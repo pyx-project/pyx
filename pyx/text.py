@@ -556,6 +556,14 @@ class DVIFile:
 #            if scale!=1000:
 #                print " (this font is magnified %d%%)" % round(scale/10)
 
+    def special(self, s):
+        if not s.startswith("PyX:"):
+            raise RuntimeError("the special '%s' cannot be handled by PyX, aborting" % s)
+        command, args = s[4:].split()[0], s[4:].split()[1:]
+        if command=="begin_color":
+            print "begin color"
+        
+
     # routines corresponding to the different reader states of the dvi maschine
 
     def _read_pre(self):
@@ -732,8 +740,7 @@ class DVIFile:
             elif cmd >= _DVI_FNT1234 and cmd < _DVI_FNT1234 + 4:
                 self.usefont(file.readint(cmd - _DVI_FNT1234 + 1, 1))
             elif cmd >= _DVI_SPECIAL1234 and cmd < _DVI_SPECIAL1234 + 4:
-                print "special %s" % file.read(file.readint(cmd - _DVI_SPECIAL1234 + 1))
-                raise RuntimeError("specials are not yet handled, abort")
+                self.special(file.read(file.readint(cmd - _DVI_SPECIAL1234 + 1)))
             elif cmd >= _DVI_FNTDEF1234 and cmd < _DVI_FNTDEF1234 + 4:
                 if cmd == _DVI_FNTDEF1234:
                     num=file.readuchar()
