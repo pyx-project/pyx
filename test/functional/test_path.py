@@ -87,13 +87,13 @@ def testmidpointsplit(c):
 
 
 def testintersectbezier(c):
-    p=normpath(path(moveto(0,0), curveto(2,6,4,5,2,9)))
-    q=normpath(path(moveto(2,0), curveto(2,6,4,12,1,6)))
+    p=normpath(path(moveto(0,0), curveto(2,6,4,5,2,9)), epsilon=1e-4)
+    q=normpath(path(moveto(2,0), curveto(2,6,4,12,1,6)), epsilon=1e-4)
 
     c.stroke(q, [style.linewidth.THIN])
     c.stroke(p, [style.linewidth.THIN])
 
-    isect = p.intersect(q, epsilon=1e-4)
+    isect = p.intersect(q)
 
     for i in isect[0]:
         x, y = p.at(i)
@@ -126,10 +126,11 @@ def testintersectline(c):
 
 
 def testnormpathtrafo(c):
-    p=path(moveto(0,5),
-           curveto(2,1,4,0,2,4),
-           rcurveto(-3,2,1,2,3,6),
-           rlineto(2,3), closepath())
+    p = path(moveto(0, 5),
+             curveto(2, 1, 4, 0, 2, 4),
+             rcurveto(-3, 2, 1, 2, 3, 6),
+             rlineto(0, 3),
+             closepath())
 
     c.stroke(p)
     c.stroke(normpath(p), [color.rgb.green, style.linestyle.dashed])
@@ -143,14 +144,9 @@ def testnormpathtrafo(c):
     c.stroke(cross(*(p.at(0))))
     c.stroke(cross(*(p.reversed().at(0))))
 
-    # c.stroke(p.tangent(0, "30 pt"), [deco.earrow.normal])
-    # c.stroke(p.reversed().tangent(0, "30 pt"), [deco.earrow.normal])
-
-    #    p1, p2, p3 = p.split(1.0, 2.1)
     p1, p2 = p.split([1.0, 2.1])
     c.stroke(p1, [color.rgb.red, style.linestyle.dashed])
     c.stroke(p2, [color.rgb.green, style.linestyle.dashed])
-    #    c.stroke(p3, [color.rgb.blue, style.linestyle.dashed])
 
     circ1 = circle(0, 10, 1)
     circ2 = circle(1.7, 10, 1)

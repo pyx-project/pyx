@@ -92,6 +92,9 @@ TODO:
     - renamed: lentopar -> arclentoparam
     - path and normpath method raise exception instead of returning None
       when parameter is out of range
+    - the accuracy epsilon can now only be specified in normpath and normsubpath
+      constructor and no longer in arguments of path and normpath methods
+      (TODO: documentation)
   - connnector module:
     - renamed _xxx -> xxx_pt
   - deco module:

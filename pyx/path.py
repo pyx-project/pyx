@@ -989,17 +989,17 @@ class path(base.PSCmd):
     def append(self, pathel):
         self.path.append(pathel)
 
-    def arclen_pt(self, epsilon=1e-5):
+    def arclen_pt(self):
         """returns total arc length of path in pts with accuracy epsilon"""
-        return normpath(self).arclen_pt(epsilon)
+        return normpath(self).arclen_pt()
 
-    def arclen(self, epsilon=1e-5):
+    def arclen(self):
         """returns total arc length of path with accuracy epsilon"""
-        return normpath(self).arclen(epsilon)
+        return normpath(self).arclen()
 
-    def arclentoparam(self, lengths, epsilon=1e-5):
+    def arclentoparam(self, lengths):
         """returns the parameter value(s) matching the given length(s)"""
-        return normpath(self).arclentoparam(lengths, epsilon)
+        return normpath(self).arclentoparam(lengths)
 
     def at_pt(self, param):
         """return coordinates in pts of corresponding normpath at parameter value param"""
@@ -1046,9 +1046,9 @@ class path(base.PSCmd):
     # << operator also designates glueing
     __lshift__ = glue
 
-    def intersect(self, other, epsilon=1e-5):
+    def intersect(self, other):
         """intersect normpath corresponding to self with other path"""
-        return normpath(self).intersect(other, epsilon)
+        return normpath(self).intersect(other)
 
     def range(self):
         """return maximal value for parameter value t for corr. normpath"""
@@ -1369,6 +1369,10 @@ class normline(normpathel):
     def __str__(self):
         return "normline(%g, %g, %g, %g)" % (self.x0, self.y0, self.x1, self.y1)
 
+    def _arclentoparam_pt(self, lengths, epsilon=1e-5):
+        l = self.arclen_pt(epsilon)
+        return ([max(min(1.0*length/l,1),0) for length in lengths], l)
+
     def _normcurve(self):
         """ return self as equivalent normcurve """
         xa = self.x0+(self.x1-self.x0)/3.0
@@ -1399,9 +1403,8 @@ class normline(normpathel):
         else:
             return  _intersectnormcurves(self._normcurve(), 0, 1, other, 0, 1, epsilon)
 
-    def _arclentoparam_pt(self, lengths, epsilon=1e-5):
-        l = self.arclen_pt(epsilon)
-        return ([max(min(1.0*length/l,1),0) for length in lengths], l)
+    def isstraight(self, epsilon):
+        return 1
 
     def reverse(self):
         self.x0, self.y0, self.x1, self.y1 = self.x1, self.y1, self.x0, self.y0
@@ -1742,25 +1745,27 @@ class normsubpath:
     and can either be closed or not.
 
     Some invariants, which have to be obeyed:
+    - All normpathels have to be longer than epsilon pts.
     - The last point of a normpathel and the first point of the next
     element have to be equal.
     - When the path is closed, the last normpathel has to be a
     normline and the last point of this normline has to be equal
-    to the first point of the first normpathel
-
+    to the first point of the first normpathel, except when
+    this normline would be too short.
     """
 
-    def __init__(self, normpathels, closed):
-        self.normpathels = normpathels
+    def __init__(self, normpathels, closed, epsilon=1e-5):
+        self.normpathels = [npel for npel in normpathels if not npel.isstraight(epsilon) or npel.arclen_pt(epsilon)>epsilon]
         self.closed = closed
+        self.epsilon = epsilon
 
     def __str__(self):
         return "subpath(%s, [%s])" % (self.closed and "closed" or "open",
                                     ", ".join(map(str, self.normpathels)))
 
-    def arclen_pt(self, epsilon=1e-5):
+    def arclen_pt(self):
         """returns total arc length of normsubpath in pts with accuracy epsilon"""
-        return sum([npel.arclen_pt(epsilon) for npel in self.normpathels])
+        return sum([npel.arclen_pt(self.epsilon) for npel in self.normpathels])
 
     def at_pt(self, t):
         """return coordinates in pts of sub path at parameter value t
@@ -1792,7 +1797,7 @@ class normsubpath:
     def end_pt(self):
         return self.normpathels[-1].end_pt()
 
-    def intersect(self, other, epsilon=1e-5):
+    def intersect(self, other):
         """intersect self with other normsubpath
 
         returns a tuple of lists consisting of the parameter values
@@ -1800,6 +1805,7 @@ class normsubpath:
 
         """
         intersections = ([], [])
+        epsilon = min(self.epsilon, other.epsilon)
         # Intersect all subpaths of self with the subpaths of other
         for t_a, pel_a  in enumerate(self.normpathels):
             for t_b, pel_b in enumerate(other.normpathels):
@@ -1814,7 +1820,7 @@ class normsubpath:
                         intersections[1].append(intersection[1]+t_b)
         return intersections
 
-    def _arclentoparam_pt(self, lengths, epsilon=1e-5):
+    def _arclentoparam_pt(self, lengths):
         """returns [t, l] where t are parameter value(s) matching given length(s)
         and l is the total length of the normsubpath
         The parameters are with respect to the normsubpath: t in [0, self.range()]
@@ -1825,7 +1831,7 @@ class normsubpath:
         rests = [length for length in lengths]
 
         for pel in self.normpathels:
-            params, arclen = pel._arclentoparam_pt(rests, epsilon)
+            params, arclen = pel._arclentoparam_pt(rests, self.epsilon)
             allarclen += arclen
             for i in range(len(rests)):
                 if rests[i] >= 0:
@@ -1955,8 +1961,9 @@ class normsubpath:
         return normsubpath(nnormpathels, self.closed)
 
     def outputPS(self, file):
-        # if the normsubpath is closed, we must not output the last normpathel
-        if self.closed:
+        # if the normsubpath is closed, we must not output a normline at
+        # the end
+        if self.closed and isinstance(self.normpathels[-1], normline):
             normpathels = self.normpathels[:-1]
         else:
             normpathels = self.normpathels
@@ -1968,8 +1975,9 @@ class normsubpath:
             file.write("closepath\n")
 
     def outputPDF(self, file):
-        # if the normsubpath is closed, we must not output the last normpathel
-        if self.closed:
+        # if the normsubpath is closed, we must not output a normline at
+        # the end
+        if self.closed and isinstance(self.normpathels[-1], normline):
             normpathels = self.normpathels[:-1]
         else:
             normpathels = self.normpathels
@@ -1992,9 +2000,12 @@ class normpath(path):
 
     """
 
-    def __init__(self, arg=[]):
+    def __init__(self, arg=[], epsilon=1e-5):
         """ construct a normpath from another normpath passed as arg,
-        a path or a list of normsubpaths """
+        a path or a list of normsubpaths. An accuracy of epsilon pts
+        is used for numerical calculations"""
+
+        self.epsilon = epsilon
         if isinstance(arg, normpath):
             self.subpaths = copy.copy(arg.subpaths)
             return
@@ -2008,7 +2019,7 @@ class normpath(path):
                     if isinstance(npel, moveto_pt):
                         if currentsubpathels:
                             # append open sub path
-                            self.subpaths.append(normsubpath(currentsubpathels, 0))
+                            self.subpaths.append(normsubpath(currentsubpathels, 0, epsilon))
                         # start new sub path
                         currentsubpathels = []
                     elif isinstance(npel, closepath):
@@ -2016,7 +2027,7 @@ class normpath(path):
                             # append closed sub path
                             currentsubpathels.append(normline(context.currentpoint[0], context.currentpoint[1],
                                                               context.currentsubpath[0], context.currentsubpath[1]))
-                        self.subpaths.append(normsubpath(currentsubpathels, 1))
+                        self.subpaths.append(normsubpath(currentsubpathels, 1, epsilon))
                         currentsubpathels = []
                     else:
                         currentsubpathels.append(npel)
@@ -2024,7 +2035,7 @@ class normpath(path):
 
             if currentsubpathels:
                 # append open sub path
-                self.subpaths.append(normsubpath(currentsubpathels, 0))
+                self.subpaths.append(normsubpath(currentsubpathels, 0, epsilon))
         else:
             # we expect a list of normsubpaths
             self.subpaths = list(arg)
@@ -2078,7 +2089,7 @@ class normpath(path):
             if isinstance(npel, moveto_pt):
                 if currentsubpathels:
                     # append open sub path
-                    self.subpaths.append(normsubpath(currentsubpathels, 0))
+                    self.subpaths.append(normsubpath(currentsubpathels, 0, self.epsilon))
                 # start new sub path
                 currentsubpathels = []
             elif isinstance(npel, closepath):
@@ -2086,24 +2097,24 @@ class normpath(path):
                     # append closed sub path
                     currentsubpathels.append(normline(context.currentpoint[0], context.currentpoint[1],
                                                       context.currentsubpath[0], context.currentsubpath[1]))
-                    self.subpaths.append(normsubpath(currentsubpathels, 1))
+                    self.subpaths.append(normsubpath(currentsubpathels, 1, self.epsilon))
                 currentsubpathels = []
             else:
                 currentsubpathels.append(npel)
 
         if currentsubpathels:
             # append open sub path
-            self.subpaths.append(normsubpath(currentsubpathels, 0))
+            self.subpaths.append(normsubpath(currentsubpathels, 0, self.epsilon))
 
-    def arclen_pt(self, epsilon=1e-5):
+    def arclen_pt(self):
         """returns total arc length of normpath in pts with accuracy epsilon"""
-        return sum([sp.arclen_pt(epsilon) for sp in self.subpaths])
+        return sum([sp.arclen_pt() for sp in self.subpaths])
 
-    def arclen(self, epsilon=1e-5):
+    def arclen(self):
         """returns total arc length of normpath with accuracy epsilon"""
-        return unit.t_pt(self.arclen_pt(epsilon))
+        return unit.t_pt(self.arclen_pt())
 
-    def arclentoparam(self, lengths, epsilon=1e-5):
+    def arclentoparam(self, lengths):
         """returns the parameter value(s) matching the given length(s)"""
 
         # split the list of lengths apart for positive and negative values
@@ -2125,7 +2136,7 @@ class normpath(path):
             # we need arclen for knowing when all the parameters are done
             # for lengths that are done: rests[i] is negative
             # sp._arclentoparam has to ignore such lengths
-            params, arclen = sp._arclentoparam_pt(rests[0], epsilon)
+            params, arclen = sp._arclentoparam_pt(rests[0])
             finis = 0 # number of lengths that are done
             for i in range(len(rests[0])):
                 if rests[0][i] >= 0:
@@ -2137,7 +2148,7 @@ class normpath(path):
 
         # go through the negative lengths
         for sp in self.reversed().subpaths:
-            params, arclen = sp._arclentoparam_pt(rests[1], epsilon)
+            params, arclen = sp._arclentoparam_pt(rests[1])
             finis = 0
             for i in range(len(rests[1])):
                 if rests[1][i] >= 0:
@@ -2224,7 +2235,7 @@ class normpath(path):
         self.subpaths += other.subpaths[1:]
         return self
 
-    def intersect(self, other, epsilon=1e-5):
+    def intersect(self, other):
         """intersect self with other path
 
         returns a tuple of lists consisting of the parameter values
@@ -2245,7 +2256,7 @@ class normpath(path):
         for sp_a in self.subpaths:
             st_b =0
             for sp_b in other.subpaths:
-                for intersection in zip(*sp_a.intersect(sp_b, epsilon)):
+                for intersection in zip(*sp_a.intersect(sp_b)):
                     intersections[0].append(intersection[0]+st_a)
                     intersections[1].append(intersection[1]+st_b)
                 st_b += sp_b.range()
