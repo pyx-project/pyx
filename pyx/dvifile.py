@@ -929,10 +929,10 @@ class dvifile:
         #        Note that q is actually s in large parts of the documentation.
         # d:     design size (fix_word)
 
-        #try:
-        #    font = virtualfont(fontname, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.fontmap, self.debug > 1)
-        #except (TypeError, RuntimeError):
-        font = type1font(fontname, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.fontmap, self.debug > 1)
+        try:
+            font = virtualfont(fontname, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.fontmap, self.debug > 1)
+        except (TypeError, RuntimeError):
+            font = type1font(fontname, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.fontmap, self.debug > 1)
 
         self.fonts[num] = font
 
