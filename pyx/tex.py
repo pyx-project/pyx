@@ -32,7 +32,7 @@ text, respectively. The method (la)tex.define can be used to define macros in
 """
 
 import os, string, tempfile, sys, md5, traceback, time, StringIO, re, atexit
-import base, unit, epsfile, color, instancelist
+import base, unit, epsfile, color, attrlist
 
 
 ################################################################################
@@ -679,17 +679,17 @@ class _BoxCmd(_TexCmd):
 # tex, latex class
 ################################################################################
 
-class _tex(base.PSCmd, instancelist.InstanceList):
+class _tex(base.PSCmd, attrlist.attrlist):
 
     """major parts are of tex and latex class are shared and implemented here"""
 
-    def __init__(self, defaultmsghandler=msghandler.hideload,
+    def __init__(self, defaultmsghandlers=msghandler.hideload,
                        defaultmissextents=missextents.returnzero,
                        texfilename=None):
-        if isinstance(defaultmsghandler, msghandler):
-            self.defaultmsghandlers = (defaultmsghandler, )
+        if isinstance(defaultmsghandlers, msghandler):
+            self.defaultmsghandlers = (defaultmsghandlers,)
         else:
-            self.defaultmsghandlers = defaultmsghandler
+            self.defaultmsghandlers = defaultmsghandlers
         self.defaultmissextents = defaultmissextents
         self.texfilename = texfilename
         self.DefCmds = []
@@ -862,20 +862,20 @@ by yourself.""")
         if len(self.BoxCmds):
             raise TexDefAfterBoxError
         self.DoneRunTex = 0
-        self.AllowedInstances(attrs, [msghandler, ])
+        self.attrcheck(attrs, None, (msghandler,))
         self.DefCmds.append(_DefCmd(Cmd + "%\n",
                                     len(self.DefCmds)+ len(self.BoxCmds),
                                     self._getstack(),
-                                    self.ExtractInstance(attrs, msghandler, self.defaultmsghandlers)))
+                                    self.attrgetall(attrs, msghandler, self.defaultmsghandlers)))
 
     def _insertcmd(self, Cmd, *attrs):
         if not len(self.BoxCmds):
             self._beginboxcmds()
             self.DefCmdsStr = reduce(lambda x,y: x + y.DefCmd, self.DefCmds, "")
-        mystyle = self.ExtractInstance(attrs, style, style.text)
-        myfontsize = self.ExtractInstance(attrs, fontsize, fontsize.normalsize)
-        myvalign = self.ExtractInstance(attrs, valign)
-        mymsghandlers = self.ExtractInstances(attrs, msghandler, self.defaultmsghandlers)
+        mystyle = self.attrget(attrs, style, style.text)
+        myfontsize = self.attrget(attrs, fontsize, fontsize.normalsize)
+        myvalign = self.attrget(attrs, valign, None)
+        mymsghandlers = self.attrgetall(attrs, msghandler, self.defaultmsghandlers)
         MyCmd = _BoxCmd(self.DefCmdsStr, Cmd, mystyle, myfontsize, myvalign,
                         len(self.DefCmds) + len(self.BoxCmds), self._getstack(), mymsghandlers)
         if MyCmd not in self.BoxCmds:
@@ -891,10 +891,10 @@ by yourself.""")
         """print Cmd at (x, y) --- position parameters in postscipt points"""
 
         self.DoneRunTex = 0
-        self.AllowedInstances(attrs, [style, fontsize, halign, valign, direction, color.color], [msghandler, ])
-        myhalign = self.ExtractInstance(attrs, halign, halign.left)
-        mydirection = self.ExtractInstance(attrs, direction, direction.horizontal)
-        mycolor = self.ExtractInstance(attrs, color.color, color.grey.black)
+        self.attrcheck(attrs, (style, fontsize, halign, valign, direction, color.color), (msghandler,))
+        myhalign = self.attrget(attrs, halign, halign.left)
+        mydirection = self.attrget(attrs, direction, direction.horizontal)
+        mycolor = self.attrget(attrs, color.color, color.grey.black)
         self._insertcmd(Cmd, *attrs).Put(x * 72.27 / 72.0, y * 72.27 / 72.0, myhalign, mydirection, mycolor)
 
     def text(self, x, y, Cmd, *attrs):
@@ -906,16 +906,16 @@ by yourself.""")
         """get width of Cmd"""
 
         self.DoneRunTex = 0
-        self.AllowedInstances(attrs, [style, fontsize, missextents], [msghandler, ])
-        mymissextents = self.ExtractInstance(attrs, missextents, self.defaultmissextents)
+        self.attrcheck(attrs, (style, fontsize, missextents), (msghandler,))
+        mymissextents = self.attrget(attrs, missextents, self.defaultmissextents)
         return self._insertcmd(Cmd, *attrs).Extents((_extent.wd, ), mymissextents, self)[0]
 
     def textht(self, Cmd, *attrs):
         """get height of Cmd"""
 
         self.DoneRunTex = 0
-        self.AllowedInstances(attrs, [style, fontsize, valign, missextents], [msghandler, ])
-        mymissextents = self.ExtractInstance(attrs, missextents, self.defaultmissextents)
+        self.attrcheck(attrs, (style, fontsize, valign, missextents), (msghandler,))
+        mymissextents = self.attrget(attrs, missextents, self.defaultmissextents)
         return self._insertcmd(Cmd, *attrs).Extents((_extent.ht, ), mymissextents, self)[0]
 
 
@@ -923,11 +923,9 @@ by yourself.""")
         """get depth of Cmd"""
 
         self.DoneRunTex = 0
-        self.AllowedInstances(attrs, [style, fontsize, valign, missextents], [msghandler, ])
-        mymissextents = self.ExtractInstance(attrs, missextents, self.defaultmissextents)
+        self.attrcheck(attrs, (style, fontsize, valign, missextents), (msghandler,))
+        mymissextents = self.attrget(attrs, missextents, self.defaultmissextents)
         return self._insertcmd(Cmd, *attrs).Extents((_extent.dp, ), mymissextents, self)[0]
-
-    #TODO: def textwht(self, Cmd, *attrs)
 
 
 class tex(_tex):

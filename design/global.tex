@@ -1,0 +1,37 @@
+% $Header$
+%
+\documentclass{article}
+\usepackage{pyx}
+\begin{document}
+\section*{Design rules about global variable dependencies}
+
+I've just noticed a problem in evaluating default arguments of
+functions in combination with global variables. Consider the following
+minimal example:
+
+\begin{verbatim}
+scale = 1
+
+def a():
+    print scale
+
+def b(a = a()):
+    pass
+
+scale = 2
+b()
+\end{verbatim}
+
+The question arises, what the output of this program will be. I
+expected the output to be \verb|2|, but I observed \verb|1|. It means
+that the modification of the scale doesn't effect the default argument
+evaluation. This effect could easily confuse users of \PyX. We should
+therefore avoid constructions where those early evaluations of default
+arguments are influenced by global variables. Typical candidates are
+constructors which will convert \PyX-length using the global unit
+settings. When those classes are used as default arguments of
+functions the effect shown above will occure. We should resolve this
+untimely evaluation by moving \PyX-length interpretations out of the
+constructors.
+
+\end{document}

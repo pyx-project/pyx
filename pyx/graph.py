@@ -23,10 +23,11 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-import types, re, math
-import bbox, canvas, path, tex, unit
+import types, re, math, string
+import bbox, canvas, path, tex, unit, mathtree
 from math import log, exp, sqrt, pow
 
+# from mathtree import *   # TODO: correct mathtree usage
 
 goldenrule = 0.5 * (sqrt(5) + 1)
 
@@ -634,91 +635,139 @@ class rectbox(path.path):
 
 class axispainter:
 
+    # TODO: see design/global.tex
     def __init__(self, innerticklength="0.2 cm",
                        outerticklength="0 cm",
                        tickstyles=(),
                        subticklengthfactor=1/goldenrule,
                        drawgrid=0,
-                       gridstyles=canvas.linestyle.dotted):
+                       gridstyles=canvas.linestyle.dotted,
+                       labeldist="0.3 cm",
+                       labelstyles=((), (tex.fontsize.footnotesize,))):
         self.innerticklength = unit.topt(unit.length(innerticklength, default_type="v"))
         self.outerticklength = unit.topt(unit.length(outerticklength, default_type="v"))
+        self.tickstyles = tickstyles
         self.subticklengthfactor = subticklengthfactor
         self.drawgrid = drawgrid
-        if type(tickstyles) not in (types.TupleType, types.ListType):
-            self.tickstyles = (tickstyles, )
-        else:
-            self.tickstyles = tickstyles
-        if type(gridstyles) not in (types.TupleType, types.ListType):
-            self.gridstyles = (gridstyles, )
-        else:
-            self.gridstyles = gridstyles
+        self.gridstyles = gridstyles
+        self.labeldist = unit.topt(unit.length(labeldist, default_type="v"))
+        self.labelstyles = labelstyles
 
     def gcd(self, m, n):
         # calculate greates common divisor
+        if m < 0: m = -m
+        if n < 0: n = -n
         if m < n:
             m, n = n, m
         while n > 0:
-            m, n = n, m % n
+            m, (dummy, n) = n, divmod(m, n)
         return m
 
     def decimalfrac(self, m, n):
-        # XXX ensure integer division!
         gcd = self.gcd(m, n)
-        m, n = int(m / gcd), int(n / gcd)
-        frac = str(m / n)
+        (m, dummy1), (n, dummy2) = divmod(m, gcd), divmod(n, gcd)
+        frac, rest = divmod(m, n)
+        strfrac = str(frac)
         rest = m % n
         if rest:
-            frac += "."
+            strfrac += "."
         oldrest = []
         while (rest):
             if rest in oldrest:
-                periodstart = len(frac) - (len(oldrest) - oldrest.index(rest))
-                frac = frac[:periodstart] + r"\overline{" + frac[periodstart:] + "}"
+                periodstart = len(strfrac) - (len(oldrest) - oldrest.index(rest))
+                strfrac = strfrac[:periodstart] + r"\overline{" + strfrac[periodstart:] + "}"
                 break
             oldrest += [rest]
             rest *= 10
-            frac += str(rest / n)
-            rest = rest % n
-        return frac
+            frac, rest = divmod(rest, n)
+            strfrac += str(frac)
+        return strfrac
 
     def rationalfrac(self, m, n):
-        # XXX ensure integer division!
         gcd = self.gcd(m, n)
-        m, n = int(m / gcd), int(n / gcd)
+        (m, dummy1), (n, dummy2) = divmod(m, gcd), divmod(n, gcd)
         if n != 1:
             frac = "{{%s}\over{%s}}" % (m, n)
         else:
             frac = str(m)
         return frac
 
+    def selectstyle(self, number, styles):
+        if type(styles) not in (types.TupleType, types.ListType):
+            return [styles,]
+        else:
+            try:
+                if type(styles[0]) not in (types.TupleType, types.ListType):
+                    return list(styles)
+            except IndexError:
+                return list(styles)
+            return list(styles[number])
+
     def paint(self, graph, axis):
+        haslabel = 0
         for tick in axis.part:
-            virtual = axis.convert(float(tick))
-            x, y = axis.tickpoint(axis, virtual)
-            dx, dy = axis.tickdirection(axis, virtual)
-            if tick.ticklevel is not None:
-                if self.drawgrid:
-                    gridpath = axis.gridpath(axis, virtual)
-                    graph.draw(gridpath, *self.gridstyles)
-                factor = math.pow(self.subticklengthfactor, tick.ticklevel)
-                x1 = x - dx * self.innerticklength * factor
-                y1 = y - dy * self.innerticklength * factor
-                x2 = x + dx * self.outerticklength * factor
-                y2 = y + dy * self.outerticklength * factor
-                graph.draw(path._line(x1, y1, x2, y2), *self.tickstyles)
+            tick.virtual = axis.convert(float(tick))
+            tick.x, tick.y = axis.tickpoint(axis, tick.virtual)
+            tick.dx, tick.dy = axis.tickdirection(axis, tick.virtual)
             if tick.labellevel is not None:
-                #text = self.decimalfrac(tick.enum, tick.denom)
-                text = self.rationalfrac(tick.enum, tick.denom)
-                # TODO: use textwht
-                ht = unit.topt(graph.tex.textht(text, tex.style.math))
-                wd = unit.topt(graph.tex.textwd(text, tex.style.math))
-                dp = unit.topt(graph.tex.textdp(text, tex.style.math))
-                if wd == 0: wd = unit.topt("0.5 t cm")
-                if ht == 0: ht = unit.topt("0.25 t cm")
-                zeroht = unit.topt(graph.tex.textht("0", tex.style.math))
-                b = rectbox(0, -dp, wd, ht, wd/2, zeroht/2)
-                tx, ty = b.translate(10 * dx, 10 * dy)
-                graph.tex._text(x + tx, y + ty, text, tex.style.math)
+                if tick.labellevel + 1 > haslabel:
+                    haslabel = tick.labellevel + 1
+
+        if haslabel:
+            zeroht = []
+            for labellevel in range(haslabel):
+                labelstyles = [tex.style.math] + self.selectstyle(labellevel, self.labelstyles)
+                zeroht.append(unit.topt(graph.tex.textht("0", *labelstyles)))
+
+            for tick in axis.part:
+                if tick.labellevel is not None:
+                    if not hasattr(tick, "text"):
+                        #tick.text = self.decimalfrac(tick.enum, tick.denom)
+                        tick.text = self.rationalfrac(tick.enum, tick.denom)
+                    tick.labelstyles = [tex.style.math] + self.selectstyle(tick.labellevel, self.labelstyles)
+                    tick.ht = unit.topt(graph.tex.textht(tick.text, *tick.labelstyles))
+                    tick.wd = unit.topt(graph.tex.textwd(tick.text, *tick.labelstyles))
+                    tick.dp = unit.topt(graph.tex.textdp(tick.text, *tick.labelstyles))
+                    if tick.wd == 0: tick.wd = unit.topt("0.5 t cm")
+                    if tick.ht == 0: tick.ht = unit.topt("0.25 t cm")
+
+            for tick in axis.part[1:]:
+                if tick.dx != axis.part[0].dx or tick.dy != axis.part[0].dy:
+                    equaldirection = 0
+                    break
+            else:
+                equaldirection = 1
+
+            if equaldirection:
+                maxht, maxdp = 0, 0
+                for tick in axis.part:
+                    if tick.labellevel is not None:
+                        if maxht < tick.ht: maxht = tick.ht
+                        if maxdp < tick.dp: maxdp = tick.dp
+                for tick in axis.part:
+                    if tick.labellevel is not None:
+                        tick.ht, tick.dp = maxht, maxdp
+
+            for tick in axis.part:
+                if tick.labellevel is not None:
+                    tick.b = rectbox(0, -tick.dp, tick.wd, tick.ht, tick.wd/2, zeroht[tick.labellevel]/2)
+                    tick.tx, tick.ty = tick.b.translate(self.labeldist * tick.dx, self.labeldist * tick.dy)
+
+        # we could now measure distances between labels rectboxes -> TODO: rating
+
+        for tick in axis.part:
+            if tick.ticklevel is not None:
+                if self.drawgrid > tick.ticklevel:
+                    gridpath = axis.gridpath(axis, tick.virtual)
+                    graph.draw(gridpath, *self.selectstyle(tick.ticklevel, self.gridstyles))
+                factor = math.pow(self.subticklengthfactor, tick.ticklevel)
+                x1 = tick.x - tick.dx * self.innerticklength * factor
+                y1 = tick.y - tick.dy * self.innerticklength * factor
+                x2 = tick.x + tick.dx * self.outerticklength * factor
+                y2 = tick.y + tick.dy * self.outerticklength * factor
+                graph.draw(path._line(x1, y1, x2, y2), *self.selectstyle(tick.ticklevel, self.tickstyles))
+            if tick.labellevel is not None:
+                graph.tex._text(tick.x + tick.tx, tick.y + tick.ty, tick.text, *tick.labelstyles)
 
 
 ################################################################################
@@ -854,6 +903,8 @@ class graphxy(canvas.canvas):
         for key, axis in self.axes.items():
             axis.setrange(min=ranges[key][0], max=ranges[key][1])
 
+        # TODO: move rating into the painter
+        # move parting into the painter too???
         for key, axis in self.axes.items():
             axis.parts = axis.part.getparts(axis.min, axis.max) # TODO: make use of stretch
             if len(axis.parts) > 1:
@@ -948,14 +999,6 @@ class graphxy(canvas.canvas):
             self._drawstate()
         canvas.canvas.write(self, file)
 
-#    def VirToPos(self, Type, List):
-#        return self.VirMap[Type].convert(List)
-#
-#    def ValueList(self, Pattern, Type, Data):
-#        (key, ) = filter(lambda x, Pattern = Pattern: Pattern.match(x), Data.GetKindList())
-#        return self.VirToPos(Type, self.Axis[key].convert(Data.GetValues(key)))
-
-
 
 ################################################################################
 # draw styles -- planed are things like:
@@ -1010,8 +1053,6 @@ class mark(_PlotStyle):
 # data
 ################################################################################
 
-from mathtree import *
-import re
 
 CommentPattern = re.compile(r"\s*(#|!)+\s*")
 
