@@ -232,7 +232,7 @@ def arctobpath(x, y, r, phi1, phi2, dphimax=pi/16):
     phi1 = (phi1-math.floor(phi1/360)*360)*pi/180
     phi2 = (phi2-math.floor(phi2/360)*360)*pi/180
 
-    if phi2<phi1: (phi1, phi2) = (phi2, phi1)
+    if phi2<phi1: phi2 = phi2 + 2*pi
 
     if r==0 or phi1-phi2==0: return None
 
