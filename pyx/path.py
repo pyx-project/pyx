@@ -1446,6 +1446,9 @@ class normline(normsubpathitem):
     def at_pt(self, t):
         return self.x0_pt+(self.x1_pt-self.x0_pt)*t, self.y0_pt+(self.y1_pt-self.y0_pt)*t
 
+    def at(self, t):
+        return (self.x0_pt+(self.x1_pt-self.x0_pt)*t) * unit.t_pt, (self.y0_pt+(self.y1_pt-self.y0_pt)*t) * unit.t_pt
+
     def bbox(self):
         return bbox.bbox_pt(min(self.x0_pt, self.x1_pt), min(self.y0_pt, self.y1_pt), 
                           max(self.x0_pt, self.x1_pt), max(self.y0_pt, self.y1_pt))
@@ -1453,11 +1456,17 @@ class normline(normsubpathitem):
     def begin_pt(self):
         return self.x0_pt, self.y0_pt
 
+    def begin(self):
+        return self.x0_pt * unit.t_pt, self.y0_pt * unit.t_pt
+
     def curvradius_pt(self, param):
         return None
 
     def end_pt(self):
         return self.x1_pt, self.y1_pt
+
+    def end(self):
+        return self.x1_pt * unit.t_pt, self.y1_pt * unit.t_pt
 
     def intersect(self, other, epsilon=1e-5):
         if isinstance(other, normline):
@@ -1595,6 +1604,10 @@ class normcurve(normsubpathitem):
                   self.y0_pt )
         return xt_pt, yt_pt
 
+    def at(self, t):
+        xt_pt, yt_pt = self.at_pt(t)
+        return xt_pt * unit.t_pt, yt_pt * unit.t_pt
+
     def bbox(self):
         return bbox.bbox_pt(min(self.x0_pt, self.x1_pt, self.x2_pt, self.x3_pt),
                           min(self.y0_pt, self.y1_pt, self.y2_pt, self.y3_pt),
@@ -1603,6 +1616,9 @@ class normcurve(normsubpathitem):
 
     def begin_pt(self):
         return self.x0_pt, self.y0_pt
+
+    def begin(self):
+        return self.x0_pt * unit.t_pt, self.y0_pt * unit.t_pt
 
     def curvradius_pt(self, param):
         xdot = ( 3 * (1-param)*(1-param) * (-self.x0_pt + self.x1_pt) +
@@ -1619,6 +1635,9 @@ class normcurve(normsubpathitem):
 
     def end_pt(self):
         return self.x3_pt, self.y3_pt
+
+    def end(self):
+        return self.x3_pt * unit.t_pt, self.y3_pt * unit.t_pt
 
     def intersect(self, other, epsilon=1e-5):
         if isinstance(other, normline):
@@ -1902,6 +1921,10 @@ class normsubpath:
         """returns total arc length of normsubpath in pts with accuracy epsilon"""
         return sum([npitem.arclen_pt(self.epsilon) for npitem in self.normsubpathitems])
 
+    def arclen(self):
+        """returns total arc length of normsubpath"""
+        return self.arclen_pt() * unit.t_pt
+
     def _arclentoparam_pt(self, lengths):
         """returns [t, l] where t are parameter value(s) matching given length(s)
         and l is the total length of the normsubpath
@@ -1922,6 +1945,21 @@ class normsubpath:
 
         return (allparams, allarclen)
 
+    def arclentoparam_pt(self, lengths):
+        if len(lengths)==1:
+            return self._arclentoparam_pt(lengths)[0][0]
+        else:
+            return self._arclentoparam_pt(lengths)[0]
+
+    def arclentoparam(self, lengths):
+        """returns the parameter value(s) matching the given length(s)
+
+        all given lengths must be positive.
+        A length greater than the total arclength will give self.range()
+        """
+        l = [unit.topt(length) for length in helper.ensuresequence(lengths)]
+        return self.arclentoparam_pt(l)
+
     def at_pt(self, param):
         """return coordinates in pts of sub path at parameter value param
 
@@ -1930,6 +1968,15 @@ class normsubpath:
         """
         normsubpathitem, itemparam = self._findnormsubpathitem(param)
         return normsubpathitem.at_pt(itemparam)
+
+    def at(self, param):
+        """return coordinates of sub path at parameter value param
+
+        The parameter param must be smaller or equal to the number of
+        segments in the normpath, otherwise None is returned.
+        """
+        normsubpathitem, itemparam = self._findnormsubpathitem(param)
+        return normsubpathitem.at(itemparam)
 
     def bbox(self):
         if self.normsubpathitems:
@@ -1942,6 +1989,9 @@ class normsubpath:
 
     def begin_pt(self):
         return self.normsubpathitems[0].begin_pt()
+
+    def begin(self):
+        return self.normsubpathitems[0].begin()
 
     def close(self):
         if self.closed:
@@ -1971,6 +2021,9 @@ class normsubpath:
 
     def end_pt(self):
         return self.normsubpathitems[-1].end_pt()
+
+    def end(self):
+        return self.normsubpathitems[-1].end()
 
     def intersect(self, other):
         """intersect self with other normsubpath
@@ -2360,8 +2413,8 @@ class normpath:
 
         At discontinuities in the path, the limit from below is returned
         """
-        x, y = self.at_pt(param, arclen)
-        return x * unit.t_pt, y * unit.t_pt
+        normsubpath, param = self._findsubpath(param, arclen)
+        return normsubpath.at(param)
 
     def bbox(self):
         abbox = None
@@ -2382,8 +2435,10 @@ class normpath:
 
     def begin(self):
         """return coordinates of first point of first subpath in path"""
-        x_pt, y_pt = self.begin_pt()
-        return x_pt * unit.t_pt, y_pt * unit.t_pt
+        if self.normsubpaths:
+            return self.normsubpaths[0].begin()
+        else:
+            raise PathException("cannot return first point of empty path")
 
     def curvradius_pt(self, param=None, arclen=None):
         """Returns the curvature radius in pts (or None if infinite)
@@ -2416,8 +2471,10 @@ class normpath:
 
     def end(self):
         """return coordinates of last point of last subpath in path"""
-        x_pt, y_pt = self.end_pt()
-        return x_pt * unit.t_pt, y_pt * unit.t_pt
+        if self.normsubpaths:
+            return self.normsubpaths[-1].end()
+        else:
+            raise PathException("cannot return last point of empty path")
 
     def join(self, other):
         if not self.normsubpaths:
