@@ -23,7 +23,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import exceptions, glob, os, threading, Queue, traceback, re, struct, tempfile, sys, atexit, time
-import helper, unit, bbox, box, base, canvas, color, trafo, path, prolog, pykpathsea, version
+import config, helper, unit, bbox, box, base, canvas, color, trafo, path, prolog, pykpathsea, version
 
 class fix_word:
     def __init__(self, word):
@@ -507,8 +507,7 @@ def readfontmap(filenames):
     return fontmap
 
 
-fontmap = readfontmap(["psfonts.map"])
-
+fontmap = readfontmap(config.fonts.fontmaps)
 
 class Font:
     def __init__(self, name, c, q, d, tfmconv, debug=0):

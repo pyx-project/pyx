@@ -16,6 +16,8 @@ PyX
     - rect style (and errorbars?) should use clipping (TODO: should they or do the now?)
   - canvas module:
     - stroke and fill now support trafos (TODO: documentation)
+  - config module:
+    - new module for loading PyX configuration information
   TODO:
   - graph module
     - address datavmin and datavmax
