@@ -65,6 +65,9 @@ TODO:
           profile for typical use cases of (new style) boxes? We do have
           begin, at and end for the normpathel's. Why is the analogous for
           normpathel.trafo a bad idea?
+      JL: There is no normpathel.begin() and .end(). Simply
+          use normpathel.at_pt(0) and normpathel.at_pt(1). The same holds
+          true for trafo.
   - color module:
     - what should we do for palette when only one entry
 
