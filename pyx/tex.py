@@ -307,8 +307,7 @@ class tex:
         
         # TODO 8: don't write save/restore directly
         self.canvas.PSAddCmd("save")
-        self.canvas.amove(0,0)
-        self.canvas.PSInsertEPS(self.canvas.BaseFilename + ".tex.eps")
+        self.canvas.PSInsertEPS(0, 0, self.canvas.BaseFilename + ".tex.eps")
         self.canvas.PSAddCmd("restore")
 
     TexResults = None

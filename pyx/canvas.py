@@ -101,8 +101,6 @@ class canvas:
         self.gsave()						# encapsulate canvas
 	self.PSAddCmd("%f %f scale" % (1/unit_ps, 1/unit_ps))
         self.PSAddCmd("%f setlinewidth" % self.w2p(0.02))	# TODO: fixme
-	self.newpath()						# delete eventually
-	self.amove(0,0)						#       ""
 
     def PSRun(self):
     	self.stroke()						# delete eventually
@@ -167,7 +165,7 @@ class canvas:
 	else: 
 	    return tuple(map(lambda x:x*unit_w2p, lengths))
 	
-    def PSInsertEPS(self, epsname):
+    def PSInsertEPS(self, x, y, epsname):
     
         'Insert EPS file epsname at current position'
 	
@@ -179,7 +177,7 @@ class canvas:
 	    assert "cannot open EPS file"	# TODO: Fehlerbehandlung
 
 	self.PSAddCmd("BeginEPSF")
-	self.PSAddCmd("%f %f translate" % self.u2p((self.x, self.y)) ) 
+	self.PSAddCmd("%f %f translate" % self.u2p((x, y)) ) 
 	self.PSAddCmd("%f %f translate" % self.u2p((-llx, -lly)) )
 	self.PSAddCmd("%f %f %f %f rect" % self.u2p((llx, lly, urx-llx,ury-lly)))
 	self.PSAddCmd("clip newpath")
@@ -207,36 +205,6 @@ class canvas:
 
     def draw(self,path):
         path.draw(self)
-
-    def amove(self,x,y):
-        #isnumber(x)
-        #isnumber(y)
-	
-        (self.x, self.y)=(x,y)
-	self.PSPositionCorrect = 0 			 
-	
-    def rmove(self,x,y):
-        #isnumber(x)
-        #isnumber(y)
-	
-        (self.x, self.y)=(self.x+x,self.y+y)
-	self.PSPositionCorrect = 0 			 
-	
-    def aline(self,x,y):
-        #isnumber(x)
-        #isnumber(y)
-	
-	self.PSUpdatePosition()			# insert moveto if needed
-        (self.x, self.y)=(x,y)
-	self.PSAddCmd("%f %f lineto" % self.u2p((x,y)))
-    
-    def rline(self,x,y):
-        #isnumber(x)
-        #isnumber(y)
-	
-	self.PSUpdatePosition()			# insert moveto if needed
-        (self.x, self.y)=(self.x+x,self.y+y)
-	self.PSAddCmd("%f %f rlineto" % self.u2p((x,y)))
 
     def setlinecap(self, cap):
         #isnumber(cap)
@@ -294,11 +262,6 @@ if __name__=="__main__":
           )
     c.draw(line(1, 1, 1,2)) 
 
-    #c.amove(1,1)
-    #c.aline(2,2)
-    #c.amove(1,2)
-    #c.aline(2,1)
-
 
     print "Breite von 'Hello world!': ",t.textwd("Hello  world!")
     print "Höhe von 'Hello world!': ",t.textht("Hello world!")
@@ -319,22 +282,24 @@ if __name__=="__main__":
    
     c.stroke()
     c.setlinestyle(linestyle_dotted)
-    c.amove(5,12)
+#    c.amove(5,12)
     t.text(5, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize = 2)
-    c.aline(7,12)
-    c.amove(5,10)
-    c.aline(5,14)
-    c.amove(7,10)
-    c.aline(7,14)
+    c.draw(path ([moveto(5,12), lineto (7,12), moveto(5,10), lineto(5,14), moveto(7,10), lineto(7,14)]))
+#    c.aline(7,12)
+#    c.amove(5,10)
+#    c.aline(5,14)
+#    c.amove(7,10)
+#    c.aline(7,14)
 
-    c.stroke()
+#    c.stroke()
     c.setlinestyle(linestyle_dashdotted)
-    c.amove(10,12)
     t.text(10, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize = 2, valign = bottom)
-    c.aline(12,12)
-    c.amove(10,10)
-    c.aline(10,14)
-    c.amove(12,10)
-    c.aline(12,14)
+    c.draw(path([moveto(10,12),lineto(12,12),moveto(10,10),lineto(10,14),moveto(12,10),lineto(12,14)]))
+#    c.amove(10,12)
+#    c.aline(12,12)
+#    c.amove(10,10)
+#    c.aline(10,14)
+#    c.amove(12,10)
+#    c.aline(12,14)
     t.TexRun()
 
