@@ -4,9 +4,10 @@ sys.path[:0] = [".."]
 import pyx
 from pyx import *
 
+text.set(mode="latex")
+text.preamble(r"\renewcommand{\familydefault}{\ttdefault}")
+
 c = canvas.canvas()
-t = tex.latex()
-t.define(r"\renewcommand{\familydefault}{\ttdefault}")
 
 # data to be plotted
 pf = graph.paramfunction("k", 0, 1, "color, xmin, xmax, ymin, ymax= k, k, 1, 0, 1")
@@ -35,10 +36,9 @@ for line in lines: # we yet don't use a file iterator
         g.plot(pf, graph.rect(pyx.color.gradient.__dict__[m.group("name")]))
         g.dodata()
         g.finish()
-        t.text(10.2, y + 0.15, m.group("id"), tex.fontsize.footnotesize)
+        c.text(10.2, y + 0.15, m.group("id"), text.size.footnotesize)
         y += dy
         skiplevel = 0
 
 
-c.insert(t)
 c.writetofile("gradientname", paperformat="a4")

@@ -30,8 +30,7 @@ t2 = c.insert(text.text(3, 0, "a b c d e f g h i j k l m n o p q r s t u v w x y
 c.stroke(t2.path())
 
 c.text(0, 3, r"\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} = \sqrt{\pi\over a}", text.mathmode)
-c.text(0, 6, r"\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} = \sqrt{\pi\over a}", text.mathmode, text.size.LARGE)
-# c.text(0, 6, r"\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} = \sqrt{\pi\over a}", text.size.LARGE, text.mathmode)
+c.text(0, 6, r"\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} = \sqrt{\pi\over a}", text.size.LARGE, text.mathmode)
 
 c.stroke(c.text(1, 2, r"Hello, world!").path())
 c.stroke(c.text(1, 2, r"Hello, world!", trafo.slant(1)).path())

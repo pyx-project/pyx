@@ -812,6 +812,7 @@ by yourself.\n""")
             else:
                 aepsfile = epsfile.epsfile(tempname + ".eps", translatebbox=0, clip=0)
                 self.abbox = aepsfile.bbox()
+                self.aprolog = aepsfile.prolog()
                 epsdatafile = StringIO.StringIO()
                 aepsfile.write(epsdatafile)
                 self.epsdata = epsdatafile.getvalue()
@@ -850,6 +851,10 @@ by yourself.\n""")
 
         self._removeaddfiles(tempname)
         self.DoneRunTex = 1
+
+    def prolog(self):
+        self._run()
+        return self.aprolog
 
     def bbox(self):
         self._run()

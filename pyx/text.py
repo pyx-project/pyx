@@ -817,9 +817,16 @@ class _texmessagenoaux(texmessage):
 
     def check(self, texrunner):
         try:
-            texrunner.texmsgparsed = texrunner.texmsgparsed.split("No file %s.aux." % texrunner.texfilename, 1)[1]
-        except IndexError:
-            pass
+            s1, s2 = texrunner.texmsgparsed.split("No file %s.aux." % texrunner.texfilename, 1)
+            texrunner.texmsgparsed = s1 + s2
+        except (IndexError, ValueError):
+            try:
+                s1, s2 = texrunner.texmsgparsed.split("No file %s%s%s.aux." % (os.curdir,
+                                                                               os.sep,
+                                                                               texrunner.texfilename), 1)
+                texrunner.texmsgparsed = s1 + s2
+            except (IndexError, ValueError):
+                pass
 
 
 class _texmessageinputmarker(texmessage):
@@ -828,7 +835,7 @@ class _texmessageinputmarker(texmessage):
         try:
             s1, s2 = texrunner.texmsgparsed.split("PyXInputMarker(%s)" % texrunner.executeid, 1)
             texrunner.texmsgparsed = s1 + s2
-        except IndexError:
+        except (IndexError, ValueError):
             raise TexResultError("PyXInputMarker expected", texrunner)
 
 
@@ -857,16 +864,23 @@ class _texmessagepyxpageout(texmessage):
 class _texmessagetexend(texmessage):
 
     def check(self, texrunner):
-        auxpattern = re.compile(r"\(%s\.aux\)" % texrunner.texfilename)
-        dvipattern = re.compile(r"Output written on %s\.dvi \((?P<page>\d+) pages?, \d+ bytes\)\." % texrunner.texfilename)
-        m = auxpattern.search(texrunner.texmsgparsed)
-        if m:
-            texrunner.texmsgparsed = texrunner.texmsgparsed[:m.start()] + texrunner.texmsgparsed[m.end():]
+        try:
+            s1, s2 = texrunner.texmsgparsed.split("(%s.aux)" % texrunner.texfilename, 1)
+            texrunner.texmsgparsed = s1 + s2
+        except (IndexError, ValueError):
+            try:
+                s1, s2 = texrunner.texmsgparsed.split("(%s%s%s.aux)" % (os.curdir,
+                                                                        os.sep,
+                                                                        texrunner.texfilename), 1)
+                texrunner.texmsgparsed = s1 + s2
+            except (IndexError, ValueError):
+                pass
         try:
             s1, s2 = texrunner.texmsgparsed.split("(see the transcript file for additional information)", 1)
             texrunner.texmsgparsed = s1 + s2
         except IndexError:
             pass
+        dvipattern = re.compile(r"Output written on %s\.dvi \((?P<page>\d+) pages?, \d+ bytes\)\." % texrunner.texfilename)
         m = dvipattern.search(texrunner.texmsgparsed)
         if texrunner.page:
             if not m:
@@ -1355,7 +1369,7 @@ class texrunner(attrlist.attrlist):
                 self.execute("\\begin{document}", *self.texmessagebegindoc)
             self.preamblemode = 0
         self.attrcheck(args, allowmulti=(halign, _texsetting, texmessage, trafo._trafo, base.PathStyle))
-                                                 #XXX: should be distiguish between StrokeStyle and FillStyle?
+                                                 #XXX: should we distiguish between StrokeStyle and FillStyle?
         texsettings = helper.getattrs(args, _texsetting, default=[])
         texsettings.reverse()
         for texsetting in texsettings:

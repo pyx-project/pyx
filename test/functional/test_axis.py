@@ -34,13 +34,11 @@ def cpaint(c, x, y, axis):
     axis.painter.paint(c, axis)
 
 c = canvas.canvas()
-t = c.insert(tex.tex())
 lintest = {"title": "axis title", "min": 0, "max": 1, "part": graph.linpart(("0.25", "0.1/0.8"))}
-c.tex = t
 hpaint(c, 0, 0, graph.linaxis(**lintest))
 hpaint(c, 0, 1, graph.linaxis(**lintest), reverse=1)
-hpaint(c, 0, 5, graph.linaxis(painter=graph.axispainter(labelattrs=tex.direction(45), titleattrs=tex.direction(45)), **lintest))
-hpaint(c, 0, 8, graph.linaxis(painter=graph.axispainter(labelattrs=(tex.direction(45), tex.halign.right), titleattrs=tex.direction(-45)), **lintest))
+hpaint(c, 0, 5, graph.linaxis(painter=graph.axispainter(labelattrs=trafo.rotate(45), titleattrs=trafo.rotate(45)), **lintest))
+hpaint(c, 0, 8, graph.linaxis(painter=graph.axispainter(labelattrs=(trafo.rotate(45), text.halign.right), titleattrs=trafo.rotate(-45)), **lintest))
 vpaint(c, 11, 0, graph.linaxis(painter=graph.axispainter(tickattrs=color.rgb.red, innerticklengths=0, outerticklengths=graph.axispainter.defaultticklengths), **lintest))
 vpaint(c, 12, 0, graph.linaxis(painter=graph.axispainter(tickattrs=(None, (color.rgb.green,))), **lintest), reverse=1)
 vpaint(c, 16, 0, graph.linaxis(painter=graph.axispainter(expfracminexp=1), **lintest))

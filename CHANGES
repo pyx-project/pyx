@@ -20,9 +20,10 @@ PyX
     - fallback solution via an external program (kpsewhich)
   - graph module:
     - removed some code duplication (various axis painters)
-    - use text module instead of the obsolete tex module (work in progress)
-    - TODO: allow for tailing zeros of automatic generated labels
-    - TODO: allow for missing data in bar graphs
+    - use text module instead of the obsolete tex module (done, check the documentation)
+    - allow for tailing zeros of automatic generated labels (done up to documentation)
+    - allow for missing data in bar graphs
+      (not yet tested --- check skat graph; check, whether this change needs to be documented in the manual)
     - TODO: remove the support for variables given within the argument dictionary in data constructor
     - TODO: graph keys; titles in data/function/etc.
     - TODO: 3d graphs --- leave it for pyx-0.4
@@ -39,17 +40,17 @@ PyX
     - TODO: line reduction for datafile like the every parameter in gnuplot
   - canvas module:
     - new way of PS prolog generation that writes only necessary parts
-    - added support for patterns 
+    - added support for patterns
     - canvas.insert() now supports arguments
     - TODO: document patterns
     - TODO: document new canvas.insert()
   - mathtree module:
     - added abs function
-    - TODO: unit tests and documentation for abs
   - numerous bugfixes:
     - problem with sizefile on windows (tex module)
     - allow for strings in graphxy's width and height; allow for width only (graph module)
     - disable rating for labelattrs equals None (graph module)
+    - TODO: defaultstyle selection, when a list of data is provided to the plot function (graph module)
     - traverse when adding functions as arguments of operators (mathtree module)
     - allow for extern functions in addcolumn (data module)
     - just one common place for the version number

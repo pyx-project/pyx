@@ -2,6 +2,13 @@
 
 default: manual.dvi
 
+clean:
+	-rm manual.log manual.aux manual.dvi manual.ps manual.pdf *.eps
+
+all:
+	make clean
+	make pdf
+
 pdf: manual.pdf
 ps: manual.ps
 dvi: manual.dvi
@@ -20,4 +27,4 @@ pyxversion.tex: ../pyx/__init__.py
 	python -c "import sys;sys.path[:0]=[\"..\"];import pyx;print pyx.__version__" > pyxversion.tex
 
 %.eps: %.py
-	python $^
+	export PYTHONPATH=$(PWD)/.. ; python $^

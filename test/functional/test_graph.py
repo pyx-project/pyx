@@ -14,7 +14,7 @@ def test_multiaxes_data(c, x, y):
                                                painter=graph.axispainter(titledirection=None)),
                                y2=graph.logaxis(title="$P_2$"),
                                y3=graph.logaxis(title="$PPP_3$",
-                                                painter=graph.axispainter(titledirection=45)),
+                                                painter=graph.axispainter(titledirection=45, decfracequal=1)),
                                y5=graph.logaxis(title="$P_5$")))
     df = data.datafile("data/testdata")
     g.plot((graph.data(df, x=1, y="sqrt(sqrt($3))"),
@@ -26,7 +26,6 @@ def test_multiaxes_data(c, x, y):
 
 def test_piaxis_function(c, x, y):
     g = c.insert(graph.graphxy(x, y, height=5,
-                               y=graph.linaxis(painter=graph.axispainter(tickattrs=None, labelattrs=None)),
                                x=graph.linaxis(min=0, max=2*math.pi, divisor=math.pi, suffix=r"\pi")))
     g.plot([graph.function("y=sin(x-i*pi/10)", extern={"i": i}) for i in range(20)],
            style=graph.line(lineattrs=(graph.changecolor.Hue(), graph.changelinestyle())))
@@ -37,7 +36,7 @@ def test_textaxis_errorbars(c, x, y):
     g = c.insert(graph.graphxy(x, y, height=5,
                                x=graph.linaxis(min=0.5, max=12.5, title="Month",
                                                part=graph.linpart("1", texts=df.getcolumn("month"), extendtick=None),
-                                               painter=graph.axispainter(labeldist=0.1, titledist=0, labelattrs=(text.direction(45),text.halign.right, text.fontsize.scriptsize))),
+                                               painter=graph.axispainter(labeldist=0.1, titledist=0, labelattrs=(trafo.rotate(45),text.halign.right, text.size.scriptsize))),
                                y=graph.linaxis(min=-10, max=30, title="Temperature [$^\circ$C]"),
                                x2=graph.linaxis(), y2=graph.linaxis()))
     g.plot(graph.data(df, x=0, ymin="min", ymax="max"))
@@ -108,7 +107,7 @@ def test_split(c, x, y):
 
 def test_bar(c, x, y):
     df = data.datafile("data/testdata2")
-    g = c.insert(graph.graphxy(x, y, height=5, width=5, x=graph.baraxis(title="Month", painter=graph.baraxispainter(nameattrs=(text.halign.right, text.direction(90))))))
+    g = c.insert(graph.graphxy(x, y, height=5, width=5, x=graph.baraxis(title="Month", painter=graph.baraxispainter(nameattrs=(text.halign.right, text.valign.centerline(), trafo.rotate(90))))))
     g.plot(graph.data(df, x=1, y=2), graph.bar(fromzero=0))
     #g = c.insert(graph.graphxy(x, y, height=5, width=5, y=graph.baraxis(title="Month")))
     #g.plot(graph.data(df, x=2, y=1), graph.bar(xbar=1, fromzero=0))
@@ -124,7 +123,7 @@ test_multiaxes_data(c, 0, 21)
 #test_textaxis_errorbars(c, 0, 7)
 #test_ownmark(c, 0, 0)
 #test_allerrorbars(c, -7, 0)
-#test_3d(c, -7, 7)
+##test_3d(c, -7, 7)
 #test_split(c, -7, 7)
 #test_bar(c, -7, 14)
 

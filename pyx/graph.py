@@ -22,7 +22,7 @@
 
 
 import types, re, math, string, sys
-import bbox, box, canvas, path, unit, mathtree, trafo, attrlist, color, helper, text
+import bbox, box, canvas, path, unit, mathtree, trafo, color, helper
 import text as textmodule
 import data as datamodule
 
@@ -35,7 +35,8 @@ goldenrule = 0.5 * (math.sqrt(5) + 1)
 ################################################################################
 
 class _Imap:
-    "maps convert a value into another value by bijective transformation f"
+    """interface definition of a map
+    maps convert a value into another value by bijective transformation f"""
 
     def convert(self, x):
         "returns f(x)"
@@ -45,9 +46,9 @@ class _Imap:
 
     def setbasepoint(self, basepoints):
         """set basepoints for the convertions
-           basepoints are tuples (x, y) with y == f(x) and x == f^-1(y)
-           the number of basepoints needed might depend on the transformation
-           usually two pairs are needed like for linear maps, logarithmic maps, etc."""
+        basepoints are tuples (x, y) with y == f(x) and x == f^-1(y)
+        the number of basepoints needed might depend on the transformation
+        usually two pairs are needed like for linear maps, logarithmic maps, etc."""
 
 
 class _linmap:
@@ -55,6 +56,7 @@ class _linmap:
     __implements__ = _Imap
 
     def setbasepoints(self, basepoints):
+        "method is part of the implementation of _Imap"
         self.dydx = (basepoints[1][1] - basepoints[0][1]) / float(basepoints[1][0] - basepoints[0][0])
         self.dxdy = (basepoints[1][0] - basepoints[0][0]) / float(basepoints[1][1] - basepoints[0][1])
         self.x1 = basepoints[0][0]
@@ -62,9 +64,11 @@ class _linmap:
         return self
 
     def convert(self, value):
+        "method is part of the implementation of _Imap"
         return self.y1 + self.dydx * (value - self.x1)
 
     def invert(self, value):
+        "method is part of the implementation of _Imap"
         return self.x1 + self.dxdy * (value - self.y1)
 
 
@@ -90,12 +94,17 @@ class _logmap:
 
 
 ################################################################################
-# tick lists = partitions
+# partition schemes
+# please note the nomenclature:
+# - a partition is a ordered sequence of tick instances
+# - a partition scheme is a class creating a single or several partitions
 ################################################################################
 
 
 class frac:
-    "fraction type for rational arithmetics"
+    """fraction class for rational arithmetics
+    the axis partitioning uses rational arithmetics (with infinite accuracy)
+    basically it contains self.enum and self.denom"""
 
     def __init__(self, enum, denom, power=None):
         "for power!=None: frac=(enum/denom)**power"
@@ -122,19 +131,21 @@ class frac:
         return frac(self.enum * other.enum, self.denom * other.denom)
 
     def __float__(self):
+        "caution: avoid final precision of floats"
         return float(self.enum) / self.denom
 
     def __str__(self):
         return "%i/%i" % (self.enum, self.denom)
 
-    def __repr__(self):
-        return "frac(%r, %r)" % (self.enum, self.denom) # I want to see the "L"
-
 
 def _ensurefrac(arg):
-    "ensure frac by converting a string to frac"
+    """helper function to convert arg into a frac
+    strings like 0.123, 1/-2, 1.23/34.21 are converted to a frac"""
+    # TODO: exponentials are not yet supported, e.g. 1e-10, etc.
+    # XXX: we don't need to force long on newer python versions
 
     def createfrac(str):
+        "converts a string 0.123 into a frac"
         commaparts = str.split(".")
         for part in commaparts:
             if not part.isdigit(): raise ValueError("non-digits found in '%s'" % part)
@@ -159,7 +170,14 @@ def _ensurefrac(arg):
 
 
 class tick(frac):
-    "a tick is a frac enhanced by a ticklevel, a labellevel and a text (they all might be None)"
+    """tick class
+    a tick is a frac enhanced by
+    - self.ticklevel (0 = tick, 1 = subtick, etc.)
+    - self.labellevel (0 = label, 1 = sublabel, etc.)
+    - self.text
+    When ticklevel or labellevel is None, no tick or label is present at that value.
+    When text is None, it should be automatically created (and stored), once the
+    an axis painter needs it."""
 
     def __init__(self, enum, denom, ticklevel=None, labellevel=None, text=None):
         frac.__init__(self, enum, denom)
@@ -168,6 +186,12 @@ class tick(frac):
         self.text = text
 
     def merge(self, other):
+        """merges two ticks together:
+          - the lower ticklevel/labellevel wins
+          - when present, self.text is taken over; otherwise the others text is taken
+          - the ticks should be at the same position (otherwise it doesn't make sense)
+            -> this is NOT checked
+        """
         if self.ticklevel is None or (other.ticklevel is not None and other.ticklevel < self.ticklevel):
             self.ticklevel = other.ticklevel
         if self.labellevel is None or (other.labellevel is not None and other.labellevel < self.labellevel):
@@ -180,9 +204,12 @@ class tick(frac):
 
 
 def _mergeticklists(list1, list2):
-    """return a merged list of ticks out of list1 and list2
-       lists have to be ordered (returned list is also ordered)
-       caution: side effects (input lists might be altered)"""
+    """helper function to merge tick lists
+    return a merged list of ticks out of list1 and list2
+    caution: original lists have to be ordered
+             (the returned list is also ordered)
+    caution: original lists are modified and they share references to
+             the result list!"""
     # TODO: improve this using bisect
     i = 0
     j = 0
@@ -203,7 +230,17 @@ def _mergeticklists(list1, list2):
 
 
 def _mergetexts(ticks, texts):
-    "merges texts into ticks"
+    """helper function to merge texts into ticks
+    - when texts is not None, the text of all ticks with
+      labellevel
+      different from None are set
+    - texts need to be a sequence of sequences of strings,
+      where the first sequence contain the strings to be
+      used as texts for the ticks with labellevel 0,
+      the second sequence for labellevel 1, etc.
+    - when the maximum labellevel is 0, just a sequence of
+      strings might be provided as the texts argument
+    - IndexError is raised, when a sequence length doesn't match"""
     if helper.issequenceofsequences(texts):
         for text, level in zip(texts, xrange(sys.maxint)):
             usetext = helper.ensuresequence(text)
@@ -225,15 +262,63 @@ def _mergetexts(ticks, texts):
             raise IndexError("wrong sequence length of texts")
 
 
+class _Ipart:
+    """interface definition of a partition scheme
+    partition schemes are used to create a list of ticks"""
+
+    def defaultpart(self, min, max, extendmin, extendmax):
+        """create a partition
+        - returns an ordered list of ticks for the interval min to max
+        - the interval is given in float numbers, thus an appropriate
+          conversion to rational numbers has to be performed
+        - extendmin and extendmax are booleans (integers)
+        - when extendmin or extendmax is set, the ticks might
+          extend the min-max range towards lower and higher
+          ranges, respectively"""
+
+    def lesspart(self):
+        """create another partition which contains less ticks
+        - this method is called several times after a call of defaultpart
+        - returns an ordered list of ticks with less ticks compared to
+          the partition returned by defaultpart and by previous calls
+          of lesspart
+        - the creation of a partition with strictly *less* ticks
+          is not to be taken serious
+        - the method might return None, when no other appropriate
+          partition can be created"""
+
+
+    def morepart(self):
+        """create another partition which contains more ticks
+        see lesspart, but increase the number of ticks"""
+
+
 class manualpart:
+    """manual partition scheme
+    ticks and labels at positions explicitly provided to the constructor"""
+
+    __implements__ = _Ipart
 
     def __init__(self, ticks=None, labels=None, texts=None, mix=()):
-        self.multipart = 0
+        """configuration of the partition scheme
+        - ticks and labels should be a sequence of sequences, where
+          the first sequence contains the values to be used for
+          ticks with ticklevel/labellevel 0, the second sequence for
+          ticklevel/labellevel 1, etc.
+        - tick and label values must be frac instances or
+          strings convertable to fracs by the _ensurefrac function
+        - when the maximum ticklevel/labellevel is 0, just a sequence
+          might be provided in ticks and labels
+        - when labels is None and ticks is not None, the tick entries
+          for ticklevel 0 are used for labels and vice versa (ticks<->labels)
+        - texts are applied to the resulting partition via the
+          mergetexts function (additional information available there)
+        - mix specifies another partition to be merged into the
+          created partition"""
         if ticks is None and labels is not None:
             self.ticks = helper.ensuresequence(helper.getsequenceno(labels, 0))
         else:
             self.ticks = ticks
-
         if labels is None and ticks is not None:
             self.labels = helper.ensuresequence(helper.getsequenceno(ticks, 0))
         else:
@@ -241,8 +326,8 @@ class manualpart:
         self.texts = texts
         self.mix = mix
 
-
     def checkfraclist(self, *fracs):
+        """orders a list of fracs, equal entries are not allowed"""
         if not len(fracs): return ()
         sorted = list(fracs)
         sorted.sort()
@@ -254,6 +339,7 @@ class manualpart:
         return sorted
 
     def part(self):
+        "create the partition as described in the constructor"
         ticks = list(self.mix)
         if helper.issequenceofsequences(self.ticks):
             for fracs, level in zip(self.ticks, xrange(sys.maxint)):
@@ -276,13 +362,49 @@ class manualpart:
         return ticks
 
     def defaultpart(self, min, max, extendmin, extendmax):
+        """method is part of the implementation of _Ipart
+        XXX: we do not take care of the parameters -> correct?"""
         return self.part()
+
+    def lesspart(self):
+        "method is part of the implementation of _Ipart"
+        return None
+
+    def morepart(self):
+        "method is part of the implementation of _Ipart"
+        return None
 
 
 class linpart:
+    """linear partition scheme
+    ticks and label distances are explicitly provided to the constructor"""
+
+    __implements__ = _Ipart
 
     def __init__(self, ticks=None, labels=None, texts=None, extendtick=0, extendlabel=None, epsilon=1e-10, mix=()):
-        self.multipart = 0
+        """configuration of the partition scheme
+        - ticks and labels should be a sequence, where the first value
+          is the distance between ticks with ticklevel/labellevel 0,
+          the second sequence for ticklevel/labellevel 1, etc.
+        - tick and label values must be frac instances or
+          strings convertable to fracs by the _ensurefrac function
+        - when the maximum ticklevel/labellevel is 0, just a single value
+          might be provided in ticks and labels
+        - when labels is None and ticks is not None, the tick entries
+          for ticklevel 0 are used for labels and vice versa (ticks<->labels)
+        - texts are applied to the resulting partition via the
+          mergetexts function (additional information available there)
+        - extendtick allows for the extension of the range given to the
+          defaultpart method to include the next tick with the specified
+          level (None turns off this feature); note, that this feature is
+          also disabled, when an axis prohibits its range extension by
+          the extendmin/extendmax variables given to the defaultpart method
+        - extendlabel is analogous to extendtick, but for labels
+        - epsilon allows for exceeding the axis range by this relative
+          value (relative to the axis range given to the defaultpart method)
+          without creating another tick specified by extendtick/extendlabel
+        - mix specifies another partition to be merged into the
+          created partition"""
         if ticks is None and labels is not None:
             self.ticks = (_ensurefrac(helper.ensuresequence(labels)[0]),)
         else:
@@ -298,6 +420,9 @@ class linpart:
         self.mix = mix
 
     def extendminmax(self, min, max, frac, extendmin, extendmax):
+        """return new min, max tuple extending the range min, max
+        frac is the tick distance to be used
+        extendmin and extendmax are booleans to allow for the extension"""
         if extendmin:
             min = float(frac) * math.floor(min / float(frac) + self.epsilon)
         if extendmax:
@@ -305,14 +430,19 @@ class linpart:
         return min, max
 
     def getticks(self, min, max, frac, ticklevel=None, labellevel=None):
+        """return a list of equal spaced ticks
+        - the tick distance is frac, the ticklevel is set to ticklevel and
+          the labellevel is set to labellevel
+        - min, max is the range where ticks should be placed"""
         imin = int(math.ceil(min / float(frac) - 0.5 * self.epsilon))
         imax = int(math.floor(max / float(frac) + 0.5 * self.epsilon))
         ticks = []
         for i in range(imin, imax + 1):
-            ticks.append(tick(long(i) * frac.enum, frac.denom, ticklevel = ticklevel, labellevel = labellevel))
+            ticks.append(tick(long(i) * frac.enum, frac.denom, ticklevel=ticklevel, labellevel=labellevel))
         return ticks
 
     def defaultpart(self, min, max, extendmin, extendmax):
+        "method is part of the implementation of _Ipart"
         if self.extendtick is not None and len(self.ticks) > self.extendtick:
             min, max = self.extendminmax(min, max, self.ticks[self.extendtick], extendmin, extendmax)
         if self.extendlabel is not None and len(self.labels) > self.extendlabel:
@@ -328,8 +458,21 @@ class linpart:
 
         return ticks
 
+    def lesspart(self):
+        "method is part of the implementation of _Ipart"
+        return None
+
+    def morepart(self):
+        "method is part of the implementation of _Ipart"
+        return None
+
 
 class autolinpart:
+    """automatic linear partition scheme
+    - possible tick distances are explicitly provided to the constructor
+    - tick distances are adjusted to the axis range by multiplication or division by 10"""
+
+    __implements__ = _Ipart
 
     defaultlist = ((frac(1, 1), frac(1, 2)),
                    (frac(2, 1), frac(1, 1)),
@@ -337,13 +480,32 @@ class autolinpart:
                    (frac(5, 1), frac(5, 2)))
 
     def __init__(self, list=defaultlist, extendtick=0, epsilon=1e-10, mix=()):
-        self.multipart = 1
+        """configuration of the partition scheme
+        - list should be a sequence of fracs
+        - ticks should be a sequence, where the first value
+          is the distance between ticks with ticklevel 0,
+          the second for ticklevel 1, etc.
+        - tick values must be frac instances or
+          strings convertable to fracs by the _ensurefrac function
+        - labellevel is set to None except for those ticks in the partitions,
+          where ticklevel is zero. There labellevel is also set to zero.
+        - extendtick allows for the extension of the range given to the
+          defaultpart method to include the next tick with the specified
+          level (None turns off this feature); note, that this feature is
+          also disabled, when an axis prohibits its range extension by
+          the extendmin/extendmax variables given to the defaultpart method
+        - epsilon allows for exceeding the axis range by this relative
+          value (relative to the axis range given to the defaultpart method)
+          without creating another tick specified by extendtick
+        - mix specifies another partition to be merged into the
+          created partition"""
         self.list = list
         self.extendtick = extendtick
         self.epsilon = epsilon
         self.mix = mix
 
     def defaultpart(self, min, max, extendmin, extendmax):
+        "method is part of the implementation of _Ipart"
         base = frac(10L, 1, int(math.log(max - min) / math.log(10)))
         ticks = self.list[0]
         useticks = [tick * base for tick in ticks]
@@ -355,6 +517,7 @@ class autolinpart:
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
     def lesspart(self):
+        "method is part of the implementation of _Ipart"
         if self.lesstickindex < len(self.list) - 1:
             self.lesstickindex += 1
         else:
@@ -366,6 +529,7 @@ class autolinpart:
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
     def morepart(self):
+        "method is part of the implementation of _Ipart"
         if self.moretickindex:
             self.moretickindex -= 1
         else:
@@ -378,13 +542,25 @@ class autolinpart:
 
 
 class shiftfracs:
+    """storage class for the definition of logarithmic axes partitions
+    instances of this class define tick positions suitable for
+    logarithmic axes by the following instance variables:
+    - shift: integer, which defines multiplicator
+    - fracs: list of tick positions (rational numbers, e.g. instances of frac)
+    possible positions are these tick positions and arbitrary divisions
+    and multiplications by the shift value"""
 
     def __init__(self, shift, *fracs):
+         "create a shiftfracs instance and store its shift and fracs information"
          self.shift = shift
          self.fracs = fracs
 
 
 class logpart(linpart):
+    """logarithmic partition scheme
+    ticks and label positions are explicitly provided to the constructor"""
+
+    __implements__ = _Ipart
 
     shift5fracs1   = shiftfracs(100000, frac(1, 1))
     shift4fracs1   = shiftfracs(10000, frac(1, 1))
@@ -392,11 +568,32 @@ class logpart(linpart):
     shift2fracs1   = shiftfracs(100, frac(1, 1))
     shiftfracs1    = shiftfracs(10, frac(1, 1))
     shiftfracs125  = shiftfracs(10, frac(1, 1), frac(2, 1), frac(5, 1))
-    shiftfracs1to9 = shiftfracs(10, *list(map(lambda x: frac(x, 1), range(1, 10))))
+    shiftfracs1to9 = shiftfracs(10, *map(lambda x: frac(x, 1), range(1, 10)))
     #         ^- we always include 1 in order to get extendto(tick|label)level to work as expected
 
     def __init__(self, ticks=None, labels=None, texts=None, extendtick=0, extendlabel=None, epsilon=1e-10, mix=()):
-        self.multipart = 0
+        """configuration of the partition scheme
+        - ticks and labels should be a sequence, where the first value
+          is a shiftfracs instance describing ticks with ticklevel/labellevel 0,
+          the second sequence for ticklevel/labellevel 1, etc.
+        - when the maximum ticklevel/labellevel is 0, just a single
+          shiftfracs instance might be provided in ticks and labels
+        - when labels is None and ticks is not None, the tick entries
+          for ticklevel 0 are used for labels and vice versa (ticks<->labels)
+        - texts are applied to the resulting partition via the
+          mergetexts function (additional information available there)
+        - extendtick allows for the extension of the range given to the
+          defaultpart method to include the next tick with the specified
+          level (None turns off this feature); note, that this feature is
+          also disabled, when an axis prohibits its range extension by
+          the extendmin/extendmax variables given to the defaultpart method
+        - extendlabel is analogous to extendtick, but for labels
+        - epsilon allows for exceeding the axis range by this relative
+          logarithm value (relative to the logarithm axis range given
+          to the defaultpart method) without creating another tick
+          specified by extendtick/extendlabel
+        - mix specifies another partition to be merged into the
+          created partition"""
         if ticks is None and labels is not None:
             self.ticks = (helper.ensuresequence(labels)[0],)
         else:
@@ -413,6 +610,9 @@ class logpart(linpart):
         self.mix = mix
 
     def extendminmax(self, min, max, shiftfracs, extendmin, extendmax):
+        """return new min, max tuple extending the range min, max
+        shiftfracs describes the allowed tick positions
+        extendmin and extendmax are booleans to allow for the extension"""
         minpower = None
         maxpower = None
         for i in xrange(len(shiftfracs.fracs)):
@@ -441,6 +641,11 @@ class logpart(linpart):
         return min, max
 
     def getticks(self, min, max, shiftfracs, ticklevel=None, labellevel=None):
+        """return a list of ticks
+        - shiftfracs describes the allowed tick positions
+        - the ticklevel of the ticks is set to ticklevel and
+          the labellevel is set to labellevel
+        -  min, max is the range where ticks should be placed"""
         ticks = list(self.mix)
         minimin = 0
         maximax = 0
@@ -458,6 +663,10 @@ class logpart(linpart):
 
 
 class autologpart(logpart):
+    """automatic logarithmic partition scheme
+    possible tick positions are explicitly provided to the constructor"""
+
+    __implements__ = _Ipart
 
     defaultlist = (((logpart.shiftfracs1,      # ticks
                      logpart.shiftfracs1to9),  # subticks
@@ -485,7 +694,30 @@ class autologpart(logpart):
                     None))                     # labels like ticks
 
     def __init__(self, list=defaultlist, extendtick=0, extendlabel=None, epsilon=1e-10, mix=()):
-        self.multipart = 1
+        """configuration of the partition scheme
+        - list should be a sequence of pairs of sequences of shiftfracs
+          instances
+        - within each pair the first sequence contains shiftfracs, where
+          the first shiftfracs instance describes ticks positions with
+          ticklevel 0, the second shiftfracs for ticklevel 1, etc.
+        - the second sequence within each pair describes the same as
+          before, but for labels
+        - within each pair: when the second entry (for the labels) is None
+          and the first entry (for the ticks) ticks is not None, the tick
+          entries for ticklevel 0 are used for labels and vice versa
+          (ticks<->labels)
+        - extendtick allows for the extension of the range given to the
+          defaultpart method to include the next tick with the specified
+          level (None turns off this feature); note, that this feature is
+          also disabled, when an axis prohibits its range extension by
+          the extendmin/extendmax variables given to the defaultpart method
+        - extendlabel is analogous to extendtick, but for labels
+        - epsilon allows for exceeding the axis range by this relative
+          logarithm value (relative to the logarithm axis range given
+          to the defaultpart method) without creating another tick
+          specified by extendtick/extendlabel
+        - mix specifies another partition to be merged into the
+          created partition"""
         self.list = list
         if len(list) > 2:
             self.listindex = divmod(len(list), 2)[0]
@@ -497,6 +729,7 @@ class autologpart(logpart):
         self.mix = mix
 
     def defaultpart(self, min, max, extendmin, extendmax):
+        "method is part of the implementation of _Ipart"
         self.min, self.max, self.extendmin, self.extendmax = min, max, extendmin, extendmax
         self.morelistindex = self.listindex
         self.lesslistindex = self.listindex
@@ -505,31 +738,49 @@ class autologpart(logpart):
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
     def lesspart(self):
+        "method is part of the implementation of _Ipart"
         self.lesslistindex += 1
         if self.lesslistindex < len(self.list):
             part = logpart(ticks=self.list[self.lesslistindex][0], labels=self.list[self.lesslistindex][1],
                            extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon, mix=self.mix)
             return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
-        return None
 
     def morepart(self):
+        "method is part of the implementation of _Ipart"
         self.morelistindex -= 1
         if self.morelistindex >= 0:
             part = logpart(ticks=self.list[self.morelistindex][0], labels=self.list[self.morelistindex][1],
                            extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon, mix=self.mix)
             return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
-        return None
 
 
 
 ################################################################################
-# rate partitions
+# rater
+# conseptional remarks:
+# - raters are used to calculate a rating for a realization of something
+# - here, a rating means a positive floating point value
+# - ratings are used to order those realizations by their suitability (lower
+#   ratings are better)
+# - a rating of None means not suitable at all (those realizations should be
+#   thrown out)
 ################################################################################
 
 
 class cuberate:
+    """a cube rater
+    - a cube rater has an optimal value, where the rate becomes zero
+    - for a left (below the optimum) and a right value (above the optimum),
+      the rating is value is set to 1 (modified by an overall weight factor
+      for the rating)
+    - the analytic form of the rating is cubic for both, the left and
+      the right side of the rater, independently"""
 
     def __init__(self, opt, left=None, right=None, weight=1):
+        """initializes the rater
+        - by default, left is set to zero, right is set to 3*opt
+        - left should be smaller than opt, right should be bigger than opt
+        - weight should be positive and is a factor multiplicated to the rates"""
         if left is None:
             left = 0
         if right is None:
@@ -540,6 +791,11 @@ class cuberate:
         self.weight = weight
 
     def rate(self, value, dense=1):
+        """returns a rating for a value
+        - the dense factor lineary rescales the rater (the optimum etc.),
+          e.g. a value bigger than one increases the optimum (when it is
+          positive) and a value lower than one decreases the optimum (when
+          it is positive); the dense factor itself should be positive"""
         opt = self.opt * dense
         if value < opt:
             other = self.left * dense
@@ -552,12 +808,31 @@ class cuberate:
 
 
 class distancerate:
+    """a distance rater (rates a list of distances)
+    - the distance rater rates a list of distances by rating each independently
+      and returning the average rate
+    - there is an optimal value, where the rate becomes zero
+    - the analytic form is linary for values above the optimal value
+      (twice the optimal value has the rating one, three times the optimal
+      value has the rating two, etc.)
+    - the analytic form is reciprocal subtracting one for values below the
+      optimal value (halve the optimal value has the rating one, one third of
+      the optimal value has the rating two, etc.)"""
 
     def __init__(self, opt, weight=0.1):
+        """inititializes the rater
+        - opt is the optimal length (a PyX length, by default a visual length)
+        - weight should be positive and is a factor multiplicated to the rates"""
         self.opt_str = opt
         self.weight = weight
 
     def _rate(self, distances, dense=1):
+        """rate distances
+        - the distances are a sequence of positive floats in PostScript points
+        - the dense factor lineary rescales the rater (the optimum etc.),
+          e.g. a value bigger than one increases the optimum (when it is
+          positive) and a value lower than one decreases the optimum (when
+          it is positive); the dense factor itself should be positive"""
         if len(distances):
             opt = unit.topt(unit.length(self.opt_str, default_type="v")) / dense
             rate = 0
@@ -570,6 +845,22 @@ class distancerate:
 
 
 class axisrater:
+    """a rater for axis partitions
+    - the rating of axes is splited into two separate parts:
+      - rating of the partitions in terms of the number of ticks,
+        subticks, labels, etc.
+      - rating of the label distances
+    - in the end, a rate for an axis partition is the sum of these rates
+    - it is useful to first just rate the number of ticks etc.
+      and selecting those partitions, where this fits well -> as soon
+      as an complete rate (the sum of both parts from the list above)
+      of a first partition is below a rate of just the ticks of another
+      partition, this second partition will never be better than the
+      first one -> we gain speed by minimizing the number of partitions,
+      where label distances have to be taken into account)
+    - both parts of the rating are shifted into instances of raters
+      defined above --- right now, there is not yet a strict interface
+      for this delegation (should be done as soon as it is needed)"""
 
     linticks = (cuberate(4), cuberate(10, weight=0.5), )
     linlabels = (cuberate(4), )
@@ -579,12 +870,39 @@ class axisrater:
     stddistance = distancerate("1 cm")
 
     def __init__(self, ticks=linticks, labels=linlabels, tickrange=stdtickrange, distance=stddistance):
+        """initializes the axis rater
+        - ticks and labels are lists of instances of cuberate
+        - the first entry in ticks rate the number of ticks, the
+          second the number of subticks, etc.; when there are no
+          ticks of a level or there is not rater for a level, the
+          level is just ignored
+        - labels is analogous, but for labels
+        - within the rating, all ticks with a higher level are
+          considered as ticks for a given level
+        - tickrange is a cuberate instance, which rates the covering
+          of an axis range by the ticks (as a relative value of the
+          tick range vs. the axis range), ticks might cover less or
+          more than the axis range (for the standard automatic axis
+          partition schemes an extention of the axis range is normal
+          and should get some penalty)
+        - distance is an distancerate instance"""
         self.ticks = ticks
         self.labels = labels
         self.tickrange = tickrange
         self.distance = distance
 
     def ratepart(self, axis, part, dense=1):
+        """rates a partition by some global parameters
+        - takes into account the number of ticks, subticks, etc.,
+          number of labels, etc., and the coverage of the axis
+          range by the ticks
+        - when there are no ticks of a level or there was not rater
+          given in the constructor for a level, the level is just
+          ignored
+        - the method returns the sum of the rating results divided
+          by the sum of the weights of the raters
+        - within the rating, all ticks with a higher level are
+          considered as ticks for a given level"""
         tickslen = len(self.ticks)
         labelslen = len(self.labels)
         ticks = [0]*tickslen
@@ -606,7 +924,7 @@ class axisrater:
             rate += rater.rate(label, dense=dense)
             weight += rater.weight
         if part is not None and len(part):
-            tickmin, tickmax = axis.gettickrange() # tickrange was not yet applied!?
+            tickmin, tickmax = axis.gettickrange() # XXX: tickrange was not yet applied!?
             rate += self.tickrange.rate((float(part[-1]) - float(part[0])) * axis.divisor / (tickmax - tickmin))
         else:
             rate += self.tickrange.rate(0)
@@ -614,6 +932,12 @@ class axisrater:
         return rate/weight
 
     def _ratedistances(self, distances, dense=1):
+        """rate distances
+        - the distances should be collected as box distances of
+          subsequent labels (of any level))
+        - the distances are a sequence of positive floats in
+          PostScript points
+        - the dense factor is used within the distancerate instance"""
         return self.distance._rate(distances, dense=dense)
 
 
@@ -622,13 +946,13 @@ class axisrater:
 ################################################################################
 
 
-class axistitlepainter(attrlist.attrlist):
+class axistitlepainter:
 
     paralleltext = -90
     orthogonaltext = 0
 
     def __init__(self, titledist="0.3 cm",
-                       titleattrs=(text.halign.center, text.valign.centerline()),
+                       titleattrs=(textmodule.halign.center, textmodule.valign.centerline()),
                        titledirection=-90,
                        titlepos=0.5):
         self.titledist_str = titledist
@@ -679,8 +1003,8 @@ class axispainter(axistitlepainter):
                        zerolineattrs=(),
                        baselineattrs=canvas.linecap.square,
                        labeldist="0.3 cm",
-                       labelattrs=((text.halign.center, text.valign.centerline()),
-                                   (text.size.footnotesize, text.halign.center, text.valign.centerline())),
+                       labelattrs=((textmodule.halign.center, textmodule.valign.centerline()),
+                                   (textmodule.size.footnotesize, textmodule.halign.center, textmodule.valign.centerline())),
                        labeldirection=None,
                        labelhequalize=0,
                        labelvequalize=1,
@@ -688,6 +1012,7 @@ class axispainter(axistitlepainter):
                        ratfracsuffixenum=1,
                        ratfracover=r"\over",
                        decfracpoint=".",
+                       decfracequal=0,
                        expfractimes=r"\cdot",
                        expfracpre1=0,
                        expfracminexp=4,
@@ -709,6 +1034,7 @@ class axispainter(axistitlepainter):
         self.ratfracsuffixenum = ratfracsuffixenum
         self.ratfracover = ratfracover
         self.decfracpoint = decfracpoint
+        self.decfracequal = decfracequal
         self.expfractimes = expfractimes
         self.expfracpre1 = expfracpre1
         self.expfracminexp = expfracminexp
@@ -759,7 +1085,7 @@ class axispainter(axistitlepainter):
             else:
                 return self.attachsuffix(tick, "%s" % m)
 
-    def decfrac(self, tick):
+    def decfrac(self, tick, decfraclength=None):
         m, n = tick.enum, tick.denom
         sign = 1
         if m < 0: m, sign = -m, -sign
@@ -772,7 +1098,9 @@ class axispainter(axistitlepainter):
         if rest:
             strfrac += self.decfracpoint
         oldrest = []
+        tick.decfraclength = 0
         while (rest):
+            tick.decfraclength += 1
             if rest in oldrest:
                 periodstart = len(strfrac) - (len(oldrest) - oldrest.index(rest))
                 strfrac = strfrac[:periodstart] + r"\overline{" + strfrac[periodstart:] + "}"
@@ -781,6 +1109,11 @@ class axispainter(axistitlepainter):
             rest *= 10
             frac, rest = divmod(rest, n)
             strfrac += str(frac)
+        else:
+            if decfraclength is not None:
+                while tick.decfraclength < decfraclength:
+                    strfrac += "0"
+                    tick.decfraclength += 1
         if sign == -1:
             return self.attachsuffix(tick, "-%s" % strfrac)
         else:
@@ -816,6 +1149,7 @@ class axispainter(axistitlepainter):
                 return self.attachsuffix(tick, "%s%s10^{%i}" % (prefactor, self.expfractimes, exp))
 
     def createtext(self, tick):
+        tick.decfraclength = None
         if self.fractype == self.fractypeauto:
             if tick.suffix is not None:
                 tick.text = self.ratfrac(tick)
@@ -852,11 +1186,25 @@ class axispainter(axistitlepainter):
                     if self.labeldirection is not None:
                         tick.labelattrs += [trafo.rotate(self.reldirection(self.labeldirection, tick.dx, tick.dy))]
                     tick.textbox = textmodule._text(tick.x, tick.y, tick.text, *tick.labelattrs)
-        equaldirection = 1
-        if len(axis.ticks):
+        if self.decfracequal:
+            maxdecfraclength = max([tick.decfraclength for tick in axis.ticks if tick.labellevel is not None and
+                                                                                 tick.labelattrs is not None and
+                                                                                 tick.decfraclength is not None])
+            for tick in axis.ticks:
+                if (tick.labellevel is not None and
+                    tick.labelattrs is not None and
+                    tick.decfraclength is not None):
+                    tick.text = self.decfrac(tick, maxdecfraclength)
+        for tick in axis.ticks:
+            if tick.labellevel is not None and tick.labelattrs is not None:
+                tick.textbox = textmodule._text(tick.x, tick.y, tick.text, *tick.labelattrs)
+        if len(axis.ticks) > 1:
+            equaldirection = 1
             for tick in axis.ticks[1:]:
                 if tick.dx != axis.ticks[0].dx or tick.dy != axis.ticks[0].dy:
                     equaldirection = 0
+        else:
+            equaldirection = 0
         if equaldirection and ((not axis.ticks[0].dx and self.labelvequalize) or
                                (not axis.ticks[0].dy and self.labelhequalize)):
             box._linealignequal([tick.textbox for tick in axis.ticks if tick.textbox],
@@ -864,7 +1212,7 @@ class axispainter(axistitlepainter):
         else:
             for tick in axis.ticks:
                 if tick.textbox:
-                    tick.textbox._linealign(labeldist, axis.ticks[0].dx, axis.ticks[0].dy)
+                    tick.textbox._linealign(labeldist, tick.dx, tick.dy)
         def topt_v_recursive(arg):
             if helper.issequence(arg):
                 # return map(topt_v_recursive, arg) needs python2.2
@@ -993,7 +1341,7 @@ class splitaxispainter(axistitlepainter):
             subaxis.dopaint(graph)
         if self.breaklinesattrs is not None:
             for subaxis1, subaxis2 in zip(axis.axislist[:-1], axis.axislist[1:]):
-                # use a tangent of the baseline (this is independend of the tickdirection)
+                # use a tangent of the baseline (this is independent of the tickdirection)
                 v = 0.5 * (subaxis1.vmax + subaxis2.vmin)
                 breakline = path.normpath(axis.vbaseline(axis, v, None)).tangent(0, self.breaklineslength)
                 widthline = path.normpath(axis.vbaseline(axis, v, None)).tangent(0, self.breaklinesdist).transformed(trafo.rotate(self.breaklinesangle+90, *breakline.begin()))
@@ -1019,7 +1367,7 @@ class baraxispainter(axistitlepainter):
                        tickattrs=(),
                        baselineattrs=canvas.linecap.square,
                        namedist="0.3 cm",
-                       nameattrs=(text.halign.center, text.valign.centerline),
+                       nameattrs=(textmodule.halign.center, textmodule.valign.centerline),
                        namedirection=None,
                        namepos=0.5,
                        namehequalize=0,
@@ -1050,38 +1398,37 @@ class baraxispainter(axistitlepainter):
                 subaxis.dolayout(graph)
                 if axis._extent < subaxis._extent:
                     axis._extent = subaxis._extent
-        equaldirection = 1
         axis.namepos = []
         for name in axis.names:
             v = axis.convert((name, self.namepos))
             x, y = axis._vtickpoint(axis, v)
             dx, dy = axis.vtickdirection(axis, v)
             axis.namepos.append((v, x, y, dx, dy))
-            if equaldirection and (dx != axis.namepos[0][3] or dy != axis.namepos[0][4]):
-                equaldirection = 0
         axis.nameboxes = []
         for (v, x, y, dx, dy), name in zip(axis.namepos, axis.names):
             nameattrs = list(helper.ensuresequence(self.nameattrs))
             if self.namedirection is not None:
                 nameattrs += [trafo.rotate(self.reldirection(self.namedirection, dx, dy))]
             if axis.texts.has_key(name):
-                axis.nameboxes.append(textmodule.text(0, 0, str(axis.texts[name]), *nameattrs))
+                axis.nameboxes.append(textmodule._text(x, y, str(axis.texts[name]), *nameattrs))
             elif axis.texts.has_key(str(name)):
-                axis.nameboxes.append(textmodule.text(0, 0, str(axis.texts[str(name)]), *nameattrs))
+                axis.nameboxes.append(textmodule._text(x, y, str(axis.texts[str(name)]), *nameattrs))
             else:
-                axis.nameboxes.append(textmodule.text(0, 0, str(name), *nameattrs))
-        #if equaldirection:
-        #    maxht, maxwd, maxdp = 0, 0, 0
-        #    for namebox in axis.nameboxes:
-        #        if maxht < namebox.ht: maxht = namebox.ht
-        #        if maxwd < namebox.wd: maxwd = namebox.wd
-        #        if maxdp < namebox.dp: maxdp = namebox.dp
-        #    for namebox in axis.nameboxes:
-        #        if self.namehequalize:
-        #            namebox.manualextents(wd = maxwd)
-        #        if self.namevequalize:
-        #            namebox.manualextents(ht = maxht, dp = maxdp)
+                axis.nameboxes.append(textmodule._text(x, y, str(name), *nameattrs))
         labeldist = axis._extent + unit.topt(unit.length(self.namedist_str, default_type="v"))
+        if len(axis.namepos) > 1:
+            equaldirection = 1
+            for namepos in axis.namepos[1:]:
+                if namepos[3] != axis.namepos[0][3] or namepos[4] != axis.namepos[0][4]:
+                    equaldirection = 0
+        else:
+            equaldirection = 0
+        if equaldirection and ((not axis.namepos[0][3] and self.namevequalize) or
+                               (not axis.namepos[0][4] and self.namehequalize)):
+            box._linealignequal(axis.nameboxes, labeldist, axis.namepos[0][3], axis.namepos[0][4])
+        else:
+            for namebox, namepos in zip(axis.nameboxes, axis.namepos):
+                namebox._linealign(labeldist, namepos[3], namepos[4])
         if self.innerticklength_str is not None:
             axis.innerticklength = unit.topt(unit.length(self.innerticklength_str, default_type="v"))
         else:
@@ -1099,8 +1446,6 @@ class baraxispainter(axistitlepainter):
         if axis.outerticklength is not None and self.tickattrs is not None:
             axis._extent += axis.outerticklength
         for (v, x, y, dx, dy), namebox in zip(axis.namepos, axis.nameboxes):
-            namebox._linealign(labeldist, dx, dy)
-            namebox.transform(trafo._translate(x, y))
             newextent = namebox._extent(dx, dy) + labeldist
             if axis._extent < newextent:
                 axis._extent = newextent
@@ -1237,61 +1582,71 @@ class _axis:
             dense = graph.dense
         min, max = self.gettickrange()
         self.ticks = self.part.defaultpart(min/self.divisor, max/self.divisor, not self.fixmin, not self.fixmax)
-        if self.part.multipart:
-            # lesspart and morepart can be called after defaultpart,
-            # although some axes may share their autoparting ---
-            # it works, because the axes are processed sequentially
-            bestrate = self.rate.ratepart(self, self.ticks, dense)
-            variants = [[bestrate, self.ticks]]
-            maxworse = 2
-            worse = 0
-            while worse < maxworse:
-                newticks = self.part.lesspart()
-                if newticks is not None:
-                    newrate = self.rate.ratepart(self, newticks, dense)
-                    variants.append([newrate, newticks])
-                    if newrate < bestrate:
-                        bestrate = newrate
-                        worse = 0
-                    else:
-                        worse += 1
+        # lesspart and morepart can be called after defaultpart,
+        # although some axes may share their autoparting ---
+        # it works, because the axes are processed sequentially
+        first = 1
+        maxworse = 2
+        worse = 0
+        while worse < maxworse:
+            newticks = self.part.lesspart()
+            if newticks is not None:
+                if first:
+                    bestrate = self.rate.ratepart(self, self.ticks, dense)
+                    variants = [[bestrate, self.ticks]]
+                    first = 0
+                newrate = self.rate.ratepart(self, newticks, dense)
+                variants.append([newrate, newticks])
+                if newrate < bestrate:
+                    bestrate = newrate
+                    worse = 0
                 else:
                     worse += 1
-            worse = 0
-            while worse < maxworse:
-                newticks = self.part.morepart()
-                if newticks is not None:
-                    newrate = self.rate.ratepart(self, newticks, dense)
-                    variants.append([newrate, newticks])
-                    if newrate < bestrate:
-                        bestrate = newrate
-                        worse = 0
-                    else:
-                        worse += 1
+            else:
+                worse += 1
+        worse = 0
+        while worse < maxworse:
+            newticks = self.part.morepart()
+            if newticks is not None:
+                if first:
+                    bestrate = self.rate.ratepart(self, self.ticks, dense)
+                    variants = [[bestrate, self.ticks]]
+                    first = 0
+                newrate = self.rate.ratepart(self, newticks, dense)
+                variants.append([newrate, newticks])
+                if newrate < bestrate:
+                    bestrate = newrate
+                    worse = 0
                 else:
                     worse += 1
+            else:
+                worse += 1
+        if not first:
             variants.sort()
-            i = 0
-            bestrate = None
-            while i < len(variants) and (bestrate is None or variants[i][0] < bestrate):
-                saverange = self.__getinternalrange()
-                self.ticks = variants[i][1]
-                if len(self.ticks):
-                    self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
-                self.painter.dolayout(graph, self)
-                ratelayout = self.painter.ratelayout(graph, self, dense)
-                if ratelayout is not None:
-                    variants[i][0] += ratelayout
-                else:
-                    variants[i][0] = None
-                if variants[i][0] is not None and (bestrate is None or variants[i][0] < bestrate):
-                    bestrate = variants[i][0]
-                self.__forceinternalrange(saverange)
-                i += 1
-            if bestrate is None:
-                raise PartitionError("no valid axis partitioning found")
-            variants = [variant for variant in variants[:i] if variant[0] is not None]
-            variants.sort()
+            if self.painter is not None:
+                i = 0
+                bestrate = None
+                while i < len(variants) and (bestrate is None or variants[i][0] < bestrate):
+                    saverange = self.__getinternalrange()
+                    self.ticks = variants[i][1]
+                    if len(self.ticks):
+                        self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
+                    self.painter.dolayout(graph, self)
+                    ratelayout = self.painter.ratelayout(graph, self, dense)
+                    if ratelayout is not None:
+                        variants[i][0] += ratelayout
+                    else:
+                        variants[i][0] = None
+                    if variants[i][0] is not None and (bestrate is None or variants[i][0] < bestrate):
+                        bestrate = variants[i][0]
+                    self.__forceinternalrange(saverange)
+                    i += 1
+                if bestrate is None:
+                    raise PartitionError("no valid axis partitioning found")
+                variants = [variant for variant in variants[:i] if variant[0] is not None]
+                variants.sort()
+            else:
+                self._extent = 0
             self.ticks = variants[0][1]
             if len(self.ticks):
                 self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
@@ -1301,7 +1656,8 @@ class _axis:
             self.painter.dolayout(graph, self)
 
     def dopaint(self, graph):
-        self.painter.paint(graph, self)
+        if self.painter is not None:
+            self.painter.paint(graph, self)
 
     def createlinkaxis(self, **args):
         return linkaxis(self, **args)
@@ -1877,11 +2233,11 @@ class graphxy(canvas.canvas):
 
     def bbox(self):
         self.finish()
-        return canvas.canvas.bbox(self)
-        #return bbox.bbox(self._xpos - self._yaxisextents[0],
-        #                 self._ypos - self._xaxisextents[0],
-        #                 self._xpos + self._width + self._yaxisextents[1],
-        #                 self._ypos + self._height + self._xaxisextents[1])
+        #return canvas.canvas.bbox(self)
+        return bbox.bbox(self._xpos - self._yaxisextents[0],
+                         self._ypos - self._xaxisextents[0],
+                         self._xpos + self._width + self._yaxisextents[1],
+                         self._ypos + self._height + self._xaxisextents[1])
 
     def write(self, file):
         self.finish()
@@ -2992,7 +3348,7 @@ class rect(symbol):
 
 class text(symbol):
 
-    def __init__(self, textdx="0", textdy="0.3 cm", textattrs=text.halign.center, **args):
+    def __init__(self, textdx="0", textdy="0.3 cm", textattrs=textmodule.halign.center, **args):
         self.textindex = None
         self.textdx_str = textdx
         self.textdy_str = textdy
@@ -3015,9 +3371,8 @@ class text(symbol):
 
     def _drawsymbol(self, graph, x, y, point=None):
         symbol._drawsymbol(self, graph, x, y, point)
-        #TODO
-        #if None not in (x, y, point[self.textindex], self._textattrs):
-        #    graph.tex._text(x + self._textdx, y + self._textdy, str(point[self.textindex]), *helper.ensuresequence(self.textattrs))
+        if None not in (x, y, point[self.textindex], self._textattrs):
+            graph._text(x + self._textdx, y + self._textdy, str(point[self.textindex]), *helper.ensuresequence(self.textattrs))
 
     def drawpoints(self, graph, points):
         self.textdx = unit.length(_getattr(self.textdx_str), default_type="v")

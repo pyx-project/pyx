@@ -777,7 +777,7 @@ class _canvas(base.PSCmd, attrlist.attrlist):
         dp.styles = self.attrgetall(args, base.PathStyle, ())
 
         # add path decorations and modify path accordingly
-        for deco in self.attrgetall(args, PathDeco):
+        for deco in self.attrgetall(args, PathDeco, ()):
             dp = deco.decorate(dp)
 
         self.insert(dp)
