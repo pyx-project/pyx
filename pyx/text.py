@@ -784,14 +784,14 @@ class TexResultWarning(TexResultError): pass
 
 
 ###############################################################################
-# checkmsg
+# texmessage
 ############################################################################{{{
 
 
-class checkmsg: pass
+class texmessage: pass
 
 
-class _checkmsgstart(checkmsg):
+class _texmessagestart(texmessage):
 
     startpattern = re.compile(r"This is [0-9a-zA-Z\s_]*TeX")
 
@@ -810,7 +810,7 @@ class _checkmsgstart(checkmsg):
             raise TexResultError("TeX scrollmode check failed", texrunner)
 
 
-class _checkmsgnoaux(checkmsg):
+class _texmessagenoaux(texmessage):
 
     def check(self, texrunner):
         try:
@@ -819,7 +819,7 @@ class _checkmsgnoaux(checkmsg):
             pass
 
 
-class _checkmsginputmarker(checkmsg):
+class _texmessageinputmarker(texmessage):
 
     def check(self, texrunner):
         try:
@@ -829,7 +829,7 @@ class _checkmsginputmarker(checkmsg):
             raise TexResultError("PyXInputMarker expected", texrunner)
 
 
-class _checkmsgpyxbox(checkmsg):
+class _texmessagepyxbox(texmessage):
 
     pattern = re.compile(r"PyXBox\(page=(?P<page>\d+),wd=-?\d*((\d\.?)|(\.?\d))\d*pt,ht=-?\d*((\d\.?)|(\.?\d))\d*pt,dp=-?\d*((\d\.?)|(\.?\d))\d*pt\)")
 
@@ -841,7 +841,7 @@ class _checkmsgpyxbox(checkmsg):
             raise TexResultError("PyXBox expected", texrunner)
 
 
-class _checkmsgpyxpageout(checkmsg):
+class _texmessagepyxpageout(texmessage):
 
     def check(self, texrunner):
         try:
@@ -851,7 +851,7 @@ class _checkmsgpyxpageout(checkmsg):
             raise TexResultError("PyXPageOutMarker expected", texrunner)
 
 
-class _checkmsgtexend(checkmsg):
+class _texmessagetexend(texmessage):
 
     auxpattern = re.compile(r"\([^()]*\.aux\)")
     dvipattern = re.compile(r"Output written on (?P<texfilename>[a-z]+).dvi \((?P<page>\d+) pages?, \d+ bytes\)\.")
@@ -887,7 +887,7 @@ class _checkmsgtexend(checkmsg):
             raise TexResultError("TeX logfile message expected")
 
 
-class _checkmsgemptylines(checkmsg):
+class _texmessageemptylines(texmessage):
 
     pattern = re.compile(r"^\*?\n", re.M)
 
@@ -898,7 +898,7 @@ class _checkmsgemptylines(checkmsg):
             m = self.pattern.search(texrunner.texmsgparsed)
 
 
-class _checkmsgload(checkmsg):
+class _texmessageload(texmessage):
 
     pattern = re.compile(r"\((?P<filename>[^()\s\n]+)[^()]*\)")
 
@@ -932,29 +932,29 @@ class _checkmsgload(checkmsg):
                 texrunner.texmsgparsed = lowestbracketlevel
 
 
-class _checkmsggraphicsload(_checkmsgload):
+class _texmessagegraphicsload(_texmessageload):
 
     def baselevels(self, s, brackets="<>", **args):
-        _checkmsgload.baselevels(self, s, brackets=brackets, **args)
+        _texmessageload.baselevels(self, s, brackets=brackets, **args)
 
 
 
-class _checkmsgignore(_checkmsgload):
+class _texmessageignore(_texmessageload):
 
     def check(self, texrunner):
         texrunner.texmsgparsed = ""
 
 
-checkmsg.start = _checkmsgstart()
-checkmsg.noaux = _checkmsgnoaux()
-checkmsg.inputmarker = _checkmsginputmarker()
-checkmsg.pyxbox = _checkmsgpyxbox()
-checkmsg.pyxpageout = _checkmsgpyxpageout()
-checkmsg.texend = _checkmsgtexend()
-checkmsg.emptylines = _checkmsgemptylines()
-checkmsg.load = _checkmsgload()
-checkmsg.graphicsload = _checkmsggraphicsload()
-checkmsg.ignore = _checkmsgignore()
+texmessage.start = _texmessagestart()
+texmessage.noaux = _texmessagenoaux()
+texmessage.inputmarker = _texmessageinputmarker()
+texmessage.pyxbox = _texmessagepyxbox()
+texmessage.pyxpageout = _texmessagepyxpageout()
+texmessage.texend = _texmessagetexend()
+texmessage.emptylines = _texmessageemptylines()
+texmessage.load = _texmessageload()
+texmessage.graphicsload = _texmessagegraphicsload()
+texmessage.ignore = _texmessageignore()
 
 # }}}
 
@@ -1081,22 +1081,32 @@ class _readpipe(threading.Thread):
 
 class _textbox(box._rect, base.PSCmd):
 
-    def __init__(self, x, y, left, right, height, depth, texrunner, page):
-        self.texttrafo = trafo._translate(-left, 0)
-        box._rect.__init__(self, -left, -depth, left + right, depth + height, abscenter = (left, depth), trafo=trafo._translate(x, y))
+    def __init__(self, x, y, left, right, height, depth, texrunner, page, *styles):
+        self.texttrafo = trafo._translate(x-left, y)
+        box._rect.__init__(self, x - left, y - depth,
+                                 left + right, depth + height,
+                                 abscenter = (left, depth))
         self.texrunner = texrunner
         self.page = page
+        self.styles = styles
 
-    def transform(self, trafo):
-        box._rect.transform(self, trafo)
-        self.texttrafo = trafo * self.texttrafo
+    def transform(self, *trafos):
+        box._rect.transform(self, *trafos)
+        for trafo in trafos:
+            self.texttrafo = trafo * self.texttrafo
 
     def prolog(self):
-        return self.texrunner.prolog()
+        result = []
+        for cmd in self.styles:
+            pr = cmd.prolog()
+            if pr: result.extend(pr)
+        return result + self.texrunner.prolog()
 
     def write(self, file):
         canvas._gsave().write(file) # XXX: canvas?, constructor call needed?
         self.texttrafo.write(file)
+        for style in self.styles:
+            style.write(file)
         self.texrunner.write(file, self.page)
         canvas._grestore().write(file)
 
@@ -1124,12 +1134,12 @@ class texrunner(attrlist.attrlist):
                        waitfortex=5,
                        texdebug=0,
                        dvidebug=0,
-                       checkmsgstart=checkmsg.start,
-                       checkmsgdocclass=checkmsg.load,
-                       checkmsgbegindoc=(checkmsg.load, checkmsg.noaux),
-                       checkmsgend=checkmsg.texend,
-                       checkmsgdefaultdefine=(),
-                       checkmsgdefaultrun=()):
+                       texmessagestart=texmessage.start,
+                       texmessagedocclass=texmessage.load,
+                       texmessagebegindoc=(texmessage.load, texmessage.noaux),
+                       texmessageend=texmessage.texend,
+                       texmessagedefaultpreamble=(),
+                       texmessagedefaultrun=()):
         self.mode = mode
         self.docclass = docclass
         self.docopt = docopt
@@ -1137,16 +1147,16 @@ class texrunner(attrlist.attrlist):
         self.waitfortex = waitfortex
         self.texdebug = texdebug
         self.dvidebug = dvidebug
-        self.checkmsgstart = helper.ensuresequence(checkmsgstart)
-        self.checkmsgdocclass = helper.ensuresequence(checkmsgdocclass)
-        self.checkmsgbegindoc = helper.ensuresequence(checkmsgbegindoc)
-        self.checkmsgend = helper.ensuresequence(checkmsgend)
-        self.checkmsgdefaultdefine = helper.ensuresequence(checkmsgdefaultdefine)
-        self.checkmsgdefaultrun = helper.ensuresequence(checkmsgdefaultrun)
+        self.texmessagestart = helper.ensuresequence(texmessagestart)
+        self.texmessagedocclass = helper.ensuresequence(texmessagedocclass)
+        self.texmessagebegindoc = helper.ensuresequence(texmessagebegindoc)
+        self.texmessageend = helper.ensuresequence(texmessageend)
+        self.texmessagedefaultpreamble = helper.ensuresequence(texmessagedefaultpreamble)
+        self.texmessagedefaultrun = helper.ensuresequence(texmessagedefaultrun)
 
         self.texruns = 0
         self.texdone = 0
-        self.definemode = 1
+        self.preamblemode = 1
         self.executeid = 0
         self.page = 0
         self.texfilename = "text"
@@ -1166,8 +1176,8 @@ class texrunner(attrlist.attrlist):
             self.gotqueue = Queue.Queue(0) # allow arbitrary number of entries
             self.readoutput = _readpipe(self.texoutput, self.expectqueue, self.gotevent, self.gotqueue)
             self.texruns = 1
-            olddefinemode = self.definemode
-            self.definemode = 1
+            oldpreamblemode = self.preamblemode
+            self.preamblemode = 1
             self.execute("\\scrollmode\n\\raiseerror%\n" + # switch to and check scrollmode
                          "\\def\\PyX{P\\kern-.3em\\lower.5ex\hbox{Y}\kern-.18em X}%\n" +
                          "\\newbox\\PyXBox%\n" +
@@ -1180,18 +1190,18 @@ class texrunner(attrlist.attrlist):
                          "\\ht\\PyXBox0pt%\n" +
                          "{\\count0=80\\count1=121\\count2=88\\count3=#2\\shipout\\copy\\PyXBox}}%\n" +
                          "\\def\\PyXInput#1{\\immediate\\write16{PyXInputMarker(#1)}}",
-                         *self.checkmsgstart)
+                         *self.texmessagestart)
             os.remove("%s.tex" % self.texfilename)
             if self.mode == "latex":
                 if self.docopt is not None:
-                    self.execute("\\documentclass[%s]{%s}" % (self.docopt, self.docclass), *self.checkmsgdocclass)
+                    self.execute("\\documentclass[%s]{%s}" % (self.docopt, self.docclass), *self.texmessagedocclass)
                 else:
-                    self.execute("\\documentclass{%s}" % self.docclass, *self.checkmsgdocclass)
-            self.definemode = olddefinemode
+                    self.execute("\\documentclass{%s}" % self.docclass, *self.texmessagedocclass)
+            self.preamblemode = oldpreamblemode
         self.executeid += 1
         if expr is not None:
             self.expectqueue.put_nowait("PyXInputMarker(%i)" % self.executeid)
-            if self.definemode:
+            if self.preamblemode:
                 self.expr = ("%s%%\n" % expr +
                                    "\\PyXInput{%i}%%\n" % self.executeid)
             else:
@@ -1221,16 +1231,16 @@ class texrunner(attrlist.attrlist):
             raise TexResultError("TeX didn't respond as expected within the timeout period (%i seconds)." % self.waitfortex, self)
         else:
             if expr is not None:
-                checkmsg.inputmarker.check(self)
-                if not self.definemode:
-                    checkmsg.pyxbox.check(self)
-                    checkmsg.pyxpageout.check(self)
+                texmessage.inputmarker.check(self)
+                if not self.preamblemode:
+                    texmessage.pyxbox.check(self)
+                    texmessage.pyxpageout.check(self)
             for check in checks:
                 try:
                     check.check(self)
                 except TexResultWarning:
                     traceback.print_exc()
-            checkmsg.emptylines.check(self)
+            texmessage.emptylines.check(self)
             if len(self.texmsgparsed):
                 raise TexResultError("unhandled TeX response (might be an error)", self)
         if expr is None:
@@ -1239,13 +1249,13 @@ class texrunner(attrlist.attrlist):
 
     def prolog(self):
         if not self.texdone:
-            self.execute(None, *self.checkmsgend)
+            self.execute(None, *self.texmessageend)
             self.dvifile = DVIFile("%s.dvi" % self.texfilename, debug=self.dvidebug)
         return self.dvifile.prolog()
 
     def write(self, file, page):
         if not self.texdone:
-            self.execute(None, *self.checkmsgend)
+            self.execute(None, *self.texmessageend)
             self.dvifile = DVIFile("%s.dvi" % self.texfilename)
         return self.dvifile.write(file, page)
 
@@ -1287,13 +1297,13 @@ class texrunner(attrlist.attrlist):
         if depth > 0:
             raise ValueError("unmatched '{'")
 
-    def define(self, expr, *args):
+    def preamble(self, expr, *args):
         if self.texdone:
             raise TexDoneError
-        if not self.definemode:
+        if not self.preamblemode:
             raise TexNotInDefineModeError
         self.bracketcheck(expr)
-        self.execute(expr, *self.attrgetall(args, checkmsg, default=self.checkmsgdefaultdefine))
+        self.execute(expr, *self.attrgetall(args, texmessage, default=self.texmessagedefaultpreamble))
 
     PyXBoxPattern = re.compile(r"PyXBox\(page=(?P<page>\d+),wd=(?P<wd>-?\d*((\d\.?)|(\.?\d))\d*)pt,ht=(?P<ht>-?\d*((\d\.?)|(\.?\d))\d*)pt,dp=(?P<dp>-?\d*((\d\.?)|(\.?\d))\d*)pt\)")
 
@@ -1302,26 +1312,28 @@ class texrunner(attrlist.attrlist):
             raise ValueError("None is invalid")
         if self.texdone:
             raise TexDoneError
-        if self.definemode:
+        if self.preamblemode:
             if self.mode == "latex":
-                self.execute("\\begin{document}", *self.checkmsgbegindoc)
-            self.definemode = 0
-        self.attrcheck(args, allowmulti=(halign, _texsetting, checkmsg, trafo._trafo))
-        for texsetting in self.attrgetall(args, _texsetting, default=()):
+                self.execute("\\begin{document}", *self.texmessagebegindoc)
+            self.preamblemode = 0
+        self.attrcheck(args, allowmulti=(halign, _texsetting, texmessage, trafo._trafo, base.PathStyle))
+                                                 #XXX: should be distiguish between StrokeStyle and FillStyle?
+        texsettings = helper.getattrs(args, _texsetting, default=[])
+        texsettings.reverse()
+        for texsetting in texsettings:
             expr = texsetting.modifyexpr(expr)
         self.bracketcheck(expr)
-        self.execute(expr, *self.attrgetall(args, checkmsg, default=self.checkmsgdefaultrun))
+        self.execute(expr, *self.attrgetall(args, texmessage, default=self.texmessagedefaultrun))
         match = self.PyXBoxPattern.search(self.texmsg)
         if not match or int(match.group("page")) != self.page:
             raise TexResultError("box extents not found", self)
         width, height, depth = map(lambda x: float(x) * 72.0 / 72.27, match.group("wd", "ht", "dp"))
         hratio = self.attrgetall(args, halign, default=(halign.left,))[0].hratio
-        textbox = _textbox(0, 0, hratio * width, (1 - hratio) * width, height, depth, self, self.page)
-                           # we do not yet move the box to the correct position
+        box = _textbox(x, y, hratio * width, (1 - hratio) * width, height, depth, self, self.page,
+                       *helper.getattrs(args, base.PathStyle, default=[]))
         for t in self.attrgetall(args, trafo._trafo, default=()):
-            textbox.transform(t) # transformations might rotate ...
-        textbox.transform(trafo._translate(x, y)) # ... before the hole box is positioned
-        return textbox
+            box.reltransform(t)
+        return box
 
     def text(self, x, y, expr, *args):
         return self._text(unit.topt(x), unit.topt(y), expr, *args)
@@ -1329,7 +1341,7 @@ class texrunner(attrlist.attrlist):
 
 defaulttexrunner = texrunner()
 set = defaulttexrunner.set
-define = defaulttexrunner.define
+preamble = defaulttexrunner.preamble
 text = defaulttexrunner.text
 _text = defaulttexrunner._text
 
