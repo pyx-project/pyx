@@ -498,35 +498,26 @@ class canvas(_canvas):
         file.write("1 0 obj\n"
                    "<<\n"
                    "/Type /Catalog\n"
-                   "/Outlines 2 0 R\n"
-                   "/Pages 3 0 R\n"
+                   "/Pages 2 0 R\n"
                    ">>\n"
                    "endobj\n")
         reflist.append(file.tell())
         file.write("2 0 obj\n"
                    "<<\n"
-                   "/Type Outlines\n"
-                   "/Count 0\n"
+                   "/Type /Pages\n"
+                   "/Kids [3 0 R]\n"
+                   "/Count 1\n"
                    ">>\n"
                    "endobj\n")
         reflist.append(file.tell())
         file.write("3 0 obj\n"
                    "<<\n"
-                   "/Type /Pages\n"
-                   "/Kids [4 0 R]\n"
-                   "/Count 1\n"
-                   ">>\n"
-                   "endobj\n")
-        reflist.append(file.tell())
-        file.write("4 0 obj\n"
-                   "<<\n"
                    "/Type /Page\n"
-                   "/Parent 3 0 R\n")
+                   "/Parent 2 0 R\n")
         abbox.outputPDF(file)
-        file.write("/Contents 5 0 R\n"
+        file.write("/Contents 4 0 R\n"
                    "/Resources <<\n")
-                   #"/ProcSet 7 0 R\n") # disabled ProcSet (its optional)
-        fontstartref = 6
+        fontstartref = 5
 
         fontnr = 0
         if len([pritem for pritem in mergedprolog if isinstance(pritem, prolog.fontdefinition)]):
@@ -543,8 +534,8 @@ class canvas(_canvas):
                    ">>\n"
                    "endobj\n")
         reflist.append(file.tell())
-        file.write("5 0 obj\n"
-                   "<< /Length 6 0 R >>\n"
+        file.write("4 0 obj\n"
+                   "<< /Length 5 0 R >>\n"
                    "stream\n")
         streamstartpos = file.tell()
 
@@ -557,13 +548,9 @@ class canvas(_canvas):
         file.write("endstream\n"
                    "endobj\n")
         reflist.append(file.tell())
-        file.write("6 0 obj\n"
+        file.write("5 0 obj\n"
                    "%s\n"
                    "endobj\n" % (streamendpos - streamstartpos))
-        #reflist.append(file.tell()) # disabled ProcSet (its optional)
-        #file.write("7 0 obj\n"
-        #           "[/PDF /Text]\n"
-        #           "endobj\n")
 
         fontnr = 0
         for pritem in mergedprolog:
