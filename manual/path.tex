@@ -171,9 +171,9 @@ and filling works as expected.
 XXX reverse, reversed, parametrisation, arclen parameters
 
 
+\section{Module path}
 
-
-\section{Class pathel}
+\subsection{Class pathel}
 
 The class \verb|pathel| is the superclass of all PostScript path
 construction primitives. It is never used directly, but only by
@@ -220,7 +220,7 @@ Some notes on the above:
 \end{itemize}
 
 
-\section{Class path}
+\subsection{Class path}
 
 The methods provided by instance of the class \verb|path| are
 summarized in the following table:
@@ -318,7 +318,7 @@ paths together with help of the \verb|<<| operator, for instance
   provided.
 \end{itemize}
 
-\section{Class normpath}
+\subsection{Class normpath}
 
 The \texttt{normpath} class represents a specialized form of a
 \texttt{path} containing only the elements \verb|moveto|,
@@ -337,7 +337,7 @@ in all \verb|normpath| calculations by means of the keyword argument
 \verb|epsilon|, which defaults to $10^{-5}$.  Note that the sum of a
 \verb|normpath| and a \verb|path| always yields a \verb|normpath|.
 
-\section{Subclasses of path}
+\subsection{Subclasses of path}
 
 For your convenience, some special PostScript paths are already defined, which
 are given in the following table.
