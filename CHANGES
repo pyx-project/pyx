@@ -99,6 +99,8 @@ TODO:
     - completely rewritten
   - pswriter module: new
     - separate PS output from canvas
+  - color module:
+    - allow selection on zero range palette (reported by Francisco Borges, cf. bug #1116257)
 
 
 0.7.1 (2004/12/15):
