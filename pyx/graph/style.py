@@ -435,7 +435,7 @@ class symbolline(_style):
                 if len(errorpath.path):
                     styledata.errorbarcanvas.stroke(errorpath, styledata.errorbarattrs)
 
-    def drawpoints(self, points, graph, styledata):
+    def initdrawpoints(self, graph, styledata):
         if styledata.lineattrs is not None:
             # TODO: bbox shortcut
             linecanvas = graph.insert(canvas.canvas())
@@ -454,16 +454,17 @@ class symbolline(_style):
                     styledata.errorlist.append((axisname, axisindex))
                 axisindex += 1
 
-        for point in points:
-            styledata.point = point
-            self.vpos(styledata)
-            if styledata.drawsymbol:
-                styledata.xpos, styledata.ypos = graph.vpos_pt(*styledata.vpos)
-                self.drawsymbol_pt(graph, styledata.xpos, styledata.ypos, styledata, point=styledata.point)
-            self.appendlinebasepoints(styledata)
-            if not styledata.validvpos:
-                self.addpointstopath(styledata)
-            self.doerrorbars(styledata)
+    def drawpoint(self, graph, styledata):
+        self.vpos(styledata)
+        if styledata.drawsymbol:
+            styledata.xpos, styledata.ypos = graph.vpos_pt(*styledata.vpos)
+            self.drawsymbol_pt(graph, styledata.xpos, styledata.ypos, styledata, point=styledata.point)
+        self.appendlinebasepoints(styledata)
+        if not styledata.validvpos:
+            self.addpointstopath(styledata)
+        self.doerrorbars(styledata)
+
+    def donedrawpoints(self, graph, styledata):
         self.addpointstopath(styledata)
 
         # stroke styledata.path

@@ -112,7 +112,13 @@ class _data:
 
     def draw(self, graph):
         for style in self.styles:
-            style.drawpoints(self.points, graph, self.styledata)
+            style.initdrawpoints(graph, self.styledata)
+        for point in self.points:
+            self.styledata.point = point
+            for style in self.styles:
+                style.drawpoint(graph, self.styledata)
+        for style in self.styles:
+            style.donedrawpoints(graph, self.styledata)
 
 
 class list(_data):
