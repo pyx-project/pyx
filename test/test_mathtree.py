@@ -7,7 +7,7 @@ from pyx import mathtree
 
 class MathTreeTestCase(unittest.TestCase):
 
-    def testParseStr(self):
+    def testStr(self):
         myparser = mathtree.parser()
         assert str(myparser.parse("a+b-c")) == "a+b-c"
         assert str(myparser.parse("(a+b)-c")) == "a+b-c"
@@ -21,7 +21,7 @@ class MathTreeTestCase(unittest.TestCase):
         assert str(myparser.parse("sin(pi/2)")) == "sin(pi/2.0)"
         assert str(myparser.parse("norm(a,b)")) == "norm(a,b)"
 
-    def testParseRepr(self):
+    def testRepr(self):
         myparser = mathtree.parser()
         assert repr(myparser.parse("a+b-c")) == """MathTreeOpSub(
     MathTreeOpAdd(
@@ -134,7 +134,7 @@ class MathTreeTestCase(unittest.TestCase):
     MathTreeValVar(
         'b'))"""
 
-    def testParseCalc(self):
+    def testCalc(self):
         myparser = mathtree.parser()
         abc = {"a": 1, "b": 2, "c": 3}
         abcdef = {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6}
@@ -167,7 +167,7 @@ class MathTreeTestCase(unittest.TestCase):
         assert abs(myparser.parse("atand(1) - 45").Calc({})) <= 1e-10
         assert abs(myparser.parse("norm(3,4)").Calc({}) - 5) <= 1e-10
 
-    def testParseCalcExtern(self):
+    def testExtern(self):
         myparser = mathtree.parser()
         a = 1
         b = 2
@@ -175,6 +175,45 @@ class MathTreeTestCase(unittest.TestCase):
         f = lambda x: x*x
         assert abs(myparser.parse("a+b-c").Calc(locals())) <= 1e-10
         assert abs(myparser.parse("f(2)-4", extern=locals()).Calc()) <= 1e-10
+
+    def testException(self):
+        myparser = mathtree.parser()
+        try:
+            myparser.parse("")
+            assert 0, "OperandExpectedMathTreeParseError expected"
+        except mathtree.OperandExpectedMathTreeParseError: pass
+        try:
+            myparser.parse("???")
+            assert 0, "OperandExpectedMathTreeParseError expected"
+        except mathtree.OperandExpectedMathTreeParseError: pass
+        try:
+            myparser.parse("sin()")
+            assert 0, "OperandExpectedMathTreeParseError expected"
+        except mathtree.OperandExpectedMathTreeParseError: pass
+        try:
+            myparser.parse("sin(x,y)")
+            assert 0, "RightParenthesisExpectedMathTreeParseError expected"
+        except mathtree.RightParenthesisExpectedMathTreeParseError: pass
+        try:
+            myparser.parse("norm(x)")
+            assert 0, "CommaExpectedMathTreeParseError expected"
+        except mathtree.CommaExpectedMathTreeParseError: pass
+        try:
+            myparser.parse("xxx(y)")
+            assert 0, "OperatorExpectedMathTreeParseError expected"
+        except mathtree.OperatorExpectedMathTreeParseError: pass
+        try:
+            myparser.parse("(1+2")
+            assert 0, "RightParenthesisExpectedMathTreeParseError expected"
+        except mathtree.RightParenthesisExpectedMathTreeParseError: pass
+        try:
+            myparser.parse("1+2)")
+            assert 0, "RightParenthesisFoundExpectedMathTreeParseError expected"
+        except mathtree.RightParenthesisFoundMathTreeParseError: pass
+        try:
+            myparser.parse("1,2")
+            assert 0, "CommaFoundExpectedMathTreeParseError expected"
+        except mathtree.CommaFoundMathTreeParseError: pass
 
 suite = unittest.TestSuite((unittest.makeSuite(MathTreeTestCase, 'test'), ))
 

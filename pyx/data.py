@@ -44,10 +44,11 @@ MathTreeValsWithCol = (MathTreeValConst, MathTreeValVar, MathTreeValCol)
 
 class data:
 
-    def __init__(self, titles, data, parser=parser(MathTreeVals=MathTreeValsWithCol)):
+    def __init__(self, titles, data, parser=parser(MathTreeVals=MathTreeValsWithCol), extern=None):
         self.titles = titles
         self.data = data
         self.parser = parser
+        self.extern = extern
 
     def getcolumnno(self, column):
         if self.titles.count(column) == 1:
@@ -84,7 +85,12 @@ class data:
                 try:
                     columnlist[key] = self.getcolumnno(columns[key])
                 except KeyError:
-                    columnlist[key] = self.getcolumnno(key)
+                    try:
+                        columnlist[key] = self.getcolumnno(key)
+                    except ColumnError, e:
+                        if self.extern is None or key not in self.extern.keys():
+                            raise e
+
         varlist = {}
         for data in self.data:
             try:
@@ -93,7 +99,7 @@ class data:
             except (TypeError, ValueError):
                 data.append(None)
             else:
-                data.append(tree.Calc(varlist))
+                data.append(tree.Calc(varlist, self.extern))
         return columnlist.keys()
 
     def addcolumn(self, expression, **columns):

@@ -6,9 +6,7 @@ PyX
   - return linewidth upon calculation with linewidths
   - fix canvas transformations
   - new transformation: slant
-  - some fixes in automatic axis partitioning
   - british and american spellings in the color module
-  - datafile module renamed to data, sectionfile class added
   - graph module:
     - new bar class (work in progress)
     - 3d graphs (work in progress)
@@ -16,9 +14,15 @@ PyX
     - move axis partitioning into the axis painter (work in progress)
     - bugfix in textbox alignment (graph module)
     - mark class renamed to symbol
+    - some fixes in automatic axis partitioning
+  - data module:
+    - previously named datafile module
+    - class "_datafile" renamed to class "data"
+    - class sectionfile added
+    - testsuite
   - mathtree:
-    - extern variables and functions
-    - tests
+    - extern variables and functions (support in graph.function, graph.paramfunction and data.data)
+    - testsuite
 
 0.1.1 (????/??/??):
   - transformation bug fixed (#624068)
