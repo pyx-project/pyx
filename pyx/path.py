@@ -1561,37 +1561,36 @@ class normcurve(normpathel):
 
         # create the list of accumulated lengths
         # and the length of the parameters
-        cumlengths = self.seglengths(1, epsilon)
-        l = len(cumlengths)
-        parlengths = [cumlengths[i][1] for i in range(l)]
-        cumlengths[0] = cumlengths[0][0]
+        seg = self.seglengths(1, epsilon)
+        arclens = [seg[i][0] for i in range(len(seg))]
+        Dparams = [seg[i][1] for i in range(len(seg))]
+        l = len(arclens)
         for i in range(1,l):
-            cumlengths[i] = cumlengths[i][0] + cumlengths[i-1]
+            arclens[i] += arclens[i-1]
 
         # create the list of parameters to be returned
         params = []
         for length in lengths:
             # find the last index that is smaller than length
             try:
-                lindex = bisect.bisect_left(cumlengths, length)
+                lindex = bisect.bisect_left(arclens, length)
             except: # workaround for python 2.0
-                lindex = bisect.bisect(cumlengths, length)
-                while lindex and (lindex >= len(cumlengths) or
-                                  cumlengths[lindex] >= length):
+                lindex = bisect.bisect(arclens, length)
+                while lindex and (lindex >= len(arclens) or
+                                  arclens[lindex] >= length):
                     lindex -= 1
             if lindex == 0:
-                param = length * 1.0 / cumlengths[0]
-                param *= parlengths[0]
-            elif lindex >= l-2:
-                param = 1
-            else:
-                param = (length - cumlengths[lindex]) * 1.0 / (cumlengths[lindex+1] - cumlengths[lindex])
-                param *= parlengths[lindex+1]
+                param = Dparams[0] * length * 1.0 / arclens[0]
+            elif lindex < l-1:
+                param = Dparams[lindex+1] * (length - arclens[lindex]) * 1.0 / (arclens[lindex+1] - arclens[lindex])
                 for i in range(lindex+1):
-                    param += parlengths[i]
+                    param += Dparams[i]
+            else:
+                param = 1 + Dparams[-1] * (length - arclens[-1]) * 1.0 / (arclens[-1] - arclens[-2])
+
             param = max(min(param,1),0)
             params.append(param)
-        return (params, cumlengths[-1])
+        return (params, arclens[-1])
 
     def arclen_pt(self, epsilon=1e-5):
         """computes arclen of bpathel in pts using successive midpoint split"""
@@ -1699,7 +1698,7 @@ class normcurve(normpathel):
         return normcurve(self.x3, self.y3, self.x2, self.y2, self.x1, self.y1, self.x0, self.y0)
 
     def seglengths(self, paraminterval, epsilon=1e-5):
-        """returns the list of segment line lengths (in pts) of the bpathel
+        """returns the list of segment line lengths (in pts) of the normcurve
            together with the length of the parameterinterval"""
 
         # lower and upper bounds for the arclen
@@ -2201,14 +2200,9 @@ class normpath(path):
         """returns total arc length of normpath"""
         return unit.t_pt(self.arclen_pt())
 
-    def arclentoparam(self, lengths):
-        """returns the parameter value(s) matching the given length(s)
-
-        all given lengths must be positive.
-        A length greater than the total arclength will give self.range()"""
-
-        rests = [unit.topt(length) for length in helper.ensuresequence(lengths)]
-        allparams = [0] * len(helper.ensuresequence(lengths))
+    def arclentoparam_pt(self, lengths):
+        rests = copy.copy(lengths)
+        allparams = [0] * len(lengths)
 
         for sp in self.subpaths:
             # we need arclen for knowing when all the parameters are done
@@ -2224,8 +2218,17 @@ class normpath(path):
                     finis += 1
             if finis == len(rests): break
 
-        if not helper.issequence(lengths): allparams = allparams[0]
+        if len(lengths) == 1: allparams = allparams[0]
         return allparams
+
+    def arclentoparam(self, lengths):
+        """returns the parameter value(s) matching the given length(s)
+
+        all given lengths must be positive.
+        A length greater than the total arclength will give self.range()
+        """
+        l = [unit.topt(length) for length in helper.ensuresequence(lengths)]
+        return self.arclentoparam_pt(l)
 
     def at_pt(self, param=None, arclen=None):
         """return coordinates in pts of path at either parameter value param
