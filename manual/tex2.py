@@ -2,6 +2,7 @@
 import sys
 sys.path[:0] = [".."]
 from pyx import *
+from pyx import tex
 
 c = canvas.canvas()
 t = c.insert(tex.tex())
@@ -46,5 +47,5 @@ t.text(7.5, -4.5, "315", tex.direction(315))
 t.text(0, -6, "red", color.rgb.red)
 t.text(3, -6, "green", color.rgb.green)
 t.text(6, -6, "blue", color.rgb.blue)
-c.writetofile("tex2")
+c.writetofile("tex2.eps")
 
