@@ -9,7 +9,7 @@
 from pyx import *
 
 g = graph.graphxy(width=8, x=graph.axis.bar())
-g.plot(graph.data.file("bar.dat", xname=0, y=2, stack=3),
+g.plot(graph.data.file("stacked.dat", xname=0, y=2, stack=3),
        [graph.style.bar(),
         graph.style.text("y"),
         graph.style.stackedbarpos("stack"),
