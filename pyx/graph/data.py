@@ -125,7 +125,7 @@ class list(_data):
             # the loop finished successfull
             return points
         # since points are not a list, convert them and try again
-        return checkmaxcolumns(__builtins__.list(points))
+        return checkmaxcolumns(__builtins__.list(points), maxcolumns=maxcolumns)
 
     def __init__(self, points, title="user provided list", maxcolumns=None, addlinenumbers=1, **columns):
         points = self.checkmaxcolumns(points, maxcolumns)
