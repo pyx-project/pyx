@@ -95,4 +95,5 @@ test_split(c, -7, 7)
 test_split2(c, -7, 14)
 
 c.writeEPSfile("test_graph", paperformat="a4")
+c.writePDFfile("test_graph", paperformat="a4")
 
