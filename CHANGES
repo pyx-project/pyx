@@ -15,6 +15,7 @@ TODO:
     - allow for graph.changesymbol.square(size=0.15) etc.
     - rect style (and errorbars?) should use clipping
     - paths are to be drawn instead of inserted
+    - should the divisor argument be moved to the texters?
   - style module:
     - default patterns
     - make dash length available
@@ -35,6 +36,8 @@ TODO:
     - multi page PostScript output
   - connnector module:
     - _xxx -> xxx_pt renaming
+  - deco module:
+    - consider rewriting decoratedpath as canvas
   - style and color module:
     - support modification of existing styles via __call__
 
@@ -74,7 +77,7 @@ TODO:
     - some axispos name have changed slightly (zeroline -> zeropath etc.)
     - tick/data-vmin/vmax removed
     - pathaxis
-    - linkaxis (TODO: still no example, FAQ?)
+    - linkaxis
     - minor enhancements in exponentionaltexter
     - axes alongs paths including a set of examples
     - mixing a partitioner and manual ticks by two distinct keyword arguments now
@@ -98,11 +101,9 @@ TODO:
     - all predefined decorators are instances now (deco.stroked is thus ok) and 
       attributes have to be passed explicitely, e.g., deco.earrow.small(attrs=color.rgb.red) 
       and deco.stroked([color.rgb.blue])
-    - TODO: document me
   - style module (NEW):
     - contains all line- and fillstyles which formerly had been defined in the canvas module
     - dash now supports relative dash lengths (as suggested by Otto Tronarp)
-    - TODO: document me
   - mathtree module:
     - fixed incorrect handling of - (for instance -x**2 was not negative)
   - attrlist module:
@@ -115,12 +116,6 @@ TODO:
     - _xxx -> xxx_pt renaming
   - trafo module:
     - _xxx -> xxx_pt renaming
-
-  TODO for PyX 0.5 (please feel free to move items up to the general TODO list)
-  - color module:
-     - should colors and palettes exclude each other?
-  - documentation!!!
-  - check FAQ
 
 0.4.1 (2003/09/17):
   - canvas module:
