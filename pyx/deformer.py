@@ -341,12 +341,13 @@ class cycloid(deformer): # {{{
         # Build the path from the pointlist
         # containing (control x 2,  base x 2, control x 2)
         if skipfirst > subpath.epsilon:
-            cycloidpath = path.normpath([subpath.split([params[0]])[0]])
-            cycloidpath.append(path.curveto_pt(*(points[0][4:6] + points[1][0:4])))
+            newpath = subpath.split([params[0]])[0]
+            newpath.append(path.normcurve(*(points[0][2:6] + points[1][0:4])))
+            cycloidpath = path.normpath([newpath])
         else:
             cycloidpath = path.normpath([path.normsubpath([path.normcurve(*(points[0][2:6] + points[1][0:4]))], 0)])
         for i in range(1, len(points)-1):
-            cycloidpath.append(path.curveto_pt(*(points[i][4:6] + points[i+1][0:4])))
+            cycloidpath.normsubpaths[-1].append(path.normcurve(*(points[i][2:6] + points[i+1][0:4])))
         if skiplast > subpath.epsilon:
             cycloidpath.join(path.normpath([subpath.split([params[-1]])[-1]]))
 

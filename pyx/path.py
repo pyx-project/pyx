@@ -1849,6 +1849,10 @@ class normsubpath:
         self.normsubpathitems = []
         self.closed = 0
 
+        # a test (might be temporary)
+        for anormsubpathitem in normsubpathitems:
+            assert isinstance(anormsubpathitem, normsubpathitem), "only list of normsubpathitem instances allowed"
+
         self.extend(normsubpathitems)
 
         if closed:
@@ -1917,7 +1921,7 @@ class normsubpath:
 
     def append(self, anormsubpathitem):
         assert isinstance(anormsubpathitem, normsubpathitem), "only normsubpathitem instances allowed"
-                    
+
         if self.closed:
             raise PathException("Cannot append to closed normsubpath")
 
@@ -2376,11 +2380,14 @@ class normpath(base.canvasitem):
             raise PathException("subpath index out of range")
         return normsubpath, normsubpath.arclentoparam(arclen)
 
-    def append(self, normsubpath):
-        self.normsubpaths.append(normsubpath)
+    def append(self, anormsubpath):
+        assert isinstance(anormsubpath, normsubpath), "only list of normsubpath instance allowed"
+        self.normsubpaths.append(anormsubpath)
 
     def extend(self, normsubpaths):
-        self.subpaths.extend(normsubpaths)
+        for anormsubpath in normsubpaths:
+            assert isinstance(anormsubpath, normsubpath), "only list of normsubpath instance allowed"
+        self.normsubpaths.extend(normsubpaths)
 
     def arclen_pt(self):
         """returns total arc length of normpath in pts"""
