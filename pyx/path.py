@@ -1186,9 +1186,9 @@ class rect_pt(path):
    """rectangle at position (x,y) with width and height (coordinates in pts)"""
 
    def __init__(self, x, y, width, height):
-       path.__init__(self, moveto_pt(x, y), 
-                           lineto_pt(x+width, y), 
-                           lineto_pt(x+width, y+height), 
+       path.__init__(self, moveto_pt(x, y),
+                           lineto_pt(x+width, y),
+                           lineto_pt(x+width, y+height),
                            lineto_pt(x, y+height),
                            closepath())
 
@@ -1208,9 +1208,8 @@ class line(line_pt):
 
    def __init__(self, x1, y1, x2, y2):
        line_pt.__init__(self,
-                      unit.topt(x1), unit.topt(y1),
-                      unit.topt(x2), unit.topt(y2)
-                      )
+                        unit.topt(x1), unit.topt(y1),
+                        unit.topt(x2), unit.topt(y2))
 
 
 class curve(curve_pt):
@@ -1219,11 +1218,10 @@ class curve(curve_pt):
 
    def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
        curve_pt.__init__(self,
-                       unit.topt(x0), unit.topt(y0),
-                       unit.topt(x1), unit.topt(y1),
-                       unit.topt(x2), unit.topt(y2),
-                       unit.topt(x3), unit.topt(y3)
-                      )
+                         unit.topt(x0), unit.topt(y0),
+                         unit.topt(x1), unit.topt(y1),
+                         unit.topt(x2), unit.topt(y2),
+                         unit.topt(x3), unit.topt(y3))
 
 
 class rect(rect_pt):
