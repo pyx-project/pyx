@@ -9,7 +9,7 @@ c.stroke(path.line("10 pt", "10 pt", "40 pt", "40 pt")+
          path.line("10 pt", "40 pt", "40 pt", "10 pt"))
 #         path.rect("10 pt", "10 pt", "30 pt", "30 pt"))
 
-c.writetofile("cross", bboxenhance=0)
+c.writetofile("cross", bboxenlarge=0)
 
 c = canvas.canvas()
 

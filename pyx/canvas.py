@@ -930,7 +930,7 @@ class canvas(_canvas):
             else:
                 self.set(arg)
 
-    def writetofile(self, filename, paperformat=None, rotated=0, fittosize=0, margin="1 t cm", bboxenhance="1 t pt"):
+    def writetofile(self, filename, paperformat=None, rotated=0, fittosize=0, margin="1 t cm", bboxenlarge="1 t pt"):
         """write canvas to EPS file
 
         If paperformat is set to a known paperformat, the output will be centered on
@@ -941,6 +941,8 @@ class canvas(_canvas):
         If fittosize is set, then the output is scaled to the size of the
         page (minus margin). In that case, the paperformat the specification
         of the paperformat is obligatory.
+
+        bboxenlarge may be used to enlarge the bbox of the canvas.
 
         returns the canvas
 
@@ -954,7 +956,7 @@ class canvas(_canvas):
         except IOError:
             assert 0, "cannot open output file"                 # TODO: Fehlerbehandlung...
 
-        abbox=self.bbox().enlarged(bboxenhance)
+        abbox=self.bbox().enlarged(bboxenlarge)
         ctrafo=None     # global transformation of canvas
 
         if rotated:
