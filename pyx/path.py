@@ -1828,6 +1828,8 @@ class normsubpath:
 
     Some invariants, which have to be obeyed:
     - All normsubpathitems have to be longer than epsilon pts.
+    - At the end there may be a normline (stored in self.skippedline) whose
+      length is shorter than epsilon
     - The last point of a normsubpathitem and the first point of the next
     element have to be equal.
     - When the path is closed, the last point of last normsubpathitem has
@@ -1847,11 +1849,28 @@ class normsubpath:
         self.normsubpathitems = []
         self.closed = 0
 
-        for normsubpathitem in normsubpathitems:
-            self.append(normsubpathitem)
+        self.extend(normsubpathitems)
 
         if closed:
             self.close()
+
+    def __add__(self, other):
+        # we take self.epsilon as accuracy for the resulting subnormpath
+        result = subnormpath(self.normpathitems, self.closed, self.epsilon)
+        result += other
+        return result
+
+    def __getitem__(self, i):
+        return self.normsubpathitems[i]
+
+    def __iadd__(self, other):
+        if other.closed:
+            raise PathException("Cannot extend normsubpath by closed normsubpath")
+        self.extend(other.normsubpathitems)
+        return self
+
+    def __len__(self):
+        return len(self.normsubpathitems)
 
     def __str__(self):
         return "subpath(%s, [%s])" % (self.closed and "closed" or "open",
@@ -2024,6 +2043,10 @@ class normsubpath:
 
     def end(self):
         return self.normsubpathitems[-1].end()
+
+    def extend(self, normsubpathitems):
+        for normsubpathitem in normsubpathitems:
+            self.append(normsubpathitem)
 
     def intersect(self, other):
         """intersect self with other normsubpath
@@ -2291,8 +2314,8 @@ class normpath(base.canvasitem):
                 assert isinstance(subpath, normsubpath), "only list of normsubpath instances allowed"
 
     def __add__(self, other):
-        result = other.normpath()
-        result.normsubpaths = self.normsubpaths + result.normsubpaths
+        result = normpath()
+        result.normsubpaths = self.normsubpaths + other.normpath().normsubpaths
         return result
 
     def __getitem__(self, i):
@@ -2301,6 +2324,9 @@ class normpath(base.canvasitem):
     def __iadd__(self, other):
         self.normsubpaths += other.normpath().normsubpaths
         return self
+
+    def __len__(self):
+        return len(self.normsubpaths)
 
     def __str__(self):
         return "normpath(%s)" % ", ".join(map(str, self.normsubpaths))
