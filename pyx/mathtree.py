@@ -824,10 +824,11 @@ class parser:
     def parse(self, str):
         return self.ParseMathTree(ParseStr(str))
 #    def parse(self, str): # XXX wieder umkommentiert, damit es erstmal läuft <wobsta>
-        # prepare raw string:
-        # "^" -> "**"
-#        thestr = re.sub("\^","**", str) # to be removed <joergl>
-#        thestr = re.sub("\$","_col_", str)
+#        # prepare raw string:
+#        # "^" -> "**"
+#        thestr = re.sub("^\s*", "", str)
+#        thestr = re.sub("\^","**", thestr) # to be removed <joergl>
+#        thestr = re.sub("\$","_col_", thestr)
 #        return self.astseq2mtree(pythonparser.expr(thestr).totuple())
 
     def ParseMathTree(self, arg):
@@ -1054,6 +1055,7 @@ class parser:
                     else:
                 # 3. a named constant
                         for const in MathConst.keys():
+                            # XXX: change to self.MathConstants
                             if const == astseq[1][1]:
                                 return MathTreeValConst(MathConst[const])
                 # 4. a variable
@@ -1063,6 +1065,8 @@ class parser:
                 if (astseq[1][0] == token.LPAR and astseq[3][0] == token.RPAR) or \
                    (astseq[1][0] == token.LSQB and astseq[3][0] == token.RSQB):
                     tree = self.astseq2mtree(astseq[2], isfunc=isfunc)
+            else:
+                raise Exception("symbol.atom with unknown number of arguments")
             return tree # }}}
 
         if astseq[0] == symbol.arglist: # {{{
@@ -1074,6 +1078,15 @@ class parser:
                     treelist.append(self.astseq2mtree(arg, isfunc=isfunc))
             return treelist # }}}
 
-        return self.astseq2mtree(astseq[1], isfunc=isfunc)
+        if astseq[0] == symbol.testlist: # {{{
+            treelist = []
+            for arg in astseq[1:]:
+                if arg[0] == token.COMMA:
+                    continue
+                elif arg[0] == symbol.test:
+                    treelist.append(self.astseq2mtree(arg, isfunc=isfunc))
+            if len(treelist) == 1: return treelist[0]
+            else: return treelist # }}}
 
+        return self.astseq2mtree(astseq[1], isfunc=isfunc)
 
