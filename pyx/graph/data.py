@@ -448,7 +448,9 @@ class function:
 
     defaultstyle = style.line()
 
-    def __init__(self, expression, title=notitle, min=None, max=None, points=100, parser=mathtree.parser(), context={}):
+    def __init__(self, expression, title=notitle, min=None, max=None,
+    points=100, parser=mathtree.parser(), context={}):
+
         if title is notitle:
             self.title = expression
         else:
@@ -456,7 +458,7 @@ class function:
         self.min = min
         self.max = max
         self.nopoints = points
-        self.context = context
+        self.context = context.copy() # be save on late evaluations
         self.result, expression = [x.strip() for x in expression.split("=")]
         self.mathtree = parser.parse(expression)
         self.variable = None
@@ -488,6 +490,13 @@ class function:
           where the y range depends on the x range)
         - on step == 2 axes ranges not previously set should be
           updated by data accumulated by step 1"""
+        if step == 0:
+            self.points = []
+            if self.min is not None:
+                self.points.append([self.min])
+            if self.max is not None:
+                self.points.append([self.max])
+            self.style.adjustaxes([0], self)
         if step == 1:
             min, max = graph.axes[self.variable].getrange()
             if self.min is not None: min = self.min
@@ -498,7 +507,6 @@ class function:
             for i in range(self.nopoints):
                 x = self.xaxis.invert(vmin + (vmax-vmin)*i / (self.nopoints-1.0))
                 self.points.append([x])
-            self.style.adjustaxes([0], self)
             for point in self.points:
                 self.context[self.variable] = point[0]
                 try:
