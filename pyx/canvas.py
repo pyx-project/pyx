@@ -785,9 +785,6 @@ class canvas(base.PSCmd):
         
         """
         
-        if not type(PSOps) in (types.TupleType, types.ListType):
-            PSOps = (PSOps,)
-            
         for PSOp in PSOps:
             if isinstance(PSOp, canvas):
                 self.PSOps.append(_gsave())
