@@ -2,19 +2,26 @@
 
 \label{canvas}
 
+The central module for the PostScript access in \PyX{} is named
+\verb|canvas|. Besides providing the class \verb|canvas|, which
+presents a collection of visual elements like paths, other canvases,
+\TeX{} or \LaTeX{} elements, it contains also various path styles (as
+subclasses of \texttt{base.PathStyle}), path decorations like arrows
+(with the class \texttt{canvas.PathDeco} and subclasses thereof), and
+the class \texttt{canvas.clip} which allows clipping of the output.
+
+
 \section{Class canvas}
 
-The basic module for the PostScript access in \PyX{} is named
-\verb|canvas|. Its main purpose is to provide the class \verb|canvas|,
-which presents a collection of visual elements like paths, other
-canvases, \TeX{} or \LaTeX{} elements. Eventually, the contents of a canvas 
-can be written to a (E)PS file to produce the desired output.
+This is the basic class of the canvas module, the purpose of which is
+the collection of various graphical and text elements you want to
+write eventually to an (E)PS file. 
 
 \subsection{Basic usage}
 
-The main \verb|canvas| instance, which we shall by convention always
-name \verb|c|, will usually be constructed without giving any
-arguments:
+Let us first demonstrate the basic usage of the \texttt{canvas} class.
+We start by constructing the main \verb|canvas| instance, which we
+shall by convention always name \verb|c|.
 \begin{quote}
 \begin{verbatim}
 import pyx
@@ -23,17 +30,17 @@ c = canvas.canvas()
 \end{verbatim}
 \end{quote}
 Basic drawing proceeds then via the construction of a \verb|path|, which 
-can subsequently be drawn on the canvas using the method \verb|draw()|:
+can subsequently be drawn on the canvas using the method \verb|stoke()|:
 \begin{quote}
 \begin{verbatim}
 p = path.line(0, 0, 10, 10)
-c.draw(p)
+c.stroke(p)
 \end{verbatim}
 \end{quote}
 or more concisely:
 \begin{quote}
 \begin{verbatim}
-c.draw(path.line(0, 0, 10, 10))
+c.stroke(path.line(0, 0, 10, 10))
 \end{verbatim}
 \end{quote}
 You can modify the appearance of a path by additionally passing 
@@ -41,19 +48,19 @@ instances of the class \verb|PathStyle|. For instance, you can draw the
 the above path \verb|p| in blue, as well:
 \begin{quote}
 \begin{verbatim}
-c.draw(p, color.rgb.blue)
+c.stroke(p, color.rgb.blue)
 \end{verbatim}
 \end{quote}
 Similarly, it is possible to draw a dashed version of \verb|p|:
 \begin{quote}
 \begin{verbatim}
-c.draw(p, canvas.linestyle.dashed)
+c.stroke(p, canvas.linestyle.dashed)
 \end{verbatim}
 \end{quote}
 Combining of several \verb|PathStyle|s is of course also possible:
 \begin{quote}
 \begin{verbatim}
-c.draw(p, color.rgb.blue, canvas.linestyle.dashed)
+c.stroke(p, color.rgb.blue, canvas.linestyle.dashed)
 \end{verbatim}
 \end{quote}
 Furthermore, drawing an arrow at the begin or end of the path is done
@@ -61,7 +68,7 @@ in a similar way. You just have to use the provided \verb|barrow| and
 \verb|earrow| instances:
 \begin{quote}
 \begin{verbatim}
-c.draw(p, canvas.barrow.normal, canvas.earrow.large)
+c.stroke(p, canvas.barrow.normal, canvas.earrow.large)
 \end{verbatim}
 \end{quote}
 
@@ -74,10 +81,10 @@ c.fill(r)
 \end{verbatim}
 \end{quote}
 Alternatively, you can use the class \verb|filled| of the canvas module
-in combination with the \verb|draw| method:
+in combination with the \verb|stroke| method:
 \begin{quote}
 \begin{verbatim}
-c.draw(r, canvas.filled())
+c.stroke(r, canvas.filled())
 \end{verbatim}
 \end{quote}
 
@@ -85,16 +92,16 @@ To conclude the section on the drawing of paths, we consider a pretty
 sophisicated combination of the above presented \verb|PathStyle|s:
 \begin{quote}
 \begin{verbatim}
-c.draw(p, 
-       color.rgb.blue, 
-       canvas.earrow.LARge(color.rgb.red,
-                           canvas.stroked(canvas.linejoin.round),
-                                          canvas.filled(color.rgb.green)))
+c.stroke(p, 
+         color.rgb.blue, 
+         canvas.earrow.LARge(color.rgb.red,
+                             canvas.stroked(canvas.linejoin.round),
+                                            canvas.filled(color.rgb.green)))
                                                               
 \end{verbatim}
 \end{quote}
-This draws the path in blue with a pretty large arrow at the end, the outline
-of which is red and rounded and which is filled with green.
+This draws the path in blue with a pretty large green arrow at the
+end, the outline of which is red and rounded.
 
 After you are finished with the composition of your canvas, you can
 write it to a file using the method \verb|writetofile()|. It expects the
@@ -107,9 +114,7 @@ c.writetofile("test")
 \end{quote}
 
 
-\subsection{Methods}
-
-
+\subsection{Methods of the class canvas}
 
 The \verb|canvas| class provides the following methods:
 
@@ -119,33 +124,37 @@ The \verb|canvas| class provides the following methods:
   {>{\hsize=.85\hsize}X>{\raggedright\arraybackslash\hsize=1.15\hsize}X}
   \texttt{canvas} method & function \\
   \hline
+  \texttt{\_\_init\_\_(*args)} & Construct new canvas. \texttt{args}
+  can be instances of \texttt{trafo.trafo}, \texttt{canvas.clip}
+  and/or \texttt{canvas.PathStyle}.\\
   \texttt{bbox()} &
   Returns the bounding box enclosing all elements of the canvas.\\
-  \texttt{draw(path, *styles)} & 
-  Draws the given \texttt{path} on the canvas, \textit{i.e.}\
-  \texttt{insert}s it together with the necessary \texttt{newpath},
-  \texttt{stroke} sequence, applying the given \texttt{styles}. Styles
-  can either be instances of \texttt{canvas.PSAttr} or
-  \texttt{canvas.PathDeco}
-  (or subclasses thereof).\\
+  \texttt{draw(path, *styles)} &
+  Generic drawing routine for given \texttt{path} on the canvas (\textit{i.e.}\
+  \texttt{insert}s it together with the necessary \texttt{newpath}
+  command, applying the given \texttt{styles}. Styles can either be instances of
+  \texttt{base.PathStyle} or \texttt{canvas.PathDeco} (or subclasses thereof).\\
   \texttt{fill(path, *styles)} &
   Fills the given \texttt{path} on the canvas, \textit{i.e.}\
   \texttt{insert}s it together with the necessary \texttt{newpath},
   \texttt{fill} sequence, applying the given \texttt{styles}. Styles can
-  either be instances of \texttt{canvas.PSAttr} (or subclasses therof).\\
-  \texttt{drawfilled(path, *styles)} &
-  Draws and fills the given \texttt{path} on the canvas (\textit{i.e.}\
-  \texttt{insert}s it together with the necessary \texttt{newpath},
-  \texttt{gsave}, \texttt{stroke}, \texttt{grestore}, \texttt{fill} sequence)
-  applying the given \texttt{styles}. Styles can either be instances of
-  \texttt{canvas.PSAttr} (or subclasses thereof).\\
-  \texttt{insert(PSOps, *styles)} &
-  Insert one ore more instances of the class \texttt{base.PSOp} in the
-  canvas applying the given \texttt{styles}.  Styles have to be instances
-  of the class \texttt{canvas.PSAttr} or derived classes thereof.\\
+  either be instances of \texttt{base.PathStyle} or
+  \texttt{canvas.PathDeco} (or subclasses
+  therof).\\
+  \texttt{insert(*PSOps)} &
+  Inserts one ore more instances of the class \texttt{base.PSOp} in the
+  canvas and returns the last one. Thereby, instances of \texttt{canvas.canvas} are
+  bracketed by \texttt{gsave}/\texttt{grestore} pair. \\
   \texttt{set(*styles)} &
-  Sets the given \texttt{styles} (instances of \texttt{canvas.PSAttr} or
+  Sets the given \texttt{styles} (instances of \texttt{base.PathStyle} or
   subclasses) for the rest of the canvas.\\
+  \texttt{stroke(path, *styles)} & 
+  Strokes the given \texttt{path} on the canvas, \textit{i.e.}\
+  \texttt{insert}s it together with the necessary \texttt{newpath},
+  \texttt{stroke} sequence, applying the given \texttt{styles}. Styles
+  can either be instances of \texttt{base.PathStyle} or
+  \texttt{canvas.PathDeco}
+  (or subclasses thereof).\\
     \texttt{writetofile(filename, 
       \newline\phantom{writetofile(}paperformat=None, 
       \newline\phantom{writetofile(}rotated=0,
@@ -164,6 +173,12 @@ The \verb|canvas| class provides the following methods:
 
 
 
+
+\section{Subclasses of base.PathStyle}
+
+The \verb|canvas| module provides a number of subclasses of the class
+\verb|base.PathStyle|, which allow to change the look of the paths
+drawn on the canvas.
 
 
 

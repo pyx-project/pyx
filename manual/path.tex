@@ -93,12 +93,11 @@ XXX terminology: subpath, \dots
 \medskip
 \begin{tabularx}{\linewidth}{>{\hsize=.7\hsize}X>{\raggedright\arraybackslash\hsize=1.3\hsize}X}
   \texttt{path} method & function \\
-  \hline 
-  \texttt{\_\_init\_\_(*pathels)} & construct new \texttt{path}
+  \hline \texttt{\_\_init\_\_(*pathels)} & construct new \texttt{path}
   consisting of \texttt{pathels}\\
   \texttt{append(pathel)} & appends \texttt{pathel} to end of \texttt{path}\\
   \texttt{arclength(epsilon=1e-5)} & returns the total arc length of
-  all \texttt{path} segments in  PostScript points with accuracy 
+  all \texttt{path} segments in PostScript points with accuracy
   \texttt{epsilon}.$^\dagger$\\
   \texttt{at(t)} & returns the coordinates of the point of
   \texttt{path} corresponding to the parameter value
@@ -111,9 +110,10 @@ XXX terminology: subpath, \dots
   \texttt{glue(opath)} & returns the \texttt{path} glued together with
   \texttt{opath}, \textit{i.e.}\ the last subpath of \texttt{path}
   and the first one of \texttt{opath} are joined.$^\dagger$\\
-  \texttt{intersect(opath, \newline\phantom{intersect(}epsilon=1e-5)} &
-  returns a list of parameter values (as tuples \texttt{(tself, tother)}) corresponding to the 
-  intersection points of \texttt{path} and \texttt{opath}.$^\dagger$\\
+  \texttt{intersect(opath, \newline\phantom{intersect(}epsilon=1e-5)}
+  & returns tuple consisting of two list of parameter values
+  corresponding to the
+  intersection points of \texttt{path} and \texttt{opath}, respectively.$^\dagger$\\
   \texttt{reversed()} & returns the normalized reversed
   \texttt{path}.$^\dagger$\\
   \texttt{split(t)} & returns a tuple consisting of two
@@ -121,7 +121,8 @@ XXX terminology: subpath, \dots
   the parameter value \texttt{t}.$^\dagger$\\
   \texttt{transformed(trafo)} & returns the normalized and accordingly
   to the linear transformation \texttt{trafo} transformed path. Here,
-  \texttt{trafo} must be an   instance of the \texttt{trafo.trafo} class.$^\dagger$
+  \texttt{trafo} must be an instance of the \texttt{trafo.trafo}
+  class.$^\dagger$
 \end{tabularx} 
 \medskip
 
