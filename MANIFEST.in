@@ -4,13 +4,13 @@ include INSTALL
 include CHANGES
 include manual/manual.ps
 include faq/pyxfaq.pdf
-recursive-include manual Makefile runlatex.sh pyx.sty *.tex *.py
+include manual Makefile runlatex.sh pyx.sty *.tex *.py
 include examples/examples.ps
-recursive-include contrib *
-recursive-include pyx *.c *.h
-recursive-include pyx/lfs *.lfs *.py *.tex
+recursive-include pyx *.c *.h *.py
+recursive-include pyx/lfs *.lfs *.tex
 recursive-include examples *.py
 recursive-include examples *.dat
+recursive-include contrib *
 
 prune test
 exclude examples/examples.py
