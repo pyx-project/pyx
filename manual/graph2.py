@@ -18,7 +18,7 @@ g = c.insert(graph.graphxy(width=10, x2=None, y2=None,
                                            painter=mypainter),
                            y=graph.linaxis(painter=mypainter, part=graph.manualpart())))
 
-line = g.plot(graph.function("y=(x-3)*(x-5)*(x-7)"))
+line = g.plot(graph.function("y=(x-3)*(x-5)*(x-7)")).style
 g.finish()
 
 pa = path.path(g.axes["x"].gridpath(a))

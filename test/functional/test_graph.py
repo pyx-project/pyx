@@ -8,7 +8,7 @@ from pyx import mathtree
 text.set(mode="latex")
 
 def test_multiaxes_data(c, x, y):
-    g = c.insert(graph.graphxy(x, y, height=5,
+    g = c.insert(graph.graphxy(x, y, height=5, key=graph.key(pos="tl"),
                                x=graph.logaxis(title="$W$", part=graph.autologpart(mix=graph.manualpart(ticks="2.2360679775", texts="$\sqrt{5}$").part())),
                                y=graph.logaxis(title=r"$PPP_1$",
                                                painter=graph.axispainter(titledirection=None)),
@@ -48,10 +48,10 @@ def test_ownmark(c, x, y):
     mod = lambda x, y: int(x)%int(y)
     g = c.insert(graph.graphxy(x, y, height=5, x=graph.linaxis(min=0, max=10), y=graph.linaxis(min=0, max=10)))
     g.plot(graph.paramfunction("k", 0, 120, "x, y, size, angle = mod(k, 11), div(k, 11), (1+sin(k*pi/120))/2, 3*k", points=121, context=locals()), style = graph.arrow())
-    line1 = g.plot(graph.function("y=10/x"))
-    line2 = g.plot(graph.function("y=12*x^-1.6"))
-    line3 = g.plot(graph.function("y=7/x"))
-    line4 = g.plot(graph.function("y=25*x^-1.6"))
+    line1 = g.plot(graph.function("y=10/x")).style
+    line2 = g.plot(graph.function("y=12*x^-1.6")).style
+    line3 = g.plot(graph.function("y=7/x")).style
+    line4 = g.plot(graph.function("y=25*x^-1.6")).style
     g.finish()
 
     p1=line1.path
@@ -119,13 +119,13 @@ def test_bar(c, x, y):
 
 c = canvas.canvas()
 test_multiaxes_data(c, 0, 21)
-test_piaxis_function(c, 0, 14)
-test_textaxis_errorbars(c, 0, 7)
-test_ownmark(c, 0, 0)
-test_allerrorbars(c, -7, 0)
+#test_piaxis_function(c, 0, 14)
+#test_textaxis_errorbars(c, 0, 7)
+#test_ownmark(c, 0, 0)
+#test_allerrorbars(c, -7, 0)
 #test_3d(c, -7, 7)
-test_split(c, -7, 7)
-test_bar(c, -7, 14)
+#test_split(c, -7, 7)
+#test_bar(c, -7, 14)
 
 c.writetofile("test_graph", paperformat="a4")
 

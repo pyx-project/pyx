@@ -1976,19 +1976,26 @@ class baraxis:
 # graph key
 ################################################################################
 
+#
+# g = graph.graphxy(key=graph.key())
+# g.addkey(graph.key(), ...)
+#
 
 class key:
 
-    def __init__(self, dist="0.2 cm", pos = "tr", hdist="0.6 cm", vdist="0.4 cm",
+    def __init__(self, dist="0.2 cm", pos = "tr", inside = 1, hdist="0.6 cm", vdist="0.4 cm",
                  symbolwidth="0.5 cm", symbolheight="0.25 cm", symbolspace="0.2 cm",
-                 textattrs=()):
+                 textattrs=textmodule.valign.centerline(), plotinfos=None):
         self.dist_str = dist
         self.pos = pos
+        self.inside = inside
         self.hdist_str = hdist
         self.vdist_str = vdist
         self.symbolwidth_str = symbolwidth
         self.symbolheight_str = symbolheight
         self.symbolspace_str = symbolspace
+        self.textattrs = textattrs
+        self.plotinfos = plotinfos
         if self.pos in ("tr", "rt"):
             self.right = 1
             self.top = 1
@@ -2004,46 +2011,62 @@ class key:
         else:
             raise RuntimeError("invalid pos attribute")
 
-    def dopaint(self, graph, styles=None):
-        self._dist = unit.topt(self.dist_str)
-        self._hdist = unit.topt(self.hdist_str)
-        self._vdist = unit.topt(self.vdist_str)
-        self._symbolwidth = unit.topt(self.symbolwidth_str)
-        self._symbolheight = unit.topt(self.symbolheight_str)
-        self._symbolspace = unit.topt(self.symbolspace_str)
-        if styles is None:
-            styles = graph.styles
-        titles = []
-        if self.top:
-            _ypos = graph._ypos + graph._height - self._vdist
-        else:
-            _ypos = graph._ypos + self._vdist
-        if self.right:
-            _xpos = graph._xpos + graph._width - self._hdist
-        else:
-            _xpos = graph._xpos + self._hdist + self._symbolwidth + self._symbolspace
-        titles = []
-        for style in styles:
-            titles.append(graph.texrunner._text(_xpos, _ypos, style.data.title))
-        if self.top:
-            box.linealignequal(titles, 0, 0, -1)
-            box._tile(titles, self._dist, 0, -1)
-        else:
-            titles.reverse() # change the order
-            box.linealignequal(titles, 0, 0, 1)
-            box._tile(titles, self._dist, 0, 1)
-            titles.reverse() # back change
-        if self.right:
-            box.linealignequal(titles, 0, -1, 0)
-        else:
-            box.linealignequal(titles, 0, 1, 0)
-        for title in titles:
-            graph.insert(title)
+    def setplotinfos(self, *plotinfos):
+        """this method should be used for automatic keys, where the graph provides the plotinfos
+        note: it is allowed to be called only once; it fails, when there were already plotinfos available"""
+        if self.plotinfos is not None:
+            raise RuntimeError("multiple plotinfos provided")
+        self.plotinfos = plotinfos
+
+    def dolayout(self, graph):
+        """creates the layout of the key"""
+        self._dist = unit.topt(unit.length(self.dist_str, default_type="v"))
+        self._hdist = unit.topt(unit.length(self.hdist_str, default_type="v"))
+        self._vdist = unit.topt(unit.length(self.vdist_str, default_type="v"))
+        self._symbolwidth = unit.topt(unit.length(self.symbolwidth_str, default_type="v"))
+        self._symbolheight = unit.topt(unit.length(self.symbolheight_str, default_type="v"))
+        self._symbolspace = unit.topt(unit.length(self.symbolspace_str, default_type="v"))
+        self.titles = []
+        for plotinfo in self.plotinfos:
+            self.titles.append(graph.texrunner._text(0, 0, plotinfo.data.title, *helper.ensuresequence(self.textattrs)))
+        box._tile(self.titles, self._dist, 0, -1)
+        box._linealignequal(self.titles, self._symbolwidth + self._symbolspace, 1, 0)
+
+    def bbox(self):
+        """return a bbox for the key
+        method should be called after dolayout"""
+        result = self.titles[0].bbox()
+        for title in self.titles[1:]:
+            result = result + title.bbox() + bbox.bbox(0, title.center[1] - 0.5 * self._symbolheight,
+                                                       0, title.center[1] + 0.5 * self._symbolheight)
+        return result
+
+    def paint(self, c, x, y):
+        """paint the graph key into a canvas c at the position x and y (in postscript points)
+        - method should be called after dolayout
+        - the x, y alignment might be calculated by the graph using:
+          - the bbox of the key as returned by the keys bbox method
+          - the attributes _hdist, _vdist and inside of the key
+          - the dimension and geometry of the graph"""
+        sc = c.insert(canvas.canvas(trafo._translate(x, y)))
+        for plotinfo, title in zip(self.plotinfos, self.titles):
+            #sc.stroke(path._rect(0, -0.5 * self._symbolheight + title.center[1],
+            #                     self._symbolwidth, self._symbolheight))
+            plotinfo.style.key(sc, 0, -0.5 * self._symbolheight + title.center[1],
+                                   self._symbolwidth, self._symbolheight)
+            sc.insert(title)
 
 
 ################################################################################
 # graph
 ################################################################################
+
+
+class plotinfo:
+
+    def __init__(self, data, style):
+        self.data = data
+        self.style = style
 
 
 class graphxy(canvas.canvas):
@@ -2064,22 +2087,19 @@ class graphxy(canvas.canvas):
             else:
                 style = data.defaultstyle()
                 self.defaultstyle[data.defaultstyle] = style
-        styles = []
+        plotinfos = []
         first = 1
         for d in helper.ensuresequence(data):
-            if first:
-                styles.append(style)
-            else:
-                styles.append(style.iterate())
+            if not first:
+                style = style.iterate()
             first = 0
             if d is not None:
-                d.setstyle(self, styles[-1])
-                styles[-1].data = d
-                self.data.append(d)
-                self.styles.append(styles[-1])
+                d.setstyle(self, style)
+                plotinfos.append(plotinfo(d, style))
+        self.plotinfos.extend(plotinfos)
         if helper.issequence(data):
-            return styles
-        return styles[0]
+            return plotinfos
+        return plotinfos[0]
 
     def _vxtickpoint(self, axis, v):
         return (self._xpos+v*self._width, axis.axispos)
@@ -2166,8 +2186,8 @@ class graphxy(canvas.canvas):
 
     def gatherranges(self):
         ranges = {}
-        for data in self.data:
-            pdranges = data.getranges()
+        for plotinfo in self.plotinfos:
+            pdranges = plotinfo.data.getranges()
             if pdranges is not None:
                 for key in pdranges.keys():
                     if key not in ranges.keys():
@@ -2200,8 +2220,8 @@ class graphxy(canvas.canvas):
         # 1. gather ranges
         ranges = self.gatherranges()
         # 2. calculate additional ranges out of known ranges
-        for data in self.data:
-            data.setranges(ranges)
+        for plotinfo in self.plotinfos:
+            plotinfo.data.setranges(ranges)
         # 3. gather ranges again
         self.gatherranges()
 
@@ -2266,14 +2286,38 @@ class graphxy(canvas.canvas):
     def dodata(self):
         self.dolayout()
         if not self.removedomethod(self.dodata): return
-        for data in self.data:
-            data.draw(self)
+        for plotinfo in self.plotinfos:
+            plotinfo.data.draw(self)
 
-    def doautokey(self):
+    def dokey(self):
         self.dolayout()
-        if not self.removedomethod(self.doautokey): return
-        if self.autokey is not None:
-            self.autokey.dopaint(self)
+        if not self.removedomethod(self.dokey): return
+        if self.key is not None:
+            self.key.setplotinfos(*self.plotinfos)
+            self.key.dolayout(self)
+            bbox = self.key.bbox()
+            if self.key.right:
+                if self.key.inside:
+                    x = self._xpos + self._width - bbox.urx - self.key._hdist
+                else:
+                    x = self._xpos + self._width - bbox.llx + self.key._hdist
+            else:
+                if self.key.inside:
+                    x = self._xpos - bbox.llx + self.key._hdist
+                else:
+                    x = self._xpos - bbox.urx - self.key._hdist
+            if self.key.top:
+                if self.key.inside:
+                    y = self._ypos + self._height - bbox.ury - self.key._vdist
+                else:
+                    y = self._ypos + self._height - bbox.lly + self.key._vdist
+            else:
+                if self.key.inside:
+                    y = self._ypos - bbox.lly + self.key._vdist
+                else:
+                    y = self._ypos - bbox.ury - self.key._vdist
+            self.mindbbox(bbox.transformed(trafo._translate(x, y)))
+            self.key.paint(self, x, y)
 
     def finish(self):
         while len(self.domethods):
@@ -2308,7 +2352,7 @@ class graphxy(canvas.canvas):
         self.axes = axes
 
     def __init__(self, xpos=0, ypos=0, width=None, height=None, ratio=goldenrule,
-                 autokey=None, backgroundattrs=None, dense=1, axesdist="0.8 cm", **axes):
+                 key=None, backgroundattrs=None, dense=1, axesdist="0.8 cm", **axes):
         canvas.canvas.__init__(self)
         self.xpos = unit.length(xpos)
         self.ypos = unit.length(ypos)
@@ -2316,13 +2360,12 @@ class graphxy(canvas.canvas):
         self._ypos = unit.topt(self.ypos)
         self.initwidthheight(width, height, ratio)
         self.initaxes(axes, 1)
-        self.autokey = autokey
+        self.key = key
         self.backgroundattrs = backgroundattrs
         self.dense = dense
         self.axesdist_str = axesdist
-        self.data = []
-        self.styles = []
-        self.domethods = [self.dolayout, self.dobackground, self.doaxes, self.dodata, self.doautokey]
+        self.plotinfos = []
+        self.domethods = [self.dolayout, self.dobackground, self.doaxes, self.dodata, self.dokey]
         self.haslayout = 0
         self.defaultstyle = {}
         self.mindbboxes = []
@@ -3258,6 +3301,12 @@ class symbol:
 
     def drawsymbol(self, canvas, x, y, point=None):
         self._drawsymbol(canvas, unit.topt(x), unit.topt(y), point)
+
+    def key(self, c, x, y, width, height):
+        if self._symbolattrs is not None:
+            self._drawsymbol(c, x + 0.5 * width, y + 0.5 * height)
+        if self._lineattrs is not None:
+            c.stroke(path._line(x, y + 0.5 * height, x + width, y + 0.5 * height), *self.lineattrs)
 
     def drawpoints(self, graph, points):
         xaxismin, xaxismax = self.xaxis.getdatarange()
