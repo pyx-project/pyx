@@ -264,6 +264,8 @@ class tex:
         #         and check for the files before reading them (including the
         #         dvi before it is converted by dvips and the resulting ps)
 
+        # TODO 7: avoid system calls, set environment variables by themselfs
+
         WorkDir = os.getcwd()
         MkTemp = tempfile.mktemp()
         TempDir = os.path.dirname(MkTemp)
