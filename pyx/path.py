@@ -665,9 +665,9 @@ class path:
 	return abbox
 	
     def write(self, canvas, file):
-	if not (isinstance(self.path[0], moveto) or
-	        isinstance(self.path[0], arc) or
-		isinstance(self.path[0], arcn)):
+	if not (isinstance(self.path[0], _moveto) or
+	        isinstance(self.path[0], _arc) or
+		isinstance(self.path[0], _arcn)):
 	    raise PathException, "first path element must be either moveto, arc, or arcn"
         for pathel in self.path:
 	    pathel.write(canvas, file)
