@@ -6,11 +6,11 @@ from pyx.deco import barrow, earrow
 from pyx.style import linewidth, linestyle
 from pyx.graph import graphxy
 from pyx.graph.axis import linear
-from pyx.graph.axis.painter import plain
+from pyx.graph.axis.painter import regular
 from pyx.graph.style import line
 from pyx.graph.data import function
 
-mypainter = plain(basepathattrs=[earrow.normal], titlepos=1)
+mypainter = regular(basepathattrs=[earrow.normal], titlepos=1)
 def mycos(x): return -cos(x)+.10*x
 
 g = graphxy(height=5, x2=None, y2=None,
