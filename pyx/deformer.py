@@ -302,7 +302,7 @@ class cycloid(deformer): # {{{
         for phi, param in zip(phis, params):
             # the cycloid is a circle that is stretched along the subpath
             # here are the points of that circle
-            basetrafo = subpath.trafo(param)
+            basetrafo = subpath.trafo([param])[0]
 
             # The point on the cycloid, in the basepath's local coordinate system
             baseZ, baseY = 0, radius*math.sin(phi)
@@ -317,7 +317,7 @@ class cycloid(deformer): # {{{
             # Respect the curvature of the basepath for the cycloid's curvature
             # XXX this is only a heuristic, not a "true" expression for
             #     the curvature in curved coordinate systems
-            pathradius = subpath.curvradius_pt(param)
+            pathradius = subpath.curveradius_pt([param])[0]
             if pathradius is not None:
                 factor = (pathradius - baseY) / pathradius
                 factor = abs(factor)
@@ -342,12 +342,12 @@ class cycloid(deformer): # {{{
         # containing (control x 2,  base x 2, control x 2)
         if skipfirst > subpath.epsilon:
             newpath = subpath.split([params[0]])[0]
-            newpath.append(path.normcurve(*(points[0][2:6] + points[1][0:4])))
+            newpath.append(path.normcurve_pt(*(points[0][2:6] + points[1][0:4])))
             cycloidpath = path.normpath([newpath])
         else:
-            cycloidpath = path.normpath([path.normsubpath([path.normcurve(*(points[0][2:6] + points[1][0:4]))], 0)])
+            cycloidpath = path.normpath([path.normsubpath([path.normcurve_pt(*(points[0][2:6] + points[1][0:4]))], 0)])
         for i in range(1, len(points)-1):
-            cycloidpath.normsubpaths[-1].append(path.normcurve(*(points[i][2:6] + points[i+1][0:4])))
+            cycloidpath.normsubpaths[-1].append(path.normcurve_pt(*(points[i][2:6] + points[i+1][0:4])))
         if skiplast > subpath.epsilon:
             cycloidpath.join(path.normpath([subpath.split([params[-1]])[-1]]))
 
@@ -402,7 +402,7 @@ class smoothed(deformer): # {{{
         radius = unit.topt(self.radius)
 
         npitems = normsubpath.normsubpathitems
-        arclens = [npitem.arclen_pt() for npitem in npitems]
+        arclens = [npitem.arclen_pt(normsubpath.epsilon) for npitem in npitems]
 
         # 1. Build up a list of all relevant normsubpathitems
         #    and the lengths where they will be cut (length with respect to the normsubpath)
@@ -428,24 +428,24 @@ class smoothed(deformer): # {{{
 
             # find the parameter(s): either one or two
             if no is npitemnumbers[0] and not normsubpath.closed:
-                pars = npitem._arclentoparam_pt([max(0, alen - radius)])[0]
+                pars = npitem._arclentoparam_pt([max(0, alen - radius)], normsubpath.epsilon)[0]
             elif alen > 2 * radius:
-                pars = npitem._arclentoparam_pt([radius, alen - radius])[0]
+                pars = npitem._arclentoparam_pt([radius, alen - radius], normsubpath.epsilon)[0]
             else:
-                pars = npitem._arclentoparam_pt([0.5 * alen])[0]
+                pars = npitem._arclentoparam_pt([0.5 * alen], normsubpath.epsilon)[0]
 
             # find points, tangents and curvatures
             ts,cs,ps = [],[],[]
             for par in pars:
                 # XXX: there is no trafo method for normsubpathitems?
-                thetrafo = normsubpath.trafo(par + no)
+                thetrafo = normsubpath.trafo([par + no])[0]
                 p = thetrafo._apply(0,0)
                 # XXX thetrafo._apply(1,0) causes numeric instabilities in
                 # bezier_by_endpoints
                 t = thetrafo._apply(100,0)
                 ps.append(p)
                 ts.append((t[0]-p[0], t[1]-p[1]))
-                c = npitem.curvradius_pt(par)
+                c = npitem.curveradius_pt([par])[0]
                 if c is None: cs.append(0)
                 else: cs.append(1.0/c)
 
@@ -462,11 +462,11 @@ class smoothed(deformer): # {{{
         if not normsubpath.closed:
             bpart = npitems[npitemnumbers[0]].split(params[0])[0]
             if do_moveto:
-                smoothpath.append(path.moveto_pt(*bpart.begin_pt()))
+                smoothpath.append(path.moveto_pt(*bpart.atbegin_pt()))
                 do_moveto = 0
-            if isinstance(bpart, path.normline):
-                smoothpath.append(path.lineto_pt(*bpart.end_pt()))
-            elif isinstance(bpart, path.normcurve):
+            if isinstance(bpart, path.normline_pt):
+                smoothpath.append(path.lineto_pt(*bpart.atend_pt()))
+            elif isinstance(bpart, path.normcurve_pt):
                 smoothpath.append(path.curveto_pt(bpart.x1_pt, bpart.y1_pt, bpart.x2_pt, bpart.y2_pt, bpart.x3_pt, bpart.y3_pt))
             do_moveto = 0
 
@@ -481,20 +481,20 @@ class smoothed(deformer): # {{{
             if len(points[this]) == 2:
                 mpart = thisnpitem.split(params[this])[1]
                 if do_moveto:
-                    smoothpath.append(path.moveto_pt(*mpart.begin_pt()))
+                    smoothpath.append(path.moveto_pt(*mpart.atbegin_pt()))
                     do_moveto = 0
-                if isinstance(mpart, path.normline):
-                    smoothpath.append(path.lineto_pt(*mpart.end_pt()))
-                elif isinstance(mpart, path.normcurve):
+                if isinstance(mpart, path.normline_pt):
+                    smoothpath.append(path.lineto_pt(*mpart.atend_pt()))
+                elif isinstance(mpart, path.normcurve_pt):
                     smoothpath.append(path.curveto_pt(mpart.x1_pt, mpart.y1_pt, mpart.x2_pt, mpart.y2_pt, mpart.x3_pt, mpart.y3_pt))
 
             # add the curve(s) replacing the corner
-            if isinstance(thisnpitem, path.normline) and isinstance(nextnpitem, path.normline) \
+            if isinstance(thisnpitem, path.normline_pt) and isinstance(nextnpitem, path.normline_pt) \
                and (next-this == 1 or (this==0 and next==len(npitems)-1)):
                 d1,g1,f1,e,f2,g2,d2 = curvescontrols_from_endlines_pt(
-                    thisnpitem.end_pt(), tangents[this][-1], tangents[next][0],
-                    math.hypot(points[this][-1][0] - thisnpitem.end_pt()[0], points[this][-1][1] - thisnpitem.end_pt()[1]),
-                    math.hypot(points[next][0][0] - nextnpitem.begin_pt()[0], points[next][0][1] - nextnpitem.begin_pt()[1]),
+                    thisnpitem.atend_pt(), tangents[this][-1], tangents[next][0],
+                    math.hypot(points[this][-1][0] - thisnpitem.atend_pt()[0], points[this][-1][1] - thisnpitem.atend_pt()[1]),
+                    math.hypot(points[next][0][0] - nextnpitem.atbegin_pt()[0], points[next][0][1] - nextnpitem.atbegin_pt()[1]),
                     softness=self.softness)
                 if do_moveto:
                     smoothpath.append(path.moveto_pt(*d1))
@@ -519,17 +519,17 @@ class smoothed(deformer): # {{{
         # 5. Second part of extra handling of closed paths
         if normsubpath.closed:
             if do_moveto:
-                smoothpath.append(path.moveto_pt(*dp.strokepath.begin()))
+                smoothpath.append(path.moveto_pt(*dp.strokepath.atbegin()))
                 sys.stderr.write("*** PyXWarning: The whole subpath has been smoothed away -- sorry\n")
             smoothpath.append(path.closepath())
         else:
             epart = npitems[npitemnumbers[-1]].split([params[-1][0]])[-1]
             if do_moveto:
-                smoothpath.append(path.moveto_pt(*epart.begin_pt()))
+                smoothpath.append(path.moveto_pt(*epart.atbegin_pt()))
                 do_moveto = 0
-            if isinstance(epart, path.normline):
-                smoothpath.append(path.lineto_pt(*epart.end_pt()))
-            elif isinstance(epart, path.normcurve):
+            if isinstance(epart, path.normline_pt):
+                smoothpath.append(path.lineto_pt(*epart.atend_pt()))
+            elif isinstance(epart, path.normcurve_pt):
                 smoothpath.append(path.curveto_pt(epart.x1_pt, epart.y1_pt, epart.x2_pt, epart.y2_pt, epart.x3_pt, epart.y3_pt))
 
         return smoothpath
