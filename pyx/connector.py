@@ -26,11 +26,11 @@ class _connector(path.normpath):
         """intersect a path with the boxes' paths"""
 
         sp = self.intersect(box1.path())[0]
-        try: self.path = self.split(sp[-1:])[1].path
+        try: self.path = self.split(sp[:1])[1].path
         except: pass
 
         sp = self.intersect(box2.path())[0]
-        try: self.path = self.split(sp[:0])[0].path
+        try: self.path = self.split(sp[-1:])[0].path
         except: pass
 
     def shortenpath(self, dists):
