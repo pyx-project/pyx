@@ -220,7 +220,7 @@ def select(attrs, index, total):
     result = []
     for a in attrs:
         if isinstance(a, changeattr):
-            result.append(a.select(index, total)
+            result.append(a.select(index, total))
         else:
             result.append(a)
 
