@@ -3,6 +3,20 @@ import sys; sys.path.insert(0, "../..")
 import math
 from pyx import *
 
+# make math.sqrt raising an exception for negativ values
+try:
+    math.sqrt(-1)
+except:
+    pass
+else:
+    math._sqrt = math.sqrt
+    def mysqrt(x):
+        if x < 0:
+            raise ValueError("sqrt of negativ number")
+        return math._sqrt(x)
+    math.sqrt = mysqrt
+
+
 c = canvas.canvas()
 
 # I'm missing some basic functionality ...
@@ -80,7 +94,7 @@ def enlarged(normpath, enlargeby_pt, round):
         splitnormpathels = subpath.normpathels[:] # do splitting on a copy
         i = 0
         while i < len(splitnormpathels):
-            if isinstance(splitnormpathels[i], path.normcurve) and splitnormpathels[i].arclen_pt() > 50:
+            if isinstance(splitnormpathels[i], path.normcurve) and splitnormpathels[i].arclen_pt() > 100:
                 splitnormpathels[i:i+1] = splitnormpathels[i].midpointsplit()
             else:
                 i += 1
@@ -117,8 +131,8 @@ def enlarged(normpath, enlargeby_pt, round):
                                                bezierparams[1][0], bezierparams[1][1],
                                                bezierparams[2][0], bezierparams[2][1],
                                                bezierparams[3][0], bezierparams[3][1])
-                showtangent(newnormpathel)
-                showcircle(newnormpathel)
+                showtangent(newnormpathel) # line alignment of bezier curves
+                showcircle(newnormpathel)  # circle alignment of bezier curves
             else:
                 # line
                 newnormpathel = path.normline(nxs, nys, nxe, nye)
@@ -199,50 +213,75 @@ def showcircle(normcurve):
         return ((x(t)-x0-l(t, sign)*cos)*xddot(t)+(xdot(t)-ldot(t, sign)*cos)*xdot(t)+
                 (y(t)-y0-l(t, sign)*sin)*yddot(t)+(ydot(t)-ldot(t, sign)*sin)*ydot(t))
     def start(t):
+        # this value should be small in the beginning (thus the chance, 
+        # that the sqrt's aboves are definied ...
         return sin*(x(t)-x0)-cos*(y(t)-y0)
-    def startdot(t):
-        return sin*xdot(t)-cos*ydot(t)
     def find(sign):
+        # calculate a start value for t
+
+        # first calculate the points where startdot(t) is 0
         x = - (sin*bx-cos*by)/(3.0*sin*ax-3.0*cos*ay)
         s = math.sqrt(x*x-(sin*cx-cos*cy)/(3.0*sin*ax-3.0*cos*ay))
         t1 = x-s
         t2 = x+s
-        #print startdot(t1), startdot(t2), start(t1), start(t2)
+
+        # see, if the value of start for those two points have the same or
+        # a different sign
         startt1, startt2 = start(t1), start(t2)
-        #print startt1, startt2
         if startt1*startt2 < 0:
+            # the sign is different -> we search for the point, where start(t) is zero
+            step = 1
             while abs(startt1)+abs(startt2) > 1e-5:
-                tn = 0.5*(t1+t2)
+                tn = t1-(t2-t1)*startt1/(startt2-startt1)
                 starttn = start(tn)
-                if starttn*startt1 < 0:
-                    t2, startt2 = tn, starttn
+                if step == 1:
+                    if abs(startt1) > abs(startt2):
+                        t1, startt1 = tn, starttn
+                    else:
+                        t2, startt2 = tn, starttn
                 else:
-                    t1, startt1 = tn, starttn
+                    t1, startt1 = t2, startt2
+                    t2, startt2 = tn, starttn
+                step += 1
             ist = 0.5*(t1+t2)
         elif abs(startt1) < abs(startt2):
+            # otherwise we t, where the absolut value of start is smaller
             ist = t1
         else:
             ist = t2
+        # finally we force the starting point to be within the valid result range
         if ist > 1:
             ist = 1
         if ist < 0:
             ist = 0
 
+        # newton iteration to find the zero of z
+        slow = 1
         isz=z(ist, sign)
         while abs(isz) > 1e-5:
-            # print ist, isz
-            ist -= 0.05*isz / zdot(ist, sign) # overshoots lead to nan-results ...
-            isz = z(ist, sign)
+            try:
+                newist = ist - slow * isz/zdot(ist, sign)
+                newisz = z(newist, sign)
+            except (ValueError, ArithmeticError):
+                slow *= 0.5 # we have slow down the newton iteration for complicated
+            else:
+                ist = newist
+                isz = newisz
+                if slow <=0.5:
+                    slow *= 2
         if isz > -1: # nan?
-            # print ist, isz
             return ist
 
     for sign in [-1, 1]:
-        ist = find(sign)
-        if ist is not None and 0 < ist < 1:
-            isl = l(ist, sign)
-            c.fill(path.circle_pt(x(ist), y(ist), 1), [color.rgb.green])
-            c.stroke(path.circle_pt(x0+isl*cos, y0+isl*sin, r), [color.rgb.green])
+        try:
+            ist = find(sign)
+        except (ValueError, ArithmeticError):
+            pass
+        else:
+            if 0 < ist < 1:
+                isl = l(ist, sign)
+                c.fill(path.circle_pt(x(ist), y(ist), 1), [color.rgb.green])
+                c.stroke(path.circle_pt(x0+isl*cos, y0+isl*sin, r), [color.rgb.green])
 
 
 # parameters for the enlargement:
