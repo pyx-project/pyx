@@ -21,6 +21,8 @@ TODO:
       (its goal is to make graph styles combinable which will also
       split up the style code in smaller parts -- those will then be
       easier to substitute by inheritance)
+    - fix docu (or code) of gridattrs functionality of axis painters
+      (how can one, e.g. draw a grid at the ticks and not at the subticks)
   - graph.data module:
     - use csv module (new in 2.3)
     - Check for "inf" and "nan" in datafiles.
