@@ -219,7 +219,7 @@ class _bcurve:
             (a, b) = self.MidPointSplit()
             return a.seglengths(0.5*paraminterval, epsilon) + b.seglengths(0.5*paraminterval, epsilon)
 
-    def lengthparam(self, lengths, epsilon=1e-5):
+    def lentopar(self, lengths, epsilon=1e-5):
         """computes the parameters [t] of bpathel where the given lengths (in pts) are assumed
         returns [ [parameter], total arclength]"""
 
@@ -547,7 +547,7 @@ class normpathel(pathel):
 
         pass
 
-    def _lengthparam(self, lengths, context, epsilon=1e-5):
+    def _lentopar(self, lengths, context, epsilon=1e-5):
         """returns [t,l] with
           t the parameter where the arclength of normpathel is length and
           l the total arclength
@@ -639,7 +639,7 @@ class closepath(normpathel):
 
         return unit.t_pt(math.sqrt((x0-x1)*(x0-x1)+(y0-y1)*(y0-y1)))
 
-    def _lengthparam(self, lengths, context, epsilon=1e-5):
+    def _lentopar(self, lengths, context, epsilon=1e-5):
         x0, y0 = context.currentpoint
         x1, y1 = context.currentsubpath
 
@@ -727,7 +727,7 @@ class _moveto(normpathel):
     def _arclength(self, context, epsilon=1e-5):
         return 0
 
-    def _lengthparam(self, lengths, context, epsilon=1e-5):
+    def _lentopar(self, lengths, context, epsilon=1e-5):
         return [ [0]*len(lengths), 0]
 
     def _normalized(self, context):
@@ -782,7 +782,7 @@ class _lineto(normpathel):
 
         return unit.t_pt(math.sqrt((x0-self.x)*(x0-self.x)+(y0-self.y)*(y0-self.y)))
 
-    def _lengthparam(self, lengths, context, epsilon=1e-5):
+    def _lentopar(self, lengths, context, epsilon=1e-5):
         x0, y0 = context.currentpoint
         l = math.sqrt((x0-self.x)*(x0-self.x)+(y0-self.y)*(y0-self.y))
 
@@ -889,8 +889,8 @@ class _curveto(normpathel):
     def _arclength(self, context, epsilon=1e-5):
         return self._bcurve(context).arclength(epsilon)
 
-    def _lengthparam(self, lengths, context, epsilon=1e-5):
-        return self._bcurve(context).lengthparam(lengths, epsilon)
+    def _lentopar(self, lengths, context, epsilon=1e-5):
+        return self._bcurve(context).lentopar(lengths, epsilon)
 
     def _normalized(self, context):
         return [_curveto(self.x1, self.y1,
@@ -1493,10 +1493,10 @@ class path(base.PSCmd):
         """returns total arc length of path in pts with accuracy epsilon"""
         return normpath(self).arclength(epsilon)
 
-    def lengthparam(self, lengths, epsilon=1e-5):
+    def lentopar(self, lengths, epsilon=1e-5):
         """returns [t,l] with t the parameter value(s) matching given length,
         l the total length"""
-        return normpath(self).lengthparam(lengths, epsilon)
+        return normpath(self).lentopar(lengths, epsilon)
 
     def at(self, t):
         """return coordinates of corresponding normpath at parameter value t"""
@@ -1710,7 +1710,7 @@ class normpath(path):
 
         return length
 
-    def lengthparam(self, lengths, epsilon=1e-5):
+    def lentopar(self, lengths, epsilon=1e-5):
         """returns [t,l] with t the parameter value(s) matching given length(s)
         and l the total length"""
 
@@ -1734,7 +1734,7 @@ class normpath(path):
 
         # go through the positive lengths
         for pel in self.path:
-            pars, arclength = pel._lengthparam(rests[0], context, epsilon)
+            pars, arclength = pel._lentopar(rests[0], context, epsilon)
             finis = 0
             for i in range(len(rests[0])):
                 t[0][i] += pars[i]
@@ -1745,7 +1745,7 @@ class normpath(path):
 
         # go through the negative lengths
         for pel in self.reversed().path:
-            pars, arclength = pel._lengthparam(rests[1], context, epsilon)
+            pars, arclength = pel._lentopar(rests[1], context, epsilon)
             finis = 0
             for i in range(len(rests[1])):
                 t[1][i] -= pars[i]

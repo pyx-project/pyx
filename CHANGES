@@ -43,7 +43,7 @@ PyX
       (TODO: documentation)
     - ensurecenter added --- do we always force the creation of a center?
   - path module:
-    - lengthparam methods added including some tests (TODO: documentation)
+    - lentopar methods added including some tests (TODO: documentation)
     TODO:
     - reverse needs to be fixed
 

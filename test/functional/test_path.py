@@ -266,7 +266,7 @@ def testclipbbox(c):
     drawpathwbbox(sc,p1)
     drawpathwbbox(sc,p2)
 
-def testlengthparam(c):
+def testlentopar(c):
     curve=path(moveto(0,0), lineto(0,5), curveto(5,0,0,10,5,5), closepath(),
                moveto(5,0), lineto(10,5))
     ll = curve.arclength()
@@ -274,7 +274,7 @@ def testlengthparam(c):
     cols=[color.gray.black, color.gray(0.3), color.gray(0.7), color.rgb.red,
           color.rgb.green, color.rgb.blue, color.cmyk(1,0,0,0),
           color.cmyk(0,1,0,0), color.cmyk(0,0,1,0)]
-    t=curve.lengthparam(l)
+    t=curve.lentopar(l)
     c.stroke(curve)
     for i in range(len(t)):
         c.stroke(path(circle(curve.at(t[i])[0], curve.at(t[i])[1], 0.1)), cols[i])
@@ -287,7 +287,7 @@ dotest(c, 2, 12, "testintersectbezier")
 dotest(c, 10,11, "testnormpathtrafo")
 dotest(c, 12, -4, "testtangent")
 dotest(c, 5, -4, "testintersectcircle")
-dotest(c, 21, 12, "testlengthparam")
+dotest(c, 21, 12, "testlentopar")
 c.writetofile("test_path", paperformat="a4", rotated=0, fittosize=1)
 
 c=canvas.canvas()

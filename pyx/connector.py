@@ -7,10 +7,6 @@ import canvas, path, box, trafo, unit, helper
 ##   helpers
 #########################
 
-def sign(x):
-    if x==0: return 0
-    return 2*(x>0)-1
-
 def _topt(length, default_type=None):
     if length is None: return None
     if default_type is not None:
