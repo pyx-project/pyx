@@ -1098,8 +1098,7 @@ class _textbox(box._rect, base.PSCmd):
     def prolog(self):
         result = []
         for cmd in self.styles:
-            pr = cmd.prolog()
-            if pr: result.extend(pr)
+            result.extedn(cmd.prolog())
         return result + self.texrunner.prolog()
 
     def write(self, file):

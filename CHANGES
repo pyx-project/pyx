@@ -41,7 +41,6 @@ PyX
     - canvas.insert() now supports arguments
     - TODO: document patterns
     - TODO: document new canvas.insert()
-    - TODO: prolog should return empty lists instead of None
   - mathtree module:
     - added abs function
     - TODO: unit tests and documentation for abs

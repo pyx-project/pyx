@@ -37,8 +37,8 @@ class PSOp:
         raise NotImplementedError, "cannot call virtual method write()"
 
     def prolog(self):
-        """return list of prolog items, if present, otherwise None"""
-        pass 
+        """return list of prolog items"""
+        return []
 
 #
 # PSCmd class

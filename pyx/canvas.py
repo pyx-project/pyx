@@ -275,8 +275,7 @@ class decoratedpath(base.PSCmd):
     def prolog(self):
         result = []
         for style in list(self.styles) + list(self.fillstyles) + list(self.strokestyles):
-            pr = style.prolog()
-            if pr: result.extend(pr)
+            result.extend(style.prolog())
         return result
 
     def write(self, file):
@@ -720,8 +719,7 @@ class _canvas(base.PSCmd, attrlist.attrlist):
     def prolog(self):
         result = []
         for cmd in self.PSOps:
-            pr = cmd.prolog()
-            if pr: result.extend(pr)
+            result.extend(cmd.prolog())
         return result
 
     def write(self, file):
@@ -883,6 +881,7 @@ class pattern(_canvas, base.PathStyle):
         stringfile.close()
         patterntrafostring = self.patterntrafo is None and "matrix" or str(self.patterntrafo)
         patternsuffix = "end\n} bind\n>>\n%s\nmakepattern" % patterntrafostring
+        
         pr = _canvas.prolog(self)     
         pr.append(definition(self.id, string.join((patternprefix, patternproc, patternsuffix), "")))
         return pr
