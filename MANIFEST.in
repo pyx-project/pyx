@@ -2,10 +2,12 @@ include AUTHORS
 include LICENSE
 include INSTALL
 include CHANGES
-include manual/manual.pdf
+include manual/manual.ps
+include examples/examples.ps
 recursive-include contrib *
 recursive-include pyx *.h
 recursive-include pyx/lfs *.lfs *.py *.tex
+recursive-include examples *.py
 
 prune test
 exclude setup.cfg
