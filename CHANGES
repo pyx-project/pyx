@@ -24,6 +24,9 @@ TODO:
     - use csv module (new in 2.3)
     - Check for "inf" and "nan" in datafiles.
       (When plotted, the graph does not complain, but the postscript will be broken)
+  - graph.style module:
+    - add styles using curves instead of lines
+    - add "steps" style for histogram-like plots
   - canvas module:
     - finish multi page PostScript output
     - contructor should only take a texrunner keyword argument
@@ -73,6 +76,8 @@ TODO:
       Attributes (clearing merging ) and changeable attributes should be 
       explained at a central place.
     - section titles: "Axes" -> "Axes - module axis" or similar
+    - box module:
+      - linealign and circlealign
 
   FAQ:
     - describe creation and modification (inplace and ``modify by new'') of
