@@ -102,15 +102,15 @@ class pathel(base.PSOp):
         pass
 
 ################################################################################ 
-# npathel: normalized element of a PS style path 
+# normpathel: normalized element of a PS style path 
 ################################################################################
 
-class npathel(pathel):
+class normpathel(pathel):
 
     """normalized element of a PS style path"""
 
     def _bpathel(self, context):
-        """convert npathel to bpathel
+        """convert normpathel to bpathel
 
         context: context of pathel
 
@@ -121,16 +121,16 @@ class npathel(pathel):
         pass
 
     def transform(self, trafo):
-        """return transformed npathel according to trafo"""
+        """return transformed normpathel according to trafo"""
 
         pass
 
-# first come the various npathels. Each one comes in two variants:
+# first come the various normpathels. Each one comes in two variants:
 #  - one with an preceding underscore, which does no coordinate to pt conversion
 #  - the other without preceding underscore, which converts to pts 
 
 
-class closepath(npathel): 
+class closepath(normpathel): 
 
     """Connect subpath back to its starting point"""
 
@@ -164,7 +164,7 @@ class closepath(npathel):
         return closepath()
 
 
-class _moveto(npathel):
+class _moveto(normpathel):
 
     """Set current point to (x, y) (coordinates in pts)"""
 
@@ -194,7 +194,7 @@ class _moveto(npathel):
     def transform(self, trafo):
         return _moveto(*trafo._apply(self.x, self.y))
 
-class _lineto(npathel):
+class _lineto(normpathel):
 
     """Append straight line to (x, y) (coordinates in pts)"""
 
@@ -229,7 +229,7 @@ class _lineto(npathel):
         return _lineto(*trafo._apply(self.x, self.y))
 
 
-class _curveto(npathel):
+class _curveto(normpathel):
 
     """Append curveto (coordinates in pts)"""
 
