@@ -18,6 +18,9 @@ dy = -0.65
 
 # we could use palette.__dict__ to get the instances, but we
 # would loose the ordering ... instead we just parse the file:
+
+# see comment in colorname.py
+
 p = re.compile("(?P<id>palette\\.(?P<name>[a-z]+)) += palette\\(.*\\)\n", re.IGNORECASE)
 lines = imp.find_module("color", pyx.__path__)[0].readlines()
 first = 1
