@@ -95,13 +95,22 @@ class dash(attr.exclusiveattr, strokestyle):
 
     """dash of paths"""
 
-    def __init__(self, pattern=[], offset=0):
+    def __init__(self, pattern=[], offset=0, rellengths=0):
+        """set pattern with offset.
+
+        If rellengths is True, interpret all dash lengths relative to current linewidth.
+        """
         attr.exclusiveattr.__init__(self, dash)
         self.pattern = pattern
         self.offset = offset
+        self.rellengths = rellengths
 
     def write(self, file):
-        patternstring = " ".join(["%g" % element for element in self.pattern])
+        if self.rellengths:
+            sep = " currentlinewidth mul "
+        else:
+            sep = " "
+        patternstring = sep.join(["%g" % element for element in self.pattern])
         file.write("[%s] %d setdash\n" % (patternstring, self.offset))
 
 dash.clear = attr.clearclass(dash)
@@ -112,6 +121,8 @@ class linestyle(attr.exclusiveattr, strokestyle):
     """linestyle (linecap together with dash) of paths"""
 
     def __init__(self, c=linecap.butt, d=dash([])):
+        # XXX better, but at the moment not supported by attr.exlusiveattr would be:
+        # XXX   attr.exclusiveattr.__init__(self, [linestyle, linecap, dash])
         attr.exclusiveattr.__init__(self, linestyle)
         self.c = c
         self.d = d
@@ -134,7 +145,7 @@ class linewidth(unit.length, attr.exclusiveattr, attr.sortbeforeattr, strokestyl
     def __init__(self, l="0 cm"):
         unit.length.__init__(self, l=l, default_type="w")
         attr.exclusiveattr.__init__(self, linewidth)
-        attr.sortbeforeattr.__init__(self, linestyle)
+        attr.sortbeforeattr.__init__(self, [dash, linestyle])
 
     def merge(self, attrs):
         return attr.sortbeforeattr.merge(self, attr.exclusiveattr.merge(self, attrs))
