@@ -156,11 +156,11 @@ class _canvas(base.PSCmd):
         obbox = None
         for cmd in self.PSOps:
             if isinstance(cmd, base.PSCmd):
-               abbox = cmd.bbox()
-               if obbox is None:
-                   obbox = abbox
-               elif abbox is not None:
-                   obbox += abbox
+                abbox = cmd.bbox()
+                if obbox is None:
+                    obbox = abbox
+                elif abbox is not None:
+                    obbox += abbox
 
         # transform according to our global transformation and
         # intersect with clipping bounding box (which have already been
