@@ -120,6 +120,9 @@ class binfile:
     def __init__(self, filename, mode="r"):
         self.file = open(filename, mode)
 
+    def tell(self):
+        return self.file.tell()
+
     def read(self, bytes):
         return self.file.read(bytes)
 
@@ -412,29 +415,35 @@ class DVIFile:
     def flushout(self):
         if self.actoutstart:
             if self.debug:
-                print "show '%s' at (%.3f cm, %.3f cm)" % (self.actoutstring,
-                                                           unit.tocm(self.actoutstart[0]),
-                                                           unit.tocm(self.actoutstart[1]))
+                print "[%s]" % self.actoutstring
             self.actpage.append(("c",
                                  self.actoutstart[0], self.actoutstart[1],
                                  self.actoutstring))
             self.actoutstart = None
 
     def putchar(self, char, inch=1):
-        x = self.pos[_POS_H] * self.conv * 1e-5
-        y = self.pos[_POS_V] * self.conv * 1e-5
-        ascii = (char > 32 and char < 128) and "%s" % chr(char) or "\\%03o" % char
-        if self.debug:
-            print "type 0x%08x (%s) at (%.3f cm, %.3f cm)" % (char, ascii, x, y)
+        x = self.pos[_POS_H] * self.conv / 100000
+        y = -self.pos[_POS_V] * self.conv / 100000
+        dx = inch and self.fonts[self.activefont].getwidth(char) or 0
 
+        if self.debug:
+            print ("%d: %schar%d h:=%d+%d=%d, hh:=%d" %
+                   (self.filepos,
+                    inch and "set" or "put",
+                    char,
+                    self.pos[_POS_H], dx, self.pos[_POS_H]+dx,
+                    0))
+
+        self.pos[_POS_H] += dx
+        
+        ascii = (char > 32 and char < 128) and "%s" % chr(char) or "\\%03o" % char
+        
         if self.actoutstart is None:
             self.actoutstart = unit.t_cm(x), unit.t_cm(y)
             self.actoutstring = ""
         self.actoutstring = self.actoutstring + ascii
 
-        if inch:
-            self.pos[_POS_H] += self.fonts[self.activefont].getwidth(char)
-        else:
+        if not inch:
             # XXX: correct !?
             self.flushout()
 
@@ -457,7 +466,9 @@ class DVIFile:
         self.activefont = fontnum
         self.actpage.append(("f", self.fonts[fontnum]))
         if self.debug:
-            print "fontnum%i current font is %s" % (self.activefont, self.fonts[fontnum].name)
+            print ("%d: fntnum%i current font is %s" %
+                   (self.filepos,
+                    self.activefont, self.fonts[fontnum].name))
 
     def definefont(self, num, c, q, d, fontname):
         # c: checksum
@@ -471,11 +482,13 @@ class DVIFile:
         m = 1.0*q/d
 
         if self.debug:
-            scalestring = scale!=1000 and " scaled %d" % scale or ""
-            print ("Font %i: %s%s---loaded at size %d DVI units" %
-                   (num, fontname, scalestring, q))
-            if scale!=1000:
-                print " (this font is magnified %d%%)" % round(scale/10)
+            print "%d: fntdefx %i: %s" % (self.filepos, num, fontname)
+
+#            scalestring = scale!=1000 and " scaled %d" % scale or ""
+#            print ("Font %i: %s%s---loaded at size %d DVI units" %
+#                   (num, fontname, scalestring, q))
+#            if scale!=1000:
+#                print " (this font is magnified %d%%)" % round(scale/10)
 
     def __init__(self, filename, debug=0):
 
@@ -500,6 +513,7 @@ class DVIFile:
         self.actoutstring = ""
 
         while state != _READ_DONE:
+            self.filepos = file.tell()
             cmd = file.readuchar()
             if cmd == _DVI_NOP: pass
 
@@ -525,9 +539,9 @@ class DVIFile:
                 if cmd == _DVI_BOP:
                     self.flushout()
                     if self.debug:
-                        print "page",
-                        for i in range(10): print file.readuint32(),
-                        print
+                        print "%d: beginning of page" % self.filepos,
+                        print file.readuint32()
+                        for i in range(9): file.readuint32(),
                     else:
                         for i in range(10): file.readuint32(),
                     file.readuint32()
@@ -552,22 +566,60 @@ class DVIFile:
                elif cmd == _DVI_PUTRULE:
                    self.putrule(file.readint32(), file.readint32(), 0)
                elif cmd == _DVI_EOP:
+                   self.flushout()
                    state = _READ_NOPAGE
+                   if self.debug:
+                       print "%d: eop" % self.filepos
+                       print
                elif cmd == _DVI_PUSH:
                    stack.append(tuple(self.pos))
+                   if self.debug:
+                       print "%d: push" % self.filepos
+                       print ("level %d:(h=%d,v=%d,w=%d,x=%d,y=%d,z=%d,hh=,vv=)" %
+                              (( len(stack)-1,)+tuple(self.pos)))
                elif cmd == _DVI_POP:
                    self.flushout()
                    self.pos = list(stack[-1])
                    del stack[-1]
+                   if self.debug:
+                       print "%d: pop" % self.filepos
+                       print ("level %d:(h=%d,v=%d,w=%d,x=%d,y=%d,z=%d,hh=,vv=)" %
+                              (( len(stack),)+tuple(self.pos)))
+
                elif cmd >= _DVI_RIGHT1234 and cmd < _DVI_RIGHT1234 + 4:
                    self.flushout()
-                   self.pos[_POS_H] += file.readint(cmd - _DVI_RIGHT1234 + 1, 1)
+                   dh = file.readint(cmd - _DVI_RIGHT1234 + 1, 1)
+                   if self.debug:
+                       print ("%d: right%d %d h:=%d%+d=%d, hh:=" %
+                              (self.filepos,
+                               cmd - _DVI_RIGHT1234 + 1,
+                               dh,
+                               self.pos[_POS_H],
+                               dh,
+                               self.pos[_POS_H]+dh))
+                   self.pos[_POS_H] += dh
+                   
                elif cmd == _DVI_W0:
                    self.flushout()
+                   if self.debug:
+                       print ("%d: w0 %d h:=%d%+d=%d, hh:=" %
+                              (self.filepos,
+                               self.pos[_POS_W],
+                               self.pos[_POS_H],
+                               self.pos[_POS_W],
+                               self.pos[_POS_H]+self.pos[_POS_W]))
                    self.pos[_POS_H] += self.pos[_POS_W]
                elif cmd >= _DVI_W1234 and cmd < _DVI_W1234 + 4:
                    self.flushout()
                    self.pos[_POS_W] = file.readint(cmd - _DVI_W1234 + 1, 1)
+                   if self.debug:
+                       print ("%d: w%d %d h:=%d%+d=%d, hh:=" %
+                              (self.filepos,
+                               cmd - _DVI_W1234 + 1,
+                               self.pos[_POS_W],
+                               self.pos[_POS_H],
+                               self.pos[_POS_W],
+                               self.pos[_POS_H]+self.pos[_POS_W]))
                    self.pos[_POS_H] += self.pos[_POS_W]
                elif cmd == _DVI_X0:
                    self.flushout()
@@ -578,7 +630,16 @@ class DVIFile:
                    self.pos[_POS_H] += self.pos[_POS_X]
                elif cmd >= _DVI_DOWN1234 and cmd < _DVI_DOWN1234 + 4:
                    self.flushout()
-                   self.pos[_POS_V] -= file.readint(cmd - _DVI_DOWN1234 + 1, 1)
+                   dv = file.readint(cmd - _DVI_DOWN1234 + 1, 1)
+                   if self.debug:
+                       print ("%d: down%d %d v:=%d%+d=%d, vv:=" %
+                              (self.filepos,
+                               cmd - _DVI_DOWN1234 + 1,
+                               dv,
+                               self.pos[_POS_V],
+                               dv,
+                               self.pos[_POS_V]+dv))
+                   self.pos[_POS_V] += dv
                elif cmd == _DVI_Y0:
                    self.flushout()
                    self.pos[_POS_V] -= self.pos[_POS_Y]
@@ -1151,7 +1212,7 @@ class texrunner(attrlist.attrlist):
     def writefontheader(self, file, containsfonts):
         if not self.texdone:
             _default.execute(None, *self.checkmsgend)
-            self.dvifile = DVIFile("%s.dvi" % self.texfilename)
+            self.dvifile = DVIFile("%s.dvi" % self.texfilename, debug=0)
         if self not in containsfonts:
             self.dvifile.writeheader(file)
             containsfonts.append(self)
