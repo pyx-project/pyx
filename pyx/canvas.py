@@ -156,7 +156,8 @@ class _linestyle:
         self.c=c
         self.d=d
     def _PSAddCmd(self, canvas):
-        canvas._PSAddCmd("%s\n%s" % (self.c, self.d))
+        self.c._PSAddCmd(canvas)
+        self.d._PSAddCmd(canvas)
        
 class linestyle(_linestyle):
     solid      = _linestyle(linecap.butt,  dash([]))
@@ -369,7 +370,7 @@ if __name__=="__main__":
     g.plot(Data(DataFile("testdata"), x=0, y=1))
     g.run()
 
-    c.canvas(trafo=scale(0.5,0.5).rotate(20).translate("10 u mm","50 v mm")).inserteps(0,0,"ratchet_f.eps")
+#    c.canvas(trafo=scale(0.5,0.5).rotate(20).translate("10 u mm","50 v mm")).inserteps(0,0,"ratchet_f.eps")
 
     c.write("example", 21, 29.7)
 
