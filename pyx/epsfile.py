@@ -22,7 +22,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import string
-import base, bbox, prolog, unit, trafo
+import base, bbox, prolog, pykpathsea, unit, trafo
 
 # PostScript-procedure definitions (cf. 5002.EPSF_Spec_v3.0.pdf)
 # with important correction in EndEPSF:
@@ -149,24 +149,26 @@ class epsfile(base.PSCmd):
 
     def __init__(self,
                  x, y, filename,
-                 width=None, height=None, scale=None,
-                 align="bl",
-                 clip=1,
-                 translatebbox = 1,
-                 bbox = None):
+                 width=None, height=None, scale=None, align="bl",
+                 clip=1, translatebbox=1, bbox=None,
+                 kpsearch=0):
         """inserts epsfile
 
-        inserts EPS file named filename at position (x,y).  If clip is
-        set, the result gets clipped to the bbox of the EPS file. If
-        translatebbox is not set, the EPS graphics is not translated to
-        the corresponding origin. If bbox is not None, it overrides 
-        the bounding box in the epsfile itself.
-
+        Object for an EPS file named filename at position (x,y). Width, height,
+        scale and aligment can be adjusted by the corresponding parameters. If
+        clip is set, the result gets clipped to the bbox of the EPS file. If
+        translatebbox is not set, the EPS graphics is not translated to the
+        corresponding origin. If bbox is not None, it overrides the bounding
+        box in the epsfile itself. If kpsearch is set then filename is searched
+        using the kpathsea library.
         """
 
         self.x_pt = unit.topt(x)
         self.y_pt = unit.topt(y)
-        self.filename = filename
+        if kpsearch:
+            self.filename = pykpathsea.find_file(filename, pykpathsea.kpse_pict_format)
+        else:
+            self.filename = filename
         self.mybbox = bbox or _readbbox(self.filename)
 
         # determine scaling in x and y direction

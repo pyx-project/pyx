@@ -114,11 +114,12 @@ TODO:
     - fix bug that graph was not finished automatically when a bbox was specified
       manually (reported by David Barton)
   - path module:
-    - pathel -> pathitem, etc. renaming 
+    - pathel -> pathitem, etc. renaming
   - deformer module: new
     - moved cycloid and smoothed from deco into deformer
   - bbox module:
     - handle "BoundingBox: (atend)" (cf. bug #945621)
+    - kpsearch option to search for file using the kpathsea library (contributed by Michael Gruber)
 
 
 0.6.x (????/??/??):
