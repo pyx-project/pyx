@@ -72,6 +72,8 @@ TODO:
    - graph/axis module:
      - fix errorbar range adjustment
      - fix empty tick lists bug (reported by Marko Vendelin, cf. bug #977323)
+   - graph/style module:
+     - symbolline drawing order in graph key (cf. bug #990687)
 
 
 0.6.3 (2004/04/27):
