@@ -127,7 +127,7 @@
   \dimen@=0.996264009963\Gin@req@width
   \@tempdima=0.996264009963\Gin@req@height
   \special{PyX:epsinclude\space
-    file=#1\space
+    file=\Gin@base\Gin@ext\space
     llx=\Gin@llx\space
     lly=\Gin@lly\space
     urx=\Gin@urx\space
