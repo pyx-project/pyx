@@ -1,0 +1,141 @@
+body { 
+        background-color:#ffe;
+        color:#333; 
+        margin:20px;
+        padding:0px;
+        font:14px verdana,helvetica,sans-serif;
+}
+
+h1 {
+        margin:0px 0px 15px 0px;
+        padding-bottom: 3px;
+        /* padding-left: 15px; */
+        font-size:200%;
+        border-bottom: 1px solid grey;
+}
+
+h2 { 
+        font-size: 130%;
+        font-weight: bolder;
+        margin: 5px 5px 5px 0px;
+        padding: 0px;
+}
+
+h3 {
+        font-size: 120%;
+        margin: 0px 0px 5px 1em;
+        padding: 0px;
+}
+
+h4 {
+        font-size: 100%;
+        margin: 0px 0px 5px 1.5em;
+        padding: 0px;
+}
+
+table caption {
+        font-weight: bold;
+        text-align: center;
+}
+
+.content table {
+        background-color:#f3f3f3;
+        border:1px solid black;
+        width: 700px;
+        padding: 5px;
+        margin-bottom: 20px;
+}
+
+pre { 
+        margin-left: 3em;
+}
+
+address { 
+        margin-left: 3em; 
+        margin-bottom: 15px; 
+}
+
+table { 
+        margin-left: 3em 
+}
+
+
+a:link { 
+        color:#222;
+        text-decoration: None;
+}
+
+a:active { 
+        color:#222; 
+        text-decoration: None;
+}
+
+a:visited { 
+        color:#222;
+        text-decoration: None;
+}
+
+#navbar a:visited { 
+        color:#222;
+}
+
+a:hover {
+        text-decoration: underline;
+}
+
+#navbar {
+        position:fixed;
+        width:200px;
+        height:100%;
+        top:0px;
+        left:0px;
+        border-right: 1px solid black;
+        text-align:center;
+        background-color:#eed;
+}
+
+#title {
+        width:100%;
+        color:#888;
+        margin-top:15px;
+        margin-bottom:10px;
+        padding:0px;
+        font-size:28px;
+        font-weight:900;
+        text-align: center;
+}
+
+#subtitle {
+/*      margin: 0px 10px 15px 10px;*/
+        padding:0px;
+        font-style: italic;
+        text-align: right;
+}
+
+.box {
+        background-color:#c8c8f0;
+        width:140px; 
+        margin-left:20px; 
+        margin-bottom:15px;
+        border:1px dashed black;
+        font-size: 90%;
+        padding: 5px 10px 10px 10px;
+        text-align:left; 
+}
+
+#navboxtitle, #linkboxtitle {
+        margin:0px 0px 10px 0px;
+        padding: 0px;
+        font-size: 120%;
+        font-weight: bold;
+        border-bottom: 1px solid black;
+}
+
+#content {
+        position:fixed;
+        margin-left: 200px;
+        background-color:#ffe;
+        padding:10px;
+}
+
+
