@@ -268,44 +268,6 @@ class linked(regular):
                                **kwargs)
 
 
-class subaxispos:
-    """implementation of the _Iaxispos interface for a subaxis"""
-
-    def __init__(self, convert, baseaxispos, vmin, vmax, vminover, vmaxover):
-        """initializes the instance
-        - convert is the subaxis convert method
-        - baseaxispos is the axispos instance of the base axis
-        - vmin, vmax is the range covered by the subaxis in graph coordinates
-        - vminover, vmaxover is the extended range of the subaxis including
-          regions between several subaxes (for basepath drawing etc.)"""
-        self.convert = convert
-        self.baseaxispos = baseaxispos
-        self.vmin = vmin
-        self.vmax = vmax
-        self.vminover = vminover
-        self.vmaxover = vmaxover
-
-    def vbasepath(self, v1=None, v2=None):
-        if v1 is not None:
-            v1 = self.vmin+v1*(self.vmax-self.vmin)
-        else:
-            v1 = self.vminover
-        if v2 is not None:
-            v2 = self.vmin+v2*(self.vmax-self.vmin)
-        else:
-            v2 = self.vmaxover
-        return self.baseaxispos.vbasepath(v1, v2)
-
-    def vgridpath(self, v):
-        return self.baseaxispos.vgridpath(self.vmin+v*(self.vmax-self.vmin))
-
-    def vtickpoint_pt(self, v, axis=None):
-        return self.baseaxispos.vtickpoint_pt(self.vmin+v*(self.vmax-self.vmin))
-
-    def vtickdirection(self, v, axis=None):
-        return self.baseaxispos.vtickdirection(self.vmin+v*(self.vmax-self.vmin))
-
-
 class split(_title):
     """class for painting a splitaxis
     - the inherited _title is used to paint the title of
@@ -407,15 +369,11 @@ class bar(_title):
         _title.__init__(self, **args)
 
     def paint(self, canvas, data, axis, axispos):
-        if axis.multisubaxis is not None:
-            for subaxis in axis.subaxis:
-                from axis import anchoredaxis
-                anchoredsubaxis = anchoredaxis(subaxis)
-                anchoredsubaxis.setpositioner(subaxispos(subaxis.convert, axispos, subaxis.vmin, subaxis.vmax, None, None))
-                subcanvas = anchoredsubaxis.create()
-                canvas.insert(subcanvas)
-                if canvas.extent_pt < subcanvas.extent_pt:
-                    canvas.extent_pt = subcanvas.extent_pt
+        for subaxis in data.subaxes.values():
+            subaxis.create(graphtexrunner=canvas.texrunner)
+            canvas.insert(subaxis.canvas)
+            if canvas.extent_pt < subaxis.canvas.extent_pt:
+                canvas.extent_pt = subaxis.canvas.extent_pt
         namepos = []
         for name in data.names:
             v = axis.convert(data, (name, self.namepos))
@@ -443,7 +401,7 @@ class bar(_title):
         else:
             for namebox, np in zip(nameboxes, namepos):
                 namebox.linealign_pt(labeldist_pt, -np[3], -np[4])
-        if self.basepathattrs is not None:
+        if data.subaxes and self.basepathattrs is not None:
             p = axispos.vbasepath()
             if p is not None:
                 canvas.stroke(p, self.defaultbasepathattrs + self.basepathattrs)
@@ -451,29 +409,29 @@ class bar(_title):
                                            self.outerticklength is not None):
             if self.innerticklength is not None:
                 innerticklength_pt = unit.topt(self.innerticklength)
-                if canvas.extent_pt < -self.innerticklength_pt:
-                    canvas.extent_pt = -self.innerticklength_pt
-            elif self.outerticklength_pt is not None:
+                if canvas.extent_pt < -innerticklength_pt:
+                    canvas.extent_pt = -innerticklength_pt
+            elif outerticklength is not None:
                 innerticklength_pt = 0
             if self.outerticklength is not None:
                 outerticklength_pt = unit.topt(self.outerticklength)
-                if canvas.extent_pt < self.outerticklength_pt:
-                    canvas.extent_pt = self.outerticklength_pt
-            elif self.innerticklength_pt is not None:
+                if canvas.extent_pt < outerticklength_pt:
+                    canvas.extent_pt = outerticklength_pt
+            elif innerticklength_pt is not None:
                 outerticklength_pt = 0
-            for pos in axis.relsizes:
-                if pos == axis.relsizes[0]:
-                    pos -= axis.firstdist
-                elif pos != axis.relsizes[-1]:
-                    pos -= 0.5 * axis.dist
-                v = pos / axis.relsizes[-1]
-                x, y = axispos.vtickpoint_pt(v)
-                dx, dy = axispos.vtickdirection(v)
-                x1 = x + dx * innerticklength_pt
-                y1 = y + dy * innerticklength_pt
-                x2 = x - dx * outerticklength_pt
-                y2 = y - dy * outerticklength_pt
-                canvas.stroke(path.line_pt(x1, y1, x2, y2), self.defaulttickattrs + self.tickattrs)
+            #for pos in axis.relsizes:
+            #    if pos == axis.relsizes[0]:
+            #        pos -= axis.firstdist
+            #    elif pos != axis.relsizes[-1]:
+            #        pos -= 0.5 * axis.dist
+            #    v = pos / axis.relsizes[-1]
+            #    x, y = axispos.vtickpoint_pt(v)
+            #    dx, dy = axispos.vtickdirection(v)
+            #    x1 = x + dx * innerticklength_pt
+            #    y1 = y + dy * innerticklength_pt
+            #    x2 = x - dx * outerticklength_pt
+            #    y2 = y - dy * outerticklength_pt
+            #    canvas.stroke(path.line_pt(x1, y1, x2, y2), self.defaulttickattrs + self.tickattrs)
         for (v, x, y, dx, dy), namebox in zip(namepos, nameboxes):
             newextent_pt = namebox.extent_pt(dx, dy) + labeldist_pt
             if canvas.extent_pt < newextent_pt:

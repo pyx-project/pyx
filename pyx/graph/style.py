@@ -1267,9 +1267,11 @@ class barpos(_style):
                 graph.axes[sharedata.barposcolumnnames[i]].adjustaxis(data)
             else:
                 if i == privatedata.barpossubindex:
-                    graph.axes[sharedata.barposcolumnnames[i][:-4]].adjustaxis([[x[index]] + privatedata.barpossubname for x in data])
+                    graph.axes[sharedata.barposcolumnnames[i][:-4]].adjustaxis([[x] + privatedata.barpossubname + [0] for x in data])
+                    graph.axes[sharedata.barposcolumnnames[i][:-4]].adjustaxis([[x] + privatedata.barpossubname + [1] for x in data])
                 else:
-                    graph.axes[sharedata.barposcolumnnames[i][:-4]].adjustaxis(data)
+                    graph.axes[sharedata.barposcolumnnames[i][:-4]].adjustaxis([[x, 0] for x in data])
+                    graph.axes[sharedata.barposcolumnnames[i][:-4]].adjustaxis([[x, 1] for x in data])
 
     def initdrawpoints(self, privatedata, sharedata, graph):
         sharedata.vpos = [None]*(len(sharedata.barposcolumnnames))
@@ -1398,6 +1400,16 @@ class bar(_style):
         xvmax = sharedata.vbarrange[0][1]
         yvmin = sharedata.vbarrange[1][0]
         yvmax = sharedata.vbarrange[1][1]
+        try:
+            if xvmin > xvmax:
+                xvmin, xvmax = xvmax, xvmin
+        except:
+            pass
+        try:
+            if yvmin > yvmax:
+                yvmin, yvmax = yvmax, yvmin
+        except:
+            pass
         if (xvmin is not None and xvmin < 1 and
             xvmax is not None and xvmax > 0 and
             yvmin is not None and yvmin < 1 and

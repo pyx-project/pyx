@@ -15,7 +15,6 @@ TODO:
     - common bboxes for different graphs
     - 3d graphs, circular graphs
     - axis painter labelattrs=None + automatic axis partitioning leads to no valid partitioning
-    - default titles of the data should try to be valid TeX expressions (handle "_" etc.)
     - when all titles are None, a graph key currently raises an exception
     - translatecanvas should be the default in graph.style.symbol
   - graph.style and graph.data modules
@@ -107,6 +106,7 @@ TODO:
       - addontop added to stackedbarpos; TODO: documentation
       - column -> columnname renaming where appropriate; TODO: documentation
       - histogram style added; TODO documentation
+      - major cleanup of bar axes: be less implicit and introduce nestedbar for nested bar axes
     - graph data:
       - function needs explicit variable definition (implicit variable definition is deprecated); TODO: documentation
       - column names are inherited; unused columns are silently ignored now
