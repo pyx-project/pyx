@@ -5,7 +5,8 @@ from const import *
 
 class Canvas(Globex):
 
-    ExportMethods = [ "amove", "text", "textwd", "textht", "textdp" ]
+    ExportMethods = [ "amove", "aline", "rmove", "rline", 
+                      "text", "textwd", "textht", "textdp" ]
 
     BaseFilename = "example"
 
@@ -225,6 +226,7 @@ class Canvas(Globex):
 	self.PSFile.write("0 0 moveto\n")
 
     def PSEnd(self):
+    	self.PSFile.write("0 0 moveto\n")
     	self.PSFile.write("stroke\n")
 	self.PSInsertEPS(self.BaseFilename + ".tex.eps")
 	self.PSFile.close()
@@ -255,7 +257,23 @@ class Canvas(Globex):
         (self.x, self.y)=(x,y)
 	self.PSFile.write("%d %d moveto\n" % self.PScm2po(x,y))
 	
+    def aline(self,x,y):
+        isnumber(x)
+        isnumber(y)
+        (self.x, self.y)=(x,y)
+	self.PSFile.write("%d %d lineto\n" % self.PScm2po(x,y))
     
+    def rmove(self,x,y):
+        isnumber(x)
+        isnumber(y)
+        (self.x, self.y)=(self.x+x,self.y+y)
+	self.PSFile.write("%d %d rmoveto\n" % self.PScm2po(x,y))
+
+    def rline(self,x,y):
+        isnumber(x)
+        isnumber(y)
+        (self.x, self.y)=(self.x+x,self.y+y)
+	self.PSFile.write("%d %d rlineto\n" % self.PScm2po(x,y))
 
 
 def canvas():
@@ -266,7 +284,13 @@ def canvas():
 if __name__=="__main__":
     canvas()
 
+    for y in range(23):
+        amove(0,y)
+        rline(29.7,0)
 
+    for x in range(31):
+       amove(x,0)
+       rline(0,21)
 
     amove(1,1)
     print "Breite von 'Hello world!': ",textwd("Hello world!")
