@@ -756,7 +756,7 @@ class texrunner:
                 hasevent = event.isSet()
                 if not hasevent:
                     if waited < self.waitfortex:
-                        sys.stderr.write("*** PyX Info: still waiting for %s after %i seconds...\n" % (self.mode, waited))
+                        sys.stderr.write("*** PyX Info: still waiting for %s after %i (of %i) seconds...\n" % (self.mode, waited, self.waitfortex))
                     else:
                         sys.stderr.write("*** PyX Error: the timeout of %i seconds expired and %s did not respond.\n" % (waited, self.mode))
             return hasevent
@@ -1158,13 +1158,13 @@ class texrunner:
         loop = 0
         while 1:
             self.execute(pageshapes_str, [])
-            # print pageshapes_str
-            parnos_str = "\\parnos={%s 0}%%\n" % " ".join(parnos)
+            parnos_str = "}{".join(parnos)
+            if parnos_str:
+                parnos_str = "{%s}" % parnos_str
+            parnos_str = "\\parnos={%s{\\relax}}%%\n" % parnos_str
             self.execute(parnos_str, [])
-            print parnos_str
             parshapes_str = "\\parshapes={%%\n%s%%\n{\\relax}%%\n}%%\n" % "%\n".join(parshapes)
             self.execute(parshapes_str, [])
-            print parshapes_str
             self.execute("\\global\\count0=1%%\n"
                          "\\global\\parno=0%%\n"
                          "\\global\\myprevgraf=0%%\n"
@@ -1186,7 +1186,6 @@ class texrunner:
             lastpar = prevgraf = -1
             m = self.PyXVariableBoxPattern.search(self.texmessage)
             while m:
-                print m.string[m.start(): m.end()]
                 pages += 1
                 page = int(m.group("page"))
                 assert page == pages
@@ -1200,6 +1199,7 @@ class texrunner:
                     nextwidth = 72.27/72*unit.topt(pageshapes[page][0])
                 else:
                     nextwidth = 72.27/72*unit.topt(pageshapes[-1][0])
+
                 if par != lastpar:
                     # a new paragraph is to be broken
                     parnos.append(str(par))
@@ -1215,15 +1215,11 @@ class texrunner:
                     oldparshape = oldparshape.split('}')[0]
                     if len(parshape):
                         oldparshape = " " + oldparshape
-                    #print r"oldparshape:"
-                    #print oldparshape
                     parshape = " 0pt ".join(["%.5ftruept" % width for i in range(prevgraf - lastprevgraf)])
                     if len(parshape):
                         parshape = " 0pt " + parshape
                     else:
                         parshape = " "
-                    #print r"parshape:"
-                    #print parshape
                     parshapes[-1] = "{\\parshape %i%s%s 0pt %.5ftruept}" % (prevgraf + 1, oldparshape, parshape, nextwidth)
                 lastpar = par
                 lastprevgraf = prevgraf
