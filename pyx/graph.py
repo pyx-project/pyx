@@ -1588,7 +1588,13 @@ class _axis:
         else:
             dense = graph.dense
         min, max = self.gettickrange()
-        self.ticks = self.part.defaultpart(min/self.divisor, max/self.divisor, not self.fixmin, not self.fixmax)
+        if self.part is not None:
+            self.ticks = self.part.defaultpart(min/self.divisor,
+                                               max/self.divisor,
+                                               not self.fixmin,
+                                               not self.fixmax)
+        else:
+            self.ticks = []
         # lesspart and morepart can be called after defaultpart,
         # although some axes may share their autoparting ---
         # it works, because the axes are processed sequentially
@@ -1596,7 +1602,10 @@ class _axis:
         maxworse = 2
         worse = 0
         while worse < maxworse:
-            newticks = self.part.lesspart()
+            if self.part is not None:
+                newticks = self.part.lesspart()
+            else:
+                newticks = None
             if newticks is not None:
                 if first:
                     bestrate = self.rate.ratepart(self, self.ticks, dense)
@@ -1613,7 +1622,10 @@ class _axis:
                 worse += 1
         worse = 0
         while worse < maxworse:
-            newticks = self.part.morepart()
+            if self.part is not None:
+                newticks = self.part.morepart()
+            else:
+                newticks = None
             if newticks is not None:
                 if first:
                     bestrate = self.rate.ratepart(self, self.ticks, dense)
