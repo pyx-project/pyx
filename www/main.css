@@ -69,10 +69,11 @@ a:visited:hover {
         width:200px;
         height:100%;
         top:0px;
-        left:0px;
+        left:0px; 
         border-right: 1px solid #88a;
         text-align:center;
         background-color:#eed;
+        z-index:3;
 }
 
 #title {
@@ -112,7 +113,6 @@ a:visited:hover {
 }
 
 #content {
-        position:relative;
         margin-left:201px;
         background-color:#ffe;
         padding-top:0px;
