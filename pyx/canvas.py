@@ -900,7 +900,9 @@ class canvas(_canvas):
 
             if fittosize:
                 # scale output to pagesize - margins
-                margin=unit.topt(margin)
+                margin = unit.topt(margin)
+                if 2*margin > min(width, height):
+                    raise RuntimeError("Margins too broad for selected paperformat. Aborting.")
 
                 if rotated:
                     sfactor = min((height-2*margin)/(abbox.urx-abbox.llx),
