@@ -38,6 +38,9 @@ PyX
     - default_unit now has to be set via unit.set. For instance: unit.set(defaultunit="m").
     - convert_to is now internal function, which moreover does not longer accept tuples or lists
   - bbox module:
+    - new class _bbox (the former bbox) which accepts points in the constructor. This is used
+      for internal purposes.
+    - the bbox constructor now accepts user lengths in the constructor.
     - new methods height, width, top, bottom, left, right
     - ll & ur ???, what about ul and lr -> ugly!
     - enlarge (was enhance) now allows selective enlargement to the left, bottom, right and top
