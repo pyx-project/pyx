@@ -59,9 +59,35 @@ def testcurvetobbox():
 
     c.writetofile("test")
 
+def testtrafobbox():
 
-testarcbbox()    
-#testcurvetobbox()    
+    c=canvas.canvas()
+
+    sc=c.insert(canvas.canvas(trafo.translate(0,10).rotate(10)))
+
+    p=path([moveto(10,10), curveto(12,16,14,15,12,19)]);   drawpathwbbox(sc,p)
+    p=path([moveto(5,17), curveto(6,18, 5,16, 7,15)]);     drawpathwbbox(sc,p)
+
+    c.writetofile("test")
+
+def testclipbbox():
+
+    c=canvas.canvas()
+
+    p=rect(6,12,6,4)
+
+    sc=c.insert(canvas.canvas(clip=p))
+
+    p=path([moveto(10,10), curveto(12,16,14,15,12,19)]);   drawpathwbbox(sc,p)
+    p=path([moveto(5,17), curveto(6,18, 5,16, 7,15)]);     drawpathwbbox(sc,p)
+
+    c.writetofile("test")
+
+
+#testarcbbox()    
+#testcurvetobbox()
+#testtrafobbox()
+testclipbbox()
 
 #test()
 #profile.run('test()', 'test.prof')
