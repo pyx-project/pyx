@@ -47,7 +47,7 @@ class polygon_pt:
     def path(self, centerradius=None, bezierradius=None, beziersoftness=1):
         pathels = []
         if centerradius is not None and self.center is not None:
-            r = unit.topt(unit.length(centerradius, default_type="v"))
+            r = unit.topt(centerradius)
             pathels.append(path.arc_pt(self.center[0], self.center[1], r, 0, 360))
             pathels.append(path.closepath())
         if bezierradius is None:

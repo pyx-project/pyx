@@ -98,7 +98,7 @@ class distance:
         """inititializes the rater
         - opt is the optimal length (a visual PyX length)
         - weight should be positive and is a factor multiplicated to the rates"""
-        self.opt_str = opt
+        self.opt = opt
         self.weight = weight
 
     def rate(self, distances, density):
@@ -109,7 +109,7 @@ class distance:
           positive) and a value lower than one decreases the optimum (when
           it is positive); the density itself should be positive"""
         if len(distances):
-            opt = unit.topt(unit.length(self.opt_str, default_type="v")) / density
+            opt = unit.topt(self.opt) / density
             rate = 0
             for distance in distances:
                 if distance < opt:
@@ -229,7 +229,7 @@ class linear(rater):
     def __init__(self, ticks=[cube(4), cube(10, weight=0.5)],
                        labels=[cube(4)],
                        range=cube(1, weight=2),
-                       distance=distance("1 cm")):
+                       distance=distance(1*unit.v_cm)):
         rater.__init__(self, ticks, labels, range, distance)
 
 lin = linear
@@ -241,7 +241,7 @@ class logarithmic(rater):
     def __init__(self, ticks=[cube(5, right=20), cube(20, right=100, weight=0.5)],
                        labels=[cube(5, right=20), cube(5, right=20, weight=0.5)],
                        range=cube(1, weight=2),
-                       distance=distance("1 cm")):
+                       distance=distance(1*unit.v_cm)):
         rater.__init__(self, ticks, labels, range, distance)
 
 log = logarithmic

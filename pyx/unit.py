@@ -114,16 +114,16 @@ class length:
             self.length = l.length
         elif helper.isnumber(l):
             self.length[default_type] = l*_m[dunit or _default_unit]
-        elif helper.isstring(l):
-            unit_match = re.match(unit_pattern, l)
-            if unit_match is None:
-                raise ValueError("expecting number or string of the form 'number [u|v|w|x] unit'")
-            else:
-                self.prefactor = float(unit_match.group(1))
-                self.unit_type = unit_match.group(7) or default_type
-                self.unit_name = unit_match.group(9) or dunit or _default_unit
+        # elif helper.isstring(l):
+        #     unit_match = re.match(unit_pattern, l)
+        #     if unit_match is None:
+        #         raise ValueError("expecting number or string of the form 'number [u|v|w|x] unit'")
+        #     else:
+        #         self.prefactor = float(unit_match.group(1))
+        #         self.unit_type = unit_match.group(7) or default_type
+        #         self.unit_name = unit_match.group(9) or dunit or _default_unit
 
-                self.length[self.unit_type] = self.prefactor*_m[self.unit_name]
+        #         self.length[self.unit_type] = self.prefactor*_m[self.unit_name]
         else:
             raise NotImplementedError("cannot convert given argument to length type")
 
@@ -185,37 +185,37 @@ class length:
 ################################################################################
 
 # user lengths and unqualified length which are also user length
-u_pt = pt = length("1 u pt")
-u_m = m = length("1 u m")
-u_mm = mm = length("1 u mm")
-u_cm = cm = length("1 u cm")
-u_inch = inch = length("1 u inch")
+u_pt = pt = length(1, "u", "pt")
+u_m = m = length(1, "u", "m")
+u_mm = mm = length(1, "u", "mm")
+u_cm = cm = length(1, "u", "cm")
+u_inch = inch = length(1, "u", "inch")
 
 # true lengths
-t_pt = length("1 t pt")
-t_m = length("1 t m")
-t_mm = length("1 t mm")
-t_cm = length("1 t cm")
-t_inch = length("1 t inch")
+t_pt = length(1, "t", "pt")
+t_m = length(1, "t", "m")
+t_mm = length(1, "t", "mm")
+t_cm = length(1, "t", "cm")
+t_inch = length(1, "t", "inch")
 
 # visual lengths
-v_pt = length("1 v pt")
-v_m = length("1 v m")
-v_mm = length("1 v mm")
-v_cm = length("1 v cm")
-v_inch = length("1 v inch")
+v_pt = length(1, "v", "pt")
+v_m = length(1, "v", "m")
+v_mm = length(1, "v", "mm")
+v_cm = length(1, "v", "cm")
+v_inch = length(1, "v", "inch")
 
 
 # width lengths
-w_pt = length("1 w pt")
-w_m = length("1 w m")
-w_mm = length("1 w mm")
-w_cm = length("1 w cm")
-w_inch = length("1 w inch")
+w_pt = length(1, "w", "pt")
+w_m = length(1, "w", "m")
+w_mm = length(1, "w", "mm")
+w_cm = length(1, "w", "cm")
+w_inch = length(1, "w", "inch")
 
 # TeX lengths
-x_pt = length("1 x pt")
-x_m = length("1 x m")
-x_mm = length("1 x mm")
-x_cm = length("1 x cm")
-x_inch = length("1 x inch")
+x_pt = length(1, "x", "pt")
+x_m = length(1, "x", "m")
+x_mm = length(1, "x", "mm")
+x_cm = length(1, "x", "cm")
+x_inch = length(1, "x", "inch")

@@ -30,18 +30,18 @@ class key:
 
     defaulttextattrs = [text.vshift.mathaxis]
 
-    def __init__(self, dist="0.2 cm", pos="tr", hinside=1, vinside=1, hdist="0.6 cm", vdist="0.4 cm",
-                 symbolwidth="0.5 cm", symbolheight="0.25 cm", symbolspace="0.2 cm",
+    def __init__(self, dist=0.2*unit.v_cm, pos="tr", hinside=1, vinside=1, hdist=0.6*unit.v_cm, vdist=0.4*unit.v_cm,
+                 symbolwidth=0.5*unit.v_cm, symbolheight=0.25*unit.v_cm, symbolspace=0.2*unit.v_cm,
                  textattrs=[]):
-        self.dist_str = dist
+        self.dist = dist
         self.pos = pos
         self.hinside = hinside
         self.vinside = vinside
-        self.hdist_str = hdist
-        self.vdist_str = vdist
-        self.symbolwidth_str = symbolwidth
-        self.symbolheight_str = symbolheight
-        self.symbolspace_str = symbolspace
+        self.hdist = hdist
+        self.vdist = vdist
+        self.symbolwidth = symbolwidth
+        self.symbolheight = symbolheight
+        self.symbolspace = symbolspace
         self.textattrs = textattrs
         if self.pos in ("tr", "rt"):
             self.right = 1
@@ -62,12 +62,12 @@ class key:
         "creates the layout of the key"
         plotdata = [plotdat for plotdat in plotdata if plotdat.title is not None]
         c = canvas.canvas()
-        self.dist_pt = unit.topt(unit.length(self.dist_str, default_type="v"))
-        self.hdist_pt = unit.topt(unit.length(self.hdist_str, default_type="v"))
-        self.vdist_pt = unit.topt(unit.length(self.vdist_str, default_type="v"))
-        self.symbolwidth_pt = unit.topt(unit.length(self.symbolwidth_str, default_type="v"))
-        self.symbolheight_pt = unit.topt(unit.length(self.symbolheight_str, default_type="v"))
-        self.symbolspace_pt = unit.topt(unit.length(self.symbolspace_str, default_type="v"))
+        self.dist_pt = unit.topt(self.dist)
+        self.hdist_pt = unit.topt(self.hdist)
+        self.vdist_pt = unit.topt(self.vdist)
+        self.symbolwidth_pt = unit.topt(self.symbolwidth)
+        self.symbolheight_pt = unit.topt(self.symbolheight)
+        self.symbolspace_pt = unit.topt(self.symbolspace)
         for plotdat in plotdata:
             plotdat.temp_titlebox = c.texrunner.text_pt(0, 0, plotdat.title, self.defaulttextattrs + self.textattrs)
         box.tile_pt([plotdat.temp_titlebox for plotdat in plotdata], self.dist_pt, 0, -1)

@@ -298,17 +298,17 @@ class symbol(_style):
     defaultsymbolattrs = [deco.stroked]
 
     def __init__(self, symbol=changecross,
-                       size="0.2 cm",
+                       size=0.2*unit.v_cm,
                        symbolattrs=[],
                        epsilon=1e-10):
-        self.size_str = size
         self.symbol = symbol
+        self.size = size
         self.symbolattrs = symbolattrs
         self.epsilon = epsilon
 
     def selectstyle(self, selectindex, selecttotal, styledata):
         styledata.symbol = attr.selectattr(self.symbol, selectindex, selecttotal)
-        styledata.size_pt = unit.topt(unit.length(attr.selectattr(self.size_str, selectindex, selecttotal), default_type="v"))
+        styledata.size_pt = unit.topt(attr.selectattr(self.size, selectindex, selecttotal))
         if self.symbolattrs is not None:
             styledata.symbolattrs = attr.selectattrs(self.defaultsymbolattrs + self.symbolattrs, selectindex, selecttotal)
         else:
@@ -349,7 +349,6 @@ class line(_style):
         styledata.path = path.path()
         styledata.linebasepoints = []
         styledata.lastvpos = None
-        styledata.errorlist = []
 
     def appendlinebasepoints(self, graph, styledata):
         # append linebasepoints
@@ -491,15 +490,15 @@ class errorbars(_style):
 
     defaulterrorbarattrs = []
 
-    def __init__(self, size="0.1 cm",
+    def __init__(self, size=0.1*unit.v_cm,
                        errorbarattrs=[],
                        epsilon=1e-10):
-        self.size_str = size
+        self.size = size
         self.errorbarattrs = errorbarattrs
         self.epsilon = epsilon
 
     def selectstyle(self, selectindex, selecttotal, styledata):
-        styledata.errorsize_pt = unit.topt(unit.length(attr.selectattr(self.size_str, selectindex, selecttotal), default_type="v"))
+        styledata.errorsize_pt = unit.topt(attr.selectattr(self.size, selectindex, selecttotal))
         styledata.errorbarattrs = attr.selectattrs(self.defaulterrorbarattrs + self.errorbarattrs, selectindex, selecttotal)
 
     def initdrawpoints(self, graph, styledata):
@@ -535,9 +534,9 @@ class text(symbol):
 
     defaulttextattrs = [textmodule.halign.center, textmodule.vshift.mathaxis]
 
-    def __init__(self, textdx="0", textdy="0.3 cm", textattrs=[], **kwargs):
-        self.textdx_str = textdx
-        self.textdy_str = textdy
+    def __init__(self, textdx=0*unit.v_cm, textdy=0.3*unit.v_cm, textattrs=[], **kwargs):
+        self.textdx = textdx
+        self.textdy = textdy
         self.textattrs = textattrs
         symbol.__init__(self, **kwargs)
 
@@ -560,10 +559,8 @@ class text(symbol):
             c.text_pt(x + styledata.textdx_pt, y + styledata.textdy_pt, str(point[styledata.textindex]), styledata.textattrs)
 
     def drawpoints(self, points, graph, styledata):
-        styledata.textdx = unit.length(self.textdx_str, default_type="v")
-        styledata.textdy = unit.length(self.textdy_str, default_type="v")
-        styledata.textdx_pt = unit.topt(styledata.textdx)
-        styledata.textdy_pt = unit.topt(styledata.textdy)
+        styledata.textdx_pt = unit.topt(self.textdx)
+        styledata.textdy_pt = unit.topt(self.textdy)
         symbol.drawpoints(self, points, graph, styledata)
 
 
@@ -572,9 +569,9 @@ class arrow(_style):
     defaultlineattrs = []
     defaultarrowattrs = []
 
-    def __init__(self, linelength="0.25 cm", arrowsize="0.15 cm", lineattrs=[], arrowattrs=[], epsilon=1e-10):
-        self.linelength_str = linelength
-        self.arrowsize_str = arrowsize
+    def __init__(self, linelength=0.25*unit.v_cm, arrowsize=0.15*unit.v_cm, lineattrs=[], arrowattrs=[], epsilon=1e-10):
+        self.linelength = linelength
+        self.arrowsize = arrowsize
         self.lineattrs = lineattrs
         self.arrowattrs = arrowattrs
         self.epsilon = epsilon
@@ -609,10 +606,7 @@ class arrow(_style):
 
     def drawpoints(self, points, graph, styledata):
         if styledata.lineattrs is not None and styledata.arrowattrs is not None:
-            arrowsize = unit.length(self.arrowsize_str, default_type="v")
-            linelength = unit.length(self.linelength_str, default_type="v")
-            arrowsize_pt = unit.topt(arrowsize)
-            linelength_pt = unit.topt(linelength)
+            linelength_pt = unit.topt(self.linelength)
             for point in points:
                 xpos, ypos = graph.pos_pt(point[styledata.xindex], point[styledata.yindex], xaxis=styledata.xaxis, yaxis=styledata.yaxis)
                 if point[styledata.sizeindex] > self.epsilon:
@@ -623,7 +617,7 @@ class arrow(_style):
                     x2 = xpos+0.5*dx*linelength_pt*point[styledata.sizeindex]
                     y2 = ypos+0.5*dy*linelength_pt*point[styledata.sizeindex]
                     graph.stroke(path.line_pt(x1, y1, x2, y2), styledata.lineattrs +
-                                 [deco.earrow(styledata.arrowattrs, size=arrowsize*point[styledata.sizeindex])])
+                                 [deco.earrow(styledata.arrowattrs, size=self.arrowsize*point[styledata.sizeindex])])
 
 
 class rect(_style):

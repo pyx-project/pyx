@@ -380,7 +380,7 @@ class arrow(deco, attr.attr):
         self.attrs = attr.mergeattrs([style.linestyle.solid, filled] + attrs)
         attr.checkattrs(self.attrs, [deco, style.fillstyle, style.strokestyle])
         self.position = position
-        self.size = unit.length(size, default_type="v")
+        self.size = size
         self.angle = angle
         self.constriction = constriction
 
@@ -475,10 +475,10 @@ class cycloid(deco, attr.attr):
     The outcome looks like a metal spring with the originalpath as the axis.
     """
 
-    def __init__(self, radius=0.5, loops=10, skipfirst=1, skiplast=1, curvesperloop=2, left=1):
-        self.skipfirst = unit.length(skipfirst, default_type="v")
-        self.skiplast = unit.length(skiplast, default_type="v")
-        self.radius = unit.length(radius, default_type="v")
+    def __init__(self, radius=0.5*unit.t_cm, loops=10, skipfirst=1*unit.t_cm, skiplast=1*unit.t_cm, curvesperloop=2, left=1):
+        self.skipfirst = skipfirst
+        self.skiplast = skiplast
+        self.radius = radius
         self.halfloops = 2 * int(loops) + 1
         self.curvesperhloop = int(0.5 * curvesperloop)
         self.sign = left and 1 or -1

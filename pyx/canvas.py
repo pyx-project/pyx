@@ -319,7 +319,7 @@ class pattern(_canvas, attr.exclusiveattr, style.fillstyle):
             raise ValueError("xstep in pattern cannot be zero")
         if not ystep:
             raise ValueError("ystep in pattern cannot be zero")
-        patternbbox = self.patternbbox or realpatternbbox.enlarged("5 pt")
+        patternbbox = self.patternbbox or realpatternbbox.enlarged(5*unit.pt)
 
         patternprefix = "\n".join(("<<",
                                    "/PatternType 1",

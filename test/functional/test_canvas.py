@@ -5,8 +5,8 @@ from pyx import *
 
 c = canvas.canvas()
 
-p = ( path.line("10 pt", "10 pt", "40 pt", "40 pt") +
-      path.line("10 pt", "40 pt", "40 pt", "10 pt") )
+p = ( path.line(10*unit.u_pt, 10*unit.u_pt, 40*unit.u_pt, 40*unit.u_pt) +
+      path.line(10*unit.u_pt, 40*unit.u_pt, 40*unit.u_pt, 10*unit.u_pt) )
 
 t1 = trafo.rotate(20)
 t2 = trafo.translate(5,0)

@@ -37,8 +37,6 @@ TODO:
     - support modification of existing styles via __call__
   - bbox module:
     - height -> getheight, ...
-  - unit module:
-    - maybe we should never convert implicitly into visual/width, etc. lengths
   - mathtree:
     - might be moved into the graph
     - perform calc by means of Python itself (see eval code in graph.data, but
@@ -56,6 +54,8 @@ TODO:
       might be a misdesign; a solution is still pending ...
   - color module:
     - what should we do for palette when only one entry
+  - connector module:
+    - is the early conversion with unit.topt unit-modification-save?
 
   Documentation:
     - path module:
@@ -91,6 +91,10 @@ TODO:
   - unit module:
     - unit.cm, unit.t_cm, etc. are no longer sub classes but instances
       of length
+    - never convert implicitly into visual/width, etc. lengths (this is more
+      about usage of the unit module in various other modules)
+    - support for string initialization commented out, so its currently still
+      easy to turn it on again (TODO: documentation)
   - canvas module:
     - added new classes page and document for multipage PostScript output
   - style module: 

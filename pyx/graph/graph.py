@@ -258,7 +258,6 @@ class graphxy(canvas.canvas):
                 data.adjustaxes(self, step)
 
         # finish all axes
-        axesdist = unit.length(self.axesdist_str, default_type="v")
         XPattern = re.compile(r"%s([2-9]|[1-9][0-9]+)?$" % self.axisnames[0])
         YPattern = re.compile(r"%s([2-9]|[1-9][0-9]+)?$" % self.axisnames[1])
         xaxisextents = [0, 0]
@@ -274,7 +273,7 @@ class graphxy(canvas.canvas):
             num3 = 2 * (num % 2) - 1 # x1 -> 1, x2 -> -1, x3 -> 1, x4 -> -1, ...
             if XPattern.match(key):
                 if needxaxisdist[num2]:
-                    xaxisextents[num2] += axesdist
+                    xaxisextents[num2] += self.axesdist
                 self.axespos[key] = lineaxisposlinegrid(self.axes[key].convert,
                                                         self.xpos,
                                                         self.ypos + num2*self.height - num3*xaxisextents[num2],
@@ -295,7 +294,7 @@ class graphxy(canvas.canvas):
                     self.xvtickdirection = self.axespos[key].vtickdirection
             elif YPattern.match(key):
                 if needyaxisdist[num2]:
-                    yaxisextents[num2] += axesdist
+                    yaxisextents[num2] += self.axesdist
                 self.axespos[key] = lineaxisposlinegrid(self.axes[key].convert,
                                                         self.xpos + num2*self.width - num3*yaxisextents[num2],
                                                         self.ypos,
@@ -405,7 +404,7 @@ class graphxy(canvas.canvas):
         self.axes = axes
 
     def __init__(self, xpos=0, ypos=0, width=None, height=None, ratio=goldenmean,
-                 key=None, backgroundattrs=None, axesdist="0.8 cm", **axes):
+                 key=None, backgroundattrs=None, axesdist=0.8*unit.v_cm, **axes):
         canvas.canvas.__init__(self)
         self.xpos = unit.length(xpos)
         self.ypos = unit.length(ypos)
@@ -417,7 +416,7 @@ class graphxy(canvas.canvas):
         self.axespos = {}
         self.key = key
         self.backgroundattrs = backgroundattrs
-        self.axesdist_str = axesdist
+        self.axesdist = axesdist
         self.plotdata = []
         self.domethods = [self.dolayout, self.dobackground, self.doaxes, self.dodata, self.dokey]
         self.haslayout = 0
@@ -591,7 +590,7 @@ class graphxy(canvas.canvas):
 #     def doaxes(self):
 #         self.dolayout()
 #         if not self.removedomethod(self.doaxes): return
-#         axesdist = unit.topt(unit.length(self.axesdist_str, default_type="v"))
+#         axesdist_pt = unit.topt(self.axesdist)
 #         XPattern = re.compile(r"%s([2-9]|[1-9][0-9]+)?$" % self.axisnames[0])
 #         YPattern = re.compile(r"%s([2-9]|[1-9][0-9]+)?$" % self.axisnames[1])
 #         ZPattern = re.compile(r"%s([2-9]|[1-9][0-9]+)?$" % self.axisnames[2])
@@ -635,7 +634,7 @@ class graphxy(canvas.canvas):
 # 
 #     def __init__(self, tex, xpos=0, ypos=0, width=None, height=None, depth=None,
 #                  phi=30, theta=30, distance=1,
-#                  backgroundattrs=None, axesdist="0.8 cm", **axes):
+#                  backgroundattrs=None, axesdist=0.8*unit.v_cm, **axes):
 #         canvas.canvas.__init__(self)
 #         self.tex = tex
 #         self.xpos = xpos
@@ -664,7 +663,7 @@ class graphxy(canvas.canvas):
 #                     self._distance*math.sin(phi)*math.cos(theta),
 #                     self._distance*math.sin(theta))
 #         self.initaxes(axes)
-#         self.axesdist_str = axesdist
+#         self.axesdist = axesdist
 #         self.backgroundattrs = backgroundattrs
 # 
 #         self.data = []
