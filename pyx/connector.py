@@ -69,7 +69,7 @@ class _line(_connector):
 
 class _arc(_connector):
 
-    def __init__(self, box1, box2, angle=45,
+    def __init__(self, box1, box2, relangle=45,
                  absbulge=None, relbulge=None, boxdists=[0,0]):
 
         self.box1 = box1
@@ -79,9 +79,9 @@ class _arc(_connector):
                self.box2.center[1] - self.box1.center[1]]
         distance = hypot(*rel)
 
-        # usage of bulge overrides the angle parameter
+        # usage of bulge overrides the relangle parameter
         if relbulge is not None or absbulge is not None:
-            angle = None
+            relangle = None
             bulge = 0
             try: bulge += absbulge
             except: pass
@@ -93,12 +93,12 @@ class _arc(_connector):
             radius = min(radius, 10 * distance)
             center = 2.0*(radius-abs(bulge))/distance
             center *= 2*(bulge>0.0)-1
-        # otherwise use angle
+        # otherwise use relangle
         else:
             bulge=None
-            try: radius = 0.5 * distance / abs(cos(0.5*math.pi - _torad(angle)))
+            try: radius = 0.5 * distance / abs(cos(0.5*math.pi - _torad(relangle)))
             except: radius = 10 * distance
-            try: center = tan(0.5*math.pi - _torad(angle))
+            try: center = tan(0.5*math.pi - _torad(relangle))
             except: center = 0
 
         # up to here center is only
@@ -109,8 +109,8 @@ class _arc(_connector):
         angle2 = atan2(*[self.box2.center[i] - center[i]  for i in [1,0]])
 
         # draw the arc in positive direction by default
-        # negative direction if angle<0 or bulge<0
-        if (angle is not None and angle < 0) or (bulge is not None and bulge < 0):
+        # negative direction if relangle<0 or bulge<0
+        if (relangle is not None and relangle < 0) or (bulge is not None and bulge < 0):
             _connector.__init__(self,
                 path._moveto(*self.box1.center),
                 path._arcn(center[0], center[1], radius, _todeg(angle1), _todeg(angle2)))
@@ -306,13 +306,13 @@ class arc(_arc):
          or a bulge parameter in (-distance, distance)
            (relbulge and absbulge are added)"""
 
-    def __init__(self, box1, box2, angle=45,
+    def __init__(self, box1, box2, relangle=45,
                  absbulge=None, relbulge=None, boxdists=[0,0]):
 
         boxdists_pt = [_topt(helper.getitemno(boxdists,i), default_type="v") for i in [0,1]]
 
         _arc.__init__(self, box1, box2,
-                      angle=angle,
+                      relangle=relangle,
                       absbulge=_topt(absbulge), relbulge=relbulge,
                       boxdists=boxdists_pt)
 
