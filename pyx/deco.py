@@ -249,7 +249,7 @@ def _arrowhead(anormpath, size, angle, constriction):
 
     # now we construct the template for our arrow but cutting
     # the path a the corresponding length
-    arrowtemplate = anormpath.split(alen)[0]
+    arrowtemplate = anormpath.split([alen])[0]
 
     # from this template, we construct the two outer curves
     # of the arrow
@@ -316,7 +316,7 @@ class arrow(deco):
         ilen = ilen*math.cos(math.pi*self.angle/360.0)
 
         # this is the rest of the path, we have to draw
-        anormpath = anormpath.split(ilen)[1]
+        anormpath = anormpath.split([ilen])[1]
 
         # go back to original orientation, if necessary
         if self.position:
