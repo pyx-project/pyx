@@ -110,17 +110,19 @@ class decoratedpath(canvas.canvasitem):
         else:
             return pathbbox
 
-    def registerresources(self, registry):
+    def resources(self):
+        resources = []
         if self.styles:
             for style in self.styles: 
-                style.registerresources(registry)
+                resources.extend(style.resources())
         if self.fillstyles:
             for style in self.fillstyles: 
-                style.registerresources(registry)
+                resources.extend(style.resources())
         if self.strokestyles:
             for style in self.strokestyles: 
-                style.registerresources(registry)
-        self.ornaments.registerresources(registry)
+                resources.extend(style.resources())
+        resources.extend(self.ornaments.resources())
+        return resources
 
     def strokepath(self):
         if self.nostrokeranges:

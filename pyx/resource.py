@@ -28,86 +28,54 @@ needed by canvasitems and a resource registry class.
 
 """
 
+import pswriter
+
 class _resource:
 
-    """ a generic resource as needed by some canvas item """
+    """ a resource needed by a canvasitem """
 
-    def __init__(self, type, id):
-        self.type = type
+    def __init__(self, id):
         self.id = id
 
-    def merge(self, other):
-        """ merge other to self by modifying self
+    def PSregister(self, registry):
+        """ return a list of PS resources corresponding to the resource """
+        return []
 
-        since type and id of other are identical to self, we usually
-        do not need to modify self at all"""
-        pass
 
+#
+# various standard resources
+#
 
 class definition(_resource):
 
-    """ a definition """
+    """ function definition """
 
     def __init__(self, id, body):
-        _resource.__init__(self, "definition", id)
+        self.id = id
         self.body = body
 
-
-class type1font(_resource):
-
-    """ a type1 font (*.pfb file) """
-
-    def __init__(self, id, fontfile, usedchars, encodingfile):
-        _resource.__init__(self, "type1font", id)
-        self.fontfile = fontfile
-        self.usedchars = usedchars
-        self.encodingfile = encodingfile
-
-    def merge(self, other):
-        # TODO: As far as I understand, the following is a totally unnecessary
-        # restriction. We should, in the future, translate "usedchars" to glyph
-        # names and merge those. The font stripping should work on the glyph
-        # names. A type1font should not even know which reencoding are applied
-        # to it later on. And it should be possible to reencode a font with
-        # different encodings. However, for the moment it works ...
-        assert self.encodingfile == other.encodingfile, "different encoding not supported"
-        for i in range(len(self.usedchars)):
-            self.usedchars[i] = self.usedchars[i] or other.usedchars[i]
+    def PSregister(self, registry):
+        pswriter.PSdefinition(self.id, self.body).register(registry)
 
 
-class fontencoding(_resource):
+class font(_resource):
 
-    """ a encoding vector (*.enc file) """
+    """ font definition """
 
-    def __init__(self, id, encoding, encodingfile):
-        _resource.__init__(self, "encoding", id)
-        self.encoding = encoding
-        self.encodingfile = encodingfile
+    def __init__(self, font):
+        """ include Type 1 font defined by the following parameters """
+        # XXX passing the font instance is probably not so nice
+        self.id = self.fontname = font.getpsname()
+        self.basepsname = font.getbasepsname()
+        self.fontfile = font.getfontfile()
+        self.encodingfile = font.getencodingfile()
+        self.encoding = font.getencoding()
+        self.usedchars = font.usedchars
 
-
-class fontreencoding(_resource):
-
-    """ a reencoded font """
-
-    def __init__(self, id, psname, basepsname, encoding):
-        _resource.__init__(self, "reencoding", id)
-        self.psname = psname
-        self.basepsname = basepsname
-        self.encoding = encoding
-
-
-class resourceregistry:
-
-    """ storage class for resources """
-
-    def __init__(self):
-        self.resources = {}
-
-    def registerresource(self, resource):
-        """registers resource and merge it with possibly already existing ones"""
-        resourcesoftype = self.resources.setdefault(resource.type, {})
-        if resourcesoftype.has_key(resource.id):
-             resourcesoftype[resource.id].merge(resource)
-        else:
-             resourcesoftype[resource.id] = resource
-
+    def PSregister(self, registry):
+        if self.fontfile:
+            pswriter.PSfontfile(self.basepsname, self.fontfile, self.encodingfile, self.usedchars).register(registry)
+        if self.encoding:
+            pswriter._ReEncodeFont.register(registry)
+            pswriter.PSfontencoding(self.encoding, self.encodingfile).register(registry)
+            pswriter.PSfontreencoding(self.fontname, self.basepsname, self.encoding).register(registry)

@@ -22,7 +22,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import copy, warnings
-import pykpathsea, unit, style
+import pykpathsea, unit, resource, style
 from t1strip import fullfont
 try:
     import zlib
@@ -154,6 +154,7 @@ class PDFcontentlength(PDFobject):
 
 
 class PDFfont(PDFobject):
+
     def __init__(self, writer, refno, font):
         PDFobject.__init__(self, writer, refno)
         self.font = font
@@ -175,6 +176,7 @@ class PDFfont(PDFobject):
                             self.fontwidths.refno, self.fontdescriptor.refno))
 
 class PDFfontwidths(PDFobject):
+
     def __init__(self, writer, refno, font):
         PDFobject.__init__(self, writer, refno)
         self.font = font
@@ -282,6 +284,14 @@ class PDFwriter:
 
         self.file.write("%%PDF-1.4\n%%%s%s%s%s\n" % (chr(195), chr(182), chr(195), chr(169)))
 
+        # insert resource objects
+        registry = resource.resourceregistry()
+        for page in document.pages:
+            page.canvas.registerresources(registry)
+        for aresource in registry.resources.values():
+            for PDFprologitem in aresource.PDFprolog():
+                PDFprologitem.outputPDF(file)
+
         # the PDFcatalog class automatically builds up the pdfobjects from a document
         catalog = self.addobject(PDFcatalog, document)
 
@@ -296,7 +306,8 @@ class PDFwriter:
         self.file.write("xref\n"
                         "0 %d\n"
                         "0000000000 65535 f \n" % (len(self.pdfobjects)+1))
-        for pdfobject in self.pdfobjects:
+        for refno, pdfobject in enumerate(self.pdfobjects):
+            assert pdfobject.refno == refno+1
             self.file.write("%010i 00000 n \n" % pdfobject.filepos)
 
         # trailer
@@ -321,37 +332,28 @@ class PDFwriter:
         pdfobject = pdfobjectclass(self, self.pdfobjectcount, *args, **kwargs)
         self.pdfobjects.append(pdfobject)
         return pdfobject
-#         # During the creating of object other objects may already have been added.
-#         # We have to make sure that we add the object at the right place in the
-#         # object list:
-#         i = len(self.pdfobjects)
-#         while i > 0 and self.pdfobjects[i-1].refno > pdfobject.refno:
-#             i -= 1
-#         self.pdfobjects.insert(i, pdfobject)
-#         return pdfobject
 
-
-    def page(self, abbox, canvas, mergedprolog, ctrafo):
-        # insert resources
-        for pritem in mergedprolog:
-            if isinstance(pritem, prolog.fontdefinition):
-                if pritem.filename:
-                    pass
-                    # fontfile
-
-        # resources
-        self.beginobj(PDFresources % self.pages)
-        self.write("<<\n")
-        if len([pritem for pritem in mergedprolog if isinstance(pritem, prolog.fontdefinition)]):
-            self.write("/Font\n"
-                       "<<\n")
-            for pritem in mergedprolog:
-                if isinstance(pritem, prolog.fontdefinition):
-                    self.write("/%s %d 0 R\n" % (pritem.font.getpsname(),
-                                                 self.refdict[PDFfont % pritem.font.getpsname()]))
-            self.write(">>\n")
-        self.write(">>\n")
-        self.endobj()
+#     def page(self, abbox, canvas, mergedprolog, ctrafo):
+#         # insert resources
+#         for pritem in mergedprolog:
+#             if isinstance(pritem, prolog.fontdefinition):
+#                 if pritem.filename:
+#                     pass
+#                     # fontfile
+# 
+#         # resources
+#         self.beginobj(PDFresources % self.pages)
+#         self.write("<<\n")
+#         if len([pritem for pritem in mergedprolog if isinstance(pritem, prolog.fontdefinition)]):
+#             self.write("/Font\n"
+#                        "<<\n")
+#             for pritem in mergedprolog:
+#                 if isinstance(pritem, prolog.fontdefinition):
+#                     self.write("/%s %d 0 R\n" % (pritem.font.getpsname(),
+#                                                  self.refdict[PDFfont % pritem.font.getpsname()]))
+#             self.write(">>\n")
+#         self.write(">>\n")
+#         self.endobj()
 
 
 # some ideas...
@@ -361,6 +363,7 @@ class context:
     def __init__(self):
         self.colorspace = None
         self.linewidth = None
+
 
 class contextstack:
 

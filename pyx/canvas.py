@@ -45,9 +45,9 @@ class canvasitem:
         """write PDF code corresponding to canvasitem to file"""
         pass
 
-    def registerresources(self, registry):
-        """register needed resources in resource registry"""
-        pass 
+    def resources(self):
+        """return a list of resources needed by canvas items"""
+        return []
 
     def bbox(self):
         """return bounding box of canvasitem or None"""
@@ -157,9 +157,11 @@ class _canvas(canvasitem):
         else:
             return self.clipbbox
 
-    def registerresources(self, registry):
+    def resources(self):
+        resources = []
         for item in self.items:
-            item.registerresources(registry)
+            resources.extend(item.resources())
+        return resources
 
     def outputPS(self, file):
         if self.items:
@@ -304,8 +306,8 @@ class pattern(_canvas, attr.exclusiveattr, style.fillstyle):
     def outputPS(self, file):
         file.write("%s setpattern\n" % self.id)
 
-    def registerresources(self, registry):
-        _canvas.registerresources(self, registry)
+    def resources(self):
+        resources = _canvas.resources(self, registry)
         realpatternbbox = _canvas.bbox(self)
         if self.xstep is None:
            xstep = unit.topt(realpatternbbox.width())
@@ -336,7 +338,8 @@ class pattern(_canvas, attr.exclusiveattr, style.fillstyle):
         patterntrafostring = self.patterntrafo is None and "matrix" or str(self.patterntrafo)
         patternsuffix = "end\n} bind\n>>\n%s\nmakepattern" % patterntrafostring
 
-        registry.registerresource(resource.definition(self.id, "".join((patternprefix, patternproc, patternsuffix))))
+        resources.append(resource.definition(self.id, "".join((patternprefix, patternproc, patternsuffix))))
+        return resources
 
 pattern.clear = attr.clearclass(pattern)
 

@@ -61,6 +61,13 @@ t = c.text(0, 11, r"scale test", [color.rgb.green])
 unit.set(xscale=1)
 t = c.text(0, 11, r"scale test", [color.rgb.red])
 
+# test font stripping (proper usedchar selection)
+c.text(0, 12, r"usechar test (``fl'' should be typed):")
+myrunner = text.texrunner(fontmaps="download35.map")
+# myrunner.preamble(r"\font\pyxfont=phvr8t\pyxfont") % currently does *not* work!
+myrunner.preamble(r"\font\pyxfont=ptmr8t\pyxfont")
+c.insert(myrunner.text(5.5, 12, r"\char'035"))
+
 # test the specials
 c.stroke(c.text(10, 2, r"Hello, \color{green}world!", [trafo.slant(1)]).path())
 c.stroke(c.text(10, 0, r"\begin{rotate}{90}\parbox{5cm}{rotated\\ in \LaTeX}\end{rotate}"))

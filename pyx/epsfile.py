@@ -231,9 +231,8 @@ class epsfile(canvas.canvasitem):
     def bbox(self):
         return self.mybbox.transformed(self.trafo)
 
-    def registerresources(self, registry):
-        registry.registerresource(_BeginEPSF)
-        registry.registerresource(_EndEPSF)
+    def resources(self):
+        return [_BeginEPSF, _EndEPSF]
 
     def outputPS(self, file):
         try:

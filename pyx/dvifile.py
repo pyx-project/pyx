@@ -387,20 +387,18 @@ class selectfont(canvas.canvasitem):
         # name, size, encoding, usedchars of the font
         self.font = font
         self.size = font.getsize_pt()
-        self.psname = font.getpsname()
+        self.fontid = None
 
-    def registerresources(self, registry):
-        if self.font.getfontfile():
-            registry.registerresource(resource.type1font(self.font.getfontfile(), self.font.getfontfile(), self.font.usedchars, self.font.getencodingfile()))
-        if self.font.getencoding():
-            registry.registerresource(resource.fontencoding(self.font.getencodingfile(), self.font.getencoding(), self.font.getencodingfile()))
-            registry.registerresource(resource.fontreencoding(self.psname, self.psname, self.font.getbasepsname(), self.font.getencoding()))
+    def resources(self):
+        fontresource = resource.font(self.font)
+        self.fontid = fontresource.id
+        return [fontresource]
 
     def outputPS(self, file):
-        file.write("/%s %f selectfont\n" % (self.psname, self.size))
+        file.write("/%s %f selectfont\n" % (self.fontid, self.size))
 
     def outputPDF(self, file):
-        file.write("/%s %f Tf\n" % (self.psname, self.size))
+        file.write("/%s %f Tf\n" % (self.fontid, self.size))
 
 
 class _show(canvas.canvasitem):

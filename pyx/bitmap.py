@@ -299,9 +299,8 @@ class bitmap(canvas.canvasitem):
         return bbox.bbox_pt(self.xpos_pt, self.ypos_pt,
                             self.xpos_pt+self.width_pt, self.ypos_pt+self.height_pt)
 
-    def registerresources(self, registry):
-        for resource in self.resources:
-            registry.registerresource(resource)
+    def resources(self):
+        return self.resources
 
     def outputPS(self, file):
         file.write("gsave\n"
