@@ -8,6 +8,8 @@ PyX
     - description in INSTALL
   - text module:
     - improved is readable test for lfs files and pyx.def file
+  - graph module:
+    - results of the splitting at "=" in graph.function were not stripped
   TODO:
   - graph module
     - another (the last?!) axis redesign: axispos -> class of its own; remove axis.axiscanvas

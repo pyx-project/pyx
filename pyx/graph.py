@@ -4971,7 +4971,7 @@ class function:
         self.max = max
         self.points = points
         self.context = context
-        self.result, expression = expression.split("=")
+        self.result, expression = [x.strip() for x in expression.split("=")]
         self.mathtree = parser.parse(expression)
         self.variable = None
         self.evalranges = 0
