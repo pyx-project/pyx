@@ -3088,6 +3088,11 @@ class graphxy(canvas.canvas):
                             self.xpos_pt + vx2*self.width_pt,
                             self.ypos_pt + vy2*self.height_pt)
 
+    def vgeodesic_el(self, vx1, vy1, vx2, vy2):
+        """returns a geodesic path element between two points in graph coordinates"""
+        return path.lineto_pt(self.xpos_pt + vx2*self.width_pt,
+                              self.ypos_pt + vy2*self.height_pt)
+
     def vcap_pt(self, direction, length_pt, vx, vy):
         """returns an error cap path for a given direction, lengths and
         point in graph coordinates"""
@@ -3756,8 +3761,10 @@ class symbolline(_style):
 
     def drawpoints(self, graph, data):
         if data.lineattrs is not None:
+            # TODO: bbox shortcut
             linecanvas = graph.insert(canvas.canvas())
         if data.errorbarattrs is not None:
+            # TODO: bbox shortcut
             errorbarcanvas = graph.insert(canvas.canvas())
         data.line = path.path()
         linebasepoints = []
@@ -3989,53 +3996,6 @@ class symbol(symbolline):
         symbolline.__init__(self, lineattrs=None, **kwargs)
 
 
-
-# class rect(symbollines):
-# 
-#     def __init__(self, palette=color.palette.Gray):
-#         self.palette = palette
-#         self.colorindex = None
-#         symbol.__init__(self, symbolattrs=None, errorbarattrs=(), lineattrs=None)
-# 
-#     def iterate(self):
-#         raise RuntimeError("style is not iterateable")
-# 
-#     def othercolumnkey(self, key, index):
-#         if key == "color":
-#             self.colorindex = index
-#         else:
-#             symbol.othercolumnkey(self, key, index)
-# 
-#     def drawerrorbar_pt(self, graph, topleft, top, topright,
-#                                    left, center, right,
-#                                    bottomleft, bottom, bottomright, point=None):
-#         color = point[self.colorindex]
-#         if color is not None:
-#             if color != self.lastcolor:
-#                 self.rectclipcanvas.set([self.palette.getcolor(color)])
-#             if bottom is not None and left is not None:
-#                 bottomleft = left[0], bottom[1]
-#             if bottom is not None and right is not None:
-#                 bottomright = right[0], bottom[1]
-#             if top is not None and right is not None:
-#                 topright = right[0], top[1]
-#             if top is not None and left is not None:
-#                 topleft = left[0], top[1]
-#             if bottomleft is not None and bottomright is not None and topright is not None and topleft is not None:
-#                 self.rectclipcanvas.fill(path.path(path.moveto_pt(*bottomleft),
-#                                          graph._connect(*(bottomleft+bottomright)),
-#                                          graph._connect(*(bottomright+topright)),
-#                                          graph._connect(*(topright+topleft)),
-#                                          path.closepath()))
-# 
-#     def drawpoints(self, graph, points):
-#         if self.colorindex is None:
-#             raise RuntimeError("column 'color' not set")
-#         self.lastcolor = None
-#         self.rectclipcanvas = graph.clipcanvas()
-#         symbol.drawpoints(self, graph, points)
-
-
 class text(symbol):
 
     defaulttextattrs = [textmodule.halign.center, textmodule.vshift.mathaxis]
@@ -4130,6 +4090,81 @@ class arrow(_style):
                     graph.stroke(path.line_pt(x1, y1, x2, y2), data.lineattrs +
                                  [deco.earrow(data.arrowattrs, size=arrowsize*point[data.sizeindex])])
 
+
+class rect(_style):
+
+    def __init__(self, palette=color.palette.Gray):
+        self.palette = palette
+
+    def setdata(self, graph, columns, data):
+        if len(graph.axisnames) != 2:
+            raise TypeError("arrow style restricted on two-dimensional graphs")
+        columns = columns.copy()
+        data.xaxis, data.xminindex = _style.setdatapattern(self, graph, columns, re.compile(r"(%s([2-9]|[1-9][0-9]+)?)min$" % graph.axisnames[0]))
+        data.yaxis, data.yminindex = _style.setdatapattern(self, graph, columns, re.compile(r"(%s([2-9]|[1-9][0-9]+)?)min$" % graph.axisnames[1]))
+        xaxis, data.xmaxindex = _style.setdatapattern(self, graph, columns, re.compile(r"(%s([2-9]|[1-9][0-9]+)?)max$" % graph.axisnames[0]))
+        yaxis, data.ymaxindex = _style.setdatapattern(self, graph, columns, re.compile(r"(%s([2-9]|[1-9][0-9]+)?)max$" % graph.axisnames[1]))
+        if xaxis != data.xaxis or yaxis != data.yaxis:
+            raise ValueError("min/max values should use the same axes")
+        data.colorindex = columns["color"]
+        del columns["color"]
+        return columns
+
+    def selectstyle(self, selectindex, selecttotal, data):
+        pass
+
+    def adjustaxes(self, columns, data):
+        if data.xminindex in columns:
+            data.xaxis.adjustrange(data.points, data.xminindex)
+        if data.xmaxindex in columns:
+            data.xaxis.adjustrange(data.points, data.xmaxindex)
+        if data.yminindex in columns:
+            data.yaxis.adjustrange(data.points, data.yminindex)
+        if data.ymaxindex in columns:
+            data.yaxis.adjustrange(data.points, data.ymaxindex)
+
+    def drawpoints(self, graph, data):
+        # TODO: bbox shortcut
+        c = graph.insert(canvas.canvas())
+        lastcolorvalue = None
+        for point in data.points:
+            try:
+                xvmin = data.xaxis.convert(point[data.xminindex])
+                xvmax = data.xaxis.convert(point[data.xmaxindex])
+                yvmin = data.yaxis.convert(point[data.yminindex])
+                yvmax = data.yaxis.convert(point[data.ymaxindex])
+                colorvalue = point[data.colorindex]
+                if colorvalue != lastcolorvalue:
+                    color = self.palette.getcolor(point[data.colorindex])
+            except:
+                continue
+            if ((xvmin < 0 and xvmax < 0) or (xvmin > 1 and xvmax > 1) or
+                (yvmin < 0 and yvmax < 0) or (yvmin > 1 and yvmax > 1)):
+                continue
+            if xvmin < 0:
+                xvmin = 0
+            elif xvmin > 1:
+                xvmin = 1
+            if xvmax < 0:
+                xvmax = 0
+            elif xvmax > 1:
+                xvmax = 1
+            if yvmin < 0:
+                yvmin = 0
+            elif yvmin > 1:
+                yvmin = 1
+            if yvmax < 0:
+                yvmax = 0
+            elif yvmax > 1:
+                yvmax = 1
+            p = graph.vgeodesic(xvmin, yvmin, xvmax, yvmin)
+            p.append(graph.vgeodesic_el(xvmax, yvmin, xvmax, yvmax))
+            p.append(graph.vgeodesic_el(xvmax, yvmax, xvmin, yvmax))
+            p.append(graph.vgeodesic_el(xvmin, yvmax, xvmin, yvmin))
+            p.append(path.closepath())
+            if colorvalue != lastcolorvalue:
+                c.set([color])
+            c.fill(p)
 
 class bar(_style):
 
@@ -4248,16 +4283,16 @@ class bar(_style):
                         continue
 
                 if data.valuepos:
-                    p = (graph.vgeodesic(vnamemin, vvaluemin, vnamemin, vvaluemax) <<
-                         graph.vgeodesic(vnamemin, vvaluemax, vnamemax, vvaluemax) <<
-                         graph.vgeodesic(vnamemax, vvaluemax, vnamemax, vvaluemin) <<
-                         graph.vgeodesic(vnamemax, vvaluemin, vnamemin, vvaluemin))
+                    p = graph.vgeodesic(vnamemin, vvaluemin, vnamemin, vvaluemax)
+                    p.append(graph.vgeodesic_el(vnamemin, vvaluemax, vnamemax, vvaluemax))
+                    p.append(graph.vgeodesic_el(vnamemax, vvaluemax, vnamemax, vvaluemin))
+                    p.append(graph.vgeodesic_el(vnamemax, vvaluemin, vnamemin, vvaluemin))
                     p.append(path.closepath())
                 else:
-                    p = (graph.vgeodesic(vvaluemin, vnamemin, vvaluemin, vnamemax) <<
-                         graph.vgeodesic(vvaluemin, vnamemax, vvaluemax, vnamemax) <<
-                         graph.vgeodesic(vvaluemax, vnamemax, vvaluemax, vnamemin) <<
-                         graph.vgeodesic(vvaluemax, vnamemin, vvaluemin, vnamemin))
+                    p = graph.vgeodesic(vvaluemin, vnamemin, vvaluemin, vnamemax)
+                    p.append(graph.vgeodesic_el(vvaluemin, vnamemax, vvaluemax, vnamemax))
+                    p.append(graph.vgeodesic_el(vvaluemax, vnamemax, vvaluemax, vnamemin))
+                    p.append(graph.vgeodesic_el(vvaluemax, vnamemin, vvaluemin, vnamemin))
                     p.append(path.closepath())
                 if barattrs is not None:
                     graph.fill(p, barattrs)
