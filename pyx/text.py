@@ -458,7 +458,7 @@ class Font:
         if self.tfmpath is None:
             raise TFMError("cannot find %s.tfm" % self.name)
         self.tfmfile = TFMFile(self.tfmpath, debug)
-        self.fontmapping = fontmap.get(name, None)
+        self.fontmapping = fontmap.get(name)
         print "found mapping %s for font %s" % (self.fontmapping, self.name)
 
         if self.tfmfile.checksum != c:
@@ -530,40 +530,22 @@ class Font:
             self.usedchars[i] = self.usedchars[i] or otherfont.usedchars[i]
 
     def getbasepsname(self):
-        if self.fontmapping:
-            return self.fontmapping.basepsname
-        else:
-            #XXX Hack !!!
-            return self.name.upper()
+        return self.fontmapping.basepsname
 
     def getpsname(self):
-        if self.fontmapping:
-            if self.fontmapping.reencodefont:
-                return "%s-%s" % (self.fontmapping.basepsname, self.fontmapping.reencodefont)
-            else:
-                return self.fontmapping.basepsname
+        if self.fontmapping.reencodefont:
+            return "%s-%s" % (self.fontmapping.basepsname, self.fontmapping.reencodefont)
         else:
-            #XXX Hack !!!
-            return self.name.upper()
+            return self.fontmapping.basepsname
 
     def getfontfile(self):
-        if self.fontmapping:
-            return self.fontmapping.fontfile
-        else:
-            return self.name+".pfb"
+        return self.fontmapping.fontfile
 
     def getencoding(self):
-        if self.fontmapping:
-            return self.fontmapping.reencodefont
-        return None
+        return self.fontmapping.reencodefont
 
     def getencodingfile(self):
-        if self.fontmapping:
-            return self.fontmapping.encodingfile
-        else:
-            # XXX hack!!!
-            return "ad.enc"
-
+        return self.fontmapping.encodingfile
 
 
 _DVI_CHARMIN     =   0 # typeset a character and move right (range min)
@@ -681,7 +663,7 @@ class DVIFile:
         if self.actoutstart is None:
             self.actoutstart = self.pos[_POS_H], self.pos[_POS_V]
             self.actoutstring = ""
-        if char > 32 and char < 128 and chr(char) not in "()[]<>":
+        if char > 32 and char < 127 and chr(char) not in "()[]<>":
             ascii = "%s" % chr(char)
         else:
             ascii = "\\%03o" % char

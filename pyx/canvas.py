@@ -101,6 +101,7 @@ _ReEncodeFont = definition("ReEncodeFont", """{
   end
 }""")
 
+
 class fontdefinition(prologitem):
 
     """ PostScript font definition included in the prolog """
@@ -177,7 +178,7 @@ class fontreencoding(prologitem):
     def merge(self, other):
         if not isinstance(other, fontreencoding):
             return other
-        if self.psname!=other.psname:
+        if self.psname==other.psname:
             if self.basepsname==other.basepsname and self.encoding==other.encoding:
                 return None
             raise ValueError("Conflicting font reencodings!")
