@@ -51,6 +51,8 @@ class Canvas(Globex):
     TexMarkerEnd = TexMarker + "End"
     TexCmds = [ ]
     TexBracketCheck = 1
+
+    PSPositionCorrect = 0		# does actual PS position coincide with our x,y
     
     def TexCreateBoxCmd(self, texstr, parmode, valign):
 
@@ -317,20 +319,26 @@ class Canvas(Globex):
 #
 # PS code
 #
+
+    def PSCmd(self, cmd):
+        try:
+            self.PSFile.write("%s\n" % cmd)
+	except IOError:
+	    assert "cannot write to output file"	# TODO: Fehlerbehandlung...
+	    
 	
     def PSInit(self):
         try:
 	    self.PSFile = open(self.BaseFilename + ".ps", "w")
 	except IOError:
-	    print "cannot open output file"	# TODO: Fehlerbehandlung...
-	    return
+	    assert "cannot open output file"		# TODO: Fehlerbehandlung...
 	
         self.PSFile.write("%!\n")
         #self.PSFile.write("%%%%BoundingBox: 0 0 %d %d\n" % (self.Height*72, self.Width*72)) # TODO: das geht so nicht ...
 
 	# PostScript-procedure definitions
 	# cf. file: 5002.EPSF_Spec_v3.0.pdf     
-	self.PSFile.write("""
+	self.PSCmd("""
 /BeginEPSF {
   /b4_Inc_state save def
   /dict_count countdictstack def
@@ -351,15 +359,14 @@ class Canvas(Globex):
   count op_count sub {pop} repeat % Clean up stacks
   countdictstack dict_count sub {end} repeat
   b4_Inc_state restore
-} bind def
-""")
+} bind def""")
         
-	self.PSFile.write("0.02 setlinewidth\n")
-	self.PSFile.write("newpath\n")
-	self.PSFile.write("0 0 moveto\n")
+	self.PSCmd("0.02 setlinewidth")
+	self.PSCmd("newpath")
+	self.amove(0,0)
 
     def PSEnd(self):
-    	self.PSFile.write("stroke\n")
+    	self.PSCmd("stroke")
     	#self.PSFile.write("0 -508 translate\n")
 	self.PSInsertEPS(self.BaseFilename + ".tex.eps")
 	self.PSFile.close()
@@ -369,12 +376,11 @@ class Canvas(Globex):
         try:
 	    epsfile=open(epsname,"r")
 	except:
-	    print "cannot open EPS file"	# TODO: Fehlerbehandlung
-	    return
+	    assert "cannot open EPS file"	# TODO: Fehlerbehandlung
 
-	self.PSFile.write("BeginEPSF\n")
-	self.PSFile.write(epsfile.read())  	
-	self.PSFile.write("EndEPSF\n")
+	self.PSCmd("BeginEPSF")
+	self.PSCmd(epsfile.read())  	
+	self.PSCmd("EndEPSF")
 
     def PScm2po(self, x, y=None): 
         # convfaktor=28.452756
@@ -384,32 +390,40 @@ class Canvas(Globex):
 	    return convfaktor * x
 	else:
 	    return (convfaktor*x, convfaktor*y)
+
+    def PSUpdatePosition(self):
+        if self.PSPositionCorrect == 0:		# actual PS position doesn't coincide with our x,y
+	    self.PSCmd("%f %f moveto" % self.PScm2po(self.x,self.y))
 	    
     def amove(self,x,y):
         isnumber(x)
         isnumber(y)
+	
         (self.x, self.y)=(x,y)
-	self.PSFile.write("%f %f moveto\n" % self.PScm2po(x,y))
-        # TODO: we don't have to write postscript here if we put text at this position later and nothing else!
+	self.PSPositionCorrect = 0 			 
+	
+    def rmove(self,x,y):
+        isnumber(x)
+        isnumber(y)
+	
+        (self.x, self.y)=(self.x+x,self.y+y)
+	self.PSPositionCorrect = 0 			 
 	
     def aline(self,x,y):
         isnumber(x)
         isnumber(y)
+	
+	self.PSUpdatePosition()
         (self.x, self.y)=(x,y)
-	self.PSFile.write("%f %f lineto\n" % self.PScm2po(x,y))
+	self.PSCmd("%f %f lineto" % self.PScm2po(x,y))
     
-    def rmove(self,x,y):
-        isnumber(x)
-        isnumber(y)
-        (self.x, self.y)=(self.x+x,self.y+y)
-	self.PSFile.write("%f %f rmoveto\n" % self.PScm2po(x,y))
-        # TODO: we don't have to write postscript here if we put text at this position later and nothing else!
-
     def rline(self,x,y):
         isnumber(x)
         isnumber(y)
+	
+	self.PSUpdatePosition()
         (self.x, self.y)=(self.x+x,self.y+y)
-	self.PSFile.write("%f %f rlineto\n" % self.PScm2po(x,y))
+	self.PSCmd("%f %f rlineto" % self.PScm2po(x,y))
 
 
 def canvas(width, height, basefilename, texinit="", TexInitIgnoreMsgLevel=1):
@@ -455,11 +469,16 @@ if __name__=="__main__":
         text(".")
         
     amove(5,12)
-    text("Beispiel:\\begin{itemize}\\item$\\alpha$\\item$\\beta$\\item$\\gamma$\\end{itemize}",parmode="2cm")
+    text("Beispiel:\\begin{itemize}\\item$\\alpha$\\item$\\beta$\"u\\item$\\gamma$\\end{itemize}",parmode="2cm")
     amove(10,12)
     text("Beispiel:\\begin{itemize}\\item$\\alpha$\\item$\\beta$\\item$\\gamma$\\end{itemize}",parmode="2cm",valign=center)
     amove(15,12)
-    text("Beispiel:\\begin{itemize}\\item$\\alpha$\\item$\\beta$\\item$\\gamma$\\end{itemize}",parmode="2cm",valign=bottom)
+    text("""Beispiela: 
+            \\begin{itemize}
+	       \\item$\\alpha$
+	       \\item$\\beta$
+	       \\item$\\gamma$
+	    \\end{itemize}""",parmode="2cm",valign=bottom,IgnoreMsgLevel=2)
 
     amove(5,20)
     text("$\\left\\{\\displaystyle\\frac{1}{2}\\right\\}$")
