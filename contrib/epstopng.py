@@ -100,7 +100,7 @@ def main():
         if o in ("-s", "--scale"):
             scale = int(a)
         if o in ("-t", "--transparent"):
-            m = re.compile(r"\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d)\s*\)\s*$").match(a)
+            m = re.compile(r"\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)\s*$").match(a)
             if not m:
                 raise RuntimeError("transparent argument does not match")
             transparent = [int(x) for x in m.groups()]
