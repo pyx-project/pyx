@@ -1,31 +1,39 @@
 PyX
 
 0.2 (????/??/??):
-  - small logo modifications
-  - allow division of length by numbers
-  - return linewidth upon calculation with linewidths
-  - fix canvas transformations
-  - new transformation: slant
-  - british and american spellings in the color module
+  - unit module:
+    - allow division of length by numbers
+  - trafo module:
+    - new transformation: slant
   - graph module:
     - new bar class (work in progress)
-    - 3d graphs (work in progress)
     - splitaxis (work in progress)
     - move axis partitioning into the axis painter (work in progress)
-    - bugfix in textbox alignment (graph module)
     - mark class renamed to symbol
-    - some fixes in automatic axis partitioning
+    - histogramm style (not yet started)
+    - date and time axis (not yet started)
+    - 3d graphs (some preliminary work done, but deferred for the moment)
   - data module:
     - previously named datafile module
     - class "_datafile" renamed to class "data"
     - class sectionfile added
     - testsuite
-  - mathtree:
+  - mathtree module:
     - extern variables and functions (support in graph.function, graph.paramfunction and data.data)
     - testsuite
+  - text module:
+    - is it TODO for 0.2 ???
+  - numerous bugfixes (remove detailed list?):
+    - transformation bug (#624068, trafo module)
+    - canvas transformations (canvas module???)
+    - automatic axis partitioning (graph module)
+    - textbox alignment (graph module)
+    - return linewidth upon calculation with linewidths (unit module)
+    - allow column number variables with several digits
+    - numerous others ???
+  - british and american spellings (color module, graph module)
+  - small logo modifications
 
-0.1.1 (????/??/??):
-  - transformation bug fixed (#624068)
 
 0.1 (2002/10/07):
   - initial release
