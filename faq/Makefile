@@ -27,3 +27,11 @@ pyxversion.tex: ../pyx/version.py
 
 pyxdate.tex: ../pyx/version.py
 	python -c "import sys;sys.path[:0]=[\"..\"];import pyx.version;print pyx.version.date+'%'" > pyxdate.tex
+
+publicserver = shell.sourceforge.net
+publicpath = /home/groups/p/py/pyx/htdocs
+
+public:
+	@bash -c 'yn=""; while [ "x"$$yn != "xy" ]; do echo -n "upload pyxfaq.pdf? [y/n] "; read yn; if [ "x"$$yn == "xn" ]; then exit 1; fi; done'
+	scp pyxfaq.pdf $(publicserver):$(publicpath)
+	-ssh $(publicserver) "cd $(publicpath); chmod -fR g+w pyxfaq.pdf"
