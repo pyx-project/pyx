@@ -861,7 +861,6 @@ class dvifile:
             self.endtext()
             if self.activetype1font != self.activefont and self.activefont:
                 self.actpage.insert(_begintextobject())
-                print self.activetype1font, self.activefont
                 self.actpage.insert(selectfont(self.activefont))
                 self.activetype1font = self.activefont
 
@@ -869,7 +868,6 @@ class dvifile:
         self.flushout()
         if self.activetype1font:
             self.actpage.insert(_endtextobject())
-            print "xxx"
             self.activetype1font = None
 
     def putrule(self, height, width, advancepos=1):
