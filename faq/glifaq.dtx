@@ -1,12 +1,12 @@
 % \iffalse
 %<package>\NeedsTeXFormat{LaTeX2e}
 %<*driver>
-\def\fileversion{0.2}
-\def\filedate{2003/11/16}
+\def\fileversion{0.3}
+\def\filedate{2004/12/10}
 \ProvidesFile{glifaq.drv}
 %</driver>
 %<package>\ProvidesPackage{glifaq}
-           [2003/11/16 Style for PyX FAQ (gli) v0.2]
+           [2004/12/10 Style for PyX FAQ (gli) v0.3]
 %<*driver>
 \documentclass{ltxdoc}
 \usepackage{url}
@@ -37,7 +37,7 @@
 %   Grave accent  \`     Left brace    \{     Vertical bar  \|
 %   Right brace   \}     Tilde         \~}
 %
-% \CheckSum{229}
+% \CheckSum{239}
 %
 %
 % \title{The \texttt{glifaq} package}
@@ -123,6 +123,15 @@
 % \DescribeMacro\PyX
 % The macro |\PyX| defines the \PyX{} logo as employed by the developers of 
 % \PyX{} in their manual.
+%
+% \DescribeMacro\tipagraph
+% In order to explain the pronunciation of \PyX, the |tipa| package is
+% needed which cannot be expected to be present in every installation. 
+% Therefore, we provide via the |\tipagraph| command a way to alternatively
+% include a graphics file. The command is used as follows
+% \begin{quote}
+% |\tipagraph{|\meta{tipa code}|}{|\meta{graphics filename}|}|
+% \end{quote}
 %
 % \DescribeMacro\cs
 % In some places, a backslash cannot be used verbatim, in particular in an
@@ -347,6 +356,20 @@
            {P\kern-.3em\lower.5ex\hbox{Y}\kern-.18em X}{PyX}%
           }
 %    \end{macrocode}  
+% We now check for the presence of the |tipa| package. If present, it
+% will be loaded and the command |\tipagraph| will hand over its first
+% argument to the command |\textipa|. Otherwise, the |graphicx| package
+% is loaded and |\tipagraph| will lead to the inclusion of the graphics file
+% given in the second argument. The vertical shift of the box has been chosen 
+% by trial and error. The horizontal spacing is slightly different in the two 
+% alternatives but this should not give to rise to major problems. 
+%    \begin{macrocode}
+\IfFileExists{tipa.sty}%
+  {\usepackage{tipa}%
+   \newcommand{\tipagraph}[2]{\textipa{##1}}}%
+  {\usepackage{graphicx}%
+   \newcommand{\tipagraph}[2]{\raisebox{-0.8ex}{\includegraphics{##2}}}}
+%    \end{macrocode}
 % When a backslash character is needed as part of a verbatim command name,
 % but verbatim code cannot be used, the macro |\cs| can be employed.
 % Again, we take care of the requirements of the \acro{pdf} bookmarks.
