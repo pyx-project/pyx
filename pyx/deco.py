@@ -672,8 +672,8 @@ class smoothed(deco, attr.attr):
                 b = -2.0 * E / curvB
                 b = math.sqrt(abs(b)) * sign(b)
             except ZeroDivisionError:
-                sys.stderr.write("*** PyX Warning: The connecting bezier is not uniquely determined."
-                    "The simple heuristic solution may not be optimal.")
+                sys.stderr.write("*** PyX Warning: The connecting bezier is not uniquely determined. "
+                    "The simple heuristic solution may not be optimal.\n")
                 a = b = 1.5 * math.hypot(A[0] - B[0], A[1] - B[1])
         else:
             if abs(curvA) < 1.0e-4:

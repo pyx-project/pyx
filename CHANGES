@@ -15,8 +15,6 @@ TODO:
     - messageparser for size differences at the end: Warning not Exception
     - messageparser for overfull/underfull vbox/hbox: Warning not Exception
     - newline removal when not disturbing texmessages only
-  - mathtree module:
-     - consider rewrite using the python compiler module
   - graph.data module:
     - use csv module (new in 2.3)
     - Check for "inf" and "nan" in datafiles.
@@ -68,6 +66,15 @@ TODO:
   FAQ:
     - describe creation and modification (inplace and ``modify by new'') of
       graph data
+
+
+0.6.2 (xxxx/xx/xx):
+  - graph module:
+    - fixed title=None + graph key issue reported by Gabriel Vasseur
+    - graph.axis.painter.plain -> graph.axis.painter.regular
+      (as it was in parts of the documentation already)
+    - changeable-gridattrs-become-None-bug fixed
+    - graph style cutting outside lines (double-)fixed
 
 
 0.6.1 (2004/03/31):
