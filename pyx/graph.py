@@ -3384,7 +3384,7 @@ class line(symbol):
 
     def __init__(self, lineattrs=helper.nodefault):
         if lineattrs is helper.nodefault:
-            lineattrs = changelinestyle()
+            lineattrs = (changelinestyle(), canvas.linejoin.round)
         symbol.__init__(self, symbolattrs=None, errorbarattrs=None, lineattrs=lineattrs)
 
 
