@@ -51,10 +51,14 @@ class fix_word:
 
 class binfile:
 
-    # TODO: def binfile.close() ?!
-
     def __init__(self, filename, mode="r"):
         self.file = open(filename, mode)
+
+    def __del__(self):
+        self.file.close()
+
+    def close(self):
+        self.file.close()
 
     def tell(self):
         return self.file.tell()
@@ -331,7 +335,7 @@ class TFMFile:
         for param_index in range(self.np):
             self.param[param_index] = self.file.readint32()
 
-        self.file.file.close()
+        self.file.close()
 
 
 # class FontEncoding:
@@ -1090,6 +1094,8 @@ class DVIFile:
             else:
                 raise DVIError # unexpected reader state, should not happen
         self.flushout()
+
+        self.file.close()
 
     def prolog(self, page): # TODO: AW inserted this page argument -> should return the prolog needed for that page only!
         """ return prolog corresponding to contents of dvi file """
