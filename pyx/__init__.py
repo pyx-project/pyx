@@ -38,6 +38,6 @@ __all__ = ["attr", "box", "canvas", "color", "connector", "deco", "epsfile", "gr
 
 
 # automatically import main modules into pyx namespace
-# for module in __all__:
-#     __import__(module, globals(), locals(), [])
+for module in __all__:
+    __import__(module, globals(), locals(), [])
 
