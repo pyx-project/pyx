@@ -1355,19 +1355,6 @@ class plotstyle:
     pass
 
 
-#class line(_PlotStyle):
-#
-#    def LoopOverPoints(self, Graph, Data):
-#        p = [ ]
-#        for pt in zip(Graph.ValueList(_XPattern, 0, Data),
-#                      Graph.ValueList(_YPattern, 1, Data)):
-#            if p:
-#                p.append(path._lineto(pt[0],pt[1]))
-#            else:
-#                p = [path._moveto(pt[0],pt[1]), ]
-#        Graph.canvas.draw(path(*p))
-
-
 class mark(plotstyle):
 
     def __init__(self, size = "0.1 cm", errorscale = 1/goldenrule, symbolstyles=()):
@@ -1549,6 +1536,55 @@ markfcircle.next = markfdiamond
 markfdiamond.next = markcross
 
 
+class line(plotstyle):
+
+    def __init__(self, dodraw = 1, linestyles=()):
+        self.dodraw = dodraw
+        self.linestyles = linestyles
+
+    def setcolumns(self, graph, columns):
+        for key, index in columns.items():
+            if graph.XPattern.match(key):
+                self.xkey = key
+                self.xindex = index - 1
+            elif graph.YPattern.match(key):
+                self.ykey = key
+                self.yindex = index - 1
+            else:
+                raise ValueError
+        if self.xindex is None: raise ValueError
+        if self.yindex is None: raise ValueError
+
+    def keyrange(self, points, index):
+        min = max = None
+        for point in points:
+            if min is None or point[index] < min: min = point[index]
+            if max is None or point[index] > max: max = point[index]
+        return min, max
+
+    def ranges(self, points):
+        return {self.xkey: self.keyrange(points, self.xindex),
+                self.ykey: self.keyrange(points, self.yindex)}
+
+    def drawpointlist(self, graph, points):
+        xaxis = graph.axes[self.xkey]
+        yaxis = graph.axes[self.ykey]
+
+        moveto = 1
+        line = []
+        for point in points:
+            x = graph.xconvert(xaxis.convert(point[self.xindex]))
+            y = graph.yconvert(yaxis.convert(point[self.yindex]))
+            if moveto:
+                line.append(path._moveto(x, y))
+                moveto = 0
+            else:
+                line.append(path._lineto(x, y))
+        self.path = path.path(*line)
+        if self.dodraw:
+            graph.draw(self.path)
+
+
 ################################################################################
 # data
 ################################################################################
@@ -1610,60 +1646,59 @@ class data:
 AssignPattern = re.compile(r"\s*([a-z][a-z0-9_]*)\s*=", re.IGNORECASE)
 
 
-class Function:
-
-    #DefaultPlotStyle = chain()
-    DefaultPlotStyle = mark()
-
-    def __init__(self, Expression, Points = 100):
-        self.name = Expression
-        self.Points = Points
-        Match = AssignPattern.match(Expression)
-        if Match:
-            self.ResKind = Match.group(1)
-            Expression = Expression[Match.end(): ]
-        else:
-            self.ResKind = None
-        self.MT = ParseMathTree(ParseStr(Expression))
-        self.VarList = self.MT.VarList()
-
-    def GetName(self):
-        return self.name
-
-    def GetKindList(self, DefaultResult = "y"):
-        if self.ResKind:
-            return self.MT.VarList() + [self.ResKind, ]
-        else:
-            return self.MT.VarList() + [DefaultResult, ]
-
-#    def GetRange(self, Kind):
-#        raise DataRangeUndefinedException
-#
-#    def SetAxis(self, Axis, DefaultResult = "y"):
-#        if self.ResKind:
-#            self.YAxis = Axis[self.ResKind]
-#        else:
-#            self.YAxis = Axis[DefaultResult]
-#        self.XAxis = { }
-#        self.XValues = { }
-#        for key in self.MT.VarList():
-#            self.XAxis[key] = Axis[key]
-#            values = []
-#            for x in range(self.Points + 1):
-#                values.append(self.XAxis[key].invert(x * 1.0 / self.Points))
-#            self.XValues[key] = values
-#        # this isn't smart ... we should walk only once throu the mathtree
-#        self.YValues = map(lambda i, self = self: self.MT.Calc(self.XValues, i), range(self.Points + 1))
-
-    def GetValues(self, Kind, DefaultResult = "y"):
-        if (self.ResKind and (Kind == self.ResKind)) or ((not self.ResKind) and (Kind == DefaultResult)):
-            return self.YValues
-        return self.XValues[Kind]
-
-
-class ParamFunction(Function):
-    # TODO: to be written
-    pass
+# class function:
+# 
+#     defaultstyle = line()
+# 
+#     def __init__(self, expression, points = 100):
+#         self.name = expression
+#         self.points = points
+#         Match = AssignPattern.match(Expression)
+#         if Match:
+#             self.ResKind = Match.group(1)
+#             Expression = Expression[Match.end(): ]
+#         else:
+#             self.ResKind = None
+#         self.MT = ParseMathTree(ParseStr(Expression))
+#         self.VarList = self.MT.VarList()
+# 
+#     def GetName(self):
+#         return self.name
+# 
+#     def GetKindList(self, DefaultResult = "y"):
+#         if self.ResKind:
+#             return self.MT.VarList() + [self.ResKind, ]
+#         else:
+#             return self.MT.VarList() + [DefaultResult, ]
+# 
+# #    def GetRange(self, Kind):
+# #        raise DataRangeUndefinedException
+# #
+# #    def SetAxis(self, Axis, DefaultResult = "y"):
+# #        if self.ResKind:
+# #            self.YAxis = Axis[self.ResKind]
+# #        else:
+# #            self.YAxis = Axis[DefaultResult]
+# #        self.XAxis = { }
+# #        self.XValues = { }
+# #        for key in self.MT.VarList():
+# #            self.XAxis[key] = Axis[key]
+# #            values = []
+# #            for x in range(self.Points + 1):
+# #                values.append(self.XAxis[key].invert(x * 1.0 / self.Points))
+# #            self.XValues[key] = values
+# #        # this isn't smart ... we should walk only once throu the mathtree
+# #        self.YValues = map(lambda i, self = self: self.MT.Calc(self.XValues, i), range(self.Points + 1))
+# 
+#     def GetValues(self, Kind, DefaultResult = "y"):
+#         if (self.ResKind and (Kind == self.ResKind)) or ((not self.ResKind) and (Kind == DefaultResult)):
+#             return self.YValues
+#         return self.XValues[Kind]
+# 
+# 
+# class ParamFunction(Function):
+#     # TODO: to be written
+#     pass
 
 
 
