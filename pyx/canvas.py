@@ -33,7 +33,7 @@ import sys, cStringIO, math, time
 import attr, base,  bbox, deco, unit, prolog, style, trafo, version
 
 # temporary for pdf fonts:
-import cStringIO
+import zlib
 from t1strip import fullfont
 import pykpathsea
 
@@ -629,20 +629,26 @@ class canvas(_canvas):
                 if fontdata[12+length1+length2:14+length1+length2] != fullfont._PFB_ASCII:
                     raise RuntimeError("PFB_ASCII mark expected")
                 length3 = fullfont.pfblength(fontdata[14+length1+length2:18+length1+length2])
+
+                uncompresseddata = fontdata[6:6+length1] + fontdata[12+length1:12+length1+length2] + fontdata[18+length1+length2:18+length1+length2+length3]
+                compresseddata = zlib.compress(uncompresseddata)
+
                 file.write("%d 0 obj\n"
                            "<<\n"
                            "/Length %d\n"
                            "/Length1 %d\n"
                            "/Length2 %d\n"
                            "/Length3 %d\n"
+                           "/Filter /FlateDecode\n"
                            ">>\n"
-                           "stream\n" % (fontnr+fontstartref, length1+length2+length3,
+                           "stream\n" % (fontnr+fontstartref, len(compresseddata),
                                                               length1,
                                                               length2,
                                                               length3))
-                file.write(fontdata[6:6+length1])
-                file.write(fontdata[12+length1:12+length1+length2])
-                file.write(fontdata[18+length1+length2:18+length1+length2+length3])
+                #file.write(fontdata[6:6+length1])
+                #file.write(fontdata[12+length1:12+length1+length2])
+                #file.write(fontdata[18+length1+length2:18+length1+length2+length3])
+                file.write(compresseddata)
                 file.write("endstream\n"
                            "endobj\n")
 
