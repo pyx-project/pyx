@@ -2270,7 +2270,7 @@ class normsubpath:
 # the normpath class
 #
 
-class normpath:
+class normpath(base.canvasitem):
 
     """normalized path
 
