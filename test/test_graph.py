@@ -38,12 +38,41 @@ from pyx import *
 # c.insert(t)
 # c.writetofile("test_graph")
 
+# c = canvas.canvas()
+# t = c.insert(tex.tex())
+# g = c.insert(graph.graphxy(t, width=10,
+#                            x=graph.linaxis(min=0,
+#                                            max=2*math.pi,
+#                                            title="x--Achse",
+#                                            factor=math.pi,
+#                                            suffix=r"\pi"),
+#                            y=graph.linaxis(title="y--Achse")))
+# g.plot(graph.function("y=sin(x)"))
+# g.plot(graph.function("y=cos(x)"))
+# g.drawall()
+# c.draw(g.ygridpath(g.axes["y"].convert(0)))
+# c.writetofile("test_graph", paperformat="a4")
+
 c = canvas.canvas()
-t = tex.tex()
-g = c.insert(graph.graphxy(t, width=10, 
-                           x=graph.linaxis(min = 0, max = 2*math.pi, title="x-Achse", factor=math.pi, suffix=r"\pi"),
-                           y=graph.linaxis(title="y-Achse")))
-g.plot(graph.function("sin(x)"), style = graph.line())
-c.insert(t)
-c.writetofile("test_graph")
+t = c.insert(tex.tex())
+df = graph.datafile("testdata2")
+g = c.insert(graph.graphxy(t, width=10,
+                           x=graph.linaxis(min=0.5, max=12.5, title="Month",
+                                           part=graph.linpart((graph.frac(1,1),), labels=[x[1] for x in df.data]),
+                                           painter=graph.axispainter(labelstyles=(tex.direction(45),tex.halign.right))),
+                           y=graph.linaxis(min=-10, max=30, title="Temperature [$^\circ$C]")))
+df.addcolumn("av", "(min+max)/2")
+g.plot(graph.data(df, x=0, y=-1, dymin="min", dymax="max"))
+g.drawall()
+c.draw(g.ygridpath(g.axes["y"].convert(0)))
+c.writetofile("test_graph", paperformat="a4")
+
+# c = canvas.canvas()
+# t = c.insert(tex.tex())
+# g = c.insert(graph.graphxy(t, width=10))
+# g.plot(graph.paramfunction("k", 0, 2*math.pi, x="sin(k)", y="cos(3*k)"))
+# g.drawall()
+# c.draw(g.xgridpath(g.axes["x"].convert(0)))
+# c.draw(g.ygridpath(g.axes["y"].convert(0)))
+# c.writetofile("test_graph", paperformat="a4")
 

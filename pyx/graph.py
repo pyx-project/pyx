@@ -711,7 +711,7 @@ class _alignbox:
 class alignbox(_alignbox):
 
     def __init__(self, *args):
-        args = map(None, map(unit.topt, *args))
+        args = map(unit.topt, args)
         _alignbox.__init__(self, *args)
 
 
@@ -963,9 +963,11 @@ class axispainter(attrlist.attrlist):
                         else:
                             raise ValueError("fractype invalid")
                         if self.presuf0 or tick.enum:
-                            if tick.enum == tick.denom and (axis.prefix is not None or
-                                                            axis.suffix is not None) and not self.presuf1:
-                                tick.text = ""
+                            if (axis.prefix is not None or axis.suffix is not None) and not self.presuf1:
+                              if tick.enum == tick.denom:
+                                  tick.text = ""
+                              elif tick.enum == -tick.denom:
+                                  tick.text = "-"
                             if axis.prefix is not None:
                                 tick.text = axis.prefix + tick.text
                             if axis.suffix is not None:
@@ -1014,7 +1016,7 @@ class axispainter(attrlist.attrlist):
         for tick in axis.ticks:
             if tick.ticklevel is not None:
                 if self.drawgrid > tick.ticklevel:
-                    gridpath = axis.gridpath(axis, tick.virtual)
+                    gridpath = axis.gridpath(tick.virtual)
                     graph.draw(gridpath, *self.selectstyle(tick.ticklevel, self.gridstyles))
                 factor = math.pow(self.subticklengthfactor, tick.ticklevel)
                 x1 = tick.x - tick.dx * innerticklength * factor
@@ -1150,7 +1152,6 @@ class graphxy(canvas.canvas):
     DYMinPattern = re.compile(r"dymin$")
     DXMaxPattern = re.compile(r"dxmax$")
     DYMaxPattern = re.compile(r"dymax$")
-    DefaultResult = "y"
 
     def __init__(self, tex, xpos=0, ypos=0, width=None, height=None, ratio=goldenrule, axesdist="0.8 cm", styleiterator=defaultstyleiterator(), **axes):
         canvas.canvas.__init__(self)
@@ -1196,11 +1197,11 @@ class graphxy(canvas.canvas):
     def tickdirection(self, axis, virtual):
         return axis.fixtickdirection
 
-    def xgridpath(self, axis, virtual):
+    def xgridpath(self, virtual):
         return path._line(self.xmap.convert(virtual), self.ymap.convert(0),
                           self.xmap.convert(virtual), self.ymap.convert(1))
 
-    def ygridpath(self, axis, virtual):
+    def ygridpath(self, virtual):
         return path._line(self.xmap.convert(0), self.ymap.convert(virtual),
                           self.xmap.convert(1), self.ymap.convert(virtual))
 
@@ -1224,7 +1225,7 @@ class graphxy(canvas.canvas):
     def gatherranges(self):
         ranges = {}
         for data in self.data:
-            pdranges = data.ranges()
+            pdranges = data.getranges()
             if pdranges is not None:
                 for key in pdranges.keys():
                     if key not in ranges.keys():
@@ -1251,7 +1252,7 @@ class graphxy(canvas.canvas):
         ranges = self.gatherranges()
         # 2. calculate additional ranges out of known ranges
         for data in self.data:
-            data.newranges(ranges)
+            data.setranges(ranges)
         # 3. gather ranges again
         ranges = self.gatherranges()
 
@@ -1394,9 +1395,10 @@ class plotstyle:
 
 class mark(plotstyle):
 
-    def __init__(self, size = "0.1 cm", errorscale = 1/goldenrule, symbolstyles=()):
+    def __init__(self, size="0.12 cm", errorscale=1/goldenrule, dodrawsymbol=1, symbolstyles=()):
         self.size_str = size
         self.errorscale = errorscale
+        self.dodrawsymbol = dodrawsymbol
         self.symbolstyles = symbolstyles
 
     def setcolumns(self, graph, columns):
@@ -1404,22 +1406,22 @@ class mark(plotstyle):
         for key, index in columns.items():
             if graph.XPattern.match(key):
                 self.xkey = key
-                self.xindex = index - 1
+                self.xindex = index
             elif graph.YPattern.match(key):
                 self.ykey = key
-                self.yindex = index - 1
+                self.yindex = index
             elif graph.DXPattern.match(key):
-                self.dxindex = index - 1
+                self.dxindex = index
             elif graph.DXMinPattern.match(key):
-                self.dxminindex = index - 1
+                self.dxminindex = index
             elif graph.DXMaxPattern.match(key):
-                self.dxmaxindex = index - 1
+                self.dxmaxindex = index
             elif graph.DYPattern.match(key):
-                self.dyindex = index - 1
+                self.dyindex = index
             elif graph.DYMinPattern.match(key):
-                self.dyminindex = index - 1
+                self.dyminindex = index
             elif graph.DYMaxPattern.match(key):
-                self.dymaxindex = index - 1
+                self.dymaxindex = index
             else:
                 raise ValueError
 
@@ -1433,19 +1435,24 @@ class mark(plotstyle):
     def keyrange(self, points, index, dindex, dminindex, dmaxindex):
         min = max = None
         for point in points:
-            if dindex is not None:
-                pointmin = point[index] - point[dindex]
-                pointmax = point[index] + point[dindex]
-            elif dminindex is not None:
-                pointmin = point[dminindex]
-                pointmax = point[dmaxindex]
-            else:
-                pointmin = pointmax = point[index]
-            if min is None or pointmin < min: min = pointmin
-            if max is None or pointmax > max: max = pointmax
+            try:
+                if dindex is not None:
+                    pointmin = point[index] - point[dindex]
+                    pointmax = point[index] + point[dindex]
+                elif dminindex is not None:
+                    pointmin = point[dminindex]
+                    pointmax = point[dmaxindex]
+                else:
+                    pointmin = pointmax = point[index]
+                if pointmin is None: raise TypeError
+                if pointmax is None: raise TypeError
+                if min is None or pointmin < min: min = pointmin
+                if max is None or pointmax > max: max = pointmax
+            except (TypeError, ValueError):
+                pass
         return min, max
 
-    def ranges(self, points):
+    def getranges(self, points):
         return {self.xkey: self.keyrange(points, self.xindex, self.dxindex, self.dxminindex, self.dxmaxindex),
                 self.ykey: self.keyrange(points, self.yindex, self.dyindex, self.dyminindex, self.dymaxindex)}
 
@@ -1455,35 +1462,45 @@ class mark(plotstyle):
         self.size = unit.topt(unit.length(self.size_str, default_type="v"))
 
         for point in points:
-            x = graph.xconvert(xaxis.convert(point[self.xindex]))
-            y = graph.yconvert(yaxis.convert(point[self.yindex]))
-            if self.dxindex is not None or (self.dxminindex is not None and self.dxmaxindex is not None):
-                if self.dxindex is not None:
-                    xmin = graph.xconvert(xaxis.convert(point[self.xindex] - point[self.dxindex]))
-                    xmax = graph.xconvert(xaxis.convert(point[self.xindex] + point[self.dxindex]))
-                else:
-                    xmin = graph.xconvert(xaxis.convert(point[self.dxminindex]))
-                    xmax = graph.xconvert(xaxis.convert(point[self.dxmaxindex]))
-                graph.draw(path.path(path._moveto(xmin, y-self.errorscale*self.size),
-                                     path._lineto(xmin, y+self.errorscale*self.size),
-                                     path._moveto(xmin, y),
-                                     path._lineto(xmax, y),
-                                     path._moveto(xmax, y-self.errorscale*self.size),
-                                     path._lineto(xmax, y+self.errorscale*self.size)))
-            if self.dyindex is not None or (self.dyminindex is not None and self.dymaxindex is not None):
-                if self.dyindex is not None:
-                    ymin = graph.yconvert(yaxis.convert(point[self.yindex] - point[self.dyindex]))
-                    ymax = graph.yconvert(yaxis.convert(point[self.yindex] + point[self.dyindex]))
-                else:
-                    ymin = graph.yconvert(yaxis.convert(point[self.dyindex]))
-                    ymax = graph.yconvert(yaxis.convert(point[self.yindex] + point[self.dyindex]))
-                graph.draw(path.path(path._moveto(x-self.errorscale*self.size, ymin),
-                                     path._lineto(x+self.errorscale*self.size, ymin),
-                                     path._moveto(x, ymin),
-                                     path._lineto(x, ymax),
-                                     path._moveto(x-self.errorscale*self.size, ymax),
-                                     path._lineto(x+self.errorscale*self.size, ymax)))
-            self._drawsymbol(graph, x, y)
+            try:
+                x = graph.xconvert(xaxis.convert(point[self.xindex]))
+                y = graph.yconvert(yaxis.convert(point[self.yindex]))
+            except (TypeError, ValueError):
+                continue
+            try:
+                if self.dxindex is not None or (self.dxminindex is not None and self.dxmaxindex is not None):
+                    if self.dxindex is not None:
+                        xmin = graph.xconvert(xaxis.convert(point[self.xindex] - point[self.dxindex]))
+                        xmax = graph.xconvert(xaxis.convert(point[self.xindex] + point[self.dxindex]))
+                    else:
+                        xmin = graph.xconvert(xaxis.convert(point[self.dxminindex]))
+                        xmax = graph.xconvert(xaxis.convert(point[self.dxmaxindex]))
+                    graph.draw(path.path(path._moveto(xmin, y-self.errorscale*self.size),
+                                         path._lineto(xmin, y+self.errorscale*self.size),
+                                         path._moveto(xmin, y),
+                                         path._lineto(xmax, y),
+                                         path._moveto(xmax, y-self.errorscale*self.size),
+                                         path._lineto(xmax, y+self.errorscale*self.size)))
+            except (TypeError, ValueError):
+                pass
+            try:
+                if self.dyindex is not None or (self.dyminindex is not None and self.dymaxindex is not None):
+                    if self.dyindex is not None:
+                        ymin = graph.yconvert(yaxis.convert(point[self.yindex] - point[self.dyindex]))
+                        ymax = graph.yconvert(yaxis.convert(point[self.yindex] + point[self.dyindex]))
+                    else:
+                        ymin = graph.yconvert(yaxis.convert(point[self.dyminindex]))
+                        ymax = graph.yconvert(yaxis.convert(point[self.dymaxindex]))
+                    graph.draw(path.path(path._moveto(x-self.errorscale*self.size, ymin),
+                                         path._lineto(x+self.errorscale*self.size, ymin),
+                                         path._moveto(x, ymin),
+                                         path._lineto(x, ymax),
+                                         path._moveto(x-self.errorscale*self.size, ymax),
+                                         path._lineto(x+self.errorscale*self.size, ymax)))
+            except (TypeError, ValueError):
+                pass
+            if self.dodrawsymbol:
+                self._drawsymbol(graph, x, y)
 
     def _drawsymbol(self, canvas, x, y):
         canvas.draw(path.path(*self._symbol(x, y)), *self.symbolstyles)
@@ -1495,7 +1512,7 @@ class mark(plotstyle):
         return self._symbol(*map(unit.topt, args))
 
 
-class markcross(mark):
+class _markcross(mark):
 
     def _symbol(self, x, y):
         return (path._moveto(x-0.5*self.size, y-0.5*self.size),
@@ -1504,7 +1521,7 @@ class markcross(mark):
                 path._lineto(x+0.5*self.size, y-0.5*self.size))
 
 
-class markplus(mark):
+class _markplus(mark):
 
     def _symbol(self, x, y):
         return (path._moveto(x-0.707106781*self.size, y),
@@ -1513,7 +1530,7 @@ class markplus(mark):
                 path._lineto(x, y+0.707106781*self.size))
 
 
-class marksquare(mark):
+class _marksquare(mark):
 
     def _symbol(self, x, y):
         return (path._moveto(x-0.5*self.size, y-0.5 * self.size),
@@ -1523,7 +1540,7 @@ class marksquare(mark):
                 path.closepath())
 
 
-class marktriangle(mark):
+class _marktriangle(mark):
 
     def _symbol(self, x, y):
         return (path._moveto(x-0.759835685*self.size, y-0.438691337*self.size),
@@ -1532,14 +1549,14 @@ class marktriangle(mark):
                 path.closepath())
 
 
-class markcircle(mark):
+class _markcircle(mark):
 
     def _symbol(self, x, y):
         return (path._arc(x, y, 0.564189583*self.size, 0, 360),
                 path.closepath())
 
 
-class markdiamond(mark):
+class _markdiamond(mark):
 
     def _symbol(self, x, y):
         return (path._moveto(x-0.537284965*self.size, y),
@@ -1549,44 +1566,55 @@ class markdiamond(mark):
                 path.closepath())
 
 
-class fmark:
+class _fmark:
 
     def _drawsymbol(self, canvas, x, y):
         canvas.fill(path.path(*self._symbol(x, y)), *self.symbolstyles)
 
 
-class markfsquare(fmark, marksquare): pass
-class markftriangle(fmark, marktriangle): pass
-class markfcircle(fmark, markcircle): pass
-class markfdiamond(fmark, markdiamond): pass
+class _markfsquare(_fmark, _marksquare): pass
+class _markftriangle(_fmark, _marktriangle): pass
+class _markfcircle(_fmark, _markcircle): pass
+class _markfdiamond(_fmark, _markdiamond): pass
 
 
-markcross.next = markplus
-markplus.next = marksquare
-marksquare.next = marktriangle
-marktriangle.next = markcircle
-markcircle.next = markdiamond
-markdiamond.next = markfsquare
-markfsquare.next = markftriangle
-markftriangle.next = markfcircle
-markfcircle.next = markfdiamond
-markfdiamond.next = markcross
+_markcross.next = _markplus
+_markplus.next = _marksquare
+_marksquare.next = _marktriangle
+_marktriangle.next = _markcircle
+_markcircle.next = _markdiamond
+_markdiamond.next = _markfsquare
+_markfsquare.next = _markftriangle
+_markftriangle.next = _markfcircle
+_markfcircle.next = _markfdiamond
+_markfdiamond.next = _markcross
+
+mark.cross = _markcross
+mark.plus = _markplus
+mark.square = _marksquare
+mark.triangle = _marktriangle
+mark.circle = _markcircle
+mark.diamond = _markdiamond
+mark.fsquare = _markfsquare
+mark.ftriangle = _markftriangle
+mark.fcircle = _markfcircle
+mark.fdiamond = _markfdiamond
 
 
 class line(plotstyle):
 
-    def __init__(self, dodraw = 1, linestyles=()):
-        self.dodraw = dodraw
+    def __init__(self, dodrawline=1, linestyles=()):
+        self.dodrawline = dodrawline
         self.linestyles = linestyles
 
     def setcolumns(self, graph, columns):
         for key, index in columns.items():
             if graph.XPattern.match(key):
                 self.xkey = key
-                self.xindex = index - 1
+                self.xindex = index
             elif graph.YPattern.match(key):
                 self.ykey = key
-                self.yindex = index - 1
+                self.yindex = index
             else:
                 raise ValueError
         if self.xindex is None: raise ValueError
@@ -1595,11 +1623,15 @@ class line(plotstyle):
     def keyrange(self, points, index):
         min = max = None
         for point in points:
-            if min is None or point[index] < min: min = point[index]
-            if max is None or point[index] > max: max = point[index]
+            try:
+                if point[index] is None: raise TypeError
+                if min is None or point[index] < min: min = point[index]
+                if max is None or point[index] > max: max = point[index]
+            except (TypeError, ValueError):
+                pass
         return min, max
 
-    def ranges(self, points):
+    def getranges(self, points):
         return {self.xkey: self.keyrange(points, self.xindex),
                 self.ykey: self.keyrange(points, self.yindex)}
 
@@ -1610,17 +1642,42 @@ class line(plotstyle):
         moveto = 1
         line = []
         for point in points:
-            x = graph.xconvert(xaxis.convert(point[self.xindex]))
-            y = graph.yconvert(yaxis.convert(point[self.yindex]))
-            if moveto:
-                line.append(path._moveto(x, y))
-                moveto = 0
-            else:
-                line.append(path._lineto(x, y))
+            try:
+                x = graph.xconvert(xaxis.convert(point[self.xindex]))
+                y = graph.yconvert(yaxis.convert(point[self.yindex]))
+                if moveto:
+                    line.append(path._moveto(x, y))
+                    moveto = 0
+                else:
+                    line.append(path._lineto(x, y))
+            except (TypeError, ValueError):
+                moveto = 1
         self.path = path.path(*line)
-        if self.dodraw:
-            graph.draw(self.path)
+        if self.dodrawline:
+            graph.draw(self.path, *self.linestyles)
 
+
+class _dashedline(line):
+
+    def __init__(self, linestyles=(canvas.linestyle.dashed, ), **args):
+        args["linestyles"] = linestyles
+        line.__init__(self, **args)
+
+
+class _dottedline(line):
+
+    def __init__(self, linestyles=(canvas.linestyle.dotted, ), **args):
+        args["linestyles"] = linestyles
+        line.__init__(self, **args)
+
+
+line.next = _dashedline
+_dashedline.next = _dottedline
+_dottedline.next = line
+
+line.normal = line
+line.dashed = _dashedline
+line.dotted = _dottedline
 
 ################################################################################
 # data
@@ -1629,58 +1686,105 @@ class line(plotstyle):
 
 class datafile:
 
-    def __init__(self, filename, sep = None, titlesep = None, commentpattern=re.compile(r"\s*(#|!)+\s*")):
+    CommentPattern = re.compile(r"(#+|!+|%+)\s*")
+    ColumnPattern = re.compile(r"(.*?)\s+")
+    StringPattern = re.compile(r"\"(.*?)\"\s+")
+
+    def __init__(self, filename, sep = None, titlesep = None):
         self.filename = filename
         file = open(filename, "r")
         self.titles = []
         self.data = []
-        self.minmax = []
+        linenumber = 0
+        maxcolumns = 0
         for line in file.readlines():
-            match = commentpattern.match(line)
+            match = self.CommentPattern.match(line)
             if match:
                 if not len(self.data):
                     self.titles = line[match.end():].split(titlesep)
             else:
-                linedata = line.split(sep)
-                for index in xrange(len(linedata)):
-                    try:
-                        linedata[index] = float(linedata[index])
-                    except ValueError:
-                        pass
-                while len(linedata) > len(self.minmax):
-                    self.minmax.append([linedata[len(self.minmax)], linedata[len(self.minmax)]])
-                for index in xrange(len(linedata)):
-                    if type(linedata[index]) is types.FloatType:
-                        if linedata[index] < self.minmax[index][0]:
-                            self.minmax[index][0] = linedata[index]
-                        if linedata[index] > self.minmax[index][1]:
-                            self.minmax[index][1] = linedata[index]
-                self.data.append(linedata)
+                linenumber += 1
+                linedata = [linenumber]
+                line = line.strip()
+                while len(line):
+                    match = self.StringPattern.match(line)
+                    if match:
+                        linedata.append(match.groups()[0])
+                        line = line[match.end():]
+                    else:
+                        match = self.ColumnPattern.match(line)
+                        if match:
+                            try:
+                                linedata.append(float(match.groups()[0]))
+                            except ValueError:
+                                linedata.append(match.groups()[0])
+                            line = line[match.end():]
+                        else:
+                            try:
+                                linedata.append(float(line))
+                            except ValueError:
+                                linedata.append(line)
+                            line = ""
+                if len(linedata) > 1:
+                    if len(linedata) > maxcolumns:
+                        maxcolumns = len(linedata)
+                    self.data.append(linedata)
+        if maxcolumns > 0:
+            self.titles = ["line no."] + self.titles[:maxcolumns-1]
+            self.titles += [None] * (maxcolumns - len(self.titles))
+        for line in self.data:
+            line += [None] * (maxcolumns - len(line))
+
+    def getcolumnno(self, column):
+        try: return self.titles.index(column)
+        except ValueError:
+            return column
+
+    def addcolumn(self, title, expression, **columns):
+        if isinstance(expression, mathtree.MathTree):
+            tree = expression
+        else:
+            tree = mathtree.ParseMathTree(mathtree.ParseStr(expression))
+        columnlist = {}
+        for key, column in columns.items():
+            columnlist[key] = self.getcolumnno(column)
+        for key in tree.VarList():
+            if key not in columnlist.keys():
+                 columnlist[key] = self.getcolumnno(key)
+        varlist = {}
+        for data in self.data:
+            try:
+                for key in columnlist.keys():
+                    varlist[key] = float(data[columnlist[key]])
+            except (TypeError, ValueError):
+                data.append(None)
+            else:
+                data.append(tree.Calc(varlist))
+        self.titles.append(title)
 
 
 class data:
 
-    defaultstyle = markcross
+    defaultstyle = mark.cross
 
     def __init__(self, datafile, **columns):
         self.datafile = datafile
-        self.columns = columns
+        self.columns = {}
+        for key, column in columns.items():
+            self.columns[key] = datafile.getcolumnno(column)
 
     def setstyle(self, graph, style):
         self.style = style
         self.style.setcolumns(graph, self.columns)
 
-    def ranges(self):
-        return self.style.ranges(self.datafile.data)
+    def getranges(self):
+        return self.style.getranges(self.datafile.data)
 
-    def newranges(self, ranges):
+    def setranges(self, ranges):
         pass
 
     def draw(self, graph):
         self.style.drawpointlist(graph, self.datafile.data)
-
-
-AssignPattern = re.compile(r"\s*([a-z][a-z0-9_]*)\s*=", re.IGNORECASE)
 
 
 class function:
@@ -1688,45 +1792,73 @@ class function:
     defaultstyle = line
 
     def __init__(self, expression, points = 100):
-        self.expression = expression
-        self.points = points
-        match = AssignPattern.match(self.expression)
-        if match:
-            self.reskind = match.group(1)
-            self.expression = self.expression[match.end(): ]
-        else:
-            self.reskind = None
-        self.mathtree = mathtree.ParseMathTree(mathtree.ParseStr(self.expression))
-        varlist = self.mathtree.VarList()
-        if len(varlist) != 1: raise ValueError
-        self.var = varlist[0]
+        self.result, expression = expression.split("=")
+        self.mathtree = mathtree.ParseMathTree(mathtree.ParseStr(expression))
+        self.variable, = self.mathtree.VarList()
         self.evalranges = 0
+        self.points = points
 
     def setstyle(self, graph, style):
         self.style = style
-        if self.reskind is None:
-            self.reskind = graph.DefaultResult
-        self.style.setcolumns(graph, {self.var: 1, self.reskind: 2})
+        self.style.setcolumns(graph, {self.variable: 0, self.result: 1})
 
-    def ranges(self):
+    def getranges(self):
         if self.evalranges:
-            return self.style.ranges(self.data)
+            return self.style.getranges(self.data)
 
-    def newranges(self, ranges):
-        min, max = ranges[self.var]
+    def setranges(self, ranges):
+        min, max = ranges[self.variable]
         self.data = []
         for i in range(self.points):
             value = min + (max-min)*i / (self.points-1.0)
-            self.data.append((value, self.mathtree.Calc({self.var: value})))
+            self.data.append((value, self.mathtree.Calc({self.variable: value})))
         self.evalranges = 1
 
     def draw(self, graph):
         self.style.drawpointlist(graph, self.data)
 
 
-#class ParamFunction(Function):
-#    # TODO: to be written
-#    pass
+class paramfunction:
+
+    defaultstyle = line
+
+    def __init__(self, varname, min, max, points = 100, **expressions):
+        self.varname = varname
+        self.min = min
+        self.max = max
+        self.points = points
+        self.mathtrees = {}
+        for key, expression in self.expressions.items():
+            if isinstance(expression):
+                self.mathtrees[key] = expression
+            else:
+                self.mathtrees[key] = mathtree.ParseMathTree(mathtree.ParseStr(expression))
+        self.data = []
+        for i in range(self.points):
+            value = self.min + (self.max-self.min)*i / (self.points-1.0)
+            line = []
+            for key, tree in self.mathtrees.items():
+                line.append(tree.Calc({self.varname: value}))
+            self.data.append(line)
+
+    def setstyle(self, graph, style):
+        self.style = style
+        columns = {}
+        i = 0
+        for key in self.mathtrees.keys():
+            columns[key] = i
+            i += 1
+        self.style.setcolumns(graph, columns)
+
+    def getranges(self):
+        return self.style.getranges(self.data)
+
+    def setranges(self, ranges):
+        pass
+
+    def draw(self, graph):
+        self.style.drawpointlist(graph, self.data)
+
 
 
 
