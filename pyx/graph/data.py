@@ -86,13 +86,14 @@ class _data:
 
     def setstyle(self, graph, style):
         self.style = style
-        unhandledcolumns = self.style.setdata(graph, self.columns, self)
+        self.styledata = styledata()
+        unhandledcolumns = self.style.setdata(graph, self.columns, self.styledata)
         unhandledcolumnkeys = unhandledcolumns.keys()
         if len(unhandledcolumnkeys):
             raise ValueError("style couldn't handle column keys %s" % unhandledcolumnkeys)
 
     def selectstyle(self, graph, selectindex, selecttotal):
-        self.style.selectstyle(selectindex, selecttotal, self)
+        self.style.selectstyle(selectindex, selecttotal, self.styledata)
 
     def adjustaxes(self, graph, step):
         """
@@ -103,10 +104,10 @@ class _data:
         - on step == 2 axes ranges not previously set should be
           updated by data accumulated by step 1"""
         if step == 0:
-            self.style.adjustaxes(self.columns.values(), self)
+            self.style.adjustaxes(self.points, self.columns.values(), self.styledata)
 
     def draw(self, graph):
-        self.style.drawpoints(graph, self)
+        self.style.drawpoints(self.points, graph, self.styledata)
 
 
 class list(_data):
@@ -503,13 +504,13 @@ class function:
             raise ValueError("no variable found")
         self.xaxis = graph.axes[self.variable]
         self.columns = {self.variable: 1, self.result: 2}
-        unhandledcolumns = self.style.setdata(graph, self.columns, self)
+        unhandledcolumns = self.style.setdata(graph, self.columns, self.styledata)
         unhandledcolumnkeys = unhandledcolumns.keys()
         if len(unhandledcolumnkeys):
             raise ValueError("style couldn't handle column keys %s" % unhandledcolumnkeys)
 
     def selectstyle(self, graph, selectindex, selecttotal):
-        self.style.selectstyle(selectindex, selecttotal, self)
+        self.style.selectstyle(selectindex, selecttotal, self.styledata)
 
     def adjustaxes(self, graph, step):
         """
@@ -525,7 +526,7 @@ class function:
                 self.points.append([None, self.min])
             if self.max is not None:
                 self.points.append([None, self.max])
-            self.style.adjustaxes([1], self)
+            self.style.adjustaxes(self.points, [1], self.styledata)
         elif step == 1:
             min, max = graph.axes[self.variable].getrange()
             if self.min is not None: min = self.min
@@ -546,10 +547,10 @@ class function:
                 except (ArithmeticError, ValueError):
                     pass
         elif step == 2:
-            self.style.adjustaxes([2], self)
+            self.style.adjustaxes(self.points, [2], self.styledata)
 
     def draw(self, graph):
-        self.style.drawpoints(graph, self)
+        self.style.drawpoints(self.points, graph, self.styledata)
 
 
 class paramfunction:
@@ -589,18 +590,18 @@ class paramfunction:
 
     def setstyle(self, graph, style):
         self.style = style
-        unhandledcolumns = self.style.setdata(graph, self.columns, self)
+        unhandledcolumns = self.style.setdata(graph, self.columns, self.styledata)
         unhandledcolumnkeys = unhandledcolumns.keys()
         if len(unhandledcolumnkeys):
             raise ValueError("style couldn't handle column keys %s" % unhandledcolumnkeys)
 
     def selectstyle(self, graph, selectindex, selecttotal):
-        self.style.selectstyle(selectindex, selecttotal, self)
+        self.style.selectstyle(selectindex, selecttotal, self.styledata)
 
     def adjustaxes(self, graph, step):
         if step == 0:
-            self.style.adjustaxes(self.columns.values(), self)
+            self.style.adjustaxes(self.points, self.columns.values(), self.styledata)
 
     def draw(self, graph):
-        self.style.drawpoints(graph, self)
+        self.style.drawpoints(self.points, graph, self.styledata)
 
