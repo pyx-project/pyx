@@ -60,8 +60,9 @@ class canvas:
 
     PSCmds = [] 				# stores all PS commands of the canvas
 
+    # ***Jörg***: kann man mit isinstance machen ... ist vielleicht hübscher
     isCanvas = 1				# identifies a canvas
-    
+
     PSPositionCorrect = 0			# does actual PS position coincide with our x,y
     
     def __init__(self, base, width, height ):
