@@ -733,6 +733,7 @@ class texrunner:
         self.preambles = []
         self.needdvitextboxes = [] # when texipc-mode off
         self.dvifile = None
+        self.textboxesincluded = 0
         savetempdir = tempfile.tempdir
         tempfile.tempdir = os.curdir
         self.texfilename = os.path.basename(tempfile.mktemp())
@@ -1141,7 +1142,9 @@ class texrunner:
         # this is some experimental code to put text into several boxes
         # while the bounding shape changes from box to box (rectangles only)
         # first we load sev.tex
-        self.execute(r"\input textboxes.tex", [texmessage.load])
+        if not self.textboxesincluded:
+            self.execute(r"\input textboxes.tex", [texmessage.load])
+            self.textboxesincluded = 1
         # define page shapes
         pageshapes_str = "\\hsize=%.5ftruept%%\n\\vsize=%.5ftruept%%\n" % (72.27/72*unit.topt(pageshapes[0][0]), 72.27/72*unit.topt(pageshapes[0][1]))
         pageshapes_str += "\\lohsizes={%\n"
