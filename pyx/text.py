@@ -2218,31 +2218,6 @@ class texrunner:
             helper.checkattr(texmessagedefaultrun, allowmulti=(texmessage,))
             self.texmessagedefaultrun = texmessagedefaultrun
 
-    def bracketcheck(self, expr):
-        """a helper method to check the usage of "{" and "}"
-        - Michael Schindler claims that this is not necessary"""
-        pass
-
-#    def bracketcheck(self, expr):
-#        """a helper method for consistant usage of "{" and "}"
-#        - prevent to pass unbalanced expressions to TeX
-#        - raises an appropriate ValueError"""
-#        depth = 0
-#        esc = 0
-#        for c in expr:
-#            if c == "{" and not esc:
-#                depth = depth + 1
-#            if c == "}" and not esc:
-#                depth = depth - 1
-#                if depth < 0:
-#                    raise ValueError("unmatched '}'")
-#            if c == "\\":
-#                esc = (esc + 1) % 2
-#            else:
-#                esc = 0
-#        if depth > 0:
-#            raise ValueError("unmatched '{'")
-
     def preamble(self, expr, *args):
         r"""put something into the TeX/LaTeX preamble
         - in LaTeX, this is done before the \begin{document}
@@ -2253,11 +2228,9 @@ class texrunner:
           (you should be able to switch from TeX to LaTeX, if you want,
           without breaking something
         - preamble expressions must not create any dvi output
-        - args might contain texmessage instances
-        - a bracketcheck is performed on the expression"""
+        - args might contain texmessage instances"""
         if self.texdone or not self.preamblemode:
             raise TexNotInPreambleModeError
-        self.bracketcheck(expr)
         helper.checkattr(args, allowmulti=(texmessage,))
         args = helper.getattrs(args, texmessage, default=self.texmessagedefaultpreamble)
         self.execute(expr, *args)
@@ -2274,8 +2247,7 @@ class texrunner:
           - _texsetting instances
           - texmessage instances
           - trafo._trafo instances
-          - base.PathStyle instances
-        - a bracketcheck is performed on the expression"""
+          - base.PathStyle instances"""
         if expr is None:
             raise ValueError("None expression is invalid")
         if self.texdone:
@@ -2300,7 +2272,6 @@ class texrunner:
         texsettings.sort()
         for texsetting in texsettings:
             expr = texsetting.modifyexpr(expr, texsettings, self)
-        self.bracketcheck(expr)
         self.execute(expr, *helper.getattrs(args, texmessage, default=self.texmessagedefaultrun))
         match = self.PyXBoxPattern.search(self.texmessage)
         if not match or int(match.group("page")) != self.page:

@@ -6,6 +6,7 @@ PyX
     - disable building pykpathsea module by default
     - more detailed description of install process in INSTALL
     - include example data files in distribution (suggested by Andrea Riciputi)
+    - force dvips to write ps files instead of printing them (suggested by Otto Tronarp)
   - text module:
     - improved is-readable test for lfs files and pyx.def file
     - explicitly quit (La)TeX in cleantmp (helps when quitting with <Ctrl>C)
