@@ -2,18 +2,157 @@
 
 \label{path}
 
-With the help of the path module it is possible to construct PostScript like 
-paths, which are one of the main building blocks for the generation of 
-drawings. To that end it provides 
-\begin{itemize}
-\item classes (derived from \verb|pathel|) for the primitives \verb|moveto|, \verb|lineto|, etc.
-\item the class \verb|path| (and derivatives thereof) representing an
-  entire PostScript path
-\item the class \verb|normpath| (and derivatives thereof) which is a
-  path consisting only of a certain subset of \verb|pathel|s, namely
-  the four \verb|normpathel|s \verb|moveto|, \verb|lineto|,
-  \verb|curveto| and \verb|closepath|.
-\end{itemize}
+\section{Introduction}
+
+The path module allows one to construct PostScript-like
+\textit{paths}, which are one of the main building blocks for the
+generation of drawings. A PostScript path is an arbitrary shape built
+up of straight lines, arc segments and cubic Bezier curves. Such a
+path does not have to be connected but may also consist of multiple
+connected segments, which will be called \textit{sub paths} in the
+following.
+
+Usually, a path is constructed by passing a list of the path
+primitives \verb|moveto|, \verb|lineto|, \verb|curveto|, etc., to the
+constructor of the \verb|path| class. The following code snippet, for
+instance, defines a path \verb|p| that consists of a straight line
+from the point $(0, 0)$ to the point $(1, 1)$
+\begin{quote}
+\begin{verbatim}
+from pyx import *
+p = path.path(path.moveto(0, 0), path.lineto(1, 1))
+\end{verbatim}
+\end{quote}
+Equivalently, one can also use the predefined \verb|path| subclass
+\verb|line| and write
+\begin{quote}
+\begin{verbatim}
+p = path.line(0, 0, 1, 1)
+\end{verbatim}
+\end{quote}
+
+Usually, one wants to draw the path on a canvas, which can be done
+using the \verb|stroke| method of the \verb|canvas| class, i.e.,
+\begin{quote}
+\begin{verbatim}
+c = canvas.canvas()
+c.stroke(p)
+c.writeEPSfile("line")
+\end{verbatim}
+\end{quote}
+To complete the example, we have added a \verb|writeEPSfile| call,
+which writes the contents of the canvas into the given file.
+
+Let us as second example define a path which consists of more than 
+one sub path:
+\begin{quote}
+\begin{verbatim}
+cross = path.path(path.moveto(0, 0), path.rlineto(1, 1),
+                  path.moveto(1, 0), path.rlineto(-1, 1))
+\end{verbatim}
+\end{quote}
+The first sub path is again a straight line from $(0, 0)$ to $(1, 1)$,
+with the only difference that we now have used the \verb|rlineto|
+class, whose arguments count relative from the last point in the path.
+The second \verb|moveto| instance opens a new sub path starting at the
+point $(1, 0)$ and ending at $(0, 1)$. Note that although both lines
+intersect at the point $(1/2, 1/2)$, they count as separate sub paths.
+The general rule is that each occurence of \verb|moveto| opens a new
+sub path. This means that if one wants to draw a rectangle, one should
+not use
+\begin{quote}
+\begin{verbatim}
+# wrong: do not use moveto when you want a single sub path
+rect1 = path.path(path.moveto(0, 0), path.lineto(0, 1),
+                  path.moveto(1, 0), path.lineto(1, 1),
+                  path.moveto(1, 1), path.lineto(1, 1),
+                  path.moveto(0, 1), path.lineto(0, 0))
+\end{verbatim}
+\end{quote}
+which would construct a rectangle consisting of four disconnected
+sub paths. Instead the correct way of defining a rectangle is 
+\begin{quote}
+\begin{verbatim}
+# correct: a rectangle consisting of a single closed sub path
+rect2 = path.path(path.moveto(0, 0), path.lineto(0, 1), 
+                  path.lineto(1, 1), path.lineto(1, 0),
+                  path.closepath())
+\end{verbatim}
+\end{quote}
+%
+\begin{figure}
+\centerline{\includegraphics{rects}}
+\caption{Not closed (left) and closed (midlle) rectangle. Filling a
+  path (right) always closes it automatically.}
+\label{fig:rects}
+\end{figure}
+Note that for the last straight line of the rectangle (from $(0, 1)$
+back to the origin at $(0, 0)$)) we have used \verb|closepath|.  This
+directive adds a straight line from the current point to the first
+point of the current sub path and furthermore \textit{closes} the sub
+path, i.e., it joins the beginning and the end of the line segment.
+The difference can be appreciated in Fig.~\ref{fig:rects}, where
+also a filled (and at the same time stroked) rectangle is shown.
+The corresponding code looks like
+\begin{quote}
+\begin{verbatim}
+c.stroke(rect1, [deco.filled([color.grey(0.95)])])
+\end{verbatim}
+\end{quote}
+The important point to remember here is that when filling a path, PostScript
+automatically closes it.
+
+Of course, rectangles are also predefined in \PyX{}, so above we could
+have as well written
+\begin{quote}
+\begin{verbatim}
+rect2 = path.rect(0, 0, 1, 1)
+\end{verbatim}
+\end{quote}
+Here, the first two arguments specify the origin of the rectangle
+while the second two arguments define its width and height,
+respectively.
+
+XXX arc, bezier example
+
+\section{Path operations}
+
+Often, one not only wants to stroke or fill a path on the canvas
+but before do some geometrical operations with it. For instance, one
+might want to intersect one path with another one and the split the
+paths at the intersection points and then join the segments together
+in a new way. \PyX{} supports such tasks by means of a number
+of path methods, which we will introduce in the following.
+
+Suppose you want to draw the radii to the intersection points of a
+circle with a straight line. This can be done with the following code
+which gives the result shown in Fig.~\ref{fig:radii}
+\begin{quote}
+\begin{verbatim}
+from pyx import *
+
+c = canvas.canvas()
+
+circ = path.circle(0, 0, 5)
+line = path.line(-7, 2, 7, 5)
+c.stroke(circ)
+c.stroke(line)
+
+isects = circ.intersect(line)[0]
+for isect in isects:
+    c.stroke(path.line(0, 0, *circ.at(isect)))
+
+c.writeEPSfile("radii")
+\end{verbatim}
+\end{quote}
+\begin{figure}
+\centerline{\includegraphics{radii}}
+%\caption{}
+\label{fig:rects}
+\end{figure}
+
+XXX continue
+
 
 \section{Class pathel}
 
