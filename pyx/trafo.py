@@ -102,14 +102,14 @@ class _trafo(base.PSOp):
 
     def __str__(self):
         return "[%f %f %f %f %f %f] concat\n" % \
-               ( self.matrix[0][0], self.matrix[0][1], 
-                 self.matrix[1][0], self.matrix[1][1], 
+               ( self.matrix[0][0], self.matrix[1][0], 
+                 self.matrix[0][1], self.matrix[1][1], 
                  self.vector[0], self.vector[1] ) 
 
     def write(self, file):
         file.write("[%f %f %f %f %f %f] concat\n" % \
-                    ( self.matrix[0][0], self.matrix[0][1], 
-                      self.matrix[1][0], self.matrix[1][1], 
+                    ( self.matrix[0][0], self.matrix[1][0], 
+                      self.matrix[0][1], self.matrix[1][1], 
                       self.vector[0], self.vector[1] ) )
 
     def bbox(self):
