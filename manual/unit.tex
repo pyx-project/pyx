@@ -3,15 +3,16 @@
 
 With the \verb|unit| module \PyX{} makes available classes and
 functions for the specification and manipulation of lengths. As usual,
-lengths consist of a number together with a measurement unit,
-\textit{e.g.}\ \unit[1]{cm}, \unit[50]{points}, \unit[0.42]{inch}.  In 
-addition, lengths in \PyX{} are composed of the four types ``true'', 
-``user'', ``visual'' and ``width'', \textit{e.g.}\ \unit[1]{user cm}, 
-\unit[50]{true points}, $(0.42\ \mathrm{visual} + 0.2\ \mathrm{width})$ inch.  
-As their names indicate, they serve different purposes. True lengths are not
-scalable and serve mainly for return values of \PyX{} functions.  The
-other length types allow a rescaling by the user and differ with
-respect to the type of object they are applied to:
+lengths consist of a number together with a measurement unit, e.g.,
+\unit[1]{cm}, \unit[50]{points}, \unit[0.42]{inch}.  In addition,
+lengths in \PyX{} are composed of the five types ``true'', ``user'',
+``visual'', ``width'', and ``\TeX'', e.g., \unit[1]{user cm},
+\unit[50]{true points}, $(0.42\ \mathrm{visual} + 0.2\ 
+\mathrm{width})$ inch.  As their names indicate, they serve different
+purposes. True lengths are not scalable and are mainly used for return
+values of \PyX{} functions.  The other length types can be rescaled by
+the user and differ with respect to the type of object they are
+applied to:
 
 \begin{description}
 \item[user length:] used for lengths of graphical objects like
@@ -19,6 +20,7 @@ respect to the type of object they are applied to:
 \item[visual length:] used for sizes of visual elements, like arrows,
   graph symbols, axis ticks, etc.
 \item[width length:] used for line widths
+\item[\TeX{} length:] used for all \TeX{} and \LaTeX{} output
 \end{description}
 
 For instance, if you only want thicker lines for a publication
@@ -36,7 +38,9 @@ unit, defined via \verb|unit.set(defaultunit=defaultunit)|.
   maximum of three parts separated by one or more whitespaces:
 \begin{description}
 \item[quantifier:] integer/float value. Optional, defaults to \verb|1|.
-\item[type:] \verb|"t"| (true), \verb|"u"| (user), \verb|"v"| (visual), or \verb|"w"| (width).
+\item[type:] \verb|"t"| (true), \verb|"u"| (user), \verb|"v"|
+  (visual), \verb|"w"| (width),
+  or \verb|"x"| (TeX).
   Optional, defaults to \verb|"u"|.
 \item[unit:] \verb|"m"|, \verb|"cm"|, \verb|"mm"|, \verb|"inch"|, or
   \verb|"pt"|. Optional, defaults to the default unit.
@@ -66,7 +70,7 @@ at the beginning of your program.
 
 To complete the discussion of the \verb|length| class, we mention,
 that as expected \PyX{} lengths can be added, subtracted, multiplied by
-a numerical factor and converted to a string.
+a numerical factor, converted to a string and compared with each other.
 
 \section{Subclasses of length}
 
@@ -90,11 +94,11 @@ Subclass of \texttt{length} & Type & Unit & Subclass of \texttt{length} & Type &
 \texttt{t\_mm(x)} & true & mm & \texttt{w\_mm(x)} & width & mm\\
 \texttt{t\_inch(x)} & true & inch & \texttt{w\_inch(x)} & width & inch\\
 \texttt{t\_pt(x)} & true & points & \texttt{w\_pt(x)} & width & points\\
-\texttt{u\_m(x)} & user & m & \\
-\texttt{u\_cm(x)} & user & cm & \\
-\texttt{u\_mm(x)} & user & mm & \\
-\texttt{u\_inch(x)} & user & inch & \\
-\texttt{u\_pt(x)} & user & points & \\
+\texttt{u\_m(x)} & user & m & \texttt{x\_m(x)} & \TeX & m \\
+\texttt{u\_cm(x)} & user & cm & \texttt{x\_cm(x)} & \TeX & cm \\
+\texttt{u\_mm(x)} & user & mm & \texttt{x\_mm(x)} & \TeX & mm w\\
+\texttt{u\_inch(x)} & user & inch & \texttt{x\_inch(x)} & \TeX & inch \\
+\texttt{u\_pt(x)} & user & points & \texttt{x\_pt(x)} & \TeX & points\\
 
 \end{tabular}
 \end{center}

@@ -52,6 +52,10 @@ TODO:
   - attr module:
     - TODO: general documentation about attributes, clearing, merging?
     - TODO: general documentation about changeable attributes?
+  - path module:
+    - glue -> join?
+  - unit module:
+    - what about unit.cm() -> unit.cm, ...
 
 0.6 (XXXX/XX/XX):
   - bbox module:
@@ -78,7 +82,7 @@ TODO:
     - added new pathels multilineto_pt and multicurveto which allows to specify
       a list of points and can thus be much more efficient
     - internal methods return coordinates in pts
-    - lentopar returns only parameters not total length (TODO: documentation)
+    - arclentoparam returns only parameters not total length
     - added path.arclength_pt, path.at_pt, path.begin_pt, path.end_pt (and
       correspondingly for normpath) (TODO: documentation)
     - complete refactoring of the normpath class: normpaths now consist of
@@ -92,7 +96,6 @@ TODO:
       when parameter is out of range
     - the accuracy epsilon can now only be specified in normpath and normsubpath
       constructor and no longer in arguments of path and normpath methods
-      (TODO: documentation)
     - negative parameters are no longer supported in path and normpath methods
     - path and normpath methods which accept parameter value param now
       alternatively accept an arc length
@@ -109,8 +112,8 @@ TODO:
     - not imported by default anymore
     - obsolete warning when importing this module
   - unit module:
-    - length comparision (David Beach) (TODO: documentation)
-    - x-scale for TeX (TODO: documenation)
+    - length comparision (David Beach)
+    - x-scale for TeX
     - more unit tests
 
 0.5.1 (2004/01/22):

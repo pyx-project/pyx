@@ -125,22 +125,22 @@ in a new way. \PyX{} supports such tasks by means of a number
 of path methods, which we will introduce in the following.
 
 Suppose you want to draw the radii to the intersection points of a
-circle with a straight line. This can be done with the following code
-which gives the result shown in Fig.~\ref{fig:radii}
+circle with a straight line. This task can be done using the following
+code which gives the result shown in Fig.~\ref{fig:radii}
 \begin{quote}
 \begin{verbatim}
 from pyx import *
 
 c = canvas.canvas()
 
-circ = path.circle(0, 0, 5)
+circle = path.circle(0, 0, 5)
 line = path.line(-7, 2, 7, 5)
-c.stroke(circ)
-c.stroke(line)
+c.stroke(circle, [style.linewidth.Thick])
+c.stroke(line, [style.linewidth.Thick])
 
-isects = circ.intersect(line)[0]
-for isect in isects:
-    c.stroke(path.line(0, 0, *circ.at(isect)))
+isects_circle, isects_line = circle.intersect(line)
+for isect in isects_circle:
+    c.stroke(path.line(0, 0, *circle.at(isect)))
 
 c.writeEPSfile("radii")
 \end{verbatim}
@@ -148,10 +148,57 @@ c.writeEPSfile("radii")
 \begin{figure}
 \centerline{\includegraphics{radii}}
 %\caption{}
-\label{fig:rects}
+\label{fig:radii}
 \end{figure}
+Passing another path, here \verb|line|, to the \verb|intersect| method
+of \verb|circle|, we obtain a tuple of parameter values of the
+intersection points. The first element of the tuple is a list of
+parameter values for the path whose \verb|intersect| method we have
+called, the second element is the corresponding list for the path
+passed as argument to this method. In the present example, we only
+need one list of parameter values, namely \verb|isects_circle|.
+Iterating over the elements of this list, we draw the radii, using the
+\verb|at| path method to obtain the point corresponding to the
+parameter value.
 
-XXX continue
+Another powerful feature of \PyX{} is its ability to split paths at a
+given set of parameters. For instance, in order to fill in the
+previous example the segment of the circle delimited by the straight
+line (cf.\ Fig.~\ref{fig:radii2}), you first have to construct a path
+corresponding to the outline of this segment. The following code
+snippet does yield this \verb|segment|
+\begin{quote}
+\begin{verbatim}
+arc1, arc2 = circle.split(isects_circle)
+arc = arc1.arclen()<arc2.arclen() and arc1 or arc2
+
+isects_line.sort()
+line1, line2, line3 = line.split(isects_line)
+
+segment = line2 << arc
+\end{verbatim}
+\end{quote}
+\begin{figure}
+\centerline{\includegraphics{radii2}}
+%\caption{}
+\label{fig:radii2}
+\end{figure}
+Here, we first split the circle using the \verb|split| method passing
+the list of parameters obtained above. Since the circle is closed,
+this yields two arc segments. We then use the \verb|arclen|, which
+returns the arc length of the path, to find the shorter of the two
+arcs. Before splitting the line, we have to take into account that
+the \verb|split| method only accepts a sorted list of parameters.
+Finally, we join the straight line and the arc segment. For
+this, we make use of the \verb|<<| operator, which not only adds
+the paths (which could be done using \verb|line2 + arc|), but also
+joins the last sub path of \verb|line2| and the first one of
+\verb|arc|. Thus, \verb|segment| consists of only a single sub path
+and filling works as expected.
+
+XXX reverse, reversed, parametrisation, arclen parameters
+
+
 
 
 \section{Class pathel}
@@ -203,34 +250,11 @@ Some notes on the above:
 
 \section{Class path}
 
-The class path represents PostScript like paths in \PyX. The \verb|path| 
-constructor allows the creation of such a path out of a series of 
-\verb|pathel|s. The following simple example generates a triangle:
-looks like:
-\begin{quote}
-\begin{verbatim}
-from pyx import *
-from pyx.path import *
-
-p = path(moveto(0, 0), 
-         lineto(0, 1),
-         lineto(1, 1),
-         closepath())
-\end{verbatim}
-\end{quote}
-In section~\ref{chap:canvas}, we shall see, how it is possible to output such 
-a path on a canvas. For the moment, we only want to discuss the methods 
-provided by the \verb|path| class. These range from standard operations like 
-the determination of the length of a path via \verb|len(p)|, fetching of
-items using \verb|p[index]| and the possibility to concatenate two
-paths, \verb|p1 + p2|, append further \verb|pathel|s using
-\verb|p.append(pathel)| to more advanced methods, which are summarized
-in the following table.
-
-XXX terminology: subpath, \dots
+The methods provided by instance of the class \verb|path| are
+summarized in the following table:
 
 \medskip
-\begin{tabularx}{\linewidth}{>{\hsize=.7\hsize}X>{\raggedright\arraybackslash\hsize=1.3\hsize}X}
+\begin{tabularx}{1.04\linewidth}{>{\hsize=.7\hsize}X>{\raggedright\arraybackslash\hsize=1.3\hsize}X}
   \texttt{path} method & function \\
   \hline \texttt{\_\_init\_\_(*pathels)} & construct new \texttt{path}
   consisting of \texttt{pathels}\\
@@ -239,16 +263,26 @@ XXX terminology: subpath, \dots
   \texttt{arclen(epsilon=1e-5)} & returns the total arc length of
   all \texttt{path} segments in PostScript points with accuracy
   \texttt{epsilon}.$^\dagger$\\
-  \texttt{at(t)} & returns the coordinates of the point of
-  \texttt{path} corresponding to the parameter value
-  \texttt{t}.$^\dagger$\\
-  \texttt{arclentoparam(l, \newline\phantom{lentopar(}epsilon=1e-5)} & returns the
-  parameter value corresponding to the lengths \texttt{l} (one or a list of
+  \texttt{arclentoparam(lengths, \newline\phantom{arclentoparam(}epsilon=1e-5)} & returns the
+  parameter value corresponding to the lengths \texttt{lengths} (one or a list of
   lengths). This uses arclen-calculations with accuracy
   \texttt{epsilon}.$^\dagger$\\
+  \texttt{at(param=None,
+    \newline\phantom{at(}arclen=None)} & returns the coordinates of the point of
+  \texttt{path} corresponding to the parameter value
+  \texttt{param} or the arc length \verb|arclen|.$^\dagger$\\
   \texttt{bbox()} & returns the bounding box of the \texttt{path}\\
   \texttt{begin()} & return first point of first subpath of
   \texttt{path}.$^\dagger$\\
+   \texttt{curvradius(self, 
+    \newline\phantom{curvradius(}param=None,
+    \newline\phantom{curvradius(}arclen=None)} &
+        Returns the curvature radius (or None if infinite) at parameter param.
+        This is the inverse of the curvature at this parameter
+        Please note that this radius can be negative or positive,
+        depending on the sign of the curvature.
+        $^\dagger$
+        \\
   \texttt{end()} & return last point of last subpath of
   \texttt{path}.$^\dagger$\\
   \texttt{glue(opath)} & returns the \texttt{path} glued together with
@@ -257,21 +291,35 @@ XXX terminology: subpath, \dots
   \texttt{intersect(opath, \newline\phantom{intersect(}epsilon=1e-5)}
   & returns tuple consisting of two lists of parameter values
   corresponding to the
-  intersection points of \texttt{path} and \texttt{opath}, respectively.$^\dagger$\\
+  intersection points of \texttt{path} and \texttt{opath},
+  respectively.$^\dagger$\\
+  \texttt{range()} & returns the maximal value of the parameter value
+  \texttt{param} in the path methods\\
   \texttt{reversed()} & returns the normalized reversed
   \texttt{path}.$^\dagger$\\
   \texttt{split(parameters)} & splits the path at the given list of
   parameters (which have to be sorted in ascending order) and returns
   a corresponding list of 
   \texttt{normpath}s.$^\dagger$\\
-    \texttt{tangent(t, length=None)} & return the tuple corresponding to
-    the tangent vector to the path at the parameter value \texttt{t}.
-    Negative values of \texttt{t} count
-    from the end of the path. The absolute value of \texttt{t} must be
-    smaller or equal to the number of segments in the normpath,
-    otherwise None is returned.  At discontinuities in the path, the
+  \texttt{tangent(param=None, 
+      \newline\phantom{tangent(}arclen=None,
+      \newline\phantom{tangent(}length=None)} & return the tuple corresponding to
+    the tangent vector to the path at the parameter value
+  \texttt{param} or the arc length \texttt{arclen}.
+    \texttt{param} (\texttt{arclen}) has to be
+    smaller or equal to \texttt{self.range()} (\texttt{self.arclen()}), 
+    otherwise an exception is raised.  At discontinuities in the path, the
     limit from below is returned. If \texttt{length} is not
-  \texttt{None}, the tangent vector will be scaled correspondingly.
+    \texttt{None}, the tangent vector will be scaled correspondingly.
+  \\
+  \texttt{trafo(param=None, 
+      \newline\phantom{trafo(}arclen=None} & return a trafo which maps 
+    a point $(0, 1)$ to the tangent vector to the path at the parameter value
+    \texttt{param} or the arc length \texttt{arclen}.
+    \texttt{param} (\texttt{arclen}) has to be
+    smaller or equal to \texttt{self.range()} (\texttt{self.arclen()}), 
+    otherwise an exception is raised.  At discontinuities in the path, the
+    limit from below is returned.
   \\
   \texttt{transformed(trafo)} & returns the normalized and accordingly
   to the linear transformation \texttt{trafo} transformed path. Here,
@@ -293,6 +341,9 @@ Some notes on the above:
 \item Instead of using the \verb|glue| method, you can also glue two
 paths together with help of the \verb|<<| operator, for instance
 \verb|p = p1 << p2|.
+\item In the methods accepting both a parameter value \verb|param| and
+  an arc length \verb|arclen|, exactly one of these arguments has to
+  provided.
 \end{itemize}
 
 \section{Class normpath}
@@ -304,18 +355,17 @@ paths are used during all of the more sophisticated path operations
 which are denoted by a $\dagger$ in the above table.
 
 
-Any path can
-easily be converted to its normalized form by passing it as parameter
-to the \texttt{normpath} constructor,
+Any path can easily be converted to its normalized form by passing it
+as parameter to the \texttt{normpath} constructor,
 \begin{quote}
 \begin{verbatim}
 np = normpath(p)
 \end{verbatim}
 \end{quote}
-Alternatively, by passing a series of \texttt{pathel}s to the constructor, a
-\texttt{normpath} can be constructed like a generic \texttt{path}.
-The sum of a \verb|normpath| and a \verb|path| always yields a
-\verb|normpath|.
+Additionally, you can specify the accuracy (in points) which is used
+in all \verb|normpath| calculations by means of the keyword argument
+\verb|epsilon|, which defaults to $10^{-5}$.  Note that the sum of a
+\verb|normpath| and a \verb|path| always yields a \verb|normpath|.
 
 \section{Subclasses of path}
 
@@ -337,8 +387,6 @@ control points  (\texttt{x0}, \texttt{y0}), $\dots$, (\texttt{x3}, \texttt{y3}).
   center (\texttt{x}, \texttt{y}) and radius~\texttt{r}.
 \end{tabularx}
 \medskip
-Note that besides the \verb|circle| class all classes are actually
-subclasses of \verb|normpath|.
 
 
 % \section{Examples}

@@ -2,13 +2,13 @@ from pyx import *
 
 c = canvas.canvas()
 
-circ = path.circle(0, 0, 2)
+circle = path.circle(0, 0, 2)
 line = path.line(-3, 1, 3, 2)
-c.stroke(circ)
-c.stroke(line)
+c.stroke(circle, [style.linewidth.Thick])
+c.stroke(line, [style.linewidth.Thick])
 
-isects = circ.intersect(line)[0]
-for isect in isects:
-    c.stroke(path.line(0, 0, *circ.at(isect)))
+isects_circle, isects_line = circle.intersect(line)
+for isect in isects_circle:
+    c.stroke(path.line(0, 0, *circle.at(isect)))
 
 c.writeEPSfile("radii")
