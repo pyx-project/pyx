@@ -187,25 +187,34 @@ class length:
 
 # lengths with user units as default
 
-class pt(length):
+class u_pt(length):
     def __init__(self, l=None, default_type="u"):
        length.__init__(self, l, default_type=default_type, dunit="pt")
 
 
-class m(length):
+class u_m(length):
     def __init__(self, l=None, default_type="u"):
        length.__init__(self, l, default_type=default_type, dunit="m")
 
 
-class mm(length):
+class u_mm(length):
     def __init__(self, l=None, default_type="u"):
        length.__init__(self, l, default_type=default_type, dunit="mm")
 
-cm = length
+u_cm = length
 
-class inch(length):
+class u_inch(length):
     def __init__(self, l=None, default_type="u"):
        length.__init__(self, l, default_type=default_type, dunit="inch")
+
+# without further specification, length are user length. Hence we
+# define the following aliases
+
+pt = u_pt
+m = u_m
+cm = u_cm
+mm = u_mm
+inch = u_inch
 
 # true lengths
 
@@ -233,5 +242,54 @@ class t_inch(length):
     def __init__(self, l=None):
        length.__init__(self, l, default_type="t", dunit="inch")
 
+# visual lengths
+
+class v_pt(length):
+    def __init__(self, l=None):
+       length.__init__(self, l, default_type="v", dunit="pt")
 
 
+class v_m(length):
+    def __init__(self, l=None):
+       length.__init__(self, l, default_type="v", dunit="m")
+
+
+class v_cm(length):
+    def __init__(self, l=None):
+       length.__init__(self, l, default_type="v", dunit="cm")
+
+
+class v_mm(length):
+    def __init__(self, l=None):
+       length.__init__(self, l, default_type="v", dunit="mm")
+
+
+class v_inch(length):
+    def __init__(self, l=None):
+       length.__init__(self, l, default_type="v", dunit="inch")
+
+# width lengths
+
+class w_pt(length):
+    def __init__(self, l=None):
+       length.__init__(self, l, default_type="w", dunit="pt")
+
+
+class w_m(length):
+    def __init__(self, l=None):
+       length.__init__(self, l, default_type="w", dunit="m")
+
+
+class w_cm(length):
+    def __init__(self, l=None):
+       length.__init__(self, l, default_type="w", dunit="cm")
+
+
+class w_mm(length):
+    def __init__(self, l=None):
+       length.__init__(self, l, default_type="w", dunit="mm")
+
+
+class w_inch(length):
+    def __init__(self, l=None):
+       length.__init__(self, l, default_type="w", dunit="inch")
