@@ -8,6 +8,7 @@ PyX
     - tick.text is renamed to tick.label (in progress), ticks and labels will become tickpos/tickdist and labelpos/labeldist in partitioning
     - separate texter out of the axispainter (in progress)
     TODO:
+    - do not include unneeded line segments when the axis range is set manually
     - allow for an iteration of a graph style, when it is used several times
     - common bboxes for different graphs
     - automatic datafile key title
