@@ -39,10 +39,10 @@ class polygon_pt:
 
     def _ensurecenter(self):
         if self.center is None:
-            self.center = [0,0]
+            self.center = 0, 0
             for corn in self.corners:
-                self.center = [self.center[0] + corn[0], self.center[1] + corn[1]]
-            self.center = [self.center[0]/len(self.corners), self.center[1]/len(self.corners)]
+                self.center = self.center[0] + corn[0], self.center[1] + corn[1]
+            self.center = self.center[0]/len(self.corners), self.center[1]/len(self.corners)
 
     def path(self, centerradius=None, bezierradius=None, beziersoftness=1):
         pathels = []
@@ -340,7 +340,7 @@ class polygon(polygon_pt):
     def __init__(self, corners=None, center=None, **args):
         corners = [[unit.topt(x) for x in corner] for corner in corners]
         if center is not None:
-            center = map(unit.topt, center)
+            center = unit.topt(center[0]), unit.topt(center[1])
         polygon_pt.__init__(self, corners=corners, center=center, **args)
 
 
