@@ -857,7 +857,7 @@ class rect(_style):
 
 class barpos(_style):
 
-    providesdata = ["vpos", "vposmissing", "vposavailable", "vposvalid", "vbarrange", "barcolumns", "barvalueindex", "stackedbar"]
+    providesdata = ["vpos", "vposmissing", "vposavailable", "vposvalid", "vbarrange", "barcolumns", "barvalueindex", "lastbarvalue", "stackedbar", "stackedbardraw"]
 
     defaultfrompathattrs = []
 
@@ -886,7 +886,7 @@ class barpos(_style):
                     sharedata.barcolumns.append(axisname + "name")
                     found += 1
                 if found > 1:
-                    raise ValueError("multiple names")
+                    raise ValueError("multiple names and value")
             if not found:
                 raise ValueError("value/name missing")
         if sharedata.barvalueindex is None:
@@ -948,8 +948,9 @@ class barpos(_style):
         for i, barname in enumerate(sharedata.barcolumns):
             if i == sharedata.barvalueindex:
                 sharedata.vbarrange[i][0] = privatedata.vfromvalue
+                sharedata.lastbarvalue = sharedata.point[barname]
                 try:
-                    sharedata.vpos[i] = sharedata.vbarrange[i][1] = graph.axes[barname].convert(sharedata.point[barname])
+                    sharedata.vpos[i] = sharedata.vbarrange[i][1] = graph.axes[barname].convert(sharedata.lastbarvalue)
                 except (ArithmeticError, ValueError, TypeError):
                     sharedata.vpos[i] = sharedata.vbarrange[i][1] = None
             else:
@@ -976,11 +977,12 @@ registerdefaultprovider(barpos(), ["vbarrange", "barcolumns", "barvalueindex"])
 class stackedbarpos(_style):
 
     # provides no additional data, but needs some data (and modifies some of them)
-    needsdata = ["vbarrange", "barcolumns", "barvalueindex"]
+    needsdata = ["vbarrange", "barcolumns", "barvalueindex", "lastbarvalue", "stackedbar", "stackedbardraw"]
 
-    def __init__(self, stackname, epsilon=1e-10):
+    def __init__(self, stackname, addontop=0, epsilon=1e-10):
         self.stackname = stackname
         self.epsilon = epsilon
+        self.addontop = addontop
 
     def columns(self, privatedata, sharedata, graph, columns):
         if self.stackname not in columns:
@@ -997,8 +999,15 @@ class stackedbarpos(_style):
 
     def drawpoint(self, privatedata, sharedata, graph):
         sharedata.vbarrange[sharedata.barvalueindex][0] = sharedata.vbarrange[sharedata.barvalueindex][1]
+        if self.addontop:
+            try:
+                sharedata.lastbarvalue += sharedata.point[self.stackname]
+            except (ArithmeticError, ValueError, TypeError):
+                sharedata.lastbarvalue = None
+        else:
+            sharedata.lastbarvalue = sharedata.point[self.stackname]
         try:
-            sharedata.vpos[sharedata.barvalueindex] = sharedata.vbarrange[sharedata.barvalueindex][1] = graph.axes[sharedata.barcolumns[sharedata.barvalueindex]].convert(sharedata.point[self.stackname])
+            sharedata.vpos[sharedata.barvalueindex] = sharedata.vbarrange[sharedata.barvalueindex][1] = graph.axes[sharedata.barcolumns[sharedata.barvalueindex]].convert(sharedata.lastbarvalue)
         except (ArithmeticError, ValueError, TypeError):
             sharedata.vpos[sharedata.barvalueindex] = sharedata.vbarrange[sharedata.barvalueindex][1] = None
             sharedata.vposavailable = sharedata.vposvalid = 0
