@@ -86,8 +86,6 @@ class clip(base.PSCmd):
 class _newpath(base.PSOp):
     def outputPS(self, file):
         file.write("newpath\n")
-    def outputPDF(self, file):
-        pass
 
 class _stroke(base.PSOp):
     def outputPS(self, file):
@@ -102,8 +100,6 @@ class _fill(base.PSOp):
         file.write("f\n")
 
 class _strokefill(base.PSOp):
-    def outputPS(self, file):
-        pass
     def outputPDF(self, file):
         file.write("B\n")
 
@@ -562,6 +558,7 @@ class canvas(_canvas):
                    "<< /Length 6 0 R >>\n"
                    "stream\n")
         streamstartpos = file.tell()
+        style.linewidth.normal.outputPDF(file)
         self.outputPDF(file)
         streamendpos = file.tell()
         file.write("endstream\n"
@@ -587,7 +584,7 @@ class canvas(_canvas):
                    ">>\n"
                    "startxref\n"
                    "%i\n"
-                   "%%EOF" % xrefpos)
+                   "%%%%EOF\n" % xrefpos)
 
     def writetofile(self, filename, *args, **kwargs):
         if filename[-4:] == ".eps":
