@@ -335,6 +335,55 @@ def _bcurveIntersect(a, a_t0, a_t1, b, b_t0, b_t1, epsilon=1e-5):
                        b_t0 + b_t * (b_t1 - b_t0) ),
                    )
 
+def _bcurvesIntersect(a, a_t0, a_t1, b, b_t0, b_t1, epsilon=1e-5):
+    """ returns list of intersection points for list of bpathels """
+
+    bbox_a = reduce(lambda x, y:x+y.bbox(), a, bbox.bbox())
+    bbox_b = reduce(lambda x, y:x+y.bbox(), b, bbox.bbox())
+    
+    if not bbox_a.intersects(bbox_b): return ()
+
+    if a_t0+1!=a_t1:
+        a_tm = (a_t0+a_t1)/2
+        aa = a[:a_tm-a_t0]
+        ab = a[a_tm-a_t0:]
+
+        if b_t0+1!=b_t1:
+            b_tm = (b_t0+b_t1)/2
+            ba = b[:b_tm-b_t0]
+            bb = b[b_tm-b_t0:]
+
+            return ( _bcurvesIntersect(aa, a_t0, a_tm,
+                                       ba, b_t0, b_tm, epsilon) + 
+                     _bcurvesIntersect(ab, a_tm, a_t1,
+                                       ba, b_t0, b_tm, epsilon) + 
+                     _bcurvesIntersect(aa, a_t0, a_tm,
+                                       bb, b_tm, b_t1, epsilon) +
+                     _bcurvesIntersect(ab, a_tm, a_t1,
+                                       bb, b_tm, b_t1, epsilon) )
+        else:
+            return ( _bcurvesIntersect(aa, a_t0, a_tm,
+                                       b, b_t0, b_t1, epsilon) +
+                     _bcurvesIntersect(ab, a_tm, a_t1,
+                                       b, b_t0, b_t1, epsilon) )
+    else:
+        if b_t0+1!=b_t1:
+            b_tm = (b_t0+b_t1)/2
+            ba = b[:b_tm-b_t0]
+            bb = b[b_tm-b_t0:]
+
+            return  ( _bcurvesIntersect(a, a_t0, a_t1,
+                                       ba, b_t0, b_tm, epsilon) +
+                      _bcurvesIntersect(a, a_t0, a_t1,
+                                       bb, b_tm, b_t1, epsilon) )
+        else:
+            # no more subdivisions of either a or b
+            # => intersect bpathel a with bpathel b
+            assert len(a)==len(b)==1, "internal error"
+            return _bcurveIntersect(a[0], a_t0, a_t1,
+                                    b[0], b_t0, b_t1, epsilon)
+
+
 #
 # now comes the real stuff...
 #
@@ -1620,36 +1669,54 @@ class normpath(path):
 
         """
 
-        # XXX make this recursive! 
-
         if not isinstance(other, normpath):
             other = normpath(other)
 
+        # convert both paths to series of bpathels: bpathels_a and bpathels_b
+        context = _pathcontext()
+        bpathels_a = []
+        for normpathel in self.path:
+            bpathel = normpathel._bcurve(context)
+            if bpathel:
+                bpathels_a.append(bpathel)
+            normpathel._updatecontext(context)
+
+        context = _pathcontext()
+        bpathels_b = []
+        for normpathel in other.path:
+            bpathel = normpathel._bcurve(context)
+            if bpathel:
+                bpathels_b.append(bpathel)
+            normpathel._updatecontext(context)
+
         intersections = ([], [])
+        # change grouping order
+        for intersection in  _bcurvesIntersect(bpathels_a, 0, len(bpathels_a),
+                                               bpathels_b, 0, len(bpathels_b),
+                                               epsilon):
+            intersections[0].append(intersection[0])
+            intersections[1].append(intersection[1])
+
+        return intersections
+
+        # XXX: the following code is not used, but probably
+        # we could use it for short lists of bpathels 
+
+        # alternative implementation (not recursive, probably more efficient
+        # for short lists bpathel_a and bpathel_b)
         t_a = 0
-        context_a = _pathcontext()
-        context_b = _pathcontext()
+        for bpathel_a in bpathels_a:
+            t_a += 1
+            t_b = 0
+            for bpathel_b in bpathels_b:
+                t_b += 1
+                newintersections = _bcurveIntersect(bpathel_a, t_a-1, t_a,
+                                                    bpathel_b, t_b-1, t_b, epsilon)
 
-        for normpathel_a in self.path:
-            bpathel_a = normpathel_a._bcurve(context_a)
-            normpathel_a._updatecontext(context_a)
-
-            if bpathel_a:
-                t_a += 1
-                t_b = 0
-                for normpathel_b in other.path:
-                    bpathel_b = normpathel_b._bcurve(context_b)
-                    normpathel_b._updatecontext(context_b)
-
-                    if bpathel_b:
-                        t_b += 1
-                        newintersections = _bcurveIntersect(bpathel_a, t_a-1, t_a,
-                                                            bpathel_b, t_b-1, t_b, epsilon)
-
-                        # change grouping order
-                        for newintersection in newintersections:
-                            intersections[0].append(newintersection[0])
-                            intersections[1].append(newintersection[1])
+                # change grouping order
+                for newintersection in newintersections:
+                    intersections[0].append(newintersection[0])
+                    intersections[1].append(newintersection[1])
 
         return intersections
 
