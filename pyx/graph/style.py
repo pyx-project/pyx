@@ -251,7 +251,7 @@ class _range(_style):
                 if mask & (self.mask_min | self.mask_max | self.mask_dmin | self.mask_dmax | self.mask_d):
                     if (numberofbits(mask & (self.mask_min | self.mask_dmin | self.mask_d)) > 1 or
                         numberofbits(mask & (self.mask_max | self.mask_dmax | self.mask_d)) > 1):
-                        raise ValueError("multiple errorbar definition")
+                        raise ValueError("multiple range definition")
                     if mask & (self.mask_dmin | self.mask_dmax | self.mask_d):
                         if not (mask & self.mask_value):
                             raise ValueError("missing value for delta")
@@ -332,7 +332,7 @@ class _range(_style):
             # some range checks for data consistency
             if (sharedata.vrange[index][0] is not None and sharedata.vrange[index][1] is not None and
                 sharedata.vrange[index][0] > sharedata.vrange[index][1] + self.epsilon):
-                raise ValueError("negative errorbar range")
+                raise ValueError("inverse range")
             #if (sharedata.vrange[index][0] is not None and sharedata.vpos[index] is not None and
             #    sharedata.vrange[index][0] > sharedata.vpos[index] + self.epsilon):
             #    raise ValueError("negative minimum errorbar")
@@ -1054,12 +1054,20 @@ class bar(_style):
 
 class barpos_new(_style):
 
-    providesdata = ["vpos", "vposmissing", "vposavailable", "vposvalid", "vrange", "vrangemissing", "vrangemissing", "vrangeminmissing", "vrangemaxmissing", "stacked"]
+    providesdata = ["vpos", "vposmissing", "vposavailable", "vposvalid", "vbarrange", "stacked"]
 
-    def __init__(self, fromvalue=None, stackname=None, epsilon=1e-10):
-        # TODO: vpos configuration ...
+    # defaultfrompathattrs = []
+
+    def __init__(self, fromvalue=None, stackname=None, subindex=0, subnames=None, epsilon=1e-10):
+        # TODO vpos configuration ...
+        # NOTE subindex is a perspective for higher dimensional plots
+        #      (just ignore it for the moment -- we don't even need to document about it)
+        if fromvalue is not None and stackname is not None:
+            raise ValueError("you can either start at a fromvalue or stack bars")
         self.fromvalue = fromvalue
         self.stackname = stackname
+        self.subindex = subindex
+        self.subnames = subnames
         self.epsilon = epsilon
 
     def columns(self, privatedata, sharedata, graph, columns):
@@ -1068,12 +1076,11 @@ class barpos_new(_style):
         for dimension, axisnames in enumerate(graph.axesnames):
             found = 0
             for axisname in axisnames:
-                if axisname in columns or axisname == self.stackname:
+                if axisname in columns:
                     if privatedata.barvalueindex is not None:
                         raise ValueError("multiple values")
-                    privatedata.barcolumns.append(axisname)
                     privatedata.barvalueindex = dimension
-                    privatedata.stacked = (axisname == self.stackname)
+                    privatedata.barcolumns.append(axisname)
                     found += 1
                 if (axisname + "name") in columns:
                     privatedata.barcolumns.append(axisname + "name")
@@ -1084,66 +1091,88 @@ class barpos_new(_style):
                 raise ValueError("value/name missing")
         if privatedata.barvalueindex is None:
             raise ValueError("missing value")
-        sharedata.vposmissing = sharedata.vrangemissing = sharedata.vrangeminmissing = sharedata.vrangemaxmissing = []
-        return privatedata.barcolumns
+        if self.stackname is not None and self.stackname not in columns:
+            raise ValueError("stackname column missing")
+        if self.subindex >= privatedata.barvalueindex:
+            privatedata.barpossubindex = self.subindex + 1
+        else:
+            privatedata.barpossubindex = self.subindex
+        sharedata.vposmissing = []
+        if self.stackname is not None:
+            return privatedata.barcolumns + [self.stackname]
+        else:
+            return privatedata.barcolumns
 
-    # def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
-    #     if selecttotal == 1:
-    #         if self.subnames is not None:
-    #             raise ValueError("subnames set for single-bar data")
-    #         privatedata.barpossubname = []
-    #     else:
-    #         if self.subnames is not None:
-    #             privatedata.barpossubname = [self.subnames[selectindex]]
-    #         else:
-    #             privatedata.barpossubname = [selectindex]
+    def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
+        if selecttotal == 1:
+            if self.subnames is not None:
+                raise ValueError("subnames set for single-bar data")
+            privatedata.barpossubname = []
+        else:
+            if self.subnames is not None:
+                privatedata.barpossubname = [self.subnames[selectindex]]
+            else:
+                privatedata.barpossubname = [selectindex]
 
     def adjustaxis(self, privatedata, sharedata, graph, column, data, index):
         try:
-            i = privatedata.barcolumns.index(column)
-        except:
+            if column == self.stackname:
+                i = privatedata.barvalueindex
+            else:
+                i = privatedata.barcolumns.index(column)
+        except ValueError:
             pass
         else:
             if i == privatedata.barvalueindex:
                 if self.fromvalue is not None:
                     graph.axes[privatedata.barcolumns[i]].adjustrange([self.fromvalue], None)
-                graph.axes[privatedata.barcolumns[i]].adjustrange(data, index)
+                if self.stackname is None or column == self.stackname:
+                    graph.axes[privatedata.barcolumns[i]].adjustrange(data, index)
             else:
-                graph.axes[privatedata.barcolumns[i][:-4]].adjustrange(data, index)
+                if i == privatedata.barpossubindex:
+                    graph.axes[privatedata.barcolumns[i][:-4]].adjustrange(data, index, privatedata.barpossubname)
+                else:
+                    graph.axes[privatedata.barcolumns[i][:-4]].adjustrange(data, index)
 
     def initdrawpoints(self, privatedata, sharedata, graph):
         sharedata.vpos = [None]*(len(privatedata.barcolumns))
-        sharedata.vrange = [[None for i in range(2)] for x in privatedata.barcolumns]
+        sharedata.vbarrange = [[None for i in range(2)] for x in privatedata.barcolumns]
 
         if self.fromvalue is not None:
-            vfromvalue = graph.axes[privatedata.barcolumns[privatedata.barvalueindex][0]].convert(self.fromvalue)
-            if vfromvalue < 0:
-                vfromvalue = 0
-            if vfromvalue > 1:
-                vfromvalue = 1
+            privatedata.vfromvalue = graph.axes[privatedata.barcolumns[privatedata.barvalueindex][0]].convert(self.fromvalue)
+            if privatedata.vfromvalue < 0:
+                privatedata.vfromvalue = 0
+            if privatedata.vfromvalue > 1:
+                privatedata.vfromvalue = 1
         else:
-            vfromvalue = 0
-
-        sharedata.vrange[privatedata.barvalueindex][0] = vfromvalue
+            privatedata.vfromvalue = 0
 
     def drawpoint(self, privatedata, sharedata, graph):
         sharedata.vposavailable = sharedata.vposvalid = 1
         for i, barname in enumerate(privatedata.barcolumns):
             if i == privatedata.barvalueindex:
                 try:
-                    sharedata.vrange[i][1] = graph.axes[barname].convert(sharedata.point[barname])
+                    if self.stackname is None:
+                        sharedata.vbarrange[i][0] = privatedata.vfromvalue
+                        sharedata.vbarrange[i][1] = graph.axes[barname].convert(sharedata.point[barname])
+                    else:
+                        sharedata.vbarrange[i][0] = sharedata.vbarrange[i][1]
+                        sharedata.vbarrange[i][1] = graph.axes[barname].convert(sharedata.point[self.stackname])
                 except (ArithmeticError, ValueError, TypeError):
-                    sharedata.vrange[i][1] = None
+                    sharedata.vbarrange[i][1] = None
                 else:
-                    sharedata.vpos[i] = sharedata.vrange[i][1]
+                    sharedata.vpos[i] = sharedata.vbarrange[i][1]
             else:
                 for j in range(2):
                     try:
-                        sharedata.vrange[i][j] = graph.axes[barname[:-4]].convert((sharedata.point[barname], j))
+                        if i == privatedata.barpossubindex:
+                            sharedata.vbarrange[i][j] = graph.axes[barname[:-4]].convert(([sharedata.point[barname]] + privatedata.barpossubname + [j]))
+                        else:
+                            sharedata.vbarrange[i][j] = graph.axes[barname[:-4]].convert((sharedata.point[barname], j))
                     except (ArithmeticError, ValueError, TypeError):
-                        sharedata.vrange[i][j] = None
+                        sharedata.vbarrange[i][j] = None
                 try:
-                    sharedata.vpos[i] = 0.5*(sharedata.vrange[i][0]+sharedata.vrange[i][1])
+                    sharedata.vpos[i] = 0.5*(sharedata.vbarrange[i][0]+sharedata.vbarrange[i][1])
                 except (ArithmeticError, ValueError, TypeError):
                     sharedata.vpos[i] = None
             if sharedata.vpos[i] is None:
@@ -1151,56 +1180,48 @@ class barpos_new(_style):
             elif sharedata.vpos[i] < -self.epsilon or sharedata.vpos[i] > 1+self.epsilon:
                 sharedata.vposvalid = 0
 
-#registerdefaultprovider(barpos(), ["barcolumns", "barvalueindex", "vbarpos"])
+registerdefaultprovider(barpos_new(), ["vbarrange", "stacked"])
 
 
 class bar_new(_style):
 
-    needsdata = ["vrange", "vrangeminmissing", "vrangemaxmissing"]
+    needsdata = ["vbarrange"]
 
-    def __init__(self, barattrs=[deco.filled([color.rgb.red]), deco.stroked()]):
+    defaultbarattrs = [color.palette.Rainbow, deco.stroked([color.gray.black])]
+
+    def __init__(self, barattrs=[]):
         self.barattrs = barattrs
 
     def columns(self, privatedata, sharedata, graph, columns):
         if len(graph.axesnames) != 2:
             raise TypeError("bar style restricted on two-dimensional graphs")
-        if len(sharedata.vrangeminmissing) + len(sharedata.vrangemaxmissing):
-            raise ValueError("range columns incomplete")
         return []
+
+    def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
+        if selecttotal > 1:
+            privatedata.barattrs = attr.selectattrs(self.defaultbarattrs + self.barattrs, selectindex, selecttotal)
+        else:
+            privatedata.barattrs = self.defaultbarattrs + self.barattrs
 
     def initdrawpoints(self, privatedata, sharedata, graph):
         privatedata.rectcanvas = graph.insert(canvas.canvas())
 
     def drawpoint(self, privatedata, sharedata, graph):
-        xvmin = sharedata.vrange[0][0]
-        xvmax = sharedata.vrange[0][1]
-        yvmin = sharedata.vrange[1][0]
-        yvmax = sharedata.vrange[1][1]
+        xvmin = sharedata.vbarrange[0][0]
+        xvmax = sharedata.vbarrange[0][1]
+        yvmin = sharedata.vbarrange[1][0]
+        yvmax = sharedata.vbarrange[1][1]
         if None not in [xvmin, xvmax, yvmin, yvmax]:
-            if xvmin < 0:
-                xvmin = 0
-            if xvmin > 1:
-                xvmin = 1
-            if xvmax < 0:
-                xvmax = 0
-            if xvmax > 1:
-                xvmax = 1
-            if yvmin < 0:
-                yvmin = 0
-            if yvmin > 1:
-                yvmin = 1
-            if yvmax < 0:
-                yvmax = 0
-            if yvmax > 1:
-                yvmax = 1
+            # TODO range check
             p = graph.vgeodesic(xvmin, yvmin, xvmax, yvmin)
             p.append(graph.vgeodesic_el(xvmax, yvmin, xvmax, yvmax))
             p.append(graph.vgeodesic_el(xvmax, yvmax, xvmin, yvmax))
             p.append(graph.vgeodesic_el(xvmin, yvmax, xvmin, yvmin))
             p.append(path.closepath())
-            privatedata.rectcanvas.draw(p, self.barattrs)
+            privatedata.rectcanvas.fill(p, privatedata.barattrs)
 
     def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt, dy_pt, selectindex, selecttotal):
-        raise "TODO"
+        #raise "TODO"
+        pass
 
 
