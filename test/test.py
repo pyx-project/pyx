@@ -23,10 +23,8 @@
 import sys
 sys.path.append("..")
 
-from pyx import *
-from pyx.trafo import *
-
 import unittest
+from pyx import *
 
 def isEqual(trafo1, trafo2):
     return max(map(abs,[trafo1.matrix[0][0]-trafo2.matrix[0][0],
@@ -54,17 +52,20 @@ class TrafoTestCase(unittest.TestCase):
 
     def testInverse(self):
         "t*t.inverse()=1"
+        from pyx.trafo import *
         t = translate(-1,-1)*rotate(72)*translate(1,1)
         assert isEqual(t*t.inverse(), trafo()), \
                 "wrong inverse definition"
 
     def testTranslate(self):
+        from pyx.trafo import *
         assert correctOnBasis(translate(1,0), (2,0), (1,1)), \
                "wrong definition of translate"
         assert correctOnBasis(translate(0,1), (1,1), (0,2)), \
                "wrong definition of translate"
 
     def testRotate(self):
+        from pyx.trafo import *
         assert correctOnBasis(rotate(90), (0,1), (-1,0)), \
                "wrong definition of rotate"
         assert isEqual(rotate(360), trafo()), \
@@ -75,12 +76,14 @@ class TrafoTestCase(unittest.TestCase):
 
     def testMirror(self):
         "mirroring two times must yield 1 and -mirror(phi)=mirror(phi+180)"
+        from pyx.trafo import *
         assert isEqual(mirror(20)*mirror(20), trafo()), \
                 "mirroring not idempotent"
         assert isEqual(mirror(20), mirror(180+20)), \
                 "mirroring by 20 degrees unequal to mirroring by 180+20 degrees"
 
     def testScale(self):
+        from pyx.trafo import *
         assert correctOnBasis(scale(0.5), (0.5,0), (0, 0.5)), \
                "wrong definition of scale"
         assert correctOnBasis(scale(0.5, 0.2), (0.5,0), (0, 0.2)), \
@@ -91,6 +94,7 @@ class TrafoTestCase(unittest.TestCase):
    
     def testMultVsMethods(self):
         "test multiplication vs trafo methods"
+        from pyx.trafo import *
         assert isEqual(rotate(72).translate(1,2), translate(1,2)*rotate(72)), \
                "trafo.translate not consistent with multiplication result"
         assert isEqual(mirror(20)*mirror(20), mirror(20).mirror(20)), \
@@ -100,6 +104,7 @@ class TrafoTestCase(unittest.TestCase):
                 "trafo.translate/rotate not consistent with multiplication result"
    
     def testTranslateCombined(self):
+        from pyx.trafo import *
         assert correctOnBasis(translate(1,0)*rotate(90), (1,1), (0,0)), \
                "wrong translate/rotate definition"
         assert correctOnBasis(rotate(90)*translate(1,0), (0,2), (-1,1)), \
@@ -120,14 +125,29 @@ class TrafoTestCase(unittest.TestCase):
         assert correctOnBasis(rotate(90)*scale(0.5)*translate(1,0), (0,1), (-0.5,0.5)), \
                "wrong translate/rotate/scale definition"
 
+class UnitTestCase(unittest.TestCase):
+    def testTrueUnits(self):
+        from pyx.unit import *
+        assert topt(t_pt(42)) == 42, "wrong unit definition"
+        assert tom(t_m(42)) == 42, "wrong unit definition"
+        assert totpt(t_tpt(42)) == 42, "wrong unit definition"
+
+    def testUserUnits(self):
+        from pyx.unit import *
+        set(uscale=2)
+        assert topt(pt(42)) == 84, "wrong unit definition"
+        assert tom(m(42)) == 84, "wrong unit definition"
+        assert totpt(tpt(42)) == 84, "wrong unit definition"
+      
 
 # construct the test suite automagically
 
-suite = unittest.makeSuite(TrafoTestCase, 'test')
-
+suite = unittest.TestSuite((unittest.makeSuite(TrafoTestCase, 'test'),
+                            unittest.makeSuite(UnitTestCase, 'test')))
 
 if __name__ == "__main__":
-    unittest.main()
+    runner = unittest.TextTestRunner()
+    runner.run(suite)
     
 
 

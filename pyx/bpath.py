@@ -165,14 +165,14 @@ class _bpathel(base.PSOp):
         x3_2 = self.x3
         y3_2 = self.y3
         
-        return bpath([_bpathel(x0_1, y0_1,
-                               x1_1, y1_1,
-                               x2_1, y2_1,
-                               x3_1, y3_1),
-                      _bpathel(x0_2, y0_2,
-                               x1_2, y1_2,
-                               x2_2, y2_2,
-                               x3_2, y3_2)])
+        return bpath(_bpathel(x0_1, y0_1,
+                              x1_1, y1_1,
+                              x2_1, y2_1,
+                              x3_1, y3_1),
+                     _bpathel(x0_2, y0_2,
+                              x1_2, y1_2,
+                              x2_2, y2_2,
+                              x3_2, y3_2))
         
         
 
@@ -201,14 +201,14 @@ class _bpathel(base.PSOp):
         xmidpoint = 0.5*(x01_12+x12_23)
         ymidpoint = 0.5*(y01_12+y12_23)
         
-        return bpath([_bpathel(self.x0, self.y0,
-                               x01, y01,
-                               x01_12, y01_12,
-                               xmidpoint, ymidpoint),
-                      _bpathel(xmidpoint, ymidpoint,
-                               x12_23, y12_23,
-                               x23, y23,
-                               self.x3, self.y3)])
+        return bpath(_bpathel(self.x0, self.y0,
+                              x01, y01,
+                              x01_12, y01_12,
+                              xmidpoint, ymidpoint),
+                     _bpathel(xmidpoint, ymidpoint,
+                              x12_23, y12_23,
+                              x23, y23,
+                              self.x3, self.y3))
 
                        
 class bpathel(_bpathel):
@@ -231,14 +231,14 @@ class bpath(canvas.PSCommand):
 
     """path consisting of bezier curves"""
     
-    def __init__(self, bpath=[]):
-        self.bpath = bpath
+    def __init__(self, *args):
+        self.bpath = list(args)
         
     def append(self, bpathel):
         self.bpath.append(bpathel)
 
     def __add__(self, bp):
-        return bpath(self.bpath+bp.bpath)
+        return bpath(*(self.bpath+bp.bpath))
 
     def __len__(self):
         return len(self.bpath)
@@ -297,8 +297,8 @@ class bpath(canvas.PSCommand):
         
     def transform(self, trafo):
         """return transformed bpath"""
-        return bpath(map(lambda x, trafo=trafo: x.transform(trafo),
-                         self.bpath))
+        return bpath(*(map(lambda x, trafo=trafo: x.transform(trafo),
+                         self.bpath)))
 
     def reverse(self):
         """return reversed bpath"""
@@ -307,13 +307,13 @@ class bpath(canvas.PSCommand):
         # types
         bp=map(lambda x: x.reverse(), self.bpath)
         bp.reverse()
-        return bpath(bp)
+        return bpath(*bp)
 
     def split(self, t):
         """return bpath splitted at parameter value t (0<=t<=len(self))"""
         bpel1, bpel2  = self.bpath[int(t)].split(t-math.floor(t))
-        return ( bpath(self.bpath[:int(t)]+[bpel1]), 
-                 bpath([bpel2]+self.bpath[int(t)+1:]) )
+        return ( bpath(*(self.bpath[:int(t)]+[bpel1])), 
+                 bpath(*([bpel2]+self.bpath[int(t)+1:])) )
 
     def MidPointSplit(self):
         result = []
@@ -321,7 +321,7 @@ class bpath(canvas.PSCommand):
             sbp = bpel.MidPointSplit()
             for sbpel in sbp:
                 result.append(sbpel)
-        return bpath(result)
+        return bpath(*result)
 
     def intersect(self, other, epsilon=1e-5):
         """intersect two bpaths
@@ -353,7 +353,7 @@ class _bcurve(bpath):
     """bpath consisting of one bezier curve (coordinates in pts)"""
     
     def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
-        bpath.__init__(self, [_bpathel(x0, y0, x1, y1, x2, y2, x3, y3)]) 
+        bpath.__init__(self, _bpathel(x0, y0, x1, y1, x2, y2, x3, y3)) 
 
 
 class bcurve(bpath):
@@ -361,7 +361,7 @@ class bcurve(bpath):
     """bpath consisting of one bezier curve"""
     
     def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
-        bpath.__init__(self, [bpathel(x0, y0, x1, y1, x2, y2, x3, y3)]) 
+        bpath.__init__(self, bpathel(x0, y0, x1, y1, x2, y2, x3, y3)) 
 
 
 class _bline(bpath):
@@ -375,7 +375,7 @@ class _bline(bpath):
         yb = y0+2.0*(y1-y0)/3.0
         
         bpath.__init__(self, 
-                      [_bpathel(x0, y0, xa, ya, xb, yb, x1, y1 )]) 
+                      _bpathel(x0, y0, xa, ya, xb, yb, x1, y1 )) 
 
 
 class bline(_bline):
@@ -393,7 +393,7 @@ class _barc(bpath):
     """bpath consisting of arc segment (coordinates in pts)"""
 
     def __init__(self, x, y, r, phi1, phi2, dphimax=pi/4):
-        bpath.__init__(self, [])
+        bpath.__init__(self)
 
         phi1 = phi1*pi/180
         phi2 = phi2*pi/180

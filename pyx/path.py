@@ -508,7 +508,7 @@ class _arct(pathel):
             my = self.y1-ry*self.r/(lr*sin(alpha/2))
             
             # now we are in the position to construct the path
-            p = path([_moveto(currentpoint[0], currentpoint[1])])
+            p = path(_moveto(currentpoint[0], currentpoint[1]))
 
             if phi<0:
                 p.append(_arc(mx, my, self.r, phi-deltaphi, phi+deltaphi))
@@ -663,11 +663,11 @@ class path(canvas.PSCommand):
     
     """PS style path"""
     
-    def __init__(self, path=[]):
-        self.path = path
+    def __init__(self, *args):
+        self.path = list(args)
         
     def __add__(self, other):
-        return path(self.path+other.path)
+        return path(*(self.path+other.path))
 
     def __len__(self):
         return len(self.path)
@@ -701,7 +701,7 @@ class path(canvas.PSCommand):
     def bpath(self):
         currentpoint = None
         currentsubpath = None
-        bp = bpath.bpath([])
+        bp = bpath.bpath()
         for pel in self.path:
             (currentpoint, currentsubpath, nbp) = \
                            pel._bpath(currentpoint, currentsubpath)
@@ -717,7 +717,7 @@ class _line(path):
    """straight line from (x1, y1) to (x2, y2) (coordinates in pts)"""
 
    def __init__(self, x1, y1, x2, y2):
-       path.__init__(self, [ _moveto(x1,y1), _lineto(x2, y2) ] )
+       path.__init__(self, _moveto(x1,y1), _lineto(x2, y2))
 
 
 class line(path):
@@ -725,7 +725,7 @@ class line(path):
    """straight line from (x1, y1) to (x2, y2)"""
 
    def __init__(self, x1, y1, x2, y2):
-       path.__init__(self, [ moveto(x1,y1), lineto(x2, y2) ] )
+       path.__init__(self, moveto(x1,y1), lineto(x2, y2))
        
 
 class _rect(path):
@@ -733,11 +733,11 @@ class _rect(path):
    """rectangle at position (x,y) with width and height (coordinates in pts)"""
 
    def __init__(self, x, y, width, height):
-       path.__init__(self, [ _moveto(x,y), 
-                             _rlineto(width,0), 
-                             _rlineto(0,height), 
-                             _rlineto(-width,0),
-                             closepath()] )
+       path.__init__(self, _moveto(x,y), 
+                           _rlineto(width,0), 
+                           _rlineto(0,height), 
+                           _rlineto(-width,0),
+                           closepath())
        
 
 class rect(path):
@@ -745,8 +745,8 @@ class rect(path):
    """rectangle at position (x,y) with width and height"""
 
    def __init__(self, x, y, width, height):
-       path.__init__(self, [ moveto(x,y), 
-                             rlineto(width,0), 
-                             rlineto(0,height), 
-                             rlineto(-unit.length(width),0),
-                             closepath()] )
+       path.__init__(self, moveto(x,y), 
+                           rlineto(width,0), 
+                           rlineto(0,height), 
+                           rlineto(-unit.length(width),0),
+                           closepath())

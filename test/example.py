@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+import sys
+sys.path.append("..")
 from pyx import *
 import pyx.canvas 
 from pyx.graph import *
@@ -18,10 +20,10 @@ t=c.insert(tex())
 #   amove(0,y)
 #   rline(10,0)
  
-c.draw(path( [moveto(1,1), 
+c.draw(path( moveto(1,1), 
               lineto(2,2), 
               moveto(1,2), 
-              lineto(2,1) ] 
+              lineto(2,1) 
              )
        )
 
@@ -53,38 +55,37 @@ for pos in range(2,21):
     c.draw(line(1.5, 6, 20.5, 6)) 
     c.draw(line(1.5, 7, 20.5, 7)) 
     
-p=path([ moveto(5,12), 
+p=path( moveto(5,12), 
          lineto(7,12), 
          moveto(5,10), 
          lineto(5,14), 
          moveto(7,10), 
-         lineto(7,14)])
+         lineto(7,14) )
 
 c.set(canvas.linestyle.dotted)
 t.text(5, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize("2 cm", c))
 c.draw(p)
 
-p=path([ moveto(10,12), 
+p=path( moveto(10,12), 
          lineto(12,12), 
          moveto(10,10), 
          lineto(10,14), 
          moveto(12,10), 
-         lineto(12,14)])
+         lineto(12,14))
 c.set(canvas.linestyle.dashdotted, rgb(1,0,0))
 t.text("10 cm", 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize("2 cm", c), valign.bottom, grey(0.5))
 c.draw(p)
 
-p=path([moveto(5,15), arc(5,15, 1, 0, 45), closepath()])
+p=path(moveto(5,15), arc(5,15, 1, 0, 45), closepath())
 c.fill(p, canvas.linestyle.dotted, canvas.linewidth.THICK)
 
-p=path([moveto(5,17), curveto(6,18, 5,16, 7,15)])
+p=path(moveto(5,17), curveto(6,18, 5,16, 7,15))
 c.draw(p, canvas.linestyle.dashed)
 
    
 for angle in range(20):
     s=c.insert(canvas.canvas(translate(10,10)*rotate(angle))).draw(p, canvas.linestyle.dashed, canvas.linewidth(0.01*angle), grey((20-angle)/20.0))
 
- 
 c.set(canvas.linestyle.solid)
 g=GraphXY(c, t, 10, 15, 8, 6, x=LogAxis())
 df = DataFile("testdata")
@@ -104,6 +105,6 @@ g.run()
 #    c.insert(canvas.canvas(scale(0.5, 0.4).rotate(10).translate("2 cm","200 mm"))).insert(epsfile("ratchet_f.eps"))
 #    c.insert(canvas.canvas(scale(0.2, 0.1).rotate(10).translate("6 cm","180 mm"))).insert(epsfile("ratchet_f.eps"))
     
-c.draw(path([moveto("5 cm", "5 cm"), rlineto(0.1,0.1)]), canvas.linewidth.THICK)
+c.draw(path(moveto("5 cm", "5 cm"), rlineto(0.1,0.1)), canvas.linewidth.THICK)
 
 c.writetofile("example")

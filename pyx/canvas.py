@@ -23,10 +23,10 @@
 # TODO:
 # - arrows
 # - _linewidth -> linewith ...
-# - epsfile scaling, centering, ...
+# - epsfile ".eps" detection
 
-
-import base, unit, trafo, types, math
+import types, math
+import base, unit, trafo
 
 # PostScript-procedure definitions
 # cf. file: 5002.EPSF_Spec_v3.0.pdf     
