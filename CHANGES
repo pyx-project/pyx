@@ -1,10 +1,5 @@
 PyX
 
-KNOWN BUGS:
-  text module:
-  - preamble: helper.checkattr(args, allowmulti=texmessage); allowmulti must be a sequence
-  - self.texmessagedefaultpreamble isn't checked (the same for all other defaults)
-
 0.4 (????/??/??):
   - text module:
     fix bug in dvi rule code where width was height
@@ -27,6 +22,8 @@ KNOWN BUGS:
     - missed to rename vbox to parbox in PyX 0.3 -> do it!
   - tex module:
     - copy lfs handling from text module (share the same source???)
+
+0.3.1 --- be sure to port all the bug fixes and insert documentation here
 
 0.3 (2003/03/31)
   - examples
