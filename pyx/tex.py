@@ -374,7 +374,7 @@ class tex:
         if os.system("dvips -E -o " + TempName + ".eps " + TempName + ".dvi > /dev/null 2>&1"):
             assert 0, "dvips exit code non-zero"
 
-        result = str(canvas.epsfile(self.unit.pt("0.38 inch"), self.unit.pt("0.38 inch"), TempName + ".eps", clip = 0))
+        result = str(canvas.epsfile(self.unit.pt("0.37 t inch"), self.unit.pt("0.37 t inch"), TempName + ".eps", clip = 0))
 
         # merge new sizes
         
