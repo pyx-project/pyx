@@ -36,37 +36,41 @@ def _nmin(x, y):
     return min(x,y)
 
 #
-# class representing bounding boxes
+# classes representing bounding boxes
 #
 
-class bbox:
+class _bbox:
+    
+    """class for bounding boxes
 
-    """class for bounding boxes"""
+    This variant requires points in the constructor, and is used for internal
+    purposes."""
 
     def __init__(self, llx=None, lly=None, urx=None, ury=None):
-        self.llx=llx
-        self.lly=lly
-        self.urx=urx
-        self.ury=ury
+        self.llx = llx
+        self.lly = lly
+        self.urx = urx
+        self.ury = ury
 
     def __add__(self, other):
         """join two bboxes"""
 
-        return bbox(_nmin(self.llx, other.llx), _nmin(self.lly, other.lly),
-                    max(self.urx, other.urx), max(self.ury, other.ury))
+        return _bbox(_nmin(self.llx, other.llx), _nmin(self.lly, other.lly),
+                     max(self.urx, other.urx), max(self.ury, other.ury))
 
     def __mul__(self, other):
         """return intersection of two bboxes"""
 
-        return bbox(max(self.llx, other.llx), max(self.lly, other.lly),
-                    _nmin(self.urx, other.urx), _nmin(self.ury, other.ury))
+        return _bbox(max(self.llx, other.llx), max(self.lly, other.lly),
+                     _nmin(self.urx, other.urx), _nmin(self.ury, other.ury))
 
     def __str__(self):
         return "%s %s %s %s" % (self.llx, self.lly, self.urx, self.ury)
 
     def write(self, file):
         file.write("%%%%BoundingBox: %d %d %d %d\n" %
-                   (math.floor(self.llx), math.floor(self.lly), math.ceil(self.urx), math.ceil(self.ury)))
+                   (math.floor(self.llx), math.floor(self.lly),
+                    math.ceil(self.urx), math.ceil(self.ury)))
         file.write("%%%%HiResBoundingBox: %g %g %g %g\n" %
                    (self.llx, self.lly, self.urx, self.ury))
 
@@ -89,8 +93,8 @@ class bbox:
         # now, by sorting, we obtain the lower left and upper right corner
         # of the new bounding box. 
 
-        return bbox(min(llx, lrx, urx, ulx), min(lly, lry, ury, uly),
-                    max(llx, lrx, urx, ulx), max(lly, lry, ury, uly))
+        return _bbox(min(llx, lrx, urx, ulx), min(lly, lry, ury, uly),
+                     max(llx, lrx, urx, ulx), max(lly, lry, ury, uly))
 
     def enlarged(self, all=0, bottom=None, left=None, top=None, right=None):
         """return bbox enlarged
@@ -107,12 +111,14 @@ class bbox:
            _top = unit.topt(unit.length(top, default_type="v"))
         if right is not None:
            _right = unit.topt(unit.length(right, default_type="v"))
-        return bbox(self.llx-_left,  self.lly-_bottom, self.urx+_right, self.ury+_top)
+        return _bbox(self.llx-_left,  self.lly-_bottom, self.urx+_right, self.ury+_top)
 
     def rect(self):
         """return rectangle corresponding to bbox"""
         import path
         return path._rect(self.llx, self.lly, self.urx-self.llx, self.ury-self.lly)
+
+    path = rect
 
     def height(self):
         """return height of bbox"""
@@ -137,3 +143,20 @@ class bbox:
     def right(self):
         """return right coordinate of bbox"""
         return unit.t_pt(self.urx)
+
+
+class bbox(_bbox):
+
+    """class for bounding boxes"""
+
+    def __init__(self, llx=None, lly=None, urx=None, ury=None):
+        if llx is not None:
+            llx = unit.topt(llx)
+        if lly is not None:
+            lly = unit.topt(lly)
+        if urx is not None:
+            urx = unit.topt(urx)
+        if ury is not None:
+            ury = unit.topt(ury)
+        _bbox.__init__(self, llx, lly, urx, ury)
+

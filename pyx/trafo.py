@@ -109,7 +109,7 @@ class _trafo(base.PSOp):
                       self.vector[0], self.vector[1] ) )
 
     def bbox(self):
-        return bbox.bbox()
+        return bbox._bbox()
 
     def _apply(self, x, y):
         """apply transformation to point (x,y) (coordinates in pts)"""

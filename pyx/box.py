@@ -263,10 +263,10 @@ class _polygon:
         return unit.t_pt(self._boxdistance(other))
 
     def bbox(self):
-        return bbox.bbox(min([x[0] for x in self.corners]),
-                         min([x[1] for x in self.corners]),
-                         max([x[0] for x in self.corners]),
-                         max([x[1] for x in self.corners]))
+        return bbox._bbox(min([x[0] for x in self.corners]),
+                          min([x[1] for x in self.corners]),
+                          max([x[0] for x in self.corners]),
+                          max([x[1] for x in self.corners]))
 
 
 def _genericalignequal(method, polygons, a, dx, dy):

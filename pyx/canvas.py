@@ -623,7 +623,7 @@ class clip(base.PSCmd):
 
     def bbox(self):
         # as a PSCmd a clipping path has NO influence on the bbox...
-        return bbox.bbox()
+        return bbox._bbox()
 
     def clipbbox(self):
         # ... but for clipping, we nevertheless need the bbox
@@ -692,7 +692,7 @@ class _canvas(base.PSCmd, attrlist.attrlist):
 
         self.PSOps     = []
         self.trafo     = trafo.trafo()
-        self.clipbbox  = bbox.bbox()
+        self.clipbbox  = bbox._bbox()
         self.texrunner = text.defaulttexrunner
 
         for arg in args:
@@ -711,7 +711,7 @@ class _canvas(base.PSCmd, attrlist.attrlist):
         obbox = reduce(lambda x,y:
                        isinstance(y, base.PSCmd) and x+y.bbox() or x,
                        self.PSOps,
-                       bbox.bbox())
+                       bbox._bbox())
 
         # transform according to our global transformation and
         # intersect with clipping bounding box (which have already been
@@ -861,7 +861,7 @@ class pattern(_canvas, base.PathStyle):
         self.patterntrafo = trafo
 
     def bbox(self):
-        return bbox.bbox()
+        return bbox._bbox()
 
     def write(self, file):
         file.write("%s setpattern\n" % self.id)
@@ -927,7 +927,7 @@ class canvas(_canvas):
 
         self.PSOps     = []
         self.trafo     = trafo.trafo()
-        self.clipbbox  = bbox.bbox()
+        self.clipbbox  = bbox._bbox()
         self.texrunner = text.defaulttexrunner
 
         for arg in args:

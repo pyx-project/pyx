@@ -2043,8 +2043,8 @@ class key:
         method should be called after dolayout"""
         result = self.titles[0].bbox()
         for title in self.titles[1:]:
-            result = result + title.bbox() + bbox.bbox(0, title.center[1] - 0.5 * self._symbolheight,
-                                                       0, title.center[1] + 0.5 * self._symbolheight)
+            result = result + title.bbox() + bbox._bbox(0, title.center[1] - 0.5 * self._symbolheight,
+                                                        0, title.center[1] + 0.5 * self._symbolheight)
         return result
 
     def paint(self, c, x, y):
@@ -2390,10 +2390,10 @@ class graphxy(canvas.canvas):
 
     def bbox(self):
         self.finish()
-        result = bbox.bbox(self._xpos - self._yaxisextents[0],
-                           self._ypos - self._xaxisextents[0],
-                           self._xpos + self._width + self._yaxisextents[1],
-                           self._ypos + self._height + self._xaxisextents[1])
+        result = bbox._bbox(self._xpos - self._yaxisextents[0],
+                            self._ypos - self._xaxisextents[0],
+                            self._xpos + self._width + self._yaxisextents[1],
+                            self._ypos + self._height + self._xaxisextents[1])
         for box in self.mindbboxes:
             result = result + box
         return result
@@ -2645,7 +2645,7 @@ class graphxy(canvas.canvas):
 # 
 #     def bbox(self):
 #         self.finish()
-#         return bbox.bbox(self._xpos - 200, self._ypos - 200, self._xpos + 200, self._ypos + 200)
+#         return bbox._bbox(self._xpos - 200, self._ypos - 200, self._xpos + 200, self._ypos + 200)
 
 
 ################################################################################
