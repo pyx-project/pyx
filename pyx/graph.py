@@ -23,7 +23,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-import types, re, math, string
+import types, re, math, string, sys
 import bbox, canvas, path, tex, unit, mathtree, trafo, attrlist
 
 goldenrule = 0.5 * (math.sqrt(5) + 1)
@@ -635,15 +635,11 @@ class _alignbox:
             if type(linevector) is types.TupleType:
                 return linevector
         for i, j in self.successivepoints():
-            if linevectors[i-1] == 1 and linevectors[j-1] == 0:
+            if ((linevectors[i-1] == 1 and linevectors[j-1] == 0) or
+                (linevectors[i-1] == 1 and linevectors[j-1] is None) or
+                (linevectors[i-1] is None and linevectors[j-1] == 0)):
                 k = j == 1 and self.points or j - 1
                 return alignpointvector(a, dx, dy, self.x[k], self.y[k])
-        for i in range(self.points):
-            if linevectors[i] == 0:
-                k = i or self.points
-                return alignpointvector(a, dx, dy, self.x[k], self.y[k])
-            elif linevectors[i] == 1:
-                return alignpointvector(a, dx, dy, self.x[i+1], self.y[i+1])
         return a*dx, a*dy
 
     def _circlealignvector(self, a, dx, dy):
@@ -704,12 +700,27 @@ class rectbox(_rectbox):
         _rectbox.__init__(self, *argslist, **argdict)
 
 
+class reldirection(tex.direction):
+
+    def reldirection(self, dx, dy, epsilon=1e-10):
+        value = self.value + math.atan2(dy, dx) * 180 / math.pi
+        while (value > 90 + epsilon):
+            value -= 180
+        while (value < -90 - epsilon):
+            value += 180
+        return value
+
+reldirection.parallel = reldirection(-90)
+reldirection.orthogonal = reldirection(0)
+
+
 class textbox(_rectbox, attrlist.attrlist):
 
     def __init__(self, _tex, text, textstyles = (), vtext="0"):
         self.tex = _tex
         self.text = text
         self.textstyles = textstyles
+        self.reldx, self.reldy = 1, 0
         self.halign = self.attrget(self.textstyles, tex.halign, None)
         self.textstyles = self.attrdel(self.textstyles, tex.halign)
         self.direction = self.attrget(self.textstyles, tex.direction, None)
@@ -734,8 +745,14 @@ class textbox(_rectbox, attrlist.attrlist):
             if self.halign == tex.halign.right:
                 xorigin = self.wd
         _rectbox.__init__(self, 0, -self.dp, self.wd, self.ht, xorigin, self.shiftht)
+
+    def setreldirection(self, dx, dy):
         if self.direction is not None:
-            self.transform(trafo._rotate(self.direction.value))
+            if hasattr(self.direction, "reldirection"):
+                self.usedirection = self.direction.reldirection(dx, dy)
+            else:
+                self.usedirection = self.direction.value
+            self.transform(trafo._rotate(self.usedirection))
 
     def transform(self, trafo):
         _rectbox.transform(self, trafo)
@@ -743,7 +760,7 @@ class textbox(_rectbox, attrlist.attrlist):
 
     def _printtext(self, x, y):
         if self.direction is not None:
-            styles = self.textstyles + [self.direction]
+            styles = self.textstyles + [tex.direction(self.usedirection)]
         else:
             styles = self.textstyles
         self.tex._text(x + self.xtext, y + self.ytext, self.text, *styles)
@@ -756,7 +773,8 @@ class textbox(_rectbox, attrlist.attrlist):
 # axis painter
 ################################################################################
 
-class axispainter:
+
+class axispainter(attrlist.attrlist):
 
     fractypeauto = 1
     fractypedec = 2
@@ -910,6 +928,7 @@ class axispainter:
                                 tick.text = tick.text + axis.suffix
                     tick.labelstyles = [tex.style.math] + self.selectstyle(tick.labellevel, self.labelstyles)
                     tick.textbox = textbox(graph.tex, tick.text, textstyles = tick.labelstyles)
+                    tick.textbox.setreldirection(tick.dx, tick.dy)
 
             for tick in axis.ticks[1:]:
                 if tick.dx != axis.ticks[0].dx or tick.dy != axis.ticks[0].dy:
@@ -964,6 +983,7 @@ class axispainter:
             x, y = axis.tickpoint(axis, 0.5)
             dx, dy = axis.tickdirection(axis, 0.5)
             axis.titlebox = textbox(graph.tex, axis.title, textstyles = axis.titlestyles)
+            axis.titlebox.setreldirection(dx, dy)
             axis.extent += titledist
             axis.titlebox._linealign(axis.extent, dx, dy)
             axis.titlebox._printtext(x, y)
@@ -1002,7 +1022,7 @@ class linkaxispainter(axispainter):
 class _axis:
 
     def __init__(self, min=None, max=None, reverse=0,
-                       title=None, titlestyles=(), painter = axispainter(),
+                       title=None, titlestyles=(reldirection.parallel,), painter = axispainter(),
                        factor = 1, prefix = None, suffix = None):
         self.fixmin = min is not None
         self.fixmax = max is not None
