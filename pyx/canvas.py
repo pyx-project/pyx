@@ -44,11 +44,12 @@ bbpattern = re.compile( r"^%%BoundingBox:\s+([+-]?\d+)\s+([+-]?\d+)\s+([+-]?\d+)
 
 class epsfile:
 
-    def __init__(self, x, y, epsname, clip = 1):
-        self.x       = x
-        self.y       = y
-        self.epsname = epsname
-        self.clip    = clip
+    def __init__(self, x, y, epsname, clip = 1, ignorebb=0):
+        self.x        = x
+        self.y        = y
+        self.epsname  = epsname
+        self.clip     = clip
+        self.ignorebb = ignorebb
         self._ReadEPSBoundingBox()                         
 
     def _ReadEPSBoundingBox(self):
@@ -80,7 +81,11 @@ class epsfile:
 	    assert "cannot open EPS file"	                          # TODO: Fehlerbehandlung
 
 
-        if self.clip:
+        if self.ignorebb:
+            return """BeginEPSF
+%f %f translate
+%%BeginDocument: %s\n""" % (self.x, self.y, self.epsname) + file.read() + "%%EndDocument\nEndEPSF\n"
+        elif self.clip:
             return """BeginEPSF
 %f %f translate
 %f %f translate 
