@@ -813,14 +813,19 @@ class parser:
                 # 2. atom + [trailer]
                 if len(astseq) == 3:
                     # we have a function call atom + "LPAR" + argumentlist + "RPAR"
-                    if astseq[2][0] != symbol.trailer or \
-                       astseq[2][1][0] != token.LPAR or \
-                       astseq[2][2][0] != symbol.arglist or \
-                       astseq[2][3][0] != token.RPAR:
+                    if astseq[2][0] == symbol.trailer and \
+                       astseq[2][1][0] == token.LPAR and \
+                       astseq[2][2][0] == symbol.arglist and \
+                       astseq[2][3][0] == token.RPAR:
+                        tree = self.astseq2mtree(astseq[1], isfunc=1)
+                        for subtree in self.astseq2mtree(astseq[2][2], isfunc=0):
+                            tree.AddArg(subtree)
+                    elif astseq[2][0] == symbol.trailer and \
+                       astseq[2][1][0] == token.LPAR and \
+                       astseq[2][2][0] == token.RPAR:
+                        tree = self.astseq2mtree(astseq[1], isfunc=1)
+                    else:
                         raise Exception("wrong function call")
-                    tree = self.astseq2mtree(astseq[1], isfunc=1)
-                    for subtree in self.astseq2mtree(astseq[2][2], isfunc=0):
-                        tree.AddArg(subtree)
                 else:
                     tree = self.astseq2mtree(astseq[1], isfunc=0)
 
