@@ -463,7 +463,7 @@ class canvas(_canvas):
         file.write("%%EOF\n")
 
     def writePDFfile(self, filename, bbox=None, bboxenlarge="1 t pt"):
-        sys.stderr.write("*** PyX Warning: writePDFfile is experimental code and supports only a small set of PyX features\n")
+        sys.stderr.write("*** PyX Warning: writePDFfile is experimental and supports only a subset of PyX's features\n")
 
         if filename[-4:]!=".pdf":
             filename = filename + ".pdf"
