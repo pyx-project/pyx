@@ -24,7 +24,20 @@
 # this code will be part of PyX 0.3
 
 import os, threading, Queue, traceback, re, struct, tempfile
-import helper, attrlist, bbox, unit, box, base, trafo, canvas
+import helper, attrlist, bbox, unit, box, base, trafo, canvas, pykpathsea
+
+try:
+    from t1strip import t1strip
+except:
+    # dummy implementation which inserts complete font
+    def t1strip(file, pfbfilename, glyphs):
+        tmpfilename = tempfile.mktemp(suffix=".pfa")
+        os.system("pfb2pfa %s %s" % (pfbfilename, tmpfilename))
+        pfa = open(tmpfilename, "r")
+        file.write(pfa.read())
+        pfa.close()
+        os.unlink(tmpfilename)
+
 
 ###############################################################################
 # joergl would mainly work here ...
@@ -375,6 +388,9 @@ class Font:
         self.beta = 256/self.alpha;
         self.alpha = self.alpha*self.q;
 
+        # for bookkeeping of used characters
+        self.usedchars = [0] * 256
+
     def __str__(self):
         return "Font(%s, %d)" % (self.name, self.tfmdesignsize)
 
@@ -409,6 +425,14 @@ class Font:
     def getitalic(self, charcode):
         return self.convert(self.tfmfile.italic[self.char_info[charcode].italic_index])
 
+    def markcharused(self, charcode):
+        self.usedchars[charcode] = 1
+
+    def write(self, file):
+        """ write used glyps of font into file """
+        pfbname = pykpathsea.find_file("%s.pfb" % self.name)
+        t1strip(file, pfbname, self.usedchars)
+        
 
 class DVIFile:
 
@@ -425,6 +449,7 @@ class DVIFile:
         x = self.pos[_POS_H] * self.conv / 100000
         y = -self.pos[_POS_V] * self.conv / 100000
         dx = inch and self.fonts[self.activefont].getwidth(char) or 0
+        self.fonts[self.activefont].markcharused(char)
 
         if self.debug:
             print ("%d: %schar%d h:=%d+%d=%d, hh:=%d" %
@@ -685,16 +710,7 @@ class DVIFile:
         for font in self.fonts:
             if font:
                 file.write("%%%%BeginFont: %s\n" % font.name.upper())
-
-                tmpfilename = tempfile.mktemp(suffix=".pfa")
-                pfbfilename = os.popen("kpsewhich %s.pfb" % font.name).readlines()[-1][:-1]
-                os.system("pfb2pfa %s %s" % (pfbfilename, tmpfilename))
-
-                pfa = open(tmpfilename, "r")
-                file.write(pfa.read())
-                pfa.close()
-                os.unlink(tmpfilename)
-
+                font.write(file)
                 file.write("%%EndFont\n")
 
     FontSizePattern= re.compile(r"([0-9]+)$")
