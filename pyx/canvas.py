@@ -833,6 +833,11 @@ class canvas(base.PSCmd):
 
         dp = DecoratedPath(path)
 
+        # XXX: use attrlist
+        if [x for x in args if not (isinstance(x, base.PathStyle) or 
+                                    isinstance(x, PathDeco))]:
+            raise ValueError("Only instances of base.PathStyle or canvas.PathDeco are allowed")
+
         # set global styles
         dp.styles = filter(lambda x: isinstance(x, base.PathStyle), args)
         
