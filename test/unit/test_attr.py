@@ -51,8 +51,8 @@ class AttrTestCase(unittest.TestCase):
     def testSort(self):
         a1 = A3((B3, C3))
         a2 = A3((B3, C3))
-        b1 = B3((C3))
-        b2 = B3((C3))
+        b1 = B3((C3,))
+        b2 = B3((C3,))
         c1 = C3()
         c2 = C3()
         self.failUnlessEqual(mergeattrs([a1, b2, b1, c2, a2, c1]), [a1, a2, b2, b1, c2, c1])
@@ -60,8 +60,8 @@ class AttrTestCase(unittest.TestCase):
     def testExclusiveSort(self):
         a1 = A4(A4, (B4, C4))
         a2 = A4(A4, (B4, C4))
-        b1 = B4(B4, (C4))
-        b2 = B4(B4, (C4))
+        b1 = B4(B4, (C4,))
+        b2 = B4(B4, (C4,))
         c1 = C4()
         c2 = C4()
         self.failUnlessEqual(mergeattrs([b2, a1, b1, c2, a2, c1]), [a2, b1, c2, c1])
