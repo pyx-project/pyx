@@ -675,7 +675,6 @@ class curvecorners(deco, attr.attr):
             if subpath.closed:
                 newpath.append(path.closepath())
 
-        newpath = path.normpath(newpath)
         dp.path = newpath
         dp.strokepath = newpath
         return dp
