@@ -2101,7 +2101,7 @@ class texrunner:
         self.executeid = 0
         self.page = 0
         self.texdone = 0
-        if self.reinit:
+        if reinit:
             for expr, args in self.preambles:
                 self.execute(expr, *args)
         else:
