@@ -8,6 +8,9 @@ PyX
     - tick.text is renamed to tick.label
     - ticks and labels are renamed to tickpos/tickdist and labelpos/labeldist in partitioning
     - separate texter out of the axispainter (done up to the documentation)
+    - dense -> density (done including the documentation; TODO in tests/examples?)
+    IN PROGRESS:
+    - axis interface
     TODO:
     - do not include unneeded line segments when the axis range is set manually
     - allow for an iteration of a graph style, when it is used several times
@@ -15,12 +18,11 @@ PyX
     - automatic datafile key title; skip title=None stuff in key
     - exceptions in drawsymbol & friends...
     - 3d graphs, circular graphs
-    - dense -> density
     - symbols + lines -> symbollines (??). Symbols should not allow setting lineattrs, and
       lines not symbolattrs
     - allow for graph.changesymbol.square(size=0.15) etc.
     - rect style (and errorbars?) should use clipping
-    documentation:
+    - documentation:
       - modified axispainter labelattrs default
   - canvas module:
     - default patterns
@@ -35,13 +37,14 @@ PyX
     - preliminary version of pyxgraphics flag (handling of file names, no documentation)
     TODO:
     - the prolog method of the dvifile class recieves the page now -> return the prolog needed by this page only
-    - further improve lfs handling
+    - further improve lfs handling; pyxgraphics handling of file names
   - tex module:
     - bugfix \def\ProcessPyXBox -> \long\def\ProcessPyXBox
     - copy lfs handling from text module (share the same source???)
   - data module:
     - full documentation via doc strings
     - data.data should add line number like data.datafile
+    - TODO: use csv module (new in 2.3)
   - connector module:
     - some preliminary version
     - TODO: documentation

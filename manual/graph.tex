@@ -72,7 +72,7 @@ argument name&description\\
 \texttt{tickvmax}&as above, but for the maximum; default: \texttt{1}\\
 \texttt{part}&axis partitioning (described below)\\
 \texttt{rate}&axis partition rating (described below)\\
-\texttt{dense}&dense parameter for the axis partition rating; if not set, the dense value for the graph is used\\
+\texttt{density}&density parameter for the axis partition rating\\
 \texttt{painter}&axis painter (described below)\\
 \end{tabularx}
 \medskip
@@ -275,7 +275,7 @@ you wish to adopt the rating to personal preferences.
 
 The overall optimal partition properties, namely the density of ticks
 and labels, can be easily adjusted by the single parameter
-\verb|dense| of the axis (or graph) constructor. The rating is
+\verb|density| of the axis constructor. The rating is
 adjusted to the default densitiy value of \verb|1|, but modifications
 of this parameter in the range of 0.5 (for less ticks) to 2 or even 3
 (for more ticks) might be usefull. This parameter was taken out of the

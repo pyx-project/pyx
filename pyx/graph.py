@@ -54,10 +54,10 @@ class _Imap:
 
 class _linmap:
     "linear mapping"
+
     __implements__ = _Imap
 
     def setbasepoints(self, basepoints):
-        "method is part of the implementation of _Imap"
         self.dydx = (basepoints[1][1] - basepoints[0][1]) / float(basepoints[1][0] - basepoints[0][0])
         self.dxdy = (basepoints[1][0] - basepoints[0][0]) / float(basepoints[1][1] - basepoints[0][1])
         self.x1 = basepoints[0][0]
@@ -65,11 +65,9 @@ class _linmap:
         return self
 
     def convert(self, value):
-        "method is part of the implementation of _Imap"
         return self.y1 + self.dydx * (value - self.x1)
 
     def invert(self, value):
-        "method is part of the implementation of _Imap"
         return self.x1 + self.dxdy * (value - self.y1)
 
 
@@ -95,10 +93,10 @@ class _logmap:
 
 
 ################################################################################
-# partition schemes
+# partitioner (abbreviation parter)
 # please note the nomenclature:
-# - a partition is a ordered sequence of tick instances
-# - a partition scheme is a class creating a single or several partitions
+# - a partition (abbreviation part) is a ordered sequence of tick instances
+# - a parter is a class creating a single or several parts
 ################################################################################
 
 
@@ -370,16 +368,13 @@ class manualpart:
         return ticks
 
     def defaultpart(self, min, max, extendmin, extendmax):
-        """method is part of the implementation of _Ipart
-        XXX: we do not take care of the parameters -> correct?"""
+        # XXX: we do not take care of the parameters -> correct?
         return self.part()
 
     def lesspart(self):
-        "method is part of the implementation of _Ipart"
         return None
 
     def morepart(self):
-        "method is part of the implementation of _Ipart"
         return None
 
 
@@ -449,7 +444,6 @@ class linpart:
         return ticks
 
     def defaultpart(self, min, max, extendmin, extendmax):
-        "method is part of the implementation of _Ipart"
         if self.extendtick is not None and len(self.ticklist) > self.extendtick:
             min, max = self.extendminmax(min, max, self.ticklist[self.extendtick], extendmin, extendmax)
         if self.extendlabel is not None and len(self.labellist) > self.extendlabel:
@@ -466,11 +460,9 @@ class linpart:
         return ticks
 
     def lesspart(self):
-        "method is part of the implementation of _Ipart"
         return None
 
     def morepart(self):
-        "method is part of the implementation of _Ipart"
         return None
 
 
@@ -512,7 +504,6 @@ class autolinpart:
         self.mix = mix
 
     def defaultpart(self, min, max, extendmin, extendmax):
-        "method is part of the implementation of _Ipart"
         logmm = math.log(max - min) / math.log(10)
         if logmm < 0: # correction for rounding towards zero of the int routine
             base = frac(10L, 1, int(logmm - 1))
@@ -528,7 +519,6 @@ class autolinpart:
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
     def lesspart(self):
-        "method is part of the implementation of _Ipart"
         if self.lesstickindex < len(self.variants) - 1:
             self.lesstickindex += 1
         else:
@@ -540,7 +530,6 @@ class autolinpart:
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
     def morepart(self):
-        "method is part of the implementation of _Ipart"
         if self.moretickindex:
             self.moretickindex -= 1
         else:
@@ -739,7 +728,6 @@ class autologpart(logpart):
         self.mix = mix
 
     def defaultpart(self, min, max, extendmin, extendmax):
-        "method is part of the implementation of _Ipart"
         self.min, self.max, self.extendmin, self.extendmax = min, max, extendmin, extendmax
         self.morevariantsindex = self.variantsindex
         self.lessvariantsindex = self.variantsindex
@@ -748,7 +736,6 @@ class autologpart(logpart):
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
     def lesspart(self):
-        "method is part of the implementation of _Ipart"
         self.lessvariantsindex += 1
         if self.lessvariantsindex < len(self.variants):
             part = logpart(tickpos=self.variants[self.lessvariantsindex][0], labelpos=self.variants[self.lessvariantsindex][1],
@@ -756,7 +743,6 @@ class autologpart(logpart):
             return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
     def morepart(self):
-        "method is part of the implementation of _Ipart"
         self.morevariantsindex -= 1
         if self.morevariantsindex >= 0:
             part = logpart(tickpos=self.variants[self.morevariantsindex][0], labelpos=self.variants[self.morevariantsindex][1],
@@ -777,8 +763,8 @@ class autologpart(logpart):
 ################################################################################
 
 
-class cuberate:
-    """a cube rater
+class cuberater:
+    """a value rater
     - a cube rater has an optimal value, where the rate becomes zero
     - for a left (below the optimum) and a right value (above the optimum),
       the rating is value is set to 1 (modified by an overall weight factor
@@ -786,7 +772,7 @@ class cuberate:
     - the analytic form of the rating is cubic for both, the left and
       the right side of the rater, independently"""
 
-    # __implements__ = TODO (sole implementation)
+    # __implements__ = sole implementation
 
     def __init__(self, opt, left=None, right=None, weight=1):
         """initializes the rater
@@ -802,24 +788,25 @@ class cuberate:
         self.right = right
         self.weight = weight
 
-    def rate(self, value, dense=1):
+    def rate(self, value, density):
         """returns a rating for a value
-        - the dense factor lineary rescales the rater (the optimum etc.),
+        - the density lineary rescales the rater (the optimum etc.),
           e.g. a value bigger than one increases the optimum (when it is
           positive) and a value lower than one decreases the optimum (when
-          it is positive); the dense factor itself should be positive"""
-        opt = self.opt * dense
+          it is positive); the density itself should be positive"""
+        opt = self.opt * density
         if value < opt:
-            other = self.left * dense
+            other = self.left * density
         elif value > opt:
-            other = self.right * dense
+            other = self.right * density
         else:
             return 0
         factor = (value - opt) / float(other - opt)
         return self.weight * (factor ** 3)
 
 
-class distancerate:
+class distancerater:
+    # TODO: update docstring
     """a distance rater (rates a list of distances)
     - the distance rater rates a list of distances by rating each independently
       and returning the average rate
@@ -831,7 +818,7 @@ class distancerate:
       optimal value (halve the optimal value has the rating one, one third of
       the optimal value has the rating two, etc.)"""
 
-    # __implements__ = TODO (sole implementation)
+    # __implements__ = sole implementation
 
     def __init__(self, opt, weight=0.1):
         """inititializes the rater
@@ -840,15 +827,15 @@ class distancerate:
         self.opt_str = opt
         self.weight = weight
 
-    def _rate(self, distances, dense=1):
+    def rate(self, distances, density):
         """rate distances
         - the distances are a sequence of positive floats in PostScript points
-        - the dense factor lineary rescales the rater (the optimum etc.),
+        - the density lineary rescales the rater (the optimum etc.),
           e.g. a value bigger than one increases the optimum (when it is
           positive) and a value lower than one decreases the optimum (when
-          it is positive); the dense factor itself should be positive"""
+          it is positive); the density itself should be positive"""
         if len(distances):
-            opt = unit.topt(unit.length(self.opt_str, default_type="v")) / dense
+            opt = unit.topt(unit.length(self.opt_str, default_type="v")) / density
             rate = 0
             for distance in distances:
                 if distance < opt:
@@ -876,18 +863,18 @@ class axisrater:
       defined above --- right now, there is not yet a strict interface
       for this delegation (should be done as soon as it is needed)"""
 
-    # __implements__ = TODO (sole implementation)
+    # __implements__ = sole implementation
 
-    linticks = (cuberate(4), cuberate(10, weight=0.5), )
-    linlabels = (cuberate(4), )
-    logticks = (cuberate(5, right=20), cuberate(20, right=100, weight=0.5), )
-    loglabels = (cuberate(5, right=20), cuberate(5, left=-20, right=20, weight=0.5), )
-    stdtickrange = cuberate(1, weight=2)
-    stddistance = distancerate("1 cm")
+    linticks = (cuberater(4), cuberater(10, weight=0.5), )
+    linlabels = (cuberater(4), )
+    logticks = (cuberater(5, right=20), cuberater(20, right=100, weight=0.5), )
+    loglabels = (cuberater(5, right=20), cuberater(5, left=-20, right=20, weight=0.5), )
+    stdtickrange = cuberater(1, weight=2)
+    stddistance = distancerater("1 cm")
 
     def __init__(self, ticks=linticks, labels=linlabels, tickrange=stdtickrange, distance=stddistance):
         """initializes the axis rater
-        - ticks and labels are lists of instances of cuberate
+        - ticks and labels are lists of instances of a value rater
         - the first entry in ticks rate the number of ticks, the
           second the number of subticks, etc.; when there are no
           ticks of a level or there is not rater for a level, the
@@ -895,19 +882,19 @@ class axisrater:
         - labels is analogous, but for labels
         - within the rating, all ticks with a higher level are
           considered as ticks for a given level
-        - tickrange is a cuberate instance, which rates the covering
+        - tickrange is a value rater instance, which rates the covering
           of an axis range by the ticks (as a relative value of the
           tick range vs. the axis range), ticks might cover less or
           more than the axis range (for the standard automatic axis
           partition schemes an extention of the axis range is normal
           and should get some penalty)
-        - distance is an distancerate instance"""
+        - distance is an distance rater instance"""
         self.ticks = ticks
         self.labels = labels
         self.tickrange = tickrange
         self.distance = distance
 
-    def ratepart(self, axis, part, dense=1):
+    def ratepart(self, axis, part, density):
         """rates a partition by some global parameters
         - takes into account the number of ticks, subticks, etc.,
           number of labels, etc., and the coverage of the axis
@@ -938,34 +925,34 @@ class axisrater:
         rate = 0
         weight = 0
         for tick, rater in zip(ticks, self.ticks):
-            rate += rater.rate(tick, dense=dense)
+            rate += rater.rate(tick, density)
             weight += rater.weight
         for label, rater in zip(labels, self.labels):
-            rate += rater.rate(label, dense=dense)
+            rate += rater.rate(label, density)
             weight += rater.weight
         if part is not None and len(part):
             # XXX: tickrange was not yet applied
             rate += self.tickrange.rate(axis.convert(float(part[-1]) * axis.divisor) -
-                                        axis.convert(float(part[0]) * axis.divisor))
+                                        axis.convert(float(part[0]) * axis.divisor), 1)
         else:
             rate += self.tickrange.rate(0)
         weight += self.tickrange.weight
         return rate/weight
 
-    def ratelayout(self, axiscanvas, dense=1):
+    def ratelayout(self, axiscanvas, density):
         # TODO: update docstring
         """rate distances
         - the distances should be collected as box distances of
           subsequent labels (of any level))
         - the distances are a sequence of positive floats in
           PostScript points
-        - the dense factor is used within the distancerate instance"""
+        - the density is used within the distancerate instance"""
         if len(axiscanvas.labels) > 1:
             try:
                 distances = [axiscanvas.labels[i]._boxdistance(axiscanvas.labels[i+1]) for i in range(len(axiscanvas.labels) - 1)]
             except box.BoxCrossError:
                 return None
-            return self.distance._rate(distances, dense)
+            return self.distance.rate(distances, density)
         else:
             return 0
 
@@ -1391,7 +1378,7 @@ class axiscanvas(canvas.canvas):
       the painter method has not only to insert the labels into this
       canvas, but should also fill this list"""
 
-    # __implements__ = TODO (sole implementation)
+    # __implements__ = sole implementation
 
     def __init__(self, *args, **kwargs):
         """initializes the instance
@@ -1406,7 +1393,7 @@ class rotatetext:
     """create rotations accordingly to tick directions
     - upsidedown rotations are suppressed by rotating them by another 180 degree"""
 
-    # __implements__ = TODO (sole implementation)
+    # __implements__ = sole implementation
 
     def __init__(self, direction, epsilon=1e-10):
         """initializes the instance
@@ -1434,28 +1421,18 @@ orthogonaltext = rotatetext(0)
 class _Iaxispainter:
     "class for painting axes"
 
-    def paint(self, graph, axis, part, axiscanvas):
+    def paint(self, axis, part, axiscanvas):
         """paint ticks into the axiscanvas
-        - graph, axis, and ticks should not be modified (we may
+        - the axis and the ticks should not be modified (we may
           add some temporary variables like part[i].temp_xxx,
           which might be used just temporary) -- the idea is that
           all things can be used several times
         - also do not modify the instance (self) -- even this
           instance might be used several times; thus do not modify
           attributes like self.titleattrs etc. (just use a copy of it)
-        - the graphs texrunner should be used to create textboxes
-          (beside that, there should be no reason to access the
-          graph directly --- please correct this statement when
-          different design decisions will take place later on)
-        - the axis should be accessed to get the tick positions:
-          for that the following methods are used:
-          - _vtickpoint
-          - vtickdirection
-          - convert, divisor?!
-          - vgridpath
-          - vbaseline
-          see documentation of an axis interface for a detailed
-          description of those methods
+        - the axis should be accessed to get the tick positions
+          namely by _Iaxistickpos and _Imap; see those interface
+          definitions for details
         - the method might access some additional attributes from
           the axis, e.g. the axis title -- the axis painter should
           document this behavior and rely on the availability of
@@ -1496,7 +1473,7 @@ class axistitlepainter:
         self.titledirection = titledirection
         self.titlepos = titlepos
 
-    def paint(self, graph, axis, part, axiscanvas):
+    def paint(self, axis, part, axiscanvas):
         if axis.title is not None and self.titleattrs is not None:
             titledist = unit.topt(unit.length(self.titledist_str, default_type="v"))
             x, y = axis._vtickpoint(axis, self.titlepos)
@@ -1504,7 +1481,7 @@ class axistitlepainter:
             titleattrs = helper.ensurelist(self.titleattrs)
             if self.titledirection is not None:
                 titleattrs.append(self.titledirection.trafo(dx, dy))
-            title = graph.texrunner._text(x, y, axis.title, *titleattrs)
+            title = axiscanvas.texrunner._text(x, y, axis.title, *titleattrs)
             axiscanvas._extent += titledist
             title._linealign(axiscanvas._extent, dx, dy)
             axiscanvas._extent += title._extent(dx, dy)
@@ -1564,6 +1541,7 @@ class axispainter(axistitlepainter):
         - labelhequalize and labelvequalize (booleans) perform an equal
           alignment for straight vertical and horizontal axes, respectively
         - futher keyword arguments are passed to axistitlepainter"""
+        # TODO: access to axis.divisor -- document, remove, ... ???
         self.innerticklengths_str = innerticklengths
         self.outerticklengths_str = outerticklengths
         self.tickattrs = tickattrs
@@ -1577,7 +1555,7 @@ class axispainter(axistitlepainter):
         self.labelvequalize = labelvequalize
         axistitlepainter.__init__(self, **kwargs)
 
-    def paint(self, graph, axis, part, axiscanvas):
+    def paint(self, axis, part, axiscanvas):
         labeldist = unit.topt(unit.length(self.labeldist_str, default_type="v"))
         for tick in part:
             tick.temp_v = axis.convert(float(tick) * axis.divisor)
@@ -1594,7 +1572,7 @@ class axispainter(axistitlepainter):
                         labelattrs.append(self.labeldirection.trafo(dx, dy))
                     if tick.labelattrs is not None:
                         labelattrs.extend(helper.ensurelist(tick.labelattrs))
-                    tick.temp_labelbox = graph.texrunner._text(tick.temp_x, tick.temp_y, tick.label, *labelattrs)
+                    tick.temp_labelbox = axiscanvas.texrunner._text(tick.temp_x, tick.temp_y, tick.label, *labelattrs)
         if len(part) > 1:
             equaldirection = 1
             for tick in part[1:]:
@@ -1665,7 +1643,7 @@ class axispainter(axistitlepainter):
         #     if tick.labellevel is not None and self.labelattrs is not None:
         #         del tick.temp_labelbox
 
-        axistitlepainter.paint(self, graph, axis, part, axiscanvas)
+        axistitlepainter.paint(self, axis, part, axiscanvas)
 
 
 class linkaxispainter(axispainter):
@@ -1688,8 +1666,6 @@ class linkaxispainter(axispainter):
                                    zerolineattrs=zerolineattrs,
                                    labelattrs=labelattrs,
                                    **kwargs)
-
-    # def paint(self,*xxx): pass
 
 
 class splitaxispainter(axistitlepainter): pass
@@ -1901,14 +1877,109 @@ class baraxispainter(axistitlepainter): pass
 # axes
 ################################################################################
 
-class PartitionError(Exception): pass
+
+class _Iaxis:
+    """interface definition of a axis
+    - data and tick range are handled separately
+    - an axis implements _Imap as well to convert between
+      axis values and graph coordinates; this is usually done
+      by mixin a proper mapping
+    - instance variables:
+      - axiscanvas: an axiscanvas instance, which is available after
+        calling the finish method
+      - relsize: relative size (width) of the axis (for use
+        in splitaxis etc.) -- this might not be available for
+        all axes, which will just create an name error right now
+    - configuration of the range handling is not subject
+      of this interface definition"""
+    # TODO: - add a mechanism to allow for a different range
+    #         handling of x and y ranges
+    #       - should we document instance variables this way?
+
+    __implements__ = _Imap
+
+    def setdatarange(self, min, max):
+        """set the axis data range
+        - the type of min and max must fit to the axis
+        - min<max; the axis might be reversed, but this is
+          expressed internally only
+        - the axis might not apply this change of the range
+          (e.g. when the axis range is fixed by the user)
+        - for invalid parameters (e.g. negativ values at an
+          logarithmic axis), an exception should be raised"""
+        # TODO: be more specific about the type of the exception
+
+    def settickrange(self, min, max):
+        """set the axis tick range
+        - as before, but for the tick range"""
+
+    def getdatarange(self):
+        """return data range as a tuple (min, max)
+        - min<max; the axis might be reversed, but this is
+          expressed internally only"""
+        # TODO: exceptions???
+
+    def gettickrange(self):
+        """return tick range as a tuple (min, max)
+        - as before, but for the tick range"""
+        # TODO: exceptions???
+
+    def finish(self, graph):
+        """paint the axis into the graph
+        - the graph should not be modified (read-only); the only
+          important property of the graph should be its texrunner
+          instance
+        - the axis instance (self) should be accessed to get the
+          tick positions namely by _Iaxistickpos and _Imap; see
+          those interface definitions for details -- again, the
+          graph should not be needed for that
+        - the finish method creates an axiscanvas, which should be
+          insertable into the graph to finally paint the axis
+        - any modification of the axis range should be disabled after
+          the finish method was called; a possible implementation would
+          be to raise an error in these methods as soon as an axiscanvas
+          is available"""
+
+
+class _Iaxistickpos:
+    """interface definition of axis tick position methods
+    - these methods are used for the postitioning of the ticks
+      when painting an axis
+    - a graph should insert these methods appropriate to its design
+      before the painting of the axis takes place, thus self is the
+      graph instance and the axis must be provided as a separate
+      argument"""
+
+    def _vtickpoint(self, axis, v):
+        """return the position at the baseline as a tuple (x, y) in
+        postscript points for the position v in graph coordinates"""
+
+    def vtickdirection(self, axis, v):
+        """return the direction of a tick as a tuple (dx, dy) for the
+        position v in graph coordinates"""
+
+    def vbaseline(self, axis, v1=None, v2=None):
+        """return the baseline as a path
+        - v1 is the start position in graph coordinates; if not set,
+          the baseline starts from the beginning, which might imply a
+          value outside of the graph coordinate range [0; 1]
+        - v2 is analogous to v1, but for the end position"""
+
+    def vgridpath(self, axis, v):
+        "return the grid path for a given position v in graph coordinates"
+        # TODO: this definition is different from the current implementation
+        #       - axis is first argument
+        #       - value -> virtual graph coordinate
+
 
 class _axis:
+
+    __implements__ = _Iaxis
 
     def __init__(self, min=None, max=None, reverse=0, divisor=1,
                        datavmin=None, datavmax=None, tickvmin=0, tickvmax=1,
                        title=None, painter=axispainter(), texter=defaulttexter(),
-                       dense=None):
+                       density=1):
         if None not in (min, max) and min > max:
             min, max, reverse = max, min, not reverse
         self.fixmin, self.fixmax, self.min, self.max, self.reverse = min is not None, max is not None, min, max, reverse
@@ -1935,7 +2006,8 @@ class _axis:
         self.title = title
         self.painter = painter
         self.texter = texter
-        self.dense = dense
+        self.density = density
+        self.axiscanvas = None
         self.canconvert = 0
         self.__setinternalrange()
 
@@ -1973,10 +2045,14 @@ class _axis:
         self.__setinternalrange()
 
     def setdatarange(self, min, max):
+        if self.axiscanvas is not None:
+            raise RuntimeError("axis was already finished")
         self.datamin, self.datamax = min, max
         self.__setinternalrange(min, max)
 
     def settickrange(self, min, max):
+        if self.axiscanvas is not None:
+            raise RuntimeError("axis was already finished")
         self.tickmin, self.tickmax = min, max
         self.__setinternalrange(min, max)
 
@@ -1994,36 +2070,32 @@ class _axis:
             else:
                 return self.invert(self.tickvmin), self.invert(self.tickvmax)
 
-    def dolayout(self, graph):
-        if self.dense is not None:
-            dense = self.dense
-        else:
-            dense = graph.dense
+    def finish(self, graph):
         min, max = self.gettickrange()
-        if self.part is not None:
-            self.ticks = self.part.defaultpart(min/self.divisor,
-                                               max/self.divisor,
-                                               not self.fixmin,
-                                               not self.fixmax)
+        if self.parter is not None:
+            self.ticks = self.parter.defaultpart(min/self.divisor,
+                                                 max/self.divisor,
+                                                 not self.fixmin,
+                                                 not self.fixmax)
         else:
             self.ticks = []
-        # lesspart and morepart can be called after defaultpart,
-        # although some axes may share their autoparting ---
-        # it works, because the axes are processed sequentially
+        # lesspart and morepart can be called after defaultpart;
+        # this works although some axes may share their autoparting,
+        # because the axes are processed sequentially
         first = 1
         maxworse = 2
         worse = 0
         while worse < maxworse:
-            if self.part is not None:
-                newticks = self.part.lesspart()
+            if self.parter is not None:
+                newticks = self.parter.lesspart()
             else:
                 newticks = None
             if newticks is not None:
                 if first:
-                    bestrate = self.rate.ratepart(self, self.ticks, dense)
+                    bestrate = self.rater.ratepart(self, self.ticks, self.density)
                     variants = [[bestrate, self.ticks]]
                     first = 0
-                newrate = self.rate.ratepart(self, newticks, dense)
+                newrate = self.rater.ratepart(self, newticks, self.density)
                 variants.append([newrate, newticks])
                 if newrate < bestrate:
                     bestrate = newrate
@@ -2034,16 +2106,16 @@ class _axis:
                 worse += 1
         worse = 0
         while worse < maxworse:
-            if self.part is not None:
-                newticks = self.part.morepart()
+            if self.parter is not None:
+                newticks = self.parter.morepart()
             else:
                 newticks = None
             if newticks is not None:
                 if first:
-                    bestrate = self.rate.ratepart(self, self.ticks, dense)
+                    bestrate = self.rater.ratepart(self, self.ticks, self.density)
                     variants = [[bestrate, self.ticks]]
                     first = 0
-                newrate = self.rate.ratepart(self, newticks, dense)
+                newrate = self.rater.ratepart(self, newticks, self.density)
                 variants.append([newrate, newticks])
                 if newrate < bestrate:
                     bestrate = newrate
@@ -2062,13 +2134,14 @@ class _axis:
                     self.ticks = variants[i][1]
                     if len(self.ticks):
                         self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
-                    layoutdata = axiscanvas()
+                    ac = axiscanvas()
+                    ac.settexrunner(graph.texrunner)
                     self.texter.labels(self.ticks)
-                    self.painter.paint(graph, self, self.ticks, layoutdata)
-                    ratelayout = self.rate.ratelayout(layoutdata, dense)
+                    self.painter.paint(self, self.ticks, ac)
+                    ratelayout = self.rater.ratelayout(ac, self.density)
                     if ratelayout is not None:
                         variants[i][0] += ratelayout
-                        variants[i].append(layoutdata)
+                        variants[i].append(ac)
                     else:
                         variants[i][0] = None
                     if variants[i][0] is not None and (bestrate is None or variants[i][0] < bestrate):
@@ -2076,28 +2149,28 @@ class _axis:
                     self.__forceinternalrange(saverange)
                     i += 1
                 if bestrate is None:
-                    raise PartitionError("no valid axis partitioning found")
+                    raise RuntimeError("no valid axis partitioning found")
                 variants = [variant for variant in variants[:i] if variant[0] is not None]
                 variants.sort()
+                if len(self.ticks):
+                    self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
                 self.ticks = variants[0][1]
-                self.layoutdata = variants[0][2]
+                self.axiscanvas = variants[0][2]
             else:
                 for tick in self.ticks:
                     tick.textbox = None
-                self.layoutdata = axiscanvas()
-            if len(self.ticks):
+                if len(self.ticks):
+                    self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
                 self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
+                self.axiscanvas = axiscanvas()
+                self.axiscanvas.settexrunner(graph.texrunner)
         else:
             if len(self.ticks):
                 self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
-            self.layoutdata = axiscanvas()
+            self.axiscanvas = axiscanvas()
+            self.axiscanvas.settexrunner(graph.texrunner)
             self.texter.labels(self.ticks)
-            self.painter.paint(graph, self, self.ticks, self.layoutdata)
-        #self.layoutdata = layoutdata
-        #graph.mindbbox(*[tick.textbox.bbox() for tick in self.ticks if tick.textbox is not None])
-
-    def dopaint(self, graph):
-        graph.insert(self.layoutdata)
+            self.painter.paint(self, self.ticks, self.axiscanvas)
 
     def createlinkaxis(self, **args):
         return linkaxis(self, **args)
@@ -2105,22 +2178,22 @@ class _axis:
 
 class linaxis(_axis, _linmap):
 
-    def __init__(self, part=autolinpart(), rate=axisrater(), **args):
+    def __init__(self, parter=autolinpart(), rater=axisrater(), **args):
         _axis.__init__(self, **args)
         if self.fixmin and self.fixmax:
             self.relsize = self.max - self.min
-        self.part = part
-        self.rate = rate
+        self.parter = parter
+        self.rater = rater
 
 
 class logaxis(_axis, _logmap):
 
-    def __init__(self, part=autologpart(), rate=axisrater(ticks=axisrater.logticks, labels=axisrater.loglabels), **args):
+    def __init__(self, parter=autologpart(), rater=axisrater(ticks=axisrater.logticks, labels=axisrater.loglabels), **args):
         _axis.__init__(self, **args)
         if self.fixmin and self.fixmax:
             self.relsize = math.log(self.max) - math.log(self.min)
-        self.part = part
-        self.rate = rate
+        self.parter = parter
+        self.rater = rater
 
 
 class linkaxis:
@@ -2149,14 +2222,9 @@ class linkaxis:
         if hasattr(self.linkedaxis, "ticks") and prevrange != self.linkedaxis.getdatarange():
             raise RuntimeError("linkaxis datarange setting performed while linked axis layout already fixed")
 
-    def dolayout(self, graph):
-        self.convert = self.linkedaxis.convert
-        self.divisor = self.linkedaxis.divisor
-        self.layoutdata = axiscanvas()
-        self.painter.paint(graph, self, self.linkedaxis.ticks, self.layoutdata)
-
-    def dopaint(self, graph):
-        graph.insert(self.layoutdata)
+    def finish(self, graph):
+        self.axiscanvas = axiscanvas()
+        self.axiscanvas.settexrunner(graph.texrunner)
 
     def createlinkaxis(self, **args):
         return linkaxis(self.linkedaxis)
@@ -2542,29 +2610,29 @@ class graphxy(canvas.canvas):
     def vpos(self, vx, vy):
         return self.xpos+vx*self.width, self.ypos+vy*self.height
 
-    def xbaseline(self, axis, x1, x2, shift=0, xaxis=None):
+    def xbaseline(self, axis, x1, x2, xaxis=None):
         if xaxis is None: xaxis = self.axes["x"]
         v1, v2 = xaxis.convert(x1), xaxis.convert(x2)
-        return path._line(self._xpos+v1*self._width, axis.axispos+shift,
-                          self._xpos+v2*self._width, axis.axispos+shift)
+        return path._line(self._xpos+v1*self._width, axis.axispos,
+                          self._xpos+v2*self._width, axis.axispos)
 
-    def ybaseline(self, axis, y1, y2, shift=0, yaxis=None):
+    def ybaseline(self, axis, y1, y2, yaxis=None):
         if yaxis is None: yaxis = self.axes["y"]
         v1, v2 = yaxis.convert(y1), yaxis.convert(y2)
-        return path._line(axis.axispos+shift, self._ypos+v1*self._height,
-                          axis.axispos+shift, self._ypos+v2*self._height)
+        return path._line(axis.axispos, self._ypos+v1*self._height,
+                          axis.axispos, self._ypos+v2*self._height)
 
-    def vxbaseline(self, axis, v1=None, v2=None, shift=0):
+    def vxbaseline(self, axis, v1=None, v2=None):
         if v1 is None: v1 = 0
         if v2 is None: v2 = 1
-        return path._line(self._xpos+v1*self._width, axis.axispos+shift,
-                          self._xpos+v2*self._width, axis.axispos+shift)
+        return path._line(self._xpos+v1*self._width, axis.axispos,
+                          self._xpos+v2*self._width, axis.axispos)
 
-    def vybaseline(self, axis, v1=None, v2=None, shift=0):
+    def vybaseline(self, axis, v1=None, v2=None):
         if v1 is None: v1 = 0
         if v2 is None: v2 = 1
-        return path._line(axis.axispos+shift, self._ypos+v1*self._height,
-                          axis.axispos+shift, self._ypos+v2*self._height)
+        return path._line(axis.axispos, self._ypos+v1*self._height,
+                          axis.axispos, self._ypos+v2*self._height)
 
     def xgridpath(self, x, xaxis=None):
         if xaxis is None: xaxis = self.axes["x"]
@@ -2678,14 +2746,13 @@ class graphxy(canvas.canvas):
             else:
                 raise ValueError("Axis key '%s' not allowed" % key)
             axis.vtickdirection = self.vtickdirection
-            axis.dolayout(self)
-            # TODO: this is totally broken !!!
+            axis.finish(self)
             if XPattern.match(key):
-                try: self._xaxisextents[num2] += axis.layoutdata._extent
-                except: pass
+                self._xaxisextents[num2] += axis.axiscanvas._extent
+                needxaxisdist[num2] = 1
             if YPattern.match(key):
-                try: self._yaxisextents[num2] += axis.layoutdata._extent
-                except: pass
+                self._yaxisextents[num2] += axis.axiscanvas._extent
+                needyaxisdist[num2] = 1
 
     def dobackground(self):
         self.dolayout()
@@ -2698,7 +2765,7 @@ class graphxy(canvas.canvas):
         self.dolayout()
         if not self.removedomethod(self.doaxes): return
         for axis in self.axes.values():
-            axis.dopaint(self)
+            self.insert(axis.axiscanvas)
 
     def dodata(self):
         self.dolayout()
@@ -2774,7 +2841,7 @@ class graphxy(canvas.canvas):
         self.axes = axes
 
     def __init__(self, xpos=0, ypos=0, width=None, height=None, ratio=goldenmean,
-                 key=None, backgroundattrs=None, dense=1, axesdist="0.8 cm", **axes):
+                 key=None, backgroundattrs=None, axesdist="0.8 cm", **axes):
         canvas.canvas.__init__(self)
         self.xpos = unit.length(xpos)
         self.ypos = unit.length(ypos)
@@ -2784,7 +2851,6 @@ class graphxy(canvas.canvas):
         self.initaxes(axes, 1)
         self.key = key
         self.backgroundattrs = backgroundattrs
-        self.dense = dense
         self.axesdist_str = axesdist
         self.plotinfos = []
         self.domethods = [self.dolayout, self.dobackground, self.doaxes, self.dodata, self.dokey]
@@ -2887,31 +2953,31 @@ class graphxy(canvas.canvas):
 #         tx, ty = self._vpos(vx, vy, vz)
 #         return unit.t_pt(tx), unit.t_pt(ty)
 # 
-#     def xbaseline(self, axis, x1, x2, shift=0, xaxis=None):
+#     def xbaseline(self, axis, x1, x2, xaxis=None):
 #         if xaxis is None: xaxis = self.axes["x"]
-#         return self.vxbaseline(axis, xaxis.convert(x1), xaxis.convert(x2), shift)
+#         return self.vxbaseline(axis, xaxis.convert(x1), xaxis.convert(x2))
 # 
-#     def ybaseline(self, axis, y1, y2, shift=0, yaxis=None):
+#     def ybaseline(self, axis, y1, y2, yaxis=None):
 #         if yaxis is None: yaxis = self.axes["y"]
-#         return self.vybaseline(axis, yaxis.convert(y1), yaxis.convert(y2), shift)
+#         return self.vybaseline(axis, yaxis.convert(y1), yaxis.convert(y2))
 # 
-#     def zbaseline(self, axis, z1, z2, shift=0, zaxis=None):
+#     def zbaseline(self, axis, z1, z2, zaxis=None):
 #         if zaxis is None: zaxis = self.axes["z"]
-#         return self.vzbaseline(axis, zaxis.convert(z1), zaxis.convert(z2), shift)
+#         return self.vzbaseline(axis, zaxis.convert(z1), zaxis.convert(z2))
 # 
-#     def vxbaseline(self, axis, v1, v2, shift=0):
+#     def vxbaseline(self, axis, v1, v2):
 #         return (path._line(*(self._vpos(v1, 0, 0) + self._vpos(v2, 0, 0))) +
 #                 path._line(*(self._vpos(v1, 0, 1) + self._vpos(v2, 0, 1))) +
 #                 path._line(*(self._vpos(v1, 1, 1) + self._vpos(v2, 1, 1))) +
 #                 path._line(*(self._vpos(v1, 1, 0) + self._vpos(v2, 1, 0))))
 # 
-#     def vybaseline(self, axis, v1, v2, shift=0):
+#     def vybaseline(self, axis, v1, v2):
 #         return (path._line(*(self._vpos(0, v1, 0) + self._vpos(0, v2, 0))) +
 #                 path._line(*(self._vpos(0, v1, 1) + self._vpos(0, v2, 1))) +
 #                 path._line(*(self._vpos(1, v1, 1) + self._vpos(1, v2, 1))) +
 #                 path._line(*(self._vpos(1, v1, 0) + self._vpos(1, v2, 0))))
 # 
-#     def vzbaseline(self, axis, v1, v2, shift=0):
+#     def vzbaseline(self, axis, v1, v2):
 #         return (path._line(*(self._vpos(0, 0, v1) + self._vpos(0, 0, v2))) +
 #                 path._line(*(self._vpos(0, 1, v1) + self._vpos(0, 1, v2))) +
 #                 path._line(*(self._vpos(1, 1, v1) + self._vpos(1, 1, v2))) +
