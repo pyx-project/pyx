@@ -11,7 +11,7 @@
 
 <div id="navbar">
 
-  <div id="title"><img src="pyxlogo.png" alt="PyX"></div>
+  <div id="title"><a href="http://pyx.sourceforge.net/"><img src="pyxlogo.png" alt="PyX" style="border:0px;"></a></div>
 
   <div class="box">
     <div id="navboxtitle">Navigation</div>
@@ -53,9 +53,10 @@
 </div>
 
 <div id="content">
-<div id="content" metal:define-slot="body">
+<div metal:define-slot="body">
   Content
 </div>
 </div>
+<br>
 </body>
 </html>
