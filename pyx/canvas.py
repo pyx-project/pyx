@@ -115,9 +115,7 @@ class fontdefinition(prologitem):
     def merge(self, other):
         if not isinstance(other, fontdefinition):
             return other
-        if self.basepsname==other.basepsname:
-            if self.encfilename!=other.encfilename:
-                raise ValueError("Multiple encodings for the same type 1 font are not supported")
+        if self.basepsname==other.basepsname and self.encfilename==other.encfilename:
             for i in range(len(self.usedchars)):
                 self.usedchars[i] = self.usedchars[i] or other.usedchars[i]
             return None
