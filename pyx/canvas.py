@@ -58,6 +58,8 @@ class prologitem:
 
 class definition(prologitem):
 
+    """ PostScript function definition included in the prolog """
+
     def __init__(self, id, body):
         self.id = id
         self.body = body
@@ -80,14 +82,18 @@ class definition(prologitem):
 
 class fontdefinition(prologitem):
 
+    """ PostScript font definition included in the prolog """
+
     def __init__(self, font):
-        self.name = font.name
+        self.psname = font.getpsname()
+        self.fontfile = font.getfontfile()
+        self.encoding = font.getencoding()
         self.usedchars = font.usedchars
 
     def merge(self, other):
         if not isinstance(other, fontdefinition):
             return other
-        if self.name==other.name:
+        if self.psname==other.psname:
             for i in range(len(self.usedchars)):
                 self.usedchars[i] = self.usedchars[i] or other.usedchars[i]
             return None
@@ -95,16 +101,15 @@ class fontdefinition(prologitem):
             return other
 
     def write(self, file):
-        file.write("%%%%BeginFont: %s\n" % self.name.upper())
+        file.write("%%%%BeginFont: %s\n" % self.psname)
         file.write("%Included char codes:")
         for i in range(len(self.usedchars)):
             if self.usedchars[i]:
                 file.write(" %d" % i)
         file.write("\n")
-        pfbname = pykpathsea.find_file("%s.pfb" % self.name, pykpathsea.kpse_type1_format)
+        pfbname = pykpathsea.find_file(self.fontfile, pykpathsea.kpse_type1_format)
         if pfbname is None:
-            # XXX Exception
-            raise "cannot find type 1 font %s" % self.name
+            raise RuntimeError("cannot find type 1 font %s" % self.fontfile)
         t1strip.t1strip(file, pfbname, self.usedchars)
         file.write("%%EndFont\n")
 
