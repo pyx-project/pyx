@@ -114,9 +114,6 @@ class char_info_word:
         self.tag          = (word & 0x00000300) >> 8
         self.remainder    = (word & 0x000000FF)
 
-        if self.width_index == 0:
-            raise TFMError("width_index should not be zero")
-
 
 class TFMFile:
     def __init__(self, name, debug=0):
@@ -217,10 +214,13 @@ class TFMFile:
         # read char_info
         #
 
-        self.char_info = [None for charcode in range(self.ec+1)]
+        self.char_info = [None]*(self.ec+1)
 
         for charcode in range(self.bc, self.ec+1):
             self.char_info[charcode] = char_info_word(self.file.readint32())
+            if self.char_info[charcode].width_index == 0:
+                # disable character if width_index is zero
+                self.char_info[charcode] = None
 
         #
         # read widths
