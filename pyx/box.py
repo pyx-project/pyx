@@ -59,16 +59,15 @@ class _polygon:
                 d2 = normed(self.corners[(i + 1 + l) % l][0] - c[0],
                             self.corners[(i + 1 + l) % l][1] - c[1])
                 dc = normed(d1[0] + d2[0], d1[1] + d2[1])
-                f = 0.375 * x * r
-                g = 1.25 * f + math.sqrt(1.5625 * f * f + f * r / 6.0)
-                e = f * math.sqrt(0.5 + 0.5 * (d1[0] * d2[0] + d1[1] * d2[1]))
-                e = c[0] + e * dc[0], c[1] + e * dc[1]
+                f = 0.3192 * x * r
+                g = (15.0 * f + math.sqrt(-15.0*f*f + 24.0*f*r))/12.0
                 f1 = c[0] + f * d1[0], c[1] + f * d1[1]
                 f2 = c[0] + f * d2[0], c[1] + f * d2[1]
                 g1 = c[0] + g * d1[0], c[1] + g * d1[1]
                 g2 = c[0] + g * d2[0], c[1] + g * d2[1]
                 d1 = c[0] + r * d1[0], c[1] + r * d1[1]
                 d2 = c[0] + r * d2[0], c[1] + r * d2[1]
+                e  = 0.5 * (f1[0] + f2[0]), 0.5 * (f1[1] + f2[1])
                 if i:
                     pathels.append(path._lineto(*d1))
                 else:
