@@ -21,63 +21,63 @@ def testarrow(c):
     base = 2
 
     c.stroke(path(moveto(5,10), rlineto(5,0)),
-           [deco.barrow(size=base/math.sqrt(8)*unit.t_pt, constriction=None),
+           [#deco.barrow(size=base/math.sqrt(8)*unit.t_pt, constriction=1),
             deco.earrow.SMall])
     c.stroke(path(moveto(5,10.5), rlineto(5,0)),
-           [deco.barrow(size=base/math.sqrt(4)*unit.t_pt, constriction=None),
+           [deco.barrow(size=base/math.sqrt(4)*unit.t_pt, constriction=1),
             deco.earrow.Small])
     c.stroke(path(moveto(5,11), rlineto(5,0)),
-           [deco.barrow(size=base/math.sqrt(2)*unit.t_pt, constriction=None),
+           [deco.barrow(size=base/math.sqrt(2)*unit.t_pt, constriction=1),
             deco.earrow.small])
     c.stroke(path(moveto(5,11.5), rlineto(5,0)),
-           [deco.barrow(size=base/math.sqrt(1)*unit.t_pt, constriction=None),
+           [deco.barrow(size=base/math.sqrt(1)*unit.t_pt, constriction=1),
             deco.earrow.normal])
     c.stroke(path(moveto(5,12), rlineto(5,0)),
-           [deco.barrow(size=base*math.sqrt(2)*unit.t_pt, constriction=None),
+           [deco.barrow(size=base*math.sqrt(2)*unit.t_pt, constriction=1),
             deco.earrow.large])
     c.stroke(path(moveto(5,12.5), rlineto(5,0)),
-           [deco.barrow(size=base*math.sqrt(4)*unit.t_pt, constriction=None),
+           [deco.barrow(size=base*math.sqrt(4)*unit.t_pt, constriction=1),
             deco.earrow.Large])
     c.stroke(path(moveto(5,13), rlineto(5,0)),
-           [deco.barrow(size=base*math.sqrt(8)*unit.t_pt, constriction=None),
+           [deco.barrow(size=base*math.sqrt(8)*unit.t_pt, constriction=1),
             deco.earrow.LArge])
     c.stroke(path(moveto(5,13.5), rlineto(5,0)),
-           [deco.barrow(size=base*math.sqrt(16)*unit.t_pt, constriction=None),
+           [deco.barrow(size=base*math.sqrt(16)*unit.t_pt, constriction=1),
             deco.earrow.LARge])
-   
+
     lt = style.linewidth.THick
 
     c.stroke(path(moveto(11,10), rlineto(5,0)),
            [lt,
-            deco.barrow(size=base/math.sqrt(8)*unit.t_pt, constriction=None),
+            deco.barrow(size=base/math.sqrt(8)*unit.t_pt, constriction=1),
             deco.earrow.SMall])
     c.stroke(path(moveto(11,10.5), rlineto(5,0)),
            [lt,
-            deco.barrow(size=base/math.sqrt(4)*unit.t_pt, constriction=None),
+            deco.barrow(size=base/math.sqrt(4)*unit.t_pt, constriction=1),
             deco.earrow.Small])
     c.stroke(path(moveto(11,11), rlineto(5,0)),
            [lt,
-            deco.barrow(size=base/math.sqrt(2)*unit.t_pt, constriction=None),
+            deco.barrow(size=base/math.sqrt(2)*unit.t_pt, constriction=1),
             deco.earrow.small])
     c.stroke(path(moveto(11,11.5), rlineto(5,0)),
            [lt,
-            deco.barrow(size=base/math.sqrt(1)*unit.t_pt, constriction=None),
+            deco.barrow(size=base/math.sqrt(1)*unit.t_pt, constriction=1),
             deco.earrow.normal])
     c.stroke(path(moveto(11,12), rlineto(5,0)),
            [lt,
-            deco.barrow(size=base*math.sqrt(2)*unit.t_pt, constriction=None),
+            deco.barrow(size=base*math.sqrt(2)*unit.t_pt, constriction=1),
             deco.earrow.large])
     c.stroke(path(moveto(11,12.5), rlineto(5,0)),
            [lt,
-            deco.barrow(size=base*math.sqrt(4)*unit.t_pt, constriction=None),
+            deco.barrow(size=base*math.sqrt(4)*unit.t_pt, constriction=1),
             deco.earrow.Large])
     c.stroke(path(moveto(11,13), rlineto(5,0)),
            [lt,
-            deco.barrow(size=base*math.sqrt(8)*unit.t_pt, constriction=None),
+            deco.barrow(size=base*math.sqrt(8)*unit.t_pt, constriction=1),
             deco.earrow.LArge(attrs=[style.linestyle.dashed, color.rgb.green])])
     c.stroke(path(moveto(11,13.5), rlineto(5,0)),
            [lt,
-            deco.barrow(size=base*math.sqrt(16)*unit.t_pt, constriction=None),
+            deco.barrow(size=base*math.sqrt(16)*unit.t_pt, constriction=1),
             deco.earrow.LARge(attrs=[color.rgb.red,
                                      deco.stroked([style.linejoin.round]),
                                      deco.filled([color.rgb.blue])])])
