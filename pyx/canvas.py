@@ -307,7 +307,7 @@ if __name__=="__main__":
     c.draw(p, linestyle.dashed)
    
     for angle in range(20):
-       s=c.canvas(trafo=translate(10,10)*rotate(angle)).draw(p, linestyle.dashed)
+       s=c.canvas(trafo=translate(10,10)*rotate(angle)).draw(p, linestyle.dashed, linewidth(0.01*angle))
 #
 #   c.setlinestyle(linestyle_solid)
 #   g=GraphXY(c, t, 10, 15, 8, 6)
