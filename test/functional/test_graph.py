@@ -54,6 +54,7 @@ def test_ownmark(c, x, y):
     line2 = g.plot(graph.function("y=12*x^-1.6"))
     line3 = g.plot(graph.function("y=7/x"))
     line4 = g.plot(graph.function("y=25*x^-1.6"))
+    g.plot(graph.data(data.data([[-1, 1], [5, 2], [11, 5], [5, 11], [4, -1]]), x=0, y=1), graph.line(lineattrs=[color.rgb.red]))
     g.finish()
 
     p1=line1.line

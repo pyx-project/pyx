@@ -1953,11 +1953,11 @@ class splitaxispainter(axistitlepainter):
                 breakline = breakline.transformed(trafomodule.translate(*tocenter).rotated(self.breaklinesangle, *breakline.begin()))
                 breakline1 = breakline.transformed(trafomodule.translate(*towidth))
                 breakline2 = breakline.transformed(trafomodule.translate(-towidth[0], -towidth[1]))
-                ac.fill(path.path(path.moveto(*breakline1.begin()),
-                                          path.lineto(*breakline1.end()),
-                                          path.lineto(*breakline2.end()),
-                                          path.lineto(*breakline2.begin()),
-                                          path.closepath()), [color.gray.white])
+                ac.fill(path.path(path.moveto_pt(*breakline1.begin_pt()),
+                                  path.lineto_pt(*breakline1.end_pt()),
+                                  path.lineto_pt(*breakline2.end_pt()),
+                                  path.lineto_pt(*breakline2.begin_pt()),
+                                  path.closepath()), [color.gray.white])
                 ac.stroke(breakline1, self.defaultbreaklinesattrs + self.breaklinesattrs)
                 ac.stroke(breakline2, self.defaultbreaklinesattrs + self.breaklinesattrs)
         axistitlepainter.paint(self, axispos, axis, ac=ac)
@@ -3040,9 +3040,6 @@ class graphxy(canvas.canvas):
             self.axispos_pt = unit.topt(axispos)
             self.tickdirection = tickdirection
 
-    def clipcanvas(self):
-        return self.insert(canvas.canvas(canvas.clip(path.rect_pt(self.xpos_pt, self.ypos_pt, self.width_pt, self.height_pt))))
-
     def plot(self, data, style=None):
         if self.haslayout:
             raise RuntimeError("layout setup was already performed")
@@ -3758,10 +3755,13 @@ class symbolline(_style):
             c.draw(path.path(*data.symbol(self, x_pt, y_pt, data.size_pt)), data.symbolattrs)
 
     def drawpoints(self, graph, data):
-        if data.lineattrs is not None or data.errorbarattrs is not None:
-            clipcanvas = graph.clipcanvas()
+        if data.lineattrs is not None:
+            linecanvas = graph.insert(canvas.canvas())
+        if data.errorbarattrs is not None:
+            errorbarcanvas = graph.insert(canvas.canvas())
         data.line = path.path()
-        moveto = 1
+        linebasepoints = []
+        lastvpos = None
         errorlist = []
         if data.errorbarattrs is not None:
             for axisname, axisindex in zip(graph.axisnames, xrange(sys.maxint)):
@@ -3769,28 +3769,117 @@ class symbolline(_style):
                     errorlist.append((axisname, axisindex))
 
         for point in data.points:
-            # symbol and line
-            vpos = []
-            drawsymbol = 1
+            # calculate vpos
+            vpos = [] # list containing the graph coordinates of the point
+            validvpos = 1 # valid position (but might be outside of the graph)
+            drawsymbol = 1 # valid position inside the graph
             for axisname in graph.axisnames:
                 try:
                     v = data.axes[axisname].convert(point[data.index[axisname]["x"]])
                 except:
-                    moveto = 1
+                    validvpos = 0
                     drawsymbol = 0
                     vpos.append(None)
                 else:
                     if v < - self.epsilon or v > 1 + self.epsilon:
                         drawsymbol = 0
                     vpos.append(v)
+
+            # draw symbol
             if drawsymbol:
                 xpos, ypos = graph.vpos_pt(*vpos)
                 self.drawsymbol_pt(graph, xpos, ypos, data, point=point)
-                if moveto:
-                    data.line.append(path.moveto_pt(xpos, ypos))
-                    moveto = 0
+
+            # append linebasepoints
+            if validvpos:
+                if len(linebasepoints):
+                    # the last point was inside the graph
+                    if drawsymbol:
+                        linebasepoints.append((xpos, ypos))
+                    else:
+                        # cut end
+                        cut = 1
+                        for vstart, vend in zip(lastvpos, vpos):
+                            newcut = None
+                            if vend > 1:
+                                # 1 = vstart + (vend - vstart) * cut
+                                newcut = (1 - vstart)/(vend - vstart)
+                            if vend < 0:
+                                # 0 = vstart + (vend - vstart) * cut
+                                newcut = - vstart/(vend - vstart)
+                            if newcut is not None and newcut < cut:
+                                cut = newcut
+                        cutvpos = []
+                        for vstart, vend in zip(lastvpos, vpos):
+                            cutvpos.append(vstart + (vend - vstart) * cut)
+                        linebasepoints.append(graph.vpos_pt(*cutvpos))
+                        validvpos = 0 # clear linebasepoints below
                 else:
-                    data.line.append(path.lineto_pt(xpos, ypos))
+                    # the last point was outside the graph
+                    if lastvpos is not None:
+                        if drawsymbol:
+                            # cut beginning
+                            cut = 0
+                            for vstart, vend in zip(lastvpos, vpos):
+                                newcut = None
+                                if vstart > 1:
+                                    # 1 = vstart + (vend - vstart) * cut
+                                    newcut = (1 - vstart)/(vend - vstart)
+                                if vstart < 0:
+                                    # 0 = vstart + (vend - vstart) * cut
+                                    newcut = - vstart/(vend - vstart)
+                                if newcut is not None and newcut > cut:
+                                    cut = newcut
+                            cutvpos = []
+                            for vstart, vend in zip(lastvpos, vpos):
+                                cutvpos.append(vstart + (vend - vstart) * cut)
+                            linebasepoints.append(graph.vpos_pt(*cutvpos))
+                            linebasepoints.append(graph.vpos_pt(*vpos))
+                        else:
+                            # sometimes cut beginning and end
+                            cutfrom = 0
+                            cutto = 1
+                            for vstart, vend in zip(lastvpos, vpos):
+                                newcutfrom = None
+                                if vstart > 1:
+                                    # 1 = vstart + (vend - vstart) * cutfrom
+                                    newcutfrom = (1 - vstart)/(vend - vstart)
+                                if vstart < 0:
+                                    # 0 = vstart + (vend - vstart) * cutfrom
+                                    newcutfrom = - vstart/(vend - vstart)
+                                if newcutfrom is not None and newcutfrom > cutfrom:
+                                    cutfrom = newcutfrom
+                                newcutto = None
+                                if vend > 1:
+                                    # 1 = vstart + (vend - vstart) * cutto
+                                    newcutto = (1 - vstart)/(vend - vstart)
+                                if vend < 0:
+                                    # 0 = vstart + (vend - vstart) * cutto
+                                    newcutto = - vstart/(vend - vstart)
+                                if newcutto is not None and newcutto < cutto:
+                                    cutto = newcutto
+                            if cutfrom < cutto:
+                                cutfromvpos = []
+                                cuttovpos = []
+                                for vstart, vend in zip(lastvpos, vpos):
+                                    cutfromvpos.append(vstart + (vend - vstart) * cutfrom)
+                                    cuttovpos.append(vstart + (vend - vstart) * cutto)
+                                linebasepoints.append(graph.vpos_pt(*cutfromvpos))
+                                linebasepoints.append(graph.vpos_pt(*cuttovpos))
+                                validvpos = 0 # clear linebasepoints below
+                lastvpos = vpos
+            else:
+                lastvpos = None
+
+            if not validvpos:
+                # add baselinepoints to data.line
+                if len(linebasepoints) > 1:
+                    data.line.append(path.moveto_pt(*linebasepoints[0]))
+                    if len(linebasepoints) > 2:
+                        data.line.append(path.multilineto_pt(linebasepoints[1:]))
+                    else:
+                        data.line.append(path.lineto_pt(*linebasepoints[1]))
+                linebasepoints = []
 
             # errorbar loop over the different direction having errorbars
             for erroraxisname, erroraxisindex in errorlist:
@@ -3868,10 +3957,19 @@ class symbolline(_style):
 
                     # stroke errorpath
                     if len(errorpath.path):
-                        graph.stroke(errorpath, data.errorbarattrs)
+                        errorbarcanvas.stroke(errorpath, data.errorbarattrs)
 
+        # add baselinepoints to data.line
+        if len(linebasepoints) > 1:
+            data.line.append(path.moveto_pt(*linebasepoints[0]))
+            if len(linebasepoints) > 2:
+                data.line.append(path.multilineto_pt(linebasepoints[1:]))
+            else:
+                data.line.append(path.lineto_pt(*linebasepoints[1]))
+
+        # stroke data.line
         if data.lineattrs is not None:
-            clipcanvas.stroke(data.line, data.lineattrs)
+            linecanvas.stroke(data.line, data.lineattrs)
 
     def key_pt(self, c, x_pt, y_pt, width_pt, height_pt, data):
         self.drawsymbol_pt(c, x_pt+0.5*width_pt, y_pt+0.5*height_pt, data)
