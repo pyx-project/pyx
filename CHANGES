@@ -4,6 +4,8 @@ PyX
   - setup.py:
     - allow customization of the extension modules built (via setup.cfg)
     - disable building pykpathsea module by default
+    TODO:
+    - description in INSTALL
   - text module:
     - improved is readable test for lfs files and pyx.def file
   TODO:
