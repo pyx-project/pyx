@@ -125,8 +125,15 @@ class _trafo:
     def translate(self, x, y):
         return trafo(vector=(x,y))*self
         
-    def rotate(self, angle):
-        return _trafo(matrix=_rmatrix(angle))*self
+    def rotate(self, angle, x=None, y=None):
+        vector = 0,0
+        if x is not None or y is not None:
+            if x is None or y is None:
+                raise (UndefinedResultError, 
+                       "either specify x or y both or none of them")
+            vector=_rvector(angle, unit.topt(x), unit.topt(y))
+            
+        return _trafo(matrix=_rmatrix(angle), vector=vector)*self
         
     def mirror(self, angle):
         return _trafo(matrix=_mmatrix(angle))*self
