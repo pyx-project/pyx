@@ -44,7 +44,6 @@ TODO:
 
 TODO for 0.6:
   - deco module:
-    - wriggle should be replaced by cycloid
     - name for cycloid OK?
       AW: Fine to me. I suggest to use curvesperloop=5. I think, it is not
           crucial to 0.6 at all. Those decorators are working but are not yet
