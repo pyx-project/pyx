@@ -496,8 +496,8 @@ class DVIFile:
         if inch:
             if self.debug:
                 print (" h:=%d+%d=%d, hh:=%d" %
-                   (self.pos[_POS_H], height, self.pos[_POS_H]+height, 0))
-            self.pos[_POS_H] += height
+                   (self.pos[_POS_H], width, self.pos[_POS_H]+width, 0))
+            self.pos[_POS_H] += width
 
 
     def usefont(self, fontnum):
