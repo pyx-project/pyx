@@ -1,5 +1,3 @@
-#TODO: - mutliple python runs when appropriate (new tex handling will render it unnecessary)
-
 default: manual.dvi
 
 clean:
@@ -14,7 +12,7 @@ ps: manual.ps
 dvi: manual.dvi
 
 manual.pdf: manual.ps
-	ps2pdf manual.ps
+	ps2pdf -sPAPERSIZE=a4 manual.ps
 
 manual.ps: manual.dvi
 	dvips -o manual.ps manual.dvi

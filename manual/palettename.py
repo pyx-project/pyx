@@ -24,13 +24,13 @@ skiplevel = None
 for line in lines: # we yet don't use a file iterator
     m = p.match(line)
     if m:
-        xaxis = graph.linaxis(datavmin=0, datavmax=1, part=graph.linpart(tickdist=("0.5","0.1"), labeldist="1"),
+        xaxis = graph.linaxis(part=graph.linpart(tickdist=("0.5","0.1"), labeldist="1"),
                               painter=graph.axispainter(innerticklengths=None, labelattrs=None))
         g = c.insert(graph.graphxy(ypos=y, width=10, height=0.5, x=xaxis,
                                    x2=graph.linkaxis(xaxis,
                                                      painter=graph.linkaxispainter(innerticklengths=None,
                                                                                    outerticklengths=graph.axispainter.defaultticklengths)),
-                                   y=graph.linaxis(datavmin=0, datavmax=1, part=None)))
+                                   y=graph.linaxis(part=None)))
         g.plot(pf, graph.rect(pyx.color.palette.__dict__[m.group("name")]))
         g.dodata()
         g.finish()

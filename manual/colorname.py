@@ -35,7 +35,7 @@ for line in lines: # we yet don't use a file iterator
         t.text(x + 1.7, y + 0.15, m.group("id"), tex.fontsize.footnotesize)
         y += dy
         lastmodel = m.group("model")
-        if y < -16:
+        if y < -16.5:
             y = 0
             x += dx
 

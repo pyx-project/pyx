@@ -3,7 +3,7 @@ from pyx import *
 text.preamble(r"\parindent0pt")
 
 c = canvas.canvas()
-t = c.text(0, 0, r"spam \& eggs", trafo.scale(6), text.valign.topbaseline, text.parbox(1.2))
+t = c.text(0, 0, r"spam \& eggs", trafo.scale(6), text.parbox(1.2, baseline=text.parbox.top))
 t2 = text.text(0, 0, "eggs", trafo.scale(6))
 b, b2 = t.bbox(), t2.bbox()
 c.stroke(t.path(), style.linewidth.THin)
