@@ -38,12 +38,11 @@ class B:
     def __str__(self):
         return "<b>"
 
-class main:
-    def show(self, *args):
-        for arg in args:
-            print arg
+def show(self, *args):
+    for arg in args:
+        print arg
 
-main().show(A(), B())
+show(A(), B())
 \end{verbatim}
 
 Although this is a rather trivial example, you can see, that the
@@ -62,9 +61,9 @@ class A:
         return "<a color=\"%s\">" % self.color
 \end{verbatim}
 
-Instead of the previous call \verb|main().show(A(), B())| we now have
+Instead of the previous call \verb|show(A(), B())| we now have
 to specify the color, e.g.
-\verb|main().show(A("red"), B())|.\footnote{The constructor of class
+\verb|show(A("red"), B())|.\footnote{The constructor of class
 \texttt{A} could have a default value for \texttt{color} (like
 \texttt{color = "black"}), so that this default value could just be
 omitted. You may keep this in mind, because it is a rather typical
@@ -76,27 +75,25 @@ To go further, we do modify the print routine in order to print some
 text within the \verb|<...>|-tags. Suppose, the \verb|<...>|-tags can
 be closed by \verb|</>| uniformly, then we could do:
 \begin{verbatim}
-class main:
-    def show(self, text, *args)
-        for arg in args:
-            print arg
-        print text
-        for arg in args:
-            print "</>"
+def show(self, text, *args):
+    for arg in args:
+        print arg
+    print text
+    for arg in args:
+        print "</>"
 \end{verbatim}
 
 Here we have introduced a standard parameter \verb|text|, which leads
-to an example call like \verb|main().show("text", A("red"), B())|. The
+to an example call like \verb|show("text", A("red"), B())|. The
 instances of class \verb|A| and \verb|B| become a property of
 \verb|text|.
 
 By this construction you can do even more, actually.
-Consider the main program as:
+Consider the following:
 \begin{verbatim}
-m = main()
-m.show(A("red"))
-m.show("text1")
-m.show("text2")
+show(A("red"))
+show("text1")
+show("text2")
 \end{verbatim}
 
 Here, the same class previously used as an property for a single
@@ -190,6 +187,7 @@ A first idea you could think about is multiple inheritance. Lets
 assume, there is the same class \verb|axis| like before. Additionally,
 there might be a class \verb|title| handling titles for arbitrary
 objects:
+
 \begin{verbatim}
 class title:
     def __init__(self, title = ""):

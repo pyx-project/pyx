@@ -217,38 +217,7 @@ class tick(frac):
             self.labellevel = other.labellevel
 
 
-class linpart:
-
-    def __init__(self, min, max, tickfracs = None, labelfracs = None, extendtoticklevel = 0, extendtolabellevel = None):
-        """
-        zero-level labelfracs are created out of the zero-level tickfracs when labelfracs are None
-        all-level tickfracs are created out of the all-level labelfracs when tickfracs are None
-        get ticks but avoid labels by labelfracs = ()
-        get labels but avoid ticks by tickfracs = ()
-
-        We do not perform the adjustment of tickfracs or labelfracs within this
-        constructor, but later in getticks in order to allow for a change by
-        parameters of getticks. That can be used to create other partition schemes
-        (which create several posibilities) by derivating this class.
-        """
-        self.min = min
-        self.max = max
-        self.tickfracs = tickfracs
-        self.labelfracs = labelfracs
-        self.extendtoticklevel = extendtoticklevel
-        self.extendtolabellevel = extendtolabellevel
-
-    def extendminmax(self, frac):
-        self.min = float(frac) * math.floor(self.min / float(frac) + epsilon)
-        self.max = float(frac) * math.ceil(self.max / float(frac) - epsilon)
-
-    def getticklist(self, frac, ticklevel = None, labellevel = None):
-        ticks = []
-        imin = int(math.ceil(self.min / float(frac) - 0.5 * epsilon))
-        imax = int(math.floor(self.max / float(frac) + 0.5 * epsilon))
-        for i in range(imin, imax + 1):
-            ticks.append(tick(long(i) * frac.enum, frac.denom, ticklevel = ticklevel, labellevel = labellevel))
-        return ticks
+class anypart:
 
     def mergeticklists(self, list1, list2):
         # caution: side effects
@@ -269,6 +238,40 @@ class linpart:
                 list1 += list2[j:]
         return list1
 
+
+class linpart(anypart):
+
+    def __init__(self, min, max, tickfracs = None, labelfracs = None, extendtoticklevel = 0, extendtolabellevel = None):
+        """
+        zero-level labelfracs are created out of the zero-level tickfracs when labelfracs are None
+        all-level tickfracs are created out of the all-level labelfracs when tickfracs are None
+        get ticks but avoid labels by labelfracs = ()
+        get labels but avoid ticks by tickfracs = ()
+
+        We do not perform the adjustment of tickfracs or labelfracs within this
+        constructor, but later in getticks in order to allow for a change by
+        parameters of getticks. That can be used to create other partition schemes
+        (which create several posibilities) by derivating this class.
+        """
+        self.min = min
+        self.max = max
+        self.tickfracs = tickfracs
+        self.labelfracs = labelfracs
+        self.extendtoticklevel = extendtoticklevel
+        self.extendtolabellevel = extendtolabellevel
+
+    def extendminmax(self, min, max, frac):
+        return (float(frac) * math.floor(min / float(frac) + epsilon),
+                float(frac) * math.ceil(max / float(frac) - epsilon))
+
+    def getticklist(self, min, max, frac, ticklevel = None, labellevel = None):
+        ticks = []
+        imin = int(math.ceil(min / float(frac) - 0.5 * epsilon))
+        imax = int(math.floor(max / float(frac) + 0.5 * epsilon))
+        for i in range(imin, imax + 1):
+            ticks.append(tick(long(i) * frac.enum, frac.denom, ticklevel = ticklevel, labellevel = labellevel))
+        return ticks
+
     def getticks(self, tickfracs = None, labelfracs = None):
         """
         When tickfracs or labelfracs are set, they will be taken instead of the
@@ -281,41 +284,30 @@ class linpart:
         else:
             assert self.tickfracs == None
             assert self.labelfracs == None
-        if isinstance(tickfracs, frac):
-            tickfracs = (tickfracs, )
-        else:
-            if tickfracs == None:
-                if isinstance(labelfracs, frac):
-                    tickfracs = (labelfracs, )
-                elif labelfracs == None:
-                    tickfracs = ()
-                else:
-                    tickfracs = labelfracs
-        if isinstance(labelfracs, frac):
-            labelfracs = (labelfracs, )
-        else:
+        if tickfracs == None:
             if labelfracs == None:
-                if len(tickfracs):
-                    labelfracs = (tickfracs[0], )
-                else:
-                    labelfracs = ()
+                tickfracs = ()
+            else:
+                tickfracs = labelfracs
+        if labelfracs == None:
+            if len(tickfracs):
+                labelfracs = (tickfracs[0], )
+            else:
+                labelfracs = ()
 
-        minrestore = self.min
-        maxrestore = self.max
+        min = self.min
+        max = self.max
 
         if self.extendtoticklevel != None:
-            self.extendminmax(tickfracs[self.extendtoticklevel])
+            (min, max, ) = self.extendminmax(min, max, tickfracs[self.extendtoticklevel])
         if self.extendtolabellevel != None:
-            self.extendminmax(labelfracs[self.extendtolabellevel])
+            (min, max, ) = self.extendminmax(min, max, labelfracs[self.extendtolabellevel])
 
         ticks = []
         for i in range(len(tickfracs)):
-            ticks = self.mergeticklists(ticks, self.getticklist(tickfracs[i], ticklevel = i))
+            ticks = self.mergeticklists(ticks, self.getticklist(min, max, tickfracs[i], ticklevel = i))
         for i in range(len(labelfracs)):
-            ticks = self.mergeticklists(ticks, self.getticklist(labelfracs[i], labellevel = i))
-
-        self.min = minrestore
-        self.max = maxrestore
+            ticks = self.mergeticklists(ticks, self.getticklist(min, max, labelfracs[i], labellevel = i))
 
         return ticks
 
@@ -323,18 +315,17 @@ class linpart:
         return [getticks(self), ]
 
 
-class sflinpart(linpart):
-    """shift - frac - partitioning"""
-    defaultfracses = ((frac(1, 1), frac(1, 2), ),
-                      (frac(2, 1), frac(1, 1), ),
-                      (frac(5, 2), frac(5, 4), ),
-                      (frac(5, 1), frac(5, 2), ), )
+class autolinpart(linpart):
+    defaulttickfracslist = ((frac(1, 1), frac(1, 2), ),
+                            (frac(2, 1), frac(1, 1), ),
+                            (frac(5, 2), frac(5, 4), ),
+                            (frac(5, 1), frac(5, 2), ), )
 
-    def __init__(self, min, max, minticks = 0.5, maxticks = 25, fracses = defaultfracses, **args):
+    def __init__(self, min, max, minticks = 0.5, maxticks = 25, tickfracslist = defaulttickfracslist, **args):
         linpart.__init__(self, min, max, **args)
         self.minticks = minticks
         self.maxticks = maxticks
-        self.fracses = fracses
+        self.tickfracslist = tickfracslist
 
     def getparts(self):
         parts = []
@@ -347,18 +338,101 @@ class sflinpart(linpart):
             else:
                 bf = frac(1, 1)
 
-            for fracs in self.fracses:
-                tickcount = (self.max - self.min) / float(fracs[0] * bf)
+            for tickfracs in self.tickfracslist:
+                tickcount = (self.max - self.min) / float(tickfracs[0] * bf)
                 if (tickcount > self.minticks) and (tickcount < self.maxticks):
-                    parts.append(self.getticks(map(lambda f, bf = bf: f * bf, fracs)))
+                    parts.append(self.getticks(map(lambda f, bf = bf: f * bf, tickfracs)))
         return parts
 
-# print linpart(0, 1.9, (frac(1, 3), frac(1, 4), ), extendtoticklevel = None, extendtolabellevel = 0).getticks()
-# print sflinpart(0, 1.9).getparts()
 
-class fffsflinpart(sflinpart):
+class multifracs:
+    pass
+
+class logpart(anypart):
+
+    """
+    This very much looks like some code duplication of linpart. However, it is
+    not, because logaxis use multifracs instead of fracs all the time.
+    """
+
+    def __init__(self, min, max, tickmultifracs = None, labelmultifracs = None, extendtoticklevel = 0, extendtolabellevel = None):
+        """
+        zero-level labelmultifracs are created out of the zero-level tickmultifracs when labelmultifracs are None
+        all-level tickmultifracs are created out of the all-level labelmultifracs when tickmultifracs are None
+        get ticks but avoid labels by labelfracs = ()
+        get labels but avoid ticks by tickfracs = ()
+
+        We do not perform the adjustment of tickfracs or labelfracs within this
+        constructor, but later in getticks in order to allow for a change by
+        parameters of getticks. That can be used to create other partition schemes
+        (which create several posibilities) by derivating this class.
+        """
+        self.min = min
+        self.max = max
+        self.tickmultifracs = tickmultifracs
+        self.labelmultifracs = labelmultifracs
+        self.extendtoticklevel = extendtoticklevel
+        self.extendtolabellevel = extendtolabellevel
+
+    def getticklist(self, fracs, ticklevel = None, labellevel = None):
+        ticks = []
+        print fracs, ticklevel, labellevel
+        bf = frac(_powi(10L, 5), 1)
+        print bf
+
+#        ticks = self.mergeticklists(ticks, self.getticklist(tickmultifracs[i], ticklevel = i))
+#        e = int(math.ceil(log((self.max - self.min) / self.factor) / log(self.shift)))
+#        imin = int(math.ceil(self.min / float(frac) - 0.5 * epsilon))
+#        imax = int(math.floor(self.max / float(frac) + 0.5 * epsilon))
+#        for i in range(imin, imax + 1):
+#            ticks.append(tick(long(i) * frac.enum, frac.denom, ticklevel = ticklevel, labellevel = labellevel))
+        return ticks
+
+    def getticks(self, tickmultifracs = None, labelmultifracs = None):
+        """
+        When tickfracs or labelfracs are set, they will be taken instead of the
+        values provided to the constructor. It is not allowed to provide something
+        to tickfracs and labelfracs here and at the constructor at the same time.
+        """
+        if (tickmultifracs == None) and (labelmultifracs == None):
+            tickmultifracs = self.tickmultifracs
+            labelmultifracs = self.labelmultifracs
+        else:
+            assert self.tickmultifracs == None
+            assert self.labelmultifracs == None
+        if tickmultifracs == None:
+            if labelmultifracs == None:
+                tickmultifracs = (())
+            else:
+                tickmultifracs = labelmultifracs
+        if labelmultifracs == None:
+            if len(tickmultifracs):
+                labelmultifracs = (tickmultifracs[0], )
+            else:
+                labelmultifracs = ()
+
+#       take care on self.extendtoticklevel and self.extendtolabellevel ...
+        #min = min.self
+        #max = max.self
+
+        ticks = []
+        #for i in range(len(tickmultifracs)):
+        #    ticks = self.mergeticklists(ticks, self.getticklist(min, max, tickmultifracs[i], ticklevel = i))
+        #for i in range(len(labelmultifracs)):
+        #    ticks = self.mergeticklists(ticks, self.getticklist(min, max, labelmultifracs[i], labellevel = i))
+
+        return ticks
+
+    def getparts(self):
+        return [getticks(self), ]
+
+#print linpart(0, 1.9, (frac(1, 3), frac(1, 4), ), extendtoticklevel = None, extendtolabellevel = 0).getticks()
+#print autolinpart(0, 1.9).getparts()
+#print logpart(0.0232, 1.4623, ((frac(1, 10), ), (frac(2, 10), frac(3, 10), frac(4, 10), frac(5, 10), frac(6, 10), frac(7, 10), frac(8, 10), frac(9, 10), ), ), extendtoticklevel = None, extendtolabellevel = 0).getticks()
+
+class favorautolinpart(autolinpart):
     """favorfixfrac - shift - frac - partitioning"""
-    # TODO: just to be done
+    # TODO: just to be done ... throw out parts within the favor region -- or what else to do?
     degreefracs = ((frac( 15, 1), frac(  5, 1), ),
                    (frac( 30, 1), frac( 15, 1), ),
                    (frac( 45, 1), frac( 15, 1), ),
