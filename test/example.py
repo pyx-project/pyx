@@ -87,21 +87,6 @@ for angle in range(20):
     s=c.insert(canvas.canvas(translate(10,10)*rotate(angle))).draw(p, canvas.linestyle.dashed, canvas.linewidth(0.01*angle), gray((20-angle)/20.0))
 
 c.set(canvas.linestyle.solid)
-g=c.insert(GraphXY(t, 10, 15, width=10, x=LogAxis()))
-df = DataFile("testdata")
-g.plot(Data(df, x=1, y=3))
-#g.plot(Data(df, x=2, y2=4))
-#g.plot(Data(df, x=2, y=5), mark(0.01))
-#g.plot(Data(df, x=2, y=6), chain())
-#g.plot(Data(df, x=2, y=7))
-#g.plot(Data(df, x=2, y=8))
-#    g.plot(Function("0.01*sin(x)",Points=1000))
-#    g.plot(Function("0", Points=2000)) # <- make this working!
-#g.plot(Function("0*x"))
-#g.plot(Function("0.01*sin(x)"), chain())
-#g.plot(Function("x=2*sin(1000*y)"))
-#    c.insert(canvas.canvas(scale(0.5, 0.4).rotate(10).translate("2 cm","200 mm"))).insert(epsfile("ratchet_f.eps"))
-#    c.insert(canvas.canvas(scale(0.2, 0.1).rotate(10).translate("6 cm","180 mm"))).insert(epsfile("ratchet_f.eps"))
     
 c.draw(path(moveto("5 cm", "5 cm"), rlineto(0.1,0.1)), canvas.linewidth.THICK)
 

@@ -665,7 +665,6 @@ class canvas(base.PSCmd):
 
         for arg in args:
             if isinstance(arg, trafo._trafo):
-                # XXX or: self.trafo = arg*self.trafo
                 self.trafo = self.trafo*arg
                 self.PSOps.append(arg)
             elif isinstance(arg, clip):
