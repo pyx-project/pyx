@@ -477,7 +477,7 @@ class line(_style):
 
     def donedrawpoints(self, graph, styledata):
         self.addpointstopath(styledata)
-        if styledata.lineattrs is not None:
+        if styledata.lineattrs is not None and len(styledata.path.path):
             styledata.linecanvas.stroke(styledata.path, styledata.lineattrs)
 
     def drawpoint(self, graph, styledata):
