@@ -23,12 +23,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-# TODO: - switch from moveto, lineto to _moveto, _lineto, which expect there
-#         coordinates in pts. This avoids an unnecessary conversion step.
-#       - related to the above: kill "from path import *"
-
-from path import *
-import types, re, tex, unit, math
+import pyx, types, re, tex, unit, math, path
 from math import log, exp, sqrt, pow
 
 
@@ -667,17 +662,19 @@ class GraphXY(Graph):
             pd.Data.SetAxis(self.Axis)
 
         # this should be done after axis-size calculation
-        self.left = 1   # convert everything to plain numbers here already, no length !!!
-        self.buttom = 1 # should we use the final postscript points already ???
+        self.left = 1
+        self.buttom = 1
         self.top = 0
         self.right = 0
-        self.VirMap = (_LinMap().setbasepts(((0, self.xpos + self.left, ), (1, self.xpos + self.width - self.right, ))),
-                       _LinMap().setbasepts(((0, self.ypos + self.buttom, ), (1, self.ypos + self.height - self.top, ))), )
+        self.VirMap = (_LinMap().setbasepts(((0, unit.topt(self.xpos + self.left), ),
+                                             (1, unit.topt(self.xpos + self.width - self.right), ))),
+                       _LinMap().setbasepts(((0, unit.topt(self.ypos + self.buttom), ),
+                                             (1, unit.topt(self.ypos + self.height - self.top), ))), )
 
-        self.canvas.draw(rect(self.VirMap[0].convert(0),
-                              self.VirMap[1].convert(0),
-                              self.VirMap[0].convert(1) - self.VirMap[0].convert(0),
-                              self.VirMap[1].convert(1) - self.VirMap[1].convert(0)))
+        self.canvas.draw(path._rect(self.VirMap[0].convert(0),
+                                    self.VirMap[1].convert(0),
+                                    self.VirMap[0].convert(1) - self.VirMap[0].convert(0),
+                                    self.VirMap[1].convert(1) - self.VirMap[1].convert(0)))
 
         for key in self.Axis.keys():
             self.Axis[key].createrateparts()
@@ -694,13 +691,17 @@ class GraphXY(Graph):
                 l = tick.Label
                 x = self.VirMap[Type].convert(xv)
                 if Type == 0:
-                    self.canvas.draw(line(x, self.VirMap[1].convert(0), x, self.VirMap[1].convert(0) + ticklength.normal.increment(-tick.TickLevel)))
+                    self.canvas.draw(path._line(x, self.VirMap[1].convert(0),
+                                                x, self.VirMap[1].convert(0)+10))
+                                                # + ticklength.normal.increment(-tick.TickLevel)))
                     if tick.LabelLevel == 0:
-                        self.tex.text(x, self.VirMap[1].convert(0)-0.5, l, tex.halign.center)
+                        self.tex._text(x, self.VirMap[1].convert(0)-10, l, tex.halign.center)
                 if Type == 1:
-                    self.canvas.draw(line(self.VirMap[0].convert(0), x, self.VirMap[0].convert(0) + ticklength.normal.increment(-tick.TickLevel), x))
+                    self.canvas.draw(path._line(self.VirMap[0].convert(0), x,
+                                                self.VirMap[0].convert(0)+10, x))
+                                                # + ticklength.normal.increment(-tick.TickLevel), x))
                     if tick.LabelLevel == 0:
-                        self.tex.text(self.VirMap[0].convert(0)-0.5, x, l, tex.halign.right)
+                        self.tex._text(self.VirMap[0].convert(0)-10, x, l, tex.halign.right)
 
         for pd in self.plotdata:
             pd.PlotStyle.LoopOverPoints(self, pd.Data)
@@ -737,9 +738,9 @@ class chain(_PlotStyle):
         for pt in zip(Graph.ValueList(_XPattern, 0, Data),
                       Graph.ValueList(_YPattern, 1, Data)):
             if p:
-                p.append(lineto(pt[0],pt[1]))
+                p.append(path._lineto(pt[0],pt[1]))
             else:
-                p = [moveto(pt[0],pt[1]), ]
+                p = [path._moveto(pt[0],pt[1]), ]
         Graph.canvas.draw(path(p))
 
 class mark(_PlotStyle):
@@ -750,10 +751,10 @@ class mark(_PlotStyle):
     def LoopOverPoints(self, Graph, Data):
         for pt in zip(Graph.ValueList(_XPattern, 0, Data),
                       Graph.ValueList(_YPattern, 1, Data)):
-            Graph.canvas.draw(path([moveto(pt[0] - self.size, pt[1] - self.size),
-                                    lineto(pt[0] + self.size, pt[1] + self.size),
-                                    moveto(pt[0] - self.size, pt[1] + self.size),
-                                    lineto(pt[0] + self.size, pt[1] - self.size), ]))
+            Graph.canvas.draw(path.path([path._moveto(pt[0] - self.size, pt[1] - self.size),
+                                         path._lineto(pt[0] + self.size, pt[1] + self.size),
+                                         path._moveto(pt[0] - self.size, pt[1] + self.size),
+                                         path._lineto(pt[0] + self.size, pt[1] - self.size), ]))
 
 ###############################################################################
 # data part

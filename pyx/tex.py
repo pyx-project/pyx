@@ -333,7 +333,7 @@ class _BoxCmd(_TexCmd):
             file.write("\\immediate\\write\\sizefile{%s:%s:%s:\\the\\%s\\localbox}%%\n" % (self.MD5(), CmdExtent, time.time(), CmdExtent, ))
         for CmdPut in self.CmdPuts:
 
-            file.write("{\\vbox to0pt{\\kern%struept\\hbox{\\kern%struept\\ht\\localbox0pt" % (unit.totpt(-CmdPut.y), unit.totpt(CmdPut.x),))
+            file.write("{\\vbox to0pt{\\kern%struept\\hbox{\\kern%struept\\ht\\localbox0pt" % (-CmdPut.y, CmdPut.x))
 
             if CmdPut.direction != direction.horizontal:
                 file.write("\\special{ps: gsave currentpoint currentpoint translate %s neg rotate neg exch neg exch translate }" % CmdPut.direction )
@@ -656,7 +656,7 @@ class tex(canvas.PSCommand, _InstanceList):
                                 # but we ignore this here -- we don't want to depend on this side effect)
         return UseCmd
 
-    def text(self, x, y, Cmd, *styleparams):
+    def _text(self, x, y, Cmd, *styleparams):
 
         'print Cmd at (x, y)'
         
@@ -664,11 +664,16 @@ class tex(canvas.PSCommand, _InstanceList):
 
         self.AllowedInstances(styleparams, [_style, _fontsize, _halign, hsize, _valign, _direction, _msglevel, color.color, ])
         
-        self.InsertCmd(Cmd, styleparams).Put(x,
-                                             y,
+        self.InsertCmd(Cmd, styleparams).Put(x * 72.27 / 72.0,
+                                             y * 72.27 / 72.0,
                                              self.ExtractInstance(styleparams, _halign, halign.left),
                                              self.ExtractInstance(styleparams, _direction, direction.horizontal),
                                              self.ExtractInstance(styleparams, color.color, color.grey.black))
+
+
+    def text(self, x, y, Cmd, *styleparams):
+
+        self._text(unit.topt(x), unit.topt(y), Cmd, *styleparams)
 
     def textwd(self, Cmd, *styleparams):
     
