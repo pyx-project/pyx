@@ -434,21 +434,14 @@ class arrow(PathDeco):
         self.fillstyles = helper.ensurelist(fillstyles)
 
     def __call__(self, *styles):
-        # XXX please shorten me!
+	fillstyles = [ style for s in styles if isinstance(s, filled) 
+		       for style in s.styles ]
 
-        fillstyles = reduce(lambda x, y:x+helper.ensurelist(y.styles),
-                            filter(lambda x: isinstance(x, filled), styles),
-                            [])
+	strokestyles = [ style for s in styles if isinstance(s, stroked) 
+		         for style in s.styles ]
 
-        strokestyles = reduce(lambda x, y:x+helper.ensurelist(y.styles),
-                              filter(lambda x: isinstance(x, stroked), styles),
-                              [])
-
-        styles = filter(lambda x:
-                        not (isinstance(x,filled) or
-                             isinstance(x,stroked)),
-                        styles)
-
+	styles = [ style for style in styles 
+	           if not isinstance(style, (filled, stroked)) ]
 
         return arrow(position=self.position,
                      size=self.size,
