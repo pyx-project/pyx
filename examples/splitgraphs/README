@@ -1,0 +1,19 @@
+Split axes can be used to build axes containing axis breaks.
+While split axes work exactly like bar axes (they even share
+the same code except for the painter), their usage differs.
+A split axes has a tuple as its data value. The first value
+of the tuple identifies a sub-axis (for example by an unique
+integer) and the second is the value to be passed to the
+sub-axis. (For a bar axis its basically the same internally,
+but in that case the styles take care of the wrapping of the
+data into those tuples.)
+
+Note: Currently the graph styles are not aware of
+axis breaks. A generic notification mechanism for
+graph styles should be added at a later point.
+
+Another note: Currently there is no support for wrapping data
+into tuples except for the splitatvalue function. Its planed
+for the future to remove the mathtree (at least in the graph
+data handling), so that the creation of a tuple becomes
+possible by standard Python constructs.
