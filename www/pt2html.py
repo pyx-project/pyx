@@ -41,6 +41,7 @@ examples = [example("hello"),
             example("vector"),
             example("tree"),
             example("sierpinski"),
+            example("graphs/arrows"),
             example("graphs/step"),
             example("graphs/piaxis")]
 
