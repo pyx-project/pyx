@@ -207,7 +207,7 @@ class canvas:
 
     def _write(self, file):
         for cmd in self.PSCmds:
-           file.write(str(cmd))
+           file.write(str(cmd) + "\n")
 
     def _PSAddCmd(self, cmd):
         self.PSCmds.append(cmd)
@@ -373,8 +373,6 @@ if __name__=="__main__":
  
     c.set(linestyle.solid)
     g=GraphXY(c, t, 10, 15, 8, 6, y2=LinAxis())
-    #g.plot(Function("5*sin(x)"))
-    #g.plot(Function("y2=(x+5)*x*(x-5)/100"))
     df = DataFile("testdata")
     g.plot(Data(df, x=2, y=3))
     g.plot(Data(df, x=2, y2=4))
@@ -382,7 +380,8 @@ if __name__=="__main__":
     g.plot(Data(df, x=2, y=6))
     g.plot(Data(df, x=2, y=7))
     g.plot(Data(df, x=2, y=8))
-    g.plot(Function("0.01*sin(x)",Points=10000))
+    #g.plot(Function("0.01*sin(x)",Points=10000))
+    g.plot(Function("0.01*sin(x)"))
     g.plot(Function("x=2*sin(1000*y)"))
     g.run()
     
