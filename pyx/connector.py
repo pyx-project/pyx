@@ -57,7 +57,7 @@ class connector_pt(path.normpath):
 
         # XXX later, this should be done by extended boxes instead of intersecting with circles
         # cut off the start of self
-        center = self.begin_pt()
+        center = self.atbegin_pt()
         cutpath = path.circle_pt(center[0], center[1], dists[0])
         try:
             cutpath = cutpath.normpath()
@@ -68,7 +68,7 @@ class connector_pt(path.normpath):
             self.normsubpaths = self.split(sp[-1:])[1].normsubpaths
 
         # cut off the end of self
-        center = self.end_pt()
+        center = self.atend_pt()
         cutpath = path.circle_pt(center[0], center[1], dists[1])
         try:
             cutpath = cutpath.normpath()
@@ -92,7 +92,7 @@ class line_pt(connector_pt):
         self.box2 = box2
 
         connector_pt.__init__(self,
-            [path.normsubpath([path.normline(*(self.box1.center+self.box2.center))], 0)])
+            [path.normsubpath([path.normline_pt(*(self.box1.center+self.box2.center))], 0)])
 
         self.omitends(box1, box2)
         self.shortenpath(boxdists)
@@ -210,7 +210,7 @@ class curve_pt(connector_pt):
         control2 = (self.box2.center[0] - control2[0] * bulge, self.box2.center[1] - control2[1] * bulge)
 
         connector_pt.__init__(self,
-               [path.normsubpath([path.normcurve(*(self.box1.center +
+               [path.normsubpath([path.normcurve_pt(*(self.box1.center +
                                                    control1 +
                                                    control2 + self.box2.center))], 0)])
 
