@@ -81,7 +81,10 @@ TODO:
     - dash now supports relative dash lengths (as suggested by Otto Tronarp)
     - TODO: document me
   - mathtree module:
-    - fix incorrect handling of - (for instance -x**2 was not negative)
+    - fixed incorrect handling of - (for instance -x**2 was not negative)
+  - attrlist module:
+    - contents have been moved to the (obsolete) tex module, which was the only user anyhow, and
+      the module itself was removed
 
   TODO for PyX 0.5 (please feel free to move items up to the general TODO list)
   - path module:
