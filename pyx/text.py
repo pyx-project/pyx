@@ -2008,9 +2008,9 @@ class texrunner:
                     self.execute("\\makeatletter%\n"
                                  "\\let\\saveProcessOptions=\\ProcessOptions%\n"
                                  "\\def\\ProcessOptions{%\n"
-                                 "\\saveProcessOptions%\n"
                                  "\\def\\Gin@driver{" + pyxdef + "}%\n"
-                                 "\\def\\c@lor@namefile{dvipsnam.def}}%\n"
+                                 "\\def\\c@lor@namefile{dvipsnam.def}%\n"
+                                 "\\saveProcessOptions}%\n"
                                  "\\makeatother")
                 if self.docopt is not None:
                     self.execute("\\documentclass[%s]{%s}" % (self.docopt, self.docclass), *self.texmessagedocclass)
