@@ -226,11 +226,12 @@ class pathel(base.PSOp):
         pass
 
     def outputPS(self, file):
-        """write pathel to file in the context of canvas"""
-
+        """write PS code corresponding to pathel to file"""
         pass
 
-    # TODO: outputPDF
+    def outputPDF(self, file):
+        """write PDF code corresponding to pathel to file"""
+        pass
 
 #
 # various pathels
