@@ -13,7 +13,7 @@ manual.pdf: manual.ps
 manual.ps: manual.dvi
 	dvips manual.dvi
 
-manual.dvi: $(wildcard *.tex) $(patsubst %.py, %.eps, $(wildcard *.py))
+manual.dvi: $(wildcard *.tex) $(patsubst %.py, %.eps, $(wildcard *.py)) pyxversion.tex
 	latex manual.tex
 
 pyxversion.tex: ../pyx/__init__.py
