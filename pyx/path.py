@@ -471,12 +471,12 @@ class arc_pt(pathitem):
                                                self.angle1, self.angle2)
 
     def _sarc(self):
-        """Return starting point of arc segment"""
+        """return starting point of arc segment"""
         return (self.x_pt+self.r_pt*cos(radians(self.angle1)),
                 self.y_pt+self.r_pt*sin(radians(self.angle1)))
 
     def _earc(self):
-        """Return end point of arc segment"""
+        """return end point of arc segment"""
         return (self.x_pt+self.r_pt*cos(radians(self.angle2)),
                 self.y_pt+self.r_pt*sin(radians(self.angle2)))
 
@@ -596,12 +596,12 @@ class arcn_pt(pathitem):
                                                 self.angle1, self.angle2)
 
     def _sarc(self):
-        """Return starting point of arc segment"""
+        """return starting point of arc segment"""
         return (self.x_pt+self.r_pt*cos(radians(self.angle1)),
                 self.y_pt+self.r_pt*sin(radians(self.angle1)))
 
     def _earc(self):
-        """Return end point of arc segment"""
+        """return end point of arc segment"""
         return (self.x_pt+self.r_pt*cos(radians(self.angle2)),
                 self.y_pt+self.r_pt*sin(radians(self.angle2)))
 
@@ -1815,7 +1815,7 @@ class normsubpath:
             return "normsubpath([%s])" % l
 
     def _distributeparams(self, params):
-        """Return a dictionary mapping normsubpathitemindices to a tuple
+        """return a dictionary mapping normsubpathitemindices to a tuple
         of a paramindices and normsubpathitemparams.
 
         normsubpathitemindex specifies a normsubpathitem containing
