@@ -9,6 +9,5 @@ clean:
 
 %.png: %.py
 	export PYTHONPATH=$(PWD)/../.. ; cd $(dir $^) ; python $(notdir $^)
-	@# -dEPSCrop needs gs version >= 8.0
-	python ../../contrib/epstopng.py -g gs8.0 -o $@ $*.eps
+	python ../../contrib/epstopng.py -o $@ $*.eps
 	rm $*.eps

@@ -41,5 +41,4 @@ html: $(htmlfiles) $(pngfiles)
 	sh -c "py2html -format:rawhtml $^"
 
 %.png: %.eps
-	@# -dEPSCrop needs gs version >= 8.0
-	python ../contrib/epstopng.py -g gs8.0 -o $@ $^
+	python ../contrib/epstopng.py -o $@ $^

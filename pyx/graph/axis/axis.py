@@ -155,7 +155,7 @@ class _axis:
       of derived classes"""
 
     def __init__(self, min=None, max=None, reverse=0, divisor=None,
-                       title=None, painter=painter.plain(), texter=texter.mixed(),
+                       title=None, painter=painter.regular(), texter=texter.mixed(),
                        density=1, maxworse=2, manualticks=[]):
         """initializes the instance
         - min and max fix the axis minimum and maximum, respectively;
