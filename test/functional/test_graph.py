@@ -9,7 +9,7 @@ text.set(mode="latex")
 
 def test_multiaxes_data(c, x, y):
     g = c.insert(graph.graphxy(x, y, height=5, key=graph.key(pos="tl"),
-                               x=graph.logaxis(title="$W$", part=[graph.tick(math.sqrt(8)*100, label="?"), graph.tick(math.sqrt(8), label="$\sqrt{8}$"), graph.autologpart()]),
+                               x=graph.logaxis(title="$W$", manualticks=[graph.tick(math.sqrt(8)*100, label="?"), graph.tick(math.sqrt(8), label="$\sqrt{8}$")]),
                                #x=graph.logaxis(title="$W$",
                                #                texter=graph.decimaltexter()),
                                y=graph.logaxis(title=r"$PPP_1$",
@@ -39,7 +39,7 @@ def test_textaxis_errorbars(c, x, y):
     df = data.datafile("data/testdata2")
     g = c.insert(graph.graphxy(x, y, height=5,
                                x=graph.linaxis(min=0.5, max=12.5, title="Month",
-                                               part=graph.linpart("1", labels=df.getcolumn("month"), extendtick=None),
+                                               parter=graph.linparter("1", labels=df.getcolumn("month"), extendtick=None),
                                                painter=graph.axispainter(labeldist=0.1, titledist=0, labelattrs=(trafo.rotate(45),text.halign.right, text.size.scriptsize))),
                                y=graph.linaxis(min=-10, max=30, title="Temperature [$^\circ$C]"),
                                x2=graph.linaxis(), y2=graph.linaxis()))

@@ -41,7 +41,7 @@ class TexterTestCase(unittest.TestCase):
         assert [tick.label for tick in ticks] == [r"{-10^{-1}}", r"{10^{0}}", r"{10^{1}}"]
         ticks = [graph.tick((0, 1), labellevel=0), graph.tick((1, -10), labellevel=0), graph.tick((15, 100), labellevel=0)]
         exponentialtexter(mantissatexter=decimaltexter(equalprecision=1)).labels(ticks)
-        assert [tick.label for tick in ticks] == [r"{{0.0}\cdot10^{0}}", r"{{-1.0}\cdot10^{-1}}", r"{{1.5}\cdot10^{-1}}"]
+        assert [tick.label for tick in ticks] == [r"{0.0}", r"{{-1.0}\cdot10^{-1}}", r"{{1.5}\cdot10^{-1}}"]
 
     def testDefault(self):
         ticks = [graph.tick((0, 10), labellevel=0), graph.tick((1, 10), labellevel=0), graph.tick((1, 1), labellevel=0), graph.tick((10, 1), labellevel=0)]
@@ -49,7 +49,7 @@ class TexterTestCase(unittest.TestCase):
         assert [tick.label for tick in ticks] == ["0", "0.1", "1", "10"]
         ticks = [graph.tick((0, 10), labellevel=0), graph.tick((1, 10), labellevel=0), graph.tick((1, 1), labellevel=0), graph.tick((10000, 1), labellevel=0)]
         defaulttexter().labels(ticks)
-        assert [tick.label for tick in ticks] == [r"{{0}\cdot10^{0}}", r"{{1}\cdot10^{-1}}", r"{{1}\cdot10^{0}}", r"{{1}\cdot10^{4}}"]
+        assert [tick.label for tick in ticks] == [r"{0}", r"{{1}\cdot10^{-1}}", r"{1}", r"{{1}\cdot10^{4}}"]
         ticks = [graph.tick((0, 10), labellevel=0), graph.tick((1, 10), labellevel=0), graph.tick((1, 1), labellevel=0), graph.tick((10000, 1), labellevel=0)]
         defaulttexter(equaldecision=0).labels(ticks)
         assert [tick.label for tick in ticks] == ["0", "0.1", "1", r"{10^{4}}"]

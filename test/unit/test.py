@@ -29,7 +29,7 @@ from test_attr import AttrTestCase
 from test_data import DataTestCase
 from test_mathtree import MathTreeTestCase
 from test_frac import FracTestCase
-from test_part import LinPartTestCase, LogPartTestCase
+from test_parter import LinParterTestCase, LogParterTestCase
 from test_texter import TexterTestCase
 from test_trafo import TrafoTestCase
 from test_unit import UnitTestCase
@@ -41,8 +41,8 @@ suite = unittest.TestSuite((unittest.makeSuite(AttrTestCase, 'test'),
                             unittest.makeSuite(DataTestCase, 'test'),
                             unittest.makeSuite(MathTreeTestCase, 'test'),
                             unittest.makeSuite(FracTestCase, 'test'),
-                            unittest.makeSuite(LinPartTestCase, 'test'),
-                            unittest.makeSuite(LogPartTestCase, 'test'),
+                            unittest.makeSuite(LinParterTestCase, 'test'),
+                            unittest.makeSuite(LogParterTestCase, 'test'),
                             unittest.makeSuite(TexterTestCase, 'test'),
                             unittest.makeSuite(UnitTestCase, 'test'),
                             unittest.makeSuite(AttrTestCaseOld, 'test'),

@@ -7,6 +7,7 @@ TODO:
     - rect style (and errorbars?) should use clipping (TODO: should they or do the now?)
     - do not include unneeded line segments when the axis range is set manually
     - allow for an iteration of a graph style, when it is used several times
+    - symbols should become decorators
     - common bboxes for different graphs
     - automatic datafile key title
     - exceptions in drawsymbol & friends...
@@ -62,6 +63,7 @@ TODO:
     - dvicopy support not needed anymore (it is still available, but obsolete and
       removed from the documentation)
     - do not include too many glyphs in the eps file
+    - _xxx -> xxx_pt renaming
   - dvifile module (NEW):
     - separated from the text module
     - dvifile class returns standard pyx canvas instances on readpage
@@ -74,6 +76,11 @@ TODO:
     - tick/data-vmin/vmax removed (TODO: documentation)
     - pathaxis (TODO: example and documentation)
     - various linkaxis (TODO: example and documentation, FAQ?)
+    - minor enhancements in exponentionaltexter (TODO: documentation)
+    - axes alongs paths including a set of examples (TODO: not in the manual)
+    - mixing a partitioner and manual ticks by two distinct keyword arguments now (TODO: documentation)
+    - _xxx -> xxx_pt renaming
+    - part -> parter renaming
   - canvas module:
     - stroke and fill now support trafos (TODO: documentation)
     - uppercase version of a4, a3, ... paperformats
@@ -101,6 +108,8 @@ TODO:
   - t1strip module:
     - new fallback solution in pure python
     - bugfix: pyxadapt.h needs to open files binary under Windows (reported by Gary Pajer)
+  - box module:
+    - _xxx -> xxx_pt renaming
 
   TODO for PyX 0.5 (please feel free to move items up to the general TODO list)
   - path module:

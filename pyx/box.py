@@ -28,7 +28,7 @@ import bbox, path, unit, trafo, helper
 
 class BoxCrossError(Exception): pass
 
-class _polygon:
+class polygon_pt:
 
     def __init__(self, corners=None, center=None):
         self.corners = corners
@@ -123,7 +123,7 @@ class _polygon:
     def successivepoints(self):
         return [(self.corners[i], self.corners[j]) for i, j in self.successivepointnumbers()]
 
-    def _circlealignlinevector(self, a, dx, dy, ex, ey, fx, fy, epsilon=1e-10):
+    def circlealignlinevector_pt(self, a, dx, dy, ex, ey, fx, fy, epsilon=1e-10):
         cx, cy = self.center
         gx, gy = ex - fx, ey - fy # direction vector
         if gx*gx + gy*gy < epsilon: # zero line length
@@ -145,7 +145,7 @@ class _polygon:
             return 0 # crossing point outside e
         return 1 # crossing point outside f
 
-    def _linealignlinevector(self, a, dx, dy, ex, ey, fx, fy, epsilon=1e-10):
+    def linealignlinevector_pt(self, a, dx, dy, ex, ey, fx, fy, epsilon=1e-10):
         cx, cy = self.center
         gx, gy = ex - fx, ey - fy # direction vector
         if gx*gx + gy*gy < epsilon: # zero line length
@@ -166,7 +166,7 @@ class _polygon:
             return 0 # crossing point outside e
         return 1 # crossing point outside f
 
-    def _circlealignpointvector(self, a, dx, dy, px, py, epsilon=1e-10):
+    def circlealignpointvector_pt(self, a, dx, dy, px, py, epsilon=1e-10):
         if a*a < epsilon:
             return None
         cx, cy = self.center
@@ -180,12 +180,12 @@ class _polygon:
             alpha = - p / 2 - math.sqrt(p*p/4 - q)
         return alpha*dx, alpha*dy
 
-    def _linealignpointvector(self, a, dx, dy, px, py):
+    def linealignpointvector_pt(self, a, dx, dy, px, py):
         cx, cy = self.center
         beta = (a*dx+cx-px)*dy - (a*dy+cy-py)*dx
         return a*dx - beta*dy - px + cx, a*dy + beta*dx - py + cy
 
-    def _alignvector(self, a, dx, dy, alignlinevector, alignpointvector):
+    def alignvector_pt(self, a, dx, dy, alignlinevector, alignpointvector):
         n = math.sqrt(dx * dx + dy * dy)
         dx, dy = dx / n, dy / n
         linevectors = map(lambda (p1, p2), self=self, a=a, dx=dx, dy=dy, alignlinevector=alignlinevector:
@@ -199,24 +199,24 @@ class _polygon:
                 return alignpointvector(a, dx, dy, *self.successivepoints()[j][0])
         return a*dx, a*dy
 
-    def _circlealignvector(self, a, dx, dy):
-        return self._alignvector(a, dx, dy, self._circlealignlinevector, self._circlealignpointvector)
+    def circlealignvector_pt(self, a, dx, dy):
+        return self.alignvector_pt(a, dx, dy, self.circlealignlinevector_pt, self.circlealignpointvector_pt)
 
-    def _linealignvector(self, a, dx, dy):
-        return self._alignvector(a, dx, dy, self._linealignlinevector, self._linealignpointvector)
+    def linealignvector_pt(self, a, dx, dy):
+        return self.alignvector_pt(a, dx, dy, self.linealignlinevector_pt, self.linealignpointvector_pt)
 
     def circlealignvector(self, a, dx, dy):
-        return map(unit.t_pt, self._circlealignvector(unit.topt(a), dx, dy))
+        return map(unit.t_pt, self.circlealignvector_pt(unit.topt(a), dx, dy))
 
     def linealignvector(self, a, dx, dy):
-        return map(unit.t_pt, self._linealignvector(unit.topt(a), dx, dy))
+        return map(unit.t_pt, self.linealignvector_pt(unit.topt(a), dx, dy))
 
-    def _circlealign(self, *args):
-        self.transform(trafo._translate(*self._circlealignvector(*args)))
+    def circlealign_pt(self, *args):
+        self.transform(trafo._translate(*self.circlealignvector_pt(*args)))
         return self
 
-    def _linealign(self, *args):
-        self.transform(trafo._translate(*self._linealignvector(*args)))
+    def linealign_pt(self, *args):
+        self.transform(trafo._translate(*self.linealignvector_pt(*args)))
         return self
 
     def circlealign(self, *args):
@@ -227,21 +227,21 @@ class _polygon:
         self.transform(trafo.translate(*self.linealignvector(*args)))
         return self
 
-    def _extent(self, dx, dy):
+    def extent_pt(self, dx, dy):
         n = math.sqrt(dx * dx + dy * dy)
         dx, dy = dx / n, dy / n
         oldcenter = self.center
         if self.center is None:
             self.center = 0, 0
-        x1, y1 = self._linealignvector(0, dx, dy)
-        x2, y2 = self._linealignvector(0, -dx, -dy)
+        x1, y1 = self.linealignvector_pt(0, dx, dy)
+        x2, y2 = self.linealignvector_pt(0, -dx, -dy)
         self.center = oldcenter
         return (x1-x2)*dx + (y1-y2)*dy
 
     def extent(self, dx, dy):
-        return unit.t_pt(self._extent(dx, dy))
+        return unit.t_pt(self.extent_pt(dx, dy))
 
-    def _pointdistance(self, x, y):
+    def pointdistance_pt(self, x, y):
         result = None
         for p1, p2 in self.successivepoints():
             gx, gy = p2[0] - p1[0], p2[1] - p1[1]
@@ -261,9 +261,9 @@ class _polygon:
         return result
 
     def pointdistance(self, x, y):
-        return unit.t_pt(self._pointdistance(unit.topt(x), unit.topt(y)))
+        return unit.t_pt(self.pointdistance_pt(unit.topt(x), unit.topt(y)))
 
-    def _boxdistance(self, other, epsilon=1e-10):
+    def boxdistance_pt(self, other, epsilon=1e-10):
         # XXX: boxes crossing and distance calculation is O(N^2)
         for p1, p2 in self.successivepoints():
             for p3, p4 in other.successivepoints():
@@ -276,17 +276,17 @@ class _polygon:
                     raise BoxCrossError
         result = None
         for x, y in other.corners:
-            new = self._pointdistance(x, y)
+            new = self.pointdistance_pt(x, y)
             if result is None or new < result:
                 result = new
         for x, y in self.corners:
-            new = other._pointdistance(x, y)
+            new = other.pointdistance_pt(x, y)
             if result is None or new < result:
                 result = new
         return result
 
     def boxdistance(self, other):
-        return unit.t_pt(self._boxdistance(other))
+        return unit.t_pt(self.boxdistance_pt(other))
 
     def bbox(self):
         return bbox._bbox(min([x[0] for x in self.corners]),
@@ -295,7 +295,7 @@ class _polygon:
                           max([x[1] for x in self.corners]))
 
 
-def _genericalignequal(method, polygons, a, dx, dy):
+def genericalignequal_pt(method, polygons, a, dx, dy):
     vec = None
     for p in polygons:
         v = method(p, a, dx, dy)
@@ -305,23 +305,23 @@ def _genericalignequal(method, polygons, a, dx, dy):
         p.transform(trafo._translate(*vec))
 
 
-def _circlealignequal(polygons, *args):
-    _genericalignequal(_polygon._circlealignvector, polygons, *args)
+def circlealignequal_pt(polygons, *args):
+    genericalignequal_pt(polygon_pt.circlealignvector_pt, polygons, *args)
 
-def _linealignequal(polygons, *args):
-    _genericalignequal(_polygon._linealignvector, polygons, *args)
+def linealignequal_pt(polygons, *args):
+    genericalignequal_pt(polygon_pt.linealignvector_pt, polygons, *args)
 
 def circlealignequal(polygons, a, *args):
-    _circlealignequal(polygons, unit.topt(a), *args)
+    circlealignequal_pt(polygons, unit.topt(a), *args)
 
 def linealignequal(polygons, a, *args):
-    _linealignequal(polygons, unit.topt(a), *args)
+    linealignequal_pt(polygons, unit.topt(a), *args)
 
 
-def _tile(polygons, a, dx, dy):
-    maxextent = polygons[0]._extent(dx, dy)
+def tile_pt(polygons, a, dx, dy):
+    maxextent = polygons[0].extent_pt(dx, dy)
     for p in polygons[1:]:
-        extent = p._extent(dx, dy)
+        extent = p.extent_pt(dx, dy)
         if extent > maxextent:
             maxextent = extent
     d = 0
@@ -331,25 +331,25 @@ def _tile(polygons, a, dx, dy):
 
 
 def tile(polygons, a, dx, dy):
-    _tile(polygons, unit.topt(a), dx, dy)
+    tile_pt(polygons, unit.topt(a), dx, dy)
 
 
-class polygon(_polygon):
+class polygon(polygon_pt):
 
     def __init__(self, corners=None, center=None, **args):
         corners = [[unit.topt(x) for x in corner] for corner in corners]
         if center is not None:
             center = map(unit.topt, center)
-        _polygon.__init__(self, corners=corners, center=center, **args)
+        polygon_pt.__init__(self, corners=corners, center=center, **args)
 
 
-class _rect(_polygon):
+class rect_pt(polygon_pt):
 
     def __init__(self, x, y, width, height, relcenter=(0, 0), abscenter=(0, 0),
                        corners=helper.nodefault, center=helper.nodefault, **args):
         if corners != helper.nodefault or center != helper.nodefault:
             raise ValueError
-        _polygon.__init__(self, corners=((x, y),
+        polygon_pt.__init__(self, corners=((x, y),
                                          (x + width, y),
                                          (x + width, y + height),
                                          (x, y + height)),
@@ -358,9 +358,10 @@ class _rect(_polygon):
                                 **args)
 
 
-class rect(_rect):
+class rect(rect_pt):
 
     def __init__(self, x, y, width, height, relcenter=(0, 0), abscenter=(0, 0), **args):
-        _rect.__init__(self, unit.topt(x), unit.topt(y), unit.topt(width), unit.topt(height),
-                             relcenter=relcenter, abscenter=(unit.topt(abscenter[0]), unit.topt(abscenter[1])), **args)
+        rect_pt.__init__(self, unit.topt(x), unit.topt(y), unit.topt(width), unit.topt(height),
+                               relcenter=relcenter,
+                               abscenter=(unit.topt(abscenter[0]), unit.topt(abscenter[1])), **args)
 

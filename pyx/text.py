@@ -525,7 +525,7 @@ class _readpipe(threading.Thread):
         self.quitevent.set()
 
 
-class textbox_pt(box._rect, canvas._canvas):
+class textbox_pt(box.rect_pt, canvas._canvas):
     """basically a box.rect, but it contains a text created by the texrunner
     - texrunner._text and texrunner.text return such an object
     - _textbox instances can be inserted into a canvas
@@ -538,7 +538,7 @@ class textbox_pt(box._rect, canvas._canvas):
           (e.g. the finishdvi calls the setdvicanvas method)
         - attrs are fillstyles"""
         self.texttrafo = trafo._translate(x, y)
-        box._rect.__init__(self, x - left, y - depth,
+        box.rect_pt.__init__(self, x - left, y - depth,
                                  left + right, depth + height,
                                  abscenter = (left, depth))
         canvas._canvas.__init__(self)
@@ -548,7 +548,7 @@ class textbox_pt(box._rect, canvas._canvas):
             self.set(attr)
 
     def transform(self, *trafos):
-        box._rect.transform(self, *trafos)
+        box.rect_pt.transform(self, *trafos)
         for trafo in trafos:
             self.texttrafo = trafo * self.texttrafo
 
