@@ -69,65 +69,57 @@ unit_w2p	= 28.346456693*unit_ps
 # helper routines
 #
 
-def PSGetEPSBoundingBox(epsname):
+class epsfile:
+    epsname           = ""
+    (llx,lly,urx,ury) = (0,0,0,0)
 
-    'returns bounding box of EPS file epsname as 4-tuple (llx, lly, urx, ury)'
+    def __init__(self, epsname):
+        self.epsname = epsname
+        self._ReadEPSBoundBox()                         
 
-    try:
-        epsfile=open(epsname,"r")
-    except:
-        assert "cannot open EPS file"	# TODO: Fehlerbehandlung
+    def _ReadEPSBoundingBox(self):
+        'determines bounding box of EPS file epsname as 4-tuple (llx, lly, urx, ury)'
+        try:
+            epsfile=open(epsname,"r")
+        except:
+            assert "cannot open EPS file"	# TODO: Fehlerbehandlung
 
-    import re
+        import re
 
-    bbpattern = re.compile( r"^%%BoundingBox:\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s*$" )
+        bbpattern = re.compile( r"^%%BoundingBox:\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s*$" )
 
-    while 1:
-        line=epsfile.readline()
-        if not line:
-	    assert "bounding box not found in EPS file"
-	    raise IOError			# TODO: Fehlerbehandlung
-        if line=="%%EndComments\n": 
-	    # TODO: BoundingBox-Deklaration kann auch an Ende von Datei verschoben worden sein
-	    assert "bounding box not found in EPS file"
-	    raise IOError			# TODO: Fehlerbehandlung
-	
-        bbmatch = bbpattern.match(line)
-        if bbmatch is not None:
-           (llx, lly, urx, ury) = map(int, bbmatch.groups())		# conversion strings->int
-	   break
-    epsfile.close()
-    return (llx, lly, urx, ury)
-    
-#
-# Exceptions
-#
-    
-class CanvasException(Exception): pass
+        while 1:
+            line=epsfile.readline()
+            if not line:
+                assert "bounding box not found in EPS file"
+                raise IOError			# TODO: Fehlerbehandlung
+            if line=="%%EndComments\n": 
+                # TODO: BoundingBox-Deklaration kann auch an Ende von Datei verschoben worden sein
+                assert "bounding box not found in EPS file"
+                raise IOError			# TODO: Fehlerbehandlung
+            
+            bbmatch = bbpattern.match(line)
+            if bbmatch is not None:
+               (self.llx, self.lly, self.urx, self.ury) = map(int, bbmatch.groups())		# conversion strings->int
+               break
+        epsfile.close()
 
-#
-# classes
-#
+    def __string__(self):
+        try:
+	    epsfile=open(epsname,"r")
+	except:
+	    assert "cannot open EPS file"	                          # TODO: Fehlerbehandlung
 
-class abstractcanvas:
+	       # "%f %f translate\n" % (x, y) +                             # we are already at this position
+	return """BeginEPSF
+	       %f %f translate 
+	       %f %f %f %f rect
+	       clip newpath
+	       %%BeginDocument: %s""" % (-self.llx, -self.lly, 
+                                         self.llx, self.lly, self.urx-self.llx,self.ury-self.lly, 
+                                         self.epsname) + epsfile.read() + "%%EndDocument\nEndEPSF\n"
 
-    def __init__(self, **kwargs):
-        from trafo import transformation
-        self.trafo = kwargs.get("trafo", transformation())
-        self.PSInit()
-    
-    def PSAddCmd(self, cmd):
-        if self.isPrimaryCanvas==1: 
-            self.PSFile.write("%s\n" % cmd)
-	else:
-	    self.base.PSAddCmd(cmd)
-	
-    def PSInit(self):
-         raise NotImplementedError, "cannot initialized abstract canvas"
-
-    def subcanvas(self, **kwargs):
-        return subcanvas(self, **kwargs)
-
+class unit:
     def u2p(self, lengths):
     	if isnumber(lengths): 
 	    return lengths*unit_u2p
@@ -145,135 +137,133 @@ class abstractcanvas:
 	    return lengths*unit_w2p
 	else: 
 	    return tuple(map(lambda x:x*unit_w2p, lengths))
-	
-    def PSInsertEPS(self, x, y, epsname):
     
-        'Insert EPS file epsname at current position'
-	
-	(llx, lly, urx, ury) = PSGetEPSBoundingBox(epsname)
-	
-        try:
-	    epsfile=open(epsname,"r")
-	except:
-	    assert "cannot open EPS file"	# TODO: Fehlerbehandlung
+#
+# Exceptions
+#
+    
+class CanvasException(Exception): pass
 
-	self.PSAddCmd("BeginEPSF")
-	self.PSAddCmd("%f %f translate" % self.u2p((x, y)) ) 
-	self.PSAddCmd("%f %f translate" % self.u2p((-llx, -lly)) )
-	self.PSAddCmd("%f %f %f %f rect" % self.u2p((llx, lly, urx-llx,ury-lly)))
-	self.PSAddCmd("clip newpath")
-	self.PSAddCmd("%%BeginDocument: %s" % epsname)
-	self.PSAddCmd(epsfile.read())  	
-	self.PSAddCmd("%%EndDocument")
-	self.PSAddCmd("EndEPSF")
+#
+# classes
+#
+
+class canvas(unit):
+
+    PSCmds = []
+
+    def __init__(self, **kwargs):
+        from trafo import transformation
+        
+        self.trafo = kwargs.get("trafo", transformation())
+        self.unit = kwargs.get("units", unit())
+        
+        self._PSAddCmd("%f %f scale" % (1/unit_ps, 1/unit_ps))
+        self._PSAddCmd("[" + `self.trafo` + " ] concat")
+    
+    def __string__(self):
+        return reduce(lambda x,y: x + ("%s\n" % y), PSCmds)
+
+    def _PSAddCmd(self, cmd):
+        self.PSCmds.append(cmd);
 
     def _newpath(self):
-    	self.PSAddCmd("newpath")
+    	self._PSAddCmd("newpath")
 
     def _stroke(self):
-    	self.PSAddCmd("stroke")
+    	self._PSAddCmd("stroke")
 
     def _fill(self):
-    	self.PSAddCmd("fill")
+    	self._PSAddCmd("fill")
+
+    def _gsave(self):
+        self._PSAddCmd("gsave")
 	
-    def draw(self,path):
+    def _grestore(self):
+        self._PSAddCmd("grestore")
+
+    def _translate(self, x, y):
+        self._PSAddCmd("%f %f translate" % (x, y))
+        
+    def canvas(self, **kwargs):
+        subcanvas = canvas(**kwargs)
+        self._gsave()
+        self._PSAddCmd(subcanvas)
+        self._grestore()
+        return subcanvas
+        
+    def tex(self, **kwargs):
+        texcanvas = tex(**kwargs)
+        self._translate(0,0)
+        self._PSAddCmd(texcanvas)
+        return texcanvas
+	
+    def draw(self, path):
         self._newpath()
         path.draw(self)
 	self._stroke()
+        return self
 	
-    def fill(self,path):
+    def fill(self, path):
         self._newpath()
         path.fill(self)
 	self._fill()
+        return self
 
     def setlinecap(self, cap):
-        #isnumber(cap)
-
-	self.PSAddCmd("%d setlinecap" % cap)
+	self._PSAddCmd("%d setlinecap" % cap)
+        return self
 
     def setlinejoin(self, join):
-        #isnumber(join)
-
-	self.PSAddCmd("%d setlinejoin" % join)
+	self._PSAddCmd("%d setlinejoin" % join)
+        return self
 	
     def setmiterlimit(self, limit):
-        #isnumber(join)
-
-	self.PSAddCmd("%f setmiterlimit" % limit)
+	self._PSAddCmd("%f setmiterlimit" % limit)
+        return self
 
     def setdash(self, pattern, offset=0):
     	patternstring=""
     	for element in pattern:
 		patternstring=patternstring + `element` + " "
     	
-    	self.PSAddCmd("[%s] %d setdash" % (patternstring, offset))
+    	self._PSAddCmd("[%s] %d setdash" % (patternstring, offset))
+        return self
 
     def setlinestyle(self, style, offset=0):
         self.setlinecap(style[0])
 	self.setdash   (style[1], offset)
+        return self
 
-    def gsave(self):
-        self.PSAddCmd("gsave")
-	
-    def grestore(self):
-        self.PSAddCmd("grestore")
-    
-class canvas(abstractcanvas):
-    def __init__(self, filename, width, height, **kwargs):
-        self.Width=width
-        self.Height=height
-	self.BaseFilename=filename
+        
+    def write(self, filename, width, height, **kwargs):
         try:
-  	    self.PSFile = open(self.BaseFilename + ".eps", "w")
+  	    self.file = open(self.filename + ".eps", "w")
 	except IOError:
-	    assert "cannot open output file"		# TODO: Fehlerbehandlung...
+	    assert "cannot open output file"		        # TODO: Fehlerbehandlung...
 
-	abstractcanvas.__init__(self, **kwargs)
-	
-	
-    def PSAddCmd(self, cmd):
-        self.PSFile.write("%s\n" % cmd)
+        file.write("%!PS-Adobe-3.0 EPSF 3.0\n")
+        file.write("%%BoundingBox: 0 0 %d %d\n" % (1000,1000))  # TODO: richtige Boundingbox!
+        file.write("%%Creator: pyx 0.0.1\n") 
+        file.write("%%Title: %s.eps\n" % self.BaseFilename) 
+        # file.write("%%CreationDate: %s" % ) 
+        file.write("%%EndComments\n") 
+        file.write("%%BeginProlog\n") 
+        file.write(PSProlog)
+        file.write("%%EndProlog\n") 
+        file.write("%f setlinewidth\n" % self.w2p(0.02))	# TODO: fixme
+        file.write(self)
 
-    def PSInit(self):
-        self.PSAddCmd("%!PS-Adobe-3.0 EPSF 3.0")
-        self.PSAddCmd("%%BoundingBox: 0 0 %d %d" % (1000,1000)) # TODO: richtige Boundingbox!
-        self.PSAddCmd("%%Creator: pyx 0.0.1") 
-        self.PSAddCmd("%%Title: %s.eps" % self.BaseFilename) 
-        # self.PSAddCmd("%%CreationDate: %s" % ) 
-        self.PSAddCmd("%%EndComments") 
-        self.PSAddCmd("%%BeginProlog") 
-        self.PSAddCmd(PSProlog)
-        self.PSAddCmd("%%EndProlog") 
-        self.PSAddCmd("%f %f scale" % (1/unit_ps, 1/unit_ps))
-
-        self.PSAddCmd("[" + `self.trafo` + " ] concat")
-        self.PSAddCmd("%f setlinewidth" % self.w2p(0.02))	# TODO: fixme
-
-class subcanvas(abstractcanvas):
-    def __init__(self, basecanvas, **kwargs):
-	self.basecanvas=basecanvas
-
-	abstractcanvas.__init__(self, **kwargs)
-
-    def __del__(self):
-        self.grestore()
-		
-    def PSAddCmd(self, cmd):
-        self.basecanvas.PSAddCmd(cmd)
-
-    def PSInit(self):
-        self.gsave()
-        self.PSAddCmd("[" + `self.trafo` + " ] concat")
 
 if __name__=="__main__":
-    c=canvas("example", 21, 29.7)
+    c=canvas()
 
     from tex import *
     from path import *
     from trafo import *
     from graph import *
 
-    t=tex(c)
+    t=c.tex()
 
     #for x in range(11):
     #    amove(x,0)
@@ -343,4 +333,4 @@ if __name__=="__main__":
     g.plot(Function("(x+5)*x*(x-5)/100"))
     g.run()
 
-    t.TexRun()
+    c=write("example", 21, 29.7)
