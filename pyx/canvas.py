@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-import const 
-import string
+import const, string, re
 from unit import unit
+
 
 # PostScript-procedure definitions
 # cf. file: 5002.EPSF_Spec_v3.0.pdf     
@@ -41,24 +41,21 @@ PSProlog = """
 # helper class for EPS files
 #
 
-class epsfile:
-    epsname           = ""
-    (llx,lly,urx,ury) = (0,0,0,0)
+bbpattern = re.compile( r"^%%BoundingBox:\s+([+-]?\d+)\s+([+-]?\d+)\s+([+-]?\d+)\s+([+-]?\d+)\s*$" )
 
-    def __init__(self, epsname):
-        self.epsname = epsname
+class epsfile:
+
+    def __init__(self, epsname, clipping = 1):
+        self.epsname   = epsname
+        self.clipping  = clipping
         self._ReadEPSBoundingBox()                         
 
     def _ReadEPSBoundingBox(self):
         'determines bounding box of EPS file epsname as 4-tuple (llx, lly, urx, ury)'
         try:
-            file=open(self.epsname,"r")
+            file = open(self.epsname,"r")
         except:
             assert "cannot open EPS file"	# TODO: Fehlerbehandlung
-
-        import re
-
-        bbpattern = re.compile( r"^%%BoundingBox:\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s*$" )
 
         while 1:
             line=file.readline()
@@ -82,13 +79,20 @@ class epsfile:
 	    assert "cannot open EPS file"	                          # TODO: Fehlerbehandlung
 
 	# "%f %f translate\n" % (x, y) +                             # we are already at this position
-	return """BeginEPSF
-	       %f %f translate 
-	       %f %f %f %f rect
-	       clip newpath
-	       %%BeginDocument: %s""" % (-self.llx, -self.lly, 
-                                         self.llx, self.lly, self.urx-self.llx,self.ury-self.lly, 
-                                         self.epsname) + file.read() + "%%EndDocument\nEndEPSF\n"
+
+        if self.clipping:
+            return """BeginEPSF
+%f %f translate 
+%f %f %f %f rect
+clip newpath
+%%BeginDocument: %s\n""" % (-self.llx, -self.lly, 
+                                             self.llx, self.lly, self.urx-self.llx,self.ury-self.lly, 
+                                             self.epsname) + file.read() + "%%EndDocument\nEndEPSF\n"
+        else:
+            return """BeginEPSF
+%f %f translate 
+%%BeginDocument: %s\n""" % (-self.llx, -self.lly, 
+                                             self.epsname) + file.read() + "%%EndDocument\nEndEPSF\n"
 
 #
 # Exceptions
@@ -133,7 +137,7 @@ class canvas:
         self._PSAddCmd("grestore")
 
     def _translate(self, x, y):
-        self._PSAddCmd("%f %f translate" % (x, y))
+        self._PSAddCmd("%f %f translate" % self.unit.pt((x, y)))
         
     def canvas(self, **kwargs):
         subcanvas = canvas(**kwargs)
@@ -185,6 +189,11 @@ class canvas:
 	self.setdash   (style[1], offset)
         return self
 
+    def inserteps(self, x, y, filename, clipping=1):
+        self._translate(x,y)
+        self._PSAddCmd(str(epsfile(filename, clipping)))
+        return self
+
         
     def write(self, filename, width, height, **kwargs):
         try:
@@ -206,7 +215,6 @@ class canvas:
 
 
 if __name__=="__main__":
-    c=canvas()
 
     from tex import *
     from path import *
@@ -214,6 +222,7 @@ if __name__=="__main__":
     from graph import *
     from const import *
 
+    c=canvas()
     t=c.tex()
  
     #for x in range(11):
@@ -266,7 +275,7 @@ if __name__=="__main__":
              moveto(12,10), 
              lineto(12,14)])
     c.setlinestyle(linestyle.dashdotted)
-    t.text(10, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize = 2, valign = valign.bottom)
+    #t.text(10, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize = 2, valign = valign.bottom)
     c.draw(p)
  
     p=path([moveto(5,15), arc(5,15, 1, 0, 45), closepath()])
@@ -283,5 +292,7 @@ if __name__=="__main__":
 #   g.plot(Function("5*sin(x)"))
 #   g.plot(Function("(x+5)*x*(x-5)/100"))
 #   g.run()
-#
+
+    c.inserteps(5,5,"ratchet_f.eps")
+
     c.write("example", 21, 29.7)

@@ -298,7 +298,7 @@ class tex:
         if os.system("dvips -P pyx -T0cm,0cm -o " + TempName + ".eps " + TempName + ".dvi > /dev/null 2>&1"):
             assert 0, "dvips exit code non-zero"
 
-        result = str(epsfile(TempName + ".eps"))
+        result = str(epsfile(TempName + ".eps", clipping = 0))
 
         # merge new sizes
         
