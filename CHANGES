@@ -5,6 +5,7 @@ TODO:
     - common bboxes for different graphs
     - exceptions in drawsymbol & friends...
     - 3d graphs, circular graphs
+    - shall we call it graph.axis.plain or graph.axis.regular?
   - style module:
     - default patterns
     - make dash length available
