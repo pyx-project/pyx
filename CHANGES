@@ -81,6 +81,12 @@ TODO:
     - describe creation and modification (inplace and ``modify by new'') of
       graph data
 
+
+0.x (xxxx/xx/xx):
+  - canvas module:
+    - EPS header fixed (bug #1065099 but Russell Lang)
+
+
 0.7 (2004/10/21):
   - bitmap module:
     - new module for inclusion of bitmap images

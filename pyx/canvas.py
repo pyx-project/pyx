@@ -430,7 +430,7 @@ class canvas(_canvas):
         # accordingly
         if ctrafo: abbox.transform(ctrafo)
 
-        file.write("%!PS-Adobe-3.0 EPSF 3.0\n")
+        file.write("%!PS-Adobe-3.0 EPSF-3.0\n")
         abbox.outputPS(file)
         file.write("%%%%Creator: PyX %s\n" % version.version)
         file.write("%%%%Title: %s\n" % filename)
