@@ -421,7 +421,7 @@ class _InstanceList:
             return Result
 
 
-class tex(_InstanceList):
+class tex(canvas.PSCommand, _InstanceList):
 
     def __init__(self, *styleparams):
         self.AllowedInstances(styleparams, [_mode, texfilename, latexsize, docclass, docopt, ])

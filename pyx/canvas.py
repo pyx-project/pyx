@@ -265,123 +265,12 @@ class linewidth(_linewidth):
 # main canvas class
 #
 
-class CanvasCmds:
+class PSCommand:
     def bbox(self):
        return bbox()
        
     def write(self, file):
        pass
-       
-
-class _newpath(CanvasCmds):
-    def write(self, file):
-       file.write("newpath\n")
-       
-
-class _stroke(CanvasCmds):
-    def write(self, file):
-       file.write("stroke\n")
-       
-
-class _fill(CanvasCmds):
-    def write(self, file):
-        file.write("fill\n")
-        
-
-class _clip(CanvasCmds):
-    def write(self, file):
-       file.write("clip\n")
-       
-
-class _gsave(CanvasCmds):
-    def write(self, file):
-       file.write("gsave\n")
-       
-
-class _grestore(CanvasCmds):
-    def write(self, file):
-       file.write("grestore\n")
-       
-
-class _translate(CanvasCmds):
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        
-    def write(self, file):
-        file.write("%f %f translate\n" % (self.x, self.y) )
-
-
-class canvas(CanvasCmds):
-
-    def __init__(self, *args, **kwargs):
-        
-        self.PSCmds = []
-        self.trafo  = trafo.trafo()
-
-        for arg in args:
-            if isinstance(arg, trafo._trafo):
-                self.trafo=arg*self.trafo
-            self.set(arg)
-
-        # clipping comes last...
-        # TODO: integrate this better; do we need a class clip?
-
-        self.clip   = kwargs.get("clip", None)
-        if self.clip:
-            self.insert((_newpath(), self.clip, _clip()))     # insert clipping path
-
-    def bbox(self):
-        obbox = reduce(lambda x,y: x+y.bbox(), self.PSCmds, bbox())
-
-        if self.clip:
-            obbox=obbox*self.clip.bbox()    # intersect with clipping bounding boxes
-
-        return obbox.transform(self.trafo).enhance(1)
-            
-    def write(self, file):
-        for cmd in self.PSCmds:
-            cmd.write(file)
-            
-    def insert(self, cmds, *args):
-        if args: 
-           self.PSCmds.append(_gsave())
-           self.set(*args)
-
-        if type(cmds) in (types.TupleType, types.ListType):
-           for cmd in list(cmds): 
-              if isinstance(cmd, canvas): self.PSCmds.append(_gsave())
-              self.PSCmds.append(cmd)
-              if isinstance(cmd, canvas): self.PSCmds.append(_grestore())
-        else: 
-           if isinstance(cmds, canvas): self.PSCmds.append(_gsave())
-           self.PSCmds.append(cmds)
-           if isinstance(cmds, canvas): self.PSCmds.append(_grestore())
-           
-        if args:
-           self.PSCmds.append(_grestore())
-           
-        return cmds
-
-    def create(self, pyxclass, *args, **kwargs):
-        instance = pyxclass( *args, **kwargs)
-        return instance
-
-    def set(self, *args):
-        for arg in args: 
-           self.insert(arg)
-        
-    def draw(self, path, *args):
-        self.insert((_newpath(), path, _stroke()), *args)
-        return self
-        
-    def fill(self, path, *args):
-        self.insert((_newpath(), path, _fill()), *args)
-        return self
-
-    def drawfilled(self, path, *args):
-        self.insert((_newpath(), path, _gsave(), _stroke(), _grestore(), _fill()), *args)
-        return self
 
     def writetofile(self, filename, paperformat=None, fittosize=0, margin="1 t cm"):
         """write canvas to EPS file
@@ -458,3 +347,114 @@ class canvas(CanvasCmds):
         file.write("showpage\n")
         file.write("%%Trailer\n")
         file.write("%%EOF\n")
+       
+
+class _newpath(PSCommand):
+    def write(self, file):
+       file.write("newpath\n")
+       
+
+class _stroke(PSCommand):
+    def write(self, file):
+       file.write("stroke\n")
+       
+
+class _fill(PSCommand):
+    def write(self, file):
+        file.write("fill\n")
+        
+
+class _clip(PSCommand):
+    def write(self, file):
+       file.write("clip\n")
+       
+
+class _gsave(PSCommand):
+    def write(self, file):
+       file.write("gsave\n")
+       
+
+class _grestore(PSCommand):
+    def write(self, file):
+       file.write("grestore\n")
+       
+
+class _translate(PSCommand):
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        
+    def write(self, file):
+        file.write("%f %f translate\n" % (self.x, self.y) )
+
+
+class canvas(PSCommand):
+
+    def __init__(self, *args, **kwargs):
+        
+        self.PSCmds = []
+        self.trafo  = trafo.trafo()
+
+        for arg in args:
+            if isinstance(arg, trafo._trafo):
+                self.trafo=arg*self.trafo
+            self.set(arg)
+
+        # clipping comes last...
+        # TODO: integrate this better; do we need a class clip?
+
+        self.clip   = kwargs.get("clip", None)
+        if self.clip:
+            self.insert((_newpath(), self.clip, _clip()))     # insert clipping path
+
+    def bbox(self):
+        obbox = reduce(lambda x,y: x+y.bbox(), self.PSCmds, bbox())
+
+        if self.clip:
+            obbox=obbox*self.clip.bbox()    # intersect with clipping bounding boxes
+
+        return obbox.transform(self.trafo).enhance(1)
+            
+    def write(self, file):
+        for cmd in self.PSCmds:
+            cmd.write(file)
+            
+    def insert(self, cmds, *args):
+        if args: 
+           self.PSCmds.append(_gsave())
+           self.set(*args)
+
+        if type(cmds) in (types.TupleType, types.ListType):
+           for cmd in list(cmds): 
+              if isinstance(cmd, canvas): self.PSCmds.append(_gsave())
+              self.PSCmds.append(cmd)
+              if isinstance(cmd, canvas): self.PSCmds.append(_grestore())
+        else: 
+           if isinstance(cmds, canvas): self.PSCmds.append(_gsave())
+           self.PSCmds.append(cmds)
+           if isinstance(cmds, canvas): self.PSCmds.append(_grestore())
+           
+        if args:
+           self.PSCmds.append(_grestore())
+           
+        return cmds
+
+    def create(self, pyxclass, *args, **kwargs):
+        instance = pyxclass( *args, **kwargs)
+        return instance
+
+    def set(self, *args):
+        for arg in args: 
+           self.insert(arg)
+        
+    def draw(self, path, *args):
+        self.insert((_newpath(), path, _stroke()), *args)
+        return self
+        
+    def fill(self, path, *args):
+        self.insert((_newpath(), path, _fill()), *args)
+        return self
+
+    def drawfilled(self, path, *args):
+        self.insert((_newpath(), path, _gsave(), _stroke(), _grestore(), _fill()), *args)
+        return self
