@@ -1441,16 +1441,20 @@ def _normalizepath(path):
 def _splitclosedsubpath(subpath, parameters):
     """ split closed subpath at list of parameters (counting from t=0)"""
 
-    context = _pathcontext()
     result = []
 
-    # first pathel of subpath must be _moveto
-    pel = subpath[0]
-    pel._updatecontext(context)
-    np = [pel]
-    t = 0
+    # first, we open the subpath by replacing the closepath by a _lineto
+    # Note that the first pel must be a _moveto
+    subpath[-1] = _lineto(subpath[0].x, subpath[0].y)
 
-    # XXX: to be done
+    # then we split this open subpath
+    pieces = _splitopensubpath(subpath, parameters)
+
+    # finally we glue the first and the last piece together
+    pieces[0] = pieces[-1] << pieces[0]
+
+    # and throw the last piece away
+    return pieces[:-1]
 
 
 def _splitopensubpath(subpath, parameters):
@@ -1537,7 +1541,6 @@ class normpath(path):
                 t0 = t
             elif isinstance(pel, closepath):
                 result.append((subpath, t0, t, 1))
-                result.append((subpath, t0, t, 0))
                 subpath = []
                 t = t
                 t += 1
