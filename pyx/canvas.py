@@ -728,18 +728,22 @@ class _canvas(base.PSCmd, attrlist.attrlist):
         for cmd in self.PSOps:
             cmd.write(file)
 
-    def insert(self, *PSOps):
-        """insert one or more PSOps in the canvas
+    def insert(self, PSOp, *args):
+        """insert PSOp in the canvas.
 
-        All canvases will be encapsulated in a gsave/grestore pair.
+        If args are given, then insert a canvas containing PSOp applying args.
 
-        returns the (last) PSOp
+        returns the PSOp
 
         """
 
-        self.PSOps.extend(PSOps)
+        if args:
+            sc = _canvas(*args)
+            sc.insert(PSop)
+        else:
+            self.PSOps.append(PSOp)
 
-        return PSOps[-1]
+        return PSOp
 
     def set(self, *styles):
         """sets styles args globally for the rest of the canvas

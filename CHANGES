@@ -38,7 +38,9 @@ PyX
   - canvas module:
     - new way of PS prolog generation that writes only necessary parts
     - added support for patterns 
+    - canvas.insert() now supports arguments
     - TODO: document patterns
+    - TODO: document new canvas.insert()
     - TODO: prolog should return empty lists instead of None
   - mathtree module:
     - added abs function
