@@ -7,7 +7,11 @@
 \ifhtml % redefine the PyX macro for html (the other makes trouble)
 \def\PyX{PyX}
 \fi
+\ifhtml % make double quotes available in html
+\def\textquotedbl{"}
+\fi
 \usepackage{graphicx}
+\usepackage[T1]{fontenc}
 \usepackage{tabularx} % TODO: get rid of that
 \usepackage{units}    % TODO: get rid of that
 

@@ -210,7 +210,7 @@ orginal order in which the \method{do}-methods are called is:
   Inserts the graph key.
 \end{methoddesc}
 
-The graph provides some functions to access its geometry:
+The graph provides some methods to access its geometry:
 
 \begin{methoddesc}{pos}{x, y, xaxis=None, yaxis=None}
   Returns the given point at \var{x} and \var{y} as a tuple
@@ -235,18 +235,383 @@ The graph provides some functions to access its geometry:
 \end{methoddesc}
 
 \begin{methoddesc}{vgeodesic\_el}{vx1, vy1, vx2, vy2}
-  Like \method{vgeodesic} but this method returns the path element to
+  Like \method{vgeodesic()} but this method returns the path element to
   connect the two points.
 \end{methoddesc}
 
 \section{Data\label{graph:data}}
 
+\declaremodule{}{graph.data}
+\modulesynopsis{graph data}
+
+The following classes provide data for the \method{plot()} method of a
+graph. The classes are implemented in \module{graph.data}.
+
+\begin{classdesc}{file}{filename,
+                        commentpattern=defaultcommentpattern,
+                        columnpattern=defaultcolumnpattern,
+                        stringpattern=defaultstringpattern,
+                        skiphead=0, skiptail=0, every=1, title=notitle,
+                        parser=dataparser(), context=\{\}, **columns}
+  This class reads data from a file and makes them available to the
+  graph system. \var{filename} is the name of the file to be read.
+  The data should be organized in columns.
+
+  The arguments \var{commentpattern}, \var{columnpattern}, and
+  \var{stringpattern} are responsible for identifying the data in each
+  line of the file. Lines matching \var{commentpattern} are ignored
+  except for the column name search of the last non-emtpy comment line
+  before the data. By default a line starting with one of the
+  characters \character{\#}, \character{\%}, or \character{!} are
+  treated as comments. A line is analysed by repeatingly matching
+  \var{stringpattern} and, whenever the stringpattern does not match
+  by \var{columnpattern}. When the \var{stringpattern} matches, the
+  result is taken as the value for the next column without further
+  transformations. When \var{columnpattern} matches, it is tried to
+  convert the result to a float. When this fails the result is taken
+  as a string as well. By default, you can write strings with spaces
+  surrounded by \character{\textquotedbl} immediately surrounded by
+  spaces or begin/end of line in the data file. Otherwise
+  \character{\textquotedbl} is not taken to be special.
+
+  \var{skiphead} and \var{skipfoot} are numbers of data lines to be
+  ignored at the beginning and end of the file while \var{every}
+  selects only every \var{every} line from the data.
+
+  \var{title} is the title of the data to be used in the graph key. A
+  default title is constructed out of \var{filename} and
+  \var{**columns}. You may set \var{title} to \code{None} to disable
+  the title.
+
+  \var{parser} is the parser for mathematical expression provided in
+  \var{**columns}. When in doubt, this is probably uninteresting for
+  you. \var{context} allows for accessing external variables and
+  functions when evaluating mathematical expressions for columns. As
+  an example you may use \code{context=locals()} or something similar.
+
+  Finally, \var{columns} defines the data columns. To make it a bit
+  more complicated, there are file column names and new created data
+  column names, namely the keywords of \var{**columns}. File column
+  names occure when the data file contains a comment line immediately
+  in front of the data. This line will be parsed skipping the comment
+  character (even if it occures multiple times) as if it would be
+  regular data, but it will not be converted to floats even if it
+  would be possible to convert them. The values of \var{**columns} can
+  refer to column numbers in the file (starting with \code{1}). The
+  column \code{0} is also available and contains the line number
+  starting from \code{1} not counting comment lines. Furthermore
+  values of \var{**columns} can be strings: file column names or
+  mathematical expressions. To refer to columns within mathematical
+  expressions you can also use file column names when they are valid
+  variable names or by the syntax \code{\$\textless
+  number\textgreater} or even \code{\$(\textless
+  expression\textgreater)}, where \code{\textless number\textgreater}
+  is a non-negative integer and \code{\textless
+  expression\textgreater} a valid mathematical expression itself. For
+  the later negative numbers count the columns from the end.
+  Example:
+  \begin{verbatim}
+graph.data.file("test.dat", a=1, b="B", c="2*B+$3")
+  \end{verbatim}
+  with \file{test.dat} looking like:
+  \begin{verbatim}
+# A   B C
+1.234 1 2
+5.678 3 4
+  \end{verbatim}
+  The columns with name \samp{a}, \samp{b}, \samp{c} will become
+  \samp{[1.234, 5.678]}, \samp{[1.0, 3.0]}, and \samp{[4.0, 10.0]},
+  respectively.
+
+  When creating the several data instances accessing the same file,
+  the file is read only once. There is an inherent caching of the
+  file contents.
+\end{classdesc}
+
+For the sake of completeness the default patterns:
+
+\begin{memberdesc}{defaultcommentpattern}
+  \code{re.compile(r\textquotedbl (\#+|!+|\%+)\e s*\textquotedbl)}
+\end{memberdesc}
+
+\begin{memberdesc}{defaultcolumnpattern}
+  \code{re.compile(r\textquotedbl\e \textquotedbl(.*?)\e \textquotedbl(\e s+|\$)\textquotedbl)}
+\end{memberdesc}
+
+\begin{memberdesc}{defaultstringpattern}
+  \code{re.compile(r\textquotedbl(.*?)(\e s+|\$)\textquotedbl)}
+\end{memberdesc}
+
+\begin{classdesc}{function}{expression, title=notitle,
+                            min=None, max=None, points=100,
+                            parser=mathtree.parser(),
+                            context=\{\}}
+  This class creates graph data from a function. \var{expression} is
+  the mathematical expression of the function. It must also contain
+  the result variable name by assignment. Thus a typical example looks
+  like \samp{y=sin(x)}.
+
+  \var{title} is the title of the data to be used in the graph key. By
+  default \var{expression} is used. You may set \var{title} to
+  \code{None} to disable the title.
+
+  \var{min} and \var{max} give the range of the variable. If not set
+  the range spans the hole axis range. The axis range might be set
+  explicitly or implicitly by ranges of other data. \var{points} is
+  the number of points for which the function is calculated. The
+  points are lineary choosen in terms of graph coordinates.
+
+  \var{parser} is the parser for the mathematical expression. When in
+  doubt, this is probably uninteresting for you. \var{context} allows
+  for accessing external variables and functions. As an example you
+  may use \code{context=locals()} or something similar.
+
+  Note when accessing external variables: When doing so, at first it
+  renders unclear, which of the variables should be used as the
+  dependent variable. The solution is, that there should be exactly
+  one variable, which is a valid and used axis name.
+  Example:
+  \begin{verbatim}
+  [graph.data.function("y=x**i", context=locals()) for i in range(1, 5)]
+  \end{verbatim}
+  The result of this expression could just be passed to a graphs
+  \method{plot()} method, since not only data instances but also lists
+  of data instances are allowed.
+\end{classdesc}
+
+\begin{classdesc}{paramfunction}{varname, min, max, expression,
+                                 title=notitle, points=100,
+                                 parser=mathtree.parser(),
+                                 context=\{\}}
+  This class creates graph data from a parametric function.
+  \var{varname} is the parameter of the function. \var{min} and
+  \var{max} give the range for that variable. \var{points} is the
+  number of points for which the function is calculated. The points
+  are choosen lineary in terms of the parameter.
+
+  \var{expression} is the mathematical expression for the parametric
+  function. It contains an assignment of a tuple of functions to a
+  tuple of variables.
+
+  \var{title} is the title of the data to be used in the graph key. By
+  default \var{expression} is used. You may set \var{title} to
+  \code{None} to disable the title.
+
+  \var{parser} is the parser for mathematical expression. When in
+  doubt, this is probably uninteresting for you. \var{context} allows
+  for accessing external variables and functions. As an example you
+  may use \code{context=locals()} or something similar.
+\end{classdesc}
+
+\begin{classdesc}{list}{points, title="user provided list",
+                        maxcolumns=None, addlinenumbers=1, **columns}
+  This class creates graph data from external provided data.
+  \var{points} is a list of lines, where each line is a list of data
+  values for the columns.
+
+  \var{title} is the title of the data to be used in the graph key.
+
+  \var{maxcolumn} is the number of columns in the points list. If set
+  to \code{None}, the number of columns will be calculated by cycling
+  through the points. Each element of \var{points}, \emph{i.e.} each
+  line, whill be checked and adjusted to the number of columns.
+
+  \var{addlinenumbers} is a boolean indicating whether line numbers
+  should be added or not. Note that the line numbers are storred in
+  column \code{0}. A transformation (see \class{data} below) will
+  always keep the first column. When not adding line numbers, you
+  should be aware, that the numbering in \var{**columns} becomes
+  different form the usual case, where the first column containing
+  data (not the line number) has column number \code{1}.
+
+  The keywords of \var{**columns} become the data column names. The
+  values are the column numbers starting from one, when
+  \var{addlinenumbers} is turned on (the zeroth column is the line
+  number then), while the column numbers starts from zero, when
+  \var{addlinenumbers} is switched off.
+\end{classdesc}
+
+\begin{classdesc}{data}{data, title=notitle, parser=dataparser(),
+                        context={}, **columns}
+  This class provides graph data out of other graph data. \var{data}
+  is the source of the data. All other paramters work like the equally
+  called parameters in \class{graph.data.file}. Indeed, the later is
+  build on top of this class by reading the file and caching its
+  contents in a \class{graph.data.list} instance. The columns are then
+  selected by creating new data out of the existing data. Note that
+  the data itself is not copied as long as no new columns need to be
+  calculated.
+\end{classdesc}
+
+\begin{classdesc}{conffile}{filename, title=notitle,
+                            parser=dataparser(), context={},
+                            **columns}
+  This class reads data from a config file with the file name
+  \var{filename}. The format of a config file is described within the
+  documentation of the \module{ConfigParser} module of the Python
+  Standard Library.
+
+  Each section of the config file becomes a data line. The options in
+  a section are the columns. The name of the options will be used as
+  file column names. All other parameters work as in
+  \var{graph.data.file} and \var{graph.data.data} since they all use
+  the same code.
+\end{classdesc}
+
 \section{Styles\label{graph:style}}
+
+\declaremodule{}{graph.style}
+\modulesynopsis{graph style}
 
 Please note that we're talking about graph styles here. Those are
 responsible for plotting symbols, lines, bars and whatever else into a
 graph. Do not mix it up with path styles like the line width, the line
 style (solid, dashed, dotted \emph{etc.}) and others.
+
+The following classes provide styles to be used at the \method{plot()}
+method of a graph. The classes are implemented in \module{graph.style}.
+
+\begin{classdesc}{symbolline}{symbol=changecross, size="0.2 cm",
+                              errorscale=0.5, symbolattrs=[],
+                              errorbarattrs=[], lineattrs=[],
+                              epsilon=1e-10}
+  This class provides a style for drawing symbols, lines and
+  errorbars. \var{symbol} refers to a (changable) symbol method (see
+  below). The symbol is drawn at size \var{size} (a visual \PyX{}
+  length; also changeable) using \var{symbolattrs}. \var{symbolattrs}
+  are merged with the decorator \class{deco.stroked}. \var{errorscale}
+  is the size of the error bars compared to the symbol size.
+  \var{errorbarattrs} and \var{lineattrs} are strokestyles for
+  stroking the errorbars and lines, respecively. \var{lineattrs} are
+  merged with \var{changelinestyle} (see below). \var{epsilon} is used
+  to determine, when a symbol is outside of the graph (in graph
+  coordinates).
+
+  \var{symbolline} is useable on graph with arbitrary dimension and
+  geometry. It needs data for each graph dimension. The data names
+  must be equal to an axis name. Furthermore there can be data names
+  constructed out of the axis names for identifying data for the error
+  bars. Suppose \code{X} is an axis name. Then \class{symbolline}
+  allows for the following data names as well:
+
+  \begin{tableii}{l|l}{}{data name}{description}
+    \lineii{\code{Xmin}}{minimal value}
+    \lineii{\code{Xmax}}{maximal value}
+    \lineii{\code{Xd}}{minimal and maximal delta}
+    \lineii{\code{Xdmin}}{minimal delta}
+    \lineii{\code{Xdmax}}{maximal delta}
+  \end{tableii}
+
+  Minimal and maximal values are calculated from delta by subtracting
+  and adding it to the value itself. Most of the data names are mutal
+  exclusive (whenever a minimal or maximal value would be set twice).
+\end{classdesc}
+
+\class{symbolline} provides some symbol methods, namely:
+
+\begin{methoddesc}{cross}{x_pt, y_pt, size_pt}
+  A cross. Should be used for stroking only.
+\end{methoddesc}
+
+\begin{methoddesc}{plus}{x_pt, y_pt, size_pt}
+  A plus. Should be used for stroking only.
+\end{methoddesc}
+
+\begin{methoddesc}{square}{x_pt, y_pt, size_pt}
+  A square. Might be stroked or filled or both.
+\end{methoddesc}
+
+\begin{methoddesc}{triangle}{x_pt, y_pt, size_pt}
+  A triangle. Might be stroked or filled or both.
+\end{methoddesc}
+
+\begin{methoddesc}{circle}{x_pt, y_pt, size_pt}
+  A circle. Might be stroked or filled or both.
+\end{methoddesc}
+
+\begin{methoddesc}{diamond}{x_pt, y_pt, size_pt}
+  A diamond. Might be stroked or filled or both.
+\end{methoddesc}
+
+\class{symbolline} provides some changeable symbol methods as class
+variables, namely:
+
+\begin{memberdesc}{changecross}
+  attr.changelist([cross, plus, square, triangle, circle, diamond])
+\end{memberdesc}
+
+\begin{memberdesc}{changeplus}
+  attr.changelist([plus, square, triangle, circle, diamond, cross])
+\end{memberdesc}
+
+\begin{memberdesc}{changesquare}
+  attr.changelist([square, triangle, circle, diamond, cross, plus])
+\end{memberdesc}
+
+\begin{memberdesc}{changetriangle}
+  attr.changelist([triangle, circle, diamond, cross, plus, square])
+\end{memberdesc}
+
+\begin{memberdesc}{changecircle}
+  attr.changelist([circle, diamond, cross, plus, square, triangle])
+\end{memberdesc}
+
+\begin{memberdesc}{changediamond}
+  attr.changelist([diamond, cross, plus, square, triangle, circle])
+\end{memberdesc}
+
+\begin{memberdesc}{changesquaretwice}
+  attr.changelist([square, square, triangle, triangle, circle, circle, diamond, diamond])
+\end{memberdesc}
+
+\begin{memberdesc}{changetriangletwice}
+  attr.changelist([triangle, triangle, circle, circle, diamond, diamond, square, square])
+\end{memberdesc}
+
+\begin{memberdesc}{changecircletwice}
+  attr.changelist([circle, circle, diamond, diamond, square, square, triangle, triangle])
+\end{memberdesc}
+
+\begin{memberdesc}{changediamondtwice}
+  attr.changelist([diamond, diamond, square, square, triangle, triangle, circle, circle])
+\end{memberdesc}
+
+\class{symbolline} provides two changeable decorators for alternated filling
+and stroking. Those are especially usefull in combination with the
+\method{change}-\method{twice}-symbol methods above. They are:
+
+\begin{memberdesc}{changestrokedfilled}
+  attr.changelist([deco.stroked, deco.filled])
+\end{memberdesc}
+
+\begin{memberdesc}{changefilledstroked}
+  attr.changelist([deco.filled, deco.stroked])
+\end{memberdesc}
+
+Finally, there is a changeable linestyle used by default. It is
+defined as:
+
+\begin{memberdesc}{changelinestyle}
+  attr.changelist([style.linestyle.solid, style.linestyle.dashed, style.linestyle.dotted, style.linestyle.dashdotted])
+\end{memberdesc}
+
+\begin{classdesc}{symbol}{symbol=changecross, size="0.2 cm",
+                          errorscale=0.5, symbolattrs=[],
+                          errorbarattrs=[], epsilon=1e-10}
+  This class provides a style for drawing symbols and errorbars.
+  It is equivalent to \class{symbollines} except that it does not
+  allow for lines. An instance of \class{symbol} is the default style
+  for all data classes described in section~\ref{graph:data} except
+  for \class{function} and \class{paramfunction}.
+\end{classdesc}
+
+\begin{classdesc}{lines}{errorbarattrs=[]}
+  This class provides a style for stroking lines. It is equivalent to
+  \class{symbollines} except that it does not allow for symbols and
+  errorbars. Thus it also does not accept data names for error bars.
+  Instances of \class{line} are the default style for the data classes
+  \class{function} and \class{paramfunction}.
+\end{classdesc}
 
 \section{Keys\label{graph:key}}
 
