@@ -24,6 +24,7 @@ PyX
     - testsuite
   - text module:
     - is it TODO for 0.2 ???
+    - running TeX "on the fly" is basically implemented
   - numerous bugfixes (remove detailed list?):
     - transformation bug (#624068, trafo module)
     - canvas transformations (canvas module???)

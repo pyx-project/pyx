@@ -1,9 +1,36 @@
 #!/usr/bin/env python
+#
+#
+# Copyright (C) 2002 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2002 André Wobst <wobsta@users.sourceforge.net>
+#
+# This file is part of PyX (http://pyx.sourceforge.net/).
+#
+# PyX is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# PyX is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PyX; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import os, struct
 
-# this code will be part of PyX 0.2 ... ;-)
+# this code will be part of PyX 0.2 (or 0.3, or ... ???)
 
+import os, threading, Queue, traceback, re, struct
+import graph, bbox
+
+###############################################################################
+# joergl would mainly work here ...
+
+###############################################################################
+# this is the old stuff
 _DVI_CHARMIN     =   0 # typeset a character and move right (range min)
 _DVI_CHARMAX     = 127 # typeset a character and move right (range max)
 _DVI_SET1234     = 128 # typeset a character and move right
@@ -88,7 +115,7 @@ class char_info_word:
         if self.width_index==0:
             raise TFMError, "width_index should not be zero"
 
-class binfile(file):
+class binfile(file): # TODO: we should not yet depend on python2.2
 
     def readint(self, bytes = 4, signed = 0):
         first = 1
@@ -512,7 +539,7 @@ class DVIFile:
 
             else: raise DVIError # unexpected reader state
 
-if __name__=="__main__":
+#if __name__=="__main__":
 #    cmr10 = Font("cmr10")
 #    print cmr10.charcoding
 #    print cmr10.fontfamily
@@ -525,7 +552,254 @@ if __name__=="__main__":
 #            cmr10.getdepth(charcode),
 #            cmr10.getitalic(charcode))
             
-    dvifile = DVIFile("test.dvi")
-    print [font for font in dvifile.fonts if font]
-    
-    
+#    dvifile = DVIFile("test.dvi")
+#    print [font for font in dvifile.fonts if font]
+
+# end of old stuff
+###############################################################################
+
+class dvifile:
+
+    def __init__(self, dvifilename):
+        self.dvifilename = dvifilename
+        print "dvifile(\"%s\") constructed, file can be opened now" % self.dvifilename
+
+    def write(self, file, page):
+        print "dvifile(\"%s\").write() for page %s called" % (self.dvifilename, page)
+        # insert postscript code into the file
+
+###############################################################################
+# wobsta would mainly work here ...
+
+class TexResultError(Exception):
+
+    def __init__(self, description, texrunner):
+        self.description = description
+        self.texrunner = texrunner
+
+    def __str__(self):
+        return ("%s\n" % self.description +
+                "The expression passed to TeX was:\n" +
+                "%s\n" % self.texrunner.expression +
+                "The return message from TeX was:\n"
+                "%s" % self.texrunner.texresult)
+
+class TexResultWarning(TexResultError): pass
+
+class texcheckres: pass
+
+class _texcheckresstart(texcheckres):
+
+    def check(self, texrunner):
+        if not texrunner.texresult.startswith("This is TeX, Version 3."):
+            raise TexResultError("TeX starting message missing", texrunner)
+        if texrunner.texresult.find("OK, entering \scrollmode...") == -1:
+            raise TexResultError("switching to scrollmode seemingly failed", texrunner)
+
+texcheckres.start = _texcheckresstart()
+
+class _readpipe(threading.Thread):
+
+    def __init__(self, pipe, expectqueue, gotevent, gotqueue):
+        threading.Thread.__init__(self)
+        self.setDaemon(1)
+        self.pipe = pipe
+        self.expect = None
+        self.expectqueue = expectqueue
+        self.gotevent = gotevent
+        self.gotqueue = gotqueue
+        self.start()
+
+    def run(self):
+        while 1:
+            read = self.pipe.readline()
+            try:
+                self.expect = self.expectqueue.get_nowait()
+            except Queue.Empty:
+                pass
+            if len(read):
+                self.gotqueue.put(read)
+            if self.expect is not None and read.find(self.expect) != -1:
+                self.expect = None
+                self.gotevent.set()
+
+
+class textbox(graph._rectbox):
+
+    def __init__(self, left, right, height, depth, texrunner, page):
+        graph._rectbox.__init__(self, -left, -depth, right, height)
+        self.texrunner = texrunner
+        self.page = page
+        # the following is temporary (for the bbox method)
+        self.left = left
+        self.right = right
+        self.height = height
+        self.depth = depth
+
+    def bbox(self):
+        # should be done within rectbox or alignbox (by the way, the name should be changed)
+        return bbox.bbox(-self.left, -self.depth, self.right, self.height)
+
+    def write(self, file):
+        self.texrunner.write(file, self.page)
+
+
+class TexRunsError(Exception): pass
+class TexDoneError(Exception): pass
+class TexNotInDefineModeError(Exception): pass
+
+
+class texrunner:
+
+    def __init__(self):
+        self.texruns = 0
+        self.texdone = 0
+        self.definemode = 1
+        self.mode = "tex"
+        self.docclass = "article"
+        self.docopt = None
+        self.auxfilename = None
+        self.waitfortex = 3
+        self.executeid = -1
+        self.page = -1
+        self.texfilename = "notemprightnow"
+        self.usefiles = None
+
+    def execute(self, expression, *checks):
+        if not self.texruns:
+            texfile = open("%s.tex" % self.texfilename, "w") # start with filename -> creates dvi file with that name
+            texfile.write("\\relax\n")
+            texfile.close()
+            self.texinput, self.texoutput = os.popen4("%s %s" % (self.mode, self.texfilename), "t", 0)
+            self.expectqueue = Queue.Queue()
+            self.gotevent = threading.Event()
+            self.gotqueue = Queue.Queue()
+            self.readoutput = _readpipe(self.texoutput, self.expectqueue, self.gotevent, self.gotqueue)
+            self.texruns = 1
+            olddefinemode = self.definemode
+            self.definemode = 1
+            # self.execute("\\raiseerror") # timeout test
+            self.execute("\\raiseerror%\ns\n" + # switch to nonstop-mode
+                         "\\def\\PyX{P\\kern-.3em\\lower.5ex\hbox{Y}\kern-.18em X}%\n" +
+                         "\\newbox\\PyXBox%\n" +
+                         "\\def\\ProcessPyXBox#1{%\n" +
+                         "\\immediate\\write16{PyXBox(page=#1," +
+                                                     "wd=\\the\\wd\\PyXBox," +
+                                                     "ht=\\the\\ht\\PyXBox," +
+                                                     "dp=\\the\\dp\\PyXBox)}%\n" +
+                         "{\\count0=80\\count1=121\\count2=88\\count3=#1\\shipout\\copy\\PyXBox}}%\n" +
+                         "\\def\\ProcessPyXFinished#1{\\immediate\\write16{ProcessPyXFinishedMarker(#1)}}",
+                         texcheckres.start)
+            os.remove("%s.tex" % self.texfilename)
+            if self.mode == "latex":
+                if self.docopt is not None:
+                    self.execute("\\documentclass[%s]{%s}" % (self.docopt, self.docclass))
+                else:
+                    self.execute("\\documentclass{%s}" % self.docclass)
+            self.definemode = olddefinemode
+        self.executeid += 1
+        if expression is not None:
+            self.expectqueue.put("ProcessPyXFinishedMarker(%i)" % self.executeid)
+            if self.definemode:
+                self.expression = ("%s%%\n" % expression +
+                                   "\\ProcessPyXFinished{%i}%%\n" % self.executeid)
+            else:
+                self.page += 1
+                self.expression = ("\\setbox\\PyXBox=\\hbox{{%s}}%%\n" % expression +
+                                   "\\ProcessPyXBox{%i}%%\n" % self.page +
+                                   "\\ProcessPyXFinished{%i}%%\n" % self.executeid)
+            self.texinput.write(self.expression)
+        else:
+            self.expectqueue.put("Transcript written on %s.log" % self.texfilename)
+            if self.mode == "latex":
+                self.expression = "\\end{document}\n"
+            else:
+                self.expression = "\\end\n"
+            self.texinput.write(self.expression)
+        self.gotevent.wait(self.waitfortex)
+        nogotevent = not self.gotevent.isSet()
+        self.gotevent.clear()
+        try:
+            self.texresult = ""
+            while 1:
+                self.texresult += self.gotqueue.get_nowait()
+        except Queue.Empty:
+            pass
+        if nogotevent:
+            raise TexResultError("TeX didn't respond as expected within %i seconds." % self.waitfortex, self)
+        else:
+            for check in checks:
+                try:
+                    check.check(self)
+                except TexResultWarning:
+                    traceback.print_exc()
+        if expression is None:
+            self.texruns = 0
+            self.texdone = 1
+
+    def write(self, file, page):
+        if not self.texdone:
+            self.page += 1
+            _default.execute(None)
+            self.dvifile = dvifile(self.texfilename)
+        return self.dvifile.write(file, page)
+
+    def set(self, mode=None, waitfortex=None):
+        if self.texruns:
+            raise TexRunsError
+        if self.texdone:
+            raise TexDoneError
+        if mode is not None:
+            if mode != "tex" and mode != "latex":
+                raise ValueError("mode \"tex\" or \"latex\" expected")
+            self.mode = mode
+        if waitfortex is not None:
+            self.waitfortex = waitfortex
+
+    def define(self, expression, *args):
+        if self.texdone:
+            raise TexDoneError
+        if not self.definemode:
+            raise TexNotInDefineModeError
+        self.execute(expression)
+
+    PyXBoxPattern = re.compile(r"PyXBox\(page=(?P<page>\d+),wd=(?P<wd>-?\d*((\d\.?)|(\.?\d))\d*)pt,ht=(?P<ht>-?\d*((\d\.?)|(\.?\d))\d*)pt,dp=(?P<dp>-?\d*((\d\.?)|(\.?\d))\d*)pt\)")
+
+    def text(self, expression, *args):
+        if self.texdone:
+            raise TexDoneError
+        if self.definemode:
+            if self.mode == "latex":
+                self.execute("\\begin{document}")
+            self.definemode = 0
+        self.execute(expression)
+        match = self.PyXBoxPattern.search(self.texresult)
+        if not match or int(match.group("page")) != self.page:
+            raise TexResultError("box extents not found", self)
+        else:
+            left = 0
+            right, height, depth = map(lambda x: float(x) * 72.0 / 72.27, match.group("wd", "ht", "dp"))
+        return textbox(left, right, height, depth, self, self.executeid)
+
+_default = texrunner()
+set = _default.set
+define = _default.define
+text = _default.text
+
+###############################################################################
+
+if __name__=="__main__":
+
+    res1 = text("\\hbox{$x$}")
+    print res1.bbox()
+    res2 = text("test")
+    res3 = text("bla")
+    print res2.bbox()
+    print res3.bbox()
+
+    # res*.collectfontheader ???
+    res1.write(None)
+    res3.write(None)
+    res2.write(None)
+
+
