@@ -29,8 +29,6 @@ TODO:
     - introduce xscale for scaling the TeX output
   - mathtree module:
      - consider rewrite using the python compiler module
-  - bbox module:
-     - we should not support None arguments for llx, lly, urx, and ury anymore
   - path module:
     - reverse needs to be fixed
     - _lentopar return value should not contain total length (or at least
