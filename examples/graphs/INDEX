@@ -2,6 +2,7 @@ minimal
 errorbar
 lissajous
 piaxis
+symbolline
 manyaxes
 inset
 link
