@@ -822,14 +822,20 @@ class parser:
         self.MathTreeVals = MathTreeVals
 
     def parse(self, str):
+        return self.old_parse(str)
+
+    def old_parse(self, str):
+        self.isnewparser = 0
         return self.ParseMathTree(ParseStr(str))
-#    def parse(self, str): # XXX wieder umkommentiert, damit es erstmal läuft <wobsta>
-#        # prepare raw string:
-#        # "^" -> "**"
-#        thestr = re.sub("^\s*", "", str)
-#        thestr = re.sub("\^","**", thestr) # to be removed <joergl>
-#        thestr = re.sub("\$","_col_", thestr)
-#        return self.astseq2mtree(pythonparser.expr(thestr).totuple())
+
+    def new_parse(self, str):
+        self.isnewparser = 1
+        # prepare raw string:
+        # "^" -> "**"
+        thestr = re.sub("^\s*", "", str)
+        thestr = re.sub("\^","**", thestr) # to be removed <joergl>
+        thestr = re.sub("\$","_col_", thestr)
+        return self.astseq2mtree(pythonparser.expr(thestr).totuple())
 
     def ParseMathTree(self, arg):
         Tree = None
