@@ -496,7 +496,7 @@ class arrow(_style):
     defaultlineattrs = []
     defaultarrowattrs = []
 
-    def __init__(self, linelength="0.25 v cm", arrowsize="0.15 v cm", lineattrs=[], arrowattrs=[], epsilon=1e-10):
+    def __init__(self, linelength="0.25 cm", arrowsize="0.15 cm", lineattrs=[], arrowattrs=[], epsilon=1e-10):
         self.linelength_str = linelength
         self.arrowsize_str = arrowsize
         self.lineattrs = lineattrs
@@ -540,7 +540,7 @@ class arrow(_style):
             for point in data.points:
                 xpos, ypos = graph.pos_pt(point[data.xindex], point[data.yindex], xaxis=data.xaxis, yaxis=data.yaxis)
                 if point[data.sizeindex] > self.epsilon:
-                    dx = math.cos(point[data.angleindex]*math.pi/180.0)
+                    dx = math.cos(point[data.angleindex]*math.pi/180)
                     dy = math.sin(point[data.angleindex]*math.pi/180)
                     x1 = xpos-0.5*dx*linelength_pt*point[data.sizeindex]
                     y1 = ypos-0.5*dy*linelength_pt*point[data.sizeindex]
