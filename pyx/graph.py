@@ -22,6 +22,11 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+
+# TODO: - switch from moveto, lineto to _moveto, _lineto, which expect there
+#         coordinates in pts. This avoids an unnecessary conversion step.
+#       - related to the above: kill "from path import *"
+
 from path import *
 import types, re, tex, unit, math
 from math import log, exp, sqrt, pow
