@@ -359,7 +359,7 @@ class arct(pathel):
                                              canvas.unit.pt(self.r) ) )
 
     def bbox(self, canvas, currentpoint, currentsubpath):
-        return (currentpoint, currentsubpath, bbox(0,0,300,300))
+        return (currentpoint, currentsubpath, bbox(100,200,150,300))
     
     def _bpath(self, currentpoint, currentsubpath):
         # direction and length of tangent 1
@@ -374,37 +374,42 @@ class arct(pathel):
 
         # intersection angle between two tangents
         alpha = math.acos((dx1*dx2+dy1*dy2)/(l1*l2))
-        calpha2 = cos(alpha/2)
+        cotalpha2 = 1.0/math.tan(alpha/2)
 
         # two tangent points
-        xt1 = self.x1+dx1*self.r*calpha2/l1
-        yt1 = self.y1+dy1*self.r*calpha2/l1
-        xt2 = self.x1+dx2*self.r*calpha2/l2
-        yt2 = self.y1+dy2*self.r*calpha2/l2
+        xt1 = self.x1+dx1*self.r*cotalpha2/l1
+        yt1 = self.y1+dy1*self.r*cotalpha2/l1
+        xt2 = self.x1+dx2*self.r*cotalpha2/l2
+        yt2 = self.y1+dy2*self.r*cotalpha2/l2
 
         # direction of center of arc 
-        rx = 0.5*(xt1+xt2)-self.x1
-        ry = 0.5*(yt1+yt2)-self.y1
+        rx = self.x1-0.5*(xt1+xt2)
+        ry = self.y1-0.5*(yt1+yt2)
         lr = math.sqrt(rx*rx+ry*ry)
+
+        # angle around which arc is centered
+
         if rx==0:
             phi=90
-        elif rx<0:
+        elif rx>0:
             phi = math.atan(ry/rx)/math.pi*180
         else:
-            phi = math.atan(ry/rx)/math.pi*180-180
+            phi = math.atan(rx/ry)/math.pi*180+180
 
+        # half angular width of arc 
+        deltaphi = 90*(1-alpha/math.pi)
 
-        # center of arc
-        mx = self.x1+rx*self.r/(lr*sin(alpha/2))
-        my = self.y1+ry*self.r/(lr*sin(alpha/2))
-        
+        # center position of arc
+        mx = self.x1-rx*self.r/(lr*sin(alpha/2))
+        my = self.y1-ry*self.r/(lr*sin(alpha/2))
+
         return ((xt2, yt2),
                 currentsubpath or (xt2, yt2),
                 bline(currentpoint[0], currentpoint[1], xt1, yt1) +
                 arc(mx, my,
                     self.r,
-                    phi-alpha/math.pi*45,
-                    phi+alpha/math.pi*45)._bpath(None, None)[2] )
+                    phi-deltaphi,
+                    phi+deltaphi)._bpath(None, None)[2] )
 
 	
 class curveto(pathel):
