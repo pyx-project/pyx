@@ -44,10 +44,10 @@ bbpattern = re.compile( r"^%%BoundingBox:\s+([+-]?\d+)\s+([+-]?\d+)\s+([+-]?\d+)
 
 class epsfile:
 
-    def __init__(self, epsname, x, y, clip = 1):
-        self.epsname = epsname
+    def __init__(self, x, y, epsname, clip = 1):
         self.x       = x
         self.y       = y
+        self.epsname = epsname
         self.clip    = clip
         self._ReadEPSBoundingBox()                         
 
@@ -80,7 +80,7 @@ class epsfile:
 	    assert "cannot open EPS file"	                          # TODO: Fehlerbehandlung
 
 
-        if self.clipping:
+        if self.clip:
             return """BeginEPSF
 %f %f translate
 %f %f translate 
@@ -268,8 +268,8 @@ class canvas:
            self._grestore()
         return self
 
-    def inserteps(self, x, y, filename, clipping=1):
-        self._PSAddCmd(str(epsfile(filename, x, y, clipping)))
+    def inserteps(self, x, y, filename, clip=1):
+        self._PSAddCmd(str(epsfile(x, y, filename, clip)))
         return self
         
     def write(self, filename, width, height, **kwargs):
