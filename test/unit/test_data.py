@@ -26,7 +26,7 @@ class DataTestCase(unittest.TestCase):
     def testAdd(self):
         mydata = data.data([[1], [2]], ["a"])
         mydata.addcolumn("b=2*a")
-        mydata.addcolumn("2*$1*a")
+        mydata.addcolumn("2*$(i)*a", context={"i":1})
         assert mydata.titles == ["a", "b", None]
         assert mydata.data == [[1, 2.0, 4.0], [2, 4.0, 16.0]]
 
@@ -35,9 +35,9 @@ class DataTestCase(unittest.TestCase):
         f = lambda x: x*x
         mydata = data.data([[1], [2]], ["a"])
         mydata.addcolumn("b=two*a", context=locals())
-        mydata.addcolumn("two*$-1*a", context=locals())
         mydata.addcolumn("two*$(-1)*a", context=locals())
-        mydata.addcolumn("f($-1)", context=locals())
+        mydata.addcolumn("two*$(-1)*a", context=locals())
+        mydata.addcolumn("f($(-1))", context=locals())
         assert mydata.titles == ["a", "b", None, None, None]
         assert mydata.data == [[1, 2.0, 4.0, 8.0, 64.0], [2, 4.0, 16.0, 64.0, 4096.0]]
 
