@@ -17,16 +17,12 @@ public:
 	scp -oCompression=yes -r build/* $(publicserver):$(publicpath)
 	-ssh $(publicserver) "cd $(publicpath); chmod -fR g+w *"
 
-build: htmlfiles always
+build: always
 	cp $(imagefiles) $(cssfiles) build
 	cp png/*.png ../manual/manual.pdf ../faq/pyxfaq.pdf build
 	cp -r ../manual/manual build
 	for d in "" $(shell grep / ../examples/INDEX); do cp ../examples/$$d*.png ../examples/$$d*.eps build/examples/$$d; done
-
-htmlfiles: $(htmlfiles)
-
-%.html: $(wildcard *.pt) pt2html.py
-	PYTHONPATH=/usr/src/ZopeCVS/Zope3/src:~/bin/python/Zope3/src ./pt2html.py $@
+	PYTHONPATH=~/bin/python/Zope3/src ./pt2html.py
 
 always:
 	@# just ensure to always build new even when the directory already exists

@@ -1,10 +1,19 @@
+<span metal:define-macro="navlink" tal:omit-tag="">
+  <span tal:condition="python: options['pagename'] != htmlname" tal:omit-tag="">
+    <a tal:attributes="href python: options['mkrellink'](htmlname, options)" tal:content="navname">navname</a>
+  </span>
+  <span tal:condition="python: options['pagename'] == htmlname" tal:omit-tag="">
+    <span tal:content="navname">navname</span>
+  </span>
+</span>
+
 <html metal:define-macro="page">
 
   <head>
     <title>PyX - Python graphics package</title>
-    <link rel="shortcut icon" href="pyx.ico" type="image/x-icon">
-    <link rel="stylesheet" type="text/css" href="main.css">
-    <link rel="stylesheet" type="text/css" tal:attributes="href python:options['mkrellink']('main.css', options)">
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+    <link rel="shortcut icon" type="image/x-icon" tal:attributes="href python: options['mkrellink']('pyx.ico', options)">
+    <link rel="stylesheet" type="text/css" tal:attributes="href python: options['mkrellink']('main.css', options)">
   </head>
 
   <body>
@@ -14,23 +23,24 @@
     <div id="navigation">
 
       <div class="logo">
-        <a href="http://pyx.sourceforge.net/"><img alt="PyX" src="pyxlogo.png"></a>
+        <a href="http://pyx.sourceforge.net/"><img alt="PyX" width=121 height=65 tal:attributes="src python: options['mkrellink']('pyxlogo.png', options)"></a>
       </div>
 
       <div class="box">
         <div class="title">Navigation</div>
-        <div class="link"><a tal:attributes="href python:options['mkrellink']('index.html', options)">Home</a></div>
-        <div class="link"><a href="news.html">News</a></div>
-        <div class="link"><a href="roadmap.html">Roadmap</a></div>
-        <div class="link"><a href="documentation.html">Documentation</a></div>
-        <div class="link"><a href="examples/index.html">Examples</a></div>
-        <div class="sublink">- <a href="examples/index.html">Examples1</a></div>
-        <div class="sublink">- <a href="examples/index.html">Examples2</a></div>
-        <div class="link"><a href="license.html">License</a></div>
+        <div class="link" tal:define="htmlname python: 'index.html'; navname python: 'Home'"><span metal:use-macro="options/maintemplate/macros/navlink"></span></div>
+        <div class="link" tal:define="htmlname python: 'news.html'; navname python: 'News'"><span metal:use-macro="options/maintemplate/macros/navlink"></span></div>
+        <div class="link" tal:define="htmlname python: 'roadmap.html'; navname python: 'Roadmap'"><span metal:use-macro="options/maintemplate/macros/navlink"></span></div>
+        <div class="link" tal:define="htmlname python: 'documentation.html'; navname python: 'Documentation'"><span metal:use-macro="options/maintemplate/macros/navlink"></span></div>
+        <div class="link" tal:define="htmlname python: 'examples/index.html'; navname python: 'Examples'"><span metal:use-macro="options/maintemplate/macros/navlink"></span></div>
+        <span tal:repeat="item options/examplepages" tal:omit-tag="">
+          <div class="sublink" tal:define="htmlname python: 'examples/'+item+'/index.html'; navname python: item.title()">- <span metal:use-macro="options/maintemplate/macros/navlink"></span></div>
+        </span>
+        <div class="link" tal:define="htmlname python: 'license.html'; navname python: 'License'"><span metal:use-macro="options/maintemplate/macros/navlink"></span></div>
       </div>
 
       <div class="box">
-        <div class="title">SF Resources</div>
+        <div class="title">SourceForge Resources</div>
         <div class="link"><a href="http://sourceforge.net/project/showfiles.php?group_id=45430">Downloads</a></div>
         <div class="link"><a href="http://sourceforge.net/mail/?group_id=45430">Mailing lists</a></div>
         <div class="link"><a href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/pyx/pyx/CHANGES?rev=HEAD&amp;content-type=text/vnd.viewcvs-markup">ChangeLog</a></div>
@@ -49,11 +59,11 @@
       </div>
 
       <div class="w3clink">
-        <a href="http://validator.w3.org/check/referer"><img alt="Valid HTML 4.01!" width=88 height=31 src="valid-html401.png"></a>
+        <a href="http://validator.w3.org/check/referer"><img alt="Valid HTML 4.01!" width=88 height=31 tal:attributes="src python: options['mkrellink']('valid-html401.png', options)"></a>
       </div>
 
       <div class="w3clink">
-        <a href="http://jigsaw.w3.org/css-validator/check/referer"><img alt="Valid CSS!" width=88 height=31 src="vcss.png"></a>
+        <a href="http://jigsaw.w3.org/css-validator/check/referer"><img alt="Valid CSS!" width=88 height=31 tal:attributes="src python: options['mkrellink']('vcss.png', options)"></a>
       </div>
     </div>
 

@@ -2,32 +2,33 @@
             "http://www.w3.org/TR/html4/strict.dtd">
 <html metal:use-macro="options/maintemplate/macros/page">
 
-<div metal:fill-slot="body">
+  <div metal:fill-slot="body">
 
-<h1>PyX - Examples</h1>
+    <h1>PyX - Examples</h1>
 
-<p tal:condition="options/abstract" tal:content="options/abstract">
-    We might have a short abstract about the examples shown on this page.
-</p>
+    <p tal:condition="options/abstract" tal:content="options/abstract">
+      We might have a short abstract about the examples shown on this page.
+    </p>
 
-<span class="example" tal:repeat="example options/examples">
-  <div style="border-top:1px solid #88a;margin-bottom:10px;" tal:condition="python: options['abstract'] or not repeat['example'].start()"></div>
-  <h2 tal:content="example/name">Name</h2>
-  <div style="text-align:center;">
-  <a href="link" tal:attributes="href example/eps"><img src="example.png" alt="example" tal:attributes="src example/png"></a>
-  </div>
-  <br>
-  <div tal:content="structure example/code" style="margin-bottom:10px;">Code</div>
-</span>
-
-<div style="border-top:1px solid #88a;margin-bottom:10px;" tal:condition="python: options['pagename'] == 'examples/index.html'">
-  <p>Further examples are available on separate pages:
-    <span tal:repeat="item options/examplepages" tal:omit-tag="">
-      <a tal:attributes="href python:item+'/index.html'" tal:content="item">Examples</a><span tal:omit-tag="" tal:condition="not: repeat/item/end">,</span>
+    <span class="example" tal:repeat="example options/examples" tal:omit-tag="">
+      <div class="exampleseparator" tal:condition="python: options['abstract'] or not repeat['example'].start()"></div>
+      <h2 tal:content="example/name">Name</h2>
+      <div class="exampleimage">
+        <a href="link" tal:attributes="href example/eps"><img tal:attributes="alt example/png; src example/png; width example/width; height example/height"></a>
+      </div>
+      <div class="examplecode" tal:content="structure example/code">Code</div>
     </span>
-  </p>
-</div>
 
-</div>
+    <span tal:condition="python: options['pagename'] == 'examples/index.html'">
+      <div class="exampleseparator"></div>
+      <h2>Further examples</h2>
+      <p>
+        Further examples are available on separate pages:
+        <span tal:repeat="item options/examplepages" tal:omit-tag=""><a tal:attributes="href python:item+'/index.html'" tal:content="python: item.title()">Examples</a><span tal:omit-tag="" tal:condition="not: repeat/item/end">,</span></span>.
+      </p>
+    </span>
+
+  </div>
 
 </html>
+<!-- vim:set syntax=html: -->

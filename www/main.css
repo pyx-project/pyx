@@ -188,3 +188,43 @@ a:hover {
         background-color: #dcf;
 }
 
+#content .exampleseparator {
+        margin-bottom: 15px;
+        border-bottom: 1px solid #88a;
+}
+
+#content .exampleimage {
+        padding-bottom: 15px;
+        text-align: center;
+}
+
+#content .examplecode {
+        padding-bottom: 15px;
+}
+
+/* python syntax */
+
+#python .number {
+        color: #08c;
+}
+
+#python .op {
+        color: #00c;
+}
+
+#python .string {
+        color: #048;
+}
+
+#python .comment {
+        color: #080;
+}
+
+#python .name {
+        color: #000;
+}
+
+#python .keyword {
+        color: #c00;
+}
+
