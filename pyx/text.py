@@ -428,11 +428,11 @@ class parbox_pt(attr.sortbeforeexclusiveattr, textattr):
 
     def apply(self, expr):
         if self.baseline == self.top:
-            return r"\linewidth%.5ftruept\vtop{\hsize\linewidth{%s}}" % (self.width * 72.27 / 72, expr)
+            return r"\linewidth%.5ftruept\vtop{\hsize\linewidth{}%s}" % (self.width * 72.27 / 72, expr)
         elif self.baseline == self.middle:
-            return r"\linewidth%.5ftruept\setbox\PyXBoxVBox=\hbox{{\vtop{\hsize\linewidth{%s}}}}\PyXDimenVBox=0.5\dp\PyXBoxVBox\setbox\PyXBoxVBox=\hbox{{\vbox{\hsize\linewidth{%s}}}}\advance\PyXDimenVBox by -0.5\dp\PyXBoxVBox\lower\PyXDimenVBox\box\PyXBoxVBox" % (self.width, expr, expr)
+            return r"\linewidth%.5ftruept\setbox\PyXBoxVBox=\hbox{{\vtop{\hsize\linewidth{}%s}}}\PyXDimenVBox=0.5\dp\PyXBoxVBox\setbox\PyXBoxVBox=\hbox{{\vbox{\hsize\linewidth{}%s}}}\advance\PyXDimenVBox by -0.5\dp\PyXBoxVBox\lower\PyXDimenVBox\box\PyXBoxVBox" % (self.width, expr, expr)
         elif self.baseline == self.bottom:
-            return r"\linewidth%.5ftruept\vbox{\hsize\linewidth{%s}}" % (self.width * 72.27 / 72, expr)
+            return r"\linewidth%.5ftruept\vbox{\hsize\linewidth{}%s}" % (self.width * 72.27 / 72, expr)
         else:
             RuntimeError("invalid baseline argument")
 
@@ -827,7 +827,7 @@ class texrunner:
                          "\\ht\\PyXBoxHAligned0pt%\n" # baseline alignment (hight to zero)
                          "{\\count0=80\\count1=121\\count2=88\\count3=#2\\shipout\\box\\PyXBoxHAligned}}%\n" # shipout PyXBox to Page 80.121.88.<page number>
                          "\\def\\PyXInput#1{\\immediate\\write16{PyXInputMarker:executeid=#1:}}%\n" # write PyXInputMarker to stdout
-                         "\\def\\PyXMarker#1{\\special{PyX:marker #1}}%\n", # write PyXMarker special into the dvi-file
+                         "\\def\\PyXMarker#1{\\hskip0pt\\special{PyX:marker #1}}%\n", # write PyXMarker special into the dvi-file
                          self.defaulttexmessagesstart + self.texmessagesstart)
             os.remove("%s.tex" % self.texfilename)
             if self.mode == "tex":
