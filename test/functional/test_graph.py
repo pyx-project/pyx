@@ -11,10 +11,10 @@ def test_multiaxes_data(c, x, y):
     g = c.insert(graph.graphxy(x, y, height=5, key=graph.key.key(pos="tl"),
                                x=graph.axis.log(title="$W$", manualticks=[graph.axis.tick.tick(math.sqrt(8)*100, label="?"), graph.axis.tick.tick(math.sqrt(8), label="$\sqrt{8}$")]),
                                y=graph.axis.log(title=r"$PPP_1$",
-                                               painter=graph.axis.painter.plain(titledirection=None)),
+                                               painter=graph.axis.painter.regular(titledirection=None)),
                                y2=graph.axis.log(title="$P_2$"),
                                y3=graph.axis.log(title="$PPP_3$",
-                                                painter=graph.axis.painter.plain(titledirection=graph.axis.painter.rotatetext(45), gridattrs=[color.palette.RedGreen]),
+                                                painter=graph.axis.painter.regular(titledirection=graph.axis.painter.rotatetext(45), gridattrs=[color.palette.RedGreen]),
                                                 texter=graph.axis.texter.decimal(equalprecision=1)),
                                y5=graph.axis.log(title="$P_5$")))
     g.plot((graph.data.file("data/testdata", x=1, y="sqrt(sqrt($3))", title="mytitle"),
@@ -73,7 +73,7 @@ def test_allerrorbars(c, x, y):
 def test_split(c, x, y):
     g = c.insert(graph.graphxy(x, y, height=5, width=5,
                                x=graph.axis.log(),
-                               y=graph.axis.split((graph.axis.lin(min=0, max=0.005, painter=graph.axis.painter.plain()), graph.axis.lin(min=0.01, max=0.015), graph.axis.lin(min=0.02, max=0.025)), title="axis title", splitlist=(None, None), relsizesplitdist=0.005)))
+                               y=graph.axis.split((graph.axis.lin(min=0, max=0.005, painter=graph.axis.painter.regular()), graph.axis.lin(min=0.01, max=0.015), graph.axis.lin(min=0.02, max=0.025)), title="axis title", splitlist=(None, None), relsizesplitdist=0.005)))
     g.plot(graph.data.file("data/testdata", x=1, y=3))
     g.finish()
 
