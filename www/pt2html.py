@@ -36,7 +36,7 @@ maintemplate = PageTemplateFromFile("maintemplate.pt")
 pagename = sys.argv[1]
 if pagename.endswith(".pt"): pagename = pagename[:-3]
 
-examples = [example("hello"), 
+examples = [example("hello"),
             example("latex"),
             example("pattern"),
             example("vector"),
@@ -47,6 +47,7 @@ examples = [example("hello"),
             example("graphs/minimal"),
             example("graphs/lissajous"),
             example("graphs/piaxis"),
+            example("graphs/manyaxes"),
             example("graphs/bar"),
             example("graphs/arrows"),
             example("graphs/integral"),
