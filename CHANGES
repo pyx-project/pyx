@@ -56,6 +56,8 @@ TODO:
      - added inplace add (__iadd__), enlarge and transform methods
      - callers use inplace add where possible now (yielding a considerable
        speedup)
+    - "undefined" corners of bounding boxes are no longer supported which makes
+      the bounding box operations much more efficient.
   - attr module:
     - TODO: general documentation about attributes, clearing, merging?
     - TODO: general documentation about changeable attributes?
@@ -66,9 +68,6 @@ TODO:
     - default handling of texmessages as in the new attribute scheme
   - examples:
     - mandel.py (contributed by Stephen Phillips)
-  - bbox module:
-    - "undefined" corners of bounding boxes are no longer supported which makes
-      the bounding box operations much more efficient.
 
 0.5.1 (2004/01/22):
   - distribution:
