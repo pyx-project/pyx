@@ -28,8 +28,9 @@ g.plot(data.function("y(x)=x*sin(x**2)"),
                            symbolattrs=[deco.filled([color.rgb.green]),
                                         deco.stroked([color.rgb.red])])])
 
+# manually typeset "0" near the origin
 g.dolayout()
 x0, y0 = g.pos(0, 0)
-g.text(x0-0.2, y0-0.2, "0", [text.halign.right, text.valign.top])
+g.text(x0 - 0.2, y0 - 0.2, "0", [text.halign.right, text.valign.top])
 
 g.writeEPSfile(__file__[:-3])
