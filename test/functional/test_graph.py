@@ -57,10 +57,10 @@ def test_ownmark(c, x, y):
     g.plot(graph.data(data.data([[-1, 1], [5, 2], [11, 5], [5, 11], [4, -1]]), x=0, y=1), graph.line(lineattrs=[color.rgb.red]))
     g.finish()
 
-    p1=line1.line
-    p2=line2.line.reversed()
-    p3=line3.line.reversed()
-    p4=line4.line
+    p1=line1.path
+    p2=line2.path.reversed()
+    p3=line3.path.reversed()
+    p4=line4.path
     (seg1a,), (seg2a,) = p1.intersect(p2)
     (seg2b,), (seg3b,) = p2.intersect(p3)
     (seg3c,), (seg4c,) = p3.intersect(p4)

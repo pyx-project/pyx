@@ -8,11 +8,11 @@ yax = graph.linaxis(min=-1.3, max=1.3, painter=None)
 g = graph.graphxy(width=10, ratio=2, x=xax, y=yax)
 fline = g.plot(graph.function("y=sin(1.0/(x**2+0.02122))", points=1000))
 horiz = g.plot(graph.function("y=0.5*x", points=2))
-g.dodata()
+g.finish()
 
 # convert paths to normpaths (for efficiency reasons only)
-fline = path.normpath(fline.style.path)
-horiz = path.normpath(horiz.style.path)
+fline = path.normpath(fline.path)
+horiz = path.normpath(horiz.path)
 # intersect the lines
 splith, splitf = horiz.intersect(fline)
 

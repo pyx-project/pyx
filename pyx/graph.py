@@ -1537,7 +1537,8 @@ class pathaxispos(_axispos):
     def __init__(self, p, convert, direction=1):
         self.path = p
         self.normpath = path.normpath(p)
-        self.arclength = self.normpath.arclength()
+        self.arclength_pt = self.normpath.arclength_pt()
+        self.arclength = unit.t_pt(self.arclength_pt)
         _axispos.__init__(self, convert)
         self.direction = direction
 
@@ -1557,14 +1558,12 @@ class pathaxispos(_axispos):
         return None
 
     def vtickpoint_pt(self, v):
-        # XXX: path._at missing!
-        return [unit.topt(x) for x in self.normpath.at(self.normpath.lentopar(v * self.arclength))]
+        return self.normpath.at_pt(self.normpath.lentopar(v * self.arclength))
 
     def vtickdirection(self, v):
         t = self.normpath.tangent(self.normpath.lentopar(v * self.arclength))
-        # XXX: path._begin and path._end missing!
-        tbegin = [unit.topt(x) for x in t.begin()]
-        tend = [unit.topt(x) for x in t.end()]
+        tbegin = t.begin_pt()
+        tend = t.end_pt()
         dx = tend[0]-tbegin[0]
         dy = tend[1]-tbegin[1]
         norm = math.sqrt(dx*dx + dy*dy)
@@ -2250,7 +2249,7 @@ class _axis:
             self.min = min
         if not self.fixmax and max is not None and (self.max is None or max > self.max):
             self.max = max
-        if None not in (self.min, self.max):
+        if None not in (self.min, self.max) and self.min != self.max:
             self.canconvert = 1
             if self.reverse:
                 self.setbasepoints(((self.min, 1), (self.max, 0)))
@@ -3766,7 +3765,7 @@ class symbolline(_style):
         if data.errorbarattrs is not None:
             # TODO: bbox shortcut
             errorbarcanvas = graph.insert(canvas.canvas())
-        data.line = path.path()
+        data.path = path.path()
         linebasepoints = []
         lastvpos = None
         errorlist = []
@@ -3879,13 +3878,13 @@ class symbolline(_style):
                 lastvpos = None
 
             if not validvpos:
-                # add baselinepoints to data.line
+                # add baselinepoints to data.path
                 if len(linebasepoints) > 1:
-                    data.line.append(path.moveto_pt(*linebasepoints[0]))
+                    data.path.append(path.moveto_pt(*linebasepoints[0]))
                     if len(linebasepoints) > 2:
-                        data.line.append(path.multilineto_pt(linebasepoints[1:]))
+                        data.path.append(path.multilineto_pt(linebasepoints[1:]))
                     else:
-                        data.line.append(path.lineto_pt(*linebasepoints[1]))
+                        data.path.append(path.lineto_pt(*linebasepoints[1]))
                 linebasepoints = []
 
             # errorbar loop over the different direction having errorbars
@@ -3966,17 +3965,17 @@ class symbolline(_style):
                     if len(errorpath.path):
                         errorbarcanvas.stroke(errorpath, data.errorbarattrs)
 
-        # add baselinepoints to data.line
+        # add baselinepoints to data.path
         if len(linebasepoints) > 1:
-            data.line.append(path.moveto_pt(*linebasepoints[0]))
+            data.path.append(path.moveto_pt(*linebasepoints[0]))
             if len(linebasepoints) > 2:
-                data.line.append(path.multilineto_pt(linebasepoints[1:]))
+                data.path.append(path.multilineto_pt(linebasepoints[1:]))
             else:
-                data.line.append(path.lineto_pt(*linebasepoints[1]))
+                data.path.append(path.lineto_pt(*linebasepoints[1]))
 
-        # stroke data.line
+        # stroke data.path
         if data.lineattrs is not None:
-            linecanvas.stroke(data.line, data.lineattrs)
+            linecanvas.stroke(data.path, data.lineattrs)
 
     def key_pt(self, c, x_pt, y_pt, width_pt, height_pt, data):
         self.drawsymbol_pt(c, x_pt+0.5*width_pt, y_pt+0.5*height_pt, data)
@@ -4212,10 +4211,13 @@ class bar(_style):
             data.frompathattrs = None
         else:
             data.frompathattrs = self.defaultfrompathattrs + self.frompathattrs
-        if self.barattrs is not None:
-            data.barattrs = attr.selectattrs(self.defaultbarattrs + self.barattrs, selectindex, selecttotal)
+        if selecttotal > 1:
+            if self.barattrs is not None:
+                data.barattrs = attr.selectattrs(self.defaultbarattrs + self.barattrs, selectindex, selecttotal)
+            else:
+                data.barattrs = None
         else:
-            data.barattrs = None
+            data.barattrs = self.defaultbarattrs + self.barattrs
         data.selectindex = selectindex
         data.selecttotal = selecttotal
         if data.selecttotal != 1 and self.subnames is not None:

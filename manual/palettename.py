@@ -34,7 +34,7 @@ for line in lines: # we yet don't use a file iterator
         else:
             x2axis=graph.linkaxis(xaxis, painter=graph.linkaxispainter(innerticklength=None))
         g = c.insert(graph.graphxy(ypos=y, width=10, height=0.5, x=xaxis, x2=x2axis, y=graph.linaxis(parter=None)))
-        g.plot(pf, graph.rect(pyx.color.palette.__dict__[m.group("name")]))
+        g.plot(pf, graph.rect(getattr(pyx.color.palette, m.group("name"))))
         g.dodata()
         g.finish()
         c.text(10.2, y + 0.15, m.group("id"), [text.size.footnotesize])

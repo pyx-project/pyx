@@ -11,15 +11,16 @@ g = graph.graphxy(width=8, x2=None, y2=None,
                                   parter=None,
                                   painter=p),
                   y=graph.linaxis(title="$y$", parter=None, painter=p))
-style = g.plot(graph.function("y=(x-3)*(x-5)*(x-7)")).style
+d = g.plot(graph.function("y=(x-3)*(x-5)*(x-7)"))
 g.finish()
+p = d.path # the path is available after the graph is finished
 
 pa = g.xgridpath(a)
 pb = g.xgridpath(b)
-(splita,), (splitpa,) = style.path.intersect(pa)
-(splitb,), (splitpb,) = style.path.intersect(pb)
+(splita,), (splitpa,) = p.intersect(pa)
+(splitb,), (splitpb,) = p.intersect(pb)
 area = (pa.split([splitpa])[0] <<
-        style.path.split([splita, splitb])[1] <<
+        p.split([splita, splitb])[1] <<
         pb.split([splitpb])[0].reversed())
 area.append(path.closepath())
 g.stroke(area, [deco.filled([color.gray(0.8)])])

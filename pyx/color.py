@@ -170,11 +170,12 @@ cmyk.white          = cmyk.White
 cmyk.black          = cmyk.Black
 
 
-class palette(attr.changeattr):
+class palette(color, attr.changeattr):
 
     """palette is a collection of two colors for calculating transitions between them"""
 
     def __init__(self, mincolor, maxcolor, min=0, max=1):
+        color.__init__(self)
         if mincolor.__class__ != maxcolor.__class__:
             raise ValueError
         self.colorclass = mincolor.__class__
@@ -191,10 +192,10 @@ class palette(attr.changeattr):
         return self.colorclass(**color)
 
     def select(self, index, total):
-        if total > 1:
-            return self.getcolor(index/(total-1.0))
-        else:
-            return self.getcolor(0)
+        return self.getcolor(index/(total-1.0))
+
+    def write(self, file):
+        self.getcolor(0).write(file)
 
 
 palette.Gray           = palette(gray.white, gray.black)
