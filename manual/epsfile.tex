@@ -1,7 +1,48 @@
 \chapter{Module epsfile: EPS file inclusion}
 
 With help of the \verb|epsfile.epsfile| class, you can easily embed
-another EPS file in your canvas.
+another EPS file in your canvas, thereby scaling, aligning the content
+at discretion. The most simple example looks like
+\begin{quote}
+\begin{verbatim}
+import pyx
+c = canvas.canvas()
+c.insert(epsfile.epsfile("file.eps"))
+c.writetofile("output")
+\end{verbatim}
+\end{quote}
+
+All relevant parameters are passed to the \verb|epsfile.epsfile|
+constructor. They are summarized in the following table:
+
+\medskip
+\begin{tabularx}{\linewidth}{l>{\raggedright\arraybackslash}X}
+argument name&description\\
+\hline
+\texttt{filename} & Name of the EPS file (including a possible
+extension).\\
+\texttt{x="0 t m"} & $x$-coordinate of position (converts to user
+unit by default).\\
+\texttt{y="0 t m"} & $y$-coordinate of position (converts to user
+unit by default).\\
+\texttt{width=None} & Desired width of EPS graphics or \texttt{None}
+for original width. Cannot be combined with scale specification.\\
+\texttt{heigth=None} & Desired height of EPS graphics or \texttt{None}
+for original height. Cannot be combined with scale specification.\\
+\texttt{scale=None} & Scaling factor for EPS graphics or \texttt{None}
+for no scaling. Cannot be combined with width or height specification.\\
+\texttt{align="bl"} & Alignment of EPS graphics. The first character
+specifies the vertical alignment: \texttt{b} for bottom, \texttt{c}
+for center, and \texttt{t} for top. The second character fixes the
+horizontal alignment: \texttt{l} for left, \texttt{c} for center
+\texttt{r} for right.\\
+\texttt{clip=1} & Clip to bounding box of EPS file?\\
+\texttt{showbbox=0} & Stroke bounding box of EPS file?\\
+\texttt{translatebox=1} & Use lower left corner of bounding box of EPS
+file? Set to $0$ with care.
+\end{tabularx}
+
+
 
 \label{epsfile}
 
