@@ -24,8 +24,14 @@
 #       - strokepath ?
 #       - nocurrentpoint exception?
 #       - implement bbox and ConvertToBezier for arct
-#       - correct bbox for curveto
-#       - intersection of bpaths
+#       - correct bbox for curveto and bpathel
+#         (maybe we still need the current bbox implementation (then maybe called
+#          cbox = control box) for bpathel for the use during the
+#          intersection of bpaths) 
+#       - intersection of bpaths: use estimate for number of subdivisions
+#       - move test routines into test directory
+#       - is it really necessary (apart from technical reasons)
+#         to specify a canvas for the intersection of two bpaths? 
 
 import unit, canvas
 from math import floor, cos, sin, pi
@@ -548,7 +554,7 @@ class bpathel:
 
         
 
-    def midpointsplit(self):
+    def MidPointSplit(self):
         ' splits bpathel at midpoint returning bpath with two bpathels '
         
         # first, we have to calculate the  midpoints between adjacent
@@ -620,10 +626,10 @@ class bpath:
     def pos(self, t):
         return self.bpath[int(t)][t-floor(t)]
 
-    def midpointsplit(self):
+    def MidPointSplit(self):
         result = []
         for bpel in self.bpath:
-            sbp = bpel.midpointsplit()
+            sbp = bpel.MidPointSplit()
             for sbpel in sbp:
                 result.append(sbpel)
         return bpath(result)
@@ -694,8 +700,13 @@ class barc(bpath):
         for i in range(subdivisions):
             self.bpath.append(arctobpathel(x, y, r, phi1+i*dphi, phi1+(i+1)*dphi))
 
+################################################################################
+# some helper routines            
+################################################################################
 
 def arctobpathel(x, y, r, phi1, phi2):
+    ' generate the best bpathel corresponding to an arc segment '
+    
     dphi=phi2-phi1
 
     if dphi==0: return None
@@ -726,11 +737,11 @@ def bpathelIntersect(canvas,
     if not a.bbox(canvas).intersects(b.bbox(canvas)): return ()
 
     if a_subdiv>0:
-        (aa, ab) = a.midpointsplit()
+        (aa, ab) = a.MidPointSplit()
         a_tm = 0.5*(a_t0+a_t1)
 
         if b_subdiv>0:
-            (ba, bb) = b.midpointsplit()
+            (ba, bb) = b.MidPointSplit()
             b_tm = 0.5*(b_t0+b_t1)
 
             return ( bpathelIntersect(canvas,
@@ -754,7 +765,7 @@ def bpathelIntersect(canvas,
                                       b, b_t0, b_t1, b_subdiv) )
     else:
         if b_subdiv>0:
-            (ba, bb) = b.midpointsplit()
+            (ba, bb) = b.MidPointSplit()
             b_tm = 0.5*(b_t0+b_t1)
 
             return  ( bpathelIntersect(canvas,
@@ -839,7 +850,7 @@ if __name__=="__main__":
 
     p=path([moveto(100,100), rlineto(20,20), arc(150,120,10,30,300),closepath()])
     p.ConvertToBezier()
-    bpsplit=p.bpath.midpointsplit()
+    bpsplit=p.bpath.MidPointSplit()
     print "stroke"
     print "1 0 0 setrgbcolor"
     print "newpath"
