@@ -59,7 +59,7 @@ TODO:
     - do not include too many glyphs in the eps file
     - dvifile class returns standard pyx canvas instances on readpage
   - graph module:
-    - removed manualpart and partitioners mix keyword (documentation already updated)
+    - removed manualpart and partitioners mix keyword
     - results of the splitting at "=" in graph.function were not stripped
     - skip title=None in key (cf. bug #821284), properly align a single key entry
   - canvas module:
@@ -92,6 +92,8 @@ TODO:
     - path.split takes several points (as *args) while lentopar takes a list of points
     - path.tangent is missing in the documentation
   - text module:
+    - documentation of the text attributes
+    - valign.middle is missing (removed by exident?)
   - color module:
      - should colors and palettes exclude each other?
   - documentation!!!

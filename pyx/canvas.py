@@ -263,7 +263,7 @@ class _canvas(base.PSCmd):
         return self.draw(path, deco.filled(), *attrs)
 
     def settexrunner(self, texrunner):
-        """sets the texrunner to be used to within the text and _text methods"""
+        """sets the texrunner to be used to within the text and text_pt methods"""
 
         self.texrunner = texrunner
 
@@ -277,14 +277,14 @@ class _canvas(base.PSCmd):
         return self.insert(self.texrunner.text(x, y, atext, *args))
 
 
-    def _text(self, x, y, atext, *args):
+    def text_pt(self, x, y, atext, *args):
         """insert a text into the canvas
 
-        inserts a textbox created by self.texrunner._text into the canvas
+        inserts a textbox created by self.texrunner.text_pt into the canvas
 
         returns the inserted textbox"""
 
-        return self.insert(self.texrunner._text(x, y, atext, *args))
+        return self.insert(self.texrunner.text_pt(x, y, atext, *args))
 
 #
 # canvas for patterns

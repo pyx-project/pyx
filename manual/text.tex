@@ -104,7 +104,7 @@ method to allow for new \verb|preamble| settings as well. The
 \verb|reset| method takes a boolean parameter \verb|reinit| which can
 be set to run the old preamble settings.
 
-\section{\TeX/\LaTeX{} settings}
+\section{\TeX/\LaTeX{} attributes}
 
 \begin{description}
 \raggedright
@@ -112,31 +112,32 @@ be set to run the old preamble settings.
 \verb|halign.center|, \verb|halign.right|, \verb|halign(x)| (\verb|x|
 is a value between \verb|0| and \verb|1| standing for left and right,
 respectively)
-\item[Vertical box:] Usually, \TeX/\LaTeX{} expressions are handled in
-horizontal mode (so-called LR-mode in \TeX/\LaTeX; everything goes
-into a single line). You may use \verb|parbox(x)|, where \verb|x| is the
-width of the text, to switch to a multiline mode (so-called vertical
-mode in \TeX/\LaTeX).
 \begin{figure}
 \centerline{\includegraphics{textvalign}}
 \caption{valign example}
 \label{fig:textvalign}
 \end{figure}
+\item[Vertical box:] Usually, \TeX/\LaTeX{} expressions are handled in
+horizontal mode (so-called LR-mode in \TeX/\LaTeX; everything goes
+into a single line). You may use \verb|parbox(x)|, where \verb|x| is the
+width of the text, to switch to a multiline mode (so-called vertical
+mode in \TeX/\LaTeX). The additional keyword parameter \verb|baseline|
+can be set to \verb|parbox.top| (default), \verb|parbox.middle|,
+\verb|parbox.bottom| to alter the position of the baseline; see
+figure~\ref{fig:textvalign} for an example
 \item[Vertical alignment:] \verb|valign.top|, \verb|valign.middle|,
-\verb|valign.bottom|; when no \verb|parbox| is defined, additionally
-\verb|valign.baseline| (default); when \verb|parbox| is defined,
-additionally \verb|valign.topbaseline| (default),
-\verb|valign.middlebaseline|, and \verb|valign.bottombaseline|; see
+\verb|valign.bottom|, \verb|valign.baseline| (default); see
 figure~\ref{fig:textvalign} for an example
 \item[Vertical shift:] \verb|vshift.char(lowerratio, heightstr="0")|
 (lowers the output by \verb|lowerratio| of the height of
 \verb|heightstr|), \verb|vshift.bottomzero=vshift.char(0)| (doesn't
 have an effect), \verb|vshift.middlezero=vshift.char(0.5)| (shifts
-down by half of the height of a \verb|0|),
-\verb|vshift.topzero=vshift.char(1)| (shifts down by the height of the a
+down by half of the height of \verb|0|),
+\verb|vshift.topzero=vshift.char(1)| (shifts down by the height of
 \verb|0|), \verb|vshift.mathaxis| (shifts down by the height of the
 mathematical axis)
-\item[Mathmode:] \verb|mathmode| switches the mathmode of \TeX/\LaTeX
+\item[Mathmode:] \verb|mathmode| switches to mathmode of \TeX/\LaTeX
+in displaystyle (\verb|nomathmode| removes this attribute)
 \item[Font size:] \verb|size.tiny|, \verb|size.scriptsize|,
 \verb|size.footnotesize|, \verb|size.small|, \verb|size.normalsize|
 (default), \verb|size.large|, \verb|size.Large|, \verb|size.LARGE|,

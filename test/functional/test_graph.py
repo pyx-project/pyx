@@ -16,7 +16,7 @@ def test_multiaxes_data(c, x, y):
                                                painter=graph.axispainter(titledirection=None)),
                                y2=graph.logaxis(title="$P_2$"),
                                y3=graph.logaxis(title="$PPP_3$",
-                                                painter=graph.axispainter(titledirection=graph.rotatetext(45)),
+                                                painter=graph.axispainter(titledirection=graph.rotatetext(45), gridattrs=([color.rgb.red], color.rgb.green)),
                                                 texter=graph.decimaltexter(equalprecision=1)),
                                y5=graph.logaxis(title="$P_5$")))
     df = data.datafile("data/testdata")
@@ -68,7 +68,7 @@ def test_ownmark(c, x, y):
     (seg4d,), (seg1d,) = p4.intersect(p1)
     area = p1.split(seg1a, seg1d)[1] << p4.split(seg4d, seg4c)[1] << p3.split(seg3c, seg3b)[1] << p2.split(seg2b, seg2a)[1]
     area.append(path.closepath())
-    g.stroke(area, canvas.linewidth.THick, canvas.filled(color.gray(0.5)))
+    g.stroke(area, style.linewidth.THick, deco.filled(color.gray(0.5)))
 
 def test_allerrorbars(c, x, y):
     df = data.datafile("data/testdata3")
@@ -123,10 +123,10 @@ def test_bar(c, x, y):
 
 c = canvas.canvas()
 test_multiaxes_data(c, 0, 21)
-#test_piaxis_function(c, 0, 14)
-#test_textaxis_errorbars(c, 0, 7)
-#test_ownmark(c, 0, 0)
-#test_allerrorbars(c, -7, 0)
+test_piaxis_function(c, 0, 14)
+test_textaxis_errorbars(c, 0, 7)
+test_ownmark(c, 0, 0)
+test_allerrorbars(c, -7, 0)
 ##test_3d(c, -7, 7)
 #test_split(c, -7, 7)
 #test_bar(c, -7, 14)

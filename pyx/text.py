@@ -1692,7 +1692,7 @@ class parbox_pt(attr.exclusiveattr, attr.sortbeforeattr, textattr):
     middle = 2
     bottom = 3
 
-    def __init__(self, width, baseline=middle):
+    def __init__(self, width, baseline=top):
         self.width = width
         self.baseline = baseline
         attr.sortbeforeattr.__init__(self, [_localattr])
@@ -1732,6 +1732,7 @@ class _valignbottom(valign):
     def apply(self, expr):
         return r"\setbox\PyXBoxVAlign=\hbox{{%s}}\raise\dp\PyXBoxVAlign\box\PyXBoxVAlign" % expr
 
+# class _valignmiddle is missing!
 
 valign.top = _valigntop()
 valign.bottom = _valignbottom()
@@ -1823,7 +1824,7 @@ class _readpipe(threading.Thread):
 
 
 
-class _textbox(box._rect, base.PSCmd):
+class textbox_pt(box._rect, base.PSCmd):
     """basically a box.rect, but it contains a text created by the texrunner
     - texrunner._text and texrunner.text return such an object
     - _textbox instances can be inserted into a canvas
@@ -1873,10 +1874,10 @@ class _textbox(box._rect, base.PSCmd):
 
 
 
-class textbox(_textbox):
+class textbox(textbox_pt):
 
     def __init__(self, x, y, left, right, height, depth, texrunner, *attrs):
-        _textbox.__init__(self, unit.topt(x), unit.topt(y), unit.topt(left), unit.topt(right),
+        textbox_pt.__init__(self, unit.topt(x), unit.topt(y), unit.topt(left), unit.topt(right),
                           unit.topt(height), unit.topt(depth), texrunner, *attrs)
 
 
@@ -2360,7 +2361,7 @@ class texrunner:
 
     PyXBoxPattern = re.compile(r"PyXBox:page=(?P<page>\d+),lt=(?P<lt>-?\d*((\d\.?)|(\.?\d))\d*)pt,rt=(?P<rt>-?\d*((\d\.?)|(\.?\d))\d*)pt,ht=(?P<ht>-?\d*((\d\.?)|(\.?\d))\d*)pt,dp=(?P<dp>-?\d*((\d\.?)|(\.?\d))\d*)pt:")
 
-    def _text(self, x, y, expr, *args):
+    def text_pt(self, x, y, expr, *args):
         """create text by passing expr to TeX/LaTeX
         - returns a textbox containing the result from running expr thru TeX/LaTeX
         - the box center is set to x, y
@@ -2395,8 +2396,8 @@ class texrunner:
         if not match or int(match.group("page")) != self.page:
             raise TexResultError("box extents not found", self)
         left, right, height, depth = map(lambda x: float(x) * 72.0 / 72.27, match.group("lt", "rt", "ht", "dp"))
-        box = _textbox(x, y, left, right, height, depth, self,
-                       *helper.getattrs(args, style.fillstyle, default=[]))
+        box = textbox_pt(x, y, left, right, height, depth, self,
+                         *helper.getattrs(args, style.fillstyle, default=[]))
         for t in helper.getattrs(args, trafo._trafo, default=()):
             box.reltransform(t)
         if self.texipc:
@@ -2405,7 +2406,7 @@ class texrunner:
         return box
 
     def text(self, x, y, expr, *args):
-        return self._text(unit.topt(x), unit.topt(y), expr, *args)
+        return self.text_pt(unit.topt(x), unit.topt(y), expr, *args)
 
 
 # the module provides an default texrunner and methods for direct access
@@ -2414,5 +2415,5 @@ reset = defaulttexrunner.reset
 set = defaulttexrunner.set
 preamble = defaulttexrunner.preamble
 text = defaulttexrunner.text
-_text = defaulttexrunner._text
+text = defaulttexrunner.text_pt
 
