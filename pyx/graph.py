@@ -1847,7 +1847,7 @@ class graphxy(canvas.canvas):
         if (width is not None) and (height is None):
              self.width = unit.length(width)
              self.height = (1/ratio) * self.width
-        if (height is not None) and (width is None):
+        elif (height is not None) and (width is None):
              self.height = unit.length(height)
              self.width = ratio * self.height
         else:
@@ -1855,8 +1855,8 @@ class graphxy(canvas.canvas):
              self.height = unit.length(height)
         self._width = unit.topt(self.width)
         self._height = unit.topt(self.height)
-        if self._width <= 0: raise ValueError("width < 0")
-        if self._height <= 0: raise ValueError("height < 0")
+        if self._width <= 0: raise ValueError("width <= 0")
+        if self._height <= 0: raise ValueError("height <= 0")
 
     def initaxes(self, axes, addlinkaxes=0):
         for key in self.Names:
