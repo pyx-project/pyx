@@ -115,11 +115,19 @@ TODO:
     - moved cycloid and smoothed from deco into deformer
 
 
+0.6.x (????/??/??):
+   - graph/axis module:
+     - fix errorbar range adjustment
+
+
 0.6.3 (2004/04/27):
    - graph module:
      - fix drawing with background
      - fix insertion of a zero length path when the whole line is outside
        the valid axis range (reported by Marko Vendelin)
+   - distribution:
+     - include source for faq and manual
+     - distribute the pdf instead of postscript (manual, faq, examples)
 
 0.6.2 (2004/04/07):
   - graph module:
@@ -129,9 +137,11 @@ TODO:
     - changeable-gridattrs-become-None-bug fixed
     - graph style cutting outside lines (double-)fixed
 
+
 0.6.1 (2004/03/31):
   - fixes missing install of the graph and axis directories introduced in 0.6
   - some minor updates to the faq
+
 
 0.6 (2004/03/30):
   - graph module:
