@@ -145,7 +145,6 @@ the first code snippet is present.
   using \PyX?}
 {}
 {\label{q:raw_string}
-
 The backslash serves in standard Python strings to start an escape sequence.
 For example {\cs n} corresponds to a newline character. On the other hand,
 \TeX{} and \LaTeX{}, which do the typesetting in \PyX, use the backslash to
@@ -163,7 +162,8 @@ c.text(0, 0, r"\${\cs alpha}{\cs beta}{\cs gamma}\$")
 
 \question{c}{How do I generate a graph from data as simply as possible?}
 {}
-{Suppose that you have a data file \texttt{x.dat} containing values for
+{\label{q:mingraphdata}
+Suppose that you have a data file \texttt{x.dat} containing values for
 $x$ and $y$ in two columns. Then the following code will do the job
 \begin{progcode}
 from pyx import *\\
@@ -178,11 +178,35 @@ axis. There is, however, no default value for the width of the graph. In
 \texttt{plot} you have to specify the name of the data file and the columns 
 from which the data should be taken. Finally, \texttt{writetofile} will 
 generate the postscript file \texttt{x.eps} which you can view or print.
+
+A minimal example is also provided in the \PyX{} distribution as 
+\path{examples/graphs/minimal.py}.
 }
 
-\question{t}{How do I generate a graph of a function as simply as possible?}
+\question{a}{How do I generate a graph of a function as simply as possible?}
 {}
-{}
+{The following example will draw a parabola:
+\begin{progcode}
+from pyx import *\\
+\\
+g = graph.graphxy(width=10,\\
+~~~~~~~~~~~~~~~~~~x=graph.linaxis(min=-2, max=2)\\
+~~~~~~~~~~~~~~~~~~)\\
+\\
+g.plot(graph.function("y=x\^{}2"))\\
+\\
+g.writetofile("x")
+\end{progcode}
+Most of the code has been explained in \uaref{q:mingraphdata}. The main 
+difference is that here you need to specify minimum and maximum for the 
+$x$-axis so that \PyX{} knows in which range to evaluate the function.
+
+See \uaref{q:zerolineattrs} for an explanation of how one can suppress the
+zero lines.
+
+Another, slightly more complex, example is also provided in the \PyX{} 
+distribution as \path{examples/graphs/piaxis.py}.
+}
 
 \question{t}{How can I stack graphs?}
 {maybe we should recommend using the bbox.height() method instead of
@@ -262,7 +286,7 @@ be drawn at all integers:
 \begin{progcode}
 tg = graph.graphxy(width=10,\\
 ~~~~~~~~~~~~~~~~~~~x=graph.linaxis(min=1, max=10,\\
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~part=graph.linpart(tickdist=[2,1])),\\
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~part=graph.linpart(tickdist=[2,1]))\\
 ~~~~~~~~~~~~~~~~~~~)
 \end{progcode}
 }
@@ -279,7 +303,8 @@ Changes in the extension of axes are announced for version 0.5.
 
 \question{a}{How do I get rid of the zero line?}
 {}
-{The \texttt{axispainter} takes an argument \texttt{zerolineattrs} which 
+{\label{q:zerolineattrs}
+The \texttt{axispainter} takes an argument \texttt{zerolineattrs} which 
 defaults to an empty list. Setting the \texttt{axispainter} for the
 appropriate axis to \texttt{None} will remove the zero line like in this
 example:
@@ -548,7 +573,7 @@ one needs no longer to worry about \texttt{psfonts.map}, at least for the
 standard cmr fonts.
 }
 
-\question{t}{No information for font `xyz7t' found in font mapping file}
+\question{o}{No information for font `xyz7t' found in font mapping file}
 {I think we should delete this question for the release, because it
   should no longer be applicable to PyX 0.5 and above.}
 {After verifying that your problem was not addressed in \uaref{q:no_cmr10}, 
