@@ -51,6 +51,6 @@
 #define xmalloc malloc
 #define xfclose(a, b) (fclose(a))
 #define isdigit(c)  ((c) >= '0' && (c) <= '9')
-#define search(a, b, c) (fopen(b, "r"))
+#define search(a, b, c) (fopen(b, "rb"))
 #define integer int
 #define boolean char

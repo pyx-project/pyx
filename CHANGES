@@ -100,6 +100,7 @@ TODO:
       the module itself was removed
   - t1strip module:
     - new fallback solution in pure python
+    - bugfix: pyxadapt.h needs to open files binary under Windows (reported by Gary Pajer)
 
   TODO for PyX 0.5 (please feel free to move items up to the general TODO list)
   - path module:
