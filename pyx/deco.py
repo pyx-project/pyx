@@ -487,7 +487,7 @@ class cycloid(deco, attr.attr):
         if radius is None:
             radius = self.radius
         if loops is None:
-            loops = self.loops
+            loops = int(0.5 * self.halfloops)
         if skipfirst is None:
             skipfirst = self.skipfirst
         if skiplast is None:
@@ -606,7 +606,7 @@ class smoothed(deco, attr.attr):
             softness = self.softness
         if strict is None:
             strict = self.strict
-        return smooted(radius=radius, softness=softness, strict=strict)
+        return smoothed(radius=radius, softness=softness, strict=strict)
 
     def _twobeziersbetweentolines(self, B, tangent1, tangent2, r1, r2, softness=1):
         # Takes the corner B
