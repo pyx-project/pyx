@@ -170,7 +170,7 @@ class length:
         return result
 
     def __str__(self):
-        return "(%(t)f t + %(u)f u + %(v)f v + %(w)f w + %(x)f x) m" % self.length.__dict__
+        return "(%(t)f t + %(u)f u + %(v)f v + %(w)f w + %(x)f x) m" % self.__dict__
 
 
 ################################################################################
