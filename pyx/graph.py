@@ -603,6 +603,7 @@ class rectbox:
                 (linesolutions[i-1] == 1 and linesolutions[j-1] == 0)):
                 k = j == 1 and self.points or j - 1
                 return self.alignpointsolution(r, dx, dy, self.x[k], self.y[k])
+        return r*dx, r*dy
 
     def align(self, *args):
         self.transform(trafo._translate(*self.alignsolution(*args)))
