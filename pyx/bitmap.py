@@ -233,7 +233,7 @@ class bitmap(base.canvasitem):
         if compressmode != None and imagecompressed != None:
             raise ValueError("compression of a compressed image not supported")
         if not haszlib and compressmode == "Flate":
-            sys.stderr.write("*** PyX Info: zlib module not available, disable compression")
+            sys.stderr.write("*** PyX Info: zlib module not available, disable compression\n")
             compressmode = None
 
         # create data
