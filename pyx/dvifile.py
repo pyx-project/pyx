@@ -569,7 +569,7 @@ class font:
         # We only check for equality of font checksums if none of them
         # is zero. The case c == 0 happend in some VF files and
         # according to the VFtoVP documentation, paragraph 40, a check
-        # is only performed if tfmfile.checksum > 0. Anyhow, begin
+        # is only performed if tfmfile.checksum > 0. Anyhow, being
         # more generous here seems to be reasonable
         if self.tfmfile.checksum != c and self.tfmfile.checksum != 0 and c !=0:
             raise DVIError("check sums do not agree: %d vs. %d" %
