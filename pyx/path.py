@@ -35,6 +35,18 @@ import base, bbox, unit, bpath
 
 class PathException(Exception): pass
 
+################################################################################
+# _pathcontext: context during walk along path
+################################################################################
+
+class _pathcontext:
+    
+    """context during walk along path"""
+
+    def __init__(self, currentpoint=None, currentsubpath=None):
+        self.currentpoint = currentpoint
+        self.currentsubpath = currentsubpath
+        
 ################################################################################ 
 # pathel: element of a PS style path 
 ################################################################################
@@ -44,15 +56,22 @@ class pathel(base.PSOp):
     """element of a PS style path"""
 
     # is pathel normalized, i.e. moveto, lineto, curveto or closepath?
+    # normalized paths support transformations, intersections, etc.
     _isnormalized = None
+
+    def _updatecontext(self, context):
+        """update context of during walk along pathel
+
+        changes context in place
+        """
+        
     
-    def _bbox(self, currentpoint, currentsubpath):
+    def _bbox(self, context):
         """calculate bounding box of pathel
 
-        returns tuple consisting of:
-         - new currentpoint
-         - new currentsubpath (i.e. first point of current subpath)
-         - bounding box of pathel (using currentpoint and currentsubpath)
+        context: context of pathel
+
+        returns bounding box of pathel (in given context)
         
         Important note: all coordinates in bbox, currentpoint, and 
         currrentsubpath have to be floats (in the unit.topt)
@@ -61,39 +80,34 @@ class pathel(base.PSOp):
 
         pass
 
+
+    def _bpath(self, context):
+        """convert pathel to bpath
+
+        context: context of pathel
+
+        return bpath corresponding to pathel in the given context
+
+        """     
+        
+        pass
+
+    def _normalized(self, context):
+        """returns tupel consisting of normalized version of pathel
+
+        context: context of pathel
+
+        returns list consisting of corresponding normalized pathels
+        _moveto, _lineto, _curveto, closepath in given context
+
+        """     
+        
+        pass
+
     def write(self, file):
         """write pathel to file in the context of canvas"""
         
         pass
-
-    def _bpath(self, currentpoint, currentsubpath):
-        """convert pathel to bpath 
-
-        returns tuple consisting of:
-         - new currentpoint
-         - new currentsubpath (i.e. first point of current subpath)
-         - bpath corresponding to pathel in the context of currentpoint and 
-           currentsubpath
-
-        """     
-        
-        pass
-
-    def _normalized(self, currentpoint, currentsubpath):
-        """used for the construction of a normalized path, i.e. a path consisting
-        only of moveto, lineto, curveto and closepath
-
-        returns tuple consisting of:
-         - new currentpoint
-         - new currentsubpath (i.e. first point of current subpath)
-         - tuple of corresponding pathels
-
-        """     
-        
-        pass
-
-        
-
 
 # now come the various pathels. Each one comes in two variants:
 #  - one with an preceding underscore, which does no coordinate to pt conversion
@@ -106,27 +120,31 @@ class closepath(pathel):
 
     _isnormalized = 1
 
-    def _bbox(self, currentpoint, currentsubpath):
-        return (None,
-                None, 
-                bbox.bbox(min(currentpoint[0], currentsubpath[0]), 
-                          min(currentpoint[1], currentsubpath[1]), 
-                          max(currentpoint[0], currentsubpath[0]), 
-                          max(currentpoint[1], currentsubpath[1])))
+    def _updatecontext(self, context):
+        context.currentpoint = None
+        context.currentsubpath = None
+
+    def _bbox(self, context):
+        cpx, cpy = context.currentpoint
+        csx, csy = context.currentsubpath
+        
+        return bbox.bbox(min(cpx, csx), min(cpy, csy), 
+                         max(cpx, csx), max(cpy, csy))
+
+    def _bpath(self, context):
+        cpx, cpy = context.currentpoint
+        csx, csy = context.currentsubpath
+        
+        return bpath._bline(cpx, cpy, csx, csy)
+
+    def _normalized(self, context):
+        return [closepath()]
 
     def write(self, file):
         file.write("closepath\n")
 
-    def _bpath(self, currentpoint, currentsubpath):
-        return (None,
-                None,
-                bpath._bline(currentpoint[0], currentpoint[1], 
-                             currentsubpath[0], currentsubpath[1]) )
-
-    def _normalized(self, currentpoint, currentsubpath):
-        return (None,
-                None,
-                (closepath(),))
+    def transform(self, trafo):
+        return closepath()
 
 
 #
@@ -143,26 +161,24 @@ class _moveto(pathel):
          self.x = x
          self.y = y
 
-    def _bbox(self, currentpoint, currentsubpath):
-        return ((self.x, self.y),
-                (self.x, self.y),
-                bbox.bbox())
+    def _updatecontext(self, context):
+        context.currentpoint = self.x, self.y
+        context.currentsubpath = self.x, self.y
+
+    def _bbox(self, context):
+        return bbox.bbox()
+
+    def _bpath(self, context):
+        return None
+    
+    def _normalized(self, context):
+        return [_moveto(self.x, self.y)]
          
     def write(self, file):
         file.write("%f %f moveto\n" % (self.x, self.y) )
-        
 
-    def _bpath(self, currentpoint, currentsubpath):
-        return ((self.x, self.y),
-                (self.x, self.y),
-                None)
-    
-    def _normalized(self, currentpoint, currentsubpath):
-        return ((self.x, self.y),
-                (self.x, self.y),
-                (_moveto(self.x, self.y),))
-
-
+    def transform(self, trafo):
+        return _moveto(*trafo._apply(self.x, self.y))
  
 class moveto(_moveto):
 
@@ -181,26 +197,27 @@ class _rmoveto(pathel):
     def __init__(self, dx, dy):
          self.dx = dx
          self.dy = dy
+
+    def _updatecontext(self, context):
+        context.currentpoint = (context.currentpoint[0] + self.dx,
+                                context.currentpoint[1] + self.dy)
+        context.currentsubpath = context.currentpoint
         
-    def _bbox(self, currentpoint, currentsubpath):
-        return ((self.dx+currentpoint[0], self.dy+currentpoint[1]), 
-                (self.dx+currentpoint[0], self.dy+currentpoint[1]),
-                bbox.bbox())
+    def _bbox(self, context):
+        return bbox.bbox()
+
+    def _bpath(self, context):
+        return None
+        
+    def _normalized(self, context):
+        x = context.currentpoint[0]+self.dx
+        y = context.currentpoint[1]+self.dy
+
+        return [_moveto(x, y)]
 
     def write(self, file):
         file.write("%f %f rmoveto\n" % (self.dx, self.dy) )
         
-    def _bpath(self, currentpoint, currentsubpath):
-        return ((self.dx+currentpoint[0], self.dy+currentpoint[1]), 
-                (self.dx+currentpoint[0], self.dy+currentpoint[1]),
-                None)
-
-    def _normalized(self, currentpoint, currentsubpath):
-        x = self.dx+currentpoint[0]
-        y = self.dy+currentpoint[1]
-        return ((x, y),
-                (x, y),
-                (_moveto(x,y),))
 
 
 
@@ -224,27 +241,29 @@ class _lineto(pathel):
     def __init__(self, x, y):
          self.x = x
          self.y = y
+
+    def _updatecontext(self, context):
+        context.currentsubpath = context.currentsubpath or context.currentpoint
+        context.currentpoint = self.x, self.y
          
-    def _bbox(self, currentpoint, currentsubpath):
-        return ((self.x, self.y),
-                currentsubpath or currentpoint,
-                bbox.bbox(min(currentpoint[0], self.x),
-                          min(currentpoint[1], self.y), 
-                          max(currentpoint[0], self.x),
-                          max(currentpoint[1], self.y)))
+    def _bbox(self, context):
+        return bbox.bbox(min(context.currentpoint[0], self.x),
+                         min(context.currentpoint[1], self.y), 
+                         max(context.currentpoint[0], self.x),
+                         max(context.currentpoint[1], self.y))
+
+    def _bpath(self, context):
+        return bpath._bline(context.currentpoint[0], context.currentpoint[1],
+                            self.x, self.y)
+
+    def _normalized(self, context):
+        return [_lineto(self.x, self.y)]
 
     def write(self, file):
         file.write("%f %f lineto\n" % (self.x, self.y) )
-       
-    def _bpath(self, currentpoint, currentsubpath):
-        return ((self.x, self.y), 
-                currentsubpath or currentpoint,
-                bpath._bline(currentpoint[0], currentpoint[1], self.x, self.y))
 
-    def _normalized(self, currentpoint, currentsubpath):
-        return ((self.x, self.y), 
-                currentsubpath or currentpoint,
-                (_lineto(self.x, self.y),))
+    def transform(self, trafo):
+        return _lineto(*trafo._apply(self.x, self.y))
 
 
 class lineto(_lineto):
@@ -265,32 +284,34 @@ class _rlineto(pathel):
          self.dx = dx
          self.dy = dy
 
-    def _bbox(self, currentpoint, currentsubpath):
-        return ((currentpoint[0]+self.dx, currentpoint[1]+self.dy),
-                currentsubpath or currentpoint,
-                bbox.bbox(min(currentpoint[0], currentpoint[0]+self.dx),
-                          min(currentpoint[1], currentpoint[1]+self.dy), 
-                          max(currentpoint[0], currentpoint[0]+self.dx),
-                          max(currentpoint[1], currentpoint[1]+self.dy)))
+    def _updatecontext(self, context):
+        context.currentsubpath = context.currentsubpath or context.currentpoint
+        context.currentpoint = (context.currentpoint[0]+self.dx,
+                                context.currentpoint[1]+self.dy)
+
+    def _bbox(self, context):
+        x = context.currentpoint[0] + self.dx
+        y = context.currentpoint[1] + self.dy
+        return bbox.bbox(min(context.currentpoint[0], x),
+                         min(context.currentpoint[1], y), 
+                         max(context.currentpoint[0], x),
+                         max(context.currentpoint[1], y))
+
+    def _bpath(self, context):
+        x = context.currentpoint[0]+self.dx
+        y = context.currentpoint[1]+self.dy
+        return bpath._bline(context.currentpoint[0], context.currentpoint[1], 
+                            x, y)
+
+    def _normalized(self, context):
+        x = context.currentpoint[0] + self.dx
+        y = context.currentpoint[1] + self.dy
+        
+        return [_lineto(x, y)]
 
     def write(self, file):
         file.write("%f %f rlineto\n" % (self.dx, self.dy) )
         
-    def _bpath(self, currentpoint, currentsubpath):
-        x = currentpoint[0]+self.dx
-        y = currentpoint[1]+self.dy
-        return ((x, y), 
-                currentsubpath or currentpoint,
-                bpath._bline(currentpoint[0], currentpoint[1], 
-                             x, y) )
-
-    def _normalized(self, currentpoint, currentsubpath):
-        x = currentpoint[0]+self.dx
-        y = currentpoint[1]+self.dy
-        return ((x, y), 
-                currentsubpath or currentpoint,
-                (_lineto(x,y),))
-
 
 class rlineto(_rlineto):
     """Perform relative lineto"""
@@ -315,17 +336,32 @@ class _arc(pathel):
         self.angle1 = angle1
         self.angle2 = angle2
 
-    def _bbox(self, currentpoint, currentsubpath):
+    def _sarc(self):
+        """Return starting point of arc segment"""
+        return (self.x+self.r*cos(pi*self.angle1/180),
+                self.y+self.r*sin(pi*self.angle1/180))
+
+    def _earc(self):
+        """Return end point of arc segment"""
+        return (self.x+self.r*cos(pi*self.angle2/180),
+                self.y+self.r*sin(pi*self.angle2/180))
+        
+    def _updatecontext(self, context):
+        if context.currentpoint:
+            context.currentsubpath = context.currentsubpath or context.currentpoint
+        else:
+            # we assert that currentsubpath is also None
+            context.currentsubpath = self._sarc()
+            
+        context.currentpoint = self._earc()
+
+    def _bbox(self, context):
         phi1=pi*self.angle1/180
         phi2=pi*self.angle2/180
         
-        # starting point of arc segment
-        sarcx = self.x+self.r*cos(phi1)
-        sarcy = self.y+self.r*sin(phi1)
-
-        # end point of arc segment
-        earcx = self.x+self.r*cos(phi2)
-        earcy = self.y+self.r*sin(phi2)
+        # starting end end point of arc segment
+        sarcx, sarcy = self._sarc()
+        earcx, earcy = self._earc()
 
         # Now, we have to determine the corners of the bbox for the
         # arc segment, i.e. global maxima/mimima of cos(phi) and sin(phi)
@@ -373,39 +409,17 @@ class _arc(pathel):
         # have to include the straight line from this point
         # to the first point of the arc segment
 
-        if currentpoint:
-             return ( (earcx, earcy),
-                      currentsubpath or currentpoint,
-                      bbox.bbox(min(currentpoint[0], sarcx),
-                                min(currentpoint[1], sarcy), 
-                                max(currentpoint[0], sarcx),
-                                max(currentpoint[1], sarcy))+
-                      bbox.bbox(minarcx, minarcy, maxarcx, maxarcy)
+        if context.currentpoint:
+            return (bbox.bbox(min(context.currentpoint[0], sarcx),
+                              min(context.currentpoint[1], sarcy), 
+                              max(context.currentpoint[0], sarcx),
+                              max(context.currentpoint[1], sarcy)) + 
+                    bbox.bbox(minarcx, minarcy, maxarcx, maxarcy)
                     )
-        else:  # we assert that currentsubpath is also None
-             return ( (earcx, earcy),
-                      (sarcx, sarcy),
-                      bbox.bbox(minarcx, minarcy, maxarcx, maxarcy)
-                    )
+        else:
+            return  bbox.bbox(minarcx, minarcy, maxarcx, maxarcy)
 
-                            
-    def write(self, file):
-        file.write("%f %f %f %f %f arc\n" % ( self.x, self.y,
-                                            self.r,
-                                            self.angle1,
-                                            self.angle2 ) )
-
-    def _sarc(self):
-        """Return starting point of arc segment"""
-        return (self.x+self.r*cos(pi*self.angle1/180),
-                self.y+self.r*sin(pi*self.angle1/180))
-
-    def _earc(self):
-        """Return end point of arc segment"""
-        return (self.x+self.r*cos(pi*self.angle2/180),
-                self.y+self.r*sin(pi*self.angle2/180))
-        
-    def _bpath(self, currentpoint, currentsubpath):
+    def _bpath(self, context):
         # get starting and end point of arc segment and bpath corresponding to arc
         sarcx, sarcy = self._sarc()
         earcx, earcy = self._earc()
@@ -414,20 +428,13 @@ class _arc(pathel):
         # Note that if there is a currentpoint defined, we also
         # have to include the straight line from this point
         # to the first point of the arc segment
-        if currentpoint:
-            return ( (earcx, earcy),
-                     currentsubpath or currentpoint,
-                     bpath._bline(currentpoint[0], currentpoint[1],
-                                  sarcx, sarcy) + 
-                     barc
-                     )
-        else:  # we assert that currentsubpath is also None
-            return ( (earcx, earcy),
-                     (sarcx, sarcy),
-                     barc
-                     )
-
-    def _normalized(self, currentpoint, currentsubpath):
+        if context.currentpoint:
+            return bpath._bline(context.currentpoint[0], context.currentpoint[1],
+                                sarcx, sarcy) + barc
+        else:  
+            return barc
+        
+    def _normalized(self, context):
         # get starting and end point of arc segment and bpath corresponding to arc
         sarcx, sarcy = self._sarc()
         earcx, earcy = self._earc()
@@ -445,17 +452,18 @@ class _arc(pathel):
         # have to include the straight line from this point
         # to the first point of the arc segment.
         # Otherwise, we have to add a moveto at the beginning
-        if currentpoint:
-            return ( (earcx, earcy),
-                     currentsubpath or currentpoint,
-                     tuple([_lineto(sarcx, sarcy)] + nbarc)
-                     
-                     )
-        else:  # we assert that currentsubpath is also None
-            return ( (earcx, earcy),
-                     (sarcx, sarcy),
-                     tuple([_moveto(sarcx, sarcy)] + nbarc)
-                     )
+        if context.currentpoint:
+            return [_lineto(sarcx, sarcy)] + nbarc
+        else:
+            return [_moveto(sarcx, sarcy)] + nbarc
+
+                            
+    def write(self, file):
+        file.write("%f %f %f %f %f arc\n" % ( self.x, self.y,
+                                            self.r,
+                                            self.angle1,
+                                            self.angle2 ) )
+
 
         
 class arc(_arc):
@@ -480,43 +488,6 @@ class _arcn(pathel):
         self.angle1 = angle1
         self.angle2 = angle2
 
-    def _bbox(self, currentpoint, currentsubpath):
-        # in principle, we obtain bbox of an arcn element from 
-        # the bounding box of the corrsponding arc element with
-        # angle1 and angle2 interchanged. Though, we have to be carefull
-        # with the straight line segment, which is added if currentpoint 
-        # is defined.
-
-        # Hence, we first compute the bbox of the arc without this line:
-
-        (earc, sarc, arcbb) = _arc(self.x, self.y, self.r, 
-                                   self.angle2, 
-                                   self.angle1)._bbox(None, None)
-
-        # Then, we repeat the logic from arc.bbox, but with interchanged
-        # start and end points of the arc
-
-        if currentpoint:
-             return ( (sarc[0], sarc[1]),
-                      currentsubpath or currentpoint,
-                      bbox.bbox(min(currentpoint[0], sarc[0]),
-                                min(currentpoint[1], sarc[1]), 
-                                max(currentpoint[0], sarc[0]),
-                                max(currentpoint[1], sarc[1]))+
-                      arcbb
-                    )
-        else:  # we assert that currentsubpath is also None
-             return ( (sarc[0], sarc[1]),
-                      (earc[0], earc[1]),
-                      arcbb
-                    )
-
-    def write(self, file):
-        file.write("%f %f %f %f %f arcn\n" % ( self.x, self.y,
-                                             self.r,
-                                             self.angle1,
-                                             self.angle2 ) )
-
     def _sarc(self):
         """Return starting point of arc segment"""
         return (self.x+self.r*cos(pi*self.angle1/180),
@@ -526,9 +497,43 @@ class _arcn(pathel):
         """Return end point of arc segment"""
         return (self.x+self.r*cos(pi*self.angle2/180),
                 self.y+self.r*sin(pi*self.angle2/180))
-    
 
-    def _bpath(self, currentpoint, currentsubpath):
+    def _updatecontext(self, context):
+        if context.currentpoint:
+            context.currentsubpath = context.currentsubpath or context.currentpoint
+        else:  # we assert that currentsubpath is also None
+            context.currentsubpath = self._sarc()
+                     
+        context.currentpoint = self._earc()
+
+    def _bbox(self, context):
+        # in principle, we obtain bbox of an arcn element from 
+        # the bounding box of the corrsponding arc element with
+        # angle1 and angle2 interchanged. Though, we have to be carefull
+        # with the straight line segment, which is added if currentpoint 
+        # is defined.
+
+        # Hence, we first compute the bbox of the arc without this line:
+
+        a = _arc(self.x, self.y, self.r, 
+                 self.angle2, 
+                 self.angle1)
+        
+        sarc = self._sarc()
+        arcbb = a._bbox(_pathcontext())
+                
+        # Then, we repeat the logic from arc.bbox, but with interchanged
+        # start and end points of the arc
+
+        if context.currentpoint:
+            return  bbox.bbox(min(context.currentpoint[0], sarc[0]),
+                              min(context.currentpoint[1], sarc[1]), 
+                              max(context.currentpoint[0], sarc[0]),
+                              max(context.currentpoint[1], sarc[1]))+ arcbb
+        else:  
+            return arcbb
+
+    def _bpath(self, context):
         # get starting and end point of arc segment and bpath corresponding to arc
         # starting point of arc segment
         sarcx, sarcy = self._sarc()
@@ -538,20 +543,16 @@ class _arcn(pathel):
         # Note that if there is a currentpoint defined, we also
         # have to include the straight line from this point
         # to the first point of the arc segment
-        if currentpoint:
-            return ( (earcx, earcy),
-                     currentsubpath or currentpoint,
-                     bpath._bline(currentpoint[0], currentpoint[1], sarcx, sarcy) +
-                     barc
-                     )
+        if context.currentpoint:
+            return bpath._bline(context.currentpoint[0],
+                                context.currentpoint[1],
+                                sarcx,
+                                sarcy) + \
+                   barc
         else:  # we assert that currentsubpath is also None
-            return ( (earcx, earcy),
-                     (sarcx, sarcy),
-                     barc
-                     )
+            return barc
 
-
-    def _normalized(self, currentpoint, currentsubpath):
+    def _normalized(self, context):
         # get starting and end point of arc segment and bpath corresponding to arc
         sarcx, sarcy = self._sarc()
         earcx, earcy = self._earc()
@@ -564,29 +565,27 @@ class _arcn(pathel):
             nbarc.append(_curveto(bpathel.x1, bpathel.y1,
                                   bpathel.x2, bpathel.y2,
                                   bpathel.x3, bpathel.y3))
-            
+
         # Note that if there is a currentpoint defined, we also
         # have to include the straight line from this point
         # to the first point of the arc segment.
         # Otherwise, we have to add a moveto at the beginning
-        if currentpoint:
-            return ( (earcx, earcy),
-                     currentsubpath or currentpoint,
-                     tuple([_lineto(sarcx, sarcy)] + nbarc)
-                     
-                     )
-        else:  # we assert that currentsubpath is also None
-            return ( (earcx, earcy),
-                     (sarcx, sarcy),
-                     tuple([_moveto(sarcx, sarcy)] + nbarc)
-                     )
+        if context.currentpoint:
+            return [_lineto(sarcx, sarcy)] + nbarc
+        else:
+            return [_moveto(sarcx, sarcy)] + nbarc
 
 
+    def write(self, file):
+        file.write("%f %f %f %f %f arcn\n" % ( self.x, self.y,
+                                             self.r,
+                                             self.angle1,
+                                             self.angle2 ) )
+
+        
 class arcn(_arcn):
 
     """Append clockwise arc"""
-
-    _isnormalized = 0
     
     def __init__(self, x, y, r, angle1, angle2):
         _arcn.__init__(self, 
@@ -664,7 +663,7 @@ class _arct(pathel):
             my = self.y1-ry*self.r/(lr*sin(alpha/2))
             
             # now we are in the position to construct the path
-            p = path(_moveto(currentpoint[0], currentpoint[1]))
+            p = path(_moveto(*currentpoint))
 
             if phi<0:
                 p.append(_arc(mx, my, self.r, phi-deltaphi, phi+deltaphi))
@@ -681,26 +680,23 @@ class _arct(pathel):
                       currentsubpath or (self.x1, self.y1),
                       _line(currentpoint[0], currentpoint[1], self.x1, self.y1) )
 
-    def _bbox(self, currentpoint, currentsubpath):
-        (currentpoint, currentsubpath, p) = self._path(currentpoint, currentsubpath)
-        
-        return ( currentpoint,
-                 currentsubpath,
-                 p.bbox() )
-    
-    def _bpath(self, currentpoint, currentsubpath):
-        (currentpoint, currentsubpath, p) = self._path(currentpoint, currentsubpath)
-        
-        return ( currentpoint,
-                 currentsubpath,
-                 p.bpath() )
+    def _updatecontext(self, context):
+        r = self._path(context.currentpoint,
+                       context.currentsubpath)
 
-    def _normalized(self, currentpoint, currentsubpath):
-        (currentpoint, currentsubpath, p) = self._path(currentpoint, currentsubpath)
-        
-        return ( currentpoint,
-                 currentsubpath,
-                 p.normalized() )
+        context.currentpoint, context.currentsubpath = r[:2]
+            
+    def _bbox(self, context):
+        return self._path(context.currentpoint,
+                          context.currentsubpath)[2].bbox()
+            
+    def _bpath(self, context):
+        return self._path(context.currentpoint,
+                          context.currentsubpath)[2].bpath()
+            
+    def _normalized(self, context):
+        return self._path(context.currentpoint,
+                          context.currentsubpath)[2].normalized().path
 
                 
 class arct(_arct):
@@ -729,34 +725,38 @@ class _curveto(pathel):
         self.y2 = y2
         self.x3 = x3
         self.y3 = y3
+
+    def _updatecontext(self, context):
+        context.currentsubpath = context.currentsubpath or context.currentpoint
+        context.currentpoint = self.x3, self.y3
         
-    def _bbox(self, currentpoint, currentsubpath):
-        return ((self.x3, self.y3),
-                currentsubpath or currentpoint,
-                bbox.bbox(min(currentpoint[0], self.x1, self.x2, self.x3), 
-                          min(currentpoint[1], self.y1, self.y2, self.y3), 
-                          max(currentpoint[0], self.x1, self.x2, self.x3), 
-                          max(currentpoint[1], self.y1, self.y2, self.y3)))
+    def _bbox(self, context):
+        return bbox.bbox(min(context.currentpoint[0], self.x1, self.x2, self.x3), 
+                         min(context.currentpoint[1], self.y1, self.y2, self.y3), 
+                         max(context.currentpoint[0], self.x1, self.x2, self.x3), 
+                         max(context.currentpoint[1], self.y1, self.y2, self.y3))
+
+    def _bpath(self, context):
+        return bpath._bcurve(context.currentpoint[0], context.currentpoint[1],
+                             self.x1, self.y1, 
+                             self.x2, self.y2, 
+                             self.x3, self.y3)
+
+    def _normalized(self, context):
+        return [_curveto(self.x1, self.y1,
+                         self.x2, self.y2,
+                         self.x3, self.y3)]
 
     def write(self, file):
         file.write("%f %f %f %f %f %f curveto\n" % ( self.x1, self.y1,
-                                                   self.x2, self.y2,
-                                                   self.x3, self.y3 ) )
+                                                     self.x2, self.y2,
+                                                     self.x3, self.y3 ) )
         
-    def _bpath(self, currentpoint, currentsubpath):
-        return ((self.x3, self.y3),
-                currentsubpath or currentpoint, 
-                bpath._bcurve(currentpoint[0], currentpoint[1],
-                              self.x1, self.y1, 
-                              self.x2, self.y2, 
-                              self.x3, self.y3))
-
-    def _normalized(self, currentpoint, currentsubpath):
-        return ((self.x3, self.y3),
-                currentsubpath or currentpoint, 
-                (_curveto(self.x1, self.y1, 
-                          self.x2, self.y2, 
-                          self.x3, self.y3),))
+    def transform(self, trafo):
+        return _curveto(*(trafo._apply(self.x1, self.y1)+
+                          trafo._apply(self.x2, self.y2)+
+                          trafo._apply(self.x3, self.y3)))
+    
 
 
 class curveto(_curveto):
@@ -789,44 +789,48 @@ class _rcurveto(pathel):
                                                     self.dx2, self.dy2,
                                                     self.dx3, self.dy3 ) )
 
-    def _bbox(self, currentpoint, currentsubpath):
-        x1=currentpoint[0]+self.dx1
-        y1=currentpoint[1]+self.dy1
-        x2=currentpoint[0]+self.dx2
-        y2=currentpoint[1]+self.dy2
-        x3=currentpoint[0]+self.dx3
-        y3=currentpoint[1]+self.dy3
+    def _updatecontext(self, context):
+        x3 = context.currentpoint[0]+self.dx3
+        y3 = context.currentpoint[1]+self.dy3
+        
+        context.currentsubpath = context.currentsubpath or context.currentpoint
+        context.currentpoint = x3, y3
 
-        return ((x3, y3),
-                currentsubpath or currentpoint,
-                bbox.bbox(min(currentpoint[0], x1, x2, x3),
-                          min(currentpoint[1], y1, y2, y3), 
-                          max(currentpoint[0], x1, x2, x3),
-                          max(currentpoint[1], y1, y2, y3)))
+
+    def _bbox(self, context):
+        x1 = context.currentpoint[0]+self.dx1
+        y1 = context.currentpoint[1]+self.dy1
+        x2 = context.currentpoint[0]+self.dx2
+        y2 = context.currentpoint[1]+self.dy2
+        x3 = context.currentpoint[0]+self.dx3
+        y3 = context.currentpoint[1]+self.dy3
+        return bbox.bbox(min(context.currentpoint[0], x1, x2, x3),
+                         min(context.currentpoint[1], y1, y2, y3), 
+                         max(context.currentpoint[0], x1, x2, x3),
+                         max(context.currentpoint[1], y1, y2, y3))
     
-    def _bpath(self, currentpoint, currentsubpath):
-        x2=currentpoint[0]+self.dx1
-        y2=currentpoint[1]+self.dy1
-        x3=currentpoint[0]+self.dx2
-        y3=currentpoint[1]+self.dy2
-        x4=currentpoint[0]+self.dx3
+    def _bpath(self, context):
+        x2 = context.currentpoint[0]+self.dx1
+        y2 = context.currentpoint[1]+self.dy1
+        x3 = context.currentpoint[0]+self.dx2
+        y3 = context.currentpoint[1]+self.dy2
+        x4 = context.currentpoint[0]+self.dx3
+        y4 = context.currentpoint[1]+self.dy3
+        
+        return bpath._bcurve(context.currentpoint[0], context.currentpoint[1],
+                             x2, y2,
+                             x3, y3,
+                             x4, y4)
 
-        y4=currentpoint[1]+self.dy3
-        return ((x4, y4),
-                currentsubpath or currentpoint,
-                bpath._bcurve(currentpoint[0],currentpoint[1], x2, y2, x3, y3, x4, y4))
+    def _normalized(self, context):
+        x2 = context.currentpoint[0]+self.dx1
+        y2 = context.currentpoint[1]+self.dy1
+        x3 = context.currentpoint[0]+self.dx2
+        y3 = context.currentpoint[1]+self.dy2
+        x4 = context.currentpoint[0]+self.dx3
+        y4 = context.currentpoint[1]+self.dy3
 
-    def _normalized(self, currentpoint, currentsubpath):
-        x2=currentpoint[0]+self.dx1
-        y2=currentpoint[1]+self.dy1
-        x3=currentpoint[0]+self.dx2
-        y3=currentpoint[1]+self.dy2
-        x4=currentpoint[0]+self.dx3
-
-        y4=currentpoint[1]+self.dy3
-        return ((x4, y4),
-                currentsubpath or currentpoint,
-                (_curveto(x2, y2, x3, y3, x4, y4),))
+        return [_curveto(x2, y2, x3, y3, x4, y4)]
 
 
 class rcurveto(_rcurveto):
@@ -861,16 +865,37 @@ class path(base.PSCmd):
         return self.path[i]
 
     def bbox(self):
-        currentpoint = None
-        currentsubpath = None
+        context = _pathcontext()
         abbox = bbox.bbox()
-        
+
         for pel in self.path:
-           (currentpoint, currentsubpath, nbbox) = \
-                          pel._bbox(currentpoint, currentsubpath)
-           if abbox: abbox = abbox+nbbox
+            nbbox =  pel._bbox(context)
+            pel._updatecontext(context)
+            if abbox: abbox = abbox+nbbox
            
         return abbox
+    
+    def bpath(self):
+        context = _pathcontext()
+        bp = bpath.bpath()
+        for pel in self.path:
+            nbp = pel._bpath(context)
+            pel._updatecontext(context)
+            if nbp:
+                for bpel in nbp.bpath:
+                    bp.append(bpel)
+        return bp
+
+    def normalized(self):
+        context = _pathcontext()
+        p = path()
+        for pel in self.path:
+            npels = pel._normalized(context)
+            pel._updatecontext(context)
+            if npels:
+                for npel in npels:
+                    p.append(npel)
+        return p
         
     def write(self, file):
         if not (isinstance(self.path[0], _moveto) or
@@ -883,29 +908,15 @@ class path(base.PSCmd):
     def append(self, pathel):
         self.path.append(pathel)
 
-    def bpath(self):
-        currentpoint = None
-        currentsubpath = None
-        bp = bpath.bpath()
-        for pel in self.path:
-            (currentpoint, currentsubpath, nbp) = \
-                           pel._bpath(currentpoint, currentsubpath)
-            if nbp:
-                for bpel in nbp.bpath:
-                    bp.append(bpel)
-        return bp
+    def transform(self, trafo):
+        """return transformed path"""
+        if self.isnormalized():
+            p = self.path
+        else:
+            p = self.path.normalized()
+            
+        return path(*map(lambda x, trafo=trafo: x.transform(trafo), p))
 
-    def normalized(self):
-        currentpoint = None
-        currentsubpath = None
-        p = path()
-        for pel in self.path:
-            (currentpoint, currentsubpath, npels) = \
-                           pel._normalized(currentpoint, currentsubpath)
-            if npels:
-                for npel in npels:
-                    p.append(npel)
-        return p
 
     def isnormalized(self):
         for pel in self.path:
@@ -913,15 +924,18 @@ class path(base.PSCmd):
                 return 0
         return 1
 
-
+#
 # some special kinds of path, again in two variants
+#
+
+# straight lines
 
 class _line(path):
 
    """straight line from (x1, y1) to (x2, y2) (coordinates in pts)"""
 
    def __init__(self, x1, y1, x2, y2):
-       path.__init__(self, _moveto(x1,y1), _lineto(x2, y2))
+       path.__init__(self, _moveto(x1, y1), _lineto(x2, y2))
 
 
 class line(path):
@@ -929,18 +943,40 @@ class line(path):
    """straight line from (x1, y1) to (x2, y2)"""
 
    def __init__(self, x1, y1, x2, y2):
-       path.__init__(self, moveto(x1,y1), lineto(x2, y2))
+       path.__init__(self, moveto(x1, y1), lineto(x2, y2))
 
+# bezier curves
+
+class _curve(path):
+
+   """Bezier curve with control points (x0, y1),..., (x3, y3)
+   (coordinates in pts)"""
+
+   def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
+       path.__init__(self,
+                     _moveto(x0, y0),
+                     _curveto(x1, y1, x2, y2, x3, y3))
+
+class curve(path):
+
+   """Bezier curve with control points (x0, y1),..., (x3, y3)"""
+
+   def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
+       path.__init__(self,
+                     moveto(x0, y0),
+                     curveto(x1, y1, x2, y2, x3, y3))
+
+# rectangles
 
 class _rect(path):
 
    """rectangle at position (x,y) with width and height (coordinates in pts)"""
 
    def __init__(self, x, y, width, height):
-       path.__init__(self, _moveto(x,y), 
-                           _rlineto(width,0), 
-                           _rlineto(0,height), 
-                           _rlineto(-width,0),
+       path.__init__(self, _moveto(x, y), 
+                           _rlineto(width, 0), 
+                           _rlineto(0, height), 
+                           _rlineto(-width, 0),
                            closepath())
 
 
@@ -949,12 +985,13 @@ class rect(path):
    """rectangle at position (x,y) with width and height"""
 
    def __init__(self, x, y, width, height):
-       path.__init__(self, moveto(x,y), 
-                           rlineto(width,0), 
-                           rlineto(0,height), 
-                           rlineto(-unit.length(width),0),
+       path.__init__(self, moveto(x, y), 
+                           rlineto(width, 0), 
+                           rlineto(0, height), 
+                           rlineto(-unit.length(width), 0),
                            closepath())
 
+# circles
 
 class _circle(path):
 
