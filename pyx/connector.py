@@ -52,14 +52,12 @@ class connector_pt(path.normpath):
         # XXX how can decoration of this box1.path() be handled?
         sp = self.intersect(box1.path())[0]
         sp.sort()
-        if sp:
-            self.subpaths = self.split(sp[-1:])[1].subpaths
+        self.subpaths = self.split(sp[-1:])[1].subpaths
 
         # cut off the end of self
         sp = self.intersect(box2.path())[0]
         sp.sort()
-        if sp:
-            self.subpaths = self.split(sp[1:])[0].subpaths
+        self.subpaths = self.split(sp[:1])[0].subpaths
 
     def shortenpath(self, dists):
         """shorten a path by the given distances"""
@@ -115,8 +113,8 @@ class arc_pt(connector_pt):
         self.box1 = box1
         self.box2 = box2
 
-        rel = [self.box2.center[0] - self.box1.center[0],
-               self.box2.center[1] - self.box1.center[1]]
+        rel = (self.box2.center[0] - self.box1.center[0],
+               self.box2.center[1] - self.box1.center[1])
         distance = hypot(*rel)
 
         # usage of bulge overrides the relangle parameter
@@ -145,8 +143,8 @@ class arc_pt(connector_pt):
         # straight connection
         center = (0.5 * (self.box1.center[0] + self.box2.center[0] - rel[1]*center),
                   0.5 * (self.box1.center[1] + self.box2.center[1] + rel[0]*center))
-        angle1 = atan2(*[self.box1.center[i] - center[i]  for i in [1,0]])
-        angle2 = atan2(*[self.box2.center[i] - center[i]  for i in [1,0]])
+        angle1 = atan2(self.box1.center[1] - center[1], self.box1.center[0] - center[0])
+        angle2 = atan2(self.box2.center[1] - center[1], self.box2.center[0] - center[0])
 
         # draw the arc in positive direction by default
         # negative direction if relangle<0 or bulge<0
@@ -185,8 +183,8 @@ class curve_pt(connector_pt):
         self.box1 = box1
         self.box2 = box2
 
-        rel = [self.box2.center[0] - self.box1.center[0],
-               self.box2.center[1] - self.box1.center[1]]
+        rel = (self.box2.center[0] - self.box1.center[0],
+               self.box2.center[1] - self.box1.center[1])
         distance = hypot(*rel)
         # absolute angle of the straight connection
         dangle = atan2(rel[1], rel[0])
@@ -207,8 +205,8 @@ class curve_pt(connector_pt):
         # get the control points
         control1 = (cos(angle1), sin(angle1))
         control2 = (cos(angle2), sin(angle2))
-        control1 = [self.box1.center[0] + control1[0] * bulge, self.box1.center[1] + control1[1] * bulge]
-        control2 = [self.box2.center[0] - control2[0] * bulge, self.box2.center[1] - control2[1] * bulge]
+        control1 = (self.box1.center[0] + control1[0] * bulge, self.box1.center[1] + control1[1] * bulge)
+        control2 = (self.box2.center[0] - control2[0] * bulge, self.box2.center[1] - control2[1] * bulge)
 
         connector_pt.__init__(self,
                [path.normsubpath([path.normcurve(*(self.box1.center +
@@ -245,8 +243,8 @@ class twolines_pt(connector_pt):
 
         begin = self.box1.center
         end = self.box2.center
-        rel = [self.box2.center[0] - self.box1.center[0],
-               self.box2.center[1] - self.box1.center[1]]
+        rel = (self.box2.center[0] - self.box1.center[0],
+               self.box2.center[1] - self.box1.center[1])
         distance = hypot(*rel)
         dangle = atan2(rel[1], rel[0])
 
@@ -320,8 +318,8 @@ class twolines_pt(connector_pt):
 
     def _middle_a(self, begin, dangle, length1, angle1):
         a = dangle - angle1
-        dir = [cos(a), sin(a)]
-        return [begin[i] + length1*dir[i]  for i in [0,1]]
+        dir = cos(a), sin(a)
+        return begin[0] + length1*dir[0], begin[1] + length1*dir[1]
 
     def _middle_b(self, end, dangle, length2, angle2):
         # a = -math.pi + dangle + angle2
@@ -342,7 +340,8 @@ class line(line_pt):
 
     def __init__(self, box1, box2, boxdists=[0,0]):
 
-        boxdists_pt = [_topt(helper.getitemno(boxdists,i), default_type="v") for i in [0,1]]
+        boxdists_pt = (_topt(helper.getitemno(boxdists, 0), default_type="v"),
+                       _topt(helper.getitemno(boxdists, 1), default_type="v"))
 
         line_pt.__init__(self, box1, box2, boxdists=boxdists_pt)
 
@@ -359,7 +358,8 @@ class curve(curve_pt):
                  absbulge=0, relbulge=0.39,
                  boxdists=[0,0]):
 
-        boxdists_pt = [_topt(helper.getitemno(boxdists,i), default_type="v") for i in [0,1]]
+        boxdists_pt = (_topt(helper.getitemno(boxdists, 0), default_type="v"),
+                       _topt(helper.getitemno(boxdists, 1), default_type="v"))
 
         curve_pt.__init__(self, box1, box2,
                         relangle1=relangle1, relangle2=relangle2,
@@ -378,7 +378,8 @@ class arc(arc_pt):
     def __init__(self, box1, box2, relangle=45,
                  absbulge=None, relbulge=None, boxdists=[0,0]):
 
-        boxdists_pt = [_topt(helper.getitemno(boxdists,i), default_type="v") for i in [0,1]]
+        boxdists_pt = (_topt(helper.getitemno(boxdists, 0), default_type="v"),
+                       _topt(helper.getitemno(boxdists, 1), default_type="v"))
 
         arc_pt.__init__(self, box1, box2,
                       relangle=relangle,
@@ -402,7 +403,8 @@ class twolines(twolines_pt):
                  arcradius=None,
                  boxdists=[0,0]):
 
-        boxdists_pt = [_topt(helper.getitemno(boxdists,i), default_type="v") for i in [0,1]]
+        boxdists_pt = (_topt(helper.getitemno(boxdists, 0), default_type="v"),
+                       _topt(helper.getitemno(boxdists, 1), default_type="v"))
 
         twolines_pt.__init__(self, box1, box2,
                        absangle1=absangle1, absangle2=absangle2,
