@@ -78,6 +78,7 @@ PyX
     - allow for extern functions in addcolumn (data module)
     - just one common place for the version number
     - fix incorrect exception name MathError (path module)
+    - prevent double return of intersections for closed sub paths
     - ...
 
 0.2 (2003/01/17):

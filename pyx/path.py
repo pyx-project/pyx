@@ -1674,29 +1674,51 @@ class normpath(path):
             other = normpath(other)
 
         # convert both paths to series of bpathels: bpathels_a and bpathels_b
+        # store list of parameter values corresponding to sub path ends in
+        # subpathends_a and subpathends_b
         context = _pathcontext()
         bpathels_a = []
+        subpathends_a = []
+        t = 0
         for normpathel in self.path:
             bpathel = normpathel._bcurve(context)
             if bpathel:
                 bpathels_a.append(bpathel)
             normpathel._updatecontext(context)
-
+            if isinstance(normpathel, closepath):
+                subpathends_a.append(t)
+            t += 1
+                
         context = _pathcontext()
         bpathels_b = []
+        subpathends_b = []
+        t = 0
         for normpathel in other.path:
             bpathel = normpathel._bcurve(context)
             if bpathel:
                 bpathels_b.append(bpathel)
             normpathel._updatecontext(context)
-
+            if isinstance(normpathel, closepath):
+                subpathends_b.append(t)
+            t += 1
+            
         intersections = ([], [])
-        # change grouping order
+        # change grouping order and check whether an intersection
+        # occurs at the end of a subpath. If yes, don't include
+        # it in list of intersections to prevent double results
         for intersection in  _bcurvesIntersect(bpathels_a, 0, len(bpathels_a),
                                                bpathels_b, 0, len(bpathels_b),
                                                epsilon):
-            intersections[0].append(intersection[0])
-            intersections[1].append(intersection[1])
+            for subpathend_a in subpathends_a:
+                if abs(intersection[0]-subpathend_a)<epsilon:
+                    break
+            else:
+                for subpathend_b in subpathends_b:
+                    if abs(intersection[1]-subpathend_b)<epsilon:
+                        break
+                else:
+                    intersections[0].append(intersection[0])
+                    intersections[1].append(intersection[1])
 
         return intersections
 
@@ -1724,7 +1746,7 @@ class normpath(path):
     def range(self):
         """return maximal value for parameter value t"""
 
-        context=_pathcontext()
+        context = _pathcontext()
         t=0
 
         for pel in self.path:
@@ -1836,7 +1858,7 @@ class normpath(path):
         else:
             p = self.reversed().path
 
-        context=_pathcontext()
+        context = _pathcontext()
 
         for pel in p:
             if not isinstance(pel, _moveto):
