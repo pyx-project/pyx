@@ -116,17 +116,16 @@ class epsfile(base.PSCmd):
         # determine scaling in x and y direction
         self.scalex = self.scaley = scale
 
-        if (width is not None or height is not None):
+        if width is not None or height is not None:
             if scale is not None:
                 raise ValueError("cannot set both width and/or height and scale simultaneously")
             if height is not None:
-                self.scalex = unit.topt(height)/(self.mybbox.urx-self.mybbox.llx)
+                self.scaley = unit.topt(height)/(self.mybbox.ury-self.mybbox.lly)
             if width is not None:
-                self.scaley = unit.topt(width)/(self.mybbox.ury-self.mybbox.lly)
+                self.scalex = unit.topt(width)/(self.mybbox.urx-self.mybbox.llx)
 
             if self.scalex is None:
                 self.scalex = self.scaley
-
             if self.scaley is None:
                 self.scaley = self.scalex
 
@@ -135,7 +134,7 @@ class epsfile(base.PSCmd):
         self._width  = (self.mybbox.urx-self.mybbox.llx)
         if self.scalex:
             self._width *= self.scalex
-            
+
         self._height  = (self.mybbox.ury-self.mybbox.lly)
         if self.scaley:
             self._height *= self.scaley

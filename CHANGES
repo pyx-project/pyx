@@ -70,6 +70,8 @@ PyX
     - log axis range rating bugfix
   - mathtree module:
     - addarg bugs (#738724)
+  - epsfile module:
+    - fix mixing up of height and width in scale calculation
 
 0.3.1 (2003/04/04):
   - text module:
