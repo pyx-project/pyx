@@ -121,7 +121,7 @@ class transformation:
         # assert 0, "this shouldn't be called!"
         return canvas.bbox()
 
-    def write(self, canvas, file):
+    def write(self, file):
         file.write("[%f %f %f %f %f %f] concat\n" % \
 	            ( self.matrix[0][0], self.matrix[0][1], 
 	              self.matrix[1][0], self.matrix[1][1], 

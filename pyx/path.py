@@ -58,7 +58,7 @@ class pathel:
 
 	pass
 
-    def write(self, canvas, file):
+    def write(self, file):
 	' write pathel to file in the context of canvas '
 	
         pass
@@ -91,7 +91,7 @@ class closepath(pathel):
 	             max(currentpoint[0], currentsubpath[0]), 
 	             max(currentpoint[1], currentsubpath[1])))
 
-    def write(self, canvas, file):
+    def write(self, file):
         file.write("closepath")
 
     def _bpath(self, currentpoint, currentsubpath):
@@ -114,7 +114,7 @@ class _moveto(pathel):
     def bbox(self, canvas, currentpoint, currentsubpath):
         return ((self.x, self.y), (self.x, self.y) , bbox())
 	 
-    def write(self, canvas, file):
+    def write(self, file):
         file.write("%f %f moveto" % (self.x, self.y) )
 
     def _bpath(self, currentpoint, currentsubpath):
@@ -140,7 +140,7 @@ class _rmoveto(pathel):
                 (self.dx+currentpoint[0], self.dy+currentpoint[1]),
 		bbox())
 
-    def write(self, canvas, file):
+    def write(self, file):
         file.write("%f %f rmoveto" % (self.dx, self.dy) )
         
     def _bpath(self, currentpoint, currentsubpath):
@@ -172,7 +172,7 @@ class _lineto(pathel):
                 bbox(min(currentpoint[0], self.x), min(currentpoint[1], self.y), 
 		     max(currentpoint[0], self.x), max(currentpoint[1], self.y)))
 
-    def write(self, canvas, file):
+    def write(self, file):
         file.write("%f %f lineto" % (self.x, self.y) )
        
     def _bpath(self, currentpoint, currentsubpath):
@@ -203,7 +203,7 @@ class _rlineto(pathel):
 	 	     max(currentpoint[0], currentpoint[0]+self.dx),
 		     max(currentpoint[1], currentpoint[1]+self.dy)))
 
-    def write(self, canvas, file):
+    def write(self, file):
         file.write("%f %f rlineto" % (self.dx, self.dy) )
         
     def _bpath(self, currentpoint, currentsubpath):
@@ -265,7 +265,7 @@ class _arc(pathel):
 	# next minimum of sin(phi) looking from phi1 in counterclockwise 
 	# direction: 2*pi*floor((phi1-3*pi/2)/(2*pi)) + 7/2*pi
 
-	if phi2<(2*floor((phi1-3*pi/2)/(2*pi))+7.0/2)*pi:
+	if phi2<(2*floor((phi1-3.0*pi/2)/(2*pi))+7.0/2)*pi:
 	    minarcy = min(sarcy, earcy)
 	else:
             minarcy = self.y-self.r
@@ -307,7 +307,7 @@ class _arc(pathel):
                     )
 
 			    
-    def write(self, canvas, file):
+    def write(self, file):
         file.write("%f %f %f %f %f arc" % ( self.x, self.y,
                                             self.r,
                                             self.angle1,
@@ -386,7 +386,7 @@ class _arcn(pathel):
 	              arcbb
                     )
 
-    def write(self, canvas, file):
+    def write(self, file):
         file.write("%f %f %f %f %f arcn" % ( self.x, self.y,
                                              self.r,
                                              self.angle1,
@@ -435,7 +435,7 @@ class _arct(pathel):
 	self.y2 = y2
 	self.r  = r
 
-    def write(self, canvas, file):
+    def write(self, file):
         file.write("%f %f %f %f %f arct" % ( self.x1, self.y1,
                                              self.x2, self.y2,
                                              self.r ) )
@@ -555,7 +555,7 @@ class _curveto(pathel):
  	             max(currentpoint[0], self.x1, self.x2, self.x3), 
                      max(currentpoint[1], self.y1, self.y2, self.y3)))
 
-    def write(self, canvas, file):
+    def write(self, file):
         file.write("%f %f %f %f %f %f curveto" % ( self.x1, self.y1,
                                                    self.x2, self.y2,
                                                    self.x3, self.y3 ) )
@@ -592,7 +592,7 @@ class _rcurveto(pathel):
 	self.dx3 = dx3
 	self.dy3 = dy3
 	
-    def write(self, canvas, file):
+    def write(self, file):
         file.write("%f %f %f %f %f %f rcurveto" % ( self.dx1, self.dy1,
                                                     self.dx2, self.dy2,
                                                     self.dx3, self.dy3 ) )
@@ -664,13 +664,13 @@ class path:
            if abbox: abbox = abbox+nbbox
 	return abbox
 	
-    def write(self, canvas, file):
+    def write(self, file):
 	if not (isinstance(self.path[0], _moveto) or
 	        isinstance(self.path[0], _arc) or
 		isinstance(self.path[0], _arcn)):
 	    raise PathException, "first path element must be either moveto, arc, or arcn"
         for pathel in self.path:
-	    pathel.write(canvas, file)
+	    pathel.write(file)
             file.write("\n")
 
     def append(self, pathel):
@@ -738,7 +738,7 @@ class _bpathel:
         self.x3 = x3
         self.y3 = y3
 
-    def write(self, canvas, file):
+    def write(self, file):
          file.write( "%f %f moveto %f %f %f %f %f %f curveto" % \
                      ( self.x0, self.y0,
                        self.x1, self.y1,
@@ -842,9 +842,9 @@ class bpath:
            abbox = abbox + bpathel.bbox(canvas)
 	return abbox
 
-    def write(self, canvas, file):
+    def write(self, file):
         for bpathel in self.bpath:
-	    bpathel.write(canvas, file)
+	    bpathel.write(file)
             file.write("\n")
 
 

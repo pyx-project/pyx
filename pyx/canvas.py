@@ -23,6 +23,7 @@
 # TODO:
 # - arrows
 
+
 import string, re, unit, trafo, types
 from math import sqrt
 
@@ -103,7 +104,7 @@ class bbox:
                     self.urx < other.llx or
                     self.ury < other.lly)
 
-    def write(self, canvas, file):
+    def write(self, file):
         file.write("%%%%BoundingBox: %d %d %d %d\n" % (self.llx-1, self.lly-1, self.urx+1, self.ury+1)) 
 
     def __str__(self):
@@ -152,10 +153,10 @@ class epsfile:
                    (llx, lly, urx, ury) = (0, 0, urx - llx, ury - lly)
 	       return bbox(llx, lly, urx, ury)
 
-    def bbox(self, canvas):
+    def bbox(self, canvas=None):
         return self.getbbox(self.translatebb)
 
-    def write(self, canvas, file):
+    def write(self, file):
 	mybbox = self.getbbox(0)
 
         try:
@@ -202,13 +203,13 @@ class PyxAttributes:
     def bbox(self, canvas):
 	return bbox()
 
-    def write(self, canvas, file):
-        file.write(self._PSCmd(canvas))
+    def write(self, file):
+        file.write(self._PSCmd())
 
 class _linecap(PyxAttributes):
     def __init__(self, value=0):
         self.value=value
-    def _PSCmd(self, canvas):
+    def _PSCmd(self):
         return "%d setlinecap" % self.value
 
 class linecap(_linecap):
@@ -219,7 +220,7 @@ class linecap(_linecap):
 class _linejoin(PyxAttributes):
     def __init__(self, value=0):
         self.value=value
-    def _PSCmd(self, canvas):
+    def _PSCmd(self):
         return "%d setlinejoin" % self.value
  
 class linejoin(_linejoin):
@@ -232,7 +233,7 @@ linejoinmiter=_linejoin(0)
 class _miterlimit(PyxAttributes):
     def __init__(self, value=10.0):
         self.value=value
-    def _PSCmd(self, canvas):
+    def _PSCmd(self):
         return "%f setmiterlimit" % self.value
 
 class miterlimit(_miterlimit):
@@ -242,7 +243,7 @@ class _dash(PyxAttributes):
     def __init__(self, pattern=[], offset=0):
         self.pattern=pattern
         self.offset=offset
-    def _PSCmd(self, canvas):
+    def _PSCmd(self):
         patternstring=""
         for element in self.pattern:
             patternstring=patternstring + `element` + " "
@@ -256,8 +257,8 @@ class _linestyle(PyxAttributes):
     def __init__(self, c=linecap.butt, d=dash([])):
         self.c=c
         self.d=d
-    def _PSCmd(self, canvas):
-        return self.c._PSCmd(canvas) + "\n" + self.d._PSCmd(canvas)
+    def _PSCmd(self):
+        return self.c._PSCmd() + "\n" + self.d._PSCmd()
        
 class linestyle(_linestyle):
     solid      = _linestyle(linecap.butt,  dash([]))
@@ -268,7 +269,7 @@ class linestyle(_linestyle):
 class _linewidth(PyxAttributes, unit.length):
     def __init__(self, l):
         unit.length.__init__(self, l=l, default_type="w")
-    def _PSCmd(self, canvas):
+    def _PSCmd(self):
         return "%f setlinewidth" % unit.topt(self)
     
 
@@ -296,31 +297,31 @@ class CanvasCmds:
     def bbox(self, canvas):
        return bbox()
        
-    def write(self, canvas, file):
+    def write(self, file):
        pass
 
 class _newpath(CanvasCmds):
-    def write(self, canvas, file):
+    def write(self, file):
        file.write("newpath")
 
 class _stroke(CanvasCmds):
-    def write(self, canvas, file):
+    def write(self, file):
        file.write("stroke")
 
 class _fill(CanvasCmds):
-    def write(self, canvas, file):
+    def write(self, file):
         file.write("fill")
 
 class _clip(CanvasCmds):
-    def write(self, canvas, file):
+    def write(self, file):
        file.write("clip")
 
 class _gsave(CanvasCmds):
-    def write(self, canvas, file):
+    def write(self, file):
        file.write("gsave")
 
 class _grestore(CanvasCmds):
-    def write(self, canvas, file):
+    def write(self, file):
        file.write("grestore")
 
 class _translate(CanvasCmds):
@@ -328,7 +329,7 @@ class _translate(CanvasCmds):
         self.x = unit.topt(x)
         self.y = unit.topt(y)
         
-    def write(self, canvas, file):
+    def write(self, file):
         file.write("%f %f translate" % (x, y) )
 
 
@@ -364,36 +365,18 @@ class canvas(CanvasCmds):
         (lrx, lry)=self.trafo.apply((obbox.urx, obbox.lly))
         (urx, ury)=self.trafo.apply((obbox.urx, obbox.ury))
         (ulx, uly)=self.trafo.apply((obbox.llx, obbox.ury))
-#	(llx, lly)=self.trafo.apply((unit.length("%f t pt" % obbox.llx),
-#                                     unit.length("%f t pt" % obbox.lly)))
-#        (lrx, lry)=self.trafo.apply((unit.length("%f t pt" % obbox.urx),
-#                                     unit.length("%f t pt" % obbox.lly)))
-#        (urx, ury)=self.trafo.apply((unit.length("%f t pt" % obbox.urx),
-#                                     unit.length("%f t pt" % obbox.ury)))
-#        (ulx, uly)=self.trafo.apply((unit.length("%f t pt" % obbox.llx),
-#                                     unit.length("%f t pt" % obbox.ury)))
 
         # now, by sorting, we obtain the lower left and upper right corner
-        # of the new bounding box. But first we have to convert back to
-        # points:
-
-#	llx=unit.topt(llx)
-#	lly=unit.topt(lly)
-#	lrx=unit.topt(lrx)
-#	lry=unit.topt(lry)
-#	urx=unit.topt(urx)
-#	ury=unit.topt(ury)
-#        ulx=unit.topt(ulx)
-#	uly=unit.topt(uly)
+        # of the new bounding box. 
 
 	abbox= bbox(min(llx, lrx, urx, ulx)-1, min(lly, lry, ury, uly)-1,
                     max(llx, lrx, urx, ulx)+1, max(lly, lry, ury, uly)+1)
  
 	return abbox
     
-    def write(self, canvas, file):
+    def write(self, file):
         for cmd in self.PSCmds:
-            cmd.write(self, file)
+            cmd.write(file)
             file.write("\n")
             
 
@@ -441,7 +424,7 @@ class canvas(CanvasCmds):
 
         file.write("%!PS-Adobe-3.0 EPSF 3.0\n")
 	abbox=self.bbox(self)
-	abbox.write(self, file)
+	abbox.write(file)
         file.write("%%Creator: pyx 0.0.1\n") 
         file.write("%%%%Title: %s.eps\n" % filename) 
         # file.write("%%CreationDate: %s" % ) 
@@ -452,7 +435,7 @@ class canvas(CanvasCmds):
         file.write("%f setlinewidth\n" % unit.topt(linewidth.normal))
         
         # here comes the actual content
-        self.write(self, file)
+        self.write(file)
         
         file.write("\nshowpage\n")
         file.write("%%Trailer\n")

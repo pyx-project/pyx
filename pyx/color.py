@@ -27,8 +27,8 @@ class color:
     def bbox(self, acanvas):
 	return canvas.bbox()
 
-    def write(self, canvas, file):
-        file.write(self._PSCmd(canvas))
+    def write(self, file):
+        file.write(self._PSCmd())
 
 
 class _grey(color):
@@ -54,7 +54,7 @@ class _rgb(color):
         self.g=g
         self.b=b
 
-    def _PSCmd(self, canvas):
+    def _PSCmd(self):
         return "%f %f %f setrgbcolor" % (self.r, self.g, self.b)
 
 class rgb(_rgb):
@@ -72,7 +72,7 @@ class _hsb(color):
         self.s=s
         self.b=b
 
-    def _PSCmd(self, canvas):
+    def _PSCmd(self):
         return "%f %f %f setrgbcolor" % (self.h, self.s, self.b)
 
 class hsb(_hsb):
@@ -89,7 +89,7 @@ class _cmyk(color):
         self.y=y
         self.k=k
 
-    def _PSCmd(self, canvas):
+    def _PSCmd(self):
         return "%f %f %f %f setcmykcolor" % (self.c, self.m, self.y, self.k)
 
 class cmyk(_cmyk):

@@ -285,7 +285,7 @@ class _DefCmd(_TexCmd):
         self.TexParenthesisCheck(DefCmd)
         self.DefCmd = DefCmd
 
-    def write(self, canvas, file):
+    def write(self, file):
         self.WriteBeginMarker(file)
         file.write(self.DefCmd)
         self.WriteEndMarker(file)
@@ -323,7 +323,7 @@ class _BoxCmd(_TexCmd):
         return cmp(self.BoxCmd, other.BoxCmd)
     __rcmp__ = __cmp__
 
-    def write(self, canvas, file):
+    def write(self, file):
 
         self.WriteBeginMarker(file)
         file.write(self.BoxCmd)
@@ -338,7 +338,7 @@ class _BoxCmd(_TexCmd):
                 file.write("\\special{ps: gsave currentpoint currentpoint translate %s neg rotate neg exch neg exch translate }" % CmdPut.direction )
             if CmdPut.color != color.grey.black:
                 file.write("\\special{ps: ")
-                CmdPut.color.write(canvas, file)
+                CmdPut.color.write(file)
                 file.write(" }")
             if CmdPut.halign == halign.left:
                 pass
@@ -352,7 +352,7 @@ class _BoxCmd(_TexCmd):
 
             if CmdPut.color != color.grey.black:
                 file.write("\\special{ps: ")
-                color.grey.black.write(canvas, file)
+                color.grey.black.write(file)
                 file.write(" }")
             if CmdPut.direction != direction.horizontal:
                 file.write("\\special{ps: currentpoint grestore moveto }")
@@ -479,7 +479,7 @@ class tex(_InstanceList):
             print "constructor of the class pyx.tex. You can then try to run the command"
             print "by yourself."
 
-    def RunTex(self, acanvas):
+    def RunTex(self):
 
         'run LaTeX&dvips for TexCmds, report errors, return postscript string'
     
@@ -510,12 +510,12 @@ class tex(_InstanceList):
         texfile.write("\\newwrite\\sizefile%\n\\newbox\\localbox%\n\\newbox\\pagebox%\n\\immediate\\openout\\sizefile=" + TempName + ".size%\n")
 
         for Cmd in self.DefCmds:
-            Cmd.write(acanvas, texfile)
+            Cmd.write(texfile)
 
         texfile.write("\\setbox\\pagebox=\\vbox{%\n")
 
         for Cmd in self.BoxCmds:
-            Cmd.write(acanvas, texfile)
+            Cmd.write(texfile)
 
         texfile.write("}\n\\immediate\\closeout\\sizefile\n\\shipout\\copy\\pagebox\n")
         if self.mode == mode.TeX:
@@ -570,9 +570,9 @@ class tex(_InstanceList):
                 print "by yourself."
             else:
                 epsfile = canvas.epsfile(TempName + ".eps", translatebb = 0)
-                self.bbox = epsfile.bbox(acanvas)
+                self.bbox = epsfile.bbox()
                 epsdatafile = StringIO.StringIO()
-                epsfile.write(acanvas, epsdatafile)
+                epsfile.write(epsdatafile)
                 self.epsdata = epsdatafile.getvalue()
 
         # merge new sizes
@@ -609,11 +609,11 @@ class tex(_InstanceList):
         self.DoneRunTex = 1
 
     def bbox(self, acanvas):
-        self.RunTex(acanvas)
+        self.RunTex()
         return self.bbox
 
-    def write(self, acanvas, file):
-        self.RunTex(acanvas)
+    def write(self, file):
+        self.RunTex()
         file.writelines(self.epsdata)
        
     def define(self, Cmd, *styleparams):
