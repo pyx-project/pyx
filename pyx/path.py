@@ -405,9 +405,11 @@ def _bcurveIntersect(a, a_t0, a_t1, b, b_t0, b_t1, epsilon=1e-5):
 def _bcurvesIntersect(a, a_t0, a_t1, b, b_t0, b_t1, epsilon=1e-5):
     """ returns list of intersection points for list of bpathels """
 
-    bbox_a = reduce(lambda x, y:x+y.bbox(), a, bbox._bbox())
-    bbox_b = reduce(lambda x, y:x+y.bbox(), b, bbox._bbox())
-    
+    bbox_a = bbox.bbox()
+    for aa in a: bbox_a += aa.bbox()
+    bbox_b = bbox.bbox()
+    for bb in b: bbox_b += bb.bbox()
+
     if not bbox_a.intersects(bbox_b): return ()
 
     if a_t0+1!=a_t1:
@@ -1519,12 +1521,12 @@ class path(base.PSCmd):
 
     def bbox(self):
         context = _pathcontext()
-        abbox = bbox._bbox()
+        abbox = bbox.bbox()
 
         for pel in self.path:
             nbbox =  pel._bbox(context)
             pel._updatecontext(context)
-            if abbox: abbox = abbox+nbbox
+            if nbbox: abbox += nbbox
 
         return abbox
 

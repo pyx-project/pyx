@@ -2848,8 +2848,8 @@ class key:
         method should be called after dolayout"""
         result = bbox.bbox()
         for title in self.titles:
-            result = result + title.bbox() + bbox._bbox(0, title.center[1] - 0.5 * self.symbolheight_pt,
-                                                        0, title.center[1] + 0.5 * self.symbolheight_pt)
+            result += title.bbox() + bbox._bbox(0, title.center[1] - 0.5 * self.symbolheight_pt,
+                                                0, title.center[1] + 0.5 * self.symbolheight_pt)
         return result
 
     def paint(self, c, x, y):
