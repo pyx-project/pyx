@@ -36,8 +36,8 @@ transformed (i.e. translated, rotated, etc.) and clipped.
 
 """
 
-import types, math, string, time
-import attrlist, base, bbox, helper, path, unit, string, StringIO, text, t1strip, pykpathsea, trafo, version
+import types, math, string, StringIO, time
+import attrlist, base, bbox, helper, path, unit, text, t1strip, pykpathsea, trafo, version
 
 class prologitem:
 
@@ -845,15 +845,19 @@ class _canvas(base.PSCmd, attrlist.attrlist):
 
 class pattern(_canvas, base.PathStyle):
 
-    def __init__(self, patterntype=1, painttype=1, tilingtype=1, xstep=None, ystep=None, trafo=None):
+    def __init__(self, painttype=1, tilingtype=1, xstep=None, ystep=None, bbox=None, trafo=None):
         _canvas.__init__(self)
         self.id = "pattern%d" % id(self)
         # XXX: some checks are in order
-        self.patterntype = patterntype
+        if painttype not in (1,2):
+            raise ValueError("painttype must be 1 or 2")
         self.painttype = painttype
+        if tilingtype not in (1,2,3):
+            raise ValueError("tilingtype must be 1, 2 or 3")
         self.tilingtype = tilingtype
         self.xstep = xstep
         self.ystep = ystep
+        self.patternbbox = bbox
         self.patterntrafo = trafo
 
     def bbox(self):
@@ -863,23 +867,30 @@ class pattern(_canvas, base.PathStyle):
         file.write("%s setpattern\n" % self.id)
 
     def prolog(self):
-        patternbbox = _canvas.bbox(self)
+        realpatternbbox = _canvas.bbox(self)
         if self.xstep is None:
-           xstep = patternbbox.urx-patternbbox.llx
+           xstep = unit.topt(realpatternbbox.width())
         else:
-           xstep = self.xstep
+           xstep = unit.topt(unit.length(self.xstep))
         if self.ystep is None:
-            ystep = patternbbox.ury-patternbbox.lly
+            ystep = unit.topt(realpatternbbox.height())
         else:
-           ystep = self.ystep
-        patternprefix = ( "<<\n" + 
-                          "/PatternType %d\n" % self.patterntype + 
-                          "/PaintType %d\n" % self.painttype +
-                          "/TilingType %d\n" % self.tilingtype +
-                          "/BBox[%s]\n" % str(patternbbox.enlarged("5 pt")) + 
-                          "/XStep %g\n" % xstep + 
-                          "/YStep %g\n" % ystep + 
-                          "/PaintProc {\nbegin\n")
+           ystep = unit.topt(unit.length(self.ystep))
+        if not xstep:
+            raise ValueError("xstep in pattern cannot be zero")
+        if not ystep:
+            raise ValueError("ystep in pattern cannot be zero")
+        patternbbox = self.patternbbox or realpatternbbox.enlarged("5 pt")
+
+        patternprefix = string.join(("<<",
+                                     "/PatternType 1",
+                                     "/PaintType %d" % self.painttype,
+                                     "/TilingType %d" % self.tilingtype,
+                                     "/BBox[%s]" % str(patternbbox),
+                                     "/XStep %g" % xstep,
+                                     "/YStep %g" % ystep,
+                                     "/PaintProc {\nbegin\n"),
+                                    sep="\n")
         stringfile = StringIO.StringIO()
         _canvas.write(self, stringfile)
         patternproc = stringfile.getvalue()
