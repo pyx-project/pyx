@@ -1177,15 +1177,8 @@ class graphxy(canvas.canvas):
                 style = self.previousstyle[data.defaultstyle.styleid].next()
             else:
                 style = data.defaultstyle
-        if style.colorchange is not None:
-            self.previouscolorchange = style.colorchange
-            self.colorchangeindex = 0
-        if self.previouscolorchange is not None:
-            style.colorchange = self.previouscolorchange
-            self.previouscolorchange.max += 1
-            style.colorchangeindex = self.colorchangeindex
-            self.colorchangeindex += 1
-        self.previousstyle[style.styleid] = style
+        if hasattr(style, "styleid"):
+            self.previousstyle[style.styleid] = style
         data.setstyle(self, style)
         self.data.append(data)
 
@@ -1397,16 +1390,24 @@ class colorchange:
         self.colorclass = lowcolor.__class__
         self.lowcolor = lowcolor
         self.highcolor = highcolor
-        self.max = -1
-        self.min = 0
+        self.max = 0
 
-    def getcolor(self, index=None):
-        if index < self.min or index > self.max or self.min >= self.max: raise ValueError
+    def getcolor(self, style):
+        if hasattr(style, "colorchangeindex"):
+            index = style.colorchangeindex
+        else:
+            index = self.max
+        if index < 0 or index > self.max: raise ValueError
         color = {}
         for key in self.lowcolor.color.keys():
-            color[key] = ((index - self.min) * self.lowcolor.color[key] +
-                          (self.max - index) * self.highcolor.color[key])/float(self.max - self.min)
+            color[key] = (index * self.highcolor.color[key] +
+                          (self.max - index) * self.lowcolor.color[key])/float(self.max)
         return self.colorclass(**color)
+
+    def next(self, style):
+        style.colorchangeindex = self.max
+        self.max += 1
+        return self
 
 
 class plotstyle:
@@ -1418,7 +1419,7 @@ class mark(plotstyle):
 
     styleid = "mark"
 
-    def __init__(self, size="0.12 cm", colorchange=None, errorscale=1/goldenrule, dodrawsymbol=1, symbolstyles=()):
+    def __init__(self, size="0.12 cm", colorchange=None, errorscale=1/goldenrule, symbolstyles=(), dodrawsymbol=1):
         self.size_str = size
         self.errorscale = errorscale
         self.dodrawsymbol = dodrawsymbol
@@ -1426,7 +1427,15 @@ class mark(plotstyle):
         self.colorchange = colorchange
 
     def next(self):
-        return self.nextclass(size=self.size_str)
+        if self.colorchange is None:
+            return self.nextclass(size=self.size_str,
+                                  errorscale=self.errorscale,
+                                  symbolstyles=self.symbolstyles)
+        else:
+            return self.nextclass(size=self.size_str,
+                                  colorchange=self.colorchange.next(self),
+                                  errorscale=self.errorscale,
+                                  symbolstyles=self.symbolstyles)
 
     def setcolumns(self, graph, columns):
         self.dxindex = self.dxminindex = self.dxmaxindex = self.dyindex = self.dyminindex = self.dymaxindex = None
@@ -1487,7 +1496,7 @@ class mark(plotstyle):
         xaxis = graph.axes[self.xkey]
         yaxis = graph.axes[self.ykey]
         self.size = unit.topt(unit.length(self.size_str, default_type="v"))
-        if self.colorchange: self.symbolstyles = self.symbolstyles + (self.colorchange.getcolor(self.colorchangeindex),)
+        if self.colorchange: self.symbolstyles = [self.colorchange.getcolor(self)] + list(self.symbolstyles)
 
         for point in points:
             try:
@@ -1633,12 +1642,17 @@ class line(plotstyle):
 
     styleid = "line"
 
-    def __init__(self, dodrawline=1, linestyles=()):
-        self.dodrawline = dodrawline
+    def __init__(self, colorchange=None, linestyles=(), dodrawline=1):
+        self.colorchange = colorchange
         self.linestyles = linestyles
+        self.dodrawline = dodrawline
 
     def next(self):
-        return self.nextclass()
+        if self.colorchange is None:
+            return self.nextclass(linestyles=self.linestyles)
+        else:
+            return self.nextclass(colorchange=self.colorchange.next(self),
+                                  linestyles=self.linestyles)
 
     def setcolumns(self, graph, columns):
         for key, index in columns.items():
@@ -1669,6 +1683,8 @@ class line(plotstyle):
                 self.ykey: self.keyrange(points, self.yindex)}
 
     def drawpointlist(self, graph, points):
+        if self.colorchange: self.linestyles = [self.colorchange.getcolor(self)] + list(self.linestyles)
+
         xaxis = graph.axes[self.xkey]
         yaxis = graph.axes[self.ykey]
 
@@ -1690,25 +1706,33 @@ class line(plotstyle):
             graph.draw(self.path, *self.linestyles)
 
 
-class _dashedline(line):
+class _solidline(line, attrlist.attrlist):
 
-    def __init__(self, linestyles=(canvas.linestyle.dashed, ), **args):
-        args["linestyles"] = linestyles
+    def __init__(self, **args):
+        args["linestyles"] = [canvas.linestyle.solid, ] + self.attrdel(args["linestyles"], canvas.linestyle)
         line.__init__(self, **args)
 
 
-class _dottedline(line):
+class _dashedline(line, attrlist.attrlist):
 
-    def __init__(self, linestyles=(canvas.linestyle.dotted, ), **args):
-        args["linestyles"] = linestyles
+    def __init__(self, **args):
+        args["linestyles"] = [canvas.linestyle.dashed, ] + self.attrdel(args["linestyles"], canvas.linestyle)
+        line.__init__(self, **args)
+
+
+class _dottedline(line, attrlist.attrlist):
+
+    def __init__(self, **args):
+        args["linestyles"] = [canvas.linestyle.dotted, ] + self.attrdel(args["linestyles"], canvas.linestyle)
         line.__init__(self, **args)
 
 
 line.nextclass = _dashedline
 _dashedline.nextclass = _dottedline
-_dottedline.nextclass = line
+_dottedline.nextclass = _solidline
+_solidline.nextclass = _dottedline
 
-line.normal = line
+line.solid = _solidline
 line.dashed = _dashedline
 line.dotted = _dottedline
 
