@@ -39,7 +39,8 @@ PyX
     - ll & ur ???, what about ul and lr -> ugly!
     - TODO: document me!
   - epsfile module:
-    - TODO: epsfile(x, y, filename, **additional_args)
+    - new constructor signature, more in line with rest of PyX: 
+      epsfile(x, y, filename, **additional_args)
   - data module:
     - removed additional column support in addcolumn; removed _addcolumn (done except for the documentation)
     - TODO: line reduction for datafile like the every parameter in gnuplot

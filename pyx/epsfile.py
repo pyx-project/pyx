@@ -21,10 +21,9 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import re
-import base, bbox, canvas, path, unit, trafo
+import base, bbox, canvas, unit, trafo
 
-# PostScript-procedure definitions
-# cf. file: 5002.EPSF_Spec_v3.0.pdf
+# PostScript-procedure definitions (cf. 5002.EPSF_Spec_v3.0.pdf)
 # with important correction in EndEPSF:
 #   end operator is missing in the spec!
 
@@ -68,10 +67,10 @@ def _readbbox(filename):
     for line in file.xreadlines():
 
         if line=="%%EndComments\n": 
-            # TODO: BoundingBox-Deklaration kann auch an Ende von Datei
-            #       verschoben worden sein...
-            #       ...but evaluation of such a bbox directive requires
-            #       a parsing of the DSC!
+            # XXX: BoundingBox-Deklaration kann auch an Ende von Datei
+            #      verschoben worden sein...
+            #      ...but evaluation of such a bbox directive requires
+            #      a parsing of the DSC!
             raise IOError, \
                   "bounding box not found in header of EPS file '%s'" % \
                   filename
@@ -91,11 +90,10 @@ class epsfile(base.PSCmd):
     """class for epsfiles"""
 
     def __init__(self,
-                 filename,
-                 x = "0 t m", y = "0 t m",
-                 width = None, height = None, scale=None,
-                 align = "bl",
-                 clip = 1,
+                 x, y, filename,
+                 width=None, height=None, scale=None,
+                 align="bl",
+                 clip=1,
                  showbbox = 0,
                  translatebbox = 1):
         """inserts epsfile
@@ -107,12 +105,11 @@ class epsfile(base.PSCmd):
         
         """
 
-        self.filename    = filename
-        self.mybbox      = _readbbox(self.filename)
+        self._x = unit.topt(x)
+        self._y = unit.topt(y)
+        self.filename = filename
+        self.mybbox = _readbbox(self.filename)
         
-        self._x           = unit.topt(x)
-        self._y           = unit.topt(y)
-
         # determine scaling in x and y direction
         self.scalex = self.scaley = scale
 
@@ -130,7 +127,7 @@ class epsfile(base.PSCmd):
             if self.scaley is None:
                 self.scaley = self.scalex
 
-        # now, we set the actual width and height of the eps file (after a
+        # set the actual width and height of the eps file (after a
         # possible scaling)
         self._width  = (self.mybbox.urx-self.mybbox.llx)
         if self.scalex:
@@ -185,8 +182,6 @@ class epsfile(base.PSCmd):
             raise IOError, "cannot open EPS file '%s'" % self.filename 
 
         file.write("BeginEPSF\n")
-
-
 
         bbrect = self.mybbox.rect().transformed(self.trafo)
         

@@ -7,7 +7,7 @@ at discretion. The most simple example looks like
 \begin{verbatim}
 from pyx import *
 c = canvas.canvas()
-c.insert(epsfile.epsfile("file.eps"))
+c.insert(epsfile.epsfile(0, 0, "file.eps"))
 c.writetofile("output")
 \end{verbatim}
 \end{quote}
@@ -19,12 +19,12 @@ constructor. They are summarized in the following table:
 \begin{tabularx}{\linewidth}{l>{\raggedright\arraybackslash}X}
 argument name&description\\
 \hline
+\texttt{x} & $x$-coordinate of position (measured in user
+units by default).\\
+\texttt{y} & $y$-coordinate of position (measured in user
+units by default).\\
 \texttt{filename} & Name of the EPS file (including a possible
 extension).\\
-\texttt{x="0 t m"} & $x$-coordinate of position (converts to user
-unit by default).\\
-\texttt{y="0 t m"} & $y$-coordinate of position (converts to user
-unit by default).\\
 \texttt{width=None} & Desired width of EPS graphics or \texttt{None}
 for original width. Cannot be combined with scale specification.\\
 \texttt{heigth=None} & Desired height of EPS graphics or \texttt{None}
