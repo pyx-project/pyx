@@ -62,7 +62,7 @@ class bbox:
 
     def write(self, file):
         file.write("%%%%BoundingBox: %d %d %d %d\n" %
-                   (self.llx-1, self.lly-1, self.urx+1, self.ury+1))
+                   (self.llx, self.lly, self.urx, self.ury))
         # TODO: add HighResBBox
 
     def intersects(self, other):
