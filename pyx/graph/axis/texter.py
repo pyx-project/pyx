@@ -33,7 +33,7 @@ class _Itexter:
         """fill the label attribute of ticks
         - ticks is a list of instances of tick
         - for each element of ticks the value of the attribute label is set to
-          a string appropriate to the attributes enum and denom of that tick
+          a string appropriate to the attributes num and denom of that tick
           instance
         - label attributes of the tick instances are just kept, whenever they
           are not equal to None
@@ -80,7 +80,7 @@ class decimal:
         for tick in ticks:
             if tick.label is None and tick.labellevel is not None:
                 labeledticks.append(tick)
-                m, n = tick.enum, tick.denom
+                m, n = tick.num, tick.denom
                 if m < 0: m = -m
                 if n < 0: n = -n
                 quotient, remainder = divmod(m, n)
@@ -123,7 +123,7 @@ class decimal:
                             tick.label += self.thousandthpartsep
                         tick.label += "0"
         for tick in labeledticks:
-            if tick.enum * tick.denom < 0:
+            if tick.num * tick.denom < 0:
                 plusminus = self.minus
             else:
                 plusminus = self.plus
@@ -197,32 +197,32 @@ class exponential:
         labeledticks = []
         for tick in ticks:
             if tick.label is None and tick.labellevel is not None:
-                tick.temp_orgenum, tick.temp_orgdenom = tick.enum, tick.denom
+                tick.temp_orgnum, tick.temp_orgdenom = tick.num, tick.denom
                 labeledticks.append(tick)
                 tick.temp_exp = 0
-                if tick.enum:
+                if tick.num:
                     while abs(tick) >= self.mantissamax:
                         tick.temp_exp += 1
                         x = tick * self.mantissamindivmax
-                        tick.enum, tick.denom = x.enum, x.denom
+                        tick.num, tick.denom = x.num, x.denom
                     while abs(tick) < self.mantissamin:
                         tick.temp_exp -= 1
                         x = tick * self.mantissamaxdivmin
-                        tick.enum, tick.denom = x.enum, x.denom
+                        tick.num, tick.denom = x.num, x.denom
                 if tick.temp_exp < 0:
                     tick.temp_exp = "%s%i" % (self.minus, -tick.temp_exp)
                 else:
                     tick.temp_exp = "%s%i" % (self.plus, tick.temp_exp)
         self.mantissatexter.labels(labeledticks)
         if self.minusnomantissaexp is not None:
-            allmantissa1 = len(labeledticks) == len([tick for tick in labeledticks if abs(tick.enum) == abs(tick.denom)])
+            allmantissa1 = len(labeledticks) == len([tick for tick in labeledticks if abs(tick.num) == abs(tick.denom)])
         else:
-            allmantissa1 = len(labeledticks) == len([tick for tick in labeledticks if tick.enum == tick.denom])
+            allmantissa1 = len(labeledticks) == len([tick for tick in labeledticks if tick.num == tick.denom])
         for tick in labeledticks:
             if (self.skipallmantissa1 and allmantissa1 or
-                (self.skipmantissa1 and (tick.enum == tick.denom or
-                                         (tick.enum == -tick.denom and self.minusnomantissaexp is not None)))):
-                if tick.enum == tick.denom:
+                (self.skipmantissa1 and (tick.num == tick.denom or
+                                         (tick.num == -tick.denom and self.minusnomantissaexp is not None)))):
+                if tick.num == tick.denom:
                     tick.label = self.nomantissaexp % tick.temp_exp
                 else:
                     tick.label = self.minusnomantissaexp % tick.temp_exp
@@ -233,9 +233,9 @@ class exponential:
                     tick.label = self.skipexp1 % tick.label
                 else:
                     tick.label = self.mantissaexp % (tick.label, tick.temp_exp)
-            tick.enum, tick.denom = tick.temp_orgenum, tick.temp_orgdenom
+            tick.num, tick.denom = tick.temp_orgnum, tick.temp_orgdenom
 
-            # del tick.temp_orgenum    # we've inserted those temporary variables ... and do not care any longer about them
+            # del tick.temp_orgnum    # we've inserted those temporary variables ... and do not care any longer about them
             # del tick.temp_orgdenom
             # del tick.temp_exp
 
@@ -269,7 +269,7 @@ class mixed:
         expticks = []
         for tick in ticks:
             if tick.label is None and tick.labellevel is not None:
-                if not tick.enum or (abs(tick) >= self.smallestdecimal and abs(tick) <= self.biggestdecimal):
+                if not tick.num or (abs(tick) >= self.smallestdecimal and abs(tick) <= self.biggestdecimal):
                     decticks.append(tick)
                 else:
                     expticks.append(tick)
@@ -292,43 +292,43 @@ class rational:
     __implements__ = _Itexter
 
     def __init__(self, prefix="", infix="", suffix="",
-                       enumprefix="", enuminfix="", enumsuffix="",
+                       numprefix="", numinfix="", numsuffix="",
                        denomprefix="", denominfix="", denomsuffix="",
                        plus="", minus="-", minuspos=0, over=r"{{%s}\over{%s}}",
-                       equaldenom=0, skip1=1, skipenum0=1, skipenum1=1, skipdenom1=1,
+                       equaldenom=0, skip1=1, skipnum0=1, skipnum1=1, skipdenom1=1,
                        labelattrs=[text.mathmode]):
         r"""initializes the instance
         - prefix, infix, and suffix (strings) are added at the begin,
           immediately after the minus, and at the end of the label,
           respectively
-        - prefixenum, infixenum, and suffixenum (strings) are added
-          to the labels enumerator correspondingly
+        - prefixnum, infixnum, and suffixnum (strings) are added
+          to the labels numerator correspondingly
         - prefixdenom, infixdenom, and suffixdenom (strings) are added
           to the labels denominator correspondingly
         - plus or minus (string) is inserted for non-negative or negative numbers
         - minuspos is an integer, which determines the position, where the
           plus or minus sign has to be placed; the following values are allowed:
-            1 - writes the plus or minus in front of the enumerator
+            1 - writes the plus or minus in front of the numerator
             0 - writes the plus or minus in front of the hole fraction
            -1 - writes the plus or minus in front of the denominator
         - over (string) is taken as a format string generating the
           fraction bar; it has to contain exactly two string insert
-          operators "%s" -- the first for the enumerator and the second
+          operators "%s" -- the first for the numerator and the second
           for the denominator; by far the most common examples are
           r"{{%s}\over{%s}}" and "{{%s}/{%s}}"
-        - usually the enumerator and denominator are canceled; however,
+        - usually the numerator and denominator are canceled; however,
           when equaldenom is set, the least common multiple of all
           denominators is used
         - skip1 (boolean) just prints the prefix, the plus or minus,
           the infix and the suffix, when the value is plus or minus one
           and at least one of prefix, infix and the suffix is present
-        - skipenum0 (boolean) just prints a zero instead of
-          the hole fraction, when the enumerator is zero;
+        - skipnum0 (boolean) just prints a zero instead of
+          the hole fraction, when the numerator is zero;
           no prefixes, infixes, and suffixes are taken into account
-        - skipenum1 (boolean) just prints the enumprefix, the plus or minus,
-          the enuminfix and the enumsuffix, when the enum value is plus or minus one
-          and at least one of enumprefix, enuminfix and the enumsuffix is present
-        - skipdenom1 (boolean) just prints the enumerator instead of
+        - skipnum1 (boolean) just prints the numprefix, the plus or minus,
+          the numinfix and the numsuffix, when the num value is plus or minus one
+          and at least one of numprefix, numinfix and the numsuffix is present
+        - skipdenom1 (boolean) just prints the numerator instead of
           the hole fraction, when the denominator is one and none of the parameters
           denomprefix, denominfix and denomsuffix are set and minuspos is not -1 or the
           fraction is positive
@@ -338,9 +338,9 @@ class rational:
         self.prefix = prefix
         self.infix = infix
         self.suffix = suffix
-        self.enumprefix = enumprefix
-        self.enuminfix = enuminfix
-        self.enumsuffix = enumsuffix
+        self.numprefix = numprefix
+        self.numinfix = numinfix
+        self.numsuffix = numsuffix
         self.denomprefix = denomprefix
         self.denominfix = denominfix
         self.denomsuffix = denomsuffix
@@ -350,8 +350,8 @@ class rational:
         self.over = over
         self.equaldenom = equaldenom
         self.skip1 = skip1
-        self.skipenum0 = skipenum0
-        self.skipenum1 = skipenum1
+        self.skipnum0 = skipnum0
+        self.skipnum1 = skipnum1
         self.skipdenom1 = skipdenom1
         self.labelattrs = labelattrs
 
@@ -392,25 +392,25 @@ class rational:
         for tick in ticks:
             if tick.label is None and tick.labellevel is not None:
                 labeledticks.append(tick)
-                tick.temp_rationalenum = tick.enum
+                tick.temp_rationalnum = tick.num
                 tick.temp_rationaldenom = tick.denom
                 tick.temp_rationalminus = 1
-                if tick.temp_rationalenum < 0:
+                if tick.temp_rationalnum < 0:
                     tick.temp_rationalminus = -tick.temp_rationalminus
-                    tick.temp_rationalenum = -tick.temp_rationalenum
+                    tick.temp_rationalnum = -tick.temp_rationalnum
                 if tick.temp_rationaldenom < 0:
                     tick.temp_rationalminus = -tick.temp_rationalminus
                     tick.temp_rationaldenom = -tick.temp_rationaldenom
-                gcd = self.gcd(tick.temp_rationalenum, tick.temp_rationaldenom)
-                (tick.temp_rationalenum, dummy1), (tick.temp_rationaldenom, dummy2) = divmod(tick.temp_rationalenum, gcd), divmod(tick.temp_rationaldenom, gcd)
+                gcd = self.gcd(tick.temp_rationalnum, tick.temp_rationaldenom)
+                (tick.temp_rationalnum, dummy1), (tick.temp_rationaldenom, dummy2) = divmod(tick.temp_rationalnum, gcd), divmod(tick.temp_rationaldenom, gcd)
         if self.equaldenom:
             equaldenom = self.lcm(*[tick.temp_rationaldenom for tick in ticks if tick.label is None])
             if equaldenom is not None:
                 for tick in labeledticks:
                     factor, dummy = divmod(equaldenom, tick.temp_rationaldenom)
-                    tick.temp_rationalenum, tick.temp_rationaldenom = factor * tick.temp_rationalenum, factor * tick.temp_rationaldenom
+                    tick.temp_rationalnum, tick.temp_rationaldenom = factor * tick.temp_rationalnum, factor * tick.temp_rationaldenom
         for tick in labeledticks:
-            rationalminus = rationalenumminus = rationaldenomminus = ""
+            rationalminus = rationalnumminus = rationaldenomminus = ""
             if tick.temp_rationalminus == -1:
                 plusminus = self.minus
             else:
@@ -418,32 +418,32 @@ class rational:
             if self.minuspos == 0:
                 rationalminus = plusminus
             elif self.minuspos == 1:
-                rationalenumminus = plusminus
+                rationalnumminus = plusminus
             elif self.minuspos == -1:
                 rationaldenomminus = plusminus
             else:
                 raise RuntimeError("invalid minuspos")
-            if self.skipenum0 and tick.temp_rationalenum == 0:
+            if self.skipnum0 and tick.temp_rationalnum == 0:
                 tick.label = "0"
-            elif (self.skip1 and self.skipdenom1 and tick.temp_rationalenum == 1 and tick.temp_rationaldenom == 1 and
+            elif (self.skip1 and self.skipdenom1 and tick.temp_rationalnum == 1 and tick.temp_rationaldenom == 1 and
                   (len(self.prefix) or len(self.infix) or len(self.suffix)) and
-                  not len(rationalenumminus) and not len(self.enumprefix) and not len(self.enuminfix) and not len(self.enumsuffix) and
+                  not len(rationalnumminus) and not len(self.numprefix) and not len(self.numinfix) and not len(self.numsuffix) and
                   not len(rationaldenomminus) and not len(self.denomprefix) and not len(self.denominfix) and not len(self.denomsuffix)):
                 tick.label = "%s%s%s%s" % (self.prefix, rationalminus, self.infix, self.suffix)
             else:
-                if self.skipenum1 and tick.temp_rationalenum == 1 and (len(self.enumprefix) or len(self.enuminfix) or len(self.enumsuffix)):
-                    tick.temp_rationalenum = "%s%s%s%s" % (self.enumprefix, rationalenumminus, self.enuminfix, self.enumsuffix)
+                if self.skipnum1 and tick.temp_rationalnum == 1 and (len(self.numprefix) or len(self.numinfix) or len(self.numsuffix)):
+                    tick.temp_rationalnum = "%s%s%s%s" % (self.numprefix, rationalnumminus, self.numinfix, self.numsuffix)
                 else:
-                    tick.temp_rationalenum = "%s%s%s%i%s" % (self.enumprefix, rationalenumminus, self.enuminfix, tick.temp_rationalenum, self.enumsuffix)
+                    tick.temp_rationalnum = "%s%s%s%i%s" % (self.numprefix, rationalnumminus, self.numinfix, tick.temp_rationalnum, self.numsuffix)
                 if self.skipdenom1 and tick.temp_rationaldenom == 1 and not len(rationaldenomminus) and not len(self.denomprefix) and not len(self.denominfix) and not len(self.denomsuffix):
-                    rational = tick.temp_rationalenum
+                    rational = tick.temp_rationalnum
                 else:
                     tick.temp_rationaldenom = "%s%s%s%i%s" % (self.denomprefix, rationaldenomminus, self.denominfix, tick.temp_rationaldenom, self.denomsuffix)
-                    rational = self.over % (tick.temp_rationalenum, tick.temp_rationaldenom)
+                    rational = self.over % (tick.temp_rationalnum, tick.temp_rationaldenom)
                 tick.label = "%s%s%s%s%s" % (self.prefix, rationalminus, self.infix, rational, self.suffix)
             tick.labelattrs = tick.labelattrs + self.labelattrs
 
-            # del tick.temp_rationalenum    # we've inserted those temporary variables ... and do not care any longer about them
+            # del tick.temp_rationalnum    # we've inserted those temporary variables ... and do not care any longer about them
             # del tick.temp_rationaldenom
             # del tick.temp_rationalminus
 

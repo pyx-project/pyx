@@ -104,6 +104,8 @@ TODO:
   - setup.py and distribution:
     - create siteconfig on install to store positions of the shared data
       and the global pyxrc
+  - graph modules:
+    - enum -> num renaming
 
 0.6.2 (2004/04/07):
   - graph module:

@@ -36,7 +36,7 @@ except OverflowError:
 class rational:
     """rational class performing some basic rational arithmetics
     the axis partitioning uses rational arithmetics (with infinite accuracy)
-    basically it contains self.enum and self.denom"""
+    basically it contains self.num and self.denom"""
 
     def initfromstring(self, s):
         "converts a string 0.123 into a rational"
@@ -48,7 +48,7 @@ class rational:
             raise ValueError("multiple '.' found in '%s'" % expparts[0])
         if len(commaparts) == 1:
             commaparts = [commaparts[0], ""]
-        self.enum = 1
+        self.num = 1
         if autolong:
             self.denom = 10 ** len(commaparts[1])
         else:
@@ -76,9 +76,9 @@ class rational:
                 y = long(commaparts[1])
         else:
             y = 0
-        self.enum = x*self.denom + y
+        self.num = x*self.denom + y
         if neg:
-            self.enum = -self.enum
+            self.num = -self.num
         if len(expparts) == 2:
             neg = expparts[1][0] == "-"
             if neg:
@@ -94,9 +94,9 @@ class rational:
                     self.denom *= 10L ** int(expparts[1])
             else:
                 if autolong:
-                    self.enum *= 10 ** int(expparts[1])
+                    self.num *= 10 ** int(expparts[1])
                 else:
-                    self.enum *= 10L ** int(expparts[1])
+                    self.num *= 10L ** int(expparts[1])
 
     def initfromfloat(self, x, floatprecision):
         "converts a float into a rational with finite resolution"
@@ -106,14 +106,14 @@ class rational:
 
     def __init__(self, x, power=1, floatprecision=10):
         """initializes a rational
-        - rational=(enum/denom)**power
+        - rational=(num/denom)**power
         - x must be one of:
           - a string (like "1.2", "1.2e3", "1.2/3.4", etc.)
           - a float (converted using floatprecision)
           - a sequence of two integers
           - a rational instance"""
         if power == 0:
-            self.enum = 1
+            self.num = 1
             self.denom = 1
             return
         try:
@@ -126,10 +126,10 @@ class rational:
             except:
                 try:
                     # x might be a tuple
-                    self.enum, self.denom = x
+                    self.num, self.denom = x
                 except:
-                    # otherwise it should have a enum and denom
-                    self.enum, self.denom = x.enum, x.denom
+                    # otherwise it should have a num and denom
+                    self.num, self.denom = x.num, x.denom
             else:
                 # x is a string
                 fraction = x.split("/")
@@ -143,51 +143,51 @@ class rational:
             self.initfromfloat(x, floatprecision)
         if not self.denom: raise ZeroDivisionError("zero denominator")
         if power == -1:
-            self.enum, self.denom = self.denom, self.enum
+            self.num, self.denom = self.denom, self.num
         elif power < -1:
             if autolong:
-                self.enum, self.denom = self.denom ** (-power), self.enum ** (-power)
+                self.num, self.denom = self.denom ** (-power), self.num ** (-power)
             else:
-                self.enum, self.denom = long(self.denom) ** (-power), long(self.enum) ** (-power)
+                self.num, self.denom = long(self.denom) ** (-power), long(self.num) ** (-power)
         elif power > 1:
             if autolong:
-                self.enum = self.enum ** power
+                self.num = self.num ** power
                 self.denom = self.denom ** power
             else:
-                self.enum = long(self.enum) ** power
+                self.num = long(self.num) ** power
                 self.denom = long(self.denom) ** power
 
     def __cmp__(self, other):
         try:
-            return cmp(self.enum * other.denom, other.enum * self.denom)
+            return cmp(self.num * other.denom, other.num * self.denom)
         except:
             return cmp(float(self), other)
 
     def __abs__(self):
-        return rational((abs(self.enum), abs(self.denom)))
+        return rational((abs(self.num), abs(self.denom)))
 
     def __mul__(self, other):
-        return rational((self.enum * other.enum, self.denom * other.denom))
+        return rational((self.num * other.num, self.denom * other.denom))
 
     def __imul__(self, other):
-        self.enum *= other.enum
+        self.num *= other.num
         self.denom *= other.denom
         return self
 
     def __div__(self, other):
-        return rational((self.enum * other.denom, self.denom * other.enum))
+        return rational((self.num * other.denom, self.denom * other.num))
 
     def __idiv__(self, other):
-        self.enum *= other.denom
-        self.denom *= other.enum
+        self.num *= other.denom
+        self.denom *= other.num
         return self
 
     def __float__(self):
         "caution: avoid final precision of floats"
-        return float(self.enum) / self.denom
+        return float(self.num) / self.denom
 
     def __str__(self):
-        return "%i/%i" % (self.enum, self.denom)
+        return "%i/%i" % (self.num, self.denom)
 
 
 class tick(rational):

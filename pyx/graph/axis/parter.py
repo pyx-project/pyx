@@ -120,7 +120,7 @@ class linear:
         imax = int(math.floor(max/float(dist) + 0.5*self.epsilon))
         ticks = []
         for i in range(imin, imax + 1):
-            ticks.append(tick.tick((i*dist.enum, dist.denom), ticklevel=ticklevel, labellevel=labellevel))
+            ticks.append(tick.tick((i*dist.num, dist.denom), ticklevel=ticklevel, labellevel=labellevel))
         return ticks
 
     def defaultpart(self, min, max, extendmin, extendmax):
@@ -188,8 +188,8 @@ class autolinear:
         ticks = map(tick.rational, self.variants[0])
         useticks = [t * base for t in ticks]
         self.lesstickindex = self.moretickindex = 0
-        self.lessbase = tick.rational((base.enum, base.denom))
-        self.morebase = tick.rational((base.enum, base.denom))
+        self.lessbase = tick.rational((base.num, base.denom))
+        self.morebase = tick.rational((base.num, base.denom))
         self.min, self.max, self.extendmin, self.extendmax = min, max, extendmin, extendmax
         part = linear(tickdist=useticks, extendtick=self.extendtick, epsilon=self.epsilon)
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
@@ -199,7 +199,7 @@ class autolinear:
             self.lesstickindex += 1
         else:
             self.lesstickindex = 0
-            self.lessbase.enum *= 10
+            self.lessbase.num *= 10
         ticks = map(tick.rational, self.variants[self.lesstickindex])
         useticks = [t * self.lessbase for t in ticks]
         part = linear(tickdist=useticks, extendtick=self.extendtick, epsilon=self.epsilon)
@@ -328,7 +328,7 @@ class logarithmic(linear):
                                   math.log(preexp.exp) + 0.5 * self.epsilon))
             for i in range(imin, imax + 1):
                 pos = f * tick.rational((preexp.exp, 1), power=i)
-                thisticks.append(tick.tick((pos.enum, pos.denom), ticklevel = ticklevel, labellevel = labellevel))
+                thisticks.append(tick.tick((pos.num, pos.denom), ticklevel = ticklevel, labellevel = labellevel))
             ticks = tick.mergeticklists(ticks, thisticks)
         return ticks
 
