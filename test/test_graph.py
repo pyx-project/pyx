@@ -24,10 +24,13 @@ from pyx import *
 
 c = canvas.canvas()
 t = tex.tex()
-g = c.insert(graph.graphxy(t, width=10, x=graph.logaxis(title="x-Achse"),
-                                        y=graph.logaxis(title="y-Achse",
-                                                        painter=graph.axispainter(labelstyles=(tex.direction(30),tex.halign.right))),
-                                        y2=graph.linaxis(title="y2-Achse", factor = 0.01, suffix = "\,\pi")))
+g = c.insert(graph.graphxy(t, width=10, 
+                           x=graph.logaxis(title="x-Achse"),
+                           y=graph.logaxis(title="y-Achse",
+                                           part=graph.logpart(tickshiftfracslist=(graph.autologpart.shiftfracs1, graph.autologpart.shiftfracs1to9),
+                                                              labeltext=("Januar", "Februar", r"M\"arz", "April")),
+                                           painter=graph.axispainter(labelstyles=(tex.direction(50),tex.halign.right))),
+                           y2=graph.linaxis(title="y2-Achse", factor = 0.01, suffix = "\,\pi")))
 df = graph.datafile("testdata")
 g.plot(graph.data(df, x=1, y=3))
 g.plot(graph.data(df, x=1, y2=4))

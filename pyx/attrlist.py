@@ -36,6 +36,8 @@ class _nodefault:
 
 class attrlist:
 
+    # TODO: could be improved??? (read python cookbook carefully)
+
     def attrcheck(self, attrs, allowonce, allowmulti = []):
         hadonce = []
         for attr in attrs:

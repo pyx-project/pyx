@@ -157,7 +157,11 @@ class tick(frac):
 
 class anypart:
 
+    def __init__(self, labeltext=None):
+        self.labeltext = labeltext
+
     def mergeticklists(self, list1, list2):
+        # TODO: could be improved??? (read python cookbook carefully)
         # caution: side effects
         i = 0
         j = 0
@@ -176,11 +180,15 @@ class anypart:
                 list1 += list2[j:]
         return list1
 
+    def setlabeltext(self, part):
+        if self.labeltext is not None:
+            for tick, label in zip([tick for tick in part if tick.labellevel == 0], self.labeltext):
+                tick.text = label
 
 class linpart(anypart):
 
     def __init__(self, tickfracs=None, labelfracs=None,
-                 extendtoticklevel=0, extendtolabellevel=None, epsilon=1e-10):
+                 extendtoticklevel=0, extendtolabellevel=None, epsilon=1e-10, **args):
         """
         zero-level labelfracs are created out of the zero-level tickfracs when labelfracs are None
         all-level tickfracs are created out of the all-level labelfracs when tickfracs are None
@@ -197,6 +205,7 @@ class linpart(anypart):
         self.extendtoticklevel = extendtoticklevel
         self.extendtolabellevel = extendtolabellevel
         self.epsilon = epsilon
+        anypart.__init__(self, **args)
 
     def extendminmax(self, min, max, frac):
         return (float(frac) * math.floor(min / float(frac) + self.epsilon),
@@ -216,12 +225,12 @@ class linpart(anypart):
         values provided to the constructor. It is not allowed to provide something
         to tickfracs and labelfracs here and at the constructor at the same time.
         """
-        if (tickfracs == None) and (labelfracs == None):
+        if tickfracs is None and tickfracs is None:
             tickfracs = self.tickfracs
             labelfracs = self.labelfracs
         else:
-            assert self.tickfracs == None
-            assert self.labelfracs == None
+            assert self.tickfracs is None
+            assert self.labelfracs is None
         if tickfracs == None:
             if labelfracs == None:
                 tickfracs = ()
@@ -244,10 +253,11 @@ class linpart(anypart):
         for i in range(len(labelfracs)):
             ticks = self.mergeticklists(ticks, self.getticklist(min, max, labelfracs[i], labellevel = i))
 
+        self.setlabeltext(ticks)
         return ticks
 
     def getparts(self, min, max):
-        return [getticks(self, min, max), ]
+        return [self.getticks(min, max), ]
 
 
 class autolinpart(linpart):
@@ -289,7 +299,7 @@ class logpart(anypart):
     """
 
     def __init__(self, tickshiftfracslist=None, labelshiftfracslist=None,
-                 extendtoticklevel=0, extendtolabellevel=None, epsilon=1e-10):
+                 extendtoticklevel=0, extendtolabellevel=None, epsilon=1e-10, **args):
         """
         For the parameters tickshiftfracslist and labelshiftfracslist apply
         rules like for tickfracs and labelfracs in linpart.
@@ -299,6 +309,7 @@ class logpart(anypart):
         self.extendtoticklevel = extendtoticklevel
         self.extendtolabellevel = extendtolabellevel
         self.epsilon = epsilon
+        anypart.__init__(self, **args)
 
     def extendminmax(self, min, max, shiftfracs):
         minpower = None
@@ -374,10 +385,11 @@ class logpart(anypart):
         for i in range(len(labelshiftfracslist)):
             ticks = self.mergeticklists(ticks, self.getticklist(min, max, labelshiftfracslist[i], labellevel = i))
 
+        self.setlabeltext(ticks)
         return ticks
 
     def getparts(self, min, max):
-        return [getticks(self, min, max), ]
+        return [self.getticks(min, max), ]
 
 class autologpart(logpart):
     shift5fracs1   = shiftfracs(100000, frac(1, 10))
@@ -906,6 +918,7 @@ class axispainter(attrlist.attrlist):
         if haslabel:
             for tick in axis.ticks:
                 if tick.labellevel is not None:
+                    tick.labelstyles = self.selectstyle(tick.labellevel, self.labelstyles)
                     if not hasattr(tick, "text"):
                         if self.fractype == axispainter.fractypeauto:
                             if axis.prefix is not None or axis.suffix is not None:
@@ -930,9 +943,9 @@ class axispainter(attrlist.attrlist):
                                 tick.text = axis.prefix + tick.text
                             if axis.suffix is not None:
                                 tick.text = tick.text + axis.suffix
-                    tick.labelstyles = self.selectstyle(tick.labellevel, self.labelstyles)
-                    tick.labelstyles += [tex.style.math]
-                    if self.labeldirection is not None:
+                        if not self.attrcount(tick.labelstyles, tex.direction):
+                            tick.labelstyles += [tex.style.math]
+                    if self.labeldirection is not None and not self.attrcount(axis.labelstyles, tex.direction):
                         tick.labelstyles += [tex.direction(self.reldirection(self.labeldirection, tick.dx, tick.dy))]
                     tick.textbox = textbox(graph.tex, tick.text, textstyles = tick.labelstyles)
 
@@ -988,7 +1001,6 @@ class axispainter(attrlist.attrlist):
         if axis.title is not None:
             x, y = axis.tickpoint(axis, 0.5)
             dx, dy = axis.tickdirection(axis, 0.5)
-            print axis.title, axis.titlestyles
             if axis.titledirection is not None and not self.attrcount(axis.titlestyles, tex.direction):
                 axis.titlestyles += [tex.direction(self.reldirection(axis.titledirection, tick.dx, tick.dy))]
             axis.titlebox = textbox(graph.tex, axis.title, textstyles = axis.titlestyles)
@@ -1057,13 +1069,6 @@ class _axis:
                 self.setbasepts(((self.min, 1), (self.max, 0)))
             else:
                 self.setbasepts(((self.min, 0), (self.max, 1)))
-
-#    def saverange(self):
-#        return (self.min, self.max)
-#
-#    def restorerange(self, savedrange):
-#        self.min, self.max = savedrange
-#        self.setrange()
 
 
 class linaxis(_axis, _linmap):
@@ -1150,8 +1155,30 @@ class graphxy(canvas.canvas):
         data.setstyle(style)
         self.data.append(data)
 
-    def bbox(self):
-        return bbox.bbox(self.xpos, self.ypos, self.xpos + self.width, self.ypos + self.height)
+    def xtickpoint(self, axis, virtual):
+        return (self.xmap.convert(virtual), axis.yaxispos)
+
+    def ytickpoint(self, axis, virtual):
+        return (axis.xaxispos, self.ymap.convert(virtual))
+
+    def tickdirection(self, axis, virtual):
+        return axis.fixtickdirection
+
+    def xgridpath(self, axis, virtual):
+        return path._line(self.xmap.convert(virtual), self.ymap.convert(0),
+                          self.xmap.convert(virtual), self.ymap.convert(1))
+
+    def ygridpath(self, axis, virtual):
+        return path._line(self.xmap.convert(0), self.ymap.convert(virtual),
+                          self.xmap.convert(1), self.ymap.convert(virtual))
+
+    def keynum(self, key):
+        try:
+            while key[0] in string.letters:
+                key = key[1:]
+            return int(key)
+        except IndexError:
+            return 1
 
     def gatherranges(self):
         ranges = {}
@@ -1207,7 +1234,7 @@ class graphxy(canvas.canvas):
                         bestrate = rate
             else:
                 axis.rates = [0, ]
-                axis.usenum = 0
+                axis.partnum = 0
 
             # TODO: Additional ratings (spacing of text etc.)
             axis.ticks = axis.parts[axis.partnum]
@@ -1226,31 +1253,6 @@ class graphxy(canvas.canvas):
                              self.xmap.convert(1) - self.xmap.convert(0),
                              self.ymap.convert(1) - self.ymap.convert(0)))
         self._drawstate = self.drawaxes
-
-    def xtickpoint(self, axis, virtual):
-        return (self.xmap.convert(virtual), axis.yaxispos)
-
-    def ytickpoint(self, axis, virtual):
-        return (axis.xaxispos, self.ymap.convert(virtual))
-
-    def tickdirection(self, axis, virtual):
-        return axis.fixtickdirection
-
-    def xgridpath(self, axis, virtual):
-        return path._line(self.xmap.convert(virtual), self.ymap.convert(0),
-                          self.xmap.convert(virtual), self.ymap.convert(1))
-
-    def ygridpath(self, axis, virtual):
-        return path._line(self.xmap.convert(0), self.ymap.convert(virtual),
-                          self.xmap.convert(1), self.ymap.convert(virtual))
-
-    def keynum(self, key):
-        try:
-            while key[0] in string.letters:
-                key = key[1:]
-            return int(key)
-        except IndexError:
-            return 1
 
     def drawaxes(self):
         axesdist = unit.topt(unit.length(self.axesdist_str, default_type="v"))
@@ -1307,14 +1309,19 @@ class graphxy(canvas.canvas):
             data.draw(self)
         self._drawstate = None
 
-    def bbox(self):
+    def drawall(self):
         while self._drawstate is not None:
             self._drawstate()
-        return canvas.canvas.bbox(self)
+
+    def bbox(self):
+        self.drawall()
+        return bbox.bbox(self.xpos - self.yaxisextents[0],
+                         self.ypos - self.xaxisextents[0],
+                         self.xpos + self.width + self.yaxisextents[1],
+                         self.ypos + self.height + self.xaxisextents[1])
 
     def write(self, file):
-        while self._drawstate is not None:
-            self._drawstate()
+        self.drawall()
         canvas.canvas.write(self, file)
 
 
