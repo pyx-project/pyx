@@ -1,4 +1,6 @@
-include manual/manual.pdf
+include AUTHORS
 include LICENSE
+include manual/manual.pdf
+
 prune test
 exclude pyx/axis.py pyx/text.py
