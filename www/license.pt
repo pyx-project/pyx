@@ -6,18 +6,17 @@
 
     <h1>PyX - License</h1>
 
-    <p> PyX is free software licensed under the GNU GPL Version 2. However,
+    <p> PyX is free software licensed under the GNU GPL Version&nbsp;2. However,
     since the copyright of the source code is currently owned by a few people
-    only, we are able to offer PyX under a different license upon request.
-    </p>
+    only, we are able to offer PyX under a different license upon request. </p>
 
     <p> In case you want to obtain PyX under a different license, seek for
     professional support, or need additional features to be added to PyX,
-    please get in touch with <a
-    href="mailto:contact@wobsta.de,joergl@users.sourceforge.net">the
-    authors</a>. Note that we like to have new features developed commercially
-    to be added to the GPL version of PyX, as already was done in the case of
-    the bitmap support added in PyX 0.7. </p>
+    please get in touch with
+    <a href="mailto:contact@wobsta.de,joergl@users.sourceforge.net">the authors</a>.
+    Note that we like to have new features developed commercially to be added
+    to the GPL version of PyX, as already was done in the case of the bitmap
+    support added in PyX&nbsp;0.7. </p>
 
   </div>
 

@@ -36,7 +36,7 @@
       PyX is in steady development.
       Planned features are listed on the <a href="roadmap.html">roadmap</a>.
       The current release,
-      PyX <span tal:content="options/version" tal:omit-tag="">version</span>,
+      PyX&nbsp;<span tal:content="options/version" tal:omit-tag="">version</span>,
       is available at the
       <a href="http://sourceforge.net/project/showfiles.php?group_id=45430">download section</a>
       of the SourceForge
@@ -57,7 +57,7 @@
       PyX is written by
       <a href="http://www.physik.uni-augsburg.de/~joergl/">Jörg Lehmann</a> and
       <a href="http://www.wobsta.de/">André Wobst</a>. PyX is free
-      software licensed under the GNU GPL Version 2. Other licensing
+      software licensed under the GNU GPL Version&nbsp;2. Other licensing
       schemes might be available upon request. Refer to the
       <a href="license.html">license page</a> for further information.
     </p>
@@ -66,7 +66,7 @@
 
     <p>
       The authors kindly acknowledge financial support from the German Speaking TeX User Group
-      <a href="http://www.dante.de/">DANTE e.V.</a>
+      <a href="http://www.dante.de/">DANTE&nbsp;e.V.</a>
     </p>
 
     <!--#exec cmd="/home/groups/p/py/pyx/htdocs/access.sh"-->
