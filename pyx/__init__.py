@@ -33,4 +33,4 @@ import version
 
 __version__ = version.version
 
-__all__ = ["box", "canvas", "color", "graph", "path", "tex", "unit", "graph", "trafo", "epsfile", "data"]
+__all__ = ["box", "canvas", "color", "graph", "path", "tex", "text", "unit", "graph", "trafo", "epsfile", "data"]

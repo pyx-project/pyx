@@ -22,7 +22,9 @@
 
 
 import types, re, math, string, sys
-import bbox, box, canvas, path, tex, unit, mathtree, trafo, attrlist, color, helper
+import bbox, box, canvas, path, unit, mathtree, trafo, attrlist, color, helper, text
+import text as textmodule # well, ugly ???
+import data as datamodule # well, ugly ???
 
 
 goldenrule = 0.5 * (math.sqrt(5) + 1)
@@ -616,66 +618,54 @@ class axisrater:
 
 
 ################################################################################
-# box alignment, connections, distances ...
-# (we may create a box drawing module and move all this stuff there)
-################################################################################
-
-
-class textbox(box._rectbox, attrlist.attrlist):
-
-    def __init__(self, _tex, text, textattrs = (), vtext="0"):
-        self.tex = _tex
-        self.text = text
-        self.textattrs = textattrs
-        self.reldx, self.reldy = 1, 0
-        self.halign = self.attrget(self.textattrs, tex.halign, None)
-        self.textattrs = self.attrdel(self.textattrs, tex.halign)
-        self.direction = self.attrget(self.textattrs, tex.direction, None)
-        hwdtextattrs = self.attrdel(self.textattrs, tex.direction)
-        self.ht = unit.topt(self.tex.textht(text, *hwdtextattrs))
-        self.wd = unit.topt(self.tex.textwd(text, *hwdtextattrs))
-        self.dp = unit.topt(self.tex.textdp(text, *hwdtextattrs))
-        self.shiftht = 0.5 * unit.topt(self.tex.textht(vtext, *hwdtextattrs))
-        self.manualextents()
-
-    def manualextents(self, ht = None, wd = None, dp = None, shiftht = None):
-        if ht is not None: self.ht = ht
-        if wd is not None: self.wd = wd
-        if dp is not None: self.dp = dp
-        if shiftht is not None: self.shiftht = None
-        self.xtext = 0
-        self.ytext = 0
-        xorigin = 0.5 * self.wd
-        if self.halign is not None:
-            # centered by default!
-            if self.halign is tex.halign.left:
-                xorigin = 0
-            if self.halign is tex.halign.right:
-                xorigin = self.wd
-        box._rectbox.__init__(self, 0, -self.dp, self.wd, self.dp + self.ht, abscenter=(xorigin, self.shiftht))
-        if self.direction is not None:
-            self.transform(trafo._rotate(self.direction.value))
-
-    def transform(self, trafo):
-        box._rectbox.transform(self, trafo)
-        self.xtext, self.ytext = trafo._apply(self.xtext, self.ytext)
-
-    def printtext(self):
-        self.tex._text(self.xtext, self.ytext, self.text, *self.textattrs)
-
-
-
-################################################################################
 # axis painter
 ################################################################################
 
 
-class axispainter(attrlist.attrlist):
-
-    defaultticklengths = ["%0.5f cm" % (0.2*goldenrule**(-i)) for i in range(10)]
+class axistitlepainter(attrlist.attrlist):
 
     paralleltext = -90
     orthogonaltext = 0
+
+    def __init__(self, titledist="0.3 cm",
+                       titleattrs=(text.halign.center, text.valign.centerline()),
+                       titledirection=-90,
+                       titlepos=0.5):
+        self.titledist_str = titledist
+        self.titleattrs = titleattrs
+        self.titledirection = titledirection
+        self.titlepos = titlepos
+
+    def reldirection(self, direction, dx, dy, epsilon=1e-10):
+        direction += math.atan2(dy, dx) * 180 / math.pi
+        while (direction > 90 + epsilon):
+            direction -= 180
+        while (direction < -90 - epsilon):
+            direction += 180
+        return direction
+
+    def dolayout(self, graph, axis):
+        titledist = unit.topt(unit.length(self.titledist_str, default_type="v"))
+        if axis.title is not None and self.titleattrs is not None:
+            dx, dy = axis.vtickdirection(axis, self.titlepos)
+            # no not modify self.titleattrs ... the painter might be used by several axes!!!
+            titleattrs = list(helper.ensuresequence(self.titleattrs))
+            if self.titledirection is not None:
+                titleattrs = titleattrs + [trafo.rotate(self.reldirection(self.titledirection, dx, dy))]
+            axis.titlebox = textmodule.text(0, 0, axis.title, *titleattrs)
+            axis._extent += titledist
+            axis.titlebox._linealign(axis._extent, dx, dy)
+            axis.titlebox.transform(trafo._translate(*axis._vtickpoint(axis, self.titlepos)))
+            axis._extent += axis.titlebox._extent(dx, dy)
+
+    def paint(self, graph, axis):
+        if axis.title is not None and self.titleattrs is not None:
+            graph.insert(axis.titlebox)
+
+
+class axispainter(axistitlepainter):
+
+    defaultticklengths = ["%0.5f cm" % (0.2*goldenrule**(-i)) for i in range(10)]
 
     fractypeauto = 1
     fractyperat = 2
@@ -689,14 +679,11 @@ class axispainter(attrlist.attrlist):
                        zerolineattrs=(),
                        baselineattrs=canvas.linecap.square,
                        labeldist="0.3 cm",
-                       labelattrs=((), tex.fontsize.footnotesize),
+                       labelattrs=((text.halign.center, text.valign.centerline()),
+                                   (text.halign.center, text.valign.centerline(), text.size.footnotesize)),
                        labeldirection=None,
                        labelhequalize=0,
                        labelvequalize=1,
-                       titledist="0.3 cm",
-                       titleattrs=(),
-                       titledirection=-90,
-                       titlepos=0.5,
                        fractype=fractypeauto,
                        ratfracsuffixenum=1,
                        ratfracover=r"\over",
@@ -705,7 +692,8 @@ class axispainter(attrlist.attrlist):
                        expfracpre1=0,
                        expfracminexp=4,
                        suffix0=0,
-                       suffix1=0):
+                       suffix1=0,
+                       **args):
         self.innerticklengths_str = innerticklengths
         self.outerticklengths_str = outerticklengths
         self.tickattrs = tickattrs
@@ -717,10 +705,6 @@ class axispainter(attrlist.attrlist):
         self.labeldirection = labeldirection
         self.labelhequalize = labelhequalize
         self.labelvequalize = labelvequalize
-        self.titledist_str = titledist
-        self.titleattrs = titleattrs
-        self.titledirection = titledirection
-        self.titlepos = titlepos
         self.fractype = fractype
         self.ratfracsuffixenum = ratfracsuffixenum
         self.ratfracover = ratfracover
@@ -730,14 +714,7 @@ class axispainter(attrlist.attrlist):
         self.expfracminexp = expfracminexp
         self.suffix0 = suffix0
         self.suffix1 = suffix1
-
-    def reldirection(self, direction, dx, dy, epsilon=1e-10):
-        direction += math.atan2(dy, dx) * 180 / math.pi
-        while (direction > 90 + epsilon):
-            direction -= 180
-        while (direction < -90 - epsilon):
-            direction += 180
-        return direction
+        axistitlepainter.__init__(self, **args)
 
     def gcd(self, m, n):
         # greates common divisor, m & n must be non-negative
@@ -839,23 +816,23 @@ class axispainter(attrlist.attrlist):
                 return self.attachsuffix(tick, "%s%s10^{%i}" % (prefactor, self.expfractimes, exp))
 
     def createtext(self, tick):
-        if self.fractype == axispainter.fractypeauto:
+        if self.fractype == self.fractypeauto:
             if tick.suffix is not None:
                 tick.text = self.ratfrac(tick)
             else:
                 tick.text = self.expfrac(tick, self.expfracminexp)
                 if tick.text is None:
                     tick.text = self.decfrac(tick)
-        elif self.fractype == axispainter.fractypedec:
+        elif self.fractype == self.fractypedec:
             tick.text = self.decfrac(tick)
-        elif self.fractype == axispainter.fractypeexp:
+        elif self.fractype == self.fractypeexp:
             tick.text = self.expfrac(tick)
-        elif self.fractype == axispainter.fractyperat:
+        elif self.fractype == self.fractyperat:
             tick.text = self.ratfrac(tick)
         else:
             raise ValueError("fractype invalid")
-        if not self.attrcount(tick.labelattrs, tex.style):
-            tick.labelattrs += [tex.style.math]
+        if textmodule.mathmode not in tick.labelattrs:
+            tick.labelattrs = [textmodule.mathmode] + tick.labelattrs
 
     def dolayout(self, graph, axis):
         labeldist = unit.topt(unit.length(self.labeldist_str, default_type="v"))
@@ -871,9 +848,9 @@ class axispainter(attrlist.attrlist):
                     if tick.text is None:
                         tick.suffix = axis.suffix
                         self.createtext(tick)
-                    if self.labeldirection is not None and not self.attrcount(tick.labelattrs, tex.direction):
-                        tick.labelattrs += [tex.direction(self.reldirection(self.labeldirection, tick.dx, tick.dy))]
-                    tick.textbox = textbox(graph.tex, tick.text, textattrs=tick.labelattrs)
+                    if self.labeldirection is not None:
+                        tick.labelattrs += [trafo.rotate(self.reldirection(self.labeldirection, tick.dx, tick.dy))]
+                    tick.textbox = textmodule.text(0, 0, tick.text, *tick.labelattrs)
                 else:
                     tick.textbox = None
             else:
@@ -884,19 +861,19 @@ class axispainter(attrlist.attrlist):
                 break
         else:
             equaldirection = 1
-        if equaldirection:
-            maxht, maxwd, maxdp = 0, 0, 0
-            for tick in axis.ticks:
-                if tick.textbox is not None:
-                    if maxht < tick.textbox.ht: maxht = tick.textbox.ht
-                    if maxwd < tick.textbox.wd: maxwd = tick.textbox.wd
-                    if maxdp < tick.textbox.dp: maxdp = tick.textbox.dp
-            for tick in axis.ticks:
-                if tick.textbox is not None:
-                    if self.labelhequalize:
-                        tick.textbox.manualextents(wd = maxwd)
-                    if self.labelvequalize:
-                        tick.textbox.manualextents(ht = maxht, dp = maxdp)
+        #if equaldirection:
+        #    maxht, maxwd, maxdp = 0, 0, 0
+        #    for tick in axis.ticks:
+        #        if tick.textbox is not None:
+        #            if maxht < tick.textbox.ht: maxht = tick.textbox.ht
+        #            if maxwd < tick.textbox.wd: maxwd = tick.textbox.wd
+        #            if maxdp < tick.textbox.dp: maxdp = tick.textbox.dp
+        #    for tick in axis.ticks:
+        #        if tick.textbox is not None:
+        #            if self.labelhequalize:
+        #                tick.textbox.manualextents(wd = maxwd)
+        #            if self.labelvequalize:
+        #                tick.textbox.manualextents(ht = maxht, dp = maxdp)
         for tick in axis.ticks:
             if tick.textbox is not None:
                 tick.textbox._linealign(labeldist, tick.dx, tick.dy)
@@ -911,7 +888,6 @@ class axispainter(attrlist.attrlist):
                     return unit.topt(unit.length(arg, default_type="v"))
         innerticklengths = topt_v_recursive(self.innerticklengths_str)
         outerticklengths = topt_v_recursive(self.outerticklengths_str)
-        titledist = unit.topt(unit.length(self.titledist_str, default_type="v"))
         axis._extent = 0
         for tick in axis.ticks:
             if tick.ticklevel is not None:
@@ -928,18 +904,7 @@ class axispainter(attrlist.attrlist):
                     tick._extent = 0
             if axis._extent < tick._extent:
                 axis._extent = tick._extent
-
-        if axis.title is not None and self.titleattrs is not None:
-            dx, dy = axis.vtickdirection(axis, self.titlepos)
-            # no not modify self.titleattrs ... the painter might be used by several axes!!!
-            titleattrs = list(helper.ensuresequence(self.titleattrs))
-            if self.titledirection is not None and not self.attrcount(titleattrs, tex.direction):
-                titleattrs = titleattrs + [tex.direction(self.reldirection(self.titledirection, dx, dy))]
-            axis.titlebox = textbox(graph.tex, axis.title, textattrs=titleattrs)
-            axis._extent += titledist
-            axis.titlebox._linealign(axis._extent, dx, dy)
-            axis.titlebox.transform(trafo._translate(*axis._vtickpoint(axis, self.titlepos)))
-            axis._extent += axis.titlebox._extent(dx, dy)
+        axistitlepainter.dolayout(self, graph, axis)
 
     def ratelayout(self, graph, axis, dense=1):
         ticktextboxes = [tick.textbox for tick in axis.ticks if tick.textbox is not None]
@@ -969,45 +934,27 @@ class axispainter(attrlist.attrlist):
                     y2 = tick.y + tick.dy * tick.outerticklength
                     graph.stroke(path._line(x1, y1, x2, y2), *helper.ensuresequence(tickattrs))
             if tick.textbox is not None:
-                tick.textbox.printtext()
+                graph.insert(tick.textbox)
         if self.baselineattrs is not None:
             graph.stroke(axis.vbaseline(axis), *helper.ensuresequence(self.baselineattrs))
         if self.zerolineattrs is not None:
             if len(axis.ticks) and axis.ticks[0] * axis.ticks[-1] < frac(0, 1):
                 graph.stroke(axis.vgridpath(axis.convert(0)), *helper.ensuresequence(self.zerolineattrs))
-        if axis.title is not None and self.titleattrs is not None:
-            axis.titlebox.printtext()
+        axistitlepainter.paint(self, graph, axis)
 
-class splitaxispainter(attrlist.attrlist): # XXX: avoid code duplication with axispainter via inheritance
 
-    paralleltext = -90
-    orthogonaltext = 0
+class splitaxispainter(axistitlepainter):
 
     def __init__(self, breaklinesdist=0.05,
                        breaklineslength=0.5,
                        breaklinesangle=-60,
                        breaklinesattrs=(),
-                       titledist="0.3 cm",
-                       titleattrs=(),
-                       titledirection=-90,
-                       titlepos=0.5):
+                       **args):
         self.breaklinesdist_str = breaklinesdist
         self.breaklineslength_str = breaklineslength
         self.breaklinesangle = breaklinesangle
         self.breaklinesattrs = breaklinesattrs
-        self.titledist_str = titledist
-        self.titleattrs = titleattrs
-        self.titledirection = titledirection
-        self.titlepos = titlepos
-
-    def reldirection(self, direction, dx, dy, epsilon=1e-10):
-        # XXX: direct code duplication from axispainter
-        direction += math.atan2(dy, dx) * 180 / math.pi
-        while (direction > 90 + epsilon):
-            direction -= 180
-        while (direction < -90 - epsilon):
-            direction += 180
-        return direction
+        axistitlepainter.__init__(self, **args)
 
     def subvbaseline(self, axis, v1=None, v2=None):
         if v1 is None:
@@ -1052,17 +999,7 @@ class splitaxispainter(attrlist.attrlist): # XXX: avoid code duplication with ax
             subaxis.dolayout(graph)
             if axis._extent < subaxis._extent:
                 axis._extent = subaxis._extent
-        titledist = unit.topt(unit.length(self.titledist_str, default_type="v"))
-        if axis.title is not None and self.titleattrs is not None:
-            dx, dy = axis.vtickdirection(axis, self.titlepos)
-            titleattrs = list(helper.ensuresequence(self.titleattrs))
-            if self.titledirection is not None and not self.attrcount(titleattrs, tex.direction):
-                titleattrs = titleattrs + [tex.direction(self.reldirection(self.titledirection, dx, dy))]
-            axis.titlebox = textbox(graph.tex, axis.title, textattrs=titleattrs)
-            axis._extent += titledist
-            axis.titlebox._linealign(axis._extent, dx, dy)
-            axis.titlebox.transform(trafo._translate(*axis._vtickpoint(axis, self.titlepos)))
-            axis._extent += axis.titlebox._extent(dx, dy)
+        axistitlepainter.dolayout(self, graph, axis)
 
     def paint(self, graph, axis):
         for subaxis in axis.axislist:
@@ -1085,29 +1022,22 @@ class splitaxispainter(attrlist.attrlist): # XXX: avoid code duplication with ax
                                      path.closepath()), color.gray.white)
                 graph.stroke(breakline1, *helper.ensuresequence(self.breaklinesattrs))
                 graph.stroke(breakline2, *helper.ensuresequence(self.breaklinesattrs))
-        if axis.title is not None and self.titleattrs is not None:
-            axis.titlebox.printtext()
+        axistitlepainter.paint(self, graph, axis)
 
 
-class baraxispainter(attrlist.attrlist): # XXX: avoid code duplication with axispainter via inheritance
-
-    paralleltext = -90
-    orthogonaltext = 0
+class baraxispainter(axistitlepainter):
 
     def __init__(self, innerticklength=None,
                        outerticklength=None,
                        tickattrs=(),
                        baselineattrs=canvas.linecap.square,
                        namedist="0.3 cm",
-                       nameattrs=(),
+                       nameattrs=(text.halign.center, text.valign.centerline),
                        namedirection=None,
                        namepos=0.5,
                        namehequalize=0,
                        namevequalize=1,
-                       titledist="0.3 cm",
-                       titleattrs=(),
-                       titledirection=-90,
-                       titlepos=0.5):
+                       **args):
         self.innerticklength_str = innerticklength
         self.outerticklength_str = outerticklength
         self.tickattrs = tickattrs
@@ -1118,19 +1048,7 @@ class baraxispainter(attrlist.attrlist): # XXX: avoid code duplication with axis
         self.namepos = namepos
         self.namehequalize = namehequalize
         self.namevequalize = namevequalize
-        self.titledist_str = titledist
-        self.titleattrs = titleattrs
-        self.titledirection = titledirection
-        self.titlepos = titlepos
-
-    def reldirection(self, direction, dx, dy, epsilon=1e-10):
-        # XXX: direct code duplication from axispainter
-        direction += math.atan2(dy, dx) * 180 / math.pi
-        while (direction > 90 + epsilon):
-            direction -= 180
-        while (direction < -90 - epsilon):
-            direction += 180
-        return direction
+        axistitlepainter.__init__(self, **args)
 
     def dolayout(self, graph, axis):
         axis._extent = 0
@@ -1157,25 +1075,25 @@ class baraxispainter(attrlist.attrlist): # XXX: avoid code duplication with axis
         axis.nameboxes = []
         for (v, x, y, dx, dy), name in zip(axis.namepos, axis.names):
             nameattrs = list(helper.ensuresequence(self.nameattrs))
-            if self.namedirection is not None and not self.attrcount(nameattrs, tex.direction):
-                nameattrs += [tex.direction(self.reldirection(self.namedirection, dx, dy))]
+            if self.namedirection is not None:
+                nameattrs += [trafo.rotate(self.reldirection(self.namedirection, dx, dy))]
             if axis.texts.has_key(name):
-                axis.nameboxes.append(textbox(graph.tex, str(axis.texts[name]), textattrs=nameattrs))
+                axis.nameboxes.append(textmodule.text(0, 0, str(axis.texts[name]), *nameattrs))
             elif axis.texts.has_key(str(name)):
-                axis.nameboxes.append(textbox(graph.tex, str(axis.texts[str(name)]), textattrs=nameattrs))
+                axis.nameboxes.append(textmodule.text(0, 0, str(axis.texts[str(name)]), *nameattrs))
             else:
-                axis.nameboxes.append(textbox(graph.tex, str(name), textattrs=nameattrs))
-        if equaldirection:
-            maxht, maxwd, maxdp = 0, 0, 0
-            for namebox in axis.nameboxes:
-                if maxht < namebox.ht: maxht = namebox.ht
-                if maxwd < namebox.wd: maxwd = namebox.wd
-                if maxdp < namebox.dp: maxdp = namebox.dp
-            for namebox in axis.nameboxes:
-                if self.namehequalize:
-                    namebox.manualextents(wd = maxwd)
-                if self.namevequalize:
-                    namebox.manualextents(ht = maxht, dp = maxdp)
+                axis.nameboxes.append(textmodule.text(0, 0, str(name), *nameattrs))
+        #if equaldirection:
+        #    maxht, maxwd, maxdp = 0, 0, 0
+        #    for namebox in axis.nameboxes:
+        #        if maxht < namebox.ht: maxht = namebox.ht
+        #        if maxwd < namebox.wd: maxwd = namebox.wd
+        #        if maxdp < namebox.dp: maxdp = namebox.dp
+        #    for namebox in axis.nameboxes:
+        #        if self.namehequalize:
+        #            namebox.manualextents(wd = maxwd)
+        #        if self.namevequalize:
+        #            namebox.manualextents(ht = maxht, dp = maxdp)
         labeldist = axis._extent + unit.topt(unit.length(self.namedist_str, default_type="v"))
         if self.innerticklength_str is not None:
             axis.innerticklength = unit.topt(unit.length(self.innerticklength_str, default_type="v"))
@@ -1199,17 +1117,7 @@ class baraxispainter(attrlist.attrlist): # XXX: avoid code duplication with axis
             newextent = namebox._extent(dx, dy) + labeldist
             if axis._extent < newextent:
                 axis._extent = newextent
-        titledist = unit.topt(unit.length(self.titledist_str, default_type="v"))
-        if axis.title is not None and self.titleattrs is not None:
-            dx, dy = axis.vtickdirection(axis, self.titlepos)
-            titleattrs = list(helper.ensuresequence(self.titleattrs))
-            if self.titledirection is not None and not self.attrcount(titleattrs, tex.direction):
-                titleattrs = titleattrs + [tex.direction(self.reldirection(self.titledirection, dx, dy))]
-            axis.titlebox = textbox(graph.tex, axis.title, textattrs=titleattrs)
-            axis._extent += titledist
-            axis.titlebox._linealign(axis._extent, dx, dy)
-            axis.titlebox.transform(trafo._translate(*axis._vtickpoint(axis, self.titlepos)))
-            axis._extent += axis.titlebox._extent(dx, dy)
+        axistitlepainter.dolayout(self, graph, axis)
 
     def paint(self, graph, axis):
         if axis.subaxis is not None:
@@ -1234,9 +1142,8 @@ class baraxispainter(attrlist.attrlist): # XXX: avoid code duplication with axis
             if axis.vbaseline is not None: # XXX: subbaselines (as for splitlines)
                 graph.stroke(axis.vbaseline(axis), *helper.ensuresequence(self.baselineattrs))
         for namebox in axis.nameboxes:
-            namebox.printtext()
-        if axis.title is not None and self.titleattrs is not None:
-            axis.titlebox.printtext()
+            graph.insert(namebox)
+        axistitlepainter.paint(self, graph, axis)
 
 
 
@@ -1961,10 +1868,9 @@ class graphxy(canvas.canvas):
                     del axes[key + "2"]
         self.axes = axes
 
-    def __init__(self, tex, xpos=0, ypos=0, width=None, height=None, ratio=goldenrule,
+    def __init__(self, xpos=0, ypos=0, width=None, height=None, ratio=goldenrule,
                  backgroundattrs=None, dense=1, axesdist="0.8 cm", **axes):
         canvas.canvas.__init__(self)
-        self.tex = tex
         self.xpos = xpos
         self.ypos = ypos
         self._xpos = unit.topt(xpos)
@@ -3096,7 +3002,7 @@ class rect(symbol):
 
 class text(symbol):
 
-    def __init__(self, textdx="0", textdy="0.3 cm", textattrs=tex.halign.center, **args):
+    def __init__(self, textdx="0", textdy="0.3 cm", textattrs=text.halign.center, **args):
         self.textindex = None
         self.textdx_str = textdx
         self.textdy_str = textdy
@@ -3119,8 +3025,9 @@ class text(symbol):
 
     def _drawsymbol(self, graph, x, y, point=None):
         symbol._drawsymbol(self, graph, x, y, point)
-        if None not in (x, y, point[self.textindex], self._textattrs):
-            graph.tex._text(x + self._textdx, y + self._textdy, str(point[self.textindex]), *helper.ensuresequence(self.textattrs))
+        #TODO
+        #if None not in (x, y, point[self.textindex], self._textattrs):
+        #    graph.tex._text(x + self._textdx, y + self._textdy, str(point[self.textindex]), *helper.ensuresequence(self.textattrs))
 
     def drawpoints(self, graph, points):
         self.textdx = unit.length(_getattr(self.textdx_str), default_type="v")
@@ -3336,8 +3243,6 @@ class bar:
 # data
 ################################################################################
 
-
-import data as datamodule # well, ugly ???
 
 class data:
 

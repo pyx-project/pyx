@@ -5,15 +5,16 @@ import math
 from pyx import *
 from pyx import mathtree
 
+text.set(mode="latex")
 
-def test_multiaxes_data(c, t, x, y):
-    g = c.insert(graph.graphxy(t, x, y, height=5,
+def test_multiaxes_data(c, x, y):
+    g = c.insert(graph.graphxy(x, y, height=5,
                                x=graph.logaxis(title="$W$", part=graph.autologpart(mix=graph.manualpart(ticks="2.2360679775", texts="$\sqrt{5}$").part())),
                                y=graph.logaxis(title=r"$PPP_1$",
-                                               painter=graph.axispainter(titleattrs=tex.direction.horizontal)),
+                                               painter=graph.axispainter(titledirection=None)),
                                y2=graph.logaxis(title="$P_2$"),
                                y3=graph.logaxis(title="$PPP_3$",
-                                                painter=graph.axispainter(titleattrs=tex.direction(45))),
+                                                painter=graph.axispainter(titledirection=45)),
                                y5=graph.logaxis(title="$P_5$")))
     df = data.datafile("data/testdata")
     g.plot((graph.data(df, x=1, y="sqrt(sqrt($3))"),
@@ -23,30 +24,30 @@ def test_multiaxes_data(c, t, x, y):
            style=graph.symbol(symbolattrs=(graph.changecolor.RedGreen(), graph.changestrokedfilled()), symbol=graph.changesymbol.squaretwice()))
     g.finish()
 
-def test_piaxis_function(c, t, x, y):
-    g = c.insert(graph.graphxy(t, x, y, height=5,
+def test_piaxis_function(c, x, y):
+    g = c.insert(graph.graphxy(x, y, height=5,
                                y=graph.linaxis(painter=graph.axispainter(tickattrs=None, labelattrs=None)),
                                x=graph.linaxis(min=0, max=2*math.pi, divisor=math.pi, suffix=r"\pi")))
     g.plot([graph.function("y=sin(x-i*pi/10)", extern={"i": i}) for i in range(20)],
            style=graph.line(lineattrs=(graph.changecolor.Hue(), graph.changelinestyle())))
     g.finish()
 
-def test_textaxis_errorbars(c, t, x, y):
+def test_textaxis_errorbars(c, x, y):
     df = data.datafile("data/testdata2")
-    g = c.insert(graph.graphxy(t, x, y, height=5,
+    g = c.insert(graph.graphxy(x, y, height=5,
                                x=graph.linaxis(min=0.5, max=12.5, title="Month",
                                                part=graph.linpart("1", texts=df.getcolumn("month"), extendtick=None),
-                                               painter=graph.axispainter(labeldist=0.1, titledist=0, labelattrs=(tex.direction(45),tex.halign.right, tex.fontsize.scriptsize))),
+                                               painter=graph.axispainter(labeldist=0.1, titledist=0, labelattrs=(text.direction(45),text.halign.right, text.fontsize.scriptsize))),
                                y=graph.linaxis(min=-10, max=30, title="Temperature [$^\circ$C]"),
                                x2=graph.linaxis(), y2=graph.linaxis()))
     g.plot(graph.data(df, x=0, ymin="min", ymax="max"))
     g.plot(graph.paramfunction("k", 0, 2*math.pi, "x2, y2, dx2, dy2 = 0.8*sin(k), 0.8*cos(3*k), 0.05, 0.05"), style = graph.symbol(symbol=graph.symbol.triangle))
     g.finish()
 
-def test_ownmark(c, t, x, y):
+def test_ownmark(c, x, y):
     div = lambda x, y: int(x)/int(y)
     mod = lambda x, y: int(x)%int(y)
-    g = c.insert(graph.graphxy(t, x, y, height=5, x=graph.linaxis(min=0, max=10), y=graph.linaxis(min=0, max=10)))
+    g = c.insert(graph.graphxy(x, y, height=5, x=graph.linaxis(min=0, max=10), y=graph.linaxis(min=0, max=10)))
     g.plot(graph.paramfunction("k", 0, 120, "x, y, size, angle = mod(k, 11), div(k, 11), (1+sin(k*pi/120))/2, 3*k", points=121, extern=locals()), style = graph.arrow())
     line1 = g.plot(graph.function("y=10/x"))
     line2 = g.plot(graph.function("y=12*x^-1.6"))
@@ -66,13 +67,13 @@ def test_ownmark(c, t, x, y):
     area.append(path.closepath())
     g.stroke(area, canvas.linewidth.THick, canvas.filled(color.gray(0.5)))
 
-def test_allerrorbars(c, t, x, y):
+def test_allerrorbars(c, x, y):
     df = data.datafile("data/testdata3")
-    g = c.insert(graph.graphxy(t, x, y, height=5, width=5))
+    g = c.insert(graph.graphxy(x, y, height=5, width=5))
     g.plot(graph.data(df, x="x", y="y", xmin="xmin", xmax="xmax", ymin="ymin", ymax="ymax", text="text"), graph.text())
     g.finish()
 
-#def test_3d(c, t, x, y):
+#def test_3d(c, x, y):
 #
 #    class Div(mathtree.MathTreeFunc2):
 #        def __init__(self, *args):
@@ -88,15 +89,15 @@ def test_allerrorbars(c, t, x, y):
 #
 #    MyFuncs = mathtree.DefaultMathTreeFuncs + (Div, Mod)
 #
-#    g = c.insert(graph.graphxyz(t, x, y, height=5, width=5, depth=5,
+#    g = c.insert(graph.graphxyz(x, y, height=5, width=5, depth=5,
 #                                x=graph.linaxis(min=0, max=10, painter=graph.axispainter(baselineattrs=color.rgb.red)),
 #                                y=graph.linaxis(min=0, max=10, painter=graph.axispainter(baselineattrs=color.rgb.green)),
 #                                z=graph.linaxis(min=0, max=10, painter=graph.axispainter(baselineattrs=color.rgb.blue))))
 #    g.plot(graph.paramfunction("k", 0, 120, "x, y, z = mod(k, 11), div(k, 11), exp(-0.1*(mod(k, 11)-5)*(mod(k, 11)-5)-0.1*(div(k, 11)-5)*(div(k, 11)-5))", points=121, parser=mathtree.parser(MathTreeFuncs=MyFuncs)), style = graph.surface())
 #    g.finish()
 
-def test_split(c, t, x, y):
-    g = c.insert(graph.graphxy(t, x, y, height=5, width=5,
+def test_split(c, x, y):
+    g = c.insert(graph.graphxy(x, y, height=5, width=5,
                                x=graph.logaxis(),
                                #y=graph.splitaxis((graph.linaxis(max=0.002), graph.splitaxis((graph.linaxis(min=0.01, max=0.015), graph.linaxis(min=0.017)))))))
                                #y=graph.splitaxis((graph.linaxis(max=0.002), graph.linaxis(min=0.01, max=0.015), graph.linaxis(min=0.017)), splitlist=(0.15, 0.75))))
@@ -105,28 +106,27 @@ def test_split(c, t, x, y):
     g.plot(graph.data(df, x=1, y=3))
     g.finish()
 
-def test_bar(c, t, x, y):
+def test_bar(c, x, y):
     df = data.datafile("data/testdata2")
-    g = c.insert(graph.graphxy(t, x, y, height=5, width=5, x=graph.baraxis(title="Month", painter=graph.baraxispainter(nameattrs=(tex.halign.right, tex.direction(90))))))
+    g = c.insert(graph.graphxy(x, y, height=5, width=5, x=graph.baraxis(title="Month", painter=graph.baraxispainter(nameattrs=(text.halign.right, text.direction(90))))))
     g.plot(graph.data(df, x=1, y=2), graph.bar(fromzero=0))
-    #g = c.insert(graph.graphxy(t, x, y, height=5, width=5, y=graph.baraxis(title="Month")))
+    #g = c.insert(graph.graphxy(x, y, height=5, width=5, y=graph.baraxis(title="Month")))
     #g.plot(graph.data(df, x=2, y=1), graph.bar(xbar=1, fromzero=0))
-    #g = c.insert(graph.graphxy(t, x, y, height=5, width=20, x=graph.baraxis(graph.baraxis(dist=0), multisubaxis=1, painter=graph.baraxispainter(innerticklength=0.2))))
+    #g = c.insert(graph.graphxy(x, y, height=5, width=20, x=graph.baraxis(graph.baraxis(dist=0), multisubaxis=1, painter=graph.baraxispainter(innerticklength=0.2))))
     #g.plot([graph.data(df, x=1, y=2), graph.data(df, x=1, y=3), graph.data(df, x=1, y=3)], graph.bar())
-    #g = c.insert(graph.graphxy(t, x, y, height=5, width=20, x=graph.baraxis(graph.baraxis(dist=0))))
+    #g = c.insert(graph.graphxy(x, y, height=5, width=20, x=graph.baraxis(graph.baraxis(dist=0))))
     #g.plot([graph.data(df, x=0, y=2), graph.data(df, x=0, y=3), graph.data(df, x=0, y=2), None, graph.data(df, x=0, y=3)], graph.bar(stacked=2))
     g.finish()
 
 c = canvas.canvas()
-t = c.insert(tex.tex())
-#test_multiaxes_data(c, t, 0, 21)
-test_piaxis_function(c, t, 0, 14)
-#test_textaxis_errorbars(c, t, 0, 7)
-#test_ownmark(c, t, 0, 0)
-#test_allerrorbars(c, t, -7, 0)
-#test_3d(c, t, -7, 7)
-#test_split(c, t, -7, 7)
-#test_bar(c, t, -7, 14)
+test_multiaxes_data(c, 0, 21)
+#test_piaxis_function(c, 0, 14)
+#test_textaxis_errorbars(c, 0, 7)
+#test_ownmark(c, 0, 0)
+#test_allerrorbars(c, -7, 0)
+#test_3d(c, -7, 7)
+#test_split(c, -7, 7)
+#test_bar(c, -7, 14)
 
 c.writetofile("test_graph", paperformat="a4")
 

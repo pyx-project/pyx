@@ -8,9 +8,11 @@ PyX
   - text module:
     - to be included in 0.3 -> finish base functionality
   - graph module:
-    - TODO: use text module instead of the obsolete tex module
-    - TODO: minimize code dublication in various painters
+    - removed some code duplication (various axis painters)
+    - use text module instead of the obsolete tex module (work in progress)
+    - TODO: allow for tailing zeros of automatic generated labels
   - numerous bugfixes:
+    - problem with sizefile on windows (tex module)
     - disable rating for labelattrs equals None (graph module)
     - traverse when adding functions as arguments of operators (mathtree module)
     - allow for extern functions in addcolumn (data module)

@@ -154,7 +154,7 @@ class binfile:
 
     def readint16(self):
         return struct.unpack(">h", self.file.read(2))[0]
-    
+
     def readuint16(self):
         return struct.unpack(">H", self.file.read(2))[0]
 
@@ -194,8 +194,8 @@ class TFMFile:
         self.ne = self.file.readint16()
         self.np = self.file.readint16()
 
-        if not (self.bc-1<=self.ec<=255 and 
-                self.ne<=256 and 
+        if not (self.bc-1<=self.ec<=255 and
+                self.ne<=256 and
                 self.lf==6+self.lh+(self.ec-self.bc+1)+self.nw+self.nh+self.nd
                 +self.ni+self.nl+self.nk+self.ne+self.np):
             raise TFMError, "error in TFM pre-header"
@@ -306,7 +306,7 @@ class TFMFile:
         # read lig_kern
         #
 
-        # XXX decode to lig_kern_command 
+        # XXX decode to lig_kern_command
 
         self.lig_kern = [None for lig_kern_index in range(self.nl)]
         for lig_kern_index in range(self.nl):
@@ -737,7 +737,7 @@ class DVIFile:
 #            cmr10.getheight(charcode),
 #            cmr10.getdepth(charcode),
 #            cmr10.getitalic(charcode))
-            
+
 #    dvifile = DVIFile("test.dvi")
 #    print [font for font in dvifile.fonts if font]
 
@@ -791,6 +791,15 @@ class _checkmsgstart(checkmsg):
             texrunner.texmsgparsed = texrunner.texmsgparsed.split("*! Undefined control sequence.\n<*> \\raiseerror\n               %\n? OK, entering \\scrollmode...\n\n", 1)[1]
         except IndexError:
             raise TexResultError("TeX switch to scrollmode failed", texrunner)
+
+
+class _checkmsgnoaux(checkmsg):
+
+    def check(self, texrunner):
+        try:
+            texrunner.texmsgparsed = texrunner.texmsgparsed.split("No file %s.aux." % texrunner.texfilename, 1)[1]
+        except IndexError:
+            pass
 
 
 class _checkmsginputmarker(checkmsg):
@@ -920,6 +929,7 @@ class _checkmsgignore(_checkmsgload):
 
 
 checkmsg.start = _checkmsgstart()
+checkmsg.noaux = _checkmsgnoaux()
 checkmsg.inputmarker = _checkmsginputmarker()
 checkmsg.pyxbox = _checkmsgpyxbox()
 checkmsg.pyxpageout = _checkmsgpyxpageout()
@@ -1051,16 +1061,16 @@ class _readpipe(threading.Thread):
 
 
 
-class _textbox(box._rectbox, base.PSText):
+class _textbox(box._rect, base.PSText):
 
     def __init__(self, x, y, left, right, height, depth, texrunner, page):
-        self.trafo = trafo.trafo()
-        box._rectbox.__init__(self, -left, -depth, left + right, depth + height, trafo=trafo._translate(x, y))
+        self.trafo = trafo._translate(-left, 0)
+        box._rect.__init__(self, -left, -depth, left + right, depth + height, abscenter = (left, depth), trafo=trafo._translate(x, y))
         self.texrunner = texrunner
         self.page = page
 
     def transform(self, trafo):
-        box._rectbox.transform(self, trafo)
+        box._rect.transform(self, trafo)
         self.trafo = trafo * self.trafo
 
     def writefontheader(self, file, containsfonts):
@@ -1089,7 +1099,7 @@ class TexNotInDefineModeError(Exception): pass
 
 class texrunner(attrlist.attrlist):
 
-    def __init__(self, mode="TeX",
+    def __init__(self, mode="tex",
                        docclass="article",
                        docopt=None,
                        usefiles=[],
@@ -1098,7 +1108,7 @@ class texrunner(attrlist.attrlist):
                        dvidebug=0,
                        checkmsgstart=checkmsg.start,
                        checkmsgdocclass=checkmsg.load,
-                       checkmsgbegindoc=checkmsg.load,
+                       checkmsgbegindoc=(checkmsg.load, checkmsg.noaux),
                        checkmsgend=checkmsg.texend,
                        checkmsgdefaultdefine=(),
                        checkmsgdefaultrun=()):
@@ -1287,9 +1297,8 @@ class texrunner(attrlist.attrlist):
         if not match or int(match.group("page")) != self.page:
             raise TexResultError("box extents not found", self)
         width, height, depth = map(lambda x: float(x) * 72.0 / 72.27, match.group("wd", "ht", "dp"))
-        textbox = _textbox(unit.topt(x), unit.topt(y), 0, width, height, depth, self, self.page)
         hratio = self.attrgetall(args, halign, default=(halign.left,))[0].hratio
-        textbox.transform(trafo._translate(-hratio * width, 0))
+        textbox = _textbox(unit.topt(x), unit.topt(y), hratio * width, (1 - hratio) * width, height, depth, self, self.page)
         for t in self.attrgetall(args, trafo._trafo, default=()):
             textbox.transform(t)
         return textbox

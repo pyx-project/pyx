@@ -27,7 +27,7 @@ import bbox, path, unit, trafo
 
 class BoxCrossError(Exception): pass
 
-class _polybox:
+class _poly:
 
     def __init__(self, corners=None, center=None, trafo=None):
         self.corners = corners
@@ -218,36 +218,36 @@ class _polybox:
         return unit.t_pt(self._boxdistance(other))
 
 
-class polybox(_polybox):
+class poly(_poly):
 
     def __init__(self, corners=None, center=None, **args):
         corners = [[unit.topt(x) for x in corner] for corner in corners]
         if center is not None:
             center = map(unit.topt, center)
-        _polybox.__init__(self, corners=corners, center=center, **args)
+        _poly.__init__(self, corners=corners, center=center, **args)
 
 
-class _rectbox(_polybox):
+class _rect(_poly):
 
     def __init__(self, x, y, width, height, relcenter=(0, 0), abscenter=(0, 0), **args):
         self._bbox = bbox.bbox(x, y, x + width, y + height)
-        _polybox.__init__(self, corners=((x, y),
-                                         (x + width, y),
-                                         (x + width, y + height),
-                                         (x, y + height)),
-                                center=(x + relcenter[0] * width + abscenter[0], y + relcenter[1] * height + abscenter[1]), **args)
+        _poly.__init__(self, corners=((x, y),
+                                      (x + width, y),
+                                      (x + width, y + height),
+                                      (x, y + height)),
+                             center=(x + relcenter[0] * width + abscenter[0], y + relcenter[1] * height + abscenter[1]), **args)
 
     def transform(self, trafo):
-        _polybox.transform(self, trafo)
+        _poly.transform(self, trafo)
         self._bbox = self._bbox.transform(trafo)
 
     def bbox(self):
         return self._bbox
 
 
-class rectbox(_rectbox):
+class rect(_rect):
 
     def __init__(self, x, y, width, height, relcenter=(0, 0), abscenter=(0, 0), **args):
-        _rectbox.__init__(self, unit.topt(x), unit.topt(y), unit.topt(width), unit.topt(height),
-                                relcenter=relcenter, abscenter=(unit.topt(center[0]), unit.topt(center[1])), **args)
+        _rect.__init__(self, unit.topt(x), unit.topt(y), unit.topt(width), unit.topt(height),
+                             relcenter=relcenter, abscenter=(unit.topt(center[0]), unit.topt(center[1])), **args)
 

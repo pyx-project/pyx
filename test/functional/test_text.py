@@ -5,7 +5,7 @@ from pyx import *
 from pyx import text
 
 c = canvas.canvas()
-text.set(mode="latex", dvidebug=1)
+text.set(mode="latex", dvidebug=0)
 
 c.stroke(path.line(-1, 0, 6, 0))
 
@@ -21,6 +21,7 @@ c.stroke(t2.path())
 
 c.text(0, 3, r"\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} = \sqrt{\pi\over a}", text.mathmode)
 c.text(0, 6, r"\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} = \sqrt{\pi\over a}", text.mathmode, text.size.LARGE)
+# c.text(0, 6, r"\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} = \sqrt{\pi\over a}", text.size.LARGE, text.mathmode)
 
 c.stroke(c.text(1, 2, r"Hello, world!").path())
 c.stroke(c.text(1, 2, r"Hello, world!", trafo.slant(1)).path())
