@@ -3,6 +3,7 @@ include LICENSE
 include INSTALL
 include CHANGES
 include manual/manual.ps
+include faq/pyxfaq.pdf
 recursive-include manual Makefile runlatex.sh pyx.sty *.tex *.py
 include examples/examples.ps
 recursive-include contrib *
