@@ -69,7 +69,7 @@ unit_w2p	= 28.346456693*unit_ps
 # helper routines
 #
 
-def PSGetEPSBoundingBox(self, epsname):
+def PSGetEPSBoundingBox(epsname):
 
     'returns bounding box of EPS file epsname as 4-tuple (llx, lly, urx, ury)'
 
@@ -150,7 +150,7 @@ class abstractcanvas:
     
         'Insert EPS file epsname at current position'
 	
-	(llx, lly, urx, ury) = self.PSGetEPSBoundingBox(epsname)
+	(llx, lly, urx, ury) = PSGetEPSBoundingBox(epsname)
 	
         try:
 	    epsfile=open(epsname,"r")

@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+# This file is obsolete (at least for the moment).
+# Axis are part of graph.py and might be separated later ...
+
 from globex import *
 
 class Axis(Globex):

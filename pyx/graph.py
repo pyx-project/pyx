@@ -1,38 +1,41 @@
 #!/usr/bin/env python
 
-from globex import *
+###############################################################################
+# axis part
 
-class Graph(Globex):
+###############################################################################
+# graph part
 
-  ExportMethods = [ "addaxis" ]
-  Axis = [ ]
+class Graph:
 
-  def __init__(self,x,y,canvas,**args):
-    # args: title, background???
-    print "Graph.__init__()",x,y,canvas,args
-    self.canvas=canvas
-
-  def addaxis(self,type,axis=None):
-    # type is something like "x", "x1", "x2", "x3", ... or "y" and others
-    if axis == None:
-      exec "newaxis=DefaultAxis" in GetCallerGlobalNamespace(),locals()
-      axis=newaxis
-    print "Graph.addaxis()",axis
-    axis.graphvar_type=type
-    self.Axis = self.Axis + [ axis, ]
-
-  def Draw(self):
-    # that's the funny part ... ;-)
-    # among others we're calling routines from axis here
-    pass
-
-  def __del__(self):
-    self.Draw()
-    print "Graph.__del__()"
+    def __init__(self, canvas, x, y):
+        self.canvas = canvas
+        self.x = x
+        self.y = y
 
 
-def graph(x,y,**args):
-  exec "canvas=DefaultCanvas" in GetCallerGlobalNamespace(),locals()
-  DefaultGraph=apply(Graph,(x,y,canvas,),args);
-  DefaultGraph.AddNamespace("DefaultGraph",GetCallerGlobalNamespace())
+class GraphXY:
 
+    plotdata = [ ]
+
+    def __init__(self, canvas, x, y, width, height):
+        Graph.__init__(canvas, x, y)
+        self.width = width
+        self.height = height
+
+    def plot(self, Data, style)
+        plotdata.append( {pd_data: Data, pd_style: style} )
+
+    def run(self)
+        for pd in self.plotdata:
+            for Data in pd[pd_data]
+
+
+class GraphRPhi:
+
+    def __init__(self, canvas, x, y, r):
+        Graph.__init__(canvas, x, y)
+
+
+###############################################################################
+# data part
