@@ -92,7 +92,7 @@ def testintersectbezier(c):
 
 def testintersectcircle(c):
     k=circle(0, 0, 2)
-    l=line(0,0, 3, 0)
+    l=line(0, 0, 3, 0)
     c.stroke(k, [style.linewidth.THIN])
     c.stroke(l, [style.linewidth.THIN])
 
