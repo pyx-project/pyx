@@ -37,6 +37,8 @@ import zlib
 from t1strip import fullfont
 import pykpathsea
 
+import pdfwriter
+
 try:
     enumerate([])
 except NameError:
@@ -514,7 +516,8 @@ class canvas(_canvas):
         file.write("3 0 obj\n"
                    "<<\n"
                    "/Type /Page\n"
-                   "/Parent 2 0 R\n")
+                   "/Parent 2 0 R\n"
+                   "/MediaBox ")
         abbox.outputPDF(file)
         file.write("/Contents 4 0 R\n"
                    "/Resources <<\n")
@@ -664,6 +667,37 @@ class canvas(_canvas):
                    "startxref\n"
                    "%i\n"
                    "%%%%EOF\n" % xrefpos)
+
+    def writePDFfile_new(self, filename, paperformat=None, rotated=0, fittosize=0, margin=1 * unit.t_cm,
+                    bbox=None, bboxenlarge=1 * unit.t_pt):
+        sys.stderr.write("*** PyX Warning: writePDFfile is experimental and supports only a subset of PyX's features\n")
+
+        if filename[-4:]!=".pdf":
+            filename = filename + ".pdf"
+
+        try:
+            writer = pdfwriter.pdfwriter(filename)
+        except IOError:
+            raise IOError("cannot open output file")
+
+        abbox = bbox is not None and bbox or self.bbox()
+        abbox.enlarge(bboxenlarge)
+
+        ctrafo = calctrafo(abbox, paperformat, margin, rotated, fittosize)
+
+        # if there has been a global transformation, adjust the bounding box
+        # accordingly
+        if ctrafo: abbox.transform(ctrafo)
+
+        mergedprolog = []
+
+        for pritem in self.prolog():
+            for mpritem in mergedprolog:
+                if mpritem.merge(pritem) is None: break
+            else:
+                mergedprolog.append(pritem)
+        writer.page(abbox, self, mergedprolog, ctrafo)
+        writer.close()
 
     def writetofile(self, filename, *args, **kwargs):
         if filename[-4:] == ".eps":
