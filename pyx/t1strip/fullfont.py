@@ -50,7 +50,7 @@ def fullfont(file, filename):
                 raise RuntimeError("EOF reached while reading blockid")
             if blockid == _PFB_DONE:
                 if infile.read() != "":
-                    raise RuntimeError("tailing characters in pfb file")
+                    raise RuntimeError("trailing characters in pfb file")
                 else:
                     return
             if blockid != _PFB_ASCII and blockid != _PFB_BIN:

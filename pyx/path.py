@@ -245,7 +245,7 @@ class moveto_pt(pathel):
         file.write("%g %g moveto\n" % (self.x_pt, self.y_pt) )
 
     def outputPDF(self, file):
-        file.write("%g %g m\n" % (self.x_pt, self.y_pt) )
+        file.write("%f %f m\n" % (self.x_pt, self.y_pt) )
 
 
 class lineto_pt(pathel):
@@ -278,7 +278,7 @@ class lineto_pt(pathel):
         file.write("%g %g lineto\n" % (self.x_pt, self.y_pt) )
 
     def outputPDF(self, file):
-        file.write("%g %g l\n" % (self.x_pt, self.y_pt) )
+        file.write("%f %f l\n" % (self.x_pt, self.y_pt) )
 
 
 class curveto_pt(pathel):

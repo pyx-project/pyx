@@ -480,7 +480,7 @@ class canvas(_canvas):
         abbox.enlarge(bboxenlarge)
 
         ctrafo = calctrafo(abbox, paperformat, margin, rotated, fittosize)
-        
+
         # if there has been a global transformation, adjust the bounding box
         # accordingly
         if ctrafo: abbox.transform(ctrafo)
@@ -575,78 +575,79 @@ class canvas(_canvas):
                 reflist.append(file.tell())
                 file.write("%d 0 obj\n"
                            "[\n" % (fontnr+fontstartref))
-                tfmconv_times_conv = 9.50111398661e-07 # FIXME this is the product of tfmconv and conv
-                                                       #       we need to get that from the dvifile!?
                 for i in range(256):
                     try:
-                        width = pritem.font.getwidth(i)*tfmconv_times_conv*1000/pritem.font.getsize()
+                        width = pritem.font.getwidth_pt(i)*1000/pritem.font.getsize_pt()
                     except:
                         width = 0
                     file.write("%f\n" % width)
                 file.write("]\n"
                            "endobj\n")
-                fontnr += 1
-                reflist.append(file.tell())
-                file.write("%d 0 obj\n"
-                           "<<\n"
-                           "/Type /FontDescriptor\n"
-                           "/FontName /%s\n"
-                           "/Flags 34\n" # FIXME
-                           "/FontBBox [-10 -10 40 40]\n" # FIXME
-                           "/ItalicAngle 0\n" # FIXME
-                           "/Ascent 20\n" # FIXME
-                           "/Descent -5\n" # FIXME
-                           "/CapHeight 15\n" # FIXME
-                           "/StemV 1\n" # FIXME
-                           "/FontFile %d 0 R\n" # FIXME
-                           # "/CharSet \n" # fill in when stripping
-                           ">>\n"
-                           "endobj\n" % (fontnr+fontstartref, pritem.font.getbasepsname(),
-                                         fontnr+fontstartref+1))
+                if pritem.filename:
+                    fontnr += 1
+                    reflist.append(file.tell())
+                    file.write("%d 0 obj\n"
+                               "<<\n"
+                               "/Type /FontDescriptor\n"
+                               "/FontName /%s\n"
+                               "/Flags 4\n" # FIXME
+                               "/FontBBox [-10 -10 1000 1000]\n" # FIXME
+                               "/ItalicAngle 0\n" # FIXME
+                               "/Ascent 20\n" # FIXME
+                               "/Descent -5\n" # FIXME
+                               "/CapHeight 15\n" # FIXME
+                               "/StemV 3\n" # FIXME
+                               "/FontFile %d 0 R\n" # FIXME
+                               # "/CharSet \n" # fill in when stripping
+                               ">>\n"
+                               "endobj\n" % (fontnr+fontstartref, pritem.font.getbasepsname(),
+                                             fontnr+fontstartref+1))
 
-                fontnr += 1
-                reflist.append(file.tell())
+                    fontnr += 1
+                    reflist.append(file.tell())
 
-                fontdata = open(pykpathsea.find_file(pritem.filename, pykpathsea.kpse_type1_format)).read()
-                if fontdata[0:2] != fullfont._PFB_ASCII:
-                    raise RuntimeError("PFB_ASCII mark expected")
-                length1 = fullfont.pfblength(fontdata[2:6])
-                if fontdata[6+length1:8+length1] != fullfont._PFB_BIN:
-                    raise RuntimeError("PFB_BIN mark expected")
-                length2 = fullfont.pfblength(fontdata[8+length1:12+length1])
-                if fontdata[12+length1+length2:14+length1+length2] != fullfont._PFB_ASCII:
-                    raise RuntimeError("PFB_ASCII mark expected")
-                length3 = fullfont.pfblength(fontdata[14+length1+length2:18+length1+length2])
-                if fontdata[18+length1+length2+length3:20+length1+length2+length3] != fullfont._PFB_DONE:
-                    raise RuntimeError("PFB_DONE mark expected")
-                if len(fontdata) != 20 + length1 + length2 + length3:
-                    raise RuntimeError("end of pfb file expected")
+                    fontdata = open(pykpathsea.find_file(pritem.filename, pykpathsea.kpse_type1_format)).read()
+                    if fontdata[0:2] != fullfont._PFB_ASCII:
+                        raise RuntimeError("PFB_ASCII mark expected")
+                    length1 = fullfont.pfblength(fontdata[2:6])
+                    if fontdata[6+length1:8+length1] != fullfont._PFB_BIN:
+                        raise RuntimeError("PFB_BIN mark expected")
+                    length2 = fullfont.pfblength(fontdata[8+length1:12+length1])
+                    if fontdata[12+length1+length2:14+length1+length2] != fullfont._PFB_ASCII:
+                        raise RuntimeError("PFB_ASCII mark expected")
+                    length3 = fullfont.pfblength(fontdata[14+length1+length2:18+length1+length2])
+                    if fontdata[18+length1+length2+length3:20+length1+length2+length3] != fullfont._PFB_DONE:
+                        raise RuntimeError("PFB_DONE mark expected")
+                    if len(fontdata) != 20 + length1 + length2 + length3:
+                        raise RuntimeError("end of pfb file expected")
 
-                # we might be allowed to skip the third part ...
-                if fontdata[18+length1+length2:18+length1+length2+length3].replace("\n", "").replace("\r", "").replace("\t", "").replace(" ", "") == "0"*512 + "cleartomark":
-                    length3 = 0
+                    # we might be allowed to skip the third part ...
+                    if fontdata[18+length1+length2:18+length1+length2+length3].replace("\n", "").replace("\r", "").replace("\t", "").replace(" ", "") == "0"*512 + "cleartomark":
+                        length3 = 0
 
-                uncompresseddata = fontdata[6:6+length1] + fontdata[12+length1:12+length1+length2] + fontdata[18+length1+length2:18+length1+length2+length3]
-                compresseddata = zlib.compress(uncompresseddata)
+                    uncompresseddata = fontdata[6:6+length1] + fontdata[12+length1:12+length1+length2] + fontdata[18+length1+length2:18+length1+length2+length3]
+                    compresseddata = zlib.compress(uncompresseddata)
 
-                file.write("%d 0 obj\n"
-                           "<<\n"
-                           "/Length %d\n"
-                           "/Length1 %d\n"
-                           "/Length2 %d\n"
-                           "/Length3 %d\n"
-                           "/Filter /FlateDecode\n"
-                           ">>\n"
-                           "stream\n" % (fontnr+fontstartref, len(compresseddata),
-                                                              length1,
-                                                              length2,
-                                                              length3))
-                #file.write(fontdata[6:6+length1])
-                #file.write(fontdata[12+length1:12+length1+length2])
-                #file.write(fontdata[18+length1+length2:18+length1+length2+length3])
-                file.write(compresseddata)
-                file.write("endstream\n"
-                           "endobj\n")
+                    file.write("%d 0 obj\n"
+                               "<<\n"
+                               "/Length %d\n"
+                               "/Length1 %d\n"
+                               "/Length2 %d\n"
+                               "/Length3 %d\n"
+                               "/Filter /FlateDecode\n"
+                               ">>\n"
+                               "stream\n" % (fontnr+fontstartref, len(compresseddata),
+                                                                  length1,
+                                                                  length2,
+                                                                  length3))
+                    #file.write(fontdata[6:6+length1])
+                    #file.write(fontdata[12+length1:12+length1+length2])
+                    #file.write(fontdata[18+length1+length2:18+length1+length2+length3])
+                    file.write(compresseddata)
+                    file.write("endstream\n"
+                               "endobj\n")
+                else:
+                    fontnr += 2
 
         xrefpos = file.tell()
         file.write("xref\n"
