@@ -62,6 +62,16 @@ def testspeed3():
     c.draw(p)
     c.writetofile("testspeed")
 
+def testspeedintersect():
+    c=canvas.canvas()
+    p=path([moveto(10,10), curveto(12,16,14,15,12,19)])
+    bp=p.bpath()
+
+    for x in xrange(1,100):
+        q=path([moveto(x/5.0,10), curveto(12,16,14,22,11,16)])
+        bq=q.bpath()
+        isect = bp.intersect(bq, epsilon=1e-3)
+
 def testarcs(c):
     def testarc(c, x, y, phi1, phi2):
         p=path([arc(x,y, 0.5, phi1, phi2)])
@@ -203,14 +213,14 @@ def testintersectbezier(c):
     bp=p.bpath()
     bq=q.bpath()
 
-    c.draw(q)
-    c.draw(p)
+    c.draw(q, canvas.linewidth.THIN)
+    c.draw(p, canvas.linewidth.THIN)
 
-    isect = bp.intersect(bq)
+    isect = bp.intersect(bq, epsilon=1e-4)
 
     for i in isect:
         x, y = bp.pos(i[0])
-        c.draw(cross(x, y))
+        c.draw(cross(x, y), canvas.linewidth.THIN)
 
 
 def testbpathtrafo(c):
@@ -250,3 +260,7 @@ pstats.Stats("test.prof").sort_stats('time').print_stats(10)
 
 profile.run('testspeed3()', 'test.prof')
 pstats.Stats("test.prof").sort_stats('time').print_stats(10)
+
+profile.run('testspeedintersect()', 'test.prof')
+pstats.Stats("test.prof").sort_stats('time').print_stats(10)
+
