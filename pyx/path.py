@@ -870,7 +870,6 @@ class normpath(path):
         if len(args)==1 and isinstance(args[0], path):
             path.__init__(self, *_normalizepath(args[0].path))
         else:
-            print args
             path.__init__(self, *_normalizepath(args))
 
     def append(self, pathel):
