@@ -43,7 +43,7 @@ import types, math, time
 import pyx
 import base
 import bbox, unit, trafo
-import bpath
+import path
 
 # PostScript-procedure definitions
 # cf. file: 5002.EPSF_Spec_v3.0.pdf     
@@ -368,59 +368,58 @@ class filled(PathDeco):
 # _arrowhead: helper routine
 #
 
-def _arrowhead(abpath, size, angle, constriction):
+def _arrowhead(anormpath, size, angle, constriction):
 
     """helper routine, which returns an arrowhead for an bpath 
 
     returns arrowhead at pos (0: begin, !=0: end) of abpath with size,
     opening angle and relative constriction
     """
-    
+
     # first order conversion from pts to the bezier curve's
     # parametrization
-          
-    lbpel = abpath[0]
-    tlen  = math.sqrt((lbpel.x3-lbpel.x2)*(lbpel.x3-lbpel.x2)+
-                      (lbpel.y3-lbpel.y2)*(lbpel.y3-lbpel.y2))
-  
+
+    tlen = unit.topt(anormpath.tangent(0).arclength())
+
     # TODO: why factor 0.5?
     alen  = 0.5*unit.topt(size)/tlen
-    if alen>len(abpath): alen=len(abpath)
-        
+
+    if alen>anormpath.range(): alen=anormpath().range()
+
     # get tip (tx, ty)
-    tx, ty = abpath.begin()
-        
+    tx, ty = anormpath.begin()
+
     # now we construct the template for our arrow but cutting
     # the path a the corresponding length
-    arrowtemplate = abpath.split(alen)[0]
-  
+    arrowtemplate = anormpath.split(alen)[0]
+
     # from this template, we construct the two outer curves
     # of the arrow
-    arrowl = arrowtemplate.transform(trafo.rotate(-angle/2.0, tx, ty))
-    arrowr = arrowtemplate.transform(trafo.rotate( angle/2.0, tx, ty))
-        
+    arrowl = arrowtemplate.transformed(trafo.rotate(-angle/2.0, tx, ty))
+    arrowr = arrowtemplate.transformed(trafo.rotate( angle/2.0, tx, ty))
+
     # now come the joining backward parts
     if constriction:
         # arrow with constriction
 
         # constriction point (cx, cy) lies on path
-        cx, cy = abpath.pos(constriction*alen)
-            
-        arrow3a= bpath.bline(*(arrowl.end()+(cx,cy)))
-        arrow3b= bpath.bline(*((cx,cy)+arrowr.end()))
+        cx, cy = anormpath.at(constriction*alen)
+
+        arrow3a= path.line(*(arrowl.end()+(cx,cy)))
+        arrow3b= path.line(*((cx,cy)+arrowr.end()))
 
         # return the complete arrow
-        return arrowl+arrow3a+arrow3b+arrowr.reverse()
+        return arrowl.glue(arrow3a).glue(arrow3b).glue(arrowr.reversed())
     else:
         # arrow without constriction
-        arrow3 = bpath.bline(*(arrowl.end()+arrowr.end()))
-        
+        arrow3 = path.line(*(arrowl.end()+arrowr.end()))
+
         # return the complete arrow
-        return arrowl+arrow3+arrowr.reverse()
-        
+        return arrowl.glue(arrow3).glue(arrowr.reversed())
+
 
 class arrow(PathDeco):
-    
+
     """A general arrow"""
 
     def __init__(self,
@@ -449,8 +448,8 @@ class arrow(PathDeco):
                         not (isinstance(x,filled) or
                              isinstance(x,stroked)),
                         styles)
-                        
-                                   
+
+
         return arrow(position=self.position,
                      size=self.size,
                      angle=self.angle,
@@ -463,16 +462,16 @@ class arrow(PathDeco):
 
         # TODO: error, when strokepath is not defined
 
-        # convert to bpath if necessary
-        if isinstance(dp.strokepath, bpath.bpath):
-            abpath=dp.strokepath
+        # convert to normpath if necessary
+        if isinstance(dp.strokepath, path.normpath):
+            anormpath=dp.strokepath
         else:
-            abpath=dp.strokepath.bpath()
-            
-        if self.position:
-            abpath=abpath.reverse()
+            anormpath=path.normpath(dp.path)
 
-        ahead = _arrowhead(abpath, self.size, self.angle, self.constriction)
+        if self.position:
+            anormpath=anormpath.reversed()
+
+        ahead = _arrowhead(anormpath, self.size, self.angle, self.constriction)
 
         dp.addsubdp(DecoratedPath(ahead,
                                   strokepath=ahead, fillpath=ahead,
@@ -482,17 +481,15 @@ class arrow(PathDeco):
 
         # the following lines are copied from arrowhead.init()
         # TODO: can this be done better?
-        
+
         # first order conversion from pts to the bezier curve's
         # parametrization
-          
-        lbpel = abpath[0]
-        tlen  = math.sqrt((lbpel.x3-lbpel.x2)*(lbpel.x3-lbpel.x2)+
-                          (lbpel.y3-lbpel.y2)*(lbpel.y3-lbpel.y2))
-  
+
+        tlen = unit.topt(anormpath.tangent(0).arclength())
+
         # TODO: why factor 0.5?
         alen  = 0.5*unit.topt(self.size)/tlen
-        if alen>len(abpath): alen=len(abpath)
+        if alen>anormpath.range(): alen=anormpath().range()
 
         if self.constriction:
             ilen = alen*self.constriction
@@ -503,14 +500,14 @@ class arrow(PathDeco):
         ilen = ilen*math.cos(math.pi*self.angle/360.0)
 
         # this is the rest of the path, we have to draw
-        abpath = abpath.split(ilen)[1]
+        anormpath = anormpath.split(ilen)[1]
 
         # go back to original orientation, if necessary
         if self.position:
-            abpath=abpath.reverse()
+            anormpath=anormpath.reversed()
 
         # set the new (shortened) strokepath
-        dp.strokepath=abpath
+        dp.strokepath=anormpath
 
         return dp
     
