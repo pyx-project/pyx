@@ -220,7 +220,7 @@ class polygon_pt:
         return self
 
     def circlealign(self, *args):
-        self.transform(trafo.translate(*self.circlealignvector(*args)))
+        self.reltransform(trafo.translate(*self.circlealignvector(*args)))
         return self
 
     def linealign(self, *args):

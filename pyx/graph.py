@@ -853,9 +853,9 @@ class axisrater:
           considered as ticks for a given level"""
         maxticklevel = maxlabellevel = 0
         for tick in ticks:
-            if tick.ticklevel >= maxticklevel:
+            if tick.ticklevel is not None and tick.ticklevel >= maxticklevel:
                 maxticklevel = tick.ticklevel + 1
-            if tick.labellevel >= maxlabellevel:
+            if tick.labellevel is not None and tick.labellevel >= maxlabellevel:
                 maxlabellevel = tick.labellevel + 1
         numticks = [0]*maxticklevel
         numlabels = [0]*maxlabellevel
@@ -2342,7 +2342,7 @@ class _axis:
             if len(self.ticks):
                 self.setrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
             self.texter.labels(self.ticks)
-            if painter is not None:
+            if self.painter is not None:
                 self.axiscanvas = self.painter.paint(axispos, self)
             else:
                 self.axiscanvas = axiscanvas()

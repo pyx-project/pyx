@@ -797,9 +797,6 @@ class _tex(base.PSCmd, attrlist):
         except IOError:
             self.Sizes = [ ]
 
-    def _getstack(self):
-        return traceback.extract_stack(sys._getframe())
-    
     def _execute(self, command):
         if os.system(command):
             sys.stderr.write("The exit code of the following command was non-zero:\n" + command +
@@ -957,7 +954,7 @@ by yourself.\n""")
         self.attrcheck(attrs, (), (msghandler,))
         self.DefCmds.append(_DefCmd(Cmd,
                                     len(self.DefCmds)+ len(self.BoxCmds),
-                                    self._getstack(),
+                                    traceback.extract_stack(),
                                     self.attrgetall(attrs, msghandler, self.defaultmsghandlers)))
 
     def _insertcmd(self, Cmd, *attrs):
@@ -969,7 +966,7 @@ by yourself.\n""")
         myvalign = self.attrget(attrs, valign, None)
         mymsghandlers = self.attrgetall(attrs, msghandler, self.defaultmsghandlers)
         MyCmd = _BoxCmd(self.DefCmdsStr, Cmd, mystyle, myfontsize, myvalign,
-                        len(self.DefCmds) + len(self.BoxCmds), self._getstack(), mymsghandlers)
+                        len(self.DefCmds) + len(self.BoxCmds), traceback.extract_stack(), mymsghandlers)
         if MyCmd not in self.BoxCmds:
             self.BoxCmds.append(MyCmd)
         for Cmd in self.BoxCmds:

@@ -65,7 +65,11 @@ def _readbbox(filename):
                                              \s+([+-]?\d+)
                                              \s+([+-]?\d+)\s*$""" , re.VERBOSE)
 
-    for line in file.xreadlines():
+    try:
+        readlinesfunc = file.xreadlines
+    except: # workaround for Python 2.0
+        readlinesfunc = file.readlines
+    for line in readlinesfunc():
 
         if line=="%%EndComments\n": 
             # XXX: BoundingBox-Deklaration kann auch an Ende von Datei

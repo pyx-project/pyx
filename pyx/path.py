@@ -237,7 +237,12 @@ class _bcurve:
         tt = []
         for length in lengths:
             # find the last index that is smaller than length
-            lindex = bisect.bisect_left(cumlengths, length)
+            try:
+                lindex = bisect.bisect_left(cumlengths, length)
+            except: # workaround for python 2.0
+                lindex = bisect.bisect(cumlengths, length)
+                if lindex:
+                    lindex -= 1
             if lindex==0:
                 t = 1.0 * length / cumlengths[0]
                 t *= parlengths[0]

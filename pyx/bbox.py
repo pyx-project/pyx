@@ -38,6 +38,15 @@ def _nmin(*args):
     else:
         return None
 
+def _nmax(*args):
+    """maximum of a list of values, where None represents +infinity, not -infinity as
+    in standard max implementation of python 2.0"""
+    args = [x for x in args if x is not None]
+    if len(args):
+        return max(args)
+    else:
+        return None
+
 #
 # classes representing bounding boxes
 #
@@ -59,12 +68,12 @@ class _bbox:
         """join two bboxes"""
 
         return _bbox(_nmin(self.llx, other.llx), _nmin(self.lly, other.lly),
-                     max(self.urx, other.urx), max(self.ury, other.ury))
+                     _nmax(self.urx, other.urx), _nmax(self.ury, other.ury))
 
     def __mul__(self, other):
         """return intersection of two bboxes"""
 
-        return _bbox(max(self.llx, other.llx), max(self.lly, other.lly),
+        return _bbox(_nmax(self.llx, other.llx), _nmax(self.lly, other.lly),
                      _nmin(self.urx, other.urx), _nmin(self.ury, other.ury))
 
     def __str__(self):
@@ -110,7 +119,7 @@ class _bbox:
         # of the new bounding box. 
 
         return _bbox(_nmin(llx, lrx, urx, ulx), _nmin(lly, lry, ury, uly),
-                     max(llx, lrx, urx, ulx), max(lly, lry, ury, uly))
+                     _nmax(llx, lrx, urx, ulx), _nmax(lly, lry, ury, uly))
 
     def enlarged(self, all=0, bottom=None, left=None, top=None, right=None):
         """return bbox enlarged
@@ -127,7 +136,7 @@ class _bbox:
            _top = unit.topt(unit.length(top, default_type="v"))
         if right is not None:
            _right = unit.topt(unit.length(right, default_type="v"))
-        return _bbox(self.llx-_left,  self.lly-_bottom, self.urx+_right, self.ury+_top)
+        return _bbox(self.llx-_left, self.lly-_bottom, self.urx+_right, self.ury+_top)
 
     def rect(self):
         """return rectangle corresponding to bbox"""
