@@ -9,8 +9,8 @@ x = lambda k: int(k)/11
 y = lambda k: int(k)%11
 z = lambda k: x(k) + y(k) * 1j
 f = lambda k: 1/(z(k)-z1)/(z(k)-z2)                # function to be plotted
-s = lambda k: 5*abs(f(k))                          # norm of the function
-a = lambda k: 180/pi*atan2(f(k).imag, f(k).real)   # direction of the function
+s = lambda k: 5*abs(f(k))                          # magnitude of function value
+a = lambda k: 180/pi*atan2(f(k).imag, f(k).real)   # direction of function value
 
 g = graph.graphxy(width=8,
                   x=graph.linaxis(min=0, max=10),
