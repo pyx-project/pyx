@@ -653,11 +653,7 @@ class bar:
       of a list; instead of the term "bar" or "subaxis" the term
       "item" will be used here
     - the bar axis stores a list of names be identify the items;
-      the names might be of any time (strings, integers, etc.);
-      the names can be printed as the titles for the items, but
-      alternatively the names might be transformed by the texts
-      dictionary, which maps a name to a text to be used to label
-      the items in the painter
+      the names might be of any time (strings, integers, etc.)
     - usually, there is only one subaxis, which is used as
       the subaxis for all items
     - alternatively it is also possible to use another bar axis
@@ -671,7 +667,6 @@ class bar:
 
     def __init__(self, subaxis=None, multisubaxis=None,
                        dist=0.5, firstdist=None, lastdist=None,
-                       names=None, texts={},
                        title=None, painter=painter.bar()):
         """initialize the instance
         - subaxis contains a axis to be used as the subaxis

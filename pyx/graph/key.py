@@ -33,7 +33,7 @@ class key:
     def __init__(self, dist=0.2*unit.v_cm, pos="tr", hpos=None, vpos=None,
                  hinside=1, vinside=1, hdist=0.6*unit.v_cm, vdist=0.4*unit.v_cm,
                  symbolwidth=0.5*unit.v_cm, symbolheight=0.25*unit.v_cm, symbolspace=0.2*unit.v_cm,
-                 textattrs=[]):
+                 textattrs=[], border=0.3*unit.v_cm, keyattrs=None):
         self.dist = dist
         self.hinside = hinside
         self.vinside = vinside
@@ -43,6 +43,8 @@ class key:
         self.symbolheight = symbolheight
         self.symbolspace = symbolspace
         self.textattrs = textattrs
+        self.border = border
+        self.keyattrs = keyattrs
         if pos is not None:
             if vpos is not None or hpos is not None:
                 raise ValueError("either specify pos or a combination of hpos, vpos")
@@ -90,4 +92,9 @@ class key:
             y_pt -= dy_pt
         for titlebox in titleboxes:
             c.insert(titlebox)
+        if self.keyattrs is not None:
+            newc = canvas.canvas()
+            newc.draw(c.bbox().enlarged(self.border).path(), self.keyattrs)
+            newc.insert(c)
+            c = newc
         return c

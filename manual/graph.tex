@@ -535,7 +535,7 @@ data.
   the range [0:1] by more than \var{epsilon}.
 \end{classdesc} % }}}
 
-\begin{classdesc}{range}{epsilon=1e-10} % {{{
+\begin{classdesc}{range}{usenames={}, epsilon=1e-10} % {{{
   This class is a hidden style providing an errorbar range. It needs
   data column names constructed out of a axis name \code{X} for each
   dimension errorbar data should be provided as follows:
@@ -547,7 +547,8 @@ data.
     \lineii{\code{dXmax}}{maximal delta}
   \end{tableii}
   When delta data are provided the style will also read column data
-  for the axis name \code{X} itself.
+  for the axis name \code{X} itself. \var{usenames} allows to insert a
+  translation dictionary from axis names to the identifiers \code{X}.
 
   \var{epsilon} is a comparison precision when checking for invalid
   errorbar ranges.
@@ -772,7 +773,8 @@ implemented in \module{graph.key}.
                        symbolwidth=0.5*unit.v\_cm,
                        symbolheight=0.25*unit.v\_cm,
                        symbolspace=0.2*unit.v\_cm,
-                       textattrs=[]}
+                       textattrs=[],
+                       border=0.3*unit.v\_cm, keyattrs=None}
   This class writes the title of the data in a plot together with a
   small illustration of the style. The style is responsible for its
   illustration.
@@ -794,6 +796,10 @@ implemented in \module{graph.key}.
   space between the illustration and the text. \var{textattrs} are
   attributes for the text creation. They are merged with
   \code{[text.vshift.mathaxis]}.
+
+  When \var{keyattrs} is set to contain some draw attributes, the
+  graph key is enlarged by \var{border} and the key area is drawn
+  using \var{keyattrs}.
 \end{classdesc} % }}} % }}}
 
 % vim:fdm=marker

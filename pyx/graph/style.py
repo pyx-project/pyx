@@ -203,7 +203,8 @@ class range(_style):
     mask_dmax = 16
     mask_d = 32
 
-    def __init__(self, epsilon=1e-10):
+    def __init__(self, usenames={}, epsilon=1e-10):
+        self.usenames = usenames
         self.epsilon = epsilon
 
     def columns(self, privatedata, sharedata, graph, columns):
@@ -222,20 +223,24 @@ class range(_style):
         privatedata.rangeposdeltacolumns = {} # temporarily used by adjustaxis only
         for count, axisnames in enumerate(graph.axesnames):
             for axisname in axisnames:
+                try:
+                    usename = self.usenames[axisname]
+                except KeyError:
+                    usename = axisname
                 mask = 0
                 for column in columns:
                     addusecolumns = 1
-                    if axisname == column:
+                    if usename == column:
                         mask += self.mask_value
-                    elif axisname + "min" == column:
+                    elif usename + "min" == column:
                         mask += self.mask_min
-                    elif axisname + "max" == column:
+                    elif usename + "max" == column:
                         mask += self.mask_max
-                    elif "d" + axisname + "min" == column:
+                    elif "d" + usename + "min" == column:
                         mask += self.mask_dmin
-                    elif "d" + axisname + "max" == column:
+                    elif "d" + usename + "max" == column:
                         mask += self.mask_dmax
-                    elif "d" + axisname == column:
+                    elif "d" + usename == column:
                         mask += self.mask_d
                     else:
                         addusecolumns = 0
@@ -249,7 +254,7 @@ class range(_style):
                         if not (mask & self.mask_value):
                             raise ValueError("missing value for delta")
                         privatedata.rangeposdeltacolumns[axisname] = {}
-                    privatedata.rangeposcolumns.append((axisname, mask))
+                    privatedata.rangeposcolumns.append((axisname, usename, mask))
                 elif mask == self.mask_value:
                     usecolumns = usecolumns[:-1]
             if len(privatedata.rangeposcolumns) + len(sharedata.vrangemissing) > count+1:
@@ -257,68 +262,69 @@ class range(_style):
             elif len(privatedata.rangeposcolumns) + len(sharedata.vrangemissing) < count+1:
                 sharedata.vrangemissing.append(count)
             else:
-                if not (privatedata.rangeposcolumns[-1][1] & (self.mask_min | self.mask_dmin | self.mask_d)):
+                if not (privatedata.rangeposcolumns[-1][2] & (self.mask_min | self.mask_dmin | self.mask_d)):
                     sharedata.vrangeminmissing.append(count)
-                if not (privatedata.rangeposcolumns[-1][1] & (self.mask_max | self.mask_dmax | self.mask_d)):
+                if not (privatedata.rangeposcolumns[-1][2] & (self.mask_max | self.mask_dmax | self.mask_d)):
                     sharedata.vrangemaxmissing.append(count)
         return usecolumns
 
     def adjustaxis(self, privatedata, sharedata, graph, column, data, index):
-        if column in [c + "min" for c, m in privatedata.rangeposcolumns if m & self.mask_min]:
+        if column in [c + "min" for a, c, m in privatedata.rangeposcolumns if m & self.mask_min]:
             graph.axes[column[:-3]].adjustrange(data, index)
-        if column in [c + "max" for c, m in privatedata.rangeposcolumns if m & self.mask_max]:
+        if column in [c + "max" for a, c, m in privatedata.rangeposcolumns if m & self.mask_max]:
             graph.axes[column[:-3]].adjustrange(data, index)
 
         # delta handling: fill rangeposdeltacolumns
-        if column in [c for c, m in privatedata.rangeposcolumns if m & (self.mask_dmin | self.mask_dmax | self.mask_d)]:
-            privatedata.rangeposdeltacolumns[column][self.mask_value] = data, index
-        if column in ["d" + c + "min" for c, m in privatedata.rangeposcolumns if m & self.mask_dmin]:
-            privatedata.rangeposdeltacolumns[column[1:-3]][self.mask_dmin] = data, index
-        if column in ["d" + c + "max" for c, m in privatedata.rangeposcolumns if m & self.mask_dmax]:
-            privatedata.rangeposdeltacolumns[column[1:-3]][self.mask_dmax] = data, index
-        if column in ["d" + c for c, m in privatedata.rangeposcolumns if m & self.mask_d]:
-            privatedata.rangeposdeltacolumns[column[1:]][self.mask_d] = data, index
+        for axisname, usename, mask in privatedata.rangeposcolumns:
+            if column == usename and mask & (self.mask_dmin | self.mask_dmax | self.mask_d):
+                privatedata.rangeposdeltacolumns[axisname][self.mask_value] = data, index
+            if column == "d" + usename + "min" and mask & self.mask_dmin:
+                privatedata.rangeposdeltacolumns[axisname][self.mask_dmin] = data, index
+            if column == "d" + usename + "max" and mask & self.mask_dmax:
+                privatedata.rangeposdeltacolumns[axisname][self.mask_dmax] = data, index
+            if column == "d" + usename and mask & self.mask_d:
+                privatedata.rangeposdeltacolumns[axisname][self.mask_d] = data, index
 
         # delta handling: process rangeposdeltacolumns
-        for c, d in privatedata.rangeposdeltacolumns.items():
+        for a, d in privatedata.rangeposdeltacolumns.items():
             if d.has_key(self.mask_value):
                 for k in d.keys():
                     if k != self.mask_value:
                         if k & (self.mask_dmin | self.mask_d):
-                            graph.axes[c].adjustrange(d[self.mask_value][0], d[self.mask_value][1],
+                            graph.axes[a].adjustrange(d[self.mask_value][0], d[self.mask_value][1],
                                                       deltamindata=d[k][0], deltaminindex=d[k][1])
                         if k & (self.mask_dmax | self.mask_d):
-                            graph.axes[c].adjustrange(d[self.mask_value][0], d[self.mask_value][1],
+                            graph.axes[a].adjustrange(d[self.mask_value][0], d[self.mask_value][1],
                                                       deltamaxdata=d[k][0], deltamaxindex=d[k][1])
                         del d[k]
 
     def initdrawpoints(self, privatedata, sharedata, graph):
         sharedata.vrange = [[None for x in xrange(2)] for y in privatedata.rangeposcolumns + sharedata.vrangemissing]
-        privatedata.rangepostmplist = [[column, mask, index, graph.axes[column]] # temporarily used by drawpoint only
-                                     for index, (column, mask) in enumerate(privatedata.rangeposcolumns)]
+        privatedata.rangepostmplist = [[usename, mask, index, graph.axes[axisname]] # temporarily used by drawpoint only
+                                     for index, (axisname, usename, mask) in enumerate(privatedata.rangeposcolumns)]
         for missing in sharedata.vrangemissing:
             for rangepostmp in privatedata.rangepostmplist:
                 if rangepostmp[2] >= missing:
                     rangepostmp[2] += 1
 
     def drawpoint(self, privatedata, sharedata, graph):
-        for column, mask, index, axis in privatedata.rangepostmplist:
+        for usename, mask, index, axis in privatedata.rangepostmplist:
             try:
                 if mask & self.mask_min:
-                    sharedata.vrange[index][0] = axis.convert(sharedata.point[column + "min"])
+                    sharedata.vrange[index][0] = axis.convert(sharedata.point[usename + "min"])
                 if mask & self.mask_dmin:
-                    sharedata.vrange[index][0] = axis.convert(sharedata.point[column] - sharedata.point["d" + column + "min"])
+                    sharedata.vrange[index][0] = axis.convert(sharedata.point[usename] - sharedata.point["d" + usename + "min"])
                 if mask & self.mask_d:
-                    sharedata.vrange[index][0] = axis.convert(sharedata.point[column] - sharedata.point["d" + column])
+                    sharedata.vrange[index][0] = axis.convert(sharedata.point[usename] - sharedata.point["d" + usename])
             except (ArithmeticError, ValueError, TypeError):
                 sharedata.vrange[index][0] = None
             try:
                 if mask & self.mask_max:
-                    sharedata.vrange[index][1] = axis.convert(sharedata.point[column + "max"])
+                    sharedata.vrange[index][1] = axis.convert(sharedata.point[usename + "max"])
                 if mask & self.mask_dmax:
-                    sharedata.vrange[index][1] = axis.convert(sharedata.point[column] + sharedata.point["d" + column + "max"])
+                    sharedata.vrange[index][1] = axis.convert(sharedata.point[usename] + sharedata.point["d" + usename + "max"])
                 if mask & self.mask_d:
-                    sharedata.vrange[index][1] = axis.convert(sharedata.point[column] + sharedata.point["d" + column])
+                    sharedata.vrange[index][1] = axis.convert(sharedata.point[usename] + sharedata.point["d" + usename])
             except (ArithmeticError, ValueError, TypeError):
                 sharedata.vrange[index][1] = None
 
@@ -430,12 +436,15 @@ class symbol(_styleneedingpointpos):
             privatedata.symbolattrs = None
 
     def initdrawpoints(self, privatedata, sharedata, graph):
-        privatedata.symbolcanvas = graph.insert(canvas.canvas())
+        privatedata.symbolcanvas = canvas.canvas()
 
     def drawpoint(self, privatedata, sharedata, graph):
         if sharedata.vposvalid and privatedata.symbolattrs is not None:
             xpos, ypos = graph.vpos_pt(*sharedata.vpos)
             privatedata.symbol(privatedata.symbolcanvas, xpos, ypos, privatedata.size_pt, privatedata.symbolattrs)
+
+    def donedrawpoints(self, privatedata, sharedata, graph):
+        graph.insert(privatedata.symbolcanvas)
 
     def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
         if privatedata.symbolattrs is not None:
@@ -461,7 +470,7 @@ class line(_styleneedingpointpos):
 
     def initdrawpoints(self, privatedata, sharedata, graph):
         if privatedata.lineattrs is not None:
-            privatedata.linecanvas = graph.insert(canvas.canvas())
+            privatedata.linecanvas = canvas.canvas()
             privatedata.linecanvas.set(privatedata.lineattrs)
         privatedata.path = path.path()
         privatedata.linebasepoints = []
@@ -596,6 +605,7 @@ class line(_styleneedingpointpos):
         if len(privatedata.linebasepoints) > 1:
             self.addpointstopath(privatedata, sharedata)
         if privatedata.lineattrs is not None and len(privatedata.path.path):
+            graph.insert(privatedata.linecanvas)
             privatedata.linecanvas.stroke(privatedata.path)
 
     def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
@@ -628,7 +638,7 @@ class errorbar(_style):
 
     def initdrawpoints(self, privatedata, sharedata, graph):
         if privatedata.errorbarattrs is not None:
-            privatedata.errorbarcanvas = graph.insert(canvas.canvas())
+            privatedata.errorbarcanvas = canvas.canvas()
             privatedata.errorbarcanvas.set(privatedata.errorbarattrs)
             privatedata.dimensionlist = list(xrange(len(sharedata.vpos)))
 
@@ -675,6 +685,10 @@ class errorbar(_style):
                                 privatedata.errorbarcanvas.stroke(graph.vcap_pt(j, privatedata.errorsize_pt, *vminpos))
                             if maxcap:
                                 privatedata.errorbarcanvas.stroke(graph.vcap_pt(j, privatedata.errorsize_pt, *vmaxpos))
+
+    def donedrawpoints(self, privatedata, sharedata, graph):
+        if privatedata.errorbarattrs is not None:
+            graph.insert(privatedata.errorbarcanvas)
 
 
 class text(_styleneedingpointpos):
@@ -752,7 +766,7 @@ class arrow(_styleneedingpointpos):
             privatedata.arrowattrs = None
 
     def initdrawpoints(self, privatedata, sharedata, graph):
-        privatedata.arrowcanvas = graph.insert(canvas.canvas())
+        privatedata.arrowcanvas = canvas.canvas()
 
     def drawpoint(self, privatedata, sharedata, graph):
         if privatedata.lineattrs is not None and privatedata.arrowattrs is not None and sharedata.vposvalid:
@@ -773,6 +787,9 @@ class arrow(_styleneedingpointpos):
                     y2 = y_pt+0.5*dy*linelength_pt*size
                     privatedata.arrowcanvas.stroke(path.line_pt(x1, y1, x2, y2), privatedata.lineattrs +
                                                  [deco.earrow(privatedata.arrowattrs, size=self.arrowsize*size)])
+
+    def donedrawpoints(self, privatedata, sharedata, graph):
+        graph.insert(privatedata.arrowcanvas)
 
     def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
         raise RuntimeError("Style currently doesn't provide a graph key")

@@ -120,8 +120,12 @@ TODO:
       and the global pyxrc
   - graph modules:
     - graph style + data reorganization
+      - modularization of the graph styles by separating data handling and drawing tasks
+      - several graph styles can now be combined together
+      - graph data can internally now combine different data sources
+        (by that, some nasty side effects could have been removed)
     - enum -> num renaming
-    - allow for horizontally and vertically centered graph key alignment
+    - allow for horizontally and vertically centered graph key alignment and a key background
     - fix bug that graph was not finished automatically when a bbox was specified
       manually (reported by David Barton)
   - path module:
@@ -152,6 +156,8 @@ TODO:
     - additional canvas provided by decorated path is now called ornaments
   - trafo module:
     - trafos are now deformers
+  - examples:
+    - a bunch of bargraph examples have been added
 
 
 0.6.x (????/??/??):
