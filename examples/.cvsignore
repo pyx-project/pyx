@@ -1,1 +1,1 @@
-*.eps *.size
+*.aux *.log *.dvi *.toc *.size *.eps *.ps *.pdf
