@@ -49,7 +49,6 @@ class _pathcontext:
 
         """
 
-
         self.currentpoint = currentpoint
         self.currentsubpath = currentsubpath
 
@@ -969,6 +968,10 @@ class path(base.PSCmd):
         """returns total arc length of path in pts with accuracy epsilon"""
         return normpath(self).arclength(epsilon)
 
+    def at(self, t):
+        """return coordinates of corresponding normpath at parameter value t"""
+        return normpath(self).at(t)
+
     def bbox(self):
         context = _pathcontext()
         abbox = bbox.bbox()
@@ -980,9 +983,33 @@ class path(base.PSCmd):
 
         return abbox
 
+    def begin(self):
+        """return first point of first subpath in path"""
+        return normpath(self).begin()
+
+    def end(self):
+        """return last point of last subpath in path"""
+        return normpath(self).end()
+
+    def intersect(self, other, epsilon=1e-5):
+        """intersect normpath corresponding to self with other path"""
+        return normpath(self).intersect(other, epsilon)
+
+    def range(self):
+        """return maximal value for parameter value t for corr. normpath"""
+        return normpath(self).range()
+
     def reversed(self):
         """return reversed path"""
         return normpath(self).reversed()
+
+    def split(self, t):
+        """return corresponding normpaths split at parameter value t"""
+        return normpath(self).split(t)
+
+    def tangent(self, t):
+        """return tangent vector at parameter value t of corr. normpath"""
+        return normpath(self).tangent(t)
 
     def transformed(self, trafo):
         """return transformed path"""
@@ -1082,18 +1109,22 @@ class normpath(path):
         return self.reversed().at(0)
 
     def glue(self, other):
+        # XXX check for closepath at end and raise Exception
         if isinstance(other, normpath):
             return normpath(*(self.path+other.path[1:]))
         else:
             return path(*(self.path+normpath(other).path[1]))
 
     def intersect(self, other, epsilon=1e-5):
-        """intersect two normpaths
+        """intersect self with other path
 
         returns a list of tuples consisting of the corresponding parameters
         of the two bpaths
 
         """
+
+        if not isinstance(other, normpath):
+            other = normpath(other)
 
         intersections = ()
         t_a, t_b = 0,0
