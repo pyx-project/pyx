@@ -53,8 +53,9 @@ def set(uscale=None, vscale=None, wscale=None):
             
 def convert_to(l, dest_unit="m"):
 
-#        if type(l) is TupleType:
-#            return tuple(map(lambda x, self=self, dest_unit=dest_unit:self.convert_to(x,dest_unit), l))
+#     if type(l) is TupleType:
+#         return tuple(map(lambda x, self=self, dest_unit=dest_unit:
+#                          self.convert_to(x,dest_unit), l))
 
     if type(l) in (IntType, LongType, FloatType):
         return l*_m[default_unit]*scale['u']/_m[dest_unit]
@@ -109,12 +110,13 @@ class length:
                     self.unit_type = unit_match.group(7) or default_type
                     self.unit_name = unit_match.group(9) or dunit or default_unit
 
-                    self.length[self.unit_type]  = self.prefactor * _m[self.unit_name]
+                    self.length[self.unit_type] = self.prefactor*_m[self.unit_name]
 
             elif type(l) in (IntType, LongType, FloatType):
-                self.length['u'] = l * _m[dunit or default_unit]
+                self.length[default_type] = l*_m[dunit or default_unit]
             else:
-                assert 0, "cannot convert given argument to length type"
+                raise ( NotImplementedError,
+			"cannot convert given argument to length type" )
         if glength:
             self.length=glength
 

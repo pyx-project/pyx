@@ -51,6 +51,13 @@ class _bpathel:
         self.x3 = x3
         self.y3 = y3
 
+    def __str__(self):
+        return "%f %f moveto %f %f %f %f %f %f curveto" % \
+               ( self.x0, self.y0,
+                 self.x1, self.y1,
+                 self.x2, self.y2,
+                 self.x3, self.y3 )
+
     def write(self, file):
          file.write( "%f %f moveto %f %f %f %f %f %f curveto" % \
                      ( self.x0, self.y0,
@@ -62,14 +69,14 @@ class _bpathel:
     def __getitem__(self, t):
         """return pathel at parameter value t (0<=t<=1)"""
         assert 0 <= t <= 1, "parameter t of pathel out of range [0,1]"
-        return ( "%f t pt" % ((  -self.x0+3*self.x1-3*self.x2+self.x3)*t*t*t +
-                              ( 3*self.x0-6*self.x1+3*self.x2        )*t*t +
-                              (-3*self.x0+3*self.x1                  )*t +
-                                  self.x0) ,
-                 "%f t pt" % ((  -self.y0+3*self.y1-3*self.y2+self.y3)*t*t*t +
-                              ( 3*self.y0-6*self.y1+3*self.y2        )*t*t +
-                              (-3*self.y0+3*self.y1                  )*t +
-                                  self.y0)
+        return ( unit.t_pt((  -self.x0+3*self.x1-3*self.x2+self.x3)*t*t*t +
+                           ( 3*self.x0-6*self.x1+3*self.x2        )*t*t +
+                           (-3*self.x0+3*self.x1                  )*t +
+                               self.x0) ,
+                 unit.t_pt((  -self.y0+3*self.y1-3*self.y2+self.y3)*t*t*t +
+                           ( 3*self.y0-6*self.y1+3*self.y2        )*t*t +
+                           (-3*self.y0+3*self.y1                  )*t +
+                               self.y0)
                )
     
     def bbox(self):
@@ -79,10 +86,10 @@ class _bpathel:
                            max(self.y0, self.y1, self.y2, self.y3))
 
     def transform(self, trafo):
-        return _bpathel(*(trafo.apply((self.x0, self.y0))+
-                          trafo.apply((self.x1, self.y1))+
-                          trafo.apply((self.x2, self.y2))+
-                          trafo.apply((self.x3, self.y3))))
+        return _bpathel(*(trafo._apply(self.x0, self.y0)+
+                          trafo._apply(self.x1, self.y1)+
+                          trafo._apply(self.x2, self.y2)+
+                          trafo._apply(self.x3, self.y3)))
 
     def reverse(self):
         return _bpathel(self.x3, self.y3,
@@ -123,11 +130,11 @@ class _bpathel:
         #
         # the new coefficients of the [0,t] part of the bezier curve
         # are then given by expanding a0+a1*(t+(1-t)*u)+a2*(t+(1-t)*u)**2+
-        # a3*(t+(1-t)*u)**3 in u, giving:
-        # a0+a1*t+a2*t**2+a3*t**3             +
-        # (a1*+2*a2*t+3*a3*t**2)*(1-t) * u    + 
-        # (a2+3*a3*t)*(1-t)**2         * u**2 +
-        # a3*(1-t)**3                  * u**3
+        # a3*(t+(1-t)*u)**3 in u, yielding:
+        #   a0+a1*t+a2*t**2+a3*t**3             +
+        #   (a1*+2*a2*t+3*a3*t**2)*(1-t) * u    + 
+        #   (a2+3*a3*t)*(1-t)**2         * u**2 +
+        #   a3*(1-t)**3                  * u**3
         #
         # from this values we obtain the new control points by inversion
         # exactly like above, except that we don't have to calculate
@@ -233,14 +240,28 @@ class bpath:
         return abbox
 
     def write(self, file):
+        currentpoint = None
+        # some arbitrary small value, used to distinguis identical points
+        eps = 1e-6
         for bpel in self.bpath:
-            bpel.write(file)
-            file.write("\n")
+            # eliminate unnecessary moveto
+            if not currentpoint or \
+               abs(currentpoint[0]-bpel.x0)+abs(currentpoint[1]-bpel.y0)>eps:
+                file.write("%f %f moveto\n" % (bpel.x0, bpel.y0))
+                
+            currentpoint=(bpel.x3, bpel.y3)
+            file.write("%f %f %f %f %f %f curveto\n" %
+                       (bpel.x1, bpel.y1,
+                        bpel.x2, bpel.y2,
+                        bpel.x3, bpel.y3))
 
     def pos(self, t):
         """return point at respective parameter value t (0<=t<=len(self))"""
-        return self.bpath[int(t)][t-math.floor(t)]
-
+        if t==len(self):
+            return self.bpath[t-1][1]
+        else:
+            return self.bpath[int(t)][t-math.floor(t)]
+        
     def transform(self, trafo):
         """return transformed bpath"""
         return bpath(map(lambda x, trafo=trafo: x.transform(trafo),

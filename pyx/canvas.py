@@ -238,9 +238,6 @@ class linejoin(_linejoin):
     bevel = _linejoin(2)
 
 
-linejoinmiter=_linejoin(0)
-
-
 class _miterlimit(PyxAttributes):
     def __init__(self, value=10.0):
         self.value=value
@@ -364,10 +361,10 @@ class canvas(CanvasCmds):
     def __init__(self, *args, **kwargs):
         
         self.PSCmds = []
-        self.trafo  = trafo.transformation()
+        self.trafo  = trafo.trafo()
 
         for arg in args:
-            if isinstance(arg, trafo.transformation):
+            if isinstance(arg, trafo._trafo):
                 self.trafo=arg*self.trafo
             self.set(arg)
 
@@ -385,10 +382,10 @@ class canvas(CanvasCmds):
             obbox=obbox*self.clip.bbox()    # intersect with clipping bounding boxes
             
         # we have to transform all four corner points of the bbox
-        (llx, lly)=self.trafo.apply((obbox.llx, obbox.lly))
-        (lrx, lry)=self.trafo.apply((obbox.urx, obbox.lly))
-        (urx, ury)=self.trafo.apply((obbox.urx, obbox.ury))
-        (ulx, uly)=self.trafo.apply((obbox.llx, obbox.ury))
+        (llx, lly)=self.trafo._apply(obbox.llx, obbox.lly)
+        (lrx, lry)=self.trafo._apply(obbox.urx, obbox.lly)
+        (urx, ury)=self.trafo._apply(obbox.urx, obbox.ury)
+        (ulx, uly)=self.trafo._apply(obbox.llx, obbox.ury)
 
         # now, by sorting, we obtain the lower left and upper right corner
         # of the new bounding box. 

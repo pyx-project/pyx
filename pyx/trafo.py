@@ -30,13 +30,20 @@ import unit, canvas, math
 # some helper routines
 
 def _rmatrix(angle):
-    phi = 2.0*math.pi*angle/360
-        
+    phi = math.pi*angle/180.0
+    
     return  (( math.cos(phi), math.sin(phi)), 
              (-math.sin(phi), math.cos(phi)))
 
+def _rvector(angle, x, y):
+    phi = math.pi*angle/180.0
+    
+    return  ((1-math.cos(phi))*x + math.sin(phi)    *y,
+              -math.sin(phi)   *x + (1-math.cos(phi))*y)
+
+
 def _mmatrix(angle):
-    phi = 2.0*math.pi*angle/360
+    phi = math.pi*angle/180.0
     
     return ( (math.cos(phi)*math.cos(phi)-math.sin(phi)*math.sin(phi),
               -2*math.sin(phi)*math.cos(phi)                ),
@@ -51,40 +58,63 @@ def _det(matrix):
 class UndefinedResultError(ArithmeticError):
     pass
 
-# transformation: affine transformations
+# trafo: affine transformations
              
-class transformation:
+class _trafo:
+
+    """affine transformation (coordinates in constructor in pts)
+
+    Note that though the coordinates in the constructor are in
+    pts (which is useful for internal purposes), all other
+    methods only accept units in the standard user notation.
+    """
+    
     def __init__(self, matrix=((1,0),(0,1)), vector=(0,0)):
         if _det(matrix)==0:             
             raise UndefinedResultError, "transformation matrix must not be singular" 
         else:
             self.matrix=matrix
-
-        self.vector = ( unit.topt(vector[0]), unit.topt(vector[1]) )
+        self.vector = vector
 
     def __mul__(self, other):
-        if isinstance(other, transformation):
-            matrix = ( ( self.matrix[0][0]*other.matrix[0][0] + self.matrix[0][1]*other.matrix[1][0],
-                         self.matrix[0][0]*other.matrix[0][1] + self.matrix[0][1]*other.matrix[1][1] ),
-                       ( self.matrix[1][0]*other.matrix[0][0] + self.matrix[1][1]*other.matrix[1][0],
-                         self.matrix[1][0]*other.matrix[0][1] + self.matrix[1][1]*other.matrix[1][1] )
+        if isinstance(other, _trafo):
+            matrix = ( ( self.matrix[0][0]*other.matrix[0][0] +
+                         self.matrix[0][1]*other.matrix[1][0],
+                         self.matrix[0][0]*other.matrix[0][1] +
+                         self.matrix[0][1]*other.matrix[1][1] ),
+                       ( self.matrix[1][0]*other.matrix[0][0] +
+                         self.matrix[1][1]*other.matrix[1][0],
+                         self.matrix[1][0]*other.matrix[0][1] +
+                         self.matrix[1][1]*other.matrix[1][1] )
                      )
 
-            vector = ( self.matrix[0][0]*other.vector[0] + self.matrix[1][0]*other.vector[1] + self.vector[0],
-                       self.matrix[0][1]*other.vector[0] + self.matrix[1][1]*other.vector[1] + self.vector[1] )
+            vector = ( self.matrix[0][0]*other.vector[0] +
+                       self.matrix[1][0]*other.vector[1] +
+                       self.vector[0],
+                       self.matrix[0][1]*other.vector[0] +
+                       self.matrix[1][1]*other.vector[1] +
+                       self.vector[1] )
 
-            # print " ( %s * %s => %s ) "% (self, other, transformation(angle=angle, vector=vector))
-                      
-            return transformation(matrix=matrix, vector=("%f t pt" % vector[0], "%f t pt" % vector[1]))
+            return _trafo(matrix=matrix, vector=vector)
         else:
             raise NotImplementedError, "can only multiply two transformations"
 
-    def __rmul__(self, other):                          # TODO: not needed!?
-        return other.__mul__(self)
+    def _apply(self, x, y):
+        """apply transformation to point (x,y) (coordinates in pts)"""
+        return (self.matrix[0][0]*x +
+                self.matrix[1][0]*y +
+                self.vector[0],
+                self.matrix[0][1]*x +
+                self.matrix[1][1]*y +
+                self.vector[1])
 
-    def apply(self, point):
-        return (self.matrix[0][0]*point[0] + self.matrix[1][0]*point[1]+self.vector[0],
-                self.matrix[0][1]*point[0] + self.matrix[1][1]*point[1]+self.vector[1])
+    def apply(self, x, y):
+        # before the transformation, we first have to convert to
+        # our internal unit (i.e. pts)
+        tx, ty = self._apply(unit.topt(x), unit.topt(y))
+        
+        # the end result can be converted back to general lengths
+        return (unit.t_pt(tx), unit.t_pt(ty))
 
     def matrix(self):
         return self.matrix
@@ -92,80 +122,100 @@ class transformation:
     def vector(self):
         return self.vector
 
-    def angle(self):
-        return self.angle
-    
-    def translate(self,x,y):
-        return transformation(vector=(x,y))*self
+    def translate(self, x, y):
+        return trafo(vector=(x,y))*self
         
-    def rotate(self,angle):
-        return transformation(matrix=_rmatrix(angle))*self
+    def rotate(self, angle):
+        return _trafo(matrix=_rmatrix(angle))*self
         
-    def mirror(self,angle):
-        return transformation(matrix=_mmatrix(angle))*self
+    def mirror(self, angle):
+        return _trafo(matrix=_mmatrix(angle))*self
 
-    def scale(self, x, y=None):
-        return transformation(matrix=((x, 0), (0,y or x)))*self
+    def scale(self, sx, sy=None):
+        return _trafo(matrix=((sx, 0), (0, sy or sx)))*self
 
     def inverse(self):
-        det = _det(self.matrix)                         # shouldn't be zero, but
+        det = _det(self.matrix)                       # shouldn't be zero, but
         try: 
           matrix = ( ( self.matrix[1][1]/det, -self.matrix[0][1]/det),
                      (-self.matrix[1][0]/det,  self.matrix[0][0]/det)
                    )
         except ZeroDivisionError:
            raise UndefinedResultError, "transformation matrix must not be singular" 
-        return transformation(matrix=matrix) * \
-               transformation(vector=("%f t pt" % -self.vector[0],
-                                      "%f t pt" % -self.vector[1]))
+        return _trafo(matrix=matrix) * \
+               _trafo(vector=(-self.vector[0], -self.vector[1]))
 
     def bbox(self):
-        # assert 0, "this shouldn't be called!"
         return canvas.bbox()
+
+    def __str__(self):
+        return "[%f %f %f %f %f %f] concat\n" % \
+               ( self.matrix[0][0], self.matrix[0][1], 
+                 self.matrix[1][0], self.matrix[1][1], 
+                 self.vector[0], self.vector[1] ) 
 
     def write(self, file):
         file.write("[%f %f %f %f %f %f] concat\n" % \
                     ( self.matrix[0][0], self.matrix[0][1], 
                       self.matrix[1][0], self.matrix[1][1], 
                       self.vector[0], self.vector[1] ) )
-        
 
-class translate(transformation):
-    def __init__(self,x,y):
-        transformation.__init__(self, vector=(x,y))
+class trafo(_trafo):
+
+    """affine transformation"""
+    
+    def __init__(self, matrix=((1,0),(0,1)), vector=(0,0)):
+        _trafo.__init__(self,
+                        matrix,
+                        (unit.topt(vector[0]), unit.topt(vector[1])))
+
+
+class translate(trafo):
+    def __init__(self, x, y):
+        trafo.__init__(self, vector=(x, y))
         
    
-class rotate(transformation):
-    def __init__(self,angle):
-        transformation.__init__(self, matrix=_rmatrix(angle))
+class rotate(trafo):
+    def __init__(self, angle, x=None, y=None):
+        vector = 0,0
+        if x is not None or y is not None:
+            if x is None or y is None:
+                raise (UndefinedResultError, 
+                       "either specify x or y both or none of them")
+            vector=_rvector(angle, unit.topt(x), unit.topt(y))
+            
+        _trafo.__init__(self,
+                       matrix=_rmatrix(angle),
+                       vector=vector)
         
         
-class mirror(transformation):
+class mirror(trafo):
     def __init__(self,angle=0):
-        transformation.__init__(self, matrix=_mmatrix(angle))
+        trafo.__init__(self, matrix=_mmatrix(angle))
         
 
-class scale(transformation):
+class scale(trafo):
     def __init__(self,x,y=None):
-        transformation.__init__(self, matrix=((x,0),(0,y or x)))
+        trafo.__init__(self, matrix=((x,0),(0,y or x)))
         
 
 if __name__=="__main__":
    # test for some invariants:
 
    def checkforidentity(trafo):
-       u=unit.unit()
        m = max(map(abs,[trafo.matrix[0][0]-1,
                         trafo.matrix[1][0],
                         trafo.matrix[0][1],
                         trafo.matrix[1][1]-1,
-                        u.pt(trafo.vector[0]),
-                        u.pt(trafo.vector[1])]))
-                    
+                        unit.topt(trafo.vector[0]),
+                        unit.topt(trafo.vector[1])]))
+
        assert m<1e-7, "tests for invariants failed" 
 
-   # transformation(angle=angle, vector=(x,y)) == translate(x,y) * rotate(angle)
-   checkforidentity( translate(1,3) * rotate(15)  * transformation(matrix=_rmatrix(15),vector=(1,3)).inverse())
+   # trafo(angle=angle, vector=(x,y)) == translate(x,y) * rotate(angle)
+   checkforidentity( translate(1,3) *
+                     rotate(15) *
+                     trafo(matrix=_rmatrix(15),vector=(1,3)).inverse())
    
    # t*t.inverse() == 1
    t = translate(-1,-1)*rotate(72)*translate(1,1)
@@ -178,22 +228,24 @@ if __name__=="__main__":
    checkforidentity( mirror(20)*mirror(180+20))
    
    # equivalent notations
-   checkforidentity( translate(1,2).rotate(72).translate(-3,-1)*(translate(-3,-1)*rotate(72)*translate(1,2)).inverse() )
+   checkforidentity( rotate(72).translate(1,2)*
+                     (translate(1,2)*rotate(72)).inverse())
+   checkforidentity( rotate(72,1,2)*(translate(-1,-2).rotate(72).translate(1,2)).inverse())
+   
+   checkforidentity( translate(1,2).rotate(72).translate(-3,-1)*
+                     (translate(-3,-1)*rotate(72)*translate(1,2)).inverse() )
    
    checkforidentity( rotate(40).rotate(120).rotate(90).rotate(110) )
 
    checkforidentity( scale(2,3).scale(1/2.0, 1/3.0) )
 
    def applyonbasis(t):
-       u=unit.unit()
-       ex = (1,0)
-       ey = (0,1)
        print "%s:" % t
        t=eval(t)
-       esx=t.apply(ex)
-       esy=t.apply(ey)
-       print "  (1,0) => (%f, %f)" % (u.m(esx[0])*100, u.m(esx[1])*100)
-       print "  (0,1) => (%f, %f)" % (u.m(esy[0])*100, u.m(esy[1])*100)
+       esx=t.apply(1,0)
+       esy=t.apply(0,1)
+       print "  (1,0) => (%f, %f)" % (unit.tom(esx[0])*100, unit.tom(esx[1])*100)
+       print "  (0,1) => (%f, %f)" % (unit.tom(esy[0])*100, unit.tom(esy[1])*100)
 
    applyonbasis("translate(1,0)")
    applyonbasis("translate(0,1)")
