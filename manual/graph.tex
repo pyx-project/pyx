@@ -1,0 +1,252 @@
+\chapter{Graphs\label{graph}}
+\section{Introduction}
+\PyX{} can be used for data and function plotting. At present only
+x-y-graphs are supported. However, the component architecture of the
+graph system described in section \ref{graph:components} allows for
+additional graph geometries while reusing most of the existing
+components.
+
+Creating a graph splits into two basic steps. First you have to create
+a graph instance. The most simples form would look like:
+\begin{verbatim}
+from pyx import *
+g = graph.graphxy(width=8)
+\end{verbatim}
+The graph instance \code{g} created in this example can than be used
+to actually plot something into the graph. Suppose you have some data
+in a file \file{graph.dat} you want to plot. The content of the file
+could look like:
+\verbatiminput{graph.dat}
+To plot these data into the graph \code{g} you must perform:
+\begin{verbatim}
+g.plot(graph.data.file("graph.dat", x=1, y=2))
+\end{verbatim}
+The method \method{plot()} takes the data to be plotted and optionally
+a graph style to be used to plot the data. When no style is provided,
+a default style defined by the data instance is used. For data read
+from a file by an instance of \class{graph.data.file}, the default are
+symbols. When instantiating \class{graph.data.file}, you not only
+specify the file name, but also a mapping from columns to axis names
+and other information the style might use (\emph{e.g.} data for error
+bars for the symbol style).
+
+While the graph is already created by that, we still need to perform a
+write of the result into a file. Since the graph instance is a canvas,
+we can just call its \method{writeEPSfile()} method.
+\begin{verbatim}
+g.writeEPSfile("graph")
+\end{verbatim}
+will create the file \file{graph.eps} as shown in
+figure~\ref{fig:graph}.
+
+\begin{figure}[ht]
+\centerline{\includegraphics{graph}}
+\caption{A minimalistic plot for the data from file \file{graph.dat}.}
+\label{fig:graph}
+\end{figure}
+
+Instead of plotting data from a file, we could also use other data
+sources like functions. The procedure would be as before, but we would
+place different data into \method{plot()}:
+\begin{verbatim}
+g.plot(graph.data.function("y=x**2"))
+\end{verbatim}
+You can plot different data into a single graph by calling the
+\method{plot()} several times. Thus the command above might just be
+inserted before \method{writeEPSfile()} of the original example.
+Note that a call to \method{plot()} will fail once you forced the
+graph to ``finish'' itself. This happens automatically, when you
+write the output. Thus it is not an option to call \method{plot()}
+after \method{writeEPSfile()}. The topic of the finalization of a
+graph is addressed in more detail in section~\ref{graph:graphxy}. As
+you can see in figure~\ref{fig:graph2}, a function is plotted as a
+line by default.
+\begin{figure}[ht]
+\centerline{\includegraphics{graph2}}
+\caption{Plotting data from a file together with a function.}
+\label{fig:graph2}
+\end{figure}
+
+\section{Component architecture \label{graph:components}}
+
+Creating a graph involves a variety of tasks, which thus can be
+separated into components without significant additional costs.
+This structure manifests itself also in the \PyX{} source, where there
+are different modules for the different tasks. They interact by some
+welldefined interfaces. They certainly has to be completed and
+stabilized in its details, but the basic structure came up in the
+continuous development quite clearly. The basic parts of a graph are:
+
+\begin{definitions}
+\term{graph}
+  Defines the geometry of the graph by means of graph coordinates with
+  range [0:1]. Keeps lists of plotted data, axes \emph{etc.}
+\term{data}
+  Produces or prepare data to be plotted in graphs.
+\term{style}
+  Performs the plotting of the data into the graph. It get data,
+  convert them via the axes into graph coordinates and uses the graph
+  to finally plot the data with respect to the graph geometry methods.
+\term{key}
+  Responsible for the graph keys.
+\term{axis}
+  Creates axes for the graph, which take care of the mapping from data
+  values to graph coordinates. Because axes are also responsible for
+  creating ticks and labels, showing up in the graph themselfs and
+  other things, this task is splitted into several independend
+  subtasks. Axes are discussed separately in chapter~\ref{axis}.
+\end{definitions}
+
+\section{X-Y-Graphs\label{graph:graphxy}}
+
+\declaremodule{}{graph.graph}
+\modulesynopsis{graph geometry}
+
+The class \class{graphxy} is part of the module \module{graph.graph}.
+However, there is a shortcut to access this class via
+\code{graph.graphxy}.
+
+\begin{classdesc}{graphxy}{xpos=0, ypos=0, width=None, height=None,
+ratio=goldenmean, key=None, backgroundattrs=None, axesdist="0.8 cm",
+**axes}
+  This class provides a x-y-graph. A graph instance is also a full
+  functional canvas.
+
+  The position of the graph on its own canvas is specified by
+  \var{xpos} and \var{ypos}. The size of the graph is specified by
+  \var{width}, \var{height}, and \var{ratio}. These parameters define
+  the size of the graph area not taking into account the additional
+  space needed for the axes. Note that you have to specify at least
+  \var{width} or \var{height}. \var{ratio} will be used as the ratio
+  between \var{width} and \var{height} when only one of these are
+  provided.
+
+  \var{key} can be set to a \class{graph.key.key} instance to create
+  an automatic graph key. \code{None} omits the graph key.
+
+  \var{backgroundattrs} is a list of attributes for drawing the
+  background of the graph. Allowed are decorators, strokestyles, and
+  fillstyles. \code{None} disables background drawing.
+
+  \var{axisdist} is the distance between axes drawn at the same side
+  of a graph.
+
+  \var{**axes} recieves axes instances. Allowed keywords (axes names)
+  are \code{x}, \code{x2}, \code{x3}, \emph{etc.} and \code{y},
+  \code{y2}, \code{y3}, \emph{etc.} When not providing a \code{x} or
+  \code{y} axis, linear axes instances will be used automatically.
+  When not providing a \code{x2} or \code{y2} axis, linked axes to the
+  \code{x} and \code{y} axes are created automatically. You may set
+  those axes to \code{None} to disable the automatic creation of axes.
+  The even numbered axes are plotted at the top (\code{y} axes) and
+  right (\code{x} axes) while the others are plotted at the bottom
+  (\code{x} axes) and left (\code{y} axes) in ascending order each.
+  Axes instances should be used once only.
+\end{classdesc}
+
+Some instance attributes might be usefull for outside read-access.
+Those are:
+
+\begin{memberdesc}{axes}
+  A dictionary mapping axes names to the \class{axis} instances.
+\end{memberdesc}
+
+\begin{memberdesc}{axespos}
+  A dictionary mapping axes names to the \class{axispos} instances.
+\end{memberdesc}
+
+To actually plot something into the graph, the following instance
+method \method{plot()} is provided:
+
+\begin{methoddesc}{plot}{data, style=None}
+  Adds \var{data} to the list of data to be plotted. Sets \var{style}
+  the be used for plotting the data. When \var{style} is \code{None},
+  the default style for the data as provided by \var{data} is used.
+
+  \var{data} should be an instance of any of the data described in
+  section~\ref{graph:data}. This instance should used once only.
+
+  When a style is used several times within the same graph instance,
+  it is kindly asked by the graph to iterate its appearence. Its up
+  to the style how this is performed.
+
+  Instead of calling the plot method several times with different
+  \var{data} but the same style, you can use a list (or something
+  iterateable) for \var{data}.
+\end{methoddesc}
+
+While a graph instance only collects data initially, at a certain
+point it must create the whole plot. Once this is done, further calls
+of \method{plot()} will fail. Usually you do not need to take care
+about the finalization of the graph, because it happens automatically
+once you write the plot into a file. However, sometime position
+methods (described below) are nice to be accessable. For that, at
+least the layout of the graph must be done. By calling the
+\method{do}-methods yourself you can also alter the order in which
+the graph is plotted. Multiple calls the any of the
+\method{do}-methods have no effect (only the first call counts). The
+orginal order in which the \method{do}-methods are called is:
+
+\begin{methoddesc}{dolayout}{}
+  Fixes the layout of the graph. As part of this work, the ranges of
+  the axes are fitted to the data when the axes ranges are allowed to
+  addjust themselfs to the data ranges. The other \method{do}-methods
+  ensure, that this method is always called first.
+\end{methoddesc}
+
+\begin{methoddesc}{dobackground}{}
+  Draws the background.
+\end{methoddesc}
+
+\begin{methoddesc}{doaxes}{}
+  Inserts the axes.
+\end{methoddesc}
+
+\begin{methoddesc}{dodata}{}
+  Plots the data.
+\end{methoddesc}
+
+\begin{methoddesc}{dokey}{}
+  Inserts the graph key.
+\end{methoddesc}
+
+The graph provides some functions to access its geometry:
+
+\begin{methoddesc}{pos}{x, y, xaxis=None, yaxis=None}
+  Returns the given point at \var{x} and \var{y} as a tuple
+  \code{(xpos, ypos)} at the graph canvas. \var{x} and \var{y} are
+  axis data values for the two axes \var{xaxis} and \var{yaxis}. When
+  \var{xaxis} or \var{yaxis} are \code{None}, the axes with names
+  \code{x} and \code{y} are used. This method fails if called before
+  \method{dolayout()}.
+\end{methoddesc}
+
+\begin{methoddesc}{vpos}{vx, vy}
+  Returns the given point at \var{vx} and \var{vy} as a tuple
+  \code{(xpos, ypos)} at the graph canvas. \var{vx} and \var{vy} are
+  graph coordinates with range [0:1].
+\end{methoddesc}
+
+\begin{methoddesc}{vgeodesic}{vx1, vy1, vx2, vy2}
+  Returns the geodesic between points \var{vx1}, \var{vy1} and
+  \var{vx1}, \var{vy1} as a path. All parameters are in graph
+  coordinates with range [0:1]. For \class{graphxy} this is a straight
+  line.
+\end{methoddesc}
+
+\begin{methoddesc}{vgeodesic\_el}{vx1, vy1, vx2, vy2}
+  Like \method{vgeodesic} but this method returns the path element to
+  connect the two points.
+\end{methoddesc}
+
+\section{Data\label{graph:data}}
+
+\section{Styles\label{graph:style}}
+
+Please note that we're talking about graph styles here. Those are
+responsible for plotting symbols, lines, bars and whatever else into a
+graph. Do not mix it up with path styles like the line width, the line
+style (solid, dashed, dotted \emph{etc.}) and others.
+
+\section{Keys\label{graph:key}}
+
