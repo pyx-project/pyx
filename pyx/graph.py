@@ -1707,172 +1707,172 @@ class changecolor(changeattr):
 
 class _changecolorgray(changecolor):
 
-    def __init__(self, gradient=color.gradient.gray):
+    def __init__(self, gradient=color.gradient.Gray):
         changecolor.__init__(self, gradient)
 
 
 class _changecolorreversegray(changecolor):
 
-    def __init__(self, gradient=color.gradient.reversegray):
+    def __init__(self, gradient=color.gradient.ReverseGray):
         changecolor.__init__(self, gradient)
 
 
 class _changecolorredblack(changecolor):
 
-    def __init__(self, gradient=color.gradient.redblack):
+    def __init__(self, gradient=color.gradient.RedBlack):
         changecolor.__init__(self, gradient)
 
 
 class _changecolorblackred(changecolor):
 
-    def __init__(self, gradient=color.gradient.blackred):
+    def __init__(self, gradient=color.gradient.BlackRed):
         changecolor.__init__(self, gradient)
 
 
 class _changecolorredwhite(changecolor):
 
-    def __init__(self, gradient=color.gradient.redwhite):
+    def __init__(self, gradient=color.gradient.RedWhite):
         changecolor.__init__(self, gradient)
 
 
 class _changecolorwhitered(changecolor):
 
-    def __init__(self, gradient=color.gradient.whitered):
+    def __init__(self, gradient=color.gradient.WhiteRed):
         changecolor.__init__(self, gradient)
 
 
 class _changecolorgreenblack(changecolor):
 
-    def __init__(self, gradient=color.gradient.greenblack):
+    def __init__(self, gradient=color.gradient.GreenBlack):
         changecolor.__init__(self, gradient)
 
 
 class _changecolorblackgreen(changecolor):
 
-    def __init__(self, gradient=color.gradient.blackgreen):
+    def __init__(self, gradient=color.gradient.BlackGreen):
         changecolor.__init__(self, gradient)
 
 
 class _changecolorgreenwhite(changecolor):
 
-    def __init__(self, gradient=color.gradient.greenwhite):
+    def __init__(self, gradient=color.gradient.GreenWhite):
         changecolor.__init__(self, gradient)
 
 
 class _changecolorwhitegreen(changecolor):
 
-    def __init__(self, gradient=color.gradient.whitegreen):
+    def __init__(self, gradient=color.gradient.WhiteGreen):
         changecolor.__init__(self, gradient)
 
 
 class _changecolorblueblack(changecolor):
 
-    def __init__(self, gradient=color.gradient.blueblack):
+    def __init__(self, gradient=color.gradient.BlueBlack):
         changecolor.__init__(self, gradient)
 
 
 class _changecolorblackblue(changecolor):
 
-    def __init__(self, gradient=color.gradient.blackblue):
+    def __init__(self, gradient=color.gradient.BlackBlue):
         changecolor.__init__(self, gradient)
 
 
 class _changecolorbluewhite(changecolor):
 
-    def __init__(self, gradient=color.gradient.bluewhite):
+    def __init__(self, gradient=color.gradient.BlueWhite):
         changecolor.__init__(self, gradient)
 
 
 class _changecolorwhiteblue(changecolor):
 
-    def __init__(self, gradient=color.gradient.whiteblue):
+    def __init__(self, gradient=color.gradient.WhiteBlue):
         changecolor.__init__(self, gradient)
 
 
 class _changecolorredgreen(changecolor):
 
-    def __init__(self, gradient=color.gradient.redgreen):
+    def __init__(self, gradient=color.gradient.RedGreen):
         changecolor.__init__(self, gradient)
 
 
 class _changecolorredblue(changecolor):
 
-    def __init__(self, gradient=color.gradient.redblue):
+    def __init__(self, gradient=color.gradient.RedBlue):
         changecolor.__init__(self, gradient)
 
 
 class _changecolorgreenred(changecolor):
 
-    def __init__(self, gradient=color.gradient.greenred):
+    def __init__(self, gradient=color.gradient.GreenRed):
         changecolor.__init__(self, gradient)
 
 
 class _changecolorgreenblue(changecolor):
 
-    def __init__(self, gradient=color.gradient.greenblue):
+    def __init__(self, gradient=color.gradient.GreenBlue):
         changecolor.__init__(self, gradient)
 
 
 class _changecolorbluered(changecolor):
 
-    def __init__(self, gradient=color.gradient.bluered):
+    def __init__(self, gradient=color.gradient.BlueRed):
         changecolor.__init__(self, gradient)
 
 
 class _changecolorbluegreen(changecolor):
 
-    def __init__(self, gradient=color.gradient.bluegreen):
+    def __init__(self, gradient=color.gradient.BlueGreen):
         changecolor.__init__(self, gradient)
 
 
 class _changecolorrainbow(changecolor):
 
-    def __init__(self, gradient=color.gradient.rainbow):
+    def __init__(self, gradient=color.gradient.Rainbow):
         changecolor.__init__(self, gradient)
 
 
 class _changecolorreverserainbow(changecolor):
 
-    def __init__(self, gradient=color.gradient.reverserainbow):
+    def __init__(self, gradient=color.gradient.ReverseRainbow):
         changecolor.__init__(self, gradient)
 
 
 class _changecolorhue(changecolor):
 
-    def __init__(self, gradient=color.gradient.hue):
+    def __init__(self, gradient=color.gradient.Hue):
         changecolor.__init__(self, gradient)
 
 
 class _changecolorreversehue(changecolor):
 
-    def __init__(self, gradient=color.gradient.reversehue):
+    def __init__(self, gradient=color.gradient.ReverseHue):
         changecolor.__init__(self, gradient)
 
 
-changecolor.gray           = _changecolorgray
-changecolor.reversegray    = _changecolorreversegray
-changecolor.redblack       = _changecolorredblack
-changecolor.blackred       = _changecolorblackred
-changecolor.redwhite       = _changecolorredwhite
-changecolor.whitered       = _changecolorwhitered
-changecolor.greenblack     = _changecolorgreenblack
-changecolor.blackgreen     = _changecolorblackgreen
-changecolor.greenwhite     = _changecolorgreenwhite
-changecolor.whitegreen     = _changecolorwhitegreen
-changecolor.blueblack      = _changecolorblueblack
-changecolor.blackblue      = _changecolorblackblue
-changecolor.bluewhite      = _changecolorbluewhite
-changecolor.whiteblue      = _changecolorwhiteblue
-changecolor.redgreen       = _changecolorredgreen
-changecolor.redblue        = _changecolorredblue
-changecolor.greenred       = _changecolorgreenred
-changecolor.greenblue      = _changecolorgreenblue
-changecolor.bluered        = _changecolorbluered
-changecolor.bluegreen      = _changecolorbluegreen
-changecolor.rainbow        = _changecolorrainbow
-changecolor.reverserainbow = _changecolorreverserainbow
-changecolor.hue            = _changecolorhue
-changecolor.reversehue     = _changecolorreversehue
+changecolor.Gray           = _changecolorgray
+changecolor.ReverseGray    = _changecolorreversegray
+changecolor.RedBlack       = _changecolorredblack
+changecolor.BlackRed       = _changecolorblackred
+changecolor.RedWhite       = _changecolorredwhite
+changecolor.WhiteRed       = _changecolorwhitered
+changecolor.GreenBlack     = _changecolorgreenblack
+changecolor.BlackGreen     = _changecolorblackgreen
+changecolor.GreenWhite     = _changecolorgreenwhite
+changecolor.WhiteGreen     = _changecolorwhitegreen
+changecolor.BlueBlack      = _changecolorblueblack
+changecolor.BlackBlue      = _changecolorblackblue
+changecolor.BlueWhite      = _changecolorbluewhite
+changecolor.WhiteBlue      = _changecolorwhiteblue
+changecolor.RedGreen       = _changecolorredgreen
+changecolor.RedBlue        = _changecolorredblue
+changecolor.GreenRed       = _changecolorgreenred
+changecolor.GreenBlue      = _changecolorgreenblue
+changecolor.BlueRed        = _changecolorbluered
+changecolor.BlueGreen      = _changecolorbluegreen
+changecolor.Rainbow        = _changecolorrainbow
+changecolor.ReverseRainbow = _changecolorreverserainbow
+changecolor.Hue            = _changecolorhue
+changecolor.ReverseHue     = _changecolorreversehue
 
 
 class changesequence(changeattr):
