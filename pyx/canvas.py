@@ -266,7 +266,7 @@ class PathDeco:
     """
 
     def decoration(self, path):
-        """return decoratorion of path as PSCommand"""
+        """return decoration of path as PSCommand"""
         pass
 
 class arrow(PathDeco):
