@@ -590,17 +590,22 @@ class rectbox(path.path):
         vy = a*ry - my
         return vx, vy
 
-import trafo
+import trafo, color
 if __name__=="__main__": 
     c=canvas.canvas()
-    b=rectbox(0, 0, 5, 3, 3, 1)
+    b=rectbox(0, 0, 5, 3, 2, 2)
     r = 3
     c.draw(path.path(path.arc(0, 0, r, 0, 360)))
     phi = 0
     while phi < 2 * math.pi - 1e-10:
-      translate = b.translatetodistance(r * math.cos(phi), r * math.sin(phi))
-      c.draw(b.bpath().transform(trafo.translate(*translate)))
-      c.draw(path.line(0, 0, b.x0 + translate[0], b.y0 + translate[1]))
+      try:
+          translate = b.translatetodistance(r * math.cos(phi), r * math.sin(phi))
+          c.draw(b.bpath().transform(trafo.translate(*translate)))
+          c.draw(path.line(0, 0, b.x0 + translate[0], b.y0 + translate[1]))
+      except ValueError:
+          c.draw(path.line(0, 0, r * math.cos(phi), r * math.sin(phi)), color.rgb.red)
+      except ZeroDivisionError:
+          c.draw(path.line(0, 0, r * math.cos(phi), r * math.sin(phi)), color.rgb.green)
       phi += math.pi / 20
     c.writetofile("boxtest")
 
