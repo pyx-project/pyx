@@ -18,11 +18,17 @@ PyX
     - make dash length available
   - text module:
     - further improve lfs handling
-    - missed to rename vbox to parbox in PyX 0.3 -> do it!
   - tex module:
     - copy lfs handling from text module (share the same source???)
 
-0.3.1 --- be sure to port all the bug fixes and insert documentation here
+0.3.1 BUGFIX RELEASE (scheduled for 2003/04/04)
+  - text module:
+    - fix bug in dvi rule code where width was height
+    - fix preamble attribute checking bug
+    - fix texmessage.load pattern search instead of match bug
+    - renamed vbox to parbox (was done in 0.3 partially only)
+  - data module:
+    - allow for tuples in arguments of the data class
 
 0.3 (2003/03/31)
   - examples
