@@ -488,7 +488,7 @@ def readfontmap(filenames):
     fontmap = {}
     for filename in filenames:
         mappath = pykpathsea.find_file(filename, pykpathsea.kpse_dvips_config_format)
-        if mappath is None:
+        if not mappath:
             raise RuntimeError("cannot find dvips font catalog '%s', aborting" % filename)
         mapfile = open(mappath, "r")
         for line in mapfile.readlines():
@@ -508,7 +508,7 @@ class Font:
     def __init__(self, name, c, q, d, tfmconv, debug=0):
         self.name = name
         self.tfmpath = pykpathsea.find_file("%s.tfm" % self.name, pykpathsea.kpse_tfm_format)
-        if self.tfmpath is None:
+        if not self.tfmpath:
             raise TFMError("cannot find %s.tfm" % self.name)
         self.tfmfile = TFMFile(self.tfmpath, debug)
         self.fontmapping = fontmap.get(name)

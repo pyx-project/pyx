@@ -119,11 +119,11 @@ class fontdefinition(prologitem):
                     file.write(" %d" % i)
             file.write("\n")
             pfbpath = pykpathsea.find_file(self.filename, pykpathsea.kpse_type1_format)
-            if pfbpath is None:
+            if not pfbpath:
                 raise RuntimeError("cannot find type 1 font %s" % self.filename)
             if self.encfilename is not None:
                 encpath = pykpathsea.find_file(self.encfilename, pykpathsea.kpse_tex_ps_header_format)
-                if encpath is None:
+                if not encpath:
                     raise RuntimeError("cannot find font encoding file %s" % self.encfilename)
                 t1strip.t1strip(file, pfbpath, self.usedchars, encpath)
             else:
