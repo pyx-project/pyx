@@ -19,7 +19,7 @@ Andr\'e Wobst \texttt{<wobsta@users.sourceforge.net>}}
 \maketitle
 \begin{abstract}
 This is an automatically generated document from the \PyX{} examples directory. For
-each \PyX{} example file its name, source code and the postscript output are
+each \PyX{} example file its name, source code and the corresponding postscript output are
 shown. Please pay attention to source code comments within the examples for
 further information.
 \end{abstract}
