@@ -488,7 +488,7 @@ class function:
           where the y range depends on the x range)
         - on step == 2 axes ranges not previously set should be
           updated by data accumulated by step 1"""
-        if step == 0:
+        if step == 1:
             min, max = graph.axes[self.variable].getrange()
             if self.min is not None: min = self.min
             if self.max is not None: max = self.max
@@ -499,7 +499,6 @@ class function:
                 x = self.xaxis.invert(vmin + (vmax-vmin)*i / (self.nopoints-1.0))
                 self.points.append([x])
             self.style.adjustaxes([0], self)
-        elif step == 1:
             for point in self.points:
                 self.context[self.variable] = point[0]
                 try:
