@@ -22,9 +22,7 @@ public:
 	scp -oCompression=yes -r $(builddir)/* $(publicserver):$(publicpath)
 	-ssh $(publicserver) "cd $(publicpath); chmod -R g+w *"
 
-build:
-	make htmlfiles
-	make otherhtml
+build: htmlfiles otherhtml
 	-rm -r $(builddir)
 	mkdir $(builddir)
 	cp $(htmlfiles) $(imagefiles) $(cssfiles) $(builddir)
@@ -42,5 +40,6 @@ otherhtml:
 	cd png; make
 	cd ../examples; make html
 	cd ../manual; make pdf
+	cd ../manual; make html
 	cd ../faq; make
 
