@@ -5,28 +5,52 @@ from pyx import *
 
 c=canvas.canvas()
 t=c.insert(tex.tex())
-
 t.text(0, 0, "Hello, world!")
-print "width of 'Hello, world!': ", t.textwd("Hello, world!")
-print "height of 'Hello, world!': ", t.textht("Hello, world!")
-print "depth of 'Hello, world!': ", t.textdp("Hello, world!")
+print "width:", t.textwd("Hello, world!")
+print "height:", t.textht("Hello, world!")
+print "depth:", t.textdp("Hello, world!")
+t.text(0, -0.5, "Hello, world!", tex.fontsize.large)
+t.text(0, -1.5,
+       r"\sum_{n=1}^{\infty} {1\over{n^2}} = {{\pi^2}\over 6}",
+       tex.style.math)
 
+c.draw(path.line(5, -0.5, 9, -0.5))
+c.draw(path.line(5, -1, 9, -1))
+c.draw(path.line(5, -1.5, 9, -1.5))
+c.draw(path.line(7, -1.5, 7, 0))
+t.text(7, -0.5, "left aligned") # default is tex.halign.left
+t.text(7, -1, "center aligned", tex.halign.center)
+t.text(7, -1.5, "right aligned", tex.halign.right)
+
+c.draw(path.line(0, -4, 2, -4))
+c.draw(path.line(0, -2.5, 0, -5.5))
+c.draw(path.line(2, -2.5, 2, -5.5))
+t.text(0, -4,
+       "a b c d e f g h i j k l m n o p q r s t u v w x y z",
+       tex.valign.top(2))
+c.draw(path.line(2.5, -4, 4.5, -4))
+c.draw(path.line(2.5, -2.5, 2.5, -5.5))
+c.draw(path.line(4.5, -2.5, 4.5, -5.5))
+t.text(2.5, -4,
+       "a b c d e f g h i j k l m n o p q r s t u v w x y z",
+       tex.valign.bottom(2))
+
+c.draw(path.line(5, -4, 9, -4))
+c.draw(path.line(7, -5.5, 7, -2.5))
+t.text(7, -4, "horizontal")
+t.text(7, -4, "vertical", tex.direction.vertical)
+t.text(7, -4, "rvertical", tex.direction.rvertical)
+t.text(7, -4, "upsidedown", tex.direction.upsidedown)
+t.text(7.5, -3.5, "45", tex.direction(45))
+t.text(6.5, -3.5, "135", tex.direction(135))
+t.text(6.5, -4.5, "225", tex.direction(225))
+t.text(7.5, -4.5, "315", tex.direction(315))
+
+t.text(0, -6, "red", color.rgb.red)
+t.text(3, -6, "green", color.rgb.green)
+t.text(6, -6, "blue", color.rgb.blue)
+
+t.text(0, -6.5, "example1", tex.valign.bottom(0.5))
+t.text(4, -6.5, "example2", tex.valign.bottom(0.5), tex.msghandler.hidebuterror)
 c.writetofile("test_tex")
 
-c=canvas.canvas()
-t=c.insert(tex.latex(defaultmsghandler=tex.msghandler.hideload))
-t.define("\usepackage[dvips]{graphicx}")
-c.draw(path.rect(0, 0, 22, 1))
-t.text(0, 0, r"""\linewidth22cm\begin{itemize}
-\item This is an example. \textsf{\textit{This}} is an example. This is an example.
-      This is an example. This is an example. This is an example.
-      This is an example. This is an example. This is an example.
-      This is an example. This is an example. This is an example.
-\item This is an example. This is an example. This is an example.
-      This is an example. This is an example. This is an example.
-      This is an example. This is an example. This is an example.
-      This is an example. This is an example. This is an example.
-\end{itemize}\par
-\includegraphics{test_tex}
-""", tex.vbox(22)) # tex.msghandler.combine(tex.msghandler.hideload, tex.msghandler.hidegraphicsload))
-c.writetofile("test_tex2")

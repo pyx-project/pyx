@@ -63,7 +63,7 @@ p=path( moveto(5,12),
          lineto(7,14) )
 
 c.set(canvas.linestyle.dotted)
-t.text(5, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize("2 cm"))
+t.text(5, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", valign.top("2 cm"))
 c.draw(p)
 
 p=path( moveto(10,12), 
@@ -73,7 +73,7 @@ p=path( moveto(10,12),
          moveto(12,10), 
          lineto(12,14))
 c.set(canvas.linestyle.dashdotted, rgb(1,0,0))
-t.text("10 cm", 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize("2 cm"), valign.bottom, grey(0.5))
+t.text("10 cm", 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", valign.bottom("2 cm"), grey(0.5))
 c.draw(p)
 
 p=path(moveto(5,15), arc(5,15, 1, 0, 45), closepath())
@@ -87,7 +87,7 @@ for angle in range(20):
     s=c.insert(canvas.canvas(translate(10,10)*rotate(angle))).draw(p, canvas.linestyle.dashed, canvas.linewidth(0.01*angle), grey((20-angle)/20.0))
 
 c.set(canvas.linestyle.solid)
-g=GraphXY(c, t, 10, 15, 8, 6, x=LogAxis())
+g=c.insert(GraphXY(t, 10, 15, width=10, x=LogAxis()))
 df = DataFile("testdata")
 g.plot(Data(df, x=1, y=3))
 #g.plot(Data(df, x=2, y2=4))
@@ -100,8 +100,6 @@ g.plot(Data(df, x=1, y=3))
 #g.plot(Function("0*x"))
 #g.plot(Function("0.01*sin(x)"), chain())
 #g.plot(Function("x=2*sin(1000*y)"))
-g.run()
-    
 #    c.insert(canvas.canvas(scale(0.5, 0.4).rotate(10).translate("2 cm","200 mm"))).insert(epsfile("ratchet_f.eps"))
 #    c.insert(canvas.canvas(scale(0.2, 0.1).rotate(10).translate("6 cm","180 mm"))).insert(epsfile("ratchet_f.eps"))
     
