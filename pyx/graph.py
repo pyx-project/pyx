@@ -118,14 +118,7 @@ class _Imap:
            usually two pairs are needed like for linear maps, logarithmic maps, etc."""
 
 
-class _map:
-
-    def setbasepoints(self, basepoints):
-        self.basepoints = basepoints
-        return self
-
-
-class _linmap(_map):
+class _linmap:
     "linear mapping"
     __implements__ = _Imap
 
@@ -145,21 +138,26 @@ class _linmap(_map):
         return self.x1 + self.dxdy * (value - self.y1)
 
 
-class _logmap(_linmap):
+class _logmap:
     "logarithmic mapping"
     __implements__ = _Imap
 
     def setbasepoints(self, basepoints):
-        return _linmap.setbasepoints(self, ((math.log(basepoints[0][0]), basepoints[0][1]),
-                                            (math.log(basepoints[1][0]), basepoints[1][1])))
+        self.dydx = ((basepoints[1][1] - basepoints[0][1]) /
+                     float(math.log(basepoints[1][0]) - math.log(basepoints[0][0])))
+        self.dxdy = ((math.log(basepoints[1][0]) - math.log(basepoints[0][0])) /
+                     float(basepoints[1][1] - basepoints[0][1]))
+        self.x1 = math.log(basepoints[0][0])
+        self.y1 = basepoints[0][1]
+        return self
 
     def convert(self, value):
         if value is None: return None
-        return _linmap.convert(self, math.log(value))
+        return self.y1 + self.dydx * (math.log(value) - self.x1)
 
     def invert(self, value):
         if value is None: return None
-        return math.exp(_linmap.invert(self, value))
+        return math.exp(self.x1 + self.dxdy * (value - self.y1))
 
 
 
