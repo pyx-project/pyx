@@ -1105,10 +1105,7 @@ class path(base.canvasitem):
 
     def joined(self, other):
         """return path consisting of self and other joined together"""
-        # TODO other might be a path as well -> we might not switch to a normpath
-        # TODO Should we return a path or a normpath (should this be dependend on
-        # whether other is a path or not?)
-        return self.normpath().joined(other)
+        return self.normpath().joined(other).path()
 
     # << operator also designates joining
     __lshift__ = joined
