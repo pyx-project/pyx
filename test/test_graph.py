@@ -19,7 +19,7 @@ def test_multiaxes_data(c, t, x, y):
             graph.data(df, x=1, y2=4),
             graph.data(df, x=1, y3=5),
             graph.data(df, x=1, y5=6)),
-           style=graph.mark(markattrs=(graph.changecolor.redgreen(), graph.changestrokedfilled()), mark=graph.mark.changesquaretwice()))
+           style=graph.mark(markattrs=(graph.changecolor.redgreen(), graph.changestrokedfilled()), mark=graph.changemark.squaretwice()))
     g.finish()
 
 def test_piaxis_function(c, t, x, y):
