@@ -32,7 +32,7 @@ with their attributes.
 import sys, cStringIO, time
 import attr, base,  bbox, deco, unit, prolog, style, trafo, version
 
-# temporarily for pdf fonts:
+# temporarily needed for pdf fonts
 import zlib
 from t1strip import fullfont
 import pykpathsea
