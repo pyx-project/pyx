@@ -32,5 +32,5 @@ import os
 
 lfsdir = os.path.join(os.path.dirname(__file__), "lfs")
 sharedir = os.path.join(os.path.dirname(__file__), "..", "contrib")
-pyxrc = os.path.join(os.path.dirname(__file__), "..", "pyxrc")
+pyxrcdir = os.path.join(os.path.dirname(__file__), "..")
 

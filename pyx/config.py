@@ -24,7 +24,7 @@
 import ConfigParser, os.path
 import siteconfig
 
-cflist = [siteconfig.pyxrc,  os.path.expanduser("~/.pyxrc")]
+cflist = [os.path.join(siteconfig.pyxrcdir, "pyxrc"),  os.path.expanduser("~/.pyxrc")]
 
 config = ConfigParser.ConfigParser()
 config.read(cflist)
