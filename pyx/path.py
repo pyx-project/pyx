@@ -1783,17 +1783,59 @@ class normsubpath:
     this normline would be too short.
     """
 
-    __slots__ = "normpathitems", "closed", "epsilon"
+    __slots__ = "normpathitems", "closed", "epsilon", "startx_pt", "starty_pt", "skippedlastitem"
 
-    def __init__(self, normpathitems, closed, epsilon=1e-5):
-        self.normpathitems = [npitem for npitem in normpathitems
-                              if not npitem.isstraight(epsilon) or npitem.arclen_pt(epsilon)>epsilon]
-        self.closed = closed
+    def __init__(self, normpathitems=[], closed=0, epsilon=1e-5):
         self.epsilon = epsilon
+        # start point of the normsubpath, needed when short (i.e. shorter than epsilon)
+        # normpathitems are inserted at the beginning
+        self.startx_pt = self.starty_pt = None
+        # If one or more items appended to the normsubpath have been
+        # skipped (because their total length was shorter than
+        # epsilon), we remember this fact because we later have to
+        # modify the next normpathitem
+        self.skippedlastitem = 0
+
+        self.normpathitems = []
+        self.closed = 0
+        for normpathitem in normpathitems:
+            self.append(normpathitem)
+
+        if closed:
+            self.close()
 
     def __str__(self):
         return "subpath(%s, [%s])" % (self.closed and "closed" or "open",
                                     ", ".join(map(str, self.normpathitems)))
+
+    def append(self, normpathitem):
+        if self.closed:
+            raise PathException("Cannot append to closed normsubpath")
+        if self.startx_pt is None:
+            # first normpathitem in normsubpath has to set the start point of the normsubpath
+            lastx_pt = self.startx_pt = normpathitem.x0_pt
+            lasty_pt = self.starty_pt = normpathitem.y0_pt
+        elif self.normpathitems:
+            lastx_pt, lasty_pt = self.normpathitems[-1].end_pt()
+        else:
+            lastx_pt = self.startx_pt
+            lasty_pt = self.starty_pt
+
+        newendx_pt, newendy_pt = normpathitem.end_pt()
+        if (math.hypot(newendx_pt-lastx_pt, newendy_pt-lasty_pt) >= self.epsilon or
+            normpathitem.arclen_pt(self.epsilon) >= self.epsilon):
+            if self.skippedlastitem:
+                if isinstance(normpathitem, normline):
+                    normpathitem = normline(lastx_pt, lasty_pt, normpathitem.x1_pt, normpathitem.y1_pt)
+                else:
+                    normpathitem = normcurve(lastx_pt, lasty_pt,
+                                             normpathitem.x1_pt, normpathitem.y1_pt,
+                                             normpathitem.x2_pt, normpathitem.y2_pt,
+                                             normpathitem.x3_pt, normpathitem.y3_pt)
+            self.normpathitems.append(normpathitem)
+            self.skippedlastitem = 0
+        else:
+            self.skippedlastitem = 1
 
     def arclen_pt(self):
         """returns total arc length of normsubpath in pts with accuracy epsilon"""
@@ -1841,6 +1883,16 @@ class normsubpath:
 
     def begin_pt(self):
         return self.normpathitems[0].begin_pt()
+
+    def close(self):
+        if self.closed:
+            raise PathException("Cannot close already closed normsubpath")
+        if not self.normpathitems:
+            if self.startx_pt is None:
+                raise PathException("Cannot close empty normsubpath")
+            else:
+                raise PathException("Normsubpath too short, cannot be closed")
+        self.closed = 1
 
     def curvradius_pt(self, param):
         try:
@@ -2075,6 +2127,9 @@ class normpath(path):
         result.subpaths = self.subpaths + result.subpaths
         return result
 
+    def __getitem__(self, i):
+        return self.subpaths[i]
+
     def __iadd__(self, other):
         self.subpaths += normpath(other).subpaths
         return self
@@ -2130,35 +2185,8 @@ class normpath(path):
             raise PathException("subpath index out of range")
         return sp, sp.arclentoparam(arclen)
 
-    def append(self, pathitem):
-        # XXX factor parts of this code out
-        if self.subpaths[-1].closed:
-            context = _pathcontext(self.end_pt(), None)
-            currentsubpathitems = []
-        else:
-            context = _pathcontext(self.end_pt(), self.subpaths[-1].begin_pt())
-            currentsubpathitems = self.subpaths[-1].normpathitems
-            self.subpaths = self.subpaths[:-1]
-        for npitem in pathitem._normalized(context):
-            if isinstance(npitem, moveto_pt):
-                if currentsubpathitems:
-                    # append open sub path
-                    self.subpaths.append(normsubpath(currentsubpathitems, 0, self.epsilon))
-                # start new sub path
-                currentsubpathitems = []
-            elif isinstance(npitem, closepath):
-                if currentsubpathitems:
-                    # append closed sub path
-                    currentsubpathitems.append(normline(context.currentpoint[0], context.currentpoint[1],
-                                                      context.currentsubpath[0], context.currentsubpath[1]))
-                    self.subpaths.append(normsubpath(currentsubpathitems, 1, self.epsilon))
-                currentsubpathitems = []
-            else:
-                currentsubpathitems.append(npitem)
-
-        if currentsubpathitems:
-            # append open sub path
-            self.subpaths.append(normsubpath(currentsubpathitems, 0, self.epsilon))
+    def append(self, normsubpath):
+        self.subpaths.append(normsubpath)
 
     def arclen_pt(self):
         """returns total arc length of normpath in pts"""
