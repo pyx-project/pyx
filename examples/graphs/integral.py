@@ -2,7 +2,7 @@ from pyx import *
 
 a, b = 2, 9 # integral area
 
-p = graph.axispainter(basepathattrs=deco.earrow.normal(),
+p = graph.axispainter(basepathattrs=[deco.earrow.normal()],
                       titlepos=0.98, titledirection=None)
 g = graph.graphxy(width=8, x2=None, y2=None,
                   x=graph.linaxis(title="$x$", min=0, max=10,
