@@ -33,7 +33,7 @@ try:
     from math import radians
 except ImportError:
     # fallback implementation for Python 2.1 and below
-    def radians(x): return x*pi/180
+    def radians(x): return x*math.pi/180
 
 #
 # Decorated path
