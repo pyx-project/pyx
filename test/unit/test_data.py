@@ -26,7 +26,8 @@ class DataTestCase(unittest.TestCase):
     def testAdd(self):
         mydata = data.data([[1], [2]], ["a"])
         mydata.addcolumn("b=2*a")
-        mydata.addcolumn("2*$(i)*a", context={"i":1})
+        mydata.addcolumn("2*$1*a")
+        #mydata.addcolumn("2*$(i)*a", context={"i":1}) # not supported
         assert mydata.titles == ["a", "b", None]
         assert mydata.data == [[1, 2.0, 4.0], [2, 4.0, 16.0]]
 
