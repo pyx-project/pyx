@@ -24,7 +24,7 @@
 
 def _nmin(x, y):
     """minimum of two values, where None represents +infinity, not -infinity as
-    in standard min iplementation of python"""
+    in standard min implementation of python"""
     if x is None: return y
     if y is None: return x
     return min(x,y)

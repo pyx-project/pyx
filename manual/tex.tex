@@ -24,12 +24,14 @@ method&task&attributes\\
 
 There are some common rules:
 \begin{itemize}
-\item \verb|define| can only called before any other of the methods.
+\item \verb|define| can only called before any other of the methods. For
+\LaTeX{} the definitions are processed before the \verb|\begin{document}|
+statement. You may use \verb|\AtBeginDocument{...}| to postpone definitions.
 \item The extent routines \verb|textwd|, \verb|textht|, and
 \verb|textdp| return true \PyX{} length (see section~\ref{length})
 and return zero at the first time of requesting the extent. The
 evaluation takes place when performing a write. Therefore you have to
-run your file twice at first to get the correct number.
+run your file twice at first to get the correct value.
 \item Commands are done in the order they are called with one exception:
 if the same text output is requested more then once (calculating extents
 of the command included), all requests are performed at the position of
@@ -76,7 +78,7 @@ allowed in \verb|tex.direction(angle)|.
 section~\ref{color}), default is \verb|color.grey.black|
 \item[\texttt{msghandler:}] provides a filter for \TeX{} and \LaTeX{}
 messages and defines, which messages are hidden. In the following table
-the predefined message handlers are described.
+the predefined message handlers are described:
 
 \bigskip
 \begin{tabularx}{\linewidth}{l>{\raggedright\arraybackslash}X}
@@ -86,20 +88,46 @@ msghandler&description\\
 \texttt{msghandler.hideload}&Hides messages which are written when loading
 packages and including other files. They look like \texttt{(file...)}
 where \texttt{file} is a readable file and \texttt{...} stands for any
-text.\\
+text. This message handler is the default handler.\\
 \texttt{msghandler.hidegraphicsload}&Hides messages which are written by
 \texttt{includegraphics} of the \texttt{graphicx} package. They look like
 \texttt{<file>} where \texttt{file} is a readable file.\\
 \texttt{msghandler.hidefontwarning}&Hides \LaTeX{} font warnings. They
 look like \texttt{LaTeX Font Warning:} and are followed by lines starting
 with \texttt{(Font)}.\\
-\texttt{msghandler.hidebuterror}&Hides all messages except those
-containing a line which starts with ``\texttt{! }''.\\
+\texttt{msghandler.hidebuterror}&Hides messages except those
+with a line which starts with ``\texttt{! }''.\\
 \texttt{msghandler.hideall}&hides all messages\\
 \texttt{msghandler.combine(*list)}&combines msghandlers in
 \texttt{*list} by applying them sequentially\\
 \end{tabularx}
 \end{description}
+
+\subsection{Constructors}
+The constructors of class \verb|tex.tex| and \verb|tex.latex| can have some
+named parameters listed in the following table:
+
+\bigskip
+\begin{tabularx}{\linewidth}{ll>{\raggedright\arraybackslash}X}
+common parameters&default&description\\
+\hline
+\texttt{defaultmsghandler}&\texttt{msghandler.hideload}&default message handler\\
+\texttt{texfilename}&\texttt{None}&Filename used for running tex. If
+\texttt{None}, a temporary name is used and the files are removed automatically.\\
+\hline
+class \texttt{tex.tex}&&\\
+\hline
+\texttt{lts}&\texttt{"10pt"}&Specifies a latex font size. Those files are created
+by \texttt{createlfs.tex} (included in the \PyX{} distribution). Available values
+are shown whenever a requested size is not found.\\
+\hline
+class \texttt{tex.latex}&&\\
+\hline
+\texttt{docclass}&\texttt{"article"}&specify the document class\\
+\texttt{docopt}&\texttt{None}&specifies options to the document class\\
+\texttt{auxfilename}&\texttt{None}&Specifies a filename for storing the \LaTeX{}
+\verb|aux| file. This is needed when using labels and references.\\
+\end{tabularx}
 
 \subsection{Examples}
 \subsubsection{Example 1}
@@ -123,6 +151,7 @@ depth: (0.000683 t + 0.000000 u + 0.000000 v + 0.000000 w) m
 
 The file \verb|tex_ex1.eps| is created and looks like:
 
+\bigskip
 \includegraphics{tex_ex1}
 
 \subsubsection{Example 2}
@@ -176,6 +205,7 @@ c.writetofile("tex_ex2")
 
 The file \verb|tex_ex2.eps| is created and looks like:
 
+\bigskip
 \includegraphics{tex_ex2}
 
 \subsection{Implementation details}

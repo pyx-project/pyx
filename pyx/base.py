@@ -63,7 +63,7 @@ class PSCmd(PSOp):
     """
     
     def bbox(self):
-       raise NotImplementedError, "cannot call virtual method bbox()"
+        raise NotImplementedError, "cannot call virtual method bbox()"
 
 
 #

@@ -25,9 +25,9 @@
 (La)TeX interface of PyX
 
 This module provides the classes tex and latex, which can be inserted into a
-PyX canvas. The method (la)tex.text are used to print out text, while
-(la)tex.textwd, tex.textht, and tex.textdp appraise the width, height, and
-depth of a text, respectively.
+PyX canvas. The method (la)tex.text are is to print text, while (la)tex.textwd,
+tex.textht, and tex.textdp appraise the width, height, and depth of a text,
+respectively.
 """
 
 import os, string, tempfile, sys, md5, traceback, time, StringIO, re
@@ -817,11 +817,23 @@ class tex(_tex):
 
     """tex class adds the specializations to _tex needed for tex"""
     
-    def __init__(self, lts="10pt", **addargs):
+    def __init__(self, lfs="10pt", **addargs):
         _tex.__init__(self, **addargs)
-        # TODO: other ways for creating font sizes?
-        LtsName = os.path.join(os.path.dirname(__file__), "lts", str(lts) + ".lts")
-        self.define(open(LtsName, "r").read())
+        # XXX other ways for creating font sizes?
+        try:
+            LocalLfsName = str(lfs) + ".lfs"
+            lfsdef = open(LocalLfsName, "r").read()
+        except IOError:
+            try:
+                SysLfsName = os.path.join(os.path.dirname(__file__), "lfs", str(lfs) + ".lfs")
+                lfsdef = open(SysLfsName, "r").read()
+            except IOError:
+                files = map(lambda x: x[:-4],
+                            filter(lambda x: x[-4:] == ".lfs", 
+                                   os.listdir(".") +
+                                   os.listdir(os.path.join(os.path.dirname(__file__), "lfs"))))
+                raise IOError("file '%s.lfs' not found. Available latex font sizes:\n%s" % (lfs, files))
+        self.define(lfsdef)
         self.define("\\newdimen\\linewidth%\n\\hsize0truein%\n\\vsize0truein%\n\\hoffset-1truein%\n\\voffset-1truein")
 
     def _beginboxcmds(self):
