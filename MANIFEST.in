@@ -13,5 +13,4 @@ recursive-include examples *.py
 recursive-include examples *.dat
 
 prune test
-exclude pyx/axis.py
 exclude examples/examples.py
