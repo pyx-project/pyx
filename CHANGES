@@ -25,10 +25,13 @@ PyX
     - allow for tailing zeros of automatic generated labels (done except for the documentation)
     - allow for missing data in bar graphs -> skipmissing parameter (done except for the documentation)
     - remove the support for variables given within the argument dictionary in data constructor (done except for the documentation)
-    - changed the handling of extern variables and functions for expressions in data, function and paramfunction
-    - TODO: graph keys; titles in data/function/etc.
-    - TODO: 3d graphs --- leave it for pyx-0.4
-    - TODO: exceptions in drawsymbol & friends...
+    - changed the handling of extern variables and functions for expressions in data, function and paramfunction (done except for the documentation)
+    - graph keys; titles in data/function/etc. (work in progress)
+    - TODO: include the labels
+    - deferred:
+      - TODO: exceptions in drawsymbol & friends...
+      - TODO: separate texter out of the axispainter
+      - TODO: 3d graphs
   - unit module:
     - new classes for visual and width lengths, aliases for user length (u_pt = pt)
     - all length classes have now by default a quantifier 1 (instead of 0), such that, 
@@ -52,12 +55,12 @@ PyX
     - TODO: document patterns
   - mathtree module:
     - added abs function
-    - changed the handling of extern functions/variables to just one global dict in the Calc method
+    - changed the handling of extern functions and all variables
   - numerous bugfixes:
     - problem with sizefile on windows (tex module)
     - allow for strings in graphxy's width and height; allow for width only (graph module)
     - disable rating for labelattrs equals None (graph module)
-    - TODO: defaultstyle selection, when a list of data is provided to the plot function (graph module)
+    - defaultstyle selection, when a list of data is provided to the plot function (graph module)
     - traverse when adding functions as arguments of operators (mathtree module)
     - allow for extern functions in addcolumn (data module)
     - just one common place for the version number

@@ -7,8 +7,8 @@ r = 1.5
 boxes = [box.polygon([(-r*sin(i*2*pi/n), r*cos(i*2*pi/n))
                       for i in range(n)])
          for n in range(3, 8)]
-# tile them horizontally with spacing 0
-box.htile(boxes, 0)
+# tile with spacing 0 horizontally
+box.tile(boxes, 0, 1, 0)
 
 c = canvas.canvas()
 for b in boxes:

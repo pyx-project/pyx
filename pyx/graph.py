@@ -1450,6 +1450,7 @@ class baraxispainter(axistitlepainter):
             if axis._extent < newextent:
                 axis._extent = newextent
         axistitlepainter.dolayout(self, graph, axis)
+        graph.mindbbox(*[namebox.bbox() for namebox in axis.nameboxes])
 
     def paint(self, graph, axis):
         if axis.subaxis is not None:
@@ -1654,6 +1655,8 @@ class _axis:
             if len(self.ticks):
                 self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
             self.painter.dolayout(graph, self)
+        if len(self.ticks):
+            graph.mindbbox(*[tick.textbox.bbox() for tick in self.ticks if tick.labellevel is not None])
 
     def dopaint(self, graph):
         if self.painter is not None:
@@ -1959,6 +1962,75 @@ class baraxis:
 
 
 ################################################################################
+# graph key
+################################################################################
+
+
+class key:
+
+    def __init__(self, dist="0.2 cm", pos = "tr", hdist="0.6 cm", vdist="0.4 cm",
+                 symbolwidth="0.5 cm", symbolheight="0.25 cm", symbolspace="0.2 cm",
+                 textattrs=()):
+        self.dist_str = dist
+        self.pos = pos
+        self.hdist_str = hdist
+        self.vdist_str = vdist
+        self.symbolwidth_str = symbolwidth
+        self.symbolheight_str = symbolheight
+        self.symbolspace_str = symbolspace
+        if self.pos in ("tr", "rt"):
+            self.right = 1
+            self.top = 1
+        elif self.pos in ("br", "rb"):
+            self.right = 1
+            self.top = 0
+        elif self.pos in ("tl", "lt"):
+            self.right = 0
+            self.top = 1
+        elif self.pos in ("bl", "lb"):
+            self.right = 0
+            self.top = 0
+        else:
+            raise RuntimeError("invalid pos attribute")
+
+    def dopaint(self, graph, styles=None):
+        self._dist = unit.topt(self.dist_str)
+        self._hdist = unit.topt(self.hdist_str)
+        self._vdist = unit.topt(self.vdist_str)
+        self._symbolwidth = unit.topt(self.symbolwidth_str)
+        self._symbolheight = unit.topt(self.symbolheight_str)
+        self._symbolspace = unit.topt(self.symbolspace_str)
+        if styles is None:
+            styles = graph.styles
+        titles = []
+        if self.top:
+            _ypos = graph._ypos + graph._height - self._vdist
+        else:
+            _ypos = graph._ypos + self._vdist
+        if self.right:
+            _xpos = graph._xpos + graph._width - self._hdist
+        else:
+            _xpos = graph._xpos + self._hdist + self._symbolwidth + self._symbolspace
+        titles = []
+        for style in styles:
+            titles.append(graph.texrunner._text(_xpos, _ypos, style.data.title))
+        if self.top:
+            box.linealignequal(titles, 0, 0, -1)
+            box._tile(titles, self._dist, 0, -1)
+        else:
+            titles.reverse() # change the order
+            box.linealignequal(titles, 0, 0, 1)
+            box._tile(titles, self._dist, 0, 1)
+            titles.reverse() # back change
+        if self.right:
+            box.linealignequal(titles, 0, -1, 0)
+        else:
+            box.linealignequal(titles, 0, 1, 0)
+        for title in titles:
+            graph.insert(title)
+
+
+################################################################################
 # graph
 ################################################################################
 
@@ -1974,6 +2046,8 @@ class graphxy(canvas.canvas):
         if self.haslayout:
             raise RuntimeError("layout setup was already performed")
         if style is None:
+            if helper.issequence(data):
+                raise RuntimeError("list plot needs an explicit style")
             if self.defaultstyle.has_key(data.defaultstyle):
                 style = self.defaultstyle[data.defaultstyle].iterate()
             else:
@@ -1989,7 +2063,9 @@ class graphxy(canvas.canvas):
             first = 0
             if d is not None:
                 d.setstyle(self, styles[-1])
+                styles[-1].data = d
                 self.data.append(d)
+                self.styles.append(styles[-1])
         if helper.issequence(data):
             return styles
         return styles[0]
@@ -2182,6 +2258,12 @@ class graphxy(canvas.canvas):
         for data in self.data:
             data.draw(self)
 
+    def doautokey(self):
+        self.dolayout()
+        if not self.removedomethod(self.doautokey): return
+        if self.autokey is not None:
+            self.autokey.dopaint(self)
+
     def finish(self):
         while len(self.domethods):
             self.domethods[0]()
@@ -2215,7 +2297,7 @@ class graphxy(canvas.canvas):
         self.axes = axes
 
     def __init__(self, xpos=0, ypos=0, width=None, height=None, ratio=goldenrule,
-                 backgroundattrs=None, dense=1, axesdist="0.8 cm", **axes):
+                 autokey=None, backgroundattrs=None, dense=1, axesdist="0.8 cm", **axes):
         canvas.canvas.__init__(self)
         self.xpos = unit.length(xpos)
         self.ypos = unit.length(ypos)
@@ -2223,21 +2305,29 @@ class graphxy(canvas.canvas):
         self._ypos = unit.topt(self.ypos)
         self.initwidthheight(width, height, ratio)
         self.initaxes(axes, 1)
+        self.autokey = autokey
+        self.backgroundattrs = backgroundattrs
         self.dense = dense
         self.axesdist_str = axesdist
-        self.backgroundattrs = backgroundattrs
         self.data = []
-        self.domethods = [self.dolayout, self.dobackground, self.doaxes, self.dodata]
+        self.styles = []
+        self.domethods = [self.dolayout, self.dobackground, self.doaxes, self.dodata, self.doautokey]
         self.haslayout = 0
         self.defaultstyle = {}
+        self.mindbboxes = []
+
+    def mindbbox(self, *boxes):
+        self.mindbboxes.extend(boxes)
 
     def bbox(self):
         self.finish()
-        #return canvas.canvas.bbox(self)
-        return bbox.bbox(self._xpos - self._yaxisextents[0],
-                         self._ypos - self._xaxisextents[0],
-                         self._xpos + self._width + self._yaxisextents[1],
-                         self._ypos + self._height + self._xaxisextents[1])
+        result = bbox.bbox(self._xpos - self._yaxisextents[0],
+                           self._ypos - self._xaxisextents[0],
+                           self._xpos + self._width + self._yaxisextents[1],
+                           self._ypos + self._height + self._xaxisextents[1])
+        for box in self.mindbboxes:
+            result = result + box
+        return result
 
     def write(self, file):
         self.finish()
@@ -3600,7 +3690,7 @@ class data:
 
     defaultstyle = symbol
 
-    def __init__(self, file, title=helper.nodefault, extern={}, **columns):
+    def __init__(self, file, title=helper.nodefault, context={}, **columns):
         self.title = title
         if helper.isstring(file):
             if title is helper.nodefault:
@@ -3616,7 +3706,7 @@ class data:
                 self.columns[key] = self.data.getcolumnno(column)
             except datamodule.ColumnError:
                 self.columns[key] = len(self.data.titles)
-                self.data.addcolumn(column, **extern)
+                self.data.addcolumn(column, context=context)
 
     def setstyle(self, graph, style):
         self.style = style
@@ -3636,7 +3726,7 @@ class function:
 
     defaultstyle = line
 
-    def __init__(self, expression, title=helper.nodefault, min=None, max=None, points=100, parser=mathtree.parser(), extern={}):
+    def __init__(self, expression, title=helper.nodefault, min=None, max=None, points=100, parser=mathtree.parser(), context={}):
         if title is helper.nodefault:
             self.title = expression
         else:
@@ -3644,29 +3734,21 @@ class function:
         self.min = min
         self.max = max
         self.points = points
-        self.extern = extern
+        self.context = context
         self.result, expression = expression.split("=")
-        for ext in extern.values():
-            if callable(ext):
-                self.mathtree = parser.parse(expression, externfunction=1)
-                break
-        else:
-            self.mathtree = parser.parse(expression)
-        if extern is None:
-            self.variable, = self.mathtree.VarList()
-        else:
-            self.variable = None
-            for variable in self.mathtree.VarList():
-                if variable not in extern.keys():
-                    if self.variable is None:
-                        self.variable = variable
-                    else:
-                        raise ValueError("multiple variables found (identifiers might be externally defined)")
-            if self.variable is None:
-                raise ValueError("no variable found (identifiers are all defined externally)")
+        self.mathtree = parser.parse(expression)
+        self.variable = None
         self.evalranges = 0
 
     def setstyle(self, graph, style):
+        for variable in self.mathtree.VarList():
+            if variable in graph.axes.keys():
+                if self.variable is None:
+                    self.variable = variable
+                else:
+                    raise ValueError("multiple variables found")
+        if self.variable is None:
+            raise ValueError("no variable found")
         self.xaxis = graph.axes[self.variable]
         self.style = style
         self.style.setcolumns(graph, {self.variable: 0, self.result: 1})
@@ -3686,9 +3768,9 @@ class function:
         vmax = self.xaxis.convert(max)
         self.data = []
         for i in range(self.points):
-            self.extern[self.variable] = x = self.xaxis.invert(vmin + (vmax-vmin)*i / (self.points-1.0))
+            self.context[self.variable] = x = self.xaxis.invert(vmin + (vmax-vmin)*i / (self.points-1.0))
             try:
-                y = self.mathtree.Calc(**self.extern)
+                y = self.mathtree.Calc(**self.context)
             except (ArithmeticError, ValueError):
                 y = None
             self.data.append((x, y))
@@ -3702,7 +3784,7 @@ class paramfunction:
 
     defaultstyle = line
 
-    def __init__(self, varname, min, max, expression, title=helper.nodefault, points=100, parser=mathtree.parser(), extern={}):
+    def __init__(self, varname, min, max, expression, title=helper.nodefault, points=100, parser=mathtree.parser(), context={}):
         if title is helper.nodefault:
             self.title = expression
         else:
@@ -3720,7 +3802,7 @@ class paramfunction:
             if self.mathtrees.has_key(key):
                 raise ValueError("multiple assignment in tuple")
             try:
-                self.mathtrees[key] = parser.ParseMathTree(parsestr, extern)
+                self.mathtrees[key] = parser.ParseMathTree(parsestr)
                 break
             except mathtree.CommaFoundMathTreeParseError, e:
                 self.mathtrees[key] = e.MathTree
@@ -3730,10 +3812,10 @@ class paramfunction:
             raise ValueError("unpack tuple of wrong size")
         self.data = []
         for i in range(self.points):
-            extern[self.varname] = self.min + (self.max-self.min)*i / (self.points-1.0)
+            context[self.varname] = self.min + (self.max-self.min)*i / (self.points-1.0)
             line = []
             for key, tree in self.mathtrees.items():
-                line.append(tree.Calc(**extern))
+                line.append(tree.Calc(**context))
             self.data.append(line)
 
     def setstyle(self, graph, style):

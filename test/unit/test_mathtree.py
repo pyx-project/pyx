@@ -183,7 +183,7 @@ class MathTreeTestCase(unittest.TestCase):
     def testExtern(self):
         myparser = mathtree.parser()
         assert abs(myparser.parse("a+b-c").Calc(a=1, b=2, c=3)) <= 1e-10
-        assert abs(myparser.parse("f(2)-4", externfunction=1).Calc(f=lambda x: x*x)) <= 1e-10
+        assert abs(myparser.parse("f(2)-4").Calc(f=lambda x: x*x)) <= 1e-10
 
     def testException(self):
         myparser = mathtree.parser()
@@ -208,7 +208,7 @@ class MathTreeTestCase(unittest.TestCase):
             assert 0, "CommaExpectedMathTreeParseError expected"
         except mathtree.CommaExpectedMathTreeParseError: pass
         try:
-            myparser.parse("xxx(y)")
+            myparser.parse("xxx yyy")
             assert 0, "OperatorExpectedMathTreeParseError expected"
         except mathtree.OperatorExpectedMathTreeParseError: pass
         try:

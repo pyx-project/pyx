@@ -62,7 +62,7 @@ class data:
         columnno = self.getcolumnno(column)
         return [x[columnno] for x in self.data]
 
-    def addcolumn(self, expression, **extern):
+    def addcolumn(self, expression, context={}):
         try:
             split = expression.rindex("=")
         except ValueError:
@@ -70,12 +70,7 @@ class data:
         else:
             self.titles.append(expression[:split])
             expression = expression[split+1:]
-        for ext in extern.values():
-            if callable(ext):
-                tree = self.parser.parse(expression, externfunction=1)
-                break
-        else:
-            tree = self.parser.parse(expression)
+        tree = self.parser.parse(expression)
         columnlist = {}
         for key in tree.VarList():
             if key[0] == "$":
@@ -89,10 +84,10 @@ class data:
                 try:
                     columnlist[key] = self.getcolumnno(key)
                 except ColumnError, e:
-                    if extern is None or key not in extern.keys():
+                    if key not in context.keys():
                         raise e
 
-        varlist = extern.copy()
+        varlist = context.copy()
         for data in self.data:
             try:
                 for key in columnlist.keys():

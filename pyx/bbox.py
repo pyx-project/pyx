@@ -20,7 +20,8 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-# TODO: - it would be nice to have a real bbox.transform (AW, 23.1.03)
+# TODO: - it would be nice to have a real bbox.transform
+#       - what about __iadd__, ...
 
 import unit
 

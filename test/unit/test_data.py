@@ -30,10 +30,13 @@ class DataTestCase(unittest.TestCase):
         assert mydata.titles == ["a", "b", None]
         assert mydata.data == [[1, 2.0, 4.0], [2, 4.0, 16.0]]
 
+        a = "nothing"
+        two = 2
+        f = lambda x: x*x
         mydata = data.data(["a"], [[1], [2]])
-        mydata.addcolumn("b=two*a", a="noting", two=2, f=lambda x: x*x)
-        mydata.addcolumn("two*$-1*a", a="noting", two=2, f=lambda x: x*x)
-        mydata.addcolumn("f($-1)", a="noting", two=2, f=lambda x: x*x)
+        mydata.addcolumn("b=two*a", context=locals())
+        mydata.addcolumn("two*$-1*a", context=locals())
+        mydata.addcolumn("f($-1)", context=locals())
         assert mydata.titles == ["a", "b", None, None]
         assert mydata.data == [[1, 2.0, 4.0, 16.0], [2, 4.0, 16.0, 256.0]]
 

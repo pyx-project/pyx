@@ -285,19 +285,20 @@ def _circlealignequal(polygons, *args):
 def _linealignequal(polygons, *args):
     _genericalignequal(_polygon._linealignvector, polygons, *args)
 
-def circlealignequal(polygons, *args):
-    _genericalignequal(_polygon.circlealignvector, polygons, *args)
+def circlealignequal(polygons, a, *args):
+    _circlealignequal(polygons, unit.topt(a), *args)
 
-def linealignequal(polygons, *args):
-    _genericalignequal(_polygon.linealignvector, polygons, *args)
+def linealignequal(polygons, a, *args):
+    _linealignequal(polygons, unit.topt(a), *args)
 
 
 def _tile(polygons, a, dx, dy):
-    d = maxextent = polygons[0]._extent(dx, dy)
+    maxextent = polygons[0]._extent(dx, dy)
     for p in polygons[1:]:
         extent = p._extent(dx, dy)
         if extent > maxextent:
             maxextent = extent
+    d = 0
     for p in polygons:
         p.transform(trafo._translate(d*dx, d*dy))
         d += maxextent + a
@@ -305,18 +306,6 @@ def _tile(polygons, a, dx, dy):
 
 def tile(polygons, a, dx, dy):
     _tile(polygons, unit.topt(a), dx, dy)
-
-def _htile(polygons, a):
-    _tile(polygons, a, 1, 0)
-
-def htile(polygons, a):
-    tile(polygons, a, 1, 0)
-
-def _vtile(polygons, a):
-    _tile(polygons, a, 0, 1)
-
-def vtile(polygons, a):
-    tile(polygons, a, 0, 1)
 
 
 class polygon(_polygon):
@@ -335,12 +324,12 @@ class _rect(_polygon):
         if corners != helper.nodefault or center != helper.nodefault:
             raise ValueError
         _polygon.__init__(self, corners=((x, y),
-                                      (x + width, y),
-                                      (x + width, y + height),
-                                      (x, y + height)),
-                             center=(x + relcenter[0] * width + abscenter[0],
-                                     y + relcenter[1] * height + abscenter[1]),
-                             **args)
+                                         (x + width, y),
+                                         (x + width, y + height),
+                                         (x, y + height)),
+                                center=(x + relcenter[0] * width + abscenter[0],
+                                        y + relcenter[1] * height + abscenter[1]),
+                                **args)
 
 
 class rect(_rect):

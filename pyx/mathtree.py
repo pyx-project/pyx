@@ -814,10 +814,10 @@ class parser:
         self.MathTreeFuncs = MathTreeFuncs
         self.MathTreeVals = MathTreeVals
 
-    def parse(self, str, externfunction=0):
-        return self.ParseMathTree(ParseStr(str), externfunction=externfunction)
+    def parse(self, str):
+        return self.ParseMathTree(ParseStr(str))
 
-    def ParseMathTree(self, arg, externfunction=0):
+    def ParseMathTree(self, arg):
         Tree = None
         Match = arg.MatchPattern(re.compile(r"\s*-(?![0-9\.])"))
         if Match:
@@ -865,7 +865,7 @@ class parser:
                         break
                 else:
                     FuncExtern = MathTreeFuncExtern()
-                    if externfunction and FuncExtern.InitByParser(arg):
+                    if FuncExtern.InitByParser(arg):
                         if Tree is not None:
                             Tree.AddArg(FuncExtern)
                         else:
