@@ -131,7 +131,7 @@ class document:
         pswriter.epswriter(self, filename, *args, **kwargs)
 
     def writePDFfile(self, filename, *args, **kwargs):
-        pdfwriter.pdfwriter(self, filename, *args, **kwargs)
+        pdfwriter.PDFwriter(self, filename, *args, **kwargs)
 
     def writetofile(self, filename, *args, **kwargs):
         if filename[-4:] == ".eps":

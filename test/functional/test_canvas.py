@@ -23,10 +23,10 @@ c.stroke(p, [color.rgb.red, style.linestyle.dotted, t3, t2, t1])
 
 c.writeEPSfile("test_canvas", paperformat="a4")
 
-d = canvas.document()
+d = document.document()
 
 for nr in range(1, 10):
-     page = canvas.page(pagename = chr(64+nr), rotated=(nr-1)%2, fittosize=1)
+     page = document.page(pagename = chr(64+nr), rotated=(nr-1)%2, fittosize=1)
      page.text(0, 0, "page %d" % nr)
      d.append(page)
 

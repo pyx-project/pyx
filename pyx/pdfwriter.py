@@ -1,4 +1,28 @@
-import sys, prolog, pykpathsea
+#!/usr/bin/env python
+# -*- coding: ISO-8859-1 -*-
+#
+#
+# Copyright (C) 2005 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2005 André Wobst <wobsta@users.sourceforge.net>
+#
+# This file is part of PyX (http://pyx.sourceforge.net/).
+#
+# PyX is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# PyX is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PyX; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+import copy, sys
+import prolog, pykpathsea, unit, style
 from t1strip import fullfont
 try:
     import zlib
@@ -6,67 +30,189 @@ try:
 except:
     haszlib = 0
 
-import style
 
-PDFcatalog = "Catalog"
-PDFpages = "Pages"
-PDFpage = "Page%i"
-PDFmediabox = "MediaBox%i"
-PDFresources = "Resources%i"
-PDFcontents = "Contents%i"
-PDFcontentslength = "ContentsLength%i"
-PDFfont = "Font%s"
-PDFwidths = "Widths%s"
-PDFfontdescriptor = "FontDescriptor%s"
-PDFfontfile = "FontFile%s"
+class PDFobject:
 
-class pdfwriter:
+    def __init__(self, writer, refno):
+        self.refno = refno
 
-    def __init__(self, filename, compress=1, compresslevel=6):
-        self.file = open(filename, "wb")
+    def outputPDFobject(self, file):
+        self.filepos = file.tell()
+        file.write("%i 0 obj\n" % self.refno)
+        self.outputPDF(file)
+        file.write("endobj\n")
+
+    def outputPDF(self, file):
+        raise NotImplementedError("outputPDF method has to be provided by PDFobject subclass")
+
+
+class PDFcatalog(PDFobject):
+
+    def __init__(self, writer, refno, document):
+        PDFobject.__init__(self, writer, refno)
+        self.pages = writer.addobject(PDFpages, document)
+
+    def outputPDF(self, file):
+        file.write("<<\n"
+                   "/Type /Catalog\n"
+                   "/Pages %i 0 R\n"
+                   ">>\n" % self.pages.refno)
+
+
+class PDFpages(PDFobject):
+
+    def __init__(self, writer, refno, document):
+        PDFobject.__init__(self, writer, refno)
+        self.pages = []
+        for page in document.pages:
+            self.pages.append(writer.addobject(PDFpage, self.refno, page))
+
+    def outputPDF(self, file):
+        file.write("<<\n"
+                   "/Type /Pages\n"
+                   "/Kids [%s]\n"
+                   "/Count %i\n"
+                   ">>\n" % (" ".join(["%i 0 R" % page.refno
+                                       for page in self.pages]),
+                             len(self.pages)))
+
+
+class PDFpage(PDFobject):
+
+    def __init__(self, writer, refno, pagesrefno, page):
+        PDFobject.__init__(self, writer, refno)
+        self.pagesrefno = pagesrefno
+        self.page = page
+        self.bbox = page.canvas.bbox()
+        self.pagetrafo = page.pagetrafo(self.bbox)
+        if self.pagetrafo:
+            self.bbox.transform(self.pagetrafo)
+        self.content = writer.addobject(PDFcontent, page.canvas, self.pagetrafo)
+
+    def outputPDF(self, file):
+        file.write("<<\n"
+                   "/Type /Page\n"
+                   "/Parent %i 0 R\n" % self.pagesrefno)
+        paperformat = self.page.paperformat
+        file.write("/MediaBox [0 0 %d %d]\n" % (unit.topt(paperformat.width), unit.topt(paperformat.height)))
+        file.write("/CropBox " )
+        self.bbox.outputPDF(file)
+        file.write("/Resources << /ProcSet [ /PDF ] >>\n"
+                   "/Contents %i 0 R\n"
+                   ">>\n" % (self.content.refno))
+
+
+class PDFcontent(PDFobject):
+
+    def __init__(self, writer, refno, canvas, pagetrafo):
+        PDFobject.__init__(self, writer, refno)
+        self.refno = refno
+        self.canvas = canvas
+        self.pagetrafo = pagetrafo
+        self.contentlength = writer.addobject(PDFcontentlength)
+
+    def outputPDF(self, file):
+        file.write("<<\n"
+                          "/Length %i 0 R\n" % (self.refno + 1))
+        # if self.compress:
+        #     self.write("/Filter /FlateDecode\n")
+        file.write(">>\n")
+        file.write("stream\n")
+        self.beginstreampos = file.tell()
+
+        # if self.compress:
+        #     if self.compressstream is not None:
+        #         raise RuntimeError("compression within compression")
+        #     self.compressstream = zlib.compressobj(self.compresslevel)
+
+        # apply a possible global transformation
+
+        if self.pagetrafo:
+            self.pagetrafo.outputPDF(file)
+        style.linewidth.normal.outputPDF(file)
+        self.canvas.outputPDF(file)
+
+        # if self.compressstream is not None:
+        #     self.file.write(self.compressstream.flush())
+        #     self.compressstream = None
+
+        self.contentlength.contentlength = file.tell() - self.beginstreampos
+        file.write("endstream\n")
+
+
+class PDFcontentlength(PDFobject):
+
+    def __init__(self, writer, refno):
+        PDFobject.__init__(self, writer, refno)
+        self.contentlength = None
+
+    def outputPDF(self, file):
+        file.write("%d\n" % self.contentlength)
+
+
+class PDFwriter:
+
+    def __init__(self, document, filename, compress=1, compresslevel=6):
+        sys.stderr.write("*** PyX Warning: writePDFfile is experimental and supports only a subset of PyX's features\n")
+
+        if filename[-4:] != ".pdf":
+            filename = filename + ".pdf"
+        try:
+            self.file = open(filename, "wb")
+        except IOError:
+            raise IOError("cannot open output file")
+
         if compress and not haszlib:
             compress = 0
-            sys.stderr.write("*** PyXWarning: compression disabled due to missing zlib module\n")
+            sys.stderr.write("*** PyX Warning: compression disabled due to missing zlib module\n")
         self.compress = compress
         self.compresslevel = compresslevel
 
-        self.compressstream = None
-        self.refdict = {} # id -> ref-no
-        self.refs = [] # refno - 1 -> filepos
-        self.pages = 0
+        self.pdfobjects = []
+        self.pdfobjectcount = 0
 
-        self.write("%%PDF-1.4\n%%%s%s%s%s\n" % (chr(195), chr(182), chr(195), chr(169)))
+        self.file.write("%%PDF-1.4\n%%%s%s%s%s\n" % (chr(195), chr(182), chr(195), chr(169)))
 
-    def write(self, str):
-        if self.compressstream is not None:
-            self.file.write(self.compressstream.compress(str))
-        else:
-            self.file.write(str)
+        catalog = self.addobject(PDFcatalog, document)
 
-    def beginobj(self, object):
-        self.refs.append(self.file.tell())
-        ref = len(self.refs)
-        self.refdict[object] = ref
-        self.write("%i 0 obj\n" % ref)
+        self.pdfobjects.reverse()
+        for pdfobject in self.pdfobjects:
+            pdfobject.outputPDFobject(self.file)
 
-    def endobj(self):
-        self.write("endobj\n")
+        # xref
+        xrefpos = self.file.tell()
+        self.file.write("xref\n"
+                        "0 %d\n"
+                        "0000000000 65535 f \n" % (len(self.pdfobjects)+1))
+        for pdfobject in self.pdfobjects:
+            self.file.write("%010i 00000 n \n" % pdfobject.filepos)
 
-    def beginstream(self):
-        self.write("stream\n")
-        self.beginstreampos = self.file.tell()
-        if self.compress:
-            if self.compressstream is not None:
-                raise RuntimeError("compression within compression")
-            self.compressstream = zlib.compressobj(self.compresslevel)
+        # trailer
+        self.file.write("trailer\n"
+                        "<<\n"
+                        "/Size %i\n"
+                        "/Root %i 0 R\n"
+                        ">>\n"
+                        "startxref\n"
+                        "%i\n"
+                        "%%%%EOF\n" % (len(self.pdfobjects)+1, catalog.refno, xrefpos))
+        self.file.close()
 
-    def endstream(self):
-        if self.compressstream is not None:
-            self.file.write(self.compressstream.flush())
-            self.compressstream = None
-        length = self.file.tell() - self.beginstreampos
-        self.write("endstream\n")
-        return length
+    def addobject(self, objectclass, *args, **kwargs):
+        self.pdfobjectcount += 1
+        pdfobject = objectclass(self, self.pdfobjectcount, *args, **kwargs)
+        self.pdfobjects.append(pdfobject)
+        return pdfobject
+#         # During the creating of object other objects may already have been added.
+#         # We have to make sure that we add the object at the right place in the
+#         # object list:
+#         i = len(self.pdfobjects)
+#         while i > 0 and self.pdfobjects[i-1].refno > pdfobject.refno:
+#             i -= 1
+#         self.pdfobjects.insert(i, pdfobject)
+#         return pdfobject
+
+
 
     def page(self, abbox, canvas, mergedprolog, ctrafo):
         # media box
@@ -203,58 +349,22 @@ class pdfwriter:
 
         self.pages += 1
 
-    def close(self):
-        # page objects and pages object
-        # XXX: note that the page objects and the pages object refer to each other
-        pagesref = len(self.refs) + self.pages + 1
-        for page in range(self.pages):
-            self.beginobj(PDFpage % page)
-            self.write("<<\n"
-                       "/Type /Page\n"
-                       "/Parent %i 0 R\n"
-                       "/MediaBox %i 0 R\n"
-                       "/Resources %i 0 R\n"
-                       "/Contents %i 0 R\n"
-                       ">>\n" % (pagesref,
-                                 self.refdict[PDFmediabox % page],
-                                 self.refdict[PDFresources % page],
-                                 self.refdict[PDFcontents % page]))
-            self.endobj()
-        self.beginobj(PDFpages)
-        self.write("<<\n"
-                   "/Type /Pages\n"
-                   "/Kids [%s]\n"
-                   "/Count %i\n"
-                   ">>\n" % (" ".join(["%i 0 R" % self.refdict[PDFpage % page]
-                                       for page in range(self.pages)]),
-                             self.pages))
-        self.endobj()
-        assert pagesref == self.refdict[PDFpages]
+# some ideas...
 
-        # catalog
-        self.beginobj(PDFcatalog)
-        self.write("<<\n"
-                   "/Type /Catalog\n"
-                   "/Pages %i 0 R\n"
-                   ">>\n" % self.refdict[PDFpages])
-        self.endobj()
+class context:
 
-        # xref
-        xrefpos = self.file.tell()
-        self.write("xref\n"
-                   "0 %d\n"
-                   "0000000000 65535 f \n" % (len(self.refs)+1))
-        for ref in self.refs:
-            self.file.write("%010i 00000 n \n" % ref)
+    def __init__(self):
+        self.colorspace = None
+        self.linewidth = None
 
-        # trailer
-        self.write("trailer\n"
-                   "<<\n"
-                   "/Size %i\n"
-                   "/Root %i 0 R\n"
-                   ">>\n"
-                   "startxref\n"
-                   "%i\n"
-                   "%%%%EOF\n" % (len(self.refs)+1, self.refdict[PDFcatalog], xrefpos))
-        self.file.close()
+class contextstack:
 
+    def __init__(self):
+        self.stack = []
+        self.context = context()
+
+    def save(self):
+        self.stack.append(copy.copy(self.context))
+
+    def restore(self):
+        self.context = self.stack.pop()

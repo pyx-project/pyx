@@ -95,6 +95,10 @@ TODO:
     - writeEPSfile wraps a canvas in a single page document and performs the output
   - bbox module:
     - add _pt methods
+  - pdfwriter module:
+    - completely rewritten
+  - pswriter module: new
+    - separate PS output from canvas
 
 
 0.7.1 (2004/12/15):
