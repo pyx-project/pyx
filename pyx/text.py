@@ -20,8 +20,6 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-
-# this code will be part of PyX 0.3
 # (TODO: check whether Knuth's division can be simplified within Python)
 #       seems to be the case!
 
