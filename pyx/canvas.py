@@ -76,7 +76,7 @@ class epsfile:
                (self.llx, self.lly, self.urx, self.ury) = map(int, bbmatch.groups())		# conversion strings->int
                break
 
-    def _write(self, canvas, file):
+    def write(self, canvas, file):
         try:
 	    epsfile=open(self.filename,"r")
 	except:
@@ -107,7 +107,7 @@ class CanvasException(Exception): pass
 #
 
 class PyxAttributes:
-    def _write(self, canvas, file):
+    def write(self, canvas, file):
         file.write(self._PSCmd(canvas))
 
 class _linecap(PyxAttributes):
@@ -198,33 +198,33 @@ class linewidth(_linewidth):
 #
 
 class CanvasCmds:
-    def _write(self, canvas, file):
+    def write(self, canvas, file):
        pass
 
 class _newpath(CanvasCmds):
-    def _write(self, canvas, file):
+    def write(self, canvas, file):
        file.write("newpath")
 
 class _stroke(CanvasCmds):
-    def _write(self, canvas, file):
+    def write(self, canvas, file):
        file.write("stroke")
 
 class _fill(CanvasCmds):
-    def _write(self, canvas, file):
+    def write(self, canvas, file):
        file.write("fill")
 
 class _gsave(CanvasCmds):
-    def _write(self, canvas, file):
+    def write(self, canvas, file):
        file.write("gsave")
 
 class _grestore(CanvasCmds):
-    def _write(self, canvas, file):
+    def write(self, canvas, file):
        file.write("grestore")
 
 class _translate(CanvasCmds):
     def __init__(self, x, y):
         (self.x, self.y) = (x,y)
-    def _write(self, canvas, file):
+    def write(self, canvas, file):
         file.write("%f %f translate" % canvas.unit.pt((x, y)))
 
 class canvas(CanvasCmds):
@@ -237,12 +237,9 @@ class canvas(CanvasCmds):
         for arg in args:
             self.set(*args)
     
-    def __str__(self):
-        return reduce(lambda x,y: x + "\n%s" % str(y), self.PSCmds, "")
-
-    def _write(self, canvas, file):
+    def write(self, canvas, file):
         for cmd in self.PSCmds:
-            cmd._write(self, file)
+            cmd.write(self, file)
             file.write("\n")
 
     def insert(self, cmds, *args):
@@ -285,7 +282,7 @@ class canvas(CanvasCmds):
         self.insert((_newpath(), path, _fill()), *args)
         return self
 
-    def write(self, filename, width, height, **kwargs):
+    def writetofile(self, filename, width, height, **kwargs):
         try:
   	    file = open(filename + ".eps", "w")
 	except IOError:
@@ -301,7 +298,7 @@ class canvas(CanvasCmds):
         file.write(PSProlog)
         file.write("\n%%EndProlog\n") 
         file.write("%f setlinewidth\n" % self.unit.pt(linewidth.normal))
-        self._write(self, file)
+        self.write(self, file)
         file.write("\nshowpage\n")
         file.write("%%Trailer\n")
         file.write("%%EOF\n")
@@ -402,5 +399,5 @@ if __name__=="__main__":
     
     c.draw(path([moveto("5 cm", "5 cm"), rlineto(0.1,0.1)]), linewidth.THICK)
 
-    c.write("example", 21, 29.7)
+    c.writetofile("example", 21, 29.7)
 

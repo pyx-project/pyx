@@ -293,10 +293,7 @@ class tex(InstanceList):
         Cmd = "\\immediate\\write16{" + MarkerBegin + "}\n" + Cmd + "\\immediate\\write16{" + MarkerEnd + "}\n"
         self.TexCmds = self.TexCmds + [ TexCmdSaveStruc(Cmd, MarkerBegin, MarkerEnd, Stack, lmsglevel), ]
 
-    def _write(self, canvas, file):             # TODO: fixme
-        file.write(str(self))
-
-    def __str__(self):
+    def write(self, acanvas, afile):
 
         'run LaTeX&dvips for TexCmds, report errors, return postscript string'
     
@@ -412,7 +409,7 @@ class tex(InstanceList):
         if os.system("dvips -E -o " + TempName + ".eps " + TempName + ".dvi > /dev/null 2>&1"):
             assert 0, "dvips exit code non-zero"
 
-        result = str(canvas.epsfile( TempName + ".eps", translatebb = 0))
+        canvas.epsfile(TempName + ".eps", translatebb = 0).write(acanvas, afile)
 
         # merge new sizes
         
@@ -450,8 +447,6 @@ class tex(InstanceList):
         
         os.chdir(WorkDir)
         
-        return result
-
     TexResults = None
 
     def TexResult(self, Str):

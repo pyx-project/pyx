@@ -17,7 +17,7 @@ class pathel:
 
     ' element of a PS style path '
     
-    def _write(self, canvas, file):
+    def write(self, canvas, file):
         pass
     def ConvertToBezier(self, currentpoint, currentsubpath):
         pass
@@ -27,7 +27,7 @@ class pathel:
 class closepath(pathel): 
     ' Connect subpath back to its starting point '
 
-    def _write(self, canvas, file):
+    def write(self, canvas, file):
         file.write("closepath")
     def ConvertToBezier(self, currentpoint, currentsubpath):
         return (None,
@@ -43,7 +43,7 @@ class moveto(pathel):
     def __init__(self, x, y):
          (self.x, self.y)=(x,y)
         
-    def _write(self, canvas, file):
+    def write(self, canvas, file):
         file.write("%f %f moveto" % (canvas.unit.pt(self.x), canvas.unit.pt(self.y) ) )
 
     def ConvertToBezier(self, currentpoint, currentsubpath):
@@ -55,7 +55,7 @@ class rmoveto(pathel):
     def __init__(self, x, y):
          (self.x, self.y)=(x,y)
         
-    def _write(self, canvas, file):
+    def write(self, canvas, file):
         file.write("%f %f rmoveto" % (canvas.unit.pt(self.x), canvas.unit.pt(self.y) ) )
         
     def ConvertToBezier(self, currentpoint, currentsubpath):
@@ -67,7 +67,7 @@ class lineto(pathel):
     def __init__(self, x, y):
          (self.x, self.y)=(x,y)
 
-    def _write(self, canvas, file):
+    def write(self, canvas, file):
         file.write("%f %f lineto" % (canvas.unit.pt(self.x), canvas.unit.pt(self.y) ) )
         
     def ConvertToBezier(self, currentpoint, currentsubpath):
@@ -81,7 +81,7 @@ class rlineto(pathel):
     def __init__(self, x, y):
          (self.x, self.y)=(x,y)
 
-    def _write(self, canvas, file):
+    def write(self, canvas, file):
         file.write("%f %f rlineto" % (canvas.unit.pt(self.x), canvas.unit.pt(self.y) ) )
         
     def ConvertToBezier(self, currentpoint, currentsubpath):
@@ -100,7 +100,7 @@ class _pathelarc(pathel):
 class arc(_pathelarc):
     ' Append counterclockwise arc '
 
-    def _write(self, canvas, file):
+    def write(self, canvas, file):
         file.write("%f %f %f %f %f arc" % ( canvas.unit.pt(self.x),
                                             canvas.unit.pt(self.y),
                                             canvas.unit.pt(self.r),
@@ -129,7 +129,7 @@ class arc(_pathelarc):
 class arcn(_pathelarc):
     ' Append clockwise arc '
 
-    def _write(self, canvas, file):
+    def write(self, canvas, file):
         file.write("%f %f %f %f %f arcn" % ( canvas.unit.pt(self.x),
                                              canvas.unit.pt(self.y),
                                              canvas.unit.pt(self.r),
@@ -140,7 +140,7 @@ class arct(pathel):
     ' Append tangent arc '
     def __init__(self, x1, y1, x2, y2, r):
         (self.x1, self.y1, self.x2, self.y2, self.r) = (x1, y1, x2, y2, r)
-    def _write(self, canvas, file):
+    def write(self, canvas, file):
         file.write("%f %f %f %f %f arct" % ( canvas.unit.pt(self.x1),
                                              canvas.unit.pt(self.y1),
                                              canvas.unit.pt(self.x2),
@@ -155,7 +155,7 @@ class _pathel6(pathel):
         (self.x1, self.y1, self.x2, self.y2, self.x3, self.y3) = (x1, y1, x2, y2, x3, y3)
 
 class curveto(_pathel6):
-    def _write(self, canvas, file):
+    def write(self, canvas, file):
         file.write("%f %f %f %f %f %f curveto" % ( canvas.unit.pt(self.x1),
                                                    canvas.unit.pt(self.y1),
                                                    canvas.unit.pt(self.x2),
@@ -169,7 +169,7 @@ class curveto(_pathel6):
                         self.x1, self.y1, self.x2, self.y2, self.x3, self.y3))
 
 class rcurveto(_pathel6):
-    def _write(self, canvas, file):
+    def write(self, canvas, file):
         file.write("%f %f %f %f %f %f rcurveto" % ( canvas.unit.pt(self.x1),
                                                     canvas.unit.pt(self.y1),
                                                     canvas.unit.pt(self.x2),
@@ -204,11 +204,11 @@ class path:
     def __getitem__(self, i):
         return self.path[i]
 	
-    def _write(self, canvas, file):
+    def write(self, canvas, file):
 	if not isinstance(self.path[0], moveto): 
 	    raise PathException, "first path element must be moveto"    # TODO: also arc, arcn, arcto
         for pathel in self.path:
-	    pathel._write(canvas, file)
+	    pathel.write(canvas, file)
             file.write("\n")
 
     def append(self, pathel):

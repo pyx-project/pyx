@@ -1,6 +1,6 @@
 class color:
 
-    def _write(self, canvas, file):
+    def write(self, canvas, file):
         file.write(self._PSCmd(canvas))
 
 

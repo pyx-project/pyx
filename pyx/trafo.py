@@ -91,7 +91,7 @@ class transformation:
 	   raise UndefinedResultError, "transformation matrix must not be singular" 
         return transformation(matrix=matrix) * transformation(vector=(-self.vector[0],-self.vector[1]))
 
-    def _write(self, canvas, file):
+    def write(self, canvas, file):
         file.write(self._PSCmd(canvas))
 
     def _PSCmd(self, canvas):
