@@ -20,4 +20,4 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-__all__ = ["canvas", "color", "graph", "bpath", "path", "tex", "unit", "graph", "trafo"]
+__all__ = ["canvas", "color", "graph", "bpath", "path", "tex", "unit", "graph", "trafo", "epsfile"]
