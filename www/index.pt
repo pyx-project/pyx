@@ -21,7 +21,7 @@ out of these primitives. </p>
 
 <h2>Features</h2>
 <ul>
-  <li>PostScript output for device independed, free scalable figures</li>
+  <li>PostScript output for device independent, free scalable figures</li>
   <li>seamless TeX/LaTeX integration</li>
   <li>full access to PostScript features like paths, linestyles, fill patterns, transformations, clipping, etc.</li>
   <li>advanced geometric operations on paths like intersections, transformations, splitting, etc.</li>
@@ -37,7 +37,7 @@ section</a> of the SourceForge project page. </p>
 
 <h2>Authors and License</h2>
 
-<p> PyX is written by J&ouml;rg Lehmann and <a href="http://www.physik.uni-augsburg.de/~wobsta">Andr&eacute; Wobst</a>.
+<p> PyX is written by <a href="http://www.physik.uni-augsburg.de/~joergl/">J&ouml;rg Lehmann</a> and <a href="http://www.physik.uni-augsburg.de/~wobsta/">Andr&eacute; Wobst</a>.
 PyX is free software licensed under the GNU GPL Version&nbsp;2. </p>
 
 </div>
