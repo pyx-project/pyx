@@ -27,6 +27,8 @@ import re, ConfigParser
 from pyx import mathtree
 from pyx.graph import style
 
+builtin_list = list
+
 
 class _Idata:
     """interface definition of a data object
@@ -115,7 +117,7 @@ class list(_data):
                     p = points[i] + [None] * (maxcolumns - l)
                 except:
                     # points[i] are not a list
-                    p = __builtins__.list(points[i]) + [None] * (maxcolumns - l)
+                    p = builtin_list(points[i]) + [None] * (maxcolumns - l)
                 try:
                     points[i] = p
                 except:
@@ -125,7 +127,7 @@ class list(_data):
             # the loop finished successfull
             return points
         # since points are not a list, convert them and try again
-        return checkmaxcolumns(__builtins__.list(points), maxcolumns=maxcolumns)
+        return checkmaxcolumns(builtin_list(points), maxcolumns=maxcolumns)
 
     def __init__(self, points, title="user provided list", maxcolumns=None, addlinenumbers=1, **columns):
         points = self.checkmaxcolumns(points, maxcolumns)
@@ -134,7 +136,7 @@ class list(_data):
                 try:
                     points[i].insert(0, i+1)
                 except:
-                    points[i] = [i+1] + __builtins__.list(points[i])
+                    points[i] = [i+1] + builtin_list(points[i])
         self.points = points
         self.columns = columns
         self.title = title

@@ -74,6 +74,8 @@ TODO:
      - fix empty tick lists bug (reported by Marko Vendelin, cf. bug #977323)
    - graph/style module:
      - symbolline drawing order in graph key (cf. bug #990687)
+   - graph/data module:
+     - access to builtin list (reported by Marcus Mendenhall, cf. bug #1042458)
 
 
 0.6.3 (2004/04/27):
