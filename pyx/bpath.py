@@ -129,7 +129,7 @@ class bpath:
     
     def __init__(self, bpath=[]):
         self.bpath = bpath
-	
+        
     def append(self, bpathel):
         self.bpath.append(bpathel)
 
@@ -152,11 +152,11 @@ class bpath:
         abbox = canvas.bbox()
         for bpel in self.bpath:
            abbox = abbox + bpel.bbox()
-	return abbox
+        return abbox
 
     def write(self, file):
         for bpel in self.bpath:
-	    bpel.write(file)
+            bpel.write(file)
             file.write("\n")
 
     def pos(self, t):
@@ -217,7 +217,7 @@ class _bline(bpath):
         ya = y0+(y1-y0)/3.0
         xb = x0+2.0*(x1-x0)/3.0
         yb = y0+2.0*(y1-y0)/3.0
-	
+        
         bpath.__init__(self, 
                       [_bpathel(x0, y0, xa, ya, xb, yb, x1, y1 )]) 
 
@@ -243,11 +243,11 @@ class _barc(bpath):
         phi2 = phi2*pi/180
 
         if phi2<phi1:        
-	    # guarantee that phi2>phi1 ...
-	    phi2 = phi2 + (math.floor((phi1-phi2)/(2*pi))+1)*2*pi
+            # guarantee that phi2>phi1 ...
+            phi2 = phi2 + (math.floor((phi1-phi2)/(2*pi))+1)*2*pi
         elif phi2>phi1+2*pi:
-   	    # ... or remove unnecessary multiples of 2*pi
-	    phi2 = phi2 - (math.floor((phi2-phi1)/(2*pi))-1)*2*pi
+            # ... or remove unnecessary multiples of 2*pi
+            phi2 = phi2 - (math.floor((phi2-phi1)/(2*pi))-1)*2*pi
             
         if r==0 or phi1-phi2==0: return
 
