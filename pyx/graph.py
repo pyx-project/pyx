@@ -28,7 +28,7 @@ import base, bbox, canvas, path, tex, unit
 from math import log, exp, sqrt, pow
 
 
-goldenrule = 1.6 # TODO: correct value!!!
+goldenrule = 0.5 * (sqrt(5) + 1)
 
 
 class _ticklength(unit.length):
