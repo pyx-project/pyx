@@ -603,13 +603,14 @@ class DVIFile:
             if font:
                 file.write("%%%%BeginFont: %s\n" % font.name.upper())
 
-                tmpfilename = tempfile.mktemp(suffix="pfa")
+                tmpfilename = tempfile.mktemp(suffix=".pfa")
                 pfbfilename = os.popen("kpsewhich %s.pfb" % font.name).readlines()[-1][:-1]
                 os.system("pfb2pfa %s %s" % (pfbfilename, tmpfilename))
 
                 pfa = open(tmpfilename, "r")
                 file.write(pfa.read())
                 pfa.close()
+                os.unlink(tmpfilename)
 
                 file.write("%%%%EndFont\n")
 
@@ -631,8 +632,6 @@ class DVIFile:
                             unit.topt(w),
                             unit.topt(h),
                             -unit.topt(w)))
-
-            
             elif command=="f":
                 fontname = arg[0].name
                 match = self.FontSizePattern.search(fontname)
@@ -642,7 +641,6 @@ class DVIFile:
                 else:
                     print "cannot determine font size from name '%s'" % fontname
 
-        
 
 #if __name__=="__main__":
 #    cmr10 = Font("cmr10")
