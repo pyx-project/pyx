@@ -21,24 +21,24 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-class _nodefault: pass
+class nodefault: pass
 
 
-def _isstring(arg):
+def isstring(arg):
     "arg is string-like (cf. python cookbook 3.2)"
     try: arg + ''
     except: return None
     return 1
 
 
-def _isnumber(arg):
+def isnumber(arg):
     "arg is number-like"
     try: arg + 0
     except: return None
     return 1
 
 
-def _isinteger(arg):
+def isinteger(arg):
     "arg is integer-like"
     try:
         if type(arg + 0.0) is type(arg):
@@ -47,41 +47,41 @@ def _isinteger(arg):
     except: return None
 
 
-def _issequence(arg):
+def issequence(arg):
     """arg is sequence-like (e.g. has a len)
        a string is *not* considered to be a sequence"""
-    if _isstring(arg): return None
+    if isstring(arg): return None
     try: len(arg)
     except: return None
     return 1
 
 
-def _ensuresequence(arg):
-    """return arg or (arg,) depending on the result of _issequence,
+def ensuresequence(arg):
+    """return arg or (arg,) depending on the result of issequence,
        None is converted to ()"""
-    if _isstring(arg): return (arg,)
+    if isstring(arg): return (arg,)
     if arg is None: return ()
-    if _issequence(arg): return arg
+    if issequence(arg): return arg
     return (arg,)
 
 
-def _getitemno(arg, n):
-    if _issequence(arg):
+def getitemno(arg, n):
+    if issequence(arg):
         try: return arg[n]
         except: return None
     else:
         return arg
 
 
-def _issequenceofsequences(arg):
+def issequenceofsequences(arg):
     """check if arg has a sequence or None as it's first entry"""
-    return _issequence(arg) and len(arg) and (_issequence(arg[0]) or arg[0] is None)
+    return issequence(arg) and len(arg) and (issequence(arg[0]) or arg[0] is None)
 
 
-def _getsequenceno(arg, n):
+def getsequenceno(arg, n):
     """get sequence number n if arg is a sequence of sequences,
        otherwise it gets just arg"""
-    if _issequenceofsequences(arg):
+    if issequenceofsequences(arg):
         try: return arg[n]
         except: return None
     else:

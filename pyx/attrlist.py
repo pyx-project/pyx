@@ -53,7 +53,7 @@ class attrlist:
                 else:
                     raise AttrlistError
 
-    def attrgetall(self, attrs, get, default=helper._nodefault):
+    def attrgetall(self, attrs, get, default=helper.nodefault):
         first = 1
         for attr in attrs:
             if isinstance(attr, get):
@@ -63,7 +63,7 @@ class attrlist:
                 else:
                     result.append(attr)
         if first:
-            if default is helper._nodefault:
+            if default is helper.nodefault:
                 raise AttrlistError
             else:
                 return default
@@ -72,11 +72,11 @@ class attrlist:
     def attrcount(self, attrs, check):
         return len(self.attrgetall(attrs, check, ()))
 
-    def attrget(self, attrs, get, default=helper._nodefault):
+    def attrget(self, attrs, get, default=helper.nodefault):
         try:
             result = self.attrgetall(attrs, get)
         except AttrlistError:
-            if default is helper._nodefault:
+            if default is helper.nodefault:
                 raise AttrlistError
             else:
                 return default
@@ -84,21 +84,21 @@ class attrlist:
             raise AttrlistError
         return result[0]
 
-    def attrgetfirst(self, attrs, get, default=helper._nodefault):
+    def attrgetfirst(self, attrs, get, default=helper.nodefault):
         try:
             result = self.attrgetall(attrs, get)
         except AttrlistError:
-            if default is helper._nodefault:
+            if default is helper.nodefault:
                 raise AttrlistError
             else:
                 return default
         return result[0]
 
-    def attrgetlast(self, attrs, get, default=helper._nodefault):
+    def attrgetlast(self, attrs, get, default=helper.nodefault):
         try:
             result = self.attrgetall(attrs, get)
         except AttrlistError:
-            if default is helper._nodefault:
+            if default is helper.nodefault:
                 raise AttrlistError
             else:
                 return default

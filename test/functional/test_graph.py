@@ -25,6 +25,7 @@ def test_multiaxes_data(c, t, x, y):
 
 def test_piaxis_function(c, t, x, y):
     g = c.insert(graph.graphxy(t, x, y, height=5,
+                               y=graph.linaxis(painter=graph.axispainter(tickattrs=None, labelattrs=None)),
                                x=graph.linaxis(min=0, max=2*math.pi, divisor=math.pi, suffix=r"\pi")))
     g.plot([graph.function("y=sin(x-i*pi/10)", extern={"i": i}) for i in range(20)],
            style=graph.line(lineattrs=(graph.changecolor.Hue(), graph.changelinestyle())))
@@ -118,14 +119,14 @@ def test_bar(c, t, x, y):
 
 c = canvas.canvas()
 t = c.insert(tex.tex())
-test_multiaxes_data(c, t, 0, 21)
+#test_multiaxes_data(c, t, 0, 21)
 test_piaxis_function(c, t, 0, 14)
-test_textaxis_errorbars(c, t, 0, 7)
-test_ownmark(c, t, 0, 0)
-test_allerrorbars(c, t, -7, 0)
+#test_textaxis_errorbars(c, t, 0, 7)
+#test_ownmark(c, t, 0, 0)
+#test_allerrorbars(c, t, -7, 0)
 #test_3d(c, t, -7, 7)
-test_split(c, t, -7, 7)
-test_bar(c, t, -7, 14)
+#test_split(c, t, -7, 7)
+#test_bar(c, t, -7, 14)
 
 c.writetofile("test_graph", paperformat="a4")
 

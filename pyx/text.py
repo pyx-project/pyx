@@ -1004,7 +1004,7 @@ defaultsizelist = ["normalsize", "large", "Large", "LARGE", "huge", "Huge", None
 class size(_texsetting):
 
     def __init__(self, expr, sizelist=defaultsizelist):
-        if helper._isinteger(expr):
+        if helper.isinteger(expr):
             if expr >= 0 and expr < sizelist.index(None):
                 self.size = sizelist[expr]
             elif expr < 0 and expr + len(sizelist) > sizelist.index(None):
@@ -1112,12 +1112,12 @@ class texrunner(attrlist.attrlist):
         self.waitfortex = waitfortex
         self.texdebug = texdebug
         self.dvidebug = dvidebug
-        self.checkmsgstart = helper._ensuresequence(checkmsgstart)
-        self.checkmsgdocclass = helper._ensuresequence(checkmsgdocclass)
-        self.checkmsgbegindoc = helper._ensuresequence(checkmsgbegindoc)
-        self.checkmsgend = helper._ensuresequence(checkmsgend)
-        self.checkmsgdefaultdefine = helper._ensuresequence(checkmsgdefaultdefine)
-        self.checkmsgdefaultrun = helper._ensuresequence(checkmsgdefaultrun)
+        self.checkmsgstart = helper.ensuresequence(checkmsgstart)
+        self.checkmsgdocclass = helper.ensuresequence(checkmsgdocclass)
+        self.checkmsgbegindoc = helper.ensuresequence(checkmsgbegindoc)
+        self.checkmsgend = helper.ensuresequence(checkmsgend)
+        self.checkmsgdefaultdefine = helper.ensuresequence(checkmsgdefaultdefine)
+        self.checkmsgdefaultrun = helper.ensuresequence(checkmsgdefaultrun)
 
         self.texruns = 0
         self.texdone = 0

@@ -97,10 +97,10 @@ class frac:
 
     def __init__(self, enum, denom, power=None):
         "for power!=None: frac=(enum/denom)**power"
-        if not helper._isinteger(enum) or not helper._isinteger(denom): raise TypeError("integer type expected")
+        if not helper.isinteger(enum) or not helper.isinteger(denom): raise TypeError("integer type expected")
         if not denom: raise ZeroDivisionError("zero denominator")
         if power != None:
-            if not helper._isinteger(power): raise TypeError("integer type expected")
+            if not helper.isinteger(power): raise TypeError("integer type expected")
             if power >= 0:
                 self.enum = long(enum) ** power
                 self.denom = long(denom) ** power
@@ -144,7 +144,7 @@ def _ensurefrac(arg):
             return result
         else: raise ValueError("multiple '.' found in '%s'" % str)
 
-    if helper._isstring(arg):
+    if helper.isstring(arg):
         fraction = arg.split("/")
         if len(fraction) > 2: raise ValueError("multiple '/' found in '%s'" % arg)
         value = createfrac(fraction[0])
@@ -202,9 +202,9 @@ def _mergeticklists(list1, list2):
 
 def _mergetexts(ticks, texts):
     "merges texts into ticks"
-    if helper._issequenceofsequences(texts):
+    if helper.issequenceofsequences(texts):
         for text, level in zip(texts, xrange(sys.maxint)):
-            usetext = helper._ensuresequence(text)
+            usetext = helper.ensuresequence(text)
             i = 0
             for tick in ticks:
                 if tick.labellevel == level:
@@ -213,7 +213,7 @@ def _mergetexts(ticks, texts):
             if i != len(usetext):
                 raise IndexError("wrong sequence length of texts at level %i" % level)
     elif texts is not None:
-        usetext = helper._ensuresequence(texts)
+        usetext = helper.ensuresequence(texts)
         i = 0
         for tick in ticks:
             if tick.labellevel == 0:
@@ -228,12 +228,12 @@ class manualpart:
     def __init__(self, ticks=None, labels=None, texts=None, mix=()):
         self.multipart = 0
         if ticks is None and labels is not None:
-            self.ticks = helper._ensuresequence(helper._getsequenceno(labels, 0))
+            self.ticks = helper.ensuresequence(helper.getsequenceno(labels, 0))
         else:
             self.ticks = ticks
 
         if labels is None and ticks is not None:
-            self.labels = helper._ensuresequence(helper._getsequenceno(ticks, 0))
+            self.labels = helper.ensuresequence(helper.getsequenceno(ticks, 0))
         else:
             self.labels = labels
         self.texts = texts
@@ -253,21 +253,21 @@ class manualpart:
 
     def part(self):
         ticks = list(self.mix)
-        if helper._issequenceofsequences(self.ticks):
+        if helper.issequenceofsequences(self.ticks):
             for fracs, level in zip(self.ticks, xrange(sys.maxint)):
                 ticks = _mergeticklists(ticks, [tick(frac.enum, frac.denom, ticklevel = level)
-                                                for frac in self.checkfraclist(*map(_ensurefrac, helper._ensuresequence(fracs)))])
+                                                for frac in self.checkfraclist(*map(_ensurefrac, helper.ensuresequence(fracs)))])
         else:
             ticks = _mergeticklists(ticks, [tick(frac.enum, frac.denom, ticklevel = 0)
-                                            for frac in self.checkfraclist(*map(_ensurefrac, helper._ensuresequence(self.ticks)))])
+                                            for frac in self.checkfraclist(*map(_ensurefrac, helper.ensuresequence(self.ticks)))])
 
-        if helper._issequenceofsequences(self.labels):
+        if helper.issequenceofsequences(self.labels):
             for fracs, level in zip(self.labels, xrange(sys.maxint)):
                 ticks = _mergeticklists(ticks, [tick(frac.enum, frac.denom, labellevel = level)
-                                                for frac in self.checkfraclist(*map(_ensurefrac, helper._ensuresequence(fracs)))])
+                                                for frac in self.checkfraclist(*map(_ensurefrac, helper.ensuresequence(fracs)))])
         else:
             ticks = _mergeticklists(ticks, [tick(frac.enum, frac.denom, labellevel = 0)
-                                            for frac in self.checkfraclist(*map(_ensurefrac, helper._ensuresequence(self.labels)))])
+                                            for frac in self.checkfraclist(*map(_ensurefrac, helper.ensuresequence(self.labels)))])
 
         _mergetexts(ticks, self.texts)
 
@@ -282,13 +282,13 @@ class linpart:
     def __init__(self, ticks=None, labels=None, texts=None, extendtick=0, extendlabel=None, epsilon=1e-10, mix=()):
         self.multipart = 0
         if ticks is None and labels is not None:
-            self.ticks = (_ensurefrac(helper._ensuresequence(labels)[0]),)
+            self.ticks = (_ensurefrac(helper.ensuresequence(labels)[0]),)
         else:
-            self.ticks = map(_ensurefrac, helper._ensuresequence(ticks))
+            self.ticks = map(_ensurefrac, helper.ensuresequence(ticks))
         if labels is None and ticks is not None:
-            self.labels = (_ensurefrac(helper._ensuresequence(ticks)[0]),)
+            self.labels = (_ensurefrac(helper.ensuresequence(ticks)[0]),)
         else:
-            self.labels = map(_ensurefrac, helper._ensuresequence(labels))
+            self.labels = map(_ensurefrac, helper.ensuresequence(labels))
         self.texts = texts
         self.extendtick = extendtick
         self.extendlabel = extendlabel
@@ -396,14 +396,14 @@ class logpart(linpart):
     def __init__(self, ticks=None, labels=None, texts=None, extendtick=0, extendlabel=None, epsilon=1e-10, mix=()):
         self.multipart = 0
         if ticks is None and labels is not None:
-            self.ticks = (helper._ensuresequence(labels)[0],)
+            self.ticks = (helper.ensuresequence(labels)[0],)
         else:
-            self.ticks = helper._ensuresequence(ticks)
+            self.ticks = helper.ensuresequence(ticks)
 
         if labels is None and ticks is not None:
-            self.labels = (helper._ensuresequence(ticks)[0],)
+            self.labels = (helper.ensuresequence(ticks)[0],)
         else:
-            self.labels = helper._ensuresequence(labels)
+            self.labels = helper.ensuresequence(labels)
         self.texts = texts
         self.extendtick = extendtick
         self.extendlabel = extendlabel
@@ -865,9 +865,9 @@ class axispainter(attrlist.attrlist):
             tick.dx, tick.dy = axis.vtickdirection(axis, tick.virtual)
         for tick in axis.ticks:
             if tick.labellevel is not None:
-                tick.labelattrs = helper._getsequenceno(self.labelattrs, tick.labellevel)
+                tick.labelattrs = helper.getsequenceno(self.labelattrs, tick.labellevel)
                 if tick.labelattrs is not None:
-                    tick.labelattrs = list(helper._ensuresequence(tick.labelattrs))
+                    tick.labelattrs = list(helper.ensuresequence(tick.labelattrs))
                     if tick.text is None:
                         tick.suffix = axis.suffix
                         self.createtext(tick)
@@ -903,7 +903,7 @@ class axispainter(attrlist.attrlist):
                 tick._extent = tick.textbox._extent(tick.dx, tick.dy) + labeldist
                 tick.textbox.transform(trafo._translate(tick.x, tick.y))
         def topt_v_recursive(arg):
-            if helper._issequence(arg):
+            if helper.issequence(arg):
                 # return map(topt_v_recursive, arg) needs python2.2
                 return [unit.topt(unit.length(a, default_type="v")) for a in arg]
             else:
@@ -915,8 +915,8 @@ class axispainter(attrlist.attrlist):
         axis._extent = 0
         for tick in axis.ticks:
             if tick.ticklevel is not None:
-                tick.innerticklength = helper._getitemno(innerticklengths, tick.ticklevel)
-                tick.outerticklength = helper._getitemno(outerticklengths, tick.ticklevel)
+                tick.innerticklength = helper.getitemno(innerticklengths, tick.ticklevel)
+                tick.outerticklength = helper.getitemno(outerticklengths, tick.ticklevel)
                 if tick.innerticklength is not None and tick.outerticklength is None:
                     tick.outerticklength = 0
                 if tick.outerticklength is not None and tick.innerticklength is None:
@@ -932,7 +932,7 @@ class axispainter(attrlist.attrlist):
         if axis.title is not None and self.titleattrs is not None:
             dx, dy = axis.vtickdirection(axis, self.titlepos)
             # no not modify self.titleattrs ... the painter might be used by several axes!!!
-            titleattrs = list(helper._ensuresequence(self.titleattrs))
+            titleattrs = list(helper.ensuresequence(self.titleattrs))
             if self.titledirection is not None and not self.attrcount(titleattrs, tex.direction):
                 titleattrs = titleattrs + [tex.direction(self.reldirection(self.titledirection, dx, dy))]
             axis.titlebox = textbox(graph.tex, axis.title, textattrs=titleattrs)
@@ -950,28 +950,31 @@ class axispainter(attrlist.attrlist):
                 return None
             rate = axis.rate._ratedistances(distances, dense)
             return rate
+        else:
+            if self.labelattrs is None:
+                return 0
 
     def paint(self, graph, axis):
         for tick in axis.ticks:
             if tick.ticklevel is not None:
                 if tick != frac(0, 1) or self.zerolineattrs is None:
-                    gridattrs = helper._getsequenceno(self.gridattrs, tick.ticklevel)
+                    gridattrs = helper.getsequenceno(self.gridattrs, tick.ticklevel)
                     if gridattrs is not None:
-                        graph.stroke(axis.vgridpath(tick.virtual), *helper._ensuresequence(gridattrs))
-                tickattrs = helper._getsequenceno(self.tickattrs, tick.ticklevel)
+                        graph.stroke(axis.vgridpath(tick.virtual), *helper.ensuresequence(gridattrs))
+                tickattrs = helper.getsequenceno(self.tickattrs, tick.ticklevel)
                 if None not in (tick.innerticklength, tick.outerticklength, tickattrs):
                     x1 = tick.x - tick.dx * tick.innerticklength
                     y1 = tick.y - tick.dy * tick.innerticklength
                     x2 = tick.x + tick.dx * tick.outerticklength
                     y2 = tick.y + tick.dy * tick.outerticklength
-                    graph.stroke(path._line(x1, y1, x2, y2), *helper._ensuresequence(tickattrs))
+                    graph.stroke(path._line(x1, y1, x2, y2), *helper.ensuresequence(tickattrs))
             if tick.textbox is not None:
                 tick.textbox.printtext()
         if self.baselineattrs is not None:
-            graph.stroke(axis.vbaseline(axis), *helper._ensuresequence(self.baselineattrs))
+            graph.stroke(axis.vbaseline(axis), *helper.ensuresequence(self.baselineattrs))
         if self.zerolineattrs is not None:
             if len(axis.ticks) and axis.ticks[0] * axis.ticks[-1] < frac(0, 1):
-                graph.stroke(axis.vgridpath(axis.convert(0)), *helper._ensuresequence(self.zerolineattrs))
+                graph.stroke(axis.vgridpath(axis.convert(0)), *helper.ensuresequence(self.zerolineattrs))
         if axis.title is not None and self.titleattrs is not None:
             axis.titlebox.printtext()
 
@@ -1052,7 +1055,7 @@ class splitaxispainter(attrlist.attrlist): # XXX: avoid code duplication with ax
         titledist = unit.topt(unit.length(self.titledist_str, default_type="v"))
         if axis.title is not None and self.titleattrs is not None:
             dx, dy = axis.vtickdirection(axis, self.titlepos)
-            titleattrs = list(helper._ensuresequence(self.titleattrs))
+            titleattrs = list(helper.ensuresequence(self.titleattrs))
             if self.titledirection is not None and not self.attrcount(titleattrs, tex.direction):
                 titleattrs = titleattrs + [tex.direction(self.reldirection(self.titledirection, dx, dy))]
             axis.titlebox = textbox(graph.tex, axis.title, textattrs=titleattrs)
@@ -1080,8 +1083,8 @@ class splitaxispainter(attrlist.attrlist): # XXX: avoid code duplication with ax
                                      path.lineto(*breakline2.end()),
                                      path.lineto(*breakline2.begin()),
                                      path.closepath()), color.gray.white)
-                graph.stroke(breakline1, *helper._ensuresequence(self.breaklinesattrs))
-                graph.stroke(breakline2, *helper._ensuresequence(self.breaklinesattrs))
+                graph.stroke(breakline1, *helper.ensuresequence(self.breaklinesattrs))
+                graph.stroke(breakline2, *helper.ensuresequence(self.breaklinesattrs))
         if axis.title is not None and self.titleattrs is not None:
             axis.titlebox.printtext()
 
@@ -1153,7 +1156,7 @@ class baraxispainter(attrlist.attrlist): # XXX: avoid code duplication with axis
                 equaldirection = 0
         axis.nameboxes = []
         for (v, x, y, dx, dy), name in zip(axis.namepos, axis.names):
-            nameattrs = list(helper._ensuresequence(self.nameattrs))
+            nameattrs = list(helper.ensuresequence(self.nameattrs))
             if self.namedirection is not None and not self.attrcount(nameattrs, tex.direction):
                 nameattrs += [tex.direction(self.reldirection(self.namedirection, dx, dy))]
             if axis.texts.has_key(name):
@@ -1199,7 +1202,7 @@ class baraxispainter(attrlist.attrlist): # XXX: avoid code duplication with axis
         titledist = unit.topt(unit.length(self.titledist_str, default_type="v"))
         if axis.title is not None and self.titleattrs is not None:
             dx, dy = axis.vtickdirection(axis, self.titlepos)
-            titleattrs = list(helper._ensuresequence(self.titleattrs))
+            titleattrs = list(helper.ensuresequence(self.titleattrs))
             if self.titledirection is not None and not self.attrcount(titleattrs, tex.direction):
                 titleattrs = titleattrs + [tex.direction(self.reldirection(self.titledirection, dx, dy))]
             axis.titlebox = textbox(graph.tex, axis.title, textattrs=titleattrs)
@@ -1226,10 +1229,10 @@ class baraxispainter(attrlist.attrlist): # XXX: avoid code duplication with axis
                 y1 = y - dy * axis.innerticklength
                 x2 = x + dx * axis.outerticklength
                 y2 = y + dy * axis.outerticklength
-                graph.stroke(path._line(x1, y1, x2, y2), *helper._ensuresequence(self.tickattrs))
+                graph.stroke(path._line(x1, y1, x2, y2), *helper.ensuresequence(self.tickattrs))
         if self.baselineattrs is not None:
             if axis.vbaseline is not None: # XXX: subbaselines (as for splitlines)
-                graph.stroke(axis.vbaseline(axis), *helper._ensuresequence(self.baselineattrs))
+                graph.stroke(axis.vbaseline(axis), *helper.ensuresequence(self.baselineattrs))
         for namebox in axis.nameboxes:
             namebox.printtext()
         if axis.title is not None and self.titleattrs is not None:
@@ -1491,7 +1494,7 @@ class splitaxis:
         self.title = title
         self.axislist = axislist
         self.painter = painter
-        self.splitlist = list(helper._ensuresequence(splitlist))
+        self.splitlist = list(helper.ensuresequence(splitlist))
         self.splitlist.sort()
         if len(self.axislist) != len(self.splitlist) + 1:
             for subaxis in self.axislist:
@@ -1614,7 +1617,7 @@ class baraxis:
         self.relsizes = None
         self.fixnames = 0
         self.names = []
-        for name in helper._ensuresequence(names):
+        for name in helper.ensuresequence(names):
             self.setname(name)
         self.fixnames = names is not None
         self.multisubaxis = multisubaxis
@@ -1728,7 +1731,7 @@ class graphxy(canvas.canvas):
                 self.defaultstyle[data.defaultstyle] = style
         styles = []
         first = 1
-        for d in helper._ensuresequence(data):
+        for d in helper.ensuresequence(data):
             if first:
                 styles.append(style)
             else:
@@ -1737,7 +1740,7 @@ class graphxy(canvas.canvas):
             if d is not None:
                 d.setstyle(self, styles[-1])
                 self.data.append(d)
-        if helper._issequence(data):
+        if helper.issequence(data):
             return styles
         return styles[0]
 
@@ -1915,7 +1918,7 @@ class graphxy(canvas.canvas):
         if not self.removedomethod(self.dobackground): return
         if self.backgroundattrs is not None:
             self.draw(path._rect(self._xpos, self._ypos, self._width, self._height),
-                      *helper._ensuresequence(self.backgroundattrs))
+                      *helper.ensuresequence(self.backgroundattrs))
 
     def doaxes(self):
         self.dolayout()
@@ -2298,7 +2301,7 @@ def _getattrs(attrs):
     """get attrs out of a sequence of attr/changeattr"""
     if attrs is not None:
         result = []
-        for attr in helper._ensuresequence(attrs):
+        for attr in helper.ensuresequence(attrs):
             if isinstance(attr, _changeattr):
                 result.append(attr.getattr())
             else:
@@ -2317,7 +2320,7 @@ def _iterateattrs(attrs):
     """perform next to a sequence of attr/changeattr"""
     if attrs is not None:
         result = []
-        for attr in helper._ensuresequence(attrs):
+        for attr in helper.ensuresequence(attrs):
             if isinstance(attr, _changeattr):
                 result.append(attr.iterate())
             else:
@@ -2586,12 +2589,12 @@ class symbol:
                 path._lineto(x, y+0.930604859*self._size),
                 path.closepath())
 
-    def __init__(self, symbol=helper._nodefault,
+    def __init__(self, symbol=helper.nodefault,
                        size="0.2 cm", symbolattrs=canvas.stroked(),
                        errorscale=0.5, errorbarattrs=(),
                        lineattrs=None):
         self.size_str = size
-        if symbol is helper._nodefault:
+        if symbol is helper.nodefault:
             self._symbol = changesymbol.cross()
         else:
             self._symbol = symbol
@@ -2909,11 +2912,11 @@ class symbol:
         self.size = unit.length(_getattr(self.size_str), default_type="v")
         self._size = unit.topt(self.size)
         self.symbol = _getattr(self._symbol)
-        self.symbolattrs = _getattrs(helper._ensuresequence(self._symbolattrs))
-        self.errorbarattrs = _getattrs(helper._ensuresequence(self._errorbarattrs))
+        self.symbolattrs = _getattrs(helper.ensuresequence(self._symbolattrs))
+        self.errorbarattrs = _getattrs(helper.ensuresequence(self._errorbarattrs))
         self._errorsize = self.errorscale * self._size
         self.errorsize = self.errorscale * self.size
-        self.lineattrs = _getattrs(helper._ensuresequence(self._lineattrs))
+        self.lineattrs = _getattrs(helper.ensuresequence(self._lineattrs))
         if self._lineattrs is not None:
             clipcanvas = graph.clipcanvas()
         lineels = []
@@ -3038,8 +3041,8 @@ changesymbol.diamondtwice  = _changesymboldiamondtwice
 
 class line(symbol):
 
-    def __init__(self, lineattrs=helper._nodefault):
-        if lineattrs is helper._nodefault:
+    def __init__(self, lineattrs=helper.nodefault):
+        if lineattrs is helper.nodefault:
             lineattrs = changelinestyle()
         symbol.__init__(self, symbolattrs=None, errorbarattrs=None, lineattrs=lineattrs)
 
@@ -3117,7 +3120,7 @@ class text(symbol):
     def _drawsymbol(self, graph, x, y, point=None):
         symbol._drawsymbol(self, graph, x, y, point)
         if None not in (x, y, point[self.textindex], self._textattrs):
-            graph.tex._text(x + self._textdx, y + self._textdy, str(point[self.textindex]), *helper._ensuresequence(self.textattrs))
+            graph.tex._text(x + self._textdx, y + self._textdy, str(point[self.textindex]), *helper.ensuresequence(self.textattrs))
 
     def drawpoints(self, graph, points):
         self.textdx = unit.length(_getattr(self.textdx_str), default_type="v")
@@ -3164,7 +3167,7 @@ class arrow(symbol):
                 graph.stroke(path.line(x1, y1, x2, y2),
                              canvas.earrow(self.arrowsize*point[self.sizeindex],
                                            **self.arrowdict),
-                             *helper._ensuresequence(self.arrowattrs))
+                             *helper.ensuresequence(self.arrowattrs))
 
     def drawpoints(self, graph, points):
         self.arrowsize = unit.length(_getattr(self.arrowsize_str), default_type="v")
@@ -3268,7 +3271,7 @@ class bar:
         if self.stacked > 1:
             index = divmod(index, self.stacked)[0]
         vmin, vmax = self.vaxis.getdatarange()
-        self.barattrs = _getattrs(helper._ensuresequence(self._barattrs))
+        self.barattrs = _getattrs(helper.ensuresequence(self._barattrs))
         if self.stacked:
             self.stackedvalue = {}
         for point in points:
@@ -3341,7 +3344,7 @@ class data:
     defaultstyle = symbol
 
     def __init__(self, file, **columns):
-        if helper._isstring(file):
+        if helper.isstring(file):
             self.data = datamodule.datafile(file)
         else:
             self.data = file
