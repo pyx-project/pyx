@@ -25,14 +25,15 @@
 # PostScript-procedure definitions
 # cf. file: 5002.EPSF_Spec_v3.0.pdf     
 
-_PSProlog = """/rect {
-  4 2 roll moveto 
-  1 index 0 rlineto 
-  0 exch rlineto 
-  neg 0 rlineto 
-  closepath 
-} bind def
-/BeginEPSF {
+#_PSProlog = """/rect {
+#  4 2 roll moveto 
+#  1 index 0 rlineto 
+#  0 exch rlineto 
+#  neg 0 rlineto 
+#  closepath 
+#} bind def
+
+_PSProlog = """/BeginEPSF {
   /b4_Inc_state save def
   /dict_count countdictstack def
   /op_count count 1 sub def
