@@ -37,7 +37,7 @@ class PSOp:
         raise NotImplementedError, "cannot call virtual method write()"
 
     def prologue(self):
-        """return a prologue item, if present, otherwise none"""
+        """return list of prologue items, if present, otherwise None"""
         pass 
 
 #
