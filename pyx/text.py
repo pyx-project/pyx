@@ -1275,9 +1275,7 @@ class dvifile:
 
     def prolog(self, page): 
         """ return prolog corresponding to contents of dvi file """
-        # XXX: can nearly be remove (see write below) but:
-        # XXX: we still have to separate the glyphs used for the different pages
-        # XXX: maybe we just clear the markused arrays of the fonts after each page
+        # XXX: can nearly be remove (see write below)
         return self.pages[page-1].prolog()
 
     def write(self, file, page):
