@@ -154,6 +154,78 @@ class decoratedpath(base.PSCmd):
         if self.styles:
             canvas._grestore().outputPS(file)
 
+    def outputPDF(self, file):
+        # draw (stroke and/or fill) the decoratedpath on the canvas
+        # while trying to produce an efficient output, e.g., by
+        # not writing one path two times
+
+        def _writestyles(styles, file=file):
+            for style in styles:
+                style.outputPDF(file)
+
+        # apply global styles
+        if self.styles:
+            canvas._gsave().outputPDF(file)
+            _writestyles(self.styles)
+
+        if self.fillpath is not None:
+            canvas._newpath().outputPDF(file)
+            self.fillpath.outputPDF(file)
+
+            if self.strokepath==self.fillpath:
+                # do efficient stroking + filling
+                canvas._gsave().outputPDF(file)
+
+                if self.fillstyles:
+                    _writestyles(self.fillstyles)
+
+                canvas._fill().outputPDF(file)
+                canvas._grestore().outputPDF(file)
+
+                if self.strokestyles:
+                    canvas._gsave().outputPDF(file)
+                    _writestyles(self.strokestyles)
+
+                canvas._stroke().outputPDF(file)
+
+                if self.strokestyles:
+                    canvas._grestore().outputPDF(file)
+            else:
+                # only fill fillpath - for the moment
+                if self.fillstyles:
+                    canvas._gsave().outputPDF(file)
+                    _writestyles(self.fillstyles)
+
+                canvas._fill().outputPDF(file)
+
+                if self.fillstyles:
+                    canvas._grestore().outputPDF(file)
+
+        if self.strokepath is not None and self.strokepath!=self.fillpath:
+            # this is the only relevant case still left
+            # Note that a possible stroking has already been done.
+
+            if self.strokestyles:
+                canvas._gsave().outputPDF(file)
+                _writestyles(self.strokestyles)
+
+            canvas._newpath().outputPDF(file)
+            self.strokepath.outputPDF(file)
+            canvas._stroke().outputPDF(file)
+
+            if self.strokestyles:
+                canvas._grestore().outputPDF(file)
+
+        if self.strokepath is None and self.fillpath is None:
+            raise RuntimeError("Path neither to be stroked nor filled")
+
+        # now, draw additional elements of decoratedpath
+        self.subcanvas.outputPDF(file)
+
+        # restore global styles
+        if self.styles:
+            canvas._grestore().outputPDF(file)
+
 #
 # Path decorators
 #

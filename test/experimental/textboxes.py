@@ -220,7 +220,8 @@ for i in range(len(boxes)):
         shape = shapes[i]
     # else shape = shapes[-1] = last shape
     c.stroke(path.rect(0, y, shape[0], -shape[1]))
+    c.stroke(boxes[i].bbox().path(), [trafo.translate(0, y), color.rgb.red])
     c.insert(boxes[i], [trafo.translate(0, y)])
     y -= shape[1] + 3
-c.writeEPSfile("textboxes", paperformat="a0")
+c.writeEPSfile("textboxes")
 

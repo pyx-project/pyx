@@ -80,32 +80,39 @@ class clip(base.PSCmd):
 
 class _newpath(base.PSOp):
     def outputPS(self, file):
-       file.write("newpath\n")
-
+        file.write("newpath\n")
+    def outputPDF(self, file):
+        pass
 
 class _stroke(base.PSOp):
     def outputPS(self, file):
-       file.write("stroke\n")
-
+        file.write("stroke\n")
+    def outputPDF(self, file):
+        file.write("S\n")
 
 class _fill(base.PSOp):
     def outputPS(self, file):
         file.write("fill\n")
-
+    def outputPDF(self, file):
+        file.write("f\n")
 
 class _clip(base.PSOp):
     def outputPS(self, file):
-       file.write("clip\n")
-
+        file.write("clip\n")
+    def outputPDF(self, file):
+        file.write("W\n")
 
 class _gsave(base.PSOp):
     def outputPS(self, file):
-       file.write("gsave\n")
-
+        file.write("gsave\n")
+    def outputPDF(self, file):
+        file.write("q\n")
 
 class _grestore(base.PSOp):
     def outputPS(self, file):
-       file.write("grestore\n")
+        file.write("grestore\n")
+    def outputPDF(self, file):
+        file.write("Q\n")
 
 #
 #
@@ -184,6 +191,13 @@ class _canvas(base.PSCmd):
             for cmd in self.PSOps:
                 cmd.outputPS(file)
             _grestore().outputPS(file)
+
+    def outputPDF(self, file):
+        if self.PSOps:
+            _gsave().outputPDF(file)
+            for cmd in self.PSOps:
+                cmd.outputPDF(file)
+            _grestore().outputPDF(file)
 
     def insert(self, PSOp, args=[]):
         """insert PSOp in the canvas.
@@ -484,6 +498,91 @@ class canvas(_canvas):
         file.write("%%Trailer\n")
         file.write("%%EOF\n")
 
-    def writetofile(self, *args, **kwargs):
-        sys.stderr.write("*** PyX Warning: writetofile is deprecated, use writeEPSfile instead\n")
-        self.writeEPSfile(*args, **kwargs)
+    def writePDFfile(self, filename, bbox=None, bboxenlarge="1 t pt"):
+        sys.stderr.write("*** PyX Warning: writePDFfile is experimental code and supports only a small set of PyX features\n")
+
+        if filename[-4:]!=".pdf":
+            filename = filename + ".pdf"
+
+        try:
+            file = open(filename, "wb")
+        except IOError:
+            raise IOError("cannot open output file")
+
+        abbox = bbox is not None and bbox or self.bbox()
+        abbox = abbox.enlarged(bboxenlarge)
+
+        file.write("%%PDF-1.4\n%%%s%s%s%s\n" % (chr(195), chr(182), chr(195), chr(169)))
+        reflist = [file.tell()]
+        file.write("1 0 obj\n"
+                   "<<\n"
+                   "/Type /Catalog\n"
+                   "/Outlines 2 0 R\n"
+                   "/Pages 3 0 R\n"
+                   ">>\n"
+                   "endobj\n")
+        reflist.append(file.tell())
+        file.write("2 0 obj\n"
+                   "<<\n"
+                   "/Type Outlines\n"
+                   "/Count 0\n"
+                   ">>\n"
+                   "endobj\n")
+        reflist.append(file.tell())
+        file.write("3 0 obj\n"
+                   "<<\n"
+                   "/Type /Pages\n"
+                   "/Kids [4 0 R]\n"
+                   "/Count 1\n"
+                   ">>\n"
+                   "endobj\n")
+        reflist.append(file.tell())
+        file.write("4 0 obj\n"
+                   "<<\n"
+                   "/Type /Page\n"
+                   "/Parent 3 0 R\n")
+        abbox.outputPDF(file)
+        file.write("/Contents 5 0 R\n"
+                   "/Resources << /ProcSet 7 0 R >>\n"
+                   ">>\n"
+                   "endobj\n")
+        reflist.append(file.tell())
+        file.write("5 0 obj\n"
+                   "<< /Length 6 0 R >>\n"
+                   "stream\n")
+        streamstartpos = file.tell()
+        self.outputPDF(file)
+        streamendpos = file.tell()
+        file.write("endstream\n"
+                   "endobj\n")
+        reflist.append(file.tell())
+        file.write("6 0 obj\n"
+                   "%s\n"
+                   "endobj\n" % (streamendpos - streamstartpos))
+        reflist.append(file.tell())
+        file.write("7 0 obj\n"
+                   "[/PDF]\n"
+                   "endobj\n")
+        xrefpos = file.tell()
+        file.write("xref\n"
+                   "0 8\n")
+        file.write("0000000000 65535 f \n")
+        for ref in reflist:
+            file.write("%010i 00000 n \n" % ref)
+        file.write("trailer\n"
+                   "<<\n"
+                   "/Size 8\n"
+                   "/Root 1 0 R\n"
+                   ">>\n"
+                   "startxref\n"
+                   "%i\n"
+                   "%%EOF" % xrefpos)
+
+    def writetofile(self, filename, *args, **kwargs):
+        if filename[-4:] == ".eps":
+            self.writeEPSfile(filename, *args, **kwargs)
+        elif filename[-4:] == ".pdf":
+            self.writePDFfile(filename, *args, **kwargs)
+        else:
+            sys.stderr.write("*** PyX Warning: deprecated usage of writetofile -- writetofile needs a filename extension or use an explicit call to writeEPSfile or the like\n")
+            self.writeEPSfile(filename, *args, **kwargs)

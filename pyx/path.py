@@ -300,6 +300,8 @@ class pathel(base.PSOp):
 
         pass
 
+    # TODO: outputPDF
+
 #
 # various pathels
 #
@@ -332,6 +334,9 @@ class closepath(pathel):
     def outputPS(self, file):
         file.write("closepath\n")
 
+    def outputPDF(self, file):
+        file.write("h\n")
+
 
 class moveto_pt(pathel):
 
@@ -356,6 +361,9 @@ class moveto_pt(pathel):
 
     def outputPS(self, file):
         file.write("%g %g moveto\n" % (self.x, self.y) )
+
+    def outputPDF(self, file):
+        file.write("%g %g m\n" % (self.x, self.y) )
 
 
 class lineto_pt(pathel):
@@ -384,6 +392,9 @@ class lineto_pt(pathel):
 
     def outputPS(self, file):
         file.write("%g %g lineto\n" % (self.x, self.y) )
+
+    def outputPDF(self, file):
+        file.write("%g %g l\n" % (self.x, self.y) )
 
 
 class curveto_pt(pathel):
@@ -424,6 +435,11 @@ class curveto_pt(pathel):
                                                      self.x2, self.y2,
                                                      self.x3, self.y3 ) )
 
+    def outputPDF(self, file):
+        file.write("%g %g %g %g %g %g c\n" % ( self.x1, self.y1,
+                                               self.x2, self.y2,
+                                               self.x3, self.y3 ) )
+
 
 class rmoveto_pt(pathel):
 
@@ -448,6 +464,8 @@ class rmoveto_pt(pathel):
 
     def outputPS(self, file):
         file.write("%g %g rmoveto\n" % (self.dx, self.dy) )
+
+    # TODO: outputPDF
 
 
 class rlineto_pt(pathel):
@@ -479,6 +497,8 @@ class rlineto_pt(pathel):
     def outputPS(self, file):
         file.write("%g %g rlineto\n" % (self.dx, self.dy) )
 
+    # TODO: outputPDF
+
 
 class rcurveto_pt(pathel):
 
@@ -496,6 +516,8 @@ class rcurveto_pt(pathel):
         file.write("%g %g %g %g %g %g rcurveto\n" % ( self.dx1, self.dy1,
                                                     self.dx2, self.dy2,
                                                     self.dx3, self.dy3 ) )
+
+    # TODO: outputPDF
 
     def _updatecontext(self, context):
         x3 = context.currentpoint[0]+self.dx3
@@ -648,6 +670,8 @@ class arc_pt(pathel):
                                             self.angle1,
                                             self.angle2 ) )
 
+    # TODO: outputPDF
+
 
 class arcn_pt(pathel):
 
@@ -737,6 +761,8 @@ class arcn_pt(pathel):
                                              self.angle1,
                                              self.angle2 ) )
 
+    # TODO: outputPDF
+
 
 class arct_pt(pathel):
 
@@ -753,6 +779,9 @@ class arct_pt(pathel):
         file.write("%g %g %g %g %g arct\n" % ( self.x1, self.y1,
                                              self.x2, self.y2,
                                              self.r ) )
+
+    # TODO: outputPDF
+
     def _path(self, currentpoint, currentsubpath):
         """returns new currentpoint, currentsubpath and path consisting
         of arc and/or line which corresponds to arct
@@ -958,6 +987,10 @@ class multilineto_pt(pathel):
         for x, y in self.points:
             file.write("%g %g lineto\n" % (x, y) )
 
+    def outputPDF(self, file):
+        for x, y in self.points:
+            file.write("%g %g l\n" % (x, y) )
+
 
 class multicurveto_pt(pathel):
 
@@ -989,6 +1022,10 @@ class multicurveto_pt(pathel):
     def outputPS(self, file):
         for point in self.points:
             file.write("%g %g %g %g %g %g curveto\n" % tuple(point))
+
+    def outputPDF(self, file):
+        for point in self.points:
+            file.write("%g %g %g %g %g %g c\n" % tuple(point))
 
 
 ################################################################################
@@ -1111,6 +1148,14 @@ class path(base.PSCmd):
         for pel in self.path:
             pel.outputPS(file)
 
+    def outputPDF(self, file):
+        if not (isinstance(self.path[0], moveto_pt) or
+                isinstance(self.path[0], arc_pt) or # outputPDF
+                isinstance(self.path[0], arcn_pt)): # outputPDF
+            raise PathException("first path element must be either moveto, arc, or arcn")
+        for pel in self.path:
+            pel.outputPDF(file)
+
 ################################################################################
 # normpath and corresponding classes
 ################################################################################
@@ -1183,6 +1228,8 @@ class normpathel:
     def outputPS(self, file):
         """write normpathel (in the context of a normsubpath) to file"""
         pass
+
+    # TODO: outputPDF
 
 #
 # there are only two normpathels: normline and normcurve
@@ -1272,6 +1319,9 @@ class normline(normpathel):
 
     def outputPS(self, file):
         file.write("%g %g lineto\n" % (self.x1, self.y1))
+
+    def outputPDF(self, file):
+        file.write("%g %g l\n" % (self.x1, self.y1))
 
 
 class normcurve(normpathel):
@@ -1546,6 +1596,9 @@ class normcurve(normpathel):
     def outputPS(self, file):
         file.write("%g %g %g %g %g %g curveto\n" % (self.x1, self.y1, self.x2, self.y2, self.x3, self.y3))
 
+    def outputPDF(self, file):
+        file.write("%g %g %g %g %g %g c\n" % (self.x1, self.y1, self.x2, self.y2, self.x3, self.y3))
+
 #
 # normpaths are made up of normsubpaths, which represent connected line segments
 #
@@ -1767,6 +1820,19 @@ class normsubpath:
             file.write("%g %g moveto\n" % self.begin_pt())
             for anormpathel in normpathels:
                 anormpathel.outputPS(file)
+        if self.closed:
+            file.write("closepath\n")
+
+    def outputPDF(self, file):
+        # if the normsubpath is closed, we must not output the last normpathel
+        if self.closed:
+            normpathels = self.normpathels[:-1]
+        else:
+            normpathels = self.normpathels
+        if normpathels:
+            file.write("%g %g m\n" % self.begin_pt())
+            for anormpathel in normpathels:
+                anormpathel.outputPDF(file)
         if self.closed:
             file.write("closepath\n")
 
@@ -2177,6 +2243,10 @@ class normpath(path):
     def outputPS(self, file):
         for sp in self.subpaths:
             sp.outputPS(file)
+
+    def outputPDF(self, file):
+        for sp in self.subpaths:
+            sp.outputPDF(file)
 
 ################################################################################
 # some special kinds of path, again in two variants

@@ -428,14 +428,27 @@ class selectfont(_selectfont):
         return result
 
 
-class _show(base.PSOp):
-    def __init__(self, x, y, s):
+class _show(base.PSCmd):
+    def __init__(self, x, y, width, height, depth, chars):
         self.x = x
         self.y = y
-        self.s = s
+        self.width = width
+        self.height = height
+        self.depth = depth
+        self.chars = chars
+
+    def bbox(self):
+        return bbox._bbox(self.x, self.y-self.depth, self.x+self.width, self.y+self.height)
 
     def outputPS(self, file):
-        file.write("%f %f moveto (%s) show\n" % (self.x, self.y, self.s))
+        outstring = ""
+        for char in self.chars:
+            if char > 32 and char < 127 and chr(char) not in "()[]<>\\":
+                ascii = "%s" % chr(char)
+            else:
+                ascii = "\\%03o" % char
+            outstring += ascii
+        file.write("%f %f moveto (%s) show\n" % (self.x, self.y, outstring))
 
 
 class fontmapping:
@@ -743,7 +756,7 @@ class dvifile:
 
         # currently active output: position, content and type 1 font
         self.actoutstart = None
-        self.actoutstring = ""
+        self.actoutchars = []
         self.actoutfont = None
 
         # stack for self.file, self.fonts and self.stack, needed for VF inclusion
@@ -763,9 +776,12 @@ class dvifile:
         if self.actoutstart:
             x =  self.actoutstart[0] * self.conv
             y = -self.actoutstart[1] * self.conv
+            width = self.actoutstart[2]
+            height = self.actoutstart[3]
+            depth = self.actoutstart[4]
             if self.debug:
-                print "[%s]" % self.actoutstring
-            self.actpage.insert(_show(x, y, self.actoutstring))
+                print "[%s]" % "".join([chr(char) for char in self.actoutchars])
+            self.actpage.insert(_show(x, y, width, height, depth, self.actoutchars))
             self.actoutstart = None
 
     def putrule(self, height, width, inch=1):
@@ -809,13 +825,17 @@ class dvifile:
 
         if isinstance(self.activefont, type1font):
             if self.actoutstart is None:
-                self.actoutstart = self.pos[_POS_H], self.pos[_POS_V]
-                self.actoutstring = ""
-            if char > 32 and char < 127 and chr(char) not in "()[]<>\\":
-                ascii = "%s" % chr(char)
-            else:
-                ascii = "\\%03o" % char
-            self.actoutstring = self.actoutstring + ascii
+                self.actoutstart = [self.pos[_POS_H], self.pos[_POS_V], 0, 0, 0]
+                self.actoutchars = []
+            width = self.activefont.getwidth(char) * self.tfmconv * self.conv
+            height = self.activefont.getheight(char) * self.tfmconv * self.conv
+            depth = self.activefont.getdepth(char) * self.tfmconv * self.conv
+            self.actoutstart[2] += width
+            if height > self.actoutstart[3]:
+                self.actoutstart[3] = height
+            if depth > self.actoutstart[4]:
+                self.actoutstart[4] = depth
+            self.actoutchars.append(char)
 
             self.activefont.markcharused(char)
             self.pos[_POS_H] += dx

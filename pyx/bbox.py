@@ -77,6 +77,11 @@ class _bbox:
         file.write("%%%%HiResBoundingBox: %g %g %g %g\n" %
                    (self.llx, self.lly, self.urx, self.ury))
 
+    def outputPDF(self, file):
+        file.write("/MediaBox [%d %d %d %d]\n" %
+                   (math.floor(self.llx), math.floor(self.lly),
+                    math.ceil(self.urx), math.ceil(self.ury)))
+
     def intersects(self, other):
         """check, if two bboxes intersect eachother"""
         return not (self.llx > other.urx or
