@@ -67,7 +67,7 @@ _PSProlog = """/BeginEPSF {
 } bind def
 /EndEPSF {
   end
-  count op_count sub {pop} repeat 
+  count op_count sub {pop} repeat
   countdictstack dict_count sub {end} repeat
   b4_Inc_state restore
 } bind def"""
@@ -79,7 +79,7 @@ _paperformats = { "a4"      : ("210 t mm",  "297 t mm"),
                   "a2"      : ("420 t mm",  "594 t mm"), 
                   "a1"      : ("594 t mm",  "840 t mm"), 
                   "a0"      : ("840 t mm", "1188 t mm"), 
-                  "a0b"     : ("910 t mm", "1350 t mm"), 
+                  "a0b"     : ("910 t mm", "1370 t mm"), 
                   "letter"  : ("8.5 t in",   "11 t in"),
                   "legal"   : ("8.5 t in",   "14 t in")}
 
@@ -665,7 +665,8 @@ class canvas(base.PSCmd):
 
         for arg in args:
             if isinstance(arg, trafo._trafo):
-                self.trafo=arg*self.trafo
+                # XXX or: self.trafo = arg*self.trafo
+                self.trafo = self.trafo*arg
                 self.PSOps.append(arg)
             elif isinstance(arg, clip):
                 self.clipbbox=(self.clipbbox*
