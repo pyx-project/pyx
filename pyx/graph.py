@@ -2457,7 +2457,7 @@ class line(mark):
         mark.__init__(self, markattrs=None, errorbarattrs=None, lineattrs=lineattrs)
 
 
-class rectmark(mark):
+class rect(mark):
 
     def __init__(self, gradient=color.gradient.Gray):
         self.gradient = gradient
@@ -2504,7 +2504,7 @@ class rectmark(mark):
 
 
 
-class textmark(mark):
+class text(mark):
 
     def __init__(self, textdx="0", textdy="0.3 cm", textattrs=tex.halign.center, **args):
         self.textindex = None
@@ -2544,7 +2544,7 @@ class textmark(mark):
         mark.drawpoints(self, graph, points)
 
 
-class arrowmark(mark):
+class arrow(mark):
 
     def __init__(self, linelength="0.2 cm", arrowattrs=(), arrowsize="0.1 cm", arrowdict={}, epsilon=1e-10):
         self.linelength_str = linelength

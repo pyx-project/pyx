@@ -32,7 +32,7 @@ for line in lines: # we yet don't use a file iterator
                                                                                    innerticklengths=None,
                                                                                    outerticklengths=graph.axispainter.defaultticklengths)),
                                    y=graph.linaxis(datavmin=0, datavmax=1, part=graph.manualpart(ticks=None))))
-        g.plot(pf, graph.rectmark(pyx.color.gradient.__dict__[m.group("name")]))
+        g.plot(pf, graph.rect(pyx.color.gradient.__dict__[m.group("name")]))
         g.dodata()
         g.finish()
         t.text(10.2, y + 0.15, m.group("id"), tex.fontsize.footnotesize)

@@ -58,7 +58,7 @@ def test_ownmark(c, t, x, y):
     MyFuncs = mathtree.DefaultMathTreeFuncs + (Div, Mod)
 
     g = c.insert(graph.graphxy(t, x, y, height=5, x=graph.linaxis(min=0, max=10), y=graph.linaxis(min=0, max=10)))
-    g.plot(graph.paramfunction("k", 0, 120, "x, y, size, angle = mod(k, 11), div(k, 11), (1+sin(k*pi/120))/2, 3*k", points=121, parser=mathtree.parser(MathTreeFuncs=MyFuncs)), style = graph.arrowmark())
+    g.plot(graph.paramfunction("k", 0, 120, "x, y, size, angle = mod(k, 11), div(k, 11), (1+sin(k*pi/120))/2, 3*k", points=121, parser=mathtree.parser(MathTreeFuncs=MyFuncs)), style = graph.arrow())
     line1 = g.plot(graph.function("y=10/x"))
     line2 = g.plot(graph.function("y=12*x^-1.6"))
     line3 = g.plot(graph.function("y=7/x"))
@@ -80,7 +80,7 @@ def test_ownmark(c, t, x, y):
 def test_allerrorbars(c, t, x, y):
     df = datafile.datafile("testdata3")
     g = c.insert(graph.graphxy(t, x, y, height=5, width=4))
-    g.plot(graph.data(df, x="x", y="y", xmin="xmin", xmax="xmax", ymin="ymin", ymax="ymax", text="text"), graph.textmark())
+    g.plot(graph.data(df, x="x", y="y", xmin="xmin", xmax="xmax", ymin="ymin", ymax="ymax", text="text"), graph.text())
     g.finish()
 
 c = canvas.canvas()
