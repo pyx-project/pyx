@@ -78,6 +78,8 @@ TODO:
       graph data
 
 0.7 (xxxx/xx/xx):
+  - bitmap module:
+    - new module for inclusion of bitmap images
   - path module:
     - names of local and member variables now follow the naming convention of
       having a _pt suffix when containing lengths in points
