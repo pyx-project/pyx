@@ -187,16 +187,15 @@ class arrowhead(base.PSCmd):
                           (lbpel.y3-lbpel.y2)*(lbpel.y3-lbpel.y2))
   
         # TODO: why factor 0.5?
-        len  = 0.5*unit.topt(size)/tlen
-        ilen = constriction*len
+        alen  = 0.5*unit.topt(size)/tlen
+        if alen>len(abpath): alen=len(abpath)
         
-        # get tip (ex, ey) and constriction point (cx, cy)
+        # get tip (tx, ty)
         tx, ty = abpath.begin()
-        cx, cy = abpath.pos(ilen)
         
         # now we construct the template for our arrow but cutting
         # the path a the corresponding length
-        arrowtemplate = abpath.split(len)[0]
+        arrowtemplate = abpath.split(alen)[0]
   
         # from this template, we construct the two outer curves
         # of the arrow
@@ -204,12 +203,23 @@ class arrowhead(base.PSCmd):
         arrowr = arrowtemplate.transform(trafo.rotate( angle/2.0, tx, ty))
         
         # now come the joining backward parts
-        # arrow3 = bpath.bline(*(arrowl.pos(ilen)+arrowr.pos(ilen)))
-        arrow3a= bpath.bline(*(arrowl.end()+(cx,cy)))
-        arrow3b= bpath.bline(*((cx,cy)+arrowr.end()))
-        
-        # and here the comlete arrow
-        self.arrow = arrowl+arrow3a+arrow3b+arrowr.reverse()
+        if constriction:
+            # arrow with constriction
+
+            # constriction point (cx, cy) lies on path
+            cx, cy = abpath.pos(constriction*alen)
+            
+            arrow3a= bpath.bline(*(arrowl.end()+(cx,cy)))
+            arrow3b= bpath.bline(*((cx,cy)+arrowr.end()))
+
+            # define the complete arrow
+            self.arrow = arrowl+arrow3a+arrow3b+arrowr.reverse()
+        else:
+            # arrow without constriction
+            arrow3 = bpath.bline(*(arrowl.end()+arrowr.end()))
+                                 
+            # define the complete arrow
+            self.arrow = arrowl+arrow3+arrowr.reverse()
         
     def bbox(self):
         return self.arrow.bbox()
@@ -241,6 +251,9 @@ class PathDeco:
     def decoration(self, path):
         """return decoration of path as PSCmd"""
         pass
+
+    def modification(self, path):
+        """return modified path"""
     
 
 class arrow(PathDeco):
@@ -264,6 +277,46 @@ class arrow(PathDeco):
             abpath=abpath.reverse()
 
         return arrowhead(abpath, self.size, self.angle, self.constriction)
+
+    def modification(self, path):
+        # convert to bpath if necessary
+        if isinstance(path, bpath.bpath):
+            abpath=path
+        else:
+            abpath=path.bpath()
+            
+        if self.position:
+            abpath=abpath.reverse()
+        
+        # the following lines are copied from arrowhead.init()
+        
+        # first order conversion from pts to the bezier curve's
+        # parametrization
+          
+        lbpel = abpath[0]
+        tlen  = math.sqrt((lbpel.x3-lbpel.x2)*(lbpel.x3-lbpel.x2)+
+                          (lbpel.y3-lbpel.y2)*(lbpel.y3-lbpel.y2))
+  
+        # TODO: why factor 0.5?
+        alen  = 0.5*unit.topt(self.size)/tlen
+        if alen>len(abpath): alen=len(abpath)
+
+        if self.constriction:
+            ilen = alen*self.constriction
+        else:
+            ilen = alen
+
+        # correct somewhat for rotation of arrow segments
+        ilen = ilen*math.cos(math.pi*self.angle/360.0)
+
+        # this is the rest of the path, we have to draw
+        abpath = abpath.split(ilen)[1]
+
+        # go back to original orientation, if necessary
+        if self.position:
+            abpath=abpath.reverse()
+
+        return abpath
     
         
 class barrow(arrow):
@@ -273,13 +326,21 @@ class barrow(arrow):
     def __init__(self, size, angle=45, constriction=0.8):
         arrow.__init__(self, 0, size, angle, constriction)
 
-_base = 5
+_base = 2
 
-barrow.tiny   = barrow("%f t pt" % (_base/math.sqrt(4)))
+barrow.SMALL  = barrow("%f t pt" % (_base/math.sqrt(64)))
+barrow.SMALl  = barrow("%f t pt" % (_base/math.sqrt(32)))
+barrow.SMAll  = barrow("%f t pt" % (_base/math.sqrt(16)))
+barrow.SMall  = barrow("%f t pt" % (_base/math.sqrt(8)))
+barrow.Small  = barrow("%f t pt" % (_base/math.sqrt(4)))
 barrow.small  = barrow("%f t pt" % (_base/math.sqrt(2)))
 barrow.normal = barrow("%f t pt" % _base)
 barrow.large  = barrow("%f t pt" % (_base*math.sqrt(2)))
-barrow.huge   = barrow("%f t pt" % (_base*math.sqrt(4)))
+barrow.Large  = barrow("%f t pt" % (_base*math.sqrt(4)))
+barrow.LArge  = barrow("%f t pt" % (_base*math.sqrt(8)))
+barrow.LARge  = barrow("%f t pt" % (_base*math.sqrt(16)))
+barrow.LARGe  = barrow("%f t pt" % (_base*math.sqrt(32)))
+barrow.LARGE  = barrow("%f t pt" % (_base*math.sqrt(64)))
                 
   
 class earrow(arrow):
@@ -289,11 +350,19 @@ class earrow(arrow):
     def __init__(self, size, angle=45, constriction=0.8):
         arrow.__init__(self, 1, size, angle, constriction)
 
-earrow.tiny   = earrow("%f t pt" % (_base/math.sqrt(4)))
+earrow.SMALL  = earrow("%f t pt" % (_base/math.sqrt(64)))
+earrow.SMALl  = earrow("%f t pt" % (_base/math.sqrt(32)))
+earrow.SMAll  = earrow("%f t pt" % (_base/math.sqrt(16)))
+earrow.SMall  = earrow("%f t pt" % (_base/math.sqrt(8)))
+earrow.Small  = earrow("%f t pt" % (_base/math.sqrt(4)))
 earrow.small  = earrow("%f t pt" % (_base/math.sqrt(2)))
 earrow.normal = earrow("%f t pt" % _base)
 earrow.large  = earrow("%f t pt" % (_base*math.sqrt(2)))
-earrow.huge   = earrow("%f t pt" % (_base*math.sqrt(4)))
+earrow.Large  = earrow("%f t pt" % (_base*math.sqrt(4)))
+earrow.LArge  = earrow("%f t pt" % (_base*math.sqrt(8)))
+earrow.LARge  = earrow("%f t pt" % (_base*math.sqrt(16)))
+earrow.LARGe  = earrow("%f t pt" % (_base*math.sqrt(32)))
+earrow.LARGE  = earrow("%f t pt" % (_base*math.sqrt(64)))
 
 #
 # some very primitive Postscript operators
@@ -498,13 +567,14 @@ class canvas(base.PSCmd):
             self.PSOps.append(arg)
         
     def draw(self, path, *args):
+        # add path decorations and modify path accordingly
+        for deco in filter(lambda x: isinstance(x, PathDeco), args):
+            self.insert(deco.decoration(path))
+            path=deco.modification(path)
+
         self.insert((_newpath(), path, _stroke()),
                     *filter(lambda x: not isinstance(x, PathDeco), args))
         
-        # add path decorations
-        for deco in filter(lambda x: isinstance(x, PathDeco), args):
-            self.insert(deco.decoration(path))
-            
         return self
         
     def fill(self, path, *args):
