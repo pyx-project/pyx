@@ -20,7 +20,6 @@ TODO:
       (its goal is to make graph styles combinable which will also
       split up the style code in smaller parts -- those will then be
       easier to substitute by inheritance)
-    - fix bug occuring when plotted is completely out of range
   - graph.data module:
     - use csv module (new in 2.3)
     - Check for "inf" and "nan" in datafiles.
