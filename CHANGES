@@ -27,6 +27,9 @@ TODO:
     - keep an eye on PEP 324 (popen 5): it could make the texrunner much easier
     - empty lines in the preamble should not raise an error
     - texmessage.ignore should be allowed _everywhere_
+    - messageparser for replaced fontsizes: Warning
+    - messageparser for size differences at the end: Warning not Exception
+    - messageparser for overfull/underfull vbox/hbox: Warning not Exception
   - unit and text module:
     - introduce xscale for scaling the TeX output
   - mathtree module:
@@ -44,6 +47,7 @@ TODO:
     - set method???
     - PDF support
     - SVG support
+    - a transformed canvas should give correct boundingbox
   - deco module:
     - arrows should not be stroked by default
     - Think about names wriggle and curvecorners
