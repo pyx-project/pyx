@@ -37,20 +37,23 @@ class _style:
     all methods of this base class (e.g. this class is not an abstract
     class in any respect).
 
-    A style should never store private data by instance variables
+    A style should never store private data by istance variables
     (i.e. accessing self), but it should use the styledata instance
     instead. A style instance can be used multiple times with different
     styledata instances at the very same time. The styledata instance
     acts as a data container and furthermore allows for sharing
     information across several styles.
 
-    A style contains two class variables, which are not to be
-    modified. provide is a of variable names a style provides via
-    the styledata instance. This list should be used to find, whether
-    all needs of subsequent styles are fullfilled. Otherwise the
-    provider dictionary described below should list a proper style
-    to be inserted. Contrary, need is a list of variable names the
-    style needs to access in the styledata instance."""
+    Every style contains two class variables, which are not to be
+    modified: 
+     - provide is a list of variable names a style offers via
+       the styledata instance. This list is used to determine whether
+       all needs of subsequent styles are fullfilled. Otherwise the
+       provider dictionary described below should list a proper style
+       to be used. 
+     - need is a list of variable names the style needs to access in the 
+       styledata instance.
+    """
 
     provide = [] # by default, we provide nothing
     need = [] # and do not depend on anything
@@ -120,8 +123,8 @@ class _style:
 # Provider is a dictionary, which maps styledata variable names
 # to default styles, which provide a default way to create the
 # corresponding styledata variable. Entries in the provider
-# dictionary should not depend on other styles, thus the need
-# list should be empty.
+# dictionary may not depend on other styles, thus their need
+# list has to be empty.
 
 provider = {}
 
