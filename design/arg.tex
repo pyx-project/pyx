@@ -1,0 +1,150 @@
+% $Header$
+%
+\documentclass{article}
+\begin{document}
+\section*{Design rules for variable argument lists and dictionaries
+of functions in PyX}
+
+In order to get an easy user interface, we should restrict ourselfs to
+some well defined ways of handling function calls with variable
+argument lists and dictionaries. This file tries to consider the
+typical occurrencies within PyX and provides standard solutions for
+them.
+
+We describe two different kind of function calls with variable
+argument lists and dictionaries. They are called
+``\verb|arglist|-functions and arguments'' and
+``\verb|argdict|-functions and arguments''. The distiction between
+these two cases is given by the way the arguments are passed to the
+function. In the following we will try to make out the difference in
+the subject of the functions and arguments already.
+
+Combinations of \verb|arglist|- and \verb|argdict|-type of arguments
+should be avoided (although they are possible). The discussion here is
+not restricted to standard function calls, but applies to class
+methods and constructors as well.
+
+\subsection*{\texttt{arglist}-type functions and arguments}
+
+Somehow, this first case is the more specific to PyX nessecities than
+the second one. Let's first consider an example:
+
+\begin{verbatim}
+class A:
+    def __str__(self):
+        return "<a>"
+
+class B:
+    def __str__(self):
+        return "<b>"
+
+class main:
+    def show(self, *args):
+        for arg in args:
+            print arg
+
+main().show(A(), B())
+\end{verbatim}
+
+Although this is a rather tivial example, you can see, that the
+arguments are collected in a list. This list is used to perform the
+action ``show'' on its entries. The entries supply the needed
+techniques to get showed -- thus \verb|show| itself doesn't need to
+know any details about it.
+
+A main feature is, that the classes \verb|A| and \verb|B| could have
+some properties. Consider the following:
+
+\begin{verbatim}
+class A:
+    def __init__(self, color):
+        self.color = color
+    def __str__(self):
+        return "<a color=\"%s\">" % self.color
+\end{verbatim}
+
+Instead of the previous call \verb|main().show(A(), B())| we now have
+to specify the color, e.g.
+\verb|main().show(A("red"), B())|.\footnote{The constructor of class
+\texttt{A} could have a default value for \texttt{color} (like
+\texttt{color = "black"}), so that this default value could just be
+omitted. You may keep this in mind, because it is a rather typical
+construction. However, it is not used here, because it might raise
+some confusion, because such default values belong to the
+\texttt{argdict}-type of functions and arguments.}
+
+To go further, we do modify the print routine in order to print some
+text within the \verb|<...>|-tags. Suppose, the \verb|<...>|-tags can
+be closed by \verb|</>| uniformly, then we could do:
+
+\begin{verbatim}
+class main:
+    def show(self, text, *args)
+        for arg in args:
+            print arg
+        print text
+        for arg in args:
+            print "</>"
+\end{verbatim}
+
+Here we have introduced a standard parameter \verb|text|, which leads
+to an example call like \verb|main().show("text", A("red"), B())|. The
+instances of class \verb|A| and \verb|B| become a property of
+\verb|text|.
+
+By this construction you can do even more, actually.
+Consider the main program as:
+
+\begin{verbatim}
+m = main()
+m.show(A("red"))
+m.show("text1")
+m.show("text2")
+\end{verbatim}
+
+Here, the same class previously used as an property for a single
+call of \verb|show| becomes now an automatically choosen attribute for
+all following calls of \verb|show|.\footnote{We should ensure, that
+calls like \textbf{show(A("red"), B())} don't work at all. In the case
+of PostScript it need to be considered anyway, because the first
+parameter usually provides PostScript as well as a bounding box
+information unless we do a property change as first and only
+parameter.} When this flavour of the property arguments is undesirable
+its use should just be prohibited.\footnote{what about the \TeX/\LaTeX
+interface}
+
+You may miss the correct handling of the closing tags \verb|</>| in
+the last example, but that's a question about the output needed.
+Indeed, for PostScript, this is not an issue.
+
+To summarize the description above, typical design features of
+\verb|arglist|-type functions and arguments are:
+
+\begin{itemize}
+\item[+]
+properties can just implement what they want --- the evaluation by
+function calls makes it most flexible
+\item[+]
+property implementations are small and well separated
+\item[+]
+properties can have additional functionality --- they may are
+comparable, incrementable, etc.
+\item[+]
+organization of properties can be done within a class tree
+\item[-]
+classes are needed construct all the different properties which leads
+to a bloat up in the namespaces
+\end{itemize}
+
+\subsection*{\texttt{argdict}-type functions and arguments}
+
+Those 
+
+To summarize the description above, typical design features of
+\verb|argdict|-type functions and arguments are:
+\begin{itemize}
+\item[+]pro
+\item[-]contra
+\end{itemize}
+
+\end{document}

@@ -23,8 +23,22 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 from path import *
-import types, re, tex, unit
+import types, re, tex, unit, math
 from math import log, exp, sqrt, pow
+
+def _powi(x, y):
+    assert type(y) == types.IntType
+    assert y >= 0
+    if y:
+        y2 = y / 2 # integer division!
+        yr = y % 2
+        res = _powi(x, y2)
+        if yr:
+           return x * res * res
+        else:
+           return res * res
+    else:
+        return 1
 
 class _ticklength(unit.length):
 
@@ -84,13 +98,13 @@ class _LinMap(_Map):
 class _LogMap(_LinMap):
     def setbasepts(self, basepts):
         """base points for convertion"""
-        self.basepts = ((math.log(basepts[0][0]), basepts[0][1], ),
-                        (math.log(basepts[1][0]), basepts[1][1], ), )
+        self.basepts = ((log(basepts[0][0]), basepts[0][1], ),
+                        (log(basepts[1][0]), basepts[1][1], ), )
         return self
     def _convert(self, Value):
-        return _LinMap._convert(self, math.log(Value))
+        return _LinMap._convert(self, log(Value))
     def _invert(self, Value):
-        return math.exp(_LinMap._invert(self, Value))
+        return exp(_LinMap._invert(self, Value))
                
 
 
@@ -99,7 +113,7 @@ class _LogMap(_LinMap):
 
 class Tick:
 
-    def __init__(self, ValuePos, VirtualPos, Label = None, LabelRep = None, TickLevel = 1, LabelLevel = 1):
+    def __init__(self, ValuePos, VirtualPos, Label = None, LabelRep = None, TickLevel = 0, LabelLevel = 0):
         if not LabelRep:
             LapelRep = Label
         self.ValuePos = ValuePos
@@ -147,70 +161,134 @@ class _Axis:
         return map(lambda x, self=self: Tick(x, self.convert(x), self.ValToLab(x)), self.TickValPosList())
 
 
+class frac:
+
+    def __init__(self, enum, denom):
+        assert type(enum) in (types.IntType, types.LongType, )
+        assert type(denom) in (types.IntType, types.LongType, )
+        self.enum = enum
+        self.denom = denom
+
+    def __str__(self):
+        return "%i/%i" % (self.enum, self.denom, )
+
+epsilon = 1e-10
+                    
 class LinAxis(_Axis, _LinMap):
 
     def __init__(self, **args):
-        _Axis.__init__(self, args)
+        _Axis.__init__(self, **args)
         self.enclosezero = 0.25 # maximal factor allowed to extend axis to enclose zero
+        self.enlargerange = 1 # should we enlarge ranges?
         self.fracfixed = ( )
         self.favorfixed = 2 # factor to favor fixed fractions
-        self.fracshift = (((1, 1, ), (1, 2, ), ),
-                          ((2, 1, ), (1, 1, ), ),
-                          ((5, 2, ), (5, 4, ), ),
-                          ((5, 1, ), (5, 2, ), ), )
-        self.shift = 10 # need to be an integer!
+        self.fracsshift = ((frac(1, 1), frac(1, 2), ),
+                           (frac(2, 1), frac(1, 1), ),
+                           (frac(5, 2), frac(5, 4), ),
+                           (frac(5, 1), frac(5, 2), ), )
+        self.shift = 10L # need to be long !!!
         self.factor = 1 # e.g. pi
         self.tickopt = ((1, 25, 4, 1, ), (1, 100, 8, 0.5, ), ) # min, max, opt, ratefactor
+        # self.getpart = getpart # make this modular
+        # self.ratepart = ratepart # make this modular
 
-    def calcpart(self):
+    def getparts(self):
+
         if self.Min * self.Max > 0:
             if (self.Min > 0) and (self.Max * self.enclosezero > self.Min):
                 self.set(Min = 0)
             elif (self.Max < 0) and (self.Min * self.enclosezero < self.Max):
                 self.set(Max = 0)
+
         e = int(math.ceil(log((self.Max - self.Min) / self.factor) / log(self.shift)))
-        #print e, pow(self.shift, e)
-        for shift in range(e - 4, e + 1): # TODO: automatically estimate this range
-                                          #       lower bound is related to the max
-                                          #       upper bound is related to the min
-            enum = 1
-            denom = 1
+
+        res = [ ]
+
+        for shift in range(e - 4, e + 1): # TODO: automatically (???) estimate this range
+                                          #       lower bound is related to the maxticks
+                                          #       upper bound is related to the minticks
+
+            # bf = basefrac
             if shift > 0:
-                enum = long(pow(self.shift, shift))
-            if shift < 0:
-                denom = long(pow(self.shift, -shift))
-            #print enum, denom
-            for frac in self.fracshift:
-                fracs = []
-                rate = 0
-                enlargerange = 1
+                bf = frac(_powi(self.shift, shift), 1)
+            elif shift < 0:
+                bf = frac(1, _powi(self.shift, -shift))
+            else:
+                bf = frac(1, 1)
+
+            for fracs in self.fracsshift:
+                resfrac = [ ]
                 min = self.Min
                 max = self.Max
-                l = (max - min) / self.factor
-                for ((subenum, subdenom, ), (minticks, maxticks, opt, ratefactor, ), ) in zip(frac, self.tickopt):
-                    subenum *= enum
-                    subdenom *= denom
-                    if enlargerange:
-                        min = math.floor(min * subdenom / subenum / self.factor + 1e-10 * l) * subenum * self.factor / subdenom
-                        max = math.ceil(max * subdenom / subenum / self.factor - 1e-10 * l) * subenum * self.factor / subdenom
-                        l = (max - min) / float(self.factor)
-                    fromfact = int(round(min * subdenom / subenum / self.factor))
-                    tofact = int(round(max * subdenom / subenum / self.factor))
-                    enlargerange = 0
-                    ticks = l * subdenom / subenum
-                    if (ticks < minticks + 1e-10) or (ticks > maxticks - 1e-10):
-                        break
-                    else:
-                        rate += ratefactor * ((opt - minticks) * log((opt - minticks) / (ticks - minticks)) +
-                                              (maxticks - opt) * log((maxticks - opt) / (maxticks - ticks))) / (maxticks - minticks)
-                        fracs.append((subenum, subdenom, float(subenum) / subdenom, ticks, fromfact, tofact, ), )
-                else:
-                    print rate, fracs
+                l = (max - min) / float(self.factor)
+                first = 1
+                for (_f, (minticks, maxticks, opt, ratefactor, ), ) in zip(fracs, self.tickopt):
+                    f = frac(bf.enum * _f.enum, bf.denom * _f.denom)
+                    scale = f.enum * float(self.factor) / f.denom
+                    imin = int(math.floor(min / scale + epsilon)) # TODO: long here, epsilon?
+                    imax = int(math.ceil(max / scale - epsilon))
+                    if first and self.enlargerange:
+                        if not self.FixMin:
+                            min = imin * scale
+                        if not self.FixMax:
+                            max = imax * scale
+                    first = 0
+                    resfrac.append( (f, imin, imax, ), )
+                res.append((min, max, resfrac, ))
+        return res
 
+    def rateparts(self, parts):
+        rparts = [ ]
+        for part in parts:
+            rate = 0
+            min = part[0]
+            max = part[1]
+            for ((f , imin, imax, ), (minticks, maxticks, opt, ratefactor, ), ) in zip(part[2], self.tickopt):
+                ticks = (max - min) * f.denom / float(self.factor) / f.enum
+                if (ticks < minticks + epsilon) or (ticks > maxticks - epsilon):
+                    break
+                else:
+                    rate += ratefactor * ((opt - minticks) * log((opt - minticks) / (ticks - minticks)) +
+                                          (maxticks - opt) * log((maxticks - opt) / (maxticks - ticks))) / (maxticks - minticks)
+            else:
+                rparts.append((rate, part, ))
+        return rparts
+
+    def getticklists(self, parts):
+        ticklists = []
+        for (rate, (min, max, fracs, )) in parts:
+            self.set(min, max, )
+            ticklist = [min, max, ]
+            level = 0
+            for (f, imin, imax, ) in fracs:
+                for i in range(imin, imax + 1):
+                    x = f.enum * i / float(f.denom)
+                    if level == 0:
+                        ticklist.append(Tick(x, self.convert(x), self.ValToLab(x)))
+                    else:
+                        ticklist.append(Tick(x, self.convert(x), TickLevel = level))
+                level = level + 1
+            ticklists.append((rate, ticklist, ))
+        return ticklists
+
+    def partitioning(self): #, rateticklists):
+        parts = self.getparts()
+        parts = self.rateparts(parts)
+        ticklists = self.getticklists(parts)
+        # ticklists = self.rateticklists(ticklists)
+        (bestrate, bestticklist, ) = ticklists[0]
+        for (rate, ticklist, ) in ticklists[1:]:
+            if rate < bestrate:
+                (bestrate, bestticklist, ) = (rate, ticklist, )
+        self.set(bestticklist[0], bestticklist[1])
+        self.ticklist = bestticklist[2:]
+
+    def TickList(self):
+        return self.ticklist
 
 class LogAxis(_Axis, _LogMap):
 
-    def calcpart(self):
+    def partitioning(self):
         pass
     
 
@@ -285,7 +363,9 @@ class GraphXY(Graph):
                               self.VirMap[1].convert(1) - self.VirMap[1].convert(0)))
 
         for key in self.Axis.keys():
-            self.Axis[key].calcpart()
+            self.Axis[key].partitioning()
+
+        for key in self.Axis.keys():
             if _XPattern.match(key):
                 Type = 0
             elif _YPattern.match(key):
@@ -298,12 +378,13 @@ class GraphXY(Graph):
                 x = self.VirMap[Type].convert(xv)
                 if Type == 0:
                     self.canvas.draw(line(x, self.VirMap[1].convert(0), x, self.VirMap[1].convert(0) + ticklength.normal))
-                    self.canvas.draw(line(x+0.1, self.VirMap[1].convert(0), x+0.1, self.VirMap[1].convert(0) + ticklength.short))
-                    self.canvas.draw(line(x+0.2, self.VirMap[1].convert(0), x+0.2, self.VirMap[1].convert(0) + ticklength.normal.increment(-2)))
+                    #self.canvas.draw(line(x+0.1, self.VirMap[1].convert(0), x+0.1, self.VirMap[1].convert(0) + ticklength.short))
+                    #self.canvas.draw(line(x+0.2, self.VirMap[1].convert(0), x+0.2, self.VirMap[1].convert(0) + ticklength.normal.increment(-2)))
                     self.tex.text(x, self.VirMap[1].convert(0)-0.5, l, tex.halign.center)
                 if Type == 1:
-                    self.canvas.draw(line(self.VirMap[0].convert(0), x, self.VirMap[0].convert(0) + ticklength.normal, x))
-                    self.tex.text(self.VirMap[0].convert(0)-0.5, x, l, tex.halign.right)
+                    self.canvas.draw(line(self.VirMap[0].convert(0), x, self.VirMap[0].convert(0) + ticklength.normal.increment(-tick.TickLevel), x))
+                    if l:
+                        self.tex.text(self.VirMap[0].convert(0)-0.5, x, l, tex.halign.right)
 
         for pd in self.plotdata:
             pd.PlotStyle.LoopOverPoints(self, pd.Data)
