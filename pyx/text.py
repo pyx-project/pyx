@@ -107,7 +107,7 @@ class TFMError(exceptions.Exception): pass
 
 class char_info_word:
     def __init__(self, word):
-        self.width_index  = (word & 0xFF000000) >> 24
+        self.width_index  = int((word & 0xFF000000L) >> 24) #make sign-safe
         self.height_index = (word & 0x00F00000) >> 20
         self.depth_index  = (word & 0x000F0000) >> 16
         self.italic_index = (word & 0x0000FC00) >> 10
@@ -296,6 +296,8 @@ class TFMFile:
         self.param = [None for param_index in range(self.np)]
         for param_index in range(self.np):
             self.param[param_index] = self.file.readint32()
+
+        self.file.file.close()
 
 
 class Font:
@@ -1420,6 +1422,7 @@ class _readpipe(threading.Thread):
             except Queue.Empty:
                 pass
         # EOF reached
+        self.pipe.close()
         if self.expect is not None and self.expect.find("PyXInputMarker") != -1:
             raise RuntimeError("TeX/LaTeX finished unexpectedly")
         self.quitevent.set()

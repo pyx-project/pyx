@@ -51,6 +51,8 @@ PyX
   bugfixes:
   - text module:
     - derive TFMError and DVIError correctly from exceptions.Exception
+    - close files and pipes, if they are no longer used (thanks to Marcus Mendenhall)
+    - remove DeprecationWarning in Python 2.3 (thanks to Marcus Mendenhall)
   - box module:
     - correct rounding algorithm (Michael Schindler)
   - graph module:
