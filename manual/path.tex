@@ -82,7 +82,7 @@ Returns the total arc length of the path.$^\dagger$
 
 \begin{methoddesc}{joined}{opath}
   Appends \var{opath} to the end of the path, thereby merging the last
-  sub path (which must not be closed) of the path with the first sub
+  subpath (which must not be closed) of the path with the first sub
   path of \var{opath} and returns the resulting new path.$^\dagger$
 \end{methoddesc}
 
@@ -156,7 +156,7 @@ passed to the path elements can be given as number (in which case they
 are interpreted as user units with the currently set default type) or in
 \PyX\ lengths.
 
-The following operation move the current point and open a new sub path:
+The following operation move the current point and open a new subpath:
 
 \begin{classdesc}{moveto}{x, y}
 Path element which sets the current point to the absolute coordinates (\var{x},
@@ -233,7 +233,7 @@ control box, i.e., the smallest rectangle enclosing the four control
 points of the B\'ezier curve. In general, this is not the smallest
 rectangle enclosing the B\'ezier curve.
 
-Finally, an open sub path can be closed using:
+Finally, an open subpath can be closed using:
 
 \begin{classdesc}{closepath}{}
 Path element which closes the current subpath.
@@ -306,14 +306,14 @@ also offers the following methods, which operate on the instance itself:
 
 \label{path:predefined}
 
-For your convenience, some oft-used paths are already pre-defined. All
-of them are sub classes of the \class{path} class.
+For convenience, some oft-used paths are already predefined. All
+of them are subclasses of the \class{path} class.
 
-\begin{classdesc}{line}{x1, y1, x2, y2, x3, y3}
-A straight line from the point (\var{x1}, \var{y1}) to the point (\var{x2}, \var{y2}).
+\begin{classdesc}{line}{x0, y0, x1, y1}
+A straight line from the point (\var{x0}, \var{y0}) to the point (\var{x1}, \var{y1}).
 \end{classdesc}
 
-\begin{classdesc}{curve}{x1, y1, x2, y2, x3, y3, x4, y4}
+\begin{classdesc}{curve}{x0, y0, x1, y1, x2, y2, x3, y3}
 A B\'ezier curve with 
 control points  (\var{x0}, \var{y0}), $\dots$, (\var{x3}, \var{y3}).\
 \end{classdesc}

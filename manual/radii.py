@@ -9,6 +9,7 @@ c.stroke(line, [style.linewidth.Thick])
 
 isects_circle, isects_line = circle.intersect(line)
 for isect in isects_circle:
-    c.stroke(path.line(0, 0, *circle.at(isect)))
+    isectx, isecty = circle.at(isect)
+    c.stroke(path.line(0, 0, isectx, isecty))
 
 c.writeEPSfile("radii")

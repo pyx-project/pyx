@@ -66,41 +66,50 @@ subpaths.  The general rule is that each occurence of a \class{moveto}
 instance opens a new subpath. This means that if one wants to draw a
 rectangle, one should not use
 \begin{verbatim}
-# wrong: do not use moveto when you want a single subpath
 rect1 = path.path(path.moveto(0, 0), path.lineto(0, 1),
-                  path.moveto(1, 0), path.lineto(1, 1),
-                  path.moveto(1, 1), path.lineto(0, 1),
-                  path.moveto(0, 1), path.lineto(0, 0))
+                  path.moveto(0, 1), path.lineto(1, 1),
+                  path.moveto(1, 1), path.lineto(1, 0),
+                  path.moveto(1, 0), path.lineto(0, 0))
 \end{verbatim}
-which would construct a rectangle consisting of four disconnected
-subpaths. Instead the correct way of defining a rectangle is 
-\begin{verbatim}
-# correct: a rectangle consisting of a single closed subpath
-rect2 = path.path(path.moveto(0, 0), path.lineto(0, 1), 
-                  path.lineto(1, 1), path.lineto(1, 0),
-                  path.closepath())
-\end{verbatim}
+which would construct a rectangle out of four disconnected
+subpaths (see Fig.~\ref{fig:rects}a). In a better solution (see
+Fig.~\ref{fig:rects}b), the pen is not lifted between the first and
+the last point:
 %
 \begin{figure}
 \centerline{\includegraphics{rects}}
-\caption{Not closed (left) and closed (middle) rectangle. Filling a
-  path (right) always closes it automatically.}
+\caption{Rectangle consisting of (a) four separate lines, (b) one open
+  path, and (c) one closed path. (d) Filling a
+  path always closes it automatically.}
 \label{fig:rects}
 \end{figure}
-Note that for the last straight line of the rectangle (from $(0, 1)$
-back to the origin at $(0, 0)$)) we have used \class{closepath}.  This
-directive adds a straight line from the current point to the first
-point of the current subpath and furthermore \textit{closes} the sub
-path, i.e., it joins the beginning and the end of the line segment.
-The difference can be appreciated in Fig.~\ref{fig:rects}, where
-also a filled (and at the same time stroked) rectangle is shown.
-The corresponding code looks like
+%
 \begin{verbatim}
-c.stroke(rect1, [deco.filled([color.grey(0.95)])])
+rect2 = path.path(path.moveto(0, 0), path.lineto(0, 1), 
+                  path.lineto(1, 1), path.lineto(1, 0))
 \end{verbatim}
-The important point to remember here is that when filling a path,
-PostScript automatically closes it.  More details on the available
-path elements can be found in Sect.~\ref{path:pathel}.
+However, as one can see in the lower left corner of
+Fig.~\ref{fig:rects}b, the rectangle is still incomplete.  It needs to
+be closed, which can  be done explicitly by using for the last straight
+line of the rectangle (from the point $(0, 1)$ back to the origin at $(0, 0)$)
+the \class{closepath} directive:
+\begin{verbatim}
+rect3 = path.path(path.moveto(0, 0), path.lineto(0, 1), 
+                  path.lineto(1, 1), path.lineto(1, 0),
+                  path.closepath())
+\end{verbatim}
+The \class{closepath} directive adds a straight line from the current
+point to the first point of the current subpath and furthermore
+\textit{closes} the sub path, i.e., it joins the beginning and the end
+of the line segment. This results in the intended rectangle shown in
+Fig.~\ref{fig:rects}c. Note that filling the path implicitly closes
+every open subpath, as is shown for a single subpath in
+Fig.~\ref{fig:rects}d), which results from
+\begin{verbatim}
+c.stroke(rect2, [deco.filled([color.grey(0.95)])])
+\end{verbatim}
+More details on the available path elements can be found in
+Sect.~\ref{path:pathel}.
 
 XXX more on styles and attributes and reference to corresponding section
 
@@ -125,30 +134,31 @@ which we will introduce in the following.
 
 Suppose you want to draw the radii to the intersection points of a
 circle with a straight line. This task can be done using the following
-code which gives the result shown in Fig.~\ref{fig:radii}
+code which results in Fig.~\ref{fig:radii}
 \verbatiminput{radii.py}
 \begin{figure}
 \centerline{\includegraphics{radii}}
 \caption{Example: Intersection of circle with line yielding two radii.}
 \label{fig:radii}
 \end{figure}
-Passing another path, here \var{line}, to the \method{intersect()} method
-of \var{circle}, we obtain a tuple of parameter values of the
-intersection points. The first element of the tuple is a list of
-parameter values for the path whose \method{intersect()} method we have
-called, the second element is the corresponding list for the path
-passed as argument to this method. In the present example, we only
-need one list of parameter values, namely \var{isects_circle}.
-Iterating over the elements of this list, we draw the radii, using the
-\method{at()} path method to obtain the point corresponding to the
-parameter value.
+Here, the basic elements, a circle around the point $(0, 0)$ with
+radius $2$ and a straight line, are defined. Then, passing the \var{line}, to
+the \method{intersect()} method of \var{circle}, we obtain a tuple of
+parameter values of the intersection points. The first element of the
+tuple is a list of parameter values for the path whose
+\method{intersect()} method has been called, the second element is the
+corresponding list for the path passed as argument to this method. In
+the present example, we only need one list of parameter values, namely
+\var{isects_circle}.  Using the \method{at()} path method to obtain
+the point corresponding to the parameter value, we draw the radii for
+the different intersection points. 
 
 Another powerful feature of \PyX{} is its ability to split paths at a
 given set of parameters. For instance, in order to fill in the
 previous example the segment of the circle delimited by the straight
-line (cf.\ Fig.~\ref{fig:radii2}), you first have to construct a path
+line (cf.\ Fig.~\ref{fig:radii2}), one first has to construct a path
 corresponding to the outline of this segment. The following code
-snippet does yield this \var{segment}
+snippet yields this \var{segment}
 \begin{verbatim}
 arc1, arc2 = circle.split(isects_circle)
 if arc1.arclen() < arc2.arclen():
