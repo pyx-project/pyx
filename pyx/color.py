@@ -23,9 +23,8 @@
 import canvas
 
 class color:
-
     def bbox(self):
-	return canvas.bbox()
+        return canvas.bbox()
 
     def _PSCmd(self):
         return ""
@@ -35,13 +34,13 @@ class color:
 
 
 class _grey(color):
-
     def __init__(self, level):
         assert 0<=level and level<=1, "grey value must be between 0 and 1"
         self.level=level
 
     def _PSCmd(self):
         return "%f setgray" % self.level
+
 
 class grey(_grey):
     black = _grey(0.0)
@@ -60,6 +59,7 @@ class _rgb(color):
     def _PSCmd(self):
         return "%f %f %f setrgbcolor" % (self.r, self.g, self.b)
 
+
 class rgb(_rgb):
     red   = _rgb(1,0,0)
     green = _rgb(0,1,0)
@@ -77,9 +77,11 @@ class _hsb(color):
 
     def _PSCmd(self):
         return "%f %f %f setrgbcolor" % (self.h, self.s, self.b)
+        
 
 class hsb(_hsb):
     pass
+    
 
 class _cmyk(color):
     def __init__(self, c=0.0, m=0.0, y=0.0, k=0.0):
@@ -94,6 +96,7 @@ class _cmyk(color):
 
     def _PSCmd(self):
         return "%f %f %f %f setcmykcolor" % (self.c, self.m, self.y, self.k)
+        
 
 class cmyk(_cmyk):
     pass
