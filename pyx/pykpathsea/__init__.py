@@ -28,7 +28,7 @@ except:
     import os
     def find_file(filename, kpse_file_format):
         return os.popen('kpsewhich --format="%s" %s' % (kpse_file_format, filename), 
-                        "r").readline()[:-1]
+                        "r").readline().rstrip()
     kpse_gf_format = "gf"
     kpse_pk_format = "pk"
     kpse_any_glyph_format = "bitmap font"
