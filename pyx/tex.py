@@ -33,7 +33,92 @@ text, respectively. The method (la)tex.define can be used to define macros in
 """
 
 import os, string, tempfile, sys, md5, traceback, time, StringIO, re, atexit
-import base, unit, epsfile, color, attrlist
+import base, helper, unit, epsfile, color
+
+
+# Code snippets from former attrlist module (which has been removed from the
+# CVS tree). We keep them here, until they are finally removed together with
+# the tex module
+
+class AttrlistError(base.PyXExcept):
+    pass
+
+
+class attrlist:
+    def attrcheck(self, attrs, allowonce=(), allowmulti=()):
+        hadonce = []
+        for attr in attrs:
+            for once in allowonce:
+                if isinstance(attr, once):
+                    if once in hadonce:
+                        raise AttrlistError
+                    else:
+                        hadonce += [once]
+                        break
+            else:
+                for multi in allowmulti:
+                    if isinstance(attr, multi):
+                        break
+                else:
+                    raise AttrlistError
+
+    def attrgetall(self, attrs, get, default=helper.nodefault):
+        first = 1
+        for attr in attrs:
+            if isinstance(attr, get):
+                if first:
+                    result = [attr]
+                    first = 0
+                else:
+                    result.append(attr)
+        if first:
+            if default is helper.nodefault:
+                raise AttrlistError
+            else:
+                return default
+        return result
+
+    def attrcount(self, attrs, check):
+        return len(self.attrgetall(attrs, check, ()))
+
+    def attrget(self, attrs, get, default=helper.nodefault):
+        try:
+            result = self.attrgetall(attrs, get)
+        except AttrlistError:
+            if default is helper.nodefault:
+                raise AttrlistError
+            else:
+                return default
+        if len(result) > 1:
+            raise AttrlistError
+        return result[0]
+
+    def attrgetfirst(self, attrs, get, default=helper.nodefault):
+        try:
+            result = self.attrgetall(attrs, get)
+        except AttrlistError:
+            if default is helper.nodefault:
+                raise AttrlistError
+            else:
+                return default
+        return result[0]
+
+    def attrgetlast(self, attrs, get, default=helper.nodefault):
+        try:
+            result = self.attrgetall(attrs, get)
+        except AttrlistError:
+            if default is helper.nodefault:
+                raise AttrlistError
+            else:
+                return default
+        return result[-1]
+
+    def attrdel(self, attrs, remove):
+        result = []
+        for attr in attrs:
+            if not isinstance(attr, remove):
+                result.append(attr)
+        return result
 
 
 ################################################################################
@@ -680,7 +765,7 @@ class _BoxCmd(_TexCmd):
 # tex, latex class
 ################################################################################
 
-class _tex(base.PSCmd, attrlist.attrlist):
+class _tex(base.PSCmd, attrlist):
 
     """major parts are of tex and latex class are shared and implemented here"""
 
