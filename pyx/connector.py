@@ -159,7 +159,7 @@ class _curve(_connector):
 
         _connector.__init__(self,
             path._moveto(*self.box1.center),
-            path._curveto(*(control1 + control2 + self.box2.center)))
+            path._curveto(*(control1 + control2 + helper.ensurelist(self.box2.center))))
 
         self.omitends(box1, box2)
         self.shortenpath(boxdists)
