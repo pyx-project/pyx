@@ -845,7 +845,11 @@ class dvifile:
         if self.debug:
             print "%d: xxx '%s'" % (self.filepos, s)
         if not s.startswith("PyX:"):
-            raise RuntimeError("the special '%s' cannot be handled by PyX, aborting" % s)
+            if s.startswith("Warning:"):
+                sys.stderr.write("*** PyX Warning: ignoring special '%s'\n" % s)
+                return
+            else:
+                raise RuntimeError("the special '%s' cannot be handled by PyX, aborting" % s)
         command, args = s[4:].split()[0], s[4:].split()[1:]
         if command=="color_begin":
             if args[0]=="cmyk":
