@@ -436,28 +436,7 @@ class _barc(bpath):
     """bpath consisting of arc segment (coordinates in pts)"""
 
     def __init__(self, x, y, r, phi1, phi2, dphimax=45):
-        bpath.__init__(self)
-
-        phi1 = phi1*pi/180
-        phi2 = phi2*pi/180
-        dphimax = dphimax*pi/180
-
-        if phi2<phi1:        
-            # guarantee that phi2>phi1 ...
-            phi2 = phi2 + (math.floor((phi1-phi2)/(2*pi))+1)*2*pi
-        elif phi2>phi1+2*pi:
-            # ... or remove unnecessary multiples of 2*pi
-            phi2 = phi2 - (math.floor((phi2-phi1)/(2*pi))-1)*2*pi
-            
-        if r==0 or phi1-phi2==0: return
-
-        subdivisions = abs(int((1.0*(phi1-phi2))/dphimax))+1
-
-        dphi=(1.0*(phi2-phi1))/subdivisions
-
-        for i in range(subdivisions):
-            self.bpath.append(_arctobpathel(x, y, r, 
-                                           phi1+i*dphi, phi1+(i+1)*dphi))
+        bpath.__init__(self, *_arctobezier(x, y, r, phi1, phi2, dphimax))
 
 
 class barc(_barc):
@@ -492,6 +471,7 @@ class bcircle(_bcircle):
 # some helper routines            
 ################################################################################
 
+
 def _arctobpathel(x, y, r, phi1, phi2):
     """generate the best bpathel corresponding to an arc segment"""
     
@@ -511,6 +491,33 @@ def _arctobpathel(x, y, r, phi1, phi2):
     (x2, y2) = ( x3+l*sin(phi2), y3-l*cos(phi2) )
     
     return _bpathel(x0, y0, x1, y1, x2, y2, x3, y3)
+
+def _arctobezier(x, y, r, phi1, phi2, dphimax=45):
+    path = []
+    
+    phi1 = phi1*pi/180
+    phi2 = phi2*pi/180
+    dphimax = dphimax*pi/180
+
+    if phi2<phi1:        
+        # guarantee that phi2>phi1 ...
+        phi2 = phi2 + (math.floor((phi1-phi2)/(2*pi))+1)*2*pi
+    elif phi2>phi1+2*pi:
+        # ... or remove unnecessary multiples of 2*pi
+        phi2 = phi2 - (math.floor((phi2-phi1)/(2*pi))-1)*2*pi
+            
+    if r==0 or phi1-phi2==0: return []
+
+    subdivisions = abs(int((1.0*(phi1-phi2))/dphimax))+1
+
+    dphi=(1.0*(phi2-phi1))/subdivisions
+
+    for i in range(subdivisions):
+        path.append(_arctobpathel(x, y, r, 
+                                  phi1+i*dphi, phi1+(i+1)*dphi))
+
+    return path
+
 
 
 def _bpathelIntersect(a, a_t0, a_t1, b, b_t0, b_t1, epsilon=1e-5):
