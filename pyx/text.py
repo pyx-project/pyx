@@ -886,8 +886,8 @@ text = _default.text
 
 if __name__=="__main__":
 
-    res1 = text(r"""\hbox{$\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} =
-    \sqrt{\pi\over a}$} """)
+    res1 = text(r"""\hbox{$$\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} =
+    \sqrt{\pi\over a}$$} """)
     print res1.bbox()
 #    res2 = text("test", 1, 1)
 #    res3 = text("bla und nochmals bla", 2, 2)
