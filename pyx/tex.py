@@ -149,9 +149,9 @@ style.text = style("", "")
 style.math = style("$\displaystyle{}", "$")
 
 
-#
+################################################################################
 # TeX message handlers
-#
+################################################################################
 
 class msghandler(_texattr):
 
@@ -303,54 +303,59 @@ class _msghandlerhideall(msghandler):
 msghandler.hideall = _msghandlerhideall()
 
 
-class missextent(_texattr):
+################################################################################
+# extent handlers
+################################################################################
+
+class missextents(_texattr):
 
     """abstract base class for handling missing extents
-    
+
     A miss extent class has to provide a misshandler method."""
 
 
-_missextentreturnzero_report = 0
-def _missextentreturnzero_printreport():
+_missextentsreturnzero_report = 0
+def _missextentsreturnzero_printreport():
     sys.stderr.write("""
 pyx.tex: Some requested extents were missing and have been replaced by zero.
          Please run the file again to get correct extents.
 """)
 
-class _missextentreturnzero(missextent):
+class _missextentsreturnzero(missextents):
 
     def misshandler(self, texinstance):
-        global _missextentreturnzero_report
-        if not _missextentreturnzero_report:
-            atexit.register(_missextentreturnzero_printreport)
-        _missextentreturnzero_report = 1
-        return unit.t_pt(0)
+        global _missextentsreturnzero_report
+        if not _missextentsreturnzero_report:
+            atexit.register(_missextentsreturnzero_printreport)
+        _missextentsreturnzero_report = 1
+        return map(lambda x: unit.t_pt(0), texinstance.BoxCmds[0].CmdExtents)
 
 
-missextent.returnzero = _missextentreturnzero()
+missextents.returnzero = _missextentsreturnzero()
 
 
-class _missextentreturnzeroquiet(missextent):
+class _missextentsreturnzeroquiet(missextents):
 
     def misshandler(self, texinstance):
-        return unit.t_pt(0)
+        return map(lambda x: unit.t_pt(0), texinstance.BoxCmds[0].CmdExtents)
 
 
-missextent.returnzeroquiet = _missextentreturnzeroquiet()
+missextents.returnzeroquiet = _missextentsreturnzeroquiet()
 
 
-class _missextentraiseerror(missextent):
+class _missextentsraiseerror(missextents):
 
     def misshandler(self, texinstance):
         raise TexMissExtentError
 
 
-missextent.raiseerror = _missextentraiseerror()
+missextents.raiseerror = _missextentsraiseerror()
 
 
-class _missextentcreateextent(missextent):
+class _missextentscreateextents(missextents):
 
     def misshandler(self, texinstance):
+        print "missextents.createextents"
         if isinstance(texinstance, latex):
             storeauxfilename = texinstance.auxfilename
             texinstance.auxfilename = None
@@ -359,16 +364,17 @@ class _missextentcreateextent(missextent):
         texinstance.DoneRunTex = 0
         if isinstance(texinstance, latex):
             texinstance.auxfilename = storeauxfilename
-        return texinstance.BoxCmds[0].Extent(texinstance.BoxCmds[0].CmdExtents[0],
-                                             missextent.returnzero, texinstance)
+        return texinstance.BoxCmds[0].Extents(texinstance.BoxCmds[0].CmdExtents,
+                                              missextents.returnzero, texinstance)
 
 
-missextent.createextent = _missextentcreateextent()
+missextents.createextents = _missextentscreateextents()
 
 
-class _missextentcreateallextent(missextent):
+class _missextentscreateallextents(missextents):
 
     def misshandler(self, texinstance):
+        print "missextents.createallextents"
         if isinstance(texinstance, latex):
             storeauxfilename = texinstance.auxfilename
             texinstance.auxfilename = None
@@ -380,11 +386,11 @@ class _missextentcreateallextent(missextent):
         texinstance.DoneRunTex = 0
         if isinstance(texinstance, latex):
             texinstance.auxfilename = storeauxfilename
-        return texinstance.BoxCmds[0].Extent(texinstance.BoxCmds[0].CmdExtents[0],
-                                             missextent.returnzero, texinstance)
+        return texinstance.BoxCmds[0].Extents(texinstance.BoxCmds[0].CmdExtents,
+                                              missextents.returnzero, texinstance)
 
 
-missextent.createallextent = _missextentcreateallextent()
+missextents.createallextents = _missextentscreateallextents()
 
 
 ################################################################################
@@ -448,7 +454,7 @@ class _extent:
 _extent.wd = _extent("wd")
 _extent.ht = _extent("ht")
 _extent.dp = _extent("dp")
-   
+
 
 class _TexCmd:
 
@@ -632,17 +638,25 @@ class _BoxCmd(_TexCmd):
     def Put(self, x, y, halign, direction, color):
         self.CmdPuts.append(_CmdPut(x, y, halign, direction, color))
 
-    def Extent(self, extent, missextent, texinstance):
+    def Extents(self, extents, missextents, texinstance):
         """get sizes from previous LaTeX run"""
 
-        if extent not in self.CmdExtents:
-            self.CmdExtents.append(extent)
+        for extent in extents:
+            if extent not in self.CmdExtents:
+                self.CmdExtents.append(extent)
 
-        s = self.MD5() + ":" + str(extent)
-        for size in texinstance.Sizes:
-            if size[:len(s)] == s:
-                texpt = float(string.rstrip(size.split(":")[3][:-3]))
-                return unit.t_pt(texpt * 72.0 / 72.27)
+        result = []
+        for extent in extents:
+            s = self.MD5() + ":" + str(extent)
+            for size in texinstance.Sizes:
+                if size[:len(s)] == s:
+                    texpt = float(string.rstrip(size.split(":")[3][:-3]))
+                    result.append(unit.t_pt(texpt * 72.0 / 72.27))
+                    break
+            else:
+                break
+        else:
+            return result
 
         # extent was not found --- temporarily remove all other commands in
         # order to allow the misshandler to access everything it ever wants
@@ -651,9 +665,9 @@ class _BoxCmd(_TexCmd):
         storecmdextents = self.CmdExtents
         texinstance.BoxCmds = [self, ]
         self.CmdPuts = []
-        self.CmdExtents = [extent, ]
+        self.CmdExtents = extents
         try:
-            result = missextent.misshandler(texinstance)
+            result = missextents.misshandler(texinstance)
         finally:
             texinstance.BoxCmds = storeboxcmds
             self.CmdPuts = storecmdputs
@@ -670,13 +684,13 @@ class _tex(base.PSCmd, instancelist.InstanceList):
     """major parts are of tex and latex class are shared and implemented here"""
 
     def __init__(self, defaultmsghandler=msghandler.hideload,
-                       defaultmissextent=missextent.returnzero,
+                       defaultmissextents=missextents.returnzero,
                        texfilename=None):
         if isinstance(defaultmsghandler, msghandler):
             self.defaultmsghandlers = (defaultmsghandler, )
         else:
             self.defaultmsghandlers = defaultmsghandler
-        self.defaultmissextent = defaultmissextent
+        self.defaultmissextents = defaultmissextents
         self.texfilename = texfilename
         self.DefCmds = []
         self.DefCmdsStr = None
@@ -892,26 +906,28 @@ by yourself.""")
         """get width of Cmd"""
 
         self.DoneRunTex = 0
-        self.AllowedInstances(attrs, [style, fontsize, missextent], [msghandler, ])
-        mymissextent = self.ExtractInstance(attrs, missextent, self.defaultmissextent)
-        return self._insertcmd(Cmd, *attrs).Extent(_extent.wd, mymissextent, self)
+        self.AllowedInstances(attrs, [style, fontsize, missextents], [msghandler, ])
+        mymissextents = self.ExtractInstance(attrs, missextents, self.defaultmissextents)
+        return self._insertcmd(Cmd, *attrs).Extents((_extent.wd, ), mymissextents, self)[0]
 
     def textht(self, Cmd, *attrs):
         """get height of Cmd"""
 
         self.DoneRunTex = 0
-        self.AllowedInstances(attrs, [style, fontsize, valign, missextent], [msghandler, ])
-        mymissextent = self.ExtractInstance(attrs, missextent, self.defaultmissextent)
-        return self._insertcmd(Cmd, *attrs).Extent(_extent.ht, mymissextent, self)
+        self.AllowedInstances(attrs, [style, fontsize, valign, missextents], [msghandler, ])
+        mymissextents = self.ExtractInstance(attrs, missextents, self.defaultmissextents)
+        return self._insertcmd(Cmd, *attrs).Extents((_extent.ht, ), mymissextents, self)[0]
 
 
     def textdp(self, Cmd, *attrs):
         """get depth of Cmd"""
 
         self.DoneRunTex = 0
-        self.AllowedInstances(attrs, [style, fontsize, valign, missextent], [msghandler, ])
-        mymissextent = self.ExtractInstance(attrs, missextent, self.defaultmissextent)
-        return self._insertcmd(Cmd, *attrs).Extent(_extent.dp, mymissextent, self)
+        self.AllowedInstances(attrs, [style, fontsize, valign, missextents], [msghandler, ])
+        mymissextents = self.ExtractInstance(attrs, missextents, self.defaultmissextents)
+        return self._insertcmd(Cmd, *attrs).Extents((_extent.dp, ), mymissextents, self)[0]
+
+    #TODO: def textwht(self, Cmd, *attrs)
 
 
 class tex(_tex):

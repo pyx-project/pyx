@@ -561,53 +561,72 @@ class rectbox(path.path):
                                  path.lineto(self.urx, self.lly),
                                  path.closepath(),
                                  path.moveto(self.x0 + self.radius, self.y0),
-                                 path.arc(self.x0, self.y0, self.radius, 0, 360))
+                                 path.arc(self.x0, self.y0, self.radius, 0, 360),
+                                 path.closepath())
 
-    def translatetodistance(self, rx, ry):
+    def translateline(self, rx, ry, ex, ey, fx, fy, epsilon=1e-10):
         mx, my = self.x0, self.y0
-        if rx > 0:
-            ex = self.llx
-        else:
-            ex = self.urx
-        if ry > 0:
-            ey = self.lly
-        else:
-            ey = self.ury
-        p = 2 * ((ex-mx)*rx + (ey-my)*ry) / (rx*rx + ry*ry)
-        q = ((ex-mx)*(ex-mx) + (ey-my)*(ey-my) - rx*rx - ry*ry) / (rx*rx + ry*ry)
-        a = - p / 2 + math.sqrt(p*p/4 - q) # TODO: cases, where no solution exists
-        if (a*rx - mx + ex) * rx < 1e-10:
-            if ry > 0:
-                a += (math.sqrt(rx*rx+ry*ry) - (a*ry - my))/ry
-            else:
-                a += (-math.sqrt(rx*rx+ry*ry) - (a*ry - my) - self.ury+self.lly)/ry
-        elif (a*ry - my + ey) * ry < 1e-10:
-            if rx > 0:
-                a += (math.sqrt(rx*rx+ry*ry) - (a*rx - mx))/rx
-            else:
-                a += (-math.sqrt(rx*rx+ry*ry) - (a*rx - mx) - self.urx+self.llx)/rx
-        vx = a*rx - mx
-        vy = a*ry - my
-        return vx, vy
+        gx, gy = ex - fx, ey - fy # direction vector
+        rsplit = (rx*gx + ry*gy) * 1.0 / (gx*gx + gy*gy)
+        sx, sy = rx - gx * rsplit, ry - gy * rsplit
+        if sx*sx + sy*sy < epsilon: # zero projection
+            return None             # no solution -> return None
+        if sx*gy - sy*gx < 0: # half space
+            return None       # no solution -> return None
+        sfactor = math.sqrt((rx*rx + ry*ry) / (sx*sx + sy*sy))
+        sx, sy = sx * sfactor, sy * sfactor
+        a = ((sx+mx-ex)*ry - (sy+my-ey)*rx) * 1.0 / (gy*rx - gx*ry)
+        if a > 0 - epsilon and a < 1 + epsilon:
+            b = ((ex-sx-mx)*gy - (ey-sy-my)*gx) * 1.0 / (gx*ry - gy*rx)
+            return b*rx - mx, b*ry - my # valid solution -> return translate tuple
+        # crossing point at the line, but outside a valid range
+        if a < 0:
+            return 0 # crossing point outside e
+        return 1 # crossing point outside f
 
-import trafo, color
-if __name__=="__main__": 
-    c=canvas.canvas()
-    b=rectbox(0, 0, 5, 3, 2, 2)
-    r = 3
-    c.draw(path.path(path.arc(0, 0, r, 0, 360)))
-    phi = 0
-    while phi < 2 * math.pi - 1e-10:
-      try:
-          translate = b.translatetodistance(r * math.cos(phi), r * math.sin(phi))
-          c.draw(b.bpath().transform(trafo.translate(*translate)))
-          c.draw(path.line(0, 0, b.x0 + translate[0], b.y0 + translate[1]))
-      except ValueError:
-          c.draw(path.line(0, 0, r * math.cos(phi), r * math.sin(phi)), color.rgb.red)
-      except ZeroDivisionError:
-          c.draw(path.line(0, 0, r * math.cos(phi), r * math.sin(phi)), color.rgb.green)
-      phi += math.pi / 20
-    c.writetofile("boxtest")
+    def translatepoint(self, rx, ry, hx, hy):
+        mx, my = self.x0, self.y0
+        p = 2 * ((hx-mx)*rx + (hy-my)*ry) / (rx*rx + ry*ry)
+        q = ((hx-mx)*(hx-mx) + (hy-my)*(hy-my) - rx*rx - ry*ry) / (rx*rx + ry*ry)
+        if p*p/4 - q < 0:
+            return None
+        a = - p / 2 + math.sqrt(p*p/4 - q)
+        return a*rx - mx, a*ry - my
+
+    def translate(self, rx, ry):
+        linesolutions = (self.translateline(rx, ry, self.llx, self.lly, self.urx, self.lly),
+                         self.translateline(rx, ry, self.urx, self.lly, self.urx, self.ury),
+                         self.translateline(rx, ry, self.urx, self.ury, self.llx, self.ury),
+                         self.translateline(rx, ry, self.llx, self.ury, self.llx, self.lly))
+        for linesolution in linesolutions:
+            if type(linesolution) is types.TupleType:
+                return linesolution
+        if linesolutions == (1, 0, None, None):
+            return self.translatepoint(rx, ry, self.urx, self.lly)
+        if linesolutions == (None, 1, 0, None):
+            return self.translatepoint(rx, ry, self.urx, self.ury)
+        if linesolutions == (None, None, 1, 0):
+            return self.translatepoint(rx, ry, self.llx, self.ury)
+        if linesolutions == (0, None, None, 1):
+            return self.translatepoint(rx, ry, self.llx, self.lly)
+        return None
+
+
+#import trafo, color
+#if __name__=="__main__": 
+#    c=canvas.canvas()
+#    b=rectbox(0, 0, 6, 3, 3, 1)
+#    r = 3
+#    c.draw(path.path(path.arc(0, 0, r, 0, 360)))
+#    phi = 0
+#    while phi < 2 * math.pi + 1e-10:
+#        translate = b.translate(r * math.cos(phi), r * math.sin(phi))
+#        if translate is not None:
+#            c.draw(b.bpath().transform(trafo.translate(*translate)))
+#            c.draw(path.line(0, 0, b.x0 + translate[0], b.y0 + translate[1]))
+#        phi += math.pi / 100
+#    c.writetofile("boxtest")
+
 
 ################################################################################
 # axis painter
@@ -615,7 +634,7 @@ if __name__=="__main__":
 
 class axispainter:
 
-    def __init__(self, innerticklength="0.25 cm",
+    def __init__(self, innerticklength="0.2 cm",
                        outerticklength="0 cm",
                        tickstyles=(),
                        subticklengthfactor=1/goldenrule,
@@ -688,7 +707,17 @@ class axispainter:
                 y2 = y + dy * self.outerticklength * factor
                 graph.draw(path._line(x1, y1, x2, y2), *self.tickstyles)
             if tick.labellevel is not None:
-                graph.tex._text(x + 10 * dx, y + 10 * dy, self.decimalfrac(tick.enum, tick.denom), tex.style.math)
+                text = self.decimalfrac(tick.enum, tick.denom)
+                # TODO: use textwht
+                ht = unit.topt(graph.tex.textht(text, tex.style.math))
+                wd = unit.topt(graph.tex.textwd(text, tex.style.math))
+                dp = unit.topt(graph.tex.textdp(text, tex.style.math))
+                if wd == 0: wd = unit.topt("0.5 t cm")
+                if ht == 0: ht = unit.toht("0.25 t cm")
+                zeroshift = unit.topt(graph.tex.textht("0", tex.style.math))
+                b = rectbox(0, -dp, wd, ht, wd/2, zeroshift/2)
+                tx, ty = b.translate(10 * dx, 10 * dy)
+                graph.tex._text(x + tx, y + ty, text, tex.style.math)
 
 
 ################################################################################
