@@ -32,6 +32,9 @@ PyX
     - multiple radii: documentation
   - bbox module:
      - __iadd__ and inplace enlarge, transform,...
+  bug fixes:
+  - canvas module:
+    - "in" to "inch" in paperformats
 
 0.4 (2003/08/22):
   - graph module:

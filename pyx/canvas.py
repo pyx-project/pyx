@@ -48,8 +48,8 @@ _paperformats = { "a4"      : ("210 t mm",  "297 t mm"),
                   "a1"      : ("594 t mm",  "840 t mm"),
                   "a0"      : ("840 t mm", "1188 t mm"),
                   "a0b"     : ("910 t mm", "1370 t mm"),
-                  "letter"  : ("8.5 t in",   "11 t in"),
-                  "legal"   : ("8.5 t in",   "14 t in")}
+                  "letter"  : ("8.5 t inch",   "11 t inch"),
+                  "legal"   : ("8.5 t inch",   "14 t inch")}
 
 
 #
@@ -886,10 +886,10 @@ class canvas(_canvas):
             # center (optionally rotated) output on page
             try:
                 width, height = _paperformats[paperformat]
-                width = unit.topt(width)
-                height = unit.topt(height)
             except KeyError:
                 raise KeyError, "unknown paperformat '%s'" % paperformat
+            width = unit.topt(width)
+            height = unit.topt(height)
 
             if not ctrafo: ctrafo=trafo.trafo()
 
