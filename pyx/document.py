@@ -64,6 +64,52 @@ class page:
         self.bboxenlarge = bboxenlarge
         self.bbox = bbox
 
+    def pagetrafo(self, abbox):
+        # calculate a trafo which rotates and fits a canvas with
+        # bounding box abbox on the given paperformat with a margin
+        # on all sides
+        if self.rotated or self.centered or self.fittosize:
+            paperwidth_pt, paperheight_pt = unit.to_pt(self.paperformat[0]), unit.to_pt(self.paperformat[1])
+
+            # center (optionally rotated) output on page
+            if self.rotated:
+                atrafo = trafo.rotate_pt(90).translated_pt(paperwidth_pt, 0)
+                if self.centered or self.fittosize:
+                    atrafo = atrafo.translated_pt(-0.5*(paperwidth_pt - unit.topt(abbox.height())) + unit.topt(abbox.bottom()),
+                                                  0.5*(paperheight_pt - unit.topt(abbox.width())) - unit.topt(abbox.left()))
+            else:
+                if self.centered or self.fittosize:
+                    atrafo = trafo.trafo()
+                else:
+                    return None # no page transformation needed
+                if self.centered or self.fittosize:
+                    atrafo = atrafo.translated_pt(0.5*(paperwidth_pt - unit.topt(abbox.width()))  - unit.topt(abbox.left()),
+                                                  0.5*(paperheight_pt - unit.topt(abbox.height())) - unit.topt(abbox.bottom()))
+
+            if self.fittosize:
+                if not isinstance(self.margin, unit.length):
+                    self.margin = unit.length(self.margin)
+
+                if 2*unit.topt(self.margin) > min(paperwidth_pt, paperheight_pt):
+                    raise RuntimeError("Margins too broad for selected paperformat. Aborting.")
+
+                paperwidth_pt -= 2*topt(self.margin)
+                paperheight_pt -= 2*topt(self.margin)
+
+                # scale output to pagesize - margins
+                if self.rotated:
+                    sfactor = min(paperheight_pt/unit.topt(abbox.width()),
+                                  paperwidth_pt/unit.topt(abbox.height()))
+                else:
+                    sfactor = min(paperwidth_pt/unit.topt(abbox.width()),
+                                  paperheight_pt/unit.topt(abbox.height()))
+
+                atrafo = atrafo.scaled_pt(sfactor, sfactor, unit.topt(self.margin) + 0.5*paperwidth_pt, unit.topt(self.margin) + 0.5*paperheight_pt)
+
+            return atrafo
+        # return None # no page transformation needed, no explicit return of None needed
+
+
 #     def outputPS(self, file):
 #         file.write("%%%%PageMedia: %s\n" % self.paperformat)
 #         file.write("%%%%PageOrientation: %s\n" % (self.rotated and "Landscape" or "Portrait"))
