@@ -124,7 +124,7 @@ class CanvasException(Exception): pass
 # classes
 #
 
-class canvas(unit):
+class canvas:
 
     PSCmds = []
 
@@ -132,9 +132,9 @@ class canvas(unit):
         from trafo import transformation
         
         self.trafo = kwargs.get("trafo", transformation())
-        self.unit = kwargs.get("units", unit())
+        self.unit = kwargs.get("unit", unit())
         
-        self._PSAddCmd("%f %f scale" % (1/unit_ps, 1/unit_ps))
+#        self._PSAddCmd("%f %f scale" % (1/unit_ps, 1/unit_ps))
         self._PSAddCmd("[" + `self.trafo` + " ] concat")
     
     def __string__(self):
