@@ -895,9 +895,9 @@ class dvifile:
 
         if height > 0 and width > 0:
             if self.debug:
-                pixelw = int(width*self.trueconv*self.mag/1000.0)
+                pixelw = int(width*self.conv*self.mag/1000.0)
                 if pixelw < width*self.pyxconv: pixelw += 1
-                pixelh = int(height*self.trueconv*self.mag/1000.0)
+                pixelh = int(height*self.conv*self.mag/1000.0)
                 if pixelh < height*self.pyxconv: pixelh += 1
 
                 print ("%d: %srule height %d, width %d (%dx%d pixels)" %
@@ -1121,27 +1121,25 @@ class dvifile:
                 den = afile.readuint32()
                 self.mag = afile.readuint32()
 
-                # for the interpretation of all quantities, two conversion factors
-                # are relevant:
-                # - self.tfmconv (tfm units->dvi units)
-                # - self.pyxconv (dvi units-> (PostScript) points)
-
+                # For the interpretation of the lengths in dvi and tfm files, 
+                # three conversion factors are relevant:
+                # - self.tfmconv: tfm units -> dvi units
+                # - self.pyxconv: dvi units -> (PostScript) points
+                # - self.conv:    dvi units -> pixels
                 self.tfmconv = (25400000.0/num)*(den/473628672.0)/16.0
 
-                # calculate conv as described in the DVIType docu
-
-                # resolution in dpi
+                # calculate conv as described in the DVIType docu using 
+                # a given resolution in dpi
                 self.resolution = 300.0
-                # self.trueconv = conv in DVIType docu
-                self.trueconv = (num/254000.0)*(self.resolution/den)
+                self.conv = (num/254000.0)*(self.resolution/den)
 
                 # self.pyxconv is the conversion factor from the dvi units
                 # to (PostScript) points. It consists of
                 # - self.mag/1000.0:   magstep scaling
-                # - self.trueconv:     conversion from dvi units to pixels
+                # - self.conv:         conversion from dvi units to pixels
                 # - 1/self.resolution: conversion from pixels to inch
                 # - 72               : conversion from inch to points
-                self.pyxconv = self.mag/1000.0*self.trueconv/self.resolution*72
+                self.pyxconv = self.mag/1000.0*self.conv/self.resolution*72
 
                 comment = afile.read(afile.readuchar())
                 return
