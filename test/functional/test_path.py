@@ -95,8 +95,21 @@ def testintersectbezier(c):
 
     isect = p.intersect(q, epsilon=1e-4)
 
-    for i in isect:
-        x, y = p.at(i[0])
+    for i in isect[0]:
+        x, y = p.at(i)
+        c.stroke(cross(x, y), canvas.linewidth.THIN)
+
+def testintersectcircle(c):
+    k=circle(0, 0, 2)
+    l=line(0,0, 3, 0)
+    c.stroke(k, canvas.linewidth.THIN)
+    c.stroke(l, canvas.linewidth.THIN)
+
+    isect = k.intersect(l)
+    assert len(isect[0])==1, "double count of intersections"
+
+    for i in isect[0]:
+        x, y = k.at(i)
         c.stroke(cross(x, y), canvas.linewidth.THIN)
 
 
@@ -260,6 +273,7 @@ dotest(c, 0, 0, "testarcs")
 dotest(c, 2, 12, "testintersectbezier")
 dotest(c, 10,11, "testnormpathtrafo")
 dotest(c, 12, -4, "testtangent")
+dotest(c, 5, -4, "testintersectcircle")
 c.writetofile("test_path", paperformat="a4", rotated=0, fittosize=1)
 
 c=canvas.canvas()
