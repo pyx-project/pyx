@@ -49,6 +49,8 @@ TODO:
       AW suggests to use cycloid with default curvesperloop=5.
   - dvifile module:
     - support single-character mode
+  - path module:
+    - arclentoparam should raise an exception when the arclen is out of range
 
   Documentation:
     - path module:
@@ -98,6 +100,7 @@ TODO:
     - renamed: arclength -> arclen
     - renamed: lentopar -> arclentoparam
     - renamed: glue -> joined
+    - normpath now supports join, the in-place version of joined
     - path and normpath method raise exception instead of returning None
       when parameter is out of range
     - the accuracy epsilon can now only be specified in normpath and normsubpath
