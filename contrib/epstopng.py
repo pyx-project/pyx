@@ -38,6 +38,7 @@ def epstopng(epsname, pngname, resolution, scale, transparent, gsname, quiet):
 
     inputdata = input.getdata() # getdata instead of getpixel leads to about a factor of 2 in running time
                                 # similar effect with putdata possible??? (didn't got that running)
+    inputsizex, inputsizey = input.size
     # loop over the small image
     for x in range(output.size[0]):
         sys.stderr.write("transparent antialias conversion ... %5.2f %%\r" % (x*100.0/output.size[0]))
@@ -45,15 +46,14 @@ def epstopng(epsname, pngname, resolution, scale, transparent, gsname, quiet):
             # r, g, b: sum of the rgb-values; u: number of non-transparent pixels
             r = g = b = u = 0
             # loop over the pixels of the large image to be used for pixel (x, y)
-            for xo in range(x*scale, (x+1)*scale):
-                for yo in range(y*scale, (y+1)*scale):
-                    if xo < input.size[0] and yo < input.size[1]:
-                        ro, go, bo = inputdata[xo+input.size[0]*yo]
-                        if (ro, go, bo) != transparent:
-                            r += ro
-                            g += go
-                            b += bo
-                            u += 1
+            for xo in range(x*scale, min((x+1)*scale, inputsizex-1)):
+                for yo in range(y*scale, min((y+1)*scale, inputsizey-1)):
+                    ro, go, bo = inputdata[xo+inputsizex*yo]
+                    if (ro, go, bo) != transparent:
+                        r += ro
+                        g += go
+                        b += bo
+                        u += 1
             if u:
                 output.putpixel((x, y), (r/u, g/u, b/u, (u*255)/(scale*scale)))
             else:
