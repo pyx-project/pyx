@@ -23,7 +23,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import copy, cStringIO, exceptions, re, struct, string, sys
-import unit, epsfile, bbox, base, canvas, color, trafo, path, prolog, pykpathsea, resource
+import unit, epsfile, bbox, base, canvas, color, trafo, path, prolog, pykpathsea
 
 class fix_word:
     def __init__(self, word):
@@ -456,11 +456,6 @@ class selectfont(base.canvasitem):
 
     def outputPDF(self, file):
         file.write("/%s %f Tf\n" % (self.fontid, self.size))
-
-    def registerresources(self, registry):
-        fontresource = resource.font(self.font.getpsname(), self.font.getencoding(), self.font.usedchars)
-        registry.registerresource(fontresource)
-        self.fontid = fontresource.id
 
 
 class _show(base.canvasitem):
