@@ -150,8 +150,8 @@ class _logmap(_linmap):
     __implements__ = _Imap
 
     def setbasepoints(self, basepoints):
-        return _linmap.setbasepoints(self, (math.log(basepoints[0][0]), basepoints[0][1]),
-                                           (math.log(basepoints[1][0]), basepoints[1][1]))
+        return _linmap.setbasepoints(self, ((math.log(basepoints[0][0]), basepoints[0][1]),
+                                            (math.log(basepoints[1][0]), basepoints[1][1])))
 
     def convert(self, value):
         if value is None: return None
