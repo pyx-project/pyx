@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 class pathel:
+    """ element of a PS style path """
     def __init__(self, command, point):
         self.command = command
 	self.point = point
@@ -28,6 +29,7 @@ class rlineto(pathel):
         pathel.__init__(self, "rlineto", (x, y))
 	
 class path:
+    """ PS style path """
     def __init__(self, path):
         self.path = path
 	

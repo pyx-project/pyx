@@ -136,7 +136,10 @@ class canvas:
 	        assert "bounding box not found in EPS file"
 		raise IOError			# TODO: Fehlerbehandlung
 	    if bbpattern.match(line)>0:
-	        (llx, lly, urx, ury) = map(eval,(bbpattern.group(1), bbpattern.group(2), bbpattern.group(3), bbpattern.group(4)))
+	        (llx, lly, urx, ury) = map(eval,(bbpattern.group(1), 
+		                                 bbpattern.group(2), 
+						 bbpattern.group(3), 
+						 bbpattern.group(4)))
 		break
         epsfile.close()
 	return (llx, lly, urx, ury)
