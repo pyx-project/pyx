@@ -318,18 +318,18 @@ if __name__=="__main__":
  
     print "Breite von 'Hello world!': ",t.textwd("Hello  world!")
     print "Höhe von 'Hello world!': ",t.textht("Hello world!")
-    print "Höhe von 'Hello world!' in large: ",t.textht("Hello world!", size = fontsize.large)
-    print "Höhe von 'Hello world!' in Large: ",t.textht("Hello world!", size = fontsize.Large)
-    print "Höhe von 'Hello world' in huge: ",t.textht("Hello world!", size = fontsize.huge)
+    print "Höhe von 'Hello world!' in large: ",t.textht("Hello world!", fontsize.large)
+    print "Höhe von 'Hello world!' in Large: ",t.textht("Hello world!", fontsize.Large)
+    print "Höhe von 'Hello world' in huge: ",t.textht("Hello world!", fontsize.huge)
     print "Tiefe von 'Hello world!': ",t.textdp("Hello world!")
     print "Tiefe von 'was mit q': ",t.textdp("was mit q")
     t.text(5, 1, "Hello world!")
-    t.text(5, 2, "Hello world!", halign = halign.center)
-    t.text(5, 3, "Hello world!", halign = halign.right)
-    for angle in (-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90):
-        t.text(11+angle/10, 5, str(angle), angle = angle)
-        t.text(11+angle/10, 6, str(angle), angle = angle, halign = halign.center)
-        t.text(11+angle/10, 7, str(angle), angle=angle, halign=halign.right)
+    t.text(5, 2, "Hello world!", halign.center)
+    t.text(5, 3, "Hello world!", halign.right)
+    for a in (-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90):
+        t.text(11+a/10, 5, str(a), angle(a))
+        t.text(11+a/10, 6, str(a), angle(a), halign.center)
+        t.text(11+a/10, 7, str(a), angle(a), halign.right)
     for pos in range(1,21):
         t.text(pos, 7.5, ".")
    
@@ -341,7 +341,7 @@ if __name__=="__main__":
              lineto(7,14)])
    
     c.set(canvas.linestyle.dotted)
-    t.text(5, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", lhsize = hsize("2 cm"))
+    t.text(5, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize("2 cm"))
     c.draw(p)
  
     p=path([ moveto(10,12), 
@@ -351,7 +351,7 @@ if __name__=="__main__":
              moveto(12,10), 
              lineto(12,14)])
     c.set(canvas.linestyle.dashdotted, rgb(1,0,0))
-    t.text(10, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", lhsize = hsize("2 cm"), valign = valign.bottom)
+    t.text("10 cm", 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize("2 cm"), valign.bottom)
     c.draw(p)
  
     p=path([moveto(5,15), arc(5,15, 1, 0, 45), closepath()])
@@ -361,9 +361,9 @@ if __name__=="__main__":
     c.draw(p, canvas.linestyle.dashed)
 
    
-    for angle in range(20):
-       s=c.canvas(trafo=translate(10,10)*rotate(angle)).draw(p, 
-           canvas.linestyle.dashed, canvas.linewidth(0.01*angle), grey((20-angle)/20.0))
+    for a in range(20):
+       s=c.canvas(trafo=translate(10,10)*rotate(a)).draw(p, 
+           canvas.linestyle.dashed, canvas.linewidth(0.01*a), grey((20-a)/20.0))
  
     c.set(linestyle.solid)
     g=GraphXY(c, t, 10, 15, 8, 6)

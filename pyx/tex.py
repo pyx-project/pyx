@@ -16,6 +16,8 @@ class halign:
    
 class hsize(unit.length):
     pass
+
+_hsize = hsize
    
 class _valign:
     def __init__(self, value):
@@ -52,11 +54,13 @@ class _angle:
     def __str__(self):
         return str(self.value)
 
-class angle:
+class angle(_angle):
     horizontal = _angle(0)
     vertical   = _angle(90)
     upsidedown = _angle(180)
     rvertical  = _angle(270)
+    def __init__(self, value):
+        _angle.__init__(self, value)
     def deg(self, value):
         return _angle(value)
     def rad(self, value):
@@ -363,7 +367,7 @@ class tex:
         # TODO 7: dvips error handling
         #         interface for modification of the dvips command line
 
-        if os.system("TEXCONFIG=" + WorkDir + " dvips -P pyx -T1in,1in -o " + TempName + ".eps " + TempName + ".dvi > /dev/null 2>&1"):
+        if os.system("TEXCONFIG=" + WorkDir + " dvips -K0 -P pyx -T1in,1in -o " + TempName + ".eps " + TempName + ".dvi > /dev/null 2>&1"):
             assert 0, "dvips exit code non-zero"
 
         result = str(canvas.epsfile(TempName + ".eps", clipping = 0))
@@ -426,51 +430,84 @@ class tex:
  
         return 1
 
-    def text(self, x, y, Cmd, size = fontsize.normalsize, halign = None, lhsize = None, valign = None, angle = None, lmsglevel = msglevel.hideload):
-    #def text(self, x, y, Cmd, *styleparam):
-        # allowed style parameter:
-        #     fontsize
-        #     halign
-        #     hsize
-        #     valign
-        #     angle
-        #     msglevel
+    def allowparam(self, params, allowedtypes):
+        for i in range(len(params)):
+            for j in range(len(allowedtypes)):
+                if isinstance(params[i], allowedtypes[j]):
+                    del allowedtypes[j]
+                    break
+            else:
+                assert 0, "multiple definition of style parameter not allowed"
+
+    def extractparam(self, params, gettype, default = None):
+        for param in params:
+            if isinstance(param, gettype):
+                return param
+        return default
+
+    def text(self, x, y, Cmd, *styleparams):
 
         'print Cmd at (x, y)'
-        
-        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, size, lhsize, valign)
-        TexCopyBoxCmd = self.TexCopyBoxCmd(x, y, Cmd, halign, angle)
-        self.TexAddCmd(TexCreateBoxCmd + TexCopyBoxCmd, lmsglevel)
 
-    def textwd(self, Cmd, size = fontsize.normalsize, lhsize = None, lmsglevel = msglevel.hideload):
+        self.allowparam(styleparams, [_fontsize, _halign, _hsize, _valign, _angle, _msglevel, ])
+        
+        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd,
+                                               self.extractparam(styleparams, _fontsize, fontsize.normalsize),
+                                               self.extractparam(styleparams, _hsize),
+                                               self.extractparam(styleparams, _valign))
+        TexCopyBoxCmd = self.TexCopyBoxCmd(x, y, Cmd, 
+                                           self.extractparam(styleparams, _halign),
+                                           self.extractparam(styleparams, _angle))
+        self.TexAddCmd(TexCreateBoxCmd + TexCopyBoxCmd,
+                       self.extractparam(styleparams, _msglevel, msglevel.hideload))
+
+    def textwd(self, Cmd, *styleparams):
     
         'get width of Cmd'
 
-        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, size, lhsize, None)
+        self.allowparam(styleparams, [_fontsize, _hsize, _msglevel, ])
+
+        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, 
+                                               self.extractparam(styleparams, _fontsize, fontsize.normalsize),
+                                               self.extractparam(styleparams, _hsize),
+                                               None)
         TexHexMD5 = self.TexHexMD5(TexCreateBoxCmd)
         self.TexAddCmd(TexCreateBoxCmd +
                        "\\immediate\\write\\sizefile{" + TexHexMD5 +
-                       ":wd:" + str(time.time()) + ":\\the\\wd\\localbox}\n", lmsglevel)
+                       ":wd:" + str(time.time()) + ":\\the\\wd\\localbox}\n",
+                       self.extractparam(styleparams, _msglevel, msglevel.hideload))
         return self.TexResult(TexHexMD5 + ":wd:")
 
-    def textht(self, Cmd, size = fontsize.normalsize, lhsize = None, valign = None, lmsglevel = msglevel.hideload):
+    def textht(self, Cmd, *styleparams):
 
         'get height of Cmd'
 
-        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, size, lhsize, valign)
+        self.allowparam(styleparams, [_fontsize, _hsize, _valign, _msglevel, ])
+
+        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd,
+                                               self.extractparam(styleparams, _fontsize, fontsize.normalsize),
+                                               self.extractparam(styleparams, _hsize, None),
+                                               self.extractparam(styleparams, _valign, None))
         TexHexMD5 = self.TexHexMD5(TexCreateBoxCmd)
         self.TexAddCmd(TexCreateBoxCmd +
                        "\\immediate\\write\\sizefile{" + TexHexMD5 +
-                       ":ht:" + str(time.time()) + ":\\the\\ht\\localbox}\n", lmsglevel)
+                       ":ht:" + str(time.time()) + ":\\the\\ht\\localbox}\n",
+                       self.extractparam(styleparams, _msglevel, msglevel.hideload))
         return self.TexResult(TexHexMD5 + ":ht:")
 
-    def textdp(self, Cmd, size = fontsize.normalsize, lhsize = None, valign = None, lmsglevel = msglevel.hideload):
+    def textdp(self, Cmd, *styleparams):
    
         'get depth of Cmd'
 
-        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, size, lhsize, valign)
+        self.allowparam(styleparams, [_fontsize, _hsize, _valign, _msglevel, ])
+
+        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd,
+                                               self.extractparam(styleparams, _fontsize, fontsize.normalsize),
+                                               self.extractparam(styleparams, _hsize, None),
+                                               self.extractparam(styleparams, _valign, None))
         TexHexMD5 = self.TexHexMD5(TexCreateBoxCmd)
         self.TexAddCmd(TexCreateBoxCmd +
                        "\\immediate\\write\\sizefile{" + TexHexMD5 +
-                       ":dp:" + str(time.time()) + ":\\the\\dp\\localbox}\n", lmsglevel)
+                       ":dp:" + str(time.time()) + ":\\the\\dp\\localbox}\n",
+                       self.extractparam(styleparams, _msglevel, msglevel.hideload))
         return self.TexResult(TexHexMD5 + ":dp:")
