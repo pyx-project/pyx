@@ -20,7 +20,7 @@ TODO:
     - Check for "inf" and "nan" in datafiles.
       (When plotted, the graph does not complain, but the postscript will be broken)
   - canvas module:
-    - multi page PostScript output
+    - finish multi page PostScript output
     - contructor should only take a texrunner keyword argument
     - set method???
     - PDF support
@@ -83,6 +83,9 @@ TODO:
       of length
   - canvas module:
     - added new classes page and document for multipage PostScript output
+  - bbox module:
+    - renamed _bbox -> bbox_pt
+    - new bbox method center which returns the center of the bounding box
 
 0.6.2 (2004/04/07):
   - graph module:
