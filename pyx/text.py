@@ -346,7 +346,7 @@ class Font:
     def __init__(self, name, c, q, d, tfmconv):
         self.name = name
         self.tfmfile = TFMFile(pykpathsea.find_file("%s.tfm" % self.name, 
-	                                            pykpathsea.kpse_tfm_format))
+                                                    pykpathsea.kpse_tfm_format))
 
         if self.tfmfile.checksum!=c:
             raise DVIError("check sums do not agree: %d vs. %d" %
@@ -695,15 +695,15 @@ class DVIFile:
         """write PostScript font header"""
 
         # generate list of used fonts
-	usedfonts = {}
+        usedfonts = {}
         for font in self.fonts:
-	    if font: 
-	        if font.name not in usedfonts:
-	            usedfonts[font.name] = font
-	        else:
-	            usedfonts[font.name].mergeusedchars(font)
+            if font: 
+                if usedfonts.has_key(font.name):
+                    usedfonts[font.name].mergeusedchars(font)
+                else:
+                    usedfonts[font.name] = font
 
-	for font in usedfonts.values():
+        for font in usedfonts.values():
             file.write("%%%%BeginFont: %s\n" % font.name.upper())
             pfbname = pykpathsea.find_file("%s.pfb" % font.name, pykpathsea.kpse_type1_format)
             t1strip.t1strip(file, pfbname, font.usedchars)
