@@ -71,7 +71,7 @@ TODO:
   - examples:
     - mandel.py (contributed by Stephen Phillips)
   - path:
-    - added new pathel multilineto_pt and multicurveto which allows to specify
+    - added new pathels multilineto_pt and multicurveto which allows to specify
       a list of points and can thus be much more efficient
     - internal methods return coordinates in pts
     - lentopar returns tuple not list
