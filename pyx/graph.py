@@ -28,7 +28,7 @@
 
 
 import types, re, math, string, sys
-import bbox, canvas, path, tex, unit, mathtree, trafo, attrlist, color
+import bbox, canvas, path, tex, unit, mathtree, trafo, attrlist, color, datafile
 
 
 goldenrule = 0.5 * (math.sqrt(5) + 1)
@@ -765,10 +765,10 @@ class _alignbox:
         return self._alignvector(a, dx, dy, self._linealignlinevector, self._linealignpointvector)
 
     def circlealignvector(self, a, dx, dy):
-        return self._circlealignvector(unit.topt(a), dx, dy)
+        return unit.t_pt(self._circlealignvector(unit.topt(a), dx, dy))
 
     def linealignvector(self, a, dx, dy):
-        return self._linealignvector(unit.topt(a), dx, dy)
+        return unit.t_pt(self._linealignvector(unit.topt(a), dx, dy))
 
     def _circlealign(self, *args):
         self.transform(trafo._translation(*self._circlealignvector(*args)))
@@ -786,10 +786,13 @@ class _alignbox:
         self.transform(trafo._translation(*self.linealignvector(*args)))
         return self
 
-    def extent(self, dx, dy):
+    def _extent(self, dx, dy):
         x1, y1 = self._linealignvector(0, dx, dy)
         x2, y2 = self._linealignvector(0, -dx, -dy)
         return (x1-x2)*dx + (y1-y2)*dy
+
+    def extent(self, dx, dy):
+        return unit.t_pt(self._extent(dx, dy))
 
 
 class alignbox(_alignbox):
@@ -1102,16 +1105,16 @@ class axispainter(attrlist.attrlist):
             for tick in axis.ticks:
                 if tick.labellevel is not None:
                     tick.textbox._linealign(labeldist, tick.dx, tick.dy)
-                    tick.extent = tick.textbox.extent(tick.dx, tick.dy) + labeldist
+                    tick._extent = tick.textbox._extent(tick.dx, tick.dy) + labeldist
 
         # we could now measure distances between textboxes -> TODO: rating
 
-        axis.extent = 0
+        axis._extent = 0
         for tick in axis.ticks:
             if tick.labellevel is None:
-                tick.extent = outerticklength * math.pow(self.subticklengthfactor, tick.ticklevel)
-            if axis.extent < tick.extent:
-                axis.extent = tick.extent
+                tick._extent = outerticklength * math.pow(self.subticklengthfactor, tick.ticklevel)
+            if axis._extent < tick._extent:
+                axis._extent = tick._extent
 
         for tick in axis.ticks:
             if tick.ticklevel is not None:
@@ -1142,10 +1145,10 @@ class axispainter(attrlist.attrlist):
             if self.titledirection is not None and not self.attrcount(titleattrs, tex.direction):
                 titleattrs = titleattrs + [tex.direction(self.reldirection(self.titledirection, tick.dx, tick.dy))]
             axis.titlebox = textbox(graph.tex, axis.title, textattrs=titleattrs)
-            axis.extent += titledist
-            axis.titlebox._linealign(axis.extent, dx, dy)
+            axis._extent += titledist
+            axis.titlebox._linealign(axis._extent, dx, dy)
             axis.titlebox._printtext(x, y)
-            axis.extent += axis.titlebox.extent(dx, dy)
+            axis._extent += axis.titlebox._extent(dx, dy)
 
 
 class linkaxispainter(axispainter):
@@ -1184,7 +1187,7 @@ class linkaxispainter(axispainter):
 class _axis:
 
     def __init__(self, min=None, max=None, reverse=0, title=None, painter=axispainter(),
-                       divisor=1, suffix=None, baselineattrs=(),
+                       divisor=1, suffix=None, baselineattrs=canvas.linecap.square,
                        datavmin=None, datavmax=None, tickvmin=None, tickvmax=None):
         if None not in (min, max) and min > max:
             min, max = max, min
@@ -1315,7 +1318,7 @@ class graphxy(canvas.canvas):
     YPattern = re.compile(r"%s([2-9]|[1-9][0-9]+)?$" % Names[1])
 
     def clipcanvas(self):
-        return self.insert(canvas.canvas(canvas.clip(path._rect(self.xpos, self.ypos, self.width, self.height))))
+        return self.insert(canvas.canvas(canvas.clip(path._rect(self._xpos, self._ypos, self._width, self._height))))
 
     def plot(self, data, style=None):
         if self.haslayout:
@@ -1444,8 +1447,8 @@ class graphxy(canvas.canvas):
                         worse += 1
             axis.settickrange(float(axis.ticks[0])*axis.divisor, float(axis.ticks[-1])*axis.divisor)
 
-        self.xmap = _linmap().setbasepoints(((0, self.xpos), (1, self.xpos + self.width)))
-        self.ymap = _linmap().setbasepoints(((0, self.ypos), (1, self.ypos + self.height)))
+        self.xmap = _linmap().setbasepoints(((0, self._xpos), (1, self._xpos + self._width)))
+        self.ymap = _linmap().setbasepoints(((0, self._ypos), (1, self._ypos + self._height)))
 
     def dobackground(self):
         self.dolayout()
@@ -1461,8 +1464,8 @@ class graphxy(canvas.canvas):
         self.dolayout()
         if not self.removedomethod(self.doaxes): return
         axesdist = unit.topt(unit.length(self.axesdist_str, default_type="v"))
-        self.xaxisextents = [0, 0]
-        self.yaxisextents = [0, 0]
+        self._xaxisextents = [0, 0]
+        self._yaxisextents = [0, 0]
         needxaxisdist = [0, 0]
         needyaxisdist = [0, 0]
         items = list(self.axes.items())
@@ -1473,15 +1476,15 @@ class graphxy(canvas.canvas):
             num3 = 1 - 2 * (num % 2) # x1 -> -1, x2 -> 1, x3 -> -1, x4 -> 1, ...
             if self.XPattern.match(key):
                  if needxaxisdist[num2]:
-                     self.xaxisextents[num2] += axesdist
-                 axis.yaxispos = self.ymap.convert(num2) + num3*self.xaxisextents[num2]
+                     self._xaxisextents[num2] += axesdist
+                 axis.yaxispos = self.ymap.convert(num2) + num3*self._xaxisextents[num2]
                  axis.tickpoint = self.xtickpoint
                  axis.fixtickdirection = (0, num3)
                  axis.gridpath = self.xgridpath
             elif self.YPattern.match(key):
                  if needyaxisdist[num2]:
-                     self.yaxisextents[num2] += axesdist
-                 axis.xaxispos = self.xmap.convert(num2) + num3*self.yaxisextents[num2]
+                     self._yaxisextents[num2] += axesdist
+                 axis.xaxispos = self.xmap.convert(num2) + num3*self._yaxisextents[num2]
                  axis.tickpoint = self.ytickpoint
                  axis.fixtickdirection = (num3, 0)
                  axis.gridpath = self.ygridpath
@@ -1495,10 +1498,10 @@ class graphxy(canvas.canvas):
             if axis.painter is not None:
                 axis.painter.paint(self, axis)
             if self.XPattern.match(key):
-                self.xaxisextents[num2] += axis.extent
+                self._xaxisextents[num2] += axis._extent
                 needxaxisdist[num2] = 1
             if self.YPattern.match(key):
-                self.yaxisextents[num2] += axis.extent
+                self._yaxisextents[num2] += axis._extent
                 needyaxisdist[num2] = 1
 
     def dodata(self):
@@ -1515,16 +1518,18 @@ class graphxy(canvas.canvas):
                  backgroundattrs=None, axesdist="0.8 cm", **axes):
         canvas.canvas.__init__(self)
         self.tex = tex
-        self.xpos = unit.topt(xpos)
-        self.ypos = unit.topt(ypos)
+        self.xpos = xpos
+        self.ypos = ypos
+        self._xpos = unit.topt(xpos)
+        self._ypos = unit.topt(ypos)
         if (width is not None) and (height is None):
              height = (1/ratio) * width
         if (height is not None) and (width is None):
              width = ratio * height
-        self.width = unit.topt(width)
-        self.height = unit.topt(height)
-        if self.width <= 0: raise ValueError("width < 0")
-        if self.height <= 0: raise ValueError("height < 0")
+        self._width = unit.topt(width)
+        self._height = unit.topt(height)
+        if self._width <= 0: raise ValueError("width < 0")
+        if self._height <= 0: raise ValueError("height < 0")
         for key in axes.keys():
             if not self.XPattern.match(key) and not self.YPattern.match(key):
                 raise TypeError("got an unexpected keyword argument '%s'" % key)
@@ -1550,10 +1555,10 @@ class graphxy(canvas.canvas):
 
     def bbox(self):
         self.finish()
-        return bbox.bbox(self.xpos - self.yaxisextents[0],
-                         self.ypos - self.xaxisextents[0],
-                         self.xpos + self.width + self.yaxisextents[1],
-                         self.ypos + self.height + self.xaxisextents[1])
+        return bbox.bbox(self._xpos - self._yaxisextents[0],
+                         self._ypos - self._xaxisextents[0],
+                         self._xpos + self._width + self._yaxisextents[1],
+                         self._ypos + self._height + self._xaxisextents[1])
 
     def write(self, file):
         self.finish()
@@ -1830,18 +1835,18 @@ class mark:
             self.mark = self.changecross()
         else:
             self.mark = mark
-        self.markattrs = markattrs
+        self._markattrs = markattrs
         self.errorscale = errorscale
-        self.errorbarattrs = errorbarattrs
-        self.lineattrs = lineattrs
+        self._errorbarattrs = errorbarattrs
+        self._lineattrs = lineattrs
         self.xmin, self.xmax, self.ymin, self.ymax = xmin, xmax, ymin, ymax
 
     def iterate(self):
         return mark(mark=_iterateattr(self.mark),
                     xmin=self.xmin, xmax=self.xmax, ymin=self.ymin, ymax=self.ymax,
-                    size=_iterateattr(self.size_str), markattrs=_iterateattrs(self.markattrs),
-                    errorscale=_iterateattr(self.errorscale), errorbarattrs=_iterateattrs(self.errorbarattrs),
-                    lineattrs=_iterateattrs(self.lineattrs))
+                    size=_iterateattr(self.size_str), markattrs=_iterateattrs(self._markattrs),
+                    errorscale=_iterateattr(self.errorscale), errorbarattrs=_iterateattrs(self._errorbarattrs),
+                    lineattrs=_iterateattrs(self._lineattrs))
 
     def setcolumns(self, graph, columns):
         def checkpattern(key, index, pattern, iskey, isindex):
@@ -2066,11 +2071,10 @@ class mark:
         if forceymax is None or forceymax > yaxismax: forceymax = yaxismax
         self.size = unit.topt(unit.length(_getattr(self.size_str), default_type="v"))
         mark = _getattr(self.mark)
-        if self.markattrs is not None:
-            markattrs = _getattrs(self.markattrs)
-        if self.errorbarattrs is not None:
-            errorbarattrs = _getattrs(self.errorbarattrs)
+        self.markattrs = _getattrs(_ensuresequence(self._markattrs))
+        self.errorbarattrs = _getattrs(_ensuresequence(self._errorbarattrs))
         self.errorsize = self.errorscale * self.size
+        self.lineattrs = _getattrs(_ensuresequence(self._lineattrs))
         clipcanvas = graph.clipcanvas()
         lineels = []
         moveto = 1
@@ -2093,13 +2097,13 @@ class mark:
             xmin, x, xmax = [graph.xconvert(xaxis.convert(x)) for x in xmin, x, xmax]
             ymin, y, ymax = [graph.yconvert(yaxis.convert(y)) for y in ymin, y, ymax]
             if drawmark:
-                if self.errorbarattrs is not None:
-                    self.drawerrorbar(graph, point, xmin, x, xmax, ymin, y, ymax, errorbarattrs)
+                if self._errorbarattrs is not None:
+                    self.drawerrorbar(graph, point, xmin, x, xmax, ymin, y, ymax, self.errorbarattrs)
                 else:
                     if xmin is not None or xmax is not None or ymin is not None or ymax is not None:
                         raise ValueError("errorbar data recieved while errorbars are off")
-                if self.markattrs is not None:
-                    self.drawmark(graph, point, x, y, mark, markattrs)
+                if self._markattrs is not None:
+                    self.drawmark(graph, point, x, y, mark, self.markattrs)
             if x is not None and y is not None:
                 if moveto:
                     lineels.append(path._moveto(x, y))
@@ -2109,8 +2113,8 @@ class mark:
             else:
                 moveto = 1
         self.path = path.path(*lineels)
-        if self.lineattrs is not None:
-            clipcanvas.stroke(self.path, *_getattrs(self.lineattrs))
+        if self._lineattrs is not None:
+            clipcanvas.stroke(self.path, self.lineattrs)
 
 
 class _changecross(changesequence):
@@ -2188,11 +2192,22 @@ class data:
 
     defaultstyle = mark()
 
-    def __init__(self, datafile, **columns):
-        self.datafile = datafile
+    def __init__(self, file, **columns):
+        if not isinstance(file, datafile._datafile):
+            self.datafile = datafile.datafile(file)
+        else:
+            self.datafile = file
         self.columns = {}
+        usedkeys = []
         for key, column in columns.items():
-            self.columns[key] = datafile.getcolumnno(column)
+            try:
+                self.columns[key] = self.datafile.getcolumnno(column)
+            except datafile.ColumnError:
+                self.columns[key] = len(self.datafile.titles)
+                usedkeys.extend(self.datafile._addcolumn(column, **columns))
+        for usedkey in usedkeys:
+            if usedkey in self.columns.keys():
+                del self.columns[usedkey]
 
     def setstyle(self, graph, style):
         self.style = style
@@ -2212,7 +2227,7 @@ class function:
 
     defaultstyle = line()
 
-    def __init__(self, expression, points = 100, parser=mathtree.parser()):
+    def __init__(self, expression, points=100, parser=mathtree.parser()):
         self.points = points
         self.result, expression = expression.split("=")
         self.mathtree = parser.parse(expression)

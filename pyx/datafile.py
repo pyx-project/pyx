@@ -26,9 +26,60 @@
 import re
 import mathtree
 
+
 class ColumnError(Exception): pass
 
-class datafile:
+
+class _datafile:
+
+    def getcolumnno(self, column):
+        if self.titles.count(column) == 1:
+            return self.titles.index(column)
+        try:
+            self.titles[column]
+        except (TypeError, IndexError, ValueError):
+            raise ColumnError
+        return column
+
+    def getcolumn(self, column):
+        columnno = self.getcolumnno(column)
+        return [x[columnno] for x in self.data]
+
+    def _addcolumn(self, expression, **columns):
+        try:
+            split = expression.rindex("=")
+        except ValueError:
+            self.titles.append(None)
+        else:
+            self.titles.append(expression[:split])
+            expression = expression[split+1:]
+        tree = self.parser.parse(expression)
+        columnlist = {}
+        for key in tree.VarList():
+            try:
+                columnlist[key] = self.getcolumnno(columns[key])
+            except KeyError:
+                columnlist[key] = self.getcolumnno(key)
+        varlist = {}
+        for data in self.data:
+            try:
+                for key in columnlist.keys():
+                    varlist[key] = float(data[columnlist[key]])
+            except (TypeError, ValueError):
+                data.append(None)
+            else:
+                data.append(tree.Calc(varlist))
+        return columnlist.keys()
+
+    def addcolumn(self, expression, **columns):
+        usedkeys = self._addcolumn(expression, **columns)
+        unusedkeys = [key for key in columns.keys() if key not in usedkeys]
+        if len(unusedkeys):
+            raise KeyError("unused keys %s" % unusedkeys)
+        return self
+
+
+class datafile(_datafile):
 
     def splitline(self, line, stringpattern, columnpattern, tofloat=1):
         result = []
@@ -49,13 +100,17 @@ class datafile:
                 line = line[match.end():]
         return result
 
-    def __init__(self, filename, commentpattern=re.compile(r"(#+|!+|%+)\s*"),
-                                 stringpattern=re.compile(r"\"(.*?)\"(\s+|$)"),
-                                 columnpattern=re.compile(r"(.*?)(\s+|$)"),
-                                 parser=mathtree.parser()):
-        self.filename = filename
+    def __init__(self, file, commentpattern=re.compile(r"(#+|!+|%+)\s*"),
+                             stringpattern=re.compile(r"\"(.*?)\"(\s+|$)"),
+                             columnpattern=re.compile(r"(.*?)(\s+|$)"),
+                             parser=mathtree.parser()):
         self.parser = parser
-        file = open(filename, "r")
+        try:
+            file + ''
+        except TypeError:
+            pass
+        else:
+            file = open(file, "r")
         self.titles = []
         self.data = []
         linenumber = 0
@@ -83,41 +138,3 @@ class datafile:
             self.titles += [None] * (maxcolumns - len(self.titles))
             for line in self.data:
                 line += [None] * (maxcolumns - len(line))
-
-    def getcolumnno(self, column):
-        if self.titles.count(column) == 1:
-            return self.titles.index(column)
-        try:
-            self.titles[column]
-        except (TypeError, IndexError, ValueError):
-            raise ColumnError
-        return column
-
-    def getcolumn(self, column):
-        columnno = self.getcolumnno(column)
-        return [x[columnno] for x in self.data]
-
-    def addcolumn(self, expression, **columns):
-        try:
-            split = expression.rindex("=")
-        except ValueError:
-            self.titles.append(None)
-        else:
-            self.titles.append(expression[:split])
-            expression = expression[split+1:]
-        tree = self.parser.parse(expression)
-        columnlist = {}
-        for key, column in columns.items():
-            columnlist[key] = self.getcolumnno(column)
-        for key in tree.VarList():
-            if key not in columnlist.keys():
-                 columnlist[key] = self.getcolumnno(key)
-        varlist = {}
-        for data in self.data:
-            try:
-                for key in columnlist.keys():
-                    varlist[key] = float(data[columnlist[key]])
-            except (TypeError, ValueError):
-                data.append(None)
-            else:
-                data.append(tree.Calc(varlist))
