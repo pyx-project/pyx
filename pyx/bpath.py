@@ -479,7 +479,7 @@ def _bpathelIntersect(a, a_t0, a_t1, b, b_t0, b_t1, epsilon=1e-5):
 
     a and b are bpathels with parameter ranges [a_t0, a_t1],
     respectively [b_t0, b_t1].
-    epsilon determines when bpathels are assumed to be straight
+    epsilon determines when the bpathels are assumed to be straight
     
     """
 
