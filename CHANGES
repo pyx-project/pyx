@@ -11,7 +11,7 @@ PyX
   - graph module:
     - removed manualpart and partitioners mix keyword (documentation already updated)
     - results of the splitting at "=" in graph.function were not stripped
-    - rect style (and errorbars?) should use clipping
+    - rect style (and errorbars?) should use clipping (TODO: should they or do the now?)
   - canvas module:
     - stroke and fill now support trafos (TODO: documentation)
   TODO:
