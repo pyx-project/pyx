@@ -78,7 +78,7 @@ class halign:
     right  = _halign("right")
    
 class hsize(_AttrTexStr):
-    def __init__(self, value, canvas):
+    def __init__(self, value):
         self.value = unit.totpt(value)
 
 class _valign(_AttrTexValCmpStr):
