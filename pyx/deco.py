@@ -351,10 +351,10 @@ class arrow(deco, attr.attr):
 
         # go back to original orientation, if necessary
         if self.position:
-            anormpath=anormpath.reversed()
+            anormpath.reverse()
 
         # set the new (shortened) strokepath
-        dp.strokepath=anormpath
+        dp.strokepath = anormpath
 
         return dp
 
