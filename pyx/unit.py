@@ -21,8 +21,19 @@ m = {
     }
 
 class unit:
-    def __init__(self, uscale=1.0, vscale=1.0, wscale=1.0):
-        self.scale        = { 't':1, 'u':uscale, 'v':vscale, 'w':wscale }
+    def __init__(self, scale=None, uscale=None, vscale=None, wscale=None):
+        self.scale = { 't':1, 'u':1, 'v':1, 'w':1 }
+        if scale: 
+            self.scale = scale
+        if uscale:
+            self.scale[uscale] = uscale
+        if vscale:
+            self.scale[vscale] = vscale
+        if wscale:
+            self.scale[wscale] = wscale
+
+    def copy(self):
+        return unit(scale=self.scale.copy())
         
     def convert_to(self, l, dest_unit="m"):
 
@@ -31,7 +42,12 @@ class unit:
 
         ll=length(l)                    # convert to length instance if necessary
 
-        return ll.factor*self.scale[ll.unit_type]/m[dest_unit]
+        result = 0 
+
+        for unit_type in self.scale.keys():
+            result = result +  ll.length[unit_type]*self.scale[unit_type]/m[dest_unit]
+
+        return result
 
     def m(self, l):
         return self.convert_to(l, "m")
@@ -51,59 +67,61 @@ class length:
        -unit_name:  "m", "cm", "mm", "inch", "pt", "tpt". Optional, defaults to default_unit
     A length specified as a number corresponds to the default values of unit_type
     and unit_name
+
+    Internally all length are stored in units of m as a quadruple for the four unit_types
     """
     
     default_unit = "cm"
 
-    def __init__(self, *args):
-        if len(args)==1:
-            l=args[0]
-            if isinstance(l, length):
-                self.factor    = l.factor
-                self.unit_type = l.unit_type
-
+    def __init__(self, l=None, glength=None):
+        self.length = { 't': 0 , 'u': 0, 'v': 0, 'v':0, 'w':0 }
+        
+        if l:
+            if isinstance(l,length):
+               self.length=l.length
             elif type(l) is StringType:
                 unit_match=re.match(unit_pattern, l)
                 if unit_match is None:
                     assert 0, "expecting number or string of the form 'number [u|v|w] unit'"
                 else:
-                    self.factor    = float(unit_match.group(1))
+                    self.prefactor = float(unit_match.group(1))
                     self.unit_type = unit_match.group(7) or "u"
                     self.unit_name = unit_match.group(9) or self.default_unit
 
-                    self.factor    = self.factor * m[self.unit_name]
+                    self.length[self.unit_type]  = self.prefactor * m[self.unit_name]
 
             elif type(l) in (IntType, LongType, FloatType):
-                self.factor     = l * m[length.default_unit]
-                self.unit_type  = "u"
+                self.length['u'] = l * m[length.default_unit]
             else:
                 assert 0, "cannot convert given argument to length type"
-        elif len(args)==3:
-            self.factor    = args[0] * m[args[2]]
-            self.unit_type = args[1]
-        else: 
-            assert 0, "expecting string or factor, unit_type, unit_name"
+        if glength:
+            self.length=glength
 
     def __mul__(self, factor):
-        return length(self.factor * factor, self.unit_type, "m")
+        newlength = self.length.copy()
+        for unit_type in newlength.keys():
+           newlength[unit_type] = newlength[unit_type]*factor
+        return length(glength=newlength)
 
     __rmul__=__mul__
 
     def __add__(self, l):
         ll=length(l)                    # convert to length if necessary
-        if ( self.unit_type!=ll.unit_type 
-             and not (self.factor==0 or ll.factor==0) ):
-            assert 0, "can only add units of same type"
-        else:
-            return length(self.factor+ll.factor, self.unit_type, "m")
+        newlength = self.length.copy()
+        for unit_type in newlength.keys():
+           newlength[unit_type] = newlength[unit_type]+ll.length[unit_type]
+        return length(glength=newlength)
 
     def __neg__(self):
-        return length(-self.factor, self.unit_type, "m")
+        newlength = self.length.copy()
+        for unit_type in newlength.keys():
+           newlength[unit_type] = -newlength[unit_type]
+        return length(glength=newlength)
 
     __radd__=__add__
 
     def __str__(self):
-        return "%f %s m" % (self.factor, self.unit_type)
+        return "(%(t)f t + %(u)f u + %(v)f v + %(w)f w) m" % self.length
 
 if __name__ == "__main__":
      length.default_unit="cm"
@@ -122,4 +140,7 @@ if __name__ == "__main__":
      print unit().pt("1.e-3 v")
      print unit().tpt("1.e-3")
      print unit().pt("1.e-3 inch")
-
+     
+     length.default_unit="cm"
+     print length("1 t") + length("2 u") + length("3 v") + length("4 w")
+     
