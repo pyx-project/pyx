@@ -62,7 +62,6 @@ class _poly:
                 f = 0.375 * x * r
                 g = 1.25 * f + math.sqrt(1.5625 * f * f + f * r / 6.0)
                 e = f * math.sqrt(0.5 + 0.5 * (d1[0] * d2[0] + d1[1] * d2[1]))
-                print r, g, f, e
                 e = c[0] + e * dc[0], c[1] + e * dc[1]
                 f1 = c[0] + f * d1[0], c[1] + f * d1[1]
                 f2 = c[0] + f * d2[0], c[1] + f * d2[1]
