@@ -622,7 +622,7 @@ class virtualfont(font):
         fontpath = pykpathsea.find_file(name, pykpathsea.kpse_vf_format)
         if fontpath is None or not len(fontpath):
             raise RuntimeError
-        self.vffile = vffile(fontpath, self.scale, tfmconv, fontmap, debug > 1)
+        self.vffile = vffile(fontpath, self.scale, tfmconv/self.scale, fontmap, debug > 1)
 
     def getfonts(self):
         """ return fonts used in virtual font itself """
@@ -721,8 +721,8 @@ class dvifile:
     def flushout(self):
         """ flush currently active string """
         if self.actoutstart:
-            x =  unit.t_m(self.actoutstart[0] * self.scale * self.conv * 0.0254 / self.resolution)
-            y = -unit.t_m(self.actoutstart[1] * self.scale * self.conv * 0.0254 / self.resolution)
+            x =  unit.t_m(self.actoutstart[0] * self.conv * 0.0254 / self.resolution)
+            y = -unit.t_m(self.actoutstart[1] * self.conv * 0.0254 / self.resolution)
             if self.debug:
                 print "[%s]" % self.actoutstring
             self.actpage.insert(_show(unit.topt(x), unit.topt(y), self.actoutstring))
@@ -730,17 +730,17 @@ class dvifile:
 
     def putrule(self, height, width, inch=1):
         self.flushout()
-        x1 =  unit.t_m(self.pos[_POS_H] * self.scale * self.conv * 0.0254 / self.resolution)
-        y1 = -unit.t_m(self.pos[_POS_V] * self.scale * self.conv * 0.0254 / self.resolution)
-        w = unit.t_m(width * self.scale * self.conv * 0.0254 / self.resolution)
-        h = unit.t_m(height * self.scale * self.conv * 0.0254 / self.resolution)
+        x1 =  unit.t_m(self.pos[_POS_H] * self.conv * 0.0254 / self.resolution)
+        y1 = -unit.t_m(self.pos[_POS_V] * self.conv * 0.0254 / self.resolution)
+        w = unit.t_m(width * self.conv * 0.0254 / self.resolution)
+        h = unit.t_m(height * self.conv * 0.0254 / self.resolution)
 
         if height > 0 and width > 0:
             if self.debug:
-                pixelw = int(width*self.scale*self.conv)
-                if pixelw < width*self.scale*self.conv: pixelw += 1
-                pixelh = int(height*self.scale *self.conv)
-                if pixelh < height*self.scale*self.conv: pixelh += 1
+                pixelw = int(width*self.conv)
+                if pixelw < width*self.conv: pixelw += 1
+                pixelh = int(height*self.conv)
+                if pixelh < height*self.conv: pixelh += 1
 
                 print ("%d: %srule height %d, width %d (%dx%d pixels)" %
                        (self.filepos, inch and "set" or "put", height, width, pixelh, pixelw))
@@ -840,8 +840,8 @@ class dvifile:
         # XXX: reset actoutfont only where strictly needed
         self.actoutfont = None
         
-        x =  unit.t_m(self.pos[_POS_H] * self.scale * self.conv * 0.0254 / self.resolution)
-        y = -unit.t_m(self.pos[_POS_V] * self.scale * self.conv * 0.0254 / self.resolution)
+        x =  unit.t_m(self.pos[_POS_H] * self.conv * 0.0254 / self.resolution)
+        y = -unit.t_m(self.pos[_POS_V] * self.conv * 0.0254 / self.resolution)
         if self.debug:
             print "%d: xxx '%s'" % (self.filepos, s)
         if not s.startswith("PyX:"):
@@ -927,10 +927,11 @@ class dvifile:
         continue with self.pos=afterpos
 
         """
+
         if self.debug:
             print "executing new dvi chunk scaled at %f" % scale
-        self.statestack.append((self.file, self.fonts, self.activefont, afterpos, self.stack, self.scale))
-        self.scale = scale
+        self.statestack.append((self.file, self.fonts, self.activefont, afterpos, self.stack, self.conv))
+        self.conv *= scale
         self.file = stringbinfile(dvi)
         self.fonts = fonts
         self.stack = []
@@ -945,7 +946,7 @@ class dvifile:
         if self.debug:
             print "finished executing dvi chunk"
         self.file.close()
-        self.file, self.fonts, self.activefont, self.pos, self.stack, self.scale = self.statestack.pop()
+        self.file, self.fonts, self.activefont, self.pos, self.stack, self.conv = self.statestack.pop()
 
     # routines corresponding to the different reader states of the dvi maschine
 
@@ -1172,9 +1173,6 @@ class dvifile:
 
         # stack for self.file, self.fonts and self.stack, needed for VF inclusion
         self.statestack = []
-
-        # global scaling used for VF ouput
-        self.scale = 1
 
         self.file = binfile(self.filename, "rb")
 
