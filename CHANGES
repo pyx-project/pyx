@@ -1,7 +1,5 @@
 PyX
 
-- ATT: refactoring of attributes in progress!!!
-
 TODO:
   - graph module
     - rect style (and errorbars?) should use clipping (TODO: should they or do the now?)
