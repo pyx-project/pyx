@@ -50,12 +50,12 @@ Paths can be drawn on the canvas using one of the following methods:
 Arbitrary allowed elements like other \class{canvas} instances can
 be inserted in the canvas using
 
-\begin{methoddesc}{insert}{PSOp, attrs=[]}
-  Inserts an instance of \class{base.PSOp} into the canvas.  If
-  \var{attrs} are present, PSOp is inserted into a new
+\begin{methoddesc}{insert}{item, attrs=[]}
+  Inserts an instance of \class{base.canvasitem} into the canvas.  If
+  \var{attrs} are present, \var{item} is inserted into a new
   \class{canvas}instance with \var{attrs} as arguments passed to its
   constructor is created. Then this \class{canvas} instance is
-  inserted itself into the canvas. Returns \var{PSOp}.
+  inserted itself into the canvas. Returns \var{item}.
 \end{methoddesc}
 
 Text output on the canvas is possible using
