@@ -33,20 +33,22 @@ def testwriggle(c):
     c.stroke(p, [color.rgb.blue, deco.wriggle(), deco.wriggle(loops=250, radius=0.1)])
 
 
-def testcurvecorners(c):
+def testsmoothed(c):
     p = path.path(path.moveto(0,0), path.lineto(3,0), path.lineto(5,7),
     path.curveto(0,10, -2,8, 0,6),
     path.lineto(0,4), path.lineto(-5,4), path.lineto(-5,2), path.lineto(-0.2,0.2),
-    path.closepath())
+    path.closepath()
+    ) + path.circle(0,0,2)
 
-    c.stroke(path.normpath(p), [color.gray(0.8), style.linewidth.THIck])
-    c.stroke(p, [color.rgb.blue, deco.curvecorners(radius=1, softness=0.1)])
-    c.stroke(p, [color.rgb.red, deco.curvecorners(radius=1, softness=1)])
-    c.stroke(path.circle(0,0,2), [deco.curvecorners(radius=6)])
+    c.stroke(path.normpath(p), [color.gray(0.8), style.linewidth.THICk])
+    c.stroke(p, [color.rgb.green, deco.smoothed(radius=0.85, softness=1, strict=1)])
+    c.stroke(p, [color.rgb.blue, deco.smoothed(radius=0.85, softness=1, strict=0)])
+    c.stroke(p, [color.rgb.blue, deco.smoothed(radius=0.2, softness=1, strict=0)])
+    c.stroke(p, [color.rgb.green, deco.smoothed(radius=1.2, softness=1, strict=0)])
 
 c=canvas.canvas()
 dotest(c, 0, 0, "testwriggle")
-dotest(c, 15, 0, "testcurvecorners")
+dotest(c, 15, 0, "testsmoothed")
 c.writeEPSfile("test_deco", paperformat="a4", rotated=0, fittosize=1)
 
 
