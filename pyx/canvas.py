@@ -425,8 +425,11 @@ if __name__=="__main__":
         t.text(11+angle/10, 5, str(angle), direction(angle))
         t.text(11+angle/10, 6, str(angle), direction(angle), halign.center)
         t.text(11+angle/10, 7, str(angle), direction(angle), halign.right)
-    for pos in range(1,21):
-        t.text(pos, 7.5, ".")
+    for pos in range(2,21):
+        c.draw(line(pos, 4.5, pos, 7.5)) 
+    c.draw(line(1.5, 5, 20.5, 5)) 
+    c.draw(line(1.5, 6, 20.5, 6)) 
+    c.draw(line(1.5, 7, 20.5, 7)) 
    
     p=path([ moveto(5,12), 
              lineto(7,12), 

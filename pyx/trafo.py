@@ -61,8 +61,8 @@ class transformation:
         return other.__mul__(self)
 
     def apply(self, point):
-	return (self.matrix[0][0]*point[0] + self.matrix[0][1]*point[1]+self.vector[0],
-                self.matrix[1][0]*point[0] + self.matrix[1][1]*point[1]+self.vector[1])
+	return (self.matrix[0][0]*point[0] + self.matrix[1][0]*point[1]+self.vector[0],
+                self.matrix[0][1]*point[0] + self.matrix[1][1]*point[1]+self.vector[1])
 
     def matrix():
         return self.matrix
@@ -96,10 +96,11 @@ class transformation:
         return transformation(matrix=matrix) * transformation(vector=(-self.vector[0],-self.vector[1]))
 
     def bbox(self, acanvas):
-	return canvas.bbox()
+        # assert 0, "this shouldn't be called!"
+        return canvas.bbox()
 
     def write(self, canvas, file):
-        file.write("[%f %f %f %f %f %f] concat" % \
+        file.write("[%f %f %f %f %f %f] concat\n" % \
 	            ( self.matrix[0][0], self.matrix[0][1], 
 	              self.matrix[1][0], self.matrix[1][1], 
 		      canvas.unit.pt(self.vector[0]), canvas.unit.pt(self.vector[1])))

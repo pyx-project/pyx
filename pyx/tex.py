@@ -416,15 +416,20 @@ class tex(_InstanceList):
         except IOError:
             self.Sizes = [ ]
 
+        self.FirstCmd = 1
         if self.mode == mode.TeX:
             # TODO: other ways for creating font sizes?
             LtsName = os.path.join(os.path.dirname(__file__), "lts", str(self.latexsize) + ".lts")
             self.define(open(LtsName, "r").read())
+            self.define("\\hsize0truein%\n\\vsize0truein%\n\\hoffset-1truein%\n\\voffset-1truein")
         if self.mode == mode.LaTeX:
+            self.BeginDocument = 0
             if self.docopt:
-                self.define("\\documentclass[" + str(self.docopt) + "]{" + str(self.docclass) + "}\n")
+                self.define("\\documentclass[" + str(self.docopt) + "]{" + str(self.docclass) + "}")
             else:
-                self.define("\\documentclass{" + str(self.docclass) + "}\n")
+                self.define("\\documentclass{" + str(self.docclass) + "}")
+            self.define("\\hsize0truein%\n\\vsize0truein%\n\\hoffset-1truein%\n\\voffset-1truein")
+
 
 
     def GetStack(self):
@@ -446,6 +451,9 @@ class tex(_InstanceList):
     
         # TODO: improve file handling (although it's quite usable now, those things can always be improved)
 
+        assert len(self.BoxCmds), "nothing to do" # TODO: we shouln't care, but we shouldn't run tex here,
+                                                  #       because it might broken due to missing BeginDocument
+
         if self.DoneRunTex:
             return
 
@@ -463,15 +471,10 @@ class tex(_InstanceList):
 
         texfile = open(TempName + ".tex", "w")
 
-        texfile.write("\\nonstopmode\n")
+        texfile.write("\\nonstopmode%\n")
+        texfile.write("\\newwrite\\sizefile%\n\\newbox\\localbox%\n\\newbox\\pagebox%\n\\immediate\\openout\\sizefile=" + TempName + ".size%\n")
         for Cmd in self.DefCmds:
             Cmd.write(acanvas, texfile)
-
-        texfile.write("\\hsize0truein\n\\vsize0truein\n\\hoffset-1truein\n\\voffset-1truein\n")
-
-        texfile.write("\\newwrite\\sizefile\n\\newbox\\localbox\n\\newbox\\pagebox\n\\immediate\\openout\\sizefile=" + TempName + ".size\n")
-        if self.mode == mode.LaTeX:
-            texfile.write("\\begin{document}\n")
 
         texfile.write("\\setbox\\pagebox=\\vbox{%\n")
 
@@ -581,15 +584,24 @@ class tex(_InstanceList):
 
         self.AllowedInstances(styleparams, [_msglevel, ])
 
-        self.DefCmds.append(_DefCmd(Cmd,
+        self.DefCmds.append(_DefCmd(Cmd + "%\n",
                                     len(self.DefCmds)+ len(self.BoxCmds),
                                     self.GetStack(),
                                     self.ExtractInstance(styleparams, _msglevel, msglevel.hideload)))
 
+    def DoBeginDocument(self):
+        assert not self.BeginDocument, "multiple BeginDocument statements not allowed"
+        assert self.mode == mode.LaTeX, "BeginDocument allowed in LaTeX mode only"
+        self.define("\\begin{document}")
+        self.BeginDocument = 1
+    
     def InsertCmd(self, Cmd, styleparams):
 
-        if not self.DefCmdsStr:
+        if self.FirstCmd:
+            if (self.mode == mode.LaTeX) and not self.BeginDocument:
+                self.DoBeginDocument()
             self.DefCmdsStr = reduce(lambda x,y: x + y.DefCmd, self.DefCmds, "")
+            self.FirstCmd = 0
 
         MyCmd = _BoxCmd(self.DefCmdsStr,
                         Cmd,

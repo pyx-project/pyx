@@ -4,26 +4,26 @@ from path import *
 import types, re, tex
 
 class _Map:
-    def forward(self, Values):
+    def convert(self, Values):
         if type(Values) in (types.IntType, types.LongType, types.FloatType, ):
-            return self._forward(Values)
+            return self._convert(Values)
         else:
-            return map(lambda x, self = self: self._forward(x), Values)
+            return map(lambda x, self = self: self._convert(x), Values)
 
-    def reverse(self, Values):
+    def invert(self, Values):
         if type(Values) in (types.IntType, types.LongType, types.FloatType, ):
-            return self._reverse(Values)
+            return self._invert(Values)
         else:
-            return map(lambda x, self = self: self._reverse(x), Values)
+            return map(lambda x, self = self: self._invert(x), Values)
 
 class _LinMap(_Map):
     def set(self, m, n):
         self.m = float(m)
         self.n = float(n)
         return self
-    def _forward(self, Value):
+    def _convert(self, Value):
         return self.m * Value + self.n
-    def _reverse(self, Value):
+    def _invert(self, Value):
         return (Value - self.n) / self.m
 
 
@@ -80,13 +80,7 @@ class LinAxis(_LinMap):
         return "%.3f" % x
 
     def TickList(self):
-        return map(lambda x, self=self: Tick(x, self.ValToVirt(x), self.ValToLab(x)), self.TickValPosList())
-
-    def ValToVirt(self, Values):
-        return self.forward(Values)
-
-    def VirtToVal(self, Values):
-        return self.reverse(Values)
+        return map(lambda x, self=self: Tick(x, self.convert(x), self.ValToLab(x)), self.TickValPosList())
 
 
 ###############################################################################
@@ -139,7 +133,7 @@ class GraphXY(Graph):
                 except DataRangeUndefinedException:
                     pass
             if len(ranges) == 0:
-                assert 0, "range for %s unknown" % key
+                assert 0, "range for %s-axis unknown" % key
             self.Axis[key].set(min( map (lambda x: x[0], ranges)),
                                max( map (lambda x: x[1], ranges)))
 
@@ -154,36 +148,38 @@ class GraphXY(Graph):
         self.VirMap = (_LinMap().set(self.width - self.left - self.right, self.x + self.left),
                        _LinMap().set(self.height - self.buttom - self.left, self.y + self.buttom), )
 
-        self.canvas.draw(rect(self.VirMap[0].forward(0),
-                              self.VirMap[1].forward(0),
-                              self.VirMap[0].forward(1) - self.VirMap[0].forward(0),
-                              self.VirMap[1].forward(1) - self.VirMap[1].forward(0)))
+        self.canvas.draw(rect(self.VirMap[0].convert(0),
+                              self.VirMap[1].convert(0),
+                              self.VirMap[0].convert(1) - self.VirMap[0].convert(0),
+                              self.VirMap[1].convert(1) - self.VirMap[1].convert(0)))
 
         for key in self.Axis.keys():
             if _XPattern.match(key):
                 Type = 0
-            if _YPattern.match(key):
+            elif _YPattern.match(key):
                 Type = 1
+            else:
+                assert 0, "Axis key %s not allowed" % key
             for tick in self.Axis[key].TickList():
                 xv = tick.VirtualPos
                 l = tick.Label
-                x = self.VirMap[Type].forward(xv)
+                x = self.VirMap[Type].convert(xv)
                 if Type == 0:
-                    self.canvas.draw(line(x, self.VirMap[1].forward(0), x, self.VirMap[1].forward(0) + 0.2))
-                    self.tex.text(x, self.VirMap[1].forward(0)-0.5, l, tex.halign.center)
+                    self.canvas.draw(line(x, self.VirMap[1].convert(0), x, self.VirMap[1].convert(0) + 0.2))
+                    self.tex.text(x, self.VirMap[1].convert(0)-0.5, l, tex.halign.center)
                 if Type == 1:
-                    self.canvas.draw(line(self.VirMap[0].forward(0), x, self.VirMap[0].forward(0) + 0.2, x))
-                    self.tex.text(self.VirMap[0].forward(0)-0.5, x, l, tex.halign.right)
+                    self.canvas.draw(line(self.VirMap[0].convert(0), x, self.VirMap[0].convert(0) + 0.2, x))
+                    self.tex.text(self.VirMap[0].convert(0)-0.5, x, l, tex.halign.right)
 
         for pd in self.plotdata:
             pd.PlotStyle.LoopOverPoints(self, pd.Data)
 
     def VirToPos(self, Type, List):
-        return self.VirMap[Type].forward(List)
+        return self.VirMap[Type].convert(List)
 
     def ValueList(self, Pattern, Type, Data):
         (key, ) = filter(lambda x, Pattern = Pattern: Pattern.match(x), Data.GetKindList())
-        return self.VirToPos(Type, self.Axis[key].ValToVirt(Data.GetValues(key)))
+        return self.VirToPos(Type, self.Axis[key].convert(Data.GetValues(key)))
 
 
 
@@ -367,7 +363,7 @@ class Function:
             self.XAxis[key] = Axis[key]
             values = []
             for x in range(self.Points + 1):
-                values.append(self.XAxis[key].VirtToVal(x * 1.0 / self.Points))
+                values.append(self.XAxis[key].invert(x * 1.0 / self.Points))
             self.XValues[key] = values
         # this isn't smart ... we should try to make self.MT.Calc(..., i) faster (walk only once throu the tree)
         self.YValues = map(lambda i, self = self: self.MT.Calc(self.XValues, i), range(self.Points + 1))
