@@ -901,8 +901,9 @@ class texrunner:
                 self.execute("\\newdimen\\linewidth%\n", [])
             elif self.mode == "latex":
                 if self.pyxgraphics:
+                    pyxdef = os.path.join(siteconfig.sharedir, "pyx.def")
                     try:
-                        open(os.path.join(siteconfig.sharedir, "pyx.def"), "r").close()
+                        open(pyxdef, "r").close()
                     except IOError:
                         IOError("file 'pyx.def' is not available or not readable. Check your installation or turn off the pyxgraphics option.")
                     pyxdef = os.path.abspath(pyxdef).replace(os.sep, "/")
