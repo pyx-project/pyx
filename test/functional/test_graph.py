@@ -114,7 +114,7 @@ def test_bar(c, x, y):
     g.plot(graph.data(df, x=1, y=2), graph.bar(fromzero=0))
     #g = c.insert(graph.graphxy(x, y, height=5, width=5, y=graph.baraxis(title="Month")))
     #g.plot(graph.data(df, x=2, y=1), graph.bar(xbar=1, fromzero=0))
-    #g = c.insert(graph.graphxy(x, y, height=5, width=20, x=graph.baraxis(graph.baraxis(dist=0), multisubaxis=1, painter=graph.baraxispainter(innerticklength=0.2))))
+    #g = c.insert(graph.graphxy(x, y, height=5, width=20, x=graph.baraxis(multisubaxis=graph.baraxis(dist=0), painter=graph.baraxispainter(innerticklength=0.3))))
     #g.plot([graph.data(df, x=1, y=2), graph.data(df, x=1, y=3), graph.data(df, x=1, y=3)], graph.bar())
     #g = c.insert(graph.graphxy(x, y, height=5, width=20, x=graph.baraxis(graph.baraxis(dist=0))))
     #g.plot([graph.data(df, x=0, y=2), graph.data(df, x=0, y=3), graph.data(df, x=0, y=2), None, graph.data(df, x=0, y=3)], graph.bar(stacked=2))
@@ -128,7 +128,7 @@ test_ownmark(c, 0, 0)
 test_allerrorbars(c, -7, 0)
 #test_3d(c, -7, 7)
 test_split(c, -7, 7)
-#test_bar(c, -7, 14)
+test_bar(c, -7, 14)
 
 c.writetofile("test_graph", paperformat="a4")
 

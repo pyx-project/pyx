@@ -971,10 +971,11 @@ class axisrater:
             weight += rater.weight
         if len(ticks):
             # XXX: tickrange was not yet applied
+            # TODO: density == 1?
             rate += self.tickrange.rate(axis.convert(float(ticks[-1]) * axis.divisor) -
                                         axis.convert(float(ticks[0]) * axis.divisor), 1)
         else:
-            rate += self.tickrange.rate(0)
+            rate += self.tickrange.rate(0, 1)
         weight += self.tickrange.weight
         return rate/weight
 
@@ -1409,20 +1410,23 @@ class axiscanvas(canvas._canvas):
     """axis canvas
     - an axis canvas is a regular canvas to be filled by
       a axispainters painter method
-    - it contains extent (a pyx length) to be used for the
+    - it contains a PyX length extent to be used for the
       alignment of additional axes; the axis extent should
       be filled by the axispainters painter method; you may
       grasp this as a size information comparable to a bounding
       box
-    - it contains labels (a list of textboxes) to be used to rate the
-      distances between the labels if needed by the axis later on;
-      the painter method has not only to insert the labels into this
-      canvas, but should also fill this list"""
+    - it contains a list of textboxes called labels which are
+      used to rate the distances between the labels if needed
+      by the axis later on; the painter method has not only to
+      insert the labels into this canvas, but should also fill
+      this list, when a rating of the distances should be
+      performed by the axis"""
 
     # __implements__ = sole implementation
 
     def __init__(self, texrunner, *args, **kwargs):
         """initializes the instance
+        - sets the texrunner
         - sets extent to zero
         - sets labels to an empty list"""
         canvas._canvas.__init__(self, *args, **kwargs)
@@ -1463,8 +1467,10 @@ orthogonaltext = rotatetext(0)
 class _Iaxispainter:
     "class for painting axes"
 
-    def paint(self, axis, axiscanvas):
+    def paint(self, axispos, axis, axiscanvas):
         """paint the axis into the axiscanvas
+        - axispos is an instance, which implements _Iaxispos to
+          define the tick positions
         - the axis and should not be modified (we may
           add some temporary variables like axis.ticks[i].temp_xxx,
           which might be used just temporary) -- the idea is that
@@ -1472,9 +1478,6 @@ class _Iaxispainter:
         - also do not modify the instance (self) -- even this
           instance might be used several times; thus do not modify
           attributes like self.titleattrs etc. (just use a copy of it)
-        - the axis should be accessed to get the tick positions
-          namely by _Iaxispos and _Imap; see those interface
-          definitions for details
         - the method might access some additional attributes from
           the axis, e.g. the axis title -- the axis painter should
           document this behavior and rely on the availability of
@@ -1511,11 +1514,11 @@ class axistitlepainter:
         self.titledirection = titledirection
         self.titlepos = titlepos
 
-    def paint(self, axis, axiscanvas):
+    def paint(self, axispos, axis, axiscanvas):
         if axis.title is not None and self.titleattrs is not None:
             titledist = unit.length(self.titledist_str, default_type="v")
-            x, y = axis._vtickpoint(self.titlepos, axis=axis)
-            dx, dy = axis.vtickdirection(self.titlepos, axis=axis)
+            x, y = axispos._vtickpoint(self.titlepos, axis=axis)
+            dx, dy = axispos.vtickdirection(self.titlepos, axis=axis)
             titleattrs = helper.ensurelist(self.titleattrs)
             if self.titledirection is not None:
                 titleattrs.append(self.titledirection.trafo(dx, dy))
@@ -1529,7 +1532,7 @@ class axistitlepainter:
 class axispainter(axistitlepainter):
     """class for painting the ticks and labels of an axis
     - the inherited titleaxispainter is used to paint the title of
-      the axis as well
+      the axis
     - note that the type of the elements of ticks given as an argument
       of the paint method must be suitable for the tick position methods
       of the axis"""
@@ -1593,12 +1596,12 @@ class axispainter(axistitlepainter):
         self.labelvequalize = labelvequalize
         axistitlepainter.__init__(self, **kwargs)
 
-    def paint(self, axis, axiscanvas):
+    def paint(self, axispos, axis, axiscanvas):
         labeldist = unit.length(self.labeldist_str, default_type="v")
         for tick in axis.ticks:
             tick.temp_v = axis.convert(float(tick) * axis.divisor)
-            tick.temp_x, tick.temp_y = axis._vtickpoint(tick.temp_v, axis=axis)
-            tick.temp_dx, tick.temp_dy = axis.vtickdirection(tick.temp_v, axis=axis)
+            tick.temp_x, tick.temp_y = axispos._vtickpoint(tick.temp_v, axis=axis)
+            tick.temp_dx, tick.temp_dy = axispos.vtickdirection(tick.temp_v, axis=axis)
 
         # create & align tick.temp_labelbox
         for tick in axis.ticks:
@@ -1640,7 +1643,7 @@ class axispainter(axistitlepainter):
             if tick.ticklevel is not None:
                 innerticklength = helper.getitemno(innerticklengths, tick.ticklevel)
                 outerticklength = helper.getitemno(outerticklengths, tick.ticklevel)
-                if not (innerticklength is None and outerticklength is None):
+                if innerticklength is not None or outerticklength is not None:
                     if innerticklength is None:
                         innerticklength = 0
                     if outerticklength is None:
@@ -1657,10 +1660,10 @@ class axispainter(axistitlepainter):
                 if tick != frac((0, 1)) or self.zerolineattrs is None:
                     gridattrs = helper.getsequenceno(self.gridattrs, tick.ticklevel)
                     if gridattrs is not None:
-                        axiscanvas.stroke(axis.vgridline(tick.temp_v, axis=axis), *helper.ensuresequence(gridattrs))
-                if unit.topt(outerticklength) > unit.topt(axiscanvas.extent):
+                        axiscanvas.stroke(axispos.vgridline(tick.temp_v, axis=axis), *helper.ensuresequence(gridattrs))
+                if outerticklength is not None and unit.topt(outerticklength) > unit.topt(axiscanvas.extent):
                     axiscanvas.extent = outerticklength
-                if unit.topt(-innerticklength) > unit.topt(axiscanvas.extent):
+                if outerticklength is not None and unit.topt(-innerticklength) > unit.topt(axiscanvas.extent):
                     axiscanvas.extent = -innerticklength
             if tick.labellevel is not None and self.labelattrs is not None:
                 axiscanvas.insert(tick.temp_labelbox)
@@ -1669,10 +1672,10 @@ class axispainter(axistitlepainter):
                 if unit.topt(extent) > unit.topt(axiscanvas.extent):
                     axiscanvas.extent = extent
         if self.baselineattrs is not None:
-            axiscanvas.stroke(axis.vbaseline(axis=axis), *helper.ensuresequence(self.baselineattrs))
+            axiscanvas.stroke(axispos.vbaseline(axis=axis), *helper.ensuresequence(self.baselineattrs))
         if self.zerolineattrs is not None:
             if len(axis.ticks) and axis.ticks[0] * axis.ticks[-1] < frac((0, 1)):
-                axiscanvas.stroke(axis.gridline(0, axis=axis), *helper.ensuresequence(self.zerolineattrs))
+                axiscanvas.stroke(axispos.gridline(0, axis=axis), *helper.ensuresequence(self.zerolineattrs))
 
         # for tick in axis.ticks:
         #     del tick.temp_v    # we've inserted those temporary variables ... and do not care any longer about them
@@ -1683,7 +1686,7 @@ class axispainter(axistitlepainter):
         #     if tick.labellevel is not None and self.labelattrs is not None:
         #         del tick.temp_labelbox
 
-        axistitlepainter.paint(self, axis, axiscanvas)
+        axistitlepainter.paint(self, axispos, axis, axiscanvas)
 
 
 class linkaxispainter(axispainter):
@@ -1712,22 +1715,40 @@ class linkaxispainter(axispainter):
 
 
 class splitaxispainter(axistitlepainter):
-    "class for painting a splitaxis"
+    """class for painting a splitaxis
+    - the inherited titleaxispainter is used to paint the title of
+      the axis
+    - the splitaxispainter access the subaxes attribute of the axis"""
 
     __implements__ = _Iaxispainter
 
-    def __init__(self, breaklinesdist=0.05,
-                       breaklineslength=0.5,
+    def __init__(self, breaklinesdist="0.05 cm",
+                       breaklineslength="0.5 cm",
                        breaklinesangle=-60,
                        breaklinesattrs=(),
                        **args):
+        """initializes the instance
+        - breaklinesdist is a visual length of the distance between
+          the two lines of the axis break
+        - breaklineslength is a visual length of the length of the
+          two lines of the axis break
+        - breaklinesangle is the angle of the lines of the axis break
+        - breaklinesattrs are a sequence of stroke attributes for the
+          axis break lines; a single entry is allowed without being a
+          sequence; None turns off the break lines
+        - futher keyword arguments are passed to axistitlepainter"""
         self.breaklinesdist_str = breaklinesdist
         self.breaklineslength_str = breaklineslength
         self.breaklinesangle = breaklinesangle
         self.breaklinesattrs = breaklinesattrs
         axistitlepainter.__init__(self, **args)
 
-    def paint(self, axis, axiscanvas):
+    def paint(self, axispos, axis, axiscanvas):
+        for subaxis in axis.subaxes:
+            subaxis.finish(axis, axiscanvas.texrunner)
+            axiscanvas.insert(subaxis.axiscanvas)
+            if unit.topt(axiscanvas.extent) < unit.topt(subaxis.axiscanvas.extent):
+                axiscanvas.extent = subaxis.axiscanvas.extent
         if self.breaklinesattrs is not None:
             self.breaklinesdist = unit.length(self.breaklinesdist_str, default_type="v")
             self.breaklineslength = unit.length(self.breaklineslength_str, default_type="v")
@@ -1737,11 +1758,11 @@ class splitaxispainter(axistitlepainter):
                                 0.5*self.breaklineslength*math.fabs(self.sin))
             if unit.topt(axiscanvas.extent) < unit.topt(breaklinesextent):
                 axiscanvas.extent = breaklinesextent
-            for subaxis1, subaxis2 in zip(axis.axislist[:-1], axis.axislist[1:]):
+            for subaxis1, subaxis2 in zip(axis.subaxes[:-1], axis.subaxes[1:]):
                 # use a tangent of the baseline (this is independent of the tickdirection)
                 v = 0.5 * (subaxis1.vmax + subaxis2.vmin)
-                breakline = path.normpath(axis.vbaseline(v, None, axis=axis)).tangent(0, self.breaklineslength)
-                widthline = path.normpath(axis.vbaseline(v, None, axis=axis)).tangent(0, self.breaklinesdist).transformed(trafomodule.rotate(self.breaklinesangle+90, *breakline.begin()))
+                breakline = path.normpath(axispos.vbaseline(v, None, axis=axis)).tangent(0, self.breaklineslength)
+                widthline = path.normpath(axispos.vbaseline(v, None, axis=axis)).tangent(0, self.breaklinesdist).transformed(trafomodule.rotate(self.breaklinesangle+90, *breakline.begin()))
                 tocenter = map(lambda x: 0.5*(x[0]-x[1]), zip(breakline.begin(), breakline.end()))
                 towidth = map(lambda x: 0.5*(x[0]-x[1]), zip(widthline.begin(), widthline.end()))
                 breakline = breakline.transformed(trafomodule.translate(*tocenter).rotated(self.breaklinesangle, *breakline.begin()))
@@ -1754,12 +1775,12 @@ class splitaxispainter(axistitlepainter):
                                           path.closepath()), color.gray.white)
                 axiscanvas.stroke(breakline1, *helper.ensuresequence(self.breaklinesattrs))
                 axiscanvas.stroke(breakline2, *helper.ensuresequence(self.breaklinesattrs))
-        axistitlepainter.paint(self, axis, axiscanvas)
+        axistitlepainter.paint(self, axispos, axis, axiscanvas)
 
 
 class linksplitaxispainter(splitaxispainter):
-    """class for painting a linked splitaxis axis
-    - the inherited axispainter is used to paint the axis
+    """class for painting a linked splitaxis
+    - the inherited splitaxispainter is used to paint the axis
     - modifies some constructor defaults"""
 
     __implements__ = _Iaxispainter
@@ -1767,130 +1788,152 @@ class linksplitaxispainter(splitaxispainter):
     def __init__(self, titleattrs=None, **kwargs):
         """initializes the instance
         - the titleattrs default is set to None thus skipping the title
-        - all keyword arguments are passed to axispainter"""
+        - all keyword arguments are passed to splitaxispainter"""
         splitaxispainter.__init__(self, titleattrs=titleattrs, **kwargs)
 
 
-class baraxispainter(axistitlepainter): pass
-# class baraxispainter(axistitlepainter):
-# 
-#     def __init__(self, innerticklength=None,
-#                        outerticklength=None,
-#                        tickattrs=(),
-#                        baselineattrs=canvas.linecap.square,
-#                        namedist="0.3 cm",
-#                        nameattrs=(textmodule.halign.center, textmodule.vshift.mathaxis),
-#                        namedirection=None,
-#                        namepos=0.5,
-#                        namehequalize=0,
-#                        namevequalize=1,
-#                        **args):
-#         self.innerticklength_str = innerticklength
-#         self.outerticklength_str = outerticklength
-#         self.tickattrs = tickattrs
-#         self.baselineattrs = baselineattrs
-#         self.namedist_str = namedist
-#         self.nameattrs = nameattrs
-#         self.namedirection = namedirection
-#         self.namepos = namepos
-#         self.namehequalize = namehequalize
-#         self.namevequalize = namevequalize
-#         axistitlepainter.__init__(self, **args)
-# 
-#     def dolayout(self, graph, axis):
-#         axis.layoutdata._extent = 0
-#         if axis.multisubaxis:
-#             for name, subaxis in zip(axis.names, axis.subaxis):
-#                 subaxis.vmin = axis.convert((name, 0))
-#                 subaxis.vmax = axis.convert((name, 1))
-#                 subaxis.baseaxis = axis
-#                 subaxis._vtickpoint = lambda axis, v: axis.baseaxis._vtickpoint(axis.baseaxis, axis.vmin+v*(axis.vmax-axis.vmin))
-#                 subaxis.vtickdirection = lambda axis, v: axis.baseaxis.vtickdirection(axis.baseaxis, axis.vmin+v*(axis.vmax-axis.vmin))
-#                 subaxis.vbaseline = None
-#                 subaxis.dolayout(graph)
-#                 if axis.layoutdata._extent < subaxis.layoutdata._extent:
-#                     axis.layoutdata._extent = subaxis.layoutdata._extent
-#         axis.namepos = []
-#         for name in axis.names:
-#             v = axis.convert((name, self.namepos))
-#             x, y = axis._vtickpoint(axis, v)
-#             dx, dy = axis.vtickdirection(axis, v)
-#             axis.namepos.append((v, x, y, dx, dy))
-#         axis.nameboxes = []
-#         if self.nameattrs is not None:
-#             for (v, x, y, dx, dy), name in zip(axis.namepos, axis.names):
-#                 nameattrs = helper.ensurelist(self.nameattrs)
-#                 if self.namedirection is not None:
-#                     nameattrs += [trafomodule.rotate(self.reldirection(self.namedirection, dx, dy))]
-#                 if axis.texts.has_key(name):
-#                     axis.nameboxes.append(graph.texrunner._text(x, y, str(axis.texts[name]), *nameattrs))
-#                 elif axis.texts.has_key(str(name)):
-#                     axis.nameboxes.append(graph.texrunner._text(x, y, str(axis.texts[str(name)]), *nameattrs))
-#                 else:
-#                     axis.nameboxes.append(graph.texrunner._text(x, y, str(name), *nameattrs))
-#         labeldist = axis.layoutdata._extent + unit.topt(unit.length(self.namedist_str, default_type="v"))
-#         if len(axis.namepos) > 1:
-#             equaldirection = 1
-#             for namepos in axis.namepos[1:]:
-#                 if namepos[3] != axis.namepos[0][3] or namepos[4] != axis.namepos[0][4]:
-#                     equaldirection = 0
-#         else:
-#             equaldirection = 0
-#         if equaldirection and ((not axis.namepos[0][3] and self.namevequalize) or
-#                                (not axis.namepos[0][4] and self.namehequalize)):
-#             box._linealignequal(axis.nameboxes, labeldist, axis.namepos[0][3], axis.namepos[0][4])
-#         else:
-#             for namebox, namepos in zip(axis.nameboxes, axis.namepos):
-#                 namebox._linealign(labeldist, namepos[3], namepos[4])
-#         if self.innerticklength_str is not None:
-#             axis.innerticklength = unit.topt(unit.length(self.innerticklength_str, default_type="v"))
-#         else:
-#             if self.outerticklength_str is not None:
-#                 axis.innerticklength = 0
-#             else:
-#                 axis.innerticklength = None
-#         if self.outerticklength_str is not None:
-#             axis.outerticklength = unit.topt(unit.length(self.outerticklength_str, default_type="v"))
-#         else:
-#             if self.innerticklength_str is not None:
-#                 axis.outerticklength = 0
-#             else:
-#                 axis.outerticklength = None
-#         if axis.outerticklength is not None and self.tickattrs is not None:
-#             axis.layoutdata._extent += axis.outerticklength
-#         for (v, x, y, dx, dy), namebox in zip(axis.namepos, axis.nameboxes):
-#             newextent = namebox._extent(dx, dy) + labeldist
-#             if axis.layoutdata._extent < newextent:
-#                 axis.layoutdata._extent = newextent
-#         #graph.mindbbox(*[namebox.bbox() for namebox in axis.nameboxes])
-#         axistitlepainter.dolayout(self, graph, axis)
-# 
-#     def paint(self, graph, axis):
-#         if axis.subaxis is not None:
-#             if axis.multisubaxis:
-#                 for subaxis in axis.subaxis:
-#                     subaxis.dopaint(graph)
-#         if None not in (self.tickattrs, axis.innerticklength, axis.outerticklength):
-#             for pos in axis.relsizes:
-#                 if pos == axis.relsizes[0]:
-#                     pos -= axis.firstdist
-#                 elif pos != axis.relsizes[-1]:
-#                     pos -= 0.5 * axis.dist
-#                 v = pos / axis.relsizes[-1]
-#                 x, y = axis._vtickpoint(axis, v)
-#                 dx, dy = axis.vtickdirection(axis, v)
-#                 x1 = x - dx * axis.innerticklength
-#                 y1 = y - dy * axis.innerticklength
-#                 x2 = x + dx * axis.outerticklength
-#                 y2 = y + dy * axis.outerticklength
-#                 graph.stroke(path._line(x1, y1, x2, y2), *helper.ensuresequence(self.tickattrs))
-#         if self.baselineattrs is not None:
-#             if axis.vbaseline is not None: # XXX: subbaselines (as for splitlines)
-#                 graph.stroke(axis.vbaseline(axis), *helper.ensuresequence(self.baselineattrs))
-#         for namebox in axis.nameboxes:
-#             graph.insert(namebox)
-#         axistitlepainter.paint(self, graph, axis)
+class baraxispainter(axistitlepainter):
+    """class for painting a baraxis
+    - the inherited titleaxispainter is used to paint the title of
+      the axis
+    - the baraxispainter access the multisubaxis, subaxis names, texts, and
+      relsizes attributes"""
 
+    __implements__ = _Iaxispainter
+
+    def __init__(self, innerticklength=None,
+                       outerticklength=None,
+                       tickattrs=(),
+                       baselineattrs=canvas.linecap.square,
+                       namedist="0.3 cm",
+                       nameattrs=(textmodule.halign.center, textmodule.vshift.mathaxis),
+                       namedirection=None,
+                       namepos=0.5,
+                       namehequalize=0,
+                       namevequalize=1,
+                       **args):
+        """initializes the instance
+        - innerticklength and outerticklength are a visual length of
+          the ticks to be plotted at the axis baseline to visually
+          separate the bars; if neither innerticklength nor
+          outerticklength are set, not ticks are plotted
+        - breaklinesattrs are a sequence of stroke attributes for the
+          axis tick; a single entry is allowed without being a
+          sequence; None turns off the ticks
+        - namedist is a visual PyX length for the distance of the bar
+          names from the axis baseline
+        - nameattrs is a sequence of attributes for a texrunners text
+          method; a single entry is allowed without being a sequence;
+          None turns off the names
+        - namedirection is an instance of rotatetext or None
+        - namehequalize and namevequalize (booleans) perform an equal
+          alignment for straight vertical and horizontal axes, respectively
+        - futher keyword arguments are passed to axistitlepainter"""
+        self.innerticklength_str = innerticklength
+        self.outerticklength_str = outerticklength
+        self.tickattrs = tickattrs
+        self.baselineattrs = baselineattrs
+        self.namedist_str = namedist
+        self.nameattrs = nameattrs
+        self.namedirection = namedirection
+        self.namepos = namepos
+        self.namehequalize = namehequalize
+        self.namevequalize = namevequalize
+        axistitlepainter.__init__(self, **args)
+
+    def paint(self, axispos, axis, axiscanvas):
+        if axis.multisubaxis is not None:
+            for subaxis in axis.subaxis:
+                subaxis.finish(axis, axiscanvas.texrunner)
+                axiscanvas.insert(subaxis.axiscanvas)
+                if unit.topt(axiscanvas.extent) < unit.topt(subaxis.axiscanvas.extent):
+                    axiscanvas.extent = subaxis.axiscanvas.extent
+        namepos = []
+        for name in axis.names:
+            v = axis.convert((name, self.namepos))
+            x, y = axispos._vtickpoint(v, axis=axis)
+            dx, dy = axispos.vtickdirection(v, axis=axis)
+            namepos.append((v, x, y, dx, dy))
+        nameboxes = []
+        if self.nameattrs is not None:
+            for (v, x, y, dx, dy), name in zip(namepos, axis.names):
+                nameattrs = helper.ensurelist(self.nameattrs)[:]
+                if self.namedirection is not None:
+                    nameattrs.append(self.namedirection.trafo(tick.temp_dx, tick.temp_dy))
+                if axis.texts.has_key(name):
+                    nameboxes.append(axiscanvas.texrunner._text(x, y, str(axis.texts[name]), *nameattrs))
+                elif axis.texts.has_key(str(name)):
+                    nameboxes.append(axiscanvas.texrunner._text(x, y, str(axis.texts[str(name)]), *nameattrs))
+                else:
+                    nameboxes.append(axiscanvas.texrunner._text(x, y, str(name), *nameattrs))
+        labeldist = axiscanvas.extent + unit.length(self.namedist_str, default_type="v")
+        if len(namepos) > 1:
+            equaldirection = 1
+            for np in namepos[1:]:
+                if np[3] != namepos[0][3] or np[4] != namepos[0][4]:
+                    equaldirection = 0
+        else:
+            equaldirection = 0
+        if equaldirection and ((not namepos[0][3] and self.namevequalize) or
+                               (not namepos[0][4] and self.namehequalize)):
+            box.linealignequal(nameboxes, labeldist, namepos[0][3], namepos[0][4])
+        else:
+            for namebox, np in zip(nameboxes, namepos):
+                namebox.linealign(labeldist, np[3], np[4])
+        if self.innerticklength_str is not None:
+            innerticklength = unit.length(self.innerticklength_str, default_type="v")
+            _innerticklength = unit.topt(innerticklength)
+            if self.tickattrs is not None and unit.topt(axiscanvas.extent) < -_innerticklength:
+                axiscanvas.extent = -innerticklength
+        elif self.outerticklength_str is not None:
+            innerticklength = _innerticklength = 0
+        if self.outerticklength_str is not None:
+            outerticklength = unit.length(self.outerticklength_str, default_type="v")
+            _outerticklength = unit.topt(outerticklength)
+            if self.tickattrs is not None and unit.topt(axiscanvas.extent) < _outerticklength:
+                axiscanvas.extent = outerticklength
+        elif self.innerticklength_str is not None:
+            outerticklength = _outerticklength = 0
+        for (v, x, y, dx, dy), namebox in zip(namepos, nameboxes):
+            newextent = namebox.extent(dx, dy) + labeldist
+            if unit.topt(axiscanvas.extent) < unit.topt(newextent):
+                axiscanvas.extent = newextent
+        if self.tickattrs is not None and (self.innerticklength_str is not None or self.outerticklength_str is not None):
+            for pos in axis.relsizes:
+                if pos == axis.relsizes[0]:
+                    pos -= axis.firstdist
+                elif pos != axis.relsizes[-1]:
+                    pos -= 0.5 * axis.dist
+                v = pos / axis.relsizes[-1]
+                x, y = axispos._vtickpoint(v, axis=axis)
+                dx, dy = axispos.vtickdirection(v, axis=axis)
+                x1 = x - dx * _innerticklength
+                y1 = y - dy * _innerticklength
+                x2 = x + dx * _outerticklength
+                y2 = y + dy * _outerticklength
+                axiscanvas.stroke(path._line(x1, y1, x2, y2), *helper.ensuresequence(self.tickattrs))
+        if self.baselineattrs is not None:
+            p = axispos.vbaseline(axis=axis)
+            if p is not None:
+                axiscanvas.stroke(axispos.vbaseline(axis=axis), *helper.ensuresequence(self.baselineattrs))
+        for namebox in nameboxes:
+            axiscanvas.insert(namebox)
+        axistitlepainter.paint(self, axispos, axis, axiscanvas)
+
+
+class linkbaraxispainter(baraxispainter):
+    """class for painting a linked baraxis
+    - the inherited baraxispainter is used to paint the axis
+    - modifies some constructor defaults"""
+
+    __implements__ = _Iaxispainter
+
+    def __init__(self, nameattrs=None, titleattrs=None, **kwargs):
+        """initializes the instance
+        - the titleattrs default is set to None thus skipping the title
+        - the nameattrs default is set to None thus skipping the names
+        - all keyword arguments are passed to axispainter"""
+        baraxispainter.__init__(self, nameattrs=nameattrs, titleattrs=titleattrs, **kwargs)
 
 
 ################################################################################
@@ -1901,14 +1944,18 @@ class baraxispainter(axistitlepainter): pass
 class _Iaxis:
     """interface definition of a axis
     - data and tick range are handled separately
-    - an axis implements _Imap as well to convert between
-      axis values and graph coordinates; this is usually done
-      by mixin a proper mapping
+    - an axis should implement an convert and invert method like
+      _Imap, but this is not part of this interface definition;
+      one possibility is to mix-in a proper map class, but special
+      purpose axes might do something else
     - instance variables:
       - axiscanvas: an axiscanvas instance, which is available after
-        calling the finish method
+        calling the finish method (the idea is, that an axis might
+        fill different axiscanvas instances by calling the painter
+        for different ticks and rate those ticks afterwards -- thus
+        the axis finally can set this best canvas as its axis canvas)
       - relsize: relative size (width) of the axis (for use
-        in splitaxis etc.) -- this might not be available for
+        in splitaxis, baraxis etc.) -- this might not be available for
         all axes, which will just create an name error right now
     - configuration of the range handling is not subject
       of this interface definition"""
@@ -1916,7 +1963,11 @@ class _Iaxis:
     #         handling of x and y ranges
     #       - should we document instance variables this way?
 
-    __implements__ = _Imap
+    def convert(self, x):
+        "convert a value into graph coordinates"
+
+    def invert(self, v):
+        "invert a graph coordinate to a axis value"
 
     def setdatarange(self, min, max):
         """set the axis data range
@@ -1927,48 +1978,50 @@ class _Iaxis:
           (e.g. when the axis range is fixed by the user)
         - for invalid parameters (e.g. negativ values at an
           logarithmic axis), an exception should be raised"""
-        # TODO: be more specific about the type of the exception
+        # TODO: be more specific about exceptions
 
     def settickrange(self, min, max):
         """set the axis tick range
-        - as before, but for the tick range"""
+        - as before, but for the tick range (whatever this
+          means for the axis)"""
 
     def getdatarange(self):
         """return data range as a tuple (min, max)
         - min<max; the axis might be reversed, but this is
           expressed internally only"""
-        # TODO: exceptions???
+        # TODO: be more specific about exceptions
 
     def gettickrange(self):
         """return tick range as a tuple (min, max)
         - as before, but for the tick range"""
-        # TODO: exceptions???
+        # TODO: be more specific about exceptions
 
-    def finish(self, graph):
-        """paint the axis into the graph
-        - the graph should not be modified (read-only); the only
-          important property of the graph should be its texrunner
-          instance
-        - the axis instance (self) should be accessed to get the
-          tick positions namely by _Iaxispos and _Imap; see
-          those interface definitions for details -- again, the
-          graph should not be needed for that
+    def finish(self, axispos, texrunner):
+        """finishes the axis
+        - axispos implements _Iaxispos (usually the graph itself
+          can be used here)
         - the finish method creates an axiscanvas, which should be
           insertable into the graph to finally paint the axis
         - any modification of the axis range should be disabled after
-          the finish method was called; a possible implementation would
-          be to raise an error in these methods as soon as an axiscanvas
-          is available"""
+          the finish method was called; a possible implementation
+          would be to raise an error in these methods as soon as an
+          axiscanvas is available"""
+        # TODO: be more specific about exceptions
+
+    def createlinkaxis(self, **kwargs):
+        """create a link axis to the axis itself
+        - typically, a link axis is a axis, which share almost
+          all properties with the axis it is linked to
+        - typically, the painter gets replaced by a painter
+          which doesn't put any text to the axis"""
 
 
 class _Iaxispos:
     """interface definition of axis tick position methods
     - these methods are used for the postitioning of the ticks
       when painting an axis
-    - a graph should insert these methods appropriate to its design
-      before the painting of the axis takes place, thus self is the
-      graph instance and the axis must be provided as a separate
-      argument"""
+    - you may try to avoid calling of these methods from each
+      other to gain speed"""
 
     def baseline(self, x1=None, x2=None, axis=None):
         """return the baseline as a path
@@ -2011,16 +2064,40 @@ class _Iaxispos:
 
 
 class _axis:
-
-    __implements__ = _Iaxis
+    """base implementation a regular axis
+    - typical usage is to mix-in a linmap or a logmap to
+      complete the definition"""
 
     def __init__(self, min=None, max=None, reverse=0, divisor=1,
                        datavmin=None, datavmax=None, tickvmin=0, tickvmax=1,
                        title=None, painter=axispainter(), texter=defaulttexter(),
                        density=1, maxworse=2):
-# - a axis has a part attribute where it stores a partitioner or/and some
-#   (manually set) ticks -> the part attribute is used to create the ticks
-#   in the axis finish method
+        """initializes the instance
+        - min and max fix the axis minimum and maximum, respectively;
+          they are determined by the data to be plotted, when not fixed
+        - reverse (boolean) reverses the minimum and the maximum of
+          the axis
+        - numerical divisor for the axis partitioning
+        - datavmin and datavmax are the minimal and maximal graph
+          coordinate when adjusting the axis to the data range
+          (likely to be changed in the future)
+        - as before, but for the tick range
+        - title is a string containing the axis title
+        - axispainter is the axis painter (should implement _Ipainter)
+        - texter is the texter (should implement _Itexter)
+        - density is a global parameter for the axis paritioning and
+          axis rating; its default is 1, but the range 0.5 to 2.5 should
+          be usefull to get less or more ticks by the automatic axis
+          partitioning
+        - maxworse is a number of trials with worse tick rating
+          before giving up (usually it should not be needed to increase
+          this value; increasing the number will slow down the automatic
+          axis partitioning considerably)
+        - note that some methods of this class want to access a
+          part and a rating attribute of the instance; those
+          attributes should be initialized by the constructors
+          of derived classes"""
+        # TODO: improve datavmin/datavmax/tickvmin/tickvmax
         if None not in (min, max) and min > max:
             min, max, reverse = max, min, not reverse
         self.fixmin, self.fixmax, self.min, self.max, self.reverse = min is not None, max is not None, min, max, reverse
@@ -2125,32 +2202,33 @@ class _axis:
             last = item
         return sorted
 
-    def finish(self, graph):
+    def finish(self, axispos, texrunner):
         if self.finished:
             return
         self.finished = 1
 
         min, max = self.gettickrange()
+        parter = parterpos = None
         if self.part is not None:
-            parter = parterpos = None
-            if helper.issequence(self.part):
-                for p, i in zip(self.part, xrange(sys.maxint)):
-                    if hasattr(p, "defaultpart"):
-                        if parter is not None:
-                            raise RuntimeError("only one partitioner allowed")
-                        parter = p
-                        parterpos = i
+            self.part = helper.ensurelist(self.part)
+            for p, i in zip(self.part, xrange(sys.maxint)):
+                if hasattr(p, "defaultpart"):
+                    if parter is not None:
+                        raise RuntimeError("only one partitioner allowed")
+                    parter = p
+                    parterpos = i
+            if parter is None:
+                self.ticks = self.checkfraclist(self.part)
+            else:
                 self.part[:parterpos] = self.checkfraclist(self.part[:parterpos])
                 self.part[parterpos+1:] = self.checkfraclist(self.part[parterpos+1:])
-            else:
-                parter = self.part
-            if parter is not None:
-                self.ticks = parter.defaultpart(min/self.divisor,
-                                                max/self.divisor,
-                                                not self.fixmin,
-                                                not self.fixmax)
-            if parterpos is not None:
-                self.ticks = _mergeticklists(_mergeticklists(self.part[:parterpos], self.ticks), self.part[parterpos+1:])
+                self.ticks = _mergeticklists(
+                                 _mergeticklists(self.part[:parterpos],
+                                                 parter.defaultpart(min/self.divisor,
+                                                                    max/self.divisor,
+                                                                    not self.fixmin,
+                                                                    not self.fixmax)),
+                                 self.part[parterpos+1:])
         else:
             self.ticks = []
         # lesspart and morepart can be called after defaultpart;
@@ -2212,9 +2290,9 @@ class _axis:
                     self.ticks = variants[i][1]
                     if len(self.ticks):
                         self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
-                    ac = axiscanvas(graph.texrunner)
+                    ac = axiscanvas(texrunner)
                     self.texter.labels(self.ticks)
-                    self.painter.paint(self, ac)
+                    self.painter.paint(axispos, self, ac)
                     ratelayout = self.rater.ratelayout(ac, self.density)
                     if ratelayout is not None:
                         variants[i][0] += ratelayout
@@ -2236,21 +2314,37 @@ class _axis:
             else:
                 if len(self.ticks):
                     self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
-                self.axiscanvas = axiscanvas(graph.texrunner)
+                self.axiscanvas = axiscanvas(texrunner)
         else:
             if len(self.ticks):
                 self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
-            self.axiscanvas = axiscanvas(graph.texrunner)
+            self.axiscanvas = axiscanvas(texrunner)
             self.texter.labels(self.ticks)
-            self.painter.paint(self, self.axiscanvas)
+            self.painter.paint(axispos, self, self.axiscanvas)
 
     def createlinkaxis(self, **args):
         return linkaxis(self, **args)
 
 
 class linaxis(_axis, _linmap):
+    """implementation of a linear axis"""
+
+    __implements__ = _Iaxis
 
     def __init__(self, part=autolinpart(), rater=axisrater(), **args):
+        """initializes the instance
+        - the part attribute contains a list of one partitioner
+          (a partitioner implements _Ipart) or/and some (manually
+          set) ticks (implementing _Itick); a single entry might
+          be passed without wrapping it into a list; the partitioner
+          and the tick instances must fit to the type of the axis
+          (e.g. they should be valid parameters to the axis convert
+          method); the ticks and the partitioner results are mixed
+          by _mergeticklists
+        - the rater implements _Irater and is used to rate different
+          tick lists created by the partitioner (after merging with
+          manully set ticks)
+        - futher keyword arguments are passed to _axis"""
         _axis.__init__(self, **args)
         if self.fixmin and self.fixmax:
             self.relsize = self.max - self.min
@@ -2259,8 +2353,24 @@ class linaxis(_axis, _linmap):
 
 
 class logaxis(_axis, _logmap):
+    """implementation of a logarithmic axis"""
+
+    __implements__ = _Iaxis
 
     def __init__(self, part=autologpart(), rater=axisrater(ticks=axisrater.logticks, labels=axisrater.loglabels), **args):
+        """initializes the instance
+        - the part attribute contains a list of one partitioner
+          (a partitioner implements _Ipart) or/and some (manually
+          set) ticks (implementing _Itick); a single entry might
+          be passed without wrapping it into a list; the partitioner
+          and the tick instances must fit to the type of the axis
+          (e.g. they should be valid parameters to the axis convert
+          method); the ticks and the partitioner results are mixed
+          by _mergeticklists
+        - the rater implements _Irater and is used to rate different
+          tick lists created by the partitioner (after merging with
+          manully set ticks)
+        - futher keyword arguments are passed to _axis"""
         _axis.__init__(self, **args)
         if self.fixmin and self.fixmax:
             self.relsize = math.log(self.max) - math.log(self.min)
@@ -2269,45 +2379,222 @@ class logaxis(_axis, _logmap):
 
 
 class linkaxis:
+    """a axis linked to an already existing regular axis
+    - almost all properties of the axis are "copied" from the
+      axis this axis is linked to
+    - usually, linked axis are used to create an axis to an
+      existing axis with different painting properties; linked
+      axis can be used to plot an axis twice at the opposite
+      sides of a graphxy or even to share an axis between
+      different graphs!"""
+
+    __implements__ = _Iaxis
 
     def __init__(self, linkedaxis, painter=linkaxispainter()):
+        """initializes the instance
+        - it gets a axis this linkaxis is linked to
+        - it gets a painter to be used for this linked axis"""
         self.linkedaxis = linkedaxis
         self.painter = painter
         self.finished = 0
 
     def __getattr__(self, attr):
+        """access to unkown attributes are handed over to the
+        axis this linkaxis is linked to"""
         return getattr(self.linkedaxis, attr)
 
-    def finish(self, graph):
+    def finish(self, axispos, texrunner):
+        """finishes the axis
+        - instead of performing the hole finish process
+          (paritioning, rating, etc.) just a painter call
+          is performed"""
         if self.finished:
             return
         self.finished = 1
-        self.linkedaxis.finish(graph)
-        self.axiscanvas = axiscanvas(graph.texrunner)
-        self.painter.paint(self, self.axiscanvas)
+        self.linkedaxis.finish(axispos, texrunner)
+        self.axiscanvas = axiscanvas(texrunner)
+        self.painter.paint(axispos, self, self.axiscanvas)
 
 
-class _splitaxis:
+class _subaxispos:
+    """implementation of the _Iaxispos interface for subaxis
+    - provides the _Iaxispos interface for axis which contain
+      several subaxes
+    - typical usage by mix-in this class into an "main" axis and
+      calling the painter(s) of the subaxes from the specialized
+      painter of the "main" axis; the subaxes need to have the
+      attributes "baseaxis" (reference to the "main" axis) and
+      "baseaxispos" (reference to the instance implementing the
+      _Iaxispos interface of the "main" axis)"""
 
-    def __init__(self, axislist, painter=splitaxispainter()):
-        self.axislist = axislist
-        self.painter = painter
-        self.finished = 0
+    __implements__ = _Iaxispos
 
-    def subbaseline(self, x1=None, x2=None, axis=None):
+    def baseline(self, x1=None, x2=None, axis=None):
         if x1 is not None:
             v1 = axis.convert(x1)
         else:
-            v1 = None
+            v1 = 0
         if x2 is not None:
             v2 = axis.convert(x2)
         else:
-            v2 = None
-        return self.subvbaseline(v1, v2, axis=axis)
+            v2 = 1
+        return axis.baseaxispos.vbaseline(v1, v2, axis=axis.baseaxis)
 
-    def subvbaseline(self, v1=None, v2=None, axis=None):
+    def vbaseline(self, v1=None, v2=None, axis=None):
         if v1 is None:
-            if self.painter.breaklinesattrs is None: # XXX undocumented access to painter!?
+            left = axis.vmin
+        else:
+            left = axis.vmin+v1*(axis.vmax-axis.vmin)
+        if v2 is None:
+            right = axis.vmax
+        else:
+            right = axis.vmin+v2*(axis.vmax-axis.vmin)
+        return axis.baseaxispos.vbaseline(left, right, axis=axis.baseaxis)
+
+    def gridline(self, x, axis=None):
+        return axis.baseaxispos.vgridline(axis.vmin+axis.convert(x)*(axis.vmax-axis.vmin), axis=axis.baseaxis)
+
+    def vgridline(self, v, axis=None):
+        return axis.baseaxispos.vgridline(axis.vmin+v*(axis.vmax-axis.vmin), axis=axis.baseaxis)
+
+    def _tickpoint(self, x, axis=None):
+        return axis.baseaxispos._vtickpoint(axis.vmin+axis.convert(x)*(axis.vmax-axis.vmin), axis=axis.baseaxis)
+
+    def tickpoint(self, x, axis=None):
+        return axis.baseaxispos.vtickpoint(axis.vmin+axis.convert(x)*(axis.vmax-axis.vmin), axis=axis.baseaxis)
+
+    def _vtickpoint(self, v, axis=None):
+        return axis.baseaxispos._vtickpoint(axis.vmin+v*(axis.vmax-axis.vmin), axis=axis.baseaxis)
+
+    def vtickpoint(self, v, axis=None):
+        return axis.baseaxispos.vtickpoint(axis.vmin+v*(axis.vmax-axis.vmin), axis=axis.baseaxis)
+
+    def tickdirection(self, x, axis=None):
+        return axis.baseaxispos.vtickdirection(axis.vmin+axis.convert(x)*(axis.vmax-axis.vmin), axis=axis.baseaxis)
+
+    def vtickdirection(self, v, axis=None):
+        return axis.baseaxispos.vtickdirection(axis.vmin+v*(axis.vmax-axis.vmin), axis=axis.baseaxis)
+
+
+class splitaxis(_subaxispos):
+    """implementation of a split axis
+    - a split axis contains several (sub-)axes with
+      non-overlapping data ranges -- between these subaxes
+      the axis is "splitted"
+    - (just to get sure: a splitaxis can contain other
+      splitaxes as its subaxes)
+    - a splitaxis implements the _Iaxispos for its subaxes
+      by inheritance from _subaxispos"""
+
+    __implements__ = _Iaxis, _Iaxispos
+
+    def __init__(self, subaxes, splitlist=0.5, splitdist=0.1, relsizesplitdist=1,
+                       title=None, painter=splitaxispainter()):
+        """initializes the instance
+        - subaxes is a list of subaxes
+        - splitlist is a list of graph coordinates, where the splitting
+          of the main axis should be performed; a single entry (splitting
+          two axes) doesn't need to be wrapped into a list; if the list
+          isn't long enough for the subaxes, missing entries are considered
+          to be None;
+        - splitdist is the size of the splitting in graph coordinates, when
+          the associated splitlist entry is not None
+        - relsizesplitdist: a None entry in splitlist means, that the
+          position of the splitting should be calculated out of the
+          relsize values of conrtibuting subaxes (the size of the
+          splitting is relsizesplitdist in values of the relsize values
+          of the axes)
+        - title is the title of the axis as a string
+        - painter is the painter of the axis; it should be specialized to
+          the splitaxis
+        - the relsize of the splitaxis is the sum of the relsizes of the
+          subaxes including the relsizesplitdist"""
+        self.subaxes = subaxes
+        self.painter = painter
+        self.title = title
+        self.splitlist = helper.ensurelist(splitlist)
+        for subaxis in self.subaxes:
+            subaxis.vmin = None
+            subaxis.vmax = None
+        self.subaxes[0].vmin = 0
+        self.subaxes[0].vminover = None
+        self.subaxes[-1].vmax = 1
+        self.subaxes[-1].vmaxover = None
+        for i in xrange(len(self.splitlist)):
+            if self.splitlist[i] is not None:
+                self.subaxes[i].vmax = self.splitlist[i] - 0.5*splitdist
+                self.subaxes[i].vmaxover = self.splitlist[i]
+                self.subaxes[i+1].vmin = self.splitlist[i] + 0.5*splitdist
+                self.subaxes[i+1].vminover = self.splitlist[i]
+        i = 0
+        while i < len(self.subaxes):
+            if self.subaxes[i].vmax is None:
+                j = relsize = relsize2 = 0
+                while self.subaxes[i + j].vmax is None:
+                    relsize += self.subaxes[i + j].relsize + relsizesplitdist
+                    j += 1
+                relsize += self.subaxes[i + j].relsize
+                vleft = self.subaxes[i].vmin
+                vright = self.subaxes[i + j].vmax
+                for k in range(i, i + j):
+                    relsize2 += self.subaxes[k].relsize
+                    self.subaxes[k].vmax = vleft + (vright - vleft) * relsize2 / float(relsize)
+                    relsize2 += 0.5 * relsizesplitdist
+                    self.subaxes[k].vmaxover = self.subaxes[k + 1].vminover = vleft + (vright - vleft) * relsize2 / float(relsize)
+                    relsize2 += 0.5 * relsizesplitdist
+                    self.subaxes[k+1].vmin = vleft + (vright - vleft) * relsize2 / float(relsize)
+                if i == 0 and i + j + 1 == len(self.subaxes):
+                    self.relsize = relsize
+                i += j + 1
+            else:
+                i += 1
+
+        self.fixmin = self.subaxes[0].fixmin
+        if self.fixmin:
+            self.min = self.subaxes[0].min
+        self.fixmax = self.subaxes[-1].fixmax
+        if self.fixmax:
+            self.max = self.subaxes[-1].max
+        self.finished = 0
+
+    def getdatarange(self):
+        min = self.subaxes[0].getdatarange()
+        max = self.subaxes[-1].getdatarange()
+        try:
+            return min[0], max[1]
+        except TypeError:
+            return None
+
+    def setdatarange(self, min, max):
+        self.subaxes[0].setdatarange(min, None)
+        self.subaxes[-1].setdatarange(None, max)
+
+    def gettickrange(self):
+        min = self.subaxes[0].gettickrange()
+        max = self.subaxes[-1].gettickrange()
+        try:
+            return min[0], max[1]
+        except TypeError:
+            return None
+
+    def settickrange(self, min, max):
+        self.subaxes[0].settickrange(min, None)
+        self.subaxes[-1].settickrange(None, max)
+
+    def convert(self, value):
+        # TODO: proper raising exceptions (which exceptions go thru, which are handled before?)
+        if value < self.subaxes[0].max:
+            return self.subaxes[0].vmin + self.subaxes[0].convert(value)*(self.subaxes[0].vmax-self.subaxes[0].vmin)
+        for axis in self.subaxes[1:-1]:
+            if value > axis.min and value < axis.max:
+                return axis.vmin + axis.convert(value)*(axis.vmax-axis.vmin)
+        if value > self.subaxes[-1].min:
+            return self.subaxes[-1].vmin + self.subaxes[-1].convert(value)*(self.subaxes[-1].vmax-self.subaxes[-1].vmin)
+        raise ValueError("value couldn't be assigned to a split region")
+
+    def vbaseline(self, v1=None, v2=None, axis=None):
+        if v1 is None:
+            if axis.baseaxis.painter.breaklinesattrs is None: # XXX undocumented access to painter!?
                 left = axis.vmin
             else:
                 if axis.vminover is None:
@@ -2317,7 +2604,7 @@ class _splitaxis:
         else:
             left = axis.vmin+v1*(axis.vmax-axis.vmin)
         if v2 is None:
-            if self.painter.breaklinesattrs is None:
+            if axis.baseaxis.painter.breaklinesattrs is None:
                 right = axis.vmax
             else:
                 if axis.vmaxover is None:
@@ -2326,175 +2613,111 @@ class _splitaxis:
                     right = axis.vmaxover
         else:
             right = axis.vmin+v2*(axis.vmax-axis.vmin)
-        return self.vbaseline(left, right, axis=self)
+        return axis.baseaxispos.vbaseline(left, right, axis=axis.baseaxis)
 
-    def subgridline(self, x, axis=None):
-        return self.vgridline(axis.vmin+axis.convert(x)*(axis.vmax-axis.vmin), axis=self)
-
-    def subvgridline(self, v, axis=None):
-        return self.vgridline(axis.vmin+v*(axis.vmax-axis.vmin), axis=self)
-
-    def sub_tickpoint(self, x, axis=None):
-        return self._vtickpoint(axis.vmin+axis.convert(x)*(axis.vmax-axis.vmin), axis=self)
-
-    def subtickpoint(self, x, axis=None):
-        return self.vtickpoint(axis.vmin+axis.convert(x)*(axis.vmax-axis.vmin), axis=self)
-
-    def sub_vtickpoint(self, v, axis=None):
-        return self._vtickpoint(axis.vmin+v*(axis.vmax-axis.vmin), axis=self)
-
-    def subvtickpoint(self, v, axis=None):
-        return self.vtickpoint(axis.vmin+v*(axis.vmax-axis.vmin), axis=self)
-
-    def subtickdirection(self, x, axis=None):
-        return self.vtickdirection(axis.vmin+axis.convert(x)*(axis.vmax-axis.vmin), axis=self)
-
-    def subvtickdirection(self, v, axis=None):
-        return self.vtickdirection(axis.vmin+v*(axis.vmax-axis.vmin), axis=self)
-
-    def finish(self, graph):
+    def finish(self, axispos, texrunner):
         if self.finished:
             return
         self.finished = 1
-        self.axiscanvas = axiscanvas(graph.texrunner)
-        for subaxis in self.axislist:
-            subaxis.baseline = self.subbaseline
-            subaxis.vbaseline = self.subvbaseline
-            subaxis.gridline = self.subgridline
-            subaxis.vgridline = self.subvgridline
-            subaxis._tickpoint = self.sub_tickpoint
-            subaxis.tickpoint = self.subtickpoint
-            subaxis._vtickpoint = self.sub_vtickpoint
-            subaxis.vtickpoint = self.subvtickpoint
-            subaxis.tickdirection = self.subtickdirection
-            subaxis.vtickdirection = self.subvtickdirection
-            subaxis.finish(graph)
-            self.axiscanvas.insert(subaxis.axiscanvas)
-            if unit.topt(self.axiscanvas.extent) < unit.topt(subaxis.axiscanvas.extent):
-                self.axiscanvas.extent = subaxis.axiscanvas.extent
-        self.painter.paint(self, self.axiscanvas)
+        for subaxis in self.subaxes:
+            subaxis.baseaxispos = axispos
+            subaxis.baseaxis = self
+        self.axiscanvas = axiscanvas(texrunner)
+        self.painter.paint(axispos, self, self.axiscanvas)
 
     def createlinkaxis(self, **args):
         return linksplitaxis(self, **args)
 
 
-class splitaxis(_splitaxis):
+class linksplitaxis(linkaxis):
+    """a splitaxis linked to an already existing splitaxis
+    - inherits the access to a linked axis -- as before,
+      basically only the painter is replaced
+    - it must take care of the creation of linked axes of
+      the subaxes"""
 
-    def __init__(self, axislist, splitlist=0.5, splitdist=0.1, relsizesplitdist=1, title=None, **kwargs):
-        _splitaxis.__init__(self, axislist, **kwargs)
-        self.title = title
-        self.splitlist = list(helper.ensuresequence(splitlist))
-        self.splitlist.sort()
-        if len(self.axislist) != len(self.splitlist) + 1:
-            for subaxis in self.axislist:
-                if not isinstance(subaxis, linkaxis):
-                    raise ValueError("axislist and splitlist lengths do not fit together")
-        for subaxis in self.axislist:
-            if isinstance(subaxis, linkaxis):
-                subaxis.vmin = subaxis.linkedaxis.vmin
-                subaxis.vminover = subaxis.linkedaxis.vminover
-                subaxis.vmax = subaxis.linkedaxis.vmax
-                subaxis.vmaxover = subaxis.linkedaxis.vmaxover
+    __implements__ = _Iaxis
+
+    def __init__(self, linkedaxis, painter=linksplitaxispainter(), subaxispainter=None):
+        """initializes the instance
+        - it gets a axis this linkaxis is linked to
+        - it gets a painter to be used for this linked axis
+        - it gets a list of painters to be used for the linkaxes
+          of the subaxes; if None, the createlinkaxis of the subaxes
+          are called without a painter parameter; if it is not a
+          sequence, the subaxispainter is passed as the painter
+          parameter to all createlinkaxis of the subaxes"""
+        if subaxispainter is not None:
+            if _issequence(subaxispainter):
+                if len(linkedaxis.subaxes) != len(subaxispainter):
+                    raise RuntimeError("subaxes and subaxispainter lengths do not fit")
+                self.subaxes = [a.createlinkaxis(painter=p) for a, p in zip(linkedaxis.subaxes, subaxispainter)]
             else:
-                subaxis.vmin = None
-                subaxis.vmax = None
-        self.axislist[0].vmin = 0
-        self.axislist[0].vminover = None
-        self.axislist[-1].vmax = 1
-        self.axislist[-1].vmaxover = None
-        for i in xrange(len(self.splitlist)):
-            if self.splitlist[i] is not None:
-                self.axislist[i].vmax = self.splitlist[i] - 0.5*splitdist
-                self.axislist[i].vmaxover = self.splitlist[i]
-                self.axislist[i+1].vmin = self.splitlist[i] + 0.5*splitdist
-                self.axislist[i+1].vminover = self.splitlist[i]
-        i = 0
-        while i < len(self.axislist):
-            if self.axislist[i].vmax is None:
-                j = relsize = relsize2 = 0
-                while self.axislist[i + j].vmax is None:
-                    relsize += self.axislist[i + j].relsize + relsizesplitdist
-                    j += 1
-                relsize += self.axislist[i + j].relsize
-                vleft = self.axislist[i].vmin
-                vright = self.axislist[i + j].vmax
-                for k in range(i, i + j):
-                    relsize2 += self.axislist[k].relsize
-                    self.axislist[k].vmax = vleft + (vright - vleft) * relsize2 / float(relsize)
-                    relsize2 += 0.5 * relsizesplitdist
-                    self.axislist[k].vmaxover = self.axislist[k + 1].vminover = vleft + (vright - vleft) * relsize2 / float(relsize)
-                    relsize2 += 0.5 * relsizesplitdist
-                    self.axislist[k+1].vmin = vleft + (vright - vleft) * relsize2 / float(relsize)
-                if i == 0 and i + j + 1 == len(self.axislist):
-                    self.relsize = relsize
-                i += j + 1
-            else:
-                i += 1
+                self.subaxes = [a.createlinkaxis(painter=subaxispainter) for a in linkedaxis.subaxes]
+        else:
+            self.subaxes = [a.createlinkaxis() for a in linkedaxis.subaxes]
+        linkaxis.__init__(self, linkedaxis, painter=painter)
 
-        self.fixmin = self.axislist[0].fixmin
-        if self.fixmin:
-            self.min = self.axislist[0].min
-        self.fixmax = self.axislist[-1].fixmax
-        if self.fixmax:
-            self.max = self.axislist[-1].max
-
-    def getdatarange(self):
-        min = self.axislist[0].getdatarange()
-        max = self.axislist[-1].getdatarange()
-        try:
-            return min[0], max[1]
-        except TypeError:
-            return None
-
-    def setdatarange(self, min, max):
-        self.axislist[0].setdatarange(min, None)
-        self.axislist[-1].setdatarange(None, max)
-
-    def gettickrange(self):
-        min = self.axislist[0].gettickrange()
-        max = self.axislist[-1].gettickrange()
-        try:
-            return min[0], max[1]
-        except TypeError:
-            return None
-
-    def settickrange(self, min, max):
-        self.axislist[0].settickrange(min, None)
-        self.axislist[-1].settickrange(None, max)
-
-    def convert(self, value):
-        # TODO: proper raising exceptions (which exceptions go thru, which are handled before?)
-        if value < self.axislist[0].max:
-            return self.axislist[0].vmin + self.axislist[0].convert(value)*(self.axislist[0].vmax-self.axislist[0].vmin)
-        for axis in self.axislist[1:-1]:
-            if value > axis.min and value < axis.max:
-                return axis.vmin + axis.convert(value)*(axis.vmax-axis.vmin)
-        if value > self.axislist[-1].min:
-            return self.axislist[-1].vmin + self.axislist[-1].convert(value)*(self.axislist[-1].vmax-self.axislist[-1].vmin)
-        raise ValueError("value couldn't be assigned to a split region")
+    def finish(self, axispos, texrunner):
+        for subaxis in self.subaxes:
+            subaxis.baseaxispos = axispos
+            subaxis.baseaxis = self
+        linkaxis.finish(self, axispos, texrunner)
 
 
-class linksplitaxis(_splitaxis):
-# caution here: some of the methods/variables are part
-# of self, other methods/variables are shared (thus, they
-# do *not* belong to the linked axis) -> this should be
-# well documented
+class baraxis(_subaxispos):
+    """implementation of a axis for bar graphs
+    - a bar axes is different from a splitaxis by the way it
+      selects its subaxes: the convert method gets a list,
+      where the first entry is a name selecting a subaxis out
+      of a list; instead of the term "bar" or "subaxis" the term
+      "item" will be used here
+    - the baraxis stores a list of names be identify the items;
+      the names might be of any time (strings, integers, etc.);
+      the names can be printed as the titles for the items, but
+      alternatively the names might be transformed by the texts
+      dictionary, which maps a name to a text to be used to label
+      the items in the painter
+    - usually, there is only one subaxis, which is used as
+      the subaxis for all items
+    - alternatively it is also possible to use another baraxis
+      as a multisubaxis; it is copied via the createsubaxis
+      method whenever another subaxis is needed (by that a
+      nested bar axis with a different number of subbars at
+      each item can be created)
+    - any axis can be a subaxis of a baraxis; if no subaxis
+      is specified at all, the baraxis simulates a linear
+      subaxis with a fixed range of 0 to 1
+    - a splitaxis implements the _Iaxispos for its subaxes
+      by inheritance from _subaxispos when the multisubaxis
+      feature is turned on"""
 
-    def __init__(self, linkedaxis, painter=linksplitaxispainter(), **kwargs):
-        self.linkedaxis = linkedaxis
-        _splitaxis.__init__(self, [a.createlinkaxis() for a in self.linkedaxis.axislist], painter=painter, **kwargs)
-
-    def __getattr__(self, attr):
-        return getattr(self.linkedaxis, attr)
-
-    def finish(self, graph):
-        self.linkedaxis.finish(graph)
-        _splitaxis.finish(self, graph)
-
-
-class baraxis:
-
-    def __init__(self, subaxis=None, multisubaxis=0, title=None, dist=0.5, firstdist=None, lastdist=None, names=None, texts={}, painter=baraxispainter()):
+    def __init__(self, subaxis=None, multisubaxis=None, title=None,
+                       dist=0.5, firstdist=None, lastdist=None, names=None,
+                       texts={}, painter=baraxispainter()):
+        """initialize the instance
+        - subaxis contains a axis to be used as the subaxis
+          for all bars
+        - multisubaxis might contain another baraxis instance
+          to be used to construct a new subaxis for each item;
+          (by that a nested bar axis with a different number
+          of subbars at each item can be created)
+        - only one of subaxis or multisubaxis can be set; if neither
+          of them is set, the baraxis behaves like having a linaxis
+          as its subaxis with a fixed range 0 to 1
+        - the title attribute contains the axis title as a string
+        - the dist is a relsize to be used as the distance between
+          the items
+        - the firstdist and lastdist are the distance before the
+          first and after the last item, respectively; when set
+          to None (the default), 0.5*dist is used
+        - names is a predefined list of names to identify the
+          items; if set, the name list is fixed
+        - texts is a dictionary transforming a name to a text in
+          the painter; if a name isn't found in the dictionary
+          it gets used itself
+        - the relsize of the baraxis is the sum of the
+          relsizes including all distances between the items"""
         self.dist = dist
         if firstdist is not None:
             self.firstdist = firstdist
@@ -2511,9 +2734,10 @@ class baraxis:
             self.setname(name)
         self.fixnames = names is not None
         self.multisubaxis = multisubaxis
-        if self.multisubaxis:
-            self.createsubaxis = subaxis
-            self.subaxis = [self.createsubaxis.createsubaxis() for name in self.names]
+        if self.multisubaxis is not None:
+            if subaxis is not None:
+                raise RuntimeError("either use subaxis or multisubaxis")
+            self.subaxis = [self.createsubaxis() for name in self.names]
         else:
             self.subaxis = subaxis
         self.title = title
@@ -2521,31 +2745,60 @@ class baraxis:
         self.texts = texts
         self.painter = painter
 
+    def createsubaxis(self):
+        return baraxis(subaxis=self.multisubaxis.subaxis,
+                       multisubaxis=self.multisubaxis.multisubaxis,
+                       title=self.multisubaxis.title,
+                       dist=self.multisubaxis.dist,
+                       firstdist=self.multisubaxis.firstdist,
+                       lastdist=self.multisubaxis.lastdist,
+                       names=self.multisubaxis.names,
+                       texts=self.multisubaxis.texts,
+                       painter=self.multisubaxis.painter)
+
     def getdatarange(self):
+        # TODO: we do not yet have a proper range handling for a baraxis
         return None
 
+    def gettickrange(self):
+        # TODO: we do not yet have a proper range handling for a baraxis
+        raise RuntimeError("range handling for a baraxis is not implemented")
+
+    def setdatarange(self):
+        # TODO: we do not yet have a proper range handling for a baraxis
+        raise RuntimeError("range handling for a baraxis is not implemented")
+
+    def settickrange(self):
+        # TODO: we do not yet have a proper range handling for a baraxis
+        raise RuntimeError("range handling for a baraxis is not implemented")
+
     def setname(self, name, *subnames):
-        # setting self.relsizes to None forces later recalculation
+        """add a name to identify an item at the baraxis
+        - by using subnames, nested name definitions are
+          possible
+        - a style (or the user itself) might use this to
+          insert new items into a baraxis
+        - setting self.relsizes to None forces later recalculation"""
         if not self.fixnames:
             if name not in self.names:
                 self.relsizes = None
                 self.names.append(name)
-                if self.multisubaxis:
-                    self.subaxis.append(self.createsubaxis.createsubaxis())
+                if self.multisubaxis is not None:
+                    self.subaxis.append(self.createsubaxis())
         if (not self.fixnames or name in self.names) and len(subnames):
-            if self.multisubaxis:
+            if self.multisubaxis is not None:
                 if self.subaxis[self.names.index(name)].setname(*subnames):
                     self.relsizes = None
             else:
-                #print self.subaxis, self.multisubaxis, subnames, name
                 if self.subaxis.setname(*subnames):
                     self.relsizes = None
         return self.relsizes is not None
 
     def updaterelsizes(self):
+        # guess what it does: it recalculates relsize attribute
         self.relsizes = [i*self.dist + self.firstdist for i in range(len(self.names) + 1)]
         self.relsizes[-1] += self.lastdist - self.dist
-        if self.multisubaxis:
+        if self.multisubaxis is not None:
             subrelsize = 0
             for i in range(1, len(self.relsizes)):
                 self.subaxis[i-1].updaterelsizes()
@@ -2561,6 +2814,15 @@ class baraxis:
                 self.relsizes[i] += i * subrelsize
 
     def convert(self, value):
+        """baraxis convert method
+        - the value should be a list, where the first entry is
+          a member of the names (set in the constructor or by the
+          setname method); this first entry identifies an item in
+          the baraxis
+        - following values are passed to the appropriate subaxis
+          convert method
+        - when there is no subaxis, the convert method will behave
+          like having a linaxis from 0 to 1 as subaxis"""
         # TODO: proper raising exceptions (which exceptions go thru, which are handled before?)
         if not self.relsizes:
             self.updaterelsizes()
@@ -2569,35 +2831,67 @@ class baraxis:
             if self.subaxis is None:
                 subvalue = value[1]
             else:
-                if self.multisubaxis:
+                if self.multisubaxis is not None:
                     subvalue = value[1] * self.subaxis[pos].relsizes[-1]
                 else:
                     subvalue = value[1] * self.subaxis.relsizes[-1]
         else:
-            if self.multisubaxis:
+            if self.multisubaxis is not None:
                 subvalue = self.subaxis[pos].convert(value[1:]) * self.subaxis[pos].relsizes[-1]
             else:
                 subvalue = self.subaxis.convert(value[1:]) * self.subaxis.relsizes[-1]
         return (self.relsizes[pos] + subvalue) / float(self.relsizes[-1])
 
-    def dolayout(self, graph):
-        self.layoutdata = layoutdata()
-        self.painter.dolayout(graph, self)
+    def baseline(self, x1=None, x2=None, axis=None):
+        "None is returned -> subaxis should not paint any baselines"
+        # TODO: quick hack ?!
+        return None
 
-    def dopaint(self, graph):
-        self.painter.paint(graph, self)
+    def vbaseline(self, v1=None, v2=None, axis=None):
+        "None is returned -> subaxis should not paint any baselines"
+        # TODO: quick hack ?!
+        return None
+
+    def finish(self, axispos, texrunner):
+        if self.multisubaxis is not None:
+            for name, subaxis in zip(self.names, self.subaxis):
+                subaxis.vmin = self.convert((name, 0))
+                subaxis.vmax = self.convert((name, 1))
+                subaxis.baseaxispos = axispos
+                subaxis.baseaxis = self
+        self.axiscanvas = axiscanvas(texrunner)
+        self.painter.paint(axispos, self, self.axiscanvas)
 
     def createlinkaxis(self, **args):
-        if self.subaxis is not None:
-            if self.multisubaxis:
-                subaxis = [subaxis.createlinkaxis() for subaxis in self.subaxis]
-            else:
-                subaxis = self.subaxis.createlinkaxis()
-        else:
-            subaxis = None
-        return baraxis(subaxis=subaxis, dist=self.dist, firstdist=self.firstdist, lastdist=self.lastdist, **args)
+        return linkbaraxis(self, **args)
 
-    createsubaxis = createlinkaxis
+
+class linkbaraxis(linkaxis):
+    """a baraxis linked to an already existing baraxis
+    - inherits the access to a linked axis -- as before,
+      basically only the painter is replaced
+    - it must take care of the creation of linked axes of
+      the subaxes"""
+
+    __implements__ = _Iaxis
+
+    def __init__(self, linkedaxis, painter=linkbaraxispainter()):
+        """initializes the instance
+        - it gets a axis this linkaxis is linked to
+        - it gets a painter to be used for this linked axis"""
+        linkaxis.__init__(self, linkedaxis, painter=painter)
+
+    def finish(self, axispos, texrunner):
+        if self.multisubaxis is not None:
+            self.subaxis = [subaxis.createlinkaxis() for subaxis in self.linkedaxis.subaxis]
+            for subaxis in self.subaxis:
+                subaxis.baseaxispos = axispos
+                subaxis.baseaxis = self
+        elif self.linkedaxis.subaxis is not None:
+            self.subaxis = self.linkedaxis.subaxis.createlinkaxis()
+            self.subaxis.baseaxispos = axispos
+            self.subaxis.baseaxis = self
+        linkaxis.finish(self, axispos, texrunner)
 
 
 ################################################################################
@@ -2696,9 +2990,25 @@ class plotinfo:
         self.style = style
 
 
+
 class graphxy(canvas.canvas):
 
     Names = "x", "y"
+
+    class axisposdata:
+
+        def __init__(self, type, axispos, tickdirection):
+            """
+            - type == 0: x-axis; type == 1: y-axis
+            - _axispos is the y or x position of the x-axis or y-axis
+              in postscript points, respectively
+            - axispos is analogous to _axispos, but as a PyX length
+            - dx and dy is the tick direction
+            """
+            self.type = type
+            self.axispos = axispos
+            self._axispos = unit.topt(axispos)
+            self.tickdirection = tickdirection
 
     def clipcanvas(self):
         return self.insert(canvas.canvas(canvas.clip(path._rect(self._xpos, self._ypos, self._width, self._height))))
@@ -2761,9 +3071,7 @@ class graphxy(canvas.canvas):
             yaxis = self.axes["y"]
         return self.xpos+vx*self.width, self.ypos+vy*self.height
 
-    def xbaseline(self, x1=None, x2=None, axis=None):
-        if axis is None:
-            axis = self.axes["x"]
+    def baseline(self, x1=None, x2=None, axis=None):
         if x1 is not None:
             v1 = axis.convert(x1)
         else:
@@ -2772,128 +3080,245 @@ class graphxy(canvas.canvas):
             v2 = axis.convert(x2)
         else:
             v2 = 1
-        return path._line(self._xpos+v1*self._width, axis._axispos,
-                          self._xpos+v2*self._width, axis._axispos)
+        if axis.axisposdata.type:
+            return path._line(axis.axisposdata._axispos, self._ypos+v1*self._height,
+                              axis.axisposdata._axispos, self._ypos+v2*self._height)
+        else:
+            return path._line(self._xpos+v1*self._width, axis.axisposdata._axispos,
+                              self._xpos+v2*self._width, axis.axisposdata._axispos)
 
-    def ybaseline(self, y1=None, y2=None, axis=None):
+    def xbaseline(self, x1=None, x2=None, axis=None):
         if axis is None:
-            axis = self.axes["y"]
-        if y1 is not None:
-            v1 = axis.convert(y1)
+            axis = self.axes["x"]
+        if axis.axisposdata.type != 0:
+            raise RuntimeError("wrong axisposdata.type")
+        if x1 is not None:
+            v1 = axis.convert(x1)
         else:
             v1 = 0
-        if y2 is not None:
-            v2 = axis.convert(y2)
+        if x2 is not None:
+            v2 = axis.convert(x2)
         else:
             v2 = 1
-        return path._line(axis._axispos, self._ypos+v1*self._height,
-                          axis._axispos, self._ypos+v2*self._height)
+        return path._line(self._xpos+v1*self._width, axis.axisposdata._axispos,
+                          self._xpos+v2*self._width, axis.axisposdata._axispos)
+
+    def ybaseline(self, x1=None, x2=None, axis=None):
+        if axis is None:
+            axis = self.axes["y"]
+        if axis.axisposdata.type != 1:
+            raise RuntimeError("wrong axisposdata.type")
+        if x1 is not None:
+            v1 = axis.convert(x1)
+        else:
+            v1 = 0
+        if x2 is not None:
+            v2 = axis.convert(x2)
+        else:
+            v2 = 1
+        return path._line(axis.axisposdata._axispos, self._ypos+v1*self._height,
+                          axis.axisposdata._axispos, self._ypos+v2*self._height)
+
+    def vbaseline(self, v1=None, v2=None, axis=None):
+        if v1 is None:
+            v1 = 0
+        if v2 is None:
+            v2 = 1
+        if axis.axisposdata.type:
+            return path._line(axis.axisposdata._axispos, self._ypos+v1*self._height,
+                              axis.axisposdata._axispos, self._ypos+v2*self._height)
+        else:
+            return path._line(self._xpos+v1*self._width, axis.axisposdata._axispos,
+                              self._xpos+v2*self._width, axis.axisposdata._axispos)
 
     def vxbaseline(self, v1=None, v2=None, axis=None):
         if axis is None:
             axis = self.axes["x"]
+        if axis.axisposdata.type != 0:
+            raise RuntimeError("wrong axisposdata.type")
         if v1 is None:
             v1 = 0
         if v2 is None:
             v2 = 1
-        return path._line(self._xpos+v1*self._width, axis._axispos,
-                          self._xpos+v2*self._width, axis._axispos)
+        return path._line(self._xpos+v1*self._width, axis.axisposdata._axispos,
+                          self._xpos+v2*self._width, axis.axisposdata._axispos)
 
     def vybaseline(self, v1=None, v2=None, axis=None):
         if axis is None:
             axis = self.axes["y"]
+        if axis.axisposdata.type != 1:
+            raise RuntimeError("wrong axisposdata.type")
         if v1 is None:
             v1 = 0
         if v2 is None:
             v2 = 1
-        return path._line(axis._axispos, self._ypos+v1*self._height,
-                          axis._axispos, self._ypos+v2*self._height)
+        return path._line(axis.axisposdata._axispos, self._ypos+v1*self._height,
+                          axis.axisposdata._axispos, self._ypos+v2*self._height)
+
+    def gridline(self, x, axis=None):
+        v = axis.convert(x)
+        if axis.axisposdata.type:
+            return path._line(self._xpos, self._ypos+v*self._height,
+                              self._xpos+self._width, self._ypos+v*self._height)
+        else:
+            return path._line(self._xpos+v*self._width, self._ypos,
+                              self._xpos+v*self._width, self._ypos+self._height)
 
     def xgridline(self, x, axis=None):
         if axis is None:
             axis = self.axes["x"]
         v = axis.convert(x)
+        if axis.axisposdata.type != 0:
+            raise RuntimeError("wrong axisposdata.type")
         return path._line(self._xpos+v*self._width, self._ypos,
                           self._xpos+v*self._width, self._ypos+self._height)
 
-    def ygridline(self, y, axis=None):
+    def ygridline(self, x, axis=None):
         if axis is None:
             axis = self.axes["y"]
-        v = axis.convert(y)
+        v = axis.convert(x)
+        if axis.axisposdata.type != 1:
+            raise RuntimeError("wrong axisposdata.type")
         return path._line(self._xpos, self._ypos+v*self._height,
                           self._xpos+self._width, self._ypos+v*self._height)
+
+    def vgridline(self, v, axis=None):
+        if axis.axisposdata.type:
+            return path._line(self._xpos, self._ypos+v*self._height,
+                              self._xpos+self._width, self._ypos+v*self._height)
+        else:
+            return path._line(self._xpos+v*self._width, self._ypos,
+                              self._xpos+v*self._width, self._ypos+self._height)
 
     def vxgridline(self, v, axis=None):
         if axis is None:
             axis = self.axes["x"]
+        if axis.axisposdata.type != 0:
+            raise RuntimeError("wrong axisposdata.type")
         return path._line(self._xpos+v*self._width, self._ypos,
                           self._xpos+v*self._width, self._ypos+self._height)
 
     def vygridline(self, v, axis=None):
         if axis is None:
             axis = self.axes["y"]
+        if axis.axisposdata.type != 1:
+            raise RuntimeError("wrong axisposdata.type")
         return path._line(self._xpos, self._ypos+v*self._height,
                           self._xpos+self._width, self._ypos+v*self._height)
+
+    def _tickpoint(self, x, axis=None):
+        if axis.axisposdata.type:
+            return axis.axisposdata._axispos, self._ypos+axis.convert(x)*self._height
+        else:
+            return self._xpos+axis.convert(x)*self._width, axis.axisposdata._axispos
 
     def _xtickpoint(self, x, axis=None):
         if axis is None:
             axis = self.axes["x"]
-        return self._xpos+axis.convert(x)*self._width, axis._axispos
+        if axis.axisposdata.type != 0:
+            raise RuntimeError("wrong axisposdata.type")
+        return self._xpos+axis.convert(x)*self._width, axis.axisposdata._axispos
 
-    def _ytickpoint(self, y, axis=None):
+    def _ytickpoint(self, x, axis=None):
         if axis is None:
             axis = self.axes["y"]
-        return axis._axispos, self._ypos+axis.convert(y)*self._height
+        if axis.axisposdata.type != 1:
+            raise RuntimeError("wrong axisposdata.type")
+        return axis.axisposdata._axispos, self._ypos+axis.convert(x)*self._height
+
+    def tickpoint(self, x, axis=None):
+        if axis.axisposdata.type:
+            return axis.axisposdata.axispos, self.ypos+axis.convert(x)*self.height
+        else:
+            return self.xpos+axis.convert(x)*self.width, axis.axisposdata.axispos
 
     def xtickpoint(self, x, axis=None):
         if axis is None:
             axis = self.axes["x"]
-        return self.xpos+axis.convert(x)*self.width, axis.axispos
+        if axis.axisposdata.type != 0:
+            raise RuntimeError("wrong axisposdata.type")
+        return self.xpos+axis.convert(x)*self.width, axis.axisposdata.axispos
 
-    def ytickpoint(self, y, axis=None):
+    def ytickpoint(self, x, axis=None):
         if axis is None:
             axis = self.axes["y"]
-        return axis.axispos, self.ypos+axis.convert(y)*self.height
+        if axis.axisposdata.type != 1:
+            raise RuntimeError("wrong axisposdata.type")
+        return axis.axisposdata.axispos, self.ypos+axis.convert(x)*self.height
+
+    def _vtickpoint(self, v, axis=None):
+        if axis.axisposdata.type:
+            return axis.axisposdata._axispos, self._ypos+v*self._height
+        else:
+            return self._xpos+v*self._width, axis.axisposdata._axispos
 
     def _vxtickpoint(self, v, axis=None):
         if axis is None:
             axis = self.axes["x"]
-        return self._xpos+v*self._width, axis._axispos
+        if axis.axisposdata.type != 0:
+            raise RuntimeError("wrong axisposdata.type")
+        return self._xpos+v*self._width, axis.axisposdata._axispos
 
     def _vytickpoint(self, v, axis=None):
         if axis is None:
             axis = self.axes["y"]
-        return axis._axispos, self._ypos+v*self._height
+        if axis.axisposdata.type != 1:
+            raise RuntimeError("wrong axisposdata.type")
+        return axis.axisposdata._axispos, self._ypos+v*self._height
+
+    def vtickpoint(self, v, axis=None):
+        if axis.axisposdata.type:
+            return axis.axisposdata.axispos, self.ypos+v*self.height
+        else:
+            return self.xpos+v*self.width, axis.axisposdata.axispos
 
     def vxtickpoint(self, v, axis=None):
         if axis is None:
             axis = self.axes["x"]
-        return self.xpos+v*self.width, axis.axispos
+        if axis.axisposdata.type != 0:
+            raise RuntimeError("wrong axisposdata.type")
+        return self.xpos+v*self.width, axis.axisposdata.axispos
 
     def vytickpoint(self, v, axis=None):
         if axis is None:
             axis = self.axes["y"]
-        return axis.axispos, self.ypos+v*self.height
+        if axis.axisposdata.type != 1:
+            raise RuntimeError("wrong axisposdata.type")
+        return axis.axisposdata.axispos, self.ypos+v*self.height
+
+    def tickdirection(self, x, axis=None):
+        return axis.axisposdata.tickdirection
 
     def xtickdirection(self, x, axis=None):
         if axis is None:
             axis = self.axes["x"]
-        return axis.fixtickdirection
+        if axis.axisposdata.type != 0:
+            raise RuntimeError("wrong axisposdata.type")
+        return axis.axisposdata.tickdirection
 
-    def ytickdirection(self, y, axis=None):
+    def ytickdirection(self, x, axis=None):
         if axis is None:
             axis = self.axes["y"]
-        return axis.fixtickdirection
+        if axis.axisposdata.type != 1:
+            raise RuntimeError("wrong axisposdata.type")
+        return axis.axisposdata.tickdirection
+
+    def vtickdirection(self, v, axis=None):
+        return axis.axisposdata.tickdirection
 
     def vxtickdirection(self, v, axis=None):
         if axis is None:
             axis = self.axes["x"]
-        return axis.fixtickdirection
+        if axis.axisposdata.type != 0:
+            raise RuntimeError("wrong axisposdata.type")
+        return axis.axisposdata.tickdirection
 
     def vytickdirection(self, v, axis=None):
         if axis is None:
             axis = self.axes["y"]
-        return axis.fixtickdirection
+        if axis.axisposdata.type != 1:
+            raise RuntimeError("wrong axisposdata.type")
+        return axis.axisposdata.tickdirection
 
     def _addpos(self, x, y, dx, dy):
         return x+dx, y+dy
@@ -2939,7 +3364,6 @@ class graphxy(canvas.canvas):
                 return hadmethod
 
     def dolayout(self):
-
         if not self.removedomethod(self.dolayout): return
         self.haslayout = 1
         # create list of ranges
@@ -2950,10 +3374,8 @@ class graphxy(canvas.canvas):
             plotinfo.data.setranges(ranges)
         # 3. gather ranges again
         self.gatherranges()
-
         # do the layout for all axes
         axesdist = unit.length(self.axesdist_str, default_type="v")
-
         XPattern = re.compile(r"%s([2-9]|[1-9][0-9]+)?$" % self.Names[0])
         YPattern = re.compile(r"%s([2-9]|[1-9][0-9]+)?$" % self.Names[1])
         xaxisextents = [0, 0]
@@ -2962,58 +3384,21 @@ class graphxy(canvas.canvas):
         needyaxisdist = [0, 0]
         items = list(self.axes.items())
         items.sort() #TODO: alphabetical sorting breaks for axis numbers bigger than 9
-
         for key, axis in items:
-
             num = self.keynum(key)
             num2 = 1 - num % 2 # x1 -> 0, x2 -> 1, x3 -> 0, x4 -> 1, ...
             num3 = 1 - 2 * (num % 2) # x1 -> -1, x2 -> 1, x3 -> -1, x4 -> 1, ...
-
             if XPattern.match(key):
-
                 if needxaxisdist[num2]:
                     xaxisextents[num2] += axesdist
-
-                axis.axispos = self.ypos + num2*self.height + num3*xaxisextents[num2]
-                axis._axispos = unit.topt(axis.axispos)
-                axis.fixtickdirection = (0, num3)
-
-                axis.baseline = self.xbaseline
-                axis.vbaseline = self.vxbaseline
-                axis.gridline = self.xgridline
-                axis.vgridline = self.vxgridline
-                axis._tickpoint = self._xtickpoint
-                axis.tickpoint = self.xtickpoint
-                axis._vtickpoint = self._vxtickpoint
-                axis.vtickpoint = self.vxtickpoint
-                axis.tickdirection = self.xtickdirection
-                axis.vtickdirection = self.vxtickdirection
-
+                axis.axisposdata = self.axisposdata(0, self.ypos + num2*self.height + num3*xaxisextents[num2], (0, num3))
             elif YPattern.match(key):
-
                 if needyaxisdist[num2]:
                     yaxisextents[num2] += axesdist
-
-                axis.axispos = self.xpos + num2*self.width + num3*yaxisextents[num2]
-                axis._axispos = unit.topt(axis.axispos)
-                axis.fixtickdirection = (num3, 0)
-
-                axis.baseline = self.ybaseline
-                axis.vbaseline = self.vybaseline
-                axis.gridline = self.ygridline
-                axis.vgridline = self.vygridline
-                axis._tickpoint = self._ytickpoint
-                axis.tickpoint = self.ytickpoint
-                axis._vtickpoint = self._vytickpoint
-                axis.vtickpoint = self.vytickpoint
-                axis.tickdirection = self.ytickdirection
-                axis.vtickdirection = self.vytickdirection
-
+                axis.axisposdata = self.axisposdata(1, self.xpos + num2*self.width + num3*yaxisextents[num2], (num3, 0))
             else:
                 raise ValueError("Axis key '%s' not allowed" % key)
-
-            axis.finish(self)
-
+            axis.finish(self, self.texrunner)
             if XPattern.match(key):
                 xaxisextents[num2] += axis.axiscanvas.extent
                 needxaxisdist[num2] = 1
@@ -4476,8 +4861,8 @@ class bar:
                             x3pos, y3pos = graph._pos(maxid, 0, xaxis=self.naxis, yaxis=self.vaxis)
                             x4pos, y4pos = graph._pos(minid, 0, xaxis=self.naxis, yaxis=self.vaxis)
                     else:
-                        x3pos, y3pos = self.naxis._vtickpoint(self.naxis, self.naxis.convert(maxid))
-                        x4pos, y4pos = self.naxis._vtickpoint(self.naxis, self.naxis.convert(minid))
+                        x3pos, y3pos = graph._tickpoint(maxid, axis=self.naxis)
+                        x4pos, y4pos = graph._tickpoint(minid, axis=self.naxis)
                 if self.barattrs is not None:
                     graph.fill(path.path(path._moveto(x1pos, y1pos),
                                          graph._connect(x1pos, y1pos, x2pos, y2pos),
