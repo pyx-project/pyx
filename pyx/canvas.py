@@ -21,9 +21,8 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 # TODO:
-# - check the factor 0.5 in arrowhead and PathDeco.modfication
 # - should we improve on the arc length -> arg parametrization routine or
-#   should we at least factor it out in bpath.bpath?
+#   should we at least factor it out?
 # - Should we really set linewidth in canvas.writetofile. Why don't we
 #   rely on the PS default (like for all other PathStyles)
 # - How should we handle the passing of stroke and fill styles to
@@ -381,8 +380,7 @@ def _arrowhead(anormpath, size, angle, constriction):
 
     tlen = unit.topt(anormpath.tangent(0).arclength())
 
-    # TODO: why factor 0.5?
-    alen  = 0.5*unit.topt(size)/tlen
+    alen  = unit.topt(size)/tlen
 
     if alen>anormpath.range(): alen=anormpath().range()
 
@@ -405,18 +403,16 @@ def _arrowhead(anormpath, size, angle, constriction):
         # constriction point (cx, cy) lies on path
         cx, cy = anormpath.at(constriction*alen)
 
-        arrow3a= path.line(*(arrowl.end()+(cx,cy)))
-        arrow3b= path.line(*((cx,cy)+arrowr.end()))
+        arrowcr= path.line(*(arrowr.end()+(cx,cy)))
 
-        # return the complete arrow
-        return arrowl.glue(arrow3a).glue(arrow3b).glue(arrowr.reversed())
+        arrow = arrowl.reversed().glue(arrowr).glue(arrowcr)
+        arrow.append(path.closepath())
     else:
         # arrow without constriction
-        arrow3 = path.line(*(arrowl.end()+arrowr.end()))
+        arrow = arrowl.reversed().glue(arrowr)
+        arrow.append(path.closepath())
 
-        # return the complete arrow
-        return arrowl.glue(arrow3).glue(arrowr.reversed())
-
+    return arrow
 
 class arrow(PathDeco):
 
@@ -487,8 +483,7 @@ class arrow(PathDeco):
 
         tlen = unit.topt(anormpath.tangent(0).arclength())
 
-        # TODO: why factor 0.5?
-        alen  = 0.5*unit.topt(self.size)/tlen
+        alen  = unit.topt(self.size)/tlen
         if alen>anormpath.range(): alen=anormpath().range()
 
         if self.constriction:
