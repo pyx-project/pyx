@@ -1129,18 +1129,6 @@ class linkaxis(_axis):
 # graph
 ################################################################################
 
-class defaultstyleiterator:
-
-    def __init__(self):
-        self.laststyles = {}
-
-    def iteratestyle(self, defaultstyle):
-        if self.laststyles.has_key(defaultstyle):
-            self.laststyles[defaultstyle] = self.laststyles[defaultstyle].next
-        else:
-            self.laststyles[defaultstyle] = defaultstyle
-        return self.laststyles[defaultstyle]()
-
 
 class graphxy(canvas.canvas):
 
@@ -1153,7 +1141,7 @@ class graphxy(canvas.canvas):
     DXMaxPattern = re.compile(r"dxmax$")
     DYMaxPattern = re.compile(r"dymax$")
 
-    def __init__(self, tex, xpos=0, ypos=0, width=None, height=None, ratio=goldenrule, axesdist="0.8 cm", styleiterator=defaultstyleiterator(), **axes):
+    def __init__(self, tex, xpos=0, ypos=0, width=None, height=None, ratio=goldenrule, axesdist="0.8 cm", **axes):
         canvas.canvas.__init__(self)
         self.tex = tex
         self.xpos = unit.topt(xpos)
@@ -1176,15 +1164,28 @@ class graphxy(canvas.canvas):
             axes["y2"] = linkaxis(axes["y"])
         self.axes = axes
         self.axesdist_str = axesdist
-        self.styleiterator = styleiterator
         self.data = [ ]
         self._drawstate = self.drawlayout
+        self.previousstyle = {}
+        self.previouscolorchange = {}
 
     def plot(self, data, style = None):
         if self._drawstate != self.drawlayout:
             raise PyxGraphDrawstateError
-        if not style:
-            style = self.styleiterator.iteratestyle(data.defaultstyle)
+        if style is None:
+            if self.previousstyle.has_key(data.defaultstyle.styleid):
+                style = self.previousstyle[data.defaultstyle.styleid].next()
+            else:
+                style = data.defaultstyle
+        if style.colorchange is not None:
+            self.previouscolorchange = style.colorchange
+            self.colorchangeindex = 0
+        if self.previouscolorchange is not None:
+            style.colorchange = self.previouscolorchange
+            self.previouscolorchange.max += 1
+            style.colorchangeindex = self.colorchangeindex
+            self.colorchangeindex += 1
+        self.previousstyle[style.styleid] = style
         data.setstyle(self, style)
         self.data.append(data)
 
@@ -1388,6 +1389,26 @@ class graphxy(canvas.canvas):
 #     * bar
 ################################################################################
 
+
+class colorchange:
+
+    def __init__(self, lowcolor, highcolor):
+        if lowcolor.__class__ != highcolor.__class__: raise ValueError
+        self.colorclass = lowcolor.__class__
+        self.lowcolor = lowcolor
+        self.highcolor = highcolor
+        self.max = -1
+        self.min = 0
+
+    def getcolor(self, index=None):
+        if index < self.min or index > self.max or self.min >= self.max: raise ValueError
+        color = {}
+        for key in self.lowcolor.color.keys():
+            color[key] = ((index - self.min) * self.lowcolor.color[key] +
+                          (self.max - index) * self.highcolor.color[key])/float(self.max - self.min)
+        return self.colorclass(**color)
+
+
 class plotstyle:
 
     pass
@@ -1395,11 +1416,17 @@ class plotstyle:
 
 class mark(plotstyle):
 
-    def __init__(self, size="0.12 cm", errorscale=1/goldenrule, dodrawsymbol=1, symbolstyles=()):
+    styleid = "mark"
+
+    def __init__(self, size="0.12 cm", colorchange=None, errorscale=1/goldenrule, dodrawsymbol=1, symbolstyles=()):
         self.size_str = size
         self.errorscale = errorscale
         self.dodrawsymbol = dodrawsymbol
         self.symbolstyles = symbolstyles
+        self.colorchange = colorchange
+
+    def next(self):
+        return self.nextclass(size=self.size_str)
 
     def setcolumns(self, graph, columns):
         self.dxindex = self.dxminindex = self.dxmaxindex = self.dyindex = self.dyminindex = self.dymaxindex = None
@@ -1460,6 +1487,7 @@ class mark(plotstyle):
         xaxis = graph.axes[self.xkey]
         yaxis = graph.axes[self.ykey]
         self.size = unit.topt(unit.length(self.size_str, default_type="v"))
+        if self.colorchange: self.symbolstyles = self.symbolstyles + (self.colorchange.getcolor(self.colorchangeindex),)
 
         for point in points:
             try:
@@ -1578,16 +1606,16 @@ class _markfcircle(_fmark, _markcircle): pass
 class _markfdiamond(_fmark, _markdiamond): pass
 
 
-_markcross.next = _markplus
-_markplus.next = _marksquare
-_marksquare.next = _marktriangle
-_marktriangle.next = _markcircle
-_markcircle.next = _markdiamond
-_markdiamond.next = _markfsquare
-_markfsquare.next = _markftriangle
-_markftriangle.next = _markfcircle
-_markfcircle.next = _markfdiamond
-_markfdiamond.next = _markcross
+_markcross.nextclass = _markplus
+_markplus.nextclass = _marksquare
+_marksquare.nextclass = _marktriangle
+_marktriangle.nextclass = _markcircle
+_markcircle.nextclass = _markdiamond
+_markdiamond.nextclass = _markfsquare
+_markfsquare.nextclass = _markftriangle
+_markftriangle.nextclass = _markfcircle
+_markfcircle.nextclass = _markfdiamond
+_markfdiamond.nextclass = _markcross
 
 mark.cross = _markcross
 mark.plus = _markplus
@@ -1603,9 +1631,14 @@ mark.fdiamond = _markfdiamond
 
 class line(plotstyle):
 
+    styleid = "line"
+
     def __init__(self, dodrawline=1, linestyles=()):
         self.dodrawline = dodrawline
         self.linestyles = linestyles
+
+    def next(self):
+        return self.nextclass()
 
     def setcolumns(self, graph, columns):
         for key, index in columns.items():
@@ -1671,9 +1704,9 @@ class _dottedline(line):
         line.__init__(self, **args)
 
 
-line.next = _dashedline
-_dashedline.next = _dottedline
-_dottedline.next = line
+line.nextclass = _dashedline
+_dashedline.nextclass = _dottedline
+_dottedline.nextclass = line
 
 line.normal = line
 line.dashed = _dashedline
@@ -1686,7 +1719,7 @@ line.dotted = _dottedline
 
 class data:
 
-    defaultstyle = mark.cross
+    defaultstyle = mark.cross()
 
     def __init__(self, datafile, **columns):
         self.datafile = datafile
@@ -1710,7 +1743,7 @@ class data:
 
 class function:
 
-    defaultstyle = line
+    defaultstyle = line()
 
     def __init__(self, expression, points = 100, parser=mathtree.parser()):
         self.result, expression = expression.split("=")
@@ -1741,7 +1774,7 @@ class function:
 
 class paramfunction:
 
-    defaultstyle = line
+    defaultstyle = line()
 
     def __init__(self, varname, min, max, expression, points = 100, parser=mathtree.parser()):
         self.varname = varname
