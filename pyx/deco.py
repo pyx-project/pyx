@@ -123,7 +123,7 @@ class _decoratedpath(base.PSCmd):
                     canvas._gsave().write(file)
                     _writestyles(self.fillstyles)
 
-                _fill().write(file)
+                canvas._fill().write(file)
 
                 if self.fillstyles:
                     canvas._grestore().write(file)
