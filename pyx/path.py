@@ -33,6 +33,11 @@ class closepath(pathel):
         pathel.__init__(self, "closepath", None)
     def draw(self, canvas):
         canvas._PSAddCmd(self.command)
+    def ConvertToBezier(self, currentpoint, currentsubpath):
+        return (None,
+                None,
+                bline(currentpoint[0], currentpoint[1], 
+                       currentsubpath[0], currentsubpath[1]))
   
 # path elements with 2 arguments  
 
@@ -48,48 +53,37 @@ class moveto(_pathel2):
     def __init__(self, x, y):
         pathel.__init__(self, "moveto", (x, y))
 
-    def ConvertToBezier(self, currentpoint):
-        return (self.args, None)
+    def ConvertToBezier(self, currentpoint, currentsubpath):
+        return (self.args, currentsubpath, None)
 	
 class rmoveto(_pathel2):
     ' Perform relative moveto '
     def __init__(self, x, y):
         pathel.__init__(self, "rmoveto", (x, y))
         
-    def ConvertToBezier(self, currentpoint):
-        return ((self.args(0)+currentpoint(0), self.args(1)+currentpoint(1)), None)
+    def ConvertToBezier(self, currentpoint, currentsubpath):
+        return ((self.args[0]+currentpoint[0], currentsubpath, self.args[1]+currentpoint[1]), None)
 	
 class lineto(_pathel2):
     ' Append straight line to (x, y) '
     def __init__(self, x, y):
         pathel.__init__(self, "lineto", (x, y))
         
-    def ConvertToBezier(self, currentpoint):
-        x2 = currentpoint(0)+(self.args(0)-currentpoint(0))/3.0
-        y2 = currentpoint(1)+(self.args(1)-currentpoint(1))/3.0
-        x3 = currentpoint(0)+2.0*(self.args(0)-currentpoint(0))/3.0
-        y3 = currentpoint(1)+2.0*(self.args(1)-currentpoint(1))/3.0
+    def ConvertToBezier(self, currentpoint, currentsubpath):
         return (self.args, 
-                bcurve(currentpoint(0), currentpoint(1), 
-                        x2, y2, 
-                        x3, y3,
-                        self.args(0), self.args(1)))
+                currentsubpath or currentpoint,
+                bline(currentpoint[0], currentpoint[1], self.args[0], self.args[1]))
 	
 class rlineto(_pathel2):
     ' Perform relative lineto '
     def __init__(self, x, y):
         pathel.__init__(self, "rlineto", (x, y))
         
-    def ConvertToBezier(self, currentpoint):
-        x2 = currentpoint(0)+self.args(0)/3.0
-        y2 = currentpoint(1)+self.args(1)/3.0
-        x3 = currentpoint(0)+2.0*self.args(0)/3.0
-        y3 = currentpoint(1)+2.0*self.args(1)/3.0
-        return ((self.args(0)+currentpoint(0), self.args(1)+currentpoint(1)),
-                bcurve(currentpoint(0), currentpoint(1), 
-                        x2, y2, 
-                        x3, y3,
-                        self.args(0), self.args(1)))
+    def ConvertToBezier(self, currentpoint, currentsubpath):
+        return ((self.args[0]+currentpoint[0], self.args[1]+currentpoint[1]), 
+                currentsubpath or currentpoint,
+                bline(currentpoint[0], currentpoint[1], 
+                      currentpoint[0]+self.args[0], currentpoint[1]+self.args[1]))
 
 # path elements with 5 arguments
 
@@ -101,6 +95,24 @@ class arc(_pathelarc):
     ' Append counterclockwise arc '
     def __init__(self, x, y, r, angle1, angle2):
         pathel.__init__(self, "arc", (x, y, r, angle1, angle2))
+        
+    def ConvertToBezier(self, currentpoint, currentsubpath):
+         (x,y,r,angle1,angle2)=self.args
+         if currentpoint:
+             return ( (x+r*math.cos(angle2), y+r*math.sin(angle2) ),
+                      currentsubpath or currentpoint,
+                      bline(currentpoint[0], 
+                            currentpoint[1], 
+                            x+r*math.cos(math.pi*angle1/180), 
+                            y+r*math.sin(math.pi*angle1/180))+
+                      barc(x, y, r, angle1, angle2)
+                    )
+         else:  # we assert that curretsubpath is also None
+             return ( (x+r*math.cos(math.pi*angle2/180), y+r*math.sin(math.pi*angle2/180)),
+                      (x+r*math.cos(math.pi*angle1/180), y+r*math.sin(math.pi*angle1/180)),
+                      barc(x, y, r, angle1, angle2)
+                    )
+    
 	
 class arcn(_pathelarc):
     ' Append clockwise arc '
@@ -127,8 +139,8 @@ class curveto(_pathel6):
         
     def ConvertToBezier(self, currentpoint):
         return (self.args[4:5], 
-                bcurve(currentpoint(0), currentpoint(1),
-                        args(0), args(1), args(2), args(3), args(4), args(5)))
+                bcurve(currentpoint[0], currentpoint[1],
+                        args[0], args[1], args[2], args[3], args[4], args[5]))
 
 class rcurveto(_pathel6):
     def __init__(self, x1, y1, x2, y2, x3, y3):
@@ -157,7 +169,7 @@ class path:
 	
     def draw(self, canvas):
 	if not isinstance(self.path[0], moveto): 
-	    raise PathException, "first path element must be moveto"
+	    raise PathException, "first path element must be moveto"    # TODO: also arc, arcn, arcto
         for pathel in self.path:
 	    pathel.draw(canvas)
 
@@ -165,11 +177,12 @@ class path:
         self.path.append(pathel)
 
     def ConvertToBezier(self):
-        currentpoint = None
-        self.bpath = bpath()
+        currentpoint   = None
+        currentsubpath = None
+        self.bpath     = bpath()
         for pathel in self.path:
-           (currentpoint, bpath) = pathel.ConvertToBezier(currentpoint)
-           if bpath: self.bpath.append(bpath)
+           (currentpoint, currentsubpath, bp) = pathel.ConvertToBezier(currentpoint, currentsubpath)
+           if bp: self.bpath.extend(bp)
 
 class line(path):
    def __init__(self, x1, y1, x2, y2):
@@ -198,8 +211,17 @@ class bpath:
     def append(self, pathel):
         self.bpath.append(pathel)
 
-    def __add__(self, bpath):
-        return self.bpath.__add__(bpath)
+    def extend(self, bp):
+        self.bpath.extend(bp)
+
+    def __add__(self, bp):
+        return bpath(self.bpath+bp.bpath)
+
+    def __len__(self):
+        return len(self.bpath)
+
+    def __getitem__(self, i):
+        return self.bpath[i]
 
     def __str__(self):
         return reduce(lambda x,y: x+"%s\n" % str(y), self.bpath, "")
@@ -209,6 +231,47 @@ class bcurve(bpath):
     def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
         bpath.__init__(self, [bpathel(x0, y0, x1, y1, x2, y2, x3, y3)]) 
 
+class bline(bpath):
+    """ bpath consisting of one straight line"""
+    def __init__(self, x0, y0, x1, y1):
+        bpath.__init__(self, 
+                      [bpathel(x0, y0, 
+                               x0+(x1-x0)/3.0, 
+                               y0+(y1-y0)/3.0,
+                               x0+2.0*(x1-x0)/3.0, 
+                               y0+2.0*(y1-y0)/3.0,
+                               x1, y1 )]) 
+
+class barc(bpath):
+    def __init__(self, x, y, r, phi1, phi2, clockwise=0, dphimax=pi/4):
+
+        phi1 = phi1*pi/180
+        phi2 = phi2*pi/180
+
+        if not clockwise:  
+            if phi2<phi1:        
+                # guarantee that phi2>phi1
+                phi2 = phi2 + (math.floor((phi1-phi2)/(2*pi))+1)*2*pi
+            elif phi2>phi1+2*pi:
+                # remove unnecessary multiples of 2*pi
+                phi2 = phi2 - (math.floor((phi2-phi1)/(2*pi))-1)*2*pi
+            
+        else:
+            if phi1<phi2: 
+                phi1 = phi1 + (math.floor((phi2-phi1)/(2*pi))+1)*2*pi
+            elif phi1>phi2+2*pi:
+                phi1 = phi1 - (math.floor((phi1-phi2)/(2*pi))-1)*2*pi
+
+        if r==0 or phi1-phi2==0: return None
+
+        subdivisions = abs(int((1.0*(phi1-phi2))/dphimax))+1
+
+        dphi=(1.0*(phi2-phi1))/subdivisions
+
+        self.bpath = []    
+
+        for i in range(subdivisions):
+            self.bpath.append(arctobpathel(x, y, r, phi1+i*dphi, phi1+(i+1)*dphi))
 
 def arctobpathel(x, y, r, phi1, phi2):
     dphi=phi2-phi1
@@ -228,36 +291,6 @@ def arctobpathel(x, y, r, phi1, phi2):
     
     return bpathel(x0, y0, x1, y1, x2, y2, x3, y3)   
 
-def arctobpath(x, y, r, phi1, phi2, clockwise=0, dphimax=pi/4):
-    phi1 = phi1*pi/180
-    phi2 = phi2*pi/180
-
-    if not clockwise:  
-        if phi2<phi1: 
-            phi2 = phi2 + (math.floor((phi1-phi2)/(2*pi))+1)*2*pi       # guarantee that phi2>phi1
-        elif phi2>phi1+2*pi:
-            phi2 = phi2 - (math.floor((phi2-phi1)/(2*pi))-1)*2*pi
-        
-    else:
-        if phi1<phi2: 
-            phi1 = phi1 + (math.floor((phi2-phi1)/(2*pi))+1)*2*pi
-        elif phi1>phi2+2*pi:
-            phi1 = phi1 - (math.floor((phi1-phi2)/(2*pi))-1)*2*pi
-
-    if r==0 or phi1-phi2==0: return None
-
-    subdivisions = abs(int((1.0*(phi1-phi2))/dphimax)+1)
-
-    dphi=(1.0*(phi2-phi1))/subdivisions
-
-    bp = bpath()    
-
-    for i in range(subdivisions):
-        bp.append(arctobpathel(x, y, r, phi1+i*dphi, phi1+(i+1)*dphi))
-
-    return bp
-
-
 if __name__=="__main__":
     def testarc(x, y, phi1, phi2):
         print "1 0 0 setrgbcolor"
@@ -266,7 +299,7 @@ if __name__=="__main__":
         print "stroke"
         print "0 1 0 setrgbcolor"
         print "newpath"
-        print arctobpath(x,y,50,phi1,phi2)
+        print barc(x,y,50,phi1,phi2)
         print "stroke"
 
     def testarcn(x, y, phi1, phi2):
@@ -276,7 +309,7 @@ if __name__=="__main__":
         print "stroke"
         print "0 1 0 setrgbcolor"
         print "newpath"
-        print arctobpath(x,y,50,phi1,phi2, clockwise=1)
+        print barc(x,y,50,phi1,phi2, clockwise=1)
         print "stroke"
        
     print "%!PS-Adobe-2.0"
@@ -285,22 +318,30 @@ if __name__=="__main__":
     #print arctobpath(100,100,100,0,90)
     #print "stroke"
 
-    testarc(100, 200, 0, 90)
-    testarc(200, 200, -90, 90)
-    testarc(300, 200, 270, 90)
-    testarc(400, 200, 90, -90)
-    testarc(500, 200, 90, 270)
-    testarc(400, 300, 45, -90)
-    testarc(200, 300, 45, -90-2*360)
-    testarc(100, 300, 45, +90+2*360)
-
-    testarcn(100, 500, 0, 90) 
-    testarcn(200, 500, -90, 90) 
-    testarcn(300, 500, 270, 90) 
-    testarcn(400, 500, 90, -90) 
-    testarcn(500, 500, 90, 270) 
-    testarcn(400, 600, 45, -90) 
-    testarcn(200, 600, 45, -90-360) 
-    testarcn(100, 600, 45, -90+360) 
-    print "showpage"
+#   testarc(100, 200, 0, 90)
+#   testarc(200, 200, -90, 90)
+#   testarc(300, 200, 270, 90)
+#   testarc(400, 200, 90, -90)
+#   testarc(500, 200, 90, 270)
+#   testarc(400, 300, 45, -90)
+#   testarc(200, 300, 45, -90-2*360)
+#   testarc(100, 300, 45, +90+2*360)
+#
+#   testarcn(100, 500, 0, 90) 
+#   testarcn(200, 500, -90, 90) 
+#   testarcn(300, 500, 270, 90) 
+#   testarcn(400, 500, 90, -90) 
+#   testarcn(500, 500, 90, 270) 
+#   testarcn(400, 600, 45, -90) 
+#   testarcn(200, 600, 45, -90-360) 
+#   testarcn(100, 600, 45, -90+360) 
+#
+    p=path([moveto(100,100), rlineto(20,20), arc(150,120,10,30,300),closepath()])
+    p.ConvertToBezier()
+    print p.bpath
+    print "stroke"
+    p=path([arc(120,120,10,30,360)])
+    p.ConvertToBezier()
+    print p.bpath
+    print "stroke"
     print "showpage"
