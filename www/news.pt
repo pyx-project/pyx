@@ -89,15 +89,15 @@
       </dd>
       <dt>2003-01-17: PyX 0.2</dt>
       <dd>
-        PyX 0.2 contained a variety of bug fixes and improvements. In
+        PyX 0.2 contains a variety of bug fixes and improvements. In
         particular the axis handling of the graph module was enhanced
         considerably.
       </dd>
       <dt>2002-10-07: PyX 0.1</dt>
       <dd>
-        The first public release, PyX 0.1, was uploaded to SourceForge.
-        It allowes for the creation of encapsulated PostScript drawings
-        and uses TeX/LaTeX + dvips for text creation. A graph module for
+        The first public release, PyX 0.1, has been uploaded to SourceForge.
+        It allows the creation of encapsulated PostScript drawings
+        and uses TeX/LaTeX + dvips for the text creation. A graph module for
         the creation of x-y-plots is included.
       </dd>
     </dl>

@@ -25,7 +25,7 @@
     <ul>
       <li>PostScript output for device independent, free scalable figures</li>
       <li>seamless TeX/LaTeX integration</li>
-      <li>full access to PostScript features like paths, linestyles, fill patterns, transformations, clipping, etc.</li>
+      <li>full access to PostScript features like paths, linestyles, fill patterns, transformations, clipping, bitmap inclusion, etc.</li>
       <li>advanced geometric operations on paths like intersections, transformations, splitting, etc.</li>
       <li>sophisticated graph generation: modular design, pluggable axes, axes partitioning based on rational number arithmetics, flexible graph styles, etc.</li>
     </ul>
@@ -35,8 +35,7 @@
     <p>
       PyX is in steady development. News are available on the
       <a href="news.html">news page</a>.
-      Some development goals are listed on the
-      <a href="roadmap.html">roadmap</a>.
+      Planned features are listed on the <a href="roadmap.html">roadmap</a>.
       The current release,
       PyX <span tal:content="options/version" tal:omit-tag="">version</span>,
       is available at the
@@ -59,8 +58,7 @@
     <h2>Thanks</h2>
 
     <p>
-      The authors acknowledge support for developer meetings
-      granted by the German Speaking TeX User Group
+      The authors kindly acknowledge financial support from the German Speaking TeX User Group
       <a href="http://www.dante.de/">DANTE e.V.</a>
     </p>
 

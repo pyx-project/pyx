@@ -30,7 +30,7 @@
       </div>
 
       <div class="box">
-        <div class="title">SF-Resources</div>
+        <div class="title">SF Resources</div>
         <div class="link"><a href="http://sourceforge.net/project/showfiles.php?group_id=45430">Downloads</a></div>
         <div class="link"><a href="http://sourceforge.net/mail/?group_id=45430">Mailing lists</a></div>
         <div class="link"><a href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/pyx/pyx/CHANGES?rev=HEAD&amp;content-type=text/vnd.viewcvs-markup">ChangeLog</a></div>
