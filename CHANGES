@@ -17,6 +17,7 @@ TODO:
     - paths are to be drawn instead of inserted
     - should the divisor argument be moved to the texters?
     - zeropathattrs=None should be the default
+    - consider removing the zero line feature
   - style module:
     - default patterns
     - make dash length available
