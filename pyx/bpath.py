@@ -187,8 +187,8 @@ class bpath:
             for o_bpel in other.bpath:
                 tb = tb+1
                 intersections = intersections + \
-                                bpathelIntersect(s_bpel, ta-1, ta, maxsubdiv,
-                                                 o_bpel, tb-1, tb, maxsubdiv)
+                                _bpathelIntersect(s_bpel, ta-1, ta, maxsubdiv,
+                                                  o_bpel, tb-1, tb, maxsubdiv)
 
         return intersections
 
@@ -249,7 +249,7 @@ class _barc(bpath):
         dphi=(1.0*(phi2-phi1))/subdivisions
 
         for i in range(subdivisions):
-            self.bpath.append(arctobpathel(x, y, r, 
+            self.bpath.append(_arctobpathel(x, y, r, 
                                            phi1+i*dphi, phi1+(i+1)*dphi))
 
 
@@ -265,7 +265,7 @@ class barc(_barc):
 # some helper routines            
 ################################################################################
 
-def arctobpathel(x, y, r, phi1, phi2):
+def _arctobpathel(x, y, r, phi1, phi2):
     ' generate the best bpathel corresponding to an arc segment '
     
     dphi=phi2-phi1
@@ -285,7 +285,7 @@ def arctobpathel(x, y, r, phi1, phi2):
     
     return _bpathel(x0, y0, x1, y1, x2, y2, x3, y3)
 
-def bpathelIntersect(a, a_t0, a_t1, a_subdiv,
+def _bpathelIntersect(a, a_t0, a_t1, a_subdiv,
                      b, b_t0, b_t1, b_subdiv):
     """ intersect two bpathels
 
@@ -304,28 +304,28 @@ def bpathelIntersect(a, a_t0, a_t1, a_subdiv,
             (ba, bb) = b.MidPointSplit()
             b_tm = 0.5*(b_t0+b_t1)
 
-            return ( bpathelIntersect(aa, a_t0, a_tm, a_subdiv-1,
-                                      ba, b_t0, b_tm, b_subdiv-1) + 
-                     bpathelIntersect(ab, a_tm, a_t1, a_subdiv-1,
-                                      ba, b_t0, b_tm, b_subdiv-1) + 
-                     bpathelIntersect(aa, a_t0, a_tm, a_subdiv-1,
-                                      bb, b_tm, b_t1, b_subdiv-1) +
-                     bpathelIntersect(ab, a_tm, a_t1, a_subdiv-1,
-                                      bb, b_tm, b_t1, b_subdiv-1) )
+            return ( _bpathelIntersect(aa, a_t0, a_tm, a_subdiv-1,
+                                       ba, b_t0, b_tm, b_subdiv-1) + 
+                     _bpathelIntersect(ab, a_tm, a_t1, a_subdiv-1,
+                                       ba, b_t0, b_tm, b_subdiv-1) + 
+                     _bpathelIntersect(aa, a_t0, a_tm, a_subdiv-1,
+                                       bb, b_tm, b_t1, b_subdiv-1) +
+                     _bpathelIntersect(ab, a_tm, a_t1, a_subdiv-1,
+                                       bb, b_tm, b_t1, b_subdiv-1) )
         else:
-            return ( bpathelIntersect(aa, a_t0, a_tm, a_subdiv-1,
-                                      b, b_t0, b_t1, b_subdiv) +
-                     bpathelIntersect(ab, a_tm, a_t1, a_subdiv-1,
-                                      b, b_t0, b_t1, b_subdiv) )
+            return ( _bpathelIntersect(aa, a_t0, a_tm, a_subdiv-1,
+                                       b, b_t0, b_t1, b_subdiv) +
+                     _bpathelIntersect(ab, a_tm, a_t1, a_subdiv-1,
+                                       b, b_t0, b_t1, b_subdiv) )
     else:
         if b_subdiv>0:
             (ba, bb) = b.MidPointSplit()
             b_tm = 0.5*(b_t0+b_t1)
 
-            return  ( bpathelIntersect(a, a_t0, a_t1, a_subdiv,
-                                       ba, b_t0, b_t1, b_subdiv-1) +
-                      bpathelIntersect(a, a_tm, a_t1, a_subdiv,
-                                       ba, b_t0, b_tm, b_subdiv-1) )
+            return  ( _bpathelIntersect(a, a_t0, a_t1, a_subdiv,
+                                        ba, b_t0, b_t1, b_subdiv-1) +
+                      _bpathelIntersect(a, a_tm, a_t1, a_subdiv,
+                                        ba, b_t0, b_tm, b_subdiv-1) )
         else:
             # no more subdivisions of either a or b
             # => try to intersect a and b as straight line segments
