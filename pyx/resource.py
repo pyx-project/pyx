@@ -30,7 +30,7 @@ needed by canvasitems and a resource registry class.
 
 import pswriter, pdfwriter
 
-class _resource:
+class resource:
 
     """ a resource needed by a canvasitem """
 
@@ -45,7 +45,7 @@ class _resource:
 # various standard resources
 #
 
-class definition(_resource):
+class definition(resource):
 
     """ function definition """
 
@@ -57,7 +57,7 @@ class definition(_resource):
         pswriter.PSdefinition(self.id, self.body).register(registry)
 
 
-class font(_resource):
+class font(resource):
 
     """ font definition """
 
