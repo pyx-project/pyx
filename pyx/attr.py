@@ -89,8 +89,8 @@ class attr:
 
 class exclusiveattr(attr):
 
-    """an attribute which swallows all but the last of the same type in an
-    attribute list"""
+    """an attribute which swallows all but the last of the same type (specified
+    by the exlusiveclass argument to the constructor) in an attribute list"""
 
     def __init__(self, exclusiveclass):
         self.exclusiveclass = exclusiveclass
@@ -127,6 +127,42 @@ class sortbeforeattr(attr):
                             first = 0
                             break
                 result.append(attr)
+        if first:
+            result.append(self)
+        return result
+
+
+class sortbeforeexclusiveattr(attr):
+
+    """an attribute which swallows all but the last of the same type (specified
+    by the exlusiveclass argument to the constructor) in an attribute list and
+    places itself previous to all attributes given in the beforetheclasses
+    argument to the constructor"""
+
+    def __init__(self, exclusiveclass, beforetheclasses):
+        self.exclusiveclass = exclusiveclass
+        self.beforetheclasses = beforetheclasses
+
+    def merge(self, attrs):
+        first = 1
+        result = []
+        try:
+            for attr in attrs:
+                if first and isinstance(attr, self.beforetheclasses):
+                    result.append(self)
+                    first = 0
+                if not isinstance(attr, self.exclusiveclass):
+                    result.append(attr)
+        except TypeError: # workaround for Python 2.1 and older
+            for attr in attrs:
+                if first:
+                    for dependedclass in self.beforetheclasses:
+                        if isinstance(attr, dependedclass):
+                            result.append(self)
+                            first = 0
+                            break
+                if not isinstance(attr, self.exclusiveclass):
+                    result.append(attr)
         if first:
             result.append(self)
         return result

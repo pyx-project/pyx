@@ -1686,7 +1686,7 @@ for s in defaultsizelist:
 
 _textattrspreamble += "\\newbox\\PyXBoxVBox%\n\\newdimen\PyXDimenVBox%\n"
 
-class parbox_pt(attr.exclusiveattr, attr.sortbeforeattr, textattr):
+class parbox_pt(attr.sortbeforeexclusiveattr, textattr):
 
     top = 1
     middle = 2
@@ -1695,11 +1695,7 @@ class parbox_pt(attr.exclusiveattr, attr.sortbeforeattr, textattr):
     def __init__(self, width, baseline=top):
         self.width = width
         self.baseline = baseline
-        attr.exclusiveattr.__init__(self, parbox_pt)
-        attr.sortbeforeattr.__init__(self, [_localattr])
-
-    def merge(self, attrs):
-        return attr.sortbeforeattr.merge(self, attr.exclusiveattr.merge(self, attrs)[:-1])
+        attr.sortbeforeexclusiveattr.__init__(self, parbox_pt, [_localattr])
 
     def apply(self, expr):
         if self.baseline == self.top:
@@ -1719,14 +1715,10 @@ class parbox(parbox_pt):
 
 _textattrspreamble += "\\newbox\\PyXBoxVAlign%\n\\newdimen\PyXDimenVAlign%\n"
 
-class valign(attr.exclusiveattr, attr.sortbeforeattr, textattr):
+class valign(attr.sortbeforeexclusiveattr, textattr):
 
     def __init__(self):
-        attr.exclusiveattr.__init__(self, valign)
-        attr.sortbeforeattr.__init__(self, [parbox_pt, _localattr])
-
-    def merge(self, attrs):
-        return attr.sortbeforeattr.merge(self, attr.exclusiveattr.merge(self, attrs)[:-1])
+        attr.sortbeforeexclusiveattr.__init__(self, valign, [parbox_pt, _localattr])
 
 class _valigntop(valign):
 

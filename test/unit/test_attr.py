@@ -15,6 +15,10 @@ class A3(sortbeforeattr): pass
 class B3(sortbeforeattr): pass
 class C3(attr): pass
 
+class A4(sortbeforeexclusiveattr): pass
+class B4(sortbeforeexclusiveattr): pass
+class C4(attr): pass
+
 
 class AttrTestCase(unittest.TestCase):
 
@@ -52,6 +56,15 @@ class AttrTestCase(unittest.TestCase):
         c1 = C3()
         c2 = C3()
         assert mergeattrs([a1, b2, b1, c2, a2, c1]) == [a1, a2, b2, b1, c2, c1]
+
+    def testExclusiveSort(self):
+        a1 = A4(A4, (B4, C4))
+        a2 = A4(A4, (B4, C4))
+        b1 = B4(B4, (C4))
+        b2 = B4(B4, (C4))
+        c1 = C4()
+        c2 = C4()
+        assert mergeattrs([b2, a1, b1, c2, a2, c1]) == [a2, b1, c2, c1]
 
 
 suite = unittest.TestSuite((unittest.makeSuite(AttrTestCase, 'test'), ))
