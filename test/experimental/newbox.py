@@ -19,37 +19,11 @@ else:
 
 c = canvas.canvas()
 
-# I'm missing some basic functionality ...
-def normpatheltrafo(normpathel, param):
-    tx, ty = normpathel.at_pt(param)
-    tdx, tdy = normpathel.tangentvector_pt(param)
-    return trafo.translate_pt(tx, ty)*trafo.rotate(math.degrees(math.atan2(tdy, tdx)))
-
-def normpathelbegintrafo(normpathel):
-    if isinstance(normpathel, path.normcurve):
-        tx, ty = normpathel.x0_pt, normpathel.y0_pt
-        tdx, tdy = normpathel.x1_pt - normpathel.x0_pt, normpathel.y1_pt - normpathel.y0_pt
-        return trafo.translate_pt(tx, ty)*trafo.rotate(math.degrees(math.atan2(tdy, tdx)))
-    else:
-        tx, ty = normpathel.x0_pt, normpathel.y0_pt
-        tdx, tdy = normpathel.x1_pt - normpathel.x0_pt, normpathel.y1_pt - normpathel.y0_pt
-        return trafo.translate_pt(tx, ty)*trafo.rotate(math.degrees(math.atan2(tdy, tdx)))
-
-def normpathelendtrafo(normpathel):
-    if isinstance(normpathel, path.normcurve):
-        tx, ty = normpathel.x3_pt, normpathel.y3_pt
-        tdx, tdy = normpathel.x3_pt - normpathel.x2_pt, normpathel.y3_pt - normpathel.y2_pt
-        return trafo.translate_pt(tx, ty)*trafo.rotate(math.degrees(math.atan2(tdy, tdx)))
-    else:
-        tx, ty = normpathel.x1_pt, normpathel.y1_pt
-        tdx, tdy = normpathel.x1_pt - normpathel.x0_pt, normpathel.y1_pt - normpathel.y0_pt
-        return trafo.translate_pt(tx, ty)*trafo.rotate(math.degrees(math.atan2(tdy, tdx)))
-
 def connect(normpathel1, normpathel2, round):
     "returns a list of normpathels connecting normpathel1 and normpathel2 either rounded or not"
     # this is for corners, i.e. when there are jumps in the tangent vector
-    t1 = normpathelendtrafo(normpathel1)
-    t2 = normpathelbegintrafo(normpathel2)
+    t1 = normpathel1.trafo(1)
+    t2 = normpathel2.trafo(0)
     xs, ys = t1._apply(0, 0) # TODO: _apply -> apply_pt
     xe, ye = t2._apply(0, 0)
     if (xs-xe)*(xs-xe) + (xs-xe)*(xs-xe) < 1e-5**2:
@@ -101,10 +75,10 @@ def enlarged(normpath, enlargeby_pt, round):
         newnormpathels = []
         for normpathel in splitnormpathels:
             # get old and new start and end points
-            ts = normpathelbegintrafo(normpathel)
+            ts = normpathel.trafo(0)
             xs, ys = ts._apply(0, 0)
             nxs, nys = ts._apply(0, -enlargeby_pt)
-            te = normpathelendtrafo(normpathel)
+            te = normpathel.trafo(1)
             xe, ye = te._apply(0, 0)
             nxe, nye = te._apply(0, -enlargeby_pt)
 
@@ -171,7 +145,7 @@ def showtangent(normcurve):
     if 0 < t2 < 1:
         ts.append(t2)
     for t in ts:
-        trafo = normpatheltrafo(normcurve, t)
+        trafo = normcurve.trafo(t)
         c.stroke(path.line_pt(*list(trafo._apply(-100, 0))+list(trafo._apply(100, 0))), [color.rgb.red])
 
 def showcircle(normcurve):
