@@ -15,7 +15,9 @@ TODO:
     - allow for graph.changesymbol.square(size=0.15) etc.
     - rect style (and errorbars?) should use clipping
     - paths are to be drawn instead of inserted
+    - should the divisor argument be moved to the texters?
     - is the divisor argument really necessary?
+    - _mergelabels should work differently (perhaps a single list or a special texter?!)
     - zeropathattrs=None should be the default
     - consider removing the zero line feature
     - the exponentialtexter should have a labelattrs argument and the mantissatexter
@@ -46,8 +48,10 @@ TODO:
   - style and color module:
     - support modification of existing styles via __call__
 
-0.5.1 (XXXX/XX/XX):
 
+0.5.1 (2004/01/22):
+  - distribution:
+    - include missing c-files for optional extension modules
   - prolog module:
     - fix unpaired BeginProcSet/EndProcSet in font enconding
 
