@@ -412,7 +412,7 @@ nomathmode = attr.clearclass(_mathmode)
 
 
 class _phantom(attr.attr, textattr, _localattr):
-    "phatom text"
+    "phantom text"
 
     def apply(self, expr):
         return r"\phantom{%s}" % expr
