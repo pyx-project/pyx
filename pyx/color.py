@@ -98,7 +98,7 @@ class hsb(color):
 
     def outputPDF(self, file, writer, context):
         r, g, b = colorsys.hsv_to_rgb(self.color["h"], self.color["s"], self.color["b"])
-        rgb(r, g, b).outputPDF(file, file, writer, context)
+        rgb(r, g, b).outputPDF(file, writer, context)
 
 
 class cmyk(color):
