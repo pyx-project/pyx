@@ -1,0 +1,184 @@
+Structure of modules and classes in the graph subdirectory
+
+general TODO: separate all interface definitions from implemenations (and finish all interface definitions)
+
+tick.py
+
+    frac [a very basic and limited rational number type]
+    tick(frac) [tick position based on a rational number (includes interface definition)]
+
+    (contains some helper functions to build and handle a list of ticks)
+
+    TODO: - move tick.py to axis/tick.py
+          - frac -> rational
+
+
+parter.py
+
+    _Iparter [interface definition]
+
+    linparter [parter for linear axes]
+    autolinparter [automatic parter for linear axes (default parter for linear axes)]
+
+    preexp [helper class for defining tick positions on a logarithmic scale]
+
+    logparter(linparter) [parter for logarithmic axes]
+    autologparter(logparter) [automatic parter for logarithmix axes (default parter for logarithmic axes)]
+
+    TODO: - move parter.py to axis/parter.py
+          - linparter -> linear
+          - autolinparter -> autolinear
+          - logparter -> logarithmic
+          - autologparter -> autologarithmic
+
+texter.py
+
+    _Itexter [interface definition]
+
+    rationaltexter [implements _Itexter to create rational number labels]
+    decimaltexter [implements _Itexter to create decimal labels]
+    exponentialtexter [implements _Itexter to create exponentential labels]
+    defaulttexter [implements _Itexter by mixing decimal and exponential texter (default texter for regular axes)]
+
+    TODO: - move texter.py to axis/texter.py
+          - rationaltexter -> rational
+          - decimaltexter -> decimal
+          - exponentialtexter -> exponential
+          - defaulttexter -> default
+
+painter.py
+
+    _Iaxispainter [interface definition]
+    _Iaxispos [interface definition]
+
+    axiscanvas(canvas.canvas) [canvas to draw axis on (includes interface definition)]
+    rotatetext [class to calculate rotation operation for a given tick direction (includes interface definition)]
+
+    _axispos [partially implements _Iaxispos interface]
+    pathaxispos(_axispos) [implements _Iaxispos for an arbitrary path]
+
+    axistitlepainter [implements _Iaxis (shared task of plotting axis titles in derived axispainters)]
+
+    geometricseries(attr.changeattr) [a changeable attribute resulting in a geometric series]
+    ticklength(geometricseries) [geometric series for tick lengths]
+
+    axispainter(axistitlepainter) [default axis painter for regular axes (linaxis, logaxis)]
+    linkaxispainter(axispainter) [default axis painter for linked regular axes (turns off some features)]
+
+    subaxispos [implements _Iaxispos for subaxes, which occure in split axes and bar axes)]
+
+    splitaxispainter(axistitlepainter) [default axis painter for split axes]
+    omitsubaxispainter [helper class for linksplitaxis argument handling]
+    linksplitaxispainter(splitaxispainter) [default axis painter for linked split axes]
+
+    baraxispainter(axistitlepainter) [default axis painter for bar axes]
+    linkbaraxispainter(baraxispainter) [default axis painter for linked bar axes]
+
+    TODO: - move painter.py to axis/painter.py
+          - axistitlepainter -> _axistitle
+          - axispainter -> default
+          - linkaxispainter -> linked
+          - splitaxispainter -> split
+          - linksplitaxispainter -> linkedsplit
+          - baraxispainter -> bar
+          - linkbaraxispainter -> linkedbar
+
+rater.py
+
+    cuberater [rater for values like the number of ticks etc. (includes interface definition)]
+
+    distancerater [rater for optimal distances of boxes (includes interface definition)]
+
+    rater.py [rater for ticks and axis layout (includes interface definition)]
+
+    TODO: - move rater.py to axis/rater.py
+          - cuberater -> cube
+          - distancerater -> distance
+          - rater -> _rater
+          - new class "linear" with predefined variables for linear partitions
+          - new class "logarithmic" with predefined variables for logarithmic partitions
+
+axis.py
+
+    _Imap [interface definition]
+    _Iaxis [interface definition]
+
+    _linmap [implements _Imap for a linear axis]
+    _logmap [implements _Imap for a logarithmic axis]
+
+    _axis [partitionally implements _Iaxis; _Imap is missing to fully implement _Iaxis]
+
+    linaxis(_axis, _linmap) [implements _Iaxis for a linear axis]
+    logaxis(_axis, _linmap) [implements _Iaxis for a logarithmic axis]
+
+    linkaxis [implements _Iaxis by linking to a linaxis or logaxis instance]
+
+    splitaxis [implements _Iaxis for a splitable axis]
+    linksplitaxis(linkaxis) [implements _Iaxis by linking to a splitaxis instance]
+
+    baraxis [implements _Iaxis for a bar axis]
+    linkbaraxis(linkaxis) [implements _Iaxis by linking to a baraxis instance]
+
+    (helper function pathaxis to draw a axis at an arbitrary path)
+
+    TODO: - move axis.py to axis/type.py
+          - linaxis -> linear
+          - logaxis -> logarithmic
+          - linkaxis -> linked
+          - splitaxis -> split
+          - linksplitaxis -> linkedsplit
+          - baraxis -> bar
+          - linkbaraxis -> linkedbar
+
+key.py
+
+    [interface definition missing]
+
+    class key [graph key painter]
+
+style.py
+
+    [interface definition missing]
+
+    _style [collection of common operations performed by styles]
+
+    symbolline(_style) [style for drawing symbols with errorbars and lines]
+    line(symbolline) [reduction of symbollines to lines only]
+    symbol(symbolline) [reduction of symbollines to symbols with errorbars only]
+    text(symbol) [extend symbol style to show given text at the symbols]
+    arrow(_style) [draw arrows with given size and direction]
+    rect(_style) [draw rectangles with given color]
+    bar(_style) [draw bars in a bar graph]
+
+    TODO: - rect -> rectangle
+
+data.py
+
+    [interface definition missing]
+
+    data [data from a pyx.data.data instance]
+    function [data from a function]
+    paramfunction [data from a parametric function]
+
+    TODO: - data -> file
+          - move pyx/data.py into pyx/graph/data.py:
+             - the construct graph.data.data(data.datafile(<filename>), ...)) should become graph.data.file(...)
+             - the construct graph.data.data(data.data(<filename>), ...)) should become graph.data.list(...)
+             - the caching currently available by using the same instance of data.datafile several times should become an intrinsic feature (with the option to turn it off by the keyword parameter cache=0 (like in rrules of the dateutil package))
+
+type:
+
+    [interface definition missing -- we don't really have interfaces here, but we may introduce some generic behaviour of all graphs (domethods, access to axes and positions, etc.)]
+
+    lineaxispos [implements _Iaxispos for a straight line]
+    lineaxisposlinegrid(lineaxispos) [like _Iaxispos but adds grid lines for a x-y-graph]
+    graphxy(canvas.canvas) [x-y-graph]
+
+timeaxis.py (experimental code, needs python 2.3)
+
+    _timemap [implements _Imap for datetime instances]
+    timetick(datetime.datetime) [tick position based on datetime]
+    timetexter [implements _Itexter as a primitiv texter for datetime instances]
+    timeaxis(axis._axis, _timemap) [implements _Iaxis for a time axis]
+
+NOTE: The timeaxis should be kept as separately as possible. It needs Python 2.3 and dateutils (dateutils is not yet needed while we currently also lack (auto-)partitioning of a timeaxis; there is an ongoing discussion with Gustavo Niemeyer about some patches).
