@@ -384,8 +384,9 @@ x, y = g.pos(px, py)
 \end{progcode}
 By default, the problem coordinates will refer to the ranges of the $x$ and $y$
 axes. If several axes with different ranges exist, the
-names of the two desired axes should be passed to the \texttt{pos} method by 
-means of the keyword arguments \texttt{xaxis} and \texttt{yaxis}.
+instances of the desired axes should be passed to the \texttt{pos} method by 
+means of the keyword arguments \texttt{xaxis} and \texttt{yaxis}, e.g. as
+\texttt{g.pos(px,py,xaxis=x2)}.
 
 We remark that the drawing of lines parallel to one of the axes at specific
 problem coordinates can also be done by adapting the method described in
