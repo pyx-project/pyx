@@ -129,15 +129,20 @@ class _linmap(_map):
     "linear mapping"
     __implements__ = _Imap
 
+    def setbasepoints(self, basepoints):
+        self.dydx = (basepoints[1][1] - basepoints[0][1]) / float(basepoints[1][0] - basepoints[0][0])
+        self.dxdy = (basepoints[1][0] - basepoints[0][0]) / float(basepoints[1][1] - basepoints[0][1])
+        self.x1 = basepoints[0][0]
+        self.y1 = basepoints[0][1]
+        return self
+
     def convert(self, value):
         if value is None: return None
-        return self.basepoints[0][1] + ((self.basepoints[1][1] - self.basepoints[0][1]) /
-               float(self.basepoints[1][0] - self.basepoints[0][0])) * (value - self.basepoints[0][0])
+        return self.y1 + self.dydx * (value - self.x1)
 
     def invert(self, value):
         if value is None: return None
-        return self.basepoints[0][0] + ((self.basepoints[1][0] - self.basepoints[0][0]) /
-               float(self.basepoints[1][1] - self.basepoints[0][1])) * (value - self.basepoints[0][1])
+        return self.x1 + self.dxdy * (value - self.y1)
 
 
 class _logmap(_linmap):
@@ -145,9 +150,8 @@ class _logmap(_linmap):
     __implements__ = _Imap
 
     def setbasepoints(self, basepoints):
-        self.basepoints = ((math.log(basepoints[0][0]), basepoints[0][1], ),
-                           (math.log(basepoints[1][0]), basepoints[1][1], ), )
-        return self
+        return _linmap.setbasepoints(self, (math.log(basepoints[0][0]), basepoints[0][1]),
+                                           (math.log(basepoints[1][0]), basepoints[1][1]))
 
     def convert(self, value):
         if value is None: return None
