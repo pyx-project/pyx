@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 #
 #
-# Copyright (C) 2002 Jörg Lehmann <joergl@users.sourceforge.net>
-# Copyright (C) 2002 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2002, 2003 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2002, 2003 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
@@ -50,8 +50,8 @@ def set(uscale=None, vscale=None, wscale=None):
         scale['v'] = vscale
     if wscale:
         scale['w'] = wscale
-    
-            
+
+
 def convert_to(l, dest_unit="m"):
 
     if type(l) is TupleType:
@@ -79,19 +79,19 @@ def tomm(l):
 
 def toinch(l):
     return convert_to(l, "inch")
-        
+
 def topt(l):
     return convert_to(l, "pt")
-        
+
 ################################################################################
 # class for generic length
 ################################################################################
 
 class length:
     """ general lengths
-    
+
     Lengths can either be a initialized with a number or a string:
-    
+
      - a length specified as a number corresponds to the default values of
        unit_type and unit_name
      - a string has to consist of a maximum of three parts:
@@ -103,17 +103,17 @@ class length:
 
     Internally all length are stored in units of m as a quadruple of the four
     unit_types.
-    
+
     """
 
     def __init__(self, l=None, default_type="u", dunit=None, glength=None):
         self.length = { 't': 0 , 'u': 0, 'v': 0, 'v':0, 'w':0 }
-        
+
         if l:
             if isinstance(l,length):
-               self.length=l.length
+               self.length = l.length
             elif type(l) is StringType:
-                unit_match=re.match(unit_pattern, l)
+                unit_match = re.match(unit_pattern, l)
                 if unit_match is None:
                     assert 0, "expecting number or string of the form 'number [u|v|w] unit'"
                 else:
@@ -129,7 +129,7 @@ class length:
                 raise ( NotImplementedError,
                         "cannot convert given argument to length type" )
         if glength:
-            self.length=glength
+            self.length = glength
 
     def __mul__(self, factor):
         newlength = self.__class__()
@@ -146,7 +146,8 @@ class length:
         return newlength
 
     def __add__(self, l):
-        ll=length(l)                    # convert to length if necessary
+        # convert to length if necessary
+        ll = length(l)
         newlength = self.__class__()
         for unit_type in newlength.length.keys():
            newlength.length[unit_type] = self.length[unit_type] + ll.length[unit_type]
@@ -155,14 +156,16 @@ class length:
     __radd__=__add__
 
     def __sub__(self, l):
-        ll=length(l)                    # convert to length if necessary
+        # convert to length if necessary
+        ll = length(l)
         newlength = self.__class__()
         for unit_type in newlength.length.keys():
            newlength.length[unit_type] = self.length[unit_type] - ll.length[unit_type]
         return newlength
 
     def __rsub__(self, l):
-        ll=length(l)                    # convert to length if necessary
+        # convert to length if necessary
+        ll = length(l)
         newlength = self.__class__()
         for unit_type in newlength.length.keys():
            newlength.length[unit_type] = ll.length[unit_type] - self.length[unit_type]
@@ -177,11 +180,12 @@ class length:
     def __str__(self):
         return "(%(t)f t + %(u)f u + %(v)f v + %(w)f w) m" % self.length
 
+
 ################################################################################
 # class for more specialized lengths
 ################################################################################
 
-# lengths in user units as default
+# lengths with user units as default
 
 class pt(length):
     def __init__(self, l=None, default_type="u"):
@@ -203,12 +207,12 @@ class inch(length):
     def __init__(self, l=None, default_type="u"):
        length.__init__(self, l, default_type=default_type, dunit="inch")
 
-# true lengths 
+# true lengths
 
 class t_pt(length):
     def __init__(self, l=None):
        length.__init__(self, l, default_type="t", dunit="pt")
-       
+
 
 class t_m(length):
     def __init__(self, l=None):
