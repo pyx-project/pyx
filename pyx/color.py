@@ -27,6 +27,9 @@ class color:
     def bbox(self):
 	return canvas.bbox()
 
+    def _PSCmd(self):
+        return ""
+
     def write(self, file):
         file.write(self._PSCmd())
 
