@@ -175,7 +175,16 @@ class Canvas(Globex):
 
         file = open(self.BaseFilename + ".tex", "w")
 
+#tex
+#        file.write("""\\nonstopmode
+#\\hsize21truecm
+#\\vsize29.7truecm
+#\\hoffset-1truein
+#\\voffset-1truein\n""")
+
+#latex
         file.write("""\\nonstopmode
+\\documentclass{article}
 \\hsize21truecm
 \\vsize29.7truecm
 \\hoffset-1truein
@@ -183,19 +192,35 @@ class Canvas(Globex):
 
         file.write(self.TexCmds[0].Cmd)
 
+#tex
+#        file.write("""\\newwrite\\sizefile
+#\\newbox\\localbox
+#\\newbox\\pagebox
+#\\immediate\\openout\\sizefile=""" + self.BaseFilename + """.size
+#\\setbox\\pagebox=\\vbox{%\n""")
+
+#latex
         file.write("""\\newwrite\\sizefile
 \\newbox\\localbox
 \\newbox\\pagebox
 \\immediate\\openout\\sizefile=""" + self.BaseFilename + """.size
-\\setbox\\pagebox=\\vbox{""")
+\\begin{document}
+\\setbox\\pagebox=\\vbox{%\n""")
 
         for Cmd in self.TexCmds[1:]:
             file.write(Cmd.Cmd)
+#tex
+#        file.write("""}
+#\\immediate\\closeout\sizefile
+#\\shipout\\copy\\pagebox
+#\\end\n""")
 
+#latex
         file.write("""}
 \\immediate\\closeout\sizefile
 \\shipout\\copy\\pagebox
-\\end""")
+\\end{document}\n""")
+
 #%\\setlength{\\unitlength}{1truecm}
 #%\\begin{picture}(0,""" + str(self.Height) + """)(0,0)
 #%\\put(0,0){\line(1,1){1}}
@@ -207,7 +232,7 @@ class Canvas(Globex):
 #%\\end{picture}%
         file.close()
 
-        if os.system("tex " + self.BaseFilename + " > " + self.BaseFilename + ".stdout 2> " + self.BaseFilename + ".stderr"):
+        if os.system("latex " + self.BaseFilename + " > " + self.BaseFilename + ".stdout 2> " + self.BaseFilename + ".stderr"):
             print "The LaTeX exit code was non-zero. This may happen due to mistakes within your\nLaTeX commands as listed below. Otherwise you have to check your local\nenvironment and the files \"" + self.BaseFilename + ".tex\" and \"" + self.BaseFilename + ".log\" manually."
 
         try:
@@ -464,10 +489,10 @@ if __name__=="__main__":
     #   amove(0,y)
     #   rline(10,0)
 
-    amove(1,1)
-    aline(2,2)
-    amove(1,2)
-    aline(2,1)
+    #amove(1,1)
+    #aline(2,2)
+    #amove(1,2)
+    #aline(2,1)
 
 
     print "Breite von 'Hello world!': ",textwd("Hello world!")
