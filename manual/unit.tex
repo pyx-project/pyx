@@ -45,15 +45,15 @@ Note that \verb|default_unit| is initially set to \verb|"cm"|,
 but can be changed at any time by the user. For instance, use
 \begin{quote}
 \begin{verbatim}
-unit.default_unit = "inch"
+unit.set(default_unit="inch")
 \end{verbatim}
 \end{quote}
 if you want to specify per default every length in inches.
 Furthermore, the scaling of the user, visual and width types can be
-changed with the \verb|set| function, which accepts the name arguments
-\verb|uscale|, \verb|vscale|, and \verb|wscale|. For example, if you
-like to change the thickness of all lines by a factor of two, just
-insert
+changed with the \verb|set| function, as well. To this end, \verb|set|
+accepts the named arguments \verb|uscale|, \verb|vscale|, and
+\verb|wscale|. For example, if you like to change the thickness of all
+lines (with predefined linewidths) by a factor of two, just insert
 \begin{quote}
 \begin{verbatim}
 unit.set(wscale = 2)
@@ -67,27 +67,41 @@ a numerical factor and converted to a string.
 
 \section{Subclasses of length}
 
-A number of subclasses of \verb|length| are already predefined. They
-only differ in their defaults for \verb|type| and \verb|unit|.
+A number of subclasses of \verb|length| are already predefined.  They
+only differ in their defaults for \verb|type| and \verb|unit|. Note
+that by default all are of length $1$ measured in the respective unit
+system, such that, for instance, \texttt{5*m(1)==m(5)}.
 
 \medskip
 \begin{center}
 \begin{tabular}{lll|lll}
 Subclass of \texttt{length} & Type & Unit & Subclass of \texttt{length} & Type & Unit\\
 \hline
-\texttt{m(x)} & user & m & \texttt{t\_m(x)} & true & m\\
-\texttt{cm(x)} & user & cm & \texttt{t\_cm(x)} & true & cm\\
-\texttt{mm(x)} & user & mm & \texttt{t\_mm(x)} & true & mm\\
-\texttt{inch(x)} & user & inch & \texttt{t\_inch(x)} & true & inch\\
-\texttt{pt(x)} & user & points & \texttt{t\_pt(x)} & true & points\\
+\texttt{m(x)} & user & m & \texttt{v\_m(x)} & visual & m\\
+\texttt{cm(x)} & user & cm & \texttt{v\_cm(x)} & visual & cm\\
+\texttt{mm(x)} & user & mm & \texttt{v\_mm(x)} & visual & mm\\
+\texttt{inch(x)} & user & inch & \texttt{v\_inch(x)} & visual & inch\\
+\texttt{pt(x)} & user & points & \texttt{v\_pt(x)} & visual & points\\
+\texttt{t\_m(x)} & true & m & \texttt{w\_m(x)} & width & m\\
+\texttt{t\_cm(x)} & true & cm & \texttt{w\_cm(x)} & width & cm\\
+\texttt{t\_mm(x)} & true & mm & \texttt{w\_mm(x)} & width & mm\\
+\texttt{t\_inch(x)} & true & inch & \texttt{w\_inch(x)} & width & inch\\
+\texttt{t\_pt(x)} & true & points & \texttt{w\_pt(x)} & width & points\\
+\texttt{u\_m(x)} & user & m & \\
+\texttt{u\_cm(x)} & user & cm & \\
+\texttt{u\_mm(x)} & user & mm & \\
+\texttt{u\_inch(x)} & user & inch & \\
+\texttt{u\_pt(x)} & user & points & \\
+
 \end{tabular}
 \end{center}
 \medskip
-Here, \verb|x| is either a number or a string.
+Here, \verb|x| is either a number or a string, which, as mentioned
+above, defaults to \texttt{1}.
 
 \section{Conversion functions}
 If you want to know the value of a \PyX{} length in certain units, you
-can use the predefined conversion functions which are given in the
+may use the predefined conversion functions which are given in the
 following table
 \begin{center}
 \begin{tabular}{ll}

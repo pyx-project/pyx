@@ -25,7 +25,7 @@ for line in lines: # we yet don't use a file iterator
     if m:
         xaxis = graph.linaxis(datavmin=0, datavmax=1, part=graph.linpart(ticks=("0.5","0.1"), labels="1"),
                               painter=graph.axispainter(innerticklengths=None, labelattrs=None))
-        g = c.insert(graph.graphxy(t, ypos=y, width=10, height=0.5, x=xaxis,
+        g = c.insert(graph.graphxy(ypos=y, width=10, height=0.5, x=xaxis,
                                    x2=graph.linkaxis(xaxis,
                                                      skipticklevel=skiplevel,
                                                      skiplabellevel=skiplevel,
