@@ -63,8 +63,6 @@ class canvas:
     # ***Jörg***: kann man mit isinstance machen ... ist vielleicht hübscher
     isCanvas = 1				# identifies a canvas
 
-    PSPositionCorrect = 0			# does actual PS position coincide with our x,y
-    
     def __init__(self, base, width, height ):
         self.Width=width
         self.Height=height
@@ -103,7 +101,6 @@ class canvas:
         self.PSAddCmd("%f setlinewidth" % self.w2p(0.02))	# TODO: fixme
 
     def PSRun(self):
-    	self.stroke()						# delete eventually
 	self.grestore()						# canvas has been encapsulated
 	
 	if self.isPrimaryCanvas:
@@ -271,22 +268,20 @@ if __name__=="__main__":
     for pos in range(1,21):
         t.text(pos, 7.5, ".")
    
-    c.stroke()
+    p=path([ moveto(5,12), 
+             lineto(7,12), 
+	     moveto(5,10), 
+	     lineto(5,14), 
+	     moveto(7,10), 
+	     lineto(7,14)])
+   
     c.setlinestyle(linestyle_dotted)
     t.text(5, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize = 2)
-    c.draw(path ([ moveto(5,12), 
-                   lineto (7,12), 
-		   moveto(5,10), 
-		   lineto(5,14), 
-		   moveto(7,10), 
-		   lineto(7,14)]))
+    c.draw(p)
 
+    p.translate(5,0)
     c.setlinestyle(linestyle_dashdotted)
     t.text(10, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize = 2, valign = bottom)
-    c.draw(path ([ moveto(10,12),
-                   lineto(12,12),
-		   moveto(10,10),
-		   lineto(10,14),
-		   moveto(12,10),
-		   lineto(12,14)]))
+    c.draw(p)
+    
     t.TexRun()

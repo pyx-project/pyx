@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 
 class pathel:
-    def __init__(self, command, points):
+    def __init__(self, command, point):
         self.command = command
-	self.points = points
+	self.point = point
 
     def draw(self, canvas):
-        canvas.PSAddCmd("%f %f " % canvas.u2p(self.points) +  self.command )
+        canvas.PSAddCmd("%f %f " % canvas.u2p(self.point) +  self.command )
+
+    def translate(self, x, y):
+        self.point = (self.point[0]+x, self.point[1]+y) 
 
 class moveto(pathel):
     def __init__(self, x, y):
@@ -33,6 +36,10 @@ class path:
         for pathel in self.path:
 	    pathel.draw(canvas)
     	canvas.stroke()
+
+    def translate(self, x, y):
+        for pathel in self.path:
+	    pathel.translate(x, y)
 
 class line(path):
    def __init__(self, x1, y1, x2, y2):
