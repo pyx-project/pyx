@@ -2090,7 +2090,7 @@ class _axis:
         else:
             if len(self.ticks):
                 self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
-            self.layoutdata = canvas.canvas()
+            self.layoutdata = axiscanvas()
             self.texter.labels(self.ticks)
             self.painter.paint(graph, self, self.ticks, self.layoutdata)
         #self.layoutdata = layoutdata
