@@ -218,6 +218,7 @@ class tex(InstanceList):
         CmdEnd = "}"
 
         if type(lhsize) != types.NoneType:
+             print Cmd,lhsize,self.unit.scale,str(self.unit.tpt(lhsize))
              if type(lvalign) == types.NoneType or lvalign == valign.top:
                   CmdBegin = CmdBegin + "\\vtop{\hsize" + str(self.unit.tpt(lhsize)) + "truept{"
                   CmdEnd = "}}" + CmdEnd
@@ -237,6 +238,8 @@ class tex(InstanceList):
     def TexCopyBoxCmd(self, x, y, Cmd, lhalign, direction, color):
 
         'creates the TeX commands to put \\localbox at the current position'
+
+        # remove page size dependence (11in)!
 
         CmdBegin = "{\\vbox to0pt{\\kern" + str(11*72.27+self.unit.tpt(-y)) + "truept\\hbox{\\kern" + str(self.unit.tpt(x)) + "truept\\ht\\localbox0pt"
         CmdEnd = "}\\vss}\\nointerlineskip}"

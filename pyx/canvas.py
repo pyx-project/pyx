@@ -287,9 +287,7 @@ class canvas:
         file.write(PSProlog)
         file.write("\n%%EndProlog\n") 
         file.write("%f setlinewidth\n" % self.unit.pt(linewidth.normal))
-        print "a"
         self._write(file)
-        print "b"
         file.write("\nshowpage\n")
         file.write("%%Trailer\n")
         file.write("%%EOF\n")
@@ -348,7 +346,7 @@ if __name__=="__main__":
              lineto(7,14)])
    
     c.set(canvas.linestyle.dotted)
-    t.text(5, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize("2 cm"))
+    t.text(5, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize("2 cm"), msglevel.hidewarning)
     c.draw(p)
  
     p=path([ moveto(10,12), 
@@ -358,7 +356,7 @@ if __name__=="__main__":
              moveto(12,10), 
              lineto(12,14)])
     c.set(canvas.linestyle.dashdotted, rgb(1,0,0))
-    t.text("10 cm", 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize("2 cm"), valign.bottom, grey(0.5))
+    t.text("10 cm", 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize("2 cm"), valign.bottom, grey(0.5), msglevel.hidewarning)
     c.draw(p)
  
     p=path([moveto(5,15), arc(5,15, 1, 0, 45), closepath()])

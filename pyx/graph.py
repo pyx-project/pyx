@@ -110,7 +110,6 @@ class GraphXY(Graph):
                 assert 0, "range for %s unknown" % key
             self.Axis[key].Min = min( map (lambda x: x[0], ranges))
             self.Axis[key].Max = max( map (lambda x: x[1], ranges))
-            print key, self.Axis[key].Min, self.Axis[key].Max
 
         for pd in self.plotdata:
             pd.SetAxis(self.Axis)

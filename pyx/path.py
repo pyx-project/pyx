@@ -211,10 +211,8 @@ class path:
     def draw(self, canvas):
 	if not isinstance(self.path[0], moveto): 
 	    raise PathException, "first path element must be moveto"    # TODO: also arc, arcn, arcto
-        print "1"
         for pathel in self.path:
 	    pathel.draw(canvas)
-        print "2"
 
     def append(self, pathel):
         self.path.append(pathel)
