@@ -24,7 +24,7 @@ various graphical and text elements you want to write eventually to an
 \begin{classdesc}{canvas}{attrs=[], texrunner=None}
   Construct a new canvas, applying the given \var{attrs}, which can be
   instances of \class{trafo.trafo}, \class{canvas.clip},
-  \class{style.strokestyle} or \class{stlye.fillstyle}.  The
+  \class{style.strokestyle} or \class{style.fillstyle}.  The
   \var{texrunner} argument can be used to specify the texrunner
   instance used for the \method{text()} method of the canvas.  If not
   specified, it defaults to \var{text.defaulttexrunner}.
@@ -123,7 +123,7 @@ keyword&description\\
 \texttt{2} for uncoloured patterns\\
 \texttt{tilingtype}&\texttt{1} (default) for constant spacing tilings
 (patterns are spaced constantly by a multiple of a device pixel),
-\texttt{2} for undistored pattern cell, whereby the spacing may vary
+\texttt{2} for undistorted pattern cell, whereby the spacing may vary
 by as much as one device pixel, or \texttt{3} for constant spacing and
 faster tiling which behaves as tiling type \texttt{1} but with
 additional distortion allowed to permit a more efficient
@@ -135,7 +135,7 @@ bounding box.\\
 \texttt{None} (default) for automatic calculation from pattern
 bounding box.\\
 \texttt{bbox}&bounding box of pattern. Use \texttt{None} for an
-automatical determination of the bounding box (including an
+automatic determination of the bounding box (including an
 enlargement by $5$ pts on each side.)\\
 \texttt{trafo}&additional transformation applied to pattern or
 \texttt{None} (default). This may be used to rotate the pattern or to

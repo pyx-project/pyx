@@ -3,7 +3,7 @@
 \PyX{} focuses on the creation of scaleable vector graphics. However,
 \PyX{} also allows for the output of bitmap images. Still, the support
 for creation and handling of bitmap images is quite limited. On the
-other hand the interfaces are build that way, that its trivial to
+other hand the interfaces are built that way, that its trivial to
 combine \PyX{} with the ``Python Image Library'', also known as
 ``PIL''.
 
@@ -73,15 +73,15 @@ Figure~\ref{fig:bitmap} shows the resulting output.
 
 \begin{classdesc}{jpegimage}{file}
   This class is specialized to read data from a JPEG/JFIF-file.
-  \var{file} is either a open file handle (it only has to provide a
+  \var{file} is either an open file handle (it only has to provide a
   \method{read()} method; the file should be opened in binary mode) or
-  a string. In the later case \class{jpegimage} will try to open a
+  a string. In the latter case \class{jpegimage} will try to open a
   file named like \var{file} for reading.
 
   The contents of the file is checked for some JPEG/JFIF format
   markers in order to identify the size and dpi resolution of the
   image for further usage. These checks will typically fail for
-  invalid data. The data is not uncompressed, but directly inserted
+  invalid data. The data are not uncompressed, but directly inserted
   into the output stream (for invalid data the result will be invalid
   PostScript). Thus there is no quality loss by recompressing the data
   as it would occur when recompressing the uncompressed stream with
@@ -114,9 +114,9 @@ Figure~\ref{fig:bitmap} shows the resulting output.
   interpreters memory, it is stored in strings. While most
   interpreters do not allow for an arbitrary string length (a common
   limit is 65535 characters), a limit for the string length is set.
-  When more data needs to be stored, a list of strings will be used.
-  Note that lists are also subject to some implemenation limits. Since
-  a typical value is 65535 enties, in combination a huge amount of
+  When more data need to be stored, a list of strings will be used.
+  Note that lists are also subject to some implementation limits. Since
+  a typical value is 65535 entries, in combination a huge amount of
   memory can be used.
 
   Valid values for \var{compressmode} currently are
