@@ -58,6 +58,8 @@ von tupeln kriegt, die die Intervalle angibt, die auszulassen sind. Es
 gibt zusätzlich eine subcanvas "ornaments", der ganz am Ende eingefügt
 wird. (für Pfeile, Beschriftungen, etc.)
 
+[DONE]
+
 Umbenennungen:
 --------------
 
