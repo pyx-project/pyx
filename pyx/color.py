@@ -46,7 +46,7 @@ class grey(color):
         self.color = {"gray": gray}
 
     def outputPS(self, file):
-        file.write("%(gray)f setgray\n" % self.color)
+        file.write("%(gray)g setgray\n" % self.color)
 
     def outputPDF(self, file, strokeattr=1, fillattr=1):
         if strokeattr:
@@ -69,7 +69,7 @@ class rgb(color):
         self.color = {"r": r, "g": g, "b": b}
 
     def outputPS(self, file):
-        file.write("%(r)f %(g)f %(b)f setrgbcolor\n" % self.color)
+        file.write("%(r)g %(g)g %(b)g setrgbcolor\n" % self.color)
 
     def outputPDF(self, file, strokeattr=1, fillattr=1):
         if strokeattr:
@@ -94,7 +94,7 @@ class hsb(color):
         self.color = {"h": h, "s": s, "b": b}
 
     def outputPS(self, file):
-        file.write("%(h)f %(s)f %(b)f sethsbcolor\n" % self.color)
+        file.write("%(h)g %(s)g %(b)g sethsbcolor\n" % self.color)
 
     def outputPDF(self, file, strokeattr=1, fillattr=1):
         r, g, b = colorsys.hsv_to_rgb(self.color["h"], self.color["s"], self.color["b"])
@@ -111,7 +111,7 @@ class cmyk(color):
         self.color = {"c": c, "m": m, "y": y, "k": k}
 
     def outputPS(self, file):
-        file.write("%(c)f %(m)f %(y)f %(k)f setcmykcolor\n" % self.color)
+        file.write("%(c)g %(m)g %(y)g %(k)g setcmykcolor\n" % self.color)
 
     def outputPDF(self, file, strokeattr=1, fillattr=1):
         if strokeattr:
