@@ -102,7 +102,7 @@ class _canvas(base.canvasitem):
         to be instances of one of the following classes:
          - trafo.trafo (leading to a global transformation of the canvas)
          - canvas.clip (clips the canvas)
-         - base.PathStyle (sets some global attributes of the canvas)
+         - style.strokestyle, style.fillstyle (sets some global attributes of the canvas)
 
         Note that, while the first two properties are fixed for the
         whole canvas, the last one can be changed via canvas.set().
