@@ -103,7 +103,7 @@ def test_split(c, x, y):
                                x=graph.logaxis(),
                                #y=graph.splitaxis((graph.linaxis(max=0.002), graph.splitaxis((graph.linaxis(min=0.01, max=0.015), graph.linaxis(min=0.017)))))))
                                #y=graph.splitaxis((graph.linaxis(max=0.002), graph.linaxis(min=0.01, max=0.015), graph.linaxis(min=0.017)), splitlist=(0.15, 0.75))))
-                               y=graph.splitaxis((graph.linaxis(min=0, max=0.005), graph.linaxis(min=0.01, max=0.015), graph.linaxis(min=0.02, max=0.025)), title="axis title", splitlist=(None, None), relsizesplitdist=0.005)))
+                               y=graph.splitaxis((graph.linaxis(min=0, max=0.005, painter=graph.axispainter()), graph.linaxis(min=0.01, max=0.015), graph.linaxis(min=0.02, max=0.025)), title="axis title", splitlist=(None, None), relsizesplitdist=0.005)))
     df = data.datafile("data/testdata")
     g.plot(graph.data(df, x=1, y=3))
     g.finish()
@@ -127,7 +127,7 @@ test_textaxis_errorbars(c, 0, 7)
 test_ownmark(c, 0, 0)
 test_allerrorbars(c, -7, 0)
 #test_3d(c, -7, 7)
-#test_split(c, -7, 7)
+test_split(c, -7, 7)
 #test_bar(c, -7, 14)
 
 c.writetofile("test_graph", paperformat="a4")

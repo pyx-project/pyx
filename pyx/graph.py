@@ -1405,7 +1405,7 @@ class defaulttexter:
 ################################################################################
 
 
-class axiscanvas(canvas.canvas):
+class axiscanvas(canvas._canvas):
     """axis canvas
     - an axis canvas is a regular canvas to be filled by
       a axispainters painter method
@@ -1421,11 +1421,12 @@ class axiscanvas(canvas.canvas):
 
     # __implements__ = sole implementation
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, texrunner, *args, **kwargs):
         """initializes the instance
         - sets extent to zero
         - sets labels to an empty list"""
-        canvas.canvas.__init__(self, *args, **kwargs)
+        canvas._canvas.__init__(self, *args, **kwargs)
+        self.settexrunner(texrunner)
         self.extent = 0
         self.labels = []
 
@@ -1462,10 +1463,10 @@ orthogonaltext = rotatetext(0)
 class _Iaxispainter:
     "class for painting axes"
 
-    def paint(self, axis, ticks, axiscanvas):
-        """paint ticks into the axiscanvas
-        - the axis and the ticks should not be modified (we may
-          add some temporary variables like ticks[i].temp_xxx,
+    def paint(self, axis, axiscanvas):
+        """paint the axis into the axiscanvas
+        - the axis and should not be modified (we may
+          add some temporary variables like axis.ticks[i].temp_xxx,
           which might be used just temporary) -- the idea is that
           all things can be used several times
         - also do not modify the instance (self) -- even this
@@ -1479,13 +1480,9 @@ class _Iaxispainter:
           document this behavior and rely on the availability of
           those attributes -> it becomes a question of the proper
           usage of the combination of axis & axispainter
-        - the ticks are a list of tick instances; there type must
-          be suitable for the tick position methods of the axis ->
-          it should again be a question ov the proper usage of the
-          combination of axis & axispainter
         - the axiscanvas is a axiscanvas instance and should be
-          filled with the ticks and labels; note that the extent
-          and labels instance variables should be filled as
+          filled with ticks, labels, title, etc.; note that the
+          extent and labels instance variables should be filled as
           documented in the axiscanvas"""
 
 
@@ -1514,7 +1511,7 @@ class axistitlepainter:
         self.titledirection = titledirection
         self.titlepos = titlepos
 
-    def paint(self, axis, ticks, axiscanvas):
+    def paint(self, axis, axiscanvas):
         if axis.title is not None and self.titleattrs is not None:
             titledist = unit.length(self.titledist_str, default_type="v")
             x, y = axis._vtickpoint(self.titlepos, axis=axis)
@@ -1596,15 +1593,15 @@ class axispainter(axistitlepainter):
         self.labelvequalize = labelvequalize
         axistitlepainter.__init__(self, **kwargs)
 
-    def paint(self, axis, ticks, axiscanvas):
+    def paint(self, axis, axiscanvas):
         labeldist = unit.length(self.labeldist_str, default_type="v")
-        for tick in ticks:
+        for tick in axis.ticks:
             tick.temp_v = axis.convert(float(tick) * axis.divisor)
             tick.temp_x, tick.temp_y = axis._vtickpoint(tick.temp_v, axis=axis)
             tick.temp_dx, tick.temp_dy = axis.vtickdirection(tick.temp_v, axis=axis)
 
         # create & align tick.temp_labelbox
-        for tick in ticks:
+        for tick in axis.ticks:
             if tick.labellevel is not None:
                 labelattrs = helper.getsequenceno(self.labelattrs, tick.labellevel)
                 if labelattrs is not None:
@@ -1614,20 +1611,20 @@ class axispainter(axistitlepainter):
                     if tick.labelattrs is not None:
                         labelattrs.extend(helper.ensurelist(tick.labelattrs))
                     tick.temp_labelbox = axiscanvas.texrunner._text(tick.temp_x, tick.temp_y, tick.label, *labelattrs)
-        if len(ticks) > 1:
+        if len(axis.ticks) > 1:
             equaldirection = 1
-            for tick in ticks[1:]:
-                if tick.temp_dx != ticks[0].temp_dx or tick.temp_dy != ticks[0].temp_dy:
+            for tick in axis.ticks[1:]:
+                if tick.temp_dx != axis.ticks[0].temp_dx or tick.temp_dy != axis.ticks[0].temp_dy:
                     equaldirection = 0
         else:
             equaldirection = 0
-        if equaldirection and ((not ticks[0].temp_dx and self.labelvequalize) or
-                               (not ticks[0].temp_dy and self.labelhequalize)):
+        if equaldirection and ((not axis.ticks[0].temp_dx and self.labelvequalize) or
+                               (not axis.ticks[0].temp_dy and self.labelhequalize)):
             if self.labelattrs is not None:
-                box.linealignequal([tick.temp_labelbox for tick in ticks if tick.labellevel is not None],
-                                   labeldist, ticks[0].temp_dx, ticks[0].temp_dy)
+                box.linealignequal([tick.temp_labelbox for tick in axis.ticks if tick.labellevel is not None],
+                                   labeldist, axis.ticks[0].temp_dx, axis.ticks[0].temp_dy)
         else:
-            for tick in ticks:
+            for tick in axis.ticks:
                 if tick.labellevel is not None and self.labelattrs is not None:
                     tick.temp_labelbox.linealign(labeldist, tick.temp_dx, tick.temp_dy)
 
@@ -1639,7 +1636,7 @@ class axispainter(axistitlepainter):
         innerticklengths = mkv(self.innerticklengths_str)
         outerticklengths = mkv(self.outerticklengths_str)
 
-        for tick in ticks:
+        for tick in axis.ticks:
             if tick.ticklevel is not None:
                 innerticklength = helper.getitemno(innerticklengths, tick.ticklevel)
                 outerticklength = helper.getitemno(outerticklengths, tick.ticklevel)
@@ -1674,10 +1671,10 @@ class axispainter(axistitlepainter):
         if self.baselineattrs is not None:
             axiscanvas.stroke(axis.vbaseline(axis=axis), *helper.ensuresequence(self.baselineattrs))
         if self.zerolineattrs is not None:
-            if len(ticks) and ticks[0] * ticks[-1] < frac((0, 1)):
+            if len(axis.ticks) and axis.ticks[0] * axis.ticks[-1] < frac((0, 1)):
                 axiscanvas.stroke(axis.gridline(0, axis=axis), *helper.ensuresequence(self.zerolineattrs))
 
-        # for tick in ticks:
+        # for tick in axis.ticks:
         #     del tick.temp_v    # we've inserted those temporary variables ... and do not care any longer about them
         #     del tick.temp_x
         #     del tick.temp_y
@@ -1686,7 +1683,7 @@ class axispainter(axistitlepainter):
         #     if tick.labellevel is not None and self.labelattrs is not None:
         #         del tick.temp_labelbox
 
-        axistitlepainter.paint(self, axis, ticks, axiscanvas)
+        axistitlepainter.paint(self, axis, axiscanvas)
 
 
 class linkaxispainter(axispainter):
@@ -1714,89 +1711,66 @@ class linkaxispainter(axispainter):
                                    **kwargs)
 
 
-class splitaxispainter(axistitlepainter): pass
-# class splitaxispainter(axistitlepainter):
-# 
-#     def __init__(self, breaklinesdist=0.05,
-#                        breaklineslength=0.5,
-#                        breaklinesangle=-60,
-#                        breaklinesattrs=(),
-#                        **args):
-#         self.breaklinesdist_str = breaklinesdist
-#         self.breaklineslength_str = breaklineslength
-#         self.breaklinesangle = breaklinesangle
-#         self.breaklinesattrs = breaklinesattrs
-#         axistitlepainter.__init__(self, **args)
-# 
-#     def subvbaseline(self, axis, v1=None, v2=None):
-#         if v1 is None:
-#             if self.breaklinesattrs is None:
-#                 left = axis.vmin
-#             else:
-#                 if axis.vminover is None:
-#                     left = None
-#                 else:
-#                     left = axis.vminover
-#         else:
-#             left = axis.vmin+v1*(axis.vmax-axis.vmin)
-#         if v2 is None:
-#             if self.breaklinesattrs is None:
-#                 right = axis.vmax
-#             else:
-#                 if axis.vmaxover is None:
-#                     right = None
-#                 else:
-#                     right = axis.vmaxover
-#         else:
-#             right = axis.vmin+v2*(axis.vmax-axis.vmin)
-#         return axis.baseaxis.vbaseline(axis.baseaxis, left, right)
-# 
-#     def dolayout(self, graph, axis):
-#         if self.breaklinesattrs is not None:
-#             self.breaklinesdist = unit.length(self.breaklinesdist_str, default_type="v")
-#             self.breaklineslength = unit.length(self.breaklineslength_str, default_type="v")
-#             self._breaklinesdist = unit.topt(self.breaklinesdist)
-#             self._breaklineslength = unit.topt(self.breaklineslength)
-#             self.sin = math.sin(self.breaklinesangle*math.pi/180.0)
-#             self.cos = math.cos(self.breaklinesangle*math.pi/180.0)
-#             axis.layoutdata._extent = (math.fabs(0.5 * self._breaklinesdist * self.cos) +
-#                                        math.fabs(0.5 * self._breaklineslength * self.sin))
-#         else:
-#             axis.layoutdata._extent = 0
-#         for subaxis in axis.axislist:
-#             subaxis.baseaxis = axis
-#             subaxis._vtickpoint = lambda axis, v: axis.baseaxis._vtickpoint(axis.baseaxis, axis.vmin+v*(axis.vmax-axis.vmin))
-#             subaxis.vtickdirection = lambda axis, v: axis.baseaxis.vtickdirection(axis.baseaxis, axis.vmin+v*(axis.vmax-axis.vmin))
-#             subaxis.vbaseline = self.subvbaseline
-#             subaxis.dolayout(graph)
-#             if axis.layoutdata._extent < subaxis.layoutdata._extent:
-#                 axis.layoutdata._extent = subaxis.layoutdata._extent
-#         axistitlepainter.dolayout(self, graph, axis)
-# 
-#     def paint(self, graph, axis):
-#         for subaxis in axis.axislist:
-#             subaxis.dopaint(graph)
-#         if self.breaklinesattrs is not None:
-#             for subaxis1, subaxis2 in zip(axis.axislist[:-1], axis.axislist[1:]):
-#                 # use a tangent of the baseline (this is independent of the tickdirection)
-#                 v = 0.5 * (subaxis1.vmax + subaxis2.vmin)
-#                 breakline = path.normpath(axis.vbaseline(axis, v, None)).tangent(0, self.breaklineslength)
-#                 widthline = path.normpath(axis.vbaseline(axis, v, None)).tangent(0, self.breaklinesdist).transformed(trafomodule.rotate(self.breaklinesangle+90, *breakline.begin()))
-#                 tocenter = map(lambda x: 0.5*(x[0]-x[1]), zip(breakline.begin(), breakline.end()))
-#                 towidth = map(lambda x: 0.5*(x[0]-x[1]), zip(widthline.begin(), widthline.end()))
-#                 breakline = breakline.transformed(trafomodule.translate(*tocenter).rotated(self.breaklinesangle, *breakline.begin()))
-#                 breakline1 = breakline.transformed(trafomodule.translate(*towidth))
-#                 breakline2 = breakline.transformed(trafomodule.translate(-towidth[0], -towidth[1]))
-#                 graph.fill(path.path(path.moveto(*breakline1.begin()),
-#                                      path.lineto(*breakline1.end()),
-#                                      path.lineto(*breakline2.end()),
-#                                      path.lineto(*breakline2.begin()),
-#                                      path.closepath()), color.gray.white)
-#                 graph.stroke(breakline1, *helper.ensuresequence(self.breaklinesattrs))
-#                 graph.stroke(breakline2, *helper.ensuresequence(self.breaklinesattrs))
-#         axistitlepainter.paint(self, graph, axis)
-# 
-# 
+class splitaxispainter(axistitlepainter):
+    "class for painting a splitaxis"
+
+    __implements__ = _Iaxispainter
+
+    def __init__(self, breaklinesdist=0.05,
+                       breaklineslength=0.5,
+                       breaklinesangle=-60,
+                       breaklinesattrs=(),
+                       **args):
+        self.breaklinesdist_str = breaklinesdist
+        self.breaklineslength_str = breaklineslength
+        self.breaklinesangle = breaklinesangle
+        self.breaklinesattrs = breaklinesattrs
+        axistitlepainter.__init__(self, **args)
+
+    def paint(self, axis, axiscanvas):
+        if self.breaklinesattrs is not None:
+            self.breaklinesdist = unit.length(self.breaklinesdist_str, default_type="v")
+            self.breaklineslength = unit.length(self.breaklineslength_str, default_type="v")
+            self.sin = math.sin(self.breaklinesangle*math.pi/180.0)
+            self.cos = math.cos(self.breaklinesangle*math.pi/180.0)
+            breaklinesextent = (0.5*self.breaklinesdist*math.fabs(self.cos) +
+                                0.5*self.breaklineslength*math.fabs(self.sin))
+            if unit.topt(axiscanvas.extent) < unit.topt(breaklinesextent):
+                axiscanvas.extent = breaklinesextent
+            for subaxis1, subaxis2 in zip(axis.axislist[:-1], axis.axislist[1:]):
+                # use a tangent of the baseline (this is independent of the tickdirection)
+                v = 0.5 * (subaxis1.vmax + subaxis2.vmin)
+                breakline = path.normpath(axis.vbaseline(v, None, axis=axis)).tangent(0, self.breaklineslength)
+                widthline = path.normpath(axis.vbaseline(v, None, axis=axis)).tangent(0, self.breaklinesdist).transformed(trafomodule.rotate(self.breaklinesangle+90, *breakline.begin()))
+                tocenter = map(lambda x: 0.5*(x[0]-x[1]), zip(breakline.begin(), breakline.end()))
+                towidth = map(lambda x: 0.5*(x[0]-x[1]), zip(widthline.begin(), widthline.end()))
+                breakline = breakline.transformed(trafomodule.translate(*tocenter).rotated(self.breaklinesangle, *breakline.begin()))
+                breakline1 = breakline.transformed(trafomodule.translate(*towidth))
+                breakline2 = breakline.transformed(trafomodule.translate(-towidth[0], -towidth[1]))
+                axiscanvas.fill(path.path(path.moveto(*breakline1.begin()),
+                                          path.lineto(*breakline1.end()),
+                                          path.lineto(*breakline2.end()),
+                                          path.lineto(*breakline2.begin()),
+                                          path.closepath()), color.gray.white)
+                axiscanvas.stroke(breakline1, *helper.ensuresequence(self.breaklinesattrs))
+                axiscanvas.stroke(breakline2, *helper.ensuresequence(self.breaklinesattrs))
+        axistitlepainter.paint(self, axis, axiscanvas)
+
+
+class linksplitaxispainter(splitaxispainter):
+    """class for painting a linked splitaxis axis
+    - the inherited axispainter is used to paint the axis
+    - modifies some constructor defaults"""
+
+    __implements__ = _Iaxispainter
+
+    def __init__(self, titleattrs=None, **kwargs):
+        """initializes the instance
+        - the titleattrs default is set to None thus skipping the title
+        - all keyword arguments are passed to axispainter"""
+        splitaxispainter.__init__(self, titleattrs=titleattrs, **kwargs)
+
+
 class baraxispainter(axistitlepainter): pass
 # class baraxispainter(axistitlepainter):
 # 
@@ -2007,7 +1981,7 @@ class _Iaxispos:
         """return the baseline as a path
         - like baseline, but for graph coordinates"""
 
-    def gridline(self, a, axis=None):
+    def gridline(self, x, axis=None):
         "return the gridline as a path for a given position x"
 
     def vgridline(self, v, axis=None):
@@ -2025,7 +1999,7 @@ class _Iaxispos:
     def _vtickpoint(self, v, axis=None):
         "like _tickpoint, but for graph coordinates"
 
-    def tickpoint(self, x, axis=None):
+    def vtickpoint(self, v, axis=None):
         "like tickpoint, but for graph coordinates"
 
     def tickdirection(self, x, axis=None):
@@ -2238,10 +2212,9 @@ class _axis:
                     self.ticks = variants[i][1]
                     if len(self.ticks):
                         self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
-                    ac = axiscanvas()
-                    ac.settexrunner(graph.texrunner)
+                    ac = axiscanvas(graph.texrunner)
                     self.texter.labels(self.ticks)
-                    self.painter.paint(self, self.ticks, ac)
+                    self.painter.paint(self, ac)
                     ratelayout = self.rater.ratelayout(ac, self.density)
                     if ratelayout is not None:
                         variants[i][0] += ratelayout
@@ -2263,15 +2236,13 @@ class _axis:
             else:
                 if len(self.ticks):
                     self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
-                self.axiscanvas = axiscanvas()
-                self.axiscanvas.settexrunner(graph.texrunner)
+                self.axiscanvas = axiscanvas(graph.texrunner)
         else:
             if len(self.ticks):
                 self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
-            self.axiscanvas = axiscanvas()
-            self.axiscanvas.settexrunner(graph.texrunner)
+            self.axiscanvas = axiscanvas(graph.texrunner)
             self.texter.labels(self.ticks)
-            self.painter.paint(self, self.ticks, self.axiscanvas)
+            self.painter.paint(self, self.axiscanvas)
 
     def createlinkaxis(self, **args):
         return linkaxis(self, **args)
@@ -2311,21 +2282,107 @@ class linkaxis:
         if self.finished:
             return
         self.finished = 1
-        self.axiscanvas = axiscanvas()
-        self.axiscanvas.settexrunner(graph.texrunner)
         self.linkedaxis.finish(graph)
-        self.painter.paint(self, self.ticks, self.axiscanvas)
-
-    def createlinkaxis(self, **args):
-        return linkaxis(self, **args)
+        self.axiscanvas = axiscanvas(graph.texrunner)
+        self.painter.paint(self, self.axiscanvas)
 
 
-class splitaxis:
+class _splitaxis:
 
-    def __init__(self, axislist, splitlist=0.5, splitdist=0.1, relsizesplitdist=1, title=None, painter=splitaxispainter()):
-        self.title = title
+    def __init__(self, axislist, painter=splitaxispainter()):
         self.axislist = axislist
         self.painter = painter
+        self.finished = 0
+
+    def subbaseline(self, x1=None, x2=None, axis=None):
+        if x1 is not None:
+            v1 = axis.convert(x1)
+        else:
+            v1 = None
+        if x2 is not None:
+            v2 = axis.convert(x2)
+        else:
+            v2 = None
+        return self.subvbaseline(v1, v2, axis=axis)
+
+    def subvbaseline(self, v1=None, v2=None, axis=None):
+        if v1 is None:
+            if self.painter.breaklinesattrs is None: # XXX undocumented access to painter!?
+                left = axis.vmin
+            else:
+                if axis.vminover is None:
+                    left = None
+                else:
+                    left = axis.vminover
+        else:
+            left = axis.vmin+v1*(axis.vmax-axis.vmin)
+        if v2 is None:
+            if self.painter.breaklinesattrs is None:
+                right = axis.vmax
+            else:
+                if axis.vmaxover is None:
+                    right = None
+                else:
+                    right = axis.vmaxover
+        else:
+            right = axis.vmin+v2*(axis.vmax-axis.vmin)
+        return self.vbaseline(left, right, axis=self)
+
+    def subgridline(self, x, axis=None):
+        return self.vgridline(axis.vmin+axis.convert(x)*(axis.vmax-axis.vmin), axis=self)
+
+    def subvgridline(self, v, axis=None):
+        return self.vgridline(axis.vmin+v*(axis.vmax-axis.vmin), axis=self)
+
+    def sub_tickpoint(self, x, axis=None):
+        return self._vtickpoint(axis.vmin+axis.convert(x)*(axis.vmax-axis.vmin), axis=self)
+
+    def subtickpoint(self, x, axis=None):
+        return self.vtickpoint(axis.vmin+axis.convert(x)*(axis.vmax-axis.vmin), axis=self)
+
+    def sub_vtickpoint(self, v, axis=None):
+        return self._vtickpoint(axis.vmin+v*(axis.vmax-axis.vmin), axis=self)
+
+    def subvtickpoint(self, v, axis=None):
+        return self.vtickpoint(axis.vmin+v*(axis.vmax-axis.vmin), axis=self)
+
+    def subtickdirection(self, x, axis=None):
+        return self.vtickdirection(axis.vmin+axis.convert(x)*(axis.vmax-axis.vmin), axis=self)
+
+    def subvtickdirection(self, v, axis=None):
+        return self.vtickdirection(axis.vmin+v*(axis.vmax-axis.vmin), axis=self)
+
+    def finish(self, graph):
+        if self.finished:
+            return
+        self.finished = 1
+        self.axiscanvas = axiscanvas(graph.texrunner)
+        for subaxis in self.axislist:
+            subaxis.baseline = self.subbaseline
+            subaxis.vbaseline = self.subvbaseline
+            subaxis.gridline = self.subgridline
+            subaxis.vgridline = self.subvgridline
+            subaxis._tickpoint = self.sub_tickpoint
+            subaxis.tickpoint = self.subtickpoint
+            subaxis._vtickpoint = self.sub_vtickpoint
+            subaxis.vtickpoint = self.subvtickpoint
+            subaxis.tickdirection = self.subtickdirection
+            subaxis.vtickdirection = self.subvtickdirection
+            subaxis.finish(graph)
+            self.axiscanvas.insert(subaxis.axiscanvas)
+            if unit.topt(self.axiscanvas.extent) < unit.topt(subaxis.axiscanvas.extent):
+                self.axiscanvas.extent = subaxis.axiscanvas.extent
+        self.painter.paint(self, self.axiscanvas)
+
+    def createlinkaxis(self, **args):
+        return linksplitaxis(self, **args)
+
+
+class splitaxis(_splitaxis):
+
+    def __init__(self, axislist, splitlist=0.5, splitdist=0.1, relsizesplitdist=1, title=None, **kwargs):
+        _splitaxis.__init__(self, axislist, **kwargs)
+        self.title = title
         self.splitlist = list(helper.ensuresequence(splitlist))
         self.splitlist.sort()
         if len(self.axislist) != len(self.splitlist) + 1:
@@ -2380,7 +2437,6 @@ class splitaxis:
         self.fixmax = self.axislist[-1].fixmax
         if self.fixmax:
             self.max = self.axislist[-1].max
-        self.divisor = 1
 
     def getdatarange(self):
         min = self.axislist[0].getdatarange()
@@ -2417,21 +2473,23 @@ class splitaxis:
             return self.axislist[-1].vmin + self.axislist[-1].convert(value)*(self.axislist[-1].vmax-self.axislist[-1].vmin)
         raise ValueError("value couldn't be assigned to a split region")
 
-    def dolayout(self, graph):
-        self.layoutdata = layoutdata()
-        self.painter.dolayout(graph, self)
 
-    def dopaint(self, graph):
-        self.painter.paint(graph, self)
+class linksplitaxis(_splitaxis):
+# caution here: some of the methods/variables are part
+# of self, other methods/variables are shared (thus, they
+# do *not* belong to the linked axis) -> this should be
+# well documented
 
-    def createlinkaxis(self, painter=None, *args):
-        if not len(args):
-            return splitaxis([x.createlinkaxis() for x in self.axislist], splitlist=None)
-        if len(args) != len(self.axislist):
-            raise IndexError("length of the argument list doesn't fit to split number")
-        if painter is None:
-            painter = self.painter
-        return splitaxis([x.createlinkaxis(**arg) for x, arg in zip(self.axislist, args)], painter=painter)
+    def __init__(self, linkedaxis, painter=linksplitaxispainter(), **kwargs):
+        self.linkedaxis = linkedaxis
+        _splitaxis.__init__(self, [a.createlinkaxis() for a in self.linkedaxis.axislist], painter=painter, **kwargs)
+
+    def __getattr__(self, attr):
+        return getattr(self.linkedaxis, attr)
+
+    def finish(self, graph):
+        self.linkedaxis.finish(graph)
+        _splitaxis.finish(self, graph)
 
 
 class baraxis:
