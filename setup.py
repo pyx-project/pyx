@@ -44,7 +44,7 @@ if sys.version_info >= (2, 3):
                       "Topic :: Software Development :: Libraries :: Python Modules" ],
                 "download_url":
                     "http://sourceforge.net/project/showfiles.php?group_id=45430",
-                "platform":
+                "platforms":
                     "OS independent",
               }
 else:
