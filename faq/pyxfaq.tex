@@ -20,7 +20,7 @@
 \LARGE\sffamily Some frequently and\\ 
 not so frequently asked questions\\ 
 about \PyX\footnote{This version of the FAQ is intended for use with \PyX\ 
-version 0.6.1.}\\
+versions 0.6.1 -- 0.6.3.}\\
 \par
 {\small\sffamily (version \RCSRevision\ of \RCSDate)}\\[1truecm]
 \large
@@ -87,7 +87,7 @@ different versions of Python installed on your system at the same time. The
 default Python version need not be the same for all users.
 }
 
-\question{a}{Does \PyX{} provide a GUI to view the produced image? \new}
+\question{a}{Does \PyX{} provide a GUI to view the produced image?}
 {}
 {No, \PyX{} itself does not provide a means to view the produced image. The 
 result of a \PyX{} run is an EPS (= Encapsulated PostScript) file which can
@@ -102,7 +102,7 @@ also be useful to translate the EPS file produced by \PyX{} into something
 your printer will understand.}
 
 \question{a}{Where can I get help if my question is not answered in this
-FAQ? \changed}
+FAQ?}
 {}
 {The \PyX{} sources contain a reference manual which is also available
 online at \url{http://pyx.sourceforge.net/manual/}. Furthermore, there
@@ -154,8 +154,8 @@ but \textbf{freely usable and distributable, even for commercial use}.
 information on Python including tutorials.
 }
 
-\question{c}{What do I need to import in order to use \PyX? \changed}
-{checked for 0.6}
+\question{c}{What do I need to import in order to use \PyX?}
+{}
 {It is recommended to begin your Python code with 
 \begin{progcode}
 from pyx import *
@@ -179,7 +179,7 @@ the first code snippet is present.
 
 \question{a}{What is a raw string and why should I know about it when
   using \PyX?}
-{checked for 0.6}
+{}
 {\label{q:raw_string}
 The backslash serves in standard Python strings to start an escape sequence.
 For example {\cs n} corresponds to a newline character. On the other hand,
@@ -196,9 +196,8 @@ c.text(0, 0, r"\${\cs alpha}{\cs beta}{\cs gamma}\$")
 
 \subsection{General aspects}
 
-\question{c}{How do I generate a graph from data as simply as possible?
-\changed}
-{checked for 0.6}
+\question{c}{How do I generate a graph from data as simply as possible?}
+{}
 {\label{q:mingraphdata}
 Suppose that you have a data file \texttt{x.dat} containing values for
 $x$ and $y$ in two columns. Then the following code will do the job
@@ -220,10 +219,10 @@ A minimal example is also provided in the \PyX{} distribution as
 \path{examples/graphs/minimal.py}.
 }
 
-\question{a}{How do I generate a graph of a function as simply as possible?
-\changed}
-{checked for 0.6}
-{The following example will draw a parabola:
+\question{a}{How do I generate a graph of a function as simply as possible?}
+{}
+{\label{q:mingraphfunc}
+The following example will draw a parabola:
 \begin{progcode}
 from pyx import *\\
 \\
@@ -243,7 +242,7 @@ Another, slightly more complex, example is also provided in the \PyX{}
 distribution as \path{examples/graphs/piaxis.py}.
 }
 
-\question{a}{How can I stack graphs? \changed}
+\question{a}{How can I stack graphs?}
 {}
 {\PyX{} always needs a canvas to draw on. One possibility therefore consists
 in creating a new canvas with
@@ -299,7 +298,7 @@ in the last line requests to write the contents of this canvas to a file.
 %\end{progcode}
 }
 
-\question{a}{How can I plot grid data? \changed}
+\question{a}{How can I plot grid data?}
 {}
 {\PyX{} offers support for plotting three-dimensional data as two-dimensional
 color plots or grey-scale plots and of vector fields by providing ways to
@@ -355,6 +354,44 @@ Complete code examples can be found in \path{examples/graphs/mandel.py} and
 \path{examples/graphs/arrows.py}\,.
 }
 
+\question{a}{How can I access points in problem coordinates of a graph? \new}
+{}
+{\label{q:problemcoord}
+Sometimes it may be necessary to add graphical elements to a graph in addition
+to the data or function(s) which have been plotted as described in 
+\uaref{q:mingraphdata} and \uaref{q:mingraphfunc}. For a graph instance 
+\texttt{g} the positioning can easily be done in canvas coordinates by making
+use of the origin (\texttt{g.xpos}, \texttt{g.ypos}) and the width 
+(\texttt{g.width}) and height (\texttt{g.height}) of the graph. 
+
+Occasionally, it may be more convenient to specify the position of the 
+additional material in terms of problem coordinates. However, this requires
+that the mapping from problem coordinates to canvas coordinates is known.
+By default this is not the case before the content of the canvas is written
+to the output which is too late for our purpose. One therefore needs to 
+explicitly instruct \PyX{} to determine this mapping. One possibility is to 
+ask \PyX{} to finish the graph by means of \texttt{g.finish()}. Now, problem
+coordinates can be used to insert additional material which will end up in
+front of the graph. If this is not desired, one should only fix the layout
+of the graph by means of \texttt{g.dolayout()}. Then, the additional material
+can be put onto the canvas before the graph is drawn and it will therefore
+appear behind the graph.
+
+The conversion of problem coordinates (\texttt{px}, \texttt{py}) to canvas
+coordinates (\texttt{x}, \texttt{y}) is performed as follows:
+\begin{progcode}
+x, y = g.pos(px, py)
+\end{progcode}
+By default, the problem coordinates will refer to the ranges of the $x$ and $y$
+axes. If several axes with different ranges exist, the
+names of the two desired axes should be passed to the \texttt{pos} method by 
+means of the keyword arguments \texttt{xaxis} and \texttt{yaxis}.
+
+We remark that the drawing of lines parallel to one of the axes at specific
+problem coordinates can also be done by adapting the method described in
+\uaref{q:zeroline}.
+}
+
 \question{t}{I would like a key for only some of my data sets. How do I do
 that?}
 {}
@@ -363,44 +400,43 @@ that?}
 
 \subsection{Axis properties}
 
-\question{a}{How do I specify the tick increment? \changed}
-{checked for 0.6. Maybe we should add an from pyx.graph import axis}
+\question{a}{How do I specify the tick increment?}
+{}
 {In the partition of a linear axis, the increments associated with ticks,
-subticks etc.\ can be specified as argument of \texttt{linpart}. In the
+subticks etc.\ can be specified as argument of \texttt{parter.linear}. In the
 following example, ticks will be drawn at even values while subticks will
 be drawn at all integers:
 \begin{progcode}
+from pyx.graph import axis\\
 tg = graph.graphxy(width=10,\\
-~~~~~~~~~~~~~~~~~~~x=graph.axis.linear(min=1, max=10,\\
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~parter=graph.axis.parter.linear(tickdist=[2,1]))\\
+~~~~~~~~~~~~~~~~~~~x=axis.linear(min=1, max=10,\\
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~parter=axis.parter.linear(tickdist=[2,1]))\\
 ~~~~~~~~~~~~~~~~~~~)
 \end{progcode}
 }
 
+\question{a}{How do I plot the zero line?}
+{}
 {
-\question{a}{How do I plot the zero line? \new}
-{new for 0.6 since zeropathattrs was removed}
-{
-\tolerance=5000
-Previous releases of \PyX{} offered the possibility to stroke a zero
-line for a given axis by specifying \texttt{zeropathattrs} in the painter
-constructor. This feature was removed in \PyX{} 0.6, but you can easily
-draw a zero line by your own. In order to do so you first have to fix the
-layout information of the graph (see first line of the code given below). 
-Then you can use, for instance, the \texttt{ygridpath} method of a graph 
-which returns a grid path at the given axis value. The so obtained path 
-can easily be stroked on the graph canvas:
+\label{q:zeroline}
+\PyX{} releases before 0.6 offered the possibility to stroke a zero line by 
+specifying \texttt{zeropathattrs} in the painter constructor. In more recent 
+releases, one proceeds as follows. First one has to fix the layout information 
+of the graph by means of the \texttt{finish} or \texttt{dolayout} method (see 
+\ref{q:problemcoord} for a more detailed explanation). Then, the 
+\texttt{xgridpath} or \texttt{ygridpath} method of a graph will return a grid 
+path parallel to the $y$ or $x$ axis, respectively, at the specified $y$ value. 
+As an example, a zero line in $x$ direction can be drawn as follows:
 \begin{progcode}
 g.finish()\\
 g.stroke(g.ygridpath(0))
 \end{progcode}
 }
-}
 
 \subsection{Data properties}
 
-\question{a}{How do I choose the symbol? \changed}
-{checked for 0.6}
+\question{a}{How do I choose the symbol?}
+{}
 {\label{q:choose_symbol}
 Suppose a graph called \texttt{g} has been initialized, e.g. by using
 \texttt{graph.graphxy}. Then, data and the style of their representation
@@ -413,8 +449,8 @@ g.plot(graph.data.file("test.dat"),\\
 \end{progcode}
 }
 
-\question{a}{How do I choose the color of the symbols? \changed}
-{checked for 0.6}
+\question{a}{How do I choose the color of the symbols?}
+{}
 {Colors are not properties of the symbol as such and can therefore not
 be specified in \texttt{symbolattrs} directly. The color is rather related
 to the plotting of the symbol as defined by \texttt{deco.stroked} or
@@ -428,8 +464,8 @@ graph.style.symbol(graph.style.symbol.circle,\\
 you will obtain a circle filled in green with a red borderline.
 }
 
-\question{a}{How do I choose the line style? \changed}
-{checked for 0.6}
+\question{a}{How do I choose the line style?}
+{}
 {If you do not want to use symbols, you can set the line style as in this
 example
 \begin{progcode}
