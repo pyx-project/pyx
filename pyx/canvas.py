@@ -152,22 +152,26 @@ class canvas:
     	if isnumber(lengths): 
 	    return lengths*unit_u2p
 	else: 
-	    return map(lambda x:x*unit_u2p, lengths) 
+	    return (lengths[0]*unit_u2p, lengths[1]*unit_u2p)
+	    #return map(lambda x:x*unit_u2p, lengths) 
 	
     def v2p(self, lengths):
     	if isnumber(lengths): 
 	    return lengths*unit_v2p
 	else: 
-	    return map(lambda x:x*unit_v2p, lengths) 
+	    return (lengths[0]*unit_v2p, lengths[1]*unit_v2p)
+	    #return map(lambda x:x*unit_v2p, lengths) 
 	
     def w2p(self, lengths):
     	if type(lengths)==type(0.0): 
 	    return lengths*unit_w2p
 	else: 
-	    return map(lambda x:x*unit_w2p, lengths) 
+	    return (lengths[0]*unit_w2p, lengths[1]*unit_w2p)
+	    #return map(lambda x:x*unit_w2p, lengths) 
 
     def PSUpdatePosition(self):
         if self.PSPositionCorrect == 0:		# actual PS position doesn't coincide with our x,y
+	    print (self.x, self.y)
 	    self.PSCmd("%f %f moveto" % self.u2p((self.x,self.y)))
 	    self.PSPositionCorrect = 1
 
