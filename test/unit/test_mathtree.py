@@ -4,6 +4,7 @@ if sys.path[0] != "../..":
 
 import unittest
 
+import parser
 from pyx import *
 from pyx import mathtree
 
@@ -203,44 +204,18 @@ class MathTreeTestCase(unittest.TestCase):
         assert abs(myparser.parse("a+b-c").Calc(a=1, b=2, c=3)) <= 1e-10
         assert abs(myparser.parse("f(2)-4").Calc(f=lambda x: x*x)) <= 1e-10
 
-#    def testException(self):
-#        myparser = mathtree.parser()
-#        try:
-#            myparser.parse("")
-#            assert 0, "OperandExpectedMathTreeParseError expected"
-#        except mathtree.OperandExpectedMathTreeParseError: pass
-#        try:
-#            myparser.parse("???")
-#            assert 0, "OperandExpectedMathTreeParseError expected"
-#        except mathtree.OperandExpectedMathTreeParseError: pass
-#        try:
-#            myparser.parse("sin()")
-#            assert 0, "OperandExpectedMathTreeParseError expected"
-#        except mathtree.OperandExpectedMathTreeParseError: pass
-#        try:
-#            myparser.parse("sin(x,y)")
-#            assert 0, "RightParenthesisExpectedMathTreeParseError expected"
-#        except mathtree.RightParenthesisExpectedMathTreeParseError: pass
-#        try:
-#            myparser.parse("norm(x)")
-#            assert 0, "CommaExpectedMathTreeParseError expected"
-#        except mathtree.CommaExpectedMathTreeParseError: pass
-#        try:
-#            myparser.parse("xxx yyy")
-#            assert 0, "OperatorExpectedMathTreeParseError expected"
-#        except mathtree.OperatorExpectedMathTreeParseError: pass
-#        try:
-#            myparser.parse("(1+2")
-#            assert 0, "RightParenthesisExpectedMathTreeParseError expected"
-#        except mathtree.RightParenthesisExpectedMathTreeParseError: pass
-#        try:
-#            myparser.parse("1+2)")
-#            assert 0, "RightParenthesisFoundExpectedMathTreeParseError expected"
-#        except mathtree.RightParenthesisFoundMathTreeParseError: pass
-#        try:
-#            myparser.parse("1,2")
-#            assert 0, "CommaFoundExpectedMathTreeParseError expected"
-#        except mathtree.CommaFoundMathTreeParseError: pass
+    def testException(self):
+        myparser = mathtree.parser()
+        self.failUnlessRaises(parser.ParserError, myparser.parse, "")
+        self.failUnlessRaises(parser.ParserError, myparser.parse, "???")
+        self.failUnlessRaises(Exception, myparser.parse, "sin()")
+        self.failUnlessRaises(mathtree.ArgCountError, myparser.parse, "sin(x,y)")
+        self.failUnlessRaises(KeyError, myparser.parse("sin(x)").Calc)
+        self.failUnlessRaises(IndexError, myparser.parse("norm(x)").Calc, x=1)
+        self.failUnlessRaises(parser.ParserError, myparser.parse, "xxx yyy")
+        self.failUnlessRaises(parser.ParserError, myparser.parse, "(1+2")
+        self.failUnlessRaises(parser.ParserError, myparser.parse, "1+2)")
+        self.failUnlessEqual(len(myparser.parse("1,2")), 2)
 
 
 if __name__ == "__main__":
