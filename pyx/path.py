@@ -1245,8 +1245,8 @@ class normpathel:
 
         pass
 
-    def tangent(self, t):
-        """returns tangent vector of _normpathel at parameter t (0<=t<=1)"""
+    def tangent_pt(self, t):
+        """returns tangent vector of normpathel in pts at parameter t (0<=t<=1)"""
         pass
 
     def transformed(self, trafo):
@@ -1254,10 +1254,12 @@ class normpathel:
         pass
 
     def outputPS(self, file):
-        """write normpathel (in the context of a normsubpath) to file"""
+        """write PS code corresponding to normpathel to file"""
         pass
 
-    # TODO: outputPDF
+    def outputPS(self, file):
+        """write PDF code corresponding to normpathel to file"""
+        pass
 
 #
 # there are only two normpathels: normline and normcurve
@@ -1343,11 +1345,8 @@ class normline(normpathel):
             result = []
         return result
 
-    def tangent(self, t):
-        tx, ty = self.x0 + (self.x1-self.x0)*t, self.y0 + (self.y1-self.y0)*t
-        tvectx, tvecty = self.x1-self.x0, self.y1-self.y0
-        # XXX should we return a normpath instead?
-        return line_pt(tx, ty, tx+tvectx, ty+tvecty)
+    def tangent_pt(self, t):
+        return (self.x1-self.x0, self.y1-self.y0)
 
     def transformed(self, trafo):
         return normline(*(trafo._apply(self.x0, self.y0) + trafo._apply(self.x1, self.y1)))
@@ -1613,15 +1612,14 @@ class normcurve(normpathel):
             result = []
         return result
 
-    def tangent(self, t):
-        tpx, tpy = self.at_pt(t)
+    def tangent_pt(self, t):
         tvectx = (3*(  -self.x0+3*self.x1-3*self.x2+self.x3)*t*t +
                   2*( 3*self.x0-6*self.x1+3*self.x2        )*t +
                     (-3*self.x0+3*self.x1                  ))
         tvecty = (3*(  -self.y0+3*self.y1-3*self.y2+self.y3)*t*t +
                   2*( 3*self.y0-6*self.y1+3*self.y2        )*t +
                     (-3*self.y0+3*self.y1                  ))
-        return line_pt(tpx, tpy, tpx+tvectx, tpy+tvecty)
+        return (tvectx, tvecty)
 
     def transform(self, trafo):
         self.x0, self.y0 = trafo._apply(self.x0, self.y0)
@@ -1832,13 +1830,13 @@ class normsubpath:
                 result = result[1:]
         return result
 
-    def tangent(self, t):
+    def tangent_pt(self, t):
         if t<0:
             t += self.range()
         if 0<=t<self.range():
-            return self.normpathels[int(t)].tangent(t-int(t))
+            return self.normpathels[int(t)].tangent_pt(t-int(t))
         if t==self.range():
-            return self.normpathels[-1].tangent(1)
+            return self.normpathels[-1].tangent_pt(1)
 
     def transform(self, trafo):
         """transform sub path according to trafo"""
@@ -2251,8 +2249,8 @@ class normpath(path):
 
         return result
 
-    def tangent(self, t, length=None):
-        """return tangent vector of path at parameter value t
+    def tangent_pt(self, t, length=None):
+        """return tuple in pts corresponding to tangent vector of path at parameter value t
 
         Negative values of t count from the end of the path. The absolute
         value of t must be smaller or equal to the number of segments in
@@ -2265,13 +2263,31 @@ class normpath(path):
         """
         result = self._findsubpath(t)
         if result:
-            tvec = result[0].tangent(result[1])
-            tlen = tvec.arclen_pt()
-            if length is None or tlen==0:
-                return tvec
-            else:
+            tdx, tdy = result[0].tangent_pt(result[1])
+            tlen = math.sqrt(tdx*tdx + tdy*tdy)
+            if not (length is None or tlen==0):
                 sfactor = unit.topt(length)/tlen
-                return tvec.transformed(trafo.scale(sfactor, sfactor, *tvec.begin()))
+                tdx *= sfactor
+                tdy *= sfactor
+            return (tdx, tdy)
+        else:
+            return None
+
+    def tangent(self, t, length=None):
+        """return tuple corresponding to tangent vector of path at parameter value t
+
+        Negative values of t count from the end of the path. The absolute
+        value of t must be smaller or equal to the number of segments in
+        the normpath, otherwise None is returned.
+        At discontinuities in the path, the limit from below is returned
+
+        if length is not None, the tangent vector will be scaled to
+        the desired length
+
+        """
+        tvec = self.tangent_pt(t, length)
+        if tvec:
+            return (unit.t_pt(tvec[0]), unit.t_pt(tvec[1]))
         else:
             return None
 

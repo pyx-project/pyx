@@ -247,11 +247,7 @@ class pathaxispos(_axispos):
         return self.normpath.at_pt(self.normpath.lentopar(v * self.arclen))
 
     def vtickdirection(self, v):
-        t = self.normpath.tangent(self.normpath.lentopar(v * self.arclen))
-        tbegin = t.begin_pt()
-        tend = t.end_pt()
-        dx = tend[0]-tbegin[0]
-        dy = tend[1]-tbegin[1]
+        dx, dy = self.normpath.tangent_pt(self.normpath.lentopar(v * self.arclen))
         norm = math.sqrt(dx*dx + dy*dy)
         if self.direction == 1:
             return -dy/norm, dx/norm
@@ -630,8 +626,10 @@ class splitaxispainter(axistitlepainter):
                 # use a tangent of the basepath (this is independent of the tickdirection)
                 v = 0.5 * (subaxis1.vmax + subaxis2.vmin)
                 p = path.normpath(axispos.vbasepath(v, None))
+                # XXX rewrite for new tangent code
                 breakline = p.tangent(0, self.breaklineslength)
                 widthline = p.tangent(0, self.breaklinesdist).transformed(trafomodule.rotate(self.breaklinesangle+90, *breakline.begin()))
+                # XXX Uiiii
                 tocenter = map(lambda x: 0.5*(x[0]-x[1]), zip(breakline.begin(), breakline.end()))
                 towidth = map(lambda x: 0.5*(x[0]-x[1]), zip(widthline.begin(), widthline.end()))
                 breakline = breakline.transformed(trafomodule.translate(*tocenter).rotated(self.breaklinesangle, *breakline.begin()))

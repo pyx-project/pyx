@@ -125,9 +125,9 @@ XXX terminology: subpath, \dots
   parameters (which have to be sorted in ascending order) and returns
   a corresponding list of 
   \texttt{normpath}s.$^\dagger$\\
-    \texttt{tangent(t, length=None)} & return the tangent (as \texttt{normpath}) to
-    the path at the 
-    parameter value \texttt{t}.  Negative values of \texttt{t} count
+    \texttt{tangent(t, length=None)} & return the tuple corresponding to
+    the tangent vector to the path at the parameter value \texttt{t}.
+    Negative values of \texttt{t} count
     from the end of the path. The absolute value of \texttt{t} must be
     smaller or equal to the number of segments in the normpath,
     otherwise None is returned.  At discontinuities in the path, the

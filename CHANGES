@@ -64,15 +64,16 @@ TODO:
     - TODO: general documentation about attributes, clearing, merging?
     - TODO: general documentation about changeable attributes?
   - graph module:
-    - painters are using the new attribute scheme including changeable attributes (TODO: documentation)
+    - painters are using the new attribute scheme including changeable
+      attributes (TODO: documentation)
     - axis zeropath feature removed (TODO: documentation)
     - graph styles rewrite (TODO: documentation)
     - graph splitted into several modules in the new subdirectory graph
   - text module:
     - default handling of texmessages as in the new attribute scheme
     - multiple insert bug fixed
-    - made left, right, width, height, depth information available
-      (x length not taking into account box transformations)
+    - made left, right, width, height, depth information available (x length
+      not taking into account box transformations)
     - added textboxes that are sequentially filled (experimental)
   - examples:
     - mandel.py (contributed by Stephen Phillips)
@@ -81,14 +82,16 @@ TODO:
       a list of points and can thus be much more efficient
     - internal methods return coordinates in pts
     - lentopar returns only parameters not total length (TODO: documentation)
-    - added path.arclength_pt, path.at_pt, path.begin_pt, path.end_pt (and 
+    - added path.arclength_pt, path.at_pt, path.begin_pt, path.end_pt (and
       correspondingly for normpath) (TODO: documentation)
-    - complete refactoring of the normpath class: normpaths now consist
-      of normsubpaths which themselves consist of normlines and normcurves
-      This is much more convenient for any routines working with normpaths.
-    - reversing of closed sub paths does not change the first point of the
-      sub path
-    - arclength -> arclen
+    - complete refactoring of the normpath class: normpaths now consist of
+      normsubpaths which themselves consist of normlines and normcurves This is
+      much more convenient for any routines working with normpaths.
+    - reversing of closed sub paths does not change the first point of the sub
+      path
+    - renamed: arclength -> arclen
+    - normpath.tangent now returns tuple corresponding to direction and
+      magnitude of tangent vector instead of normline
   - connnector module:
     - renamed _xxx -> xxx_pt
   - deco module:

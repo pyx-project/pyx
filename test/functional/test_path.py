@@ -142,8 +142,9 @@ def testnormpathtrafo(c):
 
     c.stroke(cross(*(p.at(0))))
     c.stroke(cross(*(p.reversed().at(0))))
-    c.stroke(p.tangent(0, "30 pt"), [deco.earrow.normal])
-    c.stroke(p.reversed().tangent(0, "30 pt"), [deco.earrow.normal])
+
+    # c.stroke(p.tangent(0, "30 pt"), [deco.earrow.normal])
+    # c.stroke(p.reversed().tangent(0, "30 pt"), [deco.earrow.normal])
 
     #    p1, p2, p3 = p.split(1.0, 2.1)
     p1, p2 = p.split([1.0, 2.1])
@@ -166,7 +167,6 @@ def testnormpathtrafo(c):
 
     c.stroke(segment, [style.linewidth.THick, deco.filled([color.rgb.green])])
 
-
 def testtangent(c):
     p=path(moveto(0,5),
            curveto(2,1,4,0,2,4),
@@ -174,7 +174,9 @@ def testtangent(c):
            rlineto(2,3))+circle(5,5,1)
     c.stroke(p)
     for i in range(int(p.range())*2):
-        c.stroke(p.tangent(i/2.0, "20 t pt"), [color.rgb.blue, deco.earrow.normal])
+        t0x, t0y = p.at(i/2.0)
+        tdx, tdy = p.tangent(i/2.0, "20 t pt")
+        c.stroke(line(t0x, t0y, t0x+tdx, t0y+tdy), [color.rgb.blue, deco.earrow.normal])
 
 
 def testarcbbox(c):
