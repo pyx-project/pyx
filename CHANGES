@@ -18,6 +18,9 @@ PyX
     - stroke and fill now support trafos (TODO: documentation)
   - config module:
     - new module for loading PyX configuration information
+  - pyx module:
+    - automatically import main modules into pyx namespace as suggested by Fernando 
+      Perez <fperez at colorado dot edu>
   TODO:
   - graph module
     - address datavmin and datavmax
