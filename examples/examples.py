@@ -19,15 +19,15 @@ tex.write(r"""
 Andr\'e Wobst \texttt{<wobsta@users.sourceforge.net>}}
 \maketitle
 """ % pyx.__version__)
-dirs = []
+lastdir = None
 for file in sys.argv[1:]:
     dir = os.path.dirname(file)
-    if dir not in dirs:
+    if dir != lastdir:
         try:
             tex.write("\\begin{abstract}\n%s\\end{abstract}\n" % open(os.path.join(dir, "README")).read().replace("__version__", pyx.__version__))
         except IOError:
             print "ignore missing README in %s" % dir
-        dirs.append(dir)
+        lastdir = dir
     tex.write("\\deftripstyle{mypagestyle}{}{%s}{}{}{\\pagemark}{}\n" % file)
     tex.write("\\pagestyle{mypagestyle}{}\n")
     tex.write("\\section*{%s}\n" % file)

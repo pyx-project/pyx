@@ -18,7 +18,7 @@ examples.pdf: examples.ps
 examples.ps: examples.dvi
 	dvips -o examples.ps examples.dvi
 
-files = $(foreach item, $(shell cat INDEX), $(if $(wildcard $(item)/INDEX), $(addprefix $(item)/, $(shell cat $(item)/INDEX)), $(item)))
+files = $(foreach item, $(shell grep -v / INDEX), $(item)) $(foreach item, $(shell grep / INDEX), $(addprefix $(item), $(shell cat $(item)INDEX)))
 pyfiles = $(addsuffix .py, $(files))
 htmlfiles = $(addsuffix .py.html, $(files))
 epsfiles = $(addsuffix .eps, $(files))
