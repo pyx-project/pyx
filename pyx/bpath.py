@@ -224,7 +224,7 @@ class _bpathel(base.PSOp):
 class bpathel(_bpathel):
 
     """element of Bezier path"""
-    
+
     def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
         _bpathel.__init__(self, 
                           unit.topt(x0), unit.topt(y0),
@@ -232,6 +232,26 @@ class bpathel(_bpathel):
                           unit.topt(x2), unit.topt(y2),
                           unit.topt(x3), unit.topt(y3))
 
+class _blineel(_bpathel):
+
+    """bpathel corresponding to straight line (coordiates in pts)"""
+
+    def __init__(self, x0, y0, x1, y1):
+        xa = x0+(x1-x0)/3.0
+        ya = y0+(y1-y0)/3.0
+        xb = x0+2.0*(x1-x0)/3.0
+        yb = y0+2.0*(y1-y0)/3.0
+
+        _bpathel.__init__(self, x0, y0, xa, ya, xb, yb, x1, y1 )
+
+class blineel(_blineel):
+
+    """bpathel corresponding to straight line"""
+
+    def __init__(self, x0, y0, x1, y1):
+        _blineel.__init__(self,
+                          unit.topt(x0), unit.topt(y0),
+                          unit.topt(x1), unit.topt(y1))
 
 ################################################################################
 # bpath: Bezier path
