@@ -11,8 +11,8 @@ horiz = g.plot(graph.function("y=0.5*x", points=2))
 g.dodata()
 
 # intersect the lines
-fline = path.normpath(fline.style.path)
-horiz = path.normpath(horiz.style.path)
+fline = fline.style.path
+horiz = horiz.style.path
 splith, splitf = horiz.intersect(fline)
 
 # create gray area
