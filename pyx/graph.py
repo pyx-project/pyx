@@ -156,7 +156,7 @@ class frac:
         return result
 
     def floatfrac(self, x, floatprecision):
-        "converts a float into a frac with final resolution"
+        "converts a float into a frac with finite resolution"
         if helper.isinteger(floatprecision) and floatprecision < 0:
             # this would be extremly vulnerable
             raise RuntimeError("float resolution must be non-negative integer")
