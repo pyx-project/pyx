@@ -4492,15 +4492,15 @@ class symbol:
             elif x is not None and x > xaxismax: drawsymbol = 0
             elif y is not None and y < yaxismin: drawsymbol = 0
             elif y is not None and y > yaxismax: drawsymbol = 0
-            elif haserror:
-                if xmin is not None and xmin < xaxismin: drawsymbol = 0
-                elif xmax is not None and xmax < xaxismin: drawsymbol = 0
-                elif xmax is not None and xmax > xaxismax: drawsymbol = 0
-                elif xmin is not None and xmin > xaxismax: drawsymbol = 0
-                elif ymin is not None and ymin < yaxismin: drawsymbol = 0
-                elif ymax is not None and ymax < yaxismin: drawsymbol = 0
-                elif ymax is not None and ymax > yaxismax: drawsymbol = 0
-                elif ymin is not None and ymin > yaxismax: drawsymbol = 0
+#            elif haserror:  # TODO: correct clipcanvas handling
+#                if xmin is not None and xmin < xaxismin: drawsymbol = 0
+#                elif xmax is not None and xmax < xaxismin: drawsymbol = 0
+#                elif xmax is not None and xmax > xaxismax: drawsymbol = 0
+#                elif xmin is not None and xmin > xaxismax: drawsymbol = 0
+#                elif ymin is not None and ymin < yaxismin: drawsymbol = 0
+#                elif ymax is not None and ymax < yaxismin: drawsymbol = 0
+#                elif ymax is not None and ymax > yaxismax: drawsymbol = 0
+#                elif ymin is not None and ymin > yaxismax: drawsymbol = 0
             xpos=ypos=topleft=top=topright=left=center=right=bottomleft=bottom=bottomright=None
             if x is not None and y is not None:
                 try:
