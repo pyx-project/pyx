@@ -874,11 +874,13 @@ class axispainter(axistitlepainter):
         #                tick.textbox.manualextents(wd = maxwd)
         #            if self.labelvequalize:
         #                tick.textbox.manualextents(ht = maxht, dp = maxdp)
+        box._linealignequal([tick.textbox for tick in axis.ticks if tick.textbox is not None], labeldist, tick.dx, tick.dy)
         for tick in axis.ticks:
             if tick.textbox is not None:
-                tick.textbox._linealign(labeldist, tick.dx, tick.dy)
+#                tick.textbox._linealign(labeldist, tick.dx, tick.dy)
                 tick._extent = tick.textbox._extent(tick.dx, tick.dy) + labeldist
                 tick.textbox.transform(trafo._translate(tick.x, tick.y))
+#                graph.stroke(tick.textbox.path())
         def topt_v_recursive(arg):
             if helper.issequence(arg):
                 # return map(topt_v_recursive, arg) needs python2.2

@@ -1065,21 +1065,21 @@ class _readpipe(threading.Thread):
 class _textbox(box._rect, base.PSText):
 
     def __init__(self, x, y, left, right, height, depth, texrunner, page):
-        self.trafo = trafo._translate(-left, 0)
+        self.texttrafo = trafo._translate(-left, 0)
         box._rect.__init__(self, -left, -depth, left + right, depth + height, abscenter = (left, depth), trafo=trafo._translate(x, y))
         self.texrunner = texrunner
         self.page = page
 
     def transform(self, trafo):
         box._rect.transform(self, trafo)
-        self.trafo = trafo * self.trafo
+        self.texttrafo = trafo * self.texttrafo
 
     def writefontheader(self, file, containsfonts):
         self.texrunner.writefontheader(file, containsfonts)
 
     def write(self, file):
         canvas._gsave().write(file) # XXX: canvas?, constructor call needed?
-        self.trafo.write(file)
+        self.texttrafo.write(file)
         self.texrunner.write(file, self.page)
         canvas._grestore().write(file)
 

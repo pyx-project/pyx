@@ -12,6 +12,8 @@ PyX
     - use text module instead of the obsolete tex module (work in progress)
     - TODO: allow for tailing zeros of automatic generated labels
     - TODO: allow for missing data in bar graphs
+  - data module:
+    - TODO: line reduction for datafile like the every parameter in gnuplot
   - numerous bugfixes:
     - problem with sizefile on windows (tex module)
     - disable rating for labelattrs equals None (graph module)

@@ -22,7 +22,7 @@
 
 
 import types, re, math, string, sys
-import bbox, path, unit, trafo
+import bbox, path, unit, trafo, helper
 
 
 class BoxCrossError(Exception): pass
@@ -52,10 +52,9 @@ class _poly:
         if self.center is not None:
             self.center = trafo._apply(*self.center)
         self.corners = [trafo._apply(*point) for point in self.corners]
-        return self
 
     def successivepointnumbers(self):
-        return map(lambda i, self=self: i and (i - 1, i) or (len(self.corners) - 1, 0), range(len(self.corners)))
+        return [i and (i - 1, i) or (len(self.corners) - 1, 0) for i in range(len(self.corners))]
 
     def successivepoints(self):
         return [(self.corners[i], self.corners[j]) for i, j in self.successivepointnumbers()]
@@ -192,7 +191,7 @@ class _poly:
     def pointdistance(self, x, y):
         return unit.t_pt(self._pointdistance(unit.topt(x), unit.topt(y)))
 
-    def _boxdistance(self, other, epsilon = 1e-10):
+    def _boxdistance(self, other, epsilon=1e-10):
         # XXX: boxes crossing and distance calculation is O(N^2)
         for p1, p2 in self.successivepoints():
             for p3, p4 in other.successivepoints():
@@ -217,6 +216,23 @@ class _poly:
     def boxdistance(self, other):
         return unit.t_pt(self._boxdistance(other))
 
+    #TODO: bbox method missing
+    def bbox(self):
+        return bbox.bbox(min([x[0] for x in self.corners]),
+                         min([x[1] for x in self.corners]),
+                         max([x[0] for x in self.corners]),
+                         max([x[1] for x in self.corners]))
+
+
+def _linealignequal(polys, *args):
+    vec = None
+    for p in polys:
+        v = p._linealignvector(*args)
+        if vec is None or vec[0]*vec[0] + vec[1]*vec[1] < v[0]*v[0] + v[1]*v[1]:
+            vec = v
+    for p in polys:
+        p.transform(trafo._translate(*vec))
+
 
 class poly(_poly):
 
@@ -229,20 +245,17 @@ class poly(_poly):
 
 class _rect(_poly):
 
-    def __init__(self, x, y, width, height, relcenter=(0, 0), abscenter=(0, 0), **args):
-        self._bbox = bbox.bbox(x, y, x + width, y + height)
+    def __init__(self, x, y, width, height, relcenter=(0, 0), abscenter=(0, 0),
+                       corners=helper.nodefault, center=helper.nodefault, **args):
+        if corners != helper.nodefault or center != helper.nodefault:
+            raise ValueError
         _poly.__init__(self, corners=((x, y),
                                       (x + width, y),
                                       (x + width, y + height),
                                       (x, y + height)),
-                             center=(x + relcenter[0] * width + abscenter[0], y + relcenter[1] * height + abscenter[1]), **args)
-
-    def transform(self, trafo):
-        _poly.transform(self, trafo)
-        self._bbox = self._bbox.transform(trafo)
-
-    def bbox(self):
-        return self._bbox
+                             center=(x + relcenter[0] * width + abscenter[0],
+                                     y + relcenter[1] * height + abscenter[1]),
+                             **args)
 
 
 class rect(_rect):
