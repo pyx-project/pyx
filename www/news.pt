@@ -9,6 +9,13 @@
     <h1>PyX - News</h1>
 
     <dl>
+      <dt>2004-10-29: PyX presentation in Hannover</dt>
+      <dd>
+        PyX was presented at the
+        <a href="http://www.dante.de/dante/events/mv31/">fall meeting of the German Speaking TeX User Group DANTE e.V. (October 29nd to 30th, Hannover)</a>.
+        The presentation is available in
+        <a href="presentation_dantemv31_de.pdf">German (pdf, 16 Pages, 346 KB)</a> only.
+      </dd>
       <dt>2004-10-21: PyX 0.7 released</dt>
       <dd>
         This release adds support for the inclusion of bitmaps. The internals of the path system
@@ -49,8 +56,8 @@
         PyX was presented at the
         <a href="http://www.dante.de/dante2004/">annual meeting of the German Speaking TeX User Group DANTE e.V. (March 2nd to 6th, Darmstadt)</a>.
         The presentation is available in
-        <a href="foils_dante2004_de.pdf">German (pdf, 18 Pages, 425 KB)</a> and
-        <a href="foils_dante2004_en.pdf">English</a>.
+        <a href="presentation_dante2004_de.pdf">German (pdf, 18 Pages, 425 KB)</a> and
+        <a href="presentation_dante2004_en.pdf">English</a>.
       </dd>
       <dt>2004-01-22: PyX 0.5.1 released</dt>
       <dd>
