@@ -24,7 +24,7 @@
 
 
 import types, re, math, string, sys
-import bbox, canvas, path, tex, unit, mathtree, trafo, attrlist
+import bbox, canvas, path, tex, unit, mathtree, trafo, attrlist, color
 
 goldenrule = 0.5 * (math.sqrt(5) + 1)
 
@@ -1443,16 +1443,23 @@ class graphxy(canvas.canvas):
     def drawbackground(self):
         if self._drawstate != self.drawbackground:
             raise PyxGraphDrawstateError
-        self.draw(path._rect(self.xmap.convert(0),
+        self.fill(path._rect(self.xmap.convert(0),
                              self.ymap.convert(0),
                              self.xmap.convert(1) - self.xmap.convert(0),
-                             self.ymap.convert(1) - self.ymap.convert(0)))
+                             self.ymap.convert(1) - self.ymap.convert(0)), color.gray.white)
+        self._drawstate = self.drawdata
+
+    def drawdata(self):
+        if self._drawstate != self.drawdata:
+            raise PyxGraphDrawstateError
+        for data in self.data:
+            data.draw(self)
         self._drawstate = self.drawaxes
 
     def drawaxes(self):
-        axesdist = unit.topt(unit.length(self.axesdist_str, default_type="v"))
         if self._drawstate != self.drawaxes:
             raise PyxGraphDrawstateError
+        axesdist = unit.topt(unit.length(self.axesdist_str, default_type="v"))
         self.xaxisextents = [0, 0]
         self.yaxisextents = [0, 0]
         needxaxisdist = [0, 0]
@@ -1470,10 +1477,6 @@ class graphxy(canvas.canvas):
                  axis.tickpoint = self.xtickpoint
                  axis.fixtickdirection = (0, num3)
                  axis.gridpath = self.xgridpath
-                 if needxaxisdist[num2]:
-                     x1, y1 = self.xtickpoint(axis, 0)
-                     x2, y2 = self.xtickpoint(axis, 1)
-                     self.draw(path._line(x1, y1, x2, y2))
             elif self.YPattern.match(key):
                  if needyaxisdist[num2]:
                      self.yaxisextents[num2] += axesdist
@@ -1481,12 +1484,11 @@ class graphxy(canvas.canvas):
                  axis.tickpoint = self.ytickpoint
                  axis.fixtickdirection = (num3, 0)
                  axis.gridpath = self.ygridpath
-                 if needyaxisdist[num2]:
-                     x1, y1 = self.ytickpoint(axis, 0)
-                     x2, y2 = self.ytickpoint(axis, 1)
-                     self.draw(path._line(x1, y1, x2, y2))
             else:
                 raise ValueError("Axis key %s not allowed" % key)
+            x1, y1 = axis.tickpoint(axis, 0)
+            x2, y2 = axis.tickpoint(axis, 1)
+            self.draw(path._line(x1, y1, x2, y2))
             axis.tickdirection = self.tickdirection
             axis.painter.paint(self, axis)
             if self.XPattern.match(key):
@@ -1495,13 +1497,6 @@ class graphxy(canvas.canvas):
             if self.YPattern.match(key):
                  self.yaxisextents[num2] += axis.extent
                  needyaxisdist[num2] = 1
-        self._drawstate = self.drawdata
-
-    def drawdata(self):
-        if self._drawstate != self.drawdata:
-            raise PyxGraphDrawstateError
-        for data in self.data:
-            data.draw(self)
         self._drawstate = None
 
     def drawall(self):
