@@ -23,17 +23,17 @@
 # TODO: - reversepath ?
 #       - strokepath ?
 #       - nocurrentpoint exception?
-#       - implement bbox and ConvertToBezier for arct
+#       - implement bbox and _bpath for arct
+#         we need canvas for that, which is not very nice for _bpath :((((
 #       - correct bbox for curveto and bpathel
 #         (maybe we still need the current bbox implementation (then maybe called
 #          cbox = control box) for bpathel for the use during the
 #          intersection of bpaths) 
 #       - intersection of bpaths: use estimate for number of subdivisions
-#       - move test routines into test directory
 #       - is it really necessary (apart from technical reasons)
 #         to specify a canvas for the intersection of two bpaths? 
 
-import unit, canvas
+import unit, canvas, math
 from math import floor, cos, sin, pi
 from canvas import bbox
 
@@ -357,7 +357,59 @@ class arct(pathel):
                                              canvas.unit.pt(self.x2),
                                              canvas.unit.pt(self.y2),
                                              canvas.unit.pt(self.r) ) )
+
+    def bbox(self, canvas, currentpoint, currentsubpath):
+        return (currentpoint, currentsubpath, bbox(0,0,300,300))
+    
+    def _bpath(self, currentpoint, currentsubpath):
+        # direction and length of tangent 1
+        dx1  = currentpoint[0]-self.x1
+        dy1  = currentpoint[1]-self.y1
+        l1   = math.sqrt(dx1*dx1+dy1*dy1)
+        if dx1==0:
+            phi1=90
+        else:
+            phi1 = math.atan(dy1/dx1)/math.pi*180
+
+        # direction and length of tangent 2
+        dx2  = self.x2-self.x1
+        dy2  = self.y2-self.y1
+        l2   = math.sqrt(dx2*dx2+dy2*dy2)
+        if dx2==0:
+            phi2=90
+        else:
+            phi2 = math.atan(dy2/dx2)/math.pi*180
+
+        phi=0.5*(phi2-phi1)
+
+
+        # intersection angle between two tangents
+        alpha = math.acos((dx1*dx2+dy1*dy2)/(l1*l2))
+        calpha2 = cos(alpha/2)
+
+        # two tangent points
+        xt1 = self.x1+dx1*self.r*calpha2/l1
+        yt1 = self.y1+dy1*self.r*calpha2/l1
+        xt2 = self.x1+dx2*self.r*calpha2/l2
+        yt2 = self.y1+dy2*self.r*calpha2/l2
+
+        # direction of center of arc 
+        rx = 0.5*(xt1+xt2)-self.x1
+        ry = 0.5*(yt1+yt2)-self.y1
+        lr = math.sqrt(rx*rx+ry*ry)
+
+        # center of arc
+        mx = self.x1+rx*self.r/(lr*sin(alpha/2))
+        my = self.y1+ry*self.r/(lr*sin(alpha/2))
         
+        return ((xt2, yt2),
+                currentsubpath or (xt2, yt2),
+                bline(currentpoint[0], currentpoint[1], xt1, yt1) +
+                arc(mx, my,
+                    self.r,
+                    phi-1,
+                    phi+1)._bpath(None, None)[2] )
+
 	
 class curveto(pathel):
 
@@ -427,12 +479,12 @@ class rcurveto(pathel):
  	             max(currentpoint[0], x1, x2, x3), max(currentpoint[1], y1, y2, y3)))
         
     def _bpath(self, currentpoint, currentsubpath):
-        x2=currentpoint(0)+self.dx1
-        y2=currentpoint(1)+self.dy1
-        x3=currentpoint(0)+self.dx2
-        y3=currentpoint(1)+self.dy2
-        x4=currentpoint(0)+self.dx3
-        y4=currentpoint(1)+self.dy3
+        x2=currentpoint[0]+self.dx1
+        y2=currentpoint[1]+self.dy1
+        x3=currentpoint[0]+self.dx2
+        y3=currentpoint[1]+self.dy2
+        x4=currentpoint[0]+self.dx3
+        y4=currentpoint[1]+self.dy3
         return ((x4, y4),
                 currentsubpath or currentpoint,
                 bcurve(x2, y2, x3, y3, x4, y4))
