@@ -210,6 +210,16 @@ class _bpathel(base.PSOp):
                               x23, y23,
                               self.x3, self.y3))
 
+    def length(self, epsilon=1e-5):
+        """computes length of bpathel using successive midpoint split"""
+        
+        if self.isStraight(epsilon):
+            return unit.t_pt(math.sqrt((self.x3-self.x0)*(self.x3-self.x0)+
+                                       (self.y3-self.y0)*(self.y3-self.y0)))
+        else:
+            (a, b) = self.MidPointSplit()
+            return a.length()+b.length()
+
                        
 class bpathel(_bpathel):
 
@@ -352,6 +362,10 @@ class bpath(base.PSCmd):
                                                   o_bpel, tb-1, tb, epsilon)
 
         return intersections
+
+    def length(self, epsilon=1e-5):
+        """returns length of bpath"""
+        return reduce(lambda x, y: x+y.length(), self.bpath, 0)
 
 #
 # now some special kinds of bpaths (always in pairs)
