@@ -41,6 +41,9 @@ PyX
   - bbox module:
     - new methods height, width, top, bottom, left, right
     - ll & ur ???, what about ul and lr -> ugly!
+    - enlarge (was enhance) now allows selective enlargement to the left, bottom, right and top
+    - output HiResBoundingBox
+    - never reduce bbox upon output
     - TODO: document me!
   - epsfile module:
     - new constructor signature, more in line with rest of PyX: 

@@ -23,6 +23,7 @@
 # TODO: - it would be nice to have a real bbox.transform
 #       - what about __iadd__, ...
 
+import math
 import unit
 
 # helper routine for bbox manipulations
@@ -47,7 +48,7 @@ class bbox:
         self.lly=lly
         self.urx=urx
         self.ury=ury
-    
+
     def __add__(self, other):
         """join two bboxes"""
 
@@ -65,12 +66,13 @@ class bbox:
 
     def write(self, file):
         file.write("%%%%BoundingBox: %d %d %d %d\n" %
+                   (math.floor(self.llx), math.floor(self.lly), math.ceil(self.urx), math.ceil(self.ury)))
+        file.write("%%%%HiResBoundingBox: %g %g %g %g\n" %
                    (self.llx, self.lly, self.urx, self.ury))
-        # TODO: add HighResBBox
 
     def intersects(self, other):
         """check, if two bboxes intersect eachother"""
-        
+
         return not (self.llx > other.urx or
                     self.lly > other.ury or
                     self.urx < other.llx or
@@ -90,11 +92,22 @@ class bbox:
         return bbox(min(llx, lrx, urx, ulx), min(lly, lry, ury, uly),
                     max(llx, lrx, urx, ulx), max(lly, lry, ury, uly))
 
-    def enlarged(self, size):
-        """return bbox enlargedd in all directions by size"""
-        size = unit.topt(unit.length(size, default_type="v"))
-        return bbox(self.llx-size, self.lly-size, 
-                    self.urx+size, self.ury+size)
+    def enlarged(self, all=0, bottom=None, left=None, top=None, right=None):
+        """return bbox enlarged
+
+        all is used, if bottom, left, top and/or right are not given.
+
+        """
+        _bottom = _left = _top = _right = unit.topt(unit.length(all, default_type="v"))
+        if bottom is not None:
+           _bottom = unit.topt(unit.length(bottom, default_type="v"))
+        if left is not None:
+           _left = unit.topt(unit.length(left, default_type="v"))
+        if top is not None:
+           _top = unit.topt(unit.length(top, default_type="v"))
+        if right is not None:
+           _right = unit.topt(unit.length(right, default_type="v"))
+        return bbox(self.llx-_left,  self.lly-_bottom, self.urx+_right, self.ury+_top)
 
     def rect(self):
         """return rectangle corresponding to bbox"""
