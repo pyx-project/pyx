@@ -45,11 +45,17 @@ class _linmap:
 
     def convert(self, data, value):
         """axis coordinates -> graph coordinates"""
-        return (float(value) - data.min) / (data.max - data.min)
+        if data.convertfactor is not None:
+            return (float(value) * data.convertfactor - data.min) / (data.max - data.min)
+        else:
+            return (float(value) - data.min) / (data.max - data.min)
 
     def invert(self, data, value):
         """graph coordinates -> axis coordinates"""
-        return data.min + value * (data.max - data.min)
+        if data.convertfactor is not None:
+            return (data.min + value * (data.max - data.min)) / data.convertfactor
+        else:
+            return data.min + value * (data.max - data.min)
 
 
 class _logmap:
@@ -57,11 +63,18 @@ class _logmap:
 
     def convert(self, data, value):
         """axis coordinates -> graph coordinates"""
-        return (math.log(float(value)) - math.log(self.min)) / (math.log(data.max) - math.log(data.min))
+        # TODO: store log(data.min) and log(data.max)
+        if data.convertfactor is not None:
+            return (math.log(float(value) * data.convertfactor) - math.log(self.min)) / (math.log(data.max) - math.log(data.min))
+        else:
+            return (math.log(float(value)) - math.log(self.min)) / (math.log(data.max) - math.log(data.min))
 
     def invert(self, data, value):
         """graph coordinates -> axis coordinates"""
-        return math.exp(math.log(self.min) + value * (math.log(data.max) - math.log(data.min)))
+        if data.convertfactor is not None:
+            return math.exp(math.log(self.min) + value * (math.log(data.max) - math.log(data.min))) / data.convertfactor
+        else:
+            return math.exp(math.log(self.min) + value * (math.log(data.max) - math.log(data.min)))
 
 
 class _axis:
@@ -88,7 +101,7 @@ class _axis:
 
     zero = 0.0
 
-    def adjustrange(self, data, points, index, deltamindata=None, deltaminindex=None, deltamaxdata=None, deltamaxindex=None):
+    def adjustrange(self, data, points, index, deltamindata=None, deltaminindex=None, deltamaxdata=None, deltamaxindex=None, factor=None):
         assert deltamindata is None or deltamaxdata is None
         if self.min is None or self.max is None:
             if deltamindata is not None:
@@ -104,6 +117,8 @@ class _axis:
                                 value = point - minpoint[deltaminindex] + self.zero
                             else:
                                 value = point - minpoint + self.zero
+                        if factor is not None:
+                            value *= factor
                     except:
                         pass
                     else:
@@ -122,6 +137,8 @@ class _axis:
                                 value = point + maxpoint[deltamaxindex] + self.zero
                             else:
                                 value = point + maxpoint + self.zero
+                        if factor is not None:
+                            value *= factor
                     except:
                         pass
                     else:
@@ -134,6 +151,8 @@ class _axis:
                             value = point[index] + self.zero
                         else:
                             value = point + self.zero
+                        if factor is not None:
+                            value *= factor
                     except:
                         pass
                     else:
@@ -176,7 +195,10 @@ class _axis:
         # build a list of variants
         bestrate = None
         if self.parter is not None:
-            partfunctions = self.parter.partfunctions(data.min, data.max, self.min is None, self.max is None)
+            if self.divisor is not None:
+                partfunctions = self.parter.partfunctions(data.min / self.divisor, data.max / self.divisor, self.min is None, self.max is None)
+            else:
+                partfunctions = self.parter.partfunctions(data.min, data.max, self.min is None, self.max is None)
             variants = []
             for partfunction in partfunctions:
                 worse = 0
@@ -199,15 +221,17 @@ class _axis:
         else:
             variants = [variant(data, rate=0, ticks=self.manualticks)]
 
+        data.convertfactor = self.divisor
         # build a list of variants
         if self.painter is None or len(variants) == 1:
             # in case of a single variant we're almost done
-            self.adjustrange(data, variants[0].ticks, None)
+            self.adjustrange(data, variants[0].ticks, None, factor=self.divisor)
             self.texter.labels(variants[0].ticks)
-            data.ticks = variants[0].ticks
             canvas = painter.axiscanvas(self.painter, graphtexrunner)
             if self.painter is not None:
                 self.painter.paint(canvas, data, self, positioner)
+            data.ticks = variants[0].ticks
+            data.convertfactor = None
             return canvas
         else:
             # build the layout for best variants
@@ -215,7 +239,7 @@ class _axis:
                 variant.storedcanvas = None
             variants.sort()
             while not variants[0].storedcanvas:
-                self.adjustrange(variants[0], variants[0].ticks, None)
+                self.adjustrange(variants[0], variants[0].ticks, None, factor=self.divisor)
                 self.texter.labels(variants[0].ticks)
                 canvas = painter.axiscanvas(self.painter, graphtexrunner)
                 self.painter.paint(canvas, variants[0], self, positioner)
@@ -228,8 +252,9 @@ class _axis:
                     variants[0].rate += ratelayout
                     variants[0].storedcanvas = canvas
                 variants.sort()
-            self.adjustrange(data, variants[0].ticks, None)
+            self.adjustrange(data, variants[0].ticks, None, factor=self.divisor)
             data.ticks = variants[0].ticks
+            data.convertfactor = None
             return variants[0].storedcanvas
 
     def createlinkaxis(self, **args):
@@ -646,7 +671,7 @@ class anchoredaxis:
     def __init__(self, axis, positioner):
         self.axis = axis
         self.positioner = positioner
-        self.data = axisdata()
+        self.data = axisdata(convertfactor=None)
 
     def convert(self, x):
         return self.axis.convert(self.data, x)
