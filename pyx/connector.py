@@ -65,8 +65,7 @@ class connector_pt(path.normpath):
             pass
         else:
             sp = self.intersect(cutpath)[0]
-            if sp:
-                self.normsubpaths = self.split(sp[-1:])[1].normsubpaths
+            self.normsubpaths = self.split(sp[-1:])[1].normsubpaths
 
         # cut off the end of self
         center = self.end_pt()
@@ -77,8 +76,7 @@ class connector_pt(path.normpath):
             pass
         else:
             sp = self.intersect(cutpath)[0]
-            if sp:
-                self.normsubpaths = self.split(sp[:1])[0].normsubpaths
+            self.normsubpaths = self.split(sp[:1])[0].normsubpaths
 
 
 ################
