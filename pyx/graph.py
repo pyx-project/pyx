@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 from path import *
-from const import *
 import types
 
 ###############################################################################

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-import attrib, string, re, tex
-from unit import unit
+import string, re, tex, unit, trafo
 from math import sqrt
 
 
@@ -107,12 +106,9 @@ class CanvasException(Exception): pass
 
 class _linecap:
     def __init__(self, value=0):
-       self.value=value
-    def __str__(self):
-       return "%d" % self.value
-    def __int__(self):
-       return self.value
-    
+        self.value=value
+    def _PSAddCmd(self, canvas):
+        canvas._PSAddCmd( "%d setlinecap" % self.value)
 
 class linecap:
     butt   = _linecap(0)
@@ -121,57 +117,59 @@ class linecap:
 
 class _linejoin:
     def __init__(self, value=0):
-       self.value=value
-    def __str__(self):
-       return "%d" % self.value
-    def __int__(self):
-       return self.value
+        self.value=value
+    def _PSAddCmd(self, canvas):
+        return "%d setlinejoin" % self.value
  
 class linejoin(_linejoin):
     miter = _linejoin(0)
     round = _linejoin(1)
     bevel = _linejoin(2)
 
+linejoinmiter=_linejoin(0)
+
 class _miterlimit:
     def __init__(self, value=10.0):
-       self.value=value
-    def __str__(self):
-       return "%f" % self.value
-    def __int__(self):
-       return self.value
+        self.value=value
+    def _PSAddCmd(self, canvas):
+        canvas._PSAddCmd("%f setmiterlimit" % self.value)
 
 class miterlimit(_miterlimit):
     pass
 
 class _dash:
     def __init__(self, pattern=[], offset=0):
-       self.pattern=pattern
-       self.offset=offset
-    def __str__(self):
-       patternstring=""
-       for element in self.pattern:
-           patternstring=patternstring + `element` + " "
+        self.pattern=pattern
+        self.offset=offset
+    def _PSAddCmd(self, canvas):
+        patternstring=""
+        for element in self.pattern:
+            patternstring=patternstring + `element` + " "
                               
-       return "[%s] %d" % (patternstring, self.offset)
+        canvas._PSAddCmd("[%s] %d setdash" % (patternstring, self.offset))
 
 class dash(_dash):
     pass
  
 class _linestyle:
-    def __init__(self, cap=linecap.butt, pattern=[], offset=0):
-       self.cap=cap
-       self.pattern=pattern
-       self.offset=offset
+    def __init__(self, c=linecap.butt, d=dash([])):
+        self.c=c
+        self.d=d
+    def _PSAddCmd(self, canvas):
+        canvas._PSAddCmd("%s\n%s" % (self.c, self.d))
        
 class linestyle(_linestyle):
-    solid      = _linestyle(linecap.butt,  [])
-    dashed     = _linestyle(linecap.butt,  [2])
-    dotted     = _linestyle(linecap.round, [0, 3])
-    dashdotted = _linestyle(linecap.round, [0, 3, 3, 3])
+    solid      = _linestyle(linecap.butt,  dash([]))
+    dashed     = _linestyle(linecap.butt,  dash([2]))
+    dotted     = _linestyle(linecap.round, dash([0, 3]))
+    dashdotted = _linestyle(linecap.round, dash([0, 3, 3, 3]))
  
 class _linewidth(unit.length):
     def __init__(self, l):
-       unit.length.__init__(self, l=l, default_type="w")
+        print ":", l
+        unit.length.__init__(self, l=l, default_type="w")
+    def _PSAddCmd(self, canvas):
+        canvas._PSAddCmd("%f setlinewidth" % canvas.unit.pt(self.l))
     
 
 class linewidth(_linewidth):
@@ -197,11 +195,10 @@ class linewidth(_linewidth):
 class canvas:
 
     def __init__(self, **kwargs):
-        from trafo import transformation
         
         self.PSCmds = []
-        self.trafo  = kwargs.get("trafo", transformation())
-        self.unit   = kwargs.get("unit", unit())
+        self.trafo  = kwargs.get("trafo", trafo.transformation())
+        self.unit   = kwargs.get("unit", unit.unit())
         
         self._PSAddCmd("[" + self.trafo.output(self.unit) + " ] concat")
     
@@ -243,13 +240,9 @@ class canvas:
         return texcanvas
 
     def set(self, *args):
-        for arg in args:
-           if   isinstance(arg, attrib._linecap):    self.setlinecap   (arg)
-           elif isinstance(arg, attrib._linejoin):   self.setlinejoin  (arg)
-           elif isinstance(arg, attrib._miterlimit): self.setmiterlimit(arg)
-           elif isinstance(arg, attrib._dash):       self.setdash      (arg.pattern, arg.offset)
-           elif isinstance(arg, attrib._linestyle):  self.setlinestyle (arg)
-           elif isinstance(arg, attrib._linewidth):  self.setlinewidth (arg)
+        for arg in args: 
+           print arg.__class__
+           arg._PSAddCmd(self)
 	
     def draw(self, path, *args):
         if args: 
@@ -273,34 +266,6 @@ class canvas:
            self._grestore()
         return self
 
-    def setlinecap(self, cap):
-	self._PSAddCmd("%d setlinecap" % cap)
-        return self
-
-    def setlinejoin(self, join):
-	self._PSAddCmd("%d setlinejoin" % join)
-        return self
-	
-    def setmiterlimit(self, limit):
-	self._PSAddCmd("%f setmiterlimit" % limit)
-        return self
-
-    def setdash(self, pattern=[], offset=0):
-    	patternstring=""
-    	for element in pattern:
-		patternstring=patternstring + `element` + " "
-    	
-    	self._PSAddCmd("[%s] %d setdash" % (patternstring, offset))
-        return self
-
-    def setlinestyle(self, style):
-        self.setlinecap(style.cap)
-        self.setdash   (style.pattern, style.offset)
-        return self
-
-    def setlinewidth(self, lwidth=attrib.linewidth.normal):
-        self._PSAddCmd("%f setlinewidth" % self.unit.pt(lwidth))
-
     def inserteps(self, x, y, filename, clipping=1):
         self._translate(x,y)
         self._PSAddCmd(str(epsfile(filename, clipping)))
@@ -322,18 +287,17 @@ class canvas:
         file.write("%%BeginProlog\n") 
         file.write(PSProlog)
         file.write("%%EndProlog\n") 
-        file.write("%f setlinewidth\n" % self.unit.pt(attrib.linewidth.normal))
+        file.write("%f setlinewidth\n" % self.unit.pt(linewidth.normal))
         file.write(str(self))
 
-
 if __name__=="__main__":
-
-    from tex import *
-    from path import *
+    from tex   import *
+    from path  import *
     from trafo import *
     from graph import *
-    from attrib import *
 
+
+    linewidth("0.02")
     c=canvas.canvas()
     t=c.tex()
  
@@ -376,7 +340,7 @@ if __name__=="__main__":
              moveto(7,10), 
              lineto(7,14)])
    
-    c.setlinestyle(linestyle.dotted)
+    c.set(canvas.linestyle.dotted)
     t.text(5, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize = 2)
     c.draw(p)
  
@@ -386,21 +350,22 @@ if __name__=="__main__":
              lineto(10,14), 
              moveto(12,10), 
              lineto(12,14)])
-    c.setlinestyle(linestyle.dashdotted)
+    c.set(canvas.linestyle.dashdotted)
     t.text(10, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize = 2, valign = valign.bottom)
     c.draw(p)
  
     p=path([moveto(5,15), arc(5,15, 1, 0, 45), closepath()])
-    c.fill(p, linestyle.dotted, linewidth.THICK)
+    c.fill(p, canvas.linestyle.dotted, canvas.linewidth.THICK)
  
     p=path([moveto(5,17), curveto(6,18, 5,16, 7,15)])
-    c.draw(p, linestyle.dashed)
+    c.draw(p, canvas.linestyle.dashed)
+
    
     for angle in range(20):
-       s=c.canvas(trafo=translate(10,10)*rotate(angle)).draw(p, linestyle.dashed, linewidth(0.01*angle))
-       s=c.canvas(trafo=translate(10,10)*rotate(angle)).draw(p)
+#       s=c.canvas(trafo=translate(10,10)*rotate(angle)).draw(p, canvas.linestyle.dashed, canvas.linewidth(0.01*angle))
+       s=c.canvas(trafo=translate(10,10)*rotate(angle)).draw(p, canvas.linestyle.dashed, canvas.linewidth(0.01))
  
-    c.setlinestyle(linestyle.solid)
+    c.set(linestyle.solid)
     g=GraphXY(c, t, 10, 15, 8, 6)
     #g.plot(Function("5*sin(x)"))
     #g.plot(Function("(x+5)*x*(x-5)/100"))
