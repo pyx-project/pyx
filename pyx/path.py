@@ -1409,7 +1409,7 @@ class normline(normpathel):
 
     def _arclentoparam_pt(self, lengths, epsilon=1e-5):
         l = self.arclen_pt(epsilon)
-        return ([max(min(1.0*length/l,1),0) for length in lengths], l)
+        return ([max(min(1.0 * length / l, 1), 0) for length in lengths], l)
 
     def _normcurve(self):
         """ return self as equivalent normcurve """
@@ -1548,7 +1548,7 @@ class normcurve(normpathel):
                     param += parlengths[i]
             param = max(min(param,1),0)
             params.append(param)
-        return [params, cumlengths[-1]]
+        return (params, cumlengths[-1])
 
     def arclen_pt(self, epsilon=1e-5):
         """computes arclen of bpathel in pts using successive midpoint split"""
@@ -1825,8 +1825,8 @@ class normsubpath:
         lengths that are < 0 give parameter 0"""
 
         allarclen = 0
-        allparams = [0]*len(lengths)
-        rests = [length for length in lengths]
+        allparams = [0] * len(lengths)
+        rests = copy.copy(lengths)
 
         for pel in self.normpathels:
             params, arclen = pel._arclentoparam_pt(rests, self.epsilon)
@@ -1836,7 +1836,7 @@ class normsubpath:
                     rests[i] -= arclen
                     allparams[i] += params[i]
 
-        return [allparams, allarclen]
+        return (allparams, allarclen)
 
     def at_pt(self, param):
         """return coordinates in pts of sub path at parameter value param
@@ -2160,53 +2160,29 @@ class normpath(path):
         return unit.t_pt(self.arclen_pt())
 
     def arclentoparam(self, lengths):
-        """returns the parameter value(s) matching the given length(s)"""
+        """returns the parameter value(s) matching the given length(s)
 
-        # split the list of lengths apart for positive and negative values
-        rests = [[],[]] # first the positive then the negative lengths
-        remap = [] # for resorting the rests into lengths
-        for length in helper.ensuresequence(lengths):
-            length = unit.topt(length)
-            if length >= 0.0:
-                rests[0].append(length)
-                remap.append([0,len(rests[0])-1])
-            else:
-                rests[1].append(-length)
-                remap.append([1,len(rests[1])-1])
+        all given lengths must be positive.
+        A length greater than the total arclength will give self.range()"""
 
-        allparams = [[0]*len(rests[0]),[0]*len(rests[1])]
+        rests = [unit.topt(length) for length in lengths]
+        allparams = [0] * len(lengths)
 
-        # go through the positive lengths
         for sp in self.subpaths:
             # we need arclen for knowing when all the parameters are done
             # for lengths that are done: rests[i] is negative
             # sp._arclentoparam has to ignore such lengths
-            params, arclen = sp._arclentoparam_pt(rests[0])
+            params, arclen = sp._arclentoparam_pt(rests)
             finis = 0 # number of lengths that are done
-            for i in range(len(rests[0])):
-                if rests[0][i] >= 0:
-                  rests[0][i] -= arclen
-                  allparams[0][i] += params[i]
+            for i in range(len(rests)):
+                if rests[i] >= 0:
+                  rests[i] -= arclen
+                  allparams[i] += params[i]
                 else:
                     finis += 1
-            if finis == len(rests[0]): break
+            if finis == len(rests): break
 
-        # go through the negative lengths
-        for sp in self.reversed().subpaths:
-            params, arclen = sp._arclentoparam_pt(rests[1])
-            finis = 0
-            for i in range(len(rests[1])):
-                if rests[1][i] >= 0:
-                  rests[1][i] -= arclen
-                  allparams[1][i] -= params[i]
-                else:
-                    finis += 1
-            if finis==len(rests[1]): break
-
-        # re-sort the positive and negative values into one list
-        allparams = [allparams[p[0]][p[1]] for p in remap]
         if not helper.issequence(lengths): allparams = allparams[0]
-
         return allparams
 
     def at_pt(self, param, arclen=None):
