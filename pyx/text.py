@@ -606,6 +606,8 @@ class DVIFile:
                 
                 file.write("%%%%EndFont\n")
 
+    FontSizePattern= re.compile(r"([0-9]+)$")
+
     def write(self, file, page):
         """write PostScript code for page into file"""
         print "dvifile(\"%s\").write() for page %s called" % (self.filename, page)
@@ -617,7 +619,13 @@ class DVIFile:
                 file.write("%f %f moveto (%s) show\n" %
                            (unit.topt(x), unit.topt(y), c))
             elif command=="f":
-                file.write("/%s %d selectfont\n" % (arg[0].name.upper(), 10))
+                fontname = arg[0].name
+                match = self.FontSizePattern.search(fontname)
+                if match:
+                    file.write("/%s %s selectfont\n" % (fontname.upper(),
+                                                        match.group(1)))
+                else:
+                    print "cannot determine font size from name '%s'" % fontname
 
         
 
