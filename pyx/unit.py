@@ -164,5 +164,6 @@ if __name__ == "__main__":
      print unit().pt("1.e-3 inch")
      
      length.default_unit="cm"
-     print length("1 t") + length("2 u") + length("3 v") + length("4 w")
+     print length("1 t") + length("2 u") + length("3 v") + length("4 w") - length("1 t") - length("2 u") - length("3 v") - length("4 w")
+
      

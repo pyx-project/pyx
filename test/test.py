@@ -4,6 +4,7 @@ from pyx.path import *
 
 import profile
 import pstats
+
 def drawpathwbbox(c, p):
     c.draw(p)
     bbox=p.bbox(c)
@@ -59,8 +60,8 @@ def testcurvetobbox():
     c.writetofile("test")
 
 
-#testarcbbox()    
-testcurvetobbox()    
+testarcbbox()    
+#testcurvetobbox()    
 
 #test()
 #profile.run('test()', 'test.prof')

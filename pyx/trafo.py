@@ -49,8 +49,8 @@ class transformation:
                          self.matrix[1][0]*other.matrix[0][1] + self.matrix[1][1]*other.matrix[1][1] )
                      )
 
-            vector = ( self.matrix[0][0]*other.vector[0] + self.matrix[0][1]*other.vector[1] + self.vector[0],
-                       self.matrix[1][0]*other.vector[0] + self.matrix[1][1]*other.vector[1] + self.vector[1] )
+            vector = ( self.matrix[0][0]*other.vector[0] + self.matrix[1][0]*other.vector[1] + self.vector[0],
+                       self.matrix[0][1]*other.vector[0] + self.matrix[1][1]*other.vector[1] + self.vector[1] )
 
             # print " ( %s * %s => %s ) "% (self, other, transformation(angle=angle, vector=vector))
 		      
@@ -127,12 +127,13 @@ if __name__=="__main__":
    # test for some invariants:
 
    def checkforidentity(trafo):
+       u=unit.unit()
        m = max(map(abs,[trafo.matrix[0][0]-1,
                         trafo.matrix[1][0],
                         trafo.matrix[0][1],
                         trafo.matrix[1][1]-1,
-	                trafo.vector[0],
-	                trafo.vector[1]]))
+	                u.pt(trafo.vector[0]),
+	                u.pt(trafo.vector[1])]))
 		    
        assert m<1e-7, "tests for invariants failed" 
 	    
@@ -156,3 +157,29 @@ if __name__=="__main__":
    checkforidentity( rotate(40).rotate(120).rotate(90).rotate(110) )
 
    checkforidentity( scale(2,3).scale(1/2.0, 1/3.0) )
+
+   def applyonbasis(t):
+       u=unit.unit()
+       ex = (1,0)
+       ey = (0,1)
+       print "%s:" % t
+       t=eval(t)
+       esx=t.apply(ex)
+       esy=t.apply(ey)
+       print "  (1,0) => (%f, %f)" % (u.m(esx[0])*100, u.m(esx[1])*100)
+       print "  (0,1) => (%f, %f)" % (u.m(esy[0])*100, u.m(esy[1])*100)
+
+   applyonbasis("translate(1,0)")
+   applyonbasis("translate(0,1)")
+   applyonbasis("rotate(90)")
+   applyonbasis("scale(0.5)")
+   applyonbasis("translate(1,0)*rotate(90)")
+   applyonbasis("translate(1,0)*scale(0.5)")
+   applyonbasis("rotate(90)*translate(1,0)")
+   applyonbasis("scale(0.5)*translate(1,0)")
+   applyonbasis("translate(1,0)*rotate(90)*scale(0.5)")
+   applyonbasis("translate(1,0)*scale(0.5)*rotate(90)")
+   applyonbasis("rotate(90)*scale(0.5)*translate(1,0)")
+   applyonbasis("scale(0.5)*rotate(90)*translate(1,0)")
+
+

@@ -12,7 +12,7 @@ PyX
 > project. It must be written in English.
 > 
 PyX is a python package to create encapsulated postscript figures. It provides
-classes and methods to access basic postscript functionallity at an abstract
+classes and methods to access basic postscript functionality at an abstract
 level. At the same time the emerging structures are very convenient to produce
 all kind of drawings in a non-interactive way. In combination with the python
 language itself the user can just code any complexity of the figure wanted.
@@ -38,10 +38,13 @@ GPL
 > Summary page, in search results, etc. It should not be as comprehensive and
 > formal as Project Purpose description (step 2), so feel free to use concise and
 > catchy wording. Maximum length is 255 chars.
-> 
-PyX is a python package to create encapsulated postscript figures.
-??? what about catchy wording ???
-> 
+
+PyX is a python package to create encapsulated postscript figures. As
+basic functionality it provides both an abstraction of PostScript 
+- abtraction of postscript in python classes
+- TeX/LaTeX interface
+- 2d plots
+
 > 5. Project Unix Name
 > 
 > In addition to full project name, you will need to choose short, "Unix" name for your project.
