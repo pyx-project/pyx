@@ -36,18 +36,6 @@ class PSOp:
         """writing into a file is the only routine, a PSOp has to supply"""
         raise NotImplementedError, "cannot call virtual method write()"
 
-
-#
-# Postscript attribute class
-#
-
-class PSAttr(PSOp):
-    
-    """attributes for PSCmds"""
-    
-    pass
-
-
 #
 # PSCmd class
 #
@@ -57,13 +45,26 @@ class PSCmd(PSOp):
     """ PSCmd is the base class of all visible elements
 
     Visible elements, are those, that can be embedded in the Canvas
-    and posses a bbox. Furthermore, they can write themselves to
-    an open file and to an EPS file
+    and posses a bbox.
     
     """
     
     def bbox(self):
         raise NotImplementedError, "cannot call virtual method bbox()"
+
+#
+# Path style classes
+#
+# note that as usual in PyX most classes have default instances as members
+
+class PathStyle(PSOp):
+    
+    """style modifiers for paths
+    """
+
+
+    pass
+
 
 
 #

@@ -88,19 +88,8 @@ _paperformats = { "a4"      : ("210 t mm",  "297 t mm"),
     
 class CanvasException(Exception): pass
 
-#
-# Path style classes
-#
-# note that as usual in PyX most classes have default instances as members
 
-class PathStyle(base.PSAttr):
-    
-    """style modifiers for paths"""
-    
-    pass
-
-
-class linecap(PathStyle):
+class linecap(base.PathStyle):
 
     """linecap of paths"""
     
@@ -115,7 +104,7 @@ linecap.round  = linecap(1)
 linecap.square = linecap(2)
 
 
-class linejoin(PathStyle):
+class linejoin(base.PathStyle):
 
     """linejoin of paths"""
     
@@ -130,7 +119,7 @@ linejoin.round = linejoin(1)
 linejoin.bevel = linejoin(2)
 
 
-class miterlimit(PathStyle):
+class miterlimit(base.PathStyle):
 
     """miterlimit of paths"""
     
@@ -141,7 +130,7 @@ class miterlimit(PathStyle):
         file.write("%f setmiterlimit\n" % self.value)
         
 
-class dash(PathStyle):
+class dash(base.PathStyle):
 
     """dash of paths"""
     
@@ -157,7 +146,7 @@ class dash(PathStyle):
         file.write("[%s] %d setdash\n" % (patternstring, self.offset))
         
 
-class linestyle(PathStyle):
+class linestyle(base.PathStyle):
 
     """linestyle (linecap together with dash) of paths"""
     
@@ -175,7 +164,7 @@ linestyle.dotted     = linestyle(linecap.round, dash([0, 3]))
 linestyle.dashdotted = linestyle(linecap.round, dash([0, 3, 3, 3]))
     
  
-class linewidth(PathStyle, unit.length):
+class linewidth(base.PathStyle, unit.length):
 
     """linewidth of paths"""
 
@@ -200,72 +189,140 @@ linewidth.THIck  = linewidth("%f cm" % (_base*math.sqrt(16)))
 linewidth.THICk  = linewidth("%f cm" % (_base*math.sqrt(32)))
 linewidth.THICK  = linewidth("%f cm" % (_base*math.sqrt(64)))
 
+
 #
-# arrowheads are simple PSCmds
+# Decorated path
 #
 
-class arrowhead(base.PSCmd):
+class DecoratedPath(base.PSCmd):
+    """Decorated path
 
-    """represents an arrowhead (usually constructed via arrow.decoration)"""
-  
-    def __init__(self, abpath, size, angle, constriction):
-        """arrow at pos (0: begin, !=0: end) of path with size,
-        opening angle and relative constriction"""
+    The main purpose of this class is during the drawing
+    (stroking/filling) of a path. It collects attributes for the
+    stroke and/or fill operations.
+    """
+    
+    def __init__(self,
+                 path, strokepath=None, fillpath=None,
+                 styles=None, strokestyles=None, fillstyles=None,
+                 subdps=None):
         
-        # first order conversion from pts to the bezier curve's
-        # parametrization
-          
-        lbpel = abpath[0]
-        tlen  = math.sqrt((lbpel.x3-lbpel.x2)*(lbpel.x3-lbpel.x2)+
-                          (lbpel.y3-lbpel.y2)*(lbpel.y3-lbpel.y2))
-  
-        # TODO: why factor 0.5?
-        alen  = 0.5*unit.topt(size)/tlen
-        if alen>len(abpath): alen=len(abpath)
-        
-        # get tip (tx, ty)
-        tx, ty = abpath.begin()
-        
-        # now we construct the template for our arrow but cutting
-        # the path a the corresponding length
-        arrowtemplate = abpath.split(alen)[0]
-  
-        # from this template, we construct the two outer curves
-        # of the arrow
-        arrowl = arrowtemplate.transform(trafo.rotate(-angle/2.0, tx, ty))
-        arrowr = arrowtemplate.transform(trafo.rotate( angle/2.0, tx, ty))
-        
-        # now come the joining backward parts
-        if constriction:
-            # arrow with constriction
+        self.path = path
 
-            # constriction point (cx, cy) lies on path
-            cx, cy = abpath.pos(constriction*alen)
-            
-            arrow3a= bpath.bline(*(arrowl.end()+(cx,cy)))
-            arrow3b= bpath.bline(*((cx,cy)+arrowr.end()))
+        # path to be stroked or filled (or None)
+        self.strokepath = strokepath
+        self.fillpath = fillpath
 
-            # define the complete arrow
-            self.arrow = arrowl+arrow3a+arrow3b+arrowr.reverse()
+        # global style for stroking and filling and subdps
+        if styles:
+            self.styles = styles
         else:
-            # arrow without constriction
-            arrow3 = bpath.bline(*(arrowl.end()+arrowr.end()))
-                                 
-            # define the complete arrow
-            self.arrow = arrowl+arrow3+arrowr.reverse()
+            self.styles = []
+
+        # styles which apply only for stroking and filling
+        if strokestyles:
+            self.strokestyles = strokestyles
+        else:
+            self.strokestyles = []
+
+        if fillstyles:
+            self.fillstyles = fillstyles
+        else:
+            self.fillstyles = []
+
+        # additional elements of the path, e.g., arrowheads,
+        # which are by themselves DecoratedPaths
+        if subdps:
+            self.subdps = subdps
+        else:
+            self.subdps = []
+
+    def addsubdp(self, subdp):
+        """add a further decorated path to the list of subdps"""
         
+        self.subdps.append(subdp)
+
     def bbox(self):
-        return self.arrow.bbox()
-  
+        return reduce(lambda x,y: x+y.bbox(),
+                      self.subdps,
+                      self.path.bbox())
+
+
     def write(self, file):
-        for psop in (_newpath(),
-                     self.arrow,
-                     _gsave(),
-                     linejoin.round, _stroke(), _grestore(), _fill()):
-            psop.write(file)
+        # draw (stroke and/or fill) the DecoratedPath on the canvas
+        # while trying to produce an efficient output, e.g., by
+        # not writing one path two times
+
+        # small helper
+        def _writestyles(styles, file=file):
+            for style in styles:
+                style.write(file)
+
+        
+        # apply global styles
+        if self.styles:
+            _gsave().write(file)
+            _writestyles(self.styles)
+
+        if self.strokepath: 
+            _newpath().write(file)
+            self.strokepath.write(file)
+
+            if self.strokepath==self.fillpath:
+                # do efficient stroking + filling
+                _gsave().write(file)
+                
+                if self.strokestyles:
+                    _writestyles(self.strokestyles)
+                    
+                _stroke().write(file)
+                self.strokepath.write(file)
+                _grestore().write(file)
+                
+                if self.fillstyles:
+                    _gsave().write(file)
+                    _writestyles(self.fillstyles)
+                    
+                _fill().write(file)
+                
+                if self.fillstyles:
+                    _grestore().write(file)
+            else:
+                # only stroke strokepath - for the moment
+                if self.strokestyles:
+                    _gsave().write(file)
+                    _writestyles(self.strokestyles)
+                    
+                _stroke().write(file)
+                
+                if self.strokestyles:
+                    _grestore().write(file)
+                    
+        if self.fillpath and self.strokepath!=self.fillpath:
+            # this is the only relevant case still left
+            # Note that a possible stroking has already been done.
+
+            if self.fillstyles:
+                _gsave().write(file)
+                _writestyles(self.fillstyles)
+                
+            _newpath().write(file)
+            self.fillpath.write(file)
+            _fill().write(file)
+                
+            if self.fillstyles:
+                _grestore().write(file)
+
+        # now, draw additional subdps
+        for subdp in self.subdps:
+            subdp.write(file)
+
+        # restore global styles
+        if self.styles:
+            _grestore().write(file)
 
 #
-# Path decorations (i.e. mainly arrows)
+# Path decorators
 #
 
 class PathDeco:
@@ -276,52 +333,144 @@ class PathDeco:
     path to which they are applied. In particular, they don't make
     sense without any path and can thus not be used in canvas.set!
     
-    The corresponding path is passed as first argument in the
-    constructor
-    
     """
 
-    def decoration(self, path):
-        """return decoration of path as PSCmd"""
+    def decorate(self, dp):
+        """apply a style to a given DecoratedPath object dp
+
+        decorate accepts a DecoratedPath object dp, applies PathStyle
+        by modifying dp in place and returning the new dp.
+        """
+        
         pass
 
-    def modification(self, path):
-        """return modified path"""
+
+#
+# stroked and filled: basic PathDecos which stroked and fill,
+# respectively the path
+#
+
+class stroked(PathDeco):
+
+    """stroked is a PathDecorator, which draws the outline of the path"""
+
+    def __init__(self, *styles):
+        self.styles=styles
+
+    def decorate(self, dp):
+        dp.strokepath=dp.path
+        dp.strokestyles=self.styles
+
+        return dp
+
+
+class filled(PathDeco):
+
+    """filled is a PathDecorator, which fills the interior of the path"""
+
+    def __init__(self, *styles):
+        self.styles=styles
+
+    def decorate(self, dp):
+        dp.fillpath=dp.path
+        dp.fillstyles=self.styles
+
+        return dp
+
+
+#
+# _arrowhead: helper routine
+#
+
+def _arrowhead(abpath, size, angle, constriction):
+
+    """helper routine, which returns an arrowhead
+
+    returns arrowhead at pos (0: begin, !=0: end) of path with size,
+    opening angle and relative constriction
+    """
     
+    # first order conversion from pts to the bezier curve's
+    # parametrization
+          
+    lbpel = abpath[0]
+    tlen  = math.sqrt((lbpel.x3-lbpel.x2)*(lbpel.x3-lbpel.x2)+
+                      (lbpel.y3-lbpel.y2)*(lbpel.y3-lbpel.y2))
+  
+    # TODO: why factor 0.5?
+    alen  = 0.5*unit.topt(size)/tlen
+    if alen>len(abpath): alen=len(abpath)
+        
+    # get tip (tx, ty)
+    tx, ty = abpath.begin()
+        
+    # now we construct the template for our arrow but cutting
+    # the path a the corresponding length
+    arrowtemplate = abpath.split(alen)[0]
+  
+    # from this template, we construct the two outer curves
+    # of the arrow
+    arrowl = arrowtemplate.transform(trafo.rotate(-angle/2.0, tx, ty))
+    arrowr = arrowtemplate.transform(trafo.rotate( angle/2.0, tx, ty))
+        
+    # now come the joining backward parts
+    if constriction:
+        # arrow with constriction
+
+        # constriction point (cx, cy) lies on path
+        cx, cy = abpath.pos(constriction*alen)
+            
+        arrow3a= bpath.bline(*(arrowl.end()+(cx,cy)))
+        arrow3b= bpath.bline(*((cx,cy)+arrowr.end()))
+
+        # return the complete arrow
+        return arrowl+arrow3a+arrow3b+arrowr.reverse()
+    else:
+        # arrow without constriction
+        arrow3 = bpath.bline(*(arrowl.end()+arrowr.end()))
+        
+        # return the complete arrow
+        return arrowl+arrow3+arrowr.reverse()
+        
 
 class arrow(PathDeco):
     
     """A general arrow"""
 
-    def __init__(self, position, size, angle=45, constriction=0.8):
+    def __init__(self,
+                 position, size, angle=45, constriction=0.8,
+                 styles=None, strokestyles=None, fillstyles=None):
         self.position = position
         self.size = size
         self.angle = angle
         self.constriction = constriction
+        self.styles = styles
+        self.strokestyles = strokestyles
+        self.fillstyles = fillstyles
 
-    def decoration(self, path):
+    def decorate(self, dp):
+
+        # TODO: error, when strokepath is not defined
+
         # convert to bpath if necessary
-        if isinstance(path, bpath.bpath):
-            abpath=path
+        if isinstance(dp.strokepath, bpath.bpath):
+            abpath=dp.strokepath
         else:
-            abpath=path.bpath()
+            abpath=dp.strokepath.bpath()
             
         if self.position:
             abpath=abpath.reverse()
 
-        return arrowhead(abpath, self.size, self.angle, self.constriction)
+        ahead = _arrowhead(abpath, self.size, self.angle, self.constriction)
 
-    def modification(self, path):
-        # convert to bpath if necessary
-        if isinstance(path, bpath.bpath):
-            abpath=path
-        else:
-            abpath=path.bpath()
-            
-        if self.position:
-            abpath=abpath.reverse()
-        
+        dp.addsubdp(DecoratedPath(ahead,
+                                  strokepath=ahead, fillpath=ahead,
+                                  styles=self.styles,
+                                  strokestyles=self.strokestyles,
+                                  fillstyles=self.fillstyles))
+
         # the following lines are copied from arrowhead.init()
+        # TODO: can this be done better?
         
         # first order conversion from pts to the bezier curve's
         # parametrization
@@ -349,39 +498,46 @@ class arrow(PathDeco):
         if self.position:
             abpath=abpath.reverse()
 
-        return abpath
+        # set the new (shortened) strokepath
+        dp.strokepath=abpath
+
+        return dp
     
         
 class barrow(arrow):
     
     """arrow at begin of path"""
     
-    def __init__(self, size, angle=45, constriction=0.8):
-        arrow.__init__(self, 0, size, angle, constriction)
+    def __init__(self, size, angle=45, constriction=0.8,
+                 styles=None, strokestyles=None, fillstyles=None):
+        arrow.__init__(self, 0, size, angle, constriction,
+                       styles, strokestyles, fillstyles)
 
 _base = 2
 
-barrow.SMALL  = barrow("%f t pt" % (_base/math.sqrt(64)))
-barrow.SMALl  = barrow("%f t pt" % (_base/math.sqrt(32)))
-barrow.SMAll  = barrow("%f t pt" % (_base/math.sqrt(16)))
-barrow.SMall  = barrow("%f t pt" % (_base/math.sqrt(8)))
-barrow.Small  = barrow("%f t pt" % (_base/math.sqrt(4)))
-barrow.small  = barrow("%f t pt" % (_base/math.sqrt(2)))
-barrow.normal = barrow("%f t pt" % _base)
-barrow.large  = barrow("%f t pt" % (_base*math.sqrt(2)))
-barrow.Large  = barrow("%f t pt" % (_base*math.sqrt(4)))
-barrow.LArge  = barrow("%f t pt" % (_base*math.sqrt(8)))
-barrow.LARge  = barrow("%f t pt" % (_base*math.sqrt(16)))
-barrow.LARGe  = barrow("%f t pt" % (_base*math.sqrt(32)))
-barrow.LARGE  = barrow("%f t pt" % (_base*math.sqrt(64)))
+barrow.SMALL  = barrow("%f v pt" % (_base/math.sqrt(64)))
+barrow.SMALl  = barrow("%f v pt" % (_base/math.sqrt(32)))
+barrow.SMAll  = barrow("%f v pt" % (_base/math.sqrt(16)))
+barrow.SMall  = barrow("%f v pt" % (_base/math.sqrt(8)))
+barrow.Small  = barrow("%f v pt" % (_base/math.sqrt(4)))
+barrow.small  = barrow("%f v pt" % (_base/math.sqrt(2)))
+barrow.normal = barrow("%f v pt" % _base)
+barrow.large  = barrow("%f v pt" % (_base*math.sqrt(2)))
+barrow.Large  = barrow("%f v pt" % (_base*math.sqrt(4)))
+barrow.LArge  = barrow("%f v pt" % (_base*math.sqrt(8)))
+barrow.LARge  = barrow("%f v pt" % (_base*math.sqrt(16)))
+barrow.LARGe  = barrow("%f v pt" % (_base*math.sqrt(32)))
+barrow.LARGE  = barrow("%f v pt" % (_base*math.sqrt(64)))
                 
   
 class earrow(arrow):
     
     """arrow at end of path"""
     
-    def __init__(self, size, angle=45, constriction=0.8):
-        arrow.__init__(self, 1, size, angle, constriction)
+    def __init__(self, size, angle=45, constriction=0.8,
+                 styles=None, strokestyles=None, fillstyles=None):
+        arrow.__init__(self, 1, size, angle, constriction,
+                       styles, strokestyles, fillstyles)
 
 earrow.SMALL  = earrow("%f t pt" % (_base/math.sqrt(64)))
 earrow.SMALl  = earrow("%f t pt" % (_base/math.sqrt(32)))
@@ -601,24 +757,15 @@ class canvas(base.PSCmd):
 
         return self
             
-    def insert(self, PSOps, *styles):
-        """insert one or more PSOps in the canvas applying styles if given
+    def insert(self, *PSOps):
+        """insert one or more PSOps in the canvas 
 
-        If styles are present, the PSOps are encapsulated with gsave/grestore.
-        The same happens upon insertion of a canvas.
+        All canvases will be encapsulated in a gsave/grestore pair.
         
         returns the (last) PSOp
         
         """
         
-        # encapsulate in gsave/grestore command if necessary
-        if styles:
-            self.PSOps.append(_gsave())
-
-        # add path styles if present
-        if styles:
-            self.set(*styles)
-
         if not type(PSOps) in (types.TupleType, types.ListType):
             PSOps = (PSOps,)
             
@@ -633,22 +780,19 @@ class canvas(base.PSCmd):
 
             # save last command for return value
             lastop = PSOp
-           
-        if styles:
-            self.PSOps.append(_grestore())
-           
+            
         return lastop
 
     def set(self, *styles):
-        """sets PSAttrs args globally for the rest of the canvas
+        """sets styles args globally for the rest of the canvas
 
         returns canvas
 
         """
         
         for style in styles:
-            if not isinstance(style, base.PSAttr):
-                raise NotImplementedError, "can only set attribute"
+            if not isinstance(style, base.PathStyle):
+                raise NotImplementedError, "can only set PathStyle"
 
             self.PSOps.append(style)
 
@@ -657,43 +801,48 @@ class canvas(base.PSCmd):
     def draw(self, path, *args):
         """draw path/bpath on canvas using the style given by args
 
-        The argument list args consists of PSAttrs, which modify
-        the appearance of the path. Some of the may be PathDecos,
+        The argument list args consists of PathStyles, which modify
+        the appearance of the path, or PathDecos,
         which add some new visual elements to the path.
 
         returns the canvas
 
         """
+
+        dp = stroked().decorate(DecoratedPath(path))
+
+        # set global styles
+        dp.styles = filter(lambda x: isinstance(x, base.PathStyle), args)
+        
         # add path decorations and modify path accordingly
         for deco in filter(lambda x: isinstance(x, PathDeco), args):
-            self.insert(deco.decoration(path))
-            path=deco.modification(path)
+            dp = deco.decorate(dp)
 
-        self.insert((_newpath(), path, _stroke()),
-                    *filter(lambda x: not isinstance(x, PathDeco), args))
+        self.insert(dp)
         
         return self
         
     def fill(self, path, *args):
         """fill path/bpath on canvas using the style given by args
 
-        The argument list args consists of PSAttrs, which modify
-        the appearance of the path.
+        The argument list args consists of PathStyles, which modify
+        the appearance of the path, or PathDecos,
+        which add some new visual elements to the path.
 
         returns the canvas
 
         """
-        self.insert((_newpath(), path, _fill()), *args)
+
+        dp = filled().decorate(DecoratedPath(path))
+
+        # set global styles
+        dp.styles = filter(lambda x: isinstance(x, base.PathStyle), args)
+        
+        # add path decorations and modify path accordingly
+        for deco in filter(lambda x: isinstance(x, PathDeco), args):
+            dp = deco.decorate(dp)
+
+        self.insert(dp)
+        
         return self
 
-    def drawfilled(self, path, *args):
-        """fill path/bpath on canvas using the style given by args
-
-        The argument list args consists of PSAttrs, which modify
-        the appearance of the path.
-
-        returns the canvas
-
-        """
-        self.insert((_newpath(), path, _gsave(), _stroke(), _grestore(), _fill()), *args)
-        return self

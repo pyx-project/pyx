@@ -22,7 +22,7 @@
 
 import base
 
-class color(base.PSAttr):
+class color(base.PathStyle):
 
     """base class for all colors"""
     
