@@ -40,7 +40,7 @@ for line in lines: # we yet don't use a file iterator
         else:
             x2axis=graph.axis.linked(xaxis, painter=graph.axis.painter.linked(innerticklength=None))
         g = c.insert(graph.graphxy(ypos=y, width=10, height=0.5, x=xaxis, x2=x2axis, y=graph.axis.lin(parter=None)))
-        g.plot(pf, graph.style.rect(getattr(pyx.color.palette, m.group("name"))))
+        g.plot(pf, [graph.style.rect(getattr(pyx.color.palette, m.group("name")))])
         g.dodata()
         g.finish()
         c.text(10.2, y + 0.15, m.group("id"), [text.size.footnotesize])

@@ -814,146 +814,147 @@ class rect(_style):
         raise "TODO"
 
 
-# class bar(_style):
-# 
-#     defaultfrompathattrs = []
-#     defaultbarattrs = [color.palette.Rainbow, deco.stroked([color.gray.black])]
-# 
-#     def __init__(self, fromvalue=None, frompathattrs=[], barattrs=[], subnames=None, epsilon=1e-10):
-#         self.fromvalue = fromvalue
-#         self.frompathattrs = frompathattrs
-#         self.barattrs = barattrs
-#         self.subnames = subnames
-#         self.epsilon = epsilon
-# 
-#     def setdata(self, graph, columns, styledata):
-#         # TODO: remove limitation to 2d graphs
-#         if len(graph.axisnames) != 2:
-#             raise TypeError("arrow style currently restricted on two-dimensional graphs")
-#         columns = columns.copy()
-#         xvalue = _style.setdatapattern(self, graph, columns, re.compile(r"(%s([2-9]|[1-9][0-9]+)?)$" % graph.axisnames[0]))
-#         yvalue = _style.setdatapattern(self, graph, columns, re.compile(r"(%s([2-9]|[1-9][0-9]+)?)$" % graph.axisnames[1]))
-#         if (xvalue is None and yvalue is None) or (xvalue is not None and yvalue is not None):
-#             raise TypeError("must specify exactly one value axis")
-#         if xvalue is not None:
-#             styledata.valuepos = 0
-#             styledata.nameaxis, styledata.nameindex = _style.setdatapattern(self, graph, columns, re.compile(r"(%s([2-9]|[1-9][0-9]+)?)name$" % graph.axisnames[1]))
-#             styledata.valueaxis = xvalue[0]
-#             styledata.valueindices = [xvalue[1]]
-#         else:
-#             styledata.valuepos = 1
-#             styledata.nameaxis, styledata.nameindex = _style.setdatapattern(self, graph, columns, re.compile(r"(%s([2-9]|[1-9][0-9]+)?)name$" % graph.axisnames[0]))
-#             styledata.valueaxis = yvalue[0]
-#             styledata.valueindices = [yvalue[1]]
-#         i = 1
-#         while 1:
-#             try:
-#                 valueaxis, valueindex = _style.setdatapattern(self, graph, columns, re.compile(r"(%s([2-9]|[1-9][0-9]+)?)stack%i$" % (graph.axisnames[styledata.valuepos], i)))
-#             except:
-#                 break
-#             if styledata.valueaxis != valueaxis:
-#                 raise ValueError("different value axes for stacked bars")
-#             styledata.valueindices.append(valueindex)
-#             i += 1
-#         return columns
-# 
-#     def selectstyle(self, selectindex, selecttotal, styledata):
-#         if selectindex:
-#             styledata.frompathattrs = None
-#         else:
-#             styledata.frompathattrs = self.defaultfrompathattrs + self.frompathattrs
-#         if selecttotal > 1:
-#             if self.barattrs is not None:
-#                 styledata.barattrs = attr.selectattrs(self.defaultbarattrs + self.barattrs, selectindex, selecttotal)
-#             else:
-#                 styledata.barattrs = None
-#         else:
-#             styledata.barattrs = self.defaultbarattrs + self.barattrs
-#         styledata.selectindex = selectindex
-#         styledata.selecttotal = selecttotal
-#         if styledata.selecttotal != 1 and self.subnames is not None:
-#             raise ValueError("subnames not allowed when iterating over bars")
-# 
-#     def adjustaxes(self, points, columns, styledata):
-#         if styledata.nameindex in columns:
-#             if styledata.selecttotal == 1:
-#                 styledata.nameaxis.adjustrange(points, styledata.nameindex, subnames=self.subnames)
-#             else:
-#                 for i in range(styledata.selecttotal):
-#                     styledata.nameaxis.adjustrange(points, styledata.nameindex, subnames=[i])
-#         for valueindex in styledata.valueindices:
-#             if valueindex in columns:
-#                 styledata.valueaxis.adjustrange(points, valueindex)
-# 
-#     def drawpoints(self, points, graph, styledata):
-#         if self.fromvalue is not None:
-#             vfromvalue = styledata.valueaxis.convert(self.fromvalue)
-#             if vfromvalue < -self.epsilon:
-#                 vfromvalue = 0
-#             if vfromvalue > 1 + self.epsilon:
-#                 vfromvalue = 1
-#             if styledata.frompathattrs is not None and vfromvalue > self.epsilon and vfromvalue < 1 - self.epsilon:
-#                 if styledata.valuepos:
-#                     p = graph.vgeodesic(0, vfromvalue, 1, vfromvalue)
-#                 else:
-#                     p = graph.vgeodesic(vfromvalue, 0, vfromvalue, 1)
-#                 graph.stroke(p, styledata.frompathattrs)
-#         else:
-#             vfromvalue = 0
-#         l = len(styledata.valueindices)
-#         if l > 1:
-#             barattrslist = []
-#             for i in range(l):
-#                 barattrslist.append(attr.selectattrs(styledata.barattrs, i, l))
-#         else:
-#             barattrslist = [styledata.barattrs]
-#         for point in points:
-#             vvaluemax = vfromvalue
-#             for valueindex, barattrs in zip(styledata.valueindices, barattrslist):
-#                 vvaluemin = vvaluemax
-#                 try:
-#                     vvaluemax = styledata.valueaxis.convert(point[valueindex])
-#                 except:
-#                     continue
-# 
-#                 if styledata.selecttotal == 1:
-#                     try:
-#                         vnamemin = styledata.nameaxis.convert((point[styledata.nameindex], 0))
-#                     except:
-#                         continue
-#                     try:
-#                         vnamemax = styledata.nameaxis.convert((point[styledata.nameindex], 1))
-#                     except:
-#                         continue
-#                 else:
-#                     try:
-#                         vnamemin = styledata.nameaxis.convert((point[styledata.nameindex], styledata.selectindex, 0))
-#                     except:
-#                         continue
-#                     try:
-#                         vnamemax = styledata.nameaxis.convert((point[styledata.nameindex], styledata.selectindex, 1))
-#                     except:
-#                         continue
-# 
-#                 if styledata.valuepos:
-#                     p = graph.vgeodesic(vnamemin, vvaluemin, vnamemin, vvaluemax)
-#                     p.append(graph.vgeodesic_el(vnamemin, vvaluemax, vnamemax, vvaluemax))
-#                     p.append(graph.vgeodesic_el(vnamemax, vvaluemax, vnamemax, vvaluemin))
-#                     p.append(graph.vgeodesic_el(vnamemax, vvaluemin, vnamemin, vvaluemin))
-#                     p.append(path.closepath())
-#                 else:
-#                     p = graph.vgeodesic(vvaluemin, vnamemin, vvaluemin, vnamemax)
-#                     p.append(graph.vgeodesic_el(vvaluemin, vnamemax, vvaluemax, vnamemax))
-#                     p.append(graph.vgeodesic_el(vvaluemax, vnamemax, vvaluemax, vnamemin))
-#                     p.append(graph.vgeodesic_el(vvaluemax, vnamemin, vvaluemin, vnamemin))
-#                     p.append(path.closepath())
-#                 if barattrs is not None:
-#                     graph.fill(p, barattrs)
-# 
-#     def key_pt(self, c, x_pt, y_pt, width_pt, height_pt, styledata):
-#         l = len(styledata.valueindices)
-#         if l > 1:
-#             for i in range(l):
-#                 c.fill(path.rect_pt(x_pt+i*width_pt/l, y_pt, width_pt/l, height_pt), attr.selectattrs(styledata.barattrs, i, l))
-#         else:
-#             c.fill(path.rect_pt(x_pt, y_pt, width_pt, height_pt), styledata.barattrs)
+class bar(_style):
+
+    provide = ["vpos", "vposmissing", "vposavailable", "vposvalid"]
+
+    defaultfrompathattrs = []
+    defaultbarattrs = [color.palette.Rainbow, deco.stroked([color.gray.black])]
+
+    def __init__(self, fromvalue=None, frompathattrs=[], barattrs=[], subnames=None, epsilon=1e-10):
+        self.fromvalue = fromvalue
+        self.frompathattrs = frompathattrs
+        self.barattrs = barattrs
+        self.subnames = subnames
+        self.epsilon = epsilon
+
+    def columns(self, styledata, graph, columns):
+        # TODO: remove limitation to 2d graphs
+        if len(graph.axesnames) != 2:
+            raise ValueError("bar style currently restricted on two-dimensional graphs")
+        styledata.barvalues = styledata.barname = None
+        for dimension, axisnames in enumerate(graph.axesnames):
+            for axisname in axisnames:
+                if axisname in columns:
+                    if styledata.barvalues is not None:
+                        raise ValueError("multiple values")
+                    styledata.barvalues = [axisname]
+                    styledata.valuepos = dimension
+                    while 1:
+                        nextvalue = "%sstack%i" % (axisname, len(styledata.barvalues))
+                        if nextvalue in columns:
+                            styledata.barvalues.append(nextvalue)
+                        else:
+                            break
+                    break
+            else:
+                for axisname in axisnames:
+                    if (axisname + "name") in columns:
+                        if styledata.barname is not None:
+                            raise ValueError("multiple values")
+                        styledata.barname = axisname + "name"
+                        break
+                else:
+                    raise ValueError("value nor name missing")
+        styledata.vposmissing = []
+        return [styledata.barname] + styledata.barvalues
+
+    def selectstyle(self, styledata, graph, selectindex, selecttotal):
+        if selectindex:
+            styledata.frompathattrs = None
+        else:
+            styledata.frompathattrs = self.defaultfrompathattrs + self.frompathattrs
+        if selecttotal > 1:
+            if self.barattrs is not None:
+                styledata.barattrs = attr.selectattrs(self.defaultbarattrs + self.barattrs, selectindex, selecttotal)
+            else:
+                styledata.barattrs = None
+        else:
+            styledata.barattrs = self.defaultbarattrs + self.barattrs
+        styledata.barselectindex = selectindex
+        styledata.barselecttotal = selecttotal
+        if styledata.barselecttotal != 1 and self.subnames is not None:
+            raise ValueError("subnames not allowed when iterating over bars")
+
+    def adjustaxis(self, styledata, graph, column, data, index):
+        if column in styledata.barvalues:
+            graph.axes[styledata.barvalues[0]].adjustrange(data, index)
+        if column == styledata.barname:
+            if styledata.barselecttotal == 1:
+                graph.axes[column[:-4]].adjustrange(data, index, subnames=self.subnames)
+            else:
+                for i in range(styledata.barselecttotal):
+                    graph.axes[column[:-4]].adjustrange(data, index, subnames=[i])
+
+    def drawpoint(self, styledata, graph):
+        if self.fromvalue is not None:
+            vfromvalue = graph.axes[styledata.barvalues[0]].convert(self.fromvalue)
+            if vfromvalue < -self.epsilon:
+                vfromvalue = 0
+            if vfromvalue > 1 + self.epsilon:
+                vfromvalue = 1
+            if styledata.frompathattrs is not None and vfromvalue > self.epsilon and vfromvalue < 1 - self.epsilon:
+                if styledata.valuepos:
+                    p = graph.vgeodesic(0, vfromvalue, 1, vfromvalue)
+                else:
+                    p = graph.vgeodesic(vfromvalue, 0, vfromvalue, 1)
+                graph.stroke(p, styledata.frompathattrs)
+        else:
+            vfromvalue = 0
+        l = len(styledata.barvalues)
+        if l > 1:
+            barattrslist = []
+            for i in range(l):
+                barattrslist.append(attr.selectattrs(styledata.barattrs, i, l))
+        else:
+            barattrslist = [styledata.barattrs]
+
+        vvaluemax = vfromvalue
+        for barvalue, barattrs in zip(styledata.barvalues, barattrslist):
+            vvaluemin = vvaluemax
+            try:
+                vvaluemax = graph.axes[styledata.barvalues[0]].convert(styledata.point[barvalue])
+            except:
+                continue
+
+            if styledata.barselecttotal == 1:
+                try:
+                    vnamemin = graph.axes[styledata.barname[:-4]].convert((styledata.point[styledata.barname], 0))
+                except:
+                    continue
+                try:
+                    vnamemax = graph.axes[styledata.barname[:-4]].convert((styledata.point[styledata.barname], 1))
+                except:
+                    continue
+            else:
+                try:
+                    vnamemin = graph.axes[styledata.barname[:-4]].convert((styledata.point[styledata.barname], styledata.barselectindex, 0))
+                except:
+                    continue
+                try:
+                    vnamemax = graph.axes[styledata.barname[:-4]].convert((styledata.point[styledata.barname], styledata.barselectindex, 1))
+                except:
+                    continue
+
+            if styledata.valuepos:
+                p = graph.vgeodesic(vnamemin, vvaluemin, vnamemin, vvaluemax)
+                p.append(graph.vgeodesic_el(vnamemin, vvaluemax, vnamemax, vvaluemax))
+                p.append(graph.vgeodesic_el(vnamemax, vvaluemax, vnamemax, vvaluemin))
+                p.append(graph.vgeodesic_el(vnamemax, vvaluemin, vnamemin, vvaluemin))
+                p.append(path.closepath())
+            else:
+                p = graph.vgeodesic(vvaluemin, vnamemin, vvaluemin, vnamemax)
+                p.append(graph.vgeodesic_el(vvaluemin, vnamemax, vvaluemax, vnamemax))
+                p.append(graph.vgeodesic_el(vvaluemax, vnamemax, vvaluemax, vnamemin))
+                p.append(graph.vgeodesic_el(vvaluemax, vnamemin, vvaluemin, vnamemin))
+                p.append(path.closepath())
+            if barattrs is not None:
+                graph.fill(p, barattrs)
+
+    def key_pt(self, styledata, c, x_pt, y_pt, width_pt, height_pt):
+        l = len(styledata.barvalues)
+        if l > 1:
+            for i in range(l):
+                c.fill(path.rect_pt(x_pt+i*width_pt/l, y_pt, width_pt/l, height_pt), attr.selectattrs(styledata.barattrs, i, l))
+        else:
+            c.fill(path.rect_pt(x_pt, y_pt, width_pt, height_pt), styledata.barattrs)

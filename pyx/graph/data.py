@@ -399,10 +399,10 @@ class data(_data):
                     # we could also do:
                     # point[newcolumnnumber] = eval(str(tree), vars)
 
-                    # TODO: It might happen, that the evaluation of the expression
-                    #       seems to work, but the result is NaN. It depends on the
-                    #       plattform and configuration. The NaN handling is an
-                    #       open issue.
+                    # XXX: It might happen, that the evaluation of the expression
+                    #      seems to work, but the result is NaN/Inf/-Inf. This
+                    #      is highly plattform dependend.
+
                 self.columns[column] = newdata, None
 
     def getcolumndataindex(self, column):

@@ -11,8 +11,8 @@ horiz = g.plot(graph.data.function("y=0.5*x", points=2))
 g.finish()
 
 # convert paths to normpaths (for efficiency reasons only)
-fline = path.normpath(fline.path)
-horiz = path.normpath(horiz.path)
+fline = path.normpath(fline.styledata.path)
+horiz = path.normpath(horiz.styledata.path)
 # intersect the lines
 splith, splitf = horiz.intersect(fline)
 

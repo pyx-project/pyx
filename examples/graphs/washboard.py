@@ -18,7 +18,7 @@ g = graphxy(height=5, x2=None, y2=None,
                       painter=mypainter, title=r"$\delta\phi$"),
             y=linear(min=-2.3, max=2, painter=None))
 g.plot(function("y=mycos(x)", context=locals()),
-       line(lineattrs=[linewidth.Thick]))
+       [line(lineattrs=[linewidth.Thick])])
 g.finish()
 
 x1, y1 = g.pos(-pi+.1, mycos(-pi+.1))

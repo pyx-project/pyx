@@ -18,5 +18,5 @@ g = graph.graphxy(width=8,
 g.plot(graph.data.paramfunction("k", 0, 120,
                                 "x, y, size, angle = x(k), y(k), s(k), a(k)",
                                 points=121, context=locals()),# access extern
-       graph.style.arrow())                                   # variables&functions
+       [graph.style.arrow()])                                 # variables&functions
 g.writeEPSfile("arrows")                                      # by passing a context

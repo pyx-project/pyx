@@ -125,7 +125,7 @@ TODO:
   - deformer module: new
     - moved cycloid and smoothed from deco into deformer
   - bbox module:
-    - handle "BoundingBox: (atend)" (cf. bug #945621)
+    - handle "BoundingBox: (atend)" (cf. bug #945621 reported by Jim Boyle)
     - kpsearch option to search for file using the kpathsea library (contributed by Michael Gruber)
   - base module:
     - PSCmd and PSOp are now joined in a new class canvasitem
