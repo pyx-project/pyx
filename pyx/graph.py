@@ -2,6 +2,7 @@
 
 from path import *
 from const import *
+import types
 
 ###############################################################################
 # axis part
@@ -73,7 +74,7 @@ class GraphXY(Graph):
         self.YAxis = LinAxis()
 
     def plot(self, data, style = None):
-        self.plotdata.append( {'pd_data': data, 'pd_style': style} )
+        self.plotdata.append((data, style,))
 
     def XPos(self, Values):
         if isnumber(Values):
@@ -100,28 +101,23 @@ class GraphXY(Graph):
              l = tick.Label
              x = self.XPos(xv)
              self.canvas.draw(line(x, self.YPos(0), x, self.YPos(0)+0.2))
-             self.tex.text(x, self.YPos(0)-0.5, l, halign=center)
+             self.tex.text(x, self.YPos(0)-0.5, l, halign=halign.center)
         for tick in self.YAxis.TickList():
              yv = tick.VirtualPos
              l = tick.Label
              y = self.YPos(yv)
              self.canvas.draw(line(self.XPos(0), y, self.XPos(0)+0.2, y))
-             self.tex.text(self.XPos(0)-0.2, y, l, halign=right)
+             self.tex.text(self.XPos(0)-0.2, y, l, halign=halign.right)
         for pd in self.plotdata:
              for i in range(201):
                  x = (i-100)/10.0
-                 y = pd['pd_data'].MT.Calc({'x':x})
+                 y = pd[0].MT.Calc({'x':x})
                  xnew = self.XPos(self.XAxis.ValueToVirtual(x))
                  ynew = self.YPos(self.YAxis.ValueToVirtual(y))
                  if i > 0:
                      self.canvas.draw(line(xold, yold, xnew, ynew))
                  xold = xnew
                  yold = ynew
-
-class GraphRPhi:
-
-    def __init__(self, canvas, x, y, r):
-        Graph.__init__(canvas, x, y)
 
 
 ###############################################################################
@@ -137,8 +133,10 @@ KindTypeColumn = 1
 
 class DataFile:
 
-    def __init__(self, FileName, sep = None):
+    def __init__(self, FileName, sep = None, titlesep = None):
+        # TODO 9: title in comment above data
         # read data file -> create KindTypeColumn
+        self.FileName = FileName
         File = open(FileName, "r")
         Lines = File.readlines()
         self.Columns = 0
@@ -152,36 +150,62 @@ class DataFile:
                     Row = Line.split()
                 if self.Columns < len(Row):
                     for i in range(self.Columns, len(Row)):
-                        List = []
-                        for i in range(self.Rows):
-                            List.append(None)
-                        self.data.append(List)
+                        # create new lists for each column in order to avoid side effects in append
+                        self.data.append(reduce(lambda x,y: x + [None, ], range(self.Rows), []))
                     self.Columns = len(Row)
                 for i in range(len(Row)):
-                    self.data[i].append(Row[i])
+                    try:
+                        self.data[i].append(float(Row[i]))
+                    except ValueError:
+                        self.data[i].append(Row[i])
                 for i in range(len(Row), self.Columns):
                     self.data[i].append(None)
                 self.Rows = self.Rows + 1
+        self.HasTitles = 0
+        for i in range(self.Columns):
+            if type(self.data[i][0]) in (types.IntType, types.LongType, types.FloatType, ):
+                break
+        else:
+            self.HasTitles = 1
+        if self.HasTitles:
+            self.titles = []
+            for i in range(self.Columns):
+                self.titles.append(self.data[i][0])
+                del self.data[i][0]
+        else:
+            self.titles = reduce(lambda x,y: x + [None, ], range(self.Columns), [])
 
-    def GetKindList(self):
-        return reduce(lambda x,y: x + (KindTypeColumn, ), range(self.Columns), ())
-        # KindTypeColumn
+    def GetTitle(self, Number):
+        return self.titles[Number]
 
-    def GetList(self, Number):
+    def GetColumn(self, Number):
         return self.data[Number]
+
+KindTypeX = 1
+KindTypeY = 2
+KindTypeDX = 3
+KindTypeDY = 4
 
 class Data:
 
-    def __init__(self):
-        pass
+    def __init__(self, datafile, **columns):
+        self.datafile = datafile
+        self.columns = columns
+
     def GetKindList(self):
-        # KindTypeX
-        # KindTypeY
-        # KindTypeDX
-        # KindTypeDY
-        pass
+        return self.columns.keys()
+
+    def GetValues(self, Kind):
+        return self.datafile.GetColumn(self.columns[Kind])
+
     def GetRange(self, Kind):
-        pass
+        return (min(self.GetValues(Kind)), max(self.GetValues(Kind)), )
+
+    def GetName(self):
+        return self.datafile.FileName
+
+    def GetTitle(self, Kind):
+        return self.datafile.GetTitle(self.columns[Kind])
 
 class Function:
 
@@ -190,7 +214,14 @@ class Function:
 
 
 if __name__=="__main__":
-    d = DataFile("testdata")
+    df = DataFile("testdata")
+    for i in range(df.Columns):
+        print df.GetTitle(i),len(df.GetColumn(i)),df.GetColumn(i)
+    d = Data(df, x=0, y=1)
     print d.GetKindList()
-    for i in range(len(d.GetKindList())):
-        print d.GetList(i),len(d.GetList(i))
+    print d.GetValues("x")
+    print d.GetValues("y")
+    print d.GetRange("x"), d.GetRange("y")
+    print d.GetName()
+    print d.GetTitle("x"), d.GetTitle("y")
+

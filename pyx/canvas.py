@@ -286,12 +286,12 @@ if __name__=="__main__":
    
     for angle in range(20):
        s=c.canvas(trafo=translate(10,10)*rotate(angle)).draw(p)
-#
-#   c.setlinestyle(linestyle_solid)
-#   g=GraphXY(c, t, 10, 15, 8, 6)
-#   g.plot(Function("5*sin(x)"))
-#   g.plot(Function("(x+5)*x*(x-5)/100"))
-#   g.run()
+ 
+    c.setlinestyle(linestyle.solid)
+    g=GraphXY(c, t, 10, 15, 8, 6)
+    g.plot(Function("5*sin(x)"))
+    g.plot(Function("(x+5)*x*(x-5)/100"))
+    g.run()
 
     c.canvas(trafo=scale(0.5,0.5).rotate(20).translate("10 mm","50 mm")).inserteps(0,0,"ratchet_f.eps")
 
