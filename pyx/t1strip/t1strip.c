@@ -27,47 +27,47 @@ int t1_subset_2(char*, unsigned char *g, char *);
 
 static PyObject *py_t1strip(PyObject *self, PyObject *args)
 {
-  PyObject *py_glyphs;
-  PyObject *py_file;
-  char *fontname;
-  char *encname="";
-  unsigned char glyphs[256];
+    PyObject *py_glyphs;
+    PyObject *py_file;
+    char *fontname;
+    char *encname="";
+    unsigned char glyphs[256];
 
-  if (PyArg_ParseTuple(args, "O!sO!|s", &PyFile_Type, &py_file, &fontname, &PyList_Type, &py_glyphs, &encname)) {
-      int i;
-      int size = PyList_Size(py_glyphs);
-      if (size>256) 
-         return NULL;
+    if (PyArg_ParseTuple(args, "O!sO!|s", &PyFile_Type, &py_file, &fontname, &PyList_Type, &py_glyphs, &encname)) {
+        int i;
+        int size = PyList_Size(py_glyphs);
+        if (size>256) 
+            return NULL;
 
-      for (i=0; i<size; i++) {
-          PyObject *py_int = PyList_GetItem(py_glyphs, i);
-          if (!PyInt_Check(py_int))
-              return NULL;
-          glyphs[i] = PyInt_AsLong(py_int) ? 1 : 0;
-      }
-      for (i=size; i<256; i++)
-          glyphs[i] = 0;
+        for (i=0; i<size; i++) {
+            PyObject *py_int = PyList_GetItem(py_glyphs, i);
+            if (!PyInt_Check(py_int))
+                return NULL;
+            glyphs[i] = PyInt_AsLong(py_int) ? 1 : 0;
+        }
+        for (i=size; i<256; i++)
+            glyphs[i] = 0;
 
-      bitfile = PyFile_AsFile(py_file);
+        bitfile = PyFile_AsFile(py_file);
 
-      if (strcmp(encname, "")!=0)
-	t1_subset(fontname, encname, glyphs);
-      else
-         t1_subset_2(fontname, glyphs, 0);
-  }
-  else return NULL;
+        if (strcmp(encname, "")!=0)
+            t1_subset(fontname, encname, glyphs);
+        else
+            t1_subset_2(fontname, glyphs, 0);
+    }
+    else return NULL;
 
-  Py_INCREF(Py_None);
-  return Py_None;
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 /* exported methods */
 
 static PyMethodDef t1strip_methods[] = {
-  {"t1strip", py_t1strip,  METH_VARARGS},
-  {NULL, NULL}
+    {"t1strip", py_t1strip,  METH_VARARGS},
+    {NULL, NULL}
 };
 
 void init_t1strip(void) {
-  (void) Py_InitModule("_t1strip", t1strip_methods);
+    (void) Py_InitModule("_t1strip", t1strip_methods);
 }
