@@ -113,7 +113,7 @@ class canvas:
         self.trafo  = kwargs.get("trafo", transformation())
         self.unit   = kwargs.get("unit", unit())
         
-        self._PSAddCmd("[" + `self.trafo` + " ] concat")
+        self._PSAddCmd("[" + self.trafo.output(self.unit) + " ] concat")
     
     def __str__(self):
         return reduce(lambda x,y: x + "\n%s" % str(y), self.PSCmds)

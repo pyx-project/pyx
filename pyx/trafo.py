@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import unit
+
 # TODO: 
 # - switch to affine space description (i.e. represent transformation by
 #   3x3 matrix (cf. PLRM Sect. 4.3.3)? Cooler!
@@ -37,7 +39,7 @@ class transformation:
 	    raise UndefinedResultError, "transformation matrix must not be singular" 
 	else:
             self.matrix=matrix
-        self.vector=vector
+        self.vector=tuple(map(lambda x: unit.length(x), vector))
 
     def __mul__(self, other):
         if isinstance(other, transformation):
@@ -88,11 +90,16 @@ class transformation:
         except ZeroDivisionError:
 	   raise UndefinedResultError, "transformation matrix must not be singular" 
         return transformation(matrix=matrix) * transformation(vector=(-self.vector[0],-self.vector[1]))
-	
-    def __repr__(self):
+
+    def output(self, unit):
         return "%f %f %f %f %f %f" % ( self.matrix[0][0], self.matrix[0][1], 
 	                               self.matrix[1][0], self.matrix[1][1], 
-				       self.vector[0], self.vector[1]) 
+				       unit.pt(self.vector[0]), unit.pt(self.vector[1])) 
+	
+#    def __repr__(self):
+#        return "%f %f %f %f %f %f" % ( self.matrix[0][0], self.matrix[0][1], 
+#	                               self.matrix[1][0], self.matrix[1][1], 
+#				       self.vector[0], self.vector[1]) 
 
 class translate(transformation):
     def __init__(self,x,y):

@@ -21,11 +21,10 @@ m = {
     }
 
 class unit:
-    def __init__(self, default_unit="cm", uscale=1.0, vscale=1.0, wscale=1.0):
-        self.default_unit = default_unit
+    def __init__(self, uscale=1.0, vscale=1.0, wscale=1.0):
         self.scale        = { 'u':uscale, 'v':vscale, 'w':wscale }
         
-    def convert_to(self, length, dest_unit="m"):
+    def convert_to(self, l, dest_unit="m"):
         """ converts length to given destination unit.
 
             length can either be a tuple of length which are then separately converted
@@ -38,36 +37,71 @@ class unit:
             and unit_name
         """
 
-        if type(length) is TupleType:
-            return tuple(map(lambda x, self=self, dest_unit=dest_unit:self.convert_to(x,dest_unit), length))
-            
-        if type(length) is StringType:
-            unit_match=re.match(unit_pattern, length)
+        if type(l) is TupleType:
+            return tuple(map(lambda x, self=self, dest_unit=dest_unit:self.convert_to(x,dest_unit), l))
+
+        ll=length(l)                    # convert to length instance if necessary
+
+        return ll.factor*self.scale[ll.unit_type]*m[ll.unit_name]/m[dest_unit]
+
+    def m(self, l):
+        return self.convert_to(l, "m")
+        
+    def pt(self, l):
+        return self.convert_to(l, "pt")
+        
+    def tpt(self, l):
+        return self.convert_to(l, "tpt")
+
+class length:
+    default_unit = "cm"
+
+    def __init__(self, l):
+        if isinstance(l, length):
+            self.factor    = l.factor
+            self.unit_type = l.unit_type
+            self.unit_name = l.unit_name
+        elif type(l) is StringType:
+            unit_match=re.match(unit_pattern, l)
             if unit_match is None:
-                assert 0, "expecting string of the form 'number [u|v|w] unit'"
+                assert 0, "expecting number or string of the form 'number [u|v|w] unit'"
             else:
-                quantifier = float(unit_match.group(1))
-                unit_type  = unit_match.group(7) or "u"
-                unit_name  = unit_match.group(9) or self.default_unit
-        elif type(length) in (IntType, LongType, FloatType):
-            quantifier = length
-            unit_type  = "u"
-            unit_name  = self.default_unit
+                self.factor    = float(unit_match.group(1))
+                self.unit_type = unit_match.group(7) or "u"
+                self.unit_name = unit_match.group(9) or self.default_unit
 
-        return quantifier*self.scale[unit_type]*m[unit_name]/m[dest_unit]
+        elif type(l) in (IntType, LongType, FloatType):
+            self.factor     = l
+            self.unit_type  = "u"
+            self.unit_name  = self.default_unit
+        else:
+            assert 0, "cannot convert given argument to length type"
 
-    def m(self, length):
-        return self.convert_to(length, "m")
-        
-    def pt(self, length):
-        return self.convert_to(length, "pt")
-        
-    def tpt(self, length):
-        return self.convert_to(length, "tpt")
+    def __mul__(self, factor):
+        return length("%f %s %s" % (self.factor * factor, self.unit_type, self.unit_name))
 
+    __rmul__=__mul__
+
+    def __add__(self, l):
+        ll=length(l)                    # convert to length if necessary
+        if ( (self.unit_type!=ll.unit_type or self.unit_name!=ll.unit_name) 
+             and not (self.factor==0 or ll.factor==0) ):
+            assert 0, "can only add units of same type"
+        else:
+            return length("%f %s %s" % (self.factor+ll.factor, self.unit_type, self.unit_name))
+
+    __radd__=__add__
 
 if __name__ == "__main__":
-     print unit(default_unit="inch").m(1)
+     length.default_unit="cm"
+     print unit().m(1)
+     print unit().m("1.e-3 v cm")
+     print unit().pt("1.e-3 v")
+     print unit().tpt("1.e-3")
+     print unit().pt("1.e-3 inch")
+
+     length.default_unit="inch"
+     print unit().m(1)
      print unit().m("1.e-3 v cm")
      print unit().pt("1.e-3 v")
      print unit().tpt("1.e-3")
