@@ -695,7 +695,7 @@ class DVIFile:
                 pfa.close()
                 os.unlink(tmpfilename)
 
-                file.write("%%%%EndFont\n")
+                file.write("%%EndFont\n")
 
     FontSizePattern= re.compile(r"([0-9]+)$")
 
