@@ -25,11 +25,8 @@
 
 import types, re, math, string
 import bbox, canvas, path, tex, unit, mathtree, trafo, attrlist
-from math import log, exp, sqrt, pow
 
-# from mathtree import *   # TODO: correct mathtree usage
-
-goldenrule = 0.5 * (sqrt(5) + 1)
+goldenrule = 0.5 * (math.sqrt(5) + 1)
 
 
 ################################################################################
@@ -71,15 +68,15 @@ class _logmap(_linmap):
 
     def setbasepts(self, basepts):
         """base points for convertion"""
-        self.basepts = ((log(basepts[0][0]), basepts[0][1], ),
-                        (log(basepts[1][0]), basepts[1][1], ), )
+        self.basepts = ((math.log(basepts[0][0]), basepts[0][1], ),
+                        (math.log(basepts[1][0]), basepts[1][1], ), )
         return self
 
     def _convert(self, value):
-        return _linmap._convert(self, log(value))
+        return _linmap._convert(self, math.log(value))
 
     def _invert(self, value):
-        return exp(_linmap._invert(self, value))
+        return math.exp(_linmap._invert(self, value))
 
 
 
@@ -269,7 +266,7 @@ class autolinpart(linpart):
 
     def getparts(self, min, max):
         parts = []
-        e = int(log(max - min) / log(10))
+        e = int(math.log(max - min) / math.log(10))
         for shift in range(e + self.minpower, e + self.maxpower + 1):
             basefrac = frac(10L, 1, shift)
             for tickfracs in self.tickfracslist:
@@ -307,8 +304,10 @@ class logpart(anypart):
         minpower = None
         maxpower = None
         for i in xrange(len(shiftfracs.fracs)):
-            imin = int(math.floor(log(min / float(shiftfracs.fracs[i])) / log(shiftfracs.shift) + 0.5 * self.epsilon)) + 1
-            imax = int(math.ceil(log(max / float(shiftfracs.fracs[i])) / log(shiftfracs.shift) - 0.5 * self.epsilon)) - 1
+            imin = int(math.floor(math.log(min / float(shiftfracs.fracs[i])) /
+                                  math.log(shiftfracs.shift) + 0.5 * self.epsilon)) + 1
+            imax = int(math.ceil(math.log(max / float(shiftfracs.fracs[i])) /
+                                 math.log(shiftfracs.shift) - 0.5 * self.epsilon)) - 1
             if (minpower == None) or (imin < minpower):
                 (minpower, minindex, ) = (imin, i, )
             if (maxpower == None) or (imax >= maxpower):
@@ -323,8 +322,8 @@ class logpart(anypart):
         else:
             maxfrac = shiftfracs.fracs[0]
             maxpower += 1
-        return (float(minfrac) * pow(10, minpower),
-                float(maxfrac) * pow(10, maxpower), )
+        return (float(minfrac) * math.pow(10, minpower),
+                float(maxfrac) * math.pow(10, maxpower), )
 
     def getticklist(self, min, max, shiftfracs, ticklevel=None, labellevel=None):
         ticks = []
@@ -332,8 +331,10 @@ class logpart(anypart):
         maximax = 0
         for f in shiftfracs.fracs:
             fracticks = []
-            imin = int(math.ceil(log(min / float(f)) / log(shiftfracs.shift) - 0.5 * self.epsilon))
-            imax = int(math.floor(log(max / float(f)) / log(shiftfracs.shift) + 0.5 * self.epsilon))
+            imin = int(math.ceil(math.log(min / float(f)) /
+                                 math.log(shiftfracs.shift) - 0.5 * self.epsilon))
+            imax = int(math.floor(math.log(max / float(f)) /
+                                  math.log(shiftfracs.shift) + 0.5 * self.epsilon))
             for i in range(imin, imax + 1):
                 pos = f * frac(shiftfracs.shift, 1, i)
                 fracticks.append(tick(pos.enum, pos.denom, ticklevel = ticklevel, labellevel = labellevel))
@@ -506,8 +507,8 @@ class momrate:
         opt = rateparam.opt(pinch)
         min = rateparam.min(pinch)
         max = rateparam.max(pinch)
-        rate = ((opt - min) * log((opt - min) / (val - min)) +
-                (max - opt) * log((max - opt) / (max - val))) / (max - min)
+        rate = ((opt - min) * math.log((opt - min) / (val - min)) +
+                (max - opt) * math.log((max - opt) / (max - val))) / (max - min)
         return rate
 
     def getrate(self, ticks, pinch):
@@ -528,7 +529,7 @@ class momrate:
 
 #min = 1
 #for i in range(1, 10000):
-#    max = min * pow(1.5, i)
+#    max = min * math.pow(1.5, i)
 #    if max > 1e10:
 #        break
 #    print max/min,
@@ -945,11 +946,14 @@ class linkaxis(_axis):
 # graph
 ################################################################################
 
-class _PlotData:
+class defaultstyleiterator:
 
-    def __init__(self, data, style):
-        self.data = data
-        self.style = style
+    def __init__(self):
+        self.i = 0
+
+    def iteratestyle(self, style):
+        self.i += 1
+        return style(self.i)
 
 
 _XPattern = re.compile(r"x([2-9]|[1-9][0-9]+)?$")
@@ -960,9 +964,7 @@ _DYPattern = re.compile(r"dy([2-9]|[1-9][0-9]+)?$")
 
 class graphxy(canvas.canvas):
 
-    plotdata = [ ]
-
-    def __init__(self, tex, xpos=0, ypos=0, width=None, height=None, ratio=goldenrule, axesdist="0.8 cm", **axes):
+    def __init__(self, tex, xpos=0, ypos=0, width=None, height=None, ratio=goldenrule, axesdist="0.8 cm", styleiterator=defaultstyleiterator(), **axes):
         canvas.canvas.__init__(self)
         self.tex = tex
         self.xpos = unit.topt(xpos)
@@ -985,22 +987,25 @@ class graphxy(canvas.canvas):
             axes["y2"] = linkaxis(axes["y"])
         self.axes = axes
         self.axesdist_str = axesdist
+        self.styleiterator = styleiterator
+        self.data = [ ]
         self._drawstate = self.drawlayout
 
-    def plot(self, Data, PlotStyle = None):
+    def plot(self, data, style = None):
         if self._drawstate != self.drawlayout:
             raise PyxGraphDrawstateError
-        if not PlotStyle:
-            PlotStyle = Data.DefaultPlotStyle
-        self.plotdata.append(_PlotData(Data, PlotStyle))
+        if not style:
+            style = self.styleiterator.iteratestyle(data.defaultstyle)
+        data.setstyle(style)
+        self.data.append(data)
 
     def bbox(self):
         return bbox.bbox(self.xpos, self.ypos, self.xpos + self.width, self.ypos + self.height)
 
     def gatherranges(self):
         ranges = {}
-        for pd in self.plotdata:
-            pdranges = pd.data.ranges()
+        for data in self.data:
+            pdranges = data.ranges()
             for kind in pdranges.keys():
                 if kind not in ranges.keys():
                     ranges[kind] = pdranges[kind]
@@ -1017,8 +1022,8 @@ class graphxy(canvas.canvas):
         # 1. gather ranges
         ranges = self.gatherranges()
         # 2. calculate additional ranges out of known ranges
-        for pd in self.plotdata:
-            pd.data.newranges(ranges)
+        for data in self.data:
+            data.newranges(ranges)
         # 3. gather ranges again
         ranges = self.gatherranges()
 
@@ -1081,9 +1086,12 @@ class graphxy(canvas.canvas):
         return axis.fixtickdirection
 
     def xgridpath(self, axis, virtual):
-        return path._line(self.xmap.convert(virtual), self.ymap.convert(0), self.xmap.convert(virtual), self.ymap.convert(1))
+        return path._line(self.xmap.convert(virtual), self.ymap.convert(0),
+                          self.xmap.convert(virtual), self.ymap.convert(1))
+
     def ygridpath(self, axis, virtual):
-        return path._line(self.xmap.convert(0), self.ymap.convert(virtual), self.xmap.convert(1), self.ymap.convert(virtual))
+        return path._line(self.xmap.convert(0), self.ymap.convert(virtual),
+                          self.xmap.convert(1), self.ymap.convert(virtual))
 
     def keynum(self, key):
         try:
@@ -1144,8 +1152,8 @@ class graphxy(canvas.canvas):
     def drawdata(self):
         if self._drawstate != self.drawdata:
             raise PyxGraphDrawstateError
-        for pd in self.plotdata:
-            pd.data.loop(self, pd.style)
+        for data in self.data:
+            data.loop(self)
         self._drawstate = None
 
     def bbox(self):
@@ -1172,7 +1180,7 @@ class graphxy(canvas.canvas):
 #     * bar
 ################################################################################
 
-class _PlotStyle:
+class plotstyle:
 
     pass
 
@@ -1190,23 +1198,108 @@ class _PlotStyle:
 #        Graph.canvas.draw(path(*p))
 
 
-class mark(_PlotStyle):
+class mark(plotstyle):
 
-    def __init__(self, size = 1):
-        self.size = size
+    _cross = 1
+    _plus = 2
+    _square = 3
+    _triangle = 4
+    _circle = 5
+    _diamond = 6
+    _fsquare = 7
+    _ftriangle = 8
+    _fcircle = 9
+    _fdiamond = 10
+
+    def __init__(self, style = _cross, size = "0.1 cm"):
+        self.style = style
+        self.size_str = size
 
     def draw(self, graph, keys, data):
+        size = unit.topt(unit.length(self.size_str, default_type="v"))
         if _XPattern.match(keys[0]): xindex, yindex = 0, 1
         if _XPattern.match(keys[1]): xindex, yindex = 1, 0
         xaxis = graph.axes[keys[xindex]]
         yaxis = graph.axes[keys[yindex]]
         for pt in data:
-            graph.draw(path.path(path._moveto(graph.xmap.convert(xaxis.convert(pt[xindex])) - self.size,
-                                              graph.ymap.convert(yaxis.convert(pt[yindex])) - self.size),
-                                 path._rlineto(2 * self.size, 2 * self.size),
-                                 path._rmoveto(- 2 * self.size, 0),
-                                 path._rlineto(2 * self.size, - 2 * self.size)))
+            if self.style == mark._cross:
+                graph.draw(path.path(path._moveto(graph.xmap.convert(xaxis.convert(pt[xindex])) - 0.5 * size,
+                                                  graph.ymap.convert(yaxis.convert(pt[yindex])) - 0.5 * size),
+                                     path._rlineto(size, size),
+                                     path._rmoveto(- size, 0),
+                                     path._rlineto(size, - size)))
 
+            if self.style == mark._plus:
+                graph.draw(path.path(path._moveto(graph.xmap.convert(xaxis.convert(pt[xindex])) - 0.707 * size,
+                                                  graph.ymap.convert(yaxis.convert(pt[yindex]))),
+                                     path._rlineto(1.414 * size, 0),
+                                     path._rmoveto(- 0.707 * size, - 0.707 * size),
+                                     path._rlineto(0, 1.414 * size)))
+
+            if self.style == mark._square:
+                graph.draw(path.path(path._moveto(graph.xmap.convert(xaxis.convert(pt[xindex])) - 0.5 * size,
+                                                  graph.ymap.convert(yaxis.convert(pt[yindex])) - 0.5 * size),
+                                     path._rlineto(size, 0),
+                                     path._rlineto(0, size),
+                                     path._rlineto(- size, 0),
+                                     path.closepath()))
+
+            if self.style == mark._triangle:
+                graph.draw(path.path(path._moveto(graph.xmap.convert(xaxis.convert(pt[xindex])) - 0.760 * size,
+                                                  graph.ymap.convert(yaxis.convert(pt[yindex])) - 0.439 * size),
+                                     path._rlineto(1.520 * size, 0),
+                                     path._rlineto(- 0.760 * size, 1.316 * size),
+                                     path.closepath()))
+
+            if self.style == mark._circle:
+                graph.draw(path.path(path._moveto(graph.xmap.convert(xaxis.convert(pt[xindex])) + 0.564 * size,
+                                                  graph.ymap.convert(yaxis.convert(pt[yindex]))),
+                                     path._arc(graph.xmap.convert(xaxis.convert(pt[xindex])),
+                                               graph.ymap.convert(yaxis.convert(pt[yindex])),
+                                               0.564 * size, 0, 360),
+                                     path.closepath()))
+
+            if self.style == mark._diamond:
+                graph.draw(path.path(path._moveto(graph.xmap.convert(xaxis.convert(pt[xindex])) - 0.537 * size,
+                                                  graph.ymap.convert(yaxis.convert(pt[yindex]))),
+                                     path._rlineto(0.537 * size, - 0.931*size),
+                                     path._rlineto(0.537 * size, 0.931 * size),
+                                     path._rlineto(- 0.537 * size, 0.931 * size),
+                                     path.closepath()))
+
+            if self.style == mark._fsquare:
+                graph.fill(path.path(path._moveto(graph.xmap.convert(xaxis.convert(pt[xindex])) - 0.5 * size,
+                                                  graph.ymap.convert(yaxis.convert(pt[yindex])) - 0.5 * size),
+                                     path._rlineto(size, 0),
+                                     path._rlineto(0, size),
+                                     path._rlineto(- size, 0),
+                                     path.closepath()))
+
+            if self.style == mark._ftriangle:
+                graph.fill(path.path(path._moveto(graph.xmap.convert(xaxis.convert(pt[xindex])) - 0.760 * size,
+                                                  graph.ymap.convert(yaxis.convert(pt[yindex])) - 0.439 * size),
+                                     path._rlineto(1.520 * size, 0),
+                                     path._rlineto(- 0.760 * size, 1.316 * size),
+                                     path.closepath()))
+
+            if self.style == mark._fcircle:
+                graph.fill(path.path(path._moveto(graph.xmap.convert(xaxis.convert(pt[xindex])) + 0.564 * size,
+                                                  graph.ymap.convert(yaxis.convert(pt[yindex]))),
+                                     path._arc(graph.xmap.convert(xaxis.convert(pt[xindex])),
+                                               graph.ymap.convert(yaxis.convert(pt[yindex])),
+                                               0.564 * size, 0, 360),
+                                     path.closepath()))
+
+mark.cross = mark(style = mark._cross)
+mark.plus = mark(style = mark._plus)
+mark.square = mark(style = mark._square)
+mark.triangle = mark(style = mark._triangle)
+mark.circle = mark(style = mark._circle)
+mark.diamond = mark(style = mark._diamond)
+mark.fsquare = mark(style = mark._fsquare)
+mark.ftriangle = mark(style = mark._ftriangle)
+mark.fcircle = mark(style = mark._fcircle)
+mark.fdiamond = mark(style = mark._fdiamond)
 
 ################################################################################
 # data
@@ -1284,11 +1377,14 @@ class DataRangeAlreadySetException(DataException):
 
 class data:
 
-    DefaultPlotStyle = mark()
+    defaultstyle = mark
 
     def __init__(self, datafile, **columns):
         self.datafile = datafile
         self.columns = columns
+
+    def setstyle(self, style):
+        self.style = style
 
     def ranges(self):
         result = {}
@@ -1311,11 +1407,11 @@ class data:
     def GetValues(self, Kind):
         return self.datafile.GetColumn(self.columns[Kind] - 1)
 
-    def loop(self, graph, style):
+    def loop(self, graph):
         columns = {}
         for kind in self.GetKindList():
             columns[kind] = self.GetValues(kind)
-        style.draw(graph, columns.keys(), zip(*columns.values()))
+        self.style.draw(graph, columns.keys(), zip(*columns.values()))
 
 #    def GetRange(self, Kind):
 #        # handle non-numeric things properly
