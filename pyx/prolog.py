@@ -82,7 +82,7 @@ class fontdefinition(prologitem):
 
     """ PostScript font definition included in the prolog """
 
-    def __init__(self, fontname, filename, encfilename, usedchars):
+    def __init__(self, font, fontname, filename, encfilename, usedchars):
         """ include type 1 font defined by the following parameters
 
         - fontname:    PostScript FontName of font
@@ -95,6 +95,9 @@ class fontdefinition(prologitem):
 
         # Note that here we only need the encoding for selecting the used glyphs!
 
+        # XXX rewrite
+
+        self.font = font
         self.fontname = fontname
         self.filename = filename
         self.encfilename = encfilename
@@ -169,7 +172,7 @@ class fontreencoding(prologitem):
 
     """ PostScript font re-encoding directive included in the prolog """
 
-    def __init__(self, fontname, basefontname, encname, font):
+    def __init__(self, fontname, basefontname, encname):
         """ include font re-encoding directive specified by
 
         - fontname:     PostScript FontName of the new reencoded font
@@ -185,7 +188,6 @@ class fontreencoding(prologitem):
         self.fontname = fontname
         self.basefontname = basefontname
         self.encname = encname
-        self.font = font
 
     def merge(self, other):
         if not isinstance(other, fontreencoding):

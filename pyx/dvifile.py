@@ -435,14 +435,15 @@ class selectfont(_selectfont):
         self.font = font
 
     def prolog(self):
-        result = [prolog.fontdefinition(self.font.getbasepsname(),
+        result = [prolog.fontdefinition(self.font,
+                                        self.font.getbasepsname(),
                                         self.font.getfontfile(),
                                         self.font.getencodingfile(),
                                         self.font.usedchars)]
         if self.font.getencoding():
             result.append(_ReEncodeFont)
             result.append(prolog.fontencoding(self.font.getencoding(), self.font.getencodingfile()))
-            result.append(prolog.fontreencoding(self.font.getpsname(), self.font.getbasepsname(), self.font.getencoding(), self.font))
+            result.append(prolog.fontreencoding(self.font.getpsname(), self.font.getbasepsname(), self.font.getencoding()))
         return result
 
 
@@ -877,6 +878,7 @@ class dvifile:
 
         if isinstance(self.activefont, type1font):
             if self.activeshow is None:
+                self.begintext()
                 self.activeshow = _show(self.pos[_POS_H] * self.conv, -self.pos[_POS_V] * self.conv)
             width = self.activefont.getwidth(char) * self.tfmconv * self.conv
             height = self.activefont.getheight(char) * self.tfmconv * self.conv

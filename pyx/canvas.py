@@ -529,13 +529,13 @@ class canvas(_canvas):
         fontstartref = 6
 
         fontnr = 0
-        if len([pritem for pritem in mergedprolog if isinstance(pritem, prolog.fontreencoding)]):
+        if len([pritem for pritem in mergedprolog if isinstance(pritem, prolog.fontdefinition)]):
             file.write("/Font\n"
                        "<<\n")
             for pritem in mergedprolog:
-                if isinstance(pritem, prolog.fontreencoding):
+                if isinstance(pritem, prolog.fontdefinition):
                     fontnr += 1
-                    file.write("/%s %d 0 R\n" % (pritem.fontname, fontnr+fontstartref))
+                    file.write("/%s %d 0 R\n" % (pritem.font.getpsname(), fontnr+fontstartref))
                     fontnr += 3 # further objects due to a font
             file.write(">>\n")
 
@@ -551,7 +551,7 @@ class canvas(_canvas):
         # apply a possible global transformation
         if ctrafo: ctrafo.outputPDF(file)
         style.linewidth.normal.outputPDF(file)
-        
+
         self.outputPDF(file)
         streamendpos = file.tell()
         file.write("endstream\n"
@@ -567,7 +567,7 @@ class canvas(_canvas):
 
         fontnr = 0
         for pritem in mergedprolog:
-            if isinstance(pritem, prolog.fontreencoding):
+            if isinstance(pritem, prolog.fontdefinition):
                 fontnr += 1
                 reflist.append(file.tell())
                 file.write("%d 0 obj\n"
@@ -580,9 +580,9 @@ class canvas(_canvas):
                            "/LastChar 255\n"
                            "/Widths %d 0 R\n"
                            "/FontDescriptor %d 0 R\n"
-                           "/Encoding /MacRomanEncoding\n" # FIXME
+                           "/Encoding /StandardEncoding\n" # FIXME
                            ">>\n"
-                           "endobj\n" % (fontnr+fontstartref, pritem.fontname, pritem.basefontname,
+                           "endobj\n" % (fontnr+fontstartref, pritem.font.getpsname(), pritem.font.getbasepsname(),
                                          fontnr+fontstartref+1, fontnr+fontstartref+2))
                 fontnr += 1
                 reflist.append(file.tell())
@@ -603,7 +603,7 @@ class canvas(_canvas):
                            "/Type /FontDescriptor\n"
                            "/FontName /%s\n"
                            "/Flags 34\n" # FIXME
-                           "/FontBBox [0 -5 20 10]\n" # FIXME
+                           "/FontBBox [-10 -10 40 40]\n" # FIXME
                            "/ItalicAngle 0\n" # FIXME
                            "/Ascent 20\n" # FIXME
                            "/Descent -5\n" # FIXME
@@ -612,13 +612,13 @@ class canvas(_canvas):
                            "/FontFile %d 0 R\n" # FIXME
                            # "/CharSet \n" # fill in when stripping
                            ">>\n"
-                           "endobj\n" % (fontnr+fontstartref, pritem.basefontname,
+                           "endobj\n" % (fontnr+fontstartref, pritem.font.getbasepsname(),
                                          fontnr+fontstartref+1))
 
                 fontnr += 1
                 reflist.append(file.tell())
 
-                fontdata = open(pykpathsea.find_file(pritem.basefontname.lower(), # FIXME, FIXME, FIXME !!!
+                fontdata = open(pykpathsea.find_file(pritem.font.getbasepsname().lower(), # FIXME, FIXME, FIXME !!!
                                                      pykpathsea.kpse_type1_format)).read()
                 if fontdata[0:2] != fullfont._PFB_ASCII:
                     raise RuntimeError("PFB_ASCII mark expected")
