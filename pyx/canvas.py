@@ -231,8 +231,9 @@ class Canvas(Globex):
 	self.PSFile.write("0 0 moveto\n")
 
     def PSEnd(self):
-    	self.PSFile.write("0 0 moveto\n")
+    	self.PSFile.write("100 100 moveto\n")
     	self.PSFile.write("stroke\n")
+    	self.PSFile.write("0 0 moveto\n")
 	self.PSInsertEPS(self.BaseFilename + ".tex.eps")
 	self.PSFile.close()
 	
@@ -249,7 +250,8 @@ class Canvas(Globex):
 	self.PSFile.write("EndEPSF\n")
 
     def PScm2po(self, x, y=None): 
-        convfaktor=28.452756
+        # convfaktor=28.452756
+        convfaktor=28.346456693
 	
     	if y==None:
 	    return convfaktor * x
@@ -289,13 +291,13 @@ def canvas():
 if __name__=="__main__":
     canvas()
 
-    for y in range(23):
-        amove(0,y)
-        rline(29.7,0)
+    for x in range(22):
+        amove(x,0)
+        rline(0,29.7)
 
-    for x in range(31):
-       amove(x,0)
-       rline(0,21)
+    for y in range(30):
+       amove(0,y)
+       rline(21,0)
 
     amove(1,1)
     print "Breite von 'Hello world!': ",textwd("Hello world!")
