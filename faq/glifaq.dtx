@@ -1,12 +1,12 @@
 % \iffalse
 %<package>\NeedsTeXFormat{LaTeX2e}
 %<*driver>
-\def\fileversion{0.1b}
-\def\filedate{2003/10/16}
+\def\fileversion{0.2}
+\def\filedate{2003/11/16}
 \ProvidesFile{glifaq.drv}
 %</driver>
 %<package>\ProvidesPackage{glifaq}
-           [2003/10/16 Style for PyX FAQ (gli) v0.1b]
+           [2003/11/16 Style for PyX FAQ (gli) v0.2]
 %<*driver>
 \documentclass{ltxdoc}
 \usepackage{url}
@@ -37,7 +37,7 @@
 %   Grave accent  \`     Left brace    \{     Vertical bar  \|
 %   Right brace   \}     Tilde         \~}
 %
-% \CheckSum{197}
+% \CheckSum{229}
 %
 %
 % \title{The \texttt{glifaq} package}
@@ -63,6 +63,7 @@
 % \begin{tabular}{ll}
 % |a| & answered question\\
 % |c| & question where the answer has been checked by an expert\\
+% |o| & outdated question\\
 % |t| & question not fully answered yet (= to do)
 % \end{tabular}
 % \end{center}
@@ -72,6 +73,7 @@
 % \item[answered] prints only questions which have no ``to do'' status, i.e.
 %            they have a satisfying answer and might even have been checked
 % \item[checked] prints only questions where the answers have been checked
+% \item[outdated] prints only questions and answers which are outdated
 % \item[todo] prints all questions where no satisfying answer has been 
 %            formulated yet
 % \item[unchecked] prints all questions which have not been checked yet
@@ -94,7 +96,7 @@
 % \begin{center}
 % \begin{tabular}{ll}
 % 1: & class of the question according to the table given above\\
-%    & allowed values: |a|, |c|, |t|\\
+%    & allowed values: |a|, |c|, |o|, |t|\\
 % 2: & title of the question\\
 % 3: & comments related to this question\\
 % 4: & the answer to the question
@@ -165,6 +167,7 @@
 % \begin{tabular}{ll}
 % |\if@a|& print answered questions if true\\
 % |\if@c|& print corrected questions if true\\
+% |\if@o|& print outdated questions if true\\
 % |\if@t|& print unanswered or not fully answered questions if true\\
 % |\ifc@mments|& print comments if true\\
 % |\ift@c|& insert table of contents if true
@@ -174,6 +177,7 @@
 %    \begin{macrocode}
 \newif\if@a \@atrue
 \newif\if@c \@ctrue
+\newif\if@o \@otrue
 \newif\if@t \@ttrue
 \newif\ifc@mments \c@mmentsfalse
 \newif\ift@c \t@ctrue
@@ -181,11 +185,12 @@
 % Now we define the various options and set the switches according to the
 % options' definition given in section~\ref{sec:usage}.
 %    \begin{macrocode}
-\DeclareOption{all}{\@atrue \@ctrue \@ttrue}
-\DeclareOption{answered}{\@atrue \@ctrue \@tfalse}
-\DeclareOption{checked}{\@afalse \@ctrue \@tfalse}
-\DeclareOption{todo}{\@afalse \@cfalse \@ttrue}
-\DeclareOption{unchecked}{\@atrue \@cfalse \@ttrue}
+\DeclareOption{all}{\@atrue \@ctrue \@otrue \@ttrue}
+\DeclareOption{answered}{\@atrue \@ctrue \@ofalse \@tfalse}
+\DeclareOption{checked}{\@afalse \@ctrue \@ofalse \@tfalse}
+\DeclareOption{outdated}{\@afalse \@cfalse \@otrue \@tfalse}
+\DeclareOption{todo}{\@afalse \@cfalse \@ofalse \@ttrue}
+\DeclareOption{unchecked}{\@atrue \@cfalse \@ofalse \@ttrue}
 \DeclareOption{comments}{\c@mmentstrue}
 \DeclareOption{notoc}{\t@cfalse}
 \ProcessOptions\relax
@@ -213,12 +218,14 @@
 % of whether the question acts like a subsection or subsubsection, the layout
 % of the question title should be the one of a subsubsection.
 %
-% We introduce two switches: |\@printtrue| indicates that the question has
-% to be printed while |\@margtrue| request a mark to be put into the margin
-% to indicate a question with ``to do'' status.
+% We introduce three switches: |\@printtrue| indicates that the question has
+% to be printed while |\@margtrue| requests a mark to be put into the margin
+% to indicate a question with ``to do'' status and |\@outdatedtrue| will mark a
+% question as outdated. 
 %    \begin{macrocode}
 \newif\if@print
 \newif\if@marg 
+\newif\if@outdated
 %    \end{macrocode}
 % Below we will need to find out which level a question corresponds to. If the
 % value of the counter \texttt{question} is not equal to 0, the level is
@@ -248,9 +255,10 @@
 % will in addition ask to print a mark in the margin by setting |\@margtrue|.
 %    \begin{macrocode}
 \newcommand{\question}[4]%
-{\@printfalse\@margfalse%
+{\@printfalse\@margfalse\@outdatedfalse%
  \ifthenelse{\equal{a}{#1}\and\boolean{@a}}{\@printtrue}{}%
  \ifthenelse{\equal{c}{#1}\and\boolean{@c}}{\@printtrue}{}%
+ \ifthenelse{\equal{o}{#1}\and\boolean{@o}}{\@printtrue\@outdatedtrue}{}%
  \ifthenelse{\equal{t}{#1}\and\boolean{@t}}{\@printtrue\@margtrue}{}%
 %    \end{macrocode}
 % If the \texttt{question} counter has the value 0, we need to determine the
@@ -289,16 +297,17 @@
 % does the typesetting of the title and a mark is put into the margin if
 % requested by |\@margtrue|. 
 %
-% After the title, a comment, if present, is typeset in sans serif and small
-% fontsize. Finally, the answer, i.e. the contents of argument 4, is typeset.
+% After the title, a comment, if present and asked for, is typeset in sans 
+% serif and small fontsize. Finally, the answer, i.e. the contents of argument 
+% 4, is typeset.
 %    \begin{macrocode}
   \if@print%
     \let\size@subsection\size@subsubsection
-     \questi@n{#2}\if@marg\put@ding\else\fi%
+     \questi@n{#2 \if@outdated\outd@ted\fi}\if@marg\put@ding\else\fi%
     \let\size@subsection\save@sizesubsection
    \ifc@mments
     \ifthenelse{\equal{}{#3}}{}
-    {\putding{\sffamily\small#3}\par}%
+    {\put@ding{\sffamily\small#3}\par}%
    \else\fi
     #4
   \else\fi}
@@ -382,6 +391,13 @@
 	  }
 \DeclareRobustCommand\changed[0]{\texorpdfstring%
            {\quad\raisebox{0.3ex}{\fbox{\tiny\normalfont CHANGED}}}{}
+	  }
+%    \end{macrocode}
+% Outdated questions should be marked also in the \acro{pdf} bookmarks. 
+%    \begin{macrocode}
+\DeclareRobustCommand\outd@ted[0]{\texorpdfstring%
+           {\quad\colorbox{black}{\color{white}\small OUTDATED}}
+		      {~(outdated)}
 	  }
 %    \end{macrocode}
 % \Finale
