@@ -56,9 +56,11 @@ TODO:
     - is the early conversion with unit.topt unit-modification-save?
   - deformer module:
     - better names for the helper functions ?
+    - add functionality to canvas.draw
   - open discussion:
     - clearly distingish between readers and writers. dvifile, epsfile, etc. might
       be renamed to dvireader, epsreader ...
+
 
   Documentation:
     - path module:
