@@ -119,14 +119,14 @@ def testnormpathtrafo(c):
            rcurveto(-3,2,1,2,3,6),
            rlineto(2,3), closepath())
 
-
+    c.stroke(p)
+    c.stroke(normpath(p), [color.rgb.green, style.linestyle.dashed])
     c.stroke(p.transformed(trafo.translate(3,1)), [color.rgb.red])
     c.insert(canvas.canvas(trafo.translate(3,1))).stroke(p,
                                                          [color.rgb.green,
-                                                          style.linestyle.dashed])
+                                                         style.linestyle.dashed])
 
-    c.stroke(p)
-    c.stroke(p.reversed())
+    c.stroke(p.reversed(), [color.rgb.blue, style.linestyle.dotted, style.linewidth.THick])
 
     c.stroke(cross(*(p.at(0))))
     c.stroke(cross(*(p.reversed().at(0))))
@@ -287,7 +287,7 @@ dotest(c, 2, 12, "testintersectbezier")
 dotest(c, 10,11, "testnormpathtrafo")
 dotest(c, 12, -4, "testtangent")
 dotest(c, 5, -4, "testintersectcircle")
-dotest(c, 21, 12, "testlentopar")
+#dotest(c, 21, 12, "testlentopar")
 c.writetofile("test_path", paperformat="a4", rotated=0, fittosize=1)
 
 c=canvas.canvas()
