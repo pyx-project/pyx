@@ -37,6 +37,8 @@ PyX
     - "in" to "inch" in paperformats
   - text module:
     - fix pyx.def hack occuring whenever \ProcessOptions* was used by a package
+  - pykpathsea module:
+    - implement different file formats for Python version of module
 
 0.4 (2003/08/22):
   - graph module:
