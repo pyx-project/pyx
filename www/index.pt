@@ -25,7 +25,7 @@ out of these primitives. </p>
   <li>seamless TeX/LaTeX integration</li>
   <li>full access to PostScript features like paths, linestyles, fill patterns, transformations, clipping, etc.</li>
   <li>advanced geometric operations on paths like intersections, transformations, splitting, etc.</li>
-  <li>sophisticated graph generation: modular design, plugable axes, axes partitioning based on rational number arithmetics, flexible graph styles, etc.</li>
+  <li>sophisticated graph generation: modular design, pluggable axes, axes partitioning based on rational number arithmetics, flexible graph styles, etc.</li>
 </ul>
 
 <h2>Status and Availability</h2>
