@@ -1689,7 +1689,7 @@ class normpath(path):
             if isinstance(normpathel, closepath):
                 subpathends_a.append(t)
             t += 1
-                
+
         context = _pathcontext()
         bpathels_b = []
         subpathends_b = []
@@ -1702,7 +1702,7 @@ class normpath(path):
             if isinstance(normpathel, closepath):
                 subpathends_b.append(t)
             t += 1
-            
+
         intersections = ([], [])
         # change grouping order and check whether an intersection
         # occurs at the end of a subpath. If yes, don't include
@@ -1780,7 +1780,6 @@ class normpath(path):
                 subpath.append(_moveto(*context.currentpoint))
                 subpath.reverse()
                 subpath.append(closepath())
-                
                 np = normpath(*subpath) + np
                 subpath = []
 
