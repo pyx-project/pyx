@@ -175,12 +175,12 @@
 %
 % %%%%%%  (3) rotations  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ///
 \def\Grot@start{\special{PyX:rotate_begin angle=\Grot@angle}}
-\def\Grot@end{\special{Pyx:rotate_end}}
+\def\Grot@end{\special{PyX:rotate_end}}
 % //\
 %
 % %%%%%%  (4) scalings  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ///
 %
-\def\Gscale@start{\special{Pyx:scale_begin xscale=\Gscale@x\space yscale=\Gscale@y}}
+\def\Gscale@start{\special{PyX:scale_begin xscale=\Gscale@x\space yscale=\Gscale@y}}
 \def\Gscale@end{\special{PyX:scale_end}}
 % //\
 \endinput
