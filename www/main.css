@@ -37,14 +37,6 @@ table caption {
         text-align: center;
 }
 
-.content table {
-        background-color:#f3f3f3;
-        border:1px solid black;
-        width: 700px;
-        padding: 5px;
-        margin-bottom: 20px;
-}
-
 pre { 
         margin-left: 3em;
 }
@@ -64,7 +56,11 @@ a {
 }
 
 
-a:hover {
+a:link:hover {
+        text-decoration: underline;
+}
+
+a:visited:hover {
         text-decoration: underline;
 }
 
@@ -134,6 +130,15 @@ a:hover {
         text-align:center;
         font-style:italic;
 }
+
+#content table {
+        background-color:#f3f3f3;
+        border:1px solid black;
+        width: 700px;
+        padding: 5px;
+        margin-bottom: 20px;
+}
+
 
 .PY_KEYWORD { color:#0000C0; font-weight:bold; }
 .PY_COMMENT { color:#000080; }
