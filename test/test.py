@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import pyx
 from pyx import *
 from pyx.path import *
 
@@ -9,17 +10,29 @@ def drawpathwbbox(c, p):
     c.draw(p, color.rgb.red)
     bp=p.bpath()
     c.draw(bp, color.rgb.green, canvas.linestyle.dashed)
-    bbox=p.bbox(c)
+    bbox=p.bbox()
     c.draw(rect("%f t pt" % bbox.llx,            "%f t pt" % bbox.lly,
    	        "%f t pt" % (bbox.urx-bbox.llx), "%f t pt" % (bbox.ury-bbox.lly)))
 
-def testspeed(c):
+def testspeed():
+    c=canvas.canvas()
     p=path([moveto(0,0)])
 
     for i in xrange(1000):
         p.append(lineto("%d pt" % i, "%d pt" % i))
 
     c.draw(p)
+    c.writetofile("testspeed")
+
+def testspeed2():
+    c=canvas.canvas()
+    p=path([pyx.path._moveto(0,0)])
+
+    for i in xrange(1000):
+        p.append(pyx.path._lineto(i, i))
+
+    c.draw(p)
+    c.writetofile("testspeed")
 
 def testarcs(c):
     def testarc(c, x, y, phi1, phi2):
@@ -187,5 +200,8 @@ testintersectbezier(c)
 c.writetofile("test")
 
 #testspeed()
-#profile.run('testspeed()', 'test.prof')
-#pstats.Stats("test.prof").sort_stats('time').print_stats(10)
+profile.run('testspeed()', 'test.prof')
+pstats.Stats("test.prof").sort_stats('time').print_stats(10)
+
+profile.run('testspeed2()', 'test.prof')
+pstats.Stats("test.prof").sort_stats('time').print_stats(10)
