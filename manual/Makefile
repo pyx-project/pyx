@@ -8,7 +8,7 @@
 default:dvi
 
 clean:
-	-rm -fr manual.dvi manual.ps manual.pdf *.eps *.png *.aux *.log manual
+	-rm -fr manual.dvi manual.ps manual.pdf *.eps *.png *.aux manual
 
 all:
 	make clean
@@ -36,6 +36,7 @@ manual.dvi: $(src) eps
 	./mkhowto --a4 --dvi manual.tex
 
 manual/manual.html: $(src) eps
+	-rm *.png # the png's are to big, but would be used by default
 	./mkhowto --image-type png --favicon "/pyx.ico" \
 	          --up-link "/" --up-title "PyX homepage" \
 	          --html manual.tex
