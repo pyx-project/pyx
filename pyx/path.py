@@ -2303,7 +2303,7 @@ class normpath(path):
         x, y = self.end_pt()
         return unit.t_pt(x), unit.t_pt(y)
 
-    def joined(self, other):
+    def join(self, other):
         if not self.subpaths:
             raise PathException("cannot join to end of empty path")
         if self.subpaths[-1].closed:
@@ -2314,7 +2314,11 @@ class normpath(path):
 
         self.subpaths[-1].normpathels += other.subpaths[0].normpathels
         self.subpaths += other.subpaths[1:]
-        return self
+
+    def joined(self, other):
+        result = normpath(self.subpaths)
+        result.join(other)
+        return result
 
     def intersect(self, other):
         """intersect self with other path
