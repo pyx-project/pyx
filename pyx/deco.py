@@ -27,7 +27,7 @@
 #   should we at least factor it out?
 
 import sys, math
-import attr, base, canvas, color, path, style, trafo, unit
+import attr, base, canvas, color, helper, path, style, trafo, unit
 
 try:
     from math import radians
@@ -377,7 +377,8 @@ def _arrowhead(anormsubpath, size, angle, constrictionlen, reversed):
     """helper routine, which returns an arrowhead from a given anormsubpath
 
     returns arrowhead at begin of anormpath with size,
-    opening angle and constriction length constrictionlen
+    opening angle and constriction length constrictionlen. If constrictionlen is None, we
+    do not add a constriction.
     """
 
     if reversed:
@@ -396,12 +397,14 @@ def _arrowhead(anormsubpath, size, angle, constrictionlen, reversed):
 
     # now come the joining backward parts
 
-    # constriction point (cx, cy) lies on path
-    cx, cy = anormsubpath.at(anormsubpath.arclentoparam(constrictionlen))
+    if constrictionlen is not None:
+        # constriction point (cx, cy) lies on path
+        cx, cy = anormsubpath.at(anormsubpath.arclentoparam(constrictionlen))
+        arrowcr= path.line(*(arrowr.end() + (cx,cy)))
+        arrow = arrowl.reversed() << arrowr << arrowcr
+    else:
+        arrow = arrowl.reversed() << arrowr
 
-    arrowcr= path.line(*(arrowr.end()+(cx,cy)))
-
-    arrow = arrowl.reversed() << arrowr << arrowcr
     arrow[-1].close()
 
     return arrow
@@ -421,7 +424,7 @@ class arrow(deco, attr.attr):
         self.angle = angle
         self.constriction = constriction
 
-    def __call__(self, attrs=None, position=None, size=None, angle=None, constriction=None):
+    def __call__(self, attrs=None, position=None, size=None, angle=None, constriction=helper.nodefault):
         if attrs is None:
             attrs = self.attrs
         if position is None:
@@ -430,7 +433,7 @@ class arrow(deco, attr.attr):
             size = self.size
         if angle is None:
             angle = self.angle
-        if constriction is None:
+        if constriction is helper.nodefault:
             constriction = self.constriction
         return arrow(attrs=attrs, position=position, size=size, angle=angle, constriction=constriction)
 
@@ -443,16 +446,22 @@ class arrow(deco, attr.attr):
         # by self.angle/2 to the left and right. Hence, if we want no constriction, i.e., for
         # self.constriction = 1, we actually have a length which is approximately shorter
         # by the given geometrical factor.
-        constrictionlen = self.size*self.constriction*math.cos(radians(self.angle/2.0))
-        
+        if self.constriction is not None:
+            constrictionlen = arrowheadconstrictionlen = self.size * self.constriction * math.cos(radians(self.angle/2.0))
+        else:
+            # if we do not want a constriction, i.e. constriction is None, we still
+            # need constrictionlen for cutting the path
+            constrictionlen = self.size * 1 * math.cos(radians(self.angle/2.0))
+            arrowheadconstrictionlen = None
+
         if self.position == 0:
             # Note that the template for the arrow head should only be constructed
             # from the first normsubpath
             firstnormsubpath = anormpath[0]
-            arrowhead = _arrowhead(firstnormsubpath, self.size, self.angle, constrictionlen, reversed=0)
+            arrowhead = _arrowhead(firstnormsubpath, self.size, self.angle, arrowheadconstrictionlen, reversed=0)
         else:
             lastnormsubpath = anormpath[-1]
-            arrowhead = _arrowhead(lastnormsubpath, self.size, self.angle, constrictionlen, reversed=1)
+            arrowhead = _arrowhead(lastnormsubpath, self.size, self.angle, arrowheadconstrictionlen, reversed=1)
 
         # add arrowhead to decoratedpath
         dp.ornaments.draw(arrowhead, self.attrs)

@@ -155,6 +155,7 @@ TODO:
     - decorated path no longer allows modification of its path
     - new method excluderange which allows to remove certain parameter ranges from the stroked path
     - additional canvas provided by decorated path is now called ornaments
+    - constriction=None now indicates an arrowhead without constriction
   - trafo module:
     - trafos are now deformers
   - examples:

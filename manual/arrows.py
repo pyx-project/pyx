@@ -43,7 +43,7 @@ drawdeco("barrow.normal")
 y += dy
 
 drawdeco("earrow.Large([deco.filled([color.rgb.red]), style.linewidth.normal])")
-drawdeco("earrow.normal(constriction=0)")
+drawdeco("earrow.normal(constriction=None)")
 drawdeco("earrow.Large([style.linejoin.round])")
 drawdeco("earrow.Large([deco.stroked.clear])")
 
