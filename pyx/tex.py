@@ -277,7 +277,7 @@ class tex:
         file.write("\\nonstopmode\n")
         if self.type == mode.LaTeX:
             file.write("\\documentclass[" + self.latexclassopt + "]{" + self.latexclass + "}\n")
-        file.write("\\hsize0truept\n\\vsize0truept\n\\hoffset-1truein\n\\voffset0truein\n")
+        file.write("\\hsize0truept\n\\vsize0truept\n\\hoffset0truein\n\\voffset0truein\n")
 
         file.write(self.TexCmds[0].Cmd)
 
@@ -369,7 +369,9 @@ class tex:
         # TODO 7: dvips error handling
         #         interface for modification of the dvips command line
 
-        if os.system("TEXCONFIG=" + WorkDir + " dvips -E -P pyx -T1in,1in -o " + TempName + ".eps " + TempName + ".dvi > /dev/null 2>&1"):
+        #if os.system("TEXCONFIG=" + WorkDir + " dvips -E -o " + TempName + ".eps " + TempName + ".dvi > /dev/null 2>&1"):
+        #    assert 0, "dvips exit code non-zero"
+        if os.system("dvips -E -o " + TempName + ".eps " + TempName + ".dvi > /dev/null 2>&1"):
             assert 0, "dvips exit code non-zero"
 
         result = str(canvas.epsfile(TempName + ".eps", clipping = 0))

@@ -239,6 +239,7 @@ class canvas:
     def tex(self, **kwargs):
         texcanvas = tex.tex(self.unit.copy(), **kwargs)
         self._PSAddCmd(texcanvas)
+        self._grestore()
         return texcanvas
 
     def set(self, *args):
