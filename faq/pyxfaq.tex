@@ -337,7 +337,7 @@ in the graph are defined by calling \texttt{g.plot} like in the following
 example in which filled circles are requested:
 \begin{progcode}
 g.plot(graph.data("test.dat"),\\
-~~~~~~~graph.symbol(graph.symbol.circle,symbolattrs=deco.filled()\\
+~~~~~~~graph.symbol(graph.symbol.circle,symbolattrs=[deco.filled]\\
 ~~~~~~~)
 \end{progcode}
 }
@@ -346,12 +346,12 @@ g.plot(graph.data("test.dat"),\\
 {}
 {Colors are not properties of the symbol as such and can therefore not
 be specified in \texttt{symbolattrs} directly. The color is rather related
-to the plotting of the symbol as defined by \texttt{deco.stroked()} or
-\texttt{deco.filled()}. With
+to the plotting of the symbol as defined by \texttt{deco.stroked} or
+\texttt{deco.filled}. With
 \begin{progcode}
 graph.symbol(graph.symbol.circle,\\
-~~~~~~~~~~~~~symbolattrs=[deco.stroked(color.rgb.red),\\
-~~~~~~~~~~~~~~~~~~~~~~~~~~deco.filled(color.rgb.green)]\\
+~~~~~~~~~~~~~symbolattrs=[deco.stroked([color.rgb.red]),\\
+~~~~~~~~~~~~~~~~~~~~~~~~~~deco.filled([color.rgb.green])]\\
 ~~~~~~~~~~~~~)
 \end{progcode}
 you will obtain a circle filled in green with a red borderline.
@@ -363,7 +363,7 @@ you will obtain a circle filled in green with a red borderline.
 example
 \begin{progcode}
 g.plot(graph.data("test.dat"),\\
-~~~~~~~graph.line(lineattrs=style.linewidth.Thin)\\
+~~~~~~~graph.line(lineattrs=[style.linewidth.Thin])\\
 ~~~~~~~)
 \end{progcode}
 where the linewidth is set.
@@ -374,7 +374,7 @@ you could use
 \begin{progcode}
 g.plot(graph.data("test.dat"),\\
 ~~~~~~~graph.symbol(graph.symbol.circle, \\
-~~~~~~~~~~~~~~~~~~~~symbolattrs=deco.filled(),\\
+~~~~~~~~~~~~~~~~~~~~symbolattrs=[deco.filled],\\
 ~~~~~~~~~~~~~~~~~~~~lineattrs=[style.linewidth.Thin, style.linestyle.dashed]\\
 ~~~~~~~~~~~~~~~~~~~~)\\
 ~~~~~~~)
