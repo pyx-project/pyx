@@ -57,12 +57,8 @@ class pathel:
          - bounding box of pathel (using currentpoint and currentsubpath)
 	
 	Important note: all coordinates in bbox, currentpoint, and 
-	currrentsubpath have to be converted to pts.
+	currrentsubpath have to be floats (in the unit pt)
 	'''
-	
-	# Though conceptually a little ugly, this conversion is nevertheless
-	# necessary, since one can, for instance, not compare two lengths 
-	# without specifying canvas.unit.
 
 	pass
 
@@ -126,18 +122,16 @@ class rmoveto(pathel):
     ' Perform relative moveto '
 
     def __init__(self, dx, dy):
-         self.dx = dx
-         self.dy = dy
+         self.dx = unit.pt(dx)
+         self.dy = unit.pt(dy)
         
     def bbox(self, canvas, currentpoint, currentsubpath):
-	dx=unit.pt(self.dx)
-	dy=unit.pt(self.dy)
-        return ((dx+currentpoint[0], dy+currentpoint[1]), 
-                (dx+currentpoint[0], dy+currentpoint[1]),
+        return ((self.dx+currentpoint[0], self.dy+currentpoint[1]), 
+                (self.dx+currentpoint[0], self.dy+currentpoint[1]),
 		bbox())
 
     def write(self, canvas, file):
-        file.write("%f %f rmoveto" % (canvas.unit.pt(self.dx), canvas.unit.pt(self.dy) ) )
+        file.write("%f %f rmoveto" % (self.dx, self.dy) )
         
     def _bpath(self, currentpoint, currentsubpath):
         return ((self.dx+currentpoint[0], self.dy+currentpoint[1]), 
@@ -171,22 +165,19 @@ class rlineto(pathel):
     ' Perform relative lineto '
 
     def __init__(self, dx, dy):
-         self.dx = dx
-         self.dy = dy
+         self.dx = unit.pt(dx)
+         self.dy = unit.pt(dy)
 
     def bbox(self, canvas, currentpoint, currentsubpath):
-	dx=canvas.unit.pt(self.dx)
-	dy=canvas.unit.pt(self.dy)
-        return ((currentpoint[0]+dx, currentpoint[1]+dy),
+        return ((currentpoint[0]+self.dx, currentpoint[1]+self.dy),
                 currentsubpath or currentpoint,
-                bbox(min(currentpoint[0], currentpoint[0]+dx),
-		     min(currentpoint[1], currentpoint[1]+dy), 
-	 	     max(currentpoint[0], currentpoint[0]+dx),
-		     max(currentpoint[1], currentpoint[1]+dy)))
+                bbox(min(currentpoint[0], currentpoint[0]+self.dx),
+		     min(currentpoint[1], currentpoint[1]+self.dy), 
+	 	     max(currentpoint[0], currentpoint[0]+self.dx),
+		     max(currentpoint[1], currentpoint[1]+self.dy)))
 
     def write(self, canvas, file):
-        file.write("%f %f rlineto" % (canvas.unit.pt(self.dx), 
-	                              canvas.unit.pt(self.dy)))
+        file.write("%f %f rlineto" % (self.dx, self.dy) )
         
     def _bpath(self, currentpoint, currentsubpath):
         return ((currentpoint[0]+self.dx, currentpoint[1]+self.dy), 
@@ -199,9 +190,9 @@ class arc(pathel):
     ' Append counterclockwise arc '
 
     def __init__(self, x, y, r, angle1, angle2):
-        self.x = x
-        self.y = y
-        self.r = r
+        self.x = unit.pt(x)
+        self.y = unit.pt(y)
+        self.r = unit.pt(r)
 	self.angle1 = angle1
 	self.angle2 = angle2
 
@@ -210,12 +201,12 @@ class arc(pathel):
         phi2=pi*self.angle2/180
 	
 	# starting point of arc segment
-	sarcx = canvas.unit.pt(self.x+self.r*cos(phi1))
-	sarcy = canvas.unit.pt(self.y+self.r*sin(phi1))
+	sarcx = self.x+self.r*cos(phi1)
+	sarcy = self.y+self.r*sin(phi1)
 
 	# end point of arc segment
-	earcx = canvas.unit.pt(self.x+self.r*cos(phi2))
-	earcy = canvas.unit.pt(self.y+self.r*sin(phi2))
+	earcx = self.x+self.r*cos(phi2)
+	earcy = self.y+self.r*sin(phi2)
 
 	# Now, we have to determine the corners of the bbox for the
 	# arc segment, i.e. global maxima/mimima of cos(phi) and sin(phi)
@@ -232,7 +223,7 @@ class arc(pathel):
 	if phi2<(2*floor((phi1-pi)/(2*pi))+3)*pi:
 	    minarcx = min(sarcx, earcx)
 	else:
-            minarcx = canvas.unit.pt(self.x-self.r)
+            minarcx = self.x-self.r
 
 	# next minimum of sin(phi) looking from phi1 in counterclockwise 
 	# direction: 2*pi*floor((phi1-3*pi/2)/(2*pi)) + 7/2*pi
@@ -240,7 +231,7 @@ class arc(pathel):
 	if phi2<(2*floor((phi1-3*pi/2)/(2*pi))+7.0/2)*pi:
 	    minarcy = min(sarcy, earcy)
 	else:
-            minarcy = canvas.unit.pt(self.y-self.r)
+            minarcy = self.y-self.r
 
 	# next maximum of cos(phi) looking from phi1 in counterclockwise 
 	# direction: 2*pi*floor((phi1)/(2*pi))+2*pi
@@ -248,7 +239,7 @@ class arc(pathel):
 	if phi2<(2*floor((phi1)/(2*pi))+2)*pi:
 	    maxarcx = max(sarcx, earcx)
 	else:
-            maxarcx = canvas.unit.pt(self.x+self.r)
+            maxarcx = self.x+self.r
 
 	# next maximum of sin(phi) looking from phi1 in counterclockwise 
 	# direction: 2*pi*floor((phi1-pi/2)/(2*pi)) + 1/2*pi
@@ -256,7 +247,7 @@ class arc(pathel):
 	if phi2<(2*floor((phi1-pi/2)/(2*pi))+5.0/2)*pi:
 	    maxarcy = max(sarcy, earcy)
 	else:
-            maxarcy = canvas.unit.pt(self.y+self.r)
+            maxarcy = self.y+self.r
 
 	# Finally, we are able to construct the bbox for the arc segment.
 	# Note that if there is a currentpoint defined, we also
@@ -280,9 +271,8 @@ class arc(pathel):
 
 			    
     def write(self, canvas, file):
-        file.write("%f %f %f %f %f arc" % ( canvas.unit.pt(self.x),
-                                            canvas.unit.pt(self.y),
-                                            canvas.unit.pt(self.r),
+        file.write("%f %f %f %f %f arc" % ( self.x, self.y,
+                                            self.r,
                                             self.angle1,
                                             self.angle2 ) )
         
@@ -301,58 +291,55 @@ class arc(pathel):
         if currentpoint:
              return ( (earcx, earcy),
                       currentsubpath or currentpoint,
-                      bline(currentpoint[0], currentpoint[1], sarcx, sarcy) +
-                      barc(self.x, self.y, self.r, self.angle1, self.angle2)
+                      bline("%f t pt" % currentpoint[0], "%f t pt" % currentpoint[1], "%f t pt" % sarcx, "%f t pt" % sarcy) +
+                      barc("%f t pt" % self.x, "%f t pt" % self.y, "%f t pt" % self.r, self.angle1, self.angle2)
                     )
         else:  # we assert that currentsubpath is also None
              return ( (earcx, earcy),
                       (sarcx, sarcy),
-                      barc(self.x, self.y, self.r, self.angle1, self.angle2)
+                      barc("%f t pt" % self.x, "%f t pt" % self.y, "%f t pt" % self.r, self.angle1, self.angle2)
                     )
 	
 class arcn(pathel):
     ' Append clockwise arc '
     
     def __init__(self, x, y, r, angle1, angle2):
-        self.x = x
-        self.y = y
-        self.r = r
+        self.x = unit.pt(x)
+        self.y = unit.pt(y)
+        self.r = unit.pt(r)
 	self.angle1 = angle1
 	self.angle2 = angle2
 
     def bbox(self, canvas, currentpoint, currentsubpath):
-        return arc(self.x, self.y, 
-                   self.r, 
+        return arc("%f t pt" % self.x, "%f t pt" % self.y, 
+                   "%f t pt" % self.r, 
 		   self.angle2, self.angle1).bbox(canvas, currentpoint, currentsubpath)
 
     def write(self, canvas, file):
-        file.write("%f %f %f %f %f arcn" % ( canvas.unit.pt(self.x),
-                                             canvas.unit.pt(self.y),
-                                             canvas.unit.pt(self.r),
+        file.write("%f %f %f %f %f arcn" % ( self.x, self.y,
+                                             self.r,
                                              self.angle1,
                                              self.angle2 ) )
 
     def _bpath(self, currentpoint, currentsubpath):
-        return arc(self.x, self.y, 
-                   self.r, 
+        return arc("%f t pt" % self.x, "%f t pt" % self.y, 
+                   "%f t pt" % self.r, 
 		   self.angle2, self.angle1)._bpath(currentpoint,currentsubpath)
 
 class arct(pathel):
     ' Append tangent arc '
 
     def __init__(self, x1, y1, x2, y2, r):
-        self.x1 = x1
-	self.y1 = y1
-	self.x2 = x2
-	self.y2 = y2
-	self.r = r
+        self.x1 = unit.pt(x1)
+	self.y1 = unit.pt(y1)
+	self.x2 = unit.pt(x2)
+	self.y2 = unit.pt(y2)
+	self.r  = unit.pt(r)
 
     def write(self, canvas, file):
-        file.write("%f %f %f %f %f arct" % ( canvas.unit.pt(self.x1),
-                                             canvas.unit.pt(self.y1),
-                                             canvas.unit.pt(self.x2),
-                                             canvas.unit.pt(self.y2),
-                                             canvas.unit.pt(self.r) ) )
+        file.write("%f %f %f %f %f arct" % ( self.x1, self.y1,
+                                             self.x2, self.y2,
+                                             self.r ) )
 
     def bbox(self, canvas, currentpoint, currentsubpath):
         return (currentpoint, currentsubpath, bbox(100,200,150,300))
@@ -401,9 +388,10 @@ class arct(pathel):
 
         return ((xt2, yt2),
                 currentsubpath or (xt2, yt2),
-                bline(currentpoint[0], currentpoint[1], xt1, yt1) +
-                arc(mx, my,
-                    self.r,
+                bline("%f t pt" % currentpoint[0], "%f t pt" % currentpoint[1], 
+                      "%f t pt" % xt1, "%f t pt" % yt1) +
+                arc("%f t pt" % mx, "%f t pt" % my,
+                    "%f t pt" % self.r,
                     phi-deltaphi,
                     phi+deltaphi)._bpath(None, None)[2] )
 
@@ -411,65 +399,57 @@ class arct(pathel):
 class curveto(pathel):
 
     def __init__(self, x1, y1, x2, y2, x3, y3):
-        self.x1 = x1
-	self.y1 = y1
-	self.x2 = x2
-	self.y2 = y2
-	self.x3 = x3
-	self.y3 = y3
+        self.x1 = unit.pt(x1)
+	self.y1 = unit.pt(y1)
+	self.x2 = unit.pt(x2)
+	self.y2 = unit.pt(y2)
+	self.x3 = unit.pt(x3)
+	self.y3 = unit.pt(y3)
 	
     def bbox(self, canvas, currentpoint, currentsubpath):
-	x1=canvas.unit.pt(self.x1)
-	y1=canvas.unit.pt(self.y1)
-	x2=canvas.unit.pt(self.x2)
-	y2=canvas.unit.pt(self.y2)
-	x3=canvas.unit.pt(self.x3)
-	y3=canvas.unit.pt(self.y3)
-        return ((x3, y3),
+        return ((self.x3, self.y3),
                 currentsubpath or currentpoint,
-                bbox(min(currentpoint[0], x1, x2, x3), min(currentpoint[1], y1, y2, y3), 
- 	             max(currentpoint[0], x1, x2, x3), max(currentpoint[1], y1, y2, y3)))
+                bbox(min(currentpoint[0], self.x1, self.x2, self.x3), 
+                     min(currentpoint[1], self.y1, self.y2, self.y3), 
+ 	             max(currentpoint[0], self.x1, self.x2, self.x3), 
+                     max(currentpoint[1], self.y1, self.y2, self.y3)))
 
     def write(self, canvas, file):
-        file.write("%f %f %f %f %f %f curveto" % ( canvas.unit.pt(self.x1),
-                                                   canvas.unit.pt(self.y1),
-                                                   canvas.unit.pt(self.x2),
-                                                   canvas.unit.pt(self.y2),
-                                                   canvas.unit.pt(self.x3),
-                                                   canvas.unit.pt(self.y3)) )
+        file.write("%f %f %f %f %f %f curveto" % ( self.x1, self.y1,
+                                                   self.x2, self.y2,
+                                                   self.x3, self.y3 ) )
         
     def _bpath(self, currentpoint, currentsubpath):
         return ((self.x3, self.y3),
                 currentsubpath or currentpoint, 
-                bcurve(currentpoint[0], currentpoint[1],
-                        self.x1, self.y1, self.x2, self.y2, self.x3, self.y3))
+                bcurve("%f t pt" % currentpoint[0], "%f t pt" % currentpoint[1],
+                        "%f t pt" % self.x1, "%f t pt" % self.y1, 
+                        "%f t pt" % self.x2, "%f t pt" % self.y2, 
+                        "%f t pt" % self.x3, "%f t pt" % self.y3))
 
 
 class rcurveto(pathel):
 	
     def __init__(self, dx1, dy1, dx2, dy2, dx3, dy3):
-        self.dx1 = dx1
-	self.dy1 = dy1
-	self.dx2 = dx2
-	self.dy2 = dy2
-	self.dx3 = dx3
-	self.dy3 = dy3
+        self.dx1 = unit.pt(dx1)
+	self.dy1 = unit.pt(dy1)
+	self.dx2 = unit.pt(dx2)
+	self.dy2 = unit.pt(dy2)
+	self.dx3 = unit.pt(dx3)
+	self.dy3 = unit.pt(dy3)
 	
     def write(self, canvas, file):
-        file.write("%f %f %f %f %f %f rcurveto" % ( canvas.unit.pt(self.dx1),
-                                                    canvas.unit.pt(self.dy1),
-                                                    canvas.unit.pt(self.dx2),
-                                                    canvas.unit.pt(self.dy2),
-                                                    canvas.unit.pt(self.dx3),
-                                                    canvas.unit.pt(self.dy3)) )
+        file.write("%f %f %f %f %f %f rcurveto" % ( self.dx1, self.dy1,
+                                                    self.dx2, self.dy2,
+                                                    self.dx3, self.dy3 ) )
 
     def bbox(self, canvas, currentpoint, currentsubpath):
-	x1=currentpoint[0]+canvas.unit.pt(self.dx1)
-	y1=currentpoint[1]+canvas.unit.pt(self.dy1)
-	x2=currentpoint[0]+canvas.unit.pt(self.dx2)
-	y2=currentpoint[1]+canvas.unit.pt(self.dy2)
-	x3=currentpoint[0]+canvas.unit.pt(self.dx3)
-	y3=currentpoint[1]+canvas.unit.pt(self.dy3)
+	x1=currentpoint[0]+self.dx1
+	y1=currentpoint[1]+self.dy1
+	x2=currentpoint[0]+self.dx2
+	y2=currentpoint[1]+self.dy2
+	x3=currentpoint[0]+self.dx3
+	y3=currentpoint[1]+self.dy3
         return ((x3, y3),
                 currentsubpath or currentpoint,
                 bbox(min(currentpoint[0], x1, x2, x3), min(currentpoint[1], y1, y2, y3), 
@@ -484,7 +464,9 @@ class rcurveto(pathel):
         y4=currentpoint[1]+self.dy3
         return ((x4, y4),
                 currentsubpath or currentpoint,
-                bcurve(x2, y2, x3, y3, x4, y4))
+                bcurve("%f t pt" % x2, "%f t pt" % y2, 
+                       "%f t pt" % x3, "%f t pt" % y3, 
+                       "%f t pt" % x4,"%f t pt" %  y4))
 
 ################################################################################
 # path: PS style path 
@@ -557,31 +539,21 @@ class rect(path):
 
 class bpathel:
     def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
-        self.x0 = x0
-        self.y0 = y0
-        self.x1 = x1
-        self.y1 = y1
-        self.x2 = x2
-        self.y2 = y2
-        self.x3 = x3
-        self.y3 = y3
-
-    def __str__(self):
-        return "%f %f moveto %f %f %f %f %f %f curveto" % (self.x0, self.y0,
-                                                           self.x1, self.y1,
-                                                           self.x2, self.y2,
-                                                           self.x3, self.y3)
+        self.x0 = unit.pt(x0)
+        self.y0 = unit.pt(y0)
+        self.x1 = unit.pt(x1)
+        self.y1 = unit.pt(y1)
+        self.x2 = unit.pt(x2)
+        self.y2 = unit.pt(y2)
+        self.x3 = unit.pt(x3)
+        self.y3 = unit.pt(y3)
 
     def write(self, canvas, file):
          file.write( "%f %f moveto %f %f %f %f %f %f curveto" % \
-                     ( canvas.unit.pt(self.x0),
-                       canvas.unit.pt(self.y0),
-                       canvas.unit.pt(self.x1),
-                       canvas.unit.pt(self.y1),
-                       canvas.unit.pt(self.x2),
-                       canvas.unit.pt(self.y2),
-                       canvas.unit.pt(self.x3),
-                       canvas.unit.pt(self.y3) ) )
+                     ( self.x0, self.y0,
+                       self.x1, self.y1,
+                       self.x2, self.y2,
+                       self.x3, self.y3 ) )
                      
 
     def __getitem__(self, t):
@@ -601,17 +573,11 @@ class bpathel:
                )
     
     def bbox(self, canvas):
-	x0=canvas.unit.pt(self.x0)
-        y0=canvas.unit.pt(self.y0)
-        x1=canvas.unit.pt(self.x1)
-        y1=canvas.unit.pt(self.y1)
-	x2=canvas.unit.pt(self.x2)
-        y2=canvas.unit.pt(self.y2)
-        x3=canvas.unit.pt(self.x3)
-        y3=canvas.unit.pt(self.y3)
 
-        return bbox(min(x0, x1, x2, x3), min(y0, y1, y2, y3), 
-                    max(x0, x1, x2, x3), max(y0, y1, y2, y3))
+        return bbox(min(self.x0, self.x1, self.x2, self.x3), 
+                    min(self.y0, self.y1, self.y2, self.y3), 
+                    max(self.x0, self.x1, self.x2, self.x3), 
+                    max(self.y0, self.y1, self.y2, self.y3))
 
         
 
@@ -638,10 +604,14 @@ class bpathel:
         xmidpoint = 0.5*(x01_12+x12_23)
         ymidpoint = 0.5*(y01_12+y12_23)
         
-        return bpath([bpathel(self.x0, self.y0, x01, y01,
-                              x01_12, y01_12, xmidpoint, ymidpoint),
-                      bpathel(xmidpoint, ymidpoint, x12_23, y12_23,
-                              x23, y23, self.x3, self.y3)])
+        return bpath([bpathel("%f t pt" % self.x0, "%f t pt" % self.y0, 
+                              "%f t pt" % x01, "%f t pt" %  y01,
+                              "%f t pt" % x01_12, "%f t pt" % y01_12,
+                              "%f t pt" % xmidpoint, "%f t pt" % ymidpoint),
+                      bpathel("%f t pt" % xmidpoint, "%f t pt" % ymidpoint, 
+                              "%f t pt" % x12_23, "%f t pt" % y12_23,
+                              "%f t pt" % x23, "%f t pt" % y23,
+                              "%f t pt" % self.x3, "%f t pt" % self.y3)])
                        
 
 ################################################################################
@@ -728,13 +698,19 @@ class bline(bpath):
     """ bpath consisting of one straight line"""
     
     def __init__(self, x0, y0, x1, y1):
+        x0 = unit.pt(x0)
+        y0 = unit.pt(y0)
+        x1 = unit.pt(x1)
+        y1 = unit.pt(y1)
+        xa = x0+(x1-x0)/3.0
+        ya = y0+(y1-y0)/3.0
+        xb = x0+2.0*(x1-x0)/3.0
+        yb = y0+2.0*(y1-y0)/3.0
         bpath.__init__(self, 
-                      [bpathel(x0, y0, 
-                               x0+(x1-x0)/3.0, 
-                               y0+(y1-y0)/3.0,
-                               x0+2.0*(x1-x0)/3.0, 
-                               y0+2.0*(y1-y0)/3.0,
-                               x1, y1 )]) 
+                      [bpathel("%f t pt" % x0, "%f t pt" % y0, 
+                               "%f t pt" % xa, "%f t pt" % ya,
+                               "%f t pt" % xb, "%f t pt" % yb,
+                               "%f t pt" % x1, "%f t pt" % y1 )]) 
 
 
 class barc(bpath):
@@ -759,7 +735,7 @@ class barc(bpath):
         self.bpath = []    
 
         for i in range(subdivisions):
-            self.bpath.append(arctobpathel(x, y, r, phi1+i*dphi, phi1+(i+1)*dphi))
+            self.bpath.append(arctobpathel(unit.pt(x), unit.pt(y), unit.pt(r), phi1+i*dphi, phi1+(i+1)*dphi))
 
 ################################################################################
 # some helper routines            
@@ -783,7 +759,10 @@ def arctobpathel(x, y, r, phi1, phi2):
     (x1, y1) = ( x0-l*sin(phi1), y0+l*cos(phi1) )
     (x2, y2) = ( x3+l*sin(phi2), y3-l*cos(phi2) )
     
-    return bpathel(x0, y0, x1, y1, x2, y2, x3, y3)
+    return bpathel("%f t pt" % x0, "%f t pt" % y0, 
+                   "%f t pt" % x1, "%f t pt" % y1,
+                   "%f t pt" % x2, "%f t pt" % y2,
+                   "%f t pt" % x3, "%f t pt" % y3)
 
 def bpathelIntersect(canvas,
                      a, a_t0, a_t1, a_subdiv,
@@ -839,18 +818,18 @@ def bpathelIntersect(canvas,
             # no more subdivisions of either a or b
             # => try to intersect a and b as straight line segments
 
-            a_deltax = canvas.unit.pt(a.x3 - a.x0)
-            a_deltay = canvas.unit.pt(a.y3 - a.y0)
-            b_deltax = canvas.unit.pt(b.x3 - b.x0)
-            b_deltay = canvas.unit.pt(b.y3 - b.y0)
+            a_deltax = a.x3 - a.x0
+            a_deltay = a.y3 - a.y0
+            b_deltax = b.x3 - b.x0
+            b_deltay = b.y3 - b.y0
             
             det = b_deltax*a_deltay - b_deltay*a_deltax
 
             # check for parallel lines
             if 1.0+det==1.0: return ()
 
-            ba_deltax0 = canvas.unit.pt(b.x0 - a.x0)
-            ba_deltay0 = canvas.unit.pt(b.y0 - a.y0)
+            ba_deltax0 = b.x0 - a.x0
+            ba_deltay0 = b.y0 - a.y0
 
             a_t = ( b_deltax*ba_deltay0 - b_deltay*ba_deltax0)/det
             b_t = ( a_deltax*ba_deltay0 - a_deltay*ba_deltax0)/det

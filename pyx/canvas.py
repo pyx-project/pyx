@@ -269,7 +269,7 @@ class _linewidth(PyxAttributes, unit.length):
     def __init__(self, l):
         unit.length.__init__(self, l=l, default_type="w")
     def _PSCmd(self, canvas):
-        return "%f setlinewidth" % canvas.unit.pt(self)
+        return "%f setlinewidth" % unit.pt(self)
     
 
 class linewidth(_linewidth):
@@ -325,9 +325,12 @@ class _grestore(CanvasCmds):
 
 class _translate(CanvasCmds):
     def __init__(self, x, y):
-        (self.x, self.y) = (x,y)
+        self.x = unit.pt(x)
+        self.y = unit.pt(y)
+        
     def write(self, canvas, file):
-        file.write("%f %f translate" % canvas.unit.pt((x, y)))
+        file.write("%f %f translate" % (x, y) )
+
 
 class canvas(CanvasCmds):
 

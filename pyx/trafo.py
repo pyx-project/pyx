@@ -59,7 +59,8 @@ class transformation:
 	    raise UndefinedResultError, "transformation matrix must not be singular" 
 	else:
             self.matrix=matrix
-        self.vector=tuple(map(lambda x: unit.length(x), vector))
+
+        self.vector = ( unit.pt(vector[0]), unit.pt(vector[1]) )
 
     def __mul__(self, other):
         if isinstance(other, transformation):
@@ -123,7 +124,7 @@ class transformation:
         file.write("[%f %f %f %f %f %f] concat\n" % \
 	            ( self.matrix[0][0], self.matrix[0][1], 
 	              self.matrix[1][0], self.matrix[1][1], 
-		      canvas.unit.pt(self.vector[0]), canvas.unit.pt(self.vector[1])))
+		      self.vector[0], self.vector[1] ) )
 	
 
 class translate(transformation):
