@@ -1,5 +1,11 @@
 The installation of PyX is extremely simple if you have installed
-the Python distutils package. Just run
+the Python distutils package. If you want to build PyX locally,
+just run
+
+   python setup.py build_ext -i
+
+You need the kpathsea header and library files for this.
+A system wide installation can be performed with help of
 
     python setup.py install
 
