@@ -1,0 +1,271 @@
+% Modified \output-routine for the use with PyX
+% this file makes changes of \hsize and \vsizes possible after
+% every pagebreak
+%
+% Copyright (C) 2004 Michael Schindler <m-schindler@sourceforge.net>
+%
+% This file is part of PyX (http://pyx.sourceforge.net/).
+%
+% PyX is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 2 of the License, or
+% (at your option) any later version.
+%
+% PyX is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+%
+% You should have received a copy of the GNU General Public License
+% along with PyX; if not, write to the Free Software
+% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+%
+%
+\newtoks\lovsizes
+\newtoks\lohsizes
+\newtoks\parnos
+\newtoks\parshapes
+%
+% Please note that all four tokenlists have to end with {\relax}
+% This is needed for correct shortening
+%
+%%%%%%%%%% TeX's part %%%%%%%%%%
+\newcount\tempcnt
+\newcount\parno \parno=1
+\newcount\myprevgraf \myprevgraf=0
+\newcount\showprevgraf \showprevgraf=0
+\newcount\outputtype \outputtype=0
+\newcount\razor
+\newcount\leastcost \leastcost=10000000
+%
+% Tools for splitting and merging tokenlists after their first element {{{
+% did I learn too much lisp or what?
+\def\cdr#1{\expandafter\precdr\expandafter#1\the#1@}
+\def\numcdr#1{\expandafter\prenumcdr\expandafter#1\the#1@}
+\def\numconcat#1#2{\edef\foo{{\the#1}\the#2}\global#2=\expandafter{\foo}}
+%
+\def\precdr#1#2#3@{\ifx#2\relax\relax\global#1={\relax}\else#2\global#1={#3}\fi}
+\def\prenumcdr#1#2#3@{\ifx\relax#2 0\global#1={\relax}\else#2\global#1={#3}\fi}
+% }}}
+%
+% The output routine {{{
+% Documentation {{{
+% 1. Question: Who calls the pagebuilder and \output?
+%    Answer: Only \par and $$ (as far as I have read the TeXbook)
+%
+% 2. Question: So, all together: What is to be done?
+%    Answer: We have to simulate the work of the linebuilder that makes
+%    paragraphs and math into lines in order to find out, what value \prevgraf
+%    might have at a pagepreak. Then, we change the \hsize and \vsize at the
+%    pagepreak and inform PyX about the value of \prevgraf.
+%
+% 3. Question: When is \prevgraf advanced?
+%    Answer: At every line by 1 and at every display math by 3
+%
+% 4. Question: How can we hook into the pagebuilding mechanism to find out
+%    about lines and displays?
+%    Answer: We get into the pagebuilder that splits vertical lists into pages
+%    if we enforce a penalty of less than -10000. There are three built-in
+%    hooks: \interlinepenalty
+%           \predisplaypenalty
+%           \postdisplaypenalty
+%    These are set to values less than -10000 by wrapping \par and $$, the
+%    ones who call the pagebuilder and, therefore, \output
+%
+%    Unfortunately, we get only "breaks", but we are interested in lines. At
+%    each list, we have one break less than lines. So, we have to add another
+%    call of \output at the end of a paragraph. This is done by an explicit
+%           \penalty
+%    A display math succeeding some text also calls the pagebuilder. We have
+%    to add another line in such situations. This is done in the output
+%    routine while processing \predisplaypenalty.
+%
+% 5. Question: Why are there so many \ifnum s in the output routine?
+%    Answer: As explained avove, we have to do different things at different
+%    positions of our text. \interlinepenalty and the \penalty for paragraph
+%    endings have to add a line. \postdisplaypenalty has to add the display
+%    (advances \prevgraf by 3), while \predisplaypenalty may still reside on
+%    the previous page, while the display math has moved to the next one.
+%    Therefore, it does not contribute to the \prevgraf. Nevertheless, if
+%    there was some text before the display math in the same paragraph, we
+%    still have to add the last line of text!
+%
+%    This is the reason for the whole \outputtype business:
+%    We have to show a \prevgraf value different to \myprevgraf at a situation
+%    where an \interlinepenalty is followed by a \predisplaypenalty which is
+%    followed by a pagebreak. The display is on the next page.
+%    The same can -- of course -- also occur with a \predisplaypenalty
+%    following a \penalty caused by \par
+%
+% 6. Question: What the hell does \leastcost do?
+%    Answer: This is a tricky point. We hooked into the pagebuilding mechanism
+%    by changing penalties. In this case, TeX thinks, there is a very good
+%    pagebreak and calls \output. But \output removes the strongly negative
+%    penalty we added. Now, TeX has to reconsider the pagebreak and may come
+%    to the result that some of the lines that have appeared as perfect
+%    pagebreaks are not so perfect...
+%    Therefore, before we re-inject the whole vertical list and remove the
+%    negative penalty by saying
+%       \unvbox255 \advance\outputpenalty by XXXXXX \penalty\outputpenalty
+%    we have to know in advance, what the pagebuilder will think of the
+%    pagebreak in the next run. See the TeXbook, p. 111 for the correct
+%    formula.
+%    XXX Is it necessary to reproduce the whole formula or is it sufficient to
+%    simply add \badness and \outputpenalty???
+%
+%    This is the reason for \showprevgraf. We have two counters:
+%    - \myprevgraf counts real lines and displays. This keeps us up-to-date
+%      with the paragraph all the time
+%    - \showprevgraf only counts what will be visible on the current page. It
+%    will be reset to \myprevgraf after the pagebreak.
+%
+% 7. Question: What do you do to \deadcycles?
+%    Answer: \deadcycles is advanced every time an \output routine has
+%    re-inserted \box255 into the recent contributions. We have to do this for
+%    every line and display math. Therefore, we are restricted to
+%    \maxdeadcycles lines or displays :-(
+%    To avoid this, we cheat the counting of deadcycles and re-advance
+%    \deadcycles by -1. Please, be careful with this hack!
+% }}}
+\def\calcfuturepenalty#1{%
+  \tempcnt=#1 \advance\tempcnt by\badness \advance\tempcnt by\outputpenalty
+  \ifnum\tempcnt>\leastcost\else
+    \global\leastcost=\tempcnt
+    \global\showprevgraf=\myprevgraf
+  \fi}
+\newtoks\saveoutput
+%\saveoutput=\expandafter{\the\output}
+\saveoutput={\shipout\vbox{\pagebody}\advancepageno\ifnum\outputpenalty>-20000\else\dosupereject\fi}
+\output={%
+  \tempcnt=\deadcycles \advance\tempcnt by-1 \deadcycles=\tempcnt%
+  \razor=-50000
+  \ifnum\outputpenalty>\razor
+    %%%%%%%%%% End of the page %%%%%%%%%%
+    \ifnum\outputtype=5 \advance\showprevgraf by -1 \fi% no \global here, just for the next line:
+    \immediate\write16{PyXVariableBox:page=\the\pageno,par=\the\parno,prevgraf=\the\showprevgraf:}%
+    %\immediate\write16{******** Seitenende ******** pageno=\the\pageno\space parno=\the\parno\space prevgraf=\the\showprevgraf}%
+    % reset showprevgraf
+    \global\showprevgraf=\myprevgraf
+    \tempcnt=\deadcycles \advance\tempcnt by 1 \deadcycles=\tempcnt
+    % set the outputtype
+    \global\outputtype=0
+    % after the page has been shipped out, we need a new leastcost
+    \global\leastcost=10000000
+    % do whatever someone told to be the output routine
+    \the\saveoutput
+    % and change the \hsize and \vsize
+    \cdr\lovsizes \cdr\lohsizes
+  \else\advance\razor by -100000 \ifnum\outputpenalty>\razor
+    %%%%%%%%%% InterLinePenalty: -100000 %%%%%%%%%%
+    %\immediate\write16{******** InterLinePenalty ********}%
+    \global\advance\myprevgraf by 1
+    % this will be the cost in the next page break finding:
+    \calcfuturepenalty{100000}
+    % set the outputtype
+    \global\outputtype=1
+    % and re-inject the whole page with the original penalty
+    \unvbox255 \advance\outputpenalty by 100000 \penalty\outputpenalty
+  \else\advance\razor by -100000 \ifnum\outputpenalty>\razor
+    %%%%%%%%%% PreDisplayPenalty: -200000 %%%%%%%%%%
+    %\immediate\write16{******** PreDisplayPenalty ********}%
+    \ifnum\outputtype=1
+      \global\advance\myprevgraf by 1
+      \global\outputtype=5
+      % this will be the cost in the next page break finding:
+      \calcfuturepenalty{200000}
+    \else\ifnum\outputtype=4
+      \global\advance\myprevgraf by 1
+      \global\outputtype=2
+      % this will be the cost in the next page break finding:
+      \calcfuturepenalty{200000}
+    \else\global\outputtype=2 \fi\fi
+    % and re-inject the whole page with the original penalty
+    \unvbox255 \advance\outputpenalty by 200000 \penalty\outputpenalty
+  \else\advance\razor by -100000 \ifnum\outputpenalty>\razor
+    %%%%%%%%%% PostDisplayPenalty: -300000 %%%%%%%%%%
+    %\immediate\write16{******** PostDisplayPenalty ********}%
+    \global\advance\myprevgraf by 3 % pre und post zusammen muessen 2 ergeben:
+                                    %   pre kann aber auf voriger Seite stehen
+    % this will be the cost in the next page break finding:
+    \calcfuturepenalty{300000}
+    % set the outputtype
+    \global\outputtype=3
+    % and re-inject the whole page with the original penalty
+    \unvbox255 \advance\outputpenalty by 300000 \penalty\outputpenalty
+  \else\advance\razor by -100000 \ifnum\outputpenalty>\razor
+    %%%%%%%%%% end of the paragraph: \penalty-400000 %%%%%%%%%%
+    %\immediate\write16{******** Penalty ********}%
+    \global\advance\myprevgraf by 1
+    % this will be the cost in the next page break finding:
+    \calcfuturepenalty{400000}
+    \global\outputtype=4
+    % and re-inject the whole page with the original penalty
+    \unvbox255 \advance\outputpenalty by 400000 \penalty\outputpenalty
+  \else
+    %%%%%%%%%% some stuff unknown to us %%%%%%%%%%
+    \immediate\write16{******** VEEEEEEERY negative value of outputpenalty: ERROR? ********}%
+    \unvbox255
+    \tempcnt=\deadcycles\advance\tempcnt by 1 \deadcycles=\tempcnt
+  \fi\fi\fi\fi\fi}
+% }}}
+%
+% We have to reset certain things at the beginning of {{{
+% every paragraph: Hook into it with \everypar
+\newtoks\saveeverypar
+\saveeverypar=\expandafter{\the\everypar}
+\everypar={%
+  \global\advance\parno by 1
+  \global\myprevgraf=0
+  \global\showprevgraf=0
+  \global\leastcost=10000000
+  % check if the following paragraph will need a \parshape
+  % if yes, say the first token of \parshapes
+  % if no, restore the parno number into \parnos.
+  % This has to come in \everypar to avoid content after the last \par
+  \tempcnt=\numcdr\parnos
+  \ifnum\tempcnt=\parno \cdr\parshapes
+  \else \numconcat\tempcnt\parnos
+  \fi
+  %PAR--\the\parno--%
+  \the\saveeverypar}
+% }}}
+%
+% \par calls the pagebuilder and \output {{{
+% We wrap the \par primitive
+%  - set \interlinepenalty first and reset it afterwards
+%  - call \output another time for the last line of the paragraph
+\let\savepar\par
+\def\par{%
+  \ifvmode\savepar\else\ifinner\savepar\else
+    \global\leastcost=10000000
+    \advance\interlinepenalty by -100000
+    \vadjust{\penalty-400000}%
+    \savepar
+    \advance\interlinepenalty by 100000
+  \fi\fi}
+% }}}
+%
+% $$ also calls the pagebuilder and \output {{{
+% We wrap these characters with newly defined commands
+% \display and \enddisplay
+% XXX Can $ be redefined to achieve the same result?
+%  - $$ (begin) calls the pagebuilder for the previous text
+%    we have to do similar things as in \par
+%  - $$ (end) calls the pagebuilder for the display math
+%    we have to adjust \predisplaypenalty and \postdisplaypenalty
+% XXX Has \interdisplaylinepenalty any effect on \prevgraf ?
+\def\display{%
+  \global\leastcost=10000000
+  \global\advance\interlinepenalty by -100000
+  $$%
+  \global\advance\interlinepenalty by 100000\relax}
+\def\enddisplay{%
+  \global\leastcost=1000000000
+  \global\advance\predisplaypenalty by -200000
+  \global\advance\postdisplaypenalty by -300000
+  $$%
+  \global\advance\predisplaypenalty by 200000
+  \global\advance\postdisplaypenalty by 300000\relax}
+% }}}
+%
+% vim:fdm=marker
