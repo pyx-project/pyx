@@ -1,14 +1,15 @@
 % $Header$
 %
 \documentclass{article}
+\usepackage{pyx}
 \begin{document}
 \section*{Design rules for variable argument lists and dictionaries
-of functions in PyX}
+of functions in \PyX}
 
 In order to get an easy user interface, we should restrict ourselfs to
 some well defined ways of handling function calls with variable
 argument lists and dictionaries. This file tries to consider the
-typical occurrencies within PyX and provides standard solutions for
+typical occurrencies within \PyX{} and provides standard solutions for
 them.
 
 We describe two different kind of function calls with variable
@@ -26,7 +27,7 @@ methods and constructors as well.
 
 \subsection*{\texttt{arglist}-type functions and arguments}
 
-Somehow, this first case is the more specific to PyX nessecities than
+Somehow, this first case is the more specific to \PyX{} nessecities than
 the second one. Let's first consider an example:
 
 \begin{verbatim}
