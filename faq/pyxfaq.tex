@@ -86,6 +86,20 @@ different versions of Python installed on your system at the same time. The
 default Python version need not be the same for all users.
 }
 
+\question{a}{Does \PyX{} provide a GUI to view the produced image? \new}
+{}
+{No, \PyX{} itself does not provide a means to view the produced image. The 
+result of a \PyX{} run is an EPS (= Encapsulated PostScript) file which can
+be viewed, printed or imported into other applications. There are several
+means of viewing EPS files. A common way would be to use \texttt{ghostview}
+which provides a user interface to the PostScript interpreter
+\texttt{ghostscript}. More information about this software, which is
+available for a variety of platforms, can be found at 
+\url{http://www.cs.wisc.edu/~ghost/}. If you do not own a printer which is
+capable of printing PostScript files directly, \texttt{ghostscript} may
+also be useful to translate the EPS file produced by \PyX{} into something
+your printer will understand.}
+
 \question{a}{Where can I get help if my question is not answered in this FAQ?}
 {}
 {The \PyX{} sources contain a reference manual and a set of examples 
