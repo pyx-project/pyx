@@ -302,68 +302,83 @@ class TFMFile:
 
         self.file.file.close()
 
-mappath = pykpathsea.find_file("psfonts.map", pykpathsea.kpse_fontmap_format)
-if path is None:
+
+class FontMapping:
+
+    tokenpattern = re.compile(r'"(.*?)("\s+|$)|(.*?)(\s+|$)')
+
+    def __init__(self, s):
+        """ construct font mapping from line s of dvips mapping file """
+        self.texname = self.psname = self.fontfile = self.encoding = self.pscode = None
+
+        tokens = []
+        while len(s):
+            match = self.tokenpattern.match(s)
+            if match:
+                if match.groups()[0]:
+                    tokens.append('"%s"' % match.groups()[0])
+                else:
+                    tokens.append(match.groups()[2])
+                s = s[match.end():]
+            else:
+                raise RuntimeError("wrong syntax in font catalog file 'psfonts.map'")
+
+        for token in tokens:
+            if token.startswith("<"):
+                if token.startswith("<<"):
+                    # XXX: support non-partial download here
+                    self.fontfile = token[2:]
+                elif token.startswith("<["):
+                    self.encoding = token[2:]
+                elif token.endswith(".pfa") or token.endswith(".pfb"):
+                    self.fontfile = token[1:]
+                elif token.endswith(".enc"):
+                    self.encoding = token[1:]
+                else:
+                    raise RuntimeError("wrong syntax in font catalog file 'psfonts.map'")
+            elif token.startswith('"'):
+                self.pscode = token[1:-1]
+            else:
+                if self.texname is None:
+                    self.texname = token
+                else:
+                    self.psname = token
+        if self.psname is None:
+            self.psname = self.texname
+
+    def __str__(self):
+        return ("'%s' is '%s' read from '%s' encoded as '%s' used with '%s'" %
+                (self.texname, self.psname, self.fontfile, repr(self.encoding), repr(self.pscode)))
+
+
+# generate fontmap
+
+fontmap = {}
+mappath = pykpathsea.find_file("psfonts.map", pykpathsea.kpse_dvips_config_format)
+if mappath is None:
     raise RuntimeError("cannot find dvips font catalog 'psfonts.map'")
 mapfile = open(mappath, "r")
-tokenpattern = re.compile(r'"(.*?)("\s+|$)|(.*?)(\s+|$)')
 
 for line in mapfile.readlines():
     line = line.rstrip()
-    if line=="" or line[0] in (" ", "%", "*", ";" , "#"):
-        continue
-    tokens = []
-    while len(line):
-        match = tokenpattern.match(line)
-        if match:
-            if match.groups()[0]:
-                tokens.append('"%s"' % match.groups()[0])
-            else:
-                tokens.append(match.groups()[2])
-            line = line[match.end():]
-        else:
-            raise RuntimeError("wrong syntax in font catalog file 'psfonts.map'")
-        
-    texname = psname = fontfile = encoding = pscode = None
-    for token in tokens:
-        if token.startswith("<"):
-            if token.startswith("<<"):
-                # XXX: support non-partial download here
-                fontfile = token[2:]
-            if token.startswith("<["):
-                encoding = token[2:]
-            elif token.endswith(".pfa") or token.endswith(".pfb"):
-                fontfile = token[1:]
-            elif token.endswith(".enc"):
-                encoding = token[1:]
-        elif token.startswith('"'):
-            pscode = token[1:-1]
-        else:
-            if texname is None:
-                texname = token
-            else:
-                psname = token
-
-    if psname is None:
-        psname = texname
-
-        
-            
-    print texname, "is", psname, "read from", fontfile, "encoded as", encoding, "used with", pscode
+    if not (line=="" or line[0] in (" ", "%", "*", ";" , "#")):
+        fontmapping = FontMapping(line)
+        fontmap[fontmapping.texname] = fontmapping
 
 mapfile.close()
-
-
+del mappath
+del mapfile
 
 class Font:
     def __init__(self, name, c, q, d, tfmconv, debug=0):
         self.name = name
-        self.path = pykpathsea.find_file("%s.tfm" % self.name, pykpathsea.kpse_tfm_format)
-        if self.path is None:
+        self.tfmpath = pykpathsea.find_file("%s.tfm" % self.name, pykpathsea.kpse_tfm_format)
+        if self.tfmpath is None:
             raise TFMError("cannot find %s.tfm" % self.name)
-        self.tfmfile = TFMFile(self.path, debug)
+        self.tfmfile = TFMFile(self.tfmpath, debug)
+        self.fontmapping = fontmap.get(name, None)
 
-        if self.tfmfile.checksum!=c:
+        if self.tfmfile.checksum != c:
             raise DVIError("check sums do not agree: %d vs. %d" %
                            (self.tfmfile.checksum, c))
 
@@ -430,6 +445,24 @@ class Font:
     def mergeusedchars(self, otherfont):
         for i in range(len(self.usedchars)):
             self.usedchars[i] = self.usedchars[i] or otherfont.usedchars[i]
+
+    def getpsname(self):
+        if self.fontmapping:
+            return self.fontmapping.psname
+        else:
+            return self.name.upper()
+
+    def getfontfile(self):
+        if self.fontmapping:
+            return self.fontmapping.fontfile
+        else:
+            return self.name+".pfb"
+
+    def getencoding(self):
+        if self.fontmapping:
+            return self.fontmapping.encoding
+        else:
+            return None
 
 
 _DVI_CHARMIN     =   0 # typeset a character and move right (range min)
@@ -599,12 +632,11 @@ class DVIFile:
         self.flushout()
         self.activefont = fontnum
 
-        fontname = self.fonts[self.activefont].name
+        fontpsname = self.fonts[self.activefont].getpsname()
         fontscale = self.fonts[self.activefont].scale
         fontdesignsize = float(self.fonts[self.activefont].tfmfile.designsize)
-        self.actpage.insert(_selectfont(fontname.upper(),
+        self.actpage.insert(_selectfont(fontpsname,
                                         fontscale*fontdesignsize*72/72.27))
-
 
         if self.debug:
             print ("%d: fntnum%i current font is %s" %
@@ -632,7 +664,9 @@ class DVIFile:
 #                print " (this font is magnified %d%%)" % round(scale/10)
 
     def special(self, s):
-
+        self.flushout()
+        x =  unit.t_m(self.pos[_POS_H] * self.conv * 0.0254 / self.resolution)
+        y = -unit.t_m(self.pos[_POS_V] * self.conv * 0.0254 / self.resolution)
         if self.debug:
             print "%d: xxx '%s'" % (self.filepos, s)
         if not s.startswith("PyX:"):
@@ -656,32 +690,20 @@ class DVIFile:
                     raise RuntimeError("unknown TeX color '%s', aborting" % args[1])
             else:
                 raise RuntimeError("color model '%s' cannot be handled by PyX, aborting" % args[0])
-            # XXX when do we have to flush?
-            self.flushout()
             self.actpage.insert(_savecolor())
             self.actpage.insert(c)
         elif command=="color_end":
             self.actpage.insert(_restorecolor())
-            # XXX when do we have to flush?
-            self.flushout()
         elif command=="rotate_begin":
-            self.flushout()
             self.actpage.insert(_savetrafo())
-            x =  unit.t_m(self.pos[_POS_H] * self.conv * 0.0254 / self.resolution)
-            y = -unit.t_m(self.pos[_POS_V] * self.conv * 0.0254 / self.resolution)
             self.actpage.insert(trafo.rotate(float(args[0]), x, y))
         elif command=="rotate_end":
             self.actpage.insert(_restoretrafo())
-            self.flushout()
         elif command=="scale_begin":
-            self.flushout()
             self.actpage.insert(_savetrafo())
-            x =  unit.t_m(self.pos[_POS_H] * self.conv * 0.0254 / self.resolution)
-            y = -unit.t_m(self.pos[_POS_V] * self.conv * 0.0254 / self.resolution)
             self.actpage.insert(trafo.scale(float(args[0]), float(args[1]), x, y))
         elif command=="scale_end":
             self.actpage.insert(_restoretrafo())
-            self.flushout()
         elif command=="epsinclude":
             # XXX: we cannot include epsfile in the header because this would
             # generate a cyclic import with the canvas and text modules
@@ -692,9 +714,6 @@ class DVIFile:
             for arg in args:
                 name, value = arg.split("=")
                 argdict[name] = value
-
-            x =  unit.t_m(self.pos[_POS_H] * self.conv * 0.0254 / self.resolution)
-            y = -unit.t_m(self.pos[_POS_V] * self.conv * 0.0254 / self.resolution)
 
             # construct kwargs for epsfile constructor
             epskwargs = {}
