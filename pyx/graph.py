@@ -340,92 +340,13 @@ class _Ipart:
         see lesspart, but increase the number of ticks"""
 
 
-class manualpart:
-    """manual partition scheme
-    ticks and labels at positions explicitly provided to the constructor"""
-
-    __implements__ = _Ipart
-
-    def __init__(self, tickpos=None, labelpos=None, labels=None, mix=()):
-        """configuration of the partition scheme
-        - tickpos and labelpos should be a list of lists, where
-          the first list contains the values to be used for
-          ticks with ticklevel/labellevel 0, the second list for
-          ticklevel/labellevel 1, etc.
-        - tickpos and labelpos values are passed to the frac constructor
-        - when the maximum ticklevel/labellevel is 0, just a list
-          might be provided in tickpos and labelpos
-        - when labelpos is None and tickpos is not None, the tick entries
-          for ticklevel 0 are used for labels and vice versa (ticks<->labels)
-        - labels are applied to the resulting partition via the
-          mergelabels function (additional information available there)
-        - mix specifies another partition to be merged into the
-          created partition"""
-        if tickpos is None and labelpos is not None:
-            self.tickpos = helper.ensuresequence(helper.getsequenceno(labelpos, 0))
-        else:
-            self.tickpos = tickpos
-        if labelpos is None and tickpos is not None:
-            self.labelpos = helper.ensuresequence(helper.getsequenceno(tickpos, 0))
-        else:
-            self.labelpos = labelpos
-        self.labels = labels
-        self.mix = mix
-
-    def checkfraclist(self, *fracs):
-        "orders a list of fracs, equal entries are not allowed"
-        if not len(fracs): return ()
-        sorted = list(fracs)
-        sorted.sort()
-        last = sorted[0]
-        for item in sorted[1:]:
-            if last == item:
-                raise ValueError("duplicate entry found")
-            last = item
-        return sorted
-
-    def part(self):
-        "create the partition as described in the constructor"
-        ticks = list(self.mix)
-        if helper.issequenceofsequences(self.tickpos):
-            for fracs, level in zip(self.tickpos, xrange(sys.maxint)):
-                ticks = _mergeticklists(ticks, [tick((f.enum, f.denom), ticklevel=level, labellevel=None)
-                                                for f in self.checkfraclist(*map(frac, helper.ensuresequence(fracs)))])
-        else:
-            map(frac, helper.ensuresequence(self.tickpos))
-            ticks = _mergeticklists(ticks, [tick((f.enum, f.denom), ticklevel=0, labellevel=None)
-                                            for f in self.checkfraclist(*map(frac, helper.ensuresequence(self.tickpos)))])
-
-        if helper.issequenceofsequences(self.labelpos):
-            for fracs, level in zip(self.labelpos, xrange(sys.maxint)):
-                ticks = _mergeticklists(ticks, [tick((f.enum, f.denom), ticklevel=None, labellevel = level)
-                                                for f in self.checkfraclist(*map(frac, helper.ensuresequence(fracs)))])
-        else:
-            ticks = _mergeticklists(ticks, [tick((f.enum, f.denom), ticklevel=None, labellevel = 0)
-                                            for f in self.checkfraclist(*map(frac, helper.ensuresequence(self.labelpos)))])
-
-        _mergelabels(ticks, self.labels)
-
-        return ticks
-
-    def defaultpart(self, min, max, extendmin, extendmax):
-        # XXX: we do not take care of the parameters -> correct?
-        return self.part()
-
-    def lesspart(self):
-        return None
-
-    def morepart(self):
-        return None
-
-
 class linpart:
     """linear partition scheme
     ticks and label distances are explicitly provided to the constructor"""
 
     __implements__ = _Ipart
 
-    def __init__(self, tickdist=None, labeldist=None, labels=None, extendtick=0, extendlabel=None, epsilon=1e-10, mix=()):
+    def __init__(self, tickdist=None, labeldist=None, labels=None, extendtick=0, extendlabel=None, epsilon=1e-10):
         """configuration of the partition scheme
         - tickdist and labeldist should be a list, where the first value
           is the distance between ticks with ticklevel/labellevel 0,
@@ -444,9 +365,7 @@ class linpart:
         - extendlabel is analogous to extendtick, but for labels
         - epsilon allows for exceeding the axis range by this relative
           value (relative to the axis range given to the defaultpart method)
-          without creating another tick specified by extendtick/extendlabel
-        - mix specifies another partition to be merged into the
-          created partition"""
+          without creating another tick specified by extendtick/extendlabel"""
         if tickdist is None and labeldist is not None:
             self.ticklist = (frac(helper.ensuresequence(labeldist)[0]),)
         else:
@@ -459,7 +378,6 @@ class linpart:
         self.extendtick = extendtick
         self.extendlabel = extendlabel
         self.epsilon = epsilon
-        self.mix = mix
 
     def extendminmax(self, min, max, frac, extendmin, extendmax):
         """return new min, max tuple extending the range min, max
@@ -489,7 +407,7 @@ class linpart:
         if self.extendlabel is not None and len(self.labellist) > self.extendlabel:
             min, max = self.extendminmax(min, max, self.labellist[self.extendlabel], extendmin, extendmax)
 
-        ticks = list(self.mix)
+        ticks = []
         for i in range(len(self.ticklist)):
             ticks = _mergeticklists(ticks, self.getticks(min, max, self.ticklist[i], ticklevel = i))
         for i in range(len(self.labellist)):
@@ -518,7 +436,7 @@ class autolinpart:
                        (frac((5, 2)), frac((5, 4))),
                        (frac((5, 1)), frac((5, 2))))
 
-    def __init__(self, variants=defaultvariants, extendtick=0, epsilon=1e-10, mix=()):
+    def __init__(self, variants=defaultvariants, extendtick=0, epsilon=1e-10):
         """configuration of the partition scheme
         - variants is a list of tickdist
         - tickdist should be a list, where the first value
@@ -534,13 +452,10 @@ class autolinpart:
           the extendmin/extendmax variables given to the defaultpart method
         - epsilon allows for exceeding the axis range by this relative
           value (relative to the axis range given to the defaultpart method)
-          without creating another tick specified by extendtick
-        - mix specifies another partition to be merged into the
-          created partition"""
+          without creating another tick specified by extendtick"""
         self.variants = variants
         self.extendtick = extendtick
         self.epsilon = epsilon
-        self.mix = mix
 
     def defaultpart(self, min, max, extendmin, extendmax):
         logmm = math.log(max - min) / math.log(10)
@@ -554,7 +469,7 @@ class autolinpart:
         self.lessbase = frac((base.enum, base.denom))
         self.morebase = frac((base.enum, base.denom))
         self.min, self.max, self.extendmin, self.extendmax = min, max, extendmin, extendmax
-        part = linpart(tickdist=useticks, extendtick=self.extendtick, epsilon=self.epsilon, mix=self.mix)
+        part = linpart(tickdist=useticks, extendtick=self.extendtick, epsilon=self.epsilon)
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
     def lesspart(self):
@@ -565,7 +480,7 @@ class autolinpart:
             self.lessbase.enum *= 10
         ticks = map(frac, self.variants[self.lesstickindex])
         useticks = [tick * self.lessbase for tick in ticks]
-        part = linpart(tickdist=useticks, extendtick=self.extendtick, epsilon=self.epsilon, mix=self.mix)
+        part = linpart(tickdist=useticks, extendtick=self.extendtick, epsilon=self.epsilon)
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
     def morepart(self):
@@ -576,7 +491,7 @@ class autolinpart:
             self.morebase.denom *= 10
         ticks = map(frac, self.variants[self.moretickindex])
         useticks = [tick * self.morebase for tick in ticks]
-        part = linpart(tickdist=useticks, extendtick=self.extendtick, epsilon=self.epsilon, mix=self.mix)
+        part = linpart(tickdist=useticks, extendtick=self.extendtick, epsilon=self.epsilon)
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
 
@@ -610,7 +525,7 @@ class logpart(linpart):
     pre1to9exp = preexp(map(lambda x: frac((x, 1)), range(1, 10)), 10)
     #  ^- we always include 1 in order to get extendto(tick|label)level to work as expected
 
-    def __init__(self, tickpos=None, labelpos=None, labels=None, extendtick=0, extendlabel=None, epsilon=1e-10, mix=()):
+    def __init__(self, tickpos=None, labelpos=None, labels=None, extendtick=0, extendlabel=None, epsilon=1e-10):
         """configuration of the partition scheme
         - tickpos and labelpos should be a list, where the first entry
           is a preexp instance describing ticks with ticklevel/labellevel 0,
@@ -629,9 +544,7 @@ class logpart(linpart):
         - epsilon allows for exceeding the axis range by this relative
           logarithm value (relative to the logarithm axis range given
           to the defaultpart method) without creating another tick
-          specified by extendtick/extendlabel
-        - mix specifies another partition to be merged into the
-          created partition"""
+          specified by extendtick/extendlabel"""
         if tickpos is None and labels is not None:
             self.ticklist = (helper.ensuresequence(labelpos)[0],)
         else:
@@ -645,7 +558,6 @@ class logpart(linpart):
         self.extendtick = extendtick
         self.extendlabel = extendlabel
         self.epsilon = epsilon
-        self.mix = mix
 
     def extendminmax(self, min, max, preexp, extendmin, extendmax):
         """return new min, max tuple extending the range min, max
@@ -684,7 +596,7 @@ class logpart(linpart):
         - the ticklevel of the ticks is set to ticklevel and
           the labellevel is set to labellevel
         -  min, max is the range where ticks should be placed"""
-        ticks = list(self.mix)
+        ticks = []
         minimin = 0
         maximax = 0
         for f in preexp.pres:
@@ -731,7 +643,7 @@ class autologpart(logpart):
                          logpart.pre1exp),     # subticks
                         None))                 # labels like ticks
 
-    def __init__(self, variants=defaultvariants, extendtick=0, extendlabel=None, epsilon=1e-10, mix=()):
+    def __init__(self, variants=defaultvariants, extendtick=0, extendlabel=None, epsilon=1e-10):
         """configuration of the partition scheme
         - variants should be a list of pairs of lists of preexp
           instances
@@ -753,9 +665,7 @@ class autologpart(logpart):
         - epsilon allows for exceeding the axis range by this relative
           logarithm value (relative to the logarithm axis range given
           to the defaultpart method) without creating another tick
-          specified by extendtick/extendlabel
-        - mix specifies another partition to be merged into the
-          created partition"""
+          specified by extendtick/extendlabel"""
         self.variants = variants
         if len(variants) > 2:
             self.variantsindex = divmod(len(variants), 2)[0]
@@ -764,28 +674,27 @@ class autologpart(logpart):
         self.extendtick = extendtick
         self.extendlabel = extendlabel
         self.epsilon = epsilon
-        self.mix = mix
 
     def defaultpart(self, min, max, extendmin, extendmax):
         self.min, self.max, self.extendmin, self.extendmax = min, max, extendmin, extendmax
         self.morevariantsindex = self.variantsindex
         self.lessvariantsindex = self.variantsindex
         part = logpart(tickpos=self.variants[self.variantsindex][0], labelpos=self.variants[self.variantsindex][1],
-                       extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon, mix=self.mix)
+                       extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon)
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
     def lesspart(self):
         self.lessvariantsindex += 1
         if self.lessvariantsindex < len(self.variants):
             part = logpart(tickpos=self.variants[self.lessvariantsindex][0], labelpos=self.variants[self.lessvariantsindex][1],
-                           extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon, mix=self.mix)
+                           extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon)
             return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
     def morepart(self):
         self.morevariantsindex -= 1
         if self.morevariantsindex >= 0:
             part = logpart(tickpos=self.variants[self.morevariantsindex][0], labelpos=self.variants[self.morevariantsindex][1],
-                           extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon, mix=self.mix)
+                           extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon)
             return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
 

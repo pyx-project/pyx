@@ -113,14 +113,11 @@ an \verb|texrunner| instance.
 
 You can pass a list of \verb|tick| instance to the \verb|part|
 argument of an axis. By that you can place ticks whereever you want.
-(In former versions there was a manual partitioner and the possibility
-of mixing partitions for that. This is still available in this
-version of \PyX{}, but it will be removed in the future.) Additionally
-you can use a partitioner to create ticks appropriate to the axis
-range. This can be done by manually specifying distances between
-ticks, subticks and so on. Alternatively there are automatic axis
-partitioners available, which provide different partitions and the
-rating of those different partitions by the \verb|rater| become
+Additionally you can use a partitioner to create ticks appropriate to
+the axis range. This can be done by manually specifying distances
+between ticks, subticks and so on. Alternatively there are automatic
+axis partitioners available, which provide different partitions and
+the rating of those different partitions by the \verb|rater| become
 crutial. Note, that you can combine manually set ticks and a
 partitioner in the \verb|part| argument of an axis.
 
@@ -139,7 +136,6 @@ argument name&default&description\\
 \texttt{extendtick}&\texttt{0}&allow for a range extention to include the next tick of the given level\\
 \texttt{extendlabel}&\texttt{None}&as above, but for labels\\
 \texttt{epsilon}&\texttt{1e-10}&allow for exceeding the range by that relative value\\
-\texttt{mix}&\texttt{()}&an obsolete feature to mix-in additional ticks (to be removed in future versions)\\
 \end{tabularx}
 \medskip
 
@@ -196,7 +192,6 @@ argument name&default&description\\
 \texttt{variants}&\texttt{defaultvariants}&list of possible values for the ticks parameter of \texttt{linpart} (labels are placed at the position of ticks)\\
 \texttt{extendtick}&\texttt{0}&allow for a range extention to include the next tick of the given level\\
 \texttt{epsilon}&\texttt{1e-10}&allow for exceeding the range by that relative value\\
-\texttt{mix}&\texttt{()}&as in linpart\\
 \end{tabularx}
 \medskip
 
@@ -228,7 +223,6 @@ argument name&default&description\\
 \texttt{extendtick}&\texttt{0}&allow for a range extention to include the next tick of the given level\\
 \texttt{extendlabel}&\texttt{None}&as above, but for labels\\
 \texttt{epsilon}&\texttt{1e-10}&allow for exceeding the range by that relative value\\
-\texttt{mix}&\texttt{()}&as in linpart\\
 \end{tabularx}
 \medskip
 

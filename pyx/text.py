@@ -1812,8 +1812,12 @@ def _cleantmp(texrunner):
         texrunner.texruns = 0
         texrunner.texdone = 1
         texrunner.expectqueue.put_nowait(None)     # do not expect any output anymore
+        if texrunner.mode == "latex":              # try to immediately quit from TeX or LaTeX
+            texrunner.texinput.write("\n\\catcode`\\@11\\relax\\@@end\n")
+        else:
+            texrunner.texinput.write("\n\\end\n")
         texrunner.texinput.close()                 # close the input queue and
-        texrunner.quitevent.wait(texrunner.waitfortex)  # wait for finish of the output
+        texrunner.quitevent.wait(texrunner.waitfortex) # wait for finish of the output
         if not texrunner.quitevent.isSet(): return # didn't got a quit from TeX -> we can't do much more
     for usefile in texrunner.usefiles:
         extpos = usefile.rfind(".")
@@ -1920,6 +1924,7 @@ class texrunner:
         savetempdir = tempfile.tempdir
         tempfile.tempdir = os.curdir
         self.texfilename = os.path.basename(tempfile.mktemp())
+        print self.texfilename
         tempfile.tempdir = savetempdir
 
     def execute(self, expr, *checks):
@@ -1945,7 +1950,7 @@ class texrunner:
                 except OSError:
                     pass
             texfile = open("%s.tex" % self.texfilename, "w") # start with filename -> creates dvi file with that name
-            texfile.write("\\relax\n")
+            texfile.write("\\relax%\n")
             texfile.close()
             try:
                 self.texinput, self.texoutput = os.popen4("%s %s" % (self.mode, self.texfilename), "t", 0)
@@ -2058,16 +2063,16 @@ class texrunner:
         else: # TeX/LaTeX should be finished
             self.expectqueue.put_nowait("Transcript written on %s.log" % self.texfilename)
             if self.mode == "latex":
-                self.expr = "\\end{document}\n"
+                self.expr = "\\end{document}%\n"
             else:
-                self.expr = "\\end\n"
+                self.expr = "\\end%\n"
         if self.texdebug is not None:
             self.texdebug.write(self.expr)
         self.texinput.write(self.expr)
         self.gotevent.wait(self.waitfortex) # wait for the expected output
         gotevent = self.gotevent.isSet()
         self.gotevent.clear()
-        if expr is None and gotevent:        # TeX/LaTeX should have finished
+        if expr is None and gotevent:       # TeX/LaTeX should have finished
             self.texruns = 0
             self.texdone = 1
             self.texinput.close()                # close the input queue and

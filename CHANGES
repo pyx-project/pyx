@@ -7,8 +7,10 @@ PyX
     TODO:
     - description in INSTALL
   - text module:
-    - improved is readable test for lfs files and pyx.def file
+    - improved is-readable test for lfs files and pyx.def file
+    - explicitly quit (La)TeX in cleantmp (helps when quitting with <Ctrl>C)
   - graph module:
+    - removed manualpart and partitioners mix keyword (documentation already updated)
     - results of the splitting at "=" in graph.function were not stripped
   TODO:
   - graph module
