@@ -1031,6 +1031,14 @@ class path(base.PSCmd):
         """return coordinates of first point of first subpath in path"""
         return normpath(self).begin()
 
+    def curvradius(self, param):
+        """Returns the curvature radius at parameter param.
+        This is the inverse of the curvature at this parameter
+
+        Please note that this radius can be negative or positive,
+        depending on the sign of the curvature"""
+        return normpath(self).curvradius(param)
+
     def end_pt(self):
         """return coordinates of last point of last subpath in path (in pts)"""
         return normpath(self).end_pt()
@@ -1299,14 +1307,6 @@ class normpathel:
         """returns arc length of normpathel in pts with given accuracy epsilon"""
         pass
 
-    def bbox(self):
-        """return bounding box of normpathel"""
-        pass
-
-    def intersect(self, other, epsilon=1e-5):
-        """intersect self with other normpathel"""
-        pass
-
     def _arclentoparam_pt(self, lengths, epsilon=1e-5):
         """returns tuple (t,l) with
           t the parameter where the arclen of normpathel is length and
@@ -1318,6 +1318,22 @@ class normpathel:
         """
         # Note: _arclentoparam returns both, parameters and total lengths
         # while  arclentoparam returns only parameters
+        pass
+
+    def bbox(self):
+        """return bounding box of normpathel"""
+        pass
+
+    def curvradius(self, param):
+        """Returns the curvature radius at parameter param.
+        This is the inverse of the curvature at this parameter
+
+        Please note that this radius can be negative or positive,
+        depending on the sign of the curvature"""
+        pass
+
+    def intersect(self, other, epsilon=1e-5):
+        """intersect self with other normpathel"""
         pass
 
     def reversed(self):
@@ -1383,7 +1399,7 @@ class normline(normpathel):
 
     def arclen_pt(self,  epsilon=1e-5):
         return math.sqrt((self.x0-self.x1)*(self.x0-self.x1)+(self.y0-self.y1)*(self.y0-self.y1))
-    
+
     def at_pt(self, t):
         return (self.x0+(self.x1-self.x0)*t, self.y0+(self.y1-self.y0)*t)
 
@@ -1394,11 +1410,14 @@ class normline(normpathel):
     def begin_pt(self):
         return self.x0, self.y0
 
+    def curvradius_pt(self, param):
+        return float("inf")
+
     def end_pt(self):
         return self.x1, self.y1
 
     def intersect(self, other, epsilon=1e-5):
-	if isinstance(other, normline):
+        if isinstance(other, normline):
             return _intersectnormlines(self, other)
         else:
             return  _intersectnormcurves(self._normcurve(), 0, 1, other, 0, 1, epsilon)
@@ -1479,6 +1498,45 @@ class normcurve(normpathel):
             (a, b) = self.midpointsplit()
             return a.arclen_pt(epsilon) + b.arclen_pt(epsilon)
 
+    def _arclentoparam_pt(self, lengths, epsilon=1e-5):
+        """computes the parameters [t] of bpathel where the given lengths (in pts) are assumed
+        returns ( [parameters], total arclen)
+        A negative length gives a parameter 0"""
+
+        # create the list of accumulated lengths
+        # and the length of the parameters
+        cumlengths = self.seglengths(1, epsilon)
+        l = len(cumlengths)
+        parlengths = [cumlengths[i][1] for i in range(l)]
+        cumlengths[0] = cumlengths[0][0]
+        for i in range(1,l):
+            cumlengths[i] = cumlengths[i][0] + cumlengths[i-1]
+
+        # create the list of parameters to be returned
+        params = []
+        for length in lengths:
+            # find the last index that is smaller than length
+            try:
+                lindex = bisect.bisect_left(cumlengths, length)
+            except: # workaround for python 2.0
+                lindex = bisect.bisect(cumlengths, length)
+                while lindex and (lindex >= len(cumlengths) or
+                                  cumlengths[lindex] >= length):
+                    lindex -= 1
+            if lindex == 0:
+                param = length * 1.0 / cumlengths[0]
+                param *= parlengths[0]
+            elif lindex >= l-2:
+                param = 1
+            else:
+                param = (length - cumlengths[lindex]) * 1.0 / (cumlengths[lindex+1] - cumlengths[lindex])
+                param *= parlengths[lindex+1]
+                for i in range(lindex+1):
+                    param += parlengths[i]
+            param = max(min(param,1),0)
+            params.append(param)
+        return [params, cumlengths[-1]]
+
     def at_pt(self, t):
         xt = (  (-self.x0+3*self.x1-3*self.x2+self.x3)*t*t*t +
                (3*self.x0-6*self.x1+3*self.x2        )*t*t +
@@ -1499,15 +1557,27 @@ class normcurve(normpathel):
     def begin_pt(self):
         return self.x0, self.y0
 
+    def curvradius_pt(self, param):
+        xdot = 3 * (1-param)*(1-param) * (-self.x0 + self.x1) \
+             + 6 * (1-param)*param * (-self.x1 + self.x2) \
+             + 3 * param*param * (-self.x2 + self.x3)
+        ydot = 3 * (1-param)*(1-param) * (-self.y0 + self.y1) \
+             + 6 * (1-param)*param * (-self.y1 + self.y2) \
+             + 3 * param*param * (-self.y2 + self.y3)
+        xddot = 6 * (1-param) * (self.x0 - 2*self.x1 + self.x2) \
+              + 6 * param * (self.x1 - 2*self.x2 + self.x3)
+        yddot = 6 * (1-param) * (self.y0 - 2*self.y1 + self.y2) \
+              + 6 * param * (self.y1 - 2*self.y2 + self.y3)
+        return (xdot**2 + ydot**2)**1.5 / (xdot*yddot - ydot*xddot)
+
     def end_pt(self):
         return self.x3, self.y3
 
     def intersect(self, other, epsilon=1e-5):
-	if isinstance(other, normline):
+        if isinstance(other, normline):
             return  _intersectnormcurves(self, 0, 1, other._normcurve(), 0, 1, epsilon)
         else:
             return  _intersectnormcurves(self, 0, 1, other, 0, 1, epsilon)
-
 
     def isstraight(self, epsilon=1e-5):
         """check wheter the normcurve is approximately straight"""
@@ -1525,9 +1595,6 @@ class normcurve(normpathel):
                              (self.y3-self.y2)*(self.y3-self.y2)) -
                    math.sqrt((self.x3-self.x0)*(self.x3-self.x0)+
                              (self.y3-self.y0)*(self.y3-self.y0)))<epsilon
-
-    def _arclentoparam_pt(self, lengths, epsilon=1e-5):
-        return self._normcurve()._arclentoparam_pt(lengths, epsilon)
 
     def midpointsplit(self):
         """splits bpathel at midpoint returning bpath with two bpathels"""
@@ -1589,45 +1656,6 @@ class normcurve(normpathel):
             (a, b) = self.midpointsplit()
             return a.seglengths(0.5*paraminterval, epsilon) + b.seglengths(0.5*paraminterval, epsilon)
 
-    def _arclentoparam_pt(self, lengths, epsilon=1e-5):
-        """computes the parameters [t] of bpathel where the given lengths (in pts) are assumed
-        returns ( [parameters], total arclen)
-        A negative length gives a parameter 0"""
-
-        # create the list of accumulated lengths
-        # and the length of the parameters
-        cumlengths = self.seglengths(1, epsilon)
-        l = len(cumlengths)
-        parlengths = [cumlengths[i][1] for i in range(l)]
-        cumlengths[0] = cumlengths[0][0]
-        for i in range(1,l):
-            cumlengths[i] = cumlengths[i][0] + cumlengths[i-1]
-
-        # create the list of parameters to be returned
-        params = []
-        for length in lengths:
-            # find the last index that is smaller than length
-            try:
-                lindex = bisect.bisect_left(cumlengths, length)
-            except: # workaround for python 2.0
-                lindex = bisect.bisect(cumlengths, length)
-                while lindex and (lindex >= len(cumlengths) or
-                                  cumlengths[lindex] >= length):
-                    lindex -= 1
-            if lindex == 0:
-                param = length * 1.0 / cumlengths[0]
-                param *= parlengths[0]
-            elif lindex >= l-2:
-                param = 1
-            else:
-                param = (length - cumlengths[lindex]) * 1.0 / (cumlengths[lindex+1] - cumlengths[lindex])
-                param *= parlengths[lindex+1]
-                for i in range(lindex+1):
-                    param += parlengths[i]
-            param = max(min(param,1),0)
-            params.append(param)
-        return [params, cumlengths[-1]]
-	
     def _split(self, parameters):
         """return list of normcurve corresponding to split at parameters"""
 
@@ -1767,13 +1795,33 @@ class normsubpath:
         """returns total arc length of normsubpath in pts with accuracy epsilon"""
         return sum([npel.arclen_pt(self.epsilon) for npel in self.normpathels])
 
+    def _arclentoparam_pt(self, lengths):
+        """returns [t, l] where t are parameter value(s) matching given length(s)
+        and l is the total length of the normsubpath
+        The parameters are with respect to the normsubpath: t in [0, self.range()]
+        lengths that are < 0 give parameter 0"""
+
+        allarclen = 0
+        allparams = [0]*len(lengths)
+        rests = [length for length in lengths]
+
+        for pel in self.normpathels:
+            params, arclen = pel._arclentoparam_pt(rests, self.epsilon)
+            allarclen += arclen
+            for i in range(len(rests)):
+                if rests[i] >= 0:
+                    rests[i] -= arclen
+                    allparams[i] += params[i]
+
+        return [allparams, allarclen]
+
     def at_pt(self, t):
         """return coordinates in pts of sub path at parameter value t
 
         Negative values of t count from the end of the path. The absolute
         value of t must be smaller or equal to the number of segments in
         the normpath, otherwise None is returned.
-        
+
         """
         if t<0:
             t += self.range()
@@ -1793,6 +1841,11 @@ class normsubpath:
 
     def begin_pt(self):
         return self.normpathels[0].begin_pt()
+
+    def curvradius_pt(self, param):
+        while param < 0:
+            param += self.range()
+        return self.normpathels[int(param)].curvradius_pt(param-int(param))
 
     def end_pt(self):
         return self.normpathels[-1].end_pt()
@@ -1819,26 +1872,6 @@ class normsubpath:
                         intersections[0].append(intersection[0]+t_a)
                         intersections[1].append(intersection[1]+t_b)
         return intersections
-
-    def _arclentoparam_pt(self, lengths):
-        """returns [t, l] where t are parameter value(s) matching given length(s)
-        and l is the total length of the normsubpath
-        The parameters are with respect to the normsubpath: t in [0, self.range()]
-        lengths that are < 0 give parameter 0"""
-
-        allarclen = 0
-        allparams = [0]*len(lengths)
-        rests = [length for length in lengths]
-
-        for pel in self.normpathels:
-            params, arclen = pel._arclentoparam_pt(rests, self.epsilon)
-            allarclen += arclen
-            for i in range(len(rests)):
-                if rests[i] >= 0:
-                    rests[i] -= arclen
-                    allparams[i] += params[i]
-
-        return [allparams, allarclen]
 
     def range(self):
         """return maximal parameter value, i.e. number of line/curve segments"""
@@ -2062,7 +2095,7 @@ class normpath(path):
 
         Negative values of param count from the end of the path.  At
         discontinuities in the path, the limit from below is returned.
-        An exception is raise, if the parameter t is out of range.
+        An exception is raised, if the parameter t is out of range.
         """
 
         if param<0:
@@ -2209,6 +2242,18 @@ class normpath(path):
         """return coordinates of first point of first subpath in path"""
         x, y = self.begin_pt()
         return unit.t_pt(x), unit.t_pt(y)
+
+    def curvradius_pt(self, param):
+        sp, param = self._findsubpath(param)
+        return sp.curvradius_pt(param)
+
+    def curvradius(self, param):
+        """Returns the curvature radius at parameter param.
+        This is the inverse of the curvature at this parameter
+
+        Please note that this radius can be negative or positive,
+        depending on the sign of the curvature"""
+        return unit.t_pt(self.curvradius_pt(param))
 
     def end_pt(self):
         """return coordinates of last point of last subpath in path (in pts)"""
@@ -2382,3 +2427,4 @@ class normpath(path):
     def outputPDF(self, file):
         for sp in self.subpaths:
             sp.outputPDF(file)
+
