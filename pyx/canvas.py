@@ -26,6 +26,9 @@
 #   should we at least factor it out in bpath.bpath?
 # - Should we really set linewidth in canvas.writetofile. Why don't we
 #   rely on the PS default (like for all other PathStyles)
+# - How should we handle the passing of stroke and fill styles to
+#   arrows? Calls, new instances, ...?
+
 
 """The canvas module provides a PostScript canvas class and related classes
 
@@ -211,28 +214,15 @@ class DecoratedPath(base.PSCmd):
         self.fillpath = fillpath
 
         # global style for stroking and filling and subdps
-        if styles:
-            self.styles = styles
-        else:
-            self.styles = []
-
+        self.styles = styles or []
+        
         # styles which apply only for stroking and filling
-        if strokestyles:
-            self.strokestyles = strokestyles
-        else:
-            self.strokestyles = []
-
-        if fillstyles:
-            self.fillstyles = fillstyles
-        else:
-            self.fillstyles = []
-
+        self.strokestyles = strokestyles or []
+        self.fillstyles = fillstyles or []
+        
         # additional elements of the path, e.g., arrowheads,
         # which are by themselves DecoratedPaths
-        if subdps:
-            self.subdps = subdps
-        else:
-            self.subdps = []
+        self.subdps = subdps or []
 
     def addsubdp(self, subdp):
         """add a further decorated path to the list of subdps"""
@@ -261,21 +251,30 @@ class DecoratedPath(base.PSCmd):
             _gsave().write(file)
             _writestyles(self.styles)
 
-        if self.strokepath: 
+        if self.fillpath: 
             _newpath().write(file)
-            self.strokepath.write(file)
+            self.fillpath.write(file)
 
             if self.strokepath==self.fillpath:
                 # do efficient stroking + filling
                 _gsave().write(file)
                 
+                if self.fillstyles:
+                    _writestyles(self.fillstyles)
+                    
+                _fill().write(file)
+                _grestore().write(file)
+                
                 if self.strokestyles:
+                    _gsave().write(file)
                     _writestyles(self.strokestyles)
                     
                 _stroke().write(file)
-                self.strokepath.write(file)
-                _grestore().write(file)
                 
+                if self.strokestyles:
+                    _grestore().write(file)
+            else:
+                # only fill fillpath - for the moment
                 if self.fillstyles:
                     _gsave().write(file)
                     _writestyles(self.fillstyles)
@@ -284,30 +283,20 @@ class DecoratedPath(base.PSCmd):
                 
                 if self.fillstyles:
                     _grestore().write(file)
-            else:
-                # only stroke strokepath - for the moment
-                if self.strokestyles:
-                    _gsave().write(file)
-                    _writestyles(self.strokestyles)
                     
-                _stroke().write(file)
-                
-                if self.strokestyles:
-                    _grestore().write(file)
-                    
-        if self.fillpath and self.strokepath!=self.fillpath:
+        if self.strokepath and self.strokepath!=self.fillpath:
             # this is the only relevant case still left
             # Note that a possible stroking has already been done.
 
-            if self.fillstyles:
+            if self.strokestyles:
                 _gsave().write(file)
-                _writestyles(self.fillstyles)
+                _writestyles(self.strokestyles)
                 
             _newpath().write(file)
-            self.fillpath.write(file)
-            _fill().write(file)
+            self.strokepath.write(file)
+            _stroke().write(file)
                 
-            if self.fillstyles:
+            if self.strokestyles:
                 _grestore().write(file)
 
         # now, draw additional subdps
@@ -352,7 +341,7 @@ class stroked(PathDeco):
     """stroked is a PathDecorator, which draws the outline of the path"""
 
     def __init__(self, *styles):
-        self.styles=styles
+        self.styles=list(styles)
 
     def decorate(self, dp):
         dp.strokepath=dp.path
@@ -366,7 +355,7 @@ class filled(PathDeco):
     """filled is a PathDecorator, which fills the interior of the path"""
 
     def __init__(self, *styles):
-        self.styles=styles
+        self.styles=list(styles)
 
     def decorate(self, dp):
         dp.fillpath=dp.path
@@ -381,9 +370,9 @@ class filled(PathDeco):
 
 def _arrowhead(abpath, size, angle, constriction):
 
-    """helper routine, which returns an arrowhead
+    """helper routine, which returns an arrowhead for an bpath 
 
-    returns arrowhead at pos (0: begin, !=0: end) of path with size,
+    returns arrowhead at pos (0: begin, !=0: end) of abpath with size,
     opening angle and relative constriction
     """
     
@@ -441,9 +430,34 @@ class arrow(PathDeco):
         self.size = size
         self.angle = angle
         self.constriction = constriction
-        self.styles = styles
-        self.strokestyles = strokestyles
-        self.fillstyles = fillstyles
+        self.styles = styles or []
+        self.strokestyles = strokestyles or []
+        self.fillstyles = fillstyles or []
+
+    def __call__(self, *styles):
+        fillstyles = reduce(lambda x, y:list(x)+(y.styles or []),
+                            filter(lambda x: isinstance(x, filled),
+                                   styles),
+                            [])
+
+        strokestyles = reduce(lambda x, y:list(x)+(y.styles or []),
+                              filter(lambda x: isinstance(x, stroked),
+                                     styles),
+                            [])
+
+        styles = filter(lambda x:
+                        not (isinstance(x,filled) or
+                             isinstance(x,stroked)),
+                        styles)
+                        
+                                   
+        return arrow(position=self.position,
+                     size=self.size,
+                     angle=self.angle,
+                     constriction=self.constriction,
+                     styles=styles,
+                     strokestyles=strokestyles,
+                     fillstyles=fillstyles)
 
     def decorate(self, dp):
 
@@ -507,8 +521,14 @@ class barrow(arrow):
     
     def __init__(self, size, angle=45, constriction=0.8,
                  styles=None, strokestyles=None, fillstyles=None):
-        arrow.__init__(self, 0, size, angle, constriction,
-                       styles, strokestyles, fillstyles)
+        arrow.__init__(self,
+                       position=0,
+                       size=size,
+                       angle=angle,
+                       constriction=constriction,
+                       styles=styles,
+                       strokestyles=strokestyles,
+                       fillstyles=fillstyles)
 
 _base = 2
 
@@ -530,12 +550,19 @@ barrow.LARGE  = barrow("%f v pt" % (_base*math.sqrt(64)))
 class earrow(arrow):
     
     """arrow at end of path"""
-    
-    def __init__(self, size, angle=45, constriction=0.8,
-                 styles=None, strokestyles=None, fillstyles=None):
-        arrow.__init__(self, 1, size, angle, constriction,
-                       styles, strokestyles, fillstyles)
 
+    def __init__(self, size, angle=45, constriction=0.8,
+                 styles=[], strokestyles=[], fillstyles=[]):
+        arrow.__init__(self,
+                       position=1,
+                       size=size,
+                       angle=angle,
+                       constriction=constriction,
+                       styles=styles,
+                       strokestyles=strokestyles,
+                       fillstyles=fillstyles)
+
+    
 earrow.SMALL  = earrow("%f t pt" % (_base/math.sqrt(64)))
 earrow.SMALl  = earrow("%f t pt" % (_base/math.sqrt(32)))
 earrow.SMAll  = earrow("%f t pt" % (_base/math.sqrt(16)))
