@@ -1,0 +1,130 @@
+\chapter{Module canvas: PostScript interface}
+
+\label{canvas}
+
+\section{Class canvas}
+
+The basic module for the PostScript access in \PyX{} is named
+\verb|canvas|. Its main purpose is to provide the class \verb|canvas|,
+which presents a collection of visual elements like paths, other
+canvases, \TeX or \LaTeX elements. Eventually the contents of a canvas 
+can be written to a (E)PS file to produce the desired output.
+
+\subsection{Basic usage}
+
+The main \verb|canvas| instance, which we shall name \verb|c| here and
+in the following, will usually be constructed without giving any
+arguments:
+\begin{quote}
+\begin{verbatim}
+import pyx
+
+c = canvas.canvas()
+\end{verbatim}
+\end{quote}
+Basic drawing proceeds then via the construction of a \verb|path|, which 
+can subsequently be drawn on the canvas using the method \verb|draw()|:
+\begin{quote}
+\begin{verbatim}
+p = path.path(moveto(0,0), lineto(10,10), lineto(10,0), closepath())
+c.draw(p)
+\end{verbatim}
+\end{quote}
+or more concisely:
+\begin{quote}
+\begin{verbatim}
+c.draw(path.path(moveto(0,0), lineto(10,10), lineto(10,0), closepath()))
+\end{verbatim}
+\end{quote}
+You can modify the appearance of a path by additionally passing 
+instances of the class \verb|PSAttr|. For instance, you can draw the 
+the above path \verb|p| in blue, as well:
+\begin{quote}
+\begin{verbatim}
+c.draw(p, color.rgb.blue)
+\end{verbatim}
+\end{quote}
+Similarly, it is possible to draw a dashed version of \verb|p|:
+\begin{quote}
+\begin{verbatim}
+c.draw(p, canvas.linestyle.dashed)
+\end{verbatim}
+\end{quote}
+Combining is of course also possible:
+\begin{quote}
+\begin{verbatim}
+c.draw(p, color.rgb.blue, canvas.linestyle.dashed)
+\end{verbatim}
+\end{quote}
+After you are finished with the composition of your canvas, you can
+write it to a file using the method \verb|writetofile()|. It expects the
+obligatory argument \verb|filename|, the name of the output
+file. To write your results to the file "test.eps" just call it as follows:
+\begin{quote}
+\begin{verbatim}
+c.writetofile("test")
+\end{verbatim}
+\end{quote}
+
+
+\subsection{Methods}
+
+
+
+The \verb|canvas| class provides the following methods:
+
+
+\verb|bbox()| 
+
+Returns the bounding box enclosing all elements of the canvas.
+
+\verb|draw(path, *styles)|
+
+Draws the given \verb|path| on the canvas, \textit{i.e.}, 
+\verb|insert|s it together with the necessary \verb|newpath|,
+\verb|stroke| sequence, using the given \verb|styles|. Styles can
+either be instances of \verb|canvas.PSAttr| or \verb|canvas.PathDeco|
+(or subclasses thereof).
+
+\verb|fill(path, *styles)|
+
+Fills the given \verb|path| on the canvas, \textit{i.e.},
+\verb|insert|s it together with the necessary \verb|newpath|,
+\verb|fill| sequence, using the given \verb|styles|. Styles can
+either be instances of \verb|canvas.PSAttr| (or subclasses therof).
+
+\verb|drawfilled(path, *styles)|
+
+Draws and fills the given \verb|path| on the canvas (\textit{i.e.}
+\verb|insert|s it together with the necessary \verb|newpath|,
+\verb|gsave|, \verb|stroke|, \verb|grestore|, \verb|fill| sequence)
+using the given \verb|styles|. Styles can either be instances of
+\verb|canvas.PSAttr| (or subclasses thereof).
+
+
+
+\verb|insert(PSOps, *styles)|
+
+Insert one ore more instances of the class \verb|base.PSOp| in the
+canvas applying the given \verb|styles|.  Styles have to be instances
+of the class \verb|canvas.PSAttr| or derived classes thereof.
+
+\verb|set(*styles)|
+
+Sets the given \verb|styles| (instances of \verb|canvas.PSAttr| or
+subclasses) for the rest of the canvas.
+
+\verb|writetofile(filename, paperformat=None, rotated=0, fittosize=0, margins="1 t cm")|
+
+Writes the canvas to \verb|filename|. Optionally a \verb|paperformat|
+can be specified, in which case the output will be centered with
+respect to the corresponding size using the given \verb|margin|. For a
+list of known paper formats, see \verb|canvas._paperformats|. Use
+\verb|rotated|, if you want to center on a rotated version of the
+respective paper format. If \verb|fittosize| is set, the output is
+additionally scaled to the maximal possible size.
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "manual.tex"
+%%% End:
