@@ -207,7 +207,7 @@ def curvecontrols_from_endpoints_pt(A, B, tangentA, tangentB, curvA, curvB, obey
 # }}}
 
 
-class deformer:
+class deformer(attr.attr):
 
     def deform (self, basepath):
         return origpath
