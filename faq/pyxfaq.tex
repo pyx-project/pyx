@@ -328,7 +328,7 @@ determining the color via a \PyX{} color palette. The following code gives an
 idea of how to proceed:
 \begin{progcode}
 g.plot(graph.data.file("datafile.dat"), xmin=1, xmax=2, ymin=3, ymax=4, color=5),\\
-~~~~~~~graph.style.rect(color.palette.ReverseRainbow)\\
+~~~~~~~[graph.style.rect(color.palette.ReverseRainbow)]\\
 ~~~~~~)\\
 g.dodata()
 \end{progcode}
@@ -361,7 +361,7 @@ specified by the position of the arrow, its size and its direction as indicated
 in the following code snippet:
 \begin{progcode}
 g.plot(graph.data.file("datafile.dat"), x=1, y=2, size=3, angle=4),\\
-~~~~~~~graph.style.arrow()\\
+~~~~~~~[graph.style.arrow()]\\
 ~~~~~~)
 \end{progcode}
 
@@ -459,7 +459,7 @@ in the graph are defined by calling \texttt{g.plot} like in the following
 example in which filled circles are requested:
 \begin{progcode}
 g.plot(graph.data.file("test.dat"),\\
-~~~~~~~graph.style.symbol(graph.style.symbol.circle, symbolattrs=[deco.filled])\\
+~~~~~~~[graph.style.symbol(graph.style.symbol.circle, symbolattrs=[deco.filled])]\\
 ~~~~~~~)
 \end{progcode}
 }
@@ -485,23 +485,24 @@ you will obtain a circle filled in green with a red borderline.
 example
 \begin{progcode}
 g.plot(graph.data.file("test.dat"),\\
-~~~~~~~graph.style.line([style.linewidth.Thin])\\
+~~~~~~~[graph.style.line([style.linewidth.Thin])]\\
 ~~~~~~~)
 \end{progcode}
 where the linewidth is set.
 
-If you also want to use symbols, you can set the line attributes together
-with the symbols.  Extending the example in \ref{q:choose_symbol},
-you could use
+If you also want to use symbols, you can combine the symbol and the
+line style as in
 \begin{progcode}
 g.plot(graph.data.file("test.dat"),\\
-~~~~~~~graph.style.symbolline(graph.style.symbolline.circle,\\
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~symbolattrs=[deco.filled],\\
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~lineattrs=[style.linewidth.Thin, style.linestyle.dashed]\\
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~)\\
-~~~~~~~)
+~~~~~~~[graph.style.line(lineattrs=[style.linewidth.Thin,\\
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~style.linestyle.dashed]),\\
+~~~~~~~~graph.style.symbol(graph.style.symbolline.circle,\\
+~~~~~~~~~~~~~~~~~~~~~~~~~~~symbolattrs=[deco.filled])
+~~~~~~~]
+~~~~~~)
 \end{progcode}
-to set the linewidth and to choose dashed lines. 
+to plot the symbols on top of a thin, dashed line. You may alter the
+order of the styles to plot the line on top of the symbols.
 }
 
 \section{\TeX{} and \LaTeX{}}
