@@ -24,7 +24,7 @@
 #         (maybe we still need the current bbox implementation (then maybe called
 #          cbox = control box) for bpathel for the use during the
 #          intersection of bpaths) 
-#       - intersection of bpaths: use estimate for number of subdivisions
+ 
 
 import base, unit, canvas, math
 from math import cos, sin, pi
@@ -97,7 +97,7 @@ class _bpathel(base.PSOp):
                         self.x1, self.y1,
                         self.x0, self.y0)
 
-    def isStraight(self, epsilon=1e-7):
+    def isStraight(self, epsilon=1e-5):
         """check wheter the bpathel is approximately straight"""
 
         # just check, whether the modulus of the difference between
@@ -323,7 +323,7 @@ class bpath(canvas.PSCommand):
                 result.append(sbpel)
         return bpath(result)
 
-    def intersect(self, other):
+    def intersect(self, other, epsilon=1e-5):
         """intersect two bpaths
 
         returns a list of tuples consisting of the corresponding parameters
@@ -333,19 +333,16 @@ class bpath(canvas.PSCommand):
 
         intersections = ()
         (ta, tb) = (0,0)
-        maxsubdiv = 5
         
         for s_bpel in self.bpath:
             ta = ta+1
             for o_bpel in other.bpath:
                 tb = tb+1
                 intersections = intersections + \
-                                _bpathelIntersect(s_bpel, ta-1, ta, maxsubdiv,
-                                                  o_bpel, tb-1, tb, maxsubdiv)
+                                _bpathelIntersect(s_bpel, ta-1, ta,
+                                                  o_bpel, tb-1, tb, epsilon)
 
         return intersections
-
-    __mul__ = intersect
 
 #
 # now some special kinds of bpaths (always in pairs)
@@ -454,48 +451,48 @@ def _arctobpathel(x, y, r, phi1, phi2):
     return _bpathel(x0, y0, x1, y1, x2, y2, x3, y3)
 
 
-def _bpathelIntersect(a, a_t0, a_t1, a_subdiv, b, b_t0, b_t1, b_subdiv):
+def _bpathelIntersect(a, a_t0, a_t1, b, b_t0, b_t1, epsilon=1e-5):
     """intersect two bpathels
 
     a and b are bpathels with parameter ranges [a_t0, a_t1],
-    respectively [b_t0, b_t1] and a_subdiv, respectively
-    b_subdiv subdivisions left.
+    respectively [b_t0, b_t1].
+    epsilon determines when bpathels are assumed to be straight
     
     """
 
     # intersection of bboxes is a necessary criterium for intersection
     if not a.bbox().intersects(b.bbox()): return ()
 
-    if a_subdiv>0:
+    if not a.isStraight(epsilon):
         (aa, ab) = a.MidPointSplit()
         a_tm = 0.5*(a_t0+a_t1)
 
-        if b_subdiv>0:
+        if not b.isStraight(epsilon):
             (ba, bb) = b.MidPointSplit()
             b_tm = 0.5*(b_t0+b_t1)
 
-            return ( _bpathelIntersect(aa, a_t0, a_tm, a_subdiv-1,
-                                       ba, b_t0, b_tm, b_subdiv-1) + 
-                     _bpathelIntersect(ab, a_tm, a_t1, a_subdiv-1,
-                                       ba, b_t0, b_tm, b_subdiv-1) + 
-                     _bpathelIntersect(aa, a_t0, a_tm, a_subdiv-1,
-                                       bb, b_tm, b_t1, b_subdiv-1) +
-                     _bpathelIntersect(ab, a_tm, a_t1, a_subdiv-1,
-                                       bb, b_tm, b_t1, b_subdiv-1) )
+            return ( _bpathelIntersect(aa, a_t0, a_tm,
+                                       ba, b_t0, b_tm, epsilon) + 
+                     _bpathelIntersect(ab, a_tm, a_t1,
+                                       ba, b_t0, b_tm, epsilon) + 
+                     _bpathelIntersect(aa, a_t0, a_tm,
+                                       bb, b_tm, b_t1, epsilon) +
+                     _bpathelIntersect(ab, a_tm, a_t1,
+                                       bb, b_tm, b_t1, epsilon) )
         else:
-            return ( _bpathelIntersect(aa, a_t0, a_tm, a_subdiv-1,
-                                       b, b_t0, b_t1, b_subdiv) +
-                     _bpathelIntersect(ab, a_tm, a_t1, a_subdiv-1,
-                                       b, b_t0, b_t1, b_subdiv) )
+            return ( _bpathelIntersect(aa, a_t0, a_tm,
+                                       b, b_t0, b_t1, epsilon) +
+                     _bpathelIntersect(ab, a_tm, a_t1,
+                                       b, b_t0, b_t1, epsilon) )
     else:
-        if b_subdiv>0:
+        if not b.isStraight(epsilon):
             (ba, bb) = b.MidPointSplit()
             b_tm = 0.5*(b_t0+b_t1)
 
-            return  ( _bpathelIntersect(a, a_t0, a_t1, a_subdiv,
-                                        ba, b_t0, b_t1, b_subdiv-1) +
-                      _bpathelIntersect(a, a_tm, a_t1, a_subdiv,
-                                        ba, b_t0, b_tm, b_subdiv-1) )
+            return  ( _bpathelIntersect(a, a_t0, a_t1,
+                                        ba, b_t0, b_tm, epsilon) +
+                      _bpathelIntersect(a, a_t0, a_t1,
+                                        ba, b_tm, b_t1, epsilon) )
         else:
             # no more subdivisions of either a or b
             # => try to intersect a and b as straight line segments
