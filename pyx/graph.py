@@ -380,6 +380,10 @@ class logpart(anypart):
         return [getticks(self, min, max), ]
 
 class autologpart(logpart):
+    shift5fracs1   = shiftfracs(100000, frac(1, 10))
+    shift4fracs1   = shiftfracs(10000, frac(1, 10))
+    shift3fracs1   = shiftfracs(1000, frac(1, 10))
+    shift2fracs1   = shiftfracs(100, frac(1, 10))
     shiftfracs1    = shiftfracs(10, frac(1, 10))
     shiftfracs125  = shiftfracs(10, frac(1, 10), frac(2, 10), frac(5, 10))
     shiftfracs1258 = shiftfracs(10, frac(1, 10), frac(2, 10), frac(5, 10), frac(8, 10))
@@ -395,8 +399,20 @@ class autologpart(logpart):
                                 shiftfracs1to9),  # subticks
                                None),             # labels like ticks
 
-                              ((shiftfracs1,      # ticks
-                                shiftfracs1258),  # subticks
+                              ((shift2fracs1,     # ticks
+                                shiftfracs1),     # subticks
+                               None),             # labels like ticks
+
+                              ((shift3fracs1,     # ticks
+                                shiftfracs1),     # subticks
+                               None),             # labels like ticks
+
+                              ((shift4fracs1,     # ticks
+                                shiftfracs1),     # subticks
+                               None),             # labels like ticks
+
+                              ((shift5fracs1,     # ticks
+                                shiftfracs1),     # subticks
                                None))             # labels like ticks
 
     def __init__(self, shiftfracslists=defaultshiftfracslists, **args):
@@ -700,20 +716,6 @@ class rectbox(_rectbox):
         _rectbox.__init__(self, *argslist, **argdict)
 
 
-class reldirection(tex.direction):
-
-    def reldirection(self, dx, dy, epsilon=1e-10):
-        value = self.value + math.atan2(dy, dx) * 180 / math.pi
-        while (value > 90 + epsilon):
-            value -= 180
-        while (value < -90 - epsilon):
-            value += 180
-        return value
-
-reldirection.parallel = reldirection(-90)
-reldirection.orthogonal = reldirection(0)
-
-
 class textbox(_rectbox, attrlist.attrlist):
 
     def __init__(self, _tex, text, textstyles = (), vtext="0"):
@@ -724,11 +726,11 @@ class textbox(_rectbox, attrlist.attrlist):
         self.halign = self.attrget(self.textstyles, tex.halign, None)
         self.textstyles = self.attrdel(self.textstyles, tex.halign)
         self.direction = self.attrget(self.textstyles, tex.direction, None)
-        self.textstyles = self.attrdel(self.textstyles, tex.direction)
-        self.ht = unit.topt(self.tex.textht(text, *self.textstyles))
-        self.wd = unit.topt(self.tex.textwd(text, *self.textstyles))
-        self.dp = unit.topt(self.tex.textdp(text, *self.textstyles))
-        self.shiftht = 0.5 * unit.topt(self.tex.textht(vtext, *self.textstyles))
+        hwdtextstyles = self.attrdel(self.textstyles, tex.direction)
+        self.ht = unit.topt(self.tex.textht(text, *hwdtextstyles))
+        self.wd = unit.topt(self.tex.textwd(text, *hwdtextstyles))
+        self.dp = unit.topt(self.tex.textdp(text, *hwdtextstyles))
+        self.shiftht = 0.5 * unit.topt(self.tex.textht(vtext, *hwdtextstyles))
         self.manualextents()
 
     def manualextents(self, ht = None, wd = None, dp = None, shiftht = None):
@@ -745,25 +747,15 @@ class textbox(_rectbox, attrlist.attrlist):
             if self.halign == tex.halign.right:
                 xorigin = self.wd
         _rectbox.__init__(self, 0, -self.dp, self.wd, self.ht, xorigin, self.shiftht)
-
-    def setreldirection(self, dx, dy):
         if self.direction is not None:
-            if hasattr(self.direction, "reldirection"):
-                self.usedirection = self.direction.reldirection(dx, dy)
-            else:
-                self.usedirection = self.direction.value
-            self.transform(trafo._rotate(self.usedirection))
+            self.transform(trafo._rotate(self.direction.value))
 
     def transform(self, trafo):
         _rectbox.transform(self, trafo)
         self.xtext, self.ytext = trafo._apply(self.xtext, self.ytext)
 
     def _printtext(self, x, y):
-        if self.direction is not None:
-            styles = self.textstyles + [tex.direction(self.usedirection)]
-        else:
-            styles = self.textstyles
-        self.tex._text(x + self.xtext, y + self.ytext, self.text, *styles)
+        self.tex._text(x + self.xtext, y + self.ytext, self.text, *self.textstyles)
 
     def printtext(self, x, y):
         self._printtext(unit.topt(x), unit.topt(y))
@@ -773,8 +765,10 @@ class textbox(_rectbox, attrlist.attrlist):
 # axis painter
 ################################################################################
 
-
 class axispainter(attrlist.attrlist):
+
+    paralleltext = -90
+    orthogonaltext = 0
 
     fractypeauto = 1
     fractypedec = 2
@@ -789,6 +783,7 @@ class axispainter(attrlist.attrlist):
                        gridstyles=canvas.linestyle.dotted,
                        labeldist="0.3 cm",
                        labelstyles=((), (tex.fontsize.footnotesize,)),
+                       labeldirection=None,
                        labelhequalize=0,
                        labelvequalize=1,
                        titledist="0.3 cm",
@@ -806,7 +801,8 @@ class axispainter(attrlist.attrlist):
         self.drawgrid = drawgrid
         self.gridstyles = gridstyles
         self.labeldist_str = labeldist
-        self.labelstyles = labelstyles
+        self.labelstyles = list(labelstyles)
+        self.labeldirection = labeldirection
         self.labelhequalize = labelhequalize
         self.labelvequalize = labelvequalize
         self.titledist_str = titledist
@@ -817,6 +813,14 @@ class axispainter(attrlist.attrlist):
         self.expfracminexp = expfracminexp
         self.presuf0 = presuf0
         self.presuf1 = presuf1
+
+    def reldirection(self, direction, dx, dy, epsilon=1e-10):
+        direction += math.atan2(dy, dx) * 180 / math.pi
+        while (direction > 90 + epsilon):
+            direction -= 180
+        while (direction < -90 - epsilon):
+            direction += 180
+        return direction
 
     def gcd(self, m, n):
         # calculate greates common divisor
@@ -926,9 +930,11 @@ class axispainter(attrlist.attrlist):
                                 tick.text = axis.prefix + tick.text
                             if axis.suffix is not None:
                                 tick.text = tick.text + axis.suffix
-                    tick.labelstyles = [tex.style.math] + self.selectstyle(tick.labellevel, self.labelstyles)
+                    tick.labelstyles = self.selectstyle(tick.labellevel, self.labelstyles)
+                    tick.labelstyles += [tex.style.math]
+                    if self.labeldirection is not None:
+                        tick.labelstyles += [tex.direction(self.reldirection(self.labeldirection, tick.dx, tick.dy))]
                     tick.textbox = textbox(graph.tex, tick.text, textstyles = tick.labelstyles)
-                    tick.textbox.setreldirection(tick.dx, tick.dy)
 
             for tick in axis.ticks[1:]:
                 if tick.dx != axis.ticks[0].dx or tick.dy != axis.ticks[0].dy:
@@ -982,8 +988,10 @@ class axispainter(attrlist.attrlist):
         if axis.title is not None:
             x, y = axis.tickpoint(axis, 0.5)
             dx, dy = axis.tickdirection(axis, 0.5)
+            print axis.title, axis.titlestyles
+            if axis.titledirection is not None and not self.attrcount(axis.titlestyles, tex.direction):
+                axis.titlestyles += [tex.direction(self.reldirection(axis.titledirection, tick.dx, tick.dy))]
             axis.titlebox = textbox(graph.tex, axis.title, textstyles = axis.titlestyles)
-            axis.titlebox.setreldirection(dx, dy)
             axis.extent += titledist
             axis.titlebox._linealign(axis.extent, dx, dy)
             axis.titlebox._printtext(x, y)
@@ -1022,7 +1030,8 @@ class linkaxispainter(axispainter):
 class _axis:
 
     def __init__(self, min=None, max=None, reverse=0,
-                       title=None, titlestyles=(reldirection.parallel,), painter = axispainter(),
+                       title=None, titlestyles=(), titledirection=axispainter.paralleltext,
+                       painter = axispainter(),
                        factor = 1, prefix = None, suffix = None):
         self.fixmin = min is not None
         self.fixmax = max is not None
@@ -1030,7 +1039,8 @@ class _axis:
         self.max = max
         self.reverse = reverse
         self.title = title
-        self.titlestyles = titlestyles
+        self.titlestyles = list(titlestyles)
+        self.titledirection = titledirection
         self.painter = painter
         self.factor = factor
         self.prefix = prefix

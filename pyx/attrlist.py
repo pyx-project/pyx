@@ -69,6 +69,9 @@ class attrlist:
                 return default
         return result
 
+    def attrcount(self, attrs, check):
+        return len(self.attrgetall(attrs, check, ()))
+
     def attrget(self, attrs, get, default = _nodefault()):
         try:
             result = self.attrgetall(attrs, get)
