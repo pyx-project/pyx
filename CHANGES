@@ -46,6 +46,8 @@ PyX
     - enlarge (was enhance) now allows selective enlargement to the left, bottom, right and top
     - output HiResBoundingBox
     - never reduce bbox upon output
+    - defered TODOs:
+      __iadd__ and inplace enlarge, transform,...
   - epsfile module:
     - new constructor signature, more in line with rest of PyX:
       epsfile(x, y, filename, **additional_args)
