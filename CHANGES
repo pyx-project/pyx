@@ -63,7 +63,7 @@ TODO:
   - graph module:
     - painters are using the new attribute scheme including changeable attributes (TODO: documentation)
     - axis zeropath feature removed (TODO: documentation)
-    - styles rewrite (under construction --> graph is currently broken)
+    - graph styles rewrite (TODO: documentation)
   - text module:
     - default handling of texmessages as in the new attribute scheme
     - multiple insert bug fixed
@@ -78,6 +78,8 @@ TODO:
       correspondingly for normpath) (TODO: documentation)
   - connnector module:
     - renamed _xxx -> xxx_pt
+  - deco module:
+    - wriggle decorator (TODO: documentation)
 
 
 0.5.1 (2004/01/22):
