@@ -121,7 +121,7 @@ class length:
 
     def __div__(self, factor):
         if isinstance(factor, length):
-            return tom(self)/tom(factor)
+            return tom(self) / tom(factor)
         result = length()
         result.t = self.t / factor
         result.u = self.u / factor
