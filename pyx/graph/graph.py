@@ -258,6 +258,7 @@ class graphxy(canvas.canvas):
         needyaxisdist = [0, 0]
         items = list(self.axes.items())
         items.sort() #TODO: alphabetical sorting breaks for axis numbers bigger than 9
+        # TODO: linked axes are not taken into account (consider x being a link to x2)
         for key, axis in items:
             num = self.keynum(key)
             num2 = 1 - num % 2 # x1 -> 0, x2 -> 1, x3 -> 0, x4 -> 1, ...
