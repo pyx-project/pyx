@@ -33,26 +33,34 @@ except:
 
 class PDFregistry:
 
-    # TODO: Some code dublication with PSwriter (constructor and add method).
-    # We probably want to share the the code by a registry class. Q: Where to
-    # put this class? resource.py is not possible due to cyclic imports. We
-    # might introduce a writer.py ... !?
-
     def __init__(self):
         self.resources = []
         self.types = {}
+        self.merged = {} # contains merged resources, where refno's need to be injected
+                         # (this is necessary, since some components, which depend on a
+                         # given resource might want to lookup the refno, so it needs to
+                         # be available even for objects, which have been removed due to
+                         # merging)
 
     def add(self, resource):
         resources = self.types.setdefault(resource.type, {})
         if resources.has_key(resource.id):
             resources[resource.id].merge(resource)
+            self.merged.setdefault(resource.type, []).append(resource)
         else:
             self.resources.append(resource)
             resources[resource.id] = resource
 
+    def merge(self, registry):
+        for resource in registry.resources:
+            self.add(resource)
+
     def setrefno(self, refno):
         for resource in self.resources:
             refno = resource.setrefno(refno)
+        for type, resources in self.merged.items():
+            for resource in resources:
+                resource.setrefno(self.types[type][resource.id].refno)
         return refno
 
     def outputPDFobjects(self, file):
@@ -104,8 +112,8 @@ class PDFcatalog(PDFobject):
     def __init__(self, document):
         self.PDFpages = PDFpages(document)
         self.registry = PDFregistry()
-        for resource in document.pages[0].canvas.resources():
-            resource.PDFregister(self.registry)
+        for page in self.PDFpages.PDFpagelist:
+            self.registry.merge(page.registry)
         PDFobject.__init__(self, [self.PDFpages])
 
     def setrefno(self, refno):
@@ -156,6 +164,9 @@ class PDFpage(PDFobject):
         if self.pagetrafo:
             self.bbox.transform(self.pagetrafo)
         self.PDFcontent = PDFcontent(page.canvas, self.pagetrafo)
+        self.registry = PDFregistry()
+        for resource in page.canvas.resources():
+            resource.PDFregister(self.registry)
         PDFobject.__init__(self, [self.PDFcontent])
 
     def outputPDF(self, file):
@@ -166,12 +177,11 @@ class PDFpage(PDFobject):
         file.write("/MediaBox [0 0 %d %d]\n" % (unit.topt(paperformat.width), unit.topt(paperformat.height)))
         file.write("/CropBox " )
         self.bbox.outputPDF(file)
-        file.write("""/Resources << /ProcSet [ /PDF ]
-        /Font
-        <<
-        /CMR10-TeXf7b6d320Encoding 6 0 R
-        >>
-        >>\n""")
+        file.write("/Resources << /ProcSet [ /PDF ]\n")
+        if self.registry.types["font"]:
+            file.write("/Font << %s >>" % " ".join(["/%s %i 0 R" % (font.fontname, font.refno)
+                                                    for font in self.registry.types["font"].values()]))
+        file.write(">>\n")
         file.write("/Contents %i 0 R\n"
                    ">>\n" % (self.PDFcontent.refno))
 
