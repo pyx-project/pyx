@@ -24,6 +24,21 @@
 import Numeric, LinearAlgebra
 
 
+def sum(list):
+    # we can assume len(list) != 0 here (and do not start from the scalar 0)
+    sum = list[0]
+    for item in list[1:]:
+        sum += item
+    return sum
+
+def product(list):
+    # we can assume len(list) != 0 here (and do not start from the scalar 1)
+    product = list[0]
+    for item in list[1:]:
+        product *= item
+    return product
+
+
 class scalar:
     # represents a scalar variable or constant
 
@@ -137,10 +152,7 @@ class addend:
         return addend([scalar(1/other)] + self._scalars)
 
     def __float__(self):
-        product = float(self._scalars[0])
-        for scalar in self._scalars[1:]:
-            product *= float(scalar)
-        return product
+        return product([float(scalar) for scalar in self._scalars])
 
     def is_linear(self):
         return len([scalar for scalar in self._scalars if not scalar.is_set()]) < 2
@@ -196,10 +208,7 @@ class polynom:
         return -self + other
 
     def __mul__(self, other):
-        sum = self._addends[0]*other
-        for addend in self._addends[1:]:
-            sum += addend*other
-        return sum
+        return sum([addend*other for addend in self._addends])
 
     __rmul__ = __mul__
 
@@ -207,10 +216,7 @@ class polynom:
         return polynom([addend/other for addend in self._addends])
 
     def __float__(self):
-        sum = float(self._addends[0])
-        for addend in self._addends[1:]:
-            sum += float(addend)
-        return sum
+        return sum([float(addend) for addend in self._addends])
 
     def is_linear(self):
         is_linear = 1
@@ -294,15 +300,18 @@ class vector:
         try:
             other = other.vector()
         except (TypeError, AttributeError):
-            return vector([item*other for item in self._items])
+            try:
+                polynom = other.polynom()
+            except (TypeError, AttributeError):
+                # inverse matrix multiplication
+                return other.__rmul__(self)
+            else:
+                return vector([item*other for item in self._items])
         else:
             # scalar product
             if len(self) != len(other):
                 raise RuntimeError("vector length mismatch in scalar product")
-            sum = self._items[0]*other._items[0]
-            for selfitem, otheritem in zip(self._items[1:], other._items[1:]):
-                sum += selfitem*otheritem
-            return sum
+            return sum([selfitem*otheritem for selfitem, otheritem in zip(self._items, other._items)])
 
     __rmul__ = __mul__
 
@@ -315,6 +324,118 @@ class vector:
     def solve(self, solver):
         for item in self._items:
             solver.addequation(item)
+
+
+class matrix:
+    # represents a matrix, i.e. a 2d list of terms
+
+    def __init__(self, dimensions_or_values, name="unnamed_matrix"):
+        try:
+            name + ""
+        except TypeError:
+            raise RuntimeError("a matrix name should be a string (you probably wanted to write matrix([x, y]) instead of matrix(x, y))")
+        try:
+            for row in dimensions_or_values:
+                for col in row:
+                    pass
+        except:
+            # dimension
+            self._numberofrows, self._numberofcols = [int(x) for x in dimensions_or_values]
+            self._rows = [[scalar(name="%s[%i, %i]" % (name, row, col))
+                           for col in range(self._numberofcols)]
+                          for row in range(self._numberofrows)]
+        else:
+            # values
+            self._rows = []
+            self._numberofcols = None
+            for row in dimensions_or_values:
+                _cols = []
+                for col in row:
+                    try:
+                        col.polynom()
+                    except (TypeError, AttributeError):
+                        _cols.append(scalar(value=col, name="%s[%i, %i]" % (name, len(self._rows), len(_cols))))
+                    else:
+                        _cols.append(col)
+                self._rows.append(_cols)
+                if self._numberofcols is None:
+                    self._numberofcols = len(_cols)
+                elif self._numberofcols != len(_cols):
+                    raise RuntimeError("column length mismatch")
+            self._numberofrows = len(self._rows)
+        if not self._numberofrows or not self._numberofcols:
+            raise RuntimeError("empty matrix not allowed")
+        self.name = name
+
+    def __getitem__(self, (row, col)):
+        return self._rows[row][col]
+
+    def matrix(self):
+        return self
+
+    def __neg__(self):
+        return matrix([[-col for col in row] for row in self._rows])
+
+    def __add__(self, other):
+        other = other.matrix()
+        if self._numberofrows != other._numberofrows or self._numberofcols != other._numberofcols:
+            raise RuntimeError("matrix geometry mismatch in add")
+        return matrix([[selfcol + othercol
+                        for selfcol, othercol in zip(selfrow, otherrow)]
+                       for selfrow, otherrow in zip(self._rows, other._rows)])
+
+    __radd__ = __add__
+
+    def __sub__(self, other):
+        return -other + self
+
+    def __rsub__(self, other):
+        return -self + other
+
+    def __mul__(self, other):
+        try:
+            other = other.matrix()
+        except (TypeError, AttributeError):
+            try:
+                other = other.vector()
+            except (TypeError, AttributeError):
+                return matrix([[col*other for col in row] for row in self._rows])
+            else:
+                if self._numberofcols != len(other):
+                    raise RuntimeError("size mismatch in matrix vector product")
+                return vector([sum([col*otheritem
+                                    for col, otheritem in zip(row, other)])
+                               for row in self._rows])
+        else:
+            if self._numberofcols != other._numberofrows:
+                raise RuntimeError("size mismatch in matrix product")
+            return matrix([[sum([self._rows[row][i]*other._rows[i][col]
+                                 for i in range(self._numberofcols)])
+                            for col in range(other._numberofcols)]
+                           for row in range(self._numberofrows)])
+
+    def __rmul__(self, other):
+        try:
+            other = other.vector()
+        except (TypeError, AttributeError):
+            return matrix([[other*col for col in row] for row in self._rows])
+        else:
+            if self._numberofrows != len(other):
+                raise RuntimeError("size mismatch in matrix vector product")
+            return vector([sum([other[i]*self._rows[i][col]
+                                for i in range(self._numberofrows)])
+                           for col in range(self._numberofcols)])
+
+    def __div__(self, other):
+        return matrix([[col/other for col in row] for row in self._rows])
+
+    def __str__(self):
+        return "%s{=(%s)}" % (self.name, ", ".join(["(" + ", ".join([str(col) for col in row]) + ")" for row in self._rows]))
+
+    def solve(self, solver):
+        for row in self._rows:
+            for col in row:
+                solver.addequation(col)
 
 
 class Solver:
@@ -388,15 +509,31 @@ solver = Solver()
 
 if __name__ == "__main__":
 
-    x = vector(2, "x")
-    y = vector(2, "y")
-    z = vector(2, "z")
+    # x = vector(2, "x")
+    # y = vector(2, "y")
+    # z = vector(2, "z")
 
-    solver.eq(4*x + y, 2*x - y + vector([4, 0])) # => x + y = (2, 0)
-    solver.eq(x[0] - y[0], z[1])
-    solver.eq(x[1] - y[1], z[0])
-    solver.eq(vector([5, 0]), z)
+    # solver.eq(4*x + y, 2*x - y + vector([4, 0])) # => x + y = (2, 0)
+    # solver.eq(x[0] - y[0], z[1])
+    # solver.eq(x[1] - y[1], z[0])
+    # solver.eq(vector([5, 0]), z)
 
-    print x
-    print y
-    print z
+    # print x
+    # print y
+    # print z
+
+    A = matrix([2, 2])
+    solver.eq(vector([1, 1]), A * vector([0, 1]))
+    solver.eq(vector([0, 2]), A * vector([1, 0]))
+
+    I = matrix([2, 2])
+    solver.eq(vector([0, 1]), I * vector([0, 1]))
+    solver.eq(vector([1, 0]), I * vector([1, 0]))
+
+    B = matrix([2, 2])
+    solver.eq(I, A*B)
+
+    print A
+    print B
+
+

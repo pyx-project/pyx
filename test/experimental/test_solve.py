@@ -1,6 +1,6 @@
 import unittest, operator
 
-from solve import scalar, vector, solver
+from solve import scalar, vector, matrix, solver
 
 class ScalarTestCase(unittest.TestCase):
 
@@ -148,15 +148,18 @@ class VectorTestCase(unittest.TestCase):
 
     def testMath(self):
         self.failUnlessEqual(str(-vector(2, "a")), "unnamed_vector{=(unnamed_scalar{=-1.0} * a[0], unnamed_scalar{=-1.0} * a[1])}")
-        self.failUnlessEqual(str(vector(2, "a") + vector(2, "t")), "unnamed_vector{=(a[0]  +  t[0], a[1]  +  t[1])}")
+        self.failUnlessEqual(str(vector(2, "a") + vector(2, "b")), "unnamed_vector{=(a[0]  +  b[0], a[1]  +  b[1])}")
         self.failUnlessRaises(AttributeError, operator.__add__, vector(2), scalar())
         self.failUnlessRaises(RuntimeError, operator.__add__, vector(2), vector(3))
-        self.failUnlessEqual(str(vector(2, "a") - vector(2, "t")), "unnamed_vector{=(unnamed_scalar{=-1.0} * t[0]  +  a[0], unnamed_scalar{=-1.0} * t[1]  +  a[1])}")
+        self.failUnlessEqual(str(vector(2, "a") - vector(2, "b")), "unnamed_vector{=(unnamed_scalar{=-1.0} * b[0]  +  a[0], unnamed_scalar{=-1.0} * b[1]  +  a[1])}")
         self.failUnlessRaises(RuntimeError, operator.__sub__, vector(2), scalar())
         self.failUnlessRaises(RuntimeError, operator.__sub__, vector(2), vector(3))
         self.failUnlessEqual(str(2 * vector(2, "a")), "unnamed_vector{=(a[0] * unnamed_scalar{=2.0}, a[1] * unnamed_scalar{=2.0})}")
         self.failUnlessEqual(str(vector(2, "a") * 2), "unnamed_vector{=(a[0] * unnamed_scalar{=2.0}, a[1] * unnamed_scalar{=2.0})}")
         self.failUnlessEqual(str(scalar(name="s") * vector(2, "a")), "unnamed_vector{=(a[0] * s, a[1] * s)}")
+        self.failUnlessEqual(str(scalar(name="s") * (vector(2, "a") + vector(2, "b"))), "unnamed_vector{=(a[0] * s  +  b[0] * s, a[1] * s  +  b[1] * s)}")
+        self.failUnlessEqual(str((scalar(name="s") + scalar(name="t")) * vector(2, "a")), "unnamed_vector{=(a[0] * s  +  a[0] * t, a[1] * s  +  a[1] * t)}")
+        self.failUnlessEqual(str((scalar(name="s") + scalar(name="t")) * (vector(2, "a") + vector(2, "b"))), "unnamed_vector{=(a[0] * s  +  b[0] * s  +  a[0] * t  +  b[0] * t, a[1] * s  +  b[1] * s  +  a[1] * t  +  b[1] * t)}")
         self.failUnlessEqual(str(vector(2, "a") * scalar(name="s")), "unnamed_vector{=(a[0] * s, a[1] * s)}")
         self.failUnlessEqual(str(vector(2, "a") * vector(2, "b")), "a[0] * b[0]  +  a[1] * b[1]")
         self.failUnlessRaises(RuntimeError, operator.__mul__, vector(2, "a"), vector(3))
@@ -166,6 +169,21 @@ class VectorTestCase(unittest.TestCase):
         self.failUnlessRaises(TypeError, lambda: vector(1) / vector(1))
         self.failUnlessRaises(TypeError, lambda: (scalar() + scalar()) / vector(1))
         self.failUnlessRaises(TypeError, lambda: (vector(1) + vector(1)) / vector(1))
+
+
+class MatrixTestCase(unittest.TestCase):
+
+    def testInit(self):
+        self.failUnlessEqual(str(matrix([2, 3])), "unnamed_matrix{=((unnamed_matrix[0, 0], unnamed_matrix[0, 1], unnamed_matrix[0, 2]), (unnamed_matrix[1, 0], unnamed_matrix[1, 1], unnamed_matrix[1, 2]))}")
+        self.failUnlessEqual(str(matrix([[1, 2, 3], [4, 5, 6]])), "unnamed_matrix{=((unnamed_matrix[0, 0]{=1.0}, unnamed_matrix[0, 1]{=2.0}, unnamed_matrix[0, 2]{=3.0}), (unnamed_matrix[1, 0]{=4.0}, unnamed_matrix[1, 1]{=5.0}, unnamed_matrix[1, 2]{=6.0}))}")
+        self.failUnlessEqual(str(matrix([2, 3], "a")), "a{=((a[0, 0], a[0, 1], a[0, 2]), (a[1, 0], a[1, 1], a[1, 2]))}")
+        self.failUnlessEqual(str(matrix([[1, 2, 3], [4, 5, 6]], "a")), "a{=((a[0, 0]{=1.0}, a[0, 1]{=2.0}, a[0, 2]{=3.0}), (a[1, 0]{=4.0}, a[1, 1]{=5.0}, a[1, 2]{=6.0}))}")
+
+    def testMath(self):
+        self.failUnlessEqual(str(-matrix([2, 2], "A")), "unnamed_matrix{=((unnamed_scalar{=-1.0} * A[0, 0], unnamed_scalar{=-1.0} * A[0, 1]), (unnamed_scalar{=-1.0} * A[1, 0], unnamed_scalar{=-1.0} * A[1, 1]))}")
+        self.failUnlessEqual(str(matrix([2, 3], "A") + matrix([2, 3], "B")), "unnamed_matrix{=((A[0, 0]  +  B[0, 0], A[0, 1]  +  B[0, 1], A[0, 2]  +  B[0, 2]), (A[1, 0]  +  B[1, 0], A[1, 1]  +  B[1, 1], A[1, 2]  +  B[1, 2]))}")
+        self.failUnlessEqual(str(matrix([2, 3], "A") * matrix([3, 2], "B")), "unnamed_matrix{=((A[0, 0] * B[0, 0]  +  A[0, 1] * B[1, 0]  +  A[0, 2] * B[2, 0], A[0, 0] * B[0, 1]  +  A[0, 1] * B[1, 1]  +  A[0, 2] * B[2, 1]), (A[1, 0] * B[0, 0]  +  A[1, 1] * B[1, 0]  +  A[1, 2] * B[2, 0], A[1, 0] * B[0, 1]  +  A[1, 1] * B[1, 1]  +  A[1, 2] * B[2, 1]))}")
+        self.failUnlessEqual(str(matrix([2, 3], "A") * vector(3, "a")), "unnamed_vector{=(A[0, 0] * a[0]  +  A[0, 1] * a[1]  +  A[0, 2] * a[2], A[1, 0] * a[0]  +  A[1, 1] * a[1]  +  A[1, 2] * a[2])}")
 
 
 if __name__ == "__main__":
