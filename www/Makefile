@@ -29,6 +29,7 @@ build:
 	mkdir $(builddir)
 	cp $(htmlfiles) $(imagefiles) $(cssfiles) $(builddir)
 	cp png/*.png ../manual/manual.pdf ../faq/pyxfaq.pdf $(builddir)
+	cp -r ../manual/manual $(builddir)
 	echo $(exampledirs)
 	for d in $(exampledirs); do mkdir $(builddir)/$$d; cp ../$$d/*.png ../$$d/*.eps $(builddir)/$$d; done
 
