@@ -25,7 +25,7 @@
 
 import math
 from pyx import attr, helper
-from pyx.graph import parter, rater, texter, painter
+from pyx.graph import parter, rater, texter, tick, painter
 
 
 class _Imap:
@@ -51,16 +51,18 @@ class _linmap:
     __implements__ = _Imap
 
     def setbasepoints(self, basepoints):
-        self.dydx = (basepoints[1][1] - basepoints[0][1]) / float(basepoints[1][0] - basepoints[0][0])
-        self.dxdy = (basepoints[1][0] - basepoints[0][0]) / float(basepoints[1][1] - basepoints[0][1])
-        self.x1 = basepoints[0][0]
-        self.y1 = basepoints[0][1]
+        self.x1 = float(basepoints[0][0])
+        self.y1 = float(basepoints[0][1])
+        self.x2 = float(basepoints[1][0])
+        self.y2 = float(basepoints[1][1])
+        self.dydx = (self.y2 - self.y1) / (self.x2 - self.x1)
+        self.dxdy = (self.x2 - self.x1) / (self.y2 - self.y1)
 
     def convert(self, value):
-        return self.y1 + self.dydx * (value - self.x1)
+        return self.y1 + self.dydx * (float(value) - self.x1)
 
     def invert(self, value):
-        return self.x1 + self.dxdy * (value - self.y1)
+        return self.x1 + self.dxdy * (float(value) - self.y1)
 
 
 class _logmap:
@@ -68,19 +70,18 @@ class _logmap:
     __implements__ = _Imap
 
     def setbasepoints(self, basepoints):
-        self.dydx = ((basepoints[1][1] - basepoints[0][1]) /
-                     float(math.log(basepoints[1][0]) - math.log(basepoints[0][0])))
-        self.dxdy = ((math.log(basepoints[1][0]) - math.log(basepoints[0][0])) /
-                     float(basepoints[1][1] - basepoints[0][1]))
-        self.x1 = math.log(basepoints[0][0])
-        self.y1 = basepoints[0][1]
-        return self
+        self.x1 = float(math.log(basepoints[0][0]))
+        self.y1 = float(basepoints[0][1])
+        self.x2 = float(math.log(basepoints[1][0]))
+        self.y2 = float(basepoints[1][1])
+        self.dydx = (self.y2 - self.y1) / (self.x2 - self.x1)
+        self.dxdy = (self.x2 - self.x1) / (self.y2 - self.y1)
 
     def convert(self, value):
-        return self.y1 + self.dydx * (math.log(value) - self.x1)
+        return self.y1 + self.dydx * (math.log(float(value)) - self.x1)
 
     def invert(self, value):
-        return math.exp(self.x1 + self.dxdy * (value - self.y1))
+        return math.exp(self.x1 + self.dxdy * (float(value) - self.y1))
 
 
 class _Iaxis:
@@ -153,7 +154,7 @@ class _axis:
       and _Irater should be initialized by the constructors
       of derived classes"""
 
-    def __init__(self, min=None, max=None, reverse=0, divisor=1,
+    def __init__(self, min=None, max=None, reverse=0, divisor=None,
                        title=None, painter=painter.axispainter(), texter=texter.defaulttexter(),
                        density=1, maxworse=2, manualticks=[]):
         """initializes the instance
@@ -183,13 +184,13 @@ class _axis:
             min, max, reverse = max, min, not reverse
         self.fixmin, self.fixmax, self.min, self.max, self.reverse = min is not None, max is not None, min, max, reverse
         self.divisor = divisor
+        self.usedivisor = 0
         self.title = title
         self.painter = painter
         self.texter = texter
         self.density = density
         self.maxworse = maxworse
         self.manualticks = self.checkfraclist(manualticks)
-        self.canconvert = 0
         self.axiscanvas = None
         self._setrange()
 
@@ -199,11 +200,16 @@ class _axis:
         if not self.fixmax and max is not None and (self.max is None or max > self.max):
             self.max = max
         if None not in (self.min, self.max) and self.min != self.max:
-            self.canconvert = 1
             if self.reverse:
-                self.setbasepoints(((self.min, 1), (self.max, 0)))
+                if self.usedivisor and self.divisor is not None:
+                    self.setbasepoints(((self.min/self.divisor, 1), (self.max/self.divisor, 0)))
+                else:
+                    self.setbasepoints(((self.min, 1), (self.max, 0)))
             else:
-                self.setbasepoints(((self.min, 0), (self.max, 1)))
+                if self.usedivisor and self.divisor is not None:
+                    self.setbasepoints(((self.min/self.divisor, 0), (self.max/self.divisor, 1)))
+                else:
+                    self.setbasepoints(((self.min, 0), (self.max, 1)))
 
     def _getrange(self):
         return self.min, self.max
@@ -213,6 +219,9 @@ class _axis:
         self._setrange()
 
     def setrange(self, min=None, max=None):
+        if self.usedivisor and self.divisor is not None:
+            min = float(self.divisor) * self.divisor
+            max = float(self.divisor) * self.divisor
         oldmin, oldmax = self.min, self.max
         self._setrange(min, max)
         if self.axiscanvas is not None and ((oldmin != self.min) or (oldmax != self.max)):
@@ -257,7 +266,10 @@ class _axis:
 
     def getrange(self):
         if self.min is not None and self.max is not None:
-            return self.min, self.max
+            if self.usedivisor and self.divisor is not None:
+                return float(self.min) / self.divisor, float(self.max) / self.divisor
+            else:
+                return self.min, self.max
 
     def checkfraclist(self, fracs):
         "orders a list of fracs, equal entries are not allowed"
@@ -274,32 +286,33 @@ class _axis:
     def finish(self, axispos):
         if self.axiscanvas is not None: return
 
+        # temorarily enable the axis divisor
+        self.usedivisor = 1
+        self._setrange()
+
         # lesspart and morepart can be called after defaultpart;
         # this works although some axes may share their autoparting,
         # because the axes are processed sequentially
         first = 1
         if self.parter is not None:
             min, max = self.getrange()
-            self.ticks = parter._mergeticklists(self.manualticks,
-                                         self.parter.defaultpart(min/self.divisor,
-                                                                 max/self.divisor,
-                                                                 not self.fixmin,
-                                                                 not self.fixmax))
+            self.ticks = tick._mergeticklists(self.manualticks,
+                                              self.parter.defaultpart(min, max, not self.fixmin, not self.fixmax))
             worse = 0
             nextpart = self.parter.lesspart
             while nextpart is not None:
                 newticks = nextpart()
                 if newticks is not None:
-                    newticks = parter._mergeticklists(self.manualticks, newticks)
+                    newticks = tick._mergeticklists(self.manualticks, newticks)
                     if first:
                         bestrate = self.rater.rateticks(self, self.ticks, self.density)
-                        bestrate += self.rater.raterange(self.convert(float(self.ticks[-1])/self.divisor)-
-                                                         self.convert(float(self.ticks[0])/self.divisor), 1)
+                        bestrate += self.rater.raterange(self.convert(self.ticks[-1])-
+                                                         self.convert(self.ticks[0]), 1)
                         variants = [[bestrate, self.ticks]]
                         first = 0
                     newrate = self.rater.rateticks(self, newticks, self.density)
-                    newrate += self.rater.raterange(self.convert(float(newticks[-1])/self.divisor)-
-                                                    self.convert(float(newticks[0])/self.divisor), 1)
+                    newrate += self.rater.raterange(self.convert(newticks[-1])-
+                                                    self.convert(newticks[0]), 1)
                     variants.append([newrate, newticks])
                     if newrate < bestrate:
                         bestrate = newrate
@@ -326,7 +339,7 @@ class _axis:
                     saverange = self._getrange()
                     self.ticks = variants[i][1]
                     if len(self.ticks):
-                        self.setrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
+                        self.setrange(self.ticks[0], self.ticks[-1])
                     self.texter.labels(self.ticks)
                     ac = self.painter.paint(axispos, self)
                     ratelayout = self.rater.ratelayout(ac, self.density)
@@ -345,22 +358,26 @@ class _axis:
                 variants.sort()
                 self.ticks = variants[0][1]
                 if len(self.ticks):
-                    self.setrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
+                    self.setrange(self.ticks[0], self.ticks[-1])
                 self.axiscanvas = variants[0][2]
             else:
                 self.ticks = variants[0][1]
                 self.texter.labels(self.ticks)
                 if len(self.ticks):
-                    self.setrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
+                    self.setrange(self.ticks[0], self.ticks[-1])
                 self.axiscanvas = painter.axiscanvas()
         else:
             if len(self.ticks):
-                self.setrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
+                self.setrange(self.ticks[0], self.ticks[-1])
             self.texter.labels(self.ticks)
             if self.painter is not None:
                 self.axiscanvas = self.painter.paint(axispos, self)
             else:
                 self.axiscanvas = painter.axiscanvas()
+
+        # disable the axis divisor
+        self.usedivisor = 0
+        self._setrange()
 
     def createlinkaxis(self, **args):
         return linkaxis(self, **args)
@@ -438,10 +455,19 @@ class linkaxis:
         - instead of performing the hole finish process
           (paritioning, rating, etc.) just a painter call
           is performed"""
+
+        # temporarily enable the linkaxis divisor
+        self.linkedaxis.usedivisor = 1
+        self.linkedaxis._setrange()
+
         if self.axiscanvas is None:
             if self.linkedaxis.axiscanvas is None:
                 raise RuntimeError("link axis finish method called before the finish method of the original axis")
             self.axiscanvas = self.painter.paint(axispos, self)
+
+        # disable the linkaxis divisor again
+        self.linkedaxis.usedivisor = 0
+        self.linkedaxis._setrange()
 
 
 class splitaxis:

@@ -24,7 +24,7 @@
 
 
 from pyx import text
-from pyx.graph import parter
+from pyx.graph import tick
 
 
 class _Itexter:
@@ -309,7 +309,7 @@ class exponentialtexter:
                        skipexp1=None,
                        nomantissaexp=r"{10^{%s}}",
                        minusnomantissaexp=r"{-10^{%s}}",
-                       mantissamin=parter.frac((1, 1)), mantissamax=parter.frac((10, 1)),
+                       mantissamin=tick.frac((1, 1)), mantissamax=tick.frac((10, 1)),
                        skipmantissa1=0, skipallmantissa1=1,
                        mantissatexter=decimaltexter()):
         r"""initializes the instance
@@ -410,8 +410,8 @@ class defaulttexter:
 
     __implements__ = _Itexter
 
-    def __init__(self, smallestdecimal=parter.frac((1, 1000)),
-                       biggestdecimal=parter.frac((9999, 1)),
+    def __init__(self, smallestdecimal=tick.frac((1, 1000)),
+                       biggestdecimal=tick.frac((9999, 1)),
                        equaldecision=1,
                        decimaltexter=decimaltexter(),
                        exponentialtexter=exponentialtexter()):

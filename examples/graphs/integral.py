@@ -6,8 +6,8 @@ p = graph.painter.axispainter(basepathattrs=[deco.earrow.normal],
                               titlepos=0.98, titledirection=None)
 g = graph.type.graphxy(width=8, x2=None, y2=None,
                        x=graph.axis.linaxis(title="$x$", min=0, max=10,
-                                            manualticks=[graph.parter.tick(a, label="$a$"),
-                                                         graph.parter.tick(b, label="$b$")],
+                                            manualticks=[graph.tick.tick(a, label="$a$"),
+                                                         graph.tick.tick(b, label="$b$")],
                                             parter=None,
                                             painter=p),
                   y=graph.axis.linaxis(title="$y$", parter=None, painter=p))

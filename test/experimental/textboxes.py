@@ -1,7 +1,7 @@
 import sys; sys.path[:0] = ["../.."]
 from pyx import *
 
-text.set(texdebug="debug.tex", usefiles=["debug.dvi"])
+# text.set(texdebug="debug.tex", usefiles=["debug.dvi"])
 
 t = r"""
 text text text text text text text text text text text text

@@ -24,7 +24,7 @@
 
 
 from pyx import unit, box
-from pyx.graph import parter
+from pyx.graph import tick
 
 
 # rater
@@ -179,15 +179,15 @@ class axisrater:
           by the sum of the weights of the raters
         - within the rating, all ticks with a higher level are
           considered as ticks for a given level"""
-        maxticklevel, maxlabellevel = parter._maxlevels(ticks)
+        maxticklevel, maxlabellevel = tick._maxlevels(ticks)
         numticks = [0]*maxticklevel
         numlabels = [0]*maxlabellevel
-        for tick in ticks:
-            if tick.ticklevel is not None:
-                for level in range(tick.ticklevel, maxticklevel):
+        for t in ticks:
+            if t.ticklevel is not None:
+                for level in range(t.ticklevel, maxticklevel):
                     numticks[level] += 1
-            if tick.labellevel is not None:
-                for level in range(tick.labellevel, maxlabellevel):
+            if t.labellevel is not None:
+                for level in range(t.labellevel, maxlabellevel):
                     numlabels[level] += 1
         rate = 0
         weight = 0

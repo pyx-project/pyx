@@ -26,7 +26,7 @@
 import math
 from pyx import canvas, color, attr, text, style, unit, box, path
 from pyx import trafo as trafomodule
-from pyx.graph import parter
+from pyx.graph import tick
 
 
 goldenmean = 0.5 * (math.sqrt(5) + 1)
@@ -391,7 +391,6 @@ class axispainter(axistitlepainter):
         - labelhequalize and labelvequalize (booleans) perform an equal
           alignment for straight vertical and horizontal axes, respectively
         - futher keyword arguments are passed to axistitlepainter"""
-        # TODO: access to axis.divisor -- document, remove, ... ???
         self.innerticklength_str = innerticklength
         self.outerticklength_str = outerticklength
         self.tickattrs = tickattrs
@@ -408,44 +407,44 @@ class axispainter(axistitlepainter):
         if ac is None:
             ac = axiscanvas()
         labeldist = unit.length(self.labeldist_str, default_type="v")
-        for tick in axis.ticks:
-            tick.temp_v = axis.convert(float(tick) * axis.divisor)
-            tick.temp_x, tick.temp_y = axispos.vtickpoint_pt(tick.temp_v)
-            tick.temp_dx, tick.temp_dy = axispos.vtickdirection(tick.temp_v)
-        maxticklevel, maxlabellevel = parter._maxlevels(axis.ticks)
+        for t in axis.ticks:
+            t.temp_v = axis.convert(t)
+            t.temp_x, t.temp_y = axispos.vtickpoint_pt(t.temp_v)
+            t.temp_dx, t.temp_dy = axispos.vtickdirection(t.temp_v)
+        maxticklevel, maxlabellevel = tick._maxlevels(axis.ticks)
 
-        # create & align tick.temp_labelbox
-        for tick in axis.ticks:
-            if tick.labellevel is not None:
-                labelattrs = attr.selectattrs(self.labelattrs, tick.labellevel, maxlabellevel)
+        # create & align t.temp_labelbox
+        for t in axis.ticks:
+            if t.labellevel is not None:
+                labelattrs = attr.selectattrs(self.labelattrs, t.labellevel, maxlabellevel)
                 if labelattrs is not None:
                     labelattrs = self.defaultlabelattrs + labelattrs
                     if self.labeldirection is not None:
-                        labelattrs.append(self.labeldirection.trafo(tick.temp_dx, tick.temp_dy))
-                    if tick.labelattrs is not None:
-                        labelattrs.extend(tick.labelattrs)
-                    tick.temp_labelbox = self.texrunner.text_pt(tick.temp_x, tick.temp_y, tick.label, labelattrs)
+                        labelattrs.append(self.labeldirection.trafo(t.temp_dx, t.temp_dy))
+                    if t.labelattrs is not None:
+                        labelattrs.extend(t.labelattrs)
+                    t.temp_labelbox = self.texrunner.text_pt(t.temp_x, t.temp_y, t.label, labelattrs)
         if len(axis.ticks) > 1:
             equaldirection = 1
-            for tick in axis.ticks[1:]:
-                if tick.temp_dx != axis.ticks[0].temp_dx or tick.temp_dy != axis.ticks[0].temp_dy:
+            for t in axis.ticks[1:]:
+                if t.temp_dx != axis.ticks[0].temp_dx or t.temp_dy != axis.ticks[0].temp_dy:
                     equaldirection = 0
         else:
             equaldirection = 0
         if equaldirection and ((not axis.ticks[0].temp_dx and self.labelvequalize) or
                                (not axis.ticks[0].temp_dy and self.labelhequalize)):
             if self.labelattrs is not None:
-                box.linealignequal([tick.temp_labelbox for tick in axis.ticks if tick.labellevel is not None],
+                box.linealignequal([t.temp_labelbox for t in axis.ticks if t.labellevel is not None],
                                    labeldist, -axis.ticks[0].temp_dx, -axis.ticks[0].temp_dy)
         else:
-            for tick in axis.ticks:
-                if tick.labellevel is not None and self.labelattrs is not None:
-                    tick.temp_labelbox.linealign(labeldist, -tick.temp_dx, -tick.temp_dy)
+            for t in axis.ticks:
+                if t.labellevel is not None and self.labelattrs is not None:
+                    t.temp_labelbox.linealign(labeldist, -t.temp_dx, -t.temp_dy)
 
-        for tick in axis.ticks:
-            if tick.ticklevel is not None:
-                innerticklength = attr.selectattr(self.innerticklength_str, tick.ticklevel, maxticklevel)
-                outerticklength = attr.selectattr(self.outerticklength_str, tick.ticklevel, maxticklevel)
+        for t in axis.ticks:
+            if t.ticklevel is not None:
+                innerticklength = attr.selectattr(self.innerticklength_str, t.ticklevel, maxticklevel)
+                outerticklength = attr.selectattr(self.outerticklength_str, t.ticklevel, maxticklevel)
                 if innerticklength is not None or outerticklength is not None:
                     if innerticklength is None:
                         innerticklength = 0
@@ -455,39 +454,39 @@ class axispainter(axistitlepainter):
                         outerticklength = 0
                     else:
                         outerticklength = unit.length(outerticklength, default_type="v")
-                    tickattrs = attr.selectattrs(self.defaulttickattrs + self.tickattrs, tick.ticklevel, maxticklevel)
+                    tickattrs = attr.selectattrs(self.defaulttickattrs + self.tickattrs, t.ticklevel, maxticklevel)
                     if tickattrs is not None:
                         innerticklength_pt = unit.topt(innerticklength)
                         outerticklength_pt = unit.topt(outerticklength)
-                        x1 = tick.temp_x + tick.temp_dx * innerticklength_pt
-                        y1 = tick.temp_y + tick.temp_dy * innerticklength_pt
-                        x2 = tick.temp_x - tick.temp_dx * outerticklength_pt
-                        y2 = tick.temp_y - tick.temp_dy * outerticklength_pt
+                        x1 = t.temp_x + t.temp_dx * innerticklength_pt
+                        y1 = t.temp_y + t.temp_dy * innerticklength_pt
+                        x2 = t.temp_x - t.temp_dx * outerticklength_pt
+                        y2 = t.temp_y - t.temp_dy * outerticklength_pt
                         ac.stroke(path.line_pt(x1, y1, x2, y2), tickattrs)
                         if outerticklength is not None and unit.topt(outerticklength) > unit.topt(ac.extent):
                             ac.extent = outerticklength
                         if outerticklength is not None and unit.topt(-innerticklength) > unit.topt(ac.extent):
                             ac.extent = -innerticklength
             if self.gridattrs is not None:
-                gridattrs = attr.selectattrs(self.defaultgridattrs + self.gridattrs, tick.ticklevel, maxticklevel)
-                ac.stroke(axispos.vgridpath(tick.temp_v), gridattrs)
-            if tick.labellevel is not None and self.labelattrs is not None:
-                ac.insert(tick.temp_labelbox)
-                ac.labels.append(tick.temp_labelbox)
-                extent = tick.temp_labelbox.extent(tick.temp_dx, tick.temp_dy) + labeldist
+                gridattrs = attr.selectattrs(self.defaultgridattrs + self.gridattrs, t.ticklevel, maxticklevel)
+                ac.stroke(axispos.vgridpath(t.temp_v), gridattrs)
+            if t.labellevel is not None and self.labelattrs is not None:
+                ac.insert(t.temp_labelbox)
+                ac.labels.append(t.temp_labelbox)
+                extent = t.temp_labelbox.extent(t.temp_dx, t.temp_dy) + labeldist
                 if unit.topt(extent) > unit.topt(ac.extent):
                     ac.extent = extent
         if self.basepathattrs is not None:
             ac.stroke(axispos.vbasepath(), self.defaultbasepathattrs + self.basepathattrs)
 
-        # for tick in axis.ticks:
-        #     del tick.temp_v    # we've inserted those temporary variables ... and do not care any longer about them
-        #     del tick.temp_x
-        #     del tick.temp_y
-        #     del tick.temp_dx
-        #     del tick.temp_dy
-        #     if tick.labellevel is not None and self.labelattrs is not None:
-        #         del tick.temp_labelbox
+        # for t in axis.ticks:
+        #     del t.temp_v    # we've inserted those temporary variables ... and do not care any longer about them
+        #     del t.temp_x
+        #     del t.temp_y
+        #     del t.temp_dx
+        #     del t.temp_dy
+        #     if t.labellevel is not None and self.labelattrs is not None:
+        #         del t.temp_labelbox
 
         axistitlepainter.paint(self, axispos, axis, ac=ac)
 
