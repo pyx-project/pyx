@@ -9,9 +9,11 @@ Complex tasks like 2d and 3d plots in publication-ready quality are built out
 of these primitives.
 """
 
+from distutils import log
 from distutils.core import setup, Extension
 from distutils.command.build_py import build_py
 from distutils.command.install_data import install_data
+from distutils.command.install_lib import install_lib
 import ConfigParser
 import sys, os
 import pyx
@@ -56,47 +58,58 @@ data_files = [# share/pyx is taken relative to "setup.py install --home=..."
               ("/etc", ["pyxrc"])]
 
 #
-# pyx_build_py
-#
-# pyx/siteconfig.py is not copied from the source directory,
-# but generated from the directory data obtained from install_data
+# extend install commands to overwrite the original siteconfig.py
 #
 
 class pyx_build_py(build_py):
 
-    def run(self):
-        # siteconfig depends on install_data:
-        self.run_command('install_data')
-        build_py.run(self)
-
     def build_module(self, module, module_file, package):
-        if package == "pyx" and module == "siteconfig":
+        if module == "siteconfig":
             # generate path information as the original build_module does it
             outfile = self.get_module_outfile(self.build_lib, [package], module)
-            dir = os.path.dirname(outfile)
-            self.mkpath(dir)
+            outdir = os.path.dirname(outfile)
+            self.mkpath(outdir)
 
-            # we do not copy pyx/siteconfig.py, but generate it
-            # using the pyx_install_data instance
-            install_data = self.distribution.command_obj["install_data"]
-            f = open(outfile, "w")
-            f.write("lfsdir = %r\n" % install_data.pyx_lfsdir)
-            f.write("sharedir = %r\n" % install_data.pyx_sharedir)
-            f.write("pyxrc = %r\n" % install_data.pyx_pyxrc)
-            f.close()
+            log.info("creating proper %s" % outfile)
+
+            indir = os.path.dirname(module_file)
+            addjoinstring = ", ".join(["'..'" for d in outdir.split(os.path.sep)] +
+                                      ["'%s'" % d for d in indir.split(os.path.sep)])
+            fin = open(module_file, "r")
+            fout = open(outfile, "w")
+            for line in fin.readlines():
+                fout.write(line.replace("os.path.join(os.path.dirname(__file__), ",
+                                        "os.path.join(os.path.dirname(__file__), %s, " % addjoinstring))
+            fin.close()
+            fout.close()
         else:
             return build_py.build_module(self, module, module_file, package)
-
-#
-# install_data
-#
 
 class pyx_install_data(install_data):
 
     def run(self):
-        install_data.run(self)
         self.pyx_lfsdir = self.pyx_sharedir = os.path.join(self.install_dir, "share", "pyx")
         self.pyx_pyxrc = os.path.join(self.root or "/", "etc", "pyxrc")
+        install_data.run(self)
+
+class pyx_install_lib(install_lib):
+
+    def run(self):
+        # siteconfig.py depends on install_data:
+        self.run_command('install_data')
+        install_lib.run(self)
+
+    def install(self):
+        result = install_lib.install(self)
+        install_data = self.distribution.command_obj["install_data"]
+        outfile = os.path.join(self.install_dir, "pyx", "siteconfig.py")
+        log.info("creating proper %s" % outfile)
+        f = open(outfile, "w")
+        f.write("lfsdir = %r\n" % install_data.pyx_lfsdir)
+        f.write("sharedir = %r\n" % install_data.pyx_sharedir)
+        f.write("pyxrc = %r\n" % install_data.pyx_pyxrc)
+        f.close()
+        return result
 
 #
 # additional package metadata (only available in Python 2.3 and above)
@@ -136,5 +149,6 @@ setup(name="PyX",
       ext_modules=ext_modules,
       data_files=data_files,
       cmdclass = {"build_py": pyx_build_py,
-                  "install_data": pyx_install_data},
+                  "install_data": pyx_install_data,
+                  "install_lib": pyx_install_lib},
       **addargs)
