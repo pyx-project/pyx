@@ -433,7 +433,8 @@ class Canvas(Globex):
 	self.PSFile.close()
 	
     def PSGetEPSBoundingBox(self, epsname):
-        "returns bounding box of EPS file epsname as 4-tuple (llx, lly, urx, ury)"
+    
+        'returns bounding box of EPS file epsname as 4-tuple (llx, lly, urx, ury)'
 	
         try:
 	    epsfile=open(epsname,"r")
@@ -461,7 +462,8 @@ class Canvas(Globex):
 	return (llx, lly, urx, ury)
 	
     def PSInsertEPS(self, epsname):
-        "Insert EPS file epsname at current position"
+    
+        'Insert EPS file epsname at current position'
 	
 	(llx, lly, urx, ury) = self.PSGetEPSBoundingBox(epsname)
 	
@@ -481,7 +483,9 @@ class Canvas(Globex):
 	self.PSCmd("EndEPSF")
 
     def PScm2po(self, x, y=None): 
-        "convert from cm to points"
+    
+        'convert from cm to points'
+	
         convfaktor=28.346456693
 	
     	if y==None:
