@@ -1656,10 +1656,13 @@ class _axis:
                     raise PartitionError("no valid axis partitioning found")
                 variants = [variant for variant in variants[:i] if variant[0] is not None]
                 variants.sort()
+                self.ticks = variants[0][1]
+                self.layoutdata = variants[0][2]
             else:
+                for tick in self.ticks:
+                    tick.textbox = None
+                self.layoutdata = layoutdata()
                 self.layoutdata._extent = 0
-            self.ticks = variants[0][1]
-            self.layoutdata = variants[0][2]
             if len(self.ticks):
                 self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
         else:
