@@ -57,28 +57,29 @@ c.stroke(c.text(4, 0, r"\begin{rotate}{90}Rotated Text\end{rotate}"))
 
 d = canvas.canvas()
 d.stroke(path.rect(0,0, 1,1))
+d.stroke(path.line(0,0, 1,1))
+d.stroke(path.line(1,0, 0,1))
 d.writetofile("sample")
-#c.stroke(c.text(6, 0, r"""
-#    \fbox{\includegraphics[%
-#    bb = 0 0 130 130,
-#    width=2.432cm,
-#    height=4.976562cm,
-#    totalheight=1.5cm,
-#    angle=50,
-#    origin=br,
-#    type=eps,
-#    trim=0 0 10.876 10.2348,
-#    %command=ls sample.*, % not supported!
-#    scale=5,
-#    clip=]%
-#    {sample.eps}}""", text.texmessage.graphicsload))
-c.stroke(c.text(6, 0, r"""
+c.stroke(c.text(6, 0, r"""%
     \fbox{\includegraphics[%
-    width=2.432cm,
-    height=4.976562cm,
-    %type=eps,
-    clip=]%
-    {sample.eps}}""", text.texmessage.graphicsload))
+    %type=eps,             %% type of the file ... should not change anything --
+                           %   BUG!!!!!!  size and filename information gets
+                           %   wrong when this is used  ===> not supported!
+    %command=...,          %% not supported!
+    bb = 0 0 20 20,        %% bounding box in original size
+    hiresbb=,              %! read high resolution in original file (if not bb)
+    viewport= 0 0 15 15,   %% bounding box with respect to bb
+    trim=1 1 2 2,          %% correction of the bounding box with respect to bb
+    width=1in,             %! final width
+    height=2in,            %! final height
+    %totalheight=3in,       %% final height+depth
+    keepaspectratio=,      %! keep aspect ratio, but do not exceed width nor height
+    angle=50,              %! wraps around include
+    origin=cr,             %% one or two chars of 'lrtcbB' (B for baseline)
+    scale=5,               %! wraps around rotating and include
+    %draft=,               %% do not print anything,
+    clip=]%                %! directly in dvi
+    {sample}}""", text.texmessage.graphicsload))
 c.stroke(c.text(10, 0, r"""
     \textcolor{col0}{abcdef}\\
     \textcolor{col1}{abcdef}\\
