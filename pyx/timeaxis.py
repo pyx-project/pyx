@@ -1,5 +1,5 @@
 import datetime
-import graph
+import graph, helper
 
 """some experimental code for creating a time axis
 - it needs python 2.3 to be used (it is based on the new datetime data type)
@@ -33,10 +33,37 @@ class _timemap:
         return self.x1 + datetime.timedelta(days=f*self.dx.days, seconds=f*self.dx.seconds, microseconds=f*self.dx.seconds)
 
 
+class timetick(datetime.datetime):
+
+    def __init__(self, year, month, day, ticklevel=0, labellevel=0, label=None, labelattrs=[], **kwargs):
+        datetime.datetime.__init__(self, year, month, day, **kwargs)
+        self.ticklevel = ticklevel
+        self.labellevel = labellevel
+        self.label = label
+        self.labelattrs = helper.ensurelist(labelattrs)[:]
+
+    def merge(self, other):
+        if self.ticklevel is None or (other.ticklevel is not None and other.ticklevel < self.ticklevel):
+            self.ticklevel = other.ticklevel
+        if self.labellevel is None or (other.labellevel is not None and other.labellevel < self.labellevel):
+            self.labellevel = other.labellevel
+
+
+class timetexter:
+
+    def __init__(self, formats="%c")
+        self.formats = formats
+
+    def labels(self, ticks):
+        for tick in ticks:
+            if tick.labellevel is not None and tick.label is None:
+                tick.label = tick.strftime(self.formats)
+
+
 class timeaxis(graph._axis, _timemap):
 
      def __init__(self, part=[], rater=graph.axisrater(), **args):
-        graph._axis.__init__(self, **args)
+        graph._axis.__init__(self, divisor=None, **args)
         if self.fixmin and self.fixmax:
             self.relsize = self.max - self.min
             self.relsize = 0.000001*self.relsize.microseconds + self.relsize.seconds + 3600*24*self.relsize.days

@@ -248,9 +248,6 @@ class tick(frac):
         if self.labellevel is None or (other.labellevel is not None and other.labellevel < self.labellevel):
             self.labellevel = other.labellevel
 
-    def __repr__(self):
-        return "tick(%r, %r, %s, %s, %s)" % (self.enum, self.denom, self.ticklevel, self.labellevel, self.label)
-
 
 def _mergeticklists(list1, list2):
     """helper function to merge tick lists
@@ -973,8 +970,12 @@ class axisrater:
         if len(ticks):
             # XXX: tickrange was not yet applied
             # TODO: density == 1?
-            rate += self.tickrange.rate(axis.convert(float(ticks[-1]) * axis.divisor) -
-                                        axis.convert(float(ticks[0]) * axis.divisor), 1)
+            if axis.divisor is not None: # XXX workaround for timeaxis
+                rate += self.tickrange.rate(axis.convert(float(ticks[-1]) * axis.divisor) -
+                                            axis.convert(float(ticks[0]) * axis.divisor), 1)
+            else:
+                rate += self.tickrange.rate(axis.convert(ticks[-1]) -
+                                            axis.convert(ticks[0]), 1)
         else:
             rate += self.tickrange.rate(0, 1)
         weight += self.tickrange.weight
@@ -1605,7 +1606,10 @@ class axispainter(axistitlepainter):
     def paint(self, axispos, axis, axiscanvas):
         labeldist = unit.length(self.labeldist_str, default_type="v")
         for tick in axis.ticks:
-            tick.temp_v = axis.convert(float(tick) * axis.divisor)
+            if axis.divisor is not None: # XXX workaround for timeaxis
+                tick.temp_v = axis.convert(float(tick) * axis.divisor)
+            else:
+                tick.temp_v = axis.convert(tick)
             tick.temp_x, tick.temp_y = axispos._vtickpoint(tick.temp_v, axis=axis)
             tick.temp_dx, tick.temp_dy = axispos.vtickdirection(tick.temp_v, axis=axis)
 
