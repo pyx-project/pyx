@@ -7,9 +7,8 @@ from zope.pagetemplate.pagetemplate import PageTemplate
 class example:
     def __init__(self, name):
         self.name = name
-        self.basename = os.path.basename(name)
-        self.png = self.basename+".png"
-        self.eps = self.basename+".eps"
+        self.png = "examples/%s.png" % self.name
+        self.eps = "examples/%s.eps" % self.name
         self.code = open("../examples/%s.py.html" % name, "r").read()
         self.code = self.code.replace("ä", "&auml;")
         self.code = self.code.replace("Ä", "&Auml;")

@@ -1,31 +1,45 @@
-default: html
+default: build
 
 clean:
 	-rm *.html
+	rm -r build
 
 all:
 	make clean
-	make install
+	make build
 
 ptfiles = $(filter-out maintemplate.pt, $(wildcard *.pt))
 htmlfiles = $(patsubst %.pt, %.html, $(ptfiles))
 imagefiles = valid-html401.png vcss.png pyx.ico
 cssfiles = main.css
 builddir = build
+exampledirs = $(shell cd ..; find examples -type d|grep -v CVS)
+publicserver = shell.sourceforge.net
+publicpath = /home/groups/p/py/pyx/htdocs
 
-html: $(htmlfiles)
-	cd png; make
+public:
+	make build
+	scp -oCompression=yes -r $(builddir)/* $(publicserver):$(publicpath)
+	-ssh $(publicserver) "cd $(publicpath); chmod -R g+w *"
 
-install: html
-	-mkdir $(builddir)
+build:
+	make htmlfiles
+	make otherhtml
+	-rm -r $(builddir)
+	mkdir $(builddir)
 	cp $(htmlfiles) $(imagefiles) $(cssfiles) $(builddir)
-	cd png; make
-	cp png/*.png ../examples/*.png ../examples/*/*.png $(builddir)
-	cp ../examples/*.eps ../examples/*/*.eps $(builddir)
-	cp ../manual/manual.pdf $(builddir)
-	cp ../faq/pyxfaq.pdf $(builddir)
-	chmod -R 664 $(builddir)/*
-	scp -oCompression=yes -p -r $(builddir)/* shell.sourceforge.net:/home/groups/p/py/pyx/htdocs
+	cp png/*.png ../manual/manual.pdf ../faq/pyxfaq.pdf $(builddir)
+	echo $(exampledirs)
+	for d in $(exampledirs); do mkdir $(builddir)/$$d; cp ../$$d/*.png ../$$d/*.eps $(builddir)/$$d; done
+
+htmlfiles: $(htmlfiles)
 
 %.html: %.pt maintemplate.pt pt2html.py
 	PYTHONPATH=/usr/src/ZopeCVS/Zope3/src:~/bin/python/Zope3/src ./pt2html.py $<
+
+otherhtml:
+	cd png; make
+	cd ../examples; make html
+	cd ../manual; make pdf
+	cd ../faq; make
+
