@@ -53,8 +53,9 @@ except NameError:
     def enumerate(list):
         return zip(xrange(len(list)), list)
 
+# use new style classes when possible
 __metaclass__ = type
-    
+
 ################################################################################
 # Bezier helper functions
 ################################################################################
@@ -173,6 +174,8 @@ class PathException(Exception): pass
 class _pathcontext:
 
     """context during walk along path"""
+
+    __slots__ = "currentpoint", "currentsubpath"
 
     def __init__(self, currentpoint=None, currentsubpath=None):
         """ initialize context
@@ -952,6 +955,8 @@ class multicurveto_pt(pathel):
 
     """Perform multiple curvetos (coordinates in pts)"""
 
+    __slots__ = "points"
+
     def __init__(self, points):
          self.points = points
 
@@ -1430,6 +1435,8 @@ class normline(normpathel):
 
     """Straight line from (x0, y0) to (x1, y1) (coordinates in pts)"""
 
+    __slots__ = "x0", "y0", "x1", "y1"
+
     def __init__(self, x0, y0, x1, y1):
          self.x0 = x0
          self.y0 = y0
@@ -1528,6 +1535,8 @@ class normline(normpathel):
 class normcurve(normpathel):
 
     """Bezier curve with control points x0, y0, x1, y1, x2, y2, x3, y3 (coordinates in pts)"""
+
+    __slots__ = "x0", "y0", "x1", "y1", "x2", "y2", "x3", "y3"
 
     def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
         self.x0 = x0
@@ -1836,6 +1845,8 @@ class normsubpath:
     to the first point of the first normpathel, except when
     this normline would be too short.
     """
+
+    __slots__ = "normpathels", "closed", "epsilon"
 
     def __init__(self, normpathels, closed, epsilon=1e-5):
         self.normpathels = [npel for npel in normpathels if not npel.isstraight(epsilon) or npel.arclen_pt(epsilon)>epsilon]
