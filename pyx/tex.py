@@ -29,7 +29,9 @@
 #       - various cleanups: - outsource instancelist
 #                           - use dictargs in constructor (remove classes)
 #                           - class tree
-#       - documentation & bug (side effect) description: - par-bug in vbox
+#       - documentation & bug (side effect) description:
+#                           - par-bug in vbox
+#                           - double {} for color etc.
 
 
 """
