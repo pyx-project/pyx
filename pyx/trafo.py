@@ -67,6 +67,7 @@ class _trafo(base.PSAttr):
     Note that though the coordinates in the constructor are in
     pts (which is useful for internal purposes), all other
     methods only accept units in the standard user notation.
+    
     """
     
     def __init__(self, matrix=((1,0),(0,1)), vector=(0,0)):
@@ -215,6 +216,7 @@ class rotate(_trafo):
 class mirror(trafo):
     def __init__(self,angle=0):
         trafo.__init__(self, matrix=_mmatrix(angle))
+        
 
 class _scale(_trafo):
     def __init__(self, sx, sy=None, x=None, y=None):
@@ -246,68 +248,3 @@ class scale(trafo):
             vector=(1-sx)*x, (1-sy)*y
             
         trafo.__init__(self, matrix=((sx,0),(0,sy)), vector=vector)
-
-        
-
-if __name__=="__main__":
-   # test for some invariants:
-
-   def checkforidentity(trafo):
-       m = max(map(abs,[trafo.matrix[0][0]-1,
-                        trafo.matrix[1][0],
-                        trafo.matrix[0][1],
-                        trafo.matrix[1][1]-1,
-                        unit.topt(trafo.vector[0]),
-                        unit.topt(trafo.vector[1])]))
-
-       assert m<1e-7, "tests for invariants failed" 
-
-   # trafo(angle=angle, vector=(x,y)) == translate(x,y) * rotate(angle)
-   checkforidentity( translate(1,3) *
-                     rotate(15) *
-                     trafo(matrix=_rmatrix(15),vector=(1,3)).inverse())
-   
-   # t*t.inverse() == 1
-   t = translate(-1,-1)*rotate(72)*translate(1,1)
-   checkforidentity(t*t.inverse())
-
-   # -mirroring two times should yield identiy
-   # -mirror(phi)=mirror(phi+180)
-   checkforidentity( mirror(20)*mirror(20)) 
-   checkforidentity( mirror(20).mirror(20)) 
-   checkforidentity( mirror(20)*mirror(180+20))
-   
-   # equivalent notations
-   checkforidentity( rotate(72).translate(1,2)*
-                     (translate(1,2)*rotate(72)).inverse())
-   checkforidentity( rotate(72,1,2)*(translate(-1,-2).rotate(72).translate(1,2)).inverse())
-   
-   checkforidentity( translate(1,2).rotate(72).translate(-3,-1)*
-                     (translate(-3,-1)*rotate(72)*translate(1,2)).inverse() )
-   
-   checkforidentity( rotate(40).rotate(120).rotate(90).rotate(110) )
-
-   checkforidentity( scale(2,3).scale(1/2.0, 1/3.0) )
-
-   def applyonbasis(t):
-       print "%s:" % t
-       t=eval(t)
-       esx=t.apply(1,0)
-       esy=t.apply(0,1)
-       print "  (1,0) => (%f, %f)" % (unit.tom(esx[0])*100, unit.tom(esx[1])*100)
-       print "  (0,1) => (%f, %f)" % (unit.tom(esy[0])*100, unit.tom(esy[1])*100)
-
-   applyonbasis("translate(1,0)")
-   applyonbasis("translate(0,1)")
-   applyonbasis("rotate(90)")
-   applyonbasis("scale(0.5)")
-   applyonbasis("translate(1,0)*rotate(90)")
-   applyonbasis("translate(1,0)*scale(0.5)")
-   applyonbasis("rotate(90)*translate(1,0)")
-   applyonbasis("scale(0.5)*translate(1,0)")
-   applyonbasis("translate(1,0)*rotate(90)*scale(0.5)")
-   applyonbasis("translate(1,0)*scale(0.5)*rotate(90)")
-   applyonbasis("rotate(90)*scale(0.5)*translate(1,0)")
-   applyonbasis("scale(0.5)*rotate(90)*translate(1,0)")
-
-
