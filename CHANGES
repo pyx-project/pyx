@@ -17,6 +17,7 @@ PyX
     - dense -> density
     - symbols + lines -> symbollines (??). Symbols should not allow setting lineattrs, and
       lines not symbolattrs
+    - rect style (and errorbars?) should use clipping
   - canvas module:
     - default patterns
     - stroke and fill should support trafos
