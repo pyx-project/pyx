@@ -1,6 +1,6 @@
 import math
 from math import sin, cos, atan2, tan, hypot, acos, sqrt
-import canvas, path, box, trafo, unit, helper
+import path, trafo, unit, helper
 
 
 #########################
