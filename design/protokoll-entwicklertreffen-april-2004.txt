@@ -76,9 +76,3 @@ Casp: Gleichungssystem für (x,y)(t) der Punkte mit Abstand r von der
 bisherigen Bezier. Dann kleinester Krümmungsradius t_krit und
 (x,y)(t1)=(x,y)(t2) mit t1<t_krit<t2 bestimmen. Globales bereinigen
 durch Schnittpunkte zwischen Pfadelementen ...
-
--- 
-by  _ _      _    Dr. André Wobst
-   / \ \    / )   wobsta@users.sourceforge.net, http://www.wobsta.de/
-  / _ \ \/\/ /    PyX - High quality PostScript figures with Python & TeX
- (_/ \_)_/\_/           visit http://pyx.sourceforge.net/
