@@ -1,65 +1,64 @@
-\chapter{Module connector}
+\chapter{Module \module{connector}}
 \label{connector}
 
-This module provides classes for connecting two \verb|box|-instances with
+This module provides classes for connecting two \class{box}-instances with
 lines, arcs or curves.
 All constructors of the following connector-classes take two
-\verb|box|-instances as first arguments. They return a
-\verb|normpath|-instance from the first to the second box, starting/ending at
-the boxes' outline \verb|path|. The behaviour of the path is determined by the
-boxes' center and some angle- and distance-keywords. The resulting path will
-additionally be shortened by lengths given in the \verb|boxdists|-keyword (a
-list of two lengths, default \verb|[0,0]|).
+\class{box}-instances as first arguments. They return a
+\class{normpath}-instance from the first to the second box, starting/ending at
+the boxes' outline. The behaviour of the path is determined by the
+boxes' center and some angle- and distance-keywords. The resulting \class{connector} will
+additionally be shortened by lengths given in the \keyword{boxdists}-keyword (a
+list of two lengths, default \code{[0,0]}).
 
-\section{Class line}
+\section{Class \class{line}}
 
-The constructor of the \verb|line| class accepts only boxes and the
-\verb|boxdists|-keyword.
+The constructor of the \class{line} class accepts only boxes and the
+\keyword{boxdists}-keyword.
 
-\section{Class arc}
+\section{Class \class{arc}}
 
-The constructor also takes either the \verb|relangle|-keyword or a combination
-of \verb|relbulge| and \verb|absbulge|. The ``bulge'' is the greatest distance
-between the connecting arc and the straight connecting line.
-(Default: \verb|relangle=45|, \verb|relbulge=None|,
-\verb|absbulge=None|)\medskip
+The constructor also takes either the \keyword{relangle}-keyword or a
+combination of \keyword{relbulge} and \keyword{absbulge}. The ``bulge'' is the
+meant to be a hint of the greatest distance between the connecting arc and the
+straight connecting line. (Default: \code{relangle=45},
+\code{relbulge=None}, \code{absbulge=None})\medskip
 
-Note that the bulge-keywords override the angle-keyword. When both 
-\verb|relbulge| and \verb|absbulge| are given they will be added.
+Note that the bulge-keywords override the angle-keyword. When both
+\keyword{relbulge} and \keyword{absbulge} are given they will be added.
 
-\section{Class curve}
+\section{Class \class{curve}}
 
 The constructor takes both angle- and bulge-keywords. Here, the bulges are
 used as distances between bezier-curve control points:\medskip
 
-\verb|absangle1| or \verb|relangle1|\\
-\verb|absangle2| or \verb|relangle2|, where the absolute angle overrides the
-relative if both are given. (Default: \verb|relangle1=45|,
-\verb|relangle2=45|, \verb|absangle1=None|, \verb|absangle2=None|)\medskip
+\keyword{absangle1} or \keyword{relangle1}\\
+\keyword{absangle2} or \keyword{relangle2}, where the absolute angle overrides the
+relative if both are given. (Default: \code{relangle1=45},
+\code{relangle2=45}, \code{absangle1=None}, \code{absangle2=None})\medskip
 
-\verb|absbulge| and \verb|relbulge|, where they will be added if both are
-given.\\ (Default: \verb|absbulge|=None, \verb|relbulge|=0.39; these default
-values produce output similar to the defaults of the arc-class.)\medskip
-
+\keyword{absbulge} and \keyword{relbulge}, where they will be added if both are
+given.\\ (Default: \code{absbulge=None}, \code{relbulge=0.39}; these default
+values produce output similar to the defaults of \class{arc}.)\medskip
 
 Note that relative angle-keywords are counted in the following way:
-\verb|relangle1| is counted in negative direction, starting at the straight
-connector line, and \verb|relangle2| is counted in positive direction.
+\keyword{relangle1} is counted in negative direction, starting at the straight
+connector line, and \keyword{relangle2} is counted in positive direction.
 Therefore, the outcome with two positive relative angles will always leave the
 straight connector at its left and will not cross it.
 
-\section{Class twolines}
+\section{Class \class{twolines}}
 
 This class returns two connected straight lines. There is a vast variety of
 combinations for angle- and length-keywords. The user has to make sure to
 provide a non-ambiguous set of keywords:\medskip
 
-\verb|absangle1| or \verb|relangle1| for the first angle,\\
-\verb|relangleM| for the middle angle and\\
-\verb|absangle2| or \verb|relangle2| for the ending angle.
+\keyword{absangle1} or \keyword{relangle1} for the first angle,\\
+\keyword{relangleM} for the middle angle and\\
+\keyword{absangle2} or \keyword{relangle2} for the ending angle.
 Again, the absolute angle overrides the relative if both are given. (Default:
-all five angles are \verb|None|)\medskip
+all five angles are \code{None})\medskip
 
-\verb|length1| and \verb|length2| for the lengths of the connecting lines.
-(Default: \verb|None|)
+\keyword{length1} and \keyword{length2} for the lengths of the connecting lines.
+(Default: \code{None})
 
