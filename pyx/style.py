@@ -29,9 +29,9 @@ import attr, unit, base
 # base classes for stroke and fill styles
 #
 
-class strokestyle(base.PSOp): pass
+class strokestyle(base.canvasitem): pass
 
-class fillstyle(base.PSOp): pass
+class fillstyle(base.canvasitem): pass
 
 #
 # common stroke styles

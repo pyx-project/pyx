@@ -57,7 +57,7 @@ class UndefinedResultError(ArithmeticError):
 
 # trafo: affine transformations
 
-class trafo_pt(base.PSOp, attr.attr):
+class trafo_pt(base.canvasitem, attr.attr):
 
     """affine transformation (coordinates in constructor in pts)
 

@@ -24,7 +24,7 @@
 """prolog module:
 
 Snippets included in the prolog of a PostScript file, which can be
-used as return values of PSOp instances.
+used as return values of canvasitem instances.
 
 """
 

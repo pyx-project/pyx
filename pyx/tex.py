@@ -766,7 +766,7 @@ class _BoxCmd(_TexCmd):
 # tex, latex class
 ################################################################################
 
-class _tex(base.PSCmd, attrlist):
+class _tex(base.canvasitem, attrlist):
 
     """major parts are of tex and latex class are shared and implemented here"""
 

@@ -143,7 +143,7 @@ def _readbbox(filename):
     return usebbox
 
 
-class epsfile(base.PSCmd):
+class epsfile(base.canvasitem):
 
     """class for epsfiles"""
 

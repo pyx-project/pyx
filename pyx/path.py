@@ -136,7 +136,7 @@ class _pathcontext:
 # pathitem: element of a PS style path 
 ################################################################################
 
-class pathitem(base.PSOp):
+class pathitem(base.canvasitem):
 
     """element of a PS style path"""
 
@@ -933,7 +933,7 @@ class multicurveto_pt(pathitem):
 # path: PS style path
 ################################################################################
 
-class path(base.PSCmd):
+class path(base.canvasitem):
 
     """PS style path"""
 

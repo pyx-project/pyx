@@ -33,7 +33,7 @@ import attr, base, canvas, color, helper, path, style, trafo, unit
 # Decorated path
 #
 
-class decoratedpath(base.PSCmd):
+class decoratedpath(base.canvasitem):
     """Decorated path
 
     The main purpose of this class is during the drawing

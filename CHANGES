@@ -120,6 +120,8 @@ TODO:
   - bbox module:
     - handle "BoundingBox: (atend)" (cf. bug #945621)
     - kpsearch option to search for file using the kpathsea library (contributed by Michael Gruber)
+  - base module:
+    - PSCmd and PSOp are now joined in a new class canvasitem
 
 
 0.6.x (????/??/??):

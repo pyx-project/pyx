@@ -27,37 +27,26 @@
 
 __metaclass__ = type
 
-class PSOp:
+class canvasitem:
 
-    """Poscript Operators
-
-    Everything, you can write in a (E)PS file
-
-    """
+    """Base class for everything which can be inserted into a canvas"""
 
     def outputPS(self, file):
-        """writing into a file is the only routine, a PSOp has to supply"""
-        raise NotImplementedError("cannot call virtual method outputPS()")
+        """write PS code corresponding to canvasitem to file"""
+        pass
+
+    def outputPDF(self, file):
+        """write PDF code corresponding to canvasitem to file"""
+        pass
 
     def prolog(self):
-        """return list of prolog items"""
+        """return list of prolog items required by canvasitem"""
         return []
 
-#
-# PSCmd class
-#
-
-class PSCmd(PSOp):
-
-    """ PSCmd is the base class of all visible elements
-
-    Visible elements are those, that can be embedded in the Canvas
-    and posses a bbox.
-
-    """
-
     def bbox(self):
-        raise NotImplementedError, "cannot call virtual method bbox()"
+        """return bounding box of canvasitem or None"""
+        pass
+
 
 #
 # PyX Exception class

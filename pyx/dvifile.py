@@ -401,7 +401,7 @@ _ReEncodeFont = prolog.definition("ReEncodeFont", """{
 # PostScript font selection and output primitives
 #
 
-class _begintextobject(base.PSOp):
+class _begintextobject(base.canvasitem):
     def outputPS(self, file):
         pass
     
@@ -409,7 +409,7 @@ class _begintextobject(base.PSOp):
         file.write("BT\n")
 
 
-class _endtextobject(base.PSOp):
+class _endtextobject(base.canvasitem):
     def outputPS(self, file):
         pass
     
@@ -417,7 +417,7 @@ class _endtextobject(base.PSOp):
         file.write("ET\n")
 
 
-class _selectfont(base.PSOp):
+class _selectfont(base.canvasitem):
     def __init__(self, name, size):
         self.name = name
         self.size = size
@@ -447,7 +447,7 @@ class selectfont(_selectfont):
         return result
 
 
-class _show(base.PSCmd):
+class _show(base.canvasitem):
 
     def __init__(self, x, y):
         self.x = x
@@ -780,7 +780,7 @@ class DVIError(exceptions.Exception): pass
 
 # save and restore colors
 
-class _savecolor(base.PSOp):
+class _savecolor(base.canvasitem):
     def outputPS(self, file):
         file.write("currentcolor currentcolorspace\n")
 
@@ -788,14 +788,14 @@ class _savecolor(base.PSOp):
         file.write("q\n")
 
 
-class _restorecolor(base.PSOp):
+class _restorecolor(base.canvasitem):
     def outputPS(self, file):
         file.write("setcolorspace setcolor\n")
 
     def outputPDF(self, file):
         file.write("Q\n")
 
-class _savetrafo(base.PSOp):
+class _savetrafo(base.canvasitem):
     def outputPS(self, file):
         file.write("matrix currentmatrix\n")
 
@@ -803,7 +803,7 @@ class _savetrafo(base.PSOp):
         file.write("q\n")
 
 
-class _restoretrafo(base.PSOp):
+class _restoretrafo(base.canvasitem):
     def outputPS(self, file):
         file.write("setmatrix\n")
 

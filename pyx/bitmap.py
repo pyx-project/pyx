@@ -139,7 +139,7 @@ class jpegimage(image):
        image.__init__(self, width, height, mode, data[begin:end], compressed="DCT")
 
 
-class bitmap(base.PSCmd):
+class bitmap(base.canvasitem):
 
     def __init__(self, xpos, ypos, image,
                        width=None, height=None, ratio=None,
