@@ -172,7 +172,7 @@ class MathTreeValConst(MathTreeVal):
     def VarList(self):
         return [ ]
 
-    def Calc(self, VarDict, Points=None):
+    def Calc(self, VarDict):
         return self.ArgV[0]
 
 
@@ -202,14 +202,10 @@ class MathTreeValVar(MathTreeVal):
             return [ ]
         return [self.ArgV[0], ]
 
-    def Calc(self, VarDict, Points=None):
+    def Calc(self, VarDict):
         if self.ArgV[0] in MathConst.keys():
             return MathConst[self.ArgV[0]]
-        Values = VarDict[self.ArgV[0]]
-        if type(Values) in (types.IntType, types.LongType, types.FloatType, ):
-            return Values
-        else:
-            return Values[Points]
+        return VarDict[self.ArgV[0]]
 
 
 class MathTreeFunc(MathTree):
@@ -247,8 +243,8 @@ class MathTreeFunc1Neg(MathTreeFunc1):
     def CalcDerivative(self, arg):
         return MathTreeFunc1Neg(self.ArgV[0].CalcDerivative(arg))
 
-    def Calc(self, VarDict, Points=None):
-        return -self.ArgV[0].Calc(VarDict, Points)
+    def Calc(self, VarDict):
+        return -self.ArgV[0].Calc(VarDict)
 
 MathTreeFuncList = MathTreeFuncList + (MathTreeFunc1Neg, )
 
@@ -261,8 +257,8 @@ class MathTreeFunc1Sgn(MathTreeFunc1):
     def CalcDerivative(self, arg):
         return MathTreeValConst(0.0)
 
-    def Calc(self, VarDict, Points=None):
-        if self.ArgV[0].Calc(VarDict, Points) < 0:
+    def Calc(self, VarDict):
+        if self.ArgV[0].Calc(VarDict) < 0:
             return -1.0
         return 1.0
 
@@ -281,8 +277,8 @@ class MathTreeFunc1Sqrt(MathTreeFunc1):
                        self),
                    self.ArgV[0].CalcDerivative(arg))
 
-    def Calc(self, VarDict, Points=None):
-        return math.sqrt(self.ArgV[0].Calc(VarDict, Points))
+    def Calc(self, VarDict):
+        return math.sqrt(self.ArgV[0].Calc(VarDict))
 
 MathTreeFuncList = MathTreeFuncList + (MathTreeFunc1Sqrt, )
 
@@ -295,8 +291,8 @@ class MathTreeFunc1Exp(MathTreeFunc1):
     def CalcDerivative(self, arg):
         return MathTreeOpMul(self, self.ArgV[0].CalcDerivative(arg))
 
-    def Calc(self, VarDict, Points=None):
-        return math.exp(self.ArgV[0].Calc(VarDict, Points))
+    def Calc(self, VarDict):
+        return math.exp(self.ArgV[0].Calc(VarDict))
 
 MathTreeFuncList = MathTreeFuncList + (MathTreeFunc1Exp, )
 
@@ -309,8 +305,8 @@ class MathTreeFunc1Log(MathTreeFunc1):
     def CalcDerivative(self, arg):
         return MathTreeOpDiv(self.ArgV[0].CalcDerivative(arg), self.ArgV[0])
 
-    def Calc(self, VarDict, Points=None):
-        return math.log(self.ArgV[0].Calc(VarDict, Points))
+    def Calc(self, VarDict):
+        return math.log(self.ArgV[0].Calc(VarDict))
 
 MathTreeFuncList = MathTreeFuncList + (MathTreeFunc1Log, )
 
@@ -325,8 +321,8 @@ class MathTreeFunc1Sin(MathTreeFunc1):
                    MathTreeFunc1Cos(self.ArgV[0]),
                    self.ArgV[0].CalcDerivative(arg))
 
-    def Calc(self, VarDict, Points=None):
-        return math.sin(self.ArgV[0].Calc(VarDict, Points))
+    def Calc(self, VarDict):
+        return math.sin(self.ArgV[0].Calc(VarDict))
 
 MathTreeFuncList = MathTreeFuncList + (MathTreeFunc1Sin, )
 
@@ -341,8 +337,8 @@ class MathTreeFunc1Cos(MathTreeFunc1):
                    MathTreeFunc1Neg(MathTreeFunc1Sin(self.ArgV[0])),
                    self.ArgV[0].CalcDerivative(arg))
 
-    def Calc(self, VarDict, Points=None):
-        return math.cos(self.ArgV[0].Calc(VarDict, Points))
+    def Calc(self, VarDict):
+        return math.cos(self.ArgV[0].Calc(VarDict))
 
 MathTreeFuncList = MathTreeFuncList + (MathTreeFunc1Cos, )
 
@@ -359,8 +355,8 @@ class MathTreeFunc1Tan(MathTreeFunc1):
                        MathTreeFunc1Cos(self.ArgV[0]),
                        MathTreeValConst(2.0)))
 
-    def Calc(self, VarDict, Points=None):
-        return math.tan(self.ArgV[0].Calc(VarDict, Points))
+    def Calc(self, VarDict):
+        return math.tan(self.ArgV[0].Calc(VarDict))
 
 MathTreeFuncList = MathTreeFuncList + (MathTreeFunc1Tan, )
 
@@ -380,8 +376,8 @@ class MathTreeFunc1ASin(MathTreeFunc1):
                                self.ArgV[0],
                                MathTreeValConst(2.0)))))
 
-    def Calc(self, VarDict, Points=None):
-        return math.asin(self.ArgV[0].Calc(VarDict, Points))
+    def Calc(self, VarDict):
+        return math.asin(self.ArgV[0].Calc(VarDict))
 
 MathTreeFuncList = MathTreeFuncList + (MathTreeFunc1ASin, )
 
@@ -401,8 +397,8 @@ class MathTreeFunc1ACos(MathTreeFunc1):
                                self.ArgV[0],
                                MathTreeValConst(2.0)))))
 
-    def Calc(self, VarDict, Points=None):
-        return math.acos(self.ArgV[0].Calc(VarDict, Points))
+    def Calc(self, VarDict):
+        return math.acos(self.ArgV[0].Calc(VarDict))
 
 MathTreeFuncList = MathTreeFuncList + (MathTreeFunc1ACos, )
 
@@ -421,8 +417,8 @@ class MathTreeFunc1ATan(MathTreeFunc1):
                            self.ArgV[0],
                            MathTreeValConst(2.0))))
 
-    def Calc(self, VarDict, Points=None):
-        return math.atan(self.ArgV[0].Calc(VarDict, Points))
+    def Calc(self, VarDict):
+        return math.atan(self.ArgV[0].Calc(VarDict))
 
 MathTreeFuncList = MathTreeFuncList + (MathTreeFunc1ATan, )
 
@@ -465,9 +461,9 @@ class MathTreeFunc2Norm(MathTreeFunc2):
                                self.ArgV[1].CalcDerivative(arg)),
                            self)
 
-    def Calc(self, VarDict, Points=None):
-        return math.sqrt(self.ArgV[0].Calc(VarDict, Points) ** 2 +
-                         self.ArgV[1].Calc(VarDict, Points) ** 2)
+    def Calc(self, VarDict):
+        return math.sqrt(self.ArgV[0].Calc(VarDict) ** 2 +
+                         self.ArgV[1].Calc(VarDict) ** 2)
 
 MathTreeFuncList = MathTreeFuncList + (MathTreeFunc2Norm, )
 
@@ -517,8 +513,8 @@ class MathTreeOpAdd(MathTreeOp):
             if self.ArgV[1].DependOn(arg):
                 return self.ArgV[1].CalcDerivative(arg)
 
-    def Calc(self, VarDict, Points=None):
-        return self.ArgV[0].Calc(VarDict, Points) + self.ArgV[1].Calc(VarDict, Points)
+    def Calc(self, VarDict):
+        return self.ArgV[0].Calc(VarDict) + self.ArgV[1].Calc(VarDict)
 
 
 class MathTreeOpSub(MathTreeOp):
@@ -538,8 +534,8 @@ class MathTreeOpSub(MathTreeOp):
             if self.ArgV[1].DependOn(arg):
                 return MathTreeFunc1Neg(self.ArgV[1].CalcDerivative(arg))
 
-    def Calc(self, VarDict, Points=None):
-        return self.ArgV[0].Calc(VarDict, Points) - self.ArgV[1].Calc(VarDict, Points)
+    def Calc(self, VarDict):
+        return self.ArgV[0].Calc(VarDict) - self.ArgV[1].Calc(VarDict)
 
 
 class MathTreeOpMul(MathTreeOp):
@@ -567,8 +563,8 @@ class MathTreeOpMul(MathTreeOp):
                            self.ArgV[0],
                            self.ArgV[1].CalcDerivative(arg))
 
-    def Calc(self, VarDict, Points=None):
-        return self.ArgV[0].Calc(VarDict, Points) * self.ArgV[1].Calc(VarDict, Points)
+    def Calc(self, VarDict):
+        return self.ArgV[0].Calc(VarDict) * self.ArgV[1].Calc(VarDict)
 
 
 class MathTreeOpDiv(MathTreeOp):
@@ -604,8 +600,8 @@ class MathTreeOpDiv(MathTreeOp):
                                    MathTreeValConst(-2.0))),
                            self.ArgV[1].CalcDerivative(arg))
 
-    def Calc(self, VarDict, Points=None):
-        return self.ArgV[0].Calc(VarDict, Points) / self.ArgV[1].Calc(VarDict, Points)
+    def Calc(self, VarDict):
+        return self.ArgV[0].Calc(VarDict) / self.ArgV[1].Calc(VarDict)
 
 
 class MathTreeOpPow(MathTreeOp):
@@ -656,8 +652,8 @@ class MathTreeOpPow(MathTreeOp):
                                MathTreeFunc1Log(self.ArgV[0])),
                            self.ArgV[1].CalcDerivative(arg))
 
-    def Calc(self, VarDict, Points=None):
-        return self.ArgV[0].Calc(VarDict, Points) ** self.ArgV[1].Calc(VarDict, Points)
+    def Calc(self, VarDict):
+        return self.ArgV[0].Calc(VarDict) ** self.ArgV[1].Calc(VarDict)
 
 MathTreeOpList = (MathTreeOpPow, MathTreeOpDiv, MathTreeOpMul, MathTreeOpSub, MathTreeOpAdd)
 
