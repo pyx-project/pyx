@@ -36,7 +36,9 @@ manual.dvi: $(src) eps
 	./mkhowto --a4 --dvi manual.tex
 
 manual/manual.html: $(src) eps
-	./mkhowto --image-type gif --favicon "/pyx.ico" \
+	# move pdf png's out of the way
+	-rm -f *.png
+	./mkhowto --image-type png --favicon "/pyx.ico" \
 	          --up-link "/" --up-title "PyX homepage" \
 	          --html manual.tex
 
