@@ -661,7 +661,7 @@ class texrunner:
                        texmessagesbegindoc=[texmessage.load, texmessage.noaux],
                        texmessagesend=[texmessage.texend],
                        texmessagesdefaultpreamble=[texmessage.load],
-                       texmessagesdefaultrun=[texmessage.loadfd]):
+                       texmessagesdefaultrun=[texmessage.loadfd, texmessage.graphicsload]):
         mode = mode.lower()
         if mode != "tex" and mode != "latex":
             raise ValueError("mode \"TeX\" or \"LaTeX\" expected")

@@ -8,13 +8,13 @@ PyX needs Python 2.x and a TeX installation (including Type1 fonts). Try to
 start 'python', 'tex' and 'kpsewhich cmr10.pfb' (the later should issue a full
 path of the requested Type1 font).
 
-Local usage without C extention modules
+Local usage without C extension modules
 ---------------------------------------
 
 PyX can be run without any installation. Copy the file hello.py from the
 examples directory to the main pyx directory and type 'python hello.py'. When
 your TeX installation isn't configured to use Type1 fonts by default, you may
-insert the line 'text.set(fontmaps="psfonts.cmz")' after the pyx import
+have to insert the line 'text.set(fontmaps="psfonts.cmz")' after the pyx import
 statement and try again. See the FAQ for further details about TeX and font
 configuration issues.
 
@@ -44,7 +44,7 @@ may also have to specify the location of the kpathsea header files and of the
 library itself in the setup.cfg file.
 
 After you have adapted the setup.cfg file to your needs, you can either build
-PyX locally by just running
+the extension modules locally by running
 
     python setup.py build_ext -i
 

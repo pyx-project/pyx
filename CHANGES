@@ -119,8 +119,6 @@ TODO:
   TODO for PyX 0.5 (please feel free to move items up to the general TODO list)
   - color module:
      - should colors and palettes exclude each other?
-  - graph module:
-    - multiple finish calles in linkaxis!
   - documentation!!!
   - check FAQ
 

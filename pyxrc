@@ -27,7 +27,7 @@ waitfortex = 60
 showwaitfortex = 5
 
 # 'texipc' is a boolean controlling the usage of the --ipc option of
-# TeX/LaTeX. You should turn on this option when the ipc-extention is
+# TeX/LaTeX. You should turn on this option when the ipc-extension is
 # available in your TeX installation (check the output of tex --help).
 # You will gain immediate access to the dvi-output of TeX by that,
 # which will substantially improve the performance of certain

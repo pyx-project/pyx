@@ -6,20 +6,30 @@
 The \verb|text| module seamlessly integrates the famous typesetting
 technique of \TeX/\LaTeX{} into \PyX. The basic procedure is:
 \begin{itemize}
-\item start \TeX/\LaTeX{} as soon as text creation is requested
-\item create boxes containing the requested text on the fly
-\item immediately analyse the \TeX/\LaTeX{} output for errors etc.
-\item boxes are written into the dvi output
-\item box extents are immediately available (they are contained in the
-\TeX/\LaTeX{} output)
-\item as soon as PostScript needs to be written, stop \TeX/\LaTeX{},
-analyse the dvi output and generate the requested PostScript
-\item use Type1 fonts for the PostScript generation 
+\item start a \TeX/\LaTeX{} instance as soon as an \TeX/\LaTeX{}
+preamble setting or a text creation is requested
+\item create boxes containing the requested text and shipout those
+boxes to the dvi file
+\item immediately analyse the \TeX/\LaTeX{} output for errors; the box
+extents are also contained in the \TeX/\LaTeX{} output and thus become
+available immediately
+\item when your TeX installation supports the \verb|ipc| mode and
+\PyX{} is configured to use it, the dvi output is also analysed
+immediately; alternatively \PyX{} quits the \TeX/\LaTeX{} instance to
+read the dvi output once PostScript needs to be written or markers are
+accessed
+\item Type1 fonts are used for the PostScript generation
 \end{itemize}
 
-Note that in order that Type1 fonts can be used by \PyX, an
-appropriate \verb|psfonts.map| containing entries for the used fonts
-has to be present in your texmf tree.
+Note that for using Type1 fonts an appropriate font mapping file has
+to be provided. When your \TeX{} installation is configured to use
+Type1 fonts by default, the \verb|psfonts.map| will contain entries
+for the standard \TeX{} fonts already. Alternatively, you may either
+look for updmap used by many \TeX{} installations to create an
+appropriate font mapping file or you may specify some alternative
+font mapping files like \verb|psfonts.cmz| in the \verb|pyxrc| or the
+\verb|fontmaps| keyword argument of the \verb|texrunner| constructor
+(or the \verb|set| method).
 
 \section{The texrunner}
 Instances of the class \verb|texrunner| represent a \TeX/\LaTeX{}
@@ -34,7 +44,7 @@ keyword&description\\
 \texttt{lfs}&Specifies a latex font size file to be used with \TeX{} (not in \LaTeX). Those files (with the suffix \texttt{.lfs}) can be created by \texttt{createlfs.tex}. Possible values are listed when a requested name could not be found.\\
 \texttt{docclass}&\LaTeX{} document class; default is \texttt{"article"}\\
 \texttt{docopt}&specifies options for the document class; default is \texttt{None}\\
-\texttt{usefiles}$^1$&access to \TeX/\LaTeX{} jobname files; default: \texttt{None}; example: \texttt{("spam.aux", "eggs.log")}\\
+\texttt{usefiles}&access to \TeX/\LaTeX{} jobname files; default: \texttt{None}; example: \texttt{["spam.aux", "eggs.log"]}\\
 \texttt{fontmaps}&whitespace separated names of font mapping files; default \texttt{"psfonts.map"}\\
 \texttt{waitfortex}&wait this number of seconds for a \TeX/\LaTeX{} response; default \texttt{60}\\
 \texttt{showwaitfortex}&show a message about waiting for \TeX/\LaTeX{} response on \texttt{strerr}; default \texttt{5}\\
@@ -43,22 +53,19 @@ keyword&description\\
 \texttt{dvidebug}&dvi debug messages like \texttt{dvitype} (boolean); default \texttt{0}\\
 \texttt{errordebug}&verbose level of \TeX/\LaTeX{} error messages; valid values are \texttt{0}, \texttt{1} (default), \texttt{2}\\
 \texttt{pyxgraphics}&enables the usage of the graphics package without further configuration (boolean); default 1\\
-\texttt{texmessagestart}$^{1,2}$&parsers for the \TeX/\LaTeX{} start message; default: \texttt{texmessage.start}\\
-\texttt{texmessagedocclass}$^{1,2}$&parsers for \LaTeX{}s \texttt{\textbackslash{}documentclass} statement; default: \texttt{texmessage.load}\\
-\texttt{texmessagebegindoc}$^{1,2}$&parsers for \LaTeX{}s \texttt{\textbackslash{}begin\{document\}} statement; default: \texttt{(texmessage.load, texmessage.noaux)}\\
-\texttt{texmessageend}$^{1,2}$&parsers for \TeX{}s \texttt{\textbackslash{}end}/ \LaTeX{}s \texttt{\textbackslash{}end\{document\}} statement; default: \texttt{texmessage.texend}\\
-\texttt{texmessagedefaultpreamble}$^{1,2}$&default parsers for preamble statements; default: \texttt{texmessage.load}\\
-\texttt{texmessagedefaultrun}$^{1,2}$&default parsers for text statements; default: \texttt{(texmessage.loadfd, texmessage.graphicsload)}\\
+\texttt{texmessagesstart}&parsers for the \TeX/\LaTeX{} start message; default: \texttt{[texmessage.start]}\\
+\texttt{texmessagesdocclass}&parsers for \LaTeX{}s \texttt{\textbackslash{}documentclass} statement; default: \texttt{[texmessage.load]}\\
+\texttt{texmessagesbegindoc}&parsers for \LaTeX{}s \texttt{\textbackslash{}begin\{document\}} statement; default: \texttt{[texmessage.load, texmessage.noaux]}\\
+\texttt{texmessagesend}&parsers for \TeX{}s \texttt{\textbackslash{}end}/ \LaTeX{}s \texttt{\textbackslash{}end\{document\}} statement; default: \texttt{[texmessage.texend]}\\
+\texttt{texmessagesdefaultpreamble}&default parsers for preamble statements; default: \texttt{[texmessage.load]}\\
+\texttt{texmessagesdefaultrun}&default parsers for text statements; default: \texttt{[texmessage.loadfd, texmessage.graphicsload]}\\
 \end{tabularx}
 \medskip
 
-$^1$
-The parameter might contain None, a single entry or a sequence of entries.
+The default values of the parameters \verb|fontmaps|, \verb|waitfortex|,
+\verb|showwaitfortex|, and \verb|texipc| can be modified in the \verb|text|
+section of a \verb|pyxrc|.
 
-$^2$
-\TeX/\LaTeX{} message parsers are described in more detail below.
-
-\medskip
 The \verb|texrunner| instance provides several methods to be called by
 the user. First there is a method called \verb|set|. It takes the same
 kewword arguments as the constructor and its purpose is to provide an
@@ -69,20 +76,20 @@ fails, when a modification can't be applied anymore (e.g.
 
 The \verb|preamble| method can be called before the \verb|text| method
 only (see below). It takes a \TeX/\LaTeX{} expression and optionally
-one or several \TeX/\LaTeX{} message parsers. The preamble expressions
-should be used to perform global settings, but should not create any
-\TeX/\LaTeX{} dvi output. In \LaTeX, the preamble expressions are
-inserted before the \verb|\begin{document}| statement. Note, that you
-can use \verb|\AtBeginDocument{...}| to postpone the direct
-evaluation.
+a list of \TeX/\LaTeX{} message parsers. The preamble expressions should be
+used to perform global settings, but should not create any \TeX/\LaTeX{} dvi
+output. In \LaTeX, the preamble expressions are inserted before the
+\verb|\begin{document}| statement. Note, that you can use
+\verb|\AtBeginDocument{...}| to postpone the direct evaluation.
 
 Finally there is a \verb|text| method. The first two parameters are
 the \verb|x| and \verb|y| position of the output to be generated. The
-third parameter is a \TeX/\LaTeX{} expression and further parameters
-are attributes for this command. Those attributes might be
-\TeX/\LaTeX{} settings as described below, \TeX/\LaTeX{} message
-parsers as described below as well, \PyX{} transformations, and \PyX{}
-fill styles (like colors). The \verb|text| method returns a box (see
+third parameter is a \TeX/\LaTeX{} expression. There are two further
+keyword arguments. The first, \verb|textattrs|, is a list of
+\TeX/\LaTeX{} settings as described below, \PyX{} transformations, and
+\PyX{} fill styles (like colors). The second keyword argument
+\verb|texmessages| takes a list of \TeX/\LaTeX{} message parsers as
+described below as well. The \verb|text| method returns a box (see
 chapter~\ref{module:box}), which can be inserted into a canvas
 instance by its \verb|insert| method to get the text.
 
@@ -93,7 +100,7 @@ by the command \verb|\PyXMarker{<string>}|. When calling the
 position of the marker later on. Only digits, letters and the \verb|@|
 symbol are allowed within the string. Strings containing the \verb|@|
 symbol are not considered for end users like it is done for commands
-including the \verb|@| symbol in \LaTeX{} as well.
+including the \verb|@| symbol in \LaTeX{}.
 
 Note that for the generation of the PostScript code the \TeX/\LaTeX{}
 instance must be terminated except when \verb|texipc| is turned on.
@@ -128,53 +135,55 @@ figure~\ref{fig:textvalign} for an example
 \item[Vertical alignment:] \verb|valign.top|, \verb|valign.middle|,
 \verb|valign.bottom|, \verb|valign.baseline| (default); see
 figure~\ref{fig:textvalign} for an example
-\item[Vertical shift:] \verb|vshift.char(lowerratio, heightstr="0")|
+\item[Vertical shift:] \verb|vshift(lowerratio, heightstr="0")|
 (lowers the output by \verb|lowerratio| of the height of
-\verb|heightstr|), \verb|vshift.bottomzero=vshift.char(0)| (doesn't
-have an effect), \verb|vshift.middlezero=vshift.char(0.5)| (shifts
-down by half of the height of \verb|0|),
-\verb|vshift.topzero=vshift.char(1)| (shifts down by the height of
-\verb|0|), \verb|vshift.mathaxis| (shifts down by the height of the
-mathematical axis)
-\item[Mathmode:] \verb|mathmode| switches to mathmode of \TeX/\LaTeX
-in displaystyle (\verb|nomathmode| removes this attribute)
-\item[Font size:] \verb|size.tiny|, \verb|size.scriptsize|,
-\verb|size.footnotesize|, \verb|size.small|, \verb|size.normalsize|
-(default), \verb|size.large|, \verb|size.Large|, \verb|size.LARGE|,
-\verb|size.huge|, \verb|size.Huge|
+\verb|heightstr|), \verb|vshift.bottomzero=vshift(0)| (doesn't have an
+effect), \verb|vshift.middlezero=vshift(0.5)| (shifts down by half of
+the height of \verb|0|), \verb|vshift.topzero=vshift(1)| (shifts down
+by the height of \verb|0|), \verb|vshift.mathaxis| (shifts down by the
+height of the mathematical axis)
+\item[Mathmode:] \verb|mathmode| switches to mathmode of \TeX/\LaTeX{}
+in \verb|\displaystyle| (\verb|nomathmode| removes this attribute)
+\item[Font size:] \verb|size.tiny=size(-4)|,
+\verb|size.scriptsize=size(-3)|, \verb|size.footnotesize=size(-2)|,
+\verb|size.small=size(-1)|, \verb|size.normalsize=size(0)|,
+(default), \verb|size.large=size(1)|, \verb|size.Large=size(2)|,
+\verb|size.LARGE=size(3)|, \verb|size.huge=size(4)|,
+\verb|size.Huge=size(5)|
 \end{description}
 
 \section{Using the graphics-bundle with \LaTeX}
 
 The packages in \LaTeX-graphics bundle (color.sty, graphics.sty,
-graphicx.sty, \ldots) make extensive use of \verb|\special| commands. Here
-are some notes on this topic. Please install the appropriate driver file
-\verb|pyx.def|, which defines all the specials, in your \LaTeX-tree and add
-the content of both files \verb|color.cfg| and \verb|graphics.cfg| to your
-personal configuration files.\footnote{If you do not know what I am talking about
-right now -- just ignore this paragraph, but make sure not to set the
-\texttt{pyxgraphics} keyword to 0.} After you have installed the \verb|.cfg|
-files please use the \verb|text| module always with the \verb|pyxgraphics|
-keyword set to 0, this switches off a hack that might be convenient for less
-experienced \LaTeX-users.\medskip
+graphicx.sty, \ldots) make extensive use of \verb|\special| commands.
+Here are some notes on this topic. Please install the appropriate
+driver file \verb|pyx.def|, which defines all the specials, in your
+\LaTeX-tree and add the content of both files \verb|color.cfg| and
+\verb|graphics.cfg| to your personal configuration files.\footnote{If
+you do not know what I am talking about right now -- just ignore this
+paragraph, but make sure not to set the \texttt{pyxgraphics} keyword
+to 0.} After you have installed the \verb|.cfg| files please use the
+\verb|text| module always with the \verb|pyxgraphics| keyword set to
+0, this switches off a hack that might be convenient for less
+experienced \LaTeX-users.
 
-You can then import the packages of the graphics-bundle and related packages
-(e.g.~rotating, \ldots) with the option~\verb|pyx|, e.g.{}\\
-\rule{0.1\linewidth}{0sp}\verb|\usepackage[pyx]{color,graphicx}|\\
-Please note that the option~\verb|pyx| is only available with
-\verb|pyxgraphics=0| and a properly installed driver file. Otherwise do not
-use this option, omit it completely or say~\verb|[dvips]|.\medskip
+You can then import the packages of the graphics-bundle and related
+packages (e.g.~rotating, \ldots) with the option~\verb|pyx|,
+e.g.~\verb|\usepackage[pyx]{color,graphicx}|. Please note that the
+option~\verb|pyx| is only available with \verb|pyxgraphics=0| and a
+properly installed driver file. Otherwise do not use this option, omit
+it completely or say~\verb|[dvips]|.
 
-When defining colours in \LaTeX\ as one of the colour models \{\verb|gray|,
-\verb|cmyk|, \verb|rgb|, \verb|RGB|, \verb|hsb|\} then pyx will use the
-corresponding values (one to four real numbers) for output. When you use one of the
-\verb|named| colors in \LaTeX\ then pyx will use the corresponding predefined
-colour (see module \verb|color| and the colour table at the end of the
-manual).
+When defining colours in \LaTeX{} as one of the colour models
+\verb|gray|, \verb|cmyk|, \verb|rgb|, \verb|RGB|, \verb|hsb| then
+\PyX{} will use the corresponding values (one to four real numbers)
+for output. When you use one of the \verb|named| colors in \LaTeX{}
+then \PyX{} will use the corresponding predefined colour (see module
+\verb|color| and the colour table at the end of the manual).
 
-When importing eps-graphics in \LaTeX\ then pyx will rotate, scale and clip
-your file like you expect it. Note that pyx cannot import other graphics files
-than eps at the moment.\medskip
+When importing eps-graphics in \LaTeX{} then \PyX{} will rotate, scale
+and clip your file like you expect it. Note that \PyX{} cannot import
+other graphics files than \verb|eps| at the moment.
 
 For reference purpose, the following specials can be handled by the
 \verb|text| module at the moment:\medskip

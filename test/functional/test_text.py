@@ -83,7 +83,7 @@ c.stroke(c.text(10, 4, r"""%
     %scale=2,               %! wraps around rotating and include
     %draft=,               %% do not print anything,
     clip=]%                %! directly in dvi
-    {sample}}""", texmessages=[text.texmessage.graphicsload]))
+    {sample}}"""))
 c.stroke(c.text(10, 0, r"""
     \textcolor{col0}{abc}
     \textcolor{col1}{abc}
