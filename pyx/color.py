@@ -27,7 +27,8 @@ class color(attr._exclusiveattr):
 
     """base class for all colors"""
 
-    pass
+    def __init__(self):
+        attr._exclusiveattr.__init__(self, color)
 
 
 clear = attr._classclear(color)
@@ -38,6 +39,7 @@ class grey(color):
     """grey tones"""
 
     def __init__(self, gray):
+        color.__init__(self)
         if gray<0 or gray>1: raise ValueError
         self.color = {"gray": gray}
 
@@ -54,6 +56,7 @@ class rgb(color):
     """rgb colors"""
 
     def __init__(self, r=0.0, g=0.0, b=0.0):
+        color.__init__(self)
         if r<0 or r>1 or g<0 or g>1 or b<0 or b>1: raise ValueError
         self.color = {"r": r, "g": g, "b": b}
 
@@ -72,6 +75,7 @@ class hsb(color):
     """hsb colors"""
 
     def __init__(self, h=0.0, s=0.0, b=0.0):
+        color.__init__(self)
         if h<0 or h>1 or s<0 or s>1 or b<0 or b>1: raise ValueError
         self.color = {"h": h, "s": s, "b": b}
 
@@ -84,6 +88,7 @@ class cmyk(color):
     """cmyk colors"""
 
     def __init__(self, c=0.0, m=0.0, y=0.0, k=0.0):
+        color.__init__(self)
         if c<0 or c>1 or m<0 or m>1 or y<0 or y>1 or k<0 or k>1: raise ValueError
         self.color = {"c": c, "m": m, "y": y, "k": k}
 
@@ -169,6 +174,7 @@ class palette(attr._exclusiveattr):
     """palette is a collection of two colors for calculating transitions between them"""
 
     def __init__(self, mincolor, maxcolor, min=0, max=1):
+        attr._exclusiveattr.__init__(self, palette)
         if mincolor.__class__ != maxcolor.__class__:
             raise ValueError
         self.colorclass = mincolor.__class__
