@@ -60,9 +60,6 @@ class canvas:
 
     PSCmds = [] 				# stores all PS commands of the canvas
 
-    # ***Jörg***: kann man mit isinstance machen ... ist vielleicht hübscher
-    isCanvas = 1				# identifies a canvas
-
     def __init__(self, base, width, height ):
         self.Width=width
         self.Height=height
@@ -70,10 +67,10 @@ class canvas:
 	    self.BaseFilename = base
 	    self.isPrimaryCanvas = 1
 	else: 
-#	    try: 
-	    	if base.isCanvas: self.isPrimaryCanvas = 0
-#	    except:
-#	        assert("base should be either a filename or a canvas")
+	    if isinstance(base, canvas): 
+	        self.isPrimaryCanvas = 0
+	    else:
+	        assert("base should be either a filename or a canvas")
         self.PSInit()
 
     
