@@ -1,5 +1,5 @@
 # fractal tree
-# contributed by Gerhard Schmid and Andre Wobst
+# contributed by Gerhard Schmid and André Wobst
 
 # extend module search path - not needed when PyX is installed properly
 import sys; sys.path[:0] = [".."]
@@ -15,7 +15,7 @@ ctrafo = trafo.rotate(-4).scaled(0.75).translated(0, l)
 rtrafo = trafo.mirror(90).rotated(-65).scaled(0.35).translated(0, l)
 
 def tree(depth):
-    "returns a list of transformations for a recursive tree of given depth"
+    "return transformations for a recursive tree of given depth"
     r = [trafo.rotate(5)]
     if depth > 0:
         subtree = tree(depth - 1)

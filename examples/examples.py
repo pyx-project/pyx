@@ -8,8 +8,9 @@ tex.write(r"""
 \documentclass[abstracton,a4paper]{scrreprt}
 \areaset{17cm}{24cm}
 \usepackage{pyx,graphicx,scrpage,listings,color}
+\usepackage[latin1]{inputenc}
 \lstloadlanguages{Python}
-\lstset{language=Python,commentstyle=\itshape}
+\lstset{language=Python,commentstyle={\itshape\lstset{columns=fullflexible}},extendedchars=true}
 \begin{document}
 \subject{\texttt{http://pyx.sourceforge.net/}}
 \title{\PyX{} %s\\Examples}
