@@ -151,10 +151,10 @@ class _canvas(base.PSCmd):
 
     def bbox(self):
         """returns bounding box of canvas"""
-        obbox = reduce(lambda x,y:
-                       isinstance(y, base.PSCmd) and x+y.bbox() or x,
-                       self.PSOps,
-                       bbox._bbox())
+        obbox = bbox.bbox()
+        for cmd in self.PSOps:
+            if isinstance(cmd, base.PSCmd):
+               obbox += cmd.bbox()
 
         # transform according to our global transformation and
         # intersect with clipping bounding box (which have already been
