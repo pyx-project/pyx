@@ -22,7 +22,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import math
-import attr, base, unit
+import attr, base, deformer, unit
 
 # some helper routines
 
@@ -57,7 +57,7 @@ class UndefinedResultError(ArithmeticError):
 
 # trafo: affine transformations
 
-class trafo_pt(base.canvasitem, attr.attr):
+class trafo_pt(base.canvasitem, deformer.deformer):
 
     """affine transformation (coordinates in constructor in pts)
 
@@ -131,6 +131,9 @@ class trafo_pt(base.canvasitem, attr.attr):
         # for the transformation we have to convert to points
         tx, ty = self._apply(unit.topt(x), unit.topt(y))
         return tx * unit.t_pt, ty * unit.t_pt
+
+    def deform(self, path):
+        return path.transformed(self)
 
     def inverse(self):
         det = _det(self.matrix)                       # shouldn't be zero, but

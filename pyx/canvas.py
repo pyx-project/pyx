@@ -215,13 +215,10 @@ class _canvas(base.canvasitem):
         """
 
         attrs = attr.mergeattrs(attrs)
-        attr.checkattrs(attrs, [deco.deco, deformer.deformer, style.fillstyle, style.strokestyle, trafo.trafo_pt])
+        attr.checkattrs(attrs, [deco.deco, deformer.deformer, style.fillstyle, style.strokestyle])
 
         for adeformer in attr.getattrs(attrs, [deformer.deformer]):
             path = adeformer.deform(path)
-
-        for t in attr.getattrs(attrs, [trafo.trafo_pt]):
-            path = path.transformed(t)
 
         styles = attr.getattrs(attrs, [style.fillstyle, style.strokestyle])
         dp = deco.decoratedpath(path, styles=styles)
