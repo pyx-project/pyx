@@ -105,6 +105,20 @@ class _LogMap(_LinMap):
 
 epsilon = 1e-10
 
+def _powi(x, y):
+    assert type(y) == types.IntType
+    assert y >= 0
+    if y:
+        y2 = y / 2 # integer division!
+        yr = y % 2
+        res = _powi(x, y2)
+        if yr:
+            return x * res * res
+        else: 
+            return res * res
+    else: 
+        return 1  
+
 class frac:
 
     def __init__(self, enum, denom, power = None):
@@ -574,7 +588,6 @@ class _Axis:
     def TickList(self):
         ticklist = []
         for tick in self.bestratepart.part:
-            print tick, tick.ticklevel, tick.labellevel
             ticklist.append(Tick(float(tick), self.convert(float(tick)), self.ValToLab(float(tick)), TickLevel = tick.ticklevel, LabelLevel = tick.labellevel))
         return ticklist
 

@@ -100,10 +100,10 @@ class epsfile:
         if self.translatebb:
             canvas._translate(-self.mybbox.llx, -self.mybbox.lly).write(file)
 
-        bbrect = path.rect(self.mybbox.llx,
-                           self.mybbox.lly, 
-                           self.mybbox.urx-self.mybbox.llx,
-                           self.mybbox.ury-self.mybbox.lly)
+        bbrect = path._rect(self.mybbox.llx,
+                            self.mybbox.lly, 
+                            self.mybbox.urx-self.mybbox.llx,
+                            self.mybbox.ury-self.mybbox.lly)
         
         if self.showbb:
             canvas._newpath().write(file)
