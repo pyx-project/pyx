@@ -10,14 +10,33 @@ of these primitives.
 """
 
 from distutils.core import setup, Extension
+import ConfigParser
 import sys
 import pyx
 
-ext_modules = [Extension("pyx.t1strip._t1strip",
-                         sources=["pyx/t1strip/t1strip.c", "pyx/t1strip/writet1.c"]),
-               Extension("pyx.pykpathsea._pykpathsea", 
-                         sources=["pyx/pykpathsea/pykpathsea.c"],
-                         libraries=["kpathsea"])]
+#
+# build list of extension modules
+#
+
+ext_modules = []
+pykpathsea_ext_module = Extension("pyx.pykpathsea._pykpathsea",
+                                  sources=["pyx/pykpathsea/pykpathsea.c"],
+                                  libraries=["kpathsea"])
+t1strip_ext_module = Extension("pyx.t1strip._t1strip",
+                               sources=["pyx/t1strip/t1strip.c", "pyx/t1strip/writet1.c"])
+
+# obtain information on which modules have to be built from setup.cfg file
+cfg = ConfigParser.ConfigParser()
+cfg.read("setup.cfg")
+if cfg.has_section("PyX"):
+    if cfg.has_option("PyX", "build_pykpathsea") and cfg.getboolean("PyX", "build_pykpathsea"):
+        ext_modules.append(pykpathsea_ext_module)
+    if cfg.has_option("PyX", "build_t1strip") and cfg.getboolean("PyX", "build_t1strip"):
+        ext_modules.append(t1strip_ext_module)
+
+#
+# data files
+#
 
 data_files = [('share/pyx', ['pyx/lfs/10pt.lfs',
                              'pyx/lfs/11pt.lfs',
@@ -30,6 +49,10 @@ data_files = [('share/pyx', ['pyx/lfs/10pt.lfs',
                              'pyx/lfs/foils25pt.lfs',
                              'pyx/lfs/foils30pt.lfs',
                              'contrib/pyx.def'])]
+
+#
+# additional package metadata (only available in Python 2.3 and above)
+#
 
 if sys.version_info >= (2, 3):
     addargs = { "classifiers":
