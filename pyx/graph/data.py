@@ -112,6 +112,16 @@ class _Idata:
 
         This method should draw the data."""
 
+    def stylesdata(self, graph):
+        """Collects data from a style to return it to the user
+
+        This method returns a collection of the return values of
+        the styledata method for all styles. In case all return
+        values of the styledata methods were None, None is returned.
+        When only a single return value of the styledata methods is
+        different from None, it is returned directly. Otherwise a
+        list of the return values is created."""
+
     def key_pt(self, graph, x_pt, y_pt, width_pt, height_pt, dy_pt):
         """Draw graph key
 
@@ -212,6 +222,8 @@ class _data(_Idata):
         for column in self.columns.keys():
             data, index = self.getcolumndataindex(column)
             columndataindex.append((column, data, index))
+        for privatedata, style in zip(self.privatedatalist, self.styles):
+            style.initdrawpoints(privatedata, self.sharedata, graph)
         if len(columndataindex):
             column, data, index = columndataindex[0]
             l = len(data)
@@ -219,8 +231,6 @@ class _data(_Idata):
                 if l != len(data):
                     raise ValueError("data len differs")
             self.sharedata.point = {}
-            for privatedata, style in zip(self.privatedatalist, self.styles):
-                style.initdrawpoints(privatedata, self.sharedata, graph)
             for i in xrange(l):
                 for column, data, index in columndataindex:
                     if index is not None:
@@ -229,8 +239,22 @@ class _data(_Idata):
                         self.sharedata.point[column] = data[i]
                 for privatedata, style in zip(self.privatedatalist, self.styles):
                     style.drawpoint(privatedata, self.sharedata, graph)
-            for privatedata, style in zip(self.privatedatalist, self.styles):
-                style.donedrawpoints(privatedata, self.sharedata, graph)
+        for privatedata, style in zip(self.privatedatalist, self.styles):
+            style.donedrawpoints(privatedata, self.sharedata, graph)
+
+    def stylesdata(self):
+        stylesdata = []
+        for privatedata, style in zip(self.privatedatalist, self.styles):
+            styledata = style.styledata(privatedata, self.sharedata)
+            if styledata is not None:
+                stylesdata.append(styledata)
+        if len(stylesdata) > 1:
+            return stylesdata
+        elif len(stylesdata) == 1:
+            return stylesdata[0]
+        else:
+            return None
+
 
     def key_pt(self, graph, x_pt, y_pt, width_pt, height_pt, dy_pt):
         i = None
