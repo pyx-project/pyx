@@ -118,7 +118,7 @@ class line(path):
 
 class rect(path):
    def __init__(self, x, y, width, height):
-       path.__init__(self, [ moveto(x1,y1), 
+       path.__init__(self, [ moveto(x,y), 
                              rlineto(width,0), 
 			     rlineto(0,height), 
 			     rlineto(-width,0),

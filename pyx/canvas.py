@@ -271,6 +271,7 @@ if __name__=="__main__":
     from tex import *
     from path import *
     from trafo import *
+    from graph import *
 
     t=tex(c)
 
@@ -335,5 +336,9 @@ if __name__=="__main__":
     
     for angle in range(20):
        c.subcanvas(trafo=translate(10,10)*rotate(angle)).draw(p)
+
+    c.setlinestyle(linestyle_solid)
+    g=GraphXY(c, t, 10, 15, 8, 6)
+    g.run()
 
     t.TexRun()

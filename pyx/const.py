@@ -11,6 +11,7 @@ bottom = "bottom"
 
 def isnumber(x):
     import types
-    if x is not types.IntType and x is not types.FloatType:
-        assert "number expected"
+    if type(x) in [types.IntType, types.FloatType]:
+        return 1
+    return 0
 
