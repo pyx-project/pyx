@@ -22,6 +22,13 @@
 
 # TODO:
 # - canvas.__init__() rewrite
+# - check the factor 0.5 in arrowhead and PathDeco.modfication
+# - should we improve on the arc length -> arg parametrization routine or
+#   should we at least factor it out in bpath.bpath?
+# - PathDeco cannot be a PSAttr (because it cannot be set via canvas.set())
+
+"""The canvas module provides a PostScript canvas class and related classes
+"""
 
 import types, math
 import base
@@ -78,12 +85,15 @@ class CanvasException(Exception): pass
 
 class PathStyle(base.PSAttr):
     
-    """Style modifiers for paths"""
+    """style modifiers for paths"""
     
     pass
 
 
 class linecap(PathStyle):
+
+    """linecap of paths"""
+    
     def __init__(self, value=0):
         self.value=value
         
@@ -96,6 +106,9 @@ linecap.square = linecap(2)
 
 
 class linejoin(PathStyle):
+
+    """linejoin of paths"""
+    
     def __init__(self, value=0):
         self.value=value
         
@@ -108,6 +121,9 @@ linejoin.bevel = linejoin(2)
 
 
 class miterlimit(PathStyle):
+
+    """miterlimit of paths"""
+    
     def __init__(self, value=10.0):
         self.value=value
         
@@ -116,6 +132,9 @@ class miterlimit(PathStyle):
         
 
 class dash(PathStyle):
+
+    """dash of paths"""
+    
     def __init__(self, pattern=[], offset=0):
         self.pattern=pattern
         self.offset=offset
@@ -129,6 +148,9 @@ class dash(PathStyle):
         
 
 class linestyle(PathStyle):
+
+    """linestyle (linecap together with dash) of paths"""
+    
     def __init__(self, c=linecap.butt, d=dash([])):
         self.c=c
         self.d=d
@@ -144,6 +166,8 @@ linestyle.dashdotted = linestyle(linecap.round, dash([0, 3, 3, 3]))
     
  
 class linewidth(PathStyle, unit.length):
+
+    """linewidth of paths"""
 
     def __init__(self, l):
         unit.length.__init__(self, l=l, default_type="w")
@@ -172,8 +196,7 @@ linewidth.THICK  = linewidth("%f cm" % (_base*math.sqrt(64)))
 
 class arrowhead(base.PSCmd):
 
-    """represents and arrowhead, which is usually constructed by an
-    arrow.attach call"""
+    """represents an arrowhead (usually constructed via arrow.decoration)"""
   
     def __init__(self, abpath, size, angle, constriction):
         """arrow at pos (0: begin, !=0: end) of path with size,
@@ -429,6 +452,7 @@ class canvas(base.PSCmd):
             self.insert((_newpath(), self.clip, _clip()))     # insert clipping path
 
     def bbox(self):
+        """returns bounding box of canvas"""
         obbox = reduce(lambda x,y:
                        isinstance(y, base.PSCmd) and x+y.bbox() or x,
                        self.PSOps,
@@ -447,10 +471,15 @@ class canvas(base.PSCmd):
         """write canvas to EPS file
 
         If paperformat is set to a known paperformat, the output will be centered on 
-        the page (and optionally rotated)
+        the page.
 
-        If fittosize is set as well, then the output is scaled to the size of the
-        page (minus margin).
+        If rotated is set, the output will first be rotated by 90 degrees.
+
+        If fittosize is set, then the output is scaled to the size of the
+        page (minus margin). In that case, the paperformat the specification
+        of the paperformat is obligatory.
+
+        returns the canvas
 
         """
 
@@ -525,11 +554,17 @@ class canvas(base.PSCmd):
         file.write("showpage\n")
         file.write("%%Trailer\n")
         file.write("%%EOF\n")
+
+        return self
             
-    def insert(self, cmds, *styles):
+    def insert(self, PSOps, *styles):
         """insert one or more PSOps in the canvas applying styles if given
 
-        returns the (last) cmd
+        If styles are present, the PSOps are encapsulated with gsave/grestore.
+        The same happens upon insertion of a canvas.
+        
+        returns the (last) PSOp
+        
         """
 
         # encapsulate in gsave/grestore command if necessary
@@ -540,33 +575,51 @@ class canvas(base.PSCmd):
         if styles:
             self.set(*styles)
 
-        if not type(cmds) in (types.TupleType, types.ListType):
-            cmds = (cmds,)
+        if not type(PSOps) in (types.TupleType, types.ListType):
+            PSOps = (PSOps,)
             
-        for cmd in cmds:
-            if isinstance(cmd, canvas):
+        for PSOp in PSOps:
+            if isinstance(PSOp, canvas):
                 self.PSOps.append(_gsave())
                 
-            self.PSOps.append(cmd)
+            self.PSOps.append(PSOp)
             
-            if isinstance(cmd, canvas):
+            if isinstance(PSOp, canvas):
                 self.PSOps.append(_gsave())
 
             # save last command for return value
-            lastcmd = cmd
+            lastop = PSOp
            
         if styles:
             self.PSOps.append(_grestore())
            
-        return lastcmd
+        return lastop
 
     def set(self, *args):
+
+        """sets PSAttrs args globally for the rest of the canvas
+
+        returns canvas
+
+        """
+        
         for arg in args:
             if not isinstance(arg, base.PSAttr):
                 raise NotImplementedError, "can only set attribute"
             self.PSOps.append(arg)
+
+        return self
         
     def draw(self, path, *args):
+        """draw path/bpath on canvas using the style given by args
+
+        The argument list args consists of PSAttrs, which modify
+        the appearance of the path. Some of the may be PathDecos,
+        which add some new visual elements to the path.
+
+        returns the canvas
+
+        """
         # add path decorations and modify path accordingly
         for deco in filter(lambda x: isinstance(x, PathDeco), args):
             self.insert(deco.decoration(path))
@@ -578,9 +631,27 @@ class canvas(base.PSCmd):
         return self
         
     def fill(self, path, *args):
+        """fill path/bpath on canvas using the style given by args
+
+        The argument list args consists of PSAttrs, which modify
+        the appearance of the path.
+
+        returns the canvas
+
+        """
+
         self.insert((_newpath(), path, _fill()), *args)
         return self
 
     def drawfilled(self, path, *args):
+        """fill path/bpath on canvas using the style given by args
+
+        The argument list args consists of PSAttrs, which modify
+        the appearance of the path.
+
+        returns the canvas
+
+        """
+
         self.insert((_newpath(), path, _gsave(), _stroke(), _grestore(), _fill()), *args)
         return self

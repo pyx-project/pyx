@@ -20,4 +20,13 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+""" PyX := PostScript + Python + TeX
+
+PyX is a python package for the creation of encapsulated PostScript
+figures. It provides both an abstraction of PostScript and a TeX/LaTeX
+interface. Complex tasks like 2d plots in publication-ready quality
+are build out of these primitives.
+
+"""
+
 __all__ = ["canvas", "color", "graph", "bpath", "path", "tex", "unit", "graph", "trafo", "epsfile"]
