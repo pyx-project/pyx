@@ -463,7 +463,8 @@ class regular(_title):
                             ac.extent = -innerticklength
             if self.gridattrs is not None:
                 gridattrs = attr.selectattrs(self.defaultgridattrs + self.gridattrs, t.ticklevel, maxticklevel)
-                ac.stroke(axispos.vgridpath(t.temp_v), gridattrs)
+                if gridattrs is not None:
+                    ac.stroke(axispos.vgridpath(t.temp_v), gridattrs)
             if t.labellevel is not None and self.labelattrs is not None:
                 ac.insert(t.temp_labelbox)
                 ac.labels.append(t.temp_labelbox)
