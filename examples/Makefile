@@ -25,6 +25,8 @@ htmlfiles = $(patsubst %.py, %.py.html, $(pyfiles))
 epsfiles = $(patsubst %.py, %.eps, $(pyfiles))
 pngfiles = $(patsubst %.py, %.png, $(pyfiles))
 
+eps: $(epsfiles)
+
 examples.dvi: examples.py $(epsfiles)
 	python examples.py $(basename $(epsfiles))
 	latex examples.tex
