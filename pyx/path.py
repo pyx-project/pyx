@@ -503,7 +503,7 @@ class pathel(base.PSOp):
         returns bounding box of pathel (in given context)
 
         Important note: all coordinates in bbox, currentpoint, and 
-        currrentsubpath have to be floats (in the unit.topt)
+        currrentsubpath have to be floats (in unit.topt)
 
         """
 
@@ -1481,6 +1481,37 @@ class arct(arct_pt):
         arct_pt.__init__(self, unit.topt(x1), unit.topt(y1),
                              unit.topt(x2), unit.topt(y2),
                              unit.topt(r))
+
+#
+# non PS pathels provided mostly for performance reasons
+#
+
+class multilineto_pt(pathel):
+
+    """Perform multiple linetos (coordinates in pts)"""
+
+    def __init__(self, points):
+         self.points = points
+
+    def _updatecontext(self, context):
+        context.currentsubpath = context.currentsubpath or context.currentpoint
+        context.currentpoint = self.points[-1]
+
+    def _bbox(self, context):
+        xs = [point[0] for point in self.points]
+        ys = [point[1] for point in self.points]
+        return bbox._bbox(min(context.currentpoint[0], *xs),
+                          min(context.currentpoint[1], *ys),
+                          max(context.currentpoint[0], *xs),
+                          max(context.currentpoint[1], *ys))
+
+    def _normalized(self, context):
+        return [lineto_pt(x, y) for x, y in self.points]
+
+    def write(self, file):
+        for x, y in self.points:
+            file.write("%g %g lineto\n" % (x, y) )
+
 
 ################################################################################
 # path: PS style path
