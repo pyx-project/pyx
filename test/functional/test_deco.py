@@ -50,5 +50,4 @@ c=canvas.canvas()
 dotest(c, 0, 0, "testwriggle")
 dotest(c, 15, 0, "testsmoothed")
 c.writeEPSfile("test_deco", paperformat="a4", rotated=0, fittosize=1)
-
-
+c.writePDFfile("test_deco")
