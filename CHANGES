@@ -117,6 +117,8 @@ TODO:
     - pathel -> pathitem, etc. renaming 
   - deformer module: new
     - moved cycloid and smoothed from deco into deformer
+  - bbox module:
+    - handle "BoundingBox: (atend)" (cf. bug #945621)
 
 
 0.6.x (????/??/??):

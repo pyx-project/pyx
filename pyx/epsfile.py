@@ -21,7 +21,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import re
+import string
 import base, bbox, prolog, unit, trafo
 
 # PostScript-procedure definitions (cf. 5002.EPSF_Spec_v3.0.pdf)
@@ -53,41 +53,94 @@ _EndEPSF = prolog.definition("EndEPSF", """{
 } bind""")
 
 def _readbbox(filename):
-    """returns bounding box of EPS file filename as 4-tuple (llx_pt, lly_pt, urx_pt, ury_pt)"""
+    """returns bounding box of EPS file filename"""
 
-    try:
-        file = open(filename, "r")
-    except:
-        raise IOError, "cannot open EPS file '%s'" % filename
+    file = open(filename, "r")
 
-    bbpattern = re.compile( r"""^%%BoundingBox:\s+([+-]?\d+)
-                                             \s+([+-]?\d+)
-                                             \s+([+-]?\d+)
-                                             \s+([+-]?\d+)\s*$""" , re.VERBOSE)
+    # readline
+    def readlinewithexception():
+        line = file.readline()
+        if not len(line):
+            raise IOError("unexpected end of file")
+        return line
 
-    try:
-        readlinesfunc = file.xreadlines
-    except: # workaround for Python 2.0
-        readlinesfunc = file.readlines
-    for line in readlinesfunc():
+    # check the %! header comment
+    if not readlinewithexception().startswith("%!"):
+        raise IOError("file doesn't start with a '%!' header comment")
 
-        if line=="%%EndComments\n": 
-            # XXX: BoundingBox-Deklaration kann auch an Ende von Datei
-            #      verschoben worden sein...
-            #      ...but evaluation of such a bbox directive requires
-            #      a parsing of the DSC!
-            raise IOError, \
-                  "bounding box not found in header of EPS file '%s'" % \
-                  filename
+    bboxatend = 0
+    # parse the header (use the first BoundingBox)
+    while 1:
+        line = readlinewithexception()
+        if line.startswith("%%BoundingBox:") and not bboxatend:
+            values = line.split(":", 1)[1].split()
+            if values == ["(atend)"]:
+                bboxatend = 1
+            else:
+                if len(values) != 4:
+                    raise IOError("invalid number of bounding box values")
+                return bbox.bbox_pt(*map(int, values))
+        elif (line.rstrip() == "%%EndComments" or
+              (line[0] != "%" and line[1] not in string.whitespace)): # implicit end of comments section
+            break
+    if not bboxatend:
+        raise IOError("no bounding box information found")
 
-        bbmatch = bbpattern.match(line)
-        if bbmatch is not None:
-            # conversion strings->int
-            (llx_pt, lly_pt, urx_pt, ury_pt) = map(int, bbmatch.groups()) 
-            return bbox.bbox_pt(llx_pt, lly_pt, urx_pt, ury_pt)
-    else:
-        raise IOError, \
-              "bounding box not found in EPS file '%s'" % filename
+    # parse the body
+    nesting = 0 # allow for nested documents
+    while 1:
+        line = readlinewithexception()
+        if line.startswith("%%BeginData:"):
+            values = line.split(":", 1)[1].split()
+            if len(values) > 3:
+                raise IOError("invalid number of arguments")
+            if len(values) == 3:
+                if values[2] == "Lines":
+                    for i in xrange(int(values[0])):
+                        readlinewithexception()
+                elif values[2] != "Bytes":
+                    raise IOError("invalid bytesorlines-value")
+                else:
+                    file.read(int(values[0]))
+            else:
+                file.read(int(values[0]))
+            line = readlinewithexception()
+            # ignore tailing whitespace/newline for binary data
+            if (len(values) < 3 or values[2] != "Lines") and not len(line.strip()):
+                line = readlinewithexception()
+            if line.rstrip() != "%%EndData":
+                raise IOError("missing EndData")
+        elif line.startswith("%%BeginBinary:"):
+            file.read(int(line.split(":", 1)[1]))
+            line = readlinewithexception()
+            # ignore tailing whitespace/newline
+            if not len(line.strip()):
+                line = readlinewithexception()
+            if line.rstrip() != "%%EndBinary":
+                raise IOError("missing EndBinary")
+        elif line.startswith("%%BeginDocument:"):
+            nesting += 1
+        elif line.rstrip() == "%%EndDocument":
+            if nesting < 1:
+                raise IOError("unmatched EndDocument")
+            nesting -= 1
+        elif not nesting and line.rstrip() == "%%Trailer":
+            break
+
+    usebbox = None
+    # parse the trailer (use the last BoundingBox)
+    while 1:
+        line = file.readline()
+        if line.startswith("%%BoundingBox:"):
+            values = line.split(":", 1)[1].split()
+            if len(values) != 4:
+                raise IOError("invalid number of bounding box values")
+            usebbox = bbox.bbox_pt(*map(int, values))
+        elif not len(line):
+            break
+    if usebbox is None:
+        raise IOError("missing bounding box information in document trailer")
+    return usebbox
 
 
 class epsfile(base.PSCmd):
