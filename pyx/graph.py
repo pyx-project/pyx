@@ -2333,6 +2333,7 @@ class _axis:
                     self.setrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
                 ac = axiscanvas()
         else:
+            self.ticks =self.manualticks
             if len(self.ticks):
                 self.setrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
             self.texter.labels(self.ticks)
