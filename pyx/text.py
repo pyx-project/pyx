@@ -676,21 +676,10 @@ class _restoretrafo(base.PSOp):
 
 class dvifile:
 
-    def __init__(self, filename, fontmap, debug=0, ipcmode=0):
-        """ initializes the instance
-
-        Usually, the readfile method should be called once
-        immediately after this constructor. However, if you
-        set ipcmode, you need to call readpages as often as
-        there are pages in the dvi-file plus 1 (for properly
-        closing the dvi-file).
-        """
-
+    def __init__(self, filename, fontmap, debug=0):
         self.filename = filename
         self.fontmap = fontmap
-        self.file = None
         self.debug = debug
-        self.ipcmode = ipcmode
 
     # helper routines
 
@@ -1062,66 +1051,63 @@ class dvifile:
                                 file.read(file.readuchar()+file.readuchar()))
             else: raise DVIError
 
-    def readfile(self):
-        """ reads and parses dvi file
+    def readpreamble(self):
+        """ opens the dvi file and reads the preamble """
+        self.fonts = {}
+        self.activefont = None
 
-        This routine reads the dvi file and generates a list
-        of pages in self.pages. Each page consists itself of
-        a list of PSCommands equivalent to the content of
+        self.stack = []
+
+        # here goes the result, for each page one list.
+        self.pages = []
+
+        # pointer to currently active page
+        self.actpage = None
+
+        # currently active output: position and content
+        self.actoutstart = None
+        self.actoutstring = ""
+
+        self.file = binfile(self.filename, "rb")
+
+        # currently read byte in file (for debugging output)
+        self.filepos = None
+
+        if self._read_pre() != _READ_NOPAGE:
+            raise DVIError
+
+    def readpage(self):
+        """ reads a page from the dvi file
+
+        This routine reads a page from the dvi file. The page
+        is appended to the list self.pages. Each page consists
+        of a list of PSCommands equivalent to the content of
         the dvi file. Furthermore, the list of used fonts
-        can be extracted from the array self.fonts.
+        can be extracted from the array self.fonts. """
 
-        Usually, the readfile method should be called once
-        immediately after constructing the instance. However,
-        if you set ipcmode, you need to call readpages as
-        often as there are pages in the dvi-file plus 1 (for
-        properly closing the dvi-file).
-        """
-
-        if self.file is None:
-            self.fonts = {}
-            self.activefont = None
-
-            self.stack = []
-
-            # here goes the result, for each page one list.
-            self.pages = []
-
-            # pointer to currently active page
-            self.actpage = None
-
-            # currently active output: position and content
-            self.actoutstart = None
-            self.actoutstring = ""
-
-            self.file = binfile(self.filename, "rb")
-
-            # currently read byte in file (for debugging output)
-            self.filepos = None
-
-            if self._read_pre() != _READ_NOPAGE:
-                raise DVIError
-
-        # start up reading process
-        if self.ipcmode:
-            state = self._read_nopage()
-            if state == _READ_PAGE:
-                if self._read_page() != _READ_NOPAGE:
-                    raise DVIError
-            elif state != _READ_DONE:
-                raise DVIError
+        if self._read_nopage() == _READ_PAGE:
+            state = self._read_page()
         else:
-            state = _READ_NOPAGE
-            while state != _READ_DONE:
-                if state == _READ_NOPAGE:
-                    state = self._read_nopage()
-                elif state == _READ_PAGE:
-                    state = self._read_page()
-                else:
-                    DVIError
+            raise DVIError
 
-        if state == _READ_DONE:
-            self.file.close()
+    def readpostamble(self):
+        """ finish reading of the dvi file """
+        self.file.close()
+
+    def readfile(self):
+        """ reads and parses the hole dvi file """
+        self.readpreamble()
+        # XXX its unknown how often readpage should be called so we
+        #     do it differently ... :-(
+        state = _READ_NOPAGE
+        while state != _READ_DONE:
+            if state == _READ_NOPAGE:
+                state = self._read_nopage()
+            elif state == _READ_PAGE:
+                state = self._read_page()
+            else:
+                raise DVIError
+        self.file.close()
 
     def marker(self, page, marker):
         """return marker from page"""
@@ -2240,10 +2226,12 @@ class texrunner:
             dvifilename = "%s.dvicopy" % self.texfilename
         else:
             dvifilename = "%s.dvi" % self.texfilename
-        if not self.texipc:
+        if self.texipc:
+            self.dvifiles[-1].readpostamble()
+        else:
             advifile = dvifile(dvifilename, self.fontmap, debug=self.dvidebug)
             self.dvifiles.append(advifile)
-        self.dvifiles[-1].readfile()
+            self.dvifiles[-1].readfile()
         self.dvinumber += 1
 
     def marker(self, dvinumber, page, marker):
@@ -2407,14 +2395,14 @@ class texrunner:
             raise ValueError("None expression is invalid")
         if self.texdone:
             self.reset(reinit=1)
+        first = 0
         if self.preamblemode:
             if self.mode == "latex":
                 self.execute("\\begin{document}", *self.texmessagebegindoc)
             self.preamblemode = 0
-            if self.texipc:
-                if self.dvicopy:
-                    raise RuntimeError("texipc and dvicopy can't be mixed up")
-                self.dvifiles.append(dvifile("%s.dvi" % self.texfilename, self.fontmap, debug=self.dvidebug, ipcmode=1))
+            first = 1
+            if self.texipc and self.dvicopy:
+                raise RuntimeError("texipc and dvicopy can't be mixed up")
         helper.checkattr(args, allowmulti=(_texsetting, texmessage, trafo._trafo, base.PathStyle))
                                            #XXX: should we distiguish between StrokeStyle and FillStyle?
         texsettings = helper.getattrs(args, _texsetting, default=[])
@@ -2430,7 +2418,10 @@ class texrunner:
             expr = texsetting.modifyexpr(expr, texsettings, self)
         self.execute(expr, *helper.getattrs(args, texmessage, default=self.texmessagedefaultrun))
         if self.texipc:
-            self.dvifiles[-1].readfile()
+            if first:
+                self.dvifiles.append(dvifile("%s.dvi" % self.texfilename, self.fontmap, debug=self.dvidebug))
+                self.dvifiles[-1].readpreamble()
+            self.dvifiles[-1].readpage()
         match = self.PyXBoxPattern.search(self.texmessage)
         if not match or int(match.group("page")) != self.page:
             raise TexResultError("box extents not found", self)

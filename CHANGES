@@ -21,7 +21,6 @@ PyX
   - graph module:
     - removed manualpart and partitioners mix keyword (documentation already updated)
     - results of the splitting at "=" in graph.function were not stripped
-    - rect style (and errorbars?) should use clipping (TODO: should they or do the now?)
     - skip title=None in key (cf. bug #821284), properly align a single key entry
   - canvas module:
     - stroke and fill now support trafos (TODO: documentation)
@@ -32,6 +31,7 @@ PyX
       Perez.
   TODO:
   - graph module
+    - rect style (and errorbars?) should use clipping (TODO: should they or do the now?)
     - address datavmin and datavmax
     - another (the last?!) axis redesign: axispos -> class of its own; remove axis.axiscanvas
     - do not include unneeded line segments when the axis range is set manually
