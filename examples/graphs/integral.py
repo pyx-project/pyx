@@ -2,8 +2,8 @@ from pyx import *
 
 a, b = 2, 9 # integral area
 
-p = graph.axis.painter.plain(basepathattrs=[deco.earrow.normal],
-                            titlepos=0.98, titledirection=None)
+p = graph.axis.painter.regular(basepathattrs=[deco.earrow.normal],
+                               titlepos=0.98, titledirection=None)
 ticks = [graph.axis.tick.tick(a, label="$a$"),
          graph.axis.tick.tick(b, label="$b$")]
 g = graph.graphxy(width=8, x2=None, y2=None,

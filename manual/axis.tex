@@ -99,7 +99,7 @@ only.
 \begin{classdesc}{linear}{min=None, max=None, reverse=0, divisor=None, title=None,
                           parter=parter.autolinear(), manualticks=[],
                           density=1, maxworse=2, rater=rater.linear(),
-                          texter=texter.mixed(), painter=painter.plain()}
+                          texter=texter.mixed(), painter=painter.regular()}
   This class provides a linear axis. \var{min} and \var{max} are the
   axis range. When not set, they are adjusted automatically by the
   data to be plotted in the graph. Note, that some data might want to
@@ -149,7 +149,7 @@ only.
 \begin{classdesc}{logarithmic}{min=None, max=None, reverse=0, divisor=None, title=None,
                                parter=parter.autologarithmic(), manualticks=[],
                                density=1, maxworse=2, rater=rater.logarithmic(),
-                               texter=texter.mixed(), painter=painter.plain()}
+                               texter=texter.mixed(), painter=painter.regular()}
   This class provides a logarithmic axis. All parameters work like
   \class{linear}. Only two parameters have a different default:
   \var{parter} and \var{rater}. Furthermore and most importantly, the
@@ -330,10 +330,10 @@ of regular axes.
   Instances of this class creates equally spaced tick lists. The
   distances between the ticks, subticks, subsubticks \emph{etc.}
   starting from a tick at zero are given as first, second, third
-  \emph{etc.} item of the list \var{ticklist}. For a tick position,
+  \emph{etc.} item of the list \var{tickdist}. For a tick position,
   the lowest level wins, \emph{i.e.} for \code{[2, 1]} even numbers
   will have ticks whereas subticks are placed at odd integer. The
-  items of \var{ticklist} might be strings, floats or tuples as
+  items of \var{tickdist} might be strings, floats or tuples as
   described for the \var{pos} parameter of class \class{tick}.
 
   \var{labeldist} works equally for placing labels. When
@@ -714,21 +714,21 @@ multiplication or division by multiples of $\sqrt{2}$ appropriately.
 \end{classdesc}
 
 \begin{classdesc}{linked}{innerticklength=ticklength.short,
-                         outerticklength=None,
-                         tickattrs=[],
-                         gridattrs=None,
-                         basepathattrs=[],
-                         labeldist="0.3 cm",
-                         labelattrs=None,
-                         labeldirection=None,
-                         labelhequalize=0,
-                         labelvequalize=1,
-                         titledist="0.3 cm",
-                         titleattrs=None,
-                         titledirection=rotatetext.parallel,
-                         titlepos=0.5,
-                         texrunner=text.defaulttexrunner}
-  This class is identical to \class{plain} up to the default values of
+                          outerticklength=None,
+                          tickattrs=[],
+                          gridattrs=None,
+                          basepathattrs=[],
+                          labeldist="0.3 cm",
+                          labelattrs=None,
+                          labeldirection=None,
+                          labelhequalize=0,
+                          labelvequalize=1,
+                          titledist="0.3 cm",
+                          titleattrs=None,
+                          titledirection=rotatetext.parallel,
+                          titlepos=0.5,
+                          texrunner=text.defaulttexrunner}
+  This class is identical to \class{regular} up to the default values of
   \var{labelattrs} and \var{titleattrs}. By turning off those
   features, this painter is suitable for linked axes.
 \end{classdesc}
@@ -747,7 +747,7 @@ multiplication or division by multiples of $\sqrt{2}$ appropriately.
   between axes break markers in visual \PyX{} lengths.
   \var{breaklinesangle} is the angle of the axis break marker with
   respect to the base path of the axis. All other parameters have the
-  same meaning as in \class{plain}.
+  same meaning as in \class{regular}.
 \end{classdesc}
 
 \begin{classdesc}{linkedsplit}{breaklinesdist="0.05 cm",
@@ -787,8 +787,8 @@ multiplication or division by multiples of $\sqrt{2}$ appropriately.
   attributes for the ticks or \code{None} to turns all ticks off.
 
   The parameters with prefix \var{name} are identical to their
-  \var{label} counterparts in \class{plain}. All other parameters have
-  the same meaning as in \class{plain}.
+  \var{label} counterparts in \class{regular}. All other parameters have
+  the same meaning as in \class{regular}.
 \end{classdesc}
 
 \begin{classdesc}{linkedbar}{innerticklength=None,
