@@ -20,45 +20,45 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import types, sets
 import Numeric, LinearAlgebra
 
 
-valuetypes = (types.IntType, types.LongType, types.FloatType)
-
-
 class scalar:
-    # this class represents a scalar variable
+    # represents a scalar variable or constant
 
-    def __init__(self, varname="(no variable name provided)"):
-        self.varname = varname
+    def __init__(self, value=None, varname="unnamed_scalar"):
         self.value = None
-        self.zero = 0
+        if value is not None:
+            self.set(value)
+        self.varname = varname
+
+    def addend(self):
+        return addend([self], None)
 
     def term(self):
-        return term([1], [self], self.zero)
+        return term([self.addend()])
 
     def __add__(self, other):
-        return term([1], [self], self.zero) + other
+        return self.term() + other
 
     __radd__ = __add__
 
-    def __neg__(self):
-        return term([-1], [self], self.zero)
-
     def __sub__(self, other):
-        return term([1], [self], self.zero) - other
+        return self.term() - other
 
     def __rsub__(self, other):
-        return term([-1], [self], self.zero) + other
+        return -self.term() + other
+
+    def __neg__(self):
+        return -self.addend()
 
     def __mul__(self, other):
-        return term([other], [self], self.zero)
+        return self.addend()*other
 
     __rmul__ = __mul__
 
     def __div__(self, other):
-        return term([1/other], [self], self.zero)
+        return self.addend()/other
 
     def is_set(self):
         return self.value is not None
@@ -66,7 +66,10 @@ class scalar:
     def set(self, value):
         if self.is_set():
             raise RuntimeError("variable already defined")
-        self.value = value
+        try:
+            self.value = float(value)
+        except:
+            raise RuntimeError("float expected")
 
     def get(self):
         if not self.is_set():
@@ -75,7 +78,7 @@ class scalar:
 
     def __str__(self):
         if self.is_set():
-            return "%s[=%s]" % (self.varname, self.value)
+            return "%s{=%s}" % (self.varname, self.value)
         else:
             return self.varname
 
@@ -83,13 +86,23 @@ class scalar:
         return self.get()
 
 
-class vector(scalar):
+class vector:
+    # represents a vector, i.e. a list of scalars
 
-    def __init__(self, dimension, varname="(no variable name provided)"):
-        scalar.__init__(self, varname=varname)
-        del self.value # XXX disallow is_set, set, get
-        self.scalars = [scalar(varname="%s%i" % (varname, i)) for i in range(dimension)]
-        self.zero = point(*([0]*len(self.scalars)))
+    def __init__(self, dimension_or_values, varname="unnamed_vector"):
+        try:
+            varname + ""
+        except TypeError:
+            raise RuntimeError("a vectors varname should be a string (you probably wanted to write vector([x, y]) instead of vector(x, y))")
+        try:
+            # values
+            self.scalars = [scalar(value=value, varname="%s[%i]" % (varname, i))
+                            for i, value in enumerate(dimension_or_values)]
+        except (TypeError, AttributeError):
+            # dimension
+            self.scalars = [scalar(varname="%s[%i]" % (varname, i))
+                            for i in range(dimension_or_values)]
+        self.varname = varname
 
     def __len__(self):
         return len(self.scalars)
@@ -97,105 +110,197 @@ class vector(scalar):
     def __getitem__(self, i):
         return self.scalars[i]
 
-    def __str__(self):
-        return "%s[=(%s)]" % (self.varname, ",".join([str(scalar) for scalar in self.scalars]))
+    def __getattr__(self, attr):
+        if attr == "x":
+            return self[0]
+        if attr == "y":
+            return self[1]
+        if attr == "z":
+            return self[2]
+        else:
+            raise AttributeError(attr)
 
-
-class point:
-
-    def __init__(self, *values):
-        self.values = values
+    def addend(self):
+        return addend([], self)
 
     def term(self):
-        return term([], [], self)
-
-    def __len__(self):
-        return len(self.values)
-
-    def __getitem__(self, i):
-        return self.values[i]
+        return term([self.addend()])
 
     def __add__(self, other):
-        try:
-            # other might be a point and we should return a point
-            # (this is the typical case for term.const in a vector equation)
-            return point(*[x + y for x, y in zip(self.values, other.values)])
-        except AttributeError:
-            # otherwise perform a term-like addition
-            return self.term() + other
+        return self.term() + other
 
     __radd__ = __add__
 
-    def __neg__(self):
-        return point(*[-value for value in self.values])
-
     def __sub__(self, other):
-        return -other+self
+        return self.term() - other
 
     def __rsub__(self, other):
-        return -self+other
+        return -self.term() + other
+
+    def __neg__(self):
+        return -self.addend()
 
     def __mul__(self, other):
-        return point(*[other*value for value in self.values])
+        return self.addend()*other
 
     __rmul__ = __mul__
 
     def __div__(self, other):
-        return point(*[value/other for value in self.values])
+        return self.addend()/other
+
+    def __str__(self):
+        return "%s{=(%s)}" % (self.varname, ", ".join([str(scalar) for scalar in self.scalars]))
+
+
+class addend:
+    # represents an addend of a term, i.e. a list of scalars and
+    # optionally a vector (for a vector term) otherwise the vector
+    # is None
+
+    def __init__(self, scalars, vector):
+        # self.vector might be None for a scalar addend
+        self.scalars = scalars
+        self.vector = vector
+
+    def __len__(self):
+        return len(self.vector)
+
+    def __getitem__(self, i):
+        return addend(self.scalars + [self.vector[i]], None)
+
+    def addend(self):
+        return self
+
+    def term(self):
+        return term([self.addend()])
+
+    def is_linear(self):
+        assert self.vector is None
+        return len([scalar for scalar in self.scalars if not scalar.is_set()]) < 2
+
+    def prefactor(self):
+        assert self.is_linear()
+        prefactor = 1
+        for scalar_set in [scalar for scalar in self.scalars if scalar.is_set()]:
+            prefactor *= scalar_set.get()
+        return prefactor
+
+    def variable(self):
+        assert self.is_linear()
+        try:
+            variable, = [scalar for scalar in self.scalars if not scalar.is_set()]
+        except ValueError:
+            return None
+        else:
+            return variable
+
+    def __add__(self, other):
+        return self.term() + other
+
+    __radd__ = __add__
+
+    def __sub__(self, other):
+        return self.term() - other
+
+    def __rsub__(self, other):
+        return -self.term() + other
+
+    def __neg__(self):
+        return addend([scalar(-1)] + self.scalars, self.vector)
+
+    def __mul__(self, other):
+        try:
+            a = other.addend()
+        except (TypeError, AttributeError):
+            try:
+                t = other.term()
+            except (TypeError, AttributeError):
+                return self*scalar(other)
+            else:
+                return term([self*a for a in t.addends])
+        else:
+            if a.vector is not None:
+                if self.vector is not None:
+                    if len(self.vector) != len(a.vector):
+                        raise RuntimeError("vector length mismatch in scalar product")
+                    return term([addend(self.scalars + a.scalars + [x*y], None)
+                                 for x, y in zip(self.vector, a.vector)])
+                else:
+                    return addend(self.scalars + a.scalars, a.vector)
+            else:
+                return addend(self.scalars + a.scalars, self.vector)
+
+    __rmul__ = __mul__
+
+    def __div__(self, other):
+        return addend([scalar(1/other)] + self.scalars, self.vector)
+
+    def __str__(self):
+        scalarstring = " * ".join([str(scalar) for scalar in self.scalars])
+        if self.vector is None:
+            return scalarstring
+        else:
+            if len(scalarstring):
+                scalarstring += " * "
+            return scalarstring + str(self.vector)
 
 
 class term:
-    # this class represents the linear term:
-    # sum([prefactor*var.value for prefactor, var in zip(self.prefactors, self.vars]) + self.const
+    # represents a term, i.e. a list of addends
 
-    def __init__(self, prefactors, vars, const):
+    def __init__(self, addends):
+        assert len(addends)
         try:
-            l = len(const)
-        except (AttributeError, TypeError):
-            for var in vars:
+            self.length = len(addends[0])
+        except (TypeError, AttributeError):
+            for addend in addends[1:]:
                 try:
-                    len(var)
-                except (AttributeError, TypeError):
+                    len(addend)
+                except (TypeError, AttributeError):
                     pass
                 else:
-                    raise RuntimeError("vector variable found in a non-vector term")
+                    raise RuntimeError("vector addend in scalar term")
+            self.length = None
         else:
-            for var in vars:
+            for addend in addends[1:]:
                 try:
-                    if l != len(var):
-                        raise RuntimeError("vector length mismatch in vector term")
-                except (AttributeError, TypeError):
-                    raise RuntimeError("scalar variable found in a vector term")
-        assert len(prefactors) == len(vars)
+                    l = len(addend)
+                except (TypeError, AttributeError):
+                    raise RuntimeError("scalar addend in vector term")
+                if l != self.length:
+                    raise RuntimeError("vector length mismatch in term constructor")
+        self.addends = addends
 
-        self.prefactors = prefactors
-        self.vars = vars
-        self.const = const
+    def __len__(self):
+        if self.length is None:
+            raise AttributeError("scalar term")
+        else:
+            return self.length
+
+    def __getitem__(self, i):
+        return term([addend[i] for addend in self.addends])
 
     def term(self):
         return self
 
+    def is_linear(self):
+        is_linear = 1
+        for addend in self.addends:
+            is_linear = is_linear and addend.is_linear()
+        return is_linear
+
     def __add__(self, other):
         try:
-            other = other.term()
+            t = other.term()
         except:
-            other = term([], [], other)
-        vars = self.vars[:]
-        prefactors = self.prefactors[:]
-        for prefactor, var in zip(other.prefactors, other.vars):
-            try:
-                # try to modify prefactor for existing variables
-                prefactors[vars.index(var)] += prefactor
-            except ValueError:
-                # or add the variable
-                vars.append(var)
-                prefactors.append(prefactor)
-        return term(prefactors, vars, self.const + other.const)
+            return self + scalar(other)
+        else:
+            return term(self.addends + t.addends)
 
     __radd__ = __add__
 
     def __neg__(self):
-        return term([-prefactor for prefactor in self.prefactors], self.vars, -self.const)
+        return term([-addend for addend in self.addends])
 
     def __sub__(self, other):
         return -other+self
@@ -204,50 +309,37 @@ class term:
         return -self+other
 
     def __mul__(self, other):
-        return term([other*prefactor for prefactor in self.prefactors], self.vars, other*self.const)
+        return term([addend*other for addend in self.addends])
 
     __rmul__ = __mul__
 
     def __div__(self, other):
-        return term([prefactor/other for prefactor in self.prefactors], self.vars, self.const/other)
+        return term([addend/other for addend in self.addends])
 
     def __str__(self):
-        return "+".join(["%s*%s" % pv for pv in zip(self.prefactors, self.vars)]) + "+" + str(self.const)
+        return "  +  ".join([str(addend) for addend in self.addends])
 
 
 class Solver:
     # linear equation solver
 
     def __init__(self):
-        self.eqs = [] # equations still to be taken into account
+        self.eqs = [] # scalar equations not yet solved (a equation is a term to be zero here)
 
     def eq(self, lhs, rhs=None):
         if rhs is None:
             eq = lhs
         else:
             eq = lhs - rhs
-        if not len(eq.vars):
-            raise RuntimeError("equation without variables")
+        eq = eq.term()
         try:
             # is it a vector equation?
-            neqs = len(eq.vars[0].scalars)
-        except AttributeError:
-            for v in eq.vars[1:]:
-                try:
-                    v.scalars
-                except AttributeError:
-                    pass
-                else:
-                    raise RuntimeError("mixed scalar/vector equation")
-            solver.add(eq)
+            neqs = len(eq)
+        except (TypeError, AttributeError):
+            self.add(eq)
         else:
-            for v in eq.vars[1:]:
-                if len(v.scalars) != neqs:
-                    raise RuntimeError("vectors of different dimension")
-            if len(eq.const.values) != neqs:
-                raise RuntimeError("wrong dimension of constant")
             for i in range(neqs):
-                self.add(term(eq.prefactors, [var[i] for var in eq.vars], eq.const[i]))
+                self.add(eq[i])
 
     def add(self, equation):
         # the equation is just a term which should be zero
@@ -262,33 +354,38 @@ class Solver:
                 break # quit while loop
 
     def combine(self, eqs):
-        # create combinations of equations
+        # create combinations of linear equations
         if not len(eqs):
             yield []
         else:
             for x in self.combine(eqs[1:]):
                 yield x
-                yield [eqs[0]] + x
+            if eqs[0].is_linear():
+                for x in self.combine(eqs[1:]):
+                    yield [eqs[0]] + x
 
     def solve(self, eqs):
-        # try to solve a set of equations
+        # try to solve a set of linear equations
         l = len(eqs)
         if l:
             vars = []
             for eq in eqs:
-                vars.extend([var for var in eq.vars if var not in vars and not var.is_set()])
+                for addend in eq.addends:
+                    var = addend.variable()
+                    if var is not None and var not in vars:
+                        vars.append(var)
             if len(vars) == l:
                 a = Numeric.zeros((l, l))
                 b = Numeric.zeros((l, ))
                 for i, eq in enumerate(eqs):
-                    for p, v in zip(eq.prefactors, eq.vars):
-                        if v.is_set():
-                            b[i] -= p*v.value
+                    for addend in eq.addends:
+                        var = addend.variable()
+                        if var is not None:
+                            a[i, vars.index(var)] += addend.prefactor()
                         else:
-                            a[i, vars.index(v)] += p
-                    b[i] -= eq.const
+                            b[i] -= addend.prefactor()
                 for i, value in enumerate(LinearAlgebra.solve_linear_equations(a, b)):
-                    vars[i].value = value
+                    vars[i].set(value)
                 for eq in eqs:
                     i, = [i for i, selfeq in enumerate(self.eqs) if selfeq == eq]
                     del self.eqs[i]
@@ -306,11 +403,11 @@ if __name__ == "__main__":
     y = vector(2, "y")
     z = vector(2, "z")
 
-    solver.eq(4*x + y, 2*x - y + point(4, 0)) # => x + y = (2, 0)
+    solver.eq(4*x + y, 2*x - y + vector([4, 0])) # => x + y = (2, 0)
     solver.eq(x[0] - y[0], z[1])
     solver.eq(x[1] - y[1], z[0])
-    solver.eq(point(5, 0), z)
+    solver.eq(vector([5, 0]), z)
 
-    print x, y, z
-
-
+    print x
+    print y
+    print z

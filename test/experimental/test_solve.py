@@ -1,0 +1,170 @@
+import unittest, operator
+
+from solve import scalar, vector, solver
+
+class ScalarTestCase(unittest.TestCase):
+
+    def testInit(self):
+        self.failUnlessRaises(RuntimeError, scalar, "")
+        self.failUnlessRaises(RuntimeError, scalar, 1j)
+        self.failUnlessEqual(str(scalar()), "unnamed_scalar")
+        self.failUnlessEqual(str(scalar(varname="s")), "s")
+        self.failUnlessEqual(str(scalar(1)), "unnamed_scalar{=1.0}")
+        self.failUnlessEqual(str(scalar(-1, varname="s")), "s{=-1.0}")
+
+    def testMath(self):
+        self.failUnlessEqual(str(-scalar(varname="s")), "unnamed_scalar{=-1.0} * s")
+        self.failUnlessEqual(str(scalar(varname="s") + scalar(varname="t")), "s  +  t")
+        self.failUnlessEqual(str(scalar(varname="s") + 1), "s  +  unnamed_scalar{=1.0}")
+        self.failUnlessEqual(str(1 + scalar(varname="s")), "s  +  unnamed_scalar{=1.0}")
+        self.failUnlessEqual(str(scalar(varname="s") - scalar(varname="t")), "unnamed_scalar{=-1.0} * t  +  s")
+        self.failUnlessEqual(str(1 - scalar(varname="s")), "unnamed_scalar{=-1.0} * s  +  unnamed_scalar{=1.0}")
+        self.failUnlessEqual(str(2 * scalar(varname="s")), "s * unnamed_scalar{=2.0}")
+        self.failUnlessEqual(str(scalar(varname="s") * 2), "s * unnamed_scalar{=2.0}")
+        self.failUnlessEqual(str(scalar(varname="s") * scalar(varname="t")), "s * t")
+        self.failUnlessEqual(str(scalar(varname="s") / 2.0), "unnamed_scalar{=0.5} * s")
+        self.failUnlessEqual(str(scalar(varname="s") / 2), "unnamed_scalar{=0.0} * s") # integer logic!
+        self.failUnlessRaises(TypeError, lambda: 2 / scalar())
+        self.failUnlessRaises(TypeError, lambda: scalar() / scalar())
+        self.failUnlessRaises(TypeError, lambda: vector(1) / scalar())
+        self.failUnlessRaises(TypeError, lambda: (scalar() + scalar()) / scalar())
+        self.failUnlessRaises(TypeError, lambda: (vector(1) + vector(1)) / scalar())
+
+    def testSetGetIs_Set(self):
+        s = scalar()
+        self.failUnlessEqual(s.is_set(), 0)
+        self.failUnlessRaises(RuntimeError, s.get)
+        self.failUnlessRaises(RuntimeError, float, s)
+        s.set(2)
+        self.failUnlessEqual(s.is_set(), 1)
+        self.failUnlessAlmostEqual(s.get(), 2.0)
+        self.failUnlessAlmostEqual(float(s), 2.0)
+        self.failUnlessRaises(RuntimeError, s.set, 3)
+        self.failUnlessEqual(s.is_set(), 1)
+        self.failUnlessAlmostEqual(s.get(), 2.0)
+        self.failUnlessAlmostEqual(float(s), 2.0)
+
+        s = scalar(2)
+        self.failUnlessEqual(scalar(2).is_set(), 1)
+        self.failUnlessAlmostEqual(s.get(), 2.0)
+        self.failUnlessAlmostEqual(float(s), 2.0)
+        self.failUnlessRaises(RuntimeError, s.set, 3)
+        self.failUnlessEqual(s.is_set(), 1)
+        self.failUnlessAlmostEqual(s.get(), 2.0)
+        self.failUnlessAlmostEqual(float(s), 2.0)
+
+
+class VectorTestCase(unittest.TestCase):
+
+    def testInit(self):
+        self.failUnlessRaises(RuntimeError, vector, 0, 0)
+        self.failUnlessEqual(str(vector(2)), "unnamed_vector{=(unnamed_vector[0], unnamed_vector[1])}")
+        self.failUnlessEqual(str(vector([1, 2])), "unnamed_vector{=(unnamed_vector[0]{=1.0}, unnamed_vector[1]{=2.0})}")
+        self.failUnlessEqual(str(vector(3, "a")), "a{=(a[0], a[1], a[2])}")
+        self.failUnlessEqual(str(vector([3, 2, 1], "a")), "a{=(a[0]{=3.0}, a[1]{=2.0}, a[2]{=1.0})}")
+
+    def testAccess(self):
+        a = vector(2)
+        self.failUnlessEqual(str(a), "unnamed_vector{=(unnamed_vector[0], unnamed_vector[1])}")
+        self.failUnlessEqual(a[0].is_set(), 0)
+        self.failUnlessEqual(a.x.is_set(), 0)
+        self.failUnlessEqual(a[1].is_set(), 0)
+        self.failUnlessEqual(a.y.is_set(), 0)
+        self.failUnlessRaises(IndexError, operator.__getitem__, a, 2)
+        self.failUnlessRaises(IndexError, getattr, a, "z")
+
+        a[0].set(2)
+        self.failUnlessEqual(str(a), "unnamed_vector{=(unnamed_vector[0]{=2.0}, unnamed_vector[1])}")
+        self.failUnlessAlmostEqual(a[0].get(), 2.0)
+        self.failUnlessAlmostEqual(float(a[0]), 2.0)
+        self.failUnlessAlmostEqual(a.x.get(), 2.0)
+        self.failUnlessAlmostEqual(float(a.x), 2.0)
+        self.failUnlessRaises(RuntimeError, a[1].get)
+        self.failUnlessRaises(RuntimeError, float, a[1])
+        self.failUnlessRaises(RuntimeError, a.y.get)
+        self.failUnlessRaises(RuntimeError, float, a.y)
+        self.failUnlessEqual(a[0].is_set(), 1)
+        self.failUnlessEqual(a.x.is_set(), 1)
+        self.failUnlessEqual(a[1].is_set(), 0)
+        self.failUnlessEqual(a.y.is_set(), 0)
+        self.failUnlessRaises(RuntimeError, a[0].set, 3)
+        self.failUnlessAlmostEqual(a[0].get(), 2.0)
+        self.failUnlessAlmostEqual(float(a[0]), 2.0)
+        self.failUnlessAlmostEqual(a.x.get(), 2.0)
+        self.failUnlessAlmostEqual(float(a.x), 2.0)
+        self.failUnlessRaises(RuntimeError, a[1].get)
+        self.failUnlessRaises(RuntimeError, float, a[1])
+        self.failUnlessRaises(RuntimeError, a.y.get)
+        self.failUnlessRaises(RuntimeError, float, a.y)
+        self.failUnlessEqual(a[0].is_set(), 1)
+        self.failUnlessEqual(a.x.is_set(), 1)
+        self.failUnlessEqual(a[1].is_set(), 0)
+        self.failUnlessEqual(a.y.is_set(), 0)
+
+        a[1].set(3)
+        self.failUnlessEqual(str(a), "unnamed_vector{=(unnamed_vector[0]{=2.0}, unnamed_vector[1]{=3.0})}")
+        self.failUnlessAlmostEqual(a[0].get(), 2.0)
+        self.failUnlessAlmostEqual(float(a[0]), 2.0)
+        self.failUnlessAlmostEqual(a.x.get(), 2.0)
+        self.failUnlessAlmostEqual(float(a.x), 2.0)
+        self.failUnlessAlmostEqual(a[1].get(), 3.0)
+        self.failUnlessAlmostEqual(float(a[1]), 3.0)
+        self.failUnlessAlmostEqual(a.y.get(), 3.0)
+        self.failUnlessAlmostEqual(float(a.y), 3.0)
+        self.failUnlessEqual(a[0].is_set(), 1)
+        self.failUnlessEqual(a.x.is_set(), 1)
+        self.failUnlessEqual(a[1].is_set(), 1)
+        self.failUnlessEqual(a.y.is_set(), 1)
+        self.failUnlessRaises(RuntimeError, a[0].set, 4)
+        self.failUnlessAlmostEqual(a[0].get(), 2.0)
+        self.failUnlessAlmostEqual(float(a[0]), 2.0)
+        self.failUnlessAlmostEqual(a.x.get(), 2.0)
+        self.failUnlessAlmostEqual(float(a.x), 2.0)
+        self.failUnlessAlmostEqual(a[1].get(), 3.0)
+        self.failUnlessAlmostEqual(float(a[1]), 3.0)
+        self.failUnlessAlmostEqual(a.y.get(), 3.0)
+        self.failUnlessAlmostEqual(float(a.y), 3.0)
+        self.failUnlessEqual(a[0].is_set(), 1)
+        self.failUnlessEqual(a.x.is_set(), 1)
+        self.failUnlessEqual(a[1].is_set(), 1)
+        self.failUnlessEqual(a.y.is_set(), 1)
+
+        a = vector([1, 2, 3])
+        self.failUnlessEqual(str(a.x), "unnamed_vector[0]{=1.0}")
+        self.failUnlessEqual(str(a.y), "unnamed_vector[1]{=2.0}")
+        self.failUnlessEqual(str(a.z), "unnamed_vector[2]{=3.0}")
+
+    def testLen(self):
+        for i in range(10):
+            a = vector(i)
+            self.failUnlessEqual(len(a), i)
+            self.failUnlessEqual(str(a), "unnamed_vector{=(" + ", ".join(["unnamed_vector[%i]" % j for j in range(i)]) + ")}")
+        for i in range(10):
+            a = -vector(i)
+            self.failUnlessEqual(len(a), i)
+            self.failUnlessEqual(str(a), "unnamed_scalar{=-1.0} * unnamed_vector{=(" + ", ".join(["unnamed_vector[%i]" % j for j in range(i)]) + ")}")
+
+    def testMath(self):
+        self.failUnlessEqual(str(-vector(1, "a")), "unnamed_scalar{=-1.0} * a{=(a[0])}")
+        self.failUnlessEqual(str(vector(1, "a") + vector(1, "t")), "a{=(a[0])}  +  t{=(t[0])}")
+        self.failUnlessRaises(RuntimeError, operator.__add__, vector(1), scalar())
+        self.failUnlessRaises(RuntimeError, operator.__add__, vector(1), vector(2))
+        self.failUnlessEqual(str(vector(1, "a") - vector(1, "t")), "unnamed_scalar{=-1.0} * t{=(t[0])}  +  a{=(a[0])}")
+        self.failUnlessRaises(RuntimeError, operator.__sub__, vector(1), scalar())
+        self.failUnlessRaises(RuntimeError, operator.__sub__, vector(1), vector(2))
+        self.failUnlessEqual(str(2 * vector(1, "a")), "unnamed_scalar{=2.0} * a{=(a[0])}")
+        self.failUnlessEqual(str(vector(1, "a") * 2), "unnamed_scalar{=2.0} * a{=(a[0])}")
+        self.failUnlessEqual(str(scalar(varname="s") * vector(1, "a")), "s * a{=(a[0])}")
+        self.failUnlessEqual(str(vector(1, "a") * scalar(varname="s")), "s * a{=(a[0])}")
+        self.failUnlessEqual(str(vector(2, "a") * vector(2, "b")), "a[0] * b[0]  +  a[1] * b[1]")
+        self.failUnlessRaises(RuntimeError, operator.__mul__, vector(1, "a"), vector(2))
+        self.failUnlessEqual(str(vector(1, "a") / 2.0), "unnamed_scalar{=0.5} * a{=(a[0])}")
+        self.failUnlessEqual(str(vector(1, "a") / 2), "unnamed_scalar{=0.0} * a{=(a[0])}") # integer logic!
+        self.failUnlessRaises(TypeError, lambda: scalar() / vector(1))
+        self.failUnlessRaises(TypeError, lambda: vector(1) / vector(1))
+        self.failUnlessRaises(TypeError, lambda: (scalar() + scalar()) / vector(1))
+        self.failUnlessRaises(TypeError, lambda: (vector(1) + vector(1)) / vector(1))
+
+
+if __name__ == "__main__":
+    unittest.main()
