@@ -32,15 +32,16 @@
 import unit, canvas, math
 from math import cos, sin, pi
 
-
 class PathException(Exception): pass
+
 
 ################################################################################
 # _bpathel: element of Bezier path (coordinates in pts)
 ################################################################################
 
 class _bpathel:
-    ' element of Bezier path (coordinates in pts) '
+
+    """element of Bezier path (coordinates in pts)"""
     
     def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
         self.x0 = x0
@@ -61,11 +62,8 @@ class _bpathel:
                      
 
     def __getitem__(self, t):
-        ' return pathel at parameter value t (0<=t<=1) '
-
+        """return pathel at parameter value t (0<=t<=1)"""
         assert 0 <= t <= 1, "parameter t of pathel out of range [0,1]"
-
-
         return ( "%f t pt" % ((-self.x0+3*self.x1-3*self.x2+self.x3)*t*t*t +
                               (3*self.x0-6*self.x1+3*self.x2)*t*t +
                               (-3*self.x0+3*self.x1)*t +
@@ -81,10 +79,9 @@ class _bpathel:
                            min(self.y0, self.y1, self.y2, self.y3), 
                            max(self.x0, self.x1, self.x2, self.x3), 
                            max(self.y0, self.y1, self.y2, self.y3))
-        
 
     def MidPointSplit(self):
-        ' splits bpathel at midpoint returning bpath with two bpathels '
+        """splits bpathel at midpoint returning bpath with two bpathels"""
         
         # first, we have to calculate the  midpoints between adjacent
         # control points
@@ -108,10 +105,11 @@ class _bpathel:
         
         return bpath([_bpathel(self.x0, self.y0, x01, y01, x01_12, y01_12, xmidpoint, ymidpoint),
                       _bpathel(xmidpoint, ymidpoint, x12_23, y12_23, x23, y23, self.x3, self.y3)])
+
                        
 class bpathel(_bpathel):
 
-    ' element of Bezier path '
+    """element of Bezier path"""
     
     def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
         _bpathel.__init__(self, 
@@ -126,7 +124,8 @@ class bpathel(_bpathel):
 ################################################################################
 
 class bpath:
-    """ path consisting of bezier curves"""
+
+    """path consisting of bezier curves"""
     
     def __init__(self, bpath=[]):
         self.bpath = bpath
@@ -160,7 +159,6 @@ class bpath:
 	    bpel.write(file)
             file.write("\n")
 
-
     def pos(self, t):
         return self.bpath[int(t)][t-math.floor(t)]
 
@@ -173,10 +171,10 @@ class bpath:
         return bpath(result)
 
     def intersect(self, other):
-        """ intersect two bpaths
+        """intersect two bpaths
 
         returns a list of tuples consisting of the corresponding parameters of the
-        two bpaths """
+        two bpaths"""
 
         intersections = ()
         (ta, tb) = (0,0)
@@ -192,21 +190,27 @@ class bpath:
 
         return intersections
 
+    __mul__ = intersect
+
 class _bcurve(bpath):
-    """ bpath consisting of one bezier curve (coordinates in pts)"""
+
+    """bpath consisting of one bezier curve (coordinates in pts)"""
     
     def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
         bpath.__init__(self, [_bpathel(x0, y0, x1, y1, x2, y2, x3, y3)]) 
 
+
 class bcurve(bpath):
-    """ bpath consisting of one bezier curve"""
+
+    """bpath consisting of one bezier curve"""
     
     def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
         bpath.__init__(self, [bpathel(x0, y0, x1, y1, x2, y2, x3, y3)]) 
 
 
 class _bline(bpath):
-    " bpath consisting of one straight line (coordinates in pts)"
+
+    """bpath consisting of one straight line (coordinates in pts)"""
     
     def __init__(self, x0, y0, x1, y1):
         xa = x0+(x1-x0)/3.0
@@ -217,8 +221,10 @@ class _bline(bpath):
         bpath.__init__(self, 
                       [_bpathel(x0, y0, xa, ya, xb, yb, x1, y1 )]) 
 
+
 class bline(_bline):
-    " bpath consisting of one straight line "
+
+    """bpath consisting of one straight line"""
     
     def __init__(self, x0, y0, x1, y1):
         _bline.__init__(self, 
@@ -227,7 +233,8 @@ class bline(_bline):
 
 
 class _barc(bpath):
-    " bpath consisting of arc segment (coordinates in pts)"
+
+    """bpath consisting of arc segment (coordinates in pts)"""
 
     def __init__(self, x, y, r, phi1, phi2, dphimax=pi/4):
         bpath.__init__(self, [])
@@ -254,19 +261,21 @@ class _barc(bpath):
 
 
 class barc(_barc):
-    " bpath consisting of arc segment "
+
+    """bpath consisting of arc segment"""
 
     def __init__(self, x, y, r, phi1, phi2, dphimax=pi/4):
         _barc.__init__(self, 
                        unit.topt(x), unit.topt(y), unit.topt(r), 
                        phi1, phi2, dphimax)
 
+
 ################################################################################
 # some helper routines            
 ################################################################################
 
 def _arctobpathel(x, y, r, phi1, phi2):
-    ' generate the best bpathel corresponding to an arc segment '
+    """generate the best bpathel corresponding to an arc segment"""
     
     dphi=phi2-phi1
 
@@ -285,13 +294,15 @@ def _arctobpathel(x, y, r, phi1, phi2):
     
     return _bpathel(x0, y0, x1, y1, x2, y2, x3, y3)
 
-def _bpathelIntersect(a, a_t0, a_t1, a_subdiv,
-                     b, b_t0, b_t1, b_subdiv):
-    """ intersect two bpathels
+
+def _bpathelIntersect(a, a_t0, a_t1, a_subdiv, b, b_t0, b_t1, b_subdiv):
+    """intersect two bpathels
 
     a and b are bpathels with parameter ranges [a_t0, a_t1],
     respectively [b_t0, b_t1] and a_subdiv, respectively
-    b_subdiv subdivisions left. """
+    b_subdiv subdivisions left.
+    
+    """
 
     # intersection of bboxes is a necessary criterium for intersection
     if not a.bbox().intersects(b.bbox()): return ()
