@@ -76,8 +76,8 @@ class tex:
     TexMarkerBegin = TexMarker + "Begin"
     TexMarkerEnd = TexMarker + "End"
 
-    def __del__(self):
-        self.TexRun()
+#    def __del__(self):
+#        self.TexRun()
 
     TexCmds = [ ]
         # stores the TexCmds; note that the first element has a special
@@ -306,10 +306,10 @@ class tex:
             assert 0, "dvips exit code non-zero"
         
         # TODO 8: don't write save/restore directly
-        self.canvas.PSCmd("save")
+        self.canvas.PSAddCmd("save")
         self.canvas.amove(0,0)
         self.canvas.PSInsertEPS(self.canvas.BaseFilename + ".tex.eps")
-        self.canvas.PSCmd("restore")
+        self.canvas.PSAddCmd("restore")
 
     TexResults = None
 

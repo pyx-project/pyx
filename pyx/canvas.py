@@ -17,13 +17,16 @@ linestyle_dashed     = (linecap_butt,  [2])
 linestyle_dotted     = (linecap_round, [0, 3])
 linestyle_dashdotted = (linecap_round, [0, 3, 3, 3])
 
-unit_ps		= 1000.0
+unit_ps		= 1.0
 
 unit_u2p	= 28.346456693*unit_ps
 unit_v2p	= 28.346456693*unit_ps
 unit_w2p	= 28.346456693*unit_ps
 
 class canvas:
+
+    PSCmds = [] 	# stores all PS commands of the canvas
+    
     def __init__(self,width,height,basefilename):
         self.Width=width
         self.Height=height
@@ -33,14 +36,11 @@ class canvas:
     PSPositionCorrect = 0		# does actual PS position coincide with our x,y
     
     def __del__(self):
-        self.PSEnd()
+        self.PSRun()
     
-    def PSCmd(self, cmd):
-        try:
-            self.PSFile.write("%s\n" % cmd)
-	except IOError:
-	    assert "cannot write to output file"	# TODO: Fehlerbehandlung...
-	    
+    def PSAddCmd(self, cmd):
+
+        self.PSCmds = self.PSCmds + [ cmd ]
 	
     def PSInit(self):
         try:
@@ -58,7 +58,7 @@ class canvas:
 
 	# PostScript-procedure definitions
 	# cf. file: 5002.EPSF_Spec_v3.0.pdf     
-	self.PSCmd("""
+	self.PSAddCmd("""
 /rect {
   4 2 roll moveto 
   1 index 0 rlineto 
@@ -89,13 +89,15 @@ class canvas:
 } bind def""")
         self.PSFile.write("%%EndProlog\n") 
 
-	self.PSCmd("%f %f scale" % (1/unit_ps, 1/unit_ps))
-	self.PSCmd("%f setlinewidth" % self.w2p(0.2))
+	self.PSAddCmd("%f %f scale" % (1/unit_ps, 1/unit_ps))
+	self.PSAddCmd("%f setlinewidth" % self.w2p(0.02))
 	self.newpath()
 	self.amove(0,0)
 
-    def PSEnd(self):
+    def PSRun(self):
     	self.stroke()
+	for cmd in self.PSCmds:
+	    self.PSFile.write("%s\n" % cmd)
 	self.PSFile.close()
 	
     def PSGetEPSBoundingBox(self, epsname):
@@ -107,7 +109,7 @@ class canvas:
 	except:
 	    assert "cannot open EPS file"	# TODO: Fehlerbehandlung
 
-        import regex
+#        import regex
 
 	bbpattern = regex.compile(
 	     "^%%BoundingBox:[\t ]+\([0-9]+\)[\t ]+\([0-9]+\)[\t ]+\([0-9]+\)[\t ]+\([0-9]+\)[\t ]*$")
@@ -126,6 +128,24 @@ class canvas:
 		break
         epsfile.close()
 	return (llx, lly, urx, ury)
+
+    def u2p(self, lengths):
+    	if isnumber(lengths): 
+	    return lengths*unit_u2p
+	else: 
+	    return tuple(map(lambda x:x*unit_u2p, lengths))
+	
+    def v2p(self, lengths):
+    	if isnumber(lengths): 
+	    return lengths*unit_v2p
+	else: 
+	    return tuple(map(lambda x:x*unit_v2p, lengths))
+	
+    def w2p(self, lengths):
+    	if type(lengths)==type(0.0): 
+	    return lengths*unit_w2p
+	else: 
+	    return tuple(map(lambda x:x*unit_w2p, lengths))
 	
     def PSInsertEPS(self, epsname):
     
@@ -138,50 +158,36 @@ class canvas:
 	except:
 	    assert "cannot open EPS file"	# TODO: Fehlerbehandlung
 
-	self.PSCmd("BeginEPSF")
-	self.PSCmd("%f %f translate" % (self.x, self.y)) 
-	self.PSCmd("%f %f translate" % (-llx, -lly)) 
-	self.PSCmd("%f %f %f %f rect" % (llx, lly, urx-llx,ury-lly)) 
-	self.PSCmd("clip newpath")
-	self.PSCmd("%%BeginDocument: %s" % epsname)
-	self.PSCmd(epsfile.read())  	
-	self.PSCmd("%%EndDocument")
-	self.PSCmd("EndEPSF")
+	self.PSAddCmd("BeginEPSF")
+	self.PSAddCmd("%f %f translate" % self.u2p((self.x, self.y)) ) 
+	self.PSAddCmd("%f %f translate" % self.u2p((-llx, -lly)) )
+	self.PSAddCmd("%f %f %f %f rect" % self.u2p((llx, lly, urx-llx,ury-lly)))
+	self.PSAddCmd("clip newpath")
+	self.PSAddCmd("%%BeginDocument: %s" % epsname)
+	self.PSAddCmd(epsfile.read())  	
+	self.PSAddCmd("%%EndDocument")
+	self.PSAddCmd("EndEPSF")
 
-    def u2p(self, lengths):
-    	if isnumber(lengths): 
-	    return lengths*unit_u2p
-	else: 
-	    return map(lambda x:x*unit_u2p, lengths) 
-	
-    def v2p(self, lengths):
-    	if isnumber(lengths): 
-	    return lengths*unit_v2p
-	else: 
-	    return map(lambda x:x*unit_v2p, lengths) 
-	
-    def w2p(self, lengths):
-    	if type(lengths)==type(0.0): 
-	    return lengths*unit_w2p
-	else: 
-	    return map(lambda x:x*unit_w2p, lengths) 
 
     def PSUpdatePosition(self):
         if self.PSPositionCorrect == 0:		# actual PS position doesn't coincide with our x,y
-	    self.PSCmd("%f %f moveto" % tuple(self.u2p((self.x,self.y))))
+	    self.PSAddCmd("%f %f moveto" % self.u2p((self.x,self.y)))
 	    self.PSPositionCorrect = 1
 
     def stroke(self):
-    	self.PSCmd("stroke")
+    	self.PSAddCmd("stroke")
 	self.PSPositionCorrect = 0		# in fact, current point is undefined after stroke
 	
     def newpath(self):
-    	self.PSCmd("newpath")
+    	self.PSAddCmd("newpath")
 	self.PSPositionCorrect = 0		# in fact, current point is undefined after newpath
 	
     def closepath(self):
-    	self.PSCmd("closepath")
-	    
+    	self.PSAddCmd("closepath")
+
+    def draw(self,path):
+        path.draw(self)
+
     def amove(self,x,y):
         #isnumber(x)
         #isnumber(y)
@@ -202,7 +208,7 @@ class canvas:
 	
 	self.PSUpdatePosition()			# insert moveto if needed
         (self.x, self.y)=(x,y)
-	self.PSCmd("%f %f lineto" % tuple(self.u2p((x,y))))
+	self.PSAddCmd("%f %f lineto" % self.u2p((x,y)))
     
     def rline(self,x,y):
         #isnumber(x)
@@ -210,29 +216,29 @@ class canvas:
 	
 	self.PSUpdatePosition()			# insert moveto if needed
         (self.x, self.y)=(self.x+x,self.y+y)
-	self.PSCmd("%f %f rlineto" % tuple(self.u2p((x,y))))
+	self.PSAddCmd("%f %f rlineto" % self.u2p((x,y)))
 
     def setlinecap(self, cap):
         #isnumber(cap)
 
-	self.PSCmd("%d setlinecap" % cap)
+	self.PSAddCmd("%d setlinecap" % cap)
 
     def setlinejoin(self, join):
         #isnumber(join)
 
-	self.PSCmd("%d setlinejoin" % join)
+	self.PSAddCmd("%d setlinejoin" % join)
 	
     def setmiterlimit(self, limit):
         #isnumber(join)
 
-	self.PSCmd("%f setmiterlimit" % limit)
+	self.PSAddCmd("%f setmiterlimit" % limit)
 
     def setdash(self, pattern, offset=0):
     	patternstring=""
     	for element in pattern:
 		patternstring=patternstring + `element` + " "
     	
-    	self.PSCmd("[%s] %d setdash" % (patternstring, offset))
+    	self.PSAddCmd("[%s] %d setdash" % (patternstring, offset))
 
     def setlinestyle(self, style, offset=0):
         self.setlinecap(style[0])
@@ -242,6 +248,7 @@ if __name__=="__main__":
     c=canvas(21, 29.7, "example")
 
     from tex import *
+    from path import *
     t=tex(c)
     #t.c=c
 
@@ -252,10 +259,18 @@ if __name__=="__main__":
     #   amove(0,y)
     #   rline(10,0)
 
-    c.amove(1,1)
-    c.aline(2,2)
-    c.amove(1,2)
-    c.aline(2,1)
+    c.draw(path( [moveto(1,1), 
+                  lineto(2,2), 
+                  moveto(1,2), 
+                  lineto(2,1) ] 
+		)
+          )
+    c.draw(line(1, 1, 1,2)) 
+
+    #c.amove(1,1)
+    #c.aline(2,2)
+    #c.amove(1,2)
+    #c.aline(2,1)
 
 
     print "Breite von 'Hello world!': ",t.textwd("Hello world!")
@@ -301,4 +316,5 @@ if __name__=="__main__":
     c.aline(10,14)
     c.amove(12,10)
     c.aline(12,14)
+    t.TexRun()
 
