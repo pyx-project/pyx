@@ -1,16 +1,8 @@
 PyX
 
-0.4 (????/??/??):
-  TODOs:
-  - graph module:
-      - common bboxes for different graphs
-      - automatic datafile key title
-      - exceptions in drawsymbol & friends...
-      - separate texter out of the axispainter
-      - 3d graphs
-  - canvas module:
-      - default patterns
-      - stroke and fill should support trafos
+0.3.1 (????/??/??)
+  - text module:
+     fix bug in dvi rule code where width was height
 
 0.3 (2003/03/31)
   - examples
