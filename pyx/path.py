@@ -22,7 +22,6 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-#       - exceptions: nocurrentpoint, paramrange
 #       - correct bbox for curveto and normcurve
 #         (maybe we still need the current bbox implementation (then maybe called
 #          cbox = control box) for normcurve for the use during the
@@ -38,7 +37,7 @@ except ImportError:
     # fallback implementation for Python 2.1
     def radians(x): return x*pi/180
     def degrees(x): return x*180/pi
-import base, bbox, trafo, unit, helper
+import base, bbox, trafo, unit
 
 try:
     sum([])
@@ -898,12 +897,12 @@ class multicurveto_pt(pathitem):
         context.x_pt, context.y_pt = self.points_pt[-1]
 
     def _bbox(self, context):
-        xs = ( [point[0] for point in self.points_pt] +
-               [point[2] for point in self.points_pt] +
-               [point[4] for point in self.points_pt] )
-        ys = ( [point[1] for point in self.points_pt] +
-               [point[3] for point in self.points_pt] +
-               [point[5] for point in self.points_pt] )
+        xs_pt = ( [point[0] for point in self.points_pt] +
+                  [point[2] for point in self.points_pt] +
+                  [point[4] for point in self.points_pt] )
+        ys_pt = ( [point[1] for point in self.points_pt] +
+                  [point[3] for point in self.points_pt] +
+                  [point[5] for point in self.points_pt] )
         return bbox.bbox_pt(min(context.x_pt, *xs_pt),
                             min(context.y_pt, *ys_pt),
                             max(context.x_pt, *xs_pt),
@@ -1399,7 +1398,7 @@ class normsubpathitem:
         """write PS code corresponding to normsubpathitem to file"""
         pass
 
-    def outputPS(self, file):
+    def outputPDF(self, file):
         """write PDF code corresponding to normsubpathitem to file"""
         pass
 
@@ -1840,7 +1839,7 @@ class normsubpath:
         # If one or more items appended to the normsubpath have been
         # skipped (because their total length was shorter than
         # epsilon), we remember this fact by a line because we have to
-        # take it properly into account when appending further subnormpathitems
+        # take it properly into account when appending further normsubpathitems
         self.skippedline = None
 
         self.normsubpathitems = []
@@ -1856,8 +1855,8 @@ class normsubpath:
             self.close()
 
     def __add__(self, other):
-        # we take self.epsilon as accuracy for the resulting subnormpath
-        result = subnormpath(self.normpathitems, self.closed, self.epsilon)
+        # we take self.epsilon as accuracy for the resulting normsubpath
+        result = normsubpath(self.normsubpathitems, self.closed, self.epsilon)
         result += other
         return result
 
@@ -2146,7 +2145,7 @@ class normsubpath:
         return [x for x, y in result], [y for x, y in result]
 
     def isshort(self):
-        """return whether the subnormpath is shorter than epsilon"""
+        """return whether the normsubpath is shorter than epsilon"""
         return not self.normsubpathitems
 
     def join(self, other):
@@ -2246,7 +2245,7 @@ class normsubpath:
         if self.closed:
             nnormsubpath.close()
         elif self.skippedline is not None:
-            nnormsubpath.append(skippedline.transformed(trafo))
+            nnormsubpath.append(self.skippedline.transformed(trafo))
         return nnormsubpath
 
     def outputPS(self, file):
@@ -2289,7 +2288,7 @@ class normsubpath:
 class normpathparam:
 
     """ parameter of a certain point along a normpath """
-    
+
     def __init__(self, normpath, normsubpathindex, normsubpathparam):
         self.normpath = normpath
         self.normsubpathindex = normsubpathindex
@@ -2317,10 +2316,10 @@ class normpathparam:
     def __rsub__(self, other):
         # other has to be a length in this case
         return self.normpath.arclentoparam_pt(-self.normpath.paramtoarclen_pt(self) + unit.topt(other))
-    
+
     def __mul__(self, factor):
         return self.normpath.arclentoparam_pt(self.normpath.paramtoarclen_pt(self) * factor)
-    
+
     __rmul__ = __mul__
 
     def __div__(self, divisor):
@@ -2345,7 +2344,7 @@ class normpathparam:
         return self.normpath.paramtoarclen(self)
 
 
-    
+
 ################################################################################
 # normpath class
 ################################################################################
@@ -2624,7 +2623,7 @@ class normpath(base.canvasitem):
 
         """
         other = other.normpath()
-        
+
         # here we build up the result
         intersections = ([], [])
 
