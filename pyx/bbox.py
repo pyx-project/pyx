@@ -161,13 +161,41 @@ class bbox_pt:
 
     path = rect
 
+    def height_pt(self):
+        """return height of bbox in pts"""
+        return self.ury_pt-self.lly_pt
+
+    def width_pt(self):
+        """return width of bbox in pts"""
+        return self.urx_pt-self.llx_pt
+
+    def top_pt(self):
+        """return top coordinate of bbox in pts"""
+        return self.ury_pt
+
+    def bottom_pt(self):
+        """return bottom coordinate of bbox in pts"""
+        return self.lly_pt
+
+    def left_pt(self):
+        """return left coordinate of bbox in pts"""
+        return self.llx_pt
+
+    def right_pt(self):
+        """return right coordinate of bbox in pts"""
+        return self.urx_pt
+
+    def center_pt(self):
+        """return coordinates of the center of the bbox in pts"""
+        return 0.5 * (self.llx_pt+self.urx_pt), 0.5 * (self.lly_pt+self.ury_pt)
+
     def height(self):
         """return height of bbox"""
-        return (self.ury_pt-self.lly_pt) * unit.t_pt
+        return self.height_pt() * unit.t_pt
 
     def width(self):
         """return width of bbox"""
-        return (self.urx_pt-self.llx_pt) * unit.t_pt
+        return self.width_pt() * unit.t_pt
 
     def top(self):
         """return top coordinate of bbox"""
@@ -187,7 +215,8 @@ class bbox_pt:
 
     def center(self):
         """return coordinates of the center of the bbox"""
-        return 0.5 * (self.llx_pt+self.urx_pt) * unit.t_pt, 0.5 * (self.lly_pt+self.ury_pt) * unit.t_pt
+        centerx_pt, centery_pt = self.center_pt()
+        return centerx_pt * unit.t_pt, centery_pt * unit.t_pt
 
 
 class bbox(bbox_pt):

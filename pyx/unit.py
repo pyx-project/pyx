@@ -125,15 +125,15 @@ class length:
 
     __rmul__=__mul__
 
-    def __div__(self, factor):
-        if isinstance(factor, length):
-            return tom(self) / tom(factor)
+    def __div__(self, divisor):
+        if isinstance(divisor, length):
+            return tom(self) / tom(divisor)
         result = length()
-        result.t = self.t / factor
-        result.u = self.u / factor
-        result.v = self.v / factor
-        result.w = self.w / factor
-        result.x = self.x / factor
+        result.t = self.t / divisor
+        result.u = self.u / divisor
+        result.v = self.v / divisor
+        result.w = self.w / divisor
+        result.x = self.x / divisor
         return result
 
     def __add__(self, other):

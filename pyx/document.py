@@ -21,14 +21,15 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import pswriter, pdfwriter
+import sys
+import pswriter, pdfwriter, trafo, unit
 
 
 class paperformat:
 
-    def __init__(self, height, width, name=None):
-        self.height = height
+    def __init__(self, width, height, name=None):
         self.width = width
+        self.height = height
         self.name = name
 
 paperformat.A4 = paperformat(210 * unit.t_mm, 297  * unit.t_mm, "A4")
@@ -41,12 +42,12 @@ paperformat.Letter = paperformat(8.5 * unit.t_inch, 11 * unit.t_inch, "Letter")
 paperformat.Legal = paperformat(8.5 * unit.t_inch, 14 * unit.t_inch, "Legal")
 
 def _paperformatfromstring(name):
-    return getattr(paperformat, paperformat.capitalize())
+    return getattr(paperformat, name.capitalize())
 
 
 class page:
 
-    def __init__(self, canvas, pagename=None, paperformat=paperformat.A4, rotated=0, fittosize=0,
+    def __init__(self, canvas, pagename=None, paperformat=paperformat.A4, rotated=0, centered=1, fittosize=0, 
                  margin=1 * unit.t_cm, bboxenlarge=1 * unit.t_pt, bbox=None):
         self.canvas = canvas
         self.pagename = pagename
@@ -57,82 +58,60 @@ class page:
             self.paperformat = paperformat
         else:
             self.paperformat = _paperformatfromstring(paperformat)
-            sys.stderr("*** PyX Warning: specification of paperformat by string is depricated, use document.paperformat.%s instead\n" % paperformat.capitalize())
+            sys.stderr.write("*** PyX Warning: specification of paperformat by string is depricated, use document.paperformat.%s instead\n" % paperformat.capitalize())
+            
         self.rotated = rotated
+        self.centered = centered
         self.fittosize = fittosize
         self.margin = margin
         self.bboxenlarge = bboxenlarge
         self.bbox = bbox
 
     def pagetrafo(self, abbox):
-        # calculate a trafo which rotates and fits a canvas with
-        # bounding box abbox on the given paperformat with a margin
-        # on all sides
+        """ calculate a trafo which rotates and fits a canvas on the page
+
+        The canvas extents are described by abbox, which, however, is only used
+        when during page construction no bbox has been specified.
+        """
+        if self.bbox is not None:
+            abbox = self.bbox
         if self.rotated or self.centered or self.fittosize:
-            paperwidth_pt, paperheight_pt = unit.to_pt(self.paperformat[0]), unit.to_pt(self.paperformat[1])
+            paperwidth, paperheight = self.paperformat.width, self.paperformat.height
 
             # center (optionally rotated) output on page
             if self.rotated:
-                atrafo = trafo.rotate_pt(90).translated_pt(paperwidth_pt, 0)
+                atrafo = trafo.rotate(90).translated(paperwidth, 0)
                 if self.centered or self.fittosize:
-                    atrafo = atrafo.translated_pt(-0.5*(paperwidth_pt - unit.topt(abbox.height())) + unit.topt(abbox.bottom()),
-                                                  0.5*(paperheight_pt - unit.topt(abbox.width())) - unit.topt(abbox.left()))
+                    atrafo = atrafo.translated(-0.5*(paperwidth - abbox.height()) + abbox.bottom(),
+                                               0.5*(paperheight - abbox.width()) - abbox.left())
             else:
                 if self.centered or self.fittosize:
                     atrafo = trafo.trafo()
                 else:
                     return None # no page transformation needed
                 if self.centered or self.fittosize:
-                    atrafo = atrafo.translated_pt(0.5*(paperwidth_pt - unit.topt(abbox.width()))  - unit.topt(abbox.left()),
-                                                  0.5*(paperheight_pt - unit.topt(abbox.height())) - unit.topt(abbox.bottom()))
+                    atrafo = atrafo.translated(0.5*(paperwidth - abbox.width())  - abbox.left(),
+                                               0.5*(paperheight - abbox.height()) - abbox.bottom())
 
             if self.fittosize:
-                if not isinstance(self.margin, unit.length):
-                    self.margin = unit.length(self.margin)
 
-                if 2*unit.topt(self.margin) > min(paperwidth_pt, paperheight_pt):
-                    raise RuntimeError("Margins too broad for selected paperformat. Aborting.")
+                if 2*self.margin > paperwidth or 2*self.margin > paperheight:
+                    raise ValueError("Margins too broad for selected paperformat. Aborting.")
 
-                paperwidth_pt -= 2*topt(self.margin)
-                paperheight_pt -= 2*topt(self.margin)
+                paperwidth -= 2 * self.margin
+                paperheight -= 2 * self.margin
 
                 # scale output to pagesize - margins
                 if self.rotated:
-                    sfactor = min(paperheight_pt/unit.topt(abbox.width()),
-                                  paperwidth_pt/unit.topt(abbox.height()))
+                    sfactor = min(unit.topt(paperheight)/abbox.width_pt(), unit.topt(paperwidth)/abbox.height_pt())
                 else:
-                    sfactor = min(paperwidth_pt/unit.topt(abbox.width()),
-                                  paperheight_pt/unit.topt(abbox.height()))
+                    sfactor = min(unit.topt(paperwidth)/abbox.width_pt(), unit.topt(paperheight)/abbox.height_pt())
 
-                atrafo = atrafo.scaled_pt(sfactor, sfactor, unit.topt(self.margin) + 0.5*paperwidth_pt, unit.topt(self.margin) + 0.5*paperheight_pt)
+                atrafo = atrafo.scaled(sfactor, sfactor, self.margin + 0.5*paperwidth, self.margin + 0.5*paperheight)
 
             return atrafo
-        # return None # no page transformation needed, no explicit return of None needed
-
-
-#     def outputPS(self, file):
-#         file.write("%%%%PageMedia: %s\n" % self.paperformat)
-#         file.write("%%%%PageOrientation: %s\n" % (self.rotated and "Landscape" or "Portrait"))
-#         # file.write("%%%%PageBoundingBox: %d %d %d %d\n" % (math.floor(pbbox.llx_pt), math.floor(pbbox.lly_pt),
-#         #                                                    math.ceil(pbbox.urx_pt), math.ceil(pbbox.ury_pt)))
-# 
-#         # page setup section
-#         file.write("%%BeginPageSetup\n")
-#         file.write("/pgsave save def\n")
-#         # for scaling, we need the real bounding box of the page contents
-#         pbbox = canvas.bbox(self)
-#         pbbox.enlarge(self.bboxenlarge)
-#         ptrafo = calctrafo(pbbox, self.paperformat, self.margin, self.rotated, self.fittosize)
-#         if ptrafo:
-#             ptrafo.outputPS(file)
-#         file.write("%f setlinewidth\n" % unit.topt(style.linewidth.normal))
-#         file.write("%%EndPageSetup\n")
-# 
-#         # here comes the actual content
-#         canvas.outputPS(self, file)
-#         file.write("pgsave restore\n")
-#         file.write("showpage\n")
-#         # file.write("%%PageTrailer\n")
+        
+        return None # no page transformation needed
 
 
 class document:
@@ -146,16 +125,13 @@ class document:
         self.pages.append(page)
 
     def writePSfile(self, filename, *args, **kwargs):
-        writer = pswriter.pswriter(self)
-        writer.write(filename, *args, **kwargs)
+        pswriter.pswriter(self, filename, *args, **kwargs)
 
     def writeEPSfile(self, filename, *args, **kwargs):
-        writer = pswriter.epswriter(self)
-        writer.write(filename, *args, **kwargs)
+        pswriter.epswriter(self, filename, *args, **kwargs)
 
     def writePDFfile(self, filename, *args, **kwargs):
-        writer = pdfwriter.pdfwriter(self)
-        writer.write(filename, *args, **kwargs)
+        pdfwriter.pdfwriter(self, filename, *args, **kwargs)
 
     def writetofile(self, filename, *args, **kwargs):
         if filename[-4:] == ".eps":
@@ -164,80 +140,3 @@ class document:
             self.writePDFfile(filename, *args, **kwargs)
         else:
             raise ValueError("unknown file extension")
-
-
-#     def writePSfile(self, filename):
-#         """write pages to PS file """
-# 
-#         if filename[-3:]!=".ps":
-#             filename = filename + ".ps"
-# 
-#         try:
-#             file = open(filename, "w")
-#         except IOError:
-#             raise IOError("cannot open output file")
-# 
-#         docbbox = None
-#         for apage in self.pages:
-#             pbbox = apage.bbox()
-#             if docbbox is None:
-#                 docbbox = pbbox
-#             else:
-#                 docbbox += pbbox
-# 
-#         # document header
-#         file.write("%!PS-Adobe-3.0\n")
-#         docbbox.outputPS(file)
-#         file.write("%%%%Creator: PyX %s\n" % version.version)
-#         file.write("%%%%Title: %s\n" % filename)
-#         file.write("%%%%CreationDate: %s\n" %
-#                    time.asctime(time.localtime(time.time())))
-#         # required paper formats
-#         paperformats = {}
-#         for apage in self.pages:
-#             if isinstance(apage, page):
-#                 paperformats[apage.paperformat] = _paperformats[apage.paperformat]
-#         first = 1
-#         for paperformat, size in paperformats.items():
-#             if first:
-#                 file.write("%%DocumentMedia: ")
-#                 first = 0
-#             else:
-#                 file.write("%%+ ")
-#             file.write("%s %d %d 75 white ()\n" % (paperformat, unit.topt(size[0]), unit.topt(size[1])))
-# 
-#         file.write("%%%%Pages: %d\n" % len(self.pages))
-#         file.write("%%PageOrder: Ascend\n")
-#         file.write("%%EndComments\n")
-# 
-#         # document default section
-#         #file.write("%%BeginDefaults\n")
-#         #if paperformat:
-#         #    file.write("%%%%PageMedia: %s\n" % paperformat)
-#         #file.write("%%%%PageOrientation: %s\n" % (rotated and "Landscape" or "Portrait"))
-#         #file.write("%%EndDefaults\n")
-# 
-#         # document prolog section
-#         file.write("%%BeginProlog\n")
-#         mergedprolog = []
-#         for apage in self.pages:
-#             for pritem in apage.prolog():
-#                 for mpritem in mergedprolog:
-#                     if mpritem.merge(pritem) is None: break
-#                 else:
-#                     mergedprolog.append(pritem)
-#         for pritem in mergedprolog:
-#             pritem.outputPS(file)
-#         file.write("%%EndProlog\n")
-# 
-#         # document setup section
-#         #file.write("%%BeginSetup\n")
-#         #file.write("%%EndSetup\n")
-# 
-#         # pages section
-#         for nr, apage in enumerate(self.pages):
-#             file.write("%%%%Page: %s %d\n" % (apage.pagename is None and str(nr) or apage.pagename , nr+1))
-#             apage.outputPS(file)
-# 
-#         file.write("%%Trailer\n")
-#         file.write("%%EOF\n")

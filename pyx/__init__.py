@@ -33,8 +33,8 @@ are build out of these primitives.
 import version
 __version__ = version.version
 
-__all__ = ["attr", "box", "bitmap", "canvas", "color", "connector", "deco", "deformer", "epsfile", "graph", "path",
-           "style", "trafo", "text", "unit"]
+__all__ = ["attr", "box", "bitmap", "canvas", "color", "connector", "deco", "deformer", "document",
+           "epsfile", "graph", "path", "style", "trafo", "text", "unit"]
 
 
 # automatically import main modules into pyx namespace
