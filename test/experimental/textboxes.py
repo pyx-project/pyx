@@ -50,7 +50,15 @@ only = 28
 while only is None or n <= only:
     print n
     n += 1
-    thistext = randtext()
+    if 1:
+        thistext = randtext()
+        thistextfile = open("debug.thistext", "w")
+        thistextfile.write(thistext)
+        thistextfile.close()
+    else:
+        thistextfile = open("debug.thistext", "r")
+        thistext = thistextfile.read()
+        thistextfile.close()
     if only is not None and n <= only:
         continue
     boxes = text.defaulttexrunner.textboxes(thistext, shapes)
