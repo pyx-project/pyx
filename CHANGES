@@ -16,6 +16,7 @@ TODO:
     - rect style (and errorbars?) should use clipping
     - paths are to be drawn instead of inserted
     - should the divisor argument be moved to the texters?
+    - zeropathattrs=None should be the default
   - style module:
     - default patterns
     - make dash length available
