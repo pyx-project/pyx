@@ -1094,10 +1094,19 @@ for s in defaultsizelist:
 
 
 class _readpipe(threading.Thread):
+    """threaded reader of TeX/LaTeX output
+    - sets an event, when a specific string in the programs output is found
+    - sets an event, when the terminal ends"""
 
     def __init__(self, pipe, expectqueue, gotevent, gotqueue, quitevent):
+        """initialize the reader
+        - pipe: file to be read from
+        - expectqueue: keeps the next InputMarker to be wait for
+        - gotevent: the "got InputMarker" event
+        - gotqueue: a queue containing the lines recieved from TeX/LaTeX
+        - quitevent: the "end of terminal" event"""
         threading.Thread.__init__(self)
-        self.setDaemon(1)
+        self.setDaemon(1) # don't care if the output might not be finished (nevertheless, it shouldn't happen)
         self.pipe = pipe
         self.expectqueue = expectqueue
         self.gotevent = gotevent
@@ -1107,26 +1116,28 @@ class _readpipe(threading.Thread):
         self.start()
 
     def run(self):
-        read = self.pipe.readline()
+        """thread routine"""
+        read = self.pipe.readline() # read, what comes in
         try:
-            self.expect = self.expectqueue.get_nowait()
+            self.expect = self.expectqueue.get_nowait() # read, what should be expected
         except Queue.Empty:
             pass
         while len(read):
+            # universal EOL handling (convert everything into unix like EOLs)
             read.replace("\r", "")
             if not len(read) or read[-1] != "\n":
                 read += "\n"
-            self.gotqueue.put(read)
+            self.gotqueue.put(read) # report, whats readed
             if self.expect is not None and read.find(self.expect) != -1:
-                self.gotevent.set()
-            read = self.pipe.readline()
+                self.gotevent.set() # raise the got event, when the output was expected (XXX: within a single line)
+            read = self.pipe.readline() # read again
             try:
                 self.expect = self.expectqueue.get_nowait()
             except Queue.Empty:
                 pass
+        # EOF reached
         if self.expect is not None and self.expect.find("PyXInputMarker") != -1:
-            print self.expect
-            raise RuntimeError("TeX finished unexpectedly")
+            raise RuntimeError("TeX/LaTeX finished unexpectedly")
         self.quitevent.set()
 
 
@@ -1216,6 +1227,16 @@ class texrunner:
         tempfile.tempdir = savetempdir
 
     def execute(self, expr, *checks):
+        """executes expr within TeX/LaTeX
+        - if self.texruns is not yet set, TeX/LaTeX is initialized,
+          self.texruns is set and self.preamblemode is set
+        - the method must not be called, when self.texdone is already set
+        - expr should be a string or None
+        - when expr is None, TeX/LaTeX is stopped, self.texruns is unset and
+          while self.texdone becomes set
+        - when self.preamblemode is set, the expr is passed directly to TeX/LaTeX
+        - when self.preamblemode is unset, the expr is passed to \ProcessPyXBox
+        """
         if not self.texruns:
             for usefile in self.usefiles:
                 extpos = usefile.rfind(".")
@@ -1230,26 +1251,26 @@ class texrunner:
             except ValueError:
                 # XXX: workaround for MS Windows (bufsize = 0 makes trouble!?)
                 self.texinput, self.texoutput = os.popen4("%s %s" % (self.mode, self.texfilename), "t")
-            self.expectqueue = Queue.Queue(1) # allow for a single entry only
-            self.gotevent = threading.Event()
-            self.gotqueue = Queue.Queue(0) # allow arbitrary number of entries
-            self.quitevent = threading.Event()
+            self.expectqueue = Queue.Queue(1)  # allow for a single entry only -> keeps the next InputMarker to be wait for
+            self.gotevent = threading.Event()  # keeps the got inputmarker event
+            self.gotqueue = Queue.Queue(0)     # allow arbitrary number of entries
+            self.quitevent = threading.Event() # keeps for end of terminal event
             self.readoutput = _readpipe(self.texoutput, self.expectqueue, self.gotevent, self.gotqueue, self.quitevent)
             self.texruns = 1
             oldpreamblemode = self.preamblemode
             self.preamblemode = 1
             self.execute("\\scrollmode\n\\raiseerror%\n" + # switch to and check scrollmode
-                         "\\def\\PyX{P\\kern-.3em\\lower.5ex\hbox{Y}\kern-.18em X}%\n" +
-                         "\\newbox\\PyXBox%\n" +
-                         "\\def\\ProcessPyXBox#1#2{%\n" +
-                         "\\setbox\\PyXBox=\\hbox{{#1}}%\n" +
-                         "\\immediate\\write16{PyXBox(page=#2," +
+                         "\\def\\PyX{P\\kern-.3em\\lower.5ex\hbox{Y}\kern-.18em X}%\n" + # just the PyX Logo
+                         "\\newbox\\PyXBox%\n" + # PyXBox will be used for output
+                         "\\def\\ProcessPyXBox#1#2{%\n" + # the ProcessPyXBox definition (#1 is expr, #2 is page number)
+                         "\\setbox\\PyXBox=\\hbox{{#1}}%\n" + # push expression into PyXBox
+                         "\\immediate\\write16{PyXBox(page=#2," + # write page and extents of this box to stdout
                                                      "wd=\\the\\wd\\PyXBox," +
                                                      "ht=\\the\\ht\\PyXBox," +
                                                      "dp=\\the\\dp\\PyXBox)}%\n" +
-                         "\\ht\\PyXBox0pt%\n" +
-                         "{\\count0=80\\count1=121\\count2=88\\count3=#2\\shipout\\copy\\PyXBox}}%\n" +
-                         "\\def\\PyXInput#1{\\immediate\\write16{PyXInputMarker(#1)}}",
+                         "\\ht\\PyXBox0pt%\n" + # baseline alignment (hight to zero)
+                         "{\\count0=80\\count1=121\\count2=88\\count3=#2\\shipout\\copy\\PyXBox}}%\n" + # shipout PyXBox to Page 80.121.88.<page number>
+                         "\\def\\PyXInput#1{\\immediate\\write16{PyXInputMarker(#1)}}", # write PyXInputMarker(<page number>) to stdout
                          *self.texmessagestart)
             os.remove("%s.tex" % self.texfilename)
             if self.mode == "latex":
@@ -1275,7 +1296,7 @@ class texrunner:
             else:
                 self.expr = "\\end\n"
         if self.texdebug:
-            print "pass the following expression to (La)TeX:\n  %s" % self.expr.replace("\n", "\n  ").rstrip()
+            print "pass the following expression to TeX/LaTeX:\n  %s" % self.expr.replace("\n", "\n  ").rstrip()
         self.texinput.write(self.expr)
         self.gotevent.wait(self.waitfortex) # wait for the expected output
         gotevent = self.gotevent.isSet()
