@@ -375,7 +375,7 @@ class curveto_pt(pathel):
                                                      self.x3, self.y3 ) )
 
     def outputPDF(self, file):
-        file.write("%g %g %g %g %g %g c\n" % ( self.x1, self.y1,
+        file.write("%f %f %f %f %f %f c\n" % ( self.x1, self.y1,
                                                self.x2, self.y2,
                                                self.x3, self.y3 ) )
 
@@ -405,8 +405,6 @@ class rmoveto_pt(pathel):
 
     def outputPS(self, file):
         file.write("%g %g rmoveto\n" % (self.dx, self.dy) )
-
-    # TODO: outputPDF
 
 
 class rlineto_pt(pathel):
@@ -461,8 +459,6 @@ class rcurveto_pt(pathel):
         file.write("%g %g %g %g %g %g rcurveto\n" % ( self.dx1, self.dy1,
                                                     self.dx2, self.dy2,
                                                     self.dx3, self.dy3 ) )
-
-    # TODO: outputPDF
 
     def _updatecontext(self, context):
         x3 = context.currentpoint[0]+self.dx3
@@ -617,8 +613,6 @@ class arc_pt(pathel):
                                             self.angle1,
                                             self.angle2 ) )
 
-    # TODO: outputPDF
-
 
 class arcn_pt(pathel):
 
@@ -710,8 +704,6 @@ class arcn_pt(pathel):
                                                self.angle1,
                                                self.angle2 ) )
 
-    # TODO: outputPDF
-
 
 class arct_pt(pathel):
 
@@ -725,13 +717,6 @@ class arct_pt(pathel):
         self.x2 = x2
         self.y2 = y2
         self.r  = r
-
-    def outputPS(self, file):
-        file.write("%g %g %g %g %g arct\n" % ( self.x1, self.y1,
-                                             self.x2, self.y2,
-                                             self.r ) )
-
-    # TODO: outputPDF
 
     def _path(self, currentpoint, currentsubpath):
         """returns new currentpoint, currentsubpath and path consisting
@@ -817,6 +802,10 @@ class arct_pt(pathel):
         # XXX TODO
         return normpath(self._path(context.currentpoint,
                                    context.currentsubpath)[2]).subpaths[0].normpathels
+    def outputPS(self, file):
+        file.write("%g %g %g %g %g arct\n" % ( self.x1, self.y1,
+                                               self.x2, self.y2,
+                                               self.r ) )
 
 #
 # now the pathels that convert from user coordinates to pts
@@ -960,7 +949,7 @@ class multilineto_pt(pathel):
 
     def outputPDF(self, file):
         for x, y in self.points:
-            file.write("%g %g l\n" % (x, y) )
+            file.write("%f %f l\n" % (x, y) )
 
 
 class multicurveto_pt(pathel):
@@ -996,7 +985,7 @@ class multicurveto_pt(pathel):
 
     def outputPDF(self, file):
         for point in self.points:
-            file.write("%g %g %g %g %g %g c\n" % tuple(point))
+            file.write("%f %f %f %f %f %f c\n" % tuple(point))
 
 
 ################################################################################
@@ -1155,15 +1144,18 @@ class path(base.PSCmd):
             pel.outputPS(file)
 
     def outputPDF(self, file):
+        if not (isinstance(self.path[0], moveto_pt) or
+                isinstance(self.path[0], arc_pt) or
+                isinstance(self.path[0], arcn_pt)):
+            raise PathException("first path element must be either moveto, arc, or arcn")
         # PDF practically only supports normpathels
         normpath(self).outputPDF(file)
         return
-        if not (isinstance(self.path[0], moveto_pt) or
-                isinstance(self.path[0], arc_pt) or # outputPDF
-                isinstance(self.path[0], arcn_pt)): # outputPDF
-            raise PathException("first path element must be either moveto, arc, or arcn")
+        context = _pathcontext()
         for pel in self.path:
-            pel.outputPDF(file)
+            for npel in pel._normalized(context):
+                npel.outputPDF(file)
+            pel._updatecontext(context)
 
 ################################################################################
 # some special kinds of path, again in two variants
@@ -2214,7 +2206,7 @@ class normpath(path):
         all given lengths must be positive.
         A length greater than the total arclength will give self.range()"""
 
-        rests = [unit.topt(length) for length in lengths]
+        rests = [unit.topt(length) for length in helper.ensuresequence(lengths)]
         allparams = [0] * len(lengths)
 
         for sp in self.subpaths:
