@@ -1299,7 +1299,7 @@ class defaulttexter:
                        equaldecision=1,
                        decimaltexter=decimaltexter(),
                        exponentialtexter=exponentialtexter()):
-        r"""initializes the instance
+        """initializes the instance
         - smallestdecimal and biggestdecimal are the smallest and
           biggest decimal values, where the decimaltexter should be used;
           they are frac instances; the sign of the tick is ignored here;
