@@ -5,12 +5,17 @@ PyX
   - allow division of length by numbers
   - return linewidth upon calculation with linewidths
   - fix canvas transformations
-  - 3d graphs (work in progress)
-  - splitaxis (work in progress)
-  - move axis partitioning into the axis painter (work in progress)
   - new transformation: slant
-  - bugfix in textbox alignment (graph module)
   - some fixes in automatic axis partitioning
+  - british and american spellings in the color module
+  - datafile module renamed to data, sectionfile class added
+  - graph module:
+    - new bar class (work in progress)
+    - 3d graphs (work in progress)
+    - splitaxis (work in progress)
+    - move axis partitioning into the axis painter (work in progress)
+    - bugfix in textbox alignment (graph module)
+    - mark class renamed to symbol
 
 0.1.1 (????/??/??):
   - transformation bug fixed (#624068)
