@@ -1299,6 +1299,8 @@ class dvifile:
             elif cmd >= _DVI_FNTNUMMIN and cmd <= _DVI_FNTNUMMAX:
                 self.usefont(cmd - _DVI_FNTNUMMIN)
             elif cmd >= _DVI_FNT1234 and cmd < _DVI_FNT1234 + 4:
+                # note that according to the DVI docs, for four byte font numbers,
+                # the font number is signed. Don't ask why!
                 self.usefont(afile.readint(cmd - _DVI_FNT1234 + 1, cmd == _DVI_FNT1234 + 3))
             elif cmd >= _DVI_SPECIAL1234 and cmd < _DVI_SPECIAL1234 + 4:
                 self.special(afile.read(afile.readint(cmd - _DVI_SPECIAL1234 + 1)))
