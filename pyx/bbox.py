@@ -123,15 +123,15 @@ class bbox_pt:
         all is used, if bottom, left, top and/or right are not given.
 
         """
-        bottom_pt = left_pt = top_pt = right_pt = unit.topt(unit.length(all, default_type="v"))
+        bottom_pt = left_pt = top_pt = right_pt = unit.topt(all)
         if bottom is not None:
-           bottom_pt = unit.topt(unit.length(bottom, default_type="v"))
+           bottom_pt = unit.topt(bottom)
         if left is not None:
-           left_pt = unit.topt(unit.length(left, default_type="v"))
+           left_pt = unit.topt(left)
         if top is not None:
-           top_pt = unit.topt(unit.length(top, default_type="v"))
+           top_pt = unit.topt(top)
         if right is not None:
-           right_pt = unit.topt(unit.length(right, default_type="v"))
+           right_pt = unit.topt(right)
         self.llx_pt -= left_pt
         self.lly_pt -= bottom_pt
         self.urx_pt += right_pt
@@ -143,15 +143,15 @@ class bbox_pt:
         all is used, if bottom, left, top and/or right are not given.
 
         """
-        bottom_pt = left_pt = top_pt = right_pt = unit.topt(unit.length(all, default_type="v"))
+        bottom_pt = left_pt = top_pt = right_pt = unit.topt(all)
         if bottom is not None:
-           bottom_pt = unit.topt(unit.length(bottom, default_type="v"))
+           bottom_pt = unit.topt(bottom)
         if left is not None:
-           left_pt = unit.topt(unit.length(left, default_type="v"))
+           left_pt = unit.topt(left)
         if top is not None:
-           top_pt = unit.topt(unit.length(top, default_type="v"))
+           top_pt = unit.topt(top)
         if right is not None:
-           right_pt = unit.topt(unit.length(right, default_type="v"))
+           right_pt = unit.topt(right)
         return bbox_pt(self.llx_pt-left_pt, self.lly_pt-bottom_pt, self.urx_pt+right_pt, self.ury_pt+top_pt)
 
     def rect(self):
