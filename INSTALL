@@ -85,6 +85,5 @@ into the manual directory
 
 Note that this requires Python version 2.3 and above. In former versions you
 will need to get the Python documentation sources separately from
-http://www.python.org and try to find the script there. Alternatively you may
+http://www.python.org/ and try to find the script there. Alternatively you may
 download the manual from the PyX homepage at http://pyx.sourceforge.net/.
-
