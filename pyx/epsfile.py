@@ -22,13 +22,13 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import string
-import base, bbox, prolog, pykpathsea, unit, trafo
+import base, bbox, pykpathsea, unit, trafo, resource
 
 # PostScript-procedure definitions (cf. 5002.EPSF_Spec_v3.0.pdf)
 # with important correction in EndEPSF:
 #   end operator is missing in the spec!
 
-_BeginEPSF = prolog.definition("BeginEPSF", """{
+_BeginEPSF = resource.definition("BeginEPSF", """{
   /b4_Inc_state save def
   /dict_count countdictstack def
   /op_count count 1 sub def
@@ -45,7 +45,7 @@ _BeginEPSF = prolog.definition("BeginEPSF", """{
   } if
 } bind""")
 
-_EndEPSF = prolog.definition("EndEPSF", """{
+_EndEPSF = resource.definition("EndEPSF", """{
   end
   count op_count sub {pop} repeat
   countdictstack dict_count sub {end} repeat
@@ -231,8 +231,9 @@ class epsfile(base.canvasitem):
     def bbox(self):
         return self.mybbox.transformed(self.trafo)
 
-    def prolog(self):
-        return [_BeginEPSF, _EndEPSF]
+    def registerresources(self, registry):
+        registry.registerresource(_BeginEPSF)
+        registry.registerresource(_EndEPSF)
 
     def outputPS(self, file):
         try:

@@ -23,7 +23,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import copy, cStringIO, exceptions, re, struct, string, sys
-import unit, epsfile, bbox, base, canvas, color, trafo, path, prolog, pykpathsea
+import unit, epsfile, bbox, base, canvas, color, trafo, path, pykpathsea, resource
 
 
 class binfile:
@@ -347,26 +347,6 @@ class tfmfile:
 # Font handling
 ##############################################################################
 
-_ReEncodeFont = prolog.definition("ReEncodeFont", """{
-  5 dict
-  begin
-    /newencoding exch def
-    /newfontname exch def
-    /basefontname exch def
-    /basefontdict basefontname findfont def
-    /newfontdict basefontdict maxlength dict def 
-    basefontdict {
-      exch dup dup /FID ne exch /Encoding ne and
-      { exch newfontdict 3 1 roll put }
-      { pop pop }
-      ifelse
-    } forall
-    newfontdict /FontName newfontname put
-    newfontdict /Encoding newencoding put
-    newfontname newfontdict definefont pop
-  end
-}""")
-
 #
 # PostScript font selection and output primitives
 #
@@ -406,20 +386,12 @@ class selectfont(base.canvasitem):
         # name, size, encoding, usedchars of the font
         self.font = font
         self.size = font.getsize_pt()
-        # self.fontid = None
-        self.fontid = font.getpsname()
+        self.fontid = None
 
-    def prolog(self):
-        result = [prolog.fontdefinition(self.font,
-                                        self.font.getbasepsname(),
-                                        self.font.getfontfile(),
-                                        self.font.getencodingfile(),
-                                        self.font.usedchars)]
-        if self.font.getencoding():
-            result.append(_ReEncodeFont)
-            result.append(prolog.fontencoding(self.font.getencoding(), self.font.getencodingfile()))
-            result.append(prolog.fontreencoding(self.font.getpsname(), self.font.getbasepsname(), self.font.getencoding()))
-        return result
+    def registerresources(self, registry):
+        fontresource = resource.font(self.font)
+        registry.registerresource(fontresource)
+        self.fontid = fontresource.id
 
     def outputPS(self, file):
         file.write("/%s %f selectfont\n" % (self.fontid, self.size))
@@ -617,7 +589,7 @@ class font:
         return 16L*self.q/16777216L*72/72.27
 
     def _convert_tfm_to_dvi(self, length):
-        return 16*long(round(length*self.q*self.tfmconv))/16777216
+        return 16L*long(round(length*self.q*self.tfmconv))/16777216
 
         # Knuth instead suggests the following algorithm based on integer logic only
         # For z < 8388608 the result was checked and seemed to be equal.

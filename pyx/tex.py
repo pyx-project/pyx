@@ -940,6 +940,11 @@ by yourself.\n""")
         self._run()
         return self.aprolog
 
+    def registerresources(self, registry):
+        self._run()
+        # XXX this does not work anymore like before:
+        # we need the EPS file
+
     def bbox(self):
         self._run()
         return self.abbox

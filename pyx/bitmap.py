@@ -28,7 +28,7 @@ try:
 except:
     haszlib = 0
 
-import base, bbox, prolog, trafo, unit
+import base, bbox, resource, trafo, unit
 
 def ascii85lines(datalen):
     if datalen < 4:
@@ -157,7 +157,7 @@ class bitmap(base.canvasitem):
         self.storedata = storedata
         self.maxstrlen = maxstrlen
         self.imagedataid = "imagedata%d" % id(self)
-        self.prologs = []
+        self.resources = []
 
         if width is not None or height is not None:
             self.width = width
@@ -252,10 +252,10 @@ class bitmap(base.canvasitem):
                 self.datasource = "/%s load" % self.imagedataid
             else:
                 self.datasource = "/imagedataaccess load" # some printers do not allow for inline code here
-                self.prologs.append(prolog.definition("imagedataaccess",
-                                                      "{ /imagedataindex load " # get list index
-                                                      "dup 1 add /imagedataindex exch store " # store increased index
-                                                      "/imagedataid load exch get }")) # select string from array
+                self.resources.append(resource.definition("imagedataaccess",
+                                                          "{ /imagedataindex load " # get list index
+                                                          "dup 1 add /imagedataindex exch store " # store increased index
+                                                          "/imagedataid load exch get }")) # select string from array
         else:
             self.datasource = "currentfile /ASCII85Decode filter"
         if compressmode == "Flate" or imagecompressed == "Flate":
@@ -268,7 +268,7 @@ class bitmap(base.canvasitem):
             if imagecompressed != None:
                 raise ValueError("invalid compressed image '%s'" % imagecompressed)
 
-        # cache prolog
+        # cache resources
         if self.storedata:
             # TODO resource data could be written directly on the output stream
             #      after proper code reorganization
@@ -293,14 +293,15 @@ class bitmap(base.canvasitem):
                     ascii85stream(buffer, self.data[tailpos:])
                     buffer.write("~>")
                 buffer.write("]\n%%EndData\n")
-            self.prologs.append(prolog.definition(self.imagedataid, buffer.getvalue()))
+            self.resources.append(resource.definition(self.imagedataid, buffer.getvalue()))
 
     def bbox(self):
         return bbox.bbox_pt(self.xpos_pt, self.ypos_pt,
                             self.xpos_pt+self.width_pt, self.ypos_pt+self.height_pt)
 
-    def prolog(self):
-        return self.prologs
+    def registerresources(self, registry):
+        for resource in self.resources:
+            registry.registerresource(resource)
 
     def outputPS(self, file):
         file.write("gsave\n"

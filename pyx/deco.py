@@ -110,19 +110,17 @@ class decoratedpath(base.canvasitem):
         else:
             return pathbbox
 
-    def prolog(self):
-        result = []
+    def registerresources(self, registry):
         if self.styles:
             for style in self.styles: 
-                result.extend(style.prolog())
+                style.registerresources(registry)
         if self.fillstyles:
             for style in self.fillstyles: 
-                result.extend(style.prolog())
+                style.registerresources(registry)
         if self.strokestyles:
             for style in self.strokestyles: 
-                result.extend(style.prolog())
-        result.extend(self.ornaments.prolog())
-        return result
+                style.registerresources(registry)
+        self.ornaments.registerresources(registry)
 
     def strokepath(self):
         if self.nostrokeranges:

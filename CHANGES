@@ -104,6 +104,9 @@ TODO:
   - graph modules:
     - graph styles:
       - addontop added to stackedbarpos; TODO: documentation
+  - prolog module: deleted
+  - resource module: new
+    - resources: fonts and definitions
 
 
 0.7.1 (2004/12/15):

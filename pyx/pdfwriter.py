@@ -22,7 +22,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import copy, sys
-import prolog, pykpathsea, unit, style
+import pykpathsea, unit, style
 from t1strip import fullfont
 try:
     import zlib

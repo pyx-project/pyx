@@ -650,9 +650,9 @@ class textbox(box.rect, canvas._canvas):
         self.ensuredvicanvas()
         return self.texttrafo.apply(*self.dvicanvas.markers[marker])
 
-    def prolog(self):
+    def registerresources(self, registry):
         self.ensuredvicanvas()
-        return canvas._canvas.prolog(self)
+        canvas._canvas.registerresources(self, registry)
 
     def outputPS(self, file):
         self.ensuredvicanvas()

@@ -39,9 +39,9 @@ class canvasitem:
         """write PDF code corresponding to canvasitem to file"""
         pass
 
-    def prolog(self):
-        """return list of prolog items required by canvasitem"""
-        return []
+    def registerresources(self, registry):
+        """register needed resources in resource registry"""
+        pass 
 
     def bbox(self):
         """return bounding box of canvasitem or None"""

@@ -29,7 +29,7 @@ A canvas holds a collection of all elements and corresponding attributes to be
 displayed. """
 
 import sys, cStringIO
-import attr, base, deco, deformer, unit, prolog, style, trafo
+import attr, base, deco, deformer, unit, style, trafo
 
 #
 # clipping class
@@ -129,11 +129,9 @@ class _canvas(base.canvasitem):
         else:
             return self.clipbbox
 
-    def prolog(self):
-        result = []
-        for cmd in self.items:
-            result.extend(cmd.prolog())
-        return result
+    def registerresources(self, registry):
+        for item in self.items:
+            item.registerresources(registry)
 
     def outputPS(self, file):
         if self.items:
@@ -278,7 +276,8 @@ class pattern(_canvas, attr.exclusiveattr, style.fillstyle):
     def outputPS(self, file):
         file.write("%s setpattern\n" % self.id)
 
-    def prolog(self):
+    def registerresources(self, registry):
+        _canvas.registerresources(registry)
         realpatternbbox = _canvas.bbox(self)
         if self.xstep is None:
            xstep = unit.topt(realpatternbbox.width())
@@ -309,9 +308,7 @@ class pattern(_canvas, attr.exclusiveattr, style.fillstyle):
         patterntrafostring = self.patterntrafo is None and "matrix" or str(self.patterntrafo)
         patternsuffix = "end\n} bind\n>>\n%s\nmakepattern" % patterntrafostring
 
-        pr = _canvas.prolog(self)
-        pr.append(prolog.definition(self.id, "".join((patternprefix, patternproc, patternsuffix))))
-        return pr
+        registry.registerresource(resource.definition(self.id, "".join((patternprefix, patternproc, patternsuffix))))
 
 pattern.clear = attr.clearclass(pattern)
 
