@@ -72,6 +72,8 @@ PyX
      - __iadd__ and inplace enlarge, transform,...
   - mathtree module:
      - bug: -x**2 should be negative
+  - color module:
+     - should colors and palettes exclude each other?
 
 0.4.1 (2003/09/17):
   - canvas module:
