@@ -32,8 +32,8 @@ import base, bbox, unit
 def _rmatrix(angle):
     phi = math.pi*angle/180.0
     
-    return  (( math.cos(phi), math.sin(phi)), 
-             (-math.sin(phi), math.cos(phi)))
+    return  ((math.cos(phi), -math.sin(phi)), 
+             (math.sin(phi),  math.cos(phi)))
 
 def _rvector(angle, x, y):
     phi = math.pi*angle/180.0
@@ -90,9 +90,9 @@ class _trafo(base.PSOp):
                      )
 
             vector = ( self.matrix[0][0]*other.vector[0] +
-                       self.matrix[1][0]*other.vector[1] +
+                       self.matrix[0][1]*other.vector[1] +
                        self.vector[0],
-                       self.matrix[0][1]*other.vector[0] +
+                       self.matrix[1][0]*other.vector[0] +
                        self.matrix[1][1]*other.vector[1] +
                        self.vector[1] )
 
@@ -118,9 +118,9 @@ class _trafo(base.PSOp):
     def _apply(self, x, y):
         """apply transformation to point (x,y) (coordinates in pts)"""
         return (self.matrix[0][0]*x +
-                self.matrix[1][0]*y +
+                self.matrix[0][1]*y +
                 self.vector[0],
-                self.matrix[0][1]*x +
+                self.matrix[1][0]*x +
                 self.matrix[1][1]*y +
                 self.vector[1])
 
