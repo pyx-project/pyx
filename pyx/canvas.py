@@ -301,6 +301,10 @@ class canvas(CanvasCmds):
         obbox = reduce(lambda x,y, canvas=canvas: x+y.bbox(canvas),
                        self.PSCmds,
                        bbox())
+        obbox.llx = 0
+        obbox.lly = 0
+        obbox.urx = 1000
+        obbox.ury = 1000
 	(llx, lly)=self.trafo.apply((unit.length("%d t pt" % obbox.llx),
                                      unit.length("%d t pt" % obbox.lly)))
         (urx, ury)=self.trafo.apply((unit.length("%d t pt" % obbox.urx),

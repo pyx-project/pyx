@@ -101,12 +101,30 @@ class _mode:
     def __str__(self):
         return str(self.value)
     def __cmp__(self, other):
-        return cmp(other.value)
+        return cmp(self.value, other.value)
     __rcmp__ = __cmp__
 
-class mode:
-    TeX = "TeX"
-    LaTeX = "LaTeX"
+class mode(_mode):
+    TeX = _mode("TeX")
+    LaTeX = _mode("LaTeX")
+
+class AttribStr:
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return str(self.value)
+
+class latexstyle(AttribStr):
+    pass
+
+class docclass(AttribStr):
+    pass
+
+class docopt(AttribStr):
+    pass
+
+class texfilename(AttribStr):
+    pass
 
 class _extent:
     def __init__(self, value):
@@ -184,45 +202,51 @@ class TexCmd:
             line = file.readline()
         msg = ""
         line = file.readline()
-        while line[:-1] != self.EndMarkerStr():
+        while (line != "") and (line[:-1] != self.EndMarkerStr()):
             msg = msg + line
             line = file.readline()
-
-        # check if message can be ignored
-        if self.msglevel == msglevel.showall:
-            doprint = 0
-            for c in msg:
-                if c not in " \t\r\n":
-                    doprint = 1
-        elif self.msglevel == msglevel.hideload:
-            depth = 0
-            doprint = 0
-            for c in msg:
-                if c == "(":
-                    depth = depth + 1
-                elif c == ")":
-                    depth = depth - 1
-                    if depth < 0:
-                        doprint = 1
-                elif depth == 0 and c not in " \t\r\n":
-                    doprint = 1
-        elif self.msglevel == msglevel.hidewarning:
-            doprint = 0
-            # the "\n" + msg instead of msg itself is needed, if
-            # the message starts with "! "
-            if string.find("\n" + msg, "\n! ") != -1 or string.find(msg, "\r! ") != -1:
-                doprint = 1
-        elif self.msglevel == msglevel.hideall:
-            doprint = 0
-        else:
-            assert 0, "msglevel unknown"
-
-        # print the message if needed
-        if doprint:
+        if line == "":
             print "Traceback (innermost last):"
             traceback.print_list(self.Stack)
             print "(La)TeX Message:"
             print msg
+            raise IOError
+        else:
+            # check if message can be ignored
+            if self.msglevel == msglevel.showall:
+                doprint = 0
+                for c in msg:
+                    if c not in string.whitespace:
+                        doprint = 1
+            elif self.msglevel == msglevel.hideload:
+                depth = 0
+                doprint = 0
+                for c in msg:
+                    if c == "(":
+                        depth = depth + 1
+                    elif c == ")":
+                        depth = depth - 1
+                        if depth < 0:
+                            doprint = 1
+                    elif depth == 0 and c not in " \t\r\n":
+                        doprint = 1
+            elif self.msglevel == msglevel.hidewarning:
+                doprint = 0
+                # the "\n" + msg instead of msg itself is needed, if
+                # the message starts with "! "
+                if string.find("\n" + msg, "\n! ") != -1 or string.find(msg, "\r! ") != -1:
+                    doprint = 1
+            elif self.msglevel == msglevel.hideall:
+                doprint = 0
+            else:
+                assert 0, "msglevel unknown"
+
+            # print the message if needed
+            if doprint:
+                print "Traceback (innermost last):"
+                traceback.print_list(self.Stack)
+                print "(La)TeX Message:"
+                print msg
 
 class DefCmd(TexCmd):
 
@@ -381,10 +405,17 @@ class InstanceList:
 
 class tex(InstanceList):
 
-    def __init__(self, type = mode.TeX, latexstyle = "10pt", latexclass = "article", latexclassopt = ""):
-        self.type = type
-        self.latexclass = latexclass
-        self.latexclassopt = latexclassopt
+    def __init__(self, *styleparams):
+        self.AllowedInstances(styleparams, [_mode, texfilename, latexstyle, docclass, docopt, ])
+        self.mode = self.ExtractInstance(styleparams, _mode, mode.TeX)
+        self.texfilename = self.ExtractInstance(styleparams, texfilename)
+        if self.mode == mode.TeX:
+            self.AllowedInstances(styleparams, [_mode, latexstyle, texfilename])
+            self.latexstyle = self.ExtractInstance(styleparams, latexstyle, latexstyle("10pt"))
+        else:
+            self.AllowedInstances(styleparams, [_mode, docclass, docopt, texfilename])
+            self.docclass = self.ExtractInstance(styleparams, docclass, docclass("article"))
+            self.docopt = self.ExtractInstance(styleparams, docopt)
         self.DefCmds = []
         self.DefCmdsStr = None
         self.BoxCmds = []
@@ -403,84 +434,127 @@ class tex(InstanceList):
         except IOError:
             self.Sizes = [ ]
 
-        if type == mode.TeX:
-            # TODO 7: error handling lts-file not found
-            # TODO 3: other ways for creating font sizes?
-            self.define(open("lts/" + latexstyle + ".lts", "r").read())
+        if self.mode == mode.TeX:
+            # TODO: other ways for creating font sizes?
+            LtsName = os.path.dirname(__file__) + os.sep + "lts" + os.sep + str(self.latexstyle) + ".lts"
+            self.define(open(LtsName, "r").read())
+        if self.mode == mode.LaTeX:
+            if self.docopt:
+                self.define("\\documentclass[" + str(self.docopt) + "]{" + str(self.docclass) + "}\n")
+            else:
+                self.define("\\documentclass{" + str(self.docclass) + "}\n")
+
 
     def GetStack(self):
-        try:
-            raise ZeroDivisionError
-        except ZeroDivisionError:
-            return traceback.extract_stack(sys.exc_info()[2].tb_frame.f_back.f_back)
+        return traceback.extract_stack(sys._getframe().f_back.f_back.f_back)
     
     def bbox(self, acanvas):
 	return canvas.bbox()
+
+    def execute(self, command):
+        if os.system(command):
+            print "The exit code of the following command was non-zero:"
+            print command
+            print "Usually, additional information causing this trouble appears closeby."
+            print "However, you may check the origin by keeping all temporary files."
+            print "In order to achieve this, you have to specify a texfilename in the"
+            print "constructor of the class pyx.tex. You can then try to run the command"
+            print "by yourself."
 
     def write(self, acanvas, file):
 
         'run LaTeX&dvips for TexCmds, report errors, return postscript string'
     
-        # TODO 7: improve file handling
-        #         Be sure to delete all temporary files (signal handling???)
-        #         and check for the files before reading them (including the
-        #         dvi before it is converted by dvips and the resulting ps)
+        # TODO: improve file handling (although it's quite usable now, those things can always be improved)
 
         WorkDir = os.getcwd()
-        MkTemp = tempfile.mktemp()
+        if self.texfilename:
+            MkTemp = str(self.texfilename)
+        else:
+            MkTemp = tempfile.mktemp()
         TempDir = os.path.dirname(MkTemp)
         TempName = os.path.basename(MkTemp)
-        os.chdir(TempDir)
+        try:
+            os.chdir(TempDir)
+        except:
+            pass
 
         texfile = open(TempName + ".tex", "w")
 
         texfile.write("\\nonstopmode\n")
-        if self.type == mode.LaTeX:
-            texfile.write("\\documentclass[" + self.latexclassopt + "]{" + self.latexclass + "}\n")
-        texfile.write("\\hsize0truein\n\\vsize0truein\n\\hoffset-1truein\n\\voffset-1truein\n")
-
         for Cmd in self.DefCmds:
             Cmd.write(acanvas, texfile)
 
+        texfile.write("\\hsize0truein\n\\vsize0truein\n\\hoffset-1truein\n\\voffset-1truein\n")
+
         texfile.write("\\newwrite\\sizefile\n\\newbox\\localbox\n\\newbox\\pagebox\n\\immediate\\openout\\sizefile=" + TempName + ".size\n")
-        if self.type == mode.LaTeX:
+        if self.mode == mode.LaTeX:
             texfile.write("\\begin{document}\n")
+
         texfile.write("\\setbox\\pagebox=\\vbox{%\n")
 
         for Cmd in self.BoxCmds:
             Cmd.write(acanvas, texfile)
 
         texfile.write("}\n\\immediate\\closeout\\sizefile\n\\shipout\\copy\\pagebox\n")
-        if self.type == mode.TeX:
+        if self.mode == mode.TeX:
             texfile.write("\\end\n")
 
-        if self.type == mode.LaTeX:
+        if self.mode == mode.LaTeX:
             texfile.write("\\end{document}\n")
         texfile.close()
 
-        if os.system(string.lower(self.type) + " " + TempName + ".tex > " + TempName + ".out 2> " + TempName + ".err"):
-            print "The " + self.type + " exit code was non-zero. This may happen due to mistakes within your\nLaTeX commands as listed below. Otherwise you have to check your local\nenvironment and the files \"" + TempName + ".tex\" and \"" + TempName + ".log\" manually."
+        self.execute(string.lower(str(self.mode)) + " " + TempName + ".tex > " + TempName + ".texout 2> " + TempName + ".texerr")
 
-        # TODO 7: what happens if *.out doesn't exists?
-        outfile = open(TempName + ".out", "r")
-        for Cmd in self.DefCmds + self.BoxCmds:
-            Cmd.CheckMarkerError(outfile)
-        outfile.close()
-        
-        # TODO 7: dvips error handling
-        #         interface for modification of the dvips command line
+        try:
+            outfile = open(TempName + ".texout", "r")
+            for Cmd in self.DefCmds + self.BoxCmds:
+                Cmd.CheckMarkerError(outfile)
+            outfile.close()
+        except IOError:
+            print "An unexpected error occured while reading the (La)TeX output."
+            print "May be, you just have no disk space available. Or something badly"
+            print "in your commands caused (La)TeX to give up completely. Or your"
+            print "(La)TeX installation might be broken at all."
+            print "You may try to check the origin by keeping all temporary files."
+            print "In order to achieve this, you have to specify a texfilename in the"
+            print "constructor of the class pyx.tex. You can then try to run (La)TeX"
+            print "by yourself."
 
-        if os.system("dvips -E -o " + TempName + ".eps " + TempName + ".dvi > /dev/null 2>&1"):
-            assert 0, "dvips exit code non-zero"
+        if not os.access(TempName + ".dvi", 0):
+            print "Can't find the dvi file which should be produced by (La)TeX."
+            print "May be, you just have no disk space available. Or something badly"
+            print "in your commands caused (La)TeX to give up completely. Or your"
+            print "(La)TeX installation might be broken at all."
+            print "You may try to check the origin by keeping all temporary files."
+            print "In order to achieve this, you have to specify a texfilename in the"
+            print "constructor of the class pyx.tex. You can then try to run (La)TeX"
+            print "by yourself."
 
-        canvas.epsfile(TempName + ".eps", translatebb = 0).write(acanvas, file)
+        else:
+            self.execute("dvips -E -o " + TempName + ".eps " + TempName + ".dvi > " + TempName + ".dvipsout 2> " + TempName + ".dvipserr")
+            try:
+                # TODO: the following line shouldn't raise asserts but should raise some exceptions!
+                canvas.epsfile(TempName + ".eps", translatebb = 0).write(acanvas, file)
+            except IOError:
+                print "Error reading the eps file which should be produced by dvips."
+                print "May be, you just have no disk space available. Or something badly"
+                print "in your commands caused dvips to give up completely. Or your"
+                print "(La)TeX installation might be broken at all."
+                print "You may try to check the origin by keeping all temporary files."
+                print "In order to achieve this, you have to specify a texfilename in the"
+                print "constructor of the class pyx.tex. You can then try to run dvips"
+                print "by yourself."
 
         # merge new sizes
         
         OldSizes = self.Sizes
 
-        NewSizeFile = open(TempName + ".size", "r")
-        NewSizes = NewSizeFile.readlines()
+        try:
+            NewSizeFile = open(TempName + ".size", "r")
+            NewSizes = NewSizeFile.readlines()
+        except IOError:
+            NewSizes = []
 
         if (len(NewSizes) != 0) or (len(OldSizes) != 0):
             SizeFile = open(self.SizeFileName, "w")
@@ -495,13 +569,12 @@ class tex(InstanceList):
                     if time.time() < float(OldSizeSplit[2]) + 60*60*24:   # we keep size results for one day
                         SizeFile.write(OldSize)
 
-        os.unlink(TempName + ".tex")
-        os.unlink(TempName + ".log")
-        os.unlink(TempName + ".dvi")
-        os.unlink(TempName + ".eps")
-        os.unlink(TempName + ".out")
-        os.unlink(TempName + ".err")
-        os.unlink(TempName + ".size")
+        if not self.texfilename:
+            for suffix in ("tex", "log", "aux", "size", "dvi", "eps", "texout", "texerr", "dvipsout", "dvipserr", ):
+                try:
+                    os.unlink(TempName + "." + suffix)
+                except:
+                    pass
         
         os.chdir(WorkDir)
        

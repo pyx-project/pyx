@@ -20,14 +20,14 @@ class ParseStr:
     def NextNonWhiteSpace(self, i = None):
         if i == None:
             i = self.Pos
-        while (self.StrToParse[i] in string.whitespace):
+        while self.StrToParse[i] in string.whitespace:
             i = i + 1
         return i
 
     def MatchStr(self, Str):
         try:
             i = self.NextNonWhiteSpace()
-            if (self.StrToParse[i: i + len(Str)] == Str):
+            if self.StrToParse[i: i + len(Str)] == Str:
                 self.Pos = i + len(Str)
                 return Str
         except IndexError:
@@ -36,10 +36,10 @@ class ParseStr:
     def MatchStrParenthesis(self, Str):
         try:
             i = self.NextNonWhiteSpace()
-            if (self.StrToParse[i: i + len(Str)] == Str):
+            if self.StrToParse[i: i + len(Str)] == Str:
                 i = i + len(Str)
                 i = self.NextNonWhiteSpace(i)
-                if (self.StrToParse[i: i + 1] == "("):
+                if self.StrToParse[i: i + 1] == "(":
                     self.Pos = i + 1
                     return Str
         except IndexError:
