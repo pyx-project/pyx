@@ -431,10 +431,9 @@ class favorautolinpart(autolinpart):
                    (frac(360, 1), frac( 90, 1)),
                    (frac(360, 1), frac(180, 1)))
     # favouring some fixed fracs, e.g. partitioning of an axis in degree
-    def __init__(self, fixfracs, fixfavor = 2, **args):
+    def __init__(self, fixfracs, **args):
         sfpart.__init__(self, **args)
         self.fixfracs = fixfracs
-        self.fixfavor = fixfavor
 
 
 class timepart:
@@ -759,6 +758,11 @@ class textbox(_rectbox, attrlist.attrlist):
 
 class axispainter:
 
+    fractypeauto = 1
+    fractypedec = 2
+    fractypeexp = 3
+    fractyperat = 4
+
     def __init__(self, innerticklength="0.2 cm",
                        outerticklength="0 cm",
                        tickstyles=(),
@@ -767,7 +771,16 @@ class axispainter:
                        gridstyles=canvas.linestyle.dotted,
                        labeldist="0.3 cm",
                        labelstyles=((), (tex.fontsize.footnotesize,)),
-                       titledist="0.3 cm"):
+                       labelhequalize=0,
+                       labelvequalize=1,
+                       titledist="0.3 cm",
+                       fractype=fractypeauto,
+                       decfracpoint=".",
+                       expfractimes="\cdot",
+                       expfracpre1=0,
+                       expfracminexp=4,
+                       presuf0=0,
+                       presuf1=0):
         self.innerticklength_str = innerticklength
         self.outerticklength_str = outerticklength
         self.tickstyles = tickstyles
@@ -776,7 +789,16 @@ class axispainter:
         self.gridstyles = gridstyles
         self.labeldist_str = labeldist
         self.labelstyles = labelstyles
+        self.labelhequalize = labelhequalize
+        self.labelvequalize = labelvequalize
         self.titledist_str = titledist
+        self.fractype = fractype
+        self.decfracpoint = decfracpoint
+        self.expfractimes = expfractimes
+        self.expfracpre1 = expfracpre1
+        self.expfracminexp = expfracminexp
+        self.presuf0 = presuf0
+        self.presuf1 = presuf1
 
     def gcd(self, m, n):
         # calculate greates common divisor
@@ -795,8 +817,7 @@ class axispainter:
         strfrac = str(frac)
         rest = m % n
         if rest:
-            #TODO: xxx.decimalpoint
-            strfrac += "."
+            strfrac += self.decfracpoint
         oldrest = []
         while (rest):
             if rest in oldrest:
@@ -809,6 +830,22 @@ class axispainter:
             strfrac += str(frac)
         return strfrac
 
+    def expfrac(self, m, n, minexp = None):
+        exp = 0
+        while divmod(m, n)[0] > 9:
+            n *= 10
+            exp += 1
+        while divmod(m, n)[0] < 1:
+            m *= 10
+            exp -= 1
+        if minexp is not None and ((exp < 0 and -exp < minexp) or (exp >= 0 and exp < minexp)):
+            return None
+        prefactor = self.decfrac(m, n)
+        if prefactor == "1" and not self.expfracpre1:
+            return r"10^{%i}" % exp
+        else:
+            return prefactor + r"%s10^{%i}" % (self.expfractimes, exp)
+
     def ratfrac(self, m, n):
         gcd = self.gcd(m, n)
         (m, dummy1), (n, dummy2) = divmod(m, gcd), divmod(n, gcd)
@@ -817,26 +854,6 @@ class axispainter:
         else:
             frac = str(m)
         return frac
-
-    def expfrac(self, m, n):
-        if m == 0:
-            return "0"
-        exp = 0
-        while divmod(m, n)[0] > 9:
-            n *= 10
-            exp += 1
-        while divmod(m, n)[0] < 1:
-            m *= 10
-            exp -= 1
-        prefactor = self.decfrac(m, n)
-        if exp: #TODO: and xxx.noexp0
-            if prefactor == "1":
-                return r"10^{%i}" % exp
-            else:
-                #TODO: xxx.times
-                return prefactor + r"\cdot10^{%i}" % exp
-        else:
-            return prefactor
 
     def selectstyle(self, number, styles):
         if type(styles) not in (types.TupleType, types.ListType):
@@ -857,7 +874,7 @@ class axispainter:
 
         haslabel = 0
         for tick in axis.ticks:
-            tick.virtual = axis.convert(float(tick))
+            tick.virtual = axis.convert(float(tick) * axis.factor)
             tick.x, tick.y = axis.tickpoint(axis, tick.virtual)
             tick.dx, tick.dy = axis.tickdirection(axis, tick.virtual)
             if tick.labellevel is not None:
@@ -868,11 +885,29 @@ class axispainter:
             for tick in axis.ticks:
                 if tick.labellevel is not None:
                     if not hasattr(tick, "text"):
-                        #TODO: if xxx.whichtype: ...
-                        #tick.text = self.decfrac(tick.enum, tick.denom)
-                        #tick.text = self.ratfrac(tick.enum, tick.denom)
-                        tick.text = self.expfrac(tick.enum, tick.denom)
-                        #tick.text = "abcdefghijklmnopqrstuvwxyz"
+                        if self.fractype == axispainter.fractypeauto:
+                            if axis.prefix is not None or axis.suffix is not None:
+                                tick.text = self.ratfrac(tick.enum, tick.denom)
+                            else:
+                                tick.text = self.expfrac(tick.enum, tick.denom, self.expfracminexp)
+                                if tick.text is None:
+                                    tick.text = self.decfrac(tick.enum, tick.denom)
+                        elif self.fractype == axispainter.fractypedec:
+                            tick.text = self.decfrac(tick.enum, tick.denom)
+                        elif self.fractype == axispainter.fractypeexp:
+                            tick.text = self.expfrac(tick.enum, tick.denom)
+                        elif self.fractype == axispainter.fractyperat:
+                            tick.text = self.ratfrac(tick.enum, tick.denom)
+                        else:
+                            raise ValueError("fractype invalid")
+                        if self.presuf0 or tick.enum:
+                            if tick.enum == tick.denom and (axis.prefix is not None or
+                                                            axis.suffix is not None) and not self.presuf1:
+                                tick.text = ""
+                            if axis.prefix is not None:
+                                tick.text = axis.prefix + tick.text
+                            if axis.suffix is not None:
+                                tick.text = tick.text + axis.suffix
                     tick.labelstyles = [tex.style.math] + self.selectstyle(tick.labellevel, self.labelstyles)
                     tick.textbox = textbox(graph.tex, tick.text, textstyles = tick.labelstyles)
 
@@ -892,18 +927,17 @@ class axispainter:
                         if maxdp < tick.textbox.dp: maxdp = tick.textbox.dp
                 for tick in axis.ticks:
                     if tick.labellevel is not None:
-                        pass
-                        #TODO: if xxx.vequalize
-                        #tick.textbox.manualextents(ht = maxht, dp = maxdp)
-                        #TODO: if xxx.hequalize
-                        #tick.textbox.manualextents(wd = maxwd)
+                        if self.labelhequalize:
+                            tick.textbox.manualextents(wd = maxwd)
+                        if self.labelvequalize:
+                            tick.textbox.manualextents(ht = maxht, dp = maxdp)
 
             for tick in axis.ticks:
                 if tick.labellevel is not None:
                     tick.textbox._linealign(labeldist, tick.dx, tick.dy)
                     tick.extent = tick.textbox.extent(tick.dx, tick.dy) + labeldist
 
-        # we could now measure distances between labels rectboxes -> TODO: rating
+        # we could now measure distances between textboxes -> TODO: rating
 
         axis.extent = 0
         for tick in axis.ticks:
@@ -968,7 +1002,8 @@ class linkaxispainter(axispainter):
 class _axis:
 
     def __init__(self, min=None, max=None, reverse=0,
-                       title=None, titlestyles=(), painter = axispainter()):
+                       title=None, titlestyles=(), painter = axispainter(),
+                       factor = 1, prefix = None, suffix = None):
         self.fixmin = min is not None
         self.fixmax = max is not None
         self.min = min
@@ -977,6 +1012,9 @@ class _axis:
         self.title = title
         self.titlestyles = titlestyles
         self.painter = painter
+        self.factor = factor
+        self.prefix = prefix
+        self.suffix = suffix
         self.setrange()
 
     def setrange(self, min=None, max=None):
@@ -1126,7 +1164,7 @@ class graphxy(canvas.canvas):
                 axis.part
             except AttributeError:
                 continue
-            axis.parts = axis.part.getparts(axis.min, axis.max) # TODO: make use of pinch
+            axis.parts = axis.part.getparts(axis.min / axis.factor, axis.max / axis.factor) # TODO: make use of pinch
             if len(axis.parts) > 1:
                 axis.partnum = 0
                 axis.rates = []
@@ -1143,8 +1181,8 @@ class graphxy(canvas.canvas):
 
             # TODO: Additional ratings (spacing of text etc.)
             axis.ticks = axis.parts[axis.partnum]
-            axis.setrange(min=float(axis.ticks[0]),
-                          max=float(axis.ticks[-1]))
+            axis.setrange(min=float(axis.ticks[0])*axis.factor,
+                          max=float(axis.ticks[-1])*axis.factor)
 
         self.xmap = _linmap().setbasepts(((0, self.xpos), (1, self.xpos + self.width)))
         self.ymap = _linmap().setbasepts(((0, self.ypos), (1, self.ypos + self.height)))
