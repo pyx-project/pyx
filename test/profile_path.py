@@ -17,7 +17,7 @@ def testspeed():
         p.append(lineto("%d pt" % i, "%d pt" % i))
 
     c.stroke(p)
-    c.writetofile("testspeed")
+    c.writeEPSfile("testspeed")
 
 def testspeed2():
     "coordinates in user units"
@@ -29,7 +29,7 @@ def testspeed2():
         p.append(lineto(i,i))
 
     c.stroke(p)
-    c.writetofile("testspeed")
+    c.writeEPSfile("testspeed")
 
 def testspeed3():
     "coordinates in pts (internal routines)"
@@ -41,7 +41,7 @@ def testspeed3():
         p.append(pyx.path.lineto_pt(i, i))
 
     c.stroke(p)
-    c.writetofile("testspeed")
+    c.writeEPSfile("testspeed")
 
 def testspeedintersect():
     p=path(moveto(10,10), curveto(12,16,14,15,12,19))
