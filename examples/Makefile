@@ -35,7 +35,7 @@ html: $(htmlfiles) $(pngfiles)
 	export PYTHONPATH=$(PWD)/.. ; cd $(dir $^) ; python $(notdir $^)
 
 %.py.html: %.py
-	sh -c "py2html $^"
+	sh -c "py2html -format:rawhtml $^"
 
 %.eps.png: %.eps
 	@# -dEPSCrop needs gs version >= 8.0
