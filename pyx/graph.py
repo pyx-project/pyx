@@ -1358,7 +1358,6 @@ class axispainter(axistitlepainter):
                         self.createtext(tick)
                     if self.labeldirection is not None:
                         tick.labelattrs += [trafo.rotate(self.reldirection(self.labeldirection, tick.dx, tick.dy))]
-                    tick.textbox = textmodule._text(tick.x, tick.y, tick.label, *tick.labelattrs)
         if self.decfracequal:
             maxdecfraclength = max([tick.decfraclength for tick in axis.ticks if tick.labellevel is not None and
                                                                                  tick.labelattrs is not None and
@@ -1370,7 +1369,7 @@ class axispainter(axistitlepainter):
                     tick.label = self.decfrac(tick, maxdecfraclength)
         for tick in axis.ticks:
             if tick.labellevel is not None and tick.labelattrs is not None:
-                tick.textbox = textmodule._text(tick.x, tick.y, tick.label, *tick.labelattrs)
+                tick.textbox = graph.texrunner._text(tick.x, tick.y, tick.label, *tick.labelattrs)
         if len(axis.ticks) > 1:
             equaldirection = 1
             for tick in axis.ticks[1:]:
@@ -1584,11 +1583,11 @@ class baraxispainter(axistitlepainter):
                 if self.namedirection is not None:
                     nameattrs += [trafo.rotate(self.reldirection(self.namedirection, dx, dy))]
                 if axis.texts.has_key(name):
-                    axis.nameboxes.append(textmodule._text(x, y, str(axis.texts[name]), *nameattrs))
+                    axis.nameboxes.append(graph.texrunner._text(x, y, str(axis.texts[name]), *nameattrs))
                 elif axis.texts.has_key(str(name)):
-                    axis.nameboxes.append(textmodule._text(x, y, str(axis.texts[str(name)]), *nameattrs))
+                    axis.nameboxes.append(graph.texrunner._text(x, y, str(axis.texts[str(name)]), *nameattrs))
                 else:
-                    axis.nameboxes.append(textmodule._text(x, y, str(name), *nameattrs))
+                    axis.nameboxes.append(graph.texrunner._text(x, y, str(name), *nameattrs))
         labeldist = axis.layoutdata._extent + unit.topt(unit.length(self.namedist_str, default_type="v"))
         if len(axis.namepos) > 1:
             equaldirection = 1

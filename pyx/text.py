@@ -1108,7 +1108,7 @@ class _Itexsetting:
     - higher id's will be applied first (most inside)"""
 
     exclusive = 0
-    """marks complementary effect of the setting
+    """marks exclusive effect of the setting
     - when set, settings with this id exclude each other
     - when unset, settings with this id do not exclude each other"""
 
@@ -1604,7 +1604,7 @@ class texrunner:
             if self.mode == "pdftex" or self.mode == "pdflatex":
                 self.execute("\\pdfoutput=1%\n"
                              "\\def\\marker#1{%\n"
-                             #"\\pdfsavepos%\n"
+                             "\\pdfsavepos%\n" # needs a modified pdf(La)TeX version!
                              "\\write16{PyXMarker:name=#1,"
                                                  "xpos=\\the\\pdflastxpos,"
                                                  "ypos=\\the\\pdflastypos:}%\n"
