@@ -369,7 +369,7 @@ class graphxy(canvas.canvas):
                     self.axes[key] = axis.anchoredaxis(axis.linear(), key)
                     self.axes[okey] = axis.linkedaxis(self.axes[key], okey)
                 else:
-                    self.axes[key] = axis.linkedaxis(self.axes[keyo], key)
+                    self.axes[key] = axis.linkedaxis(self.axes[okey], key)
             elif not axes.has_key(okey) and axisat is None:
                 self.axes[okey] = axis.linkedaxis(self.axes[key], okey)
 
