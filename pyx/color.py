@@ -29,9 +29,9 @@ class color(base.PathStyle):
     pass
 
 
-class gray(color):
+class grey(color):
 
-    """gray tones"""
+    """grey tones"""
 
     def __init__(self, gray):
         if gray<0 or gray>1: raise ValueError
@@ -40,8 +40,9 @@ class gray(color):
     def write(self, file):
         file.write("%(gray)f setgray\n" % self.color)
 
-gray.black = gray(0.0)
-gray.white = gray(1.0)
+grey.black = grey(0.0)
+grey.white = grey(1.0)
+gray = grey
 
 
 class rgb(color):
@@ -150,6 +151,7 @@ cmyk.Sepia          = cmyk(0, 0.83, 1, 0.70)
 cmyk.Brown          = cmyk(0, 0.81, 1, 0.60)
 cmyk.Tan            = cmyk(0.14, 0.42, 0.56, 0)
 cmyk.Gray           = cmyk(0, 0, 0, 0.50)
+cmyk.Grey           = cmyk.Gray
 cmyk.Black          = cmyk(0, 0, 0, 1)
 cmyk.White          = cmyk(0, 0, 0, 0)
 
@@ -174,7 +176,9 @@ class gradient:
 
 
 gradient.Gray           = gradient(gray.white, gray.black)
+gradient.Grey           = gradient.Gray
 gradient.ReverseGray    = gradient(gray.black, gray.white)
+gradient.ReverseGrey    = gradient.ReverseGray
 gradient.RedGreen       = gradient(rgb.red, rgb.green)
 gradient.RedBlue        = gradient(rgb.red, rgb.blue)
 gradient.GreenRed       = gradient(rgb.green, rgb.red)
