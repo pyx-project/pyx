@@ -13,7 +13,7 @@ g = graph.graphxy(width=8, x2=None, y2=None,
                   y=graph.axis.linear(title="$y$", parter=None, painter=p))
 d = g.plot(graph.data.function("y=(x-3)*(x-5)*(x-7)"))
 g.finish()
-p = d.styledata.path # the path is available after the graph is finished
+p = d.path # the path is available after the graph is finished
 
 pa = g.xgridpath(a)
 pb = g.xgridpath(b)
