@@ -11,6 +11,8 @@ PyX
     - exceptions in drawsymbol & friends...
     - 3d graphs, circular graphs
     - dense -> density
+    - symbols + lines -> symbollines (??). Symbols should not allow setting lineattrs, and
+      lines not symbolattrs
   - canvas module:
     - default patterns
     - stroke and fill should support trafos
@@ -20,6 +22,10 @@ PyX
     - further improve lfs handling
   - tex module:
     - copy lfs handling from text module (share the same source???)
+
+  enhancements:
+  - box module:
+    - multiple radii (up to two per point) and softnesses
 
   bugfixes:
   - text module:
