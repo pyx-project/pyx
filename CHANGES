@@ -7,6 +7,7 @@ PyX
   - fix canvas transformations
   - 3d graphs (work in progress)
   - new transformation: slant
+  - bugfix in textbox alignment (graph module)
 
 0.1.1 (????/??/??):
   - transformation bug fixed (#624068)

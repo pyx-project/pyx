@@ -773,10 +773,10 @@ class _alignbox:
         return self._alignvector(a, dx, dy, self._linealignlinevector, self._linealignpointvector)
 
     def circlealignvector(self, a, dx, dy):
-        return unit.t_pt(self._circlealignvector(unit.topt(a), dx, dy))
+        return map(unit.t_pt, self._circlealignvector(unit.topt(a), dx, dy))
 
     def linealignvector(self, a, dx, dy):
-        return unit.t_pt(self._linealignvector(unit.topt(a), dx, dy))
+        return map(unit.t_pt, self._linealignvector(unit.topt(a), dx, dy))
 
     def _circlealign(self, *args):
         self.transform(trafo._translation(*self._circlealignvector(*args)))
@@ -787,11 +787,11 @@ class _alignbox:
         return self
 
     def circlealign(self, *args):
-        self.transform(trafo._translation(*self.circlealignvector(*args)))
+        self.transform(trafo.translation(*self.circlealignvector(*args)))
         return self
 
     def linealign(self, *args):
-        self.transform(trafo._translation(*self.linealignvector(*args)))
+        self.transform(trafo.translation(*self.linealignvector(*args)))
         return self
 
     def _extent(self, dx, dy):
