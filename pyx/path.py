@@ -206,7 +206,7 @@ class bcurve_pt:
                                        (self.y3-self.y0)*(self.y3-self.y0)))
         else:
             (a, b) = self.MidPointSplit()
-            return a.arclength()+b.arclength()
+            return a.arclength(epsilon) + b.arclength(epsilon)
 
     def seglengths(self, paraminterval, epsilon=1e-5):
         """returns the list of segment line lengths (in pts) of the bpathel
@@ -248,15 +248,15 @@ class bcurve_pt:
                 lindex = bisect.bisect_left(cumlengths, length)
             except: # workaround for python 2.0
                 lindex = bisect.bisect(cumlengths, length)
-                if lindex:
+                while lindex and cumlengths[lindex] >= length:
                     lindex -= 1
             if lindex==0:
-                t = 1.0 * length / cumlengths[0]
+                t = length * 1.0 / cumlengths[0]
                 t *= parlengths[0]
-            if lindex>=l-2:
+            elif lindex>=l-2:
                 t = 1
             else:
-                t = 1.0 * (length - cumlengths[lindex]) / (cumlengths[lindex+1] - cumlengths[lindex])
+                t = (length - cumlengths[lindex]) * 1.0 / (cumlengths[lindex+1] - cumlengths[lindex])
                 t *= parlengths[lindex+1]
                 for i in range(lindex+1):
                     t += parlengths[i]
