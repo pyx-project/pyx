@@ -2,7 +2,6 @@
 
 from const import *
 import string
-import regex
 
 linecap_butt   = 0
 linecap_round  = 1
@@ -121,10 +120,9 @@ class canvas:
 	except:
 	    assert "cannot open EPS file"	# TODO: Fehlerbehandlung
 
-#        import regex
+        import re
 
-	bbpattern = regex.compile(
-	     "^%%BoundingBox:[\t ]+\([0-9]+\)[\t ]+\([0-9]+\)[\t ]+\([0-9]+\)[\t ]+\([0-9]+\)[\t ]*$")
+	bbpattern = re.compile( r"^%%BoundingBox:\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s*$" )
 
 	while 1:
 	    line=epsfile.readline()
@@ -135,11 +133,10 @@ class canvas:
 		# TODO: BoundingBox-Deklaration kann auch an Ende von Datei verschoben worden sein
 	        assert "bounding box not found in EPS file"
 		raise IOError			# TODO: Fehlerbehandlung
-	    if bbpattern.match(line)>0:
-	        (llx, lly, urx, ury) = map(eval,(bbpattern.group(1), 
-		                                 bbpattern.group(2), 
-						 bbpattern.group(3), 
-						 bbpattern.group(4)))
+		
+            bbmatch = bbpattern.match(line)
+	    if bbmatch is not None:
+	        (llx, lly, urx, ury) = map(int, bbmatch.groups())		# conversion strings->int
 		break
         epsfile.close()
 	return (llx, lly, urx, ury)
