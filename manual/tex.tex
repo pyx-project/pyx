@@ -1,4 +1,5 @@
 \section{\TeX/\LaTeX{} interface}
+\subsection{Methods}
 \label{tex}
 Text in \PyX{} is created by \TeX{} or \LaTeX. From the technical point
 of view, the text is inserted as an eps-file. This epsfile is generated
@@ -14,11 +15,11 @@ listed in the following table:
 \begin{tabularx}{\linewidth}{ll>{\raggedright\arraybackslash}X}
 method&task&attributes\\
 \hline
-\texttt{text(x, y, cmd, *style)}&perform text output&\texttt{style, fontsize, halign, valign, direction, color, msghandler}\\
-\texttt{define(cmd, *style)}&macro definitions&\texttt{msghandler}\\
-\texttt{textwd(cmd, *style)}&get text width&\texttt{style, fontsize, msghandler}\\
-\texttt{textht(cmd, *style)}&get text height&\texttt{style, fontsize, valign, msghandler}\\
-\texttt{textdp(cmd, *style)}&get text depth&\texttt{style, fontsize, valign, msghandler}\\
+\texttt{text(x, y, cmd, *style)}&text output&\texttt{style, fontsize, halign, valign, direction, color, msghandler(s)}\\
+\texttt{define(cmd, *style)}&macro definitions&\texttt{msghandler(s)}\\
+\texttt{textwd(cmd, *style)}&get text width&\texttt{style, fontsize, missextent, msghandler(s)}\\
+\texttt{textht(cmd, *style)}&get text height&\texttt{style, fontsize, valign, missextent, msghandler(s)}\\
+\texttt{textdp(cmd, *style)}&get text depth&\texttt{style, fontsize, valign, missextent, msghandler(s)}\\
 \end{tabularx}
 \bigskip
 
@@ -28,10 +29,12 @@ There are some common rules:
 \LaTeX{} the definitions are processed before the \verb|\begin{document}|
 statement. You may use \verb|\AtBeginDocument{...}| to postpone definitions.
 \item The extent routines \verb|textwd|, \verb|textht|, and
-\verb|textdp| return true \PyX{} length (see section~\ref{length})
-and return zero at the first time of requesting the extent. The
-evaluation takes place when performing a write. Therefore you have to
-run your file twice at first to get the correct value.
+\verb|textdp| return true \PyX{} length (see section~\ref{length}).
+Usually, the evaluation takes place when performing a write. Therefore
+you have to run your file twice at first to get the correct value,
+which are stored in a file named \verb|.size|. However, when a extent
+is requested, which is not available, this default behavior can be
+changed (see \verb|missextent| attribute description).
 \item Commands are done in the order they are called with one exception:
 if the same text output is requested more then once (calculating extents
 of the command included), all requests are performed at the position of
@@ -39,12 +42,14 @@ the first occurrence.
 \item All text is inserted into the \verb|canvas| at the position, where
 the \verb|tex|- or \verb|latex|-instance itself is inserted into the
 \verb|canvas|.
+\item The tailing \verb|*style| parameter in all the commands stands
+for a list of attribute parameters listed in the last column.
+Attribute parameters are instances of classes discussed in detail in
+the following section.
+\item There can be several \verb|msghandler|'s which will be applied
+sequentially.
 \end{itemize}
 
-The tailing \verb|*style| parameter in all the commands stands for a
-list of attribute parameters listed in the last column. Attribute
-parameters are instances of classes discussed in detail in the following
-section.
 
 \subsection{Attributes}
 \begin{description}
@@ -76,6 +81,21 @@ or \verb|rvertical|. Additionally, any angle \verb|angle| (in degree) is
 allowed in \verb|tex.direction(angle)|.
 \item[\texttt{color:}] stands for any \PyX{} color (see
 section~\ref{color}), default is \verb|color.grey.black|
+\item[\texttt{missextent:}] provides a routine, which is called when a
+requested extent is not yet available. In the following table a list
+of choises for this parameter is described:
+
+\bigskip
+\begin{tabularx}{\linewidth}{l>{\raggedright\arraybackslash}X}
+missextent&description\\
+\hline
+\texttt{missextent.returnzero}&returns zero (default)\\
+\texttt{missextent.raiseerror}&raise \texttt{TexMissExtentError}\\
+\texttt{missextent.createextent}&run \TeX{} or \LaTeX{} immediately to
+get the requested size\\
+\texttt{missextent.createallextent}&run \TeX{} or \LaTeX{} immediately
+to get the hight, width, and depth of the given text at once\\
+\end{tabularx}
 \item[\texttt{msghandler:}] provides a filter for \TeX{} and \LaTeX{}
 messages and defines, which messages are hidden. In the following table
 the predefined message handlers are described:
@@ -98,20 +118,20 @@ with \texttt{(Font)}.\\
 \texttt{msghandler.hidebuterror}&Hides messages except those
 with a line which starts with ``\texttt{! }''.\\
 \texttt{msghandler.hideall}&hides all messages\\
-\texttt{msghandler.combine(*list)}&combines msghandlers in
-\texttt{*list} by applying them sequentially\\
 \end{tabularx}
 \end{description}
 
 \subsection{Constructors}
-The constructors of class \verb|tex.tex| and \verb|tex.latex| can have some
-named parameters listed in the following table:
+%The constructors of class \verb|tex.tex| and \verb|tex.latex| can have some
+%named parameters listed in the following table:
 
 \bigskip
 \begin{tabularx}{\linewidth}{ll>{\raggedright\arraybackslash}X}
 common parameters&default&description\\
 \hline
 \texttt{defaultmsghandler}&\texttt{msghandler.hideload}&default message handler\\
+\texttt{defaultmissextent}&\texttt{missextent.returnzero}&default
+miss-extent handler\\
 \texttt{texfilename}&\texttt{None}&Filename used for running tex. If
 \texttt{None}, a temporary name is used and the files are removed automatically.\\
 \hline

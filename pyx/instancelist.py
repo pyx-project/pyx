@@ -25,7 +25,7 @@ class InstanceList:
             if isinstance(Instance, Class):
                 Result = Result + [ Instance, ]
         if len(Result) == 0:
-            return DefaultInstance
+            return DefaultInstances
         else:
             return Result
 

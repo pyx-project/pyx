@@ -5,10 +5,11 @@ from pyx import *
 
 c=canvas.canvas()
 t=c.insert(tex.tex())
+t.text(0, 0, "Hello, world, 2!")
 t.text(0, 0, "Hello, world!")
 print "width:", t.textwd("Hello, world!")
 print "height:", t.textht("Hello, world!")
-print "depth:", t.textdp("Hello, world!")
+print "depth:", t.textdp("Hello, world!", tex.missextent.createallextent)
 t.text(0, -0.5, "Hello, world!", tex.fontsize.large)
 t.text(0, -1.5,
        r"\sum_{n=1}^{\infty} {1\over{n^2}} = {{\pi^2}\over 6}",

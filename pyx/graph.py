@@ -24,7 +24,7 @@
 
 
 import types, re, math
-import base, bbox, canvas, path, tex, unit
+import bbox, canvas, path, tex, unit
 from math import log, exp, sqrt, pow
 
 
@@ -609,9 +609,9 @@ class logaxis(_axis, _logmap):
 
 class _PlotData:
 
-    def __init__(self, Data, PlotStyle):
-        self.Data = Data
-        self.PlotStyle = PlotStyle
+    def __init__(self, data, style):
+        self.data = data
+        self.style = style
 
 
 _XPattern = re.compile(r"x([2-9]|[1-9][0-9]+)?$")
@@ -620,11 +620,12 @@ _DXPattern = re.compile(r"dx([2-9]|[1-9][0-9]+)?$")
 _DYPattern = re.compile(r"dy([2-9]|[1-9][0-9]+)?$")
 
 
-class graphxy(base.PSCmd):
+class graphxy(canvas.canvas):
 
     plotdata = [ ]
 
     def __init__(self, tex, xpos, ypos, width=None, height=None, ratio=goldenrule, **axes):
+        canvas.canvas.__init__(self)
         self.tex = tex
         self.xpos = unit.topt(xpos)
         self.ypos = unit.topt(ypos)
@@ -641,8 +642,11 @@ class graphxy(base.PSCmd):
         if "y" not in axes.keys():
             axes["y"] = linaxis()
         self.axes = axes
+        self._drawstate = self.drawlayout
 
     def plot(self, Data, PlotStyle = None):
+        if self._drawstate != self.drawlayout:
+            raise PyxGraphDrawstateError
         if not PlotStyle:
             PlotStyle = Data.DefaultPlotStyle
         self.plotdata.append(_PlotData(Data, PlotStyle))
@@ -650,12 +654,23 @@ class graphxy(base.PSCmd):
     def bbox(self):
         return bbox.bbox(self.xpos, self.ypos, self.xpos + self.width, self.ypos + self.height)
     
-    def write(self, file):
+    def drawlayout(self):
+        if self._drawstate != self.drawlayout:
+            raise PyxGraphDrawstateError
+        ProvidedRanges = []
+        for pd in self.plotdata:
+            for key in pd.data.ProvideRanges():
+                if key not in ProvidedRanges:
+                    ProvidedRanges.append(key)
+        print ProvidedRanges
+        # providerange
+        # forcegeneraterange
+        # generaterange
         for key in self.axes.keys():
             ranges = []
             for pd in self.plotdata:
                 try:
-                    ranges.append(pd.Data.GetRange(key))
+                    ranges.append(pd.data.GetRange(key))
                 except DataRangeUndefinedException:
                     pass
             if len(ranges) == 0:
@@ -664,7 +679,7 @@ class graphxy(base.PSCmd):
                                     max(map (lambda x: x[1], ranges)))
 
         for pd in self.plotdata:
-            pd.Data.SetAxis(self.axes)
+            pd.data.SetAxis(self.axes)
 
         for key, axis in self.axes.items():
             axis.parts = axis.part.getparts(axis.min, axis.max)
@@ -674,8 +689,11 @@ class graphxy(base.PSCmd):
                 if axis.bestratepart.rate > ratepart.rate:
                     axis.bestratepart = ratepart
             axis.setrange(float(axis.bestratepart.part[0]), float(axis.bestratepart.part[-1]))
+        self._drawstate = self.drawbackground
 
-        # this should be done after axis-size calculation
+    def drawbackground(self):
+        if self._drawstate != self.drawbackground:
+            raise PyxGraphDrawstateError
         self.left = unit.topt(1)
         self.buttom = unit.topt(1)
         self.top = 0
@@ -684,28 +702,29 @@ class graphxy(base.PSCmd):
                                           (1, self.xpos + self.width - self.right)))
         self.ymap = _linmap().setbasepts(((0, self.ypos + self.buttom),
                                           (1, self.ypos + self.height - self.top)))
-        print self.xpos, self.ypos, self.width, self.height
+        self._drawstate = self.drawaxes
 
-        canvas._newpath().write(file)
-        path._rect(self.xmap.convert(0),
-                   self.ymap.convert(0),
-                   self.xmap.convert(1) - self.xmap.convert(0),
-                   self.ymap.convert(1) - self.ymap.convert(0)).write(file)
-        canvas._stroke().write(file)
+    def drawaxes(self):
+        if self._drawstate != self.drawaxes:
+            raise PyxGraphDrawstateError
+        self.draw(path._rect(self.xmap.convert(0),
+                             self.ymap.convert(0),
+                             self.xmap.convert(1) - self.xmap.convert(0),
+                             self.ymap.convert(1) - self.ymap.convert(0)))
 
         for key, axis in self.axes.items():
             if _XPattern.match(key):
                 for tick in axis.bestratepart.part:
                     x = self.xmap.convert(axis.convert(float(tick)))
                     if tick.ticklevel is not None:
-                        path._line(x, self.ymap.convert(0),
-                                   x, self.ymap.convert(0)+10).write(file)
+                        self.draw(path._line(x, self.ymap.convert(0),
+                                             x, self.ymap.convert(0)+10))
             elif _YPattern.match(key):
                 for tick in axis.bestratepart.part:
                     y = self.ymap.convert(axis.convert(float(tick)))
                     if tick.ticklevel is not None:
-                        path._line(self.xmap.convert(0), y,
-                                   self.xmap.convert(0)+10, y).write(file)
+                        self.draw(path._line(self.xmap.convert(0), y,
+                                             self.xmap.convert(0)+10, y))
             else:
                 assert 0, "Axis key %s not allowed" % key
             #for tick in axis.bestratepart.part:
@@ -724,9 +743,19 @@ class graphxy(base.PSCmd):
             #                                    # + ticklength.normal.increment(-tick.TickLevel), x))
             #    #    if tick.LabelLevel == 0:
             #    #        self.tex._text(self.VirMap[0].convert(0)-10, x, l, tex.halign.right)
+        self._drawstate = self.drawdata
 
+    def drawdata(self):
+        if self._drawstate != self.drawdata:
+            raise PyxGraphDrawstateError
         #for pd in self.plotdata:
         #    pd.PlotStyle.LoopOverPoints(self, pd.Data)
+        self._drawstate = None
+
+    def write(self, file):
+        while self._drawstate is not None:
+            self._drawstate()
+        canvas.canvas.write(self, file)
 
 #    def VirToPos(self, Type, List):
 #        return self.VirMap[Type].convert(List)
@@ -866,6 +895,9 @@ class data:
     def __init__(self, datafile, **columns):
         self.datafile = datafile
         self.columns = columns
+
+    def ProvideRanges(self):
+        return self.columns.keys()
 
     def GetName(self):
         return self.datafile.name

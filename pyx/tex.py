@@ -20,7 +20,8 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
-# TODO: remove msghandler.combine
+# TODO: - remove msghandler.combine
+#       - add missing extent handler (missextent)
 
 
 """
@@ -237,7 +238,7 @@ msghandler.hideload = _msghandlerhideload()
 
 class _msghandlerhidegraphicsload(msghandler):
 
-    """a message handler, which hides all messages inside like '<filename>'
+    """a message handler, which hides all messages like '<filename>'
     the string filename has to be a readable file"""
 
     def parsemsg(self, msg):
@@ -320,6 +321,70 @@ class _msghandlerhideall(msghandler):
 msghandler.hideall = _msghandlerhideall()
 
 
+class missextent(_texattr):
+
+    """abstract base class for handling missing extents
+    
+    A miss extent class has to provide a misshandler method."""
+
+
+class _missextentreturnzero(missextent):
+
+    def misshandler(self, texinstance):
+        return unit.t_pt(0)
+
+
+missextent.returnzero = _missextentreturnzero()
+
+
+class _missextentraiseerror(missextent):
+
+    def misshandler(self, texinstance):
+        raise TexMissExtentError
+
+
+missextent.raiseerror = _missextentraiseerror()
+
+
+class _missextentcreateextent(missextent):
+
+    def misshandler(self, texinstance):
+        if isinstance(texinstance, latex):
+            storeauxfilename = texinstance.auxfilename
+            texinstance.auxfilename = None
+        texinstance.DoneRunTex = 0
+        texinstance._run()
+        texinstance.DoneRunTex = 0
+        if isinstance(texinstance, latex):
+            texinstance.auxfilename = storeauxfilename
+        return texinstance.BoxCmds[0].Extent(texinstance.BoxCmds[0].CmdExtents[0],
+                                             missextent.returnzero, texinstance)
+
+
+missextent.createextent = _missextentcreateextent()
+
+
+class _missextentcreateallextent(missextent):
+
+    def misshandler(self, texinstance):
+        if isinstance(texinstance, latex):
+            storeauxfilename = texinstance.auxfilename
+            texinstance.auxfilename = None
+        texinstance.DoneRunTex = 0
+        storeextents = texinstance.BoxCmds[0].CmdExtents[0]
+        texinstance.BoxCmds[0].CmdExtents = [_extent.wd, _extent.ht, _extent.dp]
+        texinstance._run()
+        texinstance.BoxCmds[0].CmdExtents[0] = storeextents
+        texinstance.DoneRunTex = 0
+        if isinstance(texinstance, latex):
+            texinstance.auxfilename = storeauxfilename
+        return texinstance.BoxCmds[0].Extent(texinstance.BoxCmds[0].CmdExtents[0],
+                                             missextent.returnzero, texinstance)
+
+
+missextent.createallextent = _missextentcreateallextent()
+
+
 ################################################################################
 # TeX exceptions
 ################################################################################
@@ -359,6 +424,12 @@ class TexDefAfterBoxError(TexExcept):
         return "definition commands not allowed after output commands"
 
 
+class TexMissExtentError(TexExcept):
+
+    def __str__(self):
+        return "requested tex extent not available"
+
+
 ################################################################################
 # modules internal stuff
 ################################################################################
@@ -385,10 +456,10 @@ class _TexCmd:
     BeginPyxMarker = "Begin" + PyxMarker
     EndPyxMarker = "End" + PyxMarker
 
-    def __init__(self, Marker, Stack, msghandler):
+    def __init__(self, Marker, Stack, msghandlers):
         self.Marker = Marker
         self.Stack = Stack
-        self.msghandler = msghandler
+        self.msghandlers = msghandlers
 
     def TexParenthesisCheck(self, Cmd):
         """check for proper usage of "{" and "}" in Cmd"""
@@ -441,7 +512,9 @@ class _TexCmd:
         else:
             # check if message can be ignored
             doprint = 0
-            parsedmsg = self.msghandler.parsemsg(msg)
+            parsedmsg = msg
+            for msghandler in self.msghandlers:
+                parsedmsg = msghandler.parsemsg(parsedmsg)
             for c in parsedmsg:
                 if c not in string.whitespace:
                     print "Traceback (innermost last):"
@@ -455,8 +528,8 @@ class _DefCmd(_TexCmd):
 
     """definition commands"""
 
-    def __init__(self, DefCmd, Marker, Stack, msghandler):
-        _TexCmd.__init__(self, Marker, Stack, msghandler)
+    def __init__(self, DefCmd, Marker, Stack, msghandlers):
+        _TexCmd.__init__(self, Marker, Stack, msghandlers)
         self.TexParenthesisCheck(DefCmd)
         self.DefCmd = DefCmd
 
@@ -482,8 +555,8 @@ class _BoxCmd(_TexCmd):
 
     """BoxCmd (for printing text and getting extents)"""
 
-    def __init__(self, DefCmdsStr, BoxCmd, style, fontsize, valign, Marker, Stack, msghandler):
-        _TexCmd.__init__(self, Marker, Stack, msghandler)
+    def __init__(self, DefCmdsStr, BoxCmd, style, fontsize, valign, Marker, Stack, msghandlers):
+        _TexCmd.__init__(self, Marker, Stack, msghandlers)
         self.TexParenthesisCheck(BoxCmd)
         self.DefCmdsStr = DefCmdsStr
         self.BoxCmd = "{%s}" % BoxCmd # add another "{" to ensure, that everything goes into the Box
@@ -558,18 +631,28 @@ class _BoxCmd(_TexCmd):
     def Put(self, x, y, halign, direction, color):
         self.CmdPuts.append(_CmdPut(x, y, halign, direction, color))
 
-    def Extent(self, extent, Sizes):
+    def Extent(self, extent, missextent, texinstance):
         """get sizes from previous LaTeX run"""
 
         if extent not in self.CmdExtents:
             self.CmdExtents.append(extent)
 
-        Str = self.MD5() + ":" + str(extent)
-        for Size in Sizes:
-            if Size[:len(Str)] == Str:
-                texpt = float(string.rstrip(Size.split(":")[3][:-3]))
+        s = self.MD5() + ":" + str(extent)
+        for size in texinstance.Sizes:
+            if size[:len(s)] == s:
+                texpt = float(string.rstrip(size.split(":")[3][:-3]))
                 return unit.t_pt(texpt * 72.0 / 72.27)
-        return unit.t_pt(0)
+        storeboxcmds = texinstance.BoxCmds
+        storecmdputs = self.CmdPuts
+        storecmdextents = self.CmdExtents
+        texinstance.BoxCmds = [self, ]
+        self.CmdPuts = []
+        self.CmdExtents = [extent, ]
+        result = missextent.misshandler(texinstance)
+        texinstance.BoxCmds = storeboxcmds
+        self.CmdPuts = storecmdputs
+        self.CmdExtents = storecmdextents
+        return result
 
 
 ################################################################################
@@ -580,8 +663,14 @@ class _tex(base.PSCmd, instancelist.InstanceList):
 
     """major parts are of tex and latex class are shared and implemented here"""
 
-    def __init__(self, defaultmsghandler = msghandler.hideload, texfilename=None):
-        self.defaultmsghandler = defaultmsghandler
+    def __init__(self, defaultmsghandlers=msghandler.hideload,
+                       defaultmissextent=missextent.returnzero,
+                       texfilename=None):
+        if isinstance(defaultmsghandlers, msghandler):
+            self.defaultmsghandlers = (defaultmsghandlers, )
+        else:
+            self.defaultmsghandlers = defaultmsghandlers
+        self.defaultmissextent = defaultmissextent
         self.texfilename = texfilename
         self.DefCmds = []
         self.DefCmdsStr = None
@@ -703,7 +792,7 @@ class _tex(base.PSCmd, instancelist.InstanceList):
                 print "by yourself."
             else:
                 aepsfile = epsfile.epsfile(tempname + ".eps", translatebb=0, clip=0)
-                self.bbox = aepsfile.bbox()
+                self.abbox = aepsfile.bbox()
                 epsdatafile = StringIO.StringIO()
                 aepsfile.write(epsdatafile)
                 self.epsdata = epsdatafile.getvalue()
@@ -721,7 +810,7 @@ class _tex(base.PSCmd, instancelist.InstanceList):
         if (len(NewSizes) != 0) or (len(OldSizes) != 0):
             SizeFile = open(self.SizeFileName, "w")
             SizeFile.writelines(NewSizes)
-
+            self.Sizes = NewSizes
             for OldSize in OldSizes:
                 OldSizeSplit = OldSize.split(":")
                 for NewSize in NewSizes:
@@ -730,6 +819,7 @@ class _tex(base.PSCmd, instancelist.InstanceList):
                 else:
                     if time.time() < float(OldSizeSplit[2]) + 60*60*24:   # we keep size results for one day
                         SizeFile.write(OldSize)
+                        self.Sizes.append(OldSize)
 
         if not self.texfilename:
             for suffix in ("tex", "log", "size", "dvi", "eps", "texout", "texerr", "dvipsout", "dvipserr", ):
@@ -744,34 +834,32 @@ class _tex(base.PSCmd, instancelist.InstanceList):
 
     def bbox(self):
         self._run()
-        return self.bbox
+        return self.abbox
 
     def write(self, file):
         self._run()
         file.writelines(self.epsdata)
        
-    def define(self, Cmd, *styleparams):
+    def define(self, Cmd, *attrs):
         if len(self.BoxCmds):
             raise TexDefAfterBoxError
         self.DoneRunTex = 0
-        self.AllowedInstances(styleparams, [msghandler, ])
+        self.AllowedInstances(attrs, [msghandler, ])
         self.DefCmds.append(_DefCmd(Cmd + "%\n",
                                     len(self.DefCmds)+ len(self.BoxCmds),
                                     self._getstack(),
-                                    self.ExtractInstance(styleparams, msghandler, self.defaultmsghandler)))
+                                    self.ExtractInstance(attrs, msghandler, self.defaultmsghandlers)))
 
-    def _insertcmd(self, Cmd, *styleparams):
+    def _insertcmd(self, Cmd, *attrs):
         if not len(self.BoxCmds):
             self._beginboxcmds()
             self.DefCmdsStr = reduce(lambda x,y: x + y.DefCmd, self.DefCmds, "")
-        MyCmd = _BoxCmd(self.DefCmdsStr,
-                        Cmd,
-                        self.ExtractInstance(styleparams, style, style.text),
-                        self.ExtractInstance(styleparams, fontsize, fontsize.normalsize),
-                        self.ExtractInstance(styleparams, valign),
-                        len(self.DefCmds)+ len(self.BoxCmds),
-                        self._getstack(),
-                        self.ExtractInstance(styleparams, msghandler, self.defaultmsghandler))
+        mystyle = self.ExtractInstance(attrs, style, style.text)
+        myfontsize = self.ExtractInstance(attrs, fontsize, fontsize.normalsize)
+        myvalign = self.ExtractInstance(attrs, valign)
+        mymsghandlers = self.ExtractInstances(attrs, msghandler, self.defaultmsghandlers)
+        MyCmd = _BoxCmd(self.DefCmdsStr, Cmd, mystyle, myfontsize, myvalign,
+                        len(self.DefCmds) + len(self.BoxCmds), self._getstack(), mymsghandlers)
         if MyCmd not in self.BoxCmds:
             self.BoxCmds.append(MyCmd)
         for Cmd in self.BoxCmds:
@@ -781,38 +869,45 @@ class _tex(base.PSCmd, instancelist.InstanceList):
                                 # but we ignore this here -- we don't want to depend on this side effect)
         return UseCmd
 
-    def _text(self, x, y, Cmd, *styleparams):
+    def _text(self, x, y, Cmd, *attrs):
         """print Cmd at (x, y) --- position parameters in postscipt points"""
+
         self.DoneRunTex = 0
-        self.AllowedInstances(styleparams, [style, fontsize, halign, valign, direction, msghandler, color.color, ])
-        self._insertcmd(Cmd, *styleparams).Put(x * 72.27 / 72.0,
-                                               y * 72.27 / 72.0,
-                                               self.ExtractInstance(styleparams, halign, halign.left),
-                                               self.ExtractInstance(styleparams, direction, direction.horizontal),
-                                               self.ExtractInstance(styleparams, color.color, color.grey.black))
+        self.AllowedInstances(attrs, [style, fontsize, halign, valign, direction, color.color], [msghandler, ])
+        myhalign = self.ExtractInstance(attrs, halign, halign.left)
+        mydirection = self.ExtractInstance(attrs, direction, direction.horizontal)
+        mycolor = self.ExtractInstance(attrs, color.color, color.grey.black)
+        self._insertcmd(Cmd, *attrs).Put(x * 72.27 / 72.0, y * 72.27 / 72.0, myhalign, mydirection, mycolor)
 
-
-    def text(self, x, y, Cmd, *styleparams):
+    def text(self, x, y, Cmd, *attrs):
         """print Cmd at (x, y)"""
-        self._text(unit.topt(x), unit.topt(y), Cmd, *styleparams)
 
-    def textwd(self, Cmd, *styleparams):
+        self._text(unit.topt(x), unit.topt(y), Cmd, *attrs)
+
+    def textwd(self, Cmd, *attrs):
         """get width of Cmd"""
-        self.DoneRunTex = 0
-        self.AllowedInstances(styleparams, [style, fontsize, msghandler, ])
-        return self._insertcmd(Cmd, *styleparams).Extent(_extent.wd, self.Sizes)
 
-    def textht(self, Cmd, *styleparams):
+        self.DoneRunTex = 0
+        self.AllowedInstances(attrs, [style, fontsize, missextent], [msghandler, ])
+        mymissextent = self.ExtractInstance(attrs, missextent, self.defaultmissextent)
+        return self._insertcmd(Cmd, *attrs).Extent(_extent.wd, mymissextent, self)
+
+    def textht(self, Cmd, *attrs):
         """get height of Cmd"""
-        self.DoneRunTex = 0
-        self.AllowedInstances(styleparams, [style, fontsize, valign, msghandler, ])
-        return self._insertcmd(Cmd, *styleparams).Extent(_extent.ht, self.Sizes)
 
-    def textdp(self, Cmd, *styleparams):
-        """get depth of Cmd"""
         self.DoneRunTex = 0
-        self.AllowedInstances(styleparams, [style, fontsize, valign, msghandler, ])
-        return self._insertcmd(Cmd, *styleparams).Extent(_extent.dp, self.Sizes)
+        self.AllowedInstances(attrs, [style, fontsize, valign, missextent], [msghandler, ])
+        mymissextent = self.ExtractInstance(attrs, missextent, self.defaultmissextent)
+        return self._insertcmd(Cmd, *attrs).Extent(_extent.ht, mymissextent, self)
+                                                   
+
+    def textdp(self, Cmd, *attrs):
+        """get depth of Cmd"""
+
+        self.DoneRunTex = 0
+        self.AllowedInstances(attrs, [style, fontsize, valign, missextent], [msghandler, ])
+        mymissextent = self.ExtractInstance(attrs, missextent, self.defaultmissextent)
+        return self._insertcmd(Cmd, *attrs).Extent(_extent.dp, mymissextent, self)
 
 
 class tex(_tex):
