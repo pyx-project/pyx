@@ -35,7 +35,7 @@ examples.dvi: examples.py $(epsfiles)
 html: $(htmlfiles) $(pngfiles)
 
 %.eps: %.py
-	export PYTHONPATH=$(PWD)/.. ; cd $(dir $^) ; python $(notdir $^)
+	cd $(dir $^); PYTHONPATH=$(PWD)/.. python $(notdir $^)
 
 %.py.html: %.py
 	sh -c "py2html -format:rawhtml $^"
