@@ -174,8 +174,7 @@ class _axis:
           before giving up (usually it should not be needed to increase
           this value; increasing the number will slow down the automatic
           axis partitioning considerably)
-        - manualticks and the partitioner results are mixed
-          by mergeticklists
+        - manualticks and the partitioner results are combined
         - note that some methods of this class want to access a
           parter and a rater; those attributes implementing _Iparter
           and _Irater should be initialized by the constructors
@@ -315,14 +314,15 @@ class _axis:
         if self.parter is not None:
             min, max = self.getrange()
             self.ticks = tick.mergeticklists(self.manualticks,
-                                             self.parter.defaultpart(min, max, not self.fixmin, not self.fixmax))
+                                             self.parter.defaultpart(min, max, not self.fixmin, not self.fixmax),
+                                             keepfirstifequal=1)
             worse = 0
             nextpart = self.parter.lesspart
             while nextpart is not None:
                 newticks = nextpart()
                 worse += 1
                 if newticks is not None:
-                    newticks = tick.mergeticklists(self.manualticks, newticks)
+                    newticks = tick.mergeticklists(self.manualticks, newticks, keepfirstifequal=1)
                     if first:
                         if len(self.ticks):
                             bestrate = self.rater.rateticks(self, self.ticks, self.density)
@@ -415,8 +415,6 @@ class linear(_axis, _linmap):
     def __init__(self, parter=parter.autolinear(), rater=rater.linear(), **args):
         """initializes the instance
         - the parter attribute implements _Iparter
-        - manualticks and the partitioner results are mixed
-          by mergeticklists
         - the rater implements _Irater and is used to rate different
           tick lists created by the partitioner (after merging with
           manully set ticks)
@@ -438,8 +436,6 @@ class logarithmic(_axis, _logmap):
     def __init__(self, parter=parter.autologarithmic(), rater=rater.logarithmic(), **args):
         """initializes the instance
         - the parter attribute implements _Iparter
-        - manualticks and the partitioner results are mixed
-          by mergeticklists
         - the rater implements _Irater and is used to rate different
           tick lists created by the partitioner (after merging with
           manully set ticks)

@@ -213,21 +213,22 @@ class tick(rational):
     def merge(self, other):
         """merges two ticks together:
           - the lower ticklevel/labellevel wins
-          - the label is *never* taken over from other
           - the ticks should be at the same position (otherwise it doesn't make sense)
             -> this is NOT checked"""
         if self.ticklevel is None or (other.ticklevel is not None and other.ticklevel < self.ticklevel):
             self.ticklevel = other.ticklevel
         if self.labellevel is None or (other.labellevel is not None and other.labellevel < self.labellevel):
             self.labellevel = other.labellevel
+        if self.label is None:
+            self.label = other.label
 
 
-def mergeticklists(list1, list2):
+def mergeticklists(list1, list2, keepfirstifequal=0):
     """helper function to merge tick lists
     - return a merged list of ticks out of list1 and list2
     - CAUTION: original lists have to be ordered
       (the returned list is also ordered)"""
-    # TODO: improve this using bisect?!
+    # TODO: improve along the lines of http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/305269
 
     # do not destroy original lists
     list1 = list1[:]
@@ -240,7 +241,8 @@ def mergeticklists(list1, list2):
                i += 1
                j += 1
             if list2[j] == list1[i]: # merge tick
-               list1[i].merge(list2[j])
+               if not keepfirstifequal:
+                   list1[i].merge(list2[j])
                j += 1
             i += 1
     except IndexError:

@@ -2341,19 +2341,17 @@ class normpath(base.canvasitem):
             raise PathException("either param or arclen has to be specified, but not both")
 
         if param is not None:
-            # XXX Bad code which is too strict at the beginning and at the end of the
-            # parameter range
             try:
                 subpath, param = param
             except TypeError:
                 # determine subpath from param 
                 normsubpathindex = 0
-                for normsubpath in self.normsubpaths:
+                for normsubpath in self.normsubpaths[:-1]:
                     normsubpathrange = normsubpath.range()
-                    if normsubpathindex <= param < normsubpathrange+normsubpathindex:
+                    if param < normsubpathrange+normsubpathindex:
                         return normsubpath, param-normsubpathindex
                     normsubpathindex += normsubpathrange
-                raise PathException("parameter value out of range")
+                return self.normsubpaths[-1], param-normsubpathindex
             try:
                 return self.normsubpaths[subpath], param
             except IndexError:
@@ -2363,17 +2361,15 @@ class normpath(base.canvasitem):
         try:
             subpath, arclen = arclen
         except:
-            # XXX Bad code which is too strict at the beginning and at the end of the
-            # parameter range
             # determine subpath from arclen
             param = self.arclentoparam(arclen)
-            for normsubpath in self.normsubpaths:
+            for normsubpath in self.normsubpaths[:-1]:
                 normsubpathrange = normsubpath.range()
-                if normsubpathindex < param <= normsubpathrange+normsubpathindex:
+                if param <= normsubpathrange+normsubpathindex:
                     return normsubpath, param-normsubpathindex
                 normsubpathindex += normsubpathrange
-            raise PathException("parameter value out of range")
-        
+            return self.normsubpaths[-1], param-normsubpathindex
+
         try:
             normsubpath = self.normsubpaths[subpath]
         except IndexError:
