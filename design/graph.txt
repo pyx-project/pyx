@@ -77,6 +77,9 @@ painter.py
     TODO: - move painter.py to axis/painter.py
           - axistitlepainter -> _axistitle
           - axispainter -> default
+<MS>               ein "default" sollte doch eigentlich nur ein link auf einen existierenden painter sein.
+                   (gilt auch beim texter, etc...)
+                   wie waere es mit "plain" ?
           - linkaxispainter -> linked
           - splitaxispainter -> split
           - linksplitaxispainter -> linkedsplit
@@ -93,6 +96,8 @@ rater.py
 
     TODO: - move rater.py to axis/rater.py
           - cuberater -> cube
+<MS>                was hat der Wuerfel mit dem rater zu tun?
+                    "Double Dangerous Bends" here: Ich habe noch _nie_ einen rater umgestellt ;-)
           - distancerater -> distance
           - rater -> _rater
           - new class "linear" with predefined variables for linear partitions
@@ -122,6 +127,13 @@ axis.py
     (helper function pathaxis to draw a axis at an arbitrary path)
 
     TODO: - move axis.py to axis/type.py
+<MS>                Ich finde -- vor allem bei der Diskussion um zu lange Namen --
+                    das "type" ueberfluessig. Man sollte das hier ins __init__ von axis einfuegen
+                    mit "from type import *" in __init__.py,
+                    so dass man mit graph.axis.linear(...) bekommt, was Du hier anbietest.
+
+                    Das gleiche gilt uebrigens fuer graph.type
+
           - linaxis -> linear
           - logaxis -> logarithmic
           - linkaxis -> linked
@@ -151,6 +163,8 @@ style.py
     bar(_style) [draw bars in a bar graph]
 
     TODO: - rect -> rectangle
+<MS>               Wir habe im path, in box, etc. ueberall "rect".
+
 
 data.py
 
@@ -164,11 +178,19 @@ data.py
           - move pyx/data.py into pyx/graph/data.py:
              - the construct graph.data.data(data.datafile(<filename>), ...)) should become graph.data.file(...)
              - the construct graph.data.data(data.data(<filename>), ...)) should become graph.data.list(...)
-             - the caching currently available by using the same instance of data.datafile several times should become an intrinsic feature (with the option to turn it off by the keyword parameter cache=0 (like in rrules of the dateutil package))
+<MS>                   Man will doch drei Arten, einen Datenplot zu machen:
+                       1. filename
+                       2. Liste von Daten
+                       3. Data-Objekt (wenn man vorher diverse addcolumn-Methoden aufgerufen hat)
+                       Oben sieht das so aus, als wolltest Du nur noch 1. und 2. unterstuetzen.
+             - the caching currently available by using the same instance of data.datafile several times
+               should become an intrinsic feature (with the option to turn it off by the keyword parameter cache=0
+               (like in rrules of the dateutil package))
 
 type:
 
-    [interface definition missing -- we don't really have interfaces here, but we may introduce some generic behaviour of all graphs (domethods, access to axes and positions, etc.)]
+    [interface definition missing -- we don't really have interfaces here, but we may introduce some generic
+    behaviour of all graphs (domethods, access to axes and positions, etc.)]
 
     lineaxispos [implements _Iaxispos for a straight line]
     lineaxisposlinegrid(lineaxispos) [like _Iaxispos but adds grid lines for a x-y-graph]
@@ -181,4 +203,7 @@ timeaxis.py (experimental code, needs python 2.3)
     timetexter [implements _Itexter as a primitiv texter for datetime instances]
     timeaxis(axis._axis, _timemap) [implements _Iaxis for a time axis]
 
-NOTE: The timeaxis should be kept as separately as possible. It needs Python 2.3 and dateutils (dateutils is not yet needed while we currently also lack (auto-)partitioning of a timeaxis; there is an ongoing discussion with Gustavo Niemeyer about some patches).
+NOTE: The timeaxis should be kept as separately as possible. It needs Python 2.3 and dateutils
+      (dateutils is not yet needed while we currently also lack (auto-)partitioning of a timeaxis;
+      there is an ongoing discussion with Gustavo Niemeyer about some patches).
+
