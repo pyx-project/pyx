@@ -2282,10 +2282,7 @@ class normpath(path):
 
     def transformed(self, trafo):
         """return path transformed according to trafo"""
-        nnormpath = normpath()
-        for sp in self.subpaths:
-            nnormpath.subpaths.append(sp.transformed(trafo))
-        return nnormpath
+        return normpath([sp.transformed(trafo) for sp in self.subpaths])
 
     def outputPS(self, file):
         for sp in self.subpaths:
