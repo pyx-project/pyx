@@ -129,8 +129,9 @@ class binfile:
 #         self.file.close()
 
 
-class DVIError(exceptions.Exception): pass
-
+##############################################################################
+# TFM file handling
+##############################################################################
 
 class TFMError(exceptions.Exception): pass
 
@@ -361,6 +362,55 @@ class TFMFile:
 #     def encode(self, charcode):
 #         return self.encvector[charcode]
 
+##############################################################################
+# Font handling
+##############################################################################
+
+_ReEncodeFont = prolog.definition("ReEncodeFont", """{
+  5 dict
+  begin
+    /newencoding exch def
+    /newfontname exch def
+    /basefontname exch def
+    /basefontdict basefontname findfont def
+    /newfontdict basefontdict maxlength dict def 
+    basefontdict {
+      exch dup dup /FID ne exch /Encoding ne and
+      { exch newfontdict 3 1 roll put }
+      { pop pop }
+      ifelse
+    } forall
+    newfontdict /FontName newfontname put
+    newfontdict /Encoding newencoding put
+    newfontname newfontdict definefont pop
+  end
+}""")
+
+#
+# PostScript font selection and output primitives
+#
+
+class _selectfont(base.PSOp):
+    def __init__(self, name, size):
+        self.name = name
+        self.size = size
+
+    def write(self, file):
+        file.write("/%s %f selectfont\n" % (self.name, self.size))
+
+    # XXX: should we provide a prolog method for the font inclusion
+    # instead of using the coarser logic in DVIFile.prolog
+
+
+class _show(base.PSOp):
+    def __init__(self, x, y, s):
+        self.x = x
+        self.y = y
+        self.s = s
+
+    def write(self, file):
+        file.write("%f %f moveto (%s) show\n" % (self.x, self.y, self.s))
+
 
 class FontMapping:
 
@@ -430,45 +480,27 @@ class FontMapping:
         return ("'%s' is '%s' read from '%s' encoded as '%s'" %
                 (self.texname, self.basepsname, self.fontfile, repr(self.encodingfile)))
 
-
 # generate fontmap
 
-fontmap = {}
-mappath = pykpathsea.find_file("psfonts.map", pykpathsea.kpse_dvips_config_format)
-if mappath is None:
-    raise RuntimeError("cannot find dvips font catalog 'psfonts.map'")
-mapfile = open(mappath, "r")
+def readfontmap(filenames):
+    """ read font map from filename (without path) """
+    fontmap = {}
+    for filename in filenames:
+        mappath = pykpathsea.find_file(filename, pykpathsea.kpse_dvips_config_format)
+        if mappath is None:
+            raise RuntimeError("cannot find dvips font catalog 'filename', aborting")
+        mapfile = open(mappath, "r")
+        for line in mapfile.readlines():
+            line = line.rstrip()
+            if not (line=="" or line[0] in (" ", "%", "*", ";" , "#")):
+                fontmapping = FontMapping(line)
+                fontmap[fontmapping.texname] = fontmapping
 
-for line in mapfile.readlines():
-    line = line.rstrip()
-    if not (line=="" or line[0] in (" ", "%", "*", ";" , "#")):
-        fontmapping = FontMapping(line)
-        fontmap[fontmapping.texname] = fontmapping
+        mapfile.close()
+    return fontmap
 
-mapfile.close()
-del mappath
-del mapfile
 
-_ReEncodeFont = prolog.definition("ReEncodeFont", """{
-  5 dict
-  begin
-    /newencoding exch def
-    /newfontname exch def
-    /basefontname exch def
-    /basefontdict basefontname findfont def
-    /newfontdict basefontdict maxlength dict def 
-    basefontdict {
-      exch dup dup /FID ne exch /Encoding ne and
-      { exch newfontdict 3 1 roll put }
-      { pop pop }
-      ifelse
-    } forall
-    newfontdict /FontName newfontname put
-    newfontdict /Encoding newencoding put
-    newfontname newfontdict definefont pop
-  end
-}""")
-
+fontmap = readfontmap(["psfonts.map", "ecpfb.map"])
 
 
 class Font:
@@ -479,6 +511,8 @@ class Font:
             raise TFMError("cannot find %s.tfm" % self.name)
         self.tfmfile = TFMFile(self.tfmpath, debug)
         self.fontmapping = fontmap.get(name)
+        if self.fontmapping is None:
+            raise RuntimeError("no information for font '%s' found in font mapping file, aborting" % name)
         # print "found mapping %s for font %s" % (self.fontmapping, self.name)
 
         if self.tfmfile.checksum != c:
@@ -567,6 +601,9 @@ class Font:
     def getencodingfile(self):
         return self.fontmapping.encodingfile
 
+##############################################################################
+# DVI file handling
+##############################################################################
 
 _DVI_CHARMIN     =   0 # typeset a character and move right (range min)
 _DVI_CHARMAX     = 127 # typeset a character and move right (range max)
@@ -616,29 +653,8 @@ _READ_POST      = 4
 _READ_POSTPOST  = 5
 _READ_DONE      = 6
 
-#
-# PostScript font selection and output primitives
-#
 
-class _selectfont(base.PSOp):
-    def __init__(self, name, size):
-        self.name = name
-        self.size = size
-    def write(self, file):
-        file.write("/%s %f selectfont\n" % (self.name, self.size))
-
-    # XXX: should we provide a prolog method for the font inclusion
-    # instead of using the coarser logic in DVIFile.prolog
-
-
-class _show(base.PSOp):
-    def __init__(self, x, y, s):
-        self.x = x
-        self.y = y
-        self.s = s
-
-    def write(self, file):
-        file.write("%f %f moveto (%s) show\n" % (self.x, self.y, self.s))
+class DVIError(exceptions.Exception): pass
 
 # save and restore colors
 
