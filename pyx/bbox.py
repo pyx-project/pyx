@@ -24,30 +24,6 @@
 import math
 import unit
 
-# helper routine for bbox manipulations
-
-def _nmin(*args):
-    """minimum of a list of values, where None represents +infinity, not -infinity as
-    in standard min implementation of python"""
-    args = [x for x in args if x is not None]
-    if len(args):
-        return min(args)
-    else:
-        return None
-
-# XXX isn't _nmax = max?
-
-def _nmax(*args):
-    """maximum of a list of values, where None represents +infinity, not -infinity as
-    in standard max implementation of python 2.0"""
-    args = [x for x in args if x is not None]
-    if len(args):
-        return max(args)
-    else:
-        return None
-
-_nmax = max
-
 #
 # classes representing bounding boxes
 #
@@ -59,7 +35,7 @@ class _bbox:
     This variant requires points in the constructor, and is used for internal
     purposes."""
 
-    def __init__(self, llx=None, lly=None, urx=None, ury=None):
+    def __init__(self, llx, lly, urx, ury):
         self.llx = llx
         self.lly = lly
         self.urx = urx
@@ -67,30 +43,29 @@ class _bbox:
 
     def __add__(self, other):
         """join two bboxes"""
-
-        return _bbox(_nmin(self.llx, other.llx), _nmin(self.lly, other.lly),
-                     _nmax(self.urx, other.urx), _nmax(self.ury, other.ury))
+        return _bbox(min(self.llx, other.llx), min(self.lly, other.lly),
+                     max(self.urx, other.urx), max(self.ury, other.ury))
 
     def __iadd__(self, other):
         """join two bboxes inplace"""
-
-        if self.llx is not None and other.llx is not None:
-            self.llx = min(self.llx, other.llx)
-        elif other.llx is not None:
-            self.llx = other.llx
-        if self.lly is not None and other.lly is not None:
-            self.lly = min(self.lly, other.lly)
-        elif other.lly is not None:
-            self.lly = other.lly
+        self.llx = min(self.llx, other.llx)
+        self.lly = min(self.lly, other.lly)
         self.urx = max(self.urx, other.urx)
         self.ury = max(self.ury, other.ury)
         return self
 
     def __mul__(self, other):
         """return intersection of two bboxes"""
+        return _bbox(max(self.llx, other.llx), max(self.lly, other.lly),
+                     min(self.urx, other.urx), min(self.ury, other.ury))
 
-        return _bbox(_nmax(self.llx, other.llx), _nmax(self.lly, other.lly),
-                     _nmin(self.urx, other.urx), _nmin(self.ury, other.ury))
+    def __imul__(self, other):
+        """intersect two bboxes in place"""
+        self.llx = max(self.llx, other.llx)
+        self.lly = max(self.lly, other.lly)
+        self.urx = min(self.urx, other.urx)
+        self.ury = min(self.ury, other.ury)
+        return self
 
     def __str__(self):
         return "%s %s %s %s" % (self.llx, self.lly, self.urx, self.ury)
@@ -104,67 +79,38 @@ class _bbox:
 
     def intersects(self, other):
         """check, if two bboxes intersect eachother"""
-
         return not (self.llx > other.urx or
                     self.lly > other.ury or
                     self.urx < other.llx or
                     self.ury < other.lly)
 
-    def transforme(self, trafo):
+    def transform(self, trafo):
         """transform bbox in place by trafo"""
         # we have to transform all four corner points of the bbox
-        # method correctly handles bboxes with None entries at the corners
-        if None not in (self.llx, self.lly):
-            llx, lly = trafo._apply(self.llx, self.lly)
-        else:
-            llx = lly = None
-        if None not in (self.urx, self.lly):
-            lrx, lry = trafo._apply(self.urx, self.lly)
-        else:
-            lrx = lry = None
-        if None not in (self.urx, self.ury):
-            urx, ury = trafo._apply(self.urx, self.ury)
-        else:
-            urx = ury = None
-        if None not in (self.llx, self.ury):
-            ulx, uly = trafo._apply(self.llx, self.ury)
-        else:
-            ulx = uly = None
+        llx, lly = trafo._apply(self.llx, self.lly)
+        lrx, lry = trafo._apply(self.urx, self.lly)
+        urx, ury = trafo._apply(self.urx, self.ury)
+        ulx, uly = trafo._apply(self.llx, self.ury)
 
-        # now, by sorting, we obtain the lower left and upper right corner
-        # of the new bounding box. 
-
-        self.llx = _nmin(llx, lrx, urx, ulx)
-        self.lly = _nmin(lly, lry, ury, uly)
-        self.urx = _nmax(llx, lrx, urx, ulx)
-        self.ury = _nmax(lly, lry, ury, uly)
+        # Now, by sorting, we obtain the lower left and upper right corner
+        # of the new bounding box.
+        self.llx = min(llx, lrx, urx, ulx)
+        self.lly = min(lly, lry, ury, uly)
+        self.urx = max(llx, lrx, urx, ulx)
+        self.ury = max(lly, lry, ury, uly)
 
     def transformed(self, trafo):
         """return bbox transformed by trafo"""
         # we have to transform all four corner points of the bbox
-        # method correctly handles bboxes with None entries at the corners
-        if None not in (self.llx, self.lly):
-            llx, lly = trafo._apply(self.llx, self.lly)
-        else:
-            llx = lly = None
-        if None not in (self.urx, self.lly):
-            lrx, lry = trafo._apply(self.urx, self.lly)
-        else:
-            lrx = lry = None
-        if None not in (self.urx, self.ury):
-            urx, ury = trafo._apply(self.urx, self.ury)
-        else:
-            urx = ury = None
-        if None not in (self.llx, self.ury):
-            ulx, uly = trafo._apply(self.llx, self.ury)
-        else:
-            ulx = uly = None
+        llx, lly = trafo._apply(self.llx, self.lly)
+        lrx, lry = trafo._apply(self.urx, self.lly)
+        urx, ury = trafo._apply(self.urx, self.ury)
+        ulx, uly = trafo._apply(self.llx, self.ury)
 
-        # now, by sorting, we obtain the lower left and upper right corner
+        # Now, by sorting, we obtain the lower left and upper right corner
         # of the new bounding box. 
-
-        return _bbox(_nmin(llx, lrx, urx, ulx), _nmin(lly, lry, ury, uly),
-                     _nmax(llx, lrx, urx, ulx), _nmax(lly, lry, ury, uly))
+        return _bbox(min(llx, lrx, urx, ulx), min(lly, lry, ury, uly),
+                     max(llx, lrx, urx, ulx), max(lly, lry, ury, uly))
 
     def enlarged(self, all=0, bottom=None, left=None, top=None, right=None):
         """enlarge bbox in place
@@ -172,7 +118,6 @@ class _bbox:
         all is used, if bottom, left, top and/or right are not given.
 
         """
-        # XXX does not handle bbox with None entries at the corners
         _bottom = _left = _top = _right = unit.topt(unit.length(all, default_type="v"))
         if bottom is not None:
            _bottom = unit.topt(unit.length(bottom, default_type="v"))
@@ -193,7 +138,6 @@ class _bbox:
         all is used, if bottom, left, top and/or right are not given.
 
         """
-        # XXX does not handle bbox with None entries at the corners
         _bottom = _left = _top = _right = unit.topt(unit.length(all, default_type="v"))
         if bottom is not None:
            _bottom = unit.topt(unit.length(bottom, default_type="v"))
@@ -241,14 +185,10 @@ class bbox(_bbox):
 
     """class for bounding boxes"""
 
-    def __init__(self, llx=None, lly=None, urx=None, ury=None):
-        if llx is not None:
-            llx = unit.topt(llx)
-        if lly is not None:
-            lly = unit.topt(lly)
-        if urx is not None:
-            urx = unit.topt(urx)
-        if ury is not None:
-            ury = unit.topt(ury)
+    def __init__(self, llx, lly, urx, ury):
+        llx = unit.topt(llx)
+        lly = unit.topt(lly)
+        urx = unit.topt(urx)
+        ury = unit.topt(ury)
         _bbox.__init__(self, llx, lly, urx, ury)
 

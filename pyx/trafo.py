@@ -22,7 +22,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import math
-import attr, base, bbox, unit
+import attr, base, unit
 
 # some helper routines
 
@@ -110,7 +110,7 @@ class trafo_pt(base.PSOp, attr.attr):
                       self.vector[0], self.vector[1] ) )
 
     def bbox(self):
-        return bbox._bbox()
+        return None
 
     def _apply(self, x, y):
         """apply transformation to point (x,y) (coordinates in pts)"""

@@ -405,10 +405,12 @@ def _bcurveIntersect(a, a_t0, a_t1, b, b_t0, b_t1, epsilon=1e-5):
 def _bcurvesIntersect(a, a_t0, a_t1, b, b_t0, b_t1, epsilon=1e-5):
     """ returns list of intersection points for list of bpathels """
 
-    bbox_a = bbox.bbox()
-    for aa in a: bbox_a += aa.bbox()
-    bbox_b = bbox.bbox()
-    for bb in b: bbox_b += bb.bbox()
+    bbox_a = a[0].bbox()
+    for aa in a[1:]:
+        bbox_a += aa.bbox()
+    bbox_b = b[0].bbox()
+    for bb in b[1:]:
+        bbox_b += bb.bbox()
 
     if not bbox_a.intersects(bbox_b): return ()
 
@@ -736,7 +738,7 @@ class moveto_pt(normpathel):
         context.currentsubpath = self.x, self.y
 
     def _bbox(self, context):
-        return bbox._bbox()
+        return None
 
     def _bcurve(self, context):
         return None
@@ -1015,7 +1017,7 @@ class rmoveto_pt(pathel):
         context.currentsubpath = context.currentpoint
 
     def _bbox(self, context):
-        return bbox._bbox()
+        return None
 
     def _normalized(self, context):
         x = context.currentpoint[0]+self.dx
@@ -1521,12 +1523,15 @@ class path(base.PSCmd):
 
     def bbox(self):
         context = _pathcontext()
-        abbox = bbox.bbox()
+        abbox = None
 
         for pel in self.path:
             nbbox =  pel._bbox(context)
             pel._updatecontext(context)
-            if nbbox: abbox += nbbox
+            if abbox is None:
+                abbox = nbbox
+            elif nbbox: 
+                abbox += nbbox
 
         return abbox
 

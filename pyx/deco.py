@@ -67,7 +67,12 @@ class decoratedpath(base.PSCmd):
 
 
     def bbox(self):
-        return self.subcanvas.bbox() + self.path.bbox()
+        scbbox = self.subcanvas.bbox()
+        pbbox = self.path.bbox()
+        if scbbox is not None:
+            return scbbox+pbbox
+        else:
+            return pbbox
 
     def prolog(self):
         result = []

@@ -63,7 +63,7 @@ class clip(base.PSCmd):
 
     def bbox(self):
         # as a PSCmd a clipping path has NO influence on the bbox...
-        return bbox._bbox()
+        return None
 
     def clipbbox(self):
         # ... but for clipping, we nevertheless need the bbox
@@ -132,7 +132,7 @@ class _canvas(base.PSCmd):
 
         self.PSOps     = []
         self.trafo     = trafo.trafo()
-        self.clipbbox  = bbox._bbox()
+        self.clipbbox  = None
 
         # prevent cyclic imports
         import text
@@ -143,23 +143,34 @@ class _canvas(base.PSCmd):
                 self.trafo = self.trafo*arg
                 self.PSOps.append(arg)
             elif isinstance(arg, clip):
-                self.clipbbox=(self.clipbbox*
-                               arg.clipbbox().transformed(self.trafo))
+                if self.clipbbox is None:
+                    self.clipbbox = arg.clipbbox().transformed(self.trafo)
+                else: 
+                    self.clippbox *= arg.clipbbox().transformed(self.trafo)
                 self.PSOps.append(arg)
             else:
                 self.set(arg)
 
     def bbox(self):
         """returns bounding box of canvas"""
-        obbox = bbox.bbox()
+        obbox = None
         for cmd in self.PSOps:
             if isinstance(cmd, base.PSCmd):
-               obbox += cmd.bbox()
+               abbox = cmd.bbox()
+               if obbox is None:
+                   obbox = abbox
+               elif abbox is not None:
+                   obbox += abbox
 
         # transform according to our global transformation and
         # intersect with clipping bounding box (which have already been
         # transformed in canvas.__init__())
-        return obbox.transformed(self.trafo)*self.clipbbox
+        if obbox is not None and self.clipbbox is not None:
+            return obbox.transformed(self.trafo)*self.clipbbox
+        elif obbox is not None:
+            return obbox.transformed(self.trafo)
+        else:
+            return self.clipbbox
 
     def prolog(self):
         result = []
@@ -313,7 +324,7 @@ class pattern(_canvas, attr.exclusiveattr, style.fillstyle):
         self.patterntrafo = trafo
 
     def bbox(self):
-        return bbox._bbox()
+        return None
 
     def write(self, file):
         file.write("%s setpattern\n" % self.id)

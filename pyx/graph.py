@@ -2876,10 +2876,14 @@ class key:
     def bbox(self):
         """return a bbox for the key
         method should be called after dolayout"""
-        result = bbox.bbox()
+        result = None
         for title in self.titles:
-            result += title.bbox() + bbox._bbox(0, title.center[1] - 0.5 * self.symbolheight_pt,
-                                                0, title.center[1] + 0.5 * self.symbolheight_pt)
+            titlebbox = title.bbox() + bbox._bbox(0, title.center[1] - 0.5 * self.symbolheight_pt,
+                                                  0, title.center[1] + 0.5 * self.symbolheight_pt)
+            if result is None:
+                result = titlebbox
+            else:
+                result += titlebbox
         return result
 
     def paint(self, c, x, y):
