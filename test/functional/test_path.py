@@ -80,13 +80,6 @@ def testarcs(c):
 #    testarct(c, 0.5, 11, 8, 0, 1, 0, 0) # not allowed
 
 
-def testmidpointsplit(c):
-   p=path(moveto(1,1), rlineto(2,2), arc(5,2,1,30,300), closepath())
-   bpsplit=p.bpath().MidPointSplit()
-   c.stroke(p, [color.rgb.red])
-   c.stroke(bpsplit, [color.rgb.green, style.linestyle.dashed])
-
-
 def testintersectbezier(c):
     p=normpath(path(moveto(0,0), curveto(2,6,4,5,2,9)), epsilon=1e-4)
     q=normpath(path(moveto(2,0), curveto(2,6,4,12,1,6)), epsilon=1e-4)
@@ -177,14 +170,15 @@ def testtangent(c):
 
     # test the curvature
     cc = canvas.canvas()
+    cc.insert(p)
+    cc = canvas.canvas(canvas.clip(cc.bbox().path()))
     for i in range(int(p.range())*2):
         radius = p.curvradius(i/2.0)
         radius = unit.tocm(radius)
-        if radius < 10000:
+        if radius is not None:
             pos = p.trafo(i/2.0).apply(0,radius*radius/abs(radius))
             cc.stroke(circle(0,0,abs(radius)), [color.grey(0.5), trafo.translate(*pos)])
-
-    c.insert(cc)#, [canvas.clip(c.bbox().enlarge(1).rect())])
+    c.insert(cc)
 
 
 def testarcbbox(c):
@@ -305,7 +299,6 @@ def testarclentoparam(c):
 
 c=canvas.canvas()
 dotest(c, 0, 0, "testarcs")
-#dotest(c, 12, 3, "testmidpointsplit")
 dotest(c, 2, 12, "testintersectbezier")
 dotest(c, 10,11, "testnormpathtrafo")
 dotest(c, 12, -4, "testtangent")
