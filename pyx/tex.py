@@ -10,6 +10,7 @@
 #         weitere Schicht postscript-file notwendig ?!?
 
 from const import *
+from canvas import epsfile
 
 # tex processor types
 

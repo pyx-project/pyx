@@ -70,12 +70,12 @@ class epsfile:
 
     def __init__(self, epsname):
         self.epsname = epsname
-        self._ReadEPSBoundBox()                         
+        self._ReadEPSBoundingBox()                         
 
     def _ReadEPSBoundingBox(self):
         'determines bounding box of EPS file epsname as 4-tuple (llx, lly, urx, ury)'
         try:
-            epsfile=open(epsname,"r")
+            file=open(self.epsname,"r")
         except:
             assert "cannot open EPS file"	# TODO: Fehlerbehandlung
 
@@ -84,7 +84,7 @@ class epsfile:
         bbpattern = re.compile( r"^%%BoundingBox:\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s*$" )
 
         while 1:
-            line=epsfile.readline()
+            line=file.readline()
             if not line:
                 assert "bounding box not found in EPS file"
                 raise IOError			# TODO: Fehlerbehandlung
@@ -97,22 +97,21 @@ class epsfile:
             if bbmatch is not None:
                (self.llx, self.lly, self.urx, self.ury) = map(int, bbmatch.groups())		# conversion strings->int
                break
-        epsfile.close()
 
-    def __string__(self):
+    def __str__(self):
         try:
-	    epsfile=open(epsname,"r")
+	    file=open(self.epsname,"r")
 	except:
 	    assert "cannot open EPS file"	                          # TODO: Fehlerbehandlung
 
-	       # "%f %f translate\n" % (x, y) +                             # we are already at this position
+	# "%f %f translate\n" % (x, y) +                             # we are already at this position
 	return """BeginEPSF
 	       %f %f translate 
 	       %f %f %f %f rect
 	       clip newpath
 	       %%BeginDocument: %s""" % (-self.llx, -self.lly, 
                                          self.llx, self.lly, self.urx-self.llx,self.ury-self.lly, 
-                                         self.epsname) + epsfile.read() + "%%EndDocument\nEndEPSF\n"
+                                         self.epsname) + file.read() + "%%EndDocument\nEndEPSF\n"
 
 #
 # Exceptions
@@ -126,22 +125,20 @@ class CanvasException(Exception): pass
 
 class canvas:
 
-    PSCmds = []
-
     def __init__(self, **kwargs):
         from trafo import transformation
         
-        self.trafo = kwargs.get("trafo", transformation())
-        self.unit = kwargs.get("unit", unit())
+        self.PSCmds = []
+        self.trafo  = kwargs.get("trafo", transformation())
+        self.unit   = kwargs.get("unit", unit())
         
-#        self._PSAddCmd("%f %f scale" % (1/unit_ps, 1/unit_ps))
         self._PSAddCmd("[" + `self.trafo` + " ] concat")
     
-    def __string__(self):
-        return reduce(lambda x,y: x + ("%s\n" % y), PSCmds)
+    def __str__(self):
+        return reduce(lambda x,y: x + "\n%s" % str(y), self.PSCmds)
 
     def _PSAddCmd(self, cmd):
-        self.PSCmds.append(cmd);
+        self.PSCmds.append(cmd)
 
     def _newpath(self):
     	self._PSAddCmd("newpath")
@@ -214,21 +211,21 @@ class canvas:
         
     def write(self, filename, width, height, **kwargs):
         try:
-  	    self.file = open(self.filename + ".eps", "w")
+  	    file = open(filename + ".eps", "w")
 	except IOError:
 	    assert "cannot open output file"		        # TODO: Fehlerbehandlung...
 
         file.write("%!PS-Adobe-3.0 EPSF 3.0\n")
         file.write("%%BoundingBox: 0 0 %d %d\n" % (1000,1000))  # TODO: richtige Boundingbox!
         file.write("%%Creator: pyx 0.0.1\n") 
-        file.write("%%Title: %s.eps\n" % self.BaseFilename) 
+        file.write("%%Title: %s.eps\n" % filename) 
         # file.write("%%CreationDate: %s" % ) 
         file.write("%%EndComments\n") 
         file.write("%%BeginProlog\n") 
         file.write(PSProlog)
         file.write("%%EndProlog\n") 
-        file.write("%f setlinewidth\n" % self.w2p(0.02))	# TODO: fixme
-        file.write(self)
+        file.write("%f setlinewidth\n" % 1)	# TODO: fixme
+        file.write(str(self))
 
 
 if __name__=="__main__":
@@ -240,22 +237,22 @@ if __name__=="__main__":
     from graph import *
 
     t=c.tex()
-
+ 
     #for x in range(11):
     #    amove(x,0)
     #    rline(0,20)
     #for y in range(21):
     #   amove(0,y)
     #   rline(10,0)
-
+ 
     c.draw(path( [moveto(1,1), 
                   lineto(2,2), 
                   moveto(1,2), 
                   lineto(2,1) ] 
-		)
+        	)
           )
     c.draw(line(1, 1, 1,2)) 
-
+ 
     print "Breite von 'Hello world!': ",t.textwd("Hello  world!")
     print "Höhe von 'Hello world!': ",t.textht("Hello world!")
     print "Höhe von 'Hello world!' in large: ",t.textht("Hello world!", size = large)
@@ -268,45 +265,45 @@ if __name__=="__main__":
     t.text(5, 3, "Hello world!", halign = right)
     for angle in (-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90):
         t.text(11+angle/10, 5, str(angle), angle = angle)
-	t.text(11+angle/10, 6, str(angle), angle = angle, halign = center)
-	t.text(11+angle/10, 7, str(angle), angle=angle, halign=right)
+        t.text(11+angle/10, 6, str(angle), angle = angle, halign = center)
+        t.text(11+angle/10, 7, str(angle), angle=angle, halign=right)
     for pos in range(1,21):
         t.text(pos, 7.5, ".")
    
     p=path([ moveto(5,12), 
              lineto(7,12), 
-	     moveto(5,10), 
-	     lineto(5,14), 
-	     moveto(7,10), 
-	     lineto(7,14)])
+             moveto(5,10), 
+             lineto(5,14), 
+             moveto(7,10), 
+             lineto(7,14)])
    
     c.setlinestyle(linestyle_dotted)
     t.text(5, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize = 2)
     c.draw(p)
-
+ 
     p=path([ moveto(10,12), 
              lineto(12,12), 
-	     moveto(10,10), 
-	     lineto(10,14), 
-	     moveto(12,10), 
-	     lineto(12,14)])
+             moveto(10,10), 
+             lineto(10,14), 
+             moveto(12,10), 
+             lineto(12,14)])
     c.setlinestyle(linestyle_dashdotted)
     t.text(10, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize = 2, valign = bottom)
     c.draw(p)
-
+ 
     p=path([moveto(5,15), arc(5,15, 1, 0, 45), closepath()])
     c.draw(p)
-
+ 
     p=path([moveto(5,17), curveto(6,18, 5,16, 7,15)])
     c.draw(p)
-    
+   
     for angle in range(20):
-       c.subcanvas(trafo=translate(10,10)*rotate(angle)).draw(p)
-
-    c.setlinestyle(linestyle_solid)
-    g=GraphXY(c, t, 10, 15, 8, 6)
-    g.plot(Function("5*sin(x)"))
-    g.plot(Function("(x+5)*x*(x-5)/100"))
-    g.run()
-
-    c=write("example", 21, 29.7)
+       s=c.canvas(trafo=translate(10,10)*rotate(angle)).draw(p)
+#
+#   c.setlinestyle(linestyle_solid)
+#   g=GraphXY(c, t, 10, 15, 8, 6)
+#   g.plot(Function("5*sin(x)"))
+#   g.plot(Function("(x+5)*x*(x-5)/100"))
+#   g.run()
+#
+    c.write("example", 21, 29.7)
