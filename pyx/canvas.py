@@ -696,13 +696,11 @@ class canvas(base.PSText):
             if isinstance(cmd, base.PSText):
                 cmd.writefontheader(file, collectfontheader)
 
-    def write(self, file, restorestack=1):
-        if restorestack:
-            _gsave().write(file)
+    def write(self, file):
+        _gsave().write(file)
         for cmd in self.PSOps:
             cmd.write(file)
-        if restorestack:
-            _grestore().write(file)
+        _grestore().write(file)
 
     def writetofile(self, filename, paperformat=None, rotated=0, fittosize=0, margin="1 t cm", bboxenhance="1 t pt"):
         """write canvas to EPS file
@@ -793,7 +791,7 @@ class canvas(base.PSText):
         file.write("%f setlinewidth\n" % unit.topt(linewidth.normal))
 
         # here comes the actual content
-        self.write(file, restorestack=0)
+        self.write(file)
 
         file.write("showpage\n")
         file.write("%%Trailer\n")
@@ -810,23 +808,9 @@ class canvas(base.PSText):
 
         """
 
-        for PSOp in PSOps:
-            # XXX(AW): isn't gsave/grestore better be done in the write methods?
-            # XXX(AW): (there is the exception to not encapsulate a canvas in gsave/grestore for the main canvas)
-            #if isinstance(PSOp, canvas) or isinstance(PSOp, text._textbox):
-            #    self.PSOps.append(_gsave())
+        self.PSOps.extend(PSOps)
 
-            self.PSOps.append(PSOp)
-
-            #if isinstance(PSOp, canvas) or isinstance(PSOp, text._textbox):
-            #    self.PSOps.append(_grestore())
-
-            # save last command for return value
-            lastop = PSOp
-
-        # XXX(AW): BTW, what *was* "lastop" when an encapsulation in gsave/grestore was performed (the old way)?
-
-        return lastop
+        return PSOps[-1]
 
     def set(self, *styles):
         """sets styles args globally for the rest of the canvas
