@@ -74,7 +74,7 @@ class _datafile:
         columnlist = {}
         for key in tree.VarList():
             if key[0] == "$":
-                column = int(key[1])
+                column = int(key[1:])
                 try:
                     self.titles[column]
                 except:
