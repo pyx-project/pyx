@@ -564,6 +564,96 @@ class wriggle(deco, attr.attr):
         return dp
 
 
+class cycloid(deco, attr.attr):
+    """Wraps a cycloid around a path.
+
+    The outcome looks like a metal spring with the originalpath as the axis.
+    """
+
+    def __init__(self, radius=0.5, loops=10, skipfirst=1, skiplast=1, curvesperloop=2, left=1):
+        self.skipfirst = unit.length(skipfirst, default_type="v")
+        self.skiplast = unit.length(skiplast, default_type="v")
+        self.radius = unit.length(radius, default_type="v")
+        self.halfloops = 2 * int(loops) + 1
+        self.curvesperhloop = int(0.5 * curvesperloop)
+        self.sign = left and 1 or -1
+
+    def decorate(self, dp):
+        # XXX: is this the correct way to select the basepath???!!!
+        if isinstance(dp.strokepath, path.normpath):
+            basepath = dp.strokepath
+        elif dp.strokepath is not None:
+            basepath = path.normpath(dp.strokepath)
+        elif isinstance(dp.path, path.normpath):
+            basepath = dp.path
+        else:
+            basepath = path.normpath(dp.path)
+
+        skipfirst = abs(unit.topt(self.skipfirst))
+        skiplast = abs(unit.topt(self.skiplast))
+        radius = abs(unit.topt(self.radius))
+
+        # make list of the lengths and parameters at points on basepath where we will add cycloid-points
+        totlength = basepath.arclen_pt()
+        if totlength < skipfirst + skiplast + radius:
+            raise RuntimeError("Path is too short for decoration with cycloid")
+
+        # differences in length, angle ... between two basepoints
+        # and between basepoints and controlpoints
+        Dphi = math.pi / self.curvesperhloop
+        Dlength = (totlength - skipfirst - skiplast - 2*radius) * 1.0 / (self.halfloops * self.curvesperhloop)
+        # from path._arctobcurve:
+        # optimal relative distance along tangent for second and third control point
+        l = 4 * (1 - math.cos(Dphi/2)) / (3 * math.sin(Dphi/2))
+        controlDphi = math.atan2(l, 1.0)
+        controlDlength = Dlength * controlDphi / Dphi
+
+        # for every point on the cycloid we need the basepoint and two controlpoints
+        lengths = [skipfirst + radius + i * Dlength for i in range(self.halfloops * self.curvesperhloop + 1)]
+        lengths[0] = skipfirst
+        lengths[-1] = totlength - skiplast
+        phis = [i * Dphi for i in range(self.halfloops * self.curvesperhloop + 1)]
+        params = basepath.arclentoparam_pt(lengths)
+
+        #for param in params:
+        #    dp.subcanvas.fill(path.circle_pt(*(basepath.at_pt(param) + (0.3,))), [color.rgb.blue])
+        #    dp.subcanvas.fill(path.circle_pt(*(basepath.at_pt(param) + (0.3,))), [color.rgb.blue])
+        #    dp.subcanvas.fill(path.circle_pt(*(basepath.at_pt(param) + (0.3,))), [color.rgb.red])
+
+        # get the positions of the splitpoints in the cycloid
+        points = []
+        for phi, param, length in zip(phis, params, lengths):
+            # the cycloid is a circle that is stretched along the basepath
+            # here are the points of that circle
+            basetrafo = basepath.trafo(param)
+            basex, basey = -radius * math.cos(phi), radius * math.sin(phi)
+            preex, preey = basex - l * basey, basey + l * basex
+            postx, posty = basex + l * basey, basey - l * basex
+            # and put everything at the proper place
+            preex = preex - controlDlength
+            postx = postx + controlDlength
+            if length is lengths[0]:
+                postx += radius
+            if length is lengths[-1]:
+                basex, preex = basex - radius, preex - radius
+            points.append(basetrafo._apply(preex, self.sign * preey) +
+                          basetrafo._apply(basex, self.sign * basey) +
+                          basetrafo._apply(postx, self.sign * posty))
+
+        cycloidpath = basepath.split([params[0]])[0]
+        if len(points) > 1:
+            cycloidpath.append(path.multicurveto_pt(
+                [(points[i][4:6] + points[i+1][0:4]) for i in range(len(points)-1)]))
+        else:
+            raise RuntimeError("Not enough points while decorating with cycloid")
+        cycloidpath.glue(basepath.split([params[-1]])[-1])
+
+        # store cycloid path
+        # XXX bbox of dp.path is wrong
+        dp.strokepath = cycloidpath
+        return dp
+
+
 class smoothed(deco, attr.attr):
 
     """Bends corners in a path.
@@ -654,7 +744,7 @@ class smoothed(deco, attr.attr):
             except ZeroDivisionError:
                 sys.stderr.write("*** PyX Warning: The connecting bezier is not uniquely determined."
                     "The simple heuristic solution may not be optimal.")
-                a = b = 1.5 * hypot(A[0] - B[0], A[1] - B[1])
+                a = b = 1.5 * math.hypot(A[0] - B[0], A[1] - B[1])
         else:
             if abs(curvA) < 1.0e-4:
                 b = D / T
@@ -755,8 +845,6 @@ class smoothed(deco, attr.attr):
                     c = npel.curvradius_pt(par)
                     if c is None: cs.append(0)
                     else: cs.append(1.0/c)
-                    #dp.subcanvas.stroke(path.circle_pt(p[0], p[1], 3), [color.grey.black, style.linewidth.THin])
-                    #dp.subcanvas.stroke(path.line_pt(p[0], p[1], p[0] + 10*(t[0]-p[0]), p[1] + 10*(t[1]-p[1])), [color.grey.black, earrow.small, style.linewidth.THin])
 
                 params.append(pars)
                 points.append(ps)
@@ -807,8 +895,9 @@ class smoothed(deco, attr.attr):
                         do_moveto = 0
                     newpath.append(path.curveto_pt(*(g1 + f1 + e)))
                     newpath.append(path.curveto_pt(*(f2 + g2 + d2)))
+                    #for X in [d1,g1,f1,e,f2,g2,d2]:
+                    #    dp.subcanvas.fill(path.circle_pt(X[0], X[1], 1.0))
                 else:
-                    #dp.subcanvas.fill(path.circle_pt(points[next][0][0], points[next][0][1], 2))
                     if not self.strict:
                         # the curvature may have the wrong sign -- produce a heuristic for the sign:
                         vx, vy = thisnpel.end_pt()[0] - points[this][-1][0], thisnpel.end_pt()[1] - points[this][-1][1]
@@ -824,6 +913,8 @@ class smoothed(deco, attr.attr):
                         newpath.append(path.moveto_pt(*A))
                         do_moveto = 0
                     newpath.append(path.curveto_pt(*(B + C + D)))
+                    #for X in [A,B,C,D]:
+                    #    dp.subcanvas.fill(path.circle_pt(X[0], X[1], 1.0))
 
             # 5. Second part of extra handling of closed paths
             if normsubpath.closed:
