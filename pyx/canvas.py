@@ -166,7 +166,6 @@ class linestyle(_linestyle):
  
 class _linewidth(unit.length):
     def __init__(self, l):
-        print ":", l
         unit.length.__init__(self, l=l, default_type="w")
     def _PSAddCmd(self, canvas):
         canvas._PSAddCmd("%f setlinewidth" % canvas.unit.pt(self.l))
@@ -241,7 +240,6 @@ class canvas:
 
     def set(self, *args):
         for arg in args: 
-           print arg.__class__
            arg._PSAddCmd(self)
 	
     def draw(self, path, *args):
