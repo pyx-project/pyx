@@ -112,10 +112,10 @@ class frac:
             res = self._powi(x, y2)
             if yr:
                 return x * res * res
-            else: 
+            else:
                 return res * res
-        else: 
-            return 1  
+        else:
+            return 1
 
     def __cmp__(self, other):
         if other == None:
@@ -1332,12 +1332,11 @@ class graphxy(canvas.canvas):
         if self._drawstate != self.drawlayout:
             raise PyxGraphDrawstateError
         if style is None:
-            if self.previousstyle.has_key(data.defaultstyle.styleid):
-                style = self.previousstyle[data.defaultstyle.styleid].next()
+            if self.previousstyle.has_key(data.defaultstyle.__class__):
+                style = self.previousstyle[data.defaultstyle.__class__].next()
             else:
                 style = data.defaultstyle
-        if hasattr(style, "styleid"):
-            self.previousstyle[style.styleid] = style
+        self.previousstyle[style.__class__] = style
         data.setstyle(self, style)
         self.data.append(data)
 
@@ -1465,6 +1464,13 @@ class graphxy(canvas.canvas):
 
         self.xmap = _linmap().setbasepts(((0, self.xpos), (1, self.xpos + self.width)))
         self.ymap = _linmap().setbasepts(((0, self.ypos), (1, self.ypos + self.height)))
+        self._drawstate = self.drawdata
+
+    def drawdata(self):
+        if self._drawstate != self.drawdata:
+            raise PyxGraphDrawstateError
+        for data in self.data:
+            data.draw(self)
         self._drawstate = self.drawbackground
 
     def drawbackground(self):
@@ -1476,13 +1482,6 @@ class graphxy(canvas.canvas):
                                  self.xmap.convert(1) - self.xmap.convert(0),
                                  self.ymap.convert(1) - self.ymap.convert(0)),
                       *_ensuresequence(self.backgroundstyles))
-        self._drawstate = self.drawdata
-
-    def drawdata(self):
-        if self._drawstate != self.drawdata:
-            raise PyxGraphDrawstateError
-        for data in self.data:
-            data.draw(self)
         self._drawstate = self.drawaxes
 
     def drawaxes(self):
@@ -1548,63 +1547,175 @@ class graphxy(canvas.canvas):
 
 
 ################################################################################
+# attr changers
+################################################################################
+
+
+class changeattrref:
+
+    def __init__(self, ref, index):
+        self.ref = ref
+        self.index = index
+
+    def attrindex(self):
+        return self.index
+
+    def attr(self):
+        return self.ref._attr(self.index)
+
+    def next(self):
+        return self.ref.next()
+
+
+class changeattr:
+
+    def __init__(self):
+        self.len = 1
+
+    def attrindex(self):
+        return 0
+
+    def attr(self):
+        return self._attr(0)
+
+    def next(self):
+        index = self.len
+        self.len += 1
+        return changeattrref(self, index)
+
+    def _thisattr(self, index):
+        raise Exception("to be defined in derived classes")
+
+
+class changecolor(changeattr):
+
+    def __init__(self, gradient):
+        changeattr.__init__(self)
+        self.gradient = gradient
+
+    def _attr(self, index):
+        if self.len:
+            return self.gradient.getcolor(index/float(self.len-1))
+        else:
+            return gradient.getcolor(0)
+
+changecolor.gray           = changecolor(color.gradient.gray)
+changecolor.reversegray    = changecolor(color.gradient.reversegray)
+changecolor.redgreen       = changecolor(color.gradient.redgreen)
+changecolor.redblue        = changecolor(color.gradient.redblue)
+changecolor.greenred       = changecolor(color.gradient.greenred)
+changecolor.greenblue      = changecolor(color.gradient.greenblue)
+changecolor.bluered        = changecolor(color.gradient.bluered)
+changecolor.bluegreen      = changecolor(color.gradient.bluegreen)
+changecolor.rainbow        = changecolor(color.gradient.rainbow)
+changecolor.reverserainbow = changecolor(color.gradient.reverserainbow)
+changecolor.hue            = changecolor(color.gradient.hue)
+changecolor.reversehue     = changecolor(color.gradient.reversehue)
+
+
+class changesequence(changeattr):
+
+    def __init__(self, *sequence):
+        changeattr.__init__(self)
+        if not len(sequence): raise("no attributes given")
+        self.sequence = sequence
+
+    def _attr(self, index):
+        return self.sequence[index % len(self.sequence)]
+
+
+class changelinestyle(changesequence): pass
+
+changelinestyle.default = changelinestyle(canvas.linestyle.solid,
+                                          canvas.linestyle.dashed,
+                                          canvas.linestyle.dotted,
+                                          canvas.linestyle.dashdotted)
+
+
+class changemarker(changesequence): pass
+
+
+################################################################################
 # styles
 ################################################################################
 
 
-class colorchange:
+class _style:
 
-    def __init__(self, lowcolor, highcolor):
-        if lowcolor.__class__ != highcolor.__class__: raise ValueError
-        self.colorclass = lowcolor.__class__
-        self.lowcolor = lowcolor
-        self.highcolor = highcolor
-        self.max = 0
+    def __init__(self, changers=()):
+        self.changers = _ensuresequence(changers)
 
-    def getcolor(self, style):
-        if hasattr(style, "colorchangeindex"):
-            index = style.colorchangeindex
+    def changeattrs(self):
+        if self.changers is not None:
+            return [changer.attr() for changer in self.changers]
         else:
-            index = self.max
-        if index < 0 or index > self.max: raise ValueError
-        color = {}
-        for key in self.lowcolor.color.keys():
-            color[key] = (index * self.highcolor.color[key] +
-                          (self.max - index) * self.lowcolor.color[key])/float(self.max)
-        return self.colorclass(**color)
+            return None
 
-    def next(self, style):
-        style.colorchangeindex = self.max
-        self.max += 1
-        return self
+    def nextchangers(self):
+        if self.changers is not None:
+            return [changer.next() for changer in self.changers]
+        else:
+            return None
 
 
-class plotstyle:
+class mark(_style):
 
-    pass
+    def _cross(self, x, y):
+        return (path._moveto(x-0.5*self.size, y-0.5*self.size),
+                path._lineto(x+0.5*self.size, y+0.5*self.size),
+                path._moveto(x-0.5*self.size, y+0.5*self.size),
+                path._lineto(x+0.5*self.size, y-0.5*self.size))
 
+    def _plus(self, x, y):
+        return (path._moveto(x-0.707106781*self.size, y),
+                path._lineto(x+0.707106781*self.size, y),
+                path._moveto(x, y-0.707106781*self.size),
+                path._lineto(x, y+0.707106781*self.size))
 
-class mark(plotstyle):
+    def _square(self, x, y):
+        return (path._moveto(x-0.5*self.size, y-0.5 * self.size),
+                path._lineto(x+0.5*self.size, y-0.5 * self.size),
+                path._lineto(x+0.5*self.size, y+0.5 * self.size),
+                path._lineto(x-0.5*self.size, y+0.5 * self.size),
+                path.closepath())
 
-    styleid = "mark"
+    def _triangle(self, x, y):
+        return (path._moveto(x-0.759835685*self.size, y-0.438691337*self.size),
+                path._lineto(x+0.759835685*self.size, y-0.438691337*self.size),
+                path._lineto(x, y+0.877382675*self.size),
+                path.closepath())
 
-    def __init__(self, size="0.12 cm", colorchange=None, errorscale=1/goldenrule, symbolstyles=(), dodrawsymbol=1):
+    def _circle(self, x, y):
+        return (path._arc(x, y, 0.564189583*self.size, 0, 360),
+                path.closepath())
+
+    def _diamond(self, x, y):
+        return (path._moveto(x-0.537284965*self.size, y),
+                path._lineto(x, y-0.930604859*self.size),
+                path._lineto(x+0.537284965*self.size, y),
+                path._lineto(x, y+0.930604859*self.size),
+                path.closepath())
+
+    cross = changemarker(_cross, _plus, _square, _triangle, _circle, _diamond)
+    plus = changemarker(_plus, _square, _triangle, _circle, _diamond, _cross)
+    square = changemarker(_square, _triangle, _circle, _diamond, _cross, _plus)
+    triangle = changemarker(_triangle, _circle, _diamond, _cross, _plus, _square)
+    circle = changemarker(_circle, _diamond, _cross, _plus, _square, _triangle)
+    diamond = changemarker(_diamond, _cross, _plus, _square, _triangle, _circle)
+
+    def __init__(self, size="0.12 cm", errorscale=1/goldenrule, symbolstyles=canvas.stroked(), marker=cross, **attr):
+        _style.__init__(self, **attr)
+        self.marker = marker
         self.size_str = size
         self.errorscale = errorscale
-        self.dodrawsymbol = dodrawsymbol
-        self.symbolstyles = symbolstyles
-        self.colorchange = colorchange
+        self.symbolstyles = _ensuresequence(symbolstyles)
 
     def next(self):
-        if self.colorchange is None:
-            return self.nextclass(size=self.size_str,
-                                  errorscale=self.errorscale,
-                                  symbolstyles=self.symbolstyles)
-        else:
-            return self.nextclass(size=self.size_str,
-                                  colorchange=self.colorchange.next(self),
-                                  errorscale=self.errorscale,
-                                  symbolstyles=self.symbolstyles)
+        return mark(size=self.size_str,
+                    errorscale=self.errorscale,
+                    marker=self.marker.next(),
+                    symbolstyles=self.symbolstyles,
+                    changers=self.nextchangers())
 
     def setcolumns(self, graph, columns):
         self.xindex = self.dxindex = self.dxminindex = self.dxmaxindex = None
@@ -1634,7 +1745,7 @@ class mark(plotstyle):
         if None in (self.xindex, self.yindex): raise ValueError
         if self.dxindex is not None and (self.dxminindex is not None or
                                          self.dxmaxindex is not None): raise ValueError
-        if self.dyindex is not None and (self.dyminindex is not None or 
+        if self.dyindex is not None and (self.dyminindex is not None or
                                          self.dymaxindex is not None): raise ValueError
 
     def keyrange(self, points, index, dindex, dminindex, dmaxindex):
@@ -1665,7 +1776,8 @@ class mark(plotstyle):
         xaxis = graph.axes[self.xkey]
         yaxis = graph.axes[self.ykey]
         self.size = unit.topt(unit.length(self.size_str, default_type="v"))
-        if self.colorchange: self.symbolstyles = [self.colorchange.getcolor(self)] + list(self.symbolstyles)
+        if self.symbolstyles is not None:
+            symbolstyles = self.changeattrs() + list(self.symbolstyles)
 
         for point in points:
             try:
@@ -1705,123 +1817,21 @@ class mark(plotstyle):
                                          path._lineto(x+self.errorscale*self.size, ymax)))
             except (TypeError, ValueError):
                 pass
-            if self.dodrawsymbol:
-                self._drawsymbol(graph, x, y)
-
-    def _drawsymbol(self, canvas, x, y):
-        canvas.stroke(path.path(*self._symbol(x, y)), *self.symbolstyles)
-
-    def drawsymbol(self, canvas, *args):
-        return self._drawsymbol(canvas, *map(unit.topt, args))
-
-    def symbol(self, *args):
-        return self._symbol(*map(unit.topt, args))
+            if self.symbolstyles is not None:
+                symbolstyles = self.changeattrs() + list(self.symbolstyles)
+                graph.draw(path.path(*self.marker.attr()(self, x, y)), *symbolstyles)
 
 
-class _markcross(mark):
+class line(_style):
 
-    def _symbol(self, x, y):
-        return (path._moveto(x-0.5*self.size, y-0.5*self.size),
-                path._lineto(x+0.5*self.size, y+0.5*self.size),
-                path._moveto(x-0.5*self.size, y+0.5*self.size),
-                path._lineto(x+0.5*self.size, y-0.5*self.size))
-
-
-class _markplus(mark):
-
-    def _symbol(self, x, y):
-        return (path._moveto(x-0.707106781*self.size, y),
-                path._lineto(x+0.707106781*self.size, y),
-                path._moveto(x, y-0.707106781*self.size),
-                path._lineto(x, y+0.707106781*self.size))
-
-
-class _marksquare(mark):
-
-    def _symbol(self, x, y):
-        return (path._moveto(x-0.5*self.size, y-0.5 * self.size),
-                path._lineto(x+0.5*self.size, y-0.5 * self.size),
-                path._lineto(x+0.5*self.size, y+0.5 * self.size),
-                path._lineto(x-0.5*self.size, y+0.5 * self.size),
-                path.closepath())
-
-
-class _marktriangle(mark):
-
-    def _symbol(self, x, y):
-        return (path._moveto(x-0.759835685*self.size, y-0.438691337*self.size),
-                path._lineto(x+0.759835685*self.size, y-0.438691337*self.size),
-                path._lineto(x, y+0.877382675*self.size),
-                path.closepath())
-
-
-class _markcircle(mark):
-
-    def _symbol(self, x, y):
-        return (path._arc(x, y, 0.564189583*self.size, 0, 360),
-                path.closepath())
-
-
-class _markdiamond(mark):
-
-    def _symbol(self, x, y):
-        return (path._moveto(x-0.537284965*self.size, y),
-                path._lineto(x, y-0.930604859*self.size),
-                path._lineto(x+0.537284965*self.size, y),
-                path._lineto(x, y+0.930604859*self.size),
-                path.closepath())
-
-
-class _fmark:
-
-    def _drawsymbol(self, canvas, x, y):
-        canvas.fill(path.path(*self._symbol(x, y)), *self.symbolstyles)
-
-
-class _markfsquare(_fmark, _marksquare): pass
-class _markftriangle(_fmark, _marktriangle): pass
-class _markfcircle(_fmark, _markcircle): pass
-class _markfdiamond(_fmark, _markdiamond): pass
-
-
-_markcross.nextclass = _markplus
-_markplus.nextclass = _marksquare
-_marksquare.nextclass = _marktriangle
-_marktriangle.nextclass = _markcircle
-_markcircle.nextclass = _markdiamond
-_markdiamond.nextclass = _markfsquare
-_markfsquare.nextclass = _markftriangle
-_markftriangle.nextclass = _markfcircle
-_markfcircle.nextclass = _markfdiamond
-_markfdiamond.nextclass = _markcross
-
-mark.cross = _markcross
-mark.plus = _markplus
-mark.square = _marksquare
-mark.triangle = _marktriangle
-mark.circle = _markcircle
-mark.diamond = _markdiamond
-mark.fsquare = _markfsquare
-mark.ftriangle = _markftriangle
-mark.fcircle = _markfcircle
-mark.fdiamond = _markfdiamond
-
-
-class line(plotstyle):
-
-    styleid = "line"
-
-    def __init__(self, colorchange=None, linestyles=(), dodrawline=1):
-        self.colorchange = colorchange
+    def __init__(self, linestyles=(), dodrawline=1, **args):
+        _style.__init__(self, **args)
         self.linestyles = linestyles
         self.dodrawline = dodrawline
 
     def next(self):
-        if self.colorchange is None:
-            return self.nextclass(linestyles=self.linestyles)
-        else:
-            return self.nextclass(colorchange=self.colorchange.next(self),
-                                  linestyles=self.linestyles)
+        return line(linestyles=self.linestyles,
+                    changers=self.nextchangers())
 
     def setcolumns(self, graph, columns):
         self.xindex = self.yindex = None
@@ -1852,7 +1862,6 @@ class line(plotstyle):
                 self.ykey: self.keyrange(points, self.yindex)}
 
     def drawpointlist(self, graph, points):
-        if self.colorchange: self.linestyles = [self.colorchange.getcolor(self)] + list(self.linestyles)
 
         xaxis = graph.axes[self.xkey]
         yaxis = graph.axes[self.ykey]
@@ -1871,39 +1880,9 @@ class line(plotstyle):
             except (TypeError, ValueError):
                 moveto = 1
         self.path = path.path(*line)
-        if self.dodrawline:
-            graph.stroke(self.path, *self.linestyles)
-
-
-class _solidline(line, attrlist.attrlist):
-
-    def __init__(self, **args):
-        args["linestyles"] = [canvas.linestyle.solid, ] + self.attrdel(args["linestyles"], canvas.linestyle)
-        line.__init__(self, **args)
-
-
-class _dashedline(line, attrlist.attrlist):
-
-    def __init__(self, **args):
-        args["linestyles"] = [canvas.linestyle.dashed, ] + self.attrdel(args["linestyles"], canvas.linestyle)
-        line.__init__(self, **args)
-
-
-class _dottedline(line, attrlist.attrlist):
-
-    def __init__(self, **args):
-        args["linestyles"] = [canvas.linestyle.dotted, ] + self.attrdel(args["linestyles"], canvas.linestyle)
-        line.__init__(self, **args)
-
-
-line.nextclass = _dashedline
-_dashedline.nextclass = _dottedline
-_dottedline.nextclass = _solidline
-_solidline.nextclass = _dashedline
-
-line.solid = _solidline
-line.dashed = _dashedline
-line.dotted = _dottedline
+        if self.linestyles is not None:
+            linestyles = self.changeattrs() + list(self.linestyles)
+            graph.stroke(self.path, *linestyles)
 
 
 ################################################################################
@@ -1913,7 +1892,7 @@ line.dotted = _dottedline
 
 class data:
 
-    defaultstyle = mark.cross()
+    defaultstyle = mark()
 
     def __init__(self, datafile, **columns):
         self.datafile = datafile
@@ -1987,7 +1966,7 @@ class paramfunction:
         self.points = points
         self.expression = {}
         self.mathtrees = {}
-        varlist, expressionlist = expression.split("=") 
+        varlist, expressionlist = expression.split("=")
         for key in varlist.split(","):
             key = key.strip()
             if self.mathtrees.has_key(key):

@@ -15,8 +15,7 @@ def test_multiaxes_data(c, t, x, y):
                                                 painter=graph.axispainter(titlestyles=tex.direction(45))),
                                y5=graph.logaxis(title="$P_5$")))
     df = datafile.datafile("testdata")
-    colors = graph.colorchange(color.rgb.red, color.rgb.green)
-    g.plot(graph.data(df, x=1, y=3), style=graph.mark.square(colorchange=colors))
+    g.plot(graph.data(df, x=1, y=3), style=graph.mark(changers=graph.changecolor.redgreen))
     g.plot(graph.data(df, x=1, y2=4))
     g.plot(graph.data(df, x=1, y3=5))
     g.plot(graph.data(df, x=1, y5=6))
@@ -25,8 +24,9 @@ def test_multiaxes_data(c, t, x, y):
 def test_piaxis_function(c, t, x, y):
     g = c.insert(graph.graphxy(t, x, y, height=5,
                                x=graph.linaxis(min=0, max=2*math.pi, factor=math.pi, suffix=r"\pi")))
-    colors = graph.colorchange(color.hsb(0, 1, 1), color.hsb(1, 1, 1))
-    g.plot(graph.function("y=sin(x)", points=1000), style=graph.line(colorchange=colors))
+    colors = graph.changecolor.rainbow
+    g.plot(graph.function("y=sin(x)", points=1000),
+           style=graph.line(changers=(graph.changecolor.rainbow, graph.changelinestyle.default)))
     for i in range(1, 20):
         g.plot(graph.function("y=sin(x-%i*pi/10)" % i))
     g.drawall()
@@ -41,12 +41,12 @@ def test_textaxis_errorbars(c, t, x, y):
                                x2=graph.linaxis(), y2=graph.linaxis()))
     df.addcolumn("av=(min+max)/2")
     g.plot(graph.data(df, x=0, y="av", dymin="min", dymax="max"))
-    g.plot(graph.paramfunction("k", 0, 2*math.pi, "x2, y2, dx, dy = 0.9*sin(k), 0.9*cos(3*k), 0.05, 0.05"), style = graph.mark.ftriangle())
+    g.plot(graph.paramfunction("k", 0, 2*math.pi, "x2, y2, dx, dy = 0.9*sin(k), 0.9*cos(3*k), 0.05, 0.05"), style = graph.mark(marker=graph.mark.triangle))
     g.drawall()
 
 def test_ownmark(c, t, x, y):
 
-    class arrowmark(graph.plotstyle):
+    class arrowmark(graph._style):
 
         def __init__(self, size = "0.2 cm"):
             self.size_str = size

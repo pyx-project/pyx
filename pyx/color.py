@@ -25,7 +25,7 @@ import base
 class color(base.PathStyle):
 
     """base class for all colors"""
-    
+
     pass
 
 
@@ -152,4 +152,37 @@ cmyk.Tan            = cmyk(0.14, 0.42, 0.56, 0)
 cmyk.Gray           = cmyk(0, 0, 0, 0.50)
 cmyk.Black          = cmyk(0, 0, 0, 1)
 cmyk.White          = cmyk(0, 0, 0, 0)
+
+
+class gradient:
+
+    def __init__(self, mincolor, maxcolor, min=0, max=1):
+        if mincolor.__class__ != maxcolor.__class__:
+            raise ValueError
+        self.colorclass = mincolor.__class__
+        self.mincolor = mincolor
+        self.maxcolor = maxcolor
+        self.min = min
+        self.max = max
+
+    def getcolor(self, index):
+        color = {}
+        for key in self.mincolor.color.keys():
+            color[key] = ((index - self.min) * self.maxcolor.color[key] +
+                          (self.max - index) * self.mincolor.color[key])/float(self.max - self.min)
+        return self.colorclass(**color)
+
+
+gradient.gray           = gradient(gray.white, gray.black)
+gradient.reversegray    = gradient(gray.black, gray.white)
+gradient.redgreen       = gradient(rgb.red, rgb.green)
+gradient.redblue        = gradient(rgb.red, rgb.blue)
+gradient.greenred       = gradient(rgb.green, rgb.red)
+gradient.greenblue      = gradient(rgb.green, rgb.blue)
+gradient.bluered        = gradient(rgb.blue, rgb.red)
+gradient.bluegreen      = gradient(rgb.blue, rgb.green)
+gradient.rainbow        = gradient(hsb(0, 1, 1), hsb(2.0/3.0, 1, 1))
+gradient.reverserainbow = gradient(hsb(2.0/3.0, 1, 1), hsb(0, 1, 1))
+gradient.hue            = gradient(hsb(0, 1, 1), hsb(1, 1, 1))
+gradient.reversehue     = gradient(hsb(1, 1, 1), hsb(0, 1, 1))
 
