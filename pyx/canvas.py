@@ -4,10 +4,12 @@ from globex import *
 from const import *
 
 class TexCmdSaveStruc:
-    def __init__(self, Cmd, Stack, IgnoreMessageLevel):
+    def __init__(self, Cmd, MarkerBegin, MarkerEnd, Stack, IgnoreMsgLevel):
         self.Cmd = Cmd
+        self.MarkerBegin = MarkerBegin
+        self.MarkerEnd = MarkerEnd
         self.Stack = Stack
-        self.IgnoreMessageLevel = IgnoreMessageLevel
+        self.IgnoreMsgLevel = IgnoreMsgLevel
             # 0 - ignore no messages (except empty "messages")
             # 1 - ignore messages inside proper "()"
             # 2 - ignore all messages without a line starting with "! "
@@ -17,20 +19,41 @@ class TexCmdSaveStruc:
             # overfull boxes etc.) and Level 2 shows only error messages
             # Level 1 will be the default Level
 
+class TexException(Exception):
+    pass
+
+class TexLeftParenthesisError(TexException):
+    def __str__(self):
+        return "no matching parenthesis for '{' found"
+
+class TexRightParenthesisError(TexException):
+    def __str__(self):
+        return "no matching parenthesis for '}' found"
+
 class Canvas(Globex):
 
     ExportMethods = [ "amove", "aline", "rmove", "rline", 
                       "text", "textwd", "textht", "textdp" ]
 
-    def __init__(self,width,height,basefilename):
+    def __init__(self,width,height,basefilename,texinit,TexInitIgnoreMsgLevel):
         self.Width=width
         self.Height=height
         self.BaseFilename=basefilename
+        self.TexAddToFile(texinit,TexInitIgnoreMsgLevel)
         self.PSInit()
 
+#
+# TeX part
+#
+
+    TexMarker = "ThisIsThePyxTexMarker"
+    TexMarkerBegin = TexMarker + "Begin"
+    TexMarkerEnd = TexMarker + "End"
+    TexCmds = [ ]
+    TexBracketCheck = 1
+    
     def TexCreateBoxCmd(self, texstr, parmode, valign):
-        # TODO: we should check the proper usage of "{}" here ...
-        
+
         # we use two "{{" to ensure, that everything goes into the box
         CmdBegin = "\\setbox\\localbox=\\hbox{{"
         CmdEnd = "}}"
@@ -57,6 +80,8 @@ class Canvas(Globex):
     
     def TexCopyBoxCmd(self, texstr, halign, angle):
 
+        # TODO (?): Farbunterstützung
+
         CmdBegin = "{\\vbox to0pt{\\kern" + str(self.Height - self.y) + "truecm\\hbox{\\kern" + str(self.x) + "truecm\\ht\\localbox0pt"
         CmdEnd = "}\\vss}\\nointerlineskip}"
 
@@ -78,35 +103,47 @@ class Canvas(Globex):
         Cmd = CmdBegin + "\\copy\\localbox" + CmdEnd + "\n"
         return Cmd
 
-    def TexHexMD5(self, texstr):
+    def TexHexMD5(self, Cmd):
         import md5, string
         h = string.hexdigits
         r = ''
-        s = md5.md5(self.TexInitStr + texstr).digest()
+        s = md5.md5(self.TexCmds[0].Cmd + Cmd).digest()
         for c in s:
             i = ord(c)
             r = r + h[(i >> 4) & 0xF] + h[i & 0xF]
         return r
         
-    TexMarker = "ThisIsThePyxTexMarker"
-    TexMarkerBegin = TexMarker + "Begin"
-    TexMarkerEnd = TexMarker + "End"
-    TexCmds = [ ]
-    TexInitStr = ""
-    
-    def TexAddToFile(self, Cmd, IgnoreMessageLevel):
+    def TexAddToFile(self, Cmd, IgnoreMsgLevel):
+
+        # check the proper usage of "{" and "}" in Cmd
+        if self.TexBracketCheck:
+            depth = 0
+            esc = 0
+            for c in Cmd:
+                if c=="{" and not esc:
+                    depth = depth + 1
+                if c=="}" and not esc:
+                    depth = depth - 1
+                    if depth < 0:
+                        raise TexRightParenthesisError
+                if c=="\\":
+                    esc = (esc + 1) % 2
+                else:
+                    esc = 0
+            if depth > 0:
+                raise TexLeftParenthesisError
+
         import sys,traceback
         try:
             raise ZeroDivisionError
         except ZeroDivisionError:
-            #traceback.print_list(traceback.extract_stack(sys.exc_info()[2].tb_frame.f_back.f_back))
             Stack = traceback.extract_stack(sys.exc_info()[2].tb_frame.f_back.f_back)
 
-        MarkerBegin = "\\immediate\\write16{" + self.TexMarkerBegin + str(len(self.TexCmds)) + "}\n"
-        MarkerEnd = "\\immediate\\write16{" + self.TexMarkerEnd + str(len(self.TexCmds)) + "}\n"
+        MarkerBegin = self.TexMarkerBegin + " [" + str(len(self.TexCmds)) + "]"
+        MarkerEnd = self.TexMarkerEnd + " [" + str(len(self.TexCmds)) + "]"
 
-        Cmd = MarkerBegin + Cmd + MarkerEnd
-        self.TexCmds = self.TexCmds + [ TexCmdSaveStruc(Cmd, Stack, IgnoreMessageLevel), ]
+        Cmd = "\\immediate\\write16{" + MarkerBegin + "}\n" + Cmd + "\\immediate\\write16{" + MarkerEnd + "}\n"
+        self.TexCmds = self.TexCmds + [ TexCmdSaveStruc(Cmd, MarkerBegin, MarkerEnd, Stack, IgnoreMsgLevel), ]
 
     def TexRun(self):
 
@@ -128,18 +165,18 @@ class Canvas(Globex):
 \\setlength{\\hoffset}{-1truein}
 \\setlength{\\voffset}{-1truein}
 \\setlength{\\parindent}{0truecm}
-\\pagestyle{empty}
-\\immediate\\write16{MarkerBegin TexInitStr}
-""" + self.TexInitStr + """
-\\immediate\\write16{MarkerEnd TexInitStr}
-\\begin{document}
+\\pagestyle{empty}""")
+
+        file.write(self.TexCmds[0].Cmd)
+
+        file.write("""\\begin{document}
 \\newwrite\\sizefile
 \\newbox\\localbox
 \\newbox\\pagebox
 \\immediate\\openout\\sizefile=""" + self.BaseFilename + """.size
 \\setbox\\pagebox=\\vbox{""")
 
-        for Cmd in self.TexCmds:
+        for Cmd in self.TexCmds[1:]:
             file.write(Cmd.Cmd)
 
         file.write("""}
@@ -163,7 +200,25 @@ class Canvas(Globex):
         # TODO: ordentliche Fehlerbehandlung,
         #       Auswertung der Marker auf Fehler beim TeX'en
         if os.system("latex " + self.BaseFilename + " > " + self.BaseFilename + ".stdout 2> " + self.BaseFilename + ".stderr"):
-            assert "LaTeX exit code not zero"
+            assert "LaTeX exit code not zero\nCheck your environment and the file " + self.BaseFilename + ".log."
+
+        file = open(self.BaseFilename + ".stdout", "r")
+        for Cmd in self.TexCmds:
+            line = file.readline()
+            while line[:-1] != Cmd.MarkerBegin:
+                line = file.readline()
+            msg = ""
+            line = file.readline()
+            while line[:-1] != Cmd.MarkerEnd:
+                msg = msg + line
+                line = file.readline()
+            if msg != "":
+                import traceback
+                print "Traceback (innermost last):"
+                traceback.print_list(Cmd.Stack)
+                print "LaTeX Message (we don't check the IgnoreMessageLevel yet but print everything):"
+                print msg
+        file.close()
         
         # TODO: ordentliche Fehlerbehandlung,
         #       Schnittstelle zur Kommandozeile
@@ -187,33 +242,33 @@ class Canvas(Globex):
  
         return 1
 
-    def text(self, texstr, halign = None, parmode = None, valign = None, angle = None, IgnoreMessageLevel = 1):
+    def text(self, texstr, halign = None, parmode = None, valign = None, angle = None, IgnoreMsgLevel = 1):
         TexCreateBoxCmd = self.TexCreateBoxCmd(texstr, parmode, valign)
         TexCopyBoxCmd = self.TexCopyBoxCmd(texstr, halign, angle)
-        self.TexAddToFile(TexCreateBoxCmd + TexCopyBoxCmd, IgnoreMessageLevel)
+        self.TexAddToFile(TexCreateBoxCmd + TexCopyBoxCmd, IgnoreMsgLevel)
 
-    def textwd(self, texstr, parmode = None, IgnoreMessageLevel = 1):
+    def textwd(self, texstr, parmode = None, IgnoreMsgLevel = 1):
         TexCreateBoxCmd = self.TexCreateBoxCmd(texstr, parmode, None)
         TexHexMD5=self.TexHexMD5(TexCreateBoxCmd)
         self.TexAddToFile(TexCreateBoxCmd +
                           "\\immediate\\write\\sizefile{" + TexHexMD5 +
-                          ":wd:\\the\\wd\\localbox}\n", IgnoreMessageLevel)
+                          ":wd:\\the\\wd\\localbox}\n", IgnoreMsgLevel)
         return self.TexResult(TexHexMD5 + ":wd:")
 
-    def textht(self, texstr, parmode=None, valign=None, IgnoreMessageLevel = 1):
+    def textht(self, texstr, parmode=None, valign=None, IgnoreMsgLevel = 1):
         TexCreateBoxCmd = self.TexCreateBoxCmd(texstr, parmode, valign)
         TexHexMD5=self.TexHexMD5(TexCreateBoxCmd)
         self.TexAddToFile(TexCreateBoxCmd +
                           "\\immediate\\write\\sizefile{" + TexHexMD5 +
-                          ":ht:\\the\\ht\\localbox}\n", IgnoreMessageLevel)
+                          ":ht:\\the\\ht\\localbox}\n", IgnoreMsgLevel)
         return self.TexResult(TexHexMD5 + ":ht:")
 
-    def textdp(self, texstr, parmode=None, valign=None, IgnoreMessageLevel = 1):
+    def textdp(self, texstr, parmode=None, valign=None, IgnoreMsgLevel = 1):
         TexCreateBoxCmd = self.TexCreateBoxCmd(texstr, parmode, valign)
         TexHexMD5=self.TexHexMD5(TexCreateBoxCmd)
         self.TexAddToFile(TexCreateBoxCmd +
                           "\\immediate\\write\\sizefile{" + TexHexMD5 +
-                          ":dp:\\the\\dp\\localbox}\n", IgnoreMessageLevel)
+                          ":dp:\\the\\dp\\localbox}\n", IgnoreMsgLevel)
         return self.TexResult(TexHexMD5 + ":dp:")
 
 #
@@ -314,13 +369,13 @@ class Canvas(Globex):
 	self.PSFile.write("%f %f rlineto\n" % self.PScm2po(x,y))
 
 
-def canvas(width,height,basefilename):
-    DefaultCanvas=Canvas(width,height,basefilename)
-    DefaultCanvas.AddNamespace("DefaultCanvas",GetCallerGlobalNamespace())
+def canvas(width, height, basefilename, texinit="", TexInitIgnoreMsgLevel=1):
+    DefaultCanvas=Canvas(width, height, basefilename, texinit, TexInitIgnoreMsgLevel)
+    DefaultCanvas.AddNamespace("DefaultCanvas", GetCallerGlobalNamespace())
 
 
 if __name__=="__main__":
-    canvas(21,29.7,"example")
+    canvas(21, 29.7, "example", texinit="\\usepackage{german}")
 
     #for x in range(11):
     #    amove(x,0)
@@ -362,6 +417,9 @@ if __name__=="__main__":
     text("Beispiel:\\begin{itemize}\\item$\\alpha$\\item$\\beta$\\item$\\gamma$\\end{itemize}",parmode="2cm",valign=center)
     amove(15,12)
     text("Beispiel:\\begin{itemize}\\item$\\alpha$\\item$\\beta$\\item$\\gamma$\\end{itemize}",parmode="2cm",valign=bottom)
+
+    amove(5,20)
+    text("$\\left\\{\\displaystyle\\frac{1}{2}\\right\\}$")
 
     DefaultCanvas.TexRun()
     DefaultCanvas.PSEnd()
