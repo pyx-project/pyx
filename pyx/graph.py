@@ -1764,8 +1764,7 @@ class axispainter(axistitlepainter):
                     ac.extent = extent
         if self.basepathattrs is not None:
             ac.stroke(axispos.vbasepath(), helper.ensurelist(self.basepathattrs))
-        if self.zeropathattrs is not None:
-            if len(axis.ticks) and axis.ticks[0] * axis.ticks[-1] < frac((0, 1)):
+        if self.zeropathattrs is not None and axis.min < 0 < axis.max:
                 ac.stroke(axispos.gridpath(0), helper.ensurelist(self.zeropathattrs))
 
         # for tick in axis.ticks:
