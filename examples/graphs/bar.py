@@ -11,8 +11,8 @@ a2 = graph.baraxis(painter=bap(nameattrs=(trafo.rotate(45),
                    subaxis=graph.baraxis(dist=0)) # for several bars
 df = data.datafile("bar.dat") # read the datafile just once
 d = [graph.data(df, x="month", y="min"), graph.data(df, x=1, y=3)]
-nofirst = (graph.changesequence(None, [deco.stroked([color.gray.black])]),
-           graph.changesequence(None, [color.rgb.green])) # special draw attrs
+nofirst = (graph.changesequence(None, deco.stroked([color.gray.black])),
+           graph.changesequence(None, color.rgb.green)) # special draw attrs
 
 c = canvas.canvas() # we draw several plots, thus we create a main canvas
 g = c.insert(graph.graphxy(ypos=4.5, width=8, height=4, x=a1))

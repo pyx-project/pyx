@@ -72,12 +72,12 @@ TODO:
     - skip title=None in key (cf. bug #821284), properly align a single key entry
     - another (the last?!) axis redesign: axispos -> class of its own
     - some axispos name have changed slightly (zeroline -> zeropath etc.)
-    - tick/data-vmin/vmax removed (TODO: documentation)
-    - pathaxis (TODO: example and documentation)
-    - various linkaxis (TODO: example and documentation, FAQ?)
-    - minor enhancements in exponentionaltexter (TODO: documentation)
-    - axes alongs paths including a set of examples (TODO: not in the manual)
-    - mixing a partitioner and manual ticks by two distinct keyword arguments now (TODO: documentation)
+    - tick/data-vmin/vmax removed
+    - pathaxis
+    - linkaxis (TODO: still no example, FAQ?)
+    - minor enhancements in exponentionaltexter
+    - axes alongs paths including a set of examples
+    - mixing a partitioner and manual ticks by two distinct keyword arguments now
     - _xxx -> xxx_pt renaming
     - part -> parter renaming
   - canvas module:

@@ -2,8 +2,9 @@
 # -*- coding: ISO-8859-1 -*-
 #
 #
-# Copyright (C) 2002 Jörg Lehmann <joergl@users.sourceforge.net>
-# Copyright (C) 2002 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2002-2004 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2003-2004 Michael Schindler <m-schindler@users.sourceforge.net>
+# Copyright (C) 2002-2004 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
@@ -1814,7 +1815,7 @@ class subaxispos:
         - baseaxispos is the axispos instance of the base axis
         - vmin, vmax is the range covered by the subaxis in graph coordinates
         - vminover, vmaxover is the extended range of the subaxis including
-          regions between several subaxes (for baseline drawing etc.)"""
+          regions between several subaxes (for basepath drawing etc.)"""
         self.convert = convert
         self.baseaxispos = baseaxispos
         self.vmin = vmin
@@ -2236,9 +2237,10 @@ class _axis:
         self._setrange()
 
     def setrange(self, min=None, max=None):
-        if self.axiscanvas is not None:
-            raise RuntimeError("axis was already finished")
+        oldmin, oldmax = self.min, self.max
         self._setrange(min, max)
+        if self.axiscanvas is not None and ((oldmin != self.min) or (oldmax != self.max)):
+            raise RuntimeError("axis was already finished")
 
     def getrange(self):
         if self.min is not None and self.max is not None:

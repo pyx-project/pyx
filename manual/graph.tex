@@ -59,6 +59,13 @@ graphs (other axes types might be added in the future as well), but
 they behave quite different from the generic case and are thus
 described separately below.
 
+You may use axes even without a graph, but drawing them along an
+arbitrary path using the \verb|pathaxis| function. This function takes
+an path and an axis as its first two arguments and the result can be
+inserted into a canvas. The optional keyword argument \verb|direction|
+can be set to \verb|1|(default) or \verb|-1| to place the labels to
+the right (default) or left side of the path, respectively.
+
 \subsection{Axes properties}
 
 Global properties of an axis are set as named parameters in the axis
@@ -75,15 +82,12 @@ argument name&description\\
 \texttt{reverse}&boolean; exchange minimum and maximum (might be used without setting minimum and maximum); if min>max and reverse is set, they cancel each other\\
 \texttt{divisor}&numerical divisor for the axis partitioning; default: \texttt{1}\\
 \texttt{suffix}&a suffix to indicate the divisor within an automatic axis labeling\\
-\texttt{datavmin}&minimal graph coordinate when adjusting the axis minima to the graph data; default: \texttt{0.05} (or \texttt{0}, when min is present)\\
-\texttt{datavmax}&as above, but for the maximum; default: \texttt{0.95} (or \texttt{1}, when max is present)\\
-\texttt{tickvmin}&minimal graph coordinate for placing ticks to the axis; default: \texttt{0}\\
-\texttt{tickvmax}&as above, but for the maximum; default: \texttt{1}\\
 \texttt{density}&density parameter for the axis partition rating\\
 \texttt{maxworse}&number of trials with worse tick rating before giving up; default: \texttt{2}\\
+\texttt{manualticks}&a list of ticks (described below)\\
 \texttt{painter}&axis painter (described below)\\
 \texttt{texter}&texter for the axis labels (described below)\\
-\texttt{part}&axis partition (described below)\\
+\texttt{parter}&axis partitioner (described below)\\
 \texttt{rater}&partition rater (described below)\\
 \end{tabularx}
 \medskip
@@ -101,25 +105,25 @@ digits per default) or a string with infinite precision (like
 "1.2345e-100" or even "1/3"). However, a partitioning is composed out
 of a sorted list of ticks, where the class \verb|tick| is derived from
 \verb|frac| and has additional properties called \verb|ticklevel|,
-\verb|labellevel|, \verb|label| and \verb|labelattrs|. When the
-ticklevel or the labellevel is \verb|None|, it just means not present,
-\verb|0| means tick or label, respectively, \verb|1| means subtick or
-sublevel and so on. When \verb|labellevel| is not \verb|None|, a
-\verb|label| might be explicitly given, which will get used as the
-text of that label. Otherwise the axis painter has to create an
-appropriate text for the label. The \verb|labelattrs| might specify
-some attributes for the label to be used by the \verb|text| method of
-an \verb|texrunner| instance.
+\verb|labellevel|, \verb|label|, and \verb|labelattrs|. When the
+\verb|ticklevel| or the \verb|labellevel| is \verb|None|, it just
+means not present, \verb|0| means tick or label, respectively,
+\verb|1| means subtick or sublevel and so on. When \verb|labellevel|
+is not \verb|None|, a \verb|label| might be explicitly given, which
+will get used as the text of that label. Otherwise the axis painter
+has to create an appropriate text for the label. The \verb|labelattrs|
+might specify some attributes for the label to be used by the
+\verb|text| method of an \verb|texrunner| instance.
 
-You can pass a list of \verb|tick| instance to the \verb|part|
+You can pass a list of \verb|tick| instance to the \verb|manualticks|
 argument of an axis. By that you can place ticks whereever you want.
 Additionally you can use a partitioner to create ticks appropriate to
 the axis range. This can be done by manually specifying distances
 between ticks, subticks and so on. Alternatively there are automatic
 axis partitioners available, which provide different partitions and
 the rating of those different partitions by the \verb|rater| become
-crutial. Note, that you can combine manually set ticks and a
-partitioner in the \verb|part| argument of an axis.
+crucial. Note, that you can combine manually set ticks and a
+partitioner.
 
 \subsubsection{Partitioning of linear axes}
 
@@ -318,6 +322,8 @@ argument name&default&description\\
 \texttt{plus}&\texttt{""}&plus sign for the exponent\\
 \texttt{minus}&\texttt{"-"}&minus sign for the exponent\\
 \texttt{mantissaexp}&\texttt{r"\{\{\%s\}\textbackslash cdot10\textasciicircum\{\%s\}\}"}&format string for manissa and exponent\\
+\texttt{skipexp0}&\texttt{r"\{\%s\}&format string for manissa, when exponent is \texttt{0}; use \texttt{None} to turn off this feature\\
+\texttt{skipexp1}&\texttt{None}&as \texttt{skipexp0}, but for exponent \texttt{1}\\
 \texttt{nomantissaexp}&\texttt{r"\{10\textbackslash\{\%s\}\}"}&format string when skipping a manissa equals 1\\
 \texttt{minusnomantissaexp}&\texttt{r"\{-1\textbackslash\{\%s\}\}"}&format string when skipping a manstissa equals -1\\
 \texttt{mantissamin}&\texttt{frac((1, 1))}&minimal value for the mantissa\\
@@ -462,6 +468,13 @@ only. Namely, the arguments \verb|zeropathattrs|, \verb|labelattrs|,
 and \verb|titleattrs| are set to \verb|None| turing off these
 features.
 
+The standard \verb|linkaxis| can be used for a \verb|linaxis| or
+\verb|logaxis|, other axes might have different \verb|linkaxis|
+classes, \emph{e.g. \verb|linksplitaxis| and \verb|linkbaraxis|}.
+While those linked axes might be used by graphs to plot the same axis
+at both sides of the graph (when appropriate), every axis has a
+\verb|createlinkaxis| method, which returns a standard linked axis.
+
 \subsection{Special purpose axes}
 
 \subsubsection{Splitable axes}
@@ -549,7 +562,7 @@ The only point left is the description of the specialized
 \verb|baraxispainter|. It works quite similar to the
 \verb|axispainter|. Thus the constructors have quite some parameters
 in common, namely \verb|titledist|, \verb|titleattrs|,
-\verb|titledirection|, \verb|titlepos|, and \verb|baselineattrs|.
+\verb|titledirection|, \verb|titlepos|, and \verb|basepathattrs|.
 Furthermore the parameters \verb|innerticklength| and
 \verb|outerticklength| work like their counterparts in the
 \verb|axispainter|, but only plain values are allowed there (no
@@ -589,7 +602,8 @@ evaluate mathematical expressions once and for all).
 
 The constructors keyword argument \verb|title| however does not
 refer to a parameter of a style, but instead sets the title to be used
-in an axis key.
+in the graph key. It might be set to \verb|None| to exclude the data
+and style from the the graph key.
 
 \subsection{Functions}
 
@@ -911,9 +925,34 @@ the method \verb|pos| can be used. It takes two values for a position
 at the x and y axis. By default, the axes named \verb|x| or \verb|y|
 are used, but this is changed when the keyword arguments \verb|xaxis|
 and \verb|yaxis| are set to other axes. The graph axes are available
-by their name using the dictionary \verb|axes|. Each axis has a method
-\verb|gridpath| which is set by the graph. It returns a path of a grid
-line for a given position at the axis.
+by their name using the dictionary \verb|axes|. There is also an
+dictionary \verb|axespos|, which contains \verb|lineaxespos| instances
+for all axes. They implement the \verb|_Iaxispos| interface, thus
+having the following methods:
+
+\medskip
+\begin{tabularx}{\linewidth}{l>{\raggedright\arraybackslash}X}
+method name&description\\
+\hline
+\texttt{basepath(x1=None, x2=None)}&returns the base path for the
+range \texttt{x1} to \texttt{x2}, (hole range, when omitting the
+parameters)\\
+\texttt{vbasepath(x1=None, x2=None)}&as above but for graph coordinates\\
+\texttt{gridpath(x)}&returns the grid path\\
+\texttt{vgridpath(x)}&as above but for graph coordinates\\
+\texttt{tickpoint(x)}&returns the position of a tick\\
+\texttt{vtickpoint(x)}&as above but for graph coordinates\\
+\texttt{tickdirection(x)}&returns the direction, a tick should be
+drawn (towards inside of the graph)\\
+\texttt{vtickdirection(x)}&as above but for graph coordinates\\
+\end{tabularx}
+\medskip
+
+Its likely, that this interface will change to contain local
+transformation for the tick position/direction in a future release.
+For the axes named \verb|x| and \verb|y|, the methods are available
+within the graph (like the \verb|pos| method), where the method name
+is prefixed by \verb|x| or \verb|y|, respectively.
 
 To manually add a graph key, use the \verb|addkey| method, which takes
 a \verb|key| instance first followed by several \verb|plotinfo|
