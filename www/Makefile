@@ -21,7 +21,7 @@ install: html
 	cp ../examples/*.eps ../examples/*/*.eps ~/public-html/pyx
 	cp ../manual/manual.pdf ~/public-html/pyx
 
-%.html: %.pt maintemplate.pt
+%.html: %.pt maintemplate.pt pt2html.py
 	PYTHONPATH=~/bin/python/Zope3/src ./pt2html.py $<
 
 %.eps.png: %.eps
