@@ -23,76 +23,8 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-import string, re, math
-
-__oldparser__ = 1
-__newparser__ = 2
-__useparser__ = __oldparser__
-#__useparser__ = __newparser__
-
-if __useparser__ == __newparser__:
-    import symbol, token
-    import parser as pythonparser
-
-class ParseStr:
-
-    def __init__(self, StrToParse, Pos = 0):
-        self.StrToParse = StrToParse
-        self.Pos = Pos
-
-    def __repr__(self):
-        return "ParseStr('" + self.StrToParse + "', " + str(self.Pos) + ")"
-
-    def __str__(self, Indent = ""):
-        WhiteSpaces = ""
-        for i in range(self.Pos):
-            WhiteSpaces = WhiteSpaces + " "
-        return Indent + self.StrToParse + "\n" + Indent + WhiteSpaces + "^"
-
-    def NextNonWhiteSpace(self, i = None):
-        if i == None:
-            i = self.Pos
-        while self.StrToParse[i] in string.whitespace:
-            i = i + 1
-        return i
-
-    def MatchStr(self, Str):
-        try:
-            i = self.NextNonWhiteSpace()
-            if self.StrToParse[i: i + len(Str)] == Str:
-                self.Pos = i + len(Str)
-                return Str
-        except IndexError:
-            pass
-
-    def MatchStrParenthesis(self, Str):
-        try:
-            i = self.NextNonWhiteSpace()
-            if self.StrToParse[i: i + len(Str)] == Str:
-                i = i + len(Str)
-                i = self.NextNonWhiteSpace(i)
-                if self.StrToParse[i: i + 1] == "(":
-                    self.Pos = i + 1
-                    return Str
-        except IndexError:
-            pass
-
-    def MatchPattern(self, Pat):
-        try:
-            i = self.NextNonWhiteSpace()
-            Match = Pat.match(self.StrToParse[i:])
-            if Match:
-                self.Pos = i + Match.end()
-                return Match.group()
-        except IndexError:
-            pass
-
-    def AllDone(self):
-        try:
-            self.NextNonWhiteSpace()
-        except IndexError:
-            return 1
-        return 0
+import string, re, math, symbol, token
+import parser as pythonparser
 
 
 class ArgCountError(Exception): pass
@@ -790,25 +722,6 @@ class MathTreeOpPow(MathTreeOp):
 
 
 
-class UndefinedMathTreeParseError(Exception):
-
-    def __init__(self, ParseStr, MathTree):
-        self.ParseStr = ParseStr
-        self.MathTree = MathTree
-
-    def __str__(self):
-        return "\n" + str(self.ParseStr)
-
-
-class RightParenthesisExpectedMathTreeParseError(UndefinedMathTreeParseError): pass
-class RightParenthesisFoundMathTreeParseError(UndefinedMathTreeParseError): pass
-class CommaExpectedMathTreeParseError(UndefinedMathTreeParseError): pass
-class CommaFoundMathTreeParseError(UndefinedMathTreeParseError): pass
-class OperatorExpectedMathTreeParseError(UndefinedMathTreeParseError): pass
-class OperandExpectedMathTreeParseError(UndefinedMathTreeParseError): pass
-
-
-DefaultMathTreeOps = [MathTreeOpPow, MathTreeOpDiv, MathTreeOpMul, MathTreeOpSub, MathTreeOpAdd]
 DefaultMathTreeFuncs = [MathTreeFunc1Neg, MathTreeFunc1Abs, MathTreeFunc1Sgn, MathTreeFunc1Sqrt,
                         MathTreeFunc1Exp, MathTreeFunc1Log,
                         MathTreeFunc1Sin, MathTreeFunc1Cos, MathTreeFunc1Tan,
@@ -817,150 +730,13 @@ DefaultMathTreeFuncs = [MathTreeFunc1Neg, MathTreeFunc1Abs, MathTreeFunc1Sgn, Ma
                         MathTreeFunc1ASinD, MathTreeFunc1ACosD, MathTreeFunc1ATanD,
                         MathTreeFunc2Norm]
 
-DefaultMathTreeVals = [MathTreeValConst, MathTreeValVar]
-
 class parser:
 
-    def __init__(self, MathTreeOps=DefaultMathTreeOps,
-                       MathTreeFuncs=DefaultMathTreeFuncs,
-                       MathTreeVals=DefaultMathTreeVals):
-        self.MathTreeOps = MathTreeOps
+    def __init__(self, MathTreeFuncs=DefaultMathTreeFuncs):
         self.MathTreeFuncs = MathTreeFuncs
-        self.MathTreeVals = MathTreeVals
-        self.isnewparser = 0
 
-    def parse(self, str):
-        if __useparser__ == __oldparser__:
-            return self.old_parse(str)
-        elif __useparser__ == __newparser__:
-            return self.new_parse(str)
-        else:
-            RuntimeError("invalid __useparser__")
-
-    def old_parse(self, str):
-        return self.ParseMathTree(ParseStr(str))
-
-    def new_parse(self, str):
-        # prepare raw string:
-        # "^" -> "**"
-        thestr = re.sub("^\s*", "", str)
-        thestr = re.sub("\^","**", thestr) # to be removed <joergl>
-        thestr = re.sub("\$","_col_", thestr)
-        return self.astseq2mtree(pythonparser.expr(thestr).totuple())
-
-    def ParseMathTree(self, arg):
-        Tree = None
-        #Match = arg.MatchPattern(re.compile(r"\s*-(?![0-9\.])"))
-        Match = arg.MatchPattern(re.compile(r"\s*-")) # XXX another quick workaround
-        if Match:
-            #Tree = MathTreeFunc1Neg()
-            Tree = MathTreeOpSub(MathTreeValConst(0)) # XXX quick workaround
-        while 1:
-            i = arg.MatchStr("(")
-            if i:
-                try:
-                    self.ParseMathTree(arg)
-                    raise RightParenthesisExpectedMathTreeParseError(arg, Tree)
-                except RightParenthesisFoundMathTreeParseError, e:
-                    if isinstance(e.MathTree, MathTreeOp):
-                        e.MathTree.ParenthesisBarrier = 1
-                    if Tree is not None:
-                        SubTree = Tree # XXX: four lines code dublication
-                        while isinstance(SubTree, MathTreeOp) and len(SubTree.Args) == 2:
-                            SubTree = SubTree.Args[1]
-                        SubTree.AddArg(e.MathTree)
-                    else:
-                        Tree = e.MathTree
-            else:
-                for FuncClass in self.MathTreeFuncs:
-                    Func = FuncClass()
-                    if Func.InitByParser(arg):
-                        if Tree is not None:
-                            SubTree = Tree # XXX: four lines code dublication
-                            while isinstance(SubTree, MathTreeOp) and len(SubTree.Args) == 2:
-                                SubTree = SubTree.Args[1]
-                            SubTree.AddArg(Func)
-                        else:
-                            Tree = Func
-                        while 1:
-                            try:
-                                self.ParseMathTree(arg)
-                                raise RightParenthesisExpectedMathTreeParseError(arg, Tree)
-                            except CommaFoundMathTreeParseError, e:
-                                try:
-                                    Func.AddArg(e.MathTree, NotLast=1)
-                                except ArgCountError:
-                                    raise RightParenthesisExpectedMathTreeParseError(arg, Tree)
-                                continue
-                            except RightParenthesisFoundMathTreeParseError, e:
-                                try:
-                                    Func.AddArg(e.MathTree, Last=1)
-                                except ArgCountError:
-                                    raise CommaExpectedMathTreeParseError(arg, Tree)
-                                break
-                        break
-                else:
-                    FuncExtern = MathTreeFuncExtern()
-                    if FuncExtern.InitByParser(arg):
-                        if Tree is not None:
-                            SubTree = Tree # XXX: four lines code dublication
-                            while isinstance(SubTree, MathTreeOp) and len(SubTree.Args) == 2:
-                                SubTree = SubTree.Args[1]
-                            SubTree.AddArg(FuncExtern)
-                        else:
-                            Tree = FuncExtern
-                        while 1:
-                            try:
-                                self.ParseMathTree(arg)
-                                raise RightParenthesisExpectedMathTreeParseError(arg, Tree)
-                            except CommaFoundMathTreeParseError, e:
-                                FuncExtern.AddArg(e.MathTree)
-                                continue
-                            except RightParenthesisFoundMathTreeParseError, e:
-                                FuncExtern.AddArg(e.MathTree)
-                                break
-                    else:
-                        for ValClass in self.MathTreeVals:
-                            Val = ValClass()
-                            if Val.InitByParser(arg):
-                                if Tree is not None:
-                                    SubTree = Tree # XXX: four lines code dublication
-                                    while isinstance(SubTree, MathTreeOp) and len(SubTree.Args) == 2:
-                                        SubTree = SubTree.Args[1]
-                                    SubTree.AddArg(Val)
-                                else:
-                                    Tree = Val
-                                break
-                        else:
-                            raise OperandExpectedMathTreeParseError(arg, Tree)
-            if arg.AllDone():
-                return Tree
-            i = arg.MatchStr(")")
-            if i:
-                raise RightParenthesisFoundMathTreeParseError(arg, Tree)
-            i = arg.MatchStr(",")
-            if i:
-                raise CommaFoundMathTreeParseError(arg, Tree)
-            for OpClass in self.MathTreeOps:
-                Op = OpClass()
-                if Op.InitByParser(arg):
-                    SubTree = Tree
-                    SubTreeRoot = None
-                    while isinstance(SubTree, MathTreeOp) and\
-                          Op.level > SubTree.level and\
-                          not SubTree.ParenthesisBarrier:
-                        SubTreeRoot = SubTree
-                        SubTree = SubTree.Args[1]
-                    if SubTreeRoot:
-                        Op.AddArg(SubTree)
-                        SubTreeRoot.Args[1] = Op
-                    else:
-                        Op.AddArg(Tree)
-                        Tree = Op
-                    break
-            else:
-                raise OperatorExpectedMathTreeParseError(arg, Tree)
-
+    def parse(self, expr):
+        return self.astseq2mtree(pythonparser.expr(expr.strip().replace("^", "**")).totuple())
 
     def astseq2mtree(self, astseq, isfunc=0):
         # astseq has to be a sequence!
@@ -1070,12 +846,7 @@ class parser:
                         tree = MathTreeFuncExtern()
                         tree.SetName(astseq[1][1])
                     else:
-                # 3. a named constant
-                        for const in MathConst.keys():
-                            # XXX: change to self.MathConstants
-                            if const == astseq[1][1]:
-                                return MathTreeValConst(MathConst[const])
-                # 4. a variable
+                # 3. a variable
                         return MathTreeValVar(astseq[1][1])
             elif len(astseq) == 4:
                 # parentheses or brackets for structuring an atom

@@ -24,19 +24,19 @@ first = 1
 for line in lines: # we yet don't use a file iterator
     m = p.match(line)
     if m:
-        xaxis = graph.axis.linaxis(
-                parter=graph.parter.linparter(tickdist=("0.5","0.1"), labeldist="1"),
-                painter=graph.painter.axispainter(innerticklength=None, labelattrs=None))
+        xaxis = graph.axis.lin(
+                parter=graph.axis.parter.lin(tickdist=("0.5","0.1"), labeldist="1"),
+                painter=graph.axis.painter.plain(innerticklength=None, labelattrs=None))
         if first:
-            x2axis=graph.axis.linkaxis(xaxis,
-                painter=graph.painter.linkaxispainter(
+            x2axis=graph.axis.linked(xaxis,
+                painter=graph.axis.painter.linked(
                     innerticklength=None,
-                    outerticklength=graph.painter.ticklength.normal,
+                    outerticklength=graph.axis.painter.ticklength.normal,
                     labelattrs=[]))
             first = 0
         else:
-            x2axis=graph.axis.linkaxis(xaxis, painter=graph.painter.linkaxispainter(innerticklength=None))
-        g = c.insert(graph.type.graphxy(ypos=y, width=10, height=0.5, x=xaxis, x2=x2axis, y=graph.axis.linaxis(parter=None)))
+            x2axis=graph.axis.linked(xaxis, painter=graph.axis.painter.linked(innerticklength=None))
+        g = c.insert(graph.graphxy(ypos=y, width=10, height=0.5, x=xaxis, x2=x2axis, y=graph.axis.lin(parter=None)))
         g.plot(pf, graph.style.rect(getattr(pyx.color.palette, m.group("name"))))
         g.dodata()
         g.finish()

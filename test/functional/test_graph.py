@@ -17,11 +17,10 @@ def test_multiaxes_data(c, x, y):
                                                 painter=graph.axis.painter.plain(titledirection=graph.axis.painter.rotatetext(45), gridattrs=[color.palette.RedGreen]),
                                                 texter=graph.axis.texter.decimal(equalprecision=1)),
                                y5=graph.axis.log(title="$P_5$")))
-    df = data.datafile("data/testdata")
-    g.plot((graph.data.data(df, x=1, y="sqrt(sqrt($3))"),
-            graph.data.data(df, x=1, y2=4),
-            graph.data.data(df, x=1, y3=5),
-            graph.data.data(df, x=1, y5=6)),
+    g.plot((graph.data.file("data/testdata", x=1, y="sqrt(sqrt($3))", title="mytitle"),
+            graph.data.file("data/testdata", x=1, y2=4),
+            graph.data.file("data/testdata", x=1, y3=5),
+            graph.data.file("data/testdata", x=1, y5=6)),
            style=graph.style.symbol(symbolattrs=[deco.stroked.clear, color.palette.RedGreen, graph.style.symbol.changestrokedfilled], symbol=graph.style.symbol.changesquaretwice))
     g.finish()
 
@@ -34,12 +33,11 @@ def test_piaxis_function(c, x, y):
     g.finish()
 
 def test_textaxis_errorbars(c, x, y):
-    df = data.datafile("data/testdata2")
     g = c.insert(graph.graphxy(x, y, height=5,
                                x=graph.axis.lin(min=0.5, max=12.5, parter=graph.axis.parter.lin("1", extendtick=None)),
                                y=graph.axis.lin(min=-10, max=30, title="Temperature [$^\circ$C]"),
                                x2=graph.axis.lin(), y2=graph.axis.lin()))
-    g.plot(graph.data.data(df, x=0, ymin="min", ymax="max"))
+    g.plot(graph.data.file("data/testdata2", x=0, ymin="min", ymax="max"))
     g.plot(graph.data.paramfunction("k", 0, 2*math.pi, "x2, y2, dx2, dy2 = 0.8*sin(k), 0.8*cos(3*k), 0.05, 0.05"), style = graph.style.symbol(symbol=graph.style.symbol.triangle))
     g.finish()
 
@@ -52,7 +50,7 @@ def test_ownmark(c, x, y):
     line2 = g.plot(graph.data.function("y=12*x^-1.6"))
     line3 = g.plot(graph.data.function("y=7/x"))
     line4 = g.plot(graph.data.function("y=25*x^-1.6"))
-    g.plot(graph.data.data(data.data([[-1, 1], [5, 2], [11, 5], [5, 11], [4, -1]]), x=0, y=1), graph.style.line(lineattrs=[color.rgb.red]))
+    g.plot(graph.data.list([[-1, 1], [5, 2], [11, 5], [5, 11], [4, -1]], x=1, y=2), graph.style.line(lineattrs=[color.rgb.red]))
     g.finish()
 
     p1=line1.path
@@ -68,25 +66,22 @@ def test_ownmark(c, x, y):
     g.stroke(area, [style.linewidth.THick, deco.filled([color.gray(0.5)])])
 
 def test_allerrorbars(c, x, y):
-    df = data.datafile("data/testdata3")
     g = c.insert(graph.graphxy(x, y, height=5, width=5))
-    g.plot(graph.data.data(df, x="x", y="y", xmin="xmin", xmax="xmax", ymin="ymin", ymax="ymax", text="text"), graph.style.text())
+    g.plot(graph.data.file("data/testdata3", x="x", y="y", xmin="xmin", xmax="xmax", ymin="ymin", ymax="ymax", text="text"), graph.style.text())
     g.finish()
 
 def test_split(c, x, y):
     g = c.insert(graph.graphxy(x, y, height=5, width=5,
                                x=graph.axis.log(),
                                y=graph.axis.split((graph.axis.lin(min=0, max=0.005, painter=graph.axis.painter.plain()), graph.axis.lin(min=0.01, max=0.015), graph.axis.lin(min=0.02, max=0.025)), title="axis title", splitlist=(None, None), relsizesplitdist=0.005)))
-    df = data.datafile("data/testdata")
-    g.plot(graph.data.data(df, x=1, y=3))
+    g.plot(graph.data.file("data/testdata", x=1, y=3))
     g.finish()
 
 def test_split2(c, x, y):
     g = c.insert(graph.graphxy(x, y, height=5, width=5,
                                x=graph.axis.log(),
                                y=graph.axis.split((graph.axis.lin(max=0.002), graph.axis.lin(min=0.01, max=0.015), graph.axis.lin(min=0.017)), splitlist=(0.15, 0.75))))
-    df = data.datafile("data/testdata")
-    g.plot(graph.data.data(df, x=1, y=3))
+    g.plot(graph.data.file("data/testdata", x=1, y=3))
     g.finish()
 
 

@@ -1,5 +1,6 @@
 import datetime
-from pyx.graph.axis import axis, rater, style
+from pyx.graph import style
+from pyx.graph.axis import axis, rater
 
 """some experimental code for creating a time axis
 - it needs python 2.3 to be used (it is based on the new datetime data type)
@@ -62,7 +63,7 @@ class timetexter:
 
 class timeaxis(axis._axis, _timemap):
 
-     def __init__(self, parter=None, rater=rater.axisrater(), **args):
+     def __init__(self, parter=None, rater=rater.linear(), **args):
         axis._axis.__init__(self, divisor=None, **args)
         if self.fixmin and self.fixmax:
             self.relsize = self.max - self.min

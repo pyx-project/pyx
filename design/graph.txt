@@ -1,6 +1,8 @@
 Structure of modules and classes in the graph subdirectory
 
-general TODO: - separate all interface definitions from implemenations (and finish all interface definitions)
+TODO: - separate all interface definitions from implemenations (and finish all interface definitions)
+      - remove __implements__; its confuses most source code readers
+      - description of data.py is not complete below
 
 
 graph/axis/tick.py
@@ -148,29 +150,11 @@ data.py
 
     [interface definition missing]
 
-    data [data from a pyx.data.data instance]
+    list [data from a list]
+    data [data from another data instance]
+    file [data from a file]
     function [data from a function]
     paramfunction [data from a parametric function]
-
-    TODO: - data -> file
-          - move pyx/data.py into pyx/graph/data.py:
-             - the construct graph.data.data(data.datafile(<filename>), ...)) should become graph.data.file(...)
-             - the construct graph.data.data(data.data(<filename>), ...)) should become graph.data.list(...)
-<MS>                   Man will doch drei Arten, einen Datenplot zu machen:
-                       1. filename
-                       2. Liste von Daten
-                       3. Data-Objekt (wenn man vorher diverse addcolumn-Methoden aufgerufen hat)
-                       Oben sieht das so aus, als wolltest Du nur noch 1. und 2. unterstuetzen.
-<AW>                   Nun, ich will eigentlich die Seiteneffekte auch loswerden. Das addcolumn ist vollkommen
-                       krank. Wenn man graph.data.data(df, x="2*$1") machst, hast Du auf einmal eine Spalte
-                       im df mehr (!) ... addcolumn ist eine Eigenschaft, die graph.data.data haben sollte und
-                       nichts mit dem pyx.data.datafile zu tun hat. Zusätzlich berechnete Spalten sollten in einer
-                       zweiten, neuen Datenliste gehalten werden -- das jetzige Durcheinander ist eine Katastrophe.
-                       Die Styles müssen lernen, damit umzugehen. Das wird im graph.style._style zur Verfügung gestellt
-                       (im wesentlichen ein itertool.izip bzw. eine entsprechende fallback-Lösung).
-             - the caching currently available by using the same instance of data.datafile several times
-               should become an intrinsic feature (with the option to turn it off by the keyword parameter cache=0
-               (like in rrules of the dateutil package))
 
 
 graph.py

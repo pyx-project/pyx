@@ -2,23 +2,9 @@ PyX
 
 TODO:
   - graph module
-    - do not include unneeded line segments when the axis range is set manually
-    - allow for an iteration of a graph style, when it is used several times
-    - symbols should become decorators
     - common bboxes for different graphs
-    - automatic datafile key title
     - exceptions in drawsymbol & friends...
     - 3d graphs, circular graphs
-    - symbols + lines -> symbollines (??). Symbols should not allow setting lineattrs, and
-      lines not symbolattrs
-    - allow for graph.changesymbol.square(size=0.15) etc.
-    - rect style (and errorbars?) should use clipping
-    - should the divisor argument be moved to the texters?
-    - is the divisor argument really necessary?
-    - _mergelabels should work differently (perhaps a single list or a special texter?!)
-    - the exponentialtexter should have a labelattrs argument and the mantissatexter
-      should be removed
-    - Docu: part -> parter, tickdist->tickpos argument of parter
   - style module:
     - default patterns
     - make dash length available
@@ -31,8 +17,7 @@ TODO:
     - newline removal when not disturbing texmessages only
   - mathtree module:
      - consider rewrite using the python compiler module
-  - data module:
-    - data.data should add line number like data.datafile
+  - graph.data module:
     - use csv module (new in 2.3)
     - Check for "inf" and "nan" in datafiles.
       (When plotted, the graph does not complain, but the postscript will be broken)
@@ -55,6 +40,10 @@ TODO:
     - glue -> join?
   - unit module:
     - what about unit.cm() -> unit.cm, ...
+  - mathtree:
+    - might be moved into the graph
+    - perform calc by means of Python itself (see eval code in graph.data, but
+      we should use compiled code instead of eval)
 
 TODO for 0.6:
   - deco module:
@@ -66,6 +55,7 @@ TODO for 0.6:
         attributes
       - axis zeropath feature removed
       - graph styles rewrite
+      - part -> parter, tickdist->tickpos argument of parter
     - deco module:
       - wriggle decorator
       - smoothed decorator
@@ -79,12 +69,23 @@ TODO for 0.6:
     - "undefined" corners of bounding boxes are no longer supported which makes
       the bounding box operations much more efficient.
   - graph module:
-    - painters are using the new attribute scheme including changeable
-      attributes
+    - reorganisation of the graph structure finished (there might be some
+      small pending issues, but the basic restructuring is done with this release):
+      - graph splitted into several modules in pyx/graph and pyx/graph/axis
+      - painters are using the new attribute scheme including changeable
+        attributes
+      - graph styles rewrite
+      - graph data rewrite
     - axis zeropath feature has been removed
-    - graph styles rewrite
-    - graph splitted into several modules in pyx/graph and pyx/graph/axis
     - mergelabels removed; linpart doesn't have a label argument anymore
+    - iteration on graph style, when it is used several times in the same graph
+    - symbols + lines -> symbollines (??). symbols do not allow setting
+      lineattrs, and lines not symbolattrs
+    - manual line clipping (do not include unneeded line segments when the
+      axis range is set manually etc.)
+    - automatic file key titles
+    - graph.data now also includes the old data module
+    - data.list adds (by default) a line number like data.file
   - text module:
     - default handling of texmessages as in the new attribute scheme
     - multiple insert bug fixed
@@ -131,6 +132,11 @@ TODO for 0.6:
     - length comparision (David Beach)
     - x-scale for TeX
     - more unit tests
+  - mathtree module:
+    - switched to the new parser using pythons parser module
+  - data module:
+    - removed, it all lives in the graph.data module now, while before it
+      was splitted into two separate modules
 
 0.5.1 (2004/01/22):
   - distribution:
