@@ -55,8 +55,11 @@ class bbox:
     def __add__(self, other):
         ' join to bboxes '
 
-        return bbox(min(self.llx, other.llx) or self.llx or other.llx, 
-                    min(self.lly, other.lly) or self.lly or other.lly,
+        # note, that 0 also represents are false value (like None), so that
+        # we have to add the "or 0" part in the following construction
+
+        return bbox(min(self.llx, other.llx) or self.llx or other.llx or 0, 
+                    min(self.lly, other.lly) or self.lly or other.lly or 0,
                     max(self.urx, other.urx), max(self.ury, other.ury))
 
     __radd__=__add__
@@ -303,10 +306,11 @@ class canvas(CanvasCmds):
         obbox = reduce(lambda x,y, canvas=canvas: x+y.bbox(canvas),
                        self.PSCmds,
                        bbox())
-	(llx, lly)=self.trafo.apply((unit.length("%d t pt" % obbox.llx),
-                                     unit.length("%d t pt" % obbox.lly)))
-        (urx, ury)=self.trafo.apply((unit.length("%d t pt" % obbox.urx),
-                                     unit.length("%d t pt" % obbox.ury)))
+        print obbox
+	(llx, lly)=self.trafo.apply((unit.length("%f t pt" % obbox.llx),
+                                     unit.length("%f t pt" % obbox.lly)))
+        (urx, ury)=self.trafo.apply((unit.length("%f t pt" % obbox.urx),
+                                     unit.length("%f t pt" % obbox.ury)))
 	llx=self.unit.pt(llx)
 	lly=self.unit.pt(lly)
 	urx=self.unit.pt(urx)
