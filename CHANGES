@@ -51,6 +51,7 @@ TODO:
     - support single-character mode
   - path module:
     - arclentoparam should raise an exception when the arclen is out of range
+    - use _pt for variable names 
 
   Documentation:
     - path module:
