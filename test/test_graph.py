@@ -15,7 +15,7 @@ def test_multiaxes_data(c, t, x, y):
                                                 painter=graph.axispainter(titleattrs=tex.direction(45))),
                                y5=graph.logaxis(title="$P_5$")))
     df = datafile.datafile("testdata")
-    g.plot(graph.data(df, x=1, y=3), style=graph.mark(markattrs=(graph.changecolor.redgreen, graph.changestrokedfilled), mark=graph.mark.square2))
+    g.plot(graph.data(df, x=1, y=3), style=graph.mark(markattrs=(graph.changecolor.redgreen(), graph.changestrokedfilled()), mark=graph.mark.changesquaretwice()))
     g.plot(graph.data(df, x=1, y2=4))
     g.plot(graph.data(df, x=1, y3=5))
     g.plot(graph.data(df, x=1, y5=6))
@@ -25,7 +25,7 @@ def test_piaxis_function(c, t, x, y):
     g = c.insert(graph.graphxy(t, x, y, height=5,
                                x=graph.linaxis(min=0, max=2*math.pi, factor=math.pi, suffix=r"\pi")))
     g.plot(graph.function("y=sin(x)", points=1000),
-           style=graph.line(lineattrs=(graph.changecolor.hue, graph.changelinestyle)))
+           style=graph.line(lineattrs=(graph.changecolor.hue(), graph.changelinestyle())))
     for i in range(1, 20):
         g.plot(graph.function("y=sin(x-%i*pi/10)" % i))
     g.drawall()
@@ -38,9 +38,8 @@ def test_textaxis_errorbars(c, t, x, y):
                                                painter=graph.axispainter(labeldist=0.1, titledist=0, labelattrs=(tex.direction(45),tex.halign.right, tex.fontsize.scriptsize))),
                                y=graph.linaxis(min=-10, max=30, title="Temperature [$^\circ$C]"),
                                x2=graph.linaxis(), y2=graph.linaxis()))
-    df.addcolumn("av=(min+max)/2")
-    g.plot(graph.data(df, x=0, y="av", ymin="min", ymax="max"))
-    g.plot(graph.paramfunction("k", 0, 2*math.pi, "x2, y2, dx2, dy2 = 0.9*sin(k), 0.9*cos(3*k), 0.05, 0.05"), style = graph.mark(mark=graph.mark.triangle))
+    g.plot(graph.data(df, x=0, ymin="min", ymax="max"))
+    g.plot(graph.paramfunction("k", 0, 2*math.pi, "x2, y2, dx2, dy2 = 0.8*sin(k), 0.8*cos(3*k), 0.05, 0.05"), style = graph.mark(mark=graph.mark.triangle))
     g.drawall()
 
 def test_ownmark(c, t, x, y):
@@ -98,35 +97,25 @@ def test_ownmark(c, t, x, y):
 
     MyFuncs = mathtree.DefaultMathTreeFuncs + (Div, Mod)
 
-    line1 = graph.line(lineattrs=None)
-    line2 = graph.line(lineattrs=None)
-    line3 = graph.line(lineattrs=None)
-    line4 = graph.line(lineattrs=None)
-
-    g = c.insert(graph.graphxy(t, x, y, height=5))
+    g = c.insert(graph.graphxy(t, x, y, height=5, x=graph.linaxis(min=0, max=10), y=graph.linaxis(min=0, max=10)))
     g.plot(graph.paramfunction("k", 0, 120, "x, y, angle = mod(k, 11), div(k, 11), 0.05*k", points=121, parser=mathtree.parser(MathTreeFuncs=MyFuncs)), style = arrowmark())
-    g.plot(graph.function("y=10/x", xmin = 1, ymax = 10), style = line1)
-    g.plot(graph.function("y=12*x^-1.6", xmin = 1, ymax = 10), style = line2)
-    g.plot(graph.function("y=7/x", xmin = 1, ymax = 10), style = line3)
-    g.plot(graph.function("y=25*x^-1.6", xmin = 1, ymax = 10), style = line4)
+    line1 = g.plot(graph.function("y=10/x"))
+    line2 = g.plot(graph.function("y=12*x^-1.6"))
+    line3 = g.plot(graph.function("y=7/x"))
+    line4 = g.plot(graph.function("y=25*x^-1.6"))
     g.drawall()
 
-#    g.stroke(line1.path, color.rgb.blue)
-#    g.stroke(line2.path, color.rgb.red)
-#    g.stroke(line3.path, color.rgb.green)
-#    g.stroke(line4.path, color.gray.black)
-#    p1=line1.path
-#    p2=line2.path.reversed()
-#    p3=line3.path.reversed()
-#    p4=line4.path
-#    (seg1a,), (seg2a,) = p1.intersect(p2)
-#    (seg2b,), (seg3b,) = p2.intersect(p3)
-#    (seg3c,), (seg4c,) = p3.intersect(p4)
-#    (seg4d,), (seg1d,) = p4.intersect(p1)
-#    g.stroke(p1.split(seg1a, seg1d)[1] <<
-#             p4.split(seg4d, seg4c)[1] <<
-#             p3.split(seg3c, seg3b)[1] <<
-#             p2.split(seg2b, seg2a)[1], canvas.linewidth.THick, canvas.filled(color.gray(0.5)))
+    p1=line1.path
+    p2=line2.path.reversed()
+    p3=line3.path.reversed()
+    p4=line4.path
+    (seg1a,), (seg2a,) = p1.intersect(p2)
+    (seg2b,), (seg3b,) = p2.intersect(p3)
+    (seg3c,), (seg4c,) = p3.intersect(p4)
+    (seg4d,), (seg1d,) = p4.intersect(p1)
+    area = p1.split(seg1a, seg1d)[1] << p4.split(seg4d, seg4c)[1] << p3.split(seg3c, seg3b)[1] << p2.split(seg2b, seg2a)[1]
+    area.append(path.closepath())
+    g.stroke(area, canvas.linewidth.THick, canvas.filled(color.gray(0.5)))
 
 def test_allerrorbars(c, t, x, y):
     df = datafile.datafile("testdata3")

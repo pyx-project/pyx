@@ -22,6 +22,10 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+# TODO for 0.1: - symbol sizes -> attrs
+#               - linkaxis should work between different graphs
+#               - documentation (some interfaces, user manual)
+
 
 import types, re, math, string, sys
 import bbox, canvas, path, tex, unit, mathtree, trafo, attrlist, color
@@ -29,6 +33,7 @@ import bbox, canvas, path, tex, unit, mathtree, trafo, attrlist, color
 
 goldenrule = 0.5 * (math.sqrt(5) + 1)
 
+class _nodefault: pass
 
 
 ################################################################################
@@ -640,8 +645,9 @@ class cuberate:
         for label, rater in zip(labels, self.labels):
             rate += rater.rate(label, stretch=stretch)
             weight += rater.weight
-        if part is not None:
-            rate += self.tickrange.rate((float(part[-1]) - float(part[0])) * axis.factor / (axis.max-axis.min))
+        if part is not None and len(part):
+            tickmin, tickmax = axis.gettickrange()
+            rate += self.tickrange.rate((float(part[-1]) - float(part[0])) * axis.factor / (tickmax - tickmin))
         else:
             rate += self.tickrange.rate(0)
         weight += self.tickrange.weight
@@ -1177,9 +1183,10 @@ class linkaxispainter(axispainter):
 
 class _axis:
 
-    def __init__(self, min=None, max=None, reverse=0, title=None, painter = axispainter(),
-                       factor = 1, suffix = None, baselineattrs=()):
-        if min is not None and max is not None and min > max:
+    def __init__(self, min=None, max=None, reverse=0, title=None, painter=axispainter(),
+                       factor=1, suffix=None, baselineattrs=(),
+                       datavmin=None, datavmax=None, tickvmin=None, tickvmax=None):
+        if None not in (min, max) and min > max:
             min, max = max, min
             if reverse:
                 reverse = 0
@@ -1187,26 +1194,88 @@ class _axis:
                 reverse = 1
         self.fixmin = min is not None
         self.fixmax = max is not None
-        self.min = min
-        self.max = max
+        self.min, self.max = min, max
         self.reverse = reverse
+
+        self.datamin = self.datamax = self.tickmin = self.tickmax = None
+        if datavmin is None:
+            if self.fixmin:
+                self.datavmin = 0
+            else:
+                self.datavmin = 0.05
+        else:
+            self.datavmin = datavmin
+        if datavmax is None:
+            if self.fixmax:
+                self.datavmax = 1
+            else:
+                self.datavmax = 0.95
+        else:
+            self.datavmax = datavmax
+        if tickvmin is None:
+            self.tickvmin = 0
+        else:
+            self.tickvmin = tickvmin
+        if tickvmax is None:
+            self.tickvmax = 1
+        else:
+            self.tickvmax = tickvmax
+
         self.title = title
         self.painter = painter
         self.factor = factor
         self.suffix = suffix
         self.baselineattrs = baselineattrs
-        self.setrange()
+        self.canconvert = 0
+        self._setrange()
 
-    def setrange(self, min=None, max=None):
+    def _setrange(self, min=None, max=None):
         if not self.fixmin and min is not None and (self.min is None or min < self.min):
             self.min = min
         if not self.fixmax and max is not None and (self.max is None or max > self.max):
             self.max = max
-        if (self.min is not None) and (self.max is not None):
+        if None not in (self.min, self.max):
+            min, max, vmin, vmax = self.min, self.max, 0, 1
+            self.canconvert = 1
+            self.setbasepoints(((min, vmin), (max, vmax)))
+            if not self.fixmin:
+                if self.datamin is not None and self.convert(self.datamin) < self.datavmin:
+                    min, vmin = self.datamin, self.datavmin
+                    self.setbasepoints(((min, vmin), (max, vmax)))
+                if self.tickmin is not None and self.convert(self.tickmin) < self.tickvmin:
+                    min, vmin = self.tickmin, self.tickvmin
+                    self.setbasepoints(((min, vmin), (max, vmax)))
+            if not self.fixmax:
+                if self.datamax is not None and self.convert(self.datamax) > self.datavmax:
+                    max, vmax = self.datamax, self.datavmax
+                    self.setbasepoints(((min, vmin), (max, vmax)))
+                if self.tickmax is not None and self.convert(self.tickmax) > self.tickvmax:
+                    max, vmax = self.tickmax, self.tickvmax
+                    self.setbasepoints(((min, vmin), (max, vmax)))
             if self.reverse:
-                self.setbasepoints(((self.min, 1), (self.max, 0)))
+                self.setbasepoints(((min, vmax), (max, vmin)))
+
+    def setdatarange(self, min, max):
+        self.datamin, self.datamax = min, max
+        self._setrange(min, max)
+
+    def settickrange(self, min, max):
+        self.tickmin, self.tickmax = min, max
+        self._setrange(min, max)
+
+    def getdatarange(self):
+        if self.canconvert:
+            if self.reverse:
+                return self.invert(1-self.datavmin), self.invert(1-self.datavmax)
             else:
-                self.setbasepoints(((self.min, 0), (self.max, 1)))
+                return self.invert(self.datavmin), self.invert(self.datavmax)
+
+    def gettickrange(self):
+        if self.canconvert:
+            if self.reverse:
+                return self.invert(1-self.tickvmin), self.invert(1-self.tickvmax)
+            else:
+                return self.invert(self.tickvmin), self.invert(self.tickvmax)
 
 
 class linaxis(_axis, _linmap):
@@ -1245,48 +1314,12 @@ class graphxy(canvas.canvas):
     XPattern = re.compile(r"%s([2-9]|[1-9][0-9]+)?$" % Names[0])
     YPattern = re.compile(r"%s([2-9]|[1-9][0-9]+)?$" % Names[1])
 
-    def __init__(self, tex, xpos=0, ypos=0, width=None, height=None, ratio=goldenrule,
-                 backgroundattrs=None, axesdist="0.8 cm", **axes):
-        canvas.canvas.__init__(self)
-        self.tex = tex
-        self.xpos = unit.topt(xpos)
-        self.ypos = unit.topt(ypos)
-        if (width is not None) and (height is None):
-             height = (1/ratio) * width
-        if (height is not None) and (width is None):
-             width = ratio * height
-        self.width = unit.topt(width)
-        self.height = unit.topt(height)
-        if self.width <= 0: raise ValueError("width < 0")
-        if self.height <= 0: raise ValueError("height < 0")
-        for key in axes.keys():
-            if not self.XPattern.match(key) and not self.YPattern.match(key):
-                raise TypeError("got an unexpected keyword argument '%s'" % key)
-        if not axes.has_key("x"):
-            axes["x"] = linaxis()
-        if not axes.has_key("x2"):
-            axes["x2"] = linkaxis(axes["x"])
-        elif axes["x2"] is None:
-            del axes["x2"]
-        if not axes.has_key("y"):
-            axes["y"] = linaxis()
-        if not axes.has_key("y2"):
-            axes["y2"] = linkaxis(axes["y"])
-        elif axes["y2"] is None:
-            del axes["y2"]
-        self.axes = axes
-        self.axesdist_str = axesdist
-        self.backgroundattrs = backgroundattrs
-        self.data = []
-        self._drawstate = self.drawlayout
-        self.previousstyle = {}
-
     def clipcanvas(self):
         return self.insert(canvas.canvas(canvas.clip(path._rect(self.xpos, self.ypos, self.width, self.height))))
 
     def plot(self, data, style=None, defaultstyle=None):
-        if self._drawstate != self.drawlayout:
-            raise PyxGraphDrawstateError  # TODO: PyxGraphDrawstateError not defined, rewrite drawstate handling
+        if self.haslayout:
+            raise RuntimeError("layout setup was already performed")
         if style is None:
             if defaultstyle is None:
                 defaultstyle = data.defaultstyle
@@ -1297,6 +1330,7 @@ class graphxy(canvas.canvas):
         self.previousstyle[style.__class__] = style
         data.setstyle(self, style)
         self.data.append(data)
+        return style
 
     def xtickpoint(self, axis, virtual):
         return (self.xmap.convert(virtual), axis.yaxispos)
@@ -1345,19 +1379,24 @@ class graphxy(canvas.canvas):
                                        max(ranges[key][1], pdranges[key][1]))
         for key, axis in self.axes.items():
             if key in ranges.keys():
-                if axis.min is not None:
-                    ranges[key] = axis.min, ranges[key][1]
-                if axis.max is not None:
-                    ranges[key] = ranges[key][0], axis.max
-                axis.setrange(*ranges[key])
-            elif axis.min is not None and axis.max is not None:
-                ranges[key] = axis.min, axis.max
+                axis.setdatarange(*ranges[key])
+            ranges[key] = axis.getdatarange()
+            if ranges[key] is None:
+                del ranges[key]
         return ranges
 
-    def drawlayout(self):
-        if self._drawstate != self.drawlayout:
-            raise PyxGraphDrawstateError
+    def removedrawmethod(self, method):
+        hadmethod = 0
+        while 1:
+            try:
+                self.drawmethods.remove(method)
+                hadmethod = 1
+            except ValueError:
+                return hadmethod
 
+    def drawlayout(self):
+        if not self.removedrawmethod(self.drawlayout): return
+        self.haslayout = 1
         # create list of ranges
         # 1. gather ranges
         ranges = self.gatherranges()
@@ -1367,31 +1406,21 @@ class graphxy(canvas.canvas):
         # 3. gather ranges again
         ranges = self.gatherranges()
 
-        # set axes ranges
-        for key, axis in self.axes.items():
-            if ranges.has_key(key):
-                axis.setrange(min=ranges[key][0], max=ranges[key][1])
-            else:
-                # TODO: appropriate linkaxis handling
-                pass
-
         # TODO: move rating into the painter
         for key, axis in self.axes.items():
-            # TODO: appropriate linkaxis handling
+            # XXX: linkaxis handling
             try:
                 axis.part
             except AttributeError:
                 continue
 
             # TODO: make use of stretch
-            axis.ticks = axis.part.defaultpart(axis.min/axis.factor,
-                                               axis.max/axis.factor,
-                                               not axis.fixmin,
-                                               not axis.fixmax)
+            min, max = axis.gettickrange()
+            axis.ticks = axis.part.defaultpart(min/axis.factor, max/axis.factor, not axis.fixmin, not axis.fixmax)
             if axis.part.multipart:
-                # XXX: lesspart and morepart can be called after defaultpart,
-                #      although some axes may share their autoparting ---
-                #      it works, because the axes are processed sequentially
+                # lesspart and morepart can be called after defaultpart,
+                # although some axes may share their autoparting ---
+                # it works, because the axes are processed sequentially
                 rate = axis.rate.ratepart(axis, axis.ticks, 1)
                 maxworse = 2
                 worse = 0
@@ -1414,33 +1443,24 @@ class graphxy(canvas.canvas):
                         worse = 0
                     else:
                         worse += 1
-            axis.setrange(float(axis.ticks[0])*axis.factor, float(axis.ticks[-1])*axis.factor)
+            axis.settickrange(float(axis.ticks[0])*axis.factor, float(axis.ticks[-1])*axis.factor)
 
         self.xmap = _linmap().setbasepoints(((0, self.xpos), (1, self.xpos + self.width)))
         self.ymap = _linmap().setbasepoints(((0, self.ypos), (1, self.ypos + self.height)))
-        self._drawstate = self.drawdata
-
-    def drawdata(self):
-        if self._drawstate != self.drawdata:
-            raise PyxGraphDrawstateError
-        for data in self.data:
-            data.draw(self)
-        self._drawstate = self.drawbackground
 
     def drawbackground(self):
-        if self._drawstate != self.drawbackground:
-            raise PyxGraphDrawstateError
+        self.drawlayout()
+        if not self.removedrawmethod(self.drawbackground): return
         if self.backgroundattrs is not None:
             self.draw(path._rect(self.xmap.convert(0),
                                  self.ymap.convert(0),
                                  self.xmap.convert(1) - self.xmap.convert(0),
                                  self.ymap.convert(1) - self.ymap.convert(0)),
                       *_ensuresequence(self.backgroundattrs))
-        self._drawstate = self.drawaxes
 
     def drawaxes(self):
-        if self._drawstate != self.drawaxes:
-            raise PyxGraphDrawstateError
+        self.drawlayout()
+        if not self.removedrawmethod(self.drawaxes): return
         axesdist = unit.topt(unit.length(self.axesdist_str, default_type="v"))
         self.xaxisextents = [0, 0]
         self.yaxisextents = [0, 0]
@@ -1483,9 +1503,52 @@ class graphxy(canvas.canvas):
                 needyaxisdist[num2] = 1
         self._drawstate = None
 
+    def drawdata(self):
+        self.drawlayout()
+        if not self.removedrawmethod(self.drawdata): return
+        for data in self.data:
+            data.draw(self)
+
     def drawall(self):
-        while self._drawstate is not None:
-            self._drawstate()
+        while len(self.drawmethods):
+            self.drawmethods[0]()
+
+    def __init__(self, tex, xpos=0, ypos=0, width=None, height=None, ratio=goldenrule,
+                 backgroundattrs=None, axesdist="0.8 cm", **axes):
+        canvas.canvas.__init__(self)
+        self.tex = tex
+        self.xpos = unit.topt(xpos)
+        self.ypos = unit.topt(ypos)
+        if (width is not None) and (height is None):
+             height = (1/ratio) * width
+        if (height is not None) and (width is None):
+             width = ratio * height
+        self.width = unit.topt(width)
+        self.height = unit.topt(height)
+        if self.width <= 0: raise ValueError("width < 0")
+        if self.height <= 0: raise ValueError("height < 0")
+        for key in axes.keys():
+            if not self.XPattern.match(key) and not self.YPattern.match(key):
+                raise TypeError("got an unexpected keyword argument '%s'" % key)
+        if not axes.has_key("x"):
+            axes["x"] = linaxis()
+        if not axes.has_key("x2"):
+            axes["x2"] = linkaxis(axes["x"])
+        elif axes["x2"] is None:
+            del axes["x2"]
+        if not axes.has_key("y"):
+            axes["y"] = linaxis()
+        if not axes.has_key("y2"):
+            axes["y2"] = linkaxis(axes["y"])
+        elif axes["y2"] is None:
+            del axes["y2"]
+        self.axes = axes
+        self.axesdist_str = axesdist
+        self.backgroundattrs = backgroundattrs
+        self.data = []
+        self.previousstyle = {}
+        self.drawmethods = [self.drawlayout, self.drawbackground, self.drawaxes, self.drawdata]
+        self.haslayout = 0
 
     def bbox(self):
         self.drawall()
@@ -1505,40 +1568,54 @@ class graphxy(canvas.canvas):
 ################################################################################
 
 
+class _Ichangeattr:
+    """attribute changer
+       is an iterator for attributes where an attribute
+       is not refered by just a number (like for a sequence),
+       but also by the number of attributes requested
+       by calls of the next method (like for an color gradient)
+       (you should ensure to call all needed next before the attr)
+
+       the attribute itself is implemented by overloading the _attr method"""
+
+    def attr(self):
+        "get an attribute"
+
+    def next(self):
+        "get an attribute changer for the next attribute"
+
+
 class _changeattr: pass
+
 
 class changeattrref(_changeattr):
 
-    def __init__(self, ref, id, index):
+    __implements__ = _Ichangeattr
+
+    def __init__(self, ref, index):
         self.ref = ref
-        self.id = id
         self.index = index
 
     def attr(self):
-        return self.ref.attr(self.id, self.index)
+        return self.ref.attr(self.index)
 
     def next(self):
-        return self.ref.next(self.id)
-
-    def new(self):
-        return self.ref.new()
+        return self.ref.next()
 
 
 class changeattr(_changeattr):
 
+    __implements__ = _Ichangeattr
+
     def __init__(self):
-        self.counter = [1]
+        self.counter = 1
 
-    def attr(self, id=0, index=0):
-        return self._attr(index, self.counter[id])
+    def attr(self, index=0):
+        return self._attr(index, self.counter)
 
-    def next(self, id=0):
-        self.counter[id] += 1
-        return changeattrref(self, id, self.counter[id] - 1)
-
-    def new(self):
-        self.counter.append(1)
-        return changeattrref(self, len(self.counter) - 1, 0)
+    def next(self):
+        self.counter += 1
+        return changeattrref(self, self.counter - 1)
 
     # def _attr(self, index):
     # to be defined in derived classes
@@ -1596,18 +1673,91 @@ class changecolor(changeattr):
         else:
             return self.gradient.getcolor(0)
 
-changecolor.gray           = changecolor(color.gradient.gray)
-changecolor.reversegray    = changecolor(color.gradient.reversegray)
-changecolor.redgreen       = changecolor(color.gradient.redgreen)
-changecolor.redblue        = changecolor(color.gradient.redblue)
-changecolor.greenred       = changecolor(color.gradient.greenred)
-changecolor.greenblue      = changecolor(color.gradient.greenblue)
-changecolor.bluered        = changecolor(color.gradient.bluered)
-changecolor.bluegreen      = changecolor(color.gradient.bluegreen)
-changecolor.rainbow        = changecolor(color.gradient.rainbow)
-changecolor.reverserainbow = changecolor(color.gradient.reverserainbow)
-changecolor.hue            = changecolor(color.gradient.hue)
-changecolor.reversehue     = changecolor(color.gradient.reversehue)
+
+class _changecolorgray(changecolor):
+
+    def __init__(self, gradient=color.gradient.gray):
+        changecolor.__init__(self, gradient)
+
+        
+class _changecolorreversegray(changecolor):
+
+    def __init__(self, gradient=color.gradient.reversegray):
+        changecolor.__init__(self, gradient)
+
+
+class _changecolorredgreen(changecolor):
+
+    def __init__(self, gradient=color.gradient.redgreen):
+        changecolor.__init__(self, gradient)
+
+
+class _changecolorredblue(changecolor):
+
+    def __init__(self, gradient=color.gradient.redblue):
+        changecolor.__init__(self, gradient)
+
+
+class _changecolorgreenred(changecolor):
+
+    def __init__(self, gradient=color.gradient.greenred):
+        changecolor.__init__(self, gradient)
+
+
+class _changecolorgreenblue(changecolor):
+
+    def __init__(self, gradient=color.gradient.greenblue):
+        changecolor.__init__(self, gradient)
+
+
+class _changecolorbluered(changecolor):
+
+    def __init__(self, gradient=color.gradient.bluered):
+        changecolor.__init__(self, gradient)
+
+
+class _changecolorbluegreen(changecolor):
+
+    def __init__(self, gradient=color.gradient.bluegreen):
+        changecolor.__init__(self, gradient)
+
+
+class _changecolorrainbow(changecolor):
+
+    def __init__(self, gradient=color.gradient.rainbow):
+        changecolor.__init__(self, gradient)
+
+
+class _changecolorreverserainbow(changecolor):
+
+    def __init__(self, gradient=color.gradient.reverserainbow):
+        changecolor.__init__(self, gradient)
+
+
+class _changecolorhue(changecolor):
+
+    def __init__(self, gradient=color.gradient.hue):
+        changecolor.__init__(self, gradient)
+
+
+class _changecolorreversehue(changecolor):
+
+    def __init__(self, gradient=color.gradient.reversehue):
+        changecolor.__init__(self, gradient)
+
+
+changecolor.gray           = _changecolorgray
+changecolor.reversegray    = _changecolorreversegray
+changecolor.redgreen       = _changecolorredgreen
+changecolor.redblue        = _changecolorredblue
+changecolor.greenred       = _changecolorgreenred
+changecolor.greenblue      = _changecolorgreenblue
+changecolor.bluered        = _changecolorbluered
+changecolor.bluegreen      = _changecolorbluegreen
+changecolor.rainbow        = _changecolorrainbow
+changecolor.reverserainbow = _changecolorreverserainbow
+changecolor.hue            = _changecolorhue
+changecolor.reversehue     = _changecolorreversehue
 
 
 class changesequence(changeattr):
@@ -1615,21 +1765,27 @@ class changesequence(changeattr):
 
     def __init__(self, *sequence):
         changeattr.__init__(self)
-        if not len(sequence): raise("no attributes given")
+        if not len(sequence):
+            sequence = self.defaultsequence
         self.sequence = sequence
 
     def _attr(self, index, length):
         return self.sequence[index % len(self.sequence)]
 
 
-changelinestyle = changesequence(canvas.linestyle.solid,
-                                 canvas.linestyle.dashed,
-                                 canvas.linestyle.dotted,
-                                 canvas.linestyle.dashdotted)
+class changelinestyle(changesequence):
+    defaultsequence = (canvas.linestyle.solid,
+                       canvas.linestyle.dashed,
+                       canvas.linestyle.dotted,
+                       canvas.linestyle.dashdotted)
 
 
-changestrokedfilled = changesequence(canvas.stroked(), canvas.filled())
-changefilledstroked = changesequence(canvas.filled(), canvas.stroked())
+class changestrokedfilled(changesequence):
+    defaultsequence = (canvas.stroked(), canvas.filled())
+
+
+class changefilledstroked(changesequence):
+    defaultsequence = (canvas.filled(), canvas.stroked())
 
 
 
@@ -1647,59 +1803,51 @@ changefilledstroked = changesequence(canvas.filled(), canvas.stroked())
 
 class mark:
 
-    def _cross(self, x, y):
+    def cross(self, x, y):
         return (path._moveto(x-0.5*self.size, y-0.5*self.size),
                 path._lineto(x+0.5*self.size, y+0.5*self.size),
                 path._moveto(x-0.5*self.size, y+0.5*self.size),
                 path._lineto(x+0.5*self.size, y-0.5*self.size))
 
-    def _plus(self, x, y):
+    def plus(self, x, y):
         return (path._moveto(x-0.707106781*self.size, y),
                 path._lineto(x+0.707106781*self.size, y),
                 path._moveto(x, y-0.707106781*self.size),
                 path._lineto(x, y+0.707106781*self.size))
 
-    def _square(self, x, y):
+    def square(self, x, y):
         return (path._moveto(x-0.5*self.size, y-0.5 * self.size),
                 path._lineto(x+0.5*self.size, y-0.5 * self.size),
                 path._lineto(x+0.5*self.size, y+0.5 * self.size),
                 path._lineto(x-0.5*self.size, y+0.5 * self.size),
                 path.closepath())
 
-    def _triangle(self, x, y):
+    def triangle(self, x, y):
         return (path._moveto(x-0.759835685*self.size, y-0.438691337*self.size),
                 path._lineto(x+0.759835685*self.size, y-0.438691337*self.size),
                 path._lineto(x, y+0.877382675*self.size),
                 path.closepath())
 
-    def _circle(self, x, y):
+    def circle(self, x, y):
         return (path._arc(x, y, 0.564189583*self.size, 0, 360),
                 path.closepath())
 
-    def _diamond(self, x, y):
+    def diamond(self, x, y):
         return (path._moveto(x-0.537284965*self.size, y),
                 path._lineto(x, y-0.930604859*self.size),
                 path._lineto(x+0.537284965*self.size, y),
                 path._lineto(x, y+0.930604859*self.size),
                 path.closepath())
 
-    cross = changesequence(_cross, _plus, _square, _triangle, _circle, _diamond)
-    plus = changesequence(_plus, _square, _triangle, _circle, _diamond, _cross)
-    square = changesequence(_square, _triangle, _circle, _diamond, _cross, _plus)
-    triangle = changesequence(_triangle, _circle, _diamond, _cross, _plus, _square)
-    circle = changesequence(_circle, _diamond, _cross, _plus, _square, _triangle)
-    diamond = changesequence(_diamond, _cross, _plus, _square, _triangle, _circle)
-    square2 = changesequence(_square, _square, _triangle, _triangle, _circle, _circle, _diamond, _diamond)
-    triangle2 = changesequence(_triangle, _triangle, _circle, _circle, _diamond, _diamond, _square, _square)
-    circle2 = changesequence(_circle, _circle, _diamond, _diamond, _square, _square, _triangle, _triangle)
-    diamond2 = changesequence(_diamond, _diamond, _square, _square, _triangle, _triangle, _circle, _circle)
-
-    def __init__(self, mark=cross, xmin=None, xmax=None, ymin=None, ymax=None,
+    def __init__(self, mark=_nodefault, xmin=None, xmax=None, ymin=None, ymax=None,
                        size="0.2 cm", markattrs=canvas.stroked(),
                        errorscale=0.5, errorbarattrs=(),
                        lineattrs=None):
         self.size_str = size
-        self.mark = mark
+        if mark == _nodefault:
+            self.mark = self.changecross()
+        else:
+            self.mark = mark
         self.markattrs = markattrs
         self.errorscale = errorscale
         self.errorbarattrs = errorbarattrs
@@ -1928,10 +2076,12 @@ class mark:
         forcexmin, forcexmax, forceymin, forceymax = self.xmin, self.xmax, self.ymin, self.ymax
         xaxis = graph.axes[self.xkey]
         yaxis = graph.axes[self.ykey]
-        if forcexmin is None or forcexmin < xaxis.min: forcexmin = xaxis.min
-        if forcexmax is None or forcexmax > xaxis.max: forcexmax = xaxis.max
-        if forceymin is None or forceymin < yaxis.min: forceymin = yaxis.min
-        if forceymax is None or forceymax > yaxis.max: forceymax = yaxis.max
+        xaxismin, xaxismax = xaxis.getdatarange()
+        yaxismin, yaxismax = yaxis.getdatarange()
+        if forcexmin is None or forcexmin < xaxismin: forcexmin = xaxismin
+        if forcexmax is None or forcexmax > xaxismax: forcexmax = xaxismax
+        if forceymin is None or forceymin < yaxismin: forceymin = yaxismin
+        if forceymax is None or forceymax > yaxismax: forceymax = yaxismax
         self.size = unit.topt(unit.length(_getattr(self.size_str), default_type="v"))
         mark = _getattr(self.mark)
         if self.markattrs is not None:
@@ -1940,47 +2090,107 @@ class mark:
             errorbarattrs = _getattrs(self.errorbarattrs)
         self.errorsize = self.errorscale * self.size
         lineels = []
-        forcemoveto = 1
+        moveto = 1
         for point in points:
-            if forcemoveto: moveto = 1
-            forcemoveto = 1
+            drawmark = 1
             xmin, x, xmax = self.minmidmax(point, self.xi, self.xmini, self.xmaxi, self.dxi, self.dxmini, self.dxmaxi)
-            if xmin is not None and xmin < forcexmin: continue
-            if x is not None and x < forcexmin: continue
-            if xmax is not None and xmax < forcexmin: continue
-            if xmax is not None and xmax > forcexmax: continue
-            if x is not None and x > forcexmax: continue
-            if xmin is not None and xmin > forcexmax: continue
             ymin, y, ymax = self.minmidmax(point, self.yi, self.ymini, self.ymaxi, self.dyi, self.dymini, self.dymaxi)
-            if ymin is not None and ymin < forceymin: continue
-            if y is not None and y < forceymin: continue
-            if ymax is not None and ymax < forceymin: continue
-            if ymax is not None and ymax > forceymax:continue
-            if y is not None and y > forceymax: continue
-            if ymin is not None and ymin > forceymax: continue
-            forcemoveto = 0
+            if xmin is not None and xmin < forcexmin: drawmark = 0
+            elif x is not None and x < forcexmin: drawmark = 0
+            elif xmax is not None and xmax < forcexmin: drawmark = 0
+            elif xmax is not None and xmax > forcexmax: drawmark = 0
+            elif x is not None and x > forcexmax: drawmark = 0
+            elif xmin is not None and xmin > forcexmax: drawmark = 0
+            elif ymin is not None and ymin < forceymin: drawmark = 0
+            elif y is not None and y < forceymin: drawmark = 0
+            elif ymax is not None and ymax < forceymin: drawmark = 0
+            elif ymax is not None and ymax > forceymax: drawmark = 0
+            elif y is not None and y > forceymax: drawmark = 0
+            elif ymin is not None and ymin > forceymax: drawmark = 0
             xmin, x, xmax = [graph.xconvert(xaxis.convert(x)) for x in xmin, x, xmax]
             ymin, y, ymax = [graph.yconvert(yaxis.convert(y)) for y in ymin, y, ymax]
-            if self.errorbarattrs is not None:
-                self.drawerrorbar(graph, point, xmin, x, xmax, ymin, y, ymax, errorbarattrs)
+            if drawmark:
+                if self.errorbarattrs is not None:
+                    self.drawerrorbar(graph, point, xmin, x, xmax, ymin, y, ymax, errorbarattrs)
+                else:
+                    if xmin is not None or xmax is not None or ymin is not None or ymax is not None:
+                        raise ValueError("errorbar data recieved while errorbars are off")
+                if self.markattrs is not None:
+                    self.drawmark(graph, point, x, y, mark, markattrs)
+            if x is not None and y is not None:
+                if moveto:
+                    lineels.append(path._moveto(x, y))
+                    moveto = 0
+                else:
+                    lineels.append(path._lineto(x, y))
             else:
-                if xmin is not None or xmax is not None or ymin is not None or ymax is not None:
-                    raise ValueError("errorbar data recieved while errorbars are off")
-            if self.markattrs is not None:
-                self.drawmark(graph, point, x, y, mark, markattrs)
-            if moveto:
-                lineels.append(path._moveto(x, y))
-                moveto = 0
-            else:
-                lineels.append(path._lineto(x, y))
+                moveto = 1
         self.path = path.path(*lineels)
         if self.lineattrs is not None:
             graph.clipcanvas().stroke(self.path, *_getattrs(self.lineattrs))
 
 
+class _changecross(changesequence):
+    defaultsequence = (mark.cross, mark.plus, mark.square, mark.triangle, mark.circle, mark.diamond)
+
+
+class _changeplus(changesequence):
+    defaultsequence = (mark.plus, mark.square, mark.triangle, mark.circle, mark.diamond, mark.cross)
+
+
+class _changesquare(changesequence):
+    defaultsequence = (mark.square, mark.triangle, mark.circle, mark.diamond, mark.cross, mark.plus)
+
+
+class _changetriangle(changesequence):
+    defaultsequence = (mark.triangle, mark.circle, mark.diamond, mark.cross, mark.plus, mark.square)
+
+
+class _changecircle(changesequence):
+    defaultsequence = (mark.circle, mark.diamond, mark.cross, mark.plus, mark.square, mark.triangle)
+
+
+class _changediamond(changesequence):
+    defaultsequence = (mark.diamond, mark.cross, mark.plus, mark.square, mark.triangle, mark.circle)
+
+
+class _changesquaretwice(changesequence):
+    defaultsequence = (mark.square, mark.square, mark.triangle, mark.triangle,
+                       mark.circle, mark.circle, mark.diamond, mark.diamond)
+
+
+class _changetriangletwice(changesequence):
+    defaultsequence = (mark.triangle, mark.triangle, mark.circle, mark.circle,
+                       mark.diamond, mark.diamond, mark.square, mark.square)
+
+
+class _changecircletwice(changesequence):
+    defaultsequence = (mark.circle, mark.circle, mark.diamond, mark.diamond,
+                       mark.square, mark.square, mark.triangle, mark.triangle)
+
+
+class _changediamondtwice(changesequence):
+    defaultsequence = (mark.diamond, mark.diamond, mark.square, mark.square,
+                       mark.triangle, mark.triangle, mark.circle, mark.circle)
+
+
+mark.changecross         = _changecross
+mark.changeplus          = _changeplus
+mark.changesquare        = _changesquare
+mark.changetriangle      = _changetriangle
+mark.changecircle        = _changecircle
+mark.changediamond       = _changediamond
+mark.changesquaretwice   = _changesquaretwice
+mark.changetriangletwice = _changetriangletwice
+mark.changecircletwice   = _changecircletwice
+mark.changediamondtwice  = _changediamondtwice
+
+
 class line(mark):
 
-    def __init__(self, xmin=None, xmax=None, ymin=None, ymax=None, lineattrs=changelinestyle):
+    def __init__(self, xmin=None, xmax=None, ymin=None, ymax=None, lineattrs=_nodefault):
+        if lineattrs == _nodefault:
+            lineattrs = changelinestyle()
         mark.__init__(self, xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
                       markattrs=None, errorbarattrs=None, lineattrs=lineattrs)
 
@@ -2019,8 +2229,7 @@ class function:
 
     defaultstyle = line()
 
-    def __init__(self, expression, xmin=None, xmax=None, ymin=None, ymax=None, points = 100, parser=mathtree.parser()):
-        self.xmin, self.xmax, self.ymin, self.ymax = xmin, xmax, ymin, ymax
+    def __init__(self, expression, points = 100, parser=mathtree.parser()):
         self.points = points
         self.result, expression = expression.split("=")
         self.mathtree = parser.parse(expression)
@@ -2037,20 +2246,15 @@ class function:
             return self.style.getranges(self.data)
 
     def setranges(self, ranges):
-        if None in (self.xmin, self.xmax):
-            min, max = ranges[self.variable]
-            if self.xmin is not None and min < self.xmin: min = self.xmin
-            if self.xmax is not None and max > self.xmax: max = self.xmax
-        else:
-            min, max = self.xmin, self.xmax
+        min, max = ranges[self.variable]
         vmin = self.xaxis.convert(min)
         vmax = self.xaxis.convert(max)
         self.data = []
         for i in range(self.points):
             x = self.xaxis.invert(vmin + (vmax-vmin)*i / (self.points-1.0))
-            y = self.mathtree.Calc({self.variable: x})
-            if ((self.ymin is not None and y < self.ymin) or
-                (self.ymax is not None and y > self.ymax)):
+            try:
+                y = self.mathtree.Calc({self.variable: x})
+            except (ArithmeticError, ValueError):
                 y = None
             self.data.append((x, y))
         self.evalranges = 1
