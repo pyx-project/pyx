@@ -174,10 +174,10 @@ def testtangent(c):
     cc = canvas.canvas(canvas.clip(cc.bbox().path()))
     for i in range(int(p.range())*2):
         radius = p.curvradius(i/2.0)
-        radius = unit.tocm(radius)
         if radius is not None:
+            radius = unit.tocm(radius)
             pos = p.trafo(i/2.0).apply(0,radius*radius/abs(radius))
-            cc.stroke(circle(0,0,abs(radius)), [color.grey(0.5), trafo.translate(*pos)])
+            cc.stroke(circle(0,0,unit.t_cm(abs(radius))), [color.grey(0.5), trafo.translate(*pos)])
     c.insert(cc)
 
 
