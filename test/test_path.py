@@ -104,8 +104,8 @@ def testnormpathtrafo(c):
     p=path(moveto(0,5),
            curveto(2,1,4,0,2,4),
            rcurveto(-3,2,1,2,3,6),
-           rlineto(2,3),
-           closepath())
+           rlineto(2,3))
+
 
     c.draw(p.transformed(trafo.translation(3,1)), color.rgb.red)
     c.insert(canvas.canvas(trafo.translation(3,1))).draw(p,
@@ -116,9 +116,11 @@ def testnormpathtrafo(c):
     c.draw(p.reversed())
 
     c.draw(cross(*(p.at(0))))
-#    c.draw(cross(*(p.reversed().at(0))))
+    c.draw(cross(*(p.reversed().at(0))))
+    c.draw(p.tangent(0, "30 pt"), canvas.earrow.normal)
+    c.draw(p.reversed().tangent(0, "30 pt"), canvas.earrow.normal)
 
-    p1, p2, p3 = p.split(0.7, 1.7)
+    p1, p2, p3 = p.split(1.0, 2.1)
     c.draw(p1, color.rgb.red, canvas.linestyle.dashed)
     c.draw(p2, color.rgb.green, canvas.linestyle.dashed)
     c.draw(p3, color.rgb.blue, canvas.linestyle.dashed)
