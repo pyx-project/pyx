@@ -980,8 +980,8 @@ class rationaltexter:
           denomprefix, denominfix and denomsuffix are set and minuspos is not -1 or the
           fraction is positive
         - labelattrs is a list of attributes for a texrunners text method;
-          a single is allowed without being a list; None is considered as
-          an empty list; labelattrs might be changed in the painter as well"""
+          None is considered as an empty list; labelattrs might be changed
+          in the painter as well"""
         self.prefix = prefix
         self.infix = infix
         self.suffix = suffix

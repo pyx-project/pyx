@@ -811,7 +811,7 @@ class dvifile:
             if self.actoutstart is None:
                 self.actoutstart = self.pos[_POS_H], self.pos[_POS_V]
                 self.actoutstring = ""
-            if char > 32 and char < 127 and chr(char) not in "()[]<>":
+            if char > 32 and char < 127 and chr(char) not in "()[]<>\\":
                 ascii = "%s" % chr(char)
             else:
                 ascii = "\\%03o" % char

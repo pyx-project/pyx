@@ -39,10 +39,13 @@ TODO:
     - use csv module (new in 2.3)
   - canvas module:
     - multi page PostScript output
+    - contructor should only take a texrunner keyword argument
+    - set method???
   - connnector module:
     - _xxx -> xxx_pt renaming
   - deco module:
     - consider rewriting decoratedpath as canvas
+    - arrows should not be stroked by default
   - style and color module:
     - support modification of existing styles via __call__
 
