@@ -77,32 +77,31 @@ class Canvas(Globex):
         if depth > 0:
             raise TexLeftParenthesisError
 
-    def TexCreateBoxCmd(self, Cmd, parmode, valign):
+    def TexCreateBoxCmd(self, Cmd, hsize, valign):
 
         'creates the TeX box \\localbox containing Cmd'
 
         self.TexParenthesisCheck(Cmd)
 
-        # we use two "{{" to ensure, that everything goes into the box
-        CmdBegin = "\\setbox\\localbox=\\hbox{{"
-        CmdEnd = "}}"
+        # we add another "{" to ensure, that everything goes into the Cmd
+        Cmd = "{" + Cmd + "}"
 
-        if parmode != None:
-             # TODO: check that parmode is a valid TeX length
+        CmdBegin = "\\setbox\\localbox=\\hbox{"
+        CmdEnd = "}"
+
+        if hsize != None:
+             isnumber(hsize)
              if valign == top or valign == None:
-                  CmdBegin = CmdBegin + "\\begin{minipage}[t]{" + parmode + "}"
-                  CmdEnd = "\\end{minipage}" + CmdEnd
-             elif valign == center:
-                  CmdBegin = CmdBegin + "\\begin{minipage}{" + parmode + "}"
-                  CmdEnd = "\\end{minipage}" + CmdEnd
+                  CmdBegin = CmdBegin + "\\vtop{\hsize" + str(hsize) + "truecm{"
+                  CmdEnd = "}}" + CmdEnd
              elif valign == bottom:
-                  CmdBegin = CmdBegin + "\\begin{minipage}[b]{" + parmode + "}"
-                  CmdEnd = "\\end{minipage}" + CmdEnd
+                  CmdBegin = CmdBegin + "\\vbox{\hsize" + str(hsize) + "truecm{"
+                  CmdEnd = "}}" + CmdEnd
              else:
                   assert "valign unknown"
         else:
              if valign != None:
-                  assert "parmode needed to use valign"
+                  assert "hsize needed to use valign"
         
         Cmd = CmdBegin + Cmd + CmdEnd + "\n"
         return Cmd
@@ -177,25 +176,14 @@ class Canvas(Globex):
         file = open(self.BaseFilename + ".tex", "w")
 
         file.write("""\\nonstopmode
-\\documentclass{article}
-\\setlength{\\textheight}{""" + str(self.Height) + """truecm}
-\\setlength{\\textwidth}{""" + str(self.Width) + """truecm}
-\\setlength{\\topmargin}{0truecm}
-\\setlength{\\headheight}{0truecm}
-\\setlength{\\headsep}{0truecm}
-\\setlength{\\marginparwidth}{0truecm}
-\\setlength{\\marginparsep}{0truecm}
-\\setlength{\\oddsidemargin}{0truecm}
-\\setlength{\\evensidemargin}{0truecm}
-\\setlength{\\hoffset}{-1truein}
-\\setlength{\\voffset}{-1truein}
-\\setlength{\\parindent}{0truecm}
-\\pagestyle{empty}""")
+\\hsize21truecm
+\\vsize29.7truecm
+\\hoffset-1truein
+\\voffset-1truein\n""")
 
         file.write(self.TexCmds[0].Cmd)
 
-        file.write("""\\begin{document}
-\\newwrite\\sizefile
+        file.write("""\\newwrite\\sizefile
 \\newbox\\localbox
 \\newbox\\pagebox
 \\immediate\\openout\\sizefile=""" + self.BaseFilename + """.size
@@ -206,23 +194,20 @@ class Canvas(Globex):
 
         file.write("""}
 \\immediate\\closeout\sizefile
-\\ht\\pagebox\\textheight
-\\dp\\pagebox0cm
-\\wd\\pagebox\\textwidth
-\\setlength{\\unitlength}{1truecm}
-\\begin{picture}(0,""" + str(self.Height) + """)(0,0)
-\\put(0,0){\line(1,1){1}}
-\\put(2,2){\line(1,1){1}}
-\\put(0,3){\line(1,-1){1}}
-\\put(2,1){\line(1,-1){1}}
-%\\multiput(0,0)(1,0){11}{\line(0,1){20}}
-%\\multiput(0,0)(0,1){21}{\line(1,0){10}}
-\\end{picture}%
-\\copy\\pagebox
-\\end{document}""")
+\\shipout\\copy\\pagebox
+\\end""")
+#%\\setlength{\\unitlength}{1truecm}
+#%\\begin{picture}(0,""" + str(self.Height) + """)(0,0)
+#%\\put(0,0){\line(1,1){1}}
+#%\\put(2,2){\line(1,1){1}}
+#%\\put(0,3){\line(1,-1){1}}
+#%\\put(2,1){\line(1,-1){1}}
+#%\\multiput(0,0)(1,0){11}{\line(0,1){20}}
+#%\\multiput(0,0)(0,1){21}{\line(1,0){10}}
+#%\\end{picture}%
         file.close()
 
-        if os.system("latex " + self.BaseFilename + " > " + self.BaseFilename + ".stdout 2> " + self.BaseFilename + ".stderr"):
+        if os.system("tex " + self.BaseFilename + " > " + self.BaseFilename + ".stdout 2> " + self.BaseFilename + ".stderr"):
             print "The LaTeX exit code was non-zero. This may happen due to mistakes within your\nLaTeX commands as listed below. Otherwise you have to check your local\nenvironment and the files \"" + self.BaseFilename + ".tex\" and \"" + self.BaseFilename + ".log\" manually."
 
         try:
@@ -311,41 +296,41 @@ class Canvas(Globex):
  
         return 1
 
-    def text(self, Cmd, halign = None, parmode = None, valign = None, angle = None, IgnoreMsgLevel = 1):
+    def text(self, Cmd, halign = None, hsize = None, valign = None, angle = None, IgnoreMsgLevel = 1):
 
         'print Cmd at the current position'
         
-        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, parmode, valign)
+        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, hsize, valign)
         TexCopyBoxCmd = self.TexCopyBoxCmd(Cmd, halign, angle)
         self.TexAddToFile(TexCreateBoxCmd + TexCopyBoxCmd, IgnoreMsgLevel)
 
-    def textwd(self, Cmd, parmode = None, IgnoreMsgLevel = 1):
+    def textwd(self, Cmd, hsize = None, IgnoreMsgLevel = 1):
     
         'get width of Cmd'
 
-        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, parmode, None)
+        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, hsize, None)
         TexHexMD5=self.TexHexMD5(TexCreateBoxCmd)
         self.TexAddToFile(TexCreateBoxCmd +
                           "\\immediate\\write\\sizefile{" + TexHexMD5 +
                           ":wd:\\the\\wd\\localbox}\n", IgnoreMsgLevel)
         return self.TexResult(TexHexMD5 + ":wd:")
 
-    def textht(self, Cmd, parmode=None, valign=None, IgnoreMsgLevel = 1):
+    def textht(self, Cmd, hsize=None, valign=None, IgnoreMsgLevel = 1):
 
         'get height of Cmd'
 
-        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, parmode, valign)
+        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, hsize, valign)
         TexHexMD5=self.TexHexMD5(TexCreateBoxCmd)
         self.TexAddToFile(TexCreateBoxCmd +
                           "\\immediate\\write\\sizefile{" + TexHexMD5 +
                           ":ht:\\the\\ht\\localbox}\n", IgnoreMsgLevel)
         return self.TexResult(TexHexMD5 + ":ht:")
 
-    def textdp(self, Cmd, parmode=None, valign=None, IgnoreMsgLevel = 1):
+    def textdp(self, Cmd, hsize=None, valign=None, IgnoreMsgLevel = 1):
    
         'get depth of Cmd'
 
-        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, parmode, valign)
+        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, hsize, valign)
         TexHexMD5=self.TexHexMD5(TexCreateBoxCmd)
         self.TexAddToFile(TexCreateBoxCmd +
                           "\\immediate\\write\\sizefile{" + TexHexMD5 +
@@ -470,7 +455,7 @@ def canvas(width, height, basefilename, texinit="", TexInitIgnoreMsgLevel=1):
 
 
 if __name__=="__main__":
-    canvas(21, 29.7, "example", texinit="\\usepackage{german}")
+    canvas(21, 29.7, "example")
 
     #for x in range(11):
     #    amove(x,0)
@@ -492,7 +477,7 @@ if __name__=="__main__":
     amove(5,1)
     text("Hello world!")
     amove(5,2)
-    text("\Large Hello world!",halign=center)
+    text("Hello world!",halign=center)
     amove(5,3)
     text("Hello world!",halign=right)
     for angle in (-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90):
@@ -507,19 +492,23 @@ if __name__=="__main__":
         text(".")
         
     amove(5,12)
-    text("Beispiel:\\begin{itemize}\\item$\\alpha$\\item$\\beta$\"u\\item$\\gamma$\\end{itemize}",parmode="2cm")
-    amove(10,12)
-    text("Beispiel:\\begin{itemize}\\item$\\alpha$\\item$\\beta$\\item$\\gamma$\\end{itemize}",parmode="2cm",valign=center)
-    amove(15,12)
-    text("""Beispiela: 
-            \\begin{itemize}
-	       \\item$\\alpha$
-	       \\item$\\beta$
-	       \\item$\\gamma$
-	    \\end{itemize}""",parmode="2cm",valign=bottom,IgnoreMsgLevel=2)
+    text("a b c d e f g h i j k l m n o p q r s t u v w x y z",hsize=2)
+    aline(7,12)
+    amove(5,10)
+    aline(5,14)
+    amove(7,10)
+    aline(7,14)
 
-    amove(5,20)
-    text("$\\left\\{\\displaystyle\\frac{1}{2}\\right\\}$")
+    amove(10,12)
+    text("a b c d e f g h i j k l m n o p q r s t u v w x y z",hsize=2,valign=bottom)
+    aline(12,12)
+    amove(10,10)
+    aline(10,14)
+    amove(12,10)
+    aline(12,14)
+
+    #amove(5,20)
+    #text("$\\left\\{\\displaystyle\\frac{1}{2}\\right\\}$")
 
     DefaultCanvas.TexRun()
     DefaultCanvas.PSEnd()
