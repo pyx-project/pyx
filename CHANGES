@@ -81,7 +81,7 @@ TODO:
     - describe creation and modification (inplace and ``modify by new'') of
       graph data
 
-0.7 (xxxx/xx/xx):
+0.7 (2004/10/21):
   - bitmap module:
     - new module for inclusion of bitmap images
   - path module:
