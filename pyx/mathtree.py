@@ -832,7 +832,8 @@ class parser:
 
     def ParseMathTree(self, arg):
         Tree = None
-        Match = arg.MatchPattern(re.compile(r"\s*-(?![0-9\.])"))
+        #Match = arg.MatchPattern(re.compile(r"\s*-(?![0-9\.])"))
+        Match = arg.MatchPattern(re.compile(r"\s*-")) # XXX another quick workaround
         if Match:
             #Tree = MathTreeFunc1Neg()
             Tree = MathTreeOpSub(MathTreeValConst(0)) # XXX quick workaround
