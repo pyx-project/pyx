@@ -128,8 +128,8 @@ test_textaxis_errorbars(c, 0, 7)
 test_ownmark(c, 0, 0)
 test_allerrorbars(c, -7, 0)
 ##test_3d(c, -7, 7)
-#test_split(c, -7, 7)
-#test_bar(c, -7, 14)
+test_split(c, -7, 7)
+test_bar(c, -7, 14)
 
 c.writetofile("test_graph", paperformat="a4")
 
