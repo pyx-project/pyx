@@ -80,7 +80,7 @@ documentation framework. For building the manual, you will need the script
 into the manual directory
 
     cd manual/
-    ln -s </usr/lib/>python/Doc/tools/mkhowto mkhowto
+    ln -s </usr/lib/>python/doc/tools/mkhowto mkhowto
     make
 
 Note that this requires Python version 2.3 and above. In former versions you
