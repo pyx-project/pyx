@@ -28,7 +28,7 @@ The method tex.text is used to print out text, while tex.textwd, tex.textht,
 and tex.textdp appraise the width, height, and depth of a text, respectively.
 """
 
-import canvas, os, string, tempfile, sys, md5, string, traceback, time, unit, math, types, color, StringIO
+import canvas, os, string, tempfile, sys, md5, traceback, time, unit, color, StringIO
 
 class _Attr:
     """base class for all PyX attributes (TODO: has to be defined somewhere else)"""
