@@ -9,9 +9,7 @@
 #         ggf. sonst Diskussion Seitengröße etc.
 #         weitere Schicht postscript-file notwendig ?!?
 
-import const
-from canvas import epsfile
-import os, string, tempfile, sys, md5, string, traceback, time
+import const, canvas, os, string, tempfile, sys, md5, string, traceback, time
 
 # tex processor types
 
@@ -203,7 +201,7 @@ class tex:
         file.write("\\nonstopmode\n")
         if self.type == LaTeX:
             file.write("\\documentclass[" + self.latexclassopt + "]{" + self.latexclass + "}\n")
-        file.write("\\hsize0truecm\n\\vsize0truecm\n\\hoffset-1truein\n\\voffset-1truein\n")
+        file.write("\\hsize0truecm\n\\vsize0truecm\n\\hoffset-1truein\n\\voffset0truein\n")
 
         file.write(self.TexCmds[0].Cmd)
 
@@ -295,10 +293,10 @@ class tex:
         # TODO 7: dvips error handling
         #         interface for modification of the dvips command line
 
-        if os.system("dvips -P pyx -T0cm,0cm -o " + TempName + ".eps " + TempName + ".dvi > /dev/null 2>&1"):
+        if os.system("TEXCONFIG=" + WorkDir + " dvips -P pyx -T1in,1in -o " + TempName + ".eps " + TempName + ".dvi > /dev/null 2>&1"):
             assert 0, "dvips exit code non-zero"
 
-        result = str(epsfile(TempName + ".eps", clipping = 0))
+        result = str(canvas.epsfile(TempName + ".eps", clipping = 0))
 
         # merge new sizes
         

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import const, string, re
+import const, string, re, tex
 from unit import unit
 
 
@@ -55,7 +55,7 @@ class epsfile:
         try:
             file = open(self.epsname,"r")
         except:
-            assert "cannot open EPS file"	# TODO: Fehlerbehandlung
+            assert 0, "cannot open EPS file"	# TODO: Fehlerbehandlung
 
         while 1:
             line=file.readline()
@@ -147,7 +147,7 @@ class canvas:
         return subcanvas
         
     def tex(self, **kwargs):
-        texcanvas = tex(**kwargs)
+        texcanvas = tex.tex(**kwargs)
         self._translate(0,0)
         self._PSAddCmd(texcanvas)
         return texcanvas
@@ -222,7 +222,7 @@ if __name__=="__main__":
     from graph import *
     from const import *
 
-    c=canvas()
+    c=canvas.canvas()
     t=c.tex()
  
     #for x in range(11):
@@ -275,7 +275,7 @@ if __name__=="__main__":
              moveto(12,10), 
              lineto(12,14)])
     c.setlinestyle(linestyle.dashdotted)
-    #t.text(10, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize = 2, valign = valign.bottom)
+    t.text(10, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize = 2, valign = valign.bottom)
     c.draw(p)
  
     p=path([moveto(5,15), arc(5,15, 1, 0, 45), closepath()])
@@ -293,6 +293,6 @@ if __name__=="__main__":
 #   g.plot(Function("(x+5)*x*(x-5)/100"))
 #   g.run()
 
-#    c.canvas(trafo=scale(0.5,0.5).rotate(20).translate(10,5)).inserteps(0,0,"ratchet_f.eps")
+    c.canvas(trafo=scale(0.5,0.5).rotate(20).translate(10,5)).inserteps(0,0,"ratchet_f.eps")
 
     c.write("example", 21, 29.7)
