@@ -76,7 +76,7 @@ class _hsb(color):
         self.b=b
 
     def _PSCmd(self):
-        return "%f %f %f setrgbcolor" % (self.h, self.s, self.b)
+        return "%f %f %f sethsbcolor" % (self.h, self.s, self.b)
         
 
 class hsb(_hsb):
