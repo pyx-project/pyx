@@ -44,9 +44,11 @@ bbpattern = re.compile( r"^%%BoundingBox:\s+([+-]?\d+)\s+([+-]?\d+)\s+([+-]?\d+)
 
 class epsfile:
 
-    def __init__(self, epsname, clipping = 1):
-        self.epsname   = epsname
-        self.clipping  = clipping
+    def __init__(self, epsname, x, y, clip = 1):
+        self.epsname = epsname
+        self.x       = x
+        self.y       = y
+        self.clip    = clip
         self._ReadEPSBoundingBox()                         
 
     def _ReadEPSBoundingBox(self):
@@ -77,21 +79,24 @@ class epsfile:
 	except:
 	    assert "cannot open EPS file"	                          # TODO: Fehlerbehandlung
 
-	# "%f %f translate\n" % (x, y) +                             # we are already at this position
 
         if self.clipping:
             return """BeginEPSF
+%f %f translate
 %f %f translate 
 %f %f %f %f rect
 clip newpath
-%%BeginDocument: %s\n""" % (-self.llx, -self.lly, 
-                                             self.llx, self.lly, self.urx-self.llx,self.ury-self.lly, 
-                                             self.epsname) + file.read() + "%%EndDocument\nEndEPSF\n"
+%%BeginDocument: %s\n""" % (self.x, self.y, 
+                            -self.llx, -self.lly, 
+                            self.llx, self.lly, self.urx-self.llx,self.ury-self.lly, 
+                            self.epsname) + file.read() + "%%EndDocument\nEndEPSF\n"
         else:
             return """BeginEPSF
+%f %f translate
 %f %f translate 
-%%BeginDocument: %s\n""" % (-self.llx, -self.lly, 
-                                             self.epsname) + file.read() + "%%EndDocument\nEndEPSF\n"
+%%BeginDocument: %s\n""" % (self.x, self.y, 
+                            -self.llx, -self.lly, 
+                            self.epsname) + file.read() + "%%EndDocument\nEndEPSF\n"
 
 #
 # Exceptions
@@ -233,7 +238,6 @@ class canvas:
         
     def tex(self, **kwargs):
         texcanvas = tex.tex(self.unit.copy(), **kwargs)
-        self._translate(0,0)
         self._PSAddCmd(texcanvas)
         return texcanvas
 
@@ -264,10 +268,8 @@ class canvas:
         return self
 
     def inserteps(self, x, y, filename, clipping=1):
-        self._translate(x,y)
-        self._PSAddCmd(str(epsfile(filename, clipping)))
+        self._PSAddCmd(str(epsfile(filename, x, y, clipping)))
         return self
-
         
     def write(self, filename, width, height, **kwargs):
         try:
