@@ -29,6 +29,7 @@ PyX
     - the prolog method of the dvifile class recieves the page now -> return the prolog needed by this page only
     - further improve lfs handling
   - tex module:
+    - bugfix \def\ProcessPyXBox -> \long\def\ProcessPyXBox
     - copy lfs handling from text module (share the same source???)
   - data module:
     - full documentation via doc strings

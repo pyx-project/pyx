@@ -1604,7 +1604,7 @@ class texrunner:
                          "\\newdimen\\PyXDimenHAlignLT%\n" # PyXDimenHAlignLT/RT will contain the left/right extent
                          "\\newdimen\\PyXDimenHAlignRT%\n" +
                          _texsettingpreamble + # insert preambles for texsetting macros
-                         "\\def\\ProcessPyXBox#1#2{%\n" # the ProcessPyXBox definition (#1 is expr, #2 is page number)
+                         "\\long\\def\\ProcessPyXBox#1#2{%\n" # the ProcessPyXBox definition (#1 is expr, #2 is page number)
                          "\\setbox\\PyXBox=\\hbox{{#1}}%\n" # push expression into PyXBox
                          "\\PyXDimenHAlignLT=\\PyXHAlign\\wd\\PyXBox%\n" # calculate the left/right extent
                          "\\PyXDimenHAlignRT=\\wd\\PyXBox%\n"
@@ -1622,7 +1622,8 @@ class texrunner:
                          *self.texmessagestart)
             os.remove("%s.tex" % self.texfilename)
             if self.mode == "pdftex" or self.mode == "pdflatex":
-                self.execute("\\pdfoutput=1%\n"
+                raise RuntimeError("pdftex in dvi-mode not yet supported")
+                self.execute("\\pdfoutput=0%\n"
                              "\\def\\marker#1{%\n"
                              "\\pdfsavepos%\n" # needs a modified pdf(La)TeX version!
                              "\\write16{PyXMarker:name=#1,"
