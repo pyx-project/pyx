@@ -73,7 +73,7 @@ class epsfile(base.PSCmd):
 
         inserts EPS file named filename at position (x,y).  If clip is
         set, the result gets clipped to the bbox of the EPS file. If
-        translatebb is not set, the EPS graphics is not translated to
+        translatebbox is not set, the EPS graphics is not translated to
         the corresponding origin. With showbb set, the bbox is drawn.
         
         """
@@ -131,16 +131,16 @@ class epsfile(base.PSCmd):
         else:
             raise ValueError("horizontal alignment can only be l (left), c (center), or r (right)")
         
-        self.clip        = clip
-        self.translatebb = translatebb
-        self.showbbox    = showbbox
+        self.clip = clip
+        self.translatebbox = translatebbox
+        self.showbbox = showbbox
 
         self.trafo = trafo._translation(self._x, self._y)
 
         if self.scalex is not None:
             self.trafo = self.trafo * trafo._scaling(self.scalex, self.scaley)
             
-        if translatebb:
+        if translatebbox:
             self.trafo = self.trafo * trafo._translation(-self.mybbox.llx, -self.mybbox.lly)
 
     def bbox(self):
