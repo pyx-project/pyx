@@ -21,9 +21,6 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-# TODO: - it would be nice to have a real bbox.transform
-#       - what about __iadd__, ...
-
 import math
 import unit
 
@@ -113,6 +110,35 @@ class _bbox:
                     self.urx < other.llx or
                     self.ury < other.lly)
 
+    def transforme(self, trafo):
+        """transform bbox in place by trafo"""
+        # we have to transform all four corner points of the bbox
+        # method correctly handles bboxes with None entries at the corners
+        if None not in (self.llx, self.lly):
+            llx, lly = trafo._apply(self.llx, self.lly)
+        else:
+            llx = lly = None
+        if None not in (self.urx, self.lly):
+            lrx, lry = trafo._apply(self.urx, self.lly)
+        else:
+            lrx = lry = None
+        if None not in (self.urx, self.ury):
+            urx, ury = trafo._apply(self.urx, self.ury)
+        else:
+            urx = ury = None
+        if None not in (self.llx, self.ury):
+            ulx, uly = trafo._apply(self.llx, self.ury)
+        else:
+            ulx = uly = None
+
+        # now, by sorting, we obtain the lower left and upper right corner
+        # of the new bounding box. 
+
+        self.llx = _nmin(llx, lrx, urx, ulx)
+        self.lly = _nmin(lly, lry, ury, uly)
+        self.urx = _nmax(llx, lrx, urx, ulx)
+        self.ury = _nmax(lly, lry, ury, uly)
+
     def transformed(self, trafo):
         """return bbox transformed by trafo"""
         # we have to transform all four corner points of the bbox
@@ -141,11 +167,33 @@ class _bbox:
                      _nmax(llx, lrx, urx, ulx), _nmax(lly, lry, ury, uly))
 
     def enlarged(self, all=0, bottom=None, left=None, top=None, right=None):
+        """enlarge bbox in place
+
+        all is used, if bottom, left, top and/or right are not given.
+
+        """
+        # XXX does not handle bbox with None entries at the corners
+        _bottom = _left = _top = _right = unit.topt(unit.length(all, default_type="v"))
+        if bottom is not None:
+           _bottom = unit.topt(unit.length(bottom, default_type="v"))
+        if left is not None:
+           _left = unit.topt(unit.length(left, default_type="v"))
+        if top is not None:
+           _top = unit.topt(unit.length(top, default_type="v"))
+        if right is not None:
+           _right = unit.topt(unit.length(right, default_type="v"))
+        self.llx -= _left
+        self.lly -= _bottom
+        self.urx += _right
+        self.ury += top
+
+    def enlarged(self, all=0, bottom=None, left=None, top=None, right=None):
         """return bbox enlarged
 
         all is used, if bottom, left, top and/or right are not given.
 
         """
+        # XXX does not handle bbox with None entries at the corners
         _bottom = _left = _top = _right = unit.topt(unit.length(all, default_type="v"))
         if bottom is not None:
            _bottom = unit.topt(unit.length(bottom, default_type="v"))
