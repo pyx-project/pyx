@@ -75,13 +75,21 @@ Returns the total arc length of the path.$^\dagger$
 \begin{methoddesc}{intersect}{opath}
   Returns a tuple consisting of two lists of parameter values
   corresponding to the intersection points of the path with the other
-  path \var{opath}, respectively.$^\dagger$
+  path \var{opath}, respectively.$^\dagger$ For intersection points which
+  are not farther apart then \var{epsilon} points, only one is returned.
 \end{methoddesc}
 
 \begin{methoddesc}{joined}{opath}
   Appends \var{opath} to the end of the path, thereby merging the last
   subpath (which must not be closed) of the path with the first sub
   path of \var{opath} and returns the resulting new path.$^\dagger$
+\end{methoddesc}
+
+\begin{methoddesc}{normpath}{epsilon=None}
+  Returns the equivalent \class{normpath}. For the conversion and for later
+  calculations with this \class{normpath} and accuracy of
+  \var{epsilon} points is used. If \var{epsilon} is \var{None}, the
+  global \var{epsilon} of the \module{path} module is used.
 \end{methoddesc}
 
 \begin{methoddesc}{range}{}
@@ -126,9 +134,10 @@ Some notes on the above:
 \begin{itemize}
 \item The $\dagger$ denotes methods which require a prior
   conversion of the path into a \class{normpath} instance. This is
-  done automatically, but if you need to call such methods often or
+  done automatically (using the precision \var{epsilon} set globally
+  using \method{path.set}), but if you need to call such methods often or
   if you need to change the precision used for this conversion, 
-  it is a good idea to manually perform the conversion.
+  it is a good idea to perform the conversion manually.
 \item Instead of using the \method{joined()} method, you can also join two
 paths together with help of the \verb|<<| operator, for instance
 \samp{p = p1 << p2}.
@@ -269,22 +278,23 @@ paths are used for all of the more sophisticated path operations
 which are denoted by a $\dagger$ in the description of the \class{path}
 class above.
 
-Any path can easily be converted to its normalized form by passing it
-as parameter to the \class{normpath} constructor,
+Any path can easily be converted to its normalized form by calling 
+the \class{normpath} constructor, i.e.,
 \begin{verbatim}
-np = normpath(p)
+np = p.normpath())
 \end{verbatim}
 Additionally, you can specify the accuracy (in points) which is used
-in all \class{normpath} calculations by means of the keyword argument
-\var{epsilon}, which defaults to $10^{-5}$.  Note that the sum of a
-\class{normpath} and a \class{path} always yields a \class{normpath}.
+in all \class{normpath} calculations by means of the argument
+\var{epsilon}, which defaults to the value defined using
+\function{path.set}. Initially, this value is set to $10^{-5}$ points.
+Note that the sum of a \class{normpath} and a \class{path} always
+yields a \class{normpath}.
 
-\begin{classdesc}{normpath}{arg=[], epsilon=1e-5}
-  Construct a normpath from \var{arg}. All numerical calculations will
-  be performed using an accuracy of the order of \var{epsilon} points.
-  The first argument \var{arg} can be a \class{path} or a another
-  \class{normpath} instance. Alternatively, a list of
-  \class{normsubpath} instances can be supplied as argument.
+Alternatively, you can pass a list of \class{subnormpath} instances.
+
+\begin{classdesc}{normpath}{subnormpaths=[]}
+  Construct a \class{normpath} consisting of \var{subnormpaths}, which
+  is a list of \class{subnormpath} instances.
 \end{classdesc}
 
 In addition to the \class{path} methods, a \class{normpath} instance
@@ -303,6 +313,10 @@ also offers the following methods, which operate on the instance itself:
   Transforms the \class{normpath} instance according to the linear
   transformation \var{trafo}.
 \end{methoddesc}
+
+\subsection{Class \class{subnormpath}}
+
+XXX To be written
 
 \subsection{Predefined paths}
 
