@@ -305,7 +305,7 @@ class Font:
         self.name = name
         self.path = pykpathsea.find_file("%s.tfm" % self.name, pykpathsea.kpse_tfm_format)
         if self.path is None:
-            raise TFMError("cannot find %f.tfm" % self.name)
+            raise TFMError("cannot find %s.tfm" % self.name)
         self.tfmfile = TFMFile(self.path, debug)
 
         if self.tfmfile.checksum!=c:
