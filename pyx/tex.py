@@ -317,8 +317,7 @@ class tex:
         for OldSize in OldSizes:
             OldSizeSplit = OldSize.split(":")
             for NewSize in NewSizes:
-                NewSizeSplit = NewSize.split(":")
-                if (NewSizeSplit[0] == OldSizeSplit[0]) and (NewSizeSplit[1] == OldSizeSplit[1]):
+                if NewSize.split(":")[0:2] == OldSizeSplit[0:2]:
                     break
             else:
                 if time.time() < float(OldSizeSplit[2]) + 60*60*24:   # we keep it for one day
