@@ -539,7 +539,7 @@ class autologpart(logpart):
 
 #print linpart("1/2").getpart(0, 1.9)
 #print linpart(("1/2", "0.25")).getpart(0, 1.9)
-print logpart((autologpart.shiftfracs1, autologpart.shiftfracs1to9)).getpart(0.673, 2.4623)
+#print logpart((autologpart.shiftfracs1, autologpart.shiftfracs1to9)).getpart(0.673, 2.4623)
 #print autologpart().getparts(0.0432, 24.623)
 
 
