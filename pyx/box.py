@@ -55,7 +55,7 @@ class _polybox:
         return self
 
     def successivepointnumbers(self):
-        return map(lambda i: i and (i - 1, i) or (len(self.corners) - 1, 0), range(len(self.corners)))
+        return map(lambda i, self=self: i and (i - 1, i) or (len(self.corners) - 1, 0), range(len(self.corners)))
 
     def successivepoints(self):
         return [(self.corners[i], self.corners[j]) for i, j in self.successivepointnumbers()]
