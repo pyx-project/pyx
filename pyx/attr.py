@@ -27,7 +27,7 @@
 try:
     isinstance(1, (int, float))
 except TypeError:
-    # workaround for Python 2.1 and older
+    # workaround for Python 2.1
     _isinstance = isinstance
     def isinstance(instance, clsarg):
         # we explicitely check for clsarg being a sequence, because
