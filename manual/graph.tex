@@ -1,23 +1,75 @@
 \chapter{Module graph: graph plotting}
 \label{graph}
-\section{A short introduction note}
-This module is considered to be in constant, gradual development. For
-the moment we concentrate ourself on standard 2d xy-graphs taking all
-kind of possible specialties into account, like any number of axes,
-axis with any number of axis breaks and so on. Architectural decisions
-play the most substantial role at the moment and have hopefully
-already been done that way, that their flexibility will suffice for
-future usages in quite different graph types, \emph{e.g.} circular 2d
-graphs or even 3d graphs. We will describe those parts of the graph
-module here, which are in a totally usable state already and are
-hopefully not to be changed later on. However, future developments
-certainly will cause incompatibilities, for example they are expected
-to happen for automatic axis ticking and labeling or just by splitting
-the graph module into several parts later on. But at least be warned:
-Nobody knows the hole list of things that will break. At the moment,
-keeping backwards compatibility in the graph module is not at all an
-issue for us. Although we do not claim any backwards compatibility
-anywhere in \PyX, the graph module is certainly one of the biggest
+\section{Introductory notes}
+The graph module is considered to be in constant, gradual development.
+For the moment we concentrate ourself on standard 2d xy-graphs taking
+all kind of possible specialties into account like any number of axes.
+Architectural decisions play the most substantial role at the moment
+and have hopefully already been done that way, that their flexibility
+will suffice for future usage in quite different graph applications,
+\emph{e.g.} circular 2d graphs or even 3d graphs. We will describe
+those parts of the graph module here, which are in a totally usable
+state already and are hopefully not to be changed later on. However,
+future developments certainly will cause incompatibilities, for
+example they are expected to happen for automatic axis ticking (which
+will therefore not yet be covered in this manual) or just by splitting
+the graph module into several parts. But at least be warned: Nobody
+knows the hole list of things that will break. At the moment, keeping
+backwards compatibility in the graph module is not at all an issue.
+Although we do not yet claim any backwards compatibility for the
+future at all, the graph module is certainly one of the biggest
 construction site within \PyX.
+
+The task of drawing graphs is splitted in quite some subtasks, which
+are implemented by classes of its own. We've tried hard to make those
+parts as independend as it is usefull and possible in order to make
+them reuseable for other graph types and also to make the replaceable
+by the user to get more specialized graph drawing tasks without
+needing to reimplement a hole graph system again.
+
+We should mention right here, that a graph introduces own coordinates,
+called graph coordinates. The range of graph coordinates is $[0;1]$.
+Only the graph does know about the conversion between these
+coordinates and the actual position on the postscript canvas.
+
+\section{Axes}
+
+A major feature of a graph are axes. An axis is first of all
+responsible for the conversion of values to graph coordinates. This
+means, if you have an axis for the range $[10;20]$ than it converts it
+to the range $[0;1]$. This conversion might be lineary, but it could
+also be logarithmic or whatever else.
+
+Secondly the axis manages its range, e.g. the minimum and the maximum
+value. It might be set right at the beginning of the axis creation
+(and thus staying fixed all the time) or it will be set appropriate to
+the data ranges it recieves.
+
+Finally, a major task of an axis is the painting of itself. For that
+it has to calculate positions of ticks and labels and draw them.
+
+\subsection{Axis parting}
+
+\subsection{Axis painting}
+
+\section{Data}
+
+\subsection{List of points}
+
+\subsection{Functions}
+
+\subsection{Parametric functions}
+
+\section{Styles}
+
+\subsection{Lines}
+
+\subsection{Marks}
+
+\subsection{Own styles}
+
 \section{Keys}
 Sorry, there is not yet any support for graph keys.
+
+\section{X-Y-Graph}
+

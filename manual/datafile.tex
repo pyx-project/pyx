@@ -1,0 +1,107 @@
+% $Header$
+\chapter{Module datafile: reading a datafile}
+
+\section{Reading a table from a file}
+
+The module datafile contains the class \verb|datafile| which can be
+used to read in a table from a file. You just have to construct an
+instance and provide a filename as the parameter, e.g.
+\verb|datafile("testdata")|. The parsing of the file, namely the
+columns of the table, is done by matching regular expressions. They
+can be modified, as they are additional named arguments of the
+constructor:
+
+\medskip
+\begin{tabularx}{\linewidth}{ll>{\raggedright\arraybackslash}X}
+argument name&default&description\\
+\hline
+\texttt{commentpattern}&\texttt{re.compile(r"(\#+|!+|\%+)\textbackslash s*")}&start a comment line\\
+\texttt{stringpattern}&\texttt{re.compile(r"\textbackslash"(.*?)\textbackslash"(\textbackslash s+|\$)}&a string column\\
+\texttt{columnpattern}&\texttt{re.compile(r"(.*?)(\textbackslash s+|\$)}&any other column\\
+\end{tabularx}
+\medskip
+
+The processing of the input file is done be reading line by line from
+the file and first strip leading and tailing whitespaces of the lines.
+Then a check is performed, whether the line matches the comment
+pattern or not. If it does match, this rest of the line is analysed
+like a table line when no data was read before (otherwise it is just
+thrown away). The result is interpreted as column titles. As the
+titles are sequentially overwritten by another comment line previous
+to the data, finally the last non-empty comment line determines the
+column titles.
+
+Thus we have still to explain, how the reading of data lines works. We
+create a list of entries for each column out of a given line. A line
+resulting in an empty list (e.g. an empty line) is just ignored. As
+shown in the table above, there is a special string column pattern.
+When it matches it forces the interpretation of a column as a string.
+Otherwise \verb|datafile| will try to convert the columns
+automatically into floats except for the title line. When the
+conversions fails, it just keeps the string.
+
+The string pattern allows for columns to contain whitespaces. It
+matches a string whenever it starts with a quote (\verb|"|) and then
+tries to find the end of that very string by another quote immediately
+followed by a whitespace or the end of the line. Hence a quote
+within the string is just ignored and no kind of escaping is needed.
+The only disadvantage is, that you cannot describe a string which
+contains a quote and a whitespace consecutively. While, on the
+other hand, this implementation usually just does exactly what the
+user wants without needing any kind of special escaping, it is
+considered to be the best solution. Additionally we want to mention,
+that an \TeX-expression with a quote immediately follod by a
+whitespace is a really rare construct. While strings are expected to
+get used in \TeX-expressions later on, the syntactical limitation
+should normally not be relevant.
+
+Please note that you can easily reconfigure the patterns. For example
+you may change the characters used between the columns.
+
+Finally, the \verb|datafile| just provides two internal variables,
+where the data is stored. In \verb|titles| holds a list of the column
+titles. It is prefixed by the entry \verb|None| indicating an empty
+title for the column of the line number. \verb|data| contains a list
+for the lines, where each line is a list of the entries of that very
+line. It is prefixed with an integer entry for the line number
+(starting at 1). The number of columns at each line is the same and it
+is also equal to the length of the titles list. In order to fullfill
+this condition, entries with the value \verb|None| might be inserted.
+
+\section{Accessing columns}
+
+The method \verb|getcolumnno| takes a parameter as the column
+description. If it matches exactly one entry in the titles list, the
+number of this element is returned. Otherwise the parameter should be
+an integer and it is checked, if this integer is a valid column index.
+It still might be negative (counting the columns from the end).
+When an error occurres, the exception \verb|ColumnError| is raised.
+Examples are \verb|getcolumn(1)| or \verb|getcolumn("title")|.
+
+The method \verb|getcolumn| takes the same argument as the method
+\verb|getcolumnno| described above, but it returns a list with the
+values of this very column.
+
+\section{Mathematics on columns}
+
+By the method \verb|addcolumn| a new column is appended to the data.
+The method takes an string as the first parameter which is interpreted
+as an expression. Then the expression contains an equal sign
+(\verb|=|), everything left to the last equal sign will become the
+title of the new column. When no equal sign is found, the title will
+be set to \verb|None|. The part right to the last equal sign is
+interpreted as an mathematical expression. This expression might
+contain variable names. These names can either directly be a column
+title, but this is only allowed for column titles which are valid
+variable names (e.g. they should start with a letter and contain only
+letters, digits and the underscore). Alternatively, temporary names
+for columns can be given by additional named parameters of the
+\verb|addcolumn| method. The named parameters are stronger compared to
+column titles in the determination of the appropriate column. The name
+of a named parameter will be the variable name in the expression. The
+value of a named parameter should be a valid parameter of the
+\verb|getcolumnno| method. The data referenced by variables in the
+expression need to be floats, otherwise the result for that data line
+will be \verb|None|. Examples are \verb|addcolumn("av=(min+max)/2")|
+or \verb|addcolumn("av=(a+b)/2", a=1, b="max")|.
+

@@ -55,14 +55,14 @@ from pyx import *
 
 c = canvas.canvas()
 t = c.insert(tex.tex())
-df = graph.datafile("testdata2")
+df = datafile.datafile("testdata2")
 g = c.insert(graph.graphxy(t, width=10,
                            x=graph.linaxis(min=0.5, max=12.5, title="Month",
-                                           part=graph.linpart((graph.frac(1,1),), labels=[x[1] for x in df.data]),
+                                           part=graph.linpart((graph.frac(1, 1),), labels=df.getcolumn("month")),
                                            painter=graph.axispainter(labelstyles=(tex.direction(45),tex.halign.right))),
                            y=graph.linaxis(min=-10, max=30, title="Temperature [$^\circ$C]")))
-df.addcolumn("av", "(min+max)/2")
-g.plot(graph.data(df, x=0, y=-1, dymin="min", dymax="max"))
+df.addcolumn("av=(min+max)/2")
+g.plot(graph.data(df, x=0, y="av", dymin="min", dymax="max"))
 g.drawall()
 c.draw(g.ygridpath(g.axes["y"].convert(0)))
 c.writetofile("test_graph", paperformat="a4")
