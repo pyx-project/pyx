@@ -648,10 +648,12 @@ class _BoxCmd(_TexCmd):
         texinstance.BoxCmds = [self, ]
         self.CmdPuts = []
         self.CmdExtents = [extent, ]
-        result = missextent.misshandler(texinstance)
-        texinstance.BoxCmds = storeboxcmds
-        self.CmdPuts = storecmdputs
-        self.CmdExtents = storecmdextents
+        try:
+            result = missextent.misshandler(texinstance)
+        finally:
+            texinstance.BoxCmds = storeboxcmds
+            self.CmdPuts = storecmdputs
+            self.CmdExtents = storecmdextents
         return result
 
 
