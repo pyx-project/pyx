@@ -35,6 +35,8 @@ PyX
   bug fixes:
   - canvas module:
     - "in" to "inch" in paperformats
+  - text module:
+    - fix pyx.def hack occuring whenever \ProcessOptions* was used by a package
 
 0.4 (2003/08/22):
   - graph module:
