@@ -274,8 +274,6 @@ def _arrowhead(anormpath, size, angle, constriction):
 
     return arrow
 
-# XXX rewrite arrow without using __call__
-# XXX do not forget arrow.clear
 
 _base = unit.v_pt(4)
 
@@ -335,7 +333,8 @@ class arrow(deco):
 
         return dp
 
-_base = unit.v_pt(4)
+arrow.clear = attr.clearclass(arrow)
+
 
 class barrow(arrow):
 
