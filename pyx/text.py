@@ -1471,7 +1471,7 @@ class texrunner:
                        lfs="10pt",
                        docclass="article",
                        docopt=None,
-                       usefiles=[],
+                       usefiles=None,
                        waitfortex=5,
                        texdebug=0,
                        dvidebug=0,
@@ -1747,12 +1747,14 @@ class texrunner:
           (you should be able to switch from TeX to LaTeX, if you want,
           without breaking something
         - preamble expressions must not create any dvi output
+        - args might contain texmessage instances
         - a bracketcheck is performed on the expression"""
         if self.texdone:
             raise TexDoneError
         if not self.preamblemode:
             raise TexNotInPreambleModeError
         self.bracketcheck(expr)
+        helper.checkattr(args, allowmulti=texmessage)
         self.execute(expr, *helper.getattrs(args, texmessage, default=self.texmessagedefaultpreamble))
 
     PyXBoxPattern = re.compile(r"PyXBox\(page=(?P<page>\d+),lt=(?P<lt>-?\d*((\d\.?)|(\.?\d))\d*)pt,rt=(?P<rt>-?\d*((\d\.?)|(\.?\d))\d*)pt,ht=(?P<ht>-?\d*((\d\.?)|(\.?\d))\d*)pt,dp=(?P<dp>-?\d*((\d\.?)|(\.?\d))\d*)pt\)")
