@@ -95,21 +95,24 @@ class epsfile(base.PSCmd):
                  align="bl",
                  clip=1,
                  showbbox = 0,
-                 translatebbox = 1):
+                 translatebbox = 1,
+                 bbox = None):
         """inserts epsfile
 
         inserts EPS file named filename at position (x,y).  If clip is
         set, the result gets clipped to the bbox of the EPS file. If
         translatebbox is not set, the EPS graphics is not translated to
         the corresponding origin. With showbb set, the bbox is drawn.
-        
+        If bbox is specified, it overrides the bounding box in the epsfile
+        itself.
+
         """
 
         self._x = unit.topt(x)
         self._y = unit.topt(y)
         self.filename = filename
-        self.mybbox = _readbbox(self.filename)
-        
+        self.mybbox = bbox or _readbbox(self.filename)
+
         # determine scaling in x and y direction
         self.scalex = self.scaley = scale
 

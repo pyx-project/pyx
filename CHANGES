@@ -52,6 +52,10 @@ PyX
     - lentopar methods added including some tests (TODO: documentation)
     TODO:
     - reverse needs to be fixed
+  - epsfile module:
+     - new parameter bbox allows to override the bounding box of the eps file
+     TODO:
+     - document bbox parameter
 
   bugfixes:
   - text module:
