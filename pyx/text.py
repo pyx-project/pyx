@@ -1577,11 +1577,20 @@ class texrunner:
                             SysLfsName = os.path.join(os.path.dirname(__file__), "lfs", str(self.lfs) + ".lfs")
                             lfsdef = open(SysLfsName, "r").read()
                     except IOError:
-                        files = map(lambda x: x[:-4],
-                                    filter(lambda x: x[-4:] == ".lfs",
-                                           os.listdir(".") +
-                                           os.listdir(os.path.join(sys.prefix, "share", "pyx")) +
-                                           os.listdir(os.path.join(os.path.dirname(__file__), "lfs"))))
+                        allfiles = []
+                        try:
+                            allfiles += os.listdir(".")
+                        except OSError:
+                            pass
+                        try:
+                            allfiles += os.listdir(os.path.join(sys.prefix, "share", "pyx"))
+                        except OSError:
+                            pass
+                        try:
+                            allfiles += os.listdir(os.path.join(os.path.dirname(__file__), "lfs"))
+                        except OSError:
+                            pass
+                        files = map(lambda x: x[:-4], filter(lambda x: x[-4:] == ".lfs", allfiles))
                         raise IOError("file '%s.lfs' not found. Available latex font sizes:\n%s" % (self.lfs, files))
                 self.execute(lfsdef)
                 self.execute("\\normalsize%\n")
