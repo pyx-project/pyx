@@ -8,9 +8,9 @@ class Canvas(Globex):
     ExportMethods = [ "amove", "aline", "rmove", "rline", 
                       "text", "textwd", "textht", "textdp" ]
 
-    def __init__(self,height,width,basefilename):
-        self.Height=height
+    def __init__(self,width,height,basefilename):
         self.Width=width
+        self.Height=height
         self.BaseFilename=basefilename
         self.PSInit()
 
@@ -124,8 +124,12 @@ class Canvas(Globex):
 \\wd\\pagebox\\textwidth
 \\setlength{\\unitlength}{1truecm}
 \\begin{picture}(0,""" + str(self.Height) + """)(0,0)
-\\multiput(0,0)(1,0){11}{\line(0,1){20}}
-\\multiput(0,0)(0,1){21}{\line(1,0){10}}
+\\put(0,0){\line(1,1){1}}
+\\put(2,2){\line(1,1){1}}
+\\put(0,3){\line(1,-1){1}}
+\\put(2,1){\line(1,-1){1}}
+%\\multiput(0,0)(1,0){11}{\line(0,1){20}}
+%\\multiput(0,0)(0,1){21}{\line(1,0){10}}
 \\end{picture}%
 \\copy\\pagebox
 \\end{document}""")
@@ -138,8 +142,7 @@ class Canvas(Globex):
         
         # TODO: ordentliche Fehlerbehandlung,
         #       Schnittstelle zur Kommandozeile
-        if os.system("dvips -E -o " + self.BaseFilename + ".tex.eps " +
-                     self.BaseFilename + " > /dev/null 2>&1"):
+        if os.system("dvips -P eps -T" + str(self.Width) + "cm," + str(self.Height) + "cm -o " + self.BaseFilename + ".tex.eps " + self.BaseFilename + " > /dev/null 2>&1"):
             assert "dvips exit code not zero"
         
     TexResults = None
@@ -200,7 +203,7 @@ class Canvas(Globex):
 	    return
 	
         self.PSFile.write("%!\n")
-        self.PSFile.write("%%%%BoundingBox: 0 0 %d %d\n" % (self.Height*72, self.Width*72)) # TODO: das geht so nicht ...
+        #self.PSFile.write("%%%%BoundingBox: 0 0 %d %d\n" % (self.Height*72, self.Width*72)) # TODO: das geht so nicht ...
 
 	# PostScript-procedure definitions
 	# cf. file: 5002.EPSF_Spec_v3.0.pdf     
@@ -234,7 +237,7 @@ class Canvas(Globex):
 
     def PSEnd(self):
     	self.PSFile.write("stroke\n")
-    	self.PSFile.write("0 -508 translate\n")
+    	#self.PSFile.write("0 -508 translate\n")
 	self.PSInsertEPS(self.BaseFilename + ".tex.eps")
 	self.PSFile.close()
 	
@@ -264,6 +267,7 @@ class Canvas(Globex):
         isnumber(y)
         (self.x, self.y)=(x,y)
 	self.PSFile.write("%f %f moveto\n" % self.PScm2po(x,y))
+        # TODO: we don't have to write postscript here if we put text at this position later and nothing else!
 	
     def aline(self,x,y):
         isnumber(x)
@@ -276,6 +280,7 @@ class Canvas(Globex):
         isnumber(y)
         (self.x, self.y)=(self.x+x,self.y+y)
 	self.PSFile.write("%f %f rmoveto\n" % self.PScm2po(x,y))
+        # TODO: we don't have to write postscript here if we put text at this position later and nothing else!
 
     def rline(self,x,y):
         isnumber(x)
@@ -284,23 +289,27 @@ class Canvas(Globex):
 	self.PSFile.write("%f %f rlineto\n" % self.PScm2po(x,y))
 
 
-def canvas(height,width,basefilename):
-    DefaultCanvas=Canvas(height,width,basefilename)
+def canvas(width,height,basefilename):
+    DefaultCanvas=Canvas(width,height,basefilename)
     DefaultCanvas.AddNamespace("DefaultCanvas",GetCallerGlobalNamespace())
 
 
 if __name__=="__main__":
-    canvas(10,20,"example")
+    canvas(21,29.7,"example")
 
-    for x in range(11):
-        amove(x,0)
-        rline(0,20)
-
-    for y in range(21):
-       amove(0,y)
-       rline(10,0)
+    #for x in range(11):
+    #    amove(x,0)
+    #    rline(0,20)
+    #for y in range(21):
+    #   amove(0,y)
+    #   rline(10,0)
 
     amove(1,1)
+    aline(2,2)
+    amove(1,2)
+    aline(2,1)
+
+
     print "Breite von 'Hello world!': ",textwd("Hello world!")
     print "Höhe von 'Hello world!': ",textht("Hello world!")
     print "Tiefe von 'Hello world!': ",textdp("Hello world!")
