@@ -1875,11 +1875,8 @@ class normpath(path):
                 elif isinstance(npel, closepath):
                     if currentsubpathels:
                         # append closed sub path
-                        if ((context.currentpoint[0]-context.currentsubpath[0])**2 +
-                            (context.currentpoint[1]-context.currentsubpath[1])**2 > 1e-10):
-                            currentsubpathels.append(normline(context.currentpoint[0], context.currentpoint[1],
-                                                              context.currentsubpath[0], context.currentsubpath[1]))
-                        self.subpaths.append(normsubpath(currentsubpathels, 1))
+                        currentsubpathels.append(normline(context.currentpoint[0], context.currentpoint[1],
+                                                          context.currentsubpath[0], context.currentsubpath[1]))
                     currentsubpathels = []
                 else:
                     currentsubpathels.append(npel)
