@@ -80,28 +80,16 @@ class epsfile:
 	except:
 	    assert "cannot open EPS file"	                          # TODO: Fehlerbehandlung
 
-
-        if self.ignorebb:
-            return """BeginEPSF
-%f %f translate
-%%BeginDocument: %s\n""" % (self.x, self.y, self.epsname) + file.read() + "%%EndDocument\nEndEPSF\n"
-        elif self.clip:
-            return """BeginEPSF
-%f %f translate
-%f %f translate 
-%f %f %f %f rect
-clip newpath
-%%BeginDocument: %s\n""" % (self.x, self.y, 
-                            -self.llx, -self.lly, 
-                            self.llx, self.lly, self.urx-self.llx,self.ury-self.lly, 
-                            self.epsname) + file.read() + "%%EndDocument\nEndEPSF\n"
-        else:
-            return """BeginEPSF
-%f %f translate
-%f %f translate 
-%%BeginDocument: %s\n""" % (self.x, self.y, 
-                            -self.llx, -self.lly, 
-                            self.epsname) + file.read() + "%%EndDocument\nEndEPSF\n"
+        preamble = "BeginEPSF\n"
+        preamble = preamble + "%f %f translate\n" % (self.x, self.y)
+        if not self.ignorebb:
+            preamble = preamble + "%f %f translate\n" % (-self.llx, -self.lly)
+            if self.clip:
+                preamble = preamble + "%f %f %f %f rect\n" % ( self.llx, self.lly, self.urx-self.llx,self.ury-self.lly)
+                preamble = preamble + "clip newpath\n"
+        preamble = preamble + "%%%%BeginDocument: %s\n" % self.epsname
+        
+        return preamble + file.read() + "%%EndDocument\nEndEPSF\n"
 
 #
 # Exceptions
