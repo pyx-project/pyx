@@ -51,6 +51,8 @@ class fix_word:
 
 class binfile:
 
+    # TODO: def binfile.close() ?!
+
     def __init__(self, filename, mode="r"):
         self.file = open(filename, mode)
 
@@ -1818,6 +1820,12 @@ def _cleantmp(texrunner):
             os.unlink(file)
         except OSError:
             pass
+    if texrunner.texdebug is not None:
+        try:
+            texrunner.texdebug.close()
+            texrunner.texdebug = None
+        except IOError:
+            pass
 
 
 # texrunner state exceptions
@@ -1981,7 +1989,9 @@ class texrunner:
                                     os.path.join(sys.prefix, "share", "pyx", lfsname),
                                     os.path.join(os.path.dirname(__file__), "lfs", lfsname)]:
                     try:
-                        lfsdef = open(fulllfsname, "r").read()
+                        lfsfile = open(fulllfsname, "r")
+                        lfsdef = lfsfile.read()
+                        lfsfile.close()
                         break
                     except IOError:
                         pass
@@ -1989,9 +1999,18 @@ class texrunner:
                     allfiles = (glob.glob("*.lfs") +
                                 glob.glob(os.path.join(sys.prefix, "share", "pyx", "*.lfs")) +
                                 glob.glob(os.path.join(os.path.dirname(__file__), "lfs", "*.lfs")))
-                    lfsnames = [os.path.basename(x)[:-4] for x in allfiles]
+                    lfsnames = []
+                    for f in allfiles:
+                        try:
+                            open(f, "r").close()
+                            lfsnames.append(os.path.basename(f)[:-4])
+                        except IOError:
+                            pass
                     lfsnames.sort()
-                    raise IOError("file '%s' not found. Available latex font sizes: %s" % (lfsname, lfsnames))
+                    if len(lfsnames):
+                        raise IOError("file '%s' is not available or not readable. Available LaTeX font size files (*.lfs): %s" % (lfsname, lfsnames))
+                    else:
+                        raise IOError("file '%s' is not available or not readable. No LaTeX font size files (*.lfs) available. Check your installation." % lfsname)
                 self.execute(lfsdef)
                 self.execute("\\normalsize%\n")
                 self.execute("\\newdimen\\linewidth%\n")
@@ -2000,10 +2019,13 @@ class texrunner:
                     for pyxdef in ["pyx.def",
                                    os.path.join(sys.prefix, "share", "pyx", "pyx.def"),
                                    os.path.join(os.path.dirname(__file__), "..", "contrib", "pyx.def")]:
-                        if os.path.isfile(pyxdef):
+                        try:
+                            open(pyxdef, "r").close()
                             break
+                        except IOError:
+                            pass
                     else:
-                        IOError("could not find 'pyx.def'")
+                        IOError("file 'pyx.def' is not available or not readable. Check your installation or turn off the pyxgraphics option.")
                     pyxdef = os.path.abspath(pyxdef).replace(os.sep, "/")
                     self.execute("\\makeatletter%\n"
                                  "\\let\\saveProcessOptions=\\ProcessOptions%\n"
@@ -2146,6 +2168,8 @@ class texrunner:
         if waitfortex is not None:
             self.waitfortex = waitfortex
         if texdebug is not None:
+            if self.texdebug is not None:
+                self.texdebug.close()
             if texdebug[-4:] == ".tex":
                 self.texdebug = open(texdebug, "w")
             else:

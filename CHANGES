@@ -1,6 +1,8 @@
 PyX
 
 0.5 (????/??/??):
+  - text module:
+    - improved is readable test for lfs files and pyx.def file
   TODO:
   - graph module
     - another (the last?!) axis redesign: axispos -> class of its own; remove axis.axiscanvas
