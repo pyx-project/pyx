@@ -1802,7 +1802,6 @@ class texrunner:
         if texmessagedefaultrun is not None:
             texmessagedefaultrun = helper.ensuresequence(texmessagedefaultrun)
             helper.checkattr(texmessagedefaultrun, allowmulti=(texmessage,))
-            print texmessagedefaultrun
             self.texmessagedefaultrun = texmessagedefaultrun
 
     def set(self, texdebug=None, dvidebug=None, **args):
