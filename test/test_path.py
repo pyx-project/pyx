@@ -5,6 +5,18 @@ import pyx
 from pyx import *
 from pyx.path import *
 
+def bboxrect(cmd):
+   bbox=cmd.bbox()
+   return rect("%f t pt" % bbox.llx,            "%f t pt" % bbox.lly,
+               "%f t pt" % (bbox.urx-bbox.llx), "%f t pt" % (bbox.ury-bbox.lly))
+
+
+def dotest(c, x, y, test):
+   c2 = c.insert(canvas.canvas(trafo.translate(x, y)))
+   eval("%s(c2)" % test)
+   c.draw(bboxrect(c2))
+   
+
 class cross(path):
    def __init__(self, x, y):
        self.path=[moveto(x,y),
@@ -19,9 +31,7 @@ def drawpathwbbox(c, p):
     c.draw(p, color.rgb.red)
     bp=p.bpath()
     c.draw(bp, color.rgb.green, canvas.linestyle.dashed)
-    bbox=p.bbox()
-    c.draw(rect("%f t pt" % bbox.llx,            "%f t pt" % bbox.lly,
-   	        "%f t pt" % (bbox.urx-bbox.llx), "%f t pt" % (bbox.ury-bbox.lly)))
+    c.draw(bboxrect(p))
 
 
 def testarcs(c):
@@ -42,7 +52,6 @@ def testarcs(c):
         bp=p.bpath()
         c.draw(p, color.rgb.red, canvas.linewidth.Thick)
         c.draw(bp, color.rgb.green, canvas.linewidth.THin)
-
 
     testarc(c, 1, 2, 0, 90)
     testarc(c, 2, 2, -90, 90)
@@ -72,10 +81,50 @@ def testarcs(c):
 
 
 def testmidpointsplit(c):
-    p=path(moveto(10,10), rlineto(2,2), arc(15,12,1,30,300),closepath())
-    bpsplit=p.bpath().MidPointSplit()
-    c.draw(p, color.rgb.red)
-    c.draw(bpsplit, color.rgb.green, canvas.linestyle.dashed)
+   p=path(moveto(1,1), rlineto(2,2), arc(5,2,1,30,300), closepath())
+   bpsplit=p.bpath().MidPointSplit()
+   c.draw(p, color.rgb.red)
+   c.draw(bpsplit, color.rgb.green, canvas.linestyle.dashed)
+
+
+def testintersectbezier(c):
+    p=path(moveto(0,0), curveto(2,6,4,5,2,9))
+    q=path(moveto(2,0), curveto(2,6,4,12,1,6))
+
+    bp=p.bpath()
+    bq=q.bpath()
+
+    c.draw(q, canvas.linewidth.THIN)
+    c.draw(p, canvas.linewidth.THIN)
+
+    isect = bp.intersect(bq, epsilon=1e-4)
+
+    for i in isect:
+        x, y = bp.pos(i[0])
+        c.draw(cross(x, y), canvas.linewidth.THIN)
+
+
+def testbpathtrafo(c):
+    p=path(moveto(0,5),
+           curveto(2,1,4,0,2,4),
+           rcurveto(-3,2,1,2,3,6),
+           rlineto(2,3))
+    bp=p.bpath()
+
+    c.draw(bp.transform(trafo.translate(3,1)), color.rgb.red)
+    c.insert(canvas.canvas(trafo.translate(3,1))).draw(p,
+                                                       color.rgb.green,
+                                                       canvas.linestyle.dashed)
+
+    c.draw(bp)
+    c.draw(bp.reverse())
+
+    c.draw(cross(*(bp.pos(0))))
+    c.draw(cross(*(bp.reverse().pos(0))))
+
+    bp1, bp2 = bp.split(1.7)
+    c.draw(bp1, color.rgb.red, canvas.linestyle.dashed)
+    c.draw(bp2, color.rgb.green, canvas.linestyle.dashed)
 
 
 def testarcbbox(c):
@@ -139,11 +188,11 @@ def testarcbbox(c):
 
 
 def testcurvetobbox(c):
-    drawpathwbbox(c,path(moveto(10,10), curveto(12,16,14,15,12,19)))
+    drawpathwbbox(c,path(moveto(10,60), curveto(12,66,14,65,12,69)))
 
 
 def testtrafobbox(c):
-    sc=c.insert(canvas.canvas(trafo.translate(0,10).rotate(10)))
+    sc=c.insert(canvas.canvas(trafo.translate(0,40).rotate(10)))
 
     p=path(moveto(10,10), curveto(12,16,14,15,12,19));   drawpathwbbox(sc,p)
     p=path(moveto(5,17), curveto(6,18, 5,16, 7,15));     drawpathwbbox(sc,p)
@@ -158,48 +207,16 @@ def testclipbbox(c):
     p=path(moveto(5,17), curveto(6,18, 5,16, 7,15));     drawpathwbbox(sc,p)
 
 
-def testintersectbezier(c):
-    p=path(moveto(10,10), curveto(12,16,14,15,12,19))
-    q=path(moveto(12,10), curveto(12,16,14,22,11,16))
-
-    bp=p.bpath()
-    bq=q.bpath()
-
-    c.draw(q, canvas.linewidth.THIN)
-    c.draw(p, canvas.linewidth.THIN)
-
-    isect = bp.intersect(bq, epsilon=1e-4)
-
-    for i in isect:
-        x, y = bp.pos(i[0])
-        c.draw(cross(x, y), canvas.linewidth.THIN)
-
-
-def testbpathtrafo(c):
-    p=path(moveto(10,20), curveto(12,16,14,15,12,19), rcurveto(-3,2,1,2,3,6), rlineto(2,3))
-    bp=p.bpath()
-
-    c.draw(bp.transform(trafo.translate(2,3)), color.rgb.red)
-    c.insert(canvas.canvas(trafo.translate(2,3))).draw(p, color.rgb.green, canvas.linestyle.dashed)
-
-    c.draw(bp)
-    c.draw(bp.reverse())
-
-    c.draw(cross(*(bp.pos(0))))
-    c.draw(cross(*(bp.reverse().pos(0))))
-
-    bp1, bp2 = bp.split(1.7)
-    c.draw(bp1, color.rgb.red, canvas.linestyle.dashed)
-    c.draw(bp2, color.rgb.green, canvas.linestyle.dashed)
-
+c=canvas.canvas()
+dotest(c, 0, 0, "testarcs")
+dotest(c, 12, 3, "testmidpointsplit")
+dotest(c, 2, 12, "testintersectbezier")
+dotest(c, 10,11, "testbpathtrafo")
+c.writetofile("test_path", paperformat="a4", rotated=0, fittosize=1)
 
 c=canvas.canvas()
-testarcs(c)
-testmidpointsplit(c)
 testarcbbox(c)    
 testcurvetobbox(c)
 testtrafobbox(c)
 testclipbbox(c)
-testintersectbezier(c)
-testbpathtrafo(c)
-c.writetofile("test_path", paperformat="a4", rotated=1, fittosize=1)
+c.writetofile("test_bbox", paperformat="a4", rotated=1, fittosize=1)
