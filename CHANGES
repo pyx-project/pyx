@@ -10,6 +10,7 @@ PyX
     - automatic datafile key title
     - exceptions in drawsymbol & friends...
     - 3d graphs, circular graphs
+    - dense -> density
   - canvas module:
     - default patterns
     - stroke and fill should support trafos
