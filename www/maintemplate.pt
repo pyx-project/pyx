@@ -26,9 +26,9 @@
   <div class="box">
     <div id="linkboxtitle">Links</div>
 
-    <a href="http://www.python.org">Python</a><br>
-    <a href="http://www.tug.org">TeX</a><br>
-    <a href="http://partners.adobe.com/asn/developer/technotes/main.html">PostScript</a>
+    <a href="http://www.python.org/">Python</a><br>
+    <a href="http://www.tug.org/">TeX</a><br>
+    <a href="http://partners.adobe.com/asn/tech/ps/technotes.jsp">PostScript</a>
   </div>
 
   <p>
