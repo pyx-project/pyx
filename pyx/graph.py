@@ -22,9 +22,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-# TODO for 0.1: - symbol sizes -> attrs
-#               - linkaxis should work between different graphs
-#               - documentation (some interfaces, user manual)
+# TODO for 0.1: - documentation (some interfaces, user manual)
 
 
 import types, re, math, string, sys
@@ -82,19 +80,27 @@ def _ensuresequence(arg):
     return (arg,)
 
 
+def _getitemno(arg, n):
+    if _issequence(arg):
+        try: return arg[n]
+        except: return None
+    else:
+        return arg
+
+
 def _issequenceofsequences(arg):
-    """check if arg has a sequence as it's first entry"""
-    return _issequence(arg) and len(arg) and _issequence(arg[0])
+    """check if arg has a sequence or None as it's first entry"""
+    return _issequence(arg) and len(arg) and (_issequence(arg[0]) or arg[0] is None)
 
 
 def _getsequenceno(arg, n):
     """get sequence number n if arg is a sequence of sequences,
-       otherwise it gets just arg
-       the return value is always a sequence"""
+       otherwise it gets just arg"""
     if _issequenceofsequences(arg):
-        return _ensuresequence(arg[n])
+        try: return arg[n]
+        except: return None
     else:
-        return _ensuresequence(arg)
+        return arg
 
 
 
@@ -130,11 +136,9 @@ class _linmap:
         return self
 
     def convert(self, value):
-        if value is None: return None
         return self.y1 + self.dydx * (value - self.x1)
 
     def invert(self, value):
-        if value is None: return None
         return self.x1 + self.dxdy * (value - self.y1)
 
 
@@ -152,11 +156,9 @@ class _logmap:
         return self
 
     def convert(self, value):
-        if value is None: return None
         return self.y1 + self.dydx * (math.log(value) - self.x1)
 
     def invert(self, value):
-        if value is None: return None
         return math.exp(self.x1 + self.dxdy * (value - self.y1))
 
 
@@ -211,10 +213,10 @@ def _ensurefrac(arg):
         for part in commaparts:
             if not part.isdigit(): raise ValueError("non-digits found in '%s'" % part)
         if len(commaparts) == 1:
-            return frac(int(commaparts[0]), 1)
+            return frac(long(commaparts[0]), 1)
         elif len(commaparts) == 2:
             result = frac(1, 10l, power=len(commaparts[1]))
-            result.enum = int(commaparts[0])*result.denom + int(commaparts[1])
+            result.enum = long(commaparts[0])*result.denom + long(commaparts[1])
             return result
         else: raise ValueError("multiple '.' found in '%s'" % str)
 
@@ -226,7 +228,7 @@ def _ensurefrac(arg):
             value2 = createfrac(fraction[1])
             value = frac(value.enum * value2.denom, value.denom * value2.enum)
         return value
-    if not isinstance(arg, frac): raise ValueError("can't convert argument into frac")
+    if not isinstance(arg, frac): raise ValueError("can't convert argument to frac")
     return arg
 
 
@@ -299,18 +301,19 @@ def _mergetexts(ticks, texts):
 
 class manualpart:
 
-    def __init__(self, ticks=None, labels=None, texts=None):
+    def __init__(self, ticks=None, labels=None, texts=None, mix=()):
         self.multipart = 0
         if ticks is None and labels is not None:
-            self.ticks = _getsequenceno(labels, 0)
+            self.ticks = _ensuresequence(_getsequenceno(labels, 0))
         else:
             self.ticks = ticks
 
         if labels is None and ticks is not None:
-            self.labels = _getsequenceno(ticks, 0)
+            self.labels = _ensuresequence(_getsequenceno(ticks, 0))
         else:
             self.labels = labels
         self.texts = texts
+        self.mix = mix
 
 
     def checkfraclist(self, *fracs):
@@ -324,8 +327,8 @@ class manualpart:
             last = item
         return sorted
 
-    def defaultpart(self, min, max, extendmin, extendmax):
-        ticks = []
+    def part(self):
+        ticks = list(self.mix)
         if _issequenceofsequences(self.ticks):
             for fracs, level in zip(self.ticks, xrange(sys.maxint)):
                 ticks = _mergeticklists(ticks, [tick(frac.enum, frac.denom, ticklevel = level)
@@ -346,10 +349,13 @@ class manualpart:
 
         return ticks
 
+    def defaultpart(self, min, max, extendmin, extendmax):
+        return self.part()
+
 
 class linpart:
 
-    def __init__(self, ticks=None, labels=None, texts=None, extendtick=0, extendlabel=None, epsilon=1e-10):
+    def __init__(self, ticks=None, labels=None, texts=None, extendtick=0, extendlabel=None, epsilon=1e-10, mix=()):
         self.multipart = 0
         if ticks is None and labels is not None:
             self.ticks = (_ensurefrac(_ensuresequence(labels)[0]),)
@@ -363,6 +369,7 @@ class linpart:
         self.extendtick = extendtick
         self.extendlabel = extendlabel
         self.epsilon = epsilon
+        self.mix = mix
 
     def extendminmax(self, min, max, frac, extendmin, extendmax):
         if extendmin:
@@ -385,7 +392,7 @@ class linpart:
         if self.extendlabel is not None and len(self.labels) > self.extendlabel:
             min, max = self.extendminmax(min, max, self.labels[self.extendlabel], extendmin, extendmax)
 
-        ticks = []
+        ticks = list(self.mix)
         for i in range(len(self.ticks)):
             ticks = _mergeticklists(ticks, self.getticks(min, max, self.ticks[i], ticklevel = i))
         for i in range(len(self.labels)):
@@ -403,11 +410,12 @@ class autolinpart:
                    (frac(5, 2), frac(5, 4)),
                    (frac(5, 1), frac(5, 2)))
 
-    def __init__(self, list=defaultlist, extendtick=0, epsilon=1e-10):
+    def __init__(self, list=defaultlist, extendtick=0, epsilon=1e-10, mix=()):
         self.multipart = 1
         self.list = list
         self.extendtick = extendtick
         self.epsilon = epsilon
+        self.mix = mix
 
     def defaultpart(self, min, max, extendmin, extendmax):
         base = frac(10L, 1, int(math.log(max - min) / math.log(10)))
@@ -416,7 +424,7 @@ class autolinpart:
         self.lesstickindex = self.moretickindex = 0
         self.lessbase = self.morebase = base
         self.min, self.max, self.extendmin, self.extendmax = min, max, extendmin, extendmax
-        part = linpart(ticks=useticks, extendtick=self.extendtick, epsilon=self.epsilon)
+        part = linpart(ticks=useticks, extendtick=self.extendtick, epsilon=self.epsilon, mix=self.mix)
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
     def lesspart(self):
@@ -427,7 +435,7 @@ class autolinpart:
             self.lessbase.enum *= 10
         ticks = self.list[self.lesstickindex]
         useticks = [tick * self.lessbase for tick in ticks]
-        part = linpart(ticks=useticks, extendtick=self.extendtick, epsilon=self.epsilon)
+        part = linpart(ticks=useticks, extendtick=self.extendtick, epsilon=self.epsilon, mix=self.mix)
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
     def morepart(self):
@@ -438,7 +446,7 @@ class autolinpart:
             self.morebase.denom *= 10
         ticks = self.list[self.moretickindex]
         useticks = [tick * self.morebase for tick in ticks]
-        part = linpart(ticks=useticks, extendtick=self.extendtick, epsilon=self.epsilon)
+        part = linpart(ticks=useticks, extendtick=self.extendtick, epsilon=self.epsilon, mix=self.mix)
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
 
@@ -460,7 +468,7 @@ class logpart(linpart):
     shiftfracs1to9 = shiftfracs(10, *list(map(lambda x: frac(x, 1), range(1, 10))))
     #         ^- we always include 1 in order to get extendto(tick|label)level to work as expected
 
-    def __init__(self, ticks=None, labels=None, texts=None, extendtick=0, extendlabel=None, epsilon=1e-10):
+    def __init__(self, ticks=None, labels=None, texts=None, extendtick=0, extendlabel=None, epsilon=1e-10, mix=()):
         self.multipart = 0
         if ticks is None and labels is not None:
             self.ticks = (_ensuresequence(labels)[0],)
@@ -475,6 +483,7 @@ class logpart(linpart):
         self.extendtick = extendtick
         self.extendlabel = extendlabel
         self.epsilon = epsilon
+        self.mix = mix
 
     def extendminmax(self, min, max, shiftfracs, extendmin, extendmax):
         minpower = None
@@ -505,7 +514,7 @@ class logpart(linpart):
         return min, max
 
     def getticks(self, min, max, shiftfracs, ticklevel=None, labellevel=None):
-        ticks = []
+        ticks = list(self.mix)
         minimin = 0
         maximax = 0
         for f in shiftfracs.fracs:
@@ -548,7 +557,7 @@ class autologpart(logpart):
                      logpart.shiftfracs1),     # subticks
                     None))                     # labels like ticks
 
-    def __init__(self, list=defaultlist, listindex=None, extendtick=0, extendlabel=None, epsilon=1e-10):
+    def __init__(self, list=defaultlist, listindex=None, extendtick=0, extendlabel=None, epsilon=1e-10, mix=()):
         self.multipart = 1
         self.list = list
         if listindex is None:
@@ -557,20 +566,21 @@ class autologpart(logpart):
         self.extendtick = extendtick
         self.extendlabel = extendlabel
         self.epsilon = epsilon
+        self.mix = mix
 
     def defaultpart(self, min, max, extendmin, extendmax):
         self.min, self.max, self.extendmin, self.extendmax = min, max, extendmin, extendmax
         self.morelistindex = self.listindex
         self.lesslistindex = self.listindex
         part = logpart(ticks=self.list[self.listindex][0], labels=self.list[self.listindex][1],
-                       extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon)
+                       extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon, mix=self.mix)
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
     def lesspart(self):
         self.lesslistindex += 1
         if self.lesslistindex < len(self.list):
             part = logpart(ticks=self.list[self.lesslistindex][0], labels=self.list[self.lesslistindex][1],
-                           extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon)
+                           extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon, mix=self.mix)
             return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
         return None
 
@@ -578,7 +588,7 @@ class autologpart(logpart):
         self.morelistindex -= 1
         if self.morelistindex >= 0:
             part = logpart(ticks=self.list[self.morelistindex][0], labels=self.list[self.morelistindex][1],
-                           extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon)
+                           extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon, mix=self.mix)
             return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
         return None
 
@@ -874,6 +884,8 @@ class textbox(_rectbox, attrlist.attrlist):
 
 class axispainter(attrlist.attrlist):
 
+    defaultticklengths = ["%0.5f cm" % (0.2*goldenrule**(-i)) for i in range(10)]
+
     paralleltext = -90
     orthogonaltext = 0
 
@@ -882,21 +894,21 @@ class axispainter(attrlist.attrlist):
     fractypedec = 3
     fractypeexp = 4
 
-    def __init__(self, innerticklength="0.2 cm",
-                       outerticklength="0 cm",
-                       tickattrs=None,
-                       subticklengthfactor=1/goldenrule,
-                       drawgrid=0,
-                       gridattrs=canvas.linestyle.dotted,
+    def __init__(self, innerticklengths=defaultticklengths,
+                       outerticklengths=None,
+                       tickattrs=(),
+                       gridattrs=None,
                        zerolineattrs=(),
+                       baselineattrs=canvas.linecap.square,
                        labeldist="0.3 cm",
                        labelattrs=((), tex.fontsize.footnotesize),
                        labeldirection=None,
                        labelhequalize=0,
                        labelvequalize=1,
                        titledist="0.3 cm",
-                       titleattrs=None,
+                       titleattrs=(),
                        titledirection=-90,
+                       titlepos=0.5,
                        fractype=fractypeauto,
                        ratfracsuffixenum=1,
                        ratfracover=r"\over",
@@ -906,13 +918,12 @@ class axispainter(attrlist.attrlist):
                        expfracminexp=4,
                        suffix0=0,
                        suffix1=0):
-        self.innerticklength_str = innerticklength
-        self.outerticklength_str = outerticklength
+        self.innerticklengths_str = innerticklengths
+        self.outerticklengths_str = outerticklengths
         self.tickattrs = tickattrs
-        self.subticklengthfactor = subticklengthfactor
-        self.drawgrid = drawgrid
         self.gridattrs = gridattrs
         self.zerolineattrs = zerolineattrs
+        self.baselineattrs = baselineattrs
         self.labeldist_str = labeldist
         self.labelattrs = labelattrs
         self.labeldirection = labeldirection
@@ -921,6 +932,7 @@ class axispainter(attrlist.attrlist):
         self.titledist_str = titledist
         self.titleattrs = titleattrs
         self.titledirection = titledirection
+        self.titlepos = titlepos
         self.fractype = fractype
         self.ratfracsuffixenum = ratfracsuffixenum
         self.ratfracover = ratfracover
@@ -1058,92 +1070,112 @@ class axispainter(attrlist.attrlist):
             tick.labelattrs += [tex.style.math]
 
     def paint(self, graph, axis):
-        innerticklength = unit.topt(unit.length(self.innerticklength_str, default_type="v"))
-        outerticklength = unit.topt(unit.length(self.outerticklength_str, default_type="v"))
+
+        def topt_v_recursive(arg):
+            if _issequence(arg):
+                # return map(topt_v_recursive, arg) needs python2.2
+                return [unit.topt(unit.length(a, default_type="v")) for a in arg]
+            else:
+                return unit.topt(unit.length(arg, default_type="v"))
+
+        innerticklengths = topt_v_recursive(self.innerticklengths_str)
+        outerticklengths = topt_v_recursive(self.outerticklengths_str)
         labeldist = unit.topt(unit.length(self.labeldist_str, default_type="v"))
         titledist = unit.topt(unit.length(self.titledist_str, default_type="v"))
 
-        haslabel = 0
         for tick in axis.ticks:
             tick.virtual = axis.convert(float(tick) * axis.divisor)
             tick.x, tick.y = axis.tickpoint(axis, tick.virtual)
             tick.dx, tick.dy = axis.tickdirection(axis, tick.virtual)
-            if tick.labellevel is not None:
-                if tick.labellevel + 1 > haslabel:
-                    haslabel = tick.labellevel + 1
 
-        if haslabel:
-            for tick in axis.ticks:
-                if tick.labellevel is not None:
-                    tick.labelattrs = list(_getsequenceno(self.labelattrs, tick.labellevel))
+        for tick in axis.ticks:
+            if tick.labellevel is not None:
+                tick.labelattrs = _getsequenceno(self.labelattrs, tick.labellevel)
+                if tick.labelattrs is not None:
+                    tick.labelattrs = list(_ensuresequence(tick.labelattrs))
                     if tick.text is None:
                         tick.suffix = axis.suffix
                         self.createtext(tick)
                     if self.labeldirection is not None and not self.attrcount(tick.labelattrs, tex.direction):
                         tick.labelattrs += [tex.direction(self.reldirection(self.labeldirection, tick.dx, tick.dy))]
                     tick.textbox = textbox(graph.tex, tick.text, textattrs=tick.labelattrs)
-
-            for tick in axis.ticks[1:]:
-                if tick.dx != axis.ticks[0].dx or tick.dy != axis.ticks[0].dy:
-                    equaldirection = 0
-                    break
+                else:
+                    tick.textbox = None
             else:
-                equaldirection = 1
+                tick.textbox = None
 
-            if equaldirection:
-                maxht, maxwd, maxdp = 0, 0, 0
-                for tick in axis.ticks:
-                    if tick.labellevel is not None:
-                        if maxht < tick.textbox.ht: maxht = tick.textbox.ht
-                        if maxwd < tick.textbox.wd: maxwd = tick.textbox.wd
-                        if maxdp < tick.textbox.dp: maxdp = tick.textbox.dp
-                for tick in axis.ticks:
-                    if tick.labellevel is not None:
-                        if self.labelhequalize:
-                            tick.textbox.manualextents(wd = maxwd)
-                        if self.labelvequalize:
-                            tick.textbox.manualextents(ht = maxht, dp = maxdp)
+        for tick in axis.ticks[1:]:
+            if tick.dx != axis.ticks[0].dx or tick.dy != axis.ticks[0].dy:
+                equaldirection = 0
+                break
+        else:
+            equaldirection = 1
 
+        if equaldirection:
+            maxht, maxwd, maxdp = 0, 0, 0
             for tick in axis.ticks:
-                if tick.labellevel is not None:
-                    tick.textbox._linealign(labeldist, tick.dx, tick.dy)
-                    tick._extent = tick.textbox._extent(tick.dx, tick.dy) + labeldist
+                if tick.textbox is not None:
+                    if maxht < tick.textbox.ht: maxht = tick.textbox.ht
+                    if maxwd < tick.textbox.wd: maxwd = tick.textbox.wd
+                    if maxdp < tick.textbox.dp: maxdp = tick.textbox.dp
+            for tick in axis.ticks:
+                if tick.textbox is not None:
+                    if self.labelhequalize:
+                        tick.textbox.manualextents(wd = maxwd)
+                    if self.labelvequalize:
+                        tick.textbox.manualextents(ht = maxht, dp = maxdp)
+
+        for tick in axis.ticks:
+            if tick.textbox is not None:
+                tick.textbox._linealign(labeldist, tick.dx, tick.dy)
+                tick._extent = tick.textbox._extent(tick.dx, tick.dy) + labeldist
 
         # we could now measure distances between textboxes -> TODO: rating
 
         axis._extent = 0
         for tick in axis.ticks:
-            if tick.labellevel is None:
-                tick._extent = outerticklength * math.pow(self.subticklengthfactor, tick.ticklevel)
+            if tick.ticklevel is not None:
+                tick.innerticklength = _getitemno(innerticklengths, tick.ticklevel)
+                tick.outerticklength = _getitemno(outerticklengths, tick.ticklevel)
+                if tick.innerticklength is not None and tick.outerticklength is None:
+                    tick.outerticklength = 0
+                if tick.outerticklength is not None and tick.innerticklength is None:
+                    tick.innerticklength = 0
+            if tick.textbox is None:
+                if tick.outerticklength is not None and tick.outerticklength > 0:
+                    tick._extent = tick.outerticklength
+                else:
+                    tick._extent = 0
             if axis._extent < tick._extent:
                 axis._extent = tick._extent
 
         for tick in axis.ticks:
             if tick.ticklevel is not None:
-                if self.drawgrid > tick.ticklevel and (tick != frac(0, 1) or self.zerolineattrs is None):
-                    gridpath = axis.gridpath(tick.virtual)
-                    graph.stroke(gridpath, *_getsequenceno(self.gridattrs, tick.ticklevel))
-                factor = math.pow(self.subticklengthfactor, tick.ticklevel)
-                x1 = tick.x - tick.dx * innerticklength * factor
-                y1 = tick.y - tick.dy * innerticklength * factor
-                x2 = tick.x + tick.dx * outerticklength * factor
-                y2 = tick.y + tick.dy * outerticklength * factor
-                graph.stroke(path._line(x1, y1, x2, y2), *_getsequenceno(self.tickattrs, tick.ticklevel))
-            if tick.labellevel is not None:
+                if tick != frac(0, 1) or self.zerolineattrs is None:
+                    gridattrs = _getsequenceno(self.gridattrs, tick.ticklevel)
+                    if gridattrs is not None:
+                        graph.stroke(axis.gridpath(tick.virtual), *_ensuresequence(gridattrs))
+                tickattrs = _getsequenceno(self.tickattrs, tick.ticklevel)
+                if None not in (tick.innerticklength, tick.outerticklength, tickattrs):
+                    x1 = tick.x - tick.dx * tick.innerticklength
+                    y1 = tick.y - tick.dy * tick.innerticklength
+                    x2 = tick.x + tick.dx * tick.outerticklength
+                    y2 = tick.y + tick.dy * tick.outerticklength
+                    graph.stroke(path._line(x1, y1, x2, y2), *_ensuresequence(tickattrs))
+            if tick.textbox is not None:
                 tick.textbox._printtext(tick.x, tick.y)
+        if self.baselineattrs is not None:
+            graph.stroke(axis.baseline(axis, 0, 1), *_ensuresequence(self.baselineattrs))
         if self.zerolineattrs is not None:
             if len(axis.ticks) and axis.ticks[0] * axis.ticks[-1] < frac(0, 1):
                 graph.stroke(axis.gridpath(axis.convert(0)), *_ensuresequence(self.zerolineattrs))
 
 
-        if axis.title is not None:
-            x, y = axis.tickpoint(axis, 0.5)
-            dx, dy = axis.tickdirection(axis, 0.5)
+        if axis.title is not None and self.titleattrs is not None:
+            x, y = axis.tickpoint(axis, self.titlepos)
+            dx, dy = axis.tickdirection(axis, self.titlepos)
             # no not modify self.titleattrs ... the painter might be used by several axes!!!
-            if self.titleattrs is None:
-                titleattrs = []
-            else:
-                titleattrs = list(_ensuresequence(self.titleattrs))
+            titleattrs = list(_ensuresequence(self.titleattrs))
             if self.titledirection is not None and not self.attrcount(titleattrs, tex.direction):
                 titleattrs = titleattrs + [tex.direction(self.reldirection(self.titledirection, dx, dy))]
             axis.titlebox = textbox(graph.tex, axis.title, textattrs=titleattrs)
@@ -1155,14 +1187,14 @@ class axispainter(attrlist.attrlist):
 
 class linkaxispainter(axispainter):
 
-    def __init__(self, skipticklevel = None, skiplabellevel = 0, zerolineattrs=None, **args):
+    def __init__(self, skipticklevel=None, skiplabellevel=0, zerolineattrs=None, **args):
         self.skipticklevel = skipticklevel
         self.skiplabellevel = skiplabellevel
         args["zerolineattrs"] = zerolineattrs
         axispainter.__init__(self, **args)
 
     def paint(self, graph, axis):
-        ticks = []
+        axis.ticks = []
         for _tick in axis.linkedaxis.ticks:
             ticklevel = _tick.ticklevel
             labellevel = _tick.labellevel
@@ -1171,38 +1203,13 @@ class linkaxispainter(axispainter):
             if self.skiplabellevel is not None and labellevel >= self.skiplabellevel:
                 labellevel = None
             if ticklevel is not None or labellevel is not None:
-                ticks.append(tick(_tick.enum, _tick.denom, ticklevel, labellevel))
+                axis.ticks.append(tick(_tick.enum, _tick.denom, ticklevel, labellevel))
         # XXX: don't forget to calculate new text positions as soon as this is moved
         #      outside of the paint method (when rating is moved into the axispainter)
 
-        dummy = axis.linkedaxis.ticks
-        axis.linkedaxis.ticks = ticks
-
-        dummy2 = (axis.linkedaxis.axispos,
-                  axis.linkedaxis.tickpoint,
-                  axis.linkedaxis.fixtickdirection,
-                  axis.linkedaxis.gridpath)
-        (axis.linkedaxis.axispos,
-         axis.linkedaxis.tickpoint,
-         axis.linkedaxis.fixtickdirection,
-         axis.linkedaxis.gridpath) = (axis.axispos,
-                                      axis.tickpoint,
-                                      axis.fixtickdirection,
-                                      axis.gridpath)
-
-        dummy3 = axis.linkedaxis.title
-        axis.linkedaxis.title = None
-
-        axispainter.paint(self, graph, axis.linkedaxis)
-
-        axis.linkedaxis.ticks = dummy
-
-        (axis.linkedaxis.axispos,
-         axis.linkedaxis.tickpoint,
-         axis.linkedaxis.fixtickdirection,
-         axis.linkedaxis.gridpath) = dummy2
-
-        axis.linkedaxis.title = dummy3
+        axis.convert = axis.linkedaxis.convert
+        axis.divisor = axis.linkedaxis.divisor
+        axispainter.paint(self, graph, axis)
 
 
 
@@ -1215,7 +1222,7 @@ class _axis:
 
     def __init__(self, min=None, max=None, reverse=0, divisor=1,
                        datavmin=None, datavmax=None, tickvmin=None, tickvmax=None,
-                       title=None, suffix=None, painter=axispainter(), baselineattrs=canvas.linecap.square):
+                       title=None, suffix=None, painter=axispainter()):
         if None not in (min, max) and min > max:
             min, max = max, min
             if reverse:
@@ -1255,7 +1262,6 @@ class _axis:
         self.painter = painter
         self.divisor = divisor
         self.suffix = suffix
-        self.baselineattrs = baselineattrs
         self.canconvert = 0
         self._setrange()
 
@@ -1326,13 +1332,21 @@ class logaxis(_axis, _logmap):
 
 class linkaxis:
 
-    def __init__(self, linkedaxis, painter=linkaxispainter()):
+    def __init__(self, linkedaxis, title=None, painter=linkaxispainter()):
         self.linkedaxis = linkedaxis
+        while isinstance(self.linkedaxis, linkaxis):
+            self.linkedaxis = self.linkedaxis.linkedaxis
+        self.title = title
         self.painter = painter
-        self.getdatarange = linkedaxis.getdatarange
-        self.setdatarange = linkedaxis.setdatarange
-        self.baselineattrs = linkedaxis.baselineattrs
-        self._extent = 0
+
+    def getdatarange(self):
+        return self.linkedaxis.getdatarange()
+
+    def setdatarange(self, min, max):
+        prevrange = self.linkedaxis.getdatarange()
+        self.linkedaxis.setdatarange(min, max)
+        if hasattr(self.linkedaxis, "ticks") and prevrange != self.linkedaxis.getdatarange():
+            raise RuntimeError("linkaxis datarange setting performed while linked axis layout already fixed")
 
 
 
@@ -1364,30 +1378,32 @@ class graphxy(canvas.canvas):
             return styles
         return styles[0]
 
-    def xtickpoint(self, axis, virtual):
-        return (self.xmap.convert(virtual), axis.axispos)
+    def _xtickpoint(self, axis, v):
+        return (self._xpos+v*self._width, axis.axispos)
 
-    def ytickpoint(self, axis, virtual):
-        return (axis.axispos, self.ymap.convert(virtual))
+    def _ytickpoint(self, axis, v):
+        return (axis.axispos, self._ypos+v*self._height)
 
     def tickdirection(self, axis, virtual):
         return axis.fixtickdirection
 
-    def xgridpath(self, virtual):
-        return path._line(self.xmap.convert(virtual), self.ymap.convert(0),
-                          self.xmap.convert(virtual), self.ymap.convert(1))
+    def xbaseline(self, axis, v1, v2, shift=0):
+        return path._line(self._xpos+v1*self._width, axis.axispos + shift,
+                          self._xpos+v2*self._width, axis.axispos + shift)
 
-    def ygridpath(self, virtual):
-        return path._line(self.xmap.convert(0), self.ymap.convert(virtual),
-                          self.xmap.convert(1), self.ymap.convert(virtual))
+    def ybaseline(self, axis, v1, v2, shift=0):
+        return path._line(axis.axispos + shift, self._ypos+v1*self._height,
+                          axis.axispos + shift, self._ypos+v2*self._height)
 
-    def xconvert(self, x):
-        return self.xmap.convert(x)
+    def xgridpath(self, v):
+        return path._line(self._xpos+v*self._width, self._ypos,
+                          self._xpos+v*self._width, self._ypos+self._height)
 
-    def yconvert(self, y):
-        return self.ymap.convert(y)
+    def ygridpath(self, v):
+        return path._line(self._xpos, self._ypos+v*self._height,
+                          self._xpos+self._width, self._ypos+v*self._height)
 
-    def connectel(self, xstart, ystart, xend, yend):
+    def _connectel(self, xstart, ystart, xend, yend):
         return path._lineto(xend, yend)
 
     def keynum(self, key):
@@ -1475,17 +1491,11 @@ class graphxy(canvas.canvas):
             if len(axis.ticks):
                 axis.settickrange(float(axis.ticks[0])*axis.divisor, float(axis.ticks[-1])*axis.divisor)
 
-        self.xmap = _linmap().setbasepoints(((0, self._xpos), (1, self._xpos + self._width)))
-        self.ymap = _linmap().setbasepoints(((0, self._ypos), (1, self._ypos + self._height)))
-
     def dobackground(self):
         self.dolayout()
         if not self.removedomethod(self.dobackground): return
         if self.backgroundattrs is not None:
-            self.draw(path._rect(self.xmap.convert(0),
-                                 self.ymap.convert(0),
-                                 self.xmap.convert(1) - self.xmap.convert(0),
-                                 self.ymap.convert(1) - self.ymap.convert(0)),
+            self.draw(path._rect(self._xpos, self._ypos, self._width, self._height),
                       *_ensuresequence(self.backgroundattrs))
 
     def doaxes(self):
@@ -1505,23 +1515,27 @@ class graphxy(canvas.canvas):
             if self.XPattern.match(key):
                  if needxaxisdist[num2]:
                      self._xaxisextents[num2] += axesdist
-                 axis.axispos = self.ymap.convert(num2) + num3*self._xaxisextents[num2]
-                 axis.tickpoint = self.xtickpoint
+                 axis.axispos = self._ypos+num2*self._height + num3*self._xaxisextents[num2]
+                 axis.tickpoint = self._xtickpoint
                  axis.fixtickdirection = (0, num3)
                  axis.gridpath = self.xgridpath
+                 axis.baseline = self.xbaseline
+                 axis._pos = lambda x, graph=self, axis=axis: graph._xpos+axis.convert(x)*graph._width
+                 axis.pos = lambda x, graph=self, axis=axis: unit.t_pt(graph._xpos+axis.convert(x)*graph._width)
             elif self.YPattern.match(key):
                  if needyaxisdist[num2]:
                      self._yaxisextents[num2] += axesdist
-                 axis.axispos = self.xmap.convert(num2) + num3*self._yaxisextents[num2]
-                 axis.tickpoint = self.ytickpoint
+                 axis.axispos = self._xpos+num2*self._width + num3*self._yaxisextents[num2]
+                 axis.tickpoint = self._ytickpoint
                  axis.fixtickdirection = (num3, 0)
                  axis.gridpath = self.ygridpath
+                 axis.baseline = self.ybaseline
+                 axis._pos = lambda y, graph=self, axis=axis: graph._ypos+axis.convert(y)*graph._height
+                 axis.pos = lambda y, graph=self, axis=axis: unit.t_pt(graph._ypos+axis.convert(y)*graph._height)
             else:
                 raise ValueError("Axis key %s not allowed" % key)
             x1, y1 = axis.tickpoint(axis, 0)
             x2, y2 = axis.tickpoint(axis, 1)
-            if axis.baselineattrs is not None:
-                self.stroke(path._line(x1, y1, x2, y2), *_ensuresequence(axis.baselineattrs))
             axis.tickdirection = self.tickdirection
             if axis.painter is not None:
                 axis.painter.paint(self, axis)
@@ -1894,50 +1908,43 @@ class changefilledstroked(changesequence):
 # styles
 ################################################################################
 
-#class _size: pass
-#
-#class marksize(_size):
-#
-#    def __init__(self, value=None, factor=None):
-#        value
-
 
 class mark:
 
     def cross(self, x, y):
-        return (path._moveto(x-0.5*self.size, y-0.5*self.size),
-                path._lineto(x+0.5*self.size, y+0.5*self.size),
-                path._moveto(x-0.5*self.size, y+0.5*self.size),
-                path._lineto(x+0.5*self.size, y-0.5*self.size))
+        return (path._moveto(x-0.5*self._size, y-0.5*self._size),
+                path._lineto(x+0.5*self._size, y+0.5*self._size),
+                path._moveto(x-0.5*self._size, y+0.5*self._size),
+                path._lineto(x+0.5*self._size, y-0.5*self._size))
 
     def plus(self, x, y):
-        return (path._moveto(x-0.707106781*self.size, y),
-                path._lineto(x+0.707106781*self.size, y),
-                path._moveto(x, y-0.707106781*self.size),
-                path._lineto(x, y+0.707106781*self.size))
+        return (path._moveto(x-0.707106781*self._size, y),
+                path._lineto(x+0.707106781*self._size, y),
+                path._moveto(x, y-0.707106781*self._size),
+                path._lineto(x, y+0.707106781*self._size))
 
     def square(self, x, y):
-        return (path._moveto(x-0.5*self.size, y-0.5 * self.size),
-                path._lineto(x+0.5*self.size, y-0.5 * self.size),
-                path._lineto(x+0.5*self.size, y+0.5 * self.size),
-                path._lineto(x-0.5*self.size, y+0.5 * self.size),
+        return (path._moveto(x-0.5*self._size, y-0.5 * self._size),
+                path._lineto(x+0.5*self._size, y-0.5 * self._size),
+                path._lineto(x+0.5*self._size, y+0.5 * self._size),
+                path._lineto(x-0.5*self._size, y+0.5 * self._size),
                 path.closepath())
 
     def triangle(self, x, y):
-        return (path._moveto(x-0.759835685*self.size, y-0.438691337*self.size),
-                path._lineto(x+0.759835685*self.size, y-0.438691337*self.size),
-                path._lineto(x, y+0.877382675*self.size),
+        return (path._moveto(x-0.759835685*self._size, y-0.438691337*self._size),
+                path._lineto(x+0.759835685*self._size, y-0.438691337*self._size),
+                path._lineto(x, y+0.877382675*self._size),
                 path.closepath())
 
     def circle(self, x, y):
-        return (path._arc(x, y, 0.564189583*self.size, 0, 360),
+        return (path._arc(x, y, 0.564189583*self._size, 0, 360),
                 path.closepath())
 
     def diamond(self, x, y):
-        return (path._moveto(x-0.537284965*self.size, y),
-                path._lineto(x, y-0.930604859*self.size),
-                path._lineto(x+0.537284965*self.size, y),
-                path._lineto(x, y+0.930604859*self.size),
+        return (path._moveto(x-0.537284965*self._size, y),
+                path._lineto(x, y-0.930604859*self._size),
+                path._lineto(x+0.537284965*self._size, y),
+                path._lineto(x, y+0.930604859*self._size),
                 path.closepath())
 
     def __init__(self, mark=_nodefault,
@@ -1946,19 +1953,22 @@ class mark:
                        lineattrs=None):
         self.size_str = size
         if mark is _nodefault:
-            self.mark = changemark.cross()
+            self._mark = changemark.cross()
         else:
-            self.mark = mark
+            self._mark = mark
         self._markattrs = markattrs
         self.errorscale = errorscale
         self._errorbarattrs = errorbarattrs
         self._lineattrs = lineattrs
 
     def iterate(self):
-        return mark(mark=_iterateattr(self.mark),
+        return mark(mark=_iterateattr(self._mark),
                     size=_iterateattr(self.size_str), markattrs=_iterateattrs(self._markattrs),
                     errorscale=_iterateattr(self.errorscale), errorbarattrs=_iterateattrs(self._errorbarattrs),
                     lineattrs=_iterateattrs(self._lineattrs))
+
+    def othercolumnkey(self, key, index):
+        raise ValueError("unsuitable key '%s'" % key)
 
     def setcolumns(self, graph, columns):
         def checkpattern(key, index, pattern, iskey, isindex):
@@ -2004,7 +2014,7 @@ class mark:
             key, self.xkey, self.dxmaxi = checkpattern(key, index, DXMaxPattern, self.xkey, self.dxmaxi)
             key, self.ykey, self.dymaxi = checkpattern(key, index, DYMaxPattern, self.ykey, self.dymaxi)
             if key is not None:
-                raise ValueError("unsuitable key '%s'" % key)
+                self.othercolumnkey(key, index)
         if None in (self.xkey, self.ykey): raise ValueError("incomplete axis specification")
         if (len(filter(None, (self.xmini, self.dxmini, self.dxi))) > 1 or
             len(filter(None, (self.ymini, self.dymini, self.dyi))) > 1 or
@@ -2059,123 +2069,150 @@ class mark:
         ymin, ymax = self.keyrange(points, self.yi, self.ymini, self.ymaxi, self.dyi, self.dymini, self.dymaxi)
         return {self.xkey: (xmin, xmax), self.ykey: (ymin, ymax)}
 
-    def drawerrorbar(self, graph, point, xmin, x, xmax, ymin, y, ymax, attrs):
+    def _drawerrorbar(self, graph, xmin, x, xmax, ymin, y, ymax, point=None):
         if xmin is not None and xmax is not None:
             if y is not None:
-                graph.stroke(path.path(path._moveto(xmin, y-self.errorsize),
-                                       graph.connectel(xmin, y-self.errorsize, xmin, y+self.errorsize),
+                graph.stroke(path.path(path._moveto(xmin, y-self._errorsize),
+                                       graph._connectel(xmin, y-self._errorsize, xmin, y+self._errorsize),
                                        path._moveto(xmin, y),
-                                       graph.connectel(xmin, y, xmax, y),
-                                       path._moveto(xmax, y-self.errorsize),
-                                       graph.connectel(xmax, y-self.errorsize, xmax, y+self.errorsize)), *attrs)
+                                       graph._connectel(xmin, y, xmax, y),
+                                       path._moveto(xmax, y-self._errorsize),
+                                       graph._connectel(xmax, y-self._errorsize, xmax, y+self._errorsize)),
+                             *self.errorbarattrs)
             else:
                 if ymax is not None:
-                    graph.stroke(path.path(path._moveto(xmin, ymax-self.errorsize),
-                                           graph.connectel(xmin, ymax-self.errorsize, xmin, ymax),
-                                           graph.connectel(xmin, ymax, xmax, ymax),
-                                           graph.connectel(xmax, ymax, xmax, ymax-self.errorsize)), *attrs)
+                    graph.stroke(path.path(path._moveto(xmin, ymax-self._errorsize),
+                                           graph._connectel(xmin, ymax-self._errorsize, xmin, ymax),
+                                           graph._connectel(xmin, ymax, xmax, ymax),
+                                           graph._connectel(xmax, ymax, xmax, ymax-self._errorsize)),
+                                 *self.errorbarattrs)
                 if ymin is not None:
-                    graph.stroke(path.path(path._moveto(xmin, ymin+self.errorsize),
-                                           graph.connectel(xmin, ymin+self.errorsize, xmin, ymin),
-                                           graph.connectel(xmin, ymin, xmax, ymin),
-                                           graph.connectel(xmax, ymin, xmax, ymin+self.errorsize)), *attrs)
+                    graph.stroke(path.path(path._moveto(xmin, ymin+self._errorsize),
+                                           graph._connectel(xmin, ymin+self._errorsize, xmin, ymin),
+                                           graph._connectel(xmin, ymin, xmax, ymin),
+                                           graph._connectel(xmax, ymin, xmax, ymin+self._errorsize)),
+                                 *self.errorbarattrs)
         elif xmin is not None:
             if y is not None:
                 if x is None:
-                    graph.stroke(path.path(path._moveto(xmin, y-self.errorsize),
-                                           graph.connectel(xmin, y-self.errorsize, xmin, y+self.errorsize),
+                    graph.stroke(path.path(path._moveto(xmin, y-self._errorsize),
+                                           graph._connectel(xmin, y-self._errorsize, xmin, y+self._errorsize),
                                            path._moveto(xmin, y),
-                                           graph.connectel(xmin, y, xmin+self.errorsize, y)), *attrs)
+                                           graph._connectel(xmin, y, xmin+self._errorsize, y)),
+                                 *self.errorbarattrs)
                 else:
-                    graph.stroke(path.path(path._moveto(xmin, y-self.errorsize),
-                                           graph.connectel(xmin, y-self.errorsize, xmin, y+self.errorsize),
+                    graph.stroke(path.path(path._moveto(xmin, y-self._errorsize),
+                                           graph._connectel(xmin, y-self._errorsize, xmin, y+self._errorsize),
                                            path._moveto(xmin, y),
-                                           graph.connectel(xmin, y, x, y)), *attrs)
+                                           graph._connectel(xmin, y, x, y)),
+                                 *self.errorbarattrs)
             elif ymin is None and ymax is not None:
-                graph.stroke(path.path(path._moveto(xmin, ymax-self.errorsize),
-                                       graph.connectel(xmin, ymax-self.errorsize, xmin, ymax),
-                                       graph.connectel(xmin, ymax, xmin+self.errorsize, ymax)), *attrs)
+                graph.stroke(path.path(path._moveto(xmin, ymax-self._errorsize),
+                                       graph._connectel(xmin, ymax-self._errorsize, xmin, ymax),
+                                       graph._connectel(xmin, ymax, xmin+self._errorsize, ymax)),
+                             *self.errorbarattrs)
             elif ymin is not None and ymax is None:
-                graph.stroke(path.path(path._moveto(xmin, ymin+self.errorsize),
-                                       graph.connectel(xmin, ymin+self.errorsize, xmin, ymin),
-                                       graph.connectel(xmin, ymin, xmin+self.errorsize, ymin)), *attrs)
+                graph.stroke(path.path(path._moveto(xmin, ymin+self._errorsize),
+                                       graph._connectel(xmin, ymin+self._errorsize, xmin, ymin),
+                                       graph._connectel(xmin, ymin, xmin+self._errorsize, ymin)),
+                             *self.errorbarattrs)
         elif xmax is not None:
             if y is not None:
                 if x is None:
-                    graph.stroke(path.path(path._moveto(xmax, y-self.errorsize),
-                                           graph.connectel(xmax, y-self.errorsize, xmax, y+self.errorsize),
+                    graph.stroke(path.path(path._moveto(xmax, y-self._errorsize),
+                                           graph._connectel(xmax, y-self._errorsize, xmax, y+self._errorsize),
                                            path._moveto(xmax, y),
-                                           graph.connectel(xmax, y, xmax-self.errorsize, y)), *attrs)
+                                           graph._connectel(xmax, y, xmax-self._errorsize, y)),
+                                 *self.errorbarattrs)
                 else:
-                    graph.stroke(path.path(path._moveto(xmax, y-self.errorsize),
-                                           graph.connectel(xmax, y-self.errorsize, xmax, y+self.errorsize),
+                    graph.stroke(path.path(path._moveto(xmax, y-self._errorsize),
+                                           graph._connectel(xmax, y-self._errorsize, xmax, y+self._errorsize),
                                            path._moveto(xmax, y),
-                                           graph.connectel(xmax, y, x, y)), *attrs)
+                                           graph._connectel(xmax, y, x, y)),
+                                 *self.errorbarattrs)
             elif ymin is None and ymax is not None:
-                graph.stroke(path.path(path._moveto(xmax, ymax-self.errorsize),
-                                       graph.connectel(xmax, ymax-self.errorsize, xmax, ymax),
-                                       graph.connectel(xmax, ymax, xmax-self.errorsize, ymax)), *attrs)
+                graph.stroke(path.path(path._moveto(xmax, ymax-self._errorsize),
+                                       graph._connectel(xmax, ymax-self._errorsize, xmax, ymax),
+                                       graph._connectel(xmax, ymax, xmax-self._errorsize, ymax)),
+                             *self.errorbarattrs)
             elif ymin is not None and ymax is None:
-                graph.stroke(path.path(path._moveto(xmax, ymin+self.errorsize),
-                                       graph.connectel(xmax, ymin+self.errorsize, xmax, ymin),
-                                       graph.connectel(xmax, ymax, xmax-self.errorsize, ymin)), *attrs)
+                graph.stroke(path.path(path._moveto(xmax, ymin+self._errorsize),
+                                       graph._connectel(xmax, ymin+self._errorsize, xmax, ymin),
+                                       graph._connectel(xmax, ymax, xmax-self._errorsize, ymin)),
+                             *self.errorbarattrs)
         if ymin is not None and ymax is not None:
             if x is not None:
-                graph.stroke(path.path(path._moveto(x-self.errorsize, ymin),
-                                       graph.connectel(x-self.errorsize, ymin, x+self.errorsize, ymin),
+                graph.stroke(path.path(path._moveto(x-self._errorsize, ymin),
+                                       graph._connectel(x-self._errorsize, ymin, x+self._errorsize, ymin),
                                        path._moveto(x, ymin),
-                                       graph.connectel(x, ymin, x, ymax),
-                                       path._moveto(x-self.errorsize, ymax),
-                                       graph.connectel(x-self.errorsize, ymax, x+self.errorsize, ymax)), *attrs)
+                                       graph._connectel(x, ymin, x, ymax),
+                                       path._moveto(x-self._errorsize, ymax),
+                                       graph._connectel(x-self._errorsize, ymax, x+self._errorsize, ymax)),
+                             *self.errorbarattrs)
             else:
                 if xmax is not None:
-                    graph.stroke(path.path(path._moveto(xmax-self.errorsize, ymin),
-                                           graph.connectel(xmax-self.errorsize, ymin, xmax, ymin),
-                                           graph.connectel(xmax, ymin, xmax, ymax),
-                                           graph.connectel(xmax, ymax, xmax-self.errorsize, ymax)), *attrs)
+                    graph.stroke(path.path(path._moveto(xmax-self._errorsize, ymin),
+                                           graph._connectel(xmax-self._errorsize, ymin, xmax, ymin),
+                                           graph._connectel(xmax, ymin, xmax, ymax),
+                                           graph._connectel(xmax, ymax, xmax-self._errorsize, ymax)),
+                                 *self.errorbarattrs)
                 if xmin is not None:
-                    graph.stroke(path.path(path._moveto(xmin+self.errorsize, ymin),
-                                           graph.connectel(xmin+self.errorsize, ymin, xmin, ymin),
-                                           graph.connectel(xmin, ymin, xmin, ymax),
-                                           graph.connectel(xmin, ymax, xmin+self.errorsize, ymax)), *attrs)
+                    graph.stroke(path.path(path._moveto(xmin+self._errorsize, ymin),
+                                           graph._connectel(xmin+self._errorsize, ymin, xmin, ymin),
+                                           graph._connectel(xmin, ymin, xmin, ymax),
+                                           graph._connectel(xmin, ymax, xmin+self._errorsize, ymax)),
+                                 *self.errorbarattrs)
         elif ymin is not None:
             if x is not None:
                 if y is None:
-                    graph.stroke(path.path(path._moveto(x-self.errorsize, ymin),
-                                           graph.connectel(x-self.errorsize, ymin, x+self.errorsize, ymin),
+                    graph.stroke(path.path(path._moveto(x-self._errorsize, ymin),
+                                           graph._connectel(x-self._errorsize, ymin, x+self._errorsize, ymin),
                                            path._moveto(x, ymin),
-                                           graph.connectel(x, ymin, x, ymin+self.errorsize)), *attrs)
+                                           graph._connectel(x, ymin, x, ymin+self._errorsize)),
+                                 *self.errorbarattrs)
                 else:
-                    graph.stroke(path.path(path._moveto(x-self.errorsize, ymin),
-                                           graph.connectel(x-self.errorsize, ymin, x+self.errorsize, ymin),
+                    graph.stroke(path.path(path._moveto(x-self._errorsize, ymin),
+                                           graph._connectel(x-self._errorsize, ymin, x+self._errorsize, ymin),
                                            path._moveto(x, ymin),
-                                           graph.connectel(x, ymin, x, y)), *attrs)
+                                           graph._connectel(x, ymin, x, y)),
+                                 *self.errorbarattrs)
         elif ymax is not None:
             if x is not None:
                 if y is None:
-                    graph.stroke(path.path(path._moveto(x-self.errorsize, ymax),
-                                           graph.connectel(x-self.errorsize, ymax, x+self.errorsize, ymax),
+                    graph.stroke(path.path(path._moveto(x-self._errorsize, ymax),
+                                           graph._connectel(x-self._errorsize, ymax, x+self._errorsize, ymax),
                                            path._moveto(x, ymax),
-                                           graph.connectel(x, ymax, x, ymax-self.errorsize)), *attrs)
+                                           graph._connectel(x, ymax, x, ymax-self._errorsize)),
+                                 *self.errorbarattrs)
                 else:
-                    graph.stroke(path.path(path._moveto(x-self.errorsize, ymax),
-                                           graph.connectel(x-self.errorsize, ymax, x+self.errorsize, ymax),
+                    graph.stroke(path.path(path._moveto(x-self._errorsize, ymax),
+                                           graph._connectel(x-self._errorsize, ymax, x+self._errorsize, ymax),
                                            path._moveto(x, ymax),
-                                           graph.connectel(x, ymax, x, y)), *attrs)
+                                           graph._connectel(x, ymax, x, y)),
+                                 *self.errorbarattrs)
 
-    def drawmark(self, graph, point, x, y, mark, attrs):
+    def drawerrorbar(self, graph, xmin, x, xmax, ymin, y, ymax, point=None):
+        self.drawerrorbar(graph, unit.topt(xmin), unit.topt(x), unit.topt(xmax),
+                                 unit.topt(ymin), unit.topt(y), unit.topt(ymax), point)
+
+    def _drawmark(self, graph, x, y, point=None):
         if x is not None and y is not None:
-            graph.draw(path.path(*mark(self, x, y)), *attrs)
+            graph.draw(path.path(*self.mark(self, x, y)), *self.markattrs)
 
-    def drawpointlist(self, graph, points):
+    def drawmark(self, graph, x, y, point=None):
+        self._drawmark(graph, unit.topt(x), unit.topt(y), point)
+
+    def drawpoints(self, graph, points):
         xaxis = graph.axes[self.xkey]
         yaxis = graph.axes[self.ykey]
         xaxismin, xaxismax = xaxis.getdatarange()
         yaxismin, yaxismax = yaxis.getdatarange()
-        self.size = unit.topt(unit.length(_getattr(self.size_str), default_type="v"))
-        mark = _getattr(self.mark)
+        self.size = unit.length(_getattr(self.size_str), default_type="v")
+        self._size = unit.topt(self.size)
+        self.mark = _getattr(self._mark)
         self.markattrs = _getattrs(_ensuresequence(self._markattrs))
         self.errorbarattrs = _getattrs(_ensuresequence(self._errorbarattrs))
+        self._errorsize = self.errorscale * self._size
         self.errorsize = self.errorscale * self.size
         self.lineattrs = _getattrs(_ensuresequence(self._lineattrs))
         clipcanvas = graph.clipcanvas()
@@ -2197,16 +2234,20 @@ class mark:
             elif ymax is not None and ymax > yaxismax: drawmark = 0
             elif y is not None and y > yaxismax: drawmark = 0
             elif ymin is not None and ymin > yaxismax: drawmark = 0
-            xmin, x, xmax = [graph.xconvert(xaxis.convert(x)) for x in xmin, x, xmax]
-            ymin, y, ymax = [graph.yconvert(yaxis.convert(y)) for y in ymin, y, ymax]
+            if xmin is not None: xmin = xaxis._pos(xmin)
+            if x is not None: x = xaxis._pos(x)
+            if xmax is not None: xmax = xaxis._pos(xmax)
+            if ymin is not None: ymin = yaxis._pos(ymin)
+            if y is not None: y = yaxis._pos(y)
+            if ymax is not None: ymax = yaxis._pos(ymax)
             if drawmark:
                 if self._errorbarattrs is not None:
-                    self.drawerrorbar(graph, point, xmin, x, xmax, ymin, y, ymax, self.errorbarattrs)
+                    self._drawerrorbar(graph, xmin, x, xmax, ymin, y, ymax, point)
                 else:
                     if xmin is not None or xmax is not None or ymin is not None or ymax is not None:
                         raise ValueError("errorbar data recieved while errorbars are off")
                 if self._markattrs is not None:
-                    self.drawmark(graph, point, x, y, mark, self.markattrs)
+                    self._drawmark(graph, x, y, point)
             if x is not None and y is not None:
                 if moveto:
                     lineels.append(path._moveto(x, y))
@@ -2325,14 +2366,16 @@ class data:
         pass
 
     def draw(self, graph):
-        self.style.drawpointlist(graph, self.datafile.data)
+        self.style.drawpoints(graph, self.datafile.data)
 
 
 class function:
 
     defaultstyle = line()
 
-    def __init__(self, expression, points=100, parser=mathtree.parser()):
+    def __init__(self, expression, min=None, max=None, points=100, parser=mathtree.parser()):
+        self.min = min
+        self.max = max
         self.points = points
         self.result, expression = expression.split("=")
         self.mathtree = parser.parse(expression)
@@ -2350,6 +2393,8 @@ class function:
 
     def setranges(self, ranges):
         min, max = ranges[self.variable]
+        if self.min is not None: min = self.min
+        if self.max is not None: max = self.max
         vmin = self.xaxis.convert(min)
         vmax = self.xaxis.convert(max)
         self.data = []
@@ -2363,7 +2408,7 @@ class function:
         self.evalranges = 1
 
     def draw(self, graph):
-        self.style.drawpointlist(graph, self.data)
+        self.style.drawpoints(graph, self.data)
 
 
 class paramfunction:
@@ -2414,5 +2459,5 @@ class paramfunction:
         pass
 
     def draw(self, graph):
-        self.style.drawpointlist(graph, self.data)
+        self.style.drawpoints(graph, self.data)
 

@@ -24,15 +24,31 @@
 
 
 import re
-import mathtree
+from mathtree import *
 
 
 class ColumnError(Exception): pass
 
 
+ColPattern = re.compile(r"\$-?[0-9]+")
+
+class MathTreeValCol(MathTreeValVar):
+
+    def InitByParser(self, arg):
+        Match = arg.MatchPattern(ColPattern)
+        if Match:
+            self.AddArg(Match)
+            return 1
+
+
+MathTreeValsWithCol = (MathTreeValConst, MathTreeValVar, MathTreeValCol)
+
+
 class _datafile:
 
-    def __init__(self, parser=mathtree.parser(MathTreeVals=mathtree.MathTreeValsWithCol)):
+    def __init__(self, titles, data, parser=parser(MathTreeVals=MathTreeValsWithCol)):
+        self.titles = titles
+        self.data = data
         self.parser = parser
 
     def getcolumnno(self, column):
@@ -135,25 +151,24 @@ class datafile(_datafile):
     def __init__(self, file, commentpattern=defaultcommentpattern,
                              stringpattern=defaultstringpattern,
                              columnpattern=defaultcolumnpattern, **args):
-        _datafile.__init__(self, **args)
         try:
             file + ''
         except TypeError:
             pass
         else:
             file = open(file, "r")
-        self.titles = []
-        self.data = []
+        titles = []
+        data = []
         linenumber = 0
         maxcolumns = 0
         for line in file.readlines():
             line = line.strip()
             match = commentpattern.match(line)
             if match:
-                if not len(self.data):
+                if not len(data):
                     newtitles = self.splitline(line[match.end():], stringpattern, columnpattern, tofloat=0)
                     if len(newtitles):
-                        self.titles = newtitles
+                        titles = newtitles
             else:
                 linedata = []
                 for value in self.splitline(line, stringpattern, columnpattern, tofloat=1):
@@ -163,9 +178,12 @@ class datafile(_datafile):
                     linedata = [linenumber] + linedata
                     if len(linedata) > maxcolumns:
                         maxcolumns = len(linedata)
-                    self.data.append(linedata)
+                    data.append(linedata)
         if linenumber:
-            self.titles = [None] + self.titles[:maxcolumns-1]
-            self.titles += [None] * (maxcolumns - len(self.titles))
-            for line in self.data:
+            titles = [None] + titles[:maxcolumns-1]
+            titles += [None] * (maxcolumns - len(titles))
+            for line in data:
                 line += [None] * (maxcolumns - len(line))
+        else:
+            titles = []
+        _datafile.__init__(self, titles, data, **args)

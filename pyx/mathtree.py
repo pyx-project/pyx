@@ -210,17 +210,6 @@ class MathTreeValVar(MathTreeVal):
         return VarDict[self.ArgV[0]]
 
 
-ColPattern = re.compile(r"\$-?[1-9][0-9]*")
-
-class MathTreeValCol(MathTreeValVar):
-
-    def InitByParser(self, arg):
-        Match = arg.MatchPattern(ColPattern)
-        if Match:
-            self.AddArg(Match)
-            return 1
-
-
 class MathTreeFunc(MathTree):
 
     def __init__(self, name, *args):
@@ -669,7 +658,6 @@ DefaultMathTreeFuncs = (MathTreeFunc1Neg, MathTreeFunc1Sgn, MathTreeFunc1Sqrt,
                         MathTreeFunc2Norm)
 
 DefaultMathTreeVals = (MathTreeValConst, MathTreeValVar)
-MathTreeValsWithCol = (MathTreeValConst, MathTreeValVar, MathTreeValCol)
 
 class parser:
 

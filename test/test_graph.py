@@ -7,7 +7,7 @@ from pyx import mathtree
 
 def test_multiaxes_data(c, t, x, y):
     g = c.insert(graph.graphxy(t, x, y, height=5,
-                               x=graph.logaxis(title="$W$"),
+                               x=graph.logaxis(title="$W$", part=graph.autologpart(mix=graph.manualpart(ticks="2.2360679775", texts="$\sqrt{5}$").part())),
                                y=graph.logaxis(title=r"$PPP_1$",
                                                painter=graph.axispainter(titleattrs=tex.direction.horizontal)),
                                y2=graph.logaxis(title="$P_2$"),
@@ -15,7 +15,7 @@ def test_multiaxes_data(c, t, x, y):
                                                 painter=graph.axispainter(titleattrs=tex.direction(45))),
                                y5=graph.logaxis(title="$P_5$")))
     df = datafile.datafile("testdata")
-    g.plot((graph.data(df, x=1, y=3),
+    g.plot((graph.data(df, x=1, y="sqrt(sqrt($3))"),
             graph.data(df, x=1, y2=4),
             graph.data(df, x=1, y3=5),
             graph.data(df, x=1, y5=6)),
@@ -72,13 +72,13 @@ def test_ownmark(c, t, x, y):
                     self.ykey: (min([point[self.yindex] for point in points]),
                                 max([point[self.yindex] for point in points]))}
 
-        def drawpointlist(self, graph, points):
+        def drawpoints(self, graph, points):
             size = unit.topt(unit.length(self.size_str, default_type="v"))
             xaxis = graph.axes[self.xkey]
             yaxis = graph.axes[self.ykey]
             for point in points:
-                x = graph.xconvert(xaxis.convert(point[self.xindex]))
-                y = graph.yconvert(yaxis.convert(point[self.yindex]))
+                x = xaxis._pos(point[self.xindex])
+                y = yaxis._pos(point[self.yindex])
                 angle = point[self.angleindex]
                 graph.stroke(path._line(x - 0.5 * size * math.cos(angle),
                                         y - 0.5 * size * math.sin(angle),
