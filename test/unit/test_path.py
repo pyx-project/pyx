@@ -26,10 +26,10 @@ class NormpathTestCase(unittest.TestCase):
         param = param + 15 * unit.t_pt
         self.failUnlessEqual(param.normsubpathindex, 0)
         self.failUnlessAlmostEqual(param.normsubpathparam, 2.5)
-        param = param + 24.9 * unit.t_pt
+        param += 24.9 * unit.t_pt
         self.failUnlessEqual(param.normsubpathindex, 0)
         self.failUnlessAlmostEqual(param.normsubpathparam, 3.995)
-        param = param + 0.1 * unit.t_pt
+        param = 0.1 * unit.t_pt + param
         self.failUnlessEqual(param.normsubpathindex, 1)
         self.failUnlessAlmostEqual(param.normsubpathparam, 0)
         param = param + 0.5*circle_pt(0, 0, 10).arclen()
@@ -48,9 +48,61 @@ class NormpathTestCase(unittest.TestCase):
         param = param - 15 * unit.t_pt
         self.failUnlessEqual(param.normsubpathindex, 0)
         self.failUnlessAlmostEqual(param.normsubpathparam, 0.5)
-        param = param - 10 * unit.t_pt
+        param -= 10 * unit.t_pt
         self.failUnlessEqual(param.normsubpathindex, 0)
         self.failUnlessAlmostEqual(param.normsubpathparam, -0.5)
+        
+        param = normpathparam(p, 0, 1.2)
+        param2 = 2*param
+        param += param
+        self.failUnlessEqual(param.normsubpathindex, param2.normsubpathindex)
+        self.failUnlessEqual(param.normsubpathparam, param2.normsubpathparam)
+
+        param = normpathparam(p, 0, 1.2)
+        self.failUnless(param < 15 * unit.t_pt)
+        self.failUnless(15 * unit.t_pt > param)
+        self.failUnless(param > 12 * unit.t_pt)
+        self.failUnless(12 * unit.t_pt < param)
+        self.failUnless(param < 1)
+        self.failUnless(1 > param)
+
+    def testat(self):
+        p = normpath([normsubpath([normline_pt(0, 0, 10, 0),
+                                   normline_pt(10, 0, 10, 20),
+                                   normline_pt(10, 20, 0, 20),
+                                   normline_pt(0, 20, 0, 0)], closed=1)])
+        params = [-5, 0, 5, 10, 20, 30, 35, 40, 50, 60, 70]
+        ats = (-5, 0), (0, 0), (5, 0), (10, 0), (10, 10), (10, 20), (5, 20), (0, 20), (0, 10), (0, 0), (0, -10)
+        for param, (at_x, at_y) in zip(params, ats):
+            self.failUnlessAlmostEqual(p.at_pt(param)[0], at_x)
+            self.failUnlessAlmostEqual(p.at_pt(param)[1], at_y)
+        for (at_x, at_y), (at2_x, at2_y) in zip(p.at_pt(params), ats):
+            self.failUnlessAlmostEqual(at_x, at2_x)
+            self.failUnlessAlmostEqual(at_y, at2_y)
+        p = normpath([normsubpath([normline_pt(0, 0, 3, 0),
+                                   normcurve_pt(3, 0, 3, 2, 3, 4, 3, 6),
+                                   normcurve_pt(3, 6, 2, 6, 1, 6, 0, 6),
+                                   normline_pt(0, 6, 0, 0)], closed=1)])
+        self.failUnlessAlmostEqual(p.at_pt(6)[0], 3)
+        self.failUnlessAlmostEqual(p.at_pt(6)[1], 3)
+        self.failUnlessAlmostEqual(p.at_pt(4.5)[0], 3)
+        self.failUnlessAlmostEqual(p.at_pt(4.5)[1], 1.5)
+
+    def testarclentoparam(self):
+        p = ( normpath([normsubpath([normline_pt(0, 0, 10, 0),
+                                   normline_pt(10, 0, 10, 20),
+                                   normline_pt(10, 20, 0, 20),
+                                   normline_pt(0, 20, 0, 0)], closed=1)]) +
+              circle_pt(0, 0, 10) +
+              line_pt(0, 0, 2, 0))
+        
+        arclens_pt = [20, 30, -2, 61, 100, 200, -30, 1000]
+        for arclen_pt, arclen2_pt in zip(arclens_pt, p.paramtoarclen_pt(p.arclentoparam_pt(arclens_pt))):
+            self.failUnlessAlmostEqual(arclen_pt, arclen2_pt, 4)
+
+        arclens = [x*unit.t_pt for x in [20, 30, -2, 61, 100, 200, -30, 1000]]
+        for arclen, arclen2 in zip(arclens, p.paramtoarclen(p.arclentoparam(arclens))):
+            self.failUnlessAlmostEqual(unit.tom(arclen), unit.tom(arclen2), 4)
 
     def testsplit(self):
         p = normsubpath([normline_pt(0, -1, 1, 0.1),

@@ -372,9 +372,9 @@ filled.clear = attr.clearclass(_filled)
 
 # helper function which constructs the arrowhead
 
-def _arrowhead(anormsubpath, size, angle, constrictionlen, reversed):
+def _arrowhead(anormpath, size, angle, constrictionlen, reversed):
 
-    """helper routine, which returns an arrowhead from a given anormsubpath
+    """helper routine, which returns an arrowhead from a given anormpath
 
     returns arrowhead at begin of anormpath with size,
     opening angle and constriction length constrictionlen. If constrictionlen is None, we
@@ -382,24 +382,24 @@ def _arrowhead(anormsubpath, size, angle, constrictionlen, reversed):
     """
 
     if reversed:
-        anormsubpath = anormsubpath.reversed()
-    alen = anormsubpath.arclentoparam(size)
-    tx, ty = anormsubpath.begin()
+        anormpath = anormpath.reversed()
+    alen = anormpath.arclentoparam(size)
+    tx, ty = anormpath.begin()
 
     # now we construct the template for our arrow but cutting
     # the path a the corresponding length
-    arrowtemplate = anormsubpath.split([alen])[0]
+    arrowtemplate = anormpath.split(alen)[0]
 
     # from this template, we construct the two outer curves
     # of the arrow
-    arrowl = path.normpath([arrowtemplate.transformed(trafo.rotate(-angle/2.0, tx, ty))])
-    arrowr = path.normpath([arrowtemplate.transformed(trafo.rotate( angle/2.0, tx, ty))])
+    arrowl = arrowtemplate.transformed(trafo.rotate(-angle/2.0, tx, ty))
+    arrowr = arrowtemplate.transformed(trafo.rotate( angle/2.0, tx, ty))
 
     # now come the joining backward parts
 
     if constrictionlen is not None:
         # constriction point (cx, cy) lies on path
-        cx, cy = anormsubpath.at(anormsubpath.arclentoparam(constrictionlen))
+        cx, cy = anormpath.at(anormpath.arclentoparam(constrictionlen))
         arrowcr= path.line(*(arrowr.end() + (cx,cy)))
         arrow = arrowl.reversed() << arrowr << arrowcr
     else:
@@ -455,26 +455,20 @@ class arrow(deco, attr.attr):
             arrowheadconstrictionlen = None
 
         if self.position == 0:
-            # Note that the template for the arrow head should only be constructed
-            # from the first normsubpath
-            firstnormsubpath = anormpath[0]
-            arrowhead = _arrowhead(firstnormsubpath, self.size, self.angle, arrowheadconstrictionlen, reversed=0)
+            arrowhead = _arrowhead(anormpath, self.size, self.angle, arrowheadconstrictionlen, reversed=0)
         else:
-            lastnormsubpath = anormpath[-1]
-            arrowhead = _arrowhead(lastnormsubpath, self.size, self.angle, arrowheadconstrictionlen, reversed=1)
+            arrowhead = _arrowhead(anormpath, self.size, self.angle, arrowheadconstrictionlen, reversed=1)
 
         # add arrowhead to decoratedpath
         dp.ornaments.draw(arrowhead, self.attrs)
 
         if self.position == 0:
             # exclude first part of the first normsubpath from stroking
-            ilen = firstnormsubpath.arclentoparam(min(self.size, constrictionlen))
-            dp.excluderange((0, 0), (0,ilen))
+            dp.excluderange(0, min(self.size, constrictionlen))
         else:
-            ilen = lastnormsubpath.arclentoparam(lastnormsubpath.arclen()-min(self.size, constrictionlen))
-            # TODO. provide a better way to access the number of normsubpaths in a normpath
-            lastnormsubpathindex = len(anormpath.normsubpaths)-1
-            dp.excluderange((lastnormsubpathindex, ilen), (lastnormsubpathindex, lastnormsubpath.range()))
+            # XXX use end param methods
+            arclen = anormpath.arclen()
+            dp.excluderange(arclen-min(self.size, constrictionlen), arclen)
 
         return dp
 

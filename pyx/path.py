@@ -28,6 +28,8 @@
 #          cbox = control box) for normcurve for the use during the
 #          intersection of bpaths)
 
+from __future__ import nested_scopes
+
 import math, bisect
 from math import cos, sin, pi
 try:
@@ -120,35 +122,6 @@ def _arctobezierpath(x_pt, y_pt, r_pt, phi1, phi2, dphimax=45):
 #
 
 class PathException(Exception): pass
-
-
-################################################################################
-# 
-################################################################################
-
-class normpathparam:
-
-    """ """
-    
-    def __init__(self, normpath, normsubpathindex, normsubpathparam):
-        self.normpath = normpath
-        self.normsubpathindex = normsubpathindex
-        self.normsubpathparam = normsubpathparam
-
-    def __add__(self, length):
-        return self.normpath.arclentoparam_pt([self.normpath.paramtoarclen_pt(self) + unit.topt(length)])[0]
-
-    __radd__ = __add__
-
-    def __sub__(self, length):
-        return self.normpath.arclentoparam_pt([self.normpath.paramtoarclen_pt(self) - unit.topt(length)])[0]
-
-#    def __mul__(self, factor):
-#        return self.normpath.arclentoparam(self.normpath.split((self.normsubpathindex, self.normsubpathparam))[0] * factor)
-#
-#    def __div__(self, divisor):
-#        return self.normpath.arclentoparam(self.normpath.split((self.normsubpathindex, self.normsubpathparam))[0] / divisor)
-    
 
 ################################################################################
 # _pathcontext: context during walk along path
@@ -1011,21 +984,13 @@ class path(base.canvasitem):
         """returns the parameter value(s) matching the given length(s)"""
         return self.normpath().arclentoparam(lengths)
 
-    def at_pt(self, param=None, arclen=None):
-        """return coordinates of path in pts at either parameter value param
-        or arc length arclen.
+    def at_pt(self, params):
+        """return coordinates of path in pts at params."""
+        return self.normpath().at_pt(params)
 
-        At discontinuities in the path, the limit from below is returned
-        """
-        return self.normpath().at_pt(param, arclen)
-
-    def at(self, param=None, arclen=None):
-        """return coordinates of path at either parameter value param
-        or arc length arclen.
-
-        At discontinuities in the path, the limit from below is returned
-        """
-        return self.normpath().at(param, arclen)
+    def at(self, params):
+        """return coordinates of path at params."""
+        return self.normpath().at(params)
 
     def bbox(self):
         context = _pathcontext()
@@ -1049,23 +1014,22 @@ class path(base.canvasitem):
         """return coordinates of first point of first subpath in path"""
         return self.normpath().begin()
 
-    def curvradius_pt(self, param=None, arclen=None):
+    def curveradius_pt(self, params):
         """Returns the curvature radius in pts (or None if infinite)
-        at parameter param or arc length arclen.  This is the inverse
-        of the curvature at this parameter
+        at params.  This is the inverse of the curvature at this parameter
 
         Please note that this radius can be negative or positive,
         depending on the sign of the curvature"""
-        return self.normpath().curvradius_pt(param, arclen)
+        return self.normpath().curveradius_pt(params)
 
-    def curvradius(self, param=None, arclen=None):
+    def curveradius(self, params):
         """Returns the curvature radius (or None if infinite) at
-        parameter param or arc length arclen.  This is the inverse of
+        parameter params.  This is the inverse of
         the curvature at this parameter
 
         Please note that this radius can be negative or positive,
         depending on the sign of the curvature"""
-        return self.normpath().curvradius(param, arclen)
+        return self.normpath().curveradius(params)
 
     def end_pt(self):
         """return coordinates of last point of last subpath in path (in pts)"""
@@ -1131,19 +1095,17 @@ class path(base.canvasitem):
         """return corresponding normpaths split at parameter values params"""
         return self.normpath().split(params)
 
-    def tangent(self, param=None, arclen=None, length=None):
-        """return tangent vector of path at either parameter value param
-        or arc length arclen.
+    def tangent(self, params, length=None):
+        """return tangent vector of path at params.
 
-        At discontinuities in the path, the limit from below is returned.
         If length is not None, the tangent vector will be scaled to
         the desired length.
         """
-        return self.normpath().tangent(param, arclen, length)
+        return self.normpath().tangent(params, length)
 
-    def trafo(self, param=None, arclen=None):
-        """return transformation at either parameter value param or arc length arclen"""
-        return self.normpath().trafo(param, arclen)
+    def trafo(self, params):
+        """return transformation at params"""
+        return self.normpath().trafo(params)
 
     def transformed(self, trafo):
         """return transformed path"""
@@ -1357,9 +1319,10 @@ def _intersectnormlines(a, b):
     # return parameters of the intersection
     return [( a_t, b_t)]
 
-#
-# normsubpathitem: normalized element
-#
+
+################################################################################
+# normsubpathitem class
+################################################################################
 
 class normsubpathitem:
 
@@ -1390,9 +1353,9 @@ class normsubpathitem:
         """return bounding box of normsubpathitem"""
         pass
 
-    def curvradius_pt(self, param):
-        """Returns the curvature radius in pts at parameter param.
-        This is the inverse of the curvature at this parameter
+    def curveradius_pt(self, params):
+        """Returns the curvature radiuses in pts at params.
+        This is the inverse of the curvature at these parameters
 
         Please note that this radius can be negative or positive,
         depending on the sign of the curvature"""
@@ -1442,9 +1405,19 @@ class normsubpathitem:
         """write PDF code corresponding to normsubpathitem to file"""
         pass
 
-#
+################################################################################
 # there are only two normsubpathitems: normline and normcurve
-#
+################################################################################
+
+def _valueorlistmethod(method):
+    def wrappedmethod(self, valueorlist, *args, **kwargs):
+        try:
+            for item in valueorlist:
+                break
+        except:
+            return method(self, [valueorlist], *args, **kwargs)[0]
+        return method(self, valueorlist, *args, **kwargs)
+    return wrappedmethod
 
 class normline_pt(normsubpathitem):
 
@@ -1459,7 +1432,7 @@ class normline_pt(normsubpathitem):
          self.y1_pt = y1_pt
 
     def __str__(self):
-        return "normline(%g, %g, %g, %g)" % (self.x0_pt, self.y0_pt, self.x1_pt, self.y1_pt)
+        return "normline_pt(%g, %g, %g, %g)" % (self.x0_pt, self.y0_pt, self.x1_pt, self.y1_pt)
 
     def _arclentoparam_pt(self, lengths, epsilon):
         l = math.hypot(self.x0_pt-self.x1_pt, self.y0_pt-self.y1_pt)
@@ -1476,11 +1449,9 @@ class normline_pt(normsubpathitem):
     def arclen_pt(self,  epsilon):
         return math.hypot(self.x0_pt-self.x1_pt, self.y0_pt-self.y1_pt)
 
-    def at_pt(self, t):
-        return self.x0_pt+(self.x1_pt-self.x0_pt)*t, self.y0_pt+(self.y1_pt-self.y0_pt)*t
-
-    def at(self, t):
-        return (self.x0_pt+(self.x1_pt-self.x0_pt)*t) * unit.t_pt, (self.y0_pt+(self.y1_pt-self.y0_pt)*t) * unit.t_pt
+    def at_pt(self, params):
+        return [(self.x0_pt+(self.x1_pt-self.x0_pt)*t, self.y0_pt+(self.y1_pt-self.y0_pt)*t)
+                for t in params]
 
     def bbox(self):
         return bbox.bbox_pt(min(self.x0_pt, self.x1_pt), min(self.y0_pt, self.y1_pt), 
@@ -1489,17 +1460,11 @@ class normline_pt(normsubpathitem):
     def begin_pt(self):
         return self.x0_pt, self.y0_pt
 
-    def begin(self):
-        return self.x0_pt * unit.t_pt, self.y0_pt * unit.t_pt
-
-    def curvradius_pt(self, param):
-        return None
+    def curveradius_pt(self, params):
+        return [None] * len(params)
 
     def end_pt(self):
         return self.x1_pt, self.y1_pt
-
-    def end(self):
-        return self.x1_pt * unit.t_pt, self.y1_pt * unit.t_pt
 
     def intersect(self, other, epsilon):
         if isinstance(other, normline_pt):
@@ -1521,8 +1486,10 @@ class normline_pt(normsubpathitem):
             ye_pt = self.y1_pt
         return normline_pt(xs_pt, ys_pt, xe_pt, ye_pt)
 
-    def paramtoarclen_pt(self, param, epsilon):
-        return param * math.hypot(self.x0_pt-self.x1_pt, self.y0_pt-self.y1_pt)
+    def _paramtoarclen_pt(self, params, epsilon):
+        totalarclen_pt = self.arclen_pt(epsilon)
+        arclens_pt = [totalarclen_pt * param for param in params + [1]]
+        return arclens_pt[:-1], arclens_pt[-1]
 
     def reverse(self):
         self.x0_pt, self.y0_pt, self.x1_pt, self.y1_pt = self.x1_pt, self.y1_pt, self.x0_pt, self.y0_pt
@@ -1545,13 +1512,10 @@ class normline_pt(normsubpathitem):
 
         return result
 
-    def tangentvector_pt(self, param):
-        return self.x1_pt-self.x0_pt, self.y1_pt-self.y0_pt
-
     def trafo(self, param):
-        tx_pt, ty_pt = self.at_pt(param)
-        tdx_pt, tdy_pt = self.x1_pt-self.x0_pt, self.y1_pt-self.y0_pt
-        return trafo.translate_pt(tx_pt, ty_pt)*trafo.rotate(degrees(math.atan2(tdy_pt, tdx_pt)))
+        rotate = trafo.rotate(degrees(math.atan2(self.y1_pt-self.y0_pt, self.x1_pt-self.x0_pt)))
+        return [trafo.translate_pt(*at_pt) * rotate
+                for param, at_pt in zip(params, self.at_pt(params))]
 
     def transformed(self, trafo):
         return normline_pt(*(trafo._apply(self.x0_pt, self.y0_pt) + trafo._apply(self.x1_pt, self.y1_pt)))
@@ -1580,8 +1544,8 @@ class normcurve_pt(normsubpathitem):
         self.y3_pt = y3_pt
 
     def __str__(self):
-        return "normcurve(%g, %g, %g, %g, %g, %g, %g, %g)" % (self.x0_pt, self.y0_pt, self.x1_pt, self.y1_pt,
-                                                              self.x2_pt, self.y2_pt, self.x3_pt, self.y3_pt)
+        return "normcurve_pt(%g, %g, %g, %g, %g, %g, %g, %g)" % (self.x0_pt, self.y0_pt, self.x1_pt, self.y1_pt,
+                                                                 self.x2_pt, self.y2_pt, self.x3_pt, self.y3_pt)
 
     def _arclentoparam_pt(self, lengths, epsilon):
         """computes the parameters [t] of bpathitem where the given lengths (in pts) are assumed
@@ -1629,20 +1593,16 @@ class normcurve_pt(normsubpathitem):
             a, b = self.midpointsplit()
             return a.arclen_pt(epsilon) + b.arclen_pt(epsilon)
 
-    def at_pt(self, t):
-        xt_pt = ( (-self.x0_pt+3*self.x1_pt-3*self.x2_pt+self.x3_pt)*t*t*t +
+    def at_pt(self, params):
+        return [( (-self.x0_pt+3*self.x1_pt-3*self.x2_pt+self.x3_pt)*t*t*t +
                   (3*self.x0_pt-6*self.x1_pt+3*self.x2_pt          )*t*t +
                   (-3*self.x0_pt+3*self.x1_pt                      )*t +
-                  self.x0_pt )
-        yt_pt = ( (-self.y0_pt+3*self.y1_pt-3*self.y2_pt+self.y3_pt)*t*t*t +
+                  self.x0_pt,
+                  (-self.y0_pt+3*self.y1_pt-3*self.y2_pt+self.y3_pt)*t*t*t +
                   (3*self.y0_pt-6*self.y1_pt+3*self.y2_pt          )*t*t +
                   (-3*self.y0_pt+3*self.y1_pt                      )*t +
                   self.y0_pt )
-        return xt_pt, yt_pt
-
-    def at(self, t):
-        xt_pt, yt_pt = self.at_pt(t)
-        return xt_pt * unit.t_pt, yt_pt * unit.t_pt
+                for t in params]
 
     def bbox(self):
         return bbox.bbox_pt(min(self.x0_pt, self.x1_pt, self.x2_pt, self.x3_pt),
@@ -1653,27 +1613,24 @@ class normcurve_pt(normsubpathitem):
     def begin_pt(self):
         return self.x0_pt, self.y0_pt
 
-    def begin(self):
-        return self.x0_pt * unit.t_pt, self.y0_pt * unit.t_pt
-
-    def curvradius_pt(self, param):
-        xdot = ( 3 * (1-param)*(1-param) * (-self.x0_pt + self.x1_pt) +
-                 6 * (1-param)*param * (-self.x1_pt + self.x2_pt) +
-                 3 * param*param * (-self.x2_pt + self.x3_pt) )
-        ydot = ( 3 * (1-param)*(1-param) * (-self.y0_pt + self.y1_pt) +
-                 6 * (1-param)*param * (-self.y1_pt + self.y2_pt) +
-                 3 * param*param * (-self.y2_pt + self.y3_pt) )
-        xddot = ( 6 * (1-param) * (self.x0_pt - 2*self.x1_pt + self.x2_pt) +
-                  6 * param * (self.x1_pt - 2*self.x2_pt + self.x3_pt) )
-        yddot = ( 6 * (1-param) * (self.y0_pt - 2*self.y1_pt + self.y2_pt) +
-                  6 * param * (self.y1_pt - 2*self.y2_pt + self.y3_pt) )
-        return (xdot**2 + ydot**2)**1.5 / (xdot*yddot - ydot*xddot)
+    def curveradius_pt(self, params):
+        result = []
+        for param in params:
+            xdot = ( 3 * (1-param)*(1-param) * (-self.x0_pt + self.x1_pt) +
+                     6 * (1-param)*param * (-self.x1_pt + self.x2_pt) +
+                     3 * param*param * (-self.x2_pt + self.x3_pt) )
+            ydot = ( 3 * (1-param)*(1-param) * (-self.y0_pt + self.y1_pt) +
+                     6 * (1-param)*param * (-self.y1_pt + self.y2_pt) +
+                     3 * param*param * (-self.y2_pt + self.y3_pt) )
+            xddot = ( 6 * (1-param) * (self.x0_pt - 2*self.x1_pt + self.x2_pt) +
+                      6 * param * (self.x1_pt - 2*self.x2_pt + self.x3_pt) )
+            yddot = ( 6 * (1-param) * (self.y0_pt - 2*self.y1_pt + self.y2_pt) +
+                      6 * param * (self.y1_pt - 2*self.y2_pt + self.y3_pt) )
+            result.append((xdot**2 + ydot**2)**1.5 / (xdot*yddot - ydot*xddot))
+        return result
 
     def end_pt(self):
         return self.x3_pt, self.y3_pt
-
-    def end(self):
-        return self.x3_pt * unit.t_pt, self.y3_pt * unit.t_pt
 
     def intersect(self, other, epsilon):
         if isinstance(other, normline_pt):
@@ -1742,8 +1699,11 @@ class normcurve_pt(normsubpathitem):
                          self.x2_pt, self.y2_pt,
                          xe_pt, ye_pt)
 
-    def paramtoarclen_pt(self, param, epsilon):
-        return self.split([param])[0].arclen_pt(epsilon)
+    def _paramtoarclen_pt(self, params, epsilon):
+        arclens_pt = [splitpath.arclen_pt(epsilon) for splitpath in self.split(params)]
+        for i in range(1, len(arclens_pt)):
+            arclens_pt[i] += arclens_pt[i-1]
+        return arclens_pt[:-1], arclens_pt[-1]
 
     def reverse(self):
         self.x0_pt, self.y0_pt, self.x1_pt, self.y1_pt, self.x2_pt, self.y2_pt, self.x3_pt, self.y3_pt = \
@@ -1822,19 +1782,17 @@ class normcurve_pt(normsubpathitem):
 
         return result
 
-    def tangentvector_pt(self, param):
-        tvectx = (3*(  -self.x0_pt+3*self.x1_pt-3*self.x2_pt+self.x3_pt)*param*param +
-                  2*( 3*self.x0_pt-6*self.x1_pt+3*self.x2_pt        )*param +
-                    (-3*self.x0_pt+3*self.x1_pt                  ))
-        tvecty = (3*(  -self.y0_pt+3*self.y1_pt-3*self.y2_pt+self.y3_pt)*param*param +
-                  2*( 3*self.y0_pt-6*self.y1_pt+3*self.y2_pt        )*param +
-                    (-3*self.y0_pt+3*self.y1_pt                  ))
-        return (tvectx, tvecty)
-
-    def trafo(self, param):
-        tx_pt, ty_pt = self.at_pt(param)
-        tdx_pt, tdy_pt = self.tangentvector_pt(param)
-        return trafo.translate_pt(tx_pt, ty_pt)*trafo.rotate(degrees(math.atan2(tdy_pt, tdx_pt)))
+    def trafo(self, params):
+        result = []
+        for param, at_pt in zip(params, self.at_pt(params)):
+            tdx_pt = (3*(  -self.x0_pt+3*self.x1_pt-3*self.x2_pt+self.x3_pt)*param*param +
+                      2*( 3*self.x0_pt-6*self.x1_pt+3*self.x2_pt           )*param +
+                        (-3*self.x0_pt+3*self.x1_pt                        ))
+            tdy_pt = (3*(  -self.y0_pt+3*self.y1_pt-3*self.y2_pt+self.y3_pt)*param*param +
+                      2*( 3*self.y0_pt-6*self.y1_pt+3*self.y2_pt           )*param +
+                        (-3*self.y0_pt+3*self.y1_pt                        ))
+            result.append(trafo.translate_pt(*at_pt) * trafo.rotate(degrees(math.atan2(tdy_pt, tdx_pt))))
+        return result
 
     def transform(self, trafo):
         self.x0_pt, self.y0_pt = trafo._apply(self.x0_pt, self.y0_pt)
@@ -1854,9 +1812,9 @@ class normcurve_pt(normsubpathitem):
     def outputPDF(self, file):
         file.write("%f %f %f %f %f %f c\n" % (self.x1_pt, self.y1_pt, self.x2_pt, self.y2_pt, self.x3_pt, self.y3_pt))
 
-#
-# normpaths are made up of normsubpaths, which represent connected line segments
-#
+################################################################################
+# normsubpath class 
+################################################################################
 
 class normsubpath:
 
@@ -1921,7 +1879,7 @@ class normsubpath:
         return "subpath(%s, [%s])" % (self.closed and "closed" or "open",
                                     ", ".join(map(str, self.normsubpathitems)))
 
-    def _distributeparams(self, params):
+    def _distributeparamsold(self, params):
         """Creates a list tuples (normsubpathitem, itemparams),
         where itemparams are the parameter values corresponding
         to params in normsubpathitem. For the first normsubpathitem
@@ -1945,20 +1903,28 @@ class normsubpath:
                        [param - len(self.normsubpathitems) + 1 for param in params[paramindex:]]))
         return result
 
-    def _findnormsubpathitem(self, param):
-        """Finds the normsubpathitem for the given parameter and
-        returns a tuple containing this item and the parameter
-        converted to the range of the item. An out of bound parameter
-        is handled like in _distributeparams."""
-        if not self.normsubpathitems:
-            raise PathException("Cannot select parameters for a short normsubpath")
-        if param > 0:
-            index = int(param)
-            if index > len(self.normsubpathitems) - 1:
-                index = len(self.normsubpathitems) - 1
-        else:
-            index = 0
-        return self.normsubpathitems[index], param - index
+    def _distributeparams(self, params):
+        """Returns a dictionary mapping normsubpathitemindices to a tuple of a
+        paramindices and normsubpathitemparams.
+
+        normsubpathitemindex specifies a normsubpathitem containing
+        one or several positions.  paramindex specify the index of the
+        param in the original list and normsubpathitemparam is the
+        parameter value in the normsubpathitem.
+        """
+
+        result = {}
+        for i, param in enumerate(params):
+            if param > 0:
+                index = int(param)
+                if index > len(self.normsubpathitems) - 1:
+                    index = len(self.normsubpathitems) - 1
+            else:
+                index = 0
+            result.setdefault(index, ([], []))
+            result[index][0].append(i)
+            result[index][1].append(param - index)
+        return result
 
     def append(self, anormsubpathitem):
         assert isinstance(anormsubpathitem, normsubpathitem), "only normsubpathitem instances allowed"
@@ -1985,10 +1951,6 @@ class normsubpath:
         """returns total arc length of normsubpath in pts with accuracy epsilon"""
         return sum([npitem.arclen_pt(self.epsilon) for npitem in self.normsubpathitems])
 
-    def arclen(self):
-        """returns total arc length of normsubpath"""
-        return self.arclen_pt() * unit.t_pt
-
     def _arclentoparam_pt(self, lengths_pt):
         """ returns (t, l) where t are parameter values matching given lengths
         and l is the total length of the normsubpath """
@@ -2009,38 +1971,17 @@ class normsubpath:
 
         return results, totalarclen
 
-    def arclentoparam_pt(self, lengths):
-        if len(lengths)==1:
-            return self._arclentoparam_pt(lengths)[0][0]
-        else:
-            return self._arclentoparam_pt(lengths)[0]
-
-    def arclentoparam(self, lengths):
-        """returns the parameter value(s) matching the given length(s)
-
-        all given lengths must be positive.
-        A length greater than the total arclength will give self.range()
-        """
-        l = [unit.topt(length) for length in helper.ensuresequence(lengths)]
-        return self.arclentoparam_pt(l)
-
-    def at_pt(self, param):
-        """return coordinates in pts of sub path at parameter value param
+    def at_pt(self, params):
+        """return coordinates in pts of sub path at parameter value params
 
         The parameter param must be smaller or equal to the number of
         segments in the normpath, otherwise None is returned.
         """
-        normsubpathitem, itemparam = self._findnormsubpathitem(param)
-        return normsubpathitem.at_pt(itemparam)
-
-    def at(self, param):
-        """return coordinates of sub path at parameter value param
-
-        The parameter param must be smaller or equal to the number of
-        segments in the normpath, otherwise None is returned.
-        """
-        normsubpathitem, itemparam = self._findnormsubpathitem(param)
-        return normsubpathitem.at(itemparam)
+        result = [None] * len(params)
+        for normsubpathitemindex, (indices, params) in self._distributeparams(params).items():
+            for index, point_pt in zip(indices, self.normsubpathitems[normsubpathitemindex].at_pt(params)):
+                result[index] = point_pt
+        return result
 
     def bbox(self):
         if self.normsubpathitems:
@@ -2055,11 +1996,6 @@ class normsubpath:
         if not self.normsubpathitems and self.skippedline:
             return self.skippedline.begin_pt()
         return self.normsubpathitems[0].begin_pt()
-
-    def begin(self):
-        if not self.normsubpathitems and self.skippedline:
-            return self.skippedline.begin()
-        return self.normsubpathitems[0].begin()
 
     def close(self):
         if self.closed:
@@ -2083,19 +2019,17 @@ class normsubpath:
 
         self.closed = 1
 
-    def curvradius_pt(self, param):
-        normsubpathitem, itemparam = self._findnormsubpathitem(param)
-        return normsubpathitem.curvradius_pt(itemparam)
+    def curveradius_pt(self, params):
+        result = [None] * len(params)
+        for normsubpathitemindex, (indices, params) in self._distributeparams(params).items():
+            for index, radius_pt in zip(indices, self.normsubpathitems[normsubpathitemindex].curveradius_pt(params)):
+                result[index] = radius_pt
+        return result
 
     def end_pt(self):
         if self.skippedline:
             return self.skippedline.end_pt()
         return self.normsubpathitems[-1].end_pt()
-
-    def end(self):
-        if self.skippedline:
-            return self.skippedline.end()
-        return self.normsubpathitems[-1].end()
 
     def extend(self, normsubpathitems):
         for normsubpathitem in normsubpathitems:
@@ -2229,14 +2163,21 @@ class normsubpath:
         result.join(other)
         return result
 
-    def paramtoarclen_pt(self, param):
-        """returns the arc length corresponding to the normsubpathparam"""
-        # XXX using _distributeparams is overkill
-        result = 0
-        for normsubpathitem, itemparams in self._distributeparams([param]):
-            if itemparams:
-                return result + normsubpathitem.paramtoarclen_pt(itemparams[0], self.epsilon)
-            result += normsubpathitem.arclen_pt(self.epsilon)
+    def _paramtoarclen_pt(self, params):
+        """returns a tuple of arc lengths and the total arc length."""
+        result = [None] * len(params)
+        totalarclen_pt = 0
+        distributeparams = self._distributeparams(params)
+        for normsubpathitemindex in range(len(self.normsubpathitems)):
+            if distributeparams.has_key(normsubpathitemindex):
+                indices, params = distributeparams[normsubpathitemindex]
+                arclens_pt, normsubpathitemarclen_pt = self.normsubpathitems[normsubpathitemindex]._paramtoarclen_pt(params, self.epsilon)
+                for index, arclen_pt in zip(indices, arclens_pt):
+                    result[index] = totalarclen_pt + arclen_pt
+                totalarclen_pt += normsubpathitemarclen_pt
+            else:
+                totalarclen_pt += self.normsubpathitems[normsubpathitemindex].arclen_pt(self.epsilon)
+        return result, totalarclen_pt
 
     def range(self):
         """return maximal parameter value, i.e. number of line/curve segments"""
@@ -2263,7 +2204,7 @@ class normsubpath:
 
         result = [normsubpath(epsilon=self.epsilon)]
 
-        for normsubpathitem, itemparams in self._distributeparams(params):
+        for normsubpathitem, itemparams in self._distributeparamsold(params):
             splititems = normsubpathitem.split(itemparams)
             result[-1].append(splititems[0])
             result.extend([normsubpath([splititem], epsilon=self.epsilon) for splititem in splititems[1:]])
@@ -2278,19 +2219,12 @@ class normsubpath:
                 result[0].close()
         return result
 
-    def tangent(self, param, length=None):
-        normsubpathitem, itemparam = self._findnormsubpathitem(param)
-        tx_pt, ty_pt = normsubpathitem.at_pt(itemparam)
-        tdx_pt, tdy_pt = normsubpathitem.tangentvector_pt(itemparam)
-        if length is not None:
-            sfactor = unit.topt(length)/math.hypot(tdx_pt, tdy_pt)
-            tdx_pt *= sfactor
-            tdy_pt *= sfactor
-        return line_pt(tx_pt, ty_pt, tx_pt+tdx_pt, ty_pt+tdy_pt)
-
-    def trafo(self, param):
-        normsubpathitem, itemparam = self._findnormsubpathitem(param)
-        return normsubpathitem.trafo(itemparam)
+    def trafo(self, params):
+        result = [None] * len(params)
+        for normsubpathitemindex, (indices, params) in self._distributeparams(params).items():
+            for index, trafo in zip(indices, self.normsubpathitems[normsubpathitemindex].trafo(params)):
+                result[index] = trafo
+        return result
 
     def transform(self, trafo):
         """transform sub path according to trafo"""
@@ -2353,9 +2287,73 @@ class normsubpath:
         if self.closed:
             file.write("h\n")
 
-#
-# the normpath class
-#
+################################################################################
+# normpathparam class
+################################################################################
+
+class normpathparam:
+
+    """ parameter of a certain point along a normpath """
+    
+    def __init__(self, normpath, normsubpathindex, normsubpathparam):
+        self.normpath = normpath
+        self.normsubpathindex = normsubpathindex
+        self.normsubpathparam = normsubpathparam
+        float(normsubpathparam)
+
+    def __add__(self, other):
+        if isinstance(other, normpathparam):
+            assert self.normpath is other.normpath, "normpathparams have to belong to the same normpath"
+            return self.normpath.arclentoparam_pt(self.normpath.paramtoarclen_pt(self) +
+                                                  other.normpath.paramtoarclen_pt(other))
+        else:
+            return self.normpath.arclentoparam_pt(self.normpath.paramtoarclen_pt(self) + unit.topt(other))
+
+    __radd__ = __add__
+
+    def __sub__(self, other):
+        if isinstance(other, normpathparam):
+            assert self.normpath is other.normpath, "normpathparams have to belong to the same normpath"
+            return self.normpath.arclentoparam_pt(self.normpath.paramtoarclen_pt(self) -
+                                                  other.normpath.paramtoarclen_pt(other))
+        else:
+            return self.normpath.arclentoparam_pt(self.normpath.paramtoarclen_pt(self) - unit.topt(other))
+
+    def __rsub__(self, other):
+        # other has to be a length in this case
+        return self.normpath.arclentoparam_pt(-self.normpath.paramtoarclen_pt(self) + unit.topt(other))
+    
+    def __mul__(self, factor):
+        return self.normpath.arclentoparam_pt(self.normpath.paramtoarclen_pt(self) * factor)
+    
+    __rmul__ = __mul__
+
+    def __div__(self, divisor):
+        return self.normpath.arclentoparam_pt(self.normpath.paramtoarclen_pt(self) / divisor)
+
+    def __neg__(self):
+        return self.normpath.arclentoparam_pt(-self.normpath.paramtoarclen_pt(self))
+
+    def __cmp__(self, other):
+        if isinstance(other, normpathparam):
+            assert self.normpath is other.normpath, "normpathparams have to belong to the same normpath"
+            return cmp((self.normsubpathindex, self.normsubpathparam), (other.normsubpathindex, other.normsubpathparam))
+        else:
+            return cmp(self.normpath.paramtoarclen_pt(self), unit.topt(other))
+
+    def arclen_pt(self):
+        """ return arc length in pts corresponding to the normpathparam """
+        return self.normpath.paramtoarclen_pt(self)
+
+    def arclen(self):
+        """ return arc length corresponding to the normpathparam """
+        return self.normpath.paramtoarclen(self)
+
+
+    
+################################################################################
+# normpath class
+################################################################################
 
 class normpath(base.canvasitem):
 
@@ -2395,50 +2393,37 @@ class normpath(base.canvasitem):
     def __str__(self):
         return "normpath(%s)" % ", ".join(map(str, self.normsubpaths))
 
-    def _findsubpath(self, param, arclen):
-        """return a tuple (subpath, rparam), where subpath is the subpath
-        containing the position specified by either param or arclen and rparam
-        is the corresponding parameter value in this subpath. 
+    def _convertparams(self, params, convertmethod):
+        """ Returns params with all non-normpathparam arguments converted
+        by convertmethod """
+        converttoparams = []
+        convertparamindices = []
+        for i, param in enumerate(params):
+            if not isinstance(param, normpathparam):
+                converttoparams.append(param)
+                convertparamindices.append(i)
+        if converttoparams:
+            params = params[:]
+            for i, param in zip(convertparamindices, convertmethod(converttoparams)):
+                params[i] = param
+        return params
+
+    def _distributeparams(self, normpathparams):
+        """Returns a dictionary mapping subpathindices to a tuple of a
+        paramindices and subpathparams.
+
+        subpathindex specifies a subpath containing one or several positions.
+        paramindex specify the index of the normpathparam in the original list and
+        subpathparam is the parameter value in the subpath.
         """
 
-        if param is not None and arclen is not None:
-            raise PathException("either param or arclen has to be specified, but not both")
-
-        if param is not None:
-            try:
-                subpath, param = param
-            except TypeError:
-                # determine subpath from param 
-                normsubpathindex = 0
-                for normsubpath in self.normsubpaths[:-1]:
-                    normsubpathrange = normsubpath.range()
-                    if param < normsubpathrange+normsubpathindex:
-                        return normsubpath, param-normsubpathindex
-                    normsubpathindex += normsubpathrange
-                return self.normsubpaths[-1], param-normsubpathindex
-            try:
-                return self.normsubpaths[subpath], param
-            except IndexError:
-                raise PathException("subpath index out of range")
-
-        # we have been passed an arclen (or a tuple (subpath, arclen))
-        try:
-            subpath, arclen = arclen
-        except:
-            # determine subpath from arclen
-            param = self.arclentoparam(arclen)
-            for normsubpath in self.normsubpaths[:-1]:
-                normsubpathrange = normsubpath.range()
-                if param <= normsubpathrange+normsubpathindex:
-                    return normsubpath, param-normsubpathindex
-                normsubpathindex += normsubpathrange
-            return self.normsubpaths[-1], param-normsubpathindex
-
-        try:
-            normsubpath = self.normsubpaths[subpath]
-        except IndexError:
-            raise PathException("subpath index out of range")
-        return normsubpath, normsubpath.arclentoparam(arclen)
+        result = {}
+        for i, param in enumerate(normpathparams):
+            assert param.normpath is self, "normpathparam has to belong to this path"
+            result.setdefault(param.normsubpathindex, ([], []))
+            result[param.normsubpathindex][0].append(i)
+            result[param.normsubpathindex][1].append(param.normsubpathparam)
+        return result
 
     def append(self, anormsubpath):
         if isinstance(anormsubpath, normsubpath):
@@ -2486,28 +2471,40 @@ class normpath(base.canvasitem):
                 break
 
         return results
+    arclentoparam_pt = _valueorlistmethod(arclentoparam_pt)
 
     def arclentoparam(self, lengths):
         """ returns the parameter values matching the given lengths """
         return self.arclentoparam_pt([unit.topt(l) for l in lengths])
+    arclentoparam = _valueorlistmethod(arclentoparam)
 
-    def at_pt(self, param=None, arclen=None):
+    def _at_pt(self, params):
         """return coordinates in pts of path at either parameter value param
         or arc length arclen.
-
-        At discontinuities in the path, the limit from below is returned.
         """
-        normsubpath, param = self._findsubpath(param, arclen)
-        return normsubpath.at_pt(param)
 
-    def at(self, param=None, arclen=None):
+        result = [None] * len(params)
+        for normsubpathindex, (indices, params) in self._distributeparams(params).items():
+            for index, point_pt in zip(indices, self.normsubpaths[normsubpathindex].at_pt(params)):
+                result[index] = point_pt
+        return result
+
+    def at_pt(self, params):
+        """return coordinates of path (in pts) at either parameter value param
+        or arc length arclen (in pts).
+        """
+
+        return self._at_pt(self._convertparams(params, self.arclentoparam_pt))
+    at_pt = _valueorlistmethod(at_pt)
+
+    def at(self, params):
         """return coordinates of path at either parameter value param
         or arc length arclen.
-
-        At discontinuities in the path, the limit from below is returned
         """
-        normsubpath, param = self._findsubpath(param, arclen)
-        return normsubpath.at(param)
+
+        return [(x_pt * unit.t_pt, y_pt * unit.t_pt)
+                for x_pt, y_pt in self._at_pt(self._convertparams(params, self.arclentoparam))]
+    at = _valueorlistmethod(at)
 
     def bbox(self):
         abbox = None
@@ -2528,32 +2525,48 @@ class normpath(base.canvasitem):
 
     def begin(self):
         """return coordinates of first point of first subpath in path"""
-        if self.normsubpaths:
-            return self.normsubpaths[0].begin()
-        else:
-            raise PathException("cannot return first point of empty path")
+        x, y = self.begin_pt()
+        return x * unit.t_pt, y * unit.t_pt
 
-    def curvradius_pt(self, param=None, arclen=None):
+    def _curveradius_pt(self, params):
         """Returns the curvature radius in pts (or None if infinite)
         at parameter param or arc length arclen.  This is the inverse
         of the curvature at this parameter
 
         Please note that this radius can be negative or positive,
         depending on the sign of the curvature"""
-        normsubpath, param = self._findsubpath(param, arclen)
-        return normsubpath.curvradius_pt(param)
 
-    def curvradius(self, param=None, arclen=None):
+        result = [None] * len(params)
+        for normsubpathindex, (indices, params) in self._distributeparams(params).items():
+            for index, radius_pt in zip(indices, self.normsubpaths[normsubpathindex].curveradius_pt(params)):
+                result[index] = radius_pt
+        return result
+
+    def curveradius_pt(self, params):
+        """Returns the curvature radius in pts (or None if infinite)
+        at parameter param or arc length arclen.  This is the inverse
+        of the curvature at this parameter
+
+        Please note that this radius can be negative or positive,
+        depending on the sign of the curvature"""
+        return self._curveradius_pt(self._convertparams(params, self.arclentoparam_pt))
+    curveradius_pt = _valueorlistmethod(curveradius_pt)
+
+    def curveradius(self, params):
         """Returns the curvature radius (or None if infinite) at
         parameter param or arc length arclen.  This is the inverse of
         the curvature at this parameter
 
         Please note that this radius can be negative or positive,
         depending on the sign of the curvature"""
-        radius = self.curvradius_pt(param, arclen)
-        if radius is not None:
-            radius = radius * unit.t_pt
-        return radius
+        result = []
+        for radius_pt in self._curveradius_pt(self._convertparams(params, self.arclentoparam)):
+            if radius_pt is not None:
+                result.append(radius_pt * unit.t_pt)
+            else:
+                result.append(None)
+        return result
+    curveradius = _valueorlistmethod(curveradius)
 
     def end_pt(self):
         """return coordinates of last point of last subpath in path (in pts)"""
@@ -2564,10 +2577,8 @@ class normpath(base.canvasitem):
 
     def end(self):
         """return coordinates of last point of last subpath in path"""
-        if self.normsubpaths:
-            return self.normsubpaths[-1].end()
-        else:
-            raise PathException("cannot return last point of empty path")
+        x, y = self.end_pt()
+        return x * unit.t_pt, y * unit.t_pt
 
     def extend(self, normsubpaths):
         for anormsubpath in normsubpaths:
@@ -2612,18 +2623,33 @@ class normpath(base.canvasitem):
         for ia, normsubpath_a in enumerate(self.normsubpaths):
             for ib, normsubpath_b in enumerate(other.normsubpaths):
                 for intersection in zip(*normsubpath_a.intersect(normsubpath_b)):
-                    intersections[0].append((ia, intersection[0]))
-                    intersections[1].append((ib, intersection[1]))
+                    intersections[0].append(normpathparam(self, ia, intersection[0]))
+                    intersections[1].append(normpathparam(other, ib, intersection[1]))
         return intersections
 
     def normpath(self):
         return self
 
-    def paramtoarclen_pt(self, normpathparam):
-        """returns the arc length corresponding to the normpathparam"""
-        return ( sum([normsubpath.arclen_pt()
-                      for normsubpath in self.normsubpaths[:normpathparam.normsubpathindex]]) + 
-                 self.normsubpaths[normpathparam.normsubpathindex].paramtoarclen_pt(normpathparam.normsubpathparam) )
+    def paramtoarclen_pt(self, normpathparams):
+        """returns the arc length corresponding to the normpathparams"""
+        result = [None] * len(normpathparams)
+        totalarclen_pt = 0
+        distributeparams = self._distributeparams(normpathparams)
+        for normsubpathindex in range(max(distributeparams.keys()) + 1):
+            if distributeparams.has_key(normsubpathindex):
+                indices, params = distributeparams[normsubpathindex]
+                arclens_pt, normsubpatharclen_pt = self.normsubpaths[normsubpathindex]._paramtoarclen_pt(params)
+                for index, arclen_pt in zip(indices, arclens_pt):
+                    result[index] = totalarclen_pt + arclen_pt
+                totalarclen_pt += normsubpatharclen_pt
+            else:
+                totalarclen_pt += self.normsubpaths[normsubpathindex].arclen_pt()
+        return result
+    paramtoarclen_pt = _valueorlistmethod(paramtoarclen_pt)
+
+    def paramtoarclen(self, normpathparams):
+        return [arclen_pt * unit.t_pt for arclen_pt in self.paramtoarclen_pt(normpathparams)]
+    paramtoarclen = _valueorlistmethod(paramtoarclen)
 
     def range(self):
         """return maximal value for parameter value param"""
@@ -2642,12 +2668,12 @@ class normpath(base.canvasitem):
             nnormpath.normsubpaths.append(self.normsubpaths[-(i+1)].reversed())
         return nnormpath
 
-    def split(self, params):
-        """split path at parameter values params
+    def _split(self, params):
+        """split path at parameter values params and return list of normpaths
 
-        Note that the parameter list has to be sorted.
-
+        Note that the params has to be sorted.
         """
+
 
         # check whether parameter list is really sorted
         sortedparams = list(params)
@@ -2655,10 +2681,7 @@ class normpath(base.canvasitem):
         if sortedparams != list(params):
             raise ValueError("split parameter list params has to be sorted")
 
-        # convert to tuple 
-        tparams = []
-        for param in params:
-            tparams.append(self._findsubpath(param, None))
+        distributeparams = self._distributeparams(params)
 
         # we construct this list of normpaths
         result = []
@@ -2666,26 +2689,80 @@ class normpath(base.canvasitem):
         # the currently built up normpath
         np = normpath()
 
-        for subpath in self.normsubpaths:
-            splitnormsubpaths = subpath.split([param for normsubpath, param in tparams if normsubpath is subpath])
-            np.normsubpaths.append(splitnormsubpaths[0])
-            for normsubpath in splitnormsubpaths[1:]:
-                result.append(np)
-                np = normpath([normsubpath])
+        for index, subpath in enumerate(self.normsubpaths):
+            if distributeparams.has_key(index):
+                # we do not use the sorting information in distributeparams[index][0]
+                splitnormsubpaths = subpath.split(distributeparams[index][1])
+                np.normsubpaths.append(splitnormsubpaths[0])
+                for normsubpath in splitnormsubpaths[1:]:
+                    result.append(np)
+                    np = normpath([normsubpath])
+            else:
+                np.normsubpaths.append(subpath)
 
         result.append(np)
         return result
 
-    def tangent(self, param=None, arclen=None, length=None):
-        """return tangent vector of path at either parameter value param
-        or arc length arclen.
+    def split_pt(self, params):
+        """split path at parameter values params and return a list of normpaths
 
-        At discontinuities in the path, the limit from below is returned.
+        Note that the params has to be sorted..
+        """
+        try:
+            for param in params:
+                break
+        except:
+            params = [params]
+        return self._split(self._convertparams(params, self.arclentoparam_pt))
+
+    def split(self, params):
+        """split path at parameter values params and return a list of normpaths
+
+        Note that the params has to be sorted.
+        """
+        try:
+            for param in params:
+                break
+        except:
+            params = [params]
+        return self._split(self._convertparams(params, self.arclentoparam))
+
+    def _tangent(self, params, length=None):
+        """return tangent vector of path at the parameter values params.
+        
         If length is not None, the tangent vector will be scaled to
         the desired length.
         """
-        normsubpath, param = self._findsubpath(param, arclen)
-        return normsubpath.tangent(param, length)
+        result = [None] * len(params)
+        tangenttemplate = line_pt(0, 0, 1, 0).normpath()
+        for normsubpathindex, (indices, params) in self._distributeparams(params).items():
+            for index, atrafo in zip(indices, self.normsubpaths[normsubpathindex].trafo(params)):
+                tangentpath = tangenttemplate.transformed(atrafo)
+                if length is not None:
+                    sfactor = unit.topt(length)/tangentpath.arclen_pt()
+                    tangentpath.transform(trafo.scale_pt(sfactor, sfactor, *tangentpath.begin_pt()))
+                result[index] = tangentpath
+        return result
+
+    def tangent_pt(self, params, length=None):
+        """return tangent vector of path at the parameter values params.
+        
+        If length is not None, the tangent vector will be scaled to
+        the desired length.
+        """
+
+        return self._tangent(self._convertparams(params, self.arclentoparam_pt), length)
+    tangent_pt = _valueorlistmethod(tangent_pt)
+
+    def tangent(self, params, length=None):
+        """return tangent vector of path at the parameter values params.
+        
+        If length is not None, the tangent vector will be scaled to
+        the desired length.
+        """
+
+        return self._tangent(self._convertparams(params, self.arclentoparam), length)
+    tangent = _valueorlistmethod(tangent)
 
     def transform(self, trafo):
         """transform path according to trafo"""
@@ -2696,10 +2773,23 @@ class normpath(base.canvasitem):
         """return path transformed according to trafo"""
         return normpath([normsubpath.transformed(trafo) for normsubpath in self.normsubpaths])
 
-    def trafo(self, param=None, arclen=None):
-        """return transformation at either parameter value param or arc length arclen"""
-        normsubpath, param = self._findsubpath(param, arclen)
-        return normsubpath.trafo(param)
+    def _trafo(self, params):
+        """return transformation at parameter values param"""
+        result = [None] * len(params)
+        for normsubpathindex, (indices, params) in self._distributeparams(params).items():
+            for index, trafo in zip(indices, self.normsubpaths[normsubpathindex].trafo(params)):
+                result[index] = trafo
+        return result
+
+    def trafo_pt(self, params):
+        """return transformation at parameter values param"""
+        return self._trafo(self._convertparams(params, self.arclentoparam_pt))
+    trafo_pt = _valueorlistmethod(trafo_pt)
+
+    def trafo(self, params):
+        """return transformation at parameter values param"""
+        return self._trafo(self._convertparams(params, self.arclentoparam))
+    trafo = _valueorlistmethod(trafo)
 
     def outputPS(self, file):
         for normsubpath in self.normsubpaths:
@@ -2708,4 +2798,3 @@ class normpath(base.canvasitem):
     def outputPDF(self, file):
         for normsubpath in self.normsubpaths:
             normsubpath.outputPDF(file)
-

@@ -91,7 +91,7 @@ def testintersectbezier(c):
         c.stroke(cross(x, y), [style.linewidth.THIN])
 
 def testintersectcircle(c):
-    k=circle(0, 0, 2)
+    k=circle(0, 0, 2).normpath()
     l=line(0, 0, 3, 0)
     c.stroke(k, [style.linewidth.THIN])
     c.stroke(l, [style.linewidth.THIN])
@@ -104,7 +104,7 @@ def testintersectcircle(c):
         c.stroke(cross(x, y), [style.linewidth.THIN])
 
 def testintersectline(c):
-    l1=line(0, 0, 1, 1)
+    l1=line(0, 0, 1, 1).normpath()
     l2=line(0, 1, 1, 0)
     c.stroke(l1, [style.linewidth.THIN])
     c.stroke(l2, [style.linewidth.THIN])
@@ -139,8 +139,8 @@ def testnormpathtrafo(c):
     c.stroke(p1, [color.rgb.red, style.linestyle.dashed])
     c.stroke(p2, [color.rgb.green, style.linestyle.dashed])
 
-    circ1 = circle(0, 10, 1)
-    circ2 = circle(1.7, 10, 1)
+    circ1 = circle(0, 10, 1).normpath()
+    circ2 = circle(1.7, 10, 1).normpath()
 
     c.stroke(circ1)
     c.stroke(circ2)
@@ -170,7 +170,7 @@ def testtangent(c):
     cc.insert(p)
     cc = canvas.canvas([canvas.clip(cc.bbox().path())])
     for i in range(int(p.range())*2):
-        radius = p.curvradius(i/2.0)
+        radius = p.curveradius(i/2.0)
         if radius is not None:
             radius = unit.tocm(radius)
             pos = p.trafo(i/2.0).apply(0,radius*radius/abs(radius))
@@ -281,7 +281,7 @@ def testclipbbox(c):
 
 def testarclentoparam(c):
     curve=path(moveto(0,0), lineto(0,5), curveto(5,0,0,10,5,5), closepath(),
-               moveto(5,0), lineto(10,5))
+               moveto(5,0), lineto(10,5)).normpath()
     ll = curve.arclen()
     # l=[-0.8*ll, -0.6*ll, -0.4*ll, -0.2*ll, 0, 0.1*ll, 0.3*ll, 0.5*ll, 0.7*ll, 0.9*ll]
     l=[0, 0.1*ll, 0.2*ll, 0.3*ll, 0.4*ll, 0.5*ll, 0.6*ll, 0.7*ll, 0.8*ll, 0.9*ll]
