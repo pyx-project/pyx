@@ -1528,6 +1528,8 @@ class graphxy(canvas.canvas):
              width = ratio * height
         self._width = unit.topt(width)
         self._height = unit.topt(height)
+        self.width = width
+        self.height = height
         if self._width <= 0: raise ValueError("width < 0")
         if self._height <= 0: raise ValueError("height < 0")
         for key in axes.keys():
@@ -2114,7 +2116,7 @@ class mark:
                 moveto = 1
         self.path = path.path(*lineels)
         if self._lineattrs is not None:
-            clipcanvas.stroke(self.path, self.lineattrs)
+            clipcanvas.stroke(self.path, *self.lineattrs)
 
 
 class _changecross(changesequence):
