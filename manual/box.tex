@@ -1,0 +1,98 @@
+\chapter{Module box: convex box handling}
+\label{module:box}
+
+This module has a quite internal character, but might still be usefull
+from the users point of view. It might also get further enhanced to
+cover a broader range of standard problems in arranging content.
+
+In the context of this module a box is a convex polygon having
+optionally a center coordinate, which play an important role for the
+box alignment. The center might not at all be central, but it should
+be within the box. The convexity is postulated in order to keep the
+problems to be solved by this module quite a bit easier and
+unambiguous.
+
+Directions (for the alignment etc.) are usually provided as pairs
+(dx, dy) within this module. It is required, that at least one of
+these two numbers is unequal zero. No further assumptions are taken.
+
+\section{polygon}
+
+A polygon is the most general case of a box. It is an instance of the
+class \verb|polygon|. The constructor takes a list of points (which
+are (x, y) tuples) in the keyword argument \verb|corners| and
+optionally another (x, y) tuple as the keyword argument \verb|center|.
+The corners have to be ordered counterclockwise. In the following list
+some methods of this \verb|polygon| class are explained:
+
+\begin{description}
+\raggedright
+\item[\texttt{path(centerradius=None, bezierradius=None,
+beziersoftness=1)}:] returns a path of the box; the center might be
+marked by a small circle of radius \verb|centerradius|; the corners
+might be rounded using the parameters \verb|bezierradius| and
+\verb|beziersoftness|
+\item[\texttt{transform(*trafos)}:] performs a list of transformations
+to the box
+\item[\texttt{reltransform(*trafos)}:] performs a list of
+transformations to the box relative to the box center
+
+\begin{figure}
+\centerline{\includegraphics{boxalign}}
+\caption{circle and line alignment examples (equal direction and
+distance)}
+\label{fig:boxalign}
+\end{figure}
+
+\item[\texttt{circlealignvector(a, dx, dy)}:] returns a vector (a
+tuple (x, y)) to align the box at a circle with radius \verb|a| in
+the direction (\verb|dx|, \verb|dy|); see figure~\ref{fig:boxalign}
+\item[\texttt{linelealignvector(a, dx, dy)}:] as above, but align at a
+line with distance \verb|a|
+\item[\texttt{circlealign(a, dx, dy)}:] as circlealignvector, but
+perform the alignment instead of returning the vector
+\item[\texttt{linelealign(a, dx, dy)}:] as linealignvector, but
+perform the alignment instead of returning the vector
+\item[\texttt{extent(dx, dy)}:] extent of the box in the direction
+(\verb|dx|, \verb|dy|)
+\item[\texttt{pointdistance(x, y)}:] distance of the point (\verb|x|,
+\verb|y|) to the box; the point must be outside of the box
+\item[\texttt{boxdistance(other)}:] distance of the box to the box
+\verb|other|; when the boxes are overlapping, \verb|BoxCrossError| is
+raised
+\item[\texttt{bbox()}:] returns a bounding box instance appropriate to
+the box
+\end{description}
+
+\section{functions working on a box list}
+
+\begin{description}
+\raggedright
+\item[\texttt{circlealignequal(boxes, a, dx, dy)}:] Performs a circle
+alignment of the boxes \verb|boxes| using the parameters \verb|a|,
+\verb|dx|, and \verb|dy| as in the \verb|circlealign| method. For the
+length of the alignment vector its largest value is taken for all
+cases.
+\item[\texttt{linealignequal(boxes, a, dx, dy}:] as above, but
+performing a line alignment
+\item[\texttt{tile(boxes, a, dx, dy)}:] tiles the boxes \verb|boxes|
+with a distance \verb|a| between the boxes (additional the maximal box
+extent in the given direction (\verb|dx|, \verb|dy|) is taken into
+account)
+\end{description}
+
+\section{regtangular boxes}
+
+For easier creation of rectangular boxes, the module provides the
+specialized class \verb|rect|. Its constructor takes at first four
+parameters, namely the x, y position and the box width and height.
+Addtionally, for the definition of the position of the center, two
+keyword arguments are available. The parameter \verb|relcenter| takes
+a tuple containing a relative x, y position of the center (they are
+relative to the box extent, thus values between \verb|0| and
+\verb|1| should be used). The parameter \verb|abscenter| takes a tuple
+containing the x and y position of the center. This values are
+meassured with respect to the lower left corner of the box. By
+default, the center of the rectangular box is set to this lower left
+corner.
+

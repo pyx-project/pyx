@@ -1,5 +1,5 @@
 \chapter{Module text: \TeX/\LaTeX{} interface}
-\label{text}
+\label{module:text}
 
 \section{Basic functionality}
 
@@ -18,9 +18,9 @@ analyse the dvi output and generate the requested PostScript
 \end{itemize}
 
 \section{The texrunner}
-The class \verb|texrunner| represents a \TeX/\LaTeX{} instance. The
-keyword arguments of the constructor are listed in the following
-table:
+Instances of the class \verb|texrunner| represent a \TeX/\LaTeX{}
+instance. The keyword arguments of the constructor are listed in the
+following table:
 
 \medskip
 \begin{tabularx}{\linewidth}{l>{\raggedright\arraybackslash}X}
@@ -71,16 +71,77 @@ third parameter is a \TeX/\LaTeX{} expression and further parameters
 are attributes for this command. Those attributes might be
 \TeX/\LaTeX{} settings as described below, \TeX/\LaTeX{} message
 parsers as described below as well, \PyX{} transformations (like
-rotations), and \PyX{} fill styles (like colors).
+rotations), and \PyX{} fill styles (like colors). The \verb|text|
+method returns a box (see chapter~\ref{module:box}), which can be inserted
+into a canvas instance by its \verb|insert| method to get the text.
 
 \section{\TeX/\LaTeX{} settings}
 
+\begin{description}
+\raggedright
+\item[Horizontal alignment:] \verb|halign.left| (default),
+\verb|halign.center|, \verb|halign.right|, \verb|halign(x)| (\verb|x|
+is a value between \verb|0| and \verb|1|)
+\item[Vertical box:] Usually, \TeX/\LaTeX{} expressions are handled in
+horizontal mode (its called LR-mode in \TeX/\LaTeX; everything goes
+into a single line). You may use \verb|vbox(x)|, where \verb|x| is the
+width of the text, to switch to a multiline mode (its called vertical
+mode in \TeX/\LaTeX).
+\begin{figure}
+\centerline{\includegraphics{textvalign}}
+\caption{valign example}
+\label{fig:textvalign}
+\end{figure}
+\item[Vertical alignment:] \verb|valign.top|, \verb|valign.middle|,
+\verb|valign.bottom|; in horizontal mode additionally
+\verb|valign.baseline| (default); in vertical mode additionally
+\verb|valign.topbaseline| (default), \verb|valign.middlebaseline|, and
+\verb|valign.bottombaseline|; see figure~\ref{fig:textvalign} for an
+example
+\item[Vertical shift:] \verb|vshift.char(lowerratio, heightstr="0")|
+(lowers the output by \verb|lowerratio| of the height of
+\verb|heightstr|), \verb|vshift.bottomzero=vshift.char(0)| (doesn't
+have an effect), \verb|vshift.middlezero=vshift.char(0.5)| (shifts
+down by halve of the height of a \verb|0|),
+\verb|vshift.topzero=vshift.char(1)| (shifts down by the height of the a
+\verb|0|), vshift.mathaxis (shifts down by the height of the
+mathematical axis)
+\item[Mathmode:] \verb|mathmode| switches the mathmode of \TeX/\LaTeX
+\item[Font size:] \verb|size.tiny|, \verb|size.scriptsize|,
+\verb|size.footnotesize|, \verb|size.small|, \verb|size.normalsize|
+(default), \verb|size.large|, \verb|size.Large|, \verb|size.LARGE|,
+\verb|size.huge|, \verb|size.Huge|
+\end{description}
+
 \section{\TeX/\LaTeX{} message parsers}
+
+Message parsers are used to scan the output of \TeX/\LaTeX. The output
+is analyzed by a sequence of message parsers. Each of them do analyze
+the output and remove those parts of the output, they feal responsible
+for. If there is nothing left in the end, the message got validated,
+otherwise an exception is raised reporting the problem.
+
+\medskip
+\begin{tabular}{ll}
+parser name&purpose\\
+\hline
+\texttt{texmessage.load}&loading of files (accept \texttt{(file ...)})\\
+\texttt{texmessage.graphicsload}&loading of graphic files (accept \texttt{<file ...>})\\
+\texttt{texmessage.ignore}&accept everything as a valid output\\
+\end{tabular}
+\medskip
+
+More specialized message parsers should become available as required.
+Please feal free to contribute (e.g. with ideas/problems; code is
+desired as well, of course). There are further message parsers for
+\PyX{}s internal use, but we skip them here as they are not
+interesting from the users point of view.
 
 \section{The defaulttexrunner instance}
 The \verb|defaulttexrunner| is an instance of the class
 \verb|texrunner|, which is automatically created by the \verb|text|
 module. Additionally, the methods \verb|text|, \verb|preamble|, and
-\verb|set| are available as module functions. Usually, this single
-\verb|texrunner| instance is sufficient.
+\verb|set| are available as module functions accessing the
+\verb|defaulttexrunner|. This single \verb|texrunner| instance is
+sufficient in most cases.
 

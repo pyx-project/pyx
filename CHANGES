@@ -6,12 +6,10 @@ PyX
   - unit box:
     - new module for handling of convex polygons (taken out of the graph module)
   - unit helper:
-    - collection of helper functions (taken out of the graph module)
+    - new module containing a collection of helper functions (taken out of the graph module)
     - moved the attrlist into helper -- as plain functions; attrlist becomes obsolete
   - text module:
-    - to be included in 0.3 -> finish base functionality
-    - access to different baselines
-    - documentation!!!
+    - new module: a new and preferable integration of TeX/LaTeX
   - t1strip module:
     - strip glyphs from pfa/pfb-fonts
     - there is a C implementation taken from pdftex
@@ -21,12 +19,12 @@ PyX
     - fallback solution via an external program (kpsewhich)
   - graph module:
     - removed some code duplication (various axis painters)
-    - use text module instead of the obsolete tex module (done except for the documentation)
-    - allow for tailing zeros of automatic generated labels (done except for the documentation)
-    - allow for missing data in bar graphs -> skipmissing parameter (done except for the documentation)
-    - remove the support for variables given as keyword arguemtns in data constructor (done except for the documentation)
-    - use context instead of extern for extern variables and functions (done except for the documentation)
-    - graph keys; titles in data/function/etc. (done except for the documentation)
+    - use text module instead of the obsolete tex module
+    - allow for tailing zeros of automatic generated labels
+    - allow for missing data in bar graphs -> skipmissing parameter
+    - remove the support for variables given as keyword arguments in data constructor
+    - use context instead of extern for extern variables and functions
+    - graph keys; titles in data/function/etc.
     - deferred TODOs:
       - common bboxes for different graphs
       - automatic datafile key title

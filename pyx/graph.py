@@ -1988,7 +1988,7 @@ class key:
 
     def __init__(self, dist="0.2 cm", pos = "tr", hinside = 1, vinside = 1, hdist="0.6 cm", vdist="0.4 cm",
                  symbolwidth="0.5 cm", symbolheight="0.25 cm", symbolspace="0.2 cm",
-                 textattrs=textmodule.vshift.mathaxis, plotinfos=None):
+                 textattrs=textmodule.vshift.mathaxis):
         self.dist_str = dist
         self.pos = pos
         self.hinside = hinside
@@ -1999,7 +1999,7 @@ class key:
         self.symbolheight_str = symbolheight
         self.symbolspace_str = symbolspace
         self.textattrs = textattrs
-        self.plotinfos = plotinfos
+        self.plotinfos = None
         if self.pos in ("tr", "rt"):
             self.right = 1
             self.top = 1
@@ -2016,10 +2016,10 @@ class key:
             raise RuntimeError("invalid pos attribute")
 
     def setplotinfos(self, *plotinfos):
-        """this method should be used for automatic keys, where the graph provides the plotinfos
-        note: it is allowed to be called only once; it fails, when there were already plotinfos available"""
+        """set the plotinfos to be used in the key
+        - call it exactly once"""
         if self.plotinfos is not None:
-            raise RuntimeError("multiple plotinfos provided")
+            raise RuntimeError("setplotinfo is called multiple times")
         self.plotinfos = plotinfos
 
     def dolayout(self, graph):

@@ -3,7 +3,7 @@
 default: manual.dvi
 
 clean:
-	-rm manual.log manual.aux manual.dvi manual.ps manual.pdf *.eps
+	-rm manual.log manual.dvi manual.ps manual.pdf *.eps *.aux
 
 all:
 	make clean

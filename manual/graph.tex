@@ -11,14 +11,12 @@ will suffice for future usage in quite different graph applications,
 \emph{e.g.} circular 2d graphs or even 3d graphs. We will describe
 those parts of the graph module here, which are in a totally usable
 state already and are hopefully not to be changed later on. However,
-future developments certainly will cause incompatibilities, for
-example they are expected to happen for automatic axis ticking (which
-will therefore not yet be covered within this manual). At least be
-warned: Nobody knows the hole list of things that will break. At the
-moment, keeping backwards compatibility in the graph module is not at
-all an issue. Although we do not yet claim any backwards compatibility
-for the future at all, the graph module is certainly one of the
-biggest construction sites within \PyX.
+future developments certainly will cause some incompatibilities. At
+least be warned: Nobody knows the hole list of things that will break.
+At the moment, keeping backwards compatibility in the graph module is
+not at all an issue. Although we do not yet claim any backwards
+compatibility for the future at all, the graph module is certainly one
+of the biggest construction sites within \PyX.
 
 The task of drawing graphs is splitted in quite some subtasks, which
 are implemented by classes of its own. We tried to make those
@@ -302,7 +300,7 @@ argument name&description\\
 \texttt{zerolineattrs}$^{3,4}$&stroke attributes for a grid line at axis value 0; default: \texttt{()}\\
 \texttt{baselineattrs}$^{3,4}$&stroke attributes for the axis baseline;\newline default: \texttt{canvas.linecap.square}\\
 \texttt{labeldist}&label distance from axis (visual length); default: \texttt{"0.3 cm"}\\
-\texttt{labelattrs}$^{2,4}$&text attributes for labels;\newline default: \texttt{((), tex.fontsize.footnotesize)}\\
+\texttt{labelattrs}$^{2,4}$&text attributes for labels;\newline default: \texttt{((textmodule.halign.center, textmodule.vshift.mathaxis), (textmodule.size.footnotesize, textmodule.halign.center, textmodule.vshift.mathaxis))}\\
 \texttt{labeldirection}$^4$&relative label direction (see below); default: \texttt{None}\\
 \texttt{labelhequalize}&set width of labels to its maximum (boolean); default: \texttt{0}\\
 \texttt{labelvequalize}&set height and depth of labels to their maxima (boolean); default: \texttt{1}\\
@@ -314,6 +312,7 @@ argument name&description\\
 \texttt{ratfracsuffixenum}&write suffix at the enumerator (boolean); default: \texttt{1}\\
 \texttt{ratfracover}&text for fraction line; default: \texttt{r"\textbackslash over"}\\
 \texttt{decfracpoint}&decimal point; default: \texttt{"."}\\
+\texttt{decfracequal}&equalize number of decimal digits (boolean); default: \texttt{0}\\
 \texttt{expfractimes}&text between factor and decimal power; default: \texttt{r"\textbackslash cdot"}\\
 \texttt{expfracpre1}&allow factor 1 before a decimal power (boolean); default: \texttt{0}\\
 \texttt{expfracminexp}&minimal exponent for decimal power; default: \texttt{4}\\
@@ -477,11 +476,11 @@ for the bar axis). By that, each subaxis can have different names, in
 particular different number of names.
 
 The only point left is the description of the specialized
-\verb|baraxispainter|. It works quite similar as the
-\verb|axispainter|. Thus the constructor have quite some parameters in
-common, namely \verb|titledist|, \verb|titleattrs|,
+\verb|baraxispainter|. It works quite similar to the
+\verb|axispainter|. Thus the constructors have quite some parameters
+in common, namely \verb|titledist|, \verb|titleattrs|,
 \verb|titledirection|, \verb|titlepos|, and \verb|baselineattrs|.
-Furthermore the two parameters \verb|innerticklength| and
+Furthermore the parameters \verb|innerticklength| and
 \verb|outerticklength| work like their counterparts in the
 \verb|axispainter|, but only plain values are allowed there (no
 tuples). However, they are both \verb|None| by default and no ticks
@@ -489,7 +488,7 @@ get plotted. Then there is a hole bunch of name
 attribute identifiers, namely \verb|namedist|, \verb|nameattrs|,
 \verb|namedirection|, \verb|namehequalize|, \verb|namevequalize| which
 are identical to their counterparts called \verb|label...| instead of
-\verb|name|. Last but not least, there is a parameter \verb|namepos|
+\verb|name...|. Last but not least, there is a parameter \verb|namepos|
 which is analogous to \verb|titlepos| and set to \verb|0.5| by
 default.
 
@@ -498,13 +497,14 @@ default.
 
 \subsection{List of points}
 
-Instances of the class \verb|data| link a \verb|datafile| and a
+Instances of the class \verb|data| link together a \verb|datafile| (or
+another instance of a class from the module \verb|data|) and a
 \verb|style| (see below; default is \verb|symbol|). The link object is
 needed in order to be able to plot several data from a singe file
-without reading the file several times which would just be a bad
-design. However, for easy usage, it is possible to provide a filename
-instead of a datafile as the first argument to the constructor of the
-class \verb|data| hiding the underlying \verb|datafile| instance
+without reading the file several times. However, for easy usage, it is
+possible to provide just a filename instead of a \verb|datafile|
+instance as the first argument to the constructor of the class
+\verb|data| thus hiding the underlying \verb|datafile| instance
 completely from view. This is the preferable solution as long as the
 datafile gets used only once.
 
@@ -512,23 +512,14 @@ The additional parameters of the constructor of the class \verb|data|
 are named parameters. The values of those parameters describe data
 columns which are linked to the names of the parameters within the
 style. The data columns can be identified directly via their number or
-title, or by means of mathematical expressions, as the following table
-will show by some examples.
+title, or by means of mathematical expression (as in the addcolumn
+method of the class \verb|data| in the module \verb|data|; see
+chapter~\ref{module:data}; indeed a addcolumn call takes place to
+evaluate mathematical expressions once and for all).
 
-\begin{center}
-\begin{tabular}{ll}
-selection method&example\\
-\hline
-as in \texttt{datafile.getcolumnno}&\texttt{data("test.dat", x=1,}\\
-&\texttt{\hphantom{data(}y="result", dy="delta")}\\
-by mathematical expressions&\texttt{data("test.dat", x="0.5*\$1",}\\
-&\texttt{\hphantom{data(}y="0.5*result", dy="0.5*a", a=3)}\\
-\end{tabular}
-\end{center}
-
-Note that mathematical expressions get evaluated by
-\verb|datafile.addcolumn| and thus the same column identifications
-become available.
+The constructors keyword argument \verb|title| however does not
+refer to a parameter of a style, but instead sets the title to be used
+in an axis key.
 
 \subsection{Functions}
 
@@ -540,8 +531,8 @@ parameter. The expression must be a string with exactly one equal sign
 and at the right side the expression must depend on exactly one
 variable axis identifier. Hence, a valid expression looks like
 \verb|"y=sin(x)"|. You can access own variables and functions by
-providing them as a dictionary to the constructors \verb|extern|
-argument.
+providing them as a dictionary to the constructors \verb|context|
+keyword argument.
 
 Additional named parameters of the constructor are:
 
@@ -553,11 +544,12 @@ argument name&default&description\\
 \texttt{max}&\texttt{None}&as above, but for the maximum\\
 \texttt{points}&\texttt{100}&number of points to be calculated\\
 \texttt{parser}&\texttt{mathtree.parser()}&parser for the mathematical expression\\
-\texttt{extern}&\texttt{None}&dictionary of extern variables and functions\\
+\texttt{context}&\texttt{None}&dictionary of extern variables and functions\\
+\texttt{title}&equal to the expression&title to be used in the graph key\\
 \end{tabularx}
 \medskip
 
-The expression evaluation takes place at a linear raster of the
+The expression evaluation takes place at a linear raster on the
 variable axis. More advanced methods (detection of rapidely changing
 functions, handling of divergencies) are likely to be added in future
 releases.
@@ -575,9 +567,9 @@ expression assigning functions to the axis identifiers in a quite
 pythonic tuple notation. As an example, such an expression could look
 like \verb|"x, y = sin(k), cos(3*k)"|.
 
-Additionally, the named parameters \verb|points|, \verb|parser|, and
-\verb|extern| behave like their equally named counterparts in
-\verb|function|.
+Additionally, the named parameters \verb|points|, \verb|parser|,
+\verb|context|, and \verb|title| behave like their equally named
+counterparts in \verb|function|.
 
 \section{Styles}
 \label{graph:styles}
@@ -638,10 +630,11 @@ data name&description\\
 
 \subsection{Lines}
 
-The class \verb|line| is inherited from \verb|symbol| and is restricted
-to line drawing. The constructor takes only \verb|lineattrs| and its
-default is set to \verb|(changelinestyle(), canvas.linejoin.round)|.
-The other features of the symbol style are turned off.
+The class \verb|line| is inherited from the class \verb|symbol| and
+restricted itself to line drawing. The constructor takes only the
+\verb|lineattrs| keyword argment, which is by default set to
+\verb|(changelinestyle(), canvas.linejoin.round)|. The other features
+of the symbol style are turned off.
 
 \subsection{Rectangles}
 
@@ -667,7 +660,7 @@ parameters \verb|textdx| and \verb|textdy| having a default of
 interpreted as visual length. A further named parameter
 \verb|textattrs| may contain a sequence of text attributes (or just a
 single attribute). The default for this parameter is
-\verb|tex.halign.center|. Furthermore the constructor of this class
+\verb|text.halign.center|. Furthermore the constructor of this class
 allows all other attributes of the class \verb|symbol|.
 
 \subsection{Arrows}
@@ -705,6 +698,7 @@ argument name&description\\
 \hline
 \texttt{fromzero}&bars start at zero (boolean); default: \texttt{1}\\
 \texttt{stacked}&stack bars (boolean/integer); for values bigger than 1 it is the number of bars to be stacked; default: \texttt{0}\\
+\texttt{skipmissing}&skip entries in the bar axis, when datapoints are missing; default: \texttt{1}\\
 \texttt{xbar}&bars parallel to the graphs x-direction (boolean); default: \texttt{0}\\
 \texttt{barattrs}&fill attributes; default: \texttt{(canvas.stroked(color.gray.black), changecolor.Rainbow())}\\
 \end{tabularx}
@@ -758,7 +752,29 @@ in combination with \verb|changestrokedfilled| and
 \verb|changefilledstroked|.
 
 \section{Keys}
-Sorry, there is not yet any support for graph keys.
+
+Graph keys can be created by instances of the class \verb|key|. Its
+constructor takes the following keyword arguments:
+
+\medskip
+\begin{tabularx}{\linewidth}{l>{\raggedright\arraybackslash}X}
+argument name&description\\
+\hline
+\texttt{dist}&(vertical) distance between the key entries (visual length); default: \texttt{"0.2 cm"}\\
+\texttt{pos}&\texttt{"tr"} (top right; default), \texttt{"br"} (bottom right), \texttt{"tl"} (top left), \texttt{"bl"} (bottom left)\\
+\texttt{hdist}&horizontal distance of the key (visual length); default: \texttt{"0.6 cm"}\\
+\texttt{vdist}&vertical distance of the key (visual length); default: \texttt{"0.4 cm"}\\
+\texttt{hinside}&align horizonally inside to the graph (boolean); default: \texttt{1}\\
+\texttt{vinside}&align vertically inside to the graph (boolean); default: \texttt{1}\\
+\texttt{symbolwidth}&width reserved for the symbol (visual length); default: \texttt{"0.5 cm"}\\
+\texttt{symbolheight}&height reserved for the symbol (visual length); default: \texttt{"0.25 cm"}\\
+\texttt{symbolspace}&distance between symbol and text (visual length); default: \texttt{"0.2 cm"}\\
+\texttt{textattrs}&text attributes (a list or a single entry); default: \texttt{text.vshift.mathaxis}\\
+\end{tabularx}
+\medskip
+
+The data description to be printed in the graph key is given by the
+title of the data drawn.
 
 \section{X-Y-Graph}
 
@@ -779,11 +795,8 @@ they are automatically set to instances of \verb|linaxis|. When no
 linkaxis to the axis \verb|x| and \verb|y|. However, you can turn off
 the automatism by setting those axes explicitly to \verb|None|.
 
-However, the constructor takes some more attributes, namely first of
-all a tex canvas. (This ugly construction is likely to be ommited in
-future versions of \PyX{} once a new \TeX{} binding becomes
-available.) Other parameters are named and listed in the following
-table:
+However, the constructor takes some more attributes listed in the
+following table:
 
 \medskip
 \begin{tabularx}{\linewidth}{ll>{\raggedright\arraybackslash}X}
@@ -796,6 +809,7 @@ argument name&default&description\\
 \texttt{ratio}&\texttt{goldenrule}&width/height ratio when only a width or height is provided\\
 \texttt{backgroundattrs}&\texttt{None}&background attributes for the graph area\\
 \texttt{axisdist}&\texttt{"0.8 cm"}&distance between axis (visual length)\\
+\texttt{key}&\texttt{None}&\texttt{key} instance for an automatic graph key\\
 \end{tabularx}
 \medskip
 
@@ -804,118 +818,34 @@ method. The first argument should be an instance of the data providing
 classes described in section~\ref{graph:data}. This first parameter
 can also be a list of those instances when you want to iterate the
 style you explicitly provide as a second parameter to the plot method.
-The plot method returns the style (or a list of styles when a data
-list was provided) which was used for plotting. Just as an example you
-can thus access the path of a line and fill areas with it and so on.
+The plot method returns the plotinfo instance (or a list of plotinfo
+instances when a data list was provided). The plotinfo class has
+attributes \verb|data| and \verb|style|, which provide access to the
+plotted data and the style, respectively. Just as an example, from the
+style you can access the path of the drawed line, fill areas with it
+etc.
 
-After the plot method was called once or several times, you should
-call the method \verb|finish|. (This is actually needed as long as a
-tex canvas gets used for text output and the tex canvas is inserted
-into the main canvas before the graph gets inserted.) Finishing a
-graph allows for the access to positioning routines which can be quite
-usefull to plot additional information into a graph.
-
-Sometimes it is also nice to partly finish a graph. By that you can
-even modify the order in which a graph performs its drawing process.
-By default the four methods \verb|dolayout|, \verb|dobackground|,
-\verb|doaxis|, and \verb|dodata| are called in that order. The method
-\verb|dolayout| must always be called first, but this is internally
-ensured once you call any of the routines yourself. After
-\verb|dolayout| gets called, the method \verb|plot| can not be used
-anymore.
+After the plot method was called once or several times, you may
+explicitly call the method \verb|finish|. Most of the graphs
+functionallity becomes available just after (partially) finishing the
+graph. A partial finish can even modify the order in which a graph
+performs its drawing process. By default the five methods
+\verb|dolayout|, \verb|dobackground|, \verb|doaxis|, \verb|dodata|,
+and \verb|dokey| are called in that order. The method \verb|dolayout|
+must always be called first, but this is internally ensured once you
+call any of the routines yourself. After \verb|dolayout| gets called,
+the method \verb|plot| can not be used anymore.
 
 To get a position within a graph as a tuple out of some axes values,
 the method \verb|pos| can be used. It takes two values for a position
 at the x and y axis. By default, the axes named \verb|x| or \verb|y|
-are used, but this is changed when the named parameters \verb|xaxis|
+are used, but this is changed when the keyword arguments \verb|xaxis|
 and \verb|yaxis| are set to other axes. The graph axes are available
 by their name using the dictionary \verb|axes|. Each axis has a method
-\verb|gridpath| which is set by the graph. It returns a gridpath for a
-given position at the axis.
+\verb|gridpath| which is set by the graph. It returns a path of a grid
+line for a given position at the axis.
 
-\section{Examples}
-
-\subsection{A minimal example: plot data from a file}
-
-We plot data from the file \verb|"graph.dat"|:
-
-\begin{quote}
-\begin{verbatim}
-1   2
-2   3
-3   8
-4  13
-5  18
-6  21
-\end{verbatim}
-\end{quote}
-
-The following script creates the file \verb|"graph.eps"|:
-
-\begin{quote}
-\begin{verbatim}
-from pyx import *
-
-c = canvas.canvas()
-t = c.insert(tex.tex())
-g = c.insert(graph.graphxy(t, width=10))
-g.plot(graph.data("graph.dat", x=1, y=2))
-g.finish()
-c.writetofile("graph")
-\end{verbatim}
-\end{quote}
-
-The result looks like:
-\begin{quote}
-\includegraphics{graph1}
-\end{quote}
-
-\subsection{A more advanced function plot}
-
-\begin{quote}
-\begin{verbatim}
-from pyx import *
-from pyx.graph import *
-
-c = canvas.canvas()
-t = tex.tex()
-
-a, b = 2, 9
-
-mypainter=axispainter(baselineattrs=canvas.earrow.normal)
-
-g = c.insert(graphxy(t, width=10, x2=None, y2=None,
-                     x=linaxis(min=0, max=10,
-                               part=manualpart(ticks=(frac(a, 1),
-                                                      frac(b, 1)),
-                                               texts=("a", "b")),
-                               painter=mypainter),
-                     y=linaxis(painter=mypainter,
-                               part=manualpart())))
-
-line = g.plot(function("y=(x-3)*(x-5)*(x-7)"))
-g.finish()
-
-pa = path.path(g.axes["x"].gridpath(a))
-pb = path.path(g.axes["x"].gridpath(b))
-(splita,), (splitpa,) = line.path.intersect(pa)
-(splitb,), (splitpb,) = line.path.intersect(pb)
-area = (pa.split(splitpa)[0] <<
-        line.path.split(splita, splitb)[1] <<
-        pb.split(splitpb)[0].reversed())
-area.append(path.closepath())
-g.stroke(area, canvas.linewidth.THick,
-         canvas.filled(color.gray(0.8)))
-t.text(g.pos(0.5*(a+b), 0)[0], 1,
-       r"\int_a^b f(x) {\rm d}x", tex.halign.center, tex.style.math)
-
-c.insert(t)
-c.writetofile("graph2")
-\end{verbatim}
-\end{quote}
-
-The result looks like:
-\begin{quote}
-\includegraphics{graph2}
-\end{quote}
+To manually add a graph key, use the \verb|addkey| method, which takes
+a \verb|key| instance first followed by several \verb|plotinfo|
+instances.
 

@@ -1045,7 +1045,8 @@ class _texmessageignore(_texmessageload):
     """validates any TeX/LaTeX response
     - this might be used, when the expression is ok, but no suitable texmessage
       parser is available
-    - PLEASE: consider writing a suitable texmessage parser --- and share it with others"""
+    - PLEASE: - consider writing suitable tex message parsers
+              - share your ideas/problems/solutions with others (use the PyX mailing lists)"""
 
     __implements__ = _Itexmessage
 
@@ -1287,10 +1288,10 @@ class _vshiftmathaxis(vshift):
 
 
 vshift.char = _vshiftchar
-vshift.bottomzero = _vshiftchar(0)
-vshift.middlezero = _vshiftchar(0.5)
+vshift.bottomzero = vshift.char(0)
+vshift.middlezero = vshift.char(0.5)
 vshift.centerzero = vshift.middlezero
-vshift.topzero = _vshiftchar(1)
+vshift.topzero = vshift.char(1)
 vshift.mathaxis = _vshiftmathaxis()
 
 
