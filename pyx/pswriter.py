@@ -33,6 +33,17 @@ class PSregistry:
         self.types = {}
 
     def add(self, resource):
+        # XXX actually, we do not need the types hash.
+        # We could just require unique ids across all resources 
+        # or we just use the tuple (type, id) as key:
+        # rkey = (type, id)
+        # if resourceshash.has_key(rkey):
+        #    resourceshash[rkey].merge(resource)
+        # else:
+        #    resourceshash[rkey] = resource
+        #    resourceslist.append(resource)
+        # AFAIKS, the same holds true for the PDFregistry.
+        # If there comes no objection, I'll rewrite this code 
         resources = self.types.setdefault(resource.type, {})
         if resources.has_key(resource.id):
             resources[resource.id].merge(resource)
@@ -54,15 +65,16 @@ class PSresource:
     """ a PostScript resource """
 
     def __init__(self, type, id):
-        # every PSresource has to have a type and a unique id
+        # Every PSresource has to have a type and a unique id.
+        # Resources with the same type and id will be merged
+        # when they are registered in the PSregistry
         self.type = type
         self.id = id
 
     def merge(self, other):
+        """ merge self with other, which has to be a resource of the same type and with
+        the same id"""
         pass
-
-    def register(self, registry):
-        raise NotImplementedError("register not implemented for %s" % repr(self))
 
     def outputPS(self, file):
         raise NotImplementedError("outputPS not implemented for %s" % repr(self))
@@ -76,13 +88,9 @@ class PSdefinition(PSresource):
     """ PostScript function definition included in the prolog """
 
     def __init__(self, id, body):
-        # every PSresource has to have a unique id
         self.type = "definition"
         self.id = id
         self.body = body
-
-    def register(self, registry):
-        registry.addresource(registry.definitions, self)
 
     def outputPS(self, file):
         file.write("%%%%BeginRessource: %s\n" % self.id)
@@ -122,9 +130,6 @@ class PSfontfile(PSresource):
             for i in range(len(self.usedchars)):
                 self.usedchars[i] = self.usedchars[i] or other.usedchars[i]
 
-    def register(self, registry):
-        registry.addresource(registry.fontfiles, self)
-
     def outputPS(self, file):
         file.write("%%%%BeginFont: %s\n" % self.fontname)
         if self.usedchars:
@@ -163,9 +168,6 @@ class PSfontencoding(PSresource):
         self.id = self.name = name
         self.filename = filename
 
-    def register(self, registry):
-        registry.addresource(registry.fontencodings, self)
-
     def outputPS(self, file):
         file.write("%%%%BeginProcSet: %s\n" % self.name)
         path = pykpathsea.find_file(self.filename, pykpathsea.kpse_tex_ps_header_format)
@@ -196,9 +198,6 @@ class PSfontreencoding(PSresource):
         self.id = self.fontname = fontname
         self.basefontname = basefontname
         self.encname = encname
-
-    def register(self, registry):
-        registry.addresource(registry.fontreencodings, self)
 
     def outputPS(self, file):
         file.write("%%%%BeginProcSet: %s\n" % self.fontname)
