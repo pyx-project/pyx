@@ -327,7 +327,7 @@ class arcn(pathel):
     def bbox(self, canvas, currentpoint, currentsubpath):
         return arc(self.x, self.y, 
                    self.r, 
-		   self.angle2, self.angle1).bbox(currentpoint,currentsubpath)
+		   self.angle2, self.angle1).bbox(canvas, currentpoint, currentsubpath)
 
     def write(self, canvas, file):
         file.write("%f %f %f %f %f arcn" % ( canvas.unit.pt(self.x),
@@ -813,65 +813,3 @@ def bpathelIntersect(canvas,
             return ( ( a_t0 + a_t * (a_t1 - a_t0),
                        b_t0 + b_t * (b_t1 - b_t0) ),
                    )
-    
-    
-if __name__=="__main__":
-    def testarc(x, y, phi1, phi2):
-        print "1 0 0 setrgbcolor"
-        print "newpath"
-        print "%f %f 48 %f %f arc" % (x, y, phi1, phi2)
-        print "stroke"
-        print "0 1 0 setrgbcolor"
-        print "newpath"
-        print barc(x,y,50,phi1,phi2)
-        print "stroke"
-
-    def testarcn(x, y, phi1, phi2):
-        print "1 0 0 setrgbcolor"
-        print "newpath"
-        print "%f %f 48 %f %f arcn" % (x, y, phi1, phi2)
-        print "stroke"
-        print "0 1 0 setrgbcolor"
-        print "newpath"
-        print barc(x,y,50,phi2,phi1)
-        print "stroke"
-       
-    print "%!PS-Adobe-2.0"
-    #print "newpath" 
-    #print arctobpath(100,100,100,0,90,dphimax=90)
-    #print arctobpath(100,100,100,0,90)
-    #print "stroke"
-
-##     testarc(100, 200, 0, 90)
-##     testarc(200, 200, -90, 90)
-##     testarc(300, 200, 270, 90)
-##     testarc(400, 200, 90, -90)
-##     testarc(500, 200, 90, 270)
-##     testarc(400, 300, 45, -90)
-##     testarc(200, 300, 45, -90-2*360)
-##     testarc(100, 300, 45, +90+2*360)
-
-##     testarcn(100, 500, 0, 90) 
-##     testarcn(200, 500, -90, 90) 
-##     testarcn(300, 500, 270, 90) 
-##     testarcn(400, 500, 90, -90) 
-##     testarcn(500, 500, 90, 270) 
-##     testarcn(400, 600, 45, -90) 
-##     testarcn(200, 600, 45, -90-360) 
-##     testarcn(100, 600, 45, -90+360) 
-
-    p=path([moveto(100,100), rlineto(20,20), arc(150,120,10,30,300),closepath()])
-    bpsplit=p.bpath().MidPointSplit()
-    print "stroke"
-    print "1 0 0 setrgbcolor"
-    print "newpath"
-    print bpsplit
-    print "stroke"
-
-#    q = path([moveto(120,100), rlineto(20,20), arc(150,120,10,30,300),closepath()])
-
-#    p=path([arc(120,120,10,30,360)])
-#    p.ConvertToBezier()
-#    print p.bpath
-#    print "stroke"
-    print "showpage"
