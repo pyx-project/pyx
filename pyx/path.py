@@ -233,8 +233,6 @@ class closepath(normpathel):
 
         return _line(tx, ty, tx+tvectx, tx+tvecty)
 
-        return (unit.t_pt(x1-x0), unit.t_pt(y1-y0))
-
     def write(self, file):
         file.write("closepath\n")
 
@@ -333,7 +331,7 @@ class _lineto(normpathel):
         tx, ty = x0 + (self.x-x0)*t, y0 + (self.y-y0)*t
         tvectx, tvecty = self.x-x0, self.y-y0
 
-        return _line(tx, ty, tx+tvectx, tx+tvecty)
+        return _line(tx, ty, tx+tvectx, ty+tvecty)
 
     def write(self, file):
         file.write("%f %f lineto\n" % (self.x, self.y) )
@@ -413,7 +411,7 @@ class _curveto(normpathel):
                   2*( 3*y0-6*self.y1+3*self.y2        )*t +
                     (-3*y0+3*self.y1                  ))
 
-        return _line(tpx, tpy, tvectx, tvecty)
+        return _line(tpx, tpy, tpx+tvectx, tpy+tvecty)
 
     def write(self, file):
         file.write("%f %f %f %f %f %f curveto\n" % ( self.x1, self.y1,

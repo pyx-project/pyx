@@ -58,23 +58,22 @@ class fix_word:
             self.sign = 1
         else:
             self.sign = -1
-            
+
         self.precomma = abs(word) >> 20
         self.postcomma = abs(word) & 0xFFFFF
-            
+
     def __float__(self):
         return self.sign * (self.precomma + 1.0*self.postcomma/0xFFFFF)
 
     def __mul__(self, other):
         # hey, it's Q&D
         result = fix_word(0)
-        
+
         result.sign = self.sign*other.sign
         c = self.postcomma*other.precomma + self.precomma*other.postcomma
         result.precomma = self.precomma*other.precomma + (c >> 20)
-        result.postcomma = c & 0xFFFFF + ((self.postcomma*other.postcomma)>>40)
+        result.postcomma = c & 0xFFFFF + ((self.postcomma*other.postcomma) >> 40)
         return result
-        
 
 
 class char_info_word:
@@ -137,7 +136,7 @@ class TFMFile:
         #
 	# read pre header
         #
-        
+
 	self.lf = self.file.readint16()
 	self.lh = self.file.readint16()
 	self.bc = self.file.readint16()
@@ -197,7 +196,7 @@ class TFMFile:
                     facechar -= 2
                 else:
                     self.face = "M" + self.face
-                        
+
                 if facechar==1:
                     self.face = self.face[0] + "I" + self.face[1]
                 else:
@@ -311,8 +310,6 @@ class Font:
 
     def getitalic(self, charcode):
         return self.tfmfile.italic[self.char_info[charcode].italic_index] * self.designsize
-
-        
 
 
 class DVIFile:
