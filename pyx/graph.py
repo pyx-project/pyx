@@ -145,7 +145,7 @@ class GraphXY(Graph):
 ###############################################################################
 # data part
 
-from fit import *
+from mathtree import *
 import re
 
 CommentPattern = re.compile(r"\s*(#|!)+\s*")
