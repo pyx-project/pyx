@@ -384,7 +384,7 @@ def _arrowhead(anormpath, size, angle, constrictionlen, reversed):
     if reversed:
         anormpath = anormpath.reversed()
     alen = anormpath.arclentoparam(size)
-    tx, ty = anormpath.begin()
+    tx, ty = anormpath.atbegin()
 
     # now we construct the template for our arrow but cutting
     # the path a the corresponding length
@@ -400,7 +400,7 @@ def _arrowhead(anormpath, size, angle, constrictionlen, reversed):
     if constrictionlen is not None:
         # constriction point (cx, cy) lies on path
         cx, cy = anormpath.at(anormpath.arclentoparam(constrictionlen))
-        arrowcr= path.line(*(arrowr.end() + (cx,cy)))
+        arrowcr= path.line(*(arrowr.atend() + (cx,cy)))
         arrow = arrowl.reversed() << arrowr << arrowcr
     else:
         arrow = arrowl.reversed() << arrowr
@@ -466,9 +466,7 @@ class arrow(deco, attr.attr):
             # exclude first part of the first normsubpath from stroking
             dp.excluderange(0, min(self.size, constrictionlen))
         else:
-            # XXX use end param methods
-            arclen = anormpath.arclen()
-            dp.excluderange(arclen-min(self.size, constrictionlen), arclen)
+            dp.excluderange(anormpath.end() - min(self.size, constrictionlen), anormpath.end())
 
         return dp
 
