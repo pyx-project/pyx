@@ -17,7 +17,7 @@ class TexCmdSaveStruc:
 
             # typically Level 1 shows all interesting messages (errors,
             # overfull boxes etc.) and Level 2 shows only error messages
-            # Level 1 will be the default Level
+            # Level 1 is the default Level
 
 class TexException(Exception):
     pass
@@ -115,18 +115,18 @@ class Canvas(Globex):
         
     def TexAddToFile(self, Cmd, IgnoreMsgLevel):
 
-        # check the proper usage of "{" and "}" in Cmd
+        # check for the proper usage of "{" and "}" in Cmd
         if self.TexBracketCheck:
             depth = 0
             esc = 0
             for c in Cmd:
-                if c=="{" and not esc:
+                if c == "{" and not esc:
                     depth = depth + 1
-                if c=="}" and not esc:
+                if c == "}" and not esc:
                     depth = depth - 1
                     if depth < 0:
                         raise TexRightParenthesisError
-                if c=="\\":
+                if c == "\\":
                     esc = (esc + 1) % 2
                 else:
                     esc = 0
@@ -146,6 +146,7 @@ class Canvas(Globex):
         self.TexCmds = self.TexCmds + [ TexCmdSaveStruc(Cmd, MarkerBegin, MarkerEnd, Stack, IgnoreMsgLevel), ]
 
     def TexRun(self):
+        # TODO: clean file handling. Be sure to delete all temporary files (signal handling???) and check for the files before reading them (including the dvi-file before it's converted by dvips)
 
         import os
 
@@ -197,33 +198,74 @@ class Canvas(Globex):
 \\end{document}""")
         file.close()
 
-        # TODO: ordentliche Fehlerbehandlung,
-        #       Auswertung der Marker auf Fehler beim TeX'en
         if os.system("latex " + self.BaseFilename + " > " + self.BaseFilename + ".stdout 2> " + self.BaseFilename + ".stderr"):
-            assert "LaTeX exit code not zero\nCheck your environment and the file " + self.BaseFilename + ".log."
+            print "The LaTeX exit code was non-zero. This may happen due to mistakes within your\nLaTeX commands as listed below. Otherwise you have to check your local\nenvironment and the files \"" + self.BaseFilename + ".tex\" and \"" + self.BaseFilename + ".log\" manually."
 
-        file = open(self.BaseFilename + ".stdout", "r")
-        for Cmd in self.TexCmds:
-            line = file.readline()
-            while line[:-1] != Cmd.MarkerBegin:
+        try:
+            # check LaTeX output
+            file = open(self.BaseFilename + ".stdout", "r")
+            for Cmd in self.TexCmds:
+            # TODO: readline blocks if eof is reached, but we want an exception
+
+                # read markers and identify the message
                 line = file.readline()
-            msg = ""
-            line = file.readline()
-            while line[:-1] != Cmd.MarkerEnd:
-                msg = msg + line
+                while line[:-1] != Cmd.MarkerBegin:
+                    line = file.readline()
+                msg = ""
                 line = file.readline()
-            if msg != "":
-                import traceback
-                print "Traceback (innermost last):"
-                traceback.print_list(Cmd.Stack)
-                print "LaTeX Message (we don't check the IgnoreMessageLevel yet but print everything):"
-                print msg
-        file.close()
+                while line[:-1] != Cmd.MarkerEnd:
+                    msg = msg + line
+                    line = file.readline()
+
+                # check if message can be ignored
+                if Cmd.IgnoreMsgLevel == 0:
+                    doprint = 0
+                    for c in msg:
+                        if c not in " \t\r\n":
+                            doprint = 1
+                elif Cmd.IgnoreMsgLevel == 1:
+                    depth = 0
+                    doprint = 0
+                    for c in msg:
+                        if c == "(":
+                            depth = depth + 1
+                        elif c == ")":
+                            depth = depth - 1
+                            if depth < 0:
+                                doprint = 1
+                        elif depth == 0 and c not in " \t\r\n":
+                            doprint = 1
+                elif Cmd.IgnoreMsgLevel == 2:
+                    doprint = 0
+                    import string
+                    # the "\n" + msg instead of msg itself is needed, if
+                    # the message starts with "! "
+                    if string.find("\n" + msg, "\n! ") != -1 or string.find(msg, "\r! ") != -1:
+                        doprint = 1
+                elif Cmd.IgnoreMsgLevel == 3:
+                    doprint = 0
+                else:
+                    print "Traceback (innermost last):"
+                    traceback.print_list(Cmd.Stack)
+                    assert "IgnoreMsgLevel not in range(4)"
+
+                # print the message if needed
+                if doprint:
+                    import traceback
+                    print "Traceback (innermost last):"
+                    traceback.print_list(Cmd.Stack)
+                    print "LaTeX Message:"
+                    print msg
+            file.close()
+
+        except IOError:
+            print "Error reading the LaTeX output. Check your local environment and the files\n\"" + self.BaseFilename + ".tex\" and \"" + self.BaseFilename + ".log\"."
+            raise
         
         # TODO: ordentliche Fehlerbehandlung,
         #       Schnittstelle zur Kommandozeile
-        if os.system("dvips -P eps -T" + str(self.Width) + "cm," + str(self.Height) + "cm -o " + self.BaseFilename + ".tex.eps " + self.BaseFilename + " > /dev/null 2>&1"):
-            assert "dvips exit code not zero"
+        if os.system("dvips -P pyx -T" + str(self.Width) + "cm," + str(self.Height) + "cm -o " + self.BaseFilename + ".tex.eps " + self.BaseFilename + " > /dev/null 2>&1"):
+            assert "dvips exit code non-zero"
         
     TexResults = None
 
@@ -234,7 +276,8 @@ class Canvas(Globex):
                 file = open(self.BaseFilename + ".size", "r")
                 self.TexResults = file.readlines()
                 file.close()
-            except IOError: self.TexResults = [ ]
+            except IOError:
+                self.TexResults = [ ]
 
         for TexResult in self.TexResults:
             if TexResult[:len(Str)] == Str:
