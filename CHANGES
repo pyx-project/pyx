@@ -5,6 +5,7 @@ PyX
   - allow division of length by numbers
   - return linewidth upon calculation with linewidths
   - fix canvas transformations
+  - 3d graphs (work in progress)
 
 0.1.1 (????/??/??):
   - transformation bug fixed (#624068)

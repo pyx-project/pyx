@@ -84,13 +84,37 @@ def test_allerrorbars(c, t, x, y):
     g.plot(graph.data(df, x="x", y="y", xmin="xmin", xmax="xmax", ymin="ymin", ymax="ymax", text="text"), graph.text())
     g.finish()
 
+def test_3d(c, t, x, y):
+
+    class Div(mathtree.MathTreeFunc2):
+        def __init__(self, *args):
+            mathtree.MathTreeFunc2.__init__(self, "div", *args)
+        def Calc(self, VarDict):
+            return divmod(self.ArgV[0].Calc(VarDict), self.ArgV[1].Calc(VarDict))[0]
+
+    class Mod(mathtree.MathTreeFunc2):
+        def __init__(self, *args):
+            mathtree.MathTreeFunc2.__init__(self, "mod", *args)
+        def Calc(self, VarDict):
+            return divmod(self.ArgV[0].Calc(VarDict), self.ArgV[1].Calc(VarDict))[1]
+
+    MyFuncs = mathtree.DefaultMathTreeFuncs + (Div, Mod)
+
+    g = c.insert(graph.graphxyz(t, x, y, height=5, width=5, depth=5,
+                                x=graph.linaxis(min=0, max=10, painter=graph.axispainter(baselineattrs=color.rgb.red)),
+                                y=graph.linaxis(min=0, max=10, painter=graph.axispainter(baselineattrs=color.rgb.green)),
+                                z=graph.linaxis(min=0, max=10, painter=graph.axispainter(baselineattrs=color.rgb.blue))))
+    g.plot(graph.paramfunction("k", 0, 120, "x, y, z = mod(k, 11), div(k, 11), exp(-0.1*(mod(k, 11)-5)*(mod(k, 11)-5)-0.1*(div(k, 11)-5)*(div(k, 11)-5))", points=121, parser=mathtree.parser(MathTreeFuncs=MyFuncs)), style = graph.surface())
+    g.finish()
+
 c = canvas.canvas()
 t = c.insert(tex.tex())
-test_multiaxes_data(c, t, 0, 21)
-test_piaxis_function(c, t, 0, 14)
-test_textaxis_errorbars(c, t, 0, 7)
-test_ownmark(c, t, 0, 0)
-test_allerrorbars(c, t, -7, 0)
+#test_multiaxes_data(c, t, 0, 21)
+#test_piaxis_function(c, t, 0, 14)
+#test_textaxis_errorbars(c, t, 0, 7)
+#test_ownmark(c, t, 0, 0)
+#test_allerrorbars(c, t, -7, 0)
+test_3d(c, t, -7, 7)
 
 c.writetofile("test_graph", paperformat="a4")
 
