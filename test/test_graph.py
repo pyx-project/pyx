@@ -15,7 +15,7 @@ def test_multiaxes_data(c, t, x, y):
                                                 painter=graph.axispainter(titlestyles=tex.direction(45))),
                                y5=graph.logaxis(title="$P_5$")))
     df = datafile.datafile("testdata")
-    g.plot(graph.data(df, x=1, y=3), style=graph.mark(changers=graph.changecolor.redgreen))
+    g.plot(graph.data(df, x=1, y=3), style=graph.mark(symbolstyles=(graph.changecolor.redgreen, graph.changestrokedfilled), marker=graph.mark.square2))
     g.plot(graph.data(df, x=1, y2=4))
     g.plot(graph.data(df, x=1, y3=5))
     g.plot(graph.data(df, x=1, y5=6))
@@ -26,7 +26,7 @@ def test_piaxis_function(c, t, x, y):
                                x=graph.linaxis(min=0, max=2*math.pi, factor=math.pi, suffix=r"\pi")))
     colors = graph.changecolor.rainbow
     g.plot(graph.function("y=sin(x)", points=1000),
-           style=graph.line(changers=(graph.changecolor.rainbow, graph.changelinestyle.default)))
+           style=graph.line(linestyles=(graph.changecolor.rainbow, graph.changelinestyle)))
     for i in range(1, 20):
         g.plot(graph.function("y=sin(x-%i*pi/10)" % i))
     g.drawall()
@@ -46,7 +46,7 @@ def test_textaxis_errorbars(c, t, x, y):
 
 def test_ownmark(c, t, x, y):
 
-    class arrowmark(graph._style):
+    class arrowmark:
 
         def __init__(self, size = "0.2 cm"):
             self.size_str = size
@@ -99,10 +99,10 @@ def test_ownmark(c, t, x, y):
 
     MyFuncs = mathtree.DefaultMathTreeFuncs + (Div, Mod)
 
-    line1 = graph.line(dodrawline = 0)
-    line2 = graph.line(dodrawline = 0)
-    line3 = graph.line(dodrawline = 0)
-    line4 = graph.line(dodrawline = 0)
+    line1 = graph.line(linestyles=None)
+    line2 = graph.line(linestyles=None)
+    line3 = graph.line(linestyles=None)
+    line4 = graph.line(linestyles=None)
 
     g = c.insert(graph.graphxy(t, x, y, height=5))
     g.plot(graph.paramfunction("k", 0, 120, "x, y, angle = mod(k, 11), div(k, 11), 0.05*k", points=121, parser=mathtree.parser(MathTreeFuncs=MyFuncs)), style = arrowmark())
@@ -120,10 +120,10 @@ def test_ownmark(c, t, x, y):
     p2=line2.path.reversed()
     p3=line3.path.reversed()
     p4=line4.path
-    seg1a, seg2a = p1.intersect(p2)[0]
-    seg2b, seg3b = p2.intersect(p3)[0]
-    seg3c, seg4c = p3.intersect(p4)[0]
-    seg4d, seg1d = p4.intersect(p1)[0]
+    (seg1a,), (seg2a,) = p1.intersect(p2)
+    (seg2b,), (seg3b,) = p2.intersect(p3)
+    (seg3c,), (seg4c,) = p3.intersect(p4)
+    (seg4d,), (seg1d,) = p4.intersect(p1)
     g.stroke(p1.split(seg1a, seg1d)[1] <<
              p4.split(seg4d, seg4c)[1] <<
              p3.split(seg3c, seg3b)[1] <<

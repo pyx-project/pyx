@@ -1551,7 +1551,9 @@ class graphxy(canvas.canvas):
 ################################################################################
 
 
-class changeattrref:
+class _changeattr: pass
+
+class changeattrref(_changeattr):
 
     def __init__(self, ref, index):
         self.ref = ref
@@ -1567,7 +1569,7 @@ class changeattrref:
         return self.ref.next()
 
 
-class changeattr:
+class changeattr(_changeattr):
 
     def __init__(self):
         self.len = 1
@@ -1583,8 +1585,48 @@ class changeattr:
         self.len += 1
         return changeattrref(self, index)
 
-    def _thisattr(self, index):
-        raise Exception("to be defined in derived classes")
+    # def _attr(self, index):
+    # to be defined in derived classes
+
+
+# helper routines for a using attrs
+
+def _getattr(attr):
+    """get attr out of a attr/changeattr"""
+    if isinstance(attr, _changeattr):
+        return attr.attr()
+    return attr
+
+
+def _nextattr(attr):
+    """perform next to a attr/changeattr"""
+    if isinstance(attr, _changeattr):
+        return attr.next()
+    return attr
+
+
+def _getattrs(attrs):
+    """get attrs out of a sequence of attr/changeattr"""
+    if attrs is not None:
+        result = []
+        for attr in _ensuresequence(attrs):
+            if isinstance(attr, _changeattr):
+                result.append(attr.attr())
+            else:
+                result.append(attr)
+        return result
+
+
+def _nextattrs(attrs):
+    """perform next to a sequence of attr/changeattr"""
+    if attrs is not None:
+        result = []
+        for attr in _ensuresequence(attrs):
+            if isinstance(attr, _changeattr):
+                result.append(attr.next())
+            else:
+                result.append(attr)
+        return result
 
 
 class changecolor(changeattr):
@@ -1614,6 +1656,7 @@ changecolor.reversehue     = changecolor(color.gradient.reversehue)
 
 
 class changesequence(changeattr):
+    """cycles through a sequence"""
 
     def __init__(self, *sequence):
         changeattr.__init__(self)
@@ -1624,15 +1667,14 @@ class changesequence(changeattr):
         return self.sequence[index % len(self.sequence)]
 
 
-class changelinestyle(changesequence): pass
-
-changelinestyle.default = changelinestyle(canvas.linestyle.solid,
-                                          canvas.linestyle.dashed,
-                                          canvas.linestyle.dotted,
-                                          canvas.linestyle.dashdotted)
+changelinestyle = changesequence(canvas.linestyle.solid,
+                                 canvas.linestyle.dashed,
+                                 canvas.linestyle.dotted,
+                                 canvas.linestyle.dashdotted)
 
 
-class changemarker(changesequence): pass
+changestrokedfilled = changesequence(canvas.stroked(), canvas.filled())
+changefilledstroked = changesequence(canvas.filled(), canvas.stroked())
 
 
 ################################################################################
@@ -1640,25 +1682,7 @@ class changemarker(changesequence): pass
 ################################################################################
 
 
-class _style:
-
-    def __init__(self, changers=()):
-        self.changers = _ensuresequence(changers)
-
-    def changeattrs(self):
-        if self.changers is not None:
-            return [changer.attr() for changer in self.changers]
-        else:
-            return None
-
-    def nextchangers(self):
-        if self.changers is not None:
-            return [changer.next() for changer in self.changers]
-        else:
-            return None
-
-
-class mark(_style):
+class mark:
 
     def _cross(self, x, y):
         return (path._moveto(x-0.5*self.size, y-0.5*self.size),
@@ -1696,26 +1720,28 @@ class mark(_style):
                 path._lineto(x, y+0.930604859*self.size),
                 path.closepath())
 
-    cross = changemarker(_cross, _plus, _square, _triangle, _circle, _diamond)
-    plus = changemarker(_plus, _square, _triangle, _circle, _diamond, _cross)
-    square = changemarker(_square, _triangle, _circle, _diamond, _cross, _plus)
-    triangle = changemarker(_triangle, _circle, _diamond, _cross, _plus, _square)
-    circle = changemarker(_circle, _diamond, _cross, _plus, _square, _triangle)
-    diamond = changemarker(_diamond, _cross, _plus, _square, _triangle, _circle)
+    cross = changesequence(_cross, _plus, _square, _triangle, _circle, _diamond)
+    plus = changesequence(_plus, _square, _triangle, _circle, _diamond, _cross)
+    square = changesequence(_square, _triangle, _circle, _diamond, _cross, _plus)
+    triangle = changesequence(_triangle, _circle, _diamond, _cross, _plus, _square)
+    circle = changesequence(_circle, _diamond, _cross, _plus, _square, _triangle)
+    diamond = changesequence(_diamond, _cross, _plus, _square, _triangle, _circle)
+    square2 = changesequence(_square, _square, _triangle, _triangle, _circle, _circle, _diamond, _diamond)
+    triangle2 = changesequence(_triangle, _triangle, _circle, _circle, _diamond, _diamond, _square, _square)
+    circle2 = changesequence(_circle, _circle, _diamond, _diamond, _square, _square, _triangle, _triangle)
+    diamond2 = changesequence(_diamond, _diamond, _square, _square, _triangle, _triangle, _circle, _circle)
 
-    def __init__(self, size="0.12 cm", errorscale=1/goldenrule, symbolstyles=canvas.stroked(), marker=cross, **attr):
-        _style.__init__(self, **attr)
+    def __init__(self, size="0.12 cm", errorscale=1/goldenrule, symbolstyles=canvas.stroked(), marker=cross):
         self.marker = marker
         self.size_str = size
         self.errorscale = errorscale
-        self.symbolstyles = _ensuresequence(symbolstyles)
+        self.symbolstyles = symbolstyles
 
     def next(self):
-        return mark(size=self.size_str,
-                    errorscale=self.errorscale,
-                    marker=self.marker.next(),
-                    symbolstyles=self.symbolstyles,
-                    changers=self.nextchangers())
+        return mark(size=_nextattr(self.size_str),
+                    errorscale=_nextattr(self.errorscale),
+                    marker=_nextattr(self.marker),
+                    symbolstyles=_nextattrs(self.symbolstyles))
 
     def setcolumns(self, graph, columns):
         self.xindex = self.dxindex = self.dxminindex = self.dxmaxindex = None
@@ -1775,9 +1801,9 @@ class mark(_style):
     def drawpointlist(self, graph, points):
         xaxis = graph.axes[self.xkey]
         yaxis = graph.axes[self.ykey]
-        self.size = unit.topt(unit.length(self.size_str, default_type="v"))
+        self.size = unit.topt(unit.length(_getattr(self.size_str), default_type="v"))
         if self.symbolstyles is not None:
-            symbolstyles = self.changeattrs() + list(self.symbolstyles)
+            symbolstyles = _getattrs(self.symbolstyles)
 
         for point in points:
             try:
@@ -1818,20 +1844,16 @@ class mark(_style):
             except (TypeError, ValueError):
                 pass
             if self.symbolstyles is not None:
-                symbolstyles = self.changeattrs() + list(self.symbolstyles)
-                graph.draw(path.path(*self.marker.attr()(self, x, y)), *symbolstyles)
+                graph.draw(path.path(*_getattr(self.marker)(self, x, y)), *symbolstyles)
 
 
-class line(_style):
+class line:
 
-    def __init__(self, linestyles=(), dodrawline=1, **args):
-        _style.__init__(self, **args)
+    def __init__(self, linestyles=()):
         self.linestyles = linestyles
-        self.dodrawline = dodrawline
 
     def next(self):
-        return line(linestyles=self.linestyles,
-                    changers=self.nextchangers())
+        return line(linestyles=_nextattrs(self.linestyles))
 
     def setcolumns(self, graph, columns):
         self.xindex = self.yindex = None
@@ -1881,8 +1903,7 @@ class line(_style):
                 moveto = 1
         self.path = path.path(*line)
         if self.linestyles is not None:
-            linestyles = self.changeattrs() + list(self.linestyles)
-            graph.stroke(self.path, *linestyles)
+            graph.stroke(self.path, *_getattrs(self.linestyles))
 
 
 ################################################################################
