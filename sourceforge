@@ -1,7 +1,7 @@
 > 1. Project Full Name
-> 
+
 PyX
-> 
+
 > 2. Project Purpose and Summarization
 > 
 > Please provide detailed, accurate description of your project and what
@@ -10,11 +10,11 @@ PyX
 > SourceForge, and later, to ensure that you are using the services in the
 > intended way. This description will not be used as a public description of your
 > project. It must be written in English.
-> 
-PyX is a python package to create encapsulated postscript figures. It provides
-classes and methods to access basic postscript functionality at an abstract
+
+PyX is a python package to create encapsulated PostScript figures. It provides
+classes and methods to access basic PostScript functionality at an abstract
 level. At the same time the emerging structures are very convenient to produce
-all kind of drawings in a non-interactive way. In combination with the python
+all kinds of drawings non-interacitively. In combination with the python
 language itself the user can just code any complexity of the figure wanted.
 Additionally an TeX/LaTeX interface leads to the famous high quality
 typesetting within the figures.
@@ -24,14 +24,14 @@ high level functionality for complex tasks like 2d plots in publication-ready
 quality.
 
 The project started in the middle of last year and is developed by Jörg Lehmann
-and André Wobst. While we want to use pyx ourself (and already do) we want to
+and André Wobst. While we want to use PyX ourself (and already do) we want to
 take the opportunity to share our project with others under the GPL. We would
 greatly appreciate sourceforge for the hosting of this project.
-> 
+
 > 3. License
-> 
+
 GPL
-> 
+
 > 4. Project Public Description
 > 
 > This is the description of your project which will be shown on the Project
@@ -39,12 +39,9 @@ GPL
 > formal as Project Purpose description (step 2), so feel free to use concise and
 > catchy wording. Maximum length is 255 chars.
 
-PyX is a python package to create encapsulated postscript figures. As
-basic functionality it provides both an abstraction of PostScript and an
-TeX/LaTeX interface. (2d-plots)
-- abtraction of postscript in python classes
-- TeX/LaTeX interface
-- 2d plots
+PyX is a python package to create encapsulated PostScript figures. It provides
+both an abstraction of PostScript and an TeX/LaTeX interface. Complex tasks
+like 2d plots in publication-ready quality are build out of these primitives.
 
 > 5. Project Unix Name
 > 
@@ -66,5 +63,5 @@ TeX/LaTeX interface. (2d-plots)
 >     * A CVS Repository root of /cvsroot/unixname at cvs.unixname.sourceforge.net
 >     * Shell access to unixname.sourceforge.net
 >     * Search engines throughout the site
-> 
+
 pyx
