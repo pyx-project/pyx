@@ -228,27 +228,21 @@ class graphxy(canvas.canvas):
         if not self.removedomethod(self.dolayout): return
 
         # count the usage of styles and perform selects
-        # TODO: move it into the styles
         styletotal = {}
+        def stylesid(styles):
+            return ":".join([str(id(style)) for style in styles])
         for data in self.plotdata:
-            for style in data.styles:
-                try:
-                    styletotal[id(style)] += 1
-                except:
-                    styletotal[id(style)] = 1
+            try:
+                styletotal[stylesid(data.styles)] += 1
+            except:
+                styletotal[stylesid(data.styles)] = 1
         styleindex = {}
         for data in self.plotdata:
-            for style in data.styles:
-                try:
-                    styleindex[id(style)] += 1
-                except:
-                    styleindex[id(style)] = 0
-            index = styleindex[id(data.styles[0])]
-            total = styletotal[id(data.styles[0])]
-            for style in data.styles[1:]:
-                if index != styleindex[id(style)] or total != styletotal[id(style)]:
-                    raise RuntimeError("inconsistent style modification not yet supported")
-            data.selectstyles(self, index, total)
+            try:
+                styleindex[stylesid(data.styles)] += 1
+            except:
+                styleindex[stylesid(data.styles)] = 0
+            data.selectstyles(self, styleindex[stylesid(data.styles)], styletotal[stylesid(data.styles)])
 
         # adjust the axes ranges
         for step in range(3):

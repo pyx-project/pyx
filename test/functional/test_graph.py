@@ -27,7 +27,7 @@ def test_multiaxes_data(c, x, y):
 def test_piaxis_function(c, x, y):
     xaxis=graph.axis.lin(min=0, max=2*math.pi, divisor=math.pi, texter=graph.axis.texter.rational(suffix=r"\pi"))
     g = c.insert(graph.graphxy(x, y, height=5, x=xaxis))
-    # g = c.insert(graph.graphxy(x, y, height=5, x=xaxis, x2=xaxis)) # TODO
+    #g = c.insert(graph.graphxy(x, y, height=5, x=xaxis, x2=xaxis)) # TODO
     g.plot([graph.data.function("y=sin(x-i*pi/10)", context={"i": i}) for i in range(20)],
            styles=[graph.style.line(lineattrs=[color.palette.Hue])])
     g.finish()
@@ -37,7 +37,7 @@ def test_textaxis_errorbars(c, x, y):
                                x=graph.axis.lin(min=0.5, max=12.5, parter=graph.axis.parter.lin("1", extendtick=None)),
                                y=graph.axis.lin(min=-10, max=30, title="Temperature [$^\circ$C]"),
                                x2=graph.axis.lin(), y2=graph.axis.lin()))
-    #g.plot(graph.data.file("data/testdata2", x=0, ymin="min", ymax="max"), [graph.style.errorbar()])
+    g.plot(graph.data.file("data/testdata2", x=0, ymin="min", ymax="max"), [graph.style.errorbar()])
     g.plot(graph.data.paramfunction("k", 0, 2*math.pi, "x2, y2, dx2, dy2 = 0.8*sin(k), 0.8*cos(3*k), 0.05, 0.05"), [graph.style.symbol(symbol=graph.style._trianglesymbol), graph.style.errorbar()])
     g.finish()
 
