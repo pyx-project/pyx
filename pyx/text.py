@@ -507,7 +507,7 @@ def readfontmap(filenames):
     return fontmap
 
 
-fontmap = readfontmap(config.fonts.fontmaps)
+fontmap = readfontmap(config.get("text", "fontmaps", "psfonts.map").split())
 
 class Font:
     def __init__(self, name, c, q, d, tfmconv, debug=0):
@@ -655,8 +655,8 @@ _POS_Z           = 5
 _READ_PRE       = 1
 _READ_NOPAGE    = 2
 _READ_PAGE      = 3
-_READ_POST      = 4
-_READ_POSTPOST  = 5
+_READ_POST      = 4 # XXX not used
+_READ_POSTPOST  = 5 # XXX not used
 _READ_DONE      = 6
 
 
@@ -684,10 +684,20 @@ class _restoretrafo(base.PSOp):
 
 class DVIFile:
 
-    def __init__(self, filename, debug=0):
+    def __init__(self, filename, debug=0, ipcmode=0):
+        """ initializes the instance
+
+        Usually, the readfile method should be called once
+        immediately after this constructor. However, if you
+        set ipcmode, you need to call readpages as often as
+        there are pages in the dvi-file plus 1 (for properly
+        closing the dvi-file).
+        """
+
         self.filename = filename
+        self.file = None
         self.debug = debug
-        self.readfile()
+        self.ipcmode = ipcmode
 
     # helper routines 
 
@@ -891,12 +901,11 @@ class DVIFile:
                 pass
             elif cmd == _DVI_BOP:
                 self.flushout()
+                pagenos = [file.readuint32() for i in range(10)]
+                if pagenos[:3] != [ord("P"), ord("y"), ord("X")] or pagenos[4:] != [0, 0, 0, 0, 0, 0]:
+                    raise DVIError("Page in dvi file is not a PyX page.")
                 if self.debug:
-                    print "%d: beginning of page" % self.filepos,
-                    print file.readuint32()
-                    for i in range(9): file.readuint32()
-                else:
-                    for i in range(10): file.readuint32()
+                    print "%d: beginning of page %i" % (self.filepos, pagenos[0])
                 file.readuint32()
                 return _READ_PAGE
             elif cmd == _DVI_POST:
@@ -1057,44 +1066,60 @@ class DVIFile:
         of pages in self.pages. Each page consists itself of
         a list of PSCommands equivalent to the content of
         the dvi file. Furthermore, the list of used fonts
-        can be extracted from the array self.fonts. 
+        can be extracted from the array self.fonts.
+
+        Usually, the readfile method should be called once
+        immediately after constructing the instance. However,
+        if you set ipcmode, you need to call readpages as
+        often as there are pages in the dvi-file plus 1 (for
+        properly closing the dvi-file).
         """
 
-        # XXX max number of fonts
-        self.fonts = [None for i in range(64)]
-        self.activefont = None
+        if self.file is None:
+            # XXX max number of fonts
+            self.fonts = [None for i in range(64)]
+            self.activefont = None
 
-        self.stack = []
+            self.stack = []
 
-        # here goes the result, for each page one list.
-        self.pages = []
+            # here goes the result, for each page one list.
+            self.pages = []
 
-        # pointer to currently active page
-        self.actpage = None
+            # pointer to currently active page
+            self.actpage = None
 
-        # currently active output: position and content
-        self.actoutstart = None
-        self.actoutstring = ""
+            # currently active output: position and content
+            self.actoutstart = None
+            self.actoutstring = ""
 
-        self.file = binfile(self.filename, "rb")
+            self.file = binfile(self.filename, "rb")
 
-        # currently read byte in file (for debugging output)
-        self.filepos = None
+            # currently read byte in file (for debugging output)
+            self.filepos = None
+
+            if self._read_pre() != _READ_NOPAGE:
+                raise DVIError
 
         # start up reading process
-        state = _READ_PRE
-        while state!=_READ_DONE:
-            if state == _READ_PRE:
-                state = self._read_pre()
-            elif state == _READ_NOPAGE:
-                state = self._read_nopage()
-            elif state == _READ_PAGE:
-                state = self._read_page()
-            else:
-                raise DVIError # unexpected reader state, should not happen
-        self.flushout()
+        if self.ipcmode:
+            state = self._read_nopage()
+            if state == _READ_PAGE:
+                if self._read_page() != _READ_NOPAGE:
+                    raise DVIError
+            elif state != _READ_DONE:
+                raise DVIError
+        else:
+            state = _READ_NOPAGE
+            while state != _READ_DONE:
+                if state == _READ_NOPAGE:
+                    state = self._read_nopage()
+                elif state == _READ_PAGE:
+                    state = self._read_page()
+                else:
+                    DVIError
 
-        self.file.close()
+        if state == _READ_DONE:
+            self.file.close()
 
     def prolog(self, page): # TODO: AW inserted this page argument -> should return the prolog needed for that page only!
         """ return prolog corresponding to contents of dvi file """
@@ -1861,8 +1886,9 @@ class texrunner:
                        docclass="article",
                        docopt=None,
                        usefiles=None,
-                       showwaitfortex=5,
-                       waitfortex=60,
+                       waitfortex=None,
+                       showwaitfortex=None,
+                       texipc=None,
                        texdebug=None,
                        dvidebug=0,
                        errordebug=1,
@@ -1882,8 +1908,18 @@ class texrunner:
         self.docclass = docclass
         self.docopt = docopt
         self.usefiles = helper.ensurelist(usefiles)
-        self.waitfortex = waitfortex
-        self.showwaitfortex = showwaitfortex
+        if waitfortex is not None:
+            self.waitfortex = waitfortex
+        else:
+            self.waitfortex = config.getint("text", "waitfortex", 60)
+        if showwaitfortex is not None:
+            self.showwaitfortex = showwaitfortex
+        else:
+            self.showwaitfortex = config.getint("text", "showwaitfortex", 5)
+        if texipc is not None:
+            self.texipc = texipc
+        else:
+            self.texipc = config.getboolean("text", "texipc", 0)
         if texdebug is not None:
             if texdebug[-4:] == ".tex":
                 self.texdebug = open(texdebug, "w")
@@ -1978,11 +2014,15 @@ class texrunner:
             texfile = open("%s.tex" % self.texfilename, "w") # start with filename -> creates dvi file with that name
             texfile.write("\\relax%\n")
             texfile.close()
+            if self.texipc:
+                ipcflag = " --ipc"
+            else:
+                ipcflag = ""
             try:
-                self.texinput, self.texoutput = os.popen4("%s %s" % (self.mode, self.texfilename), "t", 0)
+                self.texinput, self.texoutput = os.popen4("%s%s %s" % (self.mode, ipcflag, self.texfilename), "t", 0)
             except ValueError:
                 # XXX: workaround for MS Windows (bufsize = 0 makes trouble!?)
-                self.texinput, self.texoutput = os.popen4("%s %s" % (self.mode, self.texfilename), "t")
+                self.texinput, self.texoutput = os.popen4("%s%s %s" % (self.mode, ipcflag, self.texfilename), "t")
             atexit.register(_cleantmp, self)
             self.expectqueue = Queue.Queue(1)  # allow for a single entry only -> keeps the next InputMarker to be wait for
             self.gotevent = threading.Event()  # keeps the got inputmarker event
@@ -2126,43 +2166,46 @@ class texrunner:
         else:
             raise TexResultError("TeX didn't respond as expected within the timeout period (%i seconds)." % self.waitfortex, self)
 
-    def getdvi(self):
+    def finishdvi(self):
         "finish TeX/LaTeX and read the dvifile"
         self.execute(None, *self.texmessageend)
         if self.dvicopy:
-            os.system("dvicopy %s.dvi %s.dvicopy" % (self.texfilename, self.texfilename))
+            os.system("dvicopy %(t)s.dvi %(t)s.dvicopy > %(t)s.dvicopyout 2> %(t)s.dvicopyerr" % {"t": self.texfilename})
             dvifilename = "%s.dvicopy" % self.texfilename
         else:
             dvifilename = "%s.dvi" % self.texfilename
-        self.dvifiles.append(DVIFile(dvifilename, debug=self.dvidebug))
+        if not self.texipc:
+            dvifile = DVIFile(dvifilename, debug=self.dvidebug)
+            self.dvifiles.append(dvifile)
+        self.dvifiles[-1].readfile()
         self.dvinumber += 1
 
     def prolog(self, dvinumber, page):
         "return the dvifile prolog"
-        if not self.texdone:
-            self.getdvi()
+        if not self.texipc and not self.texdone:
+            self.finishdvi()
         return self.dvifiles[dvinumber].prolog(page)
 
     def write(self, file, dvinumber, page):
         "write a page from the dvifile"
-        if not self.texdone:
-            self.getdvi()
+        if not self.texipc and not self.texdone:
+            self.finishdvi()
         return self.dvifiles[dvinumber].write(file, page)
 
     def reset(self, reinit=0):
         "resets the tex runner to its initial state (upto its record to old dvi file(s))"
-        if self.texruns:
-            if not self.texdone:
-                self.getdvi()
-        self.preamblemode = 1
+        if self.texruns and not self.texdone:
+            self.finishdvi()
         self.executeid = 0
         self.page = 0
         self.texdone = 0
         if reinit:
             for expr, args in self.preambles:
                 self.execute(expr, *args)
+            self.preamblemode = 0
         else:
             self.preambles = []
+            self.preamblemode = 1
 
     def set(self, mode=None,
                   lfs=None,
@@ -2171,8 +2214,9 @@ class texrunner:
                   usefiles=None,
                   waitfortex=None,
                   showwaitfortex=None,
+                  texipc=None,
                   texdebug=None,
-                  dvidebug=0,
+                  dvidebug=None,
                   errordebug=None,
                   dvicopy=None,
                   pyxgraphics=None,
@@ -2205,6 +2249,8 @@ class texrunner:
             self.waitfortex = waitfortex
         if showwaitfortex is not None:
             self.showwaitfortex = showwaitfortex
+        if texipc is not None:
+            self.texipc = texipc
         if texdebug is not None:
             if self.texdebug is not None:
                 self.texdebug.close()
@@ -2288,6 +2334,10 @@ class texrunner:
             if self.mode == "latex":
                 self.execute("\\begin{document}", *self.texmessagebegindoc)
             self.preamblemode = 0
+            if self.texipc:
+                if self.dvicopy:
+                    raise RuntimeError("texipc and dvicopy can't be mixed up")
+                self.dvifiles.append(DVIFile("%s.dvi" % self.texfilename, debug=self.dvidebug, ipcmode=1))
         helper.checkattr(args, allowmulti=(_texsetting, texmessage, trafo._trafo, base.PathStyle))
                                            #XXX: should we distiguish between StrokeStyle and FillStyle?
         texsettings = helper.getattrs(args, _texsetting, default=[])
@@ -2302,6 +2352,8 @@ class texrunner:
         for texsetting in texsettings:
             expr = texsetting.modifyexpr(expr, texsettings, self)
         self.execute(expr, *helper.getattrs(args, texmessage, default=self.texmessagedefaultrun))
+        if self.texipc:
+            self.dvifiles[-1].readfile()
         match = self.PyXBoxPattern.search(self.texmessage)
         if not match or int(match.group("page")) != self.page:
             raise TexResultError("box extents not found", self)

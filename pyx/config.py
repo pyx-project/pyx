@@ -29,12 +29,27 @@ cflist = ["/etc/pyxrc",  os.path.expanduser("~/.pyxrc")]
 config = ConfigParser.ConfigParser()
 config.read(cflist)
 
-def configgetdefault(section, option, default):
-    if config.has_option(section, option):
+def get(section, option, default):
+    try:
         return config.get(section, option)
-    else:
+    except:
         return default
 
-class fonts:
-    fontmaps = configgetdefault("fonts", "fontmaps", "psfonts.map").split()
+def getint(section, option, default):
+    try:
+        return config.getint(section, option)
+    except:
+        return default
+
+def getfloat(section, option, default):
+    try:
+        return config.getfloat(section, option)
+    except:
+        return default
+
+def getboolean(section, option, default):
+    try:
+        return config.getboolean(section, option)
+    except:
+        return default
 

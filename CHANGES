@@ -13,6 +13,7 @@ PyX
     - fix: allow for e-tex in texmessage.start (reported by Andrea Riciputi)
     - showwaitfortex implemented following a suggestion by Fernando Perez
       (waitfortex is increased to 60 seconds now)
+    - support of TeX extention --ipc for reading dvi results while TeX keeps running
   - graph module:
     - removed manualpart and partitioners mix keyword (documentation already updated)
     - results of the splitting at "=" in graph.function were not stripped
