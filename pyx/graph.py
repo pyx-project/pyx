@@ -707,15 +707,16 @@ class axispainter:
                 y2 = y + dy * self.outerticklength * factor
                 graph.draw(path._line(x1, y1, x2, y2), *self.tickstyles)
             if tick.labellevel is not None:
-                text = self.decimalfrac(tick.enum, tick.denom)
+                #text = self.decimalfrac(tick.enum, tick.denom)
+                text = self.rationalfrac(tick.enum, tick.denom)
                 # TODO: use textwht
                 ht = unit.topt(graph.tex.textht(text, tex.style.math))
                 wd = unit.topt(graph.tex.textwd(text, tex.style.math))
                 dp = unit.topt(graph.tex.textdp(text, tex.style.math))
                 if wd == 0: wd = unit.topt("0.5 t cm")
-                if ht == 0: ht = unit.toht("0.25 t cm")
-                zeroshift = unit.topt(graph.tex.textht("0", tex.style.math))
-                b = rectbox(0, -dp, wd, ht, wd/2, zeroshift/2)
+                if ht == 0: ht = unit.topt("0.25 t cm")
+                zeroht = unit.topt(graph.tex.textht("0", tex.style.math))
+                b = rectbox(0, -dp, wd, ht, wd/2, zeroht/2)
                 tx, ty = b.translate(10 * dx, 10 * dy)
                 graph.tex._text(x + tx, y + ty, text, tex.style.math)
 
