@@ -1091,7 +1091,7 @@ class _readpipe(threading.Thread):
 
 
 
-class _textbox(box._rect, base.PSText):
+class _textbox(box._rect, base.PSCmd):
 
     def __init__(self, x, y, left, right, height, depth, texrunner, page):
         self.texttrafo = trafo._translate(-left, 0)
@@ -1260,7 +1260,7 @@ class texrunner(attrlist.attrlist):
 
     def write(self, file, page):
         if not self.texdone:
-            _default.execute(None, *self.checkmsgend)
+            self.execute(None, *self.checkmsgend)
             self.dvifile = DVIFile("%s.dvi" % self.texfilename)
         return self.dvifile.write(file, page)
 

@@ -237,6 +237,9 @@ class DecoratedPath(base.PSCmd):
                       self.subdps,
                       self.path.bbox())
 
+    def writefontheader(self, file, containsfonts):
+        for style in list(self.styles) + list(self.fillstyles) + list(self.strokestyles):
+            style.writefontheader(file, containsfonts)
 
     def write(self, file):
         # draw (stroke and/or fill) the DecoratedPath on the canvas
@@ -434,14 +437,14 @@ class arrow(PathDeco):
         self.fillstyles = helper.ensurelist(fillstyles)
 
     def __call__(self, *styles):
-	fillstyles = [ style for s in styles if isinstance(s, filled) 
-		       for style in s.styles ]
+        fillstyles = [ style for s in styles if isinstance(s, filled) 
+                       for style in s.styles ]
 
-	strokestyles = [ style for s in styles if isinstance(s, stroked) 
-		         for style in s.styles ]
+        strokestyles = [ style for s in styles if isinstance(s, stroked) 
+                         for style in s.styles ]
 
-	styles = [ style for style in styles 
-	           if not isinstance(style, (filled, stroked)) ]
+        styles = [ style for style in styles 
+                   if not isinstance(style, (filled, stroked)) ]
 
         return arrow(position=self.position,
                      size=self.size,
@@ -625,10 +628,10 @@ class _grestore(base.PSOp):
        file.write("grestore\n")
 
 #
-# The main canvas class
+#
 #
 
-class canvas(base.PSText, attrlist.attrlist):
+class _canvas(base.PSCmd, attrlist.attrlist):
 
     """a canvas is a collection of PSCmds together with PSAttrs"""
 
@@ -676,112 +679,13 @@ class canvas(base.PSText, attrlist.attrlist):
         return obbox.transformed(self.trafo)*self.clipbbox
 
     def writefontheader(self, file, collectfontheader):
+        # XXX: refactor me
         for cmd in self.PSOps:
-            if isinstance(cmd, base.PSText):
-                cmd.writefontheader(file, collectfontheader)
+            cmd.writefontheader(file, collectfontheader)
 
     def write(self, file):
-        _gsave().write(file)
         for cmd in self.PSOps:
             cmd.write(file)
-        _grestore().write(file)
-
-    def writetofile(self, filename, paperformat=None, rotated=0, fittosize=0, margin="1 t cm", bboxenhance="1 t pt"):
-        """write canvas to EPS file
-
-        If paperformat is set to a known paperformat, the output will be centered on
-        the page.
-
-        If rotated is set, the output will first be rotated by 90 degrees.
-
-        If fittosize is set, then the output is scaled to the size of the
-        page (minus margin). In that case, the paperformat the specification
-        of the paperformat is obligatory.
-
-        returns the canvas
-
-        """
-
-        if filename[-4:]!=".eps":
-            filename = filename + ".eps"
-
-        try:
-            file = open(filename, "w")
-        except IOError:
-            assert 0, "cannot open output file"                 # TODO: Fehlerbehandlung...
-
-        abbox=self.bbox().enlarged(bboxenhance)
-        ctrafo=None     # global transformation of canvas
-
-        if rotated:
-            ctrafo = trafo._rotate(90,
-                                     0.5*(abbox.llx+abbox.urx),
-                                     0.5*(abbox.lly+abbox.ury))
-
-        if paperformat:
-            # center (optionally rotated) output on page
-            try:
-                width, height = _paperformats[paperformat]
-                width = unit.topt(width)
-                height = unit.topt(height)
-            except KeyError:
-                raise KeyError, "unknown paperformat '%s'" % paperformat
-
-            if not ctrafo: ctrafo=trafo.trafo()
-
-            ctrafo = ctrafo._translated(0.5*(width -(abbox.urx-abbox.llx))-
-                                       abbox.llx,
-                                       0.5*(height-(abbox.ury-abbox.lly))-
-                                       abbox.lly)
-
-            if fittosize:
-                # scale output to pagesize - margins
-                margin=unit.topt(margin)
-
-                if rotated:
-                    sfactor = min((height-2*margin)/(abbox.urx-abbox.llx),
-                                  (width-2*margin)/(abbox.ury-abbox.lly))
-                else:
-                    sfactor = min((width-2*margin)/(abbox.urx-abbox.llx),
-                                  (height-2*margin)/(abbox.ury-abbox.lly))
-
-                ctrafo = ctrafo._scaled(sfactor, sfactor, 0.5*width, 0.5*height)
-
-
-        elif fittosize:
-            assert 0, "must specify paper size for fittosize" # TODO: exception...
-
-        # if there has been a global transformation, adjust the bounding box
-        # accordingly
-        if ctrafo: abbox = abbox.transformed(ctrafo)
-
-        file.write("%!PS-Adobe-3.0 EPSF 3.0\n")
-        abbox.write(file)
-        file.write("%%%%Creator: PyX %s\n" % version.version)
-        file.write("%%%%Title: %s\n" % filename)
-        file.write("%%%%CreationDate: %s\n" %
-                   time.asctime(time.localtime(time.time())))
-        file.write("%%EndComments\n")
-
-        file.write("%%BeginProlog\n")
-        file.write(_PSProlog)
-        containsfonts = []
-        self.writefontheader(file, containsfonts)
-        file.write("%%EndProlog\n")
-
-        # again, if there has occured global transformation, apply it now
-        if ctrafo: ctrafo.write(file)
-
-        file.write("%f setlinewidth\n" % unit.topt(linewidth.normal))
-
-        # here comes the actual content
-        self.write(file)
-
-        file.write("showpage\n")
-        file.write("%%Trailer\n")
-        file.write("%%EOF\n")
-
-        return self
 
     def insert(self, *PSOps):
         """insert one or more PSOps in the canvas
@@ -886,3 +790,192 @@ class canvas(base.PSText, attrlist.attrlist):
         returns the inserted textbox"""
 
         return self.insert(self.texrunner._text(x, y, atext, *args))
+
+#
+# canvas for patterns
+#
+
+class patterncanvas(_canvas, base.PathStyle):
+
+    def __init__(self, *args):
+        _canvas.__init__(self, *args)
+        self.id = "patternid"
+        self.patterntype = 1
+        self.painttype = 1
+        self.tilingtype = 1
+        self.xstep = None
+        self.ystep = None
+
+    def bbox(self):
+        return bbox.bbox()
+
+    def write(self, file):
+        file.write("/Pattern setcolorspace\n")
+        file.write("%s setcolor\n" % self.id)
+
+    def writefontheader(self, file, containsfonts):
+        import StringIO, string
+        patternbbox = _canvas.bbox(self)
+        if self.xstep is None:
+           xstep = patternbbox.urx-patternbbox.llx
+        else:
+           xstep = self.xstep
+        if self.ystep is None:
+            ystep = patternbbox.ury-patternbbox.lly
+        else:
+           ystep = self.ystep
+        patternprefix = ( "<<\n" + 
+                          "/PatternType %d\n" % self.patterntype + 
+                          "/PaintType %d\n" % self.painttype +
+                          "/TilingType %d\n" % self.tilingtype +
+                          "/BBox[%s]\n" % str(patternbbox.enlarged("5 pt")) + 
+                          "/XStep %f\n" % xstep + 
+                          "/YStep %f\n" % ystep + 
+                          "/PaintProc {\n begin\n")
+        stringfile = StringIO.StringIO()
+        _canvas.write(self, stringfile)
+        patternproc = stringfile.getvalue()
+        stringfile.close()
+        patternsuffix = "end\n} bind\n>>\nmatrix\nmakepattern /%s exch def\n" % self.id
+        file.write(string.join((patternprefix, patternproc, patternsuffix)))
+
+#
+# The main canvas class
+#
+
+class canvas(_canvas):
+
+    """a canvas is a collection of PSCmds together with PSAttrs"""
+
+    def __init__(self, *args):
+
+        """construct a canvas
+
+        The canvas can be modfied by supplying args, which have
+        to be instances of one of the following classes:
+         - trafo.trafo (leading to a global transformation of the canvas)
+         - canvas.clip (clips the canvas)
+         - base.PathStyle (sets some global attributes of the canvas)
+
+        Note that, while the first two properties are fixed for the
+        whole canvas, the last one can be changed via canvas.set()
+
+        """
+
+        self.PSOps     = []
+        self.trafo     = trafo.trafo()
+        self.clipbbox  = bbox.bbox()
+        self.texrunner = text.defaulttexrunner
+
+        for arg in args:
+            if isinstance(arg, trafo._trafo):
+                self.trafo = self.trafo*arg
+                self.PSOps.append(arg)
+            elif isinstance(arg, clip):
+                self.clipbbox=(self.clipbbox*
+                               arg.clipbbox().transformed(self.trafo))
+                self.PSOps.append(arg)
+            else:
+                self.set(arg)
+
+    def write(self, file):
+        _gsave().write(file)
+        _canvas.write(self, file)
+        _grestore().write(file)
+
+    def writetofile(self, filename, paperformat=None, rotated=0, fittosize=0, margin="1 t cm", bboxenhance="1 t pt"):
+        """write canvas to EPS file
+
+        If paperformat is set to a known paperformat, the output will be centered on
+        the page.
+
+        If rotated is set, the output will first be rotated by 90 degrees.
+
+        If fittosize is set, then the output is scaled to the size of the
+        page (minus margin). In that case, the paperformat the specification
+        of the paperformat is obligatory.
+
+        returns the canvas
+
+        """
+
+        if filename[-4:]!=".eps":
+            filename = filename + ".eps"
+
+        try:
+            file = open(filename, "w")
+        except IOError:
+            assert 0, "cannot open output file"                 # TODO: Fehlerbehandlung...
+
+        abbox=self.bbox().enlarged(bboxenhance)
+        ctrafo=None     # global transformation of canvas
+
+        if rotated:
+            ctrafo = trafo._rotate(90,
+                                     0.5*(abbox.llx+abbox.urx),
+                                     0.5*(abbox.lly+abbox.ury))
+
+        if paperformat:
+            # center (optionally rotated) output on page
+            try:
+                width, height = _paperformats[paperformat]
+                width = unit.topt(width)
+                height = unit.topt(height)
+            except KeyError:
+                raise KeyError, "unknown paperformat '%s'" % paperformat
+
+            if not ctrafo: ctrafo=trafo.trafo()
+
+            ctrafo = ctrafo._translated(0.5*(width -(abbox.urx-abbox.llx))-
+                                       abbox.llx,
+                                       0.5*(height-(abbox.ury-abbox.lly))-
+                                       abbox.lly)
+
+            if fittosize:
+                # scale output to pagesize - margins
+                margin=unit.topt(margin)
+
+                if rotated:
+                    sfactor = min((height-2*margin)/(abbox.urx-abbox.llx),
+                                  (width-2*margin)/(abbox.ury-abbox.lly))
+                else:
+                    sfactor = min((width-2*margin)/(abbox.urx-abbox.llx),
+                                  (height-2*margin)/(abbox.ury-abbox.lly))
+
+                ctrafo = ctrafo._scaled(sfactor, sfactor, 0.5*width, 0.5*height)
+
+
+        elif fittosize:
+            assert 0, "must specify paper size for fittosize" # TODO: exception...
+
+        # if there has been a global transformation, adjust the bounding box
+        # accordingly
+        if ctrafo: abbox = abbox.transformed(ctrafo)
+
+        file.write("%!PS-Adobe-3.0 EPSF 3.0\n")
+        abbox.write(file)
+        file.write("%%%%Creator: PyX %s\n" % version.version)
+        file.write("%%%%Title: %s\n" % filename)
+        file.write("%%%%CreationDate: %s\n" %
+                   time.asctime(time.localtime(time.time())))
+        file.write("%%EndComments\n")
+
+        file.write("%%BeginProlog\n")
+        file.write(_PSProlog)
+        containsfonts = []
+        self.writefontheader(file, containsfonts)
+        file.write("%%EndProlog\n")
+
+        # again, if there has occured global transformation, apply it now
+        if ctrafo: ctrafo.write(file)
+
+        file.write("%f setlinewidth\n" % unit.topt(linewidth.normal))
+
+        # here comes the actual content
+        self.write(file)
+
+        file.write("showpage\n")
+        file.write("%%Trailer\n")
+        file.write("%%EOF\n")
+
+        return self

@@ -36,6 +36,9 @@ class PSOp:
         """writing into a file is the only routine, a PSOp has to supply"""
         raise NotImplementedError, "cannot call virtual method write()"
 
+    def writefontheader(self, file, containsfonts):
+        pass 
+
 #
 # PSCmd class
 #
@@ -51,22 +54,6 @@ class PSCmd(PSOp):
 
     def bbox(self):
         raise NotImplementedError, "cannot call virtual method bbox()"
-
-#
-# PSText class
-#
-
-class PSText(PSCmd):
-
-    """ PSText is the base class of all text elements
-
-    Text elements are those, that (may) contain text and thus provide a
-    writefontheader method.
-
-    """
-
-    def writefontheader(self, file, containsfonts):
-        raise NotImplementedError, "cannot call virtual method writefontheader()"
 
 #
 # Path style classes
