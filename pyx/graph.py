@@ -22,7 +22,7 @@
 
 
 import types, re, math, string, sys
-import bbox, canvas, path, tex, unit, mathtree, trafo, attrlist, color, datafile
+import bbox, canvas, path, tex, unit, mathtree, trafo, attrlist, color
 
 
 goldenrule = 0.5 * (math.sqrt(5) + 1)
@@ -1163,7 +1163,7 @@ class axispainter(attrlist.attrlist):
             if tick.textbox is not None:
                 tick.textbox._printtext(tick.x, tick.y)
         if self.baselineattrs is not None:
-            graph.stroke(axis.vbaseline(axis, 0, 1), *_ensuresequence(self.baselineattrs))
+            graph.stroke(axis.vbaseline(axis), *_ensuresequence(self.baselineattrs))
         if self.zerolineattrs is not None:
             if len(axis.ticks) and axis.ticks[0] * axis.ticks[-1] < frac(0, 1):
                 graph.stroke(axis.vgridpath(axis.convert(0)), *_ensuresequence(self.zerolineattrs))
@@ -1185,67 +1185,59 @@ class axispainter(attrlist.attrlist):
 
 class splitaxispainter:
 
-    def paint(self, graph, axis, baseaxis = None, painter = None):
-        if baseaxis is None:
-            baseaxis = axis
-        baseaxis._extent = None
-        for subaxis in axis.axislist:
-            subaxis._vtickpoint = (lambda subaxis, v,
-                                          _vtickpoint=baseaxis._vtickpoint,
-                                          axis=baseaxis,
-                                          vmin=subaxis.vmin,
-                                          vmax=subaxis.vmax: _vtickpoint(axis, vmin+v*(vmax-vmin)))
-            subaxis.vtickdirection = (lambda subaxis, v,
-                                            vtickdirection=baseaxis.vtickdirection,
-                                            axis=baseaxis,
-                                            vmin=subaxis.vmin,
-                                            vmax=subaxis.vmax: vtickdirection(axis, vmin+v*(vmax-vmin)))
-            subaxis.vbaseline = (lambda subaxis, v1, v2,
-                                        vbaseline=baseaxis.vbaseline,
-                                        axis=baseaxis,
-                                        vmin=subaxis.vmin,
-                                        vmax=subaxis.vmax: vbaseline(axis, vmin+v1*(vmax-vmin), vmin+v2*(vmax-vmin)))
-            if painter is None:
-                subaxis.painter.paint(graph, subaxis)
+    def __init__(self, breaklinesdist=0.05, breaklineslength=0.5, breaklinesangle=-60, breaklinesattrs=()):
+        self.breaklinesdist_str = breaklinesdist
+        self.breaklineslength_str = breaklineslength
+        self.breaklinesangle = breaklinesangle
+        self.breaklinesattrs = breaklinesattrs
+
+    def subvbaseline(self, axis, v1=None, v2=None):
+        if v1 is None:
+            if axis.vminover is None:
+                left = None
             else:
-                subaxis.linkedaxis = subaxis
-                painter.paint(graph, subaxis)
-            if baseaxis._extent is None or baseaxis._extent < subaxis._extent:
-                baseaxis._extent = subaxis._extent
-
-
-class linkaxispainter(axispainter):
-
-    def __init__(self, skipticklevel=None, skiplabellevel=0, zerolineattrs=None, **args):
-        self.skipticklevel = skipticklevel
-        self.skiplabellevel = skiplabellevel
-        args["zerolineattrs"] = zerolineattrs
-        axispainter.__init__(self, **args)
-
-    def ticks(self, ticks):
-        result = []
-        for _tick in ticks:
-            ticklevel = _tick.ticklevel
-            labellevel = _tick.labellevel
-            if self.skipticklevel is not None and ticklevel >= self.skipticklevel:
-                ticklevel = None
-            if self.skiplabellevel is not None and labellevel >= self.skiplabellevel:
-                labellevel = None
-            if ticklevel is not None or labellevel is not None:
-                result.append(tick(_tick.enum, _tick.denom, ticklevel, labellevel))
-        return result
-        # XXX: don't forget to calculate new text positions as soon as this is moved
-        #      outside of the paint method (when rating is moved into the axispainter)
+                left = axis.vminover
+        else:
+            left = axis.vmin+v1*(axis.vmax-axis.vmin)
+        if v2 is None:
+            if axis.vmaxover is None:
+                right = None
+            else:
+                right = axis.vmaxover
+        else:
+            right = axis.vmin+v2*(axis.vmax-axis.vmin)
+        return axis.baseaxis.vbaseline(axis.baseaxis, left, right)
 
     def paint(self, graph, axis):
-        if isinstance(axis.linkedaxis, splitaxis):
-            axis.linkedaxis.painter.paint(graph, axis.linkedaxis, axis, self)
-        else:
-            axis.ticks = self.ticks(axis.linkedaxis.ticks)
-            axis.convert = axis.linkedaxis.convert
-            axis.divisor = axis.linkedaxis.divisor
-            axis.suffix = axis.linkedaxis.suffix
-            axis.linkedaxis.painter.paint(graph, axis)
+        breaklinesdist = unit.length(self.breaklinesdist_str, default_type="w")
+        breaklineslength = unit.length(self.breaklineslength_str, default_type="v")
+        axis._extent = None
+        for subaxis in axis.axislist:
+            subaxis.baseaxis = axis
+            subaxis._vtickpoint = (lambda axis, v: axis.baseaxis._vtickpoint(axis.baseaxis, axis.vmin+v*(axis.vmax-axis.vmin)))
+            subaxis.vtickdirection = (lambda axis, v: axis.baseaxis.vtickdirection(axis.baseaxis, axis.vmin+v*(axis.vmax-axis.vmin)))
+            subaxis.vbaseline = self.subvbaseline
+            subaxis.dopaint(graph)
+            if axis._extent is None or axis._extent < subaxis._extent:
+                axis._extent = subaxis._extent
+        if self.breaklinesattrs is not None:
+            for subaxis1, subaxis2 in zip(axis.axislist[:-1], axis.axislist[1:]):
+                # TODO: could be done better; axis extent is not adjusted
+                v = 0.5 * (subaxis1.vmax + subaxis2.vmin)
+                breakline = path.normpath(axis.vbaseline(axis, v, None)).tangent(0, breaklineslength)
+                widthline = path.normpath(axis.vbaseline(axis, v, None)).tangent(0, breaklinesdist).transformed(trafo.rotation(self.breaklinesangle+90, *breakline.begin()))
+                tocenter = map(lambda x: 0.5*(x[0]-x[1]), zip(breakline.begin(), breakline.end()))
+                towidth = map(lambda x: 0.5*(x[0]-x[1]), zip(widthline.begin(), widthline.end()))
+                breakline = breakline.transformed(trafo.translation(*tocenter).rotate(self.breaklinesangle, *breakline.begin()))
+                breakline1 = breakline.transformed(trafo.translation(*towidth))
+                breakline2 = breakline.transformed(trafo.translation(-towidth[0], -towidth[1]))
+                graph.fill(path.path(path.moveto(*breakline1.begin()),
+                                     path.lineto(*breakline1.end()),
+                                     path.lineto(*breakline2.end()),
+                                     path.lineto(*breakline2.begin()),
+                                     path.closepath()), color.gray.white)
+                graph.stroke(breakline1, *_ensuresequence(self.breaklinesattrs))
+                graph.stroke(breakline2, *_ensuresequence(self.breaklinesattrs))
 
 
 
@@ -1382,6 +1374,12 @@ class _axis:
         if len(self.ticks):
             self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
 
+    def dopaint(self, graph):
+        self.painter.paint(graph, self)
+
+    def createlinkaxis(self, **args):
+        return linkaxis(self, **args)
+
 
 class linaxis(_axis, _linmap):
 
@@ -1401,14 +1399,35 @@ class logaxis(_axis, _logmap):
 
 class linkaxis:
 
-    def __init__(self, linkedaxis, title=None, painter=linkaxispainter()):
+    def __init__(self, linkedaxis, title=None, skipticklevel=None, skiplabellevel=0, painter=axispainter(zerolineattrs=None)):
         self.linkedaxis = linkedaxis
         while isinstance(self.linkedaxis, linkaxis):
             self.linkedaxis = self.linkedaxis.linkedaxis
         self.fixmin = self.linkedaxis.fixmin
         self.fixmax = self.linkedaxis.fixmax
+        if self.fixmin:
+            self.min = self.linkedaxis.min
+        if self.fixmax:
+            self.max = self.linkedaxis.max
+        self.skipticklevel = skipticklevel
+        self.skiplabellevel = skiplabellevel
         self.title = title
         self.painter = painter
+
+    def ticks(self, ticks):
+        result = []
+        for _tick in ticks:
+            ticklevel = _tick.ticklevel
+            labellevel = _tick.labellevel
+            if self.skipticklevel is not None and ticklevel >= self.skipticklevel:
+                ticklevel = None
+            if self.skiplabellevel is not None and labellevel >= self.skiplabellevel:
+                labellevel = None
+            if ticklevel is not None or labellevel is not None:
+                result.append(tick(_tick.enum, _tick.denom, ticklevel, labellevel))
+        return result
+        # XXX: don't forget to calculate new text positions as soon as this is moved
+        #      outside of the paint method (when rating is moved into the axispainter)
 
     def getdatarange(self):
         return self.linkedaxis.getdatarange()
@@ -1422,75 +1441,137 @@ class linkaxis:
     def dolayout(self):
         pass
 
+    def dopaint(self, graph):
+        self.ticks = self.ticks(self.linkedaxis.ticks)
+        self.convert = self.linkedaxis.convert
+        self.divisor = self.linkedaxis.divisor
+        self.suffix = self.linkedaxis.suffix
+        self.painter.paint(graph, self)
 
-class SplitRegionError(Exception):
-
-    pass
+    def createlinkaxis(self, **args):
+        return linkaxis(self.linkedaxis)
 
 
 class splitaxis:
 
     def __init__(self, axislist, splitlist=0.5, splitdist=0.1):
         self.axislist = axislist
-        self.splitlist = list(_ensuresequence(splitlist))
-        self.splitlist.sort()
-        if len(self.axislist) != len(self.splitlist) + 1:
-            raise ValueError("axislist and splitlist lengths do not fit together")
-        if self.splitlist[0] < 0.5*splitdist or self.splitlist[-1] > 1 - 0.5*splitdist:
-            raise ValueError("a value within splitlist is outside a valid range")
-        self.axislist[0].vmin = 0
-        for i in xrange(len(self.splitlist)):
-            self.axislist[i].vmax = self.splitlist[i] - 0.5*splitdist
-            self.axislist[i+1].vmin = self.splitlist[i] + 0.5*splitdist
-        self.axislist[-1].vmax = 1
         self.part = manualpart()
-        self.divisor = 1
-        self.suffix = ""
-        self.fixmin = self.axislist[0].fixmin
-        if self.fixmin:
-            self.min = self.axislist[0].min
-        self.fixmax = self.axislist[-1].fixmax
-        if self.fixmax:
-            self.max = self.axislist[-1].max
         self.painter = splitaxispainter()
+        if splitlist is not None:
+            self.splitlist = list(_ensuresequence(splitlist))
+            self.splitlist.sort()
+            if len(self.axislist) != len(self.splitlist) + 1:
+                raise ValueError("axislist and splitlist lengths do not fit together")
+            if self.splitlist[0] < 0.5*splitdist or self.splitlist[-1] > 1 - 0.5*splitdist:
+                raise ValueError("a value within splitlist is outside a valid range")
+            self.axislist[0].vmin = 0
+            self.axislist[0].vminover = None
+            for i in xrange(len(self.splitlist)):
+                if isinstance(self.axislist[i], linkaxis):
+                    self.axislist[i].vmax = self.axislist[i].linkedaxis.vmax
+                    self.axislist[i].vmaxover = self.axislist[i].linkedaxis.vmaxover
+                else:
+                    self.axislist[i].vmax = self.splitlist[i] - 0.5*splitdist
+                    self.axislist[i].vmaxover = self.splitlist[i]
+                if isinstance(self.axislist[i+1], linkaxis):
+                    self.axislist[i+1].vmin = self.axislist[i+1].linkedaxis.vmin
+                    self.axislist[i+1].vminover = self.axislist[i+1].linkedaxis.vminover
+                else:
+                    self.axislist[i+1].vmin = self.splitlist[i] + 0.5*splitdist
+                    self.axislist[i+1].vminover = self.splitlist[i]
+            self.axislist[-1].vmax = 1
+            self.axislist[-1].vmaxover = None
+
+            self.fixmin = self.axislist[0].fixmin
+            if self.fixmin:
+                self.min = self.axislist[0].min
+            self.fixmax = self.axislist[-1].fixmax
+            if self.fixmax:
+                self.max = self.axislist[-1].max
+            self.divisor = 1
+            self.suffix = ""
+        else:
+            self.splitlist = self.minid = self.maxid = None
 
     def getdatarange(self):
-        min = self.axislist[0].getdatarange()
-        max = self.axislist[-1].getdatarange()
-        try:
-            return min[0], max[1]
-        except TypeError:
-            return None
+        if self.splitlist is not None:
+            min = self.axislist[0].getdatarange()
+            max = self.axislist[-1].getdatarange()
+            try:
+                return min[0], max[1]
+            except TypeError:
+                return None
+        else:
+            return self.minid, self.maxid
 
     def setdatarange(self, min, max):
-        self.axislist[0].setdatarange(min, None)
-        self.axislist[-1].setdatarange(None, max)
+        if self.splitlist is not None:
+            self.axislist[0].setdatarange(min, None)
+            self.axislist[-1].setdatarange(None, max)
+        else:
+            if min is not None:
+                if not _isinteger(min):
+                    raise TypeError("integer split identifier expected")
+                self.minid = min
+            if max is not None:
+                if not _isinteger(max):
+                    raise TypeError("integer split identifier expected")
+                self.maxid = max
 
-    def gettickrange(self):
-        min = self.axislist[0].gettickrange()
-        max = self.axislist[-1].gettickrange()
-        try:
-            return min[0], max[1]
-        except TypeError:
-            return None
-
-    def settickrange(self, min, max):
-        self.axislist[0].settickrange(min, None)
-        self.axislist[-1].settickrange(None, max)
+#    def gettickrange(self):
+#        min = self.axislist[0].gettickrange()
+#        max = self.axislist[-1].gettickrange()
+#        try:
+#            return min[0], max[1]
+#        except TypeError:
+#            return None
+#
+#    def settickrange(self, min, max):
+#        self.axislist[0].settickrange(min, None)
+#        self.axislist[-1].settickrange(None, max)
 
     def convert(self, value):
-        if value < self.axislist[0].max:
-            return self.axislist[0].vmin + self.axislist[0].convert(value)*(self.axislist[0].vmax-self.axislist[0].vmin)
-        for axis in self.axislist[1:-1]:
-            if value > axis.min and value < axis.max:
-                return axis.vmin + axis.convert(value)*(axis.vmax-axis.vmin)
-        if value > self.axislist[-1].min:
-            return self.axislist[-1].vmin + self.axislist[-1].convert(value)*(self.axislist[-1].vmax-self.axislist[-1].vmin)
-        raise SplitRegionError
+        # TODO: proper raising exceptions (which exceptions go thru, which are handled before?)
+        if self.splitlist is not None:
+            if value < self.axislist[0].max:
+                return self.axislist[0].vmin + self.axislist[0].convert(value)*(self.axislist[0].vmax-self.axislist[0].vmin)
+            for axis in self.axislist[1:-1]:
+                if value > axis.min and value < axis.max:
+                    return axis.vmin + axis.convert(value)*(axis.vmax-axis.vmin)
+            if value > self.axislist[-1].min:
+                return self.axislist[-1].vmin + self.axislist[-1].convert(value)*(self.axislist[-1].vmax-self.axislist[-1].vmin)
+            raise ValueError("value couldn't be assigned to a split region")
+        else:
+            if not _isinteger(value[0]):
+                raise ValueError("integer split identifier expected")
+            if value[0] >= self.minid and value[0] <= self.maxid:
+                axis = self.axislist[value[0] - self.minid]
+                if len(value) == 2:
+                    othervalue = value[1]
+                else:
+                    othervalue = value[1:]
+                return (value[0] - self.minid + axis.convert(othervalue))/(self.maxid - self.minid + 1.0)
+            else:
+                return None
 
     def dolayout(self):
-        for axis in self.axislist:
-            axis.dolayout()
+        if self.splitlist is not None:
+            for axis in self.axislist:
+                axis.dolayout()
+
+    def dopaint(self, graph):
+        if self.splitlist is not None:
+            self.painter.paint(graph, self)
+        else:
+            self._extent = 0
+
+    def createlinkaxis(self, *args):
+        if not len(args):
+            return splitaxis([x.createlinkaxis() for x in self.axislist])
+        if len(args) != len(self.axislist):
+            raise IndexError("length of the argument list doesn't fit to split number")
+        return splitaxis([x.createlinkaxis(**arg) for x, arg in zip(self.axislist, args)])
 
 
 
@@ -1566,11 +1647,15 @@ class graphxy(canvas.canvas):
         return path._line(axis.axispos+shift, self._ypos+v1*self._height,
                           axis.axispos+shift, self._ypos+v2*self._height)
 
-    def vxbaseline(self, axis, v1, v2, shift=0):
+    def vxbaseline(self, axis, v1=None, v2=None, shift=0):
+        if v1 is None: v1 = 0
+        if v2 is None: v2 = 1
         return path._line(self._xpos+v1*self._width, axis.axispos+shift,
                           self._xpos+v2*self._width, axis.axispos+shift)
 
-    def vybaseline(self, axis, v1, v2, shift=0):
+    def vybaseline(self, axis, v1=None, v2=None, shift=0):
+        if v1 is None: v1 = 0
+        if v2 is None: v2 = 1
         return path._line(axis.axispos+shift, self._ypos+v1*self._height,
                           axis.axispos+shift, self._ypos+v2*self._height)
 
@@ -1693,8 +1778,7 @@ class graphxy(canvas.canvas):
             else:
                 raise ValueError("Axis key '%s' not allowed" % key)
             axis.vtickdirection = self.vtickdirection
-            if axis.painter is not None:
-                axis.painter.paint(self, axis)
+            axis.dopaint(self)
             if XPattern.match(key):
                 self._xaxisextents[num2] += axis._extent
                 needxaxisdist[num2] = 1
@@ -1732,7 +1816,7 @@ class graphxy(canvas.canvas):
                 del axes[key]
             if addlinkaxes:
                 if not axes.has_key(key + "2") and axes.has_key(key):
-                    axes[key + "2"] = linkaxis(axes[key])
+                    axes[key + "2"] = axes[key].createlinkaxis()
                 elif axes[key + "2"] is None:
                     del axes[key + "2"]
         self.axes = axes
@@ -1957,7 +2041,7 @@ class graphxyz(graphxy):
             else:
                 raise ValueError("Axis key '%s' not allowed" % key)
             if axis.painter is not None:
-                axis.painter.paint(self, axis)
+                axis.dopaint(self)
 #            if XPattern.match(key):
 #                self._xaxisextents[num2] += axis._extent
 #                needxaxisdist[num2] = 1
@@ -2319,7 +2403,7 @@ class changefilledstroked(changesequence):
 ################################################################################
 
 
-class mark:
+class symbol:
 
     def cross(self, x, y):
         return (path._moveto(x-0.5*self._size, y-0.5*self._size),
@@ -2357,32 +2441,32 @@ class mark:
                 path._lineto(x, y+0.930604859*self._size),
                 path.closepath())
 
-    def __init__(self, mark=_nodefault,
-                       size="0.2 cm", markattrs=canvas.stroked(),
+    def __init__(self, symbol=_nodefault,
+                       size="0.2 cm", symbolattrs=canvas.stroked(),
                        errorscale=0.5, errorbarattrs=(),
                        lineattrs=None):
         self.size_str = size
-        if mark is _nodefault:
-            self._mark = changemark.cross()
+        if symbol is _nodefault:
+            self._symbol = changesymbol.cross()
         else:
-            self._mark = mark
-        self._markattrs = markattrs
+            self._symbol = symbol
+        self._symbolattrs = symbolattrs
         self.errorscale = errorscale
         self._errorbarattrs = errorbarattrs
         self._lineattrs = lineattrs
 
     def iteratedict(self):
         result = {}
-        result["mark"] = _iterateattr(self._mark)
+        result["symbol"] = _iterateattr(self._symbol)
         result["size"] = _iterateattr(self.size_str)
-        result["markattrs"] = _iterateattrs(self._markattrs)
+        result["symbolattrs"] = _iterateattrs(self._symbolattrs)
         result["errorscale"] = _iterateattr(self.errorscale)
         result["errorbarattrs"] = _iterateattrs(self._errorbarattrs)
         result["lineattrs"] = _iterateattrs(self._lineattrs)
         return result
 
     def iterate(self):
-        return mark(**self.iteratedict())
+        return symbol(**self.iteratedict())
 
     def othercolumnkey(self, key, index):
         raise ValueError("unsuitable key '%s'" % key)
@@ -2665,12 +2749,12 @@ class mark:
                                    path.closepath()),
                          *self.errorbarattrs)
 
-    def _drawmark(self, graph, x, y, point=None):
+    def _drawsymbol(self, graph, x, y, point=None):
         if x is not None and y is not None:
-            graph.draw(path.path(*self.mark(self, x, y)), *self.markattrs)
+            graph.draw(path.path(*self.symbol(self, x, y)), *self.symbolattrs)
 
-    def drawmark(self, graph, x, y, point=None):
-        self._drawmark(graph, unit.topt(x), unit.topt(y), point)
+    def drawsymbol(self, graph, x, y, point=None):
+        self._drawsymbol(graph, unit.topt(x), unit.topt(y), point)
 
     def drawpoints(self, graph, points):
         xaxis = graph.axes[self.xkey]
@@ -2679,8 +2763,8 @@ class mark:
         yaxismin, yaxismax = yaxis.getdatarange()
         self.size = unit.length(_getattr(self.size_str), default_type="v")
         self._size = unit.topt(self.size)
-        self.mark = _getattr(self._mark)
-        self.markattrs = _getattrs(_ensuresequence(self._markattrs))
+        self.symbol = _getattr(self._symbol)
+        self.symbolattrs = _getattrs(_ensuresequence(self._symbolattrs))
         self.errorbarattrs = _getattrs(_ensuresequence(self._errorbarattrs))
         self._errorsize = self.errorscale * self._size
         self.errorsize = self.errorscale * self.size
@@ -2692,27 +2776,27 @@ class mark:
                                  self.dxi, self.dyi, self.dxmini, self.dymini, self.dxmaxi, self.dymaxi)) is not None
         moveto = 1
         for point in points:
-            drawmark = 1
+            drawsymbol = 1
             xmin, x, xmax = self.minmidmax(point, self.xi, self.xmini, self.xmaxi, self.dxi, self.dxmini, self.dxmaxi)
             ymin, y, ymax = self.minmidmax(point, self.yi, self.ymini, self.ymaxi, self.dyi, self.dymini, self.dymaxi)
-            if x is not None and x < xaxismin: drawmark = 0
-            elif x is not None and x > xaxismax: drawmark = 0
-            elif y is not None and y < yaxismin: drawmark = 0
-            elif y is not None and y > yaxismax: drawmark = 0
+            if x is not None and x < xaxismin: drawsymbol = 0
+            elif x is not None and x > xaxismax: drawsymbol = 0
+            elif y is not None and y < yaxismin: drawsymbol = 0
+            elif y is not None and y > yaxismax: drawsymbol = 0
             elif haserror:
-                if xmin is not None and xmin < xaxismin: drawmark = 0
-                elif xmax is not None and xmax < xaxismin: drawmark = 0
-                elif xmax is not None and xmax > xaxismax: drawmark = 0
-                elif xmin is not None and xmin > xaxismax: drawmark = 0
-                elif ymin is not None and ymin < yaxismin: drawmark = 0
-                elif ymax is not None and ymax < yaxismin: drawmark = 0
-                elif ymax is not None and ymax > yaxismax: drawmark = 0
-                elif ymin is not None and ymin > yaxismax: drawmark = 0
+                if xmin is not None and xmin < xaxismin: drawsymbol = 0
+                elif xmax is not None and xmax < xaxismin: drawsymbol = 0
+                elif xmax is not None and xmax > xaxismax: drawsymbol = 0
+                elif xmin is not None and xmin > xaxismax: drawsymbol = 0
+                elif ymin is not None and ymin < yaxismin: drawsymbol = 0
+                elif ymax is not None and ymax < yaxismin: drawsymbol = 0
+                elif ymax is not None and ymax > yaxismax: drawsymbol = 0
+                elif ymin is not None and ymin > yaxismax: drawsymbol = 0
             xpos=ypos=topleft=top=topright=left=center=right=bottomleft=bottom=bottomright=None
             if x is not None and y is not None:
                 try:
                     center = xpos, ypos = graph._pos(x, y, xaxis=xaxis, yaxis=yaxis)
-                except SplitRegionError:
+                except ValueError:
                     pass
             if haserror:
                 if y is not None:
@@ -2728,13 +2812,13 @@ class mark:
                     if ymin is not None:
                         if xmin is not None: bottomleft = graph._pos(xmin, ymin, xaxis=xaxis, yaxis=yaxis)
                         if xmax is not None: bottomright = graph._pos(xmax, ymin, xaxis=xaxis, yaxis=yaxis)
-            if drawmark:
+            if drawsymbol:
                 if self._errorbarattrs is not None and haserror:
                     self._drawerrorbar(graph, topleft, top, topright,
                                               left, center, right,
                                               bottomleft, bottom, bottomright, point)
-                if self._markattrs is not None:
-                    self._drawmark(graph, xpos, ypos, point)
+                if self._symbolattrs is not None:
+                    self._drawsymbol(graph, xpos, ypos, point)
             if xpos is not None and ypos is not None:
                 if moveto:
                     lineels.append(path._moveto(xpos, ypos))
@@ -2748,79 +2832,79 @@ class mark:
             clipcanvas.stroke(self.path, *self.lineattrs)
 
 
-class changemark(changesequence): pass
+class changesymbol(changesequence): pass
 
 
-class _changemarkcross(changemark):
-    defaultsequence = (mark.cross, mark.plus, mark.square, mark.triangle, mark.circle, mark.diamond)
+class _changesymbolcross(changesymbol):
+    defaultsequence = (symbol.cross, symbol.plus, symbol.square, symbol.triangle, symbol.circle, symbol.diamond)
 
 
-class _changemarkplus(changemark):
-    defaultsequence = (mark.plus, mark.square, mark.triangle, mark.circle, mark.diamond, mark.cross)
+class _changesymbolplus(changesymbol):
+    defaultsequence = (symbol.plus, symbol.square, symbol.triangle, symbol.circle, symbol.diamond, symbol.cross)
 
 
-class _changemarksquare(changemark):
-    defaultsequence = (mark.square, mark.triangle, mark.circle, mark.diamond, mark.cross, mark.plus)
+class _changesymbolsquare(changesymbol):
+    defaultsequence = (symbol.square, symbol.triangle, symbol.circle, symbol.diamond, symbol.cross, symbol.plus)
 
 
-class _changemarktriangle(changemark):
-    defaultsequence = (mark.triangle, mark.circle, mark.diamond, mark.cross, mark.plus, mark.square)
+class _changesymboltriangle(changesymbol):
+    defaultsequence = (symbol.triangle, symbol.circle, symbol.diamond, symbol.cross, symbol.plus, symbol.square)
 
 
-class _changemarkcircle(changemark):
-    defaultsequence = (mark.circle, mark.diamond, mark.cross, mark.plus, mark.square, mark.triangle)
+class _changesymbolcircle(changesymbol):
+    defaultsequence = (symbol.circle, symbol.diamond, symbol.cross, symbol.plus, symbol.square, symbol.triangle)
 
 
-class _changemarkdiamond(changemark):
-    defaultsequence = (mark.diamond, mark.cross, mark.plus, mark.square, mark.triangle, mark.circle)
+class _changesymboldiamond(changesymbol):
+    defaultsequence = (symbol.diamond, symbol.cross, symbol.plus, symbol.square, symbol.triangle, symbol.circle)
 
 
-class _changemarksquaretwice(changemark):
-    defaultsequence = (mark.square, mark.square, mark.triangle, mark.triangle,
-                       mark.circle, mark.circle, mark.diamond, mark.diamond)
+class _changesymbolsquaretwice(changesymbol):
+    defaultsequence = (symbol.square, symbol.square, symbol.triangle, symbol.triangle,
+                       symbol.circle, symbol.circle, symbol.diamond, symbol.diamond)
 
 
-class _changemarktriangletwice(changemark):
-    defaultsequence = (mark.triangle, mark.triangle, mark.circle, mark.circle,
-                       mark.diamond, mark.diamond, mark.square, mark.square)
+class _changesymboltriangletwice(changesymbol):
+    defaultsequence = (symbol.triangle, symbol.triangle, symbol.circle, symbol.circle,
+                       symbol.diamond, symbol.diamond, symbol.square, symbol.square)
 
 
-class _changemarkcircletwice(changemark):
-    defaultsequence = (mark.circle, mark.circle, mark.diamond, mark.diamond,
-                       mark.square, mark.square, mark.triangle, mark.triangle)
+class _changesymbolcircletwice(changesymbol):
+    defaultsequence = (symbol.circle, symbol.circle, symbol.diamond, symbol.diamond,
+                       symbol.square, symbol.square, symbol.triangle, symbol.triangle)
 
 
-class _changemarkdiamondtwice(changemark):
-    defaultsequence = (mark.diamond, mark.diamond, mark.square, mark.square,
-                       mark.triangle, mark.triangle, mark.circle, mark.circle)
+class _changesymboldiamondtwice(changesymbol):
+    defaultsequence = (symbol.diamond, symbol.diamond, symbol.square, symbol.square,
+                       symbol.triangle, symbol.triangle, symbol.circle, symbol.circle)
 
 
-changemark.cross         = _changemarkcross
-changemark.plus          = _changemarkplus
-changemark.square        = _changemarksquare
-changemark.triangle      = _changemarktriangle
-changemark.circle        = _changemarkcircle
-changemark.diamond       = _changemarkdiamond
-changemark.squaretwice   = _changemarksquaretwice
-changemark.triangletwice = _changemarktriangletwice
-changemark.circletwice   = _changemarkcircletwice
-changemark.diamondtwice  = _changemarkdiamondtwice
+changesymbol.cross         = _changesymbolcross
+changesymbol.plus          = _changesymbolplus
+changesymbol.square        = _changesymbolsquare
+changesymbol.triangle      = _changesymboltriangle
+changesymbol.circle        = _changesymbolcircle
+changesymbol.diamond       = _changesymboldiamond
+changesymbol.squaretwice   = _changesymbolsquaretwice
+changesymbol.triangletwice = _changesymboltriangletwice
+changesymbol.circletwice   = _changesymbolcircletwice
+changesymbol.diamondtwice  = _changesymboldiamondtwice
 
 
-class line(mark):
+class line(symbol):
 
     def __init__(self, lineattrs=_nodefault):
         if lineattrs is _nodefault:
             lineattrs = changelinestyle()
-        mark.__init__(self, markattrs=None, errorbarattrs=None, lineattrs=lineattrs)
+        symbol.__init__(self, symbolattrs=None, errorbarattrs=None, lineattrs=lineattrs)
 
 
-class rect(mark):
+class rect(symbol):
 
     def __init__(self, gradient=color.gradient.Gray):
         self.gradient = gradient
         self.colorindex = None
-        mark.__init__(self, markattrs=None, errorbarattrs=(), lineattrs=None)
+        symbol.__init__(self, symbolattrs=None, errorbarattrs=(), lineattrs=None)
 
     def iterate(self):
         raise RuntimeError("style is not iterateable")
@@ -2829,7 +2913,7 @@ class rect(mark):
         if key == "color":
             self.colorindex = index
         else:
-            mark.othercolumnkey(self, key, index)
+            symbol.othercolumnkey(self, key, index)
 
     def _drawerrorbar(self, graph, topleft, top, topright,
                                    left, center, right,
@@ -2858,35 +2942,35 @@ class rect(mark):
             raise RuntimeError("column 'color' not set")
         self.lastcolor = None
         self.rectclipcanvas = graph.clipcanvas()
-        mark.drawpoints(self, graph, points)
+        symbol.drawpoints(self, graph, points)
 
 
 
-class text(mark):
+class text(symbol):
 
     def __init__(self, textdx="0", textdy="0.3 cm", textattrs=tex.halign.center, **args):
         self.textindex = None
         self.textdx_str = textdx
         self.textdy_str = textdy
         self._textattrs = textattrs
-        mark.__init__(self, **args)
+        symbol.__init__(self, **args)
 
     def iteratedict(self):
-        result = mark.iteratedict()
+        result = symbol.iteratedict()
         result["textattrs"] = _iterateattr(self._textattrs)
         return result
 
     def iterate(self):
-        return textmark(**self.iteratedict())
+        return textsymbol(**self.iteratedict())
 
     def othercolumnkey(self, key, index):
         if key == "text":
             self.textindex = index
         else:
-            mark.othercolumnkey(self, key, index)
+            symbol.othercolumnkey(self, key, index)
 
-    def _drawmark(self, graph, x, y, point=None):
-        mark._drawmark(self, graph, x, y, point)
+    def _drawsymbol(self, graph, x, y, point=None):
+        symbol._drawsymbol(self, graph, x, y, point)
         if None not in (x, y, point[self.textindex], self._textattrs):
             graph.tex._text(x + self._textdx, y + self._textdy, str(point[self.textindex]), *_ensuresequence(self.textattrs))
 
@@ -2899,10 +2983,10 @@ class text(mark):
             self.textattrs = _getattr(self._textattrs)
         if self.textindex is None:
             raise RuntimeError("column 'text' not set")
-        mark.drawpoints(self, graph, points)
+        symbol.drawpoints(self, graph, points)
 
 
-class arrow(mark):
+class arrow(symbol):
 
     def __init__(self, linelength="0.2 cm", arrowattrs=(), arrowsize="0.1 cm", arrowdict={}, epsilon=1e-10):
         self.linelength_str = linelength
@@ -2911,7 +2995,7 @@ class arrow(mark):
         self.arrowdict = arrowdict
         self.epsilon = epsilon
         self.sizeindex = self.angleindex = None
-        mark.__init__(self, markattrs=(), errorbarattrs=None, lineattrs=None)
+        symbol.__init__(self, symbolattrs=(), errorbarattrs=None, lineattrs=None)
 
     def iterate(self):
         raise RuntimeError("style is not iterateable")
@@ -2922,9 +3006,9 @@ class arrow(mark):
         elif key == "angle":
             self.angleindex = index
         else:
-            mark.othercolumnkey(self, key, index)
+            symbol.othercolumnkey(self, key, index)
 
-    def _drawmark(self, graph, x, y, point=None):
+    def _drawsymbol(self, graph, x, y, point=None):
         if None not in (x, y, point[self.angleindex], point[self.sizeindex], self.arrowattrs, self.arrowdict):
             if point[self.sizeindex] > self.epsilon:
                 dx, dy = math.cos(point[self.angleindex]*math.pi/180.0), math.sin(point[self.angleindex]*math.pi/180)
@@ -2946,8 +3030,84 @@ class arrow(mark):
             raise RuntimeError("column 'size' not set")
         if self.angleindex is None:
             raise RuntimeError("column 'angle' not set")
-        mark.drawpoints(self, graph, points)
+        symbol.drawpoints(self, graph, points)
 
+
+class bar:
+
+    def __init__(self, barattrs=canvas.stroked()):
+        self._barattrs = barattrs
+        self.xbar = 1
+
+    def iteratedict(self):
+        result = {}
+        result["barattrs"] = _iterateattr(self._barattrs)
+        return result
+
+    def iterate(self):
+        return bar(**self.iteratedict())
+
+    def setcolumns(self, graph, columns):
+        def checkpattern(key, index, pattern, iskey, isindex):
+             if key is not None:
+                 match = pattern.match(key)
+                 if match:
+                     if isindex is not None: raise ValueError("multiple key specification")
+                     if iskey is not None and iskey != match.groups()[0]: raise ValueError("inconsistent key names")
+                     key = None
+                     iskey = match.groups()[0]
+                     isindex = index
+             return key, iskey, isindex
+
+        self.xkey = self.ykey = None
+        if len(graph.Names) != 2: raise TypeError("style not applicable in graph")
+        XPattern = re.compile(r"(%s([2-9]|[1-9][0-9]+)?)$" % graph.Names[0])
+        YPattern = re.compile(r"(%s([2-9]|[1-9][0-9]+)?)$" % graph.Names[1])
+        self.xi = self.yi = None
+        for key, index in columns.items():
+            key, self.xkey, self.xi = checkpattern(key, index, XPattern, self.xkey, self.xi)
+            key, self.ykey, self.yi = checkpattern(key, index, YPattern, self.ykey, self.yi)
+            if key is not None:
+                self.othercolumnkey(key, index)
+        if None in (self.xkey, self.ykey): raise ValueError("incomplete axis specification")
+
+    def getranges(self, points):
+        xmin, xmax = min([p[self.xi] for p in points]), max([p[self.xi] for p in points])
+        ymin, ymax = min([p[self.yi] for p in points]), max([p[self.yi] for p in points])
+        return {self.xkey: (xmin, xmax), self.ykey: (ymin, ymax)}
+
+    def drawpoints(self, graph, points):
+        xaxis = graph.axes[self.xkey]
+        yaxis = graph.axes[self.ykey]
+        xaxismin, xaxismax = xaxis.getdatarange()
+        yaxismin, yaxismax = yaxis.getdatarange()
+        self.barattrs = _getattrs(_ensuresequence(self._barattrs))
+        for point in points:
+            drawsymbol = 1
+            x = point[self.xi]
+            y = point[self.yi]
+            if x is not None and x < xaxismin: drawsymbol = 0
+            elif x is not None and x > xaxismax: drawsymbol = 0
+            elif y is not None and y < yaxismin: drawsymbol = 0
+            elif y is not None and y > yaxismax: drawsymbol = 0
+            if x is not None and y is not None:
+                try:
+                    if self.xbar:
+                        x1pos, y1pos = graph._pos((x, 0), y, xaxis=xaxis, yaxis=yaxis)
+                        x2pos, y2pos = graph._pos((x, 1), y, xaxis=xaxis, yaxis=yaxis)
+                        x3pos, y3pos = xaxis._vtickpoint(xaxis, xaxis.convert((x, 1)))
+                        x4pos, y4pos = xaxis._vtickpoint(xaxis, xaxis.convert((x, 0)))
+                        graph.fill(path.path(path._moveto(x1pos, y1pos),
+                                             graph._connect(x1pos, y1pos, x2pos, y2pos),
+                                             graph._connect(x2pos, y2pos, x3pos, y3pos),
+                                             graph._connect(x3pos, y3pos, x4pos, y4pos),
+                                             graph._connect(x4pos, y4pos, x1pos, y1pos), # might not be straight
+                                             path.closepath()))
+                    else:
+                        # TODO: ybar
+                        pass
+                except ValueError:
+                    pass
 
 
 class surface:
@@ -2968,23 +3128,25 @@ class surface:
 ################################################################################
 
 
+import data as datamodule # well, ugly ???
+
 class data:
 
-    defaultstyle = mark
+    defaultstyle = symbol
 
     def __init__(self, file, **columns):
-        if not isinstance(file, datafile._datafile):
-            self.datafile = datafile.datafile(file)
+        if _isstring(file):
+            self.data = data.datafile(file)
         else:
-            self.datafile = file
+            self.data = file
         self.columns = {}
         usedkeys = []
         for key, column in columns.items():
             try:
-                self.columns[key] = self.datafile.getcolumnno(column)
-            except datafile.ColumnError:
-                self.columns[key] = len(self.datafile.titles)
-                usedkeys.extend(self.datafile._addcolumn(column, **columns))
+                self.columns[key] = self.data.getcolumnno(column)
+            except datamodule.ColumnError:
+                self.columns[key] = len(self.data.titles)
+                usedkeys.extend(self.data._addcolumn(column, **columns))
         for usedkey in usedkeys:
             if usedkey in self.columns.keys():
                 del self.columns[usedkey]
@@ -2994,13 +3156,13 @@ class data:
         self.style.setcolumns(graph, self.columns)
 
     def getranges(self):
-        return self.style.getranges(self.datafile.data)
+        return self.style.getranges(self.data.data)
 
     def setranges(self, ranges):
         pass
 
     def draw(self, graph):
-        self.style.drawpoints(graph, self.datafile.data)
+        self.style.drawpoints(graph, self.data.data)
 
 
 class function:

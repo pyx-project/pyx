@@ -15,12 +15,12 @@ def test_multiaxes_data(c, t, x, y):
                                y3=graph.logaxis(title="$PPP_3$",
                                                 painter=graph.axispainter(titleattrs=tex.direction(45))),
                                y5=graph.logaxis(title="$P_5$")))
-    df = datafile.datafile("testdata")
+    df = data.datafile("testdata")
     g.plot((graph.data(df, x=1, y="sqrt(sqrt($3))"),
             graph.data(df, x=1, y2=4),
             graph.data(df, x=1, y3=5),
             graph.data(df, x=1, y5=6)),
-           style=graph.mark(markattrs=(graph.changecolor.RedGreen(), graph.changestrokedfilled()), mark=graph.changemark.squaretwice()))
+           style=graph.symbol(symbolattrs=(graph.changecolor.RedGreen(), graph.changestrokedfilled()), symbol=graph.changesymbol.squaretwice()))
     g.finish()
 
 def test_piaxis_function(c, t, x, y):
@@ -31,7 +31,7 @@ def test_piaxis_function(c, t, x, y):
     g.finish()
 
 def test_textaxis_errorbars(c, t, x, y):
-    df = datafile.datafile("testdata2")
+    df = data.datafile("testdata2")
     g = c.insert(graph.graphxy(t, x, y, height=5,
                                x=graph.linaxis(min=0.5, max=12.5, title="Month",
                                                part=graph.linpart("1", texts=df.getcolumn("month"), extendtick=None),
@@ -39,7 +39,7 @@ def test_textaxis_errorbars(c, t, x, y):
                                y=graph.linaxis(min=-10, max=30, title="Temperature [$^\circ$C]"),
                                x2=graph.linaxis(), y2=graph.linaxis()))
     g.plot(graph.data(df, x=0, ymin="min", ymax="max"))
-    g.plot(graph.paramfunction("k", 0, 2*math.pi, "x2, y2, dx2, dy2 = 0.8*sin(k), 0.8*cos(3*k), 0.05, 0.05"), style = graph.mark(mark=graph.mark.triangle))
+    g.plot(graph.paramfunction("k", 0, 2*math.pi, "x2, y2, dx2, dy2 = 0.8*sin(k), 0.8*cos(3*k), 0.05, 0.05"), style = graph.symbol(symbol=graph.symbol.triangle))
     g.finish()
 
 def test_ownmark(c, t, x, y):
@@ -79,7 +79,7 @@ def test_ownmark(c, t, x, y):
     g.stroke(area, canvas.linewidth.THick, canvas.filled(color.gray(0.5)))
 
 def test_allerrorbars(c, t, x, y):
-    df = datafile.datafile("testdata3")
+    df = data.datafile("testdata3")
     g = c.insert(graph.graphxy(t, x, y, height=5, width=4))
     g.plot(graph.data(df, x="x", y="y", xmin="xmin", xmax="xmax", ymin="ymin", ymax="ymax", text="text"), graph.text())
     g.finish()
@@ -108,20 +108,24 @@ def test_3d(c, t, x, y):
     g.finish()
 
 def test_split(c, t, x, y):
-    g = c.insert(graph.graphxy(t, x, y, height=5,
-                               x=graph.logaxis(title="$W$"),
-                               y=graph.splitaxis((graph.linaxis(max=0.002), graph.splitaxis((graph.linaxis(min=0.01, max=0.015), graph.linaxis(min=0.019)))))))
-    df = datafile.datafile("testdata")
-    g.plot(graph.data(df, x=1, y=3))
+    #g = c.insert(graph.graphxy(t, x, y, height=5, y2=None,
+    #                           y=graph.splitaxis((graph.linaxis(max=0.002), graph.splitaxis((graph.linaxis(min=0.01, max=0.015), graph.linaxis(min=0.019)))))))
+    #df = data.datafile("testdata2")
+    #g.plot(graph.data(df, x=0, y=2), graph.bar())
+    #g.finish()
+    g = c.insert(graph.graphxy(t, x, y, height=5, width=5, x2=None,
+                               x=graph.splitaxis([graph.linaxis(min=-0.2, max=1.2) for x in range(12)], None)))
+    df = data.datafile("testdata2")
+    g.plot(graph.data(df, x=0, y=2), graph.bar())
     g.finish()
 
 c = canvas.canvas()
 t = c.insert(tex.tex())
-#test_multiaxes_data(c, t, 0, 21)
-#test_piaxis_function(c, t, 0, 14)
-#test_textaxis_errorbars(c, t, 0, 7)
-#test_ownmark(c, t, 0, 0)
-#test_allerrorbars(c, t, -7, 0)
+test_multiaxes_data(c, t, 0, 21)
+test_piaxis_function(c, t, 0, 14)
+test_textaxis_errorbars(c, t, 0, 7)
+test_ownmark(c, t, 0, 0)
+test_allerrorbars(c, t, -7, 0)
 #test_3d(c, t, -7, 7)
 test_split(c, t, -7, 7)
 
