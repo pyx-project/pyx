@@ -1,4 +1,24 @@
 #!/usr/bin/env python
+#
+#
+# Copyright (C) 2002 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2002 André Wobst <wobsta@users.sourceforge.net>
+#
+# This file is part of PyX (http://pyx.sourceforge.net/).
+#
+# PyX is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# PyX is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PyX; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 # TODO: - clipping (especially bounding boxes, which are then limited
 #         by the bounding box of the clipping path)
@@ -469,19 +489,19 @@ if __name__=="__main__":
        s=c.insert(canvas.canvas(translate(10,10)*rotate(angle))).draw(p, canvas.linestyle.dashed, canvas.linewidth(0.01*angle), grey((20-angle)/20.0))
  
     c.set(linestyle.solid)
-    g=GraphXY(c, t, 10, 15, 8, 6 ) #, y2=LinAxis())
+    g=GraphXY(c, t, 10, 15, 8, 6, x=LogAxis())
     df = DataFile("testdata")
-    g.plot(Data(df, x=2, y=3))
+    g.plot(Data(df, x=1, y=3))
     #g.plot(Data(df, x=2, y2=4))
-    g.plot(Data(df, x=2, y=5), mark(0.01))
-    g.plot(Data(df, x=2, y=6), chain())
+    #g.plot(Data(df, x=2, y=5), mark(0.01))
+    #g.plot(Data(df, x=2, y=6), chain())
     #g.plot(Data(df, x=2, y=7))
     #g.plot(Data(df, x=2, y=8))
 #    g.plot(Function("0.01*sin(x)",Points=1000))
 #    g.plot(Function("0", Points=2000)) # <- make this working!
     #g.plot(Function("0*x"))
     #g.plot(Function("0.01*sin(x)"), chain())
-    g.plot(Function("x=2*sin(1000*y)"))
+    #g.plot(Function("x=2*sin(1000*y)"))
     g.run()
     
     c.insert(canvas.canvas(scale(0.5, 0.4).rotate(10).translate("2 cm","200 mm"))).insert(epsfile("ratchet_f.eps"))

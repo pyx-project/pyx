@@ -20,4 +20,18 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-__all__ = ["canvas", "color", "graph", "path", "tex", "unit", "graph", "trafo"]
+import os
+
+styles = (("10pt", "article", "10pt", "" , ),
+          ("11pt", "article", "11pt", "" , ),
+          ("12pt", "article", "12pt", "" , ),
+          ("10ptex", "article", "10pt", "\\\\usepackage{exscale}" , ),
+          ("11ptex", "article", "11pt", "\\\\usepackage{exscale}" , ),
+          ("12ptex", "article", "12pt", "\\\\usepackage{exscale}" , ),
+          ("foils17pt", "foils", "17pt", "" , ),
+          ("foils20pt", "foils", "20pt", "" , ),
+          ("foils25pt", "foils", "25pt", "" , ),
+          ("foils30pt", "foils", "30pt", "" , ), )
+
+for style in styles:
+    os.system("echo \'%s\n%s\n%s\n%s\'|latex createlts.tex" % style)

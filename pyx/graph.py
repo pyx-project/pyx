@@ -1,9 +1,34 @@
 #!/usr/bin/env python
+#
+#
+# Copyright (C) 2002 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2002 André Wobst <wobsta@users.sourceforge.net>
+#
+# This file is part of PyX (http://pyx.sourceforge.net/).
+#
+# PyX is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# PyX is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PyX; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 from path import *
 import types, re, tex
 
 class _Map:
+    def setbasepts(self, basepts):
+        """base points for convertion"""
+        self.basepts = basepts
+        return self
+
     def convert(self, Values):
         if type(Values) in (types.IntType, types.LongType, types.FloatType, ):
             return self._convert(Values)
@@ -17,14 +42,24 @@ class _Map:
             return map(lambda x, self = self: self._invert(x), Values)
 
 class _LinMap(_Map):
-    def set(self, m, n):
-        self.m = float(m)
-        self.n = float(n)
+    def _convert(self, Value):
+        return self.basepts[0][1] + ((self.basepts[1][1] - self.basepts[0][1]) /
+               float(self.basepts[1][0] - self.basepts[0][0])) * (Value - self.basepts[0][0])
+    def _invert(self, Value):
+        return self.basepts[0][0] + ((self.basepts[1][0] - self.basepts[0][0]) /
+               float(self.basepts[1][1] - self.basepts[0][1])) * (Value - self.basepts[0][1])
+
+class _LogMap(_LinMap):
+    def setbasepts(self, basepts):
+        """base points for convertion"""
+        self.basepts = ((math.log(basepts[0][0]), basepts[0][1], ),
+                        (math.log(basepts[1][0]), basepts[1][1], ), )
         return self
     def _convert(self, Value):
-        return self.m * Value + self.n
+        return _LinMap._convert(self, math.log(Value))
     def _invert(self, Value):
-        return (Value - self.n) / self.m
+        return math.exp(_LinMap._invert(self, Value))
+               
 
 
 ###############################################################################
@@ -32,49 +67,42 @@ class _LinMap(_Map):
 
 class Tick:
 
-    def __init__(self, ValuePos, VirtualPos, Label=None, TickLevel=1, LabelLevel=1):
+    def __init__(self, ValuePos, VirtualPos, Label = None, LabelRep = None, TickLevel = 1, LabelLevel = 1):
+        if not LabelRep:
+            LapelRep = Label
         self.ValuePos = ValuePos
         self.VirtualPos = VirtualPos
         self.Label = Label
+        self.LabelRep = LabelRep
         self.TickLevel = TickLevel
         self.LabelLevel = LabelLevel
 
 
-class Axis:
+class _Axis:
 
-    pass
-
-
-class LinAxis(_LinMap):
-
-    def __init__(self, Min = None, Max = None):
+    def __init__(self, Title = None, Min = None, Max = None):
         self.Min = None
         self.Max = None
+        self.FixMin = 0
+        self.FixMax = 0
+        self.Title = Title
+        self.set(Min, Max)
         if Min:
-            self.Min = Min
-            self.InitMin = 1
-        else:
-            self.InitMin = 0
+            self.FixMin = 1
         if Max:
-            self.Max = Max
-            self.InitMax = 1
-        else:
-            self.InitMax = 0
-        self.set(self.Min, self.Max)
+            self.FixMax = 1
 
     def set(self, Min = None, Max = None):
-        if Min and not self.InitMax:
+        if Min and not self.FixMax:
             self.Min = Min
-        if Max and not self.InitMax:
+        if Max and not self.FixMax:
             self.Max = Max
         if self.Min and self.Max:
-            _LinMap.set(self, 1 / float(self.Max - self.Min), -self.Min / float(self.Max - self.Min))
+            self.setbasepts(((self.Min, 0,), (self.Max, 1,)))
 
     def TickValPosList(self):
-        self.TickStart = self.Min
-        self.TickCount = 5
-        self.TickDist = (self.Max - self.Min) / float(self.TickCount - 1)
-        return map(lambda x, self=self: self.TickStart + x * self.TickDist, range(self.TickCount))
+        TickCount = 4
+        return map(lambda x, self = self, TickCount = TickCount: self._invert(x / float(TickCount)), range(TickCount + 1))
 
     def ValToLab(self, x):
         return "%.3f" % x
@@ -83,16 +111,26 @@ class LinAxis(_LinMap):
         return map(lambda x, self=self: Tick(x, self.convert(x), self.ValToLab(x)), self.TickValPosList())
 
 
+class LinAxis(_Axis, _LinMap):
+
+    pass
+
+
+class LogAxis(_Axis, _LogMap):
+
+    pass
+
+
 ###############################################################################
 # graph part
 
 class Graph:
 
-    def __init__(self, canvas, tex, x, y):
+    def __init__(self, canvas, tex, xpos, ypos):
         self.canvas = canvas
         self.tex = tex
-        self.x = x
-        self.y = y
+        self.xpos = xpos
+        self.ypos = ypos
 
 class _PlotData:
     def __init__(self, Data, PlotStyle):
@@ -108,8 +146,8 @@ class GraphXY(Graph):
 
     plotdata = [ ]
 
-    def __init__(self, canvas, tex, x, y, width, height, **Axis):
-        Graph.__init__(self, canvas, tex, x, y)
+    def __init__(self, canvas, tex, xpos, ypos, width, height, **Axis):
+        Graph.__init__(self, canvas, tex, xpos, ypos)
         self.width = width
         self.height = height
         if "x" not in Axis.keys():
@@ -145,8 +183,8 @@ class GraphXY(Graph):
         self.buttom = 1 # should we use the final postscript points already ???
         self.top = 0
         self.right = 0
-        self.VirMap = (_LinMap().set(self.width - self.left - self.right, self.x + self.left),
-                       _LinMap().set(self.height - self.buttom - self.left, self.y + self.buttom), )
+        self.VirMap = (_LinMap().setbasepts(((0, self.xpos + self.left, ), (1, self.xpos + self.width - self.right, ))),
+                       _LinMap().setbasepts(((0, self.ypos + self.buttom, ), (1, self.ypos + self.height - self.top, ))), )
 
         self.canvas.draw(rect(self.VirMap[0].convert(0),
                               self.VirMap[1].convert(0),
@@ -365,7 +403,7 @@ class Function:
             for x in range(self.Points + 1):
                 values.append(self.XAxis[key].invert(x * 1.0 / self.Points))
             self.XValues[key] = values
-        # this isn't smart ... we should try to make self.MT.Calc(..., i) faster (walk only once throu the tree)
+        # this isn't smart ... we should walk only once throu the mathtree
         self.YValues = map(lambda i, self = self: self.MT.Calc(self.XValues, i), range(self.Points + 1))
 
     def GetValues(self, Kind, DefaultResult = "y"):
@@ -376,5 +414,9 @@ class Function:
 
 class ParamFunction(Function):
     pass
+
+
+###############################################################################
+# key part
 
 

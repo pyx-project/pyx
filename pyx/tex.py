@@ -1,4 +1,26 @@
 #!/usr/bin/env python
+#
+#
+# Copyright (C) 2002 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2002 André Wobst <wobsta@users.sourceforge.net>
+#
+# This file is part of PyX (http://pyx.sourceforge.net/).
+#
+# PyX is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# PyX is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PyX; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+
 
 import canvas, os, string, tempfile, sys, md5, string, traceback, time, unit, math, types, color, StringIO
 
@@ -294,12 +316,10 @@ class _BoxCmd(_TexCmd):
             file.write("\\immediate\\write\\sizefile{%s:%s:%s:\\the\\%s\\localbox}%%\n" % (self.MD5(), CmdExtent, time.time(), CmdExtent, ))
         for CmdPut in self.CmdPuts:
 
-            # TODO: remove the ugly 11in!!!
-
-            file.write("{\\vbox to0pt{\\kern" + str(11*72.27+canvas.unit.tpt(-CmdPut.y)) + "truept\\hbox{\\kern" + str(canvas.unit.tpt(CmdPut.x)) + "truept\\ht\\localbox0pt")
+            file.write("{\\vbox to0pt{\\kern%struept\\hbox{\\kern%struept\\ht\\localbox0pt" % (canvas.unit.tpt(-CmdPut.y), canvas.unit.tpt(CmdPut.x),))
 
             if CmdPut.direction != direction.horizontal:
-                file.write("\\special{ps: gsave currentpoint currentpoint translate " + str(CmdPut.direction) + " neg rotate neg exch neg exch translate }")
+                file.write("\\special{ps: gsave currentpoint currentpoint translate %s neg rotate neg exch neg exch translate }" % CmdPut.direction )
             if CmdPut.color != color.grey.black:
                 file.write("\\special{ps: ")
                 CmdPut.color.write(canvas, file)
@@ -416,14 +436,12 @@ class tex(_InstanceList):
         except IOError:
             self.Sizes = [ ]
 
-        self.FirstCmd = 1
         if self.mode == mode.TeX:
             # TODO: other ways for creating font sizes?
             LtsName = os.path.join(os.path.dirname(__file__), "lts", str(self.latexsize) + ".lts")
             self.define(open(LtsName, "r").read())
             self.define("\\hsize0truein%\n\\vsize0truein%\n\\hoffset-1truein%\n\\voffset-1truein")
         if self.mode == mode.LaTeX:
-            self.BeginDocument = 0
             if self.docopt:
                 self.define("\\documentclass[" + str(self.docopt) + "]{" + str(self.docclass) + "}")
             else:
@@ -451,9 +469,6 @@ class tex(_InstanceList):
     
         # TODO: improve file handling (although it's quite usable now, those things can always be improved)
 
-        assert len(self.BoxCmds), "nothing to do" # TODO: we shouln't care, but we shouldn't run tex here,
-                                                  #       because it might broken due to missing BeginDocument
-
         if self.DoneRunTex:
             return
 
@@ -473,6 +488,7 @@ class tex(_InstanceList):
 
         texfile.write("\\nonstopmode%\n")
         texfile.write("\\newwrite\\sizefile%\n\\newbox\\localbox%\n\\newbox\\pagebox%\n\\immediate\\openout\\sizefile=" + TempName + ".size%\n")
+
         for Cmd in self.DefCmds:
             Cmd.write(acanvas, texfile)
 
@@ -488,6 +504,11 @@ class tex(_InstanceList):
         if self.mode == mode.LaTeX:
             texfile.write("\\end{document}\n")
         texfile.close()
+
+        if self.mode == mode.LaTeX:
+            auxfile = open(TempName + ".aux", "w")
+            auxfile.write("\\relax\n")
+            auxfile.close()
 
         self.execute(string.lower(str(self.mode)) + " " + TempName + ".tex > " + TempName + ".texout 2> " + TempName + ".texerr")
 
@@ -517,7 +538,7 @@ class tex(_InstanceList):
             print "by yourself."
 
         else:
-            self.execute("dvips -E -o " + TempName + ".eps " + TempName + ".dvi > " + TempName + ".dvipsout 2> " + TempName + ".dvipserr")
+            self.execute("dvips -O0in,11in -E -o " + TempName + ".eps " + TempName + ".dvi > " + TempName + ".dvipsout 2> " + TempName + ".dvipserr")
             if not os.access(TempName + ".eps", 0):
                 print "Error reading the eps file which should be produced by dvips."
                 print "May be, you just have no disk space available. Or something badly"
@@ -589,19 +610,12 @@ class tex(_InstanceList):
                                     self.GetStack(),
                                     self.ExtractInstance(styleparams, _msglevel, msglevel.hideload)))
 
-    def DoBeginDocument(self):
-        assert not self.BeginDocument, "multiple BeginDocument statements not allowed"
-        assert self.mode == mode.LaTeX, "BeginDocument allowed in LaTeX mode only"
-        self.define("\\begin{document}")
-        self.BeginDocument = 1
-    
     def InsertCmd(self, Cmd, styleparams):
 
-        if self.FirstCmd:
-            if (self.mode == mode.LaTeX) and not self.BeginDocument:
-                self.DoBeginDocument()
+        if not len(self.BoxCmds):
+            if self.mode == mode.LaTeX:
+                self.define("\\begin{document}")
             self.DefCmdsStr = reduce(lambda x,y: x + y.DefCmd, self.DefCmds, "")
-            self.FirstCmd = 0
 
         MyCmd = _BoxCmd(self.DefCmdsStr,
                         Cmd,
