@@ -15,6 +15,11 @@
 \RCS $Id$
 \RCS $Revision$
 \RCS $Date$
+
+% JL: I have mostly checked the FAQ for PyX 0.6. An exception is
+% probably the still pending change from graph.data.data to
+% graph.data.file
+
 \begin{center}
 \LARGE\sffamily Some frequently and\\ 
 not so frequently asked questions\\ 
@@ -151,7 +156,7 @@ information on Python including tutorials.
 }
 
 \question{c}{What do I need to import in order to use \PyX?}
-{}
+{checked for 0.6}
 {It is recommended to begin your Python code with 
 \begin{progcode}
 from pyx import *
@@ -159,10 +164,9 @@ from pyx import *
 when using \PyX. This allows you for example to write simply 
 \texttt{graph.graphxy}
 instead of \texttt{pyx.graph.graphxy}. The following modules will be loaded:
-\texttt{box}, \texttt{canvas}, \texttt{color}, \texttt{connector}, \texttt{data},
+\texttt{attr}, \texttt{box}, \texttt{canvas}, \texttt{color}, \texttt{connector}, \texttt{data},
 \texttt{deco}, \texttt{epsfile}, \texttt{graph}, \texttt{path},
-\texttt{style}, \texttt{trafo}, \texttt{tex}, \texttt{text}, and
-\texttt{unit}.
+\texttt{style}, \texttt{trafo},  \texttt{text}, and \texttt{unit}.
 
 For convenience, you might import specific objects of a module like in
 \begin{progcode}
@@ -176,7 +180,7 @@ the first code snippet is present.
 
 \question{a}{What is a raw string and why should I know about it when
   using \PyX?}
-{}
+{checked for 0.6}
 {\label{q:raw_string}
 The backslash serves in standard Python strings to start an escape sequence.
 For example {\cs n} corresponds to a newline character. On the other hand,
@@ -194,7 +198,7 @@ c.text(0, 0, r"\${\cs alpha}{\cs beta}{\cs gamma}\$")
 \subsection{General aspects}
 
 \question{c}{How do I generate a graph from data as simply as possible?}
-{}
+{checked for 0.6}
 {\label{q:mingraphdata}
 Suppose that you have a data file \texttt{x.dat} containing values for
 $x$ and $y$ in two columns. Then the following code will do the job
@@ -202,14 +206,14 @@ $x$ and $y$ in two columns. Then the following code will do the job
 from pyx import *\\
 \\
 g = graph.graphxy(width=10)\\
-g.plot(graph.data("x.dat", x=1, y=2))\\
-g.writetofile("x")
+g.plot(graph.data.data("x.dat", x=1, y=2))\\
+g.writeEPSfile("x")
 \end{progcode}
 \texttt{graphxy} creates a canvas (called \texttt{g} in this example) onto 
 which the graph will be drawn and it sets the default behavior including the 
 axis. There is, however, no default value for the width of the graph. In 
 \texttt{plot} you have to specify the name of the data file and the columns 
-from which the data should be taken. Finally, \texttt{writetofile} will 
+from which the data should be taken. Finally, \texttt{writeEPSfile} will 
 generate the postscript file \texttt{x.eps} which you can view or print.
 
 A minimal example is also provided in the \PyX{} distribution as 
@@ -217,25 +221,25 @@ A minimal example is also provided in the \PyX{} distribution as
 }
 
 \question{a}{How do I generate a graph of a function as simply as possible?}
-{}
+{checked for 0.6}
 {The following example will draw a parabola:
 \begin{progcode}
 from pyx import *\\
 \\
 g = graph.graphxy(width=10,\\
-~~~~~~~~~~~~~~~~~~x=graph.linaxis(min=-2, max=2)\\
+~~~~~~~~~~~~~~~~~~x=graph.axis.linear(min=-2, max=2)\\
 ~~~~~~~~~~~~~~~~~~)\\
 \\
-g.plot(graph.function("y=x**2"))\\
+g.plot(graph.data.function("y=x**2"))\\
 \\
-g.writetofile("x")
+g.writeEPSfile("x")
 \end{progcode}
 Most of the code has been explained in \uaref{q:mingraphdata}. The main 
 difference is that here you need to specify minimum and maximum for the 
 $x$-axis so that \PyX{} knows in which range to evaluate the function.
 
-See \uaref{q:zeropathattrs} for an explanation of how one can suppress the
-zero lines.
+%See \uaref{q:zeropathattrs} for an explanation of how one can suppress the
+%zero lines.
 
 Another, slightly more complex, example is also provided in the \PyX{} 
 distribution as \path{examples/graphs/piaxis.py}.
@@ -277,12 +281,12 @@ gupper = graphxy(width=10, ypos=glower.ypos+glower.height+2)\\
 gupper.plot(...)\\
 \\
 c.insert(gupper)\\
-c.writetofile(...)
+c.writeEPSfile(...)
 \end{progcode}
 where \texttt{...} has to be replaced by the appropriate information like
 data and symbol specifications and the name of the output file. Here,
 \texttt{c.insert} is used to actually insert the subcanvasses 
-for the graphs into the main canvas \texttt{c} and \texttt{c.writetofile}
+for the graphs into the main canvas \texttt{c} and \texttt{c.writeEPSfile}
 in the last line requests to write the contents of this canvas to a file.
 
 %In order to suppress the labels of the $x$-axis of the upper graph, use
@@ -290,7 +294,7 @@ in the last line requests to write the contents of this canvas to a file.
 %myaxispainter = graph.axispainter(labelattrs=None)
 %
 %gupper = graph.graphxy(...,
-%                       x=graph.linaxis(...,
+%                       x=graph.axis.linear(...,
 %                                      part=graph.linpart(),
 %                                       painter=myaxispainter)
 %                       )
@@ -298,7 +302,7 @@ in the last line requests to write the contents of this canvas to a file.
 }
 
 \question{a}{How can I plot grid data? \new}
-{}
+{checked for 0.6}
 {\PyX{} offers support for plotting three-dimensional data as two-dimensional
 color plots or grey-scale plots and of vector fields by providing ways to
 plot rectangles and arrows in graphs. 
@@ -311,8 +315,8 @@ $(x_\mathrm{max},y_\mathrm{max})$ of the triangle and a value between 0 and 1
 determining the color via a \PyX{} color palette. The following code gives an 
 idea of how to proceed:
 \begin{progcode}
-g.plot(graph.data("datafile.dat"), xmin=0, xmax=1, ymin=2, ymax=3, color=4),\\
-~~~~~~~graph.rect(color.palette.ReverseRainbow)\\
+g.plot(graph.data.data("datafile.dat"), xmin=0, xmax=1, ymin=2, ymax=3, color=4),\\
+~~~~~~~graph.style.rect(color.palette.ReverseRainbow)\\
 ~~~~~~)\\
 g.dodata()
 \end{progcode}
@@ -353,8 +357,8 @@ each data point is represented by an arrow. In this case a data point is
 specified by the position of the arrow, its size and its direction as indicated
 in the following code snippet:
 \begin{progcode}
-g.plot(graph.data("datafile.dat"), x=0, y=1, size=2, angle=3),\\
-~~~~~~~graph.arrow()\\
+g.plot(graph.data.data("datafile.dat"), x=0, y=1, size=2, angle=3),\\
+~~~~~~~graph.style.arrow()\\
 ~~~~~~)
 \end{progcode}
 
@@ -371,32 +375,32 @@ that?}
 \subsection{Axis properties}
 
 \question{a}{How do I specify the tick increment? \changed}
-{}
+{checked for 0.6. Maybe we should add an from pyx.graph import axis}
 {In the partition of a linear axis, the increments associated with ticks,
 subticks etc.\ can be specified as argument of \texttt{linpart}. In the
 following example, ticks will be drawn at even values while subticks will
 be drawn at all integers:
 \begin{progcode}
 tg = graph.graphxy(width=10,\\
-~~~~~~~~~~~~~~~~~~~x=graph.linaxis(min=1, max=10,\\
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~parter=graph.linparter(tickdist=[2,1]))\\
+~~~~~~~~~~~~~~~~~~~x=graph.axis.linear(min=1, max=10,\\
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~parter=graph.axis.parter.linear(tickdist=[2,1]))\\
 ~~~~~~~~~~~~~~~~~~~)
 \end{progcode}
 }
 
 \question{a}{How do I get rid of the zero line?}
-{}
+{Obsolete with \PyX{} 0.6. To be deleted.}
 {\label{q:zeropathattrs}
 The \texttt{axispainter} takes an argument \texttt{zeropathattrs} which 
 defaults to an empty list. Setting the \texttt{axispainter} for the
 appropriate axis to \texttt{None} will remove the zero line like in this
 example:
 \begin{progcode}
-myaxispainter = graph.axispainter(zeropathattrs=None)\\
+myaxispainter = graph.axis.painter(zeropathattrs=None)\\
 \\
 g = graph.graphxy(width=10,\\
-~~~~~~~~~~~~~~~~~~x=graph.linaxis(min=-5, max=5, painter=myaxispainter),\\
-~~~~~~~~~~~~~~~~~~y=graph.linaxis(min=-5, max=5)\\
+~~~~~~~~~~~~~~~~~~x=graph.axis.linear(min=-5, max=5, painter=myaxispainter),\\
+~~~~~~~~~~~~~~~~~~y=graph.axis.linear(min=-5, max=5)\\
 ~~~~~~~~~~~~~~~~~~)
 \end{progcode}
 This will keep the horizontal zero line but discard the vertical one.
@@ -405,41 +409,41 @@ This will keep the horizontal zero line but discard the vertical one.
 \subsection{Data properties}
 
 \question{a}{How do I choose the symbol?}
-{}
+{checked for 0.6}
 {\label{q:choose_symbol}
 Suppose a graph called \texttt{g} has been initialized, e.g. by using
 \texttt{graph.graphxy}. Then, data and the style of their representation
 in the graph are defined by calling \texttt{g.plot} like in the following
 example in which filled circles are requested:
 \begin{progcode}
-g.plot(graph.data("test.dat"),\\
-~~~~~~~graph.symbol(graph.symbol.circle, symbolattrs=[deco.filled])\\
+g.plot(graph.data.data("test.dat"),\\
+~~~~~~~graph.style.symbol(graph.style.symbol.circle, symbolattrs=[deco.filled])\\
 ~~~~~~~)
 \end{progcode}
 }
 
 \question{a}{How do I choose the color of the symbols?}
-{}
+{checked for 0.6}
 {Colors are not properties of the symbol as such and can therefore not
 be specified in \texttt{symbolattrs} directly. The color is rather related
 to the plotting of the symbol as defined by \texttt{deco.stroked} or
 \texttt{deco.filled}. With
 \begin{progcode}
-graph.symbol(graph.symbol.circle,\\
-~~~~~~~~~~~~~symbolattrs=[deco.stroked([color.rgb.red]),\\
-~~~~~~~~~~~~~~~~~~~~~~~~~~deco.filled([color.rgb.green])]\\
-~~~~~~~~~~~~~)
+graph.style.symbol(graph.style.symbol.circle,\\
+~~~~~~~~~~~~~~~~~~~symbolattrs=[deco.stroked([color.rgb.red]),\\
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~deco.filled([color.rgb.green])]\\
+~~~~~~~~~~~~~~~~~~)
 \end{progcode}
 you will obtain a circle filled in green with a red borderline.
 }
 
 \question{a}{How do I choose the line style?}
-{}
+{checked for 0.6}
 {If you do not want to use symbols, you can set the line style as in this
 example
 \begin{progcode}
-g.plot(graph.data("test.dat"),\\
-~~~~~~~graph.line(lineattrs=[style.linewidth.Thin])\\
+g.plot(graph.data.data("test.dat"),\\
+~~~~~~~graph.style.line(lineattrs=[style.linewidth.Thin])\\
 ~~~~~~~)
 \end{progcode}
 where the linewidth is set.
@@ -448,11 +452,11 @@ If you also want to use symbols, you can set the line attributes together
 with the symbols.  Extending the example in \ref{q:choose_symbol}),
 you could use
 \begin{progcode}
-g.plot(graph.data("test.dat"),\\
-~~~~~~~graph.symbol(graph.symbol.circle, \\
-~~~~~~~~~~~~~~~~~~~~symbolattrs=[deco.filled],\\
-~~~~~~~~~~~~~~~~~~~~lineattrs=[style.linewidth.Thin, style.linestyle.dashed]\\
-~~~~~~~~~~~~~~~~~~~~)\\
+g.plot(graph.data.data("test.dat"),\\
+~~~~~~~graph.style.symbol(graph.style.symbol.circle, \\
+~~~~~~~~~~~~~~~~~~~~~~~~~~symbolattrs=[deco.filled],\\
+~~~~~~~~~~~~~~~~~~~~~~~~~~lineattrs=[style.linewidth.Thin, style.linestyle.dashed]\\
+~~~~~~~~~~~~~~~~~~~~~~~~~)\\
 ~~~~~~~)
 \end{progcode}
 to set the linewidth and to choose dashed lines. 
