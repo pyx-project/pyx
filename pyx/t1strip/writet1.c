@@ -1,18 +1,25 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdarg.h>
-#define false 0
-#define true 1
-#define xstrdup strdup
-#define XTALLOC(n, t) ((t *) xmalloc ((n) * sizeof (t)))
-#define headerpath ""
-#define xmalloc malloc
-#define xfclose(a, b) (fclose(a))
-#define isdigit(c)  ((c) >= '0' && (c) <= '9')
-#define search(a, b, c) (fopen(b, "r"))
-#define NeedFunctionPrototypes
-#define HAVE_PROTOTYPES
+/*
+Copyright (c) 1996-2002 Han The Thanh, <thanh@pdftex.org>
+
+This file is part of pdfTeX.
+
+pdfTeX is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+pdfTeX is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with pdfTeX; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+$Id$
+*/
+#include "pyxadapt.h"   /* PyX */
 
 #ifdef pdfTeX /* writet1 used with pdfTeX */
 #include "ptexlib.h"           
@@ -42,9 +49,8 @@ static integer t1_save_offset;
 static integer t1_fontname_offset;
 
 #else /* writet1 used with dvips */
-#include "ptexmac.h"
-#include "dvips.h"
-#include "protos.h"
+/* #include "ptexmac.h"   PyX */
+/* #include "dvips.h"   PyX */
 #undef  fm_extend
 #define fm_extend(f)        0
 #undef  fm_slant
@@ -80,18 +86,19 @@ static integer t1_fontname_offset;
 #define t1_scan_keys()
 #define update_builtin_enc(font, glyph_names) 
 #define embed_all_glyphs(tex_font)  false
+#undef pdfmovechars
 #ifdef SHIFTLOWCHARS
 #define t1_char(c)          T1Char(c)
-#define dvips_pdfmovechars      1
+#define pdfmovechars      1
 #else /* SHIFTLOWCHARS */
 #define t1_char(c)          c
-#define dvips_pdfmovechars      0
+#define pdfmovechars      0
 #endif /* SHIFTLOWCHARS */
 #define extra_charset()     dvips_extra_charset
 #define make_subset_tag(a, b)
 static char *dvips_extra_charset ;
 extern FILE *bitfile ;
-/* extern FILE *search(); */
+/* extern FILE *search();   PyX */
 static char *cur_file_name;
 static char *cur_enc_name;
 static unsigned char *grid;
@@ -100,6 +107,9 @@ static char print_buf[PRINTF_BUF_SIZE];
 static int  hexline_length;
 static char notdef[] = ".notdef";
 #endif /* pdfTeX */
+
+/* #include <kpathsea/c-vararg.h>   PyX */
+/* #include <kpathsea/c-proto.h>   PyX */
 
 #define t1_getchar()    getc(t1_file)
 #define t1_ungetchar(c) ungetc(c, t1_file)
@@ -268,7 +278,7 @@ static void pdftex_fail(char *fmt,...)
     fputs(": ", stderr);
     vsprintf(print_buf, fmt, args);
     fputs(print_buf, stderr);
-    fputs("\n", stderr);
+    fputs("\n ==> Fatal error occurred, the output PDF file is not finished!\n", stderr);
     va_end(args);
     exit(-1);
 }
@@ -538,7 +548,7 @@ restart:
             p = t1_line_ptr - 5;
             while (*p != ' ')
                 p--;
-            t1_cslen = l = (int) t1_scan_num(p + 1, 0);
+            t1_cslen = l = t1_scan_num(p + 1, 0);
             cs_start = t1_line_ptr;
             check_buf(t1_line_ptr - t1_line + l, T1_BUF_SIZE);
             while (l-- > 0)
@@ -824,7 +834,7 @@ static void t1_scan_param(void)
     if (!t1_scan || *t1_line != '/')
         return;
     if (t1_prefix(lenIV)) {
-        t1_lenIV = (int) t1_scan_num(t1_line + strlen(lenIV), 0);
+        t1_lenIV = t1_scan_num(t1_line + strlen(lenIV), 0);
         return;
     }
     t1_scan_keys();
@@ -1092,7 +1102,7 @@ static void cs_store(boolean is_subr)
     for (p = t1_line, q = t1_buf; *p != ' '; *q++ = *p++);
     *q = 0;
     if (is_subr) {
-        subr = (int) t1_scan_num(p + 1, 0);
+        subr = t1_scan_num(p + 1, 0);
         check_subr(subr);
         ptr = subr_tab + subr;
     }
@@ -1390,7 +1400,7 @@ static void t1_subset_ascii_part(void)
     }
     if (is_included(fm_cur) && is_subsetted(fm_cur))
         make_subset_tag(fm_cur, t1_fontname_offset);
-    if (dvips_pdfmovechars == 0 && t1_encoding == ENC_STANDARD)
+    if (pdfmovechars == 0 && t1_encoding == ENC_STANDARD)
         t1_puts("/Encoding StandardEncoding def\n");
     else {
         t1_puts("/Encoding 256 array\n0 1 255 {1 index exch /.notdef put} for\n");
@@ -1459,7 +1469,7 @@ found:
        return;
     subr_size_pos = strlen("/Subrs") + 1; 
     /* subr_size_pos points to the number indicating dict size after "/Subrs" */
-    subr_size = (int) t1_scan_num(t1_line + subr_size_pos, 0);
+    subr_size = t1_scan_num(t1_line + subr_size_pos, 0);
     if (subr_size == 0) {
         while (!t1_charstrings())
             t1_getline();
@@ -1654,7 +1664,7 @@ static void t1_subset_charstrings(void)
                   - t1_line + 1; 
     /* cs_size_pos points to the number indicating
        dict size after "/CharStrings" */
-    cs_size = (int) t1_scan_num(t1_line + cs_size_pos, 0);
+    cs_size = t1_scan_num(t1_line + cs_size_pos, 0);
     cs_ptr = cs_tab = xtalloc(cs_size, cs_entry);
     for (ptr = cs_tab; ptr - cs_tab < cs_size; ptr++)
         init_cs_entry(ptr);
