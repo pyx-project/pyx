@@ -37,33 +37,34 @@ TODO:
   - unit module:
     - what about unit.cm() -> unit.cm, ...
     - maybe we should never convert implicitly into visual/width, etc. lengths
+    - check that we always return the appropriate length, i.e., not
+      too often true
   - mathtree:
     - might be moved into the graph
     - perform calc by means of Python itself (see eval code in graph.data, but
       we should use compiled code instead of eval)
+  - deco module:
+    - think hard about different paths in decoratedpath class
+    - adjust parameters of cycloid and smoothed
+      AW suggests to use cycloid with default curvesperloop=5.
+
+  Documentation:
+    - deco module:
+      - cycloid decorator
+      - smoothed decorator
+    - graphics section:
+      Attributes and changeable attributes should be explained in a
+      central place.
 
 TODO for 0.6:
-  - deco module:
-    - name for cycloid OK?
-      AW: Fine to me. I suggest to use curvesperloop=5. I think, it is not
-          crucial to 0.6 at all. Those decorators are working but are not yet
-          documented. We also need to think hard about decorators for 0.7 ...
   - Documentation:
     - graph module: (in progress)
       - axis zeropath feature removed
       AW: Why bother with that in the documentation at all?
-    - deco module:
-      - cycloid decorator
-      - smoothed decorator
-    - unit module:
-      -> not always returns true
-      AW: HÄÄÄ???
-      JL: I also don't know what this means.
     - path module:
-      in the introduction mention the canvas
-      describe + vs <<
-    - AW remarks: Attributes and changeable attributes should be explained in a
-                  central place. I guess that will not happen within 0.6 ...
+      - describe + vs <<
+      - more details in path constructor: allowed pathels, first pathel...
+
 
 0.6 (XXXX/XX/XX):
   - bbox module:
