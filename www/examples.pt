@@ -19,7 +19,7 @@
       <div class="examplecode" tal:content="structure example/code">Code</div>
     </span>
 
-    <span tal:condition="python: options['pagename'] == 'examples/index.html'">
+    <span tal:condition="python: options['pagename'] == 'examples/index.html'" tal:omit-tag="">
       <div class="exampleseparator"></div>
       <h2>Further examples</h2>
       <p>
