@@ -27,7 +27,7 @@
 #   should we at least factor it out?
 
 import sys, math
-import attr, base, canvas, color, helper, path, style, trafo, unit
+import attr, canvas, color, helper, path, style, trafo, unit
 
 try:
     from math import radians
@@ -39,7 +39,7 @@ except ImportError:
 # Decorated path
 #
 
-class decoratedpath(base.canvasitem):
+class decoratedpath(canvas.canvasitem):
     """Decorated path
 
     The main purpose of this class is during the drawing

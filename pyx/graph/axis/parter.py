@@ -24,71 +24,51 @@
 
 
 import math
-from pyx import helper
+from pyx import helper # TODO to be removed
 from pyx.graph.axis import tick
 
 
-# partitioner (parter)
-# please note the nomenclature:
-# - a part (partition) is a list of tick instances; thus ticks `==' part
-# - a parter (partitioner) is a class creating ticks
+# Note: A partition is a list of ticks.
+
+class _partdata:
+    """state storage class for a partfunction
+
+    partdata is used to keep local data and a current state to emulate
+    generators. In the future we might use yield statements within a
+    partfunction. Currently we add partdata by a lambda construct and
+    do inplace modifications within partdata to keep track of the state.
+    """
+
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
 
-class _Iparter:
-    """interface definition of a partition scheme
-    partition schemes are used to create a list of ticks"""
+class _parter:
+    """interface of a partitioner"""
 
-    def defaultpart(self, min, max, extendmin, extendmax):
-        """create a partition
-        - returns an ordered list of ticks for the interval min to max
-        - the interval is given in float numbers, thus an appropriate
-          conversion to rational numbers has to be performed
-        - extendmin and extendmax are booleans (integers)
-        - when extendmin or extendmax is set, the ticks might
-          extend the min-max range towards lower and higher
-          ranges, respectively"""
+    def partfunctions(self, min, max, extendmin, extendmax):
+        """returns a list of partfunctions
 
-    def lesspart(self):
-        """create another partition which contains less ticks
-        - this method is called several times after a call of defaultpart
-        - returns an ordered list of ticks with less ticks compared to
-          the partition returned by defaultpart and by previous calls
-          of lesspart
-        - the creation of a partition with strictly *less* ticks
-          is not to be taken serious
-        - the method might return None, when no other appropriate
-          partition can be created"""
+        A partfunction can be called without further arguments and
+        it will return a new partition each time, or None. Several
+        partfunctions are used to walk in different "directions"
+        (like more and less partitions).
+
+        Note that we do not alternate walking in different directions
+        (i.e. alternate the partfunction calls). Instead we first walk
+        into one direction (which should give less and less ticks) until
+        the rating becomes bad and when try more ticks. We want to keep
+        the number of ticks small compared to a simple alternate search.
+        """
+        # This is a (useless) empty partitioner.
+        return []
 
 
-    def morepart(self):
-        """create another partition which contains more ticks
-        see lesspart, but increase the number of ticks"""
-
-
-class linear:
-    """linear partition scheme
-    ticks and label distances are explicitly provided to the constructor"""
-
-    __implements__ = _Iparter
+class linear(_parter):
+    """partitioner to create a single linear parition"""
 
     def __init__(self, tickdist=None, labeldist=None, extendtick=0, extendlabel=None, epsilon=1e-10):
-        """configuration of the partition scheme
-        - tickdist and labeldist should be a list, where the first value
-          is the distance between ticks with ticklevel/labellevel 0,
-          the second list for ticklevel/labellevel 1, etc.;
-          a single entry is allowed without being a list
-        - tickdist and labeldist values are passed to the rational constructor
-        - when labeldist is None and tickdist is not None, the tick entries
-          for ticklevel 0 are used for labels and vice versa (ticks<->labels)
-        - extendtick allows for the extension of the range given to the
-          defaultpart method to include the next tick with the specified
-          level (None turns off this feature); note, that this feature is
-          also disabled, when an axis prohibits its range extension by
-          the extendmin/extendmax variables given to the defaultpart method
-        - extendlabel is analogous to extendtick, but for labels
-        - epsilon allows for exceeding the axis range by this relative
-          value (relative to the axis range given to the defaultpart method)
-          without creating another tick specified by extendtick/extendlabel"""
         if tickdist is None and labeldist is not None:
             self.ticklist = (tick.rational(helper.ensuresequence(labeldist)[0]),)
         else:
@@ -123,35 +103,35 @@ class linear:
             ticks.append(tick.tick((i*dist.num, dist.denom), ticklevel=ticklevel, labellevel=labellevel))
         return ticks
 
-    def defaultpart(self, min, max, extendmin, extendmax):
-        if self.extendtick is not None and len(self.ticklist) > self.extendtick:
-            min, max = self.extendminmax(min, max, self.ticklist[self.extendtick], extendmin, extendmax)
-        if self.extendlabel is not None and len(self.labellist) > self.extendlabel:
-            min, max = self.extendminmax(min, max, self.labellist[self.extendlabel], extendmin, extendmax)
+    def partfunction(self, data):
+        if data.first:
+            data.first = 0
+            min = data.min
+            max = data.max
+            if self.extendtick is not None and len(self.ticklist) > self.extendtick:
+                min, max = self.extendminmax(min, max, self.ticklist[self.extendtick], data.extendmin, data.extendmax)
+            if self.extendlabel is not None and len(self.labellist) > self.extendlabel:
+                min, max = self.extendminmax(min, max, self.labellist[self.extendlabel], data.extendmin, data.extendmax)
 
-        ticks = []
-        for i in range(len(self.ticklist)):
-            ticks = tick.mergeticklists(ticks, self.getticks(min, max, self.ticklist[i], ticklevel = i))
-        for i in range(len(self.labellist)):
-            ticks = tick.mergeticklists(ticks, self.getticks(min, max, self.labellist[i], labellevel = i))
+            ticks = []
+            for i in range(len(self.ticklist)):
+                ticks = tick.mergeticklists(ticks, self.getticks(min, max, self.ticklist[i], ticklevel = i))
+            for i in range(len(self.labellist)):
+                ticks = tick.mergeticklists(ticks, self.getticks(min, max, self.labellist[i], labellevel = i))
 
-        return ticks
+            return ticks
 
-    def lesspart(self):
         return None
 
-    def morepart(self):
-        return None
+    def partfunctions(self, min, max, extendmin, extendmax):
+        return [lambda d=_partdata(first=1, min=min, max=max, extendmin=extendmin, extendmax=extendmax):
+                       self.partfunction(d)]
 
 lin = linear
 
 
-class autolinear:
-    """automatic linear partition scheme
-    - possible tick distances are explicitly provided to the constructor
-    - tick distances are adjusted to the axis range by multiplication or division by 10"""
-
-    __implements__ = _Iparter
+class autolinear(_parter):
+    """partitioner to create an arbitrary number of linear paritions"""
 
     defaultvariants = [[tick.rational((1, 1)), tick.rational((1, 2))],
                        [tick.rational((2, 1)), tick.rational((1, 1))],
@@ -159,27 +139,14 @@ class autolinear:
                        [tick.rational((5, 1)), tick.rational((5, 2))]]
 
     def __init__(self, variants=defaultvariants, extendtick=0, epsilon=1e-10):
-        """configuration of the partition scheme
-        - variants is a list of tickdist
-        - tickdist should be a list, where the first value
-          is the distance between ticks with ticklevel 0,
-          the second for ticklevel 1, etc.
-        - tickdist values are passed to the rational constructor
-        - labellevel is set to None except for those ticks in the partitions,
-          where ticklevel is zero. There labellevel is also set to zero.
-        - extendtick allows for the extension of the range given to the
-          defaultpart method to include the next tick with the specified
-          level (None turns off this feature); note, that this feature is
-          also disabled, when an axis prohibits its range extension by
-          the extendmin/extendmax variables given to the defaultpart method
-        - epsilon allows for exceeding the axis range by this relative
-          value (relative to the axis range given to the defaultpart method)
-          without creating another tick specified by extendtick"""
         self.variants = variants
         self.extendtick = extendtick
         self.epsilon = epsilon
+        self.state_less = 1
+        self.state_more = 2
+        self.state_done = 3
 
-    def defaultpart(self, min, max, extendmin, extendmax):
+    def partfunctions(self, min, max, extendmin, extendmax):
         logmm = math.log(max - min) / math.log(10)
         if logmm < 0: # correction for rounding towards zero of the int routine
             base = tick.rational((10, 1), power=int(logmm-1))
@@ -187,59 +154,52 @@ class autolinear:
             base = tick.rational((10, 1), power=int(logmm))
         ticks = map(tick.rational, self.variants[0])
         useticks = [t * base for t in ticks]
-        self.lesstickindex = self.moretickindex = 0
-        self.lessbase = tick.rational((base.num, base.denom))
-        self.morebase = tick.rational((base.num, base.denom))
-        self.min, self.max, self.extendmin, self.extendmax = min, max, extendmin, extendmax
-        part = linear(tickdist=useticks, extendtick=self.extendtick, epsilon=self.epsilon)
-        return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
-    def lesspart(self):
-        if self.lesstickindex < len(self.variants) - 1:
-            self.lesstickindex += 1
-        else:
-            self.lesstickindex = 0
-            self.lessbase.num *= 10
-        ticks = map(tick.rational, self.variants[self.lesstickindex])
-        useticks = [t * self.lessbase for t in ticks]
-        part = linear(tickdist=useticks, extendtick=self.extendtick, epsilon=self.epsilon)
-        return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
+        return [lambda d=_partdata(min=min, max=max, extendmin=extendmin, extendmax=extendmax,
+                                   sign=1, tickindex=-1, base=tick.rational(base)):
+                       self.partfunction(d),
+                lambda d=_partdata(min=min, max=max, extendmin=extendmin, extendmax=extendmax,
+                                   sign=-1, tickindex=0, base=tick.rational(base)):
+                       self.partfunction(d)]
 
-    def morepart(self):
-        if self.moretickindex:
-            self.moretickindex -= 1
+    def partfunction(self, data):
+        if data.sign == 1:
+            if data.tickindex < len(self.variants) - 1:
+                data.tickindex += 1
+            else:
+                data.tickindex = 0
+                data.base.num *= 10
         else:
-            self.moretickindex = len(self.variants) - 1
-            self.morebase.denom *= 10
-        ticks = map(tick.rational, self.variants[self.moretickindex])
-        useticks = [t * self.morebase for t in ticks]
-        part = linear(tickdist=useticks, extendtick=self.extendtick, epsilon=self.epsilon)
-        return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
+            if data.tickindex:
+                data.tickindex -= 1
+            else:
+                data.tickindex = len(self.variants) - 1
+                data.base.denom *= 10
+        tickdist = [tick.rational(t) * data.base for t in self.variants[data.tickindex]]
+        linearparter = linear(tickdist=tickdist, extendtick=self.extendtick, epsilon=self.epsilon)
+        return linearparter.partfunctions(min=data.min, max=data.max, extendmin=data.extendmin, extendmax=data.extendmax)[0]()
 
 autolin = autolinear
 
 
 class preexp:
-    """storage class for the definition of logarithmic axes partitions
-    instances of this class define tick positions suitable for
-    logarithmic axes by the following instance variables:
-    - exp: integer, which defines multiplicator (usually 10)
-    - pres: list of tick positions (rational numbers, e.g. instances of rational)
-    possible positions are these tick positions and arbitrary divisions
-    and multiplications by the exp value"""
+    """definition of a logarithmic partition
+
+    exp is an integer, which defines multiplicator (usually 10).
+    pres are a list of tick positions (rational numbers, e.g.
+    instances of rational). possible positions are the tick
+    positions and arbitrary divisions and multiplications of
+    the tick positions by exp."""
 
     def __init__(self, pres, exp):
-         "create a preexp instance and store its pres and exp information"
          self.pres = pres
          self.exp = exp
 
 
 class logarithmic(linear):
-    """logarithmic partition scheme
-    ticks and label positions are explicitly provided to the constructor"""
+    """partitioner to create a single logarithmic parition"""
 
-    __implements__ = _Iparter
-
+    # define some useful constants
     pre1exp5   = preexp([tick.rational((1, 1))], 100000)
     pre1exp4   = preexp([tick.rational((1, 1))], 10000)
     pre1exp3   = preexp([tick.rational((1, 1))], 1000)
@@ -250,23 +210,6 @@ class logarithmic(linear):
     #  ^- we always include 1 in order to get extendto(tick|label)level to work as expected
 
     def __init__(self, tickpos=None, labelpos=None, extendtick=0, extendlabel=None, epsilon=1e-10):
-        """configuration of the partition scheme
-        - tickpos and labelpos should be a list, where the first entry
-          is a preexp instance describing ticks with ticklevel/labellevel 0,
-          the second is a preexp instance for ticklevel/labellevel 1, etc.;
-          a single entry is allowed without being a list
-        - when labelpos is None and tickpos is not None, the tick entries
-          for ticklevel 0 are used for labels and vice versa (ticks<->labels)
-        - extendtick allows for the extension of the range given to the
-          defaultpart method to include the next tick with the specified
-          level (None turns off this feature); note, that this feature is
-          also disabled, when an axis prohibits its range extension by
-          the extendmin/extendmax variables given to the defaultpart method
-        - extendlabel is analogous to extendtick, but for labels
-        - epsilon allows for exceeding the axis range by this relative
-          logarithm value (relative to the logarithm axis range given
-          to the defaultpart method) without creating another tick
-          specified by extendtick/extendlabel"""
         if tickpos is None and labelpos is not None:
             self.ticklist = (helper.ensuresequence(labelpos)[0],)
         else:
@@ -281,9 +224,6 @@ class logarithmic(linear):
         self.epsilon = epsilon
 
     def extendminmax(self, min, max, preexp, extendmin, extendmax):
-        """return new min, max tuple extending the range min, max
-        preexp describes the allowed tick positions
-        extendmin and extendmax are booleans to allow for the extension"""
         minpower = None
         maxpower = None
         for i in xrange(len(preexp.pres)):
@@ -312,11 +252,6 @@ class logarithmic(linear):
         return min, max
 
     def getticks(self, min, max, preexp, ticklevel=None, labellevel=None):
-        """return a list of ticks
-        - preexp describes the allowed tick positions
-        - the ticklevel of the ticks is set to ticklevel and
-          the labellevel is set to labellevel
-        -  min, max is the range where ticks should be placed"""
         ticks = []
         minimin = 0
         maximax = 0
@@ -336,10 +271,7 @@ log = logarithmic
 
 
 class autologarithmic(logarithmic):
-    """automatic logarithmic partition scheme
-    possible tick positions are explicitly provided to the constructor"""
-
-    __implements__ = _Iparter
+    """partitioner to create several logarithmic paritions"""
 
     defaultvariants = [([logarithmic.pre1exp,      # ticks
                          logarithmic.pre1to9exp],  # subticks
@@ -367,28 +299,6 @@ class autologarithmic(logarithmic):
                         None)]                     # labels like ticks
 
     def __init__(self, variants=defaultvariants, extendtick=0, extendlabel=None, epsilon=1e-10):
-        """configuration of the partition scheme
-        - variants should be a list of pairs of lists of preexp
-          instances
-        - within each pair the first list contains preexp, where
-          the first preexp instance describes ticks positions with
-          ticklevel 0, the second preexp for ticklevel 1, etc.
-        - the second list within each pair describes the same as
-          before, but for labels
-        - within each pair: when the second entry (for the labels) is None
-          and the first entry (for the ticks) ticks is not None, the tick
-          entries for ticklevel 0 are used for labels and vice versa
-          (ticks<->labels)
-        - extendtick allows for the extension of the range given to the
-          defaultpart method to include the next tick with the specified
-          level (None turns off this feature); note, that this feature is
-          also disabled, when an axis prohibits its range extension by
-          the extendmin/extendmax variables given to the defaultpart method
-        - extendlabel is analogous to extendtick, but for labels
-        - epsilon allows for exceeding the axis range by this relative
-          logarithm value (relative to the logarithm axis range given
-          to the defaultpart method) without creating another tick
-          specified by extendtick/extendlabel"""
         self.variants = variants
         if len(variants) > 2:
             self.variantsindex = divmod(len(variants), 2)[0]
@@ -398,26 +308,18 @@ class autologarithmic(logarithmic):
         self.extendlabel = extendlabel
         self.epsilon = epsilon
 
-    def defaultpart(self, min, max, extendmin, extendmax):
-        self.min, self.max, self.extendmin, self.extendmax = min, max, extendmin, extendmax
-        self.morevariantsindex = self.variantsindex
-        self.lessvariantsindex = self.variantsindex
-        part = logarithmic(tickpos=self.variants[self.variantsindex][0], labelpos=self.variants[self.variantsindex][1],
-                           extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon)
-        return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
+    def partfunctions(self, min, max, extendmin, extendmax):
+        return [lambda d=_partdata(min=min, max=max, extendmin=extendmin, extendmax=extendmax,
+                                   sign=1, variantsindex=self.variantsindex-1):
+                       self.partfunction(d),
+                lambda d=_partdata(min=min, max=max, extendmin=extendmin, extendmax=extendmax,
+                                   sign=-1, variantsindex=self.variantsindex):
+                       self.partfunction(d)]
 
-    def lesspart(self):
-        self.lessvariantsindex += 1
-        if self.lessvariantsindex < len(self.variants):
-            part = logarithmic(tickpos=self.variants[self.lessvariantsindex][0], labelpos=self.variants[self.lessvariantsindex][1],
-                               extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon)
-            return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
-
-    def morepart(self):
-        self.morevariantsindex -= 1
-        if self.morevariantsindex >= 0:
-            part = logarithmic(tickpos=self.variants[self.morevariantsindex][0], labelpos=self.variants[self.morevariantsindex][1],
-                               extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon)
-            return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
+    def partfunction(self, data):
+        data.variantsindex += data.sign
+        logarithmicparter= logarithmic(tickpos=self.variants[data.variantsindex][0], labelpos=self.variants[data.variantsindex][1],
+                                       extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon)
+        return logarithmicparter.partfunctions(min=data.min, max=data.max, extendmin=data.extendmin, extendmax=data.extendmax)[0]()
 
 autolog = autologarithmic

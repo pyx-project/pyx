@@ -23,15 +23,15 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import math
-import attr, unit, base
+import attr, unit, canvas
 
 #
 # base classes for stroke and fill styles
 #
 
-class strokestyle(base.canvasitem): pass
+class strokestyle(canvas.canvasitem): pass
 
-class fillstyle(base.canvasitem): pass
+class fillstyle(canvas.canvasitem): pass
 
 #
 # common stroke styles

@@ -223,7 +223,7 @@ class tick(rational):
             self.label = other.label
 
 
-def mergeticklists(list1, list2, keepfirstifequal=0):
+def mergeticklists(list1, list2, mergeequal=1):
     """helper function to merge tick lists
     - return a merged list of ticks out of list1 and list2
     - CAUTION: original lists have to be ordered
@@ -241,7 +241,7 @@ def mergeticklists(list1, list2, keepfirstifequal=0):
                i += 1
                j += 1
             if list2[j] == list1[i]: # merge tick
-               if not keepfirstifequal:
+               if mergeequal:
                    list1[i].merge(list2[j])
                j += 1
             i += 1

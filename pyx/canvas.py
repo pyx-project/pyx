@@ -28,14 +28,41 @@
 A canvas holds a collection of all elements and corresponding attributes to be
 displayed. """
 
+
+#
+# canvas item
+#
+
+class canvasitem:
+
+    """Base class for everything which can be inserted into a canvas"""
+
+    def outputPS(self, file):
+        """write PS code corresponding to canvasitem to file"""
+        pass
+
+    def outputPDF(self, file):
+        """write PDF code corresponding to canvasitem to file"""
+        pass
+
+    def registerresources(self, registry):
+        """register needed resources in resource registry"""
+        pass 
+
+    def bbox(self):
+        """return bounding box of canvasitem or None"""
+        pass
+
+
 import cStringIO
-import attr, base, deco, deformer, unit, resource, style, trafo
+import attr, deco, deformer, unit, resource, style, trafo
+
 
 #
 # clipping class
 #
 
-class clip(base.canvasitem):
+class clip(canvasitem):
 
     """class for use in canvas constructor which clips to a path"""
 
@@ -60,11 +87,12 @@ class clip(base.canvasitem):
         self.path.outputPDF(file)
         file.write("W n\n")
 
+
 #
 # general canvas class
 #
 
-class _canvas(base.canvasitem):
+class _canvas(canvasitem):
 
     """a canvas holds a collection of canvasitems"""
 
@@ -156,7 +184,7 @@ class _canvas(base.canvasitem):
 
         """
 
-        if not isinstance(item, base.canvasitem):
+        if not isinstance(item, canvasitem):
             raise RuntimeError("only instances of base.canvasitem can be inserted into a canvas")
 
         if attrs:
@@ -255,8 +283,8 @@ class _canvas(base.canvasitem):
 
 class pattern(_canvas, attr.exclusiveattr, style.fillstyle):
 
-    def __init__(self, painttype=1, tilingtype=1, xstep=None, ystep=None, bbox=None, trafo=None):
-        _canvas.__init__(self)
+    def __init__(self, painttype=1, tilingtype=1, xstep=None, ystep=None, bbox=None, trafo=None, **kwargs):
+        _canvas.__init__(self, **kwargs)
         attr.exclusiveattr.__init__(self, pattern)
         self.id = "pattern%d" % id(self)
         if painttype not in (1,2):
@@ -311,6 +339,7 @@ class pattern(_canvas, attr.exclusiveattr, style.fillstyle):
         registry.registerresource(resource.definition(self.id, "".join((patternprefix, patternproc, patternsuffix))))
 
 pattern.clear = attr.clearclass(pattern)
+
 
 #
 # user canvas class which adds a few convenience methods for single page output

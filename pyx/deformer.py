@@ -23,7 +23,7 @@
 
 
 import math, warnings
-import attr, base, canvas, color, helper, path, style, trafo, unit
+import attr, color, helper, path, style, trafo, unit
 
 ### helpers
 

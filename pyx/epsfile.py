@@ -22,7 +22,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import string
-import base, bbox, pykpathsea, unit, trafo, resource
+import canvas, bbox, pykpathsea, unit, trafo, resource
 
 # PostScript-procedure definitions (cf. 5002.EPSF_Spec_v3.0.pdf)
 # with important correction in EndEPSF:
@@ -143,7 +143,7 @@ def _readbbox(filename):
     return usebbox
 
 
-class epsfile(base.canvasitem):
+class epsfile(canvas.canvasitem):
 
     """class for epsfiles"""
 

@@ -23,7 +23,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import copy, cStringIO, exceptions, re, struct, string, sys, warnings
-import unit, epsfile, bbox, base, canvas, color, trafo, path, pykpathsea, resource
+import unit, epsfile, bbox, canvas, color, trafo, path, pykpathsea, resource
 
 
 class binfile:
@@ -351,7 +351,7 @@ class tfmfile:
 # PostScript font selection and output primitives
 #
 
-class _begintextobject(base.canvasitem):
+class _begintextobject(canvas.canvasitem):
     def outputPS(self, file):
         pass
     
@@ -359,7 +359,7 @@ class _begintextobject(base.canvasitem):
         file.write("BT\n")
 
 
-class _endtextobject(base.canvasitem):
+class _endtextobject(canvas.canvasitem):
     def outputPS(self, file):
         pass
     
@@ -367,7 +367,7 @@ class _endtextobject(base.canvasitem):
         file.write("ET\n")
 
 
-class _selectfont(base.canvasitem):
+class _selectfont(canvas.canvasitem):
     # XXX this should go away and be merged with selectfont
     def __init__(self, name, size):
         self.name = name
@@ -380,7 +380,7 @@ class _selectfont(base.canvasitem):
         file.write("/%s %f Tf\n" % (self.name, self.size))
 
 
-class selectfont(base.canvasitem):
+class selectfont(canvas.canvasitem):
     def __init__(self, font):
         # XXX maybe we should change the calling convention here and only pass the
         # name, size, encoding, usedchars of the font
@@ -400,7 +400,7 @@ class selectfont(base.canvasitem):
         file.write("/%s %f Tf\n" % (self.fontid, self.size))
 
 
-class _show(base.canvasitem):
+class _show(canvas.canvasitem):
 
     def __init__(self, x, y):
         self.x = x
@@ -760,7 +760,7 @@ class DVIError(exceptions.Exception): pass
 
 # save and restore colors
 
-class _savecolor(base.canvasitem):
+class _savecolor(canvas.canvasitem):
     def outputPS(self, file):
         file.write("currentcolor currentcolorspace\n")
 
@@ -768,14 +768,14 @@ class _savecolor(base.canvasitem):
         file.write("q\n")
 
 
-class _restorecolor(base.canvasitem):
+class _restorecolor(canvas.canvasitem):
     def outputPS(self, file):
         file.write("setcolorspace setcolor\n")
 
     def outputPDF(self, file):
         file.write("Q\n")
 
-class _savetrafo(base.canvasitem):
+class _savetrafo(canvas.canvasitem):
     def outputPS(self, file):
         file.write("matrix currentmatrix\n")
 
@@ -783,7 +783,7 @@ class _savetrafo(base.canvasitem):
         file.write("q\n")
 
 
-class _restoretrafo(base.canvasitem):
+class _restoretrafo(canvas.canvasitem):
     def outputPS(self, file):
         file.write("setmatrix\n")
 

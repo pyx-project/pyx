@@ -106,8 +106,6 @@ class lineaxisposlinegrid(lineaxispos):
     """an axispos linear along a line with a fix direction for the ticks
     with support for grid lines for a rectangular graphs"""
 
-    __implements__ = painter._Iaxispos
-
     def __init__(self, convert, x1, y1, x2, y2, fixtickdirection, startgridlength, endgridlength):
         """initializes the instance
         - only the convert method is needed from the axis
@@ -125,19 +123,19 @@ class lineaxisposlinegrid(lineaxispos):
     def gridpath(self, x):
         v = self.convert(x)
         return path.line_pt((1-v)*self.x1_pt+v*self.x2_pt+self.fixtickdirection[0]*self.startgridlength_pt,
-                          (1-v)*self.y1_pt+v*self.y2_pt+self.fixtickdirection[1]*self.startgridlength_pt,
-                          (1-v)*self.x1_pt+v*self.x2_pt+self.fixtickdirection[0]*self.endgridlength_pt,
-                          (1-v)*self.y1_pt+v*self.y2_pt+self.fixtickdirection[1]*self.endgridlength_pt)
+                            (1-v)*self.y1_pt+v*self.y2_pt+self.fixtickdirection[1]*self.startgridlength_pt,
+                            (1-v)*self.x1_pt+v*self.x2_pt+self.fixtickdirection[0]*self.endgridlength_pt,
+                            (1-v)*self.y1_pt+v*self.y2_pt+self.fixtickdirection[1]*self.endgridlength_pt)
 
     def vgridpath(self, v):
         return path.line_pt((1-v)*self.x1_pt+v*self.x2_pt+self.fixtickdirection[0]*self.startgridlength_pt,
-                          (1-v)*self.y1_pt+v*self.y2_pt+self.fixtickdirection[1]*self.startgridlength_pt,
-                          (1-v)*self.x1_pt+v*self.x2_pt+self.fixtickdirection[0]*self.endgridlength_pt,
-                          (1-v)*self.y1_pt+v*self.y2_pt+self.fixtickdirection[1]*self.endgridlength_pt)
+                            (1-v)*self.y1_pt+v*self.y2_pt+self.fixtickdirection[1]*self.startgridlength_pt,
+                            (1-v)*self.x1_pt+v*self.x2_pt+self.fixtickdirection[0]*self.endgridlength_pt,
+                            (1-v)*self.y1_pt+v*self.y2_pt+self.fixtickdirection[1]*self.endgridlength_pt)
 
 
 class styledata:
-    """Styledata storage class
+    """style data storage class
 
     Instances of this class are used to store data from the styles
     and to pass point data to the styles by instances named privatedata
@@ -436,19 +434,17 @@ class graphxy(canvas.canvas):
             self.domethods[0]()
 
     def initwidthheight(self, width, height, ratio):
-        if (width is not None) and (height is None):
-             self.width = width
-             self.height = (1.0/ratio) * self.width
-        elif (height is not None) and (width is None):
-             self.height = height
-             self.width = ratio * self.height
-        else:
-             self.width = width
-             self.height = height
+        self.width = width
+        self.height = height
+        if width is None:
+            if height is None:
+                raise ValueError("specify width and/or height")
+            else:
+                self.width = ratio * self.height
+        elif height is None:
+            self.height = (1.0/ratio) * self.width
         self.width_pt = unit.topt(self.width)
         self.height_pt = unit.topt(self.height)
-        if self.width_pt <= 0: raise ValueError("width <= 0")
-        if self.height_pt <= 0: raise ValueError("height <= 0")
 
     def initaxes(self, axes, addlinkaxes=0):
         for key in ["x", "y"]:
@@ -482,15 +478,12 @@ class graphxy(canvas.canvas):
         self.ypos_pt = unit.topt(self.ypos)
         self.initwidthheight(width, height, ratio)
         self.initaxes(axes, 1)
-        self.axescanvas = {}
-        self.axespos = {}
         self.key = key
         self.backgroundattrs = backgroundattrs
         self.axesdist = axesdist
         self.plotitems = []
         self.domethods = [self.dolayout, self.dobackground, self.doaxes, self.dodata, self.dokey]
         self.haslayout = 0
-        self.addkeys = []
 
     def bbox(self):
         self.finish()

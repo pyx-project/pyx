@@ -37,7 +37,7 @@ except ImportError:
     # fallback implementation for Python 2.1
     def radians(x): return x*pi/180
     def degrees(x): return x*180/pi
-import base, bbox, trafo, unit
+import bbox, canvas, trafo, unit
 
 try:
     sum([])
@@ -167,7 +167,7 @@ class _currentpoint:
 # pathitem: element of a PS style path
 ################################################################################
 
-class pathitem(base.canvasitem):
+class pathitem:
 
     """element of a PS style path"""
 
@@ -951,7 +951,7 @@ class multicurveto_pt(pathitem):
 # path: PS style path
 ################################################################################
 
-class path(base.canvasitem):
+class path(canvas.canvasitem):
 
     """PS style path"""
 
@@ -2390,7 +2390,7 @@ def _valueorlistmethod(method):
     return wrappedmethod
 
 
-class normpath(base.canvasitem):
+class normpath(canvas.canvasitem):
 
     """normalized path
 

@@ -22,7 +22,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import math
-import attr, base, deformer, unit
+import attr, canvas, deformer, unit
 
 # some helper routines
 
@@ -57,7 +57,7 @@ class UndefinedResultError(ArithmeticError):
 
 # trafo: affine transformations
 
-class trafo_pt(base.canvasitem, deformer.deformer):
+class trafo_pt(canvas.canvasitem, deformer.deformer):
 
     """affine transformation (coordinates in constructor in pts)
 

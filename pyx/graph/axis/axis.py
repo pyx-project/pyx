@@ -25,268 +25,120 @@
 
 import math
 from pyx import attr, helper
-from pyx.graph.axis import painter, parter, rater, texter, tick
+from pyx.graph.axis import painter, parter, positioner, rater, texter, tick
 
 
-class _Imap:
-    """interface definition of a map
-    maps convert a value into another value by bijective transformation f"""
+class axisdata:
+    """axis data storage class
 
-    def convert(self, x):
-        "returns f(x)"
+    Instances of this class are used to store axis data local to the
+    graph. It will always contain an axispos instance provided by the
+    graph during initialization."""
 
-    def invert(self, y):
-        "returns f^-1(y) where f^-1 is the inverse transformation (x=f^-1(f(x)) for all x)"
-
-    def setbasepoints(self, basepoints):
-        """set basepoints for the convertions
-        basepoints are tuples (x, y) with y == f(x) and x == f^-1(y)
-        the number of basepoints needed might depend on the transformation
-        usually two pairs are needed like for linear maps, logarithmic maps, etc."""
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
 
 class _linmap:
-    "linear mapping"
+    "linear conversion methods"
 
-    __implements__ = _Imap
+    def convert(self, data, value):
+        """axis coordinates -> graph coordinates"""
+        return (float(value) - data.min) / (data.max - data.min)
 
-    def setbasepoints(self, basepoints):
-        self.x1 = float(basepoints[0][0])
-        self.y1 = float(basepoints[0][1])
-        self.x2 = float(basepoints[1][0])
-        self.y2 = float(basepoints[1][1])
-        self.dydx = (self.y2 - self.y1) / (self.x2 - self.x1)
-        self.dxdy = (self.x2 - self.x1) / (self.y2 - self.y1)
-
-    def convert(self, value):
-        return self.y1 + self.dydx * (float(value) - self.x1)
-
-    def invert(self, value):
-        return self.x1 + self.dxdy * (float(value) - self.y1)
+    def invert(self, data, value):
+        """graph coordinates -> axis coordinates"""
+        return data.min + value * (data.max - data.min)
 
 
 class _logmap:
-    "logarithmic mapping"
-    __implements__ = _Imap
+    "logarithmic convertion methods"
 
-    def setbasepoints(self, basepoints):
-        self.x1 = float(math.log(basepoints[0][0]))
-        self.y1 = float(basepoints[0][1])
-        self.x2 = float(math.log(basepoints[1][0]))
-        self.y2 = float(basepoints[1][1])
-        self.dydx = (self.y2 - self.y1) / (self.x2 - self.x1)
-        self.dxdy = (self.x2 - self.x1) / (self.y2 - self.y1)
+    def convert(self, data, value):
+        """axis coordinates -> graph coordinates"""
+        return (math.log(float(value)) - math.log(self.min)) / (math.log(data.max) - math.log(data.min))
 
-    def convert(self, value):
-        return self.y1 + self.dydx * (math.log(float(value)) - self.x1)
-
-    def invert(self, value):
-        return math.exp(self.x1 + self.dxdy * (float(value) - self.y1))
-
-
-class _Iaxis:
-    """interface definition of a axis
-    - an axis should implement an convert and invert method like
-      _Imap, but this is not part of this interface definition;
-      one possibility is to mix-in a proper map class, but special
-      purpose axes might do something else
-    - an axis has the instance variable axiscanvas after the finish
-      method was called
-    - an axis might have further instance variables (title, ticks)
-      to be used in combination with appropriate axispainters"""
-
-    def convert(self, x):
-        "convert a value into graph coordinates"
-
-    def invert(self, v):
-        "invert a graph coordinate to a axis value"
-
-    def getrelsize(self):
-        """returns the relative size (width) of the axis
-        - for use in split axis, bar axis etc.
-        - might return None if no size is available"""
-
-    # TODO: describe adjustrange
-    def setrange(self, min=None, max=None):
-        """set the axis data range
-        - the type of min and max must fit to the axis
-        - min<max; the axis might be reversed, but this is
-          expressed internally only (min<max all the time)
-        - the axis might not apply the change of the range
-          (e.g. when the axis range is fixed by the user),
-          but usually the range is extended to contain the
-          given range
-        - for invalid parameters (e.g. negativ values at an
-          logarithmic axis), an exception should be raised
-        - a RuntimeError is raised, when setrange is called
-          after the finish method"""
-
-    def getrange(self):
-        """return data range as a tuple (min, max)
-        - min<max; the axis might be reversed, but this is
-          expressed internally only
-        - a RuntimeError exception is raised when no
-          range is available"""
-
-    def finish(self, axispos):
-        """finishes the axis
-        - axispos implements _Iaxispos
-        - sets the instance axiscanvas, which is insertable into the
-          graph to finally paint the axis
-        - any modification of the axis range should be disabled after
-          the finish method was called"""
-        # TODO: be more specific about exceptions
-
-    def createlinkaxis(self, **kwargs):
-        """create a link axis to the axis itself
-        - typically, a link axis is a axis, which share almost
-          all properties with the axis it is linked to
-        - typically, the painter gets replaced by a painter
-          which doesn't put any text to the axis"""
+    def invert(self, data, value):
+        """graph coordinates -> axis coordinates"""
+        return math.exp(math.log(self.min) + value * (math.log(data.max) - math.log(data.min)))
 
 
 class _axis:
     """base implementation a regular axis
-    - typical usage is to mix-in a linmap or a logmap to
-      complete the axis interface
-    - note that some methods of this class want to access a
-      parter and a rater; those attributes implementing _Iparter
-      and _Irater should be initialized by the constructors
-      of derived classes"""
+
+    Regular axis have a continuous variable like linear axes,
+    logarithmic axes, time axes etc."""
 
     def __init__(self, min=None, max=None, reverse=0, divisor=None,
                        title=None, painter=painter.regular(), texter=texter.mixed(),
                        density=1, maxworse=2, manualticks=[]):
-        """initializes the instance
-        - min and max fix the axis minimum and maximum, respectively;
-          they are determined by the data to be plotted, when not fixed
-        - reverse (boolean) reverses the minimum and the maximum of
-          the axis
-        - numerical divisor for the axis partitioning
-        - title is a string containing the axis title
-        - axispainter is the axis painter (should implement _Ipainter)
-        - texter is the texter (should implement _Itexter)
-        - density is a global parameter for the axis paritioning and
-          axis rating; its default is 1, but the range 0.5 to 2.5 should
-          be usefull to get less or more ticks by the automatic axis
-          partitioning
-        - maxworse is a number of trials with worse tick rating
-          before giving up (usually it should not be needed to increase
-          this value; increasing the number will slow down the automatic
-          axis partitioning considerably)
-        - manualticks and the partitioner results are combined
-        - note that some methods of this class want to access a
-          parter and a rater; those attributes implementing _Iparter
-          and _Irater should be initialized by the constructors
-          of derived classes"""
         if min is not None and max is not None and min > max:
             min, max, reverse = max, min, not reverse
-        self.fixmin, self.fixmax, self.min, self.max, self.reverse = min is not None, max is not None, min, max, reverse
+        self.min = min
+        self.max = max
+        self.reverse = reverse
         self.divisor = divisor
-        self.usedivisor = 0
         self.title = title
         self.painter = painter
         self.texter = texter
         self.density = density
         self.maxworse = maxworse
         self.manualticks = self.checkfraclist(manualticks)
-        self.axiscanvas = None
-        self._setrange()
-
-    def _setrange(self, min=None, max=None):
-        if not self.fixmin and min is not None and (self.min is None or min < self.min):
-            self.min = min
-        if not self.fixmax and max is not None and (self.max is None or max > self.max):
-            self.max = max
-        if None not in (self.min, self.max) and self.min != self.max:
-            if self.reverse:
-                if self.usedivisor and self.divisor is not None:
-                    self.setbasepoints(((self.min/self.divisor, 1), (self.max/self.divisor, 0)))
-                else:
-                    self.setbasepoints(((self.min, 1), (self.max, 0)))
-            else:
-                if self.usedivisor and self.divisor is not None:
-                    self.setbasepoints(((self.min/self.divisor, 0), (self.max/self.divisor, 1)))
-                else:
-                    self.setbasepoints(((self.min, 0), (self.max, 1)))
-
-    def _getrange(self):
-        return self.min, self.max
-
-    def _forcerange(self, range):
-        self.min, self.max = range
-        self._setrange()
-
-    def setrange(self, min=None, max=None):
-        if self.usedivisor and self.divisor is not None:
-            min = float(self.divisor) * self.divisor
-            max = float(self.divisor) * self.divisor
-        oldmin, oldmax = self.min, self.max
-        self._setrange(min, max)
-        if self.axiscanvas is not None and ((oldmin != self.min) or (oldmax != self.max)):
-            raise RuntimeError("range modification while axis was already finished")
 
     zero = 0.0
 
-    def adjustrange(self, data, index, deltamindata=None, deltaminindex=None, deltamaxdata=None, deltamaxindex=None):
+    def adjustrange(self, data, points, index, deltamindata=None, deltaminindex=None, deltamaxdata=None, deltamaxindex=None):
         assert deltamindata is None or deltamaxdata is None
-        min = max = None
-        if deltamindata is not None:
-            for point, minpoint in zip(data, deltamindata):
-                try:
-                    if index is not None:
-                        if deltaminindex is not None:
-                            value = point[index] - minpoint[deltaminindex] + self.zero
+        if self.min is None or self.max is None:
+            if deltamindata is not None:
+                for point, minpoint in zip(points, deltamindata):
+                    try:
+                        if index is not None:
+                            if deltaminindex is not None:
+                                value = point[index] - minpoint[deltaminindex] + self.zero
+                            else:
+                                value = point[index] - minpoint + self.zero
                         else:
-                            value = point[index] - minpoint + self.zero
+                            if deltaminindex is not None:
+                                value = point - minpoint[deltaminindex] + self.zero
+                            else:
+                                value = point - minpoint + self.zero
+                    except:
+                        pass
                     else:
-                        if deltaminindex is not None:
-                            value = point - minpoint[deltaminindex] + self.zero
+                        if self.min is None and (data.min is None or value < data.min): data.min = value
+                        if self.max is None and (data.max is None or value > data.max): data.max = value
+            elif deltamaxdata is not None:
+                for point, maxpoint in zip(points, deltamaxdata):
+                    try:
+                        if index is not None:
+                            if deltamaxindex is not None:
+                                value = point[index] + maxpoint[deltamaxindex] + self.zero
+                            else:
+                                value = point[index] + maxpoint + self.zero
                         else:
-                            value = point - minpoint + self.zero
-                except:
-                    pass
-                else:
-                    if min is None or value < min: min = value
-                    if max is None or value > max: max = value
-        elif deltamaxdata is not None:
-            for point, maxpoint in zip(data, deltamaxdata):
-                try:
-                    if index is not None:
-                        if deltamaxindex is not None:
-                            value = point[index] + maxpoint[deltamaxindex] + self.zero
-                        else:
-                            value = point[index] + maxpoint + self.zero
+                            if deltamaxindex is not None:
+                                value = point + maxpoint[deltamaxindex] + self.zero
+                            else:
+                                value = point + maxpoint + self.zero
+                    except:
+                        pass
                     else:
-                        if deltamaxindex is not None:
-                            value = point + maxpoint[deltamaxindex] + self.zero
-                        else:
-                            value = point + maxpoint + self.zero
-                except:
-                    pass
-                else:
-                    if min is None or value < min: min = value
-                    if max is None or value > max: max = value
-        else:
-            for point in data:
-                try:
-                    if index is not None:
-                        value = point[index] + self.zero
-                    else:
-                        value = point + self.zero
-                except:
-                    pass
-                else:
-                    if min is None or value < min: min = value
-                    if max is None or value > max: max = value
-        self.setrange(min, max)
-
-    def getrange(self):
-        if self.min is not None and self.max is not None:
-            if self.usedivisor and self.divisor is not None:
-                return float(self.min) / self.divisor, float(self.max) / self.divisor
+                        if self.min is None and (data.min is None or value < data.min): data.min = value
+                        if self.max is None and (data.max is None or value > data.max): data.max = value
             else:
-                return self.min, self.max
+                for point in points:
+                    try:
+                        if index is not None:
+                            value = point[index] + self.zero
+                        else:
+                            value = point + self.zero
+                    except:
+                        pass
+                    else:
+                        if self.min is None and (data.min is None or value < data.min): data.min = value
+                        if self.max is None and (data.max is None or value > data.max): data.max = value
 
     def checkfraclist(self, fracs):
         "orders a list of fracs, equal entries are not allowed"
@@ -300,130 +152,96 @@ class _axis:
             last = item
         return sorted
 
-    def finish(self, axispos):
-        if self.axiscanvas is not None: return
-
-        if self.min is None or self.max is None:
+    def draw(self, data, positioner, graphtexrunner=None):
+        if self.min is not None:
+            data.min = self.min
+        if self.max is not None:
+            data.max = self.max
+        if data.min is None or data.max is None:
             raise RuntimeError("incomplete axis range")
 
-        # temorarily enable the axis divisor
-        self.usedivisor = 1
-        self._setrange()
+        # a variant is a data copy with local modifications to test several partitions
+        class variant:
+            def __init__(self, data, **kwargs):
+                self.data = data
+                for key, value in kwargs.items():
+                    setattr(self, key, value)
 
-        # lesspart and morepart can be called after defaultpart;
-        # this works although some axes may share their autoparting,
-        # because the axes are processed sequentially
-        first = 1
+            def __getattr__(self, key):
+                return getattr(data, key)
+
+            def __cmp__(self, other):
+                return cmp(self.rate, other.rate)
+
+        # build a list of variants
+        bestrate = None
         if self.parter is not None:
-            min, max = self.getrange()
-            self.ticks = tick.mergeticklists(self.manualticks,
-                                             self.parter.defaultpart(min, max, not self.fixmin, not self.fixmax),
-                                             keepfirstifequal=1)
-            worse = 0
-            nextpart = self.parter.lesspart
-            while nextpart is not None:
-                newticks = nextpart()
-                worse += 1
-                if newticks is not None:
-                    newticks = tick.mergeticklists(self.manualticks, newticks, keepfirstifequal=1)
-                    if first:
-                        if len(self.ticks):
-                            bestrate = self.rater.rateticks(self, self.ticks, self.density)
-                            bestrate += self.rater.raterange(self.convert(self.ticks[-1])-
-                                                             self.convert(self.ticks[0]), 1)
-                            variants = [[bestrate, self.ticks]]
-                        else:
-                            bestrate = None
-                            variants = []
-                        first = 0
-                    if len(newticks):
-                        newrate = self.rater.rateticks(self, newticks, self.density)
-                        newrate += self.rater.raterange(self.convert(newticks[-1])-
-                                                        self.convert(newticks[0]), 1)
-                        variants.append([newrate, newticks])
-                        if bestrate is None or newrate < bestrate:
-                            bestrate = newrate
+            partfunctions = self.parter.partfunctions(data.min, data.max, self.min is None, self.max is None)
+            variants = []
+            for partfunction in partfunctions:
+                worse = 0
+                while worse < self.maxworse:
+                    worse += 1
+                    ticks = partfunction()
+                    if ticks is None:
+                        break
+                    ticks = tick.mergeticklists(self.manualticks, ticks, mergeequal=0)
+                    if ticks:
+                        rate = ( self.rater.rateticks(self, ticks, self.density) +
+                                 self.rater.raterange(self.convert(data, ticks[-1]) -
+                                                      self.convert(data, ticks[0]), 1) )
+                        if bestrate is None or rate < bestrate:
+                            bestrate = rate
                             worse = 0
-                if worse == self.maxworse and nextpart == self.parter.lesspart:
-                    worse = 0
-                    nextpart = self.parter.morepart
-                if worse == self.maxworse and nextpart == self.parter.morepart:
-                    nextpart = None
+                        variants.append(variant(data, rate=rate, ticks=ticks))
+            if not variants:
+                raise RuntimeError("no axis partitioning found")
         else:
-            self.ticks =self.manualticks
+            variants = [variant(data, rate=0, ticks=self.manualticks)]
 
-        # rating, when several choises are available
-        if not first:
+        # build a list of variants
+        if self.painter is None or len(variants) == 1:
+            # in case of a single variant we're almost done
+            self.adjustrange(data, variants[0].ticks, None)
+            self.texter.labels(variants[0].ticks)
+            data.ticks = variants[0].ticks
+            canvas = painter.axiscanvas(self.painter, graphtexrunner)
+            if self.painter is not None:
+                self.painter.paint(canvas, data, self, positioner)
+            return canvas
+        else:
+            # build the layout for best variants
+            for variant in variants:
+                variant.storedcanvas = None
             variants.sort()
-            if self.painter is not None:
-                nodistances = 1
-                i = 0
-                bestrate = None
-                while i < len(variants) and (bestrate is None or variants[i][0] < bestrate):
-                    saverange = self._getrange()
-                    self.ticks = variants[i][1]
-                    if len(self.ticks):
-                        self.setrange(self.ticks[0], self.ticks[-1])
-                    self.texter.labels(self.ticks)
-                    ac = self.painter.paint(axispos, self)
-                    if len(ac.labels) > 1:
-                        nodistances = 0
-                    ratelayout = self.rater.ratelayout(ac, self.density)
-                    if ratelayout is not None:
-                        variants[i][0] += ratelayout
-                    else:
-                        variants[i][0] = None
-                    variants[i].append(ac)
-                    if variants[i][0] is not None and (bestrate is None or variants[i][0] < bestrate):
-                        bestrate = variants[i][0]
-                    self._forcerange(saverange)
-                    i += 1
-                if not nodistances:
-                    if bestrate is None:
+            while not variants[0].storedcanvas:
+                self.adjustrange(variants[0], variants[0].ticks, None)
+                self.texter.labels(variants[0].ticks)
+                canvas = painter.axiscanvas(self.painter, graphtexrunner)
+                self.painter.paint(canvas, variants[0], self, positioner)
+                ratelayout = self.rater.ratelayout(canvas, self.density)
+                if ratelayout is None:
+                    del variants[0]
+                    if not variants:
                         raise RuntimeError("no valid axis partitioning found")
-                    variants = [variant for variant in variants[:i] if variant[0] is not None]
-                    variants.sort()
-                self.ticks = variants[0][1]
-                if len(self.ticks):
-                    self.setrange(self.ticks[0], self.ticks[-1])
-                self.axiscanvas = variants[0][2]
-            else:
-                self.ticks = variants[0][1]
-                self.texter.labels(self.ticks)
-                if len(self.ticks):
-                    self.setrange(self.ticks[0], self.ticks[-1])
-                self.axiscanvas = painter.axiscanvas()
-        else:
-            if len(self.ticks):
-                self.setrange(self.ticks[0], self.ticks[-1])
-            self.texter.labels(self.ticks)
-            if self.painter is not None:
-                self.axiscanvas = self.painter.paint(axispos, self)
-            else:
-                self.axiscanvas = painter.axiscanvas()
-
-        # disable the axis divisor
-        self.usedivisor = 0
-        self._setrange()
+                else:
+                    variants[0].rate += ratelayout
+                    variants[0].storedcanvas = canvas
+                variants.sort()
+            self.adjustrange(data, variants[0].ticks, None)
+            data.ticks = variants[0].ticks
+            return variants[0].storedcanvas
 
     def createlinkaxis(self, **args):
         return linked(self, **args)
 
 
 class linear(_axis, _linmap):
-    """implementation of a linear axis"""
-
-    __implements__ = _Iaxis
+    """linear axis"""
 
     def __init__(self, parter=parter.autolinear(), rater=rater.linear(), **args):
-        """initializes the instance
-        - the parter attribute implements _Iparter
-        - the rater implements _Irater and is used to rate different
-          tick lists created by the partitioner (after merging with
-          manully set ticks)
-        - futher keyword arguments are passed to _axis"""
         _axis.__init__(self, **args)
-        if self.fixmin and self.fixmax:
+        if self.min is not None and self.max is not None:
             self.relsize = self.max - self.min
         self.parter = parter
         self.rater = rater
@@ -432,19 +250,11 @@ lin = linear
 
 
 class logarithmic(_axis, _logmap):
-    """implementation of a logarithmic axis"""
-
-    __implements__ = _Iaxis
+    """logarithmic axis"""
 
     def __init__(self, parter=parter.autologarithmic(), rater=rater.logarithmic(), **args):
-        """initializes the instance
-        - the parter attribute implements _Iparter
-        - the rater implements _Irater and is used to rate different
-          tick lists created by the partitioner (after merging with
-          manully set ticks)
-        - futher keyword arguments are passed to _axis"""
         _axis.__init__(self, **args)
-        if self.fixmin and self.fixmax:
+        if self.min is not None and self.max is not None:
             self.relsize = math.log(self.max) - math.log(self.min)
         self.parter = parter
         self.rater = rater
@@ -462,7 +272,6 @@ class _linked:
       sides of a graphxy or even to share an axis between
       different graphs!"""
 
-    __implements__ = _Iaxis
 
     def __init__(self, linkedaxis, painter=painter.linked()):
         """initializes the instance
@@ -493,7 +302,6 @@ class linked(_linked):
     """a axis linked to an already existing regular axis
     - adds divisor handling to _linked"""
 
-    __implements__ = _Iaxis
 
     def finish(self, axispos):
         # temporarily enable the linkedaxis divisor
@@ -515,7 +323,6 @@ class split:
     - (just to get sure: a split axis can contain other
       split axes as its subaxes)"""
 
-    __implements__ = _Iaxis, painter._Iaxispos
 
     def __init__(self, subaxes, splitlist=[0.5], splitdist=0.1, relsizesplitdist=1,
                        title=None, painter=painter.split()):
@@ -629,7 +436,6 @@ class linkedsplit(_linked):
     - it takes care of the creation of linked axes of
       the subaxes"""
 
-    __implements__ = _Iaxis
 
     def __init__(self, linkedaxis, painter=painter.linkedsplit(), subaxispainter=omitsubaxispainter):
         """initializes the instance
@@ -823,7 +629,6 @@ class linkedbar(_linked):
     - it must take care of the creation of linked axes of
       the subaxes"""
 
-    __implements__ = _Iaxis
 
     def __init__(self, linkedaxis, painter=painter.linkedbar()):
         """initializes the instance
@@ -836,7 +641,50 @@ class linkedbar(_linked):
             self.subaxis = self.subaxis.createlinkaxis()
 
 
+class anchoredaxis:
+
+    def __init__(self, axis, positioner):
+        self.axis = axis
+        self.positioner = positioner
+        self.data = axisdata()
+
+    def convert(self, x):
+        return self.axis.convert(self.data, x)
+
+    def invert(self, y):
+        return self.axis.invert(self.data, y)
+
+    def basepath(self, x1=None, x2=None):
+        if x1 is None:
+            if x2 is None:
+                return self.positioner.vbasepath()
+            else:
+                return self.positioner.vbasepath(v2=self.axis.convert(self.data, x2))
+        else:
+            if x2 is None:
+                return self.positioner.vbasepath(v1=self.axis.convert(self.data, x1))
+            else:
+                return self.positioner.vbasepath(v1=self.axis.convert(self.data, x1),
+                                                 v2=self.axis.convert(self.data, x2))
+
+    def gridpath(self, x):
+        return self.positioner.vgridpath(self.axis.convert(self.data, x))
+
+    def tickpoint_pt(self, x):
+        return self.positioner.vtickpoint_pt(self.axis.convert(self.data, x))
+
+    def tickpoint(self, x):
+        return self.positioner.vtickpoint(self.axis.convert(self.data, x))
+
+    def tickdirection(self, x):
+        return self.positioner.vtickdirection(self.axis.convert(self.data, x))
+
+    def draw(self):
+        return self.axis.draw(self.data, self.positioner)
+
+
 def pathaxis(path, axis, **kwargs):
     """creates an axiscanvas for an axis along a path"""
-    axis.finish(painter.pathaxispos(path, axis.convert, **kwargs))
-    return axis.axiscanvas
+    aanchoredaxis = anchoredaxis(axis, positioner.pathpositioner(path, **kwargs))
+    return aanchoredaxis.draw()
+

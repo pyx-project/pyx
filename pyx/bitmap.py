@@ -28,7 +28,7 @@ try:
 except:
     haszlib = 0
 
-import base, bbox, resource, trafo, unit
+import bbox, canvas, resource, trafo, unit
 
 def ascii85lines(datalen):
     if datalen < 4:
@@ -143,7 +143,7 @@ class jpegimage(image):
        image.__init__(self, width, height, mode, data[begin:end], compressed="DCT")
 
 
-class bitmap(base.canvasitem):
+class bitmap(canvas.canvasitem):
 
     def __init__(self, xpos, ypos, image,
                        width=None, height=None, ratio=None,
