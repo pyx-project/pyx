@@ -139,7 +139,7 @@ named parameters of the constructor:
 argument name&default&description\\
 \hline
 \texttt{ticks}&\texttt{None}&distance between ticks, subticks, etc. (see comment below); when the parameter is \texttt{None}, ticks will get placed at labels\\
-\texttt{lavels}&\texttt{None}&distance between labels, sublabels, etc. (see comment below); when the parameter is \texttt{None}, labels will get placed at ticks\\
+\texttt{labels}&\texttt{None}&distance between labels, sublabels, etc. (see comment below); when the parameter is \texttt{None}, labels will get placed at ticks\\
 \texttt{extendtick}&\texttt{0}&allow for a range extention to include the next tick of the given level\\
 \texttt{extendlabel}&\texttt{None}&as above, but for labels\\
 \texttt{epsilon}&\texttt{1e-10}&allow for exceeding the range by that relative value\\
@@ -183,10 +183,10 @@ name&values it descibes\\
 
 \subsubsection{Automatic partitioning}
 
-When no explicit axis partitioning is provided, an automatic axis
+When no explicit axis partitioning is given, an automatic axis
 partitioning is already available, but it is still considered to be
-under heavy development. A major feature is missing, namely the rating
-of possible partitions does not yet attend the label texts, which is
+under development. A major feature is missing, namely the rating of
+possible partitions does not yet attend the label texts, which is
 important in order to avoid overlap of label texts. In order to
 provide it, the rating of axis partitions has to be moved into the
 axis painter. That has just to be done and is considered for the next
@@ -196,7 +196,7 @@ major release of \PyX.
 
 A major task of an axis is the painting of itself. It is done by
 instances of \verb|axispainter|, provided to the constructor of an
-axis as its painter. The constructor of the axis painter recieves a
+axis as its painter. The constructor of the axis painter receives a
 numerous list of named parameters to modify the axis look. A list of
 parameters is provided in the following table:
 
@@ -288,13 +288,13 @@ used otherwise.
 Linked axes can be used whenever an axis should be repeated within a
 single graph or even between different graphs although the intrinsic
 meaning is to have only one axis plotted several times. The
-constructor of \verb|linkaxis| recieves the axis it is linked to as
+constructor of \verb|linkaxis| receives the axis it is linked to as
 its first parameter. Additionally, the named parameter \verb|title|
 contains an axis title (default is \verb|None|) and the named
 parameter \verb|painter| refers to an axispainter (default is
 \verb|linkaxispainter|). This \verb|linkedaxispainter| is a slightly
 modified version of the standard \verb|axispainter|. Hence it can
-recieve all the parameters as the \verb|axispainter| and only the
+receive all the parameters as the \verb|axispainter| and only the
 default value of the parameter \verb|zerolineattrs| is changed to
 \verb|None| compared to the \verb|axispainter| previously discussed.
 Additionally, two parameters are added, namely \verb|skipticklevel|
@@ -309,13 +309,14 @@ the labels.
 \subsection{List of points}
 
 Instances of the class \verb|data| link a \verb|datafile| and a
-\verb|style| (see below). The link object is needed in order to be
-able to plot several data from a singe file without reading the file
-several times which would just be a bad design. However, for easy
-usage, it is possible to provide a filename instead of a datafile as
-the first argument to the constructor of the class \verb|data| hiding
-the underlying \verb|datafile| instance completely from view. As long
-as the datafile gets used only once, it is the preverable solution.
+\verb|style| (see below; default is \verb|mark|). The link object is
+needed in order to be able to plot several data from a singe file
+without reading the file several times which would just be a bad
+design. However, for easy usage, it is possible to provide a filename
+instead of a datafile as the first argument to the constructor of the
+class \verb|data| hiding the underlying \verb|datafile| instance
+completely from view. This is the preverable solution as long as the
+datafile gets used only once.
 
 The additional parameters of the constructor of the class \verb|data|
 are named parameters. The values of those parameters describe data
@@ -341,15 +342,101 @@ become available.
 
 \subsection{Functions}
 
+The class \verb|function| provides data generation out of a functional
+expression. The default style for function plotting is \verb|line|.
+The constructor of \verb|function| takes an expression as the first
+parameter. The expression must be a string with exactly one equal sign
+(\verb|=|). At the left side the result axis identifier must be placed
+and at the right side the expression must depend on exactly one
+variable axis identifier. Hence, a valid expression looks like
+\verb|"y=sin(x)"|. You may use the string format syntax to insert
+external parameters, \textit{e.g.} \verb|"y=sin(%f*x)" % a| where
+\verb|a| is a float variable.
+
+Additional named parameters of the constructor are:
+
+\medskip
+\begin{tabularx}{\linewidth}{ll>{\raggedright\arraybackslash}X}
+argument name&default&description\\
+\hline
+\texttt{min}&\texttt{None}&minimal value for the variable parameter; when \texttt{None}, the axis data range will be used\\
+\texttt{max}&\texttt{None}&as above, but for the maximum\\
+\texttt{points}&\texttt{100}&number of points to be calculated\\
+\texttt{parser}&\texttt{mathtree.parser()}&parser for the mathematical expression\\
+\end{tabularx}
+\medskip
+
+The expression evaluation takes place at a linear raster of the
+variable axis. More advanced methods (detection of rapidely changing
+functions, handling of divergencies) are likely to be added in future
+releases.
+
 \subsection{Parametric functions}
+
+The class \verb|paramfunction| provides data generation out of a
+parametric representation of a function. The default style for
+parametric function plotting is \verb|line|. The parameter list of the
+constructor of \verb|paramfunction| starts with three parameters
+describing the function parameter. The first parameter is a string,
+namely the variable name. It is followed by a minimal and maximal
+value to be used for that parameter. The next parameter contains an
+expression assigning functions to the axis identifiers in a quite
+pythonic tuple notation. As an example, such an expression could look
+like \verb|"x, y = sin(k), cos(3*k)"|.
+
+Additionally, the two named parameters \verb|points| and \verb|parser|
+behave like their equally named counterparts in \verb|function|.
 
 \section{Styles}
 
-\subsection{Lines}
+Styles are used to draw data at a graph. A style determines what is
+painted and how it is painted. Due to this powerfull approach there
+are already some different marker types available and the possibility
+to introduce other styles opens even more prospects.
+
+On the other hand there is not yet any support for bar graphs. This is
+due to the fact that it might be better implemented together with some
+specialized axes. It will be shown in the future, what solution will
+arise out of that idea instead of an disposable implementation right
+now.
 
 \subsection{Marks}
 
-\subsection{Own styles}
+The class \verb|mark| can be used to plot symbols, errorbars and
+lines configurable by parameters of the constructor. Providing
+\verb|None| to attributes hides the according component.
+
+\medskip
+\begin{tabularx}{\linewidth}{ll>{\raggedright\arraybackslash}X}
+argument name&default&description\\
+\hline
+\texttt{mark}&\texttt{changemark.cross()}&symbol to be used\\
+\texttt{size}&\texttt{"0.2 cm"}&size of the symbol (visual length)\\
+\texttt{markattrs}&\texttt{canvas.stroked()}&draw attributes for the symbol\\
+\texttt{errorscale}&\texttt{0.5}&size of the errorbar caps (relative to the symbol size)\\
+\texttt{errorbarattrs}&\texttt{()}&stroke attributes for the errorbars\\
+\texttt{lineattrs}&\texttt{None}&stroke attributes for the line\\
+\end{tabularx}
+\medskip
+
+The attributes are available as class variables after plotting the
+style for outside usage. Additionally, the variable \verb|path|
+contains the path of the line (even when it wasn't plotted), which
+might be used to get crossing points, fill areas, etc.
+
+\subsection{Lines}
+
+The class \verb|line| is a inherited and constricted \verb|mark|. The
+constructor takes only \verb|lineattrs| and its default is set to
+\verb|changelinestyle()|.
+
+\subsection{Rectangular marks}
+
+\subsection{Text marks}
+
+\subsection{Arrow marks}
+
+\subsection{Iterateable style attributes}
 
 \section{Keys}
 Sorry, there is not yet any support for graph keys.

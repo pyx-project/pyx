@@ -77,6 +77,7 @@ class halign(_texattr):
         self.value = value
 
     def __cmp__(self, other):
+        if other is None: return 1
         return cmp(self.value, other.value)
 
     __rcmp__ = __cmp__
@@ -581,6 +582,7 @@ class _BoxCmd(_TexCmd):
         self.BoxCmd = "\\setbox\\localbox=\\hbox{\\%s%s}%%\n" % (fontsize, self.BoxCmd, )
 
     def __cmp__(self, other):
+        if other is None: return 1
         return cmp(self.BoxCmd, other.BoxCmd)
 
     __rcmp__ = __cmp__

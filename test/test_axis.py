@@ -10,7 +10,7 @@ def hpaint(c, x, y, axis, reverse = 0):
     axis.ticks = axis.part.defaultpart(axis.min/axis.divisor, axis.max/axis.divisor, 0, 0)
     axis.tickpoint = lambda axis, v, x=x, y=y, l=l: (x+v*l, y)
     axis.tickdirection = lambda axis, v, reverse=reverse: (0, -1 + 2*reverse)
-    axis.baseline = lambda axis, v1, v2, x=x, y=y, l=l: path._line(x+v1*l, y, x+v2*l, y)
+    axis.vbaseline = lambda axis, v1, v2, x=x, y=y, l=l: path._line(x+v1*l, y, x+v2*l, y)
     axis.painter.paint(c, axis)
 
 def vpaint(c, x, y, axis, reverse = 0):
@@ -18,7 +18,7 @@ def vpaint(c, x, y, axis, reverse = 0):
     axis.ticks = axis.part.defaultpart(axis.min/axis.divisor, axis.max/axis.divisor, 0, 0)
     axis.tickpoint = lambda axis, v, x=x, y=y, l=l: (x, y+v*l)
     axis.tickdirection = lambda axis, v, reverse=reverse: (-1 + 2*reverse, 0)
-    axis.baseline = lambda axis, v1, v2, x=x, y=y, l=l: path._line(x, y+v1*l, x, y+v2*l)
+    axis.vbaseline = lambda axis, v1, v2, x=x, y=y, l=l: path._line(x, y+v1*l, x, y+v2*l)
     axis.painter.paint(c, axis)
 
 def cpaint(c, x, y, axis):
@@ -26,7 +26,7 @@ def cpaint(c, x, y, axis):
     axis.ticks = axis.part.defaultpart(axis.min/axis.divisor, axis.max/axis.divisor, 0, 0)
     axis.tickpoint = lambda axis, v, x=x, y=y, l=l: (x+l/2*math.cos(v*2*math.pi), y+l/2*math.sin(v*2*math.pi))
     axis.tickdirection = lambda axis, v: (math.cos(v*2*math.pi), math.sin(v*2*math.pi))
-    axis.baseline = lambda axis, v1, v2, x=x, y=y, l=l: path._circle(x, y, l/2)
+    axis.vbaseline = lambda axis, v1, v2, x=x, y=y, l=l: path._circle(x, y, l/2)
     axis.painter.paint(c, axis)
 
 c = canvas.canvas()

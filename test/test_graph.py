@@ -43,48 +43,6 @@ def test_textaxis_errorbars(c, t, x, y):
 
 def test_ownmark(c, t, x, y):
 
-    class arrowmark:
-
-        def __init__(self, size = "0.2 cm"):
-            self.size_str = size
-
-        def iterate(self):
-            return self
-
-        def setcolumns(self, graph, columns):
-            self.xindex = self.yindex = self.angleindex = None
-            for key, index in columns.items():
-                if graph.XPattern.match(key) and self.xindex is None:
-                    self.xkey = key
-                    self.xindex = index
-                elif graph.YPattern.match(key) and self.yindex is None:
-                    self.ykey = key
-                    self.yindex = index
-                elif key == "angle" and self.angleindex is None:
-                    self.angleindex = index
-                else:
-                    raise ValueError
-            if None in (self.xindex, self.yindex, self.angleindex): raise ValueError
-
-        def getranges(self, points):
-            return {self.xkey: (min([point[self.xindex] for point in points]),
-                                max([point[self.xindex] for point in points])),
-                    self.ykey: (min([point[self.yindex] for point in points]),
-                                max([point[self.yindex] for point in points]))}
-
-        def drawpoints(self, graph, points):
-            size = unit.topt(unit.length(self.size_str, default_type="v"))
-            xaxis = graph.axes[self.xkey]
-            yaxis = graph.axes[self.ykey]
-            for point in points:
-                x = xaxis._pos(point[self.xindex])
-                y = yaxis._pos(point[self.yindex])
-                angle = point[self.angleindex]
-                graph.stroke(path._line(x - 0.5 * size * math.cos(angle),
-                                        y - 0.5 * size * math.sin(angle),
-                                        x + 0.5 * size * math.cos(angle),
-                                        y + 0.5 * size * math.sin(angle)), canvas.earrow.normal)
-
     class Div(mathtree.MathTreeFunc2):
         def __init__(self, *args):
             mathtree.MathTreeFunc2.__init__(self, "div", *args)
@@ -100,7 +58,7 @@ def test_ownmark(c, t, x, y):
     MyFuncs = mathtree.DefaultMathTreeFuncs + (Div, Mod)
 
     g = c.insert(graph.graphxy(t, x, y, height=5, x=graph.linaxis(min=0, max=10), y=graph.linaxis(min=0, max=10)))
-    g.plot(graph.paramfunction("k", 0, 120, "x, y, angle = mod(k, 11), div(k, 11), 0.05*k", points=121, parser=mathtree.parser(MathTreeFuncs=MyFuncs)), style = arrowmark())
+    g.plot(graph.paramfunction("k", 0, 120, "x, y, size, angle = mod(k, 11), div(k, 11), (1+sin(k*pi/120))/2, 3*k", points=121, parser=mathtree.parser(MathTreeFuncs=MyFuncs)), style = graph.arrowmark())
     line1 = g.plot(graph.function("y=10/x"))
     line2 = g.plot(graph.function("y=12*x^-1.6"))
     line3 = g.plot(graph.function("y=7/x"))
@@ -122,7 +80,7 @@ def test_ownmark(c, t, x, y):
 def test_allerrorbars(c, t, x, y):
     df = datafile.datafile("testdata3")
     g = c.insert(graph.graphxy(t, x, y, height=5, width=4))
-    g.plot(graph.data(df, x="x", y="y", xmin="xmin", xmax="xmax", ymin="ymin", ymax="ymax"))
+    g.plot(graph.data(df, x="x", y="y", xmin="xmin", xmax="xmax", ymin="ymin", ymax="ymax", text="text"), graph.textmark())
     g.finish()
 
 c = canvas.canvas()
