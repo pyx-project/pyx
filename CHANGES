@@ -40,18 +40,13 @@ TODO:
     - might be moved into the graph
     - perform calc by means of Python itself (see eval code in graph.data, but
       we should use compiled code instead of eval)
-  - deco module:
-    - think hard about different paths in decoratedpath class
   - dvifile module:
     - support single-character mode
   - path module:
-    - arclentoparam should raise an exception when the arclen is out of range
-    - there are two epsilons related to normpath, one in the normpath and
-      one in the subnormpath; while the later seems a clear feature, the first
-      might be a misdesign; a solution is still pending ...
+    - arclentoparam should raise an exception when the arclen is out of range (Really?)
+    - should split also allow the user to pass arclens (instead of params)
   - color module:
     - what should we do for palette when only one entry
-    - palette is actually a gradient (as pointed out by Hansres Engel)
   - connector module:
     - is the early conversion with unit.topt unit-modification-save?
   - deformer module:
