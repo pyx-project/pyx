@@ -36,7 +36,7 @@ transformed (i.e. translated, rotated, etc.) and clipped.
 
 """
 
-import types, math, time
+import types, math, string, time
 import attrlist, base, bbox, helper, path, unit, text, t1strip, pykpathsea, trafo, version
 
 class prologueitem:
@@ -94,6 +94,11 @@ class fontdefinition(prologueitem):
 
     def write(self, file):
         file.write("%%%%BeginFont: %s\n" % self.name.upper())
+        file.write("%Included char codes:")
+	for i in range(len(self.usedchars)):
+	    if self.usedchars[i]:
+	        file.write(" %d" % i)
+        file.write("\n")
         pfbname = pykpathsea.find_file("%s.pfb" % self.name, pykpathsea.kpse_type1_format)
         t1strip.t1strip(file, pfbname, self.usedchars)
         file.write("%%EndFont\n")
