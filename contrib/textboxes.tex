@@ -142,19 +142,19 @@
               \futurecost=10000000
           \fi\fi
       \else
-          \futurecost=100000 % this case is not in Knuth's formula !??
+          \futurecost=10000 % this case is not in Knuth's formula !??
       \fi\fi
   \else
       \futurecost=10000000
   \fi
-  % show some debugging info
-  \inform
   % track the leastcost up to now and
   % set showprevgraf to the current value of myprevgraf
   \ifnum\futurecost>\leastcost\else
     \global\leastcost=\futurecost
     \global\showprevgraf=\myprevgraf
   \fi
+  % show some debugging info
+  \inform
 }
 \def\inform{\ifverbose\immediate\write16{%
   \space myprevgraf=\the\myprevgraf
@@ -170,7 +170,6 @@
   \razor=-50000
   \ifnum\outputpenalty>\razor
     %%%%%%%%%% End of the page %%%%%%%%%%
-    \ifnum\outputtype=5 \advance\showprevgraf by -1 \fi% no \global here, just for the next line:
     \immediate\write16{PyXVariableBox:page=\the\pageno,par=\the\parno,prevgraf=\the\showprevgraf:}%
     % reset showprevgraf
     \global\showprevgraf=\myprevgraf
