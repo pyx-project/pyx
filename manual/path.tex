@@ -1,0 +1,118 @@
+\chapter{Module path: PostScript like paths}
+
+\label{path}
+
+With help of the path module, one is able to construct PostScript like 
+paths, which are one of the main building blocks for the generation of 
+drawings. To that end it provides 
+\begin{itemize}
+\item classes (derived from \verb|pathel|) for the primitives \verb|moveto|, \verb|lineto|, etc.
+\item the class \verb|path| (and derivatives thereof) representing an entire PostScript path
+\end{itemize}
+
+\section{Class pathel}
+
+The class \verb|pathel| is the superclass of all PostScript path
+construction primitives. It is never used directly, but only by
+instantiating its subclasses, which correspond one by one to the
+PostScript primitives.
+
+\medskip
+\begin{tabularx}{\linewidth}{>{\hsize=.7\hsize}X>{\raggedright\arraybackslash\hsize=1.3\hsize}X}
+Subclass of \texttt{pathel} & Function \\
+\hline
+\texttt{closepath()} & closes current subpath \\
+\texttt{moveto(x, y)} & sets current point to (\texttt{x},
+\texttt{y})\\
+\texttt{rmoveto(dx, dy)} & moves current point relative by (\texttt{dx},
+\texttt{dy})\\
+\texttt{lineto(x, y)} & appends straight line from current point to
+(\texttt{x}, \texttt{y})\\
+\texttt{rlineto(dx, dy)} & appends straight line from current point
+relative by (\texttt{dx}, \texttt{dy})\\
+\texttt{arc(x, y, r, \newline\phantom{arc(}angle1, angle2)} & appends arc segment in
+counterclockwise direction with center (\verb|x|, \verb|y|) and
+radius~\verb|r| from \verb|angle1| to \verb|angle2| (in degrees).\\
+\texttt{arcn(x, y, r, \newline\phantom{arcn(}angle1, angle2)} & appends arc segment in
+clockwise direction with center (\verb|x|, \verb|y|) and
+radius~\verb|r| from \verb|angle1| to \verb|angle2| (in degrees). \\
+\texttt{arct(x1, y1, x2, y2, r)} & appends arc segment with radius \verb|r|
+which connects between (\verb|x1|, \verb|y1|) and (\verb|x2|,
+\verb|y2|).\\
+\texttt{rcurveto(dx1, dy1, \newline\phantom{rcurveto(}dx2, dy2,\newline\phantom{rcurveto(}dx3, dy3)} & appends a B\'ezier curve with
+the control points current point, and the points defined relative to
+the current point by (\verb|dx1|, \verb|dy1|), 
+(\verb|dx2|, \verb|dy2|), and (\verb|dx3|, \verb|dy3|)
+\end{tabularx}
+\medskip
+
+Some notes on the above:
+\begin{itemize}
+\item All coordinates are in \PyX\ lengths
+\item If the current point is defined before an \verb|arc| or
+  \verb|arcn| command, a straight line from current point to the
+  beginning of the arc is prepended.
+\item The bounding box (see below) of B\'ezier curves is actually only
+  the control box, \textit{i.e.}\ not neccesarily the smallest
+  enclosing rectangle.
+\end{itemize}
+
+
+\section{Class path}
+
+The class path represents PostScript like paths in \PyX. The \verb|path| constructor allows the 
+creation of such a path out of series of \verb|pathel|s. A simple example, which generates a triangle,
+looks like:
+\begin{quote}
+\begin{verbatim}
+import pyx
+from path import *
+
+p = path(moveto(0, 0), 
+         lineto(0, 1),
+         lineto(1, 1),
+         closepath())
+\end{verbatim}
+\end{quote}
+Later on, we shall see, how it is possible to output such a path on a
+canvas. For the moment, we only want to discuss the methods provided
+by the \verb|path| class. This range from standard operation like the
+determination of the length of a path via \verb|len(p)|, fetching of
+items using \verb|p[index]| and the possibility to concatenate two
+paths, \verb|p1 + p2|, append further \verb|pathel|s using
+\verb|p.append(pathel)| to more advanced methods, we shall discuss
+now.  The first one is \verb|bbox()|, which returns the bounding box
+of the path, \textit{i.e.} the smallest rectangle enclosing the path,
+as an instance of the class \verb|bbox.bbox|. This is mainly used
+during the output to an EPS file, but it can also be useful for your
+own calculations. The second one, \verb|bpath()| converts the path to
+a path consiting of B\'ezier curves and returns an instance of the class
+\verb|bpath.bpath| (cf.\ Sect.~\ref{bpath}), Use this, if you want to
+apply the more sophisticated methods, that are only available for
+B\'ezier paths, like transformations, intersection, dissections, etc.
+
+
+\subsection{Subclasses of path}
+
+For your convenience, some special PostScript paths are already defined, which
+are given in the following table.
+
+\medskip
+\begin{tabularx}{\linewidth}{l>{\raggedright\arraybackslash}X}
+Subclass of \texttt{path} & Function \\
+\hline
+\texttt{line(x1, y1, x2, y2)} & a line from the point
+  (\texttt{x1}, \texttt{y1} to the point (\texttt{x2}, \texttt{y2})\\
+\texttt{rect(x, y, w, h)} &  a rectangle with the
+  lower left point (\texttt{x}, \texttt{y}), width~\texttt{w}, and
+  height~\texttt{h}. \\
+\texttt{circle(x, y, r)} & a circle with 
+  center (\texttt{x}, \texttt{y}) and radius~\texttt{r}.
+\end{tabularx}
+\medskip
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "manual.tex"
+%%% End:
