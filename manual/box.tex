@@ -31,7 +31,10 @@ some methods of this \verb|polygon| class are explained:
 beziersoftness=1)}:] returns a path of the box; the center might be
 marked by a small circle of radius \verb|centerradius|; the corners
 might be rounded using the parameters \verb|bezierradius| and
-\verb|beziersoftness|
+\verb|beziersoftness|. For each corner of the box there may be one value
+for beziersoftness and two bezierradii. For convenience, it is not necessary
+to specify the whole list (for beziersoftness) and the whole list of
+lists (bezierradius) here. You may give a single value and/or a 2-tuple instead.
 \item[\texttt{transform(*trafos)}:] performs a list of transformations
 to the box
 \item[\texttt{reltransform(*trafos)}:] performs a list of
