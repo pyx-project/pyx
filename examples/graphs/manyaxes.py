@@ -1,9 +1,8 @@
 import math, random
 from pyx import *
 
-# a xy-graph has a linear x and y axis by default
-# they might be overwritten to change their properties
-# futher axes might be added as well
+# a xy-graph has linear x and y axes by default
+# they might be overwritten and futher axes might be added as well
 g = graph.graphxy(width=8, y=graph.logaxis(), y2=graph.linaxis(),
                   y3=graph.linaxis(min=0, max=1),
                   y4=graph.linaxis(min=0, max=2))
