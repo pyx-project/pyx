@@ -304,9 +304,9 @@ def _bcurveIntersect(a, a_t0, a_t1, b, b_t0, b_t1, epsilon=1e-5):
             b_tm = 0.5*(b_t0+b_t1)
 
             return  ( _bcurveIntersect(a, a_t0, a_t1,
-                                        ba, b_t0, b_tm, epsilon) +
+                                       ba, b_t0, b_tm, epsilon) +
                       _bcurveIntersect(a, a_t0, a_t1,
-                                        ba, b_tm, b_t1, epsilon) )
+                                       bb, b_tm, b_t1, epsilon) )
         else:
             # no more subdivisions of either a or b
             # => try to intersect a and b as straight line segments
@@ -318,17 +318,17 @@ def _bcurveIntersect(a, a_t0, a_t1, b, b_t0, b_t1, epsilon=1e-5):
 
             det = b_deltax*a_deltay - b_deltay*a_deltax
 
-            # check for parallel lines
-            if 1.0+det==1.0: return ()
-
             ba_deltax0 = b.x0 - a.x0
             ba_deltay0 = b.y0 - a.y0
 
-            a_t = ( b_deltax*ba_deltay0 - b_deltay*ba_deltax0)/det
-            b_t = ( a_deltax*ba_deltay0 - a_deltay*ba_deltax0)/det
+            try:
+                a_t = ( b_deltax*ba_deltay0 - b_deltay*ba_deltax0)/det
+                b_t = ( a_deltax*ba_deltay0 - a_deltay*ba_deltax0)/det
+            except MathError:
+                return ()
 
             # check for intersections out of bound
-            if not ( 0<=a_t<=1 and 0<=b_t<=1): return ()
+            if not (0<=a_t<=1 and 0<=b_t<=1): return ()
 
             # return rescaled parameters of the intersection
             return ( ( a_t0 + a_t * (a_t1 - a_t0),
