@@ -6,8 +6,8 @@ from pyx import *
 c = canvas.canvas()
 
 # get the lines from the graph
-xax = graph.linaxis(min=-1, max=1.0)
-yax = graph.linaxis(min=-1.3, max=1.3)
+xax = graph.linaxis(min=-1, max=1.0, painter=None)
+yax = graph.linaxis(min=-1.3, max=1.3, painter=None)
 g = graph.graphxy(width=10, ratio=2, x=xax, y=yax)
 fline = g.plot(graph.function("y=sin(1.0/(x**2+0.02122))", points=1001))
 horiz = g.plot(graph.function("y=0.5*x", points=2))
