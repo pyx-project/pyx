@@ -30,6 +30,7 @@
 % This is needed for correct shortening
 %
 %%%%%%%%%% TeX's part %%%%%%%%%%
+\newif\ifverbose \verbosefalse
 \newcount\tempcnt
 \newcount\parno \parno=1
 \newcount\myprevgraf \myprevgraf=0
@@ -37,6 +38,7 @@
 \newcount\outputtype \outputtype=0
 \newcount\razor
 \newcount\leastcost \leastcost=10000000
+\newcount\futurecost
 %
 % Tools for splitting and merging tokenlists after their first element {{{
 % did I learn too much lisp or what?
@@ -110,8 +112,6 @@
 %    we have to know in advance, what the pagebuilder will think of the
 %    pagebreak in the next run. See the TeXbook, p. 111 for the correct
 %    formula.
-%    XXX Is it necessary to reproduce the whole formula or is it sufficient to
-%    simply add \badness and \outputpenalty???
 %
 %    This is the reason for \showprevgraf. We have two counters:
 %    - \myprevgraf counts real lines and displays. This keeps us up-to-date
@@ -127,12 +127,41 @@
 %    To avoid this, we cheat the counting of deadcycles and re-advance
 %    \deadcycles by -1. Please, be careful with this hack!
 % }}}
-\def\calcfuturepenalty#1{%
-  \tempcnt=#1 \advance\tempcnt by\badness \advance\tempcnt by\outputpenalty
-  \ifnum\tempcnt>\leastcost\else
-    \global\leastcost=\tempcnt
+\def\setshowprevgraf#1{%
+  % \futurecost will be the cost in the next step (TeXBook, p.111)
+  \futurecost=#1
+  \advance\futurecost by\outputpenalty
+  \ifnum\insertpenalties<10000
+      \ifnum\futurecost<-9999
+      \else\ifnum\futurecost<10000
+          \ifnum\badness<10000
+              \advance\futurecost by\badness
+          \else\ifnum\badness=10000
+              \futurecost=100000
+          \else
+              \futurecost=10000000
+          \fi\fi
+      \else
+          \futurecost=100000 % this case is not in Knuth's formula !??
+      \fi\fi
+  \else
+      \futurecost=10000000
+  \fi
+  % show some debugging info
+  \inform
+  % track the leastcost up to now and
+  % set showprevgraf to the current value of myprevgraf
+  \ifnum\futurecost>\leastcost\else
+    \global\leastcost=\futurecost
     \global\showprevgraf=\myprevgraf
-  \fi}
+  \fi
+}
+\def\inform{\ifverbose\immediate\write16{%
+  \space myprevgraf=\the\myprevgraf
+  \space showprevgraf=\the\showprevgraf
+  \space futurecost=\the\futurecost
+  \space leastcost=\the\leastcost}\fi
+}
 \newtoks\saveoutput
 %\saveoutput=\expandafter{\the\output}
 \saveoutput={\shipout\vbox{\pagebody}\advancepageno\ifnum\outputpenalty>-20000\else\dosupereject\fi}
@@ -143,12 +172,13 @@
     %%%%%%%%%% End of the page %%%%%%%%%%
     \ifnum\outputtype=5 \advance\showprevgraf by -1 \fi% no \global here, just for the next line:
     \immediate\write16{PyXVariableBox:page=\the\pageno,par=\the\parno,prevgraf=\the\showprevgraf:}%
-    %\immediate\write16{******** Seitenende ******** pageno=\the\pageno\space parno=\the\parno\space prevgraf=\the\showprevgraf}%
     % reset showprevgraf
     \global\showprevgraf=\myprevgraf
     \tempcnt=\deadcycles \advance\tempcnt by 1 \deadcycles=\tempcnt
     % set the outputtype
-    \global\outputtype=0
+%    \global\outputtype=0 % this has no outputtype!! Otherwise, the outputtype of the last page is lost
+%    e.g. <textline> <pagebreak> <textline> <display> makes
+%    <\interlinepenalty (1)> <pagebreak (!!! not 0!!!)>  <\predisplaypenalty (should be 5, not 2)>
     % after the page has been shipped out, we need a new leastcost
     \global\leastcost=10000000
     % do whatever someone told to be the output routine
@@ -157,47 +187,47 @@
     \cdr\lovsizes \cdr\lohsizes
   \else\advance\razor by -100000 \ifnum\outputpenalty>\razor
     %%%%%%%%%% InterLinePenalty: -100000 %%%%%%%%%%
-    %\immediate\write16{******** InterLinePenalty ********}%
+    \ifverbose\immediate\write16{******** InterLinePenalty ********}\fi
     \global\advance\myprevgraf by 1
     % this will be the cost in the next page break finding:
-    \calcfuturepenalty{100000}
+    \setshowprevgraf{100000}
     % set the outputtype
     \global\outputtype=1
     % and re-inject the whole page with the original penalty
     \unvbox255 \advance\outputpenalty by 100000 \penalty\outputpenalty
   \else\advance\razor by -100000 \ifnum\outputpenalty>\razor
     %%%%%%%%%% PreDisplayPenalty: -200000 %%%%%%%%%%
-    %\immediate\write16{******** PreDisplayPenalty ********}%
+    \ifverbose\immediate\write16{******** PreDisplayPenalty ********}\fi
     \ifnum\outputtype=1
-      \global\advance\myprevgraf by 1
+      \global\advance\myprevgraf by 1 % this is for the last preceding text line
       \global\outputtype=5
       % this will be the cost in the next page break finding:
-      \calcfuturepenalty{200000}
+      \setshowprevgraf{200000}
     \else\ifnum\outputtype=4
-      \global\advance\myprevgraf by 1
+      \global\advance\myprevgraf by 1 % this is for the first line of the current par
+      % which has no interlinepenalty
       \global\outputtype=2
       % this will be the cost in the next page break finding:
-      \calcfuturepenalty{200000}
+      \setshowprevgraf{200000}
     \else\global\outputtype=2 \fi\fi
     % and re-inject the whole page with the original penalty
     \unvbox255 \advance\outputpenalty by 200000 \penalty\outputpenalty
   \else\advance\razor by -100000 \ifnum\outputpenalty>\razor
     %%%%%%%%%% PostDisplayPenalty: -300000 %%%%%%%%%%
-    %\immediate\write16{******** PostDisplayPenalty ********}%
-    \global\advance\myprevgraf by 3 % pre und post zusammen muessen 2 ergeben:
-                                    %   pre kann aber auf voriger Seite stehen
+    \ifverbose\immediate\write16{******** PostDisplayPenalty ********}\fi
+    \global\advance\myprevgraf by 3 % all prevgraf for the display comes here, not in PreDisplayPenalty
     % this will be the cost in the next page break finding:
-    \calcfuturepenalty{300000}
+    \setshowprevgraf{300000}
     % set the outputtype
     \global\outputtype=3
     % and re-inject the whole page with the original penalty
     \unvbox255 \advance\outputpenalty by 300000 \penalty\outputpenalty
   \else\advance\razor by -100000 \ifnum\outputpenalty>\razor
     %%%%%%%%%% end of the paragraph: \penalty-400000 %%%%%%%%%%
-    %\immediate\write16{******** Penalty ********}%
+    \ifverbose\immediate\write16{******** Penalty ********}\fi
     \global\advance\myprevgraf by 1
     % this will be the cost in the next page break finding:
-    \calcfuturepenalty{400000}
+    \setshowprevgraf{400000}
     \global\outputtype=4
     % and re-inject the whole page with the original penalty
     \unvbox255 \advance\outputpenalty by 400000 \penalty\outputpenalty
@@ -217,7 +247,7 @@
   \global\advance\parno by 1
   \global\myprevgraf=0
   \global\showprevgraf=0
-  \global\leastcost=10000000
+%  \global\leastcost=10000000
   % check if the following paragraph will need a \parshape
   % if yes, say the first token of \parshapes
   % if no, restore the parno number into \parnos.
@@ -237,7 +267,7 @@
 \let\savepar\par
 \def\par{%
   \ifvmode\savepar\else\ifinner\savepar\else
-    \global\leastcost=10000000
+%    \global\leastcost=10000000
     \advance\interlinepenalty by -100000
     \vadjust{\penalty-400000}%
     \savepar
@@ -255,12 +285,12 @@
 %    we have to adjust \predisplaypenalty and \postdisplaypenalty
 % XXX Has \interdisplaylinepenalty any effect on \prevgraf ?
 \def\display{%
-  \global\leastcost=10000000
+%  \global\leastcost=10000000
   \global\advance\interlinepenalty by -100000
   $$%
   \global\advance\interlinepenalty by 100000\relax}
 \def\enddisplay{%
-  \global\leastcost=1000000000
+%  \global\leastcost=10000000
   \global\advance\predisplaypenalty by -200000
   \global\advance\postdisplaypenalty by -300000
   $$%
