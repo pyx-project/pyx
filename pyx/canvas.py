@@ -55,6 +55,8 @@ unit_u2p	= 28.346456693*unit_ps
 unit_v2p	= 28.346456693*unit_ps
 unit_w2p	= 28.346456693*unit_ps
 
+class CanvasException(Exception): pass
+
 class canvas:
 
     PSCmds = [] 				# stores all PS commands of the canvas
@@ -69,7 +71,7 @@ class canvas:
 	    if isinstance(base, canvas): 
 	        self.isPrimaryCanvas = 0
 	    else:
-	        assert("base should be either a filename or a canvas")
+	        raise CanvasException, "base should be either a filename or a canvas"
         self.PSInit()
 
     
@@ -180,18 +182,24 @@ class canvas:
 	self.PSAddCmd("%%EndDocument")
 	self.PSAddCmd("EndEPSF")
 
-
-    def stroke(self):
-    	self.PSAddCmd("stroke")
-	
-    def newpath(self):
+    def _newpath(self):
     	self.PSAddCmd("newpath")
-	
-    def closepath(self):
-    	self.PSAddCmd("closepath")
 
+    def _stroke(self):
+    	self.PSAddCmd("stroke")
+
+    def _fill(self):
+    	self.PSAddCmd("fill")
+	
     def draw(self,path):
+        self._newpath()
         path.draw(self)
+	self._stroke()
+	
+    def fill(self,path):
+        self._newpath()
+        path.fill(self)
+	self._fill()
 
     def setlinecap(self, cap):
         #isnumber(cap)
@@ -280,5 +288,14 @@ if __name__=="__main__":
     c.setlinestyle(linestyle_dashdotted)
     t.text(10, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize = 2, valign = bottom)
     c.draw(p)
-    
+
+    p=path([moveto(5,15), arc(5,15, 1, 0, 45), closepath()])
+    c.draw(p)
+
+    p=path([moveto(5,17), curveto(6,18, 5,16, 7,15)])
+    c.draw(p)
+    p.translate(-1,-1)
+    c.draw(p)
+
+
     t.TexRun()
