@@ -111,13 +111,14 @@ def enlarged(normpath, enlargeby_pt, round):
                                                                                 (ts.matrix[0][0], ts.matrix[1][0]),
                                                                                 (te.matrix[0][0], te.matrix[1][0]),
                                                                                 cs, ce, strict=1)
-                c.fill(path.circle_pt(bezierparams[0][0], bezierparams[0][1], 1), [color.rgb.red])
-                c.fill(path.circle_pt(bezierparams[3][0], bezierparams[3][1], 1), [color.rgb.green])
+                c.fill(path.circle_pt(bezierparams[0][0], bezierparams[0][1], 1), [color.rgb.blue])
+                c.fill(path.circle_pt(bezierparams[3][0], bezierparams[3][1], 1), [color.rgb.blue])
                 newnormpathel = path.normcurve(bezierparams[0][0], bezierparams[0][1],
                                                bezierparams[1][0], bezierparams[1][1],
                                                bezierparams[2][0], bezierparams[2][1],
                                                bezierparams[3][0], bezierparams[3][1])
                 showtangent(newnormpathel)
+                showcircle(newnormpathel)
             else:
                 # line
                 newnormpathel = path.normline(nxs, nys, nxe, nye)
@@ -155,6 +156,93 @@ def showtangent(normcurve):
     for t in ts:
         trafo = normpatheltrafo(normcurve, t)
         c.stroke(path.line_pt(*list(trafo._apply(-100, 0))+list(trafo._apply(100, 0))), [color.rgb.red])
+
+def showcircle(normcurve):
+    x0 = 350
+    y0 = 200
+    dx = 1
+    dy = -2
+    cos = dx/math.sqrt(dx*dx+dy*dy)
+    sin = dy/math.sqrt(dx*dx+dy*dy)
+
+    r = 16
+
+    cx =                                       3*normcurve.x1_pt - 3*normcurve.x0_pt
+    bx =                   3*normcurve.x2_pt - 6*normcurve.x1_pt + 3*normcurve.x0_pt
+    ax = normcurve.x3_pt - 3*normcurve.x2_pt + 3*normcurve.x1_pt -   normcurve.x0_pt
+
+    cy =                                       3*normcurve.y1_pt - 3*normcurve.y0_pt
+    by =                   3*normcurve.y2_pt - 6*normcurve.y1_pt + 3*normcurve.y0_pt
+    ay = normcurve.y3_pt - 3*normcurve.y2_pt + 3*normcurve.y1_pt -   normcurve.y0_pt
+
+    def x(t):
+        return ax*t*t*t+bx*t*t+cx*t+normcurve.x0_pt
+    def y(t):
+        return ay*t*t*t+by*t*t+cy*t+normcurve.y0_pt
+    def xdot(t):
+        return 3*ax*t*t+2*bx*t+cx
+    def ydot(t):
+        return 3*ay*t*t+2*by*t+cy
+    def xddot(t):
+        return 6*ax*t+2*bx
+    def yddot(t):
+        return 6*ay*t+2*by
+    def l(t, sign):
+        return cos*(x(t)-x0)+sin*(y(t)-y0)+sign*math.sqrt(r*r-(sin*(x(t)-x0)-cos*(y(t)-y0))**2)
+    def ldot(t, sign):
+        return cos*xdot(t)+sin*ydot(t)-sign*((sin*(x(t)-x0)-cos*(y(t)-y0))*
+                                             (sin*xdot(t)-cos*ydot(t))/
+                                             math.sqrt(r*r-(sin*(x(t)-x0)-cos*(y(t)-y0))**2))
+    def z(t, sign):
+        return (x(t)-x0-l(t, sign)*cos)*xdot(t)+(y(t)-y0-l(t, sign)*sin)*ydot(t)
+    def zdot(t, sign):
+        return ((x(t)-x0-l(t, sign)*cos)*xddot(t)+(xdot(t)-ldot(t, sign)*cos)*xdot(t)+
+                (y(t)-y0-l(t, sign)*sin)*yddot(t)+(ydot(t)-ldot(t, sign)*sin)*ydot(t))
+    def start(t):
+        return sin*(x(t)-x0)-cos*(y(t)-y0)
+    def startdot(t):
+        return sin*xdot(t)-cos*ydot(t)
+    def find(sign):
+        x = - (sin*bx-cos*by)/(3.0*sin*ax-3.0*cos*ay)
+        s = math.sqrt(x*x-(sin*cx-cos*cy)/(3.0*sin*ax-3.0*cos*ay))
+        t1 = x-s
+        t2 = x+s
+        #print startdot(t1), startdot(t2), start(t1), start(t2)
+        startt1, startt2 = start(t1), start(t2)
+        #print startt1, startt2
+        if startt1*startt2 < 0:
+            while abs(startt1)+abs(startt2) > 1e-5:
+                tn = 0.5*(t1+t2)
+                starttn = start(tn)
+                if starttn*startt1 < 0:
+                    t2, startt2 = tn, starttn
+                else:
+                    t1, startt1 = tn, starttn
+            ist = 0.5*(t1+t2)
+        elif abs(startt1) < abs(startt2):
+            ist = t1
+        else:
+            ist = t2
+        if ist > 1:
+            ist = 1
+        if ist < 0:
+            ist = 0
+
+        isz=z(ist, sign)
+        while abs(isz) > 1e-5:
+            # print ist, isz
+            ist -= 0.05*isz / zdot(ist, sign) # overshoots lead to nan-results ...
+            isz = z(ist, sign)
+        if isz > -1: # nan?
+            # print ist, isz
+            return ist
+
+    for sign in [-1, 1]:
+        ist = find(sign)
+        if ist is not None and 0 < ist < 1:
+            isl = l(ist, sign)
+            c.fill(path.circle_pt(x(ist), y(ist), 1), [color.rgb.green])
+            c.stroke(path.circle_pt(x0+isl*cos, y0+isl*sin, r), [color.rgb.green])
 
 
 # parameters for the enlargement:
