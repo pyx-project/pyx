@@ -1,8 +1,8 @@
 PyX
 
 0.4 (????/??/??):
-  TODOs:
   - manual:
+    TODO:
     - include sources in source distribution
   - graph module:
     - tick.text is renamed to tick.label
@@ -90,6 +90,7 @@ PyX
     - addarg bugs (#738724)
   - epsfile module:
     - fix mixing up of height and width in scale calculation
+  - and various other fixer here and there
 
 0.3.1 (2003/04/04):
   - text module:
