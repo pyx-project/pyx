@@ -9,7 +9,8 @@ PyX
       - separate texter out of the axispainter
       - 3d graphs
   - canvas module:
-      default patterns
+      - default patterns
+      - stroke and fill should support trafos
 
 0.3 (2003/03/31)
   - examples

@@ -27,6 +27,6 @@ setup(name="PyX",
       url="http://pyx.sourceforge.net/",
       description="Python package for the generation of mixed PS and (La)TeX code",
       license="GPL",
-      packages=['pyx'],
+      packages=['pyx', 'pyx/t1strip', 'pyx/pykpathsea'],
       ext_modules=ext_modules,
       data_files=data_files)
