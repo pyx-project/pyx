@@ -216,6 +216,8 @@ class MathTreeTestCase(unittest.TestCase):
         self.failUnlessRaises(parser.ParserError, myparser.parse, "(1+2")
         self.failUnlessRaises(parser.ParserError, myparser.parse, "1+2)")
         self.failUnlessEqual(len(myparser.parse("1,2")), 2)
+        self.failUnlessRaises(Exception, myparser.parse, "1^2")
+        self.failUnlessRaises(Exception, myparser.parse, "1+2 and 3")
 
 
 if __name__ == "__main__":

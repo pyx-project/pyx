@@ -876,5 +876,7 @@ class parser:
             if len(treelist) == 1: return treelist[0]
             else: return treelist # }}}
 
+        if astseq[0] != symbol.eval_input and len(astseq) > 2:
+            raise Exception("invalid expression structure (contains several parts)")
         return self.astseq2mtree(astseq[1], isfunc=isfunc)
 
