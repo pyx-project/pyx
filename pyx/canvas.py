@@ -405,11 +405,11 @@ def _arrowhead(anormpath, size, angle, constriction):
 
         arrowcr= path.line(*(arrowr.end()+(cx,cy)))
 
-        arrow = arrowl.reversed().glue(arrowr).glue(arrowcr)
+        arrow = arrowl.reversed() << arrowr << arrowcr
         arrow.append(path.closepath())
     else:
         # arrow without constriction
-        arrow = arrowl.reversed().glue(arrowr)
+        arrow = arrowl.reversed() << arrowr
         arrow.append(path.closepath())
 
     return arrow
@@ -522,7 +522,7 @@ class barrow(arrow):
                        strokestyles=strokestyles,
                        fillstyles=fillstyles)
 
-_base = 2
+_base = 4
 
 barrow.SMALL  = barrow("%f v pt" % (_base/math.sqrt(64)))
 barrow.SMALl  = barrow("%f v pt" % (_base/math.sqrt(32)))
