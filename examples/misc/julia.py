@@ -18,8 +18,8 @@ def rgbcolortostring(c):
 data = StringIO()
 
 # compute fractal
-for x in range(xiterations):
-    for y in range(yiterations):
+for y in range(yiterations):
+    for x in range(xiterations):
         z = complex(1.0*(Max_Re-Min_Re)*x/xiterations + Min_Re,
                     1.0*(Max_Im-Min_Im)*y/yiterations + Min_Im)
 
