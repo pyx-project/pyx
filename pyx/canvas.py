@@ -133,8 +133,8 @@ class epsfile:
         if self.showbb:
             file.write("newpath\n")
 	    file.write("%f %f moveto\n"  % (mybbox.llx, mybbox.lly))
-	    file.write("%f 0 rlineto\n" % mybbox.urx - mybbox.llx)
-	    file.write("0 %f rlineto\n" % mybbox.ury - mybbox.lly)
+	    file.write("%f 0 rlineto\n" % (mybbox.urx - mybbox.llx))
+	    file.write("0 %f rlineto\n" % (mybbox.ury - mybbox.lly))
 	    file.write("%f 0 rlineto\n" % -(mybbox.urx - mybbox.llx))
 	    file.write("closepath\nstroke\n")
 	    
