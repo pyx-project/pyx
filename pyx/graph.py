@@ -126,29 +126,25 @@ class Tick:
 
 class _Axis:
 
-    def __init__(self, Title = None, Min = None, Max = None, reverse = 0):
+    def __init__(self, min = None, max = None, reverse = 0, title = None):
+        self.fixmin = (min != None)
+        self.fixmax = (max != None)
+        self.min = min
+        self.max = max
+        self.title = title
         self.reverse = reverse
-        self.Min = None
-        self.Max = None
-        self.FixMin = 0
-        self.FixMax = 0
-        self.Title = Title
-        self.set(Min, Max)
-        if Min != None:
-            self.FixMin = 1
-        if Max != None:
-            self.FixMax = 1
+        self.setrange()
 
-    def set(self, Min = None, Max = None):
-        if Min != None and not self.FixMin:
-            self.Min = Min
-        if Max != None  and not self.FixMax:
-            self.Max = Max
-        if self.Min != None and self.Max != None:
+    def setrange(self, min = None, max = None):
+        if (not self.fixmin) and (min != None):
+            self.min = min
+        if (not self.fixmax) and (max != None):
+            self.max = max
+        if (self.min != None) and (self.max != None):
             if self.reverse:
-                self.setbasepts(((self.Min, 1,), (self.Max, 0,)))
+                self.setbasepts(((self.min, 1,), (self.max, 0,)))
             else:
-                self.setbasepts(((self.Min, 0,), (self.Max, 1,)))
+                self.setbasepts(((self.min, 0,), (self.max, 1,)))
 
     def TickValPosList(self):
         TickCount = 4
@@ -172,12 +168,194 @@ class frac:
     def __str__(self):
         return "%i/%i" % (self.enum, self.denom, )
 
+
 epsilon = 1e-10
-                    
+
+class frac:
+
+    def __init__(self, enum, denom):
+        assert type(enum) in (types.IntType, types.LongType, )
+        assert type(denom) in (types.IntType, types.LongType, )
+        assert denom != 0
+        self.enum = enum
+        self.denom = denom
+
+    def __cmp__(self, other):
+        return cmp(self.enum * other.denom, other.enum * self.denom)
+
+    def __float__(self):
+        return float(self.enum) / self.denom
+
+    def __str__(self):
+        return "%i/%i" % (self.enum, self.denom)
+
+    def __repr__(self):
+        return "frac(%i, %i)" % (self.enum, self.denom)
+
+
+class tick(frac):
+
+    def __init__(self, enum, denom, ticklevel = 0, labellevel = 0):
+        # ticklevel and labellevel are allowed to be None (in order to skip ticks or labels)
+        frac.__init__(self, enum, denom)
+        self.ticklevel = ticklevel
+        self.labellevel = labellevel
+
+    def __repr__(self):
+        return "tick(%i, %i, %s, %s)" % (self.enum, self.denom, self.ticklevel, self.labellevel)
+
+    def merge(self, other):
+        assert self == other
+        if (self.ticklevel == None) or ((other.ticklevel != None) and (other.ticklevel < self.ticklevel)):
+            self.ticklevel = other.ticklevel
+        if (self.labellevel == None) or ((other.labellevel != None) and (other.labellevel < self.labellevel)):
+            self.labellevel = other.labellevel
+
+
+class linpart:
+
+    def __init__(self, min, max, tickfracs = None, labelfracs = None, extendtoticklevel = 0, extendtolabellevel = None):
+        """
+        zero-level labelfracs are created out of the zero-level tickfracs, when labelfracs are None
+        all-level tickfracs are created out of the all-level labelfracs, when tickfracs are None
+        get ticks but avoid labels by labelfracs = ()
+        get labels but avoid ticks by tickfracs = ()
+        """
+        self.min = min
+        self.max = max
+
+        if isinstance(tickfracs, frac):
+            self.tickfracs = (tickfracs, )
+        else:
+            if tickfracs == None:
+                if isinstance(labelfracs, frac):
+                    self.tickfracs = (labelfracs, )
+                elif labelfracs == None:
+                    self.tickfracs = ()
+                else:
+                    self.tickfracs = labelfracs
+            else:
+                self.tickfracs = tickfracs
+        if isinstance(labelfracs, frac):
+            self.labelfracs = (labelfracs, )
+        else:
+            if labelfracs == None:
+                if len(self.tickfracs):
+                    self.labelfracs = (self.tickfracs[0], )
+                else:
+                    self.labelfracs = ()
+            else:
+                self.labelfracs = labelfracs
+
+        print self.tickfracs
+        print self.labelfracs
+
+        if extendtoticklevel != None:
+            self.extendminmax(self.tickfracs[extendtoticklevel])
+        if extendtolabellevel != None:
+            self.extendminmax(self.labelfracs[extendtolabellevel])
+
+    def extendminmax(self, frac):
+        self.min = float(frac) * math.floor(self.min / float(frac) + epsilon)
+        self.max = float(frac) * math.ceil(self.max / float(frac) - epsilon)
+
+    def getticklist(self, frac, ticklevel = None, labellevel = None):
+        ticks = []
+        imin = int(math.ceil(self.min / float(frac) - 0.5 * epsilon))
+        imax = int(math.floor(self.max / float(frac) + 0.5 * epsilon))
+        for i in range(imin, imax + 1):
+            ticks.append(tick(long(i) * frac.enum, frac.denom, ticklevel = ticklevel, labellevel = labellevel))
+        return ticks
+
+    def mergeticklists(self, list1, list2):
+        # caution: side effects
+        i = 0
+        j = 0
+        try:
+            while 1: # we keep on going until we reach an index error
+                while list2[j] < list1[i]: # insert tick
+                   list1.insert(i, list2[j])
+                   i = i + 1
+                   j = j + 1
+                if list2[j] == list1[i]: # merge tick
+                   list1[i].merge(list2[j])
+                   j = j + 1
+                i = i + 1
+        except IndexError:
+            if j < len(list2):
+                list1 += list2[j:]
+        return list1
+
+    def getticks(self):
+        ticks = []
+        for i in range(len(self.tickfracs)):
+            ticks = self.mergeticklists(ticks, self.getticklist(self.tickfracs[i], ticklevel = i))
+        for i in range(len(self.labelfracs)):
+            ticks = self.mergeticklists(ticks, self.getticklist(self.labelfracs[i], labellevel = i))
+        return ticks
+
+    def getparts(self):
+        return [getticks(self), ]
+
+
+# print linpart(0, 1.9, (frac(1, 3), frac(1, 4), ), extendtoticklevel = None, extendtolabellevel = 0).getticks()
+
+class sfpart:
+    """shift - frac - partitioning"""
+    defaultfracs = ((frac(1, 1), frac(1, 2), ),
+                    (frac(2, 1), frac(1, 1), ),
+                    (frac(5, 2), frac(5, 4), ),
+                    (frac(5, 1), frac(5, 2), ), )
+
+    def __init__(self, fracs = defaultfracs):
+        self.fracs = fracs
+
+    def getparts(self):
+        pass
+
+
+class fffsfpart(sfpart):
+    """favorfixfrac - shift - frac - partitioning"""
+    # TODO: just to be done
+    degreefracs = ((frac( 15, 1), frac(  5, 1), ),
+                   (frac( 30, 1), frac( 15, 1), ),
+                   (frac( 45, 1), frac( 15, 1), ),
+                   (frac( 60, 1), frac( 30, 1), ),
+                   (frac( 90, 1), frac( 30, 1), ),
+                   (frac( 90, 1), frac( 45, 1), ),
+                   (frac(180, 1), frac( 45, 1), ),
+                   (frac(180, 1), frac( 90, 1), ),
+                   (frac(360, 1), frac( 90, 1), ),
+                   (frac(360, 1), frac(180, 1), ), )
+    # favouring some fixed fracs, e.g. partitioning of axis in degree
+    def __init__(self, fixfracs, fixfavor = 2, **args):
+        sfpart.__init__(self, **args)
+        self.fixfracs = fixfracs
+        self.fixfavor = fixfavor
+
+
+class timepart:
+    """partitioning of times and dates"""
+    # TODO: this will be a difficult subject ...
+    pass
+
+
+class momrate:
+    """min - opt - max - rating of axes partitioning"""
+    defaultrates = ((1, 25, 4, 1, ), (1, 100, 8, 0.5, ), ) # min, opt, max, ratefactor
+    def __init__(self, rates = defaultrates):
+        self.rates = rates
+
+    def getrates(self, parts):
+        pass
+
 class LinAxis(_Axis, _LinMap):
 
-    def __init__(self, **args):
+    def __init__(self, part = sfpart(), rate = momrate(), **args):
         _Axis.__init__(self, **args)
+        self.part = part
+        self.rate = rate
+
         self.enclosezero = 0.25 # maximal factor allowed to extend axis to enclose zero
         self.enlargerange = 1 # should we enlarge ranges?
         self.fracfixed = ( )
@@ -194,13 +372,13 @@ class LinAxis(_Axis, _LinMap):
 
     def getparts(self):
 
-        if self.Min * self.Max > 0:
-            if (self.Min > 0) and (self.Max * self.enclosezero > self.Min):
-                self.set(Min = 0)
-            elif (self.Max < 0) and (self.Min * self.enclosezero < self.Max):
-                self.set(Max = 0)
+        if self.min * self.max > 0:
+            if (self.min > 0) and (self.max * self.enclosezero > self.min):
+                self.setrange(min = 0)
+            elif (self.max < 0) and (self.min * self.enclosezero < self.max):
+                self.setrange(max = 0)
 
-        e = int(math.ceil(log((self.Max - self.Min) / self.factor) / log(self.shift)))
+        e = int(math.ceil(log((self.max - self.min) / self.factor) / log(self.shift)))
 
         res = [ ]
 
@@ -218,8 +396,8 @@ class LinAxis(_Axis, _LinMap):
 
             for fracs in self.fracsshift:
                 resfrac = [ ]
-                min = self.Min
-                max = self.Max
+                min = self.min
+                max = self.max
                 l = (max - min) / float(self.factor)
                 first = 1
                 for (_f, (minticks, maxticks, opt, ratefactor, ), ) in zip(fracs, self.tickopt):
@@ -228,9 +406,9 @@ class LinAxis(_Axis, _LinMap):
                     imin = int(math.floor(min / scale + epsilon)) # TODO: long here, epsilon?
                     imax = int(math.ceil(max / scale - epsilon))
                     if first and self.enlargerange:
-                        if not self.FixMin:
+                        if not self.fixmin:
                             min = imin * scale
-                        if not self.FixMax:
+                        if not self.fixmax:
                             max = imax * scale
                     first = 0
                     resfrac.append( (f, imin, imax, ), )
@@ -243,7 +421,7 @@ class LinAxis(_Axis, _LinMap):
             rate = 0
             min = part[0]
             max = part[1]
-            for ((f , imin, imax, ), (minticks, maxticks, opt, ratefactor, ), ) in zip(part[2], self.tickopt):
+            for ((f, imin, imax, ), (minticks, maxticks, opt, ratefactor, ), ) in zip(part[2], self.tickopt):
                 ticks = (max - min) * f.denom / float(self.factor) / f.enum
                 if (ticks < minticks + epsilon) or (ticks > maxticks - epsilon):
                     break
@@ -257,7 +435,7 @@ class LinAxis(_Axis, _LinMap):
     def getticklists(self, parts):
         ticklists = []
         for (rate, (min, max, fracs, )) in parts:
-            self.set(min, max, )
+            self.setrange(min, max, )
             ticklist = [min, max, ]
             level = 0
             for (f, imin, imax, ) in fracs:
@@ -280,7 +458,7 @@ class LinAxis(_Axis, _LinMap):
         for (rate, ticklist, ) in ticklists[1:]:
             if rate < bestrate:
                 (bestrate, bestticklist, ) = (rate, ticklist, )
-        self.set(bestticklist[0], bestticklist[1])
+        self.setrange(bestticklist[0], bestticklist[1])
         self.ticklist = bestticklist[2:]
 
     def TickList(self):
@@ -343,8 +521,8 @@ class GraphXY(Graph):
                     pass
             if len(ranges) == 0:
                 assert 0, "range for %s-axis unknown" % key
-            self.Axis[key].set(min( map (lambda x: x[0], ranges)),
-                               max( map (lambda x: x[1], ranges)))
+            self.Axis[key].setrange(min( map (lambda x: x[0], ranges)),
+                                    max( map (lambda x: x[1], ranges)))
 
         for pd in self.plotdata:
             pd.Data.SetAxis(self.Axis)
