@@ -191,10 +191,11 @@ class _msghandlerhideload(msghandler):
         newlevel = 0
         for c in msg:
             if newlevel and (c in (list(string.whitespace) + ["(", ")"])):
-                if not len(filestr):
-                    break
-                if not os.access(filestr,os.R_OK):
-                    break
+                if filestr not in ("c", "C"):
+                    if not len(filestr):
+                        break
+                    if not os.access(filestr,os.R_OK):
+                        break
                 newlevel = 0
             if c == "(":
                 depth += 1
