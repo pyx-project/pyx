@@ -6,9 +6,16 @@
 
 <h1>PyX - Examples</h1>
 
-<div tal:repeat="example options/examples" style="border-bottom:1px solid #88a;margin-bottom:10px;">
+<p>
+Here, you find some examples of figures created with PyX. The EPS version
+can be obtained by clicking on the image.
+</p>
+
+<div class="example" tal:repeat="example options/examples" style="border-top:1px solid #88a;margin-bottom:10px;">
     <h2 tal:content="example/name">Name</h2>
-    <img src="example.png" alt="example" tal:attributes="src example/path">
+    <div style="text-align:center;">
+    <a href="link" tal:attributes="href example/eps"><img src="example.png" alt="example" tal:attributes="src example/png"></a>
+    </div>
     <br>
     <div tal:content="structure example/code">Code</div>
 </div>

@@ -1,13 +1,15 @@
 #!/usr/bin/env python2.2
 
-import sys
+import sys, os.path
 from zope.pagetemplate.pagetemplate import PageTemplate
 
 class example:
     def __init__(self, name):
         self.name = name
-        self.path = name+".png"
-        self.code = open("examples/%s.py.html" % name, "r").read()
+        self.basename = os.path.basename(name)
+        self.png = self.basename+".png"
+        self.eps = self.basename+".eps"
+        self.code = open("../examples/%s.py.html" % name, "r").read()
     def __getattr__(self, attr):
         return self.__dict__[attr]
 
@@ -26,7 +28,7 @@ maintemplate = PageTemplateFromFile("maintemplate.pt")
 pagename = sys.argv[1]
 if pagename.endswith(".pt"): pagename = pagename[:-3]
 
-examples = [example("hello"), example("pattern"), example("vector"), example("step"), example("piaxis")]
+examples = [example("hello"), example("pattern"), example("vector"), example("graphs/step"), example("graphs/piaxis")]
 
 write_file("%s.html" % pagename,
            PageTemplateFromFile("%s.pt" % pagename)(maintemplate=maintemplate,

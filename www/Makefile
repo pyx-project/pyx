@@ -17,7 +17,8 @@ html: $(htmlfiles) $(pngfiles)
 install: html
 	cp $(htmlfiles) $(pngfiles) $(cssfiles) ~/public-html/pyx
 	cd png; make
-	cp png/*.png examples/*.png ~/public-html/pyx
+	cp png/*.png ../examples/*.png ../examples/*/*.png ~/public-html/pyx
+	cp ../examples/*.eps ../examples/*/*.eps ~/public-html/pyx
 	cp ../manual/manual.pdf ~/public-html/pyx
 
 %.html: %.pt maintemplate.pt
