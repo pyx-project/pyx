@@ -2051,8 +2051,6 @@ class key:
           - the dimension and geometry of the graph"""
         sc = c.insert(canvas.canvas(trafo._translate(x, y)))
         for plotinfo, title in zip(self.plotinfos, self.titles):
-            #sc.stroke(path._rect(0, -0.5 * self._symbolheight + title.center[1],
-            #                     self._symbolwidth, self._symbolheight))
             plotinfo.style.key(sc, 0, -0.5 * self._symbolheight + title.center[1],
                                    self._symbolwidth, self._symbolheight)
             sc.insert(title)
@@ -2101,6 +2099,11 @@ class graphxy(canvas.canvas):
         if helper.issequence(data):
             return plotinfos
         return plotinfos[0]
+
+    def addkey(self, key, *plotinfos):
+        if self.haslayout:
+            raise RuntimeError("layout setup was already performed")
+        self.addkeys.append((key, plotinfos))
 
     def _vxtickpoint(self, axis, v):
         return (self._xpos+v*self._width, axis.axispos)
@@ -2290,35 +2293,40 @@ class graphxy(canvas.canvas):
         for plotinfo in self.plotinfos:
             plotinfo.data.draw(self)
 
+    def _dokey(self, key, *plotinfos):
+        key.setplotinfos(*plotinfos)
+        key.dolayout(self)
+        bbox = key.bbox()
+        if key.right:
+            if key.hinside:
+                x = self._xpos + self._width - bbox.urx - key._hdist
+            else:
+                x = self._xpos + self._width - bbox.llx + key._hdist
+        else:
+            if key.hinside:
+                x = self._xpos - bbox.llx + key._hdist
+            else:
+                x = self._xpos - bbox.urx - key._hdist
+        if key.top:
+            if key.vinside:
+                y = self._ypos + self._height - bbox.ury - key._vdist
+            else:
+                y = self._ypos + self._height - bbox.lly + key._vdist
+        else:
+            if key.vinside:
+                y = self._ypos - bbox.lly + key._vdist
+            else:
+                y = self._ypos - bbox.ury - key._vdist
+        self.mindbbox(bbox.transformed(trafo._translate(x, y)))
+        key.paint(self, x, y)
+
     def dokey(self):
         self.dolayout()
         if not self.removedomethod(self.dokey): return
         if self.key is not None:
-            self.key.setplotinfos(*self.plotinfos)
-            self.key.dolayout(self)
-            bbox = self.key.bbox()
-            if self.key.right:
-                if self.key.hinside:
-                    x = self._xpos + self._width - bbox.urx - self.key._hdist
-                else:
-                    x = self._xpos + self._width - bbox.llx + self.key._hdist
-            else:
-                if self.key.hinside:
-                    x = self._xpos - bbox.llx + self.key._hdist
-                else:
-                    x = self._xpos - bbox.urx - self.key._hdist
-            if self.key.top:
-                if self.key.vinside:
-                    y = self._ypos + self._height - bbox.ury - self.key._vdist
-                else:
-                    y = self._ypos + self._height - bbox.lly + self.key._vdist
-            else:
-                if self.key.vinside:
-                    y = self._ypos - bbox.lly + self.key._vdist
-                else:
-                    y = self._ypos - bbox.ury - self.key._vdist
-            self.mindbbox(bbox.transformed(trafo._translate(x, y)))
-            self.key.paint(self, x, y)
+            self._dokey(self.key, *self.plotinfos)
+        for key, plotinfos in self.addkeys:
+            self._dokey(key, *plotinfos)
 
     def finish(self):
         while len(self.domethods):
@@ -2369,6 +2377,7 @@ class graphxy(canvas.canvas):
         self.domethods = [self.dolayout, self.dobackground, self.doaxes, self.dodata, self.dokey]
         self.haslayout = 0
         self.defaultstyle = {}
+        self.addkeys = []
         self.mindbboxes = []
 
     def mindbbox(self, *boxes):
@@ -3765,13 +3774,11 @@ class data:
     def __init__(self, file, title=helper.nodefault, context={}, **columns):
         self.title = title
         if helper.isstring(file):
-            if title is helper.nodefault:
-                self.title = file
             self.data = datamodule.datafile(file)
         else:
             self.data = file
-            if title is helper.nodefault:
-                self.title = "(unknown)"
+        if title is helper.nodefault:
+            self.title = "(unknown)"
         self.columns = {}
         for key, column in columns.items():
             try:
