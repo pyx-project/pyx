@@ -21,7 +21,8 @@
 #include <stdio.h>
 
 FILE *bitfile;
-int t1_subset(char*, char *, unsigned char *g);
+/* int t1_subset(char*, char *, unsigned char *g); */
+int t1_subset_2(char*, unsigned char *g, char *);
 
 static PyObject *py_t1strip(PyObject *self, PyObject *args)
 {
@@ -47,7 +48,8 @@ static PyObject *py_t1strip(PyObject *self, PyObject *args)
 
       bitfile = PyFile_AsFile(py_file);
 
-      t1_subset(fontname, "ad.enc", glyphs);
+      /* t1_subset(fontname, "ad.enc", glyphs); */
+      t1_subset_2(fontname, glyphs, 0);
   }
   else return NULL;
 
@@ -62,6 +64,6 @@ static PyMethodDef t1strip_methods[] = {
   {NULL, NULL}
 };
 
-void initt1strip(void) {
-  (void) Py_InitModule("t1strip", t1strip_methods);
+void init_t1strip(void) {
+  (void) Py_InitModule("_t1strip", t1strip_methods);
 }

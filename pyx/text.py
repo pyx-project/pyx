@@ -24,20 +24,7 @@
 # this code will be part of PyX 0.3
 
 import os, threading, Queue, traceback, re, struct, tempfile
-import helper, attrlist, bbox, unit, box, base, trafo, canvas, pykpathsea
-
-try:
-    from t1strip import t1strip
-except:
-    # dummy implementation which inserts complete font
-    def t1strip(file, pfbfilename, glyphs):
-        tmpfilename = tempfile.mktemp(suffix=".pfa")
-        os.system("pfb2pfa %s %s" % (pfbfilename, tmpfilename))
-        pfa = open(tmpfilename, "r")
-        file.write(pfa.read())
-        pfa.close()
-        os.unlink(tmpfilename)
-
+import helper, attrlist, bbox, unit, box, base, trafo, canvas, pykpathsea, t1strip
 
 ###############################################################################
 # joergl would mainly work here ...
@@ -431,8 +418,8 @@ class Font:
     def write(self, file):
         """ write used glyps of font into file """
         pfbname = pykpathsea.find_file("%s.pfb" % self.name)
-        t1strip(file, pfbname, self.usedchars)
-        
+        t1strip.t1strip(file, pfbname, self.usedchars)
+
 
 class DVIFile:
 
