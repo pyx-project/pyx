@@ -1021,11 +1021,11 @@ class path(base.PSCmd):
         self.path.append(pathel)
 
     def arclen_pt(self):
-        """returns total arc length of path in pts with accuracy epsilon"""
+        """returns total arc length of path in pts"""
         return normpath(self).arclen_pt()
 
     def arclen(self):
-        """returns total arc length of path with accuracy epsilon"""
+        """returns total arc length of path"""
         return normpath(self).arclen()
 
     def arclentoparam(self, lengths):
