@@ -125,7 +125,7 @@ def testnormpathtrafo(c):
 
     c.stroke(p)
     c.stroke(p.normpath(), [color.rgb.green, style.linestyle.dashed])
-    c.stroke(p.transformed(trafo.translate(3,1)), [color.rgb.red])
+    c.stroke(p, [trafo.translate(3, 1), color.rgb.red])
     c.insert(canvas.canvas([trafo.translate(3,1)])).stroke(p,
                                                           [color.rgb.green,
                                                           style.linestyle.dashed])
