@@ -577,7 +577,7 @@ class font:
 
         # tfmfile.designsizeraw is the design size of the font as a fix_word
         if abs(self.tfmfile.designsizeraw - d) > 2:
-            raise DVIError("design sizes do not agree: %d vs. %d" % (tfmdesignsize, d))
+            raise DVIError("design sizes do not agree: %d vs. %d" % (self.tfmfile.designsizeraw, d))
         if q < 0 or q > 134217728:
             raise DVIError("font '%s' not loaded: bad scale" % self.name)
         if d < 0 or d > 134217728:
@@ -1018,17 +1018,17 @@ class dvifile:
     # routines corresponding to the different reader states of the dvi maschine
 
     def _read_pre(self):
-        file = self.file
+        afile = self.file
         while 1:
-            self.filepos = file.tell()
-            cmd = file.readuchar()
+            self.filepos = afile.tell()
+            cmd = afile.readuchar()
             if cmd == _DVI_NOP:
                 pass
             elif cmd == _DVI_PRE:
-                if self.file.readuchar() != _DVI_VERSION: raise DVIError
-                num = file.readuint32()
-                den = file.readuint32()
-                self.mag = file.readuint32()
+                if afile.readuchar() != _DVI_VERSION: raise DVIError
+                num = afile.readuint32()
+                den = afile.readuint32()
+                self.mag = afile.readuint32()
 
                 # for the interpretation of all quantities, two conversion factors
                 # are relevant:
@@ -1052,7 +1052,7 @@ class dvifile:
                 # - 72               : conversion from inch to points
                 self.conv = self.mag/1000.0*self.trueconv/self.resolution*72
 
-                comment = file.read(file.readuchar())
+                comment = afile.read(file.readuchar())
                 return
             else:
                 raise DVIError
@@ -1101,10 +1101,10 @@ class dvifile:
             self.fonts[nr].clearusedchars()
 
         while 1:
-            file = self.file
-            self.filepos = file.tell()
+            afile = self.file
+            self.filepos = afile.tell()
             try:
-                cmd = file.readuchar()
+                cmd = afile.readuchar()
             except struct.error:
                 # we most probably (if the dvi file is not corrupt) hit the end of a dvi chunk,
                 # so we have to continue with the rest of the dvi file
@@ -1115,13 +1115,13 @@ class dvifile:
             if cmd >= _DVI_CHARMIN and cmd <= _DVI_CHARMAX:
                 self.putchar(cmd)
             elif cmd >= _DVI_SET1234 and cmd < _DVI_SET1234 + 4:
-                self.putchar(file.readint(cmd - _DVI_SET1234 + 1))
+                self.putchar(afile.readint(cmd - _DVI_SET1234 + 1))
             elif cmd == _DVI_SETRULE:
-                self.putrule(file.readint32(), file.readint32())
+                self.putrule(afile.readint32(), afile.readint32())
             elif cmd >= _DVI_PUT1234 and cmd < _DVI_PUT1234 + 4:
-                self.putchar(file.readint(cmd - _DVI_PUT1234 + 1), inch=0)
+                self.putchar(afile.readint(cmd - _DVI_PUT1234 + 1), inch=0)
             elif cmd == _DVI_PUTRULE:
-                self.putrule(file.readint32(), file.readint32(), 0)
+                self.putrule(afile.readint32(), afile.readint32(), 0)
             elif cmd == _DVI_EOP:
                 self.flushout()
                 if self.debug:
@@ -1143,7 +1143,7 @@ class dvifile:
                            (( len(self.stack),)+tuple(self.pos)))
             elif cmd >= _DVI_RIGHT1234 and cmd < _DVI_RIGHT1234 + 4:
                 self.flushout()
-                dh = file.readint(cmd - _DVI_RIGHT1234 + 1, 1)
+                dh = afile.readint(cmd - _DVI_RIGHT1234 + 1, 1)
                 if self.debug:
                     print ("%d: right%d %d h:=%d%+d=%d, hh:=" %
                            (self.filepos,
@@ -1165,7 +1165,7 @@ class dvifile:
                 self.pos[_POS_H] += self.pos[_POS_W]
             elif cmd >= _DVI_W1234 and cmd < _DVI_W1234 + 4:
                 self.flushout()
-                self.pos[_POS_W] = file.readint(cmd - _DVI_W1234 + 1, 1)
+                self.pos[_POS_W] = afile.readint(cmd - _DVI_W1234 + 1, 1)
                 if self.debug:
                     print ("%d: w%d %d h:=%d%+d=%d, hh:=" %
                            (self.filepos,
@@ -1180,11 +1180,11 @@ class dvifile:
                 self.pos[_POS_H] += self.pos[_POS_X]
             elif cmd >= _DVI_X1234 and cmd < _DVI_X1234 + 4:
                 self.flushout()
-                self.pos[_POS_X] = file.readint(cmd - _DVI_X1234 + 1, 1)
+                self.pos[_POS_X] = afile.readint(cmd - _DVI_X1234 + 1, 1)
                 self.pos[_POS_H] += self.pos[_POS_X]
             elif cmd >= _DVI_DOWN1234 and cmd < _DVI_DOWN1234 + 4:
                 self.flushout()
-                dv = file.readint(cmd - _DVI_DOWN1234 + 1, 1)
+                dv = afile.readint(cmd - _DVI_DOWN1234 + 1, 1)
                 if self.debug:
                     print ("%d: down%d %d v:=%d%+d=%d, vv:=" %
                            (self.filepos,
@@ -1206,7 +1206,7 @@ class dvifile:
                 self.pos[_POS_V] += self.pos[_POS_Y]
             elif cmd >= _DVI_Y1234 and cmd < _DVI_Y1234 + 4:
                 self.flushout()
-                self.pos[_POS_Y] = file.readint(cmd - _DVI_Y1234 + 1, 1)
+                self.pos[_POS_Y] = afile.readint(cmd - _DVI_Y1234 + 1, 1)
                 if self.debug:
                     print ("%d: y%d %d v:=%d%+d=%d, vv:=" %
                            (self.filepos,
@@ -1221,30 +1221,30 @@ class dvifile:
                 self.pos[_POS_V] += self.pos[_POS_Z]
             elif cmd >= _DVI_Z1234 and cmd < _DVI_Z1234 + 4:
                 self.flushout()
-                self.pos[_POS_Z] = file.readint(cmd - _DVI_Z1234 + 1, 1)
+                self.pos[_POS_Z] = afile.readint(cmd - _DVI_Z1234 + 1, 1)
                 self.pos[_POS_V] += self.pos[_POS_Z]
             elif cmd >= _DVI_FNTNUMMIN and cmd <= _DVI_FNTNUMMAX:
                 self.usefont(cmd - _DVI_FNTNUMMIN)
             elif cmd >= _DVI_FNT1234 and cmd < _DVI_FNT1234 + 4:
-                self.usefont(file.readint(cmd - _DVI_FNT1234 + 1, 1))
+                self.usefont(afile.readint(cmd - _DVI_FNT1234 + 1, 1))
             elif cmd >= _DVI_SPECIAL1234 and cmd < _DVI_SPECIAL1234 + 4:
-                self.special(file.read(file.readint(cmd - _DVI_SPECIAL1234 + 1)))
+                self.special(afile.read(afile.readint(cmd - _DVI_SPECIAL1234 + 1)))
             elif cmd >= _DVI_FNTDEF1234 and cmd < _DVI_FNTDEF1234 + 4:
                 if cmd == _DVI_FNTDEF1234:
-                    num = file.readuchar()
+                    num = afile.readuchar()
                 elif cmd == _DVI_FNTDEF1234+1:
-                    num = file.readuint16()
+                    num = afile.readuint16()
                 elif cmd == _DVI_FNTDEF1234+2:
-                    num = file.readuint24()
+                    num = afile.readuint24()
                 elif cmd == _DVI_FNTDEF1234+3:
                     # Cool, here we have according to docu a signed int. Why?
-                    num = file.readint32()
+                    num = afile.readint32()
                 self.definefont(cmd-_DVI_FNTDEF1234+1,
                                 num,
-                                file.readint32(),
-                                file.readint32(),
-                                file.readint32(),
-                                file.read(file.readuchar()+file.readuchar()))
+                                afile.readint32(),
+                                afile.readint32(),
+                                afile.readint32(),
+                                afile.read(afile.readuchar()+afile.readuchar()))
             else:
                 raise DVIError
 
@@ -1272,33 +1272,33 @@ class vffile:
         self.widths = {}           # widths of defined chars
         self.chardefs = {}         # dvi chunks for defined chars
 
-        file = binfile(self.filename, "rb")
+        afile = binfile(self.filename, "rb")
 
-        cmd = file.readuchar()
+        cmd = afile.readuchar()
         if cmd == _VF_PRE:
-            if file.readuchar() != _VF_ID: raise VFError
-            comment = file.read(file.readuchar())
-            self.cs = file.readuint32()
-            self.ds = file.readuint32()
+            if afile.readuchar() != _VF_ID: raise VFError
+            comment = afile.read(afile.readuchar())
+            self.cs = afile.readuint32()
+            self.ds = afile.readuint32()
         else:
             raise VFError
 
         while 1:
-            cmd = file.readuchar()
+            cmd = afile.readuchar()
             if cmd >= _VF_FNTDEF1234 and cmd < _VF_FNTDEF1234 + 4:
                 # font definition
                 if cmd == _VF_FNTDEF1234:
-                    num = file.readuchar()
+                    num = afile.readuchar()
                 elif cmd == _VF_FNTDEF1234+1:
-                    num = file.readuint16()
+                    num = afile.readuint16()
                 elif cmd == _VF_FNTDEF1234+2:
-                    num = file.readuint24()
+                    num = afile.readuint24()
                 elif cmd == _VF_FNTDEF1234+3:
-                    num = file.readint32()
-                c = file.readint32()
-                s = file.readint32()     # relative scaling used for font (fix_word)
-                d = file.readint32()     # design size of font
-                fontname = file.read(file.readuchar()+file.readuchar())
+                    num = afile.readint32()
+                c = afile.readint32()
+                s = afile.readint32()     # relative scaling used for font (fix_word)
+                d = afile.readint32()     # design size of font
+                fontname = afile.read(afile.readuchar()+afile.readuchar())
 
                 # rescaled size of font: s is relative to the scaling
                 # of the virtual font itself.  Note that realscale has
@@ -1315,17 +1315,17 @@ class vffile:
                 self.fonts[num] =  type1font(fontname, c, reals, d, self.fontmap, self.debug > 1)
             elif cmd == _VF_LONG_CHAR:
                 # character packet (long form)
-                pl = file.readuint32()   # packet length
-                cc = file.readuint32()   # char code (assumed unsigned, but anyhow only 0 <= cc < 255 is actually used)
-                tfm = file.readuint24()  # character width
-                dvi = file.read(pl)      # dvi code of character
+                pl = afile.readuint32()   # packet length
+                cc = afile.readuint32()   # char code (assumed unsigned, but anyhow only 0 <= cc < 255 is actually used)
+                tfm = afile.readuint24()  # character width
+                dvi = afile.read(pl)      # dvi code of character
                 self.widths[cc] = tfm
                 self.chardefs[cc] = dvi
             elif cmd < _VF_LONG_CHAR:
                 # character packet (short form)
-                cc = file.readuchar()    # char code
-                tfm = file.readuint24()  # character width
-                dvi = file.read(cmd)
+                cc = afile.readuchar()    # char code
+                tfm = afile.readuint24()  # character width
+                dvi = afile.read(cmd)
                 self.widths[cc] = tfm
                 self.chardefs[cc] = dvi
             elif cmd == _VF_POST:
@@ -1333,7 +1333,7 @@ class vffile:
             else:
                 raise VFError
 
-        file.close()
+        afile.close()
 
     def getfonts(self):
         return self.fonts
