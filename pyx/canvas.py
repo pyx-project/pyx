@@ -70,56 +70,13 @@ class clip(base.PSCmd):
         return self.path.bbox()
 
     def outputPS(self, file):
-        _newpath().outputPS(file)
-        self.path.outputPS(file)
-        _clip().outputPS(file)
-
-    def outputPDF(self, file):
-        # _newpath().outputPDF(file)
-        self.path.outputPDF(file)
-        _clip().outputPDF(file)
-
-#
-# some very primitive Postscript operators
-#
-
-class _newpath(base.PSOp):
-    def outputPS(self, file):
         file.write("newpath\n")
-
-class _stroke(base.PSOp):
-    def outputPS(self, file):
-        file.write("stroke\n")
-    def outputPDF(self, file):
-        file.write("S\n")
-
-class _fill(base.PSOp):
-    def outputPS(self, file):
-        file.write("fill\n")
-    def outputPDF(self, file):
-        file.write("f\n")
-
-class _strokefill(base.PSOp):
-    def outputPDF(self, file):
-        file.write("B\n")
-
-class _clip(base.PSOp):
-    def outputPS(self, file):
+        self.path.outputPS(file)
         file.write("clip\n")
+
     def outputPDF(self, file):
+        self.path.outputPDF(file)
         file.write("W n\n")
-
-class _gsave(base.PSOp):
-    def outputPS(self, file):
-        file.write("gsave\n")
-    def outputPDF(self, file):
-        file.write("q\n")
-
-class _grestore(base.PSOp):
-    def outputPS(self, file):
-        file.write("grestore\n")
-    def outputPDF(self, file):
-        file.write("Q\n")
 
 #
 #
@@ -194,17 +151,17 @@ class _canvas(base.PSCmd):
 
     def outputPS(self, file):
         if self.PSOps:
-            _gsave().outputPS(file)
+            file.write("gsave\n")
             for cmd in self.PSOps:
                 cmd.outputPS(file)
-            _grestore().outputPS(file)
+            file.write("grestore\n")
 
     def outputPDF(self, file):
         if self.PSOps:
-            _gsave().outputPDF(file)
+            file.write("q\n") # gsave
             for cmd in self.PSOps:
                 cmd.outputPDF(file)
-            _grestore().outputPDF(file)
+            file.write("Q\n") # grestore
 
     def insert(self, PSOp, args=[]):
         """insert PSOp in the canvas.

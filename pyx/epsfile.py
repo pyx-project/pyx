@@ -172,7 +172,7 @@ class epsfile(base.PSCmd):
 
         if self.scalex is not None:
             self.trafo = self.trafo * trafo.scale_pt(self.scalex, self.scaley)
-            
+
         if translatebbox:
             self.trafo = self.trafo * trafo.translate_pt(-self.mybbox.llx, -self.mybbox.lly)
 
@@ -191,16 +191,16 @@ class epsfile(base.PSCmd):
         file.write("BeginEPSF\n")
 
         bbrect = self.mybbox.rect().transformed(self.trafo)
-        
+
         if self.showbbox:
-            canvas._newpath().outputPS(file)
+            file.write("newpath\n")
             bbrect.outputPS(file)
-            canvas._stroke().outputPS(file)
-            
+            file.write("stroke\n")
+
         if self.clip:
-            canvas._newpath().outputPS(file)
+            file.write("newpath\n")
             bbrect.outputPS(file)
-            canvas._clip().outputPS(file)
+            file.write("clip\n")
 
         self.trafo.outputPS(file)
 

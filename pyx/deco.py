@@ -93,56 +93,56 @@ class decoratedpath(base.PSCmd):
 
         # apply global styles
         if self.styles:
-            canvas._gsave().outputPS(file)
+            file.write("gsave\n")
             _writestyles(self.styles)
 
         if self.fillpath is not None:
-            canvas._newpath().outputPS(file)
+            file.write("newpath\n")
             self.fillpath.outputPS(file)
 
             if self.strokepath==self.fillpath:
                 # do efficient stroking + filling
-                canvas._gsave().outputPS(file)
+                file.write("gsave\n")
 
                 if self.fillstyles:
                     _writestyles(self.fillstyles)
 
-                canvas._fill().outputPS(file)
-                canvas._grestore().outputPS(file)
+                file.write("fill\n")
+                file.write("grestore\n")
 
                 if self.strokestyles:
-                    canvas._gsave().outputPS(file)
+                    file.write("gsave\n")
                     _writestyles(self.strokestyles)
 
-                canvas._stroke().outputPS(file)
+                file.write("stroke\n")
 
                 if self.strokestyles:
-                    canvas._grestore().outputPS(file)
+                    file.write("grestore\n")
             else:
                 # only fill fillpath - for the moment
                 if self.fillstyles:
-                    canvas._gsave().outputPS(file)
+                    file.write("gsave\n")
                     _writestyles(self.fillstyles)
 
-                canvas._fill().outputPS(file)
+                file.write("fill\n")
 
                 if self.fillstyles:
-                    canvas._grestore().outputPS(file)
+                    file.write("grestore\n")
 
         if self.strokepath is not None and self.strokepath!=self.fillpath:
             # this is the only relevant case still left
             # Note that a possible stroking has already been done.
 
             if self.strokestyles:
-                canvas._gsave().outputPS(file)
+                file.write("gsave\n")
                 _writestyles(self.strokestyles)
 
-            canvas._newpath().outputPS(file)
+            file.write("newpath\n")
             self.strokepath.outputPS(file)
-            canvas._stroke().outputPS(file)
+            file.write("stroke\n")
 
             if self.strokestyles:
-                canvas._grestore().outputPS(file)
+                file.write("grestore\n")
 
         if self.strokepath is None and self.fillpath is None:
             raise RuntimeError("Path neither to be stroked nor filled")
@@ -152,7 +152,7 @@ class decoratedpath(base.PSCmd):
 
         # restore global styles
         if self.styles:
-            canvas._grestore().outputPS(file)
+            file.write("grestore\n")
 
     def outputPDF(self, file):
         # draw (stroke and/or fill) the decoratedpath on the canvas
@@ -177,50 +177,47 @@ class decoratedpath(base.PSCmd):
 
         # apply global styles
         if self.styles:
-            canvas._gsave().outputPDF(file)
+            file.write("q\n") # gsave
             _writestyles(self.styles)
 
         if self.fillpath is not None:
-            # canvas._newpath().outputPDF(file)
             self.fillpath.outputPDF(file)
 
             if self.strokepath==self.fillpath:
                 # do efficient stroking + filling
-                canvas._gsave().outputPDF(file)
+                file.write("q\n") # gsave
 
                 if self.fillstyles:
                     _writefillstyles(self.fillstyles)
                 if self.strokestyles:
                     _writestrokestyles(self.strokestyles)
 
-                canvas._strokefill().outputPDF(file)
-
-                canvas._grestore().outputPDF(file)
+                file.write("B\n") # both stroke and fill
+                file.write("Q\n") # grestore
             else:
                 # only fill fillpath - for the moment
                 if self.fillstyles:
-                    canvas._gsave().outputPDF(file)
+                    file.write("q\n") # gsave
                     _writefillstyles(self.fillstyles)
 
-                canvas._fill().outputPDF(file)
+                file.write("f\n") # fill
 
                 if self.fillstyles:
-                    canvas._grestore().outputPDF(file)
+                    file.write("Q\n") # grestore
 
         if self.strokepath is not None and self.strokepath!=self.fillpath:
             # this is the only relevant case still left
             # Note that a possible stroking has already been done.
 
             if self.strokestyles:
-                canvas._gsave().outputPDF(file)
+                file.write("q\n") # gsave
                 _writestrokestyles(self.strokestyles)
 
-            # canvas._newpath().outputPDF(file)
             self.strokepath.outputPDF(file)
-            canvas._stroke().outputPDF(file)
+            file.write("S\n") # stroke
 
             if self.strokestyles:
-                canvas._grestore().outputPDF(file)
+                file.write("Q\n") # grestore
 
         if self.strokepath is None and self.fillpath is None:
             raise RuntimeError("Path neither to be stroked nor filled")
@@ -230,7 +227,7 @@ class decoratedpath(base.PSCmd):
 
         # restore global styles
         if self.styles:
-            canvas._grestore().outputPDF(file)
+            file.write("Q\n") # grestore
 
 #
 # Path decorators
