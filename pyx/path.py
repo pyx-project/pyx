@@ -2160,7 +2160,9 @@ class normsubpath:
 
         # build result
         result = []
-        for point in intersectionpoints.keys():
+        intersectionpointskeys = intersectionpoints.keys()
+        intersectionpointskeys.sort()
+        for point in intersectionpointskeys:
             for intersection_a, index_a in intersections_a:
                 if index_a == point:
                     result_a = intersection_a
