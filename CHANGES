@@ -11,6 +11,7 @@ PyX
     - removed some code duplication (various axis painters)
     - use text module instead of the obsolete tex module (work in progress)
     - TODO: allow for tailing zeros of automatic generated labels
+    - TODO: allow for missing data in bar graphs
   - numerous bugfixes:
     - problem with sizefile on windows (tex module)
     - disable rating for labelattrs equals None (graph module)
