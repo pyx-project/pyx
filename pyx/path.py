@@ -1067,8 +1067,7 @@ class path(base.PSCmd):
         return normpath(self).arclength(epsilon)
 
     def lentopar(self, lengths, epsilon=1e-5):
-        """returns (t,l) with t the parameter value(s) matching given length,
-        l the total length"""
+        """returns the parameter value(s) matching the given length(s)"""
         return normpath(self).lentopar(lengths, epsilon)
 
     def at_pt(self, t):
@@ -2072,7 +2071,7 @@ class normpath(path):
         return intersections
 
     def lentopar(self, lengths, epsilon=1e-5):
-        """returns the parameter value(s) matching given length(s)"""
+        """returns the parameter value(s) matching the given length(s)"""
 
         # split the list of lengths apart for positive and negative values
         rests = [[],[]] # first the positive then the negative lengths
