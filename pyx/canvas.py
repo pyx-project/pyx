@@ -24,13 +24,12 @@
 # - arrows
 
 
-import re, unit, trafo, types
-from math import sqrt
+import unit, trafo, types, math
 
 # PostScript-procedure definitions
 # cf. file: 5002.EPSF_Spec_v3.0.pdf     
 
-PSProlog = """/rect {
+_PSProlog = """/rect {
   4 2 roll moveto 
   1 index 0 rlineto 
   0 exch rlineto 
@@ -87,7 +86,6 @@ class bbox:
 
         return bbox(_nmin(self.llx, other.llx), _nmin(self.lly, other.lly),
                     max(self.urx, other.urx), max(self.ury, other.ury))
-    
 
     def __mul__(self, other):
         """intersect two bboxes"""
@@ -104,91 +102,13 @@ class bbox:
                     self.ury < other.lly)
 
     def write(self, file):
-        file.write("%%%%BoundingBox: %d %d %d %d\n" % (self.llx-1, self.lly-1, self.urx+1, self.ury+1)) 
+        file.write("%%%%BoundingBox: %d %d %d %d\n" %
+                   (self.llx-1, self.lly-1, self.urx+1, self.ury+1))
+        # TODO: add HighResBBox
 
     def __str__(self):
         return "%s %s %s %s" % (self.llx, self.lly, self.urx, self.ury)
     
-#
-# class for EPS files
-#
-
-bbpattern = re.compile( r"^%%BoundingBox:\s+([+-]?\d+)\s+([+-]?\d+)\s+([+-]?\d+)\s+([+-]?\d+)\s*$" )
-
-class epsfile:
-
-    """class for epsfiles"""
-
-    def __init__(self, filename, x = "0 t m", y = "0 t m",
-                 clip = 1, translatebb = 1, showbb = 0):
-        self.x           = unit.topt(x)
-        self.y           = unit.topt(y)
-        self.filename    = filename
-        self.clip        = clip
-        self.translatebb = translatebb
-        self.showbb      = showbb
-
-    def getbbox(self, translatebb):
-        """returns bounding box of EPS file filename as 4-tuple (llx, lly, urx, ury)"""
-        
-        try:
-            file = open(self.filename,"r")
-        except:
-            assert 0, "cannot open EPS file"    # TODO: Fehlerbehandlung
-
-        while 1:
-            line=file.readline()
-            if not line:
-                assert 0, "bounding box not found in EPS file"
-                raise IOError                   # TODO: Fehlerbehandlung
-            if line=="%%EndComments\n": 
-                # TODO: BoundingBox-Deklaration kann auch an Ende von Datei verschoben worden sein
-                assert 0, "bounding box not found in EPS file"
-                raise IOError                   # TODO: Fehlerbehandlung
-            
-            bbmatch = bbpattern.match(line)
-            if bbmatch is not None:
-               (llx, lly, urx, ury) = map(int, bbmatch.groups()) # conversion strings->int
-               if translatebb:
-                   (llx, lly, urx, ury) = (0, 0, urx - llx, ury - lly)
-               return bbox(llx, lly, urx, ury)
-
-    def bbox(self):
-        return self.getbbox(self.translatebb)
-
-    def write(self, file):
-        mybbox = self.getbbox(0)
-
-        try:
-            epsfile=open(self.filename,"r")
-        except:
-            assert 0, "cannot open EPS file"                   # TODO: Fehlerbehandlung
-
-        file.write("BeginEPSF\n")
-        file.write("%f %f translate\n" % (self.x, self.y))
-        
-        if self.translatebb:
-            file.write("%f %f translate\n" % (-mybbox.llx, -mybbox.lly))
-            
-        if self.showbb:
-            file.write("newpath\n")
-            file.write("%f %f %f %f rect\n" % (mybbox.llx, 
-                                               mybbox.lly, 
-                                               mybbox.urx-mybbox.llx,
-                                               mybbox.ury-mybbox.lly))
-            file.write("stroke\n")
-            
-        if self.clip:
-            file.write("%f %f %f %f rect\n" % (mybbox.llx, 
-                                               mybbox.lly, 
-                                               mybbox.urx-mybbox.llx,
-                                               mybbox.ury-mybbox.lly))
-            file.write("clip newpath\n")
-
-        file.write("%%%%BeginDocument: %s\n" % self.filename)
-        file.write(epsfile.read()) 
-        file.write("%%EndDocument\nEndEPSF\n")
-
 #
 # Exceptions
 #
@@ -292,18 +212,18 @@ class _linewidth(PyxAttributes, unit.length):
 class linewidth(_linewidth):
     _base      = 0.02
  
-    THIN       = _linewidth("%f cm" % (_base/sqrt(32)))
-    THIn       = _linewidth("%f cm" % (_base/sqrt(16)))
-    THin       = _linewidth("%f cm" % (_base/sqrt(8)))
-    Thin       = _linewidth("%f cm" % (_base/sqrt(4)))
-    thin       = _linewidth("%f cm" % (_base/sqrt(2)))
+    THIN       = _linewidth("%f cm" % (_base/math.sqrt(32)))
+    THIn       = _linewidth("%f cm" % (_base/math.sqrt(16)))
+    THin       = _linewidth("%f cm" % (_base/math.sqrt(8)))
+    Thin       = _linewidth("%f cm" % (_base/math.sqrt(4)))
+    thin       = _linewidth("%f cm" % (_base/math.sqrt(2)))
     normal     = _linewidth("%f cm" % _base)
-    thick      = _linewidth("%f cm" % (_base*sqrt(2)))
-    Thick      = _linewidth("%f cm" % (_base*sqrt(4)))
-    THick      = _linewidth("%f cm" % (_base*sqrt(8)))
-    THIck      = _linewidth("%f cm" % (_base*sqrt(16)))
-    THICk      = _linewidth("%f cm" % (_base*sqrt(32)))
-    THICK      = _linewidth("%f cm" % (_base*sqrt(64)))
+    thick      = _linewidth("%f cm" % (_base*math.sqrt(2)))
+    Thick      = _linewidth("%f cm" % (_base*math.sqrt(4)))
+    THick      = _linewidth("%f cm" % (_base*math.sqrt(8)))
+    THIck      = _linewidth("%f cm" % (_base*math.sqrt(16)))
+    THICk      = _linewidth("%f cm" % (_base*math.sqrt(32)))
+    THICK      = _linewidth("%f cm" % (_base*math.sqrt(64)))
 
 #
 # main canvas class
@@ -349,8 +269,8 @@ class _grestore(CanvasCmds):
 
 class _translate(CanvasCmds):
     def __init__(self, x, y):
-        self.x = unit.topt(x)
-        self.y = unit.topt(y)
+        self.x = x
+        self.y = y
         
     def write(self, file):
         file.write("%f %f translate\n" % (self.x, self.y) )
@@ -453,7 +373,7 @@ class canvas(CanvasCmds):
         # file.write("%%CreationDate: %s" % ) 
         file.write("%%EndComments\n") 
         file.write("%%BeginProlog\n") 
-        file.write(PSProlog)
+        file.write(_PSProlog)
         file.write("\n%%EndProlog\n") 
         file.write("%f setlinewidth\n" % unit.topt(linewidth.normal))
         

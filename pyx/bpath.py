@@ -63,7 +63,6 @@ class _bpathel:
                        self.x1, self.y1,
                        self.x2, self.y2,
                        self.x3, self.y3 ) )
-                     
 
     def __getitem__(self, t):
         """return pathel at parameter value t (0<=t<=1)"""

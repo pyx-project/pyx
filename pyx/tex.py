@@ -28,7 +28,8 @@ The method tex.text is used to print out text, while tex.textwd, tex.textht,
 and tex.textdp appraise the width, height, and depth of a text, respectively.
 """
 
-import canvas, os, string, tempfile, sys, md5, traceback, time, unit, color, StringIO
+import canvas, unit, epsfile, color
+import os, string, tempfile, sys, md5, traceback, time, StringIO
 
 class _Attr:
     """base class for all PyX attributes (TODO: has to be defined somewhere else)"""
@@ -569,10 +570,10 @@ class tex(_InstanceList):
                 print "constructor of the class pyx.tex. You can then try to run dvips"
                 print "by yourself."
             else:
-                epsfile = canvas.epsfile(TempName + ".eps", translatebb = 0)
-                self.bbox = epsfile.bbox()
+                aepsfile = epsfile.epsfile(TempName + ".eps", translatebb = 0)
+                self.bbox = aepsfile.bbox()
                 epsdatafile = StringIO.StringIO()
-                epsfile.write(epsdatafile)
+                aepsfile.write(epsdatafile)
                 self.epsdata = epsdatafile.getvalue()
 
         # merge new sizes
