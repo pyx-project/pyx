@@ -30,8 +30,6 @@ TODO:
     - messageparser for replaced fontsizes: Warning
     - messageparser for size differences at the end: Warning not Exception
     - messageparser for overfull/underfull vbox/hbox: Warning not Exception
-  - unit and text module:
-    - introduce xscale for scaling the TeX output
   - mathtree module:
      - consider rewrite using the python compiler module
   - path module:
