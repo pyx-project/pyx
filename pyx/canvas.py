@@ -17,9 +17,13 @@ linestyle_dashed     = (linecap_butt,  [2])
 linestyle_dotted     = (linecap_round, [0, 3])
 linestyle_dashdotted = (linecap_round, [0, 3, 3, 3])
 
+unit_ps		= 1000.0
+
+unit_u2p	= 28.346456693*unit_ps
+unit_v2p	= 28.346456693*unit_ps
+unit_w2p	= 28.346456693*unit_ps
 
 class canvas:
-
     def __init__(self,width,height,basefilename):
         self.Width=width
         self.Height=height
@@ -84,8 +88,9 @@ class canvas:
   b4_Inc_state restore
 } bind def""")
         self.PSFile.write("%%EndProlog\n") 
-        
-	self.PSCmd("0.2 setlinewidth")
+
+	self.PSCmd("%f %f scale" % (1/unit_ps, 1/unit_ps))
+	self.PSCmd("%f setlinewidth" % self.w2p(0.2))
 	self.newpath()
 	self.amove(0,0)
 
@@ -143,20 +148,27 @@ class canvas:
 	self.PSCmd("%%EndDocument")
 	self.PSCmd("EndEPSF")
 
-    def PScm2po(self, x, y=None): 
-    
-        'convert from cm to points'
+    def u2p(self, lengths):
+    	if isnumber(lengths): 
+	    return lengths*unit_u2p
+	else: 
+	    return map(lambda x:x*unit_u2p, lengths) 
 	
-        convfaktor=28.346456693
+    def v2p(self, lengths):
+    	if isnumber(lengths): 
+	    return lengths*unit_v2p
+	else: 
+	    return map(lambda x:x*unit_v2p, lengths) 
 	
-    	if y==None:
-	    return convfaktor * x
-	else:
-	    return (convfaktor*x, convfaktor*y)
+    def w2p(self, lengths):
+    	if type(lengths)==type(0.0): 
+	    return lengths*unit_w2p
+	else: 
+	    return map(lambda x:x*unit_w2p, lengths) 
 
     def PSUpdatePosition(self):
         if self.PSPositionCorrect == 0:		# actual PS position doesn't coincide with our x,y
-	    self.PSCmd("%f %f moveto" % self.PScm2po(self.x,self.y))
+	    self.PSCmd("%f %f moveto" % self.u2p((self.x,self.y)))
 	    self.PSPositionCorrect = 1
 
     def stroke(self):
@@ -190,7 +202,7 @@ class canvas:
 	
 	self.PSUpdatePosition()			# insert moveto if needed
         (self.x, self.y)=(x,y)
-	self.PSCmd("%f %f lineto" % self.PScm2po(x,y))
+	self.PSCmd("%f %f lineto" % self.u2p((x,y)))
     
     def rline(self,x,y):
         #isnumber(x)
@@ -198,7 +210,7 @@ class canvas:
 	
 	self.PSUpdatePosition()			# insert moveto if needed
         (self.x, self.y)=(self.x+x,self.y+y)
-	self.PSCmd("%f %f rlineto" % self.PScm2po(x,y))
+	self.PSCmd("%f %f rlineto" % self.u2p((x,y)))
 
     def setlinecap(self, cap):
         #isnumber(cap)
