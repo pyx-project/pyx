@@ -188,6 +188,13 @@ class plotitem:
     def draw(self, graph):
         self.data.draw(self, graph)
 
+    def gettitle(self):
+        return self.data.gettitle()
+
+    def key_pt(self, graph, x_pt, y_pt, width_pt, height_pt, dy_pt, selectindex, selecttotal):
+        for privatedata, style in zip(self.privatedatalist, self.styles):
+            style.key_pt(privatedata, self.sharedata, graph, x_pt, y_pt, width_pt, height_pt, dy_pt, selectindex, selecttotal)
+
     def __getattr__(self, attr):
         # read only access to the styles privatedata
         stylesdata = [getattr(styledata, attr)
@@ -409,20 +416,20 @@ class graphxy(canvas.canvas):
     def dokey(self):
         self.dolayout()
         if not self.removedomethod(self.dokey): return
-    #    if self.key is not None:
-    #        c = self.key.paint([plotitem.data for plotitem in self.plotitems])
-    #        bbox = c.bbox()
-    #        def parentchildalign(pmin, pmax, cmin, cmax, pos, dist, inside):
-    #            ppos = pmin+0.5*(cmax-cmin)+dist+pos*(pmax-pmin-cmax+cmin-2*dist)
-    #            cpos = 0.5*(cmin+cmax)+(1-inside)*(1-2*pos)*(cmax-cmin+2*dist)
-    #            return ppos-cpos
-    #        x = parentchildalign(self.xpos_pt, self.xpos_pt+self.width_pt,
-    #                             bbox.llx_pt, bbox.urx_pt,
-    #                             self.key.hpos, unit.topt(self.key.hdist), self.key.hinside)
-    #        y = parentchildalign(self.ypos_pt, self.ypos_pt+self.height_pt,
-    #                             bbox.lly_pt, bbox.ury_pt,
-    #                             self.key.vpos, unit.topt(self.key.vdist), self.key.vinside)
-    #        self.insert(c, [trafo.translate_pt(x, y)])
+        if self.key is not None:
+            c = self.key.paint(self.plotitems)
+            bbox = c.bbox()
+            def parentchildalign(pmin, pmax, cmin, cmax, pos, dist, inside):
+                ppos = pmin+0.5*(cmax-cmin)+dist+pos*(pmax-pmin-cmax+cmin-2*dist)
+                cpos = 0.5*(cmin+cmax)+(1-inside)*(1-2*pos)*(cmax-cmin+2*dist)
+                return ppos-cpos
+            x = parentchildalign(self.xpos_pt, self.xpos_pt+self.width_pt,
+                                 bbox.llx_pt, bbox.urx_pt,
+                                 self.key.hpos, unit.topt(self.key.hdist), self.key.hinside)
+            y = parentchildalign(self.ypos_pt, self.ypos_pt+self.height_pt,
+                                 bbox.lly_pt, bbox.ury_pt,
+                                 self.key.vpos, unit.topt(self.key.vdist), self.key.vinside)
+            self.insert(c, [trafo.translate_pt(x, y)])
 
     def finish(self):
         while len(self.domethods):

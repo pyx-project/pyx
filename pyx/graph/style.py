@@ -108,7 +108,7 @@ class _style:
         drawn using the drawpoint method above."""
         pass
 
-    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt, dy_pt):
+    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt, dy_pt, selectindex, selecttotal):
         """Draw graph key
 
         This method draws a key for the style to graph at the given
@@ -437,7 +437,7 @@ class symbol(_styleneedingpointpos):
             xpos, ypos = graph.vpos_pt(*sharedata.vpos)
             privatedata.symbol(privatedata.symbolcanvas, xpos, ypos, privatedata.size_pt, privatedata.symbolattrs)
 
-    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt, dy_pt):
+    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt, dy_pt, selectindex, selecttotal):
         if privatedata.symbolattrs is not None:
             privatedata.symbol(graph, x_pt+0.5*width_pt, y_pt+0.5*height_pt, privatedata.size_pt, privatedata.symbolattrs)
         return 1
@@ -599,7 +599,7 @@ class line(_styleneedingpointpos):
         if privatedata.lineattrs is not None and len(privatedata.path.path):
             privatedata.linecanvas.stroke(privatedata.path)
 
-    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt, dy_pt):
+    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt, dy_pt, selectindex, selecttotal):
         if privatedata.lineattrs is not None:
             graph.stroke(path.line_pt(x_pt, y_pt+0.5*height_pt, x_pt+width_pt, y_pt+0.5*height_pt), privatedata.lineattrs)
         return 1
@@ -772,7 +772,7 @@ class arrow(_styleneedingpointpos):
                     privatedata.arrowcanvas.stroke(path.line_pt(x1, y1, x2, y2), privatedata.lineattrs +
                                                  [deco.earrow(privatedata.arrowattrs, size=self.arrowsize*size)])
 
-    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt, dy_pt):
+    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt, dy_pt, selectindex, selecttotal):
         raise "TODO"
 
 
@@ -827,7 +827,7 @@ class rect(_style):
             else:
                 privatedata.rectcanvas.fill(p)
 
-    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt, dy_pt):
+    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt, dy_pt, selectindex, selecttotal):
         raise "TODO"
 
 
@@ -1032,7 +1032,7 @@ class bar(_style):
                     p.append(path.closepath())
                     privatedata.barcanvas.fill(p, barattrs)
 
-    def key_pt(self, privatedata, sharedata, c, x_pt, y_pt, width_pt, height_pt, dy_pt):
+    def key_pt(self, privatedata, sharedata, c, x_pt, y_pt, width_pt, height_pt, dy_pt, selectindex, selecttotal):
         if self.multikey:
             l = 0
             for i, barattrs in privatedata.bartmplist:
@@ -1170,17 +1170,22 @@ class bar_new(_style):
         xvmax = sharedata.vrange[0][1]
         yvmin = sharedata.vrange[1][0]
         yvmax = sharedata.vrange[1][1]
-        if (xvmin is not None and xvmin < 1 and
-            xvmax is not None and xvmax > 0 and
-            yvmin is not None and yvmin < 1 and
-            yvmax is not None and yvmax > 0):
+        if None not in [xvmin, xvmax, yvmin, yvmax]:
             if xvmin < 0:
                 xvmin = 0
-            elif xvmax > 1:
+            if xvmin > 1:
+                xvmin = 1
+            if xvmax < 0:
+                xvmax = 0
+            if xvmax > 1:
                 xvmax = 1
             if yvmin < 0:
                 yvmin = 0
-            elif yvmax > 1:
+            if yvmin > 1:
+                yvmin = 1
+            if yvmax < 0:
+                yvmax = 0
+            if yvmax > 1:
                 yvmax = 1
             p = graph.vgeodesic(xvmin, yvmin, xvmax, yvmin)
             p.append(graph.vgeodesic_el(xvmax, yvmin, xvmax, yvmax))
@@ -1189,7 +1194,7 @@ class bar_new(_style):
             p.append(path.closepath())
             privatedata.rectcanvas.draw(p, self.barattrs)
 
-    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt, dy_pt):
+    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt, dy_pt, selectindex, selecttotal):
         raise "TODO"
 
 

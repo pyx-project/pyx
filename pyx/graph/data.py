@@ -138,15 +138,6 @@ class _Idata:
         some additional function calls."""
         raise NotImplementedError("call an abstract method of %r" % self)
 
-#    def key_pt(self, plotitem, graph, x_pt, y_pt, width_pt, height_pt, dy_pt):
-#        """Draw graph key
-#
-#        This method should draw a graph key at the given position
-#        x_pt, y_pt indicating the lower left corner of the given
-#        area width_pt, height_pt. The styles might draw several
-#        key entries shifted vertically by dy_pt. The method returns
-#        the number of key entries."""
-
 
 class _data(_Idata):
     """Partly implements the _Idata interface"""

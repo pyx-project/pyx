@@ -67,9 +67,9 @@ class key:
             self.hpos = hpos
             self.vpos = vpos
 
-    def paint(self, plotdata):
+    def paint(self, plotitems):
         "creates the layout of the key"
-        plotdata = [x for x in plotdata if x.title is not None]
+        plotitems = [plotitem for plotitem in plotitems if plotitem.gettitle() is not None]
         c = canvas.canvas()
         self.dist_pt = unit.topt(self.dist)
         self.hdist_pt = unit.topt(self.hdist)
@@ -78,24 +78,25 @@ class key:
         self.symbolheight_pt = unit.topt(self.symbolheight)
         self.symbolspace_pt = unit.topt(self.symbolspace)
         titleboxes = []
-        for plotdat in plotdata:
+        for plotitem in plotitems:
             try:
-                plotdat.title + ""
+                plotitem.gettitle() + ""
             except:
-                titles = plotdat.title
+                titles = plotitem.gettitle()
             else:
-                titles = [plotdat.title]
-            plotdat.titlecount = len(titles)
+                titles = [plotitem.gettitle()]
+            plotitem.titlecount = len(titles)
             for title in titles:
                 titleboxes.append(c.texrunner.text_pt(0, 0, title, self.defaulttextattrs + self.textattrs))
         dy_pt = box.tile_pt(titleboxes, self.dist_pt, 0, -1)
         box.linealignequal_pt(titleboxes, self.symbolwidth_pt + self.symbolspace_pt, 1, 0)
         y_pt = -0.5 * self.symbolheight_pt + titleboxes[0].center[1]
-        for plotdat in plotdata:
-            count = plotdat.key_pt(c, 0, y_pt, self.symbolwidth_pt, self.symbolheight_pt, dy_pt)
-            y_pt -= dy_pt*count
-            if count != plotdat.titlecount:
-                raise ValueError("key count/title count mismatch")
+        for plotitem in plotitems:
+            for selectindex in range(plotitem.titlecount):
+                plotitem.key_pt(c, 0, y_pt, self.symbolwidth_pt, self.symbolheight_pt, dy_pt, selectindex, plotitem.titlecount)
+                y_pt -= dy_pt
         for titlebox in titleboxes:
             c.insert(titlebox)
+        # for plotitem in plotitems:
+        #     del plotitem.titlecount
         return c
