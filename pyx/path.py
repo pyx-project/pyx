@@ -60,7 +60,7 @@ __metaclass__ = type
 ################################################################################
 
 def _arctobcurve(x_pt, y_pt, r_pt, phi1, phi2):
-    """generate the best bpathel corresponding to an arc segment"""
+    """generate the best bezier curve corresponding to an arc segment"""
 
     dphi = phi2-phi1
 
@@ -133,15 +133,15 @@ class _pathcontext:
         self.currentsubpath = currentsubpath
 
 ################################################################################ 
-# pathel: element of a PS style path 
+# pathitem: element of a PS style path 
 ################################################################################
 
-class pathel(base.PSOp):
+class pathitem(base.PSOp):
 
     """element of a PS style path"""
 
     def _updatecontext(self, context):
-        """update context of during walk along pathel
+        """update context of during walk along pathitem
 
         changes context in place
         """
@@ -149,11 +149,11 @@ class pathel(base.PSOp):
 
 
     def _bbox(self, context):
-        """calculate bounding box of pathel
+        """calculate bounding box of pathitem
 
-        context: context of pathel
+        context: context of pathitem
 
-        returns bounding box of pathel (in given context)
+        returns bounding box of pathitem (in given context)
 
         Important note: all coordinates in bbox, currentpoint, and 
         currrentsubpath have to be floats (in unit.topt)
@@ -162,9 +162,9 @@ class pathel(base.PSOp):
         pass
 
     def _normalized(self, context):
-        """returns list of normalized version of pathel
+        """returns list of normalized version of pathitem
 
-        context: context of pathel
+        context: context of pathitem
 
         Returns the path converted into a list of closepath, moveto_pt,
         normline, or normcurve instances.
@@ -173,22 +173,22 @@ class pathel(base.PSOp):
         pass
 
     def outputPS(self, file):
-        """write PS code corresponding to pathel to file"""
+        """write PS code corresponding to pathitem to file"""
         pass
 
     def outputPDF(self, file):
-        """write PDF code corresponding to pathel to file"""
+        """write PDF code corresponding to pathitem to file"""
         pass
 
 #
-# various pathels
+# various pathitems
 #
 # Each one comes in two variants:
 #  - one which requires the coordinates to be already in pts (mainly
 #    used for internal purposes)
 #  - another which accepts arbitrary units
 
-class closepath(pathel): 
+class closepath(pathitem): 
 
     """Connect subpath back to its starting point"""
 
@@ -218,7 +218,7 @@ class closepath(pathel):
         file.write("h\n")
 
 
-class moveto_pt(pathel):
+class moveto_pt(pathitem):
 
     """Set current point to (x_pt, y_pt) (coordinates in pts)"""
 
@@ -248,7 +248,7 @@ class moveto_pt(pathel):
         file.write("%f %f m\n" % (self.x_pt, self.y_pt) )
 
 
-class lineto_pt(pathel):
+class lineto_pt(pathitem):
 
     """Append straight line to (x_pt, y_pt) (coordinates in pts)"""
 
@@ -281,7 +281,7 @@ class lineto_pt(pathel):
         file.write("%f %f l\n" % (self.x_pt, self.y_pt) )
 
 
-class curveto_pt(pathel):
+class curveto_pt(pathitem):
 
     """Append curveto (coordinates in pts)"""
 
@@ -327,7 +327,7 @@ class curveto_pt(pathel):
                                                self.x3_pt, self.y3_pt ) )
 
 
-class rmoveto_pt(pathel):
+class rmoveto_pt(pathitem):
 
     """Perform relative moveto (coordinates in pts)"""
 
@@ -354,7 +354,7 @@ class rmoveto_pt(pathel):
         file.write("%g %g rmoveto\n" % (self.dx_pt, self.dy_pt) )
 
 
-class rlineto_pt(pathel):
+class rlineto_pt(pathitem):
 
     """Perform relative lineto (coordinates in pts)"""
 
@@ -386,7 +386,7 @@ class rlineto_pt(pathel):
         file.write("%g %g rlineto\n" % (self.dx_pt, self.dy_pt) )
 
 
-class rcurveto_pt(pathel):
+class rcurveto_pt(pathitem):
 
     """Append rcurveto (coordinates in pts)"""
 
@@ -431,7 +431,7 @@ class rcurveto_pt(pathel):
         return [normcurve(x0_pt, y0_pt, x0_pt+self.dx1_pt, y0_pt+self.dy1_pt, x0_pt+self.dx2_pt, y0_pt+self.dy2_pt, x0_pt+self.dx3_pt, y0_pt+self.dy3_pt)]
 
 
-class arc_pt(pathel):
+class arc_pt(pathitem):
 
     """Append counterclockwise arc (coordinates in pts)"""
 
@@ -536,11 +536,11 @@ class arc_pt(pathel):
         # convert to list of curvetos omitting movetos
         nbarc = []
 
-        for bpathel in barc:
-            nbarc.append(normcurve(bpathel.x0_pt, bpathel.y0_pt,
-                                   bpathel.x1_pt, bpathel.y1_pt,
-                                   bpathel.x2_pt, bpathel.y2_pt,
-                                   bpathel.x3_pt, bpathel.y3_pt))
+        for bpathitem in barc:
+            nbarc.append(normcurve(bpathitem.x0_pt, bpathitem.y0_pt,
+                                   bpathitem.x1_pt, bpathitem.y1_pt,
+                                   bpathitem.x2_pt, bpathitem.y2_pt,
+                                   bpathitem.x3_pt, bpathitem.y3_pt))
 
         # Note that if there is a currentpoint defined, we also
         # have to include the straight line from this point
@@ -558,7 +558,7 @@ class arc_pt(pathel):
                                             self.angle2 ) )
 
 
-class arcn_pt(pathel):
+class arcn_pt(pathitem):
 
     """Append clockwise arc (coordinates in pts)"""
 
@@ -626,11 +626,11 @@ class arcn_pt(pathel):
         # convert to list of curvetos omitting movetos
         nbarc = []
 
-        for bpathel in barc:
-            nbarc.append(normcurve(bpathel.x3_pt, bpathel.y3_pt,
-                                   bpathel.x2_pt, bpathel.y2_pt,
-                                   bpathel.x1_pt, bpathel.y1_pt,
-                                   bpathel.x0_pt, bpathel.y0_pt))
+        for bpathitem in barc:
+            nbarc.append(normcurve(bpathitem.x3_pt, bpathitem.y3_pt,
+                                   bpathitem.x2_pt, bpathitem.y2_pt,
+                                   bpathitem.x1_pt, bpathitem.y1_pt,
+                                   bpathitem.x0_pt, bpathitem.y0_pt))
 
         # Note that if there is a currentpoint defined, we also
         # have to include the straight line from this point
@@ -649,7 +649,7 @@ class arcn_pt(pathel):
                                                self.angle2 ) )
 
 
-class arct_pt(pathel):
+class arct_pt(pathitem):
 
     """Append tangent arc (coordinates in pts)"""
 
@@ -740,14 +740,14 @@ class arct_pt(pathel):
     def _normalized(self, context):
         # XXX TODO
         return normpath(self._path(context.currentpoint,
-                                   context.currentsubpath)[2]).subpaths[0].normpathels
+                                   context.currentsubpath)[2]).subpaths[0].normpathitems
     def outputPS(self, file):
         file.write("%g %g %g %g %g arct\n" % ( self.x1_pt, self.y1_pt,
                                                self.x2_pt, self.y2_pt,
                                                self.r_pt ) )
 
 #
-# now the pathels that convert from user coordinates to pts
+# now the pathitems that convert from user coordinates to pts
 #
 
 class moveto(moveto_pt):
@@ -846,10 +846,10 @@ class arct(arct_pt):
                          unit.topt(x2), unit.topt(y2), unit.topt(r))
 
 #
-# "combined" pathels provided for performance reasons
+# "combined" pathitems provided for performance reasons
 #
 
-class multilineto_pt(pathel):
+class multilineto_pt(pathitem):
 
     """Perform multiple linetos (coordinates in pts)"""
 
@@ -887,7 +887,7 @@ class multilineto_pt(pathel):
             file.write("%f %f l\n" % point_pt )
 
 
-class multicurveto_pt(pathel):
+class multicurveto_pt(pathitem):
 
     """Perform multiple curvetos (coordinates in pts)"""
 
@@ -958,8 +958,8 @@ class path(base.PSCmd):
     def __len__(self):
         return len(self.path)
 
-    def append(self, pathel):
-        self.path.append(pathel)
+    def append(self, pathitem):
+        self.path.append(pathitem)
 
     def arclen_pt(self):
         """returns total arc length of path in pts"""
@@ -993,9 +993,9 @@ class path(base.PSCmd):
         context = _pathcontext()
         abbox = None
 
-        for pel in self.path:
-            nbbox =  pel._bbox(context)
-            pel._updatecontext(context)
+        for pitem in self.path:
+            nbbox =  pitem._bbox(context)
+            pitem._updatecontext(context)
             if abbox is None:
                 abbox = nbbox
             elif nbbox: 
@@ -1083,20 +1083,20 @@ class path(base.PSCmd):
                 isinstance(self.path[0], arc_pt) or
                 isinstance(self.path[0], arcn_pt)):
             raise PathException("first path element must be either moveto, arc, or arcn")
-        for pel in self.path:
-            pel.outputPS(file)
+        for pitem in self.path:
+            pitem.outputPS(file)
 
     def outputPDF(self, file):
         if not (isinstance(self.path[0], moveto_pt) or
                 isinstance(self.path[0], arc_pt) or
                 isinstance(self.path[0], arcn_pt)):
             raise PathException("first path element must be either moveto, arc, or arcn")
-        # PDF practically only supports normpathels
+        # PDF practically only supports normpathitems
         context = _pathcontext()
-        for pel in self.path:
-            for npel in pel._normalized(context):
-                npel.outputPDF(file)
-            pel._updatecontext(context)
+        for pitem in self.path:
+            for npitem in pitem._normalized(context):
+                npitem.outputPDF(file)
+            pitem._updatecontext(context)
 
 ################################################################################
 # some special kinds of path, again in two variants
@@ -1187,14 +1187,14 @@ class circle(circle_pt):
 # normpath and corresponding classes
 ################################################################################
 
-# two helper functions for the intersection of normpathels
+# two helper functions for the intersection of normpathitems
 
 def _intersectnormcurves(a, a_t0, a_t1, b, b_t0, b_t1, epsilon=1e-5):
-    """intersect two bpathels
+    """intersect two bpathitems
 
-    a and b are bpathels with parameter ranges [a_t0, a_t1],
+    a and b are bpathitems with parameter ranges [a_t0, a_t1],
     respectively [b_t0, b_t1].
-    epsilon determines when the bpathels are assumed to be straight
+    epsilon determines when the bpathitems are assumed to be straight
 
     """
 
@@ -1287,10 +1287,10 @@ def _intersectnormlines(a, b):
     return [( a_t, b_t)]
 
 #
-# normpathel: normalized element
+# normpathitem: normalized element
 #
 
-class normpathel:
+class normpathitem:
 
     """element of a normalized sub path"""
 
@@ -1299,12 +1299,12 @@ class normpathel:
         pass
 
     def arclen_pt(self, epsilon=1e-5):
-        """returns arc length of normpathel in pts with given accuracy epsilon"""
+        """returns arc length of normpathitem in pts with given accuracy epsilon"""
         pass
 
     def _arclentoparam_pt(self, lengths, epsilon=1e-5):
         """returns tuple (t,l) with
-          t the parameter where the arclen of normpathel is length and
+          t the parameter where the arclen of normpathitem is length and
           l the total arclen
 
         length:  length (in pts) to find the parameter for
@@ -1316,7 +1316,7 @@ class normpathel:
         pass
 
     def bbox(self):
-        """return bounding box of normpathel"""
+        """return bounding box of normpathitem"""
         pass
 
     def curvradius_pt(self, param):
@@ -1328,45 +1328,45 @@ class normpathel:
         pass
 
     def intersect(self, other, epsilon=1e-5):
-        """intersect self with other normpathel"""
+        """intersect self with other normpathitem"""
         pass
 
     def reversed(self):
-        """return reversed normpathel"""
+        """return reversed normpathitem"""
         pass
 
     def split(self, parameters):
-        """splits normpathel
+        """splits normpathitem
 
         parameters: list of parameter values (0<=t<=1) at which to split
 
-        returns None or list of tuple of normpathels corresponding to 
-        the orginal normpathel.
+        returns None or list of tuple of normpathitems corresponding to 
+        the orginal normpathitem.
 
         """
         pass
 
     def tangentvector_pt(self, t):
-        """returns tangent vector of normpathel in pts at parameter t (0<=t<=1)"""
+        """returns tangent vector of normpathitem in pts at parameter t (0<=t<=1)"""
         pass
 
     def transformed(self, trafo):
-        """return transformed normpathel according to trafo"""
+        """return transformed normpathitem according to trafo"""
         pass
 
     def outputPS(self, file):
-        """write PS code corresponding to normpathel to file"""
+        """write PS code corresponding to normpathitem to file"""
         pass
 
     def outputPS(self, file):
-        """write PDF code corresponding to normpathel to file"""
+        """write PDF code corresponding to normpathitem to file"""
         pass
 
 #
-# there are only two normpathels: normline and normcurve
+# there are only two normpathitems: normline and normcurve
 #
 
-class normline(normpathel):
+class normline(normpathitem):
 
     """Straight line from (x0_pt, y0_pt) to (x1_pt, y1_pt) (coordinates in pts)"""
 
@@ -1472,7 +1472,7 @@ class normline(normpathel):
         file.write("%f %f l\n" % (self.x1_pt, self.y1_pt))
 
 
-class normcurve(normpathel):
+class normcurve(normpathitem):
 
     """Bezier curve with control points x0_pt, y0_pt, x1_pt, y1_pt, x2_pt, y2_pt, x3_pt, y3_pt (coordinates in pts)"""
 
@@ -1493,7 +1493,7 @@ class normcurve(normpathel):
                                                               self.x2_pt, self.y2_pt, self.x3_pt, self.y3_pt)
 
     def _arclentoparam_pt(self, lengths, epsilon=1e-5):
-        """computes the parameters [t] of bpathel where the given lengths (in pts) are assumed
+        """computes the parameters [t] of bpathitem where the given lengths (in pts) are assumed
         returns ( [parameters], total arclen)
         A negative length gives a parameter 0"""
 
@@ -1531,7 +1531,7 @@ class normcurve(normpathel):
         return (params, arclens[-1])
 
     def arclen_pt(self, epsilon=1e-5):
-        """computes arclen of bpathel in pts using successive midpoint split"""
+        """computes arclen of bpathitem in pts using successive midpoint split"""
         if self.isstraight(epsilon):
             return math.hypot(self.x3_pt-self.x0_pt, self.y3_pt-self.y0_pt)
         else:
@@ -1595,7 +1595,7 @@ class normcurve(normpathel):
                    math.hypot(self.x3_pt-self.x0_pt, self.y3_pt-self.y0_pt))<epsilon
 
     def midpointsplit(self):
-        """splits bpathel at midpoint returning bpath with two bpathels"""
+        """splits bpathitem at midpoint returning bpath with two bpathitems"""
 
         # for efficiency reason, we do not use self.split(0.5)!
 
@@ -1770,33 +1770,34 @@ class normsubpath:
 
     """sub path of a normalized path
 
-    A subpath consists of a list of normpathels, i.e., lines and bcurves
+    A subpath consists of a list of normpathitems, i.e., lines and bcurves
     and can either be closed or not.
 
     Some invariants, which have to be obeyed:
-    - All normpathels have to be longer than epsilon pts.
-    - The last point of a normpathel and the first point of the next
+    - All normpathitems have to be longer than epsilon pts.
+    - The last point of a normpathitem and the first point of the next
     element have to be equal.
-    - When the path is closed, the last normpathel has to be a
+    - When the path is closed, the last normpathitem has to be a
     normline and the last point of this normline has to be equal
-    to the first point of the first normpathel, except when
+    to the first point of the first normpathitem, except when
     this normline would be too short.
     """
 
-    __slots__ = "normpathels", "closed", "epsilon"
+    __slots__ = "normpathitems", "closed", "epsilon"
 
-    def __init__(self, normpathels, closed, epsilon=1e-5):
-        self.normpathels = [npel for npel in normpathels if not npel.isstraight(epsilon) or npel.arclen_pt(epsilon)>epsilon]
+    def __init__(self, normpathitems, closed, epsilon=1e-5):
+        self.normpathitems = [npitem for npitem in normpathitems
+                              if not npitem.isstraight(epsilon) or npitem.arclen_pt(epsilon)>epsilon]
         self.closed = closed
         self.epsilon = epsilon
 
     def __str__(self):
         return "subpath(%s, [%s])" % (self.closed and "closed" or "open",
-                                    ", ".join(map(str, self.normpathels)))
+                                    ", ".join(map(str, self.normpathitems)))
 
     def arclen_pt(self):
         """returns total arc length of normsubpath in pts with accuracy epsilon"""
-        return sum([npel.arclen_pt(self.epsilon) for npel in self.normpathels])
+        return sum([npitem.arclen_pt(self.epsilon) for npitem in self.normpathitems])
 
     def _arclentoparam_pt(self, lengths):
         """returns [t, l] where t are parameter value(s) matching given length(s)
@@ -1808,8 +1809,8 @@ class normsubpath:
         allparams = [0] * len(lengths)
         rests = copy.copy(lengths)
 
-        for pel in self.normpathels:
-            params, arclen = pel._arclentoparam_pt(rests, self.epsilon)
+        for pitem in self.normpathitems:
+            params, arclen = pitem._arclentoparam_pt(rests, self.epsilon)
             allarclen += arclen
             for i in range(len(rests)):
                 if rests[i] >= 0:
@@ -1825,30 +1826,30 @@ class normsubpath:
         segments in the normpath, otherwise None is returned.
         """
         try:
-            return self.normpathels[int(param-self.epsilon)].at_pt(param-int(param-self.epsilon))
+            return self.normpathitems[int(param-self.epsilon)].at_pt(param-int(param-self.epsilon))
         except:
             raise PathException("parameter value param out of range")
 
     def bbox(self):
-        if self.normpathels:
-            abbox = self.normpathels[0].bbox()
-            for anormpathel in self.normpathels[1:]:
-                abbox += anormpathel.bbox()
+        if self.normpathitems:
+            abbox = self.normpathitems[0].bbox()
+            for anormpathitem in self.normpathitems[1:]:
+                abbox += anormpathitem.bbox()
             return abbox
         else:
             return None
 
     def begin_pt(self):
-        return self.normpathels[0].begin_pt()
+        return self.normpathitems[0].begin_pt()
 
     def curvradius_pt(self, param):
         try:
-            return self.normpathels[int(param-self.epsilon)].curvradius_pt(param-int(param-self.epsilon))
+            return self.normpathitems[int(param-self.epsilon)].curvradius_pt(param-int(param-self.epsilon))
         except:
             raise PathException("parameter value param out of range")
 
     def end_pt(self):
-        return self.normpathels[-1].end_pt()
+        return self.normpathitems[-1].end_pt()
 
     def intersect(self, other):
         """intersect self with other normsubpath
@@ -1860,9 +1861,9 @@ class normsubpath:
         intersections = ([], [])
         epsilon = min(self.epsilon, other.epsilon)
         # Intersect all subpaths of self with the subpaths of other
-        for t_a, pel_a  in enumerate(self.normpathels):
-            for t_b, pel_b in enumerate(other.normpathels):
-                for intersection in pel_a.intersect(pel_b, epsilon):
+        for t_a, pitem_a  in enumerate(self.normpathitems):
+            for t_b, pitem_b in enumerate(other.normpathitems):
+                for intersection in pitem_a.intersect(pitem_b, epsilon):
                     # check whether an intersection occurs at the end
                     # of a closed subpath. If yes, we don't include it
                     # in the list of intersections to prevent a
@@ -1875,18 +1876,18 @@ class normsubpath:
 
     def range(self):
         """return maximal parameter value, i.e. number of line/curve segments"""
-        return len(self.normpathels)
+        return len(self.normpathitems)
 
     def reverse(self):
-        self.normpathels.reverse()
-        for npel in self.normpathels:
-            npel.reverse()
+        self.normpathitems.reverse()
+        for npitem in self.normpathitems:
+            npitem.reverse()
 
     def reversed(self):
-        nnormpathels = []
-        for i in range(len(self.normpathels)):
-            nnormpathels.append(self.normpathels[-(i+1)].reversed())
-        return normsubpath(nnormpathels, self.closed)
+        nnormpathitems = []
+        for i in range(len(self.normpathitems)):
+            nnormpathitems.append(self.normpathitems[-(i+1)].reversed())
+        return normsubpath(nnormpathitems, self.closed)
 
     def split(self, params):
         """split normsubpath at list of parameter values params and return list
@@ -1900,9 +1901,9 @@ class normsubpath:
             raise PathException("parameter for split of subpath out of range")
 
         result = []
-        npels = None
-        for t, pel in enumerate(self.normpathels):
-            # determine list of splitting parameters relevant for pel
+        npitems = None
+        for t, pitem in enumerate(self.normpathitems):
+            # determine list of splitting parameters relevant for pitem
             nparams = []
             for nt in params:
                 if t+1 >= nt:
@@ -1910,34 +1911,34 @@ class normsubpath:
                     params = params[1:]
 
             # now we split the path at the filtered parameter values
-            # This yields a list of normpathels and possibly empty
+            # This yields a list of normpathitems and possibly empty
             # segments marked by None
-            splitresult = pel.split(nparams)
+            splitresult = pitem.split(nparams)
             if splitresult:
                 # first split?
-                if npels is None:
+                if npitems is None:
                     if splitresult[0] is None:
                         # mark split at the beginning of the normsubpath
                         result = [None]
                     else:
                         result.append(normsubpath([splitresult[0]], 0))
                 else:
-                    npels.append(splitresult[0])
-                    result.append(normsubpath(npels, 0))
-                for npel in splitresult[1:-1]:
-                    result.append(normsubpath([npel], 0))
+                    npitems.append(splitresult[0])
+                    result.append(normsubpath(npitems, 0))
+                for npitem in splitresult[1:-1]:
+                    result.append(normsubpath([npitem], 0))
                 if len(splitresult)>1 and splitresult[-1] is not None:
-                    npels = [splitresult[-1]]
+                    npitems = [splitresult[-1]]
                 else:
-                    npels = []
+                    npitems = []
             else:
-                if npels is None:
-                    npels = [pel]
+                if npitems is None:
+                    npitems = [pitem]
                 else:
-                    npels.append(pel)
+                    npitems.append(pitem)
 
-        if npels:
-            result.append(normsubpath(npels, 0))
+        if npitems:
+            result.append(normsubpath(npitems, 0))
         else:
             # mark split at the end of the normsubpath
             result.append(None)
@@ -1949,14 +1950,14 @@ class normsubpath:
             elif result[-1] is None:
                 result = result[:-1]
             else:
-                result[-1].normpathels.extend(result[0].normpathels)
+                result[-1].normpathitems.extend(result[0].normpathitems)
                 result = result[1:]
         return result
 
     def tangent(self, param, length=None):
         tx_pt, ty_pt = self.at_pt(param)
         try:
-            tdx_pt, tdy_pt = self.normpathels[int(param-self.epsilon)].tangentvector_pt(param-int(param-self.epsilon))
+            tdx_pt, tdy_pt = self.normpathitems[int(param-self.epsilon)].tangentvector_pt(param-int(param-self.epsilon))
         except:
             raise PathException("parameter value param out of range")
         tlen = math.hypot(tdx_pt, tdy_pt)
@@ -1968,51 +1969,51 @@ class normsubpath:
 
     def trafo(self, param):
         try:
-            return self.normpathels[int(param-self.epsilon)].trafo(param-int(param-self.epsilon))
+            return self.normpathitems[int(param-self.epsilon)].trafo(param-int(param-self.epsilon))
         except:
             raise PathException("parameter value param out of range")
 
     def transform(self, trafo):
         """transform sub path according to trafo"""
-        for pel in self.normpathels:
-            pel.transform(trafo)
+        for pitem in self.normpathitems:
+            pitem.transform(trafo)
 
     def transformed(self, trafo):
         """return sub path transformed according to trafo"""
-        nnormpathels = []
-        for pel in self.normpathels:
-            nnormpathels.append(pel.transformed(trafo))
-        return normsubpath(nnormpathels, self.closed)
+        nnormpathitems = []
+        for pitem in self.normpathitems:
+            nnormpathitems.append(pitem.transformed(trafo))
+        return normsubpath(nnormpathitems, self.closed)
 
     def outputPS(self, file):
         # if the normsubpath is closed, we must not output a normline at
         # the end
-        if not self.normpathels:
+        if not self.normpathitems:
             return
-        if self.closed and isinstance(self.normpathels[-1], normline):
-            normpathels = self.normpathels[:-1]
+        if self.closed and isinstance(self.normpathitems[-1], normline):
+            normpathitems = self.normpathitems[:-1]
         else:
-            normpathels = self.normpathels
-        if normpathels:
+            normpathitems = self.normpathitems
+        if normpathitems:
             file.write("%g %g moveto\n" % self.begin_pt())
-            for anormpathel in normpathels:
-                anormpathel.outputPS(file)
+            for anormpathitem in normpathitems:
+                anormpathitem.outputPS(file)
         if self.closed:
             file.write("closepath\n")
 
     def outputPDF(self, file):
         # if the normsubpath is closed, we must not output a normline at
         # the end
-        if not self.normpathels:
+        if not self.normpathitems:
             return
-        if self.closed and isinstance(self.normpathels[-1], normline):
-            normpathels = self.normpathels[:-1]
+        if self.closed and isinstance(self.normpathitems[-1], normline):
+            normpathitems = self.normpathitems[:-1]
         else:
-            normpathels = self.normpathels
-        if normpathels:
+            normpathitems = self.normpathitems
+        if normpathitems:
             file.write("%f %f m\n" % self.begin_pt())
-            for anormpathel in normpathels:
-                anormpathel.outputPDF(file)
+            for anormpathitem in normpathitems:
+                anormpathitem.outputPDF(file)
         if self.closed:
             file.write("h\n")
 
@@ -2041,30 +2042,30 @@ class normpath(path):
         elif isinstance(arg, path):
             # split path in sub paths
             self.subpaths = []
-            currentsubpathels = []
+            currentsubpathitems = []
             context = _pathcontext()
-            for pel in arg.path:
-                for npel in pel._normalized(context):
-                    if isinstance(npel, moveto_pt):
-                        if currentsubpathels:
+            for pitem in arg.path:
+                for npitem in pitem._normalized(context):
+                    if isinstance(npitem, moveto_pt):
+                        if currentsubpathitems:
                             # append open sub path
-                            self.subpaths.append(normsubpath(currentsubpathels, 0, epsilon))
+                            self.subpaths.append(normsubpath(currentsubpathitems, 0, epsilon))
                         # start new sub path
-                        currentsubpathels = []
-                    elif isinstance(npel, closepath):
-                        if currentsubpathels:
+                        currentsubpathitems = []
+                    elif isinstance(npitem, closepath):
+                        if currentsubpathitems:
                             # append closed sub path
-                            currentsubpathels.append(normline(context.currentpoint[0], context.currentpoint[1],
+                            currentsubpathitems.append(normline(context.currentpoint[0], context.currentpoint[1],
                                                               context.currentsubpath[0], context.currentsubpath[1]))
-                        self.subpaths.append(normsubpath(currentsubpathels, 1, epsilon))
-                        currentsubpathels = []
+                        self.subpaths.append(normsubpath(currentsubpathitems, 1, epsilon))
+                        currentsubpathitems = []
                     else:
-                        currentsubpathels.append(npel)
-                pel._updatecontext(context)
+                        currentsubpathitems.append(npitem)
+                pitem._updatecontext(context)
 
-            if currentsubpathels:
+            if currentsubpathitems:
                 # append open sub path
-                self.subpaths.append(normsubpath(currentsubpathels, 0, epsilon))
+                self.subpaths.append(normsubpath(currentsubpathitems, 0, epsilon))
         else:
             # we expect a list of normsubpaths
             self.subpaths = list(arg)
@@ -2103,35 +2104,35 @@ class normpath(path):
             spt += sprange
         raise PathException("parameter value out of range")
 
-    def append(self, pathel):
+    def append(self, pathitem):
         # XXX factor parts of this code out
         if self.subpaths[-1].closed:
             context = _pathcontext(self.end_pt(), None)
-            currentsubpathels = []
+            currentsubpathitems = []
         else:
             context = _pathcontext(self.end_pt(), self.subpaths[-1].begin_pt())
-            currentsubpathels = self.subpaths[-1].normpathels
+            currentsubpathitems = self.subpaths[-1].normpathitems
             self.subpaths = self.subpaths[:-1]
-        for npel in pathel._normalized(context):
-            if isinstance(npel, moveto_pt):
-                if currentsubpathels:
+        for npitem in pathitem._normalized(context):
+            if isinstance(npitem, moveto_pt):
+                if currentsubpathitems:
                     # append open sub path
-                    self.subpaths.append(normsubpath(currentsubpathels, 0, self.epsilon))
+                    self.subpaths.append(normsubpath(currentsubpathitems, 0, self.epsilon))
                 # start new sub path
-                currentsubpathels = []
-            elif isinstance(npel, closepath):
-                if currentsubpathels:
+                currentsubpathitems = []
+            elif isinstance(npitem, closepath):
+                if currentsubpathitems:
                     # append closed sub path
-                    currentsubpathels.append(normline(context.currentpoint[0], context.currentpoint[1],
+                    currentsubpathitems.append(normline(context.currentpoint[0], context.currentpoint[1],
                                                       context.currentsubpath[0], context.currentsubpath[1]))
-                    self.subpaths.append(normsubpath(currentsubpathels, 1, self.epsilon))
-                currentsubpathels = []
+                    self.subpaths.append(normsubpath(currentsubpathitems, 1, self.epsilon))
+                currentsubpathitems = []
             else:
-                currentsubpathels.append(npel)
+                currentsubpathitems.append(npitem)
 
-        if currentsubpathels:
+        if currentsubpathitems:
             # append open sub path
-            self.subpaths.append(normsubpath(currentsubpathels, 0, self.epsilon))
+            self.subpaths.append(normsubpath(currentsubpathitems, 0, self.epsilon))
 
     def arclen_pt(self):
         """returns total arc length of normpath in pts"""
@@ -2254,7 +2255,7 @@ class normpath(path):
         if not other.subpaths:
             raise PathException("cannot join empty path")
 
-        self.subpaths[-1].normpathels += other.subpaths[0].normpathels
+        self.subpaths[-1].normpathitems += other.subpaths[0].normpathitems
         self.subpaths += other.subpaths[1:]
 
     def joined(self, other):

@@ -45,16 +45,16 @@ class polygon_pt:
             self.center = self.center[0]/len(self.corners), self.center[1]/len(self.corners)
 
     def path(self, centerradius=None, bezierradius=None, beziersoftness=1):
-        pathels = []
+        pathitems = []
         if centerradius is not None and self.center is not None:
             r = unit.topt(centerradius)
-            pathels.append(path.arc_pt(self.center[0], self.center[1], r, 0, 360))
-            pathels.append(path.closepath())
+            pathitems.append(path.arc_pt(self.center[0], self.center[1], r, 0, 360))
+            pathitems.append(path.closepath())
         if bezierradius is None:
-            pathels.append(path.moveto_pt(self.corners[0][0], self.corners[0][1]))
+            pathitems.append(path.moveto_pt(self.corners[0][0], self.corners[0][1]))
             for x, y in self.corners[1:]:
-                pathels.append(path.lineto_pt(x, y))
-            pathels.append(path.closepath())
+                pathitems.append(path.lineto_pt(x, y))
+            pathitems.append(path.closepath())
         else:
             # curved box plotting by Michael Schindler
             l = len(self.corners)
@@ -97,13 +97,13 @@ class polygon_pt:
                 d2 = c[0] +     d2[0] * r[i][1], c[1] +     d2[1] * r[i][1]
                 e  = 0.5 * (f1[0] + f2[0]), 0.5 * (f1[1] + f2[1])
                 if i:
-                    pathels.append(path.lineto_pt(*d1))
+                    pathitems.append(path.lineto_pt(*d1))
                 else:
-                    pathels.append(path.moveto_pt(*d1))
-                pathels.append(path.curveto_pt(*(g1 + f1 + e)))
-                pathels.append(path.curveto_pt(*(f2 + g2 + d2)))
-            pathels.append(path.closepath())
-        return path.path(*pathels)
+                    pathitems.append(path.moveto_pt(*d1))
+                pathitems.append(path.curveto_pt(*(g1 + f1 + e)))
+                pathitems.append(path.curveto_pt(*(f2 + g2 + d2)))
+            pathitems.append(path.closepath())
+        return path.path(*pathitems)
 
     def transform(self, *trafos):
         for trafo in trafos:

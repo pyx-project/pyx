@@ -107,6 +107,9 @@ TODO:
       and the global pyxrc
   - graph modules:
     - enum -> num renaming
+  - path module:
+    - pathel -> pathitem, etc. renaming 
+  
 
 0.6.3 (2004/04/27):
    - graph module:

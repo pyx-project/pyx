@@ -13,11 +13,11 @@ documented in the present section.
 
 \declaremodule{}{path}
 
-\begin{classdesc}{path}{*pathels}
+\begin{classdesc}{path}{*pathitems}
 This class represents a PostScript like path consisting of the
-path elements \var{pathels}.
+path elements \var{pathitems}.
 
-All possible path elements are described in Sect.~\ref{path:pathel}.
+All possible path items are described in Sect.~\ref{path:pathitem}.
 Note that there are restrictions on the first path element and likewise
 on each path element after a \class{closepath} directive. In both cases,
 no current point is defined and the path element has to be an instance
@@ -28,8 +28,8 @@ of one of the following classes: \class{moveto}, \class{arc}, and
 Instances of the class \class{path} provide the following
 methods (in alphabetic order):
 
-\begin{methoddesc}{append}{pathel}
-Appends a \var{pathel} to the end of the path.
+\begin{methoddesc}{append}{pathitem}
+Appends a \var{pathitem} to the end of the path.
 \end{methoddesc}
 
 \begin{methoddesc}{arclen}{}
@@ -144,9 +144,9 @@ paths together with help of the \verb|<<| operator, for instance
 
 \subsection{Path elements}
 
-\label{path:pathel}
+\label{path:pathitem}
 
-The class \class{pathel} is the superclass of all PostScript path
+The class \class{pathitem} is the superclass of all PostScript path
 construction primitives. It is never used directly, but only by
 instantiating its subclasses, which correspond one by one to the
 PostScript primitives.

@@ -641,7 +641,7 @@ class smoothed(deco, attr.attr):
 
         return [d1, g1, f1, e, f2, g2, d2]
 
-    def _onebezierbetweentwopathels(self, A, B, tangentA, tangentB, curvA, curvB, strict=0):
+    def _onebezierbetweentwopathitems(self, A, B, tangentA, tangentB, curvA, curvB, strict=0):
         # connects points A and B with a bezier curve that has
         # prescribed tangents dirA, dirB and curvatures curA, curB.
         # If strict, the sign of the curvature will be forced which may invert
@@ -730,49 +730,49 @@ class smoothed(deco, attr.attr):
 
         newpath = path.path()
         for normsubpath in basepath.subpaths:
-            npels = normsubpath.normpathels
-            arclens = [npel.arclen_pt() for npel in npels]
+            npitems = normsubpath.normpathitems
+            arclens = [npitem.arclen_pt() for npitem in npitems]
 
-            # 1. Build up a list of all relevant normpathels
+            # 1. Build up a list of all relevant normpathitems
             #    and the lengths where they will be cut (length with respect to the normsubpath)
-            npelnumbers = []
+            npitemnumbers = []
             cumalen = 0
             for no in range(len(arclens)):
                 alen = arclens[no]
-                # a first selection criterion for skipping too short normpathels
+                # a first selection criterion for skipping too short normpathitems
                 # the rest will queeze the radius
                 if alen > radius:
-                    npelnumbers.append(no)
+                    npitemnumbers.append(no)
                 else:
-                    sys.stderr.write("*** PyX Warning: smoothed is skipping a normpathel that is too short\n")
+                    sys.stderr.write("*** PyX Warning: smoothed is skipping a normpathitem that is too short\n")
                 cumalen += alen
             # XXX: what happens, if 0 or -1 is skipped and path not closed?
 
             # 2. Find the parameters, points,
             #    and calculate tangents and curvatures
             params, tangents, curvatures, points = [], [], [], []
-            for no in npelnumbers:
-                npel = npels[no]
+            for no in npitemnumbers:
+                npitem = npitems[no]
                 alen = arclens[no]
 
                 # find the parameter(s): either one or two
-                if no is npelnumbers[0] and not normsubpath.closed:
-                    pars = npel._arclentoparam_pt([max(0, alen - radius)])[0]
+                if no is npitemnumbers[0] and not normsubpath.closed:
+                    pars = npitem._arclentoparam_pt([max(0, alen - radius)])[0]
                 elif alen > 2 * radius:
-                    pars = npel._arclentoparam_pt([radius, alen - radius])[0]
+                    pars = npitem._arclentoparam_pt([radius, alen - radius])[0]
                 else:
-                    pars = npel._arclentoparam_pt([0.5 * alen])[0]
+                    pars = npitem._arclentoparam_pt([0.5 * alen])[0]
 
                 # find points, tangents and curvatures
                 ts,cs,ps = [],[],[]
                 for par in pars:
-                    # XXX: there is no trafo method for normpathels?
+                    # XXX: there is no trafo method for normpathitems?
                     thetrafo = normsubpath.trafo(par + no)
                     p = thetrafo._apply(0,0)
                     t = thetrafo._apply(1,0)
                     ps.append(p)
                     ts.append((t[0]-p[0], t[1]-p[1]))
-                    c = npel.curvradius_pt(par)
+                    c = npitem.curvradius_pt(par)
                     if c is None: cs.append(0)
                     else: cs.append(1.0/c)
 
@@ -784,7 +784,7 @@ class smoothed(deco, attr.attr):
             do_moveto = 1 # we do not know yet where to moveto
             # 3. First part of extra handling of closed paths
             if not normsubpath.closed:
-                bpart = npels[npelnumbers[0]].split(params[0])[0]
+                bpart = npitems[npitemnumbers[0]].split(params[0])[0]
                 if do_moveto:
                     newpath.append(path.moveto_pt(*bpart.begin_pt()))
                     do_moveto = 0
@@ -796,14 +796,14 @@ class smoothed(deco, attr.attr):
 
             # 4. Do the splitting for the first to the last element,
             #    a closed path must be closed later
-            for i in range(len(npelnumbers)-1+(normsubpath.closed==1)):
-                this = npelnumbers[i]
-                next = npelnumbers[(i+1) % len(npelnumbers)]
-                thisnpel, nextnpel = npels[this], npels[next]
+            for i in range(len(npitemnumbers)-1+(normsubpath.closed==1)):
+                this = npitemnumbers[i]
+                next = npitemnumbers[(i+1) % len(npitemnumbers)]
+                thisnpitem, nextnpitem = npitems[this], npitems[next]
 
-                # split thisnpel apart and take the middle peace
+                # split thisnpitem apart and take the middle peace
                 if len(points[this]) == 2:
-                    mpart = thisnpel.split(params[this])[1]
+                    mpart = thisnpitem.split(params[this])[1]
                     if do_moveto:
                         newpath.append(path.moveto_pt(*mpart.begin_pt()))
                         do_moveto = 0
@@ -813,12 +813,12 @@ class smoothed(deco, attr.attr):
                         newpath.append(path.curveto_pt(mpart.x1_pt, mpart.y1_pt, mpart.x2_pt, mpart.y2_pt, mpart.x3_pt, mpart.y3_pt))
 
                 # add the curve(s) replacing the corner
-                if isinstance(thisnpel, path.normline) and isinstance(nextnpel, path.normline) \
-                   and (next-this == 1 or (this==0 and next==len(npels)-1)):
+                if isinstance(thisnpitem, path.normline) and isinstance(nextnpitem, path.normline) \
+                   and (next-this == 1 or (this==0 and next==len(npitems)-1)):
                     d1,g1,f1,e,f2,g2,d2 = self._twobeziersbetweentolines(
-                        thisnpel.end_pt(), tangents[this][-1], tangents[next][0],
-                        math.hypot(points[this][-1][0] - thisnpel.end_pt()[0], points[this][-1][1] - thisnpel.end_pt()[1]),
-                        math.hypot(points[next][0][0] - nextnpel.begin_pt()[0], points[next][0][1] - nextnpel.begin_pt()[1]),
+                        thisnpitem.end_pt(), tangents[this][-1], tangents[next][0],
+                        math.hypot(points[this][-1][0] - thisnpitem.end_pt()[0], points[this][-1][1] - thisnpitem.end_pt()[1]),
+                        math.hypot(points[next][0][0] - nextnpitem.begin_pt()[0], points[next][0][1] - nextnpitem.begin_pt()[1]),
                         softness=self.softness)
                     if do_moveto:
                         newpath.append(path.moveto_pt(*d1))
@@ -830,13 +830,13 @@ class smoothed(deco, attr.attr):
                 else:
                     if not self.strict:
                         # the curvature may have the wrong sign -- produce a heuristic for the sign:
-                        vx, vy = thisnpel.end_pt()[0] - points[this][-1][0], thisnpel.end_pt()[1] - points[this][-1][1]
-                        wx, wy = points[next][0][0] - thisnpel.end_pt()[0], points[next][0][1] - thisnpel.end_pt()[1]
+                        vx, vy = thisnpitem.end_pt()[0] - points[this][-1][0], thisnpitem.end_pt()[1] - points[this][-1][1]
+                        wx, wy = points[next][0][0] - thisnpitem.end_pt()[0], points[next][0][1] - thisnpitem.end_pt()[1]
                         sign = vx * wy - vy * wx
                         sign = sign / abs(sign)
                         curvatures[this][-1] = sign * abs(curvatures[this][-1])
                         curvatures[next][0] = sign * abs(curvatures[next][0])
-                    A,B,C,D = self._onebezierbetweentwopathels(
+                    A,B,C,D = self._onebezierbetweentwopathitems(
                         points[this][-1], points[next][0], tangents[this][-1], tangents[next][0],
                         curvatures[this][-1], curvatures[next][0], strict=self.strict)
                     if do_moveto:
@@ -853,7 +853,7 @@ class smoothed(deco, attr.attr):
                     sys.stderr.write("*** PyXWarning: The whole path has been smoothed away -- sorry\n")
                 newpath.append(path.closepath())
             else:
-                epart = npels[npelnumbers[-1]].split([params[-1][0]])[-1]
+                epart = npitems[npitemnumbers[-1]].split([params[-1][0]])[-1]
                 if do_moveto:
                     newpath.append(path.moveto_pt(*epart.begin_pt()))
                     do_moveto = 0
