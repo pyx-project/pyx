@@ -1,0 +1,6 @@
+The installation of PyX is extremely simple if you have installed
+the Python distutils package. Just run
+
+    python setup.py install
+
+or an appropriate variant thereof.
