@@ -39,7 +39,7 @@ except ImportError:
 class connector_pt(path.normpath):
 
     def omitends(self, box1, box2):
-        """intersect a path with the boxes' paths"""
+        """intersects a path with the boxes' paths"""
 
         # cut off the start of self
         # XXX how can decoration of this box1.path() be handled?
@@ -55,26 +55,32 @@ class connector_pt(path.normpath):
             self.normsubpaths = self.split(sp[:1])[0].normsubpaths
 
     def shortenpath(self, dists):
-        """shorten a path by the given distances"""
+        """shortens a path by the given distances"""
 
+        # XXX later, this should be done by extended boxes instead of intersecting with circles
         # cut off the start of self
-        # XXX should path.lentopar used here?
         center = (unit.topt(self.begin()[0]), unit.topt(self.begin()[1]))
-        #sp = self.intersect(path.circle_pt(center[0], center[1], dists[0]))[0]
-        cutpath = path.path(path.arc(center[0], center[1], dists[0], -179, 179))
-        sp = self.intersect(cutpath.transformed(self.trafo(0)))[0]
-        sp.sort()
-        if sp:
-            self.normsubpaths = self.split(sp[-1:])[1].normsubpaths
+        try:
+            cutpath = path.circle_pt(center[0], center[1], dists[0])
+            sp = self.intersect(cutpath)[0]
+        except path.PathException:
+            pass
+        else:
+            if sp:
+                sp.sort()
+                self.normsubpaths = self.split(sp[-1:])[1].normsubpaths
 
         # cut off the end of self
         center = (unit.topt(self.end()[0]), unit.topt(self.end()[1]))
-        #sp = self.intersect(path.circle_pt(center[0], center[1], dists[1]))[0]
-        cutpath = path.path(path.arc(center[0], center[1], dists[0], 1, 359))
-        sp = self.intersect(cutpath.transformed(self.trafo(self.range()-0.001)))[0]
-        sp.sort()
-        if sp:
-            self.normsubpaths = self.split(sp[:1])[0].normsubpaths
+        try:
+            cutpath = path.circle_pt(center[0], center[1], dists[1])
+            sp = self.intersect(cutpath)[0]
+        except path.PathException:
+            pass
+        else:
+            if sp:
+                sp.sort()
+                self.normsubpaths = self.split(sp[:1])[0].normsubpaths
 
 
 ################
