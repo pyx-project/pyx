@@ -19,14 +19,14 @@ def test_multiaxes_data(c, t, x, y):
             graph.data(df, x=1, y2=4),
             graph.data(df, x=1, y3=5),
             graph.data(df, x=1, y5=6)),
-           style=graph.mark(markattrs=(graph.changecolor.redgreen(), graph.changestrokedfilled()), mark=graph.changemark.squaretwice()))
+           style=graph.mark(markattrs=(graph.changecolor.RedGreen(), graph.changestrokedfilled()), mark=graph.changemark.squaretwice()))
     g.finish()
 
 def test_piaxis_function(c, t, x, y):
     g = c.insert(graph.graphxy(t, x, y, height=5,
                                x=graph.linaxis(min=0, max=2*math.pi, divisor=math.pi, suffix=r"\pi")))
     g.plot([graph.function("y=sin(x-%i*pi/10)" % i, points=100) for i in range(20)],
-           style=graph.line(lineattrs=(graph.changecolor.hue(), graph.changelinestyle())))
+           style=graph.line(lineattrs=(graph.changecolor.Hue(), graph.changelinestyle())))
     g.finish()
 
 def test_textaxis_errorbars(c, t, x, y):
