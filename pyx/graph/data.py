@@ -363,7 +363,7 @@ class data(_data):
             try:
                 # try if it is a valid column identifier
                 self.columns[column] = self.orgdata.getcolumndataindex(value)
-            except ValueError:
+            except (KeyError, ValueError):
                 # take it as a mathematical expression
                 tree = parser.parse(value)
                 columndict = tree.columndict(**context)
@@ -375,8 +375,8 @@ class data(_data):
                 for var in tree.VarList():
                     try:
                         # column data accessed via the name of the column
-                        data, index = data.getcolumndataindex(var)
-                    except:
+                        data, index = self.orgdata.getcolumndataindex(var)
+                    except (KeyError, ValueError):
                         # other data available in context
                         if var not in context.keys():
                             raise ValueError("undefined variable '%s'" % var)
@@ -471,10 +471,8 @@ class file(data):
                        columnpattern=defaultcolumnpattern,
                        skiphead=0, skiptail=0, every=1,
                        **kwargs):
-        cachekey = self.getcachekey(filename, commentpattern, stringpattern, columnpattern, skiphead, skiptail, every)
-        if not filecache.has_key(cachekey):
-            file = open(filename)
-            self.title = filename
+
+        def readfile(file, title):
             columns = {}
             points = []
             linenumber = 0
@@ -500,60 +498,79 @@ class file(data):
                                 maxcolumns = len(linedata)
                             points.append(linedata)
                         linenumber += 1
-            if skiptail:
-                del points[-skiptail:]
+            if skiptail >= every:
+                skip, x = divmod(skiptail, every)
+                del points[-skip:]
             for i in xrange(len(points)):
                 if len(points[i]) != maxcolumns:
                     points[i].extend([None]*(maxcolumns-len(points[i])))
-            filecache[cachekey] = list(points, title=filename, addlinenumbers=0, **columns)
-        data.__init__(self, filecache[cachekey], **kwargs)
+            return list(points, title=title, addlinenumbers=0, **columns)
+
+        try:
+            filename.readlines
+        except:
+            # not a file-like object -> open it
+            cachekey = self.getcachekey(filename, commentpattern, stringpattern, columnpattern, skiphead, skiptail, every)
+            if not filecache.has_key(cachekey):
+                filecache[cachekey] = readfile(open(filename), filename)
+            data.__init__(self, filecache[cachekey], **kwargs)
+        else:
+            data.__init__(self, readfile(filename, "user provided file-like object"), **kwargs)
 
 
-# conffilecache = {}
-# 
-# class conffile(data):
-# 
-#     def __init__(self, filename, **kwargs):
-#         """read data from a config-like file
-#         - filename is a string
-#         - each row is defined by a section in the config-like file (see
-#           config module description)
-#         - the columns for each row are defined by lines in the section file;
-#           the option entries identify and name the columns
-#         - further keyword arguments are passed to the constructor of data,
-#           keyword arguments data and titles excluded"""
-#         cachekey = filename
-#         if not filecache.has_key(cachekey):
-#             config = ConfigParser.ConfigParser()
-#             config.optionxform = str
-#             config.readfp(open(filename, "r"))
-#             sections = config.sections()
-#             sections.sort()
-#             points = [None]*len(sections)
-#             maxcolumns = 1
-#             columns = {}
-#             for i in xrange(len(sections)):
-#                 point = [sections[i]] + [None]*(maxcolumns-1)
-#                 for option in config.options(sections[i]):
-#                     value = config.get(sections[i], option)
-#                     try:
-#                         value = float(value)
-#                     except:
-#                         pass
-#                     try:
-#                         index = columns[option]
-#                     except KeyError:
-#                         columns[option] = maxcolumns
-#                         point.append(value)
-#                         maxcolumns += 1
-#                     else:
-#                         point[index] = value
-#                 points[i] = point
-#             conffilecache[cachekey] = list(points, title=filename, maxcolumns=maxcolumns, addlinenumbers=0, **columns)
-#         data.__init__(self, conffilecache[cachekey], **kwargs)
+conffilecache = {}
+
+class conffile(data):
+
+    def __init__(self, filename, **kwargs):
+        """read data from a config-like file
+        - filename is a string
+        - each row is defined by a section in the config-like file (see
+          config module description)
+        - the columns for each row are defined by lines in the section file;
+          the option entries identify and name the columns
+        - further keyword arguments are passed to the constructor of data,
+          keyword arguments data and titles excluded"""
+
+        def readfile(file, title):
+            config = ConfigParser.ConfigParser()
+            config.optionxform = str
+            config.readfp(file)
+            sections = config.sections()
+            sections.sort()
+            points = [None]*len(sections)
+            maxcolumns = 1
+            columns = {}
+            for i in xrange(len(sections)):
+                point = [sections[i]] + [None]*(maxcolumns-1)
+                for option in config.options(sections[i]):
+                    value = config.get(sections[i], option)
+                    try:
+                        value = float(value)
+                    except:
+                        pass
+                    try:
+                        index = columns[option]
+                    except KeyError:
+                        columns[option] = maxcolumns
+                        point.append(value)
+                        maxcolumns += 1
+                    else:
+                        point[index] = value
+                points[i] = point
+            return list(points, title=title, addlinenumbers=0, **columns)
+
+        try:
+            filename.readlines
+        except:
+            # not a file-like object -> open it
+            if not filecache.has_key(filename):
+                filecache[filename] = readfile(open(filename), filename)
+            data.__init__(self, filecache[filename], **kwargs)
+        else:
+            data.__init__(self, readfile(filename, "user provided file-like object"), **kwargs)
 
 
-# 
 # class function:
 # 
 #     defaultstyle = style.line()
