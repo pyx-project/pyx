@@ -58,7 +58,7 @@ def _isnumber(arg):
 def _isinteger(arg):
     "arg is integer-like"
     try:
-        if type(arg + 0.0) == type(arg):
+        if type(arg + 0.0) is type(arg):
             return None
         return 1
     except: return None
@@ -188,7 +188,7 @@ class frac:
             self.denom = denom
 
     def __cmp__(self, other):
-        if other == None:
+        if other is None:
             return 1
         return cmp(self.enum * other.denom, other.enum * self.denom)
 
@@ -849,9 +849,9 @@ class textbox(_rectbox, attrlist.attrlist):
         self.ytext = 0
         xorigin = 0.5 * self.wd
         if self.halign is not None:
-            if self.halign == tex.halign.left:
+            if self.halign is tex.halign.left:
                 xorigin = 0
-            if self.halign == tex.halign.right:
+            if self.halign is tex.halign.right:
                 xorigin = self.wd
         _rectbox.__init__(self, 0, -self.dp, self.wd, self.ht, xorigin, self.shiftht)
         if self.direction is not None:
@@ -1474,7 +1474,8 @@ class graphxy(canvas.canvas):
                         worse = 0
                     else:
                         worse += 1
-            axis.settickrange(float(axis.ticks[0])*axis.divisor, float(axis.ticks[-1])*axis.divisor)
+            if len(axis.ticks):
+                axis.settickrange(float(axis.ticks[0])*axis.divisor, float(axis.ticks[-1])*axis.divisor)
 
         self.xmap = _linmap().setbasepoints(((0, self._xpos), (1, self._xpos + self._width)))
         self.ymap = _linmap().setbasepoints(((0, self._ypos), (1, self._ypos + self._height)))
@@ -1946,7 +1947,7 @@ class mark:
                        errorscale=0.5, errorbarattrs=(),
                        lineattrs=None):
         self.size_str = size
-        if mark == _nodefault:
+        if mark is _nodefault:
             self.mark = changemark.cross()
         else:
             self.mark = mark
@@ -2294,7 +2295,7 @@ changemark.diamondtwice  = _changemarkdiamondtwice
 class line(mark):
 
     def __init__(self, xmin=None, xmax=None, ymin=None, ymax=None, lineattrs=_nodefault):
-        if lineattrs == _nodefault:
+        if lineattrs is _nodefault:
             lineattrs = changelinestyle()
         mark.__init__(self, xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
                       markattrs=None, errorbarattrs=None, lineattrs=lineattrs)
