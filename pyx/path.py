@@ -109,16 +109,14 @@ class moveto(pathel):
     ' Set current point to (x, y) '
 
     def __init__(self, x, y):
-         self.x = x
-         self.y = y
+         self.x = unit.pt(x)
+         self.y = unit.pt(y)
 
     def bbox(self, canvas, currentpoint, currentsubpath):
-	x=canvas.unit.pt(self.x)
-	y=canvas.unit.pt(self.y)
-        return ((x, y), (x, y) , bbox())
+        return ((self.x, self.y), (self.x, self.y) , bbox())
 	 
     def write(self, canvas, file):
-        file.write("%f %f moveto" % (canvas.unit.pt(self.x), canvas.unit.pt(self.y) ) )
+        file.write("%f %f moveto" % (self.x, self.y) )
 
     def _bpath(self, currentpoint, currentsubpath):
         return ((self.x, self.y), (self.x, self.y) , None)
@@ -132,8 +130,8 @@ class rmoveto(pathel):
          self.dy = dy
         
     def bbox(self, canvas, currentpoint, currentsubpath):
-	dx=canvas.unit.pt(self.dx)
-	dy=canvas.unit.pt(self.dy)
+	dx=unit.pt(self.dx)
+	dy=unit.pt(self.dy)
         return ((dx+currentpoint[0], dy+currentpoint[1]), 
                 (dx+currentpoint[0], dy+currentpoint[1]),
 		bbox())
@@ -151,19 +149,17 @@ class lineto(pathel):
     ' Append straight line to (x, y) '
 
     def __init__(self, x, y):
-         self.x = x
-         self.y = y
+         self.x = unit.pt(x)
+         self.y = unit.pt(y)
 	 
     def bbox(self, canvas, currentpoint, currentsubpath):
-	x=canvas.unit.pt(self.x)
-	y=canvas.unit.pt(self.y)
-        return ((x, y),
+        return ((self.x, self.y),
                 currentsubpath or currentpoint,
-                bbox(min(currentpoint[0], x), min(currentpoint[1], y), 
-		     max(currentpoint[0], x), max(currentpoint[1], y)))
+                bbox(min(currentpoint[0], self.x), min(currentpoint[1], self.y), 
+		     max(currentpoint[0], self.x), max(currentpoint[1], self.y)))
 
     def write(self, canvas, file):
-        file.write("%f %f lineto" % (canvas.unit.pt(self.x), canvas.unit.pt(self.y) ) )
+        file.write("%f %f lineto" % (self.x, self.y) )
        
     def _bpath(self, currentpoint, currentsubpath):
         return ((self.x, self.y), 

@@ -119,9 +119,7 @@ bbpattern = re.compile( r"^%%BoundingBox:\s+([+-]?\d+)\s+([+-]?\d+)\s+([+-]?\d+)
 class epsfile:
 
     def __init__(self, filename, x = "0 t m", y = "0 t m",
-                 unit = unit.unit(),
                  clip = 1, translatebb = 1, showbb = 0):
-        self.unit        = unit
         self.x           = unit.pt(x)
         self.y           = unit.pt(y)
         self.filename    = filename
@@ -336,8 +334,7 @@ class canvas(CanvasCmds):
     def __init__(self, *args, **kwargs):
         
         self.PSCmds = []
-        self.unit   = kwargs.get("unit", unit.unit())
-	self.trafo  = trafo.transformation()
+ 	self.trafo  = trafo.transformation()
 
         for arg in args:
   	    if isinstance(arg, trafo.transformation):
@@ -373,14 +370,14 @@ class canvas(CanvasCmds):
         # of the new bounding box. But first we have to convert back to
         # points:
 
-	llx=self.unit.pt(llx)
-	lly=self.unit.pt(lly)
-	lrx=self.unit.pt(lrx)
-	lry=self.unit.pt(lry)
-	urx=self.unit.pt(urx)
-	ury=self.unit.pt(ury)
-        ulx=self.unit.pt(ulx)
-	uly=self.unit.pt(uly)
+	llx=unit.pt(llx)
+	lly=unit.pt(lly)
+	lrx=unit.pt(lrx)
+	lry=unit.pt(lry)
+	urx=unit.pt(urx)
+	ury=unit.pt(ury)
+        ulx=unit.pt(ulx)
+	uly=unit.pt(uly)
 
 	abbox= bbox(min(llx, lrx, urx, ulx)-1, min(lly, lry, ury, uly)-1,
                     max(llx, lrx, urx, ulx)+1, max(lly, lry, ury, uly)+1)
@@ -444,7 +441,7 @@ class canvas(CanvasCmds):
         file.write("%%BeginProlog\n") 
         file.write(PSProlog)
         file.write("\n%%EndProlog\n") 
-        file.write("%f setlinewidth\n" % self.unit.pt(linewidth.normal))
+        file.write("%f setlinewidth\n" % unit.pt(linewidth.normal))
         
         # here comes the actual content
         self.write(self, file)

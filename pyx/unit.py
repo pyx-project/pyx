@@ -24,6 +24,9 @@ from types import *
 import re
 
 unit_ps = 1.0
+scale = { 't':1, 'u':1, 'v':1, 'w':1 }
+default_type = "u"
+default_unit = "cm"
 
 unit_pattern = re.compile(r"""^\s*([+-]?\d*((\d\.?)|(\.?\d))\d*(E[+-]?\d+)?)
                               (\s+([t-w]))?
@@ -31,7 +34,7 @@ unit_pattern = re.compile(r"""^\s*([+-]?\d*((\d\.?)|(\.?\d))\d*(E[+-]?\d+)?)
                           re.IGNORECASE | re.VERBOSE)
 
 
-m = { 
+_m = { 
       'm' :   1,
       'cm':   0.01,
       'mm':   0.001,
@@ -40,51 +43,38 @@ m = {
       'tpt':  0.01*2.54/72.27,
     }
 
-class unit:
-    def __init__(self, scale=None, uscale=None, vscale=None, wscale=None):
-        self.scale = { 't':1, 'u':1, 'v':1, 'w':1 }
-        if scale: 
-            self.scale = scale
+def set(uscale=None, vscale=None, wscale=None):
         if uscale:
-            self.scale[uscale] = uscale
+            scale['u'] = uscale
         if vscale:
-            self.scale[vscale] = vscale
+            scale['v'] = vscale
         if wscale:
-            self.scale[wscale] = wscale
-
-    def copy(self):
-        return unit(scale=self.scale.copy())
-        
-    def convert_to(self, l, dest_unit="m"):
+            scale['w'] = wscale
+            
+def convert_to(l, dest_unit="m"):
 
 #        if type(l) is TupleType:
 #            return tuple(map(lambda x, self=self, dest_unit=dest_unit:self.convert_to(x,dest_unit), l))
 
-        if type(l) in (IntType, LongType, FloatType):
-            return  l*m[length.default_unit]*self.scale['u']/m[dest_unit]
-        elif not isinstance(l,length): l=length(l)                    # convert to length instance if necessary
+    if type(l) in (IntType, LongType, FloatType):
+        return l*_m[default_unit]*scale['u']/_m[dest_unit]
+    elif not isinstance(l,length): l=length(l)       # convert to length instance if necessary
 
-        return ( l.length['t']                 +
-                 l.length['u']*self.scale['u'] +
-                 l.length['v']*self.scale['v'] +
-                 l.length['w']*self.scale['w'] ) / m[dest_unit]
-
-        result = 0 
-
-#        for unit_type in self.scale.keys():
-#            result = result + l.length[unit_type]*self.scale[unit_type]
+    return ( l.length['t']                 +
+	     l.length['u']*scale['u'] +
+	     l.length['v']*scale['v'] +
+	     l.length['w']*scale['w'] ) / _m[dest_unit]
 
 
-        return result/m[dest_unit]
 
-    def m(self, l):
-        return self.convert_to(l, "m")
+def m(l):
+    return convert_to(l, "m")
         
-    def pt(self, l):
-        return self.convert_to(l, "pt")
+def pt(l):
+    return convert_to(l, "pt")
         
-    def tpt(self, l):
-        return self.convert_to(l, "tpt")
+def tpt(l):
+    return convert_to(l, "tpt")
 
 class length:
     """ 
@@ -98,8 +88,6 @@ class length:
 
     Internally all length are stored in units of m as a quadruple for the four unit_types
     """
-    
-    default_unit = "cm"
 
     def __init__(self, l=None, default_type="u", glength=None):
         self.length = { 't': 0 , 'u': 0, 'v': 0, 'v':0, 'w':0 }
@@ -114,12 +102,12 @@ class length:
                 else:
                     self.prefactor = float(unit_match.group(1))
                     self.unit_type = unit_match.group(7) or default_type
-                    self.unit_name = unit_match.group(9) or self.default_unit
+                    self.unit_name = unit_match.group(9) or default_unit
 
-                    self.length[self.unit_type]  = self.prefactor * m[self.unit_name]
+                    self.length[self.unit_type]  = self.prefactor * _m[self.unit_name]
 
             elif type(l) in (IntType, LongType, FloatType):
-                self.length['u'] = l * m[length.default_unit]
+                self.length['u'] = l * _m[default_unit]
             else:
                 assert 0, "cannot convert given argument to length type"
         if glength:
