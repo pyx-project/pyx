@@ -135,11 +135,11 @@ a:hover {
         font-style:italic;
 }
 
-.PY_KEYWORD{ color: #0000C0; font-weight: bold; }
-.PY_COMMENT{ color: #000080; }
-.PY_PARAMETER{ color: #C00000; }
-.PY_IDENTIFIER{ color: #C00000; font-weight: bold; }
-.PY_STRING{ color: #008000; }
+.PY_KEYWORD { color:#0000C0; font-weight:bold; }
+.PY_COMMENT { color:#000080; }
+.PY_PARAMETER { color:#C00000; }
+.PY_IDENTIFIER { color:#C00000; font-weight:bold; }
+.PY_STRING { color:#008000; }
 
 .example pre {
         margin-left:0px;
