@@ -103,6 +103,7 @@ rater.py
 <AW>                selbst ich habe noch nie einen Achsenrater auch nur umkonfiguriert. Man braucht
                     das defakto nicht. Umso uninteressanter ist der Name. Ich würde cube lassen, denn
                     es ist ein **3-rater für Zahlen. Wie sollte man den sonst nennen?
+<JL>                Ok.
           - distancerater -> distance
           - rater -> _rater
           - new class "linear" with predefined variables for linear partitions
@@ -144,6 +145,8 @@ axis.py
 
                     Hat denn die Benutzerbefragung hinsichtlich eines Verzeichnisses pyx/axis was
                     gebracht? Das ist hinsichtlich der Verkürzung der Namen viel wirksamer ...
+
+<JL>                Benutzer schmidg ist eher pro graph.axis (aus Gründen der Ordnung und Logik)
           - linaxis -> linear
           - logaxis -> logarithmic
           - linkaxis -> linked
@@ -175,6 +178,7 @@ style.py
     TODO: - rect -> rectangle
 <MS>               Wir habe im path, in box, etc. ueberall "rect".
 <AW>               Stimmt. Ist das denn gut, dass wir das da auch haben?
+<JL>               Ja, ist gut so, ich meine rect, wegen mir auch als alias auf rectangle.
 
 
 data.py
