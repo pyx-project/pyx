@@ -38,20 +38,26 @@ def testarcs(c):
     def testarc(c, x, y, phi1, phi2):
         p=path(arc(x,y, 0.5, phi1, phi2))
         bp=p.bpath()
+        np=p.normalized()
         c.draw(p, color.rgb.red)
         c.draw(bp, color.rgb.green, canvas.linestyle.dashed)
+        c.draw(np, color.rgb.blue, canvas.linestyle.dotted)
 
     def testarcn(c, x, y, phi1, phi2):
         p=path(arcn(x,y, 0.5, phi1, phi2))
         bp=p.bpath()
+        np=p.normalized()
         c.draw(p, color.rgb.red)
         c.draw(bp, color.rgb.green, canvas.linestyle.dashed)
+        c.draw(np, color.rgb.blue, canvas.linestyle.dotted)
 
     def testarct(c, r, x0, y0, dx1, dy1, dx2, dy2):
-        p=path(moveto(x0,y0), arct(x0+dx1,y0+dy1, x0+dx2, y0+dy2, r), rlineto(dx2-dx1, dy2-dy1))
+        p=path(moveto(x0,y0), arct(x0+dx1,y0+dy1, x0+dx2, y0+dy2, r), rlineto(dx2-dx1, dy2-dy1), closepath())
         bp=p.bpath()
+        np=p.normalized()
         c.draw(p, color.rgb.red, canvas.linewidth.Thick)
-        c.draw(bp, color.rgb.green, canvas.linewidth.THin)
+        c.draw(bp, color.rgb.green, canvas.linewidth.THin, canvas.filled(color.rgb.green))
+        c.draw(np, color.rgb.blue, canvas.linestyle.dotted)
 
     testarc(c, 1, 2, 0, 90)
     testarc(c, 2, 2, -90, 90)
