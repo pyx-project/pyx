@@ -425,8 +425,8 @@ class logaxis(_axis, _logmap):
         self.rater = rater
 
 
-class linkaxis:
-    """a axis linked to an already existing regular axis
+class _linkaxis:
+    """base for a axis linked to an already existing axis
     - almost all properties of the axis are "copied" from the
       axis this axis is linked to
     - usually, linked axis are used to create an axis to an
@@ -456,14 +456,24 @@ class linkaxis:
           (paritioning, rating, etc.) just a painter call
           is performed"""
 
-        # temporarily enable the linkaxis divisor
-        self.linkedaxis.usedivisor = 1
-        self.linkedaxis._setrange()
-
         if self.axiscanvas is None:
             if self.linkedaxis.axiscanvas is None:
                 raise RuntimeError("link axis finish method called before the finish method of the original axis")
             self.axiscanvas = self.painter.paint(axispos, self)
+
+
+class linkaxis(_linkaxis):
+    """a axis linked to an already existing regular axis
+    - adds divisor handling to _linkaxis"""
+
+    __implements__ = _Iaxis
+
+    def finish(self, axispos):
+        # temporarily enable the linkaxis divisor
+        self.linkedaxis.usedivisor = 1
+        self.linkedaxis._setrange()
+
+        _linkaxis.finish(self, axispos)
 
         # disable the linkaxis divisor again
         self.linkedaxis.usedivisor = 0
@@ -585,7 +595,7 @@ class splitaxis:
 
 class omitsubaxispainter: pass
 
-class linksplitaxis(linkaxis):
+class linksplitaxis(_linkaxis):
     """a splitaxis linked to an already existing splitaxis
     - inherits the access to a linked axis -- as before,
       basically only the painter is replaced
@@ -601,7 +611,7 @@ class linksplitaxis(linkaxis):
         - subaxispainter is a changeable painter to be used for linked
           subaxes; if omitsubaxispainter the createlinkaxis method of
           the subaxis are called without a painter parameter"""
-        linkaxis.__init__(self, linkedaxis, painter=painter)
+        _linkaxis.__init__(self, linkedaxis, painter=painter)
         self.subaxes = []
         for subaxis in linkedaxis.subaxes:
             painter = attr.selectattr(subaxispainter, len(self.subaxes), len(linkedaxis.subaxes))
@@ -796,7 +806,7 @@ class baraxis:
         return linkbaraxis(self, **args)
 
 
-class linkbaraxis(linkaxis):
+class linkbaraxis(_linkaxis):
     """a baraxis linked to an already existing baraxis
     - inherits the access to a linked axis -- as before,
       basically only the painter is replaced
@@ -809,7 +819,7 @@ class linkbaraxis(linkaxis):
         """initializes the instance
         - it gets a axis this linkaxis is linked to
         - it gets a painter to be used for this linked axis"""
-        linkaxis.__init__(self, linkedaxis, painter=painter)
+        _linkaxis.__init__(self, linkedaxis, painter=painter)
         if self.multisubaxis is not None:
             self.subaxis = [subaxis.createlinkaxis() for subaxis in self.linkedaxis.subaxis]
         elif self.subaxis is not None:
