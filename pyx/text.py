@@ -378,6 +378,7 @@ class Font:
             raise TFMError("cannot find %s.tfm" % self.name)
         self.tfmfile = TFMFile(self.tfmpath, debug)
         self.fontmapping = fontmap.get(name, None)
+        print "found mapping %s for font %s" % (self.fontmapping, self.name)
 
         if self.tfmfile.checksum != c:
             raise DVIError("check sums do not agree: %d vs. %d" %
@@ -1913,7 +1914,7 @@ class texrunner:
         "finish TeX/LaTeX and read the dvifile"
         self.execute(None, *self.texmessageend)
         if self.dvicopy:
-            os.system("dvicopy %s.dvi %s.dvicopy")
+            os.system("dvicopy %s.dvi %s.dvicopy" % (self.texfilename, self.texfilename))
             dvifilename = "%s.dvicopy" % self.texfilename
         else:
             dvifilename = "%s.dvi" % self.texfilename
