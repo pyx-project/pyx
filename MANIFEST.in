@@ -1,0 +1,4 @@
+include manual/manual.pdf
+include LICENSE
+prune test
+exclude pyx/axis.py pyx/text.py
