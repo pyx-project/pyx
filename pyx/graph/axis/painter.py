@@ -248,8 +248,8 @@ class pathaxispos(_axispos):
 
     def vtickdirection(self, v):
         t= self.normpath.tangent(self.normpath.arclentoparam(v * self.arclen))
-        tbegin = t.begin_pt()
-        tend = t.end_pt()
+        tbegin = t.atbegin_pt()
+        tend = t.atend_pt()
         dx = tend[0]-tbegin[0]
         dy = tend[1]-tbegin[1]
         norm = math.hypot(dx, dy)
@@ -617,17 +617,17 @@ class split(_title):
                 v = 0.5 * (subaxis1.vmax + subaxis2.vmin)
                 p = axispos.vbasepath(v, None).normpath()
                 breakline = p.tangent(0, length=self.breaklineslength)
-                widthline = p.tangent(0, length=self.breaklinesdist).transformed(trafomodule.rotate(self.breaklinesangle+90, *breakline.begin()))
+                widthline = p.tangent(0, length=self.breaklinesdist).transformed(trafomodule.rotate(self.breaklinesangle+90, *breakline.atbegin()))
                 # XXX Uiiii
-                tocenter = map(lambda x: 0.5*(x[0]-x[1]), zip(breakline.begin(), breakline.end()))
-                towidth = map(lambda x: 0.5*(x[0]-x[1]), zip(widthline.begin(), widthline.end()))
-                breakline = breakline.transformed(trafomodule.translate(*tocenter).rotated(self.breaklinesangle, *breakline.begin()))
+                tocenter = map(lambda x: 0.5*(x[0]-x[1]), zip(breakline.atbegin(), breakline.atend()))
+                towidth = map(lambda x: 0.5*(x[0]-x[1]), zip(widthline.atbegin(), widthline.atend()))
+                breakline = breakline.transformed(trafomodule.translate(*tocenter).rotated(self.breaklinesangle, *breakline.atbegin()))
                 breakline1 = breakline.transformed(trafomodule.translate(*towidth))
                 breakline2 = breakline.transformed(trafomodule.translate(-towidth[0], -towidth[1]))
-                ac.fill(path.path(path.moveto_pt(*breakline1.begin_pt()),
-                                  path.lineto_pt(*breakline1.end_pt()),
-                                  path.lineto_pt(*breakline2.end_pt()),
-                                  path.lineto_pt(*breakline2.begin_pt()),
+                ac.fill(path.path(path.moveto_pt(*breakline1.atbegin_pt()),
+                                  path.lineto_pt(*breakline1.atend_pt()),
+                                  path.lineto_pt(*breakline2.atend_pt()),
+                                  path.lineto_pt(*breakline2.atbegin_pt()),
                                   path.closepath()), [color.gray.white])
                 ac.stroke(breakline1, self.defaultbreaklinesattrs + self.breaklinesattrs)
                 ac.stroke(breakline2, self.defaultbreaklinesattrs + self.breaklinesattrs)
