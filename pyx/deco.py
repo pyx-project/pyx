@@ -558,3 +558,126 @@ class wriggle(deco, attr.attr):
         dp.path = wrigglepath # otherwise the bbox is wrong!
         dp.strokepath = wrigglepath
         return dp
+
+
+class curvecorners(deco, attr.attr):
+
+    """bends corners in a path
+
+    curvecorners replaces corners between two lines in a path by an optimized
+    curve that has zero curvature at the connections to the lines.
+    Corners between curves and lines are left as they are."""
+
+    def __init__(self, radius=None, softness=1):
+        self.radius = unit.topt(radius)
+        self.softness = softness
+
+    def controlpoints_pt(self, A, B, C, r1, r2, softness):
+        # Takes three endpoints of two straight lines:
+        # start A, connecting midpoint B, endpoint C
+        # and two radii r1 and r2:
+        # Returns the seven control points of the two bezier curves:
+        #  - start d1
+        #  - control points g1 and f1
+        #  - midpoint e
+        #  - control points f2 and g2
+        #  - endpoint d2
+
+        def normed(v):
+            n = math.sqrt(v[0] * v[0] + v[1] * v[1])
+            return v[0] / n, v[1] / n
+        # make direction vectors d1: from B to A
+        #                        d2: from B to C
+        d1 = normed([A[i] - B[i] for i in [0,1]])
+        d2 = normed([C[i] - B[i] for i in [0,1]])
+
+        # 0.3192 has turned out to be the maximum softness available
+        # for straight lines ;-)
+        f = 0.3192 * softness
+        g = (15.0 * f + math.sqrt(-15.0*f*f + 24.0*f))/12.0
+
+        # make the control points
+        f1 = [B[i] + f * r1 * d1[i] for i in [0,1]]
+        f2 = [B[i] + f * r2 * d2[i] for i in [0,1]]
+        g1 = [B[i] + g * r1 * d1[i] for i in [0,1]]
+        g2 = [B[i] + g * r2 * d2[i] for i in [0,1]]
+        d1 = [B[i] +     r1 * d1[i] for i in [0,1]]
+        d2 = [B[i] +     r2 * d2[i] for i in [0,1]]
+        e  = [0.5 * (f1[i] + f2[i]) for i in [0,1]]
+
+        return [d1, g1, f1, e, f2, g2, d2]
+
+    def decorate(self, dp):
+        # XXX: is this the correct way to select the basepath???!!!
+        # compare to wriggle()
+        if isinstance(dp.strokepath, path.normpath):
+            basepath = dp.strokepath
+        elif dp.strokepath is not None:
+            basepath = path.normpath(dp.strokepath)
+        elif isinstance(dp.path, path.normpath):
+            basepath = dp.path
+        else:
+            basepath = path.normpath(dp.path)
+
+        newpath = path.path()
+        for subpath in basepath.subpaths:
+            newpels = []
+            # it is not clear yet, where to moveto (e.g. with a closed subpath we
+            # will get the starting point when inserting the bended corner)
+            domoveto = subpath.begin_pt()
+            dolineto = None
+
+            # for a closed subpath we eventually have to bend the initial corner
+            if subpath.closed:
+                A = subpath.normpathels[-1].begin_pt()
+                previsline = isinstance(subpath.normpathels[-1], path.normline)
+            else:
+                A = subpath.begin_pt()
+                previsline = 0
+
+            # go through the list of normpathels in this subpath
+            for i in range(len(subpath.normpathels)):
+                # XXX: at the moment, we have to build up a path, not a normpath
+                # this should be changed later
+                thispel = subpath.normpathels[i]
+                prevpel = subpath.normpathels[i-1]
+                # from this pel: B,C, thisstraight
+                # from previus pel: A, prevstraight
+                B, C = thispel.begin_pt(), thispel.end_pt()
+                thisisline = isinstance(thispel, path.normline)
+                if thisisline and previsline:
+                    d1,g1,f1,e,f2,g2,d2 = self.controlpoints_pt(A,B,C, self.radius, self.radius, self.softness)
+                    if domoveto is not None:
+                        newpath.append(path.moveto_pt(d1[0],d1[1]))
+                    if dolineto is not None:
+                        newpath.append(path.lineto_pt(d1[0],d1[1]))
+                    newpath.append(path.curveto_pt(*(g1 + f1 + e)))
+                    newpath.append(path.curveto_pt(*(f2 + g2 + d2)))
+                    dolineto = C
+                else:
+                    if domoveto is not None:
+                        newpath.append(path.moveto_pt(*domoveto))
+                    if dolineto is not None:
+                        newpath.append(path.lineto_pt(*dolineto))
+                    if isinstance(thispel, path.normcurve):
+                        # convert the normcurve to a curveto
+                        newpath.append(path.curveto_pt(thispel.x1,thispel.y1,thispel.x2,thispel.y2,thispel.x3,thispel.y3))
+                        dolineto = None
+                    elif isinstance (thispel, path.normline):
+                        dolineto = C # just store something here which is not None
+
+                domoveto = None
+                previsline = thisisline
+                A = B
+
+            if dolineto is not None:
+                newpath.append(path.lineto_pt(*dolineto))
+            if subpath.closed:
+                newpath.append(path.closepath())
+
+        newpath = path.normpath(newpath)
+        dp.path = newpath
+        dp.strokepath = newpath
+        return dp
+
+

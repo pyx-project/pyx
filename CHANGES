@@ -89,6 +89,7 @@ TODO:
     - renamed _xxx -> xxx_pt
   - deco module:
     - wriggle decorator (TODO: documentation)
+    - curvecorners decorator (TODO: documentation)
   - canvas:
     - writeEPSfile deprecates writetofile
     - internally, write methods are renamed in outputPS
