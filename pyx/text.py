@@ -726,9 +726,35 @@ class _restoretrafo(base.PSOp):
 class dvifile:
 
     def __init__(self, filename, fontmap, debug=0):
+        """ opens the dvi file and reads the preamble """
         self.filename = filename
         self.fontmap = fontmap
         self.debug = debug
+
+        self.fonts = {}
+        self.activefont = None
+
+        # stack of fonts and fontscale currently used (used for VFs)
+        self.fontstack = []
+        self.stack = []
+
+        # pointer to currently active page
+        self.actpage = None
+
+        # currently active output: position, content and type 1 font
+        self.actoutstart = None
+        self.actoutstring = ""
+        self.actoutfont = None
+
+        # stack for self.file, self.fonts and self.stack, needed for VF inclusion
+        self.statestack = []
+
+        self.file = binfile(self.filename, "rb")
+
+        # currently read byte in file (for debugging output)
+        self.filepos = None
+
+        self._read_pre()
 
     # helper routines
 
@@ -1011,38 +1037,44 @@ class dvifile:
                 self.conv = self.mag/1000.0*self.trueconv/self.resolution*72
 
                 comment = file.read(file.readuchar())
-                return _READ_NOPAGE
+                return
             else:
                 raise DVIError
 
-    def _read_nopage(self):
-        file = self.file
+    def readpage(self):
+        """ reads a page from the dvi file
+
+        This routine reads a page from the dvi file which is
+        returned as a canvas. When there is no page left in the
+        dvifile, None is returned and the file is closed properly."""
+
+
         while 1:
-            self.filepos = file.tell()
-            cmd = file.readuchar()
+            self.filepos = self.file.tell()
+            cmd = self.file.readuchar()
             if cmd == _DVI_NOP:
                 pass
             elif cmd == _DVI_BOP:
                 self.flushout()
-                pagenos = [file.readuint32() for i in range(10)]
+                pagenos = [self.file.readuint32() for i in range(10)]
                 if pagenos[:3] != [ord("P"), ord("y"), ord("X")] or pagenos[4:] != [0, 0, 0, 0, 0, 0]:
                     raise DVIError("Page in dvi file is not a PyX page.")
                 if self.debug:
                     print "%d: beginning of page %i" % (self.filepos, pagenos[0])
-                file.readuint32()
-                return _READ_PAGE
+                self.file.readuint32()
+                break
             elif cmd == _DVI_POST:
-                return _READ_DONE # we skip the rest
+                self.file.close()
+                return None # nothing left
             else:
                 raise DVIError
 
-    def _read_page(self):
-        self.pages.append(canvas.canvas())
-        self.actpage = self.pages[-1]
+        actpage = canvas.canvas()
+        self.actpage = actpage # XXX should be removed ...
         self.actpage.markers = {}
         self.pos = [0, 0, 0, 0, 0, 0]
         self.actoutfont = None
-        
+
         # Since we do not know, which dvi pages the actual PS file contains later on,
         # we have to keep track of used char informations separately for each dvi page.
         # In order to do so, the already defined fonts have to be copied and their
@@ -1078,7 +1110,7 @@ class dvifile:
                 if self.debug:
                     print "%d: eop" % self.filepos
                     print
-                return _READ_NOPAGE
+                return actpage
             elif cmd == _DVI_PUSH:
                 self.stack.append(list(self.pos))
                 if self.debug:
@@ -1196,96 +1228,9 @@ class dvifile:
                                 file.readint32(),
                                 file.readint32(),
                                 file.read(file.readuchar()+file.readuchar()))
-            else: raise DVIError
-
-    def readpreamble(self):
-        """ opens the dvi file and reads the preamble """
-        # XXX shouldn't we put this into the constructor?
-        self.fonts = {}
-        self.activefont = None
-
-        # stack of fonts and fontscale currently used (used for VFs)
-        self.fontstack = []
-
-        self.stack = []
-
-        # here goes the result, for each page one list.
-        self.pages = []
-
-        # pointer to currently active page
-        self.actpage = None
-
-        # currently active output: position, content and type 1 font
-        self.actoutstart = None
-        self.actoutstring = ""
-        self.actoutfont = None
-
-        # stack for self.file, self.fonts and self.stack, needed for VF inclusion
-        self.statestack = []
-
-        self.file = binfile(self.filename, "rb")
-
-        # currently read byte in file (for debugging output)
-        self.filepos = None
-
-        if self._read_pre() != _READ_NOPAGE:
-            raise DVIError
-
-    def readpage(self):
-        # XXX shouldn't return this the next page (insted of appending to self.pages)
-        """ reads a page from the dvi file
-
-        This routine reads a page from the dvi file. The page
-        is appended to the list self.pages. Each page consists
-        of a list of PSCommands equivalent to the content of
-        the dvi file. Furthermore, the list of used fonts
-        can be extracted from the array self.fonts. """
-
-        if self._read_nopage() == _READ_PAGE:
-            state = self._read_page()
-        else:
-            raise DVIError
-
-    def readpostamble(self):
-        """ finish reading of the dvi file """
-        self.file.close()
-
-    def readfile(self):
-        """ reads and parses the hole dvi file """
-        self.readpreamble()
-        # XXX its unknown how often readpage should be called so we
-        # XXX do it differently ... :-(
-        # XXX 
-        # XXX do we realy need this method at all?
-        # XXX why can't we just return the page on readpage? Isn't this all we need in the end?
-
-        state = _READ_NOPAGE
-        while state != _READ_DONE:
-            if state == _READ_NOPAGE:
-                state = self._read_nopage()
-            elif state == _READ_PAGE:
-                state = self._read_page()
             else:
                 raise DVIError
-        self.file.close()
 
-    def marker(self, page, marker):
-        """return marker from page"""
-        return self.pages[page-1].markers[marker]
-
-    def prolog(self, page): 
-        """ return prolog corresponding to contents of dvi file """
-        # XXX: can nearly be remove (see write below)
-        return self.pages[page-1].prolog()
-
-    def write(self, file, page):
-        """write PostScript output for page into file"""
-        # XXX: remove this method by return canvas to TexRunner
-        # XXX: we should do this by removing readfile and changing readpage to return
-        # XXX: the canvas
-        if self.debug:
-            print "dvifile(\"%s\").write() for page %s called" % (self.filename, page)
-        self.pages[page-1].write(file)
 
 ##############################################################################
 # VF file handling
@@ -1652,17 +1597,6 @@ class _texmessagegraphicsload(_texmessageload):
         return _texmessageload.baselevels(self, s, brackets=brackets, **args)
 
 
-#class _texmessagepdfmapload(_texmessageload):
-#    """validates the inclusion of files as the graphics packages writes it
-#    - works like _texmessageload, but using "{" and "}" as delimiters
-#    - filename must end with .map and no further text is allowed"""
-#
-#    pattern = re.compile(r"{(?P<filename>[^}]+.map)}")
-#
-#    def baselevels(self, s, brackets="{}", **args):
-#        return _texmessageload.baselevels(self, s, brackets=brackets, **args)
-
-
 class _texmessageignore(_texmessageload):
     """validates any TeX/LaTeX response
     - this might be used, when the expression is ok, but no suitable texmessage
@@ -1895,45 +1829,55 @@ class _textbox(box._rect, base.PSCmd):
     - _textbox instances can be inserted into a canvas
     - the output is contained in a page of the dvifile available thru the texrunner"""
 
-    def __init__(self, x, y, left, right, height, depth, texrunner, dvinumber, page, *attrs):
+    def __init__(self, x, y, left, right, height, depth, texrunner, *attrs):
         self.texttrafo = trafo._translate(x, y)
         box._rect.__init__(self, x - left, y - depth,
                                  left + right, depth + height,
                                  abscenter = (left, depth))
         self.texrunner = texrunner
-        self.dvinumber = dvinumber
-        self.page = page
         self.attrs = attrs
+        self.dvicanvas = None
 
     def transform(self, *trafos):
         box._rect.transform(self, *trafos)
         for trafo in trafos:
             self.texttrafo = trafo * self.texttrafo
 
+    def setdvicanvas(self, dvicanvas):
+        self.dvicanvas = dvicanvas
+
+    def ensuredvicanvas(self):
+        if self.dvicanvas is None:
+            self.texrunner.finishdvi()
+            assert self.dvicanvas is not None, "finishdvi is broken"
+
     def marker(self, marker):
-        return self.texttrafo.apply(*self.texrunner.marker(self.dvinumber, self.page, marker))
+        self.ensuredvicanvas()
+        return self.texttrafo.apply(*self.dvicanvas.markers[marker])
 
     def prolog(self):
+        self.ensuredvicanvas()
         result = []
         for cmd in self.attrs:
             result.extend(cmd.prolog())
-        return result + self.texrunner.prolog(self.dvinumber, self.page)
+        return result + self.dvicanvas.prolog()
 
     def write(self, file):
+        self.ensuredvicanvas()
         canvas._gsave().write(file) # XXX: canvas?, constructor call needed?
         self.texttrafo.write(file)
         for attr in self.attrs:
             attr.write(file)
-        self.texrunner.write(file, self.dvinumber, self.page)
+        self.dvicanvas.write(file)
         canvas._grestore().write(file)
 
 
 
 class textbox(_textbox):
 
-    def __init__(self, x, y, left, right, height, depth, texrunner, dvinumber, page, *attrs):
+    def __init__(self, x, y, left, right, height, depth, texrunner, *attrs):
         _textbox.__init__(self, unit.topt(x), unit.topt(y), unit.topt(left), unit.topt(right),
-                          unit.topt(height), unit.topt(depth), texrunner, dvinumber, page, *attrs)
+                          unit.topt(height), unit.topt(depth), texrunner, *attrs)
 
 
 def _cleantmp(texrunner):
@@ -2056,9 +2000,9 @@ class texrunner:
         self.preamblemode = 1
         self.executeid = 0
         self.page = 0
-        self.dvinumber = 0
-        self.dvifiles = []
         self.preambles = []
+        self.acttextboxes = [] # when texipc-mode off
+        self.actdvifile = None # when texipc-mode on
         savetempdir = tempfile.tempdir
         tempfile.tempdir = os.curdir
         self.texfilename = os.path.basename(tempfile.mktemp())
@@ -2269,38 +2213,23 @@ class texrunner:
             raise TexResultError("TeX didn't respond as expected within the timeout period (%i seconds)." % self.waitfortex, self)
 
     def finishdvi(self):
-        "finish TeX/LaTeX and read the dvifile"
+        """finish TeX/LaTeX and read the dvifile
+        - this method ensures that all textboxes can access their
+          dvicanvas"""
         self.execute(None, *self.texmessageend)
         if self.dvicopy:
             os.system("dvicopy %(t)s.dvi %(t)s.dvicopy > %(t)s.dvicopyout 2> %(t)s.dvicopyerr" % {"t": self.texfilename})
             dvifilename = "%s.dvicopy" % self.texfilename
         else:
             dvifilename = "%s.dvi" % self.texfilename
-        if self.texipc:
-            self.dvifiles[-1].readpostamble()
-        else:
-            advifile = dvifile(dvifilename, self.fontmap, debug=self.dvidebug)
-            self.dvifiles.append(advifile)
-            self.dvifiles[-1].readfile()
-        self.dvinumber += 1
-
-    def marker(self, dvinumber, page, marker):
-        "return the marker position"
-        if not self.texipc and not self.texdone:
-            self.finishdvi()
-        return self.dvifiles[dvinumber].marker(page, marker)
-
-    def prolog(self, dvinumber, page):
-        "return the dvifile prolog"
-        if not self.texipc and not self.texdone:
-            self.finishdvi()
-        return self.dvifiles[dvinumber].prolog(page)
-
-    def write(self, file, dvinumber, page):
-        "write a page from the dvifile"
-        if not self.texipc and not self.texdone:
-            self.finishdvi()
-        return self.dvifiles[dvinumber].write(file, page)
+        if not self.texipc:
+            self.dvifile = dvifile(dvifilename, self.fontmap, debug=self.dvidebug)
+            for box in self.acttextboxes:
+                box.setdvicanvas(self.dvifile.readpage())
+        if self.dvifile.readpage() is not None:
+            raise RuntimeError("end of dvifile expected")
+        self.dvifile = None
+        self.acttextboxes = []
 
     def reset(self, reinit=0):
         "resets the tex runner to its initial state (upto its record to old dvi file(s))"
@@ -2461,17 +2390,18 @@ class texrunner:
         self.execute(expr, *helper.getattrs(args, texmessage, default=self.texmessagedefaultrun))
         if self.texipc:
             if first:
-                self.dvifiles.append(dvifile("%s.dvi" % self.texfilename, self.fontmap, debug=self.dvidebug))
-                self.dvifiles[-1].readpreamble()
-            self.dvifiles[-1].readpage()
+                self.dvifile = dvifile("%s.dvi" % self.texfilename, self.fontmap, debug=self.dvidebug)
         match = self.PyXBoxPattern.search(self.texmessage)
         if not match or int(match.group("page")) != self.page:
             raise TexResultError("box extents not found", self)
         left, right, height, depth = map(lambda x: float(x) * 72.0 / 72.27, match.group("lt", "rt", "ht", "dp"))
-        box = _textbox(x, y, left, right, height, depth, self, self.dvinumber, self.page,
+        box = _textbox(x, y, left, right, height, depth, self,
                        *helper.getattrs(args, style.fillstyle, default=[]))
         for t in helper.getattrs(args, trafo._trafo, default=()):
             box.reltransform(t)
+        if self.texipc:
+            box.setdvicanvas(self.dvifile.readpage())
+        self.acttextboxes.append(box)
         return box
 
     def text(self, x, y, expr, *args):

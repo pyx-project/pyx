@@ -57,6 +57,7 @@ TODO:
     - dvicopy support not needed anymore (it is still available, but obsolete and
       removed from the documentation)
     - do not include too many glyphs in the eps file
+    - dvifile class returns standard pyx canvas instances on readpage
   - graph module:
     - removed manualpart and partitioners mix keyword (documentation already updated)
     - results of the splitting at "=" in graph.function were not stripped
@@ -91,8 +92,6 @@ TODO:
     - path.split takes several points (as *args) while lentopar takes a list of points
     - path.tangent is missing in the documentation
   - text module:
-    - dvifile class:
-       - if possible remove readfile, write and prolog methods and use readpage instead
   - color module:
      - should colors and palettes exclude each other?
   - documentation!!!
