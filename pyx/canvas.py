@@ -169,7 +169,7 @@ class canvas(unit):
         return subcanvas
         
     def tex(self, **kwargs):
-        texcanvas = tex(self, **kwargs)
+        texcanvas = tex(**kwargs)
         self._translate(0,0)
         self._PSAddCmd(texcanvas)
         return texcanvas

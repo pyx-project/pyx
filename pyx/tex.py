@@ -60,14 +60,14 @@ class TexRightParenthesisError(TexException):
 
 class tex:
 
-    def __init__(self, canvas, type = "TeX", latexstyle = "10pt", latexclass = "article", latexclassopt = "", texinit = "", TexInitIgnoreMsgLevel = 1):
+    #def __init__(self, canvas, type = "TeX", latexstyle = "10pt", latexclass = "article", latexclassopt = "", texinit = "", TexInitIgnoreMsgLevel = 1):
+    def __init__(self, type = "TeX", latexstyle = "10pt", latexclass = "article", latexclassopt = "", texinit = "", TexInitIgnoreMsgLevel = 1):
         assert type == TeX or type == LaTeX, "invalid type"
         if type == TeX:
             # TODO 5: error handling lts-file not found
             # TODO 3: other ways creating font sizes?
             texinit = open("lts/" + latexstyle + ".lts", "r").read() + texinit
         self.type = type
-        self.canvas = canvas
         self.latexclass = latexclass
         self.latexclassopt = latexclassopt
         self.TexAddCmd(texinit, TexInitIgnoreMsgLevel)
@@ -140,7 +140,8 @@ class tex:
 
         # TODO 3: color support
 
-        CmdBegin = "{\\vbox to0pt{\\kern" + str(self.canvas.Height - y) + "truecm\\hbox{\\kern" + str(x) + "truecm\\ht\\localbox0pt"
+        #CmdBegin = "{\\vbox to0pt{\\kern" + str(self.canvas.Height - y) + "truecm\\hbox{\\kern" + str(x) + "truecm\\ht\\localbox0pt"
+        CmdBegin = "{\\vbox to0pt{\\kern" + str(-y) + "truecm\\hbox{\\kern" + str(x) + "truecm\\ht\\localbox0pt"
         CmdEnd = "}\\vss}\\nointerlineskip}"
 
         if angle != None and angle != 0:
@@ -193,7 +194,7 @@ class tex:
         Cmd = "\\immediate\\write16{" + MarkerBegin + "}\n" + Cmd + "\\immediate\\write16{" + MarkerEnd + "}\n"
         self.TexCmds = self.TexCmds + [ TexCmdSaveStruc(Cmd, MarkerBegin, MarkerEnd, Stack, IgnoreMsgLevel), ]
 
-    def TexRun(self):
+    def __str__(self):
 
         'run LaTeX&dvips for TexCmds, add postscript to canvas, report errors'
     
@@ -204,16 +205,18 @@ class tex:
 
         import os, string
 
-        file = open(self.canvas.BaseFilename + ".tex", "w")
+        file = open("basefilename.tex", "w")
 
         file.write("\\nonstopmode\n")
         if self.type == LaTeX:
             file.write("\\documentclass[" + self.latexclassopt + "]{" + self.latexclass + "}\n")
-        file.write("\\hsize" + str(self.canvas.Width) + "truecm\n\\vsize" + str(self.canvas.Height) + "truecm\n\\hoffset-1truein\n\\voffset-1truein\n")
+        #file.write("\\hsize" + str(self.canvas.Width) + "truecm\n\\vsize" + str(self.canvas.Height) + "truecm\n\\hoffset-1truein\n\\voffset-1truein\n")
+        file.write("\\hsize0truecm\n\\vsize0truecm\n\\hoffset-1truein\n\\voffset-1truein\n")
 
         file.write(self.TexCmds[0].Cmd)
 
-        file.write("\\newwrite\\sizefile\n\\newbox\\localbox\n\\newbox\\pagebox\n\\immediate\\openout\\sizefile=" + self.canvas.BaseFilename + ".size\n")
+        #file.write("\\newwrite\\sizefile\n\\newbox\\localbox\n\\newbox\\pagebox\n\\immediate\\openout\\sizefile=" + self.canvas.BaseFilename + ".size\n")
+        file.write("\\newwrite\\sizefile\n\\newbox\\localbox\n\\newbox\\pagebox\n\\immediate\\openout\\sizefile=basefilename.size\n")
         if self.type == LaTeX:
             file.write("\\begin{document}\n")
         file.write("\\setbox\\pagebox=\\vbox{%\n")
@@ -229,12 +232,15 @@ class tex:
             file.write("\\end{document}\n")
         file.close()
 
-        if os.system(string.lower(self.type) +" " + self.canvas.BaseFilename + " > " + self.canvas.BaseFilename + ".stdout 2> " + self.canvas.BaseFilename + ".stderr"):
-            print "The " + self.type + " exit code was non-zero. This may happen due to mistakes within your\nLaTeX commands as listed below. Otherwise you have to check your local\nenvironment and the files \"" + self.canvas.BaseFilename + ".tex\" and \"" + self.canvas.BaseFilename + ".log\" manually."
+        #if os.system(string.lower(self.type) +" " + self.canvas.BaseFilename + " > " + self.canvas.BaseFilename + ".stdout 2> " + self.canvas.BaseFilename + ".stderr"):
+        if os.system(string.lower(self.type) +" basefilename > basefilename.stdout 2> basefilename.stderr"):
+            #print "The " + self.type + " exit code was non-zero. This may happen due to mistakes within your\nLaTeX commands as listed below. Otherwise you have to check your local\nenvironment and the files \"" + self.canvas.BaseFilename + ".tex\" and \"" + self.canvas.BaseFilename + ".log\" manually."
+            print "The " + self.type + " exit code was non-zero. This may happen due to mistakes within your\nLaTeX commands as listed below. Otherwise you have to check your local\nenvironment and the files \"basefilename.tex\" and \"basefilename.log\" manually."
 
         try:
             # check output
-            file = open(self.canvas.BaseFilename + ".stdout", "r")
+            #file = open(self.canvas.BaseFilename + ".stdout", "r")
+            file = open("basefilename.stdout", "r")
             for Cmd in self.TexCmds:
 
                 # read markers and identify the message
@@ -296,19 +302,23 @@ class tex:
             file.close()
 
         except IOError:
-            print "Error reading the " + self.type + " output. Check your local environment and the files\n\"" + self.canvas.BaseFilename + ".tex\" and \"" + self.canvas.BaseFilename + ".log\"."
+            #print "Error reading the " + self.type + " output. Check your local environment and the files\n\"" + self.canvas.BaseFilename + ".tex\" and \"" + self.canvas.BaseFilename + ".log\"."
+            print "Error reading the " + self.type + " output. Check your local environment and the files\n\"" + self.canvas.BaseFilename + ".tex\" and \"basefilename.log\"."
             raise
         
         # TODO 7: dvips error handling
         #         interface for modification of the dvips command line
 
-        if os.system("dvips -P pyx -T" + str(self.canvas.Width) + "cm," + str(self.canvas.Height) + "cm -o " + self.canvas.BaseFilename + ".tex.eps " + self.canvas.BaseFilename + " > /dev/null 2>&1"):
+        #if os.system("dvips -P pyx -T" + str(self.canvas.Width) + "cm," + str(self.canvas.Height) + "cm -o " + self.canvas.BaseFilename + ".tex.eps " + self.canvas.BaseFilename + " > /dev/null 2>&1"):
+        if os.system("dvips -P pyx -T0cm,0cm -o basefilename.eps basefilename > /dev/null 2>&1"):
             assert 0, "dvips exit code non-zero"
         
         # TODO 8: don't write save/restore directly
-        self.canvas.PSAddCmd("save")
-        self.canvas.PSInsertEPS(0, 0, self.canvas.BaseFilename + ".tex.eps")
-        self.canvas.PSAddCmd("restore")
+        #self.canvas.PSAddCmd("save")
+        #self.canvas.PSInsertEPS(0, 0, self.canvas.BaseFilename + ".tex.eps")
+        #self.canvas.PSAddCmd("restore")
+        #return str(epsfile(self.canvas.BaseFilename + ".tex.eps"))
+        return str(epsfile("basefilename.eps"))
 
     TexResults = None
 
