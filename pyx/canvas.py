@@ -29,7 +29,7 @@ A canvas holds a collection of all elements that should be displayed together
 with their attributes.
 """
 
-import sys, cStringIO, math, time
+import sys, cStringIO, time
 import attr, base,  bbox, deco, unit, prolog, style, trafo, version
 
 # temporary for pdf fonts:
