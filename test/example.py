@@ -73,7 +73,7 @@ p=path( moveto(10,12),
          moveto(12,10), 
          lineto(12,14))
 c.set(canvas.linestyle.dashdotted, rgb(1,0,0))
-t.text("10 cm", 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", valign.bottom("2 cm"), grey(0.5))
+t.text("10 cm", 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", valign.bottom("2 cm"), gray(0.5))
 c.draw(p)
 
 p=path(moveto(5,15), arc(5,15, 1, 0, 45), closepath())
@@ -84,7 +84,7 @@ c.draw(p, canvas.linestyle.dashed)
 
    
 for angle in range(20):
-    s=c.insert(canvas.canvas(translate(10,10)*rotate(angle))).draw(p, canvas.linestyle.dashed, canvas.linewidth(0.01*angle), grey((20-angle)/20.0))
+    s=c.insert(canvas.canvas(translate(10,10)*rotate(angle))).draw(p, canvas.linestyle.dashed, canvas.linewidth(0.01*angle), gray((20-angle)/20.0))
 
 c.set(canvas.linestyle.solid)
 g=c.insert(GraphXY(t, 10, 15, width=10, x=LogAxis()))

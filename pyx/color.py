@@ -29,25 +29,25 @@ class color(base.PathStyle):
     pass
 
 
-class grey(color):
-    
-    """grey tones"""
-    
-    def __init__(self, level):
-        if level<0 or level>1: raise ValueError
-        self.color = {"level": level}
+class gray(color):
+
+    """gray tones"""
+
+    def __init__(self, gray):
+        if gray<0 or gray>1: raise ValueError
+        self.color = {"gray": gray}
 
     def write(self, file):
-        file.write("%(level)f setgray\n" % self.color)
+        file.write("%(gray)f setgray\n" % self.color)
 
-grey.black = grey(0.0)
-grey.white = grey(1.0)
-    
+gray.black = gray(0.0)
+gray.white = gray(1.0)
+
 
 class rgb(color):
 
     """rgb colors"""
-    
+
     def __init__(self, r=0.0, g=0.0, b=0.0):
         if r<0 or r>1 or g<0 or g>1 or b<0 or b>1: raise ValueError
         self.color = {"r": r, "g": g, "b": b}
@@ -58,24 +58,24 @@ class rgb(color):
 rgb.red   = rgb(1,0,0)
 rgb.green = rgb(0,1,0)
 rgb.blue  = rgb(0,0,1)
-       
+
 
 class hsb(color):
 
     """hsb colors"""
-    
+
     def __init__(self, h=0.0, s=0.0, b=0.0):
         if h<0 or h>1 or s<0 or s>1 or b<0 or b>1: raise ValueError
         self.color = {"h": h, "s": s, "b": b}
 
     def write(self, file):
         file.write("%(h)f %(s)f %(b)f sethsbcolor\n" % self.color)
-        
+
 
 class cmyk(color):
 
     """cmyk colors"""
-    
+
     def __init__(self, c=0.0, m=0.0, y=0.0, k=0.0):
         if c<0 or c>1 or m<0 or m>1 or y<0 or y>1 or k<0 or k>1: raise ValueError
         self.color = {"c": c, "m": m, "y": y, "k": k}

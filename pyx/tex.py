@@ -601,7 +601,7 @@ class _BoxCmd(_TexCmd):
             if CmdPut.direction != direction.horizontal:
                 file.write("\\special{ps: gsave currentpoint currentpoint translate " +
                            str(CmdPut.direction) + " neg rotate neg exch neg exch translate }")
-            if CmdPut.color != color.grey.black:
+            if CmdPut.color != color.gray.black:
                 file.write("\\special{ps: ")
                 CmdPut.color.write(file)
                 file.write(" }")
@@ -615,9 +615,9 @@ class _BoxCmd(_TexCmd):
                 raise TexHalignError
             file.write("\\copy\\localbox")
 
-            if CmdPut.color != color.grey.black:
+            if CmdPut.color != color.gray.black:
                 file.write("\\special{ps: ")
-                color.grey.black.write(file)
+                color.gray.black.write(file)
                 file.write(" }")
             if CmdPut.direction != direction.horizontal:
                 file.write("\\special{ps: currentpoint grestore moveto }")
@@ -893,7 +893,7 @@ by yourself.\n""")
         self.attrcheck(attrs, (style, fontsize, halign, valign, direction, color.color), (msghandler,))
         myhalign = self.attrget(attrs, halign, halign.left)
         mydirection = self.attrget(attrs, direction, direction.horizontal)
-        mycolor = self.attrget(attrs, color.color, color.grey.black)
+        mycolor = self.attrget(attrs, color.color, color.gray.black)
         self._insertcmd(Cmd, *attrs).Put(x * 72.27 / 72.0, y * 72.27 / 72.0, myhalign, mydirection, mycolor)
 
     def text(self, x, y, Cmd, *attrs):

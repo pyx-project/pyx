@@ -1,33 +1,29 @@
 \chapter{Module color}
 \label{color}
 \section{Color models}
-PostScript provides different color models like grey colors, rgb
-colors, hsb colors, and cmyk colors. They are available to \PyX{} by
-different color classes, which just pass the colors down to the
-PostScript level. This implies, that there are no conversion routines
-between different color models available. However, some color model
-conversion routines are included in python's standard library in the
-module \texttt{colorsym}. Furthermore also the comparision of colors
-within a color model is not supported, but might be added in future
-versions at least for checking color identity and for ordering grey
-colors.
+PostScript provides different color models. They are available to
+\PyX{} by different color classes, which just pass the colors down to
+the PostScript level. This implies, that there are no conversion
+routines between different color models available. However, some color
+model conversion routines are included in python's standard library in
+the module \texttt{colorsym}. Furthermore also the comparision of
+colors within a color model is not supported, but might be added in
+future versions at least for checking color identity and for ordering
+gray colors.
 
-\section{Color classes}
 There is a class for each of the supported color models, namely
-\verb|grey|, \verb|rgb|, \verb|cmyk|, and \verb|hsb|.
-
-\section{Color instances}
-Like all attributes, colors are instances of their specific classes.
-The constructors of the color classes take the 
+\verb|gray|, \verb|rgb|, \verb|cmyk|, and \verb|hsb|. The constructors
+take variables appropriate to the color model. Additionally, a list of
+named colors is given in appendix~\ref{colorname}.
 
 \section{Example}
 \begin{quote}
 \begin{verbatim}
-import pyx
+from pyx import *
 
 c = canvas.canvas()
 
-c.fill(path.rect(0, 0, 7, 3), color.grey(0.8))
+c.fill(path.rect(0, 0, 7, 3), color.gray(0.8))
 c.fill(path.rect(1, 1, 1, 1), color.rgb.red)
 c.fill(path.rect(3, 1, 1, 1), color.rgb.green)
 c.fill(path.rect(5, 1, 1, 1), color.rgb.blue)
