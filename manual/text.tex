@@ -87,13 +87,23 @@ fill styles (like colors). The \verb|text| method returns a box (see
 chapter~\ref{module:box}), which can be inserted into a canvas
 instance by its \verb|insert| method to get the text.
 
+The box returned by the \verb|text| method has an additional method
+\verb|marker|. You can place markers in the \TeX/\LaTeX{} expression
+by the command \verb|\PyXMarker{<string>}|. When calling the
+\verb|marker| method with the same \verb|<string>| you can get back the
+position of the marker later on. Only digits, letters and the \verb|@|
+symbol are allowed within the string. Strings containing the \verb|@|
+symbol are not considered for end users like it is done for commands
+including the \verb|@| symbol in \LaTeX{} as well.
+
 Note that for the generation of the PostScript code the \TeX/\LaTeX{}
-instance must be terminated. However, a \TeX/\LaTeX{} instance is
-started again when the \verb|text| method is called again. A call of
-the \verb|preamble| method will still fail, but you can explicitly
-call the \verb|reset| method to allow for new \verb|preamble| settings
-as well. The \verb|reset| method takes a boolean parameter
-\verb|reinit| which can be set to run the old preamble settings.
+instance must be terminated except when \verb|texipc| is turned on.
+However, a \TeX/\LaTeX{} instance is started again when the
+\verb|text| method is called again. A call of the \verb|preamble|
+method will still fail, but you can explicitly call the \verb|reset|
+method to allow for new \verb|preamble| settings as well. The
+\verb|reset| method takes a boolean parameter \verb|reinit| which can
+be set to run the old preamble settings.
 
 \section{\TeX/\LaTeX{} settings}
 

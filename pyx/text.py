@@ -22,7 +22,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import exceptions, glob, os, threading, Queue, traceback, re, struct, tempfile, sys, atexit, time
+import exceptions, glob, os, threading, Queue, traceback, re, struct, tempfile, sys, atexit, time, string
 import config, helper, unit, bbox, box, base, canvas, color, trafo, path, prolog, pykpathsea, version
 
 class fix_word:
@@ -866,6 +866,15 @@ class DVIFile:
             if argdict.has_key("clip"):
                epskwargs["clip"] = int(argdict["clip"])
             self.actpage.insert(epsfile.epsfile(x, y, **epskwargs))
+        elif command=="marker":
+            if len(args) != 1:
+                raise RuntimeError("marker contains spaces")
+            for c in args[0]:
+                if c not in string.digits + string.letters + "@":
+                    raise RuntimeError("marker contains invalid characters")
+            if self.actpage.markers.has_key(args[0]):
+                raise RuntimeError("marker name occurred several times")
+            self.actpage.markers[args[0]] = x, y
         else:
             raise RuntimeError("unknown PyX special '%s', aborting" % command)
 
@@ -921,6 +930,7 @@ class DVIFile:
         self.pos = [0, 0, 0, 0, 0, 0]
         self.pages.append(canvas.canvas())
         self.actpage = self.pages[-1]
+        self.actpage.markers = {}
         file = self.file
         while 1:
             self.filepos = file.tell()
@@ -1124,6 +1134,10 @@ class DVIFile:
 
         if state == _READ_DONE:
             self.file.close()
+
+    def marker(self, page, marker):
+        """return marker from page"""
+        return self.pages[page-1].markers[marker]
 
     def prolog(self, page): # TODO: AW inserted this page argument -> should return the prolog needed for that page only!
         """ return prolog corresponding to contents of dvi file """
@@ -1809,6 +1823,9 @@ class _textbox(box._rect, base.PSCmd):
         for trafo in trafos:
             self.texttrafo = trafo * self.texttrafo
 
+    def marker(self, marker):
+        return self.texttrafo.apply(*self.texrunner.marker(self.dvinumber, self.page, marker))
+
     def prolog(self):
         result = []
         for cmd in self.styles:
@@ -2051,7 +2068,8 @@ class texrunner:
                          "\\setbox\\PyXBoxHAligned=\\hbox{\\kern-\\PyXDimenHAlignLT\\box\\PyXBox}%\n" # align horizontally
                          "\\ht\\PyXBoxHAligned0pt%\n" # baseline alignment (hight to zero)
                          "{\\count0=80\\count1=121\\count2=88\\count3=#2\\shipout\\box\\PyXBoxHAligned}}%\n" # shipout PyXBox to Page 80.121.88.<page number>
-                         "\\def\\PyXInput#1{\\immediate\\write16{PyXInputMarker:executeid=#1:}}", # write PyXInputMarker to stdout
+                         "\\def\\PyXInput#1{\\immediate\\write16{PyXInputMarker:executeid=#1:}}%\n" # write PyXInputMarker to stdout
+                         "\\def\\PyXMarker#1{\\special{PyX:marker #1}}%\n", # write PyXMarker special into the dvi-file
                          *self.texmessagestart)
             os.remove("%s.tex" % self.texfilename)
             if self.mode == "tex":
@@ -2177,6 +2195,12 @@ class texrunner:
         self.dvifiles[-1].readfile()
         self.dvinumber += 1
 
+    def marker(self, dvinumber, page, marker):
+        "return the marker position"
+        if not self.texipc and not self.texdone:
+            self.finishdvi()
+        return self.dvifiles[dvinumber].marker(page, marker)
+
     def prolog(self, dvinumber, page):
         "return the dvifile prolog"
         if not self.texipc and not self.texdone:
@@ -2191,14 +2215,19 @@ class texrunner:
 
     def reset(self, reinit=0):
         "resets the tex runner to its initial state (upto its record to old dvi file(s))"
-        if self.texruns and not self.texdone:
+        if self.texruns:
             self.finishdvi()
+        if self.texdebug is not None:
+            self.texdebug.write("%s\n%% preparing restart of %s\n" % ("%"*80, self.mode))
         self.executeid = 0
         self.page = 0
         self.texdone = 0
         if reinit:
+            self.preamblemode = 1
             for expr, args in self.preambles:
                 self.execute(expr, *args)
+            if self.mode == "latex":
+                self.execute("\\begin{document}", *self.texmessagebegindoc)
             self.preamblemode = 0
         else:
             self.preambles = []
@@ -2326,9 +2355,6 @@ class texrunner:
         if expr is None:
             raise ValueError("None expression is invalid")
         if self.texdone:
-            if self.texdebug is not None:
-                self.texdebug.write("%s\n" % reduce(lambda x, y: "%" + x, range(80), ""))
-                self.texdebug.write("%% a new instance of %s is started\n" % self.mode)
             self.reset(reinit=1)
         if self.preamblemode:
             if self.mode == "latex":

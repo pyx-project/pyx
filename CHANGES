@@ -14,6 +14,7 @@ PyX
       (waitfortex is increased to 60 seconds now)
     - support of TeX extention --ipc for reading dvi results while TeX keeps running
     - configurable font mapping files (via pyxrc or parameter of the texrunner constructor)
+    - markers to get access to positions within TeX expressions
     - fix: allow for e-tex in texmessage.start (reported by Andrea Riciputi)
     - fix: print warning at syntax errors in font mapping file and continue (cf. bug #795271)
   - graph module:
