@@ -1,6 +1,17 @@
 PyX
 
-0.3 (????/??/??):
+0.4 (????/??/??):
+  TODOs:
+  - graph module:
+      - common bboxes for different graphs
+      - automatic datafile key title
+      - exceptions in drawsymbol & friends...
+      - separate texter out of the axispainter
+      - 3d graphs
+  - canvas module:
+      default patterns
+
+0.3 (2003/03/31)
   - examples
     - new easy to use example generation (will hopefully lead to nice examples)
   - unit box:
@@ -25,12 +36,6 @@ PyX
     - remove the support for variables given as keyword arguments in data constructor
     - use context instead of extern for extern variables and functions
     - graph keys; titles in data/function/etc.
-    - deferred TODOs:
-      - common bboxes for different graphs
-      - automatic datafile key title
-      - exceptions in drawsymbol & friends...
-      - separate texter out of the axispainter
-      - 3d graphs
   - unit module:
     - new classes for visual and width lengths, aliases for user length (u_pt = pt)
     - all length classes have now by default a quantifier 1 (instead of 0), such that,
@@ -62,8 +67,6 @@ PyX
     - writetofile does not return self anymore
     - arrow template now uses intersection with circle to get size right
       (as per a suggestion by Michael Schindler)
-    - defered TODOs:
-      default patterns
   - mathtree module:
     - added abs function
     - changed the handling of extern functions and all variables
