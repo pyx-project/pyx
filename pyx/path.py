@@ -1797,7 +1797,7 @@ class normpath(path):
             p = self.reversed().path
             t = -t
 
-        context=_pathcontext()
+        context = _pathcontext()
 
         for pel in p:
             if not isinstance(pel, moveto_pt):
@@ -1805,7 +1805,6 @@ class normpath(path):
                     t -= 1
                 else:
                     return pel._at(context, t)
-
             pel._updatecontext(context)
 
         return None
