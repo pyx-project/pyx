@@ -12,4 +12,4 @@ c.text(0, 0, r"This is \LaTeX.")
 plaintex = text.texrunner() # plain TeX instance
 c.insert(plaintex.text(0, -1, r"This is plain \TeX."))
 
-c.writetofile("latex")
+c.writeEPSfile("latex")

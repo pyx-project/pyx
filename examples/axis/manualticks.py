@@ -7,12 +7,11 @@ from pyx import *
 
 p = path.curve(0, 0, 3, 0, 1, 4, 4, 4)
 
-myticks = [graph.tick(math.pi, label="\pi", labelattrs=[text.mathmode]),
-           graph.tick(2*math.pi, label="2\pi", labelattrs=[text.mathmode])]
+myticks = [graph.parter.tick(math.pi, label="\pi", labelattrs=[text.mathmode]),
+           graph.parter.tick(2*math.pi, label="2\pi", labelattrs=[text.mathmode])]
 
 c = canvas.canvas()
-c.insert(graph.pathaxis(p,
-                        graph.linaxis(min=0, max=10)))
-c.insert(graph.pathaxis(p.transformed(trafo.translate(4, 0)),
-                        graph.linaxis(min=0, max=10, manualticks=myticks)))
-c.writetofile("manualticks")
+c.insert(graph.axis.pathaxis(p, graph.axis.linaxis(min=0, max=10)))
+c.insert(graph.axis.pathaxis(p.transformed(trafo.translate(4, 0)),
+                             graph.axis.linaxis(min=0, max=10, manualticks=myticks)))
+c.writeEPSfile("manualticks")

@@ -81,7 +81,7 @@ class decoratedpath(base.PSCmd):
         result.extend(self.subcanvas.prolog())
         return result
 
-    def write(self, file):
+    def outputPS(self, file):
         # draw (stroke and/or fill) the decoratedpath on the canvas
         # while trying to produce an efficient output, e.g., by
         # not writing one path two times
@@ -89,70 +89,70 @@ class decoratedpath(base.PSCmd):
         # small helper
         def _writestyles(styles, file=file):
             for style in styles:
-                style.write(file)
+                style.outputPS(file)
 
         # apply global styles
         if self.styles:
-            canvas._gsave().write(file)
+            canvas._gsave().outputPS(file)
             _writestyles(self.styles)
 
         if self.fillpath is not None:
-            canvas._newpath().write(file)
-            self.fillpath.write(file)
+            canvas._newpath().outputPS(file)
+            self.fillpath.outputPS(file)
 
             if self.strokepath==self.fillpath:
                 # do efficient stroking + filling
-                canvas._gsave().write(file)
+                canvas._gsave().outputPS(file)
 
                 if self.fillstyles:
                     _writestyles(self.fillstyles)
 
-                canvas._fill().write(file)
-                canvas._grestore().write(file)
+                canvas._fill().outputPS(file)
+                canvas._grestore().outputPS(file)
 
                 if self.strokestyles:
-                    canvas._gsave().write(file)
+                    canvas._gsave().outputPS(file)
                     _writestyles(self.strokestyles)
 
-                canvas._stroke().write(file)
+                canvas._stroke().outputPS(file)
 
                 if self.strokestyles:
-                    canvas._grestore().write(file)
+                    canvas._grestore().outputPS(file)
             else:
                 # only fill fillpath - for the moment
                 if self.fillstyles:
-                    canvas._gsave().write(file)
+                    canvas._gsave().outputPS(file)
                     _writestyles(self.fillstyles)
 
-                canvas._fill().write(file)
+                canvas._fill().outputPS(file)
 
                 if self.fillstyles:
-                    canvas._grestore().write(file)
+                    canvas._grestore().outputPS(file)
 
         if self.strokepath is not None and self.strokepath!=self.fillpath:
             # this is the only relevant case still left
             # Note that a possible stroking has already been done.
 
             if self.strokestyles:
-                canvas._gsave().write(file)
+                canvas._gsave().outputPS(file)
                 _writestyles(self.strokestyles)
 
-            canvas._newpath().write(file)
-            self.strokepath.write(file)
-            canvas._stroke().write(file)
+            canvas._newpath().outputPS(file)
+            self.strokepath.outputPS(file)
+            canvas._stroke().outputPS(file)
 
             if self.strokestyles:
-                canvas._grestore().write(file)
+                canvas._grestore().outputPS(file)
 
-        if not self.strokepath is not None and not self.fillpath:
+        if self.strokepath is None and self.fillpath is None:
             raise RuntimeError("Path neither to be stroked nor filled")
 
         # now, draw additional elements of decoratedpath
-        self.subcanvas.write(file)
+        self.subcanvas.outputPS(file)
 
         # restore global styles
         if self.styles:
-            canvas._grestore().write(file)
+            canvas._grestore().outputPS(file)
 
 #
 # Path decorators

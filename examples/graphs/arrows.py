@@ -12,11 +12,11 @@ f = lambda k: 1/(z(k)-z1)/(z(k)-z2)                # function to be plotted
 s = lambda k: 5*abs(f(k))                          # magnitude of function value
 a = lambda k: 180/pi*atan2(f(k).imag, f(k).real)   # direction of function value
 
-g = graph.graphxy(width=8,
-                  x=graph.linaxis(min=0, max=10),
-                  y=graph.linaxis(min=0, max=10))
-g.plot(graph.paramfunction("k", 0, 120,
-                           "x, y, size, angle = x(k), y(k), s(k), a(k)",
-                           points=121, context=locals()),# access extern
-       graph.arrow())                                    # variables&functions
-g.writetofile("arrows")                                  # by passing a context
+g = graph.type.graphxy(width=8,
+                       x=graph.axis.linaxis(min=0, max=10),
+                       y=graph.axis.linaxis(min=0, max=10))
+g.plot(graph.data.paramfunction("k", 0, 120,
+                                "x, y, size, angle = x(k), y(k), s(k), a(k)",
+                                points=121, context=locals()),# access extern
+       graph.style.arrow())                                   # variables&functions
+g.writeEPSfile("arrows")                                      # by passing a context

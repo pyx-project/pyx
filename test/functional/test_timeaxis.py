@@ -24,5 +24,5 @@ else:
                                                     texter=timeaxis.timetexter(),
                                                     painter=graph.axispainter(zerolineattrs=None)))
     g.plot(graph.data(d, x=0, y=1), timeaxis.symbol())
-    g.writetofile("test_timeaxis")
+    g.writeEPSfile("test_timeaxis")
 

@@ -46,7 +46,7 @@ class linecap(attr.exclusiveattr, strokestyle):
         attr.exclusiveattr.__init__(self, linecap)
         self.value = value
 
-    def write(self, file):
+    def outputPS(self, file):
         file.write("%d setlinecap\n" % self.value)
 
 linecap.butt = linecap(0)
@@ -63,7 +63,7 @@ class linejoin(attr.exclusiveattr, strokestyle):
         attr.exclusiveattr.__init__(self, linejoin)
         self.value = value
 
-    def write(self, file):
+    def outputPS(self, file):
         file.write("%d setlinejoin\n" % self.value)
 
 linejoin.miter = linejoin(0)
@@ -80,7 +80,7 @@ class miterlimit(attr.exclusiveattr, strokestyle):
         attr.exclusiveattr.__init__(self, miterlimit)
         self.value = value
 
-    def write(self, file):
+    def outputPS(self, file):
         file.write("%f setmiterlimit\n" % self.value)
 
 miterlimit.lessthan180deg = miterlimit(1/math.sin(math.pi*180/360))
@@ -105,7 +105,7 @@ class dash(attr.exclusiveattr, strokestyle):
         self.offset = offset
         self.rellengths = rellengths
 
-    def write(self, file):
+    def outputPS(self, file):
         if self.rellengths:
             sep = " currentlinewidth mul "
         else:
@@ -127,9 +127,9 @@ class linestyle(attr.exclusiveattr, strokestyle):
         self.c = c
         self.d = d
 
-    def write(self, file):
-        self.c.write(file)
-        self.d.write(file)
+    def outputPS(self, file):
+        self.c.outputPS(file)
+        self.d.outputPS(file)
 
 linestyle.solid = linestyle(linecap.butt, dash([]))
 linestyle.dashed = linestyle(linecap.butt, dash([2]))
@@ -146,7 +146,7 @@ class linewidth(unit.length, attr.sortbeforeexclusiveattr, strokestyle):
         unit.length.__init__(self, l=l, default_type="w")
         attr.sortbeforeexclusiveattr.__init__(self, linewidth, [dash, linestyle])
 
-    def write(self, file):
+    def outputPS(self, file):
         file.write("%f setlinewidth\n" % unit.topt(self))
 
 _base = 0.02

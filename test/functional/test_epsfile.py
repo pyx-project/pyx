@@ -9,7 +9,7 @@ c.stroke(path.line("10 pt", "10 pt", "40 pt", "40 pt")+
          path.line("10 pt", "40 pt", "40 pt", "10 pt"))
 #         path.rect("10 pt", "10 pt", "30 pt", "30 pt"))
 
-c.writetofile("cross", bboxenlarge=0)
+c.writeEPSfile("cross", bboxenlarge=0)
 
 c = canvas.canvas()
 
@@ -59,4 +59,4 @@ c.insert(epsfile.epsfile(5, -13, "cross.eps", width=2,height=1.5, align="cc", sh
 c.insert(epsfile.epsfile(9, -13, "cross.eps", scale=1, align="tr", showbbox=1))
 c.insert(epsfile.epsfile(9, -13, "cross.eps", width=2, height=1.5, align="tr", showbbox=1))
 
-c.writetofile("test_epsfile")
+c.writeEPSfile("test_epsfile")

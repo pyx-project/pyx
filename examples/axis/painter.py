@@ -8,10 +8,9 @@
 
 from pyx import *
 
-ap = graph.axispainter(outerticklength=graph.ticklength.normal)
+ap = graph.painter.axispainter(outerticklength=graph.painter.ticklength.normal)
 
-c = canvas.canvas()
-c.insert(graph.pathaxis(path.curve(0, 0, 3, 0, 1, 4, 4, 4),
-                        graph.linaxis(min=0, max=10, title="axis title",
-                                      painter=ap)))
-c.writetofile("painter")
+c = graph.axis.pathaxis(path.curve(0, 0, 3, 0, 1, 4, 4, 4),
+                        graph.axis.linaxis(min=0, max=10, title="axis title",
+                                           painter=ap))
+c.writeEPSfile("painter")

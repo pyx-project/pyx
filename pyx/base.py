@@ -33,9 +33,9 @@ class PSOp:
 
     """
 
-    def write(self, file):
+    def outputPS(self, file):
         """writing into a file is the only routine, a PSOp has to supply"""
-        raise NotImplementedError, "cannot call virtual method write()"
+        raise NotImplementedError("cannot call virtual method outputPS()")
 
     def prolog(self):
         """return list of prolog items"""

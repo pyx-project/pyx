@@ -16,9 +16,9 @@ from pyx import *
 p = path.curve(0, 0, 3, 0, 1, 4, 4, 4)
 
 c = canvas.canvas()
-c.insert(graph.pathaxis(p.transformed(trafo.translate(-4, 0).scaled(0.75)),
-                        graph.linaxis(min=0, max=10)))
-c.insert(graph.pathaxis(p, graph.linaxis(min=0, max=10)))
-c.insert(graph.pathaxis(p.transformed(trafo.scale(1.25).translated(4, 0)),
-                        graph.linaxis(min=0, max=10)))
-c.writetofile("rating")
+c.insert(graph.axis.pathaxis(p.transformed(trafo.translate(-4, 0).scaled(0.75)),
+                             graph.axis.linaxis(min=0, max=10)))
+c.insert(graph.axis.pathaxis(p, graph.axis.linaxis(min=0, max=10)))
+c.insert(graph.axis.pathaxis(p.transformed(trafo.scale(1.25).translated(4, 0)),
+                             graph.axis.linaxis(min=0, max=10)))
+c.writeEPSfile("rating")

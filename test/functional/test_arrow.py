@@ -86,5 +86,5 @@ def testarrow(c):
 
 c=canvas.canvas()
 testarrow(c)
-c.writetofile("test_arrow", paperformat="a4", rotated=0, fittosize=1)
+c.writeEPSfile("test_arrow", paperformat="a4", rotated=0, fittosize=1)
 

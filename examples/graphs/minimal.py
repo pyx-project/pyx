@@ -1,8 +1,8 @@
 from pyx import *
 
-g = graph.graphxy(width=8)
-g.plot(graph.data("minimal.dat", x=1, y=2))
-g.writetofile("minimal")
+g = graph.type.graphxy(width=8)
+g.plot(graph.data.data("minimal.dat", x=1, y=2))
+g.writeEPSfile("minimal")
 
 # the file minimal.dat looks like:
 # 1  2

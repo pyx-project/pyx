@@ -35,6 +35,7 @@ text, respectively. The method (la)tex.define can be used to define macros in
 import os, string, tempfile, sys, md5, traceback, time, StringIO, re, atexit
 import base, helper, unit, epsfile, color
 
+sys.stderr.write("*** PyX Warning: the tex module is obsolete, consider the text module instead\n")
 
 # Code snippets from former attrlist module (which has been removed from the
 # CVS tree). We keep them here, until they are finally removed together with
@@ -690,7 +691,7 @@ class _BoxCmd(_TexCmd):
                            str(CmdPut.direction) + " neg rotate neg exch neg exch translate }")
             if CmdPut.color != color.gray.black:
                 file.write("\\special{ps: ")
-                CmdPut.color.write(file)
+                CmdPut.color.outputPS(file)
                 file.write(" }")
             if CmdPut.halign == halign.left:
                 pass
@@ -704,7 +705,7 @@ class _BoxCmd(_TexCmd):
 
             if CmdPut.color != color.gray.black:
                 file.write("\\special{ps: ")
-                color.gray.black.write(file)
+                color.gray.black.outputPS(file)
                 file.write(" }")
             if CmdPut.direction != direction.horizontal:
                 file.write("\\special{ps: currentpoint grestore moveto }")
@@ -897,7 +898,7 @@ by yourself.\n""")
                 self.abbox = aepsfile.bbox()
                 self.aprolog = aepsfile.prolog()
                 epsdatafile = StringIO.StringIO()
-                aepsfile.write(epsdatafile)
+                aepsfile.outputPS(epsdatafile)
                 self.epsdata = epsdatafile.getvalue()
 
         # merge new sizes
@@ -943,7 +944,7 @@ by yourself.\n""")
         self._run()
         return self.abbox
 
-    def write(self, file):
+    def outputPS(self, file):
         self._run()
         file.writelines(self.epsdata)
 

@@ -12,20 +12,19 @@
 import math
 from pyx import *
 
-class piaxis(graph.linaxis):
+class piaxis(graph.axis.linaxis):
 
     def __init__(self, divisor=math.pi,
-                 texter=graph.rationaltexter(suffix="\pi"), **kwargs):
-        graph.linaxis.__init__(self, divisor=divisor, texter=texter, **kwargs)
+                 texter=graph.texter.rationaltexter(suffix="\pi"), **kwargs):
+        graph.axis.linaxis.__init__(self, divisor=divisor, texter=texter, **kwargs)
 
 
 p = path.path(path.moveto(0, 0), path.curveto(3, 0, 1, 4, 4, 4))
 
 c = canvas.canvas()
-c.insert(graph.pathaxis(p,
-                        graph.linaxis(min=0, max=10)))
-c.insert(graph.pathaxis(p.transformed(trafo.translate(4, 0)),
-                        graph.linaxis(min=0, max=1e5)))
-c.insert(graph.pathaxis(p.transformed(trafo.translate(8, 0)),
-                        piaxis(min=0, max=2*math.pi)))
-c.writetofile("texter")
+c.insert(graph.axis.pathaxis(p, graph.axis.linaxis(min=0, max=10)))
+c.insert(graph.axis.pathaxis(p.transformed(trafo.translate(4, 0)),
+                             graph.axis.linaxis(min=0, max=1e5)))
+c.insert(graph.axis.pathaxis(p.transformed(trafo.translate(8, 0)),
+                             piaxis(min=0, max=2*math.pi)))
+c.writeEPSfile("texter")

@@ -16,4 +16,4 @@ for b in boxes:
     c.stroke(b.path(), [color.rgb.green])
     # a second time with bezier rounded corners
     c.stroke(b.path(bezierradius=0.5), [color.rgb.red])
-c.writetofile("box")
+c.writeEPSfile("box")

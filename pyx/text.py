@@ -609,9 +609,9 @@ class textbox_pt(box.rect_pt, canvas._canvas):
         self.ensuredvicanvas()
         return canvas._canvas.prolog(self)
 
-    def write(self, file):
+    def outputPS(self, file):
         self.ensuredvicanvas()
-        canvas._canvas.write(self, file)
+        canvas._canvas.outputPS(self, file)
 
 
 class textbox(textbox_pt):
@@ -756,9 +756,9 @@ class texrunner:
                 hasevent = event.isSet()
                 if not hasevent:
                     if waited < self.waitfortex:
-                        sys.stderr.write("*** PyX INFO: still waiting for %s after %i seconds...\n" % (self.mode, waited))
+                        sys.stderr.write("*** PyX Info: still waiting for %s after %i seconds...\n" % (self.mode, waited))
                     else:
-                        sys.stderr.write("*** PyX ERROR: the timeout of %i seconds expired and %s did not respond.\n" % (waited, self.mode))
+                        sys.stderr.write("*** PyX Error: the timeout of %i seconds expired and %s did not respond.\n" % (waited, self.mode))
             return hasevent
         else:
             event.wait(self.waitfortex)

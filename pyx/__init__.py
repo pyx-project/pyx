@@ -31,11 +31,11 @@ are build out of these primitives.
 """
 
 import version
-
 __version__ = version.version
 
-__all__ = ["attr", "box", "canvas", "color", "connector", "data", "deco", "epsfile", "graph", "path",
-           "style", "trafo", "tex", "text", "unit"]
+__all__ = ["attr", "box", "canvas", "color", "connector", "deco", "epsfile", "graph", "data", "path",
+           "style", "trafo", "text", "unit"]
+
 
 # automatically import main modules into pyx namespace
 # for module in __all__:

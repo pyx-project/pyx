@@ -44,7 +44,7 @@ class grey(color):
         if gray<0 or gray>1: raise ValueError
         self.color = {"gray": gray}
 
-    def write(self, file):
+    def outputPS(self, file):
         file.write("%(gray)f setgray\n" % self.color)
 
 grey.black = grey(0.0)
@@ -61,7 +61,7 @@ class rgb(color):
         if r<0 or r>1 or g<0 or g>1 or b<0 or b>1: raise ValueError
         self.color = {"r": r, "g": g, "b": b}
 
-    def write(self, file):
+    def outputPS(self, file):
         file.write("%(r)f %(g)f %(b)f setrgbcolor\n" % self.color)
 
 rgb.red   = rgb(1 ,0, 0)
@@ -80,7 +80,7 @@ class hsb(color):
         if h<0 or h>1 or s<0 or s>1 or b<0 or b>1: raise ValueError
         self.color = {"h": h, "s": s, "b": b}
 
-    def write(self, file):
+    def outputPS(self, file):
         file.write("%(h)f %(s)f %(b)f sethsbcolor\n" % self.color)
 
 
@@ -93,7 +93,7 @@ class cmyk(color):
         if c<0 or c>1 or m<0 or m>1 or y<0 or y>1 or k<0 or k>1: raise ValueError
         self.color = {"c": c, "m": m, "y": y, "k": k}
 
-    def write(self, file):
+    def outputPS(self, file):
         file.write("%(c)f %(m)f %(y)f %(k)f setcmykcolor\n" % self.color)
 
 
@@ -194,8 +194,8 @@ class palette(color, attr.changeattr):
     def select(self, index, total):
         return self.getcolor(index/(total-1.0))
 
-    def write(self, file):
-        self.getcolor(0).write(file)
+    def outputPS(self, file):
+        self.getcolor(0).outputPS(file)
 
 
 palette.Gray           = palette(gray.white, gray.black)

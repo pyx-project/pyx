@@ -14,5 +14,5 @@ c.stroke(p, [color.rgb.red])
 c.stroke(p, [color.rgb.green, deco.wriggle(), deco.earrow.LARge([deco.stroked.clear])])
 c.stroke(p, [color.rgb.blue, deco.wriggle(), deco.wriggle(loops=250, radius=0.1)])
 
-c.writetofile("test_deco")
+c.writeEPSfile("test_deco")
 

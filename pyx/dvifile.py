@@ -407,7 +407,7 @@ class _selectfont(base.PSOp):
         self.name = name
         self.size = size
 
-    def write(self, file):
+    def outputPS(self, file):
         file.write("/%s %f selectfont\n" % (self.name, self.size))
 
 
@@ -434,7 +434,7 @@ class _show(base.PSOp):
         self.y = y
         self.s = s
 
-    def write(self, file):
+    def outputPS(self, file):
         file.write("%f %f moveto (%s) show\n" % (self.x, self.y, self.s))
 
 
@@ -705,21 +705,21 @@ class DVIError(exceptions.Exception): pass
 # save and restore colors
 
 class _savecolor(base.PSOp):
-    def write(self, file):
+    def outputPS(self, file):
         file.write("currentcolor currentcolorspace\n")
 
 
 class _restorecolor(base.PSOp):
-    def write(self, file):
+    def outputPS(self, file):
         file.write("setcolorspace setcolor\n")
 
 class _savetrafo(base.PSOp):
-    def write(self, file):
+    def outputPS(self, file):
         file.write("matrix currentmatrix\n")
 
 
 class _restoretrafo(base.PSOp):
-    def write(self, file):
+    def outputPS(self, file):
         file.write("setmatrix\n")
 
 

@@ -46,7 +46,7 @@ class prologitem:
 
         pass
 
-    def write(self, file):
+    def outputPS(self, file):
         """ write self in file """
         pass
 
@@ -72,7 +72,7 @@ class definition(prologitem):
         else:
            return other
 
-    def write(self, file):
+    def outputPS(self, file):
         file.write("%%%%BeginRessource: %s\n" % self.id)
         file.write("%(body)s /%(id)s exch def\n" % self.__dict__)
         file.write("%%EndRessource\n")
@@ -110,7 +110,7 @@ class fontdefinition(prologitem):
         else:
             return other
 
-    def write(self, file):
+    def outputPS(self, file):
         if self.filename:
             file.write("%%%%BeginFont: %s\n" % self.name)
             file.write("%Included char codes:")
@@ -156,7 +156,7 @@ class fontencoding(prologitem):
         else:
            return other
 
-    def write(self, file):
+    def outputPS(self, file):
         file.write("%%%%BeginProcSet: %s\n" % self.name)
         path = pykpathsea.find_file(self.filename, pykpathsea.kpse_tex_ps_header_format)
         encfile = open(path, "r")
@@ -195,7 +195,7 @@ class fontreencoding(prologitem):
         else:
             return other
 
-    def write(self, file):
+    def outputPS(self, file):
         file.write("%%%%BeginProcSet: %s\n" % self.fontname)
         file.write("/%s /%s %s ReEncodeFont\n" % (self.basefontname, self.fontname, self.encname))
         file.write("%%EndProcSet\n")

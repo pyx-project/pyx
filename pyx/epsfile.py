@@ -182,7 +182,7 @@ class epsfile(base.PSCmd):
     def prolog(self):
         return [_BeginEPSF, _EndEPSF]
 
-    def write(self, file):
+    def outputPS(self, file):
         try:
             epsfile=open(self.filename,"r")
         except:
@@ -193,16 +193,16 @@ class epsfile(base.PSCmd):
         bbrect = self.mybbox.rect().transformed(self.trafo)
         
         if self.showbbox:
-            canvas._newpath().write(file)
-            bbrect.write(file)
-            canvas._stroke().write(file)
+            canvas._newpath().outputPS(file)
+            bbrect.outputPS(file)
+            canvas._stroke().outputPS(file)
             
         if self.clip:
-            canvas._newpath().write(file)
-            bbrect.write(file)
-            canvas._clip().write(file)
+            canvas._newpath().outputPS(file)
+            bbrect.outputPS(file)
+            canvas._clip().outputPS(file)
 
-        self.trafo.write(file)
+        self.trafo.outputPS(file)
 
         file.write("%%%%BeginDocument: %s\n" % self.filename)
         file.write(epsfile.read()) 

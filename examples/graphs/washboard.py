@@ -4,7 +4,11 @@ from math import pi, cos
 from pyx import *
 from pyx.deco import barrow, earrow
 from pyx.style import linewidth, linestyle
-from pyx.graph import graphxy, linaxis, axispainter, function, line
+from pyx.graph.type import graphxy
+from pyx.graph.axis import linaxis
+from pyx.graph.painter import axispainter
+from pyx.graph.style import line
+from pyx.graph.data import function
 
 mypainter = axispainter(basepathattrs=[earrow.normal], titlepos=1)
 def mycos(x): return -cos(x)+.10*x
@@ -30,4 +34,4 @@ g.text(x1+.2, 0.5*(y1+y3), r"$2\pi\gamma k\Omega$", [text.vshift.middlezero])
 g.text(x1-.6, y1-.1, r"$E_{\rm b}$", [text.halign.right])
 g.text(x3+.15, y2+.20, r"$2J_k(\varepsilon/\Omega)+\pi\gamma k\Omega$")
 
-g.writetofile("washboard")
+g.writeEPSfile("washboard")

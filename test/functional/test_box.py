@@ -68,5 +68,5 @@ distances()
 #b = box.polygon(center=(0.5, math.sqrt(3)/6), corners=((0, 0), (1, 0), (1, 1), (0, 1)))
 #b.transform(trafo.translate(2, 0))
 #c.stroke(b.path(beziercorner=0.1))
-c.writetofile("test_box", paperformat="a4")
+c.writeEPSfile("test_box", paperformat="a4")
 

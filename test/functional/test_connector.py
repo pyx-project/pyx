@@ -87,5 +87,5 @@ dotest(c,  0, 0, "testline")
 dotest(c, 25, 0, "testarc")
 dotest(c, 25,30, "testcurve")
 dotest(c,  0,20, "testtwolines")
-c.writetofile("test_connector", paperformat="a4", rotated=0, fittosize=1)
+c.writeEPSfile("test_connector", paperformat="a4", rotated=0, fittosize=1)
 

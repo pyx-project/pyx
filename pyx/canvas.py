@@ -32,7 +32,7 @@ A canvas holds a collection of all elements that should be displayed together
 with their attributes.
 """
 
-import string, cStringIO, time
+import sys, string, cStringIO, time
 import attr, base, bbox, deco, unit, prolog, style, trafo, version
 
 # known paperformats as tuple(width, height)
@@ -69,42 +69,42 @@ class clip(base.PSCmd):
         # ... but for clipping, we nevertheless need the bbox
         return self.path.bbox()
 
-    def write(self, file):
-        _newpath().write(file)
-        self.path.write(file)
-        _clip().write(file)
+    def outputPS(self, file):
+        _newpath().outputPS(file)
+        self.path.outputPS(file)
+        _clip().outputPS(file)
 
 #
 # some very primitive Postscript operators
 #
 
 class _newpath(base.PSOp):
-    def write(self, file):
+    def outputPS(self, file):
        file.write("newpath\n")
 
 
 class _stroke(base.PSOp):
-    def write(self, file):
+    def outputPS(self, file):
        file.write("stroke\n")
 
 
 class _fill(base.PSOp):
-    def write(self, file):
+    def outputPS(self, file):
         file.write("fill\n")
 
 
 class _clip(base.PSOp):
-    def write(self, file):
+    def outputPS(self, file):
        file.write("clip\n")
 
 
 class _gsave(base.PSOp):
-    def write(self, file):
+    def outputPS(self, file):
        file.write("gsave\n")
 
 
 class _grestore(base.PSOp):
-    def write(self, file):
+    def outputPS(self, file):
        file.write("grestore\n")
 
 #
@@ -178,12 +178,12 @@ class _canvas(base.PSCmd):
             result.extend(cmd.prolog())
         return result
 
-    def write(self, file):
+    def outputPS(self, file):
         if self.PSOps:
-            _gsave().write(file)
+            _gsave().outputPS(file)
             for cmd in self.PSOps:
-                cmd.write(file)
-            _grestore().write(file)
+                cmd.outputPS(file)
+            _grestore().outputPS(file)
 
     def insert(self, PSOp, args=[]):
         """insert PSOp in the canvas.
@@ -326,7 +326,7 @@ class pattern(_canvas, attr.exclusiveattr, style.fillstyle):
     def bbox(self):
         return None
 
-    def write(self, file):
+    def outputPS(self, file):
         file.write("%s setpattern\n" % self.id)
 
     def prolog(self):
@@ -355,7 +355,7 @@ class pattern(_canvas, attr.exclusiveattr, style.fillstyle):
                                      "/PaintProc {\nbegin\n"),
                                     sep="\n")
         stringfile = cStringIO.StringIO()
-        _canvas.write(self, stringfile)
+        _canvas.outputPS(self, stringfile)
         patternproc = stringfile.getvalue()
         stringfile.close()
         patterntrafostring = self.patterntrafo is None and "matrix" or str(self.patterntrafo)
@@ -375,7 +375,7 @@ class canvas(_canvas):
 
     """a canvas is a collection of PSCmds together with PSAttrs"""
 
-    def writetofile(self, filename, paperformat=None, rotated=0, fittosize=0, margin="1 t cm",
+    def writeEPSfile(self, filename, paperformat=None, rotated=0, fittosize=0, margin="1 t cm",
                     bbox=None, bboxenlarge="1 t pt"):
         """write canvas to EPS file
 
@@ -450,7 +450,7 @@ class canvas(_canvas):
         if ctrafo: abbox = abbox.transformed(ctrafo)
 
         file.write("%!PS-Adobe-3.0 EPSF 3.0\n")
-        abbox.write(file)
+        abbox.outputPS(file)
         file.write("%%%%Creator: PyX %s\n" % version.version)
         file.write("%%%%Title: %s\n" % filename)
         file.write("%%%%CreationDate: %s\n" %
@@ -468,18 +468,22 @@ class canvas(_canvas):
                 mergedprolog.append(pritem)
 
         for pritem in mergedprolog:
-            pritem.write(file)
+            pritem.outputPS(file)
 
         file.write("%%EndProlog\n")
 
         # again, if there has occured global transformation, apply it now
-        if ctrafo: ctrafo.write(file)
+        if ctrafo: ctrafo.outputPS(file)
 
         file.write("%f setlinewidth\n" % unit.topt(style.linewidth.normal))
 
         # here comes the actual content
-        self.write(file)
+        self.outputPS(file)
 
         file.write("showpage\n")
         file.write("%%Trailer\n")
         file.write("%%EOF\n")
+
+    def writetofile(self, *args, **kwargs):
+        sys.stderr.write("*** PyX Warning: writetofile is deprecated, use writeEPSfile instead\n")
+        self.writeEPSfile(*args, **kwargs)

@@ -26,5 +26,5 @@ c = canvas.canvas()
 for t in tree(7):
     # apply the transformation to a "sub"-canvas and insert it into the "main" canvas
     c.insert(canvas.canvas(t).stroke(path.line(0, 0, 0, l)))
-c.writetofile("tree", paperformat="a4")
+c.writeEPSfile("tree", paperformat="a4")
 

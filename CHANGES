@@ -64,6 +64,7 @@ TODO:
     - painters are using the new attribute scheme including changeable attributes (TODO: documentation)
     - axis zeropath feature removed (TODO: documentation)
     - graph styles rewrite (TODO: documentation)
+    - graph goes into 
   - text module:
     - default handling of texmessages as in the new attribute scheme
     - multiple insert bug fixed
@@ -81,10 +82,18 @@ TODO:
       This is much more convenient for any routines working with normpaths.
     - reversing of closed sub paths does not change the first point of the
       sub path
+    - should normpaths not allow for very short path elements?
+      (currently, the closepath does prevent short paths at the end)
   - connnector module:
     - renamed _xxx -> xxx_pt
   - deco module:
     - wriggle decorator (TODO: documentation)
+  - canvas:
+    - writeEPSfile deprecates writetofile
+    - internally, write methods are renamed in outputPS
+  - tex module:
+    - not imported by default anymore
+    - obsolete warning when importing this module
 
 
 0.5.1 (2004/01/22):

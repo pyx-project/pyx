@@ -19,4 +19,4 @@ for X,Y in [[A, B], [B, C], [C, D], [D, A]]:
 c.stroke(connector.curve(D, B, boxdists=0.25, relangle1=45, relangle2=-45, relbulge=0.8),
          [color.rgb.blue, deco.earrow.normal])
 
-c.writetofile("connect")
+c.writeEPSfile("connect")

@@ -13,12 +13,11 @@ from pyx import *
 
 p = path.curve(0, 0, 3, 0, 1, 4, 4, 4)
 
-myparter = graph.linparter(["1/3", "1/6"])
+myparter = graph.parter.linparter(["1/3", "1/6"])
 
 c = canvas.canvas()
-c.insert(graph.pathaxis(p,
-                        graph.linaxis(min=0, max=1, parter=myparter)))
-c.insert(graph.pathaxis(p.transformed(trafo.translate(4, 0)),
-                        graph.linaxis(min=0, max=1, parter=myparter,
-                                      texter=graph.rationaltexter())))
-c.writetofile("parter")
+c.insert(graph.axis.pathaxis(p, graph.axis.linaxis(min=0, max=1, parter=myparter)))
+c.insert(graph.axis.pathaxis(p.transformed(trafo.translate(4, 0)),
+                             graph.axis.linaxis(min=0, max=1, parter=myparter,
+                                                texter=graph.texter.rationaltexter())))
+c.writeEPSfile("parter")

@@ -17,4 +17,4 @@ pyxpattern.text(0.125, 0.125, r"\PyX")
 
 c.draw(path.rect(-1, -1, 1, 1), [deco.filled([pyxpattern]), deco.stroked])
 
-c.writetofile("test_pattern", paperformat="a4" )
+c.writeEPSfile("test_pattern", paperformat="a4" )

@@ -541,7 +541,7 @@ class pathel(base.PSOp):
 
         pass
 
-    def write(self, file):
+    def outputPS(self, file):
         """write pathel to file in the context of canvas"""
 
         pass
@@ -575,7 +575,7 @@ class closepath(pathel):
     def _normalized(self, context):
         return [closepath()]
 
-    def write(self, file):
+    def outputPS(self, file):
         file.write("closepath\n")
 
 
@@ -600,7 +600,7 @@ class moveto_pt(pathel):
     def _normalized(self, context):
         return [moveto_pt(self.x, self.y)]
 
-    def write(self, file):
+    def outputPS(self, file):
         file.write("%g %g moveto\n" % (self.x, self.y) )
 
 
@@ -628,7 +628,7 @@ class lineto_pt(pathel):
     def _normalized(self, context):
         return [normline(context.currentpoint[0], context.currentpoint[1], self.x, self.y)]
 
-    def write(self, file):
+    def outputPS(self, file):
         file.write("%g %g lineto\n" % (self.x, self.y) )
 
 
@@ -665,7 +665,7 @@ class curveto_pt(pathel):
                           self.x2, self.y2,
                           self.x3, self.y3)]
 
-    def write(self, file):
+    def outputPS(self, file):
         file.write("%g %g %g %g %g %g curveto\n" % ( self.x1, self.y1,
                                                      self.x2, self.y2,
                                                      self.x3, self.y3 ) )
@@ -692,7 +692,7 @@ class rmoveto_pt(pathel):
         y = context.currentpoint[1]+self.dy
         return [moveto_pt(x, y)]
 
-    def write(self, file):
+    def outputPS(self, file):
         file.write("%g %g rmoveto\n" % (self.dx, self.dy) )
 
 
@@ -722,7 +722,7 @@ class rlineto_pt(pathel):
         y0 = context.currentpoint[1]
         return [normline(x0, y0, x0+self.dx, y0+self.dy)]
 
-    def write(self, file):
+    def outputPS(self, file):
         file.write("%g %g rlineto\n" % (self.dx, self.dy) )
 
 
@@ -738,7 +738,7 @@ class rcurveto_pt(pathel):
         self.dx3 = dx3
         self.dy3 = dy3
 
-    def write(self, file):
+    def outputPS(self, file):
         file.write("%g %g %g %g %g %g rcurveto\n" % ( self.dx1, self.dy1,
                                                     self.dx2, self.dy2,
                                                     self.dx3, self.dy3 ) )
@@ -888,7 +888,7 @@ class arc_pt(pathel):
             return nbarc
 
 
-    def write(self, file):
+    def outputPS(self, file):
         file.write("%g %g %g %g %g arc\n" % ( self.x, self.y,
                                             self.r,
                                             self.angle1,
@@ -977,7 +977,7 @@ class arcn_pt(pathel):
             return nbarc
 
 
-    def write(self, file):
+    def outputPS(self, file):
         file.write("%g %g %g %g %g arcn\n" % ( self.x, self.y,
                                              self.r,
                                              self.angle1,
@@ -995,7 +995,7 @@ class arct_pt(pathel):
         self.y2 = y2
         self.r  = r
 
-    def write(self, file):
+    def outputPS(self, file):
         file.write("%g %g %g %g %g arct\n" % ( self.x1, self.y1,
                                              self.x2, self.y2,
                                              self.r ) )
@@ -1200,7 +1200,7 @@ class multilineto_pt(pathel):
             x0, y0 = x, y
         return result
 
-    def write(self, file):
+    def outputPS(self, file):
         for x, y in self.points:
             file.write("%g %g lineto\n" % (x, y) )
 
@@ -1232,7 +1232,7 @@ class multicurveto_pt(pathel):
             x0, y0 = point[4:]
         return result
 
-    def write(self, file):
+    def outputPS(self, file):
         for point in self.points:
             file.write("%g %g %g %g %g %g curveto\n" % tuple(point))
 
@@ -1349,13 +1349,13 @@ class path(base.PSCmd):
         """return transformed path"""
         return normpath(self).transformed(trafo)
 
-    def write(self, file):
+    def outputPS(self, file):
         if not (isinstance(self.path[0], moveto_pt) or
                 isinstance(self.path[0], arc_pt) or
                 isinstance(self.path[0], arcn_pt)):
             raise PathException("first path element must be either moveto, arc, or arcn")
         for pel in self.path:
-            pel.write(file)
+            pel.outputPS(file)
 
 ################################################################################
 # normpath and corresponding classes
@@ -1422,7 +1422,7 @@ class normpathel:
         """return transformed normpathel according to trafo"""
         pass
 
-    def write(self, file):
+    def outputPS(self, file):
         """write normpathel (in the context of a normsubpath) to file"""
         pass
 
@@ -1508,7 +1508,7 @@ class normline(normpathel):
     def transformed(self, trafo):
         return normline(*(trafo._apply(self.x0, self.y0) + trafo._apply(self.x1, self.y1)))
 
-    def write(self, file):
+    def outputPS(self, file):
         file.write("%g %g lineto\n" % (self.x1, self.y1))
 
 
@@ -1612,7 +1612,7 @@ class normcurve(normpathel):
                            trafo._apply(self.x2, self.y2)+
                            trafo._apply(self.x3, self.y3)))
 
-    def write(self, file):
+    def outputPS(self, file):
         file.write("%g %g %g %g %g %g curveto\n" % (self.x1, self.y1, self.x2, self.y2, self.x3, self.y3))
 
 #
@@ -1826,7 +1826,7 @@ class normsubpath:
             nnormpathels.append(pel.transformed(trafo))
         return normsubpath(nnormpathels, self.closed)
 
-    def write(self, file):
+    def outputPS(self, file):
         # if the normsubpath is closed, we must not output the last normpathel
         if self.closed:
             normpathels = self.normpathels[:-1]
@@ -1835,7 +1835,7 @@ class normsubpath:
         if normpathels:
             file.write("%g %g moveto\n" % self.begin_pt())
             for anormpathel in normpathels:
-                anormpathel.write(file)
+                anormpathel.outputPS(file)
         if self.closed:
             file.write("closepath\n")
 
@@ -1875,8 +1875,10 @@ class normpath(path):
                 elif isinstance(npel, closepath):
                     if currentsubpathels:
                         # append closed sub path
-                        currentsubpathels.append(normline(context.currentpoint[0], context.currentpoint[1],
-                                                          context.currentsubpath[0], context.currentsubpath[1]))
+                        if ((context.currentpoint[0]-context.currentsubpath[0])**2 +
+                            (context.currentpoint[1]-context.currentsubpath[1])**2 > 1e-10):
+                            currentsubpathels.append(normline(context.currentpoint[0], context.currentpoint[1],
+                                                              context.currentsubpath[0], context.currentsubpath[1]))
                         self.subpaths.append(normsubpath(currentsubpathels, 1))
                     currentsubpathels = []
                 else:
@@ -2244,9 +2246,9 @@ class normpath(path):
             nnormpath.subpaths.append(sp.transformed(trafo))
         return nnormpath
 
-    def write(self, file):
+    def outputPS(self, file):
         for sp in self.subpaths:
-            sp.write(file)
+            sp.outputPS(file)
 
 ################################################################################
 # some special kinds of path, again in two variants

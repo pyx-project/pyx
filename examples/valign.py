@@ -25,4 +25,4 @@ c.text(2, 0, r"x=0", [text.mathmode, text.vshift.middlezero])
 c.text(4, 0, r"x=0", [text.mathmode, text.vshift.bottomzero])
 c.text(6, 0, r"x=0", [text.mathmode, text.vshift.mathaxis])
 
-c.writetofile("valign")
+c.writeEPSfile("valign")
