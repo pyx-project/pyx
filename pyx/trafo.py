@@ -75,7 +75,7 @@ class transformation:
 
             # print " ( %s * %s => %s ) "% (self, other, transformation(angle=angle, vector=vector))
 		      
-	    return transformation(matrix=matrix, vector=vector)
+	    return transformation(matrix=matrix, vector=("%f t pt" % vector[0], "%f t pt" % vector[1]))
 	else:
 	    raise NotImplementedError, "can only multiply two transformations"
     def __rmul__(self, other):				# TODO: not needed!?
@@ -114,7 +114,8 @@ class transformation:
 	 	   )
         except ZeroDivisionError:
 	   raise UndefinedResultError, "transformation matrix must not be singular" 
-        return transformation(matrix=matrix) * transformation(vector=(-self.vector[0],-self.vector[1]))
+        return transformation(matrix=matrix) * \
+               transformation(vector=("% t pt" % -self.vector[0],"% t pt" % -self.vector[1]))
 
     def bbox(self, acanvas):
         # assert 0, "this shouldn't be called!"

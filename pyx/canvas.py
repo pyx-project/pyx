@@ -360,30 +360,35 @@ class canvas(CanvasCmds):
             obbox=obbox*self.clip.bbox(canvas)    # intersect with clipping bounding boxes
             
         # we have to transform all four corner points of the bbox
-	(llx, lly)=self.trafo.apply((unit.length("%f t pt" % obbox.llx),
-                                     unit.length("%f t pt" % obbox.lly)))
-        (lrx, lry)=self.trafo.apply((unit.length("%f t pt" % obbox.urx),
-                                     unit.length("%f t pt" % obbox.lly)))
-        (urx, ury)=self.trafo.apply((unit.length("%f t pt" % obbox.urx),
-                                     unit.length("%f t pt" % obbox.ury)))
-        (ulx, uly)=self.trafo.apply((unit.length("%f t pt" % obbox.llx),
-                                     unit.length("%f t pt" % obbox.ury)))
+        (llx, lly)=self.trafo.apply((obbox.llx, obbox.lly))
+        (lrx, lry)=self.trafo.apply((obbox.urx, obbox.lly))
+        (urx, ury)=self.trafo.apply((obbox.urx, obbox.ury))
+        (ulx, uly)=self.trafo.apply((obbox.llx, obbox.ury))
+#	(llx, lly)=self.trafo.apply((unit.length("%f t pt" % obbox.llx),
+#                                     unit.length("%f t pt" % obbox.lly)))
+#        (lrx, lry)=self.trafo.apply((unit.length("%f t pt" % obbox.urx),
+#                                     unit.length("%f t pt" % obbox.lly)))
+#        (urx, ury)=self.trafo.apply((unit.length("%f t pt" % obbox.urx),
+#                                     unit.length("%f t pt" % obbox.ury)))
+#        (ulx, uly)=self.trafo.apply((unit.length("%f t pt" % obbox.llx),
+#                                     unit.length("%f t pt" % obbox.ury)))
 
         # now, by sorting, we obtain the lower left and upper right corner
         # of the new bounding box. But first we have to convert back to
         # points:
 
-	llx=unit.pt(llx)
-	lly=unit.pt(lly)
-	lrx=unit.pt(lrx)
-	lry=unit.pt(lry)
-	urx=unit.pt(urx)
-	ury=unit.pt(ury)
-        ulx=unit.pt(ulx)
-	uly=unit.pt(uly)
+#	llx=unit.pt(llx)
+#	lly=unit.pt(lly)
+#	lrx=unit.pt(lrx)
+#	lry=unit.pt(lry)
+#	urx=unit.pt(urx)
+#	ury=unit.pt(ury)
+#        ulx=unit.pt(ulx)
+#	uly=unit.pt(uly)
 
 	abbox= bbox(min(llx, lrx, urx, ulx)-1, min(lly, lry, ury, uly)-1,
                     max(llx, lrx, urx, ulx)+1, max(lly, lry, ury, uly)+1)
+ 
 	return abbox
     
     def write(self, canvas, file):

@@ -91,8 +91,6 @@ def testarcbbox(c):
     for phi in range(0,360,30):
        drawpathwbbox(c,path([arc(phi*0.1, 30+phi*0.1, 1, phi, phi+390)]))
 
-    c.writetofile("test")
-
 
 def testcurvetobbox(c):
     drawpathwbbox(c,path([moveto(10,10), curveto(12,16,14,15,12,19)]))
@@ -132,12 +130,12 @@ def testintersectbezier(c):
 
 c=canvas.canvas()
 testarcs(c)
-#testmidpointsplit(c)
-#testarcbbox(c)    
-#testcurvetobbox(c)
-#testtrafobbox(c)
-#testclipbbox(c)
-#testintersectbezier(c)
+testmidpointsplit(c)
+testarcbbox(c)    
+testcurvetobbox(c)
+testtrafobbox(c)
+testclipbbox(c)
+testintersectbezier(c)
 c.writetofile("test")
 
 #testspeed()

@@ -97,8 +97,8 @@ class closepath(pathel):
     def _bpath(self, currentpoint, currentsubpath):
         return (None,
                 None,
-                bline(currentpoint[0], currentpoint[1], 
-                       currentsubpath[0], currentsubpath[1]))
+                bline("%f t pt" % currentpoint[0], "%f t pt" % currentpoint[1], 
+                       "%f t pt" % currentsubpath[0], "%f t pt" % currentsubpath[1]))
  
  
 class moveto(pathel):
@@ -182,8 +182,8 @@ class rlineto(pathel):
     def _bpath(self, currentpoint, currentsubpath):
         return ((currentpoint[0]+self.dx, currentpoint[1]+self.dy), 
                 currentsubpath or currentpoint,
-                bline(currentpoint[0], currentpoint[1], 
-                      currentpoint[0]+self.dx, currentpoint[1]+self.dy))
+                bline("%f t pt" % currentpoint[0], "%f t pt" % currentpoint[1], 
+                      "%f t pt" % (currentpoint[0]+self.dx), "%f t pt" % (currentpoint[1]+self.dy)))
 
 
 class arc(pathel):
@@ -291,13 +291,16 @@ class arc(pathel):
         if currentpoint:
              return ( (earcx, earcy),
                       currentsubpath or currentpoint,
-                      bline("%f t pt" % currentpoint[0], "%f t pt" % currentpoint[1], "%f t pt" % sarcx, "%f t pt" % sarcy) +
-                      barc("%f t pt" % self.x, "%f t pt" % self.y, "%f t pt" % self.r, self.angle1, self.angle2)
+                      bline("%f t pt" % currentpoint[0], "%f t pt" % currentpoint[1],
+                            "%f t pt" % sarcx, "%f t pt" % sarcy) +
+                      barc("%f t pt" % self.x, "%f t pt" % self.y, 
+                           "%f t pt" % self.r, self.angle1, self.angle2)
                     )
         else:  # we assert that currentsubpath is also None
              return ( (earcx, earcy),
                       (sarcx, sarcy),
-                      barc("%f t pt" % self.x, "%f t pt" % self.y, "%f t pt" % self.r, self.angle1, self.angle2)
+                      barc("%f t pt" % self.x, "%f t pt" % self.y, 
+                           "%f t pt" % self.r, self.angle1, self.angle2)
                     )
 	
 class arcn(pathel):
@@ -562,14 +565,14 @@ class bpathel:
         assert 0 <= t <= 1, "parameter t of pathel out of range [0,1]"
 
 
-        return ( (-self.x0+3*self.x1-3*self.x2+self.x3)*t*t*t +
-                 (3*self.x0-6*self.x1+3*self.x2)*t*t +
-                 (-3*self.x0+3*self.x1)*t +
-                 self.x0,
-                 (-self.y0+3*self.y1-3*self.y2+self.y3)*t*t*t +
-                 (3*self.y0-6*self.y1+3*self.y2)*t*t +
-                 (-3*self.y0+3*self.y1)*t +
-                 self.y0
+        return ( "%f t pt" % ((-self.x0+3*self.x1-3*self.x2+self.x3)*t*t*t +
+                              (3*self.x0-6*self.x1+3*self.x2)*t*t +
+                              (-3*self.x0+3*self.x1)*t +
+                              self.x0) ,
+                 "%f t pt" % ((-self.y0+3*self.y1-3*self.y2+self.y3)*t*t*t +
+                              (3*self.y0-6*self.y1+3*self.y2)*t*t +
+                              (-3*self.y0+3*self.y1)*t +
+                              self.y0)
                )
     
     def bbox(self, canvas):
