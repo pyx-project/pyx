@@ -69,23 +69,24 @@ class pyxinstall(install):
         except:
             oldsiteconfig = None
 
-        # fill siteconfig data
-        sharedir = os.path.join(self.install_data, "share", "pyx")
-        f = open(siteconfigname, "w")
-        f.write("lfsdir = %r\n" % sharedir)
-        f.write("sharedir = %r\n" % sharedir)
-        f.close()
-
-        # perform install
-        install.run(self)
-
-        # restore existing siteconfig
-        if oldsiteconfig is not None:
-            f = open(siteconfigname, "wb")
-            f.write(oldsiteconfig)
+        try:
+            # fill siteconfig data
+            sharedir = os.path.join(self.install_data, "share", "pyx")
+            f = open(siteconfigname, "w")
+            f.write("lfsdir = %r\n" % sharedir)
+            f.write("sharedir = %r\n" % sharedir)
             f.close()
-        else:
-            os.unlink(siteconfigname)
+
+            # perform install
+            install.run(self)
+        finally:
+            # restore existing siteconfig
+            if oldsiteconfig is not None:
+                f = open(siteconfigname, "wb")
+                f.write(oldsiteconfig)
+                f.close()
+            else:
+                os.unlink(siteconfigname)
 
 #
 # additional package metadata (only available in Python 2.3 and above)
