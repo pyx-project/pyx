@@ -1056,6 +1056,14 @@ class _texmessageload(texmessage):
                 texrunner.texmessageparsed = lowestbracketlevel
 
 
+class _texmessageloadfd(_texmessageload):
+    """validates the inclusion of font description files (fd-files)
+    - works like _texmessageload
+    - filename must end with .fd and no further text is allowed"""
+
+    pattern = re.compile(r"\((?P<filename>[^)]+.fd)\)")
+
+
 class _texmessagegraphicsload(_texmessageload):
     """validates the inclusion of files as the graphics packages writes it
     - works like _texmessageload, but using "<" and ">" as delimiters
@@ -1099,6 +1107,7 @@ texmessage.pyxpageout = _texmessagepyxpageout()
 texmessage.texend = _texmessagetexend()
 texmessage.emptylines = _texmessageemptylines()
 texmessage.load = _texmessageload()
+texmessage.loadfd = _texmessageloadfd()
 texmessage.graphicsload = _texmessagegraphicsload()
 texmessage.ignore = _texmessageignore()
 
@@ -1521,7 +1530,7 @@ class texrunner:
                        texmessagebegindoc=(texmessage.load, texmessage.noaux),
                        texmessageend=texmessage.texend,
                        texmessagedefaultpreamble=texmessage.load,
-                       texmessagedefaultrun=None):
+                       texmessagedefaultrun=texmessage.loadfd):
         mode = mode.lower()
         if mode != "tex" and mode != "latex" and mode != "pdftex" and mode != "pdflatex":
             raise ValueError("mode \"TeX\", \"LaTeX\", \"pdfTeX\", or \"pdfLaTeX\" expected")
