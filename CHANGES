@@ -48,6 +48,8 @@ TODO:
   - path module:
     - arclentoparam should raise an exception when the arclen is out of range (Really?)
     - should split also allow the user to pass arclens (instead of params)
+    - there are many occurences of 1e-5 left. Should they be replaced by the global _epsilon,
+      which would change the constructors to epsilon=None... if epsilon is None: epsilon=_epsilon
   - color module:
     - what should we do for palette when only one entry
   - connector module:
