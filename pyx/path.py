@@ -1623,7 +1623,7 @@ class normpath(path):
         if not isinstance(other, normpath):
             other = normpath(other)
 
-        intersections = ()
+        intersections = ([], [])
         t_a = 0
         context_a = _pathcontext()
         context_b = _pathcontext()
@@ -1641,9 +1641,13 @@ class normpath(path):
 
                     if bpathel_b:
                         t_b += 1
-                        intersections = intersections + \
-                                        _bcurveIntersect(bpathel_a, t_a-1, t_a,
-                                                         bpathel_b, t_b-1, t_b, epsilon)
+                        newintersections = _bcurveIntersect(bpathel_a, t_a-1, t_a,
+                                                            bpathel_b, t_b-1, t_b, epsilon)
+
+                        # change grouping order
+                        for newintersection in newintersections:
+                            intersections[0].append(newintersection[0])
+                            intersections[1].append(newintersection[1])
 
         return intersections
 
