@@ -467,7 +467,7 @@ earrow.LARGE = earrow(size=_base*math.sqrt(64))
 
 class wriggle(deco, attr.attr):
 
-    def __init__(self, skipleft=1, skipright=1, radius=0.5, loops=8, curvesperloop=4):
+    def __init__(self, skipleft=1, skipright=1, radius=0.5, loops=8, curvesperloop=10):
         self.skipleft_str = skipleft
         self.skipright_str = skipright
         self.radius_str = radius
