@@ -21,7 +21,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import math
-from pyx import unit
+from pyx import path, unit
 
 
 class _positioner:
@@ -50,6 +50,7 @@ class _positioner:
         """return the gridpath as a path for a given position v
         in graph coordinates
         - might return None when no gridpath is available"""
+        return None
 
 #    def tickpoint_pt(self, axis, axisdata, x):
 #        """return the position at the basepath as a tuple (x, y) in
@@ -71,50 +72,6 @@ class _positioner:
 
     def vtickdirection(self, v):
         """like tickposition, but for graph coordinates"""
-
-
-# class _axispos:
-#     """implements those parts of _Iaxispos which can be build
-#     out of the axis convert method and other _Iaxispos methods
-#     - base _Iaxispos methods, which need to be implemented:
-#       - vbasepath
-#       - vgridpath
-#       - vtickpoint_pt
-#       - vtickdirection
-#     - other methods needed for _Iaxispos are build out of those
-#       listed above when this class is inherited"""
-# 
-#     def __init__(self, convert):
-#         """initializes the instance
-#         - convert is a convert method from an axis"""
-#         self.convert = convert
-# 
-#     def basepath(self, x1=None, x2=None):
-#         if x1 is None:
-#             if x2 is None:
-#                 return self.vbasepath()
-#             else:
-#                 return self.vbasepath(v2=self.convert(x2))
-#         else:
-#             if x2 is None:
-#                 return self.vbasepath(v1=self.convert(x1))
-#             else:
-#                 return self.vbasepath(v1=self.convert(x1), v2=self.convert(x2))
-# 
-#     def gridpath(self, x):
-#         return self.vgridpath(self.convert(x))
-# 
-#     def tickpoint_pt(self, x):
-#         return self.vtickpoint_pt(self.convert(x))
-# 
-#     def tickpoint(self, x):
-#         return self.vtickpoint(self.convert(x))
-# 
-#     def vtickpoint(self, v):
-#         return [x * unit.t_pt for x in self.vtickpoint(v)]
-# 
-#     def tickdirection(self, x):
-#         return self.vtickdirection(self.convert(x))
 
 
 class pathpositioner(_positioner):
@@ -139,9 +96,6 @@ class pathpositioner(_positioner):
             else:
                 return self.normpath.split(*self.normpath.arclentoparam([v1 * self.arclen, v2 * self.arclen]))[1]
 
-    def vgridpath(self, v):
-        return None
-
     def vtickpoint_pt(self, v):
         return self.normpath.at_pt(self.normpath.arclentoparam(v * self.arclen))
 
@@ -159,4 +113,33 @@ class pathpositioner(_positioner):
         raise RuntimeError("unknown direction")
 
 
+class lineaxispos_pt:
+    """an axispos linear along a line with a fix direction for the ticks"""
+
+    def __init__(self, x1_pt, y1_pt, x2_pt, y2_pt, fixtickdirection, vgridpathfunction):
+        self.x1_pt = x1_pt
+        self.y1_pt = y1_pt
+        self.x2_pt = x2_pt
+        self.y2_pt = y2_pt
+        self.fixtickdirection = fixtickdirection
+        self.vgridpathfunction = vgridpathfunction
+
+    def vbasepath(self, v1=None, v2=None):
+        if v1 is None:
+            v1 = 0
+        if v2 is None:
+            v2 = 1
+        return path.line_pt((1-v1)*self.x1_pt+v1*self.x2_pt,
+                            (1-v1)*self.y1_pt+v1*self.y2_pt,
+                            (1-v2)*self.x1_pt+v2*self.x2_pt,
+                            (1-v2)*self.y1_pt+v2*self.y2_pt)
+
+    def vgridpath(self, v):
+        return self.vgridpathfunction(v)
+
+    def vtickpoint_pt(self, v):
+        return (1-v)*self.x1_pt+v*self.x2_pt, (1-v)*self.y1_pt+v*self.y2_pt
+
+    def vtickdirection(self, v):
+        return self.fixtickdirection
 

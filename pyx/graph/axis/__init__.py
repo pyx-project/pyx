@@ -27,4 +27,5 @@ __all__ = ["axis", "painter", "parter", "rater", "texter", "tick"]
 for module in __all__:
     __import__(module, globals(), locals(), [])
 
-from axis import linear, lin, logarithmic, log, linked, split, linkedsplit, bar, linkedbar, pathaxis
+#from axis import linear, lin, logarithmic, log, linked, split, linkedsplit, bar, linkedbar, pathaxis
+from axis import linear, lin, logarithmic, log, anchoredaxis, linkedaxis, pathaxis

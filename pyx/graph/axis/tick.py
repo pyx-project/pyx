@@ -166,6 +166,10 @@ class rational:
     def __abs__(self):
         return rational((abs(self.num), abs(self.denom)))
 
+    def __add__(self, other):
+        assert abs(other) < 1e-10
+        return float(self)
+
     def __mul__(self, other):
         return rational((self.num * other.num, self.denom * other.denom))
 

@@ -115,9 +115,9 @@ class linear(_parter):
 
             ticks = []
             for i in range(len(self.ticklist)):
-                ticks = tick.mergeticklists(ticks, self.getticks(min, max, self.ticklist[i], ticklevel = i))
+                ticks = tick.mergeticklists(ticks, self.getticks(min, max, self.ticklist[i], ticklevel=i))
             for i in range(len(self.labellist)):
-                ticks = tick.mergeticklists(ticks, self.getticks(min, max, self.labellist[i], labellevel = i))
+                ticks = tick.mergeticklists(ticks, self.getticks(min, max, self.labellist[i], labellevel=i))
 
             return ticks
 
@@ -318,8 +318,10 @@ class autologarithmic(logarithmic):
 
     def partfunction(self, data):
         data.variantsindex += data.sign
-        logarithmicparter= logarithmic(tickpos=self.variants[data.variantsindex][0], labelpos=self.variants[data.variantsindex][1],
-                                       extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon)
-        return logarithmicparter.partfunctions(min=data.min, max=data.max, extendmin=data.extendmin, extendmax=data.extendmax)[0]()
+        if 0 <= data.variantsindex < len(self.variants):
+            logarithmicparter= logarithmic(tickpos=self.variants[data.variantsindex][0], labelpos=self.variants[data.variantsindex][1],
+                                           extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon)
+            return logarithmicparter.partfunctions(min=data.min, max=data.max, extendmin=data.extendmin, extendmax=data.extendmax)[0]()
+        return None
 
 autolog = autologarithmic

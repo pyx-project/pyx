@@ -46,8 +46,6 @@ class cube:
     - the analytic form of the rating is cubic for both, the left and
       the right side of the rater, independently"""
 
-    # __implements__ = sole implementation
-
     def __init__(self, opt, left=None, right=None, weight=1):
         """initializes the rater
         - by default, left is set to zero, right is set to 3*opt
@@ -92,8 +90,6 @@ class distance:
       optimal value (halve the optimal value has the rating one, one third of
       the optimal value has the rating two, etc.)"""
 
-    # __implements__ = sole implementation
-
     def __init__(self, opt, weight=0.1):
         """inititializes the rater
         - opt is the optimal length (a visual PyX length)
@@ -136,8 +132,6 @@ class rater:
     - both parts of the rating are shifted into instances of raters
       defined above --- right now, there is not yet a strict interface
       for this delegation (should be done as soon as it is needed)"""
-
-    # __implements__ = sole implementation
 
     def __init__(self, ticks, labels, range, distance):
         """initializes the axis rater
@@ -220,7 +214,7 @@ class rater:
                 return None
             return self.distance.rate(distances, density)
         else:
-            return None
+            return 0
 
 
 class linear(rater):

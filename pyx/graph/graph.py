@@ -26,112 +26,10 @@
 import math, re, string
 from pyx import canvas, path, trafo, unit
 from pyx.graph import style
-from pyx.graph.axis import painter, axis
+from pyx.graph.axis import axis, positioner
 
 
 goldenmean = 0.5 * (math.sqrt(5) + 1)
-
-
-class lineaxispos:
-    """an axispos linear along a line with a fix direction for the ticks"""
-
-    def __init__(self, convert, x1, y1, x2, y2, fixtickdirection):
-        """initializes the instance
-        - only the convert method is needed from the axis
-        - x1, y1, x2, y2 are PyX lengths (start and end position of the line)
-        - fixtickdirection is a tuple tick direction (fixed along the line)"""
-        self.convert = convert
-        self.x1 = x1
-        self.y1 = y1
-        self.x2 = x2
-        self.y2 = y2
-        self.x1_pt = unit.topt(x1)
-        self.y1_pt = unit.topt(y1)
-        self.x2_pt = unit.topt(x2)
-        self.y2_pt = unit.topt(y2)
-        self.fixtickdirection = fixtickdirection
-
-    def vbasepath(self, v1=None, v2=None):
-        if v1 is None:
-            v1 = 0
-        if v2 is None:
-            v2 = 1
-        return path.line_pt((1-v1)*self.x1_pt+v1*self.x2_pt,
-                            (1-v1)*self.y1_pt+v1*self.y2_pt,
-                            (1-v2)*self.x1_pt+v2*self.x2_pt,
-                            (1-v2)*self.y1_pt+v2*self.y2_pt)
-
-    def basepath(self, x1=None, x2=None):
-        if x1 is None:
-            v1 = 0
-        else:
-            v1 = self.convert(x1)
-        if x2 is None:
-            v2 = 1
-        else:
-            v2 = self.convert(x2)
-        return path.line_pt((1-v1)*self.x1_pt+v1*self.x2_pt,
-                            (1-v1)*self.y1_pt+v1*self.y2_pt,
-                            (1-v2)*self.x1_pt+v2*self.x2_pt,
-                            (1-v2)*self.y1_pt+v2*self.y2_pt)
-
-    def gridpath(self, x):
-        raise RuntimeError("gridpath not available")
-
-    def vgridpath(self, v):
-        raise RuntimeError("gridpath not available")
-
-    def vtickpoint_pt(self, v):
-        return (1-v)*self.x1_pt+v*self.x2_pt, (1-v)*self.y1_pt+v*self.y2_pt
-
-    def vtickpoint(self, v):
-        return (1-v)*self.x1+v*self.x2, (1-v)*self.y1+v*self.y2
-
-    def tickpoint_pt(self, x):
-        v = self.convert(x)
-        return (1-v)*self.x1_pt+v*self.x2_pt, (1-v)*self.y1_pt+v*self.y2_pt
-
-    def tickpoint(self, x):
-        v = self.convert(x)
-        return (1-v)*self.x1+v*self.x2, (1-v)*self.y1+v*self.y2
-
-    def tickdirection(self, x):
-        return self.fixtickdirection
-
-    def vtickdirection(self, v):
-        return self.fixtickdirection
-
-
-class lineaxisposlinegrid(lineaxispos):
-    """an axispos linear along a line with a fix direction for the ticks
-    with support for grid lines for a rectangular graphs"""
-
-    def __init__(self, convert, x1, y1, x2, y2, fixtickdirection, startgridlength, endgridlength):
-        """initializes the instance
-        - only the convert method is needed from the axis
-        - x1, y1, x2, y2 are PyX lengths (start and end position of the line)
-        - fixtickdirection is a tuple tick direction (fixed along the line)
-        - startgridlength and endgridlength are PyX lengths for the starting
-          and end point of the grid, respectively; the gridpath is a line along
-          the fixtickdirection"""
-        lineaxispos.__init__(self, convert, x1, y1, x2, y2, fixtickdirection)
-        self.startgridlength = startgridlength
-        self.endgridlength = endgridlength
-        self.startgridlength_pt = unit.topt(self.startgridlength)
-        self.endgridlength_pt = unit.topt(self.endgridlength)
-
-    def gridpath(self, x):
-        v = self.convert(x)
-        return path.line_pt((1-v)*self.x1_pt+v*self.x2_pt+self.fixtickdirection[0]*self.startgridlength_pt,
-                            (1-v)*self.y1_pt+v*self.y2_pt+self.fixtickdirection[1]*self.startgridlength_pt,
-                            (1-v)*self.x1_pt+v*self.x2_pt+self.fixtickdirection[0]*self.endgridlength_pt,
-                            (1-v)*self.y1_pt+v*self.y2_pt+self.fixtickdirection[1]*self.endgridlength_pt)
-
-    def vgridpath(self, v):
-        return path.line_pt((1-v)*self.x1_pt+v*self.x2_pt+self.fixtickdirection[0]*self.startgridlength_pt,
-                            (1-v)*self.y1_pt+v*self.y2_pt+self.fixtickdirection[1]*self.startgridlength_pt,
-                            (1-v)*self.x1_pt+v*self.x2_pt+self.fixtickdirection[0]*self.endgridlength_pt,
-                            (1-v)*self.y1_pt+v*self.y2_pt+self.fixtickdirection[1]*self.endgridlength_pt)
 
 
 class styledata:
@@ -283,6 +181,25 @@ class graphxy(canvas.canvas):
         else:
             raise ValueError("direction invalid")
 
+    def xvgridpath(self, vx):
+        return path.line_pt(self.xpos_pt + vx*self.width_pt, self.ypos_pt,
+                            self.xpos_pt + vx*self.width_pt, self.ypos_pt + self.height)
+
+    def yvgridpath(self, vy):
+        return path.line_pt(self.xpos_pt, self.ypos_pt + vy*self.height_pt,
+                            self.xpos_pt + self.width_pt, self.ypos_pt + vy*self.height_pt)
+
+# #                    self.xbasepath = self.axespos[key].basepath
+# #                    self.xvbasepath = self.axespos[key].vbasepath
+# #                    self.xgridpath = self.axespos[key].gridpath
+# #                    self.xvgridpath = self.axespos[key].vgridpath
+# #                    self.xtickpoint_pt = self.axespos[key].tickpoint_pt
+# #                    self.xtickpoint = self.axespos[key].tickpoint
+# #                    self.xvtickpoint_pt = self.axespos[key].vtickpoint_pt
+# #                    self.xvtickpoint = self.axespos[key].tickpoint
+# #                    self.xtickdirection = self.axespos[key].tickdirection
+# #                    self.xvtickdirection = self.axespos[key].vtickdirection
+
     def keynum(self, key):
         try:
             while key[0] in string.letters:
@@ -326,70 +243,30 @@ class graphxy(canvas.canvas):
                 plotitem.adjustaxes(self, step)
 
         # finish all axes
-        XPattern = re.compile(r"x([2-9]|[1-9][0-9]+)?$")
-        YPattern = re.compile(r"y([2-9]|[1-9][0-9]+)?$")
-        xaxisextents = [0, 0]
-        yaxisextents = [0, 0]
-        needxaxisdist = [0, 0]
-        needyaxisdist = [0, 0]
-        items = list(self.axes.items())
-        items.sort() #TODO: alphabetical sorting breaks for axis numbers bigger than 9
-        # TODO: linked axes are not taken into account (consider x being a link to x2)
-        for key, axis in items:
-            num = self.keynum(key)
-            num2 = 1 - num % 2 # x1 -> 0, x2 -> 1, x3 -> 0, x4 -> 1, ...
-            num3 = 2 * (num % 2) - 1 # x1 -> 1, x2 -> -1, x3 -> 1, x4 -> -1, ...
-            if XPattern.match(key):
-                if needxaxisdist[num2]:
-                    xaxisextents[num2] += self.axesdist
-                self.axespos[key] = lineaxisposlinegrid(axis.convert,
-                                                        self.xpos,
-                                                        self.ypos + num2*self.height - num3*xaxisextents[num2],
-                                                        self.xpos + self.width,
-                                                        self.ypos + num2*self.height - num3*xaxisextents[num2],
-                                                        (0, num3),
-                                                        xaxisextents[num2], xaxisextents[num2] + self.height)
-                if num == 1:
-                    self.xbasepath = self.axespos[key].basepath
-                    self.xvbasepath = self.axespos[key].vbasepath
-                    self.xgridpath = self.axespos[key].gridpath
-                    self.xvgridpath = self.axespos[key].vgridpath
-                    self.xtickpoint_pt = self.axespos[key].tickpoint_pt
-                    self.xtickpoint = self.axespos[key].tickpoint
-                    self.xvtickpoint_pt = self.axespos[key].vtickpoint_pt
-                    self.xvtickpoint = self.axespos[key].tickpoint
-                    self.xtickdirection = self.axespos[key].tickdirection
-                    self.xvtickdirection = self.axespos[key].vtickdirection
-            elif YPattern.match(key):
-                if needyaxisdist[num2]:
-                    yaxisextents[num2] += self.axesdist
-                self.axespos[key] = lineaxisposlinegrid(axis.convert,
-                                                        self.xpos + num2*self.width - num3*yaxisextents[num2],
-                                                        self.ypos,
-                                                        self.xpos + num2*self.width - num3*yaxisextents[num2],
-                                                        self.ypos + self.height,
-                                                        (num3, 0),
-                                                        yaxisextents[num2], yaxisextents[num2] + self.width)
-                if num == 1:
-                    self.ybasepath = self.axespos[key].basepath
-                    self.yvbasepath = self.axespos[key].vbasepath
-                    self.ygridpath = self.axespos[key].gridpath
-                    self.yvgridpath = self.axespos[key].vgridpath
-                    self.ytickpoint_pt = self.axespos[key].tickpoint_pt
-                    self.ytickpoint = self.axespos[key].tickpoint
-                    self.yvtickpoint_pt = self.axespos[key].vtickpoint_pt
-                    self.yvtickpoint = self.axespos[key].tickpoint
-                    self.ytickdirection = self.axespos[key].tickdirection
-                    self.yvtickdirection = self.axespos[key].vtickdirection
+        keys = list(self.axes.keys())
+        keys.sort() #TODO: alphabetical sorting breaks for axis numbers bigger than 9
+        for key in keys:
+            canvas = self.axes[key].get()
+            if key[1:]:
+                num = int(key[1:])
             else:
-                raise ValueError("Axis key '%s' not allowed" % key)
-            axis.finish(self.axespos[key])
-            if XPattern.match(key):
-                xaxisextents[num2] += axis.axiscanvas.extent
-                needxaxisdist[num2] = 1
-            if YPattern.match(key):
-                yaxisextents[num2] += axis.axiscanvas.extent
-                needyaxisdist[num2] = 1
+                num = 1
+            if num:
+                nextkey = "%s%i" % (key[0], (num+2))
+                if self.axes.has_key(nextkey):
+                    sign = 2*(num % 2) - 1
+                    if key[0] == "x":
+                        y_pt = self.axes[key].positioner.y1_pt - sign * (canvas.extent_pt + self.axesdist_pt)
+                        apositioner = positioner.lineaxispos_pt(self.xpos_pt, y_pt,
+                                                                self.xpos_pt + self.width_pt, y_pt,
+                                                                (0, sign), self.xvgridpath)
+                    else:
+                        x_pt = self.axes[key].positioner.x1_pt - sign * (canvas.extent_pt + self.axesdist_pt)
+                        apositioner = positioner.lineaxispos_pt(x_pt, self.ypos_pt,
+                                                                x_pt, self.ypos_pt + self.height_pt,
+                                                                (sign, 0), self.yvgridpath)
+                    self.axes[nextkey].setpositioner(apositioner)
+
         self.haslayout = 1
 
     def dobackground(self):
@@ -403,7 +280,7 @@ class graphxy(canvas.canvas):
         self.dolayout()
         if not self.removedomethod(self.doaxes): return
         for axis in self.axes.values():
-            self.insert(axis.axiscanvas)
+            self.insert(axis.get())
 
     def dodata(self):
         self.dolayout()
@@ -446,20 +323,40 @@ class graphxy(canvas.canvas):
         self.width_pt = unit.topt(self.width)
         self.height_pt = unit.topt(self.height)
 
-    def initaxes(self, axes, addlinkaxes=0):
+    def initaxes(self, axes):
+        self.axes = {}
+        for key, aaxis in axes.items():
+            if aaxis is not None:
+                self.axes[key] = axis.anchoredaxis(aaxis)
         for key in ["x", "y"]:
             if not axes.has_key(key):
-                axes[key] = axis.linear()
-            elif axes[key] is None:
-                del axes[key]
-            if addlinkaxes:
-                if not axes.has_key(key + "2") and axes.has_key(key):
-                    axes[key + "2"] = axes[key].createlinkaxis()
-                elif axes[key + "2"] is None:
-                    del axes[key + "2"]
-        self.axes = axes
+                if not axes.has_key(key + "2"):
+                    self.axes[key] = axis.anchoredaxis(axis.linear())
+                    self.axes[key + "2"] = axis.linkedaxis(self.axes[key])
+                else:
+                    self.axes[key] = axis.linkedaxis(self.axes[key + "2"])
+            elif not axes.has_key(key + "2"):
+                self.axes[key + "2"] = axis.linkedaxis(self.axes[key])
+
+        if self.axes.has_key("x"):
+            self.axes["x"].setpositioner(positioner.lineaxispos_pt(self.xpos_pt, self.ypos_pt,
+                                                                   self.xpos_pt + self.width_pt, self.ypos_pt,
+                                                                   (0, 1), self.xvgridpath))
+        if self.axes.has_key("x2"):
+            self.axes["x2"].setpositioner(positioner.lineaxispos_pt(self.xpos_pt, self.ypos_pt + self.height_pt,
+                                                                    self.xpos_pt + self.width_pt, self.ypos_pt + self.height_pt,
+                                                                    (0, -1), self.xvgridpath))
+        if self.axes.has_key("y"):
+            self.axes["y"].setpositioner(positioner.lineaxispos_pt(self.xpos_pt, self.ypos_pt,
+                                                                   self.xpos_pt, self.ypos_pt + self.height_pt,
+                                                                   (1, 0), self.yvgridpath))
+        if self.axes.has_key("y2"):
+            self.axes["y2"].setpositioner(positioner.lineaxispos_pt(self.xpos_pt + self.width_pt, self.ypos_pt,
+                                                                    self.xpos_pt + self.width_pt, self.ypos_pt + self.height_pt,
+                                                                    (-1, 0), self.yvgridpath))
+
         self.axesnames = ([], [])
-        for key in axes.keys():
+        for key in self.axes.keys():
             if len(key) != 1 and (not key[1:].isdigit() or key[1:] == "1"):
                 raise ValueError("invalid axis count")
             if key[0] == "x":
@@ -477,10 +374,11 @@ class graphxy(canvas.canvas):
         self.xpos_pt = unit.topt(self.xpos)
         self.ypos_pt = unit.topt(self.ypos)
         self.initwidthheight(width, height, ratio)
-        self.initaxes(axes, 1)
+        self.initaxes(axes)
         self.key = key
         self.backgroundattrs = backgroundattrs
         self.axesdist = axesdist
+        self.axesdist_pt = unit.topt(axesdist)
         self.plotitems = []
         self.domethods = [self.dolayout, self.dobackground, self.doaxes, self.dodata, self.dokey]
         self.haslayout = 0
@@ -489,13 +387,17 @@ class graphxy(canvas.canvas):
         self.finish()
         return canvas.canvas.bbox(self)
 
-    def prolog(self):
+    def registerresources(self, registry):
         self.finish()
-        return canvas.canvas.prolog(self)
+        return canvas.canvas.registerresources(self, registry)
 
     def outputPS(self, file):
         self.finish()
         canvas.canvas.outputPS(self, file)
+
+    def outputPDF(self, file):
+        self.finish()
+        canvas.canvas.outputPDF(self, file)
 
 
 

@@ -641,7 +641,8 @@ class function(_dynamicdata):
                 style.adjustaxis(privatedata, plotitem.sharedata, graph, self.xname, points, None)
         elif step == 1:
             xaxis = graph.axes[self.xname]
-            min, max = xaxis.getrange()
+            min = xaxis.data.min
+            max = xaxis.data.max
             if self.min is not None: min = self.min
             if self.max is not None: max = self.max
             vmin = xaxis.convert(min)
