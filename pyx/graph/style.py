@@ -82,20 +82,20 @@ class pointpos(_style):
 
     def drawpoint(self, graph, styledata):
         # calculate vpos
-        styledata.validvpos = 1 # valid position (but might be outside of the graph)
-        styledata.drawsymbol = 1 # valid position inside the graph
-        styledata.vpos = [axis.convert(styledata.point[index]) for axis, index in styledata.pointposaxisindex]
-        # for axisname in graph.axisnames:
-        #     try:
-        #         v = styledata.axes[axisname].convert(styledata.point[styledata.index[axisname]["x"]])
-        #     except (ArithmeticError, KeyError, ValueError, TypeError):
-        #         styledata.validvpos = 0
-        #         styledata.drawsymbol = 0
-        #         styledata.vpos.append(None)
-        #     else:
-        #         if v < - self.epsilon or v > 1 + self.epsilon:
-        #             styledata.drawsymbol = 0
-        #         styledata.vpos.append(v)
+        styledata.vpos = []
+        styledata.vposavailable = 1 # valid position (but might be outside of the graph)
+        styledata.vposvalid = 1 # valid position inside the graph
+        for axis, index in styledata.pointposaxisindex:
+            try:
+                v = axis.convert(styledata.point[index])
+            except (ArithmeticError, KeyError, ValueError, TypeError):
+                styledata.vposavailable = 0
+                styledata.vposvalid = 0
+                styledata.vpos.append(None)
+            else:
+                if v < - self.epsilon or v > 1 + self.epsilon:
+                    styledata.vposvalid = 0
+                styledata.vpos.append(v)
 
 
 class rangepos(_style):
@@ -243,43 +243,52 @@ class rangepos(_style):
                     break
 
 
+def _crosssymbol(c, x_pt, y_pt, size_pt, attrs):
+    c.draw(path.path(path.moveto_pt(x_pt-0.5*size_pt, y_pt-0.5*size_pt),
+                     path.lineto_pt(x_pt+0.5*size_pt, y_pt+0.5*size_pt),
+                     path.moveto_pt(x_pt-0.5*size_pt, y_pt+0.5*size_pt),
+                     path.lineto_pt(x_pt+0.5*size_pt, y_pt-0.5*size_pt)), attrs)
+
+def _plussymbol(c, x_pt, y_pt, size_pt, attrs):
+    c.draw(path.path(path.moveto_pt(x_pt-0.707106781*size_pt, y_pt),
+                     path.lineto_pt(x_pt+0.707106781*size_pt, y_pt),
+                     path.moveto_pt(x_pt, y_pt-0.707106781*size_pt),
+                     path.lineto_pt(x_pt, y_pt+0.707106781*size_pt)), attrs)
+
+def _squaresymbol(c, x_pt, y_pt, size_pt, attrs):
+    c.draw(path.path(path.moveto_pt(x_pt-0.5*size_pt, y_pt-0.5*size_pt),
+                     path.lineto_pt(x_pt+0.5*size_pt, y_pt-0.5*size_pt),
+                     path.lineto_pt(x_pt+0.5*size_pt, y_pt+0.5*size_pt),
+                     path.lineto_pt(x_pt-0.5*size_pt, y_pt+0.5*size_pt),
+                     path.closepath()), attrs)
+
+def _trianglesymbol(c, x_pt, y_pt, size_pt, attrs):
+    c.draw(path.path(path.moveto_pt(x_pt-0.759835685*size_pt, y_pt-0.438691337*size_pt),
+                     path.lineto_pt(x_pt+0.759835685*size_pt, y_pt-0.438691337*size_pt),
+                     path.lineto_pt(x_pt, y_pt+0.877382675*size_pt),
+                     path.closepath()), attrs)
+
+def _circlesymbol(c, x_pt, y_pt, size_pt, attrs):
+    c.draw(path.path(path.arc_pt(x_pt, y_pt, 0.564189583*size_pt, 0, 360),
+                     path.closepath()), attrs)
+
+def _diamondsymbol(c, x_pt, y_pt, size_pt, attrs):
+    c.draw(path.path(path.moveto_pt(x_pt-0.537284965*size_pt, y_pt),
+                     path.lineto_pt(x_pt, y_pt-0.930604859*size_pt),
+                     path.lineto_pt(x_pt+0.537284965*size_pt, y_pt),
+                     path.lineto_pt(x_pt, y_pt+0.930604859*size_pt),
+                     path.closepath()), attrs)
+
+
 class symbol(_style):
 
-    def cross(self, x_pt, y_pt, size_pt):
-        return (path.moveto_pt(x_pt-0.5*size_pt, y_pt-0.5*size_pt),
-                path.lineto_pt(x_pt+0.5*size_pt, y_pt+0.5*size_pt),
-                path.moveto_pt(x_pt-0.5*size_pt, y_pt+0.5*size_pt),
-                path.lineto_pt(x_pt+0.5*size_pt, y_pt-0.5*size_pt))
-
-    def plus(self, x_pt, y_pt, size_pt):
-        return (path.moveto_pt(x_pt-0.707106781*size_pt, y_pt),
-                path.lineto_pt(x_pt+0.707106781*size_pt, y_pt),
-                path.moveto_pt(x_pt, y_pt-0.707106781*size_pt),
-                path.lineto_pt(x_pt, y_pt+0.707106781*size_pt))
-
-    def square(self, x_pt, y_pt, size_pt):
-        return (path.moveto_pt(x_pt-0.5*size_pt, y_pt-0.5*size_pt),
-                path.lineto_pt(x_pt+0.5*size_pt, y_pt-0.5*size_pt),
-                path.lineto_pt(x_pt+0.5*size_pt, y_pt+0.5*size_pt),
-                path.lineto_pt(x_pt-0.5*size_pt, y_pt+0.5*size_pt),
-                path.closepath())
-
-    def triangle(self, x_pt, y_pt, size_pt):
-        return (path.moveto_pt(x_pt-0.759835685*size_pt, y_pt-0.438691337*size_pt),
-                path.lineto_pt(x_pt+0.759835685*size_pt, y_pt-0.438691337*size_pt),
-                path.lineto_pt(x_pt, y_pt+0.877382675*size_pt),
-                path.closepath())
-
-    def circle(self, x_pt, y_pt, size_pt):
-        return (path.arc_pt(x_pt, y_pt, 0.564189583*size_pt, 0, 360),
-                path.closepath())
-
-    def diamond(self, x_pt, y_pt, size_pt):
-        return (path.moveto_pt(x_pt-0.537284965*size_pt, y_pt),
-                path.lineto_pt(x_pt, y_pt-0.930604859*size_pt),
-                path.lineto_pt(x_pt+0.537284965*size_pt, y_pt),
-                path.lineto_pt(x_pt, y_pt+0.930604859*size_pt),
-                path.closepath())
+    # insert symbols like staticmethods
+    cross = _crosssymbol
+    plus = _plussymbol
+    square = _squaresymbol
+    triangle = _trianglesymbol
+    circle = _circlesymbol
+    diamond = _diamondsymbol
 
     changecross = attr.changelist([cross, plus, square, triangle, circle, diamond])
     changeplus = attr.changelist([plus, square, triangle, circle, diamond, cross])
@@ -297,14 +306,10 @@ class symbol(_style):
 
     defaultsymbolattrs = [deco.stroked]
 
-    def __init__(self, symbol=changecross,
-                       size=0.2*unit.v_cm,
-                       symbolattrs=[],
-                       epsilon=1e-10):
+    def __init__(self, symbol=changecross, size=0.2*unit.v_cm, symbolattrs=[]):
         self.symbol = symbol
         self.size = size
         self.symbolattrs = symbolattrs
-        self.epsilon = epsilon
 
     def selectstyle(self, selectindex, selecttotal, styledata):
         styledata.symbol = attr.selectattr(self.symbol, selectindex, selecttotal)
@@ -314,19 +319,14 @@ class symbol(_style):
         else:
             styledata.symbolattrs = None
 
-    def drawsymbol_pt(self, c, x_pt, y_pt, styledata, point=None):
-        if styledata.symbolattrs is not None:
-            c.draw(path.path(*styledata.symbol(self, x_pt, y_pt, styledata.size_pt)), styledata.symbolattrs)
-
     def drawpoint(self, graph, styledata):
-        if styledata.drawsymbol:
-            styledata.xpos, styledata.ypos = graph.vpos_pt(*styledata.vpos)
-            self.drawsymbol_pt(graph, styledata.xpos, styledata.ypos, styledata, point=styledata.point)
+        if styledata.vposvalid and styledata.symbolattrs is not None:
+            xpos, ypos = graph.vpos_pt(*styledata.vpos)
+            styledata.symbol(graph, xpos, ypos, styledata.size_pt, styledata.symbolattrs)
 
-    def key_pt(self, c, x_pt, y_pt, width_pt, height_pt, styledata):
-        self.drawsymbol_pt(c, x_pt+0.5*width_pt, y_pt+0.5*height_pt, styledata)
-#        if styledata.lineattrs is not None:
-#            c.stroke(path.line_pt(x_pt, y_pt+0.5*height_pt, x_pt+width_pt, y_pt+0.5*height_pt), styledata.lineattrs)
+    def key_pt(self, graph, x_pt, y_pt, width_pt, height_pt, styledata):
+        if styledata.symbolattrs is not None:
+            styledata.symbol(graph, x_pt+0.5*width_pt, y_pt+0.5*height_pt, styledata.size_pt, styledata.symbolattrs)
 
 
 class line(_style):
@@ -352,13 +352,11 @@ class line(_style):
 
     def appendlinebasepoints(self, graph, styledata):
         # append linebasepoints
-        if styledata.validvpos:
+        if styledata.vposavailable:
             if len(styledata.linebasepoints):
                 # the last point was inside the graph
-                if styledata.drawsymbol: # this is wrong
-                    # we always need the following line here:
-                    styledata.xpos, styledata.ypos = graph.vpos_pt(*styledata.vpos)
-                    styledata.linebasepoints.append((styledata.xpos, styledata.ypos))
+                if styledata.vposvalid: # shortcut for the common case
+                    styledata.linebasepoints.append(graph.vpos_pt(*styledata.vpos))
                 else:
                     # cut end
                     cut = 1
@@ -383,11 +381,12 @@ class line(_style):
                         for vstart, vend in zip(styledata.lastvpos, styledata.vpos):
                             cutvpos.append(vstart + (vend - vstart) * cut)
                         styledata.linebasepoints.append(styledata.graph.vpos_pt(*cutvpos))
-                        styledata.validvpos = 0 # clear linebasepoints below
+                        styledata.lastvpos = styledata.vpos
+                        return 0
             else:
                 # the last point was outside the graph
                 if styledata.lastvpos is not None:
-                    if styledata.drawsymbol:
+                    if styledata.vposvalid:
                         # cut beginning
                         cut = 0
                         for vstart, vend in zip(styledata.lastvpos, styledata.vpos):
@@ -460,10 +459,12 @@ class line(_style):
                                     cuttovpos.append(vstart + (vend - vstart) * cutto)
                                 styledata.linebasepoints.append(styledata.graph.vpos_pt(*cutfromvpos))
                                 styledata.linebasepoints.append(styledata.graph.vpos_pt(*cuttovpos))
-                        styledata.validvpos = 0 # clear linebasepoints below
+                        styledata.lastvpos = styledata.vpos
+                        return 0
             styledata.lastvpos = styledata.vpos
         else:
             styledata.lastvpos = None
+        return 0
 
     def addpointstopath(self, styledata):
         # add baselinepoints to styledata.path
@@ -475,15 +476,18 @@ class line(_style):
                 styledata.path.append(path.lineto_pt(*styledata.linebasepoints[1]))
         styledata.linebasepoints = []
 
+    def drawpoint(self, graph, styledata):
+        if self.appendlinebasepoints(graph, styledata):
+            self.addpointstopath(styledata)
+
     def donedrawpoints(self, graph, styledata):
         self.addpointstopath(styledata)
         if styledata.lineattrs is not None and len(styledata.path.path):
             styledata.linecanvas.stroke(styledata.path, styledata.lineattrs)
 
-    def drawpoint(self, graph, styledata):
-        self.appendlinebasepoints(graph, styledata)
-        if not styledata.validvpos:
-            self.addpointstopath(styledata)
+    def key_pt(self, c, x_pt, y_pt, width_pt, height_pt, styledata):
+        if styledata.lineattrs is not None:
+            c.stroke(path.line_pt(x_pt, y_pt+0.5*height_pt, x_pt+width_pt, y_pt+0.5*height_pt), styledata.lineattrs)
 
 
 class errorbars(_style):
@@ -694,6 +698,7 @@ class rect(_style):
             if colorvalue != lastcolorvalue:
                 c.set([color])
             c.fill(p)
+
 
 class bar(_style):
 
