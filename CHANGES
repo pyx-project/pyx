@@ -65,6 +65,10 @@ TODO:
       central place.
     - section titles: "Axes" -> "Axes - module axis" or similar
 
+  FAQ:
+    - describe creation and modification (inplace and ``modify by new'') of
+      graph data
+
 
 0.6 (2004/03/30):
   - graph module:
