@@ -8,9 +8,10 @@ class Canvas(Globex):
     ExportMethods = [ "amove", "aline", "rmove", "rline", 
                       "text", "textwd", "textht", "textdp" ]
 
-    BaseFilename = "example"
-
-    def __init__(self):
+    def __init__(self,height,width,basefilename):
+        self.Height=height
+        self.Width=width
+        self.BaseFilename=basefilename
         self.PSInit()
 
     def TexCreateBoxCmd(self, texstr, parmode, valign):
@@ -41,7 +42,7 @@ class Canvas(Globex):
     
     def TexCopyBoxCmd(self, texstr, halign, angle):
 
-        CmdBegin = "{\\vbox to0pt{\\kern" + str(29.7-self.y) + "truecm\\hbox{\\kern" + str(self.x) + "truecm\\ht\\localbox0pt"
+        CmdBegin = "{\\vbox to0pt{\\kern" + str(self.Height - self.y) + "truecm\\hbox{\\kern" + str(self.x) + "truecm\\ht\\localbox0pt"
         CmdEnd = "}\\vss}\\nointerlineskip}"
 
         if angle != None and angle != 0:
@@ -91,8 +92,8 @@ class Canvas(Globex):
 
         file.write("""\\nonstopmode
 \\documentclass{article}
-\\setlength{\\textheight}{29.7truecm}
-\\setlength{\\textwidth}{21truecm}
+\\setlength{\\textheight}{""" + str(self.Height) + """truecm}
+\\setlength{\\textwidth}{""" + str(self.Width) + """truecm}
 \\setlength{\\topmargin}{0truecm}
 \\setlength{\\headheight}{0truecm}
 \\setlength{\\headsep}{0truecm}
@@ -122,9 +123,9 @@ class Canvas(Globex):
 \\dp\\pagebox0cm
 \\wd\\pagebox\\textwidth
 \\setlength{\\unitlength}{1truecm}
-\\begin{picture}(0,29.7)(0,0)
-\\multiput(0,0)(1,0){22}{\line(0,1){29.7}}
-\\multiput(0,0)(0,1){30}{\line(1,0){21}}
+\\begin{picture}(0,""" + str(self.Height) + """)(0,0)
+\\multiput(0,0)(1,0){11}{\line(0,1){20}}
+\\multiput(0,0)(0,1){21}{\line(1,0){10}}
 \\end{picture}%
 \\copy\\pagebox
 \\end{document}""")
@@ -137,7 +138,7 @@ class Canvas(Globex):
         
         # TODO: ordentliche Fehlerbehandlung,
         #       Schnittstelle zur Kommandozeile
-        if os.system("dvips -T21cm,29.7cm -E -o " + self.BaseFilename + ".tex.eps " +
+        if os.system("dvips -E -o " + self.BaseFilename + ".tex.eps " +
                      self.BaseFilename + " > /dev/null 2>&1"):
             assert "dvips exit code not zero"
         
@@ -199,6 +200,7 @@ class Canvas(Globex):
 	    return
 	
         self.PSFile.write("%!\n")
+        self.PSFile.write("%%%%BoundingBox: 0 0 %d %d\n" % (self.Height*72, self.Width*72)) # TODO: das geht so nicht ...
 
 	# PostScript-procedure definitions
 	# cf. file: 5002.EPSF_Spec_v3.0.pdf     
@@ -232,7 +234,7 @@ class Canvas(Globex):
 
     def PSEnd(self):
     	self.PSFile.write("stroke\n")
-    	self.PSFile.write("0 50 translate\n")
+    	self.PSFile.write("0 -508 translate\n")
 	self.PSInsertEPS(self.BaseFilename + ".tex.eps")
 	self.PSFile.close()
 	
@@ -282,21 +284,21 @@ class Canvas(Globex):
 	self.PSFile.write("%f %f rlineto\n" % self.PScm2po(x,y))
 
 
-def canvas():
-    DefaultCanvas=Canvas()
+def canvas(height,width,basefilename):
+    DefaultCanvas=Canvas(height,width,basefilename)
     DefaultCanvas.AddNamespace("DefaultCanvas",GetCallerGlobalNamespace())
 
 
 if __name__=="__main__":
-    canvas()
+    canvas(10,20,"example")
 
-    for x in range(22):
+    for x in range(11):
         amove(x,0)
-        rline(0,29.7)
+        rline(0,20)
 
-    for y in range(30):
+    for y in range(21):
        amove(0,y)
-       rline(21,0)
+       rline(10,0)
 
     amove(1,1)
     print "Breite von 'Hello world!': ",textwd("Hello world!")
