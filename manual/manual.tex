@@ -1,25 +1,39 @@
-\documentclass[dvips]{scrreprt}
-\usepackage{pyx,tabularx,graphicx}
-\usepackage[latin1]{inputenc}
-\usepackage{url}
-\usepackage{hyperref}
-\usepackage{units}
-\hypersetup{
-   pdftitle={PyX Reference Manual},
-   pdfauthor={Jörg Lehmann, André Wobst},
-   colorlinks={true}
-}
-% \includeonly{graph} % for temporarily skipping of chapters
-\setlength{\parindent}{0pt}
+\documentclass{manual}
+
+% to shorten edit-compile-view cycles use
+% \includeonly{graph}
+
+\usepackage{pyx}
+\ifhtml % redefine the PyX macro for html (the other makes trouble)
+\def\PyX{PyX}
+\fi
+\usepackage{graphicx}
+\usepackage{tabularx} % TODO: get rid of that
+\usepackage{units}    % TODO: get rid of that
+
+\title{\PyX{} Reference Manual}
+\author{J\"org Lehmann\\
+Andr\'e Wobst}
+\authoraddress{http://pyx.sourceforge.net/}
+\date{\today}
+\release{\input{pyxversion.tex}}
+
+\makeindex
+
 \begin{document}
-\subject{\href{http://pyx.sourceforge.net/}{\url{http://pyx.sourceforge.net/}}}
-\title{\PyX{} \input pyxversion.tex\\
-Reference Manual}
-\author{J\"org Lehmann \href{mailto:joergl@users.sourceforge.net}{\url{<joergl@users.sourceforge.net>}}\and
-Andr\'e Wobst \href{mailto:wobsta@users.sourceforge.net}{\url{<wobsta@users.sourceforge.net>}}}
+
 \maketitle
-\quad\vfill\centerline{PostScript is a trademark of Adobe Systems Incorporated.}
+
+\ifhtml % make abstact better available (as in the python docs)
+\chapter*{Front Matter\label{front}}
+\fi
+\begin{abstract}
+\noindent
+TODO: Insert an abstract about \PyX{}.
+\end{abstract}
+
 \tableofcontents
+
 \include{intro}
 \include{path}
 \include{unit}
@@ -31,12 +45,15 @@ Andr\'e Wobst \href{mailto:wobsta@users.sourceforge.net}{\url{<wobsta@users.sour
 \include{epsfile}
 \include{bbox}
 \include{color}
-\include{data}
 \include{graph}
-\appendix
-\include{mathtree}
-\include{colorname}
-\include{palettename}
-\include{pathstyles}
-\include{arrows}
+\include{axis}
+%\appendix
+%\include{mathtree}
+%\include{colorname}
+%\include{palettename}
+%\include{pathstyles}
+%\include{arrows}
+
+\input{manual.ind}
+
 \end{document}
