@@ -248,7 +248,8 @@ class bcurve_pt:
                 lindex = bisect.bisect_left(cumlengths, length)
             except: # workaround for python 2.0
                 lindex = bisect.bisect(cumlengths, length)
-                while lindex and cumlengths[lindex] >= length:
+                while lindex and (lindex >= len(cumlengths) or
+                                  cumlengths[lindex] >= length):
                     lindex -= 1
             if lindex==0:
                 t = length * 1.0 / cumlengths[0]
