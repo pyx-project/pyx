@@ -29,9 +29,6 @@ TODO:
     - support modification of existing styles via __call__
   - bbox module:
     - height -> getheight, ...
-  - attr module:
-    - TODO: general documentation about attributes, clearing, merging?
-    - TODO: general documentation about changeable attributes?
   - unit module:
     - maybe we should never convert implicitly into visual/width, etc. lengths
   - mathtree:
@@ -62,8 +59,8 @@ TODO:
       - cycloid decorator
       - smoothed decorator
     - graphics section:
-      Attributes and changeable attributes should be explained in a
-      central place.
+      Attributes (clearing merging ) and changeable attributes should be 
+      explained at a central place.
     - section titles: "Axes" -> "Axes - module axis" or similar
 
   FAQ:
@@ -78,14 +75,16 @@ TODO:
     - names of local and member variables now follow the naming convention of
       having a _pt suffix when containing lengths in points
     - enlarge was misspelled as enlarged
+    - renamed _bbox -> bbox_pt
+    - new bbox method center, which returns the coordinates of the center
+      of the bbox
+    - enlarge and enlarged do no longer interprete unqualified lengths as
+      being of type visual
   - unit module:
     - unit.cm, unit.t_cm, etc. are no longer sub classes but instances
       of length
   - canvas module:
     - added new classes page and document for multipage PostScript output
-  - bbox module:
-    - renamed _bbox -> bbox_pt
-    - new bbox method center which returns the center of the bounding box
 
 0.6.2 (2004/04/07):
   - graph module:
