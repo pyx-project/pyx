@@ -362,6 +362,7 @@ class Font:
         if d<0 or d>134217728:
             raise DVIError("font '%s' not loaded: bad design size" % fontname)
 
+        self.scale = 1.0*q/d
         self.alpha = 16;
         self.q = self.qorig = q
         while self.q>=8388608:
@@ -456,7 +457,7 @@ class DVIFile:
         self.activefont = fontnum
         self.actpage.append(("f", self.fonts[fontnum]))
         if self.debug:
-            print "use font %i" % self.activefont
+            print "fontnum%i current font is %s" % (self.activefont, self.fonts[fontnum].name)
 
     def definefont(self, num, c, q, d, fontname):
         # c: checksum
@@ -466,7 +467,15 @@ class DVIFile:
         
         self.fonts[num] =  Font(fontname, c, q, d, self.tfmconv)
 
-        # m = round((1000.0*self.conv*q)/(self.trueconv*d));
+        scale = round((1000.0*self.conv*q)/(self.trueconv*d))
+        m = 1.0*q/d
+
+        if self.debug:
+            scalestring = scale!=1000 and " scaled %d" % scale or ""
+            print ("Font %i: %s%s---loaded at size %d DVI units" %
+                   (num, fontname, scalestring, q))
+            if scale!=1000:
+                print " (this font is magnified %d%%)" % round(scale/10)
 
     def __init__(self, filename, debug=0):
 
@@ -637,8 +646,6 @@ class DVIFile:
             print "dvifile(\"%s\").write() for page %s called" % (self.filename, page)
         for el in self.pages[page-1]:
             command, arg = el[0], el[1:]
-            if self.debug:
-                print "\t", command, arg
             if command=="c":
                 x, y, c = arg
                 file.write("%f %f moveto (%s) show\n" % (unit.topt(x), unit.topt(y), c))
@@ -651,10 +658,11 @@ class DVIFile:
                             -unit.topt(w)))
             elif command=="f":
                 fontname = arg[0].name
+                fontscale = arg[0].scale
                 match = self.FontSizePattern.search(fontname)
                 if match:
-                    file.write("/%s %s selectfont\n" % (fontname.upper(),
-                                                        match.group(1)))
+                    file.write("/%s %f selectfont\n" % (fontname.upper(),
+                                                        int(match.group(1))*fontscale))
                 else:
                     raise RuntimeError("cannot determine font size from name '%s'" % fontname)
 
@@ -1233,43 +1241,5 @@ _default = texrunner()
 set = _default.set
 define = _default.define
 text = _default.text
-
-
-###############################################################################
-# TODO: remove __name__ == "__main__"
-
-if __name__ == "__main__":
-
-    res1 = text(r"""\hbox{$\displaystyle\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} =
-    \sqrt{\pi\over a}$} """)
-#    print res1.bbox()
-#    res2 = text("aaa")
-#    res3 = text("bla und nochmals bla")
-#    print res2.bbox()
-#    print res3.bbox()
-
-    file = open("text.ps", "w")
-
-    file.write("%!PS-Adobe-3.0 EPSF 3.0\n")
-    file.write("%%BoundingBox: -10 -100 100 100\n")
-    file.write("%%EndComments\n")
-
-    file.write("%%BeginProlog\n")
-
-    # res*.collectfontheader ???
-    # we need to find a way to write the headers in the PS prolog!
-    containsfonts = []
-    res1.writefontheader(file, containsfonts)
-
-    file.write("%%EndProlog\n")
-
-
-    res1.write(file)
-#    res3.write(file)
-#    res2.write(file)
-
-    file.write("showpage\n")
-    file.write("%%Trailer\n")
-    file.write("%%EOF\n")
 
 # vim: fdm=marker
