@@ -794,7 +794,7 @@ class DVIFile:
                 raise DVIError # unexpected reader state, should not happen
         self.flushout()
 
-    def prolog(self):
+    def prolog(self, page): # TODO: AW inserted this page argument -> should return the prolog needed for that page only!
         """ return prolog corresponding to contents of dvi file """
         # XXX replace this by prolog method in _selectfont
         result = []
@@ -1433,12 +1433,13 @@ class _textbox(box._rect, base.PSCmd):
     - _textbox instances can be inserted into a canvas
     - the output is contained in a page of the dvifile available thru the texrunner"""
 
-    def __init__(self, x, y, left, right, height, depth, texrunner, page, *styles):
+    def __init__(self, x, y, left, right, height, depth, texrunner, dvinumber, page, *styles):
         self.texttrafo = trafo._translate(x, y)
         box._rect.__init__(self, x - left, y - depth,
                                  left + right, depth + height,
                                  abscenter = (left, depth))
         self.texrunner = texrunner
+        self.dvinumber = dvinumber
         self.page = page
         self.styles = styles
 
@@ -1451,14 +1452,14 @@ class _textbox(box._rect, base.PSCmd):
         result = []
         for cmd in self.styles:
             result.extend(cmd.prolog())
-        return result + self.texrunner.prolog()
+        return result + self.texrunner.prolog(self.dvinumber, self.page)
 
     def write(self, file):
         canvas._gsave().write(file) # XXX: canvas?, constructor call needed?
         self.texttrafo.write(file)
         for style in self.styles:
             style.write(file)
-        self.texrunner.write(file, self.page)
+        self.texrunner.write(file, self.dvinumber, self.page)
         canvas._grestore().write(file)
 
 
@@ -1554,6 +1555,8 @@ class texrunner:
         self.preamblemode = 1
         self.executeid = 0
         self.page = 0
+        self.dvinumber = 0
+        self.dvifiles = []
         savetempdir = tempfile.tempdir
         tempfile.tempdir = os.curdir
         self.texfilename = os.path.basename(tempfile.mktemp())
@@ -1717,21 +1720,32 @@ class texrunner:
             raise TexResultError("TeX didn't respond as expected within the timeout period (%i seconds)." % self.waitfortex, self)
 
     def getdvi(self):
-        "finish TeX/LaTeX and initialize dvifile"
+        "finish TeX/LaTeX and read the dvifile"
         self.execute(None, *self.texmessageend)
-        self.dvifile = DVIFile("%s.dvi" % self.texfilename, debug=self.dvidebug)
+        self.dvifiles.append(DVIFile("%s.dvi" % self.texfilename, debug=self.dvidebug))
+        self.dvinumber += 1
 
-    def prolog(self):
-        "return the dvifile prolog (assume, that everything in the dvifile will be written to postscript)"
+    def prolog(self, dvinumber, page):
+        "return the dvifile prolog"
         if not self.texdone:
             self.getdvi()
-        return self.dvifile.prolog()
+        return self.dvifiles[dvinumber].prolog(page)
 
-    def write(self, file, page):
+    def write(self, file, dvinumber, page):
         "write a page from the dvifile"
         if not self.texdone:
             self.getdvi()
-        return self.dvifile.write(file, page)
+        return self.dvifiles[dvinumber].write(file, page)
+
+    def reset(self):
+        "resets the tex runner to its initial state (upto its record to old dvi file(s))"
+        if self.texruns:
+            if not self.texdone:
+                self.getdvi()
+        self.preamblemode = 1
+        self.executeid = 0
+        self.page = 0
+        self.texdone = 0
 
     def settex(self, mode=None, lfs=None, docclass=None, docopt=None, usefiles=None, waitfortex=None,
                      texmessagestart=None,
@@ -1881,7 +1895,7 @@ class texrunner:
         if not match or int(match.group("page")) != self.page:
             raise TexResultError("box extents not found", self)
         left, right, height, depth = map(lambda x: float(x) * 72.0 / 72.27, match.group("lt", "rt", "ht", "dp"))
-        box = _textbox(x, y, left, right, height, depth, self, self.page,
+        box = _textbox(x, y, left, right, height, depth, self, self.dvinumber, self.page,
                        *helper.getattrs(args, base.PathStyle, default=[]))
         for t in helper.getattrs(args, trafo._trafo, default=()):
             box.reltransform(t)
@@ -1893,6 +1907,7 @@ class texrunner:
 
 # the module provides an default texrunner and methods for direct access
 defaulttexrunner = texrunner()
+reset = defaulttexrunner.reset
 set = defaulttexrunner.set
 preamble = defaulttexrunner.preamble
 text = defaulttexrunner.text
