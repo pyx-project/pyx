@@ -27,13 +27,21 @@
 # some helper functions for the attribute handling
 #
 
-def mergeattrs(attrs):
+def mergeattrs(attrs, defaults=[]):
     """perform merging of the attribute list attrs as defined by the
     merge methods of the attributes"""
     newattrs = []
-    for aattr in attrs:
-        if isinstance(aattr, attr):
-            newattrs = aattr.merge(newattrs)
+    if attrs is None:
+        return None
+    # XXX Should we skip merging of the default attributes?
+    for a in defaults:
+        newattrs = a.merge(newattrs)
+    for a in attrs:
+        if a is None:
+            return None
+        # XXX Do we really need this test?
+        if isinstance(a, attr):
+            newattrs = a.merge(newattrs)
         else:
             raise TypeError("only instances of class attr.attr are allowed")
     return newattrs
@@ -58,7 +66,8 @@ def getattrs(attrs, getclasses):
 
 def checkattrs(attrs, allowedclasses):
     """check whether only attributes which are instances of classes in
-    allowedclasses are present in the attribute list attrs"""
+    allowedclasses are present in the attribute list attrs; if not it
+    raises a TypeError"""
     if len(attrs) != len(getattrs(attrs, allowedclasses)):
         for attr1, attr2 in zip(attrs, getattrs(attrs, allowedclasses)):
             if attr1 is not attr2:
@@ -195,4 +204,60 @@ class _clear(attr):
 # in an attribute list
 
 clear = _clear()
+
+#
+# changeable attrs
+#
+
+def select(attrs, index, total):
+    """performs select calls for all changeable attributes and
+    returns the resulting attribute list
+    - attrs should be a list containing attributes and changeable
+      attributes
+    - index should be an unsigned integer
+    - total should be a positive number
+    - valid sections fullfill 0<=index<total"""
+    result = []
+    for a in attrs:
+        if isinstance(a, changeattr):
+            result.append(a.select(index, total)
+        else:
+            result.append(a)
+
+
+class changeattr:
+
+    """changeattr is the base class of all changeable attributes"""
+
+    def select(self, index, total):
+        """returns an attribute for a given index out of a total number
+        if attributes to be provided
+        - index should be an unsigned integer
+        - total should be a positive number
+        - valid selections fullfill 0 <= index < total
+        - the select method may raise a ValueError, when the
+          changeable attribute does not allow for a requested
+          selection"""
+
+        raise RuntimeError("not implemented")
+
+
+class changelist(changeattr):
+
+    """a changeable attribute over a list of attribute choises"""
+
+    def __init__(self, attrs, restartable=1):
+        """initializes the instance
+        - attrs is a list of attributes to cycle
+        - restartable is a boolean, allowing to start from
+          the beginning after the end was reached; otherwise
+          selecting beyond the list returns a None"""
+        self.attrs = attrs
+        self.restartable = restartable
+
+    def select(self, index, total):
+        if self.restartable:
+            return self.attrs[index % length(self.attrs)]
+        elif index < length(self.attrs):
+            return self.attrs[index]
 

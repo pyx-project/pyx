@@ -6,8 +6,9 @@ What are attributes?
 --------------------
 
 Attributes define properties of a given object when it is being used.
-Typically, there are different kind of attributes which are usually orthogonal
-to each other, while for one attribute kind, several choices are possible.
+They are instances derived from the class attr.attr. Typically, there
+are different kind of attributes which are usually orthogonal to each
+other, while for one attribute kind, several choices are possible.
 
     Example:
 
@@ -19,18 +20,12 @@ to each other, while for one attribute kind, several choices are possible.
 Where are attributes used?
 --------------------------
 
-Typically, attributes occur in lists passed as arguments to various methods of
-PyX objects. There, the object the attributes refer to may either be the first
-argument (not taking into account the self argument) of the method, like in 
+Typically, attributes occur in lists passed as an optional keyword
+argument to a method or a function. The object the attributes refer to
+might be the first argument (not taking into account the self
+argument) of the method, like in
 
-    canvas.stroke(path, attr1, attr2, attr3)
-
-The attributes may also define properties of the object the method belongs to.
-Furthermore, in more complicated cases, the attributes are collected as lists
-in keyword arguments, for instance,
-
-    graph.axispainter(labelattrs=[textattr1, textattr2],
-                      titleattrs=[textattr3, textattr4])
+    canvas.stroke(path, [attr1, attr2, attr3])
 
 
 Attribute categories
@@ -55,7 +50,8 @@ Operations usually allow for certain attibute categories only. For
 example when stroking a path, text attributes are not allowed, while
 stroke attributes and decoraters are. Some attributes might belong to
 several attribute categories like colors, which are both, stroke and
-fill attributes. This is described by multiple inheritance.
+fill attributes. This is described by multiple inheritance and the
+attribute categories can be fetched by the buildin isinstance method.
 
 
 Attribute instances as member variables
@@ -66,7 +62,7 @@ have the following technology:
 
     class linewidth(strokestyle):
 
-        def __init__(...)
+        def __init__(...):
         etc.
 
     linewidth.normal = linewidth("0.2 mm")
@@ -93,12 +89,12 @@ be helpfull in the authors eyes). The code would look like:
     darker_version = some_cmyk_color(b=1)
 
 Both, some_cmyk_color and darker_version are instances of color.cmyk.
-Since usually only some parameters are to be changed only, the
-parameters should be accessable by keyword arguments. Attribute lists
-in keyword arguments could gain from the attribute replacement and
-clearing functionality described below. Basically, the specialization
-(__call__ method) should take exactly the same arguments like the
-constructor (__init__ method). It might be consistent to provide the
+Since usually some parameters are to be changed only, the parameters
+should be accessable by keyword arguments. Attribute lists in keyword
+arguments could gain from the attribute replacement and clearing
+functionality described below. Basically, the specialization (__call__
+method) should take exactly the same arguments like the constructor
+(__init__ method). It might be consistent to provide the
 specialization possibility for all attribute instances.
 
 
@@ -110,40 +106,42 @@ This process is called merging of attributes and it is performed by
 the function merge from attr.py.
 
 The merging process might take into account some default attributes.
-They should be added in front of the list of attributes.
+They are passed in a special keyword argument.
 
     Example:
 
-    use_attr_list = attr.merge(default_attr_list + orginial_attr_list)
+    use_attr_list = attr.merge(original_attr_list, defaults=default_attr_list)
+
+When original_attr_list or a member of original_attr_list is None, the
+result use_attr_list is None.
 
 There are special clearing attributes, which overwrite other
 attributes and do not add themself when merging an attribute list.
 By that it is possible to certain or all default attributes. There are
 prototypes for clearing attributes defined in attr.py.
 
-
-Comments.
-=========
-
-Enforce named parameters
-------------------------
-
-To ensure the correct usage of keyword arguments, we could enforce the
-usage of keyword arguments by the following construct:
-
-def f(unusedparam=helper.nodefault,
-      firstparam=None,
-      secondparam=None):
-    if unusedparam is not None:
-        raise RuntimeError("we enforce the use of named parameters")
-
-Is this really necessary?
+XXX We might be more explicit about clearing attributes.
 
 
-Generic __call__ method
------------------------
+Changeable attributes
+---------------------
 
-It should be possible to write a generic __call__ method for all
-attributes. It would need to use self.__class__. I (AW) remember that
-I was strongly against this construction. As far as I can tell, I have
-changed my mind.
+Changeable attributes are instances derived from attr.changeattr. They
+provide a select method with the following prototype:
+
+    select(self, index, total)
+
+The index is an unsigned integer and the total is a positive integer.
+The select method might raise an ValueError, when the select method is
+called for parameters, it doesn't allow for. An example would be a
+color change from a starting color to an end color. Such a changeable
+attribute would not allow for a total equals to 1.
+
+The select function from attr.py returns a list of attributes out of a
+list of attributes and changeable attributes. The prototype uses the
+same index and total arguments, as described above:
+
+    select(attr_list, index, total)
+
+When changeable attributes are used, the select process must be
+performed previous to the merging.
