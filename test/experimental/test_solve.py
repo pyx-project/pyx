@@ -8,29 +8,31 @@ class ScalarTestCase(unittest.TestCase):
         self.failUnlessRaises(RuntimeError, scalar, "")
         self.failUnlessRaises(RuntimeError, scalar, 1j)
         self.failUnlessEqual(str(scalar()), "unnamed_scalar")
-        self.failUnlessEqual(str(scalar(varname="s")), "s")
+        self.failUnlessEqual(str(scalar(name="s")), "s")
         self.failUnlessEqual(str(scalar(1)), "unnamed_scalar{=1.0}")
-        self.failUnlessEqual(str(scalar(-1, varname="s")), "s{=-1.0}")
+        self.failUnlessEqual(str(scalar(-1, name="s")), "s{=-1.0}")
 
     def testMath(self):
-        self.failUnlessEqual(str(-scalar(varname="s")), "unnamed_scalar{=-1.0} * s")
-        self.failUnlessEqual(str(scalar(varname="s") + scalar(varname="t")), "s  +  t")
-        self.failUnlessEqual(str(scalar(varname="s") + 1), "s  +  unnamed_scalar{=1.0}")
-        self.failUnlessEqual(str(1 + scalar(varname="s")), "s  +  unnamed_scalar{=1.0}")
-        self.failUnlessEqual(str(scalar(varname="s") - scalar(varname="t")), "unnamed_scalar{=-1.0} * t  +  s")
-        self.failUnlessEqual(str(1 - scalar(varname="s")), "unnamed_scalar{=-1.0} * s  +  unnamed_scalar{=1.0}")
-        self.failUnlessEqual(str(2 * scalar(varname="s")), "s * unnamed_scalar{=2.0}")
-        self.failUnlessEqual(str(scalar(varname="s") * 2), "s * unnamed_scalar{=2.0}")
-        self.failUnlessEqual(str(scalar(varname="s") * scalar(varname="t")), "s * t")
-        self.failUnlessEqual(str(scalar(varname="s") / 2.0), "unnamed_scalar{=0.5} * s")
-        self.failUnlessEqual(str(scalar(varname="s") / 2), "unnamed_scalar{=0.0} * s") # integer logic!
+        self.failUnlessEqual(str(-scalar(name="s")), "unnamed_scalar{=-1.0} * s")
+        self.failUnlessEqual(str(scalar(name="s") + scalar(name="t")), "s  +  t")
+        self.failUnlessEqual(str(scalar(name="s") + 1), "s  +  unnamed_scalar{=1.0}")
+        self.failUnlessEqual(str(1 + scalar(name="s")), "s  +  unnamed_scalar{=1.0}")
+        self.failUnlessEqual(str(scalar(name="s") - scalar(name="t")), "unnamed_scalar{=-1.0} * t  +  s")
+        self.failUnlessEqual(str(1 - scalar(name="s")), "unnamed_scalar{=-1.0} * s  +  unnamed_scalar{=1.0}")
+        self.failUnlessEqual(str(2 * scalar(name="s")), "s * unnamed_scalar{=2.0}")
+        self.failUnlessEqual(str(scalar(name="s") * 2), "s * unnamed_scalar{=2.0}")
+        self.failUnlessEqual(str(scalar(name="s") * scalar(name="t")), "s * t")
+        self.failUnlessEqual(str((scalar(name="s") + scalar(name="t")) * 2), "s * unnamed_scalar{=2.0}  +  t * unnamed_scalar{=2.0}")
+        self.failUnlessEqual(str(scalar(name="s") / 2.0), "unnamed_scalar{=0.5} * s")
+        self.failUnlessEqual(str(scalar(name="s") / 2), "unnamed_scalar{=0.0} * s") # integer logic!
+        self.failUnlessEqual(str((scalar(name="s") + scalar(name="t")) / 2.0), "unnamed_scalar{=0.5} * s  +  unnamed_scalar{=0.5} * t")
         self.failUnlessRaises(TypeError, lambda: 2 / scalar())
         self.failUnlessRaises(TypeError, lambda: scalar() / scalar())
         self.failUnlessRaises(TypeError, lambda: vector(1) / scalar())
-        self.failUnlessRaises(TypeError, lambda: (scalar() + scalar()) / scalar())
+        self.failUnlessRaises(TypeError, lambda: ((scalar() + scalar()) / scalar()))
         self.failUnlessRaises(TypeError, lambda: (vector(1) + vector(1)) / scalar())
 
-    def testSetGetIs_Set(self):
+    def testAccess(self):
         s = scalar()
         self.failUnlessEqual(s.is_set(), 0)
         self.failUnlessRaises(RuntimeError, s.get)
@@ -135,31 +137,31 @@ class VectorTestCase(unittest.TestCase):
         self.failUnlessEqual(str(a.z), "unnamed_vector[2]{=3.0}")
 
     def testLen(self):
-        for i in range(10):
+        for i in range(1, 10):
             a = vector(i)
             self.failUnlessEqual(len(a), i)
             self.failUnlessEqual(str(a), "unnamed_vector{=(" + ", ".join(["unnamed_vector[%i]" % j for j in range(i)]) + ")}")
-        for i in range(10):
+        for i in range(1, 10):
             a = -vector(i)
             self.failUnlessEqual(len(a), i)
-            self.failUnlessEqual(str(a), "unnamed_scalar{=-1.0} * unnamed_vector{=(" + ", ".join(["unnamed_vector[%i]" % j for j in range(i)]) + ")}")
+            self.failUnlessEqual(str(a), "unnamed_vector{=(" + ", ".join(["unnamed_scalar{=-1.0} * unnamed_vector[%i]" % j for j in range(i)]) + ")}")
 
     def testMath(self):
-        self.failUnlessEqual(str(-vector(1, "a")), "unnamed_scalar{=-1.0} * a{=(a[0])}")
-        self.failUnlessEqual(str(vector(1, "a") + vector(1, "t")), "a{=(a[0])}  +  t{=(t[0])}")
-        self.failUnlessRaises(RuntimeError, operator.__add__, vector(1), scalar())
-        self.failUnlessRaises(RuntimeError, operator.__add__, vector(1), vector(2))
-        self.failUnlessEqual(str(vector(1, "a") - vector(1, "t")), "unnamed_scalar{=-1.0} * t{=(t[0])}  +  a{=(a[0])}")
-        self.failUnlessRaises(RuntimeError, operator.__sub__, vector(1), scalar())
-        self.failUnlessRaises(RuntimeError, operator.__sub__, vector(1), vector(2))
-        self.failUnlessEqual(str(2 * vector(1, "a")), "unnamed_scalar{=2.0} * a{=(a[0])}")
-        self.failUnlessEqual(str(vector(1, "a") * 2), "unnamed_scalar{=2.0} * a{=(a[0])}")
-        self.failUnlessEqual(str(scalar(varname="s") * vector(1, "a")), "s * a{=(a[0])}")
-        self.failUnlessEqual(str(vector(1, "a") * scalar(varname="s")), "s * a{=(a[0])}")
+        self.failUnlessEqual(str(-vector(2, "a")), "unnamed_vector{=(unnamed_scalar{=-1.0} * a[0], unnamed_scalar{=-1.0} * a[1])}")
+        self.failUnlessEqual(str(vector(2, "a") + vector(2, "t")), "unnamed_vector{=(a[0]  +  t[0], a[1]  +  t[1])}")
+        self.failUnlessRaises(AttributeError, operator.__add__, vector(2), scalar())
+        self.failUnlessRaises(RuntimeError, operator.__add__, vector(2), vector(3))
+        self.failUnlessEqual(str(vector(2, "a") - vector(2, "t")), "unnamed_vector{=(unnamed_scalar{=-1.0} * t[0]  +  a[0], unnamed_scalar{=-1.0} * t[1]  +  a[1])}")
+        self.failUnlessRaises(RuntimeError, operator.__sub__, vector(2), scalar())
+        self.failUnlessRaises(RuntimeError, operator.__sub__, vector(2), vector(3))
+        self.failUnlessEqual(str(2 * vector(2, "a")), "unnamed_vector{=(a[0] * unnamed_scalar{=2.0}, a[1] * unnamed_scalar{=2.0})}")
+        self.failUnlessEqual(str(vector(2, "a") * 2), "unnamed_vector{=(a[0] * unnamed_scalar{=2.0}, a[1] * unnamed_scalar{=2.0})}")
+        self.failUnlessEqual(str(scalar(name="s") * vector(2, "a")), "unnamed_vector{=(a[0] * s, a[1] * s)}")
+        self.failUnlessEqual(str(vector(2, "a") * scalar(name="s")), "unnamed_vector{=(a[0] * s, a[1] * s)}")
         self.failUnlessEqual(str(vector(2, "a") * vector(2, "b")), "a[0] * b[0]  +  a[1] * b[1]")
-        self.failUnlessRaises(RuntimeError, operator.__mul__, vector(1, "a"), vector(2))
-        self.failUnlessEqual(str(vector(1, "a") / 2.0), "unnamed_scalar{=0.5} * a{=(a[0])}")
-        self.failUnlessEqual(str(vector(1, "a") / 2), "unnamed_scalar{=0.0} * a{=(a[0])}") # integer logic!
+        self.failUnlessRaises(RuntimeError, operator.__mul__, vector(2, "a"), vector(3))
+        self.failUnlessEqual(str(vector(2, "a") / 2.0), "unnamed_vector{=(unnamed_scalar{=0.5} * a[0], unnamed_scalar{=0.5} * a[1])}")
+        self.failUnlessEqual(str(vector(2, "a") / 2), "unnamed_vector{=(unnamed_scalar{=0.0} * a[0], unnamed_scalar{=0.0} * a[1])}") # integer logic!
         self.failUnlessRaises(TypeError, lambda: scalar() / vector(1))
         self.failUnlessRaises(TypeError, lambda: vector(1) / vector(1))
         self.failUnlessRaises(TypeError, lambda: (scalar() + scalar()) / vector(1))
