@@ -47,7 +47,6 @@ TODO:
     - set method???
     - PDF support
     - SVG support
-    - a transformed canvas should give correct boundingbox
   - deco module:
     - arrows should not be stroked by default
     - Think about names wriggle and curvecorners
