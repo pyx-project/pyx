@@ -1,32 +1,107 @@
 #!/usr/bin/env python
 
-import attrib, canvas, os, string, tempfile, sys, md5, string, traceback, time, unit
+import canvas, os, string, tempfile, sys, md5, string, traceback, time, unit, math, types
 
-# TODO 7: make an addtexdefinition
+class _halign:
+    def __init__(self, value):
+        self.value = value
+    def __cmp__(self, other):
+        return cmp(self.value, other.value)
+    __rcmp__ = __cmp__
 
-# tex processor types
+class halign:
+    left   = _halign("left")
+    center = _halign("center")
+    right  = _halign("right")
+   
+class _valign:
+    def __init__(self, value):
+        self.value = value
+    def __cmp__(self, other):
+        return cmp(self.value, other.value)
+    __rcmp__ = __cmp__
 
-TeX = "TeX"
-LaTeX = "LaTeX"
+class valign:
+    top    = _valign("top")
+    bottom = _valign("bottom")
+
+class _fontsize:
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return self.value
+
+class fontsize:
+    tiny         = _fontsize("tiny")
+    scriptsize   = _fontsize("scriptsize")
+    footnotesize = _fontsize("footnotesize")
+    small        = _fontsize("small")
+    normalsize   = _fontsize("normalsize")
+    large        = _fontsize("large")
+    Large        = _fontsize("Large")
+    LARGE        = _fontsize("LARGE")
+    huge         = _fontsize("huge")
+    Huge         = _fontsize("Huge")
+
+class _angle:
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return str(self.value)
+
+class angle:
+    horizontal = _angle(0)
+    vertical   = _angle(90)
+    upsidedown = _angle(180)
+    rvertical  = _angle(270)
+    def deg(self, value):
+        return _angle(value)
+    def rad(self, value):
+        return _angle(value * 180 / math.pi)
+
+class _msglevel:
+    showall     = 0
+    hideload    = 1
+    hidewarning = 2
+    hideall     = 3
+    def __init__(self, value):
+        self.value = value
+    def __cmp__(self, other):
+        return cmp(self.value, other.value)
+    __rcmp__ = __cmp__
+
+class msglevel:
+    showall     = _msglevel(_msglevel.showall) # ignore no messages (except empty "messages")
+    hideload    = _msglevel(_msglevel.showall) # ignore only messages inside proper "()"
+    hidewarning = _msglevel(_msglevel.showall) # ignore all messages without a line starting with "! "
+    hideall     = _msglevel(_msglevel.showall) # ignore all messages
+    # typically "hideload" shows all interesting messages (errors,
+    # overfull boxes etc.) and "hidewarning" shows only error messages
+    # level 1 is the default level
+
+class _mode:
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return str(self.value)
+    def __cmp__(self, other):
+        return cmp(other.value)
+    def __rcmp__(self, other):
+        return self.value.__rcmp__(other.value)
+
+class mode:
+    TeX = "TeX"
+    LaTeX = "LaTeX"
 
 # structure to store TexCmds
 
 class TexCmdSaveStruc:
-    def __init__(self, Cmd, MarkerBegin, MarkerEnd, Stack, IgnoreMsgLevel):
+    def __init__(self, Cmd, MarkerBegin, MarkerEnd, Stack, msglevel):
         self.Cmd = Cmd
         self.MarkerBegin = MarkerBegin
         self.MarkerEnd = MarkerEnd
         self.Stack = Stack
-        self.IgnoreMsgLevel = IgnoreMsgLevel
-            # 0 - ignore no messages (except empty "messages")
-            # 1 - ignore only messages inside proper "()"
-            # 2 - ignore all messages without a line starting with "! "
-            # 3 - ignore all messages
-
-            # typically level 1 shows all interesting messages (errors,
-            # overfull boxes etc.) and level 2 shows only error messages
-            # level 1 is the default level
-
+        self.msglevel = msglevel
 class TexException(Exception):
     pass
 
@@ -40,17 +115,17 @@ class TexRightParenthesisError(TexException):
 
 class tex:
 
-    def __init__(self, unit, type = "TeX", latexstyle = "10pt", latexclass = "article", latexclassopt = "", texinit = "", TexInitIgnoreMsgLevel = 1):
+    def __init__(self, unit, type = mode.TeX, latexstyle = "10pt", latexclass = "article", latexclassopt = "", texinit = "", msglevel = msglevel.hideload):
         self.unit = unit
-        assert type == TeX or type == LaTeX, "invalid type"
-        if type == TeX:
+        assert type == mode.TeX or type == mode.LaTeX, "invalid type"
+        if type == mode.TeX:
             # TODO 7: error handling lts-file not found
             # TODO 3: other ways creating font sizes?
             texinit = open("lts/" + latexstyle + ".lts", "r").read() + texinit
         self.type = type
         self.latexclass = latexclass
         self.latexclassopt = latexclassopt
-        self.TexAddCmd(texinit, TexInitIgnoreMsgLevel)
+        self.TexAddCmd(texinit, msglevel)
 
         if len(os.path.basename(sys.argv[0])):
             basename = os.path.basename(sys.argv[0])
@@ -91,7 +166,7 @@ class tex:
         if depth > 0:
             raise TexLeftParenthesisError
 
-    def TexCreateBoxCmd(self, Cmd, size, hsize, valign):
+    def TexCreateBoxCmd(self, Cmd, size, hsize, lvalign):
 
         'creates the TeX box \\localbox containing Cmd'
 
@@ -100,25 +175,25 @@ class tex:
         # we add another "{" to ensure, that everything goes into the Cmd
         Cmd = "{" + Cmd + "}"
 
-        CmdBegin = "\\setbox\\localbox=\\hbox{\\" + size
+        CmdBegin = "\\setbox\\localbox=\\hbox{\\" + str(size)
         CmdEnd = "}"
 
         if hsize != None:
-             if valign == attrib.valign.top or valign == None:
+             if type(lvalign) == types.NoneType or lvalign == valign.top:
                   CmdBegin = CmdBegin + "\\vtop{\hsize" + str(hsize) + "truecm{"
                   CmdEnd = "}}" + CmdEnd
-             elif valign == attrib.valign.bottom:
+             elif lvalign == valign.bottom:
                   CmdBegin = CmdBegin + "\\vbox{\hsize" + str(hsize) + "truecm{"
                   CmdEnd = "}}" + CmdEnd
              else:
                   assert 0, "valign unknown"
         else:
-             assert valign == None, "hsize needed to use valign"
+             assert lvalign == None, "hsize needed to use valign"
         
         Cmd = CmdBegin + Cmd + CmdEnd + "\n"
         return Cmd
     
-    def TexCopyBoxCmd(self, x, y, Cmd, halign, angle):
+    def TexCopyBoxCmd(self, x, y, Cmd, lhalign, angle):
 
         'creates the TeX commands to put \\localbox at the current position'
 
@@ -131,15 +206,10 @@ class tex:
             CmdBegin = CmdBegin + "\\special{ps:gsave currentpoint currentpoint translate " + str(angle) + " rotate neg exch neg exch translate}"
             CmdEnd = "\\special{ps:currentpoint grestore moveto}" + CmdEnd
 
-        if halign != None:
-            if halign == attrib.halign.left:
-                pass
-            elif halign == attrib.halign.center:
-                CmdBegin = CmdBegin + "\kern-.5\wd\localbox"
-            elif halign == attrib.halign.right:
-                CmdBegin = CmdBegin + "\kern-\wd\localbox"
-            else:
-                assert 0, "halign unknown"
+        if type(lhalign) == types.NoneType or lhalign == halign.center:
+            CmdBegin = CmdBegin + "\kern-.5\wd\localbox"
+        elif lhalign == halign.right:
+            CmdBegin = CmdBegin + "\kern-\wd\localbox"
 
         Cmd = CmdBegin + "\\copy\\localbox" + CmdEnd + "\n"
         return Cmd
@@ -349,7 +419,7 @@ class tex:
  
         return 1
 
-    def text(self, x, y, Cmd, size = attrib.fontsize.normalsize, halign = None, hsize = None, valign = None, angle = None, IgnoreMsgLevel = 1):
+    def text(self, x, y, Cmd, size = fontsize.normalsize, halign = None, hsize = None, valign = None, angle = None, IgnoreMsgLevel = 1):
 
         'print Cmd at (x, y)'
         
@@ -357,7 +427,7 @@ class tex:
         TexCopyBoxCmd = self.TexCopyBoxCmd(x, y, Cmd, halign, angle)
         self.TexAddCmd(TexCreateBoxCmd + TexCopyBoxCmd, IgnoreMsgLevel)
 
-    def textwd(self, Cmd, size = attrib.fontsize.normalsize, hsize = None, IgnoreMsgLevel = 1):
+    def textwd(self, Cmd, size = fontsize.normalsize, hsize = None, IgnoreMsgLevel = 1):
     
         'get width of Cmd'
 
@@ -368,7 +438,7 @@ class tex:
                        ":wd:" + str(time.time()) + ":\\the\\wd\\localbox}\n", IgnoreMsgLevel)
         return self.TexResult(TexHexMD5 + ":wd:")
 
-    def textht(self, Cmd, size = attrib.fontsize.normalsize, hsize = None, valign = None, IgnoreMsgLevel = 1):
+    def textht(self, Cmd, size = fontsize.normalsize, hsize = None, valign = None, IgnoreMsgLevel = 1):
 
         'get height of Cmd'
 
@@ -379,7 +449,7 @@ class tex:
                        ":ht:" + str(time.time()) + ":\\the\\ht\\localbox}\n", IgnoreMsgLevel)
         return self.TexResult(TexHexMD5 + ":ht:")
 
-    def textdp(self, Cmd, size = attrib.fontsize.normalsize, hsize = None, valign = None, IgnoreMsgLevel = 1):
+    def textdp(self, Cmd, size = fontsize.normalsize, hsize = None, valign = None, IgnoreMsgLevel = 1):
    
         'get depth of Cmd'
 
