@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 #
-# $Header$
-#
 #
 # Copyright (C) 2002 Jörg Lehmann <joergl@users.sourceforge.net>
 # Copyright (C) 2002 André Wobst <wobsta@users.sourceforge.net>
