@@ -2765,9 +2765,9 @@ class linkbaraxis(linkaxis):
             self.subaxis = self.subaxis.createlinkaxis()
 
 
-def pathaxis(path, axis):
+def pathaxis(path, axis, **kwargs):
     """creates an axiscanvas for an axis along a path"""
-    mypathaxispos = pathaxispos(path, axis.convert)
+    mypathaxispos = pathaxispos(path, axis.convert, **kwargs)
     axis.finish(mypathaxispos)
     return axis.axiscanvas
 
