@@ -1,4 +1,4 @@
-#!/usr/bin/env python 
+#!/usr/bin/env python
 import sys
 sys.path.append("..")
 from pyx import *
@@ -14,10 +14,11 @@ print "depth of 'Hello, world!': ", t.textdp("Hello, world!")
 c.writetofile("test_tex")
 
 c=canvas.canvas()
-t=c.insert(tex.latex())
+t=c.insert(tex.latex(defaultmsghandler=tex.msghandler.hideload))
+t.define("\usepackage[dvips]{graphicx}")
 c.draw(path.rect(0, 0, 22, 1))
 t.text(0, 0, r"""\linewidth22cm\begin{itemize}
-\item This is an example. This is an example. This is an example.
+\item This is an example. \textsf{\textit{This}} is an example. This is an example.
       This is an example. This is an example. This is an example.
       This is an example. This is an example. This is an example.
       This is an example. This is an example. This is an example.
@@ -25,5 +26,7 @@ t.text(0, 0, r"""\linewidth22cm\begin{itemize}
       This is an example. This is an example. This is an example.
       This is an example. This is an example. This is an example.
       This is an example. This is an example. This is an example.
-\end{itemize}""", tex.vbox(22))
+\end{itemize}\par
+\includegraphics{test_tex}
+""", tex.vbox(22)) # tex.msghandler.combine(tex.msghandler.hideload, tex.msghandler.hidegraphicsload))
 c.writetofile("test_tex2")
