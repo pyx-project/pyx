@@ -3136,7 +3136,7 @@ class data:
 
     def __init__(self, file, **columns):
         if _isstring(file):
-            self.data = data.datafile(file)
+            self.data = datamodule.datafile(file)
         else:
             self.data = file
         self.columns = {}
@@ -3169,13 +3169,25 @@ class function:
 
     defaultstyle = line
 
-    def __init__(self, expression, min=None, max=None, points=100, parser=mathtree.parser()):
+    def __init__(self, expression, min=None, max=None, points=100, parser=mathtree.parser(), extern=None):
         self.min = min
         self.max = max
         self.points = points
+        self.extern = extern
         self.result, expression = expression.split("=")
-        self.mathtree = parser.parse(expression)
-        self.variable, = self.mathtree.VarList()
+        self.mathtree = parser.parse(expression, extern=self.extern)
+        if extern is None:
+            self.variable, = self.mathtree.VarList()
+        else:
+            self.variable = None
+            for variable in self.mathtree.VarList():
+                if variable not in self.extern.keys():
+                    if self.variable is None:
+                        self.variable = variable
+                    else:
+                        raise ValueError("multiple variables found (identifiers might be externally defined)")
+            if self.variable is None:
+                raise ValueError("no variable found (identifiers are all defined externally)")
         self.evalranges = 0
 
     def setstyle(self, graph, style):
@@ -3186,6 +3198,8 @@ class function:
     def getranges(self):
         if self.evalranges:
             return self.style.getranges(self.data)
+        if None not in (self.min, self.max):
+            return {self.variable: (self.min, self.max)}
 
     def setranges(self, ranges):
         if ranges.has_key(self.variable):
@@ -3198,7 +3212,7 @@ class function:
         for i in range(self.points):
             x = self.xaxis.invert(vmin + (vmax-vmin)*i / (self.points-1.0))
             try:
-                y = self.mathtree.Calc({self.variable: x})
+                y = self.mathtree.Calc({self.variable: x}, self.extern)
             except (ArithmeticError, ValueError):
                 y = None
             self.data.append((x, y))
@@ -3212,7 +3226,7 @@ class paramfunction:
 
     defaultstyle = line
 
-    def __init__(self, varname, min, max, expression, points = 100, parser=mathtree.parser()):
+    def __init__(self, varname, min, max, expression, points=100, parser=mathtree.parser(), extern=None):
         self.varname = varname
         self.min = min
         self.max = max
@@ -3220,16 +3234,16 @@ class paramfunction:
         self.expression = {}
         self.mathtrees = {}
         varlist, expressionlist = expression.split("=")
+        parsestr = mathtree.ParseStr(expressionlist)
         for key in varlist.split(","):
             key = key.strip()
             if self.mathtrees.has_key(key):
                 raise ValueError("multiple assignment in tuple")
             try:
-                self.mathtrees[key] = parser.parse(expressionlist)
+                self.mathtrees[key] = parser.ParseMathTree(parsestr, extern)
                 break
-            except mathtree.CommaFoundMathTreeParseError, exception:
-                self.mathtrees[key] = parser.parse(expressionlist[:exception.ParseStr.Pos-1])
-                expressionlist = expressionlist[exception.ParseStr.Pos:]
+            except mathtree.CommaFoundMathTreeParseError, e:
+                self.mathtrees[key] = e.MathTree
         else:
             raise ValueError("unpack tuple of wrong size")
         if len(varlist.split(",")) != len(self.mathtrees.keys()):
@@ -3239,7 +3253,7 @@ class paramfunction:
             value = self.min + (self.max-self.min)*i / (self.points-1.0)
             line = []
             for key, tree in self.mathtrees.items():
-                line.append(tree.Calc({self.varname: value}))
+                line.append(tree.Calc({self.varname: value}, extern))
             self.data.append(line)
 
     def setstyle(self, graph, style):

@@ -26,7 +26,7 @@ def test_multiaxes_data(c, t, x, y):
 def test_piaxis_function(c, t, x, y):
     g = c.insert(graph.graphxy(t, x, y, height=5,
                                x=graph.linaxis(min=0, max=2*math.pi, divisor=math.pi, suffix=r"\pi")))
-    g.plot([graph.function("y=sin(x-%i*pi/10)" % i, points=100) for i in range(20)],
+    g.plot([graph.function("y=sin(x-i*pi/10)", extern={"i": i}) for i in range(20)],
            style=graph.line(lineattrs=(graph.changecolor.Hue(), graph.changelinestyle())))
     g.finish()
 
@@ -43,23 +43,10 @@ def test_textaxis_errorbars(c, t, x, y):
     g.finish()
 
 def test_ownmark(c, t, x, y):
-
-    class Div(mathtree.MathTreeFunc2):
-        def __init__(self, *args):
-            mathtree.MathTreeFunc2.__init__(self, "div", *args)
-        def Calc(self, VarDict):
-            return divmod(self.ArgV[0].Calc(VarDict), self.ArgV[1].Calc(VarDict))[0]
-
-    class Mod(mathtree.MathTreeFunc2):
-        def __init__(self, *args):
-            mathtree.MathTreeFunc2.__init__(self, "mod", *args)
-        def Calc(self, VarDict):
-            return divmod(self.ArgV[0].Calc(VarDict), self.ArgV[1].Calc(VarDict))[1]
-
-    MyFuncs = mathtree.DefaultMathTreeFuncs + (Div, Mod)
-
+    div = lambda x, y: int(x)/int(y)
+    mod = lambda x, y: int(x)%int(y)
     g = c.insert(graph.graphxy(t, x, y, height=5, x=graph.linaxis(min=0, max=10), y=graph.linaxis(min=0, max=10)))
-    g.plot(graph.paramfunction("k", 0, 120, "x, y, size, angle = mod(k, 11), div(k, 11), (1+sin(k*pi/120))/2, 3*k", points=121, parser=mathtree.parser(MathTreeFuncs=MyFuncs)), style = graph.arrow())
+    g.plot(graph.paramfunction("k", 0, 120, "x, y, size, angle = mod(k, 11), div(k, 11), (1+sin(k*pi/120))/2, 3*k", points=121, extern=locals()), style = graph.arrow())
     line1 = g.plot(graph.function("y=10/x"))
     line2 = g.plot(graph.function("y=12*x^-1.6"))
     line3 = g.plot(graph.function("y=7/x"))

@@ -25,7 +25,6 @@ import string, re, math, types
 
 
 class ParseStr:
-    "parser based on a string"
 
     def __init__(self, StrToParse, Pos = 0):
         self.StrToParse = StrToParse
@@ -86,12 +85,16 @@ class ParseStr:
         return 0
 
 
+class ArgCountError(Exception): pass
 class DerivativeError(Exception): pass
 
 class MathTree:
 
-    def __init__(self, *args):
-        self.Args = list(args)
+    def __init__(self, ArgCount, *Args):
+        self.ArgCount = ArgCount
+        self.Args = []
+        for arg in Args:
+            self.AddArg(arg)
 
     def __repr__(self, depth = 0):
         indent = ""
@@ -111,8 +114,14 @@ class MathTree:
                 result = result + ")"
         return result
 
-    def AddArg(self, Arg):
+    def AddArg(self, Arg, Last=0, NotLast=0):
+        if len(self.Args) == self.ArgCount:
+            raise ArgCountError
         self.Args.append(Arg)
+        if NotLast and len(self.Args) == self.ArgCount:
+            raise ArgCountError
+        if Last and len(self.Args) != self.ArgCount:
+            raise ArgCountError
 
     def DependOn(self, arg):
         for Arg in self.Args:
@@ -138,7 +147,7 @@ class MathTree:
 class MathTreeVal(MathTree):
 
     def __init__(self, *args):
-        MathTree.__init__(self, *args)
+        MathTree.__init__(self, 1, *args)
 
     def __str__(self):
         return str(self.Args[0])
@@ -199,29 +208,19 @@ class MathTreeValVar(MathTreeVal):
 
     def Calc(self, *dicts):
         for dict in dicts:
-            if self.Args[0] in dict.keys():
+            if dict is not None and self.Args[0] in dict.keys():
                 return float(dict[self.Args[0]])
         return MathConst[self.Args[0]]
 
 
-class ArgCountError(Exception): pass
-
 class MathTreeFunc(MathTree):
 
-    def __init__(self, name, argcount, *args):
-        if argcount > 0 and len(args) > argcount:
-            raise ArgCountError
-        MathTree.__init__(self, *args)
+    def __init__(self, name, ArgCount, *args):
         self.name = name
-        self.argcount = argcount
+        MathTree.__init__(self, ArgCount, *args)
 
     def InitByParser(self, arg):
         return arg.MatchStrParenthesis(self.name)
-
-    def AddArg(self, Arg):
-        if self.argcount > 0 and len(self.Args) >= self.argcount:
-            raise ArgCountError
-        self.Args.append(Arg)
 
     def __str__(self):
         args = ""
@@ -564,8 +563,8 @@ FuncExternPattern = re.compile(r"([a-z_][a-z0-9_]*)\s*\(", re.IGNORECASE)
 class MathTreeFuncExtern(MathTreeFunc):
 
     def __init__(self, extern, *args):
-        MathTreeFunc.__init__(self, None, 0, *args)
         self.extern = extern
+        MathTreeFunc.__init__(self, None, -1, *args)
 
     def InitByParser(self, arg):
         Match = arg.MatchPattern(FuncExternPattern)
@@ -581,10 +580,10 @@ class MathTreeFuncExtern(MathTreeFunc):
 class MathTreeOp(MathTree):
 
     def __init__(self, level, symbol, *args):
-        MathTree.__init__(self, *args)
         self.ParenthesisBarrier = 0
         self.level = level
         self.symbol = symbol
+        MathTree.__init__(self, 2, *args)
 
     def __str__(self):
         result = ""
@@ -768,12 +767,12 @@ class MathTreeOpPow(MathTreeOp):
 
 class UndefinedMathTreeParseError(Exception):
 
-    def __init__(self, posstr, MathTree):
-        self.posstr = posstr
+    def __init__(self, ParseStr, MathTree):
+        self.ParseStr = ParseStr
         self.MathTree = MathTree
 
     def __str__(self):
-        return "\n" + self.posstr
+        return "\n" + str(self.ParseStr)
 
 
 class RightParenthesisExpectedMathTreeParseError(UndefinedMathTreeParseError): pass
@@ -804,7 +803,7 @@ class parser:
         self.MathTreeFuncs = MathTreeFuncs
         self.MathTreeVals = MathTreeVals
 
-    def parse(self, str, extern = None):
+    def parse(self, str, extern=None):
         return self.ParseMathTree(ParseStr(str), extern)
 
     def ParseMathTree(self, arg, extern):
@@ -817,7 +816,7 @@ class parser:
             if i:
                 try:
                     self.ParseMathTree(arg, extern)
-                    raise RightParenthesisExpectedMathTreeParseError(str(arg), Tree)
+                    raise RightParenthesisExpectedMathTreeParseError(arg, Tree)
                 except RightParenthesisFoundMathTreeParseError, e:
                     if isinstance(e.MathTree, MathTreeOp):
                         e.MathTree.ParenthesisBarrier = 1
@@ -835,20 +834,19 @@ class parser:
                             Tree = Func
                         while 1:
                             try:
-                                prevposstr = str(arg)
                                 self.ParseMathTree(arg, extern)
-                                raise RightParenthesisExpectedMathTreeParseError(str(arg), Tree)
+                                raise RightParenthesisExpectedMathTreeParseError(arg, Tree)
                             except CommaFoundMathTreeParseError, e:
                                 try:
-                                    Func.AddArg(e.MathTree)
+                                    Func.AddArg(e.MathTree, NotLast=1)
                                 except ArgCountError:
-                                    raise RightParenthesisExpectedMathTreeParseError(prevposstr, Tree)
+                                    raise RightParenthesisExpectedMathTreeParseError(arg, Tree)
                                 continue
                             except RightParenthesisFoundMathTreeParseError, e:
                                 try:
-                                    Func.AddArg(e.MathTree)
+                                    Func.AddArg(e.MathTree, Last=1)
                                 except ArgCountError:
-                                    raise RightParenthesisExpectedMathTreeParseError(prevposstr, Tree)
+                                    raise CommaExpectedMathTreeParseError(arg, Tree)
                                 break
                         break
                 else:
@@ -861,7 +859,7 @@ class parser:
                         while 1:
                             try:
                                 self.ParseMathTree(arg, extern)
-                                raise RightParenthesisExpectedMathTreeParseError(str(arg), Tree)
+                                raise RightParenthesisExpectedMathTreeParseError(arg, Tree)
                             except CommaFoundMathTreeParseError, e:
                                 FuncExtern.AddArg(e.MathTree)
                                 continue
@@ -881,15 +879,15 @@ class parser:
                                     Tree = Val
                                 break
                         else:
-                            raise OperandExpectedMathTreeParseError(str(arg), Tree)
+                            raise OperandExpectedMathTreeParseError(arg, Tree)
             if arg.AllDone():
                 return Tree
             i = arg.MatchStr(")")
             if i:
-                raise RightParenthesisFoundMathTreeParseError(str(arg), Tree)
+                raise RightParenthesisFoundMathTreeParseError(arg, Tree)
             i = arg.MatchStr(",")
             if i:
-                raise CommaFoundMathTreeParseError(str(arg), Tree)
+                raise CommaFoundMathTreeParseError(arg, Tree)
             for OpClass in self.MathTreeOps:
                 Op = OpClass()
                 if Op.InitByParser(arg):
@@ -908,4 +906,4 @@ class parser:
                         Tree = Op
                     break
             else:
-                raise OperatorExpectedMathTreeParseError(str(arg), Tree)
+                raise OperatorExpectedMathTreeParseError(arg, Tree)
