@@ -83,7 +83,7 @@ TODO:
       graph data
 
 
-0.x (xxxx/xx/xx):
+0.7.1 (2004/12/15):
   - canvas module:
     - EPS header fixed (reported by Russell Lang, cf. bug #1065099)
   - Makefile fixes:
@@ -94,6 +94,11 @@ TODO:
     - line attributes handling fixed (reported by Andrea Riciputi)
     - fix typos in predefined symbols (reported by Andrea Riciputi)
     - cut column name list at the max. number of columns (reported by Arnd Baecker)
+  - examples:
+    - add INDEX files to distribution
+    - new errorbar and julia example
+  - faq:
+    - pdf snippets for tipa based phonetic transliterations
 
 
 0.7 (2004/10/21):
