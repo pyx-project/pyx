@@ -112,6 +112,8 @@ class epsfile:
             bbmatch = bbpattern.match(line)
             if bbmatch is not None:
                (llx, lly, urx, ury) = map(int, bbmatch.groups()) # conversion strings->int
+               if self.translatebb:
+                   (llx, lly, urx, ury) = (0, 0, urx - llx, ury - lly)
 	       return bbox(llx, lly, urx, ury)
 
     def write(self, canvas, file):
