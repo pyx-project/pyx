@@ -30,7 +30,8 @@ Gert-Ludwig Ingold \par
 \section*{Acknowledgements}
 The following persons have in one way or the other, e.g.\ by asking good 
 questions or providing answers, contributed to this FAQ:\\ 
-Walter Brisken, Jörg Lehmann, Michael Schindler, Andr{\'e} Wobst.
+Walter Brisken, Jörg Lehmann, Michael Schindler, Gerhard Schmid, Andr{\'e} 
+Wobst.
 \newpage
 
 \section{General aspects of \PyX}
@@ -578,6 +579,23 @@ to plot the symbols on top of a thin, dashed line. You may alter the
 order of the styles to plot the line on top of the symbols.
 }
 
+\section{Other plotting tasks}
+
+\question{a}{How can I rotate text? \new}
+{}
+{Text can be written at an arbitrary angle by specifying the appropriate 
+transformation as an attribute. The command
+\begin{progcode}
+c.text(0, 0, "Text", [trafo.rotate(60)])
+\end{progcode}
+will write at an angle of 60 degrees relative to the horizontal axis. If no
+pivot is specified (like in this example), the text is rotated around the
+reference point given in the first two arguments of \texttt{text}. In the
+following example, the pivot coincides with the center of the text:
+\begin{progcode}
+c.text(0, 0, "Text", [text.halign.center,text.valign.middle,trafo.rotate(60)])
+\end{progcode}
+}
 \section{\TeX{} and \LaTeX{}}
 
 \subsection{General aspects}
