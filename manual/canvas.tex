@@ -12,8 +12,8 @@ can be written to a (E)PS file to produce the desired output.
 
 \subsection{Basic usage}
 
-The main \verb|canvas| instance, which we shall name \verb|c| here and
-in the following, will usually be constructed without giving any
+The main \verb|canvas| instance, which we shall by convention always
+name \verb|c|, will usually be constructed without giving any
 arguments:
 \begin{quote}
 \begin{verbatim}
@@ -26,14 +26,14 @@ Basic drawing proceeds then via the construction of a \verb|path|, which
 can subsequently be drawn on the canvas using the method \verb|draw()|:
 \begin{quote}
 \begin{verbatim}
-p = path.path(moveto(0,0), lineto(10,10), lineto(10,0), closepath())
+p = path.line(0, 0, 10, 10)
 c.draw(p)
 \end{verbatim}
 \end{quote}
 or more concisely:
 \begin{quote}
 \begin{verbatim}
-c.draw(path.path(moveto(0,0), lineto(10,10), lineto(10,0), closepath()))
+c.draw(path.line(0, 0, 10, 10))
 \end{verbatim}
 \end{quote}
 You can modify the appearance of a path by additionally passing 
@@ -50,7 +50,7 @@ Similarly, it is possible to draw a dashed version of \verb|p|:
 c.draw(p, canvas.linestyle.dashed)
 \end{verbatim}
 \end{quote}
-Combining is of course also possible:
+Combining of several \verb|PSAttr|s is of course also possible:
 \begin{quote}
 \begin{verbatim}
 c.draw(p, color.rgb.blue, canvas.linestyle.dashed)
