@@ -280,7 +280,7 @@ def testclipbbox(c):
     drawpathwbbox(sc,p1)
     drawpathwbbox(sc,p2)
 
-def testlentopar(c):
+def testarclentoparam(c):
     curve=path(moveto(0,0), lineto(0,5), curveto(5,0,0,10,5,5), closepath(),
                moveto(5,0), lineto(10,5))
     ll = curve.arclen()
@@ -288,7 +288,7 @@ def testlentopar(c):
     cols=[color.gray.black, color.gray(0.3), color.gray(0.7), color.rgb.red,
           color.rgb.green, color.rgb.blue, color.cmyk(1,0,0,0),
           color.cmyk(0,1,0,0), color.cmyk(0,0,1,0), color.gray.black]
-    t=curve.lentopar(l)
+    t=curve.arclentoparam(l)
     c.stroke(curve)
     for i in range(len(t)):
         c.draw(path(circle(curve.at(t[i])[0], curve.at(t[i])[1], 0.1)), [deco.filled([cols[i]]), deco.stroked()])
@@ -302,7 +302,7 @@ dotest(c, 10,11, "testnormpathtrafo")
 dotest(c, 12, -4, "testtangent")
 dotest(c, 5, -4, "testintersectcircle")
 dotest(c, 9, -4, "testintersectline")
-dotest(c, 21, 12, "testlentopar")
+dotest(c, 21, 12, "testarclentoparam")
 c.writeEPSfile("test_path", paperformat="a4", rotated=0, fittosize=1)
 
 c=canvas.canvas()

@@ -997,9 +997,9 @@ class path(base.PSCmd):
         """returns total arc length of path with accuracy epsilon"""
         return normpath(self).arclen(epsilon)
 
-    def lentopar(self, lengths, epsilon=1e-5):
+    def arclentoparam(self, lengths, epsilon=1e-5):
         """returns the parameter value(s) matching the given length(s)"""
-        return normpath(self).lentopar(lengths, epsilon)
+        return normpath(self).arclentoparam(lengths, epsilon)
 
     def at_pt(self, t):
         """return coordinates in pts of corresponding normpath at parameter value t"""
@@ -1216,7 +1216,7 @@ class normpathel:
         """intersect self with other normpathel"""
         pass
 
-    def _lentopar_pt(self, lengths, epsilon=1e-5):
+    def _arclentoparam_pt(self, lengths, epsilon=1e-5):
         """returns tuple (t,l) with
           t the parameter where the arclen of normpathel is length and
           l the total arclen
@@ -1225,8 +1225,8 @@ class normpathel:
         epsilon: epsilon controls the accuracy for calculation of the
                  length of the Bezier elements
         """
-        # Note: _lentopar returns both, parameters and total lengths
-        # while  lentopar returns only parameters
+        # Note: _arclentoparam returns both, parameters and total lengths
+        # while  arclentoparam returns only parameters
         pass
 
     def reversed(self):
@@ -1308,7 +1308,7 @@ class normline(normpathel):
         else:
             return  _intersectnormcurves(self._normcurve(), 0, 1, other, 0, 1, epsilon)
 
-    def _lentopar_pt(self, lengths, epsilon=1e-5):
+    def _arclentoparam_pt(self, lengths, epsilon=1e-5):
         l = self.arclen_pt(epsilon)
         return ([max(min(1.0*length/l,1),0) for length in lengths], l)
 
@@ -1432,8 +1432,8 @@ class normcurve(normpathel):
                    math.sqrt((self.x3-self.x0)*(self.x3-self.x0)+
                              (self.y3-self.y0)*(self.y3-self.y0)))<epsilon
 
-    def _lentopar_pt(self, lengths, epsilon=1e-5):
-        return self._normcurve()._lentopar_pt(lengths, epsilon)
+    def _arclentoparam_pt(self, lengths, epsilon=1e-5):
+        return self._normcurve()._arclentoparam_pt(lengths, epsilon)
 
     def midpointsplit(self):
         """splits bpathel at midpoint returning bpath with two bpathels"""
@@ -1495,7 +1495,7 @@ class normcurve(normpathel):
             (a, b) = self.midpointsplit()
             return a.seglengths(0.5*paraminterval, epsilon) + b.seglengths(0.5*paraminterval, epsilon)
 
-    def _lentopar_pt(self, lengths, epsilon=1e-5):
+    def _arclentoparam_pt(self, lengths, epsilon=1e-5):
         """computes the parameters [t] of bpathel where the given lengths (in pts) are assumed
         returns ( [parameters], total arclen)
         A negative length gives a parameter 0"""
@@ -1723,7 +1723,7 @@ class normsubpath:
                         intersections[1].append(intersection[1]+t_b)
         return intersections
 
-    def _lentopar_pt(self, lengths, epsilon=1e-5):
+    def _arclentoparam_pt(self, lengths, epsilon=1e-5):
         """returns [t, l] where t are parameter value(s) matching given length(s)
         and l is the total length of the normsubpath
         The parameters are with respect to the normsubpath: t in [0, self.range()]
@@ -1734,7 +1734,7 @@ class normsubpath:
         rests = [length for length in lengths]
 
         for pel in self.normpathels:
-            params, arclen = pel._lentopar_pt(rests, epsilon)
+            params, arclen = pel._arclentoparam_pt(rests, epsilon)
             allarclen += arclen
             for i in range(len(rests)):
                 if rests[i] >= 0:
@@ -2111,7 +2111,7 @@ class normpath(path):
             st_a += sp_a.range()
         return intersections
 
-    def lentopar(self, lengths, epsilon=1e-5):
+    def arclentoparam(self, lengths, epsilon=1e-5):
         """returns the parameter value(s) matching the given length(s)"""
 
         # split the list of lengths apart for positive and negative values
@@ -2132,8 +2132,8 @@ class normpath(path):
         for sp in self.subpaths:
             # we need arclen for knowing when all the parameters are done
             # for lengths that are done: rests[i] is negative
-            # sp._lentopar has to ignore such lengths
-            params, arclen = sp._lentopar_pt(rests[0], epsilon)
+            # sp._arclentoparam has to ignore such lengths
+            params, arclen = sp._arclentoparam_pt(rests[0], epsilon)
             finis = 0 # number of lengths that are done
             for i in range(len(rests[0])):
                 if rests[0][i] >= 0:
@@ -2145,7 +2145,7 @@ class normpath(path):
 
         # go through the negative lengths
         for sp in self.reversed().subpaths:
-            params, arclen = sp._lentopar_pt(rests[1], epsilon)
+            params, arclen = sp._arclentoparam_pt(rests[1], epsilon)
             finis = 0
             for i in range(len(rests[1])):
                 if rests[1][i] >= 0:

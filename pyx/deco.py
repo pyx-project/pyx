@@ -488,7 +488,7 @@ class wriggle(deco, attr.attr):
 
         skipleft = unit.topt(unit.length(self.skipleft_str, default_type="v"))
         skipright = unit.topt(unit.length(self.skipright_str, default_type="v"))
-        startpar, endpar = basepath.lentopar(map(unit.t_pt, [skipleft, basepath.arclen_pt() - skipright]))
+        startpar, endpar = basepath.arclentoparam(map(unit.t_pt, [skipleft, basepath.arclen_pt() - skipright]))
         radius = unit.topt(unit.length(self.radius_str))
 
         # search for the first intersection of a circle around start point x, y bigger than startpar
@@ -524,7 +524,7 @@ class wriggle(deco, attr.attr):
         sections = self.loops * self.curvesperloop
         posrange = endpos - startpos
         poslist = [startpos + i*posrange/sections for i in range(sections+1)]
-        parlist = basepath.lentopar(map(unit.t_pt, poslist))
+        parlist = basepath.arclentoparam(map(unit.t_pt, poslist))
         atlist = [basepath.at_pt(x) for x in parlist]
 
         # from pyx import color

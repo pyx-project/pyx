@@ -35,7 +35,6 @@ TODO:
     - _lentopar return value should not contain total length
     - should normpaths not allow for very short path elements?
       (currently, the closepath does prevent short paths at the end)
-    - arclength vs. lentopar (better: arclen and lentopar?)
   - data module:
     - data.data should add line number like data.datafile
     - use csv module (new in 2.3)
@@ -90,6 +89,7 @@ TODO:
     - reversing of closed sub paths does not change the first point of the sub
       path
     - renamed: arclength -> arclen
+    - renamed: lentopar -> arclentoparam
     - normpath.tangent now returns tuple corresponding to direction and
       magnitude of tangent vector instead of normline
   - connnector module:

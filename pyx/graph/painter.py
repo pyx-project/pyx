@@ -233,21 +233,21 @@ class pathaxispos(_axispos):
             if v2 is None:
                 return self.path
             else:
-                return self.normpath.split(self.normpath.lentopar(v2 * self.arclen))[0]
+                return self.normpath.split(self.normpath.arclentoparam(v2 * self.arclen))[0]
         else:
             if v2 is None:
-                return self.normpath.split(self.normpath.lentopar(v1 * self.arclen))[1]
+                return self.normpath.split(self.normpath.arclentoparam(v1 * self.arclen))[1]
             else:
-                return self.normpath.split(*self.normpath.lentopar([v1 * self.arclen, v2 * self.arclen]))[1]
+                return self.normpath.split(*self.normpath.arclentoparam([v1 * self.arclen, v2 * self.arclen]))[1]
 
     def vgridpath(self, v):
         return None
 
     def vtickpoint_pt(self, v):
-        return self.normpath.at_pt(self.normpath.lentopar(v * self.arclen))
+        return self.normpath.at_pt(self.normpath.arclentoparam(v * self.arclen))
 
     def vtickdirection(self, v):
-        dx, dy = self.normpath.tangent_pt(self.normpath.lentopar(v * self.arclen))
+        dx, dy = self.normpath.tangent_pt(self.normpath.arclentoparam(v * self.arclen))
         norm = math.sqrt(dx*dx + dy*dy)
         if self.direction == 1:
             return -dy/norm, dx/norm
