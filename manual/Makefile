@@ -1,5 +1,4 @@
-#TODO: - multiple latex runs when appropriate
-#      - mutliple python runs when appropriate (new tex handling will render it unnecessary)
+#TODO: - mutliple python runs when appropriate (new tex handling will render it unnecessary)
 
 default: manual.dvi
 
@@ -14,7 +13,7 @@ manual.ps: manual.dvi
 	dvips manual.dvi
 
 manual.dvi: $(wildcard *.tex) $(patsubst %.py, %.eps, $(wildcard *.py)) pyxversion.tex
-	latex manual.tex
+	./runlatex.sh manual.tex
 	-rm manual.ps manual.pdf
 
 pyxversion.tex: ../pyx/__init__.py
