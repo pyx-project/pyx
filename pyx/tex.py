@@ -328,7 +328,7 @@ class tex:
 
         if self.TexResults == None:
             try:
-                file = open(self.canvas.BaseFilename + ".size", "r")
+                file = open("basefilename.size", "r")
                 self.TexResults = file.readlines()
                 file.close()
             except IOError:
