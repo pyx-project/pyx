@@ -11,6 +11,6 @@ g = c.insert(graph.graphxy(width=8,
 g.plot(graph.paramfunction("k", 0, 120, "x, y, size, angle = mod(k, 11), div(k, 11), (1+sin(k*pi/120))/2, 3*k",
                            points=121,
                            context=locals()),
-       style = graph.arrow())
+       style=graph.arrow())
 
 c.writetofile("arrows")
