@@ -39,6 +39,9 @@ PyX
     - fix pyx.def hack occuring whenever \ProcessOptions* was used by a package
   - pykpathsea module:
     - implement different file formats for Python version of module
+  - t1strip module:
+    - python fallback solution should behave the same way as c extension module (closes SF bug #799182 reported
+      by Marcus Mendenhall)
   - __init__.py:
     - added "connector" to __all__
 
