@@ -163,7 +163,7 @@ class addend:
         if len(setscalars):
             return float(addend(setscalars))
         else:
-            return 1.0
+            return 1
 
     def variable(self):
         assert self.is_linear()
@@ -232,12 +232,12 @@ class polynom:
 
 
 class vector:
-    # represents a vector, i.e. a list of terms
+    # represents a vector, i.e. a list of scalars (or polynoms)
 
     def __init__(self, dimension_or_values, name="unnamed_vector"):
         try:
             name + ""
-        except TypeError:
+        except:
             raise RuntimeError("a vectors name should be a string (you probably wanted to write vector([x, y]) instead of vector(x, y))")
         try:
             for value in dimension_or_values:
@@ -298,26 +298,21 @@ class vector:
 
     def __mul__(self, other):
         try:
-            other = scalar(other)
-        except:
-            pass
-        try:
             other = other.vector()
         except (TypeError, AttributeError):
-            try:
-                other = other.polynom()
-            except (TypeError, AttributeError):
-                # inverse matrix multiplication ?
-                return other.__rmul__(self)
-            else:
-                return vector([item*other for item in self._items])
+            return vector([item*other for item in self._items])
         else:
             # scalar product
             if len(self) != len(other):
                 raise RuntimeError("vector length mismatch in scalar product")
             return sum([selfitem*otheritem for selfitem, otheritem in zip(self._items, other._items)])
 
-    __rmul__ = __mul__
+    def __rmul__(self, other):
+        return vector([other*item for item in self._items])
+        # We do not allow for vector * <matrix-like-object> here (i.e. a
+        # simulating the behaviour of a dual vector). In principle we could do
+        # that, but for transformations it would lead to (a*X)*c != a*(X*c).
+        # Hence we disallow vector*X for X being something else that a scalar.
 
     def __div__(self, other):
         return vector([item/other for item in self._items])
@@ -330,13 +325,19 @@ class vector:
             solver.addequation(item)
 
 
+class zerovector(vector):
+
+    def __init__(self, dimension, name="0"):
+        vector.__init__(self, [0 for i in range(dimension)], name)
+
+
 class matrix:
-    # represents a matrix, i.e. a 2d list of terms
+    # represents a matrix, i.e. a 2d list of scalars (or polynoms)
 
     def __init__(self, dimensions_or_values, name="unnamed_matrix"):
         try:
             name + ""
-        except TypeError:
+        except:
             raise RuntimeError("a matrix name should be a string (you probably wanted to write matrix([x, y]) instead of matrix(x, y))")
         try:
             for row in dimensions_or_values:
@@ -370,6 +371,13 @@ class matrix:
         if not self._numberofrows or not self._numberofcols:
             raise RuntimeError("empty matrix not allowed")
         self.name = name
+
+    # instead of __len__ two methods to fetch the matrix dimensions
+    def getnumberofrows(self):
+        return self._numberofrows
+
+    def getnumberofcols(self):
+        return self._numberofcols
 
     def __getitem__(self, (row, col)):
         return self._rows[row][col]
@@ -442,6 +450,97 @@ class matrix:
                 solver.addequation(col)
 
 
+class identitymatrix(matrix):
+
+    def __init__(self, dimension, name="I"):
+        def eq(row, col):
+            if row == col:
+                return 1
+            else:
+                return 0
+        matrix.__init__(self, [[eq(row, col) for col in range(dimension)] for row in range(dimension)], name)
+
+
+class trafo:
+    # represents a transformation, i.e. matrix and a constant vector
+
+    def __init__(self, dimensions_or_values, name="unnamed_trafo"):
+        try:
+            name + ""
+        except:
+            raise RuntimeError("a trafo name should be a string (you probably wanted to write trafo([x, y]) instead of trafo(x, y))")
+        if len(dimensions_or_values) != 2:
+            raise RuntimeError("first parameter of a trafo must contain two elements: either two dimensions or a matrix and a vector")
+        try:
+            numberofrows, numberofcols = [int(x) for x in dimensions_or_values]
+        except:
+            self._matrix = dimensions_or_values[0].matrix()
+            self._vector = dimensions_or_values[1].vector()
+            if self._matrix.getnumberofrows() != len(self._vector):
+                raise RuntimeError("size mismatch between matrix and vector")
+        else:
+            self._matrix = matrix((numberofrows, numberofcols), name=name + "_matrix")
+            self._vector = vector(numberofrows, name=name + "_vector")
+        self.name = name
+
+    def trafo(self):
+        return self
+
+    def getmatrix(self):
+        return self._matrix
+
+    def getvector(self):
+        return self._vector
+
+    def __neg__(self):
+        return trafo((-self._matrix, -self._vector))
+
+    def __add__(self, other):
+        other = other.trafo()
+        return trafo((self._matrix + other._matrix, self._vector + other._vector))
+
+    __radd__ = __add__
+
+    def __sub__(self, other):
+        return -other + self
+
+    def __rsub__(self, other):
+        return -self + other
+
+    def __mul__(self, other):
+        try:
+            other = other.trafo()
+        except (TypeError, AttributeError):
+            try:
+                other = other.vector()
+            except (TypeError, AttributeError):
+                return trafo((self._matrix * other, self._vector * other))
+            else:
+                return self._matrix * other + self._vector
+        else:
+            return trafo((self._matrix * other._matrix, self._vector + self._matrix * other._vector))
+
+    def __rmul__(self, other):
+        return trafo((other * self._matrix, other * self._vector))
+
+    def __div__(self, other):
+        return trafo((self._matrix/other, self._vector/other))
+
+    def __str__(self):
+        return "%s{=(matrix: %s, vector: %s)}" % (self.name, self._matrix, self._vector)
+
+    def solve(self, solver):
+        self._matrix.solve(solver)
+        self._vector.solve(solver)
+
+
+class identitytrafo(trafo):
+
+    def __init__(self, dimension, name="I"):
+        trafo.__init__(self, (identitymatrix(dimension, name=name),
+                              zerovector(dimension, name=name)), name)
+
+
 class Solver:
     # linear equation solver
 
@@ -509,35 +608,5 @@ class Solver:
         return 0
 
 solver = Solver()
-
-
-if __name__ == "__main__":
-
-    # x = vector(2, "x")
-    # y = vector(2, "y")
-    # z = vector(2, "z")
-
-    # solver.eq(4*x + y, 2*x - y + vector([4, 0])) # => x + y = (2, 0)
-    # solver.eq(x[0] - y[0], z[1])
-    # solver.eq(x[1] - y[1], z[0])
-    # solver.eq(vector([5, 0]), z)
-
-    # print x
-    # print y
-    # print z
-
-    A = matrix([2, 2])
-    solver.eq(vector([1, 1]), A * vector([0, 1]))
-    solver.eq(vector([0, 2]), A * vector([1, 0]))
-
-    I = matrix([2, 2])
-    solver.eq(vector([0, 1]), I * vector([0, 1]))
-    solver.eq(vector([1, 0]), I * vector([1, 0]))
-
-    B = matrix([2, 2])
-    solver.eq(I, A*B)
-
-    print A
-    print B
 
 
