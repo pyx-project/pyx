@@ -424,16 +424,22 @@ class DVIFile:
 
     def flushout(self):
         if self.actoutstart:
+            x =  unit.t_m(self.actoutstart[0] * self.conv * 0.0254 / self.resolution)
+            y = -unit.t_m(self.actoutstart[1] * self.conv * 0.0254 / self.resolution)
             if self.debug:
                 print "[%s]" % self.actoutstring
-            self.actpage.append(("c",
-                                 self.actoutstart[0], self.actoutstart[1],
-                                 self.actoutstring))
+            self.actpage.append("%f %f moveto (%s) show\n" %
+                                (unit.topt(x), unit.topt(y), self.actoutstring))
             self.actoutstart = None
 
     def putchar(self, char, inch=1):
-        x = self.pos[_POS_H] * self.conv / 100000
-        y = -self.pos[_POS_V] * self.conv / 100000
+        if self.actoutstart is None:
+            self.actoutstart = self.pos[_POS_H], self.pos[_POS_V]
+            self.actoutstring = ""
+
+        ascii = (char > 32 and char < 128) and "%s" % chr(char) or "\\%03o" % char
+        self.actoutstring = self.actoutstring + ascii
+
         dx = inch and self.fonts[self.activefont].getwidth(char) or 0
         self.fonts[self.activefont].markcharused(char)
 
@@ -447,36 +453,51 @@ class DVIFile:
 
         self.pos[_POS_H] += dx
 
-        ascii = (char > 32 and char < 128) and "%s" % chr(char) or "\\%03o" % char
-
-        if self.actoutstart is None:
-            self.actoutstart = unit.t_cm(x), unit.t_cm(y)
-            self.actoutstring = ""
-        self.actoutstring = self.actoutstring + ascii
-
         if not inch:
             # XXX: correct !?
             self.flushout()
 
     def putrule(self, height, width, inch=1):
         self.flushout()
+        x1 =  unit.t_m(self.pos[_POS_H] * self.conv * 0.0254 / self.resolution)
+        y1 = -unit.t_m(self.pos[_POS_V] * self.conv * 0.0254 / self.resolution)
+        w = unit.t_m(width * self.conv * 0.0254 / self.resolution)
+        h = unit.t_m(height * self.conv * 0.0254 / self.resolution)
+        
         if height > 0 and width > 0:
-            x1 = self.pos[_POS_H] * self.conv * 1e-5
-            y1 = -self.pos[_POS_V] * self.conv * 1e-5
-            w = width * self.conv * 1e-5
-            h = height * self.conv * 1e-5
             if self.debug:
-                print "%d: putrule height %d, width %d" % (self.filepos, height, width)
-            self.actpage.append(("r",
-                                 unit.t_cm(x1), unit.t_cm(y1),
-                                 unit.t_cm(w), unit.t_cm(h)))
+                pixelw = int(width*self.conv)
+                if pixelw<width*self.conv: pixelw += 1
+                pixelh = int(height*self.conv)
+                if pixelh<height*self.conv: pixelh += 1
+
+                print ("%d: putrule height %d, width %d (%dx%d pixels)" %
+                       (self.filepos, height, width, pixelh, pixelw))
+
+            self.actpage.append("%f %f moveto %f 0 rlineto 0 %f rlineto "
+                                "%f 0 rlineto closepath fill\n" %
+                                (unit.topt(x1), unit.topt(y1),
+                                 unit.topt(w), unit.topt(h), -unit.topt(w)))
+        else:
+            if self.debug:
+                print "%d: putrule height %d, width %d (invisible)" % (self.filepos, height, width)
+            
         if inch:
             pass # TODO: increment h
 
     def usefont(self, fontnum):
         self.flushout()
         self.activefont = fontnum
-        self.actpage.append(("f", self.fonts[fontnum]))
+        
+        fontname = self.fonts[self.activefont].name
+        fontscale = self.fonts[self.activefont].scale
+        match = self.FontSizePattern.search(fontname)
+        if match:
+            self.actpage.append("/%s %f selectfont\n" % (fontname.upper(),
+                                                         int(match.group(1))*fontscale))
+        else:
+            raise RuntimeError("cannot determine font size from name '%s'" % fontname)
+
         if self.debug:
             print ("%d: fntnum%i current font is %s" %
                    (self.filepos,
@@ -490,12 +511,11 @@ class DVIFile:
 
         self.fonts[num] =  Font(fontname, c, q, d, self.tfmconv)
 
-        scale = round((1000.0*self.conv*q)/(self.trueconv*d))
-        m = 1.0*q/d
-
         if self.debug:
             print "%d: fntdefx %i: %s" % (self.filepos, num, fontname)
 
+#            scale = round((1000.0*self.conv*q)/(self.trueconv*d))
+#            m = 1.0*q/d
 #            scalestring = scale!=1000 and " scaled %d" % scale or ""
 #            print ("Font %i: %s%s---loaded at size %d DVI units" %
 #                   (num, fontname, scalestring, q))
@@ -535,12 +555,12 @@ class DVIFile:
                     num = file.readuint32()
                     den = file.readuint32()
                     mag = file.readuint32()
-
-                    # self.trueconv = conv in DVIType docu
-                    # if resolution = 254000.0
-
+                    
                     self.tfmconv = (25400000.0/num)*(den/473628672)/16.0;
-                    self.trueconv = 1.0*num/den
+                    # resolution in dpi
+                    self.resolution = 300.0
+                    # self.trueconv = conv in DVIType docu
+                    self.trueconv = (num/254000.0)*(self.resolution/den)
                     self.conv = self.trueconv*(mag/1000.0)
 
                     comment = file.read(file.readuchar())
@@ -651,10 +671,25 @@ class DVIFile:
                    self.pos[_POS_V] += dv
                elif cmd == _DVI_Y0:
                    self.flushout()
+                   if self.debug:
+                       print ("%d: y0 %d v:=%d%+d=%d, vv:=" %
+                              (self.filepos,
+                               self.pos[_POS_Y],
+                               self.pos[_POS_V],
+                               self.pos[_POS_Y],
+                               self.pos[_POS_V]+self.pos[_POS_Y]))
                    self.pos[_POS_V] += self.pos[_POS_Y]
                elif cmd >= _DVI_Y1234 and cmd < _DVI_Y1234 + 4:
                    self.flushout()
                    self.pos[_POS_Y] = file.readint(cmd - _DVI_Y1234 + 1, 1)
+                   if self.debug:
+                       print ("%d: y%d %d v:=%d%+d=%d, vv:=" %
+                              (self.filepos,
+                               cmd - _DVI_Y1234 + 1,
+                               self.pos[_POS_Y],
+                               self.pos[_POS_V],
+                               self.pos[_POS_Y],
+                               self.pos[_POS_V]+self.pos[_POS_Y]))
                    self.pos[_POS_V] += self.pos[_POS_Y]
                elif cmd == _DVI_Z0:
                    self.flushout()
@@ -715,27 +750,8 @@ class DVIFile:
         """write PostScript code for page into file"""
         if self.debug:
             print "dvifile(\"%s\").write() for page %s called" % (self.filename, page)
-        for el in self.pages[page-1]:
-            command, arg = el[0], el[1:]
-            if command=="c":
-                x, y, c = arg
-                file.write("%f %f moveto (%s) show\n" % (unit.topt(x), unit.topt(y), c))
-            if command=="r":
-                x1, y1, w, h = arg
-                file.write("%f %f moveto %f 0 rlineto 0 %f rlineto %f 0 rlineto closepath fill\n" %
-                           (unit.topt(x1), unit.topt(y1),
-                            unit.topt(w),
-                            unit.topt(h),
-                            -unit.topt(w)))
-            elif command=="f":
-                fontname = arg[0].name
-                fontscale = arg[0].scale
-                match = self.FontSizePattern.search(fontname)
-                if match:
-                    file.write("/%s %f selectfont\n" % (fontname.upper(),
-                                                        int(match.group(1))*fontscale))
-                else:
-                    raise RuntimeError("cannot determine font size from name '%s'" % fontname)
+        for pscommand in self.pages[page-1]:
+            file.write(pscommand)
 
 
 #if __name__=="__main__":
