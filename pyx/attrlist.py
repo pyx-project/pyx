@@ -20,16 +20,14 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-
-import base
-
-
-class AttrlistExcept(base.PyXExcept):
-
-    pass
+# TODO: - testsuite
+#       - documentation (docstrings)
 
 
-class _nodefault:
+import base, helper
+
+
+class AttrlistError(base.PyXExcept):
 
     pass
 
@@ -38,13 +36,13 @@ class attrlist:
 
     # TODO: could be improved??? (read python cookbook carefully)
 
-    def attrcheck(self, attrs, allowonce, allowmulti = []):
+    def attrcheck(self, attrs, allowonce=(), allowmulti=()):
         hadonce = []
         for attr in attrs:
             for once in allowonce:
                 if isinstance(attr, once):
                     if once in hadonce:
-                        raise AttrlistExcept
+                        raise AttrlistError
                     else:
                         hadonce += [once]
                         break
@@ -53,9 +51,9 @@ class attrlist:
                     if isinstance(attr, multi):
                         break
                 else:
-                    raise AttrlistExcept
+                    raise AttrlistError
 
-    def attrgetall(self, attrs, get, default = _nodefault()):
+    def attrgetall(self, attrs, get, default=helper._nodefault):
         first = 1
         for attr in attrs:
             if isinstance(attr, get):
@@ -65,8 +63,8 @@ class attrlist:
                 else:
                     result.append(attr)
         if first:
-            if isinstance(default, _nodefault):
-                raise AttrlistExcept
+            if default is helper._nodefault:
+                raise AttrlistError
             else:
                 return default
         return result
@@ -74,34 +72,34 @@ class attrlist:
     def attrcount(self, attrs, check):
         return len(self.attrgetall(attrs, check, ()))
 
-    def attrget(self, attrs, get, default = _nodefault()):
+    def attrget(self, attrs, get, default=helper._nodefault):
         try:
             result = self.attrgetall(attrs, get)
-        except AttrlistExcept:
-            if isinstance(default, _nodefault):
-                raise AttrlistExcept
+        except AttrlistError:
+            if default is helper._nodefault:
+                raise AttrlistError
             else:
                 return default
         if len(result) > 1:
-            raise AttrlistExcept
+            raise AttrlistError
         return result[0]
 
-    def attrgetfirst(self, attrs, get, default = _nodefault()):
+    def attrgetfirst(self, attrs, get, default=helper._nodefault):
         try:
             result = self.attrgetall(attrs, get)
-        except AttrlistExcept:
-            if isinstance(default, _nodefault):
-                raise AttrlistExcept
+        except AttrlistError:
+            if default is helper._nodefault:
+                raise AttrlistError
             else:
                 return default
         return result[0]
 
-    def attrgetlast(self, attrs, get, default = _nodefault()):
+    def attrgetlast(self, attrs, get, default=helper._nodefault):
         try:
             result = self.attrgetall(attrs, get)
-        except AttrlistExcept:
-            if isinstance(default, _nodefault):
-                raise AttrlistExcept
+        except AttrlistError:
+            if default is helper._nodefault:
+                raise AttrlistError
             else:
                 return default
         return result[-1]
@@ -127,11 +125,11 @@ if __name__=="__main__":
     try:
         test.attrcheck((a(), A(), A(), a()), (a, b), (A, B))
         print "error"
-    except AttrlistExcept: pass
+    except AttrlistError: pass
     try:
         test.attrcheck((c(), A(), A(), c()), (a, b), (A, B))
         print "error"
-    except AttrlistExcept: pass
+    except AttrlistError: pass
     x1, x2 = a(), a()
     if test.attrgetall((x1, A(), A()), a) != [x1]:
         print "error"
@@ -142,7 +140,7 @@ if __name__=="__main__":
     try:
         test.attrget((x1, A(), A(), x2), a)
         print "error"
-    except AttrlistExcept: pass
+    except AttrlistError: pass
     if test.attrgetfirst((x1, A(), A(), x2), a) != x1:
         print "error"
     if test.attrgetlast((x1, A(), A(), x2), a) != x2:

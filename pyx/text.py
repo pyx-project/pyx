@@ -21,10 +21,10 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-# this code will be part of PyX 0.2 (or 0.3, or ... ???)
+# this code will be part of PyX 0.3
 
 import os, threading, Queue, traceback, re, struct, tempfile
-import graph, bbox, unit
+import helper, attrlist, bbox, unit, box, base, trafo, canvas
 
 ###############################################################################
 # joergl would mainly work here ...
@@ -410,9 +410,10 @@ class DVIFile:
 
     def flushout(self):
         if self.actoutstart:
-            print "show '%s' at (%.3f cm, %.3f cm)" % (self.actoutstring,
-                                                       unit.tocm(self.actoutstart[0]),
-                                                       unit.tocm(self.actoutstart[1]))
+            if self.debug:
+                print "show '%s' at (%.3f cm, %.3f cm)" % (self.actoutstring,
+                                                           unit.tocm(self.actoutstart[0]),
+                                                           unit.tocm(self.actoutstart[1]))
             self.actpage.append(("c",
                                  self.actoutstart[0], self.actoutstart[1],
                                  self.actoutstring))
@@ -422,7 +423,8 @@ class DVIFile:
         x = self.pos[_POS_H] * self.conv * 1e-5
         y = self.pos[_POS_V] * self.conv * 1e-5
         ascii = (char > 32 and char < 128) and "%s" % chr(char) or "\\%03o" % char
-        print "type 0x%08x (%s) at (%.3f cm, %.3f cm)" % (char, ascii, x, y)
+        if self.debug:
+            print "type 0x%08x (%s) at (%.3f cm, %.3f cm)" % (char, ascii, x, y)
 
         if self.actoutstart is None:
             self.actoutstart = unit.t_cm(x), unit.t_cm(y)
@@ -441,7 +443,8 @@ class DVIFile:
             y1 = self.pos[_POS_V] * self.conv * 1e-5
             w = width * self.conv * 1e-5
             h = height * self.conv * 1e-5
-            print "rule ((%.3f..%.3f cm), (%.3f..%.3f cm))" % (x1, y1, w, h)
+            if self.debug:
+                print "rule ((%.3f..%.3f cm), (%.3f..%.3f cm))" % (x1, y1, w, h)
             self.actpage.append(("r",
                                  unit.t_cm(x1), unit.t_cm(y1),
                                  unit.t_cm(w), unit.t_cm(h)))
@@ -452,7 +455,8 @@ class DVIFile:
         self.flushout()
         self.activefont = fontnum
         self.actpage.append(("f", self.fonts[fontnum]))
-        print "use font %i" % self.activefont
+        if self.debug:
+            print "use font %i" % self.activefont
 
     def definefont(self, num, c, q, d, fontname):
         # c: checksum
@@ -464,9 +468,10 @@ class DVIFile:
 
         # m = round((1000.0*self.conv*q)/(self.trueconv*d));
 
-    def __init__(self, filename):
+    def __init__(self, filename, debug=0):
 
         self.filename = filename
+        self.debug = debug
         file = binfile(self.filename, "rb")
         state = _READ_PRE
         stack = []
@@ -510,9 +515,12 @@ class DVIFile:
             elif state == _READ_NOPAGE:
                 if cmd == _DVI_BOP:
                     self.flushout()
-                    print "page",
-                    for i in range(10): print file.readuint32(),
-                    print
+                    if self.debug:
+                        print "page",
+                        for i in range(10): print file.readuint32(),
+                        print
+                    else:
+                        for i in range(10): file.readuint32(),
                     file.readuint32()
 
                     self.pos = [0, 0, 0, 0, 0, 0]
@@ -582,6 +590,7 @@ class DVIFile:
                    self.usefont(file.readint(cmd - _DVI_FNT1234 + 1, 1))
                elif cmd >= _DVI_SPECIAL1234 and cmd < _DVI_SPECIAL1234 + 4:
                    print "special %s" % file.read(file.readint(cmd - _DVI_SPECIAL1234 + 1))
+                   raise RuntimeError("specials are not yet handled, abort")
                elif cmd >= _DVI_FNTDEF1234 and cmd < _DVI_FNTDEF1234 + 4:
                    if cmd==_DVI_FNTDEF1234:
                        num=file.readuchar()
@@ -624,10 +633,12 @@ class DVIFile:
 
     def write(self, file, page):
         """write PostScript code for page into file"""
-        print "dvifile(\"%s\").write() for page %s called" % (self.filename, page)
+        if self.debug:
+            print "dvifile(\"%s\").write() for page %s called" % (self.filename, page)
         for el in self.pages[page-1]:
             command, arg = el[0], el[1:]
-            print "\t", command, arg
+            if self.debug:
+                print "\t", command, arg
             if command=="c":
                 x, y, c = arg
                 file.write("%f %f moveto (%s) show\n" % (unit.topt(x), unit.topt(y), c))
@@ -645,7 +656,7 @@ class DVIFile:
                     file.write("/%s %s selectfont\n" % (fontname.upper(),
                                                         match.group(1)))
                 else:
-                    print "cannot determine font size from name '%s'" % fontname
+                    raise RuntimeError("cannot determine font size from name '%s'" % fontname)
 
 
 #if __name__=="__main__":
@@ -679,80 +690,270 @@ class TexResultError(Exception):
     def __str__(self):
         return ("%s\n" % self.description +
                 "The expression passed to TeX was:\n" +
-                "  %s\n" % self.texrunner.expression.replace("\n", "\n  ").rstrip() +
+                "  %s\n" % self.texrunner.expr.replace("\n", "\n  ").rstrip() +
                 "The return message from TeX was:\n" +
-                "  %s\n" % self.texrunner.texresult.replace("\n", "\n  ").rstrip() +
+                "  %s\n" % self.texrunner.texmsg.replace("\n", "\n  ").rstrip() +
                 "After parsing this message, the following was left:\n" +
-                "  %s" % self.texrunner.texparsedresult.replace("\n", "\n  ").rstrip())
+                "  %s" % self.texrunner.texmsgparsed.replace("\n", "\n  ").rstrip())
+
 
 class TexResultWarning(TexResultError): pass
 
-class texcheckres: pass
 
-class _texcheckresstart(texcheckres):
+###############################################################################
+# checkmsg
+############################################################################{{{
 
-    pattern = re.compile(r"This is TeX, Version 3.[0-9a-zA-Z\.\s()]*\n\((?P<texfilename>[a-z]+).tex\)\n\*! Undefined control sequence.\n<\*\> \\raiseerror\n               %\n\? OK, entering \\scrollmode\.\.\.\n\n", re.M)
+
+class checkmsg: pass
+
+
+class _checkmsgstart(checkmsg):
+
+    startpattern = re.compile(r"This is [0-9a-zA-Z\s_]*TeX")
 
     def check(self, texrunner):
-        m = self.pattern.match(texrunner.texparsedresult)
-        if m and m.group("texfilename") == texrunner.texfilename:
-            texrunner.texparsedresult = texrunner.texparsedresult[:m.start()] + texrunner.texparsedresult[m.end():]
-        else:
+        m = self.startpattern.search(texrunner.texmsgparsed)
+        if not m:
             raise TexResultError("TeX startup failed", texrunner)
+        texrunner.texmsgparsed = texrunner.texmsgparsed[m.end():]
+        try:
+            texrunner.texmsgparsed = texrunner.texmsgparsed.split("%s.tex" % texrunner.texfilename, 1)[1]
+        except IndexError:
+            raise TexResultError("TeX running startup file failed", texrunner)
+        try:
+            texrunner.texmsgparsed = texrunner.texmsgparsed.split("*! Undefined control sequence.\n<*> \\raiseerror\n               %\n? OK, entering \\scrollmode...\n\n", 1)[1]
+        except IndexError:
+            raise TexResultError("TeX switch to scrollmode failed", texrunner)
 
 
-class _texcheckresremoveinputmarker(texcheckres):
+class _checkmsginputmarker(checkmsg):
 
-    pattern = re.compile(r"PyXInputMarker\((\d+)\)", re.M)
-
-    def check(self, texrunner, id):
-        m = self.pattern.search(texrunner.texparsedresult)
-        if m and m.group(1) == str(id):
-            texrunner.texparsedresult = texrunner.texparsedresult[:m.start()] + texrunner.texparsedresult[m.end():]
-        else:
+    def check(self, texrunner):
+        try:
+            s1, s2 = texrunner.texmsgparsed.split("PyXInputMarker(%s)" % texrunner.executeid, 1)
+            texrunner.texmsgparsed = s1 + s2
+        except IndexError:
             raise TexResultError("PyXInputMarker expected", texrunner)
 
 
-class _texcheckresremovepyxbox(texcheckres):
+class _checkmsgpyxbox(checkmsg):
 
-    pattern = re.compile(r"PyXBox\(page=(?P<page>\d+),wd=-?\d*((\d\.?)|(\.?\d))\d*pt,ht=-?\d*((\d\.?)|(\.?\d))\d*pt,dp=-?\d*((\d\.?)|(\.?\d))\d*pt\)\n\[80.121.88.(?P=page)]")
+    pattern = re.compile(r"PyXBox\(page=(?P<page>\d+),wd=-?\d*((\d\.?)|(\.?\d))\d*pt,ht=-?\d*((\d\.?)|(\.?\d))\d*pt,dp=-?\d*((\d\.?)|(\.?\d))\d*pt\)")
 
-    def check(self, texrunner, id):
-        m = self.pattern.search(texrunner.texparsedresult)
+    def check(self, texrunner):
+        m = self.pattern.search(texrunner.texmsgparsed)
         if m and m.group("page") == str(texrunner.page):
-            texrunner.texparsedresult = texrunner.texparsedresult[:m.start()] + texrunner.texparsedresult[m.end():]
+            texrunner.texmsgparsed = texrunner.texmsgparsed[:m.start()] + texrunner.texmsgparsed[m.end():]
         else:
             raise TexResultError("PyXBox expected", texrunner)
 
 
-class _texcheckresremovetexend(texcheckres):
+class _checkmsgpyxpageout(checkmsg):
 
-    pattern = re.compile(r"\(see the transcript file for additional information\)\nOutput written on (?P<texfilename>[a-z]+).dvi \((?P<page>\d+) pages?, \d+ bytes\)\.\nTranscript written on (?P=texfilename)\.log\.")
+    def check(self, texrunner):
+        try:
+            s1, s2 = texrunner.texmsgparsed.split("[80.121.88.%s]" % texrunner.page, 1)
+            texrunner.texmsgparsed = s1 + s2
+        except IndexError:
+            raise TexResultError("PyXPageOutMarker expected", texrunner)
 
-    def check(self, texrunner, id):
-        m = self.pattern.search(texrunner.texparsedresult)
-        if m and m.group("page") == str(texrunner.page) and m.group("texfilename") == texrunner.texfilename:
-            texrunner.texparsedresult = texrunner.texparsedresult[:m.start()] + texrunner.texparsedresult[m.end():]
+
+class _checkmsgtexend(checkmsg):
+
+    auxpattern = re.compile(r"\([^()]*\.aux\)")
+    dvipattern = re.compile(r"Output written on (?P<texfilename>[a-z]+).dvi \((?P<page>\d+) pages?, \d+ bytes\)\.")
+
+    def check(self, texrunner):
+        m = self.auxpattern.search(texrunner.texmsgparsed)
+        if m:
+            texrunner.texmsgparsed = texrunner.texmsgparsed[:m.start()] + texrunner.texmsgparsed[m.end():]
+        try:
+            s1, s2 = texrunner.texmsgparsed.split("(see the transcript file for additional information)", 1)
+            texrunner.texmsgparsed = s1 + s2
+        except IndexError:
+            pass
+        m = self.dvipattern.search(texrunner.texmsgparsed)
+        if texrunner.page:
+            if not m:
+                raise TexResultError("TeX dvifile messages expected", texrunner)
+            if m.group("page") != str(texrunner.page):
+                raise TexResultError("wrong number of pages reported", texrunner)
+            if m.group("texfilename") != texrunner.texfilename:
+                raise TexResultError("wrong filename of the dvifile reported", texrunner)
+            texrunner.texmsgparsed = texrunner.texmsgparsed[:m.start()] + texrunner.texmsgparsed[m.end():]
         else:
-            raise TexResultError("TeX termination messages expected", texrunner)
+            try:
+                s1, s2 = texrunner.texmsgparsed.split("No pages of output.", 1)
+                texrunner.texmsgparsed = s1 + s2
+            except IndexError:
+                raise TexResultError("no dvifile expected")
+        try:
+            s1, s2 = texrunner.texmsgparsed.split("Transcript written on %s.log." % texrunner.texfilename, 1)
+            texrunner.texmsgparsed = s1 + s2
+        except IndexError:
+            raise TexResultError("TeX logfile message expected")
 
 
-class _texcheckresremoveemptylines(texcheckres):
+class _checkmsgemptylines(checkmsg):
 
     pattern = re.compile(r"^\*?\n", re.M)
 
     def check(self, texrunner):
-        m = self.pattern.search(texrunner.texparsedresult)
+        m = self.pattern.search(texrunner.texmsgparsed)
         while m:
-            texrunner.texparsedresult = texrunner.texparsedresult[:m.start()] + texrunner.texparsedresult[m.end():]
-            m = self.pattern.search(texrunner.texparsedresult)
+            texrunner.texmsgparsed = texrunner.texmsgparsed[:m.start()] + texrunner.texmsgparsed[m.end():]
+            m = self.pattern.search(texrunner.texmsgparsed)
 
 
-texcheckres.start = _texcheckresstart()
-texcheckres.removeinputmarker = _texcheckresremoveinputmarker()
-texcheckres.removepyxbox = _texcheckresremovepyxbox()
-texcheckres.removetexend = _texcheckresremovetexend()
-texcheckres.removeemptylines = _texcheckresremoveemptylines()
+class _checkmsgload(checkmsg):
+
+    pattern = re.compile(r"\((?P<filename>[^()\s\n]+)[^()]*\)")
+
+    def baselevels(self, s, maxlevel=1, brackets="()"):
+        level = 0
+        highestlevel = 0
+        res = ""
+        for c in s:
+            if c == brackets[0]:
+                level += 1
+                if level > highestlevel:
+                    highestlevel = level
+            if level <= maxlevel:
+                res += c
+            if c == brackets[1]:
+                level -= 1
+        if not level and highestlevel > 0:
+            return res
+
+    def check(self, texrunner):
+        lowestbracketlevel = self.baselevels(texrunner.texmsgparsed)
+        if lowestbracketlevel is not None:
+            m = self.pattern.search(lowestbracketlevel)
+            while m:
+                if os.access(m.group("filename"), os.R_OK):
+                    lowestbracketlevel = lowestbracketlevel[:m.start()] + lowestbracketlevel[m.end():]
+                else:
+                    break
+                m = self.pattern.match(lowestbracketlevel)
+            else:
+                texrunner.texmsgparsed = lowestbracketlevel
+
+
+class _checkmsggraphicsload(_checkmsgload):
+
+    def baselevels(self, s, brackets="<>", **args):
+        _checkmsgload.baselevels(self, s, brackets=brackets, **args)
+
+
+
+class _checkmsgignore(_checkmsgload):
+
+    def check(self, texrunner):
+        texrunner.texmsgparsed = ""
+
+
+checkmsg.start = _checkmsgstart()
+checkmsg.inputmarker = _checkmsginputmarker()
+checkmsg.pyxbox = _checkmsgpyxbox()
+checkmsg.pyxpageout = _checkmsgpyxpageout()
+checkmsg.texend = _checkmsgtexend()
+checkmsg.emptylines = _checkmsgemptylines()
+checkmsg.load = _checkmsgload()
+checkmsg.graphicsload = _checkmsggraphicsload()
+checkmsg.ignore = _checkmsgignore()
+
+# }}}
+
+
+###############################################################################
+# texsettings
+############################################################################{{{
+
+
+class halign: # horizontal alignment
+
+    def __init__(self, hratio):
+        self.hratio = hratio
+
+
+halign.left = halign(0)
+halign.right = halign(1)
+halign.center = halign(0.5)
+
+
+class _texsetting: # generic tex settings (modifications of the tex expression)
+
+    def modifyexpr(self, expr):
+        return expr
+
+
+class valign(_texsetting):
+
+    def __init__(self, width):
+        self.width_str = width
+
+    def modifyexpr(self, expr):
+        return r"\%s{\hsize%.5fpt{%s}}" % (self.vkind, unit.topt(self.width_str)*72.27/72.0, expr)
+
+
+class _valigntopline(valign):
+
+    vkind = "vtop"
+
+
+class _valignbottomline(valign):
+
+    vkind = "vbox"
+
+
+class _valigncenterline(valign):
+
+    def __init__(self, heightstr="0", lowerratio=0.5):
+        self.heightstr = heightstr
+        self.lowerratio = lowerratio
+
+    def modifyexpr(self, expr):
+        return r"\setbox0\hbox{%s}\lower%.5f\ht0\hbox{%s}" % (self.heightstr, self.lowerratio, expr)
+
+
+valign.topline = _valigntopline
+valign.bottomline = _valignbottomline
+valign.centerline = _valigncenterline
+
+
+class _mathmode(_texsetting):
+
+    def modifyexpr(self, expr):
+        return r"\hbox{$\displaystyle{%s}$}" % expr
+
+mathmode = _mathmode()
+
+
+defaultsizelist = ["normalsize", "large", "Large", "LARGE", "huge", "Huge", None, "tiny", "scriptsize", "footnotesize", "small"]
+
+class size(_texsetting):
+
+    def __init__(self, expr, sizelist=defaultsizelist):
+        if helper._isinteger(expr):
+            if expr >= 0 and expr < sizelist.index(None):
+                self.size = sizelist[expr]
+            elif expr < 0 and expr + len(sizelist) > sizelist.index(None):
+                self.size = sizelist[expr]
+            else:
+                raise IndexError("index out of sizelist range")
+        else:
+            self.size = expr
+
+    def modifyexpr(self, expr):
+        return r"\%s{%s}" % (self.size, expr)
+
+for s in defaultsizelist:
+    if s is not None:
+        size.__dict__[s] = size(s)
+
+# }}}
+
 
 class _readpipe(threading.Thread):
 
@@ -783,24 +984,36 @@ class _readpipe(threading.Thread):
             raise RuntimeError("TeX finished unexpectedly")
 
 
-class textbox(graph._rectbox):
 
-    def __init__(self, left, right, height, depth, texrunner, page):
-        graph._rectbox.__init__(self, -left, -depth, right, height)
+class _textbox(box._rectbox, base.PSText):
+
+    def __init__(self, x, y, left, right, height, depth, texrunner, page):
+        self.trafo = trafo.trafo()
+        box._rectbox.__init__(self, -left, -depth, left + right, depth + height, trafo=trafo._translate(x, y))
         self.texrunner = texrunner
         self.page = page
-        # the following is temporary (for the bbox method)
-        self.left = left
-        self.right = right
-        self.height = height
-        self.depth = depth
 
-    def bbox(self):
-        # should be done within rectbox or alignbox (by the way, the name should be changed)
-        return bbox.bbox(-self.left, -self.depth, self.right, self.height)
+    def transform(self, trafo):
+        box._rectbox.transform(self, trafo)
+        self.trafo = trafo * self.trafo
+
+    def writefontheader(self, file, containsfonts):
+        self.texrunner.writefontheader(file, containsfonts)
 
     def write(self, file):
+        canvas._gsave().write(file) # XXX: canvas?, constructor call needed?
+        self.trafo.write(file)
         self.texrunner.write(file, self.page)
+        canvas._grestore().write(file)
+
+
+
+class textbox(_textbox):
+
+    def __init__(self, x, y, left, right, height, depth, texrunner, page):
+        _textbox.__init__(unit.topt(x), unit.topt(y), unit.topt(left), unit.topt(right),
+                          unit.topt(height), unit.topt(depth), texrunner, page)
+
 
 
 class TexRunsError(Exception): pass
@@ -808,29 +1021,49 @@ class TexDoneError(Exception): pass
 class TexNotInDefineModeError(Exception): pass
 
 
-class texrunner:
+class texrunner(attrlist.attrlist):
 
-    def __init__(self):
+    def __init__(self, mode="TeX",
+                       docclass="article",
+                       docopt=None,
+                       usefiles=[],
+                       waitfortex=5,
+                       texdebug=0,
+                       dvidebug=0,
+                       checkmsgstart=checkmsg.start,
+                       checkmsgdocclass=checkmsg.load,
+                       checkmsgbegindoc=checkmsg.load,
+                       checkmsgend=checkmsg.texend,
+                       checkmsgdefaultdefine=(),
+                       checkmsgdefaultrun=()):
+        self.mode = mode
+        self.docclass = docclass
+        self.docopt = docopt
+        self.usefiles = usefiles
+        self.waitfortex = waitfortex
+        self.texdebug = texdebug
+        self.dvidebug = dvidebug
+        self.checkmsgstart = helper._ensuresequence(checkmsgstart)
+        self.checkmsgdocclass = helper._ensuresequence(checkmsgdocclass)
+        self.checkmsgbegindoc = helper._ensuresequence(checkmsgbegindoc)
+        self.checkmsgend = helper._ensuresequence(checkmsgend)
+        self.checkmsgdefaultdefine = helper._ensuresequence(checkmsgdefaultdefine)
+        self.checkmsgdefaultrun = helper._ensuresequence(checkmsgdefaultrun)
+
         self.texruns = 0
         self.texdone = 0
         self.definemode = 1
-        self.mode = "tex"
-        self.docclass = "article"
-        self.docopt = None
-        self.auxfilename = None
-        self.waitfortex = 3
-        self.executeid = -1
+        self.executeid = 0
         self.page = 0
         self.texfilename = "text"
-        self.usefiles = None
 
-    def execute(self, expression, *checks):
+    def execute(self, expr, *checks):
         if not self.texruns:
             texfile = open("%s.tex" % self.texfilename, "w") # start with filename -> creates dvi file with that name
             texfile.write("\\relax\n")
             texfile.close()
             self.texinput, self.texoutput = os.popen4("%s %s" % (self.mode, self.texfilename), "t", 0)
-            self.expectqueue = Queue.Queue(1) # allow only for a single entry
+            self.expectqueue = Queue.Queue(1) # allow for a single entry only
             self.gotevent = threading.Event()
             self.gotqueue = Queue.Queue(0) # allow arbitrary number of entries
             self.readoutput = _readpipe(self.texoutput, self.expectqueue, self.gotevent, self.gotqueue)
@@ -847,131 +1080,176 @@ class texrunner:
                                                      "wd=\\the\\wd\\PyXBox," +
                                                      "ht=\\the\\ht\\PyXBox," +
                                                      "dp=\\the\\dp\\PyXBox)}%\n" +
+                         "\\ht\\PyXBox0pt%\n" +
                          "{\\count0=80\\count1=121\\count2=88\\count3=#2\\shipout\\copy\\PyXBox}}%\n" +
                          "\\def\\PyXInput#1{\\immediate\\write16{PyXInputMarker(#1)}}",
-                         texcheckres.start)
+                         *self.checkmsgstart)
             os.remove("%s.tex" % self.texfilename)
             if self.mode == "latex":
                 if self.docopt is not None:
-                    self.execute("\\documentclass[%s]{%s}" % (self.docopt, self.docclass))
+                    self.execute("\\documentclass[%s]{%s}" % (self.docopt, self.docclass), *self.checkmsgdocclass)
                 else:
-                    self.execute("\\documentclass{%s}" % self.docclass)
+                    self.execute("\\documentclass{%s}" % self.docclass, *self.checkmsgdocclass)
             self.definemode = olddefinemode
         self.executeid += 1
-        if expression is not None:
+        if expr is not None:
             self.expectqueue.put_nowait("PyXInputMarker(%i)" % self.executeid)
             if self.definemode:
-                self.expression = ("%s%%\n" % expression +
+                self.expr = ("%s%%\n" % expr +
                                    "\\PyXInput{%i}%%\n" % self.executeid)
             else:
                 self.page += 1
-                self.expression = ("\\ProcessPyXBox{%s}{%i}%%\n" % (expression, self.page) +
+                self.expr = ("\\ProcessPyXBox{%s}{%i}%%\n" % (expr, self.page) +
                                    "\\PyXInput{%i}%%\n" % self.executeid)
-            self.texinput.write(self.expression)
         else:
             self.expectqueue.put_nowait("Transcript written on %s.log" % self.texfilename)
             if self.mode == "latex":
-                self.expression = "\\end{document}\n"
+                self.expr = "\\end{document}\n"
             else:
-                self.expression = "\\end\n"
-            self.texinput.write(self.expression)
+                self.expr = "\\end\n"
+        if self.texdebug:
+            print "pass the following expression to (La)TeX:\n  %s" % self.expr.replace("\n", "\n  ").rstrip()
+        self.texinput.write(self.expr)
         self.gotevent.wait(self.waitfortex)
         nogotevent = not self.gotevent.isSet()
         self.gotevent.clear()
         try:
-            self.texresult = ""
+            self.texmsg = ""
             while 1:
-                self.texresult += self.gotqueue.get_nowait()
+                self.texmsg += self.gotqueue.get_nowait()
         except Queue.Empty:
             pass
+        self.texmsgparsed = self.texmsg
         if nogotevent:
-            raise TexResultError("TeX didn't respond as expected within %i seconds." % self.waitfortex, self)
+            raise TexResultError("TeX didn't respond as expected within the timeout period (%i seconds)." % self.waitfortex, self)
         else:
-            self.texparsedresult = self.texresult
-            if expression is None:
-                texcheckres.removetexend.check(self, self.executeid)
-            else:
-                texcheckres.removeinputmarker.check(self, self.executeid)
+            if expr is not None:
+                checkmsg.inputmarker.check(self)
                 if not self.definemode:
-                    texcheckres.removepyxbox.check(self, self.executeid)
+                    checkmsg.pyxbox.check(self)
+                    checkmsg.pyxpageout.check(self)
             for check in checks:
                 try:
                     check.check(self)
                 except TexResultWarning:
                     traceback.print_exc()
-            texcheckres.removeemptylines.check(self)
-            if len(self.texparsedresult):
+            checkmsg.emptylines.check(self)
+            if len(self.texmsgparsed):
                 raise TexResultError("unhandled TeX response (might be an error)", self)
-        if expression is None:
+        if expr is None:
             self.texruns = 0
             self.texdone = 1
 
+    def writefontheader(self, file, containsfonts):
+        if not self.texdone:
+            _default.execute(None, *self.checkmsgend)
+            self.dvifile = DVIFile("%s.dvi" % self.texfilename)
+        if self not in containsfonts:
+            self.dvifile.writeheader(file)
+            containsfonts.append(self)
+            # TODO: - containfonts should contain font/glyph information instead of texrunner references
+
     def write(self, file, page):
         if not self.texdone:
-            _default.execute(None)
+            _default.execute(None, *self.checkmsgend)
             self.dvifile = DVIFile("%s.dvi" % self.texfilename)
-            self.dvifile.writeheader(file)
-        # XXX: the following is a temporary hack to allow the insertion
-        # of the header on the first call of the write funtion
-        else:
-            return self.dvifile.write(file, page)
+        return self.dvifile.write(file, page)
 
-    def set(self, mode=None, waitfortex=None):
+    def settex(self, mode=None, waitfortex=None):
         if self.texruns:
             raise TexRunsError
-        if self.texdone:
-            raise TexDoneError
         if mode is not None:
+            mode = mode.lower()
             if mode != "tex" and mode != "latex":
-                raise ValueError("mode \"tex\" or \"latex\" expected")
+                raise ValueError("mode \"TeX\" or \"LaTeX\" expected")
             self.mode = mode
         if waitfortex is not None:
             self.waitfortex = waitfortex
 
-    def define(self, expression, *args):
+    def set(self, texdebug=None, dvidebug=None, **args):
+        if self.texdone:
+            raise TexDoneError
+        if texdebug is not None:
+            self.texdebug = texdebug
+        if dvidebug is not None:
+            self.dvidebug = dvidebug
+        if len(args.keys()):
+            self.settex(**args)
+
+    def bracketcheck(self, expr):
+        depth = 0
+        esc = 0
+        for c in expr:
+            if c == "{" and not esc:
+                depth = depth + 1
+            if c == "}" and not esc:
+                depth = depth - 1
+                if depth < 0:
+                    raise ValueError("unmatched '}'")
+            if c == "\\":
+                esc = (esc + 1) % 2
+            else:
+                esc = 0
+        if depth > 0:
+            raise ValueError("unmatched '{'")
+
+    def define(self, expr, *args):
         if self.texdone:
             raise TexDoneError
         if not self.definemode:
             raise TexNotInDefineModeError
-        self.execute(expression)
+        self.bracketcheck(expr)
+        self.execute(expr, *self.attrgetall(args, checkmsg, default=self.checkmsgdefaultdefine))
 
     PyXBoxPattern = re.compile(r"PyXBox\(page=(?P<page>\d+),wd=(?P<wd>-?\d*((\d\.?)|(\.?\d))\d*)pt,ht=(?P<ht>-?\d*((\d\.?)|(\.?\d))\d*)pt,dp=(?P<dp>-?\d*((\d\.?)|(\.?\d))\d*)pt\)")
 
-    def text(self, expression, *args):
+    def text(self, x, y, expr, *args):
+        if expr is None:
+            raise ValueError("None is invalid")
         if self.texdone:
             raise TexDoneError
         if self.definemode:
             if self.mode == "latex":
-                self.execute("\\begin{document}")
+                self.execute("\\begin{document}", *self.checkmsgbegindoc)
             self.definemode = 0
-        self.execute(expression)
-        match = self.PyXBoxPattern.search(self.texresult)
+        self.attrcheck(args, allowmulti=(halign, _texsetting, checkmsg, trafo._trafo))
+        for texsetting in self.attrgetall(args, _texsetting, default=()):
+            expr = texsetting.modifyexpr(expr)
+        self.bracketcheck(expr)
+        self.execute(expr, *self.attrgetall(args, checkmsg, default=self.checkmsgdefaultrun))
+        match = self.PyXBoxPattern.search(self.texmsg)
         if not match or int(match.group("page")) != self.page:
             raise TexResultError("box extents not found", self)
-        else:
-            left = 0
-            right, height, depth = map(lambda x: float(x) * 72.0 / 72.27, match.group("wd", "ht", "dp"))
-        return textbox(left, right, height, depth, self, self.executeid)
+        width, height, depth = map(lambda x: float(x) * 72.0 / 72.27, match.group("wd", "ht", "dp"))
+        textbox = _textbox(unit.topt(x), unit.topt(y), 0, width, height, depth, self, self.page)
+        hratio = self.attrgetall(args, halign, default=(halign.left,))[0].hratio
+        textbox.transform(trafo._translate(-hratio * width, 0))
+        for t in self.attrgetall(args, trafo._trafo, default=()):
+            textbox.transform(t)
+        return textbox
+
 
 _default = texrunner()
 set = _default.set
 define = _default.define
 text = _default.text
 
-###############################################################################
 
-if __name__=="__main__":
+###############################################################################
+# TODO: remove __name__ == "__main__"
+
+if __name__ == "__main__":
 
     res1 = text(r"""\hbox{$\displaystyle\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} =
     \sqrt{\pi\over a}$} """)
-    print res1.bbox()
+#    print res1.bbox()
 #    res2 = text("aaa")
 #    res3 = text("bla und nochmals bla")
 #    print res2.bbox()
 #    print res3.bbox()
 
     file = open("text.ps", "w")
-    
+
     file.write("%!PS-Adobe-3.0 EPSF 3.0\n")
     file.write("%%BoundingBox: -10 -100 100 100\n")
     file.write("%%EndComments\n")
@@ -980,17 +1258,18 @@ if __name__=="__main__":
 
     # res*.collectfontheader ???
     # we need to find a way to write the headers in the PS prolog!
-    res1.write(file)
-    
+    containsfonts = []
+    res1.writefontheader(file, containsfonts)
+
     file.write("%%EndProlog\n")
 
-    
+
     res1.write(file)
 #    res3.write(file)
 #    res2.write(file)
-    
+
     file.write("showpage\n")
     file.write("%%Trailer\n")
     file.write("%%EOF\n")
 
-
+# vim: fdm=marker

@@ -20,6 +20,9 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+# TODO: - shouldn't we rename bbox.transform to bbox.transformed? (AW, 23.1.03)
+#       - it would be nice to have a real bbox.transform (AW, 23.1.03)
+
 import unit
 
 # helper routine for bbox manipulations

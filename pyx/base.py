@@ -44,13 +44,29 @@ class PSCmd(PSOp):
 
     """ PSCmd is the base class of all visible elements
 
-    Visible elements, are those, that can be embedded in the Canvas
+    Visible elements are those, that can be embedded in the Canvas
     and posses a bbox.
-    
+
     """
-    
+
     def bbox(self):
         raise NotImplementedError, "cannot call virtual method bbox()"
+
+#
+# PSText class
+#
+
+class PSText(PSCmd):
+
+    """ PSText is the base class of all text elements
+
+    Text elements are those, that (may) contain text and thus provide a
+    writefontheader method.
+
+    """
+
+    def writefontheader(self, file, containsfonts):
+        raise NotImplementedError, "cannot call virtual method writefontheader()"
 
 #
 # Path style classes
@@ -58,7 +74,7 @@ class PSCmd(PSOp):
 # note that as usual in PyX most classes have default instances as members
 
 class PathStyle(PSOp):
-    
+
     """style modifiers for paths
     """
 

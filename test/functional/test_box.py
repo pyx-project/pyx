@@ -1,15 +1,14 @@
 #!/usr/bin/env python
-import sys
-sys.path[:0] = [".."]
+import sys; sys.path[:0] = ["../.."]
 
 import math
 from pyx import *
 
 def drawexample(canvas, corner, linealign):
     if corner:
-        b = graph.alignbox((0, 0), (0, 0), (1, 0), (0.5, math.sqrt(3)/2))
+        b = box.polybox(center=(0, 0), corners=((0, 0), (1, 0), (0.5, math.sqrt(3)/2)))
     else:
-        b = graph.alignbox((0.5, math.sqrt(3)/6), (0, 0), (1, 0), (0.5, math.sqrt(3)/2))
+        b = box.polybox(center=(0.5, math.sqrt(3)/6), corners=((0, 0), (1, 0), (0.5, math.sqrt(3)/2)))
     r = 1.5
     canvas.stroke(path.path(path.arc(0, 0, r, 0, 360)))
     phi = 0
@@ -19,18 +18,18 @@ def drawexample(canvas, corner, linealign):
         else:
             b.circlealign(r, math.cos(phi), math.sin(phi))
         if round(phi / math.pi * 2 * 100) % 100:
-            canvas.stroke(b.path())
+            canvas.stroke(b.path(centerradius=0.05))
         else:
-            canvas.stroke(b.path(), color.rgb.red)
+            canvas.stroke(b.path(centerradius=0.05), color.rgb.red)
         phi += math.pi / 50
 
 def distances():
     print "test distance measurement ...",
-    b1 = graph.alignbox((0.5, math.sqrt(3)/6), (0, 0), (1, 0), (0.5, math.sqrt(3)/2))
-    b2 = graph.alignbox((0.5, math.sqrt(3)/6), (0, 0), (1, 0), (0.5, math.sqrt(3)/2)).transform(trafo.translate(3, 0))
-    b3 = graph.alignbox((0.5, math.sqrt(3)/6), (0, 0), (1, 0), (0.5, math.sqrt(3)/2)).transform(trafo.translate(3, 3 * math.tan(math.pi/6)))
-    b4 = graph.alignbox((0.5, math.sqrt(3)/6), (0, 0), (1, 0), (0.5, math.sqrt(3)/2)).transform(trafo.translate(0, 3))
-    b5 = graph.alignbox((0.5, math.sqrt(3)/6), (0, 0), (1, 0), (0.5, math.sqrt(3)/2)).transform(trafo.translate(0.5, 0.5))
+    b1 = box.polybox(center=(0.5, math.sqrt(3)/6), corners=((0, 0), (1, 0), (0.5, math.sqrt(3)/2)))
+    b2 = box.polybox(center=(0.5, math.sqrt(3)/6), corners=((0, 0), (1, 0), (0.5, math.sqrt(3)/2))).transform(trafo.translate(3, 0))
+    b3 = box.polybox(center=(0.5, math.sqrt(3)/6), corners=((0, 0), (1, 0), (0.5, math.sqrt(3)/2))).transform(trafo.translate(3, 3 * math.tan(math.pi/6)))
+    b4 = box.polybox(center=(0.5, math.sqrt(3)/6), corners=((0, 0), (1, 0), (0.5, math.sqrt(3)/2))).transform(trafo.translate(0, 3))
+    b5 = box.polybox(center=(0.5, math.sqrt(3)/6), corners=((0, 0), (1, 0), (0.5, math.sqrt(3)/2))).transform(trafo.translate(0.5, 0.5))
     assert abs(unit.topt(b1.boxdistance(b2) - unit.t_cm(2))) < 1e-10
     assert abs(unit.topt(b1.boxdistance(b3) - unit.t_cm(math.sqrt(9*(1 + math.tan(math.pi/6)**2)) - math.sqrt(3)/2))) < 1e-10
     assert abs(unit.topt(b1.boxdistance(b4) - unit.t_cm(3 - math.sqrt(3)/2))) < 1e-10
@@ -40,11 +39,11 @@ def distances():
     try:
         b1.boxdistance(b5)
         assert 0, "BoxCrossError expected"
-    except graph.BoxCrossError: pass
+    except box.BoxCrossError: pass
     try:
         b5.boxdistance(b1)
         assert 0, "BoxCrossError expected"
-    except graph.BoxCrossError: pass
+    except box.BoxCrossError: pass
     print "ok"
 
 c = canvas.canvas()

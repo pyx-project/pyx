@@ -25,6 +25,9 @@
 #   should we at least factor it out?
 # - Should we really set linewidth in canvas.writetofile. Why don't we
 #   rely on the PS default (like for all other PathStyles)
+#   AW remarks: - our default linewidth is not the Postscript default!!!
+#               - our default linewidth depends on the unit-settings
+#               => leave it and remove that point here
 # - How should we handle the passing of stroke and fill styles to
 #   arrows? Calls, new instances, ...?
 
@@ -39,14 +42,15 @@ transformed (i.e. translated, rotated, etc.) and clipped.
 """
 
 import types, math, time
-import pyx
-import base
-import bbox, unit, trafo
-import path
+
+#import pyx
+import __init__ as pyx # what should we do here???
+
+import base, bbox, unit, trafo, path, text
 
 # PostScript-procedure definitions
-# cf. file: 5002.EPSF_Spec_v3.0.pdf     
-# with important correction in EndEPSF: 
+# cf. file: 5002.EPSF_Spec_v3.0.pdf
+# with important correction in EndEPSF:
 #   end operator is missing in the spec!
 
 _PSProlog = """/BeginEPSF {
@@ -70,16 +74,17 @@ _PSProlog = """/BeginEPSF {
   count op_count sub {pop} repeat
   countdictstack dict_count sub {end} repeat
   b4_Inc_state restore
-} bind def"""
+} bind def
+"""
 
 # known paperformats as tuple(width, height)
 
-_paperformats = { "a4"      : ("210 t mm",  "297 t mm"), 
-                  "a3"      : ("297 t mm",  "420 t mm"), 
-                  "a2"      : ("420 t mm",  "594 t mm"), 
-                  "a1"      : ("594 t mm",  "840 t mm"), 
-                  "a0"      : ("840 t mm", "1188 t mm"), 
-                  "a0b"     : ("910 t mm", "1370 t mm"), 
+_paperformats = { "a4"      : ("210 t mm",  "297 t mm"),
+                  "a3"      : ("297 t mm",  "420 t mm"),
+                  "a2"      : ("420 t mm",  "594 t mm"),
+                  "a1"      : ("594 t mm",  "840 t mm"),
+                  "a0"      : ("840 t mm", "1188 t mm"),
+                  "a0b"     : ("910 t mm", "1370 t mm"),
                   "letter"  : ("8.5 t in",   "11 t in"),
                   "legal"   : ("8.5 t in",   "14 t in")}
 
@@ -87,17 +92,17 @@ _paperformats = { "a4"      : ("210 t mm",  "297 t mm"),
 #
 # Exceptions
 #
-    
+
 class CanvasException(Exception): pass
 
 
 class linecap(base.PathStyle):
 
     """linecap of paths"""
-    
+
     def __init__(self, value=0):
         self.value=value
-        
+
     def write(self, file):
         file.write("%d setlinecap\n" % self.value)
 
@@ -109,10 +114,10 @@ linecap.square = linecap(2)
 class linejoin(base.PathStyle):
 
     """linejoin of paths"""
-    
+
     def __init__(self, value=0):
         self.value=value
-        
+
     def write(self, file):
         file.write("%d setlinejoin\n" % self.value)
 
@@ -124,10 +129,10 @@ linejoin.bevel = linejoin(2)
 class miterlimit(base.PathStyle):
 
     """miterlimit of paths"""
-    
+
     def __init__(self, value=10.0):
         self.value=value
-        
+
     def write(self, file):
         file.write("%f setmiterlimit\n" % self.value)
 
@@ -141,7 +146,7 @@ miterlimit.lessthan11deg  = miterlimit(10) # the default, approximately 11.4783 
 class dash(base.PathStyle):
 
     """dash of paths"""
-    
+
     def __init__(self, pattern=[], offset=0):
         self.pattern=pattern
         self.offset=offset
@@ -150,18 +155,18 @@ class dash(base.PathStyle):
         patternstring=""
         for element in self.pattern:
             patternstring=patternstring + `element` + " "
-                              
+
         file.write("[%s] %d setdash\n" % (patternstring, self.offset))
-        
+
 
 class linestyle(base.PathStyle):
 
     """linestyle (linecap together with dash) of paths"""
-    
+
     def __init__(self, c=linecap.butt, d=dash([])):
         self.c=c
         self.d=d
-        
+
     def write(self, file):
         self.c.write(file)
         self.d.write(file)
@@ -170,20 +175,20 @@ linestyle.solid      = linestyle(linecap.butt,  dash([]))
 linestyle.dashed     = linestyle(linecap.butt,  dash([2]))
 linestyle.dotted     = linestyle(linecap.round, dash([0, 3]))
 linestyle.dashdotted = linestyle(linecap.round, dash([0, 3, 3, 3]))
-    
- 
+
+
 class linewidth(base.PathStyle, unit.length):
 
     """linewidth of paths"""
 
     def __init__(self, l="0 cm"):
         unit.length.__init__(self, l=l, default_type="w")
-        
+
     def write(self, file):
         file.write("%f setlinewidth\n" % unit.topt(self))
 
 _base=0.02
- 
+
 linewidth.THIN   = linewidth("%f cm" % (_base/math.sqrt(32)))
 linewidth.THIn   = linewidth("%f cm" % (_base/math.sqrt(16)))
 linewidth.THin   = linewidth("%f cm" % (_base/math.sqrt(8)))
@@ -209,12 +214,12 @@ class DecoratedPath(base.PSCmd):
     (stroking/filling) of a path. It collects attributes for the
     stroke and/or fill operations.
     """
-    
+
     def __init__(self,
                  path, strokepath=None, fillpath=None,
                  styles=None, strokestyles=None, fillstyles=None,
                  subdps=None):
-        
+
         self.path = path
 
         # path to be stroked or filled (or None)
@@ -223,18 +228,18 @@ class DecoratedPath(base.PSCmd):
 
         # global style for stroking and filling and subdps
         self.styles = styles or []
-        
+
         # styles which apply only for stroking and filling
         self.strokestyles = strokestyles or []
         self.fillstyles = fillstyles or []
-        
+
         # additional elements of the path, e.g., arrowheads,
         # which are by themselves DecoratedPaths
         self.subdps = subdps or []
 
     def addsubdp(self, subdp):
         """add a further decorated path to the list of subdps"""
-        
+
         self.subdps.append(subdp)
 
     def bbox(self):
@@ -253,32 +258,32 @@ class DecoratedPath(base.PSCmd):
             for style in styles:
                 style.write(file)
 
-        
+
         # apply global styles
         if self.styles:
             _gsave().write(file)
             _writestyles(self.styles)
 
-        if self.fillpath: 
+        if self.fillpath:
             _newpath().write(file)
             self.fillpath.write(file)
 
             if self.strokepath==self.fillpath:
                 # do efficient stroking + filling
                 _gsave().write(file)
-                
+
                 if self.fillstyles:
                     _writestyles(self.fillstyles)
-                    
+
                 _fill().write(file)
                 _grestore().write(file)
-                
+
                 if self.strokestyles:
                     _gsave().write(file)
                     _writestyles(self.strokestyles)
-                    
+
                 _stroke().write(file)
-                
+
                 if self.strokestyles:
                     _grestore().write(file)
             else:
@@ -286,12 +291,12 @@ class DecoratedPath(base.PSCmd):
                 if self.fillstyles:
                     _gsave().write(file)
                     _writestyles(self.fillstyles)
-                    
+
                 _fill().write(file)
-                
+
                 if self.fillstyles:
                     _grestore().write(file)
-                    
+
         if self.strokepath and self.strokepath!=self.fillpath:
             # this is the only relevant case still left
             # Note that a possible stroking has already been done.
@@ -299,11 +304,11 @@ class DecoratedPath(base.PSCmd):
             if self.strokestyles:
                 _gsave().write(file)
                 _writestyles(self.strokestyles)
-                
+
             _newpath().write(file)
             self.strokepath.write(file)
             _stroke().write(file)
-                
+
             if self.strokestyles:
                 _grestore().write(file)
 
@@ -320,13 +325,13 @@ class DecoratedPath(base.PSCmd):
 #
 
 class PathDeco:
-    
+
     """Path decorators
-    
+
     In contrast to path styles, path decorators depend on the concrete
     path to which they are applied. In particular, they don't make
     sense without any path and can thus not be used in canvas.set!
-    
+
     """
 
     def decorate(self, dp):
@@ -335,7 +340,7 @@ class PathDeco:
         decorate accepts a DecoratedPath object dp, applies PathStyle
         by modifying dp in place and returning the new dp.
         """
-        
+
         pass
 
 
@@ -514,12 +519,12 @@ class arrow(PathDeco):
         dp.strokepath=anormpath
 
         return dp
-    
-        
+
+
 class barrow(arrow):
-    
+
     """arrow at begin of path"""
-    
+
     def __init__(self, size, angle=45, constriction=0.8,
                  styles=None, strokestyles=None, fillstyles=None):
         arrow.__init__(self,
@@ -546,10 +551,10 @@ barrow.LArge  = barrow("%f v pt" % (_base*math.sqrt(8)))
 barrow.LARge  = barrow("%f v pt" % (_base*math.sqrt(16)))
 barrow.LARGe  = barrow("%f v pt" % (_base*math.sqrt(32)))
 barrow.LARGE  = barrow("%f v pt" % (_base*math.sqrt(64)))
-                
-  
+
+
 class earrow(arrow):
-    
+
     """arrow at end of path"""
 
     def __init__(self, size, angle=45, constriction=0.8,
@@ -563,7 +568,7 @@ class earrow(arrow):
                        strokestyles=strokestyles,
                        fillstyles=fillstyles)
 
-    
+
 earrow.SMALL  = earrow("%f v pt" % (_base/math.sqrt(64)))
 earrow.SMALl  = earrow("%f v pt" % (_base/math.sqrt(32)))
 earrow.SMAll  = earrow("%f v pt" % (_base/math.sqrt(16)))
@@ -610,27 +615,27 @@ class clip(base.PSCmd):
 class _newpath(base.PSOp):
     def write(self, file):
        file.write("newpath\n")
-       
+
 
 class _stroke(base.PSOp):
     def write(self, file):
        file.write("stroke\n")
-       
+
 
 class _fill(base.PSOp):
     def write(self, file):
         file.write("fill\n")
-        
+
 
 class _clip(base.PSOp):
     def write(self, file):
        file.write("clip\n")
-       
+
 
 class _gsave(base.PSOp):
     def write(self, file):
        file.write("gsave\n")
-       
+
 
 class _grestore(base.PSOp):
     def write(self, file):
@@ -640,7 +645,7 @@ class _grestore(base.PSOp):
 # The main canvas class
 #
 
-class canvas(base.PSCmd):
+class canvas(base.PSText):
 
     """a canvas is a collection of PSCmds together with PSAttrs"""
 
@@ -680,20 +685,29 @@ class canvas(base.PSCmd):
                        isinstance(y, base.PSCmd) and x+y.bbox() or x,
                        self.PSOps,
                        bbox.bbox())
-        
+
         # transform according to our global transformation and
         # intersect with clipping bounding box (which have already been
         # transformed in canvas.__init__())
         return obbox.transform(self.trafo)*self.clipbbox
-            
-    def write(self, file):
+
+    def writefontheader(self, file, collectfontheader):
+        for cmd in self.PSOps:
+            if isinstance(cmd, base.PSText):
+                cmd.writefontheader(file, collectfontheader)
+
+    def write(self, file, restorestack=1):
+        if restorestack:
+            _gsave().write(file)
         for cmd in self.PSOps:
             cmd.write(file)
+        if restorestack:
+            _grestore().write(file)
 
     def writetofile(self, filename, paperformat=None, rotated=0, fittosize=0, margin="1 t cm", bboxenhance="1 t pt"):
         """write canvas to EPS file
 
-        If paperformat is set to a known paperformat, the output will be centered on 
+        If paperformat is set to a known paperformat, the output will be centered on
         the page.
 
         If rotated is set, the output will first be rotated by 90 degrees.
@@ -734,78 +748,84 @@ class canvas(base.PSCmd):
             if not ctrafo: ctrafo=trafo.trafo()
 
             ctrafo = ctrafo._translated(0.5*(width -(abbox.urx-abbox.llx))-
-                                       abbox.llx, 
+                                       abbox.llx,
                                        0.5*(height-(abbox.ury-abbox.lly))-
                                        abbox.lly)
-            
+
             if fittosize:
                 # scale output to pagesize - margins
                 margin=unit.topt(margin)
 
                 if rotated:
-                    sfactor = min((height-2*margin)/(abbox.urx-abbox.llx), 
+                    sfactor = min((height-2*margin)/(abbox.urx-abbox.llx),
                                   (width-2*margin)/(abbox.ury-abbox.lly))
                 else:
-                    sfactor = min((width-2*margin)/(abbox.urx-abbox.llx), 
+                    sfactor = min((width-2*margin)/(abbox.urx-abbox.llx),
                                   (height-2*margin)/(abbox.ury-abbox.lly))
-                    
+
                 ctrafo = ctrafo._scaled(sfactor, sfactor, 0.5*width, 0.5*height)
-                          
-                
+
+
         elif fittosize:
             assert 0, "must specify paper size for fittosize" # TODO: exception...
 
         # if there has been a global transformation, adjust the bounding box
         # accordingly
-        if ctrafo: abbox = abbox.transform(ctrafo) 
+        if ctrafo: abbox = abbox.transform(ctrafo)
 
         file.write("%!PS-Adobe-3.0 EPSF 3.0\n")
         abbox.write(file)
-        file.write("%%%%Creator: PyX %s\n" % pyx.__version__) 
-        file.write("%%%%Title: %s\n" % filename) 
+        file.write("%%%%Creator: PyX %s\n" % pyx.__version__)
+        file.write("%%%%Title: %s\n" % filename)
         file.write("%%%%CreationDate: %s\n" %
                    time.asctime(time.localtime(time.time())))
         file.write("%%EndComments\n")
-        
-        file.write("%%BeginProlog\n") 
+
+        file.write("%%BeginProlog\n")
         file.write(_PSProlog)
-        file.write("\n%%EndProlog\n") 
+        containsfonts = []
+        self.writefontheader(file, containsfonts)
+        file.write("%%EndProlog\n")
 
         # again, if there has occured global transformation, apply it now
-        if ctrafo: ctrafo.write(file)   
+        if ctrafo: ctrafo.write(file)
 
         file.write("%f setlinewidth\n" % unit.topt(linewidth.normal))
-        
+
         # here comes the actual content
-        self.write(file)
-        
+        self.write(file, restorestack=0)
+
         file.write("showpage\n")
         file.write("%%Trailer\n")
         file.write("%%EOF\n")
 
         return self
-            
+
     def insert(self, *PSOps):
-        """insert one or more PSOps in the canvas 
+        """insert one or more PSOps in the canvas
 
         All canvases will be encapsulated in a gsave/grestore pair.
-        
+
         returns the (last) PSOp
-        
+
         """
-        
+
         for PSOp in PSOps:
-            if isinstance(PSOp, canvas):
-                self.PSOps.append(_gsave())
-                
+            # XXX(AW): isn't gsave/grestore better be done in the write methods?
+            # XXX(AW): (there is the exception to not encapsulate a canvas in gsave/grestore for the main canvas)
+            #if isinstance(PSOp, canvas) or isinstance(PSOp, text._textbox):
+            #    self.PSOps.append(_gsave())
+
             self.PSOps.append(PSOp)
-            
-            if isinstance(PSOp, canvas):
-                self.PSOps.append(_grestore())
+
+            #if isinstance(PSOp, canvas) or isinstance(PSOp, text._textbox):
+            #    self.PSOps.append(_grestore())
 
             # save last command for return value
             lastop = PSOp
-            
+
+        # XXX(AW): BTW, what *was* "lastop" when an encapsulation in gsave/grestore was performed (the old way)?
+
         return lastop
 
     def set(self, *styles):
@@ -814,7 +834,7 @@ class canvas(base.PSCmd):
         returns canvas
 
         """
-        
+
         for style in styles:
             if not isinstance(style, base.PathStyle):
                 raise NotImplementedError, "can only set PathStyle"
@@ -822,7 +842,7 @@ class canvas(base.PSCmd):
             self.insert(style)
 
         return self
-        
+
     def draw(self, path, *args):
         """draw path on canvas using the style given by args
 
@@ -837,19 +857,19 @@ class canvas(base.PSCmd):
         dp = DecoratedPath(path)
 
         # XXX: use attrlist
-        if [x for x in args if not (isinstance(x, base.PathStyle) or 
+        if [x for x in args if not (isinstance(x, base.PathStyle) or
                                     isinstance(x, PathDeco))]:
             raise ValueError("Only instances of base.PathStyle or canvas.PathDeco are allowed")
 
         # set global styles
         dp.styles = filter(lambda x: isinstance(x, base.PathStyle), args)
-        
+
         # add path decorations and modify path accordingly
         for deco in filter(lambda x: isinstance(x, PathDeco), args):
             dp = deco.decorate(dp)
 
         self.insert(dp)
-        
+
         return self
 
     def stroke(self, path, *args):
@@ -864,7 +884,7 @@ class canvas(base.PSCmd):
         """
 
         return self.draw(path, stroked(), *args)
-        
+
     def fill(self, path, *args):
         """fill path on canvas using the style given by args
 
@@ -877,3 +897,8 @@ class canvas(base.PSCmd):
         """
 
         return self.draw(path, filled(), *args)
+
+    def text(self, x, y, atext, *args):
+        """AW: insert a text into the canvas"""
+
+        return self.insert(text.text(x, y, atext, *args))

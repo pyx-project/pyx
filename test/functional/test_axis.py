@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-import sys, math
-sys.path[:0] = [".."]
+import sys; sys.path[:0] = ["../.."]
 
+import math
 from pyx import *
 
 l = unit.topt(8)

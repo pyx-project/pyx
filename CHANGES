@@ -1,5 +1,9 @@
 PyX
 
+0.3 (????/??/??):
+  - unit box:
+    - new module for handling of convex polygons
+
 0.2 (????/??/??):
   - unit module:
     - allow division of length by numbers
