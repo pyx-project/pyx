@@ -71,7 +71,7 @@ class data:
         else:
             self.titles.append(expression[:split])
             expression = expression[split+1:]
-        tree = self.parser.parse(expression)
+        tree = self.parser.parse(expression, extern=self.extern)
         columnlist = {}
         for key in tree.VarList():
             if key[0] == "$":
