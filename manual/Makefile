@@ -15,6 +15,7 @@ manual.ps: manual.dvi
 
 manual.dvi: $(wildcard *.tex) $(patsubst %.py, %.eps, $(wildcard *.py)) pyxversion.tex
 	latex manual.tex
+	-rm manual.ps manual.pdf
 
 pyxversion.tex: ../pyx/__init__.py
 	python -c "import sys;sys.path[:0]=[\"..\"];import pyx;print pyx.__version__" > pyxversion.tex
