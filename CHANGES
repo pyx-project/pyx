@@ -1,5 +1,10 @@
 PyX
 
+KNOWN BUGS:
+  text module:
+  - preamble: helper.checkattr(args, allowmulti=texmessage); allowmulti must be a sequence
+  - self.texmessagedefaultpreamble isn't checked (the same for all other defaults)
+
 0.4 (????/??/??):
   - text module:
     fix bug in dvi rule code where width was height
