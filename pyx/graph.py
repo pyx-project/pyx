@@ -1317,20 +1317,19 @@ class graphxy(canvas.canvas):
     def clipcanvas(self):
         return self.insert(canvas.canvas(canvas.clip(path._rect(self.xpos, self.ypos, self.width, self.height))))
 
-    def plot(self, data, style=None, defaultstyle=None):
+    def plot(self, data, style=None):
         if self.haslayout:
             raise RuntimeError("layout setup was already performed")
         if style is None:
-            if defaultstyle is None:
-                defaultstyle = data.defaultstyle
-            if self.previousstyle.has_key(defaultstyle.__class__):
-                style = self.previousstyle[defaultstyle.__class__].next()
-            else:
-                style = defaultstyle
-        self.previousstyle[style.__class__] = style
-        data.setstyle(self, style)
-        self.data.append(data)
-        return style
+            style = data.defaultstyle
+        styles = []
+        for d in _ensuresequence(data):
+            styles.append(style.iterate())
+            d.setstyle(self, styles[-1])
+            self.data.append(d)
+        if _issequence(data):
+            return styles
+        return styles[0]
 
     def xtickpoint(self, axis, virtual):
         return (self.xmap.convert(virtual), axis.yaxispos)
@@ -1385,17 +1384,17 @@ class graphxy(canvas.canvas):
                 del ranges[key]
         return ranges
 
-    def removedrawmethod(self, method):
+    def removedomethod(self, method):
         hadmethod = 0
         while 1:
             try:
-                self.drawmethods.remove(method)
+                self.domethods.remove(method)
                 hadmethod = 1
             except ValueError:
                 return hadmethod
 
-    def drawlayout(self):
-        if not self.removedrawmethod(self.drawlayout): return
+    def dolayout(self):
+        if not self.removedomethod(self.dolayout): return
         self.haslayout = 1
         # create list of ranges
         # 1. gather ranges
@@ -1448,9 +1447,9 @@ class graphxy(canvas.canvas):
         self.xmap = _linmap().setbasepoints(((0, self.xpos), (1, self.xpos + self.width)))
         self.ymap = _linmap().setbasepoints(((0, self.ypos), (1, self.ypos + self.height)))
 
-    def drawbackground(self):
-        self.drawlayout()
-        if not self.removedrawmethod(self.drawbackground): return
+    def dobackground(self):
+        self.dolayout()
+        if not self.removedomethod(self.dobackground): return
         if self.backgroundattrs is not None:
             self.draw(path._rect(self.xmap.convert(0),
                                  self.ymap.convert(0),
@@ -1458,9 +1457,9 @@ class graphxy(canvas.canvas):
                                  self.ymap.convert(1) - self.ymap.convert(0)),
                       *_ensuresequence(self.backgroundattrs))
 
-    def drawaxes(self):
-        self.drawlayout()
-        if not self.removedrawmethod(self.drawaxes): return
+    def doaxes(self):
+        self.dolayout()
+        if not self.removedomethod(self.doaxes): return
         axesdist = unit.topt(unit.length(self.axesdist_str, default_type="v"))
         self.xaxisextents = [0, 0]
         self.yaxisextents = [0, 0]
@@ -1501,17 +1500,16 @@ class graphxy(canvas.canvas):
             if self.YPattern.match(key):
                 self.yaxisextents[num2] += axis.extent
                 needyaxisdist[num2] = 1
-        self._drawstate = None
 
-    def drawdata(self):
-        self.drawlayout()
-        if not self.removedrawmethod(self.drawdata): return
+    def dodata(self):
+        self.dolayout()
+        if not self.removedomethod(self.dodata): return
         for data in self.data:
             data.draw(self)
 
-    def drawall(self):
-        while len(self.drawmethods):
-            self.drawmethods[0]()
+    def finish(self):
+        while len(self.domethods):
+            self.domethods[0]()
 
     def __init__(self, tex, xpos=0, ypos=0, width=None, height=None, ratio=goldenrule,
                  backgroundattrs=None, axesdist="0.8 cm", **axes):
@@ -1547,7 +1545,7 @@ class graphxy(canvas.canvas):
         self.backgroundattrs = backgroundattrs
         self.data = []
         self.previousstyle = {}
-        self.drawmethods = [self.drawlayout, self.drawbackground, self.drawaxes, self.drawdata]
+        self.domethods = [self.dolayout, self.dobackground, self.doaxes, self.dodata]
         self.haslayout = 0
 
     def bbox(self):
@@ -1568,94 +1566,78 @@ class graphxy(canvas.canvas):
 ################################################################################
 
 
-class _Ichangeattr:
-    """attribute changer
-       is an iterator for attributes where an attribute
-       is not refered by just a number (like for a sequence),
-       but also by the number of attributes requested
-       by calls of the next method (like for an color gradient)
-       (you should ensure to call all needed next before the attr)
-
-       the attribute itself is implemented by overloading the _attr method"""
-
-    def attr(self):
-        "get an attribute"
-
-    def next(self):
-        "get an attribute changer for the next attribute"
-
-
-class _changeattr: pass
+#class _Ichangeattr:
+#    """attribute changer
+#       is an iterator for attributes where an attribute
+#       is not refered by just a number (like for a sequence),
+#       but also by the number of attributes requested
+#       by calls of the next method (like for an color gradient)
+#       (you should ensure to call all needed next before the attr)
+#
+#       the attribute itself is implemented by overloading the _attr method"""
+#
+#    def attr(self):
+#        "get an attribute"
+#
+#    def next(self):
+#        "get an attribute changer for the next attribute"
 
 
-class changeattrref(_changeattr):
-
-    __implements__ = _Ichangeattr
+class refattr:
 
     def __init__(self, ref, index):
         self.ref = ref
         self.index = index
 
-    def attr(self):
+    def getattr(self):
         return self.ref.attr(self.index)
 
-    def next(self):
-        return self.ref.next()
 
-
-class changeattr(_changeattr):
-
-    __implements__ = _Ichangeattr
+class changeattr:
 
     def __init__(self):
-        self.counter = 1
+        self.counter = 0
 
-    def attr(self, index=0):
-        return self._attr(index, self.counter)
-
-    def next(self):
+    def iterate(self):
         self.counter += 1
         return changeattrref(self, self.counter - 1)
-
-    # def _attr(self, index):
-    # to be defined in derived classes
 
 
 # helper routines for a using attrs
 
 def _getattr(attr):
-    """get attr out of a attr/changeattr"""
-    if isinstance(attr, _changeattr):
+    """get attr out of a attr/refattr"""
+    if isinstance(attr, refattr):
         return attr.attr()
     return attr
 
 
-def _nextattr(attr):
-    """perform next to a attr/changeattr"""
-    if isinstance(attr, _changeattr):
-        return attr.next()
-    return attr
-
-
 def _getattrs(attrs):
-    """get attrs out of a sequence of attr/changeattr"""
+    """get attrs out of a sequence of attr/refattr"""
     if attrs is not None:
         result = []
         for attr in _ensuresequence(attrs):
-            if isinstance(attr, _changeattr):
+            if isinstance(attr, refattr):
                 result.append(attr.attr())
             else:
                 result.append(attr)
         return result
 
 
-def _nextattrs(attrs):
+def _iterateattr(attr):
+    """perform next to a attr/changeattr"""
+    if isinstance(attr, refattr):
+        return attr.iterate()
+    return attr
+
+
+def _iterateattrs(attrs):
     """perform next to a sequence of attr/changeattr"""
     if attrs is not None:
         result = []
         for attr in _ensuresequence(attrs):
-            if isinstance(attr, _changeattr):
-                result.append(attr.next())
+            if isinstance(attr, refattr):
+                result.append(attr.iterate())
             else:
                 result.append(attr)
         return result
@@ -1667,7 +1649,7 @@ class changecolor(changeattr):
         changeattr.__init__(self)
         self.gradient = gradient
 
-    def _attr(self, index, length):
+    def attr(self, index, length):
         if length != 1:
             return self.gradient.getcolor(index/float(length-1))
         else:
@@ -1679,7 +1661,7 @@ class _changecolorgray(changecolor):
     def __init__(self, gradient=color.gradient.gray):
         changecolor.__init__(self, gradient)
 
-        
+
 class _changecolorreversegray(changecolor):
 
     def __init__(self, gradient=color.gradient.reversegray):
@@ -1854,12 +1836,12 @@ class mark:
         self.lineattrs = lineattrs
         self.xmin, self.xmax, self.ymin, self.ymax = xmin, xmax, ymin, ymax
 
-    def next(self):
-        return mark(mark=_nextattr(self.mark),
+    def iterate(self):
+        return mark(mark=_iterateattr(self.mark),
                     xmin=self.xmin, xmax=self.xmax, ymin=self.ymin, ymax=self.ymax,
-                    size=_nextattr(self.size_str), markattrs=_nextattrs(self.markattrs),
-                    errorscale=_nextattr(self.errorscale), errorbarattrs=_nextattrs(self.errorbarattrs),
-                    lineattrs=_nextattrs(self.lineattrs))
+                    size=_iterateattr(self.size_str), markattrs=_iterateattrs(self.markattrs),
+                    errorscale=_iterateattr(self.errorscale), errorbarattrs=_iterateattrs(self.errorbarattrs),
+                    lineattrs=_iterateattrs(self.lineattrs))
 
     def setcolumns(self, graph, columns):
         def checkpattern(key, index, pattern, iskey, isindex):
