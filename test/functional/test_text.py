@@ -5,7 +5,7 @@ from pyx import *
 from pyx import text
 
 c = canvas.canvas()
-text.set(mode="latex", dvidebug=1, usefiles=("test_text.dvi","test_text.log"))
+text.set(mode="latex")
 text.preamble(r"""%
     \usepackage{graphicx}
     \usepackage{color}
