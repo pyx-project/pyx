@@ -11,10 +11,9 @@ PyX
     - moved axis partitioning to axis and axis painter
     - automatic axis partitioning (general cleanup, distance measurement, documentation)
     - splitaxis (done, but documentation missing)
-    - baraxis (not yet started)
-    - new bar class (work in progress)
-    - histogramm style (not yet started)
-    - date and time axis (not yet started)
+    - baraxis, baraxispainter, and bar style (implemented upto some goodies)
+    - histogramm style (not yet started; takes an hour :-))
+    - date and time axis (not yet started; takes probably a bit more than an hour)
     - 3d graphs (some preliminary work done, but deferred for the moment)
   - data module:
     - previously named datafile module

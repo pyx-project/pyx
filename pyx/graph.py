@@ -927,6 +927,7 @@ class textbox(_rectbox, attrlist.attrlist):
         self.ytext = 0
         xorigin = 0.5 * self.wd
         if self.halign is not None:
+            # centered by default!
             if self.halign is tex.halign.left:
                 xorigin = 0
             if self.halign is tex.halign.right:
@@ -1254,7 +1255,6 @@ class axispainter(attrlist.attrlist):
         if axis.title is not None and self.titleattrs is not None:
             axis.titlebox.printtext()
 
-
 class splitaxispainter:
 
     def __init__(self, breaklinesdist=0.05, breaklineslength=0.5, breaklinesangle=-60, breaklinesattrs=()):
@@ -1328,6 +1328,126 @@ class splitaxispainter:
                                      path.closepath()), color.gray.white)
                 graph.stroke(breakline1, *_ensuresequence(self.breaklinesattrs))
                 graph.stroke(breakline2, *_ensuresequence(self.breaklinesattrs))
+
+class baraxispainter(attrlist.attrlist):
+
+    def __init__(self, innerticklength=None,
+                       outerticklength=None,
+                       tickattrs=(),
+                       baselineattrs=canvas.linecap.square,
+                       namedist="0.3 cm",
+                       nameattrs=(),
+                       namedirection=None,
+                       namepos=0.5,
+                       namehequalize=0,
+                       namevequalize=1,
+                       titledist="0.3 cm",
+                       titleattrs=(),
+                       titledirection=-90,
+                       titlepos=0.5):
+        self.innerticklength_str = innerticklength
+        self.outerticklength_str = outerticklength
+        self.tickattrs = tickattrs
+        self.baselineattrs = baselineattrs
+        self.namedist_str = namedist
+        self.nameattrs = nameattrs
+        self.namedirection = namedirection
+        self.namepos = namepos
+        self.namehequalize = namehequalize
+        self.namevequalize = namevequalize
+        self.titledist_str = titledist
+        self.titleattrs = titleattrs
+        self.titledirection = titledirection
+        self.titlepos = titlepos
+
+    def reldirection(self, direction, dx, dy, epsilon=1e-10):
+        # XXX: code duplication from axispainter
+        direction += math.atan2(dy, dx) * 180 / math.pi
+        while (direction > 90 + epsilon):
+            direction -= 180
+        while (direction < -90 - epsilon):
+            direction += 180
+        return direction
+
+    def dolayout(self, graph, axis):
+        equaldirection = 1
+        axis.namepos = []
+        for i in range(len(axis.names)):
+            v = axis.convert((i + int(axis.minid), self.namepos))
+            x, y = axis._vtickpoint(axis, v)
+            dx, dy = axis.vtickdirection(axis, v)
+            if i and equaldirection and (dx != axis.namepos[0][3] or dy != axis.namepos[0][4]):
+                equaldirection = 0
+            axis.namepos.append((v, x, y, dx, dy))
+        axis.nameboxes = []
+        for (v, x, y, dx, dy), name in zip(axis.namepos, axis.names):
+            nameattrs = list(_ensuresequence(self.nameattrs))
+            if self.namedirection is not None and not self.attrcount(nameattrs, tex.direction):
+                nameattrs += [tex.direction(self.reldirection(self.labeldirection, dx, dy))]
+            axis.nameboxes.append(textbox(graph.tex, name, textattrs=nameattrs))
+        if equaldirection:
+            maxht, maxwd, maxdp = 0, 0, 0
+            for namebox in axis.nameboxes:
+                if maxht < namebox.ht: maxht = namebox.ht
+                if maxwd < namebox.wd: maxwd = namebox.wd
+                if maxdp < namebox.dp: maxdp = namebox.dp
+            for namebox in axis.nameboxes:
+                if self.namehequalize:
+                    namebox.manualextents(wd = maxwd)
+                if self.namevequalize:
+                    namebox.manualextents(ht = maxht, dp = maxdp)
+        labeldist = axis._extent + unit.topt(unit.length(self.namedist_str, default_type="v"))
+        if self.innerticklength_str is not None:
+            axis.innerticklength = unit.topt(unit.length(self.innerticklength_str, default_type="v"))
+        else:
+            if self.outerticklength_str is not None:
+                axis.innerticklength = 0
+            else:
+                axis.innerticklength = None
+        if self.outerticklength_str is not None:
+            axis.outerticklength = unit.topt(unit.length(self.outerticklength_str, default_type="v"))
+        else:
+            if self.innerticklength_str is not None:
+                axis.outerticklength = 0
+            else:
+                axis.outerticklength = None
+        if axis.outerticklength is not None and self.tickattrs is not None:
+            axis._extent += axis.outerticklength
+        for (v, x, y, dx, dy), namebox in zip(axis.namepos, axis.nameboxes):
+            namebox._linealign(labeldist, dx, dy)
+            namebox.transform(trafo._translation(x, y))
+            newextent = namebox._extent(dx, dy) + labeldist
+            if axis._extent < newextent:
+                axis._extent = newextent
+        titledist = unit.topt(unit.length(self.titledist_str, default_type="v"))
+        if axis.title is not None and self.titleattrs is not None:
+            dx, dy = axis.vtickdirection(axis, self.titlepos)
+            titleattrs = list(_ensuresequence(self.titleattrs))
+            if self.titledirection is not None and not self.attrcount(titleattrs, tex.direction):
+                titleattrs = titleattrs + [tex.direction(self.reldirection(self.titledirection, dx, dy))]
+            axis.titlebox = textbox(graph.tex, axis.title, textattrs=titleattrs)
+            axis._extent += titledist
+            axis.titlebox._linealign(axis._extent, dx, dy)
+            axis.titlebox.transform(trafo._translation(*axis._vtickpoint(axis, self.titlepos)))
+            axis._extent += axis.titlebox._extent(dx, dy)
+
+    def paint(self, graph, axis):
+        if None not in (self.tickattrs, axis.innerticklength, axis.outerticklength):
+            for i in xrange(axis.maxid - axis.minid + 2):
+                v = i / float(axis.maxid - axis.minid + 1)
+                x, y = axis._vtickpoint(axis, v)
+                dx, dy = axis.vtickdirection(axis, v)
+                x1 = x - dx * axis.innerticklength
+                y1 = y - dy * axis.innerticklength
+                x2 = x + dx * axis.outerticklength
+                y2 = y + dy * axis.outerticklength
+                graph.stroke(path._line(x1, y1, x2, y2), *_ensuresequence(self.tickattrs))
+        if self.baselineattrs is not None:
+            graph.stroke(axis.vbaseline(axis), *_ensuresequence(self.baselineattrs))
+        for namebox in axis.nameboxes:
+            namebox.printtext()
+        if axis.title is not None and self.titleattrs is not None:
+            axis.titlebox.printtext()
 
 
 
@@ -1581,10 +1701,9 @@ class linkaxis:
 
 class splitaxis:
 
-    def __init__(self, axislist, splitlist=0.5, splitdist=0.1, relsizesplitdist=None):
+    def __init__(self, axislist, splitlist=0.5, splitdist=0.1, relsizesplitdist=None, painter=splitaxispainter()):
         self.axislist = axislist
-        self.part = manualpart()
-        self.painter = splitaxispainter()
+        self.painter = painter
         self.splitlist = list(_ensuresequence(splitlist))
         self.splitlist.sort()
         if len(self.axislist) != len(self.splitlist) + 1:
@@ -1683,12 +1802,68 @@ class splitaxis:
     def dopaint(self, graph):
         self.painter.paint(graph, self)
 
-    def createlinkaxis(self, *args):
+    def createlinkaxis(self, painter=None, *args):
         if not len(args):
             return splitaxis([x.createlinkaxis() for x in self.axislist], splitlist=None)
         if len(args) != len(self.axislist):
             raise IndexError("length of the argument list doesn't fit to split number")
-        return splitaxis([x.createlinkaxis(**arg) for x, arg in zip(self.axislist, args)])
+        if painter is None:
+            painter = self.painter
+        return splitaxis([x.createlinkaxis(**arg) for x, arg in zip(self.axislist, args)], painter=painter)
+
+class baraxis:
+
+    def __init__(self, subaxis=None, title=None, dist=0.5, names=None, painter=baraxispainter()):
+        self.subaxis = subaxis
+        self.title = title
+        self.dist = dist
+        self.names = _ensuresequence(names)
+        self.painter = painter
+        self.hasrange = 0
+
+    def getdatarange(self):
+        if not self.hasrange:
+            return None
+        else:
+            return self.minid, self.maxid
+
+    def setdatarange(self, min, max):
+        self.hasrange = 1
+        if _issequence(min):
+            self.minid = min[0]
+            self.maxid = max[0]
+            if len(min) > 1:
+                self.subaxis.setdatarange(min[1:], max[1:])
+        else:
+            self.minid = min
+            self.maxid = max
+
+    def convert(self, value):
+        # TODO: proper raising exceptions (which exceptions go thru, which are handled before?)
+        if not _isinteger(value[0]):
+            raise ValueError("integer split identifier expected")
+        if value[0] >= self.minid and value[0] <= self.maxid:
+            if len(value) == 2:
+                subvalue = value[1]
+            else:
+                subvalue = self.subaxis.convert(value[1:])
+            return ((value[0] - self.minid) * (1 + self.dist) + 0.5 * self.dist + subvalue)/((self.maxid - self.minid + 1.0) * (1 + self.dist))
+        else:
+            return None
+
+    def dolayout(self, graph):
+        self._extent = 0
+        self.painter.dolayout(graph, self)
+
+    def dopaint(self, graph):
+        self.painter.paint(graph, self)
+
+    def createlinkaxis(self):
+        if self.subaxis is not None:
+            subaxis = self.subaxis.createlinkaxis()
+        else:
+            subaxis = None
+        return baraxis(subaxis=subaxis, dist=self.dist, painter=self.painter)
 
 
 
@@ -1721,8 +1896,9 @@ class graphxy(canvas.canvas):
             else:
                 styles.append(style.iterate())
             first = 0
-            d.setstyle(self, styles[-1])
-            self.data.append(d)
+            if d is not None:
+                d.setstyle(self, styles[-1])
+                self.data.append(d)
         if _issequence(data):
             return styles
         return styles[0]
@@ -3164,19 +3340,30 @@ class arrow(symbol):
         symbol.drawpoints(self, graph, points)
 
 
+class _bariterator(changeattr):
+
+    def attr(self, index):
+        return index, self.counter
+
+
 class bar:
 
-    def __init__(self, barattrs=canvas.stroked()):
+    def __init__(self, fromzero=1, stacked=0, xbar=0, barattrs=(canvas.stroked(color.gray.black), changecolor.Rainbow()), _bariterator=_bariterator(), _previousbar=None):
+        self.fromzero = fromzero
+        self.stacked = stacked
+        self.xbar = xbar
         self._barattrs = barattrs
-        self.xbar = 1
+        self.bariterator = _bariterator
+        self.previousbar = _previousbar
 
     def iteratedict(self):
         result = {}
-        result["barattrs"] = _iterateattr(self._barattrs)
+        result["barattrs"] = _iterateattrs(self._barattrs)
         return result
 
     def iterate(self):
-        return bar(**self.iteratedict())
+        return bar(fromzero=self.fromzero, stacked=self.stacked, xbar=self.xbar,
+                   _bariterator=_iterateattr(self.bariterator), _previousbar=self, **self.iteratedict())
 
     def setcolumns(self, graph, columns):
         def checkpattern(key, index, pattern, iskey, isindex):
@@ -3203,54 +3390,100 @@ class bar:
         if None in (self.xkey, self.ykey): raise ValueError("incomplete axis specification")
 
     def getranges(self, points):
-        xmin, xmax = min([p[self.xi] for p in points]), max([p[self.xi] for p in points])
-        ymin, ymax = min([p[self.yi] for p in points]), max([p[self.yi] for p in points])
-        return {self.xkey: (xmin, xmax), self.ykey: (ymin, ymax)}
+        xmin = xmax = ymin = ymax = None
+        for point in points:
+            try:
+                x = point[self.xi] + 0.0
+                if xmin is None or x < xmin: xmin = x
+                if xmax is None or x > xmax: xmax = x
+            except (TypeError, ValueError):
+                pass
+            try:
+                y = point[self.yi] + 0.0
+                if ymin is None or y < ymin: ymin = y
+                if ymax is None or y > ymax: ymax = y
+            except (TypeError, ValueError):
+                pass
+        if self.fromzero:
+            if self.xbar:
+                if xmin > 0: xmin = 0
+                if xmax < 0: xmax = 0
+            else:
+                if ymin > 0: ymin = 0
+                if ymax < 0: ymax = 0
+        index, count = _getattr(self.bariterator)
+        if count != 1 and self.stacked != 1:
+            if self.stacked > 1:
+                index = divmod(index, self.stacked)[0]
+            if self.xbar:
+                return {self.xkey: (xmin, xmax), self.ykey: ((ymin, index), (ymax, index))}
+            else:
+                return {self.xkey: ((xmin, index), (xmax, index)), self.ykey: (ymin, ymax)}
+        else:
+            return {self.xkey: (xmin, xmax), self.ykey: (ymin, ymax)}
 
     def drawpoints(self, graph, points):
+        index, count = _getattr(self.bariterator)
+        dostacked = (self.stacked != 0 and
+                     (self.stacked == 1 or divmod(index, self.stacked)[1]) and
+                     (self.stacked != 1 or index))
+        if self.stacked > 1:
+            index = divmod(index, self.stacked)[0]
         xaxis = graph.axes[self.xkey]
         yaxis = graph.axes[self.ykey]
         xaxismin, xaxismax = xaxis.getdatarange()
         yaxismin, yaxismax = yaxis.getdatarange()
         self.barattrs = _getattrs(_ensuresequence(self._barattrs))
+        if self.stacked:
+            self.stackedvalue = {}
         for point in points:
-            drawsymbol = 1
-            x = point[self.xi]
-            y = point[self.yi]
-            if x is not None and x < xaxismin: drawsymbol = 0
-            elif x is not None and x > xaxismax: drawsymbol = 0
-            elif y is not None and y < yaxismin: drawsymbol = 0
-            elif y is not None and y > yaxismax: drawsymbol = 0
-            if x is not None and y is not None:
-                try:
-                    if self.xbar:
-                        x1pos, y1pos = graph._pos((x, 0), y, xaxis=xaxis, yaxis=yaxis)
-                        x2pos, y2pos = graph._pos((x, 1), y, xaxis=xaxis, yaxis=yaxis)
-                        x3pos, y3pos = xaxis._vtickpoint(xaxis, xaxis.convert((x, 1)))
-                        x4pos, y4pos = xaxis._vtickpoint(xaxis, xaxis.convert((x, 0)))
-                        graph.fill(path.path(path._moveto(x1pos, y1pos),
-                                             graph._connect(x1pos, y1pos, x2pos, y2pos),
-                                             graph._connect(x2pos, y2pos, x3pos, y3pos),
-                                             graph._connect(x3pos, y3pos, x4pos, y4pos),
-                                             graph._connect(x4pos, y4pos, x1pos, y1pos), # might not be straight
-                                             path.closepath()))
+            try:
+                x = point[self.xi]
+                y = point[self.yi]
+                if self.xbar:
+                    if self.stacked:
+                        self.stackedvalue[y] = x
+                    raise Exception("not yet implemented") # TODO!
+                else:
+                    if self.stacked:
+                        self.stackedvalue[x] = y
+                    if count != 1 and self.stacked != 1:
+                        minid = (x, index, 0)
+                        maxid = (x, index, 1)
                     else:
-                        # TODO: ybar
-                        pass
-                except ValueError:
-                    pass
+                        minid = (x, 0)
+                        maxid = (x, 1)
+                    x1pos, y1pos = graph._pos(minid, y, xaxis=xaxis, yaxis=yaxis)
+                    x2pos, y2pos = graph._pos(maxid, y, xaxis=xaxis, yaxis=yaxis)
+                    if dostacked:
+                        x3pos, y3pos = graph._pos(maxid, self.previousbar.stackedvalue[x], xaxis=xaxis, yaxis=yaxis)
+                        x4pos, y4pos = graph._pos(minid, self.previousbar.stackedvalue[x], xaxis=xaxis, yaxis=yaxis)
+                    else:
+                        if self.fromzero:
+                            x3pos, y3pos = graph._pos(maxid, 0, xaxis=xaxis, yaxis=yaxis)
+                            x4pos, y4pos = graph._pos(minid, 0, xaxis=xaxis, yaxis=yaxis)
+                        else:
+                            x3pos, y3pos = xaxis._vtickpoint(xaxis, xaxis.convert(maxid))
+                            x4pos, y4pos = xaxis._vtickpoint(xaxis, xaxis.convert(minid))
+                    graph.fill(path.path(path._moveto(x1pos, y1pos),
+                                         graph._connect(x1pos, y1pos, x2pos, y2pos),
+                                         graph._connect(x2pos, y2pos, x3pos, y3pos),
+                                         graph._connect(x3pos, y3pos, x4pos, y4pos),
+                                         graph._connect(x4pos, y4pos, x1pos, y1pos), # might not be straight
+                                         path.closepath()), *self.barattrs)
+            except TypeError: pass
 
 
-class surface:
-
-    def setcolumns(self, graph, columns):
-        self.columns = columns
-
-    def getranges(self, points):
-        return {"x": (0, 10), "y": (0, 10), "z": (0, 1)}
-
-    def drawpoints(self, graph, points):
-        pass
+#class surface:
+#
+#    def setcolumns(self, graph, columns):
+#        self.columns = columns
+#
+#    def getranges(self, points):
+#        return {"x": (0, 10), "y": (0, 10), "z": (0, 1)}
+#
+#    def drawpoints(self, graph, points):
+#        pass
 
 
 

@@ -105,10 +105,13 @@ def test_split(c, t, x, y):
     g.finish()
 
 def test_bar(c, t, x, y):
-    g = c.insert(graph.graphxy(t, x, y, height=5, width=5, x2=None,
-                               x=graph.splitaxis([graph.linaxis(min=-0.2, max=1.2) for x in range(12)], None)))
     df = data.datafile("testdata2")
-    g.plot(graph.data(df, x=0, y=2), graph.bar())
+    g = c.insert(graph.graphxy(t, x, y, height=5, width=5, x=graph.baraxis(names=("J","F","M","A","M","J","J","A","S","O","N","D"), title="Month")))
+    g.plot(graph.data(df, x=0, y=2), graph.bar(fromzero=0))
+    #g = c.insert(graph.graphxy(t, x, y, height=5, width=5, x2=None, x=graph.baraxis(graph.baraxis(dist=0))))
+    #g.plot([graph.data(df, x=0, y=2), graph.data(df, x=0, y=3), graph.data(df, x=0, y=3)], graph.bar())
+    #g = c.insert(graph.graphxy(t, x, y, height=5, width=5, x2=None, x=graph.baraxis(graph.baraxis(dist=0))))
+    #g.plot([graph.data(df, x=0, y=2), graph.data(df, x=0, y=3), graph.data(df, x=0, y=2), None, graph.data(df, x=0, y=3)], graph.bar(stacked=2))
     g.finish()
 
 c = canvas.canvas()
@@ -119,8 +122,8 @@ t = c.insert(tex.tex())
 #test_ownmark(c, t, 0, 0)
 #test_allerrorbars(c, t, -7, 0)
 #test_3d(c, t, -7, 7)
-test_split(c, t, -7, 7)
-#test_bar(c, t, -7, 14)
+#test_split(c, t, -7, 7)
+test_bar(c, t, -7, 14)
 
 c.writetofile("test_graph", paperformat="a4")
 
