@@ -535,7 +535,7 @@ class _DefCmd(_TexCmd):
     def __init__(self, DefCmd, Marker, Stack, msghandlers):
         _TexCmd.__init__(self, Marker, Stack, msghandlers)
         self.TexParenthesisCheck(DefCmd)
-        self.DefCmd = DefCmd
+        self.DefCmd = "%s%%\n" % DefCmd
 
     def write(self, file):
         self.WriteBeginMarker(file)
@@ -563,7 +563,7 @@ class _BoxCmd(_TexCmd):
         _TexCmd.__init__(self, Marker, Stack, msghandlers)
         self.TexParenthesisCheck(BoxCmd)
         self.DefCmdsStr = DefCmdsStr
-        self.BoxCmd = "{%s}" % BoxCmd # add another "{" to ensure, that everything goes into the Box
+        self.BoxCmd = "{%s}%%\n" % BoxCmd # add another "{" to ensure, that everything goes into the Box
         self.CmdPuts = [] # list, where to put the command
         self.CmdExtents = [] # list, which extents are requested
 
@@ -623,7 +623,7 @@ class _BoxCmd(_TexCmd):
 
     def MD5(self):
         """creates an MD5 hex string for texinit + Cmd"""
-    
+
         h = string.hexdigits
         r = ''
         s = md5.md5(self.DefCmdsStr + self.BoxCmd).digest()
@@ -860,7 +860,7 @@ by yourself.\n""")
             raise TexDefAfterBoxError
         self.DoneRunTex = 0
         self.attrcheck(attrs, (), (msghandler,))
-        self.DefCmds.append(_DefCmd(Cmd + "%\n",
+        self.DefCmds.append(_DefCmd(Cmd,
                                     len(self.DefCmds)+ len(self.BoxCmds),
                                     self._getstack(),
                                     self.attrgetall(attrs, msghandler, self.defaultmsghandlers)))
