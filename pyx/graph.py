@@ -26,7 +26,7 @@ class LinAxis:
     Min = -10
     Max = 10
     TickStart = -10
-    TickCount = 5
+    TickCount = 0
     TickDist = 5
 
     def TickValuePosList(self):
@@ -72,9 +72,13 @@ class GraphXY(Graph):
         self.height = height
         self.XAxis = LinAxis()
         self.YAxis = LinAxis()
+        self.XAxis.Min = 0
+        self.XAxis.Max = 30
+        self.YAxis.Min = 0
+        self.YAxis.Max = 0.01
 
     def plot(self, data, style = None):
-        self.plotdata.append((data, style,))
+        self.plotdata.append((data, style))
 
     def XPos(self, Values):
         if isnumber(Values):
@@ -109,15 +113,25 @@ class GraphXY(Graph):
              self.canvas.draw(line(self.XPos(0), y, self.XPos(0)+0.2, y))
              self.tex.text(self.XPos(0)-0.2, y, l, halign=halign.right)
         for pd in self.plotdata:
-             for i in range(201):
-                 x = (i-100)/10.0
-                 y = pd[0].MT.Calc({'x':x})
-                 xnew = self.XPos(self.XAxis.ValueToVirtual(x))
-                 ynew = self.YPos(self.YAxis.ValueToVirtual(y))
-                 if i > 0:
-                     self.canvas.draw(line(xold, yold, xnew, ynew))
-                 xold = xnew
-                 yold = ynew
+             p = None
+             for pt in zip(self.XPos(self.XAxis.ValueToVirtual(pd[0].GetValues("x"))),
+                           self.YPos(self.YAxis.ValueToVirtual(pd[0].GetValues("y")))):
+                 if p:
+                     p.append(lineto(pt[0],pt[1]))
+                 else:
+                     p = [moveto(pt[0],pt[1]), ]
+             print p
+             self.canvas.draw(path(p))
+             # path.__init__(self, [ moveto(x1,y1), lineto(x2, y2) ] )
+             #for i in range(201):
+             #    x = (i-100)/10.0
+             #    y = pd[0].MT.Calc({'x':x})
+             #    xnew = self.XPos(self.XAxis.ValueToVirtual(x))
+             #    ynew = self.YPos(self.YAxis.ValueToVirtual(y))
+             #    if i > 0:
+             #        self.canvas.draw(line(xold, yold, xnew, ynew))
+             #    xold = xnew
+             #    yold = ynew
 
 
 ###############################################################################
