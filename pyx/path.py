@@ -588,7 +588,8 @@ class path:
         currentsubpath = None
         abbox = bbox()
         for pathel in self.path:
-           (currentpoint, currentsubpath, nbbox) = pathel.bbox(canvas, currentpoint, currentsubpath)
+           (currentpoint, currentsubpath, nbbox) = \
+                          pathel.bbox(canvas, currentpoint, currentsubpath)
            if abbox: abbox = abbox+nbbox
 	return abbox
 	
@@ -609,7 +610,8 @@ class path:
         currentsubpath = None
         bp = bpath([])
         for pathel in self.path:
-            (currentpoint, currentsubpath, nbp) = pathel._bpath(currentpoint, currentsubpath)
+            (currentpoint, currentsubpath, nbp) = \
+                           pathel._bpath(currentpoint, currentsubpath)
             if nbp:
                 for bpel in nbp.bpath:
                     bp.append(bpel)
