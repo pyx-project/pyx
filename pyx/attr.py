@@ -171,8 +171,6 @@ class clearclass(attr):
         return [attr for attr in attrs if not isinstance(attr, self.clearclass)]
 
 
-# XXX is _clear a good choice?
-
 class _clear(attr):
 
     """a special attribute which removes all predecessing attributes
