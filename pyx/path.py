@@ -1046,6 +1046,9 @@ class path(base.canvasitem):
         """return coordinates of last point of last subpath in path"""
         return self.normpath().end()
 
+    def extend(self, pathitems):
+        self.path.extend(pathitems)
+
     def joined(self, other):
         """return path consisting of self and other joined together"""
         return self.normpath().joined(other)
@@ -2011,9 +2014,13 @@ class normsubpath:
             return None
 
     def begin_pt(self):
+        if not self.normsubpathitems and self.skippedline:
+            return self.skippedline.begin_pt()
         return self.normsubpathitems[0].begin_pt()
 
     def begin(self):
+        if not self.normsubpathitems and self.skippedline:
+            return self.skippedline.begin()
         return self.normsubpathitems[0].begin()
 
     def close(self):
@@ -2043,9 +2050,13 @@ class normsubpath:
         return normsubpathitem.curvradius_pt(itemparam)
 
     def end_pt(self):
+        if self.skippedline:
+            return self.skippedline.end_pt()
         return self.normsubpathitems[-1].end_pt()
 
     def end(self):
+        if self.skippedline:
+            return self.skippedline.end()
         return self.normsubpathitems[-1].end()
 
     def extend(self, normsubpathitems):
@@ -2381,13 +2392,22 @@ class normpath(base.canvasitem):
         return normsubpath, normsubpath.arclentoparam(arclen)
 
     def append(self, anormsubpath):
-        assert isinstance(anormsubpath, normsubpath), "only list of normsubpath instance allowed"
-        self.normsubpaths.append(anormsubpath)
+        if isinstance(anormsubpath, normsubpath):
+            # the normsubpaths list can be appended by a normsubpath only
+            self.normsubpaths.append(anormsubpath)
+        else:
+            # ... but we are kind and allow for regular path items as well
+            # in order to make a normpath to behave more like a regular path
 
-    def extend(self, normsubpaths):
-        for anormsubpath in normsubpaths:
-            assert isinstance(anormsubpath, normsubpath), "only list of normsubpath instance allowed"
-        self.normsubpaths.extend(normsubpaths)
+            for pathitem in anormsubpath._normalized(_pathcontext(self.normsubpaths[-1].begin_pt(),
+                                                                  self.normsubpaths[-1].end_pt())):
+                if isinstance(pathitem, closepath):
+                    self.normsubpaths[-1].close()
+                elif isinstance(pathitem, moveto_pt):
+                    self.normsubpaths.append(normsubpath([normline(pathitem.x_pt, pathitem.y_pt,
+                                                                   pathitem.x_pt, pathitem.y_pt)]))
+                else:
+                    self.normsubpaths[-1].append(pathitem)
 
     def arclen_pt(self):
         """returns total arc length of normpath in pts"""
@@ -2504,6 +2524,11 @@ class normpath(base.canvasitem):
             return self.normsubpaths[-1].end()
         else:
             raise PathException("cannot return last point of empty path")
+
+    def extend(self, normsubpaths):
+        for anormsubpath in normsubpaths:
+            # use append to properly handle regular path items as well as normsubpaths
+            self.append(anormsubpath)
 
     def join(self, other):
         if not self.normsubpaths:

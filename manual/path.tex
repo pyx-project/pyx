@@ -72,6 +72,10 @@ Returns the total arc length of the path.$^\dagger$
   Returns the coordinates (as 2-tuple) of the end point of the path.$^\dagger$
 \end{methoddesc}
 
+\begin{methoddesc}{extend}{pathitems}
+Appends the list \var{pathitems} to the end of the path.
+\end{methoddesc}
+
 \begin{methoddesc}{intersect}{opath}
   Returns a tuple consisting of two lists of parameter values
   corresponding to the intersection points of the path with the other
@@ -297,18 +301,13 @@ instances, you pass them to the \class{normpath} constructor:
   is a list of \class{subnormpath} instances.
 \end{classdesc}
 
-Instances of \class{normpath} offers all methods of normal
-\class{path}s, which also have the same semantics. A exceptions are:
-
-\begin{methoddesc}{append}{anormsubpath}
-  Append \var{anormsubpath}, which has to be a \class{normsubpath}
-  instance, to the \class{normpath} instance.  
-\end{methoddesc}
-
-\begin{methoddesc}{extend}{normsubpaths}
-  Extend the \class{normpath} by \var{normsubpaths}, which has to be a
-  a list of \class{normsubpath} instances.
-\end{methoddesc}
+Instances of \class{normpath} offers all methods of regular
+\class{path}s, which also have the same semantics. An exception are
+the methods \method{append} and \method{extend}. While they allow for
+adding of instances of \class{subnormpath} to the \class{normpath}
+instance, they also keep the functionality of a regular path and allow
+for regular path elements to be appended. The later are converted to
+the proper normpath representation during addition.
 
 In addition to the \class{path} methods, a \class{normpath} instance
 also offers the following methods, which operate on the instance

@@ -23,9 +23,9 @@ for i in range(0, len(splith)-2, 2):
     area = area.joined(horiz.split([splith[i+1], splith[i+2]])[1])
 area = area.joined(fline.split([splitf[-2], splitf[-1]])[1])
 area = area.joined(horiz.split([splith[-1]])[1])
-area[-1].append(path.normline(*(area[-1].end_pt() + g.vpos_pt(1, 0))))
-area[-1].append(path.normline(*(area[-1].end_pt() + g.vpos_pt(0, 0))))
-area[-1].close()
+area.append(path.lineto(*g.vpos(1, 0)))
+area.append(path.lineto(*g.vpos(0, 0)))
+area.append(path.closepath()) # not really needed (filling closes automatically)
 
 c = canvas.canvas()
 
