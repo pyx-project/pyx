@@ -724,7 +724,7 @@ class canvas(base.PSCmd):
 
             if not ctrafo: ctrafo=trafo.trafo()
 
-            ctrafo = ctrafo._translation(0.5*(width -(abbox.urx-abbox.llx))-
+            ctrafo = ctrafo._translate(0.5*(width -(abbox.urx-abbox.llx))-
                                        abbox.llx, 
                                        0.5*(height-(abbox.ury-abbox.lly))-
                                        abbox.lly)
@@ -740,7 +740,7 @@ class canvas(base.PSCmd):
                     sfactor = min((width-2*margin)/(abbox.urx-abbox.llx), 
                                   (height-2*margin)/(abbox.ury-abbox.lly))
                     
-                ctrafo = ctrafo._scaling(sfactor, sfactor, 0.5*width, 0.5*height)
+                ctrafo = ctrafo._scale(sfactor, sfactor, 0.5*width, 0.5*height)
                           
                 
         elif fittosize:
