@@ -30,6 +30,7 @@ from test_part import ManualPartTestCase, LinPartTestCase, LogPartTestCase
 from test_texter import RationalTexterTestCase, DecimalTexterTestCase
 from test_trafo import TrafoTestCase
 from test_unit import UnitTestCase
+from test_helper import AttrTestCase
 
 # construct the test suite automagically
 
@@ -41,6 +42,7 @@ suite = unittest.TestSuite((unittest.makeSuite(DataTestCase, 'test'),
                             unittest.makeSuite(DecimalTexterTestCase, 'test'),
                             unittest.makeSuite(MathTreeTestCase, 'test'),
                             unittest.makeSuite(UnitTestCase, 'test'),
+                            unittest.makeSuite(AttrTestCase, 'test'),
                             unittest.makeSuite(TrafoTestCase, 'test'),
                           ))
 
