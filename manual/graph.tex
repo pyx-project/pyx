@@ -210,6 +210,11 @@ orginal order in which the \method{do}-methods are called is:
   Inserts the graph key.
 \end{methoddesc}
 
+\begin{methoddesc}{finish}{}
+  Finishes the graph by calling all pending \method{do}-methods. This
+  is done automatically, when the output is created.
+\end{methoddesc}
+
 The graph provides some methods to access its geometry:
 
 \begin{methoddesc}{pos}{x, y, xaxis=None, yaxis=None}
@@ -238,6 +243,32 @@ The graph provides some methods to access its geometry:
   Like \method{vgeodesic()} but this method returns the path element to
   connect the two points.
 \end{methoddesc}
+
+% dirty hack to add a hole list of methods to the index:
+\index{xbasepath()@\texttt{xbasepath()} (graphxy method)}
+\index{xvbasepath()@\texttt{xvbasepath()} (graphxy method)}
+\index{xgridpath()@\texttt{xgridpath()} (graphxy method)}
+\index{xvgridpath()@\texttt{xvgridpath()} (graphxy method)}
+\index{xtickpoint()@\texttt{xtickpoint()} (graphxy method)}
+\index{xvtickpoint()@\texttt{xvtickpoint()} (graphxy method)}
+\index{xtickdirection()@\texttt{xtickdirection()} (graphxy method)}
+\index{xvtickdirection()@\texttt{xvtickdirection()} (graphxy method)}
+\index{ybasepath()@\texttt{ybasepath()} (graphxy method)}
+\index{yvbasepath()@\texttt{yvbasepath()} (graphxy method)}
+\index{ygridpath()@\texttt{ygridpath()} (graphxy method)}
+\index{yvgridpath()@\texttt{yvgridpath()} (graphxy method)}
+\index{ytickpoint()@\texttt{ytickpoint()} (graphxy method)}
+\index{yvtickpoint()@\texttt{yvtickpoint()} (graphxy method)}
+\index{ytickdirection()@\texttt{ytickdirection()} (graphxy method)}
+\index{yvtickdirection()@\texttt{yvtickdirection()} (graphxy method)}
+
+Further geometry information is available by the \member{axespos}
+instance variable. Shortcuts to the \class{axispos} methods for the
+\code{x} and \code{y} axis become available after \method{dolayout()}
+as \class{graphxy} methods \code{Xbasepath}, \code{Xvbasepath},
+\code{Xgridpath}, \code{Xvgridpath}, \code{Xtickpoint},
+\code{Xvtickpoint}, \code{Xtickdirection}, and \code{Xvtickdirection}
+where the prefix \code{X} stands for \code{x} and \code{y}.
 
 \section{Data\label{graph:data}}
 

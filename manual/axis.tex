@@ -52,9 +52,49 @@ components.
 
 The following classes are part of the module \module{graph.axis.axis}.
 However, there is a shortcut to access those classes via
-\code{graph.axis} directly. Instances of the classes can be passed to
-the \var{**axes} keyword arguments of a graph. Those instances should
-be used once only.
+\code{graph.axis} directly.
+
+The position of an axis is defined by an instance of a class providing
+the following methods:
+
+\begin{methoddesc}[axispos]{basepath}{x1=None, x2=None}
+  Returns a path instance for the the base path. \var{x1} and \var{x2}
+  are the axis range, the base path should cover.
+\end{methoddesc}
+
+\begin{methoddesc}[axispos]{vbasepath}{v1=None, v2=None}
+  Like \method{basepath} but in graph coordinates.
+\end{methoddesc}
+
+\begin{methoddesc}[axispos]{gridpath}{x}
+  Returns a path instance for the the grid path at position \var{x}.
+  Might return \code{None} when no grid path is available.
+\end{methoddesc}
+
+\begin{methoddesc}[axispos]{vgridpath}{v}
+  Like \method{gridpath} but in graph coordinates.
+\end{methoddesc}
+
+\begin{methoddesc}[axispos]{tickpoint}{x}
+  Returns the position of \var{x} as a tuple \samp{(x, y)}.
+\end{methoddesc}
+
+\begin{methoddesc}[axispos]{vtickpoint}{v}
+  Like \method{tickpoint} but in graph coordinates.
+\end{methoddesc}
+
+\begin{methoddesc}[axispos]{tickdirection}{x}
+  Returns the direction of a tick at \var{x} as a tuple \samp{(dx, dy)}.
+  The tick direction points inside of the graph.
+\end{methoddesc}
+
+\begin{methoddesc}[axispos]{vtickdirection}{v}
+  Like \method{tickdirection} but in graph coordinates.
+\end{methoddesc}
+
+Instances of the following classes can be passed to the \var{**axes}
+keyword arguments of a graph. Those instances should be used once
+only.
 
 \begin{classdesc}{linear}{min=None, max=None, reverse=0, divisor=None, title=None,
                           parter=parter.autolinear(), manualticks=[],
