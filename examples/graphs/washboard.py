@@ -4,7 +4,7 @@ from math import pi, cos
 from pyx import *
 from pyx.deco import barrow, earrow
 from pyx.style import linewidth, linestyle
-from pyx.graph.type import graphxy
+from pyx.graph import graphxy
 from pyx.graph.axis import linear
 from pyx.graph.axis.painter import plain
 from pyx.graph.style import line
