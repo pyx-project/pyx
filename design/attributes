@@ -4,10 +4,9 @@ Attributes. Design summary.
 What are attributes?
 --------------------
 
-Attributes define properties of a given object at the point of using
-this object. Typically, there are different kind of attributes which
-are usually orthogonal to each other while for one attribute kind,
-several choices are possible.
+Attributes define properties of a given object when it is being used.
+Typically, there are different kind of attributes which are usually orthogonal
+to each other, while for one attribute kind, several choices are possible.
 
     Example:
 
@@ -19,19 +18,15 @@ several choices are possible.
 Where are attributes used?
 --------------------------
 
-Typically, attributes occure in lists.  There basic usage form is in
-methods, where the object the attribute is attached to is the first
-argument (not taking into account the self argument) followed by
-several attritutes.
-
-    Example:
+Typically, attributes occur in lists passed as arguments to various methods of
+PyX objects. There, the object the attributes refer to may either be the first
+argument (not taking into account the self argument) of the method, like in 
 
     canvas.stroke(path, attr1, attr2, attr3)
 
-For more complicated cases, the attributes are collcted as lists
-in keyword arguments.
-
-    Example:
+The attributes may also define properties of the object the method belongs to.
+Furthermore, in more complicated cases, the attributes are collected as lists
+in keyword arguments, for instance,
 
     graph.axispainter(labelattrs=[textattr1, textattr2],
                       titleattrs=[textattr3, textattr4])
@@ -51,8 +46,7 @@ complete list here:
       inherited from style.textattr
     - decorators (deco module)
       inherited from deco.deco
-    - transformations? (trafo module)
-      (AW: these should be attributes)
+    - transformations (trafo module)
     - clippings?
       (AW: might go away; boxes could do that)
 
@@ -109,6 +103,8 @@ specialization possibility for all attribute instances.
 
 Attribute lists
 ---------------
+
+XXX I cannot decode the next sentence
 
 Sometimes it is needed to collect attributes in lists to provide them
 to a single keyword argument. At the same time we want to be able to
