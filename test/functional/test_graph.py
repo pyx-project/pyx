@@ -21,7 +21,7 @@ def test_multiaxes_data(c, x, y):
             graph.data.file("data/testdata", x=1, y2=4),
             graph.data.file("data/testdata", x=1, y3=5, title=None),
             graph.data.file("data/testdata", x=1, y5=6)),
-           styles=[graph.style.pointpos(), graph.style.symbol(symbolattrs=[deco.stroked.clear, color.palette.RedGreen, graph.style.symbol.changestrokedfilled], symbol=graph.style.symbol.changesquaretwice)])
+           styles=[graph.style.symbol(symbolattrs=[deco.stroked.clear, color.palette.RedGreen, graph.style.symbol.changestrokedfilled], symbol=graph.style.symbol.changesquaretwice)])
     g.finish()
 
 def test_piaxis_function(c, x, y):
@@ -29,16 +29,16 @@ def test_piaxis_function(c, x, y):
     g = c.insert(graph.graphxy(x, y, height=5, x=xaxis))
     # g = c.insert(graph.graphxy(x, y, height=5, x=xaxis, x2=xaxis)) # TODO
     g.plot([graph.data.function("y=sin(x-i*pi/10)", context={"i": i}) for i in range(20)],
-           styles=[graph.style.pointpos(), graph.style.line(lineattrs=[color.palette.Hue])])
+           styles=[graph.style.line(lineattrs=[color.palette.Hue])])
     g.finish()
 
 def test_textaxis_errorbars(c, x, y):
     g = c.insert(graph.graphxy(x, y, height=5,
                                x=graph.axis.lin(min=0.5, max=12.5, parter=graph.axis.parter.lin("1", extendtick=None)),
-                               y=graph.axis.lin(min=-10, max=30, title="Temperature [$^\circ$C]"),
-                               x2=graph.axis.lin(), y2=graph.axis.lin()))
-    g.plot(graph.data.file("data/testdata2", x=0, ymin="min", ymax="max"))
-    g.plot(graph.data.paramfunction("k", 0, 2*math.pi, "x2, y2, dx2, dy2 = 0.8*sin(k), 0.8*cos(3*k), 0.05, 0.05"), style = graph.style.symbol(symbol=graph.style.symbol.triangle))
+                               y=graph.axis.lin(title="Temperature [$^\circ$C]"),
+                               ))#x2=graph.axis.lin(), y2=graph.axis.lin()))
+    g.plot(graph.data.file("data/testdata2", x=0, ymin="min", ymax="max"), [graph.style.errorbar()])
+    #g.plot(graph.data.paramfunction("k", 0, 2*math.pi, "x2, y2, dx2, dy2 = 0.8*sin(k), 0.8*cos(3*k), 0.05, 0.05"), [graph.style.pointpos(), graph.style.rangepos(), graph.style.symbol(symbol=graph.style.symbol.triangle), graph.style.errorbar()])
     g.finish()
 
 def test_ownmark(c, x, y):
@@ -87,8 +87,8 @@ def test_split2(c, x, y):
 
 c = canvas.canvas()
 test_multiaxes_data(c, 0, 21)
-test_piaxis_function(c, 0, 14)
-#test_textaxis_errorbars(c, 0, 7)
+#test_piaxis_function(c, 0, 14)
+test_textaxis_errorbars(c, 0, 7)
 #test_ownmark(c, 0, 0)
 #test_allerrorbars(c, -7, 0)
 #test_split(c, -7, 7)

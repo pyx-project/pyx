@@ -85,18 +85,32 @@ class _data:
         return [point[columnno] for point in self.points]
 
     def setstyles(self, graph, styles):
-        self.styles = styles
+        provided = []
+        addstyles = [] # a list of style instances to be added
+        for s in styles:
+            for need in s.need:
+                if need not in provided:
+                    for addstyle in addstyles:
+                        if need in addstyle.provide:
+                            break
+                    else:
+                        addstyles.append(style.provider[need])
+            provided.extend(s.provide)
+
+        self.styles = addstyles + styles
         self.styledata = styledata()
-        unhandledcolumns = self.columns
-        for style in self.styles:
-            unhandledcolumns = style.setdata(graph, unhandledcolumns, self.styledata)
-        unhandledcolumnkeys = unhandledcolumns.keys()
-        if len(unhandledcolumnkeys):
-            raise ValueError("style couldn't handle column keys %s" % unhandledcolumnkeys)
+
+        columns = self.columns.keys()
+        usedcolumns = []
+        for s in self.styles:
+            usedcolumns.extend(s.columns(self.styledata, graph, columns))
+        for column in columns:
+            if column not in usedcolumns:
+                raise ValueError("unused column '%s'" % column)
 
     def selectstyle(self, graph, selectindex, selecttotal):
         for style in self.styles:
-            style.selectstyle(selectindex, selecttotal, self.styledata)
+            style.selectstyle(self.styledata, graph, selectindex, selecttotal)
 
     def adjustaxes(self, graph, step):
         """
@@ -107,18 +121,22 @@ class _data:
         - on step == 2 axes ranges not previously set should be
           updated by data accumulated by step 1"""
         if step == 0:
-            for style in self.styles:
-                style.adjustaxes(self.points, self.columns.values(), self.styledata)
+            for key, value in self.columns.items():
+                for style in self.styles:
+                    style.adjustaxis(self.styledata, graph, key, self.points, value)
 
     def draw(self, graph):
+        columnsitems = self.columns.items()
+        self.styledata.point = {}
         for style in self.styles:
-            style.initdrawpoints(graph, self.styledata)
+            style.initdrawpoints(self.styledata, graph)
         for point in self.points:
-            self.styledata.point = point
+            for key, value in columnsitems:
+                self.styledata.point[key] = point[value]
             for style in self.styles:
-                style.drawpoint(graph, self.styledata)
+                style.drawpoint(self.styledata, graph)
         for style in self.styles:
-            style.donedrawpoints(graph, self.styledata)
+            style.donedrawpoints(self.styledata, graph)
 
 
 class list(_data):

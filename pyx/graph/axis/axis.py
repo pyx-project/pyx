@@ -229,38 +229,36 @@ class _axis:
 
     zero = 0.0
 
-    def adjustrange(self, points, index, deltaindex=None, deltaminindex=None, deltamaxindex=None):
+    def adjustrange(self, data, index, deltamindata=None, deltaminindex=None, deltamaxdata=None, deltamaxindex=None):
+        assert deltaminindex is None or deltamaxindex is None
         min = max = None
-        if len([x for x in [deltaindex, deltaminindex, deltamaxindex] if x is not None]) > 1:
-            raise RuntimeError("only one of delta???index should set")
-        if deltaindex is not None:
-            deltaminindex = deltamaxindex = deltaindex
         if deltaminindex is not None:
-            for point in points:
+            for point, minpoint in zip(data, deltamindata):
                 try:
-                    value = point[index] - point[deltaminindex] + self.zero
+                    value = point[index] - minpoint[deltaminindex] + self.zero
                 except:
                     pass
                 else:
                     if min is None or value < min: min = value
                     if max is None or value > max: max = value
-        if deltamaxindex is not None:
-            for point in points:
+        elif deltamaxindex is not None:
+            for point, maxpoint in zip(data, deltamaxdata):
                 try:
-                    value = point[index] + point[deltamaxindex] + self.zero
+                    value = point[index] + maxpoint[deltamaxindex] + self.zero
                 except:
                     pass
                 else:
                     if min is None or value < min: min = value
                     if max is None or value > max: max = value
-        for point in points:
-            try:
-                value = point[index] + self.zero
-            except:
-                pass
-            else:
-                if min is None or value < min: min = value
-                if max is None or value > max: max = value
+        else:
+            for point in data:
+                try:
+                    value = point[index] + self.zero
+                except:
+                    pass
+                else:
+                    if min is None or value < min: min = value
+                    if max is None or value > max: max = value
         self.setrange(min, max)
 
     def getrange(self):

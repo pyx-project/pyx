@@ -137,8 +137,6 @@ class lineaxisposlinegrid(lineaxispos):
 
 class graphxy(canvas.canvas):
 
-    axisnames = "x", "y"
-
     def plot(self, data, styles=None):
         if self.haslayout:
             raise RuntimeError("layout setup was already performed")
@@ -193,15 +191,15 @@ class graphxy(canvas.canvas):
         return path.lineto_pt(self.xpos_pt + vx2*self.width_pt,
                               self.ypos_pt + vy2*self.height_pt)
 
-    def vcap_pt(self, direction, length_pt, vx, vy):
-        """returns an error cap path for a given direction, lengths and
+    def vcap_pt(self, coordinate, length_pt, vx, vy):
+        """returns an error cap path for a given coordinate, lengths and
         point in graph coordinates"""
-        if direction == "x":
+        if coordinate == 0:
             return path.line_pt(self.xpos_pt + vx*self.width_pt - 0.5*length_pt,
                                 self.ypos_pt + vy*self.height_pt,
                                 self.xpos_pt + vx*self.width_pt + 0.5*length_pt,
                                 self.ypos_pt + vy*self.height_pt)
-        elif direction == "y":
+        elif coordinate == 1:
             return path.line_pt(self.xpos_pt + vx*self.width_pt,
                                 self.ypos_pt + vy*self.height_pt - 0.5*length_pt,
                                 self.xpos_pt + vx*self.width_pt,
@@ -258,8 +256,8 @@ class graphxy(canvas.canvas):
                 data.adjustaxes(self, step)
 
         # finish all axes
-        XPattern = re.compile(r"%s([2-9]|[1-9][0-9]+)?$" % self.axisnames[0])
-        YPattern = re.compile(r"%s([2-9]|[1-9][0-9]+)?$" % self.axisnames[1])
+        XPattern = re.compile(r"x([2-9]|[1-9][0-9]+)?$")
+        YPattern = re.compile(r"y([2-9]|[1-9][0-9]+)?$")
         xaxisextents = [0, 0]
         yaxisextents = [0, 0]
         needxaxisdist = [0, 0]
@@ -274,7 +272,7 @@ class graphxy(canvas.canvas):
             if XPattern.match(key):
                 if needxaxisdist[num2]:
                     xaxisextents[num2] += self.axesdist
-                self.axespos[key] = lineaxisposlinegrid(self.axes[key].convert,
+                self.axespos[key] = lineaxisposlinegrid(axis.convert,
                                                         self.xpos,
                                                         self.ypos + num2*self.height - num3*xaxisextents[num2],
                                                         self.xpos + self.width,
@@ -295,7 +293,7 @@ class graphxy(canvas.canvas):
             elif YPattern.match(key):
                 if needyaxisdist[num2]:
                     yaxisextents[num2] += self.axesdist
-                self.axespos[key] = lineaxisposlinegrid(self.axes[key].convert,
+                self.axespos[key] = lineaxisposlinegrid(axis.convert,
                                                         self.xpos + num2*self.width - num3*yaxisextents[num2],
                                                         self.ypos,
                                                         self.xpos + num2*self.width - num3*yaxisextents[num2],
@@ -381,7 +379,7 @@ class graphxy(canvas.canvas):
         if self.height_pt <= 0: raise ValueError("height <= 0")
 
     def initaxes(self, axes, addlinkaxes=0):
-        for key in self.axisnames:
+        for key in ["x", "y"]:
             if not axes.has_key(key):
                 axes[key] = axis.linear()
             elif axes[key] is None:
@@ -392,6 +390,16 @@ class graphxy(canvas.canvas):
                 elif axes[key + "2"] is None:
                     del axes[key + "2"]
         self.axes = axes
+        self.axesnames = ([], [])
+        for key in axes.keys():
+            if len(key) != 1 and (not key[1:].isdigit() or key[1:] == "1"):
+                raise ValueError("invalid axis count")
+            if key[0] == "x":
+                self.axesnames[0].append(key)
+            elif key[0] == "y":
+                self.axesnames[1].append(key)
+            else:
+                raise ValueError("invalid axis name")
 
     def __init__(self, xpos=0, ypos=0, width=None, height=None, ratio=goldenmean,
                  key=None, backgroundattrs=None, axesdist=0.8*unit.v_cm, **axes):

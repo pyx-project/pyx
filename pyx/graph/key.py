@@ -83,8 +83,8 @@ class key:
         box.linealignequal_pt([plotdat.temp_titlebox for plotdat in plotdata], self.symbolwidth_pt + self.symbolspace_pt, 1, 0)
         for plotdat in plotdata:
             # TODO: loop over styles
-            plotdat.styles[-1].key_pt(c, 0, -0.5 * self.symbolheight_pt + plotdat.temp_titlebox.center[1],
-                                 self.symbolwidth_pt, self.symbolheight_pt, plotdat.styledata)
+            plotdat.styles[-1].key_pt(plotdat.styledata, c, 0, -0.5 * self.symbolheight_pt + plotdat.temp_titlebox.center[1],
+                                 self.symbolwidth_pt, self.symbolheight_pt)
             c.insert(plotdat.temp_titlebox)
 
         # for plotdat in plotdata:
