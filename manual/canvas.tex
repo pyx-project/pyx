@@ -103,6 +103,10 @@ c.stroke(p,
 This draws the path in blue with a pretty large green arrow at the
 end, the outline of which is red and rounded.
 
+A canvas may also be embedded in another one using the \texttt{insert}
+method. This may be useful when you want to apply a transformation on
+a whole set of operations. XXX: Example
+
 After you have finished the composition of the canvas, you can
 write it to a file using the method \verb|writetofile()|. It expects the
 obligatory argument \verb|filename|, the name of the output
@@ -141,16 +145,16 @@ The \verb|canvas| class provides the following methods:
   either be instances of \texttt{base.PathStyle} or
   \texttt{canvas.PathDeco} (or subclasses
   therof).\\
-  \texttt{insert(*PSOps)} &
-  Inserts one ore more instances of the class \texttt{base.PSOp} in the
-  canvas and returns the last one. Thereby, instances of \texttt{canvas.canvas} are
-  bracketed by \texttt{gsave}/\texttt{grestore} pair. \\
+  \texttt{insert(PSOp, *args)} &
+  Inserts an instance of \texttt{base.PSOp} into the canvas.
+  If \texttt{args} are present, create a new \texttt{canvas}instance passing
+  \texttt{args} as arguments and insert it. Returns \texttt{PSOp}.\\
   \texttt{set(*styles)} &
   Sets the given \texttt{styles} (instances of \texttt{base.PathStyle} or
   subclasses) for the rest of the canvas.\\
   \texttt{stroke(path, *styles)} & 
   Strokes the given \texttt{path} on the canvas, \textit{i.e.}\
-  \texttt{insert}s it together with the necessary \texttt{newpath},
+  \texttt{insert}s it togeither with the necessary \texttt{newpath},
   \texttt{stroke} sequence, applying the given \texttt{styles}. Styles
   can either be instances of \texttt{base.PathStyle} or
   \texttt{canvas.PathDeco}
@@ -170,6 +174,13 @@ The \verb|canvas| class provides the following methods:
   maximal possible size.
 \end{tabularx} 
 \medskip
+
+\section{Patterns}
+
+The \texttt{pattern} class allows the definition of patterns which may
+then be used to fill paths. The classes \texttt{pattern} and
+\texttt{canvas} differ only in their constructor and in the absence
+of a \texttt{writetofile} method in the former.
 
 
 
