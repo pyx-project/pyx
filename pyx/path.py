@@ -311,6 +311,7 @@ class arcn(pathel):
 	self.angle2 = angle2
 
     def bbox(self, canvas, currentpoint, currentsubpath):
+        # TODO: correct me ! 
         return arc("%f t pt" % self.x, "%f t pt" % self.y, 
                    "%f t pt" % self.r, 
 		   self.angle2, self.angle1).bbox(canvas, currentpoint, currentsubpath)
