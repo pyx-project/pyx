@@ -6,8 +6,11 @@ PyX
   - return linewidth upon calculation with linewidths
   - fix canvas transformations
   - 3d graphs (work in progress)
+  - splitaxis (work in progress)
+  - move axis partitioning into the axis painter (work in progress)
   - new transformation: slant
   - bugfix in textbox alignment (graph module)
+  - some fixes in automatic axis partitioning
 
 0.1.1 (????/??/??):
   - transformation bug fixed (#624068)

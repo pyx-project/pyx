@@ -418,7 +418,8 @@ class autolinpart:
         ticks = self.list[0]
         useticks = [tick * base for tick in ticks]
         self.lesstickindex = self.moretickindex = 0
-        self.lessbase = self.morebase = base
+        self.lessbase = frac(base.enum, base.denom)
+        self.morebase = frac(base.enum, base.denom)
         self.min, self.max, self.extendmin, self.extendmax = min, max, extendmin, extendmax
         part = linpart(ticks=useticks, extendtick=self.extendtick, epsilon=self.epsilon, mix=self.mix)
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
@@ -1082,8 +1083,8 @@ class axispainter(attrlist.attrlist):
 
         for tick in axis.ticks:
             tick.virtual = axis.convert(float(tick) * axis.divisor)
-            tick.x, tick.y = axis.tickpoint(axis, tick.virtual)
-            tick.dx, tick.dy = axis.tickdirection(axis, tick.virtual)
+            tick.x, tick.y = axis._vtickpoint(axis, tick.virtual)
+            tick.dx, tick.dy = axis.vtickdirection(axis, tick.virtual)
 
         for tick in axis.ticks:
             if tick.labellevel is not None:
@@ -1169,8 +1170,8 @@ class axispainter(attrlist.attrlist):
 
 
         if axis.title is not None and self.titleattrs is not None:
-            x, y = axis.tickpoint(axis, self.titlepos)
-            dx, dy = axis.tickdirection(axis, self.titlepos)
+            x, y = axis._vtickpoint(axis, self.titlepos)
+            dx, dy = axis.vtickdirection(axis, self.titlepos)
             # no not modify self.titleattrs ... the painter might be used by several axes!!!
             titleattrs = list(_ensuresequence(self.titleattrs))
             if self.titledirection is not None and not self.attrcount(titleattrs, tex.direction):
@@ -1182,6 +1183,37 @@ class axispainter(attrlist.attrlist):
             axis._extent += axis.titlebox._extent(dx, dy)
 
 
+class splitaxispainter:
+
+    def paint(self, graph, axis, baseaxis = None, painter = None):
+        if baseaxis is None:
+            baseaxis = axis
+        baseaxis._extent = None
+        for subaxis in axis.axislist:
+            subaxis._vtickpoint = (lambda subaxis, v,
+                                          _vtickpoint=baseaxis._vtickpoint,
+                                          axis=baseaxis,
+                                          vmin=subaxis.vmin,
+                                          vmax=subaxis.vmax: _vtickpoint(axis, vmin+v*(vmax-vmin)))
+            subaxis.vtickdirection = (lambda subaxis, v,
+                                            vtickdirection=baseaxis.vtickdirection,
+                                            axis=baseaxis,
+                                            vmin=subaxis.vmin,
+                                            vmax=subaxis.vmax: vtickdirection(axis, vmin+v*(vmax-vmin)))
+            subaxis.vbaseline = (lambda subaxis, v1, v2,
+                                        vbaseline=baseaxis.vbaseline,
+                                        axis=baseaxis,
+                                        vmin=subaxis.vmin,
+                                        vmax=subaxis.vmax: vbaseline(axis, vmin+v1*(vmax-vmin), vmin+v2*(vmax-vmin)))
+            if painter is None:
+                subaxis.painter.paint(graph, subaxis)
+            else:
+                subaxis.linkedaxis = subaxis
+                painter.paint(graph, subaxis)
+            if baseaxis._extent is None or baseaxis._extent < subaxis._extent:
+                baseaxis._extent = subaxis._extent
+
+
 class linkaxispainter(axispainter):
 
     def __init__(self, skipticklevel=None, skiplabellevel=0, zerolineattrs=None, **args):
@@ -1190,9 +1222,9 @@ class linkaxispainter(axispainter):
         args["zerolineattrs"] = zerolineattrs
         axispainter.__init__(self, **args)
 
-    def paint(self, graph, axis):
-        axis.ticks = []
-        for _tick in axis.linkedaxis.ticks:
+    def ticks(self, ticks):
+        result = []
+        for _tick in ticks:
             ticklevel = _tick.ticklevel
             labellevel = _tick.labellevel
             if self.skipticklevel is not None and ticklevel >= self.skipticklevel:
@@ -1200,14 +1232,20 @@ class linkaxispainter(axispainter):
             if self.skiplabellevel is not None and labellevel >= self.skiplabellevel:
                 labellevel = None
             if ticklevel is not None or labellevel is not None:
-                axis.ticks.append(tick(_tick.enum, _tick.denom, ticklevel, labellevel))
+                result.append(tick(_tick.enum, _tick.denom, ticklevel, labellevel))
+        return result
         # XXX: don't forget to calculate new text positions as soon as this is moved
         #      outside of the paint method (when rating is moved into the axispainter)
 
-        axis.convert = axis.linkedaxis.convert
-        axis.divisor = axis.linkedaxis.divisor
-        axis.suffix = axis.linkedaxis.suffix
-        axispainter.paint(self, graph, axis)
+    def paint(self, graph, axis):
+        if isinstance(axis.linkedaxis, splitaxis):
+            axis.linkedaxis.painter.paint(graph, axis.linkedaxis, axis, self)
+        else:
+            axis.ticks = self.ticks(axis.linkedaxis.ticks)
+            axis.convert = axis.linkedaxis.convert
+            axis.divisor = axis.linkedaxis.divisor
+            axis.suffix = axis.linkedaxis.suffix
+            axis.linkedaxis.painter.paint(graph, axis)
 
 
 
@@ -1289,9 +1327,6 @@ class _axis:
             if self.reverse:
                 self.setbasepoints(((min, vmax), (max, vmin)))
 
-    def gridpath(self, x):
-        return self.vgridpath(self.convert(x))
-
     def setdatarange(self, min, max):
         self.datamin, self.datamax = min, max
         self._setrange(min, max)
@@ -1313,6 +1348,39 @@ class _axis:
                 return self.invert(1-self.tickvmin), self.invert(1-self.tickvmax)
             else:
                 return self.invert(self.tickvmin), self.invert(self.tickvmax)
+
+    def dolayout(self):
+        # TODO: make use of stretch
+        min, max = self.gettickrange()
+        self.ticks = self.part.defaultpart(min/self.divisor, max/self.divisor, not self.fixmin, not self.fixmax)
+        if self.part.multipart:
+            # lesspart and morepart can be called after defaultpart,
+            # although some axes may share their autoparting ---
+            # it works, because the axes are processed sequentially
+            rate = self.rate.ratepart(self, self.ticks, 1)
+            maxworse = 2
+            worse = 0
+            while worse < maxworse:
+                newticks = self.part.lesspart()
+                newrate = self.rate.ratepart(self, newticks, 1)
+                if newticks is not None and newrate < rate:
+                    self.ticks = newticks
+                    rate = newrate
+                    worse = 0
+                else:
+                    worse += 1
+            worse = 0
+            while worse < maxworse:
+                newticks = self.part.morepart()
+                newrate = self.rate.ratepart(self, newticks, 1)
+                if newticks is not None and newrate <= rate:
+                    self.ticks = newticks
+                    rate = newrate
+                    worse = 0
+                else:
+                    worse += 1
+        if len(self.ticks):
+            self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
 
 
 class linaxis(_axis, _linmap):
@@ -1337,6 +1405,8 @@ class linkaxis:
         self.linkedaxis = linkedaxis
         while isinstance(self.linkedaxis, linkaxis):
             self.linkedaxis = self.linkedaxis.linkedaxis
+        self.fixmin = self.linkedaxis.fixmin
+        self.fixmax = self.linkedaxis.fixmax
         self.title = title
         self.painter = painter
 
@@ -1348,6 +1418,79 @@ class linkaxis:
         self.linkedaxis.setdatarange(min, max)
         if hasattr(self.linkedaxis, "ticks") and prevrange != self.linkedaxis.getdatarange():
             raise RuntimeError("linkaxis datarange setting performed while linked axis layout already fixed")
+
+    def dolayout(self):
+        pass
+
+
+class SplitRegionError(Exception):
+
+    pass
+
+
+class splitaxis:
+
+    def __init__(self, axislist, splitlist=0.5, splitdist=0.1):
+        self.axislist = axislist
+        self.splitlist = list(_ensuresequence(splitlist))
+        self.splitlist.sort()
+        if len(self.axislist) != len(self.splitlist) + 1:
+            raise ValueError("axislist and splitlist lengths do not fit together")
+        if self.splitlist[0] < 0.5*splitdist or self.splitlist[-1] > 1 - 0.5*splitdist:
+            raise ValueError("a value within splitlist is outside a valid range")
+        self.axislist[0].vmin = 0
+        for i in xrange(len(self.splitlist)):
+            self.axislist[i].vmax = self.splitlist[i] - 0.5*splitdist
+            self.axislist[i+1].vmin = self.splitlist[i] + 0.5*splitdist
+        self.axislist[-1].vmax = 1
+        self.part = manualpart()
+        self.divisor = 1
+        self.suffix = ""
+        self.fixmin = self.axislist[0].fixmin
+        if self.fixmin:
+            self.min = self.axislist[0].min
+        self.fixmax = self.axislist[-1].fixmax
+        if self.fixmax:
+            self.max = self.axislist[-1].max
+        self.painter = splitaxispainter()
+
+    def getdatarange(self):
+        min = self.axislist[0].getdatarange()
+        max = self.axislist[-1].getdatarange()
+        try:
+            return min[0], max[1]
+        except TypeError:
+            return None
+
+    def setdatarange(self, min, max):
+        self.axislist[0].setdatarange(min, None)
+        self.axislist[-1].setdatarange(None, max)
+
+    def gettickrange(self):
+        min = self.axislist[0].gettickrange()
+        max = self.axislist[-1].gettickrange()
+        try:
+            return min[0], max[1]
+        except TypeError:
+            return None
+
+    def settickrange(self, min, max):
+        self.axislist[0].settickrange(min, None)
+        self.axislist[-1].settickrange(None, max)
+
+    def convert(self, value):
+        if value < self.axislist[0].max:
+            return self.axislist[0].vmin + self.axislist[0].convert(value)*(self.axislist[0].vmax-self.axislist[0].vmin)
+        for axis in self.axislist[1:-1]:
+            if value > axis.min and value < axis.max:
+                return axis.vmin + axis.convert(value)*(axis.vmax-axis.vmin)
+        if value > self.axislist[-1].min:
+            return self.axislist[-1].vmin + self.axislist[-1].convert(value)*(self.axislist[-1].vmax-self.axislist[-1].vmin)
+        raise SplitRegionError
+
+    def dolayout(self):
+        for axis in self.axislist:
+            axis.dolayout()
 
 
 
@@ -1386,13 +1529,13 @@ class graphxy(canvas.canvas):
             return styles
         return styles[0]
 
-    def _xtickpoint(self, axis, v):
+    def _vxtickpoint(self, axis, v):
         return (self._xpos+v*self._width, axis.axispos)
 
-    def _ytickpoint(self, axis, v):
+    def _vytickpoint(self, axis, v):
         return (axis.axispos, self._ypos+v*self._height)
 
-    def tickdirection(self, axis, v):
+    def vtickdirection(self, axis, v):
         return axis.fixtickdirection
 
     def _pos(self, x, y, xaxis=None, yaxis=None):
@@ -1504,43 +1647,9 @@ class graphxy(canvas.canvas):
             data.setranges(ranges)
         # 3. gather ranges again
         ranges = self.gatherranges()
-
-        # TODO: move rating into the painter
-        for key, axis in self.axes.items():
-            if isinstance(axis, linkaxis):
-                continue
-
-            # TODO: make use of stretch
-            min, max = axis.gettickrange()
-            axis.ticks = axis.part.defaultpart(min/axis.divisor, max/axis.divisor, not axis.fixmin, not axis.fixmax)
-            if axis.part.multipart:
-                # lesspart and morepart can be called after defaultpart,
-                # although some axes may share their autoparting ---
-                # it works, because the axes are processed sequentially
-                rate = axis.rate.ratepart(axis, axis.ticks, 1)
-                maxworse = 2
-                worse = 0
-                while worse < maxworse:
-                    newticks = axis.part.lesspart()
-                    newrate = axis.rate.ratepart(axis, newticks, 1)
-                    if newticks is not None and newrate < rate:
-                        axis.ticks = newticks
-                        rate = newrate
-                        worse = 0
-                    else:
-                        worse += 1
-                worse = 0
-                while worse < maxworse:
-                    newticks = axis.part.morepart()
-                    newrate = axis.rate.ratepart(axis, newticks, 1)
-                    if newticks is not None and newrate < rate:
-                        axis.ticks = newticks
-                        rate = newrate
-                        worse = 0
-                    else:
-                        worse += 1
-            if len(axis.ticks):
-                axis.settickrange(float(axis.ticks[0])*axis.divisor, float(axis.ticks[-1])*axis.divisor)
+        # ticking might modify the ranges
+        for axis in self.axes.values():
+            axis.dolayout()
 
     def dobackground(self):
         self.dolayout()
@@ -1569,7 +1678,7 @@ class graphxy(canvas.canvas):
                 if needxaxisdist[num2]:
                     self._xaxisextents[num2] += axesdist
                 axis.axispos = self._ypos+num2*self._height + num3*self._xaxisextents[num2]
-                axis.tickpoint = self._xtickpoint
+                axis._vtickpoint = self._vxtickpoint
                 axis.fixtickdirection = (0, num3)
                 axis.vgridpath = self.vxgridpath
                 axis.vbaseline = self.vxbaseline
@@ -1577,13 +1686,13 @@ class graphxy(canvas.canvas):
                 if needyaxisdist[num2]:
                     self._yaxisextents[num2] += axesdist
                 axis.axispos = self._xpos+num2*self._width + num3*self._yaxisextents[num2]
-                axis.tickpoint = self._ytickpoint
+                axis._vtickpoint = self._vytickpoint
                 axis.fixtickdirection = (num3, 0)
                 axis.vgridpath = self.vygridpath
                 axis.vbaseline = self.vybaseline
             else:
                 raise ValueError("Axis key '%s' not allowed" % key)
-            axis.tickdirection = self.tickdirection
+            axis.vtickdirection = self.vtickdirection
             if axis.painter is not None:
                 axis.painter.paint(self, axis)
             if XPattern.match(key):
@@ -1662,13 +1771,13 @@ class graphxyz(graphxy):
 
     Names = "x", "y", "z"
 
-    def _xtickpoint(self, axis, v):
+    def _vxtickpoint(self, axis, v):
         return self._vpos(v, axis.vypos, axis.vzpos)
 
-    def _ytickpoint(self, axis, v):
+    def _vytickpoint(self, axis, v):
         return self._vpos(axis.vxpos, v, axis.vzpos)
 
-    def _ztickpoint(self, axis, v):
+    def _vztickpoint(self, axis, v):
         return self._vpos(axis.vxpos, axis.vypos, v)
 
     def vxtickdirection(self, axis, v):
@@ -1827,24 +1936,24 @@ class graphxyz(graphxy):
             if XPattern.match(key):
                 axis.vypos = 0
                 axis.vzpos = 0
-                axis.tickpoint = self._xtickpoint
+                axis._vtickpoint = self._vxtickpoint
                 axis.vgridpath = self.vxgridpath
                 axis.vbaseline = self.vxbaseline
-                axis.tickdirection = self.vxtickdirection
+                axis.vtickdirection = self.vxtickdirection
             elif YPattern.match(key):
                 axis.vxpos = 0
                 axis.vzpos = 0
-                axis.tickpoint = self._ytickpoint
+                axis._vtickpoint = self._vytickpoint
                 axis.vgridpath = self.vygridpath
                 axis.vbaseline = self.vybaseline
-                axis.tickdirection = self.vytickdirection
+                axis.vtickdirection = self.vytickdirection
             elif ZPattern.match(key):
                 axis.vxpos = 0
                 axis.vypos = 0
-                axis.tickpoint = self._ztickpoint
+                axis._vtickpoint = self._vztickpoint
                 axis.vgridpath = self.vzgridpath
                 axis.vbaseline = self.vzbaseline
-                axis.tickdirection = self.vztickdirection
+                axis.vtickdirection = self.vztickdirection
             else:
                 raise ValueError("Axis key '%s' not allowed" % key)
             if axis.painter is not None:
@@ -2601,7 +2710,10 @@ class mark:
                 elif ymin is not None and ymin > yaxismax: drawmark = 0
             xpos=ypos=topleft=top=topright=left=center=right=bottomleft=bottom=bottomright=None
             if x is not None and y is not None:
-                center = xpos, ypos = graph._pos(x, y, xaxis=xaxis, yaxis=yaxis)
+                try:
+                    center = xpos, ypos = graph._pos(x, y, xaxis=xaxis, yaxis=yaxis)
+                except SplitRegionError:
+                    pass
             if haserror:
                 if y is not None:
                     if xmin is not None: left = graph._pos(xmin, y, xaxis=xaxis, yaxis=yaxis)
@@ -2848,6 +2960,8 @@ class surface:
 
     def drawpoints(self, graph, points):
         pass
+
+
 
 ################################################################################
 # data

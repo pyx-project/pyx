@@ -107,6 +107,14 @@ def test_3d(c, t, x, y):
     g.plot(graph.paramfunction("k", 0, 120, "x, y, z = mod(k, 11), div(k, 11), exp(-0.1*(mod(k, 11)-5)*(mod(k, 11)-5)-0.1*(div(k, 11)-5)*(div(k, 11)-5))", points=121, parser=mathtree.parser(MathTreeFuncs=MyFuncs)), style = graph.surface())
     g.finish()
 
+def test_split(c, t, x, y):
+    g = c.insert(graph.graphxy(t, x, y, height=5,
+                               x=graph.logaxis(title="$W$"),
+                               y=graph.splitaxis((graph.linaxis(max=0.002), graph.splitaxis((graph.linaxis(min=0.01, max=0.015), graph.linaxis(min=0.019)))))))
+    df = datafile.datafile("testdata")
+    g.plot(graph.data(df, x=1, y=3))
+    g.finish()
+
 c = canvas.canvas()
 t = c.insert(tex.tex())
 #test_multiaxes_data(c, t, 0, 21)
@@ -114,7 +122,8 @@ t = c.insert(tex.tex())
 #test_textaxis_errorbars(c, t, 0, 7)
 #test_ownmark(c, t, 0, 0)
 #test_allerrorbars(c, t, -7, 0)
-test_3d(c, t, -7, 7)
+#test_3d(c, t, -7, 7)
+test_split(c, t, -7, 7)
 
 c.writetofile("test_graph", paperformat="a4")
 
