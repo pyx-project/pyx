@@ -15,20 +15,19 @@ def test_multiaxes_data(c, t, x, y):
                                                 painter=graph.axispainter(titleattrs=tex.direction(45))),
                                y5=graph.logaxis(title="$P_5$")))
     df = datafile.datafile("testdata")
-    g.plot(graph.data(df, x=1, y=3), style=graph.mark(markattrs=(graph.changecolor.redgreen(), graph.changestrokedfilled()), mark=graph.mark.changesquaretwice()))
-    g.plot(graph.data(df, x=1, y2=4))
-    g.plot(graph.data(df, x=1, y3=5))
-    g.plot(graph.data(df, x=1, y5=6))
-    g.drawall()
+    g.plot((graph.data(df, x=1, y=3),
+            graph.data(df, x=1, y2=4),
+            graph.data(df, x=1, y3=5),
+            graph.data(df, x=1, y5=6)),
+           style=graph.mark(markattrs=(graph.changecolor.redgreen(), graph.changestrokedfilled()), mark=graph.mark.changesquaretwice()))
+    g.finish()
 
 def test_piaxis_function(c, t, x, y):
     g = c.insert(graph.graphxy(t, x, y, height=5,
-                               x=graph.linaxis(min=0, max=2*math.pi, factor=math.pi, suffix=r"\pi")))
-    g.plot(graph.function("y=sin(x)", points=1000),
+                               x=graph.linaxis(min=0, max=2*math.pi, divisor=math.pi, suffix=r"\pi")))
+    g.plot([graph.function("y=sin(x-%i*pi/10)" % i, points=100) for i in range(20)],
            style=graph.line(lineattrs=(graph.changecolor.hue(), graph.changelinestyle())))
-    for i in range(1, 20):
-        g.plot(graph.function("y=sin(x-%i*pi/10)" % i))
-    g.drawall()
+    g.finish()
 
 def test_textaxis_errorbars(c, t, x, y):
     df = datafile.datafile("testdata2")
@@ -40,7 +39,7 @@ def test_textaxis_errorbars(c, t, x, y):
                                x2=graph.linaxis(), y2=graph.linaxis()))
     g.plot(graph.data(df, x=0, ymin="min", ymax="max"))
     g.plot(graph.paramfunction("k", 0, 2*math.pi, "x2, y2, dx2, dy2 = 0.8*sin(k), 0.8*cos(3*k), 0.05, 0.05"), style = graph.mark(mark=graph.mark.triangle))
-    g.drawall()
+    g.finish()
 
 def test_ownmark(c, t, x, y):
 
@@ -48,6 +47,9 @@ def test_ownmark(c, t, x, y):
 
         def __init__(self, size = "0.2 cm"):
             self.size_str = size
+
+        def iterate(self):
+            return self
 
         def setcolumns(self, graph, columns):
             self.xindex = self.yindex = self.angleindex = None
@@ -103,7 +105,7 @@ def test_ownmark(c, t, x, y):
     line2 = g.plot(graph.function("y=12*x^-1.6"))
     line3 = g.plot(graph.function("y=7/x"))
     line4 = g.plot(graph.function("y=25*x^-1.6"))
-    g.drawall()
+    g.finish()
 
     p1=line1.path
     p2=line2.path.reversed()
@@ -121,7 +123,7 @@ def test_allerrorbars(c, t, x, y):
     df = datafile.datafile("testdata3")
     g = c.insert(graph.graphxy(t, x, y, height=5, width=4))
     g.plot(graph.data(df, x="x", y="y", xmin="xmin", xmax="xmax", ymin="ymin", ymax="ymax"))
-    g.drawall()
+    g.finish()
 
 c = canvas.canvas()
 t = c.insert(tex.tex())

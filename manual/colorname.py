@@ -40,4 +40,4 @@ for line in lines: # we yet don't use a file iterator
             x += dx
 
 c.insert(t)
-c.writetofile("colorname")
+c.writetofile("colorname", paperformat="a4")

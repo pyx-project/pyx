@@ -647,7 +647,7 @@ class cuberate:
             weight += rater.weight
         if part is not None and len(part):
             tickmin, tickmax = axis.gettickrange()
-            rate += self.tickrange.rate((float(part[-1]) - float(part[0])) * axis.factor / (tickmax - tickmin))
+            rate += self.tickrange.rate((float(part[-1]) - float(part[0])) * axis.divisor / (tickmax - tickmin))
         else:
             rate += self.tickrange.rate(0)
         weight += self.tickrange.weight
@@ -1060,7 +1060,7 @@ class axispainter(attrlist.attrlist):
 
         haslabel = 0
         for tick in axis.ticks:
-            tick.virtual = axis.convert(float(tick) * axis.factor)
+            tick.virtual = axis.convert(float(tick) * axis.divisor)
             tick.x, tick.y = axis.tickpoint(axis, tick.virtual)
             tick.dx, tick.dy = axis.tickdirection(axis, tick.virtual)
             if tick.labellevel is not None:
@@ -1184,7 +1184,7 @@ class linkaxispainter(axispainter):
 class _axis:
 
     def __init__(self, min=None, max=None, reverse=0, title=None, painter=axispainter(),
-                       factor=1, suffix=None, baselineattrs=(),
+                       divisor=1, suffix=None, baselineattrs=(),
                        datavmin=None, datavmax=None, tickvmin=None, tickvmax=None):
         if None not in (min, max) and min > max:
             min, max = max, min
@@ -1223,7 +1223,7 @@ class _axis:
 
         self.title = title
         self.painter = painter
-        self.factor = factor
+        self.divisor = divisor
         self.suffix = suffix
         self.baselineattrs = baselineattrs
         self.canconvert = 0
@@ -1299,7 +1299,7 @@ class linkaxis(_axis):
     def __init__(self, linkedaxis, title=None, painter=linkaxispainter()):
         self.linkedaxis = linkedaxis
         _axis.__init__(self, title=title, painter=painter)
-        self.factor = linkedaxis.factor # XXX: not nice ...
+        self.divisor = linkedaxis.divisor # XXX: not nice ...
 
 
 
@@ -1415,7 +1415,7 @@ class graphxy(canvas.canvas):
 
             # TODO: make use of stretch
             min, max = axis.gettickrange()
-            axis.ticks = axis.part.defaultpart(min/axis.factor, max/axis.factor, not axis.fixmin, not axis.fixmax)
+            axis.ticks = axis.part.defaultpart(min/axis.divisor, max/axis.divisor, not axis.fixmin, not axis.fixmax)
             if axis.part.multipart:
                 # lesspart and morepart can be called after defaultpart,
                 # although some axes may share their autoparting ---
@@ -1442,7 +1442,7 @@ class graphxy(canvas.canvas):
                         worse = 0
                     else:
                         worse += 1
-            axis.settickrange(float(axis.ticks[0])*axis.factor, float(axis.ticks[-1])*axis.factor)
+            axis.settickrange(float(axis.ticks[0])*axis.divisor, float(axis.ticks[-1])*axis.divisor)
 
         self.xmap = _linmap().setbasepoints(((0, self.xpos), (1, self.xpos + self.width)))
         self.ymap = _linmap().setbasepoints(((0, self.ypos), (1, self.ypos + self.height)))
