@@ -7,11 +7,10 @@ body {
 }
 
 h1 {
-        margin:0px 0px 15px 0px;
         padding-bottom: 3px;
         /* padding-left: 15px; */
         font-size:200%;
-        border-bottom: 1px solid grey;
+        border-bottom: 1px solid #88a;
 }
 
 h2 { 
@@ -59,25 +58,11 @@ table {
         margin-left: 3em 
 }
 
-
-a:link { 
-        color:#222;
+a {
+        color:#b44;
         text-decoration: None;
 }
 
-a:active { 
-        color:#222; 
-        text-decoration: None;
-}
-
-a:visited { 
-        color:#222;
-        text-decoration: None;
-}
-
-#navbar a:visited { 
-        color:#222;
-}
 
 a:hover {
         text-decoration: underline;
@@ -89,7 +74,7 @@ a:hover {
         height:100%;
         top:0px;
         left:0px;
-        border-right: 1px solid black;
+        border-right: 1px solid #88a;
         text-align:center;
         background-color:#eed;
 }
@@ -106,7 +91,6 @@ a:hover {
 }
 
 #subtitle {
-/*      margin: 0px 10px 15px 10px;*/
         padding:0px;
         font-style: italic;
         text-align: right;
@@ -116,8 +100,8 @@ a:hover {
         background-color:#c8c8f0;
         width:140px; 
         margin-left:20px; 
-        margin-bottom:15px;
-        border:1px dashed black;
+        margin-bottom:20px;
+        border: 1px dashed #668;
         font-size: 90%;
         padding: 5px 10px 10px 10px;
         text-align:left; 
@@ -125,17 +109,30 @@ a:hover {
 
 #navboxtitle, #linkboxtitle {
         margin:0px 0px 10px 0px;
-        padding: 0px;
-        font-size: 120%;
-        font-weight: bold;
-        border-bottom: 1px solid black;
+        padding:0px;
+        font-size:120%;
+        font-weight:bold;
+        border-bottom:1px solid black;
 }
 
 #content {
-        position:fixed;
-        margin-left: 200px;
+        position:relative;
+        margin-left:201px;
         background-color:#ffe;
+        padding-top:0px;
+        padding-left:10px;
+        padding-right:5px;
+        min-width: 450px;
+}
+
+#content .image {
+        float:right;
+        background-color:#eed;
         padding:10px;
+        margin:10px;
+        border:1px dashed #668;
+        text-align:center;
+        font-style:italic;
 }
 
 

@@ -1,5 +1,3 @@
-#TODO: - mutliple python runs when appropriate (new tex handling will render it unnecessary)
-
 default: html
 
 clean:
@@ -11,14 +9,15 @@ all:
 
 ptfiles = $(filter-out maintemplate.pt, $(wildcard *.pt))
 htmlfiles = $(patsubst %.pt, %.html, $(ptfiles))
-epsfiles = $(patsubst %.py, %.eps, $(pyfiles))
-pngfiles = pyx.png valid-html401.png vcss.png
+pngfiles = valid-html401.png vcss.png
 cssfiles = main.css
 
 html: $(htmlfiles) $(pngfiles)
 
 install: html
 	cp $(htmlfiles) $(pngfiles) $(cssfiles) ~/public-html/pyx
+	cd png; make
+	cp png/*.png ~/public-html/pyx
 
 %.html: %.pt maintemplate.pt
 	PYTHONPATH=~/bin/python/Zope3/src ./pt2html.py $<

@@ -11,7 +11,7 @@
 
 <div id="navbar">
 
-  <div id="title"><img src="pyx.png" alt="PyX"></div>
+  <div id="title"><img src="pyxlogo.png" alt="PyX"></div>
 
   <div class="box">
     <div id="navboxtitle">Navigation</div>
@@ -19,7 +19,7 @@
     <a href="index.html">Home</a><br>
     <a href="documentation.html">Documentation</a><br>
     <a href="examples.html">Examples</a><br>
-    <a href="download.html">Download</a><br>
+    <a href="http://sourceforge.net/project/showfiles.php?group_id=45430">Downloads</a><br>
     <a href="http://sourceforge.net/projects/pyx/">Project page</a>
   </div>
 
@@ -31,14 +31,10 @@
     <a href="http://partners.adobe.com/asn/developer/technotes/main.html">PostScript</a>
   </div>
 
-  <br>
-
-
   <p>
      <a href="http://sourceforge.net"><img src="http://sourceforge.net/sflogo.php?group_id=45430&type=1" 
      style="border:0;width:88px;height:31px" alt="SourceForge Logo"></a>
   </p>
-
 
   <p>
     <a href="http://validator.w3.org/check/referer"><img style="border:0;width:88px;height:31px"
