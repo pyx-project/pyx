@@ -216,7 +216,6 @@ class _poly:
     def boxdistance(self, other):
         return unit.t_pt(self._boxdistance(other))
 
-    #TODO: bbox method missing
     def bbox(self):
         return bbox.bbox(min([x[0] for x in self.corners]),
                          min([x[1] for x in self.corners]),
@@ -224,14 +223,17 @@ class _poly:
                          max([x[1] for x in self.corners]))
 
 
-def _linealignequal(polys, *args):
+def _genalignequal(method, polys, *args):
     vec = None
     for p in polys:
-        v = p._linealignvector(*args)
+        v = method(p, *args)
         if vec is None or vec[0]*vec[0] + vec[1]*vec[1] < v[0]*v[0] + v[1]*v[1]:
             vec = v
     for p in polys:
         p.transform(trafo._translate(*vec))
+
+def _linealignequal(polys, *args):
+    _genalignequal(poly._linealignvector, polys, *args)
 
 
 class poly(_poly):
