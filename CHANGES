@@ -61,8 +61,6 @@ PyX
   - data module:
     - data.data should add line number like data.datafile
     - use csv module (new in 2.3)
-  - box module:
-    - multiple radii: documentation
   - bbox module:
      - __iadd__ and inplace enlarge, transform,...
   - mathtree module:
