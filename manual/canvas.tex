@@ -96,14 +96,14 @@ c.stroke(p,
          color.rgb.blue, 
          canvas.earrow.LARge(color.rgb.red,
                              canvas.stroked(canvas.linejoin.round),
-                                            canvas.filled(color.rgb.green)))
+                             canvas.filled(color.rgb.green)))
                                                               
 \end{verbatim}
 \end{quote}
 This draws the path in blue with a pretty large green arrow at the
 end, the outline of which is red and rounded.
 
-After you are finished with the composition of your canvas, you can
+After you have finished the composition of the canvas, you can
 write it to a file using the method \verb|writetofile()|. It expects the
 obligatory argument \verb|filename|, the name of the output
 file. To write your results to the file "test.eps" just call it as follows:
@@ -178,8 +178,9 @@ The \verb|canvas| class provides the following methods:
 
 The \verb|canvas| module provides a number of subclasses of the class
 \verb|base.PathStyle|, which allow to change the look of the paths
-drawn on the canvas.
+drawn on the canvas. They are summarized in Appendix~\ref{pathstyles}.
 
+\section{Examples}
 
 
 
