@@ -723,8 +723,10 @@ class _canvas(base.PSCmd, attrlist.attrlist):
         return result
 
     def write(self, file):
+        _gsave().write(file)
         for cmd in self.PSOps:
             cmd.write(file)
+        _grestore().write(file)
 
     def insert(self, PSOp, *args):
         """insert PSOp in the canvas.
@@ -882,8 +884,8 @@ class pattern(_canvas, base.PathStyle):
         stringfile.close()
         patterntrafostring = self.patterntrafo is None and "matrix" or str(self.patterntrafo)
         patternsuffix = "end\n} bind\n>>\n%s\nmakepattern" % patterntrafostring
-        
-        pr = _canvas.prolog(self)     
+
+        pr = _canvas.prolog(self)
         pr.append(definition(self.id, string.join((patternprefix, patternproc, patternsuffix), "")))
         return pr
 
@@ -925,11 +927,6 @@ class canvas(_canvas):
                 self.PSOps.append(arg)
             else:
                 self.set(arg)
-
-    def write(self, file):
-        _gsave().write(file)
-        _canvas.write(self, file)
-        _grestore().write(file)
 
     def writetofile(self, filename, paperformat=None, rotated=0, fittosize=0, margin="1 t cm", bboxenhance="1 t pt"):
         """write canvas to EPS file
