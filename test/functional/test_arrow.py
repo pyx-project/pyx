@@ -10,7 +10,7 @@ def testarrow(c):
     c.stroke(path(moveto(10,20), 
     	        curveto(12,16,14,15,12,19),
                 rcurveto(-3,2,3,3,-2,4)),
-           canvas.barrow.small, canvas.earrow.small)
+           canvas.barrow.small, canvas.earrow.normal)
     
     c.stroke(path(arc(8,15,4,10,70)), canvas.barrow.small, canvas.earrow.normal)
     c.stroke(path(arc(8,15,3,10,70)), canvas.barrow.small, canvas.earrow.normal)
