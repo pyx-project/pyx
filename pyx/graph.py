@@ -26,96 +26,147 @@
 import types, re, math, string, sys
 import bbox, canvas, path, tex, unit, mathtree, trafo, attrlist, color
 
+
 goldenrule = 0.5 * (math.sqrt(5) + 1)
 
 
+
+################################################################################
+# some general helper routines
+################################################################################
+
+
+def _isstring(arg):
+    "arg is string-like (cf. python cookbook 3.2)"
+    try: arg + ''
+    except: return 0
+    return 1
+
+
+def _isnumber(arg):
+    "arg is number-like"
+    try: arg + 0
+    except: return 0
+    return 1
+
+
+def _isinteger(arg):
+    "arg is integer-like"
+    try:
+        if type(arg + 0.0) == type(arg):
+            return 0
+        return 1
+    except: return 0
+
+
+def _issequence(arg):
+    """arg is sequence-like (e.g. has a len)
+       a string is *not* considered to be a sequence"""
+    if _isstring(arg): return 0
+    try: len(arg)
+    except: return 0
+    return 1
+
+
+def _ensuresequence(arg):
+    """return arg or (arg,) depending on the result of _issequence,
+       None is converted to ()"""
+    if _isstring(arg): return (arg,)
+    if arg is None: return ()
+    if _issequence(arg): return arg
+    return (arg,)
+
+
+def _issequenceofsequences(arg):
+    """check if arg has a sequence as it's first entry"""
+    return _issequence(arg) and len(arg) and _issequence(arg[0])
+
+
+def _getsequenceno(arg, n):
+    """get sequence number n if arg is a sequence of sequences,
+       otherwise it gets just arg
+       the return value is always a sequence"""
+    if _issequenceofsequences(arg):
+        return _ensuresequence(arg[n])
+    else:
+        return _ensuresequence(arg)
+
+
+ 
 ################################################################################
 # maps
 ################################################################################
 
+
 class _map:
+    "maps convert a value into another value and vice verse (via invert)"
 
     def setbasepts(self, basepts):
-        """base points for convertion"""
+        """set basepoints for convertion; basepoints are are tuples (x,y) where
+           y = convert(x) and x = invert(y) has to be valid"""
         self.basepts = basepts
         return self
 
-    def convert(self, values):
-        if type(values) in (types.IntType, types.LongType, types.FloatType, ):
-            return self._convert(values)
-        else:
-            return map(lambda x, self = self: self._convert(x), values)
+    def converts(self, sequence):
+        "convert a sequence -> returns a number or a sequence"
+        return map(self.convert, values)
 
-    def invert(self, values):
-        if type(values) in (types.IntType, types.LongType, types.FloatType, ):
-            return self._invert(values)
-        else:
-            return map(lambda x, self = self: self._invert(x), values)
+    def inverts(self, sequence):
+        "convert a sequence -> returns a number or a sequence, inverse mapping"
+        return map(self.invert, values)
 
 
 class _linmap(_map):
+    "linear mapping"
 
-    def _convert(self, value):
+    def convert(self, value):
         return self.basepts[0][1] + ((self.basepts[1][1] - self.basepts[0][1]) /
                float(self.basepts[1][0] - self.basepts[0][0])) * (value - self.basepts[0][0])
 
-    def _invert(self, value):
+    def invert(self, value):
         return self.basepts[0][0] + ((self.basepts[1][0] - self.basepts[0][0]) /
                float(self.basepts[1][1] - self.basepts[0][1])) * (value - self.basepts[0][1])
 
 
 class _logmap(_linmap):
+    "logarithmic mapping"
 
     def setbasepts(self, basepts):
-        """base points for convertion"""
         self.basepts = ((math.log(basepts[0][0]), basepts[0][1], ),
                         (math.log(basepts[1][0]), basepts[1][1], ), )
         return self
 
-    def _convert(self, value):
-        return _linmap._convert(self, math.log(value))
+    def convert(self, value):
+        return _linmap.convert(self, math.log(value))
 
-    def _invert(self, value):
-        return math.exp(_linmap._invert(self, value))
+    def invert(self, value):
+        return math.exp(_linmap.invert(self, value))
 
 
 
 ################################################################################
-# tick list = partition
+# tick lists = partitions
 ################################################################################
+
 
 class frac:
+    "fraction type for rational arithmetics"
 
     def __init__(self, enum, denom, power=None):
-        if type(enum) not in (types.IntType, types.LongType, ): raise ValueError
-        if type(denom) not in (types.IntType, types.LongType, ): raise ValueError
-        if denom == 0: raise ValueError
+        "for power!=None: frac=(enum/denom)**power"
+        if not _isinteger(enum) or not _isinteger(denom): raise TypeError("integer type expected")
+        if not denom: raise ZeroDivisionError("zero denominator")
         if power != None:
-            if power > 0:
-                self.enum = self._powi(long(enum), power)
-                self.denom = self._powi(long(denom), power)
-            elif power < 0:
-                self.enum = self._powi(long(denom), -power)
-                self.denom = self._powi(long(enum), -power)
+            if not _isinteger(power): raise TypeError("integer type expected")
+            if power >= 0:
+                self.enum = long(enum) ** power
+                self.denom = long(denom) ** power
             else:
-                self.enum = 1
-                self.denom = 1
+                self.enum = long(denom) ** (-power)
+                self.denom = long(enum) ** (-power)
         else:
             self.enum = enum
             self.denom = denom
-
-    def _powi(self, x, y):
-        if type(y) != types.IntType: raise ValueError
-        if y < 0: raise ValueError
-        if y:
-            y2, yr = divmod(y, 2)
-            res = self._powi(x, y2)
-            if yr:
-                return x * res * res
-            else:
-                return res * res
-        else:
-            return 1
 
     def __cmp__(self, other):
         if other == None:
@@ -135,95 +186,24 @@ class frac:
         return "frac(%r, %r)" % (self.enum, self.denom) # I want to see the "L"
 
 
-class tick(frac):
-
-    def __init__(self, enum, denom, ticklevel=0, labellevel=0):
-        # ticklevel and labellevel are allowed to be None (in order to skip ticks or labels)
-        frac.__init__(self, enum, denom)
-        self.ticklevel = ticklevel
-        self.labellevel = labellevel
-
-    def __repr__(self):
-        return "tick(%r, %r, %s, %s)" % (self.enum, self.denom, self.ticklevel, self.labellevel)
-
-    def merge(self, other):
-        if self != other: raise ValueError
-        if (self.ticklevel == None) or ((other.ticklevel != None) and (other.ticklevel < self.ticklevel)):
-            self.ticklevel = other.ticklevel
-        if (self.labellevel == None) or ((other.labellevel != None) and (other.labellevel < self.labellevel)):
-            self.labellevel = other.labellevel
-
-
-class anypart:
-
-    def __init__(self, labels=None, sublabels=None):
-        self.labels = labels
-        self.sublabels = sublabels
-
-    def mergeticklists(self, list1, list2):
-        # TODO: could be improved??? (read python cookbook carefully)
-        # caution: side effects
-        i = 0
-        j = 0
-        try:
-            while 1: # we keep on going until we reach an index error
-                while list2[j] < list1[i]: # insert tick
-                   list1.insert(i, list2[j])
-                   i += 1
-                   j += 1
-                if list2[j] == list1[i]: # merge tick
-                   list1[i].merge(list2[j])
-                   j += 1
-                i += 1
-        except IndexError:
-            if j < len(list2):
-                list1 += list2[j:]
-        return list1
-
-    def setlabels(self, part):
-        if self.labels is not None:
-            for tick, label in zip([tick for tick in part if tick.labellevel == 0], self.labels):
-                tick.text = label
-        if self.sublabels is not None:
-            for tick, sublabel in zip([tick for tick in part if tick.labellevel == 1], self.sublabels):
-                tick.text = sublabel
-
-
-def _ensuresequence(arg):
-    "return arg or (arg,) if it wasn't a sequence before"
-    if arg is not None:
-        try:
-            arg[0]
-            try:
-                arg + ''
-                return (arg,)
-            except:
-                pass
-        except AttributeError:
-            return (arg,)
-        except IndexError:
-            return ()
-    return arg
-
-
 def _ensurefrac(arg):
-    "convert string to frac when appropriate"
+    "ensure frac by converting a string to frac"
 
     def createfrac(str):
         commaparts = str.split(".")
         for part in commaparts:
-            if not part.isdigit(): raise ValueError
+            if not part.isdigit(): raise ValueError("non-digits found in '%s'" % part)
         if len(commaparts) == 1:
             return frac(int(commaparts[0]), 1)
         elif len(commaparts) == 2:
             result = frac(1, 10l, power=len(commaparts[1]))
             result.enum = int(commaparts[0])*result.denom + int(commaparts[1])
             return result
-        else: raise ValueError
+        else: raise ValueError("multiple '.' found in '%s'" % str)
 
-    if not isinstance(arg, frac):
+    if _isstring(arg):
         fraction = arg.split("/")
-        if len(fraction) > 2: raise ValueError
+        if len(fraction) > 2: raise ValueError("multiple '/' found in '%s'" % arg)
         value = createfrac(fraction[0])
         if len(fraction) == 2:
             value2 = createfrac(fraction[1])
@@ -231,61 +211,140 @@ def _ensurefrac(arg):
         return value
     return arg
 
-def _nonemap(method, list):
-    "like map, but allows for list is None"
-    if list is None:
-        return None
-    return map(method, list)
+
+class tick(frac):
+    "a tick is a frac enhanced by a ticklevel, a labellevel and a text (they all might be None)"
+
+    def __init__(self, enum, denom, ticklevel=None, labellevel=None, text=None):
+        frac.__init__(self, enum, denom)
+        self.ticklevel = ticklevel
+        self.labellevel = labellevel
+        self.text = text
+
+    def merge(self, other):
+        if self.ticklevel is None or (other.ticklevel is not None and other.ticklevel < self.ticklevel):
+            self.ticklevel = other.ticklevel
+        if self.labellevel is None or (other.labellevel is not None and other.labellevel < self.labellevel):
+            self.labellevel = other.labellevel
+        if self.text is None:
+            self.text = other.text
+
+    def __repr__(self):
+        return "tick(%r, %r, %s, %s, %s)" % (self.enum, self.denom, self.ticklevel, self.labellevel, self.text)
 
 
-class manualpart(anypart):
+def _mergeticklists(list1, list2):
+    """return a merged list of ticks out of list1 and list2
+       lists have to be ordered (returned list is also ordered)
+       caution: side effects (input lists might be altered)"""
+    # TODO: improve this by bisect
+    i = 0
+    j = 0
+    try:
+        while 1: # we keep on going until we reach an index error
+            while list2[j] < list1[i]: # insert tick
+               list1.insert(i, list2[j])
+               i += 1
+               j += 1
+            if list2[j] == list1[i]: # merge tick
+               list1[i].merge(list2[j])
+               j += 1
+            i += 1
+    except IndexError:
+        if j < len(list2):
+            list1 += list2[j:]
+    return list1
 
-    def __init__(self, tickfracs=None, labelfracs=None, **args):
+
+def _mergetexts(ticks, texts):
+    "merges texts into ticks"
+    if _issequenceofsequences(texts):
+        for text, level in zip(texts, xrange(sys.maxint)):
+            usetext = _ensuresequence(text)
+            i = 0
+            for tick in ticks:
+                if tick.labellevel == level:
+                    tick.text = usetext[i]
+                    i += 1
+            if i != len(usetext):
+                raise IndexError("wrong sequence length of texts at level %i" % level)
+    elif texts is not None:
+        usetext = _ensuresequence(texts)
+        i = 0
+        for tick in ticks:
+            if tick.labellevel == 0:
+                tick.text = usetext[i]
+                i += 1
+        if i != len(usetext):
+            raise IndexError("wrong sequence length of texts")
+
+
+class manualpart:
+
+    def __init__(self, ticks=None, labels=None, texts=None):
         self.multipart = 0
-        self.tickfracs = _nonemap(_ensurefrac, _ensuresequence(tickfracs))
-        self.labelfracs = _nonemap(_ensurefrac, _ensuresequence(labelfracs))
-        anypart.__init__(self, **args)
+        self.ticks = ticks
+        self.labels = labels
+        self.texts = texts
 
-    def getpart(self, min, max, extendmin=0, extendmax=0, epsilon=1e-10):
-        if self.labelfracs is not None:
-            ticks = [tick(frac.enum, frac.denom, ticklevel = 0, labellevel = None) for frac in self.tickfracs]
-            ticks = self.mergeticklists(ticks, [tick(frac.enum, frac.denom, ticklevel = None, labellevel = 0) for frac in self.labelfracs])
+    def checkfraclist(self, *fracs):
+        if not len(fracs): return ()
+        sorted = list(fracs)
+        sorted.sort()
+        last = sorted[0]
+        for item in sorted[1:]:
+            if last == item:
+                raise ValueError("duplicate entry found")
+            last = item
+        return sorted
+
+    def defaultpart(self, min, max):
+        if self.ticks is None and self.labels is not None:
+            useticks = _getsequenceno(self.labels, 0)
         else:
-            ticks = [tick(frac.enum, frac.denom, ticklevel = 0, labellevel = 0) for frac in self.tickfracs]
-        self.setlabels(ticks)
+            useticks = self.ticks
+
+        if self.labels is None and self.ticks is not None:
+            uselabels = _getsequenceno(self.ticks, 0)
+        else:
+            uselabels = self.labels
+
+        ticks = []
+        if _issequenceofsequences(useticks):
+            for fracs, level in zip(useticks, xrange(sys.maxint)):
+                ticks = _mergeticklists(ticks, [tick(frac.enum, frac.denom, ticklevel = level)
+                                                for frac in self.checkfraclist(*map(_ensurefrac, _ensuresequence(fracs)))])
+        else:
+            ticks = _mergeticklists(ticks, [tick(frac.enum, frac.denom, ticklevel = 0)
+                                            for frac in self.checkfraclist(*map(_ensurefrac, _ensuresequence(useticks)))])
+
+        if _issequenceofsequences(uselabels):
+            for fracs, level in zip(uselabels, xrange(sys.maxint)):
+                ticks = _mergeticklists(ticks, [tick(frac.enum, frac.denom, labellevel = level)
+                                                for frac in self.checkfraclist(*map(_ensurefrac, _ensuresequence(fracs)))])
+        else:
+            ticks = _mergeticklists(ticks, [tick(frac.enum, frac.denom, labellevel = 0)
+                                            for frac in self.checkfraclist(*map(_ensurefrac, _ensuresequence(uselabels)))])
+                
+        _mergetexts(ticks, self.texts)
+
         return ticks
 
-    defaultpart = getpart
 
+class linpart:
 
-class linpart(anypart):
-
-    def __init__(self, tickfracs=None, labelfracs=None,
-                 extendtoticklevel=0, extendtolabellevel=None, epsilon=1e-10, **args):
-        """
-        zero-level labelfracs are created out of the zero-level tickfracs when labelfracs are None
-        all-level tickfracs are created out of the all-level labelfracs when tickfracs are None
-        get ticks but avoid labels by labelfracs = ()
-        get labels but avoid ticks by tickfracs = ()
-
-        We do not perform the adjustment of tickfracs or labelfracs within this
-        constructor, but later in getticks in order to allow for a change by
-        parameters of getticks. That can be used to create other partition schemes
-        (which create several posibilities) by derivating this class.
-        """
+    def __init__(self, ticks=None, labels=None, texts=None, extendtoticklevel=0, extendtolabellevel=None, epsilon=1e-10):
         self.multipart = 0
-        self.tickfracs = _nonemap(_ensurefrac, _ensuresequence(tickfracs))
-        self.labelfracs = _nonemap(_ensurefrac, _ensuresequence(labelfracs))
+        self.ticks = ticks
+        self.labels = labels
+        self.texts = texts
         self.extendtoticklevel = extendtoticklevel
         self.extendtolabellevel = extendtolabellevel
         self.epsilon = epsilon
-        anypart.__init__(self, **args)
 
-    def extendminmax(self, min, max, extendmin, extendmax, frac):
-        if extendmin:
-            min = float(frac) * math.floor(min / float(frac) + self.epsilon)
-        if extendmax:
-            max = float(frac) * math.ceil(max / float(frac) - self.epsilon)
+    def extendminmax(self, min, max, frac):
+        min = float(frac) * math.floor(min / float(frac) + self.epsilon)
+        max = float(frac) * math.ceil(max / float(frac) - self.epsilon)
         return min, max
 
     def getticks(self, min, max, frac, ticklevel=None, labellevel=None):
@@ -296,85 +355,76 @@ class linpart(anypart):
             ticks.append(tick(long(i) * frac.enum, frac.denom, ticklevel = ticklevel, labellevel = labellevel))
         return ticks
 
-    def getpart(self, min, max, extendmin=0, extendmax=0, tickfracs=None, labelfracs=None):
-        """
-        When tickfracs or labelfracs are set, they will be taken instead of the
-        values provided to the constructor. It is not allowed to provide something
-        to tickfracs and labelfracs here and at the constructor at the same time.
-        """
-        if tickfracs is None and labelfracs is None:
-            tickfracs = self.tickfracs
-            labelfracs = self.labelfracs
+    def defaultpart(self, min, max):
+        if self.ticks is None and self.labels is not None:
+            useticks = (_ensurefrac(_ensuresequence(self.labels)[0]),)
         else:
-            if self.tickfracs is not None or self.labelfracs is not None: raise ValueError
-        if tickfracs is None:
-            if labelfracs is None:
-                tickfracs = ()
-            else:
-                tickfracs = labelfracs
-        if labelfracs is None:
-            if len(tickfracs):
-                labelfracs = (tickfracs[0], )
-            else:
-                labelfracs = ()
+            useticks = map(_ensurefrac, _ensuresequence(self.ticks))
 
-        if self.extendtoticklevel is not None:
-            min, max = self.extendminmax(min, max, extendmin, extendmax, tickfracs[self.extendtoticklevel])
-        if self.extendtolabellevel is not None:
-            min, max = self.extendminmax(min, max, extendmin, extendmax, labelfracs[self.extendtolabellevel])
+        if self.labels is None and self.ticks is not None:
+            uselabels = (_ensurefrac(_ensuresequence(self.ticks)[0]),)
+        else:
+            uselabels = map(_ensurefrac, _ensuresequence(self.labels))
+
+        if self.extendtoticklevel is not None and len(useticks) > self.extendtoticklevel:
+            min, max = self.extendminmax(min, max, useticks[self.extendtoticklevel])
+        if self.extendtolabellevel is not None and len(uselabels) > self.extendtolabellevel:
+            min, max = self.extendminmax(min, max, uselabels[self.extendtolabellevel])
 
         ticks = []
-        for i in range(len(tickfracs)):
-            ticks = self.mergeticklists(ticks, self.getticks(min, max, tickfracs[i], ticklevel = i))
-        for i in range(len(labelfracs)):
-            ticks = self.mergeticklists(ticks, self.getticks(min, max, labelfracs[i], labellevel = i))
+        for i in range(len(useticks)):
+            ticks = _mergeticklists(ticks, self.getticks(min, max, useticks[i], ticklevel = i))
+        for i in range(len(uselabels)):
+            ticks = _mergeticklists(ticks, self.getticks(min, max, uselabels[i], labellevel = i))
 
-        self.setlabels(ticks)
+        _mergetexts(ticks, self.texts)
+
         return ticks
 
-    defaultpart = getpart
 
+class autolinpart:
+    defaulttickslist = ((frac(1, 1), frac(1, 2)),
+                        (frac(2, 1), frac(1, 1)),
+                        (frac(5, 2), frac(5, 4)),
+                        (frac(5, 1), frac(5, 2)))
 
-class autolinpart(linpart):
-    defaulttickfracslist = ((frac(1, 1), frac(1, 2)),
-                            (frac(2, 1), frac(1, 1)),
-                            (frac(5, 2), frac(5, 4)),
-                            (frac(5, 1), frac(5, 2)))
-
-    def __init__(self, tickfracslist=defaulttickfracslist,
-                 extendtoticklevel=0, extendtolabellevel=None, epsilon=1e-10):
-        linpart.__init__(self, extendtoticklevel=0, extendtolabellevel=None, epsilon=1e-10)
+    def __init__(self, tickslist=defaulttickslist, extendtoticklevel=0, epsilon=1e-10):
         self.multipart = 1
-        self.tickfracslist = tickfracslist
+        self.tickslist = tickslist
+        self.extendtoticklevel = extendtoticklevel
+        self.epsilon = epsilon
 
-    def defaultpart(self, min, max, extendmin=0, extendmax=0):
-        basefrac = frac(10L, 1, int(math.log(max - min) / math.log(10)))
-        tickfracs = self.tickfracslist[0]
-        usefracs = [tickfrac*basefrac for tickfrac in tickfracs]
-        self.lesstickfracindex = self.moretickfracindex = 0
-        self.lessbasefrac = self.morebasefrac = basefrac
-        self.usemin, self.usemax, self.useextendmin, self.useextendmax = min, max, extendmin, extendmax
-        return self.getpart(self.usemin, self.usemax, self.useextendmin, self.useextendmax, usefracs)
+    def defaultpart(self, min, max):
+        base = frac(10L, 1, int(math.log(max - min) / math.log(10)))
+        ticks = self.tickslist[0]
+        useticks = [tick * base for tick in ticks]
+        self.lesstickindex = self.moretickindex = 0
+        self.lessbase = self.morebase = base
+        self.usemin, self.usemax = min, max
+        part = linpart(ticks=useticks, extendtoticklevel=self.extendtoticklevel, epsilon=self.epsilon)
+        return part.defaultpart(self.usemin, self.usemax)
 
     def lesspart(self):
-        if self.lesstickfracindex < len(self.tickfracslist) - 1:
-            self.lesstickfracindex += 1
+        if self.lesstickindex < len(self.tickslist) - 1:
+            self.lesstickindex += 1
         else:
-            self.lesstickfracindex = 0
-            self.lessbasefrac.enum *= 10
-        tickfracs = self.tickfracslist[self.lesstickfracindex]
-        usefracs = [tickfrac*self.lessbasefrac for tickfrac in tickfracs]
-        return self.getpart(self.usemin, self.usemax, self.useextendmin, self.useextendmax, usefracs)
+            self.lesstickindex = 0
+            self.lessbase.enum *= 10
+        ticks = self.tickslist[self.lesstickindex]
+        useticks = [tick * self.lessbase for tick in ticks]
+        part = linpart(ticks=useticks, extendtoticklevel=self.extendtoticklevel, epsilon=self.epsilon)
+        return part.defaultpart(self.usemin, self.usemax)
 
     def morepart(self):
-        if self.moretickfracindex:
-            self.moretickfracindex -= 1
+        if self.moretickindex:
+            self.moretickindex -= 1
         else:
-            self.moretickfracindex = len(self.tickfracslist) - 1
-            self.morebasefrac.denom *= 10
-        tickfracs = self.tickfracslist[self.moretickfracindex]
-        usefracs = [tickfrac*self.morebasefrac for tickfrac in tickfracs]
-        return self.getpart(self.usemin, self.usemax, self.useextendmin, self.useextendmax, usefracs)
+            self.moretickindex = len(self.tickslist) - 1
+            self.morebase.denom *= 10
+        ticks = self.tickslist[self.moretickindex]
+        useticks = [tick * self.morebase for tick in ticks]
+        part = linpart(ticks=useticks, extendtoticklevel=self.extendtoticklevel, epsilon=self.epsilon)
+        return part.defaultpart(self.usemin, self.usemax)
 
 
 class shiftfracs:
@@ -383,7 +433,7 @@ class shiftfracs:
          self.fracs = fracs
 
 
-class logpart(anypart):
+class logpart:
 
     """
     This class looks like code duplication of linpart. However, it is not,
@@ -399,21 +449,16 @@ class logpart(anypart):
     shiftfracs1to9 = shiftfracs(10, *list(map(lambda x: frac(x, 10), range(1, 10))))
     #         ^- we always include 1 in order to get extendto(tick|label)level to work as expected
 
-    def __init__(self, tickshiftfracslist=None, labelshiftfracslist=None,
-                 extendtoticklevel=0, extendtolabellevel=None, epsilon=1e-10, **args):
-        """
-        For the parameters tickshiftfracslist and labelshiftfracslist apply
-        rules like for tickfracs and labelfracs in linpart.
-        """
+    def __init__(self, ticks=None, labels=None, texts=None, extendtoticklevel=0, extendtolabellevel=None, epsilon=1e-10):
         self.multipart = 0
-        self.tickshiftfracslist = _ensuresequence(tickshiftfracslist)
-        self.labelshiftfracslist = _ensuresequence(labelshiftfracslist)
+        self.ticks = ticks
+        self.labels = labels
+        self.texts = texts
         self.extendtoticklevel = extendtoticklevel
         self.extendtolabellevel = extendtolabellevel
         self.epsilon = epsilon
-        anypart.__init__(self, **args)
 
-    def extendminmax(self, min, max, extendmin, extendmax, shiftfracs):
+    def extendminmax(self, min, max, shiftfracs):
         minpower = None
         maxpower = None
         for i in xrange(len(shiftfracs.fracs)):
@@ -435,13 +480,17 @@ class logpart(anypart):
         else:
             maxfrac = shiftfracs.fracs[0]
             maxpower += 1
-        if extendmin:
-            min = float(minfrac) * math.pow(10, minpower)
-        if extendmax:
-            max = float(maxfrac) * math.pow(10, maxpower)
+        if minpower >= 0:
+            min = float(minfrac) * (10 ** minpower)
+        else:
+            min = float(minfrac) / (10 ** (-minpower))
+        if maxpower >= 0:
+            max = float(maxfrac) * (10 ** maxpower)
+        else:
+            max = float(maxfrac) / (10 ** (-maxpower))
         return min, max
 
-    def getticklist(self, min, max, shiftfracs, ticklevel=None, labellevel=None):
+    def getticks(self, min, max, shiftfracs, ticklevel=None, labellevel=None):
         ticks = []
         minimin = 0
         maximax = 0
@@ -454,45 +503,34 @@ class logpart(anypart):
             for i in range(imin, imax + 1):
                 pos = f * frac(shiftfracs.shift, 1, i)
                 fracticks.append(tick(pos.enum, pos.denom, ticklevel = ticklevel, labellevel = labellevel))
-            ticks = self.mergeticklists(ticks, fracticks)
+            ticks = _mergeticklists(ticks, fracticks)
         return ticks
 
-    def getpart(self, min, max, extendmin=0, extendmax=0, tickshiftfracslist=None, labelshiftfracslist=None):
-        """
-        For the parameters tickshiftfracslist and labelshiftfracslist apply
-        rules like for tickfracs and labelfracs in linpart.
-        """
-        if tickshiftfracslist is None and labelshiftfracslist is None:
-            tickshiftfracslist = self.tickshiftfracslist
-            labelshiftfracslist = self.labelshiftfracslist
+    def defaultpart(self, min, max):
+        if self.ticks is None and self.labels is not None:
+            useticks = (_ensuresequence(self.labels)[0],)
         else:
-            if self.tickshiftfracslist is not None or self.labelshiftfracslist is not None: raise ValueError
-        if tickshiftfracslist is None:
-            if labelshiftfracslist is None:
-                tickshiftfracslist = (shiftfracs(10), )
-            else:
-                tickshiftfracslist = labelshiftfracslist
-        if labelshiftfracslist is None:
-            if len(tickshiftfracslist):
-                labelshiftfracslist = (tickshiftfracslist[0], )
-            else:
-                labelshiftfracslist = ()
+            useticks = _ensuresequence(self.ticks)
 
-        if self.extendtoticklevel is not None:
-            min, max = self.extendminmax(min, max, extendmin, extendmax, tickshiftfracslist[self.extendtoticklevel])
-        if self.extendtolabellevel is not None:
-            min, max = self.extendminmax(min, max, extendmin, extendmax, labelshiftfracslist[self.extendtolabellevel])
+        if self.labels is None and self.ticks is not None:
+            uselabels = (_ensuresequence(self.ticks)[0],)
+        else:
+            uselabels = _ensuresequence(self.labels)
+
+        if self.extendtoticklevel is not None and len(useticks) > self.extendtoticklevel:
+            min, max = self.extendminmax(min, max, useticks[self.extendtoticklevel])
+        if self.extendtolabellevel is not None and len(uselabels) > self.extendtolabellevel:
+            min, max = self.extendminmax(min, max, uselabels[self.extendtolabellevel])
 
         ticks = []
-        for i in range(len(tickshiftfracslist)):
-            ticks = self.mergeticklists(ticks, self.getticklist(min, max, tickshiftfracslist[i], ticklevel = i))
-        for i in range(len(labelshiftfracslist)):
-            ticks = self.mergeticklists(ticks, self.getticklist(min, max, labelshiftfracslist[i], labellevel = i))
+        for i in range(len(useticks)):
+            ticks = _mergeticklists(ticks, self.getticks(min, max, useticks[i], ticklevel = i))
+        for i in range(len(uselabels)):
+            ticks = _mergeticklists(ticks, self.getticks(min, max, uselabels[i], labellevel = i))
 
-        self.setlabels(ticks)
+        _mergetexts(ticks, self.texts)
+
         return ticks
-
-    defaultpart = getpart
 
 
 class autologpart(logpart):
@@ -524,35 +562,46 @@ class autologpart(logpart):
 
     def __init__(self, shiftfracslists=defaultshiftfracslists, shiftfracslistsindex=None,
                  extendtoticklevel=0, extendtolabellevel=None, epsilon=1e-10):
-        logpart.__init__(self, extendtoticklevel=0, extendtolabellevel=None, epsilon=1e-10)
         self.multipart = 1
         self.shiftfracslists = shiftfracslists
         if shiftfracslistsindex is None:
             shiftfracslistsindex, dummy = divmod(len(shiftfracslists), 2)
         self.shiftfracslistsindex = shiftfracslistsindex
+        self.extendtoticklevel = extendtoticklevel
+        self.extendtolabellevel = extendtolabellevel
+        self.epsilon = epsilon
 
-    def defaultpart(self, min, max, extendmin=0, extendmax=0):
-        self.usemin, self.usemax, self.useextendmin, self.useextendmax = min, max, extendmin, extendmax
+    def defaultpart(self, min, max):
+        self.usemin, self.usemax = min, max
         self.moreshiftfracslistsindex = self.shiftfracslistsindex
         self.lessshiftfracslistsindex = self.shiftfracslistsindex
-        return self.getpart(self.usemin, self.usemax, self.useextendmin, self.useextendmax,
-                            self.shiftfracslists[self.shiftfracslistsindex][0],
-                            self.shiftfracslists[self.shiftfracslistsindex][1])
+        part = logpart(ticks=self.shiftfracslists[self.shiftfracslistsindex][0],
+                       labels=self.shiftfracslists[self.shiftfracslistsindex][1],
+                       extendtoticklevel=self.extendtoticklevel,
+                       extendtolabellevel=self.extendtolabellevel,
+                       epsilon=self.epsilon)
+        return part.defaultpart(self.usemin, self.usemax)
 
     def lesspart(self):
         self.moreshiftfracslistsindex += 1
         if self.moreshiftfracslistsindex < len(self.shiftfracslists):
-            return self.getpart(self.usemin, self.usemax, self.useextendmin, self.useextendmax,
-                                self.shiftfracslists[self.moreshiftfracslistsindex][0],
-                                self.shiftfracslists[self.moreshiftfracslistsindex][1])
+            part = logpart(ticks=self.shiftfracslists[self.moreshiftfracslistsindex][0],
+                           labels=self.shiftfracslists[self.moreshiftfracslistsindex][1],
+                           extendtoticklevel=self.extendtoticklevel,
+                           extendtolabellevel=self.extendtolabellevel,
+                           epsilon=self.epsilon)
+            return part.defaultpart(self.usemin, self.usemax)
         return None
 
     def morepart(self):
         self.lessshiftfracslistsindex -= 1
         if self.lessshiftfracslistsindex >= 0:
-            return self.getpart(self.usemin, self.usemax, self.useextendmin, self.useextendmax,
-                                self.shiftfracslists[self.lessshiftfracslistsindex][0],
-                                self.shiftfracslists[self.lessshiftfracslistsindex][1])
+            part = logpart(ticks=self.shiftfracslists[self.lessshiftfracslistsindex][0],
+                           labels=self.shiftfracslists[self.lessshiftfracslistsindex][1],
+                           extendtoticklevel=self.extendtoticklevel,
+                           extendtolabellevel=self.extendtolabellevel,
+                           epsilon=self.epsilon)
+            return part.defaultpart(self.usemin, self.usemax)
         return None
 
 #print linpart("1/2").getpart(0, 1.9)
@@ -1111,7 +1160,7 @@ class axispainter(attrlist.attrlist):
             for tick in axis.ticks:
                 if tick.labellevel is not None:
                     tick.labelstyles = list(self.selectstyle(tick.labellevel, self.labelstyles))
-                    if not hasattr(tick, "text"):
+                    if tick.text is None:
                         tick.suffix = axis.suffix
                         self.createtext(tick)
                     if self.labeldirection is not None and not self.attrcount(tick.labelstyles, tex.direction):
@@ -1425,17 +1474,14 @@ class graphxy(canvas.canvas):
                 continue
 
             # TODO: make use of stretch
-            axis.ticks = axis.part.defaultpart(axis.min / axis.factor,
-                                               axis.max / axis.factor,
-                                               not axis.fixmin,
-                                               not axis.fixmax)
+            axis.ticks = axis.part.defaultpart(axis.min / axis.factor, axis.max / axis.factor)
             if axis.part.multipart:
                 # TODO: Additional ratings (spacing of text etc.) -> move rating into painter
                 # XXX: lesspart and morepart can be called after defaultpart, although some
                 #      axes may share their autoparting, because the axes are processed sequentially
                 rate = axis.rate.getrate(axis.ticks, 1)
                 #print rate, axis.ticks
-                maxworse = 4 #TODO !!! (THIS JUST DOESN'T WORK WELL!!!)
+                maxworse = 6 #TODO !!! (THIS JUST DOESN'T WORK WELL!!!)
                 worse = 0
                 while worse < maxworse:
                     newticks = axis.part.lesspart()

@@ -35,7 +35,7 @@ def test_textaxis_errorbars(c, t, x, y):
     df = datafile.datafile("testdata2")
     g = c.insert(graph.graphxy(t, x, y, height=5,
                                x=graph.linaxis(min=0.5, max=12.5, title="Month",
-                                               part=graph.linpart("1", labels=df.getcolumn("month")),
+                                               part=graph.linpart("1", texts=df.getcolumn("month"), extendtoticklevel=None),
                                                painter=graph.axispainter(labelstyles=(tex.direction(30),tex.halign.right, tex.fontsize.scriptsize))),
                                y=graph.linaxis(min=-10, max=30, title="Temperature [$^\circ$C]"),
                                x2=graph.linaxis(), y2=graph.linaxis()))
