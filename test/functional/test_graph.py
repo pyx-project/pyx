@@ -68,7 +68,7 @@ def test_ownmark(c, x, y):
     (seg4d,), (seg1d,) = p4.intersect(p1)
     area = p1.split([seg1a, seg1d])[1] << p4.split([seg4d, seg4c])[1] << p3.split([seg3c, seg3b])[1] << p2.split([seg2b, seg2a])[1]
     area.append(path.closepath())
-    g.stroke(area, style.linewidth.THick, deco.filled(color.gray(0.5)))
+    g.stroke(area, [style.linewidth.THick, deco.filled([color.gray(0.5)])])
 
 def test_allerrorbars(c, x, y):
     df = data.datafile("data/testdata3")

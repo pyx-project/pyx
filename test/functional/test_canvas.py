@@ -17,11 +17,8 @@ c.insert(sc).stroke(p)
 
 c.stroke(c.bbox().rect())
 
-c.stroke(p.transformed(t1*t2*t3), color.rgb.green, style.linestyle.dashed)
+c.stroke(p.transformed(t1*t2*t3), [color.rgb.green, style.linestyle.dashed])
 
-c.stroke(p, color.rgb.red, style.linestyle.dotted, t3, t2, t1)
-
-# c.stroke(p.transformed(trafo.mirror(10)*trafo.translate(5,0)*trafo.rotate(22.5)), style.linestyle.dashed, color.rgb.red)
-
+c.stroke(p, [color.rgb.red, style.linestyle.dotted, t3, t2, t1])
 
 c.writetofile("test_canvas", paperformat="a4" )

@@ -13,12 +13,12 @@ c.writetofile("cross", bboxenlarge=0)
 
 c = canvas.canvas()
 
-c.stroke(path.line(0,4,6,4), style.linestyle.dashed)
+c.stroke(path.line(0,4,6,4), [style.linestyle.dashed])
 c.insert(epsfile.epsfile(0, 4, "cross.eps", align="bl", showbbox=1))
 c.insert(epsfile.epsfile(2, 4, "cross.eps", align="cl", showbbox=1))
 c.insert(epsfile.epsfile(4, 4, "cross.eps", align="tl", showbbox=1))
 
-c.stroke(path.line(3,6,3,10), style.linestyle.dashed)
+c.stroke(path.line(3,6,3,10), [style.linestyle.dashed])
 c.insert(epsfile.epsfile(3, 6, "cross.eps", align="bl", showbbox=1))
 c.insert(epsfile.epsfile(3, 8, "cross.eps", align="bc", showbbox=1))
 c.insert(epsfile.epsfile(3, 10, "cross.eps", align="br", showbbox=1))

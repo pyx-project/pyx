@@ -21,7 +21,7 @@ area = (pa.split([splitpa])[0] <<
         style.path.split([splita, splitb])[1] <<
         pb.split([splitpb])[0].reversed())
 area.append(path.closepath())
-g.stroke(area, deco.filled(color.gray(0.8)))
+g.stroke(area, [deco.filled([color.gray(0.8)])])
 g.text(g.pos(0.5 * (a + b), 0)[0], 1,
        r"\int_a^b f(x){\rm d}x", text.halign.center, text.mathmode)
 g.writetofile("integral")

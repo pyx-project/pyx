@@ -30,7 +30,7 @@ area.append(path.closepath())
 c = canvas.canvas()
 
 # draw first the area, then the function
-c.fill(area, color.gray(0.6))
-c.stroke(fline, style.linewidth.Thick, style.linejoin.round)
+c.fill(area, [color.gray(0.6)])
+c.stroke(fline, [style.linewidth.Thick, style.linejoin.round])
 
 c.writetofile("partialfill")

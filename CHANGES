@@ -82,6 +82,8 @@ TODO:
     - _xxx -> xxx_pt renaming
     - part -> parter renaming
   - canvas module:
+    - stroke, fill and draw do no longer accept variable length argument lists but
+      an attribute list as last argument (TODO: documentation)
     - stroke and fill now support trafos (TODO: documentation)
     - uppercase version of a4, a3, ... paperformats
   - config module:
@@ -93,8 +95,9 @@ TODO:
     - check for sorting of parameter list passed to path.split method
   - deco module (NEW): 
     - contains decoratedpath and decorators from canvas module
-    - all predefined arrows are classes now (like all decorators) and
-      attributes have to be passed explicitely (e.g. earrow.small(attrs=color.rgb.red))
+    - all predefined decorators are instances now (deco.stroked is thus ok) and 
+      attributes have to be passed explicitely, e.g., deco.earrow.small(attrs=color.rgb.red) 
+      and deco.stroked([color.rgb.blue])
     - TODO: document me
   - style module (NEW):
     - contains all line- and fillstyles which formerly had been defined in the canvas module

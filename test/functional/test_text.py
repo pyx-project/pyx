@@ -24,14 +24,14 @@ text.preamble(r"""%
 
 c.stroke(path.line(-1, 0, 6, 0))
 
-c.stroke(path.line(6, 5, 6.99, 5), style.linewidth.THIN)
-c.stroke(path.line(6, 6, 6.99, 6), style.linewidth.THIN)
-c.stroke(path.line(8.01, 5, 9, 5), style.linewidth.THIN)
-c.stroke(path.line(8.01, 6, 9, 6), style.linewidth.THIN)
-c.stroke(path.line(7, 4, 7, 4.99), style.linewidth.THIN)
-c.stroke(path.line(8, 4, 8, 4.99), style.linewidth.THIN)
-c.stroke(path.line(7, 6.01, 7, 7), style.linewidth.THIN)
-c.stroke(path.line(8, 6.01, 8, 7), style.linewidth.THIN)
+c.stroke(path.line(6, 5, 6.99, 5), [style.linewidth.THIN])
+c.stroke(path.line(6, 6, 6.99, 6), [style.linewidth.THIN])
+c.stroke(path.line(8.01, 5, 9, 5), [style.linewidth.THIN])
+c.stroke(path.line(8.01, 6, 9, 6), [style.linewidth.THIN])
+c.stroke(path.line(7, 4, 7, 4.99), [style.linewidth.THIN])
+c.stroke(path.line(8, 4, 8, 4.99), [style.linewidth.THIN])
+c.stroke(path.line(7, 6.01, 7, 7), [style.linewidth.THIN])
+c.stroke(path.line(8, 6.01, 8, 7), [style.linewidth.THIN])
 c.text(7, 5, "\\vrule width1truecm height1truecm")
 
 c.text(6.2, 0, "0", text.vshift.middlezero)
@@ -43,8 +43,8 @@ c.stroke(t1.path())
 
 t2 = c.insert(text.text(3, 0, "a \PyXMarker{beforeb}b\PyXMarker{afterb} c d e f g h i j k l m n o p q r s t u v w x y z", text.parbox(2, baseline=text.parbox.top)))
 c.stroke(t2.path())
-c.stroke(path.line(*(t1.marker("beforeb") + t2.marker("beforeb"))), color.rgb.red)
-c.stroke(path.line(*(t1.marker("afterb") + t2.marker("afterb"))), color.rgb.green)
+c.stroke(path.line(*(t1.marker("beforeb") + t2.marker("beforeb"))), [color.rgb.red])
+c.stroke(path.line(*(t1.marker("afterb") + t2.marker("afterb"))), [color.rgb.green])
 
 c.text(0, 3, r"\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} = \sqrt{\pi\over a}", text.mathmode)
 c.text(0, 6, r"\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} = \sqrt{\pi\over a}", text.size.LARGE, text.mathmode)

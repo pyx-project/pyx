@@ -206,10 +206,10 @@ class _canvas(base.PSCmd):
             self.insert(astyle)
         return self
 
-    def draw(self, path, *attrs):
+    def draw(self, path, attrs):
         """draw path on canvas using the style given by args
 
-        The argument list args consists of PathStyles, which modify
+        The argument attrs consists of PathStyles, which modify
         the appearance of the path, PathDecos, which add some new
         visual elements to the path, or trafos, which are applied
         before drawing the path.
@@ -218,7 +218,7 @@ class _canvas(base.PSCmd):
 
         """
 
-        attr.mergeattrs(attrs)
+        attrs = attr.mergeattrs(attrs)
         attr.checkattrs(attrs, [deco.deco, style.fillstyle, style.strokestyle, trafo._trafo])
 
         for t in attr.getattrs(attrs, [trafo._trafo]):
@@ -237,10 +237,10 @@ class _canvas(base.PSCmd):
 
         return self
 
-    def stroke(self, path, *attrs):
+    def stroke(self, path, attrs=[]):
         """stroke path on canvas using the style given by args
 
-        The argument list args consists of PathStyles, which modify
+        The argument attrs consists of PathStyles, which modify
         the appearance of the path, PathDecos, which add some new
         visual elements to the path, or trafos, which are applied
         before drawing the path.
@@ -249,12 +249,12 @@ class _canvas(base.PSCmd):
 
         """
 
-        return self.draw(path, deco.stroked(), *attrs)
+        return self.draw(path, [deco.stroked]+list(attrs))
 
-    def fill(self, path, *attrs):
+    def fill(self, path, attrs=[]):
         """fill path on canvas using the style given by args
 
-        The argument list args consists of PathStyles, which modify
+        The argument attrs consists of PathStyles, which modify
         the appearance of the path, PathDecos, which add some new
         visual elements to the path, or trafos, which are applied
         before drawing the path.
@@ -263,7 +263,7 @@ class _canvas(base.PSCmd):
 
         """
 
-        return self.draw(path, deco.filled(), *attrs)
+        return self.draw(path, [deco.filled]+list(attrs))
 
     def settexrunner(self, texrunner):
         """sets the texrunner to be used to within the text and text_pt methods"""
@@ -293,10 +293,11 @@ class _canvas(base.PSCmd):
 # canvas for patterns
 #
 
-class pattern(_canvas, style.fillstyle):
+class pattern(_canvas, style.fillstyle, attr.exclusiveattr):
 
     def __init__(self, painttype=1, tilingtype=1, xstep=None, ystep=None, bbox=None, trafo=None):
         _canvas.__init__(self)
+        attr.exclusiveattr.__init__(self, pattern)
         self.id = "pattern%d" % id(self)
         # XXX: some checks are in order
         if painttype not in (1,2):
@@ -351,6 +352,8 @@ class pattern(_canvas, style.fillstyle):
         pr = _canvas.prolog(self)
         pr.append(prolog.definition(self.id, string.join((patternprefix, patternproc, patternsuffix), "")))
         return pr
+
+pattern.clear = attr.clearclass(pattern)
 
 #
 # The main canvas class

@@ -22,6 +22,6 @@ for i in range(6):
            p.transformed(trafo.translate(0.25 * l, 0.5 * h)) )
 
 c = canvas.canvas()
-c.stroke(p, style.linewidth.Thin)
+c.stroke(p, [style.linewidth.Thin])
 c.writetofile("sierpinski", paperformat="a4")
 

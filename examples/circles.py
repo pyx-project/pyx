@@ -12,8 +12,8 @@ union = (circ1.split([circ1b, circ1a])[0]
          << path.closepath())
 
 c = canvas.canvas()
-c.fill(union, color.rgb.blue)
-c.fill(intersection, color.rgb.red)
+c.fill(union, [color.rgb.blue])
+c.fill(intersection, [color.rgb.red])
 c.stroke(circ1)
 c.stroke(circ2)
 c.writetofile("circles")

@@ -23,7 +23,7 @@ def drawexample(canvas, corner, linealign):
         if round(phi / math.pi * 2 * 100) % 100:
             canvas.stroke(b.path(centerradius=0.05))
         else:
-            canvas.stroke(b.path(centerradius=0.05), color.rgb.red)
+            canvas.stroke(b.path(centerradius=0.05), [color.rgb.red])
         phi += math.pi / 50
 
 def distances():

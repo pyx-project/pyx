@@ -13,7 +13,7 @@ box.tile(boxes, 0, 1, 0)
 c = canvas.canvas()
 for b in boxes:
     # plot the boxes path
-    c.stroke(b.path(), color.rgb.green)
+    c.stroke(b.path(), [color.rgb.green])
     # a second time with bezier rounded corners
-    c.stroke(b.path(bezierradius=0.5), color.rgb.red)
+    c.stroke(b.path(bezierradius=0.5), [color.rgb.red])
 c.writetofile("box")
