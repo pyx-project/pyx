@@ -47,6 +47,7 @@ class PSAttr(PSOp):
     
     pass
 
+
 #
 # PSCmd class
 #
@@ -63,3 +64,14 @@ class PSCmd(PSOp):
     
     def bbox(self):
        raise NotImplementedError, "cannot call virtual method bbox()"
+
+
+#
+# PyX Exception class
+#
+
+class PyXExcept(Exception):
+
+    """base class for all PyX Exceptions"""
+
+    pass

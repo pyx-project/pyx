@@ -41,7 +41,6 @@ _m = {
       'mm':   0.001,
       'inch': 0.01*2.54,
       'pt':   0.01*2.54/72,
-      'tpt':  0.01*2.54/72.27,
     }
 
 def set(uscale=None, vscale=None, wscale=None):
@@ -65,9 +64,9 @@ def convert_to(l, dest_unit="m"):
         l=length(l)       # convert to length instance if necessary
 
     return ( l.length['t']            +
-	     l.length['u']*scale['u'] +
-	     l.length['v']*scale['v'] +
-	     l.length['w']*scale['w'] ) / _m[dest_unit]
+             l.length['u']*scale['u'] +
+             l.length['v']*scale['v'] +
+             l.length['w']*scale['w'] ) / _m[dest_unit]
 
 
 
@@ -77,9 +76,6 @@ def tom(l):
 def topt(l):
     return convert_to(l, "pt")
         
-def totpt(l):
-    return convert_to(l, "tpt")
-
 ################################################################################
 # class for generic length
 ################################################################################
@@ -93,7 +89,7 @@ class length:
      - a string has to consist of a maximum of three parts:
        -quantifier: integer/float value
        -unit_type:  "t", "u", "v", or "w". Optional, defaults to "u"
-       -unit_name:  "m", "cm", "mm", "inch", "pt", "tpt". Optional, defaults to default_unit
+       -unit_name:  "m", "cm", "mm", "inch", "pt". Optional, defaults to default_unit
 
     Internally all length are stored in units of m as a quadruple for the four unit_types
     """
@@ -119,7 +115,7 @@ class length:
                 self.length[default_type] = l*_m[dunit or default_unit]
             else:
                 raise ( NotImplementedError,
-			"cannot convert given argument to length type" )
+                        "cannot convert given argument to length type" )
         if glength:
             self.length=glength
 
@@ -174,11 +170,6 @@ class pt(length):
        length.__init__(self, l, default_type=default_type, dunit="pt")
 
 
-class tpt(length):
-    def __init__(self, l=None, default_type="u"):
-       length.__init__(self, l, default_type=default_type, dunit="tpt")
-
-
 class m(length):
     def __init__(self, l=None, default_type="u"):
        length.__init__(self, l, default_type=default_type, dunit="m")
@@ -190,11 +181,6 @@ class t_pt(length):
     def __init__(self, l=None):
        length.__init__(self, l, default_type="t", dunit="pt")
        
-
-class t_tpt(length):
-    def __init__(self, l=None):
-       length.__init__(self, l, default_type="t", dunit="tpt")
-
 
 class t_m(length):
     def __init__(self, l=None):

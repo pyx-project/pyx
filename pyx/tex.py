@@ -20,15 +20,8 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-# TODO: - remove hsize (becomes a parameter of valign)
-#       - set linewidth in latex-mode (also in tex-mode?) in a vbox
-#       - what about hsize in a vbox (related to the previous)?
-#       - global msglevel
+# TODO: - set linewidth in latex-mode (also in tex-mode?) in a vbox
 #       - aux-file handling
-#       - remove tpt (also in unit --- it's not needed anymore)
-#       - various cleanups: - outsource instancelist
-#                           - use dictargs in constructor (remove classes)
-#                           - class tree
 #       - documentation & bug (side effect) description:
 #                           - par-bug in vbox
 #                           - double {} for color etc.
@@ -43,157 +36,143 @@ and tex.textdp appraise the width, height, and depth of a text, respectively.
 """
 
 import os, string, tempfile, sys, md5, traceback, time, StringIO
-import base, unit, epsfile, color
+import base, PSCmd, unit, epsfile, color, instancelist
 
-class _Attr:
-    """base class for all PyX attributes (TODO: has to be defined somewhere else)"""
+class _texattr:
+    """base class for all TeX attributes"""
     pass
 
-class _AttrTex(_Attr):
-    """base class for all attributes handed to methods of class tex"""
-    pass
-
-class _AttrTexVal(_AttrTex):
-    """an attribute, which has a value"""
+class fontsize(_texattr):
+    """fontsize TeX attribute"""
     def __init__(self, value):
         self.value = value
-
-class _AttrTexStr(_AttrTex):
-    """makes a _AttrTexVal string-able"""
     def __str__(self):
-        return str(self.value)
+        return self.value
 
-class _AttrTexCmp(_AttrTex):
-    """makes a _AttrTexVal comparable"""
+fontsize.tiny = fontsize("tiny")
+fontsize.scriptsize = fontsize("scriptsize")
+fontsize.footnotesize = fontsize("footnotesize")
+fontsize.small = fontsize("small")
+fontsize.normalsize = fontsize("normalsize")
+fontsize.large = fontsize("large")
+fontsize.Large = fontsize("Large")
+fontsize.LARGE = fontsize("LARGE")
+fontsize.huge = fontsize("huge")
+fontsize.Huge = fontsize("Huge")
+
+class halign(_texattr):
+    """tex horizontal align attribute"""
+    def __init__(self, value):
+        self.value = value
     def __cmp__(self, other):
         return cmp(self.value, other.value)
     __rcmp__ = __cmp__
 
-class _AttrTexValStr(_AttrTexVal, _AttrTexStr):
-    """an attribute with a string-able value"""
-    pass
-
-class _AttrTexValCmp(_AttrTexVal, _AttrTexCmp):
-    """an attribute with a comparable value"""
-    pass
-
-class _AttrTexValCmpStr(_AttrTexVal, _AttrTexStr, _AttrTexCmp):
-    """an attribute with a string-able and comparable value"""
-    pass
-
-class _halign(_AttrTexValCmp):
-    """base attribute for halign, an comparable value"""
-    pass
-
-class halign:
-    """ """
-    left   = _halign("left")
-    center = _halign("center")
-    right  = _halign("right")
+halign.left   = halign("left")
+halign.center = halign("center")
+halign.right  = halign("right")
    
-class hsize(_AttrTexStr):
+class _valign(_texattr):
+    """tex abstract horizontal align attribute"""
+    def __init__(self, hsize):
+        self.hsize = hsize
+
+class vtop(_valign):
+    """tex top vertical align attribute"""
+    pass
+
+class vbox(_valign):
+    """tex bottom vertical align attribute"""
+    pass
+
+class direction(_texattr):
+    """tex output direction attribute"""
     def __init__(self, value):
-        self.value = unit.totpt(value)
+        self.value = value
+    def __str__(self):
+        return value
 
-class _valign(_AttrTexValCmpStr):
-    pass
+direction.horizontal = direction(0)
+direction.vertical   = direction(90)
+direction.upsidedown = direction(180)
+direction.rvertical  = direction(270)
 
-class valign:
-    top    = _valign("vtop")
-    bottom = _valign("vbox")
-
-class _fontsize(_AttrTexValStr):
-    pass
-
-class fontsize:
-    tiny         = _fontsize("tiny")
-    scriptsize   = _fontsize("scriptsize")
-    footnotesize = _fontsize("footnotesize")
-    small        = _fontsize("small")
-    normalsize   = _fontsize("normalsize")
-    large        = _fontsize("large")
-    Large        = _fontsize("Large")
-    LARGE        = _fontsize("LARGE")
-    huge         = _fontsize("huge")
-    Huge         = _fontsize("Huge")
-
-class _direction(_AttrTexValStr):
-    pass
-
-class direction(_direction):
-    horizontal = _direction(0)
-    vertical   = _direction(90)
-    upsidedown = _direction(180)
-    rvertical  = _direction(270)
-
-class _style(_AttrTex):
+class style(_texattr):
+    """tex style modification attribute"""
     def __init__(self, praefix, suffix):
         self.praefix = praefix
         self.suffix = suffix
     def ModifyCmd(self, str):
         return self.praefix + str + self.suffix
 
-class style:
-    text = _style("", "")
-    math = _style("$\displaystyle{}", "$")
+style.text = style("", "")
+style.math = style("$\displaystyle{}", "$")
 
-class _msglevel(_AttrTexValCmp):
+class msghandler(_texattr):
     pass
 
-class msglevel:
-    #
-    # this class defines levels for displaying TeX/LaTeX messages:
-    # msglevel.showall    -- shows all messages
-    # msglevel.hideload   -- ignores messages inside proper "()"
-    # msglevel.hidewaring -- ignore all messages without a line starting with "! "
-    # msglevel.hideall    -- ignore all messages
-    #
-    # typically msglevel.hideload shows all interesting messages (errors, overfull boxes etc.)
-    # while msglevel.hidewarning shows only error messages
-    #
-    # msglevel.hideload is the default level
-    #
-    showall     = _msglevel(0)
-    hideload    = _msglevel(1)
-    hidewarning = _msglevel(2)
-    hideall     = _msglevel(3)
+class _showall(msghandler):
+    """show all messages"""
+    def parsemsg(self, msg):
+         return str
+msghandler.showall = _showall()
 
-class _mode(_AttrTexValCmpStr):
-    pass
+class _hideload(msghandler):
+    """hides all messages inside proper '(' and ')'"""
+    def parsemsg(self, msg):
+        depth = 0
+        newstr = ""
+        for c in msg:
+            if c == "(":
+                depth += 1
+            elif c == ")":
+                depth -= 1
+                if depth < 0:
+                    break
+            elif depth == 0:
+                newstr += c
+        else:
+            # replace str only if loop was completed and not closing "(" missing
+            if depth == 0:
+                str = newstr
+        return str
+msghandler.hideload = _hideload()
 
-class mode:
-    TeX = _mode("TeX")
-    LaTeX = _mode("LaTeX")
+class _hidebuterror(msghandler):
+    """hides all messages whenever they do not contain a line starting with '! '"""
+    def parsemsg(self, msg):
+        # the "\n" + msg instead of msg itself is needed, if the message starts with "! "
+        if string.find("\n" + msg, "\n! ") != -1 or string.find("\r" + msg, "\r! ") != -1:
+            return str
+        else:
+            return ""
+msghandler.hidebuterror = _hidebuterror()
 
-class latexsize(_AttrTexValStr):
-    pass
-
-class docclass(_AttrTexValStr):
-    pass
-
-class docopt(_AttrTexValStr):
-    pass
-
-class texfilename(_AttrTexValStr):
-    pass
-
-class _aextent(_AttrTexValCmpStr):
-    pass
+class _hideall(msghandler):
+    """hides all messages"""
+    def parsemsg(self, msg):
+        return ""
+msghandler.hideall = _hideall()
 
 class _extent:
-    wd = _aextent("wd")
-    ht = _aextent("ht")
-    dp = _aextent("dp")
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return self.value
+
+_extent.wd = _extent("wd")
+_extent.ht = _extent("ht")
+_extent.dp = _extent("dp")
    
 
-class TexException(Exception):
+class TexExcept(base.PyXExcept):
     pass
 
-class TexLeftParenthesisError(TexException):
+class TexLeftParenthesisError(TexExcept):
     def __str__(self):
         return "no matching parenthesis for '{' found"
 
-class TexRightParenthesisError(TexException):
+class TexRightParenthesisError(TexExcept):
     def __str__(self):
         return "no matching parenthesis for '}' found"
 
@@ -203,10 +182,10 @@ class _TexCmd:
     BeginPyxMarker = "Begin" + PyxMarker
     EndPyxMarker = "End" + PyxMarker
 
-    def __init__(self, Marker, Stack, msglevel):
+    def __init__(self, Marker, Stack, msghandler):
         self.Marker = Marker
         self.Stack = Stack
-        self.msglevel = msglevel
+        self.msghandler = msghandler
 
     def TexParenthesisCheck(self, Cmd):
 
@@ -258,45 +237,20 @@ class _TexCmd:
             raise IOError
         else:
             # check if message can be ignored
-            if self.msglevel == msglevel.showall:
-                doprint = 0
-                for c in msg:
-                    if c not in string.whitespace:
-                        doprint = 1
-            elif self.msglevel == msglevel.hideload:
-                depth = 0
-                doprint = 0
-                for c in msg:
-                    if c == "(":
-                        depth = depth + 1
-                    elif c == ")":
-                        depth = depth - 1
-                        if depth < 0:
-                            doprint = 1
-                    elif depth == 0 and c not in " \t\r\n":
-                        doprint = 1
-            elif self.msglevel == msglevel.hidewarning:
-                doprint = 0
-                # the "\n" + msg instead of msg itself is needed, if
-                # the message starts with "! "
-                if string.find("\n" + msg, "\n! ") != -1 or string.find(msg, "\r! ") != -1:
-                    doprint = 1
-            elif self.msglevel == msglevel.hideall:
-                doprint = 0
-            else:
-                assert 0, "msglevel unknown"
-
-            # print the message if needed
-            if doprint:
-                print "Traceback (innermost last):"
-                traceback.print_list(self.Stack)
-                print "(La)TeX Message:"
-                print msg
+            doprint = 0
+            parsedmsg = self.msghandler.parsemsg(msg)
+            for c in parsedmsg:
+                if c not in string.whitespace:
+                    print "Traceback (innermost last):"
+                    traceback.print_list(self.Stack)
+                    print "(La)TeX Message:"
+                    print msg
+                    break
 
 class _DefCmd(_TexCmd):
 
-    def __init__(self, DefCmd, Marker, Stack, msglevel):
-        _TexCmd.__init__(self, Marker, Stack, msglevel)
+    def __init__(self, DefCmd, Marker, Stack, msghandler):
+        _TexCmd.__init__(self, Marker, Stack, msghandler)
         self.TexParenthesisCheck(DefCmd)
         self.DefCmd = DefCmd
 
@@ -316,8 +270,8 @@ class _CmdPut:
 
 class _BoxCmd(_TexCmd):
 
-    def __init__(self, DefCmdsStr, BoxCmd, style, fontsize, hsize, valign, Marker, Stack, msglevel):
-        _TexCmd.__init__(self, Marker, Stack, msglevel)
+    def __init__(self, DefCmdsStr, BoxCmd, style, fontsize, valign, Marker, Stack, msghandler):
+        _TexCmd.__init__(self, Marker, Stack, msghandler)
         self.TexParenthesisCheck(BoxCmd)
         self.DefCmdsStr = DefCmdsStr
         self.BoxCmd = "{%s}" % BoxCmd # add another "{" to ensure, that everything goes into the Box
@@ -325,13 +279,13 @@ class _BoxCmd(_TexCmd):
         self.CmdExtents = []
 
         self.BoxCmd = style.ModifyCmd(self.BoxCmd)
-        if hsize:
-            if valign:
-                self.BoxCmd = "\\%s{\hsize%struept{%s}}" % (valign, hsize, self.BoxCmd, )
+        if valign:
+            if isinstance(valign, vtop):
+                self.BoxCmd = "\\vtop{\hsize%struept{%s}}" % (valign.hsize, self.BoxCmd, )
+            elif isinstance(valign, vbox):
+                self.BoxCmd = "\\vbox{\hsize%struept{%s}}" % (valign.hsize, self.BoxCmd, )
             else:
-                self.BoxCmd = "\\vtop{\hsize%struept{%s}}" % (hsize, self.BoxCmd, )
-        else:
-            assert not valign, "hsize needed to use valign"
+                """TODO: raise error"""
         self.BoxCmd = "\\setbox\\localbox=\\hbox{\\%s%s}%%\n" % (fontsize, self.BoxCmd, )
 
     def __cmp__(self, other):
@@ -339,7 +293,6 @@ class _BoxCmd(_TexCmd):
     __rcmp__ = __cmp__
 
     def write(self, file):
-
         self.WriteBeginMarker(file)
         file.write(self.BoxCmd)
         self.WriteEndMarker(file)
@@ -398,56 +351,15 @@ class _BoxCmd(_TexCmd):
         Str = self.MD5() + ":" + str(extent)
         for Size in Sizes:
             if Size[:len(Str)] == Str:
-                string.rstrip(Size.split(":")[3])
-                return unit.length(string.rstrip(Size.split(":")[3]).replace("pt"," t tpt"))
-        return unit.length("10 t tpt")
+                texpt = float(string.rstrip(Size.split(":")[3][:-3]))
+                return unit.t_pt(texpt * 72.0 / 72.27)
+        return unit.t_pt(0)
 
+class _tex(PSCmd.PSCmd, instancelist.InstanceList):
 
-class _InstanceList:
-
-    def AllowedInstances(self, Instances, AllowedClassesOnce, AllowedClassesMultiple = []):
-        for i in range(len(Instances)):
-            for j in range(len(AllowedClassesOnce)):
-                if isinstance(Instances[i], AllowedClassesOnce[j]):
-                    del AllowedClassesOnce[j]
-                    break
-            else:
-                for j in range(len(AllowedClassesMultiple)):
-                    if isinstance(Instances[i], AllowedClassesMultiple[j]):
-                        break
-                else:
-                    assert 0, "instance not allowed"
-
-    def ExtractInstance(self, Instances, Class, DefaultInstance = None):
-        for Instance in Instances:
-            if isinstance(Instance, Class):
-                return Instance
-        return DefaultInstance
-
-    def ExtractInstances(self, Instances, Class, DefaultInstances = []):
-        Result = []
-        for Instance in Instances:
-            if isinstance(Instance, Class):
-                Result = Result + [ Instance, ]
-        if len(Result) == 0:
-            return DefaultInstance
-        else:
-            return Result
-
-
-class tex(base.PSCmd, _InstanceList):
-
-    def __init__(self, *styleparams):
-        self.AllowedInstances(styleparams, [_mode, texfilename, latexsize, docclass, docopt, ])
-        self.mode = self.ExtractInstance(styleparams, _mode, mode.TeX)
-        self.texfilename = self.ExtractInstance(styleparams, texfilename)
-        if self.mode == mode.TeX:
-            self.AllowedInstances(styleparams, [_mode, latexsize, texfilename])
-            self.latexsize = self.ExtractInstance(styleparams, latexsize, latexsize("10pt"))
-        else:
-            self.AllowedInstances(styleparams, [_mode, docclass, docopt, texfilename])
-            self.docclass = self.ExtractInstance(styleparams, docclass, docclass("article"))
-            self.docopt = self.ExtractInstance(styleparams, docopt)
+    def __init__(self, defaultmsghandler = msghandler.hideload, texfilename=None):
+        self.defaultmsghandler = defaultmsghandler
+        self.texfilename = texfilename
         self.DefCmds = []
         self.DefCmdsStr = None
         self.BoxCmds = []
@@ -467,24 +379,10 @@ class tex(base.PSCmd, _InstanceList):
         except IOError:
             self.Sizes = [ ]
 
-        if self.mode == mode.TeX:
-            # TODO: other ways for creating font sizes?
-            LtsName = os.path.join(os.path.dirname(__file__), "lts", str(self.latexsize) + ".lts")
-            self.define(open(LtsName, "r").read())
-            self.define("\\hsize0truein%\n\\vsize0truein%\n\\hoffset-1truein%\n\\voffset-1truein")
-        if self.mode == mode.LaTeX:
-            if self.docopt:
-                self.define("\\documentclass[" + str(self.docopt) + "]{" + str(self.docclass) + "}")
-            else:
-                self.define("\\documentclass{" + str(self.docclass) + "}")
-            self.define("\\hsize0truein%\n\\vsize0truein%\n\\hoffset-1truein%\n\\voffset-1truein")
-
-
-
-    def GetStack(self):
+    def _getstack(self):
         return traceback.extract_stack(sys._getframe().f_back.f_back.f_back)
     
-    def execute(self, command):
+    def _execute(self, command):
         if os.system(command):
             print "The exit code of the following command was non-zero:"
             print command
@@ -494,35 +392,35 @@ class tex(base.PSCmd, _InstanceList):
             print "constructor of the class pyx.tex. You can then try to run the command"
             print "by yourself."
 
-    def RunTex(self):
+    #def _executetex(self, tempname):
+
+    def _executedvips(self, tempname):
+        self._execute("dvips -O0in,11in -E -o %(t)s.eps %(t)s.dvi > %(t)s.dvipsout 2> %(t)s.dvipserr" % {"t": tempname})
+
+    def _run(self):
 
         'run LaTeX&dvips for TexCmds, report errors, return postscript string'
     
-        # TODO: improve file handling (although it's quite usable now, those things can always be improved)
+        # TODO: improve file handling (it's quite usable now, but those things can always be improved)
 
         if self.DoneRunTex:
             return
 
-        WorkDir = os.getcwd()
         if self.texfilename:
-            MkTemp = str(self.texfilename)
+            mktemp = str(self.texfilename)
         else:
             storetempdir = tempfile.tempdir
             tempfile.tempdir = "."
-            MkTemp = tempfile.mktemp()
+            mktemp = tempfile.mktemp()
             tempfile.tempdir = storetempdir
-        TempDir = os.path.dirname(MkTemp)
-        TempName = os.path.basename(MkTemp)
-        try:
-            os.chdir(TempDir)
-        except:
-            pass
+        tempname = os.path.basename(mktemp)
 
-        texfile = open(TempName + ".tex", "w")
+        texfile = open(tempname + ".tex", "w")
 
         texfile.write("\\nonstopmode%\n")
         texfile.write("\\def\PyX{P\\kern-.25em\\lower.5ex\\hbox{Y}\\kern-.2em X}%\n")
-        texfile.write("\\newwrite\\sizefile%\n\\newbox\\localbox%\n\\newbox\\pagebox%\n\\immediate\\openout\\sizefile=" + TempName + ".size%\n")
+        texfile.write("\\newwrite\\sizefile%\n\\newbox\\localbox%\n\\newbox\\pagebox%\n")
+        texfile.write("\\immediate\\openout\\sizefile=%s.size%%\n" % tempname)
 
         for Cmd in self.DefCmds:
             Cmd.write(texfile)
@@ -533,22 +431,13 @@ class tex(base.PSCmd, _InstanceList):
             Cmd.write(texfile)
 
         texfile.write("}\n\\immediate\\closeout\\sizefile\n\\shipout\\copy\\pagebox\n")
-        if self.mode == mode.TeX:
-            texfile.write("\\end\n")
-
-        if self.mode == mode.LaTeX:
-            texfile.write("\\end{document}\n")
+        texfile.write(self._endcmd())
         texfile.close()
 
-        if self.mode == mode.LaTeX:
-            auxfile = open(TempName + ".aux", "w")
-            auxfile.write("\\relax\n")
-            auxfile.close()
-
-        self.execute("TEXINPUTS=" + WorkDir + ": " + string.lower(str(self.mode)) + " " + TempName + ".tex > " + TempName + ".texout 2> " + TempName + ".texerr")
+        self._executetex(tempname)
 
         try:
-            outfile = open(TempName + ".texout", "r")
+            outfile = open(tempname + ".texout", "r")
             for Cmd in self.DefCmds + self.BoxCmds:
                 Cmd.CheckMarkerError(outfile)
             outfile.close()
@@ -562,7 +451,7 @@ class tex(base.PSCmd, _InstanceList):
             print "constructor of the class pyx.tex. You can then try to run (La)TeX"
             print "by yourself."
 
-        if not os.access(TempName + ".dvi", 0):
+        if not os.access(tempname + ".dvi", 0):
             print "Can't find the dvi file which should be produced by (La)TeX."
             print "May be, you just have no disk space available. Or something badly"
             print "in your commands caused (La)TeX to give up completely. Or your"
@@ -573,8 +462,8 @@ class tex(base.PSCmd, _InstanceList):
             print "by yourself."
 
         else:
-            self.execute("dvips -O0in,11in -E -o " + TempName + ".eps " + TempName + ".dvi > " + TempName + ".dvipsout 2> " + TempName + ".dvipserr")
-            if not os.access(TempName + ".eps", 0):
+            self._executedvips(tempname)
+            if not os.access(tempname + ".eps", 0):
                 print "Error reading the eps file which should be produced by dvips."
                 print "May be, you just have no disk space available. Or something badly"
                 print "in your commands caused dvips to give up completely. Or your"
@@ -584,7 +473,7 @@ class tex(base.PSCmd, _InstanceList):
                 print "constructor of the class pyx.tex. You can then try to run dvips"
                 print "by yourself."
             else:
-                aepsfile = epsfile.epsfile(TempName + ".eps", translatebb = 0)
+                aepsfile = epsfile.epsfile(tempname + ".eps", translatebb = 0)
                 self.bbox = aepsfile.bbox()
                 epsdatafile = StringIO.StringIO()
                 aepsfile.write(epsdatafile)
@@ -595,7 +484,7 @@ class tex(base.PSCmd, _InstanceList):
         OldSizes = self.Sizes
 
         try:
-            NewSizeFile = open(TempName + ".size", "r")
+            NewSizeFile = open(tempname + ".size", "r")
             NewSizes = NewSizeFile.readlines()
         except IOError:
             NewSizes = []
@@ -614,21 +503,20 @@ class tex(base.PSCmd, _InstanceList):
                         SizeFile.write(OldSize)
 
         if not self.texfilename:
-            for suffix in ("tex", "log", "aux", "size", "dvi", "eps", "texout", "texerr", "dvipsout", "dvipserr", ):
+            for suffix in ("tex", "log", "size", "dvi", "eps", "texout", "texerr", "dvipsout", "dvipserr", ):
                 try:
-                    os.unlink(TempName + "." + suffix)
+                    os.unlink(tempname + "." + suffix)
                 except:
                     pass
         
-        os.chdir(WorkDir)
         self.DoneRunTex = 1
 
     def bbox(self):
-        self.RunTex()
+        self._run()
         return self.bbox
 
     def write(self, file):
-        self.RunTex()
+        self._run()
         file.writelines(self.epsdata)
        
     def define(self, Cmd, *styleparams):
@@ -638,29 +526,27 @@ class tex(base.PSCmd, _InstanceList):
 
         self.DoneRunTex = 0
 
-        self.AllowedInstances(styleparams, [_msglevel, ])
+        self.AllowedInstances(styleparams, [msghandler, ])
 
         self.DefCmds.append(_DefCmd(Cmd + "%\n",
                                     len(self.DefCmds)+ len(self.BoxCmds),
-                                    self.GetStack(),
-                                    self.ExtractInstance(styleparams, _msglevel, msglevel.hideload)))
+                                    self._getstack(),
+                                    self.ExtractInstance(styleparams, msghandler, msghandler.hideload)))
 
     def InsertCmd(self, Cmd, styleparams):
 
         if not len(self.BoxCmds):
-            if self.mode == mode.LaTeX:
-                self.define("\\begin{document}")
+            self._beginboxcmds()
             self.DefCmdsStr = reduce(lambda x,y: x + y.DefCmd, self.DefCmds, "")
 
         MyCmd = _BoxCmd(self.DefCmdsStr,
                         Cmd,
-                        self.ExtractInstance(styleparams, _style, style.text),
-                        self.ExtractInstance(styleparams, _fontsize, fontsize.normalsize),
-                        self.ExtractInstance(styleparams, hsize),
+                        self.ExtractInstance(styleparams, style, style.text),
+                        self.ExtractInstance(styleparams, fontsize, fontsize.normalsize),
                         self.ExtractInstance(styleparams, _valign),
                         len(self.DefCmds)+ len(self.BoxCmds),
-                        self.GetStack(),
-                        self.ExtractInstance(styleparams, _msglevel, msglevel.hideload))
+                        self._getstack(),
+                        self.ExtractInstance(styleparams, msghandler, msghandler.hideload))
         if MyCmd not in self.BoxCmds:
             self.BoxCmds.append(MyCmd)
         for Cmd in self.BoxCmds:
@@ -676,12 +562,12 @@ class tex(base.PSCmd, _InstanceList):
         
         self.DoneRunTex = 0
 
-        self.AllowedInstances(styleparams, [_style, _fontsize, _halign, hsize, _valign, _direction, _msglevel, color.color, ])
+        self.AllowedInstances(styleparams, [style, fontsize, halign, _valign, direction, msghandler, color.color, ])
         
         self.InsertCmd(Cmd, styleparams).Put(x * 72.27 / 72.0,
                                              y * 72.27 / 72.0,
-                                             self.ExtractInstance(styleparams, _halign, halign.left),
-                                             self.ExtractInstance(styleparams, _direction, direction.horizontal),
+                                             self.ExtractInstance(styleparams, halign, halign.left),
+                                             self.ExtractInstance(styleparams, direction, direction.horizontal),
                                              self.ExtractInstance(styleparams, color.color, color.grey.black))
 
 
@@ -695,7 +581,7 @@ class tex(base.PSCmd, _InstanceList):
 
         self.DoneRunTex = 0
 
-        self.AllowedInstances(styleparams, [_style, _fontsize, _msglevel, ])
+        self.AllowedInstances(styleparams, [style, fontsize, msghandler, ])
         return self.InsertCmd(Cmd, styleparams).Extent(_extent.wd, self.Sizes)
 
     def textht(self, Cmd, *styleparams):
@@ -704,7 +590,7 @@ class tex(base.PSCmd, _InstanceList):
 
         self.DoneRunTex = 0
 
-        self.AllowedInstances(styleparams, [_style, _fontsize, hsize, _valign, _msglevel, ])
+        self.AllowedInstances(styleparams, [style, fontsize, _valign, msghandler, ])
         return self.InsertCmd(Cmd, styleparams).Extent(_extent.ht, self.Sizes)
 
     def textdp(self, Cmd, *styleparams):
@@ -713,6 +599,61 @@ class tex(base.PSCmd, _InstanceList):
 
         self.DoneRunTex = 0
 
-        self.AllowedInstances(styleparams, [_style, _fontsize, hsize, _valign, _msglevel, ])
+        self.AllowedInstances(styleparams, [style, fontsize, _valign, msghandler, ])
         return self.InsertCmd(Cmd, styleparams).Extent(_extent.dp, self.Sizes)
+
+
+class tex(_tex):
+
+    def __init__(self, lts="10pt", **addargs):
+        _tex.__init__(self, **addargs)
+        # TODO: other ways for creating font sizes?
+        LtsName = os.path.join(os.path.dirname(__file__), "lts", str(lts) + ".lts")
+        self.define(open(LtsName, "r").read())
+        self.define("\\hsize0truein%\n\\vsize0truein%\n\\hoffset-1truein%\n\\voffset-1truein")
+
+    def _beginboxcmds(self):
+        pass
+
+    def _endcmd(self):
+        return "\\end\n"
+
+    def _executetex(self, tempname):
+        self._execute("tex %(t)s.tex > %(t)s.texout 2> %(t)s.texerr" % {"t": tempname})
+
+class latex(_tex):
+
+    def __init__(self, docclass="article", docopt=None, auxfilename=None, **addargs):
+        _tex.__init__(self, **addargs)
+        self.auxfilename = auxfilename
+        if docopt:
+            self.define("\\documentclass[" + str(docopt) + "]{" + str(docclass) + "}")
+        else:
+            self.define("\\documentclass{" + str(docclass) + "}")
+        self.define("\\hsize0truein%\n\\vsize0truein%\n\\hoffset-1truein%\n\\voffset-1truein")
+
+    def _beginboxcmds(self):
+        self.define("\\begin{document}")
+
+    def _endcmd(self):
+        return "\\end{document}\n"
+
+    def _executetex(self, tempname):
+        if self.auxfilename is not None:
+            writenew = 0
+            try:
+                os.rename(self.auxfilename + ".aux", tempname + ".aux")
+            except OSError:
+                writenew = 1
+        else:
+            writenew = 1
+        if writenew:
+            auxfile = open(tempname + ".aux", "w")
+            auxfile.write("\\relax\n")
+            auxfile.close()
+        self._execute("latex %(t)s.tex > %(t)s.texout 2> %(t)s.texerr" % {"t": tempname})
+        if self.auxfilename is not None:
+            os.rename(tempname + ".aux", self.auxfilename + ".aux")
+        else:
+            os.unlink(tempname + ".aux")
 

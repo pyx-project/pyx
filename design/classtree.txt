@@ -24,10 +24,12 @@ PSOp +--- PSCommand ---+--- canvas
 
 bbox
                             
-texattr ---+--- fontsize
-           +--- style
-           +--- halign
-           +--- valign
+_texattr ---+--- fontsize
+            +--- halign
+            +--- valign ---+--- vtop
+            |              +--- vbox
+	    +--- direction
+            +--- style
 
 graphattr ---+--- axis ---+--- linaxis
              |            +--- logaxis
@@ -41,7 +43,9 @@ graphattr ---+--- axis ---+--- linaxis
              |            +--- function --- paramfunction
              +--- key
 
-pyxexcept ...
+(Exception) --- PyXExcept ---+--- TeXExcept ---+--- TeXCmdError ---+--- TexLeftParenthesisError
+                             |                 |                   +--- TexRightParenthesisError
+			     ?                 +--- TeXRunError
 
 psattr ----+
 texattr ---+--- color ---+--- colorgrey

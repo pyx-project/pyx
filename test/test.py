@@ -130,14 +130,12 @@ class UnitTestCase(unittest.TestCase):
         from pyx.unit import *
         assert topt(t_pt(42)) == 42, "wrong unit definition"
         assert tom(t_m(42)) == 42, "wrong unit definition"
-        assert totpt(t_tpt(42)) == 42, "wrong unit definition"
 
     def testUserUnits(self):
         from pyx.unit import *
         set(uscale=2)
         assert topt(pt(42)) == 84, "wrong unit definition"
         assert tom(m(42)) == 84, "wrong unit definition"
-        assert totpt(tpt(42)) == 84, "wrong unit definition"
       
 
 # construct the test suite automagically
