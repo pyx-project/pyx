@@ -579,98 +579,64 @@ class _linedata(_data):
     defaultstyle = [style.line()]
 
 
-# class function:
-# 
-#     defaultstyle = style.line()
-# 
-#     def __init__(self, expression, title=_notitle, min=None, max=None,
-#     points=100, parser=mathtree.parser(), context={}):
-# 
-#         if title is _notitle:
-#             self.title = expression
-#         else:
-#             self.title = title
-#         self.min = min
-#         self.max = max
-#         self.numberofpoints = points
-#         self.context = context.copy() # be save on late evaluations
-#         self.result, expression = [x.strip() for x in expression.split("=")]
-#         self.mathtree = parser.parse(expression)
-#         self.variable = None
-# 
-#     def setstyles(self, graph, styles):
-#         self.styles = styles
-#         self.styledata = styledata()
-#         for variable in self.mathtree.VarList():
-#             if variable in graph.axes.keys():
-#                 if self.variable is None:
-#                     self.variable = variable
-#                 else:
-#                     raise ValueError("multiple variables found")
-#         if self.variable is None:
-#             raise ValueError("no variable found")
-#         self.xaxis = graph.axes[self.variable]
-#         self.columns = {self.variable: 1, self.result: 2}
-#         unhandledcolumns = self.columns
-#         for style in self.styles:
-#             unhandledcolumns = style.setdata(graph, unhandledcolumns, self.styledata)
-#         unhandledcolumnkeys = unhandledcolumns.keys()
-#         if len(unhandledcolumnkeys):
-#             raise ValueError("style couldn't handle column keys %s" % unhandledcolumnkeys)
-# 
-#     def selectstyles(self, graph, selectindex, selecttotal):
-#         for style in self.styles:
-#             style.selectstyle(selectindex, selecttotal, self.styledata)
-# 
-#     def adjustaxes(self, graph, step):
-#         """
-#         - on step == 0 axes with fixed data should be adjusted
-#         - on step == 1 the current axes ranges might be used to
-#           calculate further data (e.g. y data for a function y=f(x)
-#           where the y range depends on the x range)
-#         - on step == 2 axes ranges not previously set should be
-#           updated by data accumulated by step 1"""
-#         if step == 0:
-#             self.points = []
-#             if self.min is not None:
-#                 self.points.append([None, self.min])
-#             if self.max is not None:
-#                 self.points.append([None, self.max])
-#             for style in self.styles:
-#                 style.adjustaxes(self.points, [1], self.styledata)
-#         elif step == 1:
-#             min, max = graph.axes[self.variable].getrange()
-#             if self.min is not None: min = self.min
-#             if self.max is not None: max = self.max
-#             vmin = self.xaxis.convert(min)
-#             vmax = self.xaxis.convert(max)
-#             self.points = []
-#             for i in range(self.numberofpoints):
-#                 v = vmin + (vmax-vmin)*i / (self.numberofpoints-1.0)
-#                 x = self.xaxis.invert(v)
-#                 # caution: the virtual coordinate might differ once
-#                 # the axis rescales itself to include further ticks etc.
-#                 self.points.append([v, x, None])
-#             for point in self.points:
-#                 self.context[self.variable] = point[1]
-#                 try:
-#                     point[2] = self.mathtree.Calc(**self.context)
-#                 except (ArithmeticError, ValueError):
-#                     pass
-#         elif step == 2:
-#             for style in self.styles:
-#                 style.adjustaxes(self.points, [2], self.styledata)
-# 
-#     def draw(self, graph):
-#         # TODO code dublication
-#         for style in self.styles:
-#             style.initdrawpoints(graph, self.styledata)
-#         for point in self.points:
-#             self.styledata.point = point
-#             for style in self.styles:
-#                 style.drawpoint(graph, self.styledata)
-#         for style in self.styles:
-#             style.donedrawpoints(graph, self.styledata)
+class function(_linedata):
+
+    def __init__(self, expression, title=_notitle, min=None, max=None,
+                 points=100, parser=mathtree.parser(), context={}):
+
+        if title is _notitle:
+            self.title = expression
+        else:
+            self.title = title
+        self.min = min
+        self.max = max
+        self.numberofpoints = points
+        self.context = context.copy() # be save on late evaluations
+        self.yname, expression = [x.strip() for x in expression.split("=")]
+        self.mathtree = parser.parse(expression)
+
+    def setstyles(self, graph, styles):
+        self.xname = None
+        for xname in self.mathtree.VarList():
+            if xname in graph.axes.keys():
+                if self.xname is None:
+                    self.xname = xname
+                else:
+                    raise ValueError("multiple variables found")
+        if self.xname is None:
+            raise ValueError("no variable found")
+        self.columns = {self.xname: 0, self.yname: 1}
+        _linedata.setstyles(self, graph, styles)
+
+    def adjustaxes(self, graph, step):
+        if step == 0:
+            data = []
+            if self.min is not None:
+                self.points.append(self.min)
+            if self.max is not None:
+                self.points.append(self.max)
+            for style in self.styles:
+                style.adjustaxis(self.styledata, graph, self.xname, data, None)
+        elif step == 1:
+            xaxis = graph.axes[self.xname]
+            min, max = xaxis.getrange()
+            if self.min is not None: min = self.min
+            if self.max is not None: max = self.max
+            vmin = xaxis.convert(min)
+            vmax = xaxis.convert(max)
+            self.data = []
+            for i in range(self.numberofpoints):
+                v = vmin + (vmax-vmin)*i / (self.numberofpoints-1.0)
+                x = xaxis.invert(v)
+                self.context[self.xname] = x
+                try:
+                    y = self.mathtree.Calc(**self.context)
+                except (ArithmeticError, ValueError):
+                    pass
+                self.data.append([x, y])
+        elif step == 2:
+            for style in self.styles:
+                style.adjustaxis(self.styledata, graph, self.yname, self.data, 1)
 
 
 class paramfunction(_linedata):

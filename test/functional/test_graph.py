@@ -87,7 +87,7 @@ def test_split2(c, x, y):
 
 c = canvas.canvas()
 test_multiaxes_data(c, 0, 21)
-#test_piaxis_function(c, 0, 14)
+test_piaxis_function(c, 0, 14)
 test_textaxis_errorbars(c, 0, 7)
 #test_ownmark(c, 0, 0)
 #test_allerrorbars(c, -7, 0)
