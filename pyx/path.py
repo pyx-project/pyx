@@ -1033,7 +1033,7 @@ class path(base.PSCmd):
         """returns the parameter value(s) matching the given length(s)"""
         return normpath(self).arclentoparam(lengths)
 
-    def at_pt(self, param, arclen=None):
+    def at_pt(self, param=None, arclen=None):
         """return coordinates of path in pts at either parameter value param
         or arc length arclen.
 
@@ -1041,7 +1041,7 @@ class path(base.PSCmd):
         """
         return normpath(self).at_pt(param, arclen)
 
-    def at(self, param, arclen=None):
+    def at(self, param=None, arclen=None):
         """return coordinates of path at either parameter value param
         or arc length arclen.
 
@@ -1071,17 +1071,19 @@ class path(base.PSCmd):
         """return coordinates of first point of first subpath in path"""
         return normpath(self).begin()
 
-    def curvradius_pt(self, param, arclen=None):
-        """Returns the curvature radius in pts at parameter param.
-        This is the inverse of the curvature at this parameter
+    def curvradius_pt(self, param=None, arclen=None):
+        """Returns the curvature radius in pts (or None if infinite)
+        at parameter param or arc length arclen.  This is the inverse
+        of the curvature at this parameter
 
         Please note that this radius can be negative or positive,
         depending on the sign of the curvature"""
         return normpath(self).curvradius_pt(param, arclen)
 
-    def curvradius(self, param, arclen=None):
-        """Returns the curvature radius at parameter param.
-        This is the inverse of the curvature at this parameter
+    def curvradius(self, param=None, arclen=None):
+        """Returns the curvature radius (or None if infinite) at
+        parameter param or arc length arclen.  This is the inverse of
+        the curvature at this parameter
 
         Please note that this radius can be negative or positive,
         depending on the sign of the curvature"""
@@ -1118,7 +1120,7 @@ class path(base.PSCmd):
         """return corresponding normpaths split at parameter values params"""
         return normpath(self).split(params)
 
-    def tangent(self, param, arclen=None, length=None):
+    def tangent(self, param=None, arclen=None, length=None):
         """return tangent vector of path at either parameter value param
         or arc length arclen.
 
@@ -1128,7 +1130,7 @@ class path(base.PSCmd):
         """
         return normpath(self).tangent(param, arclen, length)
 
-    def trafo(self, param, arclen=None):
+    def trafo(self, param=None, arclen=None):
         """return transformation at either parameter value param or arc length arclen"""
         return normpath(self).trafo(param, arclen)
 
@@ -2225,7 +2227,7 @@ class normpath(path):
         if not helper.issequence(lengths): allparams = allparams[0]
         return allparams
 
-    def at_pt(self, param, arclen=None):
+    def at_pt(self, param=None, arclen=None):
         """return coordinates in pts of path at either parameter value param
         or arc length arclen.
 
@@ -2234,7 +2236,7 @@ class normpath(path):
         sp, param = self._findsubpath(param, arclen)
         return sp.at_pt(param)
 
-    def at(self, param, arclen=None):
+    def at(self, param=None, arclen=None):
         """return coordinates of path at either parameter value param
         or arc length arclen.
 
@@ -2265,13 +2267,20 @@ class normpath(path):
         x, y = self.begin_pt()
         return unit.t_pt(x), unit.t_pt(y)
 
-    def curvradius_pt(self, param, arclen=None):
+    def curvradius_pt(self, param=None, arclen=None):
+        """Returns the curvature radius in pts (or None if infinite)
+        at parameter param or arc length arclen.  This is the inverse
+        of the curvature at this parameter
+
+        Please note that this radius can be negative or positive,
+        depending on the sign of the curvature"""
         sp, param = self._findsubpath(param, arclen)
         return sp.curvradius_pt(param)
 
-    def curvradius(self, param, arclen=None):
-        """Returns the curvature radius at either parameter param or arc length arclen.
-        This is the inverse of the curvature at this parameter
+    def curvradius(self, param=None, arclen=None):
+        """Returns the curvature radius (or None if infinite) at
+        parameter param or arc length arclen.  This is the inverse of
+        the curvature at this parameter
 
         Please note that this radius can be negative or positive,
         depending on the sign of the curvature"""
@@ -2418,7 +2427,7 @@ class normpath(path):
 
         return result
 
-    def tangent(self, param, arclen=None, length=None):
+    def tangent(self, param=None, arclen=None, length=None):
         """return tangent vector of path at either parameter value param
         or arc length arclen.
 
@@ -2438,7 +2447,7 @@ class normpath(path):
         """return path transformed according to trafo"""
         return normpath([sp.transformed(trafo) for sp in self.subpaths])
 
-    def trafo(self, param, arclen=None):
+    def trafo(self, param=None, arclen=None):
         """return transformation at either parameter value param or arc length arclen"""
         sp, param = self._findsubpath(param, arclen)
         return sp.trafo(param)
