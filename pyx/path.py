@@ -44,115 +44,150 @@ class closepath(pathel):
 class _pathel2(pathel):
 
     ' element of a path with args=(x,y), used for r?(move|line)to'
+    def __init__(self, x, y):
+         (self.x, self.y)=(x,y)
     
     def draw(self, canvas):
-        canvas._PSAddCmd("%f %f " % canvas.unit.pt(self.args) + self.command )
+        canvas._PSAddCmd("%f %f %s" % (canvas.unit.pt(self.args[0]), 
+                                       canvas.unit.pt(self.args[1]), 
+                                       self.command ) )
+        #canvas._PSAddCmd("%f %f " % (0,0) + self.command )
 
 class moveto(_pathel2):
     ' Set current point to (x, y) '
-    def __init__(self, x, y):
-        pathel.__init__(self, "moveto", (x, y))
+        
+    def draw(self, canvas):
+        canvas._PSAddCmd("%f %f moveto" % (canvas.unit.pt(self.x), canvas.unit.pt(self.y) ) )
 
     def ConvertToBezier(self, currentpoint, currentsubpath):
-        return (self.args, currentsubpath, None)
+        return ((self.x, self.y), currentsubpath, None)
 	
 class rmoveto(_pathel2):
     ' Perform relative moveto '
-    def __init__(self, x, y):
-        pathel.__init__(self, "rmoveto", (x, y))
+        
+    def draw(self, canvas):
+        canvas._PSAddCmd("%f %f rmoveto" % (canvas.unit.pt(self.x), canvas.unit.pt(self.y) ) )
         
     def ConvertToBezier(self, currentpoint, currentsubpath):
-        return ((self.args[0]+currentpoint[0], currentsubpath, self.args[1]+currentpoint[1]), None)
+        return ((self.x+currentpoint[0], currentsubpath, self.y+currentpoint[1]), None)
 	
 class lineto(_pathel2):
     ' Append straight line to (x, y) '
-    def __init__(self, x, y):
-        pathel.__init__(self, "lineto", (x, y))
+
+    def draw(self, canvas):
+        canvas._PSAddCmd("%f %f lineto" % (canvas.unit.pt(self.x), canvas.unit.pt(self.y) ) )
         
     def ConvertToBezier(self, currentpoint, currentsubpath):
         return (self.args, 
                 currentsubpath or currentpoint,
-                bline(currentpoint[0], currentpoint[1], self.args[0], self.args[1]))
+                bline(currentpoint[0], currentpoint[1], self.x, self.y))
 	
 class rlineto(_pathel2):
     ' Perform relative lineto '
-    def __init__(self, x, y):
-        pathel.__init__(self, "rlineto", (x, y))
+
+    def draw(self, canvas):
+        canvas._PSAddCmd("%f %f rlineto" % (canvas.unit.pt(self.x), canvas.unit.pt(self.y) ) )
         
     def ConvertToBezier(self, currentpoint, currentsubpath):
         return ((self.args[0]+currentpoint[0], self.args[1]+currentpoint[1]), 
                 currentsubpath or currentpoint,
                 bline(currentpoint[0], currentpoint[1], 
-                      currentpoint[0]+self.args[0], currentpoint[1]+self.args[1]))
+                      currentpoint[0]+self.x, currentpoint[1]+self.y))
 
 # path elements with 5 arguments
 
 class _pathelarc(pathel):
-    def draw(self, canvas):
-        canvas._PSAddCmd("%f %f %f " % canvas.unit.pt(self.args[:3]) + "%f %f " % self.args[3:] + self.command )
+    def __init__(self, x, y, r, angle1, angle2):
+        (self.x, self.y, self.r, self.angle1, self.angle2) = (x, y, r, angle1, angle2)
+        
  
 class arc(_pathelarc):
     ' Append counterclockwise arc '
-    def __init__(self, x, y, r, angle1, angle2):
-        pathel.__init__(self, "arc", (x, y, r, angle1, angle2))
+
+    def draw(self, canvas):
+        canvas._PSAddCmd("%f %f %f %f %f arc" % ( canvas.unit.pt(self.x),
+                                                  canvas.unit.pt(self.y),
+                                                  canvas.unit.pt(self.r),
+                                                  self.angle1,
+                                                  self.angle2 ) )
         
     def ConvertToBezier(self, currentpoint, currentsubpath):
-         (x,y,r,angle1,angle2)=self.args
          if currentpoint:
-             return ( (x+r*math.cos(angle2), y+r*math.sin(angle2) ),
+             return ( (self.x+self.r*math.cos(self.angle2), self.y+self.r*math.sin(aself.ngle2) ),
                       currentsubpath or currentpoint,
                       bline(currentpoint[0], 
                             currentpoint[1], 
-                            x+r*math.cos(math.pi*angle1/180), 
-                            y+r*math.sin(math.pi*angle1/180))+
-                      barc(x, y, r, angle1, angle2)
+                            self.x+self.r*math.cos(math.pi*self.angle1/180), 
+                            self.y+self.r*math.sin(math.pi*self.angle1/180))+
+                      barc(self.x, self.y, self.r, self.angle1, self.angle2)
                     )
          else:  # we assert that curretsubpath is also None
-             return ( (x+r*math.cos(math.pi*angle2/180), y+r*math.sin(math.pi*angle2/180)),
-                      (x+r*math.cos(math.pi*angle1/180), y+r*math.sin(math.pi*angle1/180)),
-                      barc(x, y, r, angle1, angle2)
+             return ( (self.x+self.r*math.cos(math.pi*self.angle2/180), 
+                       self.y+r*math.sin(math.pi*self.angle2/180)),
+                      (self.x+self.r*math.cos(math.pi*self.angle1/180),
+                       self.y+r*math.sin(math.pi*self.angle1/180)),
+                      barc(self.x, self.y, self.r, self.angle1, self.angle2)
                     )
     
 	
 class arcn(_pathelarc):
     ' Append clockwise arc '
-    def __init__(self, x, y, r, angle1, angle2):
-        pathel.__init__(self, "arcn", (x, y, r, angle1, angle2))
+
+    def draw(self, canvas):
+        canvas._PSAddCmd("%f %f %f %f %f arcn" % ( canvas.unit.pt(self.x),
+                                                   canvas.unit.pt(self.y),
+                                                   canvas.unit.pt(self.r),
+                                                   self.angle1,
+                                                   self.angle2 ) )
 
 class arct(pathel):
     ' Append tangent arc '
     def __init__(self, x1, y1, x2, y2, r):
-        pathel.__init__(self, "arct", (x1, y1, x2, y2, r))
-        
+        (self.x1, self.y1, self.x2, self.y2, self.r) = (x1, y1, x2, y2, r)
     def draw(self, canvas):
-        canvas._PSAddCmd("%f %f %f %f " % canvas.unit.pt(self.args[:4]) + "%f " % self.args[4] + self.command )
+        canvas._PSAddCmd("%f %f %f %f %f arct" % ( canvas.unit.pt(self.x1),
+                                                   canvas.unit.pt(self.y1),
+                                                   canvas.unit.pt(self.x2),
+                                                   canvas.unit.pt(self.y2),
+                                                   canvas.unit.pt(self.r) ) )
+        
 	
 # path elements with 6 arguments
 
 class _pathel6(pathel):
-    def draw(self, canvas):
-        canvas._PSAddCmd("%f %f %f %f %f %f " %  canvas.unit.pt(self.args) + self.command )
+    def __init__(self, x1, y1, x2, y2, x3, y3):
+        (self.x1, self.y1, self.x2, self.y2, self.x3, self.y3) = (x1, y1, x2, y2, x3, y3)
 
 class curveto(_pathel6):
-    def __init__(self, x1, y1, x2, y2, x3, y3):
-        pathel.__init__(self, "curveto", (x1, y1, x2, y2, x3, y3))
+    def draw(self, canvas):
+        canvas._PSAddCmd("%f %f %f %f %f %f curveto" % ( canvas.unit.pt(self.x1),
+                                                         canvas.unit.pt(self.y1),
+                                                         canvas.unit.pt(self.x2),
+                                                         canvas.unit.pt(self.y2),
+                                                         canvas.unit.pt(self.x3),
+                                                         canvas.unit.pt(self.y3)) )
         
     def ConvertToBezier(self, currentpoint):
-        return (self.args[4:5], 
+        return ((self.x3, self.y3), 
                 bcurve(currentpoint[0], currentpoint[1],
-                        args[0], args[1], args[2], args[3], args[4], args[5]))
+                        self.x1, self.y1, self.x2, self.y2, self.x3, self.y3))
 
 class rcurveto(_pathel6):
-    def __init__(self, x1, y1, x2, y2, x3, y3):
-        pathel.__init__(self, "rcurveto", (x1, y1, x2, y2, x3, y3))
+    def draw(self, canvas):
+        canvas._PSAddCmd("%f %f %f %f %f %f rcurveto" % ( canvas.unit.pt(self.x1),
+                                                          canvas.unit.pt(self.y1),
+                                                          canvas.unit.pt(self.x2),
+                                                          canvas.unit.pt(self.y2),
+                                                          canvas.unit.pt(self.x3),
+                                                          canvas.unit.pt(self.y3)) )
         
     def ConvertToBezier(self, currentpoint):
-        x2=currenpoint(0)+self.args(0)
-        y2=currenpoint(1)+self.args(1)
-        x3=currenpoint(0)+self.args(2)
-        y3=currenpoint(1)+self.args(3)
-        x4=currenpoint(0)+self.args(4)
-        y4=currenpoint(1)+self.args(5)
+        x2=currenpoint(0)+self.x1
+        y2=currenpoint(1)+self.y1
+        x3=currenpoint(0)+self.x2
+        y3=currenpoint(1)+self.y2
+        x4=currenpoint(0)+self.x3
+        y4=currenpoint(1)+self.y3
         return ((x4, y4), bcurve(x2, y2, x3, y3, x4, y4))
 
 #
@@ -164,17 +199,28 @@ class path:
     def __init__(self, path=[]):
         self.path = path
         
-    def __add__(self, path):
-        return self.path.__add__(path)
+    def __add__(self, other):
+        return path(self.path+other.path)
+
+    def __len__(self):
+        return len(self.path)
+
+    def __getitem__(self, i):
+        return self.path[i]
 	
     def draw(self, canvas):
 	if not isinstance(self.path[0], moveto): 
 	    raise PathException, "first path element must be moveto"    # TODO: also arc, arcn, arcto
+        print "1"
         for pathel in self.path:
 	    pathel.draw(canvas)
+        print "2"
 
     def append(self, pathel):
         self.path.append(pathel)
+
+#    def extend(self, pathel):
+#        self.path.extend(pathel)
 
     def ConvertToBezier(self):
         currentpoint   = None
@@ -208,11 +254,11 @@ class bpath:
     def __init__(self, bpath=[]):
         self.bpath = bpath
 	
-    def append(self, pathel):
-        self.bpath.append(pathel)
+    def append(self, bpathel):
+        self.bpath.append(bpathel)
 
-    def extend(self, bp):
-        self.bpath.extend(bp)
+#    def extend(self, bpathel):
+#        self.bpath.extend(bpathel)
 
     def __add__(self, bp):
         return bpath(self.bpath+bp.bpath)

@@ -205,6 +205,10 @@ class canvas:
     def __str__(self):
         return reduce(lambda x,y: x + "\n%s" % str(y), self.PSCmds, "")
 
+    def _write(self, file):
+        for cmd in self.PSCmds:
+           file.write(str(cmd))
+
     def _PSAddCmd(self, cmd):
         self.PSCmds.append(cmd)
 
@@ -283,7 +287,9 @@ class canvas:
         file.write(PSProlog)
         file.write("\n%%EndProlog\n") 
         file.write("%f setlinewidth\n" % self.unit.pt(linewidth.normal))
-        file.write(str(self))
+        print "a"
+        self._write(file)
+        print "b"
         file.write("\nshowpage\n")
         file.write("%%Trailer\n")
         file.write("%%EOF\n")
@@ -376,7 +382,7 @@ if __name__=="__main__":
     g.plot(Data(df, x=2, y=6))
     g.plot(Data(df, x=2, y=7))
     g.plot(Data(df, x=2, y=8))
-    g.plot(Function("0.01*sin(x)"))
+    g.plot(Function("0.01*sin(x)",Points=10000))
     g.plot(Function("x=2*sin(1000*y)"))
     g.run()
     

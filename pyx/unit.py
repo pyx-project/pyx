@@ -37,17 +37,26 @@ class unit:
         
     def convert_to(self, l, dest_unit="m"):
 
-        if type(l) is TupleType:
-            return tuple(map(lambda x, self=self, dest_unit=dest_unit:self.convert_to(x,dest_unit), l))
+#        if type(l) is TupleType:
+#            return tuple(map(lambda x, self=self, dest_unit=dest_unit:self.convert_to(x,dest_unit), l))
 
-        ll=length(l)                    # convert to length instance if necessary
+        if type(l) in (IntType, LongType, FloatType):
+            return  l*m[length.default_unit]*self.scale['u']/m[dest_unit]
+        elif not isinstance(l,length): l=length(l)                    # convert to length instance if necessary
+
+        return ( l.length['t']                 +
+                 l.length['t']*self.scale['u'] +
+                 l.length['t']*self.scale['v'] +
+                 l.length['t']*self.scale['w'] ) / m[dest_unit]
+
 
         result = 0 
 
-        for unit_type in self.scale.keys():
-            result = result +  ll.length[unit_type]*self.scale[unit_type]/m[dest_unit]
+#        for unit_type in self.scale.keys():
+#            result = result + l.length[unit_type]*self.scale[unit_type]
 
-        return result
+
+        return result/m[dest_unit]
 
     def m(self, l):
         return self.convert_to(l, "m")

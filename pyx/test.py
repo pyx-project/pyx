@@ -1,20 +1,19 @@
 from canvas import *
 from path import *
+import profile
+import pstats
 
-c1=canvas()
-c2=canvas()
-c3=canvas()
-c4=canvas()
+def test():
+    c1=canvas()
 
-c1.draw(rect(5,5,5,5))
-c1.write("test1", 21, 29.7)
+    p=path([moveto(0,0)])
 
-c2.draw(rect(5,5,5,5))
-c2.inserteps(5,5,"small.eps")
-c2.write("test2", 21, 29.7)
+    for i in xrange(5000):
+        p.append(lineto(i,i))
 
-c3.draw(rect(5,5,5,5))
-t3=c3.tex()
-t3.text(5,5,"hello world!")
-c3.write("test3", 21, 29.7)
+    c1.draw(p)
 
+    c1.write("test.eps", 21, 29.7)
+
+profile.run('test()', 'test.prof')
+pstats.Stats("test.prof").sort_stats('time').print_stats(10)
