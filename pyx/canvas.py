@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import string, re, tex, unit, trafo
+import string, re, tex, unit, trafo, types
 from math import sqrt
 
 
@@ -76,24 +76,25 @@ class epsfile:
                (self.llx, self.lly, self.urx, self.ury) = map(int, bbmatch.groups())		# conversion strings->int
                break
 
-    def __str__(self):
+    def _write(self, canvas, file):
         try:
-	    file=open(self.filename,"r")
+	    epsfile=open(self.filename,"r")
 	except:
 	    assert "cannot open EPS file"	                          # TODO: Fehlerbehandlung
 
-        preamble = "BeginEPSF\n"
-        preamble = preamble + "%f %f translate\n" % (self.x, self.y)
+        file.write("BeginEPSF\n")
+        file.write("%f %f translate\n" % (self.x, self.y))
         if self.translatebb:
-            preamble = preamble + "%f %f translate\n" % (-self.llx, -self.lly)
+            file.write("%f %f translate\n" % (-self.llx, -self.lly))
         if self.showbb:
-            preamble = preamble + "newpath\n%f %f moveto\n%f 0 rlineto\n0 %f rlineto\n%f 0 rlineto\nclosepath\nstroke\n" % ( self.llx, self.lly, self.urx-self.llx, self.ury-self.lly, -(self.urx-self.llx))
+            file.write("newpath\n%f %f moveto\n%f 0 rlineto\n0 %f rlineto\n%f 0 rlineto\nclosepath\nstroke\n" % ( self.llx, self.lly, self.urx-self.llx, self.ury-self.lly, -(self.urx-self.llx)))
         if self.clip:
-            preamble = preamble + "%f %f %f %f rect\n" % ( self.llx, self.lly, self.urx-self.llx,self.ury-self.lly)
-            preamble = preamble + "clip newpath\n"
-        preamble = preamble + "%%%%BeginDocument: %s\n" % self.filename
+            file.write("%f %f %f %f rect\n" % ( self.llx, self.lly, self.urx-self.llx,self.ury-self.lly))
+            file.write("clip newpath\n")
+        file.write("%%%%BeginDocument: %s\n" % self.filename)
         
-        return preamble + file.read() + "%%EndDocument\nEndEPSF\n"
+        file.write(epsfile.read()) 
+        file.write("%%EndDocument\nEndEPSF\n")
 
 #
 # Exceptions
@@ -105,18 +106,22 @@ class CanvasException(Exception): pass
 # property classes
 #
 
-class _linecap:
+class PyxAttributes:
+    def _write(self, canvas, file):
+        file.write(self._PSCmd(canvas))
+
+class _linecap(PyxAttributes):
     def __init__(self, value=0):
         self.value=value
     def _PSCmd(self, canvas):
         return "%d setlinecap" % self.value
 
-class linecap:
+class linecap(_linecap):
     butt   = _linecap(0)
     round  = _linecap(1)
     square = _linecap(2)
 
-class _linejoin:
+class _linejoin(PyxAttributes):
     def __init__(self, value=0):
         self.value=value
     def _PSCmd(self, canvas):
@@ -129,7 +134,7 @@ class linejoin(_linejoin):
 
 linejoinmiter=_linejoin(0)
 
-class _miterlimit:
+class _miterlimit(PyxAttributes):
     def __init__(self, value=10.0):
         self.value=value
     def _PSCmd(self, canvas):
@@ -138,7 +143,7 @@ class _miterlimit:
 class miterlimit(_miterlimit):
     pass
 
-class _dash:
+class _dash(PyxAttributes):
     def __init__(self, pattern=[], offset=0):
         self.pattern=pattern
         self.offset=offset
@@ -152,7 +157,7 @@ class _dash:
 class dash(_dash):
     pass
  
-class _linestyle:
+class _linestyle(PyxAttributes):
     def __init__(self, c=linecap.butt, d=dash([])):
         self.c=c
         self.d=d
@@ -165,7 +170,7 @@ class linestyle(_linestyle):
     dotted     = _linestyle(linecap.round, dash([0, 3]))
     dashdotted = _linestyle(linecap.round, dash([0, 3, 3, 3]))
  
-class _linewidth(unit.length):
+class _linewidth(PyxAttributes, unit.length):
     def __init__(self, l):
         unit.length.__init__(self, l=l, default_type="w")
     def _PSCmd(self, canvas):
@@ -192,7 +197,37 @@ class linewidth(_linewidth):
 # main canvas class
 #
 
-class canvas:
+class CanvasCmds:
+    def _write(self, canvas, file):
+       pass
+
+class _newpath(CanvasCmds):
+    def _write(self, canvas, file):
+       file.write("newpath")
+
+class _stroke(CanvasCmds):
+    def _write(self, canvas, file):
+       file.write("stroke")
+
+class _fill(CanvasCmds):
+    def _write(self, canvas, file):
+       file.write("fill")
+
+class _gsave(CanvasCmds):
+    def _write(self, canvas, file):
+       file.write("gsave")
+
+class _grestore(CanvasCmds):
+    def _write(self, canvas, file):
+       file.write("grestore")
+
+class _translate(CanvasCmds):
+    def __init__(self, x, y):
+        (self.x, self.y) = (x,y)
+    def _write(self, canvas, file):
+        file.write("%f %f translate" % canvas.unit.pt((x, y)))
+
+class canvas(CanvasCmds):
 
     def __init__(self, *args, **kwargs):
         
@@ -205,70 +240,49 @@ class canvas:
     def __str__(self):
         return reduce(lambda x,y: x + "\n%s" % str(y), self.PSCmds, "")
 
-    def _write(self, file):
+    def _write(self, canvas, file):
         for cmd in self.PSCmds:
-           file.write(str(cmd) + "\n")
+            cmd._write(self, file)
+            file.write("\n")
 
-    def _PSAddCmd(self, cmd):
-        self.PSCmds.append(cmd)
+    def insert(self, cmds, *args):
+        if args: 
+           self.PSCmds.append(_gsave())
+           self.set(*args)
+        if type(cmds) in (types.TupleType, types.ListType):
+           for cmd in list(cmds): 
+              self.PSCmds.append(cmd)
+        else: 
+           self.PSCmds.append(cmds)
+        if args:
+           self.PSCmds.append(_grestore())
+        return cmds
 
-    def _newpath(self):
-    	self._PSAddCmd("newpath")
-
-    def _stroke(self):
-    	self._PSAddCmd("stroke")
-
-    def _fill(self):
-    	self._PSAddCmd("fill")
-
-    def _gsave(self):
-        self._PSAddCmd("gsave")
-	
-    def _grestore(self):
-        self._PSAddCmd("grestore")
-
-    def _translate(self, x, y):
-        self._PSAddCmd("%f %f translate" % self.unit.pt((x, y)))
-        
     def create(self, pyxclass, *args, **kwargs):
         instance = pyxclass(unit = self.unit.copy(), *args, **kwargs)
         return instance
 
     def stick(self, instance):
-        self._gsave() # we need this at the moment for subcanvas, but it should be avoided here!
-        self._PSAddCmd(instance)
-        self._grestore()
+        self.insert(_gsave()) # we need this at the moment for subcanvas, but it should be avoided here!
+        self.insert(instance)
+        self.insert(_grestore())
         return self
         
-    def insert(self, pyxclass, *args, **kwargs):
+    def inserttex(self, pyxclass, *args, **kwargs):
         instance = self.create(pyxclass, *args, **kwargs)
         self.stick(instance)
         return instance
 
     def set(self, *args):
         for arg in args: 
-           self._PSAddCmd(arg._PSCmd(self))
+           self.insert(arg)
 	
     def draw(self, path, *args):
-        if args: 
-           self._gsave()
-           self.set(*args)
-        self._newpath()
-        path.draw(self)
-	self._stroke()
-        if args:
-           self._grestore()
+        self.insert((_newpath(), path, _stroke()), *args)
         return self
 	
     def fill(self, path, *args):
-        if args: 
-           self._gsave()
-           self.set(*args)
-        self._newpath()
-        path.draw(self)
-	self._fill()
-        if args:
-           self._grestore()
+        self.insert((_newpath(), path, _fill()), *args)
         return self
 
     def write(self, filename, width, height, **kwargs):
@@ -287,7 +301,7 @@ class canvas:
         file.write(PSProlog)
         file.write("\n%%EndProlog\n") 
         file.write("%f setlinewidth\n" % self.unit.pt(linewidth.normal))
-        self._write(file)
+        self._write(self, file)
         file.write("\nshowpage\n")
         file.write("%%Trailer\n")
         file.write("%%EOF\n")
@@ -301,7 +315,7 @@ if __name__=="__main__":
     import unit
 
     c=canvas.canvas(unit=unit.unit())
-    t=c.insert(tex)
+    t=c.inserttex(tex)
  
     #for x in range(11):
     #    amove(x,0)
@@ -367,7 +381,7 @@ if __name__=="__main__":
 
    
     for angle in range(20):
-       s=c.insert(canvas.canvas,translate(10,10)*rotate(angle)).draw(p, canvas.linestyle.dashed, canvas.linewidth(0.01*angle), grey((20-angle)/20.0))
+       s=c.inserttex(canvas.canvas,translate(10,10)*rotate(angle)).draw(p, canvas.linestyle.dashed, canvas.linewidth(0.01*angle), grey((20-angle)/20.0))
  
     c.set(linestyle.solid)
     g=GraphXY(c, t, 10, 15, 8, 6, y2=LinAxis())
@@ -378,13 +392,13 @@ if __name__=="__main__":
     g.plot(Data(df, x=2, y=6))
     g.plot(Data(df, x=2, y=7))
     g.plot(Data(df, x=2, y=8))
-    #g.plot(Function("0.01*sin(x)",Points=10000))
+    g.plot(Function("0.01*sin(x)",Points=10000))
     g.plot(Function("0.01*sin(x)"))
     g.plot(Function("x=2*sin(1000*y)"))
     g.run()
     
-    c.insert(canvas.canvas, scale(0.5, 0.4).rotate(10).translate("2 cm","200 mm")).insert(epsfile,"ratchet_f.eps")
-    c.insert(canvas.canvas, scale(0.2, 0.1).rotate(10).translate("6 cm","180 mm")).insert(epsfile,"ratchet_f.eps")
+#    c.inserttex(canvas.canvas, scale(0.5, 0.4).rotate(10).translate("2 cm","200 mm")).insert(epsfile,"ratchet_f.eps")
+#    c.inserttex(canvas.canvas, scale(0.2, 0.1).rotate(10).translate("6 cm","180 mm")).insert(epsfile,"ratchet_f.eps")
     
     c.draw(path([moveto("5 cm", "5 cm"), rlineto(0.1,0.1)]), linewidth.THICK)
 

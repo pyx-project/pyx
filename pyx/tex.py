@@ -293,6 +293,9 @@ class tex(InstanceList):
         Cmd = "\\immediate\\write16{" + MarkerBegin + "}\n" + Cmd + "\\immediate\\write16{" + MarkerEnd + "}\n"
         self.TexCmds = self.TexCmds + [ TexCmdSaveStruc(Cmd, MarkerBegin, MarkerEnd, Stack, lmsglevel), ]
 
+    def _write(self, canvas, file):             # TODO: fixme
+        file.write(str(self))
+
     def __str__(self):
 
         'run LaTeX&dvips for TexCmds, report errors, return postscript string'

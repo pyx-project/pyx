@@ -17,22 +17,18 @@ class pathel:
 
     ' element of a PS style path '
     
-    def __init__(self, command, args):
-        ' new pathel of type "command" and with an argument tuple args '
-        self.command = command
-        self.args = args
-
-    def draw(self, canvas):
+    def _write(self, canvas, file):
+        pass
+    def ConvertToBezier(self, currentpoint, currentsubpath):
         pass
 
 # path elements without argument
 
 class closepath(pathel): 
     ' Connect subpath back to its starting point '
-    def __init__(self):
-        pathel.__init__(self, "closepath", None)
-    def draw(self, canvas):
-        canvas._PSAddCmd(self.command)
+
+    def _write(self, canvas, file):
+        file.write("closepath")
     def ConvertToBezier(self, currentpoint, currentsubpath):
         return (None,
                 None,
@@ -41,52 +37,52 @@ class closepath(pathel):
   
 # path elements with 2 arguments  
 
-class _pathel2(pathel):
+class moveto(pathel):
+    ' Set current point to (x, y) '
 
-    ' element of a path with args=(x,y), used for r?(move|line)to'
     def __init__(self, x, y):
          (self.x, self.y)=(x,y)
-    
-    def draw(self, canvas):
-        canvas._PSAddCmd("%f %f %s" % (canvas.unit.pt(self.args[0]), 
-                                       canvas.unit.pt(self.args[1]), 
-                                       self.command ) )
-        #canvas._PSAddCmd("%f %f " % (0,0) + self.command )
-
-class moveto(_pathel2):
-    ' Set current point to (x, y) '
         
-    def draw(self, canvas):
-        canvas._PSAddCmd("%f %f moveto" % (canvas.unit.pt(self.x), canvas.unit.pt(self.y) ) )
+    def _write(self, canvas, file):
+        file.write("%f %f moveto" % (canvas.unit.pt(self.x), canvas.unit.pt(self.y) ) )
 
     def ConvertToBezier(self, currentpoint, currentsubpath):
         return ((self.x, self.y), currentsubpath, None)
 	
-class rmoveto(_pathel2):
+class rmoveto(pathel):
     ' Perform relative moveto '
+
+    def __init__(self, x, y):
+         (self.x, self.y)=(x,y)
         
-    def draw(self, canvas):
-        canvas._PSAddCmd("%f %f rmoveto" % (canvas.unit.pt(self.x), canvas.unit.pt(self.y) ) )
+    def _write(self, canvas, file):
+        file.write("%f %f rmoveto" % (canvas.unit.pt(self.x), canvas.unit.pt(self.y) ) )
         
     def ConvertToBezier(self, currentpoint, currentsubpath):
         return ((self.x+currentpoint[0], currentsubpath, self.y+currentpoint[1]), None)
 	
-class lineto(_pathel2):
+class lineto(pathel):
     ' Append straight line to (x, y) '
 
-    def draw(self, canvas):
-        canvas._PSAddCmd("%f %f lineto" % (canvas.unit.pt(self.x), canvas.unit.pt(self.y) ) )
+    def __init__(self, x, y):
+         (self.x, self.y)=(x,y)
+
+    def _write(self, canvas, file):
+        file.write("%f %f lineto" % (canvas.unit.pt(self.x), canvas.unit.pt(self.y) ) )
         
     def ConvertToBezier(self, currentpoint, currentsubpath):
         return (self.args, 
                 currentsubpath or currentpoint,
                 bline(currentpoint[0], currentpoint[1], self.x, self.y))
 	
-class rlineto(_pathel2):
+class rlineto(pathel):
     ' Perform relative lineto '
 
-    def draw(self, canvas):
-        canvas._PSAddCmd("%f %f rlineto" % (canvas.unit.pt(self.x), canvas.unit.pt(self.y) ) )
+    def __init__(self, x, y):
+         (self.x, self.y)=(x,y)
+
+    def _write(self, canvas, file):
+        file.write("%f %f rlineto" % (canvas.unit.pt(self.x), canvas.unit.pt(self.y) ) )
         
     def ConvertToBezier(self, currentpoint, currentsubpath):
         return ((self.args[0]+currentpoint[0], self.args[1]+currentpoint[1]), 
@@ -104,12 +100,12 @@ class _pathelarc(pathel):
 class arc(_pathelarc):
     ' Append counterclockwise arc '
 
-    def draw(self, canvas):
-        canvas._PSAddCmd("%f %f %f %f %f arc" % ( canvas.unit.pt(self.x),
-                                                  canvas.unit.pt(self.y),
-                                                  canvas.unit.pt(self.r),
-                                                  self.angle1,
-                                                  self.angle2 ) )
+    def _write(self, canvas, file):
+        file.write("%f %f %f %f %f arc" % ( canvas.unit.pt(self.x),
+                                            canvas.unit.pt(self.y),
+                                            canvas.unit.pt(self.r),
+                                            self.angle1,
+                                            self.angle2 ) )
         
     def ConvertToBezier(self, currentpoint, currentsubpath):
          if currentpoint:
@@ -133,23 +129,23 @@ class arc(_pathelarc):
 class arcn(_pathelarc):
     ' Append clockwise arc '
 
-    def draw(self, canvas):
-        canvas._PSAddCmd("%f %f %f %f %f arcn" % ( canvas.unit.pt(self.x),
-                                                   canvas.unit.pt(self.y),
-                                                   canvas.unit.pt(self.r),
-                                                   self.angle1,
-                                                   self.angle2 ) )
+    def _write(self, canvas, file):
+        file.write("%f %f %f %f %f arcn" % ( canvas.unit.pt(self.x),
+                                             canvas.unit.pt(self.y),
+                                             canvas.unit.pt(self.r),
+                                             self.angle1,
+                                             self.angle2 ) )
 
 class arct(pathel):
     ' Append tangent arc '
     def __init__(self, x1, y1, x2, y2, r):
         (self.x1, self.y1, self.x2, self.y2, self.r) = (x1, y1, x2, y2, r)
-    def draw(self, canvas):
-        canvas._PSAddCmd("%f %f %f %f %f arct" % ( canvas.unit.pt(self.x1),
-                                                   canvas.unit.pt(self.y1),
-                                                   canvas.unit.pt(self.x2),
-                                                   canvas.unit.pt(self.y2),
-                                                   canvas.unit.pt(self.r) ) )
+    def _write(self, canvas, file):
+        file.write("%f %f %f %f %f arct" % ( canvas.unit.pt(self.x1),
+                                             canvas.unit.pt(self.y1),
+                                             canvas.unit.pt(self.x2),
+                                             canvas.unit.pt(self.y2),
+                                             canvas.unit.pt(self.r) ) )
         
 	
 # path elements with 6 arguments
@@ -159,13 +155,13 @@ class _pathel6(pathel):
         (self.x1, self.y1, self.x2, self.y2, self.x3, self.y3) = (x1, y1, x2, y2, x3, y3)
 
 class curveto(_pathel6):
-    def draw(self, canvas):
-        canvas._PSAddCmd("%f %f %f %f %f %f curveto" % ( canvas.unit.pt(self.x1),
-                                                         canvas.unit.pt(self.y1),
-                                                         canvas.unit.pt(self.x2),
-                                                         canvas.unit.pt(self.y2),
-                                                         canvas.unit.pt(self.x3),
-                                                         canvas.unit.pt(self.y3)) )
+    def _write(self, canvas, file):
+        file.write("%f %f %f %f %f %f curveto" % ( canvas.unit.pt(self.x1),
+                                                   canvas.unit.pt(self.y1),
+                                                   canvas.unit.pt(self.x2),
+                                                   canvas.unit.pt(self.y2),
+                                                   canvas.unit.pt(self.x3),
+                                                   canvas.unit.pt(self.y3)) )
         
     def ConvertToBezier(self, currentpoint):
         return ((self.x3, self.y3), 
@@ -173,13 +169,13 @@ class curveto(_pathel6):
                         self.x1, self.y1, self.x2, self.y2, self.x3, self.y3))
 
 class rcurveto(_pathel6):
-    def draw(self, canvas):
-        canvas._PSAddCmd("%f %f %f %f %f %f rcurveto" % ( canvas.unit.pt(self.x1),
-                                                          canvas.unit.pt(self.y1),
-                                                          canvas.unit.pt(self.x2),
-                                                          canvas.unit.pt(self.y2),
-                                                          canvas.unit.pt(self.x3),
-                                                          canvas.unit.pt(self.y3)) )
+    def _write(self, canvas, file):
+        file.write("%f %f %f %f %f %f rcurveto" % ( canvas.unit.pt(self.x1),
+                                                    canvas.unit.pt(self.y1),
+                                                    canvas.unit.pt(self.x2),
+                                                    canvas.unit.pt(self.y2),
+                                                    canvas.unit.pt(self.x3),
+                                                    canvas.unit.pt(self.y3)) )
         
     def ConvertToBezier(self, currentpoint):
         x2=currenpoint(0)+self.x1
@@ -208,17 +204,15 @@ class path:
     def __getitem__(self, i):
         return self.path[i]
 	
-    def draw(self, canvas):
+    def _write(self, canvas, file):
 	if not isinstance(self.path[0], moveto): 
 	    raise PathException, "first path element must be moveto"    # TODO: also arc, arcn, arcto
         for pathel in self.path:
-	    pathel.draw(canvas)
+	    pathel._write(canvas, file)
+            file.write("\n")
 
     def append(self, pathel):
         self.path.append(pathel)
-
-#    def extend(self, pathel):
-#        self.path.extend(pathel)
 
     def ConvertToBezier(self):
         currentpoint   = None
@@ -254,9 +248,6 @@ class bpath:
 	
     def append(self, bpathel):
         self.bpath.append(bpathel)
-
-#    def extend(self, bpathel):
-#        self.bpath.extend(bpathel)
 
     def __add__(self, bp):
         return bpath(self.bpath+bp.bpath)

@@ -45,10 +45,9 @@ class unit:
         elif not isinstance(l,length): l=length(l)                    # convert to length instance if necessary
 
         return ( l.length['t']                 +
-                 l.length['t']*self.scale['u'] +
-                 l.length['t']*self.scale['v'] +
-                 l.length['t']*self.scale['w'] ) / m[dest_unit]
-
+                 l.length['u']*self.scale['u'] +
+                 l.length['v']*self.scale['v'] +
+                 l.length['w']*self.scale['w'] ) / m[dest_unit]
 
         result = 0 
 
