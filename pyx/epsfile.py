@@ -58,7 +58,7 @@ def _readbbox(filename):
     file = open(filename, "r")
 
     # readline
-    def readlinewithexception():
+    def readlinewithexception(file=file):
         line = file.readline()
         if not len(line):
             raise IOError("unexpected end of file")

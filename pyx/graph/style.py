@@ -207,14 +207,15 @@ class range(_style):
         self.usenames = usenames
         self.epsilon = epsilon
 
+    def _numberofbits(self, mask):
+        if not mask:
+            return 0
+        if mask & 1:
+            return self._numberofbits(mask >> 1) + 1
+        else:
+            return self._numberofbits(mask >> 1)
+
     def columns(self, privatedata, sharedata, graph, columns):
-        def numberofbits(mask):
-            if not mask:
-                return 0
-            if mask & 1:
-                return numberofbits(mask >> 1) + 1
-            else:
-                return numberofbits(mask >> 1)
         usecolumns = []
         privatedata.rangeposcolumns = []
         sharedata.vrangemissing = []
@@ -247,8 +248,8 @@ class range(_style):
                     if addusecolumns:
                         usecolumns.append(column)
                 if mask & (self.mask_min | self.mask_max | self.mask_dmin | self.mask_dmax | self.mask_d):
-                    if (numberofbits(mask & (self.mask_min | self.mask_dmin | self.mask_d)) > 1 or
-                        numberofbits(mask & (self.mask_max | self.mask_dmax | self.mask_d)) > 1):
+                    if (self._numberofbits(mask & (self.mask_min | self.mask_dmin | self.mask_d)) > 1 or
+                        self._numberofbits(mask & (self.mask_max | self.mask_dmax | self.mask_d)) > 1):
                         raise ValueError("multiple range definition")
                     if mask & (self.mask_dmin | self.mask_dmax | self.mask_d):
                         if not (mask & self.mask_value):

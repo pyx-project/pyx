@@ -480,7 +480,7 @@ class file(data):
                        skiphead=0, skiptail=0, every=1,
                        **kwargs):
 
-        def readfile(file, title):
+        def readfile(file, title, self=self, commentpattern=commentpattern, stringpattern=stringpattern, columnpattern=columnpattern, skiphead=skiphead, skiptail=skiptail, every=every):
             columns = {}
             points = []
             linenumber = 0
