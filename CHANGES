@@ -40,6 +40,7 @@ TODO:
     - glue -> join?
   - unit module:
     - what about unit.cm() -> unit.cm, ...
+    - maybe we should never convert implicitly into visual/width, etc. lengths
   - mathtree:
     - might be moved into the graph
     - perform calc by means of Python itself (see eval code in graph.data, but
@@ -59,6 +60,11 @@ TODO for 0.6:
     - deco module:
       - wriggle decorator
       - smoothed decorator
+    - unit module:
+      -> not always returns true
+    - path module:
+      in the introduction mention the canvas
+      describe + vs <<
     - FAQ
 
 0.6 (XXXX/XX/XX):
