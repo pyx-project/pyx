@@ -16,10 +16,6 @@
 \RCS $Revision$
 \RCS $Date$
 
-% JL: I have mostly checked the FAQ for PyX 0.6. An exception is
-% probably the still pending change from graph.data.data to
-% graph.data.file
-
 \begin{center}
 \LARGE\sffamily Some frequently and\\ 
 not so frequently asked questions\\ 
@@ -206,7 +202,7 @@ $x$ and $y$ in two columns. Then the following code will do the job
 from pyx import *\\
 \\
 g = graph.graphxy(width=10)\\
-g.plot(graph.data.data("x.dat", x=1, y=2))\\
+g.plot(graph.data.file("x.dat", x=1, y=2))\\
 g.writeEPSfile("x")
 \end{progcode}
 \texttt{graphxy} creates a canvas (called \texttt{g} in this example) onto 
@@ -315,7 +311,7 @@ $(x_\mathrm{max},y_\mathrm{max})$ of the triangle and a value between 0 and 1
 determining the color via a \PyX{} color palette. The following code gives an 
 idea of how to proceed:
 \begin{progcode}
-g.plot(graph.data.data("datafile.dat"), xmin=0, xmax=1, ymin=2, ymax=3, color=4),\\
+g.plot(graph.data.file("datafile.dat"), xmin=0, xmax=1, ymin=2, ymax=3, color=4),\\
 ~~~~~~~graph.style.rect(color.palette.ReverseRainbow)\\
 ~~~~~~)\\
 g.dodata()
@@ -357,7 +353,7 @@ each data point is represented by an arrow. In this case a data point is
 specified by the position of the arrow, its size and its direction as indicated
 in the following code snippet:
 \begin{progcode}
-g.plot(graph.data.data("datafile.dat"), x=0, y=1, size=2, angle=3),\\
+g.plot(graph.data.file("datafile.dat"), x=0, y=1, size=2, angle=3),\\
 ~~~~~~~graph.style.arrow()\\
 ~~~~~~)
 \end{progcode}
@@ -416,7 +412,7 @@ Suppose a graph called \texttt{g} has been initialized, e.g. by using
 in the graph are defined by calling \texttt{g.plot} like in the following
 example in which filled circles are requested:
 \begin{progcode}
-g.plot(graph.data.data("test.dat"),\\
+g.plot(graph.data.file("test.dat"),\\
 ~~~~~~~graph.style.symbol(graph.style.symbol.circle, symbolattrs=[deco.filled])\\
 ~~~~~~~)
 \end{progcode}
@@ -442,7 +438,7 @@ you will obtain a circle filled in green with a red borderline.
 {If you do not want to use symbols, you can set the line style as in this
 example
 \begin{progcode}
-g.plot(graph.data.data("test.dat"),\\
+g.plot(graph.data.file("test.dat"),\\
 ~~~~~~~graph.style.line(lineattrs=[style.linewidth.Thin])\\
 ~~~~~~~)
 \end{progcode}
@@ -452,7 +448,7 @@ If you also want to use symbols, you can set the line attributes together
 with the symbols.  Extending the example in \ref{q:choose_symbol}),
 you could use
 \begin{progcode}
-g.plot(graph.data.data("test.dat"),\\
+g.plot(graph.data.file("test.dat"),\\
 ~~~~~~~graph.style.symbol(graph.style.symbol.circle, \\
 ~~~~~~~~~~~~~~~~~~~~~~~~~~symbolattrs=[deco.filled],\\
 ~~~~~~~~~~~~~~~~~~~~~~~~~~lineattrs=[style.linewidth.Thin, style.linestyle.dashed]\\
