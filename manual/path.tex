@@ -271,34 +271,48 @@ points given in the \var{points_pt} argument.
 
 \label{path:normpath}
 
-The \class{normpath} class represents a specialized form of a
-\class{path} containing only the elements \class{moveto},
-\class{lineto}, \class{curveto} and \class{closepath}. Such normalized
-paths are used for all of the more sophisticated path operations
-which are denoted by a $\dagger$ in the description of the \class{path}
-class above.
+The \class{normpath} class is used internally for all non-trivial path
+operations, i.e. the ones marked by a $\dagger$ in the description of
+the \class{path} above. It represents a path as a list of subpaths, which are
+instances of the class \class{normsubpath}. These \class{normsubpath}s
+themselves consist of a list of \class{normsubpathitems} which are
+either straight lines (\class{normline}) or B\'ezier curves
+(\class{normcurve}).
 
-Any path can easily be converted to its normalized form by calling 
-the \class{normpath} constructor, i.e.,
+A given path can easily be converted to the corresponding \class{normpath}
+using the method with this name:
 \begin{verbatim}
-np = p.normpath())
+np = p.normpath()
 \end{verbatim}
 Additionally, you can specify the accuracy (in points) which is used
 in all \class{normpath} calculations by means of the argument
-\var{epsilon}, which defaults to the value defined using
-\function{path.set}. Initially, this value is set to $10^{-5}$ points.
-Note that the sum of a \class{normpath} and a \class{path} always
-yields a \class{normpath}.
+\var{epsilon}, which defaults to to $10^{-5}$ points. This default
+value can be changed using the module function \function{path.set}.
 
-Alternatively, you can pass a list of \class{subnormpath} instances.
+To construct a \class{normpath} from a list of \class{normsubpath}
+instances, you pass them to the \class{normpath} constructor:
 
-\begin{classdesc}{normpath}{subnormpaths=[]}
+\begin{classdesc}{normpath}{normsubpaths=[]}
   Construct a \class{normpath} consisting of \var{subnormpaths}, which
   is a list of \class{subnormpath} instances.
 \end{classdesc}
 
+Instances of \class{normpath} offers all methods of normal
+\class{path}s, which also have the same semantics. A exceptions are:
+
+\begin{methoddesc}{append}{anormsubpath}
+  Append \var{anormsubpath}, which has to be a \class{normsubpath}
+  instance, to the \class{normpath} instance.  
+\end{methoddesc}
+
+\begin{methoddesc}{extend}{normsubpaths}
+  Extend the \class{normpath} by \var{normsubpaths}, which has to be a
+  a list of \class{normsubpath} instances.
+\end{methoddesc}
+
 In addition to the \class{path} methods, a \class{normpath} instance
-also offers the following methods, which operate on the instance itself:
+also offers the following methods, which operate on the instance
+itself, i.e., modify it in place.
 
 \begin{methoddesc}{join}{other}
   Join \var{other}, which has to be a \class{path} instance, to
@@ -314,9 +328,45 @@ also offers the following methods, which operate on the instance itself:
   transformation \var{trafo}.
 \end{methoddesc}
 
-\subsection{Class \class{subnormpath}}
+Finally, we remark that the sum of a \class{normpath} and a \class{path}
+always yields a \class{normpath}.
 
-XXX To be written
+
+\subsection{Class \class{normsubpath}}
+
+\begin{classdesc}{normsubpath}{normsubpathitems=[], closed=0,
+    epsilon=1e-5}
+  Construct a \class{normsubpath} consisting of
+  \var{normsubpathitems}, which is a list of \class{normsubpathitem}
+  instances. If \var{closed} is set, the \class{normsubpath} will be
+  closed, thereby appending a straight line segment from the first to
+  the last point, if it is not already present. All calculations with
+  the \class{normsubpath} are performed with an accuracy of \var{epsilon}.
+\end{classdesc}
+
+Most \class{normsubpath} methods behave like the ones of a
+\class{path}.
+
+Exceptions are:
+
+\begin{methoddesc}{append}{anormsubpathitem}
+  Append the \var{anormsubpathitem} to the end of the
+  \class{normsubpath} instance. This is only possible if the
+  \class{normsubpath} is not closed, otherwise an exception is raised.
+\end{methoddesc}
+
+\begin{methoddesc}{extend}{normsubpathitems}
+  Extend the \class{normsubpath} instances by \var{normsubpathitems},
+  which has to be a list of \class{normsubpathitem} instances. This is
+  only possible if the \class{normsubpath} is not closed, otherwise an
+  exception is raised.
+\end{methoddesc}
+
+\begin{methoddesc}{close}{}
+  Close the \class{normsubpath} instance, thereby appending a straight
+  line segment from the first to the last point, if it is not already
+  present.
+\end{methoddesc}
 
 \subsection{Predefined paths}
 
