@@ -44,15 +44,11 @@ TODO:
     - PDF support
     - SVG support
   - deco module:
-    - arrows should not be stroked by default
     - Think about names wriggle and curvecorners
   - style and color module:
     - support modification of existing styles via __call__
   - bbox module:
     - height -> getheight, ...
-  - connector module:
-    - never use lists instead of tuples
-    - never use [x for y in [0,1]]
 
 0.6 (XXXX/XX/XX):
   - bbox module:
