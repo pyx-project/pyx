@@ -11,15 +11,18 @@ ptfiles = $(filter-out maintemplate.pt, $(wildcard *.pt))
 htmlfiles = $(patsubst %.pt, %.html, $(ptfiles))
 pngfiles = valid-html401.png vcss.png
 cssfiles = main.css
+builddir = build
 
 html: $(htmlfiles) $(pngfiles)
 
 install: html
-	cp $(htmlfiles) $(pngfiles) $(cssfiles) ~/public-html/pyx
+	-mkdir $(builddir)
+	cp $(htmlfiles) $(pngfiles) $(cssfiles) $(builddir)
 	cd png; make
-	cp png/*.png ../examples/*.png ../examples/*/*.png ~/public-html/pyx
-	cp ../examples/*.eps ../examples/*/*.eps ~/public-html/pyx
-	cp ../manual/manual.pdf ~/public-html/pyx
+	cp png/*.png ../examples/*.png ../examples/*/*.png $(builddir)
+	cp ../examples/*.eps ../examples/*/*.eps $(builddir)
+	cp ../manual/manual.pdf $(builddir)
+	scp -z3 -r $(builddir)/* shell.sourceforge.net:/home/groups/p/py/pyx/htdocs
 
 %.html: %.pt maintemplate.pt pt2html.py
 	PYTHONPATH=~/bin/python/Zope3/src ./pt2html.py $<
