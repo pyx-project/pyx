@@ -6,8 +6,6 @@ import pyx
 from pyx import *
 from pyx.path import *
 
-import profile
-import pstats
 
 def testspeed():
     "coordinates as strings"
@@ -54,15 +52,31 @@ def testspeedintersect():
         bq=normpath(q)
         isect = bp.intersect(bq, epsilon=1e-3)
 
+import profile, pstats
+
+import hotshot, hotshot.stats
+
+def profilefunction(f):
+    prof = hotshot.Profile("test.prof")
+    prof.runcall(f)
+    prof.close()
+    stats = hotshot.stats.load("test.prof")
+    stats.strip_dirs()
+    stats.sort_stats('time', 'calls')
+    stats.print_stats(10)
+
 profile.run('testspeed()', 'test.prof')
 pstats.Stats("test.prof").sort_stats('time').print_stats(10)
 
-profile.run('testspeed2()', 'test.prof')
-pstats.Stats("test.prof").sort_stats('time').print_stats(10)
+profilefunction(testspeed)
 
-profile.run('testspeed3()', 'test.prof')
-pstats.Stats("test.prof").sort_stats('time').print_stats(10)
+#profile.run('testspeed2()', 'test.prof')
+#pstats.Stats("test.prof").sort_stats('time').print_stats(10)
 
-profile.run('testspeedintersect()', 'test.prof')
-pstats.Stats("test.prof").sort_stats('time').print_stats(10)
+#profile.run('testspeed3()', 'test.prof')
+#pstats.Stats("test.prof").sort_stats('time').print_stats(10)
+
+#profile.run('testspeedintersect()', 'test.prof')
+#pstats.Stats("test.prof").sort_stats('time').print_stats(10)
+
 
