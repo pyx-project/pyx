@@ -6,11 +6,13 @@ PyX
   - trafo module:
     - new transformation: slant
   - graph module:
-    - (text-)box distance measurement; used for rating of automatic axis partitioning
-    - new bar class (work in progress)
-    - splitaxis (work in progress)
-    - move axis partitioning into the axis painter (work in progress)
     - mark class renamed to symbol
+    - (text-)box distance measurement
+    - moved axis partitioning to axis and axis painter
+    - automatic axis partitioning (general cleanup, distance measurement, documentation)
+    - splitaxis (done, but documentation missing)
+    - baraxis (not yet started)
+    - new bar class (work in progress)
     - histogramm style (not yet started)
     - date and time axis (not yet started)
     - 3d graphs (some preliminary work done, but deferred for the moment)
@@ -28,7 +30,6 @@ PyX
   - numerous bugfixes (remove detailed list?):
     - transformation bug (#624068, trafo module)
     - canvas transformations (canvas module???)
-    - automatic axis partitioning (graph module)
     - textbox alignment (graph module)
     - return linewidth upon calculation with linewidths (unit module)
     - allow column number variables with several digits

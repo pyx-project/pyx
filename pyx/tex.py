@@ -755,7 +755,7 @@ command by yourself.\n""")
         texfile = open(tempname + ".tex", "w")
 
         texfile.write("\\nonstopmode%\n")
-        texfile.write("\\def\PyX{P\\kern-.25em\\lower.5ex\\hbox{Y}\\kern-.2em X}%\n")
+        texfile.write("\\def\PyX{P\\kern-.3em\\lower.5ex\\hbox{Y}\\kern-.18em X}%\n")
         texfile.write("\\newwrite\\sizefile%\n\\newbox\\localbox%\n\\newbox\\pagebox%\n")
         texfile.write("\\immediate\\openout\\sizefile=%s.size%%\n" % tempname)
 

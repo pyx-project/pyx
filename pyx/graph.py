@@ -676,7 +676,7 @@ class axisrater:
             rate += rater.rate(label, dense=dense)
             weight += rater.weight
         if part is not None and len(part):
-            tickmin, tickmax = axis.gettickrange() # tickrange was not yet applied!
+            tickmin, tickmax = axis.gettickrange() # tickrange was not yet applied!?
             rate += self.tickrange.rate((float(part[-1]) - float(part[0])) * axis.divisor / (tickmax - tickmin))
         else:
             rate += self.tickrange.rate(0)
@@ -852,7 +852,7 @@ class _alignbox:
         return unit.t_pt(self._pointdistance(unit.topt(x), unit.topt(y)))
 
     def _boxdistance(self, other, epsilon = 1e-10):
-        # TODO: boxes crossing algorithm is O(N^2) --- can obviously be improved at least for common cases
+        # XXX: boxes crossing and distance calculation is O(N^2)
         for i, j in self.successivepoints():
             for k, l in other.successivepoints():
                 a = (other.y[l]-other.y[k])*(other.x[k]-self.x[i]) - (other.x[l]-other.x[k])*(other.y[k]-self.y[i])
@@ -1137,14 +1137,11 @@ class axispainter(attrlist.attrlist):
             tick.labelattrs += [tex.style.math]
 
     def dolayout(self, graph, axis):
-
         labeldist = unit.topt(unit.length(self.labeldist_str, default_type="v"))
-
         for tick in axis.ticks:
             tick.virtual = axis.convert(float(tick) * axis.divisor)
             tick.x, tick.y = axis._vtickpoint(axis, tick.virtual)
             tick.dx, tick.dy = axis.vtickdirection(axis, tick.virtual)
-
         for tick in axis.ticks:
             if tick.labellevel is not None:
                 tick.labelattrs = _getsequenceno(self.labelattrs, tick.labellevel)
@@ -1160,14 +1157,12 @@ class axispainter(attrlist.attrlist):
                     tick.textbox = None
             else:
                 tick.textbox = None
-
         for tick in axis.ticks[1:]:
             if tick.dx != axis.ticks[0].dx or tick.dy != axis.ticks[0].dy:
                 equaldirection = 0
                 break
         else:
             equaldirection = 1
-
         if equaldirection:
             maxht, maxwd, maxdp = 0, 0, 0
             for tick in axis.ticks:
@@ -1181,13 +1176,11 @@ class axispainter(attrlist.attrlist):
                         tick.textbox.manualextents(wd = maxwd)
                     if self.labelvequalize:
                         tick.textbox.manualextents(ht = maxht, dp = maxdp)
-
         for tick in axis.ticks:
             if tick.textbox is not None:
                 tick.textbox._linealign(labeldist, tick.dx, tick.dy)
                 tick._extent = tick.textbox._extent(tick.dx, tick.dy) + labeldist
                 tick.textbox.transform(trafo._translation(tick.x, tick.y))
-
         def topt_v_recursive(arg):
             if _issequence(arg):
                 # return map(topt_v_recursive, arg) needs python2.2
@@ -1195,11 +1188,9 @@ class axispainter(attrlist.attrlist):
             else:
                 if arg is not None:
                     return unit.topt(unit.length(arg, default_type="v"))
-
         innerticklengths = topt_v_recursive(self.innerticklengths_str)
         outerticklengths = topt_v_recursive(self.outerticklengths_str)
         titledist = unit.topt(unit.length(self.titledist_str, default_type="v"))
-
         axis._extent = 0
         for tick in axis.ticks:
             if tick.ticklevel is not None:
@@ -1240,7 +1231,6 @@ class axispainter(attrlist.attrlist):
             return rate
 
     def paint(self, graph, axis):
-
         for tick in axis.ticks:
             if tick.ticklevel is not None:
                 if tick != frac(0, 1) or self.zerolineattrs is None:
@@ -1261,7 +1251,6 @@ class axispainter(attrlist.attrlist):
         if self.zerolineattrs is not None:
             if len(axis.ticks) and axis.ticks[0] * axis.ticks[-1] < frac(0, 1):
                 graph.stroke(axis.vgridpath(axis.convert(0)), *_ensuresequence(self.zerolineattrs))
-
         if axis.title is not None and self.titleattrs is not None:
             axis.titlebox.printtext()
 
@@ -1276,39 +1265,57 @@ class splitaxispainter:
 
     def subvbaseline(self, axis, v1=None, v2=None):
         if v1 is None:
-            if axis.vminover is None:
-                left = None
+            if self.breaklinesattrs is None:
+                left = axis.vmin
             else:
-                left = axis.vminover
+                if axis.vminover is None:
+                    left = None
+                else:
+                    left = axis.vminover
         else:
             left = axis.vmin+v1*(axis.vmax-axis.vmin)
         if v2 is None:
-            if axis.vmaxover is None:
-                right = None
+            if self.breaklinesattrs is None:
+                right = axis.vmax
             else:
-                right = axis.vmaxover
+                if axis.vmaxover is None:
+                    right = None
+                else:
+                    right = axis.vmaxover
         else:
             right = axis.vmin+v2*(axis.vmax-axis.vmin)
         return axis.baseaxis.vbaseline(axis.baseaxis, left, right)
 
-    def paint(self, graph, axis):
-        breaklinesdist = unit.length(self.breaklinesdist_str, default_type="w")
-        breaklineslength = unit.length(self.breaklineslength_str, default_type="v")
-        axis._extent = None
+    def dolayout(self, graph, axis):
+        if self.breaklinesattrs is not None:
+            self.breaklinesdist = unit.length(self.breaklinesdist_str, default_type="v")
+            self.breaklineslength = unit.length(self.breaklineslength_str, default_type="v")
+            self._breaklinesdist = unit.topt(self.breaklinesdist)
+            self._breaklineslength = unit.topt(self.breaklineslength)
+            self.sin = math.sin(self.breaklinesangle*math.pi/180.0)
+            self.cos = math.cos(self.breaklinesangle*math.pi/180.0)
+            axis._extent = (math.fabs(0.5 * self._breaklinesdist * self.cos) +
+                            math.fabs(0.5 * self._breaklineslength * self.sin))
+        else:
+            axis._extent = 0
         for subaxis in axis.axislist:
             subaxis.baseaxis = axis
             subaxis._vtickpoint = (lambda axis, v: axis.baseaxis._vtickpoint(axis.baseaxis, axis.vmin+v*(axis.vmax-axis.vmin)))
             subaxis.vtickdirection = (lambda axis, v: axis.baseaxis.vtickdirection(axis.baseaxis, axis.vmin+v*(axis.vmax-axis.vmin)))
             subaxis.vbaseline = self.subvbaseline
-            subaxis.dopaint(graph)
-            if axis._extent is None or axis._extent < subaxis._extent:
+            subaxis.dolayout(graph)
+            if axis._extent < subaxis._extent:
                 axis._extent = subaxis._extent
+
+    def paint(self, graph, axis):
+        for subaxis in axis.axislist:
+            subaxis.dopaint(graph)
         if self.breaklinesattrs is not None:
             for subaxis1, subaxis2 in zip(axis.axislist[:-1], axis.axislist[1:]):
-                # TODO: could be done better; axis extent is not adjusted
+                # use a tangent of the baseline (this is independend of the tickdirection)
                 v = 0.5 * (subaxis1.vmax + subaxis2.vmin)
-                breakline = path.normpath(axis.vbaseline(axis, v, None)).tangent(0, breaklineslength)
-                widthline = path.normpath(axis.vbaseline(axis, v, None)).tangent(0, breaklinesdist).transformed(trafo.rotation(self.breaklinesangle+90, *breakline.begin()))
+                breakline = path.normpath(axis.vbaseline(axis, v, None)).tangent(0, self.breaklineslength)
+                widthline = path.normpath(axis.vbaseline(axis, v, None)).tangent(0, self.breaklinesdist).transformed(trafo.rotation(self.breaklinesangle+90, *breakline.begin()))
                 tocenter = map(lambda x: 0.5*(x[0]-x[1]), zip(breakline.begin(), breakline.end()))
                 towidth = map(lambda x: 0.5*(x[0]-x[1]), zip(widthline.begin(), widthline.end()))
                 breakline = breakline.transformed(trafo.translation(*tocenter).rotate(self.breaklinesangle, *breakline.begin()))
@@ -1336,15 +1343,8 @@ class _axis:
                        datavmin=None, datavmax=None, tickvmin=0, tickvmax=1,
                        title=None, suffix=None, painter=axispainter(), dense=None):
         if None not in (min, max) and min > max:
-            min, max = max, min
-            if reverse:
-                reverse = 0
-            else:
-                reverse = 1
-        self.fixmin = min is not None
-        self.fixmax = max is not None
-        self.min, self.max = min, max
-        self.reverse = reverse
+            min, max, reverse = max, min, not reverse
+        self.fixmin, self.fixmax, self.min, self.max, self.reverse = min is not None, max is not None, min, max, reverse
 
         self.datamin = self.datamax = self.tickmin = self.tickmax = None
         if datavmin is None:
@@ -1469,7 +1469,8 @@ class _axis:
                     worse += 1
             variants.sort()
             i = 0
-            while i < len(variants) and (not i or variants[i][0] < bestrate):
+            bestrate = None
+            while i < len(variants) and (bestrate is None or variants[i][0] < bestrate):
                 saverange = self.__getinternalrange()
                 self.ticks = variants[i][1]
                 if len(self.ticks):
@@ -1480,13 +1481,13 @@ class _axis:
                     variants[i][0] += ratelayout
                 else:
                     variants[i][0] = None
-                if not i or variants[i][0] < bestrate:
+                if variants[i][0] is not None and (bestrate is None or variants[i][0] < bestrate):
                     bestrate = variants[i][0]
                 self.__forceinternalrange(saverange)
                 i += 1
-            variants = [variant for variant in variants[:i] if variant[0] is not None]
-            if not len(variants):
+            if bestrate is None:
                 raise PartitionError("no valid axis partitioning found")
+            variants = [variant for variant in variants[:i] if variant[0] is not None]
             variants.sort()
             self.ticks = variants[0][1]
             if len(self.ticks):
@@ -1507,6 +1508,8 @@ class linaxis(_axis, _linmap):
 
     def __init__(self, part=autolinpart(), rate=axisrater(), **args):
         _axis.__init__(self, **args)
+        if self.fixmin and self.fixmax:
+            self.relsize = self.max - self.min
         self.part = part
         self.rate = rate
 
@@ -1515,6 +1518,8 @@ class logaxis(_axis, _logmap):
 
     def __init__(self, part=autologpart(), rate=axisrater(ticks=axisrater.logticks, labels=axisrater.loglabels), **args):
         _axis.__init__(self, **args)
+        if self.fixmin and self.fixmax:
+            self.relsize = math.log(self.max) - math.log(self.min)
         self.part = part
         self.rate = rate
 
@@ -1576,122 +1581,111 @@ class linkaxis:
 
 class splitaxis:
 
-    def __init__(self, axislist, splitlist=0.5, splitdist=0.1):
+    def __init__(self, axislist, splitlist=0.5, splitdist=0.1, relsizesplitdist=None):
         self.axislist = axislist
         self.part = manualpart()
         self.painter = splitaxispainter()
-        if splitlist is not None:
-            self.splitlist = list(_ensuresequence(splitlist))
-            self.splitlist.sort()
-            if len(self.axislist) != len(self.splitlist) + 1:
-                raise ValueError("axislist and splitlist lengths do not fit together")
-            if self.splitlist[0] < 0.5*splitdist or self.splitlist[-1] > 1 - 0.5*splitdist:
-                raise ValueError("a value within splitlist is outside a valid range")
-            self.axislist[0].vmin = 0
-            self.axislist[0].vminover = None
-            for i in xrange(len(self.splitlist)):
-                if isinstance(self.axislist[i], linkaxis):
-                    self.axislist[i].vmax = self.axislist[i].linkedaxis.vmax
-                    self.axislist[i].vmaxover = self.axislist[i].linkedaxis.vmaxover
-                else:
-                    self.axislist[i].vmax = self.splitlist[i] - 0.5*splitdist
-                    self.axislist[i].vmaxover = self.splitlist[i]
-                if isinstance(self.axislist[i+1], linkaxis):
-                    self.axislist[i+1].vmin = self.axislist[i+1].linkedaxis.vmin
-                    self.axislist[i+1].vminover = self.axislist[i+1].linkedaxis.vminover
-                else:
-                    self.axislist[i+1].vmin = self.splitlist[i] + 0.5*splitdist
-                    self.axislist[i+1].vminover = self.splitlist[i]
-            self.axislist[-1].vmax = 1
-            self.axislist[-1].vmaxover = None
+        self.splitlist = list(_ensuresequence(splitlist))
+        self.splitlist.sort()
+        if len(self.axislist) != len(self.splitlist) + 1:
+            for subaxis in self.axislist:
+                if not isinstance(subaxis, linkaxis):
+                    raise ValueError("axislist and splitlist lengths do not fit together")
+        for subaxis in self.axislist:
+            if isinstance(subaxis, linkaxis):
+                subaxis.vmin = subaxis.linkedaxis.vmin
+                subaxis.vminover = subaxis.linkedaxis.vminover
+                subaxis.vmax = subaxis.linkedaxis.vmax
+                subaxis.vmaxover = subaxis.linkedaxis.vmaxover
+            else:
+                subaxis.vmin = None
+                subaxis.vmax = None
+        self.axislist[0].vmin = 0
+        self.axislist[0].vminover = None
+        self.axislist[-1].vmax = 1
+        self.axislist[-1].vmaxover = None
+        for i in xrange(len(self.splitlist)):
+            if self.splitlist[i] is not None:
+                self.axislist[i].vmax = self.splitlist[i] - 0.5*splitdist
+                self.axislist[i].vmaxover = self.splitlist[i]
+                self.axislist[i+1].vmin = self.splitlist[i] + 0.5*splitdist
+                self.axislist[i+1].vminover = self.splitlist[i]
+        i = 0
+        while i < len(self.axislist):
+            if self.axislist[i].vmax is None:
+                j = relsize = relsize2 = 0
+                while self.axislist[i + j].vmax is None:
+                    relsize += self.axislist[i + j].relsize + relsizesplitdist
+                    j += 1
+                relsize += self.axislist[i + j].relsize
+                vleft = self.axislist[i].vmin
+                vright = self.axislist[i + j].vmax
+                for k in range(i, i + j):
+                    relsize2 += self.axislist[k].relsize
+                    self.axislist[k].vmax = vleft + (vright - vleft) * relsize2 / float(relsize)
+                    relsize2 += 0.5 * relsizesplitdist
+                    self.axislist[k].vmaxover = self.axislist[k + 1].vminover = vleft + (vright - vleft) * relsize2 / float(relsize)
+                    relsize2 += 0.5 * relsizesplitdist
+                    self.axislist[k+1].vmin = vleft + (vright - vleft) * relsize2 / float(relsize)
+                if i == 0 and i + j + 1 == len(self.axislist):
+                    self.relsize = relsize
+                i += j + 1
+            else:
+                i += 1
 
-            self.fixmin = self.axislist[0].fixmin
-            if self.fixmin:
-                self.min = self.axislist[0].min
-            self.fixmax = self.axislist[-1].fixmax
-            if self.fixmax:
-                self.max = self.axislist[-1].max
-            self.divisor = 1
-            self.suffix = ""
-        else:
-            self.splitlist = self.minid = self.maxid = None
+        self.fixmin = self.axislist[0].fixmin
+        if self.fixmin:
+            self.min = self.axislist[0].min
+        self.fixmax = self.axislist[-1].fixmax
+        if self.fixmax:
+            self.max = self.axislist[-1].max
+        self.divisor = 1
+        self.suffix = ""
 
     def getdatarange(self):
-        if self.splitlist is not None:
-            min = self.axislist[0].getdatarange()
-            max = self.axislist[-1].getdatarange()
-            try:
-                return min[0], max[1]
-            except TypeError:
-                return None
-        else:
-            return self.minid, self.maxid
+        min = self.axislist[0].getdatarange()
+        max = self.axislist[-1].getdatarange()
+        try:
+            return min[0], max[1]
+        except TypeError:
+            return None
 
     def setdatarange(self, min, max):
-        if self.splitlist is not None:
-            self.axislist[0].setdatarange(min, None)
-            self.axislist[-1].setdatarange(None, max)
-        else:
-            if min is not None:
-                if not _isinteger(min):
-                    raise TypeError("integer split identifier expected")
-                self.minid = min
-            if max is not None:
-                if not _isinteger(max):
-                    raise TypeError("integer split identifier expected")
-                self.maxid = max
+        self.axislist[0].setdatarange(min, None)
+        self.axislist[-1].setdatarange(None, max)
 
-#    def gettickrange(self):
-#        min = self.axislist[0].gettickrange()
-#        max = self.axislist[-1].gettickrange()
-#        try:
-#            return min[0], max[1]
-#        except TypeError:
-#            return None
-#
-#    def settickrange(self, min, max):
-#        self.axislist[0].settickrange(min, None)
-#        self.axislist[-1].settickrange(None, max)
+    def gettickrange(self):
+        min = self.axislist[0].gettickrange()
+        max = self.axislist[-1].gettickrange()
+        try:
+            return min[0], max[1]
+        except TypeError:
+            return None
+
+    def settickrange(self, min, max):
+        self.axislist[0].settickrange(min, None)
+        self.axislist[-1].settickrange(None, max)
 
     def convert(self, value):
         # TODO: proper raising exceptions (which exceptions go thru, which are handled before?)
-        if self.splitlist is not None:
-            if value < self.axislist[0].max:
-                return self.axislist[0].vmin + self.axislist[0].convert(value)*(self.axislist[0].vmax-self.axislist[0].vmin)
-            for axis in self.axislist[1:-1]:
-                if value > axis.min and value < axis.max:
-                    return axis.vmin + axis.convert(value)*(axis.vmax-axis.vmin)
-            if value > self.axislist[-1].min:
-                return self.axislist[-1].vmin + self.axislist[-1].convert(value)*(self.axislist[-1].vmax-self.axislist[-1].vmin)
-            raise ValueError("value couldn't be assigned to a split region")
-        else:
-            if not _isinteger(value[0]):
-                raise ValueError("integer split identifier expected")
-            if value[0] >= self.minid and value[0] <= self.maxid:
-                axis = self.axislist[value[0] - self.minid]
-                if len(value) == 2:
-                    othervalue = value[1]
-                else:
-                    othervalue = value[1:]
-                return (value[0] - self.minid + axis.convert(othervalue))/(self.maxid - self.minid + 1.0)
-            else:
-                return None
+        if value < self.axislist[0].max:
+            return self.axislist[0].vmin + self.axislist[0].convert(value)*(self.axislist[0].vmax-self.axislist[0].vmin)
+        for axis in self.axislist[1:-1]:
+            if value > axis.min and value < axis.max:
+                return axis.vmin + axis.convert(value)*(axis.vmax-axis.vmin)
+        if value > self.axislist[-1].min:
+            return self.axislist[-1].vmin + self.axislist[-1].convert(value)*(self.axislist[-1].vmax-self.axislist[-1].vmin)
+        raise ValueError("value couldn't be assigned to a split region")
 
     def dolayout(self, graph):
-        if self.splitlist is not None:
-            for axis in self.axislist:
-                axis.dolayout(graph)
-        self._extent = 0 # TODO: this is crap
+        self.painter.dolayout(graph, self)
 
     def dopaint(self, graph):
-        if self.splitlist is not None:
-            self.painter.paint(graph, self)
-        else:
-            self._extent = 0
+        self.painter.paint(graph, self)
 
     def createlinkaxis(self, *args):
         if not len(args):
-            return splitaxis([x.createlinkaxis() for x in self.axislist])
+            return splitaxis([x.createlinkaxis() for x in self.axislist], splitlist=None)
         if len(args) != len(self.axislist):
             raise IndexError("length of the argument list doesn't fit to split number")
         return splitaxis([x.createlinkaxis(**arg) for x, arg in zip(self.axislist, args)])
@@ -1981,247 +1975,248 @@ class graphxy(canvas.canvas):
 
 
 
-class graphxyz(graphxy):
-
-    Names = "x", "y", "z"
-
-    def _vxtickpoint(self, axis, v):
-        return self._vpos(v, axis.vypos, axis.vzpos)
-
-    def _vytickpoint(self, axis, v):
-        return self._vpos(axis.vxpos, v, axis.vzpos)
-
-    def _vztickpoint(self, axis, v):
-        return self._vpos(axis.vxpos, axis.vypos, v)
-
-    def vxtickdirection(self, axis, v):
-        x1, y1 = self._vpos(v, axis.vypos, axis.vzpos)
-        x2, y2 = self._vpos(v, 0.5, 0)
-        dx, dy = x1 - x2, y1 - y2
-        norm = math.sqrt(dx*dx + dy*dy)
-        return dx/norm, dy/norm
-
-    def vytickdirection(self, axis, v):
-        x1, y1 = self._vpos(axis.vxpos, v, axis.vzpos)
-        x2, y2 = self._vpos(0.5, v, 0)
-        dx, dy = x1 - x2, y1 - y2
-        norm = math.sqrt(dx*dx + dy*dy)
-        return dx/norm, dy/norm
-
-    def vztickdirection(self, axis, v):
-        return -1, 0
-        x1, y1 = self._vpos(axis.vxpos, axis.vypos, v)
-        x2, y2 = self._vpos(0.5, 0.5, v)
-        dx, dy = x1 - x2, y1 - y2
-        norm = math.sqrt(dx*dx + dy*dy)
-        return dx/norm, dy/norm
-
-    def _pos(self, x, y, z, xaxis=None, yaxis=None, zaxis=None):
-        if xaxis is None: xaxis = self.axes["x"]
-        if yaxis is None: yaxis = self.axes["y"]
-        if zaxis is None: zaxis = self.axes["z"]
-        return self._vpos(xaxis.convert(x), yaxis.convert(y), zaxis.convert(z))
-
-    def pos(self, x, y, z, xaxis=None, yaxis=None, zaxis=None):
-        if xaxis is None: xaxis = self.axes["x"]
-        if yaxis is None: yaxis = self.axes["y"]
-        if zaxis is None: zaxis = self.axes["z"]
-        return self.vpos(xaxis.convert(x), yaxis.convert(y), zaxis.convert(z))
-
-    def _vpos(self, vx, vy, vz):
-        x, y, z = (vx - 0.5)*self._depth, (vy - 0.5)*self._width, (vz - 0.5)*self._height
-        d0 = float(self.a[0]*self.b[1]*(z-self.eye[2])
-                 + self.a[2]*self.b[0]*(y-self.eye[1])
-                 + self.a[1]*self.b[2]*(x-self.eye[0])
-                 - self.a[2]*self.b[1]*(x-self.eye[0])
-                 - self.a[0]*self.b[2]*(y-self.eye[1])
-                 - self.a[1]*self.b[0]*(z-self.eye[2]))
-        da = (self.eye[0]*self.b[1]*(z-self.eye[2])
-            + self.eye[2]*self.b[0]*(y-self.eye[1])
-            + self.eye[1]*self.b[2]*(x-self.eye[0])
-            - self.eye[2]*self.b[1]*(x-self.eye[0])
-            - self.eye[0]*self.b[2]*(y-self.eye[1])
-            - self.eye[1]*self.b[0]*(z-self.eye[2]))
-        db = (self.a[0]*self.eye[1]*(z-self.eye[2])
-            + self.a[2]*self.eye[0]*(y-self.eye[1])
-            + self.a[1]*self.eye[2]*(x-self.eye[0])
-            - self.a[2]*self.eye[1]*(x-self.eye[0])
-            - self.a[0]*self.eye[2]*(y-self.eye[1])
-            - self.a[1]*self.eye[0]*(z-self.eye[2]))
-        return da/d0 + self._xpos, db/d0 + self._ypos
-
-    def vpos(self, vx, vy, vz):
-        tx, ty = self._vpos(vx, vy, vz)
-        return unit.t_pt(tx), unit.t_pt(ty)
-
-    def xbaseline(self, axis, x1, x2, shift=0, xaxis=None):
-        if xaxis is None: xaxis = self.axes["x"]
-        return self.vxbaseline(axis, xaxis.convert(x1), xaxis.convert(x2), shift)
-
-    def ybaseline(self, axis, y1, y2, shift=0, yaxis=None):
-        if yaxis is None: yaxis = self.axes["y"]
-        return self.vybaseline(axis, yaxis.convert(y1), yaxis.convert(y2), shift)
-
-    def zbaseline(self, axis, z1, z2, shift=0, zaxis=None):
-        if zaxis is None: zaxis = self.axes["z"]
-        return self.vzbaseline(axis, zaxis.convert(z1), zaxis.convert(z2), shift)
-
-    def vxbaseline(self, axis, v1, v2, shift=0):
-        return (path._line(*(self._vpos(v1, 0, 0) + self._vpos(v2, 0, 0))) +
-                path._line(*(self._vpos(v1, 0, 1) + self._vpos(v2, 0, 1))) +
-                path._line(*(self._vpos(v1, 1, 1) + self._vpos(v2, 1, 1))) +
-                path._line(*(self._vpos(v1, 1, 0) + self._vpos(v2, 1, 0))))
-
-    def vybaseline(self, axis, v1, v2, shift=0):
-        return (path._line(*(self._vpos(0, v1, 0) + self._vpos(0, v2, 0))) +
-                path._line(*(self._vpos(0, v1, 1) + self._vpos(0, v2, 1))) +
-                path._line(*(self._vpos(1, v1, 1) + self._vpos(1, v2, 1))) +
-                path._line(*(self._vpos(1, v1, 0) + self._vpos(1, v2, 0))))
-
-    def vzbaseline(self, axis, v1, v2, shift=0):
-        return (path._line(*(self._vpos(0, 0, v1) + self._vpos(0, 0, v2))) +
-                path._line(*(self._vpos(0, 1, v1) + self._vpos(0, 1, v2))) +
-                path._line(*(self._vpos(1, 1, v1) + self._vpos(1, 1, v2))) +
-                path._line(*(self._vpos(1, 0, v1) + self._vpos(1, 0, v2))))
-
-    def xgridpath(self, x, xaxis=None):
-        assert 0
-        if xaxis is None: xaxis = self.axes["x"]
-        v = xaxis.convert(x)
-        return path._line(self._xpos+v*self._width, self._ypos,
-                          self._xpos+v*self._width, self._ypos+self._height)
-
-    def ygridpath(self, y, yaxis=None):
-        assert 0
-        if yaxis is None: yaxis = self.axes["y"]
-        v = yaxis.convert(y)
-        return path._line(self._xpos, self._ypos+v*self._height,
-                          self._xpos+self._width, self._ypos+v*self._height)
-
-    def zgridpath(self, z, zaxis=None):
-        assert 0
-        if zaxis is None: zaxis = self.axes["z"]
-        v = zaxis.convert(z)
-        return path._line(self._xpos, self._zpos+v*self._height,
-                          self._xpos+self._width, self._zpos+v*self._height)
-
-    def vxgridpath(self, v):
-        return path.path(path._moveto(*self._vpos(v, 0, 0)),
-                         path._lineto(*self._vpos(v, 0, 1)),
-                         path._lineto(*self._vpos(v, 1, 1)),
-                         path._lineto(*self._vpos(v, 1, 0)),
-                         path.closepath())
-
-    def vygridpath(self, v):
-        return path.path(path._moveto(*self._vpos(0, v, 0)),
-                         path._lineto(*self._vpos(0, v, 1)),
-                         path._lineto(*self._vpos(1, v, 1)),
-                         path._lineto(*self._vpos(1, v, 0)),
-                         path.closepath())
-
-    def vzgridpath(self, v):
-        return path.path(path._moveto(*self._vpos(0, 0, v)),
-                         path._lineto(*self._vpos(0, 1, v)),
-                         path._lineto(*self._vpos(1, 1, v)),
-                         path._lineto(*self._vpos(1, 0, v)),
-                         path.closepath())
-
-    def _addpos(self, x, y, dx, dy):
-        assert 0
-        return x+dx, y+dy
-
-    def _connect(self, x1, y1, x2, y2):
-        assert 0
-        return path._lineto(x2, y2)
-
-    def doaxes(self):
-        self.dolayout()
-        if not self.removedomethod(self.doaxes): return
-        axesdist = unit.topt(unit.length(self.axesdist_str, default_type="v"))
-        XPattern = re.compile(r"%s([2-9]|[1-9][0-9]+)?$" % self.Names[0])
-        YPattern = re.compile(r"%s([2-9]|[1-9][0-9]+)?$" % self.Names[1])
-        ZPattern = re.compile(r"%s([2-9]|[1-9][0-9]+)?$" % self.Names[2])
-        items = list(self.axes.items())
-        items.sort() #TODO: alphabetical sorting breaks for axis numbers bigger than 9
-        for key, axis in items:
-            num = self.keynum(key)
-            num2 = 1 - num % 2 # x1 -> 0, x2 -> 1, x3 -> 0, x4 -> 1, ...
-            num3 = 1 - 2 * (num % 2) # x1 -> -1, x2 -> 1, x3 -> -1, x4 -> 1, ...
-            if XPattern.match(key):
-                axis.vypos = 0
-                axis.vzpos = 0
-                axis._vtickpoint = self._vxtickpoint
-                axis.vgridpath = self.vxgridpath
-                axis.vbaseline = self.vxbaseline
-                axis.vtickdirection = self.vxtickdirection
-            elif YPattern.match(key):
-                axis.vxpos = 0
-                axis.vzpos = 0
-                axis._vtickpoint = self._vytickpoint
-                axis.vgridpath = self.vygridpath
-                axis.vbaseline = self.vybaseline
-                axis.vtickdirection = self.vytickdirection
-            elif ZPattern.match(key):
-                axis.vxpos = 0
-                axis.vypos = 0
-                axis._vtickpoint = self._vztickpoint
-                axis.vgridpath = self.vzgridpath
-                axis.vbaseline = self.vzbaseline
-                axis.vtickdirection = self.vztickdirection
-            else:
-                raise ValueError("Axis key '%s' not allowed" % key)
-            if axis.painter is not None:
-                axis.dopaint(self)
-#            if XPattern.match(key):
-#                self._xaxisextents[num2] += axis._extent
-#                needxaxisdist[num2] = 1
-#            if YPattern.match(key):
-#                self._yaxisextents[num2] += axis._extent
-#                needyaxisdist[num2] = 1
-
-    def __init__(self, tex, xpos=0, ypos=0, width=None, height=None, depth=None,
-                 phi=30, theta=30, distance=1,
-                 backgroundattrs=None, axesdist="0.8 cm", **axes):
-        canvas.canvas.__init__(self)
-        self.tex = tex
-        self.xpos = xpos
-        self.ypos = ypos
-        self._xpos = unit.topt(xpos)
-        self._ypos = unit.topt(ypos)
-        self._width = unit.topt(width)
-        self._height = unit.topt(height)
-        self._depth = unit.topt(depth)
-        self.width = width
-        self.height = height
-        self.depth = depth
-        if self._width <= 0: raise ValueError("width < 0")
-        if self._height <= 0: raise ValueError("height < 0")
-        if self._depth <= 0: raise ValueError("height < 0")
-        self._distance = distance*math.sqrt(self._width*self._width+
-                                            self._height*self._height+
-                                            self._depth*self._depth)
-        phi *= -math.pi/180
-        theta *= math.pi/180
-        self.a = (-math.sin(phi), math.cos(phi), 0)
-        self.b = (-math.cos(phi)*math.sin(theta),
-                  -math.sin(phi)*math.sin(theta),
-                  math.cos(theta))
-        self.eye = (self._distance*math.cos(phi)*math.cos(theta),
-                    self._distance*math.sin(phi)*math.cos(theta),
-                    self._distance*math.sin(theta))
-        self.initaxes(axes)
-        self.axesdist_str = axesdist
-        self.backgroundattrs = backgroundattrs
-
-        self.data = []
-        self.domethods = [self.dolayout, self.dobackground, self.doaxes, self.dodata]
-        self.haslayout = 0
-        self.defaultstyle = {}
-
-    def bbox(self):
-        self.finish()
-        return bbox.bbox(self._xpos - 200, self._ypos - 200, self._xpos + 200, self._ypos + 200)
-
+# some thoughts, but deferred right now
+# 
+# class graphxyz(graphxy):
+# 
+#     Names = "x", "y", "z"
+# 
+#     def _vxtickpoint(self, axis, v):
+#         return self._vpos(v, axis.vypos, axis.vzpos)
+# 
+#     def _vytickpoint(self, axis, v):
+#         return self._vpos(axis.vxpos, v, axis.vzpos)
+# 
+#     def _vztickpoint(self, axis, v):
+#         return self._vpos(axis.vxpos, axis.vypos, v)
+# 
+#     def vxtickdirection(self, axis, v):
+#         x1, y1 = self._vpos(v, axis.vypos, axis.vzpos)
+#         x2, y2 = self._vpos(v, 0.5, 0)
+#         dx, dy = x1 - x2, y1 - y2
+#         norm = math.sqrt(dx*dx + dy*dy)
+#         return dx/norm, dy/norm
+# 
+#     def vytickdirection(self, axis, v):
+#         x1, y1 = self._vpos(axis.vxpos, v, axis.vzpos)
+#         x2, y2 = self._vpos(0.5, v, 0)
+#         dx, dy = x1 - x2, y1 - y2
+#         norm = math.sqrt(dx*dx + dy*dy)
+#         return dx/norm, dy/norm
+# 
+#     def vztickdirection(self, axis, v):
+#         return -1, 0
+#         x1, y1 = self._vpos(axis.vxpos, axis.vypos, v)
+#         x2, y2 = self._vpos(0.5, 0.5, v)
+#         dx, dy = x1 - x2, y1 - y2
+#         norm = math.sqrt(dx*dx + dy*dy)
+#         return dx/norm, dy/norm
+# 
+#     def _pos(self, x, y, z, xaxis=None, yaxis=None, zaxis=None):
+#         if xaxis is None: xaxis = self.axes["x"]
+#         if yaxis is None: yaxis = self.axes["y"]
+#         if zaxis is None: zaxis = self.axes["z"]
+#         return self._vpos(xaxis.convert(x), yaxis.convert(y), zaxis.convert(z))
+# 
+#     def pos(self, x, y, z, xaxis=None, yaxis=None, zaxis=None):
+#         if xaxis is None: xaxis = self.axes["x"]
+#         if yaxis is None: yaxis = self.axes["y"]
+#         if zaxis is None: zaxis = self.axes["z"]
+#         return self.vpos(xaxis.convert(x), yaxis.convert(y), zaxis.convert(z))
+# 
+#     def _vpos(self, vx, vy, vz):
+#         x, y, z = (vx - 0.5)*self._depth, (vy - 0.5)*self._width, (vz - 0.5)*self._height
+#         d0 = float(self.a[0]*self.b[1]*(z-self.eye[2])
+#                  + self.a[2]*self.b[0]*(y-self.eye[1])
+#                  + self.a[1]*self.b[2]*(x-self.eye[0])
+#                  - self.a[2]*self.b[1]*(x-self.eye[0])
+#                  - self.a[0]*self.b[2]*(y-self.eye[1])
+#                  - self.a[1]*self.b[0]*(z-self.eye[2]))
+#         da = (self.eye[0]*self.b[1]*(z-self.eye[2])
+#             + self.eye[2]*self.b[0]*(y-self.eye[1])
+#             + self.eye[1]*self.b[2]*(x-self.eye[0])
+#             - self.eye[2]*self.b[1]*(x-self.eye[0])
+#             - self.eye[0]*self.b[2]*(y-self.eye[1])
+#             - self.eye[1]*self.b[0]*(z-self.eye[2]))
+#         db = (self.a[0]*self.eye[1]*(z-self.eye[2])
+#             + self.a[2]*self.eye[0]*(y-self.eye[1])
+#             + self.a[1]*self.eye[2]*(x-self.eye[0])
+#             - self.a[2]*self.eye[1]*(x-self.eye[0])
+#             - self.a[0]*self.eye[2]*(y-self.eye[1])
+#             - self.a[1]*self.eye[0]*(z-self.eye[2]))
+#         return da/d0 + self._xpos, db/d0 + self._ypos
+# 
+#     def vpos(self, vx, vy, vz):
+#         tx, ty = self._vpos(vx, vy, vz)
+#         return unit.t_pt(tx), unit.t_pt(ty)
+# 
+#     def xbaseline(self, axis, x1, x2, shift=0, xaxis=None):
+#         if xaxis is None: xaxis = self.axes["x"]
+#         return self.vxbaseline(axis, xaxis.convert(x1), xaxis.convert(x2), shift)
+# 
+#     def ybaseline(self, axis, y1, y2, shift=0, yaxis=None):
+#         if yaxis is None: yaxis = self.axes["y"]
+#         return self.vybaseline(axis, yaxis.convert(y1), yaxis.convert(y2), shift)
+# 
+#     def zbaseline(self, axis, z1, z2, shift=0, zaxis=None):
+#         if zaxis is None: zaxis = self.axes["z"]
+#         return self.vzbaseline(axis, zaxis.convert(z1), zaxis.convert(z2), shift)
+# 
+#     def vxbaseline(self, axis, v1, v2, shift=0):
+#         return (path._line(*(self._vpos(v1, 0, 0) + self._vpos(v2, 0, 0))) +
+#                 path._line(*(self._vpos(v1, 0, 1) + self._vpos(v2, 0, 1))) +
+#                 path._line(*(self._vpos(v1, 1, 1) + self._vpos(v2, 1, 1))) +
+#                 path._line(*(self._vpos(v1, 1, 0) + self._vpos(v2, 1, 0))))
+# 
+#     def vybaseline(self, axis, v1, v2, shift=0):
+#         return (path._line(*(self._vpos(0, v1, 0) + self._vpos(0, v2, 0))) +
+#                 path._line(*(self._vpos(0, v1, 1) + self._vpos(0, v2, 1))) +
+#                 path._line(*(self._vpos(1, v1, 1) + self._vpos(1, v2, 1))) +
+#                 path._line(*(self._vpos(1, v1, 0) + self._vpos(1, v2, 0))))
+# 
+#     def vzbaseline(self, axis, v1, v2, shift=0):
+#         return (path._line(*(self._vpos(0, 0, v1) + self._vpos(0, 0, v2))) +
+#                 path._line(*(self._vpos(0, 1, v1) + self._vpos(0, 1, v2))) +
+#                 path._line(*(self._vpos(1, 1, v1) + self._vpos(1, 1, v2))) +
+#                 path._line(*(self._vpos(1, 0, v1) + self._vpos(1, 0, v2))))
+# 
+#     def xgridpath(self, x, xaxis=None):
+#         assert 0
+#         if xaxis is None: xaxis = self.axes["x"]
+#         v = xaxis.convert(x)
+#         return path._line(self._xpos+v*self._width, self._ypos,
+#                           self._xpos+v*self._width, self._ypos+self._height)
+# 
+#     def ygridpath(self, y, yaxis=None):
+#         assert 0
+#         if yaxis is None: yaxis = self.axes["y"]
+#         v = yaxis.convert(y)
+#         return path._line(self._xpos, self._ypos+v*self._height,
+#                           self._xpos+self._width, self._ypos+v*self._height)
+# 
+#     def zgridpath(self, z, zaxis=None):
+#         assert 0
+#         if zaxis is None: zaxis = self.axes["z"]
+#         v = zaxis.convert(z)
+#         return path._line(self._xpos, self._zpos+v*self._height,
+#                           self._xpos+self._width, self._zpos+v*self._height)
+# 
+#     def vxgridpath(self, v):
+#         return path.path(path._moveto(*self._vpos(v, 0, 0)),
+#                          path._lineto(*self._vpos(v, 0, 1)),
+#                          path._lineto(*self._vpos(v, 1, 1)),
+#                          path._lineto(*self._vpos(v, 1, 0)),
+#                          path.closepath())
+# 
+#     def vygridpath(self, v):
+#         return path.path(path._moveto(*self._vpos(0, v, 0)),
+#                          path._lineto(*self._vpos(0, v, 1)),
+#                          path._lineto(*self._vpos(1, v, 1)),
+#                          path._lineto(*self._vpos(1, v, 0)),
+#                          path.closepath())
+# 
+#     def vzgridpath(self, v):
+#         return path.path(path._moveto(*self._vpos(0, 0, v)),
+#                          path._lineto(*self._vpos(0, 1, v)),
+#                          path._lineto(*self._vpos(1, 1, v)),
+#                          path._lineto(*self._vpos(1, 0, v)),
+#                          path.closepath())
+# 
+#     def _addpos(self, x, y, dx, dy):
+#         assert 0
+#         return x+dx, y+dy
+# 
+#     def _connect(self, x1, y1, x2, y2):
+#         assert 0
+#         return path._lineto(x2, y2)
+# 
+#     def doaxes(self):
+#         self.dolayout()
+#         if not self.removedomethod(self.doaxes): return
+#         axesdist = unit.topt(unit.length(self.axesdist_str, default_type="v"))
+#         XPattern = re.compile(r"%s([2-9]|[1-9][0-9]+)?$" % self.Names[0])
+#         YPattern = re.compile(r"%s([2-9]|[1-9][0-9]+)?$" % self.Names[1])
+#         ZPattern = re.compile(r"%s([2-9]|[1-9][0-9]+)?$" % self.Names[2])
+#         items = list(self.axes.items())
+#         items.sort() #TODO: alphabetical sorting breaks for axis numbers bigger than 9
+#         for key, axis in items:
+#             num = self.keynum(key)
+#             num2 = 1 - num % 2 # x1 -> 0, x2 -> 1, x3 -> 0, x4 -> 1, ...
+#             num3 = 1 - 2 * (num % 2) # x1 -> -1, x2 -> 1, x3 -> -1, x4 -> 1, ...
+#             if XPattern.match(key):
+#                 axis.vypos = 0
+#                 axis.vzpos = 0
+#                 axis._vtickpoint = self._vxtickpoint
+#                 axis.vgridpath = self.vxgridpath
+#                 axis.vbaseline = self.vxbaseline
+#                 axis.vtickdirection = self.vxtickdirection
+#             elif YPattern.match(key):
+#                 axis.vxpos = 0
+#                 axis.vzpos = 0
+#                 axis._vtickpoint = self._vytickpoint
+#                 axis.vgridpath = self.vygridpath
+#                 axis.vbaseline = self.vybaseline
+#                 axis.vtickdirection = self.vytickdirection
+#             elif ZPattern.match(key):
+#                 axis.vxpos = 0
+#                 axis.vypos = 0
+#                 axis._vtickpoint = self._vztickpoint
+#                 axis.vgridpath = self.vzgridpath
+#                 axis.vbaseline = self.vzbaseline
+#                 axis.vtickdirection = self.vztickdirection
+#             else:
+#                 raise ValueError("Axis key '%s' not allowed" % key)
+#             if axis.painter is not None:
+#                 axis.dopaint(self)
+# #            if XPattern.match(key):
+# #                self._xaxisextents[num2] += axis._extent
+# #                needxaxisdist[num2] = 1
+# #            if YPattern.match(key):
+# #                self._yaxisextents[num2] += axis._extent
+# #                needyaxisdist[num2] = 1
+# 
+#     def __init__(self, tex, xpos=0, ypos=0, width=None, height=None, depth=None,
+#                  phi=30, theta=30, distance=1,
+#                  backgroundattrs=None, axesdist="0.8 cm", **axes):
+#         canvas.canvas.__init__(self)
+#         self.tex = tex
+#         self.xpos = xpos
+#         self.ypos = ypos
+#         self._xpos = unit.topt(xpos)
+#         self._ypos = unit.topt(ypos)
+#         self._width = unit.topt(width)
+#         self._height = unit.topt(height)
+#         self._depth = unit.topt(depth)
+#         self.width = width
+#         self.height = height
+#         self.depth = depth
+#         if self._width <= 0: raise ValueError("width < 0")
+#         if self._height <= 0: raise ValueError("height < 0")
+#         if self._depth <= 0: raise ValueError("height < 0")
+#         self._distance = distance*math.sqrt(self._width*self._width+
+#                                             self._height*self._height+
+#                                             self._depth*self._depth)
+#         phi *= -math.pi/180
+#         theta *= math.pi/180
+#         self.a = (-math.sin(phi), math.cos(phi), 0)
+#         self.b = (-math.cos(phi)*math.sin(theta),
+#                   -math.sin(phi)*math.sin(theta),
+#                   math.cos(theta))
+#         self.eye = (self._distance*math.cos(phi)*math.cos(theta),
+#                     self._distance*math.sin(phi)*math.cos(theta),
+#                     self._distance*math.sin(theta))
+#         self.initaxes(axes)
+#         self.axesdist_str = axesdist
+#         self.backgroundattrs = backgroundattrs
+# 
+#         self.data = []
+#         self.domethods = [self.dolayout, self.dobackground, self.doaxes, self.dodata]
+#         self.haslayout = 0
+#         self.defaultstyle = {}
+# 
+#     def bbox(self):
+#         self.finish()
+#         return bbox.bbox(self._xpos - 200, self._ypos - 200, self._xpos + 200, self._ypos + 200)
 
 
 ################################################################################
