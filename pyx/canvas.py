@@ -42,7 +42,14 @@ class canvasitem:
         pass
 
     def outputPDF(self, file, writer, context):
-        """write PDF code corresponding to canvasitem to file"""
+        """write PDF code corresponding to canvasitem to file using the given writer
+        and context.
+
+        - file has to provide a write(string) method
+        - writer contains properties like whether streamcompression is used.
+        - context is used for keeping track of the graphics state, in particular
+        for the emulation of PS behaviour regarding fill and stroke styles.
+        """
         pass
 
     def resources(self):
