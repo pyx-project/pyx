@@ -115,6 +115,63 @@ mathematical axis)
 \verb|size.huge|, \verb|size.Huge|
 \end{description}
 
+\section{Using the graphics-bundle with \LaTeX}
+
+The packages in \LaTeX-graphics bundle (color.sty, graphics.sty,
+graphicx.sty, \ldots) make extensive use of \verb|\special| commands here
+are some notes on this topic. Please install the appropriate driver file
+\verb|pyx.def|, which defines all the specials, in your \LaTeX-tree and add
+the content of both files \verb|color.cfg| and \verb|graphics.cfg| to your
+personal configuration files.\footnote{If you do not know what I am talking about
+right now -- just ignore this paragraph, but make sure not to set the
+\texttt{pyxgraphics} keyword to 0.} After you have installed the \verb|.cfg|
+files please use the \verb|text| module always with the \verb|pyxgraphics|
+keyword set to 0, this switches off a hack that might be convenient for less
+experienced \LaTeX-users.\medskip
+
+You can then import the packages of the graphics-bundle and related packages
+(e.g.~rotating, \ldots) with the option~\verb|pyx|, e.g.{}\\
+\rule{0.1\linewidth}{0sp}\verb|\usepackage[pyx]{color,graphicx}|\\
+Please note that the option~\verb|pyx| is only available with
+\verb|pyxgraphics=0| and a properly installed driver file. Otherwise do not
+use this option, omit it completely or say~\verb|[dvips]|.\medskip
+
+When defining colours in \LaTeX as one of \{\verb|gray|, \verb|cmyk|,
+\verb|rgb|, \verb|RGB|, \verb|hsb|\} then pyx will use the corresponding
+values (one to four reals) for output. When you use one of the \verb|named|
+colors in \LaTeX then pyx will use the corresponding predefined colour (see
+module \verb|color| and the colour table at the end of the manual).
+
+When importing eps-graphics in \LaTeX then pyx will rotate, scale and clip
+your file like you expect it. Note that pyx cannot import other than eps-files
+at the moment.\medskip
+
+In total, the following specials can be handled by the \verb|text| module at
+the moment:\medskip
+
+\begingroup
+\leftskip3em
+\parindent-3em
+\parskip0.5ex
+\texttt{PyX:color\_begin (model) (spec)}\\
+  starts a colour. (model)~is one of
+  \{\verb|gray|, \verb|cmyk|, \verb|rgb|, \verb|hsb|, \verb|texnamed|\}.
+  (spec)~depends on the model: a name or some numbers.\par
+\texttt{PyX:color\_end} ends a colour.\par
+\texttt{PyX:epsinclude file= llx= lly= urx= ury= width= height= clip=0/1}\\
+  includes an eps-file. The values of llx to ury are in the files' coordinate
+  system and specify the part of the graphics that should become the specified
+  width and height in the outcome. The graphics may be clipped. The last three
+  parameters are optional.\par
+\texttt{PyX:scale\_begin (x) (y)}\\
+  begins scaling from the current point.\par
+\texttt{PyX:scale\_end} ends scaling.\par
+\texttt{PyX:rotate\_begin (angle)} begins rotation around the current
+  point.\par
+\texttt{PyX:rotate\_end} ends rotation.\par
+\endgroup
+
+
 \section{\TeX/\LaTeX{} message parsers}
 
 Message parsers are used to scan the output of \TeX/\LaTeX. The output
