@@ -28,11 +28,12 @@ g = c.insert(graph.graphxy(t, width=10,
                            x=graph.logaxis(title="x-Achse"),
                            y=graph.logaxis(title="y-Achse",
                                            part=graph.logpart(tickshiftfracslist=(graph.autologpart.shiftfracs1, graph.autologpart.shiftfracs1to9),
-                                                              labeltext=("Januar", "Februar", r"M\"arz", "April")),
+                                                              labels=("Januar", "Februar", r"M\"arz", "April")),
                                            painter=graph.axispainter(labelstyles=(tex.direction(50),tex.halign.right))),
                            y2=graph.linaxis(title="y2-Achse", factor = 0.01, suffix = "\,\pi")))
 df = graph.datafile("testdata")
-g.plot(graph.data(df, x=1, y=3))
+#g.plot(graph.data(df, x=1, y=3), style = graph.markcircle())
+g.plot(graph.data(df, x=1, y=3, dy=8), style = graph.markftriangle(size="0.2 cm"))
 g.plot(graph.data(df, x=1, y2=4))
 c.insert(t)
 c.writetofile("test_graph")

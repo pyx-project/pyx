@@ -157,8 +157,8 @@ class tick(frac):
 
 class anypart:
 
-    def __init__(self, labeltext=None):
-        self.labeltext = labeltext
+    def __init__(self, labels=None):
+        self.labels = labels
 
     def mergeticklists(self, list1, list2):
         # TODO: could be improved??? (read python cookbook carefully)
@@ -180,10 +180,11 @@ class anypart:
                 list1 += list2[j:]
         return list1
 
-    def setlabeltext(self, part):
-        if self.labeltext is not None:
-            for tick, label in zip([tick for tick in part if tick.labellevel == 0], self.labeltext):
+    def setlabels(self, part):
+        if self.labels is not None:
+            for tick, label in zip([tick for tick in part if tick.labellevel == 0], self.labels):
                 tick.text = label
+
 
 class linpart(anypart):
 
@@ -253,7 +254,7 @@ class linpart(anypart):
         for i in range(len(labelfracs)):
             ticks = self.mergeticklists(ticks, self.getticklist(min, max, labelfracs[i], labellevel = i))
 
-        self.setlabeltext(ticks)
+        self.setlabels(ticks)
         return ticks
 
     def getparts(self, min, max):
@@ -385,7 +386,7 @@ class logpart(anypart):
         for i in range(len(labelshiftfracslist)):
             ticks = self.mergeticklists(ticks, self.getticklist(min, max, labelshiftfracslist[i], labellevel = i))
 
-        self.setlabeltext(ticks)
+        self.setlabels(ticks)
         return ticks
 
     def getparts(self, min, max):
@@ -707,7 +708,7 @@ class _alignbox:
 class alignbox(_alignbox):
 
     def __init__(self, *args):
-        args = map(lambda x: x, map(lambda x, unit=unit: unit.topt(x), args))
+        args = map(None, map(unit.topt, *args))
         _alignbox.__init__(self, *args)
 
 
@@ -722,7 +723,7 @@ class _rectbox(_alignbox):
 class rectbox(_rectbox):
 
     def __init__(self, *arglist, **argdict):
-        arglist = map(lambda x, unit=unit: unit.topt(x), arglist)
+        arglist = map(unit.topt, arglist)
         for key in argdict.keys():
             argdict[key] = unit.topt(argdict[key])
         _rectbox.__init__(self, *argslist, **argdict)
@@ -769,8 +770,8 @@ class textbox(_rectbox, attrlist.attrlist):
     def _printtext(self, x, y):
         self.tex._text(x + self.xtext, y + self.ytext, self.text, *self.textstyles)
 
-    def printtext(self, x, y):
-        self._printtext(unit.topt(x), unit.topt(y))
+    def printtext(self, *args):
+        self._printtext(*map(unit.topt, args))
 
 
 ################################################################################
@@ -1112,13 +1113,16 @@ class defaultstyleiterator:
         return self.laststyles[defaultstyle]()
 
 
-_XPattern = re.compile(r"x([2-9]|[1-9][0-9]+)?$")
-_YPattern = re.compile(r"y([2-9]|[1-9][0-9]+)?$")
-_DXPattern = re.compile(r"dx([2-9]|[1-9][0-9]+)?$")
-_DYPattern = re.compile(r"dy([2-9]|[1-9][0-9]+)?$")
-
-
 class graphxy(canvas.canvas):
+
+    XPattern = re.compile(r"x([2-9]|[1-9][0-9]+)?$")
+    YPattern = re.compile(r"y([2-9]|[1-9][0-9]+)?$")
+    DXPattern = re.compile(r"dx$")
+    DYPattern = re.compile(r"dy$")
+    DXMinPattern = re.compile(r"dxmin$")
+    DYMinPattern = re.compile(r"dymin$")
+    DXMaxPattern = re.compile(r"dxmax$")
+    DYMaxPattern = re.compile(r"dymax$")
 
     def __init__(self, tex, xpos=0, ypos=0, width=None, height=None, ratio=goldenrule, axesdist="0.8 cm", styleiterator=defaultstyleiterator(), **axes):
         canvas.canvas.__init__(self)
@@ -1152,7 +1156,7 @@ class graphxy(canvas.canvas):
             raise PyxGraphDrawstateError
         if not style:
             style = self.styleiterator.iteratestyle(data.defaultstyle)
-        data.setstyle(style)
+        data.setstyle(self, style)
         self.data.append(data)
 
     def xtickpoint(self, axis, virtual):
@@ -1171,6 +1175,15 @@ class graphxy(canvas.canvas):
     def ygridpath(self, axis, virtual):
         return path._line(self.xmap.convert(0), self.ymap.convert(virtual),
                           self.xmap.convert(1), self.ymap.convert(virtual))
+
+    def xconvert(self, x):
+        return self.xmap.convert(x)
+
+    def yconvert(self, y):
+        return self.ymap.convert(y)
+
+    def lineto(self, x, y):
+        return path._lineto(self.xmap.convert(x), self.ymap.convert(y))
 
     def keynum(self, key):
         try:
@@ -1214,7 +1227,6 @@ class graphxy(canvas.canvas):
                 pass
 
         # TODO: move rating into the painter
-        # move parting into the painter too???
         for key, axis in self.axes.items():
             # TODO: appropriate linkaxis handling
             try:
@@ -1236,7 +1248,7 @@ class graphxy(canvas.canvas):
                 axis.rates = [0, ]
                 axis.partnum = 0
 
-            # TODO: Additional ratings (spacing of text etc.)
+            # TODO: Additional ratings (spacing of text etc.) -> move rating into painter
             axis.ticks = axis.parts[axis.partnum]
             axis.setrange(min=float(axis.ticks[0])*axis.factor,
                           max=float(axis.ticks[-1])*axis.factor)
@@ -1268,7 +1280,7 @@ class graphxy(canvas.canvas):
             num = self.keynum(key)
             num2 = 1 - num % 2 # x1 -> 0, x2 -> 1, x3 -> 0, x4 -> 1, ...
             num3 = 1 - 2 * (num % 2) # x1 -> -1, x2 -> 1, x3 -> -1, x4 -> 1, ...
-            if _XPattern.match(key):
+            if self.XPattern.match(key):
                  if needxaxisdist[num2]:
                      self.xaxisextents[num2] += axesdist
                  axis.yaxispos = self.ymap.convert(num2) + num3*self.xaxisextents[num2]
@@ -1279,7 +1291,7 @@ class graphxy(canvas.canvas):
                      x1, y1 = self.xtickpoint(axis, 0)
                      x2, y2 = self.xtickpoint(axis, 1)
                      self.draw(path._line(x1, y1, x2, y2))
-            elif _YPattern.match(key):
+            elif self.YPattern.match(key):
                  if needyaxisdist[num2]:
                      self.yaxisextents[num2] += axesdist
                  axis.xaxispos = self.xmap.convert(num2) + num3*self.yaxisextents[num2]
@@ -1294,10 +1306,10 @@ class graphxy(canvas.canvas):
                 assert 0, "Axis key %s not allowed" % key
             axis.tickdirection = self.tickdirection
             axis.painter.paint(self, axis)
-            if _XPattern.match(key):
+            if self.XPattern.match(key):
                  self.xaxisextents[num2] += axis.extent
                  needxaxisdist[num2] = 1
-            if _YPattern.match(key):
+            if self.YPattern.match(key):
                  self.yaxisextents[num2] += axis.extent
                  needyaxisdist[num2] = 1
         self._drawstate = self.drawdata
@@ -1358,73 +1370,171 @@ class plotstyle:
 
 class mark(plotstyle):
 
-    def __init__(self, size = "0.1 cm"):
+    def __init__(self, size = "0.1 cm", errorscale = 1/goldenrule, symbolstyles=()):
         self.size_str = size
+        self.errorscale = errorscale
+        self.symbolstyles = symbolstyles
 
-    def draw(self, graph, keys, data):
-        size = unit.topt(unit.length(self.size_str, default_type="v"))
-        if _XPattern.match(keys[0]): xindex, yindex = 0, 1
-        if _XPattern.match(keys[1]): xindex, yindex = 1, 0
-        xaxis = graph.axes[keys[xindex]]
-        yaxis = graph.axes[keys[yindex]]
-        for pt in data:
-            graph.draw(self.drawsymbol(size, graph.xmap.convert(xaxis.convert(pt[xindex])),
-                                             graph.ymap.convert(yaxis.convert(pt[yindex]))))
+    def setcolumns(self, graph, columns):
+        self.dxindex = self.dxminindex = self.dxmaxindex = self.dyindex = self.dyminindex = self.dymaxindex = None
+        for key, index in columns.items():
+            if graph.XPattern.match(key):
+                self.xkey = key
+                self.xindex = index - 1
+            elif graph.YPattern.match(key):
+                self.ykey = key
+                self.yindex = index - 1
+            elif graph.DXPattern.match(key):
+                self.dxindex = index - 1
+            elif graph.DXMinPattern.match(key):
+                self.dxminindex = index - 1
+            elif graph.DXMaxPattern.match(key):
+                self.dxmaxindex = index - 1
+            elif graph.DYPattern.match(key):
+                self.dyindex = index - 1
+            elif graph.DYMinPattern.match(key):
+                self.dyminindex = index - 1
+            elif graph.DYMaxPattern.match(key):
+                self.dymaxindex = index - 1
+            else:
+                raise ValueError
+
+        if self.xindex is None: raise ValueError
+        if self.yindex is None: raise ValueError
+        if self.dxindex is not None and (self.dxminindex is not None or
+                                         self.dxmaxindex is not None): raise ValueError
+        if self.dyindex is not None and (self.dyminindex is not None or 
+                                         self.dymaxindex is not None): raise ValueError
+
+    def keyrange(self, points, index, dindex, dminindex, dmaxindex):
+        min = max = None
+        for point in points:
+            if dindex is not None:
+                pointmin = point[index] - point[dindex]
+                pointmax = point[index] + point[dindex]
+            elif dminindex is not None:
+                pointmin = point[dminindex]
+                pointmax = point[dmaxindex]
+            else:
+                pointmin = pointmax = point[index]
+            if min is None or pointmin < min: min = pointmin
+            if max is None or pointmax > max: max = pointmax
+        return min, max
+
+    def ranges(self, points):
+        return {self.xkey: self.keyrange(points, self.xindex, self.dxindex, self.dxminindex, self.dxmaxindex),
+                self.ykey: self.keyrange(points, self.yindex, self.dyindex, self.dyminindex, self.dymaxindex)}
+
+    def drawpointlist(self, graph, points):
+        xaxis = graph.axes[self.xkey]
+        yaxis = graph.axes[self.ykey]
+        self.size = unit.topt(unit.length(self.size_str, default_type="v"))
+
+        for point in points:
+            x = graph.xconvert(xaxis.convert(point[self.xindex]))
+            y = graph.yconvert(yaxis.convert(point[self.yindex]))
+            if self.dxindex is not None or (self.dxminindex is not None and self.dxmaxindex is not None):
+                if self.dxindex is not None:
+                    xmin = graph.xconvert(xaxis.convert(point[self.xindex] - point[self.dxindex]))
+                    xmax = graph.xconvert(xaxis.convert(point[self.xindex] + point[self.dxindex]))
+                else:
+                    xmin = graph.xconvert(xaxis.convert(point[self.dxminindex]))
+                    xmax = graph.xconvert(xaxis.convert(point[self.dxmaxindex]))
+                graph.draw(path.path(path._moveto(xmin, y-self.errorscale*self.size),
+                                     path._lineto(xmin, y+self.errorscale*self.size),
+                                     path._moveto(xmin, y),
+                                     path._lineto(xmax, y),
+                                     path._moveto(xmax, y-self.errorscale*self.size),
+                                     path._lineto(xmax, y+self.errorscale*self.size)))
+            if self.dyindex is not None or (self.dyminindex is not None and self.dymaxindex is not None):
+                if self.dyindex is not None:
+                    ymin = graph.yconvert(yaxis.convert(point[self.yindex] - point[self.dyindex]))
+                    ymax = graph.yconvert(yaxis.convert(point[self.yindex] + point[self.dyindex]))
+                else:
+                    ymin = graph.yconvert(yaxis.convert(point[self.dyindex]))
+                    ymax = graph.yconvert(yaxis.convert(point[self.yindex] + point[self.dyindex]))
+                graph.draw(path.path(path._moveto(x-self.errorscale*self.size, ymin),
+                                     path._lineto(x+self.errorscale*self.size, ymin),
+                                     path._moveto(x, ymin),
+                                     path._lineto(x, ymax),
+                                     path._moveto(x-self.errorscale*self.size, ymax),
+                                     path._lineto(x+self.errorscale*self.size, ymax)))
+            self._drawsymbol(graph, x, y)
+
+    def _drawsymbol(self, canvas, x, y):
+        canvas.draw(path.path(*self._symbol(x, y)), *self.symbolstyles)
+
+    def drawsymbol(self, canvas, *args):
+        return self._drawsymbol(canvas, *map(unit.topt, args))
+
+    def symbol(self, *args):
+        return self._symbol(*map(unit.topt, args))
 
 
 class markcross(mark):
 
-    def drawsymbol(self, size, x, y):
-        return path.path(path._moveto(x - 0.5 * size, y - 0.5 * size),
-                         path._lineto(x + 0.5 * size, y + 0.5 * size),
-                         path._moveto(x - 0.5 * size, y + 0.5 * size),
-                         path._lineto(x + 0.5 * size, y - 0.5 * size))
+    def _symbol(self, x, y):
+        return (path._moveto(x-0.5*self.size, y-0.5*self.size),
+                path._lineto(x+0.5*self.size, y+0.5*self.size),
+                path._moveto(x-0.5*self.size, y+0.5*self.size),
+                path._lineto(x+0.5*self.size, y-0.5*self.size))
 
 
 class markplus(mark):
 
-    def drawsymbol(self, size, x, y):
-        return path.path(path._moveto(x - 0.707106781 * size, y),
-                         path._lineto(x + 0.707106781 * size, y),
-                         path._moveto(x, y - 0.707106781 * size),
-                         path._lineto(x, y + 0.707106781 * size))
+    def _symbol(self, x, y):
+        return (path._moveto(x-0.707106781*self.size, y),
+                path._lineto(x+0.707106781*self.size, y),
+                path._moveto(x, y-0.707106781*self.size),
+                path._lineto(x, y+0.707106781*self.size))
 
 
 class marksquare(mark):
 
-    def drawsymbol(self, size, x, y):
-        return path.path(path._moveto(x - 0.5 * size, y - 0.5 * size),
-                         path._lineto(x + 0.5 * size, y - 0.5 * size),
-                         path._lineto(x + 0.5 * size, y + 0.5 * size),
-                         path._lineto(x - 0.5 * size, y + 0.5 * size),
-                         path.closepath())
+    def _symbol(self, x, y):
+        return (path._moveto(x-0.5*self.size, y-0.5 * self.size),
+                path._lineto(x+0.5*self.size, y-0.5 * self.size),
+                path._lineto(x+0.5*self.size, y+0.5 * self.size),
+                path._lineto(x-0.5*self.size, y+0.5 * self.size),
+                path.closepath())
 
 
 class marktriangle(mark):
 
-    def drawsymbol(self, size, x, y):
-        return path.path(path._moveto(x - 0.759835685 * size, y - 0.438691337 * size),
-                         path._lineto(x + 0.759835685 * size, y - 0.438691337 * size),
-                         path._lineto(x, y + 0.877382675 * size),
-                         path.closepath())
+    def _symbol(self, x, y):
+        return (path._moveto(x-0.759835685*self.size, y-0.438691337*self.size),
+                path._lineto(x+0.759835685*self.size, y-0.438691337*self.size),
+                path._lineto(x, y+0.877382675*self.size),
+                path.closepath())
 
 
 class markcircle(mark):
 
-    def drawsymbol(self, size, x, y):
-        return path.path(path._moveto(x + 0.564189583 * size, y),
-                         path._arc(x, y, 0.564189583 * size, 0, 360),
-                         path.closepath())
+    def _symbol(self, x, y):
+        return (path._arc(x, y, 0.564189583*self.size, 0, 360),
+                path.closepath())
 
 
 class markdiamond(mark):
 
-    def drawsymbol(self, size, x, y):
-        return path.path(path._moveto(x - 0.537284965 * size, y),
-                         path._lineto(x, y - 0.930604859 * size),
-                         path._lineto(x + 0.537284965 * size, y),
-                         path._lineto(x, y + 0.930604859 * size),
-                         path.closepath())
+    def _symbol(self, x, y):
+        return (path._moveto(x-0.537284965*self.size, y),
+                path._lineto(x, y-0.930604859*self.size),
+                path._lineto(x+0.537284965*self.size, y),
+                path._lineto(x, y+0.930604859*self.size),
+                path.closepath())
+
+
+class fmark:
+
+    def _drawsymbol(self, canvas, x, y):
+        canvas.fill(path.path(*self._symbol(x, y)), *self.symbolstyles)
+
+
+class markfsquare(fmark, marksquare): pass
+class markftriangle(fmark, marktriangle): pass
+class markfcircle(fmark, markcircle): pass
+class markfdiamond(fmark, markdiamond): pass
 
 
 markcross.next = markplus
@@ -1432,7 +1542,11 @@ markplus.next = marksquare
 marksquare.next = marktriangle
 marktriangle.next = markcircle
 markcircle.next = markdiamond
-markdiamond.next = markcross
+markdiamond.next = markfsquare
+markfsquare.next = markftriangle
+markftriangle.next = markfcircle
+markfcircle.next = markfdiamond
+markfdiamond.next = markcross
 
 
 ################################################################################
@@ -1440,73 +1554,35 @@ markdiamond.next = markcross
 ################################################################################
 
 
-CommentPattern = re.compile(r"\s*(#|!)+\s*")
-
 class datafile:
 
-    def __init__(self, FileName, sep = None, titlesep = None):
-        self.name = FileName
-        File = open(FileName, "r")
-        Lines = File.readlines()
-        self.Columns = 0
-        self.Rows = 0
+    def __init__(self, filename, sep = None, titlesep = None, commentpattern=re.compile(r"\s*(#|!)+\s*")):
+        self.filename = filename
+        file = open(filename, "r")
+        self.titles = []
         self.data = []
-        for Line in Lines:
-            Match = CommentPattern.match(Line)
-            if not Match:
-                if sep:
-                    Row = Line.split(sep)
-                else:
-                    Row = Line.split()
-                if self.Columns < len(Row):
-                    for i in range(self.Columns, len(Row)):
-                        # create new lists for each column in order to avoid side effects in append
-                        self.data.append(reduce(lambda x,y: x + [None, ], range(self.Rows), []))
-                    self.Columns = len(Row)
-                for i in range(len(Row)):
-                    try:
-                        self.data[i].append(float(Row[i]))
-                    except ValueError:
-                        self.data[i].append(Row[i])
-                for i in range(len(Row), self.Columns):
-                    self.data[i].append(None)
-                self.Rows = self.Rows + 1
+        self.minmax = []
+        for line in file.readlines():
+            match = commentpattern.match(line)
+            if match:
+                if not len(self.data):
+                    self.titles = line[match.end():].split(titlesep)
             else:
-                if self.Rows == 0:
-                    self.titleline = Line[Match.end(): ]
-                    if sep:
-                        self.titles = self.titleline.split(sep)
-                    else:
-                        self.titles = self.titleline.split()
-
-    def GetTitle(self, Number):
-        if (Number < len(self.titles)):
-            return self.titles[Number]
-        else:
-            return None
-
-    def GetColumn(self, Number):
-        return self.data[Number]
-
-
-class DataException(Exception):
-
-    pass
-
-
-class DataKindMissingException(DataException):
-
-    pass
-
-
-class DataRangeUndefinedException(DataException):
-
-    pass
-
-
-class DataRangeAlreadySetException(DataException):
-
-    pass
+                linedata = line.split(sep)
+                for index in xrange(len(linedata)):
+                    try:
+                        linedata[index] = float(linedata[index])
+                    except ValueError:
+                        pass
+                while len(linedata) > len(self.minmax):
+                    self.minmax.append([linedata[len(self.minmax)], linedata[len(self.minmax)]])
+                for index in xrange(len(linedata)):
+                    if type(linedata[index]) is types.FloatType:
+                        if linedata[index] < self.minmax[index][0]:
+                            self.minmax[index][0] = linedata[index]
+                        if linedata[index] > self.minmax[index][1]:
+                            self.minmax[index][1] = linedata[index]
+                self.data.append(linedata)
 
 
 class data:
@@ -1517,23 +1593,18 @@ class data:
         self.datafile = datafile
         self.columns = columns
 
-    def setstyle(self, style):
+    def setstyle(self, graph, style):
         self.style = style
+        self.style.setcolumns(graph, self.columns)
 
     def ranges(self):
-        result = {}
-        for kind, key in self.columns.items():
-            result[kind] = (min(self.datafile.data[key - 1]), max(self.datafile.data[key - 1]))
-        return result
+        return self.style.ranges(self.datafile.data)
 
     def newranges(self, ranges):
         pass
 
     def draw(self, graph):
-        columns = {}
-        for kind in self.columns.keys():
-            columns[kind] = self.datafile.GetColumn(self.columns[kind] - 1)
-        self.style.draw(graph, columns.keys(), zip(*columns.values()))
+        self.style.drawpointlist(graph, self.datafile.data)
 
 
 AssignPattern = re.compile(r"\s*([a-z][a-z0-9_]*)\s*=", re.IGNORECASE)
