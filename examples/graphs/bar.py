@@ -3,7 +3,7 @@ from pyx import *                   # bar.dat looks like:
                                     # January    -5   1
                                     # Feburary   -4   3
 # we prepare some stuff first                   ...
-bap = graph.baraxispainter # just a abbreviation
+bap = graph.baraxispainter # just an abbreviation
 a1 = graph.baraxis(painter=bap(nameattrs=None)) # for single bars
 a2 = graph.baraxis(painter=bap(nameattrs=(trafo.rotate(45),
                                           text.halign.right),
