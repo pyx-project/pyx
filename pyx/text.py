@@ -1306,7 +1306,6 @@ class vffile:
         if cmd == _VF_PRE:
             if file.readuchar() != _VF_ID: raise VFError
             comment = file.read(file.readuchar())
-            print "**", comment, "**"
             self.cs = file.readuint32()
             self.ds = file.readuint32()
         else:
