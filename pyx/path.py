@@ -1912,19 +1912,12 @@ class normsubpath:
         """split normsubpath at list of parameter values params and return list
         of normsubpaths
 
-        Negative values of t count from the end of the sub path.
-        After taking this rule into account, the parameter list params has
-        to be sorted and all parameters t have to fulfil
-        0<=t<=self.range().  Note that each element of the resulting
-        list is an _open_ normsubpath.
-
+        The parameter list params has to be sorted. Note that each element of
+        the resulting list is an open normsubpath.
         """
 
-        for i in range(len(params)):
-            if params[i]<0:
-                params[i] += self.range()
-            if not (0<=params[i]<=self.range()):
-                raise PathException("parameter for split of subpath out of range")
+        if min(params) < -self.epsilon or max(params) > self.range()+self.epsilon:
+            raise PathException("parameter for split of subpath out of range")
 
         result = []
         npels = None
@@ -2349,9 +2342,9 @@ class normpath(path):
         sortedparams = list(params)
         sortedparams.sort()
         if sortedparams!=list(params):
-            raise ValueError("split params have to be sorted")
+            raise ValueError("split parameter list params has to be sorted")
 
-        # we build up this list of normpaths
+        # we construct this list of normpaths
         result = []
 
         # the currently built up normpath
