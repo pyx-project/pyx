@@ -9,9 +9,6 @@ from pyx import *
 
 class BoxTestCase(unittest.TestCase):
 
-    def almostequal(self, x, y):
-        assert abs(unit.topt(x) - unit.topt(y)) > 1e-10, "numbers are not equal"
-
     def testDistance(self):
         b1 = box.polygon(center=(0.5, math.sqrt(3)/6), corners=((0, 0), (1, 0), (0.5, math.sqrt(3)/2)))
         b2 = box.polygon(center=(0.5, math.sqrt(3)/6), corners=((0, 0), (1, 0), (0.5, math.sqrt(3)/2)))
