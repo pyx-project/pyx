@@ -27,7 +27,7 @@ import text as textmodule
 import data as datamodule
 
 
-goldenrule = 0.5 * (math.sqrt(5) + 1)
+goldenmean = 0.5 * (math.sqrt(5) + 1)
 
 
 ################################################################################
@@ -995,7 +995,7 @@ class axistitlepainter:
 
 class axispainter(axistitlepainter):
 
-    defaultticklengths = ["%0.5f cm" % (0.2*goldenrule**(-i)) for i in range(10)]
+    defaultticklengths = ["%0.5f cm" % (0.2*goldenmean**(-i)) for i in range(10)]
 
     fractypeauto = 1
     fractyperat = 2
@@ -2339,7 +2339,7 @@ class graphxy(canvas.canvas):
     def initwidthheight(self, width, height, ratio):
         if (width is not None) and (height is None):
              self.width = unit.length(width)
-             self.height = (1/ratio) * self.width
+             self.height = (1.0/ratio) * self.width
         elif (height is not None) and (width is None):
              self.height = unit.length(height)
              self.width = ratio * self.height
@@ -2364,7 +2364,7 @@ class graphxy(canvas.canvas):
                     del axes[key + "2"]
         self.axes = axes
 
-    def __init__(self, xpos=0, ypos=0, width=None, height=None, ratio=goldenrule,
+    def __init__(self, xpos=0, ypos=0, width=None, height=None, ratio=goldenmean,
                  key=None, backgroundattrs=None, dense=1, axesdist="0.8 cm", **axes):
         canvas.canvas.__init__(self)
         self.xpos = unit.length(xpos)
