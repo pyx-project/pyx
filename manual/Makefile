@@ -8,7 +8,7 @@
 default:dvi
 
 clean:
-	-rm -fr manual.dvi manual.ps manual.pdf *.eps *.png manual
+	-rm -fr manual.dvi manual.ps manual.pdf *.eps *.png *.aux *.log
 
 all:
 	make clean
