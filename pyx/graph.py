@@ -22,9 +22,10 @@
 
 
 import types, re, math, string, sys
-import bbox, box, canvas, path, unit, mathtree, trafo, color, helper
+import bbox, box, canvas, path, unit, mathtree, color, helper
 import text as textmodule
 import data as datamodule
+import trafo as trafomodule
 
 
 goldenmean = 0.5 * (math.sqrt(5) + 1)
@@ -333,7 +334,7 @@ class manualpart:
         self.mix = mix
 
     def checkfraclist(self, *fracs):
-        """orders a list of fracs, equal entries are not allowed"""
+        "orders a list of fracs, equal entries are not allowed"
         if not len(fracs): return ()
         sorted = list(fracs)
         sorted.sort()
@@ -391,11 +392,10 @@ class linpart:
         """configuration of the partition scheme
         - tickdist and labeldist should be a sequence, where the first value
           is the distance between ticks with ticklevel/labellevel 0,
-          the second sequence for ticklevel/labellevel 1, etc.
+          the second sequence for ticklevel/labellevel 1, etc.;
+          a single entry is allowed without being a sequence
         - tickdist and labeldist values must be frac instances or
           something convertable to fracs by the _ensurefrac function
-        - when the maximum ticklevel/labellevel is 0, just a single value
-          might be provided in tickdist and labeldist
         - when labeldist is None and tickdist is not None, the tick entries
           for ticklevel 0 are used for labels and vice versa (ticks<->labels)
         - labels are applied to the resulting partition via the
@@ -585,9 +585,8 @@ class logpart(linpart):
         """configuration of the partition scheme
         - tickpos and labelpos should be a sequence, where the first entry
           is a preexp instance describing ticks with ticklevel/labellevel 0,
-          the second is a preexp instance for ticklevel/labellevel 1, etc.
-        - when the maximum ticklevel/labellevel is 0, just a single
-          preexp instance might be provided in tickpos and labelpos
+          the second is a preexp instance for ticklevel/labellevel 1, etc.;
+          a single entry is allowed without being a sequence
         - when labelpos is None and tickpos is not None, the tick entries
           for ticklevel 0 are used for labels and vice versa (ticks<->labels)
         - labels are applied to the resulting partition via the
@@ -786,6 +785,8 @@ class cuberate:
     - the analytic form of the rating is cubic for both, the left and
       the right side of the rater, independently"""
 
+    # __implements__ = TODO (sole implementation)
+
     def __init__(self, opt, left=None, right=None, weight=1):
         """initializes the rater
         - by default, left is set to zero, right is set to 3*opt
@@ -829,9 +830,11 @@ class distancerate:
       optimal value (halve the optimal value has the rating one, one third of
       the optimal value has the rating two, etc.)"""
 
+    # __implements__ = TODO (sole implementation)
+
     def __init__(self, opt, weight=0.1):
         """inititializes the rater
-        - opt is the optimal length (a PyX length, by default a visual length)
+        - opt is the optimal length (a visual PyX length)
         - weight should be positive and is a factor multiplicated to the rates"""
         self.opt_str = opt
         self.weight = weight
@@ -871,6 +874,8 @@ class axisrater:
     - both parts of the rating are shifted into instances of raters
       defined above --- right now, there is not yet a strict interface
       for this delegation (should be done as soon as it is needed)"""
+
+    # __implements__ = TODO (sole implementation)
 
     linticks = (cuberate(4), cuberate(10, weight=0.5), )
     linlabels = (cuberate(4), )
@@ -913,17 +918,21 @@ class axisrater:
           by the sum of the weights of the raters
         - within the rating, all ticks with a higher level are
           considered as ticks for a given level"""
-        tickslen = len(self.ticks)
-        labelslen = len(self.labels)
-        ticks = [0]*tickslen
-        labels = [0]*labelslen
+        maxticklevel = maxlabellevel = 0
+        for tick in part:
+            if tick.ticklevel >= maxticklevel:
+                maxticklevel = tick.ticklevel + 1
+            if tick.labellevel >= maxlabellevel:
+                maxlabellevel = tick.labellevel + 1
+        ticks = [0]*maxticklevel
+        labels = [0]*maxlabellevel
         if part is not None:
             for tick in part:
                 if tick.ticklevel is not None:
-                    for level in xrange(tick.ticklevel, tickslen):
+                    for level in range(tick.ticklevel, maxticklevel):
                         ticks[level] += 1
                 if tick.labellevel is not None:
-                    for level in xrange(tick.labellevel, labelslen):
+                    for level in range(tick.labellevel, maxlabellevel):
                         labels[level] += 1
         rate = 0
         weight = 0
@@ -968,12 +977,11 @@ class _Itexter:
           instance
         - label attributes of the tick instances are just kept, whenever they
           are not equal to None
-        - the method might add texsetting instances to the labelattrs attribute
-          of the ticks"""
+        - the method might extend the labelattrs attribute of the ticks"""
 
 
 class rationaltexter:
-    """a texter creating rational labels (e.g. "a/b" or even "a \over b")"""
+    "a texter creating rational labels (e.g. 'a/b' or even 'a \over b')"
     # XXX: we use divmod here to be more expicit
 
     __implements__ = _Itexter
@@ -1019,8 +1027,9 @@ class rationaltexter:
           the hole fraction, when the denominator is one and none of the parameters
           denomprefix, denominfix and denomsuffix are set and minuspos is not -1 or the
           fraction is positive
-        - labelattrs is a sequence of texsetting instances; also just a single
-          instance is allowed; None and an empty sequence is allowed as well"""
+        - labelattrs is a sequence of attributes for a texrunners text method;
+          a single is allowed without being a sequence; None is considered as
+          an empty sequence"""
         self.prefix = prefix
         self.infix = infix
         self.suffix = suffix
@@ -1077,28 +1086,28 @@ class rationaltexter:
         for tick in ticks:
             if tick.label is None and tick.labellevel is not None:
                 labeledticks.append(tick)
-                tick.fracminus = 1
-                tick.fracenum = tick.enum
-                tick.fracdenom = tick.denom
-                if tick.fracenum < 0:
-                    tick.fracminus *= -1
-                    tick.fracenum *= -1
-                if tick.fracdenom < 0:
-                    tick.fracminus *= -1
-                    tick.fracdenom *= -1
-                gcd = self.gcd(tick.fracenum, tick.fracdenom)
-                (tick.fracenum, dummy1), (tick.fracdenom, dummy2) = divmod(tick.enum, gcd), divmod(tick.fracdenom, gcd)
+                tick.temp_fracenum = tick.enum
+                tick.temp_fracdenom = tick.denom
+                tick.temp_fracminus = 1
+                if tick.temp_fracenum < 0:
+                    tick.temp_fracminus *= -1
+                    tick.temp_fracenum *= -1
+                if tick.temp_fracdenom < 0:
+                    tick.temp_fracminus *= -1
+                    tick.temp_fracdenom *= -1
+                gcd = self.gcd(tick.temp_fracenum, tick.temp_fracdenom)
+                (tick.temp_fracenum, dummy1), (tick.temp_fracdenom, dummy2) = divmod(tick.enum, gcd), divmod(tick.temp_fracdenom, gcd)
         if self.equaldenom:
-            equaldenom = self.lcm(*[tick.fracdenom for tick in ticks if tick.label is None])
+            equaldenom = self.lcm(*[tick.temp_fracdenom for tick in ticks if tick.label is None])
             if equaldenom is not None:
                 for tick in labeledticks:
-                    factor, dummy = divmod(equaldenom, tick.fracdenom)
-                    tick.fracenum, tick.fracdenom = factor * tick.fracenum, factor * tick.fracdenom
+                    factor, dummy = divmod(equaldenom, tick.temp_fracdenom)
+                    tick.temp_fracenum, tick.temp_fracdenom = factor * tick.temp_fracenum, factor * tick.temp_fracdenom
         for tick in labeledticks:
             fracminus = ""
             fracenumminus = ""
             fracdenomminus = ""
-            if tick.fracminus == -1:
+            if tick.temp_fracminus == -1:
                 if self.minuspos == 0:
                     fracminus = self.minus
                 elif self.minuspos == 1:
@@ -1108,33 +1117,33 @@ class rationaltexter:
                 else:
                     raise RuntimeError("invalid minuspos")
             else:
-                tick.fracminus = ""
-            if self.skipenum0 and tick.fracenum == 0:
+                tick.temp_fracminus = ""
+            if self.skipenum0 and tick.temp_fracenum == 0:
                 tick.label = "0"
-            elif (self.skip1 and self.skipdenom1 and tick.fracenum == 1 and tick.fracdenom == 1 and
+            elif (self.skip1 and self.skipdenom1 and tick.temp_fracenum == 1 and tick.temp_fracdenom == 1 and
                   (len(self.prefix) or len(self.infix) or len(self.suffix)) and
                   not len(fracenumminus) and not len(self.enumprefix) and not len(self.enuminfix) and not len(self.enumsuffix) and
                   not len(fracdenomminus) and not len(self.denomprefix) and not len(self.denominfix) and not len(self.denomsuffix)):
                 tick.label = "%s%s%s%s" % (self.prefix, fracminus, self.infix, self.suffix)
             else:
-                if self.skipenum1 and tick.fracenum == 1 and (len(self.enumprefix) or len(self.enuminfix) or len(self.enumsuffix)):
-                    tick.fracenum = "%s%s%s%s" % (self.enumprefix, fracenumminus, self.enuminfix, self.enumsuffix)
+                if self.skipenum1 and tick.temp_fracenum == 1 and (len(self.enumprefix) or len(self.enuminfix) or len(self.enumsuffix)):
+                    tick.temp_fracenum = "%s%s%s%s" % (self.enumprefix, fracenumminus, self.enuminfix, self.enumsuffix)
                 else:
-                    tick.fracenum = "%s%s%s%i%s" % (self.enumprefix, fracenumminus, self.enuminfix, tick.fracenum, self.enumsuffix)
-                if self.skipdenom1 and tick.fracdenom == 1 and not len(fracdenomminus) and not len(self.denomprefix) and not len(self.denominfix) and not len(self.denomsuffix):
-                    frac = tick.fracenum
+                    tick.temp_fracenum = "%s%s%s%i%s" % (self.enumprefix, fracenumminus, self.enuminfix, tick.temp_fracenum, self.enumsuffix)
+                if self.skipdenom1 and tick.temp_fracdenom == 1 and not len(fracdenomminus) and not len(self.denomprefix) and not len(self.denominfix) and not len(self.denomsuffix):
+                    frac = tick.temp_fracenum
                 else:
-                    tick.fracdenom = "%s%s%s%i%s" % (self.denomprefix, fracdenomminus, self.denominfix, tick.fracdenom, self.denomsuffix)
-                    frac = self.over % (tick.fracenum, tick.fracdenom)
+                    tick.temp_fracdenom = "%s%s%s%i%s" % (self.denomprefix, fracdenomminus, self.denominfix, tick.temp_fracdenom, self.denomsuffix)
+                    frac = self.over % (tick.temp_fracenum, tick.temp_fracdenom)
                 tick.label = "%s%s%s%s%s" % (self.prefix, fracminus, self.infix, frac, self.suffix)
-            del tick.fracenum
-            del tick.fracdenom
-            del tick.fracminus
+            # del tick.temp_fracenum    # we've inserted those temporary variables ... and do not care any longer about them
+            # del tick.temp_fracdenom
+            # del tick.temp_fracminus
             tick.labelattrs.extend(self.labelattrs)
 
 
 class decimaltexter:
-    """a texter creating decimal labels (e.g. "1.234" or even "0.\overline{3}")"""
+    "a texter creating decimal labels (e.g. '1.234' or even '0.\overline{3}')"
 
     __implements__ = _Itexter
 
@@ -1151,8 +1160,9 @@ class decimaltexter:
         - period (string) is taken as a format string generating a period;
           it has to contain exactly one string insert operators "%s" for the
           period; usually it should be r"\overline{%s}"
-        - labelattrs is a sequence of texsetting instances; also just a single
-          instance is allowed; None and an empty sequence is allowed as well"""
+        - labelattrs is a sequence of attributes for a texrunners text method;
+          a single is allowed without being a sequence; None is considered as
+          an empty sequence"""
         self.prefix = prefix
         self.infix = infix
         self.suffix = suffix
@@ -1187,28 +1197,30 @@ class decimaltexter:
                 if reminder:
                     tick.label += self.decimalsep
                 oldreminders = []
-                tick.decprecision = 0
+                tick.temp_decprecision = 0
                 while (reminder):
-                    tick.decprecision += 1
+                    tick.temp_decprecision += 1
                     if reminder in oldreminders:
-                        tick.decprecision = None
+                        tick.temp_decprecision = None
                         periodstart = len(tick.label) - (len(oldreminders) - oldreminders.index(reminder))
                         tick.label = tick.label[:periodstart] + self.period % tick.label[periodstart:]
                         break
                     oldreminders += [reminder]
                     reminder *= 10
                     whole, reminder = divmod(reminder, n)
-                    if not ((tick.decprecision - 1) % 3) and tick.decprecision > 1:
+                    if not ((tick.temp_decprecision - 1) % 3) and tick.temp_decprecision > 1:
                         tick.label += self.thousandthpartsep
                     tick.label += str(whole)
-                if maxdecprecision < tick.decprecision:
-                    maxdecprecision = tick.decprecision
+                if maxdecprecision < tick.temp_decprecision:
+                    maxdecprecision = tick.temp_decprecision
         if self.equalprecision:
             for tick in labeledticks:
-                if tick.decprecision is not None:
-                    if tick.decprecision == 0 and maxdecprecision > 0:
+                if tick.temp_decprecision is not None:
+                    if tick.temp_decprecision == 0 and maxdecprecision > 0:
                         tick.label += self.decimalsep
-                    for i in range(tick.decprecision, maxdecprecision):
+                    for i in range(tick.temp_decprecision, maxdecprecision):
+                        if not ((i - 1) % 3) and i > 1:
+                            tick.label += self.thousandthpartsep
                         tick.label += "0"
         for tick in labeledticks:
             if tick.enum * tick.denom < 0:
@@ -1217,11 +1229,11 @@ class decimaltexter:
                 minus = ""
             tick.label = "%s%s%s%s%s" % (self.prefix, minus, self.infix, tick.label, self.suffix)
             tick.labelattrs.extend(self.labelattrs)
-            del tick.decprecision
+            # del tick.temp_decprecision  # we've inserted this temporary variable ... and do not care any longer about it
 
 
 class exponentialtexter:
-    """a texter creating labels with exponentials (e.g. "2\cdot10^5")"""
+    "a texter creating labels with exponentials (e.g. '2\cdot10^5')"
 
     __implements__ = _Itexter
 
@@ -1271,22 +1283,22 @@ class exponentialtexter:
         labeledticks = []
         for tick in ticks:
             if tick.label is None and tick.labellevel is not None:
-                tick.orgenum, tick.orgdenom = tick.enum, tick.denom
+                tick.temp_orgenum, tick.temp_orgdenom = tick.enum, tick.denom
                 labeledticks.append(tick)
-                tick.exp = 0
+                tick.temp_exp = 0
                 if tick.enum:
                     while abs(tick) >= self.mantissamax:
-                        tick.exp += 1
+                        tick.temp_exp += 1
                         x = tick * self.mantissamindivmax
                         tick.enum, tick.denom = x.enum, x.denom
                     while abs(tick) < self.mantissamin:
-                        tick.exp -= 1
+                        tick.temp_exp -= 1
                         x = tick * self.mantissamaxdivmin
                         tick.enum, tick.denom = x.enum, x.denom
-                if tick.exp < 0:
-                    tick.exp = "%s%i" % (self.minus, -tick.exp)
+                if tick.temp_exp < 0:
+                    tick.temp_exp = "%s%i" % (self.minus, -tick.temp_exp)
                 else:
-                    tick.exp = "%s%i" % (self.plus, tick.exp)
+                    tick.temp_exp = "%s%i" % (self.plus, tick.temp_exp)
         self.mantissatexter.labels(labeledticks)
         if self.minusnomantissaexp is not None:
             allmantissa1 = len(labeledticks) == len([tick for tick in labeledticks if abs(tick.enum) == abs(tick.denom)])
@@ -1297,19 +1309,19 @@ class exponentialtexter:
                 (self.skipmantissa1 and (tick.enum == tick.denom or
                                          (tick.enum == -tick.denom and self.minusnomantissaexp is not None)))):
                 if tick.enum == tick.denom:
-                    tick.label = self.nomantissaexp % tick.exp
+                    tick.label = self.nomantissaexp % tick.temp_exp
                 else:
-                    tick.label = self.minusnomantissaexp % tick.exp
+                    tick.label = self.minusnomantissaexp % tick.temp_exp
             else:
-                tick.label = self.mantissaexp % (tick.label, tick.exp)
-            tick.enum, tick.denom = tick.orgenum, tick.orgdenom
-            del tick.orgenum
-            del tick.orgdenom
-            del tick.exp
+                tick.label = self.mantissaexp % (tick.label, tick.temp_exp)
+            tick.enum, tick.denom = tick.temp_orgenum, tick.temp_orgdenom
+            # del tick.temp_orgenum    # we've inserted those temporary variables ... and do not care any longer about them
+            # del tick.temp_orgdenom
+            # del tick.temp_exp
 
 
 class defaulttexter:
-    """a texter creating decimal or exponential labels"""
+    "a texter creating decimal or exponential labels"
 
     __implements__ = _Itexter
 
@@ -1358,53 +1370,143 @@ class defaulttexter:
 ################################################################################
 
 
-class layoutdata: pass
+class axiscanvas(canvas.canvas):
+    """axis canvas
+    - an axis canvas is a regular canvas to be filled by
+      a axispainters painter method
+    - it contains _extent (a float in postscript points) to be used
+      for the alignment of additional axes; the axis extent should be
+      filled by the axispainters painter method
+    - it contains labels (a list of textboxes) to be used to rate the
+      distances between the labels if needed by the axis later on;
+      the painter method has not only to insert the labels into this
+      canvas, but should also fill this list"""
+
+    # __implements__ = TODO (sole implementation)
+
+    def __init__(self, *args, **kwargs):
+        """initializes the instance
+        - sets _extent to zero
+        - sets labels to an empty list"""
+        canvas.canvas.__init__(self, *args, **kwargs)
+        self._extent = 0
+        self.labels = []
+
+
+class rotatetext:
+    """create rotations accordingly to tick directions
+    - upsidedown rotations are suppressed by rotating them by another 180 degree"""
+
+    # __implements__ = TODO (sole implementation)
+
+    def __init__(self, direction, epsilon=1e-10):
+        """initializes the instance
+        - direction is an angle to be used relative to the tick direction
+        - epsilon is the value by which 90 degrees can be exceeded before
+          an 180 degree rotation is added"""
+        self.direction = direction
+        self.epsilon = epsilon
+
+    def trafo(self, dx, dy):
+        """returns a rotation transformation accordingly to the tick direction
+        - dx and dy are the direction of the tick"""
+        direction = self.direction + math.atan2(dy, dx) * 180 / math.pi
+        while (direction > 90 + self.epsilon):
+            direction -= 180
+        while (direction < -90 - self.epsilon):
+            direction += 180
+        return trafomodule.rotate(direction)
+
+
+paralleltext = rotatetext(-90)
+orthogonaltext = rotatetext(0)
+
+
+class _Iaxispainter:
+    "class for painting axes"
+
+    def paint(self, graph, axis, part, axiscanvas):
+        """paint ticks into the axiscanvas
+        - graph, axis, and ticks should not be modified (we may
+          add some temporary variables like part[i].temp_xxx,
+          which might be used just temporary) -- the idea is that
+          all things can be used several times
+        - also do not modify the instance (self) -- even this
+          instance might be used several times; thus do not modify
+          attributes like self.titleattrs etc. (just use a copy of it)
+        - the graphs texrunner should be used to create textboxes
+          (beside that, there should be no reason to access the
+          graph directly --- please correct this statement when
+          different design decisions will take place later on)
+        - the axis should be accessed to get the tick positions:
+          for that the following methods are used:
+            TODO: ADD THE LIST OF METHODS
+          see documentation of an axis interface for a detailed
+          description of those methods
+        - the method might access some additional attributes from
+          the axis, e.g. the axis title -- the axis painter should
+          document this behavior and rely on the availability of
+          those attributes -> it becomes a question of the proper
+          usage of the combination of axis & axispainter
+        - the ticks are a list of tick instances; there type must
+          be suitable for the tick position methods of the axis ->
+          it should again be a question ov the proper usage of the
+          combination of axis & axispainter
+        - the axiscanvas is a axiscanvas instance and should be
+          filled with the ticks and labels; note that the _extent
+          and labels instance variables should be filled as
+          documented in the axiscanvas"""
 
 
 class axistitlepainter:
+    """class for painting an axis title
+    - the axis must have a title attribute when using this painter;
+      this title might be None"""
 
-    paralleltext = -90
-    orthogonaltext = 0
+    __implements__ = _Iaxispainter
 
     def __init__(self, titledist="0.3 cm",
                        titleattrs=(textmodule.halign.center, textmodule.vshift.mathaxis),
-                       titledirection=-90,
+                       titledirection=paralleltext,
                        titlepos=0.5):
+        """initialized the instance
+        - titledist is a visual PyX length giving the distance
+          of the title from the axis extent already there (a title might
+          be added after labels or other things are plotted already)
+        - labelattrs is a sequence of attributes for a texrunners text
+          method; a single is allowed without being a sequence; None
+          turns off the title
+        - titledirection is an instance of rotatetext or None
+        - titlepos is the position of the title in graph coordinates"""
         self.titledist_str = titledist
         self.titleattrs = titleattrs
         self.titledirection = titledirection
         self.titlepos = titlepos
 
-    def reldirection(self, direction, dx, dy, epsilon=1e-10):
-        direction += math.atan2(dy, dx) * 180 / math.pi
-        while (direction > 90 + epsilon):
-            direction -= 180
-        while (direction < -90 - epsilon):
-            direction += 180
-        return direction
-
-    def dolayout(self, graph, axis):
+    def paint(self, graph, axis, part, axiscanvas):
         if axis.title is not None and self.titleattrs is not None:
             titledist = unit.topt(unit.length(self.titledist_str, default_type="v"))
             x, y = axis._vtickpoint(axis, self.titlepos)
             dx, dy = axis.vtickdirection(axis, self.titlepos)
-            # no not modify self.titleattrs ... the painter might be used by several axes
-            titleattrs = list(helper.ensuresequence(self.titleattrs))
+            titleattrs = helper.ensurelist(self.titleattrs)
             if self.titledirection is not None:
-                titleattrs = titleattrs + [trafo.rotate(self.reldirection(self.titledirection, dx, dy))]
-            axis.layoutdata.titlebox = graph.texrunner._text(x, y, axis.title, *titleattrs)
-            axis.layoutdata._extent += titledist
-            axis.layoutdata.titlebox._linealign(axis.layoutdata._extent, dx, dy)
-            axis.layoutdata._extent += axis.layoutdata.titlebox._extent(dx, dy)
-        else:
-            axis.layoutdata.titlebox = None
-
-    def paint(self, graph, axis):
-        if axis.layoutdata.titlebox is not None:
-            graph.insert(axis.layoutdata.titlebox)
+                titleattrs.append(self.titledirection.trafo(dx, dy))
+            title = graph.texrunner._text(x, y, axis.title, *titleattrs)
+            axiscanvas._extent += titledist
+            title._linealign(axiscanvas._extent, dx, dy)
+            axiscanvas._extent += title._extent(dx, dy)
+            axiscanvas.insert(title)
 
 
 class axispainter(axistitlepainter):
+    """class for painting the ticks and labels of an axis
+    - the inherited titleaxispainter is used to paint the title of
+      the axis as well
+    - note that the type of the elements of ticks given as an argument
+      of the paint method must be suitable for the tick position methods
+      of the axis"""
+
+    __implements__ = _Iaxispainter
 
     defaultticklengths = ["%0.5f cm" % (0.2*goldenmean**(-i)) for i in range(10)]
 
@@ -1420,6 +1522,35 @@ class axispainter(axistitlepainter):
                        labelhequalize=0,
                        labelvequalize=1,
                        **args):
+        """initializes the instance
+        - innerticklenths and outerticklengths are two sequences of
+          visual PyX lengths for ticks, subticks, etc. plotted inside
+          and outside of the graph; when a single value is given, it
+          is used for all tick levels; None turns off ticks inside or
+          outside of the graph
+        - tickattrs are a sequence of stroke attributes for the ticks;
+          a single entry is allowed without being a sequence; None turns
+          off ticks
+        - gridlineattrs are a sequence of sequences used as stroke
+          attributes for ticks, subticks etc.; when a single sequence
+          is given, it is used for ticks, subticks, etc.; a single
+          entry is allowed without being a sequence; None turns off
+          gridlines
+        - zerolineattrs are a sequence of stroke attributes for a grid
+          line at axis value zero; a single entry is allowed without
+          being a sequence; None turns off the zeroline
+        - baselineattrs are a sequence of stroke attributes for a grid
+          line at axis value zero; a single entry is allowed without
+          being a sequence; None turns off the baseline
+        - labeldist is a visual PyX length for the distance of the labels
+          from the axis baseline
+        - labelattrs is a sequence of attributes for a texrunners text
+          method; a single entry is allowed without being a sequence;
+          None turns off the labels
+        - titledirection is an instance of rotatetext or None
+        - labelhequalize and labelvequalize (booleans) perform an equal
+          alignment for straight vertical and horizontal axes, respectively
+        - futher arguments are passed to the axistitlepainter"""
         self.innerticklengths_str = innerticklengths
         self.outerticklengths_str = outerticklengths
         self.tickattrs = tickattrs
@@ -1433,49 +1564,50 @@ class axispainter(axistitlepainter):
         self.labelvequalize = labelvequalize
         axistitlepainter.__init__(self, **args)
 
-    def dolayout(self, graph, axis):
+    def paint(self, graph, axis, ticks, axiscanvas):
         labeldist = unit.topt(unit.length(self.labeldist_str, default_type="v"))
-        for tick in axis.ticks:
+        for tick in ticks:
             tick.virtual = axis.convert(float(tick) * axis.divisor)
             tick.x, tick.y = axis._vtickpoint(axis, tick.virtual)
             tick.dx, tick.dy = axis.vtickdirection(axis, tick.virtual)
-        for tick in axis.ticks:
+        for tick in ticks:
             tick.textbox = None
             if tick.labellevel is not None:
                 labelattrs = helper.getsequenceno(self.labelattrs, tick.labellevel)
                 if labelattrs is not None:
-                    tick.labelattrs += list(labelattrs)
+                    labelattrs = list(labelattrs[:])
                     if self.labeldirection is not None:
-                        tick.labelattrs += [trafo.rotate(self.reldirection(self.labeldirection, tick.dx, tick.dy))]
-                    tick.textbox = graph.texrunner._text(tick.x, tick.y, tick.label, *tick.labelattrs)
+                        labelattrs.append(self.labeldirection.trafo(dx, dy))
+                    if tick.labelattrs is not None:
+                        labelattrs.extend(helper.ensurelist(tick.labelattrs))
+                    tick.textbox = graph.texrunner._text(tick.x, tick.y, tick.label, *labelattrs)
                 else:
                     tick.labelattrs = None
-        if len(axis.ticks) > 1:
+        if len(ticks) > 1:
             equaldirection = 1
-            for tick in axis.ticks[1:]:
-                if tick.dx != axis.ticks[0].dx or tick.dy != axis.ticks[0].dy:
+            for tick in ticks[1:]:
+                if tick.dx != ticks[0].dx or tick.dy != ticks[0].dy:
                     equaldirection = 0
         else:
             equaldirection = 0
-        if equaldirection and ((not axis.ticks[0].dx and self.labelvequalize) or
-                               (not axis.ticks[0].dy and self.labelhequalize)):
-            box._linealignequal([tick.textbox for tick in axis.ticks if tick.textbox],
-                                labeldist, axis.ticks[0].dx, axis.ticks[0].dy)
+        if equaldirection and ((not ticks[0].dx and self.labelvequalize) or
+                               (not ticks[0].dy and self.labelhequalize)):
+            box._linealignequal([tick.textbox for tick in ticks if tick.textbox],
+                                labeldist, ticks[0].dx, ticks[0].dy)
         else:
-            for tick in axis.ticks:
+            for tick in ticks:
                 if tick.textbox:
                     tick.textbox._linealign(labeldist, tick.dx, tick.dy)
         def topt_v_recursive(arg):
             if helper.issequence(arg):
                 # return map(topt_v_recursive, arg) needs python2.2
                 return [unit.topt(unit.length(a, default_type="v")) for a in arg]
-            else:
-                if arg is not None:
-                    return unit.topt(unit.length(arg, default_type="v"))
+            elif arg is not None:
+                return unit.topt(unit.length(arg, default_type="v"))
         innerticklengths = topt_v_recursive(self.innerticklengths_str)
         outerticklengths = topt_v_recursive(self.outerticklengths_str)
-        axis.layoutdata._extent = 0
-        for tick in axis.ticks:
+        axiscanvas._extent = 0
+        for tick in ticks:
             if tick.ticklevel is not None:
                 tick.innerticklength = helper.getitemno(innerticklengths, tick.ticklevel)
                 tick.outerticklength = helper.getitemno(outerticklengths, tick.ticklevel)
@@ -1489,9 +1621,29 @@ class axispainter(axistitlepainter):
                     extent = tick.outerticklength
             else:
                 extent = tick.textbox._extent(tick.dx, tick.dy) + labeldist
-            if axis.layoutdata._extent < extent:
-                axis.layoutdata._extent = extent
-        axistitlepainter.dolayout(self, graph, axis)
+            if axiscanvas._extent < extent:
+                axiscanvas._extent = extent
+        for tick in ticks:
+            if tick.ticklevel is not None:
+                if tick != frac(0, 1) or self.zerolineattrs is None:
+                    gridattrs = helper.getsequenceno(self.gridattrs, tick.ticklevel)
+                    if gridattrs is not None:
+                        axiscanvas.stroke(axis.vgridpath(tick.virtual), *helper.ensuresequence(gridattrs))
+                tickattrs = helper.getsequenceno(self.tickattrs, tick.ticklevel)
+                if None not in (tick.innerticklength, tick.outerticklength, tickattrs):
+                    x1 = tick.x - tick.dx * tick.innerticklength
+                    y1 = tick.y - tick.dy * tick.innerticklength
+                    x2 = tick.x + tick.dx * tick.outerticklength
+                    y2 = tick.y + tick.dy * tick.outerticklength
+                    axiscanvas.stroke(path._line(x1, y1, x2, y2), *helper.ensuresequence(tickattrs))
+            if tick.textbox is not None:
+                axiscanvas.insert(tick.textbox)
+        if self.baselineattrs is not None:
+            axiscanvas.stroke(axis.vbaseline(axis), *helper.ensuresequence(self.baselineattrs))
+        if self.zerolineattrs is not None:
+            if len(ticks) and ticks[0] * ticks[-1] < frac(0, 1):
+                axiscanvas.stroke(axis.vgridpath(axis.convert(0)), *helper.ensuresequence(self.zerolineattrs))
+        axistitlepainter.paint(self, graph, axis, ticks, axiscanvas)
 
     def ratelayout(self, graph, axis, dense=1):
         ticktextboxes = [tick.textbox for tick in axis.ticks if tick.textbox is not None]
@@ -1505,29 +1657,6 @@ class axispainter(axistitlepainter):
         else:
             if self.labelattrs is None:
                 return 0
-
-    def paint(self, graph, axis):
-        for tick in axis.ticks:
-            if tick.ticklevel is not None:
-                if tick != frac(0, 1) or self.zerolineattrs is None:
-                    gridattrs = helper.getsequenceno(self.gridattrs, tick.ticklevel)
-                    if gridattrs is not None:
-                        graph.stroke(axis.vgridpath(tick.virtual), *helper.ensuresequence(gridattrs))
-                tickattrs = helper.getsequenceno(self.tickattrs, tick.ticklevel)
-                if None not in (tick.innerticklength, tick.outerticklength, tickattrs):
-                    x1 = tick.x - tick.dx * tick.innerticklength
-                    y1 = tick.y - tick.dy * tick.innerticklength
-                    x2 = tick.x + tick.dx * tick.outerticklength
-                    y2 = tick.y + tick.dy * tick.outerticklength
-                    graph.stroke(path._line(x1, y1, x2, y2), *helper.ensuresequence(tickattrs))
-            if tick.textbox is not None:
-                graph.insert(tick.textbox)
-        if self.baselineattrs is not None:
-            graph.stroke(axis.vbaseline(axis), *helper.ensuresequence(self.baselineattrs))
-        if self.zerolineattrs is not None:
-            if len(axis.ticks) and axis.ticks[0] * axis.ticks[-1] < frac(0, 1):
-                graph.stroke(axis.vgridpath(axis.convert(0)), *helper.ensuresequence(self.zerolineattrs))
-        axistitlepainter.paint(self, graph, axis)
 
 
 class splitaxispainter(axistitlepainter):
@@ -1596,12 +1725,12 @@ class splitaxispainter(axistitlepainter):
                 # use a tangent of the baseline (this is independent of the tickdirection)
                 v = 0.5 * (subaxis1.vmax + subaxis2.vmin)
                 breakline = path.normpath(axis.vbaseline(axis, v, None)).tangent(0, self.breaklineslength)
-                widthline = path.normpath(axis.vbaseline(axis, v, None)).tangent(0, self.breaklinesdist).transformed(trafo.rotate(self.breaklinesangle+90, *breakline.begin()))
+                widthline = path.normpath(axis.vbaseline(axis, v, None)).tangent(0, self.breaklinesdist).transformed(trafomodule.rotate(self.breaklinesangle+90, *breakline.begin()))
                 tocenter = map(lambda x: 0.5*(x[0]-x[1]), zip(breakline.begin(), breakline.end()))
                 towidth = map(lambda x: 0.5*(x[0]-x[1]), zip(widthline.begin(), widthline.end()))
-                breakline = breakline.transformed(trafo.translate(*tocenter).rotated(self.breaklinesangle, *breakline.begin()))
-                breakline1 = breakline.transformed(trafo.translate(*towidth))
-                breakline2 = breakline.transformed(trafo.translate(-towidth[0], -towidth[1]))
+                breakline = breakline.transformed(trafomodule.translate(*tocenter).rotated(self.breaklinesangle, *breakline.begin()))
+                breakline1 = breakline.transformed(trafomodule.translate(*towidth))
+                breakline2 = breakline.transformed(trafomodule.translate(-towidth[0], -towidth[1]))
                 graph.fill(path.path(path.moveto(*breakline1.begin()),
                                      path.lineto(*breakline1.end()),
                                      path.lineto(*breakline2.end()),
@@ -1661,7 +1790,7 @@ class baraxispainter(axistitlepainter):
             for (v, x, y, dx, dy), name in zip(axis.namepos, axis.names):
                 nameattrs = helper.ensurelist(self.nameattrs)
                 if self.namedirection is not None:
-                    nameattrs += [trafo.rotate(self.reldirection(self.namedirection, dx, dy))]
+                    nameattrs += [trafomodule.rotate(self.reldirection(self.namedirection, dx, dy))]
                 if axis.texts.has_key(name):
                     axis.nameboxes.append(graph.texrunner._text(x, y, str(axis.texts[name]), *nameattrs))
                 elif axis.texts.has_key(str(name)):
@@ -1898,13 +2027,13 @@ class _axis:
                     self.ticks = variants[i][1]
                     if len(self.ticks):
                         self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
-                    self.layoutdata = layoutdata()
+                    layoutdata = canvas.canvas()
                     self.texter.labels(self.ticks)
-                    self.painter.dolayout(graph, self)
+                    self.painter.paint(graph, self, self.ticks, layoutdata)
                     ratelayout = self.painter.ratelayout(graph, self, dense)
                     if ratelayout is not None:
                         variants[i][0] += ratelayout
-                        variants[i].append(self.layoutdata)
+                        variants[i].append(layoutdata)
                     else:
                         variants[i][0] = None
                     if variants[i][0] is not None and (bestrate is None or variants[i][0] < bestrate):
@@ -1927,14 +2056,14 @@ class _axis:
         else:
             if len(self.ticks):
                 self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
-            self.layoutdata = layoutdata()
+            self.layoutdata = canvas.canvas()
             self.texter.labels(self.ticks)
-            self.painter.dolayout(graph, self)
+            self.painter.paint(graph, self, self.ticks, layoutdata)
+        self.layoutdata = layoutdata
         graph.mindbbox(*[tick.textbox.bbox() for tick in self.ticks if tick.textbox is not None])
 
     def dopaint(self, graph):
-        if self.painter is not None:
-            self.painter.paint(graph, self)
+        graph.insert(self.layoutdata)
 
     def createlinkaxis(self, **args):
         return linkaxis(self, **args)
@@ -2002,14 +2131,16 @@ class linkaxis:
             raise RuntimeError("linkaxis datarange setting performed while linked axis layout already fixed")
 
     def dolayout(self, graph):
-        self.ticks = self.ticks(self.linkedaxis.ticks)
-        self.convert = self.linkedaxis.convert
-        self.divisor = self.linkedaxis.divisor
-        self.layoutdata = layoutdata()
-        self.painter.dolayout(graph, self)
+#        self.ticks = self.ticks(self.linkedaxis.ticks)
+#        self.convert = self.linkedaxis.convert
+#        self.divisor = self.linkedaxis.divisor
+#        self.layoutdata = layoutdata()
+#        self.painter.dolayout(graph, self)
+        pass
 
     def dopaint(self, graph):
-        self.painter.paint(graph, self)
+#        self.painter.paint(graph, self)
+        pass
 
     def createlinkaxis(self, **args):
         return linkaxis(self.linkedaxis)
@@ -2285,7 +2416,7 @@ class key:
         self.plotinfos = plotinfos
 
     def dolayout(self, graph):
-        """creates the layout of the key"""
+        "creates the layout of the key"
         self._dist = unit.topt(unit.length(self.dist_str, default_type="v"))
         self._hdist = unit.topt(unit.length(self.hdist_str, default_type="v"))
         self._vdist = unit.topt(unit.length(self.vdist_str, default_type="v"))
@@ -2314,7 +2445,7 @@ class key:
           - the bbox of the key as returned by the keys bbox method
           - the attributes _hdist, _vdist, hinside, and vinside of the key
           - the dimension and geometry of the graph"""
-        sc = c.insert(canvas.canvas(trafo._translate(x, y)))
+        sc = c.insert(canvas.canvas(trafomodule._translate(x, y)))
         for plotinfo, title in zip(self.plotinfos, self.titles):
             plotinfo.style.key(sc, 0, -0.5 * self._symbolheight + title.center[1],
                                    self._symbolwidth, self._symbolheight)
@@ -2532,12 +2663,13 @@ class graphxy(canvas.canvas):
                 raise ValueError("Axis key '%s' not allowed" % key)
             axis.vtickdirection = self.vtickdirection
             axis.dolayout(self)
+            # TODO: this is totally broken !!!
             if XPattern.match(key):
-                self._xaxisextents[num2] += axis.layoutdata._extent
-                needxaxisdist[num2] = 1
+                try: self._xaxisextents[num2] += axis.layoutdata._extent
+                except: pass
             if YPattern.match(key):
-                self._yaxisextents[num2] += axis.layoutdata._extent
-                needyaxisdist[num2] = 1
+                try: self._yaxisextents[num2] += axis.layoutdata._extent
+                except: pass
 
     def dobackground(self):
         self.dolayout()
@@ -2582,7 +2714,7 @@ class graphxy(canvas.canvas):
                 y = self._ypos - bbox.lly + key._vdist
             else:
                 y = self._ypos - bbox.ury - key._vdist
-        self.mindbbox(bbox.transformed(trafo._translate(x, y)))
+        self.mindbbox(bbox.transformed(trafomodule._translate(x, y)))
         key.paint(self, x, y)
 
     def dokey(self):
@@ -2963,14 +3095,14 @@ class refattr(_changeattr):
 # helper routines for a using attrs
 
 def _getattr(attr):
-    """get attr out of a attr/changeattr"""
+    "get attr out of a attr/changeattr"
     if isinstance(attr, _changeattr):
         return attr.getattr()
     return attr
 
 
 def _getattrs(attrs):
-    """get attrs out of a sequence of attr/changeattr"""
+    "get attrs out of a sequence of attr/changeattr"
     if attrs is not None:
         result = []
         for attr in helper.ensuresequence(attrs):
@@ -2983,14 +3115,14 @@ def _getattrs(attrs):
 
 
 def _iterateattr(attr):
-    """perform next to a attr/changeattr"""
+    "perform next to a attr/changeattr"
     if isinstance(attr, _changeattr):
         return attr.iterate()
     return attr
 
 
 def _iterateattrs(attrs):
-    """perform next to a sequence of attr/changeattr"""
+    "perform next to a sequence of attr/changeattr"
     if attrs is not None:
         result = []
         for attr in helper.ensuresequence(attrs):
@@ -3191,7 +3323,7 @@ changecolor.ReverseHue     = _changecolorreversehue
 
 
 class changesequence(changeattr):
-    """cycles through a sequence"""
+    "cycles through a sequence"
 
     def __init__(self, *sequence):
         changeattr.__init__(self)
