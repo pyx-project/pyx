@@ -284,6 +284,7 @@ class canvas:
         file.write(str(self))
         file.write("\nshowpage\n")
         file.write("%%Trailer\n")
+        file.write("%%EOF\n")
 
 if __name__=="__main__":
     from tex   import *
