@@ -375,12 +375,16 @@ tg = graph.graphxy(width=10,\\
 \question{a}{How do I plot the zero line? \new}
 {new for 0.6 since zeropathattrs was removed}
 {
-To stroke a grid line at a special axis position, the graph needs to
-be finished first (at least the layout needs to be fixed). Than you
-can access special methods and variables of the graph instance to add
-further information.
+Previous releases of \PyX{} offered the possibility to stroke a zero
+line for a given axis by specifying zeropathattrs in the painter
+constructor. This feature was removed in PyX 0.6, but you can easily
+draw a zero line by your own. In order to do so you first have fix the
+layout information of the graph. Then you can use, for instance, the
+ygridpath method of a graph which returns a grid path at the given
+axis value. The so obtainted path can easily be stroked on the graph
+canvas:
 \begin{progcode}
-g.finish()
+g.finish()\\
 g.stroke(g.ygridpath(0))
 \end{progcode}
 }
