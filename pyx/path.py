@@ -136,22 +136,18 @@ class normpathparam:
         self.normsubpathparam = normsubpathparam
 
     def __add__(self, length):
-        #print self.normpath.paramtoarclen_pt(self)
         return self.normpath.arclentoparam_pt([self.normpath.paramtoarclen_pt(self) + unit.topt(length)])[0]
-
-#        return self.normpath.arclentoparam(self.normpath.split((self.normsubpathindex, self.normsubpathparam))[0].arclen()
-#                                           + length)
 
     __radd__ = __add__
 
     def __sub__(self, length):
-        return self.normpath.arclentoparam(self.normpath.split((self.normsubpathindex, self.normsubpathparam))[0] - length)
+        return self.normpath.arclentoparam_pt([self.normpath.paramtoarclen_pt(self) - unit.topt(length)])[0]
 
-    def __mul__(self, factor):
-        return self.normpath.arclentoparam(self.normpath.split((self.normsubpathindex, self.normsubpathparam))[0] * factor)
-
-    def __div__(self, divisor):
-        return self.normpath.arclentoparam(self.normpath.split((self.normsubpathindex, self.normsubpathparam))[0] / divisor)
+#    def __mul__(self, factor):
+#        return self.normpath.arclentoparam(self.normpath.split((self.normsubpathindex, self.normsubpathparam))[0] * factor)
+#
+#    def __div__(self, divisor):
+#        return self.normpath.arclentoparam(self.normpath.split((self.normsubpathindex, self.normsubpathparam))[0] / divisor)
     
 
 ################################################################################
@@ -1994,20 +1990,21 @@ class normsubpath:
         return self.arclen_pt() * unit.t_pt
 
     def _arclentoparam_pt(self, lengths_pt):
-        """ returns [t, l] where t are parameter values matching given lengths
+        """ returns (t, l) where t are parameter values matching given lengths
         and l is the total length of the normsubpath """
         # work on a copy which is counted down to negative values
         lengths_pt = lengths_pt[:]
-        results = [0] * len(lengths_pt)
+        results = [None] * len(lengths_pt)
 
         totalarclen = 0
         for normsubpathindex, normsubpathitem in enumerate(self.normsubpathitems):
             params, arclen = normsubpathitem._arclentoparam_pt(lengths_pt, self.epsilon)
             for i in range(len(results)):
-                if lengths_pt[i] > 0:
+                if results[i] is None:
                     lengths_pt[i] -= arclen
-                    # overwrite the results until the length has become negative
-                    results[i] = normsubpathindex + params[i]
+                    if lengths_pt[i] < 0 or normsubpathindex == len(self.normsubpathitems) - 1:
+                        # overwrite the results until the length has become negative
+                        results[i] = normsubpathindex + params[i]
             totalarclen += arclen
 
         return results, totalarclen
@@ -2473,17 +2470,17 @@ class normpath(base.canvasitem):
         """ returns the parameter values matching the given lengths """
         # work on a copy which is counted down to negative values
         lengths_pt = lengths_pt[:]
-        results = [normpathparam(self, 0, 0) for l in lengths_pt]
+        results = [None] * len(lengths_pt)
 
         for normsubpathindex, normsubpath in enumerate(self.normsubpaths):
             params, arclen = normsubpath._arclentoparam_pt(lengths_pt)
             done = 1
             for i, result in enumerate(results):
-                if lengths_pt[i] > 0:
+                if results[i] is None:
                     lengths_pt[i] -= arclen
-                    # overwrite the results until the length has become negative
-                    result.normsubpathindex = normsubpathindex
-                    result.normsubpathparam = params[i]
+                    if lengths_pt[i] < 0 or normsubpathindex == len(self.normsubpaths) - 1:
+                        # overwrite the results until the length has become negative
+                        results[i] = normpathparam(self, normsubpathindex, params[i])
                     done = 0
             if done:
                 break

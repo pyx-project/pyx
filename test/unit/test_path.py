@@ -7,7 +7,7 @@ import unittest
 from pyx import *
 from pyx.path import *
 import math
-#set(epsilon=1e-10)
+set(epsilon=1e-7)
 
 class NormpathTestCase(unittest.TestCase):
 
@@ -16,7 +16,8 @@ class NormpathTestCase(unittest.TestCase):
                                    normline_pt(10, 0, 10, 20),
                                    normline_pt(10, 20, 0, 20),
                                    normline_pt(0, 20, 0, 0)], closed=1)]) +
-              circle_pt(0, 0, 10) )
+              circle_pt(0, 0, 10) +
+              line_pt(0, 0, 2, 0))
 
         param = normpathparam(p, 0, 1.5)
         param = param + 0
@@ -30,17 +31,26 @@ class NormpathTestCase(unittest.TestCase):
         self.failUnlessAlmostEqual(param.normsubpathparam, 3.995)
         param = param + 0.1 * unit.t_pt
         self.failUnlessEqual(param.normsubpathindex, 1)
-        self.failUnlessAlmostEqual(param.normsubpathparam,  0)
+        self.failUnlessAlmostEqual(param.normsubpathparam, 0)
         param = param + 0.5*circle_pt(0, 0, 10).arclen()
         circlerange = p.normsubpaths[1].range()
         self.failUnlessEqual(param.normsubpathindex, 1)
-        self.failUnlessAlmostEqual(param.normsubpathparam,  0.5*circlerange, 3)
+        self.failUnlessAlmostEqual(param.normsubpathparam, 0.5*circlerange, 4)
         param = param + 0.5*circle_pt(0, 0, 10).arclen()
-        self.failUnlessEqual(param.normsubpathindex, 1)
-        self.failUnlessAlmostEqual(param.normsubpathparam,  circlerange, 3)
-        print param.normsubpathindex, param.normsubpathparam
-        param = param + circle_pt(0, 0, 10).arclen()/circlerange
-        print param.normsubpathindex, param.normsubpathparam
+        param = param + 2 * unit.t_pt
+        self.failUnlessEqual(param.normsubpathindex, 2)
+        self.failUnlessAlmostEqual(param.normsubpathparam, 1, 4)
+        param = param + 1 * unit.t_pt
+        self.failUnlessEqual(param.normsubpathindex, 2)
+        self.failUnlessAlmostEqual(param.normsubpathparam, 1.5, 4)
+
+        param = normpathparam(p, 0, 1.5)
+        param = param - 15 * unit.t_pt
+        self.failUnlessEqual(param.normsubpathindex, 0)
+        self.failUnlessAlmostEqual(param.normsubpathparam, 0.5)
+        param = param - 10 * unit.t_pt
+        self.failUnlessEqual(param.normsubpathindex, 0)
+        self.failUnlessAlmostEqual(param.normsubpathparam, -0.5)
 
     def testsplit(self):
         p = normsubpath([normline_pt(0, -1, 1, 0.1),
