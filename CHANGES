@@ -25,6 +25,8 @@ TODO:
   - text module:
     - SlantFont & Co support
     - keep an eye on PEP 324 (popen 5): it could make the texrunner much easier
+    - empty lines in the preamble should not raise an error
+    - depth information should be accessible
   - unit and text module:
     - introduce xscale for scaling the TeX output
   - mathtree module:
@@ -47,6 +49,8 @@ TODO:
     - arrows should not be stroked by default
   - style and color module:
     - support modification of existing styles via __call__
+  - bbox module:
+    - height -> getheight, ...
 
 0.6 (XXXX/XX/XX):
   - bbox module:
