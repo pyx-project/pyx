@@ -556,7 +556,7 @@ class wriggle(deco, attr.attr):
                                                  wriggletangentstart[i] +
                                                  wriggleat[i]
                                                  for i in range(1, sections+1)]))
-        wrigglepath = wrigglepath.glue(basepath.split([endpar])[1]) # glue and glued?!?
+        wrigglepath = wrigglepath.joined(basepath.split([endpar])[1])
 
         # store wriggle path
         dp.path = wrigglepath # otherwise the bbox is wrong!
@@ -646,7 +646,7 @@ class cycloid(deco, attr.attr):
                 [(points[i][4:6] + points[i+1][0:4]) for i in range(len(points)-1)]))
         else:
             raise RuntimeError("Not enough points while decorating with cycloid")
-        cycloidpath.glue(basepath.split([params[-1]])[-1])
+        cycloidpath.joined(basepath.split([params[-1]])[-1])
 
         # store cycloid path
         # XXX bbox of dp.path is wrong

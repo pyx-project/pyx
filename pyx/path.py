@@ -22,7 +22,6 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-# TODO: - glue -> glue & glued
 #       - exceptions: nocurrentpoint, paramrange
 #       - correct bbox for curveto and normcurve
 #         (maybe we still need the current bbox implementation (then maybe called
@@ -1097,12 +1096,12 @@ class path(base.PSCmd):
         """return coordinates of last point of last subpath in path"""
         return normpath(self).end()
 
-    def glue(self, other):
-        """return path consisting of self and other glued together"""
-        return normpath(self).glue(other)
+    def joined(self, other):
+        """return path consisting of self and other joined together"""
+        return normpath(self).joined(other)
 
-    # << operator also designates glueing
-    __lshift__ = glue
+    # << operator also designates joining
+    __lshift__ = joined
 
     def intersect(self, other):
         """intersect normpath corresponding to self with other path"""
@@ -1999,7 +1998,7 @@ class normsubpath:
             # mark split at the end of the normsubpath
             result.append(None)
 
-        # glue last and first segment together if the normsubpath was originally closed 
+        # join last and first segment together if the normsubpath was originally closed 
         if self.closed:
             if result[0] is None:
                 result = result[1:]
@@ -2304,14 +2303,14 @@ class normpath(path):
         x, y = self.end_pt()
         return unit.t_pt(x), unit.t_pt(y)
 
-    def glue(self, other):
+    def joined(self, other):
         if not self.subpaths:
-            raise PathException("cannot glue to end of empty path")
+            raise PathException("cannot join to end of empty path")
         if self.subpaths[-1].closed:
-            raise PathException("cannot glue to end of closed sub path")
+            raise PathException("cannot join to end of closed sub path")
         other = normpath(other)
         if not other.subpaths:
-            raise PathException("cannot glue empty path")
+            raise PathException("cannot join empty path")
 
         self.subpaths[-1].normpathels += other.subpaths[0].normpathels
         self.subpaths += other.subpaths[1:]

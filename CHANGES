@@ -34,8 +34,6 @@ TODO:
   - attr module:
     - TODO: general documentation about attributes, clearing, merging?
     - TODO: general documentation about changeable attributes?
-  - path module:
-    - glue -> join?
   - unit module:
     - what about unit.cm() -> unit.cm, ...
     - maybe we should never convert implicitly into visual/width, etc. lengths
@@ -61,6 +59,7 @@ TODO for 0.6:
     - unit module:
       -> not always returns true
       AW: HÄÄÄ???
+      JL: I also don't know what this means.
     - path module:
       in the introduction mention the canvas
       describe + vs <<
@@ -116,6 +115,7 @@ TODO for 0.6:
       path
     - renamed: arclength -> arclen
     - renamed: lentopar -> arclentoparam
+    - renamed: glue -> joined
     - path and normpath method raise exception instead of returning None
       when parameter is out of range
     - the accuracy epsilon can now only be specified in normpath and normsubpath
