@@ -21,10 +21,9 @@ a:hover {
 
 /* page layout */
 
-/* background needed when both, navigation and content
-   doesn't fill the available vertical space
-   (its a workaround for browsers which do not support
-   min-height properly) */
+/* background needed when neither navigation nor content fill the available
+ * vertical space (it's a workaround for browsers which do not support
+ * min-height properly) */
 #background {
         position: absolute;
         top: 0px;
