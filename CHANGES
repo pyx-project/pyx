@@ -11,7 +11,7 @@ PyX
     - do not include unneeded line segments when the axis range is set manually
     - allow for an iteration of a graph style, when it is used several times
     - common bboxes for different graphs
-    - automatic datafile key title
+    - automatic datafile key title; skip title=None stuff in key
     - exceptions in drawsymbol & friends...
     - 3d graphs, circular graphs
     - dense -> density
