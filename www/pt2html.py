@@ -41,9 +41,12 @@ examples = [example("hello"),
             example("vector"),
             example("tree"),
             example("sierpinski"),
+            example("graphs/minimal"),
+            example("graphs/lissajous"),
+            example("graphs/piaxis"),
+            example("graphs/bar"),
             example("graphs/arrows"),
-            example("graphs/step"),
-            example("graphs/piaxis")]
+            example("graphs/partialfill")]
 
 write_file("%s.html" % pagename,
            PageTemplateFromFile("%s.pt" % pagename)(maintemplate=maintemplate,

@@ -8,6 +8,7 @@ clean:
 all:
 	make clean
 	make pdf
+	make html
 
 pdf: examples.pdf
 ps: examples.ps
@@ -39,4 +40,7 @@ html: $(htmlfiles) $(pngfiles)
 
 %.png: %.eps
 	@# -dEPSCrop needs gs version >= 8.0
-	gs8.0 -dEPSCrop -dNOPAUSE -dQUIET -dBATCH -sDEVICE=ppmraw -sOutputFile=- -r400 $^|pnmscale 0.25|pnmtopng > $@
+	gs8.0 -dEPSCrop -dNOPAUSE -dQUIET -dBATCH -sDEVICE=ppmraw -sOutputFile=- -r400 $*.eps > $@.large
+	ppmcolormask white $@.large|pnmscale 0.25 2> /dev/null > $@.alpha
+	pnmscale 0.25 $@.large|pnmtopng -alpha $@.alpha > $@
+	rm $@.large $@.alpha

@@ -12,13 +12,11 @@ f = lambda k: 1/(z(k)-z1)/(z(k)-z2)                # function to be plotted
 s = lambda k: 5*sqrt(f(k).real**2 + f(k).imag**2)  # norm of the function
 a = lambda k: 180/pi*atan2(f(k).imag, f(k).real)   # direction of the function
 
-c = canvas.canvas()
-g = c.insert(graph.graphxy(width=8,
-                           x=graph.linaxis(min=0, max=10),
-                           y=graph.linaxis(min=0, max=10)))
+g = graph.graphxy(width=8,
+                  x=graph.linaxis(min=0, max=10),
+                  y=graph.linaxis(min=0, max=10))
 g.plot(graph.paramfunction("k", 0, 120,
                            "x, y, size, angle = x(k), y(k), s(k), a(k)",
                            points=121, context=locals()),
        style=graph.arrow())
-
-c.writetofile("arrows")
+g.writetofile("arrows")

@@ -48,8 +48,8 @@ PyX
     - new constructor signature, more in line with rest of PyX:
       epsfile(x, y, filename, **additional_args)
   - data module:
-    - removed additional column support in addcolumn; removed _addcolumn (done except for the documentation)
-    - line reduction for datafile like the every parameter in gnuplot (done except for the documentation)
+    - removed additional column support in addcolumn; removed _addcolumn
+    - line reduction for datafile like the every parameter in gnuplot
   - canvas module:
     - new way of PS prolog generation that writes only necessary parts
     - added support for patterns

@@ -14,7 +14,7 @@ d = [graph.data(df, x="month", y="min"), graph.data(df, x=1, y=3)]
 nofirst = (graph.changesequence(None, canvas.stroked(color.gray.black)),
            graph.changesequence(None, color.rgb.green)) # special draw attrs
 
-c = canvas.canvas()
+c = canvas.canvas() # we draw several plots, thus we create a main canvas
 g = c.insert(graph.graphxy(ypos=4.5, width=8, height=4, x=a1))
 g.plot(d, graph.bar(stacked=1, barattrs=nofirst))
 g.finish() # we explicitly finish the plot allow for a reuse of "d"
