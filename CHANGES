@@ -56,6 +56,8 @@ PyX
   - mathtree module:
     - added abs function
     - changed the handling of extern functions and all variables
+  - color module:
+    - gradient renamed to palette
   - numerous bugfixes:
     - problem with sizefile on windows (tex module)
     - allow for strings in graphxy's width and height; allow for width only (graph module)
