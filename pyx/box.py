@@ -27,7 +27,7 @@ import bbox, path, unit, trafo, helper
 
 class BoxCrossError(Exception): pass
 
-class _poly:
+class _polygon:
 
     def __init__(self, corners=None, center=None):
         self.corners = corners
@@ -204,8 +204,12 @@ class _poly:
     def _extent(self, dx, dy):
         n = math.sqrt(dx * dx + dy * dy)
         dx, dy = dx / n, dy / n
+        oldcenter = self.center
+        if self.center is None:
+            self.center = 0, 0
         x1, y1 = self._linealignvector(0, dx, dy)
         x2, y2 = self._linealignvector(0, -dx, -dy)
+        self.center = oldcenter
         return (x1-x2)*dx + (y1-y2)*dy
 
     def extent(self, dx, dy):
@@ -265,45 +269,72 @@ class _poly:
                          max([x[1] for x in self.corners]))
 
 
-def _genericalignequal(method, polys, a, dx, dy):
+def _genericalignequal(method, polygons, a, dx, dy):
     vec = None
-    for p in polys:
+    for p in polygons:
         v = method(p, a, dx, dy)
         if vec is None or vec[0] * dx + vec[1] * dy < v[0] * dx + v[1] * dy:
             vec = v
-    for p in polys:
+    for p in polygons:
         p.transform(trafo._translate(*vec))
 
 
-def _circlealignequal(polys, *args):
-    _genericalignequal(_poly._circlealignvector, polys, *args)
+def _circlealignequal(polygons, *args):
+    _genericalignequal(_polygon._circlealignvector, polygons, *args)
 
-def _linealignequal(polys, *args):
-    _genericalignequal(_poly._linealignvector, polys, *args)
+def _linealignequal(polygons, *args):
+    _genericalignequal(_polygon._linealignvector, polygons, *args)
 
-def circlealignequal(polys, *args):
-    _genericalignequal(_poly.circlealignvector, polys, *args)
+def circlealignequal(polygons, *args):
+    _genericalignequal(_polygon.circlealignvector, polygons, *args)
 
-def linealignequal(polys, *args):
-    _genericalignequal(_poly.linealignvector, polys, *args)
+def linealignequal(polygons, *args):
+    _genericalignequal(_polygon.linealignvector, polygons, *args)
 
 
-class poly(_poly):
+def _tile(polygons, a, dx, dy):
+    d = maxextent = polygons[0]._extent(dx, dy)
+    for p in polygons[1:]:
+        extent = p._extent(dx, dy)
+        if extent > maxextent:
+            maxextent = extent
+    for p in polygons:
+        p.transform(trafo._translate(d*dx, d*dy))
+        d += maxextent + a
+
+
+def tile(polygons, a, dx, dy):
+    _tile(polygons, unit.topt(a), dx, dy)
+
+def _htile(polygons, a):
+    _tile(polygons, a, 1, 0)
+
+def htile(polygons, a):
+    tile(polygons, a, 1, 0)
+
+def _vtile(polygons, a):
+    _tile(polygons, a, 0, 1)
+
+def vtile(polygons, a):
+    tile(polygons, a, 0, 1)
+
+
+class polygon(_polygon):
 
     def __init__(self, corners=None, center=None, **args):
         corners = [[unit.topt(x) for x in corner] for corner in corners]
         if center is not None:
             center = map(unit.topt, center)
-        _poly.__init__(self, corners=corners, center=center, **args)
+        _polygon.__init__(self, corners=corners, center=center, **args)
 
 
-class _rect(_poly):
+class _rect(_polygon):
 
     def __init__(self, x, y, width, height, relcenter=(0, 0), abscenter=(0, 0),
                        corners=helper.nodefault, center=helper.nodefault, **args):
         if corners != helper.nodefault or center != helper.nodefault:
             raise ValueError
-        _poly.__init__(self, corners=((x, y),
+        _polygon.__init__(self, corners=((x, y),
                                       (x + width, y),
                                       (x + width, y + height),
                                       (x, y + height)),
