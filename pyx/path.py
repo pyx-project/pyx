@@ -725,7 +725,7 @@ class line(path):
 
    def __init__(self, x1, y1, x2, y2):
        path.__init__(self, moveto(x1,y1), lineto(x2, y2))
-       
+
 
 class _rect(path):
 
@@ -737,7 +737,7 @@ class _rect(path):
                            _rlineto(0,height), 
                            _rlineto(-width,0),
                            closepath())
-       
+
 
 class rect(path):
 
@@ -749,3 +749,22 @@ class rect(path):
                            rlineto(0,height), 
                            rlineto(-unit.length(width),0),
                            closepath())
+
+
+class _circle(path):
+
+   """circle with center (x,y) and radius"""
+
+   def __init__(self, x, y, radius):
+       path.__init__(self, _arc(x, y, radius, 0, 360),
+                           closepath())
+
+
+class circle(path):
+
+   """circle with center (x,y) and radius"""
+
+   def __init__(self, x, y, radius):
+       path.__init__(self, arc(x, y, radius, 0, 360),
+                           closepath())
+
