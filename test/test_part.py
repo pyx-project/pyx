@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import sys, unittest
+sys.path[:0] = [".."]
 
-sys.path.append("..")
 from pyx import *
 from pyx.graph import frac, tick, manualpart, linpart, logpart
 

@@ -1,4 +1,6 @@
-import math
+import math, sys
+sys.path[:0] = [".."]
+
 from pyx import *
 
 def tree(depth):

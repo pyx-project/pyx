@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import sys, math
-sys.path.append("..")
+sys.path[:0] = [".."]
+
 from pyx import *
 from pyx import mathtree
 
