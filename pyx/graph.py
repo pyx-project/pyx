@@ -806,19 +806,19 @@ class _alignbox:
         return map(unit.t_pt, self._linealignvector(unit.topt(a), dx, dy))
 
     def _circlealign(self, *args):
-        self.transform(trafo._translation(*self._circlealignvector(*args)))
+        self.transform(trafo._translate(*self._circlealignvector(*args)))
         return self
 
     def _linealign(self, *args):
-        self.transform(trafo._translation(*self._linealignvector(*args)))
+        self.transform(trafo._translate(*self._linealignvector(*args)))
         return self
 
     def circlealign(self, *args):
-        self.transform(trafo.translation(*self.circlealignvector(*args)))
+        self.transform(trafo.translate(*self.circlealignvector(*args)))
         return self
 
     def linealign(self, *args):
-        self.transform(trafo.translation(*self.linealignvector(*args)))
+        self.transform(trafo.translate(*self.linealignvector(*args)))
         return self
 
     def _extent(self, dx, dy):
@@ -934,7 +934,7 @@ class textbox(_rectbox, attrlist.attrlist):
                 xorigin = self.wd
         _rectbox.__init__(self, 0, -self.dp, self.wd, self.ht, xorigin, self.shiftht)
         if self.direction is not None:
-            self.transform(trafo._rotation(self.direction.value))
+            self.transform(trafo._rotate(self.direction.value))
 
     def transform(self, trafo):
         _rectbox.transform(self, trafo)
@@ -1181,7 +1181,7 @@ class axispainter(attrlist.attrlist):
             if tick.textbox is not None:
                 tick.textbox._linealign(labeldist, tick.dx, tick.dy)
                 tick._extent = tick.textbox._extent(tick.dx, tick.dy) + labeldist
-                tick.textbox.transform(trafo._translation(tick.x, tick.y))
+                tick.textbox.transform(trafo._translate(tick.x, tick.y))
         def topt_v_recursive(arg):
             if _issequence(arg):
                 # return map(topt_v_recursive, arg) needs python2.2
@@ -1218,7 +1218,7 @@ class axispainter(attrlist.attrlist):
             axis.titlebox = textbox(graph.tex, axis.title, textattrs=titleattrs)
             axis._extent += titledist
             axis.titlebox._linealign(axis._extent, dx, dy)
-            axis.titlebox.transform(trafo._translation(*axis._vtickpoint(axis, self.titlepos)))
+            axis.titlebox.transform(trafo._translate(*axis._vtickpoint(axis, self.titlepos)))
             axis._extent += axis.titlebox._extent(dx, dy)
 
     def ratelayout(self, graph, axis, dense=1):
@@ -1315,12 +1315,12 @@ class splitaxispainter:
                 # use a tangent of the baseline (this is independend of the tickdirection)
                 v = 0.5 * (subaxis1.vmax + subaxis2.vmin)
                 breakline = path.normpath(axis.vbaseline(axis, v, None)).tangent(0, self.breaklineslength)
-                widthline = path.normpath(axis.vbaseline(axis, v, None)).tangent(0, self.breaklinesdist).transformed(trafo.rotation(self.breaklinesangle+90, *breakline.begin()))
+                widthline = path.normpath(axis.vbaseline(axis, v, None)).tangent(0, self.breaklinesdist).transformed(trafo.rotate(self.breaklinesangle+90, *breakline.begin()))
                 tocenter = map(lambda x: 0.5*(x[0]-x[1]), zip(breakline.begin(), breakline.end()))
                 towidth = map(lambda x: 0.5*(x[0]-x[1]), zip(widthline.begin(), widthline.end()))
-                breakline = breakline.transformed(trafo.translation(*tocenter).rotate(self.breaklinesangle, *breakline.begin()))
-                breakline1 = breakline.transformed(trafo.translation(*towidth))
-                breakline2 = breakline.transformed(trafo.translation(-towidth[0], -towidth[1]))
+                breakline = breakline.transformed(trafo.translate(*tocenter).rotated(self.breaklinesangle, *breakline.begin()))
+                breakline1 = breakline.transformed(trafo.translate(*towidth))
+                breakline2 = breakline.transformed(trafo.translate(-towidth[0], -towidth[1]))
                 graph.fill(path.path(path.moveto(*breakline1.begin()),
                                      path.lineto(*breakline1.end()),
                                      path.lineto(*breakline2.end()),
@@ -1419,7 +1419,7 @@ class baraxispainter(attrlist.attrlist): # XXX: avoid code duplication with axis
             axis._extent += axis.outerticklength
         for (v, x, y, dx, dy), namebox in zip(axis.namepos, axis.nameboxes):
             namebox._linealign(labeldist, dx, dy)
-            namebox.transform(trafo._translation(x, y))
+            namebox.transform(trafo._translate(x, y))
             newextent = namebox._extent(dx, dy) + labeldist
             if axis._extent < newextent:
                 axis._extent = newextent
@@ -1432,7 +1432,7 @@ class baraxispainter(attrlist.attrlist): # XXX: avoid code duplication with axis
             axis.titlebox = textbox(graph.tex, axis.title, textattrs=titleattrs)
             axis._extent += titledist
             axis.titlebox._linealign(axis._extent, dx, dy)
-            axis.titlebox.transform(trafo._translation(*axis._vtickpoint(axis, self.titlepos)))
+            axis.titlebox.transform(trafo._translate(*axis._vtickpoint(axis, self.titlepos)))
             axis._extent += axis.titlebox._extent(dx, dy)
 
     def paint(self, graph, axis):

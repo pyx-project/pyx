@@ -402,8 +402,8 @@ def _arrowhead(anormpath, size, angle, constriction):
 
     # from this template, we construct the two outer curves
     # of the arrow
-    arrowl = arrowtemplate.transformed(trafo.rotation(-angle/2.0, tx, ty))
-    arrowr = arrowtemplate.transformed(trafo.rotation( angle/2.0, tx, ty))
+    arrowl = arrowtemplate.transformed(trafo.rotate(-angle/2.0, tx, ty))
+    arrowr = arrowtemplate.transformed(trafo.rotate( angle/2.0, tx, ty))
 
     # now come the joining backward parts
     if constriction:
@@ -718,7 +718,7 @@ class canvas(base.PSCmd):
         ctrafo=None     # global transformation of canvas
 
         if rotated:
-            ctrafo = trafo._rotation(90,
+            ctrafo = trafo._rotate(90,
                                      0.5*(abbox.llx+abbox.urx),
                                      0.5*(abbox.lly+abbox.ury))
 
@@ -733,7 +733,7 @@ class canvas(base.PSCmd):
 
             if not ctrafo: ctrafo=trafo.trafo()
 
-            ctrafo = ctrafo._translate(0.5*(width -(abbox.urx-abbox.llx))-
+            ctrafo = ctrafo._translated(0.5*(width -(abbox.urx-abbox.llx))-
                                        abbox.llx, 
                                        0.5*(height-(abbox.ury-abbox.lly))-
                                        abbox.lly)
@@ -749,7 +749,7 @@ class canvas(base.PSCmd):
                     sfactor = min((width-2*margin)/(abbox.urx-abbox.llx), 
                                   (height-2*margin)/(abbox.ury-abbox.lly))
                     
-                ctrafo = ctrafo._scale(sfactor, sfactor, 0.5*width, 0.5*height)
+                ctrafo = ctrafo._scaled(sfactor, sfactor, 0.5*width, 0.5*height)
                           
                 
         elif fittosize:

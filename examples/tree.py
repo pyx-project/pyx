@@ -7,9 +7,9 @@ def tree(depth):
     result = [trafo.trafo()]
     if depth > 0:
         subtree = tree(depth - 1)
-        result.extend([t.rotate(65).scale(0.5).translate(0, 2.0/3.0) for t in subtree])
-        result.extend([t.rotate(-4).scale(0.7).translate(0, 1) for t in subtree])
-        result.extend([t.mirror(90).rotate(-65).scale(0.5).translate(0, 1) for t in subtree])
+        result.extend([t.rotated(65).scaled(0.5).translated(0, 2.0/3.0) for t in subtree])
+        result.extend([t.rotated(-4).scaled(0.7).translated(0, 1) for t in subtree])
+        result.extend([t.mirrored(90).rotated(-65).scaled(0.5).translated(0, 1) for t in subtree])
     return result
 
 w = 0.01

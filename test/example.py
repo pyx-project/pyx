@@ -85,7 +85,7 @@ c.stroke(p, canvas.linestyle.dashed)
 
    
 for angle in range(20):
-    s=c.insert(canvas.canvas(translation(10,10)*rotation(angle))).stroke(p, canvas.linestyle.dashed, canvas.linewidth(0.01*angle), gray((20-angle)/20.0))
+    s=c.insert(canvas.canvas(translate(10,10)*rotate(angle))).stroke(p, canvas.linestyle.dashed, canvas.linewidth(0.01*angle), gray((20-angle)/20.0))
 
 c.set(canvas.linestyle.solid)
     

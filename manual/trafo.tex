@@ -48,19 +48,21 @@ instance with transformation \texttt{matrix} and \texttt{vector}.
 $(\mathtt{x}, \mathtt{y})$.\\
 \texttt{inverse()} & returns inverse transformation of
 \texttt{trafo}.\\
-\texttt{mirror(angle)} & returns \texttt{trafo} followed by mirroring
+\texttt{mirrored(angle)} & returns \texttt{trafo} followed by mirroring
 at line through $(0,0)$ with  direction \texttt{angle} in degrees.\\
-\texttt{rotate(angle, \newline\phantom{rotate(}x=None, y=None)} &
+\texttt{rotated(angle, \newline\phantom{rotate(}x=None, y=None)} &
 returns \texttt{trafo} followed by rotation by \texttt{angle} degrees
 around point $(\mathtt{x},
 \mathtt{y})$, or $(0,0)$, if not given.\\
-\texttt{scale(sx, sy=None,\newline\phantom{scale(}x=None, y=None)} &
+\texttt{scaled(sx, sy=None,\newline\phantom{scale(}x=None, y=None)} &
 returns \texttt{trafo} followed by
 scaling with scaling factor \texttt{sx} in $x$-direction, \texttt{sy} in
 $y$-direction ($\mathtt{sy}=\mathtt{sx}$, if not given) with scaling
 center $(\mathtt{x}, \mathtt{y})$, or $(0,0)$, if not given.\\
-\texttt{translate(x, y)} & returns \texttt{trafo} followed by
+\texttt{translated(x, y)} & returns \texttt{trafo} followed by
 translation by vector $(\mathtt{x}, \mathtt{y})$.\\
+\texttt{slanted(a, angle=0, x=None, y=None)} & returns \texttt{trafo}
+followed by XXX\\
 \end{tabularx}
 \medskip
 
@@ -76,18 +78,19 @@ method. They are listed in the following table:
 \begin{tabularx}{\linewidth}{>{\hsize=.7\hsize}X>{\raggedright\arraybackslash\hsize=1.3\hsize}X}
   \texttt{trafo} subclass & function \\
   \hline 
-  \texttt{mirroring(angle)} & mirroring at line through $(0,0)$
+  \texttt{mirror(angle)} & mirroring at line through $(0,0)$
   with direction  \texttt{angle} in degrees.\\
-  \texttt{rotation(angle, \newline\phantom{rotation(}x=None, y=None)} &
+  \texttt{rotate(angle, \newline\phantom{rotation(}x=None, y=None)} &
   rotation by \texttt{angle} degrees around point $(\mathtt{x},
   \mathtt{y})$, or $(0,0)$, if not given.\\
-  \texttt{scaling(sx, sy=None,\newline\phantom{scaling(}x=None, y=None)} &
+  \texttt{scale(sx, sy=None,\newline\phantom{scaling(}x=None, y=None)} &
   scaling with scaling factor \texttt{sx} in $x$-direction,
   \texttt{sy} in $y$-direction ($\mathtt{sy}=\mathtt{sx}$, if not
   given) with scaling
   center $(\mathtt{x}, \mathtt{y})$, or $(0,0)$, if not given.\\
-  \texttt{translation(x, y)} &
+  \texttt{translate(x, y)} &
   translation by vector $(\mathtt{x}, \mathtt{y})$.\\
+  \texttt{slant(a, angle=0, x=None, y=None)} & XXX \\
 \end{tabularx}
 \medskip
 

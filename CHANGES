@@ -5,6 +5,8 @@ PyX
     - allow division of length by numbers
   - trafo module:
     - new transformation: slant
+    - renamed all trafo methods to use the participle (i.e translate->translated)
+    - the name of all trafo subclasses are verbs (i.e. translation->translate)
   - graph module:
     - mark class renamed to symbol
     - (text-)box distance measurement

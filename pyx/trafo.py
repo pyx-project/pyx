@@ -139,32 +139,32 @@ class _trafo(base.PSOp):
         return _trafo(matrix=matrix) * \
                _trafo(vector=(-self.vector[0], -self.vector[1]))
 
-    def mirror(self, angle):
-        return mirroring(angle)*self
+    def mirrored(self, angle):
+        return mirror(angle)*self
 
-    def _rotate(self, angle, x=None, y=None):
-        return _rotation(angle, x, y)*self
+    def _rotated(self, angle, x=None, y=None):
+        return _rotate(angle, x, y)*self
 
-    def rotate(self, angle, x=None, y=None):
-        return rotation(angle, x, y)*self
+    def rotated(self, angle, x=None, y=None):
+        return rotate(angle, x, y)*self
 
-    def _scale(self, sx, sy=None, x=None, y=None):
-        return _scaling(sx, sy, x, y)*self
+    def _scaled(self, sx, sy=None, x=None, y=None):
+        return _scale(sx, sy, x, y)*self
 
-    def scale(self, sx, sy=None, x=None, y=None):
-        return scaling(sx, sy, x, y)*self
+    def scaled(self, sx, sy=None, x=None, y=None):
+        return scale(sx, sy, x, y)*self
 
-    def _slant(self, a, angle=0, x=None, y=None):
-        return _slant(a, angle, x, y)*self
+    def _slanted(self, a, angle=0, x=None, y=None):
+        return _slanted(a, angle, x, y)*self
 
-    def slant(self, a, angle=0, x=None, y=None):
-        return slant(a, angle, x, y)*self
+    def slanted(self, a, angle=0, x=None, y=None):
+        return slanted(a, angle, x, y)*self
 
-    def _translate(self, x, y):
-        return _translation(x,y)*self
+    def _translated(self, x, y):
+        return _translate(x,y)*self
 
-    def translate(self, x, y):
-        return translation(x, y)*self
+    def translated(self, x, y):
+        return translate(x, y)*self
 
 
 class trafo(_trafo):
@@ -181,12 +181,12 @@ class trafo(_trafo):
 # some standard transformations 
 #
 
-class mirroring(trafo):
+class mirror(trafo):
     def __init__(self,angle=0):
         trafo.__init__(self, matrix=_mmatrix(angle))
 
 
-class _rotation(_trafo):
+class _rotate(_trafo):
     def __init__(self, angle, x=None, y=None):
         vector = 0, 0
         if x is not None or y is not None:
@@ -200,7 +200,7 @@ class _rotation(_trafo):
                        vector=vector)
 
 
-class rotation(_trafo):
+class rotate(_trafo):
     def __init__(self, angle, x=None, y=None):
         vector = 0, 0 
         if x is not None or y is not None:
@@ -214,7 +214,7 @@ class rotation(_trafo):
                        vector=vector)
 
 
-class _scaling(_trafo):
+class _scale(_trafo):
     def __init__(self, sx, sy=None, x=None, y=None):
         sy = sy or sx
         if not sx or not sy:
@@ -230,7 +230,7 @@ class _scaling(_trafo):
         _trafo.__init__(self, matrix=((sx,0),(0,sy)), vector=vector)
 
 
-class scaling(trafo):
+class scale(trafo):
     def __init__(self, sx, sy=None, x=None, y=None):
         sy = sy or sx
         if not sx or not sy:
@@ -248,25 +248,25 @@ class scaling(trafo):
 
 class _slant(_trafo):
     def __init__(self, a, angle=0, x=None, y=None):
-        t = ( _rotation(-angle, x, y)*
+        t = ( _rotate(-angle, x, y)*
               trafo(matrix=((1, a), (0, 1)))*
-              _rotation(angle, x, y) )
+              _rotate(angle, x, y) )
         _trafo.__init__(self, t.matrix, t.vector)
 
 
 class slant(trafo):
     def __init__(self, a, angle=0, x=None, y=None):
-        t = ( rotation(-angle, x, y)*
+        t = ( rotate(-angle, x, y)*
               trafo(matrix=((1, a), (0, 1)))*
-              rotation(angle, x, y) )
+              rotate(angle, x, y) )
         trafo.__init__(self, t.matrix, t.vector)
 
 
-class _translation(_trafo):
+class _translate(_trafo):
     def __init__(self, x, y):
         _trafo.__init__(self, vector=(x, y))
 
 
-class translation(trafo):
+class translate(trafo):
     def __init__(self, x, y):
         trafo.__init__(self, vector=(x, y))

@@ -417,7 +417,7 @@ class DVIFile:
         y = self.pos[_POS_V] * self.conv * 1e-5
         ascii = (char > 32 and char < 128) and "%s" % chr(char) or "\\%03o" % char
         print "type 0x%08x (%s) at (%.3f cm, %.3f cm)" % (char, ascii, x, y)
-        
+
         if self.actoutstart is None:
             self.actoutstart = unit.t_cm(x), unit.t_cm(y)
             self.actoutstring = ""

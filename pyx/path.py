@@ -1849,7 +1849,7 @@ class normpath(path):
                         return tvec
                     else:
                         sfactor = unit.topt(length)/tlen
-                        return tvec.transformed(trafo.scaling(sfactor, sfactor, *tvec.begin()))
+                        return tvec.transformed(trafo.scale(sfactor, sfactor, *tvec.begin()))
 
             pel._updatecontext(context)
 

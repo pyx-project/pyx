@@ -52,46 +52,46 @@ class TrafoTestCase(unittest.TestCase):
 
     def testInverse(self):
         "t*t.inverse()=1"
-        t = trafo.translation(-1,-1)*trafo.rotation(72)*trafo.translation(1,1)
+        t = trafo.translate(-1,-1)*trafo.rotate(72)*trafo.translate(1,1)
         assert isEqual(t*t.inverse(), trafo.trafo()), \
                 "wrong inverse definition"
 
     def testTranslate(self):
-        assert correctOnBasis(trafo.translation(1,0),
+        assert correctOnBasis(trafo.translate(1,0),
                               (2,0), (1,1)), \
                "wrong definition of trafo.translation"
-        assert correctOnBasis(trafo.translation(0,1),
+        assert correctOnBasis(trafo.translate(0,1),
                               (1,1), (0,2)), \
                "wrong definition of trafo.translation"
 
     def testRotate(self):
-        assert correctOnBasis(trafo.rotation(90),
+        assert correctOnBasis(trafo.rotate(90),
                               (0,1), (-1,0)), \
                "wrong definition of trafo.rotation"
-        assert isEqual(trafo.rotation(360), trafo.trafo()), \
+        assert isEqual(trafo.rotate(360), trafo.trafo()), \
                 "trafo.rotation by 360 deg is not 1"
-        assert isEqual(trafo.rotation(40)*trafo.rotation(120)*
-                       trafo.rotation(90)*trafo.rotation(110),
+        assert isEqual(trafo.rotate(40)*trafo.rotate(120)*
+                       trafo.rotate(90)*trafo.rotate(110),
                         trafo.trafo()), \
                 "successive multiplication by 360 degrees does not yield 1"
 
     def testMirror(self):
         "trafo.mirroring two times must yield 1 and -mirror(phi)=mirror(phi+180)"
-        assert isEqual(trafo.mirroring(20)*trafo.mirroring(20),
+        assert isEqual(trafo.mirror(20)*trafo.mirror(20),
                        trafo.trafo()), \
                 "trafo.mirroring not idempotent"
-        assert isEqual(trafo.mirroring(20),
-                       trafo.mirroring(180+20)), \
+        assert isEqual(trafo.mirror(20),
+                       trafo.mirror(180+20)), \
                 "trafo.mirroring by 20 degrees unequal to trafo.mirroring by 180+20 degrees"
 
     def testScale(self):
-        assert correctOnBasis(trafo.scaling(0.5),
+        assert correctOnBasis(trafo.scale(0.5),
                               (0.5,0), (0, 0.5)), \
                "wrong definition of trafo.scaling"
-        assert correctOnBasis(trafo.scaling(0.5, 0.2),
+        assert correctOnBasis(trafo.scale(0.5, 0.2),
                               (0.5,0), (0, 0.2)), \
                "wrong definition of trafo.scaling"
-        assert isEqual(trafo.scaling(2,3)*trafo.scaling(1/2.0, 1/3.0),
+        assert isEqual(trafo.scale(2,3)*trafo.scale(1/2.0, 1/3.0),
                        trafo.trafo()), \
                 "trafo.scaling definition wrong"
 
@@ -105,49 +105,49 @@ class TrafoTestCase(unittest.TestCase):
    
     def testMultVsMethods(self):
         "test multiplication vs trafo methods"
-        assert isEqual(trafo.rotation(72).translate(1,2),
-                       trafo.translation(1,2)*trafo.rotation(72)), \
+        assert isEqual(trafo.rotate(72).translated(1,2),
+                       trafo.translate(1,2)*trafo.rotate(72)), \
                "trafo.translate not consistent with multiplication result"
-        assert isEqual(trafo.mirroring(20)*trafo.mirroring(20),
-                       trafo.mirroring(20).mirror(20)), \
+        assert isEqual(trafo.mirror(20)*trafo.mirror(20),
+                       trafo.mirror(20).mirrored(20)), \
                "trafo.mirror not consistent with multiplication result"
-        assert isEqual(trafo.translation(1,2).rotate(72).translate(-3,-1),
-                       trafo.translation(-3,-1)*
-                       trafo.rotation(72)*
-                       trafo.translation(1,2)), \
+        assert isEqual(trafo.translate(1,2).rotated(72).translated(-3,-1),
+                       trafo.translate(-3,-1)*
+                       trafo.rotate(72)*
+                       trafo.translate(1,2)), \
                 "trafo.translate/rotate not consistent with multiplication result"
    
     def testTranslateCombined(self):
-        assert correctOnBasis(trafo.translation(1,0)*trafo.rotation(90),
+        assert correctOnBasis(trafo.translate(1,0)*trafo.rotate(90),
                               (1,1), (0,0)), \
                "wrong trafo.translation/trafo.rotation definition"
-        assert correctOnBasis(trafo.rotation(90)*trafo.translation(1,0),
+        assert correctOnBasis(trafo.rotate(90)*trafo.translate(1,0),
                               (0,2), (-1,1)), \
                "wrong trafo.translation/trafo.rotation definition"
-        assert isEqual(trafo.rotation(72,1,2),
-                       trafo.translation(-1,-2).rotate(72).translate(1,2)), \
+        assert isEqual(trafo.rotate(72,1,2),
+                       trafo.translate(-1,-2).rotated(72).translated(1,2)), \
                "wrong translate/rotate definition"
         
-        assert correctOnBasis(trafo.translation(1,0)*
-                              trafo.scaling(0.5),
+        assert correctOnBasis(trafo.translate(1,0)*
+                              trafo.scale(0.5),
                               (1.5, 0), (1.0,0.5)), \
                "wrong trafo.translation/trafo.scaling definition"
-        assert correctOnBasis(trafo.scaling(0.5)*
-                              trafo.translation(1,0),
+        assert correctOnBasis(trafo.scale(0.5)*
+                              trafo.translate(1,0),
                               (1, 0), (0.5,0.5)), \
                "wrong trafo.translation/trafo.scaling definition"
                 
-        assert correctOnBasis(trafo.translation(1,0)*
-                              trafo.rotation(90)*
-                              trafo.scaling(0.5),
+        assert correctOnBasis(trafo.translate(1,0)*
+                              trafo.rotate(90)*
+                              trafo.scale(0.5),
                               (1,0.5), (0.5,0)), \
                "wrong trafo.translation/trafo.rotation/trafo.scaling definition"
-        assert correctOnBasis(trafo.translation(1,0)*
-                              trafo.scaling(0.5)*
-                              trafo.rotation(90),
+        assert correctOnBasis(trafo.translate(1,0)*
+                              trafo.scale(0.5)*
+                              trafo.rotate(90),
                               (1,0.5), (0.5,0)), \
                "wrong trafo.translation/trafo.rotation/trafo.scaling definition"
-        assert correctOnBasis(trafo.rotation(90)*trafo.scaling(0.5)*trafo.translation(1,0),
+        assert correctOnBasis(trafo.rotate(90)*trafo.scale(0.5)*trafo.translate(1,0),
                               (0,1), (-0.5,0.5)), \
                "wrong trafo.translation/trafo.rotation/trafo.scaling definition"
 

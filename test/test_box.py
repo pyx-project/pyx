@@ -27,10 +27,10 @@ def drawexample(canvas, corner, linealign):
 def distances():
     print "test distance measurement ...",
     b1 = graph.alignbox((0.5, math.sqrt(3)/6), (0, 0), (1, 0), (0.5, math.sqrt(3)/2))
-    b2 = graph.alignbox((0.5, math.sqrt(3)/6), (0, 0), (1, 0), (0.5, math.sqrt(3)/2)).transform(trafo.translation(3, 0))
-    b3 = graph.alignbox((0.5, math.sqrt(3)/6), (0, 0), (1, 0), (0.5, math.sqrt(3)/2)).transform(trafo.translation(3, 3 * math.tan(math.pi/6)))
-    b4 = graph.alignbox((0.5, math.sqrt(3)/6), (0, 0), (1, 0), (0.5, math.sqrt(3)/2)).transform(trafo.translation(0, 3))
-    b5 = graph.alignbox((0.5, math.sqrt(3)/6), (0, 0), (1, 0), (0.5, math.sqrt(3)/2)).transform(trafo.translation(0.5, 0.5))
+    b2 = graph.alignbox((0.5, math.sqrt(3)/6), (0, 0), (1, 0), (0.5, math.sqrt(3)/2)).transform(trafo.translate(3, 0))
+    b3 = graph.alignbox((0.5, math.sqrt(3)/6), (0, 0), (1, 0), (0.5, math.sqrt(3)/2)).transform(trafo.translate(3, 3 * math.tan(math.pi/6)))
+    b4 = graph.alignbox((0.5, math.sqrt(3)/6), (0, 0), (1, 0), (0.5, math.sqrt(3)/2)).transform(trafo.translate(0, 3))
+    b5 = graph.alignbox((0.5, math.sqrt(3)/6), (0, 0), (1, 0), (0.5, math.sqrt(3)/2)).transform(trafo.translate(0.5, 0.5))
     assert abs(unit.topt(b1.boxdistance(b2) - unit.t_cm(2))) < 1e-10
     assert abs(unit.topt(b1.boxdistance(b3) - unit.t_cm(math.sqrt(9*(1 + math.tan(math.pi/6)**2)) - math.sqrt(3)/2))) < 1e-10
     assert abs(unit.topt(b1.boxdistance(b4) - unit.t_cm(3 - math.sqrt(3)/2))) < 1e-10
@@ -48,13 +48,13 @@ def distances():
     print "ok"
 
 c = canvas.canvas()
-sc = c.insert(canvas.canvas(trafo.translation(0, 6)))
+sc = c.insert(canvas.canvas(trafo.translate(0, 6)))
 drawexample(sc, 0, 0)
-sc = c.insert(canvas.canvas(trafo.translation(6, 6)))
+sc = c.insert(canvas.canvas(trafo.translate(6, 6)))
 drawexample(sc, 0, 1)
-sc = c.insert(canvas.canvas(trafo.translation(0, 0)))
+sc = c.insert(canvas.canvas(trafo.translate(0, 0)))
 drawexample(sc, 1, 0)
-sc = c.insert(canvas.canvas(trafo.translation(6, 0)))
+sc = c.insert(canvas.canvas(trafo.translate(6, 0)))
 drawexample(sc, 1, 1)
 distances()
 c.writetofile("test_box", paperformat="a4")

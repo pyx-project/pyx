@@ -135,13 +135,13 @@ class epsfile(base.PSCmd):
         self.translatebbox = translatebbox
         self.showbbox = showbbox
 
-        self.trafo = trafo._translation(self._x, self._y)
+        self.trafo = trafo._translate(self._x, self._y)
 
         if self.scalex is not None:
-            self.trafo = self.trafo * trafo._scaling(self.scalex, self.scaley)
+            self.trafo = self.trafo * trafo._scale(self.scalex, self.scaley)
             
         if translatebbox:
-            self.trafo = self.trafo * trafo._translation(-self.mybbox.llx, -self.mybbox.lly)
+            self.trafo = self.trafo * trafo._translate(-self.mybbox.llx, -self.mybbox.lly)
 
     def bbox(self):
         return self.mybbox.transform(self.trafo)

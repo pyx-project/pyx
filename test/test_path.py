@@ -12,7 +12,7 @@ def bboxrect(cmd):
 
 
 def dotest(c, x, y, test):
-   c2 = c.insert(canvas.canvas(trafo.translation(x, y)))
+   c2 = c.insert(canvas.canvas(trafo.translate(x, y)))
    eval("%s(c2)" % test)
    c.stroke(bboxrect(c2))
    
@@ -108,8 +108,8 @@ def testnormpathtrafo(c):
            rlineto(2,3), closepath())
 
 
-    c.stroke(p.transformed(trafo.translation(3,1)), color.rgb.red)
-    c.insert(canvas.canvas(trafo.translation(3,1))).draw(p,
+    c.stroke(p.transformed(trafo.translate(3,1)), color.rgb.red)
+    c.insert(canvas.canvas(trafo.translate(3,1))).draw(p,
                                                        color.rgb.green,
                                                        canvas.linestyle.dashed)
 
@@ -218,7 +218,7 @@ def testcurvetobbox(c):
 
 
 def testtrafobbox(c):
-    sc=c.insert(canvas.canvas(trafo.translation(0,40).rotate(10)))
+    sc=c.insert(canvas.canvas(trafo.translate(0,40).rotated(10)))
 
     p=path(moveto(10,10), curveto(12,16,14,15,12,19));   drawpathwbbox(sc,p)
     p=path(moveto(5,17), curveto(6,18, 5,16, 7,15));     drawpathwbbox(sc,p)
@@ -242,7 +242,7 @@ def testclipbbox(c):
     # context of the already transformed canvas, so that the
     # actually displayed portion of the path should be the same
     
-    sc=c.insert(canvas.canvas(trafo.translation(5,0), clip))
+    sc=c.insert(canvas.canvas(trafo.translate(5,0), clip))
     drawpathwbbox(sc,p1)
     drawpathwbbox(sc,p2)
 
@@ -250,7 +250,7 @@ def testclipbbox(c):
     # in this case, the clipping path will not be transformed, so
     # that the display portionof the path should change
 
-    sc=c.insert(canvas.canvas(clip, trafo.translation(1,1)))
+    sc=c.insert(canvas.canvas(clip, trafo.translate(1,1)))
     drawpathwbbox(sc,p1)
     drawpathwbbox(sc,p2)
 
