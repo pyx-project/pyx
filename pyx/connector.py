@@ -58,23 +58,25 @@ class connector_pt(path.normpath):
         # XXX later, this should be done by extended boxes instead of intersecting with circles
         # cut off the start of self
         center = self.begin_pt()
+        cutpath = path.circle_pt(center[0], center[1], dists[0])
         try:
-            cutpath = path.circle_pt(center[0], center[1], dists[0])
-            sp = self.intersect(cutpath)[0]
+            cutpath = cutpath.normpath()
         except path.PathException:
             pass
         else:
+            sp = self.intersect(cutpath)[0]
             if sp:
                 self.normsubpaths = self.split(sp[-1:])[1].normsubpaths
 
         # cut off the end of self
         center = self.end_pt()
+        cutpath = path.circle_pt(center[0], center[1], dists[1])
         try:
-            cutpath = path.circle_pt(center[0], center[1], dists[1])
-            sp = self.intersect(cutpath)[0]
+            cutpath = cutpath.normpath()
         except path.PathException:
             pass
         else:
+            sp = self.intersect(cutpath)[0]
             if sp:
                 self.normsubpaths = self.split(sp[:1])[0].normsubpaths
 
