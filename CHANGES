@@ -26,6 +26,7 @@ PyX
     - TODO: remove the support for variables given within the argument dictionary in data constructor
     - TODO: graph keys; titles in data/function/etc.
     - TODO: 3d graphs --- leave it for pyx-0.4
+    - TODO: exceptions in drawsymbol & friends...
   - unit module:
     - new classes for visual and width lengths, aliases for user length (u_pt = pt)
     - TODO: document me!
