@@ -487,6 +487,7 @@ class tex(_InstanceList):
         texfile = open(TempName + ".tex", "w")
 
         texfile.write("\\nonstopmode%\n")
+        texfile.write("\\def\PyX{P\\kern-.25em\\lower.5ex\\hbox{Y}\\kern-.2em X}%\n")
         texfile.write("\\newwrite\\sizefile%\n\\newbox\\localbox%\n\\newbox\\pagebox%\n\\immediate\\openout\\sizefile=" + TempName + ".size%\n")
 
         for Cmd in self.DefCmds:
