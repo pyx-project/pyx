@@ -254,12 +254,12 @@ class _axis:
             for point, maxpoint in zip(data, deltamaxdata):
                 try:
                     if index is not None:
-                        if deltaminindex is not None:
+                        if deltamaxindex is not None:
                             value = point[index] + maxpoint[deltamaxindex] + self.zero
                         else:
                             value = point[index] + maxpoint + self.zero
                     else:
-                        if deltaminindex is not None:
+                        if deltamaxindex is not None:
                             value = point + maxpoint[deltamaxindex] + self.zero
                         else:
                             value = point + maxpoint + self.zero

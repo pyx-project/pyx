@@ -145,27 +145,7 @@ class _data(_Idata):
     defaultstyles = [style.symbol()]
 
     def getcolumndataindex(self, column):
-        try:
-            if self.addlinenumbers:
-                index = self.columns[column]-1
-            else:
-                index = self.columns[column]
-        except KeyError:
-            try:
-                if type(column) != type(column + 0):
-                    raise ValueError("integer expected")
-            except:
-                raise ValueError("integer expected")
-            if self.addlinenumbers:
-                if column > 0:
-                    index = column-1
-                elif column < 0:
-                    index = column
-                else:
-                    return range(1, 1+len(self.data)), None
-            else:
-                index = column
-        return self.data, index
+        return self.data, self.columns[column]
 
     def getcount(self):
         return len(self.data)
@@ -251,6 +231,29 @@ class _data(_Idata):
 
 class list(_data):
     "Graph data from a list of points"
+
+    def getcolumndataindex(self, column):
+        try:
+            if self.addlinenumbers:
+                index = self.columns[column]-1
+            else:
+                index = self.columns[column]
+        except KeyError:
+            try:
+                if type(column) != type(column + 0):
+                    raise ValueError("integer expected")
+            except:
+                raise ValueError("integer expected")
+            if self.addlinenumbers:
+                if column > 0:
+                    index = column-1
+                elif column < 0:
+                    index = column
+                else:
+                    return range(1, 1+len(self.data)), None
+            else:
+                index = column
+        return self.data, index
 
     def __init__(self, data, title="user provided list", addlinenumbers=1, **columns):
         if len(data):
@@ -571,14 +574,19 @@ class conffile(data):
             data.__init__(self, readfile(filename, "user provided file-like object"), **kwargs)
 
 
+class _linedata(_data):
+
+    defaultstyle = [style.line()]
+
+
 # class function:
 # 
 #     defaultstyle = style.line()
 # 
-#     def __init__(self, expression, title=notitle, min=None, max=None,
+#     def __init__(self, expression, title=_notitle, min=None, max=None,
 #     points=100, parser=mathtree.parser(), context={}):
 # 
-#         if title is notitle:
+#         if title is _notitle:
 #             self.title = expression
 #         else:
 #             self.title = title
@@ -663,58 +671,33 @@ class conffile(data):
 #                 style.drawpoint(graph, self.styledata)
 #         for style in self.styles:
 #             style.donedrawpoints(graph, self.styledata)
-# 
-# 
-# class paramfunction:
-# 
-#     defaultstyle = style.line()
-# 
-#     def __init__(self, varname, min, max, expression, title=notitle, points=100, parser=mathtree.parser(), context={}):
-#         if title is notitle:
-#             self.title = expression
-#         else:
-#             self.title = title
-#         self.varname = varname
-#         self.min = min
-#         self.max = max
-#         self.numberofpoints = points
-#         self.expression = {}
-#         varlist, expressionlist = expression.split("=")
-#         keys = varlist.split(",")
-#         mathtrees = parser.parse(expressionlist)
-#         if len(keys) != len(mathtrees):
-#             raise ValueError("unpack tuple of wrong size")
-#         self.points = [None]*self.numberofpoints
-#         emptyresult = [None]*len(keys)
-#         self.columns = {}
-#         i = 1
-#         for key in keys:
-#             self.columns[key.strip()] = i
-#             i += 1
-#         for i in range(self.numberofpoints):
-#             param = self.min + (self.max-self.min)*i / (self.numberofpoints-1.0)
-#             context[self.varname] = param
-#             self.points[i] = [param] + emptyresult
-#             column = 1
-#             for key, column in self.columns.items():
-#                 self.points[i][column] = mathtrees[column-1].Calc(**context)
-#                 column += 1
-# 
-#     def setstyles(self, graph, style):
-#         self.style = style
-#         unhandledcolumns = self.style.setdata(graph, self.columns, self.styledata)
-#         unhandledcolumnkeys = unhandledcolumns.keys()
-#         if len(unhandledcolumnkeys):
-#             raise ValueError("style couldn't handle column keys %s" % unhandledcolumnkeys)
-# 
-#     def selectstyles(self, graph, selectindex, selecttotal):
-#         self.style.selectstyle(selectindex, selecttotal, self.styledata)
-# 
-#     def adjustaxes(self, graph, step):
-#         if step == 0:
-#             self.style.adjustaxes(self.points, self.columns.values(), self.styledata)
-# 
-#     def draw(self, graph):
-#         raise # TODO
-#         self.style.drawpoints(self.points, graph, self.styledata)
+
+
+class paramfunction(_linedata):
+
+    def __init__(self, varname, min, max, expression, title=_notitle, points=100, parser=mathtree.parser(), context={}):
+        if title is _notitle:
+            self.title = expression
+        else:
+            self.title = title
+        varlist, expressionlist = expression.split("=")
+        keys = varlist.split(",")
+        mathtrees = parser.parse(expressionlist)
+        if len(keys) != len(mathtrees):
+            raise ValueError("unpack tuple of wrong size")
+        self.data = [None]*points
+        emptyresult = [None]*len(keys)
+        self.columns = {}
+        i = 1
+        for key in keys:
+            self.columns[key.strip()] = i
+            i += 1
+        for i in range(points):
+            param = min + (max-min)*i / (points-1.0)
+            context[varname] = param
+            self.data[i] = [param] + emptyresult
+            column = 1
+            for key, column in self.columns.items():
+                self.data[i][column] = mathtrees[column-1].Calc(**context)
+                column += 1
 
