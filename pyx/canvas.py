@@ -363,7 +363,7 @@ def _arrowheadtemplatelength(anormpath, size):
         except ArithmeticError:
             # take maximum, we can get
             alen = anormpath.range()
-        if alen>anormpath.range(): alen=anormpath().range()
+        if alen > anormpath.range(): alen = anormpath.range()
 
     return alen
 
