@@ -156,8 +156,9 @@ class tick(frac):
 
 class anypart:
 
-    def __init__(self, labels=None):
+    def __init__(self, labels=None, sublabels=None):
         self.labels = labels
+        self.sublabels = sublabels
 
     def mergeticklists(self, list1, list2):
         # TODO: could be improved??? (read python cookbook carefully)
@@ -183,6 +184,9 @@ class anypart:
         if self.labels is not None:
             for tick, label in zip([tick for tick in part if tick.labellevel == 0], self.labels):
                 tick.text = label
+        if self.sublabels is not None:
+            for tick, sublabel in zip([tick for tick in part if tick.labellevel == 1], self.sublabels):
+                tick.text = sublabel
 
 
 def _ensuresequence(arg):
@@ -197,6 +201,8 @@ def _ensuresequence(arg):
                 pass
         except AttributeError:
             return (arg,)
+        except IndexError:
+            return ()
     return arg
 
 
@@ -316,8 +322,9 @@ class autolinpart(linpart):
                             (frac(5, 2), frac(5, 4)),
                             (frac(5, 1), frac(5, 2)))
 
-    def __init__(self, tickfracslist=defaulttickfracslist, **args):
-        linpart.__init__(self, **args)
+    def __init__(self, tickfracslist=defaulttickfracslist,
+                 extendtoticklevel=0, extendtolabellevel=None, epsilon=1e-10):
+        linpart.__init__(self, extendtoticklevel=0, extendtolabellevel=None, epsilon=1e-10)
         self.multipart = 1
         self.tickfracslist = tickfracslist
 
@@ -370,7 +377,6 @@ class logpart(anypart):
     shift2fracs1   = shiftfracs(100, frac(1, 10))
     shiftfracs1    = shiftfracs(10, frac(1, 10))
     shiftfracs125  = shiftfracs(10, frac(1, 10), frac(2, 10), frac(5, 10))
-    shiftfracs1258 = shiftfracs(10, frac(1, 10), frac(2, 10), frac(5, 10), frac(8, 10))
     shiftfracs1to9 = shiftfracs(10, *list(map(lambda x: frac(x, 10), range(1, 10))))
     #         ^- we always include 1 in order to get extendto(tick|label)level to work as expected
 
@@ -432,7 +438,7 @@ class logpart(anypart):
             ticks = self.mergeticklists(ticks, fracticks)
         return ticks
 
-    def getpart(self, min, max, extendmin, extendmax, tickshiftfracslist=None, labelshiftfracslist=None):
+    def getpart(self, min, max, extendmin=1, extendmax=1, tickshiftfracslist=None, labelshiftfracslist=None):
         """
         For the parameters tickshiftfracslist and labelshiftfracslist apply
         rules like for tickfracs and labelfracs in linpart.
@@ -498,8 +504,9 @@ class autologpart(logpart):
                                 logpart.shiftfracs1),     # subticks
                                None))                     # labels like ticks
 
-    def __init__(self, shiftfracslists=defaultshiftfracslists, shiftfracslistsindex=None, **args):
-        logpart.__init__(self, **args)
+    def __init__(self, shiftfracslists=defaultshiftfracslists, shiftfracslistsindex=None,
+                 extendtoticklevel=0, extendtolabellevel=None, epsilon=1e-10):
+        logpart.__init__(self, extendtoticklevel=0, extendtolabellevel=None, epsilon=1e-10)
         self.multipart = 1
         self.shiftfracslists = shiftfracslists
         if shiftfracslistsindex is None:
@@ -530,10 +537,9 @@ class autologpart(logpart):
                                 self.shiftfracslists[self.lessshiftfracslistsindex][1])
         return None
 
-#print linpart((frac(1, 3), frac(1, 4)), extendtoticklevel=None, extendtolabellevel=0).getticks(0, 1.9)
-#print autolinpart().getparts(0, 1.9)
-#print logpart((autologpart.shiftfracs1, autologpart.shiftfracs1to9),
-#              (autologpart.shiftfracs1, autologpart.shiftfracs125), extendtoticklevel=1).getticks(0.0432, 24.623)
+#print linpart("1/2").getpart(0, 1.9)
+#print linpart(("1/2", "0.25")).getpart(0, 1.9)
+print logpart((autologpart.shiftfracs1, autologpart.shiftfracs1to9)).getpart(0.673, 2.4623)
 #print autologpart().getparts(0.0432, 24.623)
 
 
@@ -882,16 +888,19 @@ class axispainter(attrlist.attrlist):
 
     def __init__(self, innerticklength="0.2 cm",
                        outerticklength="0 cm",
-                       tickstyles=(),
+                       tickstyles=None,
                        subticklengthfactor=1/goldenrule,
                        drawgrid=0,
                        gridstyles=canvas.linestyle.dotted,
+                       zerolinestyles=(),
                        labeldist="0.3 cm",
-                       labelstyles=(),
+                       labelstyles=((), tex.fontsize.footnotesize),
                        labeldirection=None,
                        labelhequalize=0,
                        labelvequalize=1,
                        titledist="0.3 cm",
+                       titlestyles=None,
+                       titledirection=-90,
                        fractype=fractypeauto,
                        ratfracsuffixenum=1,
                        ratfracover=r"\over",
@@ -903,16 +912,19 @@ class axispainter(attrlist.attrlist):
                        suffix1=0):
         self.innerticklength_str = innerticklength
         self.outerticklength_str = outerticklength
-        self.tickstyles = tickstyles
+        self.tickstyles = _ensuresequence(tickstyles)
         self.subticklengthfactor = subticklengthfactor
         self.drawgrid = drawgrid
         self.gridstyles = gridstyles
+        self.zerolinestyles = zerolinestyles
         self.labeldist_str = labeldist
-        self.labelstyles = list(labelstyles)
+        self.labelstyles = _ensuresequence(labelstyles)
         self.labeldirection = labeldirection
         self.labelhequalize = labelhequalize
         self.labelvequalize = labelvequalize
         self.titledist_str = titledist
+        self.titlestyles = titlestyles
+        self.titledirection = titledirection
         self.fractype = fractype
         self.ratfracsuffixenum = ratfracsuffixenum
         self.ratfracover = ratfracover
@@ -1050,15 +1062,17 @@ class axispainter(attrlist.attrlist):
             tick.labelstyles += [tex.style.math]
 
     def selectstyle(self, number, styles):
-        if type(styles) not in (types.TupleType, types.ListType):
-            return [styles,]
+        if styles is None:
+            return ()
+        sequence = _ensuresequence(styles)
+        if sequence != styles:
+            return sequence
         else:
-            try:
-                if type(styles[0]) not in (types.TupleType, types.ListType):
-                    return list(styles)
-            except IndexError:
-                return list(styles)
-            return list(styles[number])
+            sequence = _ensuresequence(styles[number])
+            if sequence != styles[number]:
+                return styles
+            else:
+                return _ensuresequence(styles[number])
 
     def paint(self, graph, axis):
         innerticklength = unit.topt(unit.length(self.innerticklength_str, default_type="v"))
@@ -1078,7 +1092,7 @@ class axispainter(attrlist.attrlist):
         if haslabel:
             for tick in axis.ticks:
                 if tick.labellevel is not None:
-                    tick.labelstyles = self.selectstyle(tick.labellevel, self.labelstyles)
+                    tick.labelstyles = list(self.selectstyle(tick.labellevel, self.labelstyles))
                     if not hasattr(tick, "text"):
                         tick.suffix = axis.suffix
                         self.createtext(tick)
@@ -1123,7 +1137,7 @@ class axispainter(attrlist.attrlist):
 
         for tick in axis.ticks:
             if tick.ticklevel is not None:
-                if self.drawgrid > tick.ticklevel:
+                if self.drawgrid > tick.ticklevel and (tick != frac(0, 1) or self.zerolinestyles is None):
                     gridpath = axis.gridpath(tick.virtual)
                     graph.draw(gridpath, *self.selectstyle(tick.ticklevel, self.gridstyles))
                 factor = math.pow(self.subticklengthfactor, tick.ticklevel)
@@ -1134,17 +1148,27 @@ class axispainter(attrlist.attrlist):
                 graph.draw(path._line(x1, y1, x2, y2), *self.selectstyle(tick.ticklevel, self.tickstyles))
             if tick.labellevel is not None:
                 tick.textbox._printtext(tick.x, tick.y)
+        if self.zerolinestyles is not None:
+            if axis.ticks[0] * axis.ticks[-1] < frac(0, 1):
+                graph.draw(axis.gridpath(axis.convert(0)), *_ensuresequence(self.zerolinestyles))
+            
 
         if axis.title is not None:
             x, y = axis.tickpoint(axis, 0.5)
             dx, dy = axis.tickdirection(axis, 0.5)
-            if axis.titledirection is not None and not self.attrcount(axis.titlestyles, tex.direction):
-                axis.titlestyles += [tex.direction(self.reldirection(axis.titledirection, tick.dx, tick.dy))]
-            axis.titlebox = textbox(graph.tex, axis.title, textstyles = axis.titlestyles)
+            # no not modify self.titlestyles ... the painter might be used by several axes!!!
+            if self.titlestyles is None:
+                titlestyles = []
+            else:
+                titlestyles = list(_ensuresequence(self.titlestyles))
+            if self.titledirection is not None and not self.attrcount(titlestyles, tex.direction):
+                titlestyles = titlestyles + [tex.direction(self.reldirection(self.titledirection, tick.dx, tick.dy))]
+            axis.titlebox = textbox(graph.tex, axis.title, textstyles=titlestyles)
             axis.extent += titledist
             axis.titlebox._linealign(axis.extent, dx, dy)
             axis.titlebox._printtext(x, y)
             axis.extent += axis.titlebox.extent(dx, dy)
+
 
 class linkaxispainter(axispainter):
 
@@ -1178,18 +1202,20 @@ class linkaxispainter(axispainter):
 
 class _axis:
 
-    def __init__(self, min=None, max=None, reverse=0,
-                       title=None, titlestyles=(), titledirection=axispainter.paralleltext,
-                       painter = axispainter(),
+    def __init__(self, min=None, max=None, reverse=0, title=None, painter = axispainter(),
                        factor = 1, suffix = None):
+        if min is not None and max is not None and min > max:
+            min, max = max, min
+            if reverse:
+                reverse = 0
+            else:
+                reverse = 1
         self.fixmin = min is not None
         self.fixmax = max is not None
         self.min = min
         self.max = max
         self.reverse = reverse
         self.title = title
-        self.titlestyles = list(titlestyles)
-        self.titledirection = titledirection
         self.painter = painter
         self.factor = factor
         self.suffix = suffix
@@ -1224,11 +1250,9 @@ class logaxis(_axis, _logmap):
 
 class linkaxis(_axis):
 
-    def __init__(self, linkedaxis, **args):
+    def __init__(self, linkedaxis, title=None, painter=linkaxispainter()):
         self.linkedaxis = linkedaxis
-        if not args.has_key("painter"):
-            args["painter"] = linkaxispainter()
-        _axis.__init__(self, **args)
+        _axis.__init__(self, title=title, painter=painter)
         self.factor = linkedaxis.factor # XXX: not nice ...
 
 

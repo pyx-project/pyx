@@ -21,36 +21,187 @@ future at all, the graph module is certainly one of the biggest
 construction site within \PyX.
 
 The task of drawing graphs is splitted in quite some subtasks, which
-are implemented by classes of its own. We've tried hard to make those
-parts as independend as it is usefull and possible in order to make
-them reuseable for other graph types and also to make the replaceable
-by the user to get more specialized graph drawing tasks without
-needing to reimplement a hole graph system again.
-
-We should mention right here, that a graph introduces own coordinates,
-called graph coordinates. The range of graph coordinates is $[0;1]$.
-Only the graph does know about the conversion between these
-coordinates and the actual position on the postscript canvas.
+are implemented by classes of its own. We tried to make those
+components as independend as it is usefull and possible in order to
+make them reuseable for other graph types. They are also replaceable
+by the user to get more specialized graph drawing tasks done without
+needing to implement a hole graph system. A major abstraction layer
+are the so-called graph coordinates. Their range is generally fixed to
+$[0;1]$. Only the graph does know about the conversion between these
+coordinates and the position at the canvas.
 
 \section{Axes}
 
-A major feature of a graph are axes. An axis is first of all
-responsible for the conversion of values to graph coordinates. This
-means, if you have an axis for the range $[10;20]$ than it converts it
-to the range $[0;1]$. This conversion might be lineary, but it could
-also be logarithmic or whatever else.
+A common feature of a graph are axes. An axis is responsible for the
+conversion of values to graph coordinates. There are predefined axis
+types, namely:
+\begin{center}
+\begin{tabular}{ll}
+axis type&description\\
+\hline
+\texttt{linaxis}&linear axis\\
+\texttt{logaxis}&logarithmic axis\\
+\end{tabular}
+\end{center}
 
-Secondly the axis manages its range, e.g. the minimum and the maximum
-value. It might be set right at the beginning of the axis creation
-(and thus staying fixed all the time) or it will be set appropriate to
-the data ranges it recieves.
+\subsection{Axes properties}
+
+Global properties of an axis are set as named parameters in the axis
+constructor. Both predefined axis, the \verb|linaxis| and the
+\verb|logaxis|, have the same set of named parameters listed in the
+following table:
+
+\medskip
+\begin{tabularx}{\linewidth}{l>{\raggedright\arraybackslash}X}
+argument name&description\\
+\hline
+\texttt{min}&fixes axis minimum; if not set, it is automatically
+determined, but this might fail, for example for the $x$-range of
+function\\
+\texttt{max}&like above, but for the maximum\\
+\texttt{reverse}&boolean; exchange minimum and maximum (might be used
+without setting minimum and maximum); if min>max and reverse is set,
+they cancel each other\\
+\texttt{title}&axis title\\
+\texttt{factor}&numerical factor, which is for the axis partitioning\\
+\texttt{suffix}&a suffix with gets used to indicate the factor above
+in the axis labeling\\
+\texttt{part}&axis partitioning (described below)\\
+\texttt{painter}&axis painter (described below)\\
+\end{tabularx}
+\medskip
+
+\subsection{Partitioning of axes}
+
+The definition of ticks and labels appropriate to an axis range is
+called partitioning. The axis partioning within \PyX{} uses rational
+arithmetics, which avoids any kind of rounding problems to the cost of
+performance. The class \verb|frac| supplies a rational number.
+However, a partitioning is composed out of a sorted list of ticks,
+where the class \verb|tick| is derived from \verb|frac| and has
+additional properties called \verb|ticklevel| and \verb|labellevel|.
+If those values are \verb|None| it just means not present, \verb|0|
+means tick or label, respectively, \verb|1| means subtick or sublevel,
+respectively, and so on. While multiple ticks for the same value are
+not allowed, there can for example be eigher a tick or a subtick for
+that value. The lower wins.
+
+Although there is a rudimentary automatic axis partitioning, the
+recommended solution is a manual axis partitioning at the moment. The
+reason is, that hopefully the manual axis partitioning will not break
+in future versions, while the automatic axis breaking will change for
+sure at least in the results it creates.
+
+There are two different manual partition schemes, one appropriate for
+linear axes and the other one appropriate for logarithmic axes.
+
+\subsubsection{Manual partitioning of linear axes}
+
+The class \verb|linpart| create a linear partition as described by
+named parameters in the constructor:
+
+\medskip
+\begin{tabularx}{\linewidth}{ll>{\raggedright\arraybackslash}X}
+argument name&default&description\\
+\hline
+\texttt{tickfracs}&\texttt{None}&distance between ticks, subticks, etc. (see comment below); this argument comes as the first one (no name needed)\\
+\texttt{lavelfracs}&\texttt{None}&distance between labels, sublabels, etc. (see comment below); if \texttt{None} labels will get placed at ticks; this argument is the second one\\
+\texttt{extendtoticklevel}&\texttt{0}&extend range to include the next tick of the given level\\
+\texttt{extendtolabellevel}&\texttt{None}&extend range to include the next label of the given level\\
+\texttt{epsilon}&\texttt{1e-10}&allow for exceed the range by that relative value\\
+\texttt{labels}&\texttt{None}&list of strings to be used as labels\\
+\texttt{sublabels}&\texttt{None}&list of strings to be used as sublabels\\
+\end{tabularx}
+\medskip
+
+The \verb|tickfracs| and \verb|labelfracs| can eigher be a sequence or
+just a single entry. When a sequence is provided, the first entry
+stands for the tick or label, respectively, the second for the
+subtick or sublabel, and so on. The entries can eigher be a frac or a
+string, which will be converted to a frac (but not a float in order to
+avoid a conversion from a float to a frac). Valid strings are just
+numbers like \verb|"0.1"|, or fractions like \verb|"1/10"|.
+
+By calling the method \verb|getpart| supplying a minimal and maximal
+value, the ticking can be tested:
+\begin{quote}
+\begin{verbatim}
+print linpart("1/2").getpart(0, 1.9)
+print linpart(("1/2", "0.25")).getpart(0, 1.9)
+\end{verbatim}
+\end{quote}
+The above statements result in:
+\begin{quote}
+\begin{verbatim}
+[tick(0L, 2, 0, 0), tick(1L, 2, 0, 0), tick(2L, 2, 0, 0), tick(3L, 2
+, 0, 0), tick(4L, 2, 0, 0)]
+[tick(0L, 2, 0, 0), tick(25L, 100L, 1, None), tick(1L, 2, 0, 0), tic
+k(75L, 100L, 1, None), tick(2L, 2, 0, 0), tick(125L, 100L, 1, None),
+ tick(3L, 2, 0, 0), tick(175L, 100L, 1, None), tick(4L, 2, 0, 0)]
+\end{verbatim}
+\end{quote}
+
+\subsubsection{Manual partitioning of logarithmic axes}
+
+The class \verb|logpart| create a logarithmic partition. The class has
+the same arguments as \verb|linpart| upto the two arguments
+\verb|tickfracs| and \verb|labelfracs|. They are replaced by
+\verb|tickshiftfracslist| and \verb|labelshiftfracslist|, both set to
+\verb|None| by default.
+
+The \verb|tickfracs| and \verb|labelfracs| can eigher be a sequence or
+just a single entry. When a sequence is provided, the first entry
+stands for the tick or label, respectively, the second for the
+subtick or sublabel, and so on, otherwise just the tick or label gets
+specified. The entries have to be \verb|shiftfracs|, which contains a
+\verb|frac| for the shift, say $s$, and a list of \verb|frac| for the
+positions, say $p_i$. Valid positions are then $s^np_i$, where $n$ can
+be any integer number.
+
+Within \verb|logpart| there are numerous predefined \verb|shiftfracs|,
+namely:
+
+\begin{center}
+\begin{tabular}{ll}
+name&values it descibes\\
+\hline
+\texttt{shift5fracs1}&1 and multiple of $10^5$\\
+\texttt{shift4fracs1}&1 and multiple of $10^4$\\
+\texttt{shift3fracs1}&1 and multiple of $10^3$\\
+\texttt{shift2fracs1}&1 and multiple of $10^2$\\
+\texttt{shiftfracs1}&1 and multiple of $10$\\
+\texttt{shiftfracs125}&1, 2, 5 and multiple of $10$\\
+\texttt{shiftfracs1to9}&1, 2, \dots, 9 and multiple of $10$\\
+\end{tabular}
+\end{center}
+
+By calling the method \verb|getpart| supplying a minimal and maximal
+value, the ticking can be tested:
+\begin{quote}
+\begin{verbatim}
+print logpart((autologpart.shiftfracs1,
+               autologpart.shiftfracs1to9)).getpart(0.673, 2.4623)
+\end{verbatim}
+\end{quote}
+The above statements result in:
+\begin{quote}
+\begin{verbatim}
+[tick(1, 10, 0, 0), tick(2, 10, 1, None), tick(3, 10, 1, None), tick
+(4, 10, 1, None), tick(5, 10, 1, None), tick(6, 10, 1, None), tick(7
+, 10, 1, None), tick(8, 10, 1, None), tick(9, 10, 1, None), tick(10L
+, 10L, 0, 0), tick(20L, 10L, 1, None), tick(30L, 10L, 1, None), tick
+(40L, 10L, 1, None), tick(50L, 10L, 1, None), tick(60L, 10L, 1, None
+), tick(70L, 10L, 1, None), tick(80L, 10L, 1, None), tick(90L, 10L, 
+1, None), tick(100L, 10L, 0, 0)]
+\end{verbatim}
+\end{quote}
+
+\subsection{Painting of axes}
 
 Finally, a major task of an axis is the painting of itself. For that
 it has to calculate positions of ticks and labels and draw them.
 
-\subsection{Axis parting}
-
-\subsection{Axis painting}
+\subsection{Linked axis}
 
 \section{Data}
 
