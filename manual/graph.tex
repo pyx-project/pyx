@@ -653,9 +653,9 @@ inheritance, while modifying the errorbar look into a colored filled
 rectangle and turing off the symbol itself.
 
 The color to be used for the filling of the rectangles is taken from a
-gradient provided to the constructor by the named parameter
-\verb|gradient| (default is \verb|color.gradient.Gray|). The data
-name \verb|color| is used to select the color out of this gradient.
+palette provided to the constructor by the named parameter
+\verb|palette| (default is \verb|color.palette.Gray|). The data
+name \verb|color| is used to select the color out of this palette.
 
 \subsection{Texts}
 
@@ -721,12 +721,12 @@ when plotting several data sets. Iterateable attributes can be easily
 written, but there are already some iterateable attributes available
 for the most common cases. For example a color change is done by
 instances of the class \verb|colorchange|, where the constructor takes
-a gradient. Applying this attribute to a style and using this style at
+a palette. Applying this attribute to a style and using this style at
 a sequence of data, the color will get changed lineary along the
-gradient from one end to the other. The class \verb|colorchange|
+palette from one end to the other. The class \verb|colorchange|
 includes inherited classes as class variables, which are called like
-the color gradients shown in appendix~\ref{gradientname}. For them the
-default gradient is set to the appropriate color gradient.
+the color palettes shown in appendix~\ref{palettename}. For them the
+default palette is set to the appropriate color palette.
 
 Another attribute changer is called \verb|changesequence|. The
 constructor takes a list of attributes and the attribute changer

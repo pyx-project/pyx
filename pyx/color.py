@@ -156,7 +156,7 @@ cmyk.Black          = cmyk(0, 0, 0, 1)
 cmyk.White          = cmyk(0, 0, 0, 0)
 
 
-class gradient:
+class palette:
 
     def __init__(self, mincolor, maxcolor, min=0, max=1):
         if mincolor.__class__ != maxcolor.__class__:
@@ -175,30 +175,30 @@ class gradient:
         return self.colorclass(**color)
 
 
-gradient.Gray           = gradient(gray.white, gray.black)
-gradient.Grey           = gradient.Gray
-gradient.ReverseGray    = gradient(gray.black, gray.white)
-gradient.ReverseGrey    = gradient.ReverseGray
-gradient.RedGreen       = gradient(rgb.red, rgb.green)
-gradient.RedBlue        = gradient(rgb.red, rgb.blue)
-gradient.GreenRed       = gradient(rgb.green, rgb.red)
-gradient.GreenBlue      = gradient(rgb.green, rgb.blue)
-gradient.BlueRed        = gradient(rgb.blue, rgb.red)
-gradient.BlueGreen      = gradient(rgb.blue, rgb.green)
-gradient.RedBlack       = gradient(rgb.red, rgb(0, 0, 0))
-gradient.BlackRed       = gradient(rgb(0, 0, 0), rgb.red)
-gradient.RedWhite       = gradient(rgb.red, rgb(1, 1, 1))
-gradient.WhiteRed       = gradient(rgb(1, 1, 1), rgb.red)
-gradient.GreenBlack     = gradient(rgb.green, rgb(0, 0, 0))
-gradient.BlackGreen     = gradient(rgb(0, 0, 0), rgb.green)
-gradient.GreenWhite     = gradient(rgb.green, rgb(1, 1, 1))
-gradient.WhiteGreen     = gradient(rgb(1, 1, 1), rgb.green)
-gradient.BlueBlack      = gradient(rgb.blue, rgb(0, 0, 0))
-gradient.BlackBlue      = gradient(rgb(0, 0, 0), rgb.blue)
-gradient.BlueWhite      = gradient(rgb.blue, rgb(1, 1, 1))
-gradient.WhiteBlue      = gradient(rgb(1, 1, 1), rgb.blue)
-gradient.Rainbow        = gradient(hsb(0, 1, 1), hsb(2.0/3.0, 1, 1))
-gradient.ReverseRainbow = gradient(hsb(2.0/3.0, 1, 1), hsb(0, 1, 1))
-gradient.Hue            = gradient(hsb(0, 1, 1), hsb(1, 1, 1))
-gradient.ReverseHue     = gradient(hsb(1, 1, 1), hsb(0, 1, 1))
+palette.Gray           = palette(gray.white, gray.black)
+palette.Grey           = palette.Gray
+palette.ReverseGray    = palette(gray.black, gray.white)
+palette.ReverseGrey    = palette.ReverseGray
+palette.RedGreen       = palette(rgb.red, rgb.green)
+palette.RedBlue        = palette(rgb.red, rgb.blue)
+palette.GreenRed       = palette(rgb.green, rgb.red)
+palette.GreenBlue      = palette(rgb.green, rgb.blue)
+palette.BlueRed        = palette(rgb.blue, rgb.red)
+palette.BlueGreen      = palette(rgb.blue, rgb.green)
+palette.RedBlack       = palette(rgb.red, rgb(0, 0, 0))
+palette.BlackRed       = palette(rgb(0, 0, 0), rgb.red)
+palette.RedWhite       = palette(rgb.red, rgb(1, 1, 1))
+palette.WhiteRed       = palette(rgb(1, 1, 1), rgb.red)
+palette.GreenBlack     = palette(rgb.green, rgb(0, 0, 0))
+palette.BlackGreen     = palette(rgb(0, 0, 0), rgb.green)
+palette.GreenWhite     = palette(rgb.green, rgb(1, 1, 1))
+palette.WhiteGreen     = palette(rgb(1, 1, 1), rgb.green)
+palette.BlueBlack      = palette(rgb.blue, rgb(0, 0, 0))
+palette.BlackBlue      = palette(rgb(0, 0, 0), rgb.blue)
+palette.BlueWhite      = palette(rgb.blue, rgb(1, 1, 1))
+palette.WhiteBlue      = palette(rgb(1, 1, 1), rgb.blue)
+palette.Rainbow        = palette(hsb(0, 1, 1), hsb(2.0/3.0, 1, 1))
+palette.ReverseRainbow = palette(hsb(2.0/3.0, 1, 1), hsb(0, 1, 1))
+palette.Hue            = palette(hsb(0, 1, 1), hsb(1, 1, 1))
+palette.ReverseHue     = palette(hsb(1, 1, 1), hsb(0, 1, 1))
 

@@ -16,9 +16,9 @@ pf = graph.paramfunction("k", 0, 1, "color, xmin, xmax, ymin, ymax= k, k, 1, 0, 
 y = 0
 dy = -0.65
 
-# we could use gradient.__dict__ to get the instances, but we
+# we could use palette.__dict__ to get the instances, but we
 # would loose the ordering ... instead we just parse the file:
-p = re.compile("(?P<id>gradient\\.(?P<name>[a-z]+)) += gradient\\(.*\\)\n", re.IGNORECASE)
+p = re.compile("(?P<id>palette\\.(?P<name>[a-z]+)) += palette\\(.*\\)\n", re.IGNORECASE)
 lines = imp.find_module("color", pyx.__path__)[0].readlines()
 skiplevel = None
 for line in lines: # we yet don't use a file iterator
@@ -33,7 +33,7 @@ for line in lines: # we yet don't use a file iterator
                                                      painter=graph.axispainter(innerticklengths=None,
                                                                                outerticklengths=graph.axispainter.defaultticklengths)),
                                    y=graph.linaxis(datavmin=0, datavmax=1, part=graph.manualpart(ticks=None))))
-        g.plot(pf, graph.rect(pyx.color.gradient.__dict__[m.group("name")]))
+        g.plot(pf, graph.rect(pyx.color.palette.__dict__[m.group("name")]))
         g.dodata()
         g.finish()
         c.text(10.2, y + 0.15, m.group("id"), text.size.footnotesize)
@@ -41,4 +41,4 @@ for line in lines: # we yet don't use a file iterator
         skiplevel = 0
 
 
-c.writetofile("gradientname", paperformat="a4")
+c.writetofile("palettename", paperformat="a4")

@@ -1655,8 +1655,7 @@ class _axis:
             if len(self.ticks):
                 self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
             self.painter.dolayout(graph, self)
-        if len(self.ticks):
-            graph.mindbbox(*[tick.textbox.bbox() for tick in self.ticks if tick.labellevel is not None])
+        graph.mindbbox(*[tick.textbox.bbox() for tick in self.ticks if tick.textbox is not None])
 
     def dopaint(self, graph):
         if self.painter is not None:
@@ -2589,7 +2588,7 @@ class graphxy(canvas.canvas):
 #       is an iterator for attributes where an attribute
 #       is not refered by just a number (like for a sequence),
 #       but also by the number of attributes requested
-#       by calls of the next method (like for an color gradient)
+#       by calls of the next method (like for an color palette)
 #       (you should ensure to call all needed next before the attr)
 #
 #       the attribute itself is implemented by overloading the _attr method"""
@@ -2673,163 +2672,163 @@ def _iterateattrs(attrs):
 
 class changecolor(changeattr):
 
-    def __init__(self, gradient):
+    def __init__(self, palette):
         changeattr.__init__(self)
-        self.gradient = gradient
+        self.palette = palette
 
     def attr(self, index):
         if self.counter != 1:
-            return self.gradient.getcolor(index/float(self.counter-1))
+            return self.palette.getcolor(index/float(self.counter-1))
         else:
-            return self.gradient.getcolor(0)
+            return self.palette.getcolor(0)
 
 
 class _changecolorgray(changecolor):
 
-    def __init__(self, gradient=color.gradient.Gray):
-        changecolor.__init__(self, gradient)
+    def __init__(self, palette=color.palette.Gray):
+        changecolor.__init__(self, palette)
 
 _changecolorgrey = _changecolorgray
 
 
 class _changecolorreversegray(changecolor):
 
-    def __init__(self, gradient=color.gradient.ReverseGray):
-        changecolor.__init__(self, gradient)
+    def __init__(self, palette=color.palette.ReverseGray):
+        changecolor.__init__(self, palette)
 
 _changecolorreversegrey = _changecolorreversegray
 
 
 class _changecolorredblack(changecolor):
 
-    def __init__(self, gradient=color.gradient.RedBlack):
-        changecolor.__init__(self, gradient)
+    def __init__(self, palette=color.palette.RedBlack):
+        changecolor.__init__(self, palette)
 
 
 class _changecolorblackred(changecolor):
 
-    def __init__(self, gradient=color.gradient.BlackRed):
-        changecolor.__init__(self, gradient)
+    def __init__(self, palette=color.palette.BlackRed):
+        changecolor.__init__(self, palette)
 
 
 class _changecolorredwhite(changecolor):
 
-    def __init__(self, gradient=color.gradient.RedWhite):
-        changecolor.__init__(self, gradient)
+    def __init__(self, palette=color.palette.RedWhite):
+        changecolor.__init__(self, palette)
 
 
 class _changecolorwhitered(changecolor):
 
-    def __init__(self, gradient=color.gradient.WhiteRed):
-        changecolor.__init__(self, gradient)
+    def __init__(self, palette=color.palette.WhiteRed):
+        changecolor.__init__(self, palette)
 
 
 class _changecolorgreenblack(changecolor):
 
-    def __init__(self, gradient=color.gradient.GreenBlack):
-        changecolor.__init__(self, gradient)
+    def __init__(self, palette=color.palette.GreenBlack):
+        changecolor.__init__(self, palette)
 
 
 class _changecolorblackgreen(changecolor):
 
-    def __init__(self, gradient=color.gradient.BlackGreen):
-        changecolor.__init__(self, gradient)
+    def __init__(self, palette=color.palette.BlackGreen):
+        changecolor.__init__(self, palette)
 
 
 class _changecolorgreenwhite(changecolor):
 
-    def __init__(self, gradient=color.gradient.GreenWhite):
-        changecolor.__init__(self, gradient)
+    def __init__(self, palette=color.palette.GreenWhite):
+        changecolor.__init__(self, palette)
 
 
 class _changecolorwhitegreen(changecolor):
 
-    def __init__(self, gradient=color.gradient.WhiteGreen):
-        changecolor.__init__(self, gradient)
+    def __init__(self, palette=color.palette.WhiteGreen):
+        changecolor.__init__(self, palette)
 
 
 class _changecolorblueblack(changecolor):
 
-    def __init__(self, gradient=color.gradient.BlueBlack):
-        changecolor.__init__(self, gradient)
+    def __init__(self, palette=color.palette.BlueBlack):
+        changecolor.__init__(self, palette)
 
 
 class _changecolorblackblue(changecolor):
 
-    def __init__(self, gradient=color.gradient.BlackBlue):
-        changecolor.__init__(self, gradient)
+    def __init__(self, palette=color.palette.BlackBlue):
+        changecolor.__init__(self, palette)
 
 
 class _changecolorbluewhite(changecolor):
 
-    def __init__(self, gradient=color.gradient.BlueWhite):
-        changecolor.__init__(self, gradient)
+    def __init__(self, palette=color.palette.BlueWhite):
+        changecolor.__init__(self, palette)
 
 
 class _changecolorwhiteblue(changecolor):
 
-    def __init__(self, gradient=color.gradient.WhiteBlue):
-        changecolor.__init__(self, gradient)
+    def __init__(self, palette=color.palette.WhiteBlue):
+        changecolor.__init__(self, palette)
 
 
 class _changecolorredgreen(changecolor):
 
-    def __init__(self, gradient=color.gradient.RedGreen):
-        changecolor.__init__(self, gradient)
+    def __init__(self, palette=color.palette.RedGreen):
+        changecolor.__init__(self, palette)
 
 
 class _changecolorredblue(changecolor):
 
-    def __init__(self, gradient=color.gradient.RedBlue):
-        changecolor.__init__(self, gradient)
+    def __init__(self, palette=color.palette.RedBlue):
+        changecolor.__init__(self, palette)
 
 
 class _changecolorgreenred(changecolor):
 
-    def __init__(self, gradient=color.gradient.GreenRed):
-        changecolor.__init__(self, gradient)
+    def __init__(self, palette=color.palette.GreenRed):
+        changecolor.__init__(self, palette)
 
 
 class _changecolorgreenblue(changecolor):
 
-    def __init__(self, gradient=color.gradient.GreenBlue):
-        changecolor.__init__(self, gradient)
+    def __init__(self, palette=color.palette.GreenBlue):
+        changecolor.__init__(self, palette)
 
 
 class _changecolorbluered(changecolor):
 
-    def __init__(self, gradient=color.gradient.BlueRed):
-        changecolor.__init__(self, gradient)
+    def __init__(self, palette=color.palette.BlueRed):
+        changecolor.__init__(self, palette)
 
 
 class _changecolorbluegreen(changecolor):
 
-    def __init__(self, gradient=color.gradient.BlueGreen):
-        changecolor.__init__(self, gradient)
+    def __init__(self, palette=color.palette.BlueGreen):
+        changecolor.__init__(self, palette)
 
 
 class _changecolorrainbow(changecolor):
 
-    def __init__(self, gradient=color.gradient.Rainbow):
-        changecolor.__init__(self, gradient)
+    def __init__(self, palette=color.palette.Rainbow):
+        changecolor.__init__(self, palette)
 
 
 class _changecolorreverserainbow(changecolor):
 
-    def __init__(self, gradient=color.gradient.ReverseRainbow):
-        changecolor.__init__(self, gradient)
+    def __init__(self, palette=color.palette.ReverseRainbow):
+        changecolor.__init__(self, palette)
 
 
 class _changecolorhue(changecolor):
 
-    def __init__(self, gradient=color.gradient.Hue):
-        changecolor.__init__(self, gradient)
+    def __init__(self, palette=color.palette.Hue):
+        changecolor.__init__(self, palette)
 
 
 class _changecolorreversehue(changecolor):
 
-    def __init__(self, gradient=color.gradient.ReverseHue):
-        changecolor.__init__(self, gradient)
+    def __init__(self, palette=color.palette.ReverseHue):
+        changecolor.__init__(self, palette)
 
 
 changecolor.Gray           = _changecolorgray
@@ -3391,8 +3390,8 @@ class line(symbol):
 
 class rect(symbol):
 
-    def __init__(self, gradient=color.gradient.Gray):
-        self.gradient = gradient
+    def __init__(self, palette=color.palette.Gray):
+        self.palette = palette
         self.colorindex = None
         symbol.__init__(self, symbolattrs=None, errorbarattrs=(), lineattrs=None)
 
@@ -3411,7 +3410,7 @@ class rect(symbol):
         color = point[self.colorindex]
         if color is not None:
             if color != self.lastcolor:
-                self.rectclipcanvas.set(self.gradient.getcolor(color))
+                self.rectclipcanvas.set(self.palette.getcolor(color))
             if bottom is not None and left is not None:
                 bottomleft = left[0], bottom[1]
             if bottom is not None and right is not None:
