@@ -252,15 +252,15 @@ def testtrafobbox(c):
 
 
 def testclipbbox(c):
-    clip=canvas.clip(rect(11,11,10,5))
+    clip = canvas.clip(rect(11,-9,10,5))
 
-    p1=path(moveto(10,10), curveto(12,16,14,15,12,19));   
-    p2=path(moveto(12,12), curveto(6,18, 5,16, 7,15));  
+    p1 = path(moveto(10,-10), curveto(12,-4, 14,-5, 12,-1));   
+    p2 = path(moveto(12,-8), curveto(6,-2, 5,-4, 7,-5));  
     
     # just a simple test for clipping
-    sc=c.insert(canvas.canvas([clip]))
-    drawpathwbbox(sc,p1)
-    drawpathwbbox(sc,p2)
+    sc = c.insert(canvas.canvas([clip]))
+    drawpathwbbox(sc, p1)
+    drawpathwbbox(sc, p2)
 
     # more complicated operations
     
@@ -268,18 +268,16 @@ def testclipbbox(c):
     # in this case, the clipping path will be evaluated in the
     # context of the already transformed canvas, so that the
     # actually displayed portion of the path should be the same
-    
-    sc=c.insert(canvas.canvas([trafo.translate(5,0), clip]))
-    drawpathwbbox(sc,p1)
-    drawpathwbbox(sc,p2)
+    sc = c.insert(canvas.canvas([trafo.translate(5,0), clip]))
+    drawpathwbbox(sc, p1)
+    drawpathwbbox(sc, p2)
 
     # 2. clipping followed by transformation 
     # in this case, the clipping path will not be transformed, so
     # that the display portionof the path should change
-
-    sc=c.insert(canvas.canvas([clip, trafo.translate(1,1)]))
-    drawpathwbbox(sc,p1)
-    drawpathwbbox(sc,p2)
+    sc = c.insert(canvas.canvas([clip, trafo.translate(1,1)]))
+    drawpathwbbox(sc, p1)
+    drawpathwbbox(sc, p2)
 
 def testarclentoparam(c):
     curve=path(moveto(0,0), lineto(0,5), curveto(5,0,0,10,5,5), closepath(),
