@@ -99,7 +99,7 @@ class _logmap:
 # - a partition is a list of tick instances; to reduce name clashes, a
 #   partition is called ticks
 # - a partitioner is a class creating a single or several ticks
-# - a axis has a part attribute where it stores a partitioner or/and some
+# - an axis has a part attribute where it stores a partitioner or/and some
 #   (manually set) ticks -> the part attribute is used to create the ticks
 #   in the axis finish method
 ################################################################################
