@@ -51,6 +51,9 @@ TODO:
     - support single-character mode
 
   Documentation:
+    - path module:
+      - describe + vs <<
+      - more details in path constructor: allowed pathels, first pathel...
     - deco module:
       - cycloid decorator
       - smoothed decorator
@@ -58,20 +61,8 @@ TODO:
       Attributes and changeable attributes should be explained in a
       central place.
 
-TODO for 0.6:
-  - Documentation:
-    - path module:
-      - describe + vs <<
-      - more details in path constructor: allowed pathels, first pathel...
 
-
-0.6 (XXXX/XX/XX):
-  - bbox module:
-     - added inplace add (__iadd__), enlarge and transform methods
-     - callers use inplace add where possible now (yielding a considerable
-       speedup)
-    - "undefined" corners of bounding boxes are no longer supported which makes
-      the bounding box operations much more efficient.
+0.6 (2004/03/30):
   - graph module:
     - reorganisation of the graph structure finished (there might be some
       small pending issues, but the basic restructuring is done with this release):
@@ -91,15 +82,6 @@ TODO for 0.6:
     - automatic file key titles
     - graph.data now also includes the old data module
     - data.list adds (by default) a line number like data.file
-  - text module:
-    - default handling of texmessages as in the new attribute scheme
-    - multiple insert bug fixed
-    - made left, right, width, height, depth information available (x length
-      not taking into account box transformations)
-    - ignore tex message "Please type a command or say `\\end'"
-    - added textboxes that are sequentially filled (experimental)
-  - examples:
-    - mandel.py (contributed by Stephen Phillips)
   - path:
     - added new pathels multilineto_pt and multicurveto which allows to specify
       a list of points and can thus be much more efficient
@@ -122,8 +104,6 @@ TODO for 0.6:
     - negative parameters are no longer supported in path and normpath methods
     - path and normpath methods which accept parameter value param now
       alternatively accept an arc length
-  - connnector module:
-    - renamed _xxx -> xxx_pt
   - deco module:
     - cycloid decorator
     - smoothed decorator
@@ -135,9 +115,25 @@ TODO for 0.6:
       expects a list of attrs as first argument (defaulting to []) and
       a texrunner as second argument (defaulting to text.defaulttexrunner)
     - set, draw, stroke and fill no longer return self, i.e., the canvas, but None
-  - tex module:
-    - not imported by default anymore
-    - obsolete warning when importing this module
+  - bbox module:
+     - added inplace add (__iadd__), enlarge and transform methods
+     - callers use inplace add where possible now (yielding a considerable
+       speedup)
+    - "undefined" corners of bounding boxes are no longer supported which makes
+      the bounding box operations much more efficient.
+  - connnector module:
+    - renamed _xxx -> xxx_pt
+  - epsfile module:
+    - removed showbbox argument of epsfile class
+  - text module:
+    - default handling of texmessages as in the new attribute scheme
+    - multiple insert bug fixed
+    - made left, right, width, height, depth information available (x length
+      not taking into account box transformations)
+    - ignore tex message "Please type a command or say `\\end'"
+    - added textboxes that are sequentially filled (experimental)
+  - examples:
+    - mandel.py (contributed by Stephen Phillips)
   - unit module:
     - length comparision (David Beach)
     - x-scale for TeX
@@ -147,8 +143,9 @@ TODO for 0.6:
   - data module:
     - removed, it all lives in the graph.data module now, while before it
       was splitted into two separate modules
-  - epsfile module:
-    - removed showbbox argument of epsfile class
+  - tex module:
+    - not imported by default anymore
+    - obsolete warning when importing this module
 
 0.5.1 (2004/01/22):
   - distribution:
