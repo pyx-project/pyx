@@ -103,18 +103,6 @@ class _LogMap(_LinMap):
 ###############################################################################
 # axis part
 
-class frac:
-
-    def __init__(self, enum, denom):
-        assert type(enum) in (types.IntType, types.LongType, )
-        assert type(denom) in (types.IntType, types.LongType, )
-        self.enum = enum
-        self.denom = denom
-
-    def __str__(self):
-        return "%i/%i" % (self.enum, self.denom, )
-
-
 epsilon = 1e-10
 
 class frac:
