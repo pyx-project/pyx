@@ -437,7 +437,10 @@ class DVIFile:
             self.actoutstart = self.pos[_POS_H], self.pos[_POS_V]
             self.actoutstring = ""
 
-        ascii = (char > 32 and char < 128) and "%s" % chr(char) or "\\%03o" % char
+        if char > 32 and char < 128 and chr(char) not in "()[]<>":
+            ascii = "%s" % chr(char)
+        else:
+            ascii = "\\%03o" % char
         self.actoutstring = self.actoutstring + ascii
 
         dx = inch and self.fonts[self.activefont].getwidth(char) or 0
