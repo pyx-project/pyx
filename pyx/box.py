@@ -57,10 +57,12 @@ class _polygon:
         else:
             # curved box plotting by Michael Schindler
             l = len(self.corners)
+            # make beziersoftnes a list of length l
             if helper.issequence(beziersoftness):
                 if not (len(beziersoftness) == l): raise ValueError
             else:
                 beziersoftness = [float(beziersoftness)]*l
+            # make bezierradius a list (lenght l) of 2-tuples
             if helper.issequence(bezierradius):
                 r = list(bezierradius)
                 if len(bezierradius) == l:
