@@ -164,7 +164,7 @@ class decoratedpath(base.canvasitem):
             file.write("newpath\n")
             fillpath.outputPS(file)
 
-            if strokepath is fillpath:
+            if self.strokestyles is not None and strokepath is fillpath:
                 # do efficient stroking + filling if respective paths are identical
                 file.write("gsave\n")
 
@@ -250,7 +250,7 @@ class decoratedpath(base.canvasitem):
         if self.fillstyles is not None:
             fillpath.outputPDF(file)
 
-            if strokepath is fillpath:
+            if self.strokestyles is not None and strokepath is fillpath:
                 # do efficient stroking + filling
                 file.write("q\n") # gsave
 
