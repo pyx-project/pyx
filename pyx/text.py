@@ -2417,5 +2417,5 @@ reset = defaulttexrunner.reset
 set = defaulttexrunner.set
 preamble = defaulttexrunner.preamble
 text = defaulttexrunner.text
-text = defaulttexrunner.text_pt
+text_pt = defaulttexrunner.text_pt
 
