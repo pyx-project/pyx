@@ -2873,10 +2873,11 @@ class key:
 
     def setplotinfos(self, *plotinfos):
         """set the plotinfos to be used in the key
-        - call it exactly once"""
+        - call it exactly once
+        - plotinfo instances with title == None are ignored"""
         if self.plotinfos is not None:
             raise RuntimeError("setplotinfo is called multiple times")
-        self.plotinfos = plotinfos
+        self.plotinfos = [plotinfo for plotinfo in plotinfos if plotinfo.data.title is not None]
 
     def dolayout(self, graph):
         "creates the layout of the key"
@@ -2895,8 +2896,8 @@ class key:
     def bbox(self):
         """return a bbox for the key
         method should be called after dolayout"""
-        result = self.titles[0].bbox()
-        for title in self.titles[1:]:
+        result = bbox.bbox()
+        for title in self.titles:
             result = result + title.bbox() + bbox._bbox(0, title.center[1] - 0.5 * self._symbolheight,
                                                         0, title.center[1] + 0.5 * self._symbolheight)
         return result

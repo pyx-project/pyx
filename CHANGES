@@ -17,6 +17,7 @@ PyX
     - removed manualpart and partitioners mix keyword (documentation already updated)
     - results of the splitting at "=" in graph.function were not stripped
     - rect style (and errorbars?) should use clipping (TODO: should they or do the now?)
+    - skip title=None in key (cf. bug #821284), properly align a single key entry
   - canvas module:
     - stroke and fill now support trafos (TODO: documentation)
   - config module:
@@ -31,7 +32,7 @@ PyX
     - do not include unneeded line segments when the axis range is set manually
     - allow for an iteration of a graph style, when it is used several times
     - common bboxes for different graphs
-    - automatic datafile key title; skip title=None stuff in key
+    - automatic datafile key title
     - exceptions in drawsymbol & friends...
     - 3d graphs, circular graphs
     - symbols + lines -> symbollines (??). Symbols should not allow setting lineattrs, and
