@@ -59,17 +59,28 @@ class pathel:
 	Important note: all coordinates in bbox, currentpoint, and 
 	currrentsubpath have to be converted to pts.
 	'''
+	
 	# Though conceptually a little ugly, this conversion is nevertheless
 	# necessary, since one can, for instance, not compare two lengths 
 	# without specifying canvas.unit.
+
 	pass
 
     def write(self, canvas, file):
 	' write pathel to file in the context of canvas '
+	
         pass
 	
-    def ConvertToBezier(self, currentpoint, currentsubpath):
-	' convert pathel to bpath '
+    def _bpath(self, currentpoint, currentsubpath):
+	''' convert pathel to bpath 
+
+        returns tuple consisting of:
+         - new currentpoint
+         - new currentsubpath (i.e. first point of current subpath)
+         - bpath corresponding to pathel in the context of currentpoint and 
+	   currentsubpath
+	'''
+	
         pass
 
 
@@ -87,7 +98,7 @@ class closepath(pathel):
     def write(self, canvas, file):
         file.write("closepath")
 
-    def ConvertToBezier(self, currentpoint, currentsubpath):
+    def _bpath(self, currentpoint, currentsubpath):
         return (None,
                 None,
                 bline(currentpoint[0], currentpoint[1], 
@@ -109,7 +120,7 @@ class moveto(pathel):
     def write(self, canvas, file):
         file.write("%f %f moveto" % (canvas.unit.pt(self.x), canvas.unit.pt(self.y) ) )
 
-    def ConvertToBezier(self, currentpoint, currentsubpath):
+    def _bpath(self, currentpoint, currentsubpath):
         return ((self.x, self.y), (self.x, self.y) , None)
 
 
@@ -130,7 +141,7 @@ class rmoveto(pathel):
     def write(self, canvas, file):
         file.write("%f %f rmoveto" % (canvas.unit.pt(self.dx), canvas.unit.pt(self.dy) ) )
         
-    def ConvertToBezier(self, currentpoint, currentsubpath):
+    def _bpath(self, currentpoint, currentsubpath):
         return ((self.dx+currentpoint[0], self.dy+currentpoint[1]), 
                 (self.dx+currentpoint[0], self.dy+currentpoint[1]),
 		None)
@@ -154,7 +165,7 @@ class lineto(pathel):
     def write(self, canvas, file):
         file.write("%f %f lineto" % (canvas.unit.pt(self.x), canvas.unit.pt(self.y) ) )
        
-    def ConvertToBezier(self, currentpoint, currentsubpath):
+    def _bpath(self, currentpoint, currentsubpath):
         return ((self.x, self.y), 
                 currentsubpath or currentpoint,
                 bline(currentpoint[0], currentpoint[1], self.x, self.y))
@@ -181,7 +192,7 @@ class rlineto(pathel):
         file.write("%f %f rlineto" % (canvas.unit.pt(self.dx), 
 	                              canvas.unit.pt(self.dy)))
         
-    def ConvertToBezier(self, currentpoint, currentsubpath):
+    def _bpath(self, currentpoint, currentsubpath):
         return ((currentpoint[0]+self.dx, currentpoint[1]+self.dy), 
                 currentsubpath or currentpoint,
                 bline(currentpoint[0], currentpoint[1], 
@@ -279,7 +290,7 @@ class arc(pathel):
                                             self.angle1,
                                             self.angle2 ) )
         
-    def ConvertToBezier(self, currentpoint, currentsubpath):
+    def _bpath(self, currentpoint, currentsubpath):
 	# starting point of arc segment
 	sarcx = self.x+self.r*cos(pi*self.angle1/180)
 	sarcy = self.y+self.r*sin(pi*self.angle1/180)
@@ -325,10 +336,10 @@ class arcn(pathel):
                                              self.angle1,
                                              self.angle2 ) )
 
-    def ConvertToBezier(self, currentpoint, currentsubpath):
+    def _bpath(self, currentpoint, currentsubpath):
         return arc(self.x, self.y, 
                    self.r, 
-		   self.angle2, self.angle1).ConvertToBezier(currentpoint,currentsubpath)
+		   self.angle2, self.angle1)._bpath(currentpoint,currentsubpath)
 
 class arct(pathel):
     ' Append tangent arc '
@@ -378,7 +389,7 @@ class curveto(pathel):
                                                    canvas.unit.pt(self.x3),
                                                    canvas.unit.pt(self.y3)) )
         
-    def ConvertToBezier(self, currentpoint, currentsubpath):
+    def _bpath(self, currentpoint, currentsubpath):
         return ((self.x3, self.y3),
                 currentsubpath or currentpoint, 
                 bcurve(currentpoint[0], currentpoint[1],
@@ -415,7 +426,7 @@ class rcurveto(pathel):
                 bbox(min(currentpoint[0], x1, x2, x3), min(currentpoint[1], y1, y2, y3), 
  	             max(currentpoint[0], x1, x2, x3), max(currentpoint[1], y1, y2, y3)))
         
-    def ConvertToBezier(self, currentpoint, currentsubpath):
+    def _bpath(self, currentpoint, currentsubpath):
         x2=currentpoint(0)+self.dx1
         y2=currentpoint(1)+self.dy1
         x3=currentpoint(0)+self.dx2
@@ -465,15 +476,16 @@ class path:
     def append(self, pathel):
         self.path.append(pathel)
 
-    def ConvertToBezier(self):
+    def bpath(self):
         currentpoint = None
         currentsubpath = None
-        self.bpath = bpath([])
+        bp = bpath([])
         for pathel in self.path:
-            (currentpoint, currentsubpath, bp) = pathel.ConvertToBezier(currentpoint, currentsubpath)
-            if bp:
-                for bpel in bp:
-                    self.bpath.append(bpel)
+            (currentpoint, currentsubpath, nbp) = pathel._bpath(currentpoint, currentsubpath)
+            if nbp:
+                for bpel in nbp:
+                    bp.append(bpel)
+        return bp
 
 # some special kinds of path 
 
@@ -849,16 +861,14 @@ if __name__=="__main__":
 ##     testarcn(100, 600, 45, -90+360) 
 
     p=path([moveto(100,100), rlineto(20,20), arc(150,120,10,30,300),closepath()])
-    p.ConvertToBezier()
-    bpsplit=p.bpath.MidPointSplit()
+    bpsplit=p.bpath().MidPointSplit()
     print "stroke"
     print "1 0 0 setrgbcolor"
     print "newpath"
     print bpsplit
     print "stroke"
 
-    q = path([moveto(120,100), rlineto(20,20), arc(150,120,10,30,300),closepath()])
-    q.ConvertToBezier()
+#    q = path([moveto(120,100), rlineto(20,20), arc(150,120,10,30,300),closepath()])
 
 #    p=path([arc(120,120,10,30,360)])
 #    p.ConvertToBezier()
