@@ -2,9 +2,9 @@
 # -*- coding: ISO-8859-1 -*-
 #
 #
-# Copyright (C) 2002-2004 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2002-2005 Jörg Lehmann <joergl@users.sourceforge.net>
 # Copyright (C) 2003-2004 Michael Schindler <m-schindler@users.sourceforge.net>
-# Copyright (C) 2002-2004 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2002-2005 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
@@ -24,29 +24,6 @@
 
 import copy, cStringIO, exceptions, re, struct, string, sys
 import unit, epsfile, bbox, base, canvas, color, trafo, path, prolog, pykpathsea
-
-class fix_word:
-    def __init__(self, word):
-        if word >= 0:
-            self.sign = 1
-        else:
-            self.sign = -1
-
-        self.precomma = abs(word) >> 20
-        self.postcomma = abs(word) & 0xFFFFF
-
-    def __float__(self):
-        return self.sign * (self.precomma + 1.0*self.postcomma/0xFFFFF)
-
-    def __mul__(self, other):
-        # hey, it's Q&D
-        result = fix_word(0)
-
-        result.sign = self.sign*other.sign
-        c = self.postcomma*other.precomma + self.precomma*other.postcomma
-        result.precomma = self.precomma*other.precomma + (c >> 20)
-        result.postcomma = c & 0xFFFFF + ((self.postcomma*other.postcomma) >> 40)
-        return result
 
 
 class binfile:
@@ -194,9 +171,8 @@ class tfmfile:
         #
 
         self.checksum = self.file.readint32()
-        self.designsizeraw = self.file.readint32()
-        assert self.designsizeraw > 0, "invald design size"
-        self.designsize = fix_word(self.designsizeraw)
+        self.designsize = self.file.readint32()
+        assert self.designsize > 0, "invald design size"
         if self.lh > 2:
             assert self.lh > 11, "inconsistency in TFM file: incomplete field"
             self.charcoding = self.file.readstring(40)
@@ -212,7 +188,7 @@ class tfmfile:
         if self.debug:
             print "(FAMILY %s)" % self.fontfamily
             print "(CODINGSCHEME %s)" % self.charcoding
-            print "(DESINGSIZE R %f)" % self.designsize
+            print "(DESINGSIZE R %f)" % 16L*self.designsize/16777216L
 
         if self.lh > 17:
             self.sevenbitsave = self.file.readuchar()
@@ -270,7 +246,6 @@ class tfmfile:
 
         self.width = [None for width_index in range(self.nw)]
         for width_index in range(self.nw):
-            # self.width[width_index] = fix_word(self.file.readint32())
             self.width[width_index] = self.file.readint32()
 
         #
@@ -279,7 +254,6 @@ class tfmfile:
 
         self.height = [None for height_index in range(self.nh)]
         for height_index in range(self.nh):
-            # self.height[height_index] = fix_word(self.file.readint32())
             self.height[height_index] = self.file.readint32()
 
         #
@@ -288,7 +262,6 @@ class tfmfile:
 
         self.depth = [None for depth_index in range(self.nd)]
         for depth_index in range(self.nd):
-            # self.depth[depth_index] = fix_word(self.file.readint32())
             self.depth[depth_index] = self.file.readint32()
 
         #
@@ -297,7 +270,6 @@ class tfmfile:
 
         self.italic = [None for italic_index in range(self.ni)]
         for italic_index in range(self.ni):
-            # self.italic[italic_index] = fix_word(self.file.readint32())
             self.italic[italic_index] = self.file.readint32()
 
         #
@@ -316,7 +288,6 @@ class tfmfile:
 
         self.kern = [None for kern_index in range(self.nk)]
         for kern_index in range(self.nk):
-            # self.kern[kern_index] = fix_word(self.file.readint32())
             self.kern[kern_index] = self.file.readint32()
 
         #
@@ -618,9 +589,9 @@ class font:
             raise DVIError("check sums do not agree: %d vs. %d" %
                            (self.tfmfile.checksum, c))
 
-        # tfmfile.designsizeraw is the design size of the font as a fix_word
-        if abs(self.tfmfile.designsizeraw - d) > 2:
-            raise DVIError("design sizes do not agree: %d vs. %d" % (self.tfmfile.designsizeraw, d))
+        # tfmfile.designsize is the design size of the font as a fix_word
+        if abs(self.tfmfile.designsize - d) > 2:
+            raise DVIError("design sizes do not agree: %d vs. %d" % (self.tfmfile.designsize, d))
         if q < 0 or q > 134217728:
             raise DVIError("font '%s' not loaded: bad scale" % self.name)
         if d < 0 or d > 134217728:
@@ -1148,7 +1119,6 @@ class dvifile:
         returned as a canvas. When there is no page left in the
         dvifile, None is returned and the file is closed properly."""
 
-
         while 1:
             self.filepos = self.file.tell()
             cmd = self.file.readuchar()
@@ -1391,12 +1361,11 @@ class vffile:
                 # rescaled size of font: s is relative to the scaling
                 # of the virtual font itself.  Note that realscale has
                 # to be a fix_word (like s)
-                reals = int(self.scale * float(fix_word(self.ds))*s)
+                reals = int(self.scale * (16L*self.ds/16777216L) * s)
 
-                # print ("defining font %s -- VF scale: %g, VF design size: %g, relative font size: %g => real size: %g" %
-                #        (fontname, self.scale, fix_word(self.ds), fix_word(s), fix_word(reals))
+                # print ("defining font %s -- VF scale: %g, VF design size: %d, relative font size: %d => real size: %d" %
+                #        (fontname, self.scale, self.ds, s, reals)
                 #        )
-                # reald = int(d)
 
                 # XXX allow for virtual fonts here too
                 self.fonts[num] =  type1font(fontname, c, reals, d, self.tfmconv, self.pyxconv, self.fontmap, self.debug > 1)
