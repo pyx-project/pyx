@@ -20,11 +20,11 @@ introduce round corners and other goodies later on, but for the moment
 polygons are everything we are in need for.
 
 The relative alignment takes place respecting an alignment vector
-$\vec a$. The box has a central point $\vec c$, which can be placed
+$\vec a$. The box has a reference point $\vec c$, which can be placed
 anywhere within the polygon. Otherwise some alignment requests might
 fail or result in unexpected alignments. An alignment request has to
-calculate a translation vector $t$ so that the center point is on the
-line defined by the alignment vector.
+calculate a translation vector $\vec t$ so that the reference point is
+on the line defined by the alignment vector.
 \begin{equation}
 \label{eq:center}
 \alpha\vec a=\vec c+\vec t
@@ -49,7 +49,7 @@ considered for the alignment.
 
 \pagebreak
 \section{Alignment Primitives}
-\subsection{Align a point relative to an infinite line}
+\subsection{Align a point relative to a tangent}
 The point $\vec p$ should be aligned at the dotted line:
 
 \centerline{\includegraphics{boxalignpal}}
@@ -62,7 +62,7 @@ The solution is defined by equation~(\ref{eq:center}) and
 \vec a+\beta\vec b=\vec p+\vec t\,.
 \end{equation}
 
-\subsection{Align a line segment relative to an infinite line}
+\subsection{Align a line segment relative to a tangent}
 The line segment has to be perpendicular to the alignment vector.
 We can than continue as in section \ref{s:calignline}. However, if the
 line segment is not perpendicular to the alignment vector, the
