@@ -6,6 +6,7 @@ from pyx import text
 
 c = canvas.canvas()
 text.set(mode="latex", dvidebug=1, usefiles="test_text.dvi")
+text.preamble(r"\usepackage[pyx]{color}")
 
 c.stroke(path.line(-1, 0, 6, 0))
 
@@ -33,6 +34,6 @@ c.text(0, 3, r"\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} = \sqrt{\pi\
 c.text(0, 6, r"\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} = \sqrt{\pi\over a}", text.size.LARGE, text.mathmode)
 
 c.stroke(c.text(1, 2, r"Hello, world!").path())
-c.stroke(c.text(1, 2, r"Hello, world!", trafo.slant(1)).path())
+c.stroke(c.text(1, 2, r"Hello, \color{green}world!", trafo.slant(1)).path())
 
 c.writetofile("test_text", paperformat="a4")
