@@ -33,7 +33,7 @@ class NormpathTestCase(unittest.TestCase):
         self.failUnlessEqual(param.normsubpathindex, 1)
         self.failUnlessAlmostEqual(param.normsubpathparam, 0)
         param = param + 0.5*circle_pt(0, 0, 10).arclen()
-        circlerange = p.normsubpaths[1].range()
+        circlerange = len(p.normsubpaths[1])
         self.failUnlessEqual(param.normsubpathindex, 1)
         self.failUnlessAlmostEqual(param.normsubpathparam, 0.5*circlerange, 4)
         param = param + 0.5*circle_pt(0, 0, 10).arclen()
