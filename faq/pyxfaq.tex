@@ -60,15 +60,21 @@ a large variety of operating systems so chances are pretty good that you will
 get \PyX{} to work on your system.
 }
 
-\question{c}{Under which versions of Python will \PyX{} run?}
-{}
-{\PyX{} will definitely run under Python 2.2 and higher and it is supposed
-to work under Python 2.1. Your are likely to encounter problems with Python 2.0
-and with Python 1.x \PyX{} will not work. The version of your Python interpreter
-can be determined by calling it with the option \texttt{-V}. Alternatively,
-you can simply start the interpreter and take a look at the startup message.
-Note that there may be different versions of Python installed on your system
-at the same time.
+\question{t}{Under which versions of Python will \PyX{} run?}
+{AW: this is 0.5 already, but the english might be improved}
+{\PyX{} is supposed to work with Python 2.x. However, most of the
+development takes place under current Python versions (by time of
+writing x=3). Hence its heavier tested with newer versions. On the
+other hand the examples and tests are passed with a complete set of
+Python 2.x for all available x. \PyX{} will not work with Python 1.x
+due to missing language features. The version of your Python
+interpreter can be determined by calling it with the option
+\texttt{-V}. Alternatively, you can simply start the interpreter and
+take a look at the startup message. Note that there may be different
+versions of Python installed on your system at the same time. The
+default Python version might also depend on the account in use
+(regular user vs. system administrator) which should be carefully
+checked when installing \PyX.
 }
 
 \question{a}{Where can I get help if my question is not answered in this FAQ?}
@@ -508,7 +514,7 @@ you should take a look at the subdirectories of
 }
 
 \question{t}{File \dots is not available or not readable}
-{this is for 0.5 already, please make it nice, since it is AW-englisch}
+{AW: this is 0.5 already, but the english might be improved}
 {\label{q:no_lfs}
 Such an error message can already be encountered by simply running the
 example file \texttt{hello.py} included in the \PyX{} distribution.
