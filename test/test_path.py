@@ -29,8 +29,8 @@ class cross(path):
 
 def drawpathwbbox(c, p):
     c.draw(p, color.rgb.red)
-    bp=p.bpath()
-    c.draw(bp, color.rgb.green, canvas.linestyle.dashed)
+    np=normpath(p)
+    c.draw(np, color.rgb.green, canvas.linestyle.dashed)
     c.draw(bboxrect(p))
 
 
@@ -94,43 +94,39 @@ def testmidpointsplit(c):
 
 
 def testintersectbezier(c):
-    p=path(moveto(0,0), curveto(2,6,4,5,2,9))
-    q=path(moveto(2,0), curveto(2,6,4,12,1,6))
-
-    bp=p.bpath()
-    bq=q.bpath()
+    p=normpath(moveto(0,0), curveto(2,6,4,5,2,9))
+    q=normpath(moveto(2,0), curveto(2,6,4,12,1,6))
 
     c.draw(q, canvas.linewidth.THIN)
     c.draw(p, canvas.linewidth.THIN)
 
-    isect = bp.intersect(bq, epsilon=1e-4)
+    isect = p.intersect(q, epsilon=1e-4)
 
     for i in isect:
-        x, y = bp.pos(i[0])
+        x, y = p.at(i[0])
         c.draw(cross(x, y), canvas.linewidth.THIN)
 
 
-def testbpathtrafo(c):
-    p=path(moveto(0,5),
+def testnormpathtrafo(c):
+    p=normpath(moveto(0,5),
            curveto(2,1,4,0,2,4),
            rcurveto(-3,2,1,2,3,6),
            rlineto(2,3))
-    bp=p.bpath()
 
-    c.draw(bp.transform(trafo.translate(3,1)), color.rgb.red)
+    c.draw(p.transformed(trafo.translate(3,1)), color.rgb.red)
     c.insert(canvas.canvas(trafo.translate(3,1))).draw(p,
                                                        color.rgb.green,
                                                        canvas.linestyle.dashed)
 
-    c.draw(bp)
-    c.draw(bp.reverse())
+    c.draw(p)
+    c.draw(p.reversed())
 
-    c.draw(cross(*(bp.pos(0))))
-    c.draw(cross(*(bp.reverse().pos(0))))
+    c.draw(cross(*(p.at(0))))
+    c.draw(cross(*(p.reversed().at(0))))
 
-    bp1, bp2 = bp.split(1.7)
-    c.draw(bp1, color.rgb.red, canvas.linestyle.dashed)
-    c.draw(bp2, color.rgb.green, canvas.linestyle.dashed)
+    p1, p2 = p.split(1.7)
+    c.draw(p1, color.rgb.red, canvas.linestyle.dashed)
+    c.draw(p2, color.rgb.green, canvas.linestyle.dashed)
 
 
 def testarcbbox(c):
@@ -239,7 +235,7 @@ c=canvas.canvas()
 dotest(c, 0, 0, "testarcs")
 dotest(c, 12, 3, "testmidpointsplit")
 dotest(c, 2, 12, "testintersectbezier")
-dotest(c, 10,11, "testbpathtrafo")
+dotest(c, 10,11, "testnormpathtrafo")
 c.writetofile("test_path", paperformat="a4", rotated=0, fittosize=1)
 
 c=canvas.canvas()
