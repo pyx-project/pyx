@@ -335,7 +335,8 @@ class TFMFile:
 
 class Font:
     def __init__(self, name, c, q, d, tfmconv):
-        path = os.popen("kpsewhich %s.tfm" % name, "r").readline()[:-1]
+        self.name = name
+        path = os.popen("kpsewhich %s.tfm" % self.name, "r").readline()[:-1]
         self.tfmfile = TFMFile(path)
 
         if self.tfmfile.checksum!=c:
@@ -363,6 +364,11 @@ class Font:
 
         self.beta = 256/self.alpha;
         self.alpha = self.alpha*self.q;
+
+    def __str__(self):
+        return "Font(%s)" % self.name
+
+    __repr__ = __str__
 
     def convert(self, width):
         b0 = width >> 24
@@ -396,23 +402,30 @@ class Font:
 
 class DVIFile:
 
-    def char(self, char, inch=1):
+    def putchar(self, char, inch=1):
         x = self.pos[_POS_H] * self.conv * 1e-5
         y = self.pos[_POS_V] * self.conv * 1e-5
         ascii = (char > 32 and char < 128) and "(%s)" % chr(char) or "???"
+        self.actpage.append(("c", x, y, char))
         print "type 0x%08x %s at (%.3f cm, %.3f cm)" % (char, ascii, x, y)
         if inch:
             self.pos[_POS_H] += self.conv*self.fonts[self.activefont].getwidth(char)
 
-    def rule(self, height, width, inch=1):
+    def putrule(self, height, width, inch=1):
         if height > 0 and width > 0:
             x1 = self.pos[_POS_H] * self.conv * 1e-5
             y1 = self.pos[_POS_V] * self.conv * 1e-5
             x2 = (self.pos[_POS_H] + width) * self.conv * 1e-5
             y2 = (self.pos[_POS_V] + height) * self.conv * 1e-5
             print "rule ((%.3f..%.3f cm), (%.3f..%.3f cm))" % (x1, x2, y1, y2)
+            self.actpage.append(("r", x1, y1, x2, y2))
         if inch:
             pass # TODO: increment h
+
+    def usefont(self, fontnum):
+        self.activefont = fontnum
+        self.actpage.append(("f", self.fonts[fontnum]))
+        print "use font %i" % self.activefont
 
     def definefont(self, num, c, q, d, fontname):
         # c: checksum
@@ -423,17 +436,23 @@ class DVIFile:
         self.fonts[num] =  Font(fontname, c, q, d, self.tfmconv)
 
         # m = round((1000.0*self.conv*q)/(self.trueconv*d));
-        
 
-    def __init__(self, name):
+    def __init__(self, filename):
 
-        file = binfile(name, "rb")
+        self.filename = filename
+        file = binfile(self.filename, "rb")
         state = _READ_PRE
         stack = []
         
         # XXX max number of fonts
         self.fonts = [None for i in range(64)]
         self.activefont = None
+
+        # here goes the result, for each page one list.
+        self.pages = []
+
+        # pointer to currently active page
+        self.actpage = None
 
         while state != _READ_DONE:
             cmd = file.readuchar()
@@ -464,6 +483,8 @@ class DVIFile:
                     print
                     file.readuint32()
                     self.pos = [0, 0, 0, 0, 0, 0]
+                    self.pages.append([])
+                    self.actpage = self.pages[-1]
                     state = _READ_PAGE
                 elif cmd == _DVI_POST:
                     state = _READ_DONE # we skip the rest
@@ -471,15 +492,15 @@ class DVIFile:
 
             elif state == _READ_PAGE:
                if cmd >= _DVI_CHARMIN and cmd <= _DVI_CHARMAX:
-                   self.char(cmd)
+                   self.putchar(cmd)
                elif cmd >= _DVI_SET1234 and cmd < _DVI_SET1234 + 4:
-                   self.char(file.readint(cmd - _DVI_SET1234 + 1))
+                   self.putchar(file.readint(cmd - _DVI_SET1234 + 1))
                elif cmd == _DVI_SETRULE:
-                   self.rule(file.readint32(), file.readint32())
+                   self.putrule(file.readint32(), file.readint32())
                elif cmd >= _DVI_PUT1234 and cmd < _DVI_PUT1234 + 4:
-                   self.char(file.readint(cmd - _DVI_PUT1234 + 1))
+                   self.putchar(file.readint(cmd - _DVI_PUT1234 + 1))
                elif cmd == _DVI_PUTRULE:
-                   self.rule(file.readint32(), file.readint32(), 0)
+                   self.putrule(file.readint32(), file.readint32(), 0)
                elif cmd == _DVI_EOP:
                    state = _READ_NOPAGE
                elif cmd == _DVI_PUSH:
@@ -512,11 +533,9 @@ class DVIFile:
                    self.pos[_POS_Z] = file.readint(cmd - _DVI_Z1234 + 1, 1)
                    self.pos[_POS_V] += self.pos[_POS_Z]
                elif cmd >= _DVI_FNTNUMMIN and cmd <= _DVI_FNTNUMMAX:
-                   self.activefont = cmd - _DVI_FNTNUMMIN
-                   print "use font %i" % self.activefont
+                   self.usefont(cmd - _DVI_FNTNUMMIN)
                elif cmd >= _DVI_FNT1234 and cmd < _DVI_FNT1234 + 4:
-                   self.activefont = file.readint(cmd - _DVI_FNT1234 + 1, 1)
-                   print "use font %i" % self.activefont
+                   self.usefont(file.readint(cmd - _DVI_FNT1234 + 1, 1))
                elif cmd >= _DVI_SPECIAL1234 and cmd < _DVI_SPECIAL1234 + 4:
                    print "special %s" % file.read(file.readint(cmd - _DVI_SPECIAL1234 + 1))
                elif cmd >= _DVI_FNTDEF1234 and cmd < _DVI_FNTDEF1234 + 4:
@@ -539,6 +558,32 @@ class DVIFile:
 
             else: raise DVIError # unexpected reader state
 
+    def writeheader(self, file):
+        """write PostScript font header"""
+        for font in self.fonts:
+            if font:
+                file.write("%%%%BeginFont: %s\n" % font.name.upper())
+                # pfbpath = os.popen("kpsewhich %s.pfb" % font.name, "r").readline()[:-1]
+                os.system("pfb2pfa `kpsewhich %s.pfb` /tmp/f.pfa" % font.name)
+                pfa = open("/tmp/f.pfa", "r")
+                file.write(pfa.read())
+                pfa.close()
+                file.write("%%%%EndFont\n")
+
+    def write(self, file, page):
+        """write PostScript code for page into file"""
+        print "dvifile(\"%s\").write() for page %s called" % (self.filename, page)
+        for el in self.pages[page-1]:
+            command, arg = el[0], el[1:]
+            print "\t", command, arg
+            if command=="c":
+                file.write("%f %f moveto (%c) show\n" % arg)
+            elif command=="f":
+                file.write("/%s findfont\n" % arg[0].name.upper())
+                file.write("setfont\n")
+
+        
+
 #if __name__=="__main__":
 #    cmr10 = Font("cmr10")
 #    print cmr10.charcoding
@@ -557,16 +602,6 @@ class DVIFile:
 
 # end of old stuff
 ###############################################################################
-
-class dvifile:
-
-    def __init__(self, dvifilename):
-        self.dvifilename = dvifilename
-        print "dvifile(\"%s\") constructed, file can be opened now" % self.dvifilename
-
-    def write(self, file, page):
-        print "dvifile(\"%s\").write() for page %s called" % (self.dvifilename, page)
-        # insert postscript code into the file
 
 ###############################################################################
 # wobsta would mainly work here ...
@@ -741,8 +776,12 @@ class texrunner:
         if not self.texdone:
             self.page += 1
             _default.execute(None)
-            self.dvifile = dvifile(self.texfilename)
-        return self.dvifile.write(file, page)
+            self.dvifile = DVIFile("%s.dvi" % self.texfilename)
+            self.dvifile.writeheader(file)
+        # XXX: the following is a temporary hack to allow the insertion
+        # of the header on the first call of the write funtion
+        else:
+            return self.dvifile.write(file, page)
 
     def set(self, mode=None, waitfortex=None):
         if self.texruns:
@@ -797,9 +836,30 @@ if __name__=="__main__":
     print res2.bbox()
     print res3.bbox()
 
+    file = open("test.ps", "w")
+    
+    file.write("%!PS-Adobe-3.0 EPSF 3.0\n")
+    file.write("%%BoundingBox: -10 -10 600 600\n")
+    file.write("%%Creator: PyX test\n")
+    file.write("%%%%Title: %s\n" % "test")
+#    file.write("%%%%CreationDate: %s\n" %
+#               time.asctime(time.localtime(time.time())))
+    file.write("%%EndComments\n")
+
+    file.write("%%BeginProlog\n")
+ #   file.write(_PSProlog)
+    res1.write(file)
+    file.write("%%EndProlog\n")
+
     # res*.collectfontheader ???
-    res1.write(None)
-    res3.write(None)
-    res2.write(None)
+    # we need to find a way to write the headers in the PS prolog!
+    
+    res1.write(file)
+    res3.write(file)
+    res2.write(file)
+    
+    file.write("showpage\n")
+    file.write("%%Trailer\n")
+    file.write("%%EOF\n")
 
 
