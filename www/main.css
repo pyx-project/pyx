@@ -50,7 +50,7 @@ a:hover {
    the navigation area to the size of the content */
 
 #contentwrapper {
-        position: absolute;
+        min-width: 700px;
         top: 0px;
         left: 0px;
         border-left: 200px solid #eed;
@@ -58,7 +58,6 @@ a:hover {
 }
 
 #content {
-        min-width: 600px;
         padding-left: 25px;
         padding-right: 25px;
         border-left: 1px solid #88a;
