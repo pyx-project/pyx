@@ -22,7 +22,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import exceptions, glob, os, threading, Queue, traceback, re, struct, tempfile, sys, atexit, time, string, cStringIO
+import copy, cStringIO, exceptions, glob, os, threading, Queue, traceback, re, struct, string, tempfile, sys, atexit, time
 import config, helper, unit, bbox, box, base, canvas, color, trafo, path, prolog, pykpathsea, version
 
 class fix_word:
@@ -600,6 +600,9 @@ class font:
         for i in range(len(self.usedchars)):
             self.usedchars[i] = self.usedchars[i] or otherfont.usedchars[i]
 
+    def clearusedchars(self):
+        self.usedchars = [0] * 256
+
 
 class type1font(font):
     def __init__(self, name, c, q, d, fontmap, debug=0):
@@ -1039,13 +1042,22 @@ class dvifile:
         self.actpage.markers = {}
         self.pos = [0, 0, 0, 0, 0, 0]
         self.actoutfont = None
+        
+        # Since we do not know, which dvi pages the actual PS file contains later on,
+        # we have to keep track of used char informations separately for each dvi page.
+        # In order to do so, the already defined fonts have to be copied and their
+        # used char informations have to be reset
+        for nr in self.fonts.keys():
+            self.fonts[nr] = copy.copy(self.fonts[nr])
+            self.fonts[nr].clearusedchars()
+
         while 1:
             file = self.file
             self.filepos = file.tell()
             try:
                 cmd = file.readuchar()
             except struct.error:
-                # we most probably (if the dvi file is not corrupt) hit the end of dvi chunk,
+                # we most probably (if the dvi file is not corrupt) hit the end of a dvi chunk,
                 # so we have to continue with the rest of the dvi file
                 self._pop_dvistring()
                 continue

@@ -19,6 +19,7 @@ PyX
     - fix: print warning at syntax errors in font mapping file and continue (cf. bug #795271)
     - remove limitation on number of fonts in dvi file
     - added native virtual font support
+    - do not include too many glyphs in the eps file
   - graph module:
     - removed manualpart and partitioners mix keyword (documentation already updated)
     - results of the splitting at "=" in graph.function were not stripped
@@ -54,10 +55,10 @@ PyX
     - reverse needs to be fixed
   - text module:
     - dvifile class:
-       - clear used char information after each page in dvifile
        - if possible remove readfile, write and prolog methods and use readpage instead
     - SlantFont & Co support
-    - remove dvicopy support again because it is not needed anymore
+    - at some point, we may remove the dvicopy support again. For the moment, we should
+      remove it from the documentation
   - data module:
     - data.data should add line number like data.datafile
     - use csv module (new in 2.3)
