@@ -125,8 +125,7 @@ class length:
 
                 self.length[self.unit_type] = self.prefactor*_m[self.unit_name]
         else:
-            raise ( NotImplementedError,
-                    "cannot convert given argument to length type" )
+            raise NotImplementedError("cannot convert given argument to length type")
 
     def __cmp__(self, other):
         return cmp(tom(self), tom(other))
