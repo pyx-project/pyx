@@ -13,9 +13,9 @@ from distutils.core import setup, Extension
 import sys
 import pyx
 
-ext_modules = [Extension("pyx/t1strip/_t1strip",
+ext_modules = [Extension("pyx.t1strip._t1strip",
                          sources=["pyx/t1strip/t1strip.c", "pyx/t1strip/writet1.c"]),
-               Extension("pyx/pykpathsea/_pykpathsea", 
+               Extension("pyx.pykpathsea._pykpathsea", 
                          sources=["pyx/pykpathsea/pykpathsea.c"],
                          libraries=["kpathsea"])]
 
