@@ -416,6 +416,10 @@ class graphxy(canvas.canvas):
         self.finish()
         return canvas.canvas.bbox(self)
 
+    def prolog(self):
+        self.finish()
+        return canvas.canvas.prolog(self)
+
     def outputPS(self, file):
         self.finish()
         canvas.canvas.outputPS(self, file)

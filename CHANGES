@@ -109,6 +109,8 @@ TODO:
   - graph modules:
     - enum -> num renaming
     - allow for horizontally and vertically centered graph key alignment (TODO: documentation)
+    - fix bug that graph was not finished automatically when a bbox was specified
+      manually (reported by David Barton)
   - path module:
     - pathel -> pathitem, etc. renaming 
   - deformer module: new
