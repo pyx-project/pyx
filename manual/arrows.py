@@ -47,6 +47,7 @@ y += dy
 drawdeco("earrow.Large([deco.filled([color.rgb.red]), style.linewidth.normal])")
 drawdeco("earrow.normal(constriction=0)")
 drawdeco("earrow.Large([style.linejoin.round])")
+drawdeco("earrow.Large([deco.stroked.clear])")
 
 c.insert(t)
 c.writetofile("arrows")
