@@ -1,7 +1,8 @@
 import unittest
 
 from pyx import *
-from pyx.graph.parter import frac, tick, linparter, logparter
+from pyx.graph.tick import frac, tick
+from pyx.graph.parter import linparter, logparter
 
 
 def PartEqual(part1, part2):

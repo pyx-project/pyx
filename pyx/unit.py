@@ -25,15 +25,13 @@ import types
 import re
 import helper
 
-unit_ps = 1.0
-
-scale = { 't':1, 'u':1, 'v':1, 'w':1 }
+scale = { 't':1, 'u':1, 'v':1, 'w':1, 'x':1 }
 
 _default_unit = "cm"
 
 unit_pattern = re.compile(r"""^\s*([+-]?\d*((\d\.?)|(\.?\d))\d*(E[+-]?\d+)?)
-                              (\s+([t-w]))?
-                              (\s+(([a-z][a-z]+)|[^t-w]))?\s*$""",
+                              (\s+([t-x]))?
+                              (\s+(([a-z][a-z]+)|[^t-x]))?\s*$""",
                           re.IGNORECASE | re.VERBOSE)
 
 
@@ -45,14 +43,16 @@ _m = {
       'pt':   0.01*2.54/72,
     }
 
-def set(uscale=None, vscale=None, wscale=None, defaultunit=None):
-    if uscale:
+def set(uscale=None, vscale=None, wscale=None, xscale=None, defaultunit=None):
+    if uscale is not None:
         scale['u'] = uscale
-    if vscale:
+    if vscale is not None:
         scale['v'] = vscale
-    if wscale:
+    if wscale is not None:
         scale['w'] = wscale
-    if defaultunit:
+    if xscale is not None:
+        scale['x'] = xscale
+    if defaultunit is not None:
         global _default_unit
         _default_unit = defaultunit
  
@@ -66,7 +66,8 @@ def _convert_to(l, dest_unit="m"):
     return ( l.length['t']            +
              l.length['u']*scale['u'] +
              l.length['v']*scale['v'] +
-             l.length['w']*scale['w'] ) / _m[dest_unit]
+             l.length['w']*scale['w'] +
+             l.length['x']*scale['x'] ) / _m[dest_unit]
 
 def tom(l):
     return _convert_to(l, "m")
@@ -96,7 +97,7 @@ class length:
        unit_type and unit_name
      - a string has to consist of a maximum of three parts:
        -quantifier: integer/float value
-       -unit_type:  "t", "u", "v", or "w".
+       -unit_type:  "t", "u", "v", "w", or "x".
                     Optional, defaults to "u"
        -unit_name:  "m", "cm", "mm", "inch", "pt".
                     Optional, defaults to _default_unit
@@ -107,7 +108,7 @@ class length:
     """
 
     def __init__(self, l=1, default_type="u", dunit=None):
-        self.length = { 't': 0 , 'u': 0, 'v': 0, 'v':0, 'w':0 }
+        self.length = { 't': 0 , 'u': 0, 'v': 0, 'w': 0, 'x': 0 }
 
         if isinstance(l, length):
             self.length = l.length
@@ -116,7 +117,7 @@ class length:
         elif helper.isstring(l):
             unit_match = re.match(unit_pattern, l)
             if unit_match is None:
-                raise ValueError("expecting number or string of the form 'number [u|v|w] unit'")
+                raise ValueError("expecting number or string of the form 'number [u|v|w|x] unit'")
             else:
                 self.prefactor = float(unit_match.group(1))
                 self.unit_type = unit_match.group(7) or default_type
@@ -128,7 +129,7 @@ class length:
                     "cannot convert given argument to length type" )
 
     def __cmp__(self, other):
-        return cmp(tom(self), tom(length(other)))
+        return cmp(tom(self), tom(other))
 
     def __mul__(self, factor):
         newlength = self.__class__()
@@ -177,7 +178,7 @@ class length:
         return newlength
 
     def __str__(self):
-        return "(%(t)f t + %(u)f u + %(v)f v + %(w)f w) m" % self.length
+        return "(%(t)f t + %(u)f u + %(v)f v + %(w)f w + %(x)f x) m" % self.length
 
 
 ################################################################################
@@ -296,3 +297,29 @@ class w_mm(length):
 class w_inch(length):
     def __init__(self, l=1):
        length.__init__(self, l, default_type="w", dunit="inch")
+
+# tex lengths
+
+class x_pt(length):
+    def __init__(self, l=1):
+       length.__init__(self, l, default_type="x", dunit="pt")
+
+
+class x_m(length):
+    def __init__(self, l=1):
+       length.__init__(self, l, default_type="x", dunit="m")
+
+
+class x_cm(length):
+    def __init__(self, l=1):
+       length.__init__(self, l, default_type="x", dunit="cm")
+
+
+class x_mm(length):
+    def __init__(self, l=1):
+       length.__init__(self, l, default_type="x", dunit="mm")
+
+
+class x_inch(length):
+    def __init__(self, l=1):
+       length.__init__(self, l, default_type="x", dunit="inch")

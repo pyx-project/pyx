@@ -1,7 +1,7 @@
 import unittest
 
 from pyx import *
-from pyx.graph.parter import frac
+from pyx.graph.tick import frac
 
 
 def FracEqual(f1, f2):

@@ -26,7 +26,6 @@ TODO:
     - SlantFont & Co support
     - keep an eye on PEP 324 (popen 5): it could make the texrunner much easier
     - empty lines in the preamble should not raise an error
-    - depth information should be accessible
     - texmessage.ignore should be allowed _everywhere_
   - unit and text module:
     - introduce xscale for scaling the TeX output
@@ -72,6 +71,8 @@ TODO:
   - text module:
     - default handling of texmessages as in the new attribute scheme
     - multiple insert bug fixed
+    - made left, right, width, height, depth information available
+      (x length not taking into account box transformations)
     - added textboxes that are sequentially filled (experimental)
   - examples:
     - mandel.py (contributed by Stephen Phillips)
@@ -98,6 +99,10 @@ TODO:
   - tex module:
     - not imported by default anymore
     - obsolete warning when importing this module
+  - unit module:
+    - length comparision (David Beach) (TODO: documentation)
+    - x-scale for TeX (TODO: documenation)
+    - more unit tests
 
 
 0.5.1 (2004/01/22):

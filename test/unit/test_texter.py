@@ -1,7 +1,7 @@
 import unittest
 
 from pyx import *
-from pyx.graph.parter import tick
+from pyx.graph.tick import tick
 from pyx.graph.texter import rationaltexter, decimaltexter, exponentialtexter, defaulttexter
 
 

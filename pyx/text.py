@@ -559,7 +559,7 @@ class _readpipe(threading.Thread):
         self.quitevent.set()
 
 
-class textbox_pt(box.rect_pt, canvas._canvas):
+class textbox(box.rect, canvas._canvas):
     """basically a box.rect, but it contains a text created by the texrunner
     - texrunner._text and texrunner.text return such an object
     - _textbox instances can be inserted into a canvas
@@ -571,10 +571,13 @@ class textbox_pt(box.rect_pt, canvas._canvas):
         - finishdvi is a method to be called to get the dvicanvas
           (e.g. the finishdvi calls the setdvicanvas method)
         - attrs are fillstyles"""
-        self.texttrafo = trafo.translate_pt(x, y)
-        box.rect_pt.__init__(self, x - left, y - depth,
-                                 left + right, depth + height,
-                                 abscenter = (left, depth))
+        self.left = left
+        self.right = right
+        self.width = left + right
+        self.height = height
+        self.depth = depth
+        self.texttrafo = trafo.scale(unit.scale["x"]).translated(x, y)
+        box.rect.__init__(self, x - left, y - depth, left + right, depth + height, abscenter = (left, depth))
         canvas._canvas.__init__(self)
         self.finishdvi = finishdvi
         self.dvicanvas = None
@@ -584,7 +587,7 @@ class textbox_pt(box.rect_pt, canvas._canvas):
     def transform(self, *trafos):
         if self.insertdvicanvas:
             raise RuntimeError("can't apply transformation after dvicanvas was inserted")
-        box.rect_pt.transform(self, *trafos)
+        box.rect.transform(self, *trafos)
         for trafo in trafos:
             self.texttrafo = trafo * self.texttrafo
 
@@ -612,13 +615,6 @@ class textbox_pt(box.rect_pt, canvas._canvas):
     def outputPS(self, file):
         self.ensuredvicanvas()
         canvas._canvas.outputPS(self, file)
-
-
-class textbox(textbox_pt):
-
-    def __init__(self, x, y, left, right, height, depth, texrunner, attrs):
-        textbox_pt.__init__(self, unit.topt(x), unit.topt(y), unit.topt(left), unit.topt(right),
-                          unit.topt(height), unit.topt(depth), texrunner, attrs)
 
 
 def _cleantmp(texrunner):
@@ -1086,7 +1082,7 @@ class texrunner:
 
     PyXBoxPattern = re.compile(r"PyXBox:page=(?P<page>\d+),lt=(?P<lt>-?\d*((\d\.?)|(\.?\d))\d*)pt,rt=(?P<rt>-?\d*((\d\.?)|(\.?\d))\d*)pt,ht=(?P<ht>-?\d*((\d\.?)|(\.?\d))\d*)pt,dp=(?P<dp>-?\d*((\d\.?)|(\.?\d))\d*)pt:")
 
-    def text_pt(self, x, y, expr, textattrs=[], texmessages=[]):
+    def text(self, x, y, expr, textattrs=[], texmessages=[]):
         """create text by passing expr to TeX/LaTeX
         - returns a textbox containing the result from running expr thru TeX/LaTeX
         - the box center is set to x, y
@@ -1123,8 +1119,8 @@ class texrunner:
         match = self.PyXBoxPattern.search(self.texmessage)
         if not match or int(match.group("page")) != self.page:
             raise TexResultError("box extents not found", self)
-        left, right, height, depth = map(lambda x: float(x) * 72.0 / 72.27, match.group("lt", "rt", "ht", "dp"))
-        box = textbox_pt(x, y, left, right, height, depth, self.finishdvi, fillstyles)
+        left, right, height, depth = [unit.x_pt(float(xxx)*72/72.27) for xxx in match.group("lt", "rt", "ht", "dp")]
+        box = textbox(x, y, left, right, height, depth, self.finishdvi, fillstyles)
         for t in trafos:
             box.reltransform(t)
         if self.texipc:
@@ -1133,8 +1129,8 @@ class texrunner:
             self.needdvitextboxes.append(box)
         return box
 
-    def text(self, x, y, expr, *args, **kwargs):
-        return self.text_pt(unit.topt(x), unit.topt(y), expr, *args, **kwargs)
+    def text_pt(self, x, y, expr, *args, **kwargs):
+        return self.text(unit.t_pt(x), unit.t_pt(y), expr, *args, **kwargs)
 
     PyXVariableBoxPattern = re.compile(r"PyXVariableBox:page=(?P<page>\d+),par=(?P<par>\d+),prevgraf=(?P<prevgraf>\d+):")
 
