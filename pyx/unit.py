@@ -20,8 +20,9 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-from types import *
+import types
 import re
+import helper
 
 unit_ps = 1.0
 
@@ -56,12 +57,10 @@ def set(uscale=None, vscale=None, wscale=None, default_unit=None):
  
 
 def convert_to(l, dest_unit="m"):
-
-    if type(l) is TupleType:
+    if type(l) is types.TupleType:
         return tuple(map(lambda x, dest_unit=dest_unit:
                          convert_to(x, dest_unit), l))
-
-    if type(l) in (IntType, LongType, FloatType):
+    if type(l) in (types.IntType, types.LongType, types.FloatType):
         return l*_m[_default_unit]*scale['u']/_m[dest_unit]
     elif not isinstance(l,length): 
         l=length(l)       # convert to length instance if necessary
@@ -114,7 +113,7 @@ class length:
 
         if isinstance(l, length):
             self.length = l.length
-        elif type(l) is StringType:
+        elif helper.isstring(l):
             unit_match = re.match(unit_pattern, l)
             if unit_match is None:
                 assert 0, "expecting number or string of the form 'number [u|v|w] unit'"
@@ -124,7 +123,7 @@ class length:
                 self.unit_name = unit_match.group(9) or dunit or _default_unit
 
                 self.length[self.unit_type] = self.prefactor*_m[self.unit_name]
-        elif type(l) in (IntType, LongType, FloatType):
+        elif helper.isnumber(l):
             self.length[default_type] = l*_m[dunit or _default_unit]
         else:
             raise ( NotImplementedError,
