@@ -424,7 +424,7 @@ class FontMapping:
     tokenpattern = re.compile(r'"(.*?)("\s+|"$|$)|(.*?)(\s+|$)')
 
     def __init__(self, s):
-        """ construct font mapping from line s of dvips mapping file """
+        """ construct font mapping from line s of font mapping file """
         self.texname = self.basepsname = self.fontfile = None
 
         # standard encoding
@@ -443,7 +443,7 @@ class FontMapping:
                     tokens.append(match.groups()[2])
                 s = s[match.end():]
             else:
-                raise RuntimeError("wrong syntax in font catalog file 'psfonts.map'")
+                raise RuntimeError("wrong syntax")
 
         for token in tokens:
             if token.startswith("<"):
@@ -457,7 +457,7 @@ class FontMapping:
                 elif token.endswith(".enc"):
                     self.encodingfile = token[1:]
                 else:
-                    raise RuntimeError("wrong syntax in font catalog file 'psfonts.map'")
+                    raise RuntimeError("wrong syntax")
             elif token.startswith('"'):
                 pscode = token[1:-1].split()
                 # parse standard postscript code fragments
@@ -465,7 +465,7 @@ class FontMapping:
                     try:
                         arg, cmd = pscode[:2]
                     except:
-                        raise RuntimeError("Unsupported Postscript fragment '%s' in psfonts.map" % pscode)
+                        raise RuntimeError("Unsupported Postscript fragment '%s'" % pscode)
                     pscode = pscode[2:]
                     if cmd == "ReEncodeFont":
                         self.reencodefont = arg
@@ -474,7 +474,7 @@ class FontMapping:
                     elif cmd == "SlantFont":
                         self.slantfont = arg
                     else:
-                        raise RuntimeError("Unsupported Postscript fragment '%s %s' in psfonts.map" % (arg, cmd))
+                        raise RuntimeError("Unsupported Postscript fragment '%s %s'" % (arg, cmd))
             else:
                 if self.texname is None:
                     self.texname = token
@@ -495,22 +495,25 @@ def readfontmap(filenames):
     for filename in filenames:
         mappath = pykpathsea.find_file(filename, pykpathsea.kpse_dvips_config_format)
         if not mappath:
-            raise RuntimeError("cannot find dvips font catalog '%s', aborting" % filename)
+            raise RuntimeError("cannot find font mapping file '%s'" % filename)
         mapfile = open(mappath, "r")
+        lineno = 0
         for line in mapfile.readlines():
+            lineno += 1
             line = line.rstrip()
             if not (line=="" or line[0] in (" ", "%", "*", ";" , "#")):
-                fontmapping = FontMapping(line)
-                fontmap[fontmapping.texname] = fontmapping
-
+                try:
+                    fontmapping = FontMapping(line)
+                except RuntimeError, e:
+                    sys.stderr.write("*** PyX Warning: Ignoring line %i in mapping file '%s': %s\n" % (lineno, filename, e))
+                else:
+                    fontmap[fontmapping.texname] = fontmapping
         mapfile.close()
     return fontmap
 
 
-fontmap = readfontmap(config.get("text", "fontmaps", "psfonts.map").split())
-
 class Font:
-    def __init__(self, name, c, q, d, tfmconv, debug=0):
+    def __init__(self, name, c, q, d, tfmconv, fontmap, debug=0):
         self.name = name
         self.tfmpath = pykpathsea.find_file("%s.tfm" % self.name, pykpathsea.kpse_tfm_format)
         if not self.tfmpath:
@@ -684,7 +687,7 @@ class _restoretrafo(base.PSOp):
 
 class DVIFile:
 
-    def __init__(self, filename, debug=0, ipcmode=0):
+    def __init__(self, filename, fontmap, debug=0, ipcmode=0):
         """ initializes the instance
 
         Usually, the readfile method should be called once
@@ -695,6 +698,7 @@ class DVIFile:
         """
 
         self.filename = filename
+        self.fontmap = fontmap
         self.file = None
         self.debug = debug
         self.ipcmode = ipcmode
@@ -785,7 +789,7 @@ class DVIFile:
         #        Note that q is actually s in large parts of the documentation.
         # d:     design size
 
-        self.fonts[num] =  Font(fontname, c, q, d, self.tfmconv, self.debug > 1)
+        self.fonts[num] =  Font(fontname, c, q, d, self.tfmconv, self.fontmap, self.debug > 1)
 
         if self.debug:
             print "%d: fntdef%d %i: %s" % (self.filepos, cmdnr, num, fontname)
@@ -1886,9 +1890,10 @@ class texrunner:
                        docclass="article",
                        docopt=None,
                        usefiles=None,
-                       waitfortex=None,
-                       showwaitfortex=None,
-                       texipc=None,
+                       fontmaps=config.get("text", "fontmaps", "psfonts.map"),
+                       waitfortex=config.getint("text", "waitfortex", 60),
+                       showwaitfortex=config.getint("text", "showwaitfortex", 5),
+                       texipc=config.getboolean("text", "texipc", 0),
                        texdebug=None,
                        dvidebug=0,
                        errordebug=1,
@@ -1908,18 +1913,10 @@ class texrunner:
         self.docclass = docclass
         self.docopt = docopt
         self.usefiles = helper.ensurelist(usefiles)
-        if waitfortex is not None:
-            self.waitfortex = waitfortex
-        else:
-            self.waitfortex = config.getint("text", "waitfortex", 60)
-        if showwaitfortex is not None:
-            self.showwaitfortex = showwaitfortex
-        else:
-            self.showwaitfortex = config.getint("text", "showwaitfortex", 5)
-        if texipc is not None:
-            self.texipc = texipc
-        else:
-            self.texipc = config.getboolean("text", "texipc", 0)
+        self.fontmap = readfontmap(fontmaps.split())
+        self.waitfortex = waitfortex
+        self.showwaitfortex = showwaitfortex
+        self.texipc = texipc
         if texdebug is not None:
             if texdebug[-4:] == ".tex":
                 self.texdebug = open(texdebug, "w")
@@ -2175,7 +2172,7 @@ class texrunner:
         else:
             dvifilename = "%s.dvi" % self.texfilename
         if not self.texipc:
-            dvifile = DVIFile(dvifilename, debug=self.dvidebug)
+            dvifile = DVIFile(dvifilename, self.fontmap, debug=self.dvidebug)
             self.dvifiles.append(dvifile)
         self.dvifiles[-1].readfile()
         self.dvinumber += 1
@@ -2212,6 +2209,7 @@ class texrunner:
                   docclass=None,
                   docopt=None,
                   usefiles=None,
+                  fontmaps=None,
                   waitfortex=None,
                   showwaitfortex=None,
                   texipc=None,
@@ -2243,8 +2241,10 @@ class texrunner:
             self.docclass = docclass
         if docopt is not None:
             self.docopt = docopt
-        if self.usefiles is not None:
+        if usefiles is not None:
             self.usefiles = helper.ensurelist(usefiles)
+        if fontmaps is not None:
+            self.fontmap = readfontmap(fontmaps.split())
         if waitfortex is not None:
             self.waitfortex = waitfortex
         if showwaitfortex is not None:
@@ -2337,7 +2337,7 @@ class texrunner:
             if self.texipc:
                 if self.dvicopy:
                     raise RuntimeError("texipc and dvicopy can't be mixed up")
-                self.dvifiles.append(DVIFile("%s.dvi" % self.texfilename, debug=self.dvidebug, ipcmode=1))
+                self.dvifiles.append(DVIFile("%s.dvi" % self.texfilename, self.fontmap, debug=self.dvidebug, ipcmode=1))
         helper.checkattr(args, allowmulti=(_texsetting, texmessage, trafo._trafo, base.PathStyle))
                                            #XXX: should we distiguish between StrokeStyle and FillStyle?
         texsettings = helper.getattrs(args, _texsetting, default=[])
