@@ -22,7 +22,7 @@
 
 
 import math
-from math import sin, cos, atan2, tan, hypot, acos, sqrt
+from math import pi, sin, cos, atan2, tan, hypot, acos, sqrt
 import path, trafo, unit, helper
 try:
     from math import radians, degrees
