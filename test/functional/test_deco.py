@@ -22,15 +22,15 @@ def drawpathwbbox(c, p):
 
 #####  tests  ################################################################
 
-def testwriggle(c):
+def testcycloid(c):
     p = path.line(0, 0, 3, 0)
     c.stroke(p, [color.rgb.red])
-    c.stroke(p, [color.rgb.green, deco.wriggle()])
+    c.stroke(p, [color.rgb.green, deco.cycloid()])
 
     p = path.curve(5, 0, 8, 0, 6, 4, 9, 4)
     c.stroke(p, [color.rgb.red])
-    c.stroke(p, [color.rgb.green, deco.wriggle(), deco.earrow.LARge([deco.stroked.clear])])
-    c.stroke(p, [color.rgb.blue, deco.wriggle(), deco.wriggle(loops=250, radius=0.1)])
+    c.stroke(p, [color.rgb.green, deco.cycloid(), deco.earrow.LARge([deco.stroked.clear])])
+    c.stroke(p, [color.rgb.blue, deco.cycloid(), deco.cycloid(loops=250, radius=0.1)])
 
 
 def testsmoothed(c):
@@ -47,7 +47,7 @@ def testsmoothed(c):
     c.stroke(p, [color.rgb.green, deco.smoothed(radius=1.2, softness=1, strict=0)])
 
 c=canvas.canvas()
-dotest(c, 0, 0, "testwriggle")
+dotest(c, 0, 0, "testcycloid")
 dotest(c, 15, 0, "testsmoothed")
 c.writeEPSfile("test_deco", paperformat="a4", rotated=0, fittosize=1)
 c.writePDFfile("test_deco")
