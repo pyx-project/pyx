@@ -510,10 +510,10 @@ class momrate:
                 (max - opt) * log((max - opt) / (max - val))) / (max - min)
         return rate
 
-    def getrate(self, part, stretch):
+    def getrate(self, ticks, stretch):
         rate = 0
         weight = 0
-        (tickcounts, labelcounts, ) = self.getcounts(part)
+        (tickcounts, labelcounts, ) = self.getcounts(ticks)
         try:
             for (tickcount, rateparam, ) in zip(tickcounts, self.tickrateparams, ):
                 rate += self.evalrate(tickcount, stretch, rateparam) * rateparam.weight
@@ -532,16 +532,16 @@ class momrate:
 #    if max > 1e10:
 #        break
 #    print max/min,
-#    for part in autologpart(extendtoticklevel = None).getparts(min, max):
+#    for ticks in autologpart(extendtoticklevel = None).getparts(min, max):
 #        rate = momrate(momrate.logdefaulttickrateparams,
-#                       momrate.logdefaultlabelrateparams).getrate(part, 1)
+#                       momrate.logdefaultlabelrateparams).getrate(ticks, 1)
 #        print rate,
 #    print
 
 
 ################################################################################
 # box alignment, connections, distances ...
-# (we may create a box drawing package and move all this stuff there)
+# (we may create a box drawing module and move all this stuff there)
 ################################################################################
 
 class rectbox(path.path):
@@ -635,7 +635,6 @@ class rectbox(path.path):
 
 class axispainter:
 
-    # TODO: see design/global.tex
     def __init__(self, innerticklength="0.2 cm",
                        outerticklength="0 cm",
                        tickstyles=(),
@@ -644,13 +643,13 @@ class axispainter:
                        gridstyles=canvas.linestyle.dotted,
                        labeldist="0.3 cm",
                        labelstyles=((), (tex.fontsize.footnotesize,))):
-        self.innerticklength = unit.topt(unit.length(innerticklength, default_type="v"))
-        self.outerticklength = unit.topt(unit.length(outerticklength, default_type="v"))
+        self.innerticklength_str = innerticklength
+        self.outerticklength_str = outerticklength
         self.tickstyles = tickstyles
         self.subticklengthfactor = subticklengthfactor
         self.drawgrid = drawgrid
         self.gridstyles = gridstyles
-        self.labeldist = unit.topt(unit.length(labeldist, default_type="v"))
+        self.labeldist_str = labeldist
         self.labelstyles = labelstyles
 
     def gcd(self, m, n):
@@ -704,8 +703,12 @@ class axispainter:
             return list(styles[number])
 
     def paint(self, graph, axis):
+        innerticklength = unit.topt(unit.length(self.innerticklength_str, default_type="v"))
+        outerticklength = unit.topt(unit.length(self.outerticklength_str, default_type="v"))
+        labeldist = unit.topt(unit.length(self.labeldist_str, default_type="v"))
+
         haslabel = 0
-        for tick in axis.part:
+        for tick in axis.ticks:
             tick.virtual = axis.convert(float(tick))
             tick.x, tick.y = axis.tickpoint(axis, tick.virtual)
             tick.dx, tick.dy = axis.tickdirection(axis, tick.virtual)
@@ -719,11 +722,11 @@ class axispainter:
                 labelstyles = [tex.style.math] + self.selectstyle(labellevel, self.labelstyles)
                 zeroht.append(unit.topt(graph.tex.textht("0", *labelstyles)))
 
-            for tick in axis.part:
+            for tick in axis.ticks:
                 if tick.labellevel is not None:
                     if not hasattr(tick, "text"):
-                        #tick.text = self.decimalfrac(tick.enum, tick.denom)
-                        tick.text = self.rationalfrac(tick.enum, tick.denom)
+                        tick.text = self.decimalfrac(tick.enum, tick.denom)
+                        #tick.text = self.rationalfrac(tick.enum, tick.denom)
                     tick.labelstyles = [tex.style.math] + self.selectstyle(tick.labellevel, self.labelstyles)
                     tick.ht = unit.topt(graph.tex.textht(tick.text, *tick.labelstyles))
                     tick.wd = unit.topt(graph.tex.textwd(tick.text, *tick.labelstyles))
@@ -731,8 +734,8 @@ class axispainter:
                     if tick.wd == 0: tick.wd = unit.topt("0.5 t cm")
                     if tick.ht == 0: tick.ht = unit.topt("0.25 t cm")
 
-            for tick in axis.part[1:]:
-                if tick.dx != axis.part[0].dx or tick.dy != axis.part[0].dy:
+            for tick in axis.ticks[1:]:
+                if tick.dx != axis.ticks[0].dx or tick.dy != axis.ticks[0].dy:
                     equaldirection = 0
                     break
             else:
@@ -740,34 +743,59 @@ class axispainter:
 
             if equaldirection:
                 maxht, maxdp = 0, 0
-                for tick in axis.part:
+                for tick in axis.ticks:
                     if tick.labellevel is not None:
                         if maxht < tick.ht: maxht = tick.ht
                         if maxdp < tick.dp: maxdp = tick.dp
-                for tick in axis.part:
+                for tick in axis.ticks:
                     if tick.labellevel is not None:
                         tick.ht, tick.dp = maxht, maxdp
 
-            for tick in axis.part:
+            for tick in axis.ticks:
                 if tick.labellevel is not None:
                     tick.b = rectbox(0, -tick.dp, tick.wd, tick.ht, tick.wd/2, zeroht[tick.labellevel]/2)
-                    tick.tx, tick.ty = tick.b.translate(self.labeldist * tick.dx, self.labeldist * tick.dy)
+                    tick.tx, tick.ty = tick.b.translate(labeldist * tick.dx, labeldist * tick.dy)
 
         # we could now measure distances between labels rectboxes -> TODO: rating
 
-        for tick in axis.part:
+        for tick in axis.ticks:
             if tick.ticklevel is not None:
                 if self.drawgrid > tick.ticklevel:
                     gridpath = axis.gridpath(axis, tick.virtual)
                     graph.draw(gridpath, *self.selectstyle(tick.ticklevel, self.gridstyles))
                 factor = math.pow(self.subticklengthfactor, tick.ticklevel)
-                x1 = tick.x - tick.dx * self.innerticklength * factor
-                y1 = tick.y - tick.dy * self.innerticklength * factor
-                x2 = tick.x + tick.dx * self.outerticklength * factor
-                y2 = tick.y + tick.dy * self.outerticklength * factor
+                x1 = tick.x - tick.dx * innerticklength * factor
+                y1 = tick.y - tick.dy * innerticklength * factor
+                x2 = tick.x + tick.dx * outerticklength * factor
+                y2 = tick.y + tick.dy * outerticklength * factor
                 graph.draw(path._line(x1, y1, x2, y2), *self.selectstyle(tick.ticklevel, self.tickstyles))
             if tick.labellevel is not None:
                 graph.tex._text(tick.x + tick.tx, tick.y + tick.ty, tick.text, *tick.labelstyles)
+
+class linkaxispainter(axispainter):
+
+    def __init__(self, skipticklevel = None, skiplabellevel = 0, **args):
+        self.skipticklevel = skipticklevel
+        self.skiplabellevel = skiplabellevel
+        axispainter.__init__(self, **args)
+
+    def paint(self, graph, axis):
+        axis.ticks = []
+        for _tick in axis.linkedaxis.ticks:
+            ticklevel = _tick.ticklevel
+            labellevel = _tick.labellevel
+            if self.skipticklevel is not None and ticklevel >= self.skipticklevel:
+                ticklevel = None
+            if self.skiplabellevel is not None and labellevel >= self.skiplabellevel:
+                labellevel = None
+            if ticklevel is not None or labellevel is not None:
+                axis.ticks.append(tick(_tick.enum, _tick.denom, ticklevel, labellevel))
+        axis.convert = axis.linkedaxis.convert
+
+        # XXX: don't forget to calculate new text positioning as soon as it is moved
+        #      outside of the paint method (when rating is moved into the axispainter)
+
+        axispainter.paint(self, graph, axis)
 
 
 ################################################################################
@@ -776,7 +804,8 @@ class axispainter:
 
 class _axis:
 
-    def __init__(self, min=None, max=None, reverse=0, title=None, titleattr=None, painter = axispainter()):
+    def __init__(self, min=None, max=None, reverse=0,
+                       title=None, titleattr=None, painter = axispainter()):
         self.fixmin = min is not None
         self.fixmax = max is not None
         self.min = min
@@ -821,6 +850,13 @@ class logaxis(_axis, _logmap):
         self.part = part
         self.rate = rate
 
+class linkaxis(_axis):
+
+    def __init__(self, linkedaxis, **args):
+        self.linkedaxis = linkedaxis
+        if not args.has_key("painter"):
+            args["painter"] = linkaxispainter()
+        _axis.__init__(self, **args)
 
 
 ################################################################################
@@ -857,10 +893,14 @@ class graphxy(canvas.canvas):
         assert height > 0
         self.width = unit.topt(width)
         self.height = unit.topt(height)
-        if "x" not in axes.keys():
+        if not axes.has_key("x"):
             axes["x"] = linaxis()
-        if "y" not in axes.keys():
+        if not axes.has_key("x2"):
+            axes["x2"] = linkaxis(axes["x"])
+        if not axes.has_key("y"):
             axes["y"] = linaxis()
+        if not axes.has_key("y2"):
+            axes["y2"] = linkaxis(axes["y"])
         self.axes = axes
         self._drawstate = self.drawlayout
 
@@ -901,11 +941,20 @@ class graphxy(canvas.canvas):
 
         # set axes ranges
         for key, axis in self.axes.items():
-            axis.setrange(min=ranges[key][0], max=ranges[key][1])
+            if ranges.has_key(key):
+                axis.setrange(min=ranges[key][0], max=ranges[key][1])
+            else:
+                # TODO: appropriate linkaxis handling
+                pass
 
         # TODO: move rating into the painter
         # move parting into the painter too???
         for key, axis in self.axes.items():
+            # TODO: appropriate linkaxis handling
+            try:
+                axis.part
+            except AttributeError:
+                break
             axis.parts = axis.part.getparts(axis.min, axis.max) # TODO: make use of stretch
             if len(axis.parts) > 1:
                 axis.partnum = 0
@@ -922,9 +971,9 @@ class graphxy(canvas.canvas):
                 axis.usenum = 0
 
             # TODO: Additional ratings (spacing of text etc.)
-            axis.part = axis.parts[axis.partnum]
-            axis.setrange(min=float(axis.part[0]),
-                          max=float(axis.part[-1]))
+            axis.ticks = axis.parts[axis.partnum]
+            axis.setrange(min=float(axis.ticks[0]),
+                          max=float(axis.ticks[-1]))
 
         self.xmap = _linmap().setbasepts(((0, self.xpos), (1, self.xpos + self.width)))
         self.ymap = _linmap().setbasepts(((0, self.ypos), (1, self.ypos + self.height)))
