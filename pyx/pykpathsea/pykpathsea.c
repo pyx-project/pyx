@@ -18,6 +18,7 @@
 
 #include <Python.h>
 #include <kpathsea/tex-file.h>
+#include <kpathsea/progname.h>
 
 static PyObject *py_kpse_find_file(PyObject *self, PyObject *args)
 {
@@ -26,10 +27,10 @@ static PyObject *py_kpse_find_file(PyObject *self, PyObject *args)
   PyObject *returnvalue;
 
   if (PyArg_ParseTuple(args, "s", &filename)) {
-    completefilename = kpse_find_file(filename, kpse_type1_format, 1)
+    completefilename = kpse_find_file(filename, kpse_type1_format, 1);
 
-    returnvalue = PyBuildValue("s", completefilename);
-    // XXX: free(completefilename);
+    returnvalue = Py_BuildValue("s", completefilename);
+    /* XXX: free(completefilename); */
     return returnvalue;
   }
 
@@ -44,7 +45,7 @@ static PyMethodDef pykpathsea_methods[] = {
   {NULL, NULL}
 };
 
-void initpykpathsea(void)
+void init_pykpathsea(void)
 {
   (void) Py_InitModule("_pykpathsea", pykpathsea_methods);
   kpse_set_program_name("dvips", "dvips");
