@@ -29,23 +29,21 @@ import pykpathsea, t1strip
 class PSregistry:
 
     def __init__(self):
-        self.definitions = {}
-        self.fontfiles = {}
-        self.fontencodings = {}
-        self.fontreencodings = {}
+        self.resources = []
+        self.types = {}
 
-    def addresource(self, dict, resource):
-        # dict is one of self.definitions, self.fontfiles, self.fontencodings, self.fontreencodings
-        if dict.has_key(resource.id):
-            dict[resource.id].merge(resource)
+    def add(self, resource):
+        resources = self.types.setdefault(resource.type, {})
+        if resources.has_key(resource.id):
+            resources[resource.id].merge(resource)
         else:
-            dict[resource.id] = resource
+            self.resources.append(resource)
+            resources[resource.id] = resource
 
     def outputPS(self, file):
         """ write all PostScript code of the prolog resources """
-        for dict in [self.definitions, self.fontfiles, self.fontencodings, self.fontreencodings]:
-            for resource in dict.values():
-                resource.outputPS(file)
+        for resource in self.resources:
+            resource.outputPS(file)
 
 #
 # Abstract base class
@@ -55,8 +53,9 @@ class PSresource:
 
     """ a PostScript resource """
 
-    def __init__(self, id):
-        # every PSresource has to have a unique id
+    def __init__(self, type, id):
+        # every PSresource has to have a type and a unique id
+        self.type = type
         self.id = id
 
     def merge(self, other):
@@ -78,6 +77,7 @@ class PSdefinition(PSresource):
 
     def __init__(self, id, body):
         # every PSresource has to have a unique id
+        self.type = "definition"
         self.id = id
         self.body = body
 
@@ -109,6 +109,7 @@ class PSfontfile(PSresource):
 
         # XXX rewrite
 
+        self.type = "fontfile"
         self.id = self.fontname = fontname
         self.filename = filename
         self.encfilename = encfilename
@@ -158,6 +159,7 @@ class PSfontencoding(PSresource):
 
         """
 
+        self.type = "fontencoding"
         self.id = self.name = name
         self.filename = filename
 
@@ -190,6 +192,7 @@ class PSfontreencoding(PSresource):
 
         """
 
+        self.type = "fontreencoding"
         self.id = self.fontname = fontname
         self.basefontname = basefontname
         self.encname = encname

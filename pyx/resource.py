@@ -74,11 +74,11 @@ class font(_resource):
 
     def PSregister(self, registry):
         if self.fontfile:
-            pswriter.PSfontfile(self.basepsname, self.fontfile, self.encodingfile, self.usedchars).register(registry)
+            registry.add(pswriter.PSfontfile(self.basepsname, self.fontfile, self.encodingfile, self.usedchars))
         if self.encoding:
-            pswriter._ReEncodeFont.register(registry)
-            pswriter.PSfontencoding(self.encoding, self.encodingfile).register(registry)
-            pswriter.PSfontreencoding(self.fontname, self.basepsname, self.encoding).register(registry)
+            registry.add(pswriter._ReEncodeFont)
+            registry.add(pswriter.PSfontencoding(self.encoding, self.encodingfile))
+            registry.add(pswriter.PSfontreencoding(self.fontname, self.basepsname, self.encoding))
 
     def PDFregister(self, registry):
         pdfwriter.PDFfont(self.fontname, self.basepsname, self.font).register(registry)
