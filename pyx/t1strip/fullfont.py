@@ -37,14 +37,16 @@ def fullfont(file, filename):
         file.write(blockid)
         file.write(infile.read().replace("\r\n", "\n").replace("\r", "\n"))
     else:
+        res = []
         while 1:
+            res.append(file.tell())
             if len(blockid) != 2:
                 raise RuntimeError("EOF reached while reading blockid")
             if blockid == _PFB_DONE:
                 if infile.read() != "":
                     raise RuntimeError("tailing characters in pfb file")
                 else:
-                    return
+                    return res
             if blockid != _PFB_ASCII and blockid != _PFB_BIN:
                 raise RuntimeError("invalid blockid")
             length = 0

@@ -32,6 +32,11 @@ with their attributes.
 import sys, cStringIO, math, time
 import attr, base,  bbox, deco, unit, prolog, style, trafo, version
 
+# temporary for pdf fonts:
+import cStringIO
+from t1strip import fullfont
+import pykpathsea
+
 try:
     enumerate([])
 except NameError:
@@ -527,6 +532,7 @@ class canvas(_canvas):
             if isinstance(pritem, prolog.fontreencoding):
                 fontnr += 1
                 file.write("/Font << /%s %d 0 R>>\n" % (pritem.fontname, fontnr+7))
+                fontnr += 3 # further objects due to a font
         
         file.write(">>\n"
                    ">>\n"
@@ -564,11 +570,65 @@ class canvas(_canvas):
                            "/Type /Font\n"
                            "/Subtype /Type1\n"
                            "/Name /%s\n"
-                           "/BaseFont /Helvetica\n"
-                           "/Encoding /MacRomanEncoding\n"
+                           "/BaseFont /%s\n"
+                           "/FirstChar 0\n"
+                           "/LastChar 255\n"
+                           "/Widths %d 0 R\n"
+                           "/FontDescriptor %d 0 R\n"
+                           "/Encoding /MacRomanEncoding\n" # FIXME
                            ">>\n"
-                           "endobj\n" % (fontnr+7, pritem.fontname))
-        
+                           "endobj\n" % (fontnr+7, pritem.fontname, pritem.basefontname, fontnr+8, fontnr+9))
+                fontnr += 1
+                reflist.append(file.tell())
+                file.write("%d 0 obj\n"
+                           "[ %s ]\n"
+                           "endobj\n" % (fontnr+7, " ".join(["255" for i in range(256)])))
+                fontnr += 1
+                reflist.append(file.tell())
+                file.write("%d 0 obj\n"
+                           "<<\n"
+                           "/Type /FontDescriptor\n"
+                           "/FontName /%s\n"
+                           "/Flags 0\n" # FIXME
+                           "/FontBBox [0 -5 20 10]\n" # FIXME
+                           "/ItalicAngle 0\n" # FIXME
+                           "/Ascent 20\n" # FIXME
+                           "/Descent -5\n" # FIXME
+                           "/CapHeight 15\n" # FIXME
+                           "/StemV 1\n" # FIXME
+                           "/FontFile %d 0 R\n" # FIXME
+                           # "/CharSet \n" # fill in when stripping
+                           ">>\n"
+                           "endobj\n" % (fontnr+7, pritem.fontname, fontnr+8))
+
+                fontnr += 1
+                reflist.append(file.tell())
+
+                # we need the lengths before the stream (we do not want to
+                # create another set of references)
+                # hence we use a StringIO here
+                fontfile = cStringIO.StringIO()
+                fullfilename = pykpathsea.find_file(pritem.basefontname.lower(), # FIXME, FIXME, FIXME !!!
+                                                    pykpathsea.kpse_type1_format)
+                lengths = fullfont.fullfont(fontfile, fullfilename)
+                if len(lengths) != 4:
+                    raise RuntimeError("bad number of blocks in pdf file")
+
+                file.write("%d 0 obj\n"
+                           "<<\n"
+                           "/Length %d\n"
+                           "/Length1 %d\n"
+                           "/Length2 %d\n"
+                           "/Length3 %d\n"
+                           ">>\n"
+                           "stream\n" % (fontnr+7, lengths[3]-lengths[0],
+                                                   lengths[1]-lengths[0],
+                                                   lengths[2]-lengths[1],
+                                                   lengths[3]-lengths[2]))
+                file.write(fontfile.getvalue())
+                file.write("endstream\n"
+                           "endobj\n")
+
         xrefpos = file.tell()
         file.write("xref\n"
                    "0 %d\n" % (len(reflist)+1))
