@@ -9,19 +9,24 @@ instance and provide a filename as the parameter, e.g.
 \verb|datafile("testdata")|. The parsing of the file, namely the
 columns of the table, is done by matching regular expressions. They
 can be modified, as they are additional named arguments of the
-constructor, namely:
+constructor. Furthermore there is the possibility to skip some of
+the data points by some other keyword arguments as listed in the
+following table:
 
 \medskip
-\begin{tabularx}{\linewidth}{ll>{\raggedright\arraybackslash}X}
-argument name&default&description\\
+\begin{tabularx}{\linewidth}{l>{\raggedright\arraybackslash}X}
+argument name&description\\
 \hline
-\texttt{commentpattern}&\texttt{re.compile(r"(\#+|!+|\%+)\textbackslash s*")}&start a comment line\\
-\texttt{stringpattern}&\texttt{re.compile(r"\textbackslash"(.*?)\textbackslash"(\textbackslash s+|\$)}&a string column\\
-\texttt{columnpattern}&\texttt{re.compile(r"(.*?)(\textbackslash s+|\$)}&any other column\\
+\texttt{commentpattern}&start a comment line; default: \texttt{re.compile(r"(\#+|!+|\%+)\textbackslash s*")}\\
+\texttt{stringpattern}&a string column; default: \texttt{re.compile(r"\textbackslash"(.*?)\textbackslash"(\textbackslash s+|\$)}\\
+\texttt{columnpattern}&any other column; default: \texttt{re.compile(r"(.*?)(\textbackslash s+|\$)}\\
+\texttt{skiphead}&skip first data lines; default: \texttt{0}\\
+\texttt{skiptail}&skip last data lines; default: \texttt{0}\\
+\texttt{every}&only take every \texttt{every} data line into account; default: \texttt{1}
 \end{tabularx}
 \medskip
 
-The processing of the input file is done be reading the file line by
+The processing of the input file is done by reading the file line by
 line and first strip leading and tailing whitespaces of the line. Then
 a check is performed, whether the line matches the comment pattern or
 not. If it does match, this rest of the line is analysed like a table
@@ -39,14 +44,14 @@ Otherwise \verb|datafile| will try to convert the columns
 automatically into floats except for the title line. When the
 conversions fails, it just keeps the string.
 
-The string pattern allows for columns to contain whitespaces. It
-matches a string whenever it starts with a quote (\verb|"|) and then
-tries to find the end of that very string by another quote immediately
-followed by a whitespace or the end of the line. Hence a quote
-within a string is just ignored and no kind of escaping is needed. The
-only disadvantage is, that you cannot describe a string which
-contains a quote and a whitespace consecutively. However, you can
-always replace the string pattern and replace the quote character.
+The default string pattern allows for columns to contain whitespaces.
+It matches a string whenever it starts with a quote (\verb|"|) and
+then tries to find the end of that very string by another quote
+immediately followed by a whitespace or the end of the line. Hence a
+quote within a string is just ignored and no kind of escaping is
+needed. The only disadvantage is, that you cannot describe a string
+which contains a quote and a whitespace consecutively. However, you
+can always replace this string pattern to fit your special needs.
 
 Finally the number of columns is fixed to the maximal number contained
 in the file and lines with less entries get filled with \verb|None|.
@@ -80,100 +85,36 @@ new column. If no equal sign is found, the title will be set to
 an mathematical expression. A list of functions, predefined variables
 and operators can be found in appendix~\ref{mathtree}. The list of
 available functions and predefined variables can be extended by a
-dictionary passed as the argument \verb|extern| to the constructor.
+dictionary passed as the keyword argument \verb|context| to the
+\verb|addcolumn| method.
 
 The expression might contain variable names. The interpretation of
 this names is done in the following way:
 \begin{itemize}
 \item The names can be a column title, but this is only allowed for
 column titles which are valid variable names (e.g. they should start
-with a letter and contain only letters, digits and the underscore).
-\item A temporary name might be used, which is given by additional
-named parameters of the \verb|addcolumn| method. The named parameters
-are stronger compared to column titles of the previous point in the
-determination of the appropriate column. The name of a named parameter
-will be the variable name in the expression. The value of a named
-parameter should be a valid parameter of the \verb|getcolumnno|
-method.
+with a letter or an underscore and contain only letters, digits and
+the underscore).
 \item A variable name can start with the dollar symbol (\verb|$|) and
 the following integer number will directly refer to a column number.
 \end{itemize}
 The data referenced by variables in the expression need to be
 floats, otherwise the result for that data line will be \verb|None|.
-Examples are \verb|addcolumn("av=(min+max)/2")|,
-\verb|addcolumn("av=(a+b+$3)/2", a=1, b="max")|.
 
-% \section{Dirty tricks for mathematics on columns}
-% \label{datafile:cumulate}
-% 
-% I want to present a solution for cumulating data in a new column.
-% As told in the title of this section, it is considered to be a dirty
-% trick, because it relies on side effects in the calculation of the new
-% column, namely it sums up the result in a hidden variable. While
-% that is wanted, it is nothing I would ever consider to do officially
-% (don't expect the following lines to become part of \PyX{} in the
-% future). On the other hand, nothing could be told about using this
-% tick and I don't expect that this feature will break in future
-% versions. Somehow, it is needed and the possibility to implement this
-% trick has to stay.
-% 
-% What we want to do is to add another function within the allowed
-% expression syntax for doing mathematics on columns. We supply a class
-% which we can hook it into the mathematical expression parser later on:
-% 
-% \begin{quote}
-% \begin{verbatim}
-% from pyx import mathtree
-% 
-% class Cumulate(mathtree.MathTreeFunc1):
-% 
-%     def __init__(self, *args):
-%         mathtree.MathTreeFunc1.__init__(self, "cumulate", *args)
-%         self.sum = 0
-% 
-%     def Calc(self, VarDict):
-%         self.sum += self.ArgV[0].Calc(VarDict)
-%         return self.sum
-% 
-% MyFuncs = mathtree.DefaultMathTreeFuncs + (Cumulate,)
-% \end{verbatim}
-% \end{quote}
-% 
-% Please note, that you explicitly have to import \verb|mathtree|,
-% because its not usually needed in \PyX{} applications and thus it is
-% not imported by \verb|from pyx import *|.
-% 
-% To finally use \verb|cumulate|, you have to supply a new parser to the
-% datafile, where the new generated list of available functions is
-% placed in:
-% 
-% \begin{quote}
-% \begin{verbatim}
-% df = datafile.datafile("mydata",
-%          parser=mathtree.parser(
-%                     MathTreeFuncs=MyFuncs,
-%                     MathTreeVals=datafile.MathTreeValsWithCol))
-% df.addcolumn("sum=cumulate(costs)")
-% \end{verbatim}
-% \end{quote}
-% 
-% The explicit setting of \verb|MathTreeVals| is needed in order to keep
-% column variables working. Variables starting with the dollar symbol
-% (\verb|$|) are not allowed within the original mathtree.
-
-\section{reading data from a sectioned config file}
+\section{Reading data from a sectioned config file}
 
 The class \verb|sectionfile| provides a reader for files in the
-ConfigFile format (see \verb|ConfigFile| from the pyx standard
-library).
+ConfigFile format (see the description of the module \verb|ConfigFile|
+from the pyx standard library).
 
 \section{Own datafile readers}
 
 The development of other datafile readers should be based on the
-helper class \verb|data| by inheritance. When doing so, the methods
+class \verb|data| by inheritance. When doing so, the methods
 \verb|getcolumnno|, \verb|getcolumn|, and \verb|addcolumn| are
 immediately available and the cooperation with other parts of \PyX{}
 is assured. All what has to be done, is a call to the inherited
-constructor supplying the title list and a list of data points. A data
-point itself is a list of floats or strings. The number of entries per
-data point and the number of titles provided must fit together.
+constructor supplying at least a list of data points as the
+\verb|data| keyword argument. A data point itself is a list of floats
+and/or strings. Additionally a title list can be given in the
+\verb|titles| argument.

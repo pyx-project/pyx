@@ -3,7 +3,7 @@
 default: examples.dvi
 
 clean:
-	-rm examples.tex examples.log examples.aux examples.dvi examples.ps examples.pdf *.eps */*.eps *.py.html */*.py.html *.eps.png */*.eps.png
+	-rm examples.tex examples.log examples.aux examples.dvi examples.ps examples.pdf *.eps */*.eps *.py.html */*.py.html *.png */*.png
 
 all:
 	make clean
