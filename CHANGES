@@ -2,15 +2,24 @@ PyX
 
 0.4 (????/??/??):
   TODOs:
+  - examples:
+    - to be included in source distribution
+  - manual:
+    - include sources in source distribution
   - graph module:
-      - common bboxes for different graphs
-      - automatic datafile key title
-      - exceptions in drawsymbol & friends...
-      - separate texter out of the axispainter
-      - 3d graphs
+    - common bboxes for different graphs
+    - separate texter out of the axispainter
+    - automatic datafile key title
+    - exceptions in drawsymbol & friends...
+    - 3d graphs, circular graphs
   - canvas module:
-      - default patterns
-      - stroke and fill should support trafos
+    - default patterns
+    - stroke and fill should support trafos
+  - text module:
+    - further improve lfs handling
+    - missed to rename vbox to parbox in PyX 0.3 -> do it!
+  - tex module:
+    - copy lfs handling from text module (share the same source???)
 
 0.3 (2003/03/31)
   - examples
