@@ -148,6 +148,7 @@ class length:
         # convert to length if necessary
         if not isinstance(other, length):
             other = length(other)
+        result = length()
         result.t = self.t - other.t
         result.u = self.u - other.u
         result.v = self.v - other.v
