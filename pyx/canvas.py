@@ -152,11 +152,11 @@ class _canvas(base.PSCmd):
             elif isinstance(arg, clip):
                 if self.clipbbox is None:
                     self.clipbbox = arg.clipbbox().transformed(self.trafo)
-                else: 
+                else:
                     self.clippbox *= arg.clipbbox().transformed(self.trafo)
                 self.PSOps.append(arg)
             else:
-                self.set(*arg)
+                self.set([arg])
 
     def bbox(self):
         """returns bounding box of canvas"""
