@@ -411,6 +411,16 @@ mathmode = _mathmode()
 nomathmode = attr.clearclass(_mathmode)
 
 
+class _phantom(attr.attr, textattr, _localattr):
+    "math mode"
+
+    def apply(self, expr):
+        return r"\phantom{%s}" % expr
+
+phantom = _phantom()
+nophantom = attr.clearclass(_phantom)
+
+
 defaultsizelist = ["normalsize", "large", "Large", "LARGE", "huge", "Huge", None, "tiny", "scriptsize", "footnotesize", "small"]
 
 class size(attr.sortbeforeattr, textattr, _localattr):
