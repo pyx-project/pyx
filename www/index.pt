@@ -33,8 +33,7 @@
     <h2>Status and Availability</h2>
 
     <p>
-      PyX is in steady development. News are available on the
-      <a href="news.html">news page</a>.
+      PyX is in steady development.
       Planned features are listed on the <a href="roadmap.html">roadmap</a>.
       The current release,
       PyX <span tal:content="options/version" tal:omit-tag="">version</span>,
@@ -42,6 +41,14 @@
       <a href="http://sourceforge.net/project/showfiles.php?group_id=45430">download section</a>
       of the SourceForge
       <a href="http://sourceforge.net/projects/pyx">project page</a>.
+    </p>
+
+    <h2>News</h2>
+
+    <dl tal:content="structure options/news"></dl>
+
+    <p>
+      For a full record of all news consult the <a href="news.html">news page</a>.
     </p>
 
     <h2>Authors and License</h2>
