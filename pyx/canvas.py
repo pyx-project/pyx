@@ -165,10 +165,11 @@ class _canvas(base.PSCmd):
         return result
 
     def write(self, file):
-        _gsave().write(file)
-        for cmd in self.PSOps:
-            cmd.write(file)
-        _grestore().write(file)
+        if self.PSOps:
+            _gsave().write(file)
+            for cmd in self.PSOps:
+                cmd.write(file)
+            _grestore().write(file)
 
     def insert(self, PSOp, *args):
         """insert PSOp in the canvas.
