@@ -1177,7 +1177,7 @@ class texrunner:
                 if self.dvifile is None:
                     self.dvifile = dvifile.dvifile("%s.dvi" % self.texfilename, self.fontmap, debug=self.dvidebug)
             else:
-                RuntimeError("textboxes currently needs texipc")
+                raise RuntimeError("textboxes currently needs texipc")
             lastparnos = parnos
             parnos = []
             lastparshapes = parshapes
