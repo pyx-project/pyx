@@ -428,6 +428,7 @@ _READ_DONE      = 6
 #
 # PostScript font selection and output primitives
 #
+
 class _selectfont(base.PSOp):
     def __init__(self, name, size):
         self.name = name
@@ -447,6 +448,17 @@ class _show(base.PSOp):
 
     def write(self, file):
         file.write("%f %f moveto (%s) show\n" % (self.x, self.y, self.s))
+
+# save and restore colors
+
+class _savecolor(base.PSOp):
+    def write(self, file):
+        file.write("currentcolor currentcolorspace\n")
+
+
+class _restorecolor(base.PSOp):
+    def write(self, file):
+        file.write("setcolorspace setcolor\n")
 
 
 class DVIFile:
@@ -577,13 +589,10 @@ class DVIFile:
 
             # XXX when do we have to flush?
             self.flushout()
-
-            self.colorstack.append(c)
+            self.actpage.insert(_savecolor())
             self.actpage.insert(c)
         if command=="color_end":
-            self.colorstack.pop()
-            # XXX merge color changes
-            self.actpage.insert(self.colorstack[-1])
+            self.actpage.insert(_restorecolor())
             # XXX when do we have to flush?
             self.flushout()
 
@@ -641,8 +650,6 @@ class DVIFile:
         self.pos = [0, 0, 0, 0, 0, 0]
         self.pages.append(canvas.canvas())
         self.actpage = self.pages[-1]
-        # we always keep black on the color stack
-        self.colorstack = [color.gray.black]
         file = self.file
         while 1:
             self.filepos = file.tell()
