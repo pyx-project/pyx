@@ -94,9 +94,9 @@ in the following table.
   \texttt{\_\_init\_\_(*pathels)} & construct new \texttt{path}
   consisting of \texttt{pathels}\\
   \texttt{append(pathel)} & appends \texttt{pathel} to end of \texttt{path}\\
+  \texttt{arclength(epsilon=1e-5)} & returns the total arc length of all \texttt{path} segments in
+  PostScript points with accuracy \texttt{epsilon}.\\
   \texttt{bbox()} & returns the bounding box of the \texttt{path}\\
-  \texttt{length(epsilon=1e-5)} & returns the total arc length of the \texttt{path} in
-  PostScript points with accuracy \texttt{epsilon}. \\
   \texttt{reversed()} & returns the normalized reversed \texttt{path}.\\
   \texttt{transformed(trafo)} & returns the normalized and accordingly
   to the linear transformation \texttt{trafo} transformed path. Here,
@@ -111,13 +111,6 @@ Some notes on the above:
   \textit{i.e.}, the bounding box enclosing the control points of
   the B\'ezier curve is returned.
 \end{itemize}
-
-own calculations. The second one, \verb|bpath()| converts the path to
-a path consiting of B\'ezier curves and returns an instance of the class
-\verb|bpath.bpath| (cf.\ Sect.~\ref{bpath}), Use this, if you want to
-apply the more sophisticated methods, that are only available for
-B\'ezier paths, like transformations, intersection, dissections, etc.
-
 
 \section{Class normpath}
 
@@ -143,6 +136,11 @@ More details are given in the next table:
   \hline 
   \texttt{append(pathel)} & appends \texttt{pathel} to end of
   \texttt{normpath} and ``renormalizes'' it.\\
+  \texttt{at(t)} & returns the coordinates of the point of
+  \texttt{normpath} corresponding to the parameter value \texttt{t}.\\
+  \texttt{intersect(onormpath, \newline\phantom{intersect(}epsilon=1e-5)} &
+  returns a list of parameter values (as tuples \texttt{(tself, tother)}) corresponding to the 
+  intersection points of \texttt{normpath} and \texttt{onormpath}.\\
   \texttt{split(t)} & returns a tuple consisting of two
   \texttt{normpath}s corresponding to the \texttt{normpath} split at
   the parameter value \texttt{t}.
