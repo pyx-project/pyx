@@ -67,8 +67,8 @@ class epsfile(base.PSCmd):
                  width = None, height = None, scale=None,
                  align = "bl",
                  clip = 1,
-                 translatebb = 1,
-                 showbb = 0):
+                 showbbox = 0,
+                 translatebbox = 1):
         """inserts epsfile
 
         inserts EPS file named filename at position (x,y).  If clip is
@@ -133,7 +133,7 @@ class epsfile(base.PSCmd):
         
         self.clip        = clip
         self.translatebb = translatebb
-        self.showbb      = showbb
+        self.showbbox    = showbbox
 
         self.trafo = trafo._translation(self._x, self._y)
 
@@ -158,7 +158,7 @@ class epsfile(base.PSCmd):
 
         bbrect = self.mybbox.rect().transformed(self.trafo)
         
-        if self.showbb:
+        if self.showbbox:
             canvas._newpath().write(file)
             bbrect.write(file)
             canvas._stroke().write(file)
