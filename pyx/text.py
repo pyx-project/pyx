@@ -448,6 +448,7 @@ class DVIFile:
             self.flushout()
 
     def putrule(self, height, width, inch=1):
+        self.flushout()
         if height > 0 and width > 0:
             x1 = self.pos[_POS_H] * self.conv * 1e-5
             y1 = -self.pos[_POS_V] * self.conv * 1e-5
