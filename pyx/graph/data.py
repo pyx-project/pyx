@@ -23,7 +23,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-import re
+import re, ConfigParser
 from pyx import mathtree
 from pyx.graph import style
 
@@ -397,6 +397,50 @@ class file(data):
                 del points[-skiptail:]
             filecache[cachekey] = list(points, title=filename, maxcolumns=maxcolumns, addlinenumbers=0, **columns)
         data.__init__(self, filecache[cachekey], **kwargs)
+
+
+conffilecache = {}
+
+class conffile(data):
+
+    def __init__(self, filename, **kwargs):
+        """read data from a config-like file
+        - filename is a string
+        - each row is defined by a section in the config-like file (see
+          config module description)
+        - the columns for each row are defined by lines in the section file;
+          the option entries identify and name the columns
+        - further keyword arguments are passed to the constructor of data,
+          keyword arguments data and titles excluded"""
+        cachekey = filename
+        if not filecache.has_key(cachekey):
+            config = ConfigParser.ConfigParser()
+            config.optionxform = str
+            config.readfp(open(filename, "r"))
+            sections = config.sections()
+            sections.sort()
+            points = [None]*len(sections)
+            maxcolumns = 1
+            columns = {}
+            for i in xrange(len(sections)):
+                point = [sections[i]] + [None]*(maxcolumns-1)
+                for option in config.options(sections[i]):
+                    value = config.get(sections[i], option)
+                    try:
+                        value = float(value)
+                    except:
+                        pass
+                    try:
+                        index = columns[option]
+                    except KeyError:
+                        columns[option] = maxcolumns
+                        point.append(value)
+                        maxcolumns += 1
+                    else:
+                        point[index] = value
+                points[i] = point
+            conffilecache[cachekey] = list(points, title=filename, maxcolumns=maxcolumns, addlinenumbers=0, **columns)
+        data.__init__(self, conffilecache[cachekey], **kwargs)
 
 
 
