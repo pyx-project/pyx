@@ -8,7 +8,7 @@ from pyx import mathtree
 text.set(mode="latex")
 
 def test_multiaxes_data(c, x, y):
-    g = c.insert(graph.graphxy(x, y, height=5, # key=graph.key.key(pos="tl"),
+    g = c.insert(graph.graphxy(x, y, height=5, key=graph.key.key(pos="tl"),
                                x=graph.axis.log(title="$W$", manualticks=[graph.axis.tick.tick(math.sqrt(8)*100, label="?"), graph.axis.tick.tick(math.sqrt(8), label="$\sqrt{8}$")]),
                                y=graph.axis.log(title=r"$PPP_1$",
                                                painter=graph.axis.painter.regular(titledirection=None)),

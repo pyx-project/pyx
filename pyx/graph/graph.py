@@ -349,26 +349,16 @@ class graphxy(canvas.canvas):
         if self.key is not None:
             c = self.key.paint(self.plotdata)
             bbox = c.bbox()
-            if self.key.right:
-                if self.key.hinside:
-                    x = self.xpos_pt + self.width_pt - bbox.urx_pt - self.key.hdist_pt
-                else:
-                    x = self.xpos_pt + self.width_pt - bbox.llx_pt + self.key.hdist_pt
-            else:
-                if self.key.hinside:
-                    x = self.xpos_pt - bbox.llx_pt + self.key.hdist_pt
-                else:
-                    x = self.xpos_pt - bbox.urx_pt - self.key.hdist_pt
-            if self.key.top:
-                if self.key.vinside:
-                    y = self.ypos_pt + self.height_pt - bbox.ury_pt - self.key.vdist_pt
-                else:
-                    y = self.ypos_pt + self.height_pt - bbox.lly_pt + self.key.vdist_pt
-            else:
-                if self.key.vinside:
-                    y = self.ypos_pt - bbox.lly_pt + self.key.vdist_pt
-                else:
-                    y = self.ypos_pt - bbox.ury_pt - self.key.vdist_pt
+            def parentchildalign(pmin, pmax, cmin, cmax, pos, dist, inside):
+                ppos = pmin+0.5*(cmax-cmin)+dist+pos*(pmax-pmin-cmax+cmin-2*dist)
+                cpos = 0.5*(cmin+cmax)+(1-inside)*(1-2*pos)*(cmax-cmin+2*dist)
+                return ppos-cpos
+            x = parentchildalign(self.xpos_pt, self.xpos_pt+self.width_pt,
+                                 bbox.llx_pt, bbox.urx_pt,
+                                 self.key.hpos, unit.topt(self.key.hdist), self.key.hinside)
+            y = parentchildalign(self.ypos_pt, self.ypos_pt+self.height_pt,
+                                 bbox.lly_pt, bbox.ury_pt,
+                                 self.key.vpos, unit.topt(self.key.vdist), self.key.vinside)
             self.insert(c, [trafo.translate_pt(x, y)])
 
     def finish(self):

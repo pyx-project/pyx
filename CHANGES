@@ -14,6 +14,7 @@ TODO:
   - graph.graph module
     - common bboxes for different graphs
     - 3d graphs, circular graphs
+    - axis painter labelattrs=None + automatic axis partitioning leads to no valid partitioning
   - graph.style and graph.data modules
     - exceptions in drawsymbol & friends...
     - caution: another reorganization round is in progress
@@ -107,11 +108,12 @@ TODO:
       and the global pyxrc
   - graph modules:
     - enum -> num renaming
+    - allow for horizontally and vertically centered graph key alignment (TODO: documentation)
   - path module:
     - pathel -> pathitem, etc. renaming 
   - deformer module: new
     - moved cycloid and smoothed from deco into deformer
-  
+
 
 0.6.3 (2004/04/27):
    - graph module:

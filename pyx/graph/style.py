@@ -325,8 +325,8 @@ class symbol(_style):
 
     def key_pt(self, c, x_pt, y_pt, width_pt, height_pt, styledata):
         self.drawsymbol_pt(c, x_pt+0.5*width_pt, y_pt+0.5*height_pt, styledata)
-        if styledata.lineattrs is not None:
-            c.stroke(path.line_pt(x_pt, y_pt+0.5*height_pt, x_pt+width_pt, y_pt+0.5*height_pt), styledata.lineattrs)
+#        if styledata.lineattrs is not None:
+#            c.stroke(path.line_pt(x_pt, y_pt+0.5*height_pt, x_pt+width_pt, y_pt+0.5*height_pt), styledata.lineattrs)
 
 
 class line(_style):
