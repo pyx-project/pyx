@@ -63,9 +63,9 @@ class PSCmd(PSOp):
 
 class attr(PSOp):
 
-     """ attr is the base class of all attributes, i.e., colors, decorators,
-     styles, text attributes and trafos
-     """
+    """ attr is the base class of all attributes, i.e., colors, decorators,
+    styles, text attributes and trafos
+    """
 
     def merge(self, attrs):
         """merge self into list of attrs
@@ -92,7 +92,7 @@ class exclusiveattr(attr):
         return attrs
 
 
-class _clear(_attr):
+class _clear(attr):
 
     def merge(self, attrs):
         return []
@@ -100,7 +100,7 @@ class _clear(_attr):
 clear = _clear()
 
 
-class classclear(_attr):
+class classclear(attr):
 
     def __init__(self, clearclass):
         _attr.__init__(self)
