@@ -2,12 +2,14 @@ from pyx import *
 
 a, b = 2, 9 # integral area
 
-p = graph.axispainter(basepathattrs=[deco.earrow.normal()],
+p = graph.axispainter(basepathattrs=[deco.earrow.normal],
+                      zeropathattrs=None,
                       titlepos=0.98, titledirection=None)
 g = graph.graphxy(width=8, x2=None, y2=None,
                   x=graph.linaxis(title="$x$", min=0, max=10,
                                   manualticks=[graph.tick(a, label="$a$"),
                                                graph.tick(b, label="$b$")],
+                                  parter=None,
                                   painter=p),
                   y=graph.linaxis(title="$y$", parter=None, painter=p))
 style = g.plot(graph.function("y=(x-3)*(x-5)*(x-7)")).style
