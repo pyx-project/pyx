@@ -64,6 +64,13 @@ def ensuresequence(arg):
     if issequence(arg): return arg
     return (arg,)
 
+def ensurelist(arg):
+    """return list(arg) or [arg] depending on the result of isequence,
+       None is converted to []"""
+    if isstring(arg): return [arg]
+    if arg is None: return []
+    if issequence(arg): return list(arg)
+    return [arg]
 
 def getitemno(arg, n):
     if issequence(arg):
