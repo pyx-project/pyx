@@ -1673,19 +1673,20 @@ class graphxyz(graphxy):
 
     def vxtickdirection(self, axis, v):
         x1, y1 = self._vpos(v, axis.vypos, axis.vzpos)
-        x2, y2 = self._vpos(v, 0.5, 0.5)
+        x2, y2 = self._vpos(v, 0.5, 0)
         dx, dy = x1 - x2, y1 - y2
         norm = math.sqrt(dx*dx + dy*dy)
         return dx/norm, dy/norm
 
     def vytickdirection(self, axis, v):
         x1, y1 = self._vpos(axis.vxpos, v, axis.vzpos)
-        x2, y2 = self._vpos(0.5, v, 0.5)
+        x2, y2 = self._vpos(0.5, v, 0)
         dx, dy = x1 - x2, y1 - y2
         norm = math.sqrt(dx*dx + dy*dy)
         return dx/norm, dy/norm
 
     def vztickdirection(self, axis, v):
+        return -1, 0
         x1, y1 = self._vpos(axis.vxpos, axis.vypos, v)
         x2, y2 = self._vpos(0.5, 0.5, v)
         dx, dy = x1 - x2, y1 - y2
@@ -1856,7 +1857,7 @@ class graphxyz(graphxy):
 #                needyaxisdist[num2] = 1
 
     def __init__(self, tex, xpos=0, ypos=0, width=None, height=None, depth=None,
-                 phi=30, theta=30, distance=2.5,
+                 phi=30, theta=30, distance=1,
                  backgroundattrs=None, axesdist="0.8 cm", **axes):
         canvas.canvas.__init__(self)
         self.tex = tex
