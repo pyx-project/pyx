@@ -524,9 +524,9 @@ class canvas(_canvas):
                    "/Parent 3 0 R\n")
         abbox.outputPDF(file)
         file.write("/Contents 5 0 R\n"
-                   "/Resources <<\n"
-                   "/ProcSet 7 0 R\n")
-        fontstartref = 7
+                   "/Resources <<\n")
+                   #"/ProcSet 7 0 R\n") # disabled ProcSet (its optional)
+        fontstartref = 6
 
         fontnr = 0
         if len([pritem for pritem in mergedprolog if isinstance(pritem, prolog.fontreencoding)]):
@@ -560,10 +560,10 @@ class canvas(_canvas):
         file.write("6 0 obj\n"
                    "%s\n"
                    "endobj\n" % (streamendpos - streamstartpos))
-        reflist.append(file.tell())
-        file.write("7 0 obj\n"
-                   "[/PDF /Text]\n"
-                   "endobj\n")
+        #reflist.append(file.tell()) # disabled ProcSet (its optional)
+        #file.write("7 0 obj\n"
+        #           "[/PDF /Text]\n"
+        #           "endobj\n")
 
         fontnr = 0
         for pritem in mergedprolog:
@@ -582,7 +582,8 @@ class canvas(_canvas):
                            "/FontDescriptor %d 0 R\n"
                            "/Encoding /MacRomanEncoding\n" # FIXME
                            ">>\n"
-                           "endobj\n" % (fontnr+fontstartref, pritem.fontname, pritem.basefontname, fontnr+8, fontnr+9))
+                           "endobj\n" % (fontnr+fontstartref, pritem.fontname, pritem.basefontname,
+                                         fontnr+fontstartref+1, fontnr+fontstartref+2))
                 fontnr += 1
                 reflist.append(file.tell())
                 file.write("%d 0 obj\n"
@@ -611,21 +612,23 @@ class canvas(_canvas):
                            "/FontFile %d 0 R\n" # FIXME
                            # "/CharSet \n" # fill in when stripping
                            ">>\n"
-                           "endobj\n" % (fontnr+fontstartref, pritem.basefontname, fontnr+8))
+                           "endobj\n" % (fontnr+fontstartref, pritem.basefontname,
+                                         fontnr+fontstartref+1))
 
                 fontnr += 1
                 reflist.append(file.tell())
 
-                # we need the lengths before the stream (we do not want to
-                # create another set of references)
-                # hence we use a StringIO here
-                fontfile = cStringIO.StringIO()
-                fullfilename = pykpathsea.find_file(pritem.basefontname.lower(), # FIXME, FIXME, FIXME !!!
-                                                    pykpathsea.kpse_type1_format)
-                lengths = fullfont.fullfont(fontfile, fullfilename)
-                if len(lengths) != 4:
-                    raise RuntimeError("bad number of blocks in pdf file")
-
+                fontdata = open(pykpathsea.find_file(pritem.basefontname.lower(), # FIXME, FIXME, FIXME !!!
+                                                     pykpathsea.kpse_type1_format)).read()
+                if fontdata[0:2] != fullfont._PFB_ASCII:
+                    raise RuntimeError("PFB_ASCII mark expected")
+                length1 = fullfont.pfblength(fontdata[2:6])
+                if fontdata[6+length1:8+length1] != fullfont._PFB_BIN:
+                    raise RuntimeError("PFB_BIN mark expected")
+                length2 = fullfont.pfblength(fontdata[8+length1:12+length1])
+                if fontdata[12+length1+length2:14+length1+length2] != fullfont._PFB_ASCII:
+                    raise RuntimeError("PFB_ASCII mark expected")
+                length3 = fullfont.pfblength(fontdata[14+length1+length2:18+length1+length2])
                 file.write("%d 0 obj\n"
                            "<<\n"
                            "/Length %d\n"
@@ -633,11 +636,13 @@ class canvas(_canvas):
                            "/Length2 %d\n"
                            "/Length3 %d\n"
                            ">>\n"
-                           "stream\n" % (fontnr+fontstartref, lengths[3]-lengths[0],
-                                                   lengths[1]-lengths[0],
-                                                   lengths[2]-lengths[1],
-                                                   lengths[3]-lengths[2]))
-                file.write(fontfile.getvalue())
+                           "stream\n" % (fontnr+fontstartref, length1+length2+length3,
+                                                              length1,
+                                                              length2,
+                                                              length3))
+                file.write(fontdata[6:6+length1])
+                file.write(fontdata[12+length1:12+length1+length2])
+                file.write(fontdata[18+length1+length2:18+length1+length2+length3])
                 file.write("endstream\n"
                            "endobj\n")
 

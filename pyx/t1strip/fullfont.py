@@ -25,6 +25,14 @@ _PFB_BIN = "\200\2"
 _PFB_DONE = "\200\3"
 _PFA = "%!"
 
+def pfblength(string):
+    if len(string) != 4:
+        raise ValueError("invalid string length")
+    return (ord(string[0]) +
+            ord(string[1])*256 +
+            ord(string[2])*256*256 +
+            ord(string[3])*256*256*256)
+
 def fullfont(file, filename):
     """inserts full pfa or pfb fonts
     - file is a file instance where the pfa output is written to
@@ -37,21 +45,17 @@ def fullfont(file, filename):
         file.write(blockid)
         file.write(infile.read().replace("\r\n", "\n").replace("\r", "\n"))
     else:
-        res = []
         while 1:
-            res.append(file.tell())
             if len(blockid) != 2:
                 raise RuntimeError("EOF reached while reading blockid")
             if blockid == _PFB_DONE:
                 if infile.read() != "":
                     raise RuntimeError("tailing characters in pfb file")
                 else:
-                    return res
+                    return
             if blockid != _PFB_ASCII and blockid != _PFB_BIN:
                 raise RuntimeError("invalid blockid")
-            length = 0
-            for i in range(4):
-                length = length + ord(infile.read(1))*(256l**i)
+            length = pfblength(infile.read(4))
             block = infile.read(length)
             if blockid == _PFB_ASCII:
                 file.write(block.replace("\r\n", "\n").replace("\r", "\n"))
