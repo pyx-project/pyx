@@ -41,7 +41,7 @@ TODO:
   - style and color module:
     - support modification of existing styles via __call__
 
-0.5 (????/??/??):
+0.5 (2004/01/20):
   - setup.py and distribution:
     - allow customization of the extension modules built (via setup.cfg)
     - disable building pykpathsea module by default
