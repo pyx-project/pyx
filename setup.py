@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: ISO-8859-1 -*-
 
 """Python package for the generation of encapsulated PostScript figures
 
