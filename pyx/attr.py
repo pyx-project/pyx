@@ -32,8 +32,8 @@ except TypeError:
     def isinstance(instance, clsarg):
         # we explicitely check for clsarg being a sequence, because
         # a Leap Before Look pattern, i.e., just trying out
-        # _isinstance(instance, clsarg) within an try/except 
-        # block may mask a TypeError occuring when clsarg is
+        # _isinstance(instance, clsarg) within an try/except
+        # block, may mask a TypeError occuring when clsarg is
         # not a class
         import helper
         if not helper.issequence(clsarg):
