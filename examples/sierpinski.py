@@ -1,9 +1,6 @@
 # Sierpinski triangle
 # contributed by Gerhard Schmid
 
-# extend module search path - not needed when PyX is installed properly
-import sys; sys.path[:0] = [".."]
-
 from math import sqrt
 from pyx import *
 

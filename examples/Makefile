@@ -21,4 +21,4 @@ examples.dvi: examples.py $(epsfiles)
 	-rm examples.ps examples.pdf
 
 %.eps: %.py
-	cd $(dir $^) && python $(notdir $^)
+	export PYTHONPATH=$(PWD)/.. ; cd $(dir $^) ; python $(notdir $^)

@@ -1,9 +1,6 @@
 # fractal tree
 # contributed by Gerhard Schmid and André Wobst
 
-# extend module search path - not needed when PyX is installed properly
-import sys; sys.path[:0] = [".."]
-
 from pyx import *
 
 # base tree length
