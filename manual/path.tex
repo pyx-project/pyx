@@ -30,9 +30,9 @@ p = path.line(0, 0, 1, 1)
 \end{verbatim}
 
 While you can already do some geometrical operations with the
-just create path (see next section), we need another \PyX{} object
-in order to produce the output corresponding to the path, namely
-an instance of the \verb|canvas| class. By convetion, we use
+just created path (see next section), we need another \PyX{} object
+in order to be actually able to draw the path, namely
+an instance of the \verb|canvas| class. By convention, we use
 the name \verb|c| for this instance:
 \begin{verbatim}
 c = canvas.canvas()
@@ -175,16 +175,16 @@ XXX reverse, reversed, parametrisation, arclen parameters
 
 \section{Module path}
 
-The module path defines several classes which are documented
-in the present section.
+The \module{path} module defines several important classes which are
+documented in the present section.
+
+\subsection{Class \class{path} --- PostScript-like paths}
 
 \declaremodule{}{path}
 
 \begin{classdesc}{path}{*pathels}
-
 This class represents a PostScript like path consisting of the
 elements \var{pathels}.
-
 \end{classdesc}
 
 Instances of the class \class{path} provide the following
@@ -194,14 +194,13 @@ methods (in alphabetic order):
 Appends a \var|pathel| to the end of the path.
 \end{methoddesc}
 
-\begin{methoddesc}{arclen}{epsilon=1e-5}
-Returns the total arc length of the path with an accuracy of
-\var{epsilon} points.$^\dagger$
+\begin{methoddesc}{arclen}{}
+Returns the total arc length of the path.$^\dagger$
 \end{methoddesc}
 
-\begin{methoddesc}{arclentoparam}{lengths, epsilon=1e-5}
+\begin{methoddesc}{arclentoparam}{lengths}
   Returns the parameter values corresponding to the arc lengths
-  \var{lengths} with an accuracy of \var{epsilon} points.$^\dagger$
+  \var{lengths}.$^\dagger$
 \end{methoddesc}
 
 \begin{methoddesc}{at}{param=None, arclen=None}
@@ -225,7 +224,7 @@ Returns the total arc length of the path with an accuracy of
   Returns the coordinates (as 2-tuple) of the first point of the path.$^\dagger$
 \end{methoddesc}
 
-\begin{methoddesc}{curvradius(param=None, arclen=None}
+\begin{methoddesc}{curvradius}{param=None, arclen=None}
   Returns the curvature radius (or None if infinite) at parameter
   param or, alternatively, arc length \var{arclen}.  This is the
   inverse of the curvature at this parameter Please note that this
@@ -237,7 +236,7 @@ Returns the total arc length of the path with an accuracy of
   Returns the coordinates (as 2-tuple) of the end point of the path.$^\dagger$
 \end{methoddesc}
 
-\begin{methoddesc}{intersect}{opath, epsilon=1e-5}
+\begin{methoddesc}{intersect}{opath}
   Returns a tuple consisting of two lists of parameter values
   corresponding to the intersection points of the path with the other
   path \var{opath}, respectively.$^\dagger$
@@ -304,97 +303,146 @@ paths together with help of the \verb|<<| operator, for instance
   provided.
 \end{itemize}
 
-\subsection{Class pathel}
+\subsection{Path elements}
 
-The class \verb|pathel| is the superclass of all PostScript path
+The class \class{pathel} is the superclass of all PostScript path
 construction primitives. It is never used directly, but only by
 instantiating its subclasses, which correspond one by one to the
 PostScript primitives.
 
-\medskip
-\begin{tabularx}{\linewidth}{>{\hsize=.7\hsize}X>{\raggedright\arraybackslash\hsize=1.3\hsize}X}
-Subclass of \texttt{pathel} & function \\
-\hline
-\texttt{closepath()} & closes current subpath \\
-\texttt{moveto(x, y)} & sets current point to (\texttt{x},
-\texttt{y})\\
-\texttt{rmoveto(dx, dy)} & moves current point by (\texttt{dx},
-\texttt{dy})\\
-\texttt{lineto(x, y)} & moves current point to (\texttt{x}, \texttt{y})
-while drawing a straight line\\
-\texttt{rlineto(dx, dy)} & moves current point by by (\texttt{dx}, \texttt{dy})
-while drawing a straight line\\
-\texttt{arc(x, y, r, \newline\phantom{arc(}angle1, angle2)} & appends arc segment in
-counterclockwise direction with center (\texttt{x}, \texttt{y}) and
-radius~\texttt{r} from \texttt{angle1} to \texttt{angle2} (in degrees).\\
-\texttt{arcn(x, y, r, \newline\phantom{arcn(}angle1, angle2)} & appends arc segment in
-clockwise direction with center (\texttt{x}, \texttt{y}) and
-radius~\texttt{r} from \texttt{angle1} to \texttt{angle2} (in degrees). \\
-\texttt{arct(x1, y1, x2, y2, r)} & appends arc segment of radius \texttt{r}
-connecting between (\texttt{x1}, \texttt{y1}) and (\texttt{x2}, \texttt{y2}).\\
-\texttt{rcurveto(dx1, dy1, \newline\phantom{rcurveto(}dx2, dy2,\newline\phantom{rcurveto(}dx3, dy3)} & appends a B\'ezier curve with
-the following four control points: current point and the points defined 
-relative to the current point by (\texttt{dx1}, \texttt{dy1}), 
-(\texttt{dx2}, \texttt{dy2}), and (\texttt{dx3}, \texttt{dy3})
-\end{tabularx}
-\medskip
+The following operation move the current point and open a new
+sub path:
+
+\begin{classdesc}{moveto}{x, y}
+Path element which sets the current point to the absolute coordinates (\var{x},
+\var{y}). This operation opens a new subpath.
+\end{classdesc}
+
+\begin{classdesc}{rmoveto}{dx, dy}
+Path element which moves the current point by (\var{dx}, \var{dy}).
+This operation opens a new subpath.
+\end{classdesc}
+
+Drawing a straight line can be accomplished using:
+
+\begin{classdesc}{lineto}{x, y}
+Path element which appends a straight line from the current point to the
+point with absolute coordinates (\var{x}, \var{y}), which becomes
+the new current point.
+\end{classdesc}
+
+\begin{classdesc}{rlineto}{dx, dy}
+Path element which appends a straight line from the current point to the
+a point with relative coordinates (\var{dx}, \var{dy}), which becomes
+the new current point.
+\end{classdesc}
+
+For the construction of arc segment, the following three operations
+are available:
+
+\begin{classdesc}{arc}{x, y, r, angle1, angle2}
+Path element which appends an arc segment in counterclockwise direction
+with absolute coordinates (\var{x}, \var{y}) of the center and 
+radius \var{r} from \var{angle1} to \var{angle2} (in degrees).
+If before the operation, the current point is defined, a straight line
+is from the current point to the beginning of the arc segment is
+prepended. Otherwise, a subpath, which thus is the first one in the
+path, is opened. After the operation, the current point is at the end
+of the arc segment.
+\end{classdesc}
+
+\begin{classdesc}{arcn}{x, y, r, angle1, angle2}
+Path element which appends an arc segment in clockwise direction
+with absolute coordinates (\var{x}, \var{y}) of the center and 
+radius \var{r} from \var{angle1} to \var{angle2} (in degrees).
+If before the operation, the current point is defined, a straight line
+is from the current point to the beginning of the arc segment is
+prepended. Otherwise, a subpath, which thus is the first one in the
+path, is opened. After the operation, the current point is at the end
+of the arc segment.
+\end{classdesc}
+
+\begin{classdesc}{arct}{x1, y1, x2, y2, r}
+Path element which appends an arc segment of radius \var{r}
+connecting between (\var{x1}, \var{y1}) and (\var{x2}, \var{y2}).\\
+\end{classdesc}
+
+B\'ezier curves can be constructed using: \
+
+\begin{classdesc}{curveto}{x1, y1, x2, y2, x3, y3}
+Path element which appends a B\'ezier curve with
+the current point as first control point and the other control points
+(\var{x1}, \var{y1}), (\var{x2}, \var{y2}), and (\var{x3}, \var{y3}).
+\end{classdesc}
+
+\begin{classdesc}{rcurveto}{dx1, dy1, dx2, dy2, dx3, dy3}
+Path element which appends a B\'ezier curve with
+the current point as first control point and the other control points
+defined relative to the current point by the coordinates
+(\var{dx1}, \var{dy1}), (\var{dx2}, \var{dy2}), and (\var{dx3}, \var{dy3}).
+\end{classdesc}
+
+Finally, an open sub path can be closed using:
+
+\begin{classdesc}{closepath}{}
+Path element which closes the current subpath.
+\end{classdesc}
+
+XXX \class{multicurveto} and \class{multilineto}
 
 Some notes on the above:
 \begin{itemize}
-\item All coordinates are in \PyX\ lengths
-\item If the current point is defined before an \verb|arc| or
-  \verb|arcn| command, a straight line from current point to the
-  beginning of the arc is prepended.
+\item All coordinates can be given as number (in which case they are
+interpreted as user units with the currently set default type or in
+\PyX\ lengths.
 \item The bounding box (see below) of B\'ezier curves is actually 
   the box enclosing the control points, \textit{i.e.}\ not neccesarily the 
   smallest rectangle enclosing the B\'ezier curve.
 \end{itemize}
 
+\subsection{Class \class{normpath}}
 
-\subsection{Class normpath}
-
-The \texttt{normpath} class represents a specialized form of a
-\texttt{path} containing only the elements \verb|moveto|,
-\verb|lineto|, \verb|curveto| and \verb|closepath|. Such normalized
-paths are used during all of the more sophisticated path operations
-which are denoted by a $\dagger$ in the above table.
-
+The \class{normpath} class represents a specialized form of a
+\class{path} containing only the elements \class{moveto},
+\class{lineto}, \class{curveto} and \class{closepath}. Such normalized
+paths are used for all of the more sophisticated path operations
+which are denoted by a $\dagger$ in the description of the \class{path}
+class above.
 
 Any path can easily be converted to its normalized form by passing it
-as parameter to the \texttt{normpath} constructor,
+as parameter to the \class{normpath} constructor,
 \begin{verbatim}
 np = normpath(p)
 \end{verbatim}
 Additionally, you can specify the accuracy (in points) which is used
-in all \verb|normpath| calculations by means of the keyword argument
-\verb|epsilon|, which defaults to $10^{-5}$.  Note that the sum of a
-\verb|normpath| and a \verb|path| always yields a \verb|normpath|.
+in all \class{normpath} calculations by means of the keyword argument
+\var{epsilon}, which defaults to $10^{-5}$.  Note that the sum of a
+\class{normpath} and a \class{path} always yields a \class{normpath}.
 
-\subsection{Subclasses of path}
+XXX additional operations of normpaths
 
-For your convenience, some special PostScript paths are already defined, which
-are given in the following table.
+\subsection{Predefined paths}
 
-\medskip
-\begin{tabularx}{\linewidth}{l>{\raggedright\arraybackslash}X}
-Subclass of \texttt{path} & function \\
-\hline
-\texttt{line(x1, y1, x2, y2)} & a line from the point
-  (\texttt{x1}, \texttt{y1}) to the point (\texttt{x2}, \texttt{y2})\\
-\texttt{curve(x0, y0, x1, y1, x2, y2, x3, y3)} & a B\'ezier curve with 
-control points  (\texttt{x0}, \texttt{y0}), $\dots$, (\texttt{x3}, \texttt{y3}).\\
-\texttt{rect(x, y, w, h)} &  a rectangle with the
-  lower left point (\texttt{x}, \texttt{y}), width~\texttt{w}, and
-  height~\texttt{h}. \\
-\texttt{circle(x, y, r)} & a circle with 
-  center (\texttt{x}, \texttt{y}) and radius~\texttt{r}.
-\end{tabularx}
-\medskip
+For your convenience, some special PostScript paths are already defined.
+All of them are sub classes of the \class{path} class.
 
+\begin{classdesc}{line}{x1, y1, x2, y2, x3, y3}
+A straight line from the point (\var{x1}, \var{y1}) to the point (\var{x2}, \var{y2}).
+\end{classdesc}
 
-% \section{Examples}
+\begin{classdesc}{curve}{x1, y1, x2, y2, x3, y3, x4, y4}
+A B\'ezier curve with 
+control points  (\var{x0}, \var{y0}), $\dots$, (\var{x3}, \var{y3}).\
+\end{classdesc}
 
+\begin{classdesc}{rect}{x, y, w, h}
+A closed rectangle with lower left point (\var{x}, \var{y}), width \var{w}, and
+  height \var{h}.
+\end{classdesc}
 
+\begin{classdesc}{circle}{x, y, r}
+A closed circle with center (\var{x}, \var{y}) and radius \var{r}.
+\end{classdesc}
 
 %%% Local Variables:
 %%% mode: latex
