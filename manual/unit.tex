@@ -31,18 +31,20 @@ The constructor of the \verb|length| class accepts as first argument
 either a number or a string:
 \begin{itemize}
 \item \verb|length(number)| means a user length in units of \verb|unit.default_unit|.
-\item For \verb|length(string)| the \verb|string| has to consist of a
+\item For \verb|length(string)|, the \verb|string| has to consist of a
   maximum of three parts separated by one or more whitespaces:
 \begin{description}
-\item[quantifier:] integer/float value
+\item[quantifier:] integer/float value. Optional, defaults to \verb|1|.
 \item[type:] \verb|"t"| (true), \verb|"u"| (user), \verb|"v"| (visual), or \verb|"w"| (width).
   Optional, defaults to \verb|"u"|.
 \item[unit:] \verb|"m"|, \verb|"cm"|, \verb|"mm"|, \verb|"inch"|, or
   \verb|"pt"|. Optional, defaults to \verb|default_unit|
 \end{description}
 \end{itemize}
-Note that \verb|default_unit| is initially set to \verb|"cm"|,
-but can be changed at any time by the user. For instance, use
+The default for the first argument is chosen in such a way that
+\texttt{5*length()==length(5)}.  Note that \verb|default_unit| is
+initially set to \verb|"cm"|, but can be changed at any time by the
+user. For instance, use
 \begin{quote}
 \begin{verbatim}
 unit.set(default_unit="inch")
@@ -69,8 +71,8 @@ a numerical factor and converted to a string.
 
 A number of subclasses of \verb|length| are already predefined.  They
 only differ in their defaults for \verb|type| and \verb|unit|. Note
-that by default all are of length $1$ measured in the respective unit
-system, such that, for instance, \texttt{5*m(1)==m(5)}.
+that again the default value for the quantifier is \verb|1|, such that, for
+instance, \texttt{5*m(1)==m(5)}.
 
 \medskip
 \begin{center}

@@ -109,30 +109,26 @@ class length:
 
     """
 
-    def __init__(self, l=None, default_type="u", dunit=None, glength=None):
+    def __init__(self, l=1, default_type="u", dunit=None):
         self.length = { 't': 0 , 'u': 0, 'v': 0, 'v':0, 'w':0 }
 
-        if l:
-            if isinstance(l,length):
-               self.length = l.length
-            elif type(l) is StringType:
-                unit_match = re.match(unit_pattern, l)
-                if unit_match is None:
-                    assert 0, "expecting number or string of the form 'number [u|v|w] unit'"
-                else:
-                    self.prefactor = float(unit_match.group(1))
-                    self.unit_type = unit_match.group(7) or default_type
-                    self.unit_name = unit_match.group(9) or dunit or _default_unit
-
-                    self.length[self.unit_type] = self.prefactor*_m[self.unit_name]
-
-            elif type(l) in (IntType, LongType, FloatType):
-                self.length[default_type] = l*_m[dunit or _default_unit]
+        if isinstance(l, length):
+            self.length = l.length
+        elif type(l) is StringType:
+            unit_match = re.match(unit_pattern, l)
+            if unit_match is None:
+                assert 0, "expecting number or string of the form 'number [u|v|w] unit'"
             else:
-                raise ( NotImplementedError,
-                        "cannot convert given argument to length type" )
-        if glength:
-            self.length = glength
+                self.prefactor = float(unit_match.group(1))
+                self.unit_type = unit_match.group(7) or default_type
+                self.unit_name = unit_match.group(9) or dunit or _default_unit
+
+                self.length[self.unit_type] = self.prefactor*_m[self.unit_name]
+        elif type(l) in (IntType, LongType, FloatType):
+            self.length[default_type] = l*_m[dunit or _default_unit]
+        else:
+            raise ( NotImplementedError,
+                    "cannot convert given argument to length type" )
 
     def __mul__(self, factor):
         newlength = self.__class__()

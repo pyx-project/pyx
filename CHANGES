@@ -29,8 +29,8 @@ PyX
     - TODO: exceptions in drawsymbol & friends...
   - unit module:
     - new classes for visual and width lengths, aliases for user length (u_pt = pt)
-    - all subclasses of length now default to a length of 1 in the respective units
-      (instead of 0), such that, for instance, 5*unit.t_cm() == unit.t_cm(5)
+    - all length classes have now by default a quantifier 1 (instead of 0), such that, 
+      for instance, 5*unit.t_cm() == unit.t_cm(5)
     - default_unit now has to be set via unit.set. For instance: unit.set(default_unit="m").
   - bbox module:
     - new methods height and width
