@@ -36,8 +36,7 @@ def drawarrow(c, bp, alen=4, aangle=25, cfactor=0.8):
     arrow3b= bpath.bline(*((mx,my)+arrow1.pos(0)))
     arrow  = arrow1+arrow2.reverse()+arrow3a+arrow3b
     
-    c.draw(arrow, canvas.linejoin.round)
-    c.fill(arrow)
+    c.drawfilled(arrow, canvas.linejoin.round)
 
 def drawpathwarrowboth(c, p):
     bp=p.bpath()
