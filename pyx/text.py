@@ -108,6 +108,14 @@ class binfile(file):
     def readuint32(self):
         return struct.unpack(">L", self.read(4))[0]
 
+    def readint24(self):
+        # XXX: checkme
+        return struct.unpack(">l", "\0"+self.read(3))[0]
+
+    def readuint24(self):
+        # XXX: checkme
+        return struct.unpack(">L", "\0"+self.read(3))[0]
+
     def readint16(self):
         return struct.unpack(">h", self.read(2))[0]
     
@@ -160,8 +168,10 @@ class TFMFile:
         # read header
         #
 
-        self.checksum = self.file.readuint32()
-        self.designsize = fix_word(self.file.readint32())
+        self.checksum = self.file.readint32()
+        self.designsizeraw = self.file.readint32()
+        assert self.designsizeraw>0, "invald design size"
+        self.designsize = fix_word(self.designsizeraw)
         if self.lh>2:
             self.charcoding = self.file.readstring(40)
         else:
@@ -226,7 +236,8 @@ class TFMFile:
 
         self.width = [None for width_index in range(self.nw)]
         for width_index in range(self.nw):
-            self.width[width_index] = fix_word(self.file.readint32())
+            # self.width[width_index] = fix_word(self.file.readint32())
+            self.width[width_index] = self.file.readint32()
 
         #
         # read heights
@@ -234,7 +245,8 @@ class TFMFile:
             
         self.height = [None for height_index in range(self.nh)]
         for height_index in range(self.nh):
-            self.height[height_index] = fix_word(self.file.readint32())
+            # self.height[height_index] = fix_word(self.file.readint32())
+            self.height[height_index] = self.file.readint32()
 
         #
         # read depths
@@ -242,7 +254,8 @@ class TFMFile:
 
         self.depth = [None for depth_index in range(self.nd)]
         for depth_index in range(self.nd):
-            self.depth[depth_index] = fix_word(self.file.readint32())
+            # self.depth[depth_index] = fix_word(self.file.readint32())
+            self.depth[depth_index] = self.file.readint32()
 
         #
         # read italic
@@ -250,7 +263,8 @@ class TFMFile:
 
         self.italic = [None for italic_index in range(self.ni)]
         for italic_index in range(self.ni):
-            self.italic[italic_index] = fix_word(self.file.readint32())
+            # self.italic[italic_index] = fix_word(self.file.readint32())
+            self.italic[italic_index] = self.file.readint32()
         
         #
         # read lig_kern
@@ -268,7 +282,8 @@ class TFMFile:
 
         self.kern = [None for kern_index in range(self.nk)]
         for kern_index in range(self.nk):
-            self.kern[kern_index] = fix_word(self.file.readint32())
+            # self.kern[kern_index] = fix_word(self.file.readint32())
+            self.kern[kern_index] = self.file.readint32()
 
         #
         # read exten
@@ -292,46 +307,96 @@ class TFMFile:
 
 
 class Font:
-    def __init__(self, name):
+    def __init__(self, name, c, q, d, tfmconv):
         path = os.popen("kpsewhich %s.tfm" % name, "r").readline()[:-1]
         self.tfmfile = TFMFile(path)
+
+        if self.tfmfile.checksum!=c:
+            raise DVIError("check sums do not agree: %d vs. %d" %
+                           (self.checksum, c))
+        
+        self.tfmdesignsize = round(tfmconv*self.tfmfile.designsizeraw)
+
+        if abs(self.tfmdesignsize - d)>2:
+            raise DVIError("design sizes do not agree: %d vs. %d" %
+                           (self.tfmdesignsize, d))
+
+
+        if q<0 or q>134217728:
+            raise DVIError("font '%s' not loaded: bad scale" % fontname)
+        
+        if d<0 or d>134217728:
+            raise DVIError("font '%s' not loaded: bad design size" % fontname)
+
+        self.alpha = 16;
+        self.q = self.qorig = q
+        while self.q>=8388608:
+            self.q = self.q/2
+            self.alpha *= 2
+
+        self.beta = 256/self.alpha;
+        self.alpha = self.alpha*self.q;
+
+    def convert(self, width):
+        b0 = width >> 24
+        b1 = (width >> 16) & 0xf
+        b2 = (width >> 8 ) & 0xf
+        b3 = (width      ) & 0xf
+#        print width*self.qorig*16/ 16777216, (((((b3*self.q)/256)+(b2*self.q))/256)+(b1*self.q))/self.beta
+
+        if b0==0:
+            return (((((b3*self.q)/256)+(b2*self.q))/256)+(b1*self.q))/self.beta
+        elif b0==255:
+	    return (((((b3*self.q)/256)+(b2*self.q))/256)+(b1*self.q))/self.beta-self.alpha
+        else:
+            raise TFMError("error in font size")
 
     def __getattr__(self, attr):
         return self.tfmfile.__dict__[attr]
 
     def getwidth(self, charcode):
-        return self.tfmfile.width[self.char_info[charcode].width_index] * self.designsize
+        return self.convert(self.tfmfile.width[self.char_info[charcode].width_index])
 
     def getheight(self, charcode):
-        return self.tfmfile.height[self.char_info[charcode].height_index] * self.designsize
+        return self.convert(self.tfmfile.height[self.char_info[charcode].height_index])
 
     def getdepth(self, charcode):
-        return self.tfmfile.depth[self.char_info[charcode].depth_index] * self.designsize
+        return self.convert(self.tfmfile.depth[self.char_info[charcode].depth_index])
 
     def getitalic(self, charcode):
-        return self.tfmfile.italic[self.char_info[charcode].italic_index] * self.designsize
+        return self.convert(self.tfmfile.italic[self.char_info[charcode].italic_index])
 
 
 class DVIFile:
 
     def char(self, char, inch=1):
-        x = self.pos[_POS_H] * self.scale * 1e-5
-        y = self.pos[_POS_V] * self.scale * 1e-5
+        x = self.pos[_POS_H] * self.conv * 1e-5
+        y = self.pos[_POS_V] * self.conv * 1e-5
         ascii = (char > 32 and char < 128) and "(%s)" % chr(char) or "???"
         print "type 0x%08x %s at (%.3f cm, %.3f cm)" % (char, ascii, x, y)
         if inch:
-            # XXX what about scaling
-            self.pos[_POS_H] += float(self.fonts[self.activefont].getwidth(char))
+            self.pos[_POS_H] += self.conv*self.fonts[self.activefont].getwidth(char)
 
     def rule(self, height, width, inch=1):
         if height > 0 and width > 0:
-            x1 = self.pos[_POS_H] * self.scale * 1e-5
-            y1 = self.pos[_POS_V] * self.scale * 1e-5
-            x2 = (self.pos[_POS_H] + width) * self.scale * 1e-5
-            y2 = (self.pos[_POS_V] + height) * self.scale * 1e-5
+            x1 = self.pos[_POS_H] * self.conv * 1e-5
+            y1 = self.pos[_POS_V] * self.conv * 1e-5
+            x2 = (self.pos[_POS_H] + width) * self.conv * 1e-5
+            y2 = (self.pos[_POS_V] + height) * self.conv * 1e-5
             print "rule ((%.3f..%.3f cm), (%.3f..%.3f cm))" % (x1, x2, y1, y2)
         if inch:
             pass # TODO: increment h
+
+    def definefont(self, num, c, q, d, fontname):
+        # c: checksum
+        # q: scaling factor
+        #    Note that q is actually s in large parts of the documentation.
+        # d: design size
+        
+        self.fonts[num] =  Font(fontname, c, q, d, self.tfmconv)
+
+        # m = round((1000.0*self.conv*q)/(self.trueconv*d));
+        
 
     def __init__(self, name):
 
@@ -353,7 +418,14 @@ class DVIFile:
                     num = file.readuint32()
                     den = file.readuint32()
                     mag = file.readuint32()
-                    self.scale = num*mag/1000.0/den
+                    
+                    # self.trueconv = conv in DVIType docu
+                    # if resolution = 254000.0
+
+                    self.tfmconv = (25400000.0/num)*(den/473628672)/16.0;
+                    self.trueconv = 1.0*num/den
+                    self.conv = self.trueconv*(mag/1000.0)
+                    
                     comment = file.read(file.readuchar())
                     state = _READ_NOPAGE
                 else: raise DVIError
@@ -421,30 +493,39 @@ class DVIFile:
                elif cmd >= _DVI_SPECIAL1234 and cmd < _DVI_SPECIAL1234 + 4:
                    print "special %s" % file.read(file.readint(cmd - _DVI_SPECIAL1234 + 1))
                elif cmd >= _DVI_FNTDEF1234 and cmd < _DVI_FNTDEF1234 + 4:
-                   num = file.readint(cmd - _DVI_FNTDEF1234 + 1)
-                   file.readuint32()
-                   file.readuint32()
-                   file.readuint32()
-                   fontname = file.read(file.readuchar()+file.readuchar())
-                   self.fonts[num] = Font(fontname)
-                   print "font %i is %s" % (num, fontname)
+                   if cmd==_DVI_FNTDEF1234:
+                       num=file.readuchar()
+                   elif cmd==_DVI_FNTDEF1234+1:
+                       num=file.readuint16()
+                   elif cmd==_DVI_FNTDEF1234+2:
+                       num=file.readuint24()
+                   elif cmd==_DVI_FNTDEF1234+3:
+                       # Cool, here we have according to docu a signed int. Why?
+                       num=file.readint32()
 
+                   self.definefont(num,
+                                   file.readint32(),
+                                   file.readint32(),
+                                   file.readint32(),
+                                   file.read(file.readuchar()+file.readuchar()))
                else: raise DVIError
 
             else: raise DVIError # unexpected reader state
 
 if __name__=="__main__":
-    cmr10 = Font("cmr10")
-    print cmr10.charcoding
-    print cmr10.fontfamily
-    print cmr10.face
-    for charcode in range(cmr10.bc, cmr10.ec+1):
-        print "%d\th=%f\tw=%f\td=%f\ti=%f" % (
-            charcode,
-            cmr10.getwidth(charcode),
-            cmr10.getheight(charcode),
-            cmr10.getdepth(charcode),
-            cmr10.getitalic(charcode))
+#    cmr10 = Font("cmr10")
+#    print cmr10.charcoding
+#    print cmr10.fontfamily
+#    print cmr10.face
+#    for charcode in range(cmr10.bc, cmr10.ec+1):
+#       print "%d\th=%f\tw=%f\td=%f\ti=%f" % (
+#            charcode,
+#            cmr10.getwidth(charcode),
+#            cmr10.getheight(charcode),
+#            cmr10.getdepth(charcode),
+#            cmr10.getitalic(charcode))
             
-    DVIFile("test.dvi")
+    dvifile = DVIFile("test.dvi")
+    print [font for font in dvifile.fonts if font]
+    
     
