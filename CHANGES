@@ -5,8 +5,9 @@ PyX
   - manual:
     - include sources in source distribution
   - graph module:
-    - tick.text is renamed to tick.label (in progress), ticks and labels will become tickpos/tickdist and labelpos/labeldist in partitioning
-    - separate texter out of the axispainter (in progress)
+    - tick.text is renamed to tick.label
+    - ticks and labels are renamed to tickpos/tickdist and labelpos/labeldist in partitioning
+    - separate texter out of the axispainter (done up to the documentation)
     TODO:
     - do not include unneeded line segments when the axis range is set manually
     - allow for an iteration of a graph style, when it is used several times
@@ -19,6 +20,8 @@ PyX
       lines not symbolattrs
     - allow for graph.changesymbol.square(size=0.15) etc.
     - rect style (and errorbars?) should use clipping
+    documentation:
+      - modified axispainter labelattrs default
   - canvas module:
     - default patterns
     - stroke and fill should support trafos

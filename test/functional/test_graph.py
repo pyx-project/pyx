@@ -9,12 +9,15 @@ text.set(mode="latex")
 
 def test_multiaxes_data(c, x, y):
     g = c.insert(graph.graphxy(x, y, height=5, key=graph.key(pos="tl"),
-                               x=graph.logaxis(title="$W$", part=graph.autologpart(mix=graph.manualpart(ticks="2.2360679775", texts="$\sqrt{5}$").part())),
+                               #x=graph.logaxis(title="$W$", part=graph.autologpart(mix=graph.manualpart(tickpos="2.2360679775", labels="$\sqrt{5}$").part()),
+                               x=graph.logaxis(title="$W$",
+                                               texter=graph.decimaltexter()),
                                y=graph.logaxis(title=r"$PPP_1$",
                                                painter=graph.axispainter(titledirection=None)),
                                y2=graph.logaxis(title="$P_2$"),
                                y3=graph.logaxis(title="$PPP_3$",
-                                                painter=graph.axispainter(titledirection=45, decfracequal=1)),
+                                                painter=graph.axispainter(titledirection=45),
+                                                texter=graph.decimaltexter(equalprecision=1)),
                                y5=graph.logaxis(title="$P_5$")))
     df = data.datafile("data/testdata")
     g.plot((graph.data(df, x=1, y="sqrt(sqrt($3))"),
@@ -26,7 +29,7 @@ def test_multiaxes_data(c, x, y):
 
 def test_piaxis_function(c, x, y):
     g = c.insert(graph.graphxy(x, y, height=5,
-                               x=graph.linaxis(min=0, max=2*math.pi, divisor=math.pi, suffix=r"\pi")))
+                               x=graph.linaxis(min=0, max=2*math.pi, divisor=math.pi, texter=graph.rationaltexter(suffix=r"\pi"))))
     g.plot([graph.function("y=sin(x-i*pi/10)", context={"i": i}) for i in range(20)],
            style=graph.line(lineattrs=(graph.changecolor.Hue(), graph.changelinestyle())))
     g.finish()
@@ -35,7 +38,7 @@ def test_textaxis_errorbars(c, x, y):
     df = data.datafile("data/testdata2")
     g = c.insert(graph.graphxy(x, y, height=5,
                                x=graph.linaxis(min=0.5, max=12.5, title="Month",
-                                               part=graph.linpart("1", texts=df.getcolumn("month"), extendtick=None),
+                                               part=graph.linpart("1", labels=df.getcolumn("month"), extendtick=None),
                                                painter=graph.axispainter(labeldist=0.1, titledist=0, labelattrs=(trafo.rotate(45),text.halign.right, text.size.scriptsize))),
                                y=graph.linaxis(min=-10, max=30, title="Temperature [$^\circ$C]"),
                                x2=graph.linaxis(), y2=graph.linaxis()))

@@ -127,8 +127,14 @@ class frac:
             return 1
         return cmp(self.enum * other.denom, other.enum * self.denom)
 
+    def __abs__(self):
+        return frac(abs(self.enum), abs(self.denom))
+
     def __mul__(self, other):
         return frac(self.enum * other.enum, self.denom * other.denom)
+
+    def __div__(self, other):
+        return frac(self.enum * other.denom, self.denom * other.enum)
 
     def __float__(self):
         "caution: avoid final precision of floats"
@@ -184,7 +190,7 @@ class tick(frac):
         self.ticklevel = ticklevel
         self.labellevel = labellevel
         self.label = label
-        self.labelattrs = labelattrs
+        self.labelattrs = helper.ensurelist(labelattrs)[:]
 
     def merge(self, other):
         """merges two ticks together:
@@ -511,13 +517,13 @@ class autolinpart:
             base = frac(10L, 1, int(logmm - 1))
         else:
             base = frac(10L, 1, int(logmm))
-        ticks = _ensurefrac(self.variants[0])
+        ticks = map(_ensurefrac, self.variants[0])
         useticks = [tick * base for tick in ticks]
         self.lesstickindex = self.moretickindex = 0
         self.lessbase = frac(base.enum, base.denom)
         self.morebase = frac(base.enum, base.denom)
         self.min, self.max, self.extendmin, self.extendmax = min, max, extendmin, extendmax
-        part = linpart(ticks=useticks, extendtick=self.extendtick, epsilon=self.epsilon, mix=self.mix)
+        part = linpart(tickdist=useticks, extendtick=self.extendtick, epsilon=self.epsilon, mix=self.mix)
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
     def lesspart(self):
@@ -527,9 +533,9 @@ class autolinpart:
         else:
             self.lesstickindex = 0
             self.lessbase.enum *= 10
-        ticks = _ensurefrac(self.variants[self.lesstickindex])
+        ticks = map(_ensurefrac, self.variants[self.lesstickindex])
         useticks = [tick * self.lessbase for tick in ticks]
-        part = linpart(ticks=useticks, extendtick=self.extendtick, epsilon=self.epsilon, mix=self.mix)
+        part = linpart(tickdist=useticks, extendtick=self.extendtick, epsilon=self.epsilon, mix=self.mix)
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
     def morepart(self):
@@ -539,9 +545,9 @@ class autolinpart:
         else:
             self.moretickindex = len(self.variants) - 1
             self.morebase.denom *= 10
-        ticks = _ensurefrac(self.variants[self.moretickindex])
+        ticks = map(_ensurefrac, self.variants[self.moretickindex])
         useticks = [tick * self.morebase for tick in ticks]
-        part = linpart(ticks=useticks, extendtick=self.extendtick, epsilon=self.epsilon, mix=self.mix)
+        part = linpart(tickdist=useticks, extendtick=self.extendtick, epsilon=self.epsilon, mix=self.mix)
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
 
@@ -737,7 +743,7 @@ class autologpart(logpart):
         self.min, self.max, self.extendmin, self.extendmax = min, max, extendmin, extendmax
         self.morevariantsindex = self.variantsindex
         self.lessvariantsindex = self.variantsindex
-        part = logpart(ticks=self.variants[self.variantsindex][0], labels=self.variants[self.variantsindex][1],
+        part = logpart(tickpos=self.variants[self.variantsindex][0], labelpos=self.variants[self.variantsindex][1],
                        extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon, mix=self.mix)
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
@@ -745,7 +751,7 @@ class autologpart(logpart):
         "method is part of the implementation of _Ipart"
         self.lessvariantsindex += 1
         if self.lessvariantsindex < len(self.variants):
-            part = logpart(ticks=self.variants[self.lessvariantsindex][0], labels=self.variants[self.lessvariantsindex][1],
+            part = logpart(tickpos=self.variants[self.lessvariantsindex][0], labelpos=self.variants[self.lessvariantsindex][1],
                            extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon, mix=self.mix)
             return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
@@ -753,7 +759,7 @@ class autologpart(logpart):
         "method is part of the implementation of _Ipart"
         self.morevariantsindex -= 1
         if self.morevariantsindex >= 0:
-            part = logpart(ticks=self.variants[self.morevariantsindex][0], labels=self.variants[self.morevariantsindex][1],
+            part = logpart(tickpos=self.variants[self.morevariantsindex][0], labelpos=self.variants[self.morevariantsindex][1],
                            extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon, mix=self.mix)
             return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
@@ -976,9 +982,9 @@ class rationaltexter:
                        enumprefix="", enuminfix="", enumsuffix="",
                        denomprefix="", denominfix="", denomsuffix="",
                        minus="-", minuspos=0, over=r"{{%s}\over{%s}}",
-                       equaldenom=0, skipenum0=1, skipenum1=1, skipdenom1=1,
+                       equaldenom=0, skip1=1, skipenum0=1, skipenum1=1, skipdenom1=1,
                        labelattrs=textmodule.mathmode):
-        """initializes the instance
+        r"""initializes the instance
         - prefix, infix, and suffix (strings) are added at the begin,
           immediately after the minus, and at the end of the label,
           respectively
@@ -986,9 +992,7 @@ class rationaltexter:
           to the labels enumerator correspondingly
         - prefixdenom, infixdenom, and suffixdenom (strings) are added
           to the labels denominator correspondingly
-        - usually the enumerator and denominator are canceled; however,
-          when equaldenom is set, the least common multiple of all
-          denominators is used
+        - minus (string) is inserted for negative numbers
         - minuspos is an integer, which determines the position, where the
           minus sign has to be placed; the following values are allowed:
             1 - writes the minus in front of the enumerator
@@ -996,21 +1000,27 @@ class rationaltexter:
            -1 - writes the minus in front of the denominator
         - over (string) is taken as a format string generating the
           fraction bar; it has to contain exactly two string insert
-          operators "%s" - the first for the enumerator and the second
+          operators "%s" -- the first for the enumerator and the second
           for the denominator; by far the most common examples are
           r"{{%s}\over{%s}}" and "{{%s}/{%s}}"
+        - usually the enumerator and denominator are canceled; however,
+          when equaldenom is set, the least common multiple of all
+          denominators is used
+        - skip1 (boolean) just prints the prefix, the minus (if present),
+          the infix and the suffix, when the value is plus or minus one
+          and at least one of prefix, infix and the suffix is present
         - skipenum0 (boolean) just prints a zero instead of
           the hole fraction, when the enumerator is zero;
-          all prefixes, infixes and suffixes are omitted as well
-        - skipenum1 (boolean) just prints the enumprefix directly followed
-          by the enuminfix and the enumsuffix, when the enum value is one
+          no prefixes, infixes, and suffixes are taken into account
+        - skipenum1 (boolean) just prints the enumprefix, the minus (if present),
+          the enuminfix and the enumsuffix, when the enum value is plus or minus one
           and at least one of enumprefix, enuminfix and the enumsuffix is present
         - skipdenom1 (boolean) just prints the enumerator instead of
-          the hole fraction, when the denominator is one and all the parameters
-          denomprefix, denominfix and denomsuffix are not present
+          the hole fraction, when the denominator is one and none of the parameters
+          denomprefix, denominfix and denomsuffix are set and minuspos is not -1 or the
+          fraction is positive
         - labelattrs is a sequence of texsetting instances; also just a single
-          instance is allowed; an empty sequence is allowed as well, but None
-          is not valid"""
+          instance is allowed; None and an empty sequence is allowed as well"""
         self.prefix = prefix
         self.infix = infix
         self.suffix = suffix
@@ -1022,10 +1032,9 @@ class rationaltexter:
         self.denomsuffix = denomsuffix
         self.minus = minus
         self.minuspos = minuspos
-        if self.minuspos < -1 or self.minuspos > 1:
-            raise RuntimeError("invalid minuspos")
         self.over = over
         self.equaldenom = equaldenom
+        self.skip1 = skip1
         self.skipenum0 = skipenum0
         self.skipenum1 = skipenum1
         self.skipdenom1 = skipdenom1
@@ -1064,10 +1073,10 @@ class rationaltexter:
             return res
 
     def labels(self, ticks):
-        # the temporary variables fracenum, fracdenom, and fracminus are
-        # inserted into all tick instances, where label is not None
+        labeledticks = []
         for tick in ticks:
-            if tick.label is None:
+            if tick.label is None and tick.labellevel is not None:
+                labeledticks.append(tick)
                 tick.fracminus = 1
                 tick.fracenum = tick.enum
                 tick.fracdenom = tick.denom
@@ -1082,52 +1091,46 @@ class rationaltexter:
         if self.equaldenom:
             equaldenom = self.lcm(*[tick.fracdenom for tick in ticks if tick.label is None])
             if equaldenom is not None:
-                for tick in ticks:
-                    if tick.label is None:
-                        factor, dummy = divmod(equaldenom, tick.fracdenom)
-                        tick.fracenum, tick.fracdenom = factor * tick.fracenum, factor * tick.fracdenom
-        for tick in ticks:
-            if tick.label is None:
-                if tick.fracminus == -1:
-                    tick.fracminus = "-"
+                for tick in labeledticks:
+                    factor, dummy = divmod(equaldenom, tick.fracdenom)
+                    tick.fracenum, tick.fracdenom = factor * tick.fracenum, factor * tick.fracdenom
+        for tick in labeledticks:
+            fracminus = ""
+            fracenumminus = ""
+            fracdenomminus = ""
+            if tick.fracminus == -1:
+                if self.minuspos == 0:
+                    fracminus = self.minus
+                elif self.minuspos == 1:
+                    fracenumminus = self.minus
+                elif self.minuspos == -1:
+                    fracdenomminus = self.minus
                 else:
-                    tick.fracminus = ""
-                if self.skipenum0 and tick.fracenum == 0:
-                    if self.minuspos == 2 or self.minuspos == 3:
-                        tick.fracenum = "%s0" % tick.fracminus
-                    else:
-                        tick.fracenum = tick.fracenum
-                elif self.skipenum1 and tick.fracenum == 1 and (len(self.enumprefix) or len(self.enumsuffix)):
-                    if self.minuspos == 2:
-                        tick.fracenum = "%s%s%s" % (tick.fracminus, self.enumprefix, self.enumsuffix)
-                    elif self.minuspos == 3:
-                        tick.fracenum = "%s%s%s" % (self.enumprefix, tick.fracminus, self.enumsuffix)
-                    else:
-                        tick.fracenum = "%s%s" % (self.enumprefix, self.enumsuffix)
+                    raise RuntimeError("invalid minuspos")
+            else:
+                tick.fracminus = ""
+            if self.skipenum0 and tick.fracenum == 0:
+                tick.label = "0"
+            elif (self.skip1 and self.skipdenom1 and tick.fracenum == 1 and tick.fracdenom == 1 and
+                  (len(self.prefix) or len(self.infix) or len(self.suffix)) and
+                  not len(fracenumminus) and not len(self.enumprefix) and not len(self.enuminfix) and not len(self.enumsuffix) and
+                  not len(fracdenomminus) and not len(self.denomprefix) and not len(self.denominfix) and not len(self.denomsuffix)):
+                tick.label = "%s%s%s%s" % (self.prefix, fracminus, self.infix, self.suffix)
+            else:
+                if self.skipenum1 and tick.fracenum == 1 and (len(self.enumprefix) or len(self.enuminfix) or len(self.enumsuffix)):
+                    tick.fracenum = "%s%s%s%s" % (self.enumprefix, fracenumminus, self.enuminfix, self.enumsuffix)
                 else:
-                    if self.minuspos == 2:
-                        tick.fracenum = "%s%s%i%s" % (tick.fracminus, self.enumprefix, tick.fracenum, self.enumsuffix)
-                    elif self.minuspos == 3:
-                        tick.fracenum = "%s%s%i%s" % (self.enumprefix, tick.fracminus, tick.fracenum, self.enumsuffix)
-                    else:
-                        tick.fracenum = "%s%i%s" % (self.enumprefix, tick.fracenum, self.enumsuffix)
-                if self.skipdenom1 and tick.fracdenom == 1 and self.minuspos != 4 and self.minuspos != 5:
+                    tick.fracenum = "%s%s%s%i%s" % (self.enumprefix, fracenumminus, self.enuminfix, tick.fracenum, self.enumsuffix)
+                if self.skipdenom1 and tick.fracdenom == 1 and not len(fracdenomminus) and not len(self.denomprefix) and not len(self.denominfix) and not len(self.denomsuffix):
                     frac = tick.fracenum
                 else:
-                    if self.minuspos == 4:
-                        tick.fracdenom = "%s%s%i%s" % (tick.fracminus, self.denomprefix, tick.fracdenom, self.denomsuffix)
-                    elif self.minuspos == 5:
-                        tick.fracdenom = "%s%s%i%s" % (self.denomprefix, tick.fracminus, tick.fracdenom, self.denomsuffix)
-                    else:
-                        tick.fracdenom = "%s%i%s" % (self.denomprefix, tick.fracdenom, self.denomsuffix)
+                    tick.fracdenom = "%s%s%s%i%s" % (self.denomprefix, fracdenomminus, self.denominfix, tick.fracdenom, self.denomsuffix)
                     frac = self.over % (tick.fracenum, tick.fracdenom)
-                if self.minuspos == 0:
-                    tick.label = "%s%s%s%s" % (tick.fracminus, self.prefix, frac, self.suffix)
-                elif self.minuspos == 1:
-                    tick.label = "%s%s%s%s" % (self.prefix, tick.fracminus, frac, self.suffix)
-                else:
-                    tick.label = "%s%s%s" % (self.prefix, frac, self.suffix)
-                self.labelattrs.extend(self.labelattrs)
+                tick.label = "%s%s%s%s%s" % (self.prefix, fracminus, self.infix, frac, self.suffix)
+            del tick.fracenum
+            del tick.fracdenom
+            del tick.fracminus
+            tick.labelattrs.extend(self.labelattrs)
 
 
 class decimaltexter:
@@ -1135,35 +1138,52 @@ class decimaltexter:
 
     __implements__ = _Itexter
 
-    def __init__(self, prefix="", suffix="", minuspos=0,
-                       decimalsep=".", thousandsep="", equalprecision=0,
-                       period=r"\overline{%s}", labelattrs=textmodule.mathmode):
-        """initializes the instance
-        - prefix and suffix (strings) are just added to the begin and to
-          the end of the label, respectively
-        - minuspos is an integer, which determines the position, where the
-          minus sign has to be placed; the following values are allowed:
-            0 - written immediately before the prefix
-            1 - written immediately after the prefix"""
+    def __init__(self, prefix="", infix="", suffix="", equalprecision=0,
+                       decimalsep=".", thousandsep="", thousandthpartsep="",
+                       minus="-", period=r"\overline{%s}", labelattrs=textmodule.mathmode):
+        r"""initializes the instance
+        - prefix, infix, and suffix (strings) are added at the begin,
+          immediately after the minus, and at the end of the label,
+          respectively
+        - decimalsep, thousandsep, and thousandthpartsep (strings)
+          are used as separators
+        - minus (string) is inserted for negative numbers
+        - period (string) is taken as a format string generating a period;
+          it has to contain exactly one string insert operators "%s" for the
+          period; usually it should be r"\overline{%s}"
+        - labelattrs is a sequence of texsetting instances; also just a single
+          instance is allowed; None and an empty sequence is allowed as well"""
         self.prefix = prefix
+        self.infix = infix
         self.suffix = suffix
-        self.minuspos = minuspos
+        self.equalprecision = equalprecision
         self.decimalsep = decimalsep
         self.thousandsep = thousandsep
-        self.equalprecision = equalprecision
+        self.thousandthpartsep = thousandthpartsep
+        self.minus = minus
         self.period = period
         self.labelattrs = helper.ensurelist(labelattrs)
 
     def labels(self, ticks):
-        # the temporary variable decprecision is
-        # inserted into all tick instances, where label is not None
+        labeledticks = []
+        maxdecprecision = 0
         for tick in ticks:
-            if tick.label is None:
+            if tick.label is None and tick.labellevel is not None:
+                labeledticks.append(tick)
                 m, n = tick.enum, tick.denom
-                if m < 0: m = -m
-                if n < 0: n = -n
+                if m < 0: m *= -1
+                if n < 0: n *= -1
                 whole, reminder = divmod(m, n)
-                tick.label = str(whole)
+                whole = str(whole)
+                if len(self.thousandsep):
+                    l = len(whole)
+                    tick.label = ""
+                    for i in range(l):
+                        tick.label += whole[i]
+                        if not ((l-i-1) % 3) and l > i+1:
+                            tick.label += self.thousandsep
+                else:
+                    tick.label = whole
                 if reminder:
                     tick.label += self.decimalsep
                 oldreminders = []
@@ -1171,49 +1191,166 @@ class decimaltexter:
                 while (reminder):
                     tick.decprecision += 1
                     if reminder in oldreminders:
+                        tick.decprecision = None
                         periodstart = len(tick.label) - (len(oldreminders) - oldreminders.index(reminder))
                         tick.label = tick.label[:periodstart] + self.period % tick.label[periodstart:]
                         break
                     oldreminders += [reminder]
                     reminder *= 10
                     whole, reminder = divmod(reminder, n)
+                    if not ((tick.decprecision - 1) % 3) and tick.decprecision > 1:
+                        tick.label += self.thousandthpartsep
                     tick.label += str(whole)
-        # equalprecision
-        # prefix/suffix
-        # sign
+                if maxdecprecision < tick.decprecision:
+                    maxdecprecision = tick.decprecision
+        if self.equalprecision:
+            for tick in labeledticks:
+                if tick.decprecision is not None:
+                    if tick.decprecision == 0 and maxdecprecision > 0:
+                        tick.label += self.decimalsep
+                    for i in range(tick.decprecision, maxdecprecision):
+                        tick.label += "0"
+        for tick in labeledticks:
+            if tick.enum * tick.denom < 0:
+                minus = self.minus
+            else:
+                minus = ""
+            tick.label = "%s%s%s%s%s" % (self.prefix, minus, self.infix, tick.label, self.suffix)
+            tick.labelattrs.extend(self.labelattrs)
+            del tick.decprecision
+
 
 class exponentialtexter:
-    """a texter creating decimal labels with exponentials (e.g. "2\cdot10^5")"""
+    """a texter creating labels with exponentials (e.g. "2\cdot10^5")"""
 
-    def expfrac(self, tick, minexp = None):
-        m, n = tick.enum, tick.denom
-        sign = 1
-        if m < 0: m, sign = -m, -sign
-        if n < 0: n, sign = -n, -sign
-        exp = 0
-        if m:
-            while divmod(m, n)[0] > 9:
-                n *= 10
-                exp += 1
-            while divmod(m, n)[0] < 1:
-                m *= 10
-                exp -= 1
-        if minexp is not None and ((exp < 0 and -exp < minexp) or (exp >= 0 and exp < minexp)):
-            return None
-        dummy = frac(m, n)
-        dummy.suffix = None
-        prefactor = self.decfrac(dummy)
-        if prefactor == "1" and not self.expfracpre1:
-            if sign == -1:
-                return self.attachsuffix(tick, "-10^{%i}" % exp)
-            else:
-                return self.attachsuffix(tick, "10^{%i}" % exp)
+    __implements__ = _Itexter
+
+    def __init__(self, plus="", minus="-",
+                       mantissaexp=r"{{%s}\cdot10^{%s}}",
+                       nomantissaexp=r"{10^{%s}}",
+                       minusnomantissaexp=r"{-10^{%s}}",
+                       mantissamin=frac(1, 1), mantissamax=frac(10, 1),
+                       skipmantissa1=0, skipallmantissa1=1,
+                       mantissatexter=decimaltexter()):
+        r"""initializes the instance
+        - plus or minus (string) is inserted for positive or negative exponents
+        - mantissaexp (string) is taken as a format string generating the exponent;
+          it has to contain exactly two string insert operators "%s" --
+          the first for the mantissa and the second for the exponent;
+          examples are r"{{%s}\cdot10^{%s}}" and r"{{%s}{\rm e}^{%s}}"
+        - nomantissaexp (string) is taken as a format string generating the exponent
+          when the mantissa is one and should be skipped; it has to contain
+          exactly one string insert operators "%s" for the exponent;
+          an examples is r"{10^{%s}}"
+        - minusnomantissaexp (string) is taken as a format string generating the exponent
+          when the mantissa is minus one and should be skipped; it has to contain
+          exactly one string insert operators "%s" for the exponent; might be set to None
+          to disallow skipping of any mantissa minus one
+          an examples is r"{-10^{%s}}"
+        - mantissamin and mantissamax are the minimum and maximum of the mantissa;
+          they are frac instances greater than zero and mantissamin < mantissamax;
+          the sign of the tick is ignored here
+        - skipmantissa1 (boolean) turns on skipping of any mantissa equals one
+          (and minus when minusnomantissaexp is set)
+        - skipallmantissa1 (boolean) as above, but all mantissas must be 1
+        - mantissatexter is the texter for the mantissa"""
+        self.plus = plus
+        self.minus = minus
+        self.mantissaexp = mantissaexp
+        self.nomantissaexp = nomantissaexp
+        self.minusnomantissaexp = minusnomantissaexp
+        self.mantissamin = mantissamin
+        self.mantissamax = mantissamax
+        self.mantissamindivmax = self.mantissamin / self.mantissamax
+        self.mantissamaxdivmin = self.mantissamax / self.mantissamin
+        self.skipmantissa1 = skipmantissa1
+        self.skipallmantissa1 = skipallmantissa1
+        self.mantissatexter = mantissatexter
+
+    def labels(self, ticks):
+        labeledticks = []
+        for tick in ticks:
+            if tick.label is None and tick.labellevel is not None:
+                tick.orgenum, tick.orgdenom = tick.enum, tick.denom
+                labeledticks.append(tick)
+                tick.exp = 0
+                if tick.enum:
+                    while abs(tick) >= self.mantissamax:
+                        tick.exp += 1
+                        x = tick * self.mantissamindivmax
+                        tick.enum, tick.denom = x.enum, x.denom
+                    while abs(tick) < self.mantissamin:
+                        tick.exp -= 1
+                        x = tick * self.mantissamaxdivmin
+                        tick.enum, tick.denom = x.enum, x.denom
+                if tick.exp < 0:
+                    tick.exp = "%s%i" % (self.minus, -tick.exp)
+                else:
+                    tick.exp = "%s%i" % (self.plus, tick.exp)
+        self.mantissatexter.labels(labeledticks)
+        if self.minusnomantissaexp is not None:
+            allmantissa1 = len(labeledticks) == len([tick for tick in labeledticks if abs(tick.enum) == abs(tick.denom)])
         else:
-            if sign == -1:
-                return self.attachsuffix(tick, "-%s%s10^{%i}" % (prefactor, self.expfractimes, exp))
+            allmantissa1 = len(labeledticks) == len([tick for tick in labeledticks if tick.enum == tick.denom])
+        for tick in labeledticks:
+            if (self.skipallmantissa1 and allmantissa1 or
+                (self.skipmantissa1 and (tick.enum == tick.denom or
+                                         (tick.enum == -tick.denom and self.minusnomantissaexp is not None)))):
+                if tick.enum == tick.denom:
+                    tick.label = self.nomantissaexp % tick.exp
+                else:
+                    tick.label = self.minusnomantissaexp % tick.exp
             else:
-                return self.attachsuffix(tick, "%s%s10^{%i}" % (prefactor, self.expfractimes, exp))
+                tick.label = self.mantissaexp % (tick.label, tick.exp)
+            tick.enum, tick.denom = tick.orgenum, tick.orgdenom
+            del tick.orgenum
+            del tick.orgdenom
+            del tick.exp
 
+
+class defaulttexter:
+    """a texter creating decimal or exponential labels"""
+
+    __implements__ = _Itexter
+
+    def __init__(self, smallestdecimal=frac(1, 1000),
+                       biggestdecimal=frac(9999, 1),
+                       equaldecision=1,
+                       decimaltexter=decimaltexter(),
+                       exponentialtexter=exponentialtexter()):
+        r"""initializes the instance
+        - smallestdecimal and biggestdecimal are the smallest and
+          biggest decimal values, where the decimaltexter should be used;
+          they are frac instances; the sign of the tick is ignored here;
+          a tick at zero is considered for the decimaltexter as well
+        - equaldecision (boolean) uses decimaltexter or exponentialtexter
+          globaly (set) or for each tick separately (unset)
+        - decimaltexter and exponentialtexter are texters to be used"""
+        self.smallestdecimal = smallestdecimal
+        self.biggestdecimal = biggestdecimal
+        self.equaldecision = equaldecision
+        self.decimaltexter = decimaltexter
+        self.exponentialtexter= exponentialtexter
+
+    def labels(self, ticks):
+        decticks = []
+        expticks = []
+        for tick in ticks:
+            if tick.label is None and tick.labellevel is not None:
+                if not tick.enum or (abs(tick) >= self.smallestdecimal and abs(tick) <= self.biggestdecimal):
+                    decticks.append(tick)
+                else:
+                    expticks.append(tick)
+        if self.equaldecision:
+            if len(expticks):
+                self.exponentialtexter.labels(ticks)
+            else:
+                self.decimaltexter.labels(ticks)
+        else:
+            for tick in decticks:
+                self.decimaltexter.labels([tick])
+            for tick in expticks:
+                self.exponentialtexter.labels([tick])
 
 
 ################################################################################
@@ -1251,7 +1388,7 @@ class axistitlepainter:
             titledist = unit.topt(unit.length(self.titledist_str, default_type="v"))
             x, y = axis._vtickpoint(axis, self.titlepos)
             dx, dy = axis.vtickdirection(axis, self.titlepos)
-            # no not modify self.titleattrs ... the painter might be used by several axes!!!
+            # no not modify self.titleattrs ... the painter might be used by several axes
             titleattrs = list(helper.ensuresequence(self.titleattrs))
             if self.titledirection is not None:
                 titleattrs = titleattrs + [trafo.rotate(self.reldirection(self.titledirection, dx, dy))]
@@ -1271,11 +1408,6 @@ class axispainter(axistitlepainter):
 
     defaultticklengths = ["%0.5f cm" % (0.2*goldenmean**(-i)) for i in range(10)]
 
-    fractypeauto = 1
-    fractyperat = 2
-    fractypedec = 3
-    fractypeexp = 4
-
     def __init__(self, innerticklengths=defaultticklengths,
                        outerticklengths=None,
                        tickattrs=(),
@@ -1283,21 +1415,10 @@ class axispainter(axistitlepainter):
                        zerolineattrs=(),
                        baselineattrs=canvas.linecap.square,
                        labeldist="0.3 cm",
-                       labelattrs=((textmodule.halign.center, textmodule.vshift.mathaxis),
-                                   (textmodule.size.footnotesize, textmodule.halign.center, textmodule.vshift.mathaxis)),
+                       labelattrs=(textmodule.halign.center, textmodule.vshift.mathaxis),
                        labeldirection=None,
                        labelhequalize=0,
                        labelvequalize=1,
-                       fractype=fractypeauto,
-                       ratfracsuffixenum=1,
-                       ratfracover=r"\over",
-                       decfracpoint=".",
-                       decfracequal=0,
-                       expfractimes=r"\cdot",
-                       expfracpre1=0,
-                       expfracminexp=4,
-                       suffix0=0,
-                       suffix1=0,
                        **args):
         self.innerticklengths_str = innerticklengths
         self.outerticklengths_str = outerticklengths
@@ -1310,48 +1431,7 @@ class axispainter(axistitlepainter):
         self.labeldirection = labeldirection
         self.labelhequalize = labelhequalize
         self.labelvequalize = labelvequalize
-        self.fractype = fractype
-        self.ratfracsuffixenum = ratfracsuffixenum
-        self.ratfracover = ratfracover
-        self.decfracpoint = decfracpoint
-        self.decfracequal = decfracequal
-        self.expfractimes = expfractimes
-        self.expfracpre1 = expfracpre1
-        self.expfracminexp = expfracminexp
-        self.suffix0 = suffix0
-        self.suffix1 = suffix1
         axistitlepainter.__init__(self, **args)
-
-    def attachsuffix(self, tick, str):
-        if self.suffix0 or tick.enum:
-            if tick.suffix is not None and not self.suffix1:
-                if str == "1":
-                    str = ""
-                elif str == "-1":
-                    str = "-"
-            if tick.suffix is not None:
-                str = str + tick.suffix
-        return str
-
-    def createtext(self, tick):
-        tick.decfraclength = None
-        if self.fractype == self.fractypeauto:
-            if tick.suffix is not None:
-                tick.label = self.ratfrac(tick)
-            else:
-                tick.label = self.expfrac(tick, self.expfracminexp)
-                if tick.label is None:
-                    tick.label = self.decfrac(tick)
-        elif self.fractype == self.fractypedec:
-            tick.label = self.decfrac(tick)
-        elif self.fractype == self.fractypeexp:
-            tick.label = self.expfrac(tick)
-        elif self.fractype == self.fractyperat:
-            tick.label = self.ratfrac(tick)
-        else:
-            raise ValueError("fractype invalid")
-        if textmodule.mathmode not in helper.getattrs(tick.labelattrs, textmodule._texsetting, []):
-            tick.labelattrs.append(textmodule.mathmode)
 
     def dolayout(self, graph, axis):
         labeldist = unit.topt(unit.length(self.labeldist_str, default_type="v"))
@@ -1362,26 +1442,14 @@ class axispainter(axistitlepainter):
         for tick in axis.ticks:
             tick.textbox = None
             if tick.labellevel is not None:
-                tick.labelattrs = helper.getsequenceno(self.labelattrs, tick.labellevel)
-                if tick.labelattrs is not None:
-                    tick.labelattrs = list(helper.ensuresequence(tick.labelattrs))
-                    if tick.label is None:
-                        tick.suffix = axis.suffix
-                        self.createtext(tick)
+                labelattrs = helper.getsequenceno(self.labelattrs, tick.labellevel)
+                if labelattrs is not None:
+                    tick.labelattrs += list(labelattrs)
                     if self.labeldirection is not None:
                         tick.labelattrs += [trafo.rotate(self.reldirection(self.labeldirection, tick.dx, tick.dy))]
-        if self.decfracequal:
-            maxdecfraclength = max([tick.decfraclength for tick in axis.ticks if tick.labellevel is not None and
-                                                                                 tick.labelattrs is not None and
-                                                                                 tick.decfraclength is not None])
-            for tick in axis.ticks:
-                if (tick.labellevel is not None and
-                    tick.labelattrs is not None and
-                    tick.decfraclength is not None):
-                    tick.label = self.decfrac(tick, maxdecfraclength)
-        for tick in axis.ticks:
-            if tick.labellevel is not None and tick.labelattrs is not None:
-                tick.textbox = graph.texrunner._text(tick.x, tick.y, tick.label, *tick.labelattrs)
+                    tick.textbox = graph.texrunner._text(tick.x, tick.y, tick.label, *tick.labelattrs)
+                else:
+                    tick.labelattrs = None
         if len(axis.ticks) > 1:
             equaldirection = 1
             for tick in axis.ticks[1:]:
@@ -1675,7 +1743,8 @@ class _axis:
 
     def __init__(self, min=None, max=None, reverse=0, divisor=1,
                        datavmin=None, datavmax=None, tickvmin=0, tickvmax=1,
-                       title=None, suffix=None, painter=axispainter(), dense=None):
+                       title=None, painter=axispainter(), texter=defaulttexter(),
+                       dense=None):
         if None not in (min, max) and min > max:
             min, max, reverse = max, min, not reverse
         self.fixmin, self.fixmax, self.min, self.max, self.reverse = min is not None, max is not None, min, max, reverse
@@ -1700,8 +1769,8 @@ class _axis:
 
         self.divisor = divisor
         self.title = title
-        self.suffix = suffix
         self.painter = painter
+        self.texter = texter
         self.dense = dense
         self.canconvert = 0
         self.__setinternalrange()
@@ -1830,6 +1899,7 @@ class _axis:
                     if len(self.ticks):
                         self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
                     self.layoutdata = layoutdata()
+                    self.texter.labels(self.ticks)
                     self.painter.dolayout(graph, self)
                     ratelayout = self.painter.ratelayout(graph, self, dense)
                     if ratelayout is not None:
@@ -1858,6 +1928,7 @@ class _axis:
             if len(self.ticks):
                 self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
             self.layoutdata = layoutdata()
+            self.texter.labels(self.ticks)
             self.painter.dolayout(graph, self)
         graph.mindbbox(*[tick.textbox.bbox() for tick in self.ticks if tick.textbox is not None])
 
@@ -1934,7 +2005,6 @@ class linkaxis:
         self.ticks = self.ticks(self.linkedaxis.ticks)
         self.convert = self.linkedaxis.convert
         self.divisor = self.linkedaxis.divisor
-        self.suffix = self.linkedaxis.suffix
         self.layoutdata = layoutdata()
         self.painter.dolayout(graph, self)
 
@@ -2006,7 +2076,6 @@ class splitaxis:
         if self.fixmax:
             self.max = self.axislist[-1].max
         self.divisor = 1
-        self.suffix = ""
 
     def getdatarange(self):
         min = self.axislist[0].getdatarange()
