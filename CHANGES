@@ -36,6 +36,8 @@ PyX
   - pyx module:
     - automatically import main modules into pyx namespace as suggested by Fernando 
       Perez.
+  - path module:
+    - check for sorting of parameter list passed to path.split method
   TODO:
   - graph module
     - rect style (and errorbars?) should use clipping (TODO: should they or do the now?)

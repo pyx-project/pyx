@@ -1931,9 +1931,14 @@ class normpath(path):
     def split(self, *parameters):
         """split path at parameter values parameters
 
-        Note that the parameter list  must be sorted
-        
+        Note that the parameter list has to be sorted.
         """
+
+        # check whether parameter list is really sorted
+        sortedparams = list(parameters)
+        sortedparams.sort()
+        if sortedparams!=list(parameters):
+            raise ValueError("split parameters have to be sorted")
 
         context = _pathcontext()
         t = 0
@@ -1977,7 +1982,6 @@ class normpath(path):
             result.append(np)
 
         return result
-        
 
     def tangent(self, t, length=None):
         """return tangent vector of path at parameter value t
