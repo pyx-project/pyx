@@ -31,10 +31,10 @@ class _ticklength(unit.length):
 
     def __init__(self, l = _base, power = 0, factor = _factor):
         self.factor = factor
-        unit.length.__init__(self, l=l*pow(self.factor, power), default_type="v")
+        unit.length.__init__(self, l = l * pow(self.factor, power), default_type="v")
 
     def increment(self, power = 1):
-        return pow(self.factor, power)*self
+        return pow(self.factor, power) * self
 
 
 class ticklength(_ticklength):
@@ -149,17 +149,55 @@ class LinAxis(_Axis, _LinMap):
 
     def __init__(self, **args):
         _Axis.__init__(self, args)
-        self.encasezero = 0.25
-        self.fractions = ((1, 1, ), (2, 1, ), (5, 2, ), (5, 1, ), )
-        self.multiple = 10
+        self.enclosezero = 0.25 # maximal factor allowed to extend axis to enclose zero
+        self.fracfixed = ( )
+        self.favorfixed = 2 # factor to favor fixed fractions
+        self.fracshift = (((1, 1, ), (1, 2, ), ),
+                          ((2, 1, ), (1, 1, ), ),
+                          ((5, 2, ), (5, 4, ), ),
+                          ((5, 1, ), (5, 2, ), ), )
+        self.shift = 10 # need to be an integer!
+        self.factor = 1 # e.g. pi
+        self.tickopt = ((1, 30, 3, ), (2.5, 75, 7.5, ), ) # min, max, opt
 
     def prepare(self):
         if self.Min * self.Max > 0:
-            if (self.Min > 0) and (self.Max * self.encasezero > self.Min):
+            if (self.Min > 0) and (self.Max * self.enclosezero > self.Min):
                 self.set(Min = 0)
-            elif (self.Max < 0) and (self.Min * self.encasezero < self.Max):
+            elif (self.Max < 0) and (self.Min * self.enclosezero < self.Max):
                 self.set(Max = 0)
-
+        e = int(math.ceil(log((self.Max - self.Min) / self.factor) / log(self.shift)))
+        #print e, pow(self.shift, e)
+        for shift in range(e - 4, e + 1): # TODO: automatically estimate this range
+                                          #       lower bound is related to the maxticks
+                                          #       upper bound is related to the minticks
+            enum = 1
+            denom = 1
+            if shift > 0:
+                enum = long(pow(self.shift, shift))
+            if shift < 0:
+                denom = long(pow(self.shift, -shift))
+            #print enum, denom
+            for frac in self.fracshift:
+                fracs = []
+                rate = 0
+                enlargerange = 1
+                min = self.Min
+                max = self.Max
+                for ((subenum, subdenom, ), (min, max, opt, ), ) in zip(frac, self.tickopt):
+                    subenum *= enum
+                    subdenom *= denom
+                    self.enlarge
+                    #print self.Min / self.factor, self.Max / self.factor, (self.Max - self.Min) / self.factor
+                    ticks = l * subdenom / subenum
+                    if (ticks < min) or (ticks > max):
+                        break
+                    else:
+                        rate += ((opt - min) * log((opt - min) / (ticks - min)) +
+                                 (max - opt) * log((max - opt) / (max - ticks))) / (max - min)
+                        fracs.append((subenum, subdenom, float(subenum) / subdenom, ticks, ), )
+                else:
+                    print rate, fracs
 
 class LogAxis(_Axis, _LogMap):
 

@@ -166,6 +166,9 @@ class MathTreeValConst(MathTreeVal):
     def Derivative(self, arg):
         return MathTreeValConst(0.0)
 
+    def DependOn(self, arg):
+        return 0
+
     def VarList(self):
         return [ ]
 
@@ -788,11 +791,10 @@ if __name__=="__main__":
     print x
     print ParseMathTree(ParseStr("norm(a,b)"))
 
-    choise = "n"
+    choise = ""
     while choise not in ["y","n"]:
         choise = raw_input("\nrun interactive test program [y/n]? ")
-    if choise == "n":
-        assert 0
+    assert choise == "y"
     choise = "6"
     while choise != "7":
         if choise == "6":
