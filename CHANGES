@@ -2,7 +2,7 @@ PyX
 
 TODO:
   - graph module
-    - rect style (and errorbars?) should use clipping (TODO: should they or do the now?)
+    - rect style (and errorbars?) should use clipping (should they or do they already?)
     - do not include unneeded line segments when the axis range is set manually
     - allow for an iteration of a graph style, when it is used several times
     - symbols should become decorators
@@ -18,8 +18,6 @@ TODO:
     - should the divisor argument be moved to the texters?
     - is the divisor argument really necessary?
     - _mergelabels should work differently (perhaps a single list or a special texter?!)
-    - zeropathattrs=None should be the default
-    - consider removing the zero line feature
     - the exponentialtexter should have a labelattrs argument and the mantissatexter
       should be removed
     - Docu: part -> parter, tickdist->tickpos argument of parter
@@ -53,6 +51,14 @@ TODO:
      - added inplace add (__iadd__), enlarge and transform methods
      - callers use inplace add where possible now (yielding a considerable
        speedup)
+  - attr module:
+    - TODO: general documentation about attributes, clearing, merging?
+    - TODO: general documentation about changeable attributes?
+  - graph module:
+    - painters are using the new attribute scheme including changeable attributes (TODO: documentation!)
+    - zero line feature removed (TODO: documentation)
+  - text module:
+    - default handling of texmessages as in the new attribute scheme
 
 0.5.1 (2004/01/22):
   - distribution:

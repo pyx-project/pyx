@@ -3,20 +3,18 @@ import sys; sys.path[:0] = ["../.."]
 
 import math
 from pyx import *
-from pyx import mathtree
+from pyx import mathtree, attr
 
 text.set(mode="latex")
 
 def test_multiaxes_data(c, x, y):
     g = c.insert(graph.graphxy(x, y, height=5, key=graph.key(pos="tl"),
                                x=graph.logaxis(title="$W$", manualticks=[graph.tick(math.sqrt(8)*100, label="?"), graph.tick(math.sqrt(8), label="$\sqrt{8}$")]),
-                               #x=graph.logaxis(title="$W$",
-                               #                texter=graph.decimaltexter()),
                                y=graph.logaxis(title=r"$PPP_1$",
                                                painter=graph.axispainter(titledirection=None)),
                                y2=graph.logaxis(title="$P_2$"),
                                y3=graph.logaxis(title="$PPP_3$",
-                                                painter=graph.axispainter(titledirection=graph.rotatetext(45), gridattrs=([color.rgb.red], color.rgb.green)),
+                                                painter=graph.axispainter(titledirection=graph.rotatetext(45), gridattrs=[attr.changelist([color.rgb.red, color.rgb.green])]),
                                                 texter=graph.decimaltexter(equalprecision=1)),
                                y5=graph.logaxis(title="$P_5$")))
     df = data.datafile("data/testdata")
@@ -111,7 +109,7 @@ def test_split(c, x, y):
 
 def test_bar(c, x, y):
     df = data.datafile("data/testdata2")
-    g = c.insert(graph.graphxy(x, y, height=5, width=5, x=graph.baraxis(title="Month", painter=graph.baraxispainter(nameattrs=(text.halign.right, text.vshift.mathaxis, trafo.rotate(90))))))
+    g = c.insert(graph.graphxy(x, y, height=5, width=5, x=graph.baraxis(title="Month", painter=graph.baraxispainter(nameattrs=[text.halign.right, trafo.rotate(90)]))))
     g.plot(graph.data(df, x=1, y=2), graph.bar(fromzero=0))
     #g = c.insert(graph.graphxy(x, y, height=5, width=5, y=graph.baraxis(title="Month")))
     #g.plot(graph.data(df, x=2, y=1), graph.bar(xbar=1, fromzero=0))

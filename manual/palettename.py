@@ -20,23 +20,25 @@ dy = -0.65
 # would loose the ordering ... instead we just parse the file:
 p = re.compile("(?P<id>palette\\.(?P<name>[a-z]+)) += palette\\(.*\\)\n", re.IGNORECASE)
 lines = imp.find_module("color", pyx.__path__)[0].readlines()
-skiplevel = None
+first = 1
 for line in lines: # we yet don't use a file iterator
     m = p.match(line)
     if m:
         xaxis = graph.linaxis(parter=graph.linparter(tickdist=("0.5","0.1"), labeldist="1"),
-                              painter=graph.axispainter(innerticklengths=None, labelattrs=None))
-        g = c.insert(graph.graphxy(ypos=y, width=10, height=0.5, x=xaxis,
-                                   x2=graph.linkaxis(xaxis,
-                                                     painter=graph.linkaxispainter(innerticklengths=None,
-                                                                                   outerticklengths=graph.axispainter.defaultticklengths)),
-                                   y=graph.linaxis(parter=None)))
+                              painter=graph.axispainter(innerticklength=None, labelattrs=None))
+        if first:
+            x2axis=graph.linkaxis(xaxis, painter=graph.linkaxispainter(innerticklength=None,
+                                                                       outerticklength=graph.ticklength.normal,
+                                                                       labelattrs=[]))
+            first = 0
+        else:
+            x2axis=graph.linkaxis(xaxis, painter=graph.linkaxispainter(innerticklength=None))
+        g = c.insert(graph.graphxy(ypos=y, width=10, height=0.5, x=xaxis, x2=x2axis, y=graph.linaxis(parter=None)))
         g.plot(pf, graph.rect(pyx.color.palette.__dict__[m.group("name")]))
         g.dodata()
         g.finish()
         c.text(10.2, y + 0.15, m.group("id"), [text.size.footnotesize])
         y += dy
-        skiplevel = 0
 
 
 c.writetofile("palettename", paperformat="a4")

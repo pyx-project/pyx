@@ -8,7 +8,7 @@
 
 from pyx import *
 
-ap = graph.axispainter(outerticklengths=graph.axispainter.defaultticklengths)
+ap = graph.axispainter(outerticklength=graph.ticklength.normal)
 
 c = canvas.canvas()
 c.insert(graph.pathaxis(path.curve(0, 0, 3, 0, 1, 4, 4, 4),

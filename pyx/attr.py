@@ -27,18 +27,11 @@
 # some helper functions for the attribute handling
 #
 
-def mergeattrs(attrs, defaults=[]):
+def mergeattrs(attrs):
     """perform merging of the attribute list attrs as defined by the
     merge methods of the attributes"""
     newattrs = []
-    if attrs is None:
-        return None
-    # XXX Should we skip merging of the default attributes?
-    for a in defaults:
-        newattrs = a.merge(newattrs)
     for a in attrs:
-        if a is None:
-            return None
         # XXX Do we really need this test?
         if isinstance(a, attr):
             newattrs = a.merge(newattrs)
@@ -209,20 +202,39 @@ clear = _clear()
 # changeable attrs
 #
 
-def select(attrs, index, total):
+def selectattrs(attrs, index, total):
     """performs select calls for all changeable attributes and
     returns the resulting attribute list
     - attrs should be a list containing attributes and changeable
       attributes
     - index should be an unsigned integer
     - total should be a positive number
-    - valid sections fullfill 0<=index<total"""
+    - valid sections fullfill 0<=index<total
+    - returns None, when attrs is None
+    - returns None, when a changeable attribute returns None"""
+    if attrs is None:
+        return None
     result = []
     for a in attrs:
         if isinstance(a, changeattr):
-            result.append(a.select(index, total))
+            select = a.select(index, total)
+            if select is None:
+                return None
+            result.append(select)
         else:
             result.append(a)
+    return result
+
+
+def selectattr(attr, index, total):
+    """as select, but for a single attribute"""
+    if isinstance(attr, changeattr):
+        select = attr.select(index, total)
+        if select is None:
+            return None
+        return select
+    else:
+        return attr
 
 
 class changeattr:
@@ -257,7 +269,7 @@ class changelist(changeattr):
 
     def select(self, index, total):
         if self.restartable:
-            return self.attrs[index % length(self.attrs)]
-        elif index < length(self.attrs):
+            return self.attrs[index % len(self.attrs)]
+        elif index < len(self.attrs):
             return self.attrs[index]
 

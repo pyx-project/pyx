@@ -24,7 +24,7 @@
 
 
 import re, math, string, sys
-import bbox, box, canvas, color, deco, helper, path, style, unit, mathtree
+import attr, bbox, box, canvas, color, deco, helper, path, style, unit, mathtree
 import text as textmodule
 import data as datamodule
 import trafo as trafomodule
@@ -235,7 +235,7 @@ class tick(frac):
         self.ticklevel = ticklevel
         self.labellevel = labellevel
         self.label = label
-        self.labelattrs = helper.ensurelist(labelattrs)[:]
+        self.labelattrs = labelattrs
 
     def merge(self, other):
         """merges two ticks together:
@@ -306,6 +306,16 @@ def _mergelabels(ticks, labels):
                 i += 1
         if i != len(usetext):
             raise IndexError("wrong list length of labels")
+
+def _maxlevels(ticks):
+    "returns a tuple maxticklist, maxlabellevel from a list of tick instances"
+    maxticklevel = maxlabellevel = 0
+    for tick in ticks:
+        if tick.ticklevel is not None and tick.ticklevel >= maxticklevel:
+            maxticklevel = tick.ticklevel + 1
+        if tick.labellevel is not None and tick.labellevel >= maxlabellevel:
+            maxlabellevel = tick.labellevel + 1
+    return maxticklevel, maxlabellevel
 
 
 class _Iparter:
@@ -852,12 +862,7 @@ class axisrater:
           by the sum of the weights of the raters
         - within the rating, all ticks with a higher level are
           considered as ticks for a given level"""
-        maxticklevel = maxlabellevel = 0
-        for tick in ticks:
-            if tick.ticklevel is not None and tick.ticklevel >= maxticklevel:
-                maxticklevel = tick.ticklevel + 1
-            if tick.labellevel is not None and tick.labellevel >= maxlabellevel:
-                maxlabellevel = tick.labellevel + 1
+        maxticklevel, maxlabellevel = _maxlevels(ticks)
         numticks = [0]*maxticklevel
         numlabels = [0]*maxlabellevel
         for tick in ticks:
@@ -923,7 +928,8 @@ class _Itexter:
           instance
         - label attributes of the tick instances are just kept, whenever they
           are not equal to None
-        - the method might extend the labelattrs attribute of the ticks"""
+        - the method might modify the labelattrs attribute of the ticks; be sure
+          to not modify it in-place!"""
 
 
 class rationaltexter:
@@ -937,7 +943,7 @@ class rationaltexter:
                        denomprefix="", denominfix="", denomsuffix="",
                        plus="", minus="-", minuspos=0, over=r"{{%s}\over{%s}}",
                        equaldenom=0, skip1=1, skipenum0=1, skipenum1=1, skipdenom1=1,
-                       labelattrs=textmodule.mathmode):
+                       labelattrs=[textmodule.mathmode]):
         r"""initializes the instance
         - prefix, infix, and suffix (strings) are added at the begin,
           immediately after the minus, and at the end of the label,
@@ -975,7 +981,7 @@ class rationaltexter:
           fraction is positive
         - labelattrs is a list of attributes for a texrunners text method;
           a single is allowed without being a list; None is considered as
-          an empty list"""
+          an empty list; labelattrs might be changed in the painter as well"""
         self.prefix = prefix
         self.infix = infix
         self.suffix = suffix
@@ -994,7 +1000,7 @@ class rationaltexter:
         self.skipenum0 = skipenum0
         self.skipenum1 = skipenum1
         self.skipdenom1 = skipdenom1
-        self.labelattrs = helper.ensurelist(labelattrs)
+        self.labelattrs = labelattrs
 
     def gcd(self, *n):
         """returns the greates common divisor of all elements in n
@@ -1082,7 +1088,7 @@ class rationaltexter:
                     tick.temp_fracdenom = "%s%s%s%i%s" % (self.denomprefix, fracdenomminus, self.denominfix, tick.temp_fracdenom, self.denomsuffix)
                     frac = self.over % (tick.temp_fracenum, tick.temp_fracdenom)
                 tick.label = "%s%s%s%s%s" % (self.prefix, fracminus, self.infix, frac, self.suffix)
-            tick.labelattrs.extend(self.labelattrs)
+            tick.labelattrs = tick.labelattrs + self.labelattrs
 
             # del tick.temp_fracenum    # we've inserted those temporary variables ... and do not care any longer about them
             # del tick.temp_fracdenom
@@ -1097,7 +1103,8 @@ class decimaltexter:
 
     def __init__(self, prefix="", infix="", suffix="", equalprecision=0,
                        decimalsep=".", thousandsep="", thousandthpartsep="",
-                       plus="", minus="-", period=r"\overline{%s}", labelattrs=textmodule.mathmode):
+                       plus="", minus="-", period=r"\overline{%s}",
+                       labelattrs=[textmodule.mathmode]):
         r"""initializes the instance
         - prefix, infix, and suffix (strings) are added at the begin,
           immediately after the minus, and at the end of the label,
@@ -1110,7 +1117,7 @@ class decimaltexter:
           period; usually it should be r"\overline{%s}"
         - labelattrs is a list of attributes for a texrunners text method;
           a single is allowed without being a list; None is considered as
-          an empty list"""
+          an empty list; labelattrs might be changed in the painter as well"""
         self.prefix = prefix
         self.infix = infix
         self.suffix = suffix
@@ -1121,7 +1128,7 @@ class decimaltexter:
         self.plus = plus
         self.minus = minus
         self.period = period
-        self.labelattrs = helper.ensurelist(labelattrs)
+        self.labelattrs = labelattrs
 
     def labels(self, ticks):
         labeledticks = []
@@ -1177,7 +1184,7 @@ class decimaltexter:
             else:
                 plusminus = self.plus
             tick.label = "%s%s%s%s%s" % (self.prefix, plusminus, self.infix, tick.label, self.suffix)
-            tick.labelattrs.extend(self.labelattrs)
+            tick.labelattrs = tick.labelattrs + self.labelattrs
 
             # del tick.temp_decprecision  # we've inserted this temporary variable ... and do not care any longer about it
 
@@ -1575,8 +1582,10 @@ class axistitlepainter:
 
     __implements__ = _Iaxispainter
 
+    defaulttitleattrs = [textmodule.halign.center, textmodule.vshift.mathaxis]
+
     def __init__(self, titledist="0.3 cm",
-                       titleattrs=(textmodule.halign.center, textmodule.vshift.mathaxis),
+                       titleattrs=[],
                        titledirection=rotatetext.parallel,
                        titlepos=0.5,
                        texrunner=textmodule.defaulttexrunner):
@@ -1605,7 +1614,7 @@ class axistitlepainter:
             titledist = unit.length(self.titledist_str, default_type="v")
             x, y = axispos.vtickpoint_pt(self.titlepos)
             dx, dy = axispos.vtickdirection(self.titlepos)
-            titleattrs = helper.ensurelist(self.titleattrs)
+            titleattrs = self.defaulttitleattrs + self.titleattrs
             if self.titledirection is not None:
                 titleattrs.append(self.titledirection.trafo(dx, dy))
             title = self.texrunner.text_pt(x, y, axis.title, titleattrs)
@@ -1614,6 +1623,35 @@ class axistitlepainter:
             ac.extent += title.extent(dx, dy)
             ac.insert(title)
         return ac
+
+
+class geometricseries(attr.changeattr):
+
+    def __init__(self, initial, factor):
+        self.initial = initial
+        self.factor = factor
+
+    def select(self, index, total):
+        return self.initial * (self.factor ** index)
+
+
+class ticklength(geometricseries): pass
+
+_base = 0.2
+
+#ticklength.short = ticklength("%f cm" % (_base/math.sqrt(64)), 1/goldenmean)
+ticklength.short = ticklength(_base/math.sqrt(64), 1/goldenmean)
+ticklength.short = ticklength(_base/math.sqrt(32), 1/goldenmean)
+ticklength.short = ticklength(_base/math.sqrt(16), 1/goldenmean)
+ticklength.short = ticklength(_base/math.sqrt(8), 1/goldenmean)
+ticklength.short = ticklength(_base/math.sqrt(4), 1/goldenmean)
+ticklength.short = ticklength(_base/math.sqrt(2), 1/goldenmean)
+ticklength.normal = ticklength(_base, 1/goldenmean)
+ticklength.long = ticklength(_base*math.sqrt(2), 1/goldenmean)
+ticklength.long = ticklength(_base*math.sqrt(4), 1/goldenmean)
+ticklength.long = ticklength(_base*math.sqrt(8), 1/goldenmean)
+ticklength.long = ticklength(_base*math.sqrt(16), 1/goldenmean)
+ticklength.long = ticklength(_base*math.sqrt(32), 1/goldenmean)
 
 
 class axispainter(axistitlepainter):
@@ -1626,22 +1664,24 @@ class axispainter(axistitlepainter):
 
     __implements__ = _Iaxispainter
 
-    defaultticklengths = ["%0.5f cm" % (0.2*goldenmean**(-i)) for i in range(10)]
+    defaulttickattrs = []
+    defaultgridattrs = []
+    defaultbasepathattrs = [style.linecap.square]
+    defaultlabelattrs = [textmodule.halign.center, textmodule.vshift.mathaxis]
 
-    def __init__(self, innerticklengths=defaultticklengths,
-                       outerticklengths=None,
-                       tickattrs=(),
+    def __init__(self, innerticklength=ticklength.short,
+                       outerticklength=None,
+                       tickattrs=[],
                        gridattrs=None,
-                       zeropathattrs=(),
-                       basepathattrs=style.linecap.square,
+                       basepathattrs=[],
                        labeldist="0.3 cm",
-                       labelattrs=(textmodule.halign.center, textmodule.vshift.mathaxis),
+                       labelattrs=[],
                        labeldirection=None,
                        labelhequalize=0,
                        labelvequalize=1,
                        **kwargs):
         """initializes the instance
-        - innerticklenths and outerticklengths are two lists of
+        - innerticklength and outerticklength are two lists of
           visual PyX lengths for ticks, subticks, etc. plotted inside
           and outside of the graph; when a single value is given, it
           is used for all tick levels; None turns off ticks inside or
@@ -1654,9 +1694,6 @@ class axispainter(axistitlepainter):
           is given, it is used for ticks, subticks, etc.; a single
           entry is allowed without being a list; None turns off
           the grid
-        - zeropathattrs are a list of stroke attributes for a grid
-          line at axis value zero; a single entry is allowed without
-          being a list; None turns off the zeropath
         - basepathattrs are a list of stroke attributes for a grid
           line at axis value zero; a single entry is allowed without
           being a list; None turns off the basepath
@@ -1670,11 +1707,10 @@ class axispainter(axistitlepainter):
           alignment for straight vertical and horizontal axes, respectively
         - futher keyword arguments are passed to axistitlepainter"""
         # TODO: access to axis.divisor -- document, remove, ... ???
-        self.innerticklengths_str = innerticklengths
-        self.outerticklengths_str = outerticklengths
+        self.innerticklength_str = innerticklength
+        self.outerticklength_str = outerticklength
         self.tickattrs = tickattrs
         self.gridattrs = gridattrs
-        self.zeropathattrs = zeropathattrs
         self.basepathattrs = basepathattrs
         self.labeldist_str = labeldist
         self.labelattrs = labelattrs
@@ -1693,17 +1729,18 @@ class axispainter(axistitlepainter):
             tick.temp_v = axis.convert(float(tick) * axis.divisor)
             tick.temp_x, tick.temp_y = axispos.vtickpoint_pt(tick.temp_v)
             tick.temp_dx, tick.temp_dy = axispos.vtickdirection(tick.temp_v)
+        maxticklevel, maxlabellevel = _maxlevels(axis.ticks)
 
         # create & align tick.temp_labelbox
         for tick in axis.ticks:
             if tick.labellevel is not None:
-                labelattrs = helper.getsequenceno(self.labelattrs, tick.labellevel)
+                labelattrs = attr.selectattrs(self.labelattrs, tick.labellevel, maxlabellevel)
                 if labelattrs is not None:
-                    labelattrs = helper.ensurelist(labelattrs)[:]
+                    labelattrs = self.defaultlabelattrs + labelattrs
                     if self.labeldirection is not None:
                         labelattrs.append(self.labeldirection.trafo(tick.temp_dx, tick.temp_dy))
                     if tick.labelattrs is not None:
-                        labelattrs.extend(helper.ensurelist(tick.labelattrs))
+                        labelattrs.extend(tick.labelattrs)
                     tick.temp_labelbox = self.texrunner.text_pt(tick.temp_x, tick.temp_y, tick.label, labelattrs)
         if len(axis.ticks) > 1:
             equaldirection = 1
@@ -1722,24 +1759,20 @@ class axispainter(axistitlepainter):
                 if tick.labellevel is not None and self.labelattrs is not None:
                     tick.temp_labelbox.linealign(labeldist, -tick.temp_dx, -tick.temp_dy)
 
-        def mkv(arg):
-            if helper.issequence(arg):
-                return [unit.length(a, default_type="v") for a in arg]
-            if arg is not None:
-                return unit.length(arg, default_type="v")
-        innerticklengths = mkv(self.innerticklengths_str)
-        outerticklengths = mkv(self.outerticklengths_str)
-
         for tick in axis.ticks:
             if tick.ticklevel is not None:
-                innerticklength = helper.getitemno(innerticklengths, tick.ticklevel)
-                outerticklength = helper.getitemno(outerticklengths, tick.ticklevel)
+                innerticklength = attr.selectattr(self.innerticklength_str, tick.ticklevel, maxticklevel)
+                outerticklength = attr.selectattr(self.outerticklength_str, tick.ticklevel, maxticklevel)
                 if innerticklength is not None or outerticklength is not None:
                     if innerticklength is None:
                         innerticklength = 0
+                    else:
+                        innerticklength = unit.length(innerticklength, default_type="v")
                     if outerticklength is None:
                         outerticklength = 0
-                    tickattrs = helper.getsequenceno(self.tickattrs, tick.ticklevel)
+                    else:
+                        outerticklength = unit.length(outerticklength, default_type="v")
+                    tickattrs = attr.selectattrs(self.defaulttickattrs + self.tickattrs, tick.ticklevel, maxticklevel)
                     if tickattrs is not None:
                         innerticklength_pt = unit.topt(innerticklength)
                         outerticklength_pt = unit.topt(outerticklength)
@@ -1747,15 +1780,14 @@ class axispainter(axistitlepainter):
                         y1 = tick.temp_y + tick.temp_dy * innerticklength_pt
                         x2 = tick.temp_x - tick.temp_dx * outerticklength_pt
                         y2 = tick.temp_y - tick.temp_dy * outerticklength_pt
-                        ac.stroke(path.line_pt(x1, y1, x2, y2), helper.ensurelist(tickattrs))
-                if tick != frac((0, 1)) or self.zeropathattrs is None:
-                    gridattrs = helper.getsequenceno(self.gridattrs, tick.ticklevel)
-                    if gridattrs is not None:
-                        ac.stroke(axispos.vgridpath(tick.temp_v), helper.ensurelist(gridattrs))
-                if outerticklength is not None and unit.topt(outerticklength) > unit.topt(ac.extent):
-                    ac.extent = outerticklength
-                if outerticklength is not None and unit.topt(-innerticklength) > unit.topt(ac.extent):
-                    ac.extent = -innerticklength
+                        ac.stroke(path.line_pt(x1, y1, x2, y2), tickattrs)
+                        if outerticklength is not None and unit.topt(outerticklength) > unit.topt(ac.extent):
+                            ac.extent = outerticklength
+                        if outerticklength is not None and unit.topt(-innerticklength) > unit.topt(ac.extent):
+                            ac.extent = -innerticklength
+            if self.gridattrs is not None:
+                gridattrs = attr.selectattrs(self.defaultgridattrs + self.gridattrs, tick.ticklevel, maxticklevel)
+                ac.stroke(axispos.vgridpath(tick.temp_v), gridattrs)
             if tick.labellevel is not None and self.labelattrs is not None:
                 ac.insert(tick.temp_labelbox)
                 ac.labels.append(tick.temp_labelbox)
@@ -1763,9 +1795,7 @@ class axispainter(axistitlepainter):
                 if unit.topt(extent) > unit.topt(ac.extent):
                     ac.extent = extent
         if self.basepathattrs is not None:
-            ac.stroke(axispos.vbasepath(), helper.ensurelist(self.basepathattrs))
-        if self.zeropathattrs is not None and axis.min < 0 < axis.max:
-                ac.stroke(axispos.gridpath(0), helper.ensurelist(self.zeropathattrs))
+            ac.stroke(axispos.vbasepath(), self.defaultbasepathattrs + self.basepathattrs)
 
         # for tick in axis.ticks:
         #     del tick.temp_v    # we've inserted those temporary variables ... and do not care any longer about them
@@ -1788,17 +1818,14 @@ class linkaxispainter(axispainter):
 
     __implements__ = _Iaxispainter
 
-    def __init__(self, zeropathattrs=None,
-                       labelattrs=None,
+    def __init__(self, labelattrs=None,
                        titleattrs=None,
                        **kwargs):
         """initializes the instance
-        - the zeropathattrs default is set to None thus skipping the zeropath
         - the labelattrs default is set to None thus skipping the labels
         - the titleattrs default is set to None thus skipping the title
         - all keyword arguments are passed to axispainter"""
-        axispainter.__init__(self, zeropathattrs=zeropathattrs,
-                                   labelattrs=labelattrs,
+        axispainter.__init__(self, labelattrs=labelattrs,
                                    titleattrs=titleattrs,
                                    **kwargs)
 
@@ -1877,10 +1904,12 @@ class splitaxispainter(axistitlepainter):
 
     __implements__ = _Iaxispainter
 
+    defaultbreaklinesattrs = []
+
     def __init__(self, breaklinesdist="0.05 cm",
                        breaklineslength="0.5 cm",
                        breaklinesangle=-60,
-                       breaklinesattrs=(),
+                       breaklinesattrs=[],
                        **args):
         """initializes the instance
         - breaklinesdist is a visual length of the distance between
@@ -1933,8 +1962,8 @@ class splitaxispainter(axistitlepainter):
                                           path.lineto(*breakline2.end()),
                                           path.lineto(*breakline2.begin()),
                                           path.closepath()), [color.gray.white])
-                ac.stroke(breakline1, helper.ensurelist(self.breaklinesattrs))
-                ac.stroke(breakline2, helper.ensurelist(self.breaklinesattrs))
+                ac.stroke(breakline1, self.defaultbreaklinesattrs + self.breaklinesattrs)
+                ac.stroke(breakline2, self.defaultbreaklinesattrs + self.breaklinesattrs)
         axistitlepainter.paint(self, axispos, axis, ac=ac)
         return ac
 
@@ -1962,12 +1991,16 @@ class baraxispainter(axistitlepainter):
 
     __implements__ = _Iaxispainter
 
+    defaulttickattrs = []
+    defaultbasepathattrs = [style.linecap.square]
+    defaultnameattrs = [textmodule.halign.center, textmodule.vshift.mathaxis]
+
     def __init__(self, innerticklength=None,
                        outerticklength=None,
-                       tickattrs=(),
-                       basepathattrs=style.linecap.square,
+                       tickattrs=[],
+                       basepathattrs=[],
                        namedist="0.3 cm",
-                       nameattrs=(textmodule.halign.center, textmodule.vshift.mathaxis),
+                       nameattrs=[],
                        namedirection=None,
                        namepos=0.5,
                        namehequalize=0,
@@ -2022,7 +2055,7 @@ class baraxispainter(axistitlepainter):
         nameboxes = []
         if self.nameattrs is not None:
             for (v, x, y, dx, dy), name in zip(namepos, axis.names):
-                nameattrs = helper.ensurelist(self.nameattrs)[:]
+                nameattrs = self.defaultnameattrs + self.nameattrs
                 if self.namedirection is not None:
                     nameattrs.append(self.namedirection.trafo(tick.temp_dx, tick.temp_dy))
                 if axis.texts.has_key(name):
@@ -2045,25 +2078,26 @@ class baraxispainter(axistitlepainter):
         else:
             for namebox, np in zip(nameboxes, namepos):
                 namebox.linealign(labeldist, -np[3], -np[4])
-        if self.innerticklength_str is not None:
-            innerticklength = unit.length(self.innerticklength_str, default_type="v")
-            innerticklength_pt = unit.topt(innerticklength)
-            if self.tickattrs is not None and unit.topt(ac.extent) < -innerticklength_pt:
-                ac.extent = -innerticklength
-        elif self.outerticklength_str is not None:
-            innerticklength = innerticklength_pt = 0
-        if self.outerticklength_str is not None:
-            outerticklength = unit.length(self.outerticklength_str, default_type="v")
-            outerticklength_pt = unit.topt(outerticklength)
-            if self.tickattrs is not None and unit.topt(ac.extent) < outerticklength_pt:
-                ac.extent = outerticklength
-        elif self.innerticklength_str is not None:
-            outerticklength = outerticklength_pt = 0
-        for (v, x, y, dx, dy), namebox in zip(namepos, nameboxes):
-            newextent = namebox.extent(dx, dy) + labeldist
-            if unit.topt(ac.extent) < unit.topt(newextent):
-                ac.extent = newextent
-        if self.tickattrs is not None and (self.innerticklength_str is not None or self.outerticklength_str is not None):
+        if self.basepathattrs is not None:
+            p = axispos.vbasepath()
+            if p is not None:
+                ac.stroke(p, self.defaultbasepathattrs + self.basepathattrs)
+        if self.tickattrs is not None and (self.innerticklength_str is not None or
+                                           self.outerticklength_str is not None):
+            if self.innerticklength_str is not None:
+                innerticklength = unit.length(self.innerticklength_str, default_type="v")
+                innerticklength_pt = unit.topt(innerticklength)
+                if unit.topt(ac.extent) < -innerticklength_pt:
+                    ac.extent = -innerticklength
+            elif self.outerticklength_str is not None:
+                innerticklength = innerticklength_pt = 0
+            if self.outerticklength_str is not None:
+                outerticklength = unit.length(self.outerticklength_str, default_type="v")
+                outerticklength_pt = unit.topt(outerticklength)
+                if unit.topt(ac.extent) < outerticklength_pt:
+                    ac.extent = outerticklength
+            elif self.innerticklength_str is not None:
+                outerticklength = outerticklength_pt = 0
             for pos in axis.relsizes:
                 if pos == axis.relsizes[0]:
                     pos -= axis.firstdist
@@ -2076,11 +2110,11 @@ class baraxispainter(axistitlepainter):
                 y1 = y + dy * innerticklength_pt
                 x2 = x - dx * outerticklength_pt
                 y2 = y - dy * outerticklength_pt
-                ac.stroke(path.line_pt(x1, y1, x2, y2), helper.ensurelist(self.tickattrs))
-        if self.basepathattrs is not None:
-            p = axispos.vbasepath()
-            if p is not None:
-                ac.stroke(p, helper.ensurelist(self.basepathattrs))
+                ac.stroke(path.line_pt(x1, y1, x2, y2), self.defaulttickattrs + self.tickattrs)
+        for (v, x, y, dx, dy), namebox in zip(namepos, nameboxes):
+            newextent = namebox.extent(dx, dy) + labeldist
+            if unit.topt(ac.extent) < unit.topt(newextent):
+                ac.extent = newextent
         for namebox in nameboxes:
             ac.insert(namebox)
         axistitlepainter.paint(self, axispos, axis, ac=ac)
@@ -2426,7 +2460,7 @@ class linkaxis:
           is performed"""
         if self.axiscanvas is None:
             if self.linkedaxis.axiscanvas is None:
-                raise RuntimeError("link axis finish method previous to the original axis")
+                raise RuntimeError("link axis finish method called before the finish method of the original axis")
             self.axiscanvas = self.painter.paint(axispos, self)
 
 
@@ -2442,15 +2476,13 @@ class splitaxis:
 
     __implements__ = _Iaxis, _Iaxispos
 
-    def __init__(self, subaxes, splitlist=0.5, splitdist=0.1, relsizesplitdist=1,
+    def __init__(self, subaxes, splitlist=[0.5], splitdist=0.1, relsizesplitdist=1,
                        title=None, painter=splitaxispainter()):
         """initializes the instance
         - subaxes is a list of subaxes
         - splitlist is a list of graph coordinates, where the splitting
-          of the main axis should be performed; a single entry (splitting
-          two axes) doesn't need to be wrapped into a list; if the list
-          isn't long enough for the subaxes, missing entries are considered
-          to be None;
+          of the main axis should be performed; if the list isn't long enough
+          for the subaxes, missing entries are considered to be None
         - splitdist is the size of the splitting in graph coordinates, when
           the associated splitlist entry is not None
         - relsizesplitdist: a None entry in splitlist means, that the
@@ -2466,7 +2498,7 @@ class splitaxis:
         self.subaxes = subaxes
         self.painter = painter
         self.title = title
-        self.splitlist = helper.ensurelist(splitlist)
+        self.splitlist = splitlist
         for subaxis in self.subaxes:
             subaxis.vmin = None
             subaxis.vmax = None
@@ -2543,6 +2575,8 @@ class splitaxis:
         return linksplitaxis(self, **args)
 
 
+class omitsubaxispainter: pass
+
 class linksplitaxis(linkaxis):
     """a splitaxis linked to an already existing splitaxis
     - inherits the access to a linked axis -- as before,
@@ -2552,25 +2586,21 @@ class linksplitaxis(linkaxis):
 
     __implements__ = _Iaxis
 
-    def __init__(self, linkedaxis, painter=linksplitaxispainter(), subaxispainter=None):
+    def __init__(self, linkedaxis, painter=linksplitaxispainter(), subaxispainter=omitsubaxispainter):
         """initializes the instance
-        - it gets a axis this linkaxis is linked to
-        - it gets a painter to be used for this linked axis
-        - it gets a list of painters to be used for the linkaxes
-          of the subaxes; if None, the createlinkaxis of the subaxes
-          are called without a painter parameter; if it is not a
-          list, the subaxispainter is passed as the painter
-          parameter to all createlinkaxis of the subaxes"""
+        - linkedaxis is the axis this axis becomes linked to
+        - painter is axispainter instance for this linked axis
+        - subaxispainter is a changeable painter to be used for linked
+          subaxes; if omitsubaxispainter the createlinkaxis method of
+          the subaxis are called without a painter parameter"""
         linkaxis.__init__(self, linkedaxis, painter=painter)
-        if subaxispainter is not None:
-            if helper.issequence(subaxispainter):
-                if len(linkedaxis.subaxes) != len(subaxispainter):
-                    raise RuntimeError("subaxes and subaxispainter lengths do not fit")
-                self.subaxes = [a.createlinkaxis(painter=p) for a, p in zip(linkedaxis.subaxes, subaxispainter)]
+        self.subaxes = []
+        for subaxis in linkedaxis.subaxes:
+            painter = attr.selectattr(subaxispainter, len(self.subaxes), len(linkedaxis.subaxes))
+            if painter is omitsubaxispainter:
+                self.subaxes.append(subaxis.createlinkaxis())
             else:
-                self.subaxes = [a.createlinkaxis(painter=subaxispainter) for a in linkedaxis.subaxes]
-        else:
-            self.subaxes = [a.createlinkaxis() for a in linkedaxis.subaxes]
+                self.subaxes.append(subaxis.createlinkaxis(painter=painter))
 
 
 class baraxis:

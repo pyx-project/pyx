@@ -9,4 +9,7 @@ g = graph.graphxy(width=8, key=graph.key(pos="bl"),
 g.plot(graph.function("y=sin(x)", title=r"$\sin(x)$"))
 g.plot(graph.function("y=cos(x)", title=r"$\cos(x)$"))
 
+g.finish()
+g.stroke(g.ygridpath(0))
+
 g.writetofile("piaxis")

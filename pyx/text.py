@@ -391,6 +391,7 @@ size.Large = size(2)
 size.LARGE = size(3)
 size.huge = size(4)
 size.Huge = size(5)
+size.clear = attr.clearclass(size)
 
 
 _textattrspreamble += "\\newbox\\PyXBoxVBox%\n\\newdimen\PyXDimenVBox%\n"
@@ -416,10 +417,14 @@ class parbox_pt(attr.sortbeforeexclusiveattr, textattr):
         else:
             RuntimeError("invalid baseline argument")
 
+parbox_pt.clear = attr.clearclass(parbox_pt)
+
 class parbox(parbox_pt):
 
     def __init__(self, width, **kwargs):
         parbox_pt.__init__(self, unit.topt(width), **kwargs)
+
+parbox.clear = parbox_pt.clear
 
 
 _textattrspreamble += "\\newbox\\PyXBoxVAlign%\n\\newdimen\PyXDimenVAlign%\n"
@@ -478,6 +483,7 @@ vshift.bottomzero = vshift(0)
 vshift.middlezero = vshift(0.5)
 vshift.topzero = vshift(1)
 vshift.mathaxis = _vshiftmathaxis()
+vshift.clear = attr.clearclass(_vshift)
 
 
 ###############################################################################
@@ -642,6 +648,13 @@ class texrunner:
     - the instance variable errordebug controls the verbose
       level of TexResultError"""
 
+    defaulttexmessagesstart = [texmessage.start]
+    defaulttexmessagesdocclass = [texmessage.load]
+    defaulttexmessagesbegindoc = [texmessage.load, texmessage.noaux]
+    defaulttexmessagesend = [texmessage.texend]
+    defaulttexmessagesdefaultpreamble = [texmessage.load]
+    defaulttexmessagesdefaultrun = [texmessage.loadfd, texmessage.graphicsload]
+
     def __init__(self, mode="tex",
                        lfs="10pt",
                        docclass="article",
@@ -656,12 +669,12 @@ class texrunner:
                        errordebug=1,
                        dvicopy=0,
                        pyxgraphics=1,
-                       texmessagesstart=[texmessage.start],
-                       texmessagesdocclass=[texmessage.load],
-                       texmessagesbegindoc=[texmessage.load, texmessage.noaux],
-                       texmessagesend=[texmessage.texend],
-                       texmessagesdefaultpreamble=[texmessage.load],
-                       texmessagesdefaultrun=[texmessage.loadfd, texmessage.graphicsload]):
+                       texmessagesstart=[],
+                       texmessagesdocclass=[],
+                       texmessagesbegindoc=[],
+                       texmessagesend=[],
+                       texmessagesdefaultpreamble=[],
+                       texmessagesdefaultrun=[]):
         mode = mode.lower()
         if mode != "tex" and mode != "latex":
             raise ValueError("mode \"TeX\" or \"LaTeX\" expected")
@@ -798,7 +811,7 @@ class texrunner:
                          "{\\count0=80\\count1=121\\count2=88\\count3=#2\\shipout\\box\\PyXBoxHAligned}}%\n" # shipout PyXBox to Page 80.121.88.<page number>
                          "\\def\\PyXInput#1{\\immediate\\write16{PyXInputMarker:executeid=#1:}}%\n" # write PyXInputMarker to stdout
                          "\\def\\PyXMarker#1{\\special{PyX:marker #1}}%\n", # write PyXMarker special into the dvi-file
-                         attr.mergeattrs(self.texmessagesstart))
+                         self.defaulttexmessagesstart + self.texmessagesstart)
             os.remove("%s.tex" % self.texfilename)
             if self.mode == "tex":
                 if len(self.lfs) > 4 and self.lfs[-4:] == ".lfs":
@@ -857,10 +870,10 @@ class texrunner:
                                  [])
                 if self.docopt is not None:
                     self.execute("\\documentclass[%s]{%s}" % (self.docopt, self.docclass),
-                                 attr.mergeattrs(self.texmessagesdocclass))
+                                 self.defaulttexmessagesdocclass + self.texmessagesdocclass)
                 else:
                     self.execute("\\documentclass{%s}" % self.docclass,
-                                 attr.mergeattrs(self.texmessagesdocclass))
+                                 self.defaulttexmessagesdocclass + self.texmessagesdocclass)
             self.preamblemode = oldpreamblemode
         self.executeid += 1
         if expr is not None: # TeX/LaTeX should process expr
@@ -901,9 +914,12 @@ class texrunner:
                 if not self.preamblemode:
                     texmessage.pyxbox.check(self)
                     texmessage.pyxpageout.check(self)
-            for checktexmessage in texmessages:
+            texmessages = attr.mergeattrs(texmessages)
+            # reverse loop over the merged texmessages (last is applied first)
+            lentexmessages = len(texmessages)
+            for i in range(lentexmessages):
                 try:
-                    checktexmessage.check(self)
+                    texmessages[lentexmessages-1-i].check(self)
                 except TexResultWarning:
                     traceback.print_exc()
             texmessage.emptylines.check(self)
@@ -916,7 +932,7 @@ class texrunner:
         """finish TeX/LaTeX and read the dvifile
         - this method ensures that all textboxes can access their
           dvicanvas"""
-        self.execute(None, self.texmessagesend)
+        self.execute(None, self.defaulttexmessagesend + self.texmessagesend)
         if self.dvicopy:
             os.system("dvicopy %(t)s.dvi %(t)s.dvicopy > %(t)s.dvicopyout 2> %(t)s.dvicopyerr" % {"t": self.texfilename})
             dvifilename = "%s.dvicopy" % self.texfilename
@@ -945,7 +961,7 @@ class texrunner:
             for expr, texmessages in self.preambles:
                 self.execute(expr, texmessages)
             if self.mode == "latex":
-                self.execute("\\begin{document}", self.texmessagesbegindoc)
+                self.execute("\\begin{document}", self.defaulttexmessagesbegindoc + self.texmessagesbegindoc)
             self.preamblemode = 0
         else:
             self.preambles = []
@@ -1041,7 +1057,7 @@ class texrunner:
         - args might contain texmessage instances"""
         if self.texdone or not self.preamblemode:
             raise RuntimeError("preamble calls disabled due to previous text calls")
-        texmessages = attr.mergeattrs(texmessages, self.texmessagesdefaultpreamble)
+        texmessages = self.defaulttexmessagesdefaultpreamble + self.texmessagesdefaultpreamble + texmessages
         self.execute(expr, texmessages)
         self.preambles.append((expr, texmessages))
 
@@ -1063,20 +1079,21 @@ class texrunner:
         first = 0
         if self.preamblemode:
             if self.mode == "latex":
-                self.execute("\\begin{document}", self.texmessagesbegindoc)
+                self.execute("\\begin{document}", self.defaulttexmessagesbegindoc + self.texmessagesbegindoc)
             self.preamblemode = 0
             first = 1
             if self.texipc and self.dvicopy:
                 raise RuntimeError("texipc and dvicopy can't be mixed up")
-        textattrs = attr.mergeattrs(textattrs)
+        textattrs = attr.mergeattrs(textattrs) # perform cleans
         attr.checkattrs(textattrs, [textattr, trafo.trafo_pt, style.fillstyle])
         trafos = attr.getattrs(textattrs, [trafo.trafo_pt])
         fillstyles = attr.getattrs(textattrs, [style.fillstyle])
         textattrs = attr.getattrs(textattrs, [textattr])
+        # reverse loop over the merged textattrs (last is applied first)
         lentextattrs = len(textattrs)
         for i in range(lentextattrs):
             expr = textattrs[lentextattrs-1-i].apply(expr)
-        self.execute(expr, attr.mergeattrs(texmessages, self.texmessagesdefaultrun))
+        self.execute(expr, self.defaulttexmessagesdefaultrun + self.texmessagesdefaultrun + texmessages)
         if self.texipc:
             if first:
                 self.dvifile = dvifile.dvifile("%s.dvi" % self.texfilename, self.fontmap, debug=self.dvidebug)

@@ -296,7 +296,7 @@ class arrow(deco, attr.attr):
     """arrow is a decorator which adds an arrow to either side of the path"""
 
     def __init__(self, attrs=[], position=0, size=_base, angle=45, constriction=0.8):
-        self.attrs = attr.mergeattrs(attrs, defaults=[style.linestyle.solid, stroked, filled])
+        self.attrs = attr.mergeattrs([style.linestyle.solid, stroked, filled] + attrs)
         attr.checkattrs(self.attrs, [deco, style.fillstyle, style.strokestyle])
         self.position = position
         self.size = unit.length(size, default_type="v")
