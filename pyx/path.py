@@ -531,17 +531,31 @@ class closepath(normpathel):
     def _split(self, context, parameters):
         x0, y0 = context.currentpoint
         x1, y1 = context.currentsubpath
+        
         if parameters:
             lastpoint = None
             result = []
-            for t in parameters:
-                xs, ys = x0 + (x1-x0)*t, y0 + (y1-y0)*t
-                if lastpoint is None:
-                    result.append((_lineto(xs, ys),))
+
+            if parameters[0]==0:
+                result.append(())
+                parameters = parameters[1:]
+                lastpoint = x0, y0
+
+            if parameters:
+                for t in parameters:
+                    xs, ys = x0 + (x1-x0)*t, y0 + (y1-y0)*t
+                    if lastpoint is None:
+                        result.append((_lineto(xs, ys),))
+                    else:
+                        result.append((_moveto(*lastpoint), _lineto(xs, ys)))
+                    lastpoint = xs, ys
+
+                if parameters[-1]!=1:
+                    result.append((_moveto(*lastpoint), _lineto(x1, y1)))
                 else:
-                    result.append((_moveto(*lastpoint), _lineto(xs, ys)))
-                lastpoint = xs, ys
-            result.append((_moveto(*lastpoint), _lineto(x1, y1)))
+                    result.append((_moveto(x1, y1),))
+            else:
+                result.append((_moveto(x0, y0), _lineto(x1, y1)))
         else:
             result = [(_moveto(x0, y0), _lineto(x1, y1))]
             
@@ -654,17 +668,30 @@ class _lineto(normpathel):
         if parameters:
             lastpoint = None
             result = []
-            for t in parameters:
-                xs, ys = x0 + (x1-x0)*t, y0 + (y1-y0)*t
-                if lastpoint is None:
-                    result.append((_lineto(xs, ys),))
+
+            if parameters[0]==0:
+                result.append(())
+                parameters = parameters[1:]
+                lastpoint = x0, y0
+
+            if parameters:
+                for t in parameters:
+                    xs, ys = x0 + (x1-x0)*t, y0 + (y1-y0)*t
+                    if lastpoint is None:
+                        result.append((_lineto(xs, ys),))
+                    else:
+                        result.append((_moveto(*lastpoint), _lineto(xs, ys)))
+                    lastpoint = xs, ys
+
+                if parameters[-1]!=1:
+                    result.append((_moveto(*lastpoint), _lineto(x1, y1)))
                 else:
-                    result.append((_moveto(*lastpoint), _lineto(xs, ys)))
-                lastpoint = xs, ys
-            result.append((_moveto(*lastpoint), _lineto(x1, y1)))
+                    result.append((_moveto(x1, y1),))
+            else:
+                result.append((_moveto(x0, y0), _lineto(x1, y1)))
         else:
             result = [(_moveto(x0, y0), _lineto(x1, y1))]
-            
+
         return result
 
     def _tangent(self, context, t):
@@ -740,15 +767,28 @@ class _curveto(normpathel):
                         context.currentpoint[0], context.currentpoint[1])
 
     def _split(self, context, parameters):
-        bps = self._bcurve(context).split(parameters)
-        bp0 = bps[0]
+        if parameters:
+            # we need to split
+            bps = self._bcurve(context).split(list(parameters))
 
-        result = [(_curveto(bp0.x1, bp0.y1, bp0.x2, bp0.y2, bp0.x3, bp0.y3),)]
+            if parameters[0]==0:
+                result = [()]
+            else:
+                bp0 = bps[0]
+                result = [(_curveto(bp0.x1, bp0.y1, bp0.x2, bp0.y2, bp0.x3, bp0.y3),)]
+                bps = bps[1:]
 
-        for bp in bps[1:]:
-            result.append((_moveto(bp.x0, bp.y0),
-                           _curveto(bp.x1, bp.y1, bp.x2, bp.y2, bp.x3, bp.y3)))
+            for bp in bps:
+                result.append((_moveto(bp.x0, bp.y0),
+                               _curveto(bp.x1, bp.y1, bp.x2, bp.y2, bp.x3, bp.y3)))
 
+            if parameters[-1]==1:
+                result.append((_moveto(self.x3, self.y3),))
+                
+        else:
+            result = [(_curveto(self.x1, self.y1,
+                                self.x2, self.y2,
+                                self.x3, self.y3),)]
         return result
 
     def _tangent(self, context, t):
@@ -1396,6 +1436,69 @@ def _normalizepath(path):
                 np.append(npel)
     return np
 
+# helper routine for the splitting of subpaths
+
+def _splitclosedsubpath(subpath, parameters):
+    """ split closed subpath at list of parameters (counting from t=0)"""
+
+    context = _pathcontext()
+    result = []
+
+    # first pathel of subpath must be _moveto
+    pel = subpath[0]
+    pel._updatecontext(context)
+    np = [pel]
+    t = 0
+
+    # XXX: to be done
+
+
+def _splitopensubpath(subpath, parameters):
+    """ split open subpath at list of parameters (counting from t=0)"""
+
+    context = _pathcontext()
+    result = []
+
+    # first pathel of subpath must be _moveto
+    pel = subpath[0]
+    pel._updatecontext(context)
+    np = normpath(pel)
+    t = 0
+        
+    for pel in subpath[1:]:
+        if not parameters or t+1<parameters[0]:
+            np.path.append(pel)
+        else:
+            dummy = list(parameters) + [t+1]
+            for i in range(len(dummy)):
+                if dummy[i]>t+1: break
+                
+            pieces = pel._split(context,
+                                [x-t for x in parameters[:i]])
+            
+            parameters = parameters[i:]
+
+            # the first item of pieces finishes np
+            np.path.extend(pieces[0])
+            result.append(np)
+
+            # the intermediate ones are normpaths by themselves
+            for np in pieces[1:-1]:
+                result.append(normpath(*np))
+
+            # we continue to work with the last one
+            np = normpath(*pieces[-1])
+
+        # go further along path
+        t += 1
+        pel._updatecontext(context)
+        
+    if len(np)>0:
+        result.append(np)
+
+    return result
+    
+
 class normpath(path):
 
     """normalized PS style path"""
@@ -1412,6 +1515,40 @@ class normpath(path):
     def __str__(self):
         return string.join(map(str, self.path), "\n")
 
+    def _subpaths(self):
+        """returns list of tuples (subpath, t0, tf, closed),
+        one for each subpath. Here are
+
+        subpath: list of pathels corresponding subpath
+        t0: parameter value corresponding to begin of subpath
+        tf: parameter value corresponding to end of subpath
+        closed: subpath is closed, i.e. ends with closepath
+
+        """
+        t = t0 = 0
+        result = []
+        subpath = []
+
+        for pel in self.path:
+            subpath.append(pel)
+            if isinstance(pel, _moveto) and len(subpath)>1:
+                result.append((subpath, t0, t, 0))
+                subpath = []
+                t0 = t
+            elif isinstance(pel, closepath):
+                result.append((subpath, t0, t, 1))
+                result.append((subpath, t0, t, 0))
+                subpath = []
+                t = t
+                t += 1
+            else:
+                t += 1
+
+        if len(subpath)>1:
+            result.append((subpath, t0, t-1, 0))
+                
+        return result
+            
     def append(self, pathel):
         self.path.append(pathel)
         self.path = _normalizepath(self.path)
@@ -1528,8 +1665,6 @@ class normpath(path):
         subpath = []
         np = normpath()
 
-        #print self
-
         # we append a _moveto operation at the end to end the last
         # subpath explicitely.
         for pel in self.path+[_moveto(0,0)]:
@@ -1543,21 +1678,12 @@ class normpath(path):
                 np = np + normpath(*subpath) 
                 subpath = []
             elif subpath and isinstance(pel, closepath):
-                #print ":::"
-                #print string.join(map(str, subpath), "\n")
-                #print ":::"
-
-                subpath.append(_moveto(*context.currentsubpath))
+                subpath.append(_moveto(*context.currentpoint))
                 subpath.reverse()
                 subpath.append(closepath())
                 
-                #print string.join(map(str, subpath), "\n")
-                #print 
-
                 np = np + normpath(*subpath) 
                 subpath = []
-
-
 
             pel._updatecontext(context)
 
@@ -1578,65 +1704,40 @@ class normpath(path):
 
         # the currently built up normpath
         np = normpath()
-        
-        # marker: are we creating the first subpath of a split path?
-        npisfirstsubpath = 0
 
-        for pel in self.path:
-            if isinstance(pel, _moveto):
-                np.path.append(pel)
-                # a _moveto starts a new subpath
-                npisfirstsubpath = 0
-            elif npisfirstsubpath and isinstance(pel, closepath):
-                # closepath and _moveto both end a subpath, but we 
-                # don't want to append a closepath for the
-                # first subpath, instead we append a straight line
-                np.append(_lineto(*context.currentsubpath))
-                npisfirstsubpath = 0
-                t += 1
-            else:
-                if not parameters or t+1<parameters[0]:
-                    np.path.append(pel)
+        for subpath, t0, tf, closed in self._subpaths():
+            if t0<parameters[0]:
+                if tf<parameters[0]:
+                    # this is trivial, no split has happened
+                    np.path.extend(subpath)
                 else:
-                    for i in range(len(parameters)):
-                        if parameters[i]>t+1: break
-                    i= max(1, i)
+                    # we have to split this subpath
 
-                    pieces = pel._split(context,
-                                        [x-t for x in parameters[:i]])
+                    # first we determine the relevant splitting
+                    # parameters
+                    dummy = list(parameters) + [tf]
+                    for i in range(len(dummy)):
+                        if dummy[i]>tf: break
 
+                    # the rest we delegate to helper functions
+                    if closed:
+                        new = _splitclosedsubpath(subpath,
+                                                  [x-t0 for x in parameters[:i]])
+                    else:
+                        new = _splitopensubpath(subpath,
+                                                [x-t0 for x in parameters[:i]])
+
+                    np.path.extend(new[0].path)
+                    result.append(np)
+                    result.extend(new[1:-1])
+                    np = new[-1]
                     parameters = parameters[i:]
 
-                    # the first item of pieces finishes np
-                    for pel in pieces[0]:
-                        np.path.append(pel)
-                        # np is ready
-                        result.append(np)
-
-                    # the intermediate ones are normpaths by themselves
-                    for np in pieces[1:-1]:
-                        np = normpath()
-                        for pel in np:
-                            np.path.append(pel)
-                        result.append(np)
-
-                    # we continue to work with the last one
-                    np = normpath()
-                    for pel in pieces[-1]:
-                        np.path.append(pel)
-
-                    # marker: we are creating the first subpath of np
-                    npisfirstsubpath = 1
-
-                t += 1
-
-            # go further along path
-            pel._updatecontext(context)
-            
-        if len(np)>0:
+        if np:
             result.append(np)
 
         return result
+        
 
     def tangent(self, t, length=None):
         """return tangent vector of path at parameter value t
