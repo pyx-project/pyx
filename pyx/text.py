@@ -103,30 +103,30 @@ class binfile:
         return self.file.read(bytes-1)[:l]
 
 
-class tokenfile:
-    """ ascii file containing tokens separated by spaces.
-
-    Comments beginning with % are ignored. Strings containing spaces
-    are not handled correctly
-    """
-
-    def __init__(self, filename):
-        self.file = open(filename, "r")
-        self.line = None
-
-    def gettoken(self):
-        """ return next token or None if EOF """
-        while not self.line:
-            line = self.file.readline()
-            if line == "":
-                return None
-            self.line = line.split("%")[0].split()
-        token = self.line[0]
-        self.line = self.line[1:]
-        return token
-
-    def close(self):
-        self.file.close()
+# class tokenfile:
+#     """ ascii file containing tokens separated by spaces.
+#
+#     Comments beginning with % are ignored. Strings containing spaces
+#     are not handled correctly
+#     """
+#
+#     def __init__(self, filename):
+#         self.file = open(filename, "r")
+#         self.line = None
+#
+#     def gettoken(self):
+#         """ return next token or None if EOF """
+#         while not self.line:
+#             line = self.file.readline()
+#             if line == "":
+#                 return None
+#             self.line = line.split("%")[0].split()
+#         token = self.line[0]
+#         self.line = self.line[1:]
+#         return token
+#
+#     def close(self):
+#         self.file.close()
 
 
 class DVIError(exceptions.Exception): pass
@@ -330,36 +330,36 @@ class TFMFile:
         self.file.file.close()
 
 
-class FontEncoding:
-
-    def __init__(self, filename):
-        """ font encoding contained in filename """
-        encpath = pykpathsea.find_file(filename, pykpathsea.kpse_tex_ps_header_format)
-        encfile = tokenfile(encpath)
-
-        # name of encoding
-        self.encname = encfile.gettoken()
-        token = encfile.gettoken()
-        if token != "[":
-            raise RuntimeError("cannot parse encoding file '%s', expecting '[' got '%s'" % (filename, token))
-        self.encvector = []
-        for i in range(256):
-            token = encfile.gettoken()
-            if token is None or token=="]":
-                raise RuntimeError("not enough charcodes in encoding file '%s'" % filename)
-            self.encvector.append(token)
-        if encfile.gettoken() != "]":
-            raise RuntimeError("too many charcodes in encoding file '%s'" % filename)
-        token = encfile.gettoken()
-        if token != "def":
-            raise RuntimeError("cannot parse encoding file '%s', expecting 'def' got '%s'" % (filename, token))
-        token = encfile.gettoken()
-        if token != None:
-            raise RuntimeError("encoding file '%s' too long" % filename)
-        encfile.close()
-
-    def encode(self, charcode):
-        return self.encvector[charcode]
+# class FontEncoding:
+#
+#     def __init__(self, filename):
+#         """ font encoding contained in filename """
+#         encpath = pykpathsea.find_file(filename, pykpathsea.kpse_tex_ps_header_format)
+#         encfile = tokenfile(encpath)
+#
+#         # name of encoding
+#         self.encname = encfile.gettoken()
+#         token = encfile.gettoken()
+#         if token != "[":
+#             raise RuntimeError("cannot parse encoding file '%s', expecting '[' got '%s'" % (filename, token))
+#         self.encvector = []
+#         for i in range(256):
+#             token = encfile.gettoken()
+#             if token is None or token=="]":
+#                 raise RuntimeError("not enough charcodes in encoding file '%s'" % filename)
+#             self.encvector.append(token)
+#         if encfile.gettoken() != "]":
+#             raise RuntimeError("too many charcodes in encoding file '%s'" % filename)
+#         token = encfile.gettoken()
+#         if token != "def":
+#             raise RuntimeError("cannot parse encoding file '%s', expecting 'def' got '%s'" % (filename, token))
+#         token = encfile.gettoken()
+#         if token != None:
+#             raise RuntimeError("encoding file '%s' too long" % filename)
+#         encfile.close()
+#
+#     def encode(self, charcode):
+#         return self.encvector[charcode]
 
 
 class FontMapping:
@@ -1078,10 +1078,13 @@ class DVIFile:
         result = [_ReEncodeFont]
         for font in self.fonts:
             if font:
-                result.append(prolog.fontdefinition(font))
+                result.append(prolog.fontdefinition(font.getbasepsname(),
+                                                    font.getfontfile(),
+                                                    font.getencodingfile(),
+                                                    font.usedchars))
                 if font.getencoding():
-                    result.append(prolog.fontencoding(font))
-                    result.append(prolog.fontreencoding(font))
+                    result.append(prolog.fontencoding(font.getencoding(), font.getencodingfile()))
+                    result.append(prolog.fontreencoding(font.getpsname(), font.getbasepsname(), font.getencoding()))
         result.extend(self.pages[page-1].prolog())
         return result
 

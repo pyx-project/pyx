@@ -31,7 +31,7 @@ import pykpathsea, t1strip
 
 #
 # Abstract base class
-# 
+#
 
 class prologitem:
 
@@ -81,16 +81,28 @@ class fontdefinition(prologitem):
 
     """ PostScript font definition included in the prolog """
 
-    def __init__(self, font):
-        self.basepsname = font.getbasepsname()
-        self.fontfile = font.getfontfile()
-        self.encfilename = font.getencodingfile()
-        self.usedchars = font.usedchars
+    def __init__(self, name, filename, encfilename, usedchars):
+        """ include type 1 font defined by the following parameters
+
+        - name:        PostScript FontName of font
+        - filename:    name (without path) of file containing the font definition
+        - encfilename: name (without path) of file containing used encoding of font
+                       or None (if no encoding file used)
+        - usechars:    list with 256 elements containing used charcodes of font
+
+        """
+
+        # Note that here we only need the encoding for selecting the used glyphs!
+
+        self.name = name
+        self.filename = filename
+        self.encfilename = encfilename
+        self.usedchars = usedchars
 
     def merge(self, other):
         if not isinstance(other, fontdefinition):
             return other
-        if self.basepsname==other.basepsname and self.encfilename==other.encfilename:
+        if self.name==other.name and self.encfilename==other.encfilename:
             for i in range(len(self.usedchars)):
                 self.usedchars[i] = self.usedchars[i] or other.usedchars[i]
             return None
@@ -98,16 +110,16 @@ class fontdefinition(prologitem):
             return other
 
     def write(self, file):
-        if self.fontfile:
-            file.write("%%%%BeginFont: %s\n" % self.basepsname)
+        if self.filename:
+            file.write("%%%%BeginFont: %s\n" % self.name)
             file.write("%Included char codes:")
             for i in range(len(self.usedchars)):
                 if self.usedchars[i]:
                     file.write(" %d" % i)
             file.write("\n")
-            pfbpath = pykpathsea.find_file(self.fontfile, pykpathsea.kpse_type1_format)
+            pfbpath = pykpathsea.find_file(self.filename, pykpathsea.kpse_type1_format)
             if pfbpath is None:
-                raise RuntimeError("cannot find type 1 font %s" % self.fontfile)
+                raise RuntimeError("cannot find type 1 font %s" % self.filename)
             if self.encfilename is not None:
                 encpath = pykpathsea.find_file(self.encfilename, pykpathsea.kpse_tex_ps_header_format)
                 if encpath is None:
@@ -120,11 +132,18 @@ class fontdefinition(prologitem):
 
 class fontencoding(prologitem):
 
-    """ PostScript font re-encoding vector included in the prolog """
+    """ PostScript font encoding vector included in the prolog """
 
-    def __init__(self, font):
-        self.name = font.getencoding()
-        self.filename = font.getencodingfile()
+    def __init__(self, name, filename):
+        """ include font encoding vector specified by
+
+        - name:        name of the encoding
+        - filename:    name (without path) of file containing the font encoding
+
+        """
+
+        self.name = name
+        self.filename = filename
 
     def merge(self, other):
         if not isinstance(other, fontencoding):
@@ -148,24 +167,33 @@ class fontreencoding(prologitem):
 
     """ PostScript font re-encoding directive included in the prolog """
 
-    def __init__(self, font):
-        self.psname = font.getpsname()
-        self.basepsname = font.getbasepsname()
-        self.encoding = font.getencoding()
+    def __init__(self, fontname, basefontname, encname):
+        """ include font re-encoding directive specified by
+
+        - fontname:     PostScript FontName of the new reencoded font
+        - basefontname: PostScript FontName of the original font
+        - encname:      name of the encoding
+
+        Before being able to reencode a font, you have to include the
+        encoding via a fontencoding prolog item with name=encname
+
+        """
+
+        self.fontname = fontname
+        self.basefontname = basefontname
+        self.encname = encname
 
     def merge(self, other):
         if not isinstance(other, fontreencoding):
             return other
-        if self.psname==other.psname:
-            if self.basepsname==other.basepsname and self.encoding==other.encoding:
+        if self.fontname==other.fontname:
+            if self.basefontname==other.basefontname and self.encname==other.encname:
                 return None
             raise ValueError("Conflicting font reencodings!")
         else:
             return other
 
     def write(self, file):
-        file.write("%%%%BeginProcSet: %s\n" % self.psname)
-        file.write("/%s /%s %s ReEncodeFont\n" % (self.basepsname, self.psname, self.encoding))
+        file.write("%%%%BeginProcSet: %s\n" % self.fontname)
+        file.write("/%s /%s %s ReEncodeFont\n" % (self.basefontname, self.fontname, self.encname))
         file.write("%%EndProcSet\n")
-
-
