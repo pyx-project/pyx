@@ -29,6 +29,12 @@ PyX
     - renamed vbox to parbox (was done in 0.3 partially only)
   - data module:
     - allow for tuples in arguments of the data class
+  - graph module:
+    - allow for part=None in _axis (base of linaxis and logaxis) -- just for convenience
+  - examples:
+    - added a latex example (requested by users)
+    - added back the integral example (prior part of the user manual)
+    - small change in vector example (allow for the access to the texrunner)
 
 0.3 (2003/03/31)
   - examples

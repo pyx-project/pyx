@@ -37,6 +37,7 @@ pagename = sys.argv[1]
 if pagename.endswith(".pt"): pagename = pagename[:-3]
 
 examples = [example("hello"), 
+            example("latex"),
             example("pattern"),
             example("vector"),
             example("box"),
@@ -48,6 +49,7 @@ examples = [example("hello"),
             example("graphs/piaxis"),
             example("graphs/bar"),
             example("graphs/arrows"),
+            example("graphs/integral"),
             example("graphs/partialfill")]
 
 write_file("%s.html" % pagename,
