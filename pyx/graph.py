@@ -174,21 +174,22 @@ class tick(frac):
     a tick is a frac enhanced by
     - self.ticklevel (0 = tick, 1 = subtick, etc.)
     - self.labellevel (0 = label, 1 = sublabel, etc.)
-    - self.text
+    - self.label (a string) and self.labelttrs (a list, defaults to [])
     When ticklevel or labellevel is None, no tick or label is present at that value.
-    When text is None, it should be automatically created (and stored), once the
-    an axis painter needs it."""
+    When label is None, it should be automatically created (and stored), once the
+    an axis painter needs it. Classes, which implement _Itexter do precisely that."""
 
-    def __init__(self, enum, denom, ticklevel=None, labellevel=None, text=None):
+    def __init__(self, enum, denom, ticklevel=None, labellevel=None, label=None, labelattrs=[]):
         frac.__init__(self, enum, denom)
         self.ticklevel = ticklevel
         self.labellevel = labellevel
-        self.text = text
+        self.label = label
+        self.labelattrs = labelattrs
 
     def merge(self, other):
         """merges two ticks together:
           - the lower ticklevel/labellevel wins
-          - when present, self.text is taken over; otherwise the others text is taken
+          - when present, self.label is taken over; otherwise the others label is taken
           - the ticks should be at the same position (otherwise it doesn't make sense)
             -> this is NOT checked
         """
@@ -196,11 +197,11 @@ class tick(frac):
             self.ticklevel = other.ticklevel
         if self.labellevel is None or (other.labellevel is not None and other.labellevel < self.labellevel):
             self.labellevel = other.labellevel
-        if self.text is None:
-            self.text = other.text
+        if self.label is None:
+            self.label = other.label
 
     def __repr__(self):
-        return "tick(%r, %r, %s, %s, %s)" % (self.enum, self.denom, self.ticklevel, self.labellevel, self.text)
+        return "tick(%r, %r, %s, %s, %s)" % (self.enum, self.denom, self.ticklevel, self.labellevel, self.label)
 
 
 def _mergeticklists(list1, list2):
@@ -229,37 +230,37 @@ def _mergeticklists(list1, list2):
     return list1
 
 
-def _mergetexts(ticks, texts):
-    """helper function to merge texts into ticks
-    - when texts is not None, the text of all ticks with
+def _mergelabels(ticks, labels):
+    """helper function to merge labels into ticks
+    - when labels is not None, the label of all ticks with
       labellevel
       different from None are set
-    - texts need to be a sequence of sequences of strings,
+    - labels need to be a sequence of sequences of strings,
       where the first sequence contain the strings to be
-      used as texts for the ticks with labellevel 0,
+      used as labels for the ticks with labellevel 0,
       the second sequence for labellevel 1, etc.
     - when the maximum labellevel is 0, just a sequence of
-      strings might be provided as the texts argument
+      strings might be provided as the labels argument
     - IndexError is raised, when a sequence length doesn't match"""
-    if helper.issequenceofsequences(texts):
-        for text, level in zip(texts, xrange(sys.maxint)):
-            usetext = helper.ensuresequence(text)
+    if helper.issequenceofsequences(labels):
+        for label, level in zip(labels, xrange(sys.maxint)):
+            usetext = helper.ensuresequence(label)
             i = 0
             for tick in ticks:
                 if tick.labellevel == level:
-                    tick.text = usetext[i]
+                    tick.label = usetext[i]
                     i += 1
             if i != len(usetext):
-                raise IndexError("wrong sequence length of texts at level %i" % level)
-    elif texts is not None:
-        usetext = helper.ensuresequence(texts)
+                raise IndexError("wrong sequence length of labels at level %i" % level)
+    elif labels is not None:
+        usetext = helper.ensuresequence(labels)
         i = 0
         for tick in ticks:
             if tick.labellevel == 0:
-                tick.text = usetext[i]
+                tick.label = usetext[i]
                 i += 1
         if i != len(usetext):
-            raise IndexError("wrong sequence length of texts")
+            raise IndexError("wrong sequence length of labels")
 
 
 class _Ipart:
@@ -311,8 +312,8 @@ class manualpart:
           might be provided in ticks and labels
         - when labels is None and ticks is not None, the tick entries
           for ticklevel 0 are used for labels and vice versa (ticks<->labels)
-        - texts are applied to the resulting partition via the
-          mergetexts function (additional information available there)
+        - labels are applied to the resulting partition via the
+          mergelabels function (additional information available there)
         - mix specifies another partition to be merged into the
           created partition"""
         if ticks is None and labels is not None:
@@ -357,7 +358,7 @@ class manualpart:
             ticks = _mergeticklists(ticks, [tick(frac.enum, frac.denom, labellevel = 0)
                                             for frac in self.checkfraclist(*map(_ensurefrac, helper.ensuresequence(self.labels)))])
 
-        _mergetexts(ticks, self.texts)
+        _mergelabels(ticks, self.labels)
 
         return ticks
 
@@ -413,7 +414,7 @@ class linpart:
             self.labels = (_ensurefrac(helper.ensuresequence(ticks)[0]),)
         else:
             self.labels = map(_ensurefrac, helper.ensuresequence(labels))
-        self.texts = texts
+        self.labels = labels
         self.extendtick = extendtick
         self.extendlabel = extendlabel
         self.epsilon = epsilon
@@ -454,7 +455,7 @@ class linpart:
         for i in range(len(self.labels)):
             ticks = _mergeticklists(ticks, self.getticks(min, max, self.labels[i], labellevel = i))
 
-        _mergetexts(ticks, self.texts)
+        _mergelabels(ticks, self.labels)
 
         return ticks
 
@@ -603,7 +604,7 @@ class logpart(linpart):
             self.labels = (helper.ensuresequence(ticks)[0],)
         else:
             self.labels = helper.ensuresequence(labels)
-        self.texts = texts
+        self.labels = labels
         self.extendtick = extendtick
         self.extendlabel = extendlabel
         self.epsilon = epsilon
@@ -942,6 +943,181 @@ class axisrater:
 
 
 ################################################################################
+# texter
+# texter automatically create labels for tick instances
+################################################################################
+
+
+class _Itexter:
+
+    def labels(self, ticks):
+        """fill the label attribute of ticks
+        - ticks is a list of instances of tick
+        - for each element of ticks the value of the attribute label is set to
+          a string appropriate to the attributes enum and denom of that tick
+          instance
+        - label attributes of the tick instances are just kept, whenever they
+          are not equal to None
+        - the method might add texsetting instances to the labelattrs attribute
+          of the ticks"""
+
+
+class notexter:
+    """a texter, which does just nothing (I'm not sure, if this makes sense)"""
+
+    __implements__ = _Itexter
+
+    def labels(self, ticks):
+        pass
+
+
+class rationaltexter:
+    """a texter creating rational labels (e.g. "a/b" or even "a \over b")"""
+    # XXX: we use divmod here to be more portable
+
+    __implements__ = _Itexter
+
+    def __init__(self, prefix="", suffix="",
+                       enumprefix="", enumsuffix="",
+                       denomprefix="", denomsuffix="",
+                       equaldenom=0, minuspos=0, over=r"{{%s}\over{%s}}",
+                       skipenum0=1, skipenum1=1, skipdenom1=1,
+                       labelattrs=textmodule.mathmode):
+        """initializes the instance
+        - prefix and suffix (strings) are just added to the begin and to
+          the end of the label, respectively
+        - prefixenum and suffixenum (strings) are added to the labels
+          enumerator simularly
+        - prefixdenom and suffixdenom (strings) are added to the labels
+          denominator simularly
+        - the enumerator and denominator are +++TODO: KÜRZEN+++; however,
+          when equaldenom is set, the least common multiple of all
+          denominators is used
+        - minuspos is an integer, which determines the position, where the
+          minus sign has to be placed; the following values are allowed:
+            0 - written immediately before the prefix
+            1 - written immediately after the prefix
+            2 - written immediately before the enumprefix
+            3 - written immediately after the enumprefix
+            4 - written immediately before the denomprefix
+            5 - written immediately after the denomprefix
+        - over (string) is taken as a format string generating the
+          fraction bar; it has to contain exactly two string insert
+          operators "%s" - the first for the enumerator and the second
+          for the denominator; by far the most common examples are
+          r"{{%s}\over{%s}}" and "{{%s}/{%s}}"
+        - skipenum0 (boolean) just prints a zero instead of
+          the hole fraction, when the enumerator is zero;
+          all prefixes and suffixes are omitted as well
+        - skipenum1 (boolean) just prints the enumprefix directly followed
+          by the enumsuffix, when the enum value is one and at least either,
+          the enumprefix or the enumsuffix is present
+        - skipdenom1 (boolean) just prints the enumerator instead of
+          the hole fraction, when the denominator is one
+        - labelattrs is a sequence of texsetting instances; also just a single
+          instance is allowed; an empty sequence is allowed as well, but None
+          is not valid"""
+        self.prefix = prefix
+        self.suffix = suffix
+        self.enumprefix = enumprefix
+        self.enumsuffix = enumsuffix
+        self.denomprefix = denomprefix
+        self.denomsuffix = denomsuffix
+        self.equaldenom = equaldenom
+        self.minuspos = minuspos
+        if self.minuspos < 0 or self.minuspos > 5:
+            raise RuntimeError("invalid minuspos")
+        self.over = over
+        self.skipenum0 = skipenum0
+        self.skipenum1 = skipenum1
+        self.skipdenom1 = skipdenom1
+        self.labelattrs = helper.ensuresequence(labelattrs)
+
+    def gcd(self, m, n):
+        """returns the greates common divisor
+        - m and n must be non-negative integers"""
+        if m < n:
+            m, n = n, m
+        while n > 0:
+            m, (dummy, n) = n, divmod(m, n) # ensure portable integer division
+        return m
+
+    def lcm(self, *n):
+        """returns the least common multiple of all elements in n
+        - the elements of n must be integers
+        - return None if the number of elements is zero"""
+        "TODO: fill it from knuth"
+        pass
+
+    def labels(self, ticks):
+        # the temporary variables fracenum, fracdenom, and fracminus are
+        # inserted into all tick instances, where label is not None
+        for tick in ticks:
+            if tick.label is None:
+                tick.fracminus = 1
+                tick.fracenum = tick.enum
+                tick.fracdenom = tick.denom
+                if tick.fracenum < 0:
+                    tick.fracminus *= -1
+                    tick.fracenum *= -1
+                if tick.fracdenom < 0:
+                    tick.fracminus *= -1
+                    tick.fracdenom *= -1
+                gcd = self.gcd(tick.fracenum, tick.fracdenom)
+                (tick.fracenum, dummy1), (tick.fracdenom, dummy2) = divmod(tick.enum, gcd), divmod(tick.fracdenom, gcd)
+        if self.equaldenom:
+            equaldenom = self.lcm([tick.fracdenom for tick in ticks if tick.label is None])
+            if equaldenom is not None:
+                for tick in ticks:
+                    if tick.label is None:
+                        factor, dummy = divmod(equaldenom, tick.fracdenom)
+                        assert dummy != 0, "internal error: wrong lowest common multiple?" # TODO: remove that check
+                        tick.fracenum, tick.fracdenom = factor * tick.fracenum, factor * tick.fracdenom
+        for tick in ticks:
+            if tick.label is None:
+                if tick.fracminus == -1:
+                    tick.fracminus = "-"
+                else:
+                    tick.fracminus = ""
+                if self.skipenum0 and tick.fracenum == 0:
+                    if self.minuspos == 2 or self.minuspos == 3:
+                        tick.fracenum = "%s0" % tick.fracminus
+                    else:
+                        tick.fracenum = tick.fracenum
+                elif self.skipenum1 and tick.fracenum == 1 and (len(self.enumprefix) or len(self.enumsuffix)):
+                    if self.minuspos == 2:
+                        tick.fracenum = "%s%s%s" % (tick.fracminus, self.enumprefix, self.enumsuffix)
+                    elif self.minuspos == 3:
+                        tick.fracenum = "%s%s%s" % (self.enumprefix, tick.fracminus, self.enumsuffix)
+                    else:
+                        tick.fracenum = "%s%s" % (self.enumprefix, self.enumsuffix)
+                else:
+                    if self.minuspos == 2:
+                        tick.fracenum = "%s%s%i%s" % (tick.fracminus, self.enumprefix, tick.fracenum, self.enumsuffix)
+                    elif self.minuspos == 3:
+                        tick.fracenum = "%s%s%i%s" % (self.enumprefix, tick.fracminus, tick.fracenum, self.enumsuffix)
+                    else:
+                        tick.fracenum = "%s%i%s" % (self.enumprefix, tick.fracenum, self.enumsuffix)
+                if self.skipdenom1 and tick.fracdenom == 1 and self.minuspos != 4 and self.minuspos != 5:
+                    frac = tick.fracenum
+                else:
+                    if self.minuspos == 4:
+                        tick.fracdenom = "%s%s%i%s" % (tick.fracminus, self.denomprefix, tick.fracdenom, self.denomsuffix)
+                    elif self.minuspos == 5:
+                        tick.fracdenom = "%s%s%i%s" % (self.denomprefix, tick.fracminus, tick.fracdenom, self.denomsuffix)
+                    else:
+                        tick.fracdenom = "%s%i%s" % (self.denomprefix, tick.fracdenom, self.denomsuffix)
+                    frac = self.over % (tick.fracenum, tick.fracdenom)
+                if self.minuspos == 0:
+                    tick.label = "%s%s%s%s" % (tick.fracminus, self.prefix, frac, self.suffix)
+                elif self.minuspos == 1:
+                    tick.label = "%s%s%s%s" % (self.prefix, tick.fracminus, frac, self.suffix)
+                else:
+                    tick.label = "%s%s%s" % (self.prefix, frac, self.suffix)
+
+
+
+################################################################################
 # axis painter
 ################################################################################
 
@@ -1047,14 +1223,6 @@ class axispainter(axistitlepainter):
         self.suffix1 = suffix1
         axistitlepainter.__init__(self, **args)
 
-    def gcd(self, m, n):
-        # greates common divisor, m & n must be non-negative
-        if m < n:
-            m, n = n, m
-        while n > 0:
-            m, (dummy, n) = n, divmod(m, n)
-        return m
-
     def attachsuffix(self, tick, str):
         if self.suffix0 or tick.enum:
             if tick.suffix is not None and not self.suffix1:
@@ -1157,17 +1325,17 @@ class axispainter(axistitlepainter):
         tick.decfraclength = None
         if self.fractype == self.fractypeauto:
             if tick.suffix is not None:
-                tick.text = self.ratfrac(tick)
+                tick.label = self.ratfrac(tick)
             else:
-                tick.text = self.expfrac(tick, self.expfracminexp)
-                if tick.text is None:
-                    tick.text = self.decfrac(tick)
+                tick.label = self.expfrac(tick, self.expfracminexp)
+                if tick.label is None:
+                    tick.label = self.decfrac(tick)
         elif self.fractype == self.fractypedec:
-            tick.text = self.decfrac(tick)
+            tick.label = self.decfrac(tick)
         elif self.fractype == self.fractypeexp:
-            tick.text = self.expfrac(tick)
+            tick.label = self.expfrac(tick)
         elif self.fractype == self.fractyperat:
-            tick.text = self.ratfrac(tick)
+            tick.label = self.ratfrac(tick)
         else:
             raise ValueError("fractype invalid")
         if textmodule.mathmode not in helper.getattrs(tick.labelattrs, textmodule._texsetting, []):
@@ -1185,12 +1353,12 @@ class axispainter(axistitlepainter):
                 tick.labelattrs = helper.getsequenceno(self.labelattrs, tick.labellevel)
                 if tick.labelattrs is not None:
                     tick.labelattrs = list(helper.ensuresequence(tick.labelattrs))
-                    if tick.text is None:
+                    if tick.label is None:
                         tick.suffix = axis.suffix
                         self.createtext(tick)
                     if self.labeldirection is not None:
                         tick.labelattrs += [trafo.rotate(self.reldirection(self.labeldirection, tick.dx, tick.dy))]
-                    tick.textbox = textmodule._text(tick.x, tick.y, tick.text, *tick.labelattrs)
+                    tick.textbox = textmodule._text(tick.x, tick.y, tick.label, *tick.labelattrs)
         if self.decfracequal:
             maxdecfraclength = max([tick.decfraclength for tick in axis.ticks if tick.labellevel is not None and
                                                                                  tick.labelattrs is not None and
@@ -1199,10 +1367,10 @@ class axispainter(axistitlepainter):
                 if (tick.labellevel is not None and
                     tick.labelattrs is not None and
                     tick.decfraclength is not None):
-                    tick.text = self.decfrac(tick, maxdecfraclength)
+                    tick.label = self.decfrac(tick, maxdecfraclength)
         for tick in axis.ticks:
             if tick.labellevel is not None and tick.labelattrs is not None:
-                tick.textbox = textmodule._text(tick.x, tick.y, tick.text, *tick.labelattrs)
+                tick.textbox = textmodule._text(tick.x, tick.y, tick.label, *tick.labelattrs)
         if len(axis.ticks) > 1:
             equaldirection = 1
             for tick in axis.ticks[1:]:
@@ -1739,7 +1907,7 @@ class linkaxis:
             if ticklevel is not None or labellevel is not None:
                 result.append(tick(_tick.enum, _tick.denom, ticklevel, labellevel))
         return result
-        # XXX: don't forget to calculate new text positions as soon as this is moved
+        # XXX: don't forget to calculate new label positions as soon as this is moved
         #      outside of the paint method (when rating is moved into the axispainter)
 
     def getdatarange(self):

@@ -818,11 +818,11 @@ class TexResultError(Exception):
     def __str__(self):
         "prints a detailed report about the problem"
         return ("%s\n" % self.description +
-                "The expression passed to TeX was:\n" +
+                "The expression passed to TeX was:\n"
                 "  %s\n" % self.texrunner.expr.replace("\n", "\n  ").rstrip() +
-                "The return message from TeX was:\n" +
+                "The return message from TeX was:\n"
                 "  %s\n" % self.texrunner.texmessage.replace("\n", "\n  ").rstrip() +
-                "After parsing this message, the following was left:\n" +
+                "After parsing this message, the following was left:\n"
                 "  %s" % self.texrunner.texmessageparsed.replace("\n", "\n  ").rstrip())
 
 
@@ -864,11 +864,11 @@ class _texmessagestart(texmessage):
         texrunner.texmessageparsed = texrunner.texmessageparsed[m.end():]
         try:
             texrunner.texmessageparsed = texrunner.texmessageparsed.split("%s.tex" % texrunner.texfilename, 1)[1]
-        except IndexError:
+        except (IndexError, ValueError):
             raise TexResultError("TeX running startup file failed", texrunner)
         try:
             texrunner.texmessageparsed = texrunner.texmessageparsed.split("*! Undefined control sequence.\n<*> \\raiseerror\n               %\n", 1)[1]
-        except IndexError:
+        except (IndexError, ValueError):
             raise TexResultError("TeX scrollmode check failed", texrunner)
 
 
@@ -898,7 +898,7 @@ class _texmessageinputmarker(texmessage):
 
     def check(self, texrunner):
         try:
-            s1, s2 = texrunner.texmessageparsed.split("PyXInputMarker(%s)" % texrunner.executeid, 1)
+            s1, s2 = texrunner.texmessageparsed.split("PyXInputMarker:executeid=%s:" % texrunner.executeid, 1)
             texrunner.texmessageparsed = s1 + s2
         except (IndexError, ValueError):
             raise TexResultError("PyXInputMarker expected", texrunner)
@@ -909,7 +909,7 @@ class _texmessagepyxbox(texmessage):
 
     __implements__ = _Itexmessage
 
-    pattern = re.compile(r"PyXBox\(page=(?P<page>\d+),lt=-?\d*((\d\.?)|(\.?\d))\d*pt,rt=-?\d*((\d\.?)|(\.?\d))\d*pt,ht=-?\d*((\d\.?)|(\.?\d))\d*pt,dp=-?\d*((\d\.?)|(\.?\d))\d*pt\)")
+    pattern = re.compile(r"PyXBox:page=(?P<page>\d+),lt=-?\d*((\d\.?)|(\.?\d))\d*pt,rt=-?\d*((\d\.?)|(\.?\d))\d*pt,ht=-?\d*((\d\.?)|(\.?\d))\d*pt,dp=-?\d*((\d\.?)|(\.?\d))\d*pt:")
 
     def check(self, texrunner):
         m = self.pattern.search(texrunner.texmessageparsed)
@@ -928,7 +928,7 @@ class _texmessagepyxpageout(texmessage):
         try:
             s1, s2 = texrunner.texmessageparsed.split("[80.121.88.%s]" % texrunner.page, 1)
             texrunner.texmessageparsed = s1 + s2
-        except IndexError:
+        except (IndexError, ValueError):
             raise TexResultError("PyXPageOutMarker expected", texrunner)
 
 
@@ -952,7 +952,7 @@ class _texmessagetexend(texmessage):
         try:
             s1, s2 = texrunner.texmessageparsed.split("(see the transcript file for additional information)", 1)
             texrunner.texmessageparsed = s1 + s2
-        except IndexError:
+        except (IndexError, ValueError):
             pass
         dvipattern = re.compile(r"Output written on %s\.dvi \((?P<page>\d+) pages?, \d+ bytes\)\." % texrunner.texfilename)
         m = dvipattern.search(texrunner.texmessageparsed)
@@ -966,12 +966,12 @@ class _texmessagetexend(texmessage):
             try:
                 s1, s2 = texrunner.texmessageparsed.split("No pages of output.", 1)
                 texrunner.texmessageparsed = s1 + s2
-            except IndexError:
+            except (IndexError, ValueError):
                 raise TexResultError("no dvifile expected")
         try:
             s1, s2 = texrunner.texmessageparsed.split("Transcript written on %s.log." % texrunner.texfilename, 1)
             texrunner.texmessageparsed = s1 + s2
-        except IndexError:
+        except (IndexError, ValueError):
             raise TexResultError("TeX logfile message expected")
 
 
@@ -1001,6 +1001,13 @@ class _texmessageload(texmessage):
     pattern = re.compile(r"\((?P<filename>[^()\s\n]+)[^()]*\)")
 
     def baselevels(self, s, maxlevel=1, brackets="()"):
+        """strip parts of a string above a given bracket level
+        - return a modified (some parts might be removed) version of the string s
+          where all parts inside brackets with level higher than maxlevel are
+          removed
+        - if brackets do not match (number of left and right brackets is wrong
+          or at some points there were more right brackets than left brackets)
+          just return the unmodified string"""
         level = 0
         highestlevel = 0
         res = ""
@@ -1013,7 +1020,7 @@ class _texmessageload(texmessage):
                 res += c
             if c == brackets[1]:
                 level -= 1
-        if not level and highestlevel > 0:
+        if level == 0 and highestlevel > 0:
             return res
 
     def check(self, texrunner):
@@ -1021,6 +1028,7 @@ class _texmessageload(texmessage):
         if lowestbracketlevel is not None:
             m = self.pattern.search(lowestbracketlevel)
             while m:
+                print m.group("filename")
                 if os.access(m.group("filename"), os.R_OK):
                     lowestbracketlevel = lowestbracketlevel[:m.start()] + lowestbracketlevel[m.end():]
                 else:
@@ -1032,13 +1040,24 @@ class _texmessageload(texmessage):
 
 class _texmessagegraphicsload(_texmessageload):
     """validates the inclusion of files as the graphics packages writes it
-    - works like _texmessageload, but using "<" and ">" as delimiters"""
+    - works like _texmessageload, but using "<" and ">" as delimiters
+    - filename must end with .eps and no further text is allowed"""
 
-    pattern = re.compile(r"<(?P<filename>[^()\s\n]+)[^()]*>")
+    pattern = re.compile(r"<(?P<filename>[^>]+.eps)>")
 
     def baselevels(self, s, brackets="<>", **args):
-        _texmessageload.baselevels(self, s, brackets=brackets, **args)
+        return _texmessageload.baselevels(self, s, brackets=brackets, **args)
 
+
+#class _texmessagepdfmapload(_texmessageload):
+#    """validates the inclusion of files as the graphics packages writes it
+#    - works like _texmessageload, but using "{" and "}" as delimiters
+#    - filename must end with .map and no further text is allowed"""
+#
+#    pattern = re.compile(r"{(?P<filename>[^}]+.map)}")
+#
+#    def baselevels(self, s, brackets="{}", **args):
+#        return _texmessageload.baselevels(self, s, brackets=brackets, **args)
 
 
 class _texmessageignore(_texmessageload):
@@ -1482,6 +1501,9 @@ class texrunner:
                        texmessageend=texmessage.texend,
                        texmessagedefaultpreamble=texmessage.load,
                        texmessagedefaultrun=None):
+        mode = mode.lower()
+        if mode != "tex" and mode != "latex" and mode != "pdftex" and mode != "pdflatex":
+            raise ValueError("mode \"TeX\", \"LaTeX\", \"pdfTeX\", or \"pdfLaTeX\" expected")
         self.mode = mode
         self.lfs = lfs
         self.docclass = docclass
@@ -1554,31 +1576,39 @@ class texrunner:
             self.texruns = 1
             oldpreamblemode = self.preamblemode
             self.preamblemode = 1
-            self.execute("\\scrollmode\n\\raiseerror%\n" + # switch to and check scrollmode
-                         "\\def\\PyX{P\\kern-.3em\\lower.5ex\hbox{Y}\kern-.18em X}%\n" + # just the PyX Logo
-                         "\\gdef\\PyXHAlign{0}%\n" + # global PyXHAlign (0.0-1.0) for the horizontal alignment, default to 0
-                         "\\newbox\\PyXBox%\n" + # PyXBox will contain the output
-                         "\\newbox\\PyXBoxHAligned%\n" + # PyXBox will contain the horizontal aligned output
-                         "\\newdimen\\PyXDimenHAlignLT%\n" + # PyXDimenHAlignLT/RT will contain the left/right extent
+            self.execute("\\scrollmode\n\\raiseerror%\n" # switch to and check scrollmode
+                         "\\def\\PyX{P\\kern-.3em\\lower.5ex\hbox{Y}\kern-.18em X}%\n" # just the PyX Logo
+                         "\\gdef\\PyXHAlign{0}%\n" # global PyXHAlign (0.0-1.0) for the horizontal alignment, default to 0
+                         "\\newbox\\PyXBox%\n" # PyXBox will contain the output
+                         "\\newbox\\PyXBoxHAligned%\n" # PyXBox will contain the horizontal aligned output
+                         "\\newdimen\\PyXDimenHAlignLT%\n" # PyXDimenHAlignLT/RT will contain the left/right extent
                          "\\newdimen\\PyXDimenHAlignRT%\n" +
                          _texsettingpreamble + # insert preambles for texsetting macros
-                         "\\def\\ProcessPyXBox#1#2{%\n" + # the ProcessPyXBox definition (#1 is expr, #2 is page number)
-                         "\\setbox\\PyXBox=\\hbox{{#1}}%\n" + # push expression into PyXBox
-                         "\\PyXDimenHAlignLT=\\PyXHAlign\\wd\\PyXBox%\n" + # calculate the left/right extent
-                         "\\PyXDimenHAlignRT=\\wd\\PyXBox%\n" +
-                         "\\advance\\PyXDimenHAlignRT by -\\PyXDimenHAlignLT%\n" +
-                         "\\gdef\\PyXHAlign{0}%\n" + # reset the PyXHAlign to the default 0
-                         "\\immediate\\write16{PyXBox(page=#2," + # write page and extents of this box to stdout
-                                                     "lt=\\the\\PyXDimenHAlignLT," +
-                                                     "rt=\\the\\PyXDimenHAlignRT," +
-                                                     "ht=\\the\\ht\\PyXBox," +
-                                                     "dp=\\the\\dp\\PyXBox)}%\n" +
-                         "\\setbox\\PyXBoxHAligned=\\hbox{\\kern-\\PyXDimenHAlignLT\\box\\PyXBox}%\n" + # align horizontally
-                         "\\ht\\PyXBoxHAligned0pt%\n" + # baseline alignment (hight to zero)
-                         "{\\count0=80\\count1=121\\count2=88\\count3=#2\\shipout\\box\\PyXBoxHAligned}}%\n" + # shipout PyXBox to Page 80.121.88.<page number>
-                         "\\def\\PyXInput#1{\\immediate\\write16{PyXInputMarker(#1)}}", # write PyXInputMarker(<page number>) to stdout
+                         "\\def\\ProcessPyXBox#1#2{%\n" # the ProcessPyXBox definition (#1 is expr, #2 is page number)
+                         "\\setbox\\PyXBox=\\hbox{{#1}}%\n" # push expression into PyXBox
+                         "\\PyXDimenHAlignLT=\\PyXHAlign\\wd\\PyXBox%\n" # calculate the left/right extent
+                         "\\PyXDimenHAlignRT=\\wd\\PyXBox%\n"
+                         "\\advance\\PyXDimenHAlignRT by -\\PyXDimenHAlignLT%\n"
+                         "\\gdef\\PyXHAlign{0}%\n" # reset the PyXHAlign to the default 0
+                         "\\immediate\\write16{PyXBox:page=#2," # write page and extents of this box to stdout
+                                                     "lt=\\the\\PyXDimenHAlignLT,"
+                                                     "rt=\\the\\PyXDimenHAlignRT,"
+                                                     "ht=\\the\\ht\\PyXBox,"
+                                                     "dp=\\the\\dp\\PyXBox:}%\n"
+                         "\\setbox\\PyXBoxHAligned=\\hbox{\\kern-\\PyXDimenHAlignLT\\box\\PyXBox}%\n" # align horizontally
+                         "\\ht\\PyXBoxHAligned0pt%\n" # baseline alignment (hight to zero)
+                         "{\\count0=80\\count1=121\\count2=88\\count3=#2\\shipout\\box\\PyXBoxHAligned}}%\n" # shipout PyXBox to Page 80.121.88.<page number>
+                         "\\def\\PyXInput#1{\\immediate\\write16{PyXInputMarker:executeid=#1:}}", # write PyXInputMarker to stdout
                          *self.texmessagestart)
             os.remove("%s.tex" % self.texfilename)
+            if self.mode == "pdftex" or self.mode == "pdflatex":
+                self.execute("\\pdfoutput=1%\n"
+                             "\\def\\marker#1{%\n"
+                             #"\\pdfsavepos%\n"
+                             "\\write16{PyXMarker:name=#1,"
+                                                 "xpos=\\the\\pdflastxpos,"
+                                                 "ypos=\\the\\pdflastypos:}%\n"
+                             "}%\n")
             if self.mode == "tex":
                 try:
                     LocalLfsName = str(self.lfs) + ".lfs"
@@ -1610,7 +1640,7 @@ class texrunner:
                 self.execute(lfsdef)
                 self.execute("\\normalsize%\n")
                 self.execute("\\newdimen\\linewidth%\n")
-            elif self.mode == "latex":
+            elif self.mode == "latex" or self.mode == "pdflatex":
                 if self.docopt is not None:
                     self.execute("\\documentclass[%s]{%s}" % (self.docopt, self.docclass), *self.texmessagedocclass)
                 else:
@@ -1618,7 +1648,7 @@ class texrunner:
             self.preamblemode = oldpreamblemode
         self.executeid += 1
         if expr is not None: # TeX/LaTeX should process expr
-            self.expectqueue.put_nowait("PyXInputMarker(%i)" % self.executeid)
+            self.expectqueue.put_nowait("PyXInputMarker:executeid=%i:" % self.executeid)
             if self.preamblemode:
                 self.expr = ("%s%%\n" % expr +
                                    "\\PyXInput{%i}%%\n" % self.executeid)
@@ -1628,7 +1658,7 @@ class texrunner:
                                    "\\PyXInput{%i}%%\n" % self.executeid)
         else: # TeX/LaTeX should be finished
             self.expectqueue.put_nowait("Transcript written on %s.log" % self.texfilename)
-            if self.mode == "latex":
+            if self.mode == "latex" or self.mode == "pdflatex":
                 self.expr = "\\end{document}\n"
             else:
                 self.expr = "\\end\n"
@@ -1701,8 +1731,8 @@ class texrunner:
             raise TexRunsError
         if mode is not None:
             mode = mode.lower()
-            if mode != "tex" and mode != "latex":
-                raise ValueError("mode \"TeX\" or \"LaTeX\" expected")
+            if mode != "tex" and mode != "latex" and mode != "pdftex" and mode != "pdflatex":
+                raise ValueError("mode \"TeX\", \"LaTeX\", \"pdfTeX\", or \"pdfLaTeX\" expected")
             self.mode = mode
         if lfs is not None:
             self.lfs = lfs
@@ -1793,7 +1823,7 @@ class texrunner:
         helper.checkattr(args, allowmulti=(texmessage,))
         self.execute(expr, *helper.getattrs(args, texmessage, default=self.texmessagedefaultpreamble))
 
-    PyXBoxPattern = re.compile(r"PyXBox\(page=(?P<page>\d+),lt=(?P<lt>-?\d*((\d\.?)|(\.?\d))\d*)pt,rt=(?P<rt>-?\d*((\d\.?)|(\.?\d))\d*)pt,ht=(?P<ht>-?\d*((\d\.?)|(\.?\d))\d*)pt,dp=(?P<dp>-?\d*((\d\.?)|(\.?\d))\d*)pt\)")
+    PyXBoxPattern = re.compile(r"PyXBox:page=(?P<page>\d+),lt=(?P<lt>-?\d*((\d\.?)|(\.?\d))\d*)pt,rt=(?P<rt>-?\d*((\d\.?)|(\.?\d))\d*)pt,ht=(?P<ht>-?\d*((\d\.?)|(\.?\d))\d*)pt,dp=(?P<dp>-?\d*((\d\.?)|(\.?\d))\d*)pt:")
 
     def _text(self, x, y, expr, *args):
         """create text by passing expr to TeX/LaTeX
@@ -1811,7 +1841,7 @@ class texrunner:
         if self.texdone:
             raise TexDoneError
         if self.preamblemode:
-            if self.mode == "latex":
+            if self.mode == "latex" or self.mode == "pdflatex":
                 self.execute("\\begin{document}", *self.texmessagebegindoc)
             self.preamblemode = 0
         helper.checkattr(args, allowmulti=(_texsetting, texmessage, trafo._trafo, base.PathStyle))

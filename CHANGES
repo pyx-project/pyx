@@ -5,8 +5,10 @@ PyX
   - manual:
     - include sources in source distribution
   - graph module:
+    - tick.text is renamed to tick.label (in progress), ticks and labels will become tickpos/tickdist and labelpos/labeldist in partitioning
+    - separate texter out of the axispainter (in progress)
+    TODO:
     - common bboxes for different graphs
-    - separate texter out of the axispainter
     - automatic datafile key title
     - exceptions in drawsymbol & friends...
     - 3d graphs, circular graphs
@@ -17,11 +19,15 @@ PyX
     - default patterns
     - stroke and fill should support trafos
     - make dash length available
-    - AW asks: shouldn't strokepath/fillpath be validated by "strokepath is not None" instead of just "strokepath"
+    - shouldn't strokepath/fillpath be validated by "strokepath is not None" instead of just "strokepath"
   - text module:
+    - pdf(la)tex support (will hopefully lead to markers in text)
+    TODO:
     - further improve lfs handling
   - tex module:
     - copy lfs handling from text module (share the same source???)
+  - data module:
+    - full documentation via doc strings
 
   enhancements:
   - box module:
