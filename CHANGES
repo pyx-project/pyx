@@ -20,8 +20,8 @@ TODO:
     - default patterns
     - make dash length available
   - text module:
-    - split into two modules: text and dvi 
     - SlantFont & Co support
+    - keep an eye on PEP 324 (popen 5): it could make the texrunner stuff much easier
   - mathtree module:
      - consider rewrite using the python compiler module
   - bbox module:
@@ -33,8 +33,12 @@ TODO:
   - data module:
     - data.data should add line number like data.datafile
     - use csv module (new in 2.3)
+  - canvas module:
+    - multi page PostScript output
   - connnector module:
     - use math.degrees and math.radians instead of self-written functions
+      (try to be compatible with old python versions, we should consider
+      support down to python2.0!)
 
 0.5 (????/??/??):
   - setup.py and distribution:
@@ -94,6 +98,8 @@ TODO:
   - attrlist module:
     - contents have been moved to the (obsolete) tex module, which was the only user anyhow, and
       the module itself was removed
+  - t1strip module:
+    - new fallback solution in pure python
 
   TODO for PyX 0.5 (please feel free to move items up to the general TODO list)
   - path module:
