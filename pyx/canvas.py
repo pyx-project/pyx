@@ -336,4 +336,4 @@ if __name__=="__main__":
     for angle in range(20):
        c.subcanvas(trafo=translate(10,10)*rotate(angle)).draw(p)
 
-#    t.TexRun()
+    t.TexRun()
