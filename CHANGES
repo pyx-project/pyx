@@ -39,6 +39,9 @@ PyX
     - added support for patterns 
     - TODO: document patterns
     - TODO: prolog should return empty lists instead of None
+  - mathtree module:
+    - added abs function
+    - TODO: unit tests and documentation for abs
   - numerous bugfixes:
     - problem with sizefile on windows (tex module)
     - allow for strings in graphxy's width and height; allow for width only (graph module)

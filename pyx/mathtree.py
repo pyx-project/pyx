@@ -249,6 +249,20 @@ class MathTreeFunc1Neg(MathTreeFunc1):
         return -self.Args[0].Calc(*dicts)
 
 
+class MathTreeFunc1Abs(MathTreeFunc1):
+
+    def __init__(self, *args):
+        MathTreeFunc1.__init__(self, "abs", *args)
+
+    def CalcDerivative(self, arg):
+        return MathTreeOpMul(
+                   MathTreeFunc1Sgn(self.Args[0]),
+                   self.Args[0].CalcDerivative(arg))
+
+    def Calc(self, *dicts):
+        return abs(self.Args[0].Calc(*dicts))
+
+
 class MathTreeFunc1Sgn(MathTreeFunc1):
 
     def __init__(self, *args):
@@ -784,7 +798,7 @@ class OperandExpectedMathTreeParseError(UndefinedMathTreeParseError): pass
 
 
 DefaultMathTreeOps = (MathTreeOpPow, MathTreeOpDiv, MathTreeOpMul, MathTreeOpSub, MathTreeOpAdd)
-DefaultMathTreeFuncs = (MathTreeFunc1Neg, MathTreeFunc1Sgn, MathTreeFunc1Sqrt,
+DefaultMathTreeFuncs = (MathTreeFunc1Neg, MathTreeFunc1Abs, MathTreeFunc1Sgn, MathTreeFunc1Sqrt,
                         MathTreeFunc1Exp, MathTreeFunc1Log,
                         MathTreeFunc1Sin, MathTreeFunc1Cos, MathTreeFunc1Tan,
                         MathTreeFunc1ASin, MathTreeFunc1ACos, MathTreeFunc1ATan,
