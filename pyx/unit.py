@@ -113,7 +113,7 @@ class length:
         elif helper.isstring(l):
             unit_match = re.match(unit_pattern, l)
             if unit_match is None:
-                assert 0, "expecting number or string of the form 'number [u|v|w] unit'"
+                raise ValueError("expecting number or string of the form 'number [u|v|w] unit'")
             else:
                 self.prefactor = float(unit_match.group(1))
                 self.unit_type = unit_match.group(7) or default_type
