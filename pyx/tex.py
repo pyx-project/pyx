@@ -318,8 +318,7 @@ _missextentsreturnzero_report = 0
 def _missextentsreturnzero_printreport():
     sys.stderr.write("""
 pyx.tex: Some requested extents were missing and have been replaced by zero.
-         Please run the file again to get correct extents.
-""")
+         Please run the file again to get correct extents.\n""")
 
 class _missextentsreturnzero(missextents):
 
@@ -596,7 +595,7 @@ class _BoxCmd(_TexCmd):
                        (self.MD5(), CmdExtent, time.time(), CmdExtent, ))
         for CmdPut in self.CmdPuts:
 
-            file.write("{\\vbox to0pt{\\kern%struept\\hbox{\\kern%struept\\ht\\localbox0pt" %
+            file.write("{\\vbox to0pt{\\kern%.5ftruept\\hbox{\\kern%.5ftruept\\ht\\localbox0pt" %
                         (-CmdPut.y, CmdPut.x))
 
             if CmdPut.direction != direction.horizontal:
@@ -716,12 +715,12 @@ class _tex(base.PSCmd, attrlist.attrlist):
     
     def _execute(self, command):
         if os.system(command):
-            sys.stderr.write("The exit code of the following command was non-zero:" + command +
-"""Usually, additional information causing this trouble appears closeby.
+            sys.stderr.write("The exit code of the following command was non-zero:\n" + command +
+"""\nUsually, additional information causing this trouble appears closeby.
 However, you may check the origin by keeping all temporary files.
 In order to achieve this, you have to specify a texfilename in the
 constructor of the class pyx.(la)tex. You can then try to run the
-command by yourself.""")
+command by yourself.\n""")
 
     def _createaddfiles(self, tempname):
         pass
@@ -786,7 +785,7 @@ in your commands caused (La)TeX to give up completely. Or your
 You may try to check the origin by keeping all temporary files.
 In order to achieve this, you have to specify a texfilename in the
 constructor of the class pyx.tex. You can then try to run (La)TeX
-by yourself.""")
+by yourself.\n""")
 
         if not os.access(tempname + ".dvi", 0):
             sys.stderr.write("""Can't find the dvi file which should be produced by (La)TeX.
@@ -796,7 +795,7 @@ in your commands caused (La)TeX to give up completely. Or your
 You may try to check the origin by keeping all temporary files.
 In order to achieve this, you have to specify a texfilename in the
 constructor of the class pyx.tex. You can then try to run (La)TeX
-by yourself.""")
+by yourself.\n""")
 
         else:
             self._executedvips(tempname)
@@ -808,7 +807,7 @@ in your commands caused dvips to give up completely. Or your
 You may try to check the origin by keeping all temporary files.
 In order to achieve this, you have to specify a texfilename in the
 constructor of the class pyx.tex. You can then try to run dvips
-by yourself.""")
+by yourself.\n""")
             else:
                 aepsfile = epsfile.epsfile(tempname + ".eps", translatebb=0, clip=0)
                 self.abbox = aepsfile.bbox()

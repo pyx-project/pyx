@@ -29,7 +29,7 @@ class AttrlistExcept(base.PyXExcept):
     pass
 
 
-class nodefault:
+class _nodefault:
 
     pass
 
@@ -53,7 +53,7 @@ class attrlist:
                 else:
                     raise AttrlistExcept
 
-    def attrgetall(self, attrs, get, default = nodefault()):
+    def attrgetall(self, attrs, get, default = _nodefault()):
         first = 1
         for attr in attrs:
             if isinstance(attr, get):
@@ -63,17 +63,17 @@ class attrlist:
                 else:
                     result.append(attr)
         if first:
-            if isinstance(default, nodefault):
+            if isinstance(default, _nodefault):
                 raise AttrlistExcept
             else:
                 return default
         return result
 
-    def attrget(self, attrs, get, default = nodefault()):
+    def attrget(self, attrs, get, default = _nodefault()):
         try:
             result = self.attrgetall(attrs, get)
         except AttrlistExcept:
-            if isinstance(default, nodefault):
+            if isinstance(default, _nodefault):
                 raise AttrlistExcept
             else:
                 return default
@@ -81,25 +81,32 @@ class attrlist:
             raise AttrlistExcept
         return result[0]
 
-    def attrgetfirst(self, attrs, get, default = nodefault()):
+    def attrgetfirst(self, attrs, get, default = _nodefault()):
         try:
             result = self.attrgetall(attrs, get)
         except AttrlistExcept:
-            if isinstance(default, nodefault):
+            if isinstance(default, _nodefault):
                 raise AttrlistExcept
             else:
                 return default
         return result[0]
 
-    def attrgetlast(self, attrs, get, default = nodefault()):
+    def attrgetlast(self, attrs, get, default = _nodefault()):
         try:
             result = self.attrgetall(attrs, get)
         except AttrlistExcept:
-            if isinstance(default, nodefault):
+            if isinstance(default, _nodefault):
                 raise AttrlistExcept
             else:
                 return default
         return result[-1]
+
+    def attrdel(self, attrs, remove):
+        result = []
+        for attr in attrs:
+            if not isinstance(attr, remove):
+                result.append(attr)
+        return result
 
 
 if __name__=="__main__":

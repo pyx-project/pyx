@@ -24,7 +24,7 @@
 
 
 import types, re, math, string
-import bbox, canvas, path, tex, unit, mathtree
+import bbox, canvas, path, tex, unit, mathtree, trafo, attrlist
 from math import log, exp, sqrt, pow
 
 # from mathtree import *   # TODO: correct mathtree usage
@@ -471,14 +471,14 @@ class momrate:
             self.maxfactor = maxfactor
             self.weight = weight
 
-        def min(self, stretch):
-            return self.minoffset + self.minfactor * (stretch - 1.0) * self.optfactor
+        def min(self, pinch):
+            return self.minoffset + self.minfactor * (pinch - 1.0) * self.optfactor
 
-        def opt(self, stretch):
-            return float(self.optfactor * stretch)
+        def opt(self, pinch):
+            return float(self.optfactor * pinch)
 
-        def max(self, stretch):
-            return self.maxoffset + self.maxfactor * (stretch - 1.0) * self.optfactor
+        def max(self, pinch):
+            return self.maxoffset + self.maxfactor * (pinch - 1.0) * self.optfactor
 
     lindefaulttickrateparams = (momrateparam(4, 1, 1, 20, 5), momrateparam(10, 2, 1, 100, 10, 0.5), )
     lindefaultlabelrateparams = (momrateparam(4, 1, 1, 16, 4), )
@@ -502,24 +502,24 @@ class momrate:
         labelcounts = reduce(lambda x, y: x and (x + [ x[-1] + y, ]) or [y, ] , labelcounts, [])
         return (tickcounts, labelcounts, )
 
-    def evalrate(self, val, stretch, rateparam):
-        opt = rateparam.opt(stretch)
-        min = rateparam.min(stretch)
-        max = rateparam.max(stretch)
+    def evalrate(self, val, pinch, rateparam):
+        opt = rateparam.opt(pinch)
+        min = rateparam.min(pinch)
+        max = rateparam.max(pinch)
         rate = ((opt - min) * log((opt - min) / (val - min)) +
                 (max - opt) * log((max - opt) / (max - val))) / (max - min)
         return rate
 
-    def getrate(self, ticks, stretch):
+    def getrate(self, ticks, pinch):
         rate = 0
         weight = 0
         (tickcounts, labelcounts, ) = self.getcounts(ticks)
         try:
             for (tickcount, rateparam, ) in zip(tickcounts, self.tickrateparams, ):
-                rate += self.evalrate(tickcount, stretch, rateparam) * rateparam.weight
+                rate += self.evalrate(tickcount, pinch, rateparam) * rateparam.weight
                 weight += rateparam.weight
             for (labelcount, rateparam, ) in zip(labelcounts, self.labelrateparams, ):
-                rate += self.evalrate(labelcount, stretch, rateparam) * rateparam.weight
+                rate += self.evalrate(labelcount, pinch, rateparam) * rateparam.weight
                 weight += rateparam.weight
             rate /= weight
         except (ZeroDivisionError, ValueError):
@@ -544,88 +544,130 @@ class momrate:
 # (we may create a box drawing module and move all this stuff there)
 ################################################################################
 
-class rectbox(path.path):
+class rectbox:
 
-    def __init__(self, x1, y1, x2, y2, x0=0, y0=0, radius=unit.length(0.1)):
-        self.x0, self.y0, self.radius = x0, y0, radius
-        if x1 < x2:
-            self.llx, self.urx = x1, x2
-        else:
-            self.llx, self.urx = x2, x1
-        if y1 < y2:
-            self.lly, self.ury = y1, y2
-        else:
-            self.lly, self.ury = y2, y1
-        path.path.__init__(self, path.moveto(self.llx, self.lly),
-                                 path.lineto(self.llx, self.ury),
-                                 path.lineto(self.urx, self.ury),
-                                 path.lineto(self.urx, self.lly),
-                                 path.closepath(),
-                                 path.moveto(self.x0 + self.radius, self.y0),
-                                 path.arc(self.x0, self.y0, self.radius, 0, 360),
-                                 path.closepath())
+    def __init__(self, llx, lly, urx, ury, x0=0, y0=0):
+        if llx > urx: llx, urx = urx, llx
+        if lly > ury: lly, ury = ury, lly
+        self.points = 4
+        self.x = x0, llx, urx, urx, llx
+        self.y = y0, lly, lly, ury, ury
 
-    def translateline(self, rx, ry, ex, ey, fx, fy, epsilon=1e-10):
-        mx, my = self.x0, self.y0
+    def successivepoints(self):
+        return map(lambda i, max = self.points: i and (i, i + 1) or (max, 1), range(self.points))
+
+    def alignlinesolution(self, r, dx, dy, ex, ey, fx, fy, epsilon=1e-10):
+        mx, my = self.x[0], self.y[0]
         gx, gy = ex - fx, ey - fy # direction vector
-        rsplit = (rx*gx + ry*gy) * 1.0 / (gx*gx + gy*gy)
-        sx, sy = rx - gx * rsplit, ry - gy * rsplit
+        if gx*gx + gy*gy < epsilon: # zero line length
+            return None             # no solution -> return None
+        rsplit = (dx*gx + dy*gy) * 1.0 / (gx*gx + gy*gy)
+        sx, sy = dx - gx * rsplit, dy - gy * rsplit
         if sx*sx + sy*sy < epsilon: # zero projection
             return None             # no solution -> return None
-        if sx*gy - sy*gx < 0: # half space
-            return None       # no solution -> return None
-        sfactor = math.sqrt((rx*rx + ry*ry) / (sx*sx + sy*sy))
-        sx, sy = sx * sfactor, sy * sfactor
-        a = ((sx+mx-ex)*ry - (sy+my-ey)*rx) * 1.0 / (gy*rx - gx*ry)
+        if sx*gy - sy*gx < 0:       # half space
+            return None             # no solution -> return None
+        sfactor = math.sqrt((dx*dx + dy*dy) / (sx*sx + sy*sy))
+        sx, sy = r * sx * sfactor, r * sy * sfactor
+        a = ((sx+mx-ex)*dy - (sy+my-ey)*dx) * 1.0 / (gy*dx - gx*dy)
         if a > 0 - epsilon and a < 1 + epsilon:
-            b = ((ex-sx-mx)*gy - (ey-sy-my)*gx) * 1.0 / (gx*ry - gy*rx)
-            return b*rx - mx, b*ry - my # valid solution -> return translate tuple
+            b = ((ex-sx-mx)*gy - (ey-sy-my)*gx) * 1.0 / (gx*dy - gy*dx)
+            return b*dx - mx, b*dy - my # valid solution -> return align tuple
         # crossing point at the line, but outside a valid range
         if a < 0:
             return 0 # crossing point outside e
         return 1 # crossing point outside f
 
-    def translatepoint(self, rx, ry, hx, hy):
-        mx, my = self.x0, self.y0
-        p = 2 * ((hx-mx)*rx + (hy-my)*ry) / (rx*rx + ry*ry)
-        q = ((hx-mx)*(hx-mx) + (hy-my)*(hy-my) - rx*rx - ry*ry) / (rx*rx + ry*ry)
+    def alignpointsolution(self, r, dx, dy, hx, hy, epsilon=1e-10):
+        if r*r < epsilon:
+            return None
+        mx, my = self.x[0], self.y[0]
+        p = 2 * ((hx-mx)*dx + (hy-my)*dy)
+        q = ((hx-mx)*(hx-mx) + (hy-my)*(hy-my) - r*r)
         if p*p/4 - q < 0:
             return None
-        a = - p / 2 + math.sqrt(p*p/4 - q)
-        return a*rx - mx, a*ry - my
+        if r > 0:
+            a = - p / 2 + math.sqrt(p*p/4 - q)
+        else:
+            a = - p / 2 - math.sqrt(p*p/4 - q)
+        return a*dx - mx, a*dy - my
 
-    def translate(self, rx, ry):
-        linesolutions = (self.translateline(rx, ry, self.llx, self.lly, self.urx, self.lly),
-                         self.translateline(rx, ry, self.urx, self.lly, self.urx, self.ury),
-                         self.translateline(rx, ry, self.urx, self.ury, self.llx, self.ury),
-                         self.translateline(rx, ry, self.llx, self.ury, self.llx, self.lly))
+    def alignsolution(self, r, dx, dy):
+        linesolutions = map(lambda (i, j), self=self, r=r, dx=dx, dy=dy, x=self.x, y=self.y:
+                                self.alignlinesolution(r, dx, dy, x[i], y[i], x[j], y[j]), self.successivepoints())
         for linesolution in linesolutions:
             if type(linesolution) is types.TupleType:
                 return linesolution
-        if linesolutions == (1, 0, None, None):
-            return self.translatepoint(rx, ry, self.urx, self.lly)
-        if linesolutions == (None, 1, 0, None):
-            return self.translatepoint(rx, ry, self.urx, self.ury)
-        if linesolutions == (None, None, 1, 0):
-            return self.translatepoint(rx, ry, self.llx, self.ury)
-        if linesolutions == (0, None, None, 1):
-            return self.translatepoint(rx, ry, self.llx, self.lly)
-        return None
+        for i, j in self.successivepoints():
+            if ((linesolutions[i-1] == 0 and linesolutions[j-1] == 1) or
+                (linesolutions[i-1] == 1 and linesolutions[j-1] == 0)):
+                k = j == 1 and self.points or j - 1
+                return self.alignpointsolution(r, dx, dy, self.x[k], self.y[k])
+
+    def align(self, *args):
+        self.transform(trafo._translate(*self.alignsolution(*args)))
+
+    def transform(self, trafo):
+        self.x, self.y = zip(*map(lambda i, trafo=trafo, x=self.x, y=self.y:
+                                      trafo._apply(x[i], y[i]), range(self.points + 1)))
+
+    def extent(self, dx, dy):
+        x1, y1 = self.alignsolution(1, dx, dy)
+        x2, y2 = self.alignsolution(1, -dx, -dy)
+        return (x1-x2)*dx + (y1-y2)*dy - 2
 
 
-#import trafo, color
+class textbox(rectbox, attrlist.attrlist):
+
+    def __init__(self, _tex, text, textstyles = (), vtext="0"):
+        self.tex = _tex
+        self.text = text
+        try:
+            self.direction = self.attrget(textstyles, tex.direction)
+            self.textstyles = self.attrdel(textstyles, tex.direction)
+        except attrlist.AttrlistExcept:
+            self.direction = None
+            self.textstyles = textstyles
+        self.ht = unit.topt(self.tex.textht(text, *self.textstyles))
+        self.wd = unit.topt(self.tex.textwd(text, *self.textstyles))
+        self.dp = unit.topt(self.tex.textdp(text, *self.textstyles))
+        self.shiftht = 0.5 * unit.topt(self.tex.textht(vtext, *self.textstyles))
+        self.manualextents()
+
+    def manualextents(self, ht = None, wd = None, dp = None, shiftht = None):
+        if ht is not None: self.ht = ht
+        if wd is not None: self.wd = wd
+        if dp is not None: self.dp = dp
+        if shiftht is not None: self.shiftht = None
+        self.xtext = 0
+        self.ytext = 0
+        rectbox.__init__(self, 0, -self.dp, self.wd, self.ht, self.wd/2, self.shiftht)
+        if self.direction is not None:
+            self.transform(trafo._rotate(self.direction.value))
+
+    def transform(self, trafo):
+        rectbox.transform(self, trafo)
+        self.xtext, self.ytext = trafo._apply(self.xtext, self.ytext)
+
+    def printtext(self, x, y):
+        if self.direction is not None:
+            styles = self.textstyles + [self.direction]
+        else:
+            styles = self.textstyles
+        self.tex._text(x + self.xtext, y + self.ytext, self.text, *styles)
+
+
 #if __name__=="__main__": 
 #    c=canvas.canvas()
-#    b=rectbox(0, 0, 6, 3, 3, 1)
-#    r = 3
+#    t=c.insert(tex.tex())
+#    b=textbox(t, "XXX")
+#    r = 5.0
 #    c.draw(path.path(path.arc(0, 0, r, 0, 360)))
 #    phi = 0
 #    while phi < 2 * math.pi + 1e-10:
-#        translate = b.translate(r * math.cos(phi), r * math.sin(phi))
-#        if translate is not None:
-#            c.draw(b.bpath().transform(trafo.translate(*translate)))
-#            c.draw(path.line(0, 0, b.x0 + translate[0], b.y0 + translate[1]))
-#        phi += math.pi / 100
+#        b.align(unit.topt(r), math.cos(phi), math.sin(phi))
+#        b.printtext(0, 0)
+#        phi += math.pi / 50
 #    c.writetofile("boxtest")
 
 
@@ -642,7 +684,8 @@ class axispainter:
                        drawgrid=0,
                        gridstyles=canvas.linestyle.dotted,
                        labeldist="0.3 cm",
-                       labelstyles=((), (tex.fontsize.footnotesize,))):
+                       labelstyles=((), (tex.fontsize.footnotesize,)),
+                       titledist="0.3 cm"):
         self.innerticklength_str = innerticklength
         self.outerticklength_str = outerticklength
         self.tickstyles = tickstyles
@@ -651,6 +694,7 @@ class axispainter:
         self.gridstyles = gridstyles
         self.labeldist_str = labeldist
         self.labelstyles = labelstyles
+        self.titledist_str = titledist
 
     def gcd(self, m, n):
         # calculate greates common divisor
@@ -662,13 +706,14 @@ class axispainter:
             m, (dummy, n) = n, divmod(m, n)
         return m
 
-    def decimalfrac(self, m, n):
+    def decfrac(self, m, n):
         gcd = self.gcd(m, n)
         (m, dummy1), (n, dummy2) = divmod(m, gcd), divmod(n, gcd)
         frac, rest = divmod(m, n)
         strfrac = str(frac)
         rest = m % n
         if rest:
+            #TODO: xxx.decimalpoint
             strfrac += "."
         oldrest = []
         while (rest):
@@ -682,7 +727,7 @@ class axispainter:
             strfrac += str(frac)
         return strfrac
 
-    def rationalfrac(self, m, n):
+    def ratfrac(self, m, n):
         gcd = self.gcd(m, n)
         (m, dummy1), (n, dummy2) = divmod(m, gcd), divmod(n, gcd)
         if n != 1:
@@ -690,6 +735,27 @@ class axispainter:
         else:
             frac = str(m)
         return frac
+
+    def expfrac(self, m, n):
+        if m == 0:
+            return "0"
+        exp = 0
+        while divmod(m, n)[0] > 9:
+            n *= 10
+            exp += 1
+        while divmod(m, n)[0] < 1:
+            m *= 10
+            exp -= 1
+        #TODO: if xxx.ratprefactor: prefactor = self.ratfrac(m, n); else:
+        prefactor = self.decfrac(m, n)
+        if exp: #TODO: and xxx.noexp0
+            if prefactor == "1":
+                return r"10^{%i}" % exp
+            else:
+                #TODO: xxx.times
+                return prefactor + r"\cdot10^{%i}" % exp
+        else:
+            return prefactor
 
     def selectstyle(self, number, styles):
         if type(styles) not in (types.TupleType, types.ListType):
@@ -706,6 +772,7 @@ class axispainter:
         innerticklength = unit.topt(unit.length(self.innerticklength_str, default_type="v"))
         outerticklength = unit.topt(unit.length(self.outerticklength_str, default_type="v"))
         labeldist = unit.topt(unit.length(self.labeldist_str, default_type="v"))
+        titledist = unit.topt(unit.length(self.titledist_str, default_type="v"))
 
         haslabel = 0
         for tick in axis.ticks:
@@ -725,14 +792,12 @@ class axispainter:
             for tick in axis.ticks:
                 if tick.labellevel is not None:
                     if not hasattr(tick, "text"):
-                        tick.text = self.decimalfrac(tick.enum, tick.denom)
-                        #tick.text = self.rationalfrac(tick.enum, tick.denom)
+                        #TODO: if xxx.whichtype: ...
+                        #tick.text = self.decfrac(tick.enum, tick.denom)
+                        #tick.text = self.ratfrac(tick.enum, tick.denom)
+                        tick.text = self.expfrac(tick.enum, tick.denom)
                     tick.labelstyles = [tex.style.math] + self.selectstyle(tick.labellevel, self.labelstyles)
-                    tick.ht = unit.topt(graph.tex.textht(tick.text, *tick.labelstyles))
-                    tick.wd = unit.topt(graph.tex.textwd(tick.text, *tick.labelstyles))
-                    tick.dp = unit.topt(graph.tex.textdp(tick.text, *tick.labelstyles))
-                    if tick.wd == 0: tick.wd = unit.topt("0.5 t cm")
-                    if tick.ht == 0: tick.ht = unit.topt("0.25 t cm")
+                    tick.textbox = textbox(graph.tex, tick.text, textstyles = tick.labelstyles)
 
             for tick in axis.ticks[1:]:
                 if tick.dx != axis.ticks[0].dx or tick.dy != axis.ticks[0].dy:
@@ -745,18 +810,25 @@ class axispainter:
                 maxht, maxdp = 0, 0
                 for tick in axis.ticks:
                     if tick.labellevel is not None:
-                        if maxht < tick.ht: maxht = tick.ht
-                        if maxdp < tick.dp: maxdp = tick.dp
+                        if maxht < tick.textbox.ht: maxht = tick.textbox.ht
+                        if maxdp < tick.textbox.dp: maxdp = tick.textbox.dp
                 for tick in axis.ticks:
                     if tick.labellevel is not None:
-                        tick.ht, tick.dp = maxht, maxdp
+                        tick.textbox.manualextents(ht = maxht, dp = maxdp)
 
             for tick in axis.ticks:
                 if tick.labellevel is not None:
-                    tick.b = rectbox(0, -tick.dp, tick.wd, tick.ht, tick.wd/2, zeroht[tick.labellevel]/2)
-                    tick.tx, tick.ty = tick.b.translate(labeldist * tick.dx, labeldist * tick.dy)
+                    tick.textbox.align(labeldist, tick.dx, tick.dy)
+                    tick.extent = tick.textbox.extent(tick.dx, tick.dy) + labeldist
 
         # we could now measure distances between labels rectboxes -> TODO: rating
+
+        axis.extent = 0
+        for tick in axis.ticks:
+            if tick.labellevel is None:
+                tick.extent = outerticklength * math.pow(self.subticklengthfactor, tick.ticklevel)
+            if axis.extent < tick.extent:
+                axis.extent = tick.extent
 
         for tick in axis.ticks:
             if tick.ticklevel is not None:
@@ -770,7 +842,16 @@ class axispainter:
                 y2 = tick.y + tick.dy * outerticklength * factor
                 graph.draw(path._line(x1, y1, x2, y2), *self.selectstyle(tick.ticklevel, self.tickstyles))
             if tick.labellevel is not None:
-                graph.tex._text(tick.x + tick.tx, tick.y + tick.ty, tick.text, *tick.labelstyles)
+                tick.textbox.printtext(tick.x, tick.y)
+
+        if axis.title is not None:
+            x, y = axis.tickpoint(axis, 0.5)
+            dx, dy = axis.tickdirection(axis, 0.5)
+            axis.titlebox = textbox(graph.tex, axis.title, textstyles = axis.titlestyles)
+            axis.extent += titledist
+            axis.titlebox.align(axis.extent, dx, dy)
+            axis.titlebox.printtext(x, y)
+            axis.extent += axis.titlebox.extent(dx, dy)
 
 class linkaxispainter(axispainter):
 
@@ -792,7 +873,7 @@ class linkaxispainter(axispainter):
                 axis.ticks.append(tick(_tick.enum, _tick.denom, ticklevel, labellevel))
         axis.convert = axis.linkedaxis.convert
 
-        # XXX: don't forget to calculate new text positioning as soon as it is moved
+        # XXX: don't forget to calculate new text positions as soon as this is moved
         #      outside of the paint method (when rating is moved into the axispainter)
 
         axispainter.paint(self, graph, axis)
@@ -805,14 +886,14 @@ class linkaxispainter(axispainter):
 class _axis:
 
     def __init__(self, min=None, max=None, reverse=0,
-                       title=None, titleattr=None, painter = axispainter()):
+                       title=None, titlestyles=(), painter = axispainter()):
         self.fixmin = min is not None
         self.fixmax = max is not None
         self.min = min
         self.max = max
         self.reverse = reverse
         self.title = title
-        self.titleattr = titleattr
+        self.titlestyles = titlestyles
         self.painter = painter
         self.setrange()
 
@@ -880,7 +961,7 @@ class graphxy(canvas.canvas):
 
     plotdata = [ ]
 
-    def __init__(self, tex, xpos=0, ypos=0, width=None, height=None, ratio=goldenrule, **axes):
+    def __init__(self, tex, xpos=0, ypos=0, width=None, height=None, ratio=goldenrule, axesdist="0.8 cm", **axes):
         canvas.canvas.__init__(self)
         self.tex = tex
         self.xpos = unit.topt(xpos)
@@ -902,6 +983,7 @@ class graphxy(canvas.canvas):
         if not axes.has_key("y2"):
             axes["y2"] = linkaxis(axes["y"])
         self.axes = axes
+        self.axesdist_str = axesdist
         self._drawstate = self.drawlayout
 
     def plot(self, Data, PlotStyle = None):
@@ -955,13 +1037,13 @@ class graphxy(canvas.canvas):
                 axis.part
             except AttributeError:
                 continue
-            axis.parts = axis.part.getparts(axis.min, axis.max) # TODO: make use of stretch
+            axis.parts = axis.part.getparts(axis.min, axis.max) # TODO: make use of pinch
             if len(axis.parts) > 1:
                 axis.partnum = 0
                 axis.rates = []
                 bestrate = None
                 for i in range(len(axis.parts)):
-                    rate = axis.rate.getrate(axis.parts[i], 1) # TODO: make use of stretch
+                    rate = axis.rate.getrate(axis.parts[i], 1) # TODO: make use of pinch
                     axis.rates.append(rate)
                     if (bestrate is None) or ((rate is not None) and (bestrate > rate)):
                         axis.partnum = i
@@ -1011,24 +1093,51 @@ class graphxy(canvas.canvas):
             return 1
 
     def drawaxes(self):
+        axesdist = unit.topt(unit.length(self.axesdist_str, default_type="v"))
         if self._drawstate != self.drawaxes:
             raise PyxGraphDrawstateError
-        for key, axis in self.axes.items():
+        self.xaxisextents = [0, 0]
+        self.yaxisextents = [0, 0]
+        needxaxisdist = [0, 0]
+        needyaxisdist = [0, 0]
+        items = list(self.axes.items())
+        items.sort() #TODO: alphabetical sorting breaks for axis numbers bigger than 9
+        for key, axis in items:
             num = self.keynum(key)
+            num2 = 1 - num % 2 # x1 -> 0, x2 -> 1, x3 -> 0, x4 -> 1, ...
+            num3 = 1 - 2 * (num % 2) # x1 -> -1, x2 -> 1, x3 -> -1, x4 -> 1, ...
             if _XPattern.match(key):
-                 axis.yaxispos = self.ymap.convert(1 - num % 2)
+                 if needxaxisdist[num2]:
+                     self.xaxisextents[num2] += axesdist
+                 axis.yaxispos = self.ymap.convert(num2) + num3*self.xaxisextents[num2]
                  axis.tickpoint = self.xtickpoint
-                 axis.fixtickdirection = (0, 1 - 2 * (num % 2))
+                 axis.fixtickdirection = (0, num3)
                  axis.gridpath = self.xgridpath
+                 if needxaxisdist[num2]:
+                     x1, y1 = self.xtickpoint(axis, 0)
+                     x2, y2 = self.xtickpoint(axis, 1)
+                     self.draw(path._line(x1, y1, x2, y2))
             elif _YPattern.match(key):
-                 axis.xaxispos = self.xmap.convert(1 - num % 2)
+                 if needyaxisdist[num2]:
+                     self.yaxisextents[num2] += axesdist
+                 axis.xaxispos = self.xmap.convert(num2) + num3*self.yaxisextents[num2]
                  axis.tickpoint = self.ytickpoint
-                 axis.fixtickdirection = (1 - 2 * (num % 2), 0)
+                 axis.fixtickdirection = (num3, 0)
                  axis.gridpath = self.ygridpath
+                 if needyaxisdist[num2]:
+                     x1, y1 = self.ytickpoint(axis, 0)
+                     x2, y2 = self.ytickpoint(axis, 1)
+                     self.draw(path._line(x1, y1, x2, y2))
             else:
                 assert 0, "Axis key %s not allowed" % key
             axis.tickdirection = self.tickdirection
             axis.painter.paint(self, axis)
+            if _XPattern.match(key):
+                 self.xaxisextents[num2] += axis.extent
+                 needxaxisdist[num2] = 1
+            if _YPattern.match(key):
+                 self.yaxisextents[num2] += axis.extent
+                 needyaxisdist[num2] = 1
         self._drawstate = self.drawdata
 
     def drawdata(self):
