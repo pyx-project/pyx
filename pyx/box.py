@@ -336,7 +336,7 @@ def tile_pt(polygons, a, dx, dy):
 
 
 def tile(polygons, a, dx, dy):
-    return unit.t_pt(tile_pt(polygons, unit.topt(a), dx, dy))
+    return tile_pt(polygons, unit.topt(a), dx, dy) * unit.t_pt
 
 
 class polygon(polygon_pt):
