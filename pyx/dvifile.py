@@ -188,7 +188,7 @@ class tfmfile:
         if self.debug:
             print "(FAMILY %s)" % self.fontfamily
             print "(CODINGSCHEME %s)" % self.charcoding
-            print "(DESINGSIZE R %f)" % 16L*self.designsize/16777216L
+            print "(DESINGSIZE R %f)" % 16.0*self.designsize/16777216L
 
         if self.lh > 17:
             self.sevenbitsave = self.file.readuchar()
@@ -589,7 +589,7 @@ class font:
             raise DVIError("check sums do not agree: %d vs. %d" %
                            (self.tfmfile.checksum, c))
 
-        # tfmfile.designsize is the design size of the font as a fix_word
+        # Check whether the given design size matches the one defined in the tfm file
         if abs(self.tfmfile.designsize - d) > 2:
             raise DVIError("design sizes do not agree: %d vs. %d" % (self.tfmfile.designsize, d))
         if q < 0 or q > 134217728:
@@ -636,7 +636,7 @@ class font:
 
 #    we do not need that ...
 #    def _convert_tfm_to_pt(self, length):
-#        return int(round(16L*length*self.q/16777216L*self.tfmconv)) * self.pyxconv
+#        return (16*long(round(length*self.q*self.tfmconv))/16777216) * self.pyxconv
 
     # routines returning lengths as integers in dvi units
 
@@ -1384,7 +1384,8 @@ class vffile:
                 # rescaled size of font: s is relative to the scaling
                 # of the virtual font itself.  Note that realscale has
                 # to be a fix_word (like s)
-                reals = int(self.scale * (16L*self.ds/16777216L) * s)
+                # XXX: check rounding
+                reals = int(round(self.scale * (16*self.ds/16777216L) * s))
 
                 # print ("defining font %s -- VF scale: %g, VF design size: %d, relative font size: %d => real size: %d" %
                 #        (fontname, self.scale, self.ds, s, reals)
