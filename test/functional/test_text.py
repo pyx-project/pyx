@@ -20,7 +20,7 @@ text.preamble(r"""%
     \definecolor{col4}{hsb}{0.1, 0.1, 0.1}
     \definecolor{col5}{named}{Red}
 %    \definecolor{col6}{pyx}{Some-PyX-Colour}
-    \definecolor{col0}{gray}{0.5}""", text.texmessage.ignore)
+    \definecolor{col0}{gray}{0.5}""", [text.texmessage.ignore])
 
 c.stroke(path.line(-1, 0, 6, 0))
 
@@ -34,20 +34,20 @@ c.stroke(path.line(7, 6.01, 7, 7), [style.linewidth.THIN])
 c.stroke(path.line(8, 6.01, 8, 7), [style.linewidth.THIN])
 c.text(7, 5, "\\vrule width1truecm height1truecm")
 
-c.text(6.2, 0, "0", text.vshift.middlezero)
-c.text(-1.2, 0, "abc", text.vshift.mathaxis, text.halign.right)
+c.text(6.2, 0, "0", [text.vshift.middlezero])
+c.text(-1.2, 0, "abc", [text.vshift.mathaxis, text.halign.right])
 
-t1 = text.text(0, 0, "a \PyXMarker{beforeb}b\PyXMarker{afterb} c d e f g h i j k l m n o p q r s t u v w x y z", text.parbox(2, baseline=text.parbox.bottom))
+t1 = text.text(0, 0, "a \PyXMarker{beforeb}b\PyXMarker{afterb} c d e f g h i j k l m n o p q r s t u v w x y z", [text.parbox(2, baseline=text.parbox.bottom)])
 c.insert(t1)
 c.stroke(t1.path())
 
-t2 = c.insert(text.text(3, 0, "a \PyXMarker{beforeb}b\PyXMarker{afterb} c d e f g h i j k l m n o p q r s t u v w x y z", text.parbox(2, baseline=text.parbox.top)))
+t2 = c.insert(text.text(3, 0, "a \PyXMarker{beforeb}b\PyXMarker{afterb} c d e f g h i j k l m n o p q r s t u v w x y z", [text.parbox(2, baseline=text.parbox.top)]))
 c.stroke(t2.path())
 c.stroke(path.line(*(t1.marker("beforeb") + t2.marker("beforeb"))), [color.rgb.red])
 c.stroke(path.line(*(t1.marker("afterb") + t2.marker("afterb"))), [color.rgb.green])
 
-c.text(0, 3, r"\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} = \sqrt{\pi\over a}", text.mathmode)
-c.text(0, 6, r"\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} = \sqrt{\pi\over a}", text.size.LARGE, text.mathmode)
+c.text(0, 3, r"\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} = \sqrt{\pi\over a}", [text.mathmode])
+c.text(0, 6, r"\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} = \sqrt{\pi\over a}", [text.size.LARGE, text.mathmode])
 
 c.stroke(c.text(1, 2, r"Hello, world!").path())
 
@@ -56,7 +56,7 @@ c.text(0, 8, r"\sffamily VF test: \"o\ss ffl \char0")
 c.text(0, 9, r"\sffamily \fontsize{30}{35}\selectfont VF test: \"o\ss ffl \char0")
 
 # test the specials
-c.stroke(c.text(10, 2, r"Hello, \color{green}world!", trafo.slant(1)).path())
+c.stroke(c.text(10, 2, r"Hello, \color{green}world!", [trafo.slant(1)]).path())
 c.stroke(c.text(10, 0, r"\begin{rotate}{90}\parbox{5cm}{rotated\\ in \LaTeX}\end{rotate}"))
 
 d = canvas.canvas()
@@ -83,7 +83,7 @@ c.stroke(c.text(10, 4, r"""%
     %scale=2,               %! wraps around rotating and include
     %draft=,               %% do not print anything,
     clip=]%                %! directly in dvi
-    {sample}}""", text.texmessage.graphicsload))
+    {sample}}""", texmessages=[text.texmessage.graphicsload]))
 c.stroke(c.text(10, 0, r"""
     \textcolor{col0}{abc}
     \textcolor{col1}{abc}
@@ -92,7 +92,7 @@ c.stroke(c.text(10, 0, r"""
     \textcolor{col4}{abc}
     \textcolor{col5}{abc}
 %    \textcolor{col6}{abc}%
-    """, text.parbox(3)))
+    """, [text.parbox(3)]))
 c.stroke(c.text(15, 0, r"""
     \colorbox{col2}{ColorBox}\\
     \fcolorbox{col3}{col4}{FColorBox}"""))

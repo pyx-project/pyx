@@ -127,13 +127,17 @@ class _data:
 
     __implements__ = _Idata
 
-    def __init__(self, data, titles, parser=mathtree.parser(
-           MathTreeVals=MathTreeValsWithCol, MathTreeFuncs=MathTreeFuncsWithCol)):
+    def __init__(self, data, titles, parser=None):
         """initializes an instance
         - data and titles are just set as instance variables without further checks ---
           they must be valid in terms of _Idata (expecially their sizes must fit)
         - parser is used in addcolumn and thus must implement the expression parsing as
           defined in _Idata"""
+        if parser == None:
+            if mathtree.__useparser__ == mathtree.__oldparser__:
+                parser=mathtree.parser(MathTreeVals=mathtree.DefaultMathTreeVals+MathTreeValsWithCol)
+            if mathtree.__useparser__ == mathtree.__newparser__:
+                parser=mathtree.parser(MathTreeFuncs=MathTreeFuncsWithCol)
         self.data = data
         self.titles = titles
         self.parser = parser
@@ -162,7 +166,7 @@ class _data:
         tree = self.parser.parse(expression)
         columnlist = {}
         varlist = context.copy() # do not modify context
-        if self.parser.isnewparser == 1: # XXX: switch between mathtree-parsers
+        if mathtree.__useparser__ == mathtree.__newparser__: # XXX: switch between mathtree-parsers
             for key in tree.VarList():
                 if isinstance(key, MathTreeFuncCol):
                     column = int(key.ColNo(**varlist))

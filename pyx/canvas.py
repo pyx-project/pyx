@@ -270,14 +270,14 @@ class _canvas(base.PSCmd):
 
         self.texrunner = texrunner
 
-    def text(self, x, y, atext, *args):
+    def text(self, x, y, atext, *args, **kwargs):
         """insert a text into the canvas
 
         inserts a textbox created by self.texrunner.text into the canvas
 
         returns the inserted textbox"""
 
-        return self.insert(self.texrunner.text(x, y, atext, *args))
+        return self.insert(self.texrunner.text(x, y, atext, *args, **kwargs))
 
 
     def text_pt(self, x, y, atext, *args):
@@ -293,9 +293,10 @@ class _canvas(base.PSCmd):
 # canvas for patterns
 #
 
-class pattern(_canvas, style.fillstyle, attr.exclusiveattr):
+class pattern(_canvas, attr.exclusiveattr, style.fillstyle):
 
     def __init__(self, painttype=1, tilingtype=1, xstep=None, ystep=None, bbox=None, trafo=None):
+        attr.exclusiveattr.__init__(self, pattern)
         _canvas.__init__(self)
         attr.exclusiveattr.__init__(self, pattern)
         self.id = "pattern%d" % id(self)

@@ -1607,7 +1607,7 @@ class axistitlepainter:
             titleattrs = helper.ensurelist(self.titleattrs)
             if self.titledirection is not None:
                 titleattrs.append(self.titledirection.trafo(dx, dy))
-            title = self.texrunner.text_pt(x, y, axis.title, *titleattrs)
+            title = self.texrunner.text_pt(x, y, axis.title, titleattrs)
             ac.extent += titledist
             title.linealign(ac.extent, -dx, -dy)
             ac.extent += title.extent(dx, dy)
@@ -1703,7 +1703,7 @@ class axispainter(axistitlepainter):
                         labelattrs.append(self.labeldirection.trafo(tick.temp_dx, tick.temp_dy))
                     if tick.labelattrs is not None:
                         labelattrs.extend(helper.ensurelist(tick.labelattrs))
-                    tick.temp_labelbox = self.texrunner.text_pt(tick.temp_x, tick.temp_y, tick.label, *labelattrs)
+                    tick.temp_labelbox = self.texrunner.text_pt(tick.temp_x, tick.temp_y, tick.label, labelattrs)
         if len(axis.ticks) > 1:
             equaldirection = 1
             for tick in axis.ticks[1:]:
@@ -2026,11 +2026,11 @@ class baraxispainter(axistitlepainter):
                 if self.namedirection is not None:
                     nameattrs.append(self.namedirection.trafo(tick.temp_dx, tick.temp_dy))
                 if axis.texts.has_key(name):
-                    nameboxes.append(self.texrunner.text_pt(x, y, str(axis.texts[name]), *nameattrs))
+                    nameboxes.append(self.texrunner.text_pt(x, y, str(axis.texts[name]), nameattrs))
                 elif axis.texts.has_key(str(name)):
-                    nameboxes.append(self.texrunner.text_pt(x, y, str(axis.texts[str(name)]), *nameattrs))
+                    nameboxes.append(self.texrunner.text_pt(x, y, str(axis.texts[str(name)]), nameattrs))
                 else:
-                    nameboxes.append(self.texrunner.text_pt(x, y, str(name), *nameattrs))
+                    nameboxes.append(self.texrunner.text_pt(x, y, str(name), nameattrs))
         labeldist = ac.extent + unit.length(self.namedist_str, default_type="v")
         if len(namepos) > 1:
             equaldirection = 1
@@ -2837,7 +2837,7 @@ class key:
         self.symbolspace_pt = unit.topt(unit.length(self.symbolspace_str, default_type="v"))
         self.titles = []
         for plotinfo in self.plotinfos:
-            self.titles.append(graph.texrunner.text_pt(0, 0, plotinfo.data.title, *helper.ensuresequence(self.textattrs)))
+            self.titles.append(graph.texrunner.text_pt(0, 0, plotinfo.data.title, helper.ensuresequence(self.textattrs)))
         box.tile_pt(self.titles, self.dist_pt, 0, -1)
         box.linealignequal_pt(self.titles, self.symbolwidth_pt + self.symbolspace_pt, 1, 0)
 
@@ -4367,7 +4367,7 @@ class rect(symbol):
         color = point[self.colorindex]
         if color is not None:
             if color != self.lastcolor:
-                self.rectclipcanvas.set(self.palette.getcolor(color))
+                self.rectclipcanvas.set([self.palette.getcolor(color)])
             if bottom is not None and left is not None:
                 bottomleft = left[0], bottom[1]
             if bottom is not None and right is not None:
@@ -4420,7 +4420,7 @@ class text(symbol):
     def drawsymbol_pt(self, graph, x, y, point=None):
         symbol.drawsymbol_pt(self, graph, x, y, point)
         if None not in (x, y, point[self.textindex]) and self._textattrs is not None:
-            graph.text_pt(x + self.textdx_pt, y + self.textdy_pt, str(point[self.textindex]), *helper.ensuresequence(self.textattrs))
+            graph.text_pt(x + self.textdx_pt, y + self.textdy_pt, str(point[self.textindex]), helper.ensuresequence(self.textattrs))
 
     def drawpoints(self, graph, points):
         self.textdx = unit.length(_getattr(self.textdx_str), default_type="v")
@@ -4770,7 +4770,7 @@ class paramfunction:
         self.expression = {}
         self.mathtrees = {}
         varlist, expressionlist = expression.split("=")
-        if parser.isnewparser == 1: # XXX: switch between mathtree-parsers
+        if mathtree.__useparser__ == mathtree.__newparser__: # XXX: switch between mathtree-parsers
             keys = varlist.split(",")
             mtrees = helper.ensurelist(parser.parse(expressionlist))
             if len(keys) != len(mtrees):

@@ -23,9 +23,15 @@
 
 
 import string, re, math
-import symbol, token
-import parser as pythonparser
 
+__oldparser__ = 1
+__newparser__ = 2
+__useparser__ = __oldparser__
+#__useparser__ = __newparser__
+
+if __useparser__ == __newparser__:
+    import symbol, token
+    import parser as pythonparser
 
 class ParseStr:
 
@@ -823,14 +829,17 @@ class parser:
         self.isnewparser = 0
 
     def parse(self, str):
-        return self.old_parse(str)
+        if __useparser__ == __oldparser__:
+            return self.old_parse(str)
+        elif __useparser__ == __newparser__:
+            return self.new_parse(str)
+        else:
+            RuntimeError("invalid __useparser__")
 
     def old_parse(self, str):
-        self.isnewparser = 0
         return self.ParseMathTree(ParseStr(str))
 
     def new_parse(self, str):
-        self.isnewparser = 1
         # prepare raw string:
         # "^" -> "**"
         thestr = re.sub("^\s*", "", str)

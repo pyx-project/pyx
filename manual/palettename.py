@@ -34,7 +34,7 @@ for line in lines: # we yet don't use a file iterator
         g.plot(pf, graph.rect(pyx.color.palette.__dict__[m.group("name")]))
         g.dodata()
         g.finish()
-        c.text(10.2, y + 0.15, m.group("id"), text.size.footnotesize)
+        c.text(10.2, y + 0.15, m.group("id"), [text.size.footnotesize])
         y += dy
         skiplevel = 0
 
