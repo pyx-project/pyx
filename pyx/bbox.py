@@ -20,6 +20,8 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+import unit
+
 # helper routine for bbox manipulations
 
 def _nmin(x, y):
@@ -87,6 +89,6 @@ class bbox:
 
     def enhance(self, size):
         """return bbox enhanced in all directions by size"""
-        size = unit.topt(unit.length(centerradius, default_type="v"))
+        size = unit.topt(unit.length(size, default_type="v"))
         return bbox(self.llx-size, self.lly-size, 
                     self.urx+size, self.ury+size)
