@@ -35,7 +35,7 @@ import attr, base, canvas, helper, path, trafo, unit
 # Decorated path
 #
 
-class _decoratedpath(base.PSCmd):
+class decoratedpath(base.PSCmd):
     """Decorated path
 
     The main purpose of this class is during the drawing
@@ -158,7 +158,7 @@ class _decoratedpath(base.PSCmd):
 # Path decorators
 #
 
-class _deco(attr.attr):
+class deco(attr.attr):
 
     """decorators
 
@@ -182,7 +182,7 @@ class _deco(attr.attr):
 # respectively the path
 #
 
-class stroked(_deco):
+class stroked(deco):
 
     """stroked is a decorator, which draws the outline of the path"""
 
@@ -198,7 +198,7 @@ class stroked(_deco):
 stroked.clear = attr.clearclass(stroked)
 
 
-class filled(_deco):
+class filled(deco):
 
     """filled is a decorator, which fills the interior of the path"""
 
@@ -279,7 +279,7 @@ def _arrowhead(anormpath, size, angle, constriction):
 # XXX rewrite arrow without using __call__
 # XXX do not forget arrow.clear
 
-class arrow(_deco):
+class arrow(deco):
 
     """arrow is a decorator which adds an arrow to either side of the path"""
 
@@ -328,7 +328,7 @@ class arrow(_deco):
 
         ahead = _arrowhead(anormpath, self.size, self.angle, self.constriction)
 
-        dp.addsubdp(_decoratedpath(ahead,
+        dp.addsubdp(decoratedpath(ahead,
                                   strokepath=ahead, fillpath=ahead,
                                   styles=self.styles,
                                   strokestyles=self.strokestyles,

@@ -21,9 +21,9 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import attr, base
+import attr, style
 
-class color(attr.exclusiveattr, base.strokeattr, base.fillattr):
+class color(attr.exclusiveattr, style.strokestyle, style.fillstyle):
 
     """base class for all colors"""
 
@@ -169,9 +169,9 @@ cmyk.white          = cmyk.White
 cmyk.black          = cmyk.Black
 
 
-# TODO: - a palette is not an attribute (as it is not an PSOp)
-#       - should we have a changeable attribute instead, which
-#         defines a get method (#item out of #items)?
+# TODO: - a palette is not a style (as it is not an PSOp)
+#       - should we have a changeable attribute instead
+#         those may define a method get etc.
 
 class palette:
 

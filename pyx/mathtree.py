@@ -834,7 +834,8 @@ class parser:
         Tree = None
         Match = arg.MatchPattern(re.compile(r"\s*-(?![0-9\.])"))
         if Match:
-            Tree = MathTreeFunc1Neg()
+            #Tree = MathTreeFunc1Neg()
+            Tree = MathTreeOpSub(MathTreeValConst(0)) # XXX quick workaround
         while 1:
             i = arg.MatchStr("(")
             if i:

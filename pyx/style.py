@@ -25,8 +25,20 @@
 import math
 import attr, unit, base
 
+#
+# base classes for stroke and fill styles
+#
 
-class linecap(attr.exclusiveattr, base.strokeattr):
+class strokestyle(base.PSOp): pass
+
+class fillstyle(base.PSOp): pass
+
+#
+# common stroke styles
+#
+
+
+class linecap(attr.exclusiveattr, strokestyle):
 
     """linecap of paths"""
 
@@ -43,7 +55,7 @@ linecap.square = linecap(2)
 linecap.clear = attr.clearclass(linecap)
 
 
-class linejoin(attr.exclusiveattr, base.strokeattr):
+class linejoin(attr.exclusiveattr, strokestyle):
 
     """linejoin of paths"""
 
@@ -60,7 +72,7 @@ linejoin.bevel = linejoin(2)
 linejoin.clear = attr.clearclass(linejoin)
 
 
-class miterlimit(attr.exclusiveattr, base.strokeattr):
+class miterlimit(attr.exclusiveattr, strokestyle):
 
     """miterlimit of paths"""
 
@@ -79,7 +91,7 @@ miterlimit.lessthan11deg = miterlimit(10) # the default, approximately 11.4783 d
 miterlimit.clear = attr.clearclass(miterlimit)
 
 
-class dash(attr.exclusiveattr, base.strokeattr):
+class dash(attr.exclusiveattr, strokestyle):
 
     """dash of paths"""
 
@@ -95,7 +107,7 @@ class dash(attr.exclusiveattr, base.strokeattr):
 dash.clear = attr.clearclass(dash)
 
 
-class linestyle(attr.exclusiveattr, base.strokeattr):
+class linestyle(attr.exclusiveattr, strokestyle):
 
     """linestyle (linecap together with dash) of paths"""
 
@@ -115,25 +127,17 @@ linestyle.dashdotted = linestyle(linecap.round, dash([0, 3, 3, 3]))
 linestyle.clear = attr.clearclass(linestyle)
 
 
-class linewidth(unit.length, attr.attr, base.strokeattr):
+class linewidth(unit.length, attr.exclusiveattr, attr.sortattr, strokestyle):
 
     """linewidth of paths"""
 
     def __init__(self, l="0 cm"):
         unit.length.__init__(self, l=l, default_type="w")
+        attr.exclusiveattr.__init__(self, linewidth)
+        attr.sortattr.__init__(self, linestyle)
 
     def merge(self, attrs):
-        newlist = []
-        selfinserted = 0
-        for attr in attrs:
-            if isinstance(attr, linestyle) and not selfinserted:
-                newlist.append(self)
-                selfinserted = 1
-            if not isinstance(attr, linewidth):
-                newlist.append(attr)
-        if not selfinserted:
-            newlist.append(self)
-        return newlist
+        return attr.sortattr.merge(self, attr.exclusiveattr.merge(self, attrs))
 
     def write(self, file):
         file.write("%f setlinewidth\n" % unit.topt(self))

@@ -44,7 +44,6 @@ def getattrs(attrs, getclasses):
         for attr in attrs:
             if isinstance(attr, getclasses):
                 result.append(attr)
-                break
     except TypeError: # workaround for Python 2.1 and older
         for attr in attrs:
             for getclass in getclasses:
@@ -97,6 +96,37 @@ class exclusiveattr(attr):
         attrs = [attr for attr in attrs if not isinstance(attr, self.exclusiveclass)]
         attrs.append(self)
         return attrs
+
+
+class sortattr(attr):
+
+    """an attribute which places itself previous to all attributes given
+    in the dependedclasses argument to the constructor"""
+
+    def __init__(self, dependedclasses):
+        self.dependedclasses = dependedclasses
+
+    def merge(self, attrs):
+        first = 1
+        result = []
+        try:
+            for attr in attrs:
+                if first and isinstance(attr, self.dependedclasses):
+                    result.append(self)
+                    first = 0
+                result.append(attr)
+        except TypeError: # workaround for Python 2.1 and older
+            for attr in attrs:
+                if first:
+                    for dependedclass in self.dependedclasses:
+                        if isinstance(attr, dependedclass):
+                            result.append(self)
+                            first = 0
+                            break
+                result.append(attr)
+        if first:
+            result.append(self)
+        return result
 
 
 class clearclass(attr):

@@ -43,8 +43,8 @@ _paperformats = { "A4"      : ("210 t mm",  "297 t mm"),
                   "A1"      : ("594 t mm",  "840 t mm"),
                   "A0"      : ("840 t mm", "1188 t mm"),
                   "A0B"     : ("910 t mm", "1370 t mm"),
-                  "LETTER"  : ("8.5 t inch",   "11 t inch"),
-                  "LEGAL"   : ("8.5 t inch",   "14 t inch")}
+                  "LETTER"  : ("8.5 t inch", "11 t inch"),
+                  "LEGAL"   : ("8.5 t inch", "14 t inch")}
 
 
 #
@@ -197,7 +197,7 @@ class _canvas(base.PSCmd):
 
         """
 
-        attr.checkattrs(styles, [base.strokeattr, base.fillattr])
+        attr.checkattrs(styles, [style.strokestyle, style.fillstyle])
         for astyle in styles:
             self.insert(astyle)
         return self
@@ -215,18 +215,18 @@ class _canvas(base.PSCmd):
         """
 
         attr.mergeattrs(args)
-        attr.checkattrs(args, [deco._deco, base.fillattr, base.strokeattr, trafo._trafo])
+        attr.checkattrs(args, [deco.deco, style.fillstyle, style.strokestyle, trafo._trafo])
 
         for t in attr.getattrs(args, [trafo._trafo]):
             path = path.transformed(t)
 
-        dp = deco._decoratedpath(path)
+        dp = deco.decoratedpath(path)
 
         # set global styles
-        dp.styles = attr.getattrs(args, [base.fillattr, base.strokeattr])
+        dp.styles = attr.getattrs(args, [style.fillstyle, style.strokestyle])
 
         # add path decorations and modify path accordingly
-        for adeco in attr.getattrs(args, [deco._deco]):
+        for adeco in attr.getattrs(args, [deco.deco]):
             dp = adeco.decorate(dp)
 
         self.insert(dp)
@@ -289,7 +289,7 @@ class _canvas(base.PSCmd):
 # canvas for patterns
 #
 
-class pattern(_canvas, base.fillattr):
+class pattern(_canvas, style.fillstyle):
 
     def __init__(self, painttype=1, tilingtype=1, xstep=None, ystep=None, bbox=None, trafo=None):
         _canvas.__init__(self)
