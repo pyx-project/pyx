@@ -595,6 +595,7 @@ class DVIFile:
                else: raise DVIError
 
             else: raise DVIError # unexpected reader state
+        self.flushout()
 
     def writeheader(self, file):
         """write PostScript font header"""
@@ -886,9 +887,10 @@ text = _default.text
 
 if __name__=="__main__":
 
-    res1 = text(r"""\hbox{$$\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} =
-    \sqrt{\pi\over a}$$} """)
-    print res1.bbox()
+    res1 = text(r"""\hbox{$\displaystyle\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} =
+    \sqrt{\pi\over a}$} """)
+#    res1 = text("x y z")
+#    print res1.bbox()
 #    res2 = text("test", 1, 1)
 #    res3 = text("bla und nochmals bla", 2, 2)
 #    print res2.bbox()
@@ -897,7 +899,7 @@ if __name__=="__main__":
     file = open("test.ps", "w")
     
     file.write("%!PS-Adobe-3.0 EPSF 3.0\n")
-    file.write("%%BoundingBox: -10 -30 100 100\n")
+    file.write("%%BoundingBox: -10 -100 100 100\n")
     file.write("%%EndComments\n")
 
     file.write("%%BeginProlog\n")
