@@ -406,7 +406,7 @@ class _selectfont(base.PSOp):
         file.write("/%s %f selectfont\n" % (self.name, self.size))
 
     # XXX: should we provide a prolog method for the font inclusion
-    # instead of using the coarser logic in DVIFile.prolog
+    # instead of using the coarser logic in dvifile.prolog
 
 
 class _show(base.PSOp):
@@ -419,7 +419,7 @@ class _show(base.PSOp):
         file.write("%f %f moveto (%s) show\n" % (self.x, self.y, self.s))
 
 
-class FontMapping:
+class fontmapping:
 
     tokenpattern = re.compile(r'"(.*?)("\s+|"$|$)|(.*?)(\s+|$)')
 
@@ -503,16 +503,16 @@ def readfontmap(filenames):
             line = line.rstrip()
             if not (line=="" or line[0] in (" ", "%", "*", ";" , "#")):
                 try:
-                    fontmapping = FontMapping(line)
+                    fm = fontmapping(line)
                 except RuntimeError, e:
                     sys.stderr.write("*** PyX Warning: Ignoring line %i in mapping file '%s': %s\n" % (lineno, filename, e))
                 else:
-                    fontmap[fontmapping.texname] = fontmapping
+                    fontmap[fm.texname] = fm
         mapfile.close()
     return fontmap
 
 
-class Font:
+class type1font:
     def __init__(self, name, c, q, d, tfmconv, fontmap, debug=0):
         self.name = name
         self.tfmpath = pykpathsea.find_file("%s.tfm" % self.name, pykpathsea.kpse_tfm_format)
@@ -556,26 +556,12 @@ class Font:
         self.usedchars = [0] * 256
 
     def __str__(self):
-        return "Font(%s, %d)" % (self.name, self.tfmdesignsize)
+        return "type1font(%s, %d)" % (self.name, self.tfmdesignsize)
 
     __repr__ = __str__
 
     def convert(self, width):
-        # simplified version
         return 16L*width*self.qorig/16777216L
-
-        # original algorithm of Knuth (at the moment not used)
-        b0 = width >> 24
-        b1 = (width >> 16) & 0xff
-        b2 = (width >> 8 ) & 0xff
-        b3 = (width      ) & 0xff
-
-        if b0 == 0:
-            return (((((b3*self.q)/256)+(b2*self.q))/256)+(b1*self.q))/self.beta
-        elif b0 == 255:
-            return (((((b3*self.q)/256)+(b2*self.q))/256)+(b1*self.q))/self.beta-self.alpha
-        else:
-            raise TFMError("error in font size")
 
     def getwidth(self, charcode):
         return self.convert(self.tfmfile.width[self.tfmfile.char_info[charcode].width_index])
@@ -648,7 +634,7 @@ _DVI_PRE         = 247 # preamble
 _DVI_POST        = 248 # postamble beginning
 _DVI_POSTPOST    = 249 # postamble ending
 
-_DVI_VERSION     = 2 # dvi version
+_DVI_VERSION     = 2   # dvi version
 
 # position variable indices
 _POS_H           = 0
@@ -689,7 +675,8 @@ class _restoretrafo(base.PSOp):
     def write(self, file):
         file.write("setmatrix\n")
 
-class DVIFile:
+
+class dvifile:
 
     def __init__(self, filename, fontmap, debug=0, ipcmode=0):
         """ initializes the instance
@@ -793,7 +780,7 @@ class DVIFile:
         #        Note that q is actually s in large parts of the documentation.
         # d:     design size
 
-        self.fonts[num] =  Font(fontname, c, q, d, self.tfmconv, self.fontmap, self.debug > 1)
+        self.fonts[num] =  type1font(fontname, c, q, d, self.tfmconv, self.fontmap, self.debug > 1)
 
         if self.debug:
             print "%d: fntdef%d %i: %s" % (self.filepos, cmdnr, num, fontname)
@@ -1165,15 +1152,16 @@ class DVIFile:
         self.pages[page-1].write(file)
 
 
-_VF_ID = 202
-_VF_LONG_CHAR = 242
-_VF_FNTDEF1234 = _DVI_FNTDEF1234
-_VF_PRE = _DVI_PRE
-_VF_POST = _DVI_POST
+_VF_LONG_CHAR  = 242              # character packet (long version)
+_VF_FNTDEF1234 = _DVI_FNTDEF1234  # font definition
+_VF_PRE        = _DVI_PRE         # preamble
+_VF_POST       = _DVI_POST        # postamble
+
+_VF_ID         = 202              # VF id byte
 
 class VFError(exceptions.Exception): pass
 
-class VFFile:
+class vffile:
     def __init__(self, filename, fontmap, debug=0):
         self.filename = filename
         self.fontmap = fontmap
@@ -1183,7 +1171,7 @@ class VFFile:
         self.chars = {}            # defined chars
 
         file = binfile(self.filename, "rb")
-        
+
         cmd = file.readuchar()
         if cmd == _VF_PRE:
             if file.readuchar() != _VF_ID: raise VFError
@@ -1209,7 +1197,7 @@ class VFFile:
                 s = file.readint32()     # scaling used for font (fix_word)
                 d = file.readint32()     # design size of font
                 fontname = file.read(file.readuchar()+file.readuchar())
-                self.fonts[num] =  Font(fontname, c, s, d, self.tfmconv, self.fontmap, self.debug > 1)
+                self.fonts[num] =  type1font(fontname, c, s, d, self.tfmconv, self.fontmap, self.debug > 1)
             elif cmd == _VF_LONG_CHAR:
                 # character packet (long form)
                 pl = file.readuint32()   # packet length
@@ -2258,8 +2246,8 @@ class texrunner:
         else:
             dvifilename = "%s.dvi" % self.texfilename
         if not self.texipc:
-            dvifile = DVIFile(dvifilename, self.fontmap, debug=self.dvidebug)
-            self.dvifiles.append(dvifile)
+            advifile = dvifile(dvifilename, self.fontmap, debug=self.dvidebug)
+            self.dvifiles.append(advifile)
         self.dvifiles[-1].readfile()
         self.dvinumber += 1
 
@@ -2431,7 +2419,7 @@ class texrunner:
             if self.texipc:
                 if self.dvicopy:
                     raise RuntimeError("texipc and dvicopy can't be mixed up")
-                self.dvifiles.append(DVIFile("%s.dvi" % self.texfilename, self.fontmap, debug=self.dvidebug, ipcmode=1))
+                self.dvifiles.append(dvifile("%s.dvi" % self.texfilename, self.fontmap, debug=self.dvidebug, ipcmode=1))
         helper.checkattr(args, allowmulti=(_texsetting, texmessage, trafo._trafo, base.PathStyle))
                                            #XXX: should we distiguish between StrokeStyle and FillStyle?
         texsettings = helper.getattrs(args, _texsetting, default=[])
