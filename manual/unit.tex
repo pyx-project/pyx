@@ -1,10 +1,35 @@
 \chapter{Module unit}
 \label{unit}
-\section{\PyX{} length}
+
+With the \verb|unit| module \PyX{} makes available classes and
+functions for the specification and manipulation of lengths. As usual,
+lengths consist of a number together with a measurement unit,
+\textit{e.g.}\ $1$ cm, $50$ points, $0.42$ inch.  In addition, lengths
+in \PyX{} are composed of the four types ``true'', ``user'',
+``visual'' and ``width'', \textit{e.g.}\ $1$ user cm, $50$ true
+points, $(0.42\ \mathrm{visual} + 0.2\ \mathrm{width})$ inch.  As
+their name tells, they serve different purposes. True lengths are not
+scalable and serve mainly for return values of \PyX{} functions.  The
+other length types allow a rescaling by the user and are distinguished
+for what type of object they are applied:
+
+\begin{description}
+\item[user length:] used for lengths of graphical objects like
+  positions, distances, etc.
+\item[visual length:] used for sizes of visual elements, like arrows,
+  text, etc.
+\item[width length:] used for line widths
+\end{description}
+
+Thus, if you just want thicker lines for a publication version of your
+figure, you can just rescale the width lengths. How this is done, is
+described in the following sections.
+
+\section{Class length}
 Lengths can either be a initialized with a number or a string:
 \begin{itemize}
 \item a length specified as a number corresponds to the default values of
-unit-type and unit-name
+unit-type and \verb|default_unit|
 \item a string has to consist of a maximum of three parts:
 \begin{description}
 \item[quantifier:] integer/float value
@@ -13,5 +38,13 @@ unit-type and unit-name
 to default-unit
 \end{description}
 \end{itemize}
-Internally all length are stored in units of m as a quadruple for the
-four unit-types
+
+\section{Subclasses of length}
+
+\section{Conversion functions}
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "manual.tex"
+%%% End:

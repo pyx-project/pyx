@@ -13,7 +13,7 @@ like translation, rotation, scaling, and mirroring.
 The \verb|trafo| class represents a general
 transformation, which is defined for a vector $\vec{x}$ as
 \[
-  \vec{x}' = \mathsf{A} \vec{x} + \vec{b}\ ,
+  \vec{x}' = \mathsf{A}\, \vec{x} + \vec{b}\ ,
 \]
 where $\mathsf{A}$ is the transformation matrix and $\vec{b}$ the
 translation vector. The transformation matrix must not be singular,
@@ -26,13 +26,73 @@ consecutive application of the respective transformation. Note that
 \verb|trafo1*trafo2| means that first \verb|trafo2| gets applied and
 then \verb|trafo1|, \textit{i.e.} the new transformation is given in
 obvious notation by $\mathsf{A} = \mathsf{A}_1 \mathsf{A}_2$ and
-$\vec{b} = \mathsf{A}_1 \vec{b}_2 + \vec{b}_1$. The inverse of a
-transformation can be obtained via the \verb|trafo| method
-\verb|inverse()|, defined by the inverse $\mathsf{A}^{-1}$ of the
-transformation matrix and the transformation vector $-\mathsf{A}^{-1}\vec{b}$.
+$\vec{b} = \mathsf{A}_1 \vec{b}_2 + \vec{b}_1$.  Use the \verb|trafo|
+methods described below, if you prefer thinking the other way round.
+The inverse of a transformation can be obtained via the \verb|trafo|
+method \verb|inverse()|, defined by the inverse $\mathsf{A}^{-1}$ of
+the transformation matrix and the transformation vector
+$-\mathsf{A}^{-1}\vec{b}$.
+
+The methods of the \verb|trafo| class are summarized in the following
+table.
+
+\medskip
+\begin{tabularx}{\linewidth}{>{\hsize=.8\hsize}X>{\raggedright\arraybackslash\hsize=1.2\hsize}X}
+\texttt{trafo} method & Function \\
+\hline
+\texttt{\_\_init\_\_(matrix=((1,0),(0,1)),\newline
+\phantom{\_\_init\_\_(}vector=(0,0)):} & create new \texttt{trafo}
+instance with transformation \texttt{matrix} and \texttt{vector}.
+\\
+\texttt{apply(x, y)} & apply \texttt{trafo} to point vector
+$(\mathtt{x}, \mathtt{y})$.\\
+\texttt{inverse()} & returns inverse transformation of
+\texttt{trafo}.\\
+\texttt{mirror(angle)} & returns \texttt{trafo} followed by mirroring
+at line through $(0,0)$ with  direction \texttt{angle} in degrees.\\
+\texttt{rotate(angle, \newline\phantom{rotate(}x=None, y=None)} &
+returns \texttt{trafo} followed by rotation by \texttt{angle} degrees
+around point $(\mathtt{x},
+\mathtt{y})$, or $(0,0)$, if not given.\\
+\texttt{scale(sx, sy=None,\newline\phantom{scale(}x=None, y=None)} &
+returns \texttt{trafo} followed by
+scaling with scaling factor \texttt{sx} in $x$-direction, \texttt{sy} in
+$y$-direction ($\mathtt{sy}=\mathtt{sx}$, if not given) with scaling
+center $(\mathtt{x}, \mathtt{y})$, or $(0,0)$, if not given.\\
+\texttt{translate(x, y)} & returns \texttt{trafo} followed by
+translation by vector $(\mathtt{x}, \mathtt{y})$.\\
+\end{tabularx}
+\medskip
 
 
 
+\section{Subclasses of trafo}
+
+The \verb|trafo| module provides provides a number of subclasses of
+the \verb|trafo| class, each of which corresponds to one \verb|trafo|
+method. They are listed in the following table:
+
+\medskip
+\begin{tabularx}{\linewidth}{>{\hsize=.7\hsize}X>{\raggedright\arraybackslash\hsize=1.3\hsize}X}
+  \texttt{trafo} subclass & Function \\
+  \hline 
+  \texttt{mirroring(angle)} & mirroring at line through $(0,0)$
+  with direction  \texttt{angle} in degrees.\\
+  \texttt{rotation(angle, \newline\phantom{rotation(}x=None, y=None)} &
+  rotation by \texttt{angle} degrees around point $(\mathtt{x},
+  \mathtt{y})$, or $(0,0)$, if not given.\\
+  \texttt{scaling(sx, sy=None,\newline\phantom{scaling(}x=None, y=None)} &
+  scaling with scaling factor \texttt{sx} in $x$-direction,
+  \texttt{sy} in $y$-direction ($\mathtt{sy}=\mathtt{sx}$, if not
+  given) with scaling
+  center $(\mathtt{x}, \mathtt{y})$, or $(0,0)$, if not given.\\
+  \texttt{translation(x, y)} &
+  translation by vector $(\mathtt{x}, \mathtt{y})$.\\
+\end{tabularx}
+\medskip
+
+
+\section{Examples}
 
 
 
