@@ -506,7 +506,11 @@ class autolinpart:
 
     def defaultpart(self, min, max, extendmin, extendmax):
         "method is part of the implementation of _Ipart"
-        base = frac(10L, 1, int(math.log(max - min) / math.log(10)))
+        logmm = math.log(max - min) / math.log(10)
+        if logmm < 0: # correction for rounding towards zero of the int routine
+            base = frac(10L, 1, int(logmm - 1))
+        else:
+            base = frac(10L, 1, int(logmm))
         ticks = _ensurefrac(self.variants[0])
         useticks = [tick * base for tick in ticks]
         self.lesstickindex = self.moretickindex = 0
