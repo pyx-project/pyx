@@ -87,8 +87,8 @@ def testmidpointsplit(c):
 
 
 def testintersectbezier(c):
-    p=normpath(moveto(0,0), curveto(2,6,4,5,2,9))
-    q=normpath(moveto(2,0), curveto(2,6,4,12,1,6))
+    p=normpath(path(moveto(0,0), curveto(2,6,4,5,2,9)))
+    q=normpath(path(moveto(2,0), curveto(2,6,4,12,1,6)))
 
     c.stroke(q, [style.linewidth.THIN])
     c.stroke(p, [style.linewidth.THIN])

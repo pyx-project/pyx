@@ -89,8 +89,7 @@ class line_pt(connector_pt):
         self.box2 = box2
 
         connector_pt.__init__(self,
-            path.moveto_pt(*self.box1.center),
-            path.lineto_pt(*self.box2.center))
+            [path.normsubpath([path.normline(*(self.box1.center+self.box2.center))], 0)])
 
         self.omitends(box1, box2)
         self.shortenpath(boxdists)
@@ -149,12 +148,12 @@ class arc_pt(connector_pt):
         # negative direction if relangle<0 or bulge<0
         if (relangle is not None and relangle < 0) or (bulge is not None and bulge < 0):
             connector_pt.__init__(self,
-                path.moveto_pt(*self.box1.center),
-                path.arcn_pt(center[0], center[1], radius, degrees(angle1), degrees(angle2)))
+                path.path(path.moveto_pt(*self.box1.center),
+                          path.arcn_pt(center[0], center[1], radius, degrees(angle1), degrees(angle2))))
         else:
             connector_pt.__init__(self,
-                path.moveto_pt(*self.box1.center),
-                path.arc_pt(center[0], center[1], radius, degrees(angle1), degrees(angle2)))
+                path.path(path.moveto_pt(*self.box1.center),
+                          path.arc_pt(center[0], center[1], radius, degrees(angle1), degrees(angle2))))
 
         self.omitends(box1, box2)
         self.shortenpath(boxdists)
@@ -208,8 +207,9 @@ class curve_pt(connector_pt):
         control2 = [self.box2.center[i] - control2[i] * bulge  for i in [0,1]]
 
         connector_pt.__init__(self,
-            path.moveto_pt(*self.box1.center),
-            path.curveto_pt(*(control1 + control2 + helper.ensurelist(self.box2.center))))
+               [path.normsubpath([path.normcurve(*(self.box1.center + 
+                                                   control1 +
+                                                   control2 + helper.ensurelist(self.box2.center)))], 0)])
 
         self.omitends(box1, box2)
         self.shortenpath(boxdists)
@@ -307,9 +307,9 @@ class twolines_pt(connector_pt):
                 raise NotImplementedError, "I found a strange combination of arguments"
 
         connector_pt.__init__(self,
-            path.moveto_pt(*self.box1.center),
-            path.lineto_pt(*middle),
-            path.lineto_pt(*self.box2.center))
+            path.path(path.moveto_pt(*self.box1.center),
+                      path.lineto_pt(*middle),
+                      path.lineto_pt(*self.box2.center)))
 
         self.omitends(box1, box2)
         self.shortenpath(boxdists)

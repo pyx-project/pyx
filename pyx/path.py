@@ -1848,41 +1848,42 @@ class normpath(path):
 
     """
 
-    def __init__(self, *args):
-        if len(args)==1 and isinstance(args[0], normpath):
-            self.subpaths = copy.copy(args[0].subpaths)
+    def __init__(self, arg=[]):
+        """ construct a normpath from another normpath passed as arg,
+        a path or a list of normsubpaths """
+        if isinstance(arg, normpath):
+            self.subpaths = copy.copy(arg.subpaths)
             return
-        elif len(args)==1 and isinstance(args[0], path):
-            pathels = args[0].path
+        elif isinstance(arg, path):
+            # split path in sub paths
+            self.subpaths = []
+            currentsubpathels = []
+            context = _pathcontext()
+            for pel in arg.path:
+                for npel in pel._normalized(context):
+                    if isinstance(npel, moveto_pt):
+                        if currentsubpathels:
+                            # append open sub path
+                            self.subpaths.append(normsubpath(currentsubpathels, 0))
+                        # start new sub path
+                        currentsubpathels = []
+                    elif isinstance(npel, closepath):
+                        if currentsubpathels:
+                            # append closed sub path
+                            currentsubpathels.append(normline(context.currentpoint[0], context.currentpoint[1],
+                                                              context.currentsubpath[0], context.currentsubpath[1]))
+                        self.subpaths.append(normsubpath(currentsubpathels, 1))
+                        currentsubpathels = []
+                    else:
+                        currentsubpathels.append(npel)
+                pel._updatecontext(context)
+
+            if currentsubpathels:
+                # append open sub path
+                self.subpaths.append(normsubpath(currentsubpathels, 0))
         else:
-            pathels = args
-
-        # split path in sub paths
-        self.subpaths = []
-        currentsubpathels = []
-        context = _pathcontext()
-        for pel in pathels:
-            for npel in pel._normalized(context):
-                if isinstance(npel, moveto_pt):
-                    if currentsubpathels:
-                        # append open sub path
-                        self.subpaths.append(normsubpath(currentsubpathels, 0))
-                    # start new sub path
-                    currentsubpathels = []
-                elif isinstance(npel, closepath):
-                    if currentsubpathels:
-                        # append closed sub path
-                        currentsubpathels.append(normline(context.currentpoint[0], context.currentpoint[1],
-                                                          context.currentsubpath[0], context.currentsubpath[1]))
-                    self.subpaths.append(normsubpath(currentsubpathels, 1))
-                    currentsubpathels = []
-                else:
-                    currentsubpathels.append(npel)
-            pel._updatecontext(context)
-
-        if currentsubpathels:
-            # append open sub path
-            self.subpaths.append(normsubpath(currentsubpathels, 0))
+            # we expect a list of normsubpaths
+            self.subpaths = list(arg)
 
     def __add__(self, other):
         result = normpath(other)
