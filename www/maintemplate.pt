@@ -16,7 +16,7 @@
     <div id="navboxtitle">Navigation</div>
 
     <a tal:attributes="href python:options['mkrellink']('index.html', options)">Home</a><br>
-    <a tal:attributes="href python:options['mkrellink']('documentation.html', options)">Dokumentation</a><br>
+    <a tal:attributes="href python:options['mkrellink']('documentation.html', options)">Documentation</a><br>
     <a tal:attributes="href python:options['mkrellink']('examples/index.html', options)">Examples</a><br>
     <span tal:repeat="item options/examplepages" tal:omit-tag="">
       &nbsp;&nbsp;-&nbsp;&nbsp;<a tal:attributes="href python:options['mkrellink']('examples/'+item+'/index.html', options)" tal:content="item">Examples</a><br>
