@@ -220,10 +220,8 @@ class _canvas(base.canvasitem):
         for t in attr.getattrs(attrs, [trafo.trafo_pt]):
             path = path.transformed(t)
 
-        dp = deco.decoratedpath(path)
-
-        # set global styles
-        dp.styles = attr.getattrs(attrs, [style.fillstyle, style.strokestyle])
+        styles = attr.getattrs(attrs, [style.fillstyle, style.strokestyle])
+        dp = deco.decoratedpath(path, styles=styles)
 
         # add path decorations and modify path accordingly
         for adeco in attr.getattrs(attrs, [deco.deco]):

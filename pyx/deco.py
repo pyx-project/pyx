@@ -27,7 +27,7 @@
 #   should we at least factor it out?
 
 import sys, math
-import attr, base, canvas, color, helper, path, style, trafo, unit
+import attr, base, canvas, color, path, style, trafo, unit
 
 #
 # Decorated path
@@ -43,43 +43,95 @@ class decoratedpath(base.canvasitem):
 
     def __init__(self, path, strokepath=None, fillpath=None,
                  styles=None, strokestyles=None, fillstyles=None,
-                 subcanvas=None):
+                 ornaments=None):
 
         self.path = path
 
-        # path to be stroked or filled (or None)
-        self.strokepath = strokepath
-        self.fillpath = fillpath
-
         # global style for stroking and filling and subdps
-        self.styles = helper.ensurelist(styles)
+        self.styles = styles
 
         # styles which apply only for stroking and filling
-        self.strokestyles = helper.ensurelist(strokestyles)
-        self.fillstyles = helper.ensurelist(fillstyles)
+        self.strokestyles = strokestyles
+        self.fillstyles = fillstyles
 
-        # the canvas can contain additional elements of the path, e.g.,
-        # arrowheads,
-        if subcanvas is None:
-            self.subcanvas = canvas.canvas()
+        # the decoratedpath can contain additional elements of the
+        # path (ornaments), e.g., arrowheads.
+        if ornaments is None:
+            self.ornaments = canvas.canvas()
         else:
-            self.subcanvas = subcanvas
+            self.ornaments = ornaments
 
+        self.nostrokeranges = None
+
+    def ensurenormpath(self):
+        """convert self.path into a normpath"""
+        assert self.nostrokeranges is None or isinstance(self.path, path.normpath), "you don't understand what you are doing"
+        self.path = self.path.normpath()
+
+    def excluderange(self, begin, end):
+        assert isinstance(self.path, path.normpath), "you don't understand what this is about"
+        if self.nostrokeranges is None:
+            self.nostrokeranges = [(begin, end)]
+        else:
+            ibegin = 0
+            while ibegin < len(self.nostrokeranges) and self.nostrokeranges[ibegin][1] < begin:
+                ibegin += 1
+
+            if ibegin == len(self.nostrokeranges):
+                self.nostrokeranges.append((begin, end))
+                return
+
+            iend = len(self.nostrokeranges) - 1
+            while 0 <= iend and end < self.nostrokeranges[iend][0]:
+                iend -= 1
+
+            if iend == -1:
+                self.nostrokeranges.insert(0, (begin, end))
+                return
+
+            if self.nostrokeranges[ibegin][0] < begin:
+                begin = self.nostrokeranges[ibegin][0]
+            if end < self.nostrokeranges[iend][1]:
+                end = self.nostrokeranges[iend][1]
+
+            self.nostrokeranges[ibegin:iend+1] = [(begin, end)]
 
     def bbox(self):
-        scbbox = self.subcanvas.bbox()
-        pbbox = self.path.bbox()
-        if scbbox is not None:
-            return scbbox+pbbox
+        pathbbox = self.path.bbox()
+        ornamentsbbox = self.ornaments.bbox()
+        if ornamentsbbox is not None:
+            return ornamentsbbox + pathbbox
         else:
-            return pbbox
+            return pathbbox
 
     def prolog(self):
         result = []
-        for style in list(self.styles) + list(self.fillstyles) + list(self.strokestyles):
-            result.extend(style.prolog())
-        result.extend(self.subcanvas.prolog())
+        if self.styles:
+            for style in self.styles: 
+                result.extend(style.prolog())
+        if self.fillstyles:
+            for style in self.fillstyles: 
+                result.extend(style.prolog())
+        if self.strokestyles:
+            for style in self.strokestyles: 
+                result.extend(style.prolog())
+        result.extend(self.ornaments.prolog())
         return result
+
+    def strokepath(self):
+        if self.nostrokeranges:
+            splitlist = []
+            for begin, end in self.nostrokeranges:
+                splitlist.append(begin)
+                splitlist.append(end)
+            split = self.path.split(splitlist)
+            # XXX properly handle closed paths
+            result = split[0]
+            for i in range(2, len(split), 2):
+                result += split[i]
+            return result
+        else:
+            return self.path
 
     def outputPS(self, file):
         # draw (stroke and/or fill) the decoratedpath on the canvas
@@ -91,17 +143,23 @@ class decoratedpath(base.canvasitem):
             for style in styles:
                 style.outputPS(file)
 
+        if self.strokestyles is None and self.fillstyles is None:
+            raise RuntimeError("Path neither to be stroked nor filled")
+
+        strokepath = self.strokepath()
+        fillpath = self.path
+
         # apply global styles
         if self.styles:
             file.write("gsave\n")
             _writestyles(self.styles)
 
-        if self.fillpath is not None:
+        if self.fillstyles is not None:
             file.write("newpath\n")
-            self.fillpath.outputPS(file)
+            fillpath.outputPS(file)
 
-            if self.strokepath==self.fillpath:
-                # do efficient stroking + filling
+            if strokepath is fillpath:
+                # do efficient stroking + filling if respective paths are identical
                 file.write("gsave\n")
 
                 if self.fillstyles:
@@ -129,7 +187,7 @@ class decoratedpath(base.canvasitem):
                 if self.fillstyles:
                     file.write("grestore\n")
 
-        if self.strokepath is not None and self.strokepath!=self.fillpath:
+        if self.strokestyles is not None and strokepath is not fillpath:
             # this is the only relevant case still left
             # Note that a possible stroking has already been done.
 
@@ -138,17 +196,14 @@ class decoratedpath(base.canvasitem):
                 _writestyles(self.strokestyles)
 
             file.write("newpath\n")
-            self.strokepath.outputPS(file)
+            strokepath.outputPS(file)
             file.write("stroke\n")
 
             if self.strokestyles:
                 file.write("grestore\n")
 
-        if self.strokepath is None and self.fillpath is None:
-            raise RuntimeError("Path neither to be stroked nor filled")
-
         # now, draw additional elements of decoratedpath
-        self.subcanvas.outputPS(file)
+        self.ornaments.outputPS(file)
 
         # restore global styles
         if self.styles:
@@ -175,15 +230,21 @@ class decoratedpath(base.canvasitem):
                 else:
                     style.outputPDF(file)
 
+        if self.strokestyles is None and self.fillstyles is None:
+            raise RuntimeError("Path neither to be stroked nor filled")
+
+        strokepath = self.strokepath()
+        fillpath = self.path
+
         # apply global styles
         if self.styles:
             file.write("q\n") # gsave
             _writestyles(self.styles)
 
-        if self.fillpath is not None:
-            self.fillpath.outputPDF(file)
+        if self.fillstyles is not None:
+            fillpath.outputPDF(file)
 
-            if self.strokepath==self.fillpath:
+            if strokepath is fillpath:
                 # do efficient stroking + filling
                 file.write("q\n") # gsave
 
@@ -205,7 +266,7 @@ class decoratedpath(base.canvasitem):
                 if self.fillstyles:
                     file.write("Q\n") # grestore
 
-        if self.strokepath is not None and self.strokepath!=self.fillpath:
+        if self.strokestyles is not None and strokepath is not fillpath:
             # this is the only relevant case still left
             # Note that a possible stroking has already been done.
 
@@ -213,17 +274,14 @@ class decoratedpath(base.canvasitem):
                 file.write("q\n") # gsave
                 _writestrokestyles(self.strokestyles)
 
-            self.strokepath.outputPDF(file)
+            strokepath.outputPDF(file)
             file.write("S\n") # stroke
 
             if self.strokestyles:
                 file.write("Q\n") # grestore
 
-        if self.strokepath is None and self.fillpath is None:
-            raise RuntimeError("Path neither to be stroked nor filled")
-
         # now, draw additional elements of decoratedpath
-        self.subcanvas.outputPDF(file)
+        self.ornaments.outputPDF(file)
 
         # restore global styles
         if self.styles:
@@ -271,7 +329,8 @@ class _stroked(deco, attr.exclusiveattr):
         return _stroked(styles)
 
     def decorate(self, dp):
-        dp.strokepath = dp.path
+        if dp.strokestyles is not None:
+            raise RuntimeError("Cannot stroke an already stroked path")
         dp.strokestyles = self.styles
         return dp
 
@@ -293,7 +352,8 @@ class _filled(deco, attr.exclusiveattr):
         return _filled(styles)
 
     def decorate(self, dp):
-        dp.fillpath = dp.path
+        if dp.fillstyles is not None:
+            raise RuntimeError("Cannot fill an already filled path")
         dp.fillstyles = self.styles
         return dp
 
@@ -380,32 +440,23 @@ class arrow(deco, attr.attr):
         return arrow(attrs=attrs, position=position, size=size, angle=angle, constriction=constriction)
 
     def decorate(self, dp):
-        # XXX raise exception error, when strokepath is not defined
-
-        # convert to normpath if necessary
-        if isinstance(dp.strokepath, path.normpath):
-            anormpath = dp.strokepath
-        else:
-            anormpath = path.normpath(dp.path)
+        dp.ensurenormpath()
+        anormpath = dp.path
         if self.position:
             anormpath = anormpath.reversed()
 
         # add arrowhead to decoratedpath
-        dp.subcanvas.draw(_arrowhead(anormpath, self.size, self.angle, self.constriction),
+        dp.ornaments.draw(_arrowhead(anormpath, self.size, self.angle, self.constriction),
                           self.attrs)
 
         # calculate new strokepath
         ilen = _arrowheadtemplatelength(anormpath, self.size*min(self.constriction, 1))
 
         # this is the rest of the path, we have to draw
-        anormpath = anormpath.split([ilen])[1]
+        dp.excluderange((0, 0), ilen)
 
-        # go back to original orientation, if necessary
         if self.position:
-            anormpath.reverse()
-
-        # set the new (shortened) strokepath
-        dp.strokepath = anormpath
+            dp.excluderange((0, 0), ilen)
 
         return dp
 
