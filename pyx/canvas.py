@@ -526,14 +526,19 @@ class canvas(_canvas):
         file.write("/Contents 5 0 R\n"
                    "/Resources <<\n"
                    "/ProcSet 7 0 R\n")
+        fontstartref = 7
 
         fontnr = 0
-        for pritem in mergedprolog:
-            if isinstance(pritem, prolog.fontreencoding):
-                fontnr += 1
-                file.write("/Font << /%s %d 0 R>>\n" % (pritem.fontname, fontnr+7))
-                fontnr += 3 # further objects due to a font
-        
+        if len([pritem for pritem in mergedprolog if isinstance(pritem, prolog.fontreencoding)]):
+            file.write("/Font\n"
+                       "<<\n")
+            for pritem in mergedprolog:
+                if isinstance(pritem, prolog.fontreencoding):
+                    fontnr += 1
+                    file.write("/%s %d 0 R\n" % (pritem.fontname, fontnr+fontstartref))
+                    fontnr += 3 # further objects due to a font
+            file.write(">>\n")
+
         file.write(">>\n"
                    ">>\n"
                    "endobj\n")
@@ -577,19 +582,26 @@ class canvas(_canvas):
                            "/FontDescriptor %d 0 R\n"
                            "/Encoding /MacRomanEncoding\n" # FIXME
                            ">>\n"
-                           "endobj\n" % (fontnr+7, pritem.fontname, pritem.basefontname, fontnr+8, fontnr+9))
+                           "endobj\n" % (fontnr+fontstartref, pritem.fontname, pritem.basefontname, fontnr+8, fontnr+9))
                 fontnr += 1
                 reflist.append(file.tell())
                 file.write("%d 0 obj\n"
-                           "[ %s ]\n"
-                           "endobj\n" % (fontnr+7, " ".join(["255" for i in range(256)])))
+                           "[\n" % (fontnr+fontstartref))
+                for i in range(256):
+                    try:
+                        width = pritem.font.getwidth(i)
+                    except:
+                        width = 0
+                    file.write("%f\n" % (width/pritem.font.getsize()/1000))
+                file.write("]\n"
+                           "endobj\n")
                 fontnr += 1
                 reflist.append(file.tell())
                 file.write("%d 0 obj\n"
                            "<<\n"
                            "/Type /FontDescriptor\n"
                            "/FontName /%s\n"
-                           "/Flags 0\n" # FIXME
+                           "/Flags 34\n" # FIXME
                            "/FontBBox [0 -5 20 10]\n" # FIXME
                            "/ItalicAngle 0\n" # FIXME
                            "/Ascent 20\n" # FIXME
@@ -599,7 +611,7 @@ class canvas(_canvas):
                            "/FontFile %d 0 R\n" # FIXME
                            # "/CharSet \n" # fill in when stripping
                            ">>\n"
-                           "endobj\n" % (fontnr+7, pritem.fontname, fontnr+8))
+                           "endobj\n" % (fontnr+fontstartref, pritem.basefontname, fontnr+8))
 
                 fontnr += 1
                 reflist.append(file.tell())
@@ -621,7 +633,7 @@ class canvas(_canvas):
                            "/Length2 %d\n"
                            "/Length3 %d\n"
                            ">>\n"
-                           "stream\n" % (fontnr+7, lengths[3]-lengths[0],
+                           "stream\n" % (fontnr+fontstartref, lengths[3]-lengths[0],
                                                    lengths[1]-lengths[0],
                                                    lengths[2]-lengths[1],
                                                    lengths[3]-lengths[2]))

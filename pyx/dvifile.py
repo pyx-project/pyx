@@ -442,7 +442,7 @@ class selectfont(_selectfont):
         if self.font.getencoding():
             result.append(_ReEncodeFont)
             result.append(prolog.fontencoding(self.font.getencoding(), self.font.getencodingfile()))
-            result.append(prolog.fontreencoding(self.font.getpsname(), self.font.getbasepsname(), self.font.getencoding()))
+            result.append(prolog.fontreencoding(self.font.getpsname(), self.font.getbasepsname(), self.font.getencoding(), self.font))
         return result
 
 

@@ -169,12 +169,13 @@ class fontreencoding(prologitem):
 
     """ PostScript font re-encoding directive included in the prolog """
 
-    def __init__(self, fontname, basefontname, encname):
+    def __init__(self, fontname, basefontname, encname, font):
         """ include font re-encoding directive specified by
 
         - fontname:     PostScript FontName of the new reencoded font
         - basefontname: PostScript FontName of the original font
         - encname:      name of the encoding
+        - font:         a reference to the font instance (temporarily added for pdf support)
 
         Before being able to reencode a font, you have to include the
         encoding via a fontencoding prolog item with name=encname
@@ -184,6 +185,7 @@ class fontreencoding(prologitem):
         self.fontname = fontname
         self.basefontname = basefontname
         self.encname = encname
+        self.font = font
 
     def merge(self, other):
         if not isinstance(other, fontreencoding):
