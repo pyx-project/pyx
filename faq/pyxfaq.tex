@@ -2,8 +2,8 @@
 \usepackage[latin1]{inputenc}
 \usepackage{url}
 \usepackage{mathptmx}
-%\usepackage[all,comments]{glifaq}
-\usepackage[answered]{glifaq}
+\usepackage[all,comments]{glifaq}
+%\usepackage[answered]{glifaq}
 \usepackage[pdftex]{hyperref}
 \hypersetup{pdftitle={PyX FAQ}%
             ,pdfauthor={\textcopyright\ Gert-Ludwig Ingold
@@ -127,9 +127,10 @@ from pyx import *
 when using \PyX. This allows you for example to write simply 
 \texttt{graph.graphxy}
 instead of \texttt{pyx.graph.graphxy}. The following modules will be loaded:
-\texttt{box}, \texttt{connector}, \texttt{canvas}, \texttt{epsfile},
-\texttt{color}, \texttt{text}, \texttt{tex}, \texttt{graph}, \texttt{path},
-\texttt{data}, \texttt{unit}, and \texttt{trafo}.
+\texttt{box}, \texttt{canvas}, \texttt{color}, \texttt{connector}, \texttt{data},
+\texttt{deco}, \texttt{epsfile}, \texttt{graph}, \texttt{path},
+\texttt{style}, \texttt{trafo}, \texttt{tex}, \texttt{text}, and
+\texttt{unit}.
 
 For convenience, you might import specific objects of a module like in
 \begin{progcode}
@@ -330,7 +331,7 @@ in the graph are defined by calling \texttt{g.plot} like in the following
 example in which filled circles are requested:
 \begin{progcode}
 g.plot(graph.data("test.dat"),\\
-~~~~~~~graph.symbol(graph.symbol.circle,symbolattrs=canvas.filled()\\
+~~~~~~~graph.symbol(graph.symbol.circle,symbolattrs=deco.filled()\\
 ~~~~~~~)
 \end{progcode}
 }
@@ -339,12 +340,12 @@ g.plot(graph.data("test.dat"),\\
 {}
 {Colors are not properties of the symbol as such and can therefore not
 be specified in \texttt{symbolattrs} directly. The color is rather related
-to the plotting of the symbol as defined by \texttt{canvas.stroked} or
-\texttt{canvas.filled}. With
+to the plotting of the symbol as defined by \texttt{deco.stroked()} or
+\texttt{deco.filled()}. With
 \begin{progcode}
 graph.symbol(graph.symbol.circle,\\
-~~~~~~~~~~~~~symbolattrs=[canvas.stroked(color.rgb.red),\\
-~~~~~~~~~~~~~~~~~~~~~~~~~~canvas.filled(color.rgb.green)]\\
+~~~~~~~~~~~~~symbolattrs=[deco.stroked(color.rgb.red),\\
+~~~~~~~~~~~~~~~~~~~~~~~~~~deco.filled(color.rgb.green)]\\
 ~~~~~~~~~~~~~)
 \end{progcode}
 you will obtain a circle filled in green with a red borderline.
@@ -356,7 +357,7 @@ you will obtain a circle filled in green with a red borderline.
 example
 \begin{progcode}
 g.plot(graph.data("test.dat"),\\
-~~~~~~~graph.line(lineattrs=canvas.linewidth.Thin)\\
+~~~~~~~graph.line(lineattrs=style.linewidth.Thin)\\
 ~~~~~~~)
 \end{progcode}
 where the linewidth is set.
@@ -367,8 +368,8 @@ you could use
 \begin{progcode}
 g.plot(graph.data("test.dat"),\\
 ~~~~~~~graph.symbol(graph.symbol.circle, \\
-~~~~~~~~~~~~~~~~~~~~symbolattrs=canvas.filled(),\\
-~~~~~~~~~~~~~~~~~~~~lineattrs=[canvas.linewidth.Thin,canvas.linestyle.dashed]\\
+~~~~~~~~~~~~~~~~~~~~symbolattrs=deco.filled(),\\
+~~~~~~~~~~~~~~~~~~~~lineattrs=[style.linewidth.Thin, style.linestyle.dashed]\\
 ~~~~~~~~~~~~~~~~~~~~)\\
 ~~~~~~~)
 \end{progcode}
