@@ -15,6 +15,7 @@ PyX
   - canvas module:
     - default patterns
     - stroke and fill should support trafos
+    - make dash length available
   - text module:
     - further improve lfs handling
     - missed to rename vbox to parbox in PyX 0.3 -> do it!
