@@ -67,6 +67,7 @@ _paperformats = { "a4"      : ("210 t mm",  "297 t mm"),
                   "a2"      : ("420 t mm",  "594 t mm"), 
                   "a1"      : ("594 t mm",  "840 t mm"), 
                   "a0"      : ("840 t mm", "1188 t mm"), 
+                  "a0b"     : ("910 t mm", "1350 t mm"), 
                   "letter"  : ("8.5 t in",   "11 t in"),
                   "legal"   : ("8.5 t in",   "14 t in")}
 
@@ -336,7 +337,7 @@ class PSCommand:
                     sfactor = min((width-2*margin)/(abbox.urx-abbox.llx), 
                                   (height-2*margin)/(abbox.ury-abbox.lly))
                     
-            ctrafo = ctrafo._scale(sfactor, sfactor, 0.5*width, 0.5*height)
+                ctrafo = ctrafo._scale(sfactor, sfactor, 0.5*width, 0.5*height)
                           
                 
         elif fittosize:
