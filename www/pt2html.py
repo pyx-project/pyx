@@ -39,6 +39,8 @@ if pagename.endswith(".pt"): pagename = pagename[:-3]
 examples = [example("hello"), 
             example("pattern"),
             example("vector"),
+            example("box"),
+            example("valign"),
             example("tree"),
             example("sierpinski"),
             example("graphs/minimal"),
