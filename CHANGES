@@ -34,6 +34,8 @@ PyX
     - multiple radii: documentation
   - bbox module:
      - __iadd__ and inplace enlarge, transform,...
+  - mathtree module:
+     - bug: -x**2 should be negative
 
 0.4.1 (2003/09/17):
   - canvas module:
