@@ -1865,7 +1865,7 @@ class normsubpath:
             if params[i]<0:
                 params[i] += self.range()
             if not (0<=params[i]<=self.range()):
-                raise RuntimeError("parameter for split of subpath out of range")
+                raise PathException("parameter for split of subpath out of range")
 
         result = []
         npels = None
@@ -2064,8 +2064,7 @@ class normpath(path):
             if spt <= param <= sprange+spt:
                 return sp, param-spt
             spt += sprange
-        # XXX we need better exception
-        raise RuntimeError("parameter value out of range")
+        raise PathException("parameter value out of range")
 
     def append(self, pathel):
         # XXX factor parts of this code out
@@ -2194,7 +2193,7 @@ class normpath(path):
         if self.subpaths:
             return self.subpaths[0].begin_pt()
         else:
-            raise RuntimeError("cannot return first point of empty path")
+            raise PathException("cannot return first point of empty path")
 
     def begin(self):
         """return coordinates of first point of first subpath in path"""
@@ -2206,7 +2205,7 @@ class normpath(path):
         if self.subpaths:
             return self.subpaths[-1].end_pt()
         else:
-            raise RuntimeError("cannot return last point of empty path")
+            raise PathException("cannot return last point of empty path")
 
     def end(self):
         """return coordinates of last point of last subpath in path"""
