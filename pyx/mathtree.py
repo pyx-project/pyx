@@ -808,16 +808,16 @@ class OperatorExpectedMathTreeParseError(UndefinedMathTreeParseError): pass
 class OperandExpectedMathTreeParseError(UndefinedMathTreeParseError): pass
 
 
-DefaultMathTreeOps = (MathTreeOpPow, MathTreeOpDiv, MathTreeOpMul, MathTreeOpSub, MathTreeOpAdd)
-DefaultMathTreeFuncs = (MathTreeFunc1Neg, MathTreeFunc1Abs, MathTreeFunc1Sgn, MathTreeFunc1Sqrt,
+DefaultMathTreeOps = [MathTreeOpPow, MathTreeOpDiv, MathTreeOpMul, MathTreeOpSub, MathTreeOpAdd]
+DefaultMathTreeFuncs = [MathTreeFunc1Neg, MathTreeFunc1Abs, MathTreeFunc1Sgn, MathTreeFunc1Sqrt,
                         MathTreeFunc1Exp, MathTreeFunc1Log,
                         MathTreeFunc1Sin, MathTreeFunc1Cos, MathTreeFunc1Tan,
                         MathTreeFunc1ASin, MathTreeFunc1ACos, MathTreeFunc1ATan,
                         MathTreeFunc1SinD, MathTreeFunc1CosD, MathTreeFunc1TanD,
                         MathTreeFunc1ASinD, MathTreeFunc1ACosD, MathTreeFunc1ATanD,
-                        MathTreeFunc2Norm)
+                        MathTreeFunc2Norm]
 
-DefaultMathTreeVals = (MathTreeValConst, MathTreeValVar)
+DefaultMathTreeVals = [MathTreeValConst, MathTreeValVar]
 
 class parser:
 
