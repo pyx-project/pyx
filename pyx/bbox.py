@@ -92,3 +92,8 @@ class bbox:
         size = unit.topt(unit.length(size, default_type="v"))
         return bbox(self.llx-size, self.lly-size, 
                     self.urx+size, self.ury+size)
+
+    def rect(self):
+        """return rectangle corresponding to bbox"""
+        import path
+        return path._rect(self.llx, self.lly, self.urx-self.llx, self.ury-self.lly)
