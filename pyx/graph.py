@@ -284,13 +284,13 @@ def _mergelabels(ticks, labels):
     """helper function to merge labels into ticks
     - when labels is not None, the label of all ticks with
       labellevel different from None are set
-    - labels need to be a sequence of sequences of strings,
-      where the first sequence contain the strings to be
+    - labels need to be a list of lists of strings,
+      where the first list contain the strings to be
       used as labels for the ticks with labellevel 0,
-      the second sequence for labellevel 1, etc.
-    - when the maximum labellevel is 0, just a sequence of
+      the second list for labellevel 1, etc.
+    - when the maximum labellevel is 0, just a list of
       strings might be provided as the labels argument
-    - IndexError is raised, when a sequence length doesn't match"""
+    - IndexError is raised, when a list length doesn't match"""
     if helper.issequenceofsequences(labels):
         for label, level in zip(labels, xrange(sys.maxint)):
             usetext = helper.ensuresequence(label)
@@ -300,7 +300,7 @@ def _mergelabels(ticks, labels):
                     tick.label = usetext[i]
                     i += 1
             if i != len(usetext):
-                raise IndexError("wrong sequence length of labels at level %i" % level)
+                raise IndexError("wrong list length of labels at level %i" % level)
     elif labels is not None:
         usetext = helper.ensuresequence(labels)
         i = 0
@@ -309,7 +309,7 @@ def _mergelabels(ticks, labels):
                 tick.label = usetext[i]
                 i += 1
         if i != len(usetext):
-            raise IndexError("wrong sequence length of labels")
+            raise IndexError("wrong list length of labels")
 
 
 class _Ipart:
@@ -351,12 +351,12 @@ class manualpart:
 
     def __init__(self, tickpos=None, labelpos=None, labels=None, mix=()):
         """configuration of the partition scheme
-        - tickpos and labelpos should be a sequence of sequences, where
-          the first sequence contains the values to be used for
-          ticks with ticklevel/labellevel 0, the second sequence for
+        - tickpos and labelpos should be a list of lists, where
+          the first list contains the values to be used for
+          ticks with ticklevel/labellevel 0, the second list for
           ticklevel/labellevel 1, etc.
         - tickpos and labelpos values are passed to the frac constructor
-        - when the maximum ticklevel/labellevel is 0, just a sequence
+        - when the maximum ticklevel/labellevel is 0, just a list
           might be provided in tickpos and labelpos
         - when labelpos is None and tickpos is not None, the tick entries
           for ticklevel 0 are used for labels and vice versa (ticks<->labels)
@@ -430,10 +430,10 @@ class linpart:
 
     def __init__(self, tickdist=None, labeldist=None, labels=None, extendtick=0, extendlabel=None, epsilon=1e-10, mix=()):
         """configuration of the partition scheme
-        - tickdist and labeldist should be a sequence, where the first value
+        - tickdist and labeldist should be a list, where the first value
           is the distance between ticks with ticklevel/labellevel 0,
-          the second sequence for ticklevel/labellevel 1, etc.;
-          a single entry is allowed without being a sequence
+          the second list for ticklevel/labellevel 1, etc.;
+          a single entry is allowed without being a list
         - tickdist and labeldist values are passed to the frac constructor
         - when labeldist is None and tickdist is not None, the tick entries
           for ticklevel 0 are used for labels and vice versa (ticks<->labels)
@@ -523,8 +523,8 @@ class autolinpart:
 
     def __init__(self, variants=defaultvariants, extendtick=0, epsilon=1e-10, mix=()):
         """configuration of the partition scheme
-        - variants is a sequence of tickdist
-        - tickdist should be a sequence, where the first value
+        - variants is a list of tickdist
+        - tickdist should be a list, where the first value
           is the distance between ticks with ticklevel 0,
           the second for ticklevel 1, etc.
         - tickdist values are passed to the frac constructor
@@ -588,7 +588,7 @@ class preexp:
     instances of this class define tick positions suitable for
     logarithmic axes by the following instance variables:
     - exp: integer, which defines multiplicator (usually 10)
-    - pres: sequence of tick positions (rational numbers, e.g. instances of frac)
+    - pres: list of tick positions (rational numbers, e.g. instances of frac)
     possible positions are these tick positions and arbitrary divisions
     and multiplications by the exp value"""
 
@@ -615,10 +615,10 @@ class logpart(linpart):
 
     def __init__(self, tickpos=None, labelpos=None, labels=None, extendtick=0, extendlabel=None, epsilon=1e-10, mix=()):
         """configuration of the partition scheme
-        - tickpos and labelpos should be a sequence, where the first entry
+        - tickpos and labelpos should be a list, where the first entry
           is a preexp instance describing ticks with ticklevel/labellevel 0,
           the second is a preexp instance for ticklevel/labellevel 1, etc.;
-          a single entry is allowed without being a sequence
+          a single entry is allowed without being a list
         - when labelpos is None and tickpos is not None, the tick entries
           for ticklevel 0 are used for labels and vice versa (ticks<->labels)
         - labels are applied to the resulting partition via the
@@ -736,12 +736,12 @@ class autologpart(logpart):
 
     def __init__(self, variants=defaultvariants, extendtick=0, extendlabel=None, epsilon=1e-10, mix=()):
         """configuration of the partition scheme
-        - variants should be a sequence of pairs of sequences of preexp
+        - variants should be a list of pairs of lists of preexp
           instances
-        - within each pair the first sequence contains preexp, where
+        - within each pair the first list contains preexp, where
           the first preexp instance describes ticks positions with
           ticklevel 0, the second preexp for ticklevel 1, etc.
-        - the second sequence within each pair describes the same as
+        - the second list within each pair describes the same as
           before, but for labels
         - within each pair: when the second entry (for the labels) is None
           and the first entry (for the ticks) ticks is not None, the tick
@@ -871,7 +871,7 @@ class distancerater:
 
     def rate(self, distances, density):
         """rate distances
-        - the distances are a sequence of positive floats in PostScript points
+        - the distances are a list of positive floats in PostScript points
         - the density lineary rescales the rater (the optimum etc.),
           e.g. a value bigger than one increases the optimum (when it is
           positive) and a value lower than one decreases the optimum (when
@@ -1026,7 +1026,7 @@ class rationaltexter:
     def __init__(self, prefix="", infix="", suffix="",
                        enumprefix="", enuminfix="", enumsuffix="",
                        denomprefix="", denominfix="", denomsuffix="",
-                       minus="-", minuspos=0, over=r"{{%s}\over{%s}}",
+                       plus="", minus="-", minuspos=0, over=r"{{%s}\over{%s}}",
                        equaldenom=0, skip1=1, skipenum0=1, skipenum1=1, skipdenom1=1,
                        labelattrs=textmodule.mathmode):
         r"""initializes the instance
@@ -1037,12 +1037,12 @@ class rationaltexter:
           to the labels enumerator correspondingly
         - prefixdenom, infixdenom, and suffixdenom (strings) are added
           to the labels denominator correspondingly
-        - minus (string) is inserted for negative numbers
+        - plus or minus (string) is inserted for non-negative or negative numbers
         - minuspos is an integer, which determines the position, where the
-          minus sign has to be placed; the following values are allowed:
-            1 - writes the minus in front of the enumerator
-            0 - writes the minus in front of the hole fraction
-           -1 - writes the minus in front of the denominator
+          plus or minus sign has to be placed; the following values are allowed:
+            1 - writes the plus or minus in front of the enumerator
+            0 - writes the plus or minus in front of the hole fraction
+           -1 - writes the plus or minus in front of the denominator
         - over (string) is taken as a format string generating the
           fraction bar; it has to contain exactly two string insert
           operators "%s" -- the first for the enumerator and the second
@@ -1051,22 +1051,22 @@ class rationaltexter:
         - usually the enumerator and denominator are canceled; however,
           when equaldenom is set, the least common multiple of all
           denominators is used
-        - skip1 (boolean) just prints the prefix, the minus (if present),
+        - skip1 (boolean) just prints the prefix, the plus or minus,
           the infix and the suffix, when the value is plus or minus one
           and at least one of prefix, infix and the suffix is present
         - skipenum0 (boolean) just prints a zero instead of
           the hole fraction, when the enumerator is zero;
           no prefixes, infixes, and suffixes are taken into account
-        - skipenum1 (boolean) just prints the enumprefix, the minus (if present),
+        - skipenum1 (boolean) just prints the enumprefix, the plus or minus,
           the enuminfix and the enumsuffix, when the enum value is plus or minus one
           and at least one of enumprefix, enuminfix and the enumsuffix is present
         - skipdenom1 (boolean) just prints the enumerator instead of
           the hole fraction, when the denominator is one and none of the parameters
           denomprefix, denominfix and denomsuffix are set and minuspos is not -1 or the
           fraction is positive
-        - labelattrs is a sequence of attributes for a texrunners text method;
-          a single is allowed without being a sequence; None is considered as
-          an empty sequence"""
+        - labelattrs is a list of attributes for a texrunners text method;
+          a single is allowed without being a list; None is considered as
+          an empty list"""
         self.prefix = prefix
         self.infix = infix
         self.suffix = suffix
@@ -1076,6 +1076,7 @@ class rationaltexter:
         self.denomprefix = denomprefix
         self.denominfix = denominfix
         self.denomsuffix = denomsuffix
+        self.plus = plus
         self.minus = minus
         self.minuspos = minuspos
         self.over = over
@@ -1127,11 +1128,11 @@ class rationaltexter:
                 tick.temp_fracdenom = tick.denom
                 tick.temp_fracminus = 1
                 if tick.temp_fracenum < 0:
-                    tick.temp_fracminus *= -1
-                    tick.temp_fracenum *= -1
+                    tick.temp_fracminus = -tick.temp_fracminus
+                    tick.temp_fracenum = -tick.temp_fracenum
                 if tick.temp_fracdenom < 0:
-                    tick.temp_fracminus *= -1
-                    tick.temp_fracdenom *= -1
+                    tick.temp_fracminus = -tick.temp_fracminus
+                    tick.temp_fracdenom = -tick.temp_fracdenom
                 gcd = self.gcd(tick.temp_fracenum, tick.temp_fracdenom)
                 (tick.temp_fracenum, dummy1), (tick.temp_fracdenom, dummy2) = divmod(tick.temp_fracenum, gcd), divmod(tick.temp_fracdenom, gcd)
         if self.equaldenom:
@@ -1143,14 +1144,17 @@ class rationaltexter:
         for tick in labeledticks:
             fracminus = fracenumminus = fracdenomminus = ""
             if tick.temp_fracminus == -1:
-                if self.minuspos == 0:
-                    fracminus = self.minus
-                elif self.minuspos == 1:
-                    fracenumminus = self.minus
-                elif self.minuspos == -1:
-                    fracdenomminus = self.minus
-                else:
-                    raise RuntimeError("invalid minuspos")
+                plusminus = self.minus
+            else:
+                plusminus = self.plus
+            if self.minuspos == 0:
+                fracminus = plusminus
+            elif self.minuspos == 1:
+                fracenumminus = plusminus
+            elif self.minuspos == -1:
+                fracdenomminus = plusminus
+            else:
+                raise RuntimeError("invalid minuspos")
             if self.skipenum0 and tick.temp_fracenum == 0:
                 tick.label = "0"
             elif (self.skip1 and self.skipdenom1 and tick.temp_fracenum == 1 and tick.temp_fracdenom == 1 and
@@ -1184,20 +1188,20 @@ class decimaltexter:
 
     def __init__(self, prefix="", infix="", suffix="", equalprecision=0,
                        decimalsep=".", thousandsep="", thousandthpartsep="",
-                       minus="-", period=r"\overline{%s}", labelattrs=textmodule.mathmode):
+                       plus="", minus="-", period=r"\overline{%s}", labelattrs=textmodule.mathmode):
         r"""initializes the instance
         - prefix, infix, and suffix (strings) are added at the begin,
           immediately after the minus, and at the end of the label,
           respectively
         - decimalsep, thousandsep, and thousandthpartsep (strings)
           are used as separators
-        - minus (string) is inserted for negative numbers
+        - plus or minus (string) is inserted for non-negative or negative numbers
         - period (string) is taken as a format string generating a period;
           it has to contain exactly one string insert operators "%s" for the
           period; usually it should be r"\overline{%s}"
-        - labelattrs is a sequence of attributes for a texrunners text method;
-          a single is allowed without being a sequence; None is considered as
-          an empty sequence"""
+        - labelattrs is a list of attributes for a texrunners text method;
+          a single is allowed without being a list; None is considered as
+          an empty list"""
         self.prefix = prefix
         self.infix = infix
         self.suffix = suffix
@@ -1205,6 +1209,7 @@ class decimaltexter:
         self.decimalsep = decimalsep
         self.thousandsep = thousandsep
         self.thousandthpartsep = thousandthpartsep
+        self.plus = plus
         self.minus = minus
         self.period = period
         self.labelattrs = helper.ensurelist(labelattrs)
@@ -1216,8 +1221,8 @@ class decimaltexter:
             if tick.label is None and tick.labellevel is not None:
                 labeledticks.append(tick)
                 m, n = tick.enum, tick.denom
-                if m < 0: m *= -1
-                if n < 0: n *= -1
+                if m < 0: m = -m
+                if n < 0: n = -n
                 whole, reminder = divmod(m, n)
                 whole = str(whole)
                 if len(self.thousandsep):
@@ -1259,10 +1264,10 @@ class decimaltexter:
                         tick.label += "0"
         for tick in labeledticks:
             if tick.enum * tick.denom < 0:
-                minus = self.minus
+                plusminus = self.minus
             else:
-                minus = ""
-            tick.label = "%s%s%s%s%s" % (self.prefix, minus, self.infix, tick.label, self.suffix)
+                plusminus = self.plus
+            tick.label = "%s%s%s%s%s" % (self.prefix, plusminus, self.infix, tick.label, self.suffix)
             tick.labelattrs.extend(self.labelattrs)
 
             # del tick.temp_decprecision  # we've inserted this temporary variable ... and do not care any longer about it
@@ -1281,7 +1286,7 @@ class exponentialtexter:
                        skipmantissa1=0, skipallmantissa1=1,
                        mantissatexter=decimaltexter()):
         r"""initializes the instance
-        - plus or minus (string) is inserted for positive or negative exponents
+        - plus or minus (string) is inserted for non-negative or negative exponents
         - mantissaexp (string) is taken as a format string generating the exponent;
           it has to contain exactly two string insert operators "%s" --
           the first for the mantissa and the second for the exponent;
@@ -1461,8 +1466,8 @@ class rotatetext:
         return trafomodule.rotate(direction)
 
 
-paralleltext = rotatetext(-90)
-orthogonaltext = rotatetext(0)
+rotatetext.parallel = rotatetext(-90)
+rotatetext.orthogonal = rotatetext(0)
 
 
 class _Iaxispainter:
@@ -1499,14 +1504,14 @@ class axistitlepainter:
 
     def __init__(self, titledist="0.3 cm",
                        titleattrs=(textmodule.halign.center, textmodule.vshift.mathaxis),
-                       titledirection=paralleltext,
+                       titledirection=rotatetext.parallel,
                        titlepos=0.5):
         """initialized the instance
         - titledist is a visual PyX length giving the distance
           of the title from the axis extent already there (a title might
           be added after labels or other things are plotted already)
-        - labelattrs is a sequence of attributes for a texrunners text
-          method; a single is allowed without being a sequence; None
+        - labelattrs is a list of attributes for a texrunners text
+          method; a single is allowed without being a list; None
           turns off the title
         - titledirection is an instance of rotatetext or None
         - titlepos is the position of the title in graph coordinates"""
@@ -1555,29 +1560,29 @@ class axispainter(axistitlepainter):
                        labelvequalize=1,
                        **kwargs):
         """initializes the instance
-        - innerticklenths and outerticklengths are two sequences of
+        - innerticklenths and outerticklengths are two lists of
           visual PyX lengths for ticks, subticks, etc. plotted inside
           and outside of the graph; when a single value is given, it
           is used for all tick levels; None turns off ticks inside or
           outside of the graph
-        - tickattrs are a sequence of stroke attributes for the ticks;
-          a single entry is allowed without being a sequence; None turns
+        - tickattrs are a list of stroke attributes for the ticks;
+          a single entry is allowed without being a list; None turns
           off ticks
-        - gridlineattrs are a sequence of sequences used as stroke
-          attributes for ticks, subticks etc.; when a single sequence
+        - gridlineattrs are a list of lists used as stroke
+          attributes for ticks, subticks etc.; when a single list
           is given, it is used for ticks, subticks, etc.; a single
-          entry is allowed without being a sequence; None turns off
+          entry is allowed without being a list; None turns off
           gridlines
-        - zerolineattrs are a sequence of stroke attributes for a grid
+        - zerolineattrs are a list of stroke attributes for a grid
           line at axis value zero; a single entry is allowed without
-          being a sequence; None turns off the zeroline
-        - baselineattrs are a sequence of stroke attributes for a grid
+          being a list; None turns off the zeroline
+        - baselineattrs are a list of stroke attributes for a grid
           line at axis value zero; a single entry is allowed without
-          being a sequence; None turns off the baseline
+          being a list; None turns off the baseline
         - labeldist is a visual PyX length for the distance of the labels
           from the axis baseline
-        - labelattrs is a sequence of attributes for a texrunners text
-          method; a single entry is allowed without being a sequence;
+        - labelattrs is a list of attributes for a texrunners text
+          method; a single entry is allowed without being a list;
           None turns off the labels
         - titledirection is an instance of rotatetext or None
         - labelhequalize and labelvequalize (booleans) perform an equal
@@ -1697,19 +1702,16 @@ class linkaxispainter(axispainter):
 
     __implements__ = _Iaxispainter
 
-    def __init__(self, gridattrs=None,
-                       zerolineattrs=None,
+    def __init__(self, zerolineattrs=None,
                        labelattrs=None,
                        titleattrs=None,
                        **kwargs):
         """initializes the instance
-        - the gridattrs default is set to None thus skipping the girdlines
         - the zerolineattrs default is set to None thus skipping the zeroline
         - the labelattrs default is set to None thus skipping the labels
         - the titleattrs default is set to None thus skipping the title
         - all keyword arguments are passed to axispainter"""
-        axispainter.__init__(self, gridattrs=gridattrs,
-                                   zerolineattrs=zerolineattrs,
+        axispainter.__init__(self, zerolineattrs=zerolineattrs,
                                    labelattrs=labelattrs,
                                    titleattrs=titleattrs,
                                    **kwargs)
@@ -1734,9 +1736,9 @@ class splitaxispainter(axistitlepainter):
         - breaklineslength is a visual length of the length of the
           two lines of the axis break
         - breaklinesangle is the angle of the lines of the axis break
-        - breaklinesattrs are a sequence of stroke attributes for the
+        - breaklinesattrs are a list of stroke attributes for the
           axis break lines; a single entry is allowed without being a
-          sequence; None turns off the break lines
+          list; None turns off the break lines
         - futher keyword arguments are passed to axistitlepainter"""
         self.breaklinesdist_str = breaklinesdist
         self.breaklineslength_str = breaklineslength
@@ -1818,13 +1820,13 @@ class baraxispainter(axistitlepainter):
           the ticks to be plotted at the axis baseline to visually
           separate the bars; if neither innerticklength nor
           outerticklength are set, not ticks are plotted
-        - breaklinesattrs are a sequence of stroke attributes for the
+        - breaklinesattrs are a list of stroke attributes for the
           axis tick; a single entry is allowed without being a
-          sequence; None turns off the ticks
+          list; None turns off the ticks
         - namedist is a visual PyX length for the distance of the bar
           names from the axis baseline
-        - nameattrs is a sequence of attributes for a texrunners text
-          method; a single entry is allowed without being a sequence;
+        - nameattrs is a list of attributes for a texrunners text
+          method; a single entry is allowed without being a list;
           None turns off the names
         - namedirection is an instance of rotatetext or None
         - namehequalize and namevequalize (booleans) perform an equal
@@ -2646,10 +2648,10 @@ class linksplitaxis(linkaxis):
         - it gets a list of painters to be used for the linkaxes
           of the subaxes; if None, the createlinkaxis of the subaxes
           are called without a painter parameter; if it is not a
-          sequence, the subaxispainter is passed as the painter
+          list, the subaxispainter is passed as the painter
           parameter to all createlinkaxis of the subaxes"""
         if subaxispainter is not None:
-            if _issequence(subaxispainter):
+            if helper.issequence(subaxispainter):
                 if len(linkedaxis.subaxes) != len(subaxispainter):
                     raise RuntimeError("subaxes and subaxispainter lengths do not fit")
                 self.subaxes = [a.createlinkaxis(painter=p) for a, p in zip(linkedaxis.subaxes, subaxispainter)]
@@ -2698,7 +2700,7 @@ class baraxis(_subaxispos):
                        texts={}, painter=baraxispainter()):
         """initialize the instance
         - subaxis contains a axis to be used as the subaxis
-          for all bars
+          for all items
         - multisubaxis might contain another baraxis instance
           to be used to construct a new subaxis for each item;
           (by that a nested bar axis with a different number
@@ -3826,7 +3828,7 @@ def _getattr(attr):
 
 
 def _getattrs(attrs):
-    "get attrs out of a sequence of attr/changeattr"
+    "get attrs out of a list of attr/changeattr"
     if attrs is not None:
         result = []
         for attr in helper.ensuresequence(attrs):
@@ -3846,7 +3848,7 @@ def _iterateattr(attr):
 
 
 def _iterateattrs(attrs):
-    "perform next to a sequence of attr/changeattr"
+    "perform next to a list of attr/changeattr"
     if attrs is not None:
         result = []
         for attr in helper.ensuresequence(attrs):
@@ -4047,7 +4049,7 @@ changecolor.ReverseHue     = _changecolorreversehue
 
 
 class changesequence(changeattr):
-    "cycles through a sequence"
+    "cycles through a list"
 
     def __init__(self, *sequence):
         changeattr.__init__(self)

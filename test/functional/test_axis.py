@@ -56,6 +56,6 @@ hpaint(c, 10, 11, graph.linaxis(texter=graph.rationaltexter(enumsuffix="\pi", ov
 lintest = {"min": 0, "max": 2*math.pi, "divisor": math.pi, "part": graph.linpart("0.125")}
 cpaint(c, 4, 17, graph.linaxis(texter=graph.rationaltexter(suffix="\pi"), **lintest))
 lintest = {"min": 0, "max": 2*math.pi, "divisor": math.pi/180, "part": graph.linpart("30")}
-cpaint(c, 14, 17, graph.linaxis(painter=graph.axispainter(labeldirection=graph.paralleltext), **lintest))
+cpaint(c, 14, 17, graph.linaxis(painter=graph.axispainter(labeldirection=graph.rotatetext.parallel), **lintest))
 c.writetofile("test_axis", paperformat="a4")
 

@@ -26,9 +26,18 @@ replaceable by the user to get more specialized graph drawing tasks
 done without needing to implement a hole graph system. A major
 abstraction layer are the so-called graph coordinates. Their range is
 generally fixed to $[0;1]$. Only the graph does know about the
-conversion between these coordinates and the position at the canvas.
-By that, all other components can be reused for different graph
-geometries.
+conversion between these coordinates and the position at the canvas
+(the graph itself is its canvas, that can be inserted into another
+canvas). By that, all other components can be reused for different
+graph geometries. The interfaces between the components are documented
+in docstrings of interface classes in the source. The interface
+technique is used for documentation purposes only. For the user, the
+most important informations (as described in the following) are the
+parameters of the constructors of the various implementations of those
+interface. They are documented in docstrings of the constructors of
+the classes. While effort of clearing and documenting is still in
+progress, some parts are already nicely documented as you may see by
+using \verb|pydoc|.
 
 \section{Axes}
 \label{graph:axes}
@@ -70,10 +79,12 @@ argument name&description\\
 \texttt{datavmax}&as above, but for the maximum; default: \texttt{0.95} (or \texttt{1}, when max is present)\\
 \texttt{tickvmin}&minimal graph coordinate for placing ticks to the axis; default: \texttt{0}\\
 \texttt{tickvmax}&as above, but for the maximum; default: \texttt{1}\\
-\texttt{part}&axis partitioning (described below)\\
-\texttt{rate}&axis partition rating (described below)\\
 \texttt{density}&density parameter for the axis partition rating\\
+\texttt{maxworse}&number of trials with worse tick rating before giving up; default: \texttt{2}\\
 \texttt{painter}&axis painter (described below)\\
+\texttt{texter}&texter for the axis labels (described below)\\
+\texttt{part}&axis partition (described below)\\
+\texttt{rater}&partition rater (described below)\\
 \end{tabularx}
 \medskip
 
@@ -82,53 +93,36 @@ argument name&description\\
 The definition of ticks and labels appropriate to an axis range is
 called partitioning. The axis partioning within \PyX{} uses rational
 arithmetics, which avoids any kind of rounding problems to the cost of
-performance. The class \verb|frac| supplies a rational number.
-However, a partitioning is composed out of a sorted list of ticks,
-where the class \verb|tick| is derived from \verb|frac| and has
-additional properties called \verb|ticklevel| and \verb|labellevel|.
-When those values are \verb|None|, it just means not present, \verb|0|
-means tick or label, respectively, \verb|1| means subtick or sublevel
-and so on. When \verb|labellevel| is not \verb|None|, a \verb|text|
-might be explicitly given, which will get used as the text of that
-label. Otherwise the axis painter has to create an appropriate text
-for the label.
+performance. The class \verb|frac| supplies a rational number. It can
+be initialized by another \verb|frac| instance, a tuple of integers
+(called enumerator and denominator), a float (which gets converted
+into a frac with a finite resolution \verb|floatprecision| of 10
+digits per default) or a string with infinite precision (like
+"1.2345e-100" or even "1/3"). However, a partitioning is composed out
+of a sorted list of ticks, where the class \verb|tick| is derived from
+\verb|frac| and has additional properties called \verb|ticklevel|,
+\verb|labellevel|, \verb|label| and \verb|labelattrs|. When the
+ticklevel or the labellevel is \verb|None|, it just means not present,
+\verb|0| means tick or label, respectively, \verb|1| means subtick or
+sublevel and so on. When \verb|labellevel| is not \verb|None|, a
+\verb|label| might be explicitly given, which will get used as the
+text of that label. Otherwise the axis painter has to create an
+appropriate text for the label. The \verb|labelattrs| might specify
+some attributes for the label to be used by the \verb|text| method of
+an \verb|texrunner| instance.
 
-We will first discuss manual partitioning schemes, namely a plain
-manual partition, another appropriate for linear axes and a third one
-for logarithmic axes. These partition schemes might be used directly
-or indirectly via automatic axis partioning schemes.
-
-\subsubsection{Manual partitioning}
-
-The class \verb|manualpart| creates a manual partition where every
-single tick, label etc. is set independendly from each other as
-described by named parameters of the constructor:
-
-\medskip
-\begin{tabularx}{\linewidth}{ll>{\raggedright\arraybackslash}X}
-argument name&default&description\\
-\hline
-\texttt{ticks}&\texttt{None}&position of ticks, subticks, etc. (see below)\\
-\texttt{labels}&\texttt{None}&position of labels, sublabels, etc. (see below)\\
-\texttt{texts}&\texttt{None}&force text at labels, sublabels, etc. (see below)\\
-\texttt{mix}&\texttt{()}&ordered tick list to be merged into the result\\
-\end{tabularx}
-\medskip
-
-The parameters \verb|ticks|, \verb|labels|, and \verb|texts| can
-either be a sequence, or a sequence of sequences. (When it is not a
-sequence at all, it is converted to a sequence with a single entry.)
-When it is a sequence of sequences, than the first sequence stands for
-the ticks, labels, and texts of the labels, the second sequence stands
-for the subticks, sublabels, and texts of the sublabels, and so on.
-When it is just a sequence, it stands for the ticks, labels and texts
-of the labels and no subticks, sublabels and subtexts will be created.
-
-The single entries of \verb|ticks| and \verb|labels| can either be a
-frac or a string, which will be converted to a frac. However, a float
-is not valid in order to avoid a conversion from a float to a frac.
-Valid strings are just numbers like \verb|"0.1"|, or fractions like
-\verb|"1/10"|.
+You can pass a list of \verb|tick| instance to the \verb|part|
+argument of an axis. By that you can place ticks whereever you want.
+(In former versions there was a manual partitioner and the possibility
+of mixing partitions for that. This is still available in this
+version of \PyX{}, but it will be removed in the future.) Additionally
+you can use a partitioner to create ticks appropriate to the axis
+range. This can be done by manually specifying distances between
+ticks, subticks and so on. Alternatively there are automatic axis
+partitioners available, which provide different partitions and the
+rating of those different partitions by the \verb|rater| become
+crutial. Note, that you can combine manually set ticks and a
+partitioner in the \verb|part| argument of an axis.
 
 \subsubsection{Partitioning of linear axes}
 
@@ -139,112 +133,116 @@ named parameters of the constructor:
 \begin{tabularx}{\linewidth}{ll>{\raggedright\arraybackslash}X}
 argument name&default&description\\
 \hline
-\texttt{ticks}&\texttt{None}&distance between ticks, subticks, etc. (see comment below); when the parameter is \texttt{None}, ticks will get placed at labels\\
-\texttt{labels}&\texttt{None}&distance between labels, sublabels, etc. (see comment below); when the parameter is \texttt{None}, labels will get placed at ticks\\
+\texttt{tickdist}&\texttt{None}&distance between ticks, subticks, etc. (see comment below); when the parameter is \texttt{None}, ticks will get placed at labels\\
+\texttt{labeldist}&\texttt{None}&distance between labels, sublabels, etc. (see comment below); when the parameter is \texttt{None}, labels will get placed at ticks\\
+\texttt{labels}&\texttt{None}&set the text for the labels manually\\
 \texttt{extendtick}&\texttt{0}&allow for a range extention to include the next tick of the given level\\
 \texttt{extendlabel}&\texttt{None}&as above, but for labels\\
 \texttt{epsilon}&\texttt{1e-10}&allow for exceeding the range by that relative value\\
-\texttt{texts}&\texttt{None}&as in manualpart\\
-\texttt{mix}&\texttt{()}&as in manualpart\\
+\texttt{mix}&\texttt{()}&an obsolete feature to mix-in additional ticks (to be removed in future versions)\\
 \end{tabularx}
 \medskip
 
-The \verb|ticks| and \verb|labels| can either be a sequence or just a
-single entry. When a sequence is provided, the first entry stands for
+The \verb|ticks| and \verb|labels| can either be a list or just a
+single entry. When a list is provided, the first entry stands for
 the tick or label, respectively, the second for the subtick or
-sublabel, and so on. The entries can either be a frac or a string,
-as in \verb|manualpart|.
+sublabel, and so on. The entries are passed to the constructor of a
+frac instance, e.g. there can be tuples (enumerator, denominator),
+strings, floats, etc.
 
 \subsubsection{Partitioning of logarithmic axes}
 
-The class \verb|logpart| create a logarithmic partition. The class has
-the same arguments as \verb|linpart| upto the interpretation of two
-arguments \verb|ticks| and \verb|labels|. Both parameters can contain
-just a single entry or a sequence --- the interpretation of those
-possibilities is the same as it was for \verb|linpart|. The entries
-have to be \verb|shiftfracs|, which contains a \verb|frac| for the
-shift, say $s$, and a list of \verb|frac| for the positions, say
-$p_i$. Valid positions are then $s^np_i$, where $n$ can be any integer
-number. Within \verb|logpart| there are numerous predefined
-\verb|shiftfracs|, namely:
+The class \verb|logpart| create a logarithmic partition. The
+parameters of the constructor of the class \verb|logpart| are quite
+simular to the parameters of \verb|linpart| discussed above. Instead
+of the parameters \verb|tickdist| and \verb|labeldist| the parameters
+\verb|tickpos| and \verb|labelpos| are present. All other parameters
+of \verb|logpart| do not differ in comparision to \verb|linpart|. The
+\verb|tickdist| and \verb|labeldist| parameters take either a single
+\verb|preexp| instance or a list of \verb|preexp| instances, where the
+first stands for the ticks (labels), the second for subticks
+(sublabels) and so on. A \verb|preexp| instance contains a list of
+\verb|pres|, which are \verb|frac| instances defining some positions,
+say $p_i$. Furthermore there is a \verb|frac| instance called
+\verb|exp|, say $e$. Valid tick and label positions are then given by
+$s^np_i$, where $n$ is an integer.
 
 \begin{center}
 \begin{tabular}{ll}
 name&values it descibes\\
 \hline
-\texttt{shift5fracs1}&1 and multiple of $10^5$\\
-\texttt{shift4fracs1}&1 and multiple of $10^4$\\
-\texttt{shift3fracs1}&1 and multiple of $10^3$\\
-\texttt{shift2fracs1}&1 and multiple of $10^2$\\
-\texttt{shiftfracs1}&1 and multiple of $10$\\
-\texttt{shiftfracs125}&1, 2, 5 and multiple of $10$\\
-\texttt{shiftfracs1to9}&1, 2, \dots, 9 and multiple of $10$\\
+\texttt{pre1exp5}&1 and multiple of $10^5$\\
+\texttt{pre1exp4}&1 and multiple of $10^4$\\
+\texttt{pre1exp3}&1 and multiple of $10^3$\\
+\texttt{pre1exp2}&1 and multiple of $10^2$\\
+\texttt{pre1exp}&1 and multiple of $10$\\
+\texttt{pre125exp}&1, 2, 5 and multiple of $10$\\
+\texttt{pre1to9exp}&1, 2, \dots, 9 and multiple of $10$\\
 \end{tabular}
 \end{center}
 
 \subsubsection{Automatic partitioning of linear axes}
 
-When no explicit axis partitioning is given in the constructor of an
-linear axis, it is initialized with an automatic partitioning schemes
-for linear axes. This scheme is provided by the class
-\verb|autolinpart|, where the constructor takes the following
+When no explicit axis partitioner is given in the constructor argument
+\verb|part| of an linear axis, it is initialized with an automatic
+partitioning scheme for linear axes. This scheme is provided by the
+class \verb|autolinpart|, where the constructor takes the following
 arguments:
 
 \medskip
 \begin{tabularx}{\linewidth}{ll>{\raggedright\arraybackslash}X}
 argument name&default&description\\
 \hline
-\texttt{list}&\texttt{defaultlist}&list of possible values for the ticks parameter of \texttt{linpart} (labels are placed at the position of ticks)\\
+\texttt{variants}&\texttt{defaultvariants}&list of possible values for the ticks parameter of \texttt{linpart} (labels are placed at the position of ticks)\\
 \texttt{extendtick}&\texttt{0}&allow for a range extention to include the next tick of the given level\\
 \texttt{epsilon}&\texttt{1e-10}&allow for exceeding the range by that relative value\\
-\texttt{mix}&\texttt{()}&as in manualpart\\
+\texttt{mix}&\texttt{()}&as in linpart\\
 \end{tabularx}
 \medskip
 
-The default value for the argument \verb|list|, namely
-\verb|defaultlist|, is defined as a class variable of
+The default value for the argument \verb|variants|, namely
+\verb|defaultvariants|, is defined as a class variable of
 \verb|autolinpart| and has the value \texttt{((frac(1, 1), frac(1,
 2)), (frac(2, 1), frac(1, 1)), (frac(5, 2), frac(5, 4)), (frac(5, 1),
 frac(5, 2)))}. This implies, that the automatic axis partitioning
 scheme allows for partitions using (ticks, subticks) with at distances
 (1, 1/2), (2, 1), (5/2, 5/4), (5, 5/2). This list must be sorted by
-the number of ticks the entries will lead to. Additionally, as most
-likely already from the default value of the argument \verb|list|, the
-given fractions are automatically multiplied or divided by 10 in order
-to fit better to the axis range. Therefore these additional
-partitioning possibilities must not be given explicitly.
+the number of ticks the entries will lead to. The given fractions are
+automatically multiplied or divided by 10 in order to fit better to
+the axis range. Therefore those additional partitioning possibilities
+(infinte possibilities) must not be given explicitly.
 
 \subsubsection{Automatic partitioning of logarithmic axes}
 
-When no explicit axis partitioning is given in the constructor of an
-logarithmic axis, it is initialized with an automatic partitioning
-schemes for logarithmic axes. This scheme is provided by the class
-\verb|autologpart|, where the constructor takes the following
-arguments:
+When no explicit axis partitioning is given in the constructor
+argument \verb|part| of an logarithmic axis, it is initialized with an
+automatic partitioning schemes for logarithmic axes. This scheme is
+provided by the class \verb|autologpart|, where the constructor takes
+the following arguments:
 
 \medskip
 \begin{tabularx}{\linewidth}{ll>{\raggedright\arraybackslash}X}
 argument name&default&description\\
 \hline
-\texttt{list}&\texttt{defaultlist}&list of pairs with possible values for the ticks and labels parameters of \texttt{logpart}\\
+\texttt{variants}&\texttt{defaultvariants}&list of pairs with possible values for the ticks and labels parameters of \texttt{logpart}\\
 \texttt{extendtick}&\texttt{0}&allow for a range extention to include the next tick of the given level\\
 \texttt{extendlabel}&\texttt{None}&as above, but for labels\\
 \texttt{epsilon}&\texttt{1e-10}&allow for exceeding the range by that relative value\\
-\texttt{mix}&\texttt{()}&as in manualpart\\
+\texttt{mix}&\texttt{()}&as in linpart\\
 \end{tabularx}
 \medskip
 
-The default value for the argument \verb|list|, namely
-\verb|defaultlist|, is defined as a class variable of
+The default value for the argument \verb|variants|, namely
+\verb|defaultvariants|, is defined as a class variable of
 \verb|autologpart| and has the value:
 \begin{verbatim}
-(((shiftfracs1, shiftfracs1to9),        # ticks & subticks,
-         (shiftfracs1, shiftfracs125)), # labels & sublevels
- ((shiftfracs1, shiftfracs1to9), None), # ticks & subticks, labels=ticks
- ((shift2fracs1, shiftfracs1), None),   # ticks & subticks, labels=ticks
- ((shift3fracs1, shiftfracs1), None),   # ticks & subticks, labels=ticks
- ((shift4fracs1, shiftfracs1), None),   # ticks & subticks, labels=ticks
- ((shift5fracs1, shiftfracs1), None))   # ticks & subticks, labels=ticks
+(((pre1exp, pre1to9exp),        # ticks & subticks,
+         (pre1exp, pre125exp)), # labels & sublevels
+ ((pre1exp, pre1to9exp), None), # ticks & subticks, labels=ticks
+ ((pre1exp2, pre1exp), None),   # ticks & subticks, labels=ticks
+ ((pre1exp3, pre1exp), None),   # ticks & subticks, labels=ticks
+ ((pre1exp4, pre1exp), None),   # ticks & subticks, labels=ticks
+ ((pre1exp5, pre1exp), None))   # ticks & subticks, labels=ticks
 \end{verbatim}
 As for the \verb|autolinaxis|, this list must be sorted by the number
 of ticks the entries will lead to.
@@ -253,7 +251,7 @@ of ticks the entries will lead to.
 
 When an axis partitioning scheme returns several partitioning
 possibilities, the partitions are rated by an instance of a rater
-class provided as the parameter \verb|rate| at the axis constructor.
+class provided as the parameter \verb|rater| at the axis constructor.
 It is used to calculate a positive rating number for a given axis
 partitioning. In the end, the lowest rated axis partitioning gets
 used.
@@ -278,8 +276,117 @@ and labels, can be easily adjusted by the single parameter
 \verb|density| of the axis constructor. The rating is
 adjusted to the default densitiy value of \verb|1|, but modifications
 of this parameter in the range of 0.5 (for less ticks) to 2 or even 3
-(for more ticks) might be usefull. This parameter was taken out of the
-rating class for easier access.
+(for more ticks) might be usefull.
+
+\subsection{Creating label text}
+
+When a partition is created, the typical situation is that some of the
+ticks have a \verb|labellevel| not equal to \verb|None| but there is
+no \verb|label| (a string) defined to be printed at this tick. The
+task of a \verb|texter| is to create those label strings for a given
+list of ticks. There are different \verb|texter| classes creating
+different label strings.
+
+\subsubsection{Decimal numbers}
+
+The class \verb|decimaltexter| creates decimal labels. The format of
+the labels can be configured by numerous arguments of the constructor
+listed in the following table:
+
+\medskip
+\begin{tabularx}{\linewidth}{ll>{\raggedright\arraybackslash}X}
+argument name&default&description\\
+\hline
+\texttt{prefix}&\texttt{""}&string to be inserted in front of the number\\
+\texttt{infix}&\texttt{""}&string to be inserted between the plus or minus sign and the number\\
+\texttt{suffix}&\texttt{""}&string to be inserted after the number\\
+\texttt{equalprecision}&\texttt{0}&forces a common number of digits after the comma\\
+\texttt{decimalsep}&\texttt{"."}&decimal separator\\
+\texttt{thousandsep}&\texttt{""}&thousand separator\\
+\texttt{thousandthpartsep}&\texttt{""}&thousandth part separator\\
+\texttt{plus}&\texttt{""}&plus sign\\
+\texttt{minus}&\texttt{"-"}&minus sign\\
+\texttt{period}&\texttt{r"\textbackslash overline\{\%s\}"}&format string to indicate a period\\
+\texttt{labelattrs}&\texttt{text.mathmode}&a single attribute or a list of attributes to be added to the labelattrs\\
+\end{tabularx}
+\medskip
+
+\subsubsection{Decimal numbers with an exponential}
+
+The class \verb|exponentialtexter| creates decimal labels with an
+exponent. The format of the labels can be configured by numerous
+arguments of the constructor listed in the following table:
+
+\medskip
+\begin{tabularx}{\linewidth}{ll>{\raggedright\arraybackslash}X}
+argument name&default&description\\
+\hline
+\texttt{plus}&\texttt{""}&plus sign for the exponent\\
+\texttt{minus}&\texttt{"-"}&minus sign for the exponent\\
+\texttt{mantissaexp}&\texttt{r"\{\{\%s\}\textbackslash cdot10\textasciicircum\{\%s\}\}"}&format string for manissa and exponent\\
+\texttt{nomantissaexp}&\texttt{r"\{10\textbackslash\{\%s\}\}"}&format string when skipping a manissa equals 1\\
+\texttt{minusnomantissaexp}&\texttt{r"\{-1\textbackslash\{\%s\}\}"}&format string when skipping a manstissa equals -1\\
+\texttt{mantissamin}&\texttt{frac((1, 1))}&minimal value for the mantissa\\
+\texttt{mantissamax}&\texttt{frac((10, 1))}&maximal value for the mantissa\\
+\texttt{skipmantissa1}&\texttt{0}&skip mantissa equals 1\\
+\texttt{skipallmantissa1}&\texttt{1}&skip mantissa when its always 1\\
+\texttt{mantissatexter}&\texttt{decimaltexter()}&texter for the mantissa\\
+\end{tabularx}
+\medskip
+
+\subsubsection{Decimal numbers without or with an exponential}
+
+The class \verb|defaulttexter| creates decimal labels without or
+with an exponent. As the name says, its used as the default texter.
+The texter splits the tick list into two lists, one to be passed to a
+decimal texter and another to be passed to an exponential texter. This
+splitting is based on the two properties \verb|smallestdecimal| and
+\verb|biggestdecimal|. See the following table for all available
+arguments:
+
+\medskip
+\begin{tabularx}{\linewidth}{ll>{\raggedright\arraybackslash}X}
+argument name&default&description\\
+\hline
+\texttt{smallestdecimal}&\texttt{frac((1, 1000))}&the smallest number (ignoring the sign) where the decimal texter should be used\\
+\texttt{biggestdecimal}&\texttt{frac((9999, 1))}&as above, but for the biggest number\\
+\texttt{equaldecision}&\texttt{1}&either use the \texttt{decimaltexter} or the \texttt{exponentialtexter}\\
+\texttt{decimaltexter}&\texttt{decimaltexter()}&texter withoud an exponential\\
+\texttt{exponentialtexter}&\texttt{exponentialtexter()}&exponential with an exponential\\
+\end{tabularx}
+\medskip
+
+\subsubsection{Rational numbers}
+
+The class \verb|rationaltexter| creates rational labels. The format of
+the labels can be configured by numerous arguments of the constructor
+listed in the following table:
+
+\medskip
+\begin{tabularx}{\linewidth}{ll>{\raggedright\arraybackslash}X}
+argument name&default&description\\
+\hline
+\texttt{prefix}&\texttt{""}&string to be inserted in front of the rational\\
+\texttt{infix}&\texttt{""}&string to be inserted between the plus or minus sign and the rational\\
+\texttt{suffix}&\texttt{""}&string to be inserted after the rational\\
+\texttt{enumprefix}&\texttt{""}&as \texttt{prefix} but for the enumerator\\
+\texttt{enuminfix}&\texttt{""}&as \texttt{infix} but for the enumerator\\
+\texttt{enumsuffix}&\texttt{""}&as \texttt{suffix} but for the enumerator\\
+\texttt{denomprefix}&\texttt{""}&as \texttt{prefix} but for the denominator\\
+\texttt{denominfix}&\texttt{""}&as \texttt{infix} but for the denominator\\
+\texttt{denomsuffix}&\texttt{""}&as \texttt{suffix} but for the denominator\\
+\texttt{plus}&\texttt{""}&plus sign\\
+\texttt{minus}&\texttt{"-"}&minus sign\\
+\texttt{minuspos}&\texttt{0}&position of the minus: \texttt{0} -- in front of the fraction, \texttt{1} -- in front of the enumerator, \texttt{-1} -- in front of the denominator\\
+\texttt{over}&\texttt{r"\{\{\%s\}\textbackslash over\{\%s\}\}"}&format string for the fraction\\
+\texttt{equaldenom}&\texttt{0}&usually, the enumerator and the denominator are canceled; if set, take the least common multiple of all denominators\\
+\texttt{skip1}&\texttt{1}&skip printing the fraction for \texttt{1} when there is a \texttt{prefix}, \texttt{infix}, or \texttt{suffix}\\
+\texttt{skipenum0}&\texttt{1}&print \texttt{0} instead of a fraction when the enumerator is 0\\
+\texttt{skipenum1}&\texttt{1}&as \texttt{skip1} but for the enumerator\\
+\texttt{skipdenom1}&\texttt{1}&skip the denominator when it is \texttt{1} and there is no \texttt{denomprefix}, \texttt{denominfix}, or \texttt{denomsuffix}\\
+\texttt{labelattrs}&\texttt{text.mathmode}&a single attribute or a list of attributes to be added to the labelattrs\\
+\end{tabularx}
+\medskip
 
 \subsection{Painting of axes}
 
@@ -300,99 +407,66 @@ argument name&description\\
 \texttt{zerolineattrs}$^{3,4}$&stroke attributes for a grid line at axis value 0; default: \texttt{()}\\
 \texttt{baselineattrs}$^{3,4}$&stroke attributes for the axis baseline;\newline default: \texttt{canvas.linecap.square}\\
 \texttt{labeldist}&label distance from axis (visual length); default: \texttt{"0.3 cm"}\\
-\texttt{labelattrs}$^{2,4}$&text attributes for labels;\newline default: \texttt{((textmodule.halign.center, textmodule.vshift.mathaxis), (textmodule.size.footnotesize, textmodule.halign.center, textmodule.vshift.mathaxis))}\\
+\texttt{labelattrs}$^{2,4}$&text attributes for labels;\newline default: \texttt{(text.halign.center, text.vshift.mathaxis)}\\
 \texttt{labeldirection}$^4$&relative label direction (see below); default: \texttt{None}\\
 \texttt{labelhequalize}&set width of labels to its maximum (boolean); default: \texttt{0}\\
 \texttt{labelvequalize}&set height and depth of labels to their maxima (boolean); default: \texttt{1}\\
 \texttt{titledist}&title distance from labels (visual length); default: \texttt{"0.3 cm"}\\
-\texttt{titleattrs}$^{3,4}$&text attributes for title; default: \texttt{()}\\
-\texttt{titledirection}$^4$&relative title direction (see below);\newline default: \texttt{axispainter.paralleltext}\\
+\texttt{titleattrs}$^{3,4}$&text attributes for title; default: \texttt{(text.halign.center, text.vshift.mathaxis)}\\
+\texttt{titledirection}$^4$&relative title direction (see below);\newline default: \texttt{paralleltext}\\
 \texttt{titlepos}&title position in graph coordinates; default: \texttt{0.5}\\
-\texttt{fractype}&text creation for labels (see below);\newline default: \texttt{axispainter.fractypeauto}\\
-\texttt{ratfracsuffixenum}&write suffix at the enumerator (boolean); default: \texttt{1}\\
-\texttt{ratfracover}&text for fraction line; default: \texttt{r"\textbackslash over"}\\
-\texttt{decfracpoint}&decimal point; default: \texttt{"."}\\
-\texttt{decfracequal}&equalize number of decimal digits (boolean); default: \texttt{0}\\
-\texttt{expfractimes}&text between factor and decimal power; default: \texttt{r"\textbackslash cdot"}\\
-\texttt{expfracpre1}&allow factor 1 before a decimal power (boolean); default: \texttt{0}\\
-\texttt{expfracminexp}&minimal exponent for decimal power; default: \texttt{4}\\
-\texttt{suffix0}&when a suffix is \texttt{x} write \texttt{0x} instead of \texttt{0} (boolean); default: \texttt{0}\\
-\texttt{suffix1}&when a suffix is \texttt{x} write \texttt{1x} instead of \texttt{x} (boolean); default: \texttt{0}\\
 \end{tabularx}
 \medskip
 
 $^1$
-The parameter should be a sequence, where the entries are attributes
-for the different levels. When the level is larger then the sequence
-length, \verb|None| is assumed. When the parameter is not a sequence,
+The parameter should be a list, where the entries are attributes
+for the different levels. When the level is larger then the list
+length, \verb|None| is assumed. When the parameter is not a list,
 it is applied to all levels.\\
 $^2$
-The parameter should be a sequence of sequences, where the entries are
+The parameter should be a list of lists, where the entries are
 attributes for the different levels. When the level is larger then the
-sequence length, \verb|None| is assumed. When the parameter is not a
-sequence of sequences, it is applied to all levels.\\
+list length, \verb|None| is assumed. When the parameter is not a
+list of lists, it is applied to all levels.\\
 $^3$
-The parameter should be a sequence. When the parameter is not a
-sequence, the parameter is interpreted as a sequence with a single
+The parameter should be a list. When the parameter is not a
+list, the parameter is interpreted as a list with a single
 entry.\\
 $^4$
 The feature can be turned off by the value \verb|None|. Within
-sequences or sequences of sequences, the value \verb|None| might be
+lists or lists of lists, the value \verb|None| might be
 used to turn off the feature for some levels selectively.
 \medskip
 
 Relative directions for labels (\verb|labeldirection|) and titles
-(\verb|titledirection|) are basically a float number in degree. The
-text direction is calculated relatively to the baseline of the axis
-and is added as an attribute of the text, when no direction was
-already provided. The relative direction prevents upside down text by
-flipping it by 180 degrees. For convenience, the two self-explanatory
-values \verb|axispainter.paralleltext| and
-\verb|axispainter.orthogonaltext| are available.
-
-The \verb|fractype| parameter determines the creation of label texts.
-There are three types available, which can be forced by providing them
-to the \verb|fractype| parameter. The possibilities are listed in the
-following table.
-
-\begin{center}
-\begin{tabular}{lll}
-\texttt{fractype}&description&example\\
-\hline
-\texttt{axispainter.fractypedec}&decimal&$0.1$\\
-\texttt{axispainter.fractypeexp}&decimal with exponent&$2\cdot 10^4$\\
-\texttt{axispainter.fractyperat}&rational&$\displaystyle{{1}\over{2}}$\\
-\texttt{axispainter.fractypeauto}&automatic (see below)&\\
-\end{tabular}
-\end{center}
-
-For the default \verb|axispainter.fractypeauto| the three
-possibilities are selected depending on some simple rules:
-\verb|axispainter.fractyperat| is used, when the axis provides a
-suffix, \verb|axispainter.fractypeexp| is used, when the exponent
-exceed \verb|expfracminexp|, and \verb|axispainter.fractypedec| is
-used otherwise.
+(\verb|titledirection|) are instances of \verb|rotatetext|. By that
+the text direction is calculated relatively to the tick direction of
+the axis and is added as an attribute of the text. The relative
+direction provided by instances of the class \verb|rotatetext| prevent
+upside down text by flipping it by 180 degrees. For convenience, the
+two self-explanatory values \verb|rotatetext.parallel| and
+\verb|rotatetext.orthogonal| are available, which are just instances of
+rotatetext initializes by \verb|-90| degree and \verb|0|,
+respectively.
 
 \subsection{Linked axes}
 
 Linked axes can be used whenever an axis should be repeated within a
 single graph or even between different graphs although the intrinsic
-meaning is to have only one axis plotted several times. The
-constructor of \verb|linkaxis| receives the axis it is linked to as
-its first parameter. Additionally, the named parameter \verb|title|
-contains an axis title (default is \verb|None|) and the named
-parameter \verb|painter| refers to an axispainter (default is
-\verb|linkaxispainter|). This \verb|linkedaxispainter| is a slightly
-modified version of the standard \verb|axispainter|. Hence it can
-receive all the parameters as the \verb|axispainter| and only the
-default value of the parameter \verb|zerolineattrs| is changed to
-\verb|None| compared to the \verb|axispainter| previously discussed.
-Additionally, two parameters are added, namely \verb|skipticklevel|
-and \verb|skiplabellevel|. They are used to build the tick list to be
-plotted at the linked axis. Ticks and labels at levels equal or higher
-as the provided values get ignored. The default is \verb|None| (do not
-ignore any ticks) for the ticks and \verb|0| (ignore all labels) for
-the labels.
+meaning is to have only one axis plotted several times. Almost all
+properties of a linked axis are supplied by the axis it is linked to
+(you may call it the base axis), but some properties and methods might
+be different. For the typical case (implemented by \verb|linkaxis|)
+only the painter of the axis is exchanged together with some
+simplified behaviour when finishing the axis (there is no need to
+recalculate the axis partition etc.). The constructor of
+\verb|linkaxis| takes the axis to be linked to as the first parameter
+and in the named parameter \verb|painter| a new painter for the axis.
+By default, \verb|linkaxispainter| is used, which differs from the
+standard \verb|axispainter| by some default values for the arguments
+only. Namely, the arguments \verb|zerolineattrs|, \verb|labelattrs|,
+and \verb|titleattrs| are set to \verb|None| turing off these
+features.
 
 \subsection{Special purpose axes}
 
@@ -435,7 +509,8 @@ argument name&description\\
 
 Additionally, the painter takes parameters for the axis title
 formatting like the standard axis painter class \verb|axispainter|.
-The parameters are \verb|titledist|, \verb|titleattrs|,
+(There is a common base class \verb|titleaxispainter| for that.) The
+parameters are \verb|titledist|, \verb|titleattrs|,
 \verb|titledirection|, and \verb|titlepos|.
 
 \subsubsection{Bar axes}
@@ -448,7 +523,7 @@ Axes appropriate for bar graphs are created by instances of the class
 argument name&description\\
 \hline
 \texttt{subaxis}&baraxis can be recursive by having another axis as its subaxis; default: \texttt{None}\\
-\texttt{multisubaxis}&allow for multiple subaxis (boolean); default: \texttt{0}\\
+\texttt{multisubaxis}&contains another baraxis instance to be used to construct a new subaxes for each item (by that a nested bar axis with a different number of subbars at each bar can be created) ; default: \texttt{None}\\
 \texttt{title}&axis title\\
 \texttt{dist}&distance between bars (relative to the bar width); default: \texttt{0.5}\\
 \texttt{firstdist}&distance of the first bar to the border; default: \texttt{0.5*dist}\\
@@ -460,20 +535,21 @@ argument name&description\\
 \medskip
 
 In contrast to other axes, a bar axis uses name identifiers to
-calculate a possition at the axis. Usually, a style appropriate to a
+calculate a position at the axis. Usually, a style appropriate to a
 bar axis (this is right now just the bar style) set those names out of
 the data it recieves. However, the names can be forced and fixed.
 
 Bar axes can be recursive. Thus for a given value, an appropriate
 subaxis is choosen (usually another bar axis). Usually only a single
-subaxis is needed, because for each value the same recursive subaxis
-transformation has to be applied. However, this prevents the subaxis
-to be painted, but as soon as multisubaxis is turned on, the subaxes
-(note axes instead of axis) are painted as well (however their painter
-can be set to not paint anything). For that, duplications of the
-subaxis are created for each name (right now, this is only available
-for the bar axis). By that, each subaxis can have different names, in
-particular different number of names.
+subaxis is needed, because it doesn't need to be painted and for each
+value the same recursive subaxis transformation has to be applied.
+This is achieved by using the parameter \verb|subaxis|. Alternatively
+you may use the \verb|multisubaxis|. Here only a bar axis can be used.
+Then the subaxes (note axes instead of axis) are painted as well
+(however their painter can be set to not paint anything). For that,
+duplications of the subaxis are created for each name. By that, each
+subaxis can have different names, in particular different number of
+names.
 
 The only point left is the description of the specialized
 \verb|baraxispainter|. It works quite similar to the
@@ -483,7 +559,7 @@ in common, namely \verb|titledist|, \verb|titleattrs|,
 Furthermore the parameters \verb|innerticklength| and
 \verb|outerticklength| work like their counterparts in the
 \verb|axispainter|, but only plain values are allowed there (no
-tuples). However, they are both \verb|None| by default and no ticks
+lists). However, they are both \verb|None| by default and no ticks
 get plotted. Then there is a hole bunch of name
 attribute identifiers, namely \verb|namedist|, \verb|nameattrs|,
 \verb|namedirection|, \verb|namehequalize|, \verb|namevequalize| which
@@ -658,7 +734,7 @@ position relative to the symbol is defined by the two named
 parameters \verb|textdx| and \verb|textdy| having a default of
 \verb|"0 cm"| and \verb|"0.3 cm"|, respectively, which are by default
 interpreted as visual length. A further named parameter
-\verb|textattrs| may contain a sequence of text attributes (or just a
+\verb|textattrs| may contain a list of text attributes (or just a
 single attribute). The default for this parameter is
 \verb|text.halign.center|. Furthermore the constructor of this class
 allows all other attributes of the class \verb|symbol|.
@@ -716,7 +792,7 @@ written, but there are already some iterateable attributes available
 for the most common cases. For example a color change is done by
 instances of the class \verb|colorchange|, where the constructor takes
 a palette. Applying this attribute to a style and using this style at
-a sequence of data, the color will get changed lineary along the
+a list of data, the color will get changed lineary along the
 palette from one end to the other. The class \verb|colorchange|
 includes inherited classes as class variables, which are called like
 the color palettes shown in appendix~\ref{palettename}. For them the
@@ -743,7 +819,7 @@ provides already various specialized classes as class variables. To
 loop over all available symbols (cross, plus, square, triangle,
 circle, and diamond) the equal named class variables can be used. They
 start at that symbol they are named of. Thus \verb|changesymbol.cross()|
-cycles throu the sequence starting at the cross symbol. Furthermore
+cycles throu the list starting at the cross symbol. Furthermore
 there are four class variables called \verb|squaretwice|,
 \verb|triangletwice|, \verb|circletwice|, and \verb|diamondtwice|.
 They cycle throu the four fillable symbols, but returning the symbols

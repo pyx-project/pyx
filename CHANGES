@@ -2,30 +2,8 @@ PyX
 
 0.5 (????/??/??)
   TODO:
-  - path module:
-    - reverse needs to be fixed
-
-0.4 (????/??/??):
-  - manual:
-    TODO:
-    - include sources in source distribution
-  - graph module:
-    - tick.text is renamed to tick.label
-    - ticks and labels are renamed to tickpos/tickdist and labelpos/labeldist in partitioning
-    - ticks can be used in the part to mix a partitioner with some manual ticks
-      -> manualpart and the mix technique is not needed anymore
-         (both things are still available and working, but they will be removed in the future)
-      (done up to documentation)
-    - _ensurefrac is implemented inside the frac constructor now; initialization is possible by:
-      - a (enum, denom) tuple now (previously there were two arguments)
-      - a string (as before via _ensurefrac)
-      - exponential strings are allowed as well (e.g. "1e10" etc.)
-      - a float (precision is determined by floatprecision -- the number of decimal places)
-    - separate texter out of the axispainter (done up to the documentation)
-    - dense -> density (done including the documentation; TODO in tests/examples?)
-    - axis.maxworse (done up to the documentation)
-    - axis interface (done up to the documentation)
-    TODO:
+  - graph module
+    - another (the last?!) axis redesign: axispos -> class of its own; remove axis.axiscanvas
     - do not include unneeded line segments when the axis range is set manually
     - allow for an iteration of a graph style, when it is used several times
     - common bboxes for different graphs
@@ -36,8 +14,29 @@ PyX
       lines not symbolattrs
     - allow for graph.changesymbol.square(size=0.15) etc.
     - rect style (and errorbars?) should use clipping
-    - documentation:
-      - modified axispainter labelattrs default
+  - path module:
+    - reverse needs to be fixed
+
+0.4 (????/??/??):
+  - manual:
+    TODO:
+    - include sources in source distribution
+  - graph module:
+    - separate texter out of the axispainter
+    - axis/partitioner/texter/painter/axispos redesign & interfaces
+    - tick.text is renamed to tick.label
+    - ticks and labels are renamed to tickpos/tickdist and labelpos/labeldist in partitioning
+    - ticks can be used in the part to mix a partitioner with some manual ticks
+      -> manualpart and the mix technique is not needed anymore
+         (both things are still available and working, but they will be removed in the future)
+    - _ensurefrac is implemented inside the frac constructor now; initialization is possible by:
+      - a (enum, denom) tuple now (previously there were two arguments)
+      - a string (as before via _ensurefrac)
+      - exponential strings are allowed as well (e.g. "1e10" etc.)
+      - a float (precision is determined by floatprecision -- the number of decimal places)
+    - dense -> density
+    - axis.maxworse
+    - axis interface
   - canvas module:
     - default patterns
     - stroke and fill should support trafos

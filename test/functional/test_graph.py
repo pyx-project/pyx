@@ -28,8 +28,9 @@ def test_multiaxes_data(c, x, y):
     g.finish()
 
 def test_piaxis_function(c, x, y):
-    g = c.insert(graph.graphxy(x, y, height=5,
-                               x=graph.linaxis(min=0, max=2*math.pi, divisor=math.pi, texter=graph.rationaltexter(suffix=r"\pi"))))
+    xaxis=graph.linaxis(min=0, max=2*math.pi, divisor=math.pi, texter=graph.rationaltexter(suffix=r"\pi"))
+    g = c.insert(graph.graphxy(x, y, height=5, x=xaxis))
+    # g = c.insert(graph.graphxy(x, y, height=5, x=xaxis, x2=xaxis)) # TODO
     g.plot([graph.function("y=sin(x-i*pi/10)", context={"i": i}) for i in range(20)],
            style=graph.line(lineattrs=(graph.changecolor.Hue(), graph.changelinestyle())))
     g.finish()
