@@ -14,8 +14,12 @@ technique of \TeX/\LaTeX{} into \PyX. The basic procedure is:
 \TeX/\LaTeX{} output)
 \item as soon as PostScript needs to be written, stop \TeX/\LaTeX{},
 analyse the dvi output and generate the requested PostScript
-\item use Type1 fonts for the PostScript generation
+\item use Type1 fonts for the PostScript generation 
 \end{itemize}
+
+Note that in order that Type1 fonts can be used by \PyX, an
+appropriate \verb|psfonts.map| containing entries for the used fonts
+has to be present in your texmf tree.
 
 \section{The texrunner}
 Instances of the class \verb|texrunner| represent a \TeX/\LaTeX{}
@@ -218,3 +222,7 @@ module. Additionally, the methods \verb|text|, \verb|preamble|, and
 \verb|defaulttexrunner|. This single \verb|texrunner| instance is
 sufficient in most cases.
 
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "manual.tex"
+%%% End:

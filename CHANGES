@@ -54,7 +54,6 @@ PyX
     TODO:
     - the prolog method of the dvifile class recieves the page now -> return the prolog needed by this page only
     - SlantFont & Co support
-    - mention psfonts.map in docu
   - tex module:
     - bugfix \def\ProcessPyXBox -> \long\def\ProcessPyXBox
     - copy lfs handling from text module (share the same source???)
