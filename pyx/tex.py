@@ -327,6 +327,7 @@ class tex:
                     SizeFile.write(OldSize)
 
         os.unlink(TempName + ".tex")
+        os.unlink(TempName + ".log")
         os.unlink(TempName + ".dvi")
         os.unlink(TempName + ".eps")
         os.unlink(TempName + ".out")
