@@ -35,13 +35,13 @@ def test_textaxis_errorbars(c, t, x, y):
     df = datafile.datafile("testdata2")
     g = c.insert(graph.graphxy(t, x, y, height=5,
                                x=graph.linaxis(min=0.5, max=12.5, title="Month",
-                                               part=graph.linpart("1", texts=df.getcolumn("month"), extendtoticklevel=None),
+                                               part=graph.linpart("1", texts=df.getcolumn("month"), extendtick=None),
                                                painter=graph.axispainter(labelstyles=(tex.direction(30),tex.halign.right, tex.fontsize.scriptsize))),
                                y=graph.linaxis(min=-10, max=30, title="Temperature [$^\circ$C]"),
                                x2=graph.linaxis(), y2=graph.linaxis()))
     df.addcolumn("av=(min+max)/2")
     g.plot(graph.data(df, x=0, y="av", dymin="min", dymax="max"))
-    g.plot(graph.paramfunction("k", 0, 2*math.pi, "x2, y2, dx, dy = 0.9*sin(k), 0.9*cos(3*k), 0.05, 0.05"), style = graph.mark(marker=graph.mark.triangle))
+    g.plot(graph.paramfunction("k", 0, 2*math.pi, "x2, y2, dx2, dy2 = 0.9*sin(k), 0.9*cos(3*k), 0.05, 0.05"), style = graph.mark(marker=graph.mark.triangle))
     g.drawall()
 
 def test_ownmark(c, t, x, y):

@@ -237,7 +237,7 @@ def _mergeticklists(list1, list2):
     """return a merged list of ticks out of list1 and list2
        lists have to be ordered (returned list is also ordered)
        caution: side effects (input lists might be altered)"""
-    # TODO: improve this by bisect
+    # TODO: improve this using bisect
     i = 0
     j = 0
     try:
@@ -333,13 +333,19 @@ class manualpart:
 
 class linpart:
 
-    def __init__(self, ticks=None, labels=None, texts=None, extendtoticklevel=0, extendtolabellevel=None, epsilon=1e-10):
+    def __init__(self, ticks=None, labels=None, texts=None, extendtick=0, extendlabel=None, epsilon=1e-10):
         self.multipart = 0
-        self.ticks = ticks
-        self.labels = labels
+        if ticks is None and labels is not None:
+            self.ticks = (_ensurefrac(_ensuresequence(labels)[0]),)
+        else:
+            self.ticks = map(_ensurefrac, _ensuresequence(ticks))
+        if labels is None and ticks is not None:
+            self.labels = (_ensurefrac(_ensuresequence(ticks)[0]),)
+        else:
+            self.labels = map(_ensurefrac, _ensuresequence(labels))
         self.texts = texts
-        self.extendtoticklevel = extendtoticklevel
-        self.extendtolabellevel = extendtolabellevel
+        self.extendtick = extendtick
+        self.extendlabel = extendlabel
         self.epsilon = epsilon
 
     def extendminmax(self, min, max, frac):
@@ -356,26 +362,16 @@ class linpart:
         return ticks
 
     def defaultpart(self, min, max):
-        if self.ticks is None and self.labels is not None:
-            useticks = (_ensurefrac(_ensuresequence(self.labels)[0]),)
-        else:
-            useticks = map(_ensurefrac, _ensuresequence(self.ticks))
-
-        if self.labels is None and self.ticks is not None:
-            uselabels = (_ensurefrac(_ensuresequence(self.ticks)[0]),)
-        else:
-            uselabels = map(_ensurefrac, _ensuresequence(self.labels))
-
-        if self.extendtoticklevel is not None and len(useticks) > self.extendtoticklevel:
-            min, max = self.extendminmax(min, max, useticks[self.extendtoticklevel])
-        if self.extendtolabellevel is not None and len(uselabels) > self.extendtolabellevel:
-            min, max = self.extendminmax(min, max, uselabels[self.extendtolabellevel])
+        if self.extendtick is not None and len(self.ticks) > self.extendtick:
+            min, max = self.extendminmax(min, max, self.ticks[self.extendtick])
+        if self.extendlabel is not None and len(self.labels) > self.extendlabel:
+            min, max = self.extendminmax(min, max, self.labels[self.extendlabel])
 
         ticks = []
-        for i in range(len(useticks)):
-            ticks = _mergeticklists(ticks, self.getticks(min, max, useticks[i], ticklevel = i))
-        for i in range(len(uselabels)):
-            ticks = _mergeticklists(ticks, self.getticks(min, max, uselabels[i], labellevel = i))
+        for i in range(len(self.ticks)):
+            ticks = _mergeticklists(ticks, self.getticks(min, max, self.ticks[i], ticklevel = i))
+        for i in range(len(self.labels)):
+            ticks = _mergeticklists(ticks, self.getticks(min, max, self.labels[i], labellevel = i))
 
         _mergetexts(ticks, self.texts)
 
@@ -383,79 +379,83 @@ class linpart:
 
 
 class autolinpart:
-    defaulttickslist = ((frac(1, 1), frac(1, 2)),
-                        (frac(2, 1), frac(1, 1)),
-                        (frac(5, 2), frac(5, 4)),
-                        (frac(5, 1), frac(5, 2)))
 
-    def __init__(self, tickslist=defaulttickslist, extendtoticklevel=0, epsilon=1e-10):
+    defaultlist = ((frac(1, 1), frac(1, 2)),
+                   (frac(2, 1), frac(1, 1)),
+                   (frac(5, 2), frac(5, 4)),
+                   (frac(5, 1), frac(5, 2)))
+
+    def __init__(self, list=defaultlist, extendtick=0, epsilon=1e-10):
         self.multipart = 1
-        self.tickslist = tickslist
-        self.extendtoticklevel = extendtoticklevel
+        self.list = list
+        self.extendtick = extendtick
         self.epsilon = epsilon
 
     def defaultpart(self, min, max):
         base = frac(10L, 1, int(math.log(max - min) / math.log(10)))
-        ticks = self.tickslist[0]
+        ticks = self.list[0]
         useticks = [tick * base for tick in ticks]
         self.lesstickindex = self.moretickindex = 0
         self.lessbase = self.morebase = base
         self.usemin, self.usemax = min, max
-        part = linpart(ticks=useticks, extendtoticklevel=self.extendtoticklevel, epsilon=self.epsilon)
+        part = linpart(ticks=useticks, extendtick=self.extendtick, epsilon=self.epsilon)
         return part.defaultpart(self.usemin, self.usemax)
 
     def lesspart(self):
-        if self.lesstickindex < len(self.tickslist) - 1:
+        if self.lesstickindex < len(self.list) - 1:
             self.lesstickindex += 1
         else:
             self.lesstickindex = 0
             self.lessbase.enum *= 10
-        ticks = self.tickslist[self.lesstickindex]
+        ticks = self.list[self.lesstickindex]
         useticks = [tick * self.lessbase for tick in ticks]
-        part = linpart(ticks=useticks, extendtoticklevel=self.extendtoticklevel, epsilon=self.epsilon)
+        part = linpart(ticks=useticks, extendtick=self.extendtick, epsilon=self.epsilon)
         return part.defaultpart(self.usemin, self.usemax)
 
     def morepart(self):
         if self.moretickindex:
             self.moretickindex -= 1
         else:
-            self.moretickindex = len(self.tickslist) - 1
+            self.moretickindex = len(self.list) - 1
             self.morebase.denom *= 10
-        ticks = self.tickslist[self.moretickindex]
+        ticks = self.list[self.moretickindex]
         useticks = [tick * self.morebase for tick in ticks]
-        part = linpart(ticks=useticks, extendtoticklevel=self.extendtoticklevel, epsilon=self.epsilon)
+        part = linpart(ticks=useticks, extendtick=self.extendtick, epsilon=self.epsilon)
         return part.defaultpart(self.usemin, self.usemax)
 
 
 class shiftfracs:
+
     def __init__(self, shift, *fracs):
          self.shift = shift
          self.fracs = fracs
 
 
-class logpart:
+class logpart(linpart):
 
-    """
-    This class looks like code duplication of linpart. However, it is not,
-    because logaxis use shiftfracs instead of fracs all the time.
-    """
-
-    shift5fracs1   = shiftfracs(100000, frac(1, 10))
-    shift4fracs1   = shiftfracs(10000, frac(1, 10))
-    shift3fracs1   = shiftfracs(1000, frac(1, 10))
-    shift2fracs1   = shiftfracs(100, frac(1, 10))
-    shiftfracs1    = shiftfracs(10, frac(1, 10))
-    shiftfracs125  = shiftfracs(10, frac(1, 10), frac(2, 10), frac(5, 10))
-    shiftfracs1to9 = shiftfracs(10, *list(map(lambda x: frac(x, 10), range(1, 10))))
+    shift5fracs1   = shiftfracs(100000, frac(1, 1))
+    shift4fracs1   = shiftfracs(10000, frac(1, 1))
+    shift3fracs1   = shiftfracs(1000, frac(1, 1))
+    shift2fracs1   = shiftfracs(100, frac(1, 1))
+    shiftfracs1    = shiftfracs(10, frac(1, 1))
+    shiftfracs125  = shiftfracs(10, frac(1, 1), frac(2, 1), frac(5, 1))
+    shiftfracs1to9 = shiftfracs(10, *list(map(lambda x: frac(x, 1), range(1, 10))))
     #         ^- we always include 1 in order to get extendto(tick|label)level to work as expected
 
-    def __init__(self, ticks=None, labels=None, texts=None, extendtoticklevel=0, extendtolabellevel=None, epsilon=1e-10):
+    def __init__(self, ticks=None, labels=None, texts=None, extendtick=0, extendlabel=None, epsilon=1e-10):
         self.multipart = 0
-        self.ticks = ticks
-        self.labels = labels
+        if ticks is None and labels is not None:
+            self.ticks = (_ensuresequence(labels)[0],)
+        else:
+            self.ticks = _ensuresequence(ticks)
+
+        if labels is None and ticks is not None:
+            self.labels = (_ensuresequence(ticks)[0],)
+        else:
+            self.labels = _ensuresequence(labels)
         self.texts = texts
-        self.extendtoticklevel = extendtoticklevel
-        self.extendtolabellevel = extendtolabellevel
+        self.extendtick = extendtick
+        self.extendlabel = extendlabel
         self.epsilon = epsilon
 
     def extendminmax(self, min, max, shiftfracs):
@@ -463,9 +463,9 @@ class logpart:
         maxpower = None
         for i in xrange(len(shiftfracs.fracs)):
             imin = int(math.floor(math.log(min / float(shiftfracs.fracs[i])) /
-                                  math.log(shiftfracs.shift) + 0.5 * self.epsilon)) + 1
+                                  math.log(shiftfracs.shift) + self.epsilon)) + 1
             imax = int(math.ceil(math.log(max / float(shiftfracs.fracs[i])) /
-                                 math.log(shiftfracs.shift) - 0.5 * self.epsilon)) - 1
+                                 math.log(shiftfracs.shift) - self.epsilon)) - 1
             if minpower is None or imin < minpower:
                 minpower, minindex = imin, i
             if maxpower is None or imax >= maxpower:
@@ -480,14 +480,8 @@ class logpart:
         else:
             maxfrac = shiftfracs.fracs[0]
             maxpower += 1
-        if minpower >= 0:
-            min = float(minfrac) * (10 ** minpower)
-        else:
-            min = float(minfrac) / (10 ** (-minpower))
-        if maxpower >= 0:
-            max = float(maxfrac) * (10 ** maxpower)
-        else:
-            max = float(maxfrac) / (10 ** (-maxpower))
+        min = float(minfrac) * float(shiftfracs.shift) ** minpower
+        max = float(maxfrac) * float(shiftfracs.shift) ** maxpower
         return min, max
 
     def getticks(self, min, max, shiftfracs, ticklevel=None, labellevel=None):
@@ -506,133 +500,67 @@ class logpart:
             ticks = _mergeticklists(ticks, fracticks)
         return ticks
 
-    def defaultpart(self, min, max):
-        if self.ticks is None and self.labels is not None:
-            useticks = (_ensuresequence(self.labels)[0],)
-        else:
-            useticks = _ensuresequence(self.ticks)
-
-        if self.labels is None and self.ticks is not None:
-            uselabels = (_ensuresequence(self.ticks)[0],)
-        else:
-            uselabels = _ensuresequence(self.labels)
-
-        if self.extendtoticklevel is not None and len(useticks) > self.extendtoticklevel:
-            min, max = self.extendminmax(min, max, useticks[self.extendtoticklevel])
-        if self.extendtolabellevel is not None and len(uselabels) > self.extendtolabellevel:
-            min, max = self.extendminmax(min, max, uselabels[self.extendtolabellevel])
-
-        ticks = []
-        for i in range(len(useticks)):
-            ticks = _mergeticklists(ticks, self.getticks(min, max, useticks[i], ticklevel = i))
-        for i in range(len(uselabels)):
-            ticks = _mergeticklists(ticks, self.getticks(min, max, uselabels[i], labellevel = i))
-
-        _mergetexts(ticks, self.texts)
-
-        return ticks
-
 
 class autologpart(logpart):
 
-    defaultshiftfracslists = (((logpart.shiftfracs1,      # ticks
-                                logpart.shiftfracs1to9),  # subticks
-                               (logpart.shiftfracs1,      # labels
-                                logpart.shiftfracs125)),  # sublevels
+    defaultlist = (((logpart.shiftfracs1,      # ticks
+                     logpart.shiftfracs1to9),  # subticks
+                    (logpart.shiftfracs1,      # labels
+                     logpart.shiftfracs125)),  # sublevels
 
-                              ((logpart.shiftfracs1,      # ticks
-                                logpart.shiftfracs1to9),  # subticks
-                               None),                     # labels like ticks
+                   ((logpart.shiftfracs1,      # ticks
+                     logpart.shiftfracs1to9),  # subticks
+                    None),                     # labels like ticks
 
-                              ((logpart.shift2fracs1,     # ticks
-                                logpart.shiftfracs1),     # subticks
-                               None),                     # labels like ticks
+                   ((logpart.shift2fracs1,     # ticks
+                     logpart.shiftfracs1),     # subticks
+                    None),                     # labels like ticks
 
-                              ((logpart.shift3fracs1,     # ticks
-                                logpart.shiftfracs1),     # subticks
-                               None),                     # labels like ticks
+                   ((logpart.shift3fracs1,     # ticks
+                     logpart.shiftfracs1),     # subticks
+                    None),                     # labels like ticks
 
-                              ((logpart.shift4fracs1,     # ticks
-                                logpart.shiftfracs1),     # subticks
-                               None),                     # labels like ticks
+                   ((logpart.shift4fracs1,     # ticks
+                     logpart.shiftfracs1),     # subticks
+                    None),                     # labels like ticks
 
-                              ((logpart.shift5fracs1,     # ticks
-                                logpart.shiftfracs1),     # subticks
-                               None))                     # labels like ticks
+                   ((logpart.shift5fracs1,     # ticks
+                     logpart.shiftfracs1),     # subticks
+                    None))                     # labels like ticks
 
-    def __init__(self, shiftfracslists=defaultshiftfracslists, shiftfracslistsindex=None,
-                 extendtoticklevel=0, extendtolabellevel=None, epsilon=1e-10):
+    def __init__(self, list=defaultlist, listindex=None, extendtick=0, extendlabel=None, epsilon=1e-10):
         self.multipart = 1
-        self.shiftfracslists = shiftfracslists
-        if shiftfracslistsindex is None:
-            shiftfracslistsindex, dummy = divmod(len(shiftfracslists), 2)
-        self.shiftfracslistsindex = shiftfracslistsindex
-        self.extendtoticklevel = extendtoticklevel
-        self.extendtolabellevel = extendtolabellevel
+        self.list = list
+        if listindex is None:
+            listindex = divmod(len(list), 2)[0]
+        self.listindex = listindex
+        self.extendtick = extendtick
+        self.extendlabel = extendlabel
         self.epsilon = epsilon
 
     def defaultpart(self, min, max):
         self.usemin, self.usemax = min, max
-        self.moreshiftfracslistsindex = self.shiftfracslistsindex
-        self.lessshiftfracslistsindex = self.shiftfracslistsindex
-        part = logpart(ticks=self.shiftfracslists[self.shiftfracslistsindex][0],
-                       labels=self.shiftfracslists[self.shiftfracslistsindex][1],
-                       extendtoticklevel=self.extendtoticklevel,
-                       extendtolabellevel=self.extendtolabellevel,
-                       epsilon=self.epsilon)
+        self.morelistindex = self.listindex
+        self.lesslistindex = self.listindex
+        part = logpart(ticks=self.list[self.listindex][0], labels=self.list[self.listindex][1],
+                       extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon)
         return part.defaultpart(self.usemin, self.usemax)
 
     def lesspart(self):
-        self.moreshiftfracslistsindex += 1
-        if self.moreshiftfracslistsindex < len(self.shiftfracslists):
-            part = logpart(ticks=self.shiftfracslists[self.moreshiftfracslistsindex][0],
-                           labels=self.shiftfracslists[self.moreshiftfracslistsindex][1],
-                           extendtoticklevel=self.extendtoticklevel,
-                           extendtolabellevel=self.extendtolabellevel,
-                           epsilon=self.epsilon)
+        self.lesslistindex += 1
+        if self.lesslistindex < len(self.list):
+            part = logpart(ticks=self.list[self.lesslistindex][0], labels=self.list[self.lesslistindex][1],
+                           extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon)
             return part.defaultpart(self.usemin, self.usemax)
         return None
 
     def morepart(self):
-        self.lessshiftfracslistsindex -= 1
-        if self.lessshiftfracslistsindex >= 0:
-            part = logpart(ticks=self.shiftfracslists[self.lessshiftfracslistsindex][0],
-                           labels=self.shiftfracslists[self.lessshiftfracslistsindex][1],
-                           extendtoticklevel=self.extendtoticklevel,
-                           extendtolabellevel=self.extendtolabellevel,
-                           epsilon=self.epsilon)
+        self.morelistindex -= 1
+        if self.morelistindex >= 0:
+            part = logpart(ticks=self.list[self.morelistindex][0], labels=self.list[self.morelistindex][1],
+                           extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon)
             return part.defaultpart(self.usemin, self.usemax)
         return None
-
-#print linpart("1/2").getpart(0, 1.9)
-#print linpart(("1/2", "0.25")).getpart(0, 1.9)
-#print logpart((autologpart.shiftfracs1, autologpart.shiftfracs1to9)).getpart(0.673, 2.4623)
-#print autologpart().getparts(0.0432, 24.623)
-
-
-#class favorautolinpart(autolinpart):
-#    """favorfixfrac - shift - frac - partitioning"""
-#    # TODO: just to be done ... throw out parts within the favor region -- or what else to do?
-#    degreefracs = ((frac( 15, 1), frac(  5, 1)),
-#                   (frac( 30, 1), frac( 15, 1)),
-#                   (frac( 45, 1), frac( 15, 1)),
-#                   (frac( 60, 1), frac( 30, 1)),
-#                   (frac( 90, 1), frac( 30, 1)),
-#                   (frac( 90, 1), frac( 45, 1)),
-#                   (frac(180, 1), frac( 45, 1)),
-#                   (frac(180, 1), frac( 90, 1)),
-#                   (frac(360, 1), frac( 90, 1)),
-#                   (frac(360, 1), frac(180, 1)))
-#    # favouring some fixed fracs, e.g. partitioning of an axis in degree
-#    def __init__(self, fixfracs, **args):
-#        sfpart.__init__(self, **args)
-#        self.fixfracs = fixfracs
-#
-#
-#class timepart:
-#    """partitioning of times and dates"""
-#    # TODO: this will be a difficult subject ...
-#    pass
 
 
 
@@ -640,104 +568,71 @@ class autologpart(logpart):
 # rate partitions
 ################################################################################
 
-class ratepart:
 
-    def __init__(self, part, rate):
-        self.part = part
-        self.rate = rate
+class _cuberate:
 
-    def __repr__(self):
-        return "%f, %s" % (self.rate, repr(self.part), )
-
-
-class momrate:
-    """min - opt - max - rating of axes partitioning"""
-
-    class momrateparam:
-        """mom rate parameter set"""
-
-        def __init__(self, optfactor, minoffset, minfactor, maxoffset, maxfactor, weight=1):
-            self.optfactor = optfactor
-            self.minoffset = minoffset
-            self.minfactor = minfactor
-            self.maxoffset = maxoffset
-            self.maxfactor = maxfactor
+        def __init__(self, opt, left=None, right=None, weight=1):
+            if left is None:
+                left = 0
+            if right is None:
+                right = 3*opt
+            self.opt = opt
+            self.left = left
+            self.right = right
             self.weight = weight
 
-        def min(self, stretch):
-            return self.minoffset + self.minfactor * (stretch - 1.0) * self.optfactor
+        def rate(self, value, stretch = 1):
+            opt = stretch * self.opt
+            if value < opt:
+                other = stretch * self.left
+            elif value > opt:
+                other = stretch * self.right
+            else:
+                return 0
+            factor = (value - opt) / float(other - opt)
+            return self.weight * (factor ** 3)
 
-        def opt(self, stretch):
-            return float(self.optfactor * stretch)
 
-        def max(self, stretch):
-            return self.maxoffset + self.maxfactor * (stretch - 1.0) * self.optfactor
+class cuberate:
 
-    lindefaulttickrateparams = (momrateparam(4, 1, 1, 20, 5), momrateparam(10, 2, 1, 100, 10, 0.5), )
-    lindefaultlabelrateparams = (momrateparam(4, 1, 1, 16, 4), )
-    logdefaulttickrateparams = (momrateparam(5, 1, 1, 30, 6), momrateparam(25, 5, 1, 100, 4, 0.5), )
-    logdefaultlabelrateparams = (momrateparam(5, 1, 1, 20, 4), momrateparam(3, -3, -1, 9, 3, 0.5), )
+    linticks = (_cuberate(4), _cuberate(10, weight=0.5), )
+    linlabels = (_cuberate(4), )
+    logticks = (_cuberate(5, right=20), _cuberate(20, right=100, weight=0.5), )
+    loglabels = (_cuberate(5, right=20), _cuberate(5, left=-20, right=20, weight=0.5), )
 
-    def __init__(self, tickrateparams = lindefaulttickrateparams, labelrateparams = lindefaultlabelrateparams):
-        self.tickrateparams = tickrateparams
-        self.labelrateparams = labelrateparams
+    def __init__(self, ticks=linticks, labels=linlabels):
+        self.ticks = ticks
+        self.labels = labels
 
-    def getcounts(self, ticks):
-        tickcounts = map(lambda x: 0, self.tickrateparams)
-        labelcounts = map(lambda x: 0, self.labelrateparams)
-        for tick in ticks:
-            if (tick.ticklevel != None) and (tick.ticklevel < len(self.tickrateparams)):
-                tickcounts[tick.ticklevel] += 1
-            if (tick.labellevel != None) and (tick.labellevel < len(self.labelrateparams)):
-                labelcounts[tick.labellevel] += 1
-        # sum up tick/label-counts of lower levels
-        tickcounts = reduce(lambda x, y: x and (x + [ x[-1] + y, ]) or [y, ] , tickcounts, [])
-        labelcounts = reduce(lambda x, y: x and (x + [ x[-1] + y, ]) or [y, ] , labelcounts, [])
-        return (tickcounts, labelcounts, )
-
-    def evalrate(self, val, stretch, rateparam):
-        opt = rateparam.opt(stretch)
-        min = rateparam.min(stretch)
-        max = rateparam.max(stretch)
-        rate = ((opt - min) * math.log((opt - min) / (val - min)) +
-                (max - opt) * math.log((max - opt) / (max - val))) / (max - min)
-        return rate
-
-    def getrate(self, ticks, stretch):
-        if ticks is None:
-            return None
+    def rate(self, part, stretch):
+        tickslen = len(self.ticks)
+        labelslen = len(self.labels)
+        ticks = [0]*tickslen
+        labels = [0]*labelslen
+        for tick in _ensuresequence(part):
+            if tick.ticklevel is not None:
+                for level in xrange(tick.ticklevel, tickslen):
+                    ticks[level] += 1
+            if tick.labellevel is not None:
+                for level in xrange(tick.labellevel, labelslen):
+                    labels[level] += 1
         rate = 0
         weight = 0
-        tickcounts, labelcounts = self.getcounts(ticks)
-        try:
-            for (tickcount, rateparam, ) in zip(tickcounts, self.tickrateparams, ):
-                rate += self.evalrate(tickcount, stretch, rateparam) * rateparam.weight
-                weight += rateparam.weight
-            for (labelcount, rateparam, ) in zip(labelcounts, self.labelrateparams, ):
-                rate += self.evalrate(labelcount, stretch, rateparam) * rateparam.weight
-                weight += rateparam.weight
-            rate /= weight
-        except (ZeroDivisionError, ValueError):
-            rate = None
-        return rate
+        for tick, rater in zip(ticks, self.ticks):
+            rate += rater.rate(tick, stretch=stretch)
+            weight += rater.weight
+        for label, rater in zip(labels, self.labels):
+            rate += rater.rate(label, stretch=stretch)
+            weight += rater.weight
+        return rate/weight
 
-#min = 1
-#for i in range(1, 10000):
-#    max = min * math.pow(1.5, i)
-#    if max > 1e10:
-#        break
-#    print max/min,
-#    for ticks in autologpart(extendtoticklevel = None).getparts(min, max):
-#        rate = momrate(momrate.logdefaulttickrateparams,
-#                       momrate.logdefaultlabelrateparams).getrate(ticks, 1)
-#        print rate,
-#    print
 
 
 ################################################################################
 # box alignment, connections, distances ...
 # (we may create a box drawing module and move all this stuff there)
 ################################################################################
+
 
 class _alignbox:
 
@@ -939,9 +834,11 @@ class textbox(_rectbox, attrlist.attrlist):
         self._printtext(*map(unit.topt, args))
 
 
+
 ################################################################################
 # axis painter
 ################################################################################
+
 
 class axispainter(attrlist.attrlist):
 
@@ -1128,19 +1025,6 @@ class axispainter(attrlist.attrlist):
         if not self.attrcount(tick.labelstyles, tex.style):
             tick.labelstyles += [tex.style.math]
 
-    def selectstyle(self, number, styles):
-        if styles is None:
-            return ()
-        sequence = _ensuresequence(styles)
-        if sequence != styles:
-            return sequence
-        else:
-            sequence = _ensuresequence(styles[number])
-            if sequence != styles[number]:
-                return styles
-            else:
-                return _ensuresequence(styles[number])
-
     def paint(self, graph, axis):
         innerticklength = unit.topt(unit.length(self.innerticklength_str, default_type="v"))
         outerticklength = unit.topt(unit.length(self.outerticklength_str, default_type="v"))
@@ -1159,7 +1043,7 @@ class axispainter(attrlist.attrlist):
         if haslabel:
             for tick in axis.ticks:
                 if tick.labellevel is not None:
-                    tick.labelstyles = list(self.selectstyle(tick.labellevel, self.labelstyles))
+                    tick.labelstyles = list(_getsequenceno(self.labelstyles, tick.labellevel))
                     if tick.text is None:
                         tick.suffix = axis.suffix
                         self.createtext(tick)
@@ -1206,13 +1090,13 @@ class axispainter(attrlist.attrlist):
             if tick.ticklevel is not None:
                 if self.drawgrid > tick.ticklevel and (tick != frac(0, 1) or self.zerolinestyles is None):
                     gridpath = axis.gridpath(tick.virtual)
-                    graph.stroke(gridpath, *self.selectstyle(tick.ticklevel, self.gridstyles))
+                    graph.stroke(gridpath, *_getsequenceno(self.gridstyles, tick.ticklevel))
                 factor = math.pow(self.subticklengthfactor, tick.ticklevel)
                 x1 = tick.x - tick.dx * innerticklength * factor
                 y1 = tick.y - tick.dy * innerticklength * factor
                 x2 = tick.x + tick.dx * outerticklength * factor
                 y2 = tick.y + tick.dy * outerticklength * factor
-                graph.stroke(path._line(x1, y1, x2, y2), *self.selectstyle(tick.ticklevel, self.tickstyles))
+                graph.stroke(path._line(x1, y1, x2, y2), *_getsequenceno(self.tickstyles, tick.ticklevel))
             if tick.labellevel is not None:
                 tick.textbox._printtext(tick.x, tick.y)
         if self.zerolinestyles is not None:
@@ -1264,9 +1148,11 @@ class linkaxispainter(axispainter):
         axispainter.paint(self, graph, axis)
 
 
+
 ################################################################################
 # axes
 ################################################################################
+
 
 class _axis:
 
@@ -1304,7 +1190,7 @@ class _axis:
 
 class linaxis(_axis, _linmap):
 
-    def __init__(self, part=autolinpart(), rate=momrate(), **args):
+    def __init__(self, part=autolinpart(), rate=cuberate(), **args):
         _axis.__init__(self, **args)
         self.part = part
         self.rate = rate
@@ -1312,10 +1198,11 @@ class linaxis(_axis, _linmap):
 
 class logaxis(_axis, _logmap):
 
-    def __init__(self, part=autologpart(), rate=momrate(momrate.logdefaulttickrateparams, momrate.logdefaultlabelrateparams), **args):
+    def __init__(self, part=autologpart(), rate=cuberate(ticks=cuberate.logticks, labels=cuberate.loglabels), **args):
         _axis.__init__(self, **args)
         self.part = part
         self.rate = rate
+
 
 class linkaxis(_axis):
 
@@ -1325,6 +1212,7 @@ class linkaxis(_axis):
         self.factor = linkedaxis.factor # XXX: not nice ...
 
 
+
 ################################################################################
 # graph
 ################################################################################
@@ -1332,14 +1220,11 @@ class linkaxis(_axis):
 
 class graphxy(canvas.canvas):
 
-    XPattern = re.compile(r"x([2-9]|[1-9][0-9]+)?$")
-    YPattern = re.compile(r"y([2-9]|[1-9][0-9]+)?$")
-    DXPattern = re.compile(r"dx$")
-    DYPattern = re.compile(r"dy$")
-    DXMinPattern = re.compile(r"dxmin$")
-    DYMinPattern = re.compile(r"dymin$")
-    DXMaxPattern = re.compile(r"dxmax$")
-    DYMaxPattern = re.compile(r"dymax$")
+    Dimension = 2
+    XName = "x"
+    YName = "y"
+    XPattern = re.compile(r"%s([2-9]|[1-9][0-9]+)?$" % XName)
+    YPattern = re.compile(r"%s([2-9]|[1-9][0-9]+)?$" % YName)
 
     def __init__(self, tex, xpos=0, ypos=0, width=None, height=None, ratio=goldenrule,
                  backgroundstyles=None, axesdist="0.8 cm", **axes):
@@ -1479,13 +1364,13 @@ class graphxy(canvas.canvas):
                 # TODO: Additional ratings (spacing of text etc.) -> move rating into painter
                 # XXX: lesspart and morepart can be called after defaultpart, although some
                 #      axes may share their autoparting, because the axes are processed sequentially
-                rate = axis.rate.getrate(axis.ticks, 1)
+                rate = axis.rate.rate(axis.ticks, 1)
                 #print rate, axis.ticks
-                maxworse = 6 #TODO !!! (THIS JUST DOESN'T WORK WELL!!!)
+                maxworse = 2
                 worse = 0
                 while worse < maxworse:
                     newticks = axis.part.lesspart()
-                    newrate = axis.rate.getrate(newticks, 1)
+                    newrate = axis.rate.rate(newticks, 1)
                     #print newrate, newticks
                     if newrate is not None and (rate is None or newrate < rate):
                         axis.ticks = newticks
@@ -1496,7 +1381,7 @@ class graphxy(canvas.canvas):
                 worse = 0
                 while worse < maxworse:
                     newticks = axis.part.morepart()
-                    newrate = axis.rate.getrate(newticks, 1)
+                    newrate = axis.rate.rate(newticks, 1)
                     #print newrate, newticks
                     if newrate is not None and (rate is None or newrate < rate):
                         axis.ticks = newticks
@@ -1504,6 +1389,7 @@ class graphxy(canvas.canvas):
                         worse = 0
                     else:
                         worse += 1
+                #print rate, axis.ticks
 
             axis.setrange(min=float(axis.ticks[0])*axis.factor,
                           max=float(axis.ticks[-1])*axis.factor)
@@ -1590,6 +1476,7 @@ class graphxy(canvas.canvas):
     def write(self, file):
         self.drawall()
         canvas.canvas.write(self, file)
+
 
 
 ################################################################################
@@ -1723,6 +1610,7 @@ changestrokedfilled = changesequence(canvas.stroked(), canvas.filled())
 changefilledstroked = changesequence(canvas.filled(), canvas.stroked())
 
 
+
 ################################################################################
 # styles
 ################################################################################
@@ -1790,30 +1678,44 @@ class mark:
                     symbolstyles=_nextattrs(self.symbolstyles))
 
     def setcolumns(self, graph, columns):
+        def checkpattern(key, index, pattern, iskey, isindex):
+             if key is not None:
+                 match = pattern.match(key)
+                 if match:
+                     if isindex is not None: raise ValueError("multiple key specification")
+                     if iskey is not None and iskey != match.groups()[0]: raise ValueError("inconsistent key names")
+                     key = None
+                     iskey = match.groups()[0]
+                     isindex = index
+             return key, iskey, isindex
+
         self.xindex = self.dxindex = self.dxminindex = self.dxmaxindex = None
         self.yindex = self.dyindex = self.dyminindex = self.dymaxindex = None
+        self.xkey = self.ykey = None
+        if graph.Dimension != 2: raise TypeError("style not applicable in graph")
+        XPattern = re.compile(r"(%s([2-9]|[1-9][0-9]+)?)$" % graph.XName)
+        YPattern = re.compile(r"(%s([2-9]|[1-9][0-9]+)?)$" % graph.YName)
+        DXPattern = re.compile(r"d(%s([2-9]|[1-9][0-9]+)?)$" % graph.XName)
+        DYPattern = re.compile(r"d(%s([2-9]|[1-9][0-9]+)?)$" % graph.YName)
+        DXMinPattern = re.compile(r"d(%s([2-9]|[1-9][0-9]+)?)min$" % graph.XName)
+        DYMinPattern = re.compile(r"d(%s([2-9]|[1-9][0-9]+)?)min$" % graph.YName)
+        DXMaxPattern = re.compile(r"d(%s([2-9]|[1-9][0-9]+)?)max$" % graph.XName)
+        DYMaxPattern = re.compile(r"d(%s([2-9]|[1-9][0-9]+)?)max$" % graph.YName)
+        #XMinPattern = re.compile(r"(%s([2-9]|[1-9][0-9]+)?)min$" % XName)
+        #YMinPattern = re.compile(r"(%s([2-9]|[1-9][0-9]+)?)min$" % YName)
+        #XMaxPattern = re.compile(r"(%s([2-9]|[1-9][0-9]+)?)max$" % XName)
+        #YMaxPattern = re.compile(r"(%s([2-9]|[1-9][0-9]+)?)max$" % YName)
         for key, index in columns.items():
-            if graph.XPattern.match(key) and self.xindex is None:
-                self.xkey = key
-                self.xindex = index
-            elif graph.YPattern.match(key) and self.yindex is None:
-                self.ykey = key
-                self.yindex = index
-            elif graph.DXPattern.match(key) and self.dxindex is None:
-                self.dxindex = index
-            elif graph.DXMinPattern.match(key) and self.dxminindex is None:
-                self.dxminindex = index
-            elif graph.DXMaxPattern.match(key) and self.dxmaxindex is None:
-                self.dxmaxindex = index
-            elif graph.DYPattern.match(key) and self.dyindex is None:
-                self.dyindex = index
-            elif graph.DYMinPattern.match(key) and self.dyminindex is None:
-                self.dyminindex = index
-            elif graph.DYMaxPattern.match(key) and self.dymaxindex is None:
-                self.dymaxindex = index
-            else:
-                raise ValueError
-
+            key, self.xkey, self.xindex = checkpattern(key, index, XPattern, self.xkey, self.xindex)
+            key, self.ykey, self.yindex = checkpattern(key, index, YPattern, self.ykey, self.yindex)
+            key, self.xkey, self.dxindex = checkpattern(key, index, DXPattern, self.xkey, self.dxindex)
+            key, self.ykey, self.dyindex = checkpattern(key, index, DYPattern, self.ykey, self.dyindex)
+            key, self.xkey, self.dxminindex = checkpattern(key, index, DXMinPattern, self.xkey, self.dxminindex)
+            key, self.ykey, self.dyminindex = checkpattern(key, index, DYMinPattern, self.ykey, self.dyminindex)
+            key, self.xkey, self.dxmaxindex = checkpattern(key, index, DXMaxPattern, self.xkey, self.dxmaxindex)
+            key, self.ykey, self.dymaxindex = checkpattern(key, index, DYMaxPattern, self.ykey, self.dymaxindex)
+            if key is not None:
+                raise ValueError("unsuitable key")
         if None in (self.xindex, self.yindex): raise ValueError
         if self.dxindex is not None and (self.dxminindex is not None or
                                          self.dxmaxindex is not None): raise ValueError
@@ -1952,6 +1854,7 @@ class line:
             graph.stroke(self.path, *_getattrs(self.linestyles))
 
 
+
 ################################################################################
 # data
 ################################################################################
@@ -2072,9 +1975,3 @@ class paramfunction:
     def draw(self, graph):
         self.style.drawpointlist(graph, self.data)
 
-
-################################################################################
-# key
-################################################################################
-
-# to be written
