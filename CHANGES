@@ -35,6 +35,7 @@ PyX
     - added a latex example (requested by users)
     - added back the integral example (prior part of the user manual)
     - small change in vector example (allow for the access to the texrunner)
+    - TODO: include examples in source distribution
 
 0.3 (2003/03/31)
   - examples
