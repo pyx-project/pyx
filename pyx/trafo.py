@@ -109,6 +109,12 @@ class trafo_pt(base.PSOp, attr.attr):
                       self.matrix[0][1], self.matrix[1][1],
                       self.vector[0], self.vector[1] ) )
 
+    def outputPDF(self, file):
+        file.write("%f %f %f %f %f %f cm\n" % \
+                    ( self.matrix[0][0], self.matrix[1][0],
+                      self.matrix[0][1], self.matrix[1][1],
+                      self.vector[0], self.vector[1] ) )
+
     def bbox(self):
         return None
 
