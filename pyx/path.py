@@ -28,7 +28,6 @@
 #         (maybe we still need the current bbox implementation (then maybe called
 #          cbox = control box) for bpathel for the use during the
 #          intersection of bpaths)
-#       - correct behaviour of closepath() in reversed()
 
 import copy, math, bisect
 from math import cos, sin, pi
@@ -105,78 +104,9 @@ def _arctobezierpath(x, y, r, phi1, phi2, dphimax=45):
     return apath
 
 
-def _bcurveIntersect(a, a_t0, a_t1, b, b_t0, b_t1, epsilon=1e-5):
-    """intersect two bpathels
-
-    a and b are bpathels with parameter ranges [a_t0, a_t1],
-    respectively [b_t0, b_t1].
-    epsilon determines when the bpathels are assumed to be straight
-
-    """
-
-    # intersection of bboxes is a necessary criterium for intersection
-    if not a.bbox().intersects(b.bbox()): return ()
-
-    if not a.isstraight(epsilon):
-        (aa, ab) = a.midpointsplit()
-        a_tm = 0.5*(a_t0+a_t1)
-
-        if not b.isstraight(epsilon):
-            (ba, bb) = b.midpointsplit()
-            b_tm = 0.5*(b_t0+b_t1)
-
-            return ( _bcurveIntersect(aa, a_t0, a_tm,
-                                       ba, b_t0, b_tm, epsilon) + 
-                     _bcurveIntersect(ab, a_tm, a_t1,
-                                       ba, b_t0, b_tm, epsilon) + 
-                     _bcurveIntersect(aa, a_t0, a_tm,
-                                       bb, b_tm, b_t1, epsilon) +
-                     _bcurveIntersect(ab, a_tm, a_t1,
-                                       bb, b_tm, b_t1, epsilon) )
-        else:
-            return ( _bcurveIntersect(aa, a_t0, a_tm,
-                                       b, b_t0, b_t1, epsilon) +
-                     _bcurveIntersect(ab, a_tm, a_t1,
-                                       b, b_t0, b_t1, epsilon) )
-    else:
-        if not b.isstraight(epsilon):
-            (ba, bb) = b.midpointsplit()
-            b_tm = 0.5*(b_t0+b_t1)
-
-            return  ( _bcurveIntersect(a, a_t0, a_t1,
-                                       ba, b_t0, b_tm, epsilon) +
-                      _bcurveIntersect(a, a_t0, a_t1,
-                                       bb, b_tm, b_t1, epsilon) )
-        else:
-            # no more subdivisions of either a or b
-            # => try to intersect a and b as straight line segments
-
-            a_deltax = a.x3 - a.x0
-            a_deltay = a.y3 - a.y0
-            b_deltax = b.x3 - b.x0
-            b_deltay = b.y3 - b.y0
-
-            det = b_deltax*a_deltay - b_deltay*a_deltax
-
-            ba_deltax0 = b.x0 - a.x0
-            ba_deltay0 = b.y0 - a.y0
-
-            try:
-                a_t = ( b_deltax*ba_deltay0 - b_deltay*ba_deltax0)/det
-                b_t = ( a_deltax*ba_deltay0 - a_deltay*ba_deltax0)/det
-            except ArithmeticError:
-                return ()
-
-            # check for intersections out of bound
-            if not (0<=a_t<=1 and 0<=b_t<=1): return ()
-
-            # return rescaled parameters of the intersection
-            return ( ( a_t0 + a_t * (a_t1 - a_t0),
-                       b_t0 + b_t * (b_t1 - b_t0) ),
-                   )
-
 def _bcurvesIntersect(a, a_t0, a_t1, b, b_t0, b_t1, epsilon=1e-5):
     """ returns list of intersection points for list of bpathels """
+    # XXX: unused, remove?
 
     bbox_a = a[0].bbox()
     for aa in a[1:]:
@@ -185,7 +115,7 @@ def _bcurvesIntersect(a, a_t0, a_t1, b, b_t0, b_t1, epsilon=1e-5):
     for bb in b[1:]:
         bbox_b += bb.bbox()
 
-    if not bbox_a.intersects(bbox_b): return ()
+    if not bbox_a.intersects(bbox_b): return []
 
     if a_t0+1!=a_t1:
         a_tm = (a_t0+a_t1)/2
@@ -224,12 +154,12 @@ def _bcurvesIntersect(a, a_t0, a_t1, b, b_t0, b_t1, epsilon=1e-5):
             # no more subdivisions of either a or b
             # => intersect bpathel a with bpathel b
             assert len(a)==len(b)==1, "internal error"
-            return _bcurveIntersect(a[0], a_t0, a_t1,
+            return _intersectnormcurves(a[0], a_t0, a_t1,
                                     b[0], b_t0, b_t1, epsilon)
 
 
 #
-# now comes the real stuff...
+# we define one exception
 #
 
 class PathException(Exception): pass
@@ -1159,6 +1089,108 @@ class path(base.PSCmd):
 # normpath and corresponding classes
 ################################################################################
 
+# two helper functions for the intersection of normpathels
+
+def _intersectnormcurves(a, a_t0, a_t1, b, b_t0, b_t1, epsilon=1e-5):
+    """intersect two bpathels
+
+    a and b are bpathels with parameter ranges [a_t0, a_t1],
+    respectively [b_t0, b_t1].
+    epsilon determines when the bpathels are assumed to be straight
+
+    """
+
+    # intersection of bboxes is a necessary criterium for intersection
+    if not a.bbox().intersects(b.bbox()): return []
+
+    if not a.isstraight(epsilon):
+        (aa, ab) = a.midpointsplit()
+        a_tm = 0.5*(a_t0+a_t1)
+
+        if not b.isstraight(epsilon):
+            (ba, bb) = b.midpointsplit()
+            b_tm = 0.5*(b_t0+b_t1)
+
+            return ( _intersectnormcurves(aa, a_t0, a_tm,
+                                       ba, b_t0, b_tm, epsilon) + 
+                     _intersectnormcurves(ab, a_tm, a_t1,
+                                       ba, b_t0, b_tm, epsilon) + 
+                     _intersectnormcurves(aa, a_t0, a_tm,
+                                       bb, b_tm, b_t1, epsilon) +
+                     _intersectnormcurves(ab, a_tm, a_t1,
+                                       bb, b_tm, b_t1, epsilon) )
+        else:
+            return ( _intersectnormcurves(aa, a_t0, a_tm,
+                                       b, b_t0, b_t1, epsilon) +
+                     _intersectnormcurves(ab, a_tm, a_t1,
+                                       b, b_t0, b_t1, epsilon) )
+    else:
+        if not b.isstraight(epsilon):
+            (ba, bb) = b.midpointsplit()
+            b_tm = 0.5*(b_t0+b_t1)
+
+            return  ( _intersectnormcurves(a, a_t0, a_t1,
+                                       ba, b_t0, b_tm, epsilon) +
+                      _intersectnormcurves(a, a_t0, a_t1,
+                                       bb, b_tm, b_t1, epsilon) )
+        else:
+            # no more subdivisions of either a or b
+            # => try to intersect a and b as straight line segments
+
+            a_deltax = a.x3 - a.x0
+            a_deltay = a.y3 - a.y0
+            b_deltax = b.x3 - b.x0
+            b_deltay = b.y3 - b.y0
+
+            det = b_deltax*a_deltay - b_deltay*a_deltax
+
+            ba_deltax0 = b.x0 - a.x0
+            ba_deltay0 = b.y0 - a.y0
+
+            try:
+                a_t = ( b_deltax*ba_deltay0 - b_deltay*ba_deltax0)/det
+                b_t = ( a_deltax*ba_deltay0 - a_deltay*ba_deltax0)/det
+            except ArithmeticError:
+                return []
+
+            # check for intersections out of bound
+            if not (0<=a_t<=1 and 0<=b_t<=1): return []
+
+            # return rescaled parameters of the intersection
+            return [ ( a_t0 + a_t * (a_t1 - a_t0),
+                       b_t0 + b_t * (b_t1 - b_t0) ) ]
+
+
+def _intersectnormlines(a, b):
+    """return one-element list constisting either of tuple of
+    parameters of the intersection point of the two normlines a and b
+    or empty list if both normlines do not intersect each other"""
+
+    a_deltax = a.x1 - a.x0
+    a_deltay = a.y1 - a.y0
+    b_deltax = b.x1 - b.x0
+    b_deltay = b.y1 - b.y0
+
+    det = b_deltax*a_deltay - b_deltay*a_deltax
+
+    ba_deltax0 = b.x0 - a.x0
+    ba_deltay0 = b.y0 - a.y0
+
+    try:
+        a_t = ( b_deltax*ba_deltay0 - b_deltay*ba_deltax0)/det
+        b_t = ( a_deltax*ba_deltay0 - a_deltay*ba_deltax0)/det
+    except ArithmeticError:
+        return []
+
+    # check for intersections out of bound
+    if not (0<=a_t<=1 and 0<=b_t<=1): return []
+
+    # return parameters of the intersection
+    return [( a_t, b_t)]
+
+
+
+
 #
 # normpathel: normalized element
 #
@@ -1180,12 +1212,8 @@ class normpathel:
         pass
 
     def intersect(self, other, epsilon=1e-5):
-        # XXX make this more efficient and _clean_ by treating special cases separately
-	if isinstance(self, normline):
-	    self = self._bcurve()
-	if isinstance(other, normline):
-	    other = other._bcurve()
-        return  _bcurvesIntersect([self], 0, 1, [other], 0, 1, epsilon)
+        """intersect self with other normpathel"""
+        pass
 
     def _lentopar_pt(self, lengths, epsilon=1e-5):
         """returns tuple (t,l) with
@@ -1247,7 +1275,8 @@ class normline(normpathel):
     def __str__(self):
         return "normline(%g, %g, %g, %g)" % (self.x0, self.y0, self.x1, self.y1)
 
-    def _bcurve(self):
+    def _normcurve(self):
+        """ return self as equivalent normcurve """
         xa = self.x0+(self.x1-self.x0)/3.0
         ya = self.y0+(self.y1-self.y0)/3.0
         xb = self.x0+2.0*(self.x1-self.x0)/3.0
@@ -1269,6 +1298,12 @@ class normline(normpathel):
 
     def end_pt(self):
         return self.x1, self.y1
+
+    def intersect(self, other, epsilon=1e-5):
+	if isinstance(other, normline):
+            return _intersectnormlines(self, other)
+        else:
+            return  _intersectnormcurves(self._normcurve(), 0, 1, other, 0, 1, epsilon)
 
     def _lentopar_pt(self, lengths, epsilon=1e-5):
         l = self.arclength_pt(epsilon)
@@ -1373,6 +1408,13 @@ class normcurve(normpathel):
     def end_pt(self):
         return self.x3, self.y3
 
+    def intersect(self, other, epsilon=1e-5):
+	if isinstance(other, normline):
+            return  _intersectnormcurves(self, 0, 1, other._normcurve(), 0, 1, epsilon)
+        else:
+            return  _intersectnormcurves(self, 0, 1, other, 0, 1, epsilon)
+
+
     def isstraight(self, epsilon=1e-5):
         """check wheter the normcurve is approximately straight"""
 
@@ -1391,7 +1433,7 @@ class normcurve(normpathel):
                              (self.y3-self.y0)*(self.y3-self.y0)))<epsilon
 
     def _lentopar_pt(self, lengths, epsilon=1e-5):
-        return self._bcurve()._lentopar_pt(lengths, epsilon)
+        return self._normcurve()._lentopar_pt(lengths, epsilon)
 
     def midpointsplit(self):
         """splits bpathel at midpoint returning bpath with two bpathels"""
