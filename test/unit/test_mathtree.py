@@ -208,7 +208,7 @@ class MathTreeTestCase(unittest.TestCase):
         myparser = mathtree.parser()
         self.failUnlessRaises((parser.ParserError, SyntaxError), myparser.parse, "")
         self.failUnlessRaises((parser.ParserError, SyntaxError), myparser.parse, "???")
-        self.failUnlessRaises(Exception, myparser.parse, "sin()")
+        self.failUnlessRaises(IndexError, myparser.parse("sin()").Calc)
         self.failUnlessRaises(mathtree.ArgCountError, myparser.parse, "sin(x,y)")
         self.failUnlessRaises(KeyError, myparser.parse("sin(x)").Calc)
         self.failUnlessRaises(IndexError, myparser.parse("norm(x)").Calc, x=1)
