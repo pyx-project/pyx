@@ -26,42 +26,16 @@ class DataTestCase(unittest.TestCase):
     def testAdd(self):
         mydata = data.data(["a"], [[1], [2]])
         mydata.addcolumn("b=2*a")
-        mydata.addcolumn("2*x*a", x="b")
-        mydata.addcolumn("2*x", x=-1)
-        assert mydata.titles == ["a", "b", None, None]
-        assert mydata.data == [[1, 2.0, 4.0, 8.0], [2, 4.0, 16.0, 32.0]]
-        try:
-            mydata.addcolumn("2*x", x=-1, y=-2)
-            assert 0, "KeyError expected"
-        except KeyError: pass
+        mydata.addcolumn("2*$1*a")
+        assert mydata.titles == ["a", "b", None]
+        assert mydata.data == [[1, 2.0, 4.0], [2, 4.0, 16.0]]
 
         mydata = data.data(["a"], [[1], [2]])
-        assert mydata._addcolumn("b=2*a") == ["a"]
-        temp = mydata._addcolumn("2*x*a", x="b"); temp.sort(); assert temp == ["a", "x"]
-        assert mydata._addcolumn("2*x", x=-1) == ["x"]
-        assert mydata._addcolumn("2*x", x=-1, y=-2) == ["x"]
-        assert mydata.titles == ["a", "b", None, None, None]
-        assert mydata.data == [[1, 2.0, 4.0, 8.0, 16.0], [2, 4.0, 16.0, 32.0, 64.0]]
-
-        x = "nothing"
-        two = 2
-        f = lambda x: x*x
-
-        mydata = data.data(["a"], [[1], [2]], extern=locals())
-        mydata.addcolumn("b=two*a")
-        mydata.addcolumn("two*x*a", x="b")
-        mydata.addcolumn("two*x", x=-1, two=0)
-        mydata.addcolumn("two*x", x=-1, two="a")
-        assert mydata.titles == ["a", "b", None, None, None]
-        assert mydata.data == [[1, 2.0, 4.0, 4.0, 4.0], [2, 4.0, 16.0, 32.0, 64.0]]
-
-        mydata = data.data(["a"], [[1], [2]], extern=locals())
-        assert mydata._addcolumn("b=two*a") == ["a"]
-        temp = mydata._addcolumn("two*x*a", x="b"); temp.sort(); assert temp == ["a", "x"]
-        temp = mydata._addcolumn("two*x", x=-1, two=0); temp.sort(); assert temp == ["two", "x"]
-        temp = mydata._addcolumn("two*x", x=-1, two="a"); temp.sort(); assert temp == ["two", "x"]
-        assert mydata.titles == ["a", "b", None, None, None]
-        assert mydata.data == [[1, 2.0, 4.0, 4.0, 4.0], [2, 4.0, 16.0, 32.0, 64.0]]
+        mydata.addcolumn("b=two*a", a="noting", two=2, f=lambda x: x*x)
+        mydata.addcolumn("two*$-1*a", a="noting", two=2, f=lambda x: x*x)
+        mydata.addcolumn("f($-1)", a="noting", two=2, f=lambda x: x*x)
+        assert mydata.titles == ["a", "b", None, None]
+        assert mydata.data == [[1, 2.0, 4.0, 16.0], [2, 4.0, 16.0, 256.0]]
 
     def testFile(self):
         teststr = """#a

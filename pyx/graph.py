@@ -3600,22 +3600,23 @@ class data:
 
     defaultstyle = symbol
 
-    def __init__(self, file, **columns):
+    def __init__(self, file, title=helper.nodefault, extern={}, **columns):
+        self.title = title
         if helper.isstring(file):
+            if title is helper.nodefault:
+                self.title = file
             self.data = datamodule.datafile(file)
         else:
             self.data = file
+            if title is helper.nodefault:
+                self.title = "(unknown)"
         self.columns = {}
-        usedkeys = []
         for key, column in columns.items():
             try:
                 self.columns[key] = self.data.getcolumnno(column)
             except datamodule.ColumnError:
                 self.columns[key] = len(self.data.titles)
-                usedkeys.extend(self.data._addcolumn(column, **columns))
-        for usedkey in usedkeys:
-            if usedkey in self.columns.keys():
-                del self.columns[usedkey]
+                self.data.addcolumn(column, **extern)
 
     def setstyle(self, graph, style):
         self.style = style
@@ -3635,19 +3636,28 @@ class function:
 
     defaultstyle = line
 
-    def __init__(self, expression, min=None, max=None, points=100, parser=mathtree.parser(), extern=None):
+    def __init__(self, expression, title=helper.nodefault, min=None, max=None, points=100, parser=mathtree.parser(), extern={}):
+        if title is helper.nodefault:
+            self.title = expression
+        else:
+            self.title = title
         self.min = min
         self.max = max
         self.points = points
         self.extern = extern
         self.result, expression = expression.split("=")
-        self.mathtree = parser.parse(expression, extern=self.extern)
+        for ext in extern.values():
+            if callable(ext):
+                self.mathtree = parser.parse(expression, externfunction=1)
+                break
+        else:
+            self.mathtree = parser.parse(expression)
         if extern is None:
             self.variable, = self.mathtree.VarList()
         else:
             self.variable = None
             for variable in self.mathtree.VarList():
-                if variable not in self.extern.keys():
+                if variable not in extern.keys():
                     if self.variable is None:
                         self.variable = variable
                     else:
@@ -3676,9 +3686,9 @@ class function:
         vmax = self.xaxis.convert(max)
         self.data = []
         for i in range(self.points):
-            x = self.xaxis.invert(vmin + (vmax-vmin)*i / (self.points-1.0))
+            self.extern[self.variable] = x = self.xaxis.invert(vmin + (vmax-vmin)*i / (self.points-1.0))
             try:
-                y = self.mathtree.Calc({self.variable: x}, self.extern)
+                y = self.mathtree.Calc(**self.extern)
             except (ArithmeticError, ValueError):
                 y = None
             self.data.append((x, y))
@@ -3692,7 +3702,11 @@ class paramfunction:
 
     defaultstyle = line
 
-    def __init__(self, varname, min, max, expression, points=100, parser=mathtree.parser(), extern=None):
+    def __init__(self, varname, min, max, expression, title=helper.nodefault, points=100, parser=mathtree.parser(), extern={}):
+        if title is helper.nodefault:
+            self.title = expression
+        else:
+            self.title = title
         self.varname = varname
         self.min = min
         self.max = max
@@ -3716,10 +3730,10 @@ class paramfunction:
             raise ValueError("unpack tuple of wrong size")
         self.data = []
         for i in range(self.points):
-            value = self.min + (self.max-self.min)*i / (self.points-1.0)
+            extern[self.varname] = self.min + (self.max-self.min)*i / (self.points-1.0)
             line = []
             for key, tree in self.mathtrees.items():
-                line.append(tree.Calc({self.varname: value}, extern))
+                line.append(tree.Calc(**extern))
             self.data.append(line)
 
     def setstyle(self, graph, style):

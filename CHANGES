@@ -20,10 +20,11 @@ PyX
     - fallback solution via an external program (kpsewhich)
   - graph module:
     - removed some code duplication (various axis painters)
-    - use text module instead of the obsolete tex module (done, check the documentation)
-    - allow for tailing zeros of automatic generated labels (done up to documentation)
-    - allow for missing data in bar graphs -> skipmissing parameter (done up to documentation)
-    - TODO: remove the support for variables given within the argument dictionary in data constructor
+    - use text module instead of the obsolete tex module (done except for the documentation)
+    - allow for tailing zeros of automatic generated labels (done except for the documentation)
+    - allow for missing data in bar graphs -> skipmissing parameter (done except for the documentation)
+    - remove the support for variables given within the argument dictionary in data constructor (done except for the documentation)
+    - changed the handling of extern variables and functions for expressions in data, function and paramfunction
     - TODO: graph keys; titles in data/function/etc.
     - TODO: 3d graphs --- leave it for pyx-0.4
     - TODO: exceptions in drawsymbol & friends...
@@ -37,6 +38,7 @@ PyX
     - new methods height and width
     - TODO: document me!
   - data module:
+    - removed additional column support in addcolumn; removed _addcolumn (done except for the documentation)
     - TODO: line reduction for datafile like the every parameter in gnuplot
   - canvas module:
     - new way of PS prolog generation that writes only necessary parts
@@ -46,6 +48,7 @@ PyX
     - TODO: document new canvas.insert()
   - mathtree module:
     - added abs function
+    - changed the handling of extern functions/variables to just one global dict in the Calc method
   - numerous bugfixes:
     - problem with sizefile on windows (tex module)
     - allow for strings in graphxy's width and height; allow for width only (graph module)

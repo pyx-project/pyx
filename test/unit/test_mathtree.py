@@ -149,45 +149,41 @@ class MathTreeTestCase(unittest.TestCase):
         myparser = mathtree.parser()
         abc = {"a": 1, "b": 2, "c": 3}
         abcdef = {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6}
-        assert abs(myparser.parse("a+b-c").Calc(abc)) <= 1e-10
-        assert abs(myparser.parse("(a+b)-c").Calc(abc)) <= 1e-10
-        assert abs(myparser.parse("a+(b-c)").Calc(abc)) <= 1e-10
-        assert abs(myparser.parse("a-b+c-2").Calc(abc)) <= 1e-10
-        assert abs(myparser.parse("(a-b)+c-2").Calc(abc)) <= 1e-10
-        assert abs(myparser.parse("a-(b+c)+4").Calc(abc)) <= 1e-10
-        assert abs(myparser.parse("a+b-c*d/e**f-2.999232").Calc(abcdef)) <= 1e-10
-        assert abs(myparser.parse("a**b/c*d-e+f-7/3").Calc(abcdef)) <= 1e-10
-        assert abs(myparser.parse("((a-(b+c))/(d*e))**f-6.4e-5").Calc(abcdef)) <= 1e-10
-        assert abs(myparser.parse("neg(1)+1").Calc({})) <= 1e-10
-        assert abs(myparser.parse("abs(2)-2").Calc({})) <= 1e-10
-        assert abs(myparser.parse("abs(-2)-2").Calc({})) <= 1e-10
-        assert abs(myparser.parse("sgn(1)-1").Calc({})) <= 1e-10
-        assert abs(myparser.parse("sgn(-1)+1").Calc({})) <= 1e-10
-        assert abs(myparser.parse("sqrt(4)-2").Calc({})) <= 1e-10
-        assert abs(myparser.parse("log(e)-1").Calc({})) <= 1e-10
-        assert abs(myparser.parse("exp(1)-e").Calc({})) <= 1e-10
-        assert abs(myparser.parse("sin(pi/2)-1").Calc({})) <= 1e-10
-        assert abs(myparser.parse("cos(pi)+1").Calc({})) <= 1e-10
-        assert abs(myparser.parse("tan(pi/4)-1").Calc({})) <= 1e-10
-        assert abs(myparser.parse("asin(1) - pi/2").Calc({})) <= 1e-10
-        assert abs(myparser.parse("acos(-1) - pi").Calc({})) <= 1e-10
-        assert abs(myparser.parse("atan(1) - pi/4").Calc({})) <= 1e-10
-        assert abs(myparser.parse("sind(90)-1").Calc({})) <= 1e-10
-        assert abs(myparser.parse("cosd(180)+1").Calc({})) <= 1e-10
-        assert abs(myparser.parse("tand(45)-1").Calc({})) <= 1e-10
-        assert abs(myparser.parse("asind(1) - 90").Calc({})) <= 1e-10
-        assert abs(myparser.parse("acosd(-1) - 180").Calc({})) <= 1e-10
-        assert abs(myparser.parse("atand(1) - 45").Calc({})) <= 1e-10
-        assert abs(myparser.parse("norm(3,4)").Calc({}) - 5) <= 1e-10
+        assert abs(myparser.parse("a+b-c").Calc(**abc)) <= 1e-10
+        assert abs(myparser.parse("(a+b)-c").Calc(**abc)) <= 1e-10
+        assert abs(myparser.parse("a+(b-c)").Calc(**abc)) <= 1e-10
+        assert abs(myparser.parse("a-b+c-2").Calc(**abc)) <= 1e-10
+        assert abs(myparser.parse("(a-b)+c-2").Calc(**abc)) <= 1e-10
+        assert abs(myparser.parse("a-(b+c)+4").Calc(**abc)) <= 1e-10
+        assert abs(myparser.parse("a+b-c*d/e**f-2.999232").Calc(**abcdef)) <= 1e-10
+        assert abs(myparser.parse("a**b/c*d-e+f-7/3").Calc(**abcdef)) <= 1e-10
+        assert abs(myparser.parse("((a-(b+c))/(d*e))**f-6.4e-5").Calc(**abcdef)) <= 1e-10
+        assert abs(myparser.parse("neg(1)+1").Calc()) <= 1e-10
+        assert abs(myparser.parse("abs(2)-2").Calc()) <= 1e-10
+        assert abs(myparser.parse("abs(-2)-2").Calc()) <= 1e-10
+        assert abs(myparser.parse("sgn(1)-1").Calc()) <= 1e-10
+        assert abs(myparser.parse("sgn(-1)+1").Calc()) <= 1e-10
+        assert abs(myparser.parse("sqrt(4)-2").Calc()) <= 1e-10
+        assert abs(myparser.parse("log(e)-1").Calc()) <= 1e-10
+        assert abs(myparser.parse("exp(1)-e").Calc()) <= 1e-10
+        assert abs(myparser.parse("sin(pi/2)-1").Calc()) <= 1e-10
+        assert abs(myparser.parse("cos(pi)+1").Calc()) <= 1e-10
+        assert abs(myparser.parse("tan(pi/4)-1").Calc()) <= 1e-10
+        assert abs(myparser.parse("asin(1) - pi/2").Calc()) <= 1e-10
+        assert abs(myparser.parse("acos(-1) - pi").Calc()) <= 1e-10
+        assert abs(myparser.parse("atan(1) - pi/4").Calc()) <= 1e-10
+        assert abs(myparser.parse("sind(90)-1").Calc()) <= 1e-10
+        assert abs(myparser.parse("cosd(180)+1").Calc()) <= 1e-10
+        assert abs(myparser.parse("tand(45)-1").Calc()) <= 1e-10
+        assert abs(myparser.parse("asind(1) - 90").Calc()) <= 1e-10
+        assert abs(myparser.parse("acosd(-1) - 180").Calc()) <= 1e-10
+        assert abs(myparser.parse("atand(1) - 45").Calc()) <= 1e-10
+        assert abs(myparser.parse("norm(3,4)").Calc() - 5) <= 1e-10
 
     def testExtern(self):
         myparser = mathtree.parser()
-        a = 1
-        b = 2
-        c = 3
-        f = lambda x: x*x
-        assert abs(myparser.parse("a+b-c").Calc(locals())) <= 1e-10
-        assert abs(myparser.parse("f(2)-4", extern=locals()).Calc()) <= 1e-10
+        assert abs(myparser.parse("a+b-c").Calc(a=1, b=2, c=3)) <= 1e-10
+        assert abs(myparser.parse("f(2)-4", externfunction=1).Calc(f=lambda x: x*x)) <= 1e-10
 
     def testException(self):
         myparser = mathtree.parser()

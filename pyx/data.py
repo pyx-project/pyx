@@ -44,11 +44,10 @@ MathTreeValsWithCol = (MathTreeValConst, MathTreeValVar, MathTreeValCol)
 
 class data:
 
-    def __init__(self, titles, data, parser=parser(MathTreeVals=MathTreeValsWithCol), extern=None):
+    def __init__(self, titles, data, parser=parser(MathTreeVals=MathTreeValsWithCol)):
         self.titles = titles
         self.data = data
         self.parser = parser
-        self.extern = extern
 
     def getcolumnno(self, column):
         if self.titles.count(column) == 1:
@@ -63,7 +62,7 @@ class data:
         columnno = self.getcolumnno(column)
         return [x[columnno] for x in self.data]
 
-    def _addcolumn(self, expression, **columns):
+    def addcolumn(self, expression, **extern):
         try:
             split = expression.rindex("=")
         except ValueError:
@@ -71,7 +70,12 @@ class data:
         else:
             self.titles.append(expression[:split])
             expression = expression[split+1:]
-        tree = self.parser.parse(expression, extern=self.extern)
+        for ext in extern.values():
+            if callable(ext):
+                tree = self.parser.parse(expression, externfunction=1)
+                break
+        else:
+            tree = self.parser.parse(expression)
         columnlist = {}
         for key in tree.VarList():
             if key[0] == "$":
@@ -83,15 +87,12 @@ class data:
                 columnlist[key] = column
             else:
                 try:
-                    columnlist[key] = self.getcolumnno(columns[key])
-                except KeyError:
-                    try:
-                        columnlist[key] = self.getcolumnno(key)
-                    except ColumnError, e:
-                        if self.extern is None or key not in self.extern.keys():
-                            raise e
+                    columnlist[key] = self.getcolumnno(key)
+                except ColumnError, e:
+                    if extern is None or key not in extern.keys():
+                        raise e
 
-        varlist = {}
+        varlist = extern.copy()
         for data in self.data:
             try:
                 for key in columnlist.keys():
@@ -99,16 +100,7 @@ class data:
             except (TypeError, ValueError):
                 data.append(None)
             else:
-                data.append(tree.Calc(varlist, self.extern))
-        return columnlist.keys()
-
-    def addcolumn(self, expression, **columns):
-        usedkeys = self._addcolumn(expression, **columns)
-        unusedkeys = [key for key in columns.keys() if key not in usedkeys]
-        if len(unusedkeys):
-            raise KeyError("unused keys %s" % unusedkeys)
-        return self
-
+                data.append(tree.Calc(**varlist))
 
 
 class datafile(data):
