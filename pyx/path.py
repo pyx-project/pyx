@@ -205,7 +205,7 @@ class closepath(pathel):
         x0_pt, y0_pt = context.currentpoint
         x1_pt, y1_pt = context.currentsubpath
 
-        return bbox._bbox(min(x0_pt, x1_pt), min(y0_pt, y1_pt), 
+        return bbox.bbox_pt(min(x0_pt, x1_pt), min(y0_pt, y1_pt), 
                           max(x0_pt, x1_pt), max(y0_pt, y1_pt))
 
     def _normalized(self, context):
@@ -266,7 +266,7 @@ class lineto_pt(pathel):
         context.currentpoint = self.x_pt, self.y_pt
 
     def _bbox(self, context):
-        return bbox._bbox(min(context.currentpoint[0], self.x_pt),
+        return bbox.bbox_pt(min(context.currentpoint[0], self.x_pt),
                           min(context.currentpoint[1], self.y_pt), 
                           max(context.currentpoint[0], self.x_pt),
                           max(context.currentpoint[1], self.y_pt))
@@ -305,7 +305,7 @@ class curveto_pt(pathel):
         context.currentpoint = self.x3_pt, self.y3_pt
 
     def _bbox(self, context):
-        return bbox._bbox(min(context.currentpoint[0], self.x1_pt, self.x2_pt, self.x3_pt),
+        return bbox.bbox_pt(min(context.currentpoint[0], self.x1_pt, self.x2_pt, self.x3_pt),
                           min(context.currentpoint[1], self.y1_pt, self.y2_pt, self.y3_pt),
                           max(context.currentpoint[0], self.x1_pt, self.x2_pt, self.x3_pt),
                           max(context.currentpoint[1], self.y1_pt, self.y2_pt, self.y3_pt))
@@ -372,7 +372,7 @@ class rlineto_pt(pathel):
     def _bbox(self, context):
         x = context.currentpoint[0] + self.dx_pt
         y = context.currentpoint[1] + self.dy_pt
-        return bbox._bbox(min(context.currentpoint[0], x),
+        return bbox.bbox_pt(min(context.currentpoint[0], x),
                           min(context.currentpoint[1], y),
                           max(context.currentpoint[0], x),
                           max(context.currentpoint[1], y))
@@ -420,7 +420,7 @@ class rcurveto_pt(pathel):
         y2_pt = context.currentpoint[1]+self.dy2_pt
         x3_pt = context.currentpoint[0]+self.dx3_pt
         y3_pt = context.currentpoint[1]+self.dy3_pt
-        return bbox._bbox(min(context.currentpoint[0], x1_pt, x2_pt, x3_pt),
+        return bbox.bbox_pt(min(context.currentpoint[0], x1_pt, x2_pt, x3_pt),
                           min(context.currentpoint[1], y1_pt, y2_pt, y3_pt),
                           max(context.currentpoint[0], x1_pt, x2_pt, x3_pt),
                           max(context.currentpoint[1], y1_pt, y2_pt, y3_pt))
@@ -518,14 +518,14 @@ class arc_pt(pathel):
         # to the first point of the arc segment
 
         if context.currentpoint:
-            return (bbox._bbox(min(context.currentpoint[0], sarcx_pt),
+            return (bbox.bbox_pt(min(context.currentpoint[0], sarcx_pt),
                                min(context.currentpoint[1], sarcy_pt),
                                max(context.currentpoint[0], sarcx_pt),
                                max(context.currentpoint[1], sarcy_pt)) +
-                    bbox._bbox(minarcx_pt, minarcy_pt, maxarcx_pt, maxarcy_pt)
+                    bbox.bbox_pt(minarcx_pt, minarcy_pt, maxarcx_pt, maxarcy_pt)
                     )
         else:
-            return  bbox._bbox(minarcx_pt, minarcy_pt, maxarcx_pt, maxarcy_pt)
+            return  bbox.bbox_pt(minarcx_pt, minarcy_pt, maxarcx_pt, maxarcy_pt)
 
     def _normalized(self, context):
         # get starting and end point of arc segment and bpath corresponding to arc
@@ -609,7 +609,7 @@ class arcn_pt(pathel):
         # start and end points of the arc
 
         if context.currentpoint:
-            return  bbox._bbox(min(context.currentpoint[0], sarcx_pt),
+            return  bbox.bbox_pt(min(context.currentpoint[0], sarcx_pt),
                                min(context.currentpoint[1], sarcy_pt),
                                max(context.currentpoint[0], sarcx_pt),
                                max(context.currentpoint[1], sarcy_pt))+ arcbb
@@ -865,7 +865,7 @@ class multilineto_pt(pathel):
     def _bbox(self, context):
         xs_pt = [point[0] for point in self.points_pt]
         ys_pt = [point[1] for point in self.points_pt]
-        return bbox._bbox(min(context.currentpoint[0], *xs_pt),
+        return bbox.bbox_pt(min(context.currentpoint[0], *xs_pt),
                           min(context.currentpoint[1], *ys_pt),
                           max(context.currentpoint[0], *xs_pt),
                           max(context.currentpoint[1], *ys_pt))
@@ -907,7 +907,7 @@ class multicurveto_pt(pathel):
         ys = ( [point[1] for point in self.points_pt] +
                [point[3] for point in self.points_pt] +
                [point[5] for point in self.points_pt] )
-        return bbox._bbox(min(context.currentpoint[0], *xs_pt),
+        return bbox.bbox_pt(min(context.currentpoint[0], *xs_pt),
                           min(context.currentpoint[1], *ys_pt),
                           max(context.currentpoint[0], *xs_pt),
                           max(context.currentpoint[1], *ys_pt))
@@ -1400,7 +1400,7 @@ class normline(normpathel):
         return self.x0_pt+(self.x1_pt-self.x0_pt)*t, self.y0_pt+(self.y1_pt-self.y0_pt)*t
 
     def bbox(self):
-        return bbox._bbox(min(self.x0_pt, self.x1_pt), min(self.y0_pt, self.y1_pt), 
+        return bbox.bbox_pt(min(self.x0_pt, self.x1_pt), min(self.y0_pt, self.y1_pt), 
                           max(self.x0_pt, self.x1_pt), max(self.y0_pt, self.y1_pt))
 
     def begin_pt(self):
@@ -1551,7 +1551,7 @@ class normcurve(normpathel):
         return xt_pt, yt_pt
 
     def bbox(self):
-        return bbox._bbox(min(self.x0_pt, self.x1_pt, self.x2_pt, self.x3_pt),
+        return bbox.bbox_pt(min(self.x0_pt, self.x1_pt, self.x2_pt, self.x3_pt),
                           min(self.y0_pt, self.y1_pt, self.y2_pt, self.y3_pt),
                           max(self.x0_pt, self.x1_pt, self.x2_pt, self.x3_pt),
                           max(self.y0_pt, self.y1_pt, self.y2_pt, self.y3_pt))
