@@ -19,21 +19,19 @@
 # You should have received a copy of the GNU General Public License
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-#
-# TODO: - remove msghandler.combine
-#       - add missing extent handler (missextent)
 
 
 """
 (La)TeX interface of PyX
 
 This module provides the classes tex and latex, which can be inserted into a
-PyX canvas. The method (la)tex.text are is to print text, while (la)tex.textwd,
-tex.textht, and tex.textdp appraise the width, height, and depth of a text,
-respectively.
+PyX canvas. The method (la)tex.text prints text, while (la)tex.textwd,
+(la)tex.textht, and (la)tex.textdp appraise the width, height, and depth of a
+text, respectively. The method (la)tex.define can be used to define macros in
+(La)TeX.
 """
 
-import os, string, tempfile, sys, md5, traceback, time, StringIO, re
+import os, string, tempfile, sys, md5, traceback, time, StringIO, re, atexit
 import base, unit, epsfile, color, instancelist
 
 
@@ -166,26 +164,10 @@ class msghandler(_texattr):
     def removeemptylines(self, msg):
         """any message parser may use this method to remove empty lines"""
 
-        msg = re.sub("^(" + os.linesep + ")*", "", msg)
-        msg = re.sub("(" + os.linesep + "){3,}", os.linesep + os.linesep, msg)
-        msg = re.sub("(" + os.linesep + ")+$", os.linesep, msg)
+        msg = re.sub("^(\n)*", "", msg)
+        msg = re.sub("(\n){3,}", "\n\n", msg)
+        msg = re.sub("(\n)+$", "\n", msg)
         return msg
-
-
-class _msghandlercombine(msghandler):
-
-    """a message handler, which combines different message handlers"""
-
-    def __init__(self, *handlerlst):
-        self.handlerlst = handlerlst
-    
-    def parsemsg(self, msg):
-        for handler in self.handlerlst:
-            msg = handler.parsemsg(msg)
-        return msg
-
-
-msghandler.combine = _msghandlercombine
 
 
 class _msghandlershowall(msghandler):
@@ -277,7 +259,7 @@ class _msghandlerhidefontwarning(msghandler):
     continued on following lines by '(Font)              '"""
 
     def parsemsg(self, msg):
-        msglines = string.split(msg, os.linesep)
+        msglines = string.split(msg, "\n")
         newmsglines = []
         fontwarning = 0
         for line in msglines:
@@ -287,7 +269,7 @@ class _msghandlerhidefontwarning(msghandler):
                 fontwarning = 1
             if not fontwarning:
                 newmsglines.append(line)
-        newmsg = reduce(lambda x, y: x + y + os.linesep, newmsglines, "")
+        newmsg = reduce(lambda x, y: x + y + "\n", newmsglines, "")
         return self.removeemptylines(newmsg)
 
 
@@ -300,8 +282,8 @@ class _msghandlerhidebuterror(msghandler):
     not contain a line starting with '! '"""
 
     def parsemsg(self, msg):
-        # the os.linesep + msg instead of msg itself is needed, if the message starts with "! "
-        if string.find(os.linesep + msg, os.linesep + "! ") != -1:
+        # the "\n" + msg instead of msg itself is needed, if the message starts with "! "
+        if string.find("\n" + msg, "\n! ") != -1:
             return msg
         else:
             return ""
@@ -328,13 +310,33 @@ class missextent(_texattr):
     A miss extent class has to provide a misshandler method."""
 
 
+_missextentreturnzero_report = 0
+def _missextentreturnzero_printreport():
+    sys.stderr.write("""
+pyx.tex: Some requested extents were missing and have been replaced by zero.
+         Please run the file again to get correct extents.
+""")
+
 class _missextentreturnzero(missextent):
+
+    def misshandler(self, texinstance):
+        global _missextentreturnzero_report
+        if not _missextentreturnzero_report:
+            atexit.register(_missextentreturnzero_printreport)
+        _missextentreturnzero_report = 1
+        return unit.t_pt(0)
+
+
+missextent.returnzero = _missextentreturnzero()
+
+
+class _missextentreturnzeroquiet(missextent):
 
     def misshandler(self, texinstance):
         return unit.t_pt(0)
 
 
-missextent.returnzero = _missextentreturnzero()
+missextent.returnzeroquiet = _missextentreturnzeroquiet()
 
 
 class _missextentraiseerror(missextent):
@@ -492,11 +494,16 @@ class _TexCmd:
     def WriteEndMarker(self, file):
         file.write("\\immediate\\write16{%s}%%\n" % self.EndMarkerStr())
 
+    def WriteError(self, msg):
+        sys.stderr.write("Traceback (innermost last):\n")
+        traceback.print_list(self.Stack)
+        sys.stderr.write("(La)TeX Message:\n" + msg + "\n")
+
     def CheckMarkerError(self, file):
         """read markers and identify the message"""
 
         line = file.readline()
-        while line[:-1] != self.BeginMarkerStr():
+        while (line != "") and (line[:-1] != self.BeginMarkerStr()):
             line = file.readline()
         msg = ""
         line = file.readline()
@@ -504,10 +511,7 @@ class _TexCmd:
             msg = msg + line
             line = file.readline()
         if line == "":
-            print "Traceback (innermost last):"
-            traceback.print_list(self.Stack)
-            print "(La)TeX Message:"
-            print msg
+            self.WriteError(msg)
             raise IOError
         else:
             # check if message can be ignored
@@ -517,10 +521,7 @@ class _TexCmd:
                 parsedmsg = msghandler.parsemsg(parsedmsg)
             for c in parsedmsg:
                 if c not in string.whitespace:
-                    print "Traceback (innermost last):"
-                    traceback.print_list(self.Stack)
-                    print "(La)TeX Message:"
-                    print parsedmsg
+                    self.WriteError(parsedmsg)
                     break
 
 
@@ -541,7 +542,7 @@ class _DefCmd(_TexCmd):
 
 class _CmdPut:
 
-    """print parameters for a BoxCmd"""
+    """print parameters for a BoxCmd (data structure)"""
 
     def __init__(self, x, y, halign, direction, color):
         self.x = x
@@ -642,6 +643,9 @@ class _BoxCmd(_TexCmd):
             if size[:len(s)] == s:
                 texpt = float(string.rstrip(size.split(":")[3][:-3]))
                 return unit.t_pt(texpt * 72.0 / 72.27)
+
+        # extent was not found --- temporarily remove all other commands in
+        # order to allow the misshandler to access everything it ever wants
         storeboxcmds = texinstance.BoxCmds
         storecmdputs = self.CmdPuts
         storecmdextents = self.CmdExtents
@@ -665,13 +669,13 @@ class _tex(base.PSCmd, instancelist.InstanceList):
 
     """major parts are of tex and latex class are shared and implemented here"""
 
-    def __init__(self, defaultmsghandlers=msghandler.hideload,
+    def __init__(self, defaultmsghandler=msghandler.hideload,
                        defaultmissextent=missextent.returnzero,
                        texfilename=None):
-        if isinstance(defaultmsghandlers, msghandler):
-            self.defaultmsghandlers = (defaultmsghandlers, )
+        if isinstance(defaultmsghandler, msghandler):
+            self.defaultmsghandlers = (defaultmsghandler, )
         else:
-            self.defaultmsghandlers = defaultmsghandlers
+            self.defaultmsghandlers = defaultmsghandler
         self.defaultmissextent = defaultmissextent
         self.texfilename = texfilename
         self.DefCmds = []
@@ -698,13 +702,12 @@ class _tex(base.PSCmd, instancelist.InstanceList):
     
     def _execute(self, command):
         if os.system(command):
-            print "The exit code of the following command was non-zero:"
-            print command
-            print "Usually, additional information causing this trouble appears closeby."
-            print "However, you may check the origin by keeping all temporary files."
-            print "In order to achieve this, you have to specify a texfilename in the"
-            print "constructor of the class pyx.tex. You can then try to run the command"
-            print "by yourself."
+            sys.stderr.write("The exit code of the following command was non-zero:" + command +
+"""Usually, additional information causing this trouble appears closeby.
+However, you may check the origin by keeping all temporary files.
+In order to achieve this, you have to specify a texfilename in the
+constructor of the class pyx.(la)tex. You can then try to run the
+command by yourself.""")
 
     def _createaddfiles(self, tempname):
         pass
@@ -719,7 +722,7 @@ class _tex(base.PSCmd, instancelist.InstanceList):
         self._execute("dvips -O0in,11in -E -o %(t)s.eps %(t)s.dvi > %(t)s.dvipsout 2> %(t)s.dvipserr" % {"t": tempname})
 
     def _run(self):
-        """run LaTeX&dvips for TexCmds, report errors, return postscript string"""
+        """run (La)TeX & dvips, report errors, fill self.abbox & self.epsdata"""
     
         if self.DoneRunTex:
             return
@@ -762,36 +765,36 @@ class _tex(base.PSCmd, instancelist.InstanceList):
                 Cmd.CheckMarkerError(outfile)
             outfile.close()
         except IOError:
-            print "An unexpected error occured while reading the (La)TeX output."
-            print "May be, you just have no disk space available. Or something badly"
-            print "in your commands caused (La)TeX to give up completely. Or your"
-            print "(La)TeX installation might be broken at all."
-            print "You may try to check the origin by keeping all temporary files."
-            print "In order to achieve this, you have to specify a texfilename in the"
-            print "constructor of the class pyx.tex. You can then try to run (La)TeX"
-            print "by yourself."
+            sys.stderr.write("""An unexpected error occured while reading the (La)TeX output.
+May be, you just have no disk space available. Or something badly
+in your commands caused (La)TeX to give up completely. Or your
+(La)TeX installation might be broken at all.
+You may try to check the origin by keeping all temporary files.
+In order to achieve this, you have to specify a texfilename in the
+constructor of the class pyx.tex. You can then try to run (La)TeX
+by yourself.""")
 
         if not os.access(tempname + ".dvi", 0):
-            print "Can't find the dvi file which should be produced by (La)TeX."
-            print "May be, you just have no disk space available. Or something badly"
-            print "in your commands caused (La)TeX to give up completely. Or your"
-            print "(La)TeX installation might be broken at all."
-            print "You may try to check the origin by keeping all temporary files."
-            print "In order to achieve this, you have to specify a texfilename in the"
-            print "constructor of the class pyx.tex. You can then try to run (La)TeX"
-            print "by yourself."
+            sys.stderr.write("""Can't find the dvi file which should be produced by (La)TeX.
+May be, you just have no disk space available. Or something badly
+in your commands caused (La)TeX to give up completely. Or your
+(La)TeX installation might be broken at all.
+You may try to check the origin by keeping all temporary files.
+In order to achieve this, you have to specify a texfilename in the
+constructor of the class pyx.tex. You can then try to run (La)TeX
+by yourself.""")
 
         else:
             self._executedvips(tempname)
             if not os.access(tempname + ".eps", 0):
-                print "Error reading the eps file which should be produced by dvips."
-                print "May be, you just have no disk space available. Or something badly"
-                print "in your commands caused dvips to give up completely. Or your"
-                print "(La)TeX installation might be broken at all."
-                print "You may try to check the origin by keeping all temporary files."
-                print "In order to achieve this, you have to specify a texfilename in the"
-                print "constructor of the class pyx.tex. You can then try to run dvips"
-                print "by yourself."
+                sys.stderr.write("""Error reading the eps file which should be produced by dvips.
+May be, you just have no disk space available. Or something badly
+in your commands caused dvips to give up completely. Or your
+(La)TeX installation might be broken at all.
+You may try to check the origin by keeping all temporary files.
+In order to achieve this, you have to specify a texfilename in the
+constructor of the class pyx.tex. You can then try to run dvips
+by yourself.""")
             else:
                 aepsfile = epsfile.epsfile(tempname + ".eps", translatebb=0, clip=0)
                 self.abbox = aepsfile.bbox()
@@ -831,7 +834,6 @@ class _tex(base.PSCmd, instancelist.InstanceList):
                     pass
 
         self._removeaddfiles(tempname)
-        
         self.DoneRunTex = 1
 
     def bbox(self):

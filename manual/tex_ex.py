@@ -3,6 +3,7 @@ import sys
 sys.path.append("..")
 from pyx import *
 
+
 c=canvas.canvas()
 t=c.insert(tex.tex())
 t.text(0, 0, "Hello, world!")
@@ -57,8 +58,3 @@ t.text(3, -6, "green", color.rgb.green)
 t.text(6, -6, "blue", color.rgb.blue)
 c.writetofile("tex_ex2")
 
-c=canvas.canvas()
-t=c.insert(tex.latex())
-t.text(0, 0, r"\textsf{\textit{example}}",
-       tex.msghandler.hidefontwarning)
-c.writetofile("tex_ex3")

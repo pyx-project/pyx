@@ -654,46 +654,50 @@ class graphxy(canvas.canvas):
     def bbox(self):
         return bbox.bbox(self.xpos, self.ypos, self.xpos + self.width, self.ypos + self.height)
     
+    def gatherranges(self):
+        ranges = {}
+        for pd in self.plotdata:
+            pdranges = pd.data.ranges()
+            for kind in pdranges.keys():
+                if kind not in ranges.keys():
+                    ranges[kind] = pdranges[kind]
+                else:
+                    ranges[kind] = (min(ranges[kind][0], pdranges[kind][0]),
+                                    max(ranges[kind][1], pdranges[kind][1]))
+        return ranges
+
     def drawlayout(self):
         if self._drawstate != self.drawlayout:
             raise PyxGraphDrawstateError
-        ProvidedRanges = []
-        for pd in self.plotdata:
-            for key in pd.data.ProvideRanges():
-                if key not in ProvidedRanges:
-                    ProvidedRanges.append(key)
-        print ProvidedRanges
-        # providerange
-        # forcegeneraterange
-        # generaterange
-        for key in self.axes.keys():
-            ranges = []
-            for pd in self.plotdata:
-                try:
-                    ranges.append(pd.data.GetRange(key))
-                except DataRangeUndefinedException:
-                    pass
-            if len(ranges) == 0:
-                assert 0, "range for %s-axis unknown" % key
-            self.axes[key].setrange(min(map (lambda x: x[0], ranges)),
-                                    max(map (lambda x: x[1], ranges)))
 
+        # create list of ranges
+        # 1. gather ranges
+        ranges = self.gatherranges()
+        # 2. calculate additional ranges out of known ranges
         for pd in self.plotdata:
-            pd.data.SetAxis(self.axes)
+            pd.data.newranges(ranges)
+        # 3. gather ranges again
+        ranges = self.gatherranges()
+
+        # set axes ranges
+        for key, axis in self.axes.items():
+            axis.setrange(min=ranges[key][0], max=ranges[key][1])
 
         for key, axis in self.axes.items():
             axis.parts = axis.part.getparts(axis.min, axis.max)
-            axis.rateparts = axis.rate.getrateparts(axis.parts)
-            axis.bestratepart = axis.rateparts[0]
-            for ratepart in axis.rateparts[1:]:
-                if axis.bestratepart.rate > ratepart.rate:
-                    axis.bestratepart = ratepart
-            axis.setrange(float(axis.bestratepart.part[0]), float(axis.bestratepart.part[-1]))
-        self._drawstate = self.drawbackground
+            if len(axis.parts)>1:
+                axis.rateparts = axis.rate.getrateparts(axis.parts)
+                axis.bestratepart = axis.rateparts[0]
+                for ratepart in axis.rateparts[1:]:
+                    if axis.bestratepart.rate > ratepart.rate:
+                        axis.bestratepart = ratepart
+            else:
+                axis.rateparts = (ratepart(axis.parts[0], 0), )
+                #axis.bestratepart = ...
 
-    def drawbackground(self):
-        if self._drawstate != self.drawbackground:
-            raise PyxGraphDrawstateError
+            axis.setrange(min=float(axis.bestratepart.part[0]),
+                          max=float(axis.bestratepart.part[-1]))
+
         self.left = unit.topt(1)
         self.buttom = unit.topt(1)
         self.top = 0
@@ -702,16 +706,20 @@ class graphxy(canvas.canvas):
                                           (1, self.xpos + self.width - self.right)))
         self.ymap = _linmap().setbasepts(((0, self.ypos + self.buttom),
                                           (1, self.ypos + self.height - self.top)))
-        self._drawstate = self.drawaxes
+        self._drawstate = self.drawbackground
 
-    def drawaxes(self):
-        if self._drawstate != self.drawaxes:
+    def drawbackground(self):
+        if self._drawstate != self.drawbackground:
             raise PyxGraphDrawstateError
         self.draw(path._rect(self.xmap.convert(0),
                              self.ymap.convert(0),
                              self.xmap.convert(1) - self.xmap.convert(0),
                              self.ymap.convert(1) - self.ymap.convert(0)))
+        self._drawstate = self.drawaxes
 
+    def drawaxes(self):
+        if self._drawstate != self.drawaxes:
+            raise PyxGraphDrawstateError
         for key, axis in self.axes.items():
             if _XPattern.match(key):
                 for tick in axis.bestratepart.part:
@@ -896,8 +904,14 @@ class data:
         self.datafile = datafile
         self.columns = columns
 
-    def ProvideRanges(self):
-        return self.columns.keys()
+    def ranges(self):
+        result = {}
+        for kind, key in self.columns.items():
+            result[kind] = (min(self.datafile.data[key - 1]), max(self.datafile.data[key - 1]))
+        return result
+
+    def newranges(self, ranges):
+        pass
 
     def GetName(self):
         return self.datafile.name
@@ -911,14 +925,11 @@ class data:
     def GetValues(self, Kind):
         return self.datafile.GetColumn(self.columns[Kind] - 1)
     
-    def GetRange(self, Kind):
-        # handle non-numeric things properly
-        if Kind not in self.columns.keys():
-            raise DataRangeUndefinedException
-        return (min(self.GetValues(Kind)), max(self.GetValues(Kind)), )
-
-    def SetAxis(self, Axis):
-        pass
+#    def GetRange(self, Kind):
+#        # handle non-numeric things properly
+#        if Kind not in self.columns.keys():
+#            raise DataRangeUndefinedException
+#        return (min(self.GetValues(Kind)), max(self.GetValues(Kind)), )
 
 
 AssignPattern = re.compile(r"\s*([a-z][a-z0-9_]*)\s*=", re.IGNORECASE)
@@ -950,24 +961,24 @@ class Function:
         else:
             return self.MT.VarList() + [DefaultResult, ]
     
-    def GetRange(self, Kind):
-        raise DataRangeUndefinedException
-
-    def SetAxis(self, Axis, DefaultResult = "y"):
-        if self.ResKind:
-            self.YAxis = Axis[self.ResKind]
-        else:
-            self.YAxis = Axis[DefaultResult]
-        self.XAxis = { }
-        self.XValues = { }
-        for key in self.MT.VarList():
-            self.XAxis[key] = Axis[key]
-            values = []
-            for x in range(self.Points + 1):
-                values.append(self.XAxis[key].invert(x * 1.0 / self.Points))
-            self.XValues[key] = values
-        # this isn't smart ... we should walk only once throu the mathtree
-        self.YValues = map(lambda i, self = self: self.MT.Calc(self.XValues, i), range(self.Points + 1))
+#    def GetRange(self, Kind):
+#        raise DataRangeUndefinedException
+#
+#    def SetAxis(self, Axis, DefaultResult = "y"):
+#        if self.ResKind:
+#            self.YAxis = Axis[self.ResKind]
+#        else:
+#            self.YAxis = Axis[DefaultResult]
+#        self.XAxis = { }
+#        self.XValues = { }
+#        for key in self.MT.VarList():
+#            self.XAxis[key] = Axis[key]
+#            values = []
+#            for x in range(self.Points + 1):
+#                values.append(self.XAxis[key].invert(x * 1.0 / self.Points))
+#            self.XValues[key] = values
+#        # this isn't smart ... we should walk only once throu the mathtree
+#        self.YValues = map(lambda i, self = self: self.MT.Calc(self.XValues, i), range(self.Points + 1))
 
     def GetValues(self, Kind, DefaultResult = "y"):
         if (self.ResKind and (Kind == self.ResKind)) or ((not self.ResKind) and (Kind == DefaultResult)):
