@@ -640,24 +640,22 @@ class _readpipe(threading.Thread):
         threading.Thread.__init__(self)
         self.setDaemon(1)
         self.pipe = pipe
-        self.expect = None
         self.expectqueue = expectqueue
         self.gotevent = gotevent
         self.gotqueue = gotqueue
         self.start()
 
     def run(self):
-        while 1:
-            read = self.pipe.readline()
+        read = self.pipe.readline()
+        while len(read):
+            self.gotqueue.put(read)
             try:
                 self.expect = self.expectqueue.get_nowait()
             except Queue.Empty:
                 pass
-            if len(read):
-                self.gotqueue.put(read)
-            if self.expect is not None and read.find(self.expect) != -1:
-                self.expect = None
+            if read.find(self.expect) != -1:
                 self.gotevent.set()
+            read = self.pipe.readline()
 
 
 class textbox(graph._rectbox):
@@ -707,9 +705,9 @@ class texrunner:
             texfile.write("\\relax\n")
             texfile.close()
             self.texinput, self.texoutput = os.popen4("%s %s" % (self.mode, self.texfilename), "t", 0)
-            self.expectqueue = Queue.Queue()
+            self.expectqueue = Queue.Queue(1) # allow only for a single entry
             self.gotevent = threading.Event()
-            self.gotqueue = Queue.Queue()
+            self.gotqueue = Queue.Queue(0) # allow arbitrary number of entries
             self.readoutput = _readpipe(self.texoutput, self.expectqueue, self.gotevent, self.gotqueue)
             self.texruns = 1
             olddefinemode = self.definemode
@@ -735,7 +733,7 @@ class texrunner:
             self.definemode = olddefinemode
         self.executeid += 1
         if expression is not None:
-            self.expectqueue.put("ProcessPyXFinishedMarker(%i)" % self.executeid)
+            self.expectqueue.put_nowait("ProcessPyXFinishedMarker(%i)" % self.executeid)
             if self.definemode:
                 self.expression = ("%s%%\n" % expression +
                                    "\\ProcessPyXFinished{%i}%%\n" % self.executeid)
@@ -746,7 +744,7 @@ class texrunner:
                                    "\\ProcessPyXFinished{%i}%%\n" % self.executeid)
             self.texinput.write(self.expression)
         else:
-            self.expectqueue.put("Transcript written on %s.log" % self.texfilename)
+            self.expectqueue.put_nowait("Transcript written on %s.log" % self.texfilename)
             if self.mode == "latex":
                 self.expression = "\\end{document}\n"
             else:
