@@ -91,15 +91,13 @@ class transformation:
 	   raise UndefinedResultError, "transformation matrix must not be singular" 
         return transformation(matrix=matrix) * transformation(vector=(-self.vector[0],-self.vector[1]))
 
-    def output(self, unit):
-        return "%f %f %f %f %f %f" % ( self.matrix[0][0], self.matrix[0][1], 
-	                               self.matrix[1][0], self.matrix[1][1], 
-				       unit.pt(self.vector[0]), unit.pt(self.vector[1])) 
+
+
+    def _PSCmd(self, canvas):
+        return "[%f %f %f %f %f %f] concat" % ( self.matrix[0][0], self.matrix[0][1], 
+	                                        self.matrix[1][0], self.matrix[1][1], 
+		    	  	                canvas.unit.pt(self.vector[0]), canvas.unit.pt(self.vector[1]) ) 
 	
-#    def __repr__(self):
-#        return "%f %f %f %f %f %f" % ( self.matrix[0][0], self.matrix[0][1], 
-#	                               self.matrix[1][0], self.matrix[1][1], 
-#				       self.vector[0], self.vector[1]) 
 
 class translate(transformation):
     def __init__(self,x,y):

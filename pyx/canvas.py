@@ -190,16 +190,16 @@ class linewidth(_linewidth):
 
 class canvas:
 
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         
         self.PSCmds = []
-        self.trafo  = kwargs.get("trafo", trafo.transformation())
         self.unit   = kwargs.get("unit", unit.unit())
-        
-        self._PSAddCmd("[" + self.trafo.output(self.unit) + " ] concat")
+
+        for arg in args:
+            self.set(*args)
     
     def __str__(self):
-        return reduce(lambda x,y: x + "\n%s" % str(y), self.PSCmds)
+        return reduce(lambda x,y: x + "\n%s" % str(y), self.PSCmds, "")
 
     def _PSAddCmd(self, cmd):
         self.PSCmds.append(cmd)
@@ -222,8 +222,8 @@ class canvas:
     def _translate(self, x, y):
         self._PSAddCmd("%f %f translate" % self.unit.pt((x, y)))
         
-    def canvas(self, **kwargs):
-        subcanvas = canvas(**kwargs)
+    def canvas(self, *args):
+        subcanvas = canvas(*args)
         self._gsave()
         self._PSAddCmd(subcanvas)
         self._grestore()
@@ -232,7 +232,6 @@ class canvas:
     def tex(self, **kwargs):
         texcanvas = tex.tex(self.unit.copy(), **kwargs)
         self._PSAddCmd(texcanvas)
-        self._grestore()
         return texcanvas
 
     def set(self, *args):
@@ -292,8 +291,9 @@ if __name__=="__main__":
     from trafo import *
     from graph import *
     from color import *
+    import unit
 
-    c=canvas.canvas()
+    c=canvas.canvas(unit=unit.unit())
     t=c.tex()
  
     #for x in range(11):
@@ -321,14 +321,14 @@ if __name__=="__main__":
     print "Tiefe von 'Hello world!': ",t.textdp("Hello world!")
     print "Tiefe von 'was mit q': ",t.textdp("was mit q")
     t.text(5, 1, "Hello world!")
-    #t.text(5, 2, "Hello world!", halign.center)
-    #t.text(5, 3, "Hello world!", halign.right)
-    #for a in (-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90):
-    #    t.text(11+a/10, 5, str(a), angle(a))
-    #    t.text(11+a/10, 6, str(a), angle(a), halign.center)
-    #    t.text(11+a/10, 7, str(a), angle(a), halign.right)
-    #for pos in range(1,21):
-    #    t.text(pos, 7.5, ".")
+    t.text(5, 2, "Hello world!", halign.center)
+    t.text(5, 3, "Hello world!", halign.right)
+    for a in (-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90):
+        t.text(11+a/10, 5, str(a), angle(a))
+        t.text(11+a/10, 6, str(a), angle(a), halign.center)
+        t.text(11+a/10, 7, str(a), angle(a), halign.right)
+    for pos in range(1,21):
+        t.text(pos, 7.5, ".")
    
     p=path([ moveto(5,12), 
              lineto(7,12), 
@@ -359,8 +359,7 @@ if __name__=="__main__":
 
    
     for a in range(20):
-       s=c.canvas(trafo=translate(10,10)*rotate(a)).draw(p, 
-           canvas.linestyle.dashed, canvas.linewidth(0.01*a), grey((20-a)/20.0))
+       s=c.canvas(translate(10,10)*rotate(a)).draw(p, canvas.linestyle.dashed, canvas.linewidth(0.01*a), grey((20-a)/20.0))
  
     c.set(linestyle.solid)
     g=GraphXY(c, t, 10, 15, 8, 6)
@@ -369,8 +368,8 @@ if __name__=="__main__":
     g.plot(Data(DataFile("testdata"), x=0, y=1))
     g.run()
 
-    c.canvas(trafo=scale(0.5, 0.4).rotate(10).translate("2 cm","200 mm")).inserteps(0,0,"ratchet_f.eps")
-    c.canvas(trafo=scale(0.2, 0.1).rotate(10).translate("6 cm","180 mm")).inserteps(0,0,"ratchet_f.eps")
+    c.canvas(scale(0.5, 0.4).rotate(10).translate("2 cm","200 mm")).inserteps(0,0,"ratchet_f.eps")
+    c.canvas(scale(0.2, 0.1).rotate(10).translate("6 cm","180 mm")).inserteps(0,0,"ratchet_f.eps")
     
     c.draw(path([moveto("5 cm", "5 cm"), rlineto(0.1,0.1)]), linewidth.THICK)
 
