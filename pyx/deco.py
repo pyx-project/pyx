@@ -469,101 +469,6 @@ earrow.LARGe = earrow(size=_base*math.sqrt(32))
 earrow.LARGE = earrow(size=_base*math.sqrt(64))
 
 
-class wriggle(deco, attr.attr):
-
-    def __init__(self, skipleft=1, skipright=1, radius=0.5, loops=8, curvesperloop=10):
-        self.skipleft_str = skipleft
-        self.skipright_str = skipright
-        self.radius_str = radius
-        self.loops = loops
-        self.curvesperloop = curvesperloop
-
-    def decorate(self, dp):
-        # XXX: is this the correct way to select the basepath???!!!
-        if isinstance(dp.strokepath, path.normpath):
-            basepath = dp.strokepath
-        elif dp.strokepath is not None:
-            basepath = path.normpath(dp.strokepath)
-        elif isinstance(dp.path, path.normpath):
-            basepath = dp.path
-        else:
-            basepath = path.normpath(dp.path)
-
-        skipleft = unit.topt(unit.length(self.skipleft_str, default_type="v"))
-        skipright = unit.topt(unit.length(self.skipright_str, default_type="v"))
-        startpar, endpar = basepath.arclentoparam(map(unit.t_pt, [skipleft, basepath.arclen_pt() - skipright]))
-        radius = unit.topt(unit.length(self.radius_str))
-
-        # search for the first intersection of a circle around start point x, y bigger than startpar
-        x, y = basepath.at_pt(startpar)
-        startcircpar = None
-        for intersectpar in basepath.intersect(path.circle_pt(x, y, radius))[0]:
-            if startpar < intersectpar and (startcircpar is None or startcircpar > intersectpar):
-                startcircpar = intersectpar
-        if startcircpar is None:
-            raise RuntimeError("couldn't find wriggle start point")
-        # calculate start position and angle
-        xcenter, ycenter = basepath.at_pt(startcircpar)
-        startpos = basepath.split([startcircpar])[0].arclen_pt()
-        startangle = math.atan2(y-ycenter, x-xcenter)
-
-        # find the last intersection of a circle around x, y smaller than endpar
-        x, y = basepath.at_pt(endpar)
-        endcircpar = None
-        for intersectpar in basepath.intersect(path.circle_pt(x, y, radius))[0]:
-            if endpar > intersectpar and (endcircpar is None or endcircpar < intersectpar):
-                endcircpar = intersectpar
-        if endcircpar is None:
-            raise RuntimeError("couldn't find wriggle end point")
-        # calculate end position and angle
-        x2, y2 = basepath.at_pt(endcircpar)
-        endpos = basepath.split([endcircpar])[0].arclen_pt()
-        endangle = math.atan2(y-y2, x-x2)
-
-        if endangle < startangle:
-            endangle += 2*math.pi
-
-        # calculate basepath points
-        sections = self.loops * self.curvesperloop
-        posrange = endpos - startpos
-        poslist = [startpos + i*posrange/sections for i in range(sections+1)]
-        parlist = basepath.arclentoparam(map(unit.t_pt, poslist))
-        atlist = [basepath.at_pt(x) for x in parlist]
-
-        # from pyx import color
-        # for at in atlist:
-        #     dp.subcanvas.stroke(path.circle_pt(at[0], at[1], 1), [color.rgb.blue])
-
-        # calculate wriggle points and tangents
-        anglerange = 2*math.pi*self.loops + endangle - startangle
-        deltaangle = anglerange / sections
-        tangentlength = radius * 4 * (1 - math.cos(deltaangle/2)) / (3 * math.sin(deltaangle/2))
-        wriggleat = [None]*(sections+1)
-        wriggletangentstart = [None]*(sections+1)
-        wriggletangentend = [None]*(sections+1)
-        for i in range(sections+1):
-            x, y = atlist[i]
-            angle = startangle + i*anglerange/sections
-            dx, dy = math.cos(angle), math.sin(angle)
-            wriggleat[i] = x + radius*dx, y + radius*dy
-            # dp.subcanvas.stroke(path.line_pt(x, y, x + radius*dx, y + radius*dy), [color.rgb.blue])
-            wriggletangentstart[i] = x + radius*dx + tangentlength*dy, y + radius*dy - tangentlength*dx
-            wriggletangentend[i] = x + radius*dx - tangentlength*dy, y + radius*dy + tangentlength*dx
-
-        # build wriggle path
-        wrigglepath = basepath.split([startpar])[0]
-        wrigglepath.append(path.multicurveto_pt([wriggletangentend[i-1] +
-                                                 wriggletangentstart[i] +
-                                                 wriggleat[i]
-                                                 for i in range(1, sections+1)]))
-        wrigglepath = wrigglepath.joined(basepath.split([endpar])[1])
-
-        # store wriggle path
-        dp.path = wrigglepath # otherwise the bbox is wrong!
-        dp.strokepath = wrigglepath
-        return dp
-
-
 class cycloid(deco, attr.attr):
     """Wraps a cycloid around a path.
 
@@ -577,6 +482,22 @@ class cycloid(deco, attr.attr):
         self.halfloops = 2 * int(loops) + 1
         self.curvesperhloop = int(0.5 * curvesperloop)
         self.sign = left and 1 or -1
+
+    def __call__(self, radius=None, loops=None, skipfirst=None, skiplast=None, curvesperloop=None, left=None):
+        if radius is None:
+            radius = self.radius
+        if loops is None:
+            loops = self.loops
+        if skipfirst is None:
+            skipfirst = self.skipfirst
+        if skiplast is None:
+            skiplast = self.skiplast
+        if curvesperloop is None:
+            curvesperloop = self.curvesperloop
+        if left is None:
+            left = self.left
+        return cycloid(radius=radius, loops=loop, skipfirst=skipfirst, skiplast=skiplast,
+                       curvesperloop=curvesperloop, left=left)
 
     def decorate(self, dp):
         # XXX: is this the correct way to select the basepath???!!!
@@ -677,6 +598,15 @@ class smoothed(deco, attr.attr):
         self.radius = unit.length(radius, default_type="v")
         self.softness = softness
         self.strict = strict
+
+    def __call__(self, radius=None, softness=None, strict=None):
+        if radius is None:
+            radius = self.radius
+        if softness is None:
+            softness = self.softness
+        if strict is None:
+            strict = self.strict
+        return smooted(radius=radius, softness=softness, strict=strict)
 
     def _twobeziersbetweentolines(self, B, tangent1, tangent2, r1, r2, softness=1):
         # Takes the corner B
