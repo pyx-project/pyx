@@ -21,10 +21,10 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-__all__ = ["data", "graph", "key", "style"]
+__all__ = ["axis", "painter", "parter", "rater", "texter", "tick"]
 
 
 for module in __all__:
     __import__(module, globals(), locals(), [])
 
-from graph import graphxy
+from axis import linear, lin, logarithmic, log, split, bar, pathaxis

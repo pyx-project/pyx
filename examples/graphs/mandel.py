@@ -32,9 +32,9 @@ for re_index in range(gridx):
                   float(n)/max_iter])
 
 # Plot graph
-g = graph.type.graphxy(height=8, width=8,
-                       x=graph.axis.linaxis(min=re_min, max=re_max, title=r'$\Re(c)$'),
-                       y=graph.axis.linaxis(min=im_min, max=im_max, title=r'$\Im(c)$'))
+g = graph.graphxy(height=8, width=8,
+                  x=graph.axis.linaxis(min=re_min, max=re_max, title=r'$\Re(c)$'),
+                  y=graph.axis.linaxis(min=im_min, max=im_max, title=r'$\Im(c)$'))
 g.plot(graph.data.data(data.data(d), xmin=0, xmax=1, ymin=2, ymax=3, color=4),
        graph.style.rect(color.palette.Rainbow))
 g.dodata() # plot data first, then axes

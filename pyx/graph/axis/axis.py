@@ -25,7 +25,7 @@
 
 import math
 from pyx import attr, helper
-from pyx.graph import parter, rater, texter, tick, painter
+from pyx.graph.axis import painter, parter, rater, texter, tick
 
 
 class _Imap:
@@ -103,7 +103,7 @@ class _Iaxis:
 
     def getrelsize(self):
         """returns the relative size (width) of the axis
-        - for use in splitaxis, baraxis etc.
+        - for use in split axis, bar axis etc.
         - might return None if no size is available"""
 
     # TODO: describe adjustrange
@@ -155,7 +155,7 @@ class _axis:
       of derived classes"""
 
     def __init__(self, min=None, max=None, reverse=0, divisor=None,
-                       title=None, painter=painter.axispainter(), texter=texter.defaulttexter(),
+                       title=None, painter=painter.plain(), texter=texter.default(),
                        density=1, maxworse=2, manualticks=[]):
         """initializes the instance
         - min and max fix the axis minimum and maximum, respectively;
@@ -175,7 +175,7 @@ class _axis:
           this value; increasing the number will slow down the automatic
           axis partitioning considerably)
         - manualticks and the partitioner results are mixed
-          by _mergeticklists
+          by mergeticklists
         - note that some methods of this class want to access a
           parter and a rater; those attributes implementing _Iparter
           and _Irater should be initialized by the constructors
@@ -296,14 +296,14 @@ class _axis:
         first = 1
         if self.parter is not None:
             min, max = self.getrange()
-            self.ticks = tick._mergeticklists(self.manualticks,
-                                              self.parter.defaultpart(min, max, not self.fixmin, not self.fixmax))
+            self.ticks = tick.mergeticklists(self.manualticks,
+                                             self.parter.defaultpart(min, max, not self.fixmin, not self.fixmax))
             worse = 0
             nextpart = self.parter.lesspart
             while nextpart is not None:
                 newticks = nextpart()
                 if newticks is not None:
-                    newticks = tick._mergeticklists(self.manualticks, newticks)
+                    newticks = tick.mergeticklists(self.manualticks, newticks)
                     if first:
                         bestrate = self.rater.rateticks(self, self.ticks, self.density)
                         bestrate += self.rater.raterange(self.convert(self.ticks[-1])-
@@ -380,19 +380,19 @@ class _axis:
         self._setrange()
 
     def createlinkaxis(self, **args):
-        return linkaxis(self, **args)
+        return linked(self, **args)
 
 
-class linaxis(_axis, _linmap):
+class linear(_axis, _linmap):
     """implementation of a linear axis"""
 
     __implements__ = _Iaxis
 
-    def __init__(self, parter=parter.autolinparter(), rater=rater.axisrater(), **args):
+    def __init__(self, parter=parter.autolinear(), rater=rater.linear(), **args):
         """initializes the instance
         - the parter attribute implements _Iparter
         - manualticks and the partitioner results are mixed
-          by _mergeticklists
+          by mergeticklists
         - the rater implements _Irater and is used to rate different
           tick lists created by the partitioner (after merging with
           manully set ticks)
@@ -403,17 +403,19 @@ class linaxis(_axis, _linmap):
         self.parter = parter
         self.rater = rater
 
+lin = linear
 
-class logaxis(_axis, _logmap):
+
+class logarithmic(_axis, _logmap):
     """implementation of a logarithmic axis"""
 
     __implements__ = _Iaxis
 
-    def __init__(self, parter=parter.autologparter(), rater=rater.axisrater(ticks=rater.axisrater.logticks, labels=rater.axisrater.loglabels), **args):
+    def __init__(self, parter=parter.autologarithmic(), rater=rater.logarithmic(), **args):
         """initializes the instance
         - the parter attribute implements _Iparter
         - manualticks and the partitioner results are mixed
-          by _mergeticklists
+          by mergeticklists
         - the rater implements _Irater and is used to rate different
           tick lists created by the partitioner (after merging with
           manully set ticks)
@@ -424,8 +426,10 @@ class logaxis(_axis, _logmap):
         self.parter = parter
         self.rater = rater
 
+log = logarithmic
 
-class _linkaxis:
+
+class _linked:
     """base for a axis linked to an already existing axis
     - almost all properties of the axis are "copied" from the
       axis this axis is linked to
@@ -437,9 +441,9 @@ class _linkaxis:
 
     __implements__ = _Iaxis
 
-    def __init__(self, linkedaxis, painter=painter.linkaxispainter()):
+    def __init__(self, linkedaxis, painter=painter.linked()):
         """initializes the instance
-        - it gets a axis this linkaxis is linked to
+        - it gets a axis this axis is linked to
         - it gets a painter to be used for this linked axis"""
         self.linkedaxis = linkedaxis
         self.painter = painter
@@ -447,7 +451,7 @@ class _linkaxis:
 
     def __getattr__(self, attr):
         """access to unkown attributes are handed over to the
-        axis this linkaxis is linked to"""
+        axis this axis is linked to"""
         return getattr(self.linkedaxis, attr)
 
     def finish(self, axispos):
@@ -462,36 +466,36 @@ class _linkaxis:
             self.axiscanvas = self.painter.paint(axispos, self)
 
 
-class linkaxis(_linkaxis):
+class linked(_linked):
     """a axis linked to an already existing regular axis
-    - adds divisor handling to _linkaxis"""
+    - adds divisor handling to _linked"""
 
     __implements__ = _Iaxis
 
     def finish(self, axispos):
-        # temporarily enable the linkaxis divisor
+        # temporarily enable the linkedaxis divisor
         self.linkedaxis.usedivisor = 1
         self.linkedaxis._setrange()
 
-        _linkaxis.finish(self, axispos)
+        _linked.finish(self, axispos)
 
-        # disable the linkaxis divisor again
+        # disable the linkedaxis divisor again
         self.linkedaxis.usedivisor = 0
         self.linkedaxis._setrange()
 
 
-class splitaxis:
+class split:
     """implementation of a split axis
     - a split axis contains several (sub-)axes with
       non-overlapping data ranges -- between these subaxes
       the axis is "splitted"
-    - (just to get sure: a splitaxis can contain other
-      splitaxes as its subaxes)"""
+    - (just to get sure: a split axis can contain other
+      split axes as its subaxes)"""
 
     __implements__ = _Iaxis, painter._Iaxispos
 
     def __init__(self, subaxes, splitlist=[0.5], splitdist=0.1, relsizesplitdist=1,
-                       title=None, painter=painter.splitaxispainter()):
+                       title=None, painter=painter.split()):
         """initializes the instance
         - subaxes is a list of subaxes
         - splitlist is a list of graph coordinates, where the splitting
@@ -506,8 +510,8 @@ class splitaxis:
           of the axes)
         - title is the title of the axis as a string
         - painter is the painter of the axis; it should be specialized to
-          the splitaxis
-        - the relsize of the splitaxis is the sum of the relsizes of the
+          the split axis
+        - the relsize of the split axis is the sum of the relsizes of the
           subaxes including the relsizesplitdist"""
         self.subaxes = subaxes
         self.painter = painter
@@ -590,13 +594,13 @@ class splitaxis:
             self.axiscanvas = self.painter.paint(axispos, self)
 
     def createlinkaxis(self, **args):
-        return linksplitaxis(self, **args)
+        return linkedsplit(self, **args)
 
 
 class omitsubaxispainter: pass
 
-class linksplitaxis(_linkaxis):
-    """a splitaxis linked to an already existing splitaxis
+class linkedsplit(_linked):
+    """a split axis linked to an already existing split axis
     - inherits the access to a linked axis -- as before,
       basically only the painter is replaced
     - it takes care of the creation of linked axes of
@@ -604,14 +608,14 @@ class linksplitaxis(_linkaxis):
 
     __implements__ = _Iaxis
 
-    def __init__(self, linkedaxis, painter=painter.linksplitaxispainter(), subaxispainter=omitsubaxispainter):
+    def __init__(self, linkedaxis, painter=painter.linkedsplit(), subaxispainter=omitsubaxispainter):
         """initializes the instance
         - linkedaxis is the axis this axis becomes linked to
         - painter is axispainter instance for this linked axis
         - subaxispainter is a changeable painter to be used for linked
           subaxes; if omitsubaxispainter the createlinkaxis method of
           the subaxis are called without a painter parameter"""
-        _linkaxis.__init__(self, linkedaxis, painter=painter)
+        _linked.__init__(self, linkedaxis, painter=painter)
         self.subaxes = []
         for subaxis in linkedaxis.subaxes:
             painter = attr.selectattr(subaxispainter, len(self.subaxes), len(linkedaxis.subaxes))
@@ -621,14 +625,14 @@ class linksplitaxis(_linkaxis):
                 self.subaxes.append(subaxis.createlinkaxis(painter=painter))
 
 
-class baraxis:
+class bar:
     """implementation of a axis for bar graphs
-    - a bar axes is different from a splitaxis by the way it
+    - a bar axes is different from a split axis by the way it
       selects its subaxes: the convert method gets a list,
       where the first entry is a name selecting a subaxis out
       of a list; instead of the term "bar" or "subaxis" the term
       "item" will be used here
-    - the baraxis stores a list of names be identify the items;
+    - the bar axis stores a list of names be identify the items;
       the names might be of any time (strings, integers, etc.);
       the names can be printed as the titles for the items, but
       alternatively the names might be transformed by the texts
@@ -636,27 +640,27 @@ class baraxis:
       the items in the painter
     - usually, there is only one subaxis, which is used as
       the subaxis for all items
-    - alternatively it is also possible to use another baraxis
+    - alternatively it is also possible to use another bar axis
       as a multisubaxis; it is copied via the createsubaxis
       method whenever another subaxis is needed (by that a
       nested bar axis with a different number of subbars at
       each item can be created)
-    - any axis can be a subaxis of a baraxis; if no subaxis
-      is specified at all, the baraxis simulates a linear
+    - any axis can be a subaxis of a bar axis; if no subaxis
+      is specified at all, the bar axis simulates a linear
       subaxis with a fixed range of 0 to 1"""
 
     def __init__(self, subaxis=None, multisubaxis=None, title=None,
                        dist=0.5, firstdist=None, lastdist=None, names=None,
-                       texts={}, painter=painter.baraxispainter()):
+                       texts={}, painter=painter.bar()):
         """initialize the instance
         - subaxis contains a axis to be used as the subaxis
           for all items
-        - multisubaxis might contain another baraxis instance
+        - multisubaxis might contain another bar axis instance
           to be used to construct a new subaxis for each item;
           (by that a nested bar axis with a different number
           of subbars at each item can be created)
         - only one of subaxis or multisubaxis can be set; if neither
-          of them is set, the baraxis behaves like having a linaxis
+          of them is set, the bar axis behaves like having a linear axis
           as its subaxis with a fixed range 0 to 1
         - the title attribute contains the axis title as a string
         - the dist is a relsize to be used as the distance between
@@ -669,7 +673,7 @@ class baraxis:
         - texts is a dictionary transforming a name to a text in
           the painter; if a name isn't found in the dictionary
           it gets used itself
-        - the relsize of the baraxis is the sum of the
+        - the relsize of the bar axis is the sum of the
           relsizes including all distances between the items"""
         self.dist = dist
         if firstdist is not None:
@@ -700,30 +704,30 @@ class baraxis:
         self.axiscanvas = None
 
     def createsubaxis(self):
-        return baraxis(subaxis=self.multisubaxis.subaxis,
-                       multisubaxis=self.multisubaxis.multisubaxis,
-                       title=self.multisubaxis.title,
-                       dist=self.multisubaxis.dist,
-                       firstdist=self.multisubaxis.firstdist,
-                       lastdist=self.multisubaxis.lastdist,
-                       names=self.multisubaxis.names,
-                       texts=self.multisubaxis.texts,
-                       painter=self.multisubaxis.painter)
+        return bar(subaxis=self.multisubaxis.subaxis,
+                   multisubaxis=self.multisubaxis.multisubaxis,
+                   title=self.multisubaxis.title,
+                   dist=self.multisubaxis.dist,
+                   firstdist=self.multisubaxis.firstdist,
+                   lastdist=self.multisubaxis.lastdist,
+                   names=self.multisubaxis.names,
+                   texts=self.multisubaxis.texts,
+                   painter=self.multisubaxis.painter)
 
     def getrange(self):
-        # TODO: we do not yet have a proper range handling for a baraxis
+        # TODO: we do not yet have a proper range handling for a bar axis
         return None
 
     def setrange(self, min=None, max=None):
-        # TODO: we do not yet have a proper range handling for a baraxis
-        raise RuntimeError("range handling for a baraxis is not implemented")
+        # TODO: we do not yet have a proper range handling for a bar axis
+        raise RuntimeError("range handling for a bar axis is not implemented")
 
     def setname(self, name, *subnames):
-        """add a name to identify an item at the baraxis
+        """add a name to identify an item at the bar axis
         - by using subnames, nested name definitions are
           possible
         - a style (or the user itself) might use this to
-          insert new items into a baraxis
+          insert new items into a bar axis
         - setting self.relsizes to None forces later recalculation"""
         if not self.fixnames:
             if name not in self.names:
@@ -766,15 +770,15 @@ class baraxis:
                 self.relsizes[i] += i * subrelsize
 
     def convert(self, value):
-        """baraxis convert method
+        """bar axis convert method
         - the value should be a list, where the first entry is
           a member of the names (set in the constructor or by the
           setname method); this first entry identifies an item in
-          the baraxis
+          the bar axis
         - following values are passed to the appropriate subaxis
           convert method
         - when there is no subaxis, the convert method will behave
-          like having a linaxis from 0 to 1 as subaxis"""
+          like having a linear axis from 0 to 1 as subaxis"""
         # TODO: proper raising exceptions (which exceptions go thru, which are handled before?)
         if not self.relsizes:
             self.updaterelsizes()
@@ -803,11 +807,11 @@ class baraxis:
             self.axiscanvas = self.painter.paint(axispos, self)
 
     def createlinkaxis(self, **args):
-        return linkbaraxis(self, **args)
+        return linkedbar(self, **args)
 
 
-class linkbaraxis(_linkaxis):
-    """a baraxis linked to an already existing baraxis
+class linkedbar(_linked):
+    """a bar axis linked to an already existing bar axis
     - inherits the access to a linked axis -- as before,
       basically only the painter is replaced
     - it must take care of the creation of linked axes of
@@ -815,11 +819,11 @@ class linkbaraxis(_linkaxis):
 
     __implements__ = _Iaxis
 
-    def __init__(self, linkedaxis, painter=painter.linkbaraxispainter()):
+    def __init__(self, linkedaxis, painter=painter.linkedbar()):
         """initializes the instance
         - it gets a axis this linkaxis is linked to
         - it gets a painter to be used for this linked axis"""
-        _linkaxis.__init__(self, linkedaxis, painter=painter)
+        _linked.__init__(self, linkedaxis, painter=painter)
         if self.multisubaxis is not None:
             self.subaxis = [subaxis.createlinkaxis() for subaxis in self.linkedaxis.subaxis]
         elif self.subaxis is not None:

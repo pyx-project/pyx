@@ -24,20 +24,20 @@
 
 
 from pyx import unit, box
-from pyx.graph import tick
+from pyx.graph.axis import tick
 
 
 # rater
 # conseptional remarks:
 # - raters are used to calculate a rating for a realization of something
-# - here, a rating means a positive floating point value
-# - ratings are used to order those realizations by their suitability (lower
-#   ratings are better)
+# - a rating means a positive floating point value
+# - ratings are used to order those realizations by their suitability
+#   (small ratings are better)
 # - a rating of None means not suitable at all (those realizations should be
 #   thrown out)
 
 
-class cuberater:
+class cube:
     """a value rater
     - a cube rater has an optimal value, where the rate becomes zero
     - for a left (below the optimum) and a right value (above the optimum),
@@ -79,7 +79,7 @@ class cuberater:
         return self.weight * (factor ** 3)
 
 
-class distancerater:
+class distance:
     # TODO: update docstring
     """a distance rater (rates a list of distances)
     - the distance rater rates a list of distances by rating each independently
@@ -119,7 +119,7 @@ class distancerater:
             return rate / float(len(distances))
 
 
-class axisrater:
+class rater:
     """a rater for ticks
     - the rating of axes is splited into two separate parts:
       - rating of the ticks in terms of the number of ticks, subticks,
@@ -139,14 +139,18 @@ class axisrater:
 
     # __implements__ = sole implementation
 
-    linticks = (cuberater(4), cuberater(10, weight=0.5), )
-    linlabels = (cuberater(4), )
-    logticks = (cuberater(5, right=20), cuberater(20, right=100, weight=0.5), )
-    loglabels = (cuberater(5, right=20), cuberater(5, left=-20, right=20, weight=0.5), )
-    stdrange = cuberater(1, weight=2)
-    stddistance = distancerater("1 cm")
+    linearticks = [cube(4), cube(10, weight=0.5)]
+    linearlabels = [cube(4)]
+    linticks = linearticks
+    linlabels = linearlabels
+    logarithmicticks = [cube(5, right=20), cube(20, right=100, weight=0.5)]
+    logarithmiclabels = [cube(5, right=20), cube(5, left=-20, right=20, weight=0.5)]
+    logticks = logarithmicticks
+    loglabels = logarithmiclabels
+    stdrange = cube(1, weight=2)
+    stddistance = distance("1 cm")
 
-    def __init__(self, ticks=linticks, labels=linlabels, range=stdrange, distance=stddistance):
+    def __init__(self, ticks, labels, range=stdrange, distance=stddistance):
         """initializes the axis rater
         - ticks and labels are lists of instances of a value rater
         - the first entry in ticks rate the number of ticks, the
@@ -179,7 +183,7 @@ class axisrater:
           by the sum of the weights of the raters
         - within the rating, all ticks with a higher level are
           considered as ticks for a given level"""
-        maxticklevel, maxlabellevel = tick._maxlevels(ticks)
+        maxticklevel, maxlabellevel = tick.maxlevels(ticks)
         numticks = [0]*maxticklevel
         numlabels = [0]*maxlabellevel
         for t in ticks:
@@ -221,9 +225,28 @@ class axisrater:
         - the density is used within the distancerate instance"""
         if len(axiscanvas.labels) > 1:
             try:
-                distances = [axiscanvas.labels[i].boxdistance_pt(axiscanvas.labels[i+1]) for i in range(len(axiscanvas.labels) - 1)]
+                distances = [axiscanvas.labels[i].boxdistance_pt(axiscanvas.labels[i+1])
+                             for i in range(len(axiscanvas.labels) - 1)]
             except box.BoxCrossError:
                 return None
             return self.distance.rate(distances, density)
         else:
             return None
+
+
+class linear(rater):
+    """a rater with predefined constructor arguments suitable for a linear axis"""
+
+    def __init__(self, ticks=rater.linearticks, labels=rater.linearlabels, **kwargs):
+        rater.__init__(self, ticks, labels, **kwargs)
+
+lin = linear
+
+
+class logarithmic(rater):
+    """a rater with predefined constructor arguments suitable for a logarithmic axis"""
+
+    def __init__(self, ticks=rater.logarithmicticks, labels=rater.logarithmiclabels, **kwargs):
+        rater.__init__(self, ticks, labels, **kwargs)
+
+log = logarithmic

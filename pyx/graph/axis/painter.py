@@ -26,7 +26,7 @@
 import math
 from pyx import canvas, color, attr, text, style, unit, box, path
 from pyx import trafo as trafomodule
-from pyx.graph import tick
+from pyx.graph.axis import tick
 
 
 goldenmean = 0.5 * (math.sqrt(5) + 1)
@@ -260,7 +260,7 @@ class pathaxispos(_axispos):
         raise RuntimeError("unknown direction")
 
 
-class axistitlepainter:
+class _title:
     """class for painting an axis title
     - the axis must have a title attribute when using this painter;
       this title might be None"""
@@ -339,9 +339,9 @@ ticklength.long = ticklength(_base*math.sqrt(16), 1/goldenmean)
 ticklength.long = ticklength(_base*math.sqrt(32), 1/goldenmean)
 
 
-class axispainter(axistitlepainter):
+class plain(_title):
     """class for painting the ticks and labels of an axis
-    - the inherited titleaxispainter is used to paint the title of
+    - the inherited _title is used to paint the title of
       the axis
     - note that the type of the elements of ticks given as an argument
       of the paint method must be suitable for the tick position methods
@@ -387,10 +387,10 @@ class axispainter(axistitlepainter):
         - labelattrs is a list of attributes for a texrunners text
           method; a single entry is allowed without being a list;
           None turns off the labels
-        - titledirection is an instance of rotatetext or None
+        - labeldirection is an instance of rotatetext or None
         - labelhequalize and labelvequalize (booleans) perform an equal
           alignment for straight vertical and horizontal axes, respectively
-        - futher keyword arguments are passed to axistitlepainter"""
+        - futher keyword arguments are passed to _axistitle"""
         self.innerticklength_str = innerticklength
         self.outerticklength_str = outerticklength
         self.tickattrs = tickattrs
@@ -401,7 +401,7 @@ class axispainter(axistitlepainter):
         self.labeldirection = labeldirection
         self.labelhequalize = labelhequalize
         self.labelvequalize = labelvequalize
-        axistitlepainter.__init__(self, **kwargs)
+        _title.__init__(self, **kwargs)
 
     def paint(self, axispos, axis, ac=None):
         if ac is None:
@@ -411,7 +411,7 @@ class axispainter(axistitlepainter):
             t.temp_v = axis.convert(t)
             t.temp_x, t.temp_y = axispos.vtickpoint_pt(t.temp_v)
             t.temp_dx, t.temp_dy = axispos.vtickdirection(t.temp_v)
-        maxticklevel, maxlabellevel = tick._maxlevels(axis.ticks)
+        maxticklevel, maxlabellevel = tick.maxlevels(axis.ticks)
 
         # create & align t.temp_labelbox
         for t in axis.ticks:
@@ -488,14 +488,14 @@ class axispainter(axistitlepainter):
         #     if t.labellevel is not None and self.labelattrs is not None:
         #         del t.temp_labelbox
 
-        axistitlepainter.paint(self, axispos, axis, ac=ac)
+        _title.paint(self, axispos, axis, ac=ac)
 
         return ac
 
 
-class linkaxispainter(axispainter):
+class linked(plain):
     """class for painting a linked axis
-    - the inherited axispainter is used to paint the axis
+    - the inherited plain is used to paint the axis
     - modifies some constructor defaults"""
 
     __implements__ = _Iaxispainter
@@ -506,10 +506,10 @@ class linkaxispainter(axispainter):
         """initializes the instance
         - the labelattrs default is set to None thus skipping the labels
         - the titleattrs default is set to None thus skipping the title
-        - all keyword arguments are passed to axispainter"""
-        axispainter.__init__(self, labelattrs=labelattrs,
-                                   titleattrs=titleattrs,
-                                   **kwargs)
+        - all keyword arguments are passed to plain"""
+        plain.__init__(self, labelattrs=labelattrs,
+                             titleattrs=titleattrs,
+                             **kwargs)
 
 
 class subaxispos:
@@ -578,11 +578,11 @@ class subaxispos:
         return self.baseaxispos.vtickdirection(self.vmin+v*(self.vmax-self.vmin))
 
 
-class splitaxispainter(axistitlepainter):
+class split(_title):
     """class for painting a splitaxis
-    - the inherited titleaxispainter is used to paint the title of
+    - the inherited _title is used to paint the title of
       the axis
-    - the splitaxispainter access the subaxes attribute of the axis"""
+    - the splitaxis access the subaxes attribute of the axis"""
 
     __implements__ = _Iaxispainter
 
@@ -602,12 +602,12 @@ class splitaxispainter(axistitlepainter):
         - breaklinesattrs are a list of stroke attributes for the
           axis break lines; a single entry is allowed without being a
           list; None turns off the break lines
-        - futher keyword arguments are passed to axistitlepainter"""
+        - futher keyword arguments are passed to _title"""
         self.breaklinesdist_str = breaklinesdist
         self.breaklineslength_str = breaklineslength
         self.breaklinesangle = breaklinesangle
         self.breaklinesattrs = breaklinesattrs
-        axistitlepainter.__init__(self, **args)
+        _title.__init__(self, **args)
 
     def paint(self, axispos, axis, ac=None):
         if ac is None:
@@ -645,13 +645,13 @@ class splitaxispainter(axistitlepainter):
                                   path.closepath()), [color.gray.white])
                 ac.stroke(breakline1, self.defaultbreaklinesattrs + self.breaklinesattrs)
                 ac.stroke(breakline2, self.defaultbreaklinesattrs + self.breaklinesattrs)
-        axistitlepainter.paint(self, axispos, axis, ac=ac)
+        _title.paint(self, axispos, axis, ac=ac)
         return ac
 
 
-class linksplitaxispainter(splitaxispainter):
+class linkedsplit(split):
     """class for painting a linked splitaxis
-    - the inherited splitaxispainter is used to paint the axis
+    - the inherited split is used to paint the axis
     - modifies some constructor defaults"""
 
     __implements__ = _Iaxispainter
@@ -659,15 +659,15 @@ class linksplitaxispainter(splitaxispainter):
     def __init__(self, titleattrs=None, **kwargs):
         """initializes the instance
         - the titleattrs default is set to None thus skipping the title
-        - all keyword arguments are passed to splitaxispainter"""
-        splitaxispainter.__init__(self, titleattrs=titleattrs, **kwargs)
+        - all keyword arguments are passed to split"""
+        split.__init__(self, titleattrs=titleattrs, **kwargs)
 
 
-class baraxispainter(axistitlepainter):
+class bar(_title):
     """class for painting a baraxis
-    - the inherited titleaxispainter is used to paint the title of
+    - the inherited _title is used to paint the title of
       the axis
-    - the baraxispainter access the multisubaxis, subaxis names, texts, and
+    - the bar access the multisubaxis, subaxis names, texts, and
       relsizes attributes"""
 
     __implements__ = _Iaxispainter
@@ -703,7 +703,7 @@ class baraxispainter(axistitlepainter):
         - namedirection is an instance of rotatetext or None
         - namehequalize and namevequalize (booleans) perform an equal
           alignment for straight vertical and horizontal axes, respectively
-        - futher keyword arguments are passed to axistitlepainter"""
+        - futher keyword arguments are passed to _title"""
         self.innerticklength_str = innerticklength
         self.outerticklength_str = outerticklength
         self.tickattrs = tickattrs
@@ -714,7 +714,7 @@ class baraxispainter(axistitlepainter):
         self.namepos = namepos
         self.namehequalize = namehequalize
         self.namevequalize = namevequalize
-        axistitlepainter.__init__(self, **args)
+        _title.__init__(self, **args)
 
     def paint(self, axispos, axis, ac=None):
         if ac is None:
@@ -796,13 +796,13 @@ class baraxispainter(axistitlepainter):
                 ac.extent = newextent
         for namebox in nameboxes:
             ac.insert(namebox)
-        axistitlepainter.paint(self, axispos, axis, ac=ac)
+        _title.paint(self, axispos, axis, ac=ac)
         return ac
 
 
-class linkbaraxispainter(baraxispainter):
+class linkedbar(bar):
     """class for painting a linked baraxis
-    - the inherited baraxispainter is used to paint the axis
+    - the inherited bar is used to paint the axis
     - modifies some constructor defaults"""
 
     __implements__ = _Iaxispainter
@@ -811,5 +811,5 @@ class linkbaraxispainter(baraxispainter):
         """initializes the instance
         - the titleattrs default is set to None thus skipping the title
         - the nameattrs default is set to None thus skipping the names
-        - all keyword arguments are passed to axispainter"""
-        baraxispainter.__init__(self, nameattrs=nameattrs, titleattrs=titleattrs, **kwargs)
+        - all keyword arguments are passed to bar"""
+        bar.__init__(self, nameattrs=nameattrs, titleattrs=titleattrs, **kwargs)

@@ -2,14 +2,14 @@ from pyx import *
 
 a, b = 2, 9 # integral area
 
-p = graph.painter.axispainter(basepathattrs=[deco.earrow.normal],
-                              titlepos=0.98, titledirection=None)
-g = graph.type.graphxy(width=8, x2=None, y2=None,
-                       x=graph.axis.linaxis(title="$x$", min=0, max=10,
-                                            manualticks=[graph.tick.tick(a, label="$a$"),
-                                                         graph.tick.tick(b, label="$b$")],
-                                            parter=None,
-                                            painter=p),
+p = graph.axis.painter.axispainter(basepathattrs=[deco.earrow.normal],
+                                   titlepos=0.98, titledirection=None)
+g = graph.graphxy(width=8, x2=None, y2=None,
+                  x=graph.axis.linaxis(title="$x$", min=0, max=10,
+                                       manualticks=[graph.axis.tick.tick(a, label="$a$"),
+                                                    graph.axis.tick.tick(b, label="$b$")],
+                                       parter=None,
+                                       painter=p),
                   y=graph.axis.linaxis(title="$y$", parter=None, painter=p))
 d = g.plot(graph.data.function("y=(x-3)*(x-5)*(x-7)"))
 g.finish()

@@ -1,6 +1,6 @@
 from pyx import *
 
-g = graph.type.graphxy(width=8)
+g = graph.graphxy(width=8)
 g.plot(graph.data.data("minimal.dat", x=1, y=2))
 g.writeEPSfile("minimal")
 
@@ -13,4 +13,4 @@ g.writeEPSfile("minimal")
 # 6  21
 
 # graph styles can be modified by a second parameter to the plot method:
-# g.plot(graph.data("minimal.dat", x=1, y=2), graph.line())
+# g.plot(graph.data.data("minimal.dat", x=1, y=2), graph.line())

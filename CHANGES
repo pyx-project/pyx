@@ -25,11 +25,10 @@ TODO:
   - text module:
     - SlantFont & Co support
     - keep an eye on PEP 324 (popen 5): it could make the texrunner much easier
-    - empty lines in the preamble should not raise an error
-    - texmessage.ignore should be allowed _everywhere_
     - messageparser for replaced fontsizes: Warning
     - messageparser for size differences at the end: Warning not Exception
     - messageparser for overfull/underfull vbox/hbox: Warning not Exception
+    - newline removal when not disturbing texmessages only
   - mathtree module:
      - consider rewrite using the python compiler module
   - data module:
@@ -69,12 +68,14 @@ TODO:
       attributes (TODO: documentation)
     - axis zeropath feature removed (TODO: documentation)
     - graph styles rewrite (TODO: documentation)
-    - graph splitted into several modules in the new subdirectory graph
+    - graph splitted into several modules in pyx/graph and pyx/graph/axis
+    - mergelabels removed; linpart doesn't have a label argument anymore
   - text module:
     - default handling of texmessages as in the new attribute scheme
     - multiple insert bug fixed
     - made left, right, width, height, depth information available (x length
       not taking into account box transformations)
+    - ignore tex message "Please type a command or say `\\end'"
     - added textboxes that are sequentially filled (experimental)
   - examples:
     - mandel.py (contributed by Stephen Phillips)

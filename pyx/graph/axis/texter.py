@@ -24,7 +24,7 @@
 
 
 from pyx import text
-from pyx.graph import tick
+from pyx.graph.axis import tick
 
 
 class _Itexter:
@@ -41,7 +41,7 @@ class _Itexter:
           to not modify it in-place!"""
 
 
-class rationaltexter:
+class rational:
     "a texter creating rational labels (e.g. 'a/b' or even 'a \over b')"
     # XXX: we use divmod here to be more expicit
 
@@ -148,64 +148,64 @@ class rationaltexter:
         for tick in ticks:
             if tick.label is None and tick.labellevel is not None:
                 labeledticks.append(tick)
-                tick.temp_fracenum = tick.enum
-                tick.temp_fracdenom = tick.denom
-                tick.temp_fracminus = 1
-                if tick.temp_fracenum < 0:
-                    tick.temp_fracminus = -tick.temp_fracminus
-                    tick.temp_fracenum = -tick.temp_fracenum
-                if tick.temp_fracdenom < 0:
-                    tick.temp_fracminus = -tick.temp_fracminus
-                    tick.temp_fracdenom = -tick.temp_fracdenom
-                gcd = self.gcd(tick.temp_fracenum, tick.temp_fracdenom)
-                (tick.temp_fracenum, dummy1), (tick.temp_fracdenom, dummy2) = divmod(tick.temp_fracenum, gcd), divmod(tick.temp_fracdenom, gcd)
+                tick.temp_rationalenum = tick.enum
+                tick.temp_rationaldenom = tick.denom
+                tick.temp_rationalminus = 1
+                if tick.temp_rationalenum < 0:
+                    tick.temp_rationalminus = -tick.temp_rationalminus
+                    tick.temp_rationalenum = -tick.temp_rationalenum
+                if tick.temp_rationaldenom < 0:
+                    tick.temp_rationalminus = -tick.temp_rationalminus
+                    tick.temp_rationaldenom = -tick.temp_rationaldenom
+                gcd = self.gcd(tick.temp_rationalenum, tick.temp_rationaldenom)
+                (tick.temp_rationalenum, dummy1), (tick.temp_rationaldenom, dummy2) = divmod(tick.temp_rationalenum, gcd), divmod(tick.temp_rationaldenom, gcd)
         if self.equaldenom:
-            equaldenom = self.lcm(*[tick.temp_fracdenom for tick in ticks if tick.label is None])
+            equaldenom = self.lcm(*[tick.temp_rationaldenom for tick in ticks if tick.label is None])
             if equaldenom is not None:
                 for tick in labeledticks:
-                    factor, dummy = divmod(equaldenom, tick.temp_fracdenom)
-                    tick.temp_fracenum, tick.temp_fracdenom = factor * tick.temp_fracenum, factor * tick.temp_fracdenom
+                    factor, dummy = divmod(equaldenom, tick.temp_rationaldenom)
+                    tick.temp_rationalenum, tick.temp_rationaldenom = factor * tick.temp_rationalenum, factor * tick.temp_rationaldenom
         for tick in labeledticks:
-            fracminus = fracenumminus = fracdenomminus = ""
-            if tick.temp_fracminus == -1:
+            rationalminus = rationalenumminus = rationaldenomminus = ""
+            if tick.temp_rationalminus == -1:
                 plusminus = self.minus
             else:
                 plusminus = self.plus
             if self.minuspos == 0:
-                fracminus = plusminus
+                rationalminus = plusminus
             elif self.minuspos == 1:
-                fracenumminus = plusminus
+                rationalenumminus = plusminus
             elif self.minuspos == -1:
-                fracdenomminus = plusminus
+                rationaldenomminus = plusminus
             else:
                 raise RuntimeError("invalid minuspos")
-            if self.skipenum0 and tick.temp_fracenum == 0:
+            if self.skipenum0 and tick.temp_rationalenum == 0:
                 tick.label = "0"
-            elif (self.skip1 and self.skipdenom1 and tick.temp_fracenum == 1 and tick.temp_fracdenom == 1 and
+            elif (self.skip1 and self.skipdenom1 and tick.temp_rationalenum == 1 and tick.temp_rationaldenom == 1 and
                   (len(self.prefix) or len(self.infix) or len(self.suffix)) and
-                  not len(fracenumminus) and not len(self.enumprefix) and not len(self.enuminfix) and not len(self.enumsuffix) and
-                  not len(fracdenomminus) and not len(self.denomprefix) and not len(self.denominfix) and not len(self.denomsuffix)):
-                tick.label = "%s%s%s%s" % (self.prefix, fracminus, self.infix, self.suffix)
+                  not len(rationalenumminus) and not len(self.enumprefix) and not len(self.enuminfix) and not len(self.enumsuffix) and
+                  not len(rationaldenomminus) and not len(self.denomprefix) and not len(self.denominfix) and not len(self.denomsuffix)):
+                tick.label = "%s%s%s%s" % (self.prefix, rationalminus, self.infix, self.suffix)
             else:
-                if self.skipenum1 and tick.temp_fracenum == 1 and (len(self.enumprefix) or len(self.enuminfix) or len(self.enumsuffix)):
-                    tick.temp_fracenum = "%s%s%s%s" % (self.enumprefix, fracenumminus, self.enuminfix, self.enumsuffix)
+                if self.skipenum1 and tick.temp_rationalenum == 1 and (len(self.enumprefix) or len(self.enuminfix) or len(self.enumsuffix)):
+                    tick.temp_rationalenum = "%s%s%s%s" % (self.enumprefix, rationalenumminus, self.enuminfix, self.enumsuffix)
                 else:
-                    tick.temp_fracenum = "%s%s%s%i%s" % (self.enumprefix, fracenumminus, self.enuminfix, tick.temp_fracenum, self.enumsuffix)
-                if self.skipdenom1 and tick.temp_fracdenom == 1 and not len(fracdenomminus) and not len(self.denomprefix) and not len(self.denominfix) and not len(self.denomsuffix):
-                    frac = tick.temp_fracenum
+                    tick.temp_rationalenum = "%s%s%s%i%s" % (self.enumprefix, rationalenumminus, self.enuminfix, tick.temp_rationalenum, self.enumsuffix)
+                if self.skipdenom1 and tick.temp_rationaldenom == 1 and not len(rationaldenomminus) and not len(self.denomprefix) and not len(self.denominfix) and not len(self.denomsuffix):
+                    rational = tick.temp_rationalenum
                 else:
-                    tick.temp_fracdenom = "%s%s%s%i%s" % (self.denomprefix, fracdenomminus, self.denominfix, tick.temp_fracdenom, self.denomsuffix)
-                    frac = self.over % (tick.temp_fracenum, tick.temp_fracdenom)
-                tick.label = "%s%s%s%s%s" % (self.prefix, fracminus, self.infix, frac, self.suffix)
+                    tick.temp_rationaldenom = "%s%s%s%i%s" % (self.denomprefix, rationaldenomminus, self.denominfix, tick.temp_rationaldenom, self.denomsuffix)
+                    rational = self.over % (tick.temp_rationalenum, tick.temp_rationaldenom)
+                tick.label = "%s%s%s%s%s" % (self.prefix, rationalminus, self.infix, rational, self.suffix)
             tick.labelattrs = tick.labelattrs + self.labelattrs
 
-            # del tick.temp_fracenum    # we've inserted those temporary variables ... and do not care any longer about them
-            # del tick.temp_fracdenom
-            # del tick.temp_fracminus
+            # del tick.temp_rationalenum    # we've inserted those temporary variables ... and do not care any longer about them
+            # del tick.temp_rationaldenom
+            # del tick.temp_rationalminus
 
 
 
-class decimaltexter:
+class decimal:
     "a texter creating decimal labels (e.g. '1.234' or even '0.\overline{3}')"
 
     __implements__ = _Itexter
@@ -298,7 +298,7 @@ class decimaltexter:
             # del tick.temp_decprecision  # we've inserted this temporary variable ... and do not care any longer about it
 
 
-class exponentialtexter:
+class exponential:
     "a texter creating labels with exponentials (e.g. '2\cdot10^5')"
 
     __implements__ = _Itexter
@@ -309,9 +309,9 @@ class exponentialtexter:
                        skipexp1=None,
                        nomantissaexp=r"{10^{%s}}",
                        minusnomantissaexp=r"{-10^{%s}}",
-                       mantissamin=tick.frac((1, 1)), mantissamax=tick.frac((10, 1)),
+                       mantissamin=tick.rational((1, 1)), mantissamax=tick.rational((10, 1)),
                        skipmantissa1=0, skipallmantissa1=1,
-                       mantissatexter=decimaltexter()):
+                       mantissatexter=decimal()):
         r"""initializes the instance
         - plus or minus (string) is inserted for non-negative or negative exponents
         - mantissaexp (string) is taken as a format string generating the exponent;
@@ -336,7 +336,7 @@ class exponentialtexter:
           None turns off the special handling of mantissa -1;
           an examples is r"{-10^{%s}}"
         - mantissamin and mantissamax are the minimum and maximum of the mantissa;
-          they are frac instances greater than zero and mantissamin < mantissamax;
+          they are rational instances greater than zero and mantissamin < mantissamax;
           the sign of the tick is ignored here
         - skipmantissa1 (boolean) turns on skipping of any mantissa equals one
           (and minus when minusnomantissaexp is set)
@@ -405,29 +405,29 @@ class exponentialtexter:
             # del tick.temp_exp
 
 
-class defaulttexter:
+class default:
     "a texter creating decimal or exponential labels"
 
     __implements__ = _Itexter
 
-    def __init__(self, smallestdecimal=tick.frac((1, 1000)),
-                       biggestdecimal=tick.frac((9999, 1)),
+    def __init__(self, smallestdecimal=tick.rational((1, 1000)),
+                       biggestdecimal=tick.rational((9999, 1)),
                        equaldecision=1,
-                       decimaltexter=decimaltexter(),
-                       exponentialtexter=exponentialtexter()):
+                       decimal=decimal(),
+                       exponential=exponential()):
         """initializes the instance
         - smallestdecimal and biggestdecimal are the smallest and
-          biggest decimal values, where the decimaltexter should be used;
-          they are frac instances; the sign of the tick is ignored here;
-          a tick at zero is considered for the decimaltexter as well
-        - equaldecision (boolean) uses decimaltexter or exponentialtexter
+          biggest decimal values, where the decimal texter should be used;
+          they are rational instances; the sign of the tick is ignored here;
+          a tick at zero is considered for the decimal texter as well
+        - equaldecision (boolean) uses decimal texter or exponential texter
           globaly (set) or for each tick separately (unset)
-        - decimaltexter and exponentialtexter are texters to be used"""
+        - decimal and exponential are texters to be used"""
         self.smallestdecimal = smallestdecimal
         self.biggestdecimal = biggestdecimal
         self.equaldecision = equaldecision
-        self.decimaltexter = decimaltexter
-        self.exponentialtexter = exponentialtexter
+        self.decimal = decimal
+        self.exponential = exponential
 
     def labels(self, ticks):
         decticks = []
@@ -440,11 +440,11 @@ class defaulttexter:
                     expticks.append(tick)
         if self.equaldecision:
             if len(expticks):
-                self.exponentialtexter.labels(ticks)
+                self.exponential.labels(ticks)
             else:
-                self.decimaltexter.labels(ticks)
+                self.decimal.labels(ticks)
         else:
             for tick in decticks:
-                self.decimaltexter.labels([tick])
+                self.decimal.labels([tick])
             for tick in expticks:
-                self.exponentialtexter.labels([tick])
+                self.exponential.labels([tick])

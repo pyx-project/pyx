@@ -1,5 +1,5 @@
 import datetime
-from pyx.graph import axis, rater, style
+from pyx.graph.axis import axis, rater, style
 
 """some experimental code for creating a time axis
 - it needs python 2.3 to be used (it is based on the new datetime data type)

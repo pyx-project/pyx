@@ -1,52 +1,45 @@
 Structure of modules and classes in the graph subdirectory
 
-general TODO: separate all interface definitions from implemenations (and finish all interface definitions)
-
-tick.py
-
-    frac [a very basic and limited rational number type]
-    tick(frac) [tick position based on a rational number (includes interface definition)]
-
-    (contains some helper functions to build and handle a list of ticks)
-
-    TODO: - move tick.py to axis/tick.py
-          - frac -> rational
+general TODO: - separate all interface definitions from implemenations (and finish all interface definitions)
 
 
-parter.py
+graph/axis/tick.py
+
+    rational [a very basic and limited rational number type]
+    tick(rational) [tick position based on a rational number (includes interface definition)]
+
+    (contains two helper functions to build and handle a list of ticks: mergeticklists and maxlevels)
+
+
+graph/axis/parter.py
 
     _Iparter [interface definition]
 
-    linparter [parter for linear axes]
-    autolinparter [automatic parter for linear axes (default parter for linear axes)]
+    linear [parter for linear axes]
+    autolinear [automatic parter for linear axes (default parter for linear axes)]
 
     preexp [helper class for defining tick positions on a logarithmic scale]
 
-    logparter(linparter) [parter for logarithmic axes]
-    autologparter(logparter) [automatic parter for logarithmix axes (default parter for logarithmic axes)]
+    logarithmic(linparter) [parter for logarithmic axes]
+    autologarithmic(logparter) [automatic parter for logarithmix axes (default parter for logarithmic axes)]
 
-    TODO: - move parter.py to axis/parter.py
-          - linparter -> linear
-          - autolinparter -> autolinear
-          - logparter -> logarithmic
-          - autologparter -> autologarithmic
+    shortcuts: - lin = linear
+               - autolin = autolinear
+               - log = logarithmic
+               - autolog = autologarithmic
 
-texter.py
+
+graph/axis/texter.py
 
     _Itexter [interface definition]
 
-    rationaltexter [implements _Itexter to create rational number labels]
-    decimaltexter [implements _Itexter to create decimal labels]
-    exponentialtexter [implements _Itexter to create exponentential labels]
-    defaulttexter [implements _Itexter by mixing decimal and exponential texter (default texter for regular axes)]
+    rational [implements _Itexter to create rational number labels]
+    decimal [implements _Itexter to create decimal labels]
+    exponential [implements _Itexter to create exponentential labels]
+    default [implements _Itexter by mixing decimal and exponential texter (default texter for regular axes)]
 
-    TODO: - move texter.py to axis/texter.py
-          - rationaltexter -> rational
-          - decimaltexter -> decimal
-          - exponentialtexter -> exponential
-          - defaulttexter -> default
 
-painter.py
+graph/axis/painter.py
 
     _Iaxispainter [interface definition]
     _Iaxispos [interface definition]
@@ -57,59 +50,41 @@ painter.py
     _axispos [partially implements _Iaxispos interface]
     pathaxispos(_axispos) [implements _Iaxispos for an arbitrary path]
 
-    axistitlepainter [implements _Iaxis (shared task of plotting axis titles in derived axispainters)]
+    _title [implements _Iaxis (shared task of plotting axis titles in derived axispainters)]
 
     geometricseries(attr.changeattr) [a changeable attribute resulting in a geometric series]
     ticklength(geometricseries) [geometric series for tick lengths]
 
-    axispainter(axistitlepainter) [default axis painter for regular axes (linaxis, logaxis)]
-    linkaxispainter(axispainter) [default axis painter for linked regular axes (turns off some features)]
+    plain(_title) [default axis painter for regular axes (linaxis, logaxis)]
+    linked(plain) [default axis painter for linked regular axes (turns off some features)]
 
     subaxispos [implements _Iaxispos for subaxes, which occure in split axes and bar axes)]
 
-    splitaxispainter(axistitlepainter) [default axis painter for split axes]
+    split(_title) [default axis painter for split axes]
     omitsubaxispainter [helper class for linksplitaxis argument handling]
-    linksplitaxispainter(splitaxispainter) [default axis painter for linked split axes]
+    linkedsplit(split) [default axis painter for linked split axes]
 
-    baraxispainter(axistitlepainter) [default axis painter for bar axes]
-    linkbaraxispainter(baraxispainter) [default axis painter for linked bar axes]
+    bar(_title) [default axis painter for bar axes]
+    linkedbar(bar) [default axis painter for linked bar axes]
 
-    TODO: - move painter.py to axis/painter.py
-          - axistitlepainter -> _axistitle
-          - axispainter -> default
-<MS>               ein "default" sollte doch eigentlich nur ein link auf einen existierenden painter sein.
-                   (gilt auch beim texter, etc...)
-                   wie waere es mit "plain" ?
-<AW>               Von mir aus gern. Ich würde dann aber das default ganz sein lassen. Es gibt einen plain
-                   painter für normale Achsen ...
-          - linkaxispainter -> linked
-          - splitaxispainter -> split
-          - linksplitaxispainter -> linkedsplit
-          - baraxispainter -> bar
-          - linkbaraxispainter -> linkedbar
 
-rater.py
+graph/axis/rater.py
 
     cuberater [rater for values like the number of ticks etc. (includes interface definition)]
 
     distancerater [rater for optimal distances of boxes (includes interface definition)]
 
-    rater.py [rater for ticks and axis layout (includes interface definition)]
+    rater [rater for ticks and axis layout (includes interface definition)]
 
-    TODO: - move rater.py to axis/rater.py
-          - cuberater -> cube
-<MS>                was hat der Wuerfel mit dem rater zu tun?
-                    "Double Dangerous Bends" here: Ich habe noch _nie_ einen rater umgestellt ;-)
-<AW>                selbst ich habe noch nie einen Achsenrater auch nur umkonfiguriert. Man braucht
-                    das defakto nicht. Umso uninteressanter ist der Name. Ich würde cube lassen, denn
-                    es ist ein **3-rater für Zahlen. Wie sollte man den sonst nennen?
-<JL>                Ok.
-          - distancerater -> distance
-          - rater -> _rater
-          - new class "linear" with predefined variables for linear partitions
-          - new class "logarithmic" with predefined variables for logarithmic partitions
+    linear [rater with predefined constructor arguments suitable for a linear axis]
 
-axis.py
+    logarithmic [rater with predefined constructor arguments suitable for a logarithmic axis]
+
+    shortcuts: - lin = linear
+               - log = logarithmic
+
+
+graph/axis/axis.py
 
     _Imap [interface definition]
     _Iaxis [interface definition]
@@ -119,48 +94,40 @@ axis.py
 
     _axis [partitionally implements _Iaxis; _Imap is missing to fully implement _Iaxis]
 
-    linaxis(_axis, _linmap) [implements _Iaxis for a linear axis]
-    logaxis(_axis, _linmap) [implements _Iaxis for a logarithmic axis]
+    linear(_axis, _linmap) [implements _Iaxis for a linear axis]
+    logarithmic(_axis, _linmap) [implements _Iaxis for a logarithmic axis]
 
-    linkaxis [implements _Iaxis by linking to a linaxis or logaxis instance]
+    _linked [implements _Iaxis by linking to a regular axis instance, but not taking into account an axis divisor]
+    linked [implements _Iaxis by linking to a regular]
 
-    splitaxis [implements _Iaxis for a splitable axis]
-    linksplitaxis(linkaxis) [implements _Iaxis by linking to a splitaxis instance]
+    split [implements _Iaxis for a splitable axis]
+    linkedsplit(_linked) [implements _Iaxis by linking to a splitaxis instance]
 
-    baraxis [implements _Iaxis for a bar axis]
-    linkbaraxis(linkaxis) [implements _Iaxis by linking to a baraxis instance]
+    bar [implements _Iaxis for a bar axis]
+    linkedbar(_linked) [implements _Iaxis by linking to a baraxis instance]
 
     (helper function pathaxis to draw a axis at an arbitrary path)
 
-    TODO: - move axis.py to axis/type.py
-<MS>                Ich finde -- vor allem bei der Diskussion um zu lange Namen --
-                    das "type" ueberfluessig. Man sollte das hier ins __init__ von axis einfuegen
-                    mit "from type import *" in __init__.py,
-                    so dass man mit graph.axis.linear(...) bekommt, was Du hier anbietest.
+    shortcuts: - lin = linear
+               - log = logarithmic
+               - pyx.graph.axis.linear = pyx.graph.axis.axis.linear
+               - pyx.graph.axis.lin = pyx.graph.axis.axis.lin
+               - pyx.graph.axis.logarithmic = pyx.graph.axis.axis.logarithmic
+               - pyx.graph.axis.log = pyx.graph.axis.axis.log
+               - pyx.graph.axis.linked = pyx.graph.axis.axis.linked
+               - pyx.graph.axis.split = pyx.graph.axis.axis.split
+               - pyx.graph.axis.linkedsplit = pyx.graph.axis.axis.linkedsplit
+               - pyx.graph.axis.bar = pyx.graph.axis.axis.bar
+               - pyx.graph.axis.linkedbar = pyx.graph.axis.axis.linkedbar
+               - pyx.graph.axis.pathaxis = pyx.graph.axis.axis.pathaxis
 
-                    Das gleiche gilt uebrigens fuer graph.type
-
-<AW>                Interessante Möglichkeit. Allerdings wird im __init__ nie viel ausprogrammiert.
-                    Man könnte aber Dinge reinladen. Bin -0 zum Laden ...
-
-                    Hat denn die Benutzerbefragung hinsichtlich eines Verzeichnisses pyx/axis was
-                    gebracht? Das ist hinsichtlich der Verkürzung der Namen viel wirksamer ...
-
-<JL>                Benutzer schmidg ist eher pro graph.axis (aus Gründen der Ordnung und Logik)
-                    Benutzer strasmic ist pro axis ("kürzer")
-          - linaxis -> linear
-          - logaxis -> logarithmic
-          - linkaxis -> linked
-          - splitaxis -> split
-          - linksplitaxis -> linkedsplit
-          - baraxis -> bar
-          - linkbaraxis -> linkedbar
 
 key.py
 
     [interface definition missing]
 
     class key [graph key painter]
+
 
 style.py
 
@@ -175,11 +142,6 @@ style.py
     arrow(_style) [draw arrows with given size and direction]
     rect(_style) [draw rectangles with given color]
     bar(_style) [draw bars in a bar graph]
-
-    TODO: - rect -> rectangle
-<MS>               Wir habe im path, in box, etc. ueberall "rect".
-<AW>               Stimmt. Ist das denn gut, dass wir das da auch haben?
-<JL>               Ja, ist gut so, ich meine rect, wegen mir auch als alias auf rectangle.
 
 
 data.py
@@ -210,7 +172,8 @@ data.py
                should become an intrinsic feature (with the option to turn it off by the keyword parameter cache=0
                (like in rrules of the dateutil package))
 
-type:
+
+graph.py
 
     [interface definition missing -- we don't really have interfaces here, but we may introduce some generic
     behaviour of all graphs (domethods, access to axes and positions, etc.)]
@@ -218,6 +181,9 @@ type:
     lineaxispos [implements _Iaxispos for a straight line]
     lineaxisposlinegrid(lineaxispos) [like _Iaxispos but adds grid lines for a x-y-graph]
     graphxy(canvas.canvas) [x-y-graph]
+
+    shortcuts: - pyx.graph.graphxy = pyx.graph.graph.graphxy
+
 
 timeaxis.py (experimental code, needs python 2.3)
 

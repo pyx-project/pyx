@@ -6,7 +6,7 @@ from pyx.deco import barrow, earrow
 from pyx.style import linewidth, linestyle
 from pyx.graph.type import graphxy
 from pyx.graph.axis import linaxis
-from pyx.graph.painter import axispainter
+from pyx.graph.axis.painter import axispainter
 from pyx.graph.style import line
 from pyx.graph.data import function
 

@@ -25,7 +25,7 @@
 
 import math, re, string
 from pyx import canvas, path, trafo, unit
-from pyx.graph import painter, axis
+from pyx.graph.axis import painter, axis
 
 
 goldenmean = 0.5 * (math.sqrt(5) + 1)
@@ -384,7 +384,7 @@ class graphxy(canvas.canvas):
     def initaxes(self, axes, addlinkaxes=0):
         for key in self.axisnames:
             if not axes.has_key(key):
-                axes[key] = axis.linaxis()
+                axes[key] = axis.linear()
             elif axes[key] is None:
                 del axes[key]
             if addlinkaxes:

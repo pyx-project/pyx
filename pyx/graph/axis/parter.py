@@ -25,7 +25,7 @@
 
 import math
 from pyx import helper
-from pyx.graph import tick
+from pyx.graph.axis import tick
 
 
 # partitioner (parter)
@@ -65,23 +65,21 @@ class _Iparter:
         see lesspart, but increase the number of ticks"""
 
 
-class linparter:
+class linear:
     """linear partition scheme
     ticks and label distances are explicitly provided to the constructor"""
 
     __implements__ = _Iparter
 
-    def __init__(self, tickdist=None, labeldist=None, labels=None, extendtick=0, extendlabel=None, epsilon=1e-10):
+    def __init__(self, tickdist=None, labeldist=None, extendtick=0, extendlabel=None, epsilon=1e-10):
         """configuration of the partition scheme
         - tickdist and labeldist should be a list, where the first value
           is the distance between ticks with ticklevel/labellevel 0,
           the second list for ticklevel/labellevel 1, etc.;
           a single entry is allowed without being a list
-        - tickdist and labeldist values are passed to the frac constructor
+        - tickdist and labeldist values are passed to the rational constructor
         - when labeldist is None and tickdist is not None, the tick entries
           for ticklevel 0 are used for labels and vice versa (ticks<->labels)
-        - labels are applied to the resulting partition via the
-          mergelabels function (additional information available there)
         - extendtick allows for the extension of the range given to the
           defaultpart method to include the next tick with the specified
           level (None turns off this feature); note, that this feature is
@@ -92,38 +90,37 @@ class linparter:
           value (relative to the axis range given to the defaultpart method)
           without creating another tick specified by extendtick/extendlabel"""
         if tickdist is None and labeldist is not None:
-            self.ticklist = (tick.frac(helper.ensuresequence(labeldist)[0]),)
+            self.ticklist = (tick.rational(helper.ensuresequence(labeldist)[0]),)
         else:
-            self.ticklist = map(tick.frac, helper.ensuresequence(tickdist))
+            self.ticklist = map(tick.rational, helper.ensuresequence(tickdist))
         if labeldist is None and tickdist is not None:
-            self.labellist = (tick.frac(helper.ensuresequence(tickdist)[0]),)
+            self.labellist = (tick.rational(helper.ensuresequence(tickdist)[0]),)
         else:
-            self.labellist = map(tick.frac, helper.ensuresequence(labeldist))
-        self.labels = labels
+            self.labellist = map(tick.rational, helper.ensuresequence(labeldist))
         self.extendtick = extendtick
         self.extendlabel = extendlabel
         self.epsilon = epsilon
 
-    def extendminmax(self, min, max, frac, extendmin, extendmax):
+    def extendminmax(self, min, max, dist, extendmin, extendmax):
         """return new min, max tuple extending the range min, max
-        - frac is the tick distance to be used
+        - dist is the tick distance to be used
         - extendmin and extendmax are booleans to allow for the extension"""
         if extendmin:
-            min = float(frac) * math.floor(min / float(frac) + self.epsilon)
+            min = float(dist) * math.floor(min / float(dist) + self.epsilon)
         if extendmax:
-            max = float(frac) * math.ceil(max / float(frac) - self.epsilon)
+            max = float(dist) * math.ceil(max / float(dist) - self.epsilon)
         return min, max
 
-    def getticks(self, min, max, frac, ticklevel=None, labellevel=None):
+    def getticks(self, min, max, dist, ticklevel=None, labellevel=None):
         """return a list of equal spaced ticks
-        - the tick distance is frac, the ticklevel is set to ticklevel and
+        - the tick distance is dist, the ticklevel is set to ticklevel and
           the labellevel is set to labellevel
         - min, max is the range where ticks should be placed"""
-        imin = int(math.ceil(min / float(frac) - 0.5 * self.epsilon))
-        imax = int(math.floor(max / float(frac) + 0.5 * self.epsilon))
+        imin = int(math.ceil(min/float(dist) - 0.5*self.epsilon))
+        imax = int(math.floor(max/float(dist) + 0.5*self.epsilon))
         ticks = []
         for i in range(imin, imax + 1):
-            ticks.append(tick.tick((long(i) * frac.enum, frac.denom), ticklevel=ticklevel, labellevel=labellevel))
+            ticks.append(tick.tick((i*dist.enum, dist.denom), ticklevel=ticklevel, labellevel=labellevel))
         return ticks
 
     def defaultpart(self, min, max, extendmin, extendmax):
@@ -134,11 +131,9 @@ class linparter:
 
         ticks = []
         for i in range(len(self.ticklist)):
-            ticks = tick._mergeticklists(ticks, self.getticks(min, max, self.ticklist[i], ticklevel = i))
+            ticks = tick.mergeticklists(ticks, self.getticks(min, max, self.ticklist[i], ticklevel = i))
         for i in range(len(self.labellist)):
-            ticks = tick._mergeticklists(ticks, self.getticks(min, max, self.labellist[i], labellevel = i))
-
-        tick._mergelabels(ticks, self.labels)
+            ticks = tick.mergeticklists(ticks, self.getticks(min, max, self.labellist[i], labellevel = i))
 
         return ticks
 
@@ -148,18 +143,20 @@ class linparter:
     def morepart(self):
         return None
 
+lin = linear
 
-class autolinparter:
+
+class autolinear:
     """automatic linear partition scheme
     - possible tick distances are explicitly provided to the constructor
     - tick distances are adjusted to the axis range by multiplication or division by 10"""
 
     __implements__ = _Iparter
 
-    defaultvariants = ((tick.frac((1, 1)), tick.frac((1, 2))),
-                       (tick.frac((2, 1)), tick.frac((1, 1))),
-                       (tick.frac((5, 2)), tick.frac((5, 4))),
-                       (tick.frac((5, 1)), tick.frac((5, 2))))
+    defaultvariants = ((tick.rational((1, 1)), tick.rational((1, 2))),
+                       (tick.rational((2, 1)), tick.rational((1, 1))),
+                       (tick.rational((5, 2)), tick.rational((5, 4))),
+                       (tick.rational((5, 1)), tick.rational((5, 2))))
 
     def __init__(self, variants=defaultvariants, extendtick=0, epsilon=1e-10):
         """configuration of the partition scheme
@@ -167,7 +164,7 @@ class autolinparter:
         - tickdist should be a list, where the first value
           is the distance between ticks with ticklevel 0,
           the second for ticklevel 1, etc.
-        - tickdist values are passed to the frac constructor
+        - tickdist values are passed to the rational constructor
         - labellevel is set to None except for those ticks in the partitions,
           where ticklevel is zero. There labellevel is also set to zero.
         - extendtick allows for the extension of the range given to the
@@ -185,16 +182,16 @@ class autolinparter:
     def defaultpart(self, min, max, extendmin, extendmax):
         logmm = math.log(max - min) / math.log(10)
         if logmm < 0: # correction for rounding towards zero of the int routine
-            base = tick.frac((10L, 1), int(logmm - 1))
+            base = tick.rational((10, 1), power=int(logmm-1))
         else:
-            base = tick.frac((10L, 1), int(logmm))
-        ticks = map(tick.frac, self.variants[0])
+            base = tick.rational((10, 1), power=int(logmm))
+        ticks = map(tick.rational, self.variants[0])
         useticks = [t * base for t in ticks]
         self.lesstickindex = self.moretickindex = 0
-        self.lessbase = tick.frac((base.enum, base.denom))
-        self.morebase = tick.frac((base.enum, base.denom))
+        self.lessbase = tick.rational((base.enum, base.denom))
+        self.morebase = tick.rational((base.enum, base.denom))
         self.min, self.max, self.extendmin, self.extendmax = min, max, extendmin, extendmax
-        part = linparter(tickdist=useticks, extendtick=self.extendtick, epsilon=self.epsilon)
+        part = linear(tickdist=useticks, extendtick=self.extendtick, epsilon=self.epsilon)
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
     def lesspart(self):
@@ -203,9 +200,9 @@ class autolinparter:
         else:
             self.lesstickindex = 0
             self.lessbase.enum *= 10
-        ticks = map(tick.frac, self.variants[self.lesstickindex])
+        ticks = map(tick.rational, self.variants[self.lesstickindex])
         useticks = [t * self.lessbase for t in ticks]
-        part = linparter(tickdist=useticks, extendtick=self.extendtick, epsilon=self.epsilon)
+        part = linear(tickdist=useticks, extendtick=self.extendtick, epsilon=self.epsilon)
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
     def morepart(self):
@@ -214,10 +211,12 @@ class autolinparter:
         else:
             self.moretickindex = len(self.variants) - 1
             self.morebase.denom *= 10
-        ticks = map(tick.frac, self.variants[self.moretickindex])
+        ticks = map(tick.rational, self.variants[self.moretickindex])
         useticks = [t * self.morebase for t in ticks]
-        part = linparter(tickdist=useticks, extendtick=self.extendtick, epsilon=self.epsilon)
+        part = linear(tickdist=useticks, extendtick=self.extendtick, epsilon=self.epsilon)
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
+
+autolin = autolinear
 
 
 class preexp:
@@ -225,7 +224,7 @@ class preexp:
     instances of this class define tick positions suitable for
     logarithmic axes by the following instance variables:
     - exp: integer, which defines multiplicator (usually 10)
-    - pres: list of tick positions (rational numbers, e.g. instances of frac)
+    - pres: list of tick positions (rational numbers, e.g. instances of rational)
     possible positions are these tick positions and arbitrary divisions
     and multiplications by the exp value"""
 
@@ -235,19 +234,19 @@ class preexp:
          self.exp = exp
 
 
-class logparter(linparter):
+class logarithmic(linear):
     """logarithmic partition scheme
     ticks and label positions are explicitly provided to the constructor"""
 
     __implements__ = _Iparter
 
-    pre1exp5   = preexp(tick.frac((1, 1)), 100000)
-    pre1exp4   = preexp(tick.frac((1, 1)), 10000)
-    pre1exp3   = preexp(tick.frac((1, 1)), 1000)
-    pre1exp2   = preexp(tick.frac((1, 1)), 100)
-    pre1exp    = preexp(tick.frac((1, 1)), 10)
-    pre125exp  = preexp((tick.frac((1, 1)), tick.frac((2, 1)), tick.frac((5, 1))), 10)
-    pre1to9exp = preexp(map(lambda x: tick.frac((x, 1)), range(1, 10)), 10)
+    pre1exp5   = preexp(tick.rational((1, 1)), 100000)
+    pre1exp4   = preexp(tick.rational((1, 1)), 10000)
+    pre1exp3   = preexp(tick.rational((1, 1)), 1000)
+    pre1exp2   = preexp(tick.rational((1, 1)), 100)
+    pre1exp    = preexp(tick.rational((1, 1)), 10)
+    pre125exp  = preexp((tick.rational((1, 1)), tick.rational((2, 1)), tick.rational((5, 1))), 10)
+    pre1to9exp = preexp(map(lambda x: tick.rational((x, 1)), range(1, 10)), 10)
     #  ^- we always include 1 in order to get extendto(tick|label)level to work as expected
 
     def __init__(self, tickpos=None, labelpos=None, labels=None, extendtick=0, extendlabel=None, epsilon=1e-10):
@@ -300,19 +299,19 @@ class logparter(linparter):
             if maxpower is None or imax >= maxpower:
                 maxpower, maxindex = imax, i
         if minindex:
-            minfrac = preexp.pres[minindex - 1]
+            minrational = preexp.pres[minindex - 1]
         else:
-            minfrac = preexp.pres[-1]
+            minrational = preexp.pres[-1]
             minpower -= 1
         if maxindex != len(preexp.pres) - 1:
-            maxfrac = preexp.pres[maxindex + 1]
+            maxrational = preexp.pres[maxindex + 1]
         else:
-            maxfrac = preexp.pres[0]
+            maxrational = preexp.pres[0]
             maxpower += 1
         if extendmin:
-            min = float(minfrac) * float(preexp.exp) ** minpower
+            min = float(minrational) * float(preexp.exp) ** minpower
         if extendmax:
-            max = float(maxfrac) * float(preexp.exp) ** maxpower
+            max = float(maxrational) * float(preexp.exp) ** maxpower
         return min, max
 
     def getticks(self, min, max, preexp, ticklevel=None, labellevel=None):
@@ -325,48 +324,50 @@ class logparter(linparter):
         minimin = 0
         maximax = 0
         for f in preexp.pres:
-            fracticks = []
+            thisticks = []
             imin = int(math.ceil(math.log(min / float(f)) /
                                  math.log(preexp.exp) - 0.5 * self.epsilon))
             imax = int(math.floor(math.log(max / float(f)) /
                                   math.log(preexp.exp) + 0.5 * self.epsilon))
             for i in range(imin, imax + 1):
-                pos = f * tick.frac((preexp.exp, 1), i)
-                fracticks.append(tick.tick((pos.enum, pos.denom), ticklevel = ticklevel, labellevel = labellevel))
-            ticks = tick._mergeticklists(ticks, fracticks)
+                pos = f * tick.rational((preexp.exp, 1), power=i)
+                thisticks.append(tick.tick((pos.enum, pos.denom), ticklevel = ticklevel, labellevel = labellevel))
+            ticks = tick.mergeticklists(ticks, thisticks)
         return ticks
 
+log = logarithmic
 
-class autologparter(logparter):
+
+class autologarithmic(logarithmic):
     """automatic logarithmic partition scheme
     possible tick positions are explicitly provided to the constructor"""
 
     __implements__ = _Iparter
 
-    defaultvariants = (((logparter.pre1exp,      # ticks
-                         logparter.pre1to9exp),  # subticks
-                        (logparter.pre1exp,      # labels
-                         logparter.pre125exp)),  # sublevels
+    defaultvariants = (((logarithmic.pre1exp,      # ticks
+                         logarithmic.pre1to9exp),  # subticks
+                        (logarithmic.pre1exp,      # labels
+                         logarithmic.pre125exp)),  # sublevels
 
-                       ((logparter.pre1exp,      # ticks
-                         logparter.pre1to9exp),  # subticks
-                        None),                 # labels like ticks
+                       ((logarithmic.pre1exp,      # ticks
+                         logarithmic.pre1to9exp),  # subticks
+                        None),                     # labels like ticks
 
-                       ((logparter.pre1exp2,     # ticks
-                         logparter.pre1exp),     # subticks
-                        None),                 # labels like ticks
+                       ((logarithmic.pre1exp2,     # ticks
+                         logarithmic.pre1exp),     # subticks
+                        None),                     # labels like ticks
 
-                       ((logparter.pre1exp3,     # ticks
-                         logparter.pre1exp),     # subticks
-                        None),                 # labels like ticks
+                       ((logarithmic.pre1exp3,     # ticks
+                         logarithmic.pre1exp),     # subticks
+                        None),                     # labels like ticks
 
-                       ((logparter.pre1exp4,     # ticks
-                         logparter.pre1exp),     # subticks
-                        None),                 # labels like ticks
+                       ((logarithmic.pre1exp4,     # ticks
+                         logarithmic.pre1exp),     # subticks
+                        None),                     # labels like ticks
 
-                       ((logparter.pre1exp5,     # ticks
-                         logparter.pre1exp),     # subticks
-                        None))                 # labels like ticks
+                       ((logarithmic.pre1exp5,     # ticks
+                         logarithmic.pre1exp),     # subticks
+                        None))                     # labels like ticks
 
     def __init__(self, variants=defaultvariants, extendtick=0, extendlabel=None, epsilon=1e-10):
         """configuration of the partition scheme
@@ -404,20 +405,22 @@ class autologparter(logparter):
         self.min, self.max, self.extendmin, self.extendmax = min, max, extendmin, extendmax
         self.morevariantsindex = self.variantsindex
         self.lessvariantsindex = self.variantsindex
-        part = logparter(tickpos=self.variants[self.variantsindex][0], labelpos=self.variants[self.variantsindex][1],
-                         extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon)
+        part = logarithmic(tickpos=self.variants[self.variantsindex][0], labelpos=self.variants[self.variantsindex][1],
+                           extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon)
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
     def lesspart(self):
         self.lessvariantsindex += 1
         if self.lessvariantsindex < len(self.variants):
-            part = logparter(tickpos=self.variants[self.lessvariantsindex][0], labelpos=self.variants[self.lessvariantsindex][1],
-                             extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon)
+            part = logarithmic(tickpos=self.variants[self.lessvariantsindex][0], labelpos=self.variants[self.lessvariantsindex][1],
+                               extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon)
             return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
     def morepart(self):
         self.morevariantsindex -= 1
         if self.morevariantsindex >= 0:
-            part = logparter(tickpos=self.variants[self.morevariantsindex][0], labelpos=self.variants[self.morevariantsindex][1],
-                             extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon)
+            part = logarithmic(tickpos=self.variants[self.morevariantsindex][0], labelpos=self.variants[self.morevariantsindex][1],
+                               extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon)
             return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
+
+autolog = autologarithmic

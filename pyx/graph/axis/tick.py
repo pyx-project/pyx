@@ -23,17 +23,23 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-from pyx import helper
+import sys
+
+# test automatic long conversion
+if type(sys.maxint+1) is type(0L):
+    autolong = 1
+else:
+    autolong = 0
 
 
-class frac:
-    """fraction class for rational arithmetics
+class rational:
+    """rational class performing some basic rational arithmetics
     the axis partitioning uses rational arithmetics (with infinite accuracy)
     basically it contains self.enum and self.denom"""
 
-    def stringfrac(self, s):
-        "converts a string 0.123 into a frac"
-        expparts = s.split("e")
+    def initfromstring(self, s):
+        "converts a string 0.123 into a rational"
+        expparts = s.strip().replace("E", "e").split("e")
         if len(expparts) > 2:
             raise ValueError("multiple 'e' found in '%s'" % s)
         commaparts = expparts[0].split(".")
@@ -41,7 +47,11 @@ class frac:
             raise ValueError("multiple '.' found in '%s'" % expparts[0])
         if len(commaparts) == 1:
             commaparts = [commaparts[0], ""]
-        result = frac((1, 10l), power=len(commaparts[1]))
+        self.enum = 1
+        if autolong:
+            self.denom = 10 ** len(commaparts[1])
+        else:
+            self.denom = 10L ** len(commaparts[1])
         neg = len(commaparts[0]) and commaparts[0][0] == "-"
         if neg:
             commaparts[0] = commaparts[0][1:]
@@ -50,18 +60,24 @@ class frac:
         if len(commaparts[0]):
             if not commaparts[0].isdigit():
                 raise ValueError("unrecognized characters in '%s'" % s)
-            x = long(commaparts[0])
+            try:
+                x = int(commaparts[0])
+            except:
+                x = long(commaparts[0])
         else:
             x = 0
         if len(commaparts[1]):
             if not commaparts[1].isdigit():
                 raise ValueError("unrecognized characters in '%s'" % s)
-            y = long(commaparts[1])
+            try:
+                y = int(commaparts[1])
+            except:
+                y = long(commaparts[1])
         else:
             y = 0
-        result.enum = x*result.denom+y
+        self.enum = x*self.denom + y
         if neg:
-            result.enum = -result.enum
+            self.enum = -self.enum
         if len(expparts) == 2:
             neg = expparts[1][0] == "-"
             if neg:
@@ -71,66 +87,99 @@ class frac:
             if not expparts[1].isdigit():
                 raise ValueError("unrecognized characters in '%s'" % s)
             if neg:
-                result *= frac((1, 10l),  power=long(expparts[1]))
+                if autolong:
+                    self.denom *= 10 ** int(expparts[1])
+                else:
+                    self.denom *= 10L ** int(expparts[1])
             else:
-                result *= frac((10, 1l),  power=long(expparts[1]))
-        return result
+                if autolong:
+                    self.enum *= 10 ** int(expparts[1])
+                else:
+                    self.enum *= 10L ** int(expparts[1])
 
-    def floatfrac(self, x, floatprecision):
-        "converts a float into a frac with finite resolution"
-        if helper.isinteger(floatprecision) and floatprecision < 0:
-            raise RuntimeError("float resolution must be non-negative integer")
-        return self.stringfrac(("%%.%ig" % floatprecision) % x)
+    def initfromfloat(self, x, floatprecision):
+        "converts a float into a rational with finite resolution"
+        if floatprecision < 0:
+            raise RuntimeError("float resolution must be non-negative")
+        self.initfromstring(("%%.%ig" % floatprecision) % x)
 
-    def __init__(self, x, power=None, floatprecision=10):
-        "for power!=None: frac=(enum/denom)**power"
-        if helper.isnumber(x):
-            value = self.floatfrac(x, floatprecision)
-            enum, denom = value.enum, value.denom
-        elif helper.isstring(x):
-            fraction = x.split("/")
-            if len(fraction) > 2:
-                raise ValueError("multiple '/' found in '%s'" % x)
-            value = self.stringfrac(fraction[0])
-            if len(fraction) == 2:
-                value2 = self.stringfrac(fraction[1])
-                value = value / value2
-            enum, denom = value.enum, value.denom
-        else:
+    def __init__(self, x, power=1, floatprecision=10):
+        """initializes a rational
+        - rational=(enum/denom)**power
+        - x must be one of:
+          - a string (like "1.2", "1.2e3", "1.2/3.4", etc.)
+          - a float (converted using floatprecision)
+          - a sequence of two integers
+          - a rational instance"""
+        if power == 0:
+            self.enum = 1
+            self.denom = 1
+            return
+        try:
+            # does x behave like a number
+            x + 0
+        except:
             try:
-                enum, denom = x
-            except (TypeError, AttributeError):
-                enum, denom = x.enum, x.denom
-            if not helper.isinteger(enum) or not helper.isinteger(denom): raise TypeError("integer type expected")
-        if not denom: raise ZeroDivisionError("zero denominator")
-        if power != None:
-            if not helper.isinteger(power): raise TypeError("integer type expected")
-            if power >= 0:
-                self.enum = long(enum) ** power
-                self.denom = long(denom) ** power
+                # does x behave like a string
+                x + ""
+            except:
+                try:
+                    # x might be a tuple
+                    self.enum, self.denom = x
+                except:
+                    # otherwise it should have a enum and denom
+                    self.enum, self.denom = x.enum, x.denom
             else:
-                self.enum = long(denom) ** (-power)
-                self.denom = long(enum) ** (-power)
+                # x is a string
+                fraction = x.split("/")
+                if len(fraction) > 2:
+                    raise ValueError("multiple '/' found in '%s'" % x)
+                self.initfromstring(fraction[0])
+                if len(fraction) == 2:
+                    self /= rational(fraction[1])
         else:
-            self.enum = enum
-            self.denom = denom
+            # x is a number
+            self.initfromfloat(x, floatprecision)
+        if not self.denom: raise ZeroDivisionError("zero denominator")
+        if power == -1:
+            self.enum, self.denom = self.denom, self.enum
+        elif power < -1:
+            if autolong:
+                self.enum, self.denom = self.denom ** (-power), self.enum ** (-power)
+            else:
+                self.enum, self.denom = long(self.denom) ** (-power), long(self.enum) ** (-power)
+        elif power > 1:
+            if autolong:
+                self.enum = self.enum ** power
+                self.denom = self.denom ** power
+            else:
+                self.enum = self.long(enum) ** power
+                self.denom = self.long(denom) ** power
 
     def __cmp__(self, other):
-        # if other is None: # XXX disabled -- do we really need this?
-        #     return 1
         try:
             return cmp(self.enum * other.denom, other.enum * self.denom)
         except:
             return cmp(float(self), other)
 
     def __abs__(self):
-        return frac((abs(self.enum), abs(self.denom)))
+        return rational((abs(self.enum), abs(self.denom)))
 
     def __mul__(self, other):
-        return frac((self.enum * other.enum, self.denom * other.denom))
+        return rational((self.enum * other.enum, self.denom * other.denom))
+
+    def __imul__(self, other):
+        self.enum *= other.enum
+        self.denom *= other.denom
+        return self
 
     def __div__(self, other):
-        return frac((self.enum * other.denom, self.denom * other.enum))
+        return rational((self.enum * other.denom, self.denom * other.enum))
+
+    def __idiv__(self, other):
+        self.enum *= other.denom
+        self.denom *= other.enum
+        return self
 
     def __float__(self):
         "caution: avoid final precision of floats"
@@ -140,9 +189,9 @@ class frac:
         return "%i/%i" % (self.enum, self.denom)
 
 
-class tick(frac):
+class tick(rational):
     """tick class
-    a tick is a frac enhanced by
+    a tick is a rational enhanced by
     - self.ticklevel (0 = tick, 1 = subtick, etc.)
     - self.labellevel (0 = label, 1 = sublabel, etc.)
     - self.label (a string) and self.labelattrs (a list, defaults to [])
@@ -153,8 +202,8 @@ class tick(frac):
     def __init__(self, pos, ticklevel=0, labellevel=0, label=None, labelattrs=[], **kwargs):
         """initializes the instance
         - see class description for the parameter description
-        - **kwargs are passed to the frac constructor"""
-        frac.__init__(self, pos, **kwargs)
+        - **kwargs are passed to the rational constructor"""
+        rational.__init__(self, pos, **kwargs)
         self.ticklevel = ticklevel
         self.labellevel = labellevel
         self.label = label
@@ -172,7 +221,7 @@ class tick(frac):
             self.labellevel = other.labellevel
 
 
-def _mergeticklists(list1, list2):
+def mergeticklists(list1, list2):
     """helper function to merge tick lists
     - return a merged list of ticks out of list1 and list2
     - CAUTION: original lists have to be ordered
@@ -199,41 +248,8 @@ def _mergeticklists(list1, list2):
     return list1
 
 
-def _mergelabels(ticks, labels):
-    """helper function to merge labels into ticks
-    - when labels is not None, the label of all ticks with
-      labellevel different from None are set
-    - labels need to be a list of lists of strings,
-      where the first list contain the strings to be
-      used as labels for the ticks with labellevel 0,
-      the second list for labellevel 1, etc.
-    - when the maximum labellevel is 0, just a list of
-      strings might be provided as the labels argument
-    - IndexError is raised, when a list length doesn't match"""
-    if helper.issequenceofsequences(labels):
-        level = 0
-        for label in labels:
-            usetext = helper.ensuresequence(label)
-            i = 0
-            for tick in ticks:
-                if tick.labellevel == level:
-                    tick.label = usetext[i]
-                    i += 1
-            if i != len(usetext):
-                raise IndexError("wrong list length of labels at level %i" % level)
-            level += 1
-    elif labels is not None:
-        usetext = helper.ensuresequence(labels)
-        i = 0
-        for tick in ticks:
-            if tick.labellevel == 0:
-                tick.label = usetext[i]
-                i += 1
-        if i != len(usetext):
-            raise IndexError("wrong list length of labels")
-
-def _maxlevels(ticks):
-    "returns a tuple maxticklist, maxlabellevel from a list of tick instances"
+def maxlevels(ticks):
+    "returns a tuple maxticklevel, maxlabellevel from a list of tick instances"
     maxticklevel = maxlabellevel = 0
     for tick in ticks:
         if tick.ticklevel is not None and tick.ticklevel >= maxticklevel:
