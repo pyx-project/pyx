@@ -7,7 +7,7 @@ include faq/pyxfaq.pdf
 recursive-include manual Makefile runlatex.sh pyx.sty *.tex *.py
 include examples/examples.ps
 recursive-include contrib *
-recursive-include pyx *.h
+recursive-include pyx *.c *.h
 recursive-include pyx/lfs *.lfs *.py *.tex
 recursive-include examples *.py
 recursive-include examples *.dat
