@@ -463,9 +463,9 @@ class axispainter(axistitlepainter):
                         x2 = t.temp_x - t.temp_dx * outerticklength_pt
                         y2 = t.temp_y - t.temp_dy * outerticklength_pt
                         ac.stroke(path.line_pt(x1, y1, x2, y2), tickattrs)
-                        if outerticklength is not None and unit.topt(outerticklength) > unit.topt(ac.extent):
+                        if outerticklength is not None and outerticklength > ac.extent:
                             ac.extent = outerticklength
-                        if outerticklength is not None and unit.topt(-innerticklength) > unit.topt(ac.extent):
+                        if outerticklength is not None and -innerticklength > ac.extent:
                             ac.extent = -innerticklength
             if self.gridattrs is not None:
                 gridattrs = attr.selectattrs(self.defaultgridattrs + self.gridattrs, t.ticklevel, maxticklevel)
@@ -474,7 +474,7 @@ class axispainter(axistitlepainter):
                 ac.insert(t.temp_labelbox)
                 ac.labels.append(t.temp_labelbox)
                 extent = t.temp_labelbox.extent(t.temp_dx, t.temp_dy) + labeldist
-                if unit.topt(extent) > unit.topt(ac.extent):
+                if extent > ac.extent:
                     ac.extent = extent
         if self.basepathattrs is not None:
             ac.stroke(axispos.vbasepath(), self.defaultbasepathattrs + self.basepathattrs)
@@ -615,7 +615,7 @@ class splitaxispainter(axistitlepainter):
         for subaxis in axis.subaxes:
             subaxis.finish(subaxispos(subaxis.convert, axispos, subaxis.vmin, subaxis.vmax, subaxis.vminover, subaxis.vmaxover))
             ac.insert(subaxis.axiscanvas)
-            if unit.topt(ac.extent) < unit.topt(subaxis.axiscanvas.extent):
+            if ac.extent < subaxis.axiscanvas.extent:
                 ac.extent = subaxis.axiscanvas.extent
         if self.breaklinesattrs is not None:
             self.breaklinesdist = unit.length(self.breaklinesdist_str, default_type="v")
@@ -624,7 +624,7 @@ class splitaxispainter(axistitlepainter):
             self.cos = math.cos(self.breaklinesangle*math.pi/180.0)
             breaklinesextent = (0.5*self.breaklinesdist*math.fabs(self.cos) +
                                 0.5*self.breaklineslength*math.fabs(self.sin))
-            if unit.topt(ac.extent) < unit.topt(breaklinesextent):
+            if ac.extent < breaklinesextent:
                 ac.extent = breaklinesextent
             for subaxis1, subaxis2 in zip(axis.subaxes[:-1], axis.subaxes[1:]):
                 # use a tangent of the basepath (this is independent of the tickdirection)
@@ -723,7 +723,7 @@ class baraxispainter(axistitlepainter):
             for subaxis in axis.subaxis:
                 subaxis.finish(subaxispos(subaxis.convert, axispos, subaxis.vmin, subaxis.vmax, None, None))
                 ac.insert(subaxis.axiscanvas)
-                if unit.topt(ac.extent) < unit.topt(subaxis.axiscanvas.extent):
+                if ac.extent < subaxis.axiscanvas.extent:
                     ac.extent = subaxis.axiscanvas.extent
         namepos = []
         for name in axis.names:
@@ -766,14 +766,14 @@ class baraxispainter(axistitlepainter):
             if self.innerticklength_str is not None:
                 innerticklength = unit.length(self.innerticklength_str, default_type="v")
                 innerticklength_pt = unit.topt(innerticklength)
-                if unit.topt(ac.extent) < -innerticklength_pt:
+                if ac.extent < -innerticklength:
                     ac.extent = -innerticklength
             elif self.outerticklength_str is not None:
                 innerticklength = innerticklength_pt = 0
             if self.outerticklength_str is not None:
                 outerticklength = unit.length(self.outerticklength_str, default_type="v")
                 outerticklength_pt = unit.topt(outerticklength)
-                if unit.topt(ac.extent) < outerticklength_pt:
+                if ac.extent < outerticklength:
                     ac.extent = outerticklength
             elif self.innerticklength_str is not None:
                 outerticklength = outerticklength_pt = 0
@@ -792,7 +792,7 @@ class baraxispainter(axistitlepainter):
                 ac.stroke(path.line_pt(x1, y1, x2, y2), self.defaulttickattrs + self.tickattrs)
         for (v, x, y, dx, dy), namebox in zip(namepos, nameboxes):
             newextent = namebox.extent(dx, dy) + labeldist
-            if unit.topt(ac.extent) < unit.topt(newextent):
+            if ac.extent < newextent:
                 ac.extent = newextent
         for namebox in nameboxes:
             ac.insert(namebox)

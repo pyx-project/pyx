@@ -9,10 +9,10 @@ from pyx import *
 
 p = path.curve(0, 0, 3, 0, 1, 4, 4, 4)
 
-log2parter = graph.parter.logparter([graph.parter.preexp(graph.parter.frac(1), 4),
-                                     graph.parter.preexp(graph.parter.frac(1), 2)])
+log2parter = graph.parter.logparter([graph.parter.preexp(graph.tick.frac(1), 4),
+                                     graph.parter.preexp(graph.tick.frac(1), 2)])
 log2texter = graph.texter.exponentialtexter(nomantissaexp=r"{2^{%s}}",
-                                            mantissamax=graph.parter.frac(2))
+                                            mantissamax=graph.tick.frac(2))
 
 c = canvas.canvas()
 c.insert(graph.axis.pathaxis(p, graph.axis.logaxis(min=1, max=1024)))

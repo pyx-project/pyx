@@ -1,3 +1,7 @@
+import sys
+if sys.path[0] != "../..":
+    sys.path.insert(0, "../..")
+
 import unittest
 
 from pyx import *
@@ -6,7 +10,6 @@ from pyx.path import *
 epsilon = 1e-5
 def isEqual(l1, l2):
     return abs(unit.topt(l1-l2))<epsilon
-    
 
 
 class NormpathTestCase(unittest.TestCase):
@@ -113,9 +116,5 @@ class NormpathTestCase(unittest.TestCase):
         assert len(sp)==6 and sp[0] is None and isEqual(sp[1].arclen(), 0.5) and isEqual(sp[2].arclen(), 0.5) and isEqual(sp[3].arclen(), 0.5) and isEqual(sp[4].arclen(), 0.5) and sp[5] is None
 
 
-suite = unittest.TestSuite((unittest.makeSuite(NormpathTestCase, 'test'),))
-
 if __name__ == "__main__":
-    runner = unittest.TextTestRunner()
-    runner.run(suite)
-
+    unittest.main()

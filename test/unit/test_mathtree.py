@@ -1,3 +1,7 @@
+import sys
+if sys.path[0] != "../..":
+    sys.path.insert(0, "../..")
+
 import unittest
 
 from pyx import *
@@ -238,9 +242,6 @@ class MathTreeTestCase(unittest.TestCase):
             assert 0, "CommaFoundExpectedMathTreeParseError expected"
         except mathtree.CommaFoundMathTreeParseError: pass
 
-suite = unittest.TestSuite((unittest.makeSuite(MathTreeTestCase, 'test'), ))
 
 if __name__ == "__main__":
-    runner = unittest.TextTestRunner()
-    runner.run(suite)
-
+    unittest.main()

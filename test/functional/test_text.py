@@ -58,10 +58,8 @@ c.text(0, 9, r"\sffamily \fontsize{30}{35}\selectfont VF test: \"o\ss ffl \char0
 # scaling test
 unit.set(xscale=2)
 t = c.text(0, 11, r"scale test", [color.rgb.green])
-print t.x, t.y, t.left, t.right, t.width, t.height, t.depth
 unit.set(xscale=1)
 t = c.text(0, 11, r"scale test", [color.rgb.red])
-print t.x, t.y, t.left, t.right, t.width, t.height, t.depth
 
 # test the specials
 c.stroke(c.text(10, 2, r"Hello, \color{green}world!", [trafo.slant(1)]).path())

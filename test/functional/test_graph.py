@@ -9,7 +9,7 @@ text.set(mode="latex")
 
 def test_multiaxes_data(c, x, y):
     g = c.insert(graph.type.graphxy(x, y, height=5, key=graph.key.key(pos="tl"),
-                               x=graph.axis.logaxis(title="$W$", manualticks=[graph.parter.tick(math.sqrt(8)*100, label="?"), graph.parter.tick(math.sqrt(8), label="$\sqrt{8}$")]),
+                               x=graph.axis.logaxis(title="$W$", manualticks=[graph.tick.tick(math.sqrt(8)*100, label="?"), graph.tick.tick(math.sqrt(8), label="$\sqrt{8}$")]),
                                y=graph.axis.logaxis(title=r"$PPP_1$",
                                                painter=graph.painter.axispainter(titledirection=None)),
                                y2=graph.axis.logaxis(title="$P_2$"),

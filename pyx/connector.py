@@ -207,8 +207,8 @@ class curve_pt(connector_pt):
         # get the control points
         control1 = (cos(angle1), sin(angle1))
         control2 = (cos(angle2), sin(angle2))
-        control1 = (self.box1.center[0] + control1[0] * bulge, self.box1.center[1] + control1[1] * bulge)
-        control2 = (self.box2.center[0] - control2[0] * bulge, self.box2.center[1] - control2[1] * bulge)
+        control1 = [self.box1.center[0] + control1[0] * bulge, self.box1.center[1] + control1[1] * bulge]
+        control2 = [self.box2.center[0] - control2[0] * bulge, self.box2.center[1] - control2[1] * bulge]
 
         connector_pt.__init__(self,
                [path.normsubpath([path.normcurve(*(self.box1.center +
