@@ -134,7 +134,7 @@
     ury=\Gin@ury\space
     \ifx\Gin@scalex\@tempa\else width=\strip@pt\dimen@\space\fi
     \ifx\Gin@scaley\@tempa\else height=\strip@pt\@tempdima\space\fi
-    \ifGin@clip clip\fi}%
+    \ifGin@clip clip=1\fi}%
   \egroup}
 %
 % bmp, oztex, pntg, pict file inclusions:
