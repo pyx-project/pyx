@@ -546,10 +546,10 @@ mincol = min(colors)
 maxcol = max(colors)
 for triangle in triangles:
     if triangle[1] < 0:
-        c.fill(triangle[2], color.gray.black)
+        c.fill(triangle[2], [color.gray.black])
     else:
         usecolor = color.hsb(triangle[3], 1, 0.25 + 0.65 * ((triangle[1] - mincol)/(maxcol - mincol)) ** 0.5 )
-        c.fill(triangle[2], usecolor)
+        c.fill(triangle[2], [usecolor])
 
 c.writetofile("example")
 
