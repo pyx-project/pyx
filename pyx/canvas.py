@@ -174,7 +174,7 @@ class _canvas(base.PSCmd):
                 cmd.write(file)
             _grestore().write(file)
 
-    def insert(self, PSOp, *args):
+    def insert(self, PSOp, args=[]):
         """insert PSOp in the canvas.
 
         If args are given, then insert a canvas containing PSOp applying args.
@@ -194,7 +194,7 @@ class _canvas(base.PSCmd):
 
         return PSOp
 
-    def set(self, *attrs):
+    def set(self, attrs):
         """sets styles args globally for the rest of the canvas
 
         returns canvas

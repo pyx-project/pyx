@@ -25,13 +25,13 @@ for line in lines: # we yet don't use a file iterator
         if lastmodel and (m.group("model") != lastmodel):
            y += dy
         myc = pyx.color.__dict__[m.group("model")].__dict__[m.group("name")]
-        c.stroke(path.line(x + 0.1, y + 0.1, x + 0.4, y + 0.4), myc)
-        c.stroke(path.line(x + 0.4, y + 0.1, x + 0.1, y + 0.4), myc)
-        c.fill(path.rect(x + 0.5, y, 1, 0.5), myc)
-        c.stroke(path.line(x + 0.6, y + 0.1, x + 0.9, y + 0.4), color.gray.black)
-        c.stroke(path.line(x + 0.9, y + 0.1, x + 0.6, y + 0.4), color.gray.black)
-        c.stroke(path.line(x + 1.1, y + 0.1, x + 1.4, y + 0.4), color.gray.white)
-        c.stroke(path.line(x + 1.4, y + 0.1, x + 1.1, y + 0.4), color.gray.white)
+        c.stroke(path.line(x + 0.1, y + 0.1, x + 0.4, y + 0.4), [myc])
+        c.stroke(path.line(x + 0.4, y + 0.1, x + 0.1, y + 0.4), [myc])
+        c.fill(path.rect(x + 0.5, y, 1, 0.5), [myc])
+        c.stroke(path.line(x + 0.6, y + 0.1, x + 0.9, y + 0.4), [color.gray.black])
+        c.stroke(path.line(x + 0.9, y + 0.1, x + 0.6, y + 0.4), [color.gray.black])
+        c.stroke(path.line(x + 1.1, y + 0.1, x + 1.4, y + 0.4), [color.gray.white])
+        c.stroke(path.line(x + 1.4, y + 0.1, x + 1.1, y + 0.4), [color.gray.white])
         t.text(x + 1.7, y + 0.15, m.group("id"), tex.fontsize.footnotesize)
         y += dy
         lastmodel = m.group("model")

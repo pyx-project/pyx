@@ -6,7 +6,7 @@ from pyx import *
 c = canvas.canvas()
 
 pattern = canvas.pattern()
-pattern.set(style.linewidth.thin)
+pattern.set([style.linewidth.thin])
 pattern.stroke(path.line(0, 0, 0.25, 0.25))
 pattern.stroke(path.line(0, 0.25, 0.25, 0))
 

@@ -661,7 +661,7 @@ argument name&default&description\\
 \hline
 \texttt{symbol}&\texttt{changesymbol.cross()}&symbol to be used (see below)\\
 \texttt{size}&\texttt{"0.2 cm"}&size of the symbol (visual length)\\
-\texttt{symbolattrs}&\texttt{deco.stroked()}&draw attributes for the symbol\\
+\texttt{symbolattrs}&\texttt{deco.stroked}&draw attributes for the symbol\\
 \texttt{errorscale}&\texttt{0.5}&size of the errorbar caps (relative to the symbol size)\\
 \texttt{errorbarattrs}&\texttt{()}&stroke attributes for the errorbars\\
 \texttt{lineattrs}&\texttt{None}&stroke attributes for the line\\
@@ -803,8 +803,8 @@ changers:
 attribute changer&description\\
 \hline
 \texttt{changelinestyle}&iterates linestyles solid, dashed, dotted, dashdotted\\
-\texttt{changestrokedfilled}&iterates \texttt{(deco.stroked(), deco.filled())}\\
-\texttt{changefilledstroked}&iterates \texttt{(deco.filled(), deco.stroked())}\\
+\texttt{changestrokedfilled}&iterates \texttt{(deco.stroked, deco.filled)}\\
+\texttt{changefilledstroked}&iterates \texttt{(deco.filled, deco.stroked)}\\
 \end{tabular}
 \end{center}
 

@@ -544,8 +544,7 @@ class textbox_pt(box.rect_pt, canvas._canvas):
         canvas._canvas.__init__(self)
         self.finishdvi = finishdvi
         self.dvicanvas = None
-        for attr in attrs:
-            self.set(attr)
+        self.set(attrs)
         self.insertdvicanvas = 0
 
     def transform(self, *trafos):
@@ -565,7 +564,7 @@ class textbox_pt(box.rect_pt, canvas._canvas):
             self.finishdvi()
             assert self.dvicanvas is not None, "finishdvi is broken"
         if not self.insertdvicanvas:
-            self.insert(self.dvicanvas, self.texttrafo)
+            self.insert(self.dvicanvas, [self.texttrafo])
 
     def marker(self, marker):
         self.ensuredvicanvas()

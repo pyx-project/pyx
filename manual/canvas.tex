@@ -49,19 +49,19 @@ instances of the class \verb|PathStyle|. For instance, you can draw the
 the above path \verb|p| in blue:
 \begin{quote}
 \begin{verbatim}
-c.stroke(p, color.rgb.blue)
+c.stroke(p, [color.rgb.blue])
 \end{verbatim}
 \end{quote}
 Similarly, it is possible to draw a dashed version of \verb|p|:
 \begin{quote}
 \begin{verbatim}
-c.stroke(p, style.linestyle.dashed)
+c.stroke(p, [style.linestyle.dashed])
 \end{verbatim}
 \end{quote}
 Combining of several \verb|PathStyle|s is of course also possible:
 \begin{quote}
 \begin{verbatim}
-c.stroke(p, color.rgb.blue, style.linestyle.dashed)
+c.stroke(p, [color.rgb.blue, style.linestyle.dashed])
 \end{verbatim}
 \end{quote}
 Furthermore, drawing an arrow at the begin or end of the path is done
@@ -69,7 +69,7 @@ in a similar way. You just have to use the provided \verb|barrow| and
 \verb|earrow| instances:
 \begin{quote}
 \begin{verbatim}
-c.stroke(p, canvas.barrow.normal, canvas.earrow.large)
+c.stroke(p, [deco.barrow.normal, deco.earrow.large])
 \end{verbatim}
 \end{quote}
 
@@ -81,11 +81,11 @@ r = path.rect(0, 0, 10, 5)
 c.fill(r)
 \end{verbatim}
 \end{quote}
-Alternatively, you can use the class \verb|filled| of the canvas module
+Alternatively, you can use the attribute \verb|filled| of the deco module
 in combination with the \verb|stroke| method:
 \begin{quote}
 \begin{verbatim}
-c.stroke(r, deco.filled())
+c.stroke(r, [deco.filled])
 \end{verbatim}
 \end{quote}
 
@@ -93,12 +93,11 @@ To conclude the section on the drawing of paths, we consider a pretty
 sophisticated combination of the above presented \verb|PathStyle|s:
 \begin{quote}
 \begin{verbatim}
-c.stroke(p, 
-         color.rgb.blue, 
-         canvas.earrow.LARge(color.rgb.red,
-                             deco.stroked(style.linejoin.round),
-                             deco.filled(color.rgb.green)))
-                                                              
+c.stroke(p,
+         [color.rgb.blue,
+          deco.earrow.LARge([color.rgb.red,
+                             deco.stroked([style.linejoin.round]),
+                             deco.filled([color.rgb.green])])])
 \end{verbatim}
 \end{quote}
 This draws the path in blue with a pretty large green arrow at the
@@ -134,18 +133,14 @@ The \verb|canvas| class provides the following methods:
   and/or \texttt{canvas.PathStyle}.\\
   \texttt{bbox()} &
   Returns the bounding box enclosing all elements of the canvas.\\
-  \texttt{draw(path, *styles)} &
+  \texttt{draw(path, attrs)} &
   Generic drawing routine for given \texttt{path} on the canvas (\textit{i.e.}\
   \texttt{insert}s it together with the necessary \texttt{newpath}
-  command, applying the given \texttt{styles}. Styles can either be instances of
-  \texttt{base.PathStyle} or \texttt{canvas.PathDeco} (or subclasses thereof).\\
-  \texttt{fill(path, *styles)} &
+  command, applying the given \texttt{attrs}. \\
+  \texttt{fill(path, attrs=[])} &
   Fills the given \texttt{path} on the canvas, \textit{i.e.}\
   \texttt{insert}s it together with the necessary \texttt{newpath},
-  \texttt{fill} sequence, applying the given \texttt{styles}. Styles can
-  either be instances of \texttt{base.PathStyle} or
-  \texttt{canvas.PathDeco} (or subclasses
-  therof).\\
+  \texttt{fill} sequence, applying the given \texttt{attrs}. \\
   \texttt{insert(PSOp, *args)} &
   Inserts an instance of \texttt{base.PSOp} into the canvas.
   If \texttt{args} are present, create a new \texttt{canvas}instance passing
@@ -153,13 +148,10 @@ The \verb|canvas| class provides the following methods:
   \texttt{set(*styles)} &
   Sets the given \texttt{styles} (instances of \texttt{base.PathStyle} or
   subclasses) for the rest of the canvas.\\
-  \texttt{stroke(path, *styles)} & 
+  \texttt{stroke(path, attrs=[])} & 
   Strokes the given \texttt{path} on the canvas, \textit{i.e.}\
   \texttt{insert}s it togeither with the necessary \texttt{newpath},
-  \texttt{stroke} sequence, applying the given \texttt{styles}. Styles
-  can either be instances of \texttt{base.PathStyle} or
-  \texttt{canvas.PathDeco}
-  (or subclasses thereof).\\
+  \texttt{stroke} sequence, applying the given \texttt{attrs}. \\
   \texttt{text(x, y, text, *args)} &
   Inserts \texttt{text} into the
   canvas (shortcut for

@@ -153,7 +153,7 @@ class decoratedpath(base.PSCmd):
 # Path decorators
 #
 
-class deco(attr.attr):
+class deco:
 
     """decorators
 
@@ -177,11 +177,12 @@ class deco(attr.attr):
 # respectively the path
 #
 
-class _stroked(deco):
+class _stroked(deco, attr.exclusiveattr):
 
     """stroked is a decorator, which draws the outline of the path"""
 
     def __init__(self, styles=[]):
+        attr.exclusiveattr.__init__(self, _stroked)
         self.styles = attr.mergeattrs(styles)
         attr.checkattrs(self.styles, [style.strokestyle])
 
@@ -198,11 +199,12 @@ stroked = _stroked()
 stroked.clear = attr.clearclass(stroked)
 
 
-class _filled(deco):
+class _filled(deco, attr.exclusiveattr):
 
     """filled is a decorator, which fills the interior of the path"""
 
     def __init__(self, styles=[]):
+        attr.exclusiveattr.__init__(self, _filled)
         self.styles = attr.mergeattrs(styles)
         attr.checkattrs(self.styles, [style.fillstyle])
 
@@ -289,7 +291,7 @@ def _arrowhead(anormpath, size, angle, constriction):
 
 _base = unit.v_pt(4)
 
-class arrow(deco):
+class arrow(deco, attr.attr):
 
     """arrow is a decorator which adds an arrow to either side of the path"""
 
