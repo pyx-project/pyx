@@ -1499,6 +1499,10 @@ class path(base.PSCmd):
     def __add__(self, other):
         return path(*(self.path+other.path))
 
+    def __iadd__(self, other):
+        self.path += other.path
+        return self
+
     def __getitem__(self, i):
         return self.path[i]
 
@@ -1678,6 +1682,10 @@ class normpath(path):
 
     def __add__(self, other):
         return normpath(*(self.path+other.path))
+
+    def __iadd__(self, other):
+        self.path += normpath(other).path
+        return self
 
     def __str__(self):
         return string.join(map(str, self.path), "\n")
