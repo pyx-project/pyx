@@ -1231,7 +1231,7 @@ class texrunner:
             if parnos == lastparnos and parshapes == lastparshapes:
                 return result
             loop += 1
-            if loop > 10:
+            if loop > 100:
                 raise TexResultError("Too many loops in textboxes ", texrunner)
 
 
