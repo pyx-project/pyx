@@ -58,9 +58,8 @@ PyX
     - dvicopy flag
     - support for specials; pyxgraphics flag
     - support psfonts.map: font names, font encodings
-  - tex module:
     - bugfix \def\ProcessPyXBox -> \long\def\ProcessPyXBox
-    - copy lfs handling from text module (share the same source???)
+    - improved lfs handling
   - data module:
     - full documentation via doc strings
   - connector module:
