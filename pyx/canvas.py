@@ -74,6 +74,11 @@ class clip(base.PSCmd):
         self.path.outputPS(file)
         _clip().outputPS(file)
 
+    def outputPDF(self, file):
+        _newpath().outputPDF(file)
+        self.path.outputPDF(file)
+        _clip().outputPDF(file)
+
 #
 # some very primitive Postscript operators
 #
@@ -106,7 +111,7 @@ class _clip(base.PSOp):
     def outputPS(self, file):
         file.write("clip\n")
     def outputPDF(self, file):
-        file.write("W\n")
+        file.write("W n\n")
 
 class _gsave(base.PSOp):
     def outputPS(self, file):
