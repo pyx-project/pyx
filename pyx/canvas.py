@@ -21,10 +21,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-# XXX remove string module
-# XXX what is a pattern
-# XXX what is a color
-
+# XXX what are the correct base classes of clip and pattern
 
 """The canvas module provides a PostScript canvas class and related classes
 
@@ -32,10 +29,10 @@ A canvas holds a collection of all elements that should be displayed together
 with their attributes.
 """
 
-import sys, string, cStringIO, time
+import sys, cStringIO, time
 import attr, base,  deco, unit, prolog, style, trafo, version
 
-# known paperformats as tuple(width, height)
+# known paperformats as tuple (width, height)
 
 _paperformats = { "A4"      : ("210 t mm",  "297 t mm"),
                   "A3"      : ("297 t mm",  "420 t mm"),
@@ -46,12 +43,9 @@ _paperformats = { "A4"      : ("210 t mm",  "297 t mm"),
                   "LETTER"  : ("8.5 t inch", "11 t inch"),
                   "LEGAL"   : ("8.5 t inch", "14 t inch")}
 
-
 #
 # clipping class
 #
-
-# XXX help me find my identity
 
 class clip(base.PSCmd):
 
@@ -79,7 +73,7 @@ class clip(base.PSCmd):
         file.write("W n\n")
 
 #
-#
+# general canvas class
 #
 
 class _canvas(base.PSCmd):
@@ -316,15 +310,14 @@ class pattern(_canvas, attr.exclusiveattr, style.fillstyle):
             raise ValueError("ystep in pattern cannot be zero")
         patternbbox = self.patternbbox or realpatternbbox.enlarged("5 pt")
 
-        patternprefix = string.join(("<<",
-                                     "/PatternType 1",
-                                     "/PaintType %d" % self.painttype,
-                                     "/TilingType %d" % self.tilingtype,
-                                     "/BBox[%s]" % str(patternbbox),
-                                     "/XStep %g" % xstep,
-                                     "/YStep %g" % ystep,
-                                     "/PaintProc {\nbegin\n"),
-                                    sep="\n")
+        patternprefix = "\n".join(("<<",
+                                   "/PatternType 1",
+                                   "/PaintType %d" % self.painttype,
+                                   "/TilingType %d" % self.tilingtype,
+                                   "/BBox[%s]" % str(patternbbox),
+                                   "/XStep %g" % xstep,
+                                   "/YStep %g" % ystep,
+                                   "/PaintProc {\nbegin\n"))
         stringfile = cStringIO.StringIO()
         _canvas.outputPS(self, stringfile)
         patternproc = stringfile.getvalue()
@@ -333,7 +326,7 @@ class pattern(_canvas, attr.exclusiveattr, style.fillstyle):
         patternsuffix = "end\n} bind\n>>\n%s\nmakepattern" % patterntrafostring
 
         pr = _canvas.prolog(self)
-        pr.append(prolog.definition(self.id, string.join((patternprefix, patternproc, patternsuffix), "")))
+        pr.append(prolog.definition(self.id, "".join((patternprefix, patternproc, patternsuffix))))
         return pr
 
 pattern.clear = attr.clearclass(pattern)
