@@ -24,11 +24,8 @@
 # - check the factor 0.5 in arrowhead and PathDeco.modfication
 # - should we improve on the arc length -> arg parametrization routine or
 #   should we at least factor it out in bpath.bpath?
-# - PathDeco cannot be a PSAttr (because it cannot be set via canvas.set())
-#   (at the moment it derives from nothing)
 # - Should we really set linewidth in canvas.writetofile. Why don't we
 #   rely on the PS default (like for all other PathStyles)
-# - detect .[e]ps as extension in writetofile
 
 """The canvas module provides a PostScript canvas class and related classes
 
@@ -627,7 +624,7 @@ class canvas(base.PSCmd):
         to be instances of one of the following classes:
          - trafo.trafo (leading to a global transformation of the canvas)
          - canvas.clip (clips the canvas)
-         - base.PSAttr (sets some global attributes of the canvas)
+         - base.PathStyle (sets some global attributes of the canvas)
 
         Note that, while the first two properties are fixed for the
         whole canvas, the last one can be changed via canvas.set()
@@ -681,8 +678,11 @@ class canvas(base.PSCmd):
 
         """
 
+        if filename[-4:]!=".eps":
+            filename = filename + ".eps"
+
         try:
-            file = open(filename + ".eps", "w")
+            file = open(filename, "w")
         except IOError:
             assert 0, "cannot open output file"                 # TODO: Fehlerbehandlung...
 
@@ -734,7 +734,7 @@ class canvas(base.PSCmd):
         file.write("%!PS-Adobe-3.0 EPSF 3.0\n")
         abbox.write(file)
         file.write("%%%%Creator: PyX %s\n" % pyx.__version__) 
-        file.write("%%%%Title: %s.eps\n" % filename) 
+        file.write("%%%%Title: %s\n" % filename) 
         file.write("%%%%CreationDate: %s\n" %
                    time.asctime(time.localtime(time.time())))
         file.write("%%EndComments\n")
@@ -794,7 +794,7 @@ class canvas(base.PSCmd):
             if not isinstance(style, base.PathStyle):
                 raise NotImplementedError, "can only set PathStyle"
 
-            self.PSOps.append(style)
+            self.insert(style)
 
         return self
         
