@@ -218,7 +218,6 @@ class tex(InstanceList):
         CmdEnd = "}"
 
         if type(lhsize) != types.NoneType:
-             print Cmd,lhsize,self.unit.scale,str(self.unit.tpt(lhsize))
              if type(lvalign) == types.NoneType or lvalign == valign.top:
                   CmdBegin = CmdBegin + "\\vtop{\hsize" + str(self.unit.tpt(lhsize)) + "truept{"
                   CmdEnd = "}}" + CmdEnd
