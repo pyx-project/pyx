@@ -21,7 +21,7 @@ is available both as PDF and as online HTML version:</p>
 
 <h2>FAQ</h2>
 
-<p>A further ressource containing tips and tricks for PyX users is the FAQ
+<p>A further resource containing tips and tricks for PyX users is the FAQ
 contributed by Gert-Ludwig Ingold. At the moment, it is only available as PDF
 version.</p>
 
@@ -31,7 +31,7 @@ version.</p>
 
 <h2>Examples</h2>
 
-<p>Please have also a look on our <a href="examples.html">examples</a> page,
+<p>Please have also a look on our <a href="examples/">examples</a> page,
 which contains a comprehensive set of PyX drawings together with the
 corresponding Python source code. </p>
 
