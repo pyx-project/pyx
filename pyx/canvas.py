@@ -737,7 +737,8 @@ class _canvas(base.PSCmd, attrlist.attrlist):
 
         if args:
             sc = _canvas(*args)
-            sc.insert(PSop)
+            sc.insert(PSOp)
+            self.PSOps.append(sc)
         else:
             self.PSOps.append(PSOp)
 
