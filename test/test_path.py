@@ -5,9 +5,6 @@ import pyx
 from pyx import *
 from pyx.path import *
 
-import profile
-import pstats
-
 class cross(path):
    def __init__(self, x, y):
        self.path=[moveto(x,y),
@@ -26,51 +23,6 @@ def drawpathwbbox(c, p):
     c.draw(rect("%f t pt" % bbox.llx,            "%f t pt" % bbox.lly,
    	        "%f t pt" % (bbox.urx-bbox.llx), "%f t pt" % (bbox.ury-bbox.lly)))
 
-def testspeed():
-    "coordinates as strings"
-    
-    c=canvas.canvas()
-    p=path([moveto(0,0)])
-
-    for i in xrange(1000):
-        p.append(lineto("%d pt" % i, "%d pt" % i))
-
-    c.draw(p)
-    c.writetofile("testspeed")
-
-def testspeed2():
-    "coordinates in user units"
-
-    c=canvas.canvas()
-    p=path([moveto(0,0)])
-
-    for i in xrange(1000):
-        p.append(lineto(i,i))
-
-    c.draw(p)
-    c.writetofile("testspeed")
-
-def testspeed3():
-    "coordinates in pts (internal routines)"
-
-    c=canvas.canvas()
-    p=path([pyx.path._moveto(0,0)])
-
-    for i in xrange(1000):
-        p.append(pyx.path._lineto(i, i))
-
-    c.draw(p)
-    c.writetofile("testspeed")
-
-def testspeedintersect():
-    c=canvas.canvas()
-    p=path([moveto(10,10), curveto(12,16,14,15,12,19)])
-    bp=p.bpath()
-
-    for x in xrange(1,100):
-        q=path([moveto(x/5.0,10), curveto(12,16,14,22,11,16)])
-        bq=q.bpath()
-        isect = bp.intersect(bq, epsilon=1e-3)
 
 def testarcs(c):
     def testarc(c, x, y, phi1, phi2):
@@ -198,6 +150,7 @@ def testtrafobbox(c):
     p=path([moveto(10,10), curveto(12,16,14,15,12,19)]);   drawpathwbbox(sc,p)
     p=path([moveto(5,17), curveto(6,18, 5,16, 7,15)]);     drawpathwbbox(sc,p)
 
+
 def testclipbbox(c):
     p=rect(6,12,6,4)
 
@@ -205,6 +158,7 @@ def testclipbbox(c):
 
     p=path([moveto(10,10), curveto(12,16,14,15,12,19)]);   drawpathwbbox(sc,p)
     p=path([moveto(5,17), curveto(6,18, 5,16, 7,15)]);     drawpathwbbox(sc,p)
+
 
 def testintersectbezier(c):
     p=path([moveto(10,10), curveto(12,16,14,15,12,19)])
@@ -251,16 +205,3 @@ testclipbbox(c)
 testintersectbezier(c)
 testbpathtrafo(c)
 c.writetofile("test", paperformat="a4", rotated=1, fittosize=1)
-
-profile.run('testspeed()', 'test.prof')
-pstats.Stats("test.prof").sort_stats('time').print_stats(10)
-
-profile.run('testspeed2()', 'test.prof')
-pstats.Stats("test.prof").sort_stats('time').print_stats(10)
-
-profile.run('testspeed3()', 'test.prof')
-pstats.Stats("test.prof").sort_stats('time').print_stats(10)
-
-profile.run('testspeedintersect()', 'test.prof')
-pstats.Stats("test.prof").sort_stats('time').print_stats(10)
-
