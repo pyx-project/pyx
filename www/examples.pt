@@ -10,14 +10,15 @@
     We might have a short abstract about the examples shown on this page.
 </p>
 
-<div class="example" tal:repeat="example options/examples" style="border-top:1px solid #88a;margin-bottom:10px;">
-    <h2 tal:content="example/name">Name</h2>
-    <div style="text-align:center;">
-    <a href="link" tal:attributes="href example/eps"><img src="example.png" alt="example" tal:attributes="src example/png"></a>
-    </div>
-    <br>
-    <div tal:content="structure example/code">Code</div>
-</div>
+<span class="example" tal:repeat="example options/examples">
+  <div style="border-top:1px solid #88a;margin-bottom:10px;" tal:condition="options/abstract | not: repeat/example/start"></div>
+  <h2 tal:content="example/name">Name</h2>
+  <div style="text-align:center;">
+  <a href="link" tal:attributes="href example/eps"><img src="example.png" alt="example" tal:attributes="src example/png"></a>
+  </div>
+  <br>
+  <div tal:content="structure example/code" style="margin-bottom:10px;">Code</div>
+</span>
 
 
 </div>
