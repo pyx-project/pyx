@@ -13,7 +13,7 @@ def tree(depth):
 w = 0.01
 c = canvas.canvas()
 #for t in tree(8):
-#    c.insert(canvas.canvas(t).fill(path.line(0, 0, 0, 1)))
+#    c.insert(canvas.canvas(t).stroke(path.line(0, 0, 0, 1)))
 
 for t in tree(8):
     c.fill(path.path(path.moveto(-w, 0),
