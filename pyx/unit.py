@@ -67,29 +67,34 @@ def convert_to(l, dest_unit="m"):
 
 
 
-def m(l):
+def tom(l):
     return convert_to(l, "m")
         
-def pt(l):
+def topt(l):
     return convert_to(l, "pt")
         
-def tpt(l):
+def totpt(l):
     return convert_to(l, "tpt")
 
+################################################################################
+# class for generic length
+################################################################################
+
 class length:
-    """ 
-    This value can either be a number or a string.
-    The string has to consist of a maximum of three parts:
+    """ general lengths
+    
+    Lengths can either be a initialized with a number or a string:
+     - a length specified as a number corresponds to the default values of unit_type
+       and unit_name
+     - a string has to consist of a maximum of three parts:
        -quantifier: integer/float value
        -unit_type:  "t", "u", "v", or "w". Optional, defaults to "u"
        -unit_name:  "m", "cm", "mm", "inch", "pt", "tpt". Optional, defaults to default_unit
-    A length specified as a number corresponds to the default values of unit_type
-    and unit_name
 
     Internally all length are stored in units of m as a quadruple for the four unit_types
     """
 
-    def __init__(self, l=None, default_type="u", glength=None):
+    def __init__(self, l=None, default_type="u", dunit=None, glength=None):
         self.length = { 't': 0 , 'u': 0, 'v': 0, 'v':0, 'w':0 }
         
         if l:
@@ -102,12 +107,12 @@ class length:
                 else:
                     self.prefactor = float(unit_match.group(1))
                     self.unit_type = unit_match.group(7) or default_type
-                    self.unit_name = unit_match.group(9) or default_unit
+                    self.unit_name = unit_match.group(9) or dunit or default_unit
 
                     self.length[self.unit_type]  = self.prefactor * _m[self.unit_name]
 
             elif type(l) in (IntType, LongType, FloatType):
-                self.length['u'] = l * _m[default_unit]
+                self.length['u'] = l * _m[dunit or default_unit]
             else:
                 assert 0, "cannot convert given argument to length type"
         if glength:
@@ -152,6 +157,44 @@ class length:
 
     def __str__(self):
         return "(%(t)f t + %(u)f u + %(v)f v + %(w)f w) m" % self.length
+
+################################################################################
+# class for more specialized lengths
+################################################################################
+
+# lengths in user units as default
+
+class pt(length):
+    def __init__(self, l=None, default_type="u"):
+       length.__init__(self, l, default_type=default_type, dunit="pt")
+
+
+class tpt(length):
+    def __init__(self, l=None, default_type="u"):
+       length.__init__(self, l, default_type=default_type, dunit="tpt")
+
+
+class m(length):
+    def __init__(self, l=None, default_type="u"):
+       length.__init__(self, l, default_type=default_type, dunit="m")
+
+
+# true lengths 
+
+class t_pt(length):
+    def __init__(self, l=None):
+       length.__init__(self, l, default_type="t", dunit="pt")
+       
+
+class t_tpt(length):
+    def __init__(self, l=None):
+       length.__init__(self, l, default_type="t", dunit="tpt")
+
+
+class t_m(length):
+    def __init__(self, l=None):
+       length.__init__(self, l, default_type="t", dunit="m")
+    
 
 if __name__ == "__main__":
      length.default_unit="cm"

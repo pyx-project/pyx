@@ -78,7 +78,7 @@ class halign:
    
 class hsize(_AttrTexStr):
     def __init__(self, value, canvas):
-        self.value = canvas.unit.tpt(value)
+        self.value = unit.totpt(value)
 
 class _valign(_AttrTexValCmpStr):
     pass
@@ -332,7 +332,7 @@ class _BoxCmd(_TexCmd):
             file.write("\\immediate\\write\\sizefile{%s:%s:%s:\\the\\%s\\localbox}%%\n" % (self.MD5(), CmdExtent, time.time(), CmdExtent, ))
         for CmdPut in self.CmdPuts:
 
-            file.write("{\\vbox to0pt{\\kern%struept\\hbox{\\kern%struept\\ht\\localbox0pt" % (canvas.unit.tpt(-CmdPut.y), canvas.unit.tpt(CmdPut.x),))
+            file.write("{\\vbox to0pt{\\kern%struept\\hbox{\\kern%struept\\ht\\localbox0pt" % (unit.totpt(-CmdPut.y), unit.totpt(CmdPut.x),))
 
             if CmdPut.direction != direction.horizontal:
                 file.write("\\special{ps: gsave currentpoint currentpoint translate %s neg rotate neg exch neg exch translate }" % CmdPut.direction )

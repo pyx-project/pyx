@@ -60,7 +60,7 @@ class transformation:
 	else:
             self.matrix=matrix
 
-        self.vector = ( unit.pt(vector[0]), unit.pt(vector[1]) )
+        self.vector = ( unit.topt(vector[0]), unit.topt(vector[1]) )
 
     def __mul__(self, other):
         if isinstance(other, transformation):

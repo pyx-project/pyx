@@ -8,7 +8,7 @@ from pyx.trafo import *
 from pyx.color import *
 import pyx.unit
 
-c=canvas.canvas(unit=unit.unit())
+c=canvas.canvas()
 t=c.insert(tex())
 
 #for x in range(11):

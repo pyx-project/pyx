@@ -120,8 +120,8 @@ class epsfile:
 
     def __init__(self, filename, x = "0 t m", y = "0 t m",
                  clip = 1, translatebb = 1, showbb = 0):
-        self.x           = unit.pt(x)
-        self.y           = unit.pt(y)
+        self.x           = unit.topt(x)
+        self.y           = unit.topt(y)
         self.filename    = filename
         self.clip        = clip
         self.translatebb = translatebb
@@ -269,7 +269,7 @@ class _linewidth(PyxAttributes, unit.length):
     def __init__(self, l):
         unit.length.__init__(self, l=l, default_type="w")
     def _PSCmd(self, canvas):
-        return "%f setlinewidth" % unit.pt(self)
+        return "%f setlinewidth" % unit.topt(self)
     
 
 class linewidth(_linewidth):
@@ -325,8 +325,8 @@ class _grestore(CanvasCmds):
 
 class _translate(CanvasCmds):
     def __init__(self, x, y):
-        self.x = unit.pt(x)
-        self.y = unit.pt(y)
+        self.x = unit.topt(x)
+        self.y = unit.topt(y)
         
     def write(self, canvas, file):
         file.write("%f %f translate" % (x, y) )
@@ -377,14 +377,14 @@ class canvas(CanvasCmds):
         # of the new bounding box. But first we have to convert back to
         # points:
 
-#	llx=unit.pt(llx)
-#	lly=unit.pt(lly)
-#	lrx=unit.pt(lrx)
-#	lry=unit.pt(lry)
-#	urx=unit.pt(urx)
-#	ury=unit.pt(ury)
-#        ulx=unit.pt(ulx)
-#	uly=unit.pt(uly)
+#	llx=unit.topt(llx)
+#	lly=unit.topt(lly)
+#	lrx=unit.topt(lrx)
+#	lry=unit.topt(lry)
+#	urx=unit.topt(urx)
+#	ury=unit.topt(ury)
+#        ulx=unit.topt(ulx)
+#	uly=unit.topt(uly)
 
 	abbox= bbox(min(llx, lrx, urx, ulx)-1, min(lly, lry, ury, uly)-1,
                     max(llx, lrx, urx, ulx)+1, max(lly, lry, ury, uly)+1)
@@ -449,7 +449,7 @@ class canvas(CanvasCmds):
         file.write("%%BeginProlog\n") 
         file.write(PSProlog)
         file.write("\n%%EndProlog\n") 
-        file.write("%f setlinewidth\n" % unit.pt(linewidth.normal))
+        file.write("%f setlinewidth\n" % unit.topt(linewidth.normal))
         
         # here comes the actual content
         self.write(self, file)
