@@ -13,4 +13,4 @@ g.writeEPSfile("minimal")
 # 6  21
 
 # graph styles can be modified by a second parameter to the plot method:
-# g.plot(graph.data.file("minimal.dat", x=1, y=2), graph.line())
+# g.plot(graph.data.file("minimal.dat", x=1, y=2), [graph.style.line()])
