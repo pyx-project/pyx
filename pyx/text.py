@@ -20,11 +20,8 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-# (TODO: check whether Knuth's division can be simplified within Python)
-#       seems to be the case!
-
 import exceptions, glob, os, threading, Queue, traceback, re, struct, tempfile, sys, atexit
-import helper, unit, box, base, trafo, canvas, pykpathsea
+import helper, unit, box, base, trafo, canvas, path, pykpathsea
 
 class fix_word:
     def __init__(self, word):
@@ -377,7 +374,7 @@ class Font:
         for i in range(len(self.usedchars)):
             self.usedchars[i] = self.usedchars[i] or otherfont.usedchars[i]
 
-            
+
 _DVI_CHARMIN     =   0 # typeset a character and move right (range min)
 _DVI_CHARMAX     = 127 # typeset a character and move right (range max)
 _DVI_SET1234     = 128 # typeset a character and move right
@@ -407,7 +404,7 @@ _DVI_FNTDEF1234  = 243 # define the meaning of a font number
 _DVI_PRE         = 247 # preamble
 _DVI_POST        = 248 # postamble beginning
 _DVI_POSTPOST    = 249 # postamble ending
-    
+
 _DVI_VERSION     = 2 # dvi version
 
 # position variable indices
@@ -426,6 +423,30 @@ _READ_POST      = 4
 _READ_POSTPOST  = 5
 _READ_DONE      = 6
 
+#
+# PostScript font selection and output primitives
+#
+class _selectfont(base.PSOp):
+    def __init__(self, name, size):
+        self.name = name
+        self.size = size
+    def write(self, file):
+        file.write("/%s %f selectfont\n" % (self.name, self.size))
+
+    # XXX: should we provide a prolog method for the font inclusion
+    # instead of using the coarser logic in DVIFile.prolog
+
+
+class _show(base.PSOp):
+    def __init__(self, x, y, s):
+        self.x = x
+        self.y = y
+        self.s = s
+
+    def write(self, file):
+        file.write("%f %f moveto (%s) show\n" % (self.x, self.y, self.s))
+
+
 class DVIFile:
 
     def __init__(self, filename, debug=0):
@@ -436,13 +457,13 @@ class DVIFile:
     # helper routines 
 
     def flushout(self):
+        """ flush currently active string """
         if self.actoutstart:
             x =  unit.t_m(self.actoutstart[0] * self.conv * 0.0254 / self.resolution)
             y = -unit.t_m(self.actoutstart[1] * self.conv * 0.0254 / self.resolution)
             if self.debug:
                 print "[%s]" % self.actoutstring
-            self.actpage.append("%f %f moveto (%s) show\n" %
-                                (unit.topt(x), unit.topt(y), self.actoutstring))
+            self.actpage.insert(_show(unit.topt(x), unit.topt(y), self.actoutstring))
             self.actoutstart = None
 
     def putchar(self, char, inch=1):
@@ -484,11 +505,7 @@ class DVIFile:
 
                 print ("%d: %srule height %d, width %d (%dx%d pixels)" %
                        (self.filepos, inch and "set" or "put", height, width, pixelh, pixelw))
-
-            self.actpage.append("%f %f moveto %f 0 rlineto 0 %f rlineto "
-                                "%f 0 rlineto closepath fill\n" %
-                                (unit.topt(x1), unit.topt(y1),
-                                 unit.topt(w), unit.topt(h), -unit.topt(w)))
+            self.actpage.fill(path.rect(x1, y1, w, h))
         else:
             if self.debug:
                 print ("%d: %srule height %d, width %d (invisible)" %
@@ -508,8 +525,8 @@ class DVIFile:
         fontname = self.fonts[self.activefont].name
         fontscale = self.fonts[self.activefont].scale
         fontdesignsize = float(self.fonts[self.activefont].tfmfile.designsize)
-        self.actpage.append("/%s %f selectfont\n" %
-                            (fontname.upper(), fontscale*fontdesignsize*72/72.27))
+        self.actpage.insert(_selectfont(fontname.upper(),
+                                        fontscale*fontdesignsize*72/72.27))
 
 
         if self.debug:
@@ -538,7 +555,7 @@ class DVIFile:
 #                print " (this font is magnified %d%%)" % round(scale/10)
 
     # routines corresponding to the different reader states of the dvi maschine
-    
+
     def _read_pre(self):
         file = self.file
         while 1:
@@ -551,7 +568,7 @@ class DVIFile:
                 num = file.readuint32()
                 den = file.readuint32()
                 mag = file.readuint32()
-                    
+
                 self.tfmconv = (25400000.0/num)*(den/473628672)/16.0;
                 # resolution in dpi
                 self.resolution = 300.0
@@ -580,10 +597,6 @@ class DVIFile:
                 else:
                     for i in range(10): file.readuint32()
                 file.readuint32()
-
-                self.pos = [0, 0, 0, 0, 0, 0]
-                self.pages.append([])
-                self.actpage = self.pages[-1]
                 return _READ_PAGE
             elif cmd == _DVI_POST:
                 return _READ_DONE # we skip the rest
@@ -591,6 +604,9 @@ class DVIFile:
                 raise DVIError
 
     def _read_page(self):
+        self.pos = [0, 0, 0, 0, 0, 0]
+        self.pages.append(canvas.canvas())
+        self.actpage = self.pages[-1]
         file = self.file
         while 1:
             self.filepos = file.tell()
@@ -743,7 +759,7 @@ class DVIFile:
         the dvi file. Furthermore, the list of used fonts
         can be extracted from the array self.fonts. 
         """
-        
+
         # XXX max number of fonts
         self.fonts = [None for i in range(64)]
         self.activefont = None
@@ -780,6 +796,7 @@ class DVIFile:
 
     def prolog(self):
         """ return prolog corresponding to contents of dvi file """
+        # XXX replace this by prolog method in _selectfont
         result = []
         for font in self.fonts:
             if font: result.append(canvas.fontdefinition(font))
@@ -787,10 +804,10 @@ class DVIFile:
 
     def write(self, file, page):
         """write PostScript output for page into file"""
+        # XXX: remove this method by return canvas to TexRunner
         if self.debug:
             print "dvifile(\"%s\").write() for page %s called" % (self.filename, page)
-        for pscommand in self.pages[page-1]:
-            file.write(pscommand)
+        self.pages[page-1].write(file)
 
 
 ###############################################################################
