@@ -5,6 +5,7 @@ PyX
     - fix bug in dvi rule code where width was height
     - fix preamble attribute checking bug
     - fix texmessage.hideload pattern search instead of match bug
+    - renamed vbox to parbox (was done in 0.3 partially only)
   - data module:
     - allow for tuples in lines of the data argument of the data class
 

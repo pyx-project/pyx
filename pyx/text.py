@@ -1075,7 +1075,7 @@ texmessage.ignore = _texmessageignore()
 #   id than fontsize)
 # - order attributes are used to exclude complementary settings (with the
 #   same id)
-# - texsettings might (in rare cases) depend on each other (e.g. vbox and
+# - texsettings might (in rare cases) depend on each other (e.g. parbox and
 #   valign)
 ###############################################################################
 
@@ -1175,18 +1175,18 @@ class _valignbaseline(valign):
 
     def modifyexpr(self, expr, texsettings, texrunner):
         for texsetting in texsettings:
-            if isinstance(texsetting, vbox):
-                raise RuntimeError("valign.baseline: specify top/middle/bottom baseline for vbox")
+            if isinstance(texsetting, parbox):
+                raise RuntimeError("valign.baseline: specify top/middle/bottom baseline for parbox")
 
 
 class _valignxxxbaseline(valign):
 
     def modifyexpr(self, expr, texsettings, texrunner):
         for texsetting in texsettings:
-            if isinstance(texsetting, vbox):
+            if isinstance(texsetting, parbox):
                 break
         else:
-            raise RuntimeError(self.novboxmessage)
+            raise RuntimeError(self.noparboxmessage)
         return expr
 
 
@@ -1194,21 +1194,21 @@ class _valigntopbaseline(_valignxxxbaseline):
 
     __implements__ = _Itexsetting
 
-    novboxmessage = "valign.topbaseline: no vbox defined"
+    noparboxmessage = "valign.topbaseline: no parbox defined"
 
 
 class _valignmiddlebaseline(_valignxxxbaseline):
 
     __implements__ = _Itexsetting
 
-    novboxmessage = "valign.middlebaseline: no vbox defined"
+    noparboxmessage = "valign.middlebaseline: no parbox defined"
 
 
 class _valignbottombaseline(_valignxxxbaseline):
 
     __implements__ = _Itexsetting
 
-    novboxmessage = "valign.bottombaseline: no vbox defined"
+    noparboxmessage = "valign.bottombaseline: no parbox defined"
 
 
 valign.top = _valigntop()
@@ -1225,7 +1225,7 @@ valign.bottombaseline = _valignbottombaseline()
 _texsettingpreamble += "\\newbox\\PyXBoxVBox%\n\\newdimen\PyXDimenVBox%\n"
 
 
-class _vbox(_texsetting):
+class _parbox(_texsetting):
     "goes into the vertical mode"
 
     __implements__ = _Itexsetting
@@ -1248,17 +1248,17 @@ class _vbox(_texsetting):
                     elif isinstance(texsetting, _valignbottombaseline):
                         boxkind = "vbox"
                     else:
-                        raise RuntimeError("vbox couldn'd identify the valign instance")
+                        raise RuntimeError("parbox couldn'd identify the valign instance")
         if boxkind == "vcenter":
             return r"\linewidth%.5ftruept\setbox\PyXBoxVBox=\hbox{{\vtop{\hsize\linewidth{%s}}}}\PyXDimenVBox=0.5\dp\PyXBoxVBox\setbox\PyXBoxVBox=\hbox{{\vbox{\hsize\linewidth{%s}}}}\advance\PyXDimenVBox by -0.5\dp\PyXBoxVBox\lower\PyXDimenVBox\box\PyXBoxVBox" % (self.width, expr, expr)
         else:
             return r"\linewidth%.5ftruept\%s{\hsize\linewidth{%s}}" % (self.width * 72.27 / 72, boxkind, expr)
 
 
-class vbox(_vbox):
+class parbox(_parbox):
 
     def __init__(self, width):
-        _vbox.__init__(self, unit.topt(width))
+        _parbox.__init__(self, unit.topt(width))
 
 
 class vshift(_texsetting):
