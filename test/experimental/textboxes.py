@@ -1,3 +1,4 @@
+import sys; sys.path[:0] = ["../.."]
 from pyx import *
 
 text.set(texdebug="debug.tex", usefiles=["debug.dvi"])
@@ -221,5 +222,5 @@ for i in range(len(boxes)):
     c.stroke(path.rect(0, y, shape[0], -shape[1]))
     c.insert(boxes[i], [trafo.translate(0, y)])
     y -= shape[1] + 3
-c.writetofile("textboxes", paperformat="a0")
+c.writeEPSfile("textboxes", paperformat="a0")
 
