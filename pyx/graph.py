@@ -954,7 +954,7 @@ class graphxy(canvas.canvas):
             try:
                 axis.part
             except AttributeError:
-                break
+                continue
             axis.parts = axis.part.getparts(axis.min, axis.max) # TODO: make use of stretch
             if len(axis.parts) > 1:
                 axis.partnum = 0
