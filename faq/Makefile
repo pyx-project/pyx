@@ -21,6 +21,7 @@ glifaq.sty: glifaq.dtx glifaq.ins
 
 glifaq.pdf: glifaq.dtx
 	pdflatex glifaq.dtx
+	pdflatex glifaq.dtx
 
 pyxversion.tex: ../pyx/version.py
 	python -c "import sys;sys.path[:0]=[\"..\"];import pyx.version;print pyx.version.version+'%'" > pyxversion.tex
