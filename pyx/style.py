@@ -161,7 +161,12 @@ class linewidth(unit.length, attr.sortbeforeexclusiveattr, strokestyle):
     """linewidth of paths"""
 
     def __init__(self, l):
-        unit.length.__init__(self, l)
+        unit.length.__init__(self, 0)
+        self.t = l.t
+        self.u = l.u
+        self.v = l.v
+        self.w = l.w
+        self.x = l.x
         attr.sortbeforeexclusiveattr.__init__(self, linewidth, [dash, linestyle])
 
     def outputPS(self, file):
@@ -170,18 +175,18 @@ class linewidth(unit.length, attr.sortbeforeexclusiveattr, strokestyle):
     def outputPDF(self, file):
         file.write("%f w\n" % unit.topt(self))
 
-_base = 0.02
+_base = 0.02 * unit.w_cm
 
-linewidth.THIN = linewidth(_base/math.sqrt(32) * unit.w_cm)
-linewidth.THIn = linewidth(_base/math.sqrt(16) * unit.w_cm)
-linewidth.THin = linewidth(_base/math.sqrt(8) * unit.w_cm)
-linewidth.Thin = linewidth(_base/math.sqrt(4) * unit.w_cm)
-linewidth.thin = linewidth(_base/math.sqrt(2) * unit.w_cm)
-linewidth.normal = linewidth(_base * unit.w_cm)
-linewidth.thick = linewidth(_base*math.sqrt(2) * unit.w_cm)
-linewidth.Thick = linewidth(_base*math.sqrt(4) * unit.w_cm)
-linewidth.THick = linewidth(_base*math.sqrt(8) * unit.w_cm)
-linewidth.THIck = linewidth(_base*math.sqrt(16) * unit.w_cm)
-linewidth.THICk = linewidth(_base*math.sqrt(32) * unit.w_cm)
-linewidth.THICK = linewidth(_base*math.sqrt(64) * unit.w_cm)
+linewidth.THIN = linewidth(_base/math.sqrt(32))
+linewidth.THIn = linewidth(_base/math.sqrt(16))
+linewidth.THin = linewidth(_base/math.sqrt(8))
+linewidth.Thin = linewidth(_base/math.sqrt(4))
+linewidth.thin = linewidth(_base/math.sqrt(2))
+linewidth.normal = linewidth(_base)
+linewidth.thick = linewidth(_base*math.sqrt(2))
+linewidth.Thick = linewidth(_base*math.sqrt(4))
+linewidth.THick = linewidth(_base*math.sqrt(8))
+linewidth.THIck = linewidth(_base*math.sqrt(16))
+linewidth.THICk = linewidth(_base*math.sqrt(32))
+linewidth.THICK = linewidth(_base*math.sqrt(64))
 linewidth.clear = attr.clearclass(linewidth)

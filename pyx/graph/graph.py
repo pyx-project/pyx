@@ -377,14 +377,14 @@ class graphxy(canvas.canvas):
 
     def initwidthheight(self, width, height, ratio):
         if (width is not None) and (height is None):
-             self.width = unit.length(width)
+             self.width = width
              self.height = (1.0/ratio) * self.width
         elif (height is not None) and (width is None):
-             self.height = unit.length(height)
+             self.height = height
              self.width = ratio * self.height
         else:
-             self.width = unit.length(width)
-             self.height = unit.length(height)
+             self.width = width
+             self.height = height
         self.width_pt = unit.topt(self.width)
         self.height_pt = unit.topt(self.height)
         if self.width_pt <= 0: raise ValueError("width <= 0")
@@ -406,8 +406,8 @@ class graphxy(canvas.canvas):
     def __init__(self, xpos=0, ypos=0, width=None, height=None, ratio=goldenmean,
                  key=None, backgroundattrs=None, axesdist=0.8*unit.v_cm, **axes):
         canvas.canvas.__init__(self)
-        self.xpos = unit.length(xpos)
-        self.ypos = unit.length(ypos)
+        self.xpos = xpos
+        self.ypos = ypos
         self.xpos_pt = unit.topt(self.xpos)
         self.ypos_pt = unit.topt(self.ypos)
         self.initwidthheight(width, height, ratio)

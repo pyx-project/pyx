@@ -310,11 +310,11 @@ class pattern(_canvas, attr.exclusiveattr, style.fillstyle):
         if self.xstep is None:
            xstep = unit.topt(realpatternbbox.width())
         else:
-           xstep = unit.topt(unit.length(self.xstep))
+           xstep = unit.topt(self.xstep)
         if self.ystep is None:
             ystep = unit.topt(realpatternbbox.height())
         else:
-           ystep = unit.topt(unit.length(self.ystep))
+           ystep = unit.topt(self.ystep)
         if not xstep:
             raise ValueError("xstep in pattern cannot be zero")
         if not ystep:
@@ -348,7 +348,8 @@ def calctrafo(abbox, paperformat, margin, rotated, fittosize):
     """ calculate a trafo which rotates and fits a canvas with
     bounding box abbox on the given paperformat with a margin on all
     sides"""
-    margin = unit.length(margin)
+    if not isinstance(margin, unit.length):
+        margin = unit.length(margin)
     atrafo = None     # global transformation of canvas
 
     if rotated:
@@ -363,7 +364,7 @@ def calctrafo(abbox, paperformat, margin, rotated, fittosize):
 
         paperwidth -= 2*margin
         paperheight -= 2*margin
-        
+
         if not atrafo: atrafo = trafo.trafo()
 
         atrafo = atrafo.translated(margin + 0.5*(paperwidth  - abbox.width())  - abbox.left(),

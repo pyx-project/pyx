@@ -321,21 +321,20 @@ class geometricseries(attr.changeattr):
 
 class ticklength(geometricseries): pass
 
-_base = 0.12
+_base = 0.12 * unit.v_cm
 
-#ticklength.short = ticklength("%f cm" % (_base/math.sqrt(64)), 1/goldenmean)
-ticklength.SHORT = ticklength(_base/math.sqrt(64)*unit.v_cm, 1/goldenmean)
-ticklength.SHORt = ticklength(_base/math.sqrt(32)*unit.v_cm, 1/goldenmean)
-ticklength.SHOrt = ticklength(_base/math.sqrt(16)*unit.v_cm, 1/goldenmean)
-ticklength.SHort = ticklength(_base/math.sqrt(8)*unit.v_cm, 1/goldenmean)
-ticklength.Short = ticklength(_base/math.sqrt(4)*unit.v_cm, 1/goldenmean)
-ticklength.short = ticklength(_base/math.sqrt(2)*unit.v_cm, 1/goldenmean)
-ticklength.normal = ticklength(_base*unit.v_cm, 1/goldenmean)
-ticklength.long = ticklength(_base*math.sqrt(2)*unit.v_cm, 1/goldenmean)
-ticklength.Long = ticklength(_base*math.sqrt(4)*unit.v_cm, 1/goldenmean)
-ticklength.LOng = ticklength(_base*math.sqrt(8)*unit.v_cm, 1/goldenmean)
-ticklength.LONg = ticklength(_base*math.sqrt(16)*unit.v_cm, 1/goldenmean)
-ticklength.LONG = ticklength(_base*math.sqrt(32)*unit.v_cm, 1/goldenmean)
+ticklength.SHORT = ticklength(_base/math.sqrt(64), 1/goldenmean)
+ticklength.SHORt = ticklength(_base/math.sqrt(32), 1/goldenmean)
+ticklength.SHOrt = ticklength(_base/math.sqrt(16), 1/goldenmean)
+ticklength.SHort = ticklength(_base/math.sqrt(8), 1/goldenmean)
+ticklength.Short = ticklength(_base/math.sqrt(4), 1/goldenmean)
+ticklength.short = ticklength(_base/math.sqrt(2), 1/goldenmean)
+ticklength.normal = ticklength(_base, 1/goldenmean)
+ticklength.long = ticklength(_base*math.sqrt(2), 1/goldenmean)
+ticklength.Long = ticklength(_base*math.sqrt(4), 1/goldenmean)
+ticklength.LOng = ticklength(_base*math.sqrt(8), 1/goldenmean)
+ticklength.LONg = ticklength(_base*math.sqrt(16), 1/goldenmean)
+ticklength.LONG = ticklength(_base*math.sqrt(32), 1/goldenmean)
 
 
 class regular(_title):
