@@ -946,6 +946,9 @@ class axisrater:
 ################################################################################
 
 
+class layoutdata: pass
+
+
 class axistitlepainter:
 
     paralleltext = -90
@@ -969,22 +972,24 @@ class axistitlepainter:
         return direction
 
     def dolayout(self, graph, axis):
-        titledist = unit.topt(unit.length(self.titledist_str, default_type="v"))
         if axis.title is not None and self.titleattrs is not None:
+            titledist = unit.topt(unit.length(self.titledist_str, default_type="v"))
             x, y = axis._vtickpoint(axis, self.titlepos)
             dx, dy = axis.vtickdirection(axis, self.titlepos)
             # no not modify self.titleattrs ... the painter might be used by several axes!!!
             titleattrs = list(helper.ensuresequence(self.titleattrs))
             if self.titledirection is not None:
                 titleattrs = titleattrs + [trafo.rotate(self.reldirection(self.titledirection, dx, dy))]
-            axis.titlebox = textmodule._text(x, y, axis.title, *titleattrs)
-            axis._extent += titledist
-            axis.titlebox._linealign(axis._extent, dx, dy)
-            axis._extent += axis.titlebox._extent(dx, dy)
+            axis.layoutdata.titlebox = graph.texrunner._text(x, y, axis.title, *titleattrs)
+            axis.layoutdata._extent += titledist
+            axis.layoutdata.titlebox._linealign(axis.layoutdata._extent, dx, dy)
+            axis.layoutdata._extent += axis.layoutdata.titlebox._extent(dx, dy)
+        else:
+            axis.layoutdata.titlebox = None
 
     def paint(self, graph, axis):
-        if axis.title is not None and self.titleattrs is not None:
-            graph.insert(axis.titlebox)
+        if axis.layoutdata.titlebox is not None:
+            graph.insert(axis.layoutdata.titlebox)
 
 
 class axispainter(axistitlepainter):
@@ -1222,7 +1227,7 @@ class axispainter(axistitlepainter):
                     return unit.topt(unit.length(arg, default_type="v"))
         innerticklengths = topt_v_recursive(self.innerticklengths_str)
         outerticklengths = topt_v_recursive(self.outerticklengths_str)
-        axis._extent = 0
+        axis.layoutdata._extent = 0
         for tick in axis.ticks:
             if tick.ticklevel is not None:
                 tick.innerticklength = helper.getitemno(innerticklengths, tick.ticklevel)
@@ -1237,8 +1242,8 @@ class axispainter(axistitlepainter):
                     extent = tick.outerticklength
             else:
                 extent = tick.textbox._extent(tick.dx, tick.dy) + labeldist
-            if axis._extent < extent:
-                axis._extent = extent
+            if axis.layoutdata._extent < extent:
+                axis.layoutdata._extent = extent
         axistitlepainter.dolayout(self, graph, axis)
 
     def ratelayout(self, graph, axis, dense=1):
@@ -1322,18 +1327,18 @@ class splitaxispainter(axistitlepainter):
             self._breaklineslength = unit.topt(self.breaklineslength)
             self.sin = math.sin(self.breaklinesangle*math.pi/180.0)
             self.cos = math.cos(self.breaklinesangle*math.pi/180.0)
-            axis._extent = (math.fabs(0.5 * self._breaklinesdist * self.cos) +
-                            math.fabs(0.5 * self._breaklineslength * self.sin))
+            axis.layoutdata._extent = (math.fabs(0.5 * self._breaklinesdist * self.cos) +
+                                       math.fabs(0.5 * self._breaklineslength * self.sin))
         else:
-            axis._extent = 0
+            axis.layoutdata._extent = 0
         for subaxis in axis.axislist:
             subaxis.baseaxis = axis
             subaxis._vtickpoint = lambda axis, v: axis.baseaxis._vtickpoint(axis.baseaxis, axis.vmin+v*(axis.vmax-axis.vmin))
             subaxis.vtickdirection = lambda axis, v: axis.baseaxis.vtickdirection(axis.baseaxis, axis.vmin+v*(axis.vmax-axis.vmin))
             subaxis.vbaseline = self.subvbaseline
             subaxis.dolayout(graph)
-            if axis._extent < subaxis._extent:
-                axis._extent = subaxis._extent
+            if axis.layoutdata._extent < subaxis.layoutdata._extent:
+                axis.layoutdata._extent = subaxis.layoutdata._extent
         axistitlepainter.dolayout(self, graph, axis)
 
     def paint(self, graph, axis):
@@ -1386,7 +1391,7 @@ class baraxispainter(axistitlepainter):
         axistitlepainter.__init__(self, **args)
 
     def dolayout(self, graph, axis):
-        axis._extent = 0
+        axis.layoutdata._extent = 0
         if axis.multisubaxis:
             for name, subaxis in zip(axis.names, axis.subaxis):
                 subaxis.vmin = axis.convert((name, 0))
@@ -1396,8 +1401,8 @@ class baraxispainter(axistitlepainter):
                 subaxis.vtickdirection = lambda axis, v: axis.baseaxis.vtickdirection(axis.baseaxis, axis.vmin+v*(axis.vmax-axis.vmin))
                 subaxis.vbaseline = None
                 subaxis.dolayout(graph)
-                if axis._extent < subaxis._extent:
-                    axis._extent = subaxis._extent
+                if axis.layoutdata._extent < subaxis.layoutdata._extent:
+                    axis.layoutdata._extent = subaxis.layoutdata._extent
         axis.namepos = []
         for name in axis.names:
             v = axis.convert((name, self.namepos))
@@ -1415,7 +1420,7 @@ class baraxispainter(axistitlepainter):
                 axis.nameboxes.append(textmodule._text(x, y, str(axis.texts[str(name)]), *nameattrs))
             else:
                 axis.nameboxes.append(textmodule._text(x, y, str(name), *nameattrs))
-        labeldist = axis._extent + unit.topt(unit.length(self.namedist_str, default_type="v"))
+        labeldist = axis.layoutdata._extent + unit.topt(unit.length(self.namedist_str, default_type="v"))
         if len(axis.namepos) > 1:
             equaldirection = 1
             for namepos in axis.namepos[1:]:
@@ -1444,11 +1449,11 @@ class baraxispainter(axistitlepainter):
             else:
                 axis.outerticklength = None
         if axis.outerticklength is not None and self.tickattrs is not None:
-            axis._extent += axis.outerticklength
+            axis.layoutdata._extent += axis.outerticklength
         for (v, x, y, dx, dy), namebox in zip(axis.namepos, axis.nameboxes):
             newextent = namebox._extent(dx, dy) + labeldist
-            if axis._extent < newextent:
-                axis._extent = newextent
+            if axis.layoutdata._extent < newextent:
+                axis.layoutdata._extent = newextent
         axistitlepainter.dolayout(self, graph, axis)
         graph.mindbbox(*[namebox.bbox() for namebox in axis.nameboxes])
 
@@ -1632,10 +1637,12 @@ class _axis:
                     self.ticks = variants[i][1]
                     if len(self.ticks):
                         self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
+                    self.layoutdata = layoutdata()
                     self.painter.dolayout(graph, self)
                     ratelayout = self.painter.ratelayout(graph, self, dense)
                     if ratelayout is not None:
                         variants[i][0] += ratelayout
+                        variants[i].append(self.layoutdata)
                     else:
                         variants[i][0] = None
                     if variants[i][0] is not None and (bestrate is None or variants[i][0] < bestrate):
@@ -1647,13 +1654,15 @@ class _axis:
                 variants = [variant for variant in variants[:i] if variant[0] is not None]
                 variants.sort()
             else:
-                self._extent = 0
+                self.layoutdata._extent = 0
             self.ticks = variants[0][1]
+            self.layoutdata = variants[0][2]
             if len(self.ticks):
                 self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
         else:
             if len(self.ticks):
                 self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
+            self.layoutdata = layoutdata()
             self.painter.dolayout(graph, self)
         graph.mindbbox(*[tick.textbox.bbox() for tick in self.ticks if tick.textbox is not None])
 
@@ -1731,6 +1740,7 @@ class linkaxis:
         self.convert = self.linkedaxis.convert
         self.divisor = self.linkedaxis.divisor
         self.suffix = self.linkedaxis.suffix
+        self.layoutdata = layoutdata()
         self.painter.dolayout(graph, self)
 
     def dopaint(self, graph):
@@ -1839,6 +1849,7 @@ class splitaxis:
         raise ValueError("value couldn't be assigned to a split region")
 
     def dolayout(self, graph):
+        self.layoutdata = layoutdata()
         self.painter.dolayout(graph, self)
 
     def dopaint(self, graph):
@@ -1942,6 +1953,7 @@ class baraxis:
         return (self.relsizes[pos] + subvalue) / float(self.relsizes[-1])
 
     def dolayout(self, graph):
+        self.layoutdata = layoutdata()
         self.painter.dolayout(graph, self)
 
     def dopaint(self, graph):
@@ -2232,10 +2244,10 @@ class graphxy(canvas.canvas):
             axis.vtickdirection = self.vtickdirection
             axis.dolayout(self)
             if XPattern.match(key):
-                self._xaxisextents[num2] += axis._extent
+                self._xaxisextents[num2] += axis.layoutdata._extent
                 needxaxisdist[num2] = 1
             if YPattern.match(key):
-                self._yaxisextents[num2] += axis._extent
+                self._yaxisextents[num2] += axis.layoutdata._extent
                 needyaxisdist[num2] = 1
 
     def dobackground(self):
