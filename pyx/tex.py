@@ -367,7 +367,7 @@ class tex:
         # TODO 7: dvips error handling
         #         interface for modification of the dvips command line
 
-        if os.system("TEXCONFIG=" + WorkDir + " dvips -K0 -P pyx -T1in,1in -o " + TempName + ".eps " + TempName + ".dvi > /dev/null 2>&1"):
+        if os.system("TEXCONFIG=" + WorkDir + " dvips -P pyx -T1in,1in -o " + TempName + ".eps " + TempName + ".dvi > /dev/null 2>&1"):
             assert 0, "dvips exit code non-zero"
 
         result = str(canvas.epsfile(TempName + ".eps", clipping = 0))
