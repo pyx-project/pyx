@@ -5,7 +5,7 @@ another EPS file in your canvas, thereby scaling, aligning the content
 at discretion. The most simple example looks like
 \begin{quote}
 \begin{verbatim}
-import pyx
+from pyx import *
 c = canvas.canvas()
 c.insert(epsfile.epsfile("file.eps"))
 c.writetofile("output")
