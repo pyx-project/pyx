@@ -595,7 +595,7 @@ class smoothed(deco, attr.attr):
     """
 
     def __init__(self, radius, softness=1, strict=0):
-        self.radius = unit.length(radius, default_type="v")
+        self.radius = radius
         self.softness = softness
         self.strict = strict
 
@@ -868,17 +868,17 @@ class smoothed(deco, attr.attr):
 smoothed.clear = attr.clearclass(smoothed)
 
 _base = 1
-smoothed.SHARP = smoothed(radius="%f cm" % (_base/math.sqrt(64)))
-smoothed.SHARp = smoothed(radius="%f cm" % (_base/math.sqrt(32)))
-smoothed.SHArp = smoothed(radius="%f cm" % (_base/math.sqrt(16)))
-smoothed.SHarp = smoothed(radius="%f cm" % (_base/math.sqrt(8)))
-smoothed.Sharp = smoothed(radius="%f cm" % (_base/math.sqrt(4)))
-smoothed.sharp = smoothed(radius="%f cm" % (_base/math.sqrt(2)))
-smoothed.normal = smoothed(radius="%f cm" % (_base))
-smoothed.round = smoothed(radius="%f cm" % (_base*math.sqrt(2)))
-smoothed.Round = smoothed(radius="%f cm" % (_base*math.sqrt(4)))
-smoothed.ROund = smoothed(radius="%f cm" % (_base*math.sqrt(8)))
-smoothed.ROUnd = smoothed(radius="%f cm" % (_base*math.sqrt(16)))
-smoothed.ROUNd = smoothed(radius="%f cm" % (_base*math.sqrt(32)))
-smoothed.ROUND = smoothed(radius="%f cm" % (_base*math.sqrt(64)))
+smoothed.SHARP = smoothed(radius=_base/math.sqrt(64) * unit.v_cm)
+smoothed.SHARp = smoothed(radius=_base/math.sqrt(32) * unit.v_cm)
+smoothed.SHArp = smoothed(radius=_base/math.sqrt(16) * unit.v_cm)
+smoothed.SHarp = smoothed(radius=_base/math.sqrt(8) * unit.v_cm)
+smoothed.Sharp = smoothed(radius=_base/math.sqrt(4) * unit.v_cm)
+smoothed.sharp = smoothed(radius=_base/math.sqrt(2) * unit.v_cm)
+smoothed.normal = smoothed(radius=_base * unit.v_cm)
+smoothed.round = smoothed(radius=_base*math.sqrt(2) * unit.v_cm)
+smoothed.Round = smoothed(radius=_base*math.sqrt(4) * unit.v_cm)
+smoothed.ROund = smoothed(radius=_base*math.sqrt(8) * unit.v_cm)
+smoothed.ROUnd = smoothed(radius=_base*math.sqrt(16) * unit.v_cm)
+smoothed.ROUNd = smoothed(radius=_base*math.sqrt(32) * unit.v_cm)
+smoothed.ROUND = smoothed(radius=_base*math.sqrt(64) * unit.v_cm)
 

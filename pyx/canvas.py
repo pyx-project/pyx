@@ -395,8 +395,8 @@ class canvas(_canvas):
 
     """a canvas is a collection of PSCmds together with PSAttrs"""
 
-    def writeEPSfile(self, filename, paperformat=None, rotated=0, fittosize=0, margin="1 t cm",
-                    bbox=None, bboxenlarge="1 t pt"):
+    def writeEPSfile(self, filename, paperformat=None, rotated=0, fittosize=0, margin=1 * unit.t_cm,
+                    bbox=None, bboxenlarge=1 * unit.t_pt):
         """write canvas to EPS file
 
         If paperformat is set to a known paperformat, the output will be centered on
@@ -424,7 +424,7 @@ class canvas(_canvas):
         abbox = bbox is not None and bbox or self.bbox()
         abbox.enlarge(bboxenlarge)
         ctrafo = calctrafo(abbox, paperformat, margin, rotated, fittosize)
-        
+
         # if there has been a global transformation, adjust the bounding box
         # accordingly
         if ctrafo: abbox.transform(ctrafo)
@@ -464,8 +464,8 @@ class canvas(_canvas):
         file.write("%%Trailer\n")
         file.write("%%EOF\n")
 
-    def writePDFfile(self, filename, paperformat=None, rotated=0, fittosize=0, margin="1 t cm",
-                    bbox=None, bboxenlarge="1 t pt"):
+    def writePDFfile(self, filename, paperformat=None, rotated=0, fittosize=0, margin=1 * unit.t_cm,
+                    bbox=None, bboxenlarge=1 * unit.t_pt):
         sys.stderr.write("*** PyX Warning: writePDFfile is experimental and supports only a subset of PyX's features\n")
 
         if filename[-4:]!=".pdf":
@@ -676,7 +676,7 @@ class canvas(_canvas):
 class page(canvas):
 
     def __init__(self, attrs=[], texrunner=None, pagename=None, paperformat="a4", rotated=0, fittosize=0,
-                 margin="1 t cm", bboxenlarge="1 t pt"):
+                 margin=1 * unit.t_cm, bboxenlarge=1 * unit.t_pt):
         canvas.__init__(self, attrs, texrunner)
         self.pagename = pagename
         self.paperformat = paperformat.capitalize()
