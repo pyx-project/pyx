@@ -103,6 +103,9 @@ XXX terminology: subpath, \dots
   \texttt{at(t)} & returns the coordinates of the point of
   \texttt{path} corresponding to the parameter value
   \texttt{t}.$^\dagger$\\
+  \texttt{lentopar(l, \newline\phantom{lentopar(}epsilon=1e-5)} & returns the parameter value corresponding to the
+  lengths \texttt{l} (one or a list of lengths). This uses
+  arclength-calculations with accuracy \texttt{epsilon}.$^\dagger$\\
   \texttt{bbox()} & returns the bounding box of the \texttt{path}\\
   \texttt{begin()} & return first point of first subpath of
   \texttt{path}.$^\dagger$\\
