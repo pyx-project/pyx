@@ -139,21 +139,6 @@ class graphxy(canvas.canvas):
 
     axisnames = "x", "y"
 
-    class axisposdata:
-
-        def __init__(self, type, axispos, tickdirection):
-            """
-            - type == 0: x-axis; type == 1: y-axis
-            - axispos_pt is the y or x position of the x-axis or y-axis
-              in postscript points, respectively
-            - axispos is analogous to axispos, but as a PyX length
-            - dx and dy is the tick direction
-            """
-            self.type = type
-            self.axispos = axispos
-            self.axispos_pt = unit.topt(axispos)
-            self.tickdirection = tickdirection
-
     def plot(self, data, style=None):
         if self.haslayout:
             raise RuntimeError("layout setup was already performed")

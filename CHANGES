@@ -65,7 +65,7 @@ TODO:
     - painters are using the new attribute scheme including changeable attributes (TODO: documentation)
     - axis zeropath feature removed (TODO: documentation)
     - graph styles rewrite (TODO: documentation)
-    - graph goes into 
+    - graph splitted into several modules in the new subdirectory graph
   - text module:
     - default handling of texmessages as in the new attribute scheme
     - multiple insert bug fixed

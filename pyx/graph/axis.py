@@ -476,9 +476,7 @@ class splitaxis:
       non-overlapping data ranges -- between these subaxes
       the axis is "splitted"
     - (just to get sure: a splitaxis can contain other
-      splitaxes as its subaxes)
-    - a splitaxis implements the _Iaxispos for its subaxes
-      by inheritance from _subaxispos"""
+      splitaxes as its subaxes)"""
 
     __implements__ = _Iaxis, painter._Iaxispos
 
@@ -635,10 +633,7 @@ class baraxis:
       each item can be created)
     - any axis can be a subaxis of a baraxis; if no subaxis
       is specified at all, the baraxis simulates a linear
-      subaxis with a fixed range of 0 to 1
-    - a splitaxis implements the _Iaxispos for its subaxes
-      by inheritance from _subaxispos when the multisubaxis
-      feature is turned on"""
+      subaxis with a fixed range of 0 to 1"""
 
     def __init__(self, subaxis=None, multisubaxis=None, title=None,
                        dist=0.5, firstdist=None, lastdist=None, names=None,
