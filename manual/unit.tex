@@ -1,0 +1,17 @@
+\chapter{Module unit}
+\label{unit}
+\section{\PyX{} length}
+Lengths can either be a initialized with a number or a string:
+\begin{itemize}
+\item a length specified as a number corresponds to the default values of
+unit-type and unit-name
+\item a string has to consist of a maximum of three parts:
+\begin{description}
+\item[quantifier:] integer/float value
+\item[unit-type:] "t", "u", "v", or "w". Optional, defaults to "u"
+\item[unit-name:] "m", "cm", "mm", "inch", "pt". Optional, defaults
+to default-unit
+\end{description}
+\end{itemize}
+Internally all length are stored in units of m as a quadruple for the
+four unit-types

@@ -10,7 +10,7 @@ t.text(0, 0, "Hello, world!")
 print "width:", t.textwd("Hello, world!")
 print "height:", t.textht("Hello, world!")
 print "depth:", t.textdp("Hello, world!")
-c.writetofile("tex_ex1")
+c.writetofile("tex1")
 
 
 c = canvas.canvas()
@@ -56,5 +56,5 @@ t.text(7.5, -4.5, "315", tex.direction(315))
 t.text(0, -6, "red", color.rgb.red)
 t.text(3, -6, "green", color.rgb.green)
 t.text(6, -6, "blue", color.rgb.blue)
-c.writetofile("tex_ex2")
+c.writetofile("tex2")
 

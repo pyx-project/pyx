@@ -1,0 +1,38 @@
+\chapter{Module color}
+\label{color}
+\section{Color models}
+PostScript provides different color models like grey colors, rgb
+colors, hsb colors, and cmyk colors. They are available to \PyX{} by
+different color classes, which just pass the colors down to the
+PostScript level. This implies, that there are no conversion routines
+between different color models available. However, some color model
+conversion routines are included in python's standard library in the
+module \texttt{colorsym}. Furthermore also the comparision of colors
+within a color model is not supported, but might be added in future
+versions at least for checking color identity and for ordering grey
+colors.
+
+\section{Color classes}
+
+\section{Color instances}
+
+\section{Example}
+\begin{quote}
+\begin{verbatim}
+import pyx
+
+c = canvas.canvas()
+
+c.fill(path.rect(0, 0, 7, 3), color.grey(0.8))
+c.fill(path.rect(1, 1, 1, 1), color.rgb.red)
+c.fill(path.rect(3, 1, 1, 1), color.rgb.green)
+c.fill(path.rect(5, 1, 1, 1), color.rgb.blue)
+
+c.writetofile("color")
+\end{verbatim}
+\end{quote}
+
+The file \verb|color.eps| is created and looks like:
+\begin{quote}
+\includegraphics{color}
+\end{quote}
