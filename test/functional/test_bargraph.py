@@ -9,11 +9,11 @@ text.set(mode="latex")
 
 def test_bar(c, x, y):
     g = c.insert(graph.graphxy(x, y, height=5, width=5, x=graph.axis.bar(title="Month", painter=graph.axis.painter.bar(nameattrs=[text.halign.right, trafo.rotate(90)]))))
-    g.plot(graph.data.file("data/testdata2", xname=1, y=2), [graph.style.bar(fromvalue=0)])
+    g.plot(graph.data.file("data/testdata2", xname=1, y=2, text=2), [graph.style.barpos(fromvalue=0), graph.style.bar(), graph.style.text()])
 
 def test_bar2(c, x, y):
     g = c.insert(graph.graphxy(x, y, height=5, width=5, y=graph.axis.bar(title="Month")))
-    g.plot(graph.data.file("data/testdata2", x=2, yname=1), [graph.style.bar()])
+    g.plot(graph.data.file("data/testdata2", x=2, dx="1", yname=1), [graph.style.bar(), graph.style.errorbar()])
 
 def test_bar3(c, x, y):
     g = c.insert(graph.graphxy(x, y, height=5, width=12, x=graph.axis.bar(multisubaxis=graph.axis.bar(dist=0), painter=graph.axis.painter.bar(innerticklength=0.2))))

@@ -327,14 +327,16 @@ def tile_pt(polygons, a, dx, dy):
         extent = p.extent_pt(dx, dy)
         if extent > maxextent:
             maxextent = extent
+    delta = maxextent + a
     d = 0
     for p in polygons:
         p.transform(trafo.translate_pt(d*dx, d*dy))
-        d += maxextent + a
+        d += delta
+    return delta
 
 
 def tile(polygons, a, dx, dy):
-    tile_pt(polygons, unit.topt(a), dx, dy)
+    return unit.t_pt(tile_pt(polygons, unit.topt(a), dx, dy))
 
 
 class polygon(polygon_pt):

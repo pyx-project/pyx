@@ -80,7 +80,9 @@ class _Idata:
         This method returns a title string for the data to be used
         in graph keys and probably other locations. The method might
         return None to indicate, that there is no title and the data
-        should be skiped in a graph key. A data title does not need
+        should be skiped in a graph key. Alternatively, the title
+        might contain a list of strings. The list should fit the
+        return value of the key_pt method. Data titles does not need
         to be unique."""
 
     def setstyles(self, graph, styles):
@@ -112,12 +114,14 @@ class _Idata:
 
         This method should draw the data."""
 
-    def key_pt(self, graph, x_pt, y_pt, width_pt, height_pt):
+    def key_pt(self, graph, x_pt, y_pt, width_pt, height_pt, dy_pt):
         """Draw graph key
 
         This method should draw a graph key at the given position
         x_pt, y_pt indicating the lower left corner of the given
-        area width_pt, height_pt."""
+        area width_pt, height_pt. The styles might draw several
+        key entries shifted vertically by dy_pt. The method returns
+        the number of key entries."""
 
 
 class styledata:
@@ -224,9 +228,18 @@ class _data(_Idata):
             for style in self.styles:
                 style.donedrawpoints(self.styledata, graph)
 
-    def key_pt(self, graph, x_pt, y_pt, width_pt, height_pt):
+    def key_pt(self, graph, x_pt, y_pt, width_pt, height_pt, dy_pt):
+        i = None
         for style in self.styles:
-            style.key_pt(self.styledata, graph, x_pt, y_pt, width_pt, height_pt)
+            j = style.key_pt(self.styledata, graph, x_pt, y_pt, width_pt, height_pt)
+            if i is None:
+                if j is not None:
+                    i = j
+            elif j is not None and i != j:
+                raise ValueError("different number of graph keys")
+        if i is None:
+            raise ValueError("no graph key available")
+        return i
 
 
 class list(_data):

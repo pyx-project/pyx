@@ -69,7 +69,7 @@ class key:
 
     def paint(self, plotdata):
         "creates the layout of the key"
-        plotdata = [plotdat for plotdat in plotdata if plotdat.title is not None]
+        plotdata = [x for x in plotdata if x.title is not None]
         c = canvas.canvas()
         self.dist_pt = unit.topt(self.dist)
         self.hdist_pt = unit.topt(self.hdist)
@@ -77,16 +77,27 @@ class key:
         self.symbolwidth_pt = unit.topt(self.symbolwidth)
         self.symbolheight_pt = unit.topt(self.symbolheight)
         self.symbolspace_pt = unit.topt(self.symbolspace)
+        titleboxes = []
         for plotdat in plotdata:
-            plotdat.temp_titlebox = c.texrunner.text_pt(0, 0, plotdat.title, self.defaulttextattrs + self.textattrs)
-        box.tile_pt([plotdat.temp_titlebox for plotdat in plotdata], self.dist_pt, 0, -1)
-        box.linealignequal_pt([plotdat.temp_titlebox for plotdat in plotdata], self.symbolwidth_pt + self.symbolspace_pt, 1, 0)
+            try:
+                plotdat.title + ""
+            except:
+                titles = plotdat.title
+            else:
+                titles = [plotdat.title]
+            plotdat.titlecount = len(titles)
+            for title in titles:
+                titleboxes.append(c.texrunner.text_pt(0, 0, title, self.defaulttextattrs + self.textattrs))
+        dy_pt = box.tile_pt(titleboxes, self.dist_pt, 0, -1)
+        box.linealignequal_pt(titleboxes, self.symbolwidth_pt + self.symbolspace_pt, 1, 0)
+        y_pt = -0.5 * self.symbolheight_pt + titleboxes[0].center[1]
         for plotdat in plotdata:
             # TODO: loop over styles
-            plotdat.styles[-1].key_pt(plotdat.styledata, c, 0, -0.5 * self.symbolheight_pt + plotdat.temp_titlebox.center[1],
-                                 self.symbolwidth_pt, self.symbolheight_pt)
-            c.insert(plotdat.temp_titlebox)
-
-        # for plotdat in plotdata:
-        #     del plotdat.temp_titlebox
+            count = plotdat.styles[-1].key_pt(plotdat.styledata, c, 0, y_pt,
+                                              self.symbolwidth_pt, self.symbolheight_pt, dy_pt)
+            y_pt -= dy_pt*count
+            if count != plotdat.titlecount:
+                raise ValueError("key count/title count mismatch")
+        for titlebox in titleboxes:
+            c.insert(titlebox)
         return c

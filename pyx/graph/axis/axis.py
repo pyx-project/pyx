@@ -751,9 +751,7 @@ class bar:
                     self.relsizes = None
         return self.relsizes is not None
 
-    def adjustrange(self, points, index, subnames=None):
-        if subnames is None:
-            subnames = []
+    def adjustrange(self, points, index, subnames=[]):
         for point in points:
             if index is not None:
                 self.setname(point[index], *subnames)

@@ -17,10 +17,6 @@ TODO:
     - axis painter labelattrs=None + automatic axis partitioning leads to no valid partitioning
   - graph.style and graph.data modules
     - exceptions in drawsymbol & friends...
-    - caution: another reorganization round is in progress
-      (its goal is to make graph styles combinable which will also
-      split up the style code in smaller parts -- those will then be
-      easier to substitute by inheritance)
     - fix docu (or code) of gridattrs functionality of axis painters
       (how can one, e.g. draw a grid at the ticks and not at the subticks)
   - graph.data module:
@@ -59,6 +55,9 @@ TODO:
     - is the early conversion with unit.topt unit-modification-save?
   - deformer module:
     - better names for the helper functions ?
+  - open discussion:
+    - clearly distingish between readers and writers. dvifile, epsfile, etc. might
+      be renamed to dvireader, epsreader ...
 
   Documentation:
     - path module:
@@ -114,6 +113,7 @@ TODO:
     - create siteconfig on install to store positions of the shared data
       and the global pyxrc
   - graph modules:
+    - graph style + data reorganization
     - enum -> num renaming
     - allow for horizontally and vertically centered graph key alignment (TODO: documentation)
     - fix bug that graph was not finished automatically when a bbox was specified
