@@ -43,6 +43,12 @@ class axisdata:
 class _axis:
     """axis"""
 
+    def createlinked(self, data, positioner, graphtexrunner, errorname, linkpainter):
+        canvas = painter.axiscanvas(self.painter, graphtexrunner)
+        if linkpainter is not None:
+            linkpainter.paint(canvas, data, self, positioner)
+        return canvas
+
 
 class _linmap:
     "linear conversion methods"
@@ -50,10 +56,6 @@ class _linmap:
     def convert(self, data, value):
         """axis coordinates -> graph coordinates"""
         return (float(value) - data.min) / (data.max - data.min)
-
-    def invert(self, data, value):
-        """graph coordinates -> axis coordinates"""
-        return data.min + value * (data.max - data.min)
 
 
 class _logmap:
@@ -63,10 +65,6 @@ class _logmap:
         """axis coordinates -> graph coordinates"""
         # TODO: store log(data.min) and log(data.max)
         return (math.log(float(value)) - math.log(data.min)) / (math.log(data.max) - math.log(data.min))
-
-    def invert(self, data, value):
-        """graph coordinates -> axis coordinates"""
-        return math.exp(math.log(data.min) + value * (math.log(data.max) - math.log(data.min)))
 
 
 class _regularaxis(_axis):
@@ -92,12 +90,12 @@ class _regularaxis(_axis):
         self.maxworse = maxworse
         self.manualticks = self.checkfraclist(manualticks)
 
-    def createdata(self):
+    def createdata(self, errorname):
         return axisdata(min=self.min, max=self.max)
 
     zero = 0.0
 
-    def adjustaxis(self, data, columndata):
+    def adjustaxis(self, data, columndata, errorname):
         if self.min is None or self.max is None:
             for value in columndata:
                 try:
@@ -122,9 +120,10 @@ class _regularaxis(_axis):
             last = item
         return sorted
 
-    def create(self, data, positioner, graphtexrunner=None):
+    def create(self, data, positioner, graphtexrunner, errorname):
+        errorname = " for axis %s" % errorname
         if data.min is None or data.max is None:
-            raise RuntimeError("incomplete axis range")
+            raise RuntimeError("incomplete axis range%s" % errorname)
 
         # a variant is a data copy with local modifications to test several partitions
         class variant:
@@ -166,14 +165,14 @@ class _regularaxis(_axis):
                             worse = 0
                         variants.append(variant(data, rate=rate, ticks=ticks))
             if not variants:
-                raise RuntimeError("no axis partitioning found")
+                raise RuntimeError("no axis partitioning found%s" % errorname)
         else:
             variants = [variant(data, rate=0, ticks=self.manualticks)]
 
         # get best variant
         if self.painter is None or len(variants) == 1:
             # in case of a single variant we're almost done
-            self.adjustaxis(data, variants[0].ticks)
+            self.adjustaxis(data, variants[0].ticks, errorname)
             if variants[0].ticks:
                 self.texter.labels(variants[0].ticks)
             if self.divisor:
@@ -190,7 +189,7 @@ class _regularaxis(_axis):
                 variant.storedcanvas = None
             variants.sort()
             while not variants[0].storedcanvas:
-                self.adjustaxis(variants[0], variants[0].ticks)
+                self.adjustaxis(variants[0], variants[0].ticks, errorname)
                 if variants[0].ticks:
                     self.texter.labels(variants[0].ticks)
                 if self.divisor:
@@ -202,12 +201,12 @@ class _regularaxis(_axis):
                 if ratelayout is None:
                     del variants[0]
                     if not variants:
-                        raise RuntimeError("no valid axis partitioning found")
+                        raise RuntimeError("no valid axis partitioning found%s" % errorname)
                 else:
                     variants[0].rate += ratelayout
                     variants[0].storedcanvas = canvas
                 variants.sort()
-            self.adjustaxis(data, variants[0].ticks)
+            self.adjustaxis(data, variants[0].ticks, errorname)
             data.ticks = variants[0].ticks
             return variants[0].storedcanvas
 
@@ -234,153 +233,15 @@ class logarithmic(_regularaxis, _logmap):
 log = logarithmic
 
 
-# class split:
-#     """implementation of a split axis
-#     - a split axis contains several (sub-)axes with
-#       non-overlapping data ranges -- between these subaxes
-#       the axis is "splitted"
-#     - (just to get sure: a split axis can contain other
-#       split axes as its subaxes)"""
-# 
-# 
-#     def __init__(self, subaxes, splitlist=[0.5], splitdist=0.1, relsizesplitdist=1,
-#                        title=None, painter=painter.split()):
-#         """initializes the instance
-#         - subaxes is a list of subaxes
-#         - splitlist is a list of graph coordinates, where the splitting
-#           of the main axis should be performed; if the list isn't long enough
-#           for the subaxes, missing entries are considered to be None
-#         - splitdist is the size of the splitting in graph coordinates, when
-#           the associated splitlist entry is not None
-#         - relsizesplitdist: a None entry in splitlist means, that the
-#           position of the splitting should be calculated out of the
-#           relsize values of conrtibuting subaxes (the size of the
-#           splitting is relsizesplitdist in values of the relsize values
-#           of the axes)
-#         - title is the title of the axis as a string
-#         - painter is the painter of the axis; it should be specialized to
-#           the split axis
-#         - the relsize of the split axis is the sum of the relsizes of the
-#           subaxes including the relsizesplitdist"""
-#         self.subaxes = subaxes
-#         self.painter = painter
-#         self.title = title
-#         self.splitlist = splitlist
-#         for subaxis in self.subaxes:
-#             subaxis.vmin = None
-#             subaxis.vmax = None
-#         self.subaxes[0].vmin = 0
-#         self.subaxes[0].vminover = None
-#         self.subaxes[-1].vmax = 1
-#         self.subaxes[-1].vmaxover = None
-#         for i in xrange(len(self.splitlist)):
-#             if self.splitlist[i] is not None:
-#                 self.subaxes[i].vmax = self.splitlist[i] - 0.5*splitdist
-#                 self.subaxes[i].vmaxover = self.splitlist[i]
-#                 self.subaxes[i+1].vmin = self.splitlist[i] + 0.5*splitdist
-#                 self.subaxes[i+1].vminover = self.splitlist[i]
-#         i = 0
-#         while i < len(self.subaxes):
-#             if self.subaxes[i].vmax is None:
-#                 j = relsize = relsize2 = 0
-#                 while self.subaxes[i + j].vmax is None:
-#                     relsize += self.subaxes[i + j].relsize + relsizesplitdist
-#                     j += 1
-#                 relsize += self.subaxes[i + j].relsize
-#                 vleft = self.subaxes[i].vmin
-#                 vright = self.subaxes[i + j].vmax
-#                 for k in range(i, i + j):
-#                     relsize2 += self.subaxes[k].relsize
-#                     self.subaxes[k].vmax = vleft + (vright - vleft) * relsize2 / float(relsize)
-#                     relsize2 += 0.5 * relsizesplitdist
-#                     self.subaxes[k].vmaxover = self.subaxes[k + 1].vminover = vleft + (vright - vleft) * relsize2 / float(relsize)
-#                     relsize2 += 0.5 * relsizesplitdist
-#                     self.subaxes[k+1].vmin = vleft + (vright - vleft) * relsize2 / float(relsize)
-#                 if i == 0 and i + j + 1 == len(self.subaxes):
-#                     self.relsize = relsize
-#                 i += j + 1
-#             else:
-#                 i += 1
-# 
-#         self.fixmin = self.subaxes[0].fixmin
-#         if self.fixmin:
-#             self.min = self.subaxes[0].min
-#         self.fixmax = self.subaxes[-1].fixmax
-#         if self.fixmax:
-#             self.max = self.subaxes[-1].max
-# 
-#         self.axiscanvas = None
-# 
-#     def getrange(self):
-#         min = self.subaxes[0].getrange()
-#         max = self.subaxes[-1].getrange()
-#         try:
-#             return min[0], max[1]
-#         except TypeError:
-#             return None
-# 
-#     def setrange(self, min, max):
-#         self.subaxes[0].setrange(min, None)
-#         self.subaxes[-1].setrange(None, max)
-# 
-#     def adjustaxis(self, data, columndata):
-#         pass # TODO ???
-# 
-#     def convert(self, value):
-#         # TODO: proper raising exceptions (which exceptions go thru, which are handled before?)
-#         if value < self.subaxes[0].max:
-#             return self.subaxes[0].vmin + self.subaxes[0].convert(value)*(self.subaxes[0].vmax-self.subaxes[0].vmin)
-#         for axis in self.subaxes[1:-1]:
-#             if value > axis.min and value < axis.max:
-#                 return axis.vmin + axis.convert(value)*(axis.vmax-axis.vmin)
-#         if value > self.subaxes[-1].min:
-#             return self.subaxes[-1].vmin + self.subaxes[-1].convert(value)*(self.subaxes[-1].vmax-self.subaxes[-1].vmin)
-#         raise ValueError("value couldn't be assigned to a split region")
-# 
-#     def finish(self, axispos):
-#         if self.axiscanvas is None:
-#             self.axiscanvas = self.painter.paint(axispos, self)
-# 
-#     def createlinkaxis(self, **args):
-#         return linkedsplit(self, **args)
-# 
-# 
-# class omitsubaxispainter: pass
-# 
-# class linkedsplit(_linked):
-#     """a split axis linked to an already existing split axis
-#     - inherits the access to a linked axis -- as before,
-#       basically only the painter is replaced
-#     - it takes care of the creation of linked axes of
-#       the subaxes"""
-# 
-# 
-#     def __init__(self, linkedaxis, painter=painter.linkedsplit(), subaxispainter=omitsubaxispainter):
-#         """initializes the instance
-#         - linkedaxis is the axis this axis becomes linked to
-#         - painter is axispainter instance for this linked axis
-#         - subaxispainter is a changeable painter to be used for linked
-#           subaxes; if omitsubaxispainter the createlinkaxis method of
-#           the subaxis are called without a painter parameter"""
-#         _linked.__init__(self, linkedaxis, painter=painter)
-#         self.subaxes = []
-#         for subaxis in linkedaxis.subaxes:
-#             painter = attr.selectattr(subaxispainter, len(self.subaxes), len(linkedaxis.subaxes))
-#             if painter is omitsubaxispainter:
-#                 self.subaxes.append(subaxis.createlinkaxis())
-#             else:
-#                 self.subaxes.append(subaxis.createlinkaxis(painter=painter))
+class subaxispositioner(positioner._positioner):
+    """a subaxis positioner"""
 
-
-class subaxispos:
-    """implementation of the _Iaxispos interface for a subaxis"""
-
-    def __init__(self, basepositioner, vmin, vmax, vminover, vmaxover):
+    def __init__(self, basepositioner, subaxis):
         self.basepositioner = basepositioner
-        self.vmin = vmin
-        self.vmax = vmax
-        self.vminover = vminover
-        self.vmaxover = vmaxover
+        self.vmin = subaxis.vmin
+        self.vmax = subaxis.vmax
+        self.vminover = subaxis.vminover
+        self.vmaxover = subaxis.vmaxover
 
     def vbasepath(self, v1=None, v2=None):
         if v1 is not None:
@@ -405,18 +266,9 @@ class subaxispos:
 
 class bar(_axis):
 
-    def __init__(self, subaxes=None, defaultsubaxis=linear(min=0, max=1, painter=None, parter=None, texter=None),
+    def __init__(self, subaxes=None, defaultsubaxis=linear(painter=None, linkpainter=None, parter=None, texter=None),
                        dist=0.5, firstdist=None, lastdist=None, title=None,
                        painter=painter.bar(), linkpainter=painter.linkedbar()):
-        if subaxes:
-            try:
-                subaxes = list(subaxes)
-            except:
-                for key, subaxis in subaxes.values():
-                    subaxes[key] = anchoredaxis(subaxis)
-            else:
-                for i in range(len(subaxes)):
-                    subaxes[i] = anchoedaxis(subaxes[i])
         self.subaxes = subaxes
         self.defaultsubaxis = defaultsubaxis
         self.dist = dist
@@ -432,44 +284,67 @@ class bar(_axis):
         self.painter = painter
         self.linkpainter = linkpainter
 
-    def createdata(self):
-        return axisdata(min=0, max=0, subaxes={}, names=[], size=self.firstdist+self.lastdist-self.dist)
+    def createdata(self, errorname):
+        data = axisdata(size=self.firstdist+self.lastdist-self.dist, subaxes={}, names=[])
+        try:
+            len(self.subaxes)
+        except:
+            pass
+        else:
+            for name, subaxis in enumerate(self.subaxes):
+                self.addsubaxis(data, name, subaxis, errorname)
+        return data
 
-    def subvalue(self, value):
-        assert len(value) == 2, "wrong length"
-        return value[1]
+    def addsubaxis(self, data, name, subaxis, errorname):
+        subaxis = anchoredaxis(subaxis, "%s, subaxis %s" % (errorname, name))
+        subaxis.sized = hasattr(subaxis.data, "size")
+        if subaxis.sized:
+            data.size += subaxis.data.size
+        else:
+            data.size += 1
+        data.size += self.dist
+        data.subaxes[name] = subaxis
+        data.names.append(name)
 
-    def adjustaxis(self, data, columndata):
-        names = []
+    def adjustaxis(self, data, columndata, errorname):
         for value in columndata:
+            assert len(value) == 2, "wrong length"
             name = value[0]
-            if not self.subaxes and not data.subaxes.has_key(name):
-                data.names.append(name)
-                subaxis = anchoredaxis(self.defaultsubaxis)
-                data.max += 1
-                data.size += subaxis.data.max - subaxis.data.min
-                data.size += self.dist
-                data.subaxes[name] = subaxis
-            names.append(name)
-        for name in names:
+            if name is not None and name not in data.names:
+                if self.subaxes:
+                    if self.subaxes[name] is not None:
+                        self.addsubaxis(data, name, self.subaxes[name], errorname)
+                else:
+                    self.addsubaxis(data, name, self.defaultsubaxis, errorname)
+        for name in data.names:
             subaxis = data.subaxes[name]
-            data.size -= subaxis.data.max - subaxis.data.min
-            subaxis.axis.adjustaxis(subaxis.data, [self.subvalue(value) for value in columndata if value[0] == name])
-            data.size += subaxis.data.max - subaxis.data.min
+            if subaxis.sized:
+                data.size -= subaxis.data.size
+            subaxis.axis.adjustaxis(subaxis.data, [value[1] for value in columndata if value[0] == name], "%s, subaxis %s" % (errorname, name))
+            if subaxis.sized:
+                data.size += subaxis.data.size
 
     def convert(self, data, value):
-        axis = data.subaxes[value[0]]
+        assert len(value) == 2, "wrong length"
+        try:
+            axis = data.subaxes[value[0]]
+        except KeyError:
+            return None
         vmin = axis.vmin
         vmax = axis.vmax
-        return axis.vmin + axis.convert(self.subvalue(value)) * (axis.vmax - axis.vmin)
+        return axis.vmin + axis.convert(value[1]) * (axis.vmax - axis.vmin)
 
-    def create(self, data, positioner, graphtexrunner=None):
+    def create(self, data, positioner, graphtexrunner, errorname):
+        canvas = painter.axiscanvas(self.painter, graphtexrunner)
         v = 0
         position = self.firstdist
         for name in data.names:
             subaxis = data.subaxes[name]
             subaxis.vmin = position / float(data.size)
-            position += subaxis.data.max - subaxis.data.min
+            if subaxis.sized:
+                position += subaxis.data.size
+            else:
+                position += 1
             subaxis.vmax = position / float(data.size)
             position += 0.5*self.dist
             subaxis.vminover = v
@@ -477,54 +352,114 @@ class bar(_axis):
                 subaxis.vmaxover = 1
             else:
                 subaxis.vmaxover = position / float(data.size)
-            subaxis.setpositioner(subaxispos(positioner, subaxis.vmin, subaxis.vmax, subaxis.vminover, subaxis.vmaxover))
+            # print subaxis.vminover, subaxis.vmin, subaxis.vmax, subaxis.vmaxover
+            subaxis.setpositioner(subaxispositioner(positioner, subaxis))
+            subaxis.create(canvas.texrunner)
+            canvas.insert(subaxis.canvas)
+            if canvas.extent_pt < subaxis.canvas.extent_pt:
+                canvas.extent_pt = subaxis.canvas.extent_pt
             position += 0.5*self.dist
             v = subaxis.vmaxover
-        canvas = painter.axiscanvas(self.painter, graphtexrunner)
-        if self.painter:
+        if self.painter is not None:
             self.painter.paint(canvas, data, self, positioner)
-        for subaxis in data.subaxes.values():
-            canvas.insert(subaxis.get())
+        return canvas
+
+    def createlinked(self, data, positioner, graphtexrunner, errorname, linkpainter):
+        canvas = painter.axiscanvas(self.painter, graphtexrunner)
+        for name in data.names:
+            subaxis = data.subaxes[name]
+            subaxis = linkedaxis(subaxis, name)
+            subaxis.setpositioner(subaxispositioner(positioner, data.subaxes[name]))
+            subaxis.create(canvas.texrunner)
+            canvas.insert(subaxis.canvas)
+            if canvas.extent_pt < subaxis.canvas.extent_pt:
+                canvas.extent_pt = subaxis.canvas.extent_pt
+        if linkpainter is not None:
+            linkpainter.paint(canvas, data, self, positioner)
         return canvas
 
 
 class nestedbar(bar):
 
-    def __init__(self, defaultsubaxis=bar(dist=0, painter=None), **kwargs):
+    def __init__(self, defaultsubaxis=bar(dist=0, painter=None, linkpainter=None), **kwargs):
         bar.__init__(self, defaultsubaxis=defaultsubaxis, **kwargs)
 
-    def subvalue(self, value):
-        return value[1:]
 
-    def convert(self, data, value):
-        if len(value) == 2:
-            # usually len(value) should be at least 3, but we also allow for
-            # the second argument to be a graph coordinate
-            axis = data.subaxes[value[0]]
-            vmin = axis.vmin
-            vmax = axis.vmax
-            return axis.vmin + value[1] * (axis.vmax - axis.vmin)
-        return bar.convert(self, data, value)
+class split(bar):
+
+    def __init__(self, subaxes=None, defaultsubaxis=linear(),
+                       firstdist=0, lastdist=0,
+                       painter=painter.split(), linkpainter=painter.linkedsplit(), **kwargs):
+        bar.__init__(self, subaxes=subaxes, defaultsubaxis=defaultsubaxis,
+                           firstdist=firstdist, lastdist=lastdist,
+                           painter=painter, linkpainter=linkpainter, **kwargs)
+
+
+class sizedlinear(linear):
+
+    def __init__(self, size=1, **kwargs):
+        linear.__init__(self, **kwargs)
+        self.size = size
+
+    def createdata(self, errorname):
+        data = linear.createdata(self, errorname)
+        data.size = self.size
+        return data
+
+sizedlin = sizedlinear
+
+
+class autosizedlinear(linear):
+
+    def __init__(self, parter=parter.autolinear(extendtick=None), **kwargs):
+        linear.__init__(self, parter=parter, **kwargs)
+
+    def createdata(self, errorname):
+        data = linear.createdata(self, errorname)
+        try:
+            data.size = data.max - data.min
+        except:
+            data.size = 0
+        return data
+
+    def adjustaxis(self, data, columndata, errorname):
+        linear.adjustaxis(self, data, columndata, errorname)
+        try:
+            data.size = data.max - data.min
+        except:
+            data.size = 0
+
+    def create(self, data, positioner, graphtexrunner, errorname):
+        min = data.min
+        max = data.max
+        canvas = linear.create(self, data, positioner, graphtexrunner, errorname)
+        if min != data.min or max != data.max:
+            raise RuntimeError("range change during axis creation of autosized linear axis")
+        return canvas
+
+autosizedlin = autosizedlinear
 
 
 class anchoredaxis:
 
-    def __init__(self, axis):
-        assert not isinstance(axis, anchoredaxis)
+    def __init__(self, axis, errorname):
+        assert not isinstance(axis, anchoredaxis), errorname
         self.axis = axis
-        self.data = axis.createdata()
+        self.errorname = errorname
+        self.data = axis.createdata(errorname)
         self.canvas = None
+        self.positioner = None
 
     def convert(self, x):
+        assert self.canvas is not None, self.errorname
         return self.axis.convert(self.data, x)
 
-    def invert(self, y):
-        return self.axis.invert(self.data, y)
-
     def adjustaxis(self, columndata):
-        self.axis.adjustaxis(self.data, columndata)
+        self.axis.adjustaxis(self.data, columndata, self.errorname)
 
     def setpositioner(self, positioner):
+        assert positioner is not None, self.errorname
+        assert self.positioner is None, self.errorname
         self.positioner = positioner
 
     def vbasepath(self, v1=None, v2=None):
@@ -567,41 +502,43 @@ class anchoredaxis:
     def tickdirection(self, x):
         return self.positioner.vtickdirection(self.axis.convert(self.data, x))
 
-    def create(self, graphtexrunner=None):
+    def create(self, graphtexrunner):
+        assert self.positioner is not None, self.errorname
         if self.canvas is None:
-            self.canvas = self.axis.create(self.data, self.positioner)
-
-    def get(self, graphtexrunner=None):
-        self.create(graphtexrunner=graphtexrunner)
+            self.canvas = self.axis.create(self.data, self.positioner, graphtexrunner, self.errorname)
         return self.canvas
 
 
 class _nopainter: pass
 
+
 class linkedaxis(anchoredaxis):
 
-    def __init__(self, axis, painter=_nopainter):
-        assert isinstance(axis, anchoredaxis)
+    def __init__(self, axis, errorname="manual-linked", painter=_nopainter):
+        assert isinstance(axis, anchoredaxis), errorname
         if painter is _nopainter:
             self.painter = axis.axis.linkpainter
         else:
             self.painter = painter
         self.linkedto = axis
         self.axis = axis.axis
+        self.errorname = "%s (linked to %s)" % (errorname, axis.errorname)
         self.data = axis.data
         self.canvas = None
+        self.positioner = None
 
-    def create(self, graphtexrunner=None):
+    def create(self, graphtexrunner):
+        assert self.positioner is not None, self.errorname
         if self.canvas is None:
-            self.linkedto.create()
-            self.canvas = painter.axiscanvas(self.painter, graphtexrunner)
-            if self.painter is not None:
-                self.painter.paint(self.canvas, self.data, self.axis, self.positioner)
+            self.linkedto.create(graphtexrunner)
+            self.canvas = self.axis.createlinked(self.data, self.positioner, graphtexrunner, self.errorname, self.painter)
+        return self.canvas
 
 
 def pathaxis(path, axis, **kwargs):
     """creates an axiscanvas for an axis along a path"""
-    aanchoredaxis = anchoredaxis(axis)
+    aanchoredaxis = anchoredaxis(axis, "pathaxis")
     aanchoredaxis.setpositioner(positioner.pathpositioner(path, **kwargs))
-    return aanchoredaxis.get()
+    aanchoredaxis.create(None)
+    return aanchoredaxis.canvas
 

@@ -191,7 +191,7 @@ class _notitle:
 class data(_data):
     "creates a new data set out of an existing data set"
 
-    def __init__(self, data, title=_notitle, parser=dataparser(), context={}, **columns):
+    def __init__(self, data, title=_notitle, parser=dataparser(), context={}, copy=1, **columns):
         # build a nice title
         if title is _notitle:
             items = columns.items()
@@ -239,6 +239,8 @@ class data(_data):
                 if self.orgdata.columns:
                     key, columndata = self.orgdata.columns.items()[0]
                     count = len(columndata)
+                elif self.orgdata.columndata:
+                    count = len(self.orgdata.columndata[0])
                 else:
                     count = 0
                 for i in xrange(count):
@@ -259,10 +261,11 @@ class data(_data):
 
                 self.columns[columnname] = newdata
 
-        # copy other, non-conflicting column names
-        for columnname, columndata in self.orgdata.columns.items():
-            if not self.columns.has_key(columnname):
-                self.columns[columnname] = columndata
+        if copy:
+            # copy other, non-conflicting column names
+            for columnname, columndata in self.orgdata.columns.items():
+                if not self.columns.has_key(columnname):
+                    self.columns[columnname] = columndata
 
     def getcolumnpointsindex(self, column):
         return self.columns[column]
@@ -412,7 +415,10 @@ class conffile(data):
                         point[index] = value
                 columndata[i] = point
             # wrap result into a data instance to remove column numbers
-            return data(list(columndata, addlinenumbers=0, **columns), title=title)
+            result = data(list(columndata, addlinenumbers=0, **columns), title=title)
+            # ... but reinsert sections as linenumbers
+            result.columndata = [[x[0] for x in columndata]]
+            return result
 
         try:
             filename.readlines
@@ -469,15 +475,23 @@ class function(_data):
         dynamiccolumns = {self.xname: [], self.yname: []}
 
         xaxis = graph.axes[self.xname]
-        min = xaxis.data.min
-        max = xaxis.data.max
-        if self.min is not None: min = self.min
-        if self.max is not None: max = self.max
-        vmin = xaxis.convert(min)
-        vmax = xaxis.convert(max)
+        from pyx.graph.axis import logarithmic
+        log = isinstance(xaxis, logarithmic)
+        if self.min is not None:
+            min = self.min
+        else:
+            min = xaxis.data.min
+        if self.max is not None:
+            max = self.max
+        else:
+            max = xaxis.data.max
+        if log:
+            min = log(min)
+            max = log(max)
         for i in range(self.numberofpoints):
-            v = vmin + (vmax-vmin)*i / (self.numberofpoints-1.0)
-            x = xaxis.invert(v)
+            x = min + (max-min)*i / (self.numberofpoints-1.0)
+            if log:
+                x = exp(x)
             dynamiccolumns[self.xname].append(x)
             self.context[self.xname] = x
             try:

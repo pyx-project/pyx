@@ -750,7 +750,7 @@ class arct_pt(pathitem):
         self._pathitem(currentpoint)._updatecurrentpoint(currentpoint)
 
     def _bbox(self, currentpoint):
-        return self._pathitem(currentpoint).bbox()
+        return self._pathitem(currentpoint)._bbox(currentpoint)
 
     def _normalized(self, currentpoint):
         return self._pathitem(currentpoint)._normalized(currentpoint)

@@ -31,20 +31,9 @@ class _positioner:
     # TODO: should we add a local transformation (for label text etc?)
     #       (this might replace tickdirection (and even tickposition?))
 
-#    def basepath(self, axis, axisdata, x1=None, x2=None):
-#        """return the basepath as a path
-#        - x1 is the start position; if not set, the basepath starts
-#          from the beginning of the axis, which might imply a
-#          value outside of the graph coordinate range [0; 1]
-#        - x2 is analogous to x1, but for the end position"""
-
     def vbasepath(self, v1=None, v2=None):
         """return the basepath as a path
         - like basepath, but for graph coordinates"""
-
-#    def gridpath(self, axis, axisdata, x):
-#        """return the gridpath as a path for a given position x
-#        - might return None when no gridpath is available"""
 
     def vgridpath(self, v):
         """return the gridpath as a path for a given position v
@@ -52,20 +41,8 @@ class _positioner:
         - might return None when no gridpath is available"""
         return None
 
-#    def tickpoint_pt(self, axis, axisdata, x):
-#        """return the position at the basepath as a tuple (x, y) in
-#        postscript points for the position x"""
-
-#    def tickpoint(self, x):
-#        """return the position at the basepath as a tuple (x, y) in
-#        in PyX length for the position x"""
-
     def vtickpoint_pt(self, v):
         "like tickpoint_pt, but for graph coordinates"
-
-#    def tickdirection(self, x):
-#        """return the direction of a tick as a tuple (dx, dy) for the
-#        position x (the direction points towards the graph)"""
 
     def vtickdirection(self, v):
         """like tickposition, but for graph coordinates"""

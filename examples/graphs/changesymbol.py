@@ -22,13 +22,13 @@ class changesymbol(graph.style.symbol):
                 graph.style.symbol.columnnames(self, privatedata,
                                                sharedata, agraph, columnnames))
 
-    def drawpoint(self, privatedata, sharedata, agraph):
+    def drawpoint(self, privatedata, sharedata, agraph, point):
         # replace the original drawpoint method by a slightly revised one
         if sharedata.vposvalid and privatedata.symbolattrs is not None:
             xpos, ypos = agraph.vpos_pt(*sharedata.vpos)
-            color = self.palette.getcolor(sharedata.point[self.colorname])
+            color = self.palette.getcolor(point[self.colorname])
             privatedata.symbol(privatedata.symbolcanvas, xpos, ypos,
-                               privatedata.size_pt*sharedata.point[self.sizename],
+                               privatedata.size_pt*point[self.sizename],
                                privatedata.symbolattrs + [color])
 
 g = graph.graphxy(width=10)

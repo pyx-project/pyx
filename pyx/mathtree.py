@@ -513,6 +513,28 @@ class MathTreeFunc2Norm(MathTreeFunc2):
                          HIDDEN_self.Args[1].Calc(**args) ** 2)
 
 
+class MathTreeFuncSplitAtValue(MathTreeFunc):
+
+    def __init__(self, *args):
+        MathTreeFunc.__init__(self, "splitatvalue", -1, *args)
+
+    def CalcDerivative(self, arg):
+        return self.Args[0].CalcDerivative(arg)
+
+    def Calc(HIDDEN_self, **args):
+        result = HIDDEN_self.Args[0].Calc(**args)
+        splits = [split.Calc(**args) for split in HIDDEN_self.Args[1:]]
+        section = 0
+        while section < len(splits) and splits[section] < result:
+            section += 1
+        if len(splits) > 1:
+            if section % 2:
+                section = None
+            else:
+                section >>= 1
+        return (section, result)
+
+
 FuncExternPattern = re.compile(r"([a-z_][a-z0-9_]*)\s*\(", re.IGNORECASE)
 
 class MathTreeFuncExtern(MathTreeFunc):
@@ -728,7 +750,8 @@ DefaultMathTreeFuncs = [MathTreeFunc1Neg, MathTreeFunc1Abs, MathTreeFunc1Sgn, Ma
                         MathTreeFunc1ASin, MathTreeFunc1ACos, MathTreeFunc1ATan,
                         MathTreeFunc1SinD, MathTreeFunc1CosD, MathTreeFunc1TanD,
                         MathTreeFunc1ASinD, MathTreeFunc1ACosD, MathTreeFunc1ATanD,
-                        MathTreeFunc2Norm]
+                        MathTreeFunc2Norm,
+                        MathTreeFuncSplitAtValue]
 
 class parser:
 

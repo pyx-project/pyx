@@ -27,7 +27,7 @@ def test_multiaxes_data(c, x, y):
 def test_piaxis_function(c, x, y):
     xaxis=graph.axis.lin(min=0, max=2*math.pi, divisor=math.pi, texter=graph.axis.texter.rational(suffix=r"\pi"))
     g = c.insert(graph.graphxy(x, y, height=5, x=xaxis))
-    #g = c.insert(graph.graphxy(x, y, height=5, x=xaxis, x2=xaxis)) # TODO
+    #g = c.insert(graph.graphxy(x, y, height=5, x=xaxis, x2=xaxis))
     g.plot([graph.data.function("y=sin(x-i*pi/10)", context={"i": i}) for i in range(20)],
            styles=[graph.style.line(lineattrs=[color.palette.Hue])])
     g.finish()
@@ -74,15 +74,15 @@ def test_allerrorbars(c, x, y):
 def test_split(c, x, y):
     g = c.insert(graph.graphxy(x, y, height=5, width=5,
                                x=graph.axis.log(),
-                               y=graph.axis.split((graph.axis.lin(min=0, max=0.005, painter=graph.axis.painter.regular()), graph.axis.lin(min=0.01, max=0.015), graph.axis.lin(min=0.02, max=0.025)), title="axis title", splitlist=(None, None), relsizesplitdist=0.005)))
-    g.plot(graph.data.file("data/testdata", x=1, y=3))
+                               y=graph.axis.split()))
+    g.plot(graph.data.file("data/testdata", x=1, y="splitatvalue($3, 0.005, 0.01, 0.015, 0.018)"))
     g.finish()
 
 def test_split2(c, x, y):
     g = c.insert(graph.graphxy(x, y, height=5, width=5,
                                x=graph.axis.log(),
-                               y=graph.axis.split((graph.axis.lin(max=0.002), graph.axis.lin(min=0.01, max=0.015), graph.axis.lin(min=0.017)), splitlist=(0.15, 0.75))))
-    g.plot(graph.data.file("data/testdata", x=1, y=3))
+                               y=graph.axis.split(subaxes=[graph.axis.sizedlinear(size=0.005), graph.axis.sizedlinear(size=0.0025), graph.axis.autosizedlinear()], dist=0.0025)))
+    g.plot(graph.data.file("data/testdata", x=1, y="splitatvalue(0.0215-$3, 0.005, 0.01, 0.015, 0.015)"))
     g.finish()
 
 

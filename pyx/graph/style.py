@@ -515,13 +515,13 @@ class line(_styleneedingpointpos):
                             # 1 = vstart + (vend - vstart) * cut
                             try:
                                 newcut = (1 - vstart)/(vend - vstart)
-                            except ArithmeticError:
+                            except (ArithmeticError, TypeError):
                                 break
                         if vend < 0:
                             # 0 = vstart + (vend - vstart) * cut
                             try:
                                 newcut = - vstart/(vend - vstart)
-                            except ArithmeticError:
+                            except (ArithmeticError, TypeError):
                                 break
                         if newcut is not None and newcut < cut:
                             cut = newcut
@@ -543,13 +543,13 @@ class line(_styleneedingpointpos):
                                 # 1 = vstart + (vend - vstart) * cut
                                 try:
                                     newcut = (1 - vstart)/(vend - vstart)
-                                except ArithmeticError:
+                                except (ArithmeticError, TypeError):
                                     break
                             if vstart < 0:
                                 # 0 = vstart + (vend - vstart) * cut
                                 try:
                                     newcut = - vstart/(vend - vstart)
-                                except ArithmeticError:
+                                except (ArithmeticError, TypeError):
                                     break
                             if newcut is not None and newcut > cut:
                                 cut = newcut
@@ -571,7 +571,7 @@ class line(_styleneedingpointpos):
                                 # 1 = vstart + (vend - vstart) * cutfrom
                                 try:
                                     newcutfrom = (1 - vstart)/(vend - vstart)
-                                except ArithmeticError:
+                                except (ArithmeticError, TypeError):
                                     break
                             if vstart < 0:
                                 if vend < 0:
@@ -579,7 +579,7 @@ class line(_styleneedingpointpos):
                                 # 0 = vstart + (vend - vstart) * cutfrom
                                 try:
                                     newcutfrom = - vstart/(vend - vstart)
-                                except ArithmeticError:
+                                except (ArithmeticError, TypeError):
                                     break
                             if newcutfrom is not None and newcutfrom > cutfrom:
                                 cutfrom = newcutfrom
@@ -588,13 +588,13 @@ class line(_styleneedingpointpos):
                                 # 1 = vstart + (vend - vstart) * cutto
                                 try:
                                     newcutto = (1 - vstart)/(vend - vstart)
-                                except ArithmeticError:
+                                except (ArithmeticError, TypeError):
                                     break
                             if vend < 0:
                                 # 0 = vstart + (vend - vstart) * cutto
                                 try:
                                     newcutto = - vstart/(vend - vstart)
-                                except ArithmeticError:
+                                except (ArithmeticError, TypeError):
                                     break
                             if newcutto is not None and newcutto < cutto:
                                 cutto = newcutto
@@ -1248,12 +1248,12 @@ class barpos(_style):
         if selecttotal == 1:
             if self.subnames is not None:
                 raise ValueError("subnames set for single-bar data")
-            privatedata.barpossubname = []
+            privatedata.barpossubname = None
         else:
             if self.subnames is not None:
-                privatedata.barpossubname = [self.subnames[selectindex]]
+                privatedata.barpossubname = self.subnames[selectindex]
             else:
-                privatedata.barpossubname = [selectindex]
+                privatedata.barpossubname = selectindex
 
     def adjustaxis(self, privatedata, sharedata, graph, columnname, data):
         try:
@@ -1266,12 +1266,12 @@ class barpos(_style):
                     graph.axes[sharedata.barposcolumnnames[i]].adjustaxis([self.fromvalue])
                 graph.axes[sharedata.barposcolumnnames[i]].adjustaxis(data)
             else:
-                if i == privatedata.barpossubindex:
-                    graph.axes[sharedata.barposcolumnnames[i][:-4]].adjustaxis([[x] + privatedata.barpossubname + [0] for x in data])
-                    graph.axes[sharedata.barposcolumnnames[i][:-4]].adjustaxis([[x] + privatedata.barpossubname + [1] for x in data])
+                if i == privatedata.barpossubindex and privatedata.barpossubname is not None:
+                    graph.axes[sharedata.barposcolumnnames[i][:-4]].adjustaxis([(x, (privatedata.barpossubname, 0)) for x in data])
+                    graph.axes[sharedata.barposcolumnnames[i][:-4]].adjustaxis([(x, (privatedata.barpossubname, 1)) for x in data])
                 else:
-                    graph.axes[sharedata.barposcolumnnames[i][:-4]].adjustaxis([[x, 0] for x in data])
-                    graph.axes[sharedata.barposcolumnnames[i][:-4]].adjustaxis([[x, 1] for x in data])
+                    graph.axes[sharedata.barposcolumnnames[i][:-4]].adjustaxis([(x, 0) for x in data])
+                    graph.axes[sharedata.barposcolumnnames[i][:-4]].adjustaxis([(x, 1) for x in data])
 
     def initdrawpoints(self, privatedata, sharedata, graph):
         sharedata.vpos = [None]*(len(sharedata.barposcolumnnames))
@@ -1304,8 +1304,8 @@ class barpos(_style):
             else:
                 for j in xrange(2):
                     try:
-                        if i == privatedata.barpossubindex:
-                            sharedata.vbarrange[i][j] = graph.axes[barname[:-4]].convert(([point[barname]] + privatedata.barpossubname + [j]))
+                        if i == privatedata.barpossubindex and privatedata.barpossubname is not None:
+                            sharedata.vbarrange[i][j] = graph.axes[barname[:-4]].convert((point[barname], (privatedata.barpossubname, j)))
                         else:
                             sharedata.vbarrange[i][j] = graph.axes[barname[:-4]].convert((point[barname], j))
                     except (ArithmeticError, ValueError, TypeError):

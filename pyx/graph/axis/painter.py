@@ -32,14 +32,8 @@ from pyx.graph.axis import tick
 goldenmean = 0.5 * (math.sqrt(5) + 1)
 
 
-class axiscanvas(canvas.canvas, object):
+class axiscanvas(canvas.canvas):
     """axis canvas"""
-
-    def getextent_pt(self): return self._extent_pt
-    def setextent_pt(self, value):
-        assert not isinstance(value, unit.length)
-        self._extent_pt = value
-    extent_pt = property(getextent_pt, setextent_pt)
 
     def __init__(self, painter, graphtexrunner):
         """initializes the instance
@@ -268,76 +262,6 @@ class linked(regular):
                                **kwargs)
 
 
-class split(_title):
-    """class for painting a splitaxis
-    - the inherited _title is used to paint the title of
-      the axis
-    - the splitaxis access the subaxes attribute of the axis"""
-
-    defaultbreaklinesattrs = []
-
-    def __init__(self, breaklinesdist=0.05*unit.v_cm,
-                       breaklineslength=0.5*unit.v_cm,
-                       breaklinesangle=-60,
-                       breaklinesattrs=[],
-                       **args):
-        """initializes the instance
-        - breaklinesdist is a visual length of the distance between
-          the two lines of the axis break
-        - breaklineslength is a visual length of the length of the
-          two lines of the axis break
-        - breaklinesangle is the angle of the lines of the axis break
-        - breaklinesattrs are a list of stroke attributes for the
-          axis break lines; a single entry is allowed without being a
-          list; None turns off the break lines
-        - futher keyword arguments are passed to _title"""
-        self.breaklinesdist = breaklinesdist
-        self.breaklineslength = breaklineslength
-        self.breaklinesangle = breaklinesangle
-        self.breaklinesattrs = breaklinesattrs
-        _title.__init__(self, **args)
-
-    def paint(self, canvas, data, axis, axispos):
-        for subaxis in axis.subaxes:
-            subaxis.finish(subaxispos(subaxis.convert, axispos, subaxis.vmin, subaxis.vmax, subaxis.vminover, subaxis.vmaxover))
-            canvas.insert(subaxis.axiscanvas)
-            if canvas.extent_pt < subaxis.axiscanvas.extent_pt:
-                canvas.extent_pt = subaxis.axiscanvas.extent_pt
-        if self.breaklinesattrs is not None:
-            self.sin = math.sin(self.breaklinesangle*math.pi/180.0)
-            self.cos = math.cos(self.breaklinesangle*math.pi/180.0)
-            breaklinesextent_pt = (0.5*self.breaklinesdist_pt*math.fabs(self.cos) +
-                                0.5*self.breaklineslength_pt*math.fabs(self.sin))
-            if canvas.extent_pt < breaklinesextent_pt:
-                canvas.extent_pt = breaklinesextent_pt
-            for subaxis1, subaxis2 in zip(axis.subaxes[:-1], axis.subaxes[1:]):
-                # use a tangent of the basepath (this is independent of the tickdirection)
-                v = 0.5 * (subaxis1.vmax + subaxis2.vmin)
-                p = axispos.vbasepath(v, None).normpath()
-                breakline = p.tangent(0, length=self.breaklineslength)
-                widthline = p.tangent(0, length=self.breaklinesdist).transformed(trafomodule.rotate(self.breaklinesangle+90, *breakline.atbegin()))
-                # XXX Uiiii
-                tocenter = map(lambda x: 0.5*(x[0]-x[1]), zip(breakline.atbegin(), breakline.atend()))
-                towidth = map(lambda x: 0.5*(x[0]-x[1]), zip(widthline.atbegin(), widthline.atend()))
-                breakline = breakline.transformed(trafomodule.translate(*tocenter).rotated(self.breaklinesangle, *breakline.atbegin()))
-                breakline1 = breakline.transformed(trafomodule.translate(*towidth))
-                breakline2 = breakline.transformed(trafomodule.translate(-towidth[0], -towidth[1]))
-                canvas.fill(path.path(path.moveto_pt(*breakline1.atbegin_pt()),
-                                  path.lineto_pt(*breakline1.atend_pt()),
-                                  path.lineto_pt(*breakline2.atend_pt()),
-                                  path.lineto_pt(*breakline2.atbegin_pt()),
-                                  path.closepath()), [color.gray.white])
-                canvas.stroke(breakline1, self.defaultbreaklinesattrs + self.breaklinesattrs)
-                canvas.stroke(breakline2, self.defaultbreaklinesattrs + self.breaklinesattrs)
-        _title.paint(self, canvas, data, axis, axispos)
-
-
-class linkedsplit(split):
-
-    def __init__(self, titleattrs=None, **kwargs):
-        split.__init__(self, titleattrs=titleattrs, **kwargs)
-
-
 class bar(_title):
     """class for painting a baraxis"""
 
@@ -368,17 +292,13 @@ class bar(_title):
         self.namevequalize = namevequalize
         _title.__init__(self, **args)
 
-    def paint(self, canvas, data, axis, axispos):
-        for subaxis in data.subaxes.values():
-            subaxis.create(graphtexrunner=canvas.texrunner)
-            canvas.insert(subaxis.canvas)
-            if canvas.extent_pt < subaxis.canvas.extent_pt:
-                canvas.extent_pt = subaxis.canvas.extent_pt
+    def paint(self, canvas, data, axis, positioner):
         namepos = []
         for name in data.names:
-            v = axis.convert(data, (name, self.namepos))
-            x, y = axispos.vtickpoint_pt(v)
-            dx, dy = axispos.vtickdirection(v)
+            subaxis = data.subaxes[name]
+            v = subaxis.vmin + self.namepos * (subaxis.vmax - subaxis.vmin)
+            x, y = positioner.vtickpoint_pt(v)
+            dx, dy = positioner.vtickdirection(v)
             namepos.append((v, x, y, dx, dy))
         nameboxes = []
         if self.nameattrs is not None:
@@ -401,11 +321,11 @@ class bar(_title):
         else:
             for namebox, np in zip(nameboxes, namepos):
                 namebox.linealign_pt(labeldist_pt, -np[3], -np[4])
-        if data.subaxes and self.basepathattrs is not None:
-            p = axispos.vbasepath()
+        if self.basepathattrs is not None:
+            p = positioner.vbasepath()
             if p is not None:
                 canvas.stroke(p, self.defaultbasepathattrs + self.basepathattrs)
-        if ( self.tickattrs is not None and data.subaxes and
+        if ( self.tickattrs is not None and
              (self.innerticklength is not None or self.outerticklength is not None) ):
             if self.innerticklength is not None:
                 innerticklength_pt = unit.topt(self.innerticklength)
@@ -419,9 +339,9 @@ class bar(_title):
                     canvas.extent_pt = outerticklength_pt
             elif innerticklength_pt is not None:
                 outerticklength_pt = 0
-            for v in [subaxis.vminover for subaxis in data.subaxes.values()] + [1]:
-                x, y = axispos.vtickpoint_pt(v)
-                dx, dy = axispos.vtickdirection(v)
+            for v in [data.subaxes[name].vminover for name in data.names] + [1]:
+                x, y = positioner.vtickpoint_pt(v)
+                dx, dy = positioner.vtickdirection(v)
                 x1 = x + dx * innerticklength_pt
                 y1 = y + dy * innerticklength_pt
                 x2 = x - dx * outerticklength_pt
@@ -433,7 +353,7 @@ class bar(_title):
                 canvas.extent_pt = newextent_pt
         for namebox in nameboxes:
             canvas.insert(namebox)
-        _title.paint(self, canvas, data, axis, axispos)
+        _title.paint(self, canvas, data, axis, positioner)
 
 
 class linkedbar(bar):
@@ -441,3 +361,60 @@ class linkedbar(bar):
 
     def __init__(self, nameattrs=None, titleattrs=None, **kwargs):
         bar.__init__(self, nameattrs=nameattrs, titleattrs=titleattrs, **kwargs)
+
+    def getsubaxis(self, subaxis, name):
+        from pyx.graph.axis import linkedaxis
+        return linkedaxis(subaxis, name)
+
+
+class split(_title):
+    """class for painting a splitaxis"""
+
+    defaultbreaklinesattrs = []
+
+    def __init__(self, breaklinesdist=0.05*unit.v_cm,
+                       breaklineslength=0.5*unit.v_cm,
+                       breaklinesangle=-60,
+                       breaklinesattrs=[],
+                       **args):
+        self.breaklinesdist = breaklinesdist
+        self.breaklineslength = breaklineslength
+        self.breaklinesangle = breaklinesangle
+        self.breaklinesattrs = breaklinesattrs
+        self.sin = math.sin(self.breaklinesangle*math.pi/180.0)
+        self.cos = math.cos(self.breaklinesangle*math.pi/180.0)
+        _title.__init__(self, **args)
+
+    def paint(self, canvas, data, axis, axispos):
+        if self.breaklinesattrs is not None:
+            breaklinesdist_pt = unit.topt(self.breaklinesdist)
+            breaklineslength_pt = unit.topt(self.breaklineslength)
+            breaklinesextent_pt = (0.5*breaklinesdist_pt*math.fabs(self.cos) +
+                                   0.5*breaklineslength_pt*math.fabs(self.sin))
+            if canvas.extent_pt < breaklinesextent_pt:
+                canvas.extent_pt = breaklinesextent_pt
+            for v in [data.subaxes[name].vminover for name in data.names[1:]]:
+                # use a tangent of the basepath (this is independent of the tickdirection)
+                p = axispos.vbasepath(v, None).normpath()
+                breakline = p.tangent(0, length=self.breaklineslength)
+                widthline = p.tangent(0, length=self.breaklinesdist).transformed(trafomodule.rotate(self.breaklinesangle+90, *breakline.atbegin()))
+                # XXX Uiiii
+                tocenter = map(lambda x: 0.5*(x[0]-x[1]), zip(breakline.atbegin(), breakline.atend()))
+                towidth = map(lambda x: 0.5*(x[0]-x[1]), zip(widthline.atbegin(), widthline.atend()))
+                breakline = breakline.transformed(trafomodule.translate(*tocenter).rotated(self.breaklinesangle, *breakline.atbegin()))
+                breakline1 = breakline.transformed(trafomodule.translate(*towidth))
+                breakline2 = breakline.transformed(trafomodule.translate(-towidth[0], -towidth[1]))
+                canvas.fill(path.path(path.moveto_pt(*breakline1.atbegin_pt()),
+                                  path.lineto_pt(*breakline1.atend_pt()),
+                                  path.lineto_pt(*breakline2.atend_pt()),
+                                  path.lineto_pt(*breakline2.atbegin_pt()),
+                                  path.closepath()), [color.gray.white])
+                canvas.stroke(breakline1, self.defaultbreaklinesattrs + self.breaklinesattrs)
+                canvas.stroke(breakline2, self.defaultbreaklinesattrs + self.breaklinesattrs)
+        _title.paint(self, canvas, data, axis, axispos)
+
+
+class linkedsplit(split):
+
+    def __init__(self, titleattrs=None, **kwargs):
+        split.__init__(self, titleattrs=titleattrs, **kwargs)

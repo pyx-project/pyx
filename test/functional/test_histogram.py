@@ -11,7 +11,7 @@ d1 = graph.data.list([(1.5, 1, 0.3),
                       (10, 2.5, 0.8),
                       (13, 0.5, -0.2),
                       (14, 0.5, 0.4)], x=1, dx=2, y=3)
-d2 = graph.data.data(d1, y="x", dy="dx", x="y")
+d2 = graph.data.data(d1, y="x", dy="dx", x="y", copy=0)
 d3 = graph.data.list([(1, 0.3),
                       (2, 0.5),
                       (3, -0.2),

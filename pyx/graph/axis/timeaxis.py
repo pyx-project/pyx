@@ -7,31 +7,27 @@ from pyx.graph.axis import axis, rater
 - a timeaxis is always based on the datetime data type (there is no distinction between times and dates)
 """
 
-class _timemap:
+class timeaxis(axis._regularaxis):
     "time axis mapping based "
 
-    __implements__ = axis._Imap
+    # TODO: how to deal with reversed timeaxis?
 
-    def setbasepoints(self, basepoints):
-        (self.x1, self.y1), (self.x2, self.y2) = basepoints
-        self.dx = self.x2-self.x1
-        self.dy = self.y2-self.y1
-        if self.dx < datetime.timedelta(0):
-            raise RuntimeError("reverse time axis is not expected to work") # and should not happen
+    def __init__(self, parter=None, rater=rater.linear(), **args):
+        axis._regularaxis.__init__(self, divisor=None, **args)
+        self.parter = parter
+        self.rater = rater
 
-    def convert(self, x):
+    def convert(self, data, x):
         # XXX float division of timedelta instances
         def mstimedelta(td):
             "return the timedelta in microseconds"
             return td.microseconds + 1000000*(td.seconds + 3600*24*td.days)
-        return self.y1 + self.dy * mstimedelta(x - self.x1) / float(mstimedelta(self.dx))
+        return mstimedelta(x - data.min) / float(mstimedelta(data.max - data.min))
         # we could store float(mstimedelta(self.dx)) instead of self.dx, but
         # I prefer a different solution (not based on huge integers) for the
         # future
 
-    def invert(self, y):
-        f = (y - self.y1) / float(self.dy)
-        return self.x1 + datetime.timedelta(days=f*self.dx.days, seconds=f*self.dx.seconds, microseconds=f*self.dx.seconds)
+    zero = datetime.timedelta(0)
 
 
 class timetick(datetime.datetime):
@@ -60,17 +56,5 @@ class timetexter:
             if tick.labellevel is not None and tick.label is None:
                 tick.label = tick.strftime(self.format)
 
-
-class timeaxis(axis._axis, _timemap):
-
-    zero = datetime.timedelta(0)
-
-    def __init__(self, parter=None, rater=rater.linear(), **args):
-        axis._axis.__init__(self, divisor=None, **args)
-        if self.fixmin and self.fixmax:
-            self.relsize = self.max - self.min
-            self.relsize = 0.000001*self.relsize.microseconds + self.relsize.seconds + 60*60*24.0*self.relsize.days
-        self.parter = parter
-        self.rater = rater
 
 

@@ -204,22 +204,11 @@ class graphxy(canvas.canvas):
 
     def xvgridpath(self, vx):
         return path.line_pt(self.xpos_pt + vx*self.width_pt, self.ypos_pt,
-                            self.xpos_pt + vx*self.width_pt, self.ypos_pt + self.height)
+                            self.xpos_pt + vx*self.width_pt, self.ypos_pt + self.height_pt)
 
     def yvgridpath(self, vy):
         return path.line_pt(self.xpos_pt, self.ypos_pt + vy*self.height_pt,
                             self.xpos_pt + self.width_pt, self.ypos_pt + vy*self.height_pt)
-
-# #                    self.xbasepath = self.axespos[key].basepath
-# #                    self.xvbasepath = self.axespos[key].vbasepath
-# #                    self.xgridpath = self.axespos[key].gridpath
-# #                    self.xvgridpath = self.axespos[key].vgridpath
-# #                    self.xtickpoint_pt = self.axespos[key].tickpoint_pt
-# #                    self.xtickpoint = self.axespos[key].tickpoint
-# #                    self.xvtickpoint_pt = self.axespos[key].vtickpoint_pt
-# #                    self.xvtickpoint = self.axespos[key].tickpoint
-# #                    self.xtickdirection = self.axespos[key].tickdirection
-# #                    self.xvtickdirection = self.axespos[key].vtickdirection
 
     def keynum(self, key):
         try:
@@ -270,7 +259,7 @@ class graphxy(canvas.canvas):
         keys = list(self.axes.keys())
         keys.sort() #TODO: alphabetical sorting breaks for axis numbers bigger than 9
         for key in keys:
-            canvas = self.axes[key].get()
+            self.axes[key].create(self.texrunner)
             if key[1:]:
                 num = int(key[1:])
             else:
@@ -280,12 +269,12 @@ class graphxy(canvas.canvas):
                 if self.axes.has_key(nextkey):
                     sign = 2*(num % 2) - 1
                     if key[0] == "x":
-                        y_pt = self.axes[key].positioner.y1_pt - sign * (canvas.extent_pt + self.axesdist_pt)
+                        y_pt = self.axes[key].positioner.y1_pt - sign * (self.axes[key].canvas.extent_pt + self.axesdist_pt)
                         apositioner = positioner.lineaxispos_pt(self.xpos_pt, y_pt,
                                                                 self.xpos_pt + self.width_pt, y_pt,
                                                                 (0, sign), self.xvgridpath)
                     else:
-                        x_pt = self.axes[key].positioner.x1_pt - sign * (canvas.extent_pt + self.axesdist_pt)
+                        x_pt = self.axes[key].positioner.x1_pt - sign * (self.axes[key].canvas.extent_pt + self.axesdist_pt)
                         apositioner = positioner.lineaxispos_pt(x_pt, self.ypos_pt,
                                                                 x_pt, self.ypos_pt + self.height_pt,
                                                                 (sign, 0), self.yvgridpath)
@@ -304,7 +293,7 @@ class graphxy(canvas.canvas):
         self.dolayout()
         if not self.removedomethod(self.doaxes): return
         for axis in self.axes.values():
-            self.insert(axis.get())
+            self.insert(axis.canvas)
 
     def dodata(self):
         self.dolayout()
@@ -351,21 +340,35 @@ class graphxy(canvas.canvas):
         self.axes = {}
         for key, aaxis in axes.items():
             if aaxis is not None:
-                self.axes[key] = axis.anchoredaxis(aaxis)
-        for key in ["x", "y"]:
-            if not axes.has_key(key):
-                if not axes.has_key(key + "2"):
-                    self.axes[key] = axis.anchoredaxis(axis.linear())
-                    self.axes[key + "2"] = axis.linkedaxis(self.axes[key])
+                if not isinstance(aaxis, axis.linkedaxis):
+                    self.axes[key] = axis.anchoredaxis(aaxis, key)
                 else:
-                    self.axes[key] = axis.linkedaxis(self.axes[key + "2"])
-            elif not axes.has_key(key + "2"):
-                self.axes[key + "2"] = axis.linkedaxis(self.axes[key])
+                    self.axes[key] = aaxis
+        for key in ["x", "y"]:
+            okey = key + "2"
+            if not axes.has_key(key):
+                if not axes.has_key(okey):
+                    self.axes[key] = axis.anchoredaxis(axis.linear(), key)
+                    self.axes[okey] = axis.linkedaxis(self.axes[key], okey)
+                else:
+                    self.axes[key] = axis.linkedaxis(self.axes[keyo], key)
+            elif not axes.has_key(okey):
+                self.axes[okey] = axis.linkedaxis(self.axes[key], okey)
 
         if self.axes.has_key("x"):
             self.axes["x"].setpositioner(positioner.lineaxispos_pt(self.xpos_pt, self.ypos_pt,
                                                                    self.xpos_pt + self.width_pt, self.ypos_pt,
                                                                    (0, 1), self.xvgridpath))
+            self.xbasepath = self.axes["x"].basepath
+            self.xvbasepath = self.axes["x"].vbasepath
+            self.xgridpath = self.axes["x"].gridpath
+            self.xtickpoint_pt = self.axes["x"].tickpoint_pt
+            self.xtickpoint = self.axes["x"].tickpoint
+            self.xvtickpoint_pt = self.axes["x"].vtickpoint_pt
+            self.xvtickpoint = self.axes["x"].tickpoint
+            self.xtickdirection = self.axes["x"].tickdirection
+            self.xvtickdirection = self.axes["x"].vtickdirection
+
         if self.axes.has_key("x2"):
             self.axes["x2"].setpositioner(positioner.lineaxispos_pt(self.xpos_pt, self.ypos_pt + self.height_pt,
                                                                     self.xpos_pt + self.width_pt, self.ypos_pt + self.height_pt,
@@ -374,6 +377,16 @@ class graphxy(canvas.canvas):
             self.axes["y"].setpositioner(positioner.lineaxispos_pt(self.xpos_pt, self.ypos_pt,
                                                                    self.xpos_pt, self.ypos_pt + self.height_pt,
                                                                    (1, 0), self.yvgridpath))
+            self.ybasepath = self.axes["y"].basepath
+            self.yvbasepath = self.axes["y"].vbasepath
+            self.ygridpath = self.axes["y"].gridpath
+            self.ytickpoint_pt = self.axes["y"].tickpoint_pt
+            self.ytickpoint = self.axes["y"].tickpoint
+            self.yvtickpoint_pt = self.axes["y"].vtickpoint_pt
+            self.yvtickpoint = self.axes["y"].tickpoint
+            self.ytickdirection = self.axes["y"].tickdirection
+            self.yvtickdirection = self.axes["y"].vtickdirection
+
         if self.axes.has_key("y2"):
             self.axes["y2"].setpositioner(positioner.lineaxispos_pt(self.xpos_pt + self.width_pt, self.ypos_pt,
                                                                     self.xpos_pt + self.width_pt, self.ypos_pt + self.height_pt,
