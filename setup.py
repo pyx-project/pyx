@@ -1,5 +1,13 @@
 #!/usr/bin/env python
 
+"""Python package for the generation of encapsulated PostScript figures
+
+PyX is a Python package for the creation of encapsulated PostScript figures.
+It provides both an abstraction of PostScript and a TeX/LaTeX interface.
+Complex tasks like 2d and 3d plots in publication-ready quality are built out
+of these primitives.
+"""
+
 from distutils.core import setup, Extension
 import sys
 import pyx
@@ -24,8 +32,9 @@ data_files = [('share/pyx', ['pyx/lfs/10pt.lfs',
 if sys.version_info >= (2, 3):
     addargs = { "classifiers":
                 ["Development Status :: 3 - Alpha",
-                 "Environment :: Console (Text Based)",
-                 "Intended Audience :: Developers, End Users/Desktop",
+                 "Environment :: Console :: Curses",
+                 "Intended Audience :: Developers",
+                 "Intended Audience :: End Users/Desktop",
                  "License :: OSI Approved :: GNU General Public License (GPL)",
                  "Operating System :: OS Independent",
                  "Programming Language :: Python",
@@ -36,12 +45,16 @@ if sys.version_info >= (2, 3):
 else:
     addargs = {}
 
+# We're using the module docstring as the distutils descriptions. (seen in Zope3 setup.py)
+doclines = __doc__.split("\n")
+
 setup(name="PyX",
       version=pyx.__version__,
       author="Jörg Lehmann, André Wobst",
       author_email="pyx-devel@lists.sourceforge.net",
       url="http://pyx.sourceforge.net/",
-      description="Python package for the generation of encapsulated PostScript figures",
+      description=doclines[0],
+      long_description="\n".join(doclines[2:]),
       license="GPL",
       packages=['pyx', 'pyx/t1strip', 'pyx/pykpathsea'],
       ext_modules=ext_modules,
