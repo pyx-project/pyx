@@ -2761,13 +2761,11 @@ class baraxis:
                     self.relsizes = None
         return self.relsizes is not None
 
-    def adjustrange(self, points, index=None):
-        if index is not None:
-            for point in points:
-                self.setname(point[index])
-        else:
-            for point in points:
-                self.setname(*point)
+    def adjustrange(self, points, index, subnames=None):
+        if subnames is None:
+            subnames = []
+        for point in points:
+            self.setname(point[index], *subnames)
 
     def updaterelsizes(self):
         # guess what it does: it recalculates relsize attribute
@@ -2859,11 +2857,6 @@ def pathaxis(path, axis, **kwargs):
 # graph key
 ################################################################################
 
-#
-# g = graph.graphxy(key=graph.key())
-# g.addkey(graph.key(), ...)
-#
-
 class key:
 
     defaulttextattrs = [textmodule.vshift.mathaxis]
@@ -2881,7 +2874,6 @@ class key:
         self.symbolheight_str = symbolheight
         self.symbolspace_str = symbolspace
         self.textattrs = textattrs
-        self.plotinfos = None
         if self.pos in ("tr", "rt"):
             self.right = 1
             self.top = 1
@@ -2897,53 +2889,25 @@ class key:
         else:
             raise RuntimeError("invalid pos attribute")
 
-    def setplotinfos(self, *plotinfos):
-        """set the plotinfos to be used in the key
-        - call it exactly once
-        - plotinfo instances with title == None are ignored"""
-        if self.plotinfos is not None:
-            raise RuntimeError("setplotinfo is called multiple times")
-        self.plotinfos = [plotinfo for plotinfo in plotinfos if plotinfo.data.title is not None]
-
-    def dolayout(self, graph):
+    def paint(self, plotdata):
         "creates the layout of the key"
+        c = canvas.canvas()
         self.dist_pt = unit.topt(unit.length(self.dist_str, default_type="v"))
         self.hdist_pt = unit.topt(unit.length(self.hdist_str, default_type="v"))
         self.vdist_pt = unit.topt(unit.length(self.vdist_str, default_type="v"))
         self.symbolwidth_pt = unit.topt(unit.length(self.symbolwidth_str, default_type="v"))
         self.symbolheight_pt = unit.topt(unit.length(self.symbolheight_str, default_type="v"))
         self.symbolspace_pt = unit.topt(unit.length(self.symbolspace_str, default_type="v"))
-        self.titles = []
-        for plotinfo in self.plotinfos:
-            self.titles.append(graph.texrunner.text_pt(0, 0, plotinfo.data.title, self.defaulttextattrs + self.textattrs))
-        box.tile_pt(self.titles, self.dist_pt, 0, -1)
-        box.linealignequal_pt(self.titles, self.symbolwidth_pt + self.symbolspace_pt, 1, 0)
-
-    def bbox(self):
-        """return a bbox for the key
-        method should be called after dolayout"""
-        result = None
-        for title in self.titles:
-            titlebbox = title.bbox() + bbox._bbox(0, title.center[1] - 0.5 * self.symbolheight_pt,
-                                                  0, title.center[1] + 0.5 * self.symbolheight_pt)
-            if result is None:
-                result = titlebbox
-            else:
-                result += titlebbox
-        return result
-
-    def paint(self, c, x, y):
-        """paint the graph key into a canvas c at the position x and y (in postscript points)
-        - method should be called after dolayout
-        - the x, y alignment might be calculated by the graph using:
-          - the bbox of the key as returned by the keys bbox method
-          - the attributes hdist_pt, vdist_pt, hinside, and vinside of the key
-          - the dimension and geometry of the graph"""
-        sc = c.insert(canvas.canvas(trafomodule.translate_pt(x, y)))
-        for plotinfo, title in zip(self.plotinfos, self.titles):
-            plotinfo.style.key(sc, 0, -0.5 * self.symbolheight_pt + title.center[1],
-                                   self.symbolwidth_pt, self.symbolheight_pt)
-            sc.insert(title)
+        titles = []
+        for plotdat in plotdata:
+            titles.append(c.texrunner.text_pt(0, 0, plotdat.title, self.defaulttextattrs + self.textattrs))
+        box.tile_pt(titles, self.dist_pt, 0, -1)
+        box.linealignequal_pt(titles, self.symbolwidth_pt + self.symbolspace_pt, 1, 0)
+        for plotdat, title in zip(plotdata, titles):
+            plotdat.style.key_pt(c, 0, -0.5 * self.symbolheight_pt + title.center[1],
+                                   self.symbolwidth_pt, self.symbolheight_pt, plotdat)
+            c.insert(title)
+        return c
 
 
 ################################################################################
@@ -3100,36 +3064,48 @@ class graphxy(canvas.canvas):
             self.plotdata.append(d)
         return data
 
-    def addkey(self, key, *plotinfos):
-        if self.haslayout:
-            raise RuntimeError("layout setup was already performed")
-        self.addkeys.append((key, plotinfos))
-
     def pos_pt(self, x, y, xaxis=None, yaxis=None):
         if xaxis is None:
             xaxis = self.axes["x"]
         if yaxis is None:
             yaxis = self.axes["y"]
-        return self.xpos_pt+xaxis.convert(x)*self.width_pt, self.ypos_pt+yaxis.convert(y)*self.height_pt
+        return self.xpos_pt + xaxis.convert(x)*self.width_pt, self.ypos_pt + yaxis.convert(y)*self.height_pt
 
     def pos(self, x, y, xaxis=None, yaxis=None):
         if xaxis is None:
             xaxis = self.axes["x"]
         if yaxis is None:
             yaxis = self.axes["y"]
-        return self.xpos+xaxis.convert(x)*self.width, self.ypos+yaxis.convert(y)*self.height
+        return self.xpos + xaxis.convert(x)*self.width, self.ypos + yaxis.convert(y)*self.height
 
     def vpos_pt(self, vx, vy):
-        return self.xpos_pt+vx*self.width_pt, self.ypos_pt+vy*self.height_pt
+        return self.xpos_pt + vx*self.width_pt, self.ypos_pt + vy*self.height_pt
 
     def vpos(self, vx, vy):
-        return self.xpos+vx*self.width, self.ypos+vy*self.height
+        return self.xpos + vx*self.width, self.ypos + vy*self.height
 
     def vgeodesic(self, vx1, vy1, vx2, vy2):
-        return path.line_pt(self.xpos_pt+vx1*self.width_pt,
-                            self.ypos_pt+vy1*self.height_pt,
-                            self.xpos_pt+vx2*self.width_pt,
-                            self.ypos_pt+vy2*self.height_pt)
+        """returns a geodesic path between two points in graph coordinates"""
+        return path.line_pt(self.xpos_pt + vx1*self.width_pt,
+                            self.ypos_pt + vy1*self.height_pt,
+                            self.xpos_pt + vx2*self.width_pt,
+                            self.ypos_pt + vy2*self.height_pt)
+
+    def vcap_pt(self, direction, length_pt, vx, vy):
+        """returns an error cap path for a given direction, lengths and
+        point in graph coordinates"""
+        if direction == "x":
+            return path.line_pt(self.xpos_pt + vx*self.width_pt - 0.5*length_pt,
+                                self.ypos_pt + vy*self.height_pt,
+                                self.xpos_pt + vx*self.width_pt + 0.5*length_pt,
+                                self.ypos_pt + vy*self.height_pt)
+        elif direction == "y":
+            return path.line_pt(self.xpos_pt + vx*self.width_pt,
+                                self.ypos_pt + vy*self.height_pt - 0.5*length_pt,
+                                self.xpos_pt + vx*self.width_pt,
+                                self.ypos_pt + vy*self.height_pt + 0.5*length_pt)
+        else:
+            raise ValueError("direction invalid")
 
     def keynum(self, key):
         try:
@@ -3257,39 +3233,33 @@ class graphxy(canvas.canvas):
         for data in self.plotdata:
             data.draw(self)
 
-    def _dokey(self, key, *plotinfos):
-        key.setplotinfos(*plotinfos)
-        key.dolayout(self)
-        bbox = key.bbox()
-        if key.right:
-            if key.hinside:
-                x = self.xpos_pt + self.width_pt - bbox.urx - key.hdist_pt
-            else:
-                x = self.xpos_pt + self.width_pt - bbox.llx + key.hdist_pt
-        else:
-            if key.hinside:
-                x = self.xpos_pt - bbox.llx + key.hdist_pt
-            else:
-                x = self.xpos_pt - bbox.urx - key.hdist_pt
-        if key.top:
-            if key.vinside:
-                y = self.ypos_pt + self.height_pt - bbox.ury - key.vdist_pt
-            else:
-                y = self.ypos_pt + self.height_pt - bbox.lly + key.vdist_pt
-        else:
-            if key.vinside:
-                y = self.ypos_pt - bbox.lly + key.vdist_pt
-            else:
-                y = self.ypos_pt - bbox.ury - key.vdist_pt
-        key.paint(self, x, y)
-
     def dokey(self):
         self.dolayout()
         if not self.removedomethod(self.dokey): return
         if self.key is not None:
-            self._dokey(self.key, *self.plotinfos)
-        for key, plotinfos in self.addkeys:
-            self._dokey(key, *plotinfos)
+            c = self.key.paint(self.plotdata)
+            bbox = c.bbox()
+            if self.key.right:
+                if self.key.hinside:
+                    x = self.xpos_pt + self.width_pt - bbox.urx - self.key.hdist_pt
+                else:
+                    x = self.xpos_pt + self.width_pt - bbox.llx + self.key.hdist_pt
+            else:
+                if self.key.hinside:
+                    x = self.xpos_pt - bbox.llx + self.key.hdist_pt
+                else:
+                    x = self.xpos_pt - bbox.urx - self.key.hdist_pt
+            if self.key.top:
+                if self.key.vinside:
+                    y = self.ypos_pt + self.height_pt - bbox.ury - self.key.vdist_pt
+                else:
+                    y = self.ypos_pt + self.height_pt - bbox.lly + self.key.vdist_pt
+            else:
+                if self.key.vinside:
+                    y = self.ypos_pt - bbox.lly + self.key.vdist_pt
+                else:
+                    y = self.ypos_pt - bbox.ury - self.key.vdist_pt
+            self.insert(c, [trafomodule.translate_pt(x, y)])
 
     def finish(self):
         while len(self.domethods):
@@ -3613,6 +3583,9 @@ class _style:
                 del columns[datakey]
                 return graph.axes[axisname], index
 
+    def key_pt(self, c, x_pt, y_pt, width_pt, height_pt, data):
+        raise RuntimeError("style doesn't provide a key")
+
 
 class symbolline(_style):
 
@@ -3784,11 +3757,6 @@ class symbolline(_style):
         if data.symbolattrs is not None:
             c.draw(path.path(*data.symbol(self, x_pt, y_pt, data.size_pt)), data.symbolattrs)
 
-    def key_pt(self, c, x_pt, y_pt, width_pt, height_pt, data):
-        self.drawsymbol_pt(c, x_pt+0.5*width, y_pt+0.5*height, data)
-        if data.lineattrs is not None:
-            c.stroke(path.line_pt(x_pt, y_pt+0.5*height, x_pt+width, y_pt+0.5*height), data.lineattrs)
-
     def drawpoints(self, graph, data):
         if data.lineattrs is not None or data.errorbarattrs is not None:
             clipcanvas = graph.clipcanvas()
@@ -3894,14 +3862,9 @@ class symbolline(_style):
                     errorpath = path.path()
                     errorpath += graph.vgeodesic(*(vminpos + vmaxpos))
                     for vcap in vcaps:
-                        for axisindex in range(len(graph.axisnames)):
-                            if axisindex != erroraxisindex:
-                                # TODO: fix cap range
-                                vcapmin = vcap[:]
-                                vcapmin[axisindex] -= 0.01
-                                vcapmax = vcap[:]
-                                vcapmax[axisindex] += 0.01
-                                errorpath += graph.vgeodesic(*(vcapmin + vcapmax))
+                        for axisname in graph.axisnames:
+                            if axisname != erroraxisname:
+                                errorpath += graph.vcap_pt(axisname, data.errorsize_pt, *vcap)
 
                     # stroke errorpath
                     if len(errorpath.path):
@@ -3909,6 +3872,11 @@ class symbolline(_style):
 
         if data.lineattrs is not None:
             clipcanvas.stroke(data.line, data.lineattrs)
+
+    def key_pt(self, c, x_pt, y_pt, width_pt, height_pt, data):
+        self.drawsymbol_pt(c, x_pt+0.5*width_pt, y_pt+0.5*height_pt, data)
+        if data.lineattrs is not None:
+            c.stroke(path.line_pt(x_pt, y_pt+0.5*height_pt, x_pt+width_pt, y_pt+0.5*height_pt), data.lineattrs)
 
 
 class line(symbolline):
@@ -3968,9 +3936,6 @@ class symbol(symbolline):
 #         self.lastcolor = None
 #         self.rectclipcanvas = graph.clipcanvas()
 #         symbol.drawpoints(self, graph, points)
-# 
-#     def key(self, c, x, y, width, height):
-#         raise RuntimeError("style doesn't yet provide a key")
 
 
 class text(symbol):
@@ -4007,9 +3972,6 @@ class text(symbol):
         data.textdx_pt = unit.topt(data.textdx)
         data.textdy_pt = unit.topt(data.textdy)
         symbol.drawpoints(self, graph, points)
-
-    def key(self, c, x, y, width, height):
-        raise RuntimeError("style doesn't yet provide a key")
 
 
 class arrow(_style):
@@ -4070,62 +4032,46 @@ class arrow(_style):
                     graph.stroke(path.line_pt(x1, y1, x2, y2), data.lineattrs +
                                  [deco.earrow(data.arrowattrs, size=arrowsize*point[data.sizeindex])])
 
-    def key(self, c, x, y, width, height):
-        raise RuntimeError("style doesn't yet provide a key")
-
 
 class bar(_style):
 
     defaultfrompathattrs = []
     defaultbarattrs = [color.palette.Rainbow, deco.stroked([color.gray.black])]
 
-    def __init__(self, fromvalue=None, frompathattrs=[], barattrs=[], epsilon=1e-10):
+    def __init__(self, fromvalue=None, frompathattrs=[], barattrs=[], subnames=None, epsilon=1e-10):
         self.fromvalue = fromvalue
         self.frompathattrs = frompathattrs
         self.barattrs = barattrs
+        self.subnames = subnames
         self.epsilon = epsilon
 
     def setdata(self, graph, columns, data):
-        # TODO: remove limitation to 2d graphs (and code duplication)
+        # TODO: remove limitation to 2d graphs
         if len(graph.axisnames) != 2:
             raise TypeError("arrow style currently restricted on two-dimensional graphs")
         columns = columns.copy()
-        xname = _style.setdatapattern(self, graph, columns, re.compile(r"(%s([2-9]|[1-9][0-9]+)?)name$" % graph.axisnames[0]))
-        yname = _style.setdatapattern(self, graph, columns, re.compile(r"(%s([2-9]|[1-9][0-9]+)?)name$" % graph.axisnames[1]))
         xvalue = _style.setdatapattern(self, graph, columns, re.compile(r"(%s([2-9]|[1-9][0-9]+)?)$" % graph.axisnames[0]))
         yvalue = _style.setdatapattern(self, graph, columns, re.compile(r"(%s([2-9]|[1-9][0-9]+)?)$" % graph.axisnames[1]))
-        if (xname is None and yname is None) or (xname is not None and yname is not None):
-            raise TypeError("must specify exactly one name axis")
         if (xvalue is None and yvalue is None) or (xvalue is not None and yvalue is not None):
             raise TypeError("must specify exactly one value axis")
-        if (xname is None and xvalue is None) or (yname is None and yvalue is None):
-            raise TypeError("must specify exactly one of name or value per axis")
-        if xname is None:
+        if xvalue is not None:
+            data.valuepos = 0
+            data.nameaxis, data.nameindex = _style.setdatapattern(self, graph, columns, re.compile(r"(%s([2-9]|[1-9][0-9]+)?)name$" % graph.axisnames[1]))
             data.valueaxis = xvalue[0]
             data.valueindices = [xvalue[1]]
-            for i in xrange(1, sys.maxint):
-                try:
-                    valueaxis, valueindex = _style.setdatapattern(self, graph, columns, re.compile(r"(%s([2-9]|[1-9][0-9]+)?)stack%i$" % (graph.axisnames[0], i)))
-                except:
-                    break
-                if data.valueaxis != valueaxis:
-                    raise ValueError("different value axes for stacked bars")
-                data.valueindices.append(valueindex)
-            data.nameaxis, data.nameindex = yname
-            data.valuepos = 0
         else:
-            data.nameaxis, data.nameindex = xname
+            data.valuepos = 1
+            data.nameaxis, data.nameindex = _style.setdatapattern(self, graph, columns, re.compile(r"(%s([2-9]|[1-9][0-9]+)?)name$" % graph.axisnames[0]))
             data.valueaxis = yvalue[0]
             data.valueindices = [yvalue[1]]
-            for i in xrange(1, sys.maxint):
-                try:
-                    valueaxis, valueindex = _style.setdatapattern(self, graph, columns, re.compile(r"(%s([2-9]|[1-9][0-9]+)?)stack%i$" % (graph.axisnames[1], i)))
-                except:
-                    break
-                if data.valueaxis != valueaxis:
-                    raise ValueError("different value axes for stacked bars")
-                data.valueindices.append(valueindex)
-            data.valuepos = 1
+        for i in xrange(1, sys.maxint):
+            try:
+                valueaxis, valueindex = _style.setdatapattern(self, graph, columns, re.compile(r"(%s([2-9]|[1-9][0-9]+)?)stack%i$" % (graph.axisnames[data.valuepos], i)))
+            except:
+                break
+            if data.valueaxis != valueaxis:
+                raise ValueError("different value axes for stacked bars")
+            data.valueindices.append(valueindex)
         return columns
 
     def selectstyle(self, selectindex, selecttotal, data):
@@ -4139,14 +4085,16 @@ class bar(_style):
             data.barattrs = None
         data.selectindex = selectindex
         data.selecttotal = selecttotal
+        if data.selecttotal != 1 and self.subnames is not None:
+            raise ValueError("subnames not allowed when iterating over bars")
 
     def adjustaxes(self, columns, data):
         if data.nameindex in columns:
             if data.selecttotal == 1:
-                data.nameaxis.adjustrange(data.points, data.nameindex)
+                data.nameaxis.adjustrange(data.points, data.nameindex, subnames=self.subnames)
             else:
                 for i in range(data.selecttotal):
-                    data.nameaxis.adjustrange([(point[data.nameindex], i) for point in data.points])
+                    data.nameaxis.adjustrange(data.points, data.nameindex, subnames=[i])
         for valueindex in data.valueindices:
             if valueindex in columns:
                 data.valueaxis.adjustrange(data.points, valueindex)
@@ -4166,51 +4114,63 @@ class bar(_style):
                 graph.stroke(p, data.frompathattrs)
         else:
             vfromvalue = 0
-        if data.barattrs is not None:
-            for point in data.points:
-                vvaluemax = vfromvalue
-                for valueindex in data.valueindices:
-                    vvaluemin = vvaluemax
+        l = len(data.valueindices)
+        if l > 1:
+            barattrslist = []
+            for i in range(l):
+                barattrslist.append(attr.selectattrs(data.barattrs, i, l))
+        else:
+            barattrslist = [data.barattrs]
+        for point in data.points:
+            vvaluemax = vfromvalue
+            for valueindex, barattrs in zip(data.valueindices, barattrslist):
+                vvaluemin = vvaluemax
+                try:
+                    vvaluemax = data.valueaxis.convert(point[valueindex])
+                except:
+                    continue
+
+                if data.selecttotal == 1:
                     try:
-                        vvaluemax = data.valueaxis.convert(point[valueindex])
+                        vnamemin = data.nameaxis.convert((point[data.nameindex], 0))
+                    except:
+                        continue
+                    try:
+                        vnamemax = data.nameaxis.convert((point[data.nameindex], 1))
+                    except:
+                        continue
+                else:
+                    try:
+                        vnamemin = data.nameaxis.convert((point[data.nameindex], data.selectindex, 0))
+                    except:
+                        continue
+                    try:
+                        vnamemax = data.nameaxis.convert((point[data.nameindex], data.selectindex, 1))
                     except:
                         continue
 
-                    if data.selecttotal == 1:
-                        try:
-                            vnamemin = data.nameaxis.convert((point[data.nameindex], 0))
-                        except:
-                            continue
-                        try:
-                            vnamemax = data.nameaxis.convert((point[data.nameindex], 1))
-                        except:
-                            continue
-                    else:
-                        try:
-                            vnamemin = data.nameaxis.convert((point[data.nameindex], data.selectindex, 0))
-                        except:
-                            continue
-                        try:
-                            vnamemax = data.nameaxis.convert((point[data.nameindex], data.selectindex, 1))
-                        except:
-                            continue
+                if data.valuepos:
+                    p = (graph.vgeodesic(vnamemin, vvaluemin, vnamemin, vvaluemax) <<
+                         graph.vgeodesic(vnamemin, vvaluemax, vnamemax, vvaluemax) <<
+                         graph.vgeodesic(vnamemax, vvaluemax, vnamemax, vvaluemin) <<
+                         graph.vgeodesic(vnamemax, vvaluemin, vnamemin, vvaluemin))
+                    p.append(path.closepath())
+                else:
+                    p = (graph.vgeodesic(vvaluemin, vnamemin, vvaluemin, vnamemax) <<
+                         graph.vgeodesic(vvaluemin, vnamemax, vvaluemax, vnamemax) <<
+                         graph.vgeodesic(vvaluemax, vnamemax, vvaluemax, vnamemin) <<
+                         graph.vgeodesic(vvaluemax, vnamemin, vvaluemin, vnamemin))
+                    p.append(path.closepath())
+                if barattrs is not None:
+                    graph.fill(p, barattrs)
 
-                    if data.valuepos:
-                        p = (graph.vgeodesic(vnamemin, vvaluemin, vnamemin, vvaluemax) <<
-                             graph.vgeodesic(vnamemin, vvaluemax, vnamemax, vvaluemax) <<
-                             graph.vgeodesic(vnamemax, vvaluemax, vnamemax, vvaluemin) <<
-                             graph.vgeodesic(vnamemax, vvaluemin, vnamemin, vvaluemin))
-                        p.append(path.closepath())
-                    else:
-                        p = (graph.vgeodesic(vvaluemin, vnamemin, vvaluemin, vnamemax) <<
-                             graph.vgeodesic(vvaluemin, vnamemax, vvaluemax, vnamemax) <<
-                             graph.vgeodesic(vvaluemax, vnamemax, vvaluemax, vnamemin) <<
-                             graph.vgeodesic(vvaluemax, vnamemin, vvaluemin, vnamemin))
-                        p.append(path.closepath())
-                    graph.fill(p, data.barattrs)
-
-    def key(self, c, x, y, width, height):
-        c.fill(path.rect_pt(x, y, width, height), self.barattrs)
+    def key_pt(self, c, x_pt, y_pt, width_pt, height_pt, data):
+        l = len(data.valueindices)
+        if l > 1:
+            for i in range(l):
+                c.fill(path.rect_pt(x_pt+i*width_pt/l, y_pt, width_pt/l, height_pt), attr.selectattrs(data.barattrs, i, l))
+        else:
+            c.fill(path.rect_pt(x_pt, y_pt, width_pt, height_pt), data.barattrs)
 
 
 
