@@ -9,9 +9,9 @@ text.set(mode="latex")
 
 def test_multiaxes_data(c, x, y):
     g = c.insert(graph.graphxy(x, y, height=5, key=graph.key(pos="tl"),
-                               #x=graph.logaxis(title="$W$", part=graph.autologpart(mix=graph.manualpart(tickpos="2.2360679775", labels="$\sqrt{5}$").part()),
-                               x=graph.logaxis(title="$W$",
-                                               texter=graph.decimaltexter()),
+                               x=graph.logaxis(title="$W$", parter=graph.autologpart(mix=graph.manualpart(tickpos="4.12310562562", labels="$\sqrt{17}$").part())),
+                               #x=graph.logaxis(title="$W$",
+                               #                texter=graph.decimaltexter()),
                                y=graph.logaxis(title=r"$PPP_1$",
                                                painter=graph.axispainter(titledirection=None)),
                                y2=graph.logaxis(title="$P_2$"),

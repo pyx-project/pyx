@@ -9,6 +9,7 @@ PyX
     - ticks and labels are renamed to tickpos/tickdist and labelpos/labeldist in partitioning
     - separate texter out of the axispainter (done up to the documentation)
     - dense -> density (done including the documentation; TODO in tests/examples?)
+    - axis.maxworse (done up to the documentation)
     IN PROGRESS:
     - axis interface
     TODO:
