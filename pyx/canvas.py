@@ -55,11 +55,14 @@ class bbox:
     def __add__(self, other):
         ' join to bboxes '
 
-        # note, that 0 also represents are false value (like None), so that
-        # we have to add the "or 0" part in the following construction
+        def nmin(x, y):
+            """ minimum of two values, where None represents +infinity, not -infinity as
+                in standard min iplementation of python"""
+            if x is None: return y
+            if y is None: return x
+            return min(x,y)
 
-        return bbox(min(self.llx, other.llx) or self.llx or other.llx or 0, 
-                    min(self.lly, other.lly) or self.lly or other.lly or 0,
+        return bbox(nmin(self.llx, other.llx), nmin(self.lly, other.lly),
                     max(self.urx, other.urx), max(self.ury, other.ury))
 
     __radd__=__add__
@@ -306,7 +309,6 @@ class canvas(CanvasCmds):
         obbox = reduce(lambda x,y, canvas=canvas: x+y.bbox(canvas),
                        self.PSCmds,
                        bbox())
-        print obbox
 	(llx, lly)=self.trafo.apply((unit.length("%f t pt" % obbox.llx),
                                      unit.length("%f t pt" % obbox.lly)))
         (urx, ury)=self.trafo.apply((unit.length("%f t pt" % obbox.urx),
