@@ -20,6 +20,7 @@ TODO:
     - consider removing the zero line feature
     - the exponentialtexter should have a labelattrs argument and the mantissatexter
       should be removed
+    - Docu: part -> parter, tickdist->tickpos argument of parter
   - style module:
     - default patterns
     - make dash length available
