@@ -30,7 +30,7 @@ with their attributes.
 """
 
 import sys, cStringIO, math, time
-import attr, base,  deco, unit, prolog, style, trafo, version
+import attr, base,  bbox, deco, unit, prolog, style, trafo, version
 
 # known paperformats as tuple (width, height)
 
@@ -40,8 +40,8 @@ _paperformats = { "A4"      : ("210 t mm",  "297 t mm"),
                   "A1"      : ("594 t mm",  "840 t mm"),
                   "A0"      : ("840 t mm", "1188 t mm"),
                   "A0B"     : ("910 t mm", "1370 t mm"),
-                  "LETTER"  : ("8.5 t inch", "11 t inch"),
-                  "LEGAL"   : ("8.5 t inch", "14 t inch")}
+                  "Letter"  : ("8.5 t inch", "11 t inch"),
+                  "Legal"   : ("8.5 t inch", "14 t inch")}
 
 #
 # clipping class
@@ -376,7 +376,7 @@ class canvas(_canvas):
         if paperformat:
             # center (optionally rotated) output on page
             try:
-                width, height = _paperformats[paperformat.upper()]
+                width, height = _paperformats[paperformat.capitalize()]
             except KeyError:
                 raise KeyError, "unknown paperformat '%s'" % paperformat
             width = unit.topt(width)
@@ -539,16 +539,21 @@ class canvas(_canvas):
 
 class page(canvas):
 
-    def __init__(self, attrs=[], texrunner=None, pagename=None, paperformat="a4", rotated=0):
+    def __init__(self, attrs=[], texrunner=None, pagename=None, paperformat="a4", rotated=0, fittosize=0, margin="1 t cm"):
         canvas.__init__(self, attrs, texrunner)
         self.pagename = pagename
-        self.paperformat = paperformat.upper()
+        self.paperformat = paperformat.capitalize()
         self.rotated = rotated
+        self.fittosize = fittosize
+        self.margin = margin
+
+    def bbox(self):
+        return bbox.bbox(0, 0, *_paperformats[self.paperformat])
 
 
 class document:
 
-    """holds a collection of pages which are output as pages of a document"""
+    """holds a collection of page and canvas instances which are output as pages of a document"""
 
     def __init__(self, pages=[]):
         self.pages = pages
@@ -574,7 +579,7 @@ class document:
         manually specified bbox).
         """
 
-        if filename[-4:]!=".ps":
+        if filename[-3:]!=".ps":
             filename = filename + ".ps"
 
         try:
@@ -602,7 +607,7 @@ class document:
         if paperformat:
             # center (optionally rotated) output on page
             try:
-                width, height = _paperformats[paperformat.upper()]
+                width, height = _paperformats[paperformat.capitalize()]
             except KeyError:
                 raise KeyError, "unknown paperformat '%s'" % paperformat
             width = unit.topt(width)
@@ -633,8 +638,9 @@ class document:
                    time.asctime(time.localtime(time.time())))
         # required paper formats
         paperformats = {}
-        for page in self.pages:
-            paperformats[page.paperformat] = _paperformats[page.paperformat]
+        for apage in self.pages:
+            if isinstance(apage, page):
+                paperformats[apage.paperformat] = _paperformats[apage.paperformat]
         first = 1
         for paperformat, size in paperformats.items():
             if first:
@@ -643,7 +649,7 @@ class document:
             else:
                 file.write("%%+ ")
             file.write("%s %d %d 75 white ()\n" % (paperformat, unit.topt(size[0]), unit.topt(size[1])))
-            
+
         file.write("%%%%Pages: %d\n" % len(self.pages))
         file.write("%%PageOrder: Ascend\n")
         file.write("%%EndComments\n")
@@ -658,8 +664,8 @@ class document:
         # document prolog section
         file.write("%%BeginProlog\n")
         mergedprolog = []
-        for page in self.pages:
-            for pritem in page.prolog():
+        for apage in self.pages:
+            for pritem in apage.prolog():
                 for mpritem in mergedprolog:
                     if mpritem.merge(pritem) is None: break
                 else:
@@ -674,14 +680,15 @@ class document:
         #file.write("%%EndSetup\n")
 
         # pages section
-        for page, abbox, nr in zip(self.pages, bboxes, range(1, len(self.pages)+1)):
-            # XXX support arbitrary labels: Page label nr
-            file.write("%%%%Page: %s %d\n" % (page.pagename is None and str(nr) or page.pagename , nr))
-            file.write("%%%%PageBoundingBox: %d %d %d %d\n" % (math.floor(abbox.llx_pt), math.floor(abbox.lly_pt),
-                                                               math.ceil(abbox.urx_pt), math.ceil(abbox.ury_pt)))
-
-            file.write("%%%%PageMedia: %s\n" % page.paperformat)
-            file.write("%%%%PageOrientation: %s\n" % (page.rotated and "Landscape" or "Portrait"))
+        for apage, abbox, nr in zip(self.pages, bboxes, range(1, len(self.pages)+1)):
+            if isinstance(apage, page): 
+                file.write("%%%%Page: %s %d\n" % (apage.pagename is None and str(nr) or apage.pagename , nr))
+                file.write("%%%%PageMedia: %s\n" % apage.paperformat)
+                file.write("%%%%PageOrientation: %s\n" % (apage.rotated and "Landscape" or "Portrait"))
+            else:
+                file.write("%%%%Page: %d %d\n" % (nr , nr))
+                file.write("%%%%PageBoundingBox: %d %d %d %d\n" % (math.floor(abbox.llx_pt), math.floor(abbox.lly_pt),
+                                                                   math.ceil(abbox.urx_pt), math.ceil(abbox.ury_pt)))
 
             # page setup section
             file.write("%%BeginPageSetup\n")
@@ -691,10 +698,10 @@ class document:
             file.write("%%EndPageSetup\n")
 
             # here comes the actual content
-            page.outputPS(file)
+            apage.outputPS(file)
             file.write("pgsave restore\n")
             file.write("showpage\n")
             # file.write("%%PageTrailer\n")
-            
+
         file.write("%%Trailer\n")
         file.write("%%EOF\n")
