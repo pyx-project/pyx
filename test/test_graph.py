@@ -106,12 +106,12 @@ def test_split(c, t, x, y):
 
 def test_bar(c, t, x, y):
     df = data.datafile("testdata2")
-    g = c.insert(graph.graphxy(t, x, y, height=5, width=5, x=graph.baraxis(names=("J","F","M","A","M","J","J","A","S","O","N","D"), title="Month")))
-    g.plot(graph.data(df, x=0, y=2), graph.bar(fromzero=0))
-    #g = c.insert(graph.graphxy(t, x, y, height=5, width=5, y=graph.baraxis(names=("J","F","M","A","M","J","J","A","S","O","N","D"), title="Month")))
-    #g.plot(graph.data(df, x=2, y=0), graph.bar(xbar=1, fromzero=0))
-    #g = c.insert(graph.graphxy(t, x, y, height=5, width=5, x2=None, x=graph.baraxis(graph.baraxis(dist=0))))
-    #g.plot([graph.data(df, x=0, y=2), graph.data(df, x=0, y=3), graph.data(df, x=0, y=3)], graph.bar())
+    #g = c.insert(graph.graphxy(t, x, y, height=5, width=5, x=graph.baraxis(title="Month", painter=graph.baraxispainter(nameattrs=(tex.halign.right, tex.direction(90))))))
+    #g.plot(graph.data(df, x=1, y=2), graph.bar(fromzero=0))
+    #g = c.insert(graph.graphxy(t, x, y, height=5, width=5, y=graph.baraxis(title="Month")))
+    #g.plot(graph.data(df, x=2, y=1), graph.bar(xbar=1, fromzero=0))
+    g = c.insert(graph.graphxy(t, x, y, height=5, width=20, x=graph.baraxis(graph.baraxis(dist=0), multisubaxis=1)))
+    g.plot([graph.data(df, x=1, y=2), graph.data(df, x=1, y=3), graph.data(df, x=1, y=3)], graph.bar())
     #g = c.insert(graph.graphxy(t, x, y, height=5, width=5, x2=None, x=graph.baraxis(graph.baraxis(dist=0))))
     #g.plot([graph.data(df, x=0, y=2), graph.data(df, x=0, y=3), graph.data(df, x=0, y=2), None, graph.data(df, x=0, y=3)], graph.bar(stacked=2))
     g.finish()
