@@ -3,7 +3,7 @@ import sys, unittest
 
 sys.path.append("..")
 from pyx import *
-from pyx.graph import frac, tick, manualpart, linpart
+from pyx.graph import frac, tick, manualpart, linpart, logpart
 
 
 def PartEqual(part1, part2):
@@ -174,18 +174,18 @@ class ManualPartTestCase(unittest.TestCase):
 
 class LinPartTestCase(unittest.TestCase):
 
-     def testTicks(self):
+     def testAll(self):
          PartEqual(linpart(ticks="1", labels=()).defaultpart(0, 1),
                    [tick(0, 1, 0), tick(1, 1, 0)])
          PartEqual(linpart(ticks=("1", "0.5"), labels=()).defaultpart(0, 1),
                    [tick(0, 1, 0), tick(1, 2, 1), tick(1, 1, 0)])
          PartEqual(linpart(ticks=("1", "0.5", "0.25"), labels=()).defaultpart(0, 1),
                    [tick(0, 1, 0), tick(1, 4, 2), tick(1, 2, 1), tick(3, 4, 2), tick(1, 1, 0)])
-         PartEqual(linpart(ticks=("1", "0.5"), labels=(), extendtoticklevel=None).defaultpart(0, 1.5),
+         PartEqual(linpart(ticks=("1", "0.5"), labels=(), extendtick=None).defaultpart(0, 1.5),
                    [tick(0, 1, 0), tick(1, 2, 1), tick(1, 1, 0), tick(3, 2, 1)])
-         PartEqual(linpart(ticks=("1", "0.5"), labels=(), extendtoticklevel=1).defaultpart(0, 1.2),
+         PartEqual(linpart(ticks=("1", "0.5"), labels=(), extendtick=1).defaultpart(0, 1.2),
                    [tick(0, 1, 0), tick(1, 2, 1), tick(1, 1, 0), tick(3, 2, 1)])
-         PartEqual(linpart(ticks=("1", "0.5"), labels=(), extendtoticklevel=0).defaultpart(0, 1.2),
+         PartEqual(linpart(ticks=("1", "0.5"), labels=(), extendtick=0).defaultpart(0, 1.2),
                    [tick(0, 1, 0), tick(1, 2, 1), tick(1, 1, 0), tick(3, 2, 1), tick(2, 1, 0)])
          PartEqual(linpart(labels="1", ticks=()).defaultpart(0, 1),
                    [tick(0, 1, None, 0), tick(1, 1, None, 0)])
@@ -193,11 +193,11 @@ class LinPartTestCase(unittest.TestCase):
                    [tick(0, 1, None, 0), tick(1, 2, None, 1), tick(1, 1, None, 0)])
          PartEqual(linpart(labels=("1", "0.5", "0.25"), ticks=()).defaultpart(0, 1),
                    [tick(0, 1, None, 0), tick(1, 4, None, 2), tick(1, 2, None, 1), tick(3, 4, None, 2), tick(1, 1, None, 0)])
-         PartEqual(linpart(labels=("1", "0.5"), ticks=(), extendtolabellevel=None).defaultpart(0, 1.5),
+         PartEqual(linpart(labels=("1", "0.5"), ticks=(), extendlabel=None).defaultpart(0, 1.5),
                    [tick(0, 1, None, 0), tick(1, 2, None, 1), tick(1, 1, None, 0), tick(3, 2, None, 1)])
-         PartEqual(linpart(labels=("1", "0.5"), ticks=(), extendtolabellevel=1).defaultpart(0, 1.2),
+         PartEqual(linpart(labels=("1", "0.5"), ticks=(), extendlabel=1).defaultpart(0, 1.2),
                    [tick(0, 1, None, 0), tick(1, 2, None, 1), tick(1, 1, None, 0), tick(3, 2, None, 1)])
-         PartEqual(linpart(labels=("1", "0.5"), ticks=(), extendtolabellevel=0).defaultpart(0, 1.2),
+         PartEqual(linpart(labels=("1", "0.5"), ticks=(), extendlabel=0).defaultpart(0, 1.2),
                    [tick(0, 1, None, 0), tick(1, 2, None, 1), tick(1, 1, None, 0), tick(3, 2, None, 1), tick(2, 1, None, 0)])
          PartEqual(linpart(ticks="1").defaultpart(0, 1),
                    [tick(0, 1, 0, 0), tick(1, 1, 0, 0)])
@@ -205,11 +205,11 @@ class LinPartTestCase(unittest.TestCase):
                    [tick(0, 1, 0, 0), tick(1, 2, 1), tick(1, 1, 0, 0)])
          PartEqual(linpart(ticks=("1", "0.5", "0.25")).defaultpart(0, 1),
                    [tick(0, 1, 0, 0), tick(1, 4, 2), tick(1, 2, 1), tick(3, 4, 2), tick(1, 1, 0, 0)])
-         PartEqual(linpart(ticks=("1", "0.5"), extendtoticklevel=None).defaultpart(0, 1.5),
+         PartEqual(linpart(ticks=("1", "0.5"), extendtick=None).defaultpart(0, 1.5),
                    [tick(0, 1, 0, 0), tick(1, 2, 1), tick(1, 1, 0, 0), tick(3, 2, 1)])
-         PartEqual(linpart(ticks=("1", "0.5"), extendtoticklevel=1).defaultpart(0, 1.2),
+         PartEqual(linpart(ticks=("1", "0.5"), extendtick=1).defaultpart(0, 1.2),
                    [tick(0, 1, 0, 0), tick(1, 2, 1), tick(1, 1, 0, 0), tick(3, 2, 1)])
-         PartEqual(linpart(ticks=("1", "0.5"), extendtoticklevel=0).defaultpart(0, 1.2),
+         PartEqual(linpart(ticks=("1", "0.5"), extendtick=0).defaultpart(0, 1.2),
                    [tick(0, 1, 0, 0), tick(1, 2, 1), tick(1, 1, 0, 0), tick(3, 2, 1), tick(2, 1, 0, 0)])
          PartEqual(linpart(labels="1").defaultpart(0, 1),
                    [tick(0, 1, 0, 0), tick(1, 1, 0, 0)])
@@ -217,11 +217,11 @@ class LinPartTestCase(unittest.TestCase):
                    [tick(0, 1, 0, 0), tick(1, 2, None, 1), tick(1, 1, 0, 0)])
          PartEqual(linpart(labels=("1", "0.5", "0.25")).defaultpart(0, 1),
                    [tick(0, 1, 0, 0), tick(1, 4, None, 2), tick(1, 2, None, 1), tick(3, 4, None, 2), tick(1, 1, 0, 0)])
-         PartEqual(linpart(labels=("1", "0.5"), extendtoticklevel=None).defaultpart(0, 1.5),
+         PartEqual(linpart(labels=("1", "0.5"), extendtick=None).defaultpart(0, 1.5),
                    [tick(0, 1, 0, 0), tick(1, 2, None, 1), tick(1, 1, 0, 0), tick(3, 2, None, 1)])
-         PartEqual(linpart(labels=("1", "0.5"), extendtoticklevel=None, extendtolabellevel=1).defaultpart(0, 1.2),
+         PartEqual(linpart(labels=("1", "0.5"), extendtick=None, extendlabel=1).defaultpart(0, 1.2),
                    [tick(0, 1, 0, 0), tick(1, 2, None, 1), tick(1, 1, 0, 0), tick(3, 2, None, 1)])
-         PartEqual(linpart(labels=("1", "0.5"), extendtoticklevel=None, extendtolabellevel=0).defaultpart(0, 1.2),
+         PartEqual(linpart(labels=("1", "0.5"), extendtick=None, extendlabel=0).defaultpart(0, 1.2),
                    [tick(0, 1, 0, 0), tick(1, 2, None, 1), tick(1, 1, 0, 0), tick(3, 2, None, 1), tick(2, 1, 0, 0)])
          PartEqual(linpart(labels="1", texts=("a", "b")).defaultpart(0, 1),
                    [tick(0, 1, 0, 0, "a"), tick(1, 1, 0, 0, "b")])
@@ -230,9 +230,26 @@ class LinPartTestCase(unittest.TestCase):
          PartEqual(linpart(labels=("1", "0.5", "0.25"), texts=(("a", "e"), "c", ("b", "d"))).defaultpart(0, 1),
                    [tick(0, 1, 0, 0, "a"), tick(1, 4, None, 2, "b"), tick(1, 2, None, 1, "c"), tick(3, 4, None, 2, "d"), tick(1, 1, 0, 0, "e")])
 
+class LogPartTestCase(unittest.TestCase):
+
+     def testAll(self):
+         PartEqual(logpart(ticks=logpart.shiftfracs1, labels=()).defaultpart(1, 10),
+                   [tick(1, 1, 0), tick(10, 1, 0)])
+         PartEqual(logpart(ticks=logpart.shiftfracs1, labels=()).defaultpart(1, 100),
+                   [tick(1, 1, 0), tick(10, 1, 0), tick(100, 1, 0)])
+         PartEqual(logpart(ticks=logpart.shift2fracs1, labels=()).defaultpart(1, 100),
+                   [tick(1, 1, 0), tick(100, 1, 0)])
+         PartEqual(logpart(ticks=logpart.shiftfracs1to9, labels=()).defaultpart(1, 10),
+                   [tick(1, 1, 0), tick(2, 1, 0), tick(3, 1, 0), tick(4, 1, 0), tick(5, 1, 0), tick(6, 1, 0), tick(7, 1, 0), tick(8, 1, 0), tick(9, 1, 0), tick(10, 1, 0)])
+         PartEqual(logpart(ticks=(logpart.shiftfracs1, logpart.shiftfracs1to9), labels=()).defaultpart(1, 10),
+                   [tick(1, 1, 0), tick(2, 1, 1), tick(3, 1, 1), tick(4, 1, 1), tick(5, 1, 1), tick(6, 1, 1), tick(7, 1, 1), tick(8, 1, 1), tick(9, 1, 1), tick(10, 1, 0)])
+         PartEqual(logpart(ticks=(logpart.shiftfracs1, logpart.shiftfracs1to9)).defaultpart(1, 10),
+                   [tick(1, 1, 0, 0), tick(2, 1, 1), tick(3, 1, 1), tick(4, 1, 1), tick(5, 1, 1), tick(6, 1, 1), tick(7, 1, 1), tick(8, 1, 1), tick(9, 1, 1), tick(10, 1, 0, 0)])
+
 
 suite = unittest.TestSuite((unittest.makeSuite(ManualPartTestCase, 'test'),
-                            unittest.makeSuite(LinPartTestCase, 'test')))
+                            unittest.makeSuite(LinPartTestCase, 'test'),
+                            unittest.makeSuite(LogPartTestCase, 'test')))
 
 if __name__ == "__main__":
     runner = unittest.TextTestRunner()
