@@ -267,17 +267,24 @@ class symbolline(_style):
                             newcut = None
                             if vend > 1:
                                 # 1 = vstart + (vend - vstart) * cut
-                                newcut = (1 - vstart)/(vend - vstart)
+                                try:
+                                    newcut = (1 - vstart)/(vend - vstart)
+                                except ArithmeticError:
+                                    break
                             if vend < 0:
                                 # 0 = vstart + (vend - vstart) * cut
-                                newcut = - vstart/(vend - vstart)
+                                try:
+                                    newcut = - vstart/(vend - vstart)
+                                except ArithmeticError:
+                                    break
                             if newcut is not None and newcut < cut:
                                 cut = newcut
-                        cutvpos = []
-                        for vstart, vend in zip(lastvpos, vpos):
-                            cutvpos.append(vstart + (vend - vstart) * cut)
-                        linebasepoints.append(graph.vpos_pt(*cutvpos))
-                        validvpos = 0 # clear linebasepoints below
+                        else:
+                            cutvpos = []
+                            for vstart, vend in zip(lastvpos, vpos):
+                                cutvpos.append(vstart + (vend - vstart) * cut)
+                            linebasepoints.append(graph.vpos_pt(*cutvpos))
+                            validvpos = 0 # clear linebasepoints below
                 else:
                     # the last point was outside the graph
                     if lastvpos is not None:
@@ -288,17 +295,24 @@ class symbolline(_style):
                                 newcut = None
                                 if vstart > 1:
                                     # 1 = vstart + (vend - vstart) * cut
-                                    newcut = (1 - vstart)/(vend - vstart)
+                                    try:
+                                        newcut = (1 - vstart)/(vend - vstart)
+                                    except ArithmeticError:
+                                        break
                                 if vstart < 0:
                                     # 0 = vstart + (vend - vstart) * cut
-                                    newcut = - vstart/(vend - vstart)
+                                    try:
+                                        newcut = - vstart/(vend - vstart)
+                                    except ArithmeticError:
+                                        break
                                 if newcut is not None and newcut > cut:
                                     cut = newcut
-                            cutvpos = []
-                            for vstart, vend in zip(lastvpos, vpos):
-                                cutvpos.append(vstart + (vend - vstart) * cut)
-                            linebasepoints.append(graph.vpos_pt(*cutvpos))
-                            linebasepoints.append(graph.vpos_pt(*vpos))
+                            else:
+                                cutvpos = []
+                                for vstart, vend in zip(lastvpos, vpos):
+                                    cutvpos.append(vstart + (vend - vstart) * cut)
+                                linebasepoints.append(graph.vpos_pt(*cutvpos))
+                                linebasepoints.append(graph.vpos_pt(*vpos))
                         else:
                             # sometimes cut beginning and end
                             cutfrom = 0
@@ -306,31 +320,48 @@ class symbolline(_style):
                             for vstart, vend in zip(lastvpos, vpos):
                                 newcutfrom = None
                                 if vstart > 1:
+                                    if vend > 1:
+                                        break
                                     # 1 = vstart + (vend - vstart) * cutfrom
-                                    newcutfrom = (1 - vstart)/(vend - vstart)
+                                    try:
+                                        newcutfrom = (1 - vstart)/(vend - vstart)
+                                    except ArithmeticError:
+                                        break
                                 if vstart < 0:
+                                    if vend < 0:
+                                        break
                                     # 0 = vstart + (vend - vstart) * cutfrom
-                                    newcutfrom = - vstart/(vend - vstart)
+                                    try:
+                                        newcutfrom = - vstart/(vend - vstart)
+                                    except ArithmeticError:
+                                        break
                                 if newcutfrom is not None and newcutfrom > cutfrom:
                                     cutfrom = newcutfrom
                                 newcutto = None
                                 if vend > 1:
                                     # 1 = vstart + (vend - vstart) * cutto
-                                    newcutto = (1 - vstart)/(vend - vstart)
+                                    try:
+                                        newcutto = (1 - vstart)/(vend - vstart)
+                                    except ArithmeticError:
+                                        break
                                 if vend < 0:
                                     # 0 = vstart + (vend - vstart) * cutto
-                                    newcutto = - vstart/(vend - vstart)
+                                    try:
+                                        newcutto = - vstart/(vend - vstart)
+                                    except ArithmeticError:
+                                        break
                                 if newcutto is not None and newcutto < cutto:
                                     cutto = newcutto
-                            if cutfrom < cutto:
-                                cutfromvpos = []
-                                cuttovpos = []
-                                for vstart, vend in zip(lastvpos, vpos):
-                                    cutfromvpos.append(vstart + (vend - vstart) * cutfrom)
-                                    cuttovpos.append(vstart + (vend - vstart) * cutto)
-                                linebasepoints.append(graph.vpos_pt(*cutfromvpos))
-                                linebasepoints.append(graph.vpos_pt(*cuttovpos))
-                                validvpos = 0 # clear linebasepoints below
+                            else:
+                                if cutfrom < cutto:
+                                    cutfromvpos = []
+                                    cuttovpos = []
+                                    for vstart, vend in zip(lastvpos, vpos):
+                                        cutfromvpos.append(vstart + (vend - vstart) * cutfrom)
+                                        cuttovpos.append(vstart + (vend - vstart) * cutto)
+                                    linebasepoints.append(graph.vpos_pt(*cutfromvpos))
+                                    linebasepoints.append(graph.vpos_pt(*cuttovpos))
+                            validvpos = 0 # clear linebasepoints below
                 lastvpos = vpos
             else:
                 lastvpos = None

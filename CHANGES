@@ -80,6 +80,7 @@ TODO:
     - graph.axis.painter.plain -> graph.axis.painter.regular
       (as it was in parts of the documentation already)
     - changeable-gridattrs-become-None-bug fixed
+    - graph style cutting outside lines (double-)fixed
 
 
 0.6.1 (2004/03/31):
