@@ -1866,7 +1866,7 @@ class normsubpath:
         normsubpathitems itemparams fulfil 0 <= param < 1.
         Note that params have to be sorted.
         """
-        if not self.normsubpathitems:
+        if self.isshort():
             if params:
                 raise PathException("Cannot select parameters for a short normsubpath")
             return []
