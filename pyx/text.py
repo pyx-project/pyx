@@ -534,7 +534,7 @@ def readfontmap(filenames):
 class font:
     def __init__(self, name, c, q, d, tfmconv, debug=0):
         self.name = name
-        self.q = q
+        self.q = q                  # desired size of font (fix_word)
         tfmpath = pykpathsea.find_file("%s.tfm" % self.name, pykpathsea.kpse_tfm_format)
         if not tfmpath:
             raise TFMError("cannot find %s.tfm" % self.name)
@@ -558,7 +558,7 @@ class font:
             raise DVIError("font '%s' not loaded: bad design size" % self.name)
 
         self.scale = 1.0*q/d
-
+        
         # for bookkeeping of used characters
         self.usedchars = [0] * 256
 
@@ -568,7 +568,7 @@ class font:
     __repr__ = __str__
 
     def convert(self, width):
-        return 16L*width*self.q/16777216L
+        return 16L*width*self.q/16777216L 
 
     def getwidth(self, charcode):
         return self.convert(self.tfmfile.width[self.tfmfile.char_info[charcode].width_index])
@@ -622,7 +622,7 @@ class virtualfont(font):
         fontpath = pykpathsea.find_file(name, pykpathsea.kpse_vf_format)
         if fontpath is None or not len(fontpath):
             raise RuntimeError
-        self.vffile = vffile(fontpath, self.scale, fontmap, debug > 1)
+        self.vffile = vffile(fontpath, self.scale, tfmconv, fontmap, debug > 1)
 
     def getfonts(self):
         """ return fonts used in virtual font itself """
@@ -721,8 +721,8 @@ class dvifile:
     def flushout(self):
         """ flush currently active string """
         if self.actoutstart:
-            x =  unit.t_m(self.actoutstart[0] * self.conv * 0.0254 / self.resolution)
-            y = -unit.t_m(self.actoutstart[1] * self.conv * 0.0254 / self.resolution)
+            x =  unit.t_m(self.actoutstart[0] * self.scale * self.conv * 0.0254 / self.resolution)
+            y = -unit.t_m(self.actoutstart[1] * self.scale * self.conv * 0.0254 / self.resolution)
             if self.debug:
                 print "[%s]" % self.actoutstring
             self.actpage.insert(_show(unit.topt(x), unit.topt(y), self.actoutstring))
@@ -730,17 +730,17 @@ class dvifile:
 
     def putrule(self, height, width, inch=1):
         self.flushout()
-        x1 =  unit.t_m(self.pos[_POS_H] * self.conv * 0.0254 / self.resolution)
-        y1 = -unit.t_m(self.pos[_POS_V] * self.conv * 0.0254 / self.resolution)
-        w = unit.t_m(width * self.conv * 0.0254 / self.resolution)
-        h = unit.t_m(height * self.conv * 0.0254 / self.resolution)
+        x1 =  unit.t_m(self.pos[_POS_H] * self.scale * self.conv * 0.0254 / self.resolution)
+        y1 = -unit.t_m(self.pos[_POS_V] * self.scale * self.conv * 0.0254 / self.resolution)
+        w = unit.t_m(width * self.scale * self.conv * 0.0254 / self.resolution)
+        h = unit.t_m(height * self.scale * self.conv * 0.0254 / self.resolution)
 
         if height > 0 and width > 0:
             if self.debug:
-                pixelw = int(width*self.conv)
-                if pixelw < width*self.conv: pixelw += 1
-                pixelh = int(height*self.conv)
-                if pixelh < height*self.conv: pixelh += 1
+                pixelw = int(width*self.scale*self.conv)
+                if pixelw < width*self.scale*self.conv: pixelw += 1
+                pixelh = int(height*self.scale *self.conv)
+                if pixelh < height*self.scale*self.conv: pixelh += 1
 
                 print ("%d: %srule height %d, width %d (%dx%d pixels)" %
                        (self.filepos, inch and "set" or "put", height, width, pixelh, pixelw))
@@ -783,7 +783,7 @@ class dvifile:
             # virtual font handling
             afterpos = list(self.pos)
             afterpos[_POS_H] += dx
-            self._push_dvistring(self.activefont.getchar(char), self.activefont.getfonts(), afterpos)
+            self._push_dvistring(self.activefont.getchar(char), self.activefont.getfonts(), afterpos, self.activefont.scale)
             
         if not inch:
             # XXX: correct !?
@@ -840,8 +840,8 @@ class dvifile:
         # XXX: reset actoutfont only where strictly needed
         self.actoutfont = None
         
-        x =  unit.t_m(self.pos[_POS_H] * self.conv * 0.0254 / self.resolution)
-        y = -unit.t_m(self.pos[_POS_V] * self.conv * 0.0254 / self.resolution)
+        x =  unit.t_m(self.pos[_POS_H] * self.scale * self.conv * 0.0254 / self.resolution)
+        y = -unit.t_m(self.pos[_POS_V] * self.scale * self.conv * 0.0254 / self.resolution)
         if self.debug:
             print "%d: xxx '%s'" % (self.filepos, s)
         if not s.startswith("PyX:"):
@@ -920,24 +920,32 @@ class dvifile:
 
     # routines for pushing and popping different dvi chunks on the reader
 
-    def _push_dvistring(self, dvi, fonts, afterpos):
-        """ push dvi string with defined fonts on top of reader stack.
-        When finished with interpreting the dvi chunk, we continue with self.pos=afterpos
+    def _push_dvistring(self, dvi, fonts, afterpos, scale):
+        """ push dvi string with defined fonts on top of reader
+        stack. Every positions gets scaled relatively by the factor
+        scale. When finished with interpreting the dvi chunk, we
+        continue with self.pos=afterpos
 
         """
         if self.debug:
-            print "executing new dvi chunk"
-        self.statestack.append((self.file, self.fonts, self.activefont, afterpos, self.stack))
+            print "executing new dvi chunk scaled at %f" % scale
+        self.statestack.append((self.file, self.fonts, self.activefont, afterpos, self.stack, self.scale))
+        self.scale = scale
         self.file = stringbinfile(dvi)
         self.fonts = fonts
         self.stack = []
+        self.filepos = 0
+
+        # we have to downscale self.pos in order to be consistent with the new scaling
+        self.pos = map(lambda x, scale=scale:1.0*x/scale, self.pos)
         self.usefont(0)
 
     def _pop_dvistring(self):
+        self.flushout()
         if self.debug:
-            print "finished executing new dvi chunk"
+            print "finished executing dvi chunk"
         self.file.close()
-        self.file, self.fonts, self.activefont, self.pos, self.stack = self.statestack.pop()
+        self.file, self.fonts, self.activefont, self.pos, self.stack, self.scale = self.statestack.pop()
 
     # routines corresponding to the different reader states of the dvi maschine
 
@@ -1165,6 +1173,9 @@ class dvifile:
         # stack for self.file, self.fonts and self.stack, needed for VF inclusion
         self.statestack = []
 
+        # global scaling used for VF ouput
+        self.scale = 1
+
         self.file = binfile(self.filename, "rb")
 
         # currently read byte in file (for debugging output)
@@ -1245,11 +1256,11 @@ _VF_ID         = 202              # VF id byte
 class VFError(exceptions.Exception): pass
 
 class vffile:
-    def __init__(self, filename, scale, fontmap, debug=0):
+    def __init__(self, filename, scale, tfmconv, fontmap, debug=0):
         self.filename = filename
         self.scale = scale
         self.fontmap = fontmap
-        self.tfmconv = 1
+        self.tfmconv = tfmconv
         self.debug = debug
         self.fonts = {}            # used fonts
         self.widths = {}           # widths of defined chars
@@ -1286,10 +1297,12 @@ class vffile:
                 # rescaled size of font: s is relative to the scaling
                 # of the virtual font itself.  Note that realscale has
                 # to be a fix_word (like s)
-                realscale = int(self.scale * float(fix_word(self.ds))*s)
+                # Furthermore we have to correct for self.tfmconv
+                reals = int(self.scale * float(fix_word(self.ds))*s*tfmconv)
+                reald = int(d * tfmconv)
 
                 # XXX allow for virtual fonts here too
-                self.fonts[num] =  type1font(fontname, c, realscale, d, self.tfmconv, self.fontmap, self.debug > 1)
+                self.fonts[num] =  type1font(fontname, c, reals, reald, self.tfmconv, self.fontmap, self.debug > 1)
             elif cmd == _VF_LONG_CHAR:
                 # character packet (long form)
                 pl = file.readuint32()   # packet length

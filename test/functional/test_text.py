@@ -52,7 +52,8 @@ c.text(0, 6, r"\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} = \sqrt{\pi\
 c.stroke(c.text(1, 2, r"Hello, world!").path())
 
 # test a virtual font with encoding
-c.text(0, 8, r"\sffamily Helvetica test: \"o\ss")
+c.text(0, 8, r"\sffamily VF test: \"o\ss ffl \char0")
+c.text(0, 9, r"\sffamily \fontsize{30}{35}\selectfont VF test: \"o\ss ffl \char0")
 
 # test the specials
 c.stroke(c.text(10, 2, r"Hello, \color{green}world!", trafo.slant(1)).path())
