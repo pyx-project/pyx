@@ -84,7 +84,7 @@ setup(name="PyX",
       description=doclines[0],
       long_description="\n".join(doclines[2:]),
       license="GPL",
-      packages=['pyx', 'pyx/t1strip', 'pyx/pykpathsea'],
+      packages=['pyx', 'pyx/graph', 'pyx/graph/axis', 'pyx/t1strip', 'pyx/pykpathsea'],
       ext_modules=ext_modules,
       data_files=data_files,
       **addargs)
