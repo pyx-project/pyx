@@ -590,7 +590,7 @@ class canvas(_canvas):
                            "[\n" % (fontnr+fontstartref))
                 for i in range(256):
                     try:
-                        width = pritem.font.getwidth(i)
+                        width = pritem.font.getwidth(i)*72/72.27
                     except:
                         width = 0
                     file.write("%f\n" % (width/pritem.font.getsize()/1000))
@@ -618,8 +618,7 @@ class canvas(_canvas):
                 fontnr += 1
                 reflist.append(file.tell())
 
-                fontdata = open(pykpathsea.find_file(pritem.font.getbasepsname().lower(), # FIXME, FIXME, FIXME !!!
-                                                     pykpathsea.kpse_type1_format)).read()
+                fontdata = open(pykpathsea.find_file(pritem.filename, pykpathsea.kpse_type1_format)).read()
                 if fontdata[0:2] != fullfont._PFB_ASCII:
                     raise RuntimeError("PFB_ASCII mark expected")
                 length1 = fullfont.pfblength(fontdata[2:6])
