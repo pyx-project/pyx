@@ -470,7 +470,7 @@ features.
 
 The standard \verb|linkaxis| can be used for a \verb|linaxis| or
 \verb|logaxis|, other axes might have different \verb|linkaxis|
-classes, {\it e.g. \verb|linksplitaxis| and \verb|linkbaraxis|}.
+classes, \emph{e.g. \texttt{linksplitaxis} and \texttt{linkbaraxis}}.
 While those linked axes might be used by graphs to plot the same axis
 at both sides of the graph (when appropriate), every axis has a
 \verb|createlinkaxis| method, which returns a standard linked axis.
@@ -934,16 +934,13 @@ having the following methods:
 \begin{tabularx}{\linewidth}{l>{\raggedright\arraybackslash}X}
 method name&description\\
 \hline
-\texttt{basepath(x1=None, x2=None)}&returns the base path for the
-range \texttt{x1} to \texttt{x2}, (hole range, when omitting the
-parameters)\\
+\texttt{basepath(x1=None, x2=None)}&returns the base path for the range \texttt{x1} to \texttt{x2}, (hole range, when omitting the parameters)\\
 \texttt{vbasepath(x1=None, x2=None)}&as above but for graph coordinates\\
 \texttt{gridpath(x)}&returns the grid path\\
 \texttt{vgridpath(x)}&as above but for graph coordinates\\
 \texttt{tickpoint(x)}&returns the position of a tick\\
 \texttt{vtickpoint(x)}&as above but for graph coordinates\\
-\texttt{tickdirection(x)}&returns the direction, a tick should be
-drawn (towards inside of the graph)\\
+\texttt{tickdirection(x)}&returns the direction, a tick should be drawn (towards inside of the graph)\\
 \texttt{vtickdirection(x)}&as above but for graph coordinates\\
 \end{tabularx}
 \medskip
