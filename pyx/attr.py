@@ -247,17 +247,17 @@ class changelist(changeattr):
 
     """a changeable attribute over a list of attribute choises"""
 
-    def __init__(self, attrs, restartable=1):
+    def __init__(self, attrs, cyclic=1):
         """initializes the instance
         - attrs is a list of attributes to cycle
-        - restartable is a boolean, allowing to start from
+        - cyclic is a boolean, allowing to start from
           the beginning after the end was reached; otherwise
           selecting beyond the list returns a None"""
         self.attrs = attrs
-        self.restartable = restartable
+        self.cyclic = cyclic
 
     def select(self, index, total):
-        if self.restartable:
+        if self.cyclic:
             return self.attrs[index % len(self.attrs)]
         elif index < len(self.attrs):
             return self.attrs[index]
