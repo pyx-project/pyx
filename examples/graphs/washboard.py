@@ -5,18 +5,18 @@ from pyx import *
 from pyx.deco import barrow, earrow
 from pyx.style import linewidth, linestyle
 from pyx.graph.type import graphxy
-from pyx.graph.axis import linaxis
-from pyx.graph.axis.painter import axispainter
+from pyx.graph.axis import linear
+from pyx.graph.axis.painter import plain
 from pyx.graph.style import line
 from pyx.graph.data import function
 
-mypainter = axispainter(basepathattrs=[earrow.normal], titlepos=1)
+mypainter = plain(basepathattrs=[earrow.normal], titlepos=1)
 def mycos(x): return -cos(x)+.10*x
 
 g = graphxy(height=5, x2=None, y2=None,
-            x=linaxis(min=-2.5*pi, max=3.3*pi, parter=None,
+            x=linear(min=-2.5*pi, max=3.3*pi, parter=None,
                       painter=mypainter, title=r"$\delta\phi$"),
-            y=linaxis(min=-2.3, max=2, painter=None))
+            y=linear(min=-2.3, max=2, painter=None))
 g.plot(function("y=mycos(x)", context=locals()),
        line(lineattrs=[linewidth.Thick]))
 g.finish()

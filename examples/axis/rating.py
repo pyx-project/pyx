@@ -12,13 +12,14 @@
 # possible by the axis keyword argument "density".
 
 from pyx import *
+from pyx.graph import axis
 
 p = path.curve(0, 0, 3, 0, 1, 4, 4, 4)
 
 c = canvas.canvas()
-c.insert(graph.axis.pathaxis(p.transformed(trafo.translate(-4, 0).scaled(0.75)),
-                             graph.axis.linaxis(min=0, max=10)))
-c.insert(graph.axis.pathaxis(p, graph.axis.linaxis(min=0, max=10)))
-c.insert(graph.axis.pathaxis(p.transformed(trafo.scale(1.25).translated(4, 0)),
-                             graph.axis.linaxis(min=0, max=10)))
+c.insert(axis.pathaxis(p.transformed(trafo.translate(-4, 0).scaled(0.75)),
+                       axis.linear(min=0, max=10)))
+c.insert(axis.pathaxis(p, axis.linear(min=0, max=10)))
+c.insert(axis.pathaxis(p.transformed(trafo.scale(1.25).translated(4, 0)),
+                       axis.linear(min=0, max=10)))
 c.writeEPSfile("rating")

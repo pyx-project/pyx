@@ -3,8 +3,8 @@
 from pyx import *
 
 # get the lines from the graph
-xax = graph.axis.linaxis(min=-1, max=1.0, painter=None)
-yax = graph.axis.linaxis(min=-1.3, max=1.3, painter=None)
+xax = graph.axis.linear(min=-1, max=1.0, painter=None)
+yax = graph.axis.linear(min=-1.3, max=1.3, painter=None)
 g = graph.graphxy(width=10, ratio=2, x=xax, y=yax)
 fline = g.plot(graph.data.function("y=sin(1.0/(x**2+0.02122))", points=1000))
 horiz = g.plot(graph.data.function("y=0.5*x", points=2))

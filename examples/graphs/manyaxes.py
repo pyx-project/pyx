@@ -3,9 +3,9 @@ from pyx import *
 
 # a xy-graph has linear x and y axes by default
 # they might be overwritten and futher axes might be added as well
-g = graph.type.graphxy(width=8, y=graph.axis.logaxis(), y2=graph.axis.linaxis(),
-                       y3=graph.axis.linaxis(min=0, max=1),
-                       y4=graph.axis.linaxis(min=0, max=2))
+g = graph.graphxy(width=8, y=graph.axis.log(), y2=graph.axis.lin(),
+                  y3=graph.axis.lin(min=0, max=1),
+                  y4=graph.axis.lin(min=0, max=2))
 
 # we generate some data and a function with multiple arguments
 d = [(i, math.exp(0.8*i+random.random())) for i in range(1,10)]

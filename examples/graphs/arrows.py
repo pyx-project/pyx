@@ -13,8 +13,8 @@ s = lambda k: 5*abs(f(k))                          # magnitude of function value
 a = lambda k: 180/pi*atan2(f(k).imag, f(k).real)   # direction of function value
 
 g = graph.graphxy(width=8,
-                  x=graph.axis.linaxis(min=0, max=10),
-                  y=graph.axis.linaxis(min=0, max=10))
+                  x=graph.axis.linear(min=0, max=10),
+                  y=graph.axis.linear(min=0, max=10))
 g.plot(graph.data.paramfunction("k", 0, 120,
                                 "x, y, size, angle = x(k), y(k), s(k), a(k)",
                                 points=121, context=locals()),# access extern
