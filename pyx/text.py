@@ -23,7 +23,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import copy, cStringIO, exceptions, glob, os, threading, Queue, traceback, re, struct, string, tempfile, sys, atexit, time
-import config, helper, unit, bbox, box, base, canvas, color, trafo, path, prolog, pykpathsea, version
+import config, helper, unit, bbox, box, base, canvas, color, trafo, path, prolog, pykpathsea, version, style, attr
 
 class fix_word:
     def __init__(self, word):
@@ -2581,8 +2581,7 @@ class texrunner:
             first = 1
             if self.texipc and self.dvicopy:
                 raise RuntimeError("texipc and dvicopy can't be mixed up")
-        helper.checkattr(args, allowmulti=(_texsetting, texmessage, trafo._trafo, base.PathStyle))
-                                           #XXX: should we distiguish between StrokeStyle and FillStyle?
+        helper.checkattr(args, allowmulti=(_texsetting, texmessage, trafo._trafo, base.fillattr))
         texsettings = helper.getattrs(args, _texsetting, default=[])
         exclusive = []
         for texsetting in texsettings:
@@ -2605,7 +2604,7 @@ class texrunner:
             raise TexResultError("box extents not found", self)
         left, right, height, depth = map(lambda x: float(x) * 72.0 / 72.27, match.group("lt", "rt", "ht", "dp"))
         box = _textbox(x, y, left, right, height, depth, self, self.dvinumber, self.page,
-                       *helper.getattrs(args, base.PathStyle, default=[]))
+                       *helper.getattrs(args, base.fillattr, default=[]))
         for t in helper.getattrs(args, trafo._trafo, default=()):
             box.reltransform(t)
         return box

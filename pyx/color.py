@@ -21,17 +21,17 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import attr
+import attr, base
 
-class color(attr._exclusiveattr):
+class color(attr.exclusiveattr, base.strokeattr, base.fillattr):
 
     """base class for all colors"""
 
     def __init__(self):
-        attr._exclusiveattr.__init__(self, color)
+        attr.exclusiveattr.__init__(self, color)
 
 
-clear = attr._classclear(color)
+clear = attr.clearclass(color)
 
 
 class grey(color):
@@ -169,12 +169,15 @@ cmyk.white          = cmyk.White
 cmyk.black          = cmyk.Black
 
 
-class palette(attr._exclusiveattr):
+# TODO: - a palette is not an attribute (as it is not an PSOp)
+#       - should we have a changeable attribute instead, which
+#         defines a get method (#item out of #items)?
+
+class palette:
 
     """palette is a collection of two colors for calculating transitions between them"""
 
     def __init__(self, mincolor, maxcolor, min=0, max=1):
-        attr._exclusiveattr.__init__(self, palette)
         if mincolor.__class__ != maxcolor.__class__:
             raise ValueError
         self.colorclass = mincolor.__class__
@@ -190,7 +193,7 @@ class palette(attr._exclusiveattr):
                           (self.max - index) * self.mincolor.color[key]) / float(self.max - self.min)
         return self.colorclass(**color)
 
-palette.clear = attr._classclear(palette)
+#palette.clear = attr._classclear(palette)
 
 palette.Gray           = palette(gray.white, gray.black)
 palette.Grey           = palette.Gray

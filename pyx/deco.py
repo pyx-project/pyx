@@ -158,7 +158,7 @@ class _decoratedpath(base.PSCmd):
 # Path decorators
 #
 
-class _deco(attr._attr):
+class _deco(attr.attr):
 
     """decorators
 
@@ -195,7 +195,7 @@ class stroked(_deco):
 
         return dp
 
-stroked.clear = attr._classclear(stroked)
+stroked.clear = attr.clearclass(stroked)
 
 
 class filled(_deco):
@@ -211,7 +211,7 @@ class filled(_deco):
 
         return dp
 
-filled.clear = attr._classclear(filled)
+filled.clear = attr.clearclass(filled)
 
 
 def _arrowheadtemplatelength(anormpath, size):

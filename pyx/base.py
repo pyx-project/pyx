@@ -58,6 +58,17 @@ class PSCmd(PSOp):
         raise NotImplementedError, "cannot call virtual method bbox()"
 
 #
+# attribute classification
+#
+
+# XXX is any fillattr also a strokeattr
+#     (could be defined by inheritance here once and for all)
+
+class strokeattr(PSOp): pass
+
+class fillattr(PSOp): pass
+
+#
 # PyX Exception class
 #
 

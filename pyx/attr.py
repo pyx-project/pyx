@@ -23,13 +23,11 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-import base
-
 #
 # some helper functions for the attribute handling
 #
 
-def _mergeattrs(attrs):
+def mergeattrs(attrs):
     """perform merging of the attribute list attrs as defined by the
     merge methods of the attributes"""
     newattrs = []
@@ -38,7 +36,7 @@ def _mergeattrs(attrs):
     return newattrs
 
 
-def _getattrs(attrs, getclasses):
+def getattrs(attrs, getclasses):
     """return all attributes in the attribute list attrs, which are
     instances of one of the classes in getclasses"""
     result = []
@@ -46,29 +44,31 @@ def _getattrs(attrs, getclasses):
         for attr in attrs:
             if isinstance(attr, getclasses):
                 result.append(attr)
+                break
     except TypeError: # workaround for Python 2.1 and older
         for attr in attrs:
             for getclass in getclasses:
                 if isinstance(attr, getclass):
                     result.append(attr)
+                    break
     return result
 
 
-def _checkattrs(attrs, allowedclasses):
+def checkattrs(attrs, allowedclasses):
     """check whether only attributes which are instances of classes in
     allowedclasses are present in the attribute list attrs"""
-    if len(attrs) != len(_getattrs(attrs, allowedclasses)):
-        for attr1, attr2 in zip(attrs, _getattrs(attrs, allowedclasses)):
+    if len(attrs) != len(getattrs(attrs, allowedclasses)):
+        for attr1, attr2 in zip(attrs, getattrs(attrs, allowedclasses)):
             if attr1 is not attr2:
                 raise TypeError("instance %r not allowed" % attr1)
         else:
-            raise TypeError("instance %r not allowed" % attrs[len(_getattrs(attrs, allowedclasses))])
+            raise TypeError("instance %r not allowed" % attrs[len(getattrs(attrs, allowedclasses))])
 
 #
 # attr class and simple descendants
 #
 
-class _attr(base.PSOp):
+class attr:
 
     """ attr is the base class of all attributes, i.e., colors, decorators,
     styles, text attributes and trafos"""
@@ -85,7 +85,7 @@ class _attr(base.PSOp):
         return attrs
 
 
-class _exclusiveattr(_attr):
+class exclusiveattr(attr):
 
     """an attribute which swallows all but the last of the same type in an
     attribute list"""
@@ -99,7 +99,7 @@ class _exclusiveattr(_attr):
         return attrs
 
 
-class _classclear(_attr):
+class clearclass(attr):
 
     """a special attribute which allows to remove all predecessing attributes of
     the same type in an attribute list"""
@@ -111,7 +111,9 @@ class _classclear(_attr):
         return [attr for attr in attrs if not isinstance(attr, self.clearclass)]
 
 
-class _clear(_attr):
+# XXX is _clear a good choice?
+
+class _clear(attr):
 
     """a special attribute which removes all predecessing attributes
     in an attribute list"""
@@ -119,8 +121,9 @@ class _clear(_attr):
     def merge(self, attrs):
         return []
 
-# the only externally visible attribute is "clear", an instance of "_clear",
-# which can be used to remove all predecessing attributes in an attribute list
+# we define the attribute "clear", an instance of "_clear",
+# which can be used to remove all predecessing attributes
+# in an attribute list
 
 clear = _clear()
 

@@ -37,19 +37,14 @@ import attr, base, bbox, color, deco, path, unit, prolog, style, text, trafo, ve
 
 # known paperformats as tuple(width, height)
 
-_paperformats = { "a4"      : ("210 t mm",  "297 t mm"),
-                  "A4"      : ("210 t mm",  "297 t mm"),
-                  "a3"      : ("297 t mm",  "420 t mm"),
+_paperformats = { "A4"      : ("210 t mm",  "297 t mm"),
                   "A3"      : ("297 t mm",  "420 t mm"),
-                  "a2"      : ("420 t mm",  "594 t mm"),
                   "A2"      : ("420 t mm",  "594 t mm"),
-                  "a1"      : ("594 t mm",  "840 t mm"),
                   "A1"      : ("594 t mm",  "840 t mm"),
-                  "a0"      : ("840 t mm", "1188 t mm"),
                   "A0"      : ("840 t mm", "1188 t mm"),
-                  "a0b"     : ("910 t mm", "1370 t mm"),
-                  "letter"  : ("8.5 t inch",   "11 t inch"),
-                  "legal"   : ("8.5 t inch",   "14 t inch")}
+                  "A0B"     : ("910 t mm", "1370 t mm"),
+                  "LETTER"  : ("8.5 t inch",   "11 t inch"),
+                  "LEGAL"   : ("8.5 t inch",   "14 t inch")}
 
 
 #
@@ -202,7 +197,7 @@ class _canvas(base.PSCmd):
 
         """
 
-        attr._checkattrs(styles, [color.color, style._style])
+        attr.checkattrs(styles, [base.strokeattr, base.fillattr])
         for astyle in styles:
             self.insert(astyle)
         return self
@@ -219,19 +214,19 @@ class _canvas(base.PSCmd):
 
         """
 
-        attr._mergeattrs(args)
-        attr._checkattrs(args, [color.color, deco._deco, style._style, trafo._trafo])
+        attr.mergeattrs(args)
+        attr.checkattrs(args, [deco._deco, base.fillattr, base.strokeattr, trafo._trafo])
 
-        for t in attr._getattrs(args, [trafo._trafo]):
+        for t in attr.getattrs(args, [trafo._trafo]):
             path = path.transformed(t)
 
         dp = deco._decoratedpath(path)
 
         # set global styles
-        dp.styles = attr._getattrs(args, [color.color, style._style])
+        dp.styles = attr.getattrs(args, [base.fillattr, base.strokeattr])
 
         # add path decorations and modify path accordingly
-        for adeco in attr._getattrs(args, [deco._deco]):
+        for adeco in attr.getattrs(args, [deco._deco]):
             dp = adeco.decorate(dp)
 
         self.insert(dp)
@@ -294,7 +289,7 @@ class _canvas(base.PSCmd):
 # canvas for patterns
 #
 
-class pattern(_canvas, style._style):
+class pattern(_canvas, base.fillattr):
 
     def __init__(self, painttype=1, tilingtype=1, xstep=None, ystep=None, bbox=None, trafo=None):
         _canvas.__init__(self)
@@ -399,7 +394,7 @@ class canvas(_canvas):
         if paperformat:
             # center (optionally rotated) output on page
             try:
-                width, height = _paperformats[paperformat]
+                width, height = _paperformats[paperformat.upper()]
             except KeyError:
                 raise KeyError, "unknown paperformat '%s'" % paperformat
             width = unit.topt(width)
