@@ -167,6 +167,7 @@ class MathTreeTestCase(unittest.TestCase):
         assert abs(myparser.parse("a+b-c*d/e**f-2.999232").Calc(**abcdef)) <= 1e-10
         assert abs(myparser.parse("a**b/c*d-e+f-7/3").Calc(**abcdef)) <= 1e-10
         assert abs(myparser.parse("((a-(b+c))/(d*e))**f-6.4e-5").Calc(**abcdef)) <= 1e-10
+        assert abs(myparser.parse("-a**2+1").Calc(**abc)) <= 1e-10
         assert abs(myparser.parse("neg(1)+1").Calc()) <= 1e-10
         assert abs(myparser.parse("abs(2)-2").Calc()) <= 1e-10
         assert abs(myparser.parse("abs(-2)-2").Calc()) <= 1e-10
