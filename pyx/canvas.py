@@ -837,7 +837,7 @@ class _canvas(base.PSCmd, attrlist.attrlist):
 
 class pattern(_canvas, base.PathStyle):
 
-    def __init__(self, patterntype=1, painttype=1, tilingtype=1, xstep=None, ystep=None):
+    def __init__(self, patterntype=1, painttype=1, tilingtype=1, xstep=None, ystep=None, trafo=None):
         _canvas.__init__(self)
         self.id = "pattern%d" % id(self)
         # XXX: some checks are in order
@@ -846,6 +846,7 @@ class pattern(_canvas, base.PathStyle):
         self.tilingtype = tilingtype
         self.xstep = xstep
         self.ystep = ystep
+        self.patterntrafo = trafo
 
     def bbox(self):
         return bbox.bbox()
@@ -875,7 +876,8 @@ class pattern(_canvas, base.PathStyle):
         _canvas.write(self, stringfile)
         patternproc = stringfile.getvalue()
         stringfile.close()
-        patternsuffix = "end\n} bind\n>>\nmatrix\nmakepattern"
+        patterntrafostring = self.patterntrafo is None and "matrix" or str(self.patterntrafo)
+        patternsuffix = "end\n} bind\n>>\n%s\nmakepattern" % patterntrafostring
         pr = _canvas.prolog(self)     
         pr.append(definition(self.id, string.join((patternprefix, patternproc, patternsuffix), "")))
         return pr

@@ -97,7 +97,7 @@ class _trafo(base.PSOp):
             raise NotImplementedError, "can only multiply two transformations"
 
     def __str__(self):
-        return "[%f %f %f %f %f %f] concat\n" % \
+        return "[%f %f %f %f %f %f]" % \
                ( self.matrix[0][0], self.matrix[1][0],
                  self.matrix[0][1], self.matrix[1][1],
                  self.vector[0], self.vector[1] )
