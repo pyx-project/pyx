@@ -23,7 +23,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import copy, cStringIO, exceptions, glob, os, threading, Queue, traceback, re, struct, string, tempfile, sys, atexit, time
-import config, helper, unit, bbox, box, base, canvas, color, trafo, path, prolog, pykpathsea, version, style, attr
+import config, helper, unit, bbox, box, base, canvas, color, trafo, path, prolog, pykpathsea, version, attr, style
 
 class fix_word:
     def __init__(self, word):
@@ -1692,258 +1692,48 @@ texmessage.ignore = _texmessageignore()
 
 
 ###############################################################################
-# texsettings
-# - texsettings are used to modify a TeX/LaTeX expression
-#   to fit the users need
-# - texsettings have an order attribute (id), because the order is usually
-#   important (e.g. you can not change the fontsize in mathmode in LaTeX)
-# - lower id's get applied later (are more outside -> mathmode has a higher
-#   id than fontsize)
-# - order attributes are used to exclude complementary settings (with the
-#   same id)
-# - texsettings might (in rare cases) depend on each other (e.g. parbox and
-#   valign)
+# textattrs
 ###############################################################################
 
-class _Itexsetting:
-    """tex setting
-    - modifies a TeX/LaTeX expression"""
+_textattrspreamble = ""
 
-    id = 0
-    """order attribute for TeX settings
-    - higher id's will be applied first (most inside)"""
+class textattr:
+    "a textattr defines a apply method, which modifies a (La)TeX expression"
 
-    exclusive = 0
-    """marks exclusive effect of the setting
-    - when set, settings with this id exclude each other
-    - when unset, settings with this id do not exclude each other"""
-
-    def modifyexpr(self, expr, texsettings, texrunner):
-        """modifies the TeX/LaTeX expression
-        - expr is the original expression
-        - the return value is the modified expression
-        - texsettings contains a list of all texsettings (in case a tex setting
-          depends on another texsetting)
-        - texrunner contains the texrunner in case the texsetting depends
-          on it"""
-
-    def __cmp__(self, other):
-        """compare texsetting with other
-        - other is a texsetting as well
-        - performs an id comparison (NOTE: higher id's come first!!!)"""
-
-
-# preamble settings for texsetting macros
-_texsettingpreamble = ""
-
-class _texsetting:
-
-    exclusive = 1
-
-    def __cmp__(self, other):
-        return -cmp(self.id, other.id) # note the sign!!!
-
-
-class halign(_texsetting):
-    """horizontal alignment
-    the left/right splitting is performed within the PyXBox routine"""
-
-    __implements__ = _Itexsetting
-
-    id = 1000
+class halign(attr.exclusiveattr, textattr):
 
     def __init__(self, hratio):
         self.hratio = hratio
+        attr.exclusiveattr.__init__(self, halign)
 
-    def modifyexpr(self, expr, texsettings, texrunner):
+    def apply(self, expr):
         return r"\gdef\PyXHAlign{%.5f}%s" % (self.hratio, expr)
 
-halign.left = halign(0)
 halign.center = halign(0.5)
 halign.right = halign(1)
+halign.clear = attr.clearclass(halign)
+halign.left = halign.clear
 
 
-_texsettingpreamble += "\\newbox\\PyXBoxVAlign%\n\\newdimen\PyXDimenVAlign%\n"
+class _localattr: pass
 
-class valign(_texsetting):
-    "vertical alignment"
-
-    id = 7000
-
-
-class _valigntop(valign):
-
-    __implements__ = _Itexsetting
-
-    def modifyexpr(self, expr, texsettings, texrunner):
-        return r"\setbox\PyXBoxVAlign=\hbox{{%s}}\lower\ht\PyXBoxVAlign\box\PyXBoxVAlign" % expr
-
-
-class _valignmiddle(valign):
-
-    __implements__ = _Itexsetting
-
-    def modifyexpr(self, expr, texsettings, texrunner):
-        return r"\setbox\PyXBoxVAlign=\hbox{{%s}}\PyXDimenVAlign=0.5\ht\PyXBoxVAlign\advance\PyXDimenVAlign by -0.5\dp\PyXBoxVAlign\lower\PyXDimenVAlign\box\PyXBoxVAlign" % expr
-
-
-class _valignbottom(valign):
-
-    __implements__ = _Itexsetting
-
-    def modifyexpr(self, expr, texsettings, texrunner):
-        return r"\setbox\PyXBoxVAlign=\hbox{{%s}}\raise\dp\PyXBoxVAlign\box\PyXBoxVAlign" % expr
-
-
-class _valignbaseline(valign):
-
-    __implements__ = _Itexsetting
-
-    def modifyexpr(self, expr, texsettings, texrunner):
-        for texsetting in texsettings:
-            if isinstance(texsetting, parbox):
-                raise RuntimeError("valign.baseline: specify top/middle/bottom baseline for parbox")
-        return expr
-
-
-class _valignxxxbaseline(valign):
-
-    def modifyexpr(self, expr, texsettings, texrunner):
-        for texsetting in texsettings:
-            if isinstance(texsetting, parbox):
-                break
-        else:
-            raise RuntimeError(self.noparboxmessage)
-        return expr
-
-
-class _valigntopbaseline(_valignxxxbaseline):
-
-    __implements__ = _Itexsetting
-
-    noparboxmessage = "valign.topbaseline: no parbox defined"
-
-
-class _valignmiddlebaseline(_valignxxxbaseline):
-
-    __implements__ = _Itexsetting
-
-    noparboxmessage = "valign.middlebaseline: no parbox defined"
-
-
-class _valignbottombaseline(_valignxxxbaseline):
-
-    __implements__ = _Itexsetting
-
-    noparboxmessage = "valign.bottombaseline: no parbox defined"
-
-
-valign.top = _valigntop()
-valign.middle = _valignmiddle()
-valign.center = valign.middle
-valign.bottom = _valignbottom()
-valign.baseline = _valignbaseline()
-valign.topbaseline = _valigntopbaseline()
-valign.middlebaseline = _valignmiddlebaseline()
-valign.centerbaseline = valign.middlebaseline
-valign.bottombaseline = _valignbottombaseline()
-
-
-_texsettingpreamble += "\\newbox\\PyXBoxVBox%\n\\newdimen\PyXDimenVBox%\n"
-
-
-class _parbox(_texsetting):
-    "goes into the vertical mode"
-
-    __implements__ = _Itexsetting
-
-    id = 7100
-
-    def __init__(self, width):
-        self.width = width
-
-    def modifyexpr(self, expr, texsettings, texrunner):
-        boxkind = "vtop"
-        for texsetting in texsettings:
-            if isinstance(texsetting, valign):
-                if (not isinstance(texsetting, _valigntop) and
-                    not isinstance(texsetting, _valignmiddle) and
-                    not isinstance(texsetting, _valignbottom) and
-                    not isinstance(texsetting, _valigntopbaseline)):
-                    if isinstance(texsetting, _valignmiddlebaseline):
-                        boxkind = "vcenter"
-                    elif isinstance(texsetting, _valignbottombaseline):
-                        boxkind = "vbox"
-                    else:
-                        raise RuntimeError("parbox couldn'd identify the valign instance")
-        if boxkind == "vcenter":
-            return r"\linewidth%.5ftruept\setbox\PyXBoxVBox=\hbox{{\vtop{\hsize\linewidth{%s}}}}\PyXDimenVBox=0.5\dp\PyXBoxVBox\setbox\PyXBoxVBox=\hbox{{\vbox{\hsize\linewidth{%s}}}}\advance\PyXDimenVBox by -0.5\dp\PyXBoxVBox\lower\PyXDimenVBox\box\PyXBoxVBox" % (self.width, expr, expr)
-        else:
-            return r"\linewidth%.5ftruept\%s{\hsize\linewidth{%s}}" % (self.width * 72.27 / 72, boxkind, expr)
-
-
-class parbox(_parbox):
-
-    def __init__(self, width):
-        _parbox.__init__(self, unit.topt(width))
-
-
-class vshift(_texsetting):
-
-    exclusive = 0
-
-    id = 5000
-
-
-class _vshiftchar(vshift):
-    "vertical down shift by a fraction of a character height"
-
-    def __init__(self, lowerratio, heightstr="0"):
-        self.lowerratio = lowerratio
-        self.heightstr = heightstr
-
-    def modifyexpr(self, expr, texsettings, texrunner):
-        return r"\setbox0\hbox{{%s}}\lower%.5f\ht0\hbox{{%s}}" % (self.heightstr, self.lowerratio, expr)
-
-
-class _vshiftmathaxis(vshift):
-    "vertical down shift by the height of the math axis"
-
-    def modifyexpr(self, expr, texsettings, texrunner):
-        return r"\setbox0\hbox{$\vcenter{\vrule width0pt}$}\lower\ht0\hbox{{%s}}" % expr
-
-
-vshift.char = _vshiftchar
-vshift.bottomzero = vshift.char(0)
-vshift.middlezero = vshift.char(0.5)
-vshift.centerzero = vshift.middlezero
-vshift.topzero = vshift.char(1)
-vshift.mathaxis = _vshiftmathaxis()
-
-
-class _mathmode(_texsetting):
+class _mathmode(attr.attr, textattr, _localattr):
     "math mode"
 
-    __implements__ = _Itexsetting
-
-    id = 9000
-
-    def modifyexpr(self, expr, texsettings, texrunner):
+    def apply(self, expr):
         return r"$\displaystyle{%s}$" % expr
 
 mathmode = _mathmode()
+nomathmode = attr.clearclass(_mathmode)
 
 
 defaultsizelist = ["normalsize", "large", "Large", "LARGE", "huge", "Huge", None, "tiny", "scriptsize", "footnotesize", "small"]
 
-class size(_texsetting):
+class size(attr.sortattr, textattr, _localattr):
     "font size"
 
-    __implements__ = _Itexsetting
-
-    id = 3000
-
     def __init__(self, expr, sizelist=defaultsizelist):
+        attr.sortattr.__init__(self, [_mathmode])
         if helper.isinteger(expr):
             if expr >= 0 and expr < sizelist.index(None):
                 self.size = sizelist[expr]
@@ -1954,12 +1744,96 @@ class size(_texsetting):
         else:
             self.size = expr
 
-    def modifyexpr(self, expr, texsettings, texrunner):
+    def apply(self, expr):
         return r"\%s{%s}" % (self.size, expr)
 
 for s in defaultsizelist:
     if s is not None:
-        size.__dict__[s] = size(s)
+        setattr(size, s, size(s))
+
+
+_textattrspreamble += "\\newbox\\PyXBoxVBox%\n\\newdimen\PyXDimenVBox%\n"
+
+class parbox_pt(attr.exclusiveattr, attr.sortattr, textattr):
+
+    top = 1
+    middle = 2
+    bottom = 3
+
+    def __init__(self, width, baseline=middle):
+        self.width = width
+        self.baseline = baseline
+        attr.sortattr.__init__(self, [_localattr])
+        attr.exclusiveattr.__init__(self, parbox_pt)
+
+    def apply(self, expr):
+        if self.baseline == self.top:
+            return r"\linewidth%.5ftruept\vtop{\hsize\linewidth{%s}}" % (self.width * 72.27 / 72, expr)
+        elif self.baseline == self.middle:
+            return r"\linewidth%.5ftruept\setbox\PyXBoxVBox=\hbox{{\vtop{\hsize\linewidth{%s}}}}\PyXDimenVBox=0.5\dp\PyXBoxVBox\setbox\PyXBoxVBox=\hbox{{\vbox{\hsize\linewidth{%s}}}}\advance\PyXDimenVBox by -0.5\dp\PyXBoxVBox\lower\PyXDimenVBox\box\PyXBoxVBox" % (self.width, expr, expr)
+        elif self.baseline == self.bottom:
+            return r"\linewidth%.5ftruept\vbox{\hsize\linewidth{%s}}" % (self.width * 72.27 / 72, expr)
+        else:
+            RuntimeError("invalid baseline argument")
+
+class parbox(parbox_pt):
+
+    def __init__(self, width, **kwargs):
+        parbox_pt.__init__(self, unit.topt(width), **kwargs)
+
+
+_textattrspreamble += "\\newbox\\PyXBoxVAlign%\n\\newdimen\PyXDimenVAlign%\n"
+
+class valign(attr.exclusiveattr, attr.sortattr, textattr):
+
+    def __init__(self):
+        attr.exclusiveattr.__init__(self, valign)
+        attr.sortattr.__init__(self, [parbox_pt, _localattr])
+
+class _valigntop(valign):
+
+    def apply(self, expr):
+        return r"\setbox\PyXBoxVAlign=\hbox{{%s}}\lower\ht\PyXBoxVAlign\box\PyXBoxVAlign" % expr
+
+class _valignbottom(valign):
+
+    def apply(self, expr):
+        return r"\setbox\PyXBoxVAlign=\hbox{{%s}}\raise\dp\PyXBoxVAlign\box\PyXBoxVAlign" % expr
+
+
+valign.top = _valigntop()
+valign.bottom = _valignbottom()
+valign.clear = attr.clearclass(valign)
+valign.baseline = valign.clear
+
+
+class _vshift(attr.sortattr, textattr):
+
+    def __init__(self):
+        attr.sortattr.__init__(self, [valign, parbox_pt, _localattr])
+
+class vshift(_vshift):
+    "vertical down shift by a fraction of a character height"
+
+    def __init__(self, lowerratio, heightstr="0"):
+        _vshift.__init__(self)
+        self.lowerratio = lowerratio
+        self.heightstr = heightstr
+
+    def apply(self, expr):
+        return r"\setbox0\hbox{{%s}}\lower%.5f\ht0\hbox{{%s}}" % (self.heightstr, self.lowerratio, expr)
+
+class _vshiftmathaxis(_vshift):
+    "vertical down shift by the height of the math axis"
+
+    def apply(self, expr):
+        return r"\setbox0\hbox{$\vcenter{\vrule width0pt}$}\lower\ht0\hbox{{%s}}" % expr
+
+
+vshift.bottomzero = vshift(0)
+vshift.middlezero = vshift(0.5)
+vshift.topzero = vshift(1)
+vshift.mathaxis = _vshiftmathaxis()
 
 
 ###############################################################################
@@ -2023,7 +1897,7 @@ class _textbox(box._rect, base.PSCmd):
     - _textbox instances can be inserted into a canvas
     - the output is contained in a page of the dvifile available thru the texrunner"""
 
-    def __init__(self, x, y, left, right, height, depth, texrunner, dvinumber, page, *styles):
+    def __init__(self, x, y, left, right, height, depth, texrunner, dvinumber, page, *attrs):
         self.texttrafo = trafo._translate(x, y)
         box._rect.__init__(self, x - left, y - depth,
                                  left + right, depth + height,
@@ -2031,7 +1905,7 @@ class _textbox(box._rect, base.PSCmd):
         self.texrunner = texrunner
         self.dvinumber = dvinumber
         self.page = page
-        self.styles = styles
+        self.attrs = attrs
 
     def transform(self, *trafos):
         box._rect.transform(self, *trafos)
@@ -2043,15 +1917,15 @@ class _textbox(box._rect, base.PSCmd):
 
     def prolog(self):
         result = []
-        for cmd in self.styles:
+        for cmd in self.attrs:
             result.extend(cmd.prolog())
         return result + self.texrunner.prolog(self.dvinumber, self.page)
 
     def write(self, file):
         canvas._gsave().write(file) # XXX: canvas?, constructor call needed?
         self.texttrafo.write(file)
-        for style in self.styles:
-            style.write(file)
+        for attr in self.attrs:
+            attr.write(file)
         self.texrunner.write(file, self.dvinumber, self.page)
         canvas._grestore().write(file)
 
@@ -2059,9 +1933,9 @@ class _textbox(box._rect, base.PSCmd):
 
 class textbox(_textbox):
 
-    def __init__(self, x, y, left, right, height, depth, texrunner, dvinumber, page, *styles):
+    def __init__(self, x, y, left, right, height, depth, texrunner, dvinumber, page, *attrs):
         _textbox.__init__(self, unit.topt(x), unit.topt(y), unit.topt(left), unit.topt(right),
-                          unit.topt(height), unit.topt(depth), texrunner, dvinumber, page, *styles)
+                          unit.topt(height), unit.topt(depth), texrunner, dvinumber, page, *attrs)
 
 
 def _cleantmp(texrunner):
@@ -2268,7 +2142,7 @@ class texrunner:
                          "\\newbox\\PyXBoxHAligned%\n" # PyXBox will contain the horizontal aligned output
                          "\\newdimen\\PyXDimenHAlignLT%\n" # PyXDimenHAlignLT/RT will contain the left/right extent
                          "\\newdimen\\PyXDimenHAlignRT%\n" +
-                         _texsettingpreamble + # insert preambles for texsetting macros
+                         _textattrspreamble + # insert preambles for textattrs macros
                          "\\long\\def\\ProcessPyXBox#1#2{%\n" # the ProcessPyXBox definition (#1 is expr, #2 is page number)
                          "\\setbox\\PyXBox=\\hbox{{#1}}%\n" # push expression into PyXBox
                          "\\PyXDimenHAlignLT=\\PyXHAlign\\wd\\PyXBox%\n" # calculate the left/right extent
@@ -2563,12 +2437,11 @@ class texrunner:
         """create text by passing expr to TeX/LaTeX
         - returns a textbox containing the result from running expr thru TeX/LaTeX
         - the box center is set to x, y
-        - *args may contain style parameters, namely:
-          - an halign instance
-          - _texsetting instances
+        - *args may contain attr parameters, namely:
+          - textattr instances
           - texmessage instances
           - trafo._trafo instances
-          - base.PathStyle instances"""
+          - style.fillstyle instances"""
         if expr is None:
             raise ValueError("None expression is invalid")
         if self.texdone:
@@ -2581,18 +2454,12 @@ class texrunner:
             first = 1
             if self.texipc and self.dvicopy:
                 raise RuntimeError("texipc and dvicopy can't be mixed up")
-        helper.checkattr(args, allowmulti=(_texsetting, texmessage, trafo._trafo, base.fillattr))
-        texsettings = helper.getattrs(args, _texsetting, default=[])
-        exclusive = []
-        for texsetting in texsettings:
-            if texsetting.exclusive:
-                if texsetting.id not in exclusive:
-                    exclusive.append(texsetting.id)
-                else:
-                    raise RuntimeError("multiple occurance of exclusive texsetting with id=%i" % texsetting.id)
-        texsettings.sort()
-        for texsetting in texsettings:
-            expr = texsetting.modifyexpr(expr, texsettings, self)
+        helper.checkattr(args, allowmulti=(textattr, texmessage, trafo._trafo, style.fillstyle))
+        textattrs = attr.getattrs(args, [textattr])
+        textattrs = attr.mergeattrs(textattrs)
+        lentextattrs = len(textattrs)
+        for i in range(lentextattrs):
+            expr = textattrs[lentextattrs-1-i].apply(expr)
         self.execute(expr, *helper.getattrs(args, texmessage, default=self.texmessagedefaultrun))
         if self.texipc:
             if first:
@@ -2604,7 +2471,7 @@ class texrunner:
             raise TexResultError("box extents not found", self)
         left, right, height, depth = map(lambda x: float(x) * 72.0 / 72.27, match.group("lt", "rt", "ht", "dp"))
         box = _textbox(x, y, left, right, height, depth, self, self.dvinumber, self.page,
-                       *helper.getattrs(args, base.fillattr, default=[]))
+                       *helper.getattrs(args, style.fillstyle, default=[]))
         for t in helper.getattrs(args, trafo._trafo, default=()):
             box.reltransform(t)
         return box

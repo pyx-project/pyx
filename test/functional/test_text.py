@@ -37,11 +37,11 @@ c.text(7, 5, "\\vrule width1truecm height1truecm")
 c.text(6.2, 0, "0", text.vshift.middlezero)
 c.text(-1.2, 0, "abc", text.vshift.mathaxis, text.halign.right)
 
-t1 = text.text(0, 0, "a \PyXMarker{beforeb}b\PyXMarker{afterb} c d e f g h i j k l m n o p q r s t u v w x y z", text.parbox(2), text.valign.bottombaseline)
+t1 = text.text(0, 0, "a \PyXMarker{beforeb}b\PyXMarker{afterb} c d e f g h i j k l m n o p q r s t u v w x y z", text.parbox(2, baseline=text.parbox.bottom))
 c.insert(t1)
 c.stroke(t1.path())
 
-t2 = c.insert(text.text(3, 0, "a \PyXMarker{beforeb}b\PyXMarker{afterb} c d e f g h i j k l m n o p q r s t u v w x y z", text.parbox(2)))
+t2 = c.insert(text.text(3, 0, "a \PyXMarker{beforeb}b\PyXMarker{afterb} c d e f g h i j k l m n o p q r s t u v w x y z", text.parbox(2, baseline=text.parbox.top)))
 c.stroke(t2.path())
 c.stroke(path.line(*(t1.marker("beforeb") + t2.marker("beforeb"))), color.rgb.red)
 c.stroke(path.line(*(t1.marker("afterb") + t2.marker("afterb"))), color.rgb.green)
