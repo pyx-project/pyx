@@ -314,7 +314,7 @@ class linpart(anypart):
         return ticks
 
     defaultpart = getpart
-        
+
 
 class autolinpart(linpart):
     defaulttickfracslist = ((frac(1, 1), frac(1, 2)),
@@ -1172,9 +1172,10 @@ class axispainter(attrlist.attrlist):
 
 class linkaxispainter(axispainter):
 
-    def __init__(self, skipticklevel = None, skiplabellevel = 0, **args):
+    def __init__(self, skipticklevel = None, skiplabellevel = 0, zerolinestyles=None, **args):
         self.skipticklevel = skipticklevel
         self.skiplabellevel = skiplabellevel
+        self.zerolinestyles = zerolinestyles
         axispainter.__init__(self, **args)
 
     def paint(self, graph, axis):
@@ -1408,7 +1409,7 @@ class graphxy(canvas.canvas):
                 #      axes may share their autoparting, because the axes are processed sequentially
                 rate = axis.rate.getrate(axis.ticks, 1)
                 #print rate, axis.ticks
-                maxworse = 4
+                maxworse = 4 #TODO !!! (THIS JUST DOESN'T WORK WELL!!!)
                 worse = 0
                 while worse < maxworse:
                     newticks = axis.part.lesspart()
