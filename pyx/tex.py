@@ -723,7 +723,7 @@ command by yourself.""")
 
     def _run(self):
         """run (La)TeX & dvips, report errors, fill self.abbox & self.epsdata"""
-    
+
         if self.DoneRunTex:
             return
 
@@ -803,7 +803,7 @@ by yourself.""")
                 self.epsdata = epsdatafile.getvalue()
 
         # merge new sizes
-        
+
         OldSizes = self.Sizes
 
         try:
@@ -843,7 +843,7 @@ by yourself.""")
     def write(self, file):
         self._run()
         file.writelines(self.epsdata)
-       
+
     def define(self, Cmd, *attrs):
         if len(self.BoxCmds):
             raise TexDefAfterBoxError
@@ -903,7 +903,7 @@ by yourself.""")
         self.AllowedInstances(attrs, [style, fontsize, valign, missextent], [msghandler, ])
         mymissextent = self.ExtractInstance(attrs, missextent, self.defaultmissextent)
         return self._insertcmd(Cmd, *attrs).Extent(_extent.ht, mymissextent, self)
-                                                   
+
 
     def textdp(self, Cmd, *attrs):
         """get depth of Cmd"""
@@ -917,7 +917,7 @@ by yourself.""")
 class tex(_tex):
 
     """tex class adds the specializations to _tex needed for tex"""
-    
+
     def __init__(self, lfs="10pt", **addargs):
         _tex.__init__(self, **addargs)
         # XXX other ways for creating font sizes?

@@ -31,36 +31,6 @@ from math import log, exp, sqrt, pow
 goldenrule = 0.5 * (sqrt(5) + 1)
 
 
-class _ticklength(unit.length):
-
-    _base      = 0.15
-    _factor    = sqrt(2)
-
-    def __init__(self, l = _base, power = 0, factor = _factor):
-        self.factor = factor
-        unit.length.__init__(self, l = l * pow(self.factor, power), default_type="v")
-
-    def increment(self, power = 1):
-        return pow(self.factor, power) * self
-
-
-class ticklength(_ticklength):
-
-    SHORT      = _ticklength(power = -6)
-    SHORt      = _ticklength(power = -5)
-    SHOrt      = _ticklength(power = -4)
-    SHort      = _ticklength(power = -3)
-    Short      = _ticklength(power = -2)
-    short      = _ticklength(power = -1)
-    normal     = _ticklength()
-    long       = _ticklength(power = 1)
-    Long       = _ticklength(power = 2)
-    LOng       = _ticklength(power = 3)
-    LONg       = _ticklength(power = 4)
-    LONG       = _ticklength(power = 5)
-
-
-
 ################################################################################
 # maps
 ################################################################################
@@ -113,7 +83,7 @@ class _logmap(_linmap):
 
 
 ################################################################################
-# tick lists = partitions
+# tick list = partition
 ################################################################################
 
 class frac:
@@ -526,6 +496,9 @@ class momrate:
                 tickcounts[tick.ticklevel] += 1
             if (tick.labellevel != None) and (tick.labellevel < len(self.labelrateparams)):
                 labelcounts[tick.labellevel] += 1
+        # sum up tick/label-counts of lower levels
+        tickcounts = reduce(lambda x, y: x and (x + [ x[-1] + y, ]) or [y, ] , tickcounts, [])
+        labelcounts = reduce(lambda x, y: x and (x + [ x[-1] + y, ]) or [y, ] , labelcounts, [])
         return (tickcounts, labelcounts, )
 
     def evalrate(self, val, stretch, rateparam):
@@ -535,7 +508,7 @@ class momrate:
         rate = ((opt - min) * log((opt - min) / (val - min)) +
                 (max - opt) * log((max - opt) / (max - val))) / (max - min)
         return rate
-    
+
     def getrate(self, part, stretch):
         rate = 0
         weight = 0
@@ -551,7 +524,7 @@ class momrate:
         except (ZeroDivisionError, ValueError):
             rate = None
         return rate
-    
+
 #min = 1
 #for i in range(1, 10000):
 #    max = min * pow(1.5, i)
@@ -566,13 +539,89 @@ class momrate:
 
 
 
+
+################################################################################
+# painter
+################################################################################
+
+class tickpainter:
+
+    def __init__(self, value, factor = goldenrule, drawgrid = 0, gridstyles = canvas.linestyle.dotted):
+        self.value = value
+        self.factor = factor
+        self.drawgrid = drawgrid
+        if type(gridstyles) not in (types.TupleType, types.ListType):
+            self.gridstyles = (gridstyles, )
+        else:
+            self.gridstyles = gridstyles
+
+    def length(self, power):
+        return pow(self.factor, power) * unit.topt(self.value)
+
+    def paint(self, graph, x, y, dx, dy, tick, gridpath):
+        graph.draw(path._line(x, y, x + dx * self.length(-tick.ticklevel), y + dy * self.length(-tick.ticklevel)))
+        if self.drawgrid:
+            graph.draw(gridpath, *self.gridstyles)
+
+_base=0.2
+
+tickpainter.SHORT  = tickpainter("%f v cm" % (_base/math.sqrt(64)))
+tickpainter.SHORt  = tickpainter("%f v cm" % (_base/math.sqrt(32)))
+tickpainter.SHOrt  = tickpainter("%f v cm" % (_base/math.sqrt(16)))
+tickpainter.SHort  = tickpainter("%f v cm" % (_base/math.sqrt(8)))
+tickpainter.Short  = tickpainter("%f v cm" % (_base/math.sqrt(4)))
+tickpainter.short  = tickpainter("%f v cm" % (_base/math.sqrt(2)))
+tickpainter.normal = tickpainter("%f v cm" % _base)
+tickpainter.long   = tickpainter("%f v cm" % (_base*math.sqrt(2)))
+tickpainter.Long   = tickpainter("%f v cm" % (_base*math.sqrt(4)))
+tickpainter.LOng   = tickpainter("%f v cm" % (_base*math.sqrt(8)))
+tickpainter.LONg   = tickpainter("%f v cm" % (_base*math.sqrt(16)))
+tickpainter.LONG   = tickpainter("%f v cm" % (_base*math.sqrt(32)))
+
+
+class labelpainter:
+
+    def __init__(self):
+        pass
+
+    def gcd(self, m, n):
+        if m < n:
+            m, n = n, m
+        while n > 0:
+            m, n = n, m % n
+        return m
+
+    def decimalfrac(self, m, n):
+        # XXX ensure integer division!
+        gcd = self.gcd(m, n)
+        m, n = int(m / gcd), int(n / gcd)
+        frac = str(m / n)
+        rest = m % n
+        if rest:
+            frac += "."
+        while (rest):
+            rest *= 10
+            frac += str(rest / n)
+            rest = rest % n
+        return frac
+
+    def paint(self, graph, x, y, dx, dy, tick):
+        graph.tex._text(x - 10 * dx, y - 10 * dy, self.decimalfrac(tick.enum, tick.denom))
+
+
+labelpainter.normal = labelpainter()
+
+
+#print labelpainter.normal.decimalfrac(32, 33)
+#assert 0
+
 ################################################################################
 # axes
 ################################################################################
 
 class _axis:
 
-    def __init__(self, min=None, max=None, reverse=0, title=None, titleattr=None):
+    def __init__(self, min=None, max=None, reverse=0, title=None, titleattr=None, tickpainter = tickpainter.normal, labelpainter = labelpainter.normal):
         self.fixmin = min is not None
         self.fixmax = max is not None
         self.min = min
@@ -580,6 +629,8 @@ class _axis:
         self.reverse = reverse
         self.title = title
         self.titleattr = titleattr
+        self.tickpainter = tickpainter
+        self.labelpainter = labelpainter
         self.setrange()
 
     def setrange(self, min=None, max=None):
@@ -639,7 +690,7 @@ class graphxy(canvas.canvas):
 
     plotdata = [ ]
 
-    def __init__(self, tex, xpos, ypos, width=None, height=None, ratio=goldenrule, **axes):
+    def __init__(self, tex, xpos=0, ypos=0, width=None, height=None, ratio=goldenrule, **axes):
         canvas.canvas.__init__(self)
         self.tex = tex
         self.xpos = unit.topt(xpos)
@@ -665,10 +716,10 @@ class graphxy(canvas.canvas):
         if not PlotStyle:
             PlotStyle = Data.DefaultPlotStyle
         self.plotdata.append(_PlotData(Data, PlotStyle))
-    
+
     def bbox(self):
         return bbox.bbox(self.xpos, self.ypos, self.xpos + self.width, self.ypos + self.height)
-    
+
     def gatherranges(self):
         ranges = {}
         for pd in self.plotdata:
@@ -699,34 +750,29 @@ class graphxy(canvas.canvas):
             axis.setrange(min=ranges[key][0], max=ranges[key][1])
 
         for key, axis in self.axes.items():
-            axis.parts = axis.part.getparts(axis.min, axis.max)
+            axis.parts = axis.part.getparts(axis.min, axis.max) # TODO: make use of stretch
             if len(axis.parts) > 1:
                 axis.bestnum = 0
                 axis.rates = []
                 bestrate = None
                 for i in range(len(axis.parts)):
-                    rate = axis.rate.getrate(axis.parts[i], 1)
+                    rate = axis.rate.getrate(axis.parts[i], 1) # TODO: make use of stretch
                     axis.rates.append(rate)
-                    if (bestrate is None) or (bestrate > rate):
+                    if (bestrate is None) or ((rate is not None) and (bestrate > rate)):
                         axis.bestnum = i
                         bestrate = rate
             else:
                 axis.rates = [0, ]
                 axis.bestnum = 0
 
-            axis.savedrange = axis.saverange()
+            # axis.savedrange = axis.saverange()
+            # TODO: Additional ratings (spacing of text etc.)
             axis.bestpart = axis.parts[axis.bestnum]
             axis.setrange(min=float(axis.bestpart[0]),
                           max=float(axis.bestpart[-1]))
 
-        self.left = unit.topt(1)
-        self.buttom = unit.topt(1)
-        self.top = 0
-        self.right = 0
-        self.xmap = _linmap().setbasepts(((0, self.xpos + self.left),
-                                          (1, self.xpos + self.width - self.right)))
-        self.ymap = _linmap().setbasepts(((0, self.ypos + self.buttom),
-                                          (1, self.ypos + self.height - self.top)))
+        self.xmap = _linmap().setbasepts(((0, self.xpos), (1, self.xpos + self.width)))
+        self.ymap = _linmap().setbasepts(((0, self.ypos), (1, self.ypos + self.height)))
         self._drawstate = self.drawbackground
 
     def drawbackground(self):
@@ -746,40 +792,33 @@ class graphxy(canvas.canvas):
                 for tick in axis.bestpart:
                     x = self.xmap.convert(axis.convert(float(tick)))
                     if tick.ticklevel is not None:
-                        self.draw(path._line(x, self.ymap.convert(0),
-                                             x, self.ymap.convert(0)+10))
+                        axis.tickpainter.paint(self, x, self.ymap.convert(0), 0, 1, tick,
+                                               path._line(x, self.ymap.convert(0), x, self.ymap.convert(1)))
+                    if tick.labellevel is not None:
+                        axis.labelpainter.paint(self, x, self.ymap.convert(0), 0, 1, tick)
             elif _YPattern.match(key):
                 for tick in axis.bestpart:
                     y = self.ymap.convert(axis.convert(float(tick)))
                     if tick.ticklevel is not None:
-                        self.draw(path._line(self.xmap.convert(0), y,
-                                             self.xmap.convert(0)+10, y))
+                        axis.tickpainter.paint(self, self.xmap.convert(0), y, 1, 0, tick,
+                                               path._line(self.xmap.convert(0), y, self.xmap.convert(1), y))
+                    if tick.labellevel is not None:
+                        axis.labelpainter.paint(self, self.xmap.convert(0), y, 1, 0, tick)
             else:
                 assert 0, "Axis key %s not allowed" % key
-            #for tick in axis.bestratepart.part:
-            #    xv = axis.convert(float(tick))
-            #    x = self.VirMap[Type].convert(xv)
-            #    #l = tick.Label
-            #    if Type == 0:
-            #        self.canvas.draw(path._line(x, self.VirMap[1].convert(0),
-            #                                    x, self.VirMap[1].convert(0)+10))
-            #                                    # + ticklength.normal.increment(-tick.TickLevel)))
-            #    #    if tick.LabelLevel == 0:
-            #    #        self.tex._text(x, self.VirMap[1].convert(0)-10, l, tex.halign.center)
-            #    if Type == 1:
-            #        self.canvas.draw(path._line(self.VirMap[0].convert(0), x,
-            #                                    self.VirMap[0].convert(0)+10, x))
-            #                                    # + ticklength.normal.increment(-tick.TickLevel), x))
-            #    #    if tick.LabelLevel == 0:
-            #    #        self.tex._text(self.VirMap[0].convert(0)-10, x, l, tex.halign.right)
         self._drawstate = self.drawdata
 
     def drawdata(self):
         if self._drawstate != self.drawdata:
             raise PyxGraphDrawstateError
-        #for pd in self.plotdata:
-        #    pd.PlotStyle.LoopOverPoints(self, pd.Data)
+        for pd in self.plotdata:
+            pd.data.loop(self, pd.style)
         self._drawstate = None
+
+    def bbox(self):
+        while self._drawstate is not None:
+            self._drawstate()
+        return canvas.canvas.bbox(self)
 
     def write(self, file):
         while self._drawstate is not None:
@@ -813,32 +852,38 @@ class _PlotStyle:
     pass
 
 
-class chain(_PlotStyle):
-
-    def LoopOverPoints(self, Graph, Data):
-        p = [ ]
-        for pt in zip(Graph.ValueList(_XPattern, 0, Data),
-                      Graph.ValueList(_YPattern, 1, Data)):
-            if p:
-                p.append(path._lineto(pt[0],pt[1]))
-            else:
-                p = [path._moveto(pt[0],pt[1]), ]
-        Graph.canvas.draw(path(*p))
+#class line(_PlotStyle):
+#
+#    def LoopOverPoints(self, Graph, Data):
+#        p = [ ]
+#        for pt in zip(Graph.ValueList(_XPattern, 0, Data),
+#                      Graph.ValueList(_YPattern, 1, Data)):
+#            if p:
+#                p.append(path._lineto(pt[0],pt[1]))
+#            else:
+#                p = [path._moveto(pt[0],pt[1]), ]
+#        Graph.canvas.draw(path(*p))
 
 
 class mark(_PlotStyle):
 
-    def __init__(self, size = 0.05):
+    def __init__(self, size = 1):
         self.size = size
 
-    def LoopOverPoints(self, Graph, Data):
-        for pt in zip(Graph.ValueList(_XPattern, 0, Data),
-                      Graph.ValueList(_YPattern, 1, Data)):
-            Graph.canvas.draw(path.path(path._moveto(pt[0] - self.size, pt[1] - self.size),
-                                        path._lineto(pt[0] + self.size, pt[1] + self.size),
-                                        path._moveto(pt[0] - self.size, pt[1] + self.size),
-                                        path._lineto(pt[0] + self.size, pt[1] - self.size)))
-
+    def draw(self, graph, keys, data):
+        if _XPattern.match(keys[0]): xindex, yindex = 0, 1
+        if _XPattern.match(keys[1]): xindex, yindex = 1, 0
+        xaxis = graph.axes[keys[xindex]]
+        yaxis = graph.axes[keys[yindex]]
+        for pt in data:
+            graph.draw(path.path(path._moveto(graph.xmap.convert(xaxis.convert(pt[xindex])) - self.size,
+                                              graph.ymap.convert(yaxis.convert(pt[yindex])) - self.size),
+                                 path._lineto(graph.xmap.convert(xaxis.convert(pt[xindex])) + self.size,
+                                              graph.ymap.convert(yaxis.convert(pt[yindex])) + self.size),
+                                 path._moveto(graph.xmap.convert(xaxis.convert(pt[xindex])) - self.size,
+                                              graph.ymap.convert(yaxis.convert(pt[yindex])) + self.size),
+                                 path._lineto(graph.xmap.convert(xaxis.convert(pt[xindex])) + self.size,
+                                              graph.ymap.convert(yaxis.convert(pt[yindex])) - self.size)))
 
 
 ################################################################################
@@ -945,7 +990,13 @@ class data:
 
     def GetValues(self, Kind):
         return self.datafile.GetColumn(self.columns[Kind] - 1)
-    
+
+    def loop(self, graph, style):
+        columns = {}
+        for kind in self.GetKindList():
+            columns[kind] = self.GetValues(kind)
+        style.draw(graph, columns.keys(), zip(*columns.values()))
+
 #    def GetRange(self, Kind):
 #        # handle non-numeric things properly
 #        if Kind not in self.columns.keys():
@@ -958,8 +1009,9 @@ AssignPattern = re.compile(r"\s*([a-z][a-z0-9_]*)\s*=", re.IGNORECASE)
 
 class Function:
 
-    DefaultPlotStyle = chain()
-    
+    #DefaultPlotStyle = chain()
+    DefaultPlotStyle = mark()
+
     def __init__(self, Expression, Points = 100):
         self.name = Expression
         self.Points = Points
@@ -971,17 +1023,16 @@ class Function:
             self.ResKind = None
         self.MT = ParseMathTree(ParseStr(Expression))
         self.VarList = self.MT.VarList()
-    
 
     def GetName(self):
         return self.name
-    
+
     def GetKindList(self, DefaultResult = "y"):
         if self.ResKind:
             return self.MT.VarList() + [self.ResKind, ]
         else:
             return self.MT.VarList() + [DefaultResult, ]
-    
+
 #    def GetRange(self, Kind):
 #        raise DataRangeUndefinedException
 #
