@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import const, string, re, tex
+import attrib, string, re, tex
 from unit import unit
 
 
@@ -151,8 +151,17 @@ class canvas:
         self._translate(0,0)
         self._PSAddCmd(texcanvas)
         return texcanvas
+
+    def set(self, *args):
+        for arg in args:
+           if   isinstance(arg, attrib.linecap):    self.setlinecap   (arg)
+           elif isinstance(arg, attrib.linejoin):   self.setlinejoin  (arg)
+           elif isinstance(arg, attrib.miterlimit): self.setmiterlimit(arg.value)
+           elif isinstance(arg, attrib.dash):       self.setdash      (arg.value)
+           elif isinstance(arg, attrib.linestyle):  self.setlinestyle (arg)
+           elif isinstance(arg, attrib.linewidth):  self.setlinewidth (arg)
 	
-    def draw(self, path):
+    def draw(self, path, **kwargs):
         self._newpath()
         path.draw(self)
 	self._stroke()
@@ -176,7 +185,7 @@ class canvas:
 	self._PSAddCmd("%f setmiterlimit" % limit)
         return self
 
-    def setdash(self, pattern, offset=0):
+    def setdash(self, pattern=0, offset=0):
     	patternstring=""
     	for element in pattern:
 		patternstring=patternstring + `element` + " "
@@ -210,7 +219,7 @@ class canvas:
         file.write("%%BeginProlog\n") 
         file.write(PSProlog)
         file.write("%%EndProlog\n") 
-        file.write("%f setlinewidth\n" % self.unit.pt(const.linewidth.normal))
+        file.write("%f setlinewidth\n" % self.unit.pt(attrib.linewidth.normal))
         file.write(str(self))
 
 
@@ -220,7 +229,7 @@ if __name__=="__main__":
     from path import *
     from trafo import *
     from graph import *
-    from const import *
+    from attrib import *
 
     c=canvas.canvas()
     t=c.tex()
@@ -286,12 +295,12 @@ if __name__=="__main__":
    
     for angle in range(20):
        s=c.canvas(trafo=translate(10,10)*rotate(angle)).draw(p)
- 
-    c.setlinestyle(linestyle.solid)
-    g=GraphXY(c, t, 10, 15, 8, 6)
-    g.plot(Function("5*sin(x)"))
-    g.plot(Function("(x+5)*x*(x-5)/100"))
-    g.run()
+#
+#   c.setlinestyle(linestyle_solid)
+#   g=GraphXY(c, t, 10, 15, 8, 6)
+#   g.plot(Function("5*sin(x)"))
+#   g.plot(Function("(x+5)*x*(x-5)/100"))
+#   g.run()
 
     c.canvas(trafo=scale(0.5,0.5).rotate(20).translate("10 u mm","50 v mm")).inserteps(0,0,"ratchet_f.eps")
 

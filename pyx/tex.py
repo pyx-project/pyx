@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import const, canvas, os, string, tempfile, sys, md5, string, traceback, time, unit
+import attrib, canvas, os, string, tempfile, sys, md5, string, traceback, time, unit
 
 # TODO 7: make an addtexdefinition
 
@@ -104,10 +104,10 @@ class tex:
         CmdEnd = "}"
 
         if hsize != None:
-             if valign == const.valign.top or valign == None:
+             if valign == attrib.valign.top or valign == None:
                   CmdBegin = CmdBegin + "\\vtop{\hsize" + str(hsize) + "truecm{"
                   CmdEnd = "}}" + CmdEnd
-             elif valign == const.valign.bottom:
+             elif valign == attrib.valign.bottom:
                   CmdBegin = CmdBegin + "\\vbox{\hsize" + str(hsize) + "truecm{"
                   CmdEnd = "}}" + CmdEnd
              else:
@@ -132,11 +132,11 @@ class tex:
             CmdEnd = "\\special{ps:currentpoint grestore moveto}" + CmdEnd
 
         if halign != None:
-            if halign == const.halign.left:
+            if halign == attrib.halign.left:
                 pass
-            elif halign == const.halign.center:
+            elif halign == attrib.halign.center:
                 CmdBegin = CmdBegin + "\kern-.5\wd\localbox"
-            elif halign == const.halign.right:
+            elif halign == attrib.halign.right:
                 CmdBegin = CmdBegin + "\kern-\wd\localbox"
             else:
                 assert 0, "halign unknown"
@@ -349,7 +349,7 @@ class tex:
  
         return 1
 
-    def text(self, x, y, Cmd, size = const.fontsize.normalsize, halign = None, hsize = None, valign = None, angle = None, IgnoreMsgLevel = 1):
+    def text(self, x, y, Cmd, size = attrib.fontsize.normalsize, halign = None, hsize = None, valign = None, angle = None, IgnoreMsgLevel = 1):
 
         'print Cmd at (x, y)'
         
@@ -357,7 +357,7 @@ class tex:
         TexCopyBoxCmd = self.TexCopyBoxCmd(x, y, Cmd, halign, angle)
         self.TexAddCmd(TexCreateBoxCmd + TexCopyBoxCmd, IgnoreMsgLevel)
 
-    def textwd(self, Cmd, size = const.fontsize.normalsize, hsize = None, IgnoreMsgLevel = 1):
+    def textwd(self, Cmd, size = attrib.fontsize.normalsize, hsize = None, IgnoreMsgLevel = 1):
     
         'get width of Cmd'
 
@@ -368,7 +368,7 @@ class tex:
                        ":wd:" + str(time.time()) + ":\\the\\wd\\localbox}\n", IgnoreMsgLevel)
         return self.TexResult(TexHexMD5 + ":wd:")
 
-    def textht(self, Cmd, size = const.fontsize.normalsize, hsize = None, valign = None, IgnoreMsgLevel = 1):
+    def textht(self, Cmd, size = attrib.fontsize.normalsize, hsize = None, valign = None, IgnoreMsgLevel = 1):
 
         'get height of Cmd'
 
@@ -379,7 +379,7 @@ class tex:
                        ":ht:" + str(time.time()) + ":\\the\\ht\\localbox}\n", IgnoreMsgLevel)
         return self.TexResult(TexHexMD5 + ":ht:")
 
-    def textdp(self, Cmd, size = const.fontsize.normalsize, hsize = None, valign = None, IgnoreMsgLevel = 1):
+    def textdp(self, Cmd, size = attrib.fontsize.normalsize, hsize = None, valign = None, IgnoreMsgLevel = 1):
    
         'get depth of Cmd'
 

@@ -1,4 +1,5 @@
 from math import sqrt
+import unit
 
 class halign:
    left   = "left"
@@ -19,6 +20,14 @@ class linejoin:
     miter = 0
     round = 1
     bevel = 2
+
+class miterlimit:
+    def __init__(self, limit=10.0)
+        self.value=limit
+
+class dash:
+    def __init__(self, pattern=0, offset=0):
+        self.value=(pattern, offset)
  
 class linestyle:
     solid      = (linecap.butt,  [])
@@ -26,7 +35,7 @@ class linestyle:
     dotted     = (linecap.round, [0, 3])
     dashdotted = (linecap.round, [0, 3, 3, 3])
  
-class linewidth:
+class linewidth(unit.length):
     _base      = 0.02
  
     THIN       = "%f w cm" % (_base/sqrt(32))
@@ -54,12 +63,3 @@ class fontsize:
     huge = "huge"
     Huge = "Huge"
  
-
-# helper stuff TODO: discuss this, create helper module?
-
-def isnumber(x):
-    import types
-    if type(x) in [types.IntType, types.FloatType]:
-        return 1
-    return 0
-
