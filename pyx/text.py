@@ -221,11 +221,14 @@ class _texmessagetexend(texmessage):
 
 
 class _texmessageemptylines(texmessage):
-    """validates "*-only" (TeX/LaTeX input marker in interactive mode) and empty lines"""
+    """validates "*-only" (TeX/LaTeX input marker in interactive mode) and empty lines
+    also clear TeX interactive mode warning (Please type a command or say `\\end')
+    """
 
     __implements__ = _Itexmessage
 
     def check(self, texrunner):
+        texrunner.texmessageparsed = texrunner.texmessageparsed.replace(r"(Please type a command or say `\end')", "")
         texrunner.texmessageparsed = texrunner.texmessageparsed.replace("*\n", "")
         texrunner.texmessageparsed = texrunner.texmessageparsed.replace("\n", "")
 
@@ -310,6 +313,21 @@ class _texmessageignore(_texmessageload):
         texrunner.texmessageparsed = ""
 
 
+class _texmessagewarning(_texmessageload):
+    """validates any TeX/LaTeX response
+    - this might be used, when the expression is ok, but no suitable texmessage
+      parser is available
+    - PLEASE: - consider writing suitable tex message parsers
+              - share your ideas/problems/solutions with others (use the PyX mailing lists)"""
+
+    __implements__ = _Itexmessage
+
+    def check(self, texrunner):
+        if len(texrunner.texmessageparsed):
+            texrunner.texmessageparsed = ""
+            raise TexResultWarning("TeX result is ignored", texrunner)
+
+
 texmessage.start = _texmessagestart()
 texmessage.noaux = _texmessagenoaux()
 texmessage.inputmarker = _texmessageinputmarker()
@@ -321,6 +339,7 @@ texmessage.load = _texmessageload()
 texmessage.loadfd = _texmessageloadfd()
 texmessage.graphicsload = _texmessagegraphicsload()
 texmessage.ignore = _texmessageignore()
+texmessage.warning = _texmessagewarning()
 
 
 ###############################################################################
@@ -712,8 +731,8 @@ class texrunner:
         self.executeid = 0
         self.page = 0
         self.preambles = []
-        self.acttextboxes = [] # when texipc-mode off
-        self.actdvifile = None # when texipc-mode on
+        self.needdvitextboxes = [] # when texipc-mode off
+        self.dvifile = None
         savetempdir = tempfile.tempdir
         tempfile.tempdir = os.curdir
         self.texfilename = os.path.basename(tempfile.mktemp())
@@ -941,12 +960,14 @@ class texrunner:
             dvifilename = "%s.dvi" % self.texfilename
         if not self.texipc:
             self.dvifile = dvifile.dvifile(dvifilename, self.fontmap, debug=self.dvidebug)
-            for box in self.acttextboxes:
-                box.setdvicanvas(self.dvifile.readpage())
-        if self.dvifile.readpage() is not None:
+            page = 1
+            for box in self.needdvitextboxes:
+                box.setdvicanvas(self.dvifile.readpage([ord("P"), ord("y"), ord("X"), page, 0, 0, 0, 0, 0, 0]))
+                page += 1
+        if self.dvifile.readpage(None) is not None:
             raise RuntimeError("end of dvifile expected")
         self.dvifile = None
-        self.acttextboxes = []
+        self.needdvitextboxes = []
 
     def reset(self, reinit=0):
         "resets the tex runner to its initial state (upto its record to old dvi file(s))"
@@ -1106,12 +1127,104 @@ class texrunner:
         for t in trafos:
             box.reltransform(t)
         if self.texipc:
-            box.setdvicanvas(self.dvifile.readpage())
-        self.acttextboxes.append(box)
+            box.setdvicanvas(self.dvifile.readpage([ord("P"), ord("y"), ord("X"), self.page, 0, 0, 0, 0, 0, 0]))
+        else:
+            self.needdvitextboxes.append(box)
         return box
 
     def text(self, x, y, expr, *args, **kwargs):
         return self.text_pt(unit.topt(x), unit.topt(y), expr, *args, **kwargs)
+
+    PyXVariableBoxPattern = re.compile(r"PyXVariableBox:page=(?P<page>\d+),par=(?P<par>\d+),prevgraf=(?P<prevgraf>\d+):")
+
+    def textboxes(self, text, pageshapes):
+        # this is some experimental code to put text into several boxes
+        # while the bounding shape changes from box to box (rectangles only)
+        # first we load sev.tex
+        self.execute(r"\input textboxes.tex", [texmessage.load])
+        # define page shapes
+        pageshapes_str = "\\hsize=%.5ftruept%%\n\\vsize=%.5ftruept%%\n" % (72.27/72*unit.topt(pageshapes[0][0]), 72.27/72*unit.topt(pageshapes[0][1]))
+        pageshapes_str += "\\lohsizes={%\n"
+        for hsize, vsize in pageshapes[1:]:
+            pageshapes_str += "{\\global\\hsize=%.5ftruept}%%\n" % (72.27/72*unit.topt(hsize))
+        pageshapes_str += "{\\relax}%\n}%\n"
+        pageshapes_str += "\\lovsizes={%\n"
+        for hsize, vsize in pageshapes[1:]:
+            pageshapes_str += "{\\global\\vsize=%.5ftruept}%%\n" % (72.27/72*unit.topt(vsize))
+        pageshapes_str += "{\\relax}%\n}%\n"
+        page = 0
+        parnos = []
+        parshapes = []
+        loop = 0
+        while 1:
+            self.execute(pageshapes_str, [])
+            # print pageshapes_str
+            parnos_str = "\\parnos={%s 0}%%\n" % " ".join(parnos)
+            self.execute(parnos_str, [])
+            print parnos_str
+            parshapes_str = "\\parshapes={%%\n%s%%\n{\\relax}%%\n}%%\n" % "%\n".join(parshapes)
+            self.execute(parshapes_str, [])
+            print parshapes_str
+            self.execute("\\global\\count0=1%%\n"
+                         "\\global\\parno=0%%\n"
+                         "\\global\\myprevgraf=0%%\n"
+                         "\\global\\showprevgraf=0%%\n"
+                         "\\global\\outputtype=0%%\n"
+                         "\\global\\leastcost=10000000%%\n"
+                         "%s%%\n"
+                         "\\vfill\\supereject%%\n" % text, [texmessage.ignore])
+            if self.texipc:
+                if self.dvifile is None:
+                    self.dvifile = dvifile.dvifile("%s.dvi" % self.texfilename, self.fontmap, debug=self.dvidebug)
+            else:
+                RuntimeError("textboxes currently needs texipc")
+            lastparnos = parnos
+            parnos = []
+            lastparshapes = parshapes
+            parshapes = []
+            pages = 0
+            lastpar = prevgraf = -1
+            m = self.PyXVariableBoxPattern.search(self.texmessage)
+            while m:
+                print m.string[m.start(): m.end()]
+                pages += 1
+                page = int(m.group("page"))
+                assert page == pages
+                par = int(m.group("par"))
+                prevgraf = int(m.group("prevgraf"))
+                if page <= len(pageshapes):
+                    width = 72.27/72*unit.topt(pageshapes[page-1][0])
+                else:
+                    width = 72.27/72*unit.topt(pageshapes[-1][0])
+                if page < len(pageshapes):
+                    nextwidth = 72.27/72*unit.topt(pageshapes[page][0])
+                else:
+                    nextwidth = 72.27/72*unit.topt(pageshapes[-1][0])
+                parnos.append(str(par))
+                if par != lastpar:
+                    parshape = " 0pt ".join(["%.5ftruept" % width for i in range(prevgraf)])
+                    if len(parshape):
+                        parshape = " 0pt " + parshape
+                    parshapes.append("{\\parshape %i%s 0pt %.5ftruept}" % (prevgraf + 1, parshape, nextwidth))
+                else:
+                    parshape = " 0pt ".join(["%.5ftruept" % width for i in range(prevgraf - 1)])
+                    if len(parshape):
+                        parshape = " 0pt " + parshape
+                    oldparshape = parshapes[-1].split(None, 2)[2][:-1]
+                    if len(parshape):
+                        oldparshape = " " + oldparshape
+                    prevgraf = prevgraf + lastprevgraf
+                    parshapes[-1] = "{\\parshape %i%s%s 0pt %.5ftruept}" % (prevgraf + 1, oldparshape, parshape, nextwidth)
+                lastpar = par
+                lastprevgraf = prevgraf
+                nextpos = m.end()
+                m = self.PyXVariableBoxPattern.search(self.texmessage, nextpos)
+            result = []
+            for i in range(pages):
+                result.append(self.dvifile.readpage([ord("P"), ord("y"), ord("X"), i, 0, 0, 0, 0, 0, 0]))
+            if parnos == lastparnos and parshapes == lastparshapes:
+                return result
+            loop += 1
 
 
 # the module provides an default texrunner and methods for direct access

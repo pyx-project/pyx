@@ -1037,7 +1037,7 @@ class dvifile:
             else:
                 raise DVIError
 
-    def readpage(self):
+    def readpage(self, pageid):
         """ reads a page from the dvi file
 
         This routine reads a page from the dvi file which is
@@ -1052,11 +1052,12 @@ class dvifile:
                 pass
             elif cmd == _DVI_BOP:
                 self.flushout()
-                pagenos = [self.file.readuint32() for i in range(10)]
-                if pagenos[:3] != [ord("P"), ord("y"), ord("X")] or pagenos[4:] != [0, 0, 0, 0, 0, 0]:
-                    raise DVIError("Page in dvi file is not a PyX page.")
+                ispageid = [self.file.readuint32() for i in range(10)]
+                #if ispageid[:3] != [ord("P"), ord("y"), ord("X")] or ispageid[4:] != [0, 0, 0, 0, 0, 0]:
+                if pageid is not None and ispageid != pageid:
+                    raise DVIError("invalid pageid")
                 if self.debug:
-                    print "%d: beginning of page %i" % (self.filepos, pagenos[0])
+                    print "%d: beginning of page %i" % (self.filepos, ispageid[0])
                 self.file.readuint32()
                 break
             elif cmd == _DVI_POST:
