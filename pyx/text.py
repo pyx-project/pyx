@@ -202,10 +202,6 @@ class _texmessagetexend(texmessage):
     __implements__ = _Itexmessage
 
     def check(self, texrunner):
-        # skip when the message is empty (this occurs after LaTeX's message about Font Substitutions)
-        if not texrunner.texmessageparsed:
-            return
-
         try:
             s1, s2 = texrunner.texmessageparsed.split("(%s.aux)" % texrunner.texfilename, 1)
             texrunner.texmessageparsed = s1 + s2
@@ -976,11 +972,9 @@ class texrunner:
                     texmessage.pyxbox.check(self)
                     texmessage.pyxpageout.check(self)
             texmessages = attr.mergeattrs(texmessages)
-            # reverse loop over the merged texmessages (last is applied first)
-            lentexmessages = len(texmessages)
-            for i in range(lentexmessages):
+            for t in texmessages:
                 try:
-                    texmessages[lentexmessages-1-i].check(self)
+                    t.check(self)
                 except TexResultWarning:
                     traceback.print_exc()
             texmessage.emptylines.check(self)
