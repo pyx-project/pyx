@@ -46,7 +46,7 @@ class _Imap:
     def invert(self, y):
         "returns f^-1(y) where f^-1 is the inverse transformation (x=f^-1(f(x)) for all x)"
 
-    def setbasepoint(self, basepoints):
+    def setbasepoints(self, basepoints):
         """set basepoints for the convertions
         basepoints are tuples (x, y) with y == f(x) and x == f^-1(y)
         the number of basepoints needed might depend on the transformation
@@ -2225,13 +2225,22 @@ class _axis:
             else:
                 self.part[:parterpos] = self.checkfraclist(self.part[:parterpos])
                 self.part[parterpos+1:] = self.checkfraclist(self.part[parterpos+1:])
-                self.ticks = _mergeticklists(
-                                 _mergeticklists(self.part[:parterpos],
-                                                 parter.defaultpart(min/self.divisor,
-                                                                    max/self.divisor,
-                                                                    not self.fixmin,
-                                                                    not self.fixmax)),
-                                 self.part[parterpos+1:])
+                if self.divisor is not None: # XXX workaround for timeaxis
+                    self.ticks = _mergeticklists(
+                                     _mergeticklists(self.part[:parterpos],
+                                                     parter.defaultpart(min/self.divisor,
+                                                                        max/self.divisor,
+                                                                        not self.fixmin,
+                                                                        not self.fixmax)),
+                                     self.part[parterpos+1:])
+                else:
+                    self.ticks = _mergeticklists(
+                                     _mergeticklists(self.part[:parterpos],
+                                                     parter.defaultpart(min,
+                                                                        max,
+                                                                        not self.fixmin,
+                                                                        not self.fixmax)),
+                                     self.part[parterpos+1:])
         else:
             self.ticks = []
         # lesspart and morepart can be called after defaultpart;
@@ -2292,7 +2301,10 @@ class _axis:
                     saverange = self.__getinternalrange()
                     self.ticks = variants[i][1]
                     if len(self.ticks):
-                        self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
+                        if self.divisor is not None: # XXX workaround for timeaxis
+                            self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
+                        else:
+                            self.settickrange(self.ticks[0], self.ticks[-1])
                     ac = axiscanvas(texrunner)
                     self.texter.labels(self.ticks)
                     self.painter.paint(axispos, self, ac)
@@ -2312,15 +2324,24 @@ class _axis:
                 variants.sort()
                 self.ticks = variants[0][1]
                 if len(self.ticks):
-                    self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
+                    if self.divisor is not None: # XXX workaround for timeaxis
+                        self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
+                    else:
+                        self.settickrange(self.ticks[0], self.ticks[-1])
                 self.axiscanvas = variants[0][2]
             else:
                 if len(self.ticks):
-                    self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
+                    if self.divisor is not None: # XXX workaround for timeaxis
+                        self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
+                    else:
+                        self.settickrange(self.ticks[0], self.ticks[-1])
                 self.axiscanvas = axiscanvas(texrunner)
         else:
             if len(self.ticks):
-                self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
+                if self.divisor is not None: # XXX workaround for timeaxis
+                    self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
+                else:
+                    self.settickrange(self.ticks[0], self.ticks[-1])
             self.axiscanvas = axiscanvas(texrunner)
             self.texter.labels(self.ticks)
             self.painter.paint(axispos, self, self.axiscanvas)
