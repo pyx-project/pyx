@@ -1603,7 +1603,7 @@ class normpath(path):
                     i= max(1, i)
 
                     pieces = pel._split(context,
-                                        map(lambda x:x-t, parameters[:i]))
+                                        [x-t for x in parameters[:i]])
 
                     parameters = parameters[i:]
 
