@@ -21,7 +21,37 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 from path import *
-import types, re, tex
+import types, re, tex, unit
+from math import log, exp, sqrt, pow
+
+class _ticklength(unit.length):
+
+    _base      = 0.15
+    _factor    = sqrt(2)
+
+    def __init__(self, l = _base, power = 0, factor = _factor):
+        self.factor = factor
+        unit.length.__init__(self, l=l*pow(self.factor, power), default_type="v")
+
+    def increment(self, power = 1):
+        return pow(self.factor, power)*self
+
+
+class ticklength(_ticklength):
+
+    SHORT      = _ticklength(power = -6)
+    SHORt      = _ticklength(power = -5)
+    SHOrt      = _ticklength(power = -4)
+    SHort      = _ticklength(power = -3)
+    Short      = _ticklength(power = -2)
+    short      = _ticklength(power = -1)
+    normal     = _ticklength()
+    long       = _ticklength(power = 1)
+    Long       = _ticklength(power = 2)
+    LOng       = _ticklength(power = 3)
+    LONg       = _ticklength(power = 4)
+    LONG       = _ticklength(power = 5)
+
 
 class _Map:
     def setbasepts(self, basepts):
@@ -80,25 +110,29 @@ class Tick:
 
 class _Axis:
 
-    def __init__(self, Title = None, Min = None, Max = None):
+    def __init__(self, Title = None, Min = None, Max = None, reverse = 0):
+        self.reverse = reverse
         self.Min = None
         self.Max = None
         self.FixMin = 0
         self.FixMax = 0
         self.Title = Title
         self.set(Min, Max)
-        if Min:
+        if Min != None:
             self.FixMin = 1
-        if Max:
+        if Max != None:
             self.FixMax = 1
 
     def set(self, Min = None, Max = None):
-        if Min and not self.FixMax:
+        if Min != None and not self.FixMin:
             self.Min = Min
-        if Max and not self.FixMax:
+        if Max != None  and not self.FixMax:
             self.Max = Max
-        if self.Min and self.Max:
-            self.setbasepts(((self.Min, 0,), (self.Max, 1,)))
+        if self.Min != None and self.Max != None:
+            if self.reverse:
+                self.setbasepts(((self.Min, 1,), (self.Max, 0,)))
+            else:
+                self.setbasepts(((self.Min, 0,), (self.Max, 1,)))
 
     def TickValPosList(self):
         TickCount = 4
@@ -113,13 +147,25 @@ class _Axis:
 
 class LinAxis(_Axis, _LinMap):
 
-    pass
+    def __init__(self, **args):
+        _Axis.__init__(self, args)
+        self.encasezero = 0.25
+        self.fractions = ((1, 1, ), (2, 1, ), (5, 2, ), (5, 1, ), )
+        self.multiple = 10
+
+    def prepare(self):
+        if self.Min * self.Max > 0:
+            if (self.Min > 0) and (self.Max * self.encasezero > self.Min):
+                self.set(Min = 0)
+            elif (self.Max < 0) and (self.Min * self.encasezero < self.Max):
+                self.set(Max = 0)
 
 
 class LogAxis(_Axis, _LogMap):
 
-    pass
-
+    def prepare(self):
+        pass
+    
 
 ###############################################################################
 # graph part
@@ -192,6 +238,7 @@ class GraphXY(Graph):
                               self.VirMap[1].convert(1) - self.VirMap[1].convert(0)))
 
         for key in self.Axis.keys():
+            self.Axis[key].prepare()
             if _XPattern.match(key):
                 Type = 0
             elif _YPattern.match(key):
@@ -203,10 +250,12 @@ class GraphXY(Graph):
                 l = tick.Label
                 x = self.VirMap[Type].convert(xv)
                 if Type == 0:
-                    self.canvas.draw(line(x, self.VirMap[1].convert(0), x, self.VirMap[1].convert(0) + 0.2))
+                    self.canvas.draw(line(x, self.VirMap[1].convert(0), x, self.VirMap[1].convert(0) + ticklength.normal))
+                    self.canvas.draw(line(x+0.1, self.VirMap[1].convert(0), x+0.1, self.VirMap[1].convert(0) + ticklength.short))
+                    self.canvas.draw(line(x+0.2, self.VirMap[1].convert(0), x+0.2, self.VirMap[1].convert(0) + ticklength.normal.increment(-2)))
                     self.tex.text(x, self.VirMap[1].convert(0)-0.5, l, tex.halign.center)
                 if Type == 1:
-                    self.canvas.draw(line(self.VirMap[0].convert(0), x, self.VirMap[0].convert(0) + 0.2, x))
+                    self.canvas.draw(line(self.VirMap[0].convert(0), x, self.VirMap[0].convert(0) + ticklength.normal, x))
                     self.tex.text(self.VirMap[0].convert(0)-0.5, x, l, tex.halign.right)
 
         for pd in self.plotdata:
