@@ -324,11 +324,7 @@ for line in mapfile.readlines():
         else:
             raise RuntimeError("wrong syntax in font catalog file 'psfonts.map'")
         
-    encoding = None
-    fontfile = None
-    pscode = None
-    texname = None
-    psname = None
+    texname = psname = fontfile = encoding = pscode = None
     for token in tokens:
         if token.startswith("<"):
             if token.startswith("<<"):
@@ -350,6 +346,8 @@ for line in mapfile.readlines():
 
     if psname is None:
         psname = texname
+
+        
             
     print texname, "is", psname, "read from", fontfile, "encoded as", encoding, "used with", pscode
 
