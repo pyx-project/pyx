@@ -113,56 +113,61 @@ c.writetofile("test")
 
 The \verb|canvas| class provides the following methods:
 
+\medskip
+\begin{tabularx}
+  {\linewidth}
+  {>{\hsize=.85\hsize}X>{\raggedright\arraybackslash\hsize=1.15\hsize}X}
+  \texttt{canvas} method & function \\
+  \hline
+  \texttt{bbox()} &
+  Returns the bounding box enclosing all elements of the canvas.\\
+  \texttt{draw(path, *styles)} & 
+  Draws the given \texttt{path} on the canvas, \textit{i.e.}\
+  \texttt{insert}s it together with the necessary \texttt{newpath},
+  \texttt{stroke} sequence, applying the given \texttt{styles}. Styles
+  can either be instances of \texttt{canvas.PSAttr} or
+  \texttt{canvas.PathDeco}
+  (or subclasses thereof).\\
+  \texttt{fill(path, *styles)} &
+  Fills the given \texttt{path} on the canvas, \textit{i.e.}\
+  \texttt{insert}s it together with the necessary \texttt{newpath},
+  \texttt{fill} sequence, applying the given \texttt{styles}. Styles can
+  either be instances of \texttt{canvas.PSAttr} (or subclasses therof).\\
+  \texttt{drawfilled(path, *styles)} &
+  Draws and fills the given \texttt{path} on the canvas (\textit{i.e.}\
+  \texttt{insert}s it together with the necessary \texttt{newpath},
+  \texttt{gsave}, \texttt{stroke}, \texttt{grestore}, \texttt{fill} sequence)
+  applying the given \texttt{styles}. Styles can either be instances of
+  \texttt{canvas.PSAttr} (or subclasses thereof).\\
+  \texttt{insert(PSOps, *styles)} &
+  Insert one ore more instances of the class \texttt{base.PSOp} in the
+  canvas applying the given \texttt{styles}.  Styles have to be instances
+  of the class \texttt{canvas.PSAttr} or derived classes thereof.\\
+  \texttt{set(*styles)} &
+  Sets the given \texttt{styles} (instances of \texttt{canvas.PSAttr} or
+  subclasses) for the rest of the canvas.\\
+    \texttt{writetofile(filename, 
+      \newline\phantom{writetofile(}paperformat=None, 
+      \newline\phantom{writetofile(}rotated=0,
+      \newline\phantom{writetofile(}fittosize=0, 
+      \newline\phantom{writetofile(}margins="1 t cm")} &
+  Writes the canvas to \texttt{filename}. Optionally a
+  \texttt{paperformat} can be specified, in which case the output will
+  be centered with respect to the corresponding size using the given
+  \texttt{margin}. See \texttt{canvas.\_paperformats} for a list of
+  known paper formats . Use \texttt{rotated}, if you want to center on
+  a $90^\circ$ rotated version of the respective paper format. If
+  \texttt{fittosize} is set, the output is additionally scaled to the
+  maximal possible size.
+\end{tabularx} 
+\medskip
 
-\verb|bbox()| 
-
-Returns the bounding box enclosing all elements of the canvas.
-
-\verb|draw(path, *styles)|
-
-Draws the given \verb|path| on the canvas, \textit{i.e.}, 
-\verb|insert|s it together with the necessary \verb|newpath|,
-\verb|stroke| sequence, using the given \verb|styles|. Styles can
-either be instances of \verb|canvas.PSAttr| or \verb|canvas.PathDeco|
-(or subclasses thereof).
-
-\verb|fill(path, *styles)|
-
-Fills the given \verb|path| on the canvas, \textit{i.e.},
-\verb|insert|s it together with the necessary \verb|newpath|,
-\verb|fill| sequence, using the given \verb|styles|. Styles can
-either be instances of \verb|canvas.PSAttr| (or subclasses therof).
-
-\verb|drawfilled(path, *styles)|
-
-Draws and fills the given \verb|path| on the canvas (\textit{i.e.}
-\verb|insert|s it together with the necessary \verb|newpath|,
-\verb|gsave|, \verb|stroke|, \verb|grestore|, \verb|fill| sequence)
-using the given \verb|styles|. Styles can either be instances of
-\verb|canvas.PSAttr| (or subclasses thereof).
 
 
 
-\verb|insert(PSOps, *styles)|
 
-Insert one ore more instances of the class \verb|base.PSOp| in the
-canvas applying the given \verb|styles|.  Styles have to be instances
-of the class \verb|canvas.PSAttr| or derived classes thereof.
 
-\verb|set(*styles)|
 
-Sets the given \verb|styles| (instances of \verb|canvas.PSAttr| or
-subclasses) for the rest of the canvas.
-
-\verb|writetofile(filename, paperformat=None, rotated=0, fittosize=0, margins="1 t cm")|
-
-Writes the canvas to \verb|filename|. Optionally a \verb|paperformat|
-can be specified, in which case the output will be centered with
-respect to the corresponding size using the given \verb|margin|. For a
-list of known paper formats, see \verb|canvas._paperformats|. Use
-\verb|rotated|, if you want to center on a rotated version of the
-respective paper format. If \verb|fittosize| is set, the output is
-additionally scaled to the maximal possible size.
 
 %%% Local Variables:
 %%% mode: latex
