@@ -5,9 +5,19 @@ from pyx import *
 from pyx import text
 
 c = canvas.canvas()
-text.set(mode="latex", dvidebug=0)
+text.set(mode="latex", dvidebug=1)
 
 c.stroke(path.line(-1, 0, 6, 0))
+
+c.stroke(path.line(6, 5, 6.99, 5), canvas.linewidth.THIN)
+c.stroke(path.line(6, 6, 6.99, 6), canvas.linewidth.THIN)
+c.stroke(path.line(8.01, 5, 9, 5), canvas.linewidth.THIN)
+c.stroke(path.line(8.01, 6, 9, 6), canvas.linewidth.THIN)
+c.stroke(path.line(7, 4, 7, 4.99), canvas.linewidth.THIN)
+c.stroke(path.line(8, 4, 8, 4.99), canvas.linewidth.THIN)
+c.stroke(path.line(7, 6.01, 7, 7), canvas.linewidth.THIN)
+c.stroke(path.line(8, 6.01, 8, 7), canvas.linewidth.THIN)
+c.text(7, 5, "\\vrule width1truecm height1truecm")
 
 c.text(6.2, 0, "0", text.valign.centerline())
 c.text(-1.2, 0, "abc", text.valign.centerline(), text.halign.right)

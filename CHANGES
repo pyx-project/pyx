@@ -9,6 +9,7 @@ PyX
     - collection of helper functions (taken out of the graph module)
   - text module:
     - to be included in 0.3 -> finish base functionality
+    - documentation!!!
   - t1strip module:
     - strip glyphs from pfa/pfb-fonts
     - there is a C implementation taken from pdftex
@@ -21,8 +22,9 @@ PyX
     - use text module instead of the obsolete tex module (work in progress)
     - TODO: allow for tailing zeros of automatic generated labels
     - TODO: allow for missing data in bar graphs
+    - TODO: remove the support for variables given within the argument dictionary in data constructor
     - TODO: graph keys
-    - TODO: 3d graphs should be scheduled for pyx-0.4
+    - TODO: 3d graphs --- leave it for pyx-0.4
   - data module:
     - TODO: line reduction for datafile like the every parameter in gnuplot
   - numerous bugfixes:

@@ -819,7 +819,7 @@ class _checkmsgstart(checkmsg):
         try:
             texrunner.texmsgparsed = texrunner.texmsgparsed.split("*! Undefined control sequence.\n<*> \\raiseerror\n               %\n", 1)[1]
         except IndexError:
-            raise TexResultError("TeX switch to scrollmode failed", texrunner)
+            raise TexResultError("TeX scrollmode check failed", texrunner)
 
 
 class _checkmsgnoaux(checkmsg):
@@ -1069,6 +1069,7 @@ class _readpipe(threading.Thread):
         self.expectqueue = expectqueue
         self.gotevent = gotevent
         self.gotqueue = gotqueue
+        self.expect = None
         self.start()
 
     def run(self):
@@ -1082,7 +1083,7 @@ class _readpipe(threading.Thread):
                 self.expect = self.expectqueue.get_nowait()
             except Queue.Empty:
                 pass
-            if read.find(self.expect) != -1:
+            if self.expect is not None and read.find(self.expect) != -1:
                 self.gotevent.set()
             read = self.pipe.readline()
         if self.expect.find("PyXInputMarker") != -1:
@@ -1170,7 +1171,7 @@ class texrunner(attrlist.attrlist):
             try:
                 self.texinput, self.texoutput = os.popen4("%s %s" % (self.mode, self.texfilename), "t", 0)
             except ValueError:
-                # workaround for MS Windows
+                # XXX: workaround for MS Windows (bufsize = 0 makes trouble!?)
                 self.texinput, self.texoutput = os.popen4("%s %s" % (self.mode, self.texfilename), "t")
             self.expectqueue = Queue.Queue(1) # allow for a single entry only
             self.gotevent = threading.Event()
@@ -1250,7 +1251,7 @@ class texrunner(attrlist.attrlist):
 
     def writefontheader(self, file, containsfonts):
         if not self.texdone:
-            _default.execute(None, *self.checkmsgend)
+            self.execute(None, *self.checkmsgend)
             self.dvifile = DVIFile("%s.dvi" % self.texfilename, debug=self.dvidebug)
         if self not in containsfonts:
             self.dvifile.writeheader(file)
@@ -1311,7 +1312,7 @@ class texrunner(attrlist.attrlist):
 
     PyXBoxPattern = re.compile(r"PyXBox\(page=(?P<page>\d+),wd=(?P<wd>-?\d*((\d\.?)|(\.?\d))\d*)pt,ht=(?P<ht>-?\d*((\d\.?)|(\.?\d))\d*)pt,dp=(?P<dp>-?\d*((\d\.?)|(\.?\d))\d*)pt\)")
 
-    def text(self, x, y, expr, *args):
+    def _text(self, x, y, expr, *args):
         if expr is None:
             raise ValueError("None is invalid")
         if self.texdone:
@@ -1330,15 +1331,21 @@ class texrunner(attrlist.attrlist):
             raise TexResultError("box extents not found", self)
         width, height, depth = map(lambda x: float(x) * 72.0 / 72.27, match.group("wd", "ht", "dp"))
         hratio = self.attrgetall(args, halign, default=(halign.left,))[0].hratio
-        textbox = _textbox(unit.topt(x), unit.topt(y), hratio * width, (1 - hratio) * width, height, depth, self, self.page)
+        textbox = _textbox(0, 0, hratio * width, (1 - hratio) * width, height, depth, self, self.page)
+                           # we do not yet move the box to the correct position
         for t in self.attrgetall(args, trafo._trafo, default=()):
-            textbox.transform(t)
+            textbox.transform(t) # transformations might rotate ...
+        textbox.transform(trafo._translate(x, y)) # ... before the hole box is positioned
         return textbox
 
+    def text(self, x, y, expr, *args):
+        return self._text(unit.topt(x), unit.topt(y), expr, *args)
 
-_default = texrunner()
-set = _default.set
-define = _default.define
-text = _default.text
+
+defaulttexrunner = texrunner()
+set = defaulttexrunner.set
+define = defaulttexrunner.define
+text = defaulttexrunner.text
+_text = defaulttexrunner._text
 
 # vim: fdm=marker

@@ -35,17 +35,54 @@ class _poly:
         if trafo is not None:
             self.transform(trafo)
 
-    def path(self, centerradius=None):
+    def path(self, centerradius=None, beziercorner=None):
         # TODO: - supply curved box plotting (Michael Schindler)
         pathels = []
         if centerradius is not None and self.center is not None:
             r = unit.topt(unit.length(centerradius, default_type="v"))
             pathels.append(path._arc(self.center[0], self.center[1], r, 0, 360))
             pathels.append(path.closepath())
-        pathels.append(path._moveto(self.corners[0][0], self.corners[0][1]))
-        for x, y in self.corners[1:]:
-            pathels.append(path._lineto(x, y))
-        pathels.append(path.closepath())
+        if beziercorner is None:
+            pathels.append(path._moveto(self.corners[0][0], self.corners[0][1]))
+            for x, y in self.corners[1:]:
+                pathels.append(path._lineto(x, y))
+            pathels.append(path.closepath())
+        else:
+            # curved box plotting according to a suggestion by Michael Schindler
+            l = len(self.corners)
+            r = unit.topt(beziercorner)
+            for i in range(l):
+                c = self.corners[i]
+                def normed(*v):
+                    n = math.sqrt(v[0] * v[0] + v[1] * v[1])
+                    return v[0] / n, v[1] / n
+                d1 = normed(self.corners[(i - 1 + l) % l][0] - c[0],
+                            self.corners[(i - 1 + l) % l][1] - c[1])
+                d2 = normed(self.corners[(i + 1 + l) % l][0] - c[0],
+                            self.corners[(i + 1 + l) % l][1] - c[1])
+                dc = normed(d1[0] + d2[0], d1[1] + d2[1])
+                cosa = d1[0] * d2[0] + d1[1] * d2[1]
+                sina2 = math.sqrt(0.5 - 0.5 * cosa)
+                cosa2 = math.sqrt(0.5 + 0.5 * cosa)
+                R = r * cosa2 / sina2
+                x = 0.75
+                f = x * r * (1 - sina2) / sina2
+                e = f * cosa2
+                g = 1.25 * f + math.sqrt(1.5625 * f * f + f * r / 6.0)
+                e = c[0] + e * dc[0], c[1] + e * dc[1]
+                f1 = c[0] + f * d1[0], c[1] + f * d1[1]
+                f2 = c[0] + f * d2[0], c[1] + f * d2[1]
+                g1 = c[0] + g * d1[0], c[1] + g * d1[1]
+                g2 = c[0] + g * d2[0], c[1] + g * d2[1]
+                d1 = c[0] + R * d1[0], c[1] + R * d1[1]
+                d2 = c[0] + R * d2[0], c[1] + R * d2[1]
+                if i:
+                    pathels.append(path._lineto(*d1))
+                else:
+                    pathels.append(path._moveto(*d1))
+                pathels.append(path._curveto(*(g1 + f1 + e)))
+                pathels.append(path._curveto(*(f2 + g2 + d2)))
+            pathels.append(path.closepath())
         return path.path(*pathels)
 
     def transform(self, trafo):
@@ -75,7 +112,7 @@ class _poly:
         alpha = ((bx+cx-ex)*dy - (by+cy-ey)*dx) * 1.0 / (gy*dx - gx*dy)
         if alpha > 0 - epsilon and alpha < 1 + epsilon:
                 beta = ((ex-bx-cx)*gy - (ey-by-cy)*gx) * 1.0 / (gx*dy - gy*dx)
-                return beta*dx - cx, beta*dy - cy # valid solution -> return align tuple
+                return beta*dx, beta*dy # valid solution -> return align tuple
         # crossing point at the line, but outside a valid range
         if alpha < 0:
             return 0 # crossing point outside e
@@ -96,7 +133,7 @@ class _poly:
         alpha = ((a*dx+cx-ex)*dy - (a*dy+cy-ey)*dx) * 1.0 / (gy*dx - gx*dy)
         if alpha > 0 - epsilon and alpha < 1 + epsilon:
             beta = ((ex-a*dx-cx)*gy - (ey-a*dy-cy)*gx) * 1.0 / (gx*dy - gy*dx)
-            return beta*dx - cx, beta*dy - cy # valid solution -> return align tuple
+            return beta*dx, beta*dy # valid solution -> return align tuple
         # crossing point at the line, but outside a valid range
         if alpha < 0:
             return 0 # crossing point outside e
@@ -114,12 +151,12 @@ class _poly:
             alpha = - p / 2 + math.sqrt(p*p/4 - q)
         else:
             alpha = - p / 2 - math.sqrt(p*p/4 - q)
-        return alpha*dx - cx, alpha*dy - cy
+        return alpha*dx, alpha*dy
 
     def _linealignpointvector(self, a, dx, dy, px, py):
         cx, cy = self.center
         beta = (a*dx+cx-px)*dy - (a*dy+cy-py)*dx
-        return a*dx - beta*dy - px, a*dy + beta*dx - py
+        return a*dx - beta*dy - px + cx, a*dy + beta*dx - py + cy
 
     def _alignvector(self, a, dx, dy, alignlinevector, alignpointvector):
         linevectors = map(lambda (p1, p2), self=self, a=a, dx=dx, dy=dy, alignlinevector=alignlinevector:
@@ -223,17 +260,27 @@ class _poly:
                          max([x[1] for x in self.corners]))
 
 
-def _genalignequal(method, polys, *args):
+def _genericalignequal(method, polys, a, dx, dy):
     vec = None
     for p in polys:
-        v = method(p, *args)
-        if vec is None or vec[0]*vec[0] + vec[1]*vec[1] < v[0]*v[0] + v[1]*v[1]:
+        v = method(p, a, dx, dy)
+        if vec is None or vec[0] * dx + vec[1] * dy < v[0] * dx + v[1] * dy:
             vec = v
     for p in polys:
         p.transform(trafo._translate(*vec))
 
+
+def _circlealignequal(polys, *args):
+    _genericalignequal(_poly._circlealignvector, polys, *args)
+
 def _linealignequal(polys, *args):
-    _genalignequal(poly._linealignvector, polys, *args)
+    _genericalignequal(_poly._linealignvector, polys, *args)
+
+def circlealignequal(polys, *args):
+    _genericalignequal(_poly.circlealignvector, polys, *args)
+
+def linealignequal(polys, *args):
+    _genericalignequal(_poly.linealignvector, polys, *args)
 
 
 class poly(_poly):

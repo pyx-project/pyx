@@ -29,6 +29,7 @@ for file in sys.argv[1:]:
     tex.write("\\pagestyle{mypagestyle}{}\n")
     tex.write("\\section*{%s}\n" % file)
     tex.write("\\lstinputlisting{%s.py}\n" % file)
+    tex.write("\\vspace{1cm}\n")
     tex.write("\\centerline{\\includegraphics{%s}}\n\\clearpage\n" % file)
 tex.write("\\end{document}\n")
 

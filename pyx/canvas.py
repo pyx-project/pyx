@@ -647,9 +647,10 @@ class canvas(base.PSText, attrlist.attrlist):
 
         """
 
-        self.PSOps    = []
-        self.trafo    = trafo.trafo()
-        self.clipbbox = bbox.bbox()
+        self.PSOps     = []
+        self.trafo     = trafo.trafo()
+        self.clipbbox  = bbox.bbox()
+        self.texrunner = text.defaulttexrunner
 
         for arg in args:
             if isinstance(arg, trafo._trafo):
@@ -862,7 +863,26 @@ class canvas(base.PSText, attrlist.attrlist):
 
         return self.draw(path, filled(), *args)
 
-    def text(self, x, y, atext, *args):
-        """AW: insert a text into the canvas"""
+    def settexrunner(self, texrunner):
+        """sets the texrunner to be used to within the text and _text methods"""
 
-        return self.insert(text.text(x, y, atext, *args))
+        self.texrunner = texrunner
+
+    def text(self, x, y, atext, *args):
+        """insert a text into the canvas
+
+        inserts a textbox created by self.texrunner.text into the canvas
+
+        returns the inserted textbox"""
+
+        return self.insert(self.texrunner.text(x, y, atext, *args))
+
+
+    def _text(self, x, y, atext, *args):
+        """insert a text into the canvas
+
+        inserts a textbox created by self.texrunner._text into the canvas
+
+        returns the inserted textbox"""
+
+        return self.insert(self.texrunner._text(x, y, atext, *args))

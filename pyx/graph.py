@@ -23,8 +23,8 @@
 
 import types, re, math, string, sys
 import bbox, box, canvas, path, unit, mathtree, trafo, attrlist, color, helper, text
-import text as textmodule # well, ugly ???
-import data as datamodule # well, ugly ???
+import text as textmodule
+import data as datamodule
 
 
 goldenrule = 0.5 * (math.sqrt(5) + 1)
@@ -647,15 +647,15 @@ class axistitlepainter(attrlist.attrlist):
     def dolayout(self, graph, axis):
         titledist = unit.topt(unit.length(self.titledist_str, default_type="v"))
         if axis.title is not None and self.titleattrs is not None:
+            x, y = axis._vtickpoint(axis, self.titlepos)
             dx, dy = axis.vtickdirection(axis, self.titlepos)
             # no not modify self.titleattrs ... the painter might be used by several axes!!!
             titleattrs = list(helper.ensuresequence(self.titleattrs))
             if self.titledirection is not None:
                 titleattrs = titleattrs + [trafo.rotate(self.reldirection(self.titledirection, dx, dy))]
-            axis.titlebox = textmodule.text(0, 0, axis.title, *titleattrs)
+            axis.titlebox = textmodule._text(x, y, axis.title, *titleattrs)
             axis._extent += titledist
             axis.titlebox._linealign(axis._extent, dx, dy)
-            axis.titlebox.transform(trafo._translate(*axis._vtickpoint(axis, self.titlepos)))
             axis._extent += axis.titlebox._extent(dx, dy)
 
     def paint(self, graph, axis):
@@ -841,6 +841,7 @@ class axispainter(axistitlepainter):
             tick.x, tick.y = axis._vtickpoint(axis, tick.virtual)
             tick.dx, tick.dy = axis.vtickdirection(axis, tick.virtual)
         for tick in axis.ticks:
+            tick.textbox = None
             if tick.labellevel is not None:
                 tick.labelattrs = helper.getsequenceno(self.labelattrs, tick.labellevel)
                 if tick.labelattrs is not None:
@@ -850,37 +851,20 @@ class axispainter(axistitlepainter):
                         self.createtext(tick)
                     if self.labeldirection is not None:
                         tick.labelattrs += [trafo.rotate(self.reldirection(self.labeldirection, tick.dx, tick.dy))]
-                    tick.textbox = textmodule.text(0, 0, tick.text, *tick.labelattrs)
-                else:
-                    tick.textbox = None
-            else:
-                tick.textbox = None
-        for tick in axis.ticks[1:]:
-            if tick.dx != axis.ticks[0].dx or tick.dy != axis.ticks[0].dy:
-                equaldirection = 0
-                break
+                    tick.textbox = textmodule._text(tick.x, tick.y, tick.text, *tick.labelattrs)
+        equaldirection = 1
+        if len(axis.ticks):
+            for tick in axis.ticks[1:]:
+                if tick.dx != axis.ticks[0].dx or tick.dy != axis.ticks[0].dy:
+                    equaldirection = 0
+        if equaldirection and ((not axis.ticks[0].dx and self.labelvequalize) or
+                               (not axis.ticks[0].dy and self.labelhequalize)):
+            box._linealignequal([tick.textbox for tick in axis.ticks if tick.textbox],
+                                labeldist, axis.ticks[0].dx, axis.ticks[0].dy)
         else:
-            equaldirection = 1
-        #if equaldirection:
-        #    maxht, maxwd, maxdp = 0, 0, 0
-        #    for tick in axis.ticks:
-        #        if tick.textbox is not None:
-        #            if maxht < tick.textbox.ht: maxht = tick.textbox.ht
-        #            if maxwd < tick.textbox.wd: maxwd = tick.textbox.wd
-        #            if maxdp < tick.textbox.dp: maxdp = tick.textbox.dp
-        #    for tick in axis.ticks:
-        #        if tick.textbox is not None:
-        #            if self.labelhequalize:
-        #                tick.textbox.manualextents(wd = maxwd)
-        #            if self.labelvequalize:
-        #                tick.textbox.manualextents(ht = maxht, dp = maxdp)
-        box._linealignequal([tick.textbox for tick in axis.ticks if tick.textbox is not None], labeldist, tick.dx, tick.dy)
-        for tick in axis.ticks:
-            if tick.textbox is not None:
-#                tick.textbox._linealign(labeldist, tick.dx, tick.dy)
-                tick._extent = tick.textbox._extent(tick.dx, tick.dy) + labeldist
-                tick.textbox.transform(trafo._translate(tick.x, tick.y))
-#                graph.stroke(tick.textbox.path())
+            for tick in axis.ticks:
+                if tick.textbox:
+                    tick.textbox._linealign(labeldist, axis.ticks[0].dx, axis.ticks[0].dy)
         def topt_v_recursive(arg):
             if helper.issequence(arg):
                 # return map(topt_v_recursive, arg) needs python2.2
@@ -899,13 +883,14 @@ class axispainter(axistitlepainter):
                     tick.outerticklength = 0
                 if tick.outerticklength is not None and tick.innerticklength is None:
                     tick.innerticklength = 0
+            extent = 0
             if tick.textbox is None:
                 if tick.outerticklength is not None and tick.outerticklength > 0:
-                    tick._extent = tick.outerticklength
-                else:
-                    tick._extent = 0
-            if axis._extent < tick._extent:
-                axis._extent = tick._extent
+                    extent = tick.outerticklength
+            else:
+                extent = tick.textbox._extent(tick.dx, tick.dy) + labeldist
+            if axis._extent < extent:
+                axis._extent = extent
         axistitlepainter.dolayout(self, graph, axis)
 
     def ratelayout(self, graph, axis, dense=1):
@@ -1892,10 +1877,11 @@ class graphxy(canvas.canvas):
 
     def bbox(self):
         self.finish()
-        return bbox.bbox(self._xpos - self._yaxisextents[0],
-                         self._ypos - self._xaxisextents[0],
-                         self._xpos + self._width + self._yaxisextents[1],
-                         self._ypos + self._height + self._xaxisextents[1])
+        return canvas.canvas.bbox(self)
+        #return bbox.bbox(self._xpos - self._yaxisextents[0],
+        #                 self._ypos - self._xaxisextents[0],
+        #                 self._xpos + self._width + self._yaxisextents[1],
+        #                 self._ypos + self._height + self._xaxisextents[1])
 
     def write(self, file):
         self.finish()
@@ -2810,12 +2796,11 @@ class symbol:
                                    path.closepath()),
                          *self.errorbarattrs)
 
-    def _drawsymbol(self, graph, x, y, point=None):
-        if x is not None and y is not None:
-            graph.draw(path.path(*self.symbol(self, x, y)), *self.symbolattrs)
+    def _drawsymbol(self, canvas, x, y, point=None):
+        canvas.draw(path.path(*self.symbol(self, x, y)), *self.symbolattrs)
 
-    def drawsymbol(self, graph, x, y, point=None):
-        self._drawsymbol(graph, unit.topt(x), unit.topt(y), point)
+    def drawsymbol(self, canvas, x, y, point=None):
+        self._drawsymbol(canvas, unit.topt(x), unit.topt(y), point)
 
     def drawpoints(self, graph, points):
         xaxismin, xaxismax = self.xaxis.getdatarange()
@@ -2876,7 +2861,7 @@ class symbol:
                     self._drawerrorbar(graph, topleft, top, topright,
                                               left, center, right,
                                               bottomleft, bottom, bottomright, point)
-                if self._symbolattrs is not None:
+                if self._symbolattrs is not None and xpos is not None and ypos is not None:
                     self._drawsymbol(graph, xpos, ypos, point)
             if xpos is not None and ypos is not None:
                 if moveto:
