@@ -16,12 +16,12 @@ def dotest(c, x, y, test):
 
 class cross(path):
    def __init__(self, x, y):
-       self.path=[moveto(x,y),
-                  rmoveto(-0.1, -0.1), 
-		  rlineto(0.2, 0.2), 
-		  rmoveto(-0.1, -0.1),
-                  rmoveto(-0.1, +0.1), 
-		  rlineto(0.2, -0.2)]
+       path.__init__(self, moveto(x,y),
+                           rmoveto(-0.1, -0.1),
+                           rlineto(0.2, 0.2),
+                           rmoveto(-0.1, -0.1),
+                           rmoveto(-0.1, +0.1),
+                           rlineto(0.2, -0.2))
 
 
 def drawpathwbbox(c, p):
@@ -293,7 +293,7 @@ def testarclentoparam(c):
     t=curve.arclentoparam(l)
     c.stroke(curve)
     for i in range(len(t)):
-        c.draw(path(circle(curve.at(t[i])[0], curve.at(t[i])[1], 0.1)), [deco.filled([cols[i]]), deco.stroked()])
+        c.draw(circle(curve.at(t[i])[0], curve.at(t[i])[1], 0.1), [deco.filled([cols[i]]), deco.stroked()])
 
 
 c = canvas.canvas()
