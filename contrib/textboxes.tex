@@ -131,6 +131,7 @@
   % \futurecost will be the cost in the next step (TeXBook, p.111)
   \futurecost=#1
   \advance\futurecost by\outputpenalty
+  % redo Knuth's formula for pagebreaking: futurecost (is the penalty), badness and insertpenalties
   \ifnum\insertpenalties<10000
       \ifnum\futurecost<-9999
       \else\ifnum\futurecost<10000
@@ -139,13 +140,13 @@
           \else\ifnum\badness=10000
               \futurecost=100000
           \else
-              \futurecost=10000000
+              \futurecost=10000000 % infinity
           \fi\fi
       \else
           \futurecost=10000 % this case is not in Knuth's formula !??
       \fi\fi
   \else
-      \futurecost=10000000
+      \futurecost=10000000 % infinity
   \fi
   % track the leastcost up to now and
   % set showprevgraf to the current value of myprevgraf
@@ -162,9 +163,18 @@
   \space futurecost=\the\futurecost
   \space leastcost=\the\leastcost}\fi
 }
+% at the end of all input we will need \showprevgraf to be \myprevgraf
+% \supereject is called by \bye
+% and explicitly by the textboxes() method
+\edef\savesupereject{\supereject}
+\def\supereject{\global\showprevgraf=\myprevgraf\savesupereject}
+% save whatever someone said to be the output routine
+%   \plainoutput uses \makeheadline and \makefootline
 \newtoks\saveoutput
-%\saveoutput=\expandafter{\the\output}
-\saveoutput={\shipout\vbox{\pagebody}\advancepageno\ifnum\outputpenalty>-20000\else\dosupereject\fi}
+\def\makeheadline{}
+\def\makefootline{}
+\saveoutput=\expandafter{\the\output}
+\def\linemarker{\PyXMarker{start@\the\parno@\the\myprevgraf}}
 \output={%
   \tempcnt=\deadcycles \advance\tempcnt by-1 \deadcycles=\tempcnt%
   \razor=-50000
@@ -193,12 +203,13 @@
     % set the outputtype
     \global\outputtype=1
     % and re-inject the whole page with the original penalty
-    \unvbox255%
-    \setbox0=\lastbox%
-    \setbox0=\hbox to \the\wd0{\PyXMarker{start@\the\parno@\the\myprevgraf}%
-                               \unhbox0%
-                               \PyXMarker{end@\the\parno@\the\myprevgraf}}%
-    \nointerlineskip\box0%
+    \unvbox255
+    \linemarker
+%    \setbox0=\lastbox%
+%    \setbox0=\hbox to \the\wd0{\PyXMarker{start@\the\parno@\the\myprevgraf}%
+%                               \unhbox0%
+%                               \PyXMarker{end@\the\parno@\the\myprevgraf}}%
+%    \nointerlineskip\box0%
     \advance\outputpenalty by 100000 \penalty\outputpenalty
   \else\advance\razor by -100000 \ifnum\outputpenalty>\razor
     %%%%%%%%%% PreDisplayPenalty: -200000 %%%%%%%%%%
@@ -214,9 +225,14 @@
       \global\outputtype=2
       % this will be the cost in the next page break finding:
       \setshowprevgraf{200000}
-    \else\global\outputtype=2 \fi\fi
+    \else
+      \global\outputtype=2
+      \def\linemarker{}
+    \fi\fi
     % and re-inject the whole page with the original penalty
-    \unvbox255 \advance\outputpenalty by 200000 \penalty\outputpenalty
+    \unvbox255
+    \linemarker
+    \advance\outputpenalty by 200000 \penalty\outputpenalty
   \else\advance\razor by -100000 \ifnum\outputpenalty>\razor
     %%%%%%%%%% PostDisplayPenalty: -300000 %%%%%%%%%%
     \ifverbose\immediate\write16{******** PostDisplayPenalty ********}\fi
@@ -226,7 +242,9 @@
     % set the outputtype
     \global\outputtype=3
     % and re-inject the whole page with the original penalty
-    \unvbox255 \advance\outputpenalty by 300000 \penalty\outputpenalty
+    \unvbox255
+    \linemarker
+    \advance\outputpenalty by 300000 \penalty\outputpenalty
   \else\advance\razor by -100000 \ifnum\outputpenalty>\razor
     %%%%%%%%%% end of the paragraph: \penalty-400000 %%%%%%%%%%
     \ifverbose\immediate\write16{******** Penalty ********}\fi
@@ -235,7 +253,9 @@
     \setshowprevgraf{400000}
     \global\outputtype=4
     % and re-inject the whole page with the original penalty
-    \unvbox255 \advance\outputpenalty by 400000 \penalty\outputpenalty
+    \unvbox255
+    \linemarker
+    \advance\outputpenalty by 400000 \penalty\outputpenalty
   \else
     %%%%%%%%%% some stuff unknown to us %%%%%%%%%%
     \immediate\write16{******** VEEEEEEERY negative value of outputpenalty: ERROR? ********}%
