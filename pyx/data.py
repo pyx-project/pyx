@@ -22,7 +22,7 @@
 
 
 import re, ConfigParser
-from mathtree import *
+import helper, mathtree
 
 
 class ColumnError(Exception): pass
@@ -30,7 +30,7 @@ class ColumnError(Exception): pass
 
 ColPattern = re.compile(r"\$-?[0-9]+")
 
-class MathTreeValCol(MathTreeValVar):
+class MathTreeValCol(mathtree.MathTreeValVar):
 
     def InitByParser(self, arg):
         Match = arg.MatchPattern(ColPattern)
@@ -39,12 +39,14 @@ class MathTreeValCol(MathTreeValVar):
             return 1
 
 
-MathTreeValsWithCol = (MathTreeValConst, MathTreeValVar, MathTreeValCol)
+MathTreeValsWithCol = (mathtree.MathTreeValConst,
+                       mathtree.MathTreeValVar,
+                       MathTreeValCol)
 
 
 class data:
 
-    def __init__(self, titles, data, parser=parser(MathTreeVals=MathTreeValsWithCol)):
+    def __init__(self, titles, data, parser=mathtree.parser(MathTreeVals=MathTreeValsWithCol)):
         self.titles = titles
         self.data = data
         self.parser = parser
@@ -143,11 +145,7 @@ class datafile(data):
     def __init__(self, file, commentpattern=defaultcommentpattern,
                              stringpattern=defaultstringpattern,
                              columnpattern=defaultcolumnpattern, **args):
-        try:
-            file + ''
-        except TypeError:
-            pass
-        else:
+        if helper.isstring(file):
             file = open(file, "r")
         usetitles = []
         usedata = []
