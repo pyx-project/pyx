@@ -2,10 +2,26 @@
 
 from globex import *
 from const import *
+import string
+
+linecap_butt   = 0
+linecap_round  = 1
+linecap_square = 2
+
+linejoin_miter = 0
+linejoin_round = 1
+linejoin_bevel = 2
+
+linestyle_solid      = (linecap_butt,  [])
+linestyle_dashed     = (linecap_butt,  [2])
+linestyle_dotted     = (linecap_round, [0, 3])
+linestyle_dashdotted = (linecap_round, [0, 3, 3, 3])
+
 
 class Canvas(Globex):
 
-    ExportMethods = [ "amove", "aline", "rmove", "rline" ]
+    ExportMethods = [ "amove", "aline", "rmove", "rline", 
+                      "setlinecap", "setlinejoin", "setmiterlimit", "setdash", "setlinestyle" ]
 
     def __init__(self,width,height,basefilename):
         self.Width=width
@@ -69,7 +85,7 @@ class Canvas(Globex):
 } bind def""")
         self.PSFile.write("%%EndProlog\n") 
         
-	self.PSCmd("0.02 setlinewidth")
+	self.PSCmd("0.2 setlinewidth")
 	self.PSCmd("newpath")
 	self.amove(0,0)
 
@@ -175,7 +191,32 @@ class Canvas(Globex):
         (self.x, self.y)=(self.x+x,self.y+y)
 	self.PSCmd("%f %f rlineto" % self.PScm2po(x,y))
 
+    def setlinecap(self, cap):
+        isnumber(cap)
 
+	self.PSCmd("%d setlinecap" % cap)
+
+    def setlinejoin(self, join):
+        isnumber(join)
+
+	self.PSCmd("%d setlinejoin" % join)
+	
+    def setmiterlimit(self, limit):
+        isnumber(join)
+
+	self.PSCmd("%f setmiterlimit" % limit)
+
+    def setdash(self, pattern, offset=0):
+    	patternstring=""
+    	for element in pattern:
+		patternstring=patternstring + `element` + " "
+    	
+    	self.PSCmd("[%s] %d setdash" % (patternstring, offset))
+
+    def setlinestyle(self, style):
+        self.setlinecap(style[0])
+	self.setdash   (style[1])
+    	
 def canvas(width, height, basefilename):
     DefaultCanvas=Canvas(width, height, basefilename)
     DefaultCanvas.AddNamespace("DefaultCanvas", GetCallerGlobalNamespace())
@@ -220,7 +261,8 @@ if __name__=="__main__":
     for pos in range(1,21):
         amove(pos,7.5)
         text(".")
-        
+    
+    setlinestyle(linestyle_dashdotted)
     amove(5,12)
     text("a b c d e f g h i j k l m n o p q r s t u v w x y z",hsize=2)
     aline(7,12)
