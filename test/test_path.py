@@ -121,6 +121,15 @@ def testnormpathtrafo(c):
     c.draw(p1, color.rgb.red, canvas.linestyle.dashed)
     c.draw(p2, color.rgb.green, canvas.linestyle.dashed)
 
+def testtangent(c):
+    p=normpath(moveto(0,5),
+           curveto(2,1,4,0,2,4),
+           rcurveto(-3,2,1,2,3,6),
+           rlineto(2,3))+circle(3,4,1)
+    c.draw(p)
+    for i in range(int(p.range())*2):
+        c.draw(p.tangent(i/2.0)) 
+
 
 def testarcbbox(c):
     for phi in range(0,360,30):
@@ -229,6 +238,7 @@ dotest(c, 0, 0, "testarcs")
 # dotest(c, 12, 3, "testmidpointsplit")
 dotest(c, 2, 12, "testintersectbezier")
 dotest(c, 10,11, "testnormpathtrafo")
+dotest(c, 12,3, "testtangent")
 c.writetofile("test_path", paperformat="a4", rotated=0, fittosize=1)
 
 c=canvas.canvas()
