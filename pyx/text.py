@@ -620,6 +620,8 @@ class virtualfont(font):
     def __init__(self, name, c, q, d, tfmconv, fontmap, debug=0):
         font.__init__(self, name, c, q, d, tfmconv, debug)
         fontpath = pykpathsea.find_file(name, pykpathsea.kpse_vf_format)
+        if fontpath is None or not len(fontpath):
+            raise RuntimeError
         self.vffile = vffile(fontpath, self.scale, fontmap, debug > 1)
 
     def getfonts(self):
@@ -814,7 +816,7 @@ class dvifile:
 
         try:
             font = virtualfont(fontname, c, q, d, self.tfmconv, self.fontmap, self.debug > 1)
-        except TypeError:
+        except (TypeError, RuntimeError):
             font = type1font(fontname, c, q, d, self.tfmconv, self.fontmap, self.debug > 1)
 
         self.fonts[num] = font
