@@ -295,8 +295,7 @@ if __name__=="__main__":
     amove(12,10)
     aline(12,14)
 
-    #amove(5,20)
-    #text("$\\left\\{\\displaystyle\\frac{1}{2}\\right\\}$")
-
-    DefaultTex.TexRun()
+    #DefaultTex.TexRun()
+    deltex()
+    #text("a b c d e f g h i j k l m n o p q r s t u v w x y z",hsize=2,valign=bottom)
     DefaultCanvas.PSEnd()

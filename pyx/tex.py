@@ -2,12 +2,12 @@
 
 # Design TODO's:
 
-# TODO7: nur ein size-file bei mehreren TeX Klassen
-#        derzeit überschreiben der size-files -- verhindern!
+# TODO 7: nur ein size-file bei mehreren TeX Klassen
+#         derzeit überschreiben der size-files -- verhindern!
 
-# TODO7: Diskussion ein canvas pro postscript-file? (ggf. canvas umbenennen)
-#        ggf. sonst Diskussion Seitengröße etc.
-#        weitere Schicht postscript-file notwendig ?!?
+# TODO 7: Diskussion ein canvas pro postscript-file? (ggf. canvas umbenennen)
+#         ggf. sonst Diskussion Seitengröße etc.
+#         weitere Schicht postscript-file notwendig ?!?
 
 from globex import *
 from const import *
@@ -64,11 +64,10 @@ class Tex(Globex):
     ExportMethods = [ "text", "textwd", "textht", "textdp" ]
 
     def __init__(self, canvas, type = "TeX", latexstyle = "10pt", latexclass = "article", latexclassopt = "", texinit = "", TexInitIgnoreMsgLevel = 1):
-        if type != TeX or type != LaTeX:
-            assert "invalid type"
+        assert type == TeX or type == LaTeX, "invalid type"
         if type == TeX:
-            # TODO5: error handling lts-file not found
-            # TODO3: other ways creating font sizes?
+            # TODO 5: error handling lts-file not found
+            # TODO 3: other ways creating font sizes?
             texinit = open("lts/" + latexstyle + ".lts", "r").read() + texinit
         self.type = type
         self.canvas = canvas
@@ -81,8 +80,8 @@ class Tex(Globex):
     TexMarkerEnd = TexMarker + "End"
 
     def __del__(self):
-        # FIXME: self.TexRun()
-	pass
+        self.canvas.amove(0,0)
+        # self.TexRun()
 
     TexCmds = [ ]
         # stores the TexCmds; note that the first element has a special
@@ -93,7 +92,7 @@ class Tex(Globex):
 
     def TexParenthesisCheck(self, Cmd):
 
-        'check for the proper usage of "{" and "}" in Cmd'
+        'check for proper usage of "{" and "}" in Cmd'
 
         depth = 0
         esc = 0
@@ -132,10 +131,9 @@ class Tex(Globex):
                   CmdBegin = CmdBegin + "\\vbox{\hsize" + str(hsize) + "truecm{"
                   CmdEnd = "}}" + CmdEnd
              else:
-                  assert "valign unknown"
+                  assert 0, "valign unknown"
         else:
-             if valign != None:
-                  assert "hsize needed to use valign"
+             assert valign == None, "hsize needed to use valign"
         
         Cmd = CmdBegin + Cmd + CmdEnd + "\n"
         return Cmd
@@ -144,7 +142,7 @@ class Tex(Globex):
 
         'creates the TeX commands to put \\localbox at the current position'
 
-        # TODO3: color support
+        # TODO 3: color support
 
         CmdBegin = "{\\vbox to0pt{\\kern" + str(self.canvas.Height - self.canvas.y) + "truecm\\hbox{\\kern" + str(self.canvas.x) + "truecm\\ht\\localbox0pt"
         CmdEnd = "}\\vss}\\nointerlineskip}"
@@ -162,7 +160,7 @@ class Tex(Globex):
             elif halign == right:
                 CmdBegin = CmdBegin + "\kern-\wd\localbox"
             else:
-                assert "halign unknown"
+                assert 0, "halign unknown"
 
         Cmd = CmdBegin + "\\copy\\localbox" + CmdEnd + "\n"
         return Cmd
@@ -203,10 +201,10 @@ class Tex(Globex):
 
         'run LaTeX&dvips for TexCmds, add postscript to canvas, report errors'
     
-        # TODO7: file handling
-        #        Be sure to delete all temporary files (signal handling???)
-        #        and check for the files before reading them (including the
-        #        dvi before it is converted by dvips and the resulting ps)
+        # TODO 7: file handling
+        #         Be sure to delete all temporary files (signal handling???)
+        #         and check for the files before reading them (including the
+        #         dvi before it is converted by dvips and the resulting ps)
 
         import os, string
 
@@ -290,7 +288,7 @@ class Tex(Globex):
                 else:
                     print "Traceback (innermost last):"
                     traceback.print_list(Cmd.Stack)
-                    assert "IgnoreMsgLevel not in range(4)"
+                    assert 0, "IgnoreMsgLevel not in range(4)"
 
                 # print the message if needed
                 if doprint:
@@ -305,12 +303,12 @@ class Tex(Globex):
             print "Error reading the " + self.type + " output. Check your local environment and the files\n\"" + self.canvas.BaseFilename + ".tex\" and \"" + self.canvas.BaseFilename + ".log\"."
             raise
         
-        # TODO7: dvips error handling
-        #        interface for modification of the dvips command line
+        # TODO 7: dvips error handling
+        #         interface for modification of the dvips command line
         if os.system("dvips -P pyx -T" + str(self.canvas.Width) + "cm," + str(self.canvas.Height) + "cm -o " + self.canvas.BaseFilename + ".tex.eps " + self.canvas.BaseFilename + " > /dev/null 2>&1"):
-            assert "dvips exit code non-zero"
+            assert 0, "dvips exit code non-zero"
         
-        # TODO8: don't write save/restore directly
+        # TODO 8: don't write save/restore directly
         self.canvas.PSCmd("save")
         self.canvas.amove(0,0)
         self.canvas.PSInsertEPS(self.canvas.BaseFilename + ".tex.eps")
@@ -379,12 +377,27 @@ class Tex(Globex):
 
 
 def tex(latexstyle = "10pt", texinit = "", TexInitIgnoreMsgLevel = 1):
-    exec "canvas = DefaultCanvas" in GetCallerGlobalNamespace(), locals()
-    DefaultTex = Tex(canvas, TeX, latexstyle, None, None, texinit, TexInitIgnoreMsgLevel)
+    try:
+        exec "DefaultTex" in GetCallerGlobalNamespace()
+    except:
+        pass
+    else:
+        assert 0, "DefaultTex already defined"
+    exec "__pyx__canvas = DefaultCanvas" in GetCallerGlobalNamespace(), locals()
+    DefaultTex = Tex(__pyx__canvas, TeX, latexstyle, None, None, texinit, TexInitIgnoreMsgLevel)
     DefaultTex.AddNamespace("DefaultTex", GetCallerGlobalNamespace())
+
+def addtex(tex):
+    tex.AddNamespace("DefaultTex", GetCallerGlobalNamespace())
+
+def deltex():
+    exec "__pyx__tex = DefaultTex" in GetCallerGlobalNamespace(), locals()
+    __pyx__tex.DelNamespace("DefaultTex", GetCallerGlobalNamespace())
 
 def latex(latexclass = "article", latexclassopt = "", texinit = "", TexInitIgnoreMsgLevel = 1):
-    exec "canvas = DefaultCanvas" in GetCallerGlobalNamespace(), locals()
-    DefaultTex = Tex(canvas, LaTeX, None, latexclass, latexclassopt, texinit, TexInitIgnoreMsgLevel)
+    exec "__pyx__canvas = DefaultCanvas" in GetCallerGlobalNamespace(), locals()
+    DefaultTex = Tex(__pyx__canvas, LaTeX, None, latexclass, latexclassopt, texinit, TexInitIgnoreMsgLevel)
     DefaultTex.AddNamespace("DefaultTex", GetCallerGlobalNamespace())
 
+addlatex=addtex
+dellatex=deltex
