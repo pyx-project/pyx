@@ -1,0 +1,40 @@
+
+pyxclass ---+--- pscommand ---+--- canvas
+            |                 +--- epsfile
+            |                 +--- tex
+            |                 +--- path ---+--- line
+            |                 |            +--- rect
+            |                 +--- bpath ---+--- bline
+            |                 |             +--- bcurve
+            |                 |             +--- barc
+            |                 +--- graph
+            +--- psattr ---+--- pathdeco
+            |              +--- pathstyle ---+--- linewidth
+            |                                +--- linestyle
+            |                                +--- linecap
+            +--- psalign --- ???
+            +--- texattr ---+--- fontsize
+            |               +--- style
+            +--- texalign ---+--- halign
+            |                +--- valign
+            +--- graphattr ---+--- axis ---+--- linaxis
+            |                 |            +--- logaxis
+            |                 +--- part ---+--- linpart --- autolinpart
+            |                 |            +--- logpart --- autologpart
+            |                 +--- rate --- momrate
+            |                 +--- style ---+--- marker
+            |                 |             +--- line
+            |                 |             +--- bar
+            |                 +--- data ---+--- datafile
+            |                 |            +--- function --- paramfunction
+            |                 +--- key
+            +--- pyxexcept ...
+
+psattr ----+
+texattr ---+--- color ---+--- colorgrey
+                         +--- colorrgb
+                         +--- colorhsb
+
+where is bbox?
+where are pathel/bpathel?
+
