@@ -276,7 +276,6 @@ class pattern(_canvas, attr.exclusiveattr, style.fillstyle):
         _canvas.__init__(self)
         attr.exclusiveattr.__init__(self, pattern)
         self.id = "pattern%d" % id(self)
-        # XXX: some checks are in order
         if painttype not in (1,2):
             raise ValueError("painttype must be 1 or 2")
         self.painttype = painttype
