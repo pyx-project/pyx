@@ -1200,20 +1200,30 @@ class texrunner:
                     nextwidth = 72.27/72*unit.topt(pageshapes[page][0])
                 else:
                     nextwidth = 72.27/72*unit.topt(pageshapes[-1][0])
-                parnos.append(str(par))
                 if par != lastpar:
+                    # a new paragraph is to be broken
+                    parnos.append(str(par))
                     parshape = " 0pt ".join(["%.5ftruept" % width for i in range(prevgraf)])
                     if len(parshape):
                         parshape = " 0pt " + parshape
                     parshapes.append("{\\parshape %i%s 0pt %.5ftruept}" % (prevgraf + 1, parshape, nextwidth))
+                elif prevgraf == lastprevgraf:
+                    pass
                 else:
-                    parshape = " 0pt ".join(["%.5ftruept" % width for i in range(prevgraf - 1)])
-                    if len(parshape):
-                        parshape = " 0pt " + parshape
-                    oldparshape = parshapes[-1].split(None, 2)[2][:-1]
+                    # we have to append the breaking of the previous paragraph
+                    oldparshape = " ".join(parshapes[-1].split(' ')[2:2+2*lastprevgraf])
+                    oldparshape = oldparshape.split('}')[0]
                     if len(parshape):
                         oldparshape = " " + oldparshape
-                    prevgraf = prevgraf + lastprevgraf
+                    #print r"oldparshape:"
+                    #print oldparshape
+                    parshape = " 0pt ".join(["%.5ftruept" % width for i in range(prevgraf - lastprevgraf)])
+                    if len(parshape):
+                        parshape = " 0pt " + parshape
+                    else:
+                        parshape = " "
+                    #print r"parshape:"
+                    #print parshape
                     parshapes[-1] = "{\\parshape %i%s%s 0pt %.5ftruept}" % (prevgraf + 1, oldparshape, parshape, nextwidth)
                 lastpar = par
                 lastprevgraf = prevgraf
@@ -1225,6 +1235,8 @@ class texrunner:
             if parnos == lastparnos and parshapes == lastparshapes:
                 return result
             loop += 1
+            if loop > 10:
+                raise Error
 
 
 # the module provides an default texrunner and methods for direct access
