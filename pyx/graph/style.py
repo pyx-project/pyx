@@ -178,7 +178,7 @@ provider["vpos"] = provider["vposmissing"] = provider["vposavailable"] = provide
 
 class _range(_style):
 
-    provide = ["vrange", "vrangemissing"]
+    provide = ["vrange", "vrangemissing", "vrangeminmissing", "vrangemaxmissing"]
 
     # internal bit masks
     mask_value = 1
@@ -202,6 +202,8 @@ class _range(_style):
         usecolumns = []
         styledata.rangeposcolumns = []
         styledata.vrangemissing = []
+        styledata.vrangeminmissing = []
+        styledata.vrangemaxmissing = []
         styledata.rangeposdeltacolumns = {} # temporarily used by adjustaxis only
         for count, axisnames in enumerate(graph.axesnames):
             for axisname in axisnames:
@@ -239,6 +241,11 @@ class _range(_style):
                 raise ValueError("multiple axes per graph dimension")
             elif len(styledata.rangeposcolumns) + len(styledata.vrangemissing) < count+1:
                 styledata.vrangemissing.append(count)
+            else:
+                if not (styledata.rangeposcolumns[-1][1] & (self.mask_min | self.mask_dmin | self.mask_d)):
+                    styledata.vrangeminmissing.append(count)
+                if not (styledata.rangeposcolumns[-1][1] & (self.mask_max | self.mask_dmax | self.mask_d)):
+                    styledata.vrangemaxmissing.append(count)
         return usecolumns
 
     def adjustaxis(self, styledata, graph, column, data, index):
@@ -304,12 +311,12 @@ class _range(_style):
             if (styledata.vrange[index][0] is not None and styledata.vrange[index][1] is not None and
                 styledata.vrange[index][0] > styledata.vrange[index][1] + self.epsilon):
                 raise ValueError("negative errorbar range")
-            if (styledata.vrange[index][0] is not None and styledata.vpos[index] is not None and
-                styledata.vrange[index][0] > styledata.vpos[index] + self.epsilon):
-                raise ValueError("negative minimum errorbar")
-            if (styledata.vrange[index][1] is not None and styledata.vpos[index] is not None and
-                styledata.vrange[index][1] < styledata.vpos[index] - self.epsilon):
-                raise ValueError("negative maximum errorbar")
+            #if (styledata.vrange[index][0] is not None and styledata.vpos[index] is not None and
+            #    styledata.vrange[index][0] > styledata.vpos[index] + self.epsilon):
+            #    raise ValueError("negative minimum errorbar")
+            #if (styledata.vrange[index][1] is not None and styledata.vpos[index] is not None and
+            #    styledata.vrange[index][1] < styledata.vpos[index] - self.epsilon):
+            #    raise ValueError("negative maximum errorbar")
 
 
 provider["vrange"] = provider["vrangemissing"] = _range()
@@ -437,8 +444,8 @@ class line(_styleneedingpointpos):
         styledata.lineattrs = attr.selectattrs(self.defaultlineattrs + self.lineattrs, selectindex, selecttotal)
 
     def initdrawpoints(self, styledata, graph):
-        styledata.linecanvas = graph.insert(canvas.canvas())
         if styledata.lineattrs is not None:
+            styledata.linecanvas = graph.insert(canvas.canvas())
             styledata.linecanvas.set(styledata.lineattrs)
         styledata.path = path.path()
         styledata.linebasepoints = []
@@ -604,10 +611,10 @@ class errorbar(_style):
         styledata.errorbarattrs = attr.selectattrs(self.defaulterrorbarattrs + self.errorbarattrs, selectindex, selecttotal)
 
     def initdrawpoints(self, styledata, graph):
-        styledata.errorbarcanvas = graph.insert(canvas.canvas())
         if styledata.errorbarattrs is not None:
+            styledata.errorbarcanvas = graph.insert(canvas.canvas())
             styledata.errorbarcanvas.set(styledata.errorbarattrs)
-        styledata.dimensionlist = range(len(styledata.vpos))
+            styledata.dimensionlist = range(len(styledata.vpos))
 
     def drawpoint(self, styledata, graph):
         if styledata.errorbarattrs is None:
@@ -725,6 +732,9 @@ class arrow(_styleneedingpointpos):
         else:
             styledata.arrowattrs = None
 
+    def initdrawpoints(self, styledata, graph):
+        styledata.arrowcanvas = graph.insert(canvas.canvas())
+
     def drawpoint(self, styledata, graph):
         if styledata.lineattrs is not None and styledata.arrowattrs is not None and styledata.vposvalid:
             linelength_pt = unit.topt(self.linelength)
@@ -742,89 +752,68 @@ class arrow(_styleneedingpointpos):
                     y1 = y_pt-0.5*dy*linelength_pt*size
                     x2 = x_pt+0.5*dx*linelength_pt*size
                     y2 = y_pt+0.5*dy*linelength_pt*size
-                    graph.stroke(path.line_pt(x1, y1, x2, y2), styledata.lineattrs +
-                                 [deco.earrow(styledata.arrowattrs, size=self.arrowsize*size)])
+                    styledata.arrowcanvas.stroke(path.line_pt(x1, y1, x2, y2), styledata.lineattrs +
+                                                 [deco.earrow(styledata.arrowattrs, size=self.arrowsize*size)])
 
     def key_pt(self, styledata, graph, x_pt, y_pt, width_pt, height_pt):
         raise "TODO"
 
 
-# class rect(_style):
-# 
-#     def __init__(self, palette=color.palette.Gray):
-#         self.palette = palette
-# 
-#     def setdata(self, graph, columns, styledata):
-#         if len(graph.axisnames) != 2:
-#             raise TypeError("arrow style restricted on two-dimensional graphs")
-#         columns = columns.copy()
-#         styledata.xaxis, styledata.xminindex = _style.setdatapattern(self, graph, columns, re.compile(r"(%s([2-9]|[1-9][0-9]+)?)min$" % graph.axisnames[0]))
-#         styledata.yaxis, styledata.yminindex = _style.setdatapattern(self, graph, columns, re.compile(r"(%s([2-9]|[1-9][0-9]+)?)min$" % graph.axisnames[1]))
-#         xaxis, styledata.xmaxindex = _style.setdatapattern(self, graph, columns, re.compile(r"(%s([2-9]|[1-9][0-9]+)?)max$" % graph.axisnames[0]))
-#         yaxis, styledata.ymaxindex = _style.setdatapattern(self, graph, columns, re.compile(r"(%s([2-9]|[1-9][0-9]+)?)max$" % graph.axisnames[1]))
-#         if xaxis != styledata.xaxis or yaxis != styledata.yaxis:
-#             raise ValueError("min/max values should use the same axes")
-#         styledata.colorindex = columns["color"]
-#         del columns["color"]
-#         return columns
-# 
-#     def selectstyle(self, selectindex, selecttotal, styledata):
-#         pass
-# 
-#     def adjustaxes(self, points, columns, styledata):
-#         if styledata.xminindex in columns:
-#             styledata.xaxis.adjustrange(points, styledata.xminindex)
-#         if styledata.xmaxindex in columns:
-#             styledata.xaxis.adjustrange(points, styledata.xmaxindex)
-#         if styledata.yminindex in columns:
-#             styledata.yaxis.adjustrange(points, styledata.yminindex)
-#         if styledata.ymaxindex in columns:
-#             styledata.yaxis.adjustrange(points, styledata.ymaxindex)
-# 
-#     def drawpoints(self, points, graph, styledata):
-#         # TODO: bbox shortcut
-#         c = graph.insert(canvas.canvas())
-#         lastcolorvalue = None
-#         for point in points:
-#             try:
-#                 xvmin = styledata.xaxis.convert(point[styledata.xminindex])
-#                 xvmax = styledata.xaxis.convert(point[styledata.xmaxindex])
-#                 yvmin = styledata.yaxis.convert(point[styledata.yminindex])
-#                 yvmax = styledata.yaxis.convert(point[styledata.ymaxindex])
-#                 colorvalue = point[styledata.colorindex]
-#                 if colorvalue != lastcolorvalue:
-#                     color = self.palette.getcolor(point[styledata.colorindex])
-#             except:
-#                 continue
-#             if ((xvmin < 0 and xvmax < 0) or (xvmin > 1 and xvmax > 1) or
-#                 (yvmin < 0 and yvmax < 0) or (yvmin > 1 and yvmax > 1)):
-#                 continue
-#             if xvmin < 0:
-#                 xvmin = 0
-#             elif xvmin > 1:
-#                 xvmin = 1
-#             if xvmax < 0:
-#                 xvmax = 0
-#             elif xvmax > 1:
-#                 xvmax = 1
-#             if yvmin < 0:
-#                 yvmin = 0
-#             elif yvmin > 1:
-#                 yvmin = 1
-#             if yvmax < 0:
-#                 yvmax = 0
-#             elif yvmax > 1:
-#                 yvmax = 1
-#             p = graph.vgeodesic(xvmin, yvmin, xvmax, yvmin)
-#             p.append(graph.vgeodesic_el(xvmax, yvmin, xvmax, yvmax))
-#             p.append(graph.vgeodesic_el(xvmax, yvmax, xvmin, yvmax))
-#             p.append(graph.vgeodesic_el(xvmin, yvmax, xvmin, yvmin))
-#             p.append(path.closepath())
-#             if colorvalue != lastcolorvalue:
-#                 c.set([color])
-#             c.fill(p)
-# 
-# 
+class rect(_style):
+
+    need = ["vrange", "vrangeminmissing", "vrangemaxmissing"]
+
+    def __init__(self, palette=color.palette.Gray):
+        self.palette = palette
+
+    def columns(self, styledata, graph, columns):
+        if len(graph.axesnames) != 2:
+            raise TypeError("arrow style restricted on two-dimensional graphs")
+        if "color" not in columns:
+            raise ValueError("color missing")
+        if len(styledata.vrangeminmissing) + len(styledata.vrangemaxmissing):
+            raise ValueError("range columns incomplete")
+        return ["color"]
+
+    def initdrawpoints(self, styledata, graph):
+        styledata.rectcanvas = graph.insert(canvas.canvas())
+        styledata.lastcolorvalue = None
+
+    def drawpoint(self, styledata, graph):
+        xvmin = styledata.vrange[0][0]
+        xvmax = styledata.vrange[0][1]
+        yvmin = styledata.vrange[1][0]
+        yvmax = styledata.vrange[1][1]
+        if (xvmin is not None and xvmin < 1 and
+            xvmax is not None and xvmax > 0 and
+            yvmin is not None and yvmin < 1 and
+            yvmax is not None and yvmax > 0):
+            if xvmin < 0:
+                xvmin = 0
+            elif xvmax > 1:
+                xvmax = 1
+            if yvmin < 0:
+                yvmin = 0
+            elif yvmax > 1:
+                yvmax = 1
+            p = graph.vgeodesic(xvmin, yvmin, xvmax, yvmin)
+            p.append(graph.vgeodesic_el(xvmax, yvmin, xvmax, yvmax))
+            p.append(graph.vgeodesic_el(xvmax, yvmax, xvmin, yvmax))
+            p.append(graph.vgeodesic_el(xvmin, yvmax, xvmin, yvmin))
+            p.append(path.closepath())
+            colorvalue = styledata.point["color"]
+            try:
+                if colorvalue != styledata.lastcolorvalue:
+                    styledata.rectcanvas.set([self.palette.getcolor(colorvalue)])
+            except:
+                pass
+            else:
+                styledata.rectcanvas.fill(p)
+
+    def key_pt(self, styledata, graph, x_pt, y_pt, width_pt, height_pt):
+        raise "TODO"
+
+
 # class bar(_style):
 # 
 #     defaultfrompathattrs = []

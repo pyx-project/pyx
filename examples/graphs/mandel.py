@@ -36,6 +36,6 @@ g = graph.graphxy(height=8, width=8,
                   x=graph.axis.linear(min=re_min, max=re_max, title=r'$\Re(c)$'),
                   y=graph.axis.linear(min=im_min, max=im_max, title=r'$\Im(c)$'))
 g.plot(graph.data.list(d, xmin=1, xmax=2, ymin=3, ymax=4, color=5),
-       graph.style.rect(color.palette.Rainbow))
+       [graph.style.rect(color.palette.Rainbow)])
 g.dodata() # plot data first, then axes
 g.writeEPSfile('mandel')
