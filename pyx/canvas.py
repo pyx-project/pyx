@@ -235,91 +235,93 @@ linewidth.THIck  = linewidth("%f cm" % (_base*math.sqrt(16)))
 linewidth.THICk  = linewidth("%f cm" % (_base*math.sqrt(32)))
 linewidth.THICK  = linewidth("%f cm" % (_base*math.sqrt(64)))
 
-#
-# Path decorations (i.e. mainly arrows)
-#
-
-class PathDeco(base.PSCommand, base.PSAttr):
-    """Path decorators
-
-    In contrast to path styles, path decorators depend on the concrete
-    path to which they are applied. In particular, they don't make
-    sense without any path and can thus not be used in canvas.set!
-
-    The corresponding path is passed as first argument in the
-    constructor
-
-    """
-    pass
-
-class arrow(PathDeco):
-    """A general arrow"""
-
-    def __init__(self, bpath, position, size, angle=45, constriction=0.8):
-        """constructs an arrow at pos (0: begin, !=0: end) of path with size,
-        opening angle and relative constriction"""
-
-        # convert to bpath if necessary
-        if not isinstance(bpath, bpath.bpath):
-            bpath=bpath.bpath()
-
-        if position:
-            bpath=bpath.reverse()
-
-        # first order conversion from pts to the bezier curve's
-        # parametrization
-        
-        lbpel = bp[0]
-        tlen  = math.sqrt((lbpel.x3-lbpel.x2)*(lbpel.x3-lbpel.x2)+
-                          (lbpel.y3-lbpel.y2)*(lbpel.y3-lbpel.y2))
-
-        # TODO: why factor 0.5?
-        len  = 0.5*unit.topt(size)/tlen
-        ilen = constriction*len
-
-        # get end point (ex, ey) and constriction point (cx, cy)
-        ex, ey = lbpel[0]
-        cx, cy = bp[ilen]
-
-        # now we construct the template for our arrow but cutting
-        # the path a the corresponding length
-        arrowtemplate = bp.split(len)[0]
-
-        # from this template, we construct the two outer curves
-        # of the arrow
-        arrowl = arrowtemplate.transform(trafo.rotate(-aangle, ex, ey))
-        arrowr = arrowtemplate.transform(trafo.rotate( aangle, ex, ey))
-
-        # now come the joining backward parts
-        arrow3 = bpath.bline(*(arrowl.pos(0)+arrowr.pos(0)))
-        arrow3a= bpath.bline(*(arrowr.pos(0)+(mx,my)))
-        arrow3b= bpath.bline(*((mx,my)+arrowl.pos(0)))
-
-        # and here the comlete arrow
-        self.arrow = arrowl+arrowr.reverse()+arrow3a+arrow3b
-
-    def bbox(self):
-        return self.arrow.bbox()
-
-    def write(self, file):
-        for psop in (_newpath(), self.arrow,
-                     _gsave(),
-                     canvas.linejoin.round, _stroke(), _grestore(), _fill())):
-            psop.write(file)
-
-    
-class barrow(arrow):
-    """arrow at begin of path"""
-    def __init__(self, bpath, size, angle=45, constriction=0.8):
-        arrow.__int__(self, bpath, position=0, size, angle, constriction)
-
-
-class earrow(arrow):
-    """arrow at end of path"""
-    def __init__(self, bpath, size="5 t pt", angle=45, constriction=0.8):
-        arrow.__int__(self, bpath, position=1, size, angle, constriction)
-
-
+###   doesn't yet run -> comment --- just remove this later (AW)
+###   
+###   #
+###   # Path decorations (i.e. mainly arrows)
+###   #
+###   
+###   class PathDeco(base.PSCommand, base.PSAttr):
+###       """Path decorators
+###   
+###       In contrast to path styles, path decorators depend on the concrete
+###       path to which they are applied. In particular, they don't make
+###       sense without any path and can thus not be used in canvas.set!
+###   
+###       The corresponding path is passed as first argument in the
+###       constructor
+###   
+###       """
+###       pass
+###   
+###   class arrow(PathDeco):
+###       """A general arrow"""
+###   
+###       def __init__(self, bpath, position, size, angle=45, constriction=0.8):
+###           """constructs an arrow at pos (0: begin, !=0: end) of path with size,
+###           opening angle and relative constriction"""
+###   
+###           # convert to bpath if necessary
+###           if not isinstance(bpath, bpath.bpath):
+###               bpath=bpath.bpath()
+###   
+###           if position:
+###               bpath=bpath.reverse()
+###   
+###           # first order conversion from pts to the bezier curve's
+###           # parametrization
+###           
+###           lbpel = bp[0]
+###           tlen  = math.sqrt((lbpel.x3-lbpel.x2)*(lbpel.x3-lbpel.x2)+
+###                             (lbpel.y3-lbpel.y2)*(lbpel.y3-lbpel.y2))
+###   
+###           # TODO: why factor 0.5?
+###           len  = 0.5*unit.topt(size)/tlen
+###           ilen = constriction*len
+###   
+###           # get end point (ex, ey) and constriction point (cx, cy)
+###           ex, ey = lbpel[0]
+###           cx, cy = bp[ilen]
+###   
+###           # now we construct the template for our arrow but cutting
+###           # the path a the corresponding length
+###           arrowtemplate = bp.split(len)[0]
+###   
+###           # from this template, we construct the two outer curves
+###           # of the arrow
+###           arrowl = arrowtemplate.transform(trafo.rotate(-aangle, ex, ey))
+###           arrowr = arrowtemplate.transform(trafo.rotate( aangle, ex, ey))
+###   
+###           # now come the joining backward parts
+###           arrow3 = bpath.bline(*(arrowl.pos(0)+arrowr.pos(0)))
+###           arrow3a= bpath.bline(*(arrowr.pos(0)+(mx,my)))
+###           arrow3b= bpath.bline(*((mx,my)+arrowl.pos(0)))
+###   
+###           # and here the comlete arrow
+###           self.arrow = arrowl+arrowr.reverse()+arrow3a+arrow3b
+###   
+###       def bbox(self):
+###           return self.arrow.bbox()
+###   
+###       def write(self, file):
+###           for psop in (_newpath(), self.arrow,
+###                        _gsave(),
+###                        canvas.linejoin.round, _stroke(), _grestore(), _fill())):
+###               psop.write(file)
+###   
+###       
+###   class barrow(arrow):
+###       """arrow at begin of path"""
+###       def __init__(self, bpath, size, angle=45, constriction=0.8):
+###           arrow.__int__(self, bpath, position=0, size, angle, constriction)
+###   
+###   
+###   class earrow(arrow):
+###       """arrow at end of path"""
+###       def __init__(self, bpath, size="5 t pt", angle=45, constriction=0.8):
+###           arrow.__int__(self, bpath, position=1, size, angle, constriction)
+###   
+###   
 #
 # some very primitive Postscript operators
 #

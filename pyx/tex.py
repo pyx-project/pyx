@@ -20,6 +20,18 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+# TODO: - remove hsize (becomes a parameter of valign)
+#       - set linewidth in latex-mode (also in tex-mode?) in a vbox
+#       - what about hsize in a vbox (related to the previous)?
+#       - global msglevel
+#       - aux-file handling
+#       - remove tpt (also in unit --- it's not needed anymore)
+#       - various cleanups: - outsource instancelist
+#                           - use dictargs in constructor (remove classes)
+#                           - class tree
+#       - documentation & bug (side effect) description: - par-bug in vbox
+
+
 """
 (La)TeX interface of PyX
 
