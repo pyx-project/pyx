@@ -6,6 +6,13 @@ from const import *
 ###############################################################################
 # axis part
 
+class Tick:
+
+    def __init__(self, ValuePos, VirtualPos, Label):
+        self.ValuePos = ValuePos
+        self.VirtualPos = VirtualPos
+        self.Label = Label
+
 class Axis:
 
     pass
@@ -19,23 +26,20 @@ class LinAxis:
     TickCount = 5
     TickDist = 5
 
+    def TickValuePosList(self):
+        return map(lambda x, self=self: self.TickStart + x * self.TickDist, range(self.TickCount))
+
+    def ValueToLabel(self, x):
+        return str(x)
+
     def TickList(self):
-        return map(lambda x,self=self: self.TickStart + x * self.TickDist, range(self.TickCount))
-
-    def TickPosList(self):
-        return self.ValueToVirtual(self.TickList())
-
-    def TickPosLabelDict(self):
-        result = { }
-        for x in self.TickList():
-            result[self.ValueToVirtual(x)] = str(x)
-        return result
+        return map(lambda x, self=self: Tick(x, self.ValueToVirtual(x), self.ValueToLabel(x)), self.TickValuePosList())
 
     def ValueToVirtual(self, Values):
         if isnumber(Values):
             return (Values - self.Min)/float(self.Max - self.Min)
         else:
-            return map(lambda x,self=self: (x - self.Min)/float(self.Max - self.Min), Values)
+            return map(lambda x, self=self: (x - self.Min)/float(self.Max - self.Min), Values)
 
     def VirtualToValue(self, Values):
         if isnumber(Values):
@@ -89,14 +93,18 @@ class GraphXY(Graph):
                 lineto(self.XPos(0),self.YPos(1)),
                 closepath()])
         self.canvas.draw(p)
-        for x in self.XPos(self.XAxis.TickPosList()):
-             self.canvas.draw(line(x,self.YPos(0),x,self.YPos(0)+0.2))
-        for x in self.XAxis.TickPosLabelDict().keys():
-             self.tex.text(self.XPos(x),self.YPos(0)-0.5,self.XAxis.TickPosLabelDict()[x], halign=center)
-        for y in self.YPos(self.YAxis.TickPosList()):
-             self.canvas.draw(line(self.XPos(0),y,self.XPos(0)+0.2,y))
-        for y in self.YAxis.TickPosLabelDict().keys():
-             self.tex.text(self.XPos(0)-0.2,self.YPos(y),self.YAxis.TickPosLabelDict()[y], halign=right)
+        for tick in self.XAxis.TickList():
+             xv = tick.VirtualPos
+             l = tick.Label
+             x = self.XPos(xv)
+             self.canvas.draw(line(x, self.YPos(0), x, self.YPos(0)+0.2))
+             self.tex.text(x, self.YPos(0)-0.5, l, halign=center)
+        for tick in self.YAxis.TickList():
+             yv = tick.VirtualPos
+             l = tick.Label
+             y = self.YPos(yv)
+             self.canvas.draw(line(self.XPos(0), y, self.XPos(0)+0.2, y))
+             self.tex.text(self.XPos(0)-0.2, y, l, halign=right)
         #for pd in self.plotdata:
         #    for Data in pd[pd_data]
 
