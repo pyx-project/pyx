@@ -23,7 +23,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-import re, math
+import math
 from pyx import attr, deco, style, color, unit, canvas, path
 from pyx import text as textmodule
 
@@ -77,9 +77,12 @@ class _style:
 
         This method is called in order to adjust the axis range to
         the provided data. Column is the name of the column (each
-        style is subsequently called for all column names), data is
-        a list of points and index is the index of the column within
-        a point."""
+        style is subsequently called for all column names). If index
+        is not None, data is a list of points and index is the index
+        of the column within a point. Otherwise data is already the
+        axis data. Note, that data might be different for different
+        columns, e.i. data might come from various places and is
+        combined without copying but keeping references."""
         pass
 
     def initdrawpoints(self, styledata, graph):
@@ -104,15 +107,19 @@ class _style:
         pass
 
     def key_pt(self, styledata, graph, x_pt, y_pt, width_pt, height_pt):
-        """Draw a graph key
+        """Draw graph key
 
-        Draw a graph key to graph."""
+        This method draws a key for the style to graph at the given
+        position x_pt, y_pt indicating the lower left corner of the
+        given area width_pt, height_pt."""
         pass
 
 
-# provider is a dictionary, which maps styledata variable names
+# Provider is a dictionary, which maps styledata variable names
 # to default styles, which provide a default way to create the
-# corresponding styledata variable.
+# corresponding styledata variable. Entries in the provider
+# dictionary should not depend on other styles, thus the need
+# list should be empty.
 
 provider = {}
 

@@ -248,7 +248,7 @@ class graphxy(canvas.canvas):
             for style in data.styles[1:]:
                 if index != styleindex[id(style)] or total != styletotal[id(style)]:
                     raise RuntimeError("inconsistent style modification not yet supported")
-            data.selectstyle(self, index, total)
+            data.selectstyles(self, index, total)
 
         # adjust the axes ranges
         for step in range(3):

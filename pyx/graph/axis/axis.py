@@ -230,21 +230,39 @@ class _axis:
     zero = 0.0
 
     def adjustrange(self, data, index, deltamindata=None, deltaminindex=None, deltamaxdata=None, deltamaxindex=None):
-        assert deltaminindex is None or deltamaxindex is None
+        assert deltamindata is None or deltamaxdata is None
         min = max = None
-        if deltaminindex is not None:
+        if deltamindata is not None:
             for point, minpoint in zip(data, deltamindata):
                 try:
-                    value = point[index] - minpoint[deltaminindex] + self.zero
+                    if index is not None:
+                        if deltaminindex is not None:
+                            value = point[index] - minpoint[deltaminindex] + self.zero
+                        else:
+                            value = point[index] - minpoint + self.zero
+                    else:
+                        if deltaminindex is not None:
+                            value = point - minpoint[deltaminindex] + self.zero
+                        else:
+                            value = point - minpoint + self.zero
                 except:
                     pass
                 else:
                     if min is None or value < min: min = value
                     if max is None or value > max: max = value
-        elif deltamaxindex is not None:
+        elif deltamaxdata is not None:
             for point, maxpoint in zip(data, deltamaxdata):
                 try:
-                    value = point[index] + maxpoint[deltamaxindex] + self.zero
+                    if index is not None:
+                        if deltaminindex is not None:
+                            value = point[index] + maxpoint[deltamaxindex] + self.zero
+                        else:
+                            value = point[index] + maxpoint + self.zero
+                    else:
+                        if deltaminindex is not None:
+                            value = point + maxpoint[deltamaxindex] + self.zero
+                        else:
+                            value = point + maxpoint + self.zero
                 except:
                     pass
                 else:
@@ -253,7 +271,10 @@ class _axis:
         else:
             for point in data:
                 try:
-                    value = point[index] + self.zero
+                    if index is not None:
+                        value = point[index] + self.zero
+                    else:
+                        value = point + self.zero
                 except:
                     pass
                 else:
@@ -734,7 +755,10 @@ class bar:
         if subnames is None:
             subnames = []
         for point in points:
-            self.setname(point[index], *subnames)
+            if index is not None:
+                self.setname(point[index], *subnames)
+            else:
+                self.setname(point, *subnames)
 
     def updaterelsizes(self):
         # guess what it does: it recalculates relsize attribute
