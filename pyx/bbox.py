@@ -28,12 +28,12 @@ import unit
 
 # helper routine for bbox manipulations
 
-def _nmin(x, y):
-    """minimum of two values, where None represents +infinity, not -infinity as
+def _nmin(*args):
+    """minimum of a list of values, where None represents +infinity, not -infinity as
     in standard min implementation of python"""
-    if x is None: return y
-    if y is None: return x
-    return min(x,y)
+    args = [x for x in args if x is not None]
+    if len(args):
+        return min(args)
 
 #
 # classes representing bounding boxes
@@ -85,15 +85,28 @@ class _bbox:
     def transformed(self, trafo):
         """return bbox transformed by trafo"""
         # we have to transform all four corner points of the bbox
-        (llx, lly)=trafo._apply(self.llx, self.lly)
-        (lrx, lry)=trafo._apply(self.urx, self.lly)
-        (urx, ury)=trafo._apply(self.urx, self.ury)
-        (ulx, uly)=trafo._apply(self.llx, self.ury)
+        # method correctly handles bboxes with None entries at the corners
+        if None not in (self.llx, self.lly):
+            llx, lly = trafo._apply(self.llx, self.lly)
+        else:
+            llx = lly = None
+        if None not in (self.urx, self.lly):
+            lrx, lry = trafo._apply(self.urx, self.lly)
+        else:
+            lrx = lry = None
+        if None not in (self.urx, self.ury):
+            urx, ury = trafo._apply(self.urx, self.ury)
+        else:
+            urx = ury = None
+        if None not in (self.llx, self.ury):
+            ulx, uly = trafo._apply(self.llx, self.ury)
+        else:
+            ulx = uly = None
 
         # now, by sorting, we obtain the lower left and upper right corner
         # of the new bounding box. 
 
-        return _bbox(min(llx, lrx, urx, ulx), min(lly, lry, ury, uly),
+        return _bbox(_nmin(llx, lrx, urx, ulx), _nmin(lly, lry, ury, uly),
                      max(llx, lrx, urx, ulx), max(lly, lry, ury, uly))
 
     def enlarged(self, all=0, bottom=None, left=None, top=None, right=None):
