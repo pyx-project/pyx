@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
 #define false 0
 #define true 1
 #define xstrdup strdup
@@ -9,7 +10,7 @@
 #define xmalloc malloc
 #define xfclose(a, b) (fclose(a))
 #define isdigit(c)  ((c) >= '0' && (c) <= '9')
-/*#define search(a, b, c) (fopen(b, "r"))*/
+#define search(a, b, c) (fopen(b, "r"))
 #define NeedFunctionPrototypes
 #define HAVE_PROTOTYPES
 
@@ -99,9 +100,6 @@ static char print_buf[PRINTF_BUF_SIZE];
 static int  hexline_length;
 static char notdef[] = ".notdef";
 #endif /* pdfTeX */
-
-#include <kpathsea/c-vararg.h>
-#include <kpathsea/c-proto.h>
 
 #define t1_getchar()    getc(t1_file)
 #define t1_ungetchar(c) ungetc(c, t1_file)

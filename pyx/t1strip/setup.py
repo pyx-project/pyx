@@ -8,7 +8,6 @@ setup(name="PyX",
       url="http://pyx.sourceforge.net/",
       description="Python package for the generation of mixed PS and (La)TeX code",
       license="GPL",
-      ext_modules=[Extension("t1strip", sources=["t1strip.c", "writet1.c", "search.c"],
-                            libraries = ["kpathsea"])],
+      ext_modules=[Extension("t1strip", sources=["t1strip.c", "writet1.c"])]
      )
 
