@@ -388,7 +388,10 @@ class data(_staticdata):
                         else:
                             vars[var] = points[i]
                     # evaluate expression
-                    newdata[i] = tree.Calc(**vars)
+                    try:
+                        newdata[i] = tree.Calc(**vars)
+                    except (ArithmeticError, ValueError):
+                        newdata[i] = None
                     # we could also do:
                     # point[newcolumnnumber] = eval(str(tree), vars)
 
@@ -658,5 +661,8 @@ class paramfunction(_staticdata):
             context[varname] = param
             self.points[i] = [None]*l
             for index, mathtree in enumerate(mathtrees):
-                self.points[i][index] = mathtree.Calc(**context)
+                try:
+                    self.points[i][index] = mathtree.Calc(**context)
+                except (ArithmeticError, ValueError):
+                    self.points[i][index] = None
 
