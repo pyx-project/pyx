@@ -22,7 +22,7 @@ examples.ps: examples.dvi
 pyfiles = $(filter-out examples.py,$(wildcard *.py)) $(wildcard */*.py)
 htmlfiles = $(patsubst %.py, %.py.html, $(pyfiles))
 epsfiles = $(patsubst %.py, %.eps, $(pyfiles))
-pngfiles = $(patsubst %.py, %.eps.png, $(pyfiles))
+pngfiles = $(patsubst %.py, %.png, $(pyfiles))
 
 examples.dvi: examples.py $(epsfiles)
 	python examples.py $(basename $(epsfiles))
@@ -37,6 +37,6 @@ html: $(htmlfiles) $(pngfiles)
 %.py.html: %.py
 	sh -c "py2html -format:rawhtml $^"
 
-%.eps.png: %.eps
+%.png: %.eps
 	@# -dEPSCrop needs gs version >= 8.0
-	gs8.0 -dEPSCrop -dNOPAUSE -dQUIET -dBATCH -sDEVICE=ppmraw -sOutputFile=- -r400 $^|pnmscale 0.25|pnmtopng > $^.png
+	gs8.0 -dEPSCrop -dNOPAUSE -dQUIET -dBATCH -sDEVICE=ppmraw -sOutputFile=- -r400 $^|pnmscale 0.25|pnmtopng > $@
