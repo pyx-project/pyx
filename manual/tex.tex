@@ -1,5 +1,7 @@
-\chapter{Module tex: \TeX/\LaTeX{} interface}
+\chapter{Module tex: \TeX/\LaTeX{} interface (obsolete)}
 \label{tex}
+\section*{Please note: THIS MODULE IS OBSOLETE. Consider the \texttt{text} module instead.}
+
 \section{Methods}
 Text in \PyX{} is created by \TeX{} or \LaTeX. From the technical point
 of view, the text is inserted as an Encapsulated PostScript file
@@ -296,5 +298,6 @@ correctly handle long filenames splited on several lines by \TeX.
 While we will certainly keep this module working at least for a while,
 it is likely that another \TeX{} interface will occure soon. The idea
 is to get rid of \verb|dvips| and integrate \TeX{} more directly into
-\PyX.
+\PyX. The replacement module called \verb|text| becomes available for
+the first time in \PyX{} 0.3.
 

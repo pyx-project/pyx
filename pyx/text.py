@@ -25,7 +25,7 @@
 # (TODO: check whether Knuth's division can be simplified within Python)
 #       seems to be the case!
 
-import glob, os, threading, Queue, traceback, re, struct, tempfile
+import glob, os, threading, Queue, traceback, re, struct, tempfile, sys, atexit
 import helper, unit, box, base, trafo, canvas, pykpathsea
 
 class fix_word:
@@ -796,7 +796,7 @@ class DVIFile:
 
 
 ###############################################################################
-# texmessage
+# texmessages
 # - please don't get confused:
 #   - there is a texmessage (and a texmessageparsed) attribute within the
 #     texrunner; it contains TeX/LaTeX response from the last command execution
@@ -1065,68 +1065,244 @@ texmessage.graphicsload = _texmessagegraphicsload()
 texmessage.ignore = _texmessageignore()
 
 
-
 ###############################################################################
 # texsettings
+# - texsettings are used to modify a TeX/LaTeX expression
+#   to fit the users need
+# - texsettings have an order attribute (id), because the order is usually
+#   important (e.g. you can not change the fontsize in mathmode in LaTeX)
+# - lower id's get applied later (are more outside -> mathmode has a higher
+#   id than fontsize)
+# - order attributes are used to exclude complementary settings (with the
+#   same id)
+# - texsettings might (in rare cases) depend on each other (e.g. vbox and
+#   valign)
 ###############################################################################
 
+class _Itexsetting:
+    """tex setting
+    - modifies a TeX/LaTeX expression"""
 
-class _texsetting: # generic tex settings (modifications of the tex expression)
+    id = 0
+    """order attribute for TeX settings
+    - higher id's will be applied first (most inside)"""
 
-    def modifyexpr(self, expr):
-        return expr
+    exclusive = 0
+    """marks complementary effect of the setting
+    - when set, settings with this id exclude each other
+    - when unset, settings with this id do not exclude each other"""
+
+    def modifyexpr(self, expr, texsettings, texrunner):
+        """modifies the TeX/LaTeX expression
+        - expr is the original expression
+        - the return value is the modified expression
+        - texsettings contains a list of all texsettings (in case a tex setting
+          depends on another texsetting)
+        - texrunner contains the texrunner in case the texsetting depends
+          on it"""
+
+    def __cmp__(self, other):
+        """compare texsetting with other
+        - other is a texsetting as well
+        - performs an id comparison (NOTE: higher id's come first!!!)"""
 
 
-class halign(_texsetting): # horizontal alignment
+# preamble settings for texsetting macros
+_texsettingpreamble = ""
+
+class _texsetting:
+
+    exclusive = 1
+
+    def __cmp__(self, other):
+        return -cmp(self.id, other.id) # note the sign!!!
+
+
+class halign(_texsetting):
+    """horizontal alignment
+    the left/right splitting is performed within the PyXBox routine"""
+
+    __implements__ = _Itexsetting
+
+    id = 1000
 
     def __init__(self, hratio):
         self.hratio = hratio
 
-    def modifyexpr(self, expr):
+    def modifyexpr(self, expr, texsettings, texrunner):
         return r"\gdef\PyXHAlign{%.5f}%s" % (self.hratio, expr)
 
 halign.left = halign(0)
-halign.right = halign(1)
 halign.center = halign(0.5)
+halign.right = halign(1)
 
+
+_texsettingpreamble += "\\newbox\\PyXBoxVAlign%\n\\newdimen\PyXDimenVAlign%\n"
 
 class valign(_texsetting):
+    "vertical alignment"
+
+    id = 7000
+
+
+class _valigntop(valign):
+
+    __implements__ = _Itexsetting
+
+    def modifyexpr(self, expr, texsettings, texrunner):
+        return r"\setbox\PyXBoxVAlign=\hbox{{%s}}\lower\ht\PyXBoxVAlign\box\PyXBoxVAlign" % expr
+
+
+class _valignmiddle(valign):
+
+    __implements__ = _Itexsetting
+
+    def modifyexpr(self, expr, texsettings, texrunner):
+        return r"\setbox\PyXBoxVAlign=\hbox{{%s}}\PyXDimenVAlign=0.5\ht\PyXBoxVAlign\advance\PyXDimenVAlign by -0.5\dp\PyXBoxVAlign\lower\PyXDimenVAlign\box\PyXBoxVAlign" % expr
+
+
+class _valignbottom(valign):
+
+    __implements__ = _Itexsetting
+
+    def modifyexpr(self, expr, texsettings, texrunner):
+        return r"\setbox\PyXBoxVAlign=\hbox{{%s}}\raise\dp\PyXBoxVAlign\box\PyXBoxVAlign" % expr
+
+
+class _valignbaseline(valign):
+
+    __implements__ = _Itexsetting
+
+    def modifyexpr(self, expr, texsettings, texrunner):
+        for texsetting in texsettings:
+            if isinstance(texsetting, vbox):
+                raise RuntimeError("valign.baseline: specify top/middle/bottom baseline for vbox")
+
+
+class _valignxxxbaseline(valign):
+
+    def modifyexpr(self, expr, texsettings, texrunner):
+        for texsetting in texsettings:
+            if isinstance(texsetting, vbox):
+                break
+        else:
+            raise RuntimeError(self.novboxmessage)
+        return expr
+
+
+class _valigntopbaseline(_valignxxxbaseline):
+
+    __implements__ = _Itexsetting
+
+    novboxmessage = "valign.topbaseline: no vbox defined"
+
+
+class _valignmiddlebaseline(_valignxxxbaseline):
+
+    __implements__ = _Itexsetting
+
+    novboxmessage = "valign.middlebaseline: no vbox defined"
+
+
+class _valignbottombaseline(_valignxxxbaseline):
+
+    __implements__ = _Itexsetting
+
+    novboxmessage = "valign.bottombaseline: no vbox defined"
+
+
+valign.top = _valigntop()
+valign.middle = _valignmiddle()
+valign.center = valign.middle
+valign.bottom = _valignbottom()
+valign.baseline = _valignbaseline()
+valign.topbaseline = _valigntopbaseline()
+valign.middlebaseline = _valignmiddlebaseline()
+valign.centerbaseline = valign.middlebaseline
+valign.bottombaseline = _valignbottombaseline()
+
+
+_texsettingpreamble += "\\newbox\\PyXBoxVBox%\n\\newdimen\PyXDimenVBox%\n"
+
+
+class _vbox(_texsetting):
+    "goes into the vertical mode"
+
+    __implements__ = _Itexsetting
+
+    id = 7100
 
     def __init__(self, width):
-        self.width_str = width
+        self.width = width
 
-    def modifyexpr(self, expr):
-        return r"\%s{\hsize%.5fpt{%s}}" % (self.vkind, unit.topt(self.width_str)*72.27/72.0, expr)
+    def modifyexpr(self, expr, texsettings, texrunner):
+        boxkind = "vtop"
+        for texsetting in texsettings:
+            if isinstance(texsetting, valign):
+                if (not isinstance(texsetting, _valigntop) and
+                    not isinstance(texsetting, _valignmiddle) and
+                    not isinstance(texsetting, _valignbottom) and
+                    not isinstance(texsetting, _valigntopbaseline)):
+                    if isinstance(texsetting, _valignmiddlebaseline):
+                        boxkind = "vcenter"
+                    elif isinstance(texsetting, _valignbottombaseline):
+                        boxkind = "vbox"
+                    else:
+                        raise RuntimeError("vbox couldn'd identify the valign instance")
+        if boxkind == "vcenter":
+            return r"\linewidth%.5ftruept\setbox\PyXBoxVBox=\hbox{{\vtop{\hsize\linewidth{%s}}}}\PyXDimenVBox=0.5\dp\PyXBoxVBox\setbox\PyXBoxVBox=\hbox{{\vbox{\hsize\linewidth{%s}}}}\advance\PyXDimenVBox by -0.5\dp\PyXBoxVBox\lower\PyXDimenVBox\box\PyXBoxVBox" % (self.width, expr, expr)
+        else:
+            return r"\linewidth%.5ftruept\%s{\hsize\linewidth{%s}}" % (self.width * 72.27 / 72, boxkind, expr)
 
 
-class _valigntopline(valign):
+class vbox(_vbox):
 
-    vkind = "vtop"
-
-
-class _valignbottomline(valign):
-
-    vkind = "vbox"
+    def __init__(self, width):
+        _vbox.__init__(self, unit.topt(width))
 
 
-valign.topline = _valigntopline
-valign.bottomline = _valignbottomline
+class vshift(_texsetting):
+
+    exclusive = 0
+
+    id = 5000
 
 
-class vshift(valign):
+class _vshiftchar(vshift):
+    "vertical down shift by a fraction of a character height"
 
     def __init__(self, lowerratio, heightstr="0"):
         self.lowerratio = lowerratio
         self.heightstr = heightstr
 
-    def modifyexpr(self, expr):
-        return r"\setbox0\hbox{%s}\lower%.5f\ht0\hbox{%s}" % (self.heightstr, self.lowerratio, expr)
+    def modifyexpr(self, expr, texsettings, texrunner):
+        return r"\setbox0\hbox{{%s}}\lower%.5f\ht0\hbox{{%s}}" % (self.heightstr, self.lowerratio, expr)
+
+
+class _vshiftmathaxis(vshift):
+    "vertical down shift by the height of the math axis"
+
+    def modifyexpr(self, expr, texsettings, texrunner):
+        return r"\setbox0\hbox{$\vcenter{\vrule width0pt}$}\lower\ht0\hbox{{%s}}" % expr
+
+
+vshift.char = _vshiftchar
+vshift.bottomzero = _vshiftchar(0)
+vshift.middlezero = _vshiftchar(0.5)
+vshift.centerzero = vshift.middlezero
+vshift.topzero = _vshiftchar(1)
+vshift.mathaxis = _vshiftmathaxis()
 
 
 class _mathmode(_texsetting):
+    "math mode"
 
-    def modifyexpr(self, expr):
-        return r"\hbox{$\displaystyle{%s}$}" % expr
+    __implements__ = _Itexsetting
+
+    id = 9000
+
+    def modifyexpr(self, expr, texsettings, texrunner):
+        return r"$\displaystyle{%s}$" % expr
 
 mathmode = _mathmode()
 
@@ -1134,6 +1310,11 @@ mathmode = _mathmode()
 defaultsizelist = ["normalsize", "large", "Large", "LARGE", "huge", "Huge", None, "tiny", "scriptsize", "footnotesize", "small"]
 
 class size(_texsetting):
+    "font size"
+
+    __implements__ = _Itexsetting
+
+    id = 3000
 
     def __init__(self, expr, sizelist=defaultsizelist):
         if helper.isinteger(expr):
@@ -1146,7 +1327,7 @@ class size(_texsetting):
         else:
             self.size = expr
 
-    def modifyexpr(self, expr):
+    def modifyexpr(self, expr, texsettings, texrunner):
         return r"\%s{%s}" % (self.size, expr)
 
 for s in defaultsizelist:
@@ -1251,6 +1432,30 @@ class textbox(_textbox):
                           unit.topt(height), unit.topt(depth), texrunner, page)
 
 
+def _cleantmp(texrunner):
+    """get rid of temporary files
+    - function to be registered by atexit
+    - files contained in usefiles are kept"""
+    if texrunner.texruns: # cleanup while TeX is still running?
+        texrunner.texruns = 0
+        texrunner.texdone = 1
+        texrunner.expectqueue.put_nowait(None)     # do not expect any output anymore
+        texrunner.texinput.close()                 # close the input queue and
+        texrunner.quitevent.wait(texrunner.waitfortex)  # wait for finish of the output
+        if not texrunner.quitevent.isSet(): return # didn't got a quit from TeX -> we can't do much more
+    for usefile in texrunner.usefiles:
+        extpos = usefile.rfind(".")
+        try:
+            os.rename(texrunner.texfilename + usefile[extpos:], usefile)
+        except OSError:
+            pass
+    for file in glob.glob("%s.*" % texrunner.texfilename):
+        try:
+            os.unlink(file)
+        except OSError:
+            pass
+
+
 # texrunner state exceptions
 class TexRunsError(Exception): pass
 class TexDoneError(Exception): pass
@@ -1263,6 +1468,7 @@ class texrunner:
     - checks TeX/LaTeX response"""
 
     def __init__(self, mode="tex",
+                       lfs="10pt",
                        docclass="article",
                        docopt=None,
                        usefiles=[],
@@ -1274,8 +1480,9 @@ class texrunner:
                        texmessagebegindoc=(texmessage.load, texmessage.noaux),
                        texmessageend=texmessage.texend,
                        texmessagedefaultpreamble=texmessage.load,
-                       texmessagedefaultrun=()):
+                       texmessagedefaultrun=None):
         self.mode = mode
+        self.lfs = lfs
         self.docclass = docclass
         self.docopt = docopt
         self.usefiles = helper.ensurelist(usefiles)
@@ -1325,6 +1532,7 @@ class texrunner:
             except ValueError:
                 # XXX: workaround for MS Windows (bufsize = 0 makes trouble!?)
                 self.texinput, self.texoutput = os.popen4("%s %s" % (self.mode, self.texfilename), "t")
+            atexit.register(_cleantmp, self)
             self.expectqueue = Queue.Queue(1)  # allow for a single entry only -> keeps the next InputMarker to be wait for
             self.gotevent = threading.Event()  # keeps the got inputmarker event
             self.gotqueue = Queue.Queue(0)     # allow arbitrary number of entries
@@ -1335,29 +1543,51 @@ class texrunner:
             self.preamblemode = 1
             self.execute("\\scrollmode\n\\raiseerror%\n" + # switch to and check scrollmode
                          "\\def\\PyX{P\\kern-.3em\\lower.5ex\hbox{Y}\kern-.18em X}%\n" + # just the PyX Logo
+                         "\\gdef\\PyXHAlign{0}%\n" + # global PyXHAlign (0.0-1.0) for the horizontal alignment, default to 0
                          "\\newbox\\PyXBox%\n" + # PyXBox will contain the output
                          "\\newbox\\PyXBoxHAligned%\n" + # PyXBox will contain the horizontal aligned output
-                         "\\gdef\\PyXHAlign{0}%\n" + # PyXHAlign (0.0-1.0) for the horizontal alignment, default to 0
-                         "\\newdimen\\PyXHAlignLT%\n" + # PyXHAlignLT/RT will contain the left/right extent
-                         "\\newdimen\\PyXHAlignRT%\n" +
+                         "\\newdimen\\PyXDimenHAlignLT%\n" + # PyXDimenHAlignLT/RT will contain the left/right extent
+                         "\\newdimen\\PyXDimenHAlignRT%\n" +
+                         _texsettingpreamble + # insert preambles for texsetting macros
                          "\\def\\ProcessPyXBox#1#2{%\n" + # the ProcessPyXBox definition (#1 is expr, #2 is page number)
                          "\\setbox\\PyXBox=\\hbox{{#1}}%\n" + # push expression into PyXBox
-                         "\\PyXHAlignLT=\\PyXHAlign\\wd\\PyXBox%\n" + # calculate the left/right extent
-                         "\\PyXHAlignRT=\\wd\\PyXBox%\n" +
-                         "\\advance\\PyXHAlignRT-\\PyXHAlignLT%\n" +
+                         "\\PyXDimenHAlignLT=\\PyXHAlign\\wd\\PyXBox%\n" + # calculate the left/right extent
+                         "\\PyXDimenHAlignRT=\\wd\\PyXBox%\n" +
+                         "\\advance\\PyXDimenHAlignRT by -\\PyXDimenHAlignLT%\n" +
                          "\\gdef\\PyXHAlign{0}%\n" + # reset the PyXHAlign to the default 0
                          "\\immediate\\write16{PyXBox(page=#2," + # write page and extents of this box to stdout
-                                                     "lt=\\the\\PyXHAlignLT," +
-                                                     "rt=\\the\\PyXHAlignRT," +
+                                                     "lt=\\the\\PyXDimenHAlignLT," +
+                                                     "rt=\\the\\PyXDimenHAlignRT," +
                                                      "ht=\\the\\ht\\PyXBox," +
                                                      "dp=\\the\\dp\\PyXBox)}%\n" +
-                         "\\setbox\\PyXBoxHAligned=\\hbox{\\kern-\\PyXHAlignLT\\copy\\PyXBox}%\n" + # align horizontally
+                         "\\setbox\\PyXBoxHAligned=\\hbox{\\kern-\\PyXDimenHAlignLT\\box\\PyXBox}%\n" + # align horizontally
                          "\\ht\\PyXBoxHAligned0pt%\n" + # baseline alignment (hight to zero)
-                         "{\\count0=80\\count1=121\\count2=88\\count3=#2\\shipout\\copy\\PyXBoxHAligned}}%\n" + # shipout PyXBox to Page 80.121.88.<page number>
+                         "{\\count0=80\\count1=121\\count2=88\\count3=#2\\shipout\\box\\PyXBoxHAligned}}%\n" + # shipout PyXBox to Page 80.121.88.<page number>
                          "\\def\\PyXInput#1{\\immediate\\write16{PyXInputMarker(#1)}}", # write PyXInputMarker(<page number>) to stdout
                          *self.texmessagestart)
             os.remove("%s.tex" % self.texfilename)
-            if self.mode == "latex":
+            if self.mode == "tex":
+                try:
+                    LocalLfsName = str(self.lfs) + ".lfs"
+                    lfsdef = open(LocalLfsName, "r").read()
+                except IOError:
+                    try:
+                        try:
+                            SysLfsName = os.path.join(sys.prefix, "share", "pyx", str(self.lfs) + ".lfs")
+                            lfsdef = open(SysLfsName, "r").read()
+                        except IOError:
+                            SysLfsName = os.path.join(os.path.dirname(__file__), "lfs", str(self.lfs) + ".lfs")
+                            lfsdef = open(SysLfsName, "r").read()
+                    except IOError:
+                        files = map(lambda x: x[:-4],
+                                    filter(lambda x: x[-4:] == ".lfs",
+                                           os.listdir(".") +
+                                           os.listdir(os.path.join(sys.prefix, "share", "pyx")),
+                                           os.listdir(os.path.join(os.path.dirname(__file__), "lfs"))))
+                        raise IOError("file '%s.lfs' not found. Available latex font sizes:\n%s" % (lfs, files))
+                self.execute(lfsdef)
+                self.execute("\\newdimen\\linewidth%\n")
+            elif self.mode == "latex":
                 if self.docopt is not None:
                     self.execute("\\documentclass[%s]{%s}" % (self.docopt, self.docclass), *self.texmessagedocclass)
                 else:
@@ -1411,38 +1641,14 @@ class texrunner:
                     traceback.print_exc()
             texmessage.emptylines.check(self)
             if len(self.texmessageparsed):
-                self.cleantmp()
                 raise TexResultError("unhandled TeX response (might be an error)", self)
         else:
-            self.cleantmp()
             raise TexResultError("TeX didn't respond as expected within the timeout period (%i seconds)." % self.waitfortex, self)
-
-    def cleantmp(self):
-        "get rid of temporary files, files contained in usefiles are kept"
-        if self.texruns: # cleanup while TeX is still running?
-            self.texruns = 0
-            self.texdone = 1
-            self.expectqueue.put_nowait(None)     # do not expect any output anymore
-            self.texinput.close()                 # close the input queue and
-            self.quitevent.wait(self.waitfortex)  # wait for finish of the output
-            if not self.quitevent.isSet(): return # didn't got a quit from TeX -> we can't do much more
-        for usefile in self.usefiles:
-            extpos = usefile.rfind(".")
-            try:
-                os.rename(self.texfilename + usefile[extpos:], usefile)
-            except OSError:
-                pass
-        for file in glob.glob("%s.*" % self.texfilename):
-            try:
-                os.unlink(file)
-            except OSError:
-                pass
 
     def getdvi(self):
         "finish TeX/LaTeX and initialize dvifile"
         self.execute(None, *self.texmessageend)
         self.dvifile = DVIFile("%s.dvi" % self.texfilename, debug=self.dvidebug)
-        self.cleantmp()
 
     def prolog(self):
         "return the dvifile prolog (assume, that everything in the dvifile will be written to postscript)"
@@ -1456,7 +1662,7 @@ class texrunner:
             self.getdvi()
         return self.dvifile.write(file, page)
 
-    def settex(self, mode=None, docclass=None, docopt=None, usefiles=None, waitfortex=None,
+    def settex(self, mode=None, lfs=None, docclass=None, docopt=None, usefiles=None, waitfortex=None,
                      texmessagestart=None,
                      texmessagedocclass=None,
                      texmessagebegindoc=None,
@@ -1475,6 +1681,8 @@ class texrunner:
             if mode != "tex" and mode != "latex":
                 raise ValueError("mode \"TeX\" or \"LaTeX\" expected")
             self.mode = mode
+        if lfs is not None:
+            self.lfs = lfs
         if docclass is not None:
             self.docclass = docclass
         if docopt is not None:
@@ -1571,9 +1779,16 @@ class texrunner:
         helper.checkattr(args, allowmulti=(_texsetting, texmessage, trafo._trafo, base.PathStyle))
                                            #XXX: should we distiguish between StrokeStyle and FillStyle?
         texsettings = helper.getattrs(args, _texsetting, default=[])
-        texsettings.reverse()
+        exclusive = []
         for texsetting in texsettings:
-            expr = texsetting.modifyexpr(expr)
+            if texsetting.exclusive:
+                if texsetting.id not in exclusive:
+                    exclusive.append(texsetting.id)
+                else:
+                    raise RuntimeError("multiple occurance of exclusive texsetting with id=%i" % texsetting.id)
+        texsettings.sort()
+        for texsetting in texsettings:
+            expr = texsetting.modifyexpr(expr, texsettings, self)
         self.bracketcheck(expr)
         self.execute(expr, *helper.getattrs(args, texmessage, default=self.texmessagedefaultrun))
         match = self.PyXBoxPattern.search(self.texmessage)

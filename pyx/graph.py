@@ -955,8 +955,7 @@ class axistitlepainter:
     orthogonaltext = 0
 
     def __init__(self, titledist="0.3 cm",
-                       #titleattrs=(textmodule.halign.center, textmodule.valign.centerline()),
-                       titleattrs=(),
+                       titleattrs=(textmodule.halign.center, textmodule.vshift.mathaxis),
                        titledirection=-90,
                        titlepos=0.5):
         self.titledist_str = titledist
@@ -1009,9 +1008,8 @@ class axispainter(axistitlepainter):
                        zerolineattrs=(),
                        baselineattrs=canvas.linecap.square,
                        labeldist="0.3 cm",
-                       #labelattrs=((textmodule.halign.center, textmodule.valign.centerline()),
-                       #            (textmodule.size.footnotesize, textmodule.halign.center, textmodule.valign.centerline())),
-                       labelattrs=(),
+                       labelattrs=((textmodule.halign.center, textmodule.vshift.mathaxis),
+                                   (textmodule.size.footnotesize, textmodule.halign.center, textmodule.vshift.mathaxis)),
                        labeldirection=None,
                        labelhequalize=0,
                        labelvequalize=1,
@@ -1374,8 +1372,7 @@ class baraxispainter(axistitlepainter):
                        tickattrs=(),
                        baselineattrs=canvas.linecap.square,
                        namedist="0.3 cm",
-                       #nameattrs=(textmodule.halign.center, textmodule.valign.centerline()),
-                       nameattrs=(),
+                       nameattrs=(textmodule.halign.center, textmodule.vshift.mathaxis),
                        namedirection=None,
                        namepos=0.5,
                        namehequalize=0,
@@ -1991,8 +1988,7 @@ class key:
 
     def __init__(self, dist="0.2 cm", pos = "tr", hinside = 1, vinside = 1, hdist="0.6 cm", vdist="0.4 cm",
                  symbolwidth="0.5 cm", symbolheight="0.25 cm", symbolspace="0.2 cm",
-                 #textattrs=textmodule.valign.centerline(), plotinfos=None):
-                 textattrs=(), plotinfos=None):
+                 textattrs=textmodule.vshift.mathaxis, plotinfos=None):
         self.dist_str = dist
         self.pos = pos
         self.hinside = hinside

@@ -159,6 +159,13 @@ The \verb|canvas| class provides the following methods:
   can either be instances of \texttt{base.PathStyle} or
   \texttt{canvas.PathDeco}
   (or subclasses thereof).\\
+  \texttt{text(x, y, text, *args)} &
+  Inserts \texttt{text} into the
+  canvas (shortcut for
+  \texttt{insert(texrunner.text(x, y, text, *args))}).\\
+  \texttt{texrunner(texrunner)} &
+  Sets the \texttt{texrunner}; default is \texttt{defaulttexrunner}
+  from the \texttt{text} module.\\
     \texttt{writetofile(filename, 
       \newline\phantom{writetofile(}paperformat=None, 
       \newline\phantom{writetofile(}rotated=0,
