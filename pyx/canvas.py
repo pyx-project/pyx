@@ -175,9 +175,9 @@ class canvas:
     def fill(self, path, *args):
         if args: 
            self._gsave()
-           self.set(args)
+           self.set(*args)
         self._newpath()
-        path.fill(self)
+        path.draw(self)
 	self._fill()
         if args:
            self._grestore()
@@ -301,7 +301,7 @@ if __name__=="__main__":
     c.draw(p)
  
     p=path([moveto(5,15), arc(5,15, 1, 0, 45), closepath()])
-    c.draw(p, linestyle.dotted, linewidth.THICK)
+    c.fill(p, linestyle.dotted, linewidth.THICK)
  
     p=path([moveto(5,17), curveto(6,18, 5,16, 7,15)])
     c.draw(p, linestyle.dashed)
