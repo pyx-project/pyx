@@ -1983,12 +1983,13 @@ class baraxis:
 
 class key:
 
-    def __init__(self, dist="0.2 cm", pos = "tr", inside = 1, hdist="0.6 cm", vdist="0.4 cm",
+    def __init__(self, dist="0.2 cm", pos = "tr", hinside = 1, vinside = 1, hdist="0.6 cm", vdist="0.4 cm",
                  symbolwidth="0.5 cm", symbolheight="0.25 cm", symbolspace="0.2 cm",
                  textattrs=textmodule.valign.centerline(), plotinfos=None):
         self.dist_str = dist
         self.pos = pos
-        self.inside = inside
+        self.hinside = hinside
+        self.vinside = vinside
         self.hdist_str = hdist
         self.vdist_str = vdist
         self.symbolwidth_str = symbolwidth
@@ -2046,7 +2047,7 @@ class key:
         - method should be called after dolayout
         - the x, y alignment might be calculated by the graph using:
           - the bbox of the key as returned by the keys bbox method
-          - the attributes _hdist, _vdist and inside of the key
+          - the attributes _hdist, _vdist, hinside, and vinside of the key
           - the dimension and geometry of the graph"""
         sc = c.insert(canvas.canvas(trafo._translate(x, y)))
         for plotinfo, title in zip(self.plotinfos, self.titles):
@@ -2297,22 +2298,22 @@ class graphxy(canvas.canvas):
             self.key.dolayout(self)
             bbox = self.key.bbox()
             if self.key.right:
-                if self.key.inside:
+                if self.key.hinside:
                     x = self._xpos + self._width - bbox.urx - self.key._hdist
                 else:
                     x = self._xpos + self._width - bbox.llx + self.key._hdist
             else:
-                if self.key.inside:
+                if self.key.hinside:
                     x = self._xpos - bbox.llx + self.key._hdist
                 else:
                     x = self._xpos - bbox.urx - self.key._hdist
             if self.key.top:
-                if self.key.inside:
+                if self.key.vinside:
                     y = self._ypos + self._height - bbox.ury - self.key._vdist
                 else:
                     y = self._ypos + self._height - bbox.lly + self.key._vdist
             else:
-                if self.key.inside:
+                if self.key.vinside:
                     y = self._ypos - bbox.lly + self.key._vdist
                 else:
                     y = self._ypos - bbox.ury - self.key._vdist
@@ -3494,6 +3495,8 @@ class rect(symbol):
         self.rectclipcanvas = graph.clipcanvas()
         symbol.drawpoints(self, graph, points)
 
+    def key(self, c, x, y, width, height):
+        raise RuntimeError("style doesn't yet provide a key")
 
 
 class text(symbol):
@@ -3534,6 +3537,9 @@ class text(symbol):
         if self.textindex is None:
             raise RuntimeError("column 'text' not set")
         symbol.drawpoints(self, graph, points)
+
+    def key(self, c, x, y, width, height):
+        raise RuntimeError("style doesn't yet provide a key")
 
 
 class arrow(symbol):
@@ -3581,6 +3587,9 @@ class arrow(symbol):
         if self.angleindex is None:
             raise RuntimeError("column 'angle' not set")
         symbol.drawpoints(self, graph, points)
+
+    def key(self, c, x, y, width, height):
+        raise RuntimeError("style doesn't yet provide a key")
 
 
 class _bariterator(changeattr):
@@ -3726,6 +3735,9 @@ class bar:
                                      graph._connect(x4pos, y4pos, x1pos, y1pos), # no closepath (might not be straight)
                                      path.closepath()), *self.barattrs)
             except (TypeError, ValueError): pass
+
+    def key(self, c, x, y, width, height):
+        c.fill(path._rect(x, y, width, height), *self.barattrs)
 
 
 #class surface:
