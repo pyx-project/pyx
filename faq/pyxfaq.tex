@@ -7,7 +7,7 @@
 \usepackage[pdftex]{hyperref}
 \hypersetup{pdftitle={PyX FAQ}%
             ,pdfauthor={\textcopyright\ Gert-Ludwig Ingold
-	               <gert.ingold@physik.uni-augsburg.de>}%
+                       <gert.ingold@physik.uni-augsburg.de>}%
             ,colorlinks=true%
             ,linkcolor=blue}
 \begin{document}
@@ -225,7 +225,7 @@ in the last line requests to write the contents of this canvas to a file.
 %
 %gupper = graph.graphxy(...,
 %                       x=graph.linaxis(...,
-%		                       part=graph.linpart(),
+%                                      part=graph.linpart(),
 %                                       painter=myaxispainter)
 %                       )
 %\end{progcode}
@@ -539,7 +539,8 @@ standard cmr fonts.
 }
 
 \question{a}{No information for font `xyz7t' found in font mapping file}
-{}
+{I think we should delete this question for the release, because it
+  should no longer be applicable to PyX 0.5 and above.}
 {After verifying that your problem was not addressed in \uaref{q:no_cmr10}, 
 you should switch on virtual font support by using \texttt{text.set(dvicopy=1)}.
 For those interested in more details: setting this option will cause
