@@ -1,4 +1,4 @@
-# contributed by Gerd Ingold
+# contributed by Gert-Ludwig Ingold
 
 from pyx import *
 from math import cos, sin, pi
