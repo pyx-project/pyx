@@ -36,3 +36,15 @@ The file \verb|color.eps| is created and looks like:
 \begin{quote}
 \includegraphics{color}
 \end{quote}
+
+\section{Color gradients}
+
+The color module provides a class \verb|gradient|. The constructor of
+that class receives two colors from the same color model and two
+named parameters \verb|min| and \verb|max|, which are set to \verb|0|
+and \verb|1| by default. Between those colors a linear interpolation
+takes place by the method \verb|getcolor| depending on a value between
+\verb|min| and \verb|max|.
+
+A list of named gradients is available in appendix~\ref{gradientname}.
+
