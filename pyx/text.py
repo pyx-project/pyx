@@ -1810,14 +1810,14 @@ def _cleantmp(texrunner):
     if texrunner.texruns: # cleanup while TeX is still running?
         texrunner.texruns = 0
         texrunner.texdone = 1
-        texrunner.expectqueue.put_nowait(None)     # do not expect any output anymore
-        if texrunner.mode == "latex":              # try to immediately quit from TeX or LaTeX
+        texrunner.expectqueue.put_nowait(None)              # do not expect any output anymore
+        if texrunner.mode == "latex":                       # try to immediately quit from TeX or LaTeX
             texrunner.texinput.write("\n\\catcode`\\@11\\relax\\@@end\n")
         else:
             texrunner.texinput.write("\n\\end\n")
-        texrunner.texinput.close()                 # close the input queue and
-        texrunner.quitevent.wait(texrunner.waitfortex) # wait for finish of the output
-        if not texrunner.quitevent.isSet(): return # didn't got a quit from TeX -> we can't do much more
+        texrunner.texinput.close()                          # close the input queue and
+        if not texrunner.waitforevent(texrunner.quitevent): # wait for finish of the output
+            return                                          # didn't got a quit from TeX -> we can't do much more
     for usefile in texrunner.usefiles:
         extpos = usefile.rfind(".")
         try:
@@ -1861,7 +1861,8 @@ class texrunner:
                        docclass="article",
                        docopt=None,
                        usefiles=None,
-                       waitfortex=5,
+                       showwaitfortex=5,
+                       waitfortex=60,
                        texdebug=None,
                        dvidebug=0,
                        errordebug=1,
@@ -1882,6 +1883,7 @@ class texrunner:
         self.docopt = docopt
         self.usefiles = helper.ensurelist(usefiles)
         self.waitfortex = waitfortex
+        self.showwaitfortex = showwaitfortex
         if texdebug is not None:
             if texdebug[-4:] == ".tex":
                 self.texdebug = open(texdebug, "w")
@@ -1924,6 +1926,32 @@ class texrunner:
         tempfile.tempdir = os.curdir
         self.texfilename = os.path.basename(tempfile.mktemp())
         tempfile.tempdir = savetempdir
+
+    def waitforevent(self, event):
+        """waits verbosely with an timeout for an event
+        - observes an event while periodly while printing messages
+        - returns the status of the event (isSet)
+        - does not clear the event"""
+        if self.showwaitfortex:
+            waited = 0
+            hasevent = 0
+            while waited < self.waitfortex and not hasevent:
+                if self.waitfortex - waited > self.showwaitfortex:
+                    event.wait(self.showwaitfortex)
+                    waited += self.showwaitfortex
+                else:
+                    event.wait(self.waitfortex - waited)
+                    waited += self.waitfortex - waited
+                hasevent = event.isSet()
+                if not hasevent:
+                    if waited < self.waitfortex:
+                        sys.stderr.write("*** PyX INFO: still waiting for %s after %i seconds...\n" % (self.mode, waited))
+                    else:
+                        sys.stderr.write("*** PyX ERROR: the timeout of %i seconds expired and %s did not respond.\n" % (waited, self.mode))
+            return hasevent
+        else:
+            event.wait(self.waitfortex)
+            return event.isSet()
 
     def execute(self, expr, *checks):
         """executes expr within TeX/LaTeX
@@ -2067,15 +2095,13 @@ class texrunner:
         if self.texdebug is not None:
             self.texdebug.write(self.expr)
         self.texinput.write(self.expr)
-        self.gotevent.wait(self.waitfortex) # wait for the expected output
-        gotevent = self.gotevent.isSet()
+        gotevent = self.waitforevent(self.gotevent)
         self.gotevent.clear()
-        if expr is None and gotevent:       # TeX/LaTeX should have finished
+        if expr is None and gotevent: # TeX/LaTeX should have finished
             self.texruns = 0
             self.texdone = 1
-            self.texinput.close()                # close the input queue and
-            self.quitevent.wait(self.waitfortex) # wait for finish of the output
-            gotevent = self.quitevent.isSet()
+            self.texinput.close()                        # close the input queue and
+            gotevent = self.waitforevent(self.quitevent) # wait for finish of the output
         try:
             self.texmessage = ""
             while 1:
@@ -2144,6 +2170,7 @@ class texrunner:
                   docopt=None,
                   usefiles=None,
                   waitfortex=None,
+                  showwaitfortex=None,
                   texdebug=None,
                   dvidebug=0,
                   errordebug=None,
@@ -2176,6 +2203,8 @@ class texrunner:
             self.usefiles = helper.ensurelist(usefiles)
         if waitfortex is not None:
             self.waitfortex = waitfortex
+        if showwaitfortex is not None:
+            self.showwaitfortex = showwaitfortex
         if texdebug is not None:
             if self.texdebug is not None:
                 self.texdebug.close()
