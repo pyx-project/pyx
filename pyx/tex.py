@@ -389,17 +389,18 @@ class tex:
         NewSizeFile = open(TempName + ".size", "r")
         NewSizes = NewSizeFile.readlines()
 
-        SizeFile = open(self.SizeFileName, "w")
-        SizeFile.writelines(NewSizes)
+        if (len(NewSizes) != 0) or (len(OldSizes) != 0):
+            SizeFile = open(self.SizeFileName, "w")
+            SizeFile.writelines(NewSizes)
 
-        for OldSize in OldSizes:
-            OldSizeSplit = OldSize.split(":")
-            for NewSize in NewSizes:
-                if NewSize.split(":")[0:2] == OldSizeSplit[0:2]:
-                    break
-            else:
-                if time.time() < float(OldSizeSplit[2]) + 60*60*24:   # we keep it for one day
-                    SizeFile.write(OldSize)
+            for OldSize in OldSizes:
+                OldSizeSplit = OldSize.split(":")
+                for NewSize in NewSizes:
+                    if NewSize.split(":")[0:2] == OldSizeSplit[0:2]:
+                        break
+                else:
+                    if time.time() < float(OldSizeSplit[2]) + 60*60*24:   # we keep it for one day
+                        SizeFile.write(OldSize)
 
         os.unlink(TempName + ".tex")
         os.unlink(TempName + ".log")

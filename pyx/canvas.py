@@ -262,7 +262,7 @@ class canvas:
         return self
 
     def inserteps(self, x, y, filename, clip=1):
-        self._PSAddCmd(str(epsfile(x, y, filename, clip)))
+        self._PSAddCmd(str(epsfile(self.unit.pt(x), self.unit.pt(y), filename, clip)))
         return self
         
     def write(self, filename, width, height, **kwargs):
