@@ -1,7 +1,23 @@
 #!/usr/bin/env python
 
-# affine trafos
+# some helper routines
 
+def _rmatrix(angle):
+    from math import pi, cos, sin
+    phi = 2*pi*angle/360
+	
+    return  (( cos(phi), sin(phi)), 
+             (-sin(phi), cos(phi)))
+
+def _mmatrix(angle):
+    from math import pi, cos, sin
+    phi = 2*pi*angle/360
+    
+    return ( (cos(phi)*cos(phi)-sin(phi)*sin(phi), -2*sin(phi)*cos(phi)                ),
+	     (-2*sin(phi)*cos(phi),                sin(phi)*sin(phi)-cos(phi)*cos(phi) ) )
+
+# trafo: affine transformations
+	     
 class trafo:
     def __init__(self, matrix=((1,0),(0,1)), vector=(0,0)):
         self.matrix=matrix
@@ -39,13 +55,10 @@ class trafo:
 	return trafo(vector=(x,y))*self
 	
     def rotate(self,angle):
-        from math import pi, cos, sin
-	phi = 2*pi*angle/360
+	return trafo(matrix=_rmatrix(angle))*self
 	
-	matrix = (( cos(phi), sin(phi)), 
-	          (-sin(phi), cos(phi)))
-		  
-	return trafo(matrix=matrix)*self
+    def mirror(self,angle):
+	return trafo(matrix=_mmatrix(angle))*self
 
     def inverse(self):
         det = self.matrix[0][0]*self.matrix[1][1] - self.matrix[0][1]*self.matrix[1][0]
@@ -64,23 +77,11 @@ class translate(trafo):
    
 class rotate(trafo):
     def __init__(self,angle):
-        from math import pi, cos, sin
-	phi = 2*pi*angle/360
-	
-	matrix = (( cos(phi), sin(phi)), 
-	          (-sin(phi), cos(phi)) )
-		  
-        trafo.__init__(self, matrix=matrix)
+        trafo.__init__(self, matrix=_rmatrix(angle))
 	
 class mirror(trafo):
     def __init__(self,angle=0):
-        from math import pi, cos, sin
-	phi = 2*pi*angle/360
-
-	matrix=( (cos(phi)*cos(phi)-sin(phi)*sin(phi), -2*sin(phi)*cos(phi)                ),
-	         (-2*sin(phi)*cos(phi),                sin(phi)*sin(phi)-cos(phi)*cos(phi) ) )
-       
-        trafo.__init__(self, matrix=matrix)
+        trafo.__init__(self, matrix=_mmatrix(angle))
         
 
 if __name__=="__main__":
@@ -105,6 +106,7 @@ if __name__=="__main__":
    # -mirror(phi)=mirror(phi+180)
 
    print mirror(20)*mirror(20)
+   print mirror(20).mirror(20)
    print mirror(20)*mirror(180+20)
    print trafo()
    print
