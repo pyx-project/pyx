@@ -205,7 +205,7 @@ class bcurve_pt:
                              (self.y3-self.y0)*(self.y3-self.y0))
         else:
             (a, b) = self.MidPointSplit()
-            return a.arclength(epsilon) + b.arclength(epsilon)
+            return a.arclength_pt(epsilon) + b.arclength_pt(epsilon)
 
     def arclength(self, epsilon=1e-5):
         """computes arclength of bpathel using successive midpoint split"""
@@ -1512,6 +1512,33 @@ class multilineto_pt(pathel):
     def write(self, file):
         for x, y in self.points:
             file.write("%g %g lineto\n" % (x, y) )
+
+
+class multicurveto_pt(pathel):
+
+    """Perform multiple curvetos (coordinates in pts)"""
+
+    def __init__(self, points):
+         self.points = points
+
+    def _updatecontext(self, context):
+        context.currentsubpath = context.currentsubpath or context.currentpoint
+        context.currentpoint = self.points[-1]
+
+    def _bbox(self, context):
+        xs = [point[0] for point in self.points] + [point[2] for point in self.points] + [point[2] for point in self.points]
+        ys = [point[1] for point in self.points] + [point[3] for point in self.points] + [point[5] for point in self.points]
+        return bbox._bbox(min(context.currentpoint[0], *xs),
+                          min(context.currentpoint[1], *ys),
+                          max(context.currentpoint[0], *xs),
+                          max(context.currentpoint[1], *ys))
+
+    def _normalized(self, context):
+        return [curveto_pt(*point) for point in self.points]
+
+    def write(self, file):
+        for point in self.points:
+            file.write("%g %g %g %g %g %g curveto\n" % tuple(point))
 
 
 ################################################################################
