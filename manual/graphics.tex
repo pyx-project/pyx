@@ -196,42 +196,43 @@ of length $1$ for each path element of a path. For instance, for a
 simple straight line, the possible parameter values range from $0$ to
 $1$, corresponding to the first and last point, respectively, of the
 line. Appending another straight line, would extend this range to a
-maximal value of $2$. You can always query this maximal value using
-the \method{range()} method of the \class{path} class.  
+maximal value of $2$. 
 
 However, the situation becomes more complicated if more complex
 objects like a circle are involved. Then, one could be tempted to
-assume that again the parameter value range from $0$ to $1$, because
+assume that again the parameter value ranges from $0$ to $1$, because
 the predefined circle consists just of one \class{arc} together with a
-\class{closepath} element. However, as a simple \samp{path.circle(0,
-  0, 1).range()} will tell, this is not the case: the actual range is
-much larger. The reason for this behaviour lies in the internal path
-handling of \PyX: Before performing any non-trivial geometrical
-operation with a path, it will automatically be converted into an
-instance of the \class{normpath} class (see also
+\class{closepath} element. However, this is not the case: the actual
+range is much larger. The reason for this behaviour lies in the
+internal path handling of \PyX: Before performing any non-trivial
+geometrical operation with a path, it will automatically be converted
+into an instance of the \class{normpath} class (see also
 Sect.~\ref{path:normpath}). These so generated paths are already
 separated in their subpaths and only contain straight lines and
 B\'ezier curve segments. Thus, as is easily imaginable, they are much
 simpler to deal with.
 
-A unique way of accessing a point on the path is to use the arc length
-of the path segment from the first point of the path to the given
-point. Thus, all \PyX{} path methods that accept a parameter value
-also allow the user to pass an arc length. For instance, 
+A more geometrical way of accessing a point on the path is to use the
+arc length of the path segment from the first point of the path to the
+given point. Thus, all \PyX{} path methods that accept a parameter
+value also allow the user to pass an arc length. For instance,
 \begin{verbatim}
 from math import pi
 
-pt1 = path.circle(0, 0, 1).at(arclen=pi)
-pt2 = path.circle(0, 0, 1).at(arclen=3*pi/2)
+pt1 = path.circle(0, 0, 1).at(pi)
+pt2 = path.circle(0, 0, 1).at(3*pi/2)
 
 c.stroke(path.path(path.moveto(*pt1), path.lineto(*pt2)))
 \end{verbatim}
 will draw a straight line from a point at angle $180$ degrees (in
 radians $\pi$) to another point at angle $270$ degrees (in radians
-$3\pi/2$) on the unit circle.
+$3\pi/2$) on the unit circle. Note however, that the mapping arc
+length $\to$ point is in general discontinuous at the begin and the
+end of a subpath, and thus \PyX{} does not guarantee any particular
+result for this boundary case.
 
 More information on the available path methods can be found 
-in Sect.~\ref{path:path}.
+in Sect.~\ref{path:path}. 
 
 \section{Attributes: Styles and Decorations}
 

@@ -37,15 +37,22 @@ Returns the total arc length of the path.$^\dagger$
 \end{methoddesc}
 
 \begin{methoddesc}{arclentoparam}{lengths}
-  Returns the parameter values corresponding to the arc lengths
+  Returns the parameter value(s) corresponding to the arc length(s)
   \var{lengths}.$^\dagger$
 \end{methoddesc}
 
-\begin{methoddesc}{at}{param=None, arclen=None}
-  Returns the coordinates (as 2-tuple) of the path point corresponding
-  to the parameter value \var{param} or, alternatively, the arc length
-  \var{arclen}.$^\ddagger$ At discontinuities in the path, the limit
-  from below is returned.$^\dagger$
+\begin{methoddesc}{at}{params}
+  Returns the coordinates (as 2-tuple) of the path point(s)
+  corresponding to the parameter value(s) \var{params}.$^\ddagger$
+  $^\dagger$
+\end{methoddesc}
+
+\begin{methoddesc}{atbegin}{}
+  Returns the coordinates (as 2-tuple) of the first point of the path.$^\dagger$
+\end{methoddesc}
+
+\begin{methoddesc}{atend}{}
+  Returns the coordinates (as 2-tuple) of the end point of the path.$^\dagger$
 \end{methoddesc}
 
 \begin{methoddesc}{bbox}{}
@@ -53,34 +60,35 @@ Returns the total arc length of the path.$^\dagger$
   bounding box may be too large, if the path contains any
   \class{curveto} elements, since for these the control box, i.e., the
   bounding box enclosing the control points of the B\'ezier curve is
-  returned.
+  returned. 
 \end{methoddesc}
 
 \begin{methoddesc}{begin}{}
-  Returns the coordinates (as 2-tuple) of the first point of the path.$^\dagger$
+  Returns the parameter value (a \class{normpathparam} instance) of
+  the first point in the path. 
 \end{methoddesc}
 
-\begin{methoddesc}{curvradius}{param=None, arclen=None}
-  Returns the curvature radius (or None if infinite) at parameter
-  param or, alternatively, arc length \var{arclen}.$^\ddagger$ This is
-  the inverse of the curvature at this parameter. Note that this
-  radius can be negative or positive, depending on the sign of the
-  curvature.$^\dagger$
+\begin{methoddesc}{curveradius}{param=None, arclen=None}
+  Returns the curvature radius/radii (or None if infinite) at parameter
+  value(s) params.$^\ddagger$ This is the inverse of the curvature at
+  this parameter. Note that this radius can be negative or positive,
+  depending on the sign of the curvature.$^\dagger$
 \end{methoddesc}
 
 \begin{methoddesc}{end}{}
-  Returns the coordinates (as 2-tuple) of the end point of the path.$^\dagger$
+  Returns the parameter value (a \class{normpathparam} instance) of
+  the last point in the path. 
 \end{methoddesc}
 
 \begin{methoddesc}{extend}{pathitems}
-Appends the list \var{pathitems} to the end of the path.
+Appends the list \var{pathitems} to the end of the path. 
 \end{methoddesc}
 
 \begin{methoddesc}{intersect}{opath}
   Returns a tuple consisting of two lists of parameter values
   corresponding to the intersection points of the path with the other
   path \var{opath}, respectively.$^\dagger$ For intersection points which
-  are not farther apart then \var{epsilon} points, only one is returned.
+  are not farther apart then \var{epsilon} points, only one is returned. 
 \end{methoddesc}
 
 \begin{methoddesc}{joined}{opath}
@@ -93,12 +101,18 @@ Appends the list \var{pathitems} to the end of the path.
   Returns the equivalent \class{normpath}. For the conversion and for later
   calculations with this \class{normpath} and accuracy of
   \var{epsilon} points is used. If \var{epsilon} is \var{None}, the
-  global \var{epsilon} of the \module{path} module is used.
+  global \var{epsilon} of the \module{path} module is used. 
 \end{methoddesc}
+
+\begin{methoddesc}{paramtoarclen}{params}
+  Returns the arc length(s) corresponding to the parameter value(s)
+  \var{params}.$^\ddagger$ $^\dagger$
+\end{methoddesc}
+
 
 \begin{methoddesc}{range}{}
   Returns the maximal parameter value \var{param} that is allowed in the
-  path methods.
+  path methods. 
 \end{methoddesc}
 
 \begin{methoddesc}{reversed}{}
@@ -106,26 +120,22 @@ Appends the list \var{pathitems} to the end of the path.
 \end{methoddesc}
 
 \begin{methoddesc}{split}{params}
-  Splits the path at the parameters \var{params}, which have to be
-  sorted in ascending order, and returns a corresponding list of
+  Splits the path at the parameter values \var{params}, which have to
+  be sorted in ascending order, and returns a corresponding list of
   \class{normpath} instances.$^\dagger$
 \end{methoddesc}
 
-\begin{methoddesc}{tangent}{param=None, arclen=None, length=None}
-  Return a \class{line} instance corresponding to the tangent vector
-  to the path at the parameter value \var{param} or, alternatively,
-  the arc length \var{arclen}.$^\ddagger$ At discontinuities in the
-  path, the limit from below is returned. If \var{length} is not
-  \texttt{None}, the tangent vector will be scaled
-  correspondingly.$^\dagger$
+\begin{methoddesc}{tangent}{params, length=None}
+  Return (a) \class{line} instance(s) corresponding to the tangent
+  vector(s) to the path at the parameter value(s)
+  \var{params}.$^\ddagger$ If \var{length} is not \texttt{None}, the
+  tangent vector will be scaled correspondingly.$^\dagger$
 \end{methoddesc}
 
 
-\begin{methoddesc}{trafo}{param=None, arclen=None}
-  Returns a trafo which maps a point $(0, 1)$ to the tangent vector to
-  the path at the parameter value \var{param} or, alternatively, the
-  arc length \var{arclen}.$^\ddagger$ At discontinuities in the path,
-  the limit from below is returned.$^\dagger$
+\begin{methoddesc}{trafo}{params}
+  Returns (a) trafo(s) which maps a point $(0, 1)$ to the tangent vector to
+  the path at the parameter value(s) \var{params}.$^\ddagger$ $^\dagger$
 \end{methoddesc}
 
 \begin{methoddesc}{transformed}{trafo}
@@ -139,22 +149,18 @@ Some notes on the above:
 \item The $\dagger$ denotes methods which require a prior
   conversion of the path into a \class{normpath} instance. This is
   done automatically (using the precision \var{epsilon} set globally
-  using \method{path.set}), but if you need to call such methods often or
-  if you need to change the precision used for this conversion, 
-  it is a good idea to perform the conversion manually.
+  using \method{path.set}). If you need a different \var{epsilon} for
+  a normpath, you also can perform the conversion manually. 
 \item Instead of using the \method{joined()} method, you can also join two
 paths together with help of the \verb|<<| operator, for instance
-\samp{p = p1 << p2}.
-\item $^\ddagger$ In the methods accepting both a parameter value
-  \var{param} and an arc length \var{arclen}, exactly one of these
-  arguments has to provided.  Each argument can either be a
-  number/length or a tuple.  In the former case, the parameter value
-  \var{param} (\var{arclen}) refers to the whole path and has to be
-  smaller or equal to \method{self.range()} (\method{self.arclen()}),
-  otherwise an exception is raised.  In the latter case, the first
-  element has to be an integer specifying the subpath and the second
-  element specifies the parameter value or the arc length inside of
-  this subpath.
+\samp{p = p1 << p2}. 
+\item $^\ddagger$ In these methods, \var{params} may either be a
+  single value or a list. In the latter case, the result of the method
+  will be a list consisting of the results for every parameter.  The
+  parameter itself may either be a length (or a number which is then
+  interpreted as a user length) or an instance of the class
+  \class{normpathparam}. In the former case, the length refers to the
+  arc length along the path. 
 \end{itemize}
 
 \subsection{Path elements}
@@ -164,23 +170,23 @@ paths together with help of the \verb|<<| operator, for instance
 The class \class{pathitem} is the superclass of all PostScript path
 construction primitives. It is never used directly, but only by
 instantiating its subclasses, which correspond one by one to the
-PostScript primitives.
+PostScript primitives. 
 
 Except for the path elements ending in \code{_pt}, all coordinates
 passed to the path elements can be given as number (in which case they
 are interpreted as user units with the currently set default type) or in
-\PyX\ lengths.
+\PyX\ lengths. 
 
 The following operation move the current point and open a new subpath:
 
 \begin{classdesc}{moveto}{x, y}
 Path element which sets the current point to the absolute coordinates (\var{x},
-\var{y}). This operation opens a new subpath.
+\var{y}). This operation opens a new subpath. 
 \end{classdesc}
 
 \begin{classdesc}{rmoveto}{dx, dy}
-Path element which moves the current point by (\var{dx}, \var{dy}).
-This operation opens a new subpath.
+Path element which moves the current point by (\var{dx}, \var{dy}). 
+This operation opens a new subpath. 
 \end{classdesc}
 
 Drawing a straight line can be accomplished using:
@@ -188,13 +194,13 @@ Drawing a straight line can be accomplished using:
 \begin{classdesc}{lineto}{x, y}
 Path element which appends a straight line from the current point to the
 point with absolute coordinates (\var{x}, \var{y}), which becomes
-the new current point.
+the new current point. 
 \end{classdesc}
 
 \begin{classdesc}{rlineto}{dx, dy}
 Path element which appends a straight line from the current point to the
 a point with relative coordinates (\var{dx}, \var{dy}), which becomes
-the new current point.
+the new current point. 
 \end{classdesc}
 
 For the construction of arc segments, the following three operations
@@ -203,23 +209,23 @@ are available:
 \begin{classdesc}{arc}{x, y, r, angle1, angle2}
 Path element which appends an arc segment in counterclockwise direction
 with absolute coordinates (\var{x}, \var{y}) of the center and 
-radius \var{r} from \var{angle1} to \var{angle2} (in degrees).
+radius \var{r} from \var{angle1} to \var{angle2} (in degrees). 
 If before the operation, the current point is defined, a straight line
 is from the current point to the beginning of the arc segment is
 prepended. Otherwise, a subpath, which thus is the first one in the
 path, is opened. After the operation, the current point is at the end
-of the arc segment.
+of the arc segment. 
 \end{classdesc}
 
 \begin{classdesc}{arcn}{x, y, r, angle1, angle2}
 Path element which appends an arc segment in clockwise direction
 with absolute coordinates (\var{x}, \var{y}) of the center and 
-radius \var{r} from \var{angle1} to \var{angle2} (in degrees).
+radius \var{r} from \var{angle1} to \var{angle2} (in degrees). 
 If before the operation, the current point is defined, a straight line
 is from the current point to the beginning of the arc segment is
 prepended. Otherwise, a subpath, which thus is the first one in the
 path, is opened. After the operation, the current point is at the end
-of the arc segment.
+of the arc segment. 
 \end{classdesc}
 
 \begin{classdesc}{arct}{x1, y1, x2, y2, r}
@@ -232,26 +238,26 @@ B\'ezier curves can be constructed using: \
 \begin{classdesc}{curveto}{x1, y1, x2, y2, x3, y3}
 Path element which appends a B\'ezier curve with
 the current point as first control point and the other control points
-(\var{x1}, \var{y1}), (\var{x2}, \var{y2}), and (\var{x3}, \var{y3}).
+(\var{x1}, \var{y1}), (\var{x2}, \var{y2}), and (\var{x3}, \var{y3}). 
 \end{classdesc}
 
 \begin{classdesc}{rcurveto}{dx1, dy1, dx2, dy2, dx3, dy3}
 Path element which appends a B\'ezier curve with
 the current point as first control point and the other control points
 defined relative to the current point by the coordinates
-(\var{dx1}, \var{dy1}), (\var{dx2}, \var{dy2}), and (\var{dx3}, \var{dy3}).
+(\var{dx1}, \var{dy1}), (\var{dx2}, \var{dy2}), and (\var{dx3}, \var{dy3}). 
 \end{classdesc}
 
 Note that when calculating the bounding box (see Sect.~\ref{bbox}) of
 B\'ezier curves, \PyX{} uses for performance reasons the so-called
 control box, i.e., the smallest rectangle enclosing the four control
 points of the B\'ezier curve. In general, this is not the smallest
-rectangle enclosing the B\'ezier curve.
+rectangle enclosing the B\'ezier curve. 
 
 Finally, an open subpath can be closed using:
 
 \begin{classdesc}{closepath}{}
-Path element which closes the current subpath.
+Path element which closes the current subpath. 
 \end{classdesc}
 
 For performance reasons, two non-PostScript path elements are defined, 
@@ -261,13 +267,13 @@ which perform multiple identical operations:
 Path element which appends straight line segments starting from
 the current point and going through the list of points given 
 in the \var{points_pt} argument. All coordinates have to 
-be given in PostScript points.
+be given in PostScript points. 
 \end{classdesc}
 
 \begin{classdesc}{multicurveto_pt}{points_pt}
 Path element which appends B\'ezier curve segments starting from
 the current point and going through the list of each three control
-points given in the \var{points_pt} argument.
+points given in the \var{points_pt} argument. 
 \end{classdesc}
 
 
@@ -281,7 +287,7 @@ the \class{path} above. It represents a path as a list of subpaths, which are
 instances of the class \class{normsubpath}. These \class{normsubpath}s
 themselves consist of a list of \class{normsubpathitems} which are
 either straight lines (\class{normline}) or B\'ezier curves
-(\class{normcurve}).
+(\class{normcurve}). 
 
 A given path can easily be converted to the corresponding \class{normpath}
 using the method with this name:
@@ -291,14 +297,14 @@ np = p.normpath()
 Additionally, you can specify the accuracy (in points) which is used
 in all \class{normpath} calculations by means of the argument
 \var{epsilon}, which defaults to to $10^{-5}$ points. This default
-value can be changed using the module function \function{path.set}.
+value can be changed using the module function \function{path.set}. 
 
 To construct a \class{normpath} from a list of \class{normsubpath}
 instances, you pass them to the \class{normpath} constructor:
 
 \begin{classdesc}{normpath}{normsubpaths=[]}
   Construct a \class{normpath} consisting of \var{subnormpaths}, which
-  is a list of \class{subnormpath} instances.
+  is a list of \class{subnormpath} instances. 
 \end{classdesc}
 
 Instances of \class{normpath} offers all methods of regular
@@ -307,28 +313,28 @@ the methods \method{append} and \method{extend}. While they allow for
 adding of instances of \class{subnormpath} to the \class{normpath}
 instance, they also keep the functionality of a regular path and allow
 for regular path elements to be appended. The later are converted to
-the proper normpath representation during addition.
+the proper normpath representation during addition. 
 
 In addition to the \class{path} methods, a \class{normpath} instance
 also offers the following methods, which operate on the instance
-itself, i.e., modify it in place.
+itself, i.e., modify it in place. 
 
 \begin{methoddesc}{join}{other}
   Join \var{other}, which has to be a \class{path} instance, to
-  the \class{normpath} instance.
+  the \class{normpath} instance. 
 \end{methoddesc}
 
 \begin{methoddesc}{reverse}{}
-  Reverses the \class{normpath} instance.
+  Reverses the \class{normpath} instance. 
 \end{methoddesc}
 
 \begin{methoddesc}{transform}{trafo}
   Transforms the \class{normpath} instance according to the linear
-  transformation \var{trafo}.
+  transformation \var{trafo}. 
 \end{methoddesc}
 
 Finally, we remark that the sum of a \class{normpath} and a \class{path}
-always yields a \class{normpath}.
+always yields a \class{normpath}. 
 
 
 \subsection{Class \class{normsubpath}}
@@ -340,31 +346,31 @@ always yields a \class{normpath}.
   instances. If \var{closed} is set, the \class{normsubpath} will be
   closed, thereby appending a straight line segment from the first to
   the last point, if it is not already present. All calculations with
-  the \class{normsubpath} are performed with an accuracy of \var{epsilon}.
+  the \class{normsubpath} are performed with an accuracy of \var{epsilon}. 
 \end{classdesc}
 
 Most \class{normsubpath} methods behave like the ones of a
-\class{path}.
+\class{path}. 
 
 Exceptions are:
 
 \begin{methoddesc}{append}{anormsubpathitem}
   Append the \var{anormsubpathitem} to the end of the
   \class{normsubpath} instance. This is only possible if the
-  \class{normsubpath} is not closed, otherwise an exception is raised.
+  \class{normsubpath} is not closed, otherwise an exception is raised. 
 \end{methoddesc}
 
 \begin{methoddesc}{extend}{normsubpathitems}
   Extend the \class{normsubpath} instances by \var{normsubpathitems},
   which has to be a list of \class{normsubpathitem} instances. This is
   only possible if the \class{normsubpath} is not closed, otherwise an
-  exception is raised.
+  exception is raised. 
 \end{methoddesc}
 
 \begin{methoddesc}{close}{}
   Close the \class{normsubpath} instance, thereby appending a straight
   line segment from the first to the last point, if it is not already
-  present.
+  present. 
 \end{methoddesc}
 
 \subsection{Predefined paths}
@@ -372,10 +378,10 @@ Exceptions are:
 \label{path:predefined}
 
 For convenience, some oft-used paths are already predefined. All
-of them are subclasses of the \class{path} class.
+of them are subclasses of the \class{path} class. 
 
 \begin{classdesc}{line}{x0, y0, x1, y1}
-A straight line from the point (\var{x0}, \var{y0}) to the point (\var{x1}, \var{y1}).
+A straight line from the point (\var{x0}, \var{y0}) to the point (\var{x1}, \var{y1}). 
 \end{classdesc}
 
 \begin{classdesc}{curve}{x0, y0, x1, y1, x2, y2, x3, y3}
@@ -385,11 +391,11 @@ control points  (\var{x0}, \var{y0}), $\dots$, (\var{x3}, \var{y3}).\
 
 \begin{classdesc}{rect}{x, y, w, h}
 A closed rectangle with lower left point (\var{x}, \var{y}), width \var{w}, and
-  height \var{h}.
+  height \var{h}. 
 \end{classdesc}
 
 \begin{classdesc}{circle}{x, y, r}
-A closed circle with center (\var{x}, \var{y}) and radius \var{r}.
+A closed circle with center (\var{x}, \var{y}) and radius \var{r}. 
 \end{classdesc}
 
 %%% Local Variables:
