@@ -526,6 +526,10 @@ class wriggle(deco, attr.attr):
         parlist = basepath.lentopar(map(unit.t_pt, poslist))
         atlist = [basepath.at_pt(x) for x in parlist]
 
+        # from pyx import color
+        # for at in atlist:
+        #     dp.subcanvas.stroke(path.circle_pt(at[0], at[1], 1), [color.rgb.blue])
+
         # calculate wriggle points and tangents
         anglerange = 2*math.pi*self.loops + endangle - startangle
         deltaangle = anglerange / sections
@@ -538,6 +542,7 @@ class wriggle(deco, attr.attr):
             angle = startangle + i*anglerange/sections
             dx, dy = math.cos(angle), math.sin(angle)
             wriggleat[i] = x + radius*dx, y + radius*dy
+            # dp.subcanvas.stroke(path.line_pt(x, y, x + radius*dx, y + radius*dy), [color.rgb.blue])
             wriggletangentstart[i] = x + radius*dx + tangentlength*dy, y + radius*dy - tangentlength*dx
             wriggletangentend[i] = x + radius*dx - tangentlength*dy, y + radius*dy + tangentlength*dx
 
