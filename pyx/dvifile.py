@@ -1052,7 +1052,7 @@ class dvifile:
                 # - 72               : conversion from inch to points
                 self.conv = self.mag/1000.0*self.trueconv/self.resolution*72
 
-                comment = afile.read(file.readuchar())
+                comment = afile.read(afile.readuchar())
                 return
             else:
                 raise DVIError
