@@ -24,7 +24,7 @@
 # this code will be part of PyX 0.2 (or 0.3, or ... ???)
 
 import os, threading, Queue, traceback, re, struct
-import graph, bbox
+import graph, bbox, unit
 
 ###############################################################################
 # joergl would mainly work here ...
@@ -406,10 +406,10 @@ class DVIFile:
         x = self.pos[_POS_H] * self.conv * 1e-5
         y = self.pos[_POS_V] * self.conv * 1e-5
         ascii = (char > 32 and char < 128) and "(%s)" % chr(char) or "???"
-        self.actpage.append(("c", x, y, char))
+        self.actpage.append(("c", unit.t_cm(x), unit.t_cm(y), char))
         print "type 0x%08x %s at (%.3f cm, %.3f cm)" % (char, ascii, x, y)
         if inch:
-            self.pos[_POS_H] += self.conv*self.fonts[self.activefont].getwidth(char)
+            self.pos[_POS_H] += self.fonts[self.activefont].getwidth(char)
 
     def putrule(self, height, width, inch=1):
         if height > 0 and width > 0:
@@ -575,11 +575,14 @@ class DVIFile:
         print "dvifile(\"%s\").write() for page %s called" % (self.filename, page)
         for el in self.pages[page-1]:
             command, arg = el[0], el[1:]
-            print "\t", command, arg
+#            print "\t", command, arg
             if command=="c":
-                file.write("%f %f moveto (%c) show\n" % arg)
+                x, y, c = arg
+                file.write("%f %f moveto (%c) show\n" %
+                           (unit.topt(x), unit.topt(y), c))
             elif command=="f":
                 file.write("/%s findfont\n" % arg[0].name.upper())
+                file.write("%d scalefont\n" % 10)
                 file.write("setfont\n")
 
         
@@ -831,28 +834,25 @@ if __name__=="__main__":
 
     res1 = text("\\hbox{$x$}")
     print res1.bbox()
-    res2 = text("test")
-    res3 = text("bla")
+    res2 = text("test", 1, 1)
+    res3 = text("bla und nochmals bla", 2, 2)
     print res2.bbox()
     print res3.bbox()
 
     file = open("test.ps", "w")
     
     file.write("%!PS-Adobe-3.0 EPSF 3.0\n")
-    file.write("%%BoundingBox: -10 -10 600 600\n")
-    file.write("%%Creator: PyX test\n")
-    file.write("%%%%Title: %s\n" % "test")
-#    file.write("%%%%CreationDate: %s\n" %
-#               time.asctime(time.localtime(time.time())))
+    file.write("%%BoundingBox: -10 -10 100 100\n")
     file.write("%%EndComments\n")
 
     file.write("%%BeginProlog\n")
- #   file.write(_PSProlog)
-    res1.write(file)
-    file.write("%%EndProlog\n")
 
     # res*.collectfontheader ???
     # we need to find a way to write the headers in the PS prolog!
+    res1.write(file)
+    
+    file.write("%%EndProlog\n")
+
     
     res1.write(file)
     res3.write(file)
