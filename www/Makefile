@@ -15,6 +15,9 @@ clean:
 
 public:
 	scp -oCompression=yes -r build/* $(publicserver):$(publicpath)
+	make chmod
+
+chmod:
 	-ssh $(publicserver) "cd $(publicpath); chmod -fR g+w *"
 
 build: always
