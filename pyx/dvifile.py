@@ -534,9 +534,10 @@ def readfontmap(filenames):
     """ read font map from filename (without path) """
     fontmap = {}
     for filename in filenames:
-        mappath = pykpathsea.find_file(filename, pykpathsea.kpse_dvips_config_format)
+        mappath = pykpathsea.find_file(filename, pykpathsea.kpse_fontmap_format)
+        # try also the oft-used registration as dvips config file
         if not mappath:
-            mappath = pykpathsea.find_file(filename, pykpathsea.kpse_fontmap_format)
+            mappath = pykpathsea.find_file(filename, pykpathsea.kpse_dvips_config_format)
         if not mappath:
             raise RuntimeError("cannot find font mapping file '%s'" % filename)
         mapfile = open(mappath, "r")
