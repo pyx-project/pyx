@@ -307,29 +307,17 @@ filled.clear = attr.clearclass(_filled)
 # two helper functions which construct the arrowhead and return its size, respectively
 
 def _arrowheadtemplatelength(anormpath, size):
-    "calculate length of arrowhead template (in parametrisation of anormpath)"
+    "returns length of arrowhead template (in parametrisation of anormpath)"
     # get tip (tx, ty)
     tx, ty = anormpath.begin()
 
     # obtain arrow template by using path up to first intersection
     # with circle around tip (as suggested by Michael Schindler)
-    ipar = anormpath.intersect(path.circle(tx, ty, size))
-    if ipar[0]:
-        alen = ipar[0][0]
+    ipar = anormpath.intersect(path.circle(tx, ty, size))[0]
+    if ipar:
+        return ipar[0]
     else:
-        # if this doesn't work, use first order conversion from pts to
-        # the bezier curve's parametrization
-        tvec = anormpath.tangent(0)
-        tlen = tvec.arclen_pt()
-        try:
-            alen = unit.topt(size)/tlen
-        except ArithmeticError:
-            # take maximum, we can get
-            alen = anormpath.range()
-        if alen > anormpath.range(): alen = anormpath.range()
-
-    return alen
-
+        raise RuntimeError("arrow head too big for path")
 
 def _arrowhead(anormpath, size, angle, constriction):
 
@@ -352,20 +340,14 @@ def _arrowhead(anormpath, size, angle, constriction):
     arrowr = arrowtemplate.transformed(trafo.rotate( angle/2.0, tx, ty))
 
     # now come the joining backward parts
-    if constriction:
-        # arrow with constriction
 
-        # constriction point (cx, cy) lies on path
-        cx, cy = anormpath.at(constriction*alen)
+    # constriction point (cx, cy) lies on path
+    cx, cy = anormpath.at(_arrowheadtemplatelength(anormpath, constriction*size))
 
-        arrowcr= path.line(*(arrowr.end()+(cx,cy)))
+    arrowcr= path.line(*(arrowr.end()+(cx,cy)))
 
-        arrow = arrowl.reversed() << arrowr << arrowcr
-        arrow.append(path.closepath())
-    else:
-        # arrow without constriction
-        arrow = arrowl.reversed() << arrowr
-        arrow.append(path.closepath())
+    arrow = arrowl.reversed() << arrowr << arrowcr
+    arrow.append(path.closepath())
 
     return arrow
 
@@ -413,14 +395,7 @@ class arrow(deco, attr.attr):
                           self.attrs)
 
         # calculate new strokepath
-        alen = _arrowheadtemplatelength(anormpath, self.size)
-        if self.constriction:
-            ilen = alen*self.constriction
-        else:
-            ilen = alen
-
-        # correct somewhat for rotation of arrow segments
-        ilen = ilen*math.cos(math.pi*self.angle/360.0)
+        ilen = _arrowheadtemplatelength(anormpath, self.size*min(self.constriction, 1))
 
         # this is the rest of the path, we have to draw
         anormpath = anormpath.split([ilen])[1]
