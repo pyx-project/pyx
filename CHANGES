@@ -129,6 +129,14 @@ TODO:
     - pathel -> pathitem, etc. renaming
     - methods accepting a parameter value / arc length now also allow the user to 
       pass a tuple (subpath, param) / (subpath, arclen)
+    - normpath constructor no longer accepts a path or normpath as argument but only a list
+      of normsubpaths. Use the new normpath method of the path instead to construct a normpath
+      from a path.
+    - normsubpath can now deal with short (i.e. shorter than epsilon) segments correctly
+    - the intersect and split methods of normpath and normsubpath have been completely rewritten and
+      now take the accuracy epsilon correctly into account
+    - normsubpathitems and normsubpath now implement much more methods also provided by
+      path and normpath instances
   - deformer module: new
     - moved cycloid and smoothed from deco into deformer
   - bbox module:
@@ -136,6 +144,10 @@ TODO:
     - kpsearch option to search for file using the kpathsea library (contributed by Michael Gruber)
   - base module:
     - PSCmd and PSOp are now joined in a new class canvasitem
+  - deco module: 
+    - decorated path no longer allows modification of its path
+    - new method excluderange which allows to remove certain parameter ranges from the stroked path
+    - additional canvas provided by decorated path is now called ornaments
 
 
 0.6.x (????/??/??):
