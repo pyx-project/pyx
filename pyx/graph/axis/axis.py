@@ -304,16 +304,21 @@ class _axis:
                 if newticks is not None:
                     newticks = tick.mergeticklists(self.manualticks, newticks)
                     if first:
-                        bestrate = self.rater.rateticks(self, self.ticks, self.density)
-                        bestrate += self.rater.raterange(self.convert(self.ticks[-1])-
-                                                         self.convert(self.ticks[0]), 1)
-                        variants = [[bestrate, self.ticks]]
+                        if len(self.ticks):
+                            bestrate = self.rater.rateticks(self, self.ticks, self.density)
+                            bestrate += self.rater.raterange(self.convert(self.ticks[-1])-
+                                                             self.convert(self.ticks[0]), 1)
+                            variants = [[bestrate, self.ticks]]
+                        else:
+                            bestrate = None
+                            variants = []
                         first = 0
-                    newrate = self.rater.rateticks(self, newticks, self.density)
-                    newrate += self.rater.raterange(self.convert(newticks[-1])-
-                                                    self.convert(newticks[0]), 1)
-                    variants.append([newrate, newticks])
-                    if newrate < bestrate:
+                    if len(newticks):
+                        newrate = self.rater.rateticks(self, newticks, self.density)
+                        newrate += self.rater.raterange(self.convert(newticks[-1])-
+                                                        self.convert(newticks[0]), 1)
+                        variants.append([newrate, newticks])
+                    if newrate is not None and (bestrate is None or newrate < bestrate):
                         bestrate = newrate
                         worse = 0
                     else:
