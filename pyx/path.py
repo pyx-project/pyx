@@ -1365,12 +1365,11 @@ class normsubpathitem:
         """return reversed normsubpathitem"""
         pass
 
-    def split(self, params):
-        """splits normsubpathitem
+    def segments(self, params):
+        """return segments of the normsubpathitem
 
-        The returned list contains normsubpathitems for the regions
-        between the params. Hence params need to contain at least two
-        values to get a non-empty list.
+        The returned list of normsubpathitems for the segments between
+        the params. params need to contain at least two values.
         """
         pass
 
@@ -1475,7 +1474,9 @@ class normline_pt(normsubpathitem):
     def reversed(self):
         return normline_pt(self.x1_pt, self.y1_pt, self.x0_pt, self.y0_pt)
 
-    def split(self, params):
+    def segments(self, params):
+        if len(params) < 2:
+            raise ValueError("at least two parameters needed in segments")
         result = []
         xl_pt = yl_pt = None
         for t in params:
@@ -1665,7 +1666,7 @@ class normcurve_pt(normsubpathitem):
                             x_pt, y_pt)
 
     def _paramtoarclen_pt(self, params, epsilon):
-        arclens_pt = [splitpath.arclen_pt(epsilon) for splitpath in self.split([0] + list(params) + [1])]
+        arclens_pt = [segment.arclen_pt(epsilon) for segment in self.segments([0] + list(params) + [1])]
         for i in range(1, len(arclens_pt)):
             arclens_pt[i] += arclens_pt[i-1]
         return arclens_pt[:-1], arclens_pt[-1]
@@ -1676,7 +1677,10 @@ class normcurve_pt(normsubpathitem):
     def reversed(self):
         return normcurve_pt(self.x3_pt, self.y3_pt, self.x2_pt, self.y2_pt, self.x1_pt, self.y1_pt, self.x0_pt, self.y0_pt)
 
-    def split(self, params):
+    def segments(self, params):
+        if len(params) < 2:
+            raise ValueError("at least two parameters needed in segments")
+
         # first, we calculate the coefficients corresponding to our
         # original bezier curve. These represent a useful starting
         # point for the following change of the polynomial parameter
@@ -2027,7 +2031,7 @@ class normsubpath:
         # now we search for intersections points which are closer together than epsilon
         # This task is handled by the following function
         def closepoints(normsubpath, intersections):
-            split = normsubpath.split([0] + [intersection for intersection, index in intersections] + [len(normsubpath)])
+            split = normsubpath.segments([0] + [intersection for intersection, index in intersections] + [len(normsubpath)])
             result = []
             if normsubpath.closed:
                 # note that the number of segments of a closed path is off by one
@@ -2173,33 +2177,32 @@ class normsubpath:
             nnormpathitems.append(self.normsubpathitems[-(i+1)].reversed())
         return normsubpath(nnormpathitems, self.closed)
 
-    def split(self, params):
-        """splits normsubpath
+    def segments(self, params):
+        """return segments of the normsubpath
 
-        The returned list contains normsubpathitems for the regions
-        between the params. Hence params need to contain at least two
-        values to get a non-empty list.
+        The returned list of normsubpaths for the segments between
+        the params. params need to contain at least two values.
 
-        For a closed normsubpath the last split result is joined to
+        For a closed normsubpath the last segment result is joined to
         the first one when params starts with 0 and ends with len(self).
-        The first is joined to the last when params starts with len(self)
-        and ends with 0. Thus a split operation on a closed normsubpath
-        might properly join those the first and the last part to take into
-        account the closed nature of the normsubpath. However, for
-        intermediate parameters, closepath is not taken into account, i.e.
-        when walking backwards you do not loop over the closepath forwardly.
-        The special values 0 and len(self) for the first and the last
-        parameter should be given as integers, i.e. no finite precision is
-        used when checking for equality."""
+        or params starts with len(self) and ends with 0. Thus a segments
+        operation on a closed normsubpath might properly join those the
+        first and the last part to take into account the closed nature of
+        the normsubpath. However, for intermediate parameters, closepath
+        is not taken into account, i.e. when walking backwards you do not
+        loop over the closepath forwardly. The special values 0 and
+        len(self) for the first and the last parameter should be given as
+        integers, i.e. no finite precision is used when checking for
+        equality."""
 
         if len(params) < 2:
-            return []
+            raise ValueError("at least two parameters needed in segments")
 
         result = [normsubpath(epsilon=self.epsilon)]
 
         # instead of distribute the parameters, we need to keep their
-        # order and collect parameters for splitting of normsubpathitem
-        # with index collectindex
+        # order and collect parameters for the needed segments of
+        # normsubpathitem with index collectindex
         collectparams = []
         collectindex = None
         for param in params:
@@ -2218,11 +2221,11 @@ class normsubpath:
                         collectparams.append(1)
                     else:
                         collectparams.append(0)
-                    # perfom split and add it to the result
-                    splits = self.normsubpathitems[collectindex].split(collectparams)
-                    result[-1].append(splits[0])
-                    result.extend([normsubpath([split], epsilon=self.epsilon) for split in splits[1:]])
-                    # add normsubpathitems and first split parameter to close the
+                    # get segments of the normsubpathitem and add them to the result
+                    segments = self.normsubpathitems[collectindex].segments(collectparams)
+                    result[-1].append(segments[0])
+                    result.extend([normsubpath([segment], epsilon=self.epsilon) for segment in segments[1:]])
+                    # add normsubpathitems and first segment parameter to close the
                     # gap to the forthcoming index
                     if index > collectindex:
                         for i in range(collectindex+1, index):
@@ -2235,14 +2238,14 @@ class normsubpath:
                 collectindex = index
             collectparams.append(param)
         # add remaining collectparams to the result
-        splits = self.normsubpathitems[collectindex].split(collectparams)
-        result[-1].append(splits[0])
-        result.extend([normsubpath([split], epsilon=self.epsilon) for split in splits[1:]])
+        segments = self.normsubpathitems[collectindex].segments(collectparams)
+        result[-1].append(segments[0])
+        result.extend([normsubpath([segment], epsilon=self.epsilon) for segment in segments[1:]])
 
         if self.closed:
             # join last and first segment together if the normsubpath was
-            # originally closed and it has been split and first and the last
-            # parameters are the beginning and end points of the normsubpath
+            # originally closed and first and the last parameters are the
+            # beginning and end points of the normsubpath
             if ( ( params[0] == 0 and params[-1] == len(self.normsubpathitems) ) or
                  ( params[-1] == 0 and params[0] == len(self.normsubpathitems) ) ):
                 result[-1].normsubpathitems.extend(result[0].normsubpathitems)
@@ -2746,11 +2749,11 @@ class normpath(base.canvasitem):
                         collectparams.append(len(self.normsubpaths[collectindex]))
                     else:
                         collectparams.append(0)
-                    # perfom split and add it to the result
-                    splits = self.normsubpaths[collectindex].split(collectparams)
-                    result[-1].append(splits[0])
-                    result.extend([normpath([split]) for split in splits[1:]])
-                    # add normsubpathitems and first split parameter to close the
+                    # get segments of the normsubpath and add them to the result
+                    segments = self.normsubpaths[collectindex].segments(collectparams)
+                    result[-1].append(segments[0])
+                    result.extend([normpath([segment]) for segment in segments[1:]])
+                    # add normsubpathitems and first segment parameter to close the
                     # gap to the forthcoming index
                     if param.normsubpathindex > collectindex:
                         for i in range(collectindex+1, param.normsubpathindex):
@@ -2767,9 +2770,9 @@ class normpath(base.canvasitem):
             collectparams.append(param.normsubpathparam)
         # add remaining collectparams to the result
         collectparams.append(len(self.normsubpaths[collectindex]))
-        splits = self.normsubpaths[collectindex].split(collectparams)
-        result[-1].append(splits[0])
-        result.extend([normpath([split]) for split in splits[1:]])
+        segments = self.normsubpaths[collectindex].segments(collectparams)
+        result[-1].append(segments[0])
+        result.extend([normpath([segment]) for segment in segments[1:]])
         result[-1].extend(self.normsubpaths[collectindex+1:])
         return result
 

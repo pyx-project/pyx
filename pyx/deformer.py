@@ -341,7 +341,7 @@ class cycloid(deformer): # {{{
         # Build the path from the pointlist
         # containing (control x 2,  base x 2, control x 2)
         if skipfirst > subpath.epsilon:
-            newpath = subpath.split([0, params[0], 1])[0]
+            newpath = subpath.segments([0, params[0]])[0]
             newpath.append(path.normcurve_pt(*(points[0][2:6] + points[1][0:4])))
             cycloidpath = path.normpath([newpath])
         else:
@@ -349,7 +349,7 @@ class cycloid(deformer): # {{{
         for i in range(1, len(points)-1):
             cycloidpath.normsubpaths[-1].append(path.normcurve_pt(*(points[i][2:6] + points[i+1][0:4])))
         if skiplast > subpath.epsilon:
-            cycloidpath.join(path.normpath([subpath.split([0, params[-1], 1])[-1]]))
+            cycloidpath.join(path.normpath(subpath.segments([params[-1], 1])))
 
         # That's it
         return cycloidpath
@@ -460,7 +460,7 @@ class smoothed(deformer): # {{{
         do_moveto = 1 # we do not know yet where to moveto
         # 3. First part of extra handling of closed paths
         if not normsubpath.closed:
-            bpart = npitems[npitemnumbers[0]].split([0, params[0], 1])[0]
+            bpart = npitems[npitemnumbers[0]].segments([0, params[0]])[0]
             if do_moveto:
                 smoothpath.append(path.moveto_pt(*bpart.atbegin_pt()))
                 do_moveto = 0
@@ -479,7 +479,7 @@ class smoothed(deformer): # {{{
 
             # split thisnpitem apart and take the middle peace
             if len(points[this]) == 2:
-                mpart = thisnpitem.split([0] + params[this] + [1])[1]
+                mpart = thisnpitem.segments(params[this] + [1])[0]
                 if do_moveto:
                     smoothpath.append(path.moveto_pt(*mpart.atbegin_pt()))
                     do_moveto = 0
@@ -523,7 +523,7 @@ class smoothed(deformer): # {{{
                 sys.stderr.write("*** PyXWarning: The whole subpath has been smoothed away -- sorry\n")
             smoothpath.append(path.closepath())
         else:
-            epart = npitems[npitemnumbers[-1]].split([0, params[-1][0], 1])[-1]
+            epart = npitems[npitemnumbers[-1]].segments([params[-1][0], 1])[0]
             if do_moveto:
                 smoothpath.append(path.moveto_pt(*epart.atbegin_pt()))
                 do_moveto = 0
