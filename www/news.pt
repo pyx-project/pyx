@@ -12,7 +12,7 @@
       <dt>2004-12-15: PyX 0.7.1 released</dt>
       <dd>
         This release fixes some bugs in the graph system, the canvas module and
-        the kpsewhich support. The tipa package became optional when building
+        the kpsewhich support. The tipa package is no longer required when building
         the FAQ. The index files to sort the examples are now included in the
         distribution. Two new examples complete this maintenance release.
       </dd>
