@@ -22,6 +22,8 @@
 
 # TODO:
 # - arrows
+# - _linewidth -> linewith ...
+# - epsfile scaling, centering, ...
 
 
 import unit, trafo, types, math
@@ -58,6 +60,21 @@ _PSProlog = """/rect {
   b4_Inc_state restore
 } bind def"""
 
+# known paperformats as tuple(width,
+
+_paperformats = { "a4"      : ("210 t mm",  "297 t mm", 0), 
+                  "a3"      : ("297 t mm",  "420 t mm", 0), 
+                  "a2"      : ("420 t mm",  "594 t mm", 0), 
+                  "a1"      : ("594 t mm",  "840 t mm", 0), 
+                  "a0"      : ("840 t mm", "1188 t mm", 0), 
+                  "letter"  : ("8.5 t in",   "11 t in", 0),
+                  "a4_r"    : ("210 t mm",  "297 t mm", 1), 
+                  "a3_r"    : ("297 t mm",  "420 t mm", 1), 
+                  "a2_r"    : ("420 t mm",  "594 t mm", 1), 
+                  "a1_r"    : ("594 t mm",  "840 t mm", 1), 
+                  "a0_r"    : ("840 t mm", "1188 t mm", 1),
+                  "letter_r": ("8.5 t in",   "11 t in", 1) }
+
 # helper routine for bbox manipulations
 
 def _nmin(x, y):
@@ -93,6 +110,14 @@ class bbox:
         return bbox(max(self.llx, other.llx), max(self.lly, other.lly),
                     _nmin(self.urx, other.urx), _nmin(self.ury, other.ury))
 
+    def __str__(self):
+        return "%s %s %s %s" % (self.llx, self.lly, self.urx, self.ury)
+
+    def write(self, file):
+        file.write("%%%%BoundingBox: %d %d %d %d\n" %
+                   (self.llx-1, self.lly-1, self.urx+1, self.ury+1))
+        # TODO: add HighResBBox
+
     def intersects(self, other):
         """check, if two bboxes intersect eachother"""
         
@@ -101,13 +126,24 @@ class bbox:
                     self.urx < other.llx or
                     self.ury < other.lly)
 
-    def write(self, file):
-        file.write("%%%%BoundingBox: %d %d %d %d\n" %
-                   (self.llx-1, self.lly-1, self.urx+1, self.ury+1))
-        # TODO: add HighResBBox
+    def transform(self, trafo):
+        """return bbox transformed by trafo"""
+        # we have to transform all four corner points of the bbox
+        (llx, lly)=trafo._apply(self.llx, self.lly)
+        (lrx, lry)=trafo._apply(self.urx, self.lly)
+        (urx, ury)=trafo._apply(self.urx, self.ury)
+        (ulx, uly)=trafo._apply(self.llx, self.ury)
 
-    def __str__(self):
-        return "%s %s %s %s" % (self.llx, self.lly, self.urx, self.ury)
+        # now, by sorting, we obtain the lower left and upper right corner
+        # of the new bounding box. 
+
+        return bbox(min(llx, lrx, urx, ulx), min(lly, lry, ury, uly),
+                    max(llx, lrx, urx, ulx), max(lly, lry, ury, uly))
+
+    def enhance(self, size):
+        """return bbox enhanced in all directions by size pts"""
+        return bbox(self.llx-size, self.lly-size, 
+                    self.urx+size, self.ury+size)
     
 #
 # Exceptions
@@ -300,21 +336,9 @@ class canvas(CanvasCmds):
 
         if self.clip:
             obbox=obbox*self.clip.bbox()    # intersect with clipping bounding boxes
+
+        return obbox.transform(self.trafo).enhance(1)
             
-        # we have to transform all four corner points of the bbox
-        (llx, lly)=self.trafo._apply(obbox.llx, obbox.lly)
-        (lrx, lry)=self.trafo._apply(obbox.urx, obbox.lly)
-        (urx, ury)=self.trafo._apply(obbox.urx, obbox.ury)
-        (ulx, uly)=self.trafo._apply(obbox.llx, obbox.ury)
-
-        # now, by sorting, we obtain the lower left and upper right corner
-        # of the new bounding box. 
-
-        abbox= bbox(min(llx, lrx, urx, ulx)-1, min(lly, lry, ury, uly)-1,
-                    max(llx, lrx, urx, ulx)+1, max(lly, lry, ury, uly)+1)
- 
-        return abbox
-    
     def write(self, file):
         for cmd in self.PSCmds:
             cmd.write(file)
@@ -359,14 +383,62 @@ class canvas(CanvasCmds):
         self.insert((_newpath(), path, _gsave(), _stroke(), _grestore(), _fill()), *args)
         return self
 
-    def writetofile(self, filename):
+    def writetofile(self, filename, paperformat=None, fittosize=0, margin="1 t cm"):
+        """write canvas to EPS file
+
+        If paperformat is set to a known paperformat, the output will be centered on 
+        the page (and optionally rotated)
+
+        If fittosize is set as well, then the output is scaled to the size of the
+        page (minus margin).
+
+        """
         try:
             file = open(filename + ".eps", "w")
         except IOError:
             assert 0, "cannot open output file"                 # TODO: Fehlerbehandlung...
 
-        file.write("%!PS-Adobe-3.0 EPSF 3.0\n")
         abbox=self.bbox()
+        ctrafo=None     # global transformation of canvas
+
+        if paperformat:
+            # center (optionally rotated) output on page
+            try:
+                width, height, rotated = _paperformats[paperformat]
+                width = unit.topt(width)
+                height = unit.topt(height)
+            except KeyError:
+                raise KeyError, "unknown paperformat '%s'" % paperformat
+
+            ctrafo = trafo._translate(0.5*(width -(abbox.urx-abbox.llx))-abbox.llx, 
+                                      0.5*(height-(abbox.ury-abbox.lly))-abbox.lly)
+                                          
+            if rotated:
+                ctrafo = trafo._rotate(90, 0.5*width, 0.5*height)*ctrafo
+
+            if fittosize:
+                # scale output to pagesize - margins
+                margin=unit.topt(margin)
+
+                if rotated:
+                    sfactor = min((height-2*margin)/(abbox.urx-abbox.llx), 
+                                  (width-2*margin)/(abbox.ury-abbox.lly))
+                else:
+                    sfactor = min((width-2*margin)/(abbox.urx-abbox.llx), 
+                                  (height-2*margin)/(abbox.ury-abbox.lly))
+
+                ctrafo = (trafo._translate(0.5*width, 0.5*height)*
+                          trafo.scale(sfactor)*
+                          trafo._translate(-0.5*width, -0.5*height)*
+                          ctrafo)
+                          
+            # adjust bounding box
+            abbox = abbox.transform(ctrafo)
+                
+        elif fittosize:
+              assert 0, "must specify paper size for fittosize" # TODO: exception...
+
+        file.write("%!PS-Adobe-3.0 EPSF 3.0\n")
         abbox.write(file)
         file.write("%%Creator: pyx 0.0.1\n") 
         file.write("%%%%Title: %s.eps\n" % filename) 
@@ -375,6 +447,9 @@ class canvas(CanvasCmds):
         file.write("%%BeginProlog\n") 
         file.write(_PSProlog)
         file.write("\n%%EndProlog\n") 
+        
+        if ctrafo: ctrafo.write(file)   # add global transformation if necessary
+
         file.write("%f setlinewidth\n" % unit.topt(linewidth.normal))
         
         # here comes the actual content

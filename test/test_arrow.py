@@ -61,5 +61,5 @@ def testarrow(c):
 c=canvas.canvas()
 testarrow(c)
 #c.draw(rect(0,0,10,10).bpath())
-c.writetofile("test_arrow")
+c.writetofile("test_arrow", paperformat="a4_r", fittosize=1)
 

@@ -177,20 +177,39 @@ class trafo(_trafo):
                         (unit.topt(vector[0]), unit.topt(vector[1])))
 
 
+class _translate(_trafo):
+    def __init__(self, x, y):
+        _trafo.__init__(self, vector=(x, y))
+        
+        
 class translate(trafo):
     def __init__(self, x, y):
         trafo.__init__(self, vector=(x, y))
-        
+
    
-class rotate(trafo):
+class _rotate(_trafo):
     def __init__(self, angle, x=None, y=None):
-        vector = 0,0
+        vector = 0, 0
+        if x is not None or y is not None:
+            if x is None or y is None:
+                raise (UndefinedResultError, 
+                       "either specify x or y both or none of them")
+            vector=_rvector(angle, x, y)
+            
+        _trafo.__init__(self,
+                       matrix=_rmatrix(angle),
+                       vector=vector)
+
+
+class rotate(_trafo):
+    def __init__(self, angle, x=None, y=None):
+        vector = 0, 0 
         if x is not None or y is not None:
             if x is None or y is None:
                 raise (UndefinedResultError, 
                        "either specify x or y both or none of them")
             vector=_rvector(angle, unit.topt(x), unit.topt(y))
-            
+
         _trafo.__init__(self,
                        matrix=_rmatrix(angle),
                        vector=vector)
