@@ -150,7 +150,7 @@ class bcurve_pt:
             # XXX: we could do this more efficiently by reusing for
             # (x0, y0) the control point (x3, y3) from the previous
             # Bezier curve
-            
+
             x0 = a0x + a1x*t1 + a2x*t1*t1 + a3x*t1*t1*t1 
             y0 = a0y + a1y*t1 + a2y*t1*t1 + a3y*t1*t1*t1 
             x1 = (a1x+2*a2x*t1+3*a3x*t1*t1)*dt/3.0 + x0
@@ -198,15 +198,18 @@ class bcurve_pt:
                         x23, y23,
                         self.x3, self.y3))
 
-    def arclength(self, epsilon=1e-5):
-        """computes arclength of bpathel using successive midpoint split"""
-
+    def arclength_pt(self, epsilon=1e-5):
+        """computes arclength of bpathel in pts using successive midpoint split"""
         if self.isStraight(epsilon):
-            return unit.t_pt(math.sqrt((self.x3-self.x0)*(self.x3-self.x0)+
-                                       (self.y3-self.y0)*(self.y3-self.y0)))
+            return math.sqrt((self.x3-self.x0)*(self.x3-self.x0)+
+                             (self.y3-self.y0)*(self.y3-self.y0))
         else:
             (a, b) = self.MidPointSplit()
             return a.arclength(epsilon) + b.arclength(epsilon)
+
+    def arclength(self, epsilon=1e-5):
+        """computes arclength of bpathel using successive midpoint split"""
+        return unit.t_pt(self.arclength_pt(epsilon))
 
     def seglengths(self, paraminterval, epsilon=1e-5):
         """returns the list of segment line lengths (in pts) of the bpathel
@@ -229,7 +232,7 @@ class bcurve_pt:
 
     def lentopar(self, lengths, epsilon=1e-5):
         """computes the parameters [t] of bpathel where the given lengths (in pts) are assumed
-        returns [ [parameter], total arclength]"""
+        returns ( [parameter], total arclength)"""
 
         # create the list of accumulated lengths
         # and the length of the parameters
@@ -535,7 +538,7 @@ class normpathel(pathel):
     """normalized element of a PS style path"""
 
     def _at(self, context, t):
-        """returns coordinates of point at parameter t (0<=t<=1)
+        """returns coordinates of point in pts at parameter t (0<=t<=1)
 
         context: context of normpathel
 
@@ -566,7 +569,7 @@ class normpathel(pathel):
         pass
 
     def _lentopar(self, context, lengths, epsilon=1e-5):
-        """returns [t,l] with
+        """returns tuple (t,l) with
           t the parameter where the arclength of normpathel is length and
           l the total arclength
 
@@ -637,7 +640,7 @@ class closepath(normpathel):
     def _at(self, context, t):
         x0, y0 = context.currentpoint
         x1, y1 = context.currentsubpath
-        return (unit.t_pt(x0 + (x1-x0)*t), unit.t_pt(y0 + (y1-y0)*t))
+        return (x0+(x1-x0)*t, y0+(y1-y0)*t)
 
     def _bbox(self, context):
         x0, y0 = context.currentpoint
@@ -656,14 +659,14 @@ class closepath(normpathel):
         x0, y0 = context.currentpoint
         x1, y1 = context.currentsubpath
 
-        return unit.t_pt(math.sqrt((x0-x1)*(x0-x1)+(y0-y1)*(y0-y1)))
+        return math.sqrt((x0-x1)*(x0-x1)+(y0-y1)*(y0-y1))
 
     def _lentopar(self, context, lengths, epsilon=1e-5):
         x0, y0 = context.currentpoint
         x1, y1 = context.currentsubpath
 
         l = math.sqrt((x0-x1)*(x0-x1)+(y0-y1)*(y0-y1))
-        return [ [max(min(1.0*length/l,1),0) for length in lengths], l]
+        return ([max(min(1.0*length/l,1),0) for length in lengths], l)
 
     def _normalized(self, context):
         return [closepath()]
@@ -747,7 +750,7 @@ class moveto_pt(normpathel):
         return 0
 
     def _lentopar(self, context, lengths, epsilon=1e-5):
-        return [ [0]*len(lengths), 0]
+        return ([0]*len(lengths), 0)
 
     def _normalized(self, context):
         return [moveto_pt(self.x, self.y)]
@@ -784,7 +787,7 @@ class lineto_pt(normpathel):
 
     def _at(self, context, t):
         x0, y0 = context.currentpoint
-        return (unit.t_pt(x0 + (self.x-x0)*t), unit.t_pt(y0 + (self.y-y0)*t))
+        return (x0+(self.x-x0)*t, y0+(self.y-y0)*t)
 
     def _bbox(self, context):
         return bbox._bbox(min(context.currentpoint[0], self.x),
@@ -799,13 +802,13 @@ class lineto_pt(normpathel):
     def _arclength(self, context, epsilon=1e-5):
         x0, y0 = context.currentpoint
 
-        return unit.t_pt(math.sqrt((x0-self.x)*(x0-self.x)+(y0-self.y)*(y0-self.y)))
+        return math.sqrt((x0-self.x)*(x0-self.x)+(y0-self.y)*(y0-self.y))
 
     def _lentopar(self, context, lengths, epsilon=1e-5):
         x0, y0 = context.currentpoint
         l = math.sqrt((x0-self.x)*(x0-self.x)+(y0-self.y)*(y0-self.y))
 
-        return [ [max(min(1.0*length/l,1),0) for length in lengths], l]
+        return ([max(min(1.0*length/l,1),0) for length in lengths], l)
 
     def _normalized(self, context):
         return [lineto_pt(self.x, self.y)]
@@ -883,15 +886,15 @@ class curveto_pt(normpathel):
 
     def _at(self, context, t):
         x0, y0 = context.currentpoint
-        return ( unit.t_pt((  -x0+3*self.x1-3*self.x2+self.x3)*t*t*t +
-                           ( 3*x0-6*self.x1+3*self.x2        )*t*t +
-                           (-3*x0+3*self.x1                  )*t +
-                               x0) ,
-                 unit.t_pt((  -y0+3*self.y1-3*self.y2+self.y3)*t*t*t +
-                           ( 3*y0-6*self.y1+3*self.y2        )*t*t +
-                           (-3*y0+3*self.y1                  )*t +
-                               y0)
-               )
+        xt = (  (-x0+3*self.x1-3*self.x2+self.x3)*t*t*t +
+               (3*x0-6*self.x1+3*self.x2        )*t*t +
+              (-3*x0+3*self.x1                  )*t +
+              x0)
+        yt = (  (-y0+3*self.y1-3*self.y2+self.y3)*t*t*t +
+               (3*y0-6*self.y1+3*self.y2        )*t*t +
+              (-3*y0+3*self.y1                  )*t +
+              y0)
+        return (xt, yt)
 
     def _bbox(self, context):
         return bbox._bbox(min(context.currentpoint[0], self.x1, self.x2, self.x3),
@@ -906,7 +909,7 @@ class curveto_pt(normpathel):
                          self.x3, self.y3)
 
     def _arclength(self, context, epsilon=1e-5):
-        return self._bcurve(context).arclength(epsilon)
+        return self._bcurve(context).arclength_pt(epsilon)
 
     def _lentopar(self, context, lengths, epsilon=1e-5):
         return self._bcurve(context).lentopar(lengths, epsilon)
@@ -948,15 +951,13 @@ class curveto_pt(normpathel):
 
     def _tangent(self, context, t):
         x0, y0 = context.currentpoint
-        tp = self._at(context, t)
-        tpx, tpy = unit.topt(tp[0]), unit.topt(tp[1])
+        tpx, tpy = self._at(context, t)
         tvectx = (3*(  -x0+3*self.x1-3*self.x2+self.x3)*t*t +
                   2*( 3*x0-6*self.x1+3*self.x2        )*t +
                     (-3*x0+3*self.x1                  ))
         tvecty = (3*(  -y0+3*self.y1-3*self.y2+self.y3)*t*t +
                   2*( 3*y0-6*self.y1+3*self.y2        )*t +
                     (-3*y0+3*self.y1                  ))
-
         return line_pt(tpx, tpy, tpx+tvectx, tpy+tvecty)
 
     def write(self, file):
@@ -1543,14 +1544,22 @@ class path(base.PSCmd):
     def append(self, pathel):
         self.path.append(pathel)
 
-    def arclength(self, epsilon=1e-5):
+    def arclength_pt(self, epsilon=1e-5):
         """returns total arc length of path in pts with accuracy epsilon"""
+        return normpath(self).arclength_pt(epsilon)
+
+    def arclength(self, epsilon=1e-5):
+        """returns total arc length of path with accuracy epsilon"""
         return normpath(self).arclength(epsilon)
 
     def lentopar(self, lengths, epsilon=1e-5):
-        """returns [t,l] with t the parameter value(s) matching given length,
+        """returns (t,l) with t the parameter value(s) matching given length,
         l the total length"""
         return normpath(self).lentopar(lengths, epsilon)
+
+    def at_pt(self, t):
+        """return coordinates in pts of corresponding normpath at parameter value t"""
+        return normpath(self).at_pt(t)
 
     def at(self, t):
         """return coordinates of corresponding normpath at parameter value t"""
@@ -1570,12 +1579,20 @@ class path(base.PSCmd):
 
         return abbox
 
+    def begin_pt(self):
+        """return coordinates of first point of first subpath in path (in pts)"""
+        return normpath(self).begin_pt()
+
     def begin(self):
-        """return first point of first subpath in path"""
+        """return coordinates of first point of first subpath in path"""
         return normpath(self).begin()
 
+    def end_pt(self):
+        """return coordinates of last point of last subpath in path (in pts)"""
+        return normpath(self).end_pt()
+
     def end(self):
-        """return last point of last subpath in path"""
+        """return coordinates of last point of last subpath in path"""
         return normpath(self).end()
 
     def glue(self, other):
@@ -1751,24 +1768,25 @@ class normpath(path):
 
         if len(subpath)>1:
             result.append((subpath, t0, t-1, 0))
-                
+
         return result
-            
+
     def append(self, pathel):
         self.path.append(pathel)
         self.path = _normalizepath(self.path)
 
-    def arclength(self, epsilon=1e-5):
+    def arclength_pt(self, epsilon=1e-5):
         """returns total arc length of normpath in pts with accuracy epsilon"""
-
         context = _pathcontext()
         length = 0
-
         for pel in self.path:
             length += pel._arclength(context, epsilon)
             pel._updatecontext(context)
-
         return length
+
+    def arclength(self, epsilon=1e-5):
+        """returns total arc length of normpath with accuracy epsilon"""
+        return unit.t_pt(self.arclength_pt(epsilon))
 
     def lentopar(self, lengths, epsilon=1e-5):
         """returns [t,l] with t the parameter value(s) matching given length(s)
@@ -1820,8 +1838,8 @@ class normpath(path):
 
         return tt
 
-    def at(self, t):
-        """return coordinates of path at parameter value t
+    def at_pt(self, t):
+        """return coordinates in pts of path at parameter value t
 
         Negative values of t count from the end of the path. The absolute
         value of t must be smaller or equal to the number of segments in
@@ -1848,12 +1866,35 @@ class normpath(path):
 
         return None
 
+    def at(self, t):
+        """return coordinates of path at parameter value t
+
+        Negative values of t count from the end of the path. The absolute
+        value of t must be smaller or equal to the number of segments in
+        the normpath, otherwise None is returned.
+        At discontinuities in the path, the limit from below is returned
+
+        """
+        result = self.at_pt(t)
+        if result:
+            return unit.t_pt(result[0]), unit.t_pt(result[1])
+        else:
+            return result
+
+    def begin_pt(self):
+        """return coordinates of first point of first subpath in path (in pts)"""
+        return self.at_pt(0)
+
     def begin(self):
-        """return first point of first subpath in path"""
+        """return coordinates of first point of first subpath in path"""
         return self.at(0)
 
+    def end_pt(self):
+        """return coordinates of last point of last subpath in path (in pts)"""
+        return self.reversed().at_pt(0)
+
     def end(self):
-        """return last point of last subpath in path"""
+        """return coordinates of last point of last subpath in path"""
         return self.reversed().at(0)
 
     def glue(self, other):
@@ -1889,7 +1930,7 @@ class normpath(path):
             if isinstance(normpathel, closepath):
                 subpathends_a.append(t)
             t += 1
-                
+
         context = _pathcontext()
         bpathels_b = []
         subpathends_b = []
@@ -1902,7 +1943,7 @@ class normpath(path):
             if isinstance(normpathel, closepath):
                 subpathends_b.append(t)
             t += 1
-            
+
         intersections = ([], [])
         # change grouping order and check whether an intersection
         # occurs at the end of a subpath. If yes, don't include
@@ -2068,7 +2109,7 @@ class normpath(path):
                     t -= 1
                 else:
                     tvec = pel._tangent(context, t)
-                    tlen = unit.topt(tvec.arclength())
+                    tlen = tvec.arclength_pt()
                     if length is None or tlen==0:
                         return tvec
                     else:
