@@ -283,7 +283,7 @@ class arrow(deco):
 
     def __init__(self, position=0, size=_base, attrs=[], angle=45, constriction=0.8):
         self.position = position
-        self.size = size
+        self.size = unit.length(size, default_type="v")
         self.angle = angle
         self.constriction = constriction
         self.attrs = [stroked(), filled()] + helper.ensurelist(attrs)
