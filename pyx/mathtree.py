@@ -829,7 +829,10 @@ class parser:
                     Func = FuncClass()
                     if Func.InitByParser(arg):
                         if Tree is not None:
-                            Tree.AddArg(Func)
+                            SubTree = Tree # XXX 1: four lines code dublication (see 2)
+                            while isinstance(SubTree, MathTreeOp) and len(SubTree.Args) == 2:
+                                SubTree = SubTree.Args[1]
+                            SubTree.AddArg(Func)
                         else:
                             Tree = Func
                         while 1:
@@ -871,7 +874,7 @@ class parser:
                             Val = ValClass()
                             if Val.InitByParser(arg):
                                 if Tree is not None:
-                                    SubTree = Tree
+                                    SubTree = Tree # XXX 2: four lines code dublication (see 1)
                                     while isinstance(SubTree, MathTreeOp) and len(SubTree.Args) == 2:
                                         SubTree = SubTree.Args[1]
                                     SubTree.AddArg(Val)

@@ -17,6 +17,7 @@ class MathTreeTestCase(unittest.TestCase):
         assert str(myparser.parse("a**b/c*d-e+f")) == "a^b/c*d-e+f"
         assert str(myparser.parse("((a-(b+c))/(d*e))**f")) == "((a-(b+c))/(d*e))^f"
         assert str(myparser.parse("sin(pi/2)")) == "sin(pi/2.0)"
+        assert str(myparser.parse("a+b*sin(c)**d")) == "a+b*sin(c)^d"
         assert str(myparser.parse("norm(a,b)")) == "norm(a,b)"
 
     def testRepr(self):
