@@ -249,7 +249,7 @@ class logarithmic(linear):
     pre1to9exp = preexp(map(lambda x: tick.rational((x, 1)), range(1, 10)), 10)
     #  ^- we always include 1 in order to get extendto(tick|label)level to work as expected
 
-    def __init__(self, tickpos=None, labelpos=None, labels=None, extendtick=0, extendlabel=None, epsilon=1e-10):
+    def __init__(self, tickpos=None, labelpos=None, extendtick=0, extendlabel=None, epsilon=1e-10):
         """configuration of the partition scheme
         - tickpos and labelpos should be a list, where the first entry
           is a preexp instance describing ticks with ticklevel/labellevel 0,
@@ -257,8 +257,6 @@ class logarithmic(linear):
           a single entry is allowed without being a list
         - when labelpos is None and tickpos is not None, the tick entries
           for ticklevel 0 are used for labels and vice versa (ticks<->labels)
-        - labels are applied to the resulting partition via the
-          mergetexts function (additional information available there)
         - extendtick allows for the extension of the range given to the
           defaultpart method to include the next tick with the specified
           level (None turns off this feature); note, that this feature is
@@ -269,7 +267,7 @@ class logarithmic(linear):
           logarithm value (relative to the logarithm axis range given
           to the defaultpart method) without creating another tick
           specified by extendtick/extendlabel"""
-        if tickpos is None and labels is not None:
+        if tickpos is None and labelpos is not None:
             self.ticklist = (helper.ensuresequence(labelpos)[0],)
         else:
             self.ticklist = helper.ensuresequence(tickpos)
@@ -278,7 +276,6 @@ class logarithmic(linear):
             self.labellist = (helper.ensuresequence(tickpos)[0],)
         else:
             self.labellist = helper.ensuresequence(labelpos)
-        self.labels = labels
         self.extendtick = extendtick
         self.extendlabel = extendlabel
         self.epsilon = epsilon
