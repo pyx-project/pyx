@@ -496,7 +496,7 @@ class arrow(_style):
     defaultlineattrs = []
     defaultarrowattrs = []
 
-    def __init__(self, linelength="0.2 cm", arrowsize="0.1 cm", lineattrs=[], arrowattrs=[], epsilon=1e-10):
+    def __init__(self, linelength="0.25 v cm", arrowsize="0.15 v cm", lineattrs=[], arrowattrs=[], epsilon=1e-10):
         self.linelength_str = linelength
         self.arrowsize_str = arrowsize
         self.lineattrs = lineattrs
