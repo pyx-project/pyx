@@ -65,13 +65,13 @@ def drawexample(canvas, corner, linealign):
 
 d = 6
 c = canvas.canvas()
-sc = c.insert(canvas.canvas(trafo.translate(0, d)))
+sc = c.insert(canvas.canvas(trafo.translation(0, d)))
 drawexample(sc, 0, 0)
-sc = c.insert(canvas.canvas(trafo.translate(d, d)))
+sc = c.insert(canvas.canvas(trafo.translation(d, d)))
 drawexample(sc, 0, 1)
-sc = c.insert(canvas.canvas(trafo.translate(0, 0)))
+sc = c.insert(canvas.canvas(trafo.translation(0, 0)))
 drawexample(sc, 1, 0)
-sc = c.insert(canvas.canvas(trafo.translate(d, 0)))
+sc = c.insert(canvas.canvas(trafo.translation(d, 0)))
 drawexample(sc, 1, 1)
 t = c.insert(tex.tex())
 t.text(0, 1.5*d, "align at a circle", tex.halign.center)
