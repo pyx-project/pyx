@@ -20,13 +20,11 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-# TODO: - reversepath ?
-#       - nocurrentpoint exception?
+# TODO: - nocurrentpoint exception?
 #       - correct bbox for curveto and bpathel
 #         (maybe we still need the current bbox implementation (then maybe called
 #          cbox = control box) for bpathel for the use during the
 #          intersection of bpaths) 
-#       - intersection of bpaths: use estimate for number of subdivisions
 
 import math
 from math import cos, sin, pi
@@ -109,10 +107,19 @@ class normpathel(pathel):
 
     """normalized element of a PS style path"""
 
+    def _at(self, context, t):
+        """returns coordinates of point at parameter t (0<=t<=1)
+
+        context: context of normpathel
+
+        """
+
+        pass
+
     def _bpathel(self, context):
         """convert normpathel to bpathel
 
-        context: context of pathel
+        context: context of normpathel
 
         return bpathel corresponding to pathel in the given context
 
@@ -120,10 +127,30 @@ class normpathel(pathel):
 
         pass
 
-    def transform(self, trafo):
+    def _arclength(self, context, epsilon=1e-5):
+        """returns arc length of normpathel in pts in given context
+
+        context: context of normpathel
+        epsilon: epsilon controls the accuracy for calculation of the
+                 length of the Bezier elements
+
+        """
+
+    def _reverse(self, context):
+        """return reversed normpathel
+
+        context: context of normpathel
+
+        """
+
+        pass
+
+    def transformed(self, trafo):
         """return transformed normpathel according to trafo"""
 
         pass
+
+
 
 # first come the various normpathels. Each one comes in two variants:
 #  - one with an preceding underscore, which does no coordinate to pt conversion
@@ -138,18 +165,29 @@ class closepath(normpathel):
         context.currentpoint = None
         context.currentsubpath = None
 
-    def _bbox(self, context):
-        cpx, cpy = context.currentpoint
-        csx, csy = context.currentsubpath
+    def _at(self, context, t):
+        x0, y0 = context.currentpoint
+        x1, y1 = context.currentsubpath
+        return (unit.t_pt(x0 + (x1-x0)*t), unit.t_pt(y0 + (y1-y0)*t))
 
-        return bbox.bbox(min(cpx, csx), min(cpy, csy), 
-                         max(cpx, csx), max(cpy, csy))
+    def _bbox(self, context):
+        x0, y0 = context.currentpoint
+        x1, y1 = context.currentsubpath
+
+        return bbox.bbox(min(x0, x1), min(y0, y1), 
+                         max(x0, x1), max(y0, y1))
 
     def _bpathel(self, context):
-        cpx, cpy = context.currentpoint
-        csx, csy = context.currentsubpath
+        x0, y0 = context.currentpoint
+        x1, y1 = context.currentsubpath
 
-        return bpath._blineel(cpx, cpy, csx, csy)
+        return bpath._blineel(x0, y0, x1, y1)
+
+    def _arclength(self, context, epsilon=1e-5):
+        x0, y0 = context.currentpoint
+        x1, y1 = context.currentsubpath
+        
+        return unit.t_pt(math.sqrt((x0-x1)*(x0-x1)+(y0-y1)*(y0-y1)))
 
     def _normalized(self, context):
         return [closepath()]
@@ -160,7 +198,7 @@ class closepath(normpathel):
     def write(self, file):
         file.write("closepath\n")
 
-    def transform(self, trafo):
+    def transformed(self, trafo):
         return closepath()
 
 
@@ -172,6 +210,9 @@ class _moveto(normpathel):
          self.x = x
          self.y = y
 
+    def _at(self, context, t):
+        return None
+
     def _updatecontext(self, context):
         context.currentpoint = self.x, self.y
         context.currentsubpath = self.x, self.y
@@ -182,6 +223,9 @@ class _moveto(normpathel):
     def _bpathel(self, context):
         return None
 
+    def _arclength(self, context, epsilon=1e-5):
+        return 0
+
     def _normalized(self, context):
         return [_moveto(self.x, self.y)]
 
@@ -191,7 +235,7 @@ class _moveto(normpathel):
     def write(self, file):
         file.write("%f %f moveto\n" % (self.x, self.y) )
 
-    def transform(self, trafo):
+    def transformed(self, trafo):
         return _moveto(*trafo._apply(self.x, self.y))
 
 class _lineto(normpathel):
@@ -206,6 +250,10 @@ class _lineto(normpathel):
         context.currentsubpath = context.currentsubpath or context.currentpoint
         context.currentpoint = self.x, self.y
 
+    def _at(self, context, t):
+        x0, y0 = context.currentpoint
+        return (unit.t_pt(x0 + (self.x-x0)*t), unit.t_pt(y0 + (self.y-y0)*t))
+
     def _bbox(self, context):
         return bbox.bbox(min(context.currentpoint[0], self.x),
                          min(context.currentpoint[1], self.y), 
@@ -216,6 +264,11 @@ class _lineto(normpathel):
         return bpath._blineel(context.currentpoint[0], context.currentpoint[1],
                               self.x, self.y)
 
+    def _arclength(self, context, epsilon=1e-5):
+        x0, y0 = context.currentpoint
+             
+        return unit.t_pt(math.sqrt((x0-self.x)*(x0-self.x)+(y0-self.y)*(y0-self.y)))
+
     def _normalized(self, context):
         return [_lineto(self.x, self.y)]
 
@@ -225,7 +278,7 @@ class _lineto(normpathel):
     def write(self, file):
         file.write("%f %f lineto\n" % (self.x, self.y) )
 
-    def transform(self, trafo):
+    def transformed(self, trafo):
         return _lineto(*trafo._apply(self.x, self.y))
 
 
@@ -244,6 +297,18 @@ class _curveto(normpathel):
     def _updatecontext(self, context):
         context.currentsubpath = context.currentsubpath or context.currentpoint
         context.currentpoint = self.x3, self.y3
+        
+    def _at(self, context, t):
+        x0, y0 = context.currentpoint
+        return ( unit.t_pt((  -x0+3*self.x1-3*self.x2+self.x3)*t*t*t +
+                           ( 3*x0-6*self.x1+3*self.x2        )*t*t +
+                           (-3*x0+3*self.x1                  )*t +
+                               x0) ,
+                 unit.t_pt((  -y0+3*self.y1-3*self.y2+self.y3)*t*t*t +
+                           ( 3*y0-6*self.y1+3*self.y2        )*t*t +
+                           (-3*y0+3*self.y1                  )*t +
+                               y0)
+               )
 
     def _bbox(self, context):
         return bbox.bbox(min(context.currentpoint[0], self.x1, self.x2, self.x3),
@@ -256,6 +321,9 @@ class _curveto(normpathel):
                               self.x1, self.y1,
                               self.x2, self.y2,
                               self.x3, self.y3)
+
+    def _arclength(self, context, epsilon=1e-5):
+        return self._bpathel(context).length(epsilon)
 
     def _normalized(self, context):
         return [_curveto(self.x1, self.y1,
@@ -272,7 +340,7 @@ class _curveto(normpathel):
                                                      self.x2, self.y2,
                                                      self.x3, self.y3 ) )
 
-    def transform(self, trafo):
+    def transformed(self, trafo):
         return _curveto(*(trafo._apply(self.x1, self.y1)+
                           trafo._apply(self.x2, self.y2)+
                           trafo._apply(self.x3, self.y3)))
@@ -517,7 +585,7 @@ class _arc(pathel):
         # get starting and end point of arc segment and bpath corresponding to arc
         sarcx, sarcy = self._sarc()
         earcx, earcy = self._earc()
-        barc = bpath._barc(self.x, self.y, self.r, self.angle1, self.angle2)
+        barc = bpath._arctobezier(self.x, self.y, self.r, self.angle1, self.angle2)
 
         # convert to list of curvetos omitting movetos
         nbarc = []
@@ -604,15 +672,16 @@ class _arcn(pathel):
         # get starting and end point of arc segment and bpath corresponding to arc
         sarcx, sarcy = self._sarc()
         earcx, earcy = self._earc()
-        barc = bpath._barc(self.x, self.y, self.r, self.angle2, self.angle1).reverse()
+        barc = bpath._arctobezier(self.x, self.y, self.r, self.angle2, self.angle1)
+        barc.reverse()
 
         # convert to list of curvetos omitting movetos
         nbarc = []
 
         for bpathel in barc:
-            nbarc.append(_curveto(bpathel.x1, bpathel.y1,
-                                  bpathel.x2, bpathel.y2,
-                                  bpathel.x3, bpathel.y3))
+            nbarc.append(_curveto(bpathel.x2, bpathel.y2,
+                                  bpathel.x1, bpathel.y1,
+                                  bpathel.x0, bpathel.y0))
 
         # Note that if there is a currentpoint defined, we also
         # have to include the straight line from this point
@@ -872,9 +941,59 @@ class normpath(path):
         else:
             path.__init__(self, *_normalizepath(args))
 
+    def __add__(self, other):
+        if isinstance(other, normpath):
+            return normpath(*(self.path+other.path))
+        else:
+            return path(*(self.path+other.path))
+
     def append(self, pathel):
         self.path.append(pathel)
         self.path = _normalizepath(self.path)
+
+    def arclength(self, epsilon=1e-5):
+        """returns total arc length of normpath in pts with accuracy epsilon"""
+        
+        context = _pathcontext()
+        length = 0
+
+        for pel in self.path:
+            length += pel._arclength(context, epsilon)
+            pel._updatecontext(context)
+
+        return length
+
+    def at(self, t):
+        """return coordinates of path at parameter value t
+
+        Negative values of t count from the end of the path. The absolute
+        value of t must be smaller or equal to the number of segments in
+        the normpath, otherwise None is returned.
+        At discontinuities in the path, the limit from below is returned
+
+        """
+
+        if t>=0:
+            p = self.path
+        else:
+            p = self.reversed().path
+
+        context=_pathcontext()
+
+        for pel in p:
+            if not isinstance(pel, _moveto):
+                if t>1:
+                    t -= 1
+                else:
+                    return pel._at(context, t)
+                
+            pel._updatecontext(context)
+            
+        return None
+
+    def begin(self):
+        """return first point of first subpath in path"""
+        return self.at(0)
 
     def bpath(self):
         context = _pathcontext()
@@ -887,6 +1006,41 @@ class normpath(path):
                 bp.append(bpathel)
 
         return bp
+
+    def end(self):
+        """return last point of last subpath in path"""
+        return self.reversed.at(0)
+
+    def intersect(self, other, epsilon=1e-5):
+        """intersect two normpaths
+
+        returns a list of tuples consisting of the corresponding parameters
+        of the two bpaths
+
+        """
+
+        intersections = ()
+        t_a, t_b = 0,0
+        context_a = _pathcontext()
+        context_b = _pathcontext()
+        
+        for normpathel_a in self.path:
+            bpathel_a = normpathel_a._bpathel(context_a)
+            normpathel_a._updatecontext(context_a)
+            
+            if bpathel_a:
+                t_a += 1
+                for normpathel_b in other.path:
+                    bpathel_b = normpathel_b._bpathel(context_b)
+                    normpathel_b._updatecontext(context_b)
+                    
+                    if bpathel_b:
+                        t_b += 1
+                        intersections = intersections + \
+                                        bpath._bpathelIntersect(bpathel_a, t_a-1, t_a,
+                                                                bpathel_b, t_b-1, t_b, epsilon)
+
+        return intersections
 
     def reversed(self):
         """return reversed path"""
@@ -914,7 +1068,7 @@ class normpath(path):
 
     def transformed(self, trafo):
         """return transformed path"""
-        return normpath(*map(lambda x, trafo=trafo: x.transform(trafo), self.path))
+        return normpath(*map(lambda x, trafo=trafo: x.transformed(trafo), self.path))
 
 #
 # some special kinds of path, again in two variants
