@@ -353,6 +353,7 @@ class _axis:
         if not first:
             variants.sort()
             if self.painter is not None:
+                nodistances = 1
                 i = 0
                 bestrate = None
                 while i < len(variants) and (bestrate is None or variants[i][0] < bestrate):
@@ -362,20 +363,23 @@ class _axis:
                         self.setrange(self.ticks[0], self.ticks[-1])
                     self.texter.labels(self.ticks)
                     ac = self.painter.paint(axispos, self)
+                    if len(ac.labels) > 1:
+                        nodistances = 0
                     ratelayout = self.rater.ratelayout(ac, self.density)
                     if ratelayout is not None:
                         variants[i][0] += ratelayout
-                        variants[i].append(ac)
                     else:
                         variants[i][0] = None
+                    variants[i].append(ac)
                     if variants[i][0] is not None and (bestrate is None or variants[i][0] < bestrate):
                         bestrate = variants[i][0]
                     self._forcerange(saverange)
                     i += 1
-                if bestrate is None:
-                    raise RuntimeError("no valid axis partitioning found")
-                variants = [variant for variant in variants[:i] if variant[0] is not None]
-                variants.sort()
+                if not nodistances:
+                    if bestrate is None:
+                        raise RuntimeError("no valid axis partitioning found")
+                    variants = [variant for variant in variants[:i] if variant[0] is not None]
+                    variants.sort()
                 self.ticks = variants[0][1]
                 if len(self.ticks):
                     self.setrange(self.ticks[0], self.ticks[-1])
