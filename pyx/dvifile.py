@@ -1299,7 +1299,7 @@ class dvifile:
             elif cmd >= _DVI_FNTNUMMIN and cmd <= _DVI_FNTNUMMAX:
                 self.usefont(cmd - _DVI_FNTNUMMIN)
             elif cmd >= _DVI_FNT1234 and cmd < _DVI_FNT1234 + 4:
-                self.usefont(afile.readint(cmd - _DVI_FNT1234 + 1, 1))
+                self.usefont(afile.readint(cmd - _DVI_FNT1234 + 1, cmd == _DVI_FNT1234 + 3))
             elif cmd >= _DVI_SPECIAL1234 and cmd < _DVI_SPECIAL1234 + 4:
                 self.special(afile.read(afile.readint(cmd - _DVI_SPECIAL1234 + 1)))
             elif cmd >= _DVI_FNTDEF1234 and cmd < _DVI_FNTDEF1234 + 4:
