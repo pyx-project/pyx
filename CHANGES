@@ -108,7 +108,7 @@ TODO:
   - graph modules:
     - enum -> num renaming
 
-0.6.3 (xxxx/xx/xx):
+0.6.3 (2004/04/27):
    - graph module:
      - fix drawing with background
      - fix insertion of a zero length path when the whole line is outside
