@@ -119,7 +119,6 @@ class GraphXY(Graph):
                      p.append(lineto(pt[0],pt[1]))
                  else:
                      p = [moveto(pt[0],pt[1]), ]
-             print p
              self.canvas.draw(path(p))
              # path.__init__(self, [ moveto(x1,y1), lineto(x2, y2) ] )
              #for i in range(201):

@@ -67,14 +67,16 @@ class _msglevel:
     def __init__(self, value):
         self.value = value
     def __cmp__(self, other):
+        return 0
+        print self, type(self), other, type(other)
         return cmp(self.value, other.value)
     __rcmp__ = __cmp__
 
 class msglevel:
-    showall     = _msglevel(_msglevel.showall) # ignore no messages (except empty "messages")
-    hideload    = _msglevel(_msglevel.showall) # ignore only messages inside proper "()"
-    hidewarning = _msglevel(_msglevel.showall) # ignore all messages without a line starting with "! "
-    hideall     = _msglevel(_msglevel.showall) # ignore all messages
+    showall     = _msglevel(_msglevel.showall)     # ignore no messages (except empty "messages")
+    hideload    = _msglevel(_msglevel.hideload)    # ignore only messages inside proper "()"
+    hidewarning = _msglevel(_msglevel.hidewarning) # ignore all messages without a line starting with "! "
+    hideall     = _msglevel(_msglevel.hideall)     # ignore all messages
     # typically "hideload" shows all interesting messages (errors,
     # overfull boxes etc.) and "hidewarning" shows only error messages
     # level 1 is the default level
@@ -262,14 +264,14 @@ class tex:
         file = open(TempName + ".tex", "w")
 
         file.write("\\nonstopmode\n")
-        if self.type == LaTeX:
+        if self.type == mode.LaTeX:
             file.write("\\documentclass[" + self.latexclassopt + "]{" + self.latexclass + "}\n")
         file.write("\\hsize0truecm\n\\vsize0truecm\n\\hoffset-1truein\n\\voffset0truein\n")
 
         file.write(self.TexCmds[0].Cmd)
 
         file.write("\\newwrite\\sizefile\n\\newbox\\localbox\n\\newbox\\pagebox\n\\immediate\\openout\\sizefile=" + TempName + ".size\n")
-        if self.type == LaTeX:
+        if self.type == mode.LaTeX:
             file.write("\\begin{document}\n")
         file.write("\\setbox\\pagebox=\\vbox{%\n")
 
@@ -277,10 +279,10 @@ class tex:
             file.write(Cmd.Cmd)
 
         file.write("}\n\\immediate\\closeout\\sizefile\n\\shipout\\copy\\pagebox\n")
-        if self.type == TeX:
+        if self.type == mode.TeX:
             file.write("\\end\n")
 
-        if self.type == LaTeX:
+        if self.type == mode.LaTeX:
             file.write("\\end{document}\n")
         file.close()
 
@@ -311,12 +313,12 @@ class tex:
                         raise IOError
 
                 # check if message can be ignored
-                if Cmd.IgnoreMsgLevel == 0:
+                if Cmd.msglevel == msglevel.showall:
                     doprint = 0
                     for c in msg:
                         if c not in " \t\r\n":
                             doprint = 1
-                elif Cmd.IgnoreMsgLevel == 1:
+                elif Cmd.msglevel == msglevel.hideload:
                     depth = 0
                     doprint = 0
                     for c in msg:
@@ -328,18 +330,18 @@ class tex:
                                 doprint = 1
                         elif depth == 0 and c not in " \t\r\n":
                             doprint = 1
-                elif Cmd.IgnoreMsgLevel == 2:
+                elif Cmd.msglevel == msglevel.hidewarning:
                     doprint = 0
                     # the "\n" + msg instead of msg itself is needed, if
                     # the message starts with "! "
                     if string.find("\n" + msg, "\n! ") != -1 or string.find(msg, "\r! ") != -1:
                         doprint = 1
-                elif Cmd.IgnoreMsgLevel == 3:
+                elif Cmd.msglevel == msglevel.hideall:
                     doprint = 0
                 else:
                     print "Traceback (innermost last):"
                     traceback.print_list(Cmd.Stack)
-                    assert 0, "IgnoreMsgLevel not in range(4)"
+                    assert 0, "msglevel unknown"
 
                 # print the message if needed
                 if doprint:
