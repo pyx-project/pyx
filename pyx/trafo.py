@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
-# affine transformations
+# affine trafos
 
-class transformation:
+class trafo:
     def __init__(self, matrix=((1,0),(0,1)), vector=(0,0)):
         self.matrix=matrix
         self.vector=vector
 
     def __mul__(self, other):
-        if isinstance(other, transformation):
+        if isinstance(other, trafo):
             matrix = ( ( self.matrix[0][0]*other.matrix[0][0] + self.matrix[0][1]*other.matrix[1][0],
                          self.matrix[0][0]*other.matrix[0][1] + self.matrix[0][1]*other.matrix[1][1] ),
                        ( self.matrix[1][0]*other.matrix[0][0] + self.matrix[1][1]*other.matrix[1][0],
@@ -17,11 +17,11 @@ class transformation:
             vector = ( self.matrix[0][0]*other.vector[0] + self.matrix[0][1]*other.vector[1] + self.vector[0],
                        self.matrix[1][0]*other.vector[0] + self.matrix[1][1]*other.vector[1] + self.vector[1] )
 
-            # print " ( %s * %s => %s ) "% (self, other, transformation(angle=angle, vector=vector))
+            # print " ( %s * %s => %s ) "% (self, other, trafo(angle=angle, vector=vector))
 		      
-	    return transformation(matrix=matrix, vector=vector)
+	    return trafo(matrix=matrix, vector=vector)
 	else:
-	    raise NotImplementedError, "can only multiply two transformations"
+	    raise NotImplementedError, "can only multiply two trafos"
     def __rmul__(self, other):				# TODO: not needed!?
         print "!"
         return other.__mul__(self)
@@ -36,7 +36,7 @@ class transformation:
         return self.angle
     
     def translate(self,x,y):
-	return transformation(vector=(x,y))*self
+	return trafo(vector=(x,y))*self
 	
     def rotate(self,angle):
         from math import pi, cos, sin
@@ -45,7 +45,7 @@ class transformation:
 	matrix = (( cos(phi), sin(phi)), 
 	          (-sin(phi), cos(phi)))
 		  
-	return transformation(matrix=matrix)*self
+	return trafo(matrix=matrix)*self
 
     def inverse(self):
         det = self.matrix[0][0]*self.matrix[1][1] - self.matrix[0][1]*self.matrix[1][0]
@@ -53,16 +53,16 @@ class transformation:
         matrix = ( ( self.matrix[1][1]/det, -self.matrix[0][1]/det),
 	           (-self.matrix[1][0]/det,  self.matrix[0][0]/det)
 		 )
-        return transformation(matrix=matrix) * transformation(vector=(-self.vector[0],-self.vector[1]))
+        return trafo(matrix=matrix) * trafo(vector=(-self.vector[0],-self.vector[1]))
 	
     def __repr__(self):
         return "matrix=%s, vector=%s" % (self.matrix, self.vector)
 
-class translate(transformation):
+class translate(trafo):
     def __init__(self,x,y):
-        transformation.__init__(self, vector=(x,y))
+        trafo.__init__(self, vector=(x,y))
    
-class rotate(transformation):
+class rotate(trafo):
     def __init__(self,angle):
         from math import pi, cos, sin
 	phi = 2*pi*angle/360
@@ -70,9 +70,9 @@ class rotate(transformation):
 	matrix = (( cos(phi), sin(phi)), 
 	          (-sin(phi), cos(phi)) )
 		  
-        transformation.__init__(self, matrix=matrix)
+        trafo.__init__(self, matrix=matrix)
 	
-class mirror(transformation):
+class mirror(trafo):
     def __init__(self,angle=0):
         from math import pi, cos, sin
 	phi = 2*pi*angle/360
@@ -80,25 +80,25 @@ class mirror(transformation):
 	matrix=( (cos(phi)*cos(phi)-sin(phi)*sin(phi), -2*sin(phi)*cos(phi)                ),
 	         (-2*sin(phi)*cos(phi),                sin(phi)*sin(phi)-cos(phi)*cos(phi) ) )
        
-        transformation.__init__(self, matrix=matrix)
+        trafo.__init__(self, matrix=matrix)
         
 
 if __name__=="__main__":
    # some invariants:
-   #  transformation(angle=angle, vector=(x,y)) == translate(x,y) * rotate(angle)
+   #  trafo(angle=angle, vector=(x,y)) == translate(x,y) * rotate(angle)
    from math import pi, cos, sin
    angle = 15
    phi = 2*pi*angle/360
    matrix=((cos(phi), sin(phi)), (-sin(phi), cos(phi)))
 
    print translate(1,3) * rotate(15) 
-   print transformation(matrix=matrix, vector=(1,3) )
+   print trafo(matrix=matrix, vector=(1,3) )
    print
    
    # t*t.inverse() == 1
    t = translate(-1,-1)*rotate(72)*translate(1,1)
    print t*t.inverse()
-   print transformation()
+   print trafo()
    print
 
    # -mirroring two times should yield identiy
@@ -106,7 +106,7 @@ if __name__=="__main__":
 
    print mirror(20)*mirror(20)
    print mirror(20)*mirror(180+20)
-   print transformation()
+   print trafo()
    print
    
    # equivalent notations
@@ -115,7 +115,7 @@ if __name__=="__main__":
    print
    
    print rotate(90).rotate(90).rotate(90).rotate(90)
-   print transformation()
+   print trafo()
    print
    
   
