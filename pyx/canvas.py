@@ -377,16 +377,28 @@ class Canvas(Globex):
 	
     def PSInit(self):
         try:
-	    self.PSFile = open(self.BaseFilename + ".ps", "w")
+	    self.PSFile = open(self.BaseFilename + ".eps", "w")
 	except IOError:
 	    assert "cannot open output file"		# TODO: Fehlerbehandlung...
 	
-        self.PSFile.write("%!\n")
-        #self.PSFile.write("%%%%BoundingBox: 0 0 %d %d\n" % (self.Height*72, self.Width*72)) # TODO: das geht so nicht ...
+        self.PSFile.write("%!PS-Adobe-3.0 EPSF 3.0\n")
+        self.PSFile.write("%%BoundingBox: 0 0 %d %d\n" % (1000,1000)) # TODO: richtige Boundingbox!
+        self.PSFile.write("%%Creator: pyx 0.0.1\n") 
+        self.PSFile.write("%%Title: %s.eps\n" % self.BaseFilename) 
+        # self.PSFile.write("%%CreationDate: %s\n" % ) 
+        self.PSFile.write("%%EndComments\n") 
+        self.PSFile.write("%%BeginProlog\n") 
 
 	# PostScript-procedure definitions
 	# cf. file: 5002.EPSF_Spec_v3.0.pdf     
 	self.PSCmd("""
+/rect {
+  4 2 roll moveto 
+  1 index 0 rlineto 
+  0 exch rlineto 
+  neg 0 rlineto 
+  closepath 
+} bind def
 /BeginEPSF {
   /b4_Inc_state save def
   /dict_count countdictstack def
@@ -408,6 +420,7 @@ class Canvas(Globex):
   countdictstack dict_count sub {end} repeat
   b4_Inc_state restore
 } bind def""")
+        self.PSFile.write("%%EndProlog\n") 
         
 	self.PSCmd("0.02 setlinewidth")
 	self.PSCmd("newpath")
@@ -415,22 +428,60 @@ class Canvas(Globex):
 
     def PSEnd(self):
     	self.PSCmd("stroke")
-    	#self.PSFile.write("0 -508 translate\n")
+	self.amove(0,0)
 	self.PSInsertEPS(self.BaseFilename + ".tex.eps")
 	self.PSFile.close()
 	
+    def PSGetEPSBoundingBox(self, epsname):
+        "returns bounding box of EPS file epsname as 4-tuple (llx, lly, urx, ury)"
+	
+        try:
+	    epsfile=open(epsname,"r")
+	except:
+	    assert "cannot open EPS file"	# TODO: Fehlerbehandlung
+
+	import regex
+
+	bbpattern = regex.compile(
+	     "^%%BoundingBox:[\t ]+\([0-9]+\)[\t ]+\([0-9]+\)[\t ]+\([0-9]+\)[\t ]+\([0-9]+\)[\t ]*$")
+
+	while 1:
+	    line=epsfile.readline()
+	    if not line:
+	        assert "bounding box not found in EPS file"
+		raise IOError			# TODO: Fehlerbehandlung
+	    if line=="%%EndComments\n": 
+		# TODO: BoundingBox-Deklaration kann auch an Ende von Datei verschoben worden sein
+	        assert "bounding box not found in EPS file"
+		raise IOError			# TODO: Fehlerbehandlung
+	    if bbpattern.match(line)>0:
+	        (llx, lly, urx, ury) = map(eval,(bbpattern.group(1), bbpattern.group(2), bbpattern.group(3), bbpattern.group(4)))
+		break
+        epsfile.close()
+	return (llx, lly, urx, ury)
+	
     def PSInsertEPS(self, epsname):
+        "Insert EPS file epsname at current position"
+	
+	(llx, lly, urx, ury) = self.PSGetEPSBoundingBox(epsname)
+	
         try:
 	    epsfile=open(epsname,"r")
 	except:
 	    assert "cannot open EPS file"	# TODO: Fehlerbehandlung
 
 	self.PSCmd("BeginEPSF")
+	self.PSCmd("%f %f translate" % (self.x, self.y)) 
+	self.PSCmd("%f %f translate" % (-llx, -lly)) 
+	self.PSCmd("%f %f %f %f rect" % (llx, lly, urx-llx,ury-lly)) 
+	self.PSCmd("clip newpath")
+	self.PSCmd("%%BeginDocument: %s" % epsname)
 	self.PSCmd(epsfile.read())  	
+	self.PSCmd("%%EndDocument")
 	self.PSCmd("EndEPSF")
 
     def PScm2po(self, x, y=None): 
-        # convfaktor=28.452756
+        "convert from cm to points"
         convfaktor=28.346456693
 	
     	if y==None:
