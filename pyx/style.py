@@ -49,6 +49,9 @@ class linecap(attr.exclusiveattr, strokestyle):
     def outputPS(self, file):
         file.write("%d setlinecap\n" % self.value)
 
+    def outputPDF(self, file):
+        file.write("%d J\n" % self.value)
+
 linecap.butt = linecap(0)
 linecap.round = linecap(1)
 linecap.square = linecap(2)
@@ -66,6 +69,9 @@ class linejoin(attr.exclusiveattr, strokestyle):
     def outputPS(self, file):
         file.write("%d setlinejoin\n" % self.value)
 
+    def outputPDF(self, file):
+        file.write("%d j\n" % self.value)
+
 linejoin.miter = linejoin(0)
 linejoin.round = linejoin(1)
 linejoin.bevel = linejoin(2)
@@ -82,6 +88,9 @@ class miterlimit(attr.exclusiveattr, strokestyle):
 
     def outputPS(self, file):
         file.write("%f setmiterlimit\n" % self.value)
+
+    def outoutPDF(self, file):
+        file.write("%f M\n" % self.value)
 
 miterlimit.lessthan180deg = miterlimit(1/math.sin(math.pi*180/360))
 miterlimit.lessthan90deg = miterlimit(1/math.sin(math.pi*90/360))
@@ -110,8 +119,13 @@ class dash(attr.exclusiveattr, strokestyle):
             sep = " currentlinewidth mul "
         else:
             sep = " "
-        patternstring = sep.join(["%g" % element for element in self.pattern])
+        patternstring = sep.join(["%f" % element for element in self.pattern])
         file.write("[%s] %d setdash\n" % (patternstring, self.offset))
+
+    def outputPDF(self, file):
+        if self.rellengths:
+            raise RuntimeError("rellengths currently not supported in pdf output")
+        file.write("[%s] %d d\n" % (" ".join(["%f" % element for element in self.pattern]), self.offset))
 
 dash.clear = attr.clearclass(dash)
 
@@ -131,6 +145,10 @@ class linestyle(attr.exclusiveattr, strokestyle):
         self.c.outputPS(file)
         self.d.outputPS(file)
 
+    def outputPDF(self, file):
+        self.c.outputPDF(file)
+        self.d.outputPDF(file)
+
 linestyle.solid = linestyle(linecap.butt, dash([]))
 linestyle.dashed = linestyle(linecap.butt, dash([2]))
 linestyle.dotted = linestyle(linecap.round, dash([0, 3]))
@@ -148,6 +166,9 @@ class linewidth(unit.length, attr.sortbeforeexclusiveattr, strokestyle):
 
     def outputPS(self, file):
         file.write("%f setlinewidth\n" % unit.topt(self))
+
+    def outputPDF(self, file):
+        file.write("%f w\n" % unit.topt(self))
 
 _base = 0.02
 

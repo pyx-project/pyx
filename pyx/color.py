@@ -22,6 +22,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+import colorsys
 import attr, style
 
 class color(attr.exclusiveattr, style.strokestyle, style.fillstyle):
@@ -47,6 +48,12 @@ class grey(color):
     def outputPS(self, file):
         file.write("%(gray)f setgray\n" % self.color)
 
+    def outputPDF(self, file, strokeattr=1, fillattr=1):
+        if strokeattr:
+            file.write("%(gray)f g\n" % self.color)
+        if fillattr:
+            file.write("%(gray)f G\n" % self.color)
+
 grey.black = grey(0.0)
 grey.white = grey(1.0)
 gray = grey
@@ -63,6 +70,12 @@ class rgb(color):
 
     def outputPS(self, file):
         file.write("%(r)f %(g)f %(b)f setrgbcolor\n" % self.color)
+
+    def outputPDF(self, file, strokeattr=1, fillattr=1):
+        if strokeattr:
+            file.write("%(r)f %(g)f %(b)f RG\n" % self.color)
+        if fillattr:
+            file.write("%(r)f %(g)f %(b)f rg\n" % self.color)
 
 rgb.red   = rgb(1 ,0, 0)
 rgb.green = rgb(0 ,1, 0)
@@ -83,6 +96,10 @@ class hsb(color):
     def outputPS(self, file):
         file.write("%(h)f %(s)f %(b)f sethsbcolor\n" % self.color)
 
+    def outputPDF(self, file, strokeattr=1, fillattr=1):
+        r, g, b = colorsys.hsv_to_rgb(self.color["h"], self.color["s"], self.color["b"])
+        rgb(r, g, b).outputPDF(file, strokeattr=strokeattr, fillattr=fillattr)
+
 
 class cmyk(color):
 
@@ -95,6 +112,12 @@ class cmyk(color):
 
     def outputPS(self, file):
         file.write("%(c)f %(m)f %(y)f %(k)f setcmykcolor\n" % self.color)
+
+    def outputPDF(self, file, strokeattr=1, fillattr=1):
+        if strokeattr:
+            file.write("%(c)f %(m)f %(y)f %(k)f K\n" % self.color)
+        if fillattr:
+            file.write("%(c)f %(m)f %(y)f %(k)f k\n" % self.color)
 
 
 cmyk.GreenYellow    = cmyk(0.15, 0, 0.69, 0)
@@ -196,6 +219,9 @@ class palette(color, attr.changeattr):
 
     def outputPS(self, file):
         self.getcolor(0).outputPS(file)
+
+    def outputPDF(self, file):
+        self.getcolor(0).outputPDF(file)
 
 
 palette.Gray           = palette(gray.white, gray.black)
