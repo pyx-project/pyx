@@ -14,5 +14,5 @@ c.draw(path(moveto(0,0), lineto(unit.length("1 u")+unit.length("1 t"), "1 u")), 
 unit.set(uscale=4)
 c.draw(path(moveto(0,0), lineto(unit.length("1 u")+unit.length("1 t"), "1 u")), color.rgb.blue)
 
-c.writetofile("test")
+c.writetofile("test_unit")
 
