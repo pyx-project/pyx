@@ -1877,6 +1877,7 @@ class normpath(path):
                         # append closed sub path
                         currentsubpathels.append(normline(context.currentpoint[0], context.currentpoint[1],
                                                           context.currentsubpath[0], context.currentsubpath[1]))
+                    self.subpaths.append(normsubpath(currentsubpathels, 1))
                     currentsubpathels = []
                 else:
                     currentsubpathels.append(npel)
