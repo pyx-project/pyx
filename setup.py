@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+from distutils.core import setup, Extension
 import pyx
 
 setup(name="PyX",
@@ -11,6 +11,11 @@ setup(name="PyX",
       description="Python package for the generation of mixed PS and (La)TeX code",
       license="GPL",
       packages=['pyx'],
+      ext_modules=[Extension("t1strip",
+                             sources=["pyx/t1strip/t1strip.c", "pyx/t1strip/writet1.c"]),
+                   Extension("pykpathsea", 
+                             sources=["pyx/pykpathsea/pykpathsea.c"],
+                             libraries=["kpathsea"])],
       data_files=[('share/pyx', ['pyx/lfs/10pt.lfs',
                                  'pyx/lfs/11pt.lfs',
                                  'pyx/lfs/12pt.lfs',
@@ -22,4 +27,3 @@ setup(name="PyX",
                                  'pyx/lfs/foils25pt.lfs',
                                  'pyx/lfs/foils30pt.lfs'])]
      )
-
