@@ -163,7 +163,7 @@ class addend:
         if len(setscalars):
             return float(addend(setscalars))
         else:
-            return 1
+            return 1.0
 
     def variable(self):
         assert self.is_linear()
@@ -298,12 +298,16 @@ class vector:
 
     def __mul__(self, other):
         try:
+            other = scalar(other)
+        except:
+            pass
+        try:
             other = other.vector()
         except (TypeError, AttributeError):
             try:
-                polynom = other.polynom()
+                other = other.polynom()
             except (TypeError, AttributeError):
-                # inverse matrix multiplication
+                # inverse matrix multiplication ?
                 return other.__rmul__(self)
             else:
                 return vector([item*other for item in self._items])
@@ -485,8 +489,8 @@ class Solver:
                     if var is not None and var not in vars:
                         vars.append(var)
             if len(vars) == l:
-                a = Numeric.zeros((l, l))
-                b = Numeric.zeros((l, ))
+                a = Numeric.zeros((l, l), Numeric.Float)
+                b = Numeric.zeros((l, ), Numeric.Float)
                 for i, eq in enumerate(eqs):
                     for addend in eq._addends:
                         var = addend.variable()
