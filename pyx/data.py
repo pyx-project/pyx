@@ -112,7 +112,7 @@ class data(_data):
             titles = titles[:maxcolumns]
             titles += [None] * (maxcolumns - len(titles))
             for line in data:
-                line += [None] * (maxcolumns - len(line))
+                line = list(line) + [None] * (maxcolumns - len(line))
         else:
             titles = []
         _data.__init__(self, titles, data, **kwargs)

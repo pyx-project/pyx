@@ -1024,7 +1024,7 @@ class _texmessageload(texmessage):
                     lowestbracketlevel = lowestbracketlevel[:m.start()] + lowestbracketlevel[m.end():]
                 else:
                     break
-                m = self.pattern.match(lowestbracketlevel)
+                m = self.pattern.search(lowestbracketlevel)
             else:
                 texrunner.texmessageparsed = lowestbracketlevel
 
@@ -1032,6 +1032,8 @@ class _texmessageload(texmessage):
 class _texmessagegraphicsload(_texmessageload):
     """validates the inclusion of files as the graphics packages writes it
     - works like _texmessageload, but using "<" and ">" as delimiters"""
+
+    pattern = re.compile(r"<(?P<filename>[^()\s\n]+)[^()]*>")
 
     def baselevels(self, s, brackets="<>", **args):
         _texmessageload.baselevels(self, s, brackets=brackets, **args)
@@ -1487,12 +1489,24 @@ class texrunner:
         self.waitfortex = waitfortex
         self.texdebug = texdebug
         self.dvidebug = dvidebug
-        self.texmessagestart = helper.ensuresequence(texmessagestart)
-        self.texmessagedocclass = helper.ensuresequence(texmessagedocclass)
-        self.texmessagebegindoc = helper.ensuresequence(texmessagebegindoc)
-        self.texmessageend = helper.ensuresequence(texmessageend)
-        self.texmessagedefaultpreamble = helper.ensuresequence(texmessagedefaultpreamble)
-        self.texmessagedefaultrun = helper.ensuresequence(texmessagedefaultrun)
+        texmessagestart = helper.ensuresequence(texmessagestart)
+        helper.checkattr(texmessagestart, allowmulti=(texmessage,))
+        self.texmessagestart = texmessagestart
+        texmessagedocclass = helper.ensuresequence(texmessagedocclass)
+        helper.checkattr(texmessagedocclass, allowmulti=(texmessage,))
+        self.texmessagedocclass = texmessagedocclass
+        texmessagebegindoc = helper.ensuresequence(texmessagebegindoc)
+        helper.checkattr(texmessagebegindoc, allowmulti=(texmessage,))
+        self.texmessagebegindoc = texmessagebegindoc
+        texmessageend = helper.ensuresequence(texmessageend)
+        helper.checkattr(texmessageend, allowmulti=(texmessage,))
+        self.texmessageend = texmessageend
+        texmessagedefaultpreamble = helper.ensuresequence(texmessagedefaultpreamble)
+        helper.checkattr(texmessagedefaultpreamble, allowmulti=(texmessage,))
+        self.texmessagedefaultpreamble = texmessagedefaultpreamble
+        texmessagedefaultrun = helper.ensuresequence(texmessagedefaultrun)
+        helper.checkattr(texmessagedefaultrun, allowmulti=(texmessage,))
+        self.texmessagedefaultrun = texmessagedefaultrun
 
         self.texruns = 0
         self.texdone = 0
@@ -1700,16 +1714,29 @@ class texrunner:
         if waitfortex is not None:
             self.waitfortex = waitfortex
         if texmessagestart is not None:
+            texmessagestart = helper.ensuresequence(texmessagestart)
+            helper.checkattr(texmessagestart, allowmulti=(texmessage,))
             self.texmessagestart = texmessagestart
         if texmessagedocclass is not None:
+            texmessagedocclass = helper.ensuresequence(texmessagedocclass)
+            helper.checkattr(texmessagedocclass, allowmulti=(texmessage,))
             self.texmessagedocclass = texmessagedocclass
         if texmessagebegindoc is not None:
+            texmessagebegindoc = helper.ensuresequence(texmessagebegindoc)
+            helper.checkattr(texmessagebegindoc, allowmulti=(texmessage,))
             self.texmessagebegindoc = texmessagebegindoc
         if texmessageend is not None:
+            texmessageend = helper.ensuresequence(texmessageend)
+            helper.checkattr(texmessageend, allowmulti=(texmessage,))
             self.texmessageend = texmessageend
         if texmessagedefaultpreamble is not None:
+            texmessagedefaultpreamble = helper.ensuresequence(texmessagedefaultpreamble)
+            helper.checkattr(texmessagedefaultpreamble, allowmulti=(texmessage,))
             self.texmessagedefaultpreamble = texmessagedefaultpreamble
         if texmessagedefaultrun is not None:
+            texmessagedefaultrun = helper.ensuresequence(texmessagedefaultrun)
+            helper.checkattr(texmessagedefaultrun, allowmulti=(texmessage,))
+            print texmessagedefaultrun
             self.texmessagedefaultrun = texmessagedefaultrun
 
     def set(self, texdebug=None, dvidebug=None, **args):
@@ -1762,7 +1789,7 @@ class texrunner:
         if not self.preamblemode:
             raise TexNotInPreambleModeError
         self.bracketcheck(expr)
-        helper.checkattr(args, allowmulti=texmessage)
+        helper.checkattr(args, allowmulti=(texmessage,))
         self.execute(expr, *helper.getattrs(args, texmessage, default=self.texmessagedefaultpreamble))
 
     PyXBoxPattern = re.compile(r"PyXBox\(page=(?P<page>\d+),lt=(?P<lt>-?\d*((\d\.?)|(\.?\d))\d*)pt,rt=(?P<rt>-?\d*((\d\.?)|(\.?\d))\d*)pt,ht=(?P<ht>-?\d*((\d\.?)|(\.?\d))\d*)pt,dp=(?P<dp>-?\d*((\d\.?)|(\.?\d))\d*)pt\)")
