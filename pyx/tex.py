@@ -14,6 +14,9 @@ class halign:
     center = _halign("center")
     right  = _halign("right")
    
+class hsize(unit.length):
+    pass
+   
 class _valign:
     def __init__(self, value):
         self.value = value
@@ -96,12 +99,12 @@ class mode:
 # structure to store TexCmds
 
 class TexCmdSaveStruc:
-    def __init__(self, Cmd, MarkerBegin, MarkerEnd, Stack, msglevel):
+    def __init__(self, Cmd, MarkerBegin, MarkerEnd, Stack, lmsglevel):
         self.Cmd = Cmd
         self.MarkerBegin = MarkerBegin
         self.MarkerEnd = MarkerEnd
         self.Stack = Stack
-        self.msglevel = msglevel
+        self.msglevel = lmsglevel
 class TexException(Exception):
     pass
 
@@ -115,7 +118,7 @@ class TexRightParenthesisError(TexException):
 
 class tex:
 
-    def __init__(self, unit, type = mode.TeX, latexstyle = "10pt", latexclass = "article", latexclassopt = "", texinit = "", msglevel = msglevel.hideload):
+    def __init__(self, unit, type = mode.TeX, latexstyle = "10pt", latexclass = "article", latexclassopt = "", texinit = "", lmsglevel = msglevel.hideload):
         self.unit = unit
         assert type == mode.TeX or type == mode.LaTeX, "invalid type"
         if type == mode.TeX:
@@ -125,7 +128,7 @@ class tex:
         self.type = type
         self.latexclass = latexclass
         self.latexclassopt = latexclassopt
-        self.TexAddCmd(texinit, msglevel)
+        self.TexAddCmd(texinit, lmsglevel)
 
         if len(os.path.basename(sys.argv[0])):
             basename = os.path.basename(sys.argv[0])
@@ -166,7 +169,7 @@ class tex:
         if depth > 0:
             raise TexLeftParenthesisError
 
-    def TexCreateBoxCmd(self, Cmd, size, hsize, lvalign):
+    def TexCreateBoxCmd(self, Cmd, size, lhsize, lvalign):
 
         'creates the TeX box \\localbox containing Cmd'
 
@@ -178,17 +181,17 @@ class tex:
         CmdBegin = "\\setbox\\localbox=\\hbox{\\" + str(size)
         CmdEnd = "}"
 
-        if hsize != None:
+        if type(lhsize) != types.NoneType:
              if type(lvalign) == types.NoneType or lvalign == valign.top:
-                  CmdBegin = CmdBegin + "\\vtop{\hsize" + str(hsize) + "truecm{"
+                  CmdBegin = CmdBegin + "\\vtop{\hsize" + str(self.unit.tpt(lhsize)) + "truept{"
                   CmdEnd = "}}" + CmdEnd
              elif lvalign == valign.bottom:
-                  CmdBegin = CmdBegin + "\\vbox{\hsize" + str(hsize) + "truecm{"
+                  CmdBegin = CmdBegin + "\\vbox{\hsize" + str(self.unit.tpt(lhsize)) + "truept{"
                   CmdEnd = "}}" + CmdEnd
              else:
                   assert 0, "valign unknown"
         else:
-             assert lvalign == None, "hsize needed to use valign"
+             assert type(lvalign) == types.NoneType, "hsize needed to use valign"
         
         Cmd = CmdBegin + Cmd + CmdEnd + "\n"
         return Cmd
@@ -268,7 +271,7 @@ class tex:
         file.write("\\nonstopmode\n")
         if self.type == mode.LaTeX:
             file.write("\\documentclass[" + self.latexclassopt + "]{" + self.latexclass + "}\n")
-        file.write("\\hsize0truecm\n\\vsize0truecm\n\\hoffset-1truein\n\\voffset0truein\n")
+        file.write("\\hsize0truept\n\\vsize0truept\n\\hoffset-1truein\n\\voffset0truein\n")
 
         file.write(self.TexCmds[0].Cmd)
 
@@ -423,41 +426,49 @@ class tex:
  
         return 1
 
-    def text(self, x, y, Cmd, size = fontsize.normalsize, halign = None, hsize = None, valign = None, angle = None, lmsglevel = msglevel.hideload):
+    def text(self, x, y, Cmd, size = fontsize.normalsize, halign = None, lhsize = None, valign = None, angle = None, lmsglevel = msglevel.hideload):
+    #def text(self, x, y, Cmd, *styleparam):
+        # allowed style parameter:
+        #     fontsize
+        #     halign
+        #     hsize
+        #     valign
+        #     angle
+        #     msglevel
 
         'print Cmd at (x, y)'
         
-        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, size, hsize, valign)
+        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, size, lhsize, valign)
         TexCopyBoxCmd = self.TexCopyBoxCmd(x, y, Cmd, halign, angle)
         self.TexAddCmd(TexCreateBoxCmd + TexCopyBoxCmd, lmsglevel)
 
-    def textwd(self, Cmd, size = fontsize.normalsize, hsize = None, lmsglevel = msglevel.hideload):
+    def textwd(self, Cmd, size = fontsize.normalsize, lhsize = None, lmsglevel = msglevel.hideload):
     
         'get width of Cmd'
 
-        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, size, hsize, None)
+        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, size, lhsize, None)
         TexHexMD5 = self.TexHexMD5(TexCreateBoxCmd)
         self.TexAddCmd(TexCreateBoxCmd +
                        "\\immediate\\write\\sizefile{" + TexHexMD5 +
                        ":wd:" + str(time.time()) + ":\\the\\wd\\localbox}\n", lmsglevel)
         return self.TexResult(TexHexMD5 + ":wd:")
 
-    def textht(self, Cmd, size = fontsize.normalsize, hsize = None, valign = None, lmsglevel = msglevel.hideload):
+    def textht(self, Cmd, size = fontsize.normalsize, lhsize = None, valign = None, lmsglevel = msglevel.hideload):
 
         'get height of Cmd'
 
-        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, size, hsize, valign)
+        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, size, lhsize, valign)
         TexHexMD5 = self.TexHexMD5(TexCreateBoxCmd)
         self.TexAddCmd(TexCreateBoxCmd +
                        "\\immediate\\write\\sizefile{" + TexHexMD5 +
                        ":ht:" + str(time.time()) + ":\\the\\ht\\localbox}\n", lmsglevel)
         return self.TexResult(TexHexMD5 + ":ht:")
 
-    def textdp(self, Cmd, size = fontsize.normalsize, hsize = None, valign = None, lmsglevel = msglevel.hideload):
+    def textdp(self, Cmd, size = fontsize.normalsize, lhsize = None, valign = None, lmsglevel = msglevel.hideload):
    
         'get depth of Cmd'
 
-        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, size, hsize, valign)
+        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, size, lhsize, valign)
         TexHexMD5 = self.TexHexMD5(TexCreateBoxCmd)
         self.TexAddCmd(TexCreateBoxCmd +
                        "\\immediate\\write\\sizefile{" + TexHexMD5 +
