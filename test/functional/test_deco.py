@@ -5,9 +5,7 @@ from pyx import *
 #####  helpers  ##############################################################
 
 def bboxrect(cmd):
-   bbox=cmd.bbox()
-   return path.rect("%f t pt" % bbox.llx,            "%f t pt" % bbox.lly,
-               "%f t pt" % (bbox.urx-bbox.llx), "%f t pt" % (bbox.ury-bbox.lly))
+   return cmd.bbox().rect()
 
 def dotest(c, x, y, test):
    c2 = c.insert(canvas.canvas([trafo.translate(x, y)]))

@@ -370,7 +370,7 @@ def _arrowhead(anormpath, size, angle, constriction):
     return arrow
 
 
-_base = unit.v_pt(6)
+_base = 6 * unit.v_pt
 
 class arrow(deco, attr.attr):
 
@@ -791,7 +791,7 @@ class smoothed(deco, attr.attr):
                 if isinstance(bpart, path.normline):
                     newpath.append(path.lineto_pt(*bpart.end_pt()))
                 elif isinstance(bpart, path.normcurve):
-                    newpath.append(path.curveto_pt(bpart.x1, bpart.y1, bpart.x2, bpart.y2, bpart.x3, bpart.y3))
+                    newpath.append(path.curveto_pt(bpart.x1_pt, bpart.y1_pt, bpart.x2_pt, bpart.y2_pt, bpart.x3_pt, bpart.y3_pt))
                 do_moveto = 0
 
             # 4. Do the splitting for the first to the last element,
@@ -810,7 +810,7 @@ class smoothed(deco, attr.attr):
                     if isinstance(mpart, path.normline):
                         newpath.append(path.lineto_pt(*mpart.end_pt()))
                     elif isinstance(mpart, path.normcurve):
-                        newpath.append(path.curveto_pt(mpart.x1, mpart.y1, mpart.x2, mpart.y2, mpart.x3, mpart.y3))
+                        newpath.append(path.curveto_pt(mpart.x1_pt, mpart.y1_pt, mpart.x2_pt, mpart.y2_pt, mpart.x3_pt, mpart.y3_pt))
 
                 # add the curve(s) replacing the corner
                 if isinstance(thisnpel, path.normline) and isinstance(nextnpel, path.normline) \
@@ -860,7 +860,7 @@ class smoothed(deco, attr.attr):
                 if isinstance(epart, path.normline):
                     newpath.append(path.lineto_pt(*epart.end_pt()))
                 elif isinstance(epart, path.normcurve):
-                    newpath.append(path.curveto_pt(epart.x1, epart.y1, epart.x2, epart.y2, epart.x3, epart.y3))
+                    newpath.append(path.curveto_pt(epart.x1_pt, epart.y1_pt, epart.x2_pt, epart.y2_pt, epart.x3_pt, epart.y3_pt))
 
         dp.strokepath = newpath
         return dp

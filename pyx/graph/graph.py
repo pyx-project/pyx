@@ -343,24 +343,24 @@ class graphxy(canvas.canvas):
             bbox = c.bbox()
             if self.key.right:
                 if self.key.hinside:
-                    x = self.xpos_pt + self.width_pt - bbox.urx - self.key.hdist_pt
+                    x = self.xpos_pt + self.width_pt - bbox.urx_pt - self.key.hdist_pt
                 else:
-                    x = self.xpos_pt + self.width_pt - bbox.llx + self.key.hdist_pt
+                    x = self.xpos_pt + self.width_pt - bbox.llx_pt + self.key.hdist_pt
             else:
                 if self.key.hinside:
-                    x = self.xpos_pt - bbox.llx + self.key.hdist_pt
+                    x = self.xpos_pt - bbox.llx_pt + self.key.hdist_pt
                 else:
-                    x = self.xpos_pt - bbox.urx - self.key.hdist_pt
+                    x = self.xpos_pt - bbox.urx_pt - self.key.hdist_pt
             if self.key.top:
                 if self.key.vinside:
-                    y = self.ypos_pt + self.height_pt - bbox.ury - self.key.vdist_pt
+                    y = self.ypos_pt + self.height_pt - bbox.ury_pt - self.key.vdist_pt
                 else:
-                    y = self.ypos_pt + self.height_pt - bbox.lly + self.key.vdist_pt
+                    y = self.ypos_pt + self.height_pt - bbox.lly_pt + self.key.vdist_pt
             else:
                 if self.key.vinside:
-                    y = self.ypos_pt - bbox.lly + self.key.vdist_pt
+                    y = self.ypos_pt - bbox.lly_pt + self.key.vdist_pt
                 else:
-                    y = self.ypos_pt - bbox.ury - self.key.vdist_pt
+                    y = self.ypos_pt - bbox.ury_pt - self.key.vdist_pt
             self.insert(c, [trafo.translate_pt(x, y)])
 
     def finish(self):

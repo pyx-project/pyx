@@ -207,10 +207,12 @@ class polygon_pt:
         return self.alignvector_pt(a, dx, dy, self.linealignlinevector_pt, self.linealignpointvector_pt)
 
     def circlealignvector(self, a, dx, dy):
-        return map(unit.t_pt, self.circlealignvector_pt(unit.topt(a), dx, dy))
+        ndx, ndy = self.circlealignvector_pt(unit.topt(a), dx, dy)
+        return ndx * unit.t_pt, ndy * unit.t_pt
 
     def linealignvector(self, a, dx, dy):
-        return map(unit.t_pt, self.linealignvector_pt(unit.topt(a), dx, dy))
+        ndx, ndy = self.linealignvector_pt(unit.topt(a), dx, dy)
+        return ndx * unit.t_pt, ndy * unit.t_pt
 
     def circlealign_pt(self, *args):
         self.transform(trafo.translate_pt(*self.circlealignvector_pt(*args)))
@@ -240,7 +242,7 @@ class polygon_pt:
         return (x1-x2)*dx + (y1-y2)*dy
 
     def extent(self, dx, dy):
-        return unit.t_pt(self.extent_pt(dx, dy))
+        return self.extent_pt(dx, dy) * unit.t_pt
 
     def pointdistance_pt(self, x, y):
         result = None
@@ -262,7 +264,7 @@ class polygon_pt:
         return result
 
     def pointdistance(self, x, y):
-        return unit.t_pt(self.pointdistance_pt(unit.topt(x), unit.topt(y)))
+        return self.pointdistance_pt(unit.topt(x), unit.topt(y)) * unit.t_pt
 
     def boxdistance_pt(self, other, epsilon=1e-10):
         # XXX: boxes crossing and distance calculation is O(N^2)
@@ -287,7 +289,7 @@ class polygon_pt:
         return result
 
     def boxdistance(self, other):
-        return unit.t_pt(self.boxdistance_pt(other))
+        return self.boxdistance_pt(other) * unit.t_pt
 
     def bbox(self):
         return bbox._bbox(min([x[0] for x in self.corners]),

@@ -209,7 +209,7 @@ class _axispos:
         return self.vtickpoint(self.convert(x))
 
     def vtickpoint(self, v):
-        return [unit.t_pt(x) for x in self.vtickpoint(v)]
+        return [x * unit.t_pt for x in self.vtickpoint(v)]
 
     def tickdirection(self, x):
         return self.vtickdirection(self.convert(x))
@@ -224,7 +224,7 @@ class pathaxispos(_axispos):
         self.path = p
         self.normpath = path.normpath(p)
         self.arclen_pt = self.normpath.arclen_pt()
-        self.arclen = unit.t_pt(self.arclen_pt)
+        self.arclen = self.arclen_pt * unit.t_pt
         _axispos.__init__(self, convert)
         self.direction = direction
 

@@ -181,144 +181,41 @@ class length:
 
 
 ################################################################################
-# class for more specialized lengths
+# predefined instances which can be used as length units
 ################################################################################
 
-# lengths with user units as default
-
-class u_pt(length):
-    def __init__(self, l=1, default_type="u"):
-       length.__init__(self, l, default_type=default_type, dunit="pt")
-
-
-class u_m(length):
-    def __init__(self, l=1, default_type="u"):
-       length.__init__(self, l, default_type=default_type, dunit="m")
-
-
-class u_mm(length):
-    def __init__(self, l=1, default_type="u"):
-       length.__init__(self, l, default_type=default_type, dunit="mm")
-
-
-class u_cm(length):
-    def __init__(self, l=1, default_type="u"):
-       length.__init__(self, l, default_type=default_type, dunit="cm")
-
-
-class u_inch(length):
-    def __init__(self, l=1, default_type="u"):
-       length.__init__(self, l, default_type=default_type, dunit="inch")
-
-# without further specification, length are user length. Hence we
-# define the following aliases
-
-pt = u_pt
-m = u_m
-cm = u_cm
-mm = u_mm
-inch = u_inch
+# user lengths and unqualified length which are also user length
+u_pt = pt = length("1 u pt")
+u_m = m = length("1 u m")
+u_mm = mm = length("1 u mm")
+u_cm = cm = length("1 u cm")
+u_inch = inch = length("1 u inch")
 
 # true lengths
-
-class t_pt(length):
-    def __init__(self, l=1):
-       length.__init__(self, l, default_type="t", dunit="pt")
-
-
-class t_m(length):
-    def __init__(self, l=1):
-       length.__init__(self, l, default_type="t", dunit="m")
-
-
-class t_cm(length):
-    def __init__(self, l=1):
-       length.__init__(self, l, default_type="t", dunit="cm")
-
-
-class t_mm(length):
-    def __init__(self, l=1):
-       length.__init__(self, l, default_type="t", dunit="mm")
-
-
-class t_inch(length):
-    def __init__(self, l=1):
-       length.__init__(self, l, default_type="t", dunit="inch")
+t_pt = length("1 t pt")
+t_m = length("1 t m")
+t_mm = length("1 t mm")
+t_cm = length("1 t cm")
+t_inch = length("1 t inch")
 
 # visual lengths
+v_pt = length("1 v pt")
+v_m = length("1 v m")
+v_mm = length("1 v mm")
+v_cm = length("1 v cm")
+v_inch = length("1 v inch")
 
-class v_pt(length):
-    def __init__(self, l=1):
-       length.__init__(self, l, default_type="v", dunit="pt")
-
-
-class v_m(length):
-    def __init__(self, l=1):
-       length.__init__(self, l, default_type="v", dunit="m")
-
-
-class v_cm(length):
-    def __init__(self, l=1):
-       length.__init__(self, l, default_type="v", dunit="cm")
-
-
-class v_mm(length):
-    def __init__(self, l=1):
-       length.__init__(self, l, default_type="v", dunit="mm")
-
-
-class v_inch(length):
-    def __init__(self, l=1):
-       length.__init__(self, l, default_type="v", dunit="inch")
 
 # width lengths
+w_pt = length("1 w pt")
+w_m = length("1 w m")
+w_mm = length("1 w mm")
+w_cm = length("1 w cm")
+w_inch = length("1 w inch")
 
-class w_pt(length):
-    def __init__(self, l=1):
-       length.__init__(self, l, default_type="w", dunit="pt")
-
-
-class w_m(length):
-    def __init__(self, l=1):
-       length.__init__(self, l, default_type="w", dunit="m")
-
-
-class w_cm(length):
-    def __init__(self, l=1):
-       length.__init__(self, l, default_type="w", dunit="cm")
-
-
-class w_mm(length):
-    def __init__(self, l=1):
-       length.__init__(self, l, default_type="w", dunit="mm")
-
-
-class w_inch(length):
-    def __init__(self, l=1):
-       length.__init__(self, l, default_type="w", dunit="inch")
-
-# tex lengths
-
-class x_pt(length):
-    def __init__(self, l=1):
-       length.__init__(self, l, default_type="x", dunit="pt")
-
-
-class x_m(length):
-    def __init__(self, l=1):
-       length.__init__(self, l, default_type="x", dunit="m")
-
-
-class x_cm(length):
-    def __init__(self, l=1):
-       length.__init__(self, l, default_type="x", dunit="cm")
-
-
-class x_mm(length):
-    def __init__(self, l=1):
-       length.__init__(self, l, default_type="x", dunit="mm")
-
-
-class x_inch(length):
-    def __init__(self, l=1):
-       length.__init__(self, l, default_type="x", dunit="inch")
+# TeX lengths
+x_pt = length("1 x pt")
+x_m = length("1 x m")
+x_mm = length("1 x mm")
+x_cm = length("1 x cm")
+x_inch = length("1 x inch")

@@ -955,12 +955,12 @@ class dvifile:
             epskwargs["bbox"] = bbox._bbox(float(argdict["llx"]), float(argdict["lly"]),
                                            float(argdict["urx"]), float(argdict["ury"]))
             if argdict.has_key("width"):
-                epskwargs["width"] = unit.t_pt(float(argdict["width"]))
+                epskwargs["width"] = float(argdict["width"]) * unit.t_pt
             if argdict.has_key("height"):
-                epskwargs["height"] = unit.t_pt(float(argdict["height"]))
+                epskwargs["height"] = float(argdict["height"]) * unit.t_pt
             if argdict.has_key("clip"):
                epskwargs["clip"] = int(argdict["clip"])
-            self.actpage.insert(epsfile.epsfile(unit.t_pt(x), unit.t_pt(y), **epskwargs))
+            self.actpage.insert(epsfile.epsfile(x * unit.t_pt, y * unit.t_pt, **epskwargs))
         elif command=="marker":
             if len(args) != 1:
                 raise RuntimeError("marker contains spaces")
@@ -969,7 +969,7 @@ class dvifile:
                     raise RuntimeError("marker contains invalid characters")
             if self.actpage.markers.has_key(args[0]):
                 raise RuntimeError("marker name occurred several times")
-            self.actpage.markers[args[0]] = unit.t_pt(x), unit.t_pt(y)
+            self.actpage.markers[args[0]] = x * unit.t_pt, y * unit.t_pt
         else:
             raise RuntimeError("unknown PyX special '%s', aborting" % command)
 

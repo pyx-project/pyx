@@ -29,7 +29,7 @@ A canvas holds a collection of all elements that should be displayed together
 with their attributes.
 """
 
-import sys, cStringIO, time
+import sys, cStringIO, math, time
 import attr, base,  deco, unit, prolog, style, trafo, version
 
 # known paperformats as tuple (width, height)
@@ -365,13 +365,13 @@ class canvas(_canvas):
             raise IOError("cannot open output file")
 
         abbox = bbox is not None and bbox or self.bbox()
-        abbox = abbox.enlarged(bboxenlarge)
+        abbox.enlarge(bboxenlarge)
         ctrafo = None     # global transformation of canvas
 
         if rotated:
             ctrafo = trafo.rotate_pt(90,
-                                     0.5*(abbox.llx+abbox.urx),
-                                     0.5*(abbox.lly+abbox.ury))
+                                     0.5*(abbox.llx_pt+abbox.urx_pt),
+                                     0.5*(abbox.lly_pt+abbox.ury_pt))
 
         if paperformat:
             # center (optionally rotated) output on page
@@ -384,10 +384,10 @@ class canvas(_canvas):
 
             if not ctrafo: ctrafo=trafo.trafo()
 
-            ctrafo = ctrafo.translated_pt(0.5*(width -(abbox.urx-abbox.llx))-
-                                       abbox.llx,
-                                       0.5*(height-(abbox.ury-abbox.lly))-
-                                       abbox.lly)
+            ctrafo = ctrafo.translated_pt(0.5*(width -(abbox.urx_pt-abbox.llx_pt))-
+                                       abbox.llx_pt,
+                                       0.5*(height-(abbox.ury_pt-abbox.lly_pt))-
+                                       abbox.lly_pt)
 
             if fittosize:
                 # scale output to pagesize - margins
@@ -396,11 +396,11 @@ class canvas(_canvas):
                     raise RuntimeError("Margins too broad for selected paperformat. Aborting.")
 
                 if rotated:
-                    sfactor = min((height-2*margin)/(abbox.urx-abbox.llx),
-                                  (width-2*margin)/(abbox.ury-abbox.lly))
+                    sfactor = min((height-2*margin)/(abbox.urx_pt-abbox.llx_pt),
+                                  (width-2*margin)/(abbox.ury_pt-abbox.lly_pt))
                 else:
-                    sfactor = min((width-2*margin)/(abbox.urx-abbox.llx),
-                                  (height-2*margin)/(abbox.ury-abbox.lly))
+                    sfactor = min((width-2*margin)/(abbox.urx_pt-abbox.llx_pt),
+                                  (height-2*margin)/(abbox.ury_pt-abbox.lly_pt))
 
                 ctrafo = ctrafo.scaled_pt(sfactor, sfactor, 0.5*width, 0.5*height)
 
@@ -410,7 +410,7 @@ class canvas(_canvas):
 
         # if there has been a global transformation, adjust the bounding box
         # accordingly
-        if ctrafo: abbox = abbox.transformed(ctrafo)
+        if ctrafo: abbox.transform(ctrafo)
 
         file.write("%!PS-Adobe-3.0 EPSF 3.0\n")
         abbox.outputPS(file)
@@ -459,7 +459,7 @@ class canvas(_canvas):
             raise IOError("cannot open output file")
 
         abbox = bbox is not None and bbox or self.bbox()
-        abbox = abbox.enlarged(bboxenlarge)
+        abbox.enlarge(bboxenlarge)
 
         file.write("%%PDF-1.4\n%%%s%s%s%s\n" % (chr(195), chr(182), chr(195), chr(169)))
         reflist = [file.tell()]

@@ -12,8 +12,8 @@ def dotest(c, x, y, test):
    c2 = c.insert(canvas.canvas([trafo.translate(x, y)]))
    c2.stroke(startbox.path())
    c2.stroke(endbox.path())
-   c2.stroke(path.circle( unit.pt(startbox.center[0]), unit.pt(startbox.center[1]), 0.1))
-   c2.stroke(path.circle( unit.pt(endbox.center[0]), unit.pt(endbox.center[1]), 0.1))
+   c2.stroke(path.circle( unit.pt * startbox.center[0], unit.pt * startbox.center[1], 0.1))
+   c2.stroke(path.circle( unit.pt * endbox.center[0], unit.pt * endbox.center[1], 0.1))
    eval("%s(c2)" % test)
    c.insert(c2)
 

@@ -242,17 +242,17 @@ Path element which closes the current subpath.
 For performance reasons, two non-PostScript path elements are defined, 
 which perform multiple identical operations:
 
-\begin{classdesc}{multilineto_pt}{points}
+\begin{classdesc}{multilineto_pt}{points_pt}
 Path element which appends straight line segments starting from
 the current point and going through the list of points given 
-in the \var{points} argument. All coordinates have to 
+in the \var{points_pt} argument. All coordinates have to 
 be given in PostScript points.
 \end{classdesc}
 
-\begin{classdesc}{multicurveto_pt}{points}
+\begin{classdesc}{multicurveto_pt}{points_pt}
 Path element which appends B\'ezier curve segments starting from
 the current point and going through the list of each three control
-points given in the \var{points} argument.
+points given in the \var{points_pt} argument.
 \end{classdesc}
 
 

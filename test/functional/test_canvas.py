@@ -21,4 +21,9 @@ c.stroke(p.transformed(t1*t2*t3), [color.rgb.green, style.linestyle.dashed])
 
 c.stroke(p, [color.rgb.red, style.linestyle.dotted, t3, t2, t1])
 
-c.writeEPSfile("test_canvas", paperformat="a4" )
+c.writeEPSfile("test_canvas", paperformat="a4")
+
+pages = canvas.pages([c, c])
+
+# pages.writePSfile("test_canvas", paperformat="a4")
+pages.writePSfile("test_canvas")

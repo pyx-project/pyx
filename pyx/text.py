@@ -1119,7 +1119,7 @@ class texrunner:
         match = self.PyXBoxPattern.search(self.texmessage)
         if not match or int(match.group("page")) != self.page:
             raise TexResultError("box extents not found", self)
-        left, right, height, depth = [unit.x_pt(float(xxx)*72/72.27) for xxx in match.group("lt", "rt", "ht", "dp")]
+        left, right, height, depth = [float(xxx)*72/72.27*unit.x_pt for xxx in match.group("lt", "rt", "ht", "dp")]
         box = textbox(x, y, left, right, height, depth, self.finishdvi, fillstyles)
         for t in trafos:
             box.reltransform(t)
@@ -1130,7 +1130,7 @@ class texrunner:
         return box
 
     def text_pt(self, x, y, expr, *args, **kwargs):
-        return self.text(unit.t_pt(x), unit.t_pt(y), expr, *args, **kwargs)
+        return self.text(x * unit.t_pt, y * unit.t_pt, expr, *args, **kwargs)
 
     PyXVariableBoxPattern = re.compile(r"PyXVariableBox:page=(?P<page>\d+),par=(?P<par>\d+),prevgraf=(?P<prevgraf>\d+):")
 

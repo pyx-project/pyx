@@ -33,10 +33,7 @@ TODO:
     - TODO: general documentation about attributes, clearing, merging?
     - TODO: general documentation about changeable attributes?
   - unit module:
-    - what about unit.cm() -> unit.cm, ...
     - maybe we should never convert implicitly into visual/width, etc. lengths
-    - check that we always return the appropriate length, i.e., not
-      too often true
   - mathtree:
     - might be moved into the graph
     - perform calc by means of Python itself (see eval code in graph.data, but
@@ -49,11 +46,11 @@ TODO:
     - support single-character mode
   - path module:
     - arclentoparam should raise an exception when the arclen is out of range
-    - use _pt for variable names 
     - it seems to be, that epsilon is a feature of normsubpath;
       Why is there (also) a self.epsilon?
-    - Why is there no normpathel.trafo()? And how about
-      normpathel.begintrafo() and normpathel.endtrafo()?
+      JL: What class does self refer to?
+    - How about normpathel.begintrafo() and normpathel.endtrafo()?
+      JL: -1
   - color module:
     - what should we do for palette when only one entry
 
@@ -73,8 +70,19 @@ TODO:
     - describe creation and modification (inplace and ``modify by new'') of
       graph data
 
-
-0.? (xxxx/xx/xx):
+0.7 (xxxx/xx/xx):
+  - path module:
+    - names of local and member variables now follow the naming convention of
+      having a _pt suffix when containing lengths in points
+  - bbox module:
+    - names of local and member variables now follow the naming convention of
+      having a _pt suffix when containing lengths in points
+    - enlarge was misspelled as enlarged
+  - unit module:
+    - unit.cm, unit.t_cm, etc. are no longer sub classes but instances
+      of length
+    
+0.6.? (xxxx/xx/xx):
   - graph module:
     - fixed title=None + graph key issue reported by Gabriel Vasseur
     - graph.axis.painter.plain -> graph.axis.painter.regular
@@ -82,11 +90,9 @@ TODO:
     - changeable-gridattrs-become-None-bug fixed
     - graph style cutting outside lines (double-)fixed
 
-
 0.6.1 (2004/03/31):
   - fixes missing install of the graph and axis directories introduced in 0.6
   - some minor updates to the faq
-
 
 0.6 (2004/03/30):
   - graph module:
