@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from path import *
-import types
+import types, re
 
 ###############################################################################
 # axis part
@@ -11,8 +11,9 @@ class Tick:
     def __init__(self, ValuePos, VirtualPos, Label=None, TickLevel=1, LabelLevel=1):
         self.ValuePos = ValuePos
         self.VirtualPos = VirtualPos
-        self.TickLevel = TickLevel
         self.Label = Label
+        self.TickLevel = TickLevel
+        self.LabelLevel = LabelLevel
 
 
 class Axis:
@@ -60,92 +61,86 @@ class Graph:
         self.x = x
         self.y = y
 
+_XPattern = re.compile(r"x([2-9]|[1-9][0-9]+)?$")
+_YPattern = re.compile(r"y([2-9]|[1-9][0-9]+)?$")
+_DXPattern = re.compile(r"dx([2-9]|[1-9][0-9]+)?$")
+_DYPattern = re.compile(r"dy([2-9]|[1-9][0-9]+)?$")
 
 class GraphXY(Graph):
 
     plotdata = [ ]
 
-    def __init__(self, canvas, tex, x, y, width, height):
+    def __init__(self, canvas, tex, x, y, width, height, **Axis):
         Graph.__init__(self, canvas, tex, x, y)
         self.width = width
         self.height = height
-        self.XAxis = LinAxis()
-        self.YAxis = LinAxis()
+        if "x" not in Axis.keys():
+            Axis["x"] = LinAxis()
+        if "y" not in Axis.keys():
+            Axis["y"] = LinAxis()
+        self.Axis = Axis
 
     def plot(self, data, style = None):
         self.plotdata.append(data)
 
-    def XPos(self, Values):
+    def VirToXPos(self, Values):
         if type(Values) in (types.IntType, types.LongType, types.FloatType, ):
             return self.x + 1 + Values * (self.width - 1)
         else:
-            return map(lambda x,self=self: self.x + 1 + x * (self.width - 1), Values)
+            return map(lambda x, self = self: self.x + 1 + x * (self.width - 1), Values)
 
-    def YPos(self, Values):
+    def VirToYPos(self, Values):
         if type(Values) in (types.IntType, types.LongType, types.FloatType, ):
             return self.y + 1 + Values * (self.height - 1)
         else:
-            return map(lambda y,self=self: self.y + 1 + y * (self.height - 1), Values)
+            return map(lambda y, self = self: self.y + 1 + y * (self.height - 1), Values)
     
     def run(self):
-        self.XPos(0.0)
-        self.canvas.draw(rect(self.XPos(0), self.YPos(0), self.XPos(1) - self.XPos(0), self.YPos(1) - self.YPos(0)))
-        xranges = []
-        for pd in self.plotdata:
-            try:
-                xranges.append(pd.GetRange("x"))
-            except DataRangeUndefinedException:
-                pass
-        if len(xranges) == 0:
-            assert 0, "xrange unknown"
-        self.XAxis.Min = min( map (lambda x: x[0], xranges))
-        self.XAxis.Max = max( map (lambda x: x[1], xranges))
+        self.VirToXPos(0.0)
+        self.canvas.draw(rect(self.VirToXPos(0), self.VirToYPos(0), self.VirToXPos(1) - self.VirToXPos(0), self.VirToYPos(1) - self.VirToYPos(0)))
+
+        for key in self.Axis.keys():
+            ranges = []
+            for pd in self.plotdata:
+                try:
+                    ranges.append(pd.GetRange(key))
+                except DataRangeUndefinedException:
+                    pass
+            if len(ranges) == 0:
+                assert 0, "range for %s unknown" % key
+            self.Axis[key].Min = min( map (lambda x: x[0], ranges))
+            self.Axis[key].Max = max( map (lambda x: x[1], ranges))
+            print key, self.Axis[key].Min, self.Axis[key].Max
 
         for pd in self.plotdata:
-            pd.SetXAxis({"x": self.XAxis, })
+            pd.SetAxis(self.Axis)
 
-        yranges = []
-        for pd in self.plotdata:
-            try:
-                yranges.append(pd.GetRange("y"))
-            except DataRangeUndefinedException:
-                pass
-        if len(yranges) == 0:
-            assert 0, "yrange unknown"
-        self.YAxis.Min = min( map (lambda y: y[0], yranges))
-        self.YAxis.Max = max( map (lambda y: y[1], yranges))
+        #for tick in self.XAxis.TickList():
+        #     xv = tick.VirtualPos
+        #     l = tick.Label
+        #     x = self.VirToXPos(xv)
+        #     self.canvas.draw(line(x, self.VirToYPos(0), x, self.VirToYPos(0)+0.2))
+        #     self.tex.text(x, self.VirToYPos(0)-0.5, l, halign=halign.center)
+        #for tick in self.YAxis.TickList():
+        #     yv = tick.VirtualPos
+        #     l = tick.Label
+        #     y = self.VirToYPos(yv)
+        #     self.canvas.draw(line(self.VirToXPos(0), y, self.VirToXPos(0)+0.2, y))
+        #     self.tex.text(self.VirToXPos(0)-0.2, y, l, halign=halign.right)
 
-        for tick in self.XAxis.TickList():
-             xv = tick.VirtualPos
-             l = tick.Label
-             x = self.XPos(xv)
-             self.canvas.draw(line(x, self.YPos(0), x, self.YPos(0)+0.2))
-             self.tex.text(x, self.YPos(0)-0.5, l, halign=halign.center)
-        for tick in self.YAxis.TickList():
-             yv = tick.VirtualPos
-             l = tick.Label
-             y = self.YPos(yv)
-             self.canvas.draw(line(self.XPos(0), y, self.XPos(0)+0.2, y))
-             self.tex.text(self.XPos(0)-0.2, y, l, halign=halign.right)
         for pd in self.plotdata:
-            p = None
-            for pt in zip(self.XPos(self.XAxis.ValToVirt(pd.GetValues("x"))),
-                          self.YPos(self.YAxis.ValToVirt(pd.GetValues("y")))):
+            p = [ ]
+            (xkey, ) = filter(lambda x: _XPattern.match(x), pd.GetKindList())
+            (ykey, ) = filter(lambda y: _YPattern.match(y), pd.GetKindList())
+            for pt in zip(self.VirToXPos(self.Axis[xkey].ValToVirt(pd.GetValues(xkey))),
+                          self.VirToYPos(self.Axis[ykey].ValToVirt(pd.GetValues(ykey)))):
                 if p:
                     p.append(lineto(pt[0],pt[1]))
                 else:
                     p = [moveto(pt[0],pt[1]), ]
+                pass
+            # the following line is extremly time consuming !!!
             self.canvas.draw(path(p))
-            # path.__init__(self, [ moveto(x1,y1), lineto(x2, y2) ] )
-            #for i in range(201):
-            #    x = (i-100)/10.0
-            #    y = pd[0].MT.Calc({'x':x})
-            #    xnew = self.XPos(self.XAxis.ValToVirt(x))
-            #    ynew = self.YPos(self.YAxis.ValToVirt(y))
-            #    if i > 0:
-            #        self.canvas.draw(line(xold, yold, xnew, ynew))
-            #    xold = xnew
-            #    yold = ynew
 
 
 ###############################################################################
@@ -159,7 +154,6 @@ CommentPattern = re.compile(r"\s*(#|!)+\s*")
 class DataFile:
 
     def __init__(self, FileName, sep = None, titlesep = None):
-        # TODO 9: title in comment above data
         self.name = FileName
         File = open(FileName, "r")
         Lines = File.readlines()
@@ -236,9 +230,11 @@ class Data:
     
     def GetRange(self, Kind):
         # handle non-numeric things properly
+        if Kind not in self.columns.keys():
+            raise DataRangeUndefinedException
         return (min(self.GetValues(Kind)), max(self.GetValues(Kind)), )
 
-    def SetXAxis(self, XAxis):
+    def SetAxis(self, Axis):
         pass
 
 
@@ -254,7 +250,7 @@ class Function:
             self.ResKind = Match.group(1)
             Expression = Expression[Match.end(): ]
         else:
-            self.ResKind = "y"
+            self.ResKind = None
         self.MT = ParseMathTree(ParseStr(Expression))
         self.VarList = self.MT.VarList()
     
@@ -262,7 +258,7 @@ class Function:
     def GetName(self):
         return self.name
     
-    def GetKindList(self, DefaultResult = 'y'):
+    def GetKindList(self, DefaultResult = "y"):
         if self.ResKind:
             return self.MT.VarList() + [self.ResKind, ]
         else:
@@ -270,34 +266,29 @@ class Function:
     
     def GetRange(self, Kind):
         raise DataRangeUndefinedException
-        # try to get y range after x range was set
 
-    def SetXAxis(self, XAxis):
-        self.XAxis = XAxis
-        self.XValues = []
-        for x in range(self.Points + 1):
-            self.XValues.append(self.XAxis["x"].VirtToVal(x * 1.0 / self.Points))
-        self.YValues = map(lambda x, self=self: self.MT.Calc({"x": x, }), self.XValues)
+    def SetAxis(self, Axis, DefaultResult = "y"):
+        if self.ResKind:
+            self.YAxis = Axis[self.ResKind]
+        else:
+            self.YAxis = Axis[DefaultResult]
+        self.XAxis = { }
+        self.XValues = { }
+        for key in self.MT.VarList():
+            self.XAxis[key] = Axis[key]
+            values = []
+            for x in range(self.Points + 1):
+                values.append(self.XAxis[key].VirtToVal(x * 1.0 / self.Points))
+            self.XValues[key] = values
+        # this isn't smart ... we should try to make self.MT.Calc(..., i) faster (walk only once throu the tree)
+        self.YValues = map(lambda i, self = self: self.MT.Calc(self.XValues, i), range(self.Points + 1))
 
-    def GetValues(self, Kind):
-        if Kind == "x":
-            return self.XValues
-        if Kind == self.ResKind:
+    def GetValues(self, Kind, DefaultResult = "y"):
+        if (self.ResKind and (Kind == self.ResKind)) or ((not self.ResKind) and (Kind == DefaultResult)):
             return self.YValues
-    
+        return self.XValues[Kind]
+
+
 class ParamFunction(Function):
     pass
-
-if __name__=="__main__":
-    print Function("sin(x)").GetKindList()
-    #df = DataFile("testdata")
-    #for i in range(df.Columns):
-    #    print df.GetTitle(i),len(df.GetColumn(i)),df.GetColumn(i)
-    #d = Data(df, x=0, y=1)
-    #print d.GetKindList()
-    #print d.GetValues("x")
-    #print d.GetValues("y")
-    #print d.GetRange("x"), d.GetRange("y")
-    #print d.GetName()
-    #print d.GetTitle("x"), d.GetTitle("y")
 
