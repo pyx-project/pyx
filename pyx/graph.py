@@ -1132,7 +1132,7 @@ class axispainter(attrlist.attrlist):
             if tick.labellevel is not None:
                 tick.textbox._printtext(tick.x, tick.y)
         if self.zerolineattrs is not None:
-            if axis.ticks[0] * axis.ticks[-1] < frac(0, 1):
+            if len(axis.ticks) and axis.ticks[0] * axis.ticks[-1] < frac(0, 1):
                 graph.stroke(axis.gridpath(axis.convert(0)), *_ensuresequence(self.zerolineattrs))
 
 
@@ -1145,7 +1145,7 @@ class axispainter(attrlist.attrlist):
             else:
                 titleattrs = list(_ensuresequence(self.titleattrs))
             if self.titledirection is not None and not self.attrcount(titleattrs, tex.direction):
-                titleattrs = titleattrs + [tex.direction(self.reldirection(self.titledirection, tick.dx, tick.dy))]
+                titleattrs = titleattrs + [tex.direction(self.reldirection(self.titledirection, dx, dy))]
             axis.titlebox = textbox(graph.tex, axis.title, textattrs=titleattrs)
             axis._extent += titledist
             axis.titlebox._linealign(axis._extent, dx, dy)
