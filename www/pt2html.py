@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: ISO-8859-1 -*-
 
 import sys, os.path, codecs, encodings
 from zope.pagetemplate.pagetemplate import PageTemplate
@@ -39,6 +40,7 @@ if pagename.endswith(".pt"): pagename = pagename[:-3]
 examples = [example("hello"),
             example("latex"),
             example("pattern"),
+            example("circles"),
             example("vector"),
             example("box"),
             example("connect"),
@@ -49,12 +51,21 @@ examples = [example("hello"),
             example("graphs/lissajous"),
             example("graphs/piaxis"),
             example("graphs/manyaxes"),
+            example("graphs/inset"),
+            example("graphs/link"),
             example("graphs/change"),
             example("graphs/bar"),
             example("graphs/arrows"),
             example("graphs/integral"),
             example("graphs/partialfill"),
-            example("graphs/washboard")]
+            example("graphs/washboard"),
+            example("axis/simple"),
+            example("axis/painter"),
+            example("axis/rating"),
+            example("axis/manualticks"),
+            example("axis/parter"),
+            example("axis/texter"),
+            example("axis/log")]
 
 write_file("%s.html" % pagename,
            PageTemplateFromFile("%s.pt" % pagename)(maintemplate=maintemplate,
