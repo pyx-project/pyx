@@ -45,12 +45,12 @@ class prologitem:
 
     def merge(self, other):
         """ try to merge self with other prologitem
- 
+
         If the merge succeeds, return None. Otherwise return other.
         Raise ValueError, if conflicts arise!"""
 
         pass
-        
+
     def write(self, file):
         """ write self in file """
         pass
