@@ -24,7 +24,7 @@
 
 
 import math
-from pyx import attr, helper
+from pyx import attr
 from pyx.graph.axis import painter, parter, rater, texter, tick
 
 

@@ -23,7 +23,7 @@
 
 import math
 from math import pi, sin, cos, atan2, tan, hypot, acos, sqrt
-import path, trafo, unit, helper
+import path, unit, helper
 try:
     from math import radians, degrees
 except ImportError:
