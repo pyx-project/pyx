@@ -704,7 +704,7 @@ class smoothed(deco, attr.attr):
                 Ga = a*abs(a)*curvA*0.5 + b*T - D
                 Gb = b*abs(b)*curvB*0.5 + a*T + E
 
-                a, b = a - invDG[0][0]*Ga - invDG[0][1]*Gb, b - invDG[1][0]*Ga - invDG[1][1]*Gb
+                a, b = a - 0.5*invDG[0][0]*Ga - 0.5*invDG[0][1]*Gb, b - 0.5*invDG[1][0]*Ga - 0.5*invDG[1][1]*Gb
 
         # the curvature may change its sign if we would get a cusp
         # in the optimal case we have a>0 and b>0
