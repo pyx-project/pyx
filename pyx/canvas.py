@@ -332,17 +332,31 @@ class canvas(CanvasCmds):
         obbox = reduce(lambda x,y, canvas=canvas: x+y.bbox(canvas),
                        self.PSCmds,
                        bbox())
+        # we have to transform all four corner points of the bbox
 	(llx, lly)=self.trafo.apply((unit.length("%f t pt" % obbox.llx),
+                                     unit.length("%f t pt" % obbox.lly)))
+        (lrx, lry)=self.trafo.apply((unit.length("%f t pt" % obbox.urx),
                                      unit.length("%f t pt" % obbox.lly)))
         (urx, ury)=self.trafo.apply((unit.length("%f t pt" % obbox.urx),
                                      unit.length("%f t pt" % obbox.ury)))
+        (ulx, uly)=self.trafo.apply((unit.length("%f t pt" % obbox.llx),
+                                     unit.length("%f t pt" % obbox.ury)))
+
+        # now, by sorting, we obtain the lower left and upper right corner
+        # of the new bounding box. But first we have to convert back to
+        # points:
+
 	llx=self.unit.pt(llx)
 	lly=self.unit.pt(lly)
+	lrx=self.unit.pt(lrx)
+	lry=self.unit.pt(lry)
 	urx=self.unit.pt(urx)
 	ury=self.unit.pt(ury)
+        ulx=self.unit.pt(ulx)
+	uly=self.unit.pt(uly)
 
-	abbox= bbox(min(llx, urx)-1, min(lly, ury)-1,
-                    max(llx, urx)+1, max(lly, ury)+1)
+	abbox= bbox(min(llx, lrx, urx, ulx)-1, min(lly, lry, ury, uly)-1,
+                    max(llx, lrx, urx, ulx)+1, max(lly, lry, ury, uly)+1)
 	return abbox
     
     def write(self, canvas, file):
@@ -489,7 +503,8 @@ if __name__=="__main__":
 
    
     for angle in range(20):
-       s=c.insert(canvas.canvas(translate(10,10)*rotate(angle))).draw(p, canvas.linestyle.dashed, canvas.linewidth(0.01*angle), grey((20-angle)/20.0))
+#       s=c.insert(canvas.canvas(translate(10,10)*rotate(angle))).draw(p, canvas.linestyle.dashed, canvas.linewidth(0.01*angle), grey((20-angle)/20.0))
+       s=c.insert(canvas.canvas(translate(10,10))).draw(p, canvas.linestyle.dashed, canvas.linewidth(0.01*angle), grey((20-angle)/20.0))
  
     c.set(linestyle.solid)
     g=GraphXY(c, t, 10, 15, 8, 6, x=LogAxis())
@@ -507,8 +522,8 @@ if __name__=="__main__":
     #g.plot(Function("x=2*sin(1000*y)"))
     g.run()
     
-    c.insert(canvas.canvas(scale(0.5, 0.4).rotate(10).translate("2 cm","200 mm"))).insert(epsfile("ratchet_f.eps"))
-    c.insert(canvas.canvas(scale(0.2, 0.1).rotate(10).translate("6 cm","180 mm"))).insert(epsfile("ratchet_f.eps"))
+#    c.insert(canvas.canvas(scale(0.5, 0.4).rotate(10).translate("2 cm","200 mm"))).insert(epsfile("ratchet_f.eps"))
+#    c.insert(canvas.canvas(scale(0.2, 0.1).rotate(10).translate("6 cm","180 mm"))).insert(epsfile("ratchet_f.eps"))
     
     c.draw(path([moveto("5 cm", "5 cm"), rlineto(0.1,0.1)]), linewidth.THICK)
 
