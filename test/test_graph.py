@@ -107,7 +107,7 @@ def test_split(c, t, x, y):
     g.finish()
 
 c = canvas.canvas()
-t = c.insert(tex.tex())
+t = c.insert(tex.tex(texfilename="bla"))
 test_multiaxes_data(c, t, 0, 21)
 test_piaxis_function(c, t, 0, 14)
 test_textaxis_errorbars(c, t, 0, 7)

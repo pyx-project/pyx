@@ -596,42 +596,60 @@ class autologpart(logpart):
 ################################################################################
 
 
-class _cuberate:
-
-        def __init__(self, opt, left=None, right=None, weight=1):
-            if left is None:
-                left = 0
-            if right is None:
-                right = 3*opt
-            self.opt = opt
-            self.left = left
-            self.right = right
-            self.weight = weight
-
-        def rate(self, value, stretch = 1):
-            opt = stretch * self.opt
-            if value < opt:
-                other = stretch * self.left
-            elif value > opt:
-                other = stretch * self.right
-            else:
-                return 0
-            factor = (value - opt) / float(other - opt)
-            return self.weight * (factor ** 3)
-
-
 class cuberate:
 
-    linticks = (_cuberate(4), _cuberate(10, weight=0.5), )
-    linlabels = (_cuberate(4), )
-    logticks = (_cuberate(5, right=20), _cuberate(20, right=100, weight=0.5), )
-    loglabels = (_cuberate(5, right=20), _cuberate(5, left=-20, right=20, weight=0.5), )
-    stdtickrange = (_cuberate(1, weight=2))
+    def __init__(self, opt, left=None, right=None, weight=1):
+        if left is None:
+            left = 0
+        if right is None:
+            right = 3*opt
+        self.opt = opt
+        self.left = left
+        self.right = right
+        self.weight = weight
 
-    def __init__(self, ticks=linticks, labels=linlabels, tickrange=stdtickrange):
+    def rate(self, value, stretch = 1):
+        opt = stretch * self.opt
+        if value < opt:
+            other = stretch * self.left
+        elif value > opt:
+            other = stretch * self.right
+        else:
+            return 0
+        factor = (value - opt) / float(other - opt)
+        return self.weight * (factor ** 3)
+
+class distancerate:
+
+    def __init__(self, opt, weight=0.01):
+        self.opt_str = opt
+        self.weight = weight
+
+    def _rate(self, distances, stretch = 1):
+        if len(distances):
+            opt = unit.topt(unit.length(self.opt_str, default_type="v")) / stretch
+            rate = 0
+            for distance in distances:
+                if distance < opt:
+                    rate += self.weight * (opt / distance - 1)
+                else:
+                    rate += self.weight * (distance - opt)
+            return rate / float(len(distances))
+
+class rater:
+
+    linticks = (cuberate(4), cuberate(10, weight=0.5), )
+    linlabels = (cuberate(4), )
+    logticks = (cuberate(5, right=20), cuberate(20, right=100, weight=0.5), )
+    loglabels = (cuberate(5, right=20), cuberate(5, left=-20, right=20, weight=0.5), )
+    stdtickrange = cuberate(1, weight=2)
+    stddistance = distancerate("1.5 v cm")
+
+    def __init__(self, ticks=linticks, labels=linlabels, tickrange=stdtickrange, distance=stddistance):
         self.ticks = ticks
         self.labels = labels
         self.tickrange = tickrange
+        self.distance = distance
 
     def ratepart(self, axis, part, stretch):
         tickslen = len(self.ticks)
@@ -655,13 +673,15 @@ class cuberate:
             rate += rater.rate(label, stretch=stretch)
             weight += rater.weight
         if part is not None and len(part):
-            tickmin, tickmax = axis.gettickrange()
+            tickmin, tickmax = axis.gettickrange() # tickrange was not yet applied!
             rate += self.tickrange.rate((float(part[-1]) - float(part[0])) * axis.divisor / (tickmax - tickmin))
         else:
             rate += self.tickrange.rate(0)
         weight += self.tickrange.weight
         return rate/weight
 
+    def _ratedistances(self, distances, stretch):
+        return self.distance._rate(distances, stretch=stretch)
 
 
 ################################################################################
@@ -669,6 +689,8 @@ class cuberate:
 # (we may create a box drawing module and move all this stuff there)
 ################################################################################
 
+
+class BoxCrossError(Exception): pass
 
 class _alignbox:
 
@@ -687,6 +709,7 @@ class _alignbox:
     def transform(self, trafo):
         self.x, self.y = zip(*map(lambda i, trafo=trafo, x=self.x, y=self.y:
                                       trafo._apply(x[i], y[i]), range(self.points + 1)))
+        return self
 
     def successivepoints(self):
         return map(lambda i, max = self.points: i and (i, i + 1) or (max, 1), range(self.points))
@@ -803,6 +826,53 @@ class _alignbox:
     def extent(self, dx, dy):
         return unit.t_pt(self._extent(dx, dy))
 
+    def _pointdistance(self, x, y):
+        result = None
+        for i, j in self.successivepoints():
+            gx, gy = self.x[j] - self.x[i], self.y[j] - self.y[i]
+            if gx * gx + gy * gy < 1e-10:
+                dx, dy = self.x[i] - x, self.y[i] - y
+            else:
+                a = (gx * (x - self.x[i]) + gy * (y - self.y[i])) / (gx * gx + gy * gy)
+                if a < 0:
+                    dx, dy = self.x[i] - x, self.y[i] - y
+                elif a > 1:
+                    dx, dy = self.x[j] - x, self.y[j] - y
+                else:
+                    dx, dy = x - self.x[i] - a * gx, y - self.y[i] - a * gy
+            new = math.sqrt(dx * dx + dy * dy)
+            if result is None or new < result:
+                result = new
+        return result
+
+    def pointdistance(self, x, y):
+        return unit.t_pt(self._pointdistance(unit.topt(x), unit.topt(y)))
+
+    def _boxdistance(self, other, epsilon = 1e-10):
+        # TODO: boxes crossing algorithm is O(N^2) --- can obviously be improved at least for common cases
+        for i, j in self.successivepoints():
+            for k, l in other.successivepoints():
+                a = (other.y[l]-other.y[k])*(other.x[k]-self.x[i]) - (other.x[l]-other.x[k])*(other.y[k]-self.y[i])
+                b = (self.y[j]-self.y[i])*(other.x[k]-self.x[i]) - (self.x[j]-self.x[i])*(other.y[k]-self.y[i])
+                c = (self.x[j]-self.x[i])*(other.y[l]-other.y[k]) - (self.y[j]-self.y[i])*(other.x[l]-other.x[k])
+                if (abs(c) > 1e-10 and
+                    a / c > -epsilon and a / c < 1 + epsilon and
+                    b / c > -epsilon and b / c < 1 + epsilon):
+                    raise BoxCrossError
+        result = None
+        for x, y in zip(other.x, other.y)[1:]:
+            new = self._pointdistance(x, y)
+            if result is None or new < result:
+                result = new
+        for x, y in zip(self.x, self.y)[1:]:
+            new = other._pointdistance(x, y)
+            if result is None or new < result:
+                result = new
+        return result
+
+    def boxdistance(self, other):
+        return unit.t_pt(self._boxdistance(other))
+
 
 class alignbox(_alignbox):
 
@@ -866,11 +936,8 @@ class textbox(_rectbox, attrlist.attrlist):
         _rectbox.transform(self, trafo)
         self.xtext, self.ytext = trafo._apply(self.xtext, self.ytext)
 
-    def _printtext(self, x, y):
-        self.tex._text(x + self.xtext, y + self.ytext, self.text, *self.textattrs)
-
-    def printtext(self, *args):
-        self._printtext(*map(unit.topt, args))
+    def printtext(self):
+        self.tex._text(self.xtext, self.ytext, self.text, *self.textattrs)
 
 
 
@@ -1066,20 +1133,9 @@ class axispainter(attrlist.attrlist):
         if not self.attrcount(tick.labelattrs, tex.style):
             tick.labelattrs += [tex.style.math]
 
-    def paint(self, graph, axis):
+    def dolayout(self, graph, axis):
 
-        def topt_v_recursive(arg):
-            if _issequence(arg):
-                # return map(topt_v_recursive, arg) needs python2.2
-                return [unit.topt(unit.length(a, default_type="v")) for a in arg]
-            else:
-                if arg is not None:
-                    return unit.topt(unit.length(arg, default_type="v"))
-
-        innerticklengths = topt_v_recursive(self.innerticklengths_str)
-        outerticklengths = topt_v_recursive(self.outerticklengths_str)
         labeldist = unit.topt(unit.length(self.labeldist_str, default_type="v"))
-        titledist = unit.topt(unit.length(self.titledist_str, default_type="v"))
 
         for tick in axis.ticks:
             tick.virtual = axis.convert(float(tick) * axis.divisor)
@@ -1127,8 +1183,19 @@ class axispainter(attrlist.attrlist):
             if tick.textbox is not None:
                 tick.textbox._linealign(labeldist, tick.dx, tick.dy)
                 tick._extent = tick.textbox._extent(tick.dx, tick.dy) + labeldist
+                tick.textbox.transform(trafo._translation(tick.x, tick.y))
 
-        # we could now measure distances between textboxes -> TODO: rating
+        def topt_v_recursive(arg):
+            if _issequence(arg):
+                # return map(topt_v_recursive, arg) needs python2.2
+                return [unit.topt(unit.length(a, default_type="v")) for a in arg]
+            else:
+                if arg is not None:
+                    return unit.topt(unit.length(arg, default_type="v"))
+
+        innerticklengths = topt_v_recursive(self.innerticklengths_str)
+        outerticklengths = topt_v_recursive(self.outerticklengths_str)
+        titledist = unit.topt(unit.length(self.titledist_str, default_type="v"))
 
         axis._extent = 0
         for tick in axis.ticks:
@@ -1147,6 +1214,30 @@ class axispainter(attrlist.attrlist):
             if axis._extent < tick._extent:
                 axis._extent = tick._extent
 
+        if axis.title is not None and self.titleattrs is not None:
+            dx, dy = axis.vtickdirection(axis, self.titlepos)
+            # no not modify self.titleattrs ... the painter might be used by several axes!!!
+            titleattrs = list(_ensuresequence(self.titleattrs))
+            if self.titledirection is not None and not self.attrcount(titleattrs, tex.direction):
+                titleattrs = titleattrs + [tex.direction(self.reldirection(self.titledirection, dx, dy))]
+            axis.titlebox = textbox(graph.tex, axis.title, textattrs=titleattrs)
+            axis._extent += titledist
+            axis.titlebox._linealign(axis._extent, dx, dy)
+            axis.titlebox.transform(trafo._translation(*axis._vtickpoint(axis, self.titlepos)))
+            axis._extent += axis.titlebox._extent(dx, dy)
+
+    def ratelayout(self, graph, axis, stretch):
+        ticktextboxes = [tick.textbox for tick in axis.ticks if tick.textbox is not None]
+        if len(ticktextboxes) > 1:
+            try:
+                distances = [ticktextboxes[i]._boxdistance(ticktextboxes[i+1]) for i in range(len(ticktextboxes) - 1)]
+            except BoxCrossError:
+                return None
+            rate = axis.rate._ratedistances(distances, stretch)
+            return rate
+
+    def paint(self, graph, axis):
+
         for tick in axis.ticks:
             if tick.ticklevel is not None:
                 if tick != frac(0, 1) or self.zerolineattrs is None:
@@ -1161,26 +1252,15 @@ class axispainter(attrlist.attrlist):
                     y2 = tick.y + tick.dy * tick.outerticklength
                     graph.stroke(path._line(x1, y1, x2, y2), *_ensuresequence(tickattrs))
             if tick.textbox is not None:
-                tick.textbox._printtext(tick.x, tick.y)
+                tick.textbox.printtext()
         if self.baselineattrs is not None:
             graph.stroke(axis.vbaseline(axis), *_ensuresequence(self.baselineattrs))
         if self.zerolineattrs is not None:
             if len(axis.ticks) and axis.ticks[0] * axis.ticks[-1] < frac(0, 1):
                 graph.stroke(axis.vgridpath(axis.convert(0)), *_ensuresequence(self.zerolineattrs))
 
-
         if axis.title is not None and self.titleattrs is not None:
-            x, y = axis._vtickpoint(axis, self.titlepos)
-            dx, dy = axis.vtickdirection(axis, self.titlepos)
-            # no not modify self.titleattrs ... the painter might be used by several axes!!!
-            titleattrs = list(_ensuresequence(self.titleattrs))
-            if self.titledirection is not None and not self.attrcount(titleattrs, tex.direction):
-                titleattrs = titleattrs + [tex.direction(self.reldirection(self.titledirection, dx, dy))]
-            axis.titlebox = textbox(graph.tex, axis.title, textattrs=titleattrs)
-            axis._extent += titledist
-            axis.titlebox._linealign(axis._extent, dx, dy)
-            axis.titlebox._printtext(x, y)
-            axis._extent += axis.titlebox._extent(dx, dy)
+            axis.titlebox.printtext()
 
 
 class splitaxispainter:
@@ -1245,11 +1325,12 @@ class splitaxispainter:
 # axes
 ################################################################################
 
+class PartitionError(Exception): pass
 
 class _axis:
 
     def __init__(self, min=None, max=None, reverse=0, divisor=1,
-                       datavmin=None, datavmax=None, tickvmin=None, tickvmax=None,
+                       datavmin=None, datavmax=None, tickvmin=0, tickvmax=1,
                        title=None, suffix=None, painter=axispainter()):
         if None not in (min, max) and min > max:
             min, max = max, min
@@ -1277,23 +1358,17 @@ class _axis:
                 self.datavmax = 0.95
         else:
             self.datavmax = datavmax
-        if tickvmin is None:
-            self.tickvmin = 0
-        else:
-            self.tickvmin = tickvmin
-        if tickvmax is None:
-            self.tickvmax = 1
-        else:
-            self.tickvmax = tickvmax
+        self.tickvmin = tickvmin
+        self.tickvmax = tickvmax
 
         self.title = title
         self.painter = painter
         self.divisor = divisor
         self.suffix = suffix
         self.canconvert = 0
-        self._setrange()
+        self.__setinternalrange()
 
-    def _setrange(self, min=None, max=None):
+    def __setinternalrange(self, min=None, max=None):
         if not self.fixmin and min is not None and (self.min is None or min < self.min):
             self.min = min
         if not self.fixmax and max is not None and (self.max is None or max > self.max):
@@ -1319,13 +1394,20 @@ class _axis:
             if self.reverse:
                 self.setbasepoints(((min, vmax), (max, vmin)))
 
+    def __getinternalrange(self):
+        return self.min, self.max, self.datamin, self.datamax, self.tickmin, self.tickmax
+
+    def __forceinternalrange(self, range):
+        self.min, self.max, self.datamin, self.datamax, self.tickmin, self.tickmax = range
+        self.__setinternalrange()
+
     def setdatarange(self, min, max):
         self.datamin, self.datamax = min, max
-        self._setrange(min, max)
+        self.__setinternalrange(min, max)
 
     def settickrange(self, min, max):
         self.tickmin, self.tickmax = min, max
-        self._setrange(min, max)
+        self.__setinternalrange(min, max)
 
     def getdatarange(self):
         if self.canconvert:
@@ -1341,7 +1423,7 @@ class _axis:
             else:
                 return self.invert(self.tickvmin), self.invert(self.tickvmax)
 
-    def dolayout(self):
+    def dolayout(self, graph):
         # TODO: make use of stretch
         min, max = self.gettickrange()
         self.ticks = self.part.defaultpart(min/self.divisor, max/self.divisor, not self.fixmin, not self.fixmax)
@@ -1349,30 +1431,63 @@ class _axis:
             # lesspart and morepart can be called after defaultpart,
             # although some axes may share their autoparting ---
             # it works, because the axes are processed sequentially
-            rate = self.rate.ratepart(self, self.ticks, 1)
+            bestrate = self.rate.ratepart(self, self.ticks, 1)
+            variants = [[bestrate, self.ticks]]
             maxworse = 2
             worse = 0
             while worse < maxworse:
                 newticks = self.part.lesspart()
-                newrate = self.rate.ratepart(self, newticks, 1)
-                if newticks is not None and newrate < rate:
-                    self.ticks = newticks
-                    rate = newrate
-                    worse = 0
+                if newticks is not None:
+                    newrate = self.rate.ratepart(self, newticks, 1)
+                    variants.append([newrate, newticks])
+                    if newrate < bestrate:
+                        bestrate = newrate
+                        worse = 0
+                    else:
+                        worse += 1
                 else:
                     worse += 1
             worse = 0
             while worse < maxworse:
                 newticks = self.part.morepart()
-                newrate = self.rate.ratepart(self, newticks, 1)
-                if newticks is not None and newrate <= rate:
-                    self.ticks = newticks
-                    rate = newrate
-                    worse = 0
+                if newticks is not None:
+                    newrate = self.rate.ratepart(self, newticks, 1)
+                    variants.append([newrate, newticks])
+                    if newrate < bestrate:
+                        bestrate = newrate
+                        worse = 0
+                    else:
+                        worse += 1
                 else:
                     worse += 1
-        if len(self.ticks):
-            self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
+            variants.sort()
+            i = 0
+            while i < len(variants) and (not i or variants[i][0] < bestrate):
+                saverange = self.__getinternalrange()
+                self.ticks = variants[i][1]
+                if len(self.ticks):
+                    self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
+                self.painter.dolayout(graph, self)
+                ratelayout = self.painter.ratelayout(graph, self, 1)
+                if ratelayout is not None:
+                    variants[i][0] += ratelayout
+                else:
+                    variants[i][0] = None
+                if not i or variants[i][0] < bestrate:
+                    bestrate = variants[i][0]
+                self.__forceinternalrange(saverange)
+                i += 1
+            variants = [variant for variant in variants[:i] if variant[0] is not None]
+            if not len(variants):
+                raise PartitionError("no valid axis partitioning found")
+            variants.sort()
+            self.ticks = variants[0][1]
+            if len(self.ticks):
+                self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
+        else:
+            if len(self.ticks):
+                self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
+            self.painter.dolayout(graph, self)
 
     def dopaint(self, graph):
         self.painter.paint(graph, self)
@@ -1383,7 +1498,7 @@ class _axis:
 
 class linaxis(_axis, _linmap):
 
-    def __init__(self, part=autolinpart(), rate=cuberate(), **args):
+    def __init__(self, part=autolinpart(), rate=rater(), **args):
         _axis.__init__(self, **args)
         self.part = part
         self.rate = rate
@@ -1391,7 +1506,7 @@ class linaxis(_axis, _linmap):
 
 class logaxis(_axis, _logmap):
 
-    def __init__(self, part=autologpart(), rate=cuberate(ticks=cuberate.logticks, labels=cuberate.loglabels), **args):
+    def __init__(self, part=autologpart(), rate=rater(ticks=rater.logticks, labels=rater.loglabels), **args):
         _axis.__init__(self, **args)
         self.part = part
         self.rate = rate
@@ -1438,14 +1553,14 @@ class linkaxis:
         if hasattr(self.linkedaxis, "ticks") and prevrange != self.linkedaxis.getdatarange():
             raise RuntimeError("linkaxis datarange setting performed while linked axis layout already fixed")
 
-    def dolayout(self):
-        pass
-
-    def dopaint(self, graph):
+    def dolayout(self, graph):
         self.ticks = self.ticks(self.linkedaxis.ticks)
         self.convert = self.linkedaxis.convert
         self.divisor = self.linkedaxis.divisor
         self.suffix = self.linkedaxis.suffix
+        self.painter.dolayout(graph, self)
+
+    def dopaint(self, graph):
         self.painter.paint(graph, self)
 
     def createlinkaxis(self, **args):
@@ -1555,10 +1670,11 @@ class splitaxis:
             else:
                 return None
 
-    def dolayout(self):
+    def dolayout(self, graph):
         if self.splitlist is not None:
             for axis in self.axislist:
-                axis.dolayout()
+                axis.dolayout(graph)
+        self._extent = 0 # TODO: this is crap
 
     def dopaint(self, graph):
         if self.splitlist is not None:
@@ -1704,6 +1820,7 @@ class graphxy(canvas.canvas):
                     else:
                         ranges[key] = (min(ranges[key][0], pdranges[key][0]),
                                        max(ranges[key][1], pdranges[key][1]))
+        # known ranges are also set as ranges for the axes
         for key, axis in self.axes.items():
             if key in ranges.keys():
                 axis.setdatarange(*ranges[key])
@@ -1731,21 +1848,9 @@ class graphxy(canvas.canvas):
         for data in self.data:
             data.setranges(ranges)
         # 3. gather ranges again
-        ranges = self.gatherranges()
-        # ticking might modify the ranges
-        for axis in self.axes.values():
-            axis.dolayout()
+        self.gatherranges()
 
-    def dobackground(self):
-        self.dolayout()
-        if not self.removedomethod(self.dobackground): return
-        if self.backgroundattrs is not None:
-            self.draw(path._rect(self._xpos, self._ypos, self._width, self._height),
-                      *_ensuresequence(self.backgroundattrs))
-
-    def doaxes(self):
-        self.dolayout()
-        if not self.removedomethod(self.doaxes): return
+        # do the layout for all axes
         axesdist = unit.topt(unit.length(self.axesdist_str, default_type="v"))
         XPattern = re.compile(r"%s([2-9]|[1-9][0-9]+)?$" % self.Names[0])
         YPattern = re.compile(r"%s([2-9]|[1-9][0-9]+)?$" % self.Names[1])
@@ -1767,6 +1872,8 @@ class graphxy(canvas.canvas):
                 axis.fixtickdirection = (0, num3)
                 axis.vgridpath = self.vxgridpath
                 axis.vbaseline = self.vxbaseline
+                axis.gridpath = self.xgridpath
+                axis.baseline = self.xbaseline
             elif YPattern.match(key):
                 if needyaxisdist[num2]:
                     self._yaxisextents[num2] += axesdist
@@ -1775,16 +1882,31 @@ class graphxy(canvas.canvas):
                 axis.fixtickdirection = (num3, 0)
                 axis.vgridpath = self.vygridpath
                 axis.vbaseline = self.vybaseline
+                axis.gridpath = self.ygridpath
+                axis.baseline = self.ybaseline
             else:
                 raise ValueError("Axis key '%s' not allowed" % key)
             axis.vtickdirection = self.vtickdirection
-            axis.dopaint(self)
+            axis.dolayout(self)
             if XPattern.match(key):
                 self._xaxisextents[num2] += axis._extent
                 needxaxisdist[num2] = 1
             if YPattern.match(key):
                 self._yaxisextents[num2] += axis._extent
                 needyaxisdist[num2] = 1
+
+    def dobackground(self):
+        self.dolayout()
+        if not self.removedomethod(self.dobackground): return
+        if self.backgroundattrs is not None:
+            self.draw(path._rect(self._xpos, self._ypos, self._width, self._height),
+                      *_ensuresequence(self.backgroundattrs))
+
+    def doaxes(self):
+        self.dolayout()
+        if not self.removedomethod(self.doaxes): return
+        for axis in self.axes.values():
+            axis.dopaint(self)
 
     def dodata(self):
         self.dolayout()
@@ -1839,7 +1961,7 @@ class graphxy(canvas.canvas):
         self.defaultstyle = {}
 
     def bbox(self):
-        self.finish()
+        self.dolayout()
         return bbox.bbox(self._xpos - self._yaxisextents[0],
                          self._ypos - self._xaxisextents[0],
                          self._xpos + self._width + self._yaxisextents[1],

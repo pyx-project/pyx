@@ -66,8 +66,8 @@ argument name&description\\
 \texttt{reverse}&boolean; exchange minimum and maximum (might be used without setting minimum and maximum); if min>max and reverse is set, they cancel each other\\
 \texttt{divisor}&numerical divisor for the axis partitioning (its default value is 1)\\
 \texttt{suffix}&a suffix to indicate the divisor within an automatic axis labeling\\
-\texttt{datavmin}&minimal graph coordinate when adjusting the axis minima to the graph data; default is 0.05\\
-\texttt{datavmax}&as above, but for the maximum; default is 0.95\\
+\texttt{datavmin}&minimal graph coordinate when adjusting the axis minima to the graph data; default is 0.05 (or 0, when min is present)\\
+\texttt{datavmax}&as above, but for the maximum; default is 0.95 (or 1, when max is present)\\
 \texttt{tickvmin}&minimal graph coordinate for placing ticks to the axis; default is 0\\
 \texttt{tickvmax}&as above, but for the maximum; default is 1\\
 \texttt{part}&axis partitioning (described below)\\
