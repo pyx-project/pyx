@@ -141,7 +141,7 @@ class _bbox:
     def rect(self):
         """return rectangle corresponding to bbox"""
         import path
-        return path._rect(self.llx, self.lly, self.urx-self.llx, self.ury-self.lly)
+        return path.rect_pt(self.llx, self.lly, self.urx-self.llx, self.ury-self.lly)
 
     path = rect
 

@@ -33,7 +33,6 @@ from test_parter import LinParterTestCase, LogParterTestCase
 from test_texter import TexterTestCase
 from test_trafo import TrafoTestCase
 from test_unit import UnitTestCase
-from test_helper import AttrTestCase as AttrTestCaseOld
 
 # construct the test suite automagically
 
@@ -45,7 +44,6 @@ suite = unittest.TestSuite((unittest.makeSuite(AttrTestCase, 'test'),
                             unittest.makeSuite(LogParterTestCase, 'test'),
                             unittest.makeSuite(TexterTestCase, 'test'),
                             unittest.makeSuite(UnitTestCase, 'test'),
-                            unittest.makeSuite(AttrTestCaseOld, 'test'),
                             unittest.makeSuite(TrafoTestCase, 'test'),
                           ))
 

@@ -546,7 +546,7 @@ class textbox_pt(box.rect_pt, canvas._canvas):
         - finishdvi is a method to be called to get the dvicanvas
           (e.g. the finishdvi calls the setdvicanvas method)
         - attrs are fillstyles"""
-        self.texttrafo = trafo._translate(x, y)
+        self.texttrafo = trafo.translate_pt(x, y)
         box.rect_pt.__init__(self, x - left, y - depth,
                                  left + right, depth + height,
                                  abscenter = (left, depth))
@@ -1069,8 +1069,8 @@ class texrunner:
             if self.texipc and self.dvicopy:
                 raise RuntimeError("texipc and dvicopy can't be mixed up")
         textattrs = attr.mergeattrs(textattrs)
-        attr.checkattrs(textattrs, [textattr, trafo._trafo, style.fillstyle])
-        trafos = attr.getattrs(textattrs, [trafo._trafo])
+        attr.checkattrs(textattrs, [textattr, trafo.trafo_pt, style.fillstyle])
+        trafos = attr.getattrs(textattrs, [trafo.trafo_pt])
         fillstyles = attr.getattrs(textattrs, [style.fillstyle])
         textattrs = attr.getattrs(textattrs, [textattr])
         lentextattrs = len(textattrs)

@@ -1746,7 +1746,7 @@ class axispainter(axistitlepainter):
                         y1 = tick.temp_y + tick.temp_dy * innerticklength_pt
                         x2 = tick.temp_x - tick.temp_dx * outerticklength_pt
                         y2 = tick.temp_y - tick.temp_dy * outerticklength_pt
-                        ac.stroke(path._line(x1, y1, x2, y2), helper.ensurelist(tickattrs))
+                        ac.stroke(path.line_pt(x1, y1, x2, y2), helper.ensurelist(tickattrs))
                 if tick != frac((0, 1)) or self.zeropathattrs is None:
                     gridattrs = helper.getsequenceno(self.gridattrs, tick.ticklevel)
                     if gridattrs is not None:
@@ -2076,7 +2076,7 @@ class baraxispainter(axistitlepainter):
                 y1 = y + dy * innerticklength_pt
                 x2 = x - dx * outerticklength_pt
                 y2 = y - dy * outerticklength_pt
-                ac.stroke(path._line(x1, y1, x2, y2), helper.ensurelist(self.tickattrs))
+                ac.stroke(path.line_pt(x1, y1, x2, y2), helper.ensurelist(self.tickattrs))
         if self.basepathattrs is not None:
             p = axispos.vbasepath()
             if p is not None:
@@ -2857,7 +2857,7 @@ class key:
           - the bbox of the key as returned by the keys bbox method
           - the attributes hdist_pt, vdist_pt, hinside, and vinside of the key
           - the dimension and geometry of the graph"""
-        sc = c.insert(canvas.canvas(trafomodule._translate(x, y)))
+        sc = c.insert(canvas.canvas(trafomodule.translate_pt(x, y)))
         for plotinfo, title in zip(self.plotinfos, self.titles):
             plotinfo.style.key(sc, 0, -0.5 * self.symbolheight_pt + title.center[1],
                                    self.symbolwidth_pt, self.symbolheight_pt)
@@ -2894,7 +2894,7 @@ class lineaxispos:
             v1 = 0
         if v2 is None:
             v2 = 1
-        return path._line((1-v1)*self.x1_pt+v1*self.x2_pt,
+        return path.line_pt((1-v1)*self.x1_pt+v1*self.x2_pt,
                           (1-v1)*self.y1_pt+v1*self.y2_pt,
                           (1-v2)*self.x1_pt+v2*self.x2_pt,
                           (1-v2)*self.y1_pt+v2*self.y2_pt)
@@ -2908,7 +2908,7 @@ class lineaxispos:
             v2 = 1
         else:
             v2 = self.convert(x2)
-        return path._line((1-v1)*self.x1_pt+v1*self.x2_pt,
+        return path.line_pt((1-v1)*self.x1_pt+v1*self.x2_pt,
                           (1-v1)*self.y1_pt+v1*self.y2_pt,
                           (1-v2)*self.x1_pt+v2*self.x2_pt,
                           (1-v2)*self.y1_pt+v2*self.y2_pt)
@@ -2957,13 +2957,13 @@ class lineaxisposlinegrid(lineaxispos):
 
     def gridpath(self, x):
         v = self.convert(x)
-        return path._line((1-v)*self.x1_pt+v*self.x2_pt+self.fixtickdirection[0]*self.startgridlength_pt,
+        return path.line_pt((1-v)*self.x1_pt+v*self.x2_pt+self.fixtickdirection[0]*self.startgridlength_pt,
                           (1-v)*self.y1_pt+v*self.y2_pt+self.fixtickdirection[1]*self.startgridlength_pt,
                           (1-v)*self.x1_pt+v*self.x2_pt+self.fixtickdirection[0]*self.endgridlength_pt,
                           (1-v)*self.y1_pt+v*self.y2_pt+self.fixtickdirection[1]*self.endgridlength_pt)
 
     def vgridpath(self, v):
-        return path._line((1-v)*self.x1_pt+v*self.x2_pt+self.fixtickdirection[0]*self.startgridlength_pt,
+        return path.line_pt((1-v)*self.x1_pt+v*self.x2_pt+self.fixtickdirection[0]*self.startgridlength_pt,
                           (1-v)*self.y1_pt+v*self.y2_pt+self.fixtickdirection[1]*self.startgridlength_pt,
                           (1-v)*self.x1_pt+v*self.x2_pt+self.fixtickdirection[0]*self.endgridlength_pt,
                           (1-v)*self.y1_pt+v*self.y2_pt+self.fixtickdirection[1]*self.endgridlength_pt)
@@ -2997,7 +2997,7 @@ class graphxy(canvas.canvas):
             self.tickdirection = tickdirection
 
     def clipcanvas(self):
-        return self.insert(canvas.canvas(canvas.clip(path._rect(self.xpos_pt, self.ypos_pt, self.width_pt, self.height_pt))))
+        return self.insert(canvas.canvas(canvas.clip(path.rect_pt(self.xpos_pt, self.ypos_pt, self.width_pt, self.height_pt))))
 
     def plot(self, data, style=None):
         if self.haslayout:
@@ -3053,7 +3053,7 @@ class graphxy(canvas.canvas):
         return x+dx, y+dy
 
     def _connect(self, x1, y1, x2, y2):
-        return path._lineto(x2, y2)
+        return path.lineto_pt(x2, y2)
 
     def keynum(self, key):
         try:
@@ -3173,7 +3173,7 @@ class graphxy(canvas.canvas):
         self.dolayout()
         if not self.removedomethod(self.dobackground): return
         if self.backgroundattrs is not None:
-            self.draw(path._rect(self.xpos_pt, self.ypos_pt, self.width_pt, self.height_pt),
+            self.draw(path.rect_pt(self.xpos_pt, self.ypos_pt, self.width_pt, self.height_pt),
                       helper.ensurelist(self.backgroundattrs))
 
     def doaxes(self):
@@ -3847,39 +3847,39 @@ class changefilledstroked(changesequence):
 class symbol:
 
     def cross(self, x, y):
-        return (path._moveto(x-0.5*self.size_pt, y-0.5*self.size_pt),
-                path._lineto(x+0.5*self.size_pt, y+0.5*self.size_pt),
-                path._moveto(x-0.5*self.size_pt, y+0.5*self.size_pt),
-                path._lineto(x+0.5*self.size_pt, y-0.5*self.size_pt))
+        return (path.moveto_pt(x-0.5*self.size_pt, y-0.5*self.size_pt),
+                path.lineto_pt(x+0.5*self.size_pt, y+0.5*self.size_pt),
+                path.moveto_pt(x-0.5*self.size_pt, y+0.5*self.size_pt),
+                path.lineto_pt(x+0.5*self.size_pt, y-0.5*self.size_pt))
 
     def plus(self, x, y):
-        return (path._moveto(x-0.707106781*self.size_pt, y),
-                path._lineto(x+0.707106781*self.size_pt, y),
-                path._moveto(x, y-0.707106781*self.size_pt),
-                path._lineto(x, y+0.707106781*self.size_pt))
+        return (path.moveto_pt(x-0.707106781*self.size_pt, y),
+                path.lineto_pt(x+0.707106781*self.size_pt, y),
+                path.moveto_pt(x, y-0.707106781*self.size_pt),
+                path.lineto_pt(x, y+0.707106781*self.size_pt))
 
     def square(self, x, y):
-        return (path._moveto(x-0.5*self.size_pt, y-0.5 * self.size_pt),
-                path._lineto(x+0.5*self.size_pt, y-0.5 * self.size_pt),
-                path._lineto(x+0.5*self.size_pt, y+0.5 * self.size_pt),
-                path._lineto(x-0.5*self.size_pt, y+0.5 * self.size_pt),
+        return (path.moveto_pt(x-0.5*self.size_pt, y-0.5 * self.size_pt),
+                path.lineto_pt(x+0.5*self.size_pt, y-0.5 * self.size_pt),
+                path.lineto_pt(x+0.5*self.size_pt, y+0.5 * self.size_pt),
+                path.lineto_pt(x-0.5*self.size_pt, y+0.5 * self.size_pt),
                 path.closepath())
 
     def triangle(self, x, y):
-        return (path._moveto(x-0.759835685*self.size_pt, y-0.438691337*self.size_pt),
-                path._lineto(x+0.759835685*self.size_pt, y-0.438691337*self.size_pt),
-                path._lineto(x, y+0.877382675*self.size_pt),
+        return (path.moveto_pt(x-0.759835685*self.size_pt, y-0.438691337*self.size_pt),
+                path.lineto_pt(x+0.759835685*self.size_pt, y-0.438691337*self.size_pt),
+                path.lineto_pt(x, y+0.877382675*self.size_pt),
                 path.closepath())
 
     def circle(self, x, y):
-        return (path._arc(x, y, 0.564189583*self.size_pt, 0, 360),
+        return (path.arc_pt(x, y, 0.564189583*self.size_pt, 0, 360),
                 path.closepath())
 
     def diamond(self, x, y):
-        return (path._moveto(x-0.537284965*self.size_pt, y),
-                path._lineto(x, y-0.930604859*self.size_pt),
-                path._lineto(x+0.537284965*self.size_pt, y),
-                path._lineto(x, y+0.930604859*self.size_pt),
+        return (path.moveto_pt(x-0.537284965*self.size_pt, y),
+                path.lineto_pt(x, y-0.930604859*self.size_pt),
+                path.lineto_pt(x+0.537284965*self.size_pt, y),
+                path.lineto_pt(x, y+0.930604859*self.size_pt),
                 path.closepath())
 
     def __init__(self, symbol=helper.nodefault,
@@ -4031,46 +4031,46 @@ class symbol:
                 left2 = graph._addpos(*(left+(0, self.errorsize_pt)))
                 right1 = graph._addpos(*(right+(0, -self.errorsize_pt)))
                 right2 = graph._addpos(*(right+(0, self.errorsize_pt)))
-                graph.stroke(path.path(path._moveto(*left1),
+                graph.stroke(path.path(path.moveto_pt(*left1),
                                        graph._connect(*(left1+left2)),
-                                       path._moveto(*left),
+                                       path.moveto_pt(*left),
                                        graph._connect(*(left+right)),
-                                       path._moveto(*right1),
+                                       path.moveto_pt(*right1),
                                        graph._connect(*(right1+right2))),
                              self.errorbarattrs)
             elif center is not None:
                 left1 = graph._addpos(*(left+(0, -self.errorsize_pt)))
                 left2 = graph._addpos(*(left+(0, self.errorsize_pt)))
-                graph.stroke(path.path(path._moveto(*left1),
+                graph.stroke(path.path(path.moveto_pt(*left1),
                                        graph._connect(*(left1+left2)),
-                                       path._moveto(*left),
+                                       path.moveto_pt(*left),
                                        graph._connect(*(left+center))),
                              self.errorbarattrs)
             else:
                 left1 = graph._addpos(*(left+(0, -self.errorsize_pt)))
                 left2 = graph._addpos(*(left+(0, self.errorsize_pt)))
                 left3 = graph._addpos(*(left+(self.errorsize_pt, 0)))
-                graph.stroke(path.path(path._moveto(*left1),
+                graph.stroke(path.path(path.moveto_pt(*left1),
                                        graph._connect(*(left1+left2)),
-                                       path._moveto(*left),
+                                       path.moveto_pt(*left),
                                        graph._connect(*(left+left3))),
                              self.errorbarattrs)
         if right is not None and left is None:
             if center is not None:
                 right1 = graph._addpos(*(right+(0, -self.errorsize_pt)))
                 right2 = graph._addpos(*(right+(0, self.errorsize_pt)))
-                graph.stroke(path.path(path._moveto(*right1),
+                graph.stroke(path.path(path.moveto_pt(*right1),
                                        graph._connect(*(right1+right2)),
-                                       path._moveto(*right),
+                                       path.moveto_pt(*right),
                                        graph._connect(*(right+center))),
                              self.errorbarattrs)
             else:
                 right1 = graph._addpos(*(right+(0, -self.errorsize_pt)))
                 right2 = graph._addpos(*(right+(0, self.errorsize_pt)))
                 right3 = graph._addpos(*(right+(-self.errorsize_pt, 0)))
-                graph.stroke(path.path(path._moveto(*right1),
+                graph.stroke(path.path(path.moveto_pt(*right1),
                                        graph._connect(*(right1+right2)),
-                                       path._moveto(*right),
+                                       path.moveto_pt(*right),
                                        graph._connect(*(right+right3))),
                              self.errorbarattrs)
 
@@ -4080,53 +4080,53 @@ class symbol:
                 bottom2 = graph._addpos(*(bottom+(self.errorsize_pt, 0)))
                 top1 = graph._addpos(*(top+(-self.errorsize_pt, 0)))
                 top2 = graph._addpos(*(top+(self.errorsize_pt, 0)))
-                graph.stroke(path.path(path._moveto(*bottom1),
+                graph.stroke(path.path(path.moveto_pt(*bottom1),
                                        graph._connect(*(bottom1+bottom2)),
-                                       path._moveto(*bottom),
+                                       path.moveto_pt(*bottom),
                                        graph._connect(*(bottom+top)),
-                                       path._moveto(*top1),
+                                       path.moveto_pt(*top1),
                                        graph._connect(*(top1+top2))),
                              self.errorbarattrs)
             elif center is not None:
                 bottom1 = graph._addpos(*(bottom+(-self.errorsize_pt, 0)))
                 bottom2 = graph._addpos(*(bottom+(self.errorsize_pt, 0)))
-                graph.stroke(path.path(path._moveto(*bottom1),
+                graph.stroke(path.path(path.moveto_pt(*bottom1),
                                        graph._connect(*(bottom1+bottom2)),
-                                       path._moveto(*bottom),
+                                       path.moveto_pt(*bottom),
                                        graph._connect(*(bottom+center))),
                              self.errorbarattrs)
             else:
                 bottom1 = graph._addpos(*(bottom+(-self.errorsize_pt, 0)))
                 bottom2 = graph._addpos(*(bottom+(self.errorsize_pt, 0)))
                 bottom3 = graph._addpos(*(bottom+(0, self.errorsize_pt)))
-                graph.stroke(path.path(path._moveto(*bottom1),
+                graph.stroke(path.path(path.moveto_pt(*bottom1),
                                        graph._connect(*(bottom1+bottom2)),
-                                       path._moveto(*bottom),
+                                       path.moveto_pt(*bottom),
                                        graph._connect(*(bottom+bottom3))),
                              self.errorbarattrs)
         if top is not None and bottom is None:
             if center is not None:
                 top1 = graph._addpos(*(top+(-self.errorsize_pt, 0)))
                 top2 = graph._addpos(*(top+(self.errorsize_pt, 0)))
-                graph.stroke(path.path(path._moveto(*top1),
+                graph.stroke(path.path(path.moveto_pt(*top1),
                                        graph._connect(*(top1+top2)),
-                                       path._moveto(*top),
+                                       path.moveto_pt(*top),
                                        graph._connect(*(top+center))),
                              self.errorbarattrs)
             else:
                 top1 = graph._addpos(*(top+(-self.errorsize_pt, 0)))
                 top2 = graph._addpos(*(top+(self.errorsize_pt, 0)))
                 top3 = graph._addpos(*(top+(0, -self.errorsize_pt)))
-                graph.stroke(path.path(path._moveto(*top1),
+                graph.stroke(path.path(path.moveto_pt(*top1),
                                        graph._connect(*(top1+top2)),
-                                       path._moveto(*top),
+                                       path.moveto_pt(*top),
                                        graph._connect(*(top+top3))),
                              self.errorbarattrs)
         if bottomleft is not None:
             if topleft is not None and bottomright is None:
                 bottomleft1 = graph._addpos(*(bottomleft+(self.errorsize_pt, 0)))
                 topleft1 = graph._addpos(*(topleft+(self.errorsize_pt, 0)))
-                graph.stroke(path.path(path._moveto(*bottomleft1),
+                graph.stroke(path.path(path.moveto_pt(*bottomleft1),
                                        graph._connect(*(bottomleft1+bottomleft)),
                                        graph._connect(*(bottomleft+topleft)),
                                        graph._connect(*(topleft+topleft1))),
@@ -4134,7 +4134,7 @@ class symbol:
             elif bottomright is not None and topleft is None:
                 bottomleft1 = graph._addpos(*(bottomleft+(0, self.errorsize_pt)))
                 bottomright1 = graph._addpos(*(bottomright+(0, self.errorsize_pt)))
-                graph.stroke(path.path(path._moveto(*bottomleft1),
+                graph.stroke(path.path(path.moveto_pt(*bottomleft1),
                                        graph._connect(*(bottomleft1+bottomleft)),
                                        graph._connect(*(bottomleft+bottomright)),
                                        graph._connect(*(bottomright+bottomright1))),
@@ -4142,7 +4142,7 @@ class symbol:
             elif bottomright is None and topleft is None:
                 bottomleft1 = graph._addpos(*(bottomleft+(self.errorsize_pt, 0)))
                 bottomleft2 = graph._addpos(*(bottomleft+(0, self.errorsize_pt)))
-                graph.stroke(path.path(path._moveto(*bottomleft1),
+                graph.stroke(path.path(path.moveto_pt(*bottomleft1),
                                        graph._connect(*(bottomleft1+bottomleft)),
                                        graph._connect(*(bottomleft+bottomleft2))),
                              self.errorbarattrs)
@@ -4150,7 +4150,7 @@ class symbol:
             if bottomright is not None and topleft is None:
                 topright1 = graph._addpos(*(topright+(-self.errorsize_pt, 0)))
                 bottomright1 = graph._addpos(*(bottomright+(-self.errorsize_pt, 0)))
-                graph.stroke(path.path(path._moveto(*topright1),
+                graph.stroke(path.path(path.moveto_pt(*topright1),
                                        graph._connect(*(topright1+topright)),
                                        graph._connect(*(topright+bottomright)),
                                        graph._connect(*(bottomright+bottomright1))),
@@ -4158,7 +4158,7 @@ class symbol:
             elif topleft is not None and bottomright is None:
                 topright1 = graph._addpos(*(topright+(0, -self.errorsize_pt)))
                 topleft1 = graph._addpos(*(topleft+(0, -self.errorsize_pt)))
-                graph.stroke(path.path(path._moveto(*topright1),
+                graph.stroke(path.path(path.moveto_pt(*topright1),
                                        graph._connect(*(topright1+topright)),
                                        graph._connect(*(topright+topleft)),
                                        graph._connect(*(topleft+topleft1))),
@@ -4166,26 +4166,26 @@ class symbol:
             elif topleft is None and bottomright is None:
                 topright1 = graph._addpos(*(topright+(-self.errorsize_pt, 0)))
                 topright2 = graph._addpos(*(topright+(0, -self.errorsize_pt)))
-                graph.stroke(path.path(path._moveto(*topright1),
+                graph.stroke(path.path(path.moveto_pt(*topright1),
                                        graph._connect(*(topright1+topright)),
                                        graph._connect(*(topright+topright2))),
                              self.errorbarattrs)
         if bottomright is not None and bottomleft is None and topright is None:
             bottomright1 = graph._addpos(*(bottomright+(-self.errorsize_pt, 0)))
             bottomright2 = graph._addpos(*(bottomright+(0, self.errorsize_pt)))
-            graph.stroke(path.path(path._moveto(*bottomright1),
+            graph.stroke(path.path(path.moveto_pt(*bottomright1),
                                    graph._connect(*(bottomright1+bottomright)),
                                    graph._connect(*(bottomright+bottomright2))),
                          self.errorbarattrs)
         if topleft is not None and bottomleft is None and topright is None:
             topleft1 = graph._addpos(*(topleft+(self.errorsize_pt, 0)))
             topleft2 = graph._addpos(*(topleft+(0, -self.errorsize_pt)))
-            graph.stroke(path.path(path._moveto(*topleft1),
+            graph.stroke(path.path(path.moveto_pt(*topleft1),
                                    graph._connect(*(topleft1+topleft)),
                                    graph._connect(*(topleft+topleft2))),
                          self.errorbarattrs)
         if bottomleft is not None and bottomright is not None and topright is not None and topleft is not None:
-            graph.stroke(path.path(path._moveto(*bottomleft),
+            graph.stroke(path.path(path.moveto_pt(*bottomleft),
                                    graph._connect(*(bottomleft+bottomright)),
                                    graph._connect(*(bottomright+topright)),
                                    graph._connect(*(topright+topleft)),
@@ -4202,7 +4202,7 @@ class symbol:
         if self._symbolattrs is not None:
             self.drawsymbol_pt(c, x + 0.5 * width, y + 0.5 * height)
         if self._lineattrs is not None:
-            c.stroke(path._line(x, y + 0.5 * height, x + width, y + 0.5 * height), self.lineattrs)
+            c.stroke(path.line_pt(x, y + 0.5 * height, x + width, y + 0.5 * height), self.lineattrs)
 
     def drawpoints(self, graph, points):
         xaxismin, xaxismax = self.xaxis.getrange()
@@ -4267,10 +4267,10 @@ class symbol:
                     self.drawsymbol_pt(graph, xpos, ypos, point)
             if xpos is not None and ypos is not None:
                 if moveto:
-                    lineels.append(path._moveto(xpos, ypos))
+                    lineels.append(path.moveto_pt(xpos, ypos))
                     moveto = 0
                 else:
-                    lineels.append(path._lineto(xpos, ypos))
+                    lineels.append(path.lineto_pt(xpos, ypos))
             else:
                 moveto = 1
         self.path = path.path(*lineels)
@@ -4377,7 +4377,7 @@ class rect(symbol):
             if top is not None and left is not None:
                 topleft = left[0], top[1]
             if bottomleft is not None and bottomright is not None and topright is not None and topleft is not None:
-                self.rectclipcanvas.fill(path.path(path._moveto(*bottomleft),
+                self.rectclipcanvas.fill(path.path(path.moveto_pt(*bottomleft),
                                          graph._connect(*(bottomleft+bottomright)),
                                          graph._connect(*(bottomright+topright)),
                                          graph._connect(*(topright+topleft)),
@@ -4630,7 +4630,7 @@ class bar:
                         x3pos, y3pos = graph.axespos[self.nkey].tickpoint_pt(maxid)
                         x4pos, y4pos = graph.axespos[self.nkey].tickpoint_pt(minid)
                 if self.barattrs is not None:
-                    graph.fill(path.path(path._moveto(x1pos, y1pos),
+                    graph.fill(path.path(path.moveto_pt(x1pos, y1pos),
                                          graph._connect(x1pos, y1pos, x2pos, y2pos),
                                          graph._connect(x2pos, y2pos, x3pos, y3pos),
                                          graph._connect(x3pos, y3pos, x4pos, y4pos),
@@ -4639,7 +4639,7 @@ class bar:
             except (TypeError, ValueError): pass
 
     def key(self, c, x, y, width, height):
-        c.fill(path._rect(x, y, width, height), self.barattrs)
+        c.fill(path.rect_pt(x, y, width, height), self.barattrs)
 
 
 #class surface:

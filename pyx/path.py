@@ -38,10 +38,10 @@ import base, bbox, trafo, unit, helper
 ################################################################################
 
 #
-# _bcurve: Bezier curve segment with four control points (coordinates in pts)
+# bcurve_pt: Bezier curve segment with four control points (coordinates in pts)
 #
 
-class _bcurve:
+class bcurve_pt:
 
     """element of Bezier path (coordinates in pts)"""
 
@@ -84,13 +84,13 @@ class _bcurve:
                           max(self.y0, self.y1, self.y2, self.y3))
 
     def isStraight(self, epsilon=1e-5):
-        """check wheter the _bcurve is approximately straight"""
+        """check wheter the bcurve_pt is approximately straight"""
 
         # just check, whether the modulus of the difference between
         # the length of the control polygon
         # (i.e. |P1-P0|+|P2-P1|+|P3-P2|) and the length of the
         # straight line between starting and ending point of the
-        # _bcurve (i.e. |P3-P1|) is smaller the epsilon
+        # bcurve_pt (i.e. |P3-P1|) is smaller the epsilon
         return abs(math.sqrt((self.x1-self.x0)*(self.x1-self.x0)+
                              (self.y1-self.y0)*(self.y1-self.y0)) +
                    math.sqrt((self.x2-self.x1)*(self.x2-self.x1)+
@@ -101,7 +101,7 @@ class _bcurve:
                              (self.y3-self.y0)*(self.y3-self.y0)))<epsilon
 
     def split(self, parameters):
-        """return list of _bcurves corresponding to split at parameters"""
+        """return list of bcurve_pt corresponding to split at parameters"""
 
         # first, we calculate the coefficients corresponding to our
         # original bezier curve. These represent a useful starting
@@ -153,7 +153,7 @@ class _bcurve:
             x3 = a3x*dt*dt*dt + x0 - 3*x1 + 3*x2
             y3 = a3y*dt*dt*dt + y0 - 3*y1 + 3*y2
 
-            result.append(_bcurve(x0, y0, x1, y1, x2, y2, x3, y3))
+            result.append(bcurve_pt(x0, y0, x1, y1, x2, y2, x3, y3))
 
         return result
 
@@ -182,11 +182,11 @@ class _bcurve:
         xmidpoint = 0.5*(x01_12+x12_23)
         ymidpoint = 0.5*(y01_12+y12_23)
 
-        return (_bcurve(self.x0, self.y0,
+        return (bcurve_pt(self.x0, self.y0,
                         x01, y01,
                         x01_12, y01_12,
                         xmidpoint, ymidpoint),
-                _bcurve(xmidpoint, ymidpoint,
+                bcurve_pt(xmidpoint, ymidpoint,
                         x12_23, y12_23,
                         x23, y23,
                         self.x3, self.y3))
@@ -258,12 +258,12 @@ class _bcurve:
         return [tt, cumlengths[-1]]
 
 #
-# _bline: Bezier curve segment corresponding to straight line (coordinates in pts)
+# bline_pt: Bezier curve segment corresponding to straight line (coordinates in pts)
 #
 
-class _bline(_bcurve):
+class bline_pt(bcurve_pt):
 
-    """_bcurve corresponding to straight line (coordiates in pts)"""
+    """bcurve_pt corresponding to straight line (coordiates in pts)"""
 
     def __init__(self, x0, y0, x1, y1):
         xa = x0+(x1-x0)/3.0
@@ -271,7 +271,7 @@ class _bline(_bcurve):
         xb = x0+2.0*(x1-x0)/3.0
         yb = y0+2.0*(y1-y0)/3.0
 
-        _bcurve.__init__(self, x0, y0, xa, ya, xb, yb, x1, y1)
+        bcurve_pt.__init__(self, x0, y0, xa, ya, xb, yb, x1, y1)
 
 ################################################################################
 # Bezier helper functions
@@ -295,7 +295,7 @@ def _arctobcurve(x, y, r, phi1, phi2):
     (x1, y1) = ( x0-l*sin(phi1), y0+l*cos(phi1) )
     (x2, y2) = ( x3+l*sin(phi2), y3-l*cos(phi2) )
 
-    return _bcurve(x0, y0, x1, y1, x2, y2, x3, y3)
+    return bcurve_pt(x0, y0, x1, y1, x2, y2, x3, y3)
 
 
 def _arctobezierpath(x, y, r, phi1, phi2, dphimax=45):
@@ -503,7 +503,7 @@ class pathel(base.PSOp):
         context: context of pathel
 
         returns list consisting of corresponding normalized pathels
-        _moveto, _lineto, _curveto, closepath in given context
+        moveto_pt, lineto_pt, curveto_pt, closepath in given context
 
         """
 
@@ -606,8 +606,9 @@ class normpathel(pathel):
 
 
 # first come the various normpathels. Each one comes in two variants:
-#  - one with an preceding underscore, which does no coordinate to pt conversion
-#  - the other without preceding underscore, which converts to pts 
+#  - one which requires the coordinates to be already in pts (mainly
+#    used for internal purposes)
+#  - another which accepts arbitrary units
 
 
 class closepath(normpathel): 
@@ -637,7 +638,7 @@ class closepath(normpathel):
         x0, y0 = context.currentpoint
         x1, y1 = context.currentsubpath
 
-        return _bline(x0, y0, x1, y1)
+        return bline_pt(x0, y0, x1, y1)
 
     def _arclength(self, context, epsilon=1e-5):
         x0, y0 = context.currentpoint
@@ -675,19 +676,19 @@ class closepath(normpathel):
                 for t in parameters:
                     xs, ys = x0 + (x1-x0)*t, y0 + (y1-y0)*t
                     if lastpoint is None:
-                        result.append((_lineto(xs, ys),))
+                        result.append((lineto_pt(xs, ys),))
                     else:
-                        result.append((_moveto(*lastpoint), _lineto(xs, ys)))
+                        result.append((moveto_pt(*lastpoint), lineto_pt(xs, ys)))
                     lastpoint = xs, ys
 
                 if parameters[-1]!=1:
-                    result.append((_moveto(*lastpoint), _lineto(x1, y1)))
+                    result.append((moveto_pt(*lastpoint), lineto_pt(x1, y1)))
                 else:
-                    result.append((_moveto(x1, y1),))
+                    result.append((moveto_pt(x1, y1),))
             else:
-                result.append((_moveto(x0, y0), _lineto(x1, y1)))
+                result.append((moveto_pt(x0, y0), lineto_pt(x1, y1)))
         else:
-            result = [(_moveto(x0, y0), _lineto(x1, y1))]
+            result = [(moveto_pt(x0, y0), lineto_pt(x1, y1))]
             
         return result
 
@@ -697,7 +698,7 @@ class closepath(normpathel):
         tx, ty = x0 + (x1-x0)*t, y0 + (y1-y0)*t
         tvectx, tvecty = x1-x0, y1-y0
 
-        return _line(tx, ty, tx+tvectx, ty+tvecty)
+        return line_pt(tx, ty, tx+tvectx, ty+tvecty)
 
     def write(self, file):
         file.write("closepath\n")
@@ -706,7 +707,7 @@ class closepath(normpathel):
         return closepath()
 
 
-class _moveto(normpathel):
+class moveto_pt(normpathel):
 
     """Set current point to (x, y) (coordinates in pts)"""
 
@@ -737,7 +738,7 @@ class _moveto(normpathel):
         return [ [0]*len(lengths), 0]
 
     def _normalized(self, context):
-        return [_moveto(self.x, self.y)]
+        return [moveto_pt(self.x, self.y)]
 
     def _reversed(self, context):
         return None
@@ -752,9 +753,9 @@ class _moveto(normpathel):
         file.write("%g %g moveto\n" % (self.x, self.y) )
 
     def transformed(self, trafo):
-        return _moveto(*trafo._apply(self.x, self.y))
+        return moveto_pt(*trafo._apply(self.x, self.y))
 
-class _lineto(normpathel):
+class lineto_pt(normpathel):
 
     """Append straight line to (x, y) (coordinates in pts)"""
 
@@ -780,7 +781,7 @@ class _lineto(normpathel):
                           max(context.currentpoint[1], self.y))
 
     def _bcurve(self, context):
-        return _bline(context.currentpoint[0], context.currentpoint[1],
+        return bline_pt(context.currentpoint[0], context.currentpoint[1],
                       self.x, self.y)
 
     def _arclength(self, context, epsilon=1e-5):
@@ -795,10 +796,10 @@ class _lineto(normpathel):
         return [ [max(min(1.0*length/l,1),0) for length in lengths], l]
 
     def _normalized(self, context):
-        return [_lineto(self.x, self.y)]
+        return [lineto_pt(self.x, self.y)]
 
     def _reversed(self, context):
-        return _lineto(*context.currentpoint)
+        return lineto_pt(*context.currentpoint)
 
     def _split(self, context, parameters):
         x0, y0 = context.currentpoint
@@ -817,19 +818,19 @@ class _lineto(normpathel):
                 for t in parameters:
                     xs, ys = x0 + (x1-x0)*t, y0 + (y1-y0)*t
                     if lastpoint is None:
-                        result.append((_lineto(xs, ys),))
+                        result.append((lineto_pt(xs, ys),))
                     else:
-                        result.append((_moveto(*lastpoint), _lineto(xs, ys)))
+                        result.append((moveto_pt(*lastpoint), lineto_pt(xs, ys)))
                     lastpoint = xs, ys
 
                 if parameters[-1]!=1:
-                    result.append((_moveto(*lastpoint), _lineto(x1, y1)))
+                    result.append((moveto_pt(*lastpoint), lineto_pt(x1, y1)))
                 else:
-                    result.append((_moveto(x1, y1),))
+                    result.append((moveto_pt(x1, y1),))
             else:
-                result.append((_moveto(x0, y0), _lineto(x1, y1)))
+                result.append((moveto_pt(x0, y0), lineto_pt(x1, y1)))
         else:
-            result = [(_moveto(x0, y0), _lineto(x1, y1))]
+            result = [(moveto_pt(x0, y0), lineto_pt(x1, y1))]
 
         return result
 
@@ -838,16 +839,16 @@ class _lineto(normpathel):
         tx, ty = x0 + (self.x-x0)*t, y0 + (self.y-y0)*t
         tvectx, tvecty = self.x-x0, self.y-y0
 
-        return _line(tx, ty, tx+tvectx, ty+tvecty)
+        return line_pt(tx, ty, tx+tvectx, ty+tvecty)
 
     def write(self, file):
         file.write("%g %g lineto\n" % (self.x, self.y) )
 
     def transformed(self, trafo):
-        return _lineto(*trafo._apply(self.x, self.y))
+        return lineto_pt(*trafo._apply(self.x, self.y))
 
 
-class _curveto(normpathel):
+class curveto_pt(normpathel):
 
     """Append curveto (coordinates in pts)"""
 
@@ -887,10 +888,10 @@ class _curveto(normpathel):
                           max(context.currentpoint[1], self.y1, self.y2, self.y3))
 
     def _bcurve(self, context):
-        return _bcurve(context.currentpoint[0], context.currentpoint[1],
-                        self.x1, self.y1,
-                        self.x2, self.y2,
-                        self.x3, self.y3)
+        return bcurve_pt(context.currentpoint[0], context.currentpoint[1],
+                         self.x1, self.y1,
+                         self.x2, self.y2,
+                         self.x3, self.y3)
 
     def _arclength(self, context, epsilon=1e-5):
         return self._bcurve(context).arclength(epsilon)
@@ -899,12 +900,12 @@ class _curveto(normpathel):
         return self._bcurve(context).lentopar(lengths, epsilon)
 
     def _normalized(self, context):
-        return [_curveto(self.x1, self.y1,
+        return [curveto_pt(self.x1, self.y1,
                          self.x2, self.y2,
                          self.x3, self.y3)]
 
     def _reversed(self, context):
-        return _curveto(self.x2, self.y2,
+        return curveto_pt(self.x2, self.y2,
                         self.x1, self.y1,
                         context.currentpoint[0], context.currentpoint[1])
 
@@ -917,18 +918,18 @@ class _curveto(normpathel):
                 result = [()]
             else:
                 bp0 = bps[0]
-                result = [(_curveto(bp0.x1, bp0.y1, bp0.x2, bp0.y2, bp0.x3, bp0.y3),)]
+                result = [(curveto_pt(bp0.x1, bp0.y1, bp0.x2, bp0.y2, bp0.x3, bp0.y3),)]
                 bps = bps[1:]
 
             for bp in bps:
-                result.append((_moveto(bp.x0, bp.y0),
-                               _curveto(bp.x1, bp.y1, bp.x2, bp.y2, bp.x3, bp.y3)))
+                result.append((moveto_pt(bp.x0, bp.y0),
+                               curveto_pt(bp.x1, bp.y1, bp.x2, bp.y2, bp.x3, bp.y3)))
 
             if parameters[-1]==1:
-                result.append((_moveto(self.x3, self.y3),))
+                result.append((moveto_pt(self.x3, self.y3),))
                 
         else:
-            result = [(_curveto(self.x1, self.y1,
+            result = [(curveto_pt(self.x1, self.y1,
                                 self.x2, self.y2,
                                 self.x3, self.y3),)]
         return result
@@ -944,7 +945,7 @@ class _curveto(normpathel):
                   2*( 3*y0-6*self.y1+3*self.y2        )*t +
                     (-3*y0+3*self.y1                  ))
 
-        return _line(tpx, tpy, tpx+tvectx, tpy+tvecty)
+        return line_pt(tpx, tpy, tpx+tvectx, tpy+tvecty)
 
     def write(self, file):
         file.write("%g %g %g %g %g %g curveto\n" % ( self.x1, self.y1,
@@ -952,7 +953,7 @@ class _curveto(normpathel):
                                                      self.x3, self.y3 ) )
 
     def transformed(self, trafo):
-        return _curveto(*(trafo._apply(self.x1, self.y1)+
+        return curveto_pt(*(trafo._apply(self.x1, self.y1)+
                           trafo._apply(self.x2, self.y2)+
                           trafo._apply(self.x3, self.y3)))
 
@@ -960,28 +961,28 @@ class _curveto(normpathel):
 # now the versions that convert from user coordinates to pts
 #
 
-class moveto(_moveto):
+class moveto(moveto_pt):
 
     """Set current point to (x, y)"""
 
     def __init__(self, x, y):
-         _moveto.__init__(self, unit.topt(x), unit.topt(y))
+         moveto_pt.__init__(self, unit.topt(x), unit.topt(y))
 
 
-class lineto(_lineto):
+class lineto(lineto_pt):
 
     """Append straight line to (x, y)"""
 
     def __init__(self, x, y):
-        _lineto.__init__(self, unit.topt(x), unit.topt(y))
+        lineto_pt.__init__(self, unit.topt(x), unit.topt(y))
 
 
-class curveto(_curveto):
+class curveto(curveto_pt):
 
     """Append curveto"""
 
     def __init__(self, x1, y1, x2, y2, x3, y3):
-        _curveto.__init__(self,
+        curveto_pt.__init__(self,
                           unit.topt(x1), unit.topt(y1),
                           unit.topt(x2), unit.topt(y2),
                           unit.topt(x3), unit.topt(y3))
@@ -990,7 +991,7 @@ class curveto(_curveto):
 # now come the pathels, again in two versions
 #
 
-class _rmoveto(pathel):
+class rmoveto_pt(pathel):
 
     """Perform relative moveto (coordinates in pts)"""
 
@@ -1010,13 +1011,13 @@ class _rmoveto(pathel):
         x = context.currentpoint[0]+self.dx
         y = context.currentpoint[1]+self.dy
 
-        return [_moveto(x, y)]
+        return [moveto_pt(x, y)]
 
     def write(self, file):
         file.write("%g %g rmoveto\n" % (self.dx, self.dy) )
 
 
-class _rlineto(pathel):
+class rlineto_pt(pathel):
 
     """Perform relative lineto (coordinates in pts)"""
 
@@ -1041,13 +1042,13 @@ class _rlineto(pathel):
         x = context.currentpoint[0] + self.dx
         y = context.currentpoint[1] + self.dy
 
-        return [_lineto(x, y)]
+        return [lineto_pt(x, y)]
 
     def write(self, file):
         file.write("%g %g rlineto\n" % (self.dx, self.dy) )
 
 
-class _rcurveto(pathel):
+class rcurveto_pt(pathel):
 
     """Append rcurveto (coordinates in pts)"""
 
@@ -1092,13 +1093,13 @@ class _rcurveto(pathel):
         x4 = context.currentpoint[0]+self.dx3
         y4 = context.currentpoint[1]+self.dy3
 
-        return [_curveto(x2, y2, x3, y3, x4, y4)]
+        return [curveto_pt(x2, y2, x3, y3, x4, y4)]
 
 #
 # arc, arcn, arct
 #
 
-class _arc(pathel):
+class arc_pt(pathel):
 
     """Append counterclockwise arc (coordinates in pts)"""
 
@@ -1202,7 +1203,7 @@ class _arc(pathel):
         nbarc = []
 
         for bpathel in barc:
-            nbarc.append(_curveto(bpathel.x1, bpathel.y1,
+            nbarc.append(curveto_pt(bpathel.x1, bpathel.y1,
                                   bpathel.x2, bpathel.y2,
                                   bpathel.x3, bpathel.y3))
 
@@ -1211,9 +1212,9 @@ class _arc(pathel):
         # to the first point of the arc segment.
         # Otherwise, we have to add a moveto at the beginning
         if context.currentpoint:
-            return [_lineto(sarcx, sarcy)] + nbarc
+            return [lineto_pt(sarcx, sarcy)] + nbarc
         else:
-            return [_moveto(sarcx, sarcy)] + nbarc
+            return [moveto_pt(sarcx, sarcy)] + nbarc
 
 
     def write(self, file):
@@ -1223,7 +1224,7 @@ class _arc(pathel):
                                             self.angle2 ) )
 
 
-class _arcn(pathel):
+class arcn_pt(pathel):
 
     """Append clockwise arc (coordinates in pts)"""
 
@@ -1261,7 +1262,7 @@ class _arcn(pathel):
 
         # Hence, we first compute the bbox of the arc without this line:
 
-        a = _arc(self.x, self.y, self.r, 
+        a = arc_pt(self.x, self.y, self.r, 
                  self.angle2, 
                  self.angle1)
 
@@ -1290,7 +1291,7 @@ class _arcn(pathel):
         nbarc = []
 
         for bpathel in barc:
-            nbarc.append(_curveto(bpathel.x2, bpathel.y2,
+            nbarc.append(curveto_pt(bpathel.x2, bpathel.y2,
                                   bpathel.x1, bpathel.y1,
                                   bpathel.x0, bpathel.y0))
 
@@ -1299,9 +1300,9 @@ class _arcn(pathel):
         # to the first point of the arc segment.
         # Otherwise, we have to add a moveto at the beginning
         if context.currentpoint:
-            return [_lineto(sarcx, sarcy)] + nbarc
+            return [lineto_pt(sarcx, sarcy)] + nbarc
         else:
-            return [_moveto(sarcx, sarcy)] + nbarc
+            return [moveto_pt(sarcx, sarcy)] + nbarc
 
 
     def write(self, file):
@@ -1311,7 +1312,7 @@ class _arcn(pathel):
                                              self.angle2 ) )
 
 
-class _arct(pathel):
+class arct_pt(pathel):
 
     """Append tangent arc (coordinates in pts)"""
 
@@ -1379,12 +1380,12 @@ class _arct(pathel):
             my = self.y1-ry*self.r/(lr*sin(alpha/2))
 
             # now we are in the position to construct the path
-            p = path(_moveto(*currentpoint))
+            p = path(moveto_pt(*currentpoint))
 
             if phi<0:
-                p.append(_arc(mx, my, self.r, phi-deltaphi, phi+deltaphi))
+                p.append(arc_pt(mx, my, self.r, phi-deltaphi, phi+deltaphi))
             else:
-                p.append(_arcn(mx, my, self.r, phi+deltaphi, phi-deltaphi))
+                p.append(arcn_pt(mx, my, self.r, phi+deltaphi, phi-deltaphi))
 
             return ( (xt2, yt2) ,
                      currentsubpath or (xt2, yt2),
@@ -1394,7 +1395,7 @@ class _arct(pathel):
             # we need no arc, so just return a straight line to currentpoint to x1, y1
             return  ( (self.x1, self.y1),
                       currentsubpath or (self.x1, self.y1),
-                      _line(currentpoint[0], currentpoint[1], self.x1, self.y1) )
+                      line_pt(currentpoint[0], currentpoint[1], self.x1, self.y1) )
 
     def _updatecontext(self, context):
         r = self._path(context.currentpoint,
@@ -1414,58 +1415,58 @@ class _arct(pathel):
 # the user coordinates versions...
 #
 
-class rmoveto(_rmoveto):
+class rmoveto(rmoveto_pt):
 
     """Perform relative moveto"""
 
     def __init__(self, dx, dy):
-        _rmoveto.__init__(self, unit.topt(dx), unit.topt(dy))
+        rmoveto_pt.__init__(self, unit.topt(dx), unit.topt(dy))
 
 
-class rlineto(_rlineto):
+class rlineto(rlineto_pt):
 
     """Perform relative lineto"""
 
     def __init__(self, dx, dy):
-        _rlineto.__init__(self, unit.topt(dx), unit.topt(dy))
+        rlineto_pt.__init__(self, unit.topt(dx), unit.topt(dy))
 
 
-class rcurveto(_rcurveto):
+class rcurveto(rcurveto_pt):
 
     """Append rcurveto"""
 
     def __init__(self, dx1, dy1, dx2, dy2, dx3, dy3):
-        _rcurveto.__init__(self,
+        rcurveto_pt.__init__(self,
                            unit.topt(dx1), unit.topt(dy1),
                            unit.topt(dx2), unit.topt(dy2),
                            unit.topt(dx3), unit.topt(dy3))
 
 
-class arcn(_arcn):
+class arcn(arcn_pt):
 
     """Append clockwise arc"""
 
     def __init__(self, x, y, r, angle1, angle2):
-        _arcn.__init__(self, 
+        arcn_pt.__init__(self, 
                        unit.topt(x), unit.topt(y), unit.topt(r), 
                        angle1, angle2)
 
 
-class arc(_arc):
+class arc(arc_pt):
 
     """Append counterclockwise arc"""
 
     def __init__(self, x, y, r, angle1, angle2):
-        _arc.__init__(self, unit.topt(x), unit.topt(y), unit.topt(r), 
+        arc_pt.__init__(self, unit.topt(x), unit.topt(y), unit.topt(r), 
                       angle1, angle2)
 
 
-class arct(_arct):
+class arct(arct_pt):
 
     """Append tangent arc"""
 
     def __init__(self, x1, y1, x2, y2, r):
-        _arct.__init__(self, unit.topt(x1), unit.topt(y1),
+        arct_pt.__init__(self, unit.topt(x1), unit.topt(y1),
                              unit.topt(x2), unit.topt(y2),
                              unit.topt(r))
 
@@ -1559,9 +1560,9 @@ class path(base.PSCmd):
         return normpath(self).transformed(trafo)
 
     def write(self, file):
-        if not (isinstance(self.path[0], _moveto) or
-                isinstance(self.path[0], _arc) or
-                isinstance(self.path[0], _arcn)):
+        if not (isinstance(self.path[0], moveto_pt) or
+                isinstance(self.path[0], arc_pt) or
+                isinstance(self.path[0], arcn_pt)):
             raise PathException, "first path element must be either moveto, arc, or arcn"
         for pel in self.path:
             pel.write(file)
@@ -1588,10 +1589,10 @@ def _normalizepath(path):
 def _splitclosedsubpath(subpath, parameters):
     """ split closed subpath at list of parameters (counting from t=0)"""
 
-    # first, we open the subpath by replacing the closepath by a _lineto
-    # Note that the first pel must be a _moveto
+    # first, we open the subpath by replacing the closepath by a lineto_pt
+    # Note that the first pel must be a moveto_pt
     opensubpath = copy.copy(subpath)
-    opensubpath[-1] = _lineto(subpath[0].x, subpath[0].y)
+    opensubpath[-1] = lineto_pt(subpath[0].x, subpath[0].y)
 
     # then we split this open subpath
     pieces = _splitopensubpath(opensubpath, parameters)
@@ -1609,7 +1610,7 @@ def _splitopensubpath(subpath, parameters):
     context = _pathcontext()
     result = []
 
-    # first pathel of subpath must be _moveto
+    # first pathel of subpath must be moveto_pt
     pel = subpath[0]
     pel._updatecontext(context)
     np = normpath(pel)
@@ -1682,7 +1683,7 @@ class normpath(path):
 
         for pel in self.path:
             subpath.append(pel)
-            if isinstance(pel, _moveto) and len(subpath)>1:
+            if isinstance(pel, moveto_pt) and len(subpath)>1:
                 result.append((subpath, t0, t, 0))
                 subpath = []
                 t0 = t
@@ -1784,7 +1785,7 @@ class normpath(path):
         context=_pathcontext()
 
         for pel in p:
-            if not isinstance(pel, _moveto):
+            if not isinstance(pel, moveto_pt):
                 if t>1:
                     t -= 1
                 else:
@@ -1895,7 +1896,7 @@ class normpath(path):
         t=0
 
         for pel in self.path:
-            if not isinstance(pel, _moveto):
+            if not isinstance(pel, moveto_pt):
                 t += 1
             pel._updatecontext(context)
 
@@ -1910,20 +1911,20 @@ class normpath(path):
         subpath = []
         np = normpath()
 
-        # we append a _moveto operation at the end to end the last
+        # we append a moveto_pt operation at the end to end the last
         # subpath explicitely.
-        for pel in self.path+[_moveto(0,0)]:
+        for pel in self.path+[moveto_pt(0,0)]:
             pelr = pel._reversed(context)
             if pelr:
                 subpath.append(pelr)
 
-            if subpath and isinstance(pel, _moveto):
-                subpath.append(_moveto(*context.currentpoint))
+            if subpath and isinstance(pel, moveto_pt):
+                subpath.append(moveto_pt(*context.currentpoint))
                 subpath.reverse()
                 np = normpath(*subpath) + np
                 subpath = []
             elif subpath and isinstance(pel, closepath):
-                subpath.append(_moveto(*context.currentpoint))
+                subpath.append(moveto_pt(*context.currentpoint))
                 subpath.reverse()
                 subpath.append(closepath())
                 np = normpath(*subpath) + np
@@ -2009,7 +2010,7 @@ class normpath(path):
         context = _pathcontext()
 
         for pel in p:
-            if not isinstance(pel, _moveto):
+            if not isinstance(pel, moveto_pt):
                 if t>1:
                     t -= 1
                 else:
@@ -2035,42 +2036,42 @@ class normpath(path):
 
 # straight lines
 
-class _line(normpath):
+class line_pt(normpath):
 
    """straight line from (x1, y1) to (x2, y2) (coordinates in pts)"""
 
    def __init__(self, x1, y1, x2, y2):
-       normpath.__init__(self, _moveto(x1, y1), _lineto(x2, y2))
+       normpath.__init__(self, moveto_pt(x1, y1), lineto_pt(x2, y2))
 
 
-class line(_line):
+class line(line_pt):
 
    """straight line from (x1, y1) to (x2, y2)"""
 
    def __init__(self, x1, y1, x2, y2):
-       _line.__init__(self,
+       line_pt.__init__(self,
                       unit.topt(x1), unit.topt(y1),
                       unit.topt(x2), unit.topt(y2)
                       )
 
 # bezier curves
 
-class _curve(normpath):
+class curve_pt(normpath):
 
    """Bezier curve with control points (x0, y1),..., (x3, y3)
    (coordinates in pts)"""
 
    def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
        normpath.__init__(self,
-                         _moveto(x0, y0),
-                         _curveto(x1, y1, x2, y2, x3, y3))
+                         moveto_pt(x0, y0),
+                         curveto_pt(x1, y1, x2, y2, x3, y3))
 
-class curve(_curve):
+class curve(curve_pt):
 
    """Bezier curve with control points (x0, y1),..., (x3, y3)"""
 
    def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
-       _curve.__init__(self,
+       curve_pt.__init__(self,
                        unit.topt(x0), unit.topt(y0),
                        unit.topt(x1), unit.topt(y1),
                        unit.topt(x2), unit.topt(y2),
@@ -2079,44 +2080,44 @@ class curve(_curve):
 
 # rectangles
 
-class _rect(normpath):
+class rect_pt(normpath):
 
    """rectangle at position (x,y) with width and height (coordinates in pts)"""
 
    def __init__(self, x, y, width, height):
-       path.__init__(self, _moveto(x, y), 
-                           _lineto(x+width, y), 
-                           _lineto(x+width, y+height), 
-                           _lineto(x, y+height),
+       path.__init__(self, moveto_pt(x, y), 
+                           lineto_pt(x+width, y), 
+                           lineto_pt(x+width, y+height), 
+                           lineto_pt(x, y+height),
                            closepath())
 
 
-class rect(_rect):
+class rect(rect_pt):
 
    """rectangle at position (x,y) with width and height"""
 
    def __init__(self, x, y, width, height):
-       _rect.__init__(self,
+       rect_pt.__init__(self,
                       unit.topt(x), unit.topt(y),
                       unit.topt(width), unit.topt(height))
 
 # circles
 
-class _circle(path):
+class circle_pt(path):
 
    """circle with center (x,y) and radius"""
 
    def __init__(self, x, y, radius):
-       path.__init__(self, _arc(x, y, radius, 0, 360),
+       path.__init__(self, arc_pt(x, y, radius, 0, 360),
                            closepath())
 
 
-class circle(_circle):
+class circle(circle_pt):
 
    """circle with center (x,y) and radius"""
 
    def __init__(self, x, y, radius):
-       _circle.__init__(self,
+       circle_pt.__init__(self,
                         unit.topt(x), unit.topt(y),
                         unit.topt(radius))
 

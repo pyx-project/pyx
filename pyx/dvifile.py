@@ -784,7 +784,7 @@ class dvifile:
 
                 print ("%d: %srule height %d, width %d (%dx%d pixels)" %
                        (self.filepos, inch and "set" or "put", height, width, pixelh, pixelw))
-            self.actpage.fill(path._rect(x1, y1, w, h))
+            self.actpage.fill(path.rect_pt(x1, y1, w, h))
         else:
             if self.debug:
                 print ("%d: %srule height %d, width %d (invisible)" %
@@ -915,12 +915,12 @@ class dvifile:
             self.actpage.insert(_restorecolor())
         elif command=="rotate_begin":
             self.actpage.insert(_savetrafo())
-            self.actpage.insert(trafo._rotate(float(args[0]), x, y))
+            self.actpage.insert(trafo.rotate_pt(float(args[0]), x, y))
         elif command=="rotate_end":
             self.actpage.insert(_restoretrafo())
         elif command=="scale_begin":
             self.actpage.insert(_savetrafo())
-            self.actpage.insert(trafo._scale(float(args[0]), float(args[1]), x, y))
+            self.actpage.insert(trafo.scale_pt(float(args[0]), float(args[1]), x, y))
         elif command=="scale_end":
             self.actpage.insert(_restoretrafo())
         elif command=="epsinclude":

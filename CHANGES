@@ -39,7 +39,8 @@ TODO:
   - connnector module:
     - use math.degrees and math.radians instead of self-written functions
       (try to be compatible with old python versions, we should consider
-      support down to python2.0!)
+      support down to python2.0!) DEFERRED
+    - _xxx -> xxx_pt renaming
 
 0.5 (????/??/??):
   - setup.py and distribution:
@@ -93,6 +94,7 @@ TODO:
       Perez.
   - path module:
     - check for sorting of parameter list passed to path.split method
+    - _xxx -> xxx_pt renaming
   - deco module (NEW): 
     - contains decoratedpath and decorators from canvas module
     - all predefined decorators are instances now (deco.stroked is thus ok) and 
@@ -112,6 +114,8 @@ TODO:
     - new fallback solution in pure python
     - bugfix: pyxadapt.h needs to open files binary under Windows (reported by Gary Pajer)
   - box module:
+    - _xxx -> xxx_pt renaming
+  - trafo module:
     - _xxx -> xxx_pt renaming
 
   TODO for PyX 0.5 (please feel free to move items up to the general TODO list)

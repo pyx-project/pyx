@@ -57,7 +57,7 @@ class UndefinedResultError(ArithmeticError):
 
 # trafo: affine transformations
 
-class _trafo(base.PSOp, attr.attr):
+class trafo_pt(base.PSOp, attr.attr):
 
     """affine transformation (coordinates in constructor in pts)
 
@@ -75,7 +75,7 @@ class _trafo(base.PSOp, attr.attr):
         self.vector = vector
 
     def __mul__(self, other):
-        if isinstance(other, _trafo):
+        if isinstance(other, trafo_pt):
             matrix = ( ( self.matrix[0][0]*other.matrix[0][0] +
                          self.matrix[0][1]*other.matrix[1][0],
                          self.matrix[0][0]*other.matrix[0][1] +
@@ -93,7 +93,7 @@ class _trafo(base.PSOp, attr.attr):
                        self.matrix[1][1]*other.vector[1] +
                        self.vector[1] )
 
-            return _trafo(matrix=matrix, vector=vector)
+            return trafo_pt(matrix=matrix, vector=vector)
         else:
             raise NotImplementedError, "can only multiply two transformations"
 
@@ -137,43 +137,43 @@ class _trafo(base.PSOp, attr.attr):
                    )
         except ZeroDivisionError:
            raise UndefinedResultError, "transformation matrix must not be singular" 
-        return _trafo(matrix=matrix) * \
-               _trafo(vector=(-self.vector[0], -self.vector[1]))
+        return trafo_pt(matrix=matrix) * \
+               trafo_pt(vector=(-self.vector[0], -self.vector[1]))
 
     def mirrored(self, angle):
         return mirror(angle)*self
 
-    def _rotated(self, angle, x=None, y=None):
-        return _rotate(angle, x, y)*self
+    def rotated_pt(self, angle, x=None, y=None):
+        return rotate_pt(angle, x, y)*self
 
     def rotated(self, angle, x=None, y=None):
         return rotate(angle, x, y)*self
 
-    def _scaled(self, sx, sy=None, x=None, y=None):
-        return _scale(sx, sy, x, y)*self
+    def scaled_pt(self, sx, sy=None, x=None, y=None):
+        return scale_pt(sx, sy, x, y)*self
 
     def scaled(self, sx, sy=None, x=None, y=None):
         return scale(sx, sy, x, y)*self
 
-    def _slanted(self, a, angle=0, x=None, y=None):
-        return _slant(a, angle, x, y)*self
+    def slanted_pt(self, a, angle=0, x=None, y=None):
+        return slant_pt(a, angle, x, y)*self
 
     def slanted(self, a, angle=0, x=None, y=None):
         return slant(a, angle, x, y)*self
 
-    def _translated(self, x, y):
-        return _translate(x,y)*self
+    def translated_pt(self, x, y):
+        return translate_pt(x,y)*self
 
     def translated(self, x, y):
         return translate(x, y)*self
 
 
-class trafo(_trafo):
+class trafo(trafo_pt):
 
     """affine transformation"""
 
     def __init__(self, matrix=((1,0),(0,1)), vector=(0,0)):
-        _trafo.__init__(self,
+        trafo_pt.__init__(self,
                         matrix,
                         (unit.topt(vector[0]), unit.topt(vector[1])))
 
@@ -187,7 +187,7 @@ class mirror(trafo):
         trafo.__init__(self, matrix=_mmatrix(angle))
 
 
-class _rotate(_trafo):
+class rotate_pt(trafo_pt):
     def __init__(self, angle, x=None, y=None):
         vector = 0, 0
         if x is not None or y is not None:
@@ -196,12 +196,12 @@ class _rotate(_trafo):
                        "either specify both x and y or none of them")
             vector=_rvector(angle, x, y)
 
-        _trafo.__init__(self,
+        trafo_pt.__init__(self,
                        matrix=_rmatrix(angle),
                        vector=vector)
 
 
-class rotate(_trafo):
+class rotate(trafo_pt):
     def __init__(self, angle, x=None, y=None):
         vector = 0, 0 
         if x is not None or y is not None:
@@ -210,12 +210,12 @@ class rotate(_trafo):
                        "either specify both x and y or none of them")
             vector=_rvector(angle, unit.topt(x), unit.topt(y))
 
-        _trafo.__init__(self,
+        trafo_pt.__init__(self,
                        matrix=_rmatrix(angle),
                        vector=vector)
 
 
-class _scale(_trafo):
+class scale_pt(trafo_pt):
     def __init__(self, sx, sy=None, x=None, y=None):
         sy = sy or sx
         if not sx or not sy:
@@ -228,7 +228,7 @@ class _scale(_trafo):
                        "either specify both x and y or none of them")
             vector = (1-sx)*x, (1-sy)*y
 
-        _trafo.__init__(self, matrix=((sx,0),(0,sy)), vector=vector)
+        trafo_pt.__init__(self, matrix=((sx,0),(0,sy)), vector=vector)
 
 
 class scale(trafo):
@@ -247,12 +247,12 @@ class scale(trafo):
         trafo.__init__(self, matrix=((sx,0),(0,sy)), vector=vector)
 
 
-class _slant(_trafo):
+class slant_pt(trafo_pt):
     def __init__(self, a, angle=0, x=None, y=None):
-        t = ( _rotate(-angle, x, y)*
+        t = ( rotate_pt(-angle, x, y)*
               trafo(matrix=((1, a), (0, 1)))*
-              _rotate(angle, x, y) )
-        _trafo.__init__(self, t.matrix, t.vector)
+              rotate_pt(angle, x, y) )
+        trafo_pt.__init__(self, t.matrix, t.vector)
 
 
 class slant(trafo):
@@ -263,9 +263,9 @@ class slant(trafo):
         trafo.__init__(self, t.matrix, t.vector)
 
 
-class _translate(_trafo):
+class translate_pt(trafo_pt):
     def __init__(self, x, y):
-        _trafo.__init__(self, vector=(x, y))
+        trafo_pt.__init__(self, vector=(x, y))
 
 
 class translate(trafo):

@@ -47,12 +47,12 @@ class polygon_pt:
         pathels = []
         if centerradius is not None and self.center is not None:
             r = unit.topt(unit.length(centerradius, default_type="v"))
-            pathels.append(path._arc(self.center[0], self.center[1], r, 0, 360))
+            pathels.append(path.arc_pt(self.center[0], self.center[1], r, 0, 360))
             pathels.append(path.closepath())
         if bezierradius is None:
-            pathels.append(path._moveto(self.corners[0][0], self.corners[0][1]))
+            pathels.append(path.moveto_pt(self.corners[0][0], self.corners[0][1]))
             for x, y in self.corners[1:]:
-                pathels.append(path._lineto(x, y))
+                pathels.append(path.lineto_pt(x, y))
             pathels.append(path.closepath())
         else:
             # curved box plotting by Michael Schindler
@@ -96,11 +96,11 @@ class polygon_pt:
                 d2 = c[0] +     d2[0] * r[i][1], c[1] +     d2[1] * r[i][1]
                 e  = 0.5 * (f1[0] + f2[0]), 0.5 * (f1[1] + f2[1])
                 if i:
-                    pathels.append(path._lineto(*d1))
+                    pathels.append(path.lineto_pt(*d1))
                 else:
-                    pathels.append(path._moveto(*d1))
-                pathels.append(path._curveto(*(g1 + f1 + e)))
-                pathels.append(path._curveto(*(f2 + g2 + d2)))
+                    pathels.append(path.moveto_pt(*d1))
+                pathels.append(path.curveto_pt(*(g1 + f1 + e)))
+                pathels.append(path.curveto_pt(*(f2 + g2 + d2)))
             pathels.append(path.closepath())
         return path.path(*pathels)
 
@@ -112,9 +112,9 @@ class polygon_pt:
 
     def reltransform(self, *trafos):
         if self.center is not None:
-            trafos = ([trafo._translate(-self.center[0], -self.center[1])] +
+            trafos = ([trafo.translate_pt(-self.center[0], -self.center[1])] +
                       list(trafos) +
-                      [trafo._translate(self.center[0], self.center[1])])
+                      [trafo.translate_pt(self.center[0], self.center[1])])
         self.transform(*trafos)
 
     def successivepointnumbers(self):
@@ -212,11 +212,11 @@ class polygon_pt:
         return map(unit.t_pt, self.linealignvector_pt(unit.topt(a), dx, dy))
 
     def circlealign_pt(self, *args):
-        self.transform(trafo._translate(*self.circlealignvector_pt(*args)))
+        self.transform(trafo.translate_pt(*self.circlealignvector_pt(*args)))
         return self
 
     def linealign_pt(self, *args):
-        self.transform(trafo._translate(*self.linealignvector_pt(*args)))
+        self.transform(trafo.translate_pt(*self.linealignvector_pt(*args)))
         return self
 
     def circlealign(self, *args):
@@ -302,7 +302,7 @@ def genericalignequal_pt(method, polygons, a, dx, dy):
         if vec is None or vec[0] * dx + vec[1] * dy < v[0] * dx + v[1] * dy:
             vec = v
     for p in polygons:
-        p.transform(trafo._translate(*vec))
+        p.transform(trafo.translate_pt(*vec))
 
 
 def circlealignequal_pt(polygons, *args):
@@ -326,7 +326,7 @@ def tile_pt(polygons, a, dx, dy):
             maxextent = extent
     d = 0
     for p in polygons:
-        p.transform(trafo._translate(d*dx, d*dy))
+        p.transform(trafo.translate_pt(d*dx, d*dy))
         d += maxextent + a
 
 

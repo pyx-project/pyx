@@ -139,7 +139,7 @@ class _canvas(base.PSCmd):
         self.texrunner = text.defaulttexrunner
 
         for arg in args:
-            if isinstance(arg, trafo._trafo):
+            if isinstance(arg, trafo.trafo_pt):
                 self.trafo = self.trafo*arg
                 self.PSOps.append(arg)
             elif isinstance(arg, clip):
@@ -219,9 +219,9 @@ class _canvas(base.PSCmd):
         """
 
         attrs = attr.mergeattrs(attrs)
-        attr.checkattrs(attrs, [deco.deco, style.fillstyle, style.strokestyle, trafo._trafo])
+        attr.checkattrs(attrs, [deco.deco, style.fillstyle, style.strokestyle, trafo.trafo_pt])
 
-        for t in attr.getattrs(attrs, [trafo._trafo]):
+        for t in attr.getattrs(attrs, [trafo.trafo_pt]):
             path = path.transformed(t)
 
         dp = deco.decoratedpath(path)
@@ -395,7 +395,7 @@ class canvas(_canvas):
         ctrafo = None     # global transformation of canvas
 
         if rotated:
-            ctrafo = trafo._rotate(90,
+            ctrafo = trafo.rotate_pt(90,
                                      0.5*(abbox.llx+abbox.urx),
                                      0.5*(abbox.lly+abbox.ury))
 
@@ -410,7 +410,7 @@ class canvas(_canvas):
 
             if not ctrafo: ctrafo=trafo.trafo()
 
-            ctrafo = ctrafo._translated(0.5*(width -(abbox.urx-abbox.llx))-
+            ctrafo = ctrafo.translated_pt(0.5*(width -(abbox.urx-abbox.llx))-
                                        abbox.llx,
                                        0.5*(height-(abbox.ury-abbox.lly))-
                                        abbox.lly)
@@ -428,7 +428,7 @@ class canvas(_canvas):
                     sfactor = min((width-2*margin)/(abbox.urx-abbox.llx),
                                   (height-2*margin)/(abbox.ury-abbox.lly))
 
-                ctrafo = ctrafo._scaled(sfactor, sfactor, 0.5*width, 0.5*height)
+                ctrafo = ctrafo.scaled_pt(sfactor, sfactor, 0.5*width, 0.5*height)
 
 
         elif fittosize:

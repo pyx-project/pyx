@@ -37,12 +37,12 @@ class _connector(path.normpath):
         """shorten a path by the given distances"""
 
         center = [unit.topt(self.begin()[i]) for i in [0,1]]
-        sp = self.intersect( path._circle(center[0], center[1], dists[0]) )[0]
+        sp = self.intersect( path.circle_pt(center[0], center[1], dists[0]) )[0]
         try: self.path = self.split(sp[:1])[1].path
         except: pass
 
         center = [unit.topt(self.end()[i]) for i in [0,1]]
-        sp = self.intersect( path._circle(center[0], center[1], dists[1]) )[0]
+        sp = self.intersect( path.circle_pt(center[0], center[1], dists[1]) )[0]
         try: self.path = self.split(sp[-1:])[0].path
         except: pass
 
@@ -60,8 +60,8 @@ class _line(_connector):
         self.box2 = box2
 
         _connector.__init__(self,
-            path._moveto(*self.box1.center),
-            path._lineto(*self.box2.center))
+            path.moveto_pt(*self.box1.center),
+            path.lineto_pt(*self.box2.center))
 
         self.omitends(box1, box2)
         self.shortenpath(boxdists)
@@ -112,12 +112,12 @@ class _arc(_connector):
         # negative direction if relangle<0 or bulge<0
         if (relangle is not None and relangle < 0) or (bulge is not None and bulge < 0):
             _connector.__init__(self,
-                path._moveto(*self.box1.center),
-                path._arcn(center[0], center[1], radius, _todeg(angle1), _todeg(angle2)))
+                path.moveto_pt(*self.box1.center),
+                path.arcn_pt(center[0], center[1], radius, _todeg(angle1), _todeg(angle2)))
         else:
             _connector.__init__(self,
-                path._moveto(*self.box1.center),
-                path._arc(center[0], center[1], radius, _todeg(angle1), _todeg(angle2)))
+                path.moveto_pt(*self.box1.center),
+                path.arc_pt(center[0], center[1], radius, _todeg(angle1), _todeg(angle2)))
 
         self.omitends(box1, box2)
         self.shortenpath(boxdists)
@@ -158,8 +158,8 @@ class _curve(_connector):
         control2 = [self.box2.center[i] - control2[i] * bulge  for i in [0,1]]
 
         _connector.__init__(self,
-            path._moveto(*self.box1.center),
-            path._curveto(*(control1 + control2 + helper.ensurelist(self.box2.center))))
+            path.moveto_pt(*self.box1.center),
+            path.curveto_pt(*(control1 + control2 + helper.ensurelist(self.box2.center))))
 
         self.omitends(box1, box2)
         self.shortenpath(boxdists)
@@ -242,9 +242,9 @@ class _twolines(_connector):
                 raise NotImplementedError, "I found a strange combination of arguments"
 
         _connector.__init__(self,
-            path._moveto(*self.box1.center),
-            path._lineto(*middle),
-            path._lineto(*self.box2.center))
+            path.moveto_pt(*self.box1.center),
+            path.lineto_pt(*middle),
+            path.lineto_pt(*self.box2.center))
 
         self.omitends(box1, box2)
         self.shortenpath(boxdists)
