@@ -7,80 +7,80 @@ from pyx.path import *
 import math
 
 def testarrow(c):
-    c.stroke(path(moveto(10,20), 
+    c.stroke(path(moveto(10,20),
     	        curveto(12,16,14,15,12,19),
                 rcurveto(-3,2,3,3,-2,4)),
-           deco.barrow.small, deco.earrow.normal)
-    
-    c.stroke(path(arc(8,15,4,10,70)), deco.barrow.small, deco.earrow.normal)
-    c.stroke(path(arc(8,15,3,10,70)), deco.barrow.small, deco.earrow.normal)
-    c.stroke(path(arc(8,15,2,10,70)), deco.barrow.small, deco.earrow.normal)
-    c.stroke(path(arc(8,15,1,10,70)), deco.barrow.small, deco.earrow.normal)
-    c.stroke(path(arc(8,15,0.5,10,70)), deco.barrow.small, deco.earrow.normal)
+           deco.barrow.small(), deco.earrow.normal())
+
+    c.stroke(path(arc(8,15,4,10,70)), deco.barrow.small(), deco.earrow.normal())
+    c.stroke(path(arc(8,15,3,10,70)), deco.barrow.small(), deco.earrow.normal())
+    c.stroke(path(arc(8,15,2,10,70)), deco.barrow.small(), deco.earrow.normal())
+    c.stroke(path(arc(8,15,1,10,70)), deco.barrow.small(), deco.earrow.normal())
+    c.stroke(path(arc(8,15,0.5,10,70)), deco.barrow.small(), deco.earrow.normal())
 
     base = 2
 
     c.stroke(path(moveto(5,10), rlineto(5,0)),
            deco.barrow("%f t pt" % (base/math.sqrt(8)), constriction=None),
-           deco.earrow.SMall)
+           deco.earrow.SMall())
     c.stroke(path(moveto(5,10.5), rlineto(5,0)),
            deco.barrow("%f t pt" % (base/math.sqrt(4)), constriction=None),
-           deco.earrow.Small)
+           deco.earrow.Small())
     c.stroke(path(moveto(5,11), rlineto(5,0)),
            deco.barrow("%f t pt" % (base/math.sqrt(2)), constriction=None),
-           deco.earrow.small)
+           deco.earrow.small())
     c.stroke(path(moveto(5,11.5), rlineto(5,0)),
            deco.barrow("%f t pt" % (base/math.sqrt(1)), constriction=None),
-           deco.earrow.normal)
+           deco.earrow.normal())
     c.stroke(path(moveto(5,12), rlineto(5,0)),
            deco.barrow("%f t pt" % (base*math.sqrt(2)), constriction=None),
-           deco.earrow.large)
+           deco.earrow.large())
     c.stroke(path(moveto(5,12.5), rlineto(5,0)),
            deco.barrow("%f t pt" % (base*math.sqrt(4)), constriction=None),
-           deco.earrow.Large)
+           deco.earrow.Large())
     c.stroke(path(moveto(5,13), rlineto(5,0)),
            deco.barrow("%f t pt" % (base*math.sqrt(8)), constriction=None),
-           deco.earrow.LArge)
+           deco.earrow.LArge())
     c.stroke(path(moveto(5,13.5), rlineto(5,0)),
            deco.barrow("%f t pt" % (base*math.sqrt(16)), constriction=None),
-           deco.earrow.LARge)
+           deco.earrow.LARge())
    
     lt = style.linewidth.THick
 
     c.stroke(path(moveto(11,10), rlineto(5,0)),
            lt,
            deco.barrow("%f t pt" % (base/math.sqrt(8)), constriction=None),
-           deco.earrow.SMall)
+           deco.earrow.SMall())
     c.stroke(path(moveto(11,10.5), rlineto(5,0)),
            lt,
            deco.barrow("%f t pt" % (base/math.sqrt(4)), constriction=None),
-           deco.earrow.Small)
+           deco.earrow.Small())
     c.stroke(path(moveto(11,11), rlineto(5,0)),
            lt,
            deco.barrow("%f t pt" % (base/math.sqrt(2)), constriction=None),
-           deco.earrow.small)
+           deco.earrow.small())
     c.stroke(path(moveto(11,11.5), rlineto(5,0)),
            lt,
            deco.barrow("%f t pt" % (base/math.sqrt(1)), constriction=None),
-           deco.earrow.normal)
+           deco.earrow.normal())
     c.stroke(path(moveto(11,12), rlineto(5,0)),
            lt,
            deco.barrow("%f t pt" % (base*math.sqrt(2)), constriction=None),
-           deco.earrow.large)
+           deco.earrow.large())
     c.stroke(path(moveto(11,12.5), rlineto(5,0)),
            lt,
            deco.barrow("%f t pt" % (base*math.sqrt(4)), constriction=None),
-           deco.earrow.Large)
+           deco.earrow.Large())
     c.stroke(path(moveto(11,13), rlineto(5,0)),
            lt,
            deco.barrow("%f t pt" % (base*math.sqrt(8)), constriction=None),
-           deco.earrow.LArge(style.linestyle.dashed, color.rgb.green))
+           deco.earrow.LArge(attrs=[style.linestyle.dashed, color.rgb.green]))
     c.stroke(path(moveto(11,13.5), rlineto(5,0)),
            lt,
            deco.barrow("%f t pt" % (base*math.sqrt(16)), constriction=None),
-           deco.earrow.LARge(color.rgb.red, 
-                               deco.stroked(style.linejoin.round),
-                               deco.filled(color.rgb.blue)))
+           deco.earrow.LARge(attrs=[color.rgb.red,
+                                    deco.stroked(style.linejoin.round),
+                                    deco.filled(color.rgb.blue)]))
 
 
 
