@@ -67,8 +67,6 @@ class _msglevel:
     def __init__(self, value):
         self.value = value
     def __cmp__(self, other):
-        return 0
-        print self, type(self), other, type(other)
         return cmp(self.value, other.value)
     __rcmp__ = __cmp__
 
@@ -228,7 +226,7 @@ class tex:
             r = r + h[(i >> 4) & 0xF] + h[i & 0xF]
         return r
         
-    def TexAddCmd(self, Cmd, IgnoreMsgLevel):
+    def TexAddCmd(self, Cmd, lmsglevel):
 
         'save Cmd to TexCmds, store "stack[2:]" for later error report'
         
@@ -244,7 +242,7 @@ class tex:
         MarkerEnd = self.TexMarkerEnd + " [" + str(len(self.TexCmds)) + "]"
 
         Cmd = "\\immediate\\write16{" + MarkerBegin + "}\n" + Cmd + "\\immediate\\write16{" + MarkerEnd + "}\n"
-        self.TexCmds = self.TexCmds + [ TexCmdSaveStruc(Cmd, MarkerBegin, MarkerEnd, Stack, IgnoreMsgLevel), ]
+        self.TexCmds = self.TexCmds + [ TexCmdSaveStruc(Cmd, MarkerBegin, MarkerEnd, Stack, lmsglevel), ]
 
     def __str__(self):
 
@@ -421,15 +419,15 @@ class tex:
  
         return 1
 
-    def text(self, x, y, Cmd, size = fontsize.normalsize, halign = None, hsize = None, valign = None, angle = None, IgnoreMsgLevel = 1):
+    def text(self, x, y, Cmd, size = fontsize.normalsize, halign = None, hsize = None, valign = None, angle = None, lmsglevel = msglevel.hideload):
 
         'print Cmd at (x, y)'
         
         TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, size, hsize, valign)
         TexCopyBoxCmd = self.TexCopyBoxCmd(x, y, Cmd, halign, angle)
-        self.TexAddCmd(TexCreateBoxCmd + TexCopyBoxCmd, IgnoreMsgLevel)
+        self.TexAddCmd(TexCreateBoxCmd + TexCopyBoxCmd, lmsglevel)
 
-    def textwd(self, Cmd, size = fontsize.normalsize, hsize = None, IgnoreMsgLevel = 1):
+    def textwd(self, Cmd, size = fontsize.normalsize, hsize = None, lmsglevel = msglevel.hideload):
     
         'get width of Cmd'
 
@@ -437,10 +435,10 @@ class tex:
         TexHexMD5 = self.TexHexMD5(TexCreateBoxCmd)
         self.TexAddCmd(TexCreateBoxCmd +
                        "\\immediate\\write\\sizefile{" + TexHexMD5 +
-                       ":wd:" + str(time.time()) + ":\\the\\wd\\localbox}\n", IgnoreMsgLevel)
+                       ":wd:" + str(time.time()) + ":\\the\\wd\\localbox}\n", lmsglevel)
         return self.TexResult(TexHexMD5 + ":wd:")
 
-    def textht(self, Cmd, size = fontsize.normalsize, hsize = None, valign = None, IgnoreMsgLevel = 1):
+    def textht(self, Cmd, size = fontsize.normalsize, hsize = None, valign = None, lmsglevel = msglevel.hideload):
 
         'get height of Cmd'
 
@@ -448,10 +446,10 @@ class tex:
         TexHexMD5 = self.TexHexMD5(TexCreateBoxCmd)
         self.TexAddCmd(TexCreateBoxCmd +
                        "\\immediate\\write\\sizefile{" + TexHexMD5 +
-                       ":ht:" + str(time.time()) + ":\\the\\ht\\localbox}\n", IgnoreMsgLevel)
+                       ":ht:" + str(time.time()) + ":\\the\\ht\\localbox}\n", lmsglevel)
         return self.TexResult(TexHexMD5 + ":ht:")
 
-    def textdp(self, Cmd, size = fontsize.normalsize, hsize = None, valign = None, IgnoreMsgLevel = 1):
+    def textdp(self, Cmd, size = fontsize.normalsize, hsize = None, valign = None, lmsglevel = msglevel.hideload):
    
         'get depth of Cmd'
 
@@ -459,5 +457,5 @@ class tex:
         TexHexMD5 = self.TexHexMD5(TexCreateBoxCmd)
         self.TexAddCmd(TexCreateBoxCmd +
                        "\\immediate\\write\\sizefile{" + TexHexMD5 +
-                       ":dp:" + str(time.time()) + ":\\the\\dp\\localbox}\n", IgnoreMsgLevel)
+                       ":dp:" + str(time.time()) + ":\\the\\dp\\localbox}\n", lmsglevel)
         return self.TexResult(TexHexMD5 + ":dp:")
