@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#rrrrrrr!/usr/bin/env python
 # -*- coding: ISO-8859-1 -*-
 #
 #
@@ -54,252 +54,6 @@ except NameError:
     def enumerate(list):
         return zip(xrange(len(list)), list)
     
-
-################################################################################
-# helper classes and routines for Bezier curves
-################################################################################
-
-#
-# bcurve_pt: Bezier curve segment with four control points (coordinates in pts)
-#
-
-class bcurve_pt:
-
-    """element of Bezier path (coordinates in pts)"""
-
-    def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
-        self.x0 = x0
-        self.y0 = y0
-        self.x1 = x1
-        self.y1 = y1
-        self.x2 = x2
-        self.y2 = y2
-        self.x3 = x3
-        self.y3 = y3
-
-    def __str__(self):
-        return "%g %g moveto %g %g %g %g %g %g curveto" % \
-               ( self.x0, self.y0,
-                 self.x1, self.y1,
-                 self.x2, self.y2,
-                 self.x3, self.y3 )
-
-    def __getitem__(self, t):
-        """return pathel at parameter value t (0<=t<=1)"""
-        assert 0 <= t <= 1, "parameter t of pathel out of range [0,1]"
-        return ( unit.t_pt((  -self.x0+3*self.x1-3*self.x2+self.x3)*t*t*t +
-                           ( 3*self.x0-6*self.x1+3*self.x2        )*t*t +
-                           (-3*self.x0+3*self.x1                  )*t +
-                               self.x0) ,
-                 unit.t_pt((  -self.y0+3*self.y1-3*self.y2+self.y3)*t*t*t +
-                           ( 3*self.y0-6*self.y1+3*self.y2        )*t*t +
-                           (-3*self.y0+3*self.y1                  )*t +
-                               self.y0)
-               )
-
-    pos = __getitem__
-
-    def bbox(self):
-        return bbox._bbox(min(self.x0, self.x1, self.x2, self.x3), 
-                          min(self.y0, self.y1, self.y2, self.y3), 
-                          max(self.x0, self.x1, self.x2, self.x3), 
-                          max(self.y0, self.y1, self.y2, self.y3))
-
-    def isStraight(self, epsilon=1e-5):
-        """check wheter the bcurve_pt is approximately straight"""
-
-        # just check, whether the modulus of the difference between
-        # the length of the control polygon
-        # (i.e. |P1-P0|+|P2-P1|+|P3-P2|) and the length of the
-        # straight line between starting and ending point of the
-        # bcurve_pt (i.e. |P3-P1|) is smaller the epsilon
-        return abs(math.sqrt((self.x1-self.x0)*(self.x1-self.x0)+
-                             (self.y1-self.y0)*(self.y1-self.y0)) +
-                   math.sqrt((self.x2-self.x1)*(self.x2-self.x1)+
-                             (self.y2-self.y1)*(self.y2-self.y1)) +
-                   math.sqrt((self.x3-self.x2)*(self.x3-self.x2)+
-                             (self.y3-self.y2)*(self.y3-self.y2)) -
-                   math.sqrt((self.x3-self.x0)*(self.x3-self.x0)+
-                             (self.y3-self.y0)*(self.y3-self.y0)))<epsilon
-
-    def split(self, parameters):
-        """return list of bcurve_pt corresponding to split at parameters"""
-
-        # first, we calculate the coefficients corresponding to our
-        # original bezier curve. These represent a useful starting
-        # point for the following change of the polynomial parameter
-        a0x = self.x0
-        a0y = self.y0
-        a1x = 3*(-self.x0+self.x1)
-        a1y = 3*(-self.y0+self.y1)
-        a2x = 3*(self.x0-2*self.x1+self.x2)
-        a2y = 3*(self.y0-2*self.y1+self.y2)
-        a3x = -self.x0+3*(self.x1-self.x2)+self.x3
-        a3y = -self.y0+3*(self.y1-self.y2)+self.y3
-
-        if parameters[0]!=0:
-            parameters = [0] + parameters
-        if parameters[-1]!=1:
-            parameters = parameters + [1]
-
-        result = []
-
-        for i in range(len(parameters)-1):
-            t1 = parameters[i]
-            dt = parameters[i+1]-t1
-
-            # [t1,t2] part
-            #
-            # the new coefficients of the [t1,t1+dt] part of the bezier curve
-            # are then given by expanding
-            #  a0 + a1*(t1+dt*u) + a2*(t1+dt*u)**2 +
-            #  a3*(t1+dt*u)**3 in u, yielding
-            #
-            #   a0 + a1*t1 + a2*t1**2 + a3*t1**3        +
-            #   ( a1 + 2*a2 + 3*a3*t1**2 )*dt    * u    + 
-            #   ( a2 + 3*a3*t1 )*dt**2           * u**2 +
-            #   a3*dt**3                         * u**3
-            #
-            # from this values we obtain the new control points by inversion
-            #
-            # XXX: we could do this more efficiently by reusing for
-            # (x0, y0) the control point (x3, y3) from the previous
-            # Bezier curve
-
-            x0 = a0x + a1x*t1 + a2x*t1*t1 + a3x*t1*t1*t1 
-            y0 = a0y + a1y*t1 + a2y*t1*t1 + a3y*t1*t1*t1 
-            x1 = (a1x+2*a2x*t1+3*a3x*t1*t1)*dt/3.0 + x0
-            y1 = (a1y+2*a2y*t1+3*a3y*t1*t1)*dt/3.0 + y0
-            x2 = (a2x+3*a3x*t1)*dt*dt/3.0 - x0 + 2*x1
-            y2 = (a2y+3*a3y*t1)*dt*dt/3.0 - y0 + 2*y1
-            x3 = a3x*dt*dt*dt + x0 - 3*x1 + 3*x2
-            y3 = a3y*dt*dt*dt + y0 - 3*y1 + 3*y2
-
-            result.append(bcurve_pt(x0, y0, x1, y1, x2, y2, x3, y3))
-
-        return result
-
-    def MidPointSplit(self):
-        """splits bpathel at midpoint returning bpath with two bpathels"""
-
-        # for efficiency reason, we do not use self.split(0.5)!
-
-        # first, we have to calculate the  midpoints between adjacent
-        # control points
-        x01 = 0.5*(self.x0+self.x1)
-        y01 = 0.5*(self.y0+self.y1)
-        x12 = 0.5*(self.x1+self.x2)
-        y12 = 0.5*(self.y1+self.y2)
-        x23 = 0.5*(self.x2+self.x3)
-        y23 = 0.5*(self.y2+self.y3)
-
-        # In the next iterative step, we need the midpoints between 01 and 12
-        # and between 12 and 23 
-        x01_12 = 0.5*(x01+x12)
-        y01_12 = 0.5*(y01+y12)
-        x12_23 = 0.5*(x12+x23)
-        y12_23 = 0.5*(y12+y23)
-
-        # Finally the midpoint is given by
-        xmidpoint = 0.5*(x01_12+x12_23)
-        ymidpoint = 0.5*(y01_12+y12_23)
-
-        return (bcurve_pt(self.x0, self.y0,
-                        x01, y01,
-                        x01_12, y01_12,
-                        xmidpoint, ymidpoint),
-                bcurve_pt(xmidpoint, ymidpoint,
-                        x12_23, y12_23,
-                        x23, y23,
-                        self.x3, self.y3))
-
-    def arclength_pt(self, epsilon=1e-5):
-        """computes arclength of bpathel in pts using successive midpoint split"""
-        if self.isStraight(epsilon):
-            return math.sqrt((self.x3-self.x0)*(self.x3-self.x0)+
-                             (self.y3-self.y0)*(self.y3-self.y0))
-        else:
-            (a, b) = self.MidPointSplit()
-            return a.arclength_pt(epsilon) + b.arclength_pt(epsilon)
-
-    def arclength(self, epsilon=1e-5):
-        """computes arclength of bpathel using successive midpoint split"""
-        return unit.t_pt(self.arclength_pt(epsilon))
-
-    def seglengths(self, paraminterval, epsilon=1e-5):
-        """returns the list of segment line lengths (in pts) of the bpathel
-           together with the length of the parameterinterval"""
-
-        # lower and upper bounds for the arclength
-        lowerlen = \
-            math.sqrt((self.x3-self.x0)*(self.x3-self.x0) + (self.y3-self.y0)*(self.y3-self.y0))
-        upperlen = \
-            math.sqrt((self.x1-self.x0)*(self.x1-self.x0) + (self.y1-self.y0)*(self.y1-self.y0)) + \
-            math.sqrt((self.x2-self.x1)*(self.x2-self.x1) + (self.y2-self.y1)*(self.y2-self.y1)) + \
-            math.sqrt((self.x3-self.x2)*(self.x3-self.x2) + (self.y3-self.y2)*(self.y3-self.y2))
-
-        # instead of isStraight method:
-        if abs(upperlen-lowerlen)<epsilon:
-            return [( 0.5*(upperlen+lowerlen), paraminterval )]
-        else:
-            (a, b) = self.MidPointSplit()
-            return a.seglengths(0.5*paraminterval, epsilon) + b.seglengths(0.5*paraminterval, epsilon)
-
-    def _lentopar_pt(self, lengths, epsilon=1e-5):
-        """computes the parameters [t] of bpathel where the given lengths (in pts) are assumed
-        returns ( [parameters], total arclength)
-        A negative length gives a parameter 0"""
-
-        # create the list of accumulated lengths
-        # and the length of the parameters
-        cumlengths = self.seglengths(1, epsilon)
-        l = len(cumlengths)
-        parlengths = [cumlengths[i][1] for i in range(l)]
-        cumlengths[0] = cumlengths[0][0]
-        for i in range(1,l):
-            cumlengths[i] = cumlengths[i][0] + cumlengths[i-1]
-
-        # create the list of parameters to be returned
-        params = []
-        for length in lengths:
-            # find the last index that is smaller than length
-            try:
-                lindex = bisect.bisect_left(cumlengths, length)
-            except: # workaround for python 2.0
-                lindex = bisect.bisect(cumlengths, length)
-                while lindex and (lindex >= len(cumlengths) or
-                                  cumlengths[lindex] >= length):
-                    lindex -= 1
-            if lindex == 0:
-                param = length * 1.0 / cumlengths[0]
-                param *= parlengths[0]
-            elif lindex >= l-2:
-                param = 1
-            else:
-                param = (length - cumlengths[lindex]) * 1.0 / (cumlengths[lindex+1] - cumlengths[lindex])
-                param *= parlengths[lindex+1]
-                for i in range(lindex+1):
-                    param += parlengths[i]
-            param = max(min(param,1),0)
-            params.append(param)
-        return [params, cumlengths[-1]]
-
-#
-# bline_pt: Bezier curve segment corresponding to straight line (coordinates in pts)
-#
-
-class bline_pt(bcurve_pt):
-
-    """bcurve_pt corresponding to straight line (coordiates in pts)"""
-
-    def __init__(self, x0, y0, x1, y1):
-        xa = x0+(x1-x0)/3.0
-        ya = y0+(y1-y0)/3.0
-        xb = x0+2.0*(x1-x0)/3.0
-        yb = y0+2.0*(y1-y0)/3.0
-
-        bcurve_pt.__init__(self, x0, y0, xa, ya, xb, yb, x1, y1)
-
 ################################################################################
 # Bezier helper functions
 ################################################################################
@@ -322,7 +76,7 @@ def _arctobcurve(x, y, r, phi1, phi2):
     (x1, y1) = ( x0-l*sin(phi1), y0+l*cos(phi1) )
     (x2, y2) = ( x3+l*sin(phi2), y3-l*cos(phi2) )
 
-    return bcurve_pt(x0, y0, x1, y1, x2, y2, x3, y3)
+    return normcurve(x0, y0, x1, y1, x2, y2, x3, y3)
 
 
 def _arctobezierpath(x, y, r, phi1, phi2, dphimax=45):
@@ -363,12 +117,12 @@ def _bcurveIntersect(a, a_t0, a_t1, b, b_t0, b_t1, epsilon=1e-5):
     # intersection of bboxes is a necessary criterium for intersection
     if not a.bbox().intersects(b.bbox()): return ()
 
-    if not a.isStraight(epsilon):
-        (aa, ab) = a.MidPointSplit()
+    if not a.isstraight(epsilon):
+        (aa, ab) = a.midpointsplit()
         a_tm = 0.5*(a_t0+a_t1)
 
-        if not b.isStraight(epsilon):
-            (ba, bb) = b.MidPointSplit()
+        if not b.isstraight(epsilon):
+            (ba, bb) = b.midpointsplit()
             b_tm = 0.5*(b_t0+b_t1)
 
             return ( _bcurveIntersect(aa, a_t0, a_tm,
@@ -385,8 +139,8 @@ def _bcurveIntersect(a, a_t0, a_t1, b, b_t0, b_t1, epsilon=1e-5):
                      _bcurveIntersect(ab, a_tm, a_t1,
                                        b, b_t0, b_t1, epsilon) )
     else:
-        if not b.isStraight(epsilon):
-            (ba, bb) = b.MidPointSplit()
+        if not b.isstraight(epsilon):
+            (ba, bb) = b.midpointsplit()
             b_tm = 0.5*(b_t0+b_t1)
 
             return  ( _bcurveIntersect(a, a_t0, a_t1,
@@ -1382,8 +1136,12 @@ class normpathel:
         pass
 
     def intersect(self, other, epsilon=1e-5):
-        # XXX make this more efficient by treating special cases separately
-        return  _bcurvesIntersect([self._bcurve()], 0, 1, [other._bcurve()], 0, 1, epsilon)
+        # XXX make this more efficient and _clean_ by treating special cases separately
+	if isinstance(self, normline):
+	    self = self._bcurve()
+	if isinstance(other, normline):
+	    other = other._bcurve()
+        return  _bcurvesIntersect([self], 0, 1, [other], 0, 1, epsilon)
 
     def _lentopar_pt(self, lengths, epsilon=1e-5):
         """returns tuple (t,l) with
@@ -1444,7 +1202,11 @@ class normline(normpathel):
         return "normline(%g, %g, %g, %g)" % (self.x0, self.y0, self.x1, self.y1)
 
     def _bcurve(self):
-        return bline_pt(self.x0, self.y0, self.x1, self.y1)
+        xa = self.x0+(self.x1-self.x0)/3.0
+        ya = self.y0+(self.y1-self.y0)/3.0
+        xb = self.x0+2.0*(self.x1-self.x0)/3.0
+        yb = self.y0+2.0*(self.y1-self.y0)/3.0
+        return normcurve(self.x0, self.y0, xa, ya, xb, yb, self.x1, self.y1)
 
     def arclength_pt(self,  epsilon=1e-5):
         return math.sqrt((self.x0-self.x1)*(self.x0-self.x1)+(self.y0-self.y1)*(self.y0-self.y1))
@@ -1530,6 +1292,15 @@ class normcurve(normpathel):
         return "normcurve(%g, %g, %g, %g, %g, %g, %g, %g)" % (self.x0, self.y0, self.x1, self.y1,
                                                               self.x2, self.y2, self.x3, self.y3)
 
+    def arclength_pt(self, epsilon=1e-5):
+        """computes arclength of bpathel in pts using successive midpoint split"""
+        if self.isstraight(epsilon):
+            return math.sqrt((self.x3-self.x0)*(self.x3-self.x0)+
+                             (self.y3-self.y0)*(self.y3-self.y0))
+        else:
+            (a, b) = self.midpointsplit()
+            return a.arclength_pt(epsilon) + b.arclength_pt(epsilon)
+
     def at_pt(self, t):
         xt = (  (-self.x0+3*self.x1-3*self.x2+self.x3)*t*t*t +
                (3*self.x0-6*self.x1+3*self.x2        )*t*t +
@@ -1540,12 +1311,6 @@ class normcurve(normpathel):
               (-3*self.y0+3*self.y1                  )*t +
               self.y0)
         return (xt, yt)
-
-    def _bcurve(self):
-        return bcurve_pt(self.x0, self.y0, self.x1, self.y1, self.x2, self.y2, self.x3, self.y3)
-
-    def arclength_pt(self, epsilon=1e-5):
-        return self._bcurve().arclength_pt(epsilon)
 
     def bbox(self):
         return bbox._bbox(min(self.x0, self.x1, self.x2, self.x3),
@@ -1559,8 +1324,59 @@ class normcurve(normpathel):
     def end_pt(self):
         return self.x3, self.y3
 
+    def isstraight(self, epsilon=1e-5):
+        """check wheter the normcurve is approximately straight"""
+
+        # just check, whether the modulus of the difference between
+        # the length of the control polygon
+        # (i.e. |P1-P0|+|P2-P1|+|P3-P2|) and the length of the
+        # straight line between starting and ending point of the
+        # normcurve (i.e. |P3-P1|) is smaller the epsilon
+        return abs(math.sqrt((self.x1-self.x0)*(self.x1-self.x0)+
+                             (self.y1-self.y0)*(self.y1-self.y0)) +
+                   math.sqrt((self.x2-self.x1)*(self.x2-self.x1)+
+                             (self.y2-self.y1)*(self.y2-self.y1)) +
+                   math.sqrt((self.x3-self.x2)*(self.x3-self.x2)+
+                             (self.y3-self.y2)*(self.y3-self.y2)) -
+                   math.sqrt((self.x3-self.x0)*(self.x3-self.x0)+
+                             (self.y3-self.y0)*(self.y3-self.y0)))<epsilon
+
     def _lentopar_pt(self, lengths, epsilon=1e-5):
         return self._bcurve()._lentopar_pt(lengths, epsilon)
+
+    def midpointsplit(self):
+        """splits bpathel at midpoint returning bpath with two bpathels"""
+
+        # for efficiency reason, we do not use self.split(0.5)!
+
+        # first, we have to calculate the  midpoints between adjacent
+        # control points
+        x01 = 0.5*(self.x0+self.x1)
+        y01 = 0.5*(self.y0+self.y1)
+        x12 = 0.5*(self.x1+self.x2)
+        y12 = 0.5*(self.y1+self.y2)
+        x23 = 0.5*(self.x2+self.x3)
+        y23 = 0.5*(self.y2+self.y3)
+
+        # In the next iterative step, we need the midpoints between 01 and 12
+        # and between 12 and 23 
+        x01_12 = 0.5*(x01+x12)
+        y01_12 = 0.5*(y01+y12)
+        x12_23 = 0.5*(x12+x23)
+        y12_23 = 0.5*(y12+y23)
+
+        # Finally the midpoint is given by
+        xmidpoint = 0.5*(x01_12+x12_23)
+        ymidpoint = 0.5*(y01_12+y12_23)
+
+        return (normcurve(self.x0, self.y0,
+                          x01, y01,
+                          x01_12, y01_12,
+                          xmidpoint, ymidpoint),
+                normcurve(xmidpoint, ymidpoint,
+                          x12_23, y12_23,
+                          x23, y23,
+                          self.x3, self.y3))
 
     def reverse(self):
         self.x0, self.y0, self.x1, self.y1, self.x2, self.y2, self.x3, self.y3 = \
@@ -1569,10 +1385,125 @@ class normcurve(normpathel):
     def reversed(self):
         return normcurve(self.x3, self.y3, self.x2, self.y2, self.x1, self.y1, self.x0, self.y0)
 
+    def seglengths(self, paraminterval, epsilon=1e-5):
+        """returns the list of segment line lengths (in pts) of the bpathel
+           together with the length of the parameterinterval"""
+
+        # lower and upper bounds for the arclength
+        lowerlen = \
+            math.sqrt((self.x3-self.x0)*(self.x3-self.x0) + (self.y3-self.y0)*(self.y3-self.y0))
+        upperlen = \
+            math.sqrt((self.x1-self.x0)*(self.x1-self.x0) + (self.y1-self.y0)*(self.y1-self.y0)) + \
+            math.sqrt((self.x2-self.x1)*(self.x2-self.x1) + (self.y2-self.y1)*(self.y2-self.y1)) + \
+            math.sqrt((self.x3-self.x2)*(self.x3-self.x2) + (self.y3-self.y2)*(self.y3-self.y2))
+
+        # instead of isstraight method:
+        if abs(upperlen-lowerlen)<epsilon:
+            return [( 0.5*(upperlen+lowerlen), paraminterval )]
+        else:
+            (a, b) = self.midpointsplit()
+            return a.seglengths(0.5*paraminterval, epsilon) + b.seglengths(0.5*paraminterval, epsilon)
+
+    def _lentopar_pt(self, lengths, epsilon=1e-5):
+        """computes the parameters [t] of bpathel where the given lengths (in pts) are assumed
+        returns ( [parameters], total arclength)
+        A negative length gives a parameter 0"""
+
+        # create the list of accumulated lengths
+        # and the length of the parameters
+        cumlengths = self.seglengths(1, epsilon)
+        l = len(cumlengths)
+        parlengths = [cumlengths[i][1] for i in range(l)]
+        cumlengths[0] = cumlengths[0][0]
+        for i in range(1,l):
+            cumlengths[i] = cumlengths[i][0] + cumlengths[i-1]
+
+        # create the list of parameters to be returned
+        params = []
+        for length in lengths:
+            # find the last index that is smaller than length
+            try:
+                lindex = bisect.bisect_left(cumlengths, length)
+            except: # workaround for python 2.0
+                lindex = bisect.bisect(cumlengths, length)
+                while lindex and (lindex >= len(cumlengths) or
+                                  cumlengths[lindex] >= length):
+                    lindex -= 1
+            if lindex == 0:
+                param = length * 1.0 / cumlengths[0]
+                param *= parlengths[0]
+            elif lindex >= l-2:
+                param = 1
+            else:
+                param = (length - cumlengths[lindex]) * 1.0 / (cumlengths[lindex+1] - cumlengths[lindex])
+                param *= parlengths[lindex+1]
+                for i in range(lindex+1):
+                    param += parlengths[i]
+            param = max(min(param,1),0)
+            params.append(param)
+        return [params, cumlengths[-1]]
+	
+    def _split(self, parameters):
+        """return list of normcurve corresponding to split at parameters"""
+
+        # first, we calculate the coefficients corresponding to our
+        # original bezier curve. These represent a useful starting
+        # point for the following change of the polynomial parameter
+        a0x = self.x0
+        a0y = self.y0
+        a1x = 3*(-self.x0+self.x1)
+        a1y = 3*(-self.y0+self.y1)
+        a2x = 3*(self.x0-2*self.x1+self.x2)
+        a2y = 3*(self.y0-2*self.y1+self.y2)
+        a3x = -self.x0+3*(self.x1-self.x2)+self.x3
+        a3y = -self.y0+3*(self.y1-self.y2)+self.y3
+
+        if parameters[0]!=0:
+            parameters = [0] + parameters
+        if parameters[-1]!=1:
+            parameters = parameters + [1]
+
+        result = []
+
+        for i in range(len(parameters)-1):
+            t1 = parameters[i]
+            dt = parameters[i+1]-t1
+
+            # [t1,t2] part
+            #
+            # the new coefficients of the [t1,t1+dt] part of the bezier curve
+            # are then given by expanding
+            #  a0 + a1*(t1+dt*u) + a2*(t1+dt*u)**2 +
+            #  a3*(t1+dt*u)**3 in u, yielding
+            #
+            #   a0 + a1*t1 + a2*t1**2 + a3*t1**3        +
+            #   ( a1 + 2*a2 + 3*a3*t1**2 )*dt    * u    + 
+            #   ( a2 + 3*a3*t1 )*dt**2           * u**2 +
+            #   a3*dt**3                         * u**3
+            #
+            # from this values we obtain the new control points by inversion
+            #
+            # XXX: we could do this more efficiently by reusing for
+            # (x0, y0) the control point (x3, y3) from the previous
+            # Bezier curve
+
+            x0 = a0x + a1x*t1 + a2x*t1*t1 + a3x*t1*t1*t1 
+            y0 = a0y + a1y*t1 + a2y*t1*t1 + a3y*t1*t1*t1 
+            x1 = (a1x+2*a2x*t1+3*a3x*t1*t1)*dt/3.0 + x0
+            y1 = (a1y+2*a2y*t1+3*a3y*t1*t1)*dt/3.0 + y0
+            x2 = (a2x+3*a3x*t1)*dt*dt/3.0 - x0 + 2*x1
+            y2 = (a2y+3*a3y*t1)*dt*dt/3.0 - y0 + 2*y1
+            x3 = a3x*dt*dt*dt + x0 - 3*x1 + 3*x2
+            y3 = a3y*dt*dt*dt + y0 - 3*y1 + 3*y2
+
+            result.append(normcurve(x0, y0, x1, y1, x2, y2, x3, y3))
+
+        return result
+
     def split(self, parameters):
         if parameters:
             # we need to split
-            bps = self._bcurve().split(list(parameters))
+            bps = self._split(list(parameters))
 
             if parameters[0]==0:
                 result = [None]
