@@ -134,13 +134,13 @@ class tex:
         Cmd = CmdBegin + Cmd + CmdEnd + "\n"
         return Cmd
     
-    def TexCopyBoxCmd(self, Cmd, halign, angle):
+    def TexCopyBoxCmd(self, x, y, Cmd, halign, angle):
 
         'creates the TeX commands to put \\localbox at the current position'
 
         # TODO 3: color support
 
-        CmdBegin = "{\\vbox to0pt{\\kern" + str(self.canvas.Height - self.canvas.y) + "truecm\\hbox{\\kern" + str(self.canvas.x) + "truecm\\ht\\localbox0pt"
+        CmdBegin = "{\\vbox to0pt{\\kern" + str(self.canvas.Height - y) + "truecm\\hbox{\\kern" + str(x) + "truecm\\ht\\localbox0pt"
         CmdEnd = "}\\vss}\\nointerlineskip}"
 
         if angle != None and angle != 0:
@@ -331,12 +331,12 @@ class tex:
  
         return 1
 
-    def text(self, Cmd, size = normalsize, halign = None, hsize = None, valign = None, angle = None, IgnoreMsgLevel = 1):
+    def text(self, x, y, Cmd, size = normalsize, halign = None, hsize = None, valign = None, angle = None, IgnoreMsgLevel = 1):
 
-        'print Cmd at the current position'
+        'print Cmd at (x, y)'
         
         TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, size, hsize, valign)
-        TexCopyBoxCmd = self.TexCopyBoxCmd(Cmd, halign, angle)
+        TexCopyBoxCmd = self.TexCopyBoxCmd(x, y, Cmd, halign, angle)
         self.TexAddCmd(TexCreateBoxCmd + TexCopyBoxCmd, IgnoreMsgLevel)
 
     def textwd(self, Cmd, size = normalsize, hsize = None, IgnoreMsgLevel = 1):
