@@ -180,18 +180,14 @@ class pathitem(base.canvasitem):
 
 
     def _bbox(self, currentpoint):
-        """calculate bounding box of pathitem
+        """return bounding box of pathitem
 
         currentpoint: current point along path
-
-        returns bounding box of pathitem
-
-        Important note: all coordinates in pts
         """
         raise NotImplementedError()
 
     def _normalized(self, currentpoint):
-        """returns list of normalized version of pathitem
+        """return list of normalized version of pathitem
 
         currentpoint: current point along path
 
@@ -1194,11 +1190,11 @@ class path(base.canvasitem):
         return self.normpath().tangent(params, length)
 
     def trafo_pt(self, params):
-        """returns transformation at param(s) or arc length(s) in pts"""
+        """return transformation at param(s) or arc length(s) in pts"""
         return self.normpath().trafo(params)
 
     def trafo(self, params):
-        """returns transformation at param(s) or arc length(s)"""
+        """return transformation at param(s) or arc length(s)"""
         return self.normpath().trafo(params)
 
     def transformed(self, trafo):
@@ -1822,7 +1818,7 @@ class normsubpath:
             return "normsubpath([%s])" % l
 
     def _distributeparams(self, params):
-        """Returns a dictionary mapping normsubpathitemindices to a tuple
+        """Return a dictionary mapping normsubpathitemindices to a tuple
         of a paramindices and normsubpathitemparams.
 
         normsubpathitemindex specifies a normsubpathitem containing
@@ -2491,11 +2487,11 @@ class normpath(base.canvasitem):
                     self.normsubpaths[-1].append(pathitem)
 
     def arclen_pt(self):
-        """returns arc length in pts"""
+        """return arc length in pts"""
         return sum([normsubpath.arclen_pt() for normsubpath in self.normsubpaths])
 
     def arclen(self):
-        """returns arc length"""
+        """return arc length"""
         return self.arclen_pt() * unit.t_pt
 
     def _arclentoparam_pt(self, lengths_pt):
@@ -2837,7 +2833,7 @@ class normpath(base.canvasitem):
     tangent = _valueorlistmethod(tangent)
 
     def _trafo(self, params):
-        """returns transformation at params"""
+        """return transformation at params"""
         result = [None] * len(params)
         for normsubpathindex, (indices, params) in self._distributeparams(params).items():
             for index, trafo in zip(indices, self.normsubpaths[normsubpathindex].trafo(params)):
@@ -2845,12 +2841,12 @@ class normpath(base.canvasitem):
         return result
 
     def trafo_pt(self, params):
-        """returns transformation at param(s) or arc length(s) in pts"""
+        """return transformation at param(s) or arc length(s) in pts"""
         return self._trafo(self._convertparams(params, self.arclentoparam_pt))
     trafo_pt = _valueorlistmethod(trafo_pt)
 
     def trafo(self, params):
-        """returns transformation at param(s) or arc length(s)"""
+        """return transformation at param(s) or arc length(s)"""
         return self._trafo(self._convertparams(params, self.arclentoparam))
     trafo = _valueorlistmethod(trafo)
 
