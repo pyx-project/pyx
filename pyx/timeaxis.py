@@ -72,7 +72,8 @@ class timeaxis(graph._axis, _timemap):
 
 
 class symbol(graph.symbol):
-    "the preliminary symbol class uses its "
+    "skip float conversion -> symbol class"
+    # shouldn't be needed -> the axis should be able to add data and find minimum and maximum!
 
     def minmidmax(self, point, i, mini, maxi, di, dmini, dmaxi):
         min = max = mid = None
