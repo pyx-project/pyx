@@ -28,7 +28,7 @@
 #          intersection of bpaths)
 #       - correct behaviour of closepath() in reversed()
 
-import math, string, bisect
+import copy, math, string, bisect
 from math import cos, sin, pi
 import base, bbox, trafo, unit, helper
 
@@ -293,7 +293,7 @@ def _arctobcurve(x, y, r, phi1, phi2):
 
 
 def _arctobezierpath(x, y, r, phi1, phi2, dphimax=45):
-    path = []
+    apath = []
 
     phi1 = phi1*pi/180
     phi2 = phi2*pi/180
@@ -313,9 +313,9 @@ def _arctobezierpath(x, y, r, phi1, phi2, dphimax=45):
     dphi=(1.0*(phi2-phi1))/subdivisions
 
     for i in range(subdivisions):
-        path.append(_arctobcurve(x, y, r, phi1+i*dphi, phi1+(i+1)*dphi))
+        apath.append(_arctobcurve(x, y, r, phi1+i*dphi, phi1+(i+1)*dphi))
 
-    return path
+    return apath
 
 
 def _bcurveIntersect(a, a_t0, a_t1, b, b_t0, b_t1, epsilon=1e-5):
@@ -1582,14 +1582,13 @@ def _normalizepath(path):
 def _splitclosedsubpath(subpath, parameters):
     """ split closed subpath at list of parameters (counting from t=0)"""
 
-    result = []
-
     # first, we open the subpath by replacing the closepath by a _lineto
     # Note that the first pel must be a _moveto
-    subpath[-1] = _lineto(subpath[0].x, subpath[0].y)
+    opensubpath = copy.copy(subpath)
+    opensubpath[-1] = _lineto(subpath[0].x, subpath[0].y)
 
     # then we split this open subpath
-    pieces = _splitopensubpath(subpath, parameters)
+    pieces = _splitopensubpath(opensubpath, parameters)
 
     # finally we glue the first and the last piece together
     pieces[0] = pieces[-1] << pieces[0]
