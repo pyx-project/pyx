@@ -1,5 +1,10 @@
 PyX
 
+0.5 (????/??/??)
+  TODO:
+  - path module:
+    - reverse needs to be fixed
+
 0.4 (????/??/??):
   - manual:
     TODO:
@@ -66,8 +71,6 @@ PyX
     - ensurecenter added --- do we always force the creation of a center?
   - path module:
     - lentopar methods added including some tests (TODO: documentation)
-    TODO:
-    - reverse needs to be fixed
   - epsfile module:
      - new parameter bbox allows to override the bounding box of the eps file
 
