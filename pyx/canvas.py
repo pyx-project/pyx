@@ -16,7 +16,7 @@ class Canvas(Globex):
     def TexCreateBoxCmd(self, texstr, parmode, valign):
 
         # we use two "{{" to ensure, that everything goes into the box
-        CmdBegin = "\\setbox\\mybox=\\hbox{{"
+        CmdBegin = "\\setbox\\localbox=\\hbox{{"
         CmdEnd = "}}"
 
         if parmode != None:
@@ -41,25 +41,25 @@ class Canvas(Globex):
     
     def TexCopyBoxCmd(self, texstr, halign, angle):
 
-        CmdBegin = ""
-        CmdEnd = ""
+        CmdBegin = "{\\vbox to0pt{\\kern" + str(29.7-self.y) + "truecm\\hbox{\\kern" + str(self.x) + "truecm\\ht\\localbox0pt"
+        CmdEnd = "}\\vss}\\nointerlineskip}"
 
         if angle != None and angle != 0:
             isnumber(angle)
-            CmdBegin = CmdBegin + "\\begin{rotate}{" + str(angle) + "}"
-            CmdEnd = "\\end{rotate}" + CmdEnd
+            CmdBegin = CmdBegin + "\\special{ps:gsave currentpoint currentpoint translate " + str(angle) + " rotate neg exch neg exch translate}"
+            CmdEnd = "\\special{ps:currentpoint grestore moveto}" + CmdEnd
 
         if halign != None:
             if halign == left:
                 pass
             elif halign == center:
-                CmdBegin = CmdBegin + "\\hbox{\\kern-.5\\wd\\mybox}"
+                CmdBegin = CmdBegin + "\kern-.5\wd\localbox"
             elif halign == right:
-                CmdBegin = CmdBegin + "\\hbox{\\kern-\\wd\\mybox}"
+                CmdBegin = CmdBegin + "\kern-\wd\localbox"
             else:
                 assert "halign unknown"
 
-        Cmd = CmdBegin + "\\copy\\mybox" + CmdEnd
+        Cmd = CmdBegin + "\\copy\\localbox" + CmdEnd + "\n"
         return Cmd
 
     def TexHexMD5(self, texstr):
@@ -91,7 +91,6 @@ class Canvas(Globex):
 
         file.write("""\\nonstopmode
 \\documentclass{article}
-\\usepackage{rotating}
 \\setlength{\\textheight}{29.7truecm}
 \\setlength{\\textwidth}{21truecm}
 \\setlength{\\topmargin}{0truecm}
@@ -109,19 +108,26 @@ class Canvas(Globex):
 """ + self.TexInitStr + """
 \\immediate\\write16{MarkerEnd TexInitStr}
 \\begin{document}
-\\newwrite\\myfile
-\\newbox\\mybox
-\\immediate\\openout\\myfile=""" + self.BaseFilename + """.size
-\\setlength{\\unitlength}{1truecm}
-\\begin{picture}(21,29.7)(0,0)
-\\multiput(0,0)(1,0){22}{\\line(0,1){29.7}}
-\\multiput(0,0)(0,1){30}{\\line(1,0){21}}\n""")
+\\newwrite\\sizefile
+\\newbox\\localbox
+\\newbox\\pagebox
+\\immediate\\openout\\sizefile=""" + self.BaseFilename + """.size
+\\setbox\\pagebox=\\vbox{""")
 
         file.writelines(self.TexExpressions)
 
-        file.write("""\\end{picture}
-\\immediate\\closeout\\myfile
-\\end{document}\n""")
+        file.write("""}
+\\immediate\\closeout\sizefile
+\\ht\\pagebox\\textheight
+\\dp\\pagebox0cm
+\\wd\\pagebox\\textwidth
+\\setlength{\\unitlength}{1truecm}
+\\begin{picture}(0,29.7)(0,0)
+\\multiput(0,0)(1,0){22}{\line(0,1){29.7}}
+\\multiput(0,0)(0,1){30}{\line(1,0){21}}
+\\end{picture}%
+\\copy\\pagebox
+\\end{document}""")
         file.close()
 
         # TODO: ordentliche Fehlerbehandlung,
@@ -154,32 +160,31 @@ class Canvas(Globex):
 
     def text(self, texstr, halign=None, parmode=None, valign=None, angle=None):
         TexCreateBoxCmd = self.TexCreateBoxCmd(texstr, parmode, valign)
-        self.TexAddToFile(TexCreateBoxCmd +
-                          "\\put(" + str(self.x) + "," + str(self.y) + "){" +
-                          self.TexCopyBoxCmd(texstr, halign, angle) + "}\n")
+        TexCopyBoxCmd = self.TexCopyBoxCmd(texstr, halign, angle)
+        self.TexAddToFile(TexCreateBoxCmd + TexCopyBoxCmd)
 
     def textwd(self, texstr, parmode=None):
         TexCreateBoxCmd = self.TexCreateBoxCmd(texstr, parmode, None)
         TexHexMD5=self.TexHexMD5(TexCreateBoxCmd)
         self.TexAddToFile(TexCreateBoxCmd +
-                          "\\immediate\\write\\myfile{" + TexHexMD5 +
-                          ":wd:\\the\\wd\\mybox}\n")
+                          "\\immediate\\write\\sizefile{" + TexHexMD5 +
+                          ":wd:\\the\\wd\\localbox}\n")
         return self.TexResult(TexHexMD5 + ":wd:")
 
     def textht(self, texstr, parmode=None, valign=None):
         TexCreateBoxCmd = self.TexCreateBoxCmd(texstr, parmode, valign)
         TexHexMD5=self.TexHexMD5(TexCreateBoxCmd)
         self.TexAddToFile(TexCreateBoxCmd +
-                          "\\immediate\\write\\myfile{" + TexHexMD5 +
-                          ":ht:\\the\\ht\\mybox}\n")
+                          "\\immediate\\write\\sizefile{" + TexHexMD5 +
+                          ":ht:\\the\\ht\\localbox}\n")
         return self.TexResult(TexHexMD5 + ":ht:")
 
     def textdp(self, texstr, parmode=None, valign=None):
         TexCreateBoxCmd = self.TexCreateBoxCmd(texstr, parmode, valign)
         TexHexMD5=self.TexHexMD5(TexCreateBoxCmd)
         self.TexAddToFile(TexCreateBoxCmd +
-                          "\\immediate\\write\\myfile{" + TexHexMD5 +
-                          ":dp:\\the\\dp\\mybox}\n")
+                          "\\immediate\\write\\sizefile{" + TexHexMD5 +
+                          ":dp:\\the\\dp\\localbox}\n")
         return self.TexResult(TexHexMD5 + ":dp:")
 
 #
@@ -311,7 +316,7 @@ if __name__=="__main__":
 	amove(11+angle/10,7)
 	text(str(angle),angle=angle,halign=right)
     amove(5,12)
-    text("Beispiel:\\begin{itemie}\\item$\\alpha$\\item$\\beta$\\item$\\gamma$\\end{itemize}",parmode="2cm")
+    text("Beispiel:\\begin{itemize}\\item$\\alpha$\\item$\\beta$\\item$\\gamma$\\end{itemize}",parmode="2cm")
     amove(10,12)
     text("Beispiel:\\begin{itemize}\\item$\\alpha$\\item$\\beta$\\item$\\gamma$\\end{itemize}",parmode="2cm",valign=center)
     amove(15,12)
