@@ -345,7 +345,7 @@ class Font:
 
     def convert(self, width):
         # simplified version
-        return width*self.qorig*16/16777216
+        return 16L*width*self.qorig/16777216L
 
         # original algorithm of Knuth (at the moment not used)
         b0 = width >> 24
