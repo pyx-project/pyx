@@ -118,7 +118,7 @@ mathematical axis)
 \section{Using the graphics-bundle with \LaTeX}
 
 The packages in \LaTeX-graphics bundle (color.sty, graphics.sty,
-graphicx.sty, \ldots) make extensive use of \verb|\special| commands here
+graphicx.sty, \ldots) make extensive use of \verb|\special| commands. Here
 are some notes on this topic. Please install the appropriate driver file
 \verb|pyx.def|, which defines all the specials, in your \LaTeX-tree and add
 the content of both files \verb|color.cfg| and \verb|graphics.cfg| to your
@@ -136,18 +136,19 @@ Please note that the option~\verb|pyx| is only available with
 \verb|pyxgraphics=0| and a properly installed driver file. Otherwise do not
 use this option, omit it completely or say~\verb|[dvips]|.\medskip
 
-When defining colours in \LaTeX as one of \{\verb|gray|, \verb|cmyk|,
-\verb|rgb|, \verb|RGB|, \verb|hsb|\} then pyx will use the corresponding
-values (one to four reals) for output. When you use one of the \verb|named|
-colors in \LaTeX then pyx will use the corresponding predefined colour (see
-module \verb|color| and the colour table at the end of the manual).
+When defining colours in \LaTeX\ as one of the colour models \{\verb|gray|,
+\verb|cmyk|, \verb|rgb|, \verb|RGB|, \verb|hsb|\} then pyx will use the
+corresponding values (one to four real numbers) for output. When you use one of the
+\verb|named| colors in \LaTeX\ then pyx will use the corresponding predefined
+colour (see module \verb|color| and the colour table at the end of the
+manual).
 
-When importing eps-graphics in \LaTeX then pyx will rotate, scale and clip
-your file like you expect it. Note that pyx cannot import other than eps-files
-at the moment.\medskip
+When importing eps-graphics in \LaTeX\ then pyx will rotate, scale and clip
+your file like you expect it. Note that pyx cannot import other graphics files
+than eps at the moment.\medskip
 
-In total, the following specials can be handled by the \verb|text| module at
-the moment:\medskip
+For reference purpose, the following specials can be handled by the
+\verb|text| module at the moment:\medskip
 
 \begingroup
 \leftskip3em
