@@ -925,15 +925,19 @@ class path(base.canvasitem):
 
     __slots__ = "path", "_normpath"
 
-    def __init__(self, *args):
+    def __init__(self, *pathitems):
         """construct a path from pathitems *args"""
-        self.path = list(args)
+
+        for apathitem in pathitems:
+            assert isinstance(apathitem, pathitem), "only pathitem instances allowed"
+
+        self.pathitems = list(pathitems)
         # normpath cache
         self._normpath = None
 
     def __add__(self, other):
         """create new path out of self and other"""
-        return path(*(self.path+other.path))
+        return path(*(self.pathitems + other.pathitems))
 
     def __iadd__(self, other):
         """add other inplace
@@ -941,21 +945,22 @@ class path(base.canvasitem):
         Note that other must be a path, not a normpath.
         """
         # TODO: Allow inplace addition of a normpath.
-        self.path += other.path
+        self.pathitems += other.pathitems
         self._normpath = None
         return self
 
     def __getitem__(self, i):
         """return path item i"""
-        return self.path[i]
+        return self.pathitems[i]
 
     def __len__(self):
         """return the number of path items"""
-        return len(self.path)
+        return len(self.pathitems)
 
-    def append(self, pathitem):
+    def append(self, apathitem):
         """append a path item"""
-        self.path.append(pathitem)
+        assert isinstance(apathitem, pathitem), "only pathitem instance allowed"
+        self.pathitems.append(apathitem)
         self._normpath = None
 
     def arclen_pt(self):
@@ -1003,7 +1008,7 @@ class path(base.canvasitem):
         context = _pathcontext()
         abbox = None
 
-        for pitem in self.path:
+        for pitem in self.pathitems:
             nbbox =  pitem._bbox(context)
             pitem._updatecontext(context)
             if abbox is None:
@@ -1039,7 +1044,9 @@ class path(base.canvasitem):
 
     def extend(self, pathitems):
         """extend path by pathitems"""
-        self.path.extend(pathitems)
+        for apathitem in pathitems:
+            assert isinstance(apathitem, pathitem), "only pathitem instance allowed"
+        self.pathitems.extend(pathitems)
         self._normpath = None
 
     def intersect(self, other):
@@ -1067,7 +1074,7 @@ class path(base.canvasitem):
         subpaths = []
         currentsubpathitems = []
         context = _pathcontext()
-        for pitem in self.path:
+        for pitem in self.pathitems:
             for npitem in pitem._normalized(context):
                 if isinstance(npitem, moveto_pt):
                     if currentsubpathitems:
@@ -1144,7 +1151,7 @@ class path(base.canvasitem):
 
     def outputPS(self, file):
         """write PS code to file"""
-        for pitem in self.path:
+        for pitem in self.pathitems:
             pitem.outputPS(file)
 
     def outputPDF(self, file):
@@ -1153,7 +1160,7 @@ class path(base.canvasitem):
         # converting to a normpath, which will fail for short
         # closed paths, we use outputPDF of the normalized paths
         context = _pathcontext()
-        for pitem in self.path:
+        for pitem in self.pathitems:
             for npitem in pitem._normalized(context):
                 npitem.outputPDF(file)
             pitem._updatecontext(context)
@@ -2389,8 +2396,7 @@ class normpath(base.canvasitem):
             # ... but we are kind and allow for regular path items as well
             # in order to make a normpath to behave more like a regular path
 
-            for pathitem in anormsubpath._normalized(_pathcontext(self.normsubpaths[-1].atbegin_pt(),
-                                                                  self.normsubpaths[-1].atend_pt())):
+            for pathitem in anormsubpath._normalized(_pathcontext(*self.normsubpaths[-1].atend_pt())):
                 if isinstance(pathitem, closepath):
                     self.normsubpaths[-1].close()
                 elif isinstance(pathitem, moveto_pt):

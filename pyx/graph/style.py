@@ -605,7 +605,7 @@ class line(_styleneedingpointpos):
     def donedrawpoints(self, privatedata, sharedata, graph):
         if len(privatedata.linebasepoints) > 1:
             self.addpointstopath(privatedata, sharedata)
-        if privatedata.lineattrs is not None and len(privatedata.path.path):
+        if privatedata.lineattrs is not None and len(privatedata.path):
             graph.stroke(privatedata.path, privatedata.lineattrs)
 
     def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
