@@ -16,6 +16,9 @@ PyX
     - move axis partitioning into the axis painter (work in progress)
     - bugfix in textbox alignment (graph module)
     - mark class renamed to symbol
+  - mathtree:
+    - extern variables and functions
+    - tests
 
 0.1.1 (????/??/??):
   - transformation bug fixed (#624068)

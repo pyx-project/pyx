@@ -91,37 +91,31 @@ class DerivativeError(Exception): pass
 class MathTree:
 
     def __init__(self, *args):
-        self.ArgC = 0
-        self.ArgV = list(args)
+        self.Args = list(args)
 
     def __repr__(self, depth = 0):
-        assert len(self.ArgV) == self.ArgC, "wrong number of arguments"
         indent = ""
         SingleIndent = "    "
         for i in range(depth):
             indent = indent + SingleIndent
         result = indent + self.__class__.__name__ + "(\n"
-        for SubTree in self.ArgV:
+        for SubTree in self.Args:
             if isinstance(SubTree, MathTree):
                 result = result + SubTree.__repr__(depth + 1)
             else:
                 result = result + indent + SingleIndent + repr(SubTree)
 
-            if SubTree != self.ArgV[-1]:
+            if SubTree != self.Args[-1]:
                 result = result + ",\n"
             else:
                 result = result + ")"
         return result
 
     def AddArg(self, Arg):
-        assert self.ArgC > 0, "can't add an argument"
-        if len(self.ArgV) < self.ArgC:
-            self.ArgV = self.ArgV + [ Arg, ]
-        else:
-            self.ArgV[-1].AddArg(Arg)
+        self.Args.append(Arg)
 
     def DependOn(self, arg):
-        for Arg in self.ArgV:
+        for Arg in self.Args:
             if Arg.DependOn(arg):
                 return 1
         return 0
@@ -133,7 +127,7 @@ class MathTree:
 
     def VarList(self):
         list = [ ]
-        for Arg in self.ArgV:
+        for Arg in self.Args:
             newlist = Arg.VarList()
             for x in newlist:
                 if x not in list:
@@ -145,10 +139,9 @@ class MathTreeVal(MathTree):
 
     def __init__(self, *args):
         MathTree.__init__(self, *args)
-        self.ArgC = 1
 
     def __str__(self):
-        return str(self.ArgV[0])
+        return str(self.Args[0])
 
 
 ConstPattern = re.compile(r"-?\d*((\d\.?)|(\.?\d))\d*(E[+-]?\d+)?",
@@ -163,7 +156,7 @@ class MathTreeValConst(MathTreeVal):
             return 1
 
     def CalcDerivative(self, arg):
-        raise DerivativeError("expression doesn't depend on %s" % arg)
+        raise DerivativeError("expression doesn't depend on \"%s\"" % arg)
 
     def Derivative(self, arg):
         return MathTreeValConst(0.0)
@@ -174,8 +167,8 @@ class MathTreeValConst(MathTreeVal):
     def VarList(self):
         return [ ]
 
-    def Calc(self, VarDict):
-        return self.ArgV[0]
+    def Calc(self, *dicts):
+        return self.Args[0]
 
 
 VarPattern = re.compile(r"[a-z_][a-z0-9_]*", re.IGNORECASE)
@@ -190,40 +183,51 @@ class MathTreeValVar(MathTreeVal):
             return 1
 
     def CalcDerivative(self, arg):
-        if arg != self.ArgV[0]:
-            raise DerivativeError("expression doesn't depend on '%s'" % arg)
+        if arg != self.Args[0]:
+            raise DerivativeError("expression doesn't depend on \"%s\"" % arg)
         return MathTreeValConst(1.0)
 
-    def DependOn(self,arg):
-        if arg == self.ArgV[0]:
+    def DependOn(self, arg):
+        if arg == self.Args[0]:
             return 1
         return 0
 
     def VarList(self):
-        if self.ArgV[0] in MathConst.keys():
+        if self.Args[0] in MathConst.keys():
             return []
-        return [self.ArgV[0]]
+        return [self.Args[0]]
 
-    def Calc(self, VarDict):
-        if self.ArgV[0] in MathConst.keys():
-            return MathConst[self.ArgV[0]]
-        return VarDict[self.ArgV[0]]
+    def Calc(self, *dicts):
+        for dict in dicts:
+            if self.Args[0] in dict.keys():
+                return float(dict[self.Args[0]])
+        return MathConst[self.Args[0]]
 
+
+class ArgCountError(Exception): pass
 
 class MathTreeFunc(MathTree):
 
-    def __init__(self, name, *args):
+    def __init__(self, name, argcount, *args):
+        if argcount > 0 and len(args) > argcount:
+            raise ArgCountError
         MathTree.__init__(self, *args)
         self.name = name
+        self.argcount = argcount
 
     def InitByParser(self, arg):
         return arg.MatchStrParenthesis(self.name)
 
+    def AddArg(self, Arg):
+        if self.argcount > 0 and len(self.Args) >= self.argcount:
+            raise ArgCountError
+        self.Args.append(Arg)
+
     def __str__(self):
         args = ""
-        for SubTree in self.ArgV:
+        for SubTree in self.Args:
             args = args + str(SubTree)
-            if SubTree != self.ArgV[-1]:
+            if SubTree != self.Args[-1]:
                 args = args + ","
         return self.name + "(" + args + ")"
 
@@ -231,8 +235,7 @@ class MathTreeFunc(MathTree):
 class MathTreeFunc1(MathTreeFunc):
 
     def __init__(self, name, *args):
-        MathTreeFunc.__init__(self, name, *args)
-        self.ArgC = 1
+        MathTreeFunc.__init__(self, name, 1, *args)
 
 
 class MathTreeFunc1Neg(MathTreeFunc1):
@@ -241,10 +244,10 @@ class MathTreeFunc1Neg(MathTreeFunc1):
         MathTreeFunc1.__init__(self, "neg", *args)
 
     def CalcDerivative(self, arg):
-        return MathTreeFunc1Neg(self.ArgV[0].CalcDerivative(arg))
+        return MathTreeFunc1Neg(self.Args[0].CalcDerivative(arg))
 
-    def Calc(self, VarDict):
-        return -self.ArgV[0].Calc(VarDict)
+    def Calc(self, *dicts):
+        return -self.Args[0].Calc(*dicts)
 
 
 class MathTreeFunc1Sgn(MathTreeFunc1):
@@ -255,8 +258,8 @@ class MathTreeFunc1Sgn(MathTreeFunc1):
     def CalcDerivative(self, arg):
         return MathTreeValConst(0.0)
 
-    def Calc(self, VarDict):
-        if self.ArgV[0].Calc(VarDict) < 0:
+    def Calc(self, *dicts):
+        if self.Args[0].Calc(*dicts) < 0:
             return -1.0
         return 1.0
 
@@ -271,10 +274,10 @@ class MathTreeFunc1Sqrt(MathTreeFunc1):
                    MathTreeOpDiv(
                        MathTreeValConst(0.5),
                        self),
-                   self.ArgV[0].CalcDerivative(arg))
+                   self.Args[0].CalcDerivative(arg))
 
-    def Calc(self, VarDict):
-        return math.sqrt(self.ArgV[0].Calc(VarDict))
+    def Calc(self, *dicts):
+        return math.sqrt(self.Args[0].Calc(*dicts))
 
 
 class MathTreeFunc1Exp(MathTreeFunc1):
@@ -283,10 +286,10 @@ class MathTreeFunc1Exp(MathTreeFunc1):
         MathTreeFunc1.__init__(self, "exp", *args)
 
     def CalcDerivative(self, arg):
-        return MathTreeOpMul(self, self.ArgV[0].CalcDerivative(arg))
+        return MathTreeOpMul(self, self.Args[0].CalcDerivative(arg))
 
-    def Calc(self, VarDict):
-        return math.exp(self.ArgV[0].Calc(VarDict))
+    def Calc(self, *dicts):
+        return math.exp(self.Args[0].Calc(*dicts))
 
 
 class MathTreeFunc1Log(MathTreeFunc1):
@@ -295,10 +298,10 @@ class MathTreeFunc1Log(MathTreeFunc1):
         MathTreeFunc1.__init__(self, "log", *args)
 
     def CalcDerivative(self, arg):
-        return MathTreeOpDiv(self.ArgV[0].CalcDerivative(arg), self.ArgV[0])
+        return MathTreeOpDiv(self.Args[0].CalcDerivative(arg), self.Args[0])
 
-    def Calc(self, VarDict):
-        return math.log(self.ArgV[0].Calc(VarDict))
+    def Calc(self, *dicts):
+        return math.log(self.Args[0].Calc(*dicts))
 
 
 class MathTreeFunc1Sin(MathTreeFunc1):
@@ -308,11 +311,11 @@ class MathTreeFunc1Sin(MathTreeFunc1):
 
     def CalcDerivative(self, arg):
         return MathTreeOpMul(
-                   MathTreeFunc1Cos(self.ArgV[0]),
-                   self.ArgV[0].CalcDerivative(arg))
+                   MathTreeFunc1Cos(self.Args[0]),
+                   self.Args[0].CalcDerivative(arg))
 
-    def Calc(self, VarDict):
-        return math.sin(self.ArgV[0].Calc(VarDict))
+    def Calc(self, *dicts):
+        return math.sin(self.Args[0].Calc(*dicts))
 
 
 class MathTreeFunc1Cos(MathTreeFunc1):
@@ -322,11 +325,11 @@ class MathTreeFunc1Cos(MathTreeFunc1):
 
     def CalcDerivative(self, arg):
         return MathTreeOpMul(
-                   MathTreeFunc1Neg(MathTreeFunc1Sin(self.ArgV[0])),
-                   self.ArgV[0].CalcDerivative(arg))
+                   MathTreeFunc1Neg(MathTreeFunc1Sin(self.Args[0])),
+                   self.Args[0].CalcDerivative(arg))
 
-    def Calc(self, VarDict):
-        return math.cos(self.ArgV[0].Calc(VarDict))
+    def Calc(self, *dicts):
+        return math.cos(self.Args[0].Calc(*dicts))
 
 
 class MathTreeFunc1Tan(MathTreeFunc1):
@@ -336,13 +339,13 @@ class MathTreeFunc1Tan(MathTreeFunc1):
 
     def CalcDerivative(self, arg):
         return MathTreeOpDiv(
-                   self.ArgV[0].CalcDerivative(arg),
+                   self.Args[0].CalcDerivative(arg),
                    MathTreeOpPow(
-                       MathTreeFunc1Cos(self.ArgV[0]),
+                       MathTreeFunc1Cos(self.Args[0]),
                        MathTreeValConst(2.0)))
 
-    def Calc(self, VarDict):
-        return math.tan(self.ArgV[0].Calc(VarDict))
+    def Calc(self, *dicts):
+        return math.tan(self.Args[0].Calc(*dicts))
 
 
 class MathTreeFunc1ASin(MathTreeFunc1):
@@ -352,16 +355,16 @@ class MathTreeFunc1ASin(MathTreeFunc1):
 
     def CalcDerivative(self, arg):
         return MathTreeOpDiv(
-                   self.ArgV[0].CalcDerivative(arg),
+                   self.Args[0].CalcDerivative(arg),
                    MathTreeFunc1Sqrt(
                        MathTreeOpSub(
                            MathTreeValConst(1.0),
                            MathTreeOpPow(
-                               self.ArgV[0],
+                               self.Args[0],
                                MathTreeValConst(2.0)))))
 
-    def Calc(self, VarDict):
-        return math.asin(self.ArgV[0].Calc(VarDict))
+    def Calc(self, *dicts):
+        return math.asin(self.Args[0].Calc(*dicts))
 
 
 class MathTreeFunc1ACos(MathTreeFunc1):
@@ -371,16 +374,16 @@ class MathTreeFunc1ACos(MathTreeFunc1):
 
     def CalcDerivate(self, arg):
         return MathTreeOpDiv(
-                   MathTreeFunc1Neg(self.ArgV[0].CalcDerivative(arg)),
+                   MathTreeFunc1Neg(self.Args[0].CalcDerivative(arg)),
                    MathTreeFunc1Sqrt(
                        MathTreeOpSub(
                            MathTreeValConst(1.0),
                            MathTreeOpPow(
-                               self.ArgV[0],
+                               self.Args[0],
                                MathTreeValConst(2.0)))))
 
-    def Calc(self, VarDict):
-        return math.acos(self.ArgV[0].Calc(VarDict))
+    def Calc(self, *dicts):
+        return math.acos(self.Args[0].Calc(*dicts))
 
 
 class MathTreeFunc1ATan(MathTreeFunc1):
@@ -390,15 +393,15 @@ class MathTreeFunc1ATan(MathTreeFunc1):
 
     def CalcDerivate(self, arg):
         return MathTreeOpDiv(
-                   self.ArgV[0].CalcDerivative(arg),
+                   self.Args[0].CalcDerivative(arg),
                    MathTreeOpAdd(
                        MathTreeValConst(1.0),
                        MathTreeOpPow(
-                           self.ArgV[0],
+                           self.Args[0],
                            MathTreeValConst(2.0))))
 
-    def Calc(self, VarDict):
-        return math.atan(self.ArgV[0].Calc(VarDict))
+    def Calc(self, *dicts):
+        return math.atan(self.Args[0].Calc(*dicts))
 
 
 class MathTreeFunc1SinD(MathTreeFunc1):
@@ -408,13 +411,13 @@ class MathTreeFunc1SinD(MathTreeFunc1):
 
     def CalcDerivative(self, arg):
         return MathTreeOpMul(
-                   MathTreeFunc1CosD(self.ArgV[0]),
+                   MathTreeFunc1CosD(self.Args[0]),
                    MathTreeOpMul(
                        MathTreeValConst(math.pi/180.0),
-                       self.ArgV[0].CalcDerivative(arg)))
+                       self.Args[0].CalcDerivative(arg)))
 
-    def Calc(self, VarDict):
-        return math.sin(math.pi/180.0*self.ArgV[0].Calc(VarDict))
+    def Calc(self, *dicts):
+        return math.sin(math.pi/180.0*self.Args[0].Calc(*dicts))
 
 
 class MathTreeFunc1CosD(MathTreeFunc1):
@@ -424,13 +427,13 @@ class MathTreeFunc1CosD(MathTreeFunc1):
 
     def CalcDerivative(self, arg):
         return MathTreeOpMul(
-                   MathTreeFunc1Neg(MathTreeFunc1Sin(self.ArgV[0])),
+                   MathTreeFunc1Neg(MathTreeFunc1Sin(self.Args[0])),
                    MathTreeOpMul(
                        MathTreeValConst(math.pi/180.0),
-                       self.ArgV[0].CalcDerivative(arg)))
+                       self.Args[0].CalcDerivative(arg)))
 
-    def Calc(self, VarDict):
-        return math.cos(math.pi/180.0*self.ArgV[0].Calc(VarDict))
+    def Calc(self, *dicts):
+        return math.cos(math.pi/180.0*self.Args[0].Calc(*dicts))
 
 
 class MathTreeFunc1TanD(MathTreeFunc1):
@@ -442,13 +445,13 @@ class MathTreeFunc1TanD(MathTreeFunc1):
         return MathTreeOpDiv(
                    MathTreeOpMul(
                        MathTreeValConst(math.pi/180.0),
-                       self.ArgV[0].CalcDerivative(arg)),
+                       self.Args[0].CalcDerivative(arg)),
                    MathTreeOpPow(
-                       MathTreeFunc1Cos(self.ArgV[0]),
+                       MathTreeFunc1Cos(self.Args[0]),
                        MathTreeValConst(2.0)))
 
-    def Calc(self, VarDict):
-        return math.tan(math.pi/180.0*self.ArgV[0].Calc(VarDict))
+    def Calc(self, *dicts):
+        return math.tan(math.pi/180.0*self.Args[0].Calc(*dicts))
 
 
 class MathTreeFunc1ASinD(MathTreeFunc1):
@@ -460,16 +463,16 @@ class MathTreeFunc1ASinD(MathTreeFunc1):
         return MathTreeOpDiv(
                    MathTreeOpMul(
                        MathTreeValConst(180.0/math.pi),
-                       self.ArgV[0].CalcDerivative(arg)),
+                       self.Args[0].CalcDerivative(arg)),
                    MathTreeFunc1Sqrt(
                        MathTreeOpSub(
                            MathTreeValConst(1.0),
                            MathTreeOpPow(
-                               self.ArgV[0],
+                               self.Args[0],
                                MathTreeValConst(2.0)))))
 
-    def Calc(self, VarDict):
-        return 180.0/math.pi*math.asin(self.ArgV[0].Calc(VarDict))
+    def Calc(self, *dicts):
+        return 180.0/math.pi*math.asin(self.Args[0].Calc(*dicts))
 
 
 class MathTreeFunc1ACosD(MathTreeFunc1):
@@ -482,16 +485,16 @@ class MathTreeFunc1ACosD(MathTreeFunc1):
                    MathTreeFunc1Neg(
                        MathTreeOpMul(
                            MathTreeValConst(180.0/math.pi),
-                           self.ArgV[0].CalcDerivative(arg))),
+                           self.Args[0].CalcDerivative(arg))),
                    MathTreeFunc1Sqrt(
                        MathTreeOpSub(
                            MathTreeValConst(1.0),
                            MathTreeOpPow(
-                               self.ArgV[0],
+                               self.Args[0],
                                MathTreeValConst(2.0)))))
 
-    def Calc(self, VarDict):
-        return 180.0/math.pi*math.acos(self.ArgV[0].Calc(VarDict))
+    def Calc(self, *dicts):
+        return 180.0/math.pi*math.acos(self.Args[0].Calc(*dicts))
 
 
 class MathTreeFunc1ATanD(MathTreeFunc1):
@@ -503,22 +506,21 @@ class MathTreeFunc1ATanD(MathTreeFunc1):
         return MathTreeOpDiv(
                    MathTreeOpMul(
                        MathTreeValConst(180.0/math.pi),
-                       self.ArgV[0].CalcDerivative(arg)),
+                       self.Args[0].CalcDerivative(arg)),
                    MathTreeOpAdd(
                        MathTreeValConst(1.0),
                        MathTreeOpPow(
-                           self.ArgV[0],
+                           self.Args[0],
                            MathTreeValConst(2.0))))
 
-    def Calc(self, VarDict):
-        return 180.0/math.pi*math.atan(self.ArgV[0].Calc(VarDict))
+    def Calc(self, *dicts):
+        return 180.0/math.pi*math.atan(self.Args[0].Calc(*dicts))
 
 
 class MathTreeFunc2(MathTreeFunc):
 
     def __init__(self, name, *args):
-        MathTreeFunc.__init__(self, name, *args)
-        self.ArgC = 2
+        MathTreeFunc.__init__(self, name, 2, *args)
 
 
 class MathTreeFunc2Norm(MathTreeFunc2):
@@ -527,58 +529,76 @@ class MathTreeFunc2Norm(MathTreeFunc2):
         MathTreeFunc2.__init__(self, "norm", *args)
 
     def CalcDerivative(self, arg):
-        if self.ArgV[0].DependOn(arg):
-            if self.ArgV[1].DependOn(arg):
+        if self.Args[0].DependOn(arg):
+            if self.Args[1].DependOn(arg):
                 return MathTreeOpDiv(
                            MathTreeOpAdd(
                                MathTreeOpMul(
-                                   self.ArgV[0],
-                                   self.ArgV[0].CalcDerivative(arg)),
+                                   self.Args[0],
+                                   self.Args[0].CalcDerivative(arg)),
                                MathTreeOpMul(
-                                   self.ArgV[1],
-                                   self.ArgV[1].CalcDerivative(arg))),
+                                   self.Args[1],
+                                   self.Args[1].CalcDerivative(arg))),
                            self)
             else:
                 return MathTreeOpDiv(
                            MathTreeOpMul(
-                               self.ArgV[0],
-                               self.ArgV[0].CalcDerivative(arg)),
+                               self.Args[0],
+                               self.Args[0].CalcDerivative(arg)),
                            self)
         else:
-            if self.ArgV[1].DependOn(arg):
+            if self.Args[1].DependOn(arg):
                 return MathTreeOpDiv(
                            MathTreeOpMul(
-                               self.ArgV[1],
-                               self.ArgV[1].CalcDerivative(arg)),
+                               self.Args[1],
+                               self.Args[1].CalcDerivative(arg)),
                            self)
 
-    def Calc(self, VarDict):
-        return math.sqrt(self.ArgV[0].Calc(VarDict) ** 2 +
-                         self.ArgV[1].Calc(VarDict) ** 2)
+    def Calc(self, *dicts):
+        return math.sqrt(self.Args[0].Calc(*dicts) ** 2 +
+                         self.Args[1].Calc(*dicts) ** 2)
+
+
+FuncExternPattern = re.compile(r"([a-z_][a-z0-9_]*)\s*\(", re.IGNORECASE)
+
+class MathTreeFuncExtern(MathTreeFunc):
+
+    def __init__(self, extern, *args):
+        MathTreeFunc.__init__(self, None, 0, *args)
+        self.extern = extern
+
+    def InitByParser(self, arg):
+        Match = arg.MatchPattern(FuncExternPattern)
+        if Match:
+            self.name = Match[:-1].strip()
+            self.func = self.extern[self.name]
+            return self.name
+
+    def Calc(self, *dicts):
+        return self.func(*[arg.Calc(*dicts) for arg in self.Args])
 
 
 class MathTreeOp(MathTree):
 
     def __init__(self, level, symbol, *args):
         MathTree.__init__(self, *args)
-        self.ArgC = 2
         self.ParenthesisBarrier = 0
         self.level = level
         self.symbol = symbol
 
     def __str__(self):
         result = ""
-        if isinstance(self.ArgV[0], MathTreeOp) and\
-            self.level > self.ArgV[0].level:
-            result = result + "(" + str(self.ArgV[0]) + ")"
+        if isinstance(self.Args[0], MathTreeOp) and\
+            self.level > self.Args[0].level:
+            result = result + "(" + str(self.Args[0]) + ")"
         else:
-            result = result + str(self.ArgV[0])
+            result = result + str(self.Args[0])
         result = result + self.symbol
-        if isinstance(self.ArgV[1], MathTreeOp) and\
-            self.level >= self.ArgV[1].level:
-            result = result + "(" + str(self.ArgV[1]) + ")"
+        if isinstance(self.Args[1], MathTreeOp) and\
+            self.level >= self.Args[1].level:
+            result = result + "(" + str(self.Args[1]) + ")"
         else:
-            result = result + str(self.ArgV[1])
+            result = result + str(self.Args[1])
         return result
 
     def InitByParser(self, arg):
@@ -591,19 +611,19 @@ class MathTreeOpAdd(MathTreeOp):
         MathTreeOp.__init__(self, 1, "+", *args)
 
     def CalcDerivative(self, arg):
-        if self.ArgV[0].DependOn(arg):
-            if self.ArgV[1].DependOn(arg):
+        if self.Args[0].DependOn(arg):
+            if self.Args[1].DependOn(arg):
                 return MathTreeOpAdd(
-                           self.ArgV[0].CalcDerivative(arg),
-                           self.ArgV[1].CalcDerivative(arg))
+                           self.Args[0].CalcDerivative(arg),
+                           self.Args[1].CalcDerivative(arg))
             else:
-                return self.ArgV[0].CalcDerivative(arg)
+                return self.Args[0].CalcDerivative(arg)
         else:
-            if self.ArgV[1].DependOn(arg):
-                return self.ArgV[1].CalcDerivative(arg)
+            if self.Args[1].DependOn(arg):
+                return self.Args[1].CalcDerivative(arg)
 
-    def Calc(self, VarDict):
-        return self.ArgV[0].Calc(VarDict) + self.ArgV[1].Calc(VarDict)
+    def Calc(self, *dicts):
+        return self.Args[0].Calc(*dicts) + self.Args[1].Calc(*dicts)
 
 
 class MathTreeOpSub(MathTreeOp):
@@ -612,19 +632,19 @@ class MathTreeOpSub(MathTreeOp):
         MathTreeOp.__init__(self, 1, "-", *args)
 
     def CalcDerivative(self, arg):
-        if self.ArgV[0].DependOn(arg):
-            if self.ArgV[1].DependOn(arg):
+        if self.Args[0].DependOn(arg):
+            if self.Args[1].DependOn(arg):
                 return MathTreeOpSub(
-                           self.ArgV[0].CalcDerivative(arg),
-                           self.ArgV[1].CalcDerivative(arg))
+                           self.Args[0].CalcDerivative(arg),
+                           self.Args[1].CalcDerivative(arg))
             else:
-                return self.ArgV[0].CalcDerivative(arg)
+                return self.Args[0].CalcDerivative(arg)
         else:
-            if self.ArgV[1].DependOn(arg):
-                return MathTreeFunc1Neg(self.ArgV[1].CalcDerivative(arg))
+            if self.Args[1].DependOn(arg):
+                return MathTreeFunc1Neg(self.Args[1].CalcDerivative(arg))
 
-    def Calc(self, VarDict):
-        return self.ArgV[0].Calc(VarDict) - self.ArgV[1].Calc(VarDict)
+    def Calc(self, *dicts):
+        return self.Args[0].Calc(*dicts) - self.Args[1].Calc(*dicts)
 
 
 class MathTreeOpMul(MathTreeOp):
@@ -633,27 +653,27 @@ class MathTreeOpMul(MathTreeOp):
         MathTreeOp.__init__(self, 2, "*", *args)
 
     def CalcDerivative(self, arg):
-        if self.ArgV[0].DependOn(arg):
-            if self.ArgV[1].DependOn(arg):
+        if self.Args[0].DependOn(arg):
+            if self.Args[1].DependOn(arg):
                 return MathTreeOpAdd(
                            MathTreeOpMul(
-                               self.ArgV[0],
-                               self.ArgV[1].CalcDerivative(arg)),
+                               self.Args[0],
+                               self.Args[1].CalcDerivative(arg)),
                            MathTreeOpMul(
-                               self.ArgV[0].CalcDerivative(arg),
-                               self.ArgV[1]))
+                               self.Args[0].CalcDerivative(arg),
+                               self.Args[1]))
             else:
                 return MathTreeOpMul(
-                           self.ArgV[0].CalcDerivative(arg),
-                           self.ArgV[1])
+                           self.Args[0].CalcDerivative(arg),
+                           self.Args[1])
         else:
-            if self.ArgV[1].DependOn(arg):
+            if self.Args[1].DependOn(arg):
                 return MathTreeOpMul(
-                           self.ArgV[0],
-                           self.ArgV[1].CalcDerivative(arg))
+                           self.Args[0],
+                           self.Args[1].CalcDerivative(arg))
 
-    def Calc(self, VarDict):
-        return self.ArgV[0].Calc(VarDict) * self.ArgV[1].Calc(VarDict)
+    def Calc(self, *dicts):
+        return self.Args[0].Calc(*dicts) * self.Args[1].Calc(*dicts)
 
 
 class MathTreeOpDiv(MathTreeOp):
@@ -662,35 +682,35 @@ class MathTreeOpDiv(MathTreeOp):
         MathTreeOp.__init__(self, 2, "/", *args)
 
     def CalcDerivative(self, arg):
-        if self.ArgV[0].DependOn(arg):
-            if self.ArgV[1].DependOn(arg):
+        if self.Args[0].DependOn(arg):
+            if self.Args[1].DependOn(arg):
                 return MathTreeOpMul(
                            MathTreeOpSub(
                                MathTreeOpMul(
-                                   self.ArgV[0].CalcDerivative(arg),
-                                   self.ArgV[1]),
+                                   self.Args[0].CalcDerivative(arg),
+                                   self.Args[1]),
                                MathTreeOpMul(
-                                   self.ArgV[0],
-                                   self.ArgV[1].CalcDerivative(arg))),
+                                   self.Args[0],
+                                   self.Args[1].CalcDerivative(arg))),
                            MathTreeOpPow(
-                               self.ArgV[1],
+                               self.Args[1],
                                MathTreeValConst(-2.0)))
             else:
                 return MathTreeOpDiv(
-                           self.ArgV[0].CalcDerivative(arg),
-                           self.ArgV[1])
+                           self.Args[0].CalcDerivative(arg),
+                           self.Args[1])
         else:
-            if self.ArgV[1].DependOn(arg):
+            if self.Args[1].DependOn(arg):
                 return MathTreeOpMul(
                            MathTreeOpMul(
-                               MathTreeFunc1Neg(self.ArgV[0]),
+                               MathTreeFunc1Neg(self.Args[0]),
                                MathTreeOpPow(
-                                   self.ArgV[1],
+                                   self.Args[1],
                                    MathTreeValConst(-2.0))),
-                           self.ArgV[1].CalcDerivative(arg))
+                           self.Args[1].CalcDerivative(arg))
 
-    def Calc(self, VarDict):
-        return self.ArgV[0].Calc(VarDict) / self.ArgV[1].Calc(VarDict)
+    def Calc(self, *dicts):
+        return self.Args[0].Calc(*dicts) / self.Args[1].Calc(*dicts)
 
 
 class MathTreeOpPow(MathTreeOp):
@@ -706,53 +726,54 @@ class MathTreeOpPow(MathTreeOp):
             return arg.MatchStr("**")
 
     def CalcDerivative(self, arg):
-        if self.ArgV[0].DependOn(arg):
-            if self.ArgV[1].DependOn(arg):
+        if self.Args[0].DependOn(arg):
+            if self.Args[1].DependOn(arg):
                 return MathTreeOpMul(
                            MathTreeOpPow(
-                               self.ArgV[0],
-                               self.ArgV[1]),
+                               self.Args[0],
+                               self.Args[1]),
                            MathTreeOpAdd(
                                MathTreeOpMul(
-                                   MathTreeFunc1Log(self.ArgV[0]),
-                                   self.ArgV[1].CalcDerivative(arg)),
+                                   MathTreeFunc1Log(self.Args[0]),
+                                   self.Args[1].CalcDerivative(arg)),
                                MathTreeOpMul(
-                                   self.ArgV[1],
+                                   self.Args[1],
                                    MathTreeOpDiv(
-                                       self.ArgV[0].CalcDerivative(arg),
-                                       self.ArgV[0]))))
+                                       self.Args[0].CalcDerivative(arg),
+                                       self.Args[0]))))
             else:
                 return MathTreeOpMul(
-                           self.ArgV[1],
+                           self.Args[1],
                            MathTreeOpMul(
                                MathTreeOpPow(
-                                   self.ArgV[0],
+                                   self.Args[0],
                                    MathTreeOpSub(
-                                       self.ArgV[1],
+                                       self.Args[1],
                                        MathTreeValConst(1.0))),
-                               self.ArgV[0].CalcDerivative(arg)))
+                               self.Args[0].CalcDerivative(arg)))
         else:
-            if self.ArgV[1].DependOn(arg):
+            if self.Args[1].DependOn(arg):
                 return MathTreeOpMul(
                            MathTreeOpMul(
                                MathTreeOpPow(
-                                   self.ArgV[0],
-                                   self.ArgV[1]),
-                               MathTreeFunc1Log(self.ArgV[0])),
-                           self.ArgV[1].CalcDerivative(arg))
+                                   self.Args[0],
+                                   self.Args[1]),
+                               MathTreeFunc1Log(self.Args[0])),
+                           self.Args[1].CalcDerivative(arg))
 
-    def Calc(self, VarDict):
-        return self.ArgV[0].Calc(VarDict) ** self.ArgV[1].Calc(VarDict)
+    def Calc(self, *dicts):
+        return self.Args[0].Calc(*dicts) ** self.Args[1].Calc(*dicts)
 
 
 
 class UndefinedMathTreeParseError(Exception):
 
-    def __init__(self, ParseStr, MathTree):
-        self.ParseStr = ParseStr
+    def __init__(self, posstr, MathTree):
+        self.posstr = posstr
         self.MathTree = MathTree
+
     def __str__(self):
-        return "\n" + str(self.ParseStr)
+        return "\n" + self.posstr
 
 
 class RightParenthesisExpectedMathTreeParseError(UndefinedMathTreeParseError): pass
@@ -768,6 +789,8 @@ DefaultMathTreeFuncs = (MathTreeFunc1Neg, MathTreeFunc1Sgn, MathTreeFunc1Sqrt,
                         MathTreeFunc1Exp, MathTreeFunc1Log,
                         MathTreeFunc1Sin, MathTreeFunc1Cos, MathTreeFunc1Tan,
                         MathTreeFunc1ASin, MathTreeFunc1ACos, MathTreeFunc1ATan,
+                        MathTreeFunc1SinD, MathTreeFunc1CosD, MathTreeFunc1TanD,
+                        MathTreeFunc1ASinD, MathTreeFunc1ACosD, MathTreeFunc1ATanD,
                         MathTreeFunc2Norm)
 
 DefaultMathTreeVals = (MathTreeValConst, MathTreeValVar)
@@ -781,10 +804,10 @@ class parser:
         self.MathTreeFuncs = MathTreeFuncs
         self.MathTreeVals = MathTreeVals
 
-    def parse(self, str):
-        return self.ParseMathTree(ParseStr(str))
+    def parse(self, str, extern = None):
+        return self.ParseMathTree(ParseStr(str), extern)
 
-    def ParseMathTree(self, arg):
+    def ParseMathTree(self, arg, extern):
         Tree = None
         Match = arg.MatchPattern(re.compile(r"\s*-(?![0-9\.])"))
         if Match:
@@ -793,12 +816,12 @@ class parser:
             i = arg.MatchStr("(")
             if i:
                 try:
-                    self.ParseMathTree(arg)
-                    raise RightParenthesisExpectedMathTreeParseError(arg, Tree)
+                    self.ParseMathTree(arg, extern)
+                    raise RightParenthesisExpectedMathTreeParseError(str(arg), Tree)
                 except RightParenthesisFoundMathTreeParseError, e:
                     if isinstance(e.MathTree, MathTreeOp):
                         e.MathTree.ParenthesisBarrier = 1
-                    if Tree:
+                    if Tree is not None:
                         Tree.AddArg(e.MathTree)
                     else:
                         Tree = e.MathTree
@@ -806,41 +829,67 @@ class parser:
                 for FuncClass in self.MathTreeFuncs:
                     Func = FuncClass()
                     if Func.InitByParser(arg):
-                        if Tree:
+                        if Tree is not None:
                             Tree.AddArg(Func)
                         else:
                             Tree = Func
-                        for i in range(Func.ArgC - 1):
+                        while 1:
                             try:
-                                self.ParseMathTree(arg)
-                                raise CommaExpectedMathTreeParseError(arg, Tree)
+                                prevposstr = str(arg)
+                                self.ParseMathTree(arg, extern)
+                                raise RightParenthesisExpectedMathTreeParseError(str(arg), Tree)
                             except CommaFoundMathTreeParseError, e:
-                                Func.AddArg(e.MathTree)
-                        try:
-                            self.ParseMathTree(arg)
-                            raise RightParenthesisExpectedMathTreeParseError(arg, Tree)
-                        except RightParenthesisFoundMathTreeParseError, e:
-                            Func.AddArg(e.MathTree)
+                                try:
+                                    Func.AddArg(e.MathTree)
+                                except ArgCountError:
+                                    raise RightParenthesisExpectedMathTreeParseError(prevposstr, Tree)
+                                continue
+                            except RightParenthesisFoundMathTreeParseError, e:
+                                try:
+                                    Func.AddArg(e.MathTree)
+                                except ArgCountError:
+                                    raise RightParenthesisExpectedMathTreeParseError(prevposstr, Tree)
+                                break
                         break
                 else:
-                    for ValClass in self.MathTreeVals:
-                        Val = ValClass()
-                        if Val.InitByParser(arg):
-                            if Tree:
-                                Tree.AddArg(Val)
-                            else:
-                                Tree = Val
-                            break
+                    FuncExtern = MathTreeFuncExtern(extern)
+                    if extern is not None and FuncExtern.InitByParser(arg):
+                        if Tree is not None:
+                            Tree.AddArg(FuncExtern)
+                        else:
+                            Tree = FuncExtern
+                        while 1:
+                            try:
+                                self.ParseMathTree(arg, extern)
+                                raise RightParenthesisExpectedMathTreeParseError(str(arg), Tree)
+                            except CommaFoundMathTreeParseError, e:
+                                FuncExtern.AddArg(e.MathTree)
+                                continue
+                            except RightParenthesisFoundMathTreeParseError, e:
+                                FuncExtern.AddArg(e.MathTree)
+                                break
                     else:
-                        raise OperandExpectedMathTreeParseError(arg, Tree)
+                        for ValClass in self.MathTreeVals:
+                            Val = ValClass()
+                            if Val.InitByParser(arg):
+                                if Tree is not None:
+                                    SubTree = Tree
+                                    while isinstance(SubTree, MathTreeOp) and len(SubTree.Args) == 2:
+                                        SubTree = SubTree.Args[1]
+                                    SubTree.AddArg(Val)
+                                else:
+                                    Tree = Val
+                                break
+                        else:
+                            raise OperandExpectedMathTreeParseError(str(arg), Tree)
             if arg.AllDone():
                 return Tree
             i = arg.MatchStr(")")
             if i:
-                raise RightParenthesisFoundMathTreeParseError(arg, Tree)
+                raise RightParenthesisFoundMathTreeParseError(str(arg), Tree)
             i = arg.MatchStr(",")
             if i:
-                raise CommaFoundMathTreeParseError(arg, Tree)
+                raise CommaFoundMathTreeParseError(str(arg), Tree)
             for OpClass in self.MathTreeOps:
                 Op = OpClass()
                 if Op.InitByParser(arg):
@@ -850,76 +899,13 @@ class parser:
                           Op.level > SubTree.level and\
                           not SubTree.ParenthesisBarrier:
                         SubTreeRoot = SubTree
-                        SubTree = SubTree.ArgV[1]
+                        SubTree = SubTree.Args[1]
                     if SubTreeRoot:
                         Op.AddArg(SubTree)
-                        SubTreeRoot.ArgV[1] = Op
+                        SubTreeRoot.Args[1] = Op
                     else:
                         Op.AddArg(Tree)
                         Tree = Op
                     break
             else:
-                raise OperatorExpectedMathTreeParseError(arg, Tree)
-
-
-if __name__=="__main__":
-    myparser = parser()
-    print myparser.parse("a+b-c*d/e**f")
-    print myparser.parse("a**b/c*d-e+f")
-    print myparser.parse("a+b-c")
-    print myparser.parse("(a+b)-c")
-    print myparser.parse("a+(b-c)"), " <= this is somehow wrong (needs no parenthesis)"
-    print myparser.parse("a-b+c")
-    print myparser.parse("(a-b)+c")
-    print myparser.parse("a-(b+c)")
-    print myparser.parse("((a-(b+c))/(d*e))**f")
-    print repr(myparser.parse("((a-(b+c))/(d*e))**f"))
-    print myparser.parse("sin(pi/2)")
-    print repr(myparser.parse("sin(pi/2)"))
-    x = MathTreeFunc1Sin(
-            MathTreeOpDiv(
-                MathTreeValVar(
-                    'pi'),
-                MathTreeValConst(
-                    2.0)))
-    print x
-    print myparser.parse("norm(a,b)")
-
-    choise = ""
-    while choise not in ["y","n"]:
-        choise = raw_input("\nrun interactive test program [y/n]? ")
-    assert choise == "y"
-    choise = "6"
-    while choise != "7":
-        if choise == "6":
-            expression = raw_input("\nexpression? ")
-            MyTree=myparser.parse(expression)
-        choise = "0"
-        while choise not in map(lambda x: chr(x + ord("1")), range(7)):
-            choise = raw_input("\n1) view expression\
-                                \n2) view math tree\
-                                \n3) view list of variables\
-                                \n4) calculate expression\
-                                \n5) calculate derivative\
-                                \n6) enter new expression\
-                                \n7) quit\
-                                \nyour choise? ")
-        if choise == "1":
-            print "\n", MyTree
-        if choise == "2":
-            print "\n", repr(MyTree)
-        if choise == "3":
-            print "\n", MyTree.VarList()
-        if choise == "4":
-            print
-            VarDict = { }
-            for key in MyTree.VarList():
-                VarDict[key] = float(raw_input("value for '" + key + "'? "))
-            print "\nthe result is:",MyTree.Calc(VarDict)
-        if choise == "5":
-            VarName = raw_input("\nwhich variable? ")
-            if VarName != "":
-                MyTree = MyTree.Derivative(VarName)
-                print "\nexpression replaced by the calculated derivative"
-            else:
-                print "\nstring was empty, go back to main menu"
+                raise OperatorExpectedMathTreeParseError(str(arg), Tree)
