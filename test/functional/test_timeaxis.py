@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 import sys; sys.path[:0] = ["../.."]
 
+print "timeaxis are currently deferred"
+sys.exit()
+
 try:
     import datetime
 except:
