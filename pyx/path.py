@@ -1091,6 +1091,93 @@ class path(base.PSCmd):
             pel.outputPDF(file)
 
 ################################################################################
+# some special kinds of path, again in two variants
+################################################################################
+
+class line_pt(path):
+
+   """straight line from (x1, y1) to (x2, y2) (coordinates in pts)"""
+
+   def __init__(self, x1, y1, x2, y2):
+       path.__init__(self, moveto_pt(x1, y1), lineto_pt(x2, y2))
+
+
+class curve_pt(path):
+
+   """Bezier curve with control points (x0, y1),..., (x3, y3)
+   (coordinates in pts)"""
+
+   def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
+       path.__init__(self,
+                     moveto_pt(x0, y0),
+                     curveto_pt(x1, y1, x2, y2, x3, y3))
+
+
+class rect_pt(path):
+
+   """rectangle at position (x,y) with width and height (coordinates in pts)"""
+
+   def __init__(self, x, y, width, height):
+       path.__init__(self, moveto_pt(x, y), 
+                           lineto_pt(x+width, y), 
+                           lineto_pt(x+width, y+height), 
+                           lineto_pt(x, y+height),
+                           closepath())
+
+
+class circle_pt(path):
+
+   """circle with center (x,y) and radius"""
+
+   def __init__(self, x, y, radius):
+       path.__init__(self, arc_pt(x, y, radius, 0, 360),
+                           closepath())
+
+
+class line(line_pt):
+
+   """straight line from (x1, y1) to (x2, y2)"""
+
+   def __init__(self, x1, y1, x2, y2):
+       line_pt.__init__(self,
+                      unit.topt(x1), unit.topt(y1),
+                      unit.topt(x2), unit.topt(y2)
+                      )
+
+
+class curve(curve_pt):
+
+   """Bezier curve with control points (x0, y1),..., (x3, y3)"""
+
+   def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
+       curve_pt.__init__(self,
+                       unit.topt(x0), unit.topt(y0),
+                       unit.topt(x1), unit.topt(y1),
+                       unit.topt(x2), unit.topt(y2),
+                       unit.topt(x3), unit.topt(y3)
+                      )
+
+
+class rect(rect_pt):
+
+   """rectangle at position (x,y) with width and height"""
+
+   def __init__(self, x, y, width, height):
+       rect_pt.__init__(self,
+                        unit.topt(x), unit.topt(y),
+                        unit.topt(width), unit.topt(height))
+
+
+class circle(circle_pt):
+
+   """circle with center (x,y) and radius"""
+
+   def __init__(self, x, y, radius):
+       circle_pt.__init__(self,
+                        unit.topt(x), unit.topt(y),
+                        unit.topt(radius))
+
+################################################################################
 # normpath and corresponding classes
 ################################################################################
 
@@ -2286,90 +2373,3 @@ class normpath(path):
     def outputPDF(self, file):
         for sp in self.subpaths:
             sp.outputPDF(file)
-
-################################################################################
-# some special kinds of path, again in two variants
-################################################################################
-
-class line_pt(path):
-
-   """straight line from (x1, y1) to (x2, y2) (coordinates in pts)"""
-
-   def __init__(self, x1, y1, x2, y2):
-       path.__init__(self, moveto_pt(x1, y1), lineto_pt(x2, y2))
-
-
-class curve_pt(path):
-
-   """Bezier curve with control points (x0, y1),..., (x3, y3)
-   (coordinates in pts)"""
-
-   def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
-       path.__init__(self,
-                     moveto_pt(x0, y0),
-                     curveto_pt(x1, y1, x2, y2, x3, y3))
-
-
-class rect_pt(path):
-
-   """rectangle at position (x,y) with width and height (coordinates in pts)"""
-
-   def __init__(self, x, y, width, height):
-       path.__init__(self, moveto_pt(x, y), 
-                           lineto_pt(x+width, y), 
-                           lineto_pt(x+width, y+height), 
-                           lineto_pt(x, y+height),
-                           closepath())
-
-
-class circle_pt(path):
-
-   """circle with center (x,y) and radius"""
-
-   def __init__(self, x, y, radius):
-       path.__init__(self, arc_pt(x, y, radius, 0, 360),
-                           closepath())
-
-
-class line(line_pt):
-
-   """straight line from (x1, y1) to (x2, y2)"""
-
-   def __init__(self, x1, y1, x2, y2):
-       line_pt.__init__(self,
-                      unit.topt(x1), unit.topt(y1),
-                      unit.topt(x2), unit.topt(y2)
-                      )
-
-
-class curve(curve_pt):
-
-   """Bezier curve with control points (x0, y1),..., (x3, y3)"""
-
-   def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
-       curve_pt.__init__(self,
-                       unit.topt(x0), unit.topt(y0),
-                       unit.topt(x1), unit.topt(y1),
-                       unit.topt(x2), unit.topt(y2),
-                       unit.topt(x3), unit.topt(y3)
-                      )
-
-
-class rect(rect_pt):
-
-   """rectangle at position (x,y) with width and height"""
-
-   def __init__(self, x, y, width, height):
-       rect_pt.__init__(self,
-                        unit.topt(x), unit.topt(y),
-                        unit.topt(width), unit.topt(height))
-
-
-class circle(circle_pt):
-
-   """circle with center (x,y) and radius"""
-
-   def __init__(self, x, y, radius):
-       circle_pt.__init__(self,
-                        unit.topt(x), unit.topt(y),
-                        unit.topt(radius))
