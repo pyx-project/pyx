@@ -214,7 +214,7 @@ class rotation(_trafo):
         
 class _scaling(_trafo):
     def __init__(self, sx, sy=None, x=None, y=None):
-        sy=sy or sx
+        sy = sy or sx
         if not sx or not sy:
             raise (UndefinedResultError, 
                    "one scaling factor is 0")
@@ -223,14 +223,14 @@ class _scaling(_trafo):
             if x is None or y is None:
                 raise (UndefinedResultError, 
                        "either specify both x and y or none of them")
-            vector=(1-sx)*x, (1-sy)*y
+            vector = (1-sx)*x, (1-sy)*y
             
         _trafo.__init__(self, matrix=((sx,0),(0,sy)), vector=vector)
 
 
 class scaling(trafo):
     def __init__(self, sx, sy=None, x=None, y=None):
-        sy=sy or sx
+        sy = sy or sx
         if not sx or not sy:
             raise (UndefinedResultError, 
                    "one scaling factor is 0")
@@ -239,9 +239,25 @@ class scaling(trafo):
             if x is None or y is None:
                 raise (UndefinedResultError, 
                        "either specify both x and y or none of them")
-            vector=(1-sx)*x, (1-sy)*y
+            vector = (1-sx)*x, (1-sy)*y
             
         trafo.__init__(self, matrix=((sx,0),(0,sy)), vector=vector)
+
+
+class _slant(_trafo):
+    def __init__(self, a, angle=0, x=None, y=None):
+        t = ( _rotation(-angle, x, y)*
+              trafo(matrix=((1, a), (0, 1)))*
+              _rotation(angle, x, y) )
+        _trafo.__init__(self, t.matrix, t.vector)
+
+
+class slant(trafo):
+    def __init__(self, a, angle=0, x=None, y=None):
+        t = ( rotation(-angle, x, y)*
+              trafo(matrix=((1, a), (0, 1)))*
+              rotation(angle, x, y) )
+        trafo.__init__(self, t.matrix, t.vector)
 
 
 class _translation(_trafo):
