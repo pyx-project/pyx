@@ -149,6 +149,9 @@ class PSCommand(PSOp):
             except KeyError:
                 raise KeyError, "unknown paperformat '%s'" % paperformat
 
+            if not ctrafo:
+                ctrafo=trafo.trafo()
+
             ctrafo = ctrafo._translate(0.5*(width -(abbox.urx-abbox.llx))-
                                        abbox.llx, 
                                        0.5*(height-(abbox.ury-abbox.lly))-
