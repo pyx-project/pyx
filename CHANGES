@@ -82,6 +82,7 @@ TODO:
     - automatic file key titles
     - graph.data now also includes the old data module
     - data.list adds (by default) a line number like data.file
+      (thus regular columns are counted from 1)
   - path:
     - added new pathels multilineto_pt and multicurveto which allows to specify
       a list of points and can thus be much more efficient
