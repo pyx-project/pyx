@@ -33,38 +33,35 @@ except:
 
 class PDFregistry:
 
-    # TODO: code dublication with PSregistry. We probably want to share the
-    # the code by a registry class. Q: Where to put this class? resource.py
-    # is not possible due to cyclic imports. We might introduce a writer.py.
+    # TODO: Some code dublication with PSwriter (constructor and add method).
+    # We probably want to share the the code by a registry class. Q: Where to
+    # put this class? resource.py is not possible due to cyclic imports. We
+    # might introduce a writer.py ... !?
 
     def __init__(self):
-        self.fonts = {}
-        self.fontwidths = {}
-        self.fontdescriptors = {}
-        self.fontfiles = {}
+        self.resources = []
+        self.types = {}
 
-    def addresource(self, dict, resource):
-        # dict is one of self.fonts, self.fontwidths, self.fontdescriptors, self.fontfiles
-        if dict.has_key(resource.id):
-            dict[resource.id].merge(resource)
+    def add(self, resource):
+        resources = self.types.setdefault(resource.type, {})
+        if resources.has_key(resource.id):
+            resources[resource.id].merge(resource)
         else:
-            dict[resource.id] = resource
+            self.resources.append(resource)
+            resources[resource.id] = resource
 
     def setrefno(self, refno):
-        for dict in [self.fonts, self.fontwidths, self.fontdescriptors, self.fontfiles]:
-            for resource in dict.values():
-                refno = resource.setrefno(refno)
+        for resource in self.resources:
+            refno = resource.setrefno(refno)
         return refno
 
     def outputPDFobjects(self, file):
-        for dict in [self.fonts, self.fontwidths, self.fontdescriptors, self.fontfiles]:
-            for resource in dict.values():
-                resource.outputPDFobjects(file)
+        for resource in self.resources:
+            resource.outputPDFobjects(file)
 
     def outputPDFxref(self, file):
-        for dict in [self.fonts, self.fontwidths, self.fontdescriptors, self.fontfiles]:
-            for resource in dict.values():
-                resource.outputPDFxref(file)
+        for resource in self.resources:
+            resource.outputPDFxref(file)
 
 
 class PDFobject:
@@ -227,6 +224,7 @@ class PDFcontentlength(PDFobject):
 class PDFfont(PDFobject):
 
     def __init__(self, fontname, basepsname, font):
+        self.type = "font"
         self.id = self.fontname = fontname
         self.basepsname = basepsname
         self.fontwidths = PDFfontwidths(font)
@@ -253,6 +251,7 @@ class PDFfont(PDFobject):
 class PDFfontwidths(PDFobject):
 
     def __init__(self, font):
+        self.type = "fontwidth"
         self.font = font
         PDFobject.__init__(self)
 
@@ -273,6 +272,7 @@ class PDFfontwidths(PDFobject):
 class PDFfontdescriptor(PDFobject):
 
     def __init__(self, font):
+        self.type = "fontdescriptor"
         self.font = font
         path = pykpathsea.find_file(font.getfontfile(), pykpathsea.kpse_type1_format)
         self.fontfile = PDFfontfile(path)
@@ -302,6 +302,7 @@ class PDFfontdescriptor(PDFobject):
 class PDFfontfile(PDFobject):
 
     def __init__(self, path):
+        self.type = "fontfile"
         self.path = path
         PDFobject.__init__(self)
 
@@ -371,13 +372,15 @@ class PDFwriter:
         # the PDFcatalog class automatically builds up the pdfobjects from a document
         catalog = PDFcatalog(document)
         pdfobjects = catalog.setrefno(1)
+
+        # objects
         catalog.outputPDFobjects(self.file)
 
-        # create xref list
+        # xref
         xrefpos = self.file.tell()
         self.file.write("xref\n"
                         "0 %d\n"
-                        "0000000000 65535 f \n" % (pdfobjects))
+                        "0000000000 65535 f \n" % pdfobjects)
         catalog.outputPDFxref(self.file)
 
         # trailer

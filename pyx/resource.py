@@ -81,4 +81,4 @@ class font(_resource):
             registry.add(pswriter.PSfontreencoding(self.fontname, self.basepsname, self.encoding))
 
     def PDFregister(self, registry):
-        pdfwriter.PDFfont(self.fontname, self.basepsname, self.font).register(registry)
+        registry.add(pdfwriter.PDFfont(self.fontname, self.basepsname, self.font))
