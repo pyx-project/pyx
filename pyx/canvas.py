@@ -467,7 +467,7 @@ if __name__=="__main__":
     g.plot(Data(df, x=2, y=7))
     g.plot(Data(df, x=2, y=8))
 #    g.plot(Function("0.01*sin(x)",Points=1000))
-    g.plot(Function("0*x",Points=2000))
+    g.plot(Function("0*x", Points=2000))
     g.plot(Function("0.01*sin(x)"))
     g.plot(Function("x=2*sin(1000*y)"))
     g.run()
