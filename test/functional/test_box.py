@@ -6,7 +6,10 @@ from pyx import *
 
 def drawexample(canvas, corner, linealign):
     r = 1.5
-    canvas.stroke(path.path(path.arc(0, 0, r, 0, 360)))
+    if corner:
+      canvas.stroke(path.path(path.arc(5, 5, r, 0, 360)))
+    else:
+      canvas.stroke(path.path(path.arc(5.5, 5+math.sqrt(3)/6, r, 0, 360)))
     phi = 0
     while phi < 2 * math.pi + 1e-10:
         if corner:
