@@ -24,7 +24,7 @@
 
 
 import math
-from pyx import attr
+from pyx import attr, helper
 from pyx.graph.axis import painter, parter, rater, texter, tick
 
 
@@ -244,7 +244,7 @@ class _axis:
                 else:
                     if min is None or value < min: min = value
                     if max is None or value > max: max = value
-        elif deltamaxindex is not None:
+        if deltamaxindex is not None:
             for point in points:
                 try:
                     value = point[index] + point[deltamaxindex] + self.zero
@@ -253,15 +253,14 @@ class _axis:
                 else:
                     if min is None or value < min: min = value
                     if max is None or value > max: max = value
-        else:
-            for point in points:
-                try:
-                    value = point[index] + self.zero
-                except:
-                    pass
-                else:
-                    if min is None or value < min: min = value
-                    if max is None or value > max: max = value
+        for point in points:
+            try:
+                value = point[index] + self.zero
+            except:
+                pass
+            else:
+                if min is None or value < min: min = value
+                if max is None or value > max: max = value
         self.setrange(min, max)
 
     def getrange(self):
