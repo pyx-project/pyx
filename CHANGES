@@ -20,7 +20,7 @@ PyX
     - new module for loading PyX configuration information
   - pyx module:
     - automatically import main modules into pyx namespace as suggested by Fernando 
-      Perez <fperez at colorado dot edu>
+      Perez.
   TODO:
   - graph module
     - address datavmin and datavmax
