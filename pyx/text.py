@@ -1045,7 +1045,6 @@ class _texmessageload(texmessage):
         if lowestbracketlevel is not None:
             m = self.pattern.search(lowestbracketlevel)
             while m:
-                print m.group("filename")
                 if os.access(m.group("filename"), os.R_OK):
                     lowestbracketlevel = lowestbracketlevel[:m.start()] + lowestbracketlevel[m.end():]
                 else:
