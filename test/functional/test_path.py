@@ -29,7 +29,7 @@ class cross(path):
 def drawpathwbbox(c, p):
     c.stroke(p, color.rgb.red)
     np=normpath(p)
-    c.stroke(np, color.rgb.green, canvas.linestyle.dashed)
+    c.stroke(np, color.rgb.green, style.linestyle.dashed)
     c.stroke(bboxrect(p))
 
 
@@ -38,19 +38,19 @@ def testarcs(c):
         p=path(arc(x,y, 0.5, phi1, phi2))
         np=normpath(p)
         c.stroke(p, color.rgb.red)
-        c.stroke(np, color.rgb.green, canvas.linestyle.dashed)
+        c.stroke(np, color.rgb.green, style.linestyle.dashed)
 
     def testarcn(c, x, y, phi1, phi2):
         p=path(arcn(x,y, 0.5, phi1, phi2))
         np=normpath(p)
         c.stroke(p, color.rgb.red)
-        c.stroke(np, color.rgb.green, canvas.linestyle.dashed)
+        c.stroke(np, color.rgb.green, style.linestyle.dashed)
 
     def testarct(c, r, x0, y0, dx1, dy1, dx2, dy2):
         p=path(moveto(x0,y0), arct(x0+dx1,y0+dy1, x0+dx2, y0+dy2, r), rlineto(dx2-dx1, dy2-dy1), closepath())
         np=normpath(p)
-        c.stroke(p, color.rgb.red, canvas.linewidth.Thick)
-        c.stroke(np, color.rgb.green, canvas.linewidth.THin, canvas.filled(color.rgb.green))
+        c.stroke(p, color.rgb.red, style.linewidth.Thick)
+        c.stroke(np, color.rgb.green, style.linewidth.THin, deco.filled(color.rgb.green))
 
     testarc(c, 1, 2, 0, 90)
     testarc(c, 2, 2, -90, 90)
@@ -83,34 +83,34 @@ def testmidpointsplit(c):
    p=path(moveto(1,1), rlineto(2,2), arc(5,2,1,30,300), closepath())
    bpsplit=p.bpath().MidPointSplit()
    c.stroke(p, color.rgb.red)
-   c.stroke(bpsplit, color.rgb.green, canvas.linestyle.dashed)
+   c.stroke(bpsplit, color.rgb.green, style.linestyle.dashed)
 
 
 def testintersectbezier(c):
     p=normpath(moveto(0,0), curveto(2,6,4,5,2,9))
     q=normpath(moveto(2,0), curveto(2,6,4,12,1,6))
 
-    c.stroke(q, canvas.linewidth.THIN)
-    c.stroke(p, canvas.linewidth.THIN)
+    c.stroke(q, style.linewidth.THIN)
+    c.stroke(p, style.linewidth.THIN)
 
     isect = p.intersect(q, epsilon=1e-4)
 
     for i in isect[0]:
         x, y = p.at(i)
-        c.stroke(cross(x, y), canvas.linewidth.THIN)
+        c.stroke(cross(x, y), style.linewidth.THIN)
 
 def testintersectcircle(c):
     k=circle(0, 0, 2)
     l=line(0,0, 3, 0)
-    c.stroke(k, canvas.linewidth.THIN)
-    c.stroke(l, canvas.linewidth.THIN)
+    c.stroke(k, style.linewidth.THIN)
+    c.stroke(l, style.linewidth.THIN)
 
     isect = k.intersect(l)
     assert len(isect[0])==1, "double count of intersections"
 
     for i in isect[0]:
         x, y = k.at(i)
-        c.stroke(cross(x, y), canvas.linewidth.THIN)
+        c.stroke(cross(x, y), style.linewidth.THIN)
 
 
 def testnormpathtrafo(c):
@@ -123,21 +123,21 @@ def testnormpathtrafo(c):
     c.stroke(p.transformed(trafo.translate(3,1)), color.rgb.red)
     c.insert(canvas.canvas(trafo.translate(3,1))).stroke(p,
                                                        color.rgb.green,
-                                                       canvas.linestyle.dashed)
+                                                       style.linestyle.dashed)
 
     c.stroke(p)
     c.stroke(p.reversed())
 
     c.stroke(cross(*(p.at(0))))
     c.stroke(cross(*(p.reversed().at(0))))
-    c.stroke(p.tangent(0, "30 pt"), canvas.earrow.normal)
-    c.stroke(p.reversed().tangent(0, "30 pt"), canvas.earrow.normal)
+    c.stroke(p.tangent(0, "30 pt"), deco.earrow.normal)
+    c.stroke(p.reversed().tangent(0, "30 pt"), deco.earrow.normal)
 
     #    p1, p2, p3 = p.split(1.0, 2.1)
     p1, p2 = p.split(1.0, 2.1)
-    c.stroke(p1, color.rgb.red, canvas.linestyle.dashed)
-    c.stroke(p2, color.rgb.green, canvas.linestyle.dashed)
-    #    c.stroke(p3, color.rgb.blue, canvas.linestyle.dashed)
+    c.stroke(p1, color.rgb.red, style.linestyle.dashed)
+    c.stroke(p2, color.rgb.green, style.linestyle.dashed)
+    #    c.stroke(p3, color.rgb.blue, style.linestyle.dashed)
 
     circ1 = circle(0, 10, 1)
     circ2 = circle(1.7, 10, 1)
@@ -152,7 +152,7 @@ def testnormpathtrafo(c):
     segment = segment1 << segment2
     segment.append(closepath())
 
-    c.stroke(segment, canvas.linewidth.THick, canvas.filled(color.rgb.green))
+    c.stroke(segment, style.linewidth.THick, deco.filled(color.rgb.green))
 
 
 def testtangent(c):
@@ -162,7 +162,7 @@ def testtangent(c):
            rlineto(2,3))+circle(5,5,1)
     c.stroke(p)
     for i in range(int(p.range())*2):
-        c.stroke(p.tangent(i/2.0, "20 t pt"), color.rgb.blue, canvas.earrow.normal)
+        c.stroke(p.tangent(i/2.0, "20 t pt"), color.rgb.blue, deco.earrow.normal)
 
 
 def testarcbbox(c):

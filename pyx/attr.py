@@ -57,21 +57,21 @@ def _getattrs(attrs, getclasses):
 def _checkattrs(attrs, allowedclasses):
     """check whether only attributes which are instances of classes in
     allowedclasses are present in the attribute list attrs"""
-    if len(attrs) != len(getattrs(attrs, allowedclasses)):
-        for attr1, attr2 in zip(attrs, getattrs(attrs, allowedclasses)):
+    if len(attrs) != len(_getattrs(attrs, allowedclasses)):
+        for attr1, attr2 in zip(attrs, _getattrs(attrs, allowedclasses)):
             if attr1 is not attr2:
                 raise TypeError("instance %r not allowed" % attr1)
         else:
-            raise TypeError("instance %r not allowed" % attrs[len(getattrs(attrs, allowedclasses))])
+            raise TypeError("instance %r not allowed" % attrs[len(_getattrs(attrs, allowedclasses))])
 
 #
 # attr class and simple descendants
 #
 
-class _attr(PSOp):
+class _attr(base.PSOp):
 
-     """ attr is the base class of all attributes, i.e., colors, decorators,
-     styles, text attributes and trafos"""
+    """ attr is the base class of all attributes, i.e., colors, decorators,
+    styles, text attributes and trafos"""
 
     def merge(self, attrs):
         """merge self into list of attrs
@@ -85,13 +85,12 @@ class _attr(PSOp):
         return attrs
 
 
-class _exclusiveattr(attr):
+class _exclusiveattr(_attr):
 
     """an attribute which swallows all but the last of the same type in an
     attribute list"""
 
     def __init__(self, exclusiveclass):
-        attr.__init__(self)
         self.exclusiveclass = exclusiveclass
 
     def merge(self, attrs):
@@ -106,7 +105,6 @@ class _classclear(_attr):
     the same type in an attribute list"""
 
     def __init__(self, clearclass):
-        _attr.__init__(self)
         self.clearclass = clearclass
 
     def merge(self, attrs):

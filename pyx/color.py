@@ -21,9 +21,9 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import base
+import attr
 
-class color(base.PathStyle):
+class color(attr._attr):
 
     """base class for all colors"""
 

@@ -23,7 +23,7 @@
 
 
 import re, math, string, sys
-import bbox, box, canvas, path, unit, mathtree, color, helper
+import bbox, box, canvas, color, deco, helper, path, style, unit, mathtree
 import text as textmodule
 import data as datamodule
 import trafo as trafomodule
@@ -1605,7 +1605,7 @@ class axispainter(axistitlepainter):
                        tickattrs=(),
                        gridattrs=None,
                        zerolineattrs=(),
-                       baselineattrs=canvas.linecap.square,
+                       baselineattrs=style.linecap.square,
                        labeldist="0.3 cm",
                        labelattrs=(textmodule.halign.center, textmodule.vshift.mathaxis),
                        labeldirection=None,
@@ -1875,7 +1875,7 @@ class baraxispainter(axistitlepainter):
     def __init__(self, innerticklength=None,
                        outerticklength=None,
                        tickattrs=(),
-                       baselineattrs=canvas.linecap.square,
+                       baselineattrs=style.linecap.square,
                        namedist="0.3 cm",
                        nameattrs=(textmodule.halign.center, textmodule.vshift.mathaxis),
                        namedirection=None,
@@ -3945,18 +3945,18 @@ class changesequence(changeattr):
 
 
 class changelinestyle(changesequence):
-    defaultsequence = (canvas.linestyle.solid,
-                       canvas.linestyle.dashed,
-                       canvas.linestyle.dotted,
-                       canvas.linestyle.dashdotted)
+    defaultsequence = (style.linestyle.solid,
+                       style.linestyle.dashed,
+                       style.linestyle.dotted,
+                       style.linestyle.dashdotted)
 
 
 class changestrokedfilled(changesequence):
-    defaultsequence = (canvas.stroked(), canvas.filled())
+    defaultsequence = (deco.stroked(), deco.filled())
 
 
 class changefilledstroked(changesequence):
-    defaultsequence = (canvas.filled(), canvas.stroked())
+    defaultsequence = (deco.filled(), deco.stroked())
 
 
 
@@ -4004,7 +4004,7 @@ class symbol:
                 path.closepath())
 
     def __init__(self, symbol=helper.nodefault,
-                       size="0.2 cm", symbolattrs=canvas.stroked(),
+                       size="0.2 cm", symbolattrs=deco.stroked(),
                        errorscale=0.5, errorbarattrs=(),
                        lineattrs=None):
         self.size_str = size
@@ -4462,7 +4462,7 @@ class line(symbol):
 
     def __init__(self, lineattrs=helper.nodefault):
         if lineattrs is helper.nodefault:
-            lineattrs = (changelinestyle(), canvas.linejoin.round)
+            lineattrs = (changelinestyle(), style.linejoin.round)
         symbol.__init__(self, symbolattrs=None, errorbarattrs=None, lineattrs=lineattrs)
 
 
@@ -4589,7 +4589,7 @@ class arrow(symbol):
                 x2 = unit.t_pt(x)+0.5*dx*self.linelength*point[self.sizeindex]
                 y2 = unit.t_pt(y)+0.5*dy*self.linelength*point[self.sizeindex]
                 graph.stroke(path.line(x1, y1, x2, y2),
-                             canvas.earrow(self.arrowsize*point[self.sizeindex],
+                             deco.earrow(self.arrowsize*point[self.sizeindex],
                                            **self.arrowdict),
                              *helper.ensuresequence(self.arrowattrs))
 
@@ -4623,7 +4623,7 @@ class bar:
         self.skipmissing = skipmissing
         self.xbar = xbar
         if barattrs is helper.nodefault:
-            self._barattrs = (canvas.stroked(color.gray.black), changecolor.Rainbow())
+            self._barattrs = (deco.stroked(color.gray.black), changecolor.Rainbow())
         else:
             self._barattrs = barattrs
         if _usebariterator is helper.nodefault:

@@ -28,7 +28,8 @@
 # - How should we handle the passing of stroke and fill styles to
 #   arrows? Calls, new instances, ...?
 
-import attr, base
+import math
+import attr, base, canvas, helper, path, trafo, unit
 
 #
 # Decorated path
@@ -91,41 +92,41 @@ class _decoratedpath(base.PSCmd):
 
         # apply global styles
         if self.styles:
-            _gsave().write(file)
+            canvas._gsave().write(file)
             _writestyles(self.styles)
 
         if self.fillpath is not None:
-            _newpath().write(file)
+            canvas._newpath().write(file)
             self.fillpath.write(file)
 
             if self.strokepath==self.fillpath:
                 # do efficient stroking + filling
-                _gsave().write(file)
+                canvas._gsave().write(file)
 
                 if self.fillstyles:
                     _writestyles(self.fillstyles)
 
-                _fill().write(file)
-                _grestore().write(file)
+                canvas._fill().write(file)
+                canvas._grestore().write(file)
 
                 if self.strokestyles:
-                    _gsave().write(file)
+                    canvas._gsave().write(file)
                     _writestyles(self.strokestyles)
 
-                _stroke().write(file)
+                canvas._stroke().write(file)
 
                 if self.strokestyles:
-                    _grestore().write(file)
+                    canvas._grestore().write(file)
             else:
                 # only fill fillpath - for the moment
                 if self.fillstyles:
-                    _gsave().write(file)
+                    canvas._gsave().write(file)
                     _writestyles(self.fillstyles)
 
                 _fill().write(file)
 
                 if self.fillstyles:
-                    _grestore().write(file)
+                    canvas._grestore().write(file)
 
         if self.strokepath is not None and self.strokepath!=self.fillpath:
             # this is the only relevant case still left
@@ -135,12 +136,12 @@ class _decoratedpath(base.PSCmd):
                 _gsave().write(file)
                 _writestyles(self.strokestyles)
 
-            _newpath().write(file)
+            canvas._newpath().write(file)
             self.strokepath.write(file)
-            _stroke().write(file)
+            canvas._stroke().write(file)
 
             if self.strokestyles:
-                _grestore().write(file)
+                canvas._grestore().write(file)
 
         if not self.strokepath is not None and not self.fillpath:
             raise RuntimeError("Path neither to be stroked nor filled")
@@ -151,7 +152,7 @@ class _decoratedpath(base.PSCmd):
 
         # restore global styles
         if self.styles:
-            _grestore().write(file)
+            canvas._grestore().write(file)
 
 #
 # Path decorators
@@ -327,7 +328,7 @@ class arrow(_deco):
 
         ahead = _arrowhead(anormpath, self.size, self.angle, self.constriction)
 
-        dp.addsubdp(decoratedpath(ahead,
+        dp.addsubdp(_decoratedpath(ahead,
                                   strokepath=ahead, fillpath=ahead,
                                   styles=self.styles,
                                   strokestyles=self.strokestyles,

@@ -25,12 +25,17 @@
 import math
 import attr, unit, base
 
-class linecap(attr._exlusiveattr):
+class _style(attr._exclusiveattr):
+    def __init__(self):
+        attr._exclusiveattr.__init__(self, self.__class__)
+
+
+class linecap(_style):
 
     """linecap of paths"""
 
     def __init__(self, value=0):
-        attr._exclusiveattr(self, linecap)
+        _style.__init__(self)
         self.value = value
 
     def write(self, file):
@@ -39,15 +44,15 @@ class linecap(attr._exlusiveattr):
 linecap.butt = linecap(0)
 linecap.round = linecap(1)
 linecap.square = linecap(2)
-linecap.clear = attr._clearclass(linecap)
+linecap.clear = attr._classclear(linecap)
 
 
-class linejoin(attr._exlusiveattr):
+class linejoin(_style):
 
     """linejoin of paths"""
 
     def __init__(self, value=0):
-        attr._exclusiveattr(self, linejoin)
+        _style.__init__(self)
         self.value = value
 
     def write(self, file):
@@ -56,15 +61,15 @@ class linejoin(attr._exlusiveattr):
 linejoin.miter = linejoin(0)
 linejoin.round = linejoin(1)
 linejoin.bevel = linejoin(2)
-linejoin.clear = attr._clearclass(linejoin)
+linejoin.clear = attr._classclear(linejoin)
 
 
-class miterlimit(attr._exlusiveattr):
+class miterlimit(_style):
 
     """miterlimit of paths"""
 
     def __init__(self, value=10.0):
-        attr._exclusiveattr(self, miterlimit)
+        _style.__init__(self)
         self.value = value
 
     def write(self, file):
@@ -75,15 +80,15 @@ miterlimit.lessthan90deg = miterlimit(1/math.sin(math.pi*90/360))
 miterlimit.lessthan60deg = miterlimit(1/math.sin(math.pi*60/360))
 miterlimit.lessthan45deg = miterlimit(1/math.sin(math.pi*45/360))
 miterlimit.lessthan11deg = miterlimit(10) # the default, approximately 11.4783 degress
-mitelimit.clear = attr._clearclass(miterlimit)
+miterlimit.clear = attr._classclear(miterlimit)
 
 
-class dash(attr._exclusiveattr):
+class dash(_style):
 
     """dash of paths"""
 
     def __init__(self, pattern=[], offset=0):
-        attr._exclusiveattr(self, dash)
+        _style.__init__(self)
         self.pattern = pattern
         self.offset = offset
 
@@ -91,15 +96,15 @@ class dash(attr._exclusiveattr):
         patternstring = " ".join(["%g" % element for element in self.pattern])
         file.write("[%s] %d setdash\n" % (patternstring, self.offset))
 
-dash.clear = attr._clearclass(dash)
+dash.clear = attr._classclear(dash)
 
 
-class linestyle(attr._exclusiveattr):
+class linestyle(_style):
 
     """linestyle (linecap together with dash) of paths"""
 
     def __init__(self, c=linecap.butt, d=dash([])):
-        attr._exclusiveattr.__init__(self, linestyle)
+        _style.__init__(self)
         self.c = c
         self.d = d
 
@@ -111,15 +116,15 @@ linestyle.solid = linestyle(linecap.butt, dash([]))
 linestyle.dashed = linestyle(linecap.butt, dash([2]))
 linestyle.dotted = linestyle(linecap.round, dash([0, 3]))
 linestyle.dashdotted = linestyle(linecap.round, dash([0, 3, 3, 3]))
-linestyle.clear = attr._clearclass(linestyle)
+linestyle.clear = attr._classclear(linestyle)
 
 
-class linewidth(attr._attr, unit.length):
+class linewidth(_style, unit.length):
 
     """linewidth of paths"""
 
     def __init__(self, l="0 cm"):
-        attr._attr(self)
+        _style.__init__(self)
         unit.length.__init__(self, l=l, default_type="w")
 
     def merge(self, attrs):
@@ -152,4 +157,4 @@ linewidth.THick = linewidth("%f cm" % (_base*math.sqrt(8)))
 linewidth.THIck = linewidth("%f cm" % (_base*math.sqrt(16)))
 linewidth.THICk = linewidth("%f cm" % (_base*math.sqrt(32)))
 linewidth.THICK = linewidth("%f cm" % (_base*math.sqrt(64)))
-linewidth.clear = attr._clearclass(linewidth)
+linewidth.clear = attr._classclear(linewidth)

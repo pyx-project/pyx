@@ -10,77 +10,77 @@ def testarrow(c):
     c.stroke(path(moveto(10,20), 
     	        curveto(12,16,14,15,12,19),
                 rcurveto(-3,2,3,3,-2,4)),
-           canvas.barrow.small, canvas.earrow.normal)
+           deco.barrow.small, deco.earrow.normal)
     
-    c.stroke(path(arc(8,15,4,10,70)), canvas.barrow.small, canvas.earrow.normal)
-    c.stroke(path(arc(8,15,3,10,70)), canvas.barrow.small, canvas.earrow.normal)
-    c.stroke(path(arc(8,15,2,10,70)), canvas.barrow.small, canvas.earrow.normal)
-    c.stroke(path(arc(8,15,1,10,70)), canvas.barrow.small, canvas.earrow.normal)
-    c.stroke(path(arc(8,15,0.5,10,70)), canvas.barrow.small, canvas.earrow.normal)
+    c.stroke(path(arc(8,15,4,10,70)), deco.barrow.small, deco.earrow.normal)
+    c.stroke(path(arc(8,15,3,10,70)), deco.barrow.small, deco.earrow.normal)
+    c.stroke(path(arc(8,15,2,10,70)), deco.barrow.small, deco.earrow.normal)
+    c.stroke(path(arc(8,15,1,10,70)), deco.barrow.small, deco.earrow.normal)
+    c.stroke(path(arc(8,15,0.5,10,70)), deco.barrow.small, deco.earrow.normal)
 
     base = 2
 
     c.stroke(path(moveto(5,10), rlineto(5,0)),
-           canvas.barrow("%f t pt" % (base/math.sqrt(8)), constriction=None),
-           canvas.earrow.SMall)
+           deco.barrow("%f t pt" % (base/math.sqrt(8)), constriction=None),
+           deco.earrow.SMall)
     c.stroke(path(moveto(5,10.5), rlineto(5,0)),
-           canvas.barrow("%f t pt" % (base/math.sqrt(4)), constriction=None),
-           canvas.earrow.Small)
+           deco.barrow("%f t pt" % (base/math.sqrt(4)), constriction=None),
+           deco.earrow.Small)
     c.stroke(path(moveto(5,11), rlineto(5,0)),
-           canvas.barrow("%f t pt" % (base/math.sqrt(2)), constriction=None),
-           canvas.earrow.small)
+           deco.barrow("%f t pt" % (base/math.sqrt(2)), constriction=None),
+           deco.earrow.small)
     c.stroke(path(moveto(5,11.5), rlineto(5,0)),
-           canvas.barrow("%f t pt" % (base/math.sqrt(1)), constriction=None),
-           canvas.earrow.normal)
+           deco.barrow("%f t pt" % (base/math.sqrt(1)), constriction=None),
+           deco.earrow.normal)
     c.stroke(path(moveto(5,12), rlineto(5,0)),
-           canvas.barrow("%f t pt" % (base*math.sqrt(2)), constriction=None),
-           canvas.earrow.large)
+           deco.barrow("%f t pt" % (base*math.sqrt(2)), constriction=None),
+           deco.earrow.large)
     c.stroke(path(moveto(5,12.5), rlineto(5,0)),
-           canvas.barrow("%f t pt" % (base*math.sqrt(4)), constriction=None),
-           canvas.earrow.Large)
+           deco.barrow("%f t pt" % (base*math.sqrt(4)), constriction=None),
+           deco.earrow.Large)
     c.stroke(path(moveto(5,13), rlineto(5,0)),
-           canvas.barrow("%f t pt" % (base*math.sqrt(8)), constriction=None),
-           canvas.earrow.LArge)
+           deco.barrow("%f t pt" % (base*math.sqrt(8)), constriction=None),
+           deco.earrow.LArge)
     c.stroke(path(moveto(5,13.5), rlineto(5,0)),
-           canvas.barrow("%f t pt" % (base*math.sqrt(16)), constriction=None),
-           canvas.earrow.LARge)
+           deco.barrow("%f t pt" % (base*math.sqrt(16)), constriction=None),
+           deco.earrow.LARge)
    
-    lt = canvas.linewidth.THick
+    lt = style.linewidth.THick
 
     c.stroke(path(moveto(11,10), rlineto(5,0)),
            lt,
-           canvas.barrow("%f t pt" % (base/math.sqrt(8)), constriction=None),
-           canvas.earrow.SMall)
+           deco.barrow("%f t pt" % (base/math.sqrt(8)), constriction=None),
+           deco.earrow.SMall)
     c.stroke(path(moveto(11,10.5), rlineto(5,0)),
            lt,
-           canvas.barrow("%f t pt" % (base/math.sqrt(4)), constriction=None),
-           canvas.earrow.Small)
+           deco.barrow("%f t pt" % (base/math.sqrt(4)), constriction=None),
+           deco.earrow.Small)
     c.stroke(path(moveto(11,11), rlineto(5,0)),
            lt,
-           canvas.barrow("%f t pt" % (base/math.sqrt(2)), constriction=None),
-           canvas.earrow.small)
+           deco.barrow("%f t pt" % (base/math.sqrt(2)), constriction=None),
+           deco.earrow.small)
     c.stroke(path(moveto(11,11.5), rlineto(5,0)),
            lt,
-           canvas.barrow("%f t pt" % (base/math.sqrt(1)), constriction=None),
-           canvas.earrow.normal)
+           deco.barrow("%f t pt" % (base/math.sqrt(1)), constriction=None),
+           deco.earrow.normal)
     c.stroke(path(moveto(11,12), rlineto(5,0)),
            lt,
-           canvas.barrow("%f t pt" % (base*math.sqrt(2)), constriction=None),
-           canvas.earrow.large)
+           deco.barrow("%f t pt" % (base*math.sqrt(2)), constriction=None),
+           deco.earrow.large)
     c.stroke(path(moveto(11,12.5), rlineto(5,0)),
            lt,
-           canvas.barrow("%f t pt" % (base*math.sqrt(4)), constriction=None),
-           canvas.earrow.Large)
+           deco.barrow("%f t pt" % (base*math.sqrt(4)), constriction=None),
+           deco.earrow.Large)
     c.stroke(path(moveto(11,13), rlineto(5,0)),
            lt,
-           canvas.barrow("%f t pt" % (base*math.sqrt(8)), constriction=None),
-           canvas.earrow.LArge(canvas.linestyle.dashed, color.rgb.green))
+           deco.barrow("%f t pt" % (base*math.sqrt(8)), constriction=None),
+           deco.earrow.LArge(style.linestyle.dashed, color.rgb.green))
     c.stroke(path(moveto(11,13.5), rlineto(5,0)),
            lt,
-           canvas.barrow("%f t pt" % (base*math.sqrt(16)), constriction=None),
-           canvas.earrow.LARge(color.rgb.red, 
-                               canvas.stroked(canvas.linejoin.round),
-                               canvas.filled(color.rgb.blue)))
+           deco.barrow("%f t pt" % (base*math.sqrt(16)), constriction=None),
+           deco.earrow.LARge(color.rgb.red, 
+                               deco.stroked(style.linejoin.round),
+                               deco.filled(color.rgb.blue)))
 
 
 

@@ -21,6 +21,10 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+# XXX remove string module
+# XXX what is a pattern
+# XXX what is a color
+
 
 """The canvas module provides a PostScript canvas class and related classes
 
@@ -28,8 +32,8 @@ A canvas holds a collection of all elements that should be displayed together
 with their attributes.
 """
 
-import math, string, cStringIO, time
-import attrlist, base, bbox, helper, path, unit, prolog, text, trafo, version
+import string, cStringIO, time
+import attr, base, bbox, color, deco, path, unit, prolog, style, text, trafo, version
 
 # known paperformats as tuple(width, height)
 
@@ -112,7 +116,7 @@ class _grestore(base.PSOp):
 #
 #
 
-class _canvas(base.PSCmd, attrlist.attrlist):
+class _canvas(base.PSCmd):
 
     """a canvas is a collection of PSCmds together with PSAttrs"""
 
@@ -198,12 +202,9 @@ class _canvas(base.PSCmd, attrlist.attrlist):
 
         """
 
-        for style in styles:
-            if not isinstance(style, base.PathStyle):
-                raise NotImplementedError, "can only set PathStyle"
-
-            self.insert(style)
-
+        attr._checkattrs(styles, [color.color, style._style])
+        for astyle in styles:
+            self.insert(astyle)
         return self
 
     def draw(self, path, *args):
@@ -218,19 +219,20 @@ class _canvas(base.PSCmd, attrlist.attrlist):
 
         """
 
-        self.attrcheck(args, allowmulti=(base.PathStyle, PathDeco, trafo._trafo))
+        attr._mergeattrs(args)
+        attr._checkattrs(args, [color.color, deco._deco, style._style, trafo._trafo])
 
-        for t in self.attrgetall(args, trafo._trafo, ()):
+        for t in attr._getattrs(args, [trafo._trafo]):
             path = path.transformed(t)
 
-        dp = decoratedpath(path)
+        dp = deco._decoratedpath(path)
 
         # set global styles
-        dp.styles = self.attrgetall(args, base.PathStyle, ())
+        dp.styles = attr._getattrs(args, [color.color, style._style])
 
         # add path decorations and modify path accordingly
-        for deco in self.attrgetall(args, PathDeco, ()):
-            dp = deco.decorate(dp)
+        for adeco in attr._getattrs(args, [deco._deco]):
+            dp = adeco.decorate(dp)
 
         self.insert(dp)
 
@@ -248,7 +250,7 @@ class _canvas(base.PSCmd, attrlist.attrlist):
 
         """
 
-        return self.draw(path, stroked(), *args)
+        return self.draw(path, deco.stroked(), *args)
 
     def fill(self, path, *args):
         """fill path on canvas using the style given by args
@@ -262,7 +264,7 @@ class _canvas(base.PSCmd, attrlist.attrlist):
 
         """
 
-        return self.draw(path, filled(), *args)
+        return self.draw(path, deco.filled(), *args)
 
     def settexrunner(self, texrunner):
         """sets the texrunner to be used to within the text and _text methods"""
@@ -292,7 +294,7 @@ class _canvas(base.PSCmd, attrlist.attrlist):
 # canvas for patterns
 #
 
-class pattern(_canvas, base.PathStyle):
+class pattern(_canvas, style._style):
 
     def __init__(self, painttype=1, tilingtype=1, xstep=None, ystep=None, bbox=None, trafo=None):
         _canvas.__init__(self)
@@ -459,7 +461,7 @@ class canvas(_canvas):
         # again, if there has occured global transformation, apply it now
         if ctrafo: ctrafo.write(file)
 
-        file.write("%f setlinewidth\n" % unit.topt(linewidth.normal))
+        file.write("%f setlinewidth\n" % unit.topt(style.linewidth.normal))
 
         # here comes the actual content
         self.write(file)
