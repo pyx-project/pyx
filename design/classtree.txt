@@ -1,27 +1,27 @@
 # some thoughts: 
-# - naming: PSCommand -> PSCmd ? 
-# - arrow is a PSCommand (an arrow has a bbox!)
-#   for the moment, I derive pathdeco(PSCommand, PSAttr)
+# totally out of date
 
-PSOp +--- PSCommand ---+--- canvas
-     |                 +--- epsfile
-     |                 +--- tex
-     |                 +--- _path ---+--- line
-     |                 |             +--- rect
-     |                 +--- _bpath --+--- bline
-     |                 |             +--- bcurve
-     |                 |             +--- barc
-     |                 +--- graph --- graphxy
+PSOp +--- PSCmd ----+--- canvas
+     |              +--- epsfile
+     |              +--- tex
+     |              +--- _path ---+--- line
+     |              |             +--- rect
+     |              +--- _bpath --+--- bline
+     |              |             +--- bcurve
+     |              |             +--- barc
+     |              +--- graph --- graphxy
      |        
-     +--- PSAttr ---+--- pathdeco-----+---arrow---+---barrow
-     |              |                             +---earrow
-     |              +--- pathstyle ---+--- linewidth
-     |              |                 +--- linestyle
-     |              |                 +--- linecap
-     |              +--- _trafo
+     +--- pathstyle +--- linewidth
+     |              +--- linestyle
+     |              +--- linecap
+     +--- _trafo
      +--- _bpathel
      +--- _pathel
 
+pathdeco-----+---arrow---+---barrow
+             |           +---earrow
+	     +---filled
+	     +---stroked
 bbox
                             
 _texattr ---+--- fontsize
