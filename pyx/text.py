@@ -524,7 +524,11 @@ class Font:
             raise RuntimeError("no information for font '%s' found in font mapping file, aborting" % name)
         # print "found mapping %s for font %s" % (self.fontmapping, self.name)
 
-        if self.tfmfile.checksum != c:
+        # We only check for equality of font checksums if none of them is zero
+        # c == 0 appeared in VF files and according to the VFtoVP 40. a check
+        # is only performed if tfmfile.checksum > 0. Anyhow, begin more generous
+        # here seems to be reasonable
+        if self.tfmfile.checksum != c and self.tfmfile.checksum != 0 and c !=0:
             raise DVIError("check sums do not agree: %d vs. %d" %
                            (self.tfmfile.checksum, c))
 
@@ -927,10 +931,10 @@ class DVIFile:
                 raise DVIError
 
     def _read_page(self):
-        self.pos = [0, 0, 0, 0, 0, 0]
         self.pages.append(canvas.canvas())
         self.actpage = self.pages[-1]
         self.actpage.markers = {}
+        self.pos = [0, 0, 0, 0, 0, 0]
         file = self.file
         while 1:
             self.filepos = file.tell()
@@ -1057,11 +1061,11 @@ class DVIFile:
                 self.special(file.read(file.readint(cmd - _DVI_SPECIAL1234 + 1)))
             elif cmd >= _DVI_FNTDEF1234 and cmd < _DVI_FNTDEF1234 + 4:
                 if cmd == _DVI_FNTDEF1234:
-                    num=file.readuchar()
+                    num = file.readuchar()
                 elif cmd == _DVI_FNTDEF1234+1:
-                    num=file.readuint16()
+                    num = file.readuint16()
                 elif cmd == _DVI_FNTDEF1234+2:
-                    num=file.readuint24()
+                    num = file.readuint24()
                 elif cmd == _DVI_FNTDEF1234+3:
                     # Cool, here we have according to docu a signed int. Why?
                     num = file.readint32()
@@ -1162,26 +1166,69 @@ class DVIFile:
 
 
 _VF_ID = 202
+_VF_LONG_CHAR = 242
+_VF_FNTDEF1234 = _DVI_FNTDEF1234
+_VF_PRE = _DVI_PRE
+_VF_POST = _DVI_POST
 
 class VFError(exceptions.Exception): pass
 
-class VFFile(DVIFile):
-    def _read_pre(self):
-        file = self.file
+class VFFile:
+    def __init__(self, filename, fontmap, debug=0):
+        self.filename = filename
+        self.fontmap = fontmap
+        self.tfmconv = 1
+        self.debug = debug
+        self.fonts = {}            # used fonts
+        self.chars = {}            # defined chars
+
+        file = binfile(self.filename, "rb")
+        
+        cmd = file.readuchar()
+        if cmd == _VF_PRE:
+            if file.readuchar() != _VF_ID: raise VFError
+            comment = file.read(file.readuchar())
+            cs = file.readuint32()
+            ds = file.readuint32()
+        else:
+            raise VFError
+
         while 1:
-            self.filepos = file.tell()
             cmd = file.readuchar()
-            if cmd == _DVI_PRE:
-                if self.file.readuchar() != _VF_ID: raise VFError
-
-                comment = file.read(file.readuchar())
-                cs = file.readuint32()
-                ds = file.readuint32()
-
-                return _READ_NOPAGE
+            if cmd >= _VF_FNTDEF1234 and cmd < _VF_FNTDEF1234 + 4:
+                # font definition
+                if cmd == _VF_FNTDEF1234:
+                    num = file.readuchar()
+                elif cmd == _VF_FNTDEF1234+1:
+                    num = file.readuint16()
+                elif cmd == _VF_FNTDEF1234+2:
+                    num = file.readuint24()
+                elif cmd == _VF_FNTDEF1234+3:
+                    num = file.readint32()
+                c = file.readint32()
+                s = file.readint32()     # scaling used for font (fix_word)
+                d = file.readint32()     # design size of font
+                fontname = file.read(file.readuchar()+file.readuchar())
+                self.fonts[num] =  Font(fontname, c, s, d, self.tfmconv, self.fontmap, self.debug > 1)
+            elif cmd == _VF_LONG_CHAR:
+                # character packet (long form)
+                pl = file.readuint32()   # packet length
+                cc = file.readuint32()   # char code (assumed unsigned, but anyhow only 0 <= cc < 255 is actually used)
+                tfm = file.readuint24()  # character width
+                dvi = file.read(pl)      # dvi code of character 
+                self.chars[cc] = (tfm, dvi)
+            elif cmd < _VF_LONG_CHAR:
+                # character packet (short form)
+                cc = file.readuchar()    # char code
+                tfm = file.readuint24()  # character width
+                dvi = file.read(cmd)
+                self.chars[cc] = (tfm, dvi)
+            elif cmd == _VF_POST:
+                break
             else:
                 raise VFError
 
+        file.close()
 
 
 ###############################################################################
