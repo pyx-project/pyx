@@ -1,3 +1,7 @@
+# This example is identical to the introductory example in the
+# bitmap section of the manual. More eye-catchy examples are
+# very welcome (BTW not only for this case but in general).
+
 import sys; sys.path.insert(0, "..")
 from pyx import *
 
