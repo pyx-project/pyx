@@ -412,9 +412,29 @@ class filled(PathDeco):
 
         return dp
 
-#
-# _arrowhead: helper routine
-#
+def _arrowheadtemplatelength(anormpath, size):
+    "calculate length of arrowhead template (in parametrisation of anormpath)"
+    # get tip (tx, ty)
+    tx, ty = anormpath.begin()
+
+    # obtain arrow template by using path up to first intersection
+    # with circle around tip (as suggested by Michael Schindler)
+    ipar = anormpath.intersect(path.circle(tx, ty, size))
+    if ipar[0]:
+        alen = ipar[0][0]
+    else:
+        # if this doesn't work, use first order conversion from pts to
+        # the bezier curve's parametrization
+        tlen = unit.topt(anormpath.tangent(0).arclength())
+        try:
+            alen = unit.topt(size)/tlen
+        except ZeroDivisionError:
+            # take maximum, we can get
+            alen = anormpath.range()
+        if alen>anormpath.range(): alen=anormpath().range()
+
+    return alen
+
 
 def _arrowhead(anormpath, size, angle, constriction):
 
@@ -424,20 +444,8 @@ def _arrowhead(anormpath, size, angle, constriction):
     opening angle and relative constriction
     """
 
-    # get tip (tx, ty)
+    alen = _arrowheadtemplatelength(anormpath, size)
     tx, ty = anormpath.begin()
-
-    # obtain arrow template by using path up to first intersection
-    # with circle around tip (as suggested by Michael Schindler)
-    ipar = anormpath.intersect(path.circle(tx, ty, size))
-    if ipar:
-        alen = ipar[0][0]
-    else:
-        # if this doesn't work, use first order conversion from pts to
-        # the bezier curve's parametrization
-        tlen = unit.topt(anormpath.tangent(0).arclength())
-        alen  = unit.topt(size)/tlen
-        if alen>anormpath.range(): alen=anormpath().range()
 
     # now we construct the template for our arrow but cutting
     # the path a the corresponding length
@@ -521,16 +529,7 @@ class arrow(PathDeco):
                                   strokestyles=self.strokestyles,
                                   fillstyles=self.fillstyles))
 
-        # the following lines are copied from arrowhead.init()
-        # TODO: can this be done better?
-
-        # first order conversion from pts to the bezier curve's
-        # parametrization
-
-        tlen = unit.topt(anormpath.tangent(0).arclength())
-
-        alen  = unit.topt(self.size)/tlen
-        if alen>anormpath.range(): alen=anormpath().range()
+        alen = _arrowheadtemplatelength(anormpath, self.size)
 
         if self.constriction:
             ilen = alen*self.constriction

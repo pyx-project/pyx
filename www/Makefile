@@ -9,16 +9,16 @@ all:
 
 ptfiles = $(filter-out maintemplate.pt, $(wildcard *.pt))
 htmlfiles = $(patsubst %.pt, %.html, $(ptfiles))
-pngfiles = valid-html401.png vcss.png
+imagefiles = valid-html401.png vcss.png pyx.ico
 cssfiles = main.css
 builddir = build
 
-html: $(htmlfiles) $(pngfiles)
+html: $(htmlfiles)
 	cd png; make
 
 install: html
 	-mkdir $(builddir)
-	cp $(htmlfiles) $(pngfiles) $(cssfiles) $(builddir)
+	cp $(htmlfiles) $(imagefiles) $(cssfiles) $(builddir)
 	cd png; make
 	cp png/*.png ../examples/*.png ../examples/*/*.png $(builddir)
 	cp ../examples/*.eps ../examples/*/*.eps $(builddir)
