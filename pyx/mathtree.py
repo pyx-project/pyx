@@ -736,7 +736,7 @@ class parser:
         self.MathTreeFuncs = MathTreeFuncs
 
     def parse(self, expr):
-        return self.astseq2mtree(pythonparser.expr(expr.strip().replace("^", "**")).totuple())
+        return self.astseq2mtree(pythonparser.expr(expr.strip()).totuple())
 
     def astseq2mtree(self, astseq, isfunc=0):
         # astseq has to be a sequence!
