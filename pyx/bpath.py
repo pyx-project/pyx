@@ -78,6 +78,8 @@ class _bpathel:
                            (-3*self.y0+3*self.y1                  )*t +
                                self.y0)
                )
+
+    pos = __getitem__
     
     def bbox(self):
         return canvas.bbox(min(self.x0, self.x1, self.x2, self.x3), 
@@ -96,6 +98,23 @@ class _bpathel:
                         self.x2, self.y2,
                         self.x1, self.y1,
                         self.x0, self.y0)
+
+    def isStraight(self, epsilon=1e-7):
+        """check wheter the bpathel is approximately straight"""
+
+        # just check, whether the modulus of the difference between
+        # the length of the control polygon
+        # (i.e. |P1-P0|+|P2-P1|+|P3-P2|) and the length of the
+        # straight line between starting and ending point of the
+        # bpathel (i.e. |P3-P1|) is smaller the epsilon
+        return abs(math.sqrt((self.x1-self.x0)*(self.x1-self.x0)+
+                             (self.y1-self.y0)*(self.y1-self.y0)) +
+                   math.sqrt((self.x2-self.x1)*(self.x2-self.x1)+
+                             (self.y2-self.y1)*(self.y2-self.y1)) +
+                   math.sqrt((self.x3-self.x2)*(self.x3-self.x2)+
+                             (self.y3-self.y2)*(self.y3-self.y2)) -
+                   math.sqrt((self.x3-self.x0)*(self.x3-self.x0)+
+                             (self.y3-self.y0)*(self.y3-self.y0)))<epsilon
 
     def split(self, t):
         """return bpath consisting of two bpathels due to split at 0<=t<=1"""
@@ -269,7 +288,9 @@ class bpath:
 
     def reverse(self):
         """return reversed bpath"""
-        return bpath(map(lambda x: x.reverse(), self.bpath))
+        bp=map(lambda x: x.reverse(), self.bpath)
+        bp.reverse()
+        return bpath(bp)
 
     def split(self, t):
         """return bpath splitted at parameter value t (0<=t<=len(self))"""
