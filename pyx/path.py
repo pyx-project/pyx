@@ -232,7 +232,7 @@ class closepath(normpathel):
                 lastpoint = xs, ys
             result.append((_moveto(*lastpoint), _lineto(x1, y1)))
         else:
-            result = (_moveto(x0, y0), _lineto(x1, y1))
+            result = [(_moveto(x0, y0), _lineto(x1, y1))]
             
         return result
 
@@ -346,7 +346,7 @@ class _lineto(normpathel):
                 lastpoint = xs, ys
             result.append((_moveto(*lastpoint), _lineto(x1, y1)))
         else:
-            result = (_moveto(x0, y0), _lineto(x1, y1))
+            result = [(_moveto(x0, y0), _lineto(x1, y1))]
             
         return result
 
@@ -424,6 +424,9 @@ class _curveto(normpathel):
 
     def _split(self, context, parameters):
         bps = self._bcurve(context).split(parameters)
+
+        print bps[0]
+        print bps[1]
 
         bp0 = bps[0]
 
@@ -1043,9 +1046,9 @@ class path(base.PSCmd):
         """return reversed path"""
         return normpath(self).reversed()
 
-    def split(self, parameters):
+    def split(self, *parameters):
         """return corresponding normpaths split at parameter value t"""
-        return normpath(self).split(parameters)
+        return normpath(self).split(*parameters)
 
     def tangent(self, t, length=None):
         """return tangent vector at parameter value t of corr. normpath"""
@@ -1228,59 +1231,80 @@ class normpath(path):
 
         return np
 
-    def split(self, parameters):
-        """split path at parameter values parameters"""
+    def split(self, *parameters):
+        """split path at parameter values parameters
 
-        try: parameters[0]
-        except TypeError: parameters = [parameters]
+        Note that the parameter list  must be sorted
+        
+        """
 
         context = _pathcontext()
+        t = 0
 
-        np1 = normpath()
-        # np2 is None is a marker, that we still have to append to np1
-        np2 = None
+        # we build up this list of normpaths
+        result = []
+
+        # the currently built up normpath
+        np = normpath()
+        
+        # marker: are we creating the first subpath of a split path?
+        npisfirstsubpath = 0
 
         for pel in self.path:
-            if np2 is None:
-                # we still have to construct np1
-                if isinstance(pel, _moveto):
-                    np1.path.append(pel)
-                else:
-                    if t>1:
-                        t -= 1
-                        np1.path.append(pel)
-                    else:
-                        pels1, pels2 = pel._split(context, t)
-
-                        for pel1 in pels1:
-                            np1.path.append(pel1)
-
-                        np2 = normpath(*pels2)
-
-                        # marker: we are creating the first subpath of np2
-                        np2isfirstsubpath = 1
+            if isinstance(pel, _moveto):
+                np.path.append(pel)
+                # a _moveto starts a new subpath
+                npisfirstsubpath = 0
+            elif npisfirstsubpath and isinstance(pel, closepath):
+                # closepath and _moveto both end a subpath, but we 
+                # don't want to append a closepath for the
+                # first subpath
+                npisfirstsubpath = 0
+                t += 1
             else:
-                # construction of np2
-                # Note: We have to be careful to not close the first subpath!
-
-                if np2isfirstsubpath :
-                    # closepath and _moveto both end a subpath, but we 
-                    # don't want to append a closepath for the
-                    # first subpath
-                    if isinstance(pel, closepath):
-                        np2isfirstsubpath = 0
-                    elif isinstance(pel, _moveto):
-                        np2isfirstsubpath = 0
-                        np2.path.append(pel)
-                    else:
-                        np2.path.append(pel)
+                print t
+                if not parameters or t+1<parameters[0]:
+                    np.path.append(pel)
                 else:
-                    np2.path.append(pel)
+                    for i in range(len(parameters)):
+                        if parameters[i]>t+1: break
+                    i= max(1, i)
+
+                    pieces = pel._split(context,
+                                        map(lambda x:x-t, parameters[:i]))
+
+                    parameters = parameters[i:]
+
+                    # the first item of pieces finishes np
+                    for pel in pieces[0]:
+                        np.path.append(pel)
+                        # np is ready
+                        result.append(np)
+
+                    # the intermediate ones are normpaths by themselves
+                    for np in pieces[1:-1]:
+                        np = normpath()
+                        for pel in np:
+                            np.path.append(pel)
+                        result.append(np)
+
+                    # we continue to work with the last one
+                    np = normpath()
+                    for pel in pieces[-1]:
+                        np.path.append(pel)
+
+                    # marker: we are creating the first subpath of np
+                    npisfirstsubpath = 1
+
+                t += 1
 
             # go further along path
             pel._updatecontext(context)
+            
+        if len(np)>0:
+            result.append(np)
 
-        return np1, np2
+        return result
 
     def tangent(self, t, length=None):
         """return tangent vector of path at parameter value t
@@ -1505,19 +1529,21 @@ class _bcurve:
 
         for i in range(len(parameters)-1):
             t1 = parameters[i]
-            t2 = parameters[i+1]
+            dt = parameters[i+1]-t1
+
+            print ":::", t1, dt
 
             # [t1,t2] part
             #
-            # the new coefficients of the [0,t] part of the bezier curve
+            # the new coefficients of the [t1,t1+dt] part of the bezier curve
             # are then given by expanding
-            #  a0 + a1*(t1+(t2-t1)*u) + a2*(t1+(t2-t1)*u)**2 +
-            #  a3*(t1+(t2-t1)*u)**3 in u, yielding
+            #  a0 + a1*(t1+dt*u) + a2*(t1+dt*u)**2 +
+            #  a3*(t1+dt*u)**3 in u, yielding
             #
-            #   a0 + a1*t1 + a2*t1**2 + a3*t1**3          +
-            #   ( a1 + 2*a2 + 3*a3*t1**2 )*(t2-t1) * u    + 
-            #   ( a2 + 3*a3*t1 )*(t2-t1)**2        * u**2 +
-            #   a3*(t2-t1)**3                      * u**3
+            #   a0 + a1*t1 + a2*t1**2 + a3*t1**3        +
+            #   ( a1 + 2*a2 + 3*a3*t1**2 )*dt    * u    + 
+            #   ( a2 + 3*a3*t1 )*dt**2           * u**2 +
+            #   a3*dt**3                         * u**3
             #
             # from this values we obtain the new control points by inversion
             #
@@ -1527,14 +1553,14 @@ class _bcurve:
             
             x0 = a0x + a1x*t1 + a2x*t1*t1 + a3x*t1*t1*t1 
             y0 = a0y + a1y*t1 + a2y*t1*t1 + a3y*t1*t1*t1 
-            x1 = (a1x+2*a2x*t1+3*a3x*t1*t1)*(t2-t1)/3.0+x0_2
-            y1 = (a1y+2*a2y*t1+3*a3y*t1*t1)*(t2-t1)/3.0+y0_2
-            x2 = (a2x+3*a3x*t1)*(t2-t1)*(t2-t1)/3.0-x0_2+2*x1_2
-            y2 = (a2y+3*a3y*t1)*(t2-t1)*(t2-t1)/3.0-y0_2+2*y1_2
-            x3 = a3x*(t2-t1)*(t2-t1)*(t2-t1)+x0_1-3*x1_1+3*x2_1 
-            y3 = a3y*(t2-t1)*(t2-t1)*(t2-t1)+y0_1-3*y1_1+3*y2_1
+            x1 = (a1x+2*a2x*t1+3*a3x*t1*t1)*dt/3.0 + x0
+            y1 = (a1y+2*a2y*t1+3*a3y*t1*t1)*dt/3.0 + y0
+            x2 = (a2x+3*a3x*t1)*dt*dt/3.0 - x0 + 2*x1
+            y2 = (a2y+3*a3y*t1)*dt*dt/3.0 - y0 + 2*y1
+            x3 = a3x*dt*dt*dt + x0 - 3*x1 + 3*x2
+            y3 = a3y*dt*dt*dt + y0 - 3*y1 + 3*y2
 
-            result.append(_bcurve(x0, y0, x1, y1, x2, y2, y3, y3))
+            result.append(_bcurve(x0, y0, x1, y1, x2, y2, x3, y3))
 
         return result
 
