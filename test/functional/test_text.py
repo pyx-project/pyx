@@ -105,4 +105,4 @@ c.stroke(c.text(15, 0, r"""
 
 c.text(4, 2, r"{\color[cmyk]{0.1,0.2,0.3,0.4}c\color[gray]{0.5}o\color[hsb]{0.2,0.3,0.4}l\color[rgb]{0.2,0.4,0.6}o\color[RGB]{100,200,50}r}s!")
 
-c.writeEPSfile("test_text", paperformat="a4")
+c.writeEPSfile("test_text", paperformat=document.paperformat.A4)
