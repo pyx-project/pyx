@@ -9,13 +9,13 @@ of functions in \PyX}
 In order to get an easy user interface, we should restrict ourselfs to
 some well defined ways of handling function calls with variable
 argument lists and dictionaries. This file tries to consider the
-typical occurrencies within \PyX{} and provides standard solutions for
+typical occurrences within \PyX{} and provides standard solutions for
 them.
 
 We describe two different kind of function calls with variable
 argument lists and dictionaries. They are called
 ``\verb|arglist|-functions and arguments'' and
-``\verb|argdict|-functions and arguments''. The distiction between
+``\verb|argdict|-functions and arguments''. The distinction between
 these two cases is given by the way the arguments are passed to the
 function. In the following we will try to make out the difference in
 the subject of the functions and arguments already.
@@ -27,9 +27,8 @@ methods and constructors as well.
 
 \subsection*{\texttt{arglist}-type functions and arguments}
 
-Somehow, this first case is the more specific to \PyX{} nessecities than
+Somehow, this first case is the more specific to \PyX{} necessities than
 the second one. Let's first consider an example:
-
 \begin{verbatim}
 class A:
     def __str__(self):
@@ -47,7 +46,7 @@ class main:
 main().show(A(), B())
 \end{verbatim}
 
-Although this is a rather tivial example, you can see, that the
+Although this is a rather trivial example, you can see, that the
 arguments are collected in a list. This list is used to perform the
 action ``show'' on its entries. The entries supply the needed
 techniques to get showed -- thus \verb|show| itself doesn't need to
@@ -55,7 +54,6 @@ know any details about it.
 
 A main feature is, that the classes \verb|A| and \verb|B| could have
 some properties. Consider the following:
-
 \begin{verbatim}
 class A:
     def __init__(self, color):
@@ -77,7 +75,6 @@ some confusion, because such default values belong to the
 To go further, we do modify the print routine in order to print some
 text within the \verb|<...>|-tags. Suppose, the \verb|<...>|-tags can
 be closed by \verb|</>| uniformly, then we could do:
-
 \begin{verbatim}
 class main:
     def show(self, text, *args)
@@ -95,7 +92,6 @@ instances of class \verb|A| and \verb|B| become a property of
 
 By this construction you can do even more, actually.
 Consider the main program as:
-
 \begin{verbatim}
 m = main()
 m.show(A("red"))
@@ -104,15 +100,15 @@ m.show("text2")
 \end{verbatim}
 
 Here, the same class previously used as an property for a single
-call of \verb|show| becomes now an automatically choosen attribute for
+call of \verb|show| becomes now an automatically chosen attribute for
 all following calls of \verb|show|.\footnote{We should ensure, that
 calls like \textbf{show(A("red"), B())} don't work at all. In the case
 of PostScript it need to be considered anyway, because the first
 parameter usually provides PostScript as well as a bounding box
 information unless we do a property change as first and only
-parameter.} When this flavour of the property arguments is undesirable
-its use should just be prohibited.\footnote{what about the
-\TeX/\LaTeX{} interface}
+parameter.} When this flavor of the property arguments is undesirable
+its use should just be prohibited.\footnote{like for the \TeX/\LaTeX{}
+interface ???}
 
 You may miss the correct handling of the closing tags \verb|</>| in
 the last example, but that's a question about the output needed.
@@ -120,7 +116,6 @@ Indeed, for PostScript, this is not an issue.
 
 To summarize the description above, typical design features of
 \verb|arglist|-type functions and arguments are:
-
 \begin{itemize}
 \item[$+$]
 properties can just implement what they want --- the evaluation by
@@ -139,13 +134,151 @@ to a bloat up in the namespaces
 
 \subsection*{\texttt{argdict}-type functions and arguments}
 
-Those 
+Consider a class \verb|axis| used to handle axes of a graphs. Its
+constructor might be defined as:
+\begin{verbatim}
+class axis:
+    def __init__(self, min = None, max = None):
+        self.min = min
+        self.max = max
+\end{verbatim}
+
+There are two predefined arguments, \verb|min| and \verb|max|. The
+user could just create an axis without passing values to these
+parameters, which would lead to the usage of the predefined
+values.\footnote{In this example the value \texttt{None} could mean,
+that minimal and maximal values are unknown and should be
+automatically estimated.}
+
+We now derive this class in order to implement a new feature, namely
+an axis title. This would look like:
+\begin{verbatim}
+class titleaxis(axis):
+    def __init__(self, min = None, max = None, title = ""):
+        axis.__init__(self, min = min, max = max)
+        self.title = title
+\end{verbatim}
+
+That would do, but its ugly. Of course, we can easily change the
+default values for min and max -- but hence we have always to recode
+the default values. What happens, if somebody enhances the class
+\verb|axis| later? Yes, we wouldn't be able to access those additional
+parameters without modifying titleaxis too.
+
+The solution would look like the following:
+\begin{verbatim}
+class axis:
+    def __init__(self, min = None, max = None):
+        self.min = min
+        self.max = max
+
+class titleaxis(axis):
+    def __init__(self, title = "", **args):
+        axis.__init__(self, **args)
+        self.title = title
+\end{verbatim}
+
+It is intrinsic, that we do not see all parameters we can handle to
+the constructor of \verb|titleaxis| at its definition. As far as
+discussed up to this point, this seems to be the perfect solution. And
+for \PyX we shouldn't go along the line discussed in the following.
+Anyhow, I want to describe it here to make the clear statement of
+avoiding sophisticated excesses, although they may look fascinating.
+I will point out the problems arising by them.
+
+A first idea you could think about is multiple inheritance. Lets
+assume, there is the same class \verb|axis| like before. Additionally,
+there might be a class \verb|title| handling titles for arbitrary
+objects:
+\begin{verbatim}
+class title:
+    def __init__(self, title = ""):
+        self.title = title
+\end{verbatim}
+
+A combination of those classes is a bad idea, because again you have
+to know about the parameters and it's defaults, if you do:
+\begin{verbatim}
+class titleaxis(axis, title):
+    def __init__(self, min = None, max = None, title = ""):
+        axis.__init__(self, min = min, max = max)
+        title.__init__(self, title)
+\end{verbatim}
+
+There is another way, which is exactly a solution, I claim we should
+avoid. The idea is to append a dictionary for additional parameters at
+the base classes. The code would then look like:
+
+\begin{verbatim}
+class axis:
+    def __init__(self, min = None, max = None, **args):
+        self.min = min
+        self.max = max
+
+class title:
+    def __init__(self, title = "", **args):
+        self.title = title
+
+class titleaxis(axis, title):
+    def __init__(self, **args):
+        axis.__init__(self, **args)
+        title.__init__(self, **args)
+\end{verbatim}
+
+There are two things causing trouble here. First, we have to be sure
+to have dictionaries for additional parameters at all base classes.
+Secondly, and that's much more crucial, we do not get errors any more,
+if we pass parameters which are not handled by any of the base
+constructors we call. While we wanted to avoid knowing all parameters,
+we're in troubles here. We could inspect the constructors we call
+(using the inspect module) and find out if a parameter is never used,
+but we shouldn't do that.
+
+Another application is a parameter, which provides some solution for a
+special task. Consider the non-trivial task of an automatic axis
+partitioning, where there are different algorithms to provide it.
+While it is wanted to keep this algorithm apart from other axis stuff,
+the question arises, how to insert such an algorithm into an axis
+class. Using a special routine, the user has to call in order to
+insert an automatic axis partitioning is bad, because it would mean, the
+user always has to call it (although some automatic default could be
+implemented). Another option, multiple inheritance, leads to some
+constrains as discussed before. It would also mean, the user can't
+modify the default by just implementing another automatic axis
+partitioning class, but additionally a new axis class derivation would
+be needed. Naturally, an automatic axis partitioning would be just an
+parameter of the constructor of the axis. It would look like:
+\begin{verbatim}
+class genpart:
+    def __init__(self, opt = 5):
+        self.opt = opt
+
+class axis:
+    def __init__(self, min = None, max = None, part = genpart(opt = 10)):
+        self.min = min
+        self.max = max
+        self.part = part
+\end{verbatim}
+
+And actually, this should be the solution of choice. Similar to the
+idea already discussed above, we could thought of a mechanism of
+making the parameter \verb|opt| of the constructor of \verb|genpart|
+directly available as a parameter of the constructor of \verb|axis|.
+Instead of writing something like \verb|axis(part = genpart(opt =
+15))| we could desire a syntax \verb|axis(opt = 15)|. While it is
+again a charming idea, it finally would generate a lot of trouble.
 
 To summarize the description above, typical design features of
 \verb|argdict|-type functions and arguments are:
 \begin{itemize}
-\item[$+$]pro
-\item[$-$]contra
+\item[$+$]straight forward implementation of ``to be set'' parameters
+with default values
+\item[$-$]should not be combined with an tailing dictionary parameter
+(e.g. \verb|**args| at the end of the argument list)
+\item[$-$]multiple inheritance should allow only one parent with an
+\verb|argdict|-type constructor
+\item[$-$]modification of parameters of default values (e.g. class
+instances) are a little bulky
 \end{itemize}
 
 \end{document}
