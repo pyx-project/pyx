@@ -937,15 +937,15 @@ class path(base.canvasitem):
 
     def __add__(self, other):
         """create new path out of self and other"""
-        return path(*(self.pathitems + other.pathitems))
+        return path(*(self.pathitems + other.path().pathitems))
 
     def __iadd__(self, other):
         """add other inplace
 
-        Note that other must be a path, not a normpath.
+        If other is a normpath instance, it is converted to a path before
+        being added.
         """
-        # TODO: Allow inplace addition of a normpath.
-        self.pathitems += other.pathitems
+        self.pathitems += other.path().pathitems
         self._normpath = None
         return self
 
@@ -1057,9 +1057,21 @@ class path(base.canvasitem):
         """
         return self.normpath().intersect(other)
 
+    def join(self, other):
+        """join other path/normpath inplace
+
+        If other is a normpath instance, it is converted to a path before
+        being joined.
+        """
+        self.pathitems = self.joined(other).path().pathitems
+        self._normpath = None
+        return self
+
     def joined(self, other):
         """return path consisting of self and other joined together"""
         # TODO other might be a path as well -> we might not switch to a normpath
+        # TODO Should we return a path or a normpath (should this be dependend on
+        # whether other is a path or not?)
         return self.normpath().joined(other)
 
     # << operator also designates joining
@@ -1106,6 +1118,10 @@ class path(base.canvasitem):
     def paramtoarclen(self, params):
         """return arc lenght(s) matching the given param(s)"""
         return self.normpath().paramtoarclen(lengths_pt)
+
+    def path(self):
+        """return corresponding path, i.e., self"""
+        return self
 
     def reversed(self):
         """return reversed normpath"""
@@ -1306,8 +1322,11 @@ class normsubpathitem:
         pass
 
     def _paramtoarclen_pt(self, param, epsilon):
-        """returns a tuple of arc lengths and the total arc length in pts"""
+        """return a tuple of arc lengths and the total arc length in pts"""
         pass
+
+    def pathitem(self):
+        """return pathitem corresponding to normsubpathitem"""
 
     def reversed(self):
         """return reversed normsubpathitem"""
@@ -1416,6 +1435,9 @@ class normline_pt(normsubpathitem):
         totalarclen_pt = self.arclen_pt(epsilon)
         arclens_pt = [totalarclen_pt * param for param in params + [1]]
         return arclens_pt[:-1], arclens_pt[-1]
+
+    def pathitem(self):
+        return lineto_pt(self.x1_pt, self.y1_pt)
 
     def reversed(self):
         return normline_pt(self.x1_pt, self.y1_pt, self.x0_pt, self.y0_pt)
@@ -1614,6 +1636,9 @@ class normcurve_pt(normsubpathitem):
         for i in range(1, len(arclens_pt)):
             arclens_pt[i] += arclens_pt[i-1]
         return arclens_pt[:-1], arclens_pt[-1]
+
+    def pathitem(self):
+        return curveto_pt(self.x1_pt, self.y1_pt, self.x2_pt, self.y2_pt, self.x3_pt, self.y3_pt)
 
     def reversed(self):
         return normcurve_pt(self.x3_pt, self.y3_pt, self.x2_pt, self.y2_pt, self.x1_pt, self.y1_pt, self.x0_pt, self.y0_pt)
@@ -2075,7 +2100,7 @@ class normsubpath:
         return result
 
     def _paramtoarclen_pt(self, params):
-        """returns a tuple of arc lengths and the total arc length in pts"""
+        """return a tuple of arc lengths and the total arc length in pts"""
         result = [None] * len(params)
         totalarclen_pt = 0
         distributeparams = self._distributeparams(params)
@@ -2089,6 +2114,24 @@ class normsubpath:
             else:
                 totalarclen_pt += self.normsubpathitems[normsubpathitemindex].arclen_pt(self.epsilon)
         return result, totalarclen_pt
+
+    def pathitems(self):
+        """return list of pathitems"""
+        if not self.normsubpathitems:
+            return []
+
+        # remove trailing normline_pt of closed subpaths
+        if self.closed and isinstance(self.normsubpathitems[-1], normline_pt):
+            normsubpathitems = self.normsubpathitems[:-1]
+        else:
+            normsubpathitems = self.normsubpathitems
+
+        result = [moveto_pt(*self.atbegin_pt())]
+        for normsubpathitem in normsubpathitems:
+            result.append(normsubpathitem.pathitem())
+        if self.closed:
+            result.append(closepath())
+        return result
 
     def reversed(self):
         """return reversed normsubpath"""
@@ -2203,10 +2246,11 @@ class normsubpath:
             normsubpathitems = self.normsubpathitems[:-1]
         else:
             normsubpathitems = self.normsubpathitems
+        # XXX why is this check necessary
         if normsubpathitems:
             file.write("%g %g moveto\n" % self.atbegin_pt())
-            for anormpathitem in normsubpathitems:
-                anormpathitem.outputPS(file)
+            for anormsubpathitem in normsubpathitems:
+                anormsubpathitem.outputPS(file)
         if self.closed:
             file.write("closepath\n")
 
@@ -2220,10 +2264,11 @@ class normsubpath:
             normsubpathitems = self.normsubpathitems[:-1]
         else:
             normsubpathitems = self.normsubpathitems
+        # XXX why is this check necessary
         if normsubpathitems:
             file.write("%f %f m\n" % self.atbegin_pt())
-            for anormpathitem in normsubpathitems:
-                anormpathitem.outputPDF(file)
+            for anormsubpathitem in normsubpathitems:
+                anormsubpathitem.outputPDF(file)
         if self.closed:
             file.write("h\n")
 
@@ -2640,6 +2685,13 @@ class normpath(base.canvasitem):
         """return arc length(s) matching the given param(s)"""
         return [arclen_pt * unit.t_pt for arclen_pt in self._paramtoarclen_pt(params)]
     paramtoarclen = _valueorlistmethod(paramtoarclen)
+
+    def path(self):
+        """return path corresponding to normpath"""
+        pathitems = []
+        for normsubpath in self.normsubpaths:
+            pathitems.extend(normsubpath.pathitems())
+        return path(*pathitems)
 
     def reversed(self):
         """return reversed path"""
