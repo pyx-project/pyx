@@ -2217,7 +2217,7 @@ class normsubpath:
 # the normpath class
 #
 
-class normpath(path):
+class normpath:
 
     """normalized path
 
@@ -2436,6 +2436,9 @@ class normpath(path):
         result = normpath(self.normsubpaths)
         result.join(other)
         return result
+
+    # << operator also designates joining
+    __lshift__ = joined
 
     def intersect(self, other):
         """intersect self with other path
