@@ -284,7 +284,12 @@ if __name__=="__main__":
     t.text(5, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize = 2)
     c.draw(p)
 
-    p.translate(5,0)
+    p=path([ moveto(10,12), 
+             lineto(12,12), 
+	     moveto(10,10), 
+	     lineto(10,14), 
+	     moveto(12,10), 
+	     lineto(12,14)])
     c.setlinestyle(linestyle_dashdotted)
     t.text(10, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize = 2, valign = bottom)
     c.draw(p)
@@ -294,8 +299,5 @@ if __name__=="__main__":
 
     p=path([moveto(5,17), curveto(6,18, 5,16, 7,15)])
     c.draw(p)
-    p.translate(-1,-1)
-    c.draw(p)
-
 
     t.TexRun()

@@ -22,9 +22,6 @@ class pathel:
     def draw(self, canvas):
         pass
 
-    def translate(self, x, y):
-        pass
-
 # path elements without argument
 
 class closepath(pathel): 
@@ -47,8 +44,6 @@ class moveto(_pathel2):
     ' Set current point to (x, y) '
     def __init__(self, x, y):
         pathel.__init__(self, "moveto", (x, y))
-    def translate(self, x, y):
-        self.args = (self.args[0]+x, self.args[1]+y) 
 	
 class rmoveto(_pathel2):
     ' Perform relative moveto '
@@ -59,8 +54,6 @@ class lineto(_pathel2):
     ' Append straight line to (x, y) '
     def __init__(self, x, y):
         pathel.__init__(self, "lineto", (x, y))
-    def translate(self, x, y):
-        self.args = (self.args[0]+x, self.args[1]+y) 
 	
 class rlineto(_pathel2):
     ' Perform relative lineto '
@@ -72,8 +65,6 @@ class rlineto(_pathel2):
 class _pathelarc(pathel):
     def draw(self, canvas):
         canvas.PSAddCmd("%f %f %f " % canvas.u2p(self.args[:3]) + "%f %f " % self.args[3:] + self.command )
-    def translate(self, x, y):
-        self.args = (self.args[0]+x, self.args[1]+y) 
  
 class arc(_pathelarc):
     ' Append counterclockwise arc '
@@ -91,9 +82,6 @@ class arct(pathel):
         pathel.__init__(self, "arct", (x1, y1, x2, y2, r))
     def draw(self, canvas):
         canvas.PSAddCmd("%f %f %f %f " % canvas.u2p(self.args[:4]) + "%f " % self.args[4] + self.command )
-    def translate(self, x, y):
-        self.args = (self.args[0]+x, self.args[1]+y, 
-	             self.args[2]+x, self.args[3]+y)
 	
 # path elements with 6 arguments
 
@@ -104,10 +92,6 @@ class _pathel6(pathel):
 class curveto(_pathel6):
     def __init__(self, x1, y1, x2, y2, x3, y3):
         pathel.__init__(self, "curveto", (x1, y1, x2, y2, x3, y3))
-    def translate(self, x, y):
-        self.args = (self.args[0]+x, self.args[1]+y, 
-	             self.args[2]+x, self.args[3]+y,
-	             self.args[4]+x, self.args[5]+y) 
 
 class rcurveto(_pathel6):
     def __init__(self, x1, y1, x2, y2, x3, y3):
@@ -127,10 +111,6 @@ class path:
 	    raise PathException, "first path element must be moveto"
         for pathel in self.path:
 	    pathel.draw(canvas)
-
-    def translate(self, x, y):
-        for pathel in self.path:
-	    pathel.translate(x, y)
 
 class line(path):
    def __init__(self, x1, y1, x2, y2):
