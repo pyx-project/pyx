@@ -2005,7 +2005,6 @@ class normpath(path):
         return intersections
 
     def lentopar(self, lengths, epsilon=1e-5):
-        # XXX TODO for Michael
         """returns the parameter value(s) matching given length(s)"""
 
         # split the list of lengths apart for positive and negative values
