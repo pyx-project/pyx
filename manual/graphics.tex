@@ -61,15 +61,15 @@ with the only difference that we now have used the \class{rlineto}
 class, whose arguments count relative from the last point in the path.
 The second \class{moveto} instance opens a new subpath starting at the
 point $(1, 0)$ and ending at $(0, 1)$. Note that although both lines
-intersect at the point $(1/2, 1/2)$, they count as separate subpaths.
-The general rule is that each occurence of \class{moveto} opens a new
-subpath. This means that if one wants to draw a rectangle, one should
-not use
+intersect at the point $(1/2, 1/2)$, they count as disconnected
+subpaths.  The general rule is that each occurence of a \class{moveto}
+instance opens a new subpath. This means that if one wants to draw a
+rectangle, one should not use
 \begin{verbatim}
 # wrong: do not use moveto when you want a single subpath
 rect1 = path.path(path.moveto(0, 0), path.lineto(0, 1),
                   path.moveto(1, 0), path.lineto(1, 1),
-                  path.moveto(1, 1), path.lineto(1, 1),
+                  path.moveto(1, 1), path.lineto(0, 1),
                   path.moveto(0, 1), path.lineto(0, 0))
 \end{verbatim}
 which would construct a rectangle consisting of four disconnected
@@ -83,7 +83,7 @@ rect2 = path.path(path.moveto(0, 0), path.lineto(0, 1),
 %
 \begin{figure}
 \centerline{\includegraphics{rects}}
-\caption{Not closed (left) and closed (midlle) rectangle. Filling a
+\caption{Not closed (left) and closed (middle) rectangle. Filling a
   path (right) always closes it automatically.}
 \label{fig:rects}
 \end{figure}
@@ -116,12 +116,12 @@ refer the reader to Sect.~\ref{path:predefined}.
 
 \section{Path operations}
 
-Often, one not only wants to stroke or fill a path on the canvas
-but before do some geometrical operations with it. For instance, one
-might want to intersect one path with another one and the split the
-paths at the intersection points and then join the segments together
-in a new way. \PyX{} supports such tasks by means of a number
-of path methods, which we will introduce in the following.
+Often, one wants to perform geometrical operations with a path before
+placing it on a canvas by stroking or filling it.  For instance, one
+might want to intersect one path with another one, split the paths at
+the intersection points, and then join the segments together in a new
+way. \PyX{} supports such tasks by means of a number of path methods,
+which we will introduce in the following.
 
 Suppose you want to draw the radii to the intersection points of a
 circle with a straight line. This task can be done using the following
@@ -129,7 +129,7 @@ code which gives the result shown in Fig.~\ref{fig:radii}
 \verbatiminput{radii.py}
 \begin{figure}
 \centerline{\includegraphics{radii}}
-%\caption{}
+\caption{Example: Intersection of circle with line yielding two radii.}
 \label{fig:radii}
 \end{figure}
 Passing another path, here \var{line}, to the \method{intersect()} method
@@ -151,7 +151,10 @@ corresponding to the outline of this segment. The following code
 snippet does yield this \var{segment}
 \begin{verbatim}
 arc1, arc2 = circle.split(isects_circle)
-arc = arc1.arclen()<arc2.arclen() and arc1 or arc2
+if arc1.arclen() < arc2.arclen():
+    arc = arc1
+else:
+    arc = arc2
 
 isects_line.sort()
 line1, line2, line3 = line.split(isects_line)
@@ -160,7 +163,8 @@ segment = line2 << arc
 \end{verbatim}
 \begin{figure}
 \centerline{\includegraphics{radii2}}
-%\caption{}
+\caption{Example: Intersection of circle with line yielding radii and
+  circle segment.}
 \label{fig:radii2}
 \end{figure}
 Here, we first split the circle using the \method{split()} method passing
