@@ -23,7 +23,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import glob, os, threading, Queue, traceback, re, tempfile, sys, atexit, time
-import config, helper, unit, box, canvas, trafo, pykpathsea, version, attr, style, dvifile
+import config, helper, unit, box, canvas, trafo, version, attr, style, dvifile
 
 ###############################################################################
 # texmessages
@@ -212,12 +212,12 @@ class _texmessagetexend(texmessage):
                 s1, s2 = texrunner.texmessageparsed.split("No pages of output.", 1)
                 texrunner.texmessageparsed = s1 + s2
             except (IndexError, ValueError):
-                raise TexResultError("no dvifile expected")
+                raise TexResultError("no dvifile expected", texrunner)
         try:
             s1, s2 = texrunner.texmessageparsed.split("Transcript written on %s.log." % texrunner.texfilename, 1)
             texrunner.texmessageparsed = s1 + s2
         except (IndexError, ValueError):
-            raise TexResultError("TeX logfile message expected")
+            raise TexResultError("TeX logfile message expected", texrunner)
 
 
 class _texmessageemptylines(texmessage):
@@ -382,7 +382,7 @@ class size(attr.sortbeforeattr, textattr, _localattr):
 for s in defaultsizelist:
     if s is not None:
         setattr(size, s, size(s))
-
+del s
 
 _textattrspreamble += "\\newbox\\PyXBoxVBox%\n\\newdimen\PyXDimenVBox%\n"
 
@@ -992,7 +992,7 @@ class texrunner:
         if usefiles is not None:
             self.usefiles = helper.ensurelist(usefiles)
         if fontmaps is not None:
-            self.fontmap = readfontmap(fontmaps.split())
+            self.fontmap = dvifile.readfontmap(fontmaps.split())
         if waitfortex is not None:
             self.waitfortex = waitfortex
         if showwaitfortex is not None:
