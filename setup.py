@@ -28,7 +28,8 @@ data_files = [('share/pyx', ['pyx/lfs/10pt.lfs',
                              'pyx/lfs/foils17pt.lfs',
                              'pyx/lfs/foils20pt.lfs',
                              'pyx/lfs/foils25pt.lfs',
-                             'pyx/lfs/foils30pt.lfs'])]
+                             'pyx/lfs/foils30pt.lfs',
+                             'contrib/pyx.def'])]
 
 if sys.version_info >= (2, 3):
     addargs = { "classifiers":

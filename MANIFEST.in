@@ -3,6 +3,7 @@ include LICENSE
 include INSTALL
 include CHANGES
 include manual/manual.ps
+recursive-include manual Makefile *.tex *.py
 include examples/examples.ps
 recursive-include contrib *
 recursive-include pyx *.h
