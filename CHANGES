@@ -59,15 +59,6 @@ TODO:
           dublication here). A possibility would be to add a keyword-argument
           epsilon to append. The point is, that I would like to get rid of
           self.epsilon, where self is a normpath instance ...
-    - How about normpathel.begintrafo() and normpathel.endtrafo()?
-      JL: -1
-      AW: May I be able to change your rank to -0 when comming up with a
-          profile for typical use cases of (new style) boxes? We do have
-          begin, at and end for the normpathel's. Why is the analogous for
-          normpathel.trafo a bad idea?
-      JL: There is no normpathel.begin() and .end(). Simply
-          use normpathel.at_pt(0) and normpathel.at_pt(1). The same holds
-          true for trafo.
   - color module:
     - what should we do for palette when only one entry
 
