@@ -50,7 +50,7 @@ class bbox:
                     max(self.urx, other.urx), max(self.ury, other.ury))
 
     def __mul__(self, other):
-        """intersect two bboxes"""
+        """return intersection of two bboxes"""
 
         return bbox(max(self.llx, other.llx), max(self.lly, other.lly),
                     _nmin(self.urx, other.urx), _nmin(self.ury, other.ury))

@@ -390,6 +390,31 @@ earrow.LARGe  = earrow("%f t pt" % (_base*math.sqrt(32)))
 earrow.LARGE  = earrow("%f t pt" % (_base*math.sqrt(64)))
 
 #
+# clipping class
+#
+
+class clip(base.PSCmd):
+
+    """class for use in canvas constructor which clips to a path"""
+
+    def __init__(self, path):
+        """construct a clip instance for a given path"""
+        self.path = path
+
+    def bbox(self):
+        # as a PSCmd a clipping path has NO influence on the bbox...
+        return bbox.bbox()
+
+    def clipbbox(self):
+        # ... but for clipping, we nevertheless need the bbox
+        return self.path.bbox()
+
+    def write(self, file):
+        _newpath().write(file)
+        self.path.write(file)
+        _clip().write(file)
+
+#
 # some very primitive Postscript operators
 #
 
@@ -430,28 +455,35 @@ class canvas(base.PSCmd):
 
     """a canvas is a collection of PSCmds together with PSAttrs"""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args):
 
         """construct a canvas
 
-        TODO: documentation of options
+        The canvas can be modfied by supplying args, which have
+        to instances of one of the following classes:
+         - trafo.trafo (leading to a global transformation of the canvas)
+         - canvas.clip (clips the canvas)
+         - base.PSAttr (sets some global attributes of the canvas)
+
+        Note that, while the first two properties are fixed for the
+        whole canvas, the last one can be changed via canvas.set()
 
         """
 
-        self.PSOps = []
-        self.trafo  = trafo.trafo()
+        self.PSOps    = []
+        self.trafo    = trafo.trafo()
+        self.clipbbox = bbox.bbox()
 
         for arg in args:
             if isinstance(arg, trafo._trafo):
                 self.trafo=arg*self.trafo
-            self.set(arg)
-
-        # clipping comes last...
-        # TODO: integrate this better; do we need a class clip?
-
-        self.clip   = kwargs.get("clip", None)
-        if self.clip:
-            self.insert((_newpath(), self.clip, _clip()))     # insert clipping path
+                self.PSOps.append(arg)
+            elif isinstance(arg, clip):
+                self.clipbbox=(self.clipbbox*
+                               arg.clipbbox().transform(self.trafo))
+                self.PSOps.append(arg)
+            else:
+                self.set(arg)
 
     def bbox(self):
         """returns bounding box of canvas"""
@@ -459,11 +491,11 @@ class canvas(base.PSCmd):
                        isinstance(y, base.PSCmd) and x+y.bbox() or x,
                        self.PSOps,
                        bbox.bbox())
-
-        if self.clip:
-            obbox=obbox*self.clip.bbox()    # intersect with clipping bounding boxes
-
-        return obbox.transform(self.trafo).enhance(1)
+        
+        # transform according to our global transformation and
+        # intersect with clipping bounding box (which have already been
+        # transformed in canvas.__init__())
+        return obbox.transform(self.trafo)*self.clipbbox
             
     def write(self, file):
         for cmd in self.PSOps:
@@ -490,7 +522,7 @@ class canvas(base.PSCmd):
         except IOError:
             assert 0, "cannot open output file"                 # TODO: Fehlerbehandlung...
 
-        abbox=self.bbox()
+        abbox=self.bbox().enhance(1)
         ctrafo=None     # global transformation of canvas
 
         if rotated:

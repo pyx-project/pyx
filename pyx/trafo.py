@@ -60,7 +60,7 @@ class UndefinedResultError(ArithmeticError):
 
 # trafo: affine transformations
              
-class _trafo(base.PSAttr):
+class _trafo(base.PSOp):
 
     """affine transformation (coordinates in constructor in pts)
 
