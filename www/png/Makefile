@@ -1,7 +1,7 @@
-default: logo.png
+default: pyxlogo.png
 
 clean:
-	-rm logo.png
+	-rm pyxlogo.png
 
 %.eps: %.py
 	export PYTHONPATH=$(PWD)/../.. ; cd $(dir $^) ; python $(notdir $^)
