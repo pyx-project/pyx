@@ -31,4 +31,4 @@ are build out of these primitives.
 
 __version__ = "0.1+"
 
-__all__ = ["canvas", "color", "graph", "path", "tex", "unit", "graph", "trafo", "epsfile", "datafile"]
+__all__ = ["canvas", "color", "graph", "path", "tex", "unit", "graph", "trafo", "epsfile", "data"]
