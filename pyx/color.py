@@ -63,11 +63,11 @@ class rgb(color):
     def write(self, file):
         file.write("%(r)f %(g)f %(b)f setrgbcolor\n" % self.color)
 
-rgb.red   = rgb(1,0,0)
-rgb.green = rgb(0,1,0)
-rgb.blue  = rgb(0,0,1)
-rgb.white = rgb(1,1,1)
-rgb.black = rgb(0,0,0)
+rgb.red   = rgb(1 ,0, 0)
+rgb.green = rgb(0 ,1, 0)
+rgb.blue  = rgb(0 ,0, 1)
+rgb.white = rgb(1 ,1, 1)
+rgb.black = rgb(0 ,0, 0)
 
 
 class hsb(color):
