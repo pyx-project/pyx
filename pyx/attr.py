@@ -250,9 +250,9 @@ class changelist(changeattr):
     def __init__(self, attrs, cyclic=1):
         """initializes the instance
         - attrs is a list of attributes to cycle
-        - cyclic is a boolean, allowing to start from
-          the beginning after the end was reached; otherwise
-          selecting beyond the list returns a None"""
+        - If cyclic is set, we restart from the beginning after
+          the end of the list has been reached; otherwise
+          selecting beyond the end of the list returns None"""
         self.attrs = attrs
         self.cyclic = cyclic
 
