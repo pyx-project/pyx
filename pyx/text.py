@@ -581,9 +581,7 @@ class DVIFile:
                 file.write("%f %f moveto (%c) show\n" %
                            (unit.topt(x), unit.topt(y), c))
             elif command=="f":
-                file.write("/%s findfont\n" % arg[0].name.upper())
-                file.write("%d scalefont\n" % 10)
-                file.write("setfont\n")
+                file.write("/%s %d selectfont\n" % (arg[0].name.upper(), 10))
 
         
 
