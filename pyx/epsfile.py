@@ -23,6 +23,40 @@
 import re
 import base, bbox, canvas, path, unit, trafo
 
+def _readbbox(filename):
+    """returns bounding box of EPS file filename as 4-tuple (llx, lly, urx, ury)"""
+
+    try:
+        file = open(filename, "r")
+    except:
+        raise IOError, "cannot open EPS file '%s'" % filename
+
+    bbpattern = re.compile( r"""^%%BoundingBox:\s+([+-]?\d+)
+                                             \s+([+-]?\d+)
+                                             \s+([+-]?\d+)
+                                             \s+([+-]?\d+)\s*$""" , re.VERBOSE)
+
+    for line in file.xreadlines():
+
+        if line=="%%EndComments\n": 
+            # TODO: BoundingBox-Deklaration kann auch an Ende von Datei
+            #       verschoben worden sein...
+            #       ...but evaluation of such a bbox directive requires
+            #       a parsing of the DSC!
+            raise IOError, \
+                  "bounding box not found in header of EPS file '%s'" % \
+                  filename
+
+        bbmatch = bbpattern.match(line)
+        if bbmatch is not None:
+            # conversion strings->int
+            (llx, lly, urx, ury) = map(int, bbmatch.groups()) 
+            return bbox.bbox(llx, lly, urx, ury)
+    else:
+        raise IOError, \
+              "bounding box not found in EPS file '%s'" % filename
+
+
 class epsfile(base.PSCmd):
 
     """class for epsfiles"""
@@ -30,6 +64,8 @@ class epsfile(base.PSCmd):
     def __init__(self,
                  filename,
                  x = "0 t m", y = "0 t m",
+                 width = None, height = None, scale=None,
+                 align = "bl",
                  clip = 1,
                  translatebb = 1,
                  showbb = 0):
@@ -41,51 +77,74 @@ class epsfile(base.PSCmd):
         the corresponding origin. With showbb set, the bbox is drawn.
         
         """
-        self.x           = unit.topt(x)
-        self.y           = unit.topt(y)
+
         self.filename    = filename
+        self.mybbox      = _readbbox(self.filename)
+        
+        self._x           = unit.topt(x)
+        self._y           = unit.topt(y)
+
+        # determine scaling in x and y direction
+        self.scalex = self.scaley = scale
+
+        if (width is not None or height is not None):
+            if scale is not None:
+                raise ValueError("cannot set both width and/or height and scale simultaneously")
+            if height is not None:
+                self.scalex = unit.topt(height)/(self.mybbox.urx-self.mybbox.llx)
+            if width is not None:
+                self.scaley = unit.topt(width)/(self.mybbox.ury-self.mybbox.lly)
+
+            if self.scalex is None:
+                self.scalex = self.scaley
+
+            if self.scaley is None:
+                self.scaley = self.scalex
+
+        # now, we set the actual width and height of the eps file (after a
+        # possible scaling)
+        self._width  = (self.mybbox.urx-self.mybbox.llx)
+        if self.scalex:
+            self._width *= self.scalex
+            
+        self._height  = (self.mybbox.ury-self.mybbox.lly)
+        if self.scaley:
+            self._height *= self.scaley
+
+        # take alignment into account
+        self.align       = align
+        if self.align[0]=="b":
+            pass
+        elif self.align[0]=="c":
+            self._y -= self._height/2.0
+        elif self.align[0]=="t":
+            self._y -= self._height
+        else:
+            raise ValueError("vertical alignment can only be b (bottom), c (center), or t (top)")
+
+        if self.align[1]=="l":
+            pass
+        elif self.align[1]=="c":
+            self._x -= self._width/2.0
+        elif self.align[1]=="r":
+            self._x -= self._width
+        else:
+            raise ValueError("horizontal alignment can only be l (left), c (center), or r (right)")
+        
         self.clip        = clip
         self.translatebb = translatebb
         self.showbb      = showbb
-        self.mybbox      = self._readbbox(translatebb)
 
-    def _readbbox(self, translatebb):
-        """returns bounding box of EPS file filename as 4-tuple (llx, lly, urx, ury)"""
-        
-        try:
-            file = open(self.filename, "r")
-        except:
-            raise IOError, "cannot open EPS file '%s'" % self.filename
+        self.trafo = trafo._translation(self._x, self._y)
 
-        bbpattern = re.compile( r"""^%%BoundingBox:\s+([+-]?\d+)
-                                                 \s+([+-]?\d+)
-                                                 \s+([+-]?\d+)
-                                                 \s+([+-]?\d+)\s*$""" , re.VERBOSE)
-
-        for line in file.xreadlines():
+        if self.scalex is not None:
+            self.trafo = self.trafo * trafo._scaling(self.scalex, self.scaley)
             
-            if line=="%%EndComments\n": 
-                # TODO: BoundingBox-Deklaration kann auch an Ende von Datei
-                #       verschoben worden sein...
-                #       ...but evaluation of such a bbox directive requires
-                #       a parsing of the DSC!
-                raise IOError, \
-                      "bounding box not found in header of EPS file '%s'" % \
-                      self.filename
-            
-            bbmatch = bbpattern.match(line)
-            if bbmatch is not None:
-                # conversion strings->int
-                (llx, lly, urx, ury) = map(int, bbmatch.groups()) 
-                if translatebb:
-                    (llx, lly, urx, ury) = (0, 0, urx - llx, ury - lly)
-                return bbox.bbox(llx, lly, urx, ury)
-        else:
-            raise IOError, \
-                  "bounding box not found in EPS file '%s'" % self.filename
+        if translatebb:
+            self.trafo = self.trafo * trafo._translation(-self.mybbox.llx, -self.mybbox.lly)
 
     def bbox(self):
-        return self.mybbox
+        return self.mybbox.transform(self.trafo)
 
     def write(self, file):
         try:
@@ -94,16 +153,10 @@ class epsfile(base.PSCmd):
             raise IOError, "cannot open EPS file '%s'" % self.filename 
 
         file.write("BeginEPSF\n")
-        
-        trafo._translation(self.x, self.y).write(file)
-        
-        if self.translatebb:
-            trafo._translation(-self.mybbox.llx, -self.mybbox.lly).write(file)
 
-        bbrect = path._rect(self.mybbox.llx,
-                            self.mybbox.lly, 
-                            self.mybbox.urx-self.mybbox.llx,
-                            self.mybbox.ury-self.mybbox.lly)
+
+
+        bbrect = self.mybbox.rect().transformed(self.trafo)
         
         if self.showbb:
             canvas._newpath().write(file)
@@ -114,6 +167,8 @@ class epsfile(base.PSCmd):
             canvas._newpath().write(file)
             bbrect.write(file)
             canvas._clip().write(file)
+
+        self.trafo.write(file)
 
         file.write("%%%%BeginDocument: %s\n" % self.filename)
         file.write(epsfile.read()) 
