@@ -49,7 +49,6 @@ PyX
     - added support for patterns
     - canvas.insert() now supports arguments
     - TODO: document patterns
-    - TODO: document new canvas.insert()
   - mathtree module:
     - added abs function
     - changed the handling of extern functions/variables to just one global dict in the Calc method
