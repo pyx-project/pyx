@@ -166,7 +166,7 @@ class binfile:
 
     def readstring(self, bytes):
         l = self.readuchar()
-        assert l<bytes-1, "inconsistency in file: string too long"
+        assert l<=bytes-1, "inconsistency in file: string too long"
         return self.file.read(bytes-1)[:l]
 
 class DVIError(Exception): pass
@@ -174,8 +174,9 @@ class DVIError(Exception): pass
 class TFMError(Exception): pass
 
 class TFMFile:
-    def __init__(self, name):
+    def __init__(self, name, debug=1):
         self.file = binfile(name, "rb")
+        self.debug = debug
 
         #
         # read pre header
@@ -200,6 +201,9 @@ class TFMFile:
                 +self.ni+self.nl+self.nk+self.ne+self.np):
             raise TFMError, "error in TFM pre-header"
 
+        if debug:
+            print "lh=%d" % self.lh
+
         #
         # read header
         #
@@ -209,14 +213,21 @@ class TFMFile:
         assert self.designsizeraw>0, "invald design size"
         self.designsize = fix_word(self.designsizeraw)
         if self.lh>2:
+            assert self.lh>11, "inconsistency in TFM file: incomplete field"
             self.charcoding = self.file.readstring(40)
         else:
             self.charcoding = None
 
         if self.lh>12:
+            assert self.lh>16, "inconsistency in TFM file: incomplete field"
             self.fontfamily = self.file.readstring(20)
         else:
             self.fontfamily = None
+
+        if self.debug:
+            print "(FAMILY %s)" % self.fontfamily
+            print "(CODINGSCHEME %s)" % self.charcoding
+            print "(DESINGSIZE R %f)" % self.designsize
 
         if self.lh>17:
             self.sevenbitsave = self.file.readuchar()
@@ -255,7 +266,7 @@ class TFMFile:
 
         if self.lh>18:
             # just ignore the rest
-            self.file.read((self.lh-18)*4)
+            print self.file.read((self.lh-18)*4)
 
         #
         # read char_info
