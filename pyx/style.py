@@ -151,8 +151,8 @@ class linestyle(attr.exclusiveattr, strokestyle):
 
 linestyle.solid = linestyle(linecap.butt, dash([]))
 linestyle.dashed = linestyle(linecap.butt, dash([2]))
-linestyle.dotted = linestyle(linecap.round, dash([0, 3]))
-linestyle.dashdotted = linestyle(linecap.round, dash([0, 3, 3, 3]))
+linestyle.dotted = linestyle(linecap.round, dash([0, 2]))
+linestyle.dashdotted = linestyle(linecap.round, dash([0, 2, 2, 2]))
 linestyle.clear = attr.clearclass(linestyle)
 
 

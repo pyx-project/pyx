@@ -101,6 +101,9 @@ TODO:
       of length
   - canvas module:
     - added new classes page and document for multipage PostScript output
+  - style module: 
+    - decrease interval for dotted and dash-dotted lines for better visual
+      appearance
   - setup.py and distribution:
     - create siteconfig on install to store positions of the shared data
       and the global pyxrc
