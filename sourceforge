@@ -1,0 +1,66 @@
+> 1. Project Full Name
+> 
+PyX
+> 
+> 2. Project Purpose and Summarization
+> 
+> Please provide detailed, accurate description of your project and what
+> SourceForge resources and in which way you plan to use. This description will
+> be the basis for the approval or rejection of your project's hosting on
+> SourceForge, and later, to ensure that you are using the services in the
+> intended way. This description will not be used as a public description of your
+> project. It must be written in English.
+> 
+PyX is a python package to create encapsulated postscript figures. It provides
+classes and methods to access basic postscript functionallity at an abstract
+level. At the same time the emerging structures are very convenient to produce
+all kind of drawings in a non-interactive way. In combination with the python
+language itself the user can just code any complexity of the figure wanted.
+Additionally the integration of a TeX/LaTeX interface into PyX leads to the
+famous high quality typesetting within the figures.
+
+A major part of PyX on top of the already discribed functionallity is the
+provision of high level functionallity for complex tasks like 2d plots in
+publication-ready quality.
+
+The project started mid of last year and is developed by Jörg Lehmann and André
+Wobst. While we want to use pyx ourself (and already do) we want to take the
+opportunity to share our project with others under the GPL. We would greatly
+appreciate sourceforge for the hosting of this project.
+> 
+> 3. License
+> 
+GPL
+> 
+> 4. Project Public Description
+> 
+> This is the description of your project which will be shown on the Project
+> Summary page, in search results, etc. It should not be as comprehensive and
+> formal as Project Purpose description (step 2), so feel free to use concise and
+> catchy wording. Maximum length is 255 chars.
+> 
+PyX is a python package to create encapsulated postscript figures.
+??? what about catchy wording ???
+> 
+> 5. Project Unix Name
+> 
+> In addition to full project name, you will need to choose short, "Unix" name for your project.
+> 
+> The "Unix Name" has several restrictions because it is used in so many places around the site. They are:
+> 
+>     * Cannot match the unix name of any other project
+>     * Must be between 3 and 15 characters in length
+>     * Must be in lower case
+>     * Can only contain characters, numbers, and dashes
+>     * Must be a valid unix username
+>     * Cannot match one of our reserved domains
+>     * Unix name will never change for this project
+> 
+> Your unix name is important, however, because it will be used for many things, including:
+> 
+>     * A web site at unixname.sourceforge.net
+>     * A CVS Repository root of /cvsroot/unixname at cvs.unixname.sourceforge.net
+>     * Shell access to unixname.sourceforge.net
+>     * Search engines throughout the site
+> 
+pyx
