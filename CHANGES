@@ -7,6 +7,7 @@ PyX
     - new module for handling of convex polygons (taken out of the graph module)
   - unit helper:
     - collection of helper functions (taken out of the graph module)
+    - moved the attrlist into helper -- as plain functions; attrlist becomes obsolete
   - text module:
     - to be included in 0.3 -> finish base functionality
     - documentation!!!
@@ -23,14 +24,15 @@ PyX
     - TODO: allow for tailing zeros of automatic generated labels
     - TODO: allow for missing data in bar graphs
     - TODO: remove the support for variables given within the argument dictionary in data constructor
-    - TODO: graph keys
+    - TODO: graph keys; titles in data/function/etc.
     - TODO: 3d graphs --- leave it for pyx-0.4
   - data module:
     - TODO: line reduction for datafile like the every parameter in gnuplot
   - canvas module:
-    - new way of PS prologue generation that writes only necessary parts
+    - new way of PS prolog generation that writes only necessary parts
     - added support for patterns 
     - TODO: document patterns
+    - TODO: prolog should return empty lists instead of None
   - numerous bugfixes:
     - problem with sizefile on windows (tex module)
     - allow for strings in graphxy's width and height; allow for width only (graph module)
