@@ -23,7 +23,7 @@
 # (TODO: check whether Knuth's division can be simplified within Python)
 #       seems to be the case!
 
-import glob, os, threading, Queue, traceback, re, struct, tempfile, sys, atexit
+import exceptions, glob, os, threading, Queue, traceback, re, struct, tempfile, sys, atexit
 import helper, unit, box, base, trafo, canvas, pykpathsea
 
 class fix_word:
@@ -49,18 +49,6 @@ class fix_word:
         result.postcomma = c & 0xFFFFF + ((self.postcomma*other.postcomma) >> 40)
         return result
 
-
-class char_info_word:
-    def __init__(self, word):
-        self.width_index  = (word & 0xFF000000) >> 24
-        self.height_index = (word & 0x00F00000) >> 20
-        self.depth_index  = (word & 0x000F0000) >> 16
-        self.italic_index = (word & 0x0000FC00) >> 10
-        self.tag          = (word & 0x00000300) >> 8
-        self.remainder    = (word & 0x000000FF)
-
-        if self.width_index == 0:
-            raise TFMError, "width_index should not be zero"
 
 class binfile:
 
@@ -116,9 +104,22 @@ class binfile:
         assert l <= bytes-1, "inconsistency in file: string too long"
         return self.file.read(bytes-1)[:l]
 
-class DVIError(Exception): pass
+class DVIError(exceptions.Exception): pass
 
-class TFMError(Exception): pass
+class TFMError(exceptions.Exception): pass
+
+class char_info_word:
+    def __init__(self, word):
+        self.width_index  = (word & 0xFF000000) >> 24
+        self.height_index = (word & 0x00F00000) >> 20
+        self.depth_index  = (word & 0x000F0000) >> 16
+        self.italic_index = (word & 0x0000FC00) >> 10
+        self.tag          = (word & 0x00000300) >> 8
+        self.remainder    = (word & 0x000000FF)
+
+        if self.width_index == 0:
+            raise TFMError("width_index should not be zero")
+
 
 class TFMFile:
     def __init__(self, name, debug=0):

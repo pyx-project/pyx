@@ -20,6 +20,12 @@ PyX
   - tex module:
     - copy lfs handling from text module (share the same source???)
 
+  bugfixes:
+  - text module:
+    - derive TFMError and DVIError correctly from exceptions.Exception
+  - box module:
+    - correct rounding algorithm (Michael Schindler)
+
 0.3.1 (2003/04/04):
   - text module:
     - fix bug in dvi rule code where width was height
