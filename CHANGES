@@ -55,6 +55,8 @@ TODO:
     - dvicopy support not needed anymore (it is still available, but obsolete and
       removed from the documentation)
     - do not include too many glyphs in the eps file
+  - dvifile module (NEW):
+    - separated from the text module
     - dvifile class returns standard pyx canvas instances on readpage
   - graph module:
     - removed manualpart and partitioners mix keyword

@@ -33,7 +33,7 @@ with their attributes.
 """
 
 import string, cStringIO, time
-import attr, base, bbox, color, deco, path, unit, prolog, style, text, trafo, version
+import attr, base, bbox, color, deco, path, unit, prolog, style, trafo, version
 
 # known paperformats as tuple(width, height)
 
@@ -133,6 +133,9 @@ class _canvas(base.PSCmd):
         self.PSOps     = []
         self.trafo     = trafo.trafo()
         self.clipbbox  = bbox._bbox()
+
+        # prevent cyclic imports
+        import text
         self.texrunner = text.defaulttexrunner
 
         for arg in args:
