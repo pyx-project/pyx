@@ -745,7 +745,7 @@ command by yourself.\n""")
             mktemp = str(self.texfilename)
         else:
             storetempdir = tempfile.tempdir
-            tempfile.tempdir = "."
+            tempfile.tempdir = os.curdir
             mktemp = tempfile.mktemp()
             tempfile.tempdir = storetempdir
         tempname = os.path.basename(mktemp)
