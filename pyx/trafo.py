@@ -20,7 +20,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import unit, canvas, math
+import base, unit, canvas, math
 
 # TODO: 
 # - switch to affine space description (i.e. represent transformation by
@@ -60,7 +60,7 @@ class UndefinedResultError(ArithmeticError):
 
 # trafo: affine transformations
              
-class _trafo:
+class _trafo(base.PSAttr):
 
     """affine transformation (coordinates in constructor in pts)
 
@@ -99,6 +99,21 @@ class _trafo:
         else:
             raise NotImplementedError, "can only multiply two transformations"
 
+    def __str__(self):
+        return "[%f %f %f %f %f %f] concat\n" % \
+               ( self.matrix[0][0], self.matrix[0][1], 
+                 self.matrix[1][0], self.matrix[1][1], 
+                 self.vector[0], self.vector[1] ) 
+
+    def write(self, file):
+        file.write("[%f %f %f %f %f %f] concat\n" % \
+                    ( self.matrix[0][0], self.matrix[0][1], 
+                      self.matrix[1][0], self.matrix[1][1], 
+                      self.vector[0], self.vector[1] ) )
+
+    def bbox(self):
+        return canvas.bbox()
+
     def _apply(self, x, y):
         """apply transformation to point (x,y) (coordinates in pts)"""
         return (self.matrix[0][0]*x +
@@ -116,31 +131,6 @@ class _trafo:
         # the end result can be converted back to general lengths
         return (unit.t_pt(tx), unit.t_pt(ty))
 
-    def matrix(self):
-        return self.matrix
-
-    def vector(self):
-        return self.vector
-
-    def translate(self, x, y):
-        return trafo(vector=(x,y))*self
-        
-    def rotate(self, angle, x=None, y=None):
-        vector = 0,0
-        if x is not None or y is not None:
-            if x is None or y is None:
-                raise (UndefinedResultError, 
-                       "either specify x or y both or none of them")
-            vector=_rvector(angle, unit.topt(x), unit.topt(y))
-            
-        return _trafo(matrix=_rmatrix(angle), vector=vector)*self
-        
-    def mirror(self, angle):
-        return _trafo(matrix=_mmatrix(angle))*self
-
-    def scale(self, sx, sy=None):
-        return _trafo(matrix=((sx, 0), (0, sy or sx)))*self
-
     def inverse(self):
         det = _det(self.matrix)                       # shouldn't be zero, but
         try: 
@@ -152,20 +142,27 @@ class _trafo:
         return _trafo(matrix=matrix) * \
                _trafo(vector=(-self.vector[0], -self.vector[1]))
 
-    def bbox(self):
-        return canvas.bbox()
+    def translate(self, x, y):
+        return translate(x, y)*self
 
-    def __str__(self):
-        return "[%f %f %f %f %f %f] concat\n" % \
-               ( self.matrix[0][0], self.matrix[0][1], 
-                 self.matrix[1][0], self.matrix[1][1], 
-                 self.vector[0], self.vector[1] ) 
+    def _translate(self, x, y):
+        return _translate(x,y)*self
+        
+    def rotate(self, angle, x=None, y=None):
+        return rotate(angle, x, y)*self
 
-    def write(self, file):
-        file.write("[%f %f %f %f %f %f] concat\n" % \
-                    ( self.matrix[0][0], self.matrix[0][1], 
-                      self.matrix[1][0], self.matrix[1][1], 
-                      self.vector[0], self.vector[1] ) )
+    def _rotate(self, angle, x=None, y=None):
+        return _rotate(angle, x, y)*self
+        
+    def mirror(self, angle):
+        return mirror(angle)*self
+
+    def scale(self, sx, sy=None, x=None, y=None):
+        return scale(sx, sy, x, y)*self
+    
+    def _scale(self, sx, sy=None, x=None, y=None):
+        return _scale(sx, sy, x, y)*self
+
 
 class trafo(_trafo):
 
@@ -193,7 +190,7 @@ class _rotate(_trafo):
         if x is not None or y is not None:
             if x is None or y is None:
                 raise (UndefinedResultError, 
-                       "either specify x or y both or none of them")
+                       "either specify both x and y or none of them")
             vector=_rvector(angle, x, y)
             
         _trafo.__init__(self,
@@ -207,7 +204,7 @@ class rotate(_trafo):
         if x is not None or y is not None:
             if x is None or y is None:
                 raise (UndefinedResultError, 
-                       "either specify x or y both or none of them")
+                       "either specify both x and y or none of them")
             vector=_rvector(angle, unit.topt(x), unit.topt(y))
 
         _trafo.__init__(self,
@@ -218,11 +215,38 @@ class rotate(_trafo):
 class mirror(trafo):
     def __init__(self,angle=0):
         trafo.__init__(self, matrix=_mmatrix(angle))
-        
+
+class _scale(_trafo):
+    def __init__(self, sx, sy=None, x=None, y=None):
+        sy=sy or sx
+        if not sx or not sy:
+            raise (UndefinedResultError, 
+                   "one scaling factor is 0")
+        vector = 0, 0 
+        if x is not None or y is not None:
+            if x is None or y is None:
+                raise (UndefinedResultError, 
+                       "either specify both x and y or none of them")
+            vector=(1-sx)*x, (1-sy)*y
+            
+        _trafo.__init__(self, matrix=((sx,0),(0,sy)), vector=vector)
+
 
 class scale(trafo):
-    def __init__(self,x,y=None):
-        trafo.__init__(self, matrix=((x,0),(0,y or x)))
+    def __init__(self, sx, sy=None, x=None, y=None):
+        sy=sy or sx
+        if not sx or not sy:
+            raise (UndefinedResultError, 
+                   "one scaling factor is 0")
+        vector = 0, 0 
+        if x is not None or y is not None:
+            if x is None or y is None:
+                raise (UndefinedResultError, 
+                       "either specify both x and y or none of them")
+            vector=(1-sx)*x, (1-sy)*y
+            
+        trafo.__init__(self, matrix=((sx,0),(0,sy)), vector=vector)
+
         
 
 if __name__=="__main__":

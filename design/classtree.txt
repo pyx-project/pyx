@@ -1,18 +1,20 @@
-pscommand ---+--- canvas
-             +--- epsfile
-             +--- tex
-             +--- _path ---+--- line
-             |             +--- rect
-             +--- _bpath --+--- bline
-             |             +--- bcurve
-             |             +--- barc
-             +--- graph --- graphxy
-             
-psattr ---+--- pathdeco-----+---arrow---+---barrow
-          |                             +---earrow
-          +--- pathstyle ---+--- linewidth
-                            +--- linestyle
-                            +--- linecap
+PSOp +---PSCommand ---+--- canvas
+     |                +--- epsfile
+     |                +--- tex
+     |                +--- _path ---+--- line
+     |                |             +--- rect
+     |                +--- _bpath --+--- bline
+     |                |             +--- bcurve
+     |                |             +--- barc
+     |                +--- graph --- graphxy
+     |        
+     +---PSAttr ---+--- pathdeco-----+---arrow---+---barrow
+     |              |                             +---earrow
+     |              +--- pathstyle ---+--- linewidth
+     |                                +--- linestyle
+     |                                +--- linecap
+     +---bpathel
+     +---pathel
 
 bbox
                             
@@ -34,8 +36,6 @@ graphattr ---+--- axis ---+--- linaxis
              +--- key
 
 pyxexcept ...
-pathel
-bpathel
 
 psattr ----+
 texattr ---+--- color ---+--- colorgrey

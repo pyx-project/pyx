@@ -21,9 +21,9 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-import canvas, path, unit, re
+import canvas, path, unit, trafo, re
 
-class epsfile:
+class epsfile(canvas.PSCommand):
 
     """class for epsfiles"""
 
@@ -95,10 +95,10 @@ class epsfile:
 
         file.write("BeginEPSF\n")
         
-        canvas._translate(self.x, self.y).write(file)
+        trafo._translate(self.x, self.y).write(file)
         
         if self.translatebb:
-            canvas._translate(-self.mybbox.llx, -self.mybbox.lly).write(file)
+            trafo._translate(-self.mybbox.llx, -self.mybbox.lly).write(file)
 
         bbrect = path._rect(self.mybbox.llx,
                             self.mybbox.lly, 

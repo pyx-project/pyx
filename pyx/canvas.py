@@ -26,7 +26,7 @@
 # - epsfile scaling, centering, ...
 
 
-import unit, trafo, types, math
+import base, unit, trafo, types, math
 
 # PostScript-procedure definitions
 # cf. file: 5002.EPSF_Spec_v3.0.pdf     
@@ -60,20 +60,14 @@ _PSProlog = """/rect {
   b4_Inc_state restore
 } bind def"""
 
-# known paperformats as tuple(width,
+# known paperformats as tuple(width, height)
 
-_paperformats = { "a4"      : ("210 t mm",  "297 t mm", 0), 
-                  "a3"      : ("297 t mm",  "420 t mm", 0), 
-                  "a2"      : ("420 t mm",  "594 t mm", 0), 
-                  "a1"      : ("594 t mm",  "840 t mm", 0), 
-                  "a0"      : ("840 t mm", "1188 t mm", 0), 
-                  "letter"  : ("8.5 t in",   "11 t in", 0),
-                  "a4_r"    : ("210 t mm",  "297 t mm", 1), 
-                  "a3_r"    : ("297 t mm",  "420 t mm", 1), 
-                  "a2_r"    : ("420 t mm",  "594 t mm", 1), 
-                  "a1_r"    : ("594 t mm",  "840 t mm", 1), 
-                  "a0_r"    : ("840 t mm", "1188 t mm", 1),
-                  "letter_r": ("8.5 t in",   "11 t in", 1) }
+_paperformats = { "a4"      : ("210 t mm",  "297 t mm"), 
+                  "a3"      : ("297 t mm",  "420 t mm"), 
+                  "a2"      : ("420 t mm",  "594 t mm"), 
+                  "a1"      : ("594 t mm",  "840 t mm"), 
+                  "a0"      : ("840 t mm", "1188 t mm"), 
+                  "letter"  : ("8.5 t in",   "11 t in")}
 
 # helper routine for bbox manipulations
 
@@ -151,128 +145,149 @@ class bbox:
     
 class CanvasException(Exception): pass
 
-#
-# property classes
-#
 
-class PyxAttributes:
-    def bbox(self):
-        return bbox()
+class PathStyle(base.PSAttr):
+    """Style modifiers for paths"""
+    pass
 
-    def _PSCmd(self):
-        return ""
 
+class linecap(PathStyle):
+    def __init__(self, value=0):
+        self.value=value
+        
     def write(self, file):
-        file.write("%s\n" % self._PSCmd())
+        file.write("%d setlinecap\n" % self.value)
+
+linecap.butt   = linecap(0)
+linecap.round  = linecap(1)
+linecap.square = linecap(2)
 
 
-class _linecap(PyxAttributes):
+class linejoin(PathStyle):
     def __init__(self, value=0):
         self.value=value
         
-    def _PSCmd(self):
-        return "%d setlinecap" % self.value
-        
+    def write(self, file):
+        file.write("%d setlinejoin\n" % self.value)
 
-class linecap(_linecap):
-    butt   = _linecap(0)
-    round  = _linecap(1)
-    square = _linecap(2)
+linejoin.miter = linejoin(0)
+linejoin.round = linejoin(1)
+linejoin.bevel = linejoin(2)
 
 
-class _linejoin(PyxAttributes):
-    def __init__(self, value=0):
-        self.value=value
-        
-    def _PSCmd(self):
-        return "%d setlinejoin" % self.value
-
- 
-class linejoin(_linejoin):
-    miter = _linejoin(0)
-    round = _linejoin(1)
-    bevel = _linejoin(2)
-
-
-class _miterlimit(PyxAttributes):
+class miterlimit(PathStyle):
     def __init__(self, value=10.0):
         self.value=value
         
-    def _PSCmd(self):
-        return "%f setmiterlimit" % self.value
+    def write(self, file):
+        file.write("%f setmiterlimit\n" % self.value)
         
 
-class miterlimit(_miterlimit):
-    pass
-    
-
-class _dash(PyxAttributes):
+class dash(PathStyle):
     def __init__(self, pattern=[], offset=0):
         self.pattern=pattern
         self.offset=offset
 
-    def _PSCmd(self):
+    def write(self, file):
         patternstring=""
         for element in self.pattern:
             patternstring=patternstring + `element` + " "
                               
-        return "[%s] %d setdash" % (patternstring, self.offset)
+        file.write("[%s] %d setdash\n" % (patternstring, self.offset))
         
 
-class dash(_dash):
-    pass
-    
- 
-class _linestyle(PyxAttributes):
+class linestyle(PathStyle):
     def __init__(self, c=linecap.butt, d=dash([])):
         self.c=c
         self.d=d
-    def _PSCmd(self):
-        return self.c._PSCmd() + "\n" + self.d._PSCmd()
         
-       
-class linestyle(_linestyle):
-    solid      = _linestyle(linecap.butt,  dash([]))
-    dashed     = _linestyle(linecap.butt,  dash([2]))
-    dotted     = _linestyle(linecap.round, dash([0, 3]))
-    dashdotted = _linestyle(linecap.round, dash([0, 3, 3, 3]))
+    def write(self, file):
+        self.c.write(file)
+        self.d.write(file)
+
+linestyle.solid      = linestyle(linecap.butt,  dash([]))
+linestyle.dashed     = linestyle(linecap.butt,  dash([2]))
+linestyle.dotted     = linestyle(linecap.round, dash([0, 3]))
+linestyle.dashdotted = linestyle(linecap.round, dash([0, 3, 3, 3]))
     
  
-class _linewidth(PyxAttributes, unit.length):
+class linewidth(PathStyle, unit.length):
+
     def __init__(self, l):
         unit.length.__init__(self, l=l, default_type="w")
-    def _PSCmd(self):
-        return "%f setlinewidth" % unit.topt(self)
-    
+        
+    def write(self, file):
+        file.write("%f setlinewidth\n" % unit.topt(self))
 
-class linewidth(_linewidth):
-    _base      = 0.02
+_base=0.02
  
-    THIN       = _linewidth("%f cm" % (_base/math.sqrt(32)))
-    THIn       = _linewidth("%f cm" % (_base/math.sqrt(16)))
-    THin       = _linewidth("%f cm" % (_base/math.sqrt(8)))
-    Thin       = _linewidth("%f cm" % (_base/math.sqrt(4)))
-    thin       = _linewidth("%f cm" % (_base/math.sqrt(2)))
-    normal     = _linewidth("%f cm" % _base)
-    thick      = _linewidth("%f cm" % (_base*math.sqrt(2)))
-    Thick      = _linewidth("%f cm" % (_base*math.sqrt(4)))
-    THick      = _linewidth("%f cm" % (_base*math.sqrt(8)))
-    THIck      = _linewidth("%f cm" % (_base*math.sqrt(16)))
-    THICk      = _linewidth("%f cm" % (_base*math.sqrt(32)))
-    THICK      = _linewidth("%f cm" % (_base*math.sqrt(64)))
+linewidth.THIN   = linewidth("%f cm" % (_base/math.sqrt(32)))
+linewidth.THIn   = linewidth("%f cm" % (_base/math.sqrt(16)))
+linewidth.THin   = linewidth("%f cm" % (_base/math.sqrt(8)))
+linewidth.Thin   = linewidth("%f cm" % (_base/math.sqrt(4)))
+linewidth.thin   = linewidth("%f cm" % (_base/math.sqrt(2)))
+linewidth.normal = linewidth("%f cm" % _base)
+linewidth.thick  = linewidth("%f cm" % (_base*math.sqrt(2)))
+linewidth.Thick  = linewidth("%f cm" % (_base*math.sqrt(4)))
+linewidth.THick  = linewidth("%f cm" % (_base*math.sqrt(8)))
+linewidth.THIck  = linewidth("%f cm" % (_base*math.sqrt(16)))
+linewidth.THICk  = linewidth("%f cm" % (_base*math.sqrt(32)))
+linewidth.THICK  = linewidth("%f cm" % (_base*math.sqrt(64)))
 
 #
-# main canvas class
+# some very primitive Postscript operator
+#
+
+class _newpath(base.PSOp):
+    def write(self, file):
+       file.write("newpath\n")
+       
+
+class _stroke(base.PSOp):
+    def write(self, file):
+       file.write("stroke\n")
+       
+
+class _fill(base.PSOp):
+    def write(self, file):
+        file.write("fill\n")
+        
+
+class _clip(base.PSOp):
+    def write(self, file):
+       file.write("clip\n")
+       
+
+class _gsave(base.PSOp):
+    def write(self, file):
+       file.write("gsave\n")
+       
+
+class _grestore(base.PSOp):
+    def write(self, file):
+       file.write("grestore\n")
+
+#
+# PSCommand class
 #
 
 class PSCommand:
+
+    """ PSCommand is the base class of all visible elements
+
+    Visible elements, are those, that can be embedded in the Canvas
+    and possed a bbox. Furthermore, they can write themselves to
+    an open file and to an EPS file
+    
+    """
+    
     def bbox(self):
-       return bbox()
+       raise NotImplementedError, "cannot call virtual method bbox()"
        
     def write(self, file):
-       pass
+        raise NotImplementedError, "cannot call virtual method write()"
 
-    def writetofile(self, filename, paperformat=None, fittosize=0, margin="1 t cm"):
+    def writetofile(self, filename, paperformat=None, rotated=0, fittosize=0, margin="1 t cm"):
         """write canvas to EPS file
 
         If paperformat is set to a known paperformat, the output will be centered on 
@@ -290,21 +305,25 @@ class PSCommand:
         abbox=self.bbox()
         ctrafo=None     # global transformation of canvas
 
+        if rotated:
+            ctrafo = trafo._rotate(90,
+                                   0.5*(abbox.llx+abbox.urx),
+                                   0.5*(abbox.lly+abbox.ury))
+
         if paperformat:
             # center (optionally rotated) output on page
             try:
-                width, height, rotated = _paperformats[paperformat]
+                width, height = _paperformats[paperformat]
                 width = unit.topt(width)
                 height = unit.topt(height)
             except KeyError:
                 raise KeyError, "unknown paperformat '%s'" % paperformat
 
-            ctrafo = trafo._translate(0.5*(width -(abbox.urx-abbox.llx))-abbox.llx, 
-                                      0.5*(height-(abbox.ury-abbox.lly))-abbox.lly)
-                                          
-            if rotated:
-                ctrafo = trafo._rotate(90, 0.5*width, 0.5*height)*ctrafo
-
+            ctrafo = ctrafo._translate(0.5*(width -(abbox.urx-abbox.llx))-
+                                       abbox.llx, 
+                                       0.5*(height-(abbox.ury-abbox.lly))-
+                                       abbox.lly)
+            
             if fittosize:
                 # scale output to pagesize - margins
                 margin=unit.topt(margin)
@@ -315,17 +334,17 @@ class PSCommand:
                 else:
                     sfactor = min((width-2*margin)/(abbox.urx-abbox.llx), 
                                   (height-2*margin)/(abbox.ury-abbox.lly))
-
-                ctrafo = (trafo._translate(0.5*width, 0.5*height)*
-                          trafo.scale(sfactor)*
-                          trafo._translate(-0.5*width, -0.5*height)*
-                          ctrafo)
+                    
+            ctrafo = ctrafo._scale(sfactor, sfactor, 0.5*width, 0.5*height)
                           
-            # adjust bounding box
-            abbox = abbox.transform(ctrafo)
                 
         elif fittosize:
-              assert 0, "must specify paper size for fittosize" # TODO: exception...
+            assert 0, "must specify paper size for fittosize" # TODO: exception...
+
+        # if there has been a global transformation, adjust the bounding box
+        # accordingly
+        if ctrafo:
+            abbox = abbox.transform(ctrafo) 
 
         file.write("%!PS-Adobe-3.0 EPSF 3.0\n")
         abbox.write(file)
@@ -336,8 +355,9 @@ class PSCommand:
         file.write("%%BeginProlog\n") 
         file.write(_PSProlog)
         file.write("\n%%EndProlog\n") 
-        
-        if ctrafo: ctrafo.write(file)   # add global transformation if necessary
+
+        # now apply a potential global transformation
+        if ctrafo: ctrafo.write(file)   
 
         file.write("%f setlinewidth\n" % unit.topt(linewidth.normal))
         
@@ -347,52 +367,18 @@ class PSCommand:
         file.write("showpage\n")
         file.write("%%Trailer\n")
         file.write("%%EOF\n")
-       
 
-class _newpath(PSCommand):
-    def write(self, file):
-       file.write("newpath\n")
-       
-
-class _stroke(PSCommand):
-    def write(self, file):
-       file.write("stroke\n")
-       
-
-class _fill(PSCommand):
-    def write(self, file):
-        file.write("fill\n")
-        
-
-class _clip(PSCommand):
-    def write(self, file):
-       file.write("clip\n")
-       
-
-class _gsave(PSCommand):
-    def write(self, file):
-       file.write("gsave\n")
-       
-
-class _grestore(PSCommand):
-    def write(self, file):
-       file.write("grestore\n")
-       
-
-class _translate(PSCommand):
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        
-    def write(self, file):
-        file.write("%f %f translate\n" % (self.x, self.y) )
-
+#
+# The main canvas class
+#
 
 class canvas(PSCommand):
 
+    """a canvas is a collection of PSCommands together with PSAttrs"""
+
     def __init__(self, *args, **kwargs):
         
-        self.PSCmds = []
+        self.PSOps = []
         self.trafo  = trafo.trafo()
 
         for arg in args:
@@ -408,7 +394,10 @@ class canvas(PSCommand):
             self.insert((_newpath(), self.clip, _clip()))     # insert clipping path
 
     def bbox(self):
-        obbox = reduce(lambda x,y: x+y.bbox(), self.PSCmds, bbox())
+        obbox = reduce(lambda x,y:
+                       isinstance(y, PSCommand) and x+y.bbox() or x,
+                       self.PSOps,
+                       bbox())
 
         if self.clip:
             obbox=obbox*self.clip.bbox()    # intersect with clipping bounding boxes
@@ -416,36 +405,33 @@ class canvas(PSCommand):
         return obbox.transform(self.trafo).enhance(1)
             
     def write(self, file):
-        for cmd in self.PSCmds:
+        for cmd in self.PSOps:
             cmd.write(file)
             
     def insert(self, cmds, *args):
         if args: 
-           self.PSCmds.append(_gsave())
+           self.PSOps.append(_gsave())
            self.set(*args)
 
         if type(cmds) in (types.TupleType, types.ListType):
            for cmd in list(cmds): 
-              if isinstance(cmd, canvas): self.PSCmds.append(_gsave())
-              self.PSCmds.append(cmd)
-              if isinstance(cmd, canvas): self.PSCmds.append(_grestore())
+              if isinstance(cmd, canvas): self.PSOps.append(_gsave())
+              self.PSOps.append(cmd)
+              if isinstance(cmd, canvas): self.PSOps.append(_grestore())
         else: 
-           if isinstance(cmds, canvas): self.PSCmds.append(_gsave())
-           self.PSCmds.append(cmds)
-           if isinstance(cmds, canvas): self.PSCmds.append(_grestore())
+           if isinstance(cmds, canvas): self.PSOps.append(_gsave())
+           self.PSOps.append(cmds)
+           if isinstance(cmds, canvas): self.PSOps.append(_grestore())
            
         if args:
-           self.PSCmds.append(_grestore())
+           self.PSOps.append(_grestore())
            
         return cmds
 
-    def create(self, pyxclass, *args, **kwargs):
-        instance = pyxclass( *args, **kwargs)
-        return instance
-
     def set(self, *args):
-        for arg in args: 
-           self.insert(arg)
+        for arg in args:
+            assert isinstance(arg, base.PSAttr), "can only set attributes"
+            self.PSOps.append(arg)
         
     def draw(self, path, *args):
         self.insert((_newpath(), path, _stroke()), *args)

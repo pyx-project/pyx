@@ -26,7 +26,7 @@
 #          intersection of bpaths) 
 #       - intersection of bpaths: use estimate for number of subdivisions
 
-import unit, canvas, math
+import base, unit, canvas, math
 from math import cos, sin, pi
 
 class PathException(Exception): pass
@@ -36,7 +36,7 @@ class PathException(Exception): pass
 # _bpathel: element of Bezier path (coordinates in pts)
 ################################################################################
 
-class _bpathel:
+class _bpathel(base.PSOp):
 
     """element of Bezier path (coordinates in pts)"""
     
@@ -227,7 +227,7 @@ class bpathel(_bpathel):
 # bpath: Bezier path
 ################################################################################
 
-class bpath:
+class bpath(canvas.PSCommand):
 
     """path consisting of bezier curves"""
     

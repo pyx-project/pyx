@@ -240,7 +240,7 @@ testtrafobbox(c)
 testclipbbox(c)
 testintersectbezier(c)
 testbpathtrafo(c)
-c.writetofile("test", paperformat="a4_r", fittosize=1)
+c.writetofile("test", paperformat="a4", rotated=1, fittosize=1)
 
 profile.run('testspeed()', 'test.prof')
 pstats.Stats("test.prof").sort_stats('time').print_stats(10)
