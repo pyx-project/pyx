@@ -45,36 +45,36 @@ class pathel:
     """element of a PS style path"""
     
     def _bbox(self, currentpoint, currentsubpath):
-	"""calculate bounding box of pathel
+        """calculate bounding box of pathel
 
         returns tuple consisting of:
          - new currentpoint
          - new currentsubpath (i.e. first point of current subpath)
          - bounding box of pathel (using currentpoint and currentsubpath)
-	
-	Important note: all coordinates in bbox, currentpoint, and 
-	currrentsubpath have to be floats (in the unit.topt)
+        
+        Important note: all coordinates in bbox, currentpoint, and 
+        currrentsubpath have to be floats (in the unit.topt)
 
-	"""
+        """
 
-	pass
+        pass
 
     def write(self, file):
-	"""write pathel to file in the context of canvas"""
-	
+        """write pathel to file in the context of canvas"""
+        
         pass
-	
+        
     def _bpath(self, currentpoint, currentsubpath):
-	"""convert pathel to bpath 
+        """convert pathel to bpath 
 
         returns tuple consisting of:
          - new currentpoint
          - new currentsubpath (i.e. first point of current subpath)
          - bpath corresponding to pathel in the context of currentpoint and 
-	   currentsubpath
+           currentsubpath
 
-        """	
-	
+        """     
+        
         pass
 
 # now come the various pathels. Each one comes in two variants:
@@ -87,9 +87,9 @@ class closepath(pathel):
     """Connect subpath back to its starting point"""
 
     def _bbox(self, currentpoint, currentsubpath):
-	return (None,
+        return (None,
                 None, 
-		canvas.bbox(min(currentpoint[0], currentsubpath[0]), 
+                canvas.bbox(min(currentpoint[0], currentsubpath[0]), 
                             min(currentpoint[1], currentsubpath[1]), 
                             max(currentpoint[0], currentsubpath[0]), 
                             max(currentpoint[1], currentsubpath[1])))
@@ -118,7 +118,7 @@ class _moveto(pathel):
         return ((self.x, self.y),
                 (self.x, self.y),
                 canvas.bbox())
-	 
+         
     def write(self, file):
         file.write("%f %f moveto" % (self.x, self.y) )
 
@@ -147,7 +147,7 @@ class _rmoveto(pathel):
     def _bbox(self, currentpoint, currentsubpath):
         return ((self.dx+currentpoint[0], self.dy+currentpoint[1]), 
                 (self.dx+currentpoint[0], self.dy+currentpoint[1]),
-		canvas.bbox())
+                canvas.bbox())
 
     def write(self, file):
         file.write("%f %f rmoveto" % (self.dx, self.dy) )
@@ -155,7 +155,7 @@ class _rmoveto(pathel):
     def _bpath(self, currentpoint, currentsubpath):
         return ((self.dx+currentpoint[0], self.dy+currentpoint[1]), 
                 (self.dx+currentpoint[0], self.dy+currentpoint[1]),
-		None)
+                None)
 
 
 class rmoveto(_rmoveto):
@@ -176,7 +176,7 @@ class _lineto(pathel):
     def __init__(self, x, y):
          self.x = x
          self.y = y
-	 
+         
     def _bbox(self, currentpoint, currentsubpath):
         return ((self.x, self.y),
                 currentsubpath or currentpoint,
@@ -245,83 +245,83 @@ class _arc(pathel):
         self.x = x
         self.y = y
         self.r = r
-	self.angle1 = angle1
-	self.angle2 = angle2
+        self.angle1 = angle1
+        self.angle2 = angle2
 
     def _bbox(self, currentpoint, currentsubpath):
         phi1=pi*self.angle1/180
         phi2=pi*self.angle2/180
-	
-	# starting point of arc segment
-	sarcx = self.x+self.r*cos(phi1)
-	sarcy = self.y+self.r*sin(phi1)
+        
+        # starting point of arc segment
+        sarcx = self.x+self.r*cos(phi1)
+        sarcy = self.y+self.r*sin(phi1)
 
-	# end point of arc segment
-	earcx = self.x+self.r*cos(phi2)
-	earcy = self.y+self.r*sin(phi2)
+        # end point of arc segment
+        earcx = self.x+self.r*cos(phi2)
+        earcy = self.y+self.r*sin(phi2)
 
-	# Now, we have to determine the corners of the bbox for the
-	# arc segment, i.e. global maxima/mimima of cos(phi) and sin(phi)
-	# in the interval [phi1, phi2]. These can either be located
-	# on the borders of this interval or in the interior.
+        # Now, we have to determine the corners of the bbox for the
+        # arc segment, i.e. global maxima/mimima of cos(phi) and sin(phi)
+        # in the interval [phi1, phi2]. These can either be located
+        # on the borders of this interval or in the interior.
 
         if phi2<phi1:        
-	    # guarantee that phi2>phi1
-	    phi2 = phi2 + (math.floor((phi1-phi2)/(2*pi))+1)*2*pi
+            # guarantee that phi2>phi1
+            phi2 = phi2 + (math.floor((phi1-phi2)/(2*pi))+1)*2*pi
 
-	# next minimum of cos(phi) looking from phi1 in counterclockwise 
-	# direction: 2*pi*floor((phi1-pi)/(2*pi)) + 3*pi
+        # next minimum of cos(phi) looking from phi1 in counterclockwise 
+        # direction: 2*pi*floor((phi1-pi)/(2*pi)) + 3*pi
 
-	if phi2<(2*math.floor((phi1-pi)/(2*pi))+3)*pi:
-	    minarcx = min(sarcx, earcx)
-	else:
+        if phi2<(2*math.floor((phi1-pi)/(2*pi))+3)*pi:
+            minarcx = min(sarcx, earcx)
+        else:
             minarcx = self.x-self.r
 
-	# next minimum of sin(phi) looking from phi1 in counterclockwise 
-	# direction: 2*pi*floor((phi1-3*pi/2)/(2*pi)) + 7/2*pi
+        # next minimum of sin(phi) looking from phi1 in counterclockwise 
+        # direction: 2*pi*floor((phi1-3*pi/2)/(2*pi)) + 7/2*pi
 
-	if phi2<(2*math.floor((phi1-3.0*pi/2)/(2*pi))+7.0/2)*pi:
-	    minarcy = min(sarcy, earcy)
-	else:
+        if phi2<(2*math.floor((phi1-3.0*pi/2)/(2*pi))+7.0/2)*pi:
+            minarcy = min(sarcy, earcy)
+        else:
             minarcy = self.y-self.r
 
-	# next maximum of cos(phi) looking from phi1 in counterclockwise 
-	# direction: 2*pi*floor((phi1)/(2*pi))+2*pi
+        # next maximum of cos(phi) looking from phi1 in counterclockwise 
+        # direction: 2*pi*floor((phi1)/(2*pi))+2*pi
 
-	if phi2<(2*math.floor((phi1)/(2*pi))+2)*pi:
-	    maxarcx = max(sarcx, earcx)
-	else:
+        if phi2<(2*math.floor((phi1)/(2*pi))+2)*pi:
+            maxarcx = max(sarcx, earcx)
+        else:
             maxarcx = self.x+self.r
 
-	# next maximum of sin(phi) looking from phi1 in counterclockwise 
-	# direction: 2*pi*floor((phi1-pi/2)/(2*pi)) + 1/2*pi
+        # next maximum of sin(phi) looking from phi1 in counterclockwise 
+        # direction: 2*pi*floor((phi1-pi/2)/(2*pi)) + 1/2*pi
 
-	if phi2<(2*math.floor((phi1-pi/2)/(2*pi))+5.0/2)*pi:
-	    maxarcy = max(sarcy, earcy)
-	else:
+        if phi2<(2*math.floor((phi1-pi/2)/(2*pi))+5.0/2)*pi:
+            maxarcy = max(sarcy, earcy)
+        else:
             maxarcy = self.y+self.r
 
-	# Finally, we are able to construct the bbox for the arc segment.
-	# Note that if there is a currentpoint defined, we also
-	# have to include the straight line from this point
-	# to the first point of the arc segment
+        # Finally, we are able to construct the bbox for the arc segment.
+        # Note that if there is a currentpoint defined, we also
+        # have to include the straight line from this point
+        # to the first point of the arc segment
 
-	if currentpoint:
+        if currentpoint:
              return ( (earcx, earcy),
                       currentsubpath or currentpoint,
                       canvas.bbox(min(currentpoint[0], sarcx),
-		                  min(currentpoint[1], sarcy), 
-			          max(currentpoint[0], sarcx),
-			          max(currentpoint[1], sarcy))+
-	              canvas.bbox(minarcx, minarcy, maxarcx, maxarcy)
+                                  min(currentpoint[1], sarcy), 
+                                  max(currentpoint[0], sarcx),
+                                  max(currentpoint[1], sarcy))+
+                      canvas.bbox(minarcx, minarcy, maxarcx, maxarcy)
                     )
         else:  # we assert that currentsubpath is also None
              return ( (earcx, earcy),
                       (sarcx, sarcy),
-	              canvas.bbox(minarcx, minarcy, maxarcx, maxarcy)
+                      canvas.bbox(minarcx, minarcy, maxarcx, maxarcy)
                     )
 
-			    
+                            
     def write(self, file):
         file.write("%f %f %f %f %f arc" % ( self.x, self.y,
                                             self.r,
@@ -329,17 +329,17 @@ class _arc(pathel):
                                             self.angle2 ) )
         
     def _bpath(self, currentpoint, currentsubpath):
-	# starting point of arc segment
-	sarcx = self.x+self.r*cos(pi*self.angle1/180)
-	sarcy = self.y+self.r*sin(pi*self.angle1/180)
+        # starting point of arc segment
+        sarcx = self.x+self.r*cos(pi*self.angle1/180)
+        sarcy = self.y+self.r*sin(pi*self.angle1/180)
 
-	# end point of arc segment
-	earcx = self.x+self.r*cos(pi*self.angle2/180)
-	earcy = self.y+self.r*sin(pi*self.angle2/180)
+        # end point of arc segment
+        earcx = self.x+self.r*cos(pi*self.angle2/180)
+        earcy = self.y+self.r*sin(pi*self.angle2/180)
 
         # Note that if there is a currentpoint defined, we also
-	# have to include the straight line from this point
-	# to the first point of the arc segment
+        # have to include the straight line from this point
+        # to the first point of the arc segment
         if currentpoint:
              return ( (earcx, earcy),
                       currentsubpath or currentpoint,
@@ -351,7 +351,7 @@ class _arc(pathel):
                       (sarcx, sarcy),
                       bpath._barc(self.x, self.y, self.r, self.angle1, self.angle2)
                     )
-	
+        
 class arc(_arc):
     """Append counterclockwise arc"""
 
@@ -367,38 +367,38 @@ class _arcn(pathel):
         self.x = x
         self.y = y
         self.r = r
-	self.angle1 = angle1
-	self.angle2 = angle2
+        self.angle1 = angle1
+        self.angle2 = angle2
 
     def _bbox(self, currentpoint, currentsubpath):
         # in principle, we obtain bbox of an arcn element from 
-	# the bounding box of the corrsponding arc element with
-	# angle1 and angle2 interchanged. Though, we have to be carefull
-	# with the straight line segment, which is added if currentpoint 
-	# is defined.
+        # the bounding box of the corrsponding arc element with
+        # angle1 and angle2 interchanged. Though, we have to be carefull
+        # with the straight line segment, which is added if currentpoint 
+        # is defined.
 
-	# Hence, we first compute the bbox of the arc without this line:
+        # Hence, we first compute the bbox of the arc without this line:
 
         (earc, sarc, arcbb) = _arc(self.x, self.y, self.r, 
-		                   self.angle2, 
-			           self.angle1)._bbox(None, None)
+                                   self.angle2, 
+                                   self.angle1)._bbox(None, None)
 
-	# Then, we repeat the logic from arc.bbox, but with interchanged
-	# start and end points of the arc
+        # Then, we repeat the logic from arc.bbox, but with interchanged
+        # start and end points of the arc
 
-	if currentpoint:
+        if currentpoint:
              return ( (sarc[0], sarc[1]),
                       currentsubpath or currentpoint,
                       canvas.bbox(min(currentpoint[0], sarc[0]),
-		                  min(currentpoint[1], sarc[1]), 
-			          max(currentpoint[0], sarc[0]),
-			          max(currentpoint[1], sarc[1]))+
-	              arcbb
+                                  min(currentpoint[1], sarc[1]), 
+                                  max(currentpoint[0], sarc[0]),
+                                  max(currentpoint[1], sarc[1]))+
+                      arcbb
                     )
         else:  # we assert that currentsubpath is also None
              return ( (sarc[0], sarc[1]),
                       (earc[0], earc[1]),
-	              arcbb
+                      arcbb
                     )
 
     def write(self, file):
@@ -409,16 +409,16 @@ class _arcn(pathel):
 
     def _bpath(self, currentpoint, currentsubpath):
         # starting point of arc segment
-	sarcx = self.x+self.r*cos(pi*self.angle1/180)
-	sarcy = self.y+self.r*sin(pi*self.angle1/180)
+        sarcx = self.x+self.r*cos(pi*self.angle1/180)
+        sarcy = self.y+self.r*sin(pi*self.angle1/180)
 
-	# end point of arc segment
-	earcx = self.x+self.r*cos(pi*self.angle2/180)
-	earcy = self.y+self.r*sin(pi*self.angle2/180)
+        # end point of arc segment
+        earcx = self.x+self.r*cos(pi*self.angle2/180)
+        earcy = self.y+self.r*sin(pi*self.angle2/180)
 
         # Note that if there is a currentpoint defined, we also
-	# have to include the straight line from this point
-	# to the first point of the arc segment
+        # have to include the straight line from this point
+        # to the first point of the arc segment
         if currentpoint:
              return ( (earcx, earcy),
                       currentsubpath or currentpoint,
@@ -446,10 +446,10 @@ class _arct(pathel):
 
     def __init__(self, x1, y1, x2, y2, r):
         self.x1 = x1
-	self.y1 = y1
-	self.x2 = x2
-	self.y2 = y2
-	self.r  = r
+        self.y1 = y1
+        self.x2 = x2
+        self.y2 = y2
+        self.r  = r
 
     def write(self, file):
         file.write("%f %f %f %f %f arct" % ( self.x1, self.y1,
@@ -477,7 +477,7 @@ class _arct(pathel):
         # intersection angle between two tangents
         alpha = math.acos((dx1*dx2+dy1*dy2)/(l1*l2))
 
-	if math.fabs(sin(alpha))>=1e-15 and 1.0+self.r!=1.0:
+        if math.fabs(sin(alpha))>=1e-15 and 1.0+self.r!=1.0:
             cotalpha2 = 1.0/math.tan(alpha/2)
 
             # two tangent points
@@ -553,19 +553,19 @@ class arct(_arct):
 #
 # curveto, rcurveto
 #
-	
+        
 class _curveto(pathel):
 
     """Append curveto (coordinates in pts)"""
 
     def __init__(self, x1, y1, x2, y2, x3, y3):
         self.x1 = x1
-	self.y1 = y1
-	self.x2 = x2
-	self.y2 = y2
-	self.x3 = x3
-	self.y3 = y3
-	
+        self.y1 = y1
+        self.x2 = x2
+        self.y2 = y2
+        self.x3 = x3
+        self.y3 = y3
+        
     def _bbox(self, currentpoint, currentsubpath):
         return ((self.x3, self.y3),
                 currentsubpath or currentpoint,
@@ -602,27 +602,27 @@ class curveto(_curveto):
 class _rcurveto(pathel):
 
     """Append rcurveto (coordinates in pts)"""
-	
+        
     def __init__(self, dx1, dy1, dx2, dy2, dx3, dy3):
         self.dx1 = dx1
-	self.dy1 = dy1
-	self.dx2 = dx2
-	self.dy2 = dy2
-	self.dx3 = dx3
-	self.dy3 = dy3
-	
+        self.dy1 = dy1
+        self.dx2 = dx2
+        self.dy2 = dy2
+        self.dx3 = dx3
+        self.dy3 = dy3
+        
     def write(self, file):
         file.write("%f %f %f %f %f %f rcurveto" % ( self.dx1, self.dy1,
                                                     self.dx2, self.dy2,
                                                     self.dx3, self.dy3 ) )
 
     def _bbox(self, currentpoint, currentsubpath):
-	x1=currentpoint[0]+self.dx1
-	y1=currentpoint[1]+self.dy1
-	x2=currentpoint[0]+self.dx2
-	y2=currentpoint[1]+self.dy2
-	x3=currentpoint[0]+self.dx3
-	y3=currentpoint[1]+self.dy3
+        x1=currentpoint[0]+self.dx1
+        y1=currentpoint[1]+self.dy1
+        x2=currentpoint[0]+self.dx2
+        y2=currentpoint[1]+self.dy2
+        x3=currentpoint[0]+self.dx3
+        y3=currentpoint[1]+self.dy3
 
         return ((x3, y3),
                 currentsubpath or currentpoint,
@@ -647,7 +647,7 @@ class _rcurveto(pathel):
 class rcurveto(_rcurveto):
 
     """Append rcurveto"""
-	
+        
     def __init__(self, dx1, dy1, dx2, dy2, dx3, dy3):
         _rcurveto.__init__(self,
                            unit.topt(dx1), unit.topt(dy1),
@@ -658,7 +658,7 @@ class rcurveto(_rcurveto):
 ################################################################################
 # path: PS style path 
 ################################################################################
-	
+        
 class path:
     
     """PS style path"""
@@ -685,15 +685,15 @@ class path:
                           pel._bbox(currentpoint, currentsubpath)
            if abbox: abbox = abbox+nbbox
            
-	return abbox
-	
+        return abbox
+        
     def write(self, file):
-	if not (isinstance(self.path[0], _moveto) or
-	        isinstance(self.path[0], _arc) or
-		isinstance(self.path[0], _arcn)):
-	    raise PathException, "first path element must be either moveto, arc, or arcn"
+        if not (isinstance(self.path[0], _moveto) or
+                isinstance(self.path[0], _arc) or
+                isinstance(self.path[0], _arcn)):
+            raise PathException, "first path element must be either moveto, arc, or arcn"
         for pel in self.path:
-	    pel.write(file)
+            pel.write(file)
             file.write("\n")
 
     def append(self, pathel):
@@ -736,9 +736,9 @@ class _rect(path):
    def __init__(self, x, y, width, height):
        path.__init__(self, [ _moveto(x,y), 
                              _rlineto(width,0), 
-			     _rlineto(0,height), 
-			     _rlineto(-width,0),
-			     closepath()] )
+                             _rlineto(0,height), 
+                             _rlineto(-width,0),
+                             closepath()] )
        
 
 class rect(path):
@@ -748,6 +748,6 @@ class rect(path):
    def __init__(self, x, y, width, height):
        path.__init__(self, [ moveto(x,y), 
                              rlineto(width,0), 
-			     rlineto(0,height), 
-			     rlineto(-unit.length(width),0),
-			     closepath()] )
+                             rlineto(0,height), 
+                             rlineto(-unit.length(width),0),
+                             closepath()] )
