@@ -60,6 +60,7 @@ class key:
 
     def paint(self, plotdata):
         "creates the layout of the key"
+        plotdata = [plotdat for plotdat in plotdata if plotdat.title is not None]
         c = canvas.canvas()
         self.dist_pt = unit.topt(unit.length(self.dist_str, default_type="v"))
         self.hdist_pt = unit.topt(unit.length(self.hdist_str, default_type="v"))
@@ -67,14 +68,15 @@ class key:
         self.symbolwidth_pt = unit.topt(unit.length(self.symbolwidth_str, default_type="v"))
         self.symbolheight_pt = unit.topt(unit.length(self.symbolheight_str, default_type="v"))
         self.symbolspace_pt = unit.topt(unit.length(self.symbolspace_str, default_type="v"))
-        titles = []
         for plotdat in plotdata:
-            if plotdat.title is not None:
-                titles.append(c.texrunner.text_pt(0, 0, plotdat.title, self.defaulttextattrs + self.textattrs))
-        box.tile_pt(titles, self.dist_pt, 0, -1)
-        box.linealignequal_pt(titles, self.symbolwidth_pt + self.symbolspace_pt, 1, 0)
-        for plotdat, title in zip(plotdata, titles):
-            plotdat.style.key_pt(c, 0, -0.5 * self.symbolheight_pt + title.center[1],
-                                   self.symbolwidth_pt, self.symbolheight_pt, plotdat)
-            c.insert(title)
+            plotdat.temp_titlebox = c.texrunner.text_pt(0, 0, plotdat.title, self.defaulttextattrs + self.textattrs)
+        box.tile_pt([plotdat.temp_titlebox for plotdat in plotdata], self.dist_pt, 0, -1)
+        box.linealignequal_pt([plotdat.temp_titlebox for plotdat in plotdata], self.symbolwidth_pt + self.symbolspace_pt, 1, 0)
+        for plotdat in plotdata:
+            plotdat.style.key_pt(c, 0, -0.5 * self.symbolheight_pt + plotdat.temp_titlebox.center[1],
+                                 self.symbolwidth_pt, self.symbolheight_pt, plotdat)
+            c.insert(plotdat.temp_titlebox)
+
+        # for plotdat in plotdata:
+        #     del plotdat.temp_titlebox
         return c
