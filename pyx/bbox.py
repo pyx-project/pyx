@@ -86,6 +86,7 @@ class bbox:
                     max(llx, lrx, urx, ulx), max(lly, lry, ury, uly))
 
     def enhance(self, size):
-        """return bbox enhanced in all directions by size pts"""
+        """return bbox enhanced in all directions by size"""
+        size = unit.topt(unit.length(centerradius, default_type="v"))
         return bbox(self.llx-size, self.lly-size, 
                     self.urx+size, self.ury+size)

@@ -705,7 +705,7 @@ class canvas(base.PSCmd):
         except IOError:
             assert 0, "cannot open output file"                 # TODO: Fehlerbehandlung...
 
-        abbox=self.bbox().enhance(1)
+        abbox=self.bbox().enhance("1 t pt")
         ctrafo=None     # global transformation of canvas
 
         if rotated:
