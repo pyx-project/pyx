@@ -20,9 +20,6 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-# TODO: - clipping (especially bounding boxes, which are then limited
-#         by the bounding box of the clipping path)
-
 import string, re, tex, unit, trafo, types
 from math import sqrt
 
@@ -58,9 +55,19 @@ PSProlog = """/rect {
   b4_Inc_state restore
 } bind def"""
 
+# helper routine for bbox manipulations
+
+def _nmin(x, y):
+    """ minimum of two values, where None represents +infinity, not -infinity as
+    in standard min iplementation of python"""
+    if x is None: return y
+    if y is None: return x
+    return min(x,y)
+
 #
 # class representing bounding boxes
 #
+
 
 class bbox:
 
@@ -73,21 +80,21 @@ class bbox:
 	self.ury=ury
     
     def __add__(self, other):
-        ' join to bboxes '
+        ' join two bboxes '
 
-        def nmin(x, y):
-            """ minimum of two values, where None represents +infinity, not -infinity as
-                in standard min iplementation of python"""
-            if x is None: return y
-            if y is None: return x
-            return min(x,y)
 
-        return bbox(nmin(self.llx, other.llx), nmin(self.lly, other.lly),
+        return bbox(_nmin(self.llx, other.llx), _nmin(self.lly, other.lly),
                     max(self.urx, other.urx), max(self.ury, other.ury))
 
-    __radd__=__add__
+#    __radd__=__add__
 
-    def intersect(self, other):
+    def __mul__(self, other):
+        ' intersect two bboxes '
+
+        return bbox(max(self.llx, other.llx), max(self.lly, other.lly),
+                    _nmin(self.urx, other.urx), _nmin(self.ury, other.ury))
+
+    def intersects(self, other):
         ' check, if two bboxes intersect eachother '
         return not (self.llx > other.urx or
                     self.lly > other.ury or
@@ -161,11 +168,11 @@ class epsfile:
 	    
         if self.showbb:
             file.write("newpath\n")
-	    file.write("%f %f moveto\n"  % (mybbox.llx, mybbox.lly))
-	    file.write("%f 0 rlineto\n" % (mybbox.urx - mybbox.llx))
-	    file.write("0 %f rlineto\n" % (mybbox.ury - mybbox.lly))
-	    file.write("%f 0 rlineto\n" % -(mybbox.urx - mybbox.llx))
-	    file.write("closepath\nstroke\n")
+            file.write("%f %f %f %f rect\n" % (mybbox.llx, 
+	                                       mybbox.lly, 
+	                                       mybbox.urx-mybbox.llx,
+					       mybbox.ury-mybbox.lly))
+	    file.write("stroke\n")
 	    
         if self.clip:
             file.write("%f %f %f %f rect\n" % (mybbox.llx, 
@@ -299,7 +306,11 @@ class _stroke(CanvasCmds):
 
 class _fill(CanvasCmds):
     def write(self, canvas, file):
-       file.write("fill")
+        file.write("fill")
+
+class _clip(CanvasCmds):
+    def write(self, canvas, file):
+       file.write("clip")
 
 class _gsave(CanvasCmds):
     def write(self, canvas, file):
@@ -328,10 +339,21 @@ class canvas(CanvasCmds):
 	        self.trafo=arg*self.trafo
             self.set(arg)
 
+        # clipping comes last...
+        # TODO: integrate this better; do we need a class clip?
+
+        self.clip   = kwargs.get("clip", None)
+        if self.clip:
+            self.insert((_newpath(), self.clip, _clip()))     # insert clipping path
+
     def bbox(self, canvas):
         obbox = reduce(lambda x,y, canvas=canvas: x+y.bbox(canvas),
                        self.PSCmds,
                        bbox())
+
+        if self.clip:
+            obbox=obbox*self.clip.bbox(canvas)    # intersect with clipping bounding boxes
+            
         # we have to transform all four corner points of the bbox
 	(llx, lly)=self.trafo.apply((unit.length("%f t pt" % obbox.llx),
                                      unit.length("%f t pt" % obbox.lly)))
@@ -363,6 +385,7 @@ class canvas(CanvasCmds):
         for cmd in self.PSCmds:
             cmd.write(self, file)
             file.write("\n")
+            
 
     def insert(self, cmds, *args):
         if args: 
@@ -503,8 +526,8 @@ if __name__=="__main__":
 
    
     for angle in range(20):
-#       s=c.insert(canvas.canvas(translate(10,10)*rotate(angle))).draw(p, canvas.linestyle.dashed, canvas.linewidth(0.01*angle), grey((20-angle)/20.0))
-       s=c.insert(canvas.canvas(translate(10,10))).draw(p, canvas.linestyle.dashed, canvas.linewidth(0.01*angle), grey((20-angle)/20.0))
+       s=c.insert(canvas.canvas(translate(10,10)*rotate(angle))).draw(p, canvas.linestyle.dashed, canvas.linewidth(0.01*angle), grey((20-angle)/20.0))
+
  
     c.set(linestyle.solid)
     g=GraphXY(c, t, 10, 15, 8, 6, x=LogAxis())
