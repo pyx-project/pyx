@@ -558,7 +558,7 @@ class font:
             raise DVIError("font '%s' not loaded: bad design size" % self.name)
 
         self.scale = 1.0*q/d
-        
+
         # for bookkeeping of used characters
         self.usedchars = [0] * 256
 
@@ -631,7 +631,7 @@ class virtualfont(font):
     def getchar(self, cc):
         """ return dvi chunk corresponding to char code cc """
         return self.vffile.getchar(cc)
-        
+
 
 ##############################################################################
 # DVI file handling
@@ -784,7 +784,7 @@ class dvifile:
             afterpos = list(self.pos)
             afterpos[_POS_H] += dx
             self._push_dvistring(self.activefont.getchar(char), self.activefont.getfonts(), afterpos, self.activefont.scale)
-            
+
         if not inch:
             # XXX: correct !?
             self.flushout()
@@ -839,7 +839,7 @@ class dvifile:
         # the specials may involve some gsave/grestore operations
         # XXX: reset actoutfont only where strictly needed
         self.actoutfont = None
-        
+
         x =  unit.t_m(self.pos[_POS_H] * self.conv * 0.0254 / self.resolution)
         y = -unit.t_m(self.pos[_POS_V] * self.conv * 0.0254 / self.resolution)
         if self.debug:
@@ -1209,7 +1209,7 @@ class dvifile:
         # XXX 
         # XXX do we realy need this method at all?
         # XXX why can't we just return the page on readpage? Isn't this all we need in the end?
-        
+
         state = _READ_NOPAGE
         while state != _READ_DONE:
             if state == _READ_NOPAGE:
