@@ -156,8 +156,6 @@ class decoratedpath(base.PSCmd):
 
     def outputPDF(self, file):
         # draw (stroke and/or fill) the decoratedpath on the canvas
-        # while trying to produce an efficient output, e.g., by
-        # not writing one path two times
 
         def _writestyles(styles, file=file):
             for style in styles:
@@ -367,14 +365,14 @@ def _arrowhead(anormpath, size, angle, constriction):
     return arrow
 
 
-_base = unit.v_pt(4)
+_base = unit.v_pt(6)
 
 class arrow(deco, attr.attr):
 
     """arrow is a decorator which adds an arrow to either side of the path"""
 
     def __init__(self, attrs=[], position=0, size=_base, angle=45, constriction=0.8):
-        self.attrs = attr.mergeattrs([style.linestyle.solid, stroked, filled] + attrs)
+        self.attrs = attr.mergeattrs([style.linestyle.solid, filled] + attrs)
         attr.checkattrs(self.attrs, [deco, style.fillstyle, style.strokestyle])
         self.position = position
         self.size = unit.length(size, default_type="v")
@@ -679,5 +677,3 @@ class curvecorners(deco, attr.attr):
         dp.path = newpath
         dp.strokepath = newpath
         return dp
-
-

@@ -107,6 +107,7 @@ TODO:
   - deco module:
     - wriggle decorator (TODO: documentation)
     - curvecorners decorator (TODO: documentation)
+    - arrow heads are no longer stroked (as suggested by Magnus Lie Hetland)
   - canvas:
     - writeEPSfile deprecates writetofile
     - internally, write methods are renamed in outputPS
