@@ -20,7 +20,8 @@ linestyle_dashdotted = (linecap_round, [0, 3, 3, 3])
 
 class Canvas(Globex):
 
-    ExportMethods = [ "amove", "aline", "rmove", "rline", 
+    ExportMethods = [ "stroke", "newpath", "closepath", 
+    		      "amove", "aline", "rmove", "rline", 
                       "setlinecap", "setlinejoin", "setmiterlimit", "setdash", "setlinestyle" ]
 
     def __init__(self,width,height,basefilename):
@@ -86,13 +87,11 @@ class Canvas(Globex):
         self.PSFile.write("%%EndProlog\n") 
         
 	self.PSCmd("0.2 setlinewidth")
-	self.PSCmd("newpath")
+	self.newpath()
 	self.amove(0,0)
 
     def PSEnd(self):
-    	self.PSCmd("stroke")
-	#self.amove(0,0)
-	#self.PSInsertEPS(self.BaseFilename + ".tex.eps")
+    	self.stroke()
 	self.PSFile.close()
 	
     def PSGetEPSBoundingBox(self, epsname):
@@ -160,6 +159,17 @@ class Canvas(Globex):
         if self.PSPositionCorrect == 0:		# actual PS position doesn't coincide with our x,y
 	    self.PSCmd("%f %f moveto" % self.PScm2po(self.x,self.y))
 	    self.PSPositionCorrect = 1
+
+    def stroke(self):
+    	self.PSCmd("stroke")
+	self.PSPositionCorrect = 0		# in fact, current point is undefined after stroke
+	
+    def newpath(self):
+    	self.PSCmd("newpath")
+	self.PSPositionCorrect = 0		# in fact, current point is undefined after newpath
+	
+    def closepath(self):
+    	self.PSCmd("closepath")
 	    
     def amove(self,x,y):
         isnumber(x)
@@ -213,9 +223,9 @@ class Canvas(Globex):
     	
     	self.PSCmd("[%s] %d setdash" % (patternstring, offset))
 
-    def setlinestyle(self, style):
+    def setlinestyle(self, style, offset=0):
         self.setlinecap(style[0])
-	self.setdash   (style[1])
+	self.setdash   (style[1], offset)
     	
 def canvas(width, height, basefilename):
     DefaultCanvas=Canvas(width, height, basefilename)
@@ -264,8 +274,9 @@ if __name__=="__main__":
     for pos in range(1,21):
         amove(pos,7.5)
         text(".")
-    
-    setlinestyle(linestyle_dashdotted)
+   
+    stroke()
+    setlinestyle(linestyle_dotted)
     amove(5,12)
     text("a b c d e f g h i j k l m n o p q r s t u v w x y z",hsize=2)
     aline(7,12)
@@ -274,6 +285,8 @@ if __name__=="__main__":
     amove(7,10)
     aline(7,14)
 
+    stroke()
+    setlinestyle(linestyle_dashdotted)
     amove(10,12)
     text("a b c d e f g h i j k l m n o p q r s t u v w x y z",hsize=2,valign=bottom)
     aline(12,12)
