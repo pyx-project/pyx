@@ -2,6 +2,41 @@ PyX
 
 - ATT: refactoring of attributes in progress!!!
 
+TODO:
+  - graph module
+    - rect style (and errorbars?) should use clipping (TODO: should they or do the now?)
+    - address datavmin and datavmax
+    - another (the last?!) axis redesign: axispos -> class of its own; remove axis.axiscanvas
+    - do not include unneeded line segments when the axis range is set manually
+    - allow for an iteration of a graph style, when it is used several times
+    - common bboxes for different graphs
+    - automatic datafile key title
+    - exceptions in drawsymbol & friends...
+    - 3d graphs, circular graphs
+    - symbols + lines -> symbollines (??). Symbols should not allow setting lineattrs, and
+      lines not symbolattrs
+    - allow for graph.changesymbol.square(size=0.15) etc.
+    - rect style (and errorbars?) should use clipping
+    - paths are to be drawn instead of inserted
+  - style module:
+    - default patterns
+    - make dash length available
+  - text module:
+    - split into two modules: text and dvi 
+    - SlantFont & Co support
+  - mathtree module:
+     - consider rewrite using the python compiler module
+  - bbox module:
+     - __iadd__ and inplace enlarge, transform,...
+  - deco module:
+     - should decoratedpaths have a canvas attached, instead of subdps?
+  - path module:
+    - reverse needs to be fixed
+    - there should be a path._at, path._begin, path._end
+  - data module:
+    - data.data should add line number like data.datafile
+    - use csv module (new in 2.3)
+
 0.5 (????/??/??):
   - setup.py and distribution:
     - allow customization of the extension modules built (via setup.cfg)
@@ -38,44 +73,29 @@ PyX
       Perez.
   - path module:
     - check for sorting of parameter list passed to path.split method
-  TODO:
-  - graph module
-    - rect style (and errorbars?) should use clipping (TODO: should they or do the now?)
-    - address datavmin and datavmax
-    - another (the last?!) axis redesign: axispos -> class of its own; remove axis.axiscanvas
-    - do not include unneeded line segments when the axis range is set manually
-    - allow for an iteration of a graph style, when it is used several times
-    - common bboxes for different graphs
-    - automatic datafile key title
-    - exceptions in drawsymbol & friends...
-    - 3d graphs, circular graphs
-    - symbols + lines -> symbollines (??). Symbols should not allow setting lineattrs, and
-      lines not symbolattrs
-    - allow for graph.changesymbol.square(size=0.15) etc.
-    - rect style (and errorbars?) should use clipping
-    - paths are to be drawn instead of inserted
-  - canvas module:
-    - default patterns
-    - make dash length available
-    - support relative dash lengths
+  - deco module (NEW): 
+    - contains decoratedpath and decorators from canvas module
+    - all predefined arrows are classes now (like all decorators) and
+      attributes have to be passed explicitely (e.g. earrow.small(attrs=color.rgb.red))
+    - TODO: document me
+  - style module (NEW):
+    - contains all line- and fillstyles which formerly had been defined in the canvas module
+    - dash now supports relative dash lengths (as suggested by Otto Tronarp)
+    - TODO: document me
+  - mathtree module:
+    - fix incorrect handling of - (for instance -x**2 was not negative)
+
+  TODO for PyX 0.5 (please feel free to move items up to the general TODO list)
   - path module:
-    - reverse needs to be fixed
     - path.split takes several points (as *args) while lentopar takes a list of points
-    - there should be a path._at, path._begin, path._end
     - path.tangent is missing in the documentation
   - text module:
     - dvifile class:
        - if possible remove readfile, write and prolog methods and use readpage instead
-    - SlantFont & Co support
-  - data module:
-    - data.data should add line number like data.datafile
-    - use csv module (new in 2.3)
-  - bbox module:
-     - __iadd__ and inplace enlarge, transform,...
-  - mathtree module:
-     - bug: -x**2 should be negative
   - color module:
      - should colors and palettes exclude each other?
+  - documentation!!!
+  - check FAQ
 
 0.4.1 (2003/09/17):
   - canvas module:
