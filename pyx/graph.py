@@ -1549,14 +1549,14 @@ class graphxy(canvas.canvas):
         self.haslayout = 0
 
     def bbox(self):
-        self.drawall()
+        self.finish()
         return bbox.bbox(self.xpos - self.yaxisextents[0],
                          self.ypos - self.xaxisextents[0],
                          self.xpos + self.width + self.yaxisextents[1],
                          self.ypos + self.height + self.xaxisextents[1])
 
     def write(self, file):
-        self.drawall()
+        self.finish()
         canvas.canvas.write(self, file)
 
 
@@ -1600,7 +1600,7 @@ class changeattr:
 
     def iterate(self):
         self.counter += 1
-        return changeattrref(self, self.counter - 1)
+        return refattr(self, self.counter - 1)
 
 
 # helper routines for a using attrs
@@ -1608,7 +1608,7 @@ class changeattr:
 def _getattr(attr):
     """get attr out of a attr/refattr"""
     if isinstance(attr, refattr):
-        return attr.attr()
+        return attr.getattr()
     return attr
 
 
@@ -1618,7 +1618,7 @@ def _getattrs(attrs):
         result = []
         for attr in _ensuresequence(attrs):
             if isinstance(attr, refattr):
-                result.append(attr.attr())
+                result.append(attr.getattr())
             else:
                 result.append(attr)
         return result
@@ -1626,7 +1626,7 @@ def _getattrs(attrs):
 
 def _iterateattr(attr):
     """perform next to a attr/changeattr"""
-    if isinstance(attr, refattr):
+    if isinstance(attr, changeattr):
         return attr.iterate()
     return attr
 
@@ -1636,7 +1636,7 @@ def _iterateattrs(attrs):
     if attrs is not None:
         result = []
         for attr in _ensuresequence(attrs):
-            if isinstance(attr, refattr):
+            if isinstance(attr, changeattr):
                 result.append(attr.iterate())
             else:
                 result.append(attr)
@@ -1649,9 +1649,9 @@ class changecolor(changeattr):
         changeattr.__init__(self)
         self.gradient = gradient
 
-    def attr(self, index, length):
-        if length != 1:
-            return self.gradient.getcolor(index/float(length-1))
+    def attr(self, index):
+        if self.counter != 1:
+            return self.gradient.getcolor(index/float(self.counter-1))
         else:
             return self.gradient.getcolor(0)
 
@@ -1751,7 +1751,7 @@ class changesequence(changeattr):
             sequence = self.defaultsequence
         self.sequence = sequence
 
-    def _attr(self, index, length):
+    def attr(self, index):
         return self.sequence[index % len(self.sequence)]
 
 
