@@ -1,1 +1,1 @@
-*.aux *.log *.dvi *.toc *.size *.eps *.ps *.pdf
+examples.aux examples.log examples.dvi examples.toc *.size *.eps examples.ps examples.pdf examples.tex
