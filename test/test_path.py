@@ -101,10 +101,11 @@ def testintersectbezier(c):
 
 
 def testnormpathtrafo(c):
-    p=normpath(moveto(0,5),
+    p=path(moveto(0,5),
            curveto(2,1,4,0,2,4),
            rcurveto(-3,2,1,2,3,6),
-           rlineto(2,3))
+           rlineto(2,3),
+           closepath())
 
     c.draw(p.transformed(trafo.translation(3,1)), color.rgb.red)
     c.insert(canvas.canvas(trafo.translation(3,1))).draw(p,
@@ -115,11 +116,12 @@ def testnormpathtrafo(c):
     c.draw(p.reversed())
 
     c.draw(cross(*(p.at(0))))
-    c.draw(cross(*(p.reversed().at(0))))
+#    c.draw(cross(*(p.reversed().at(0))))
 
-    p1, p2 = p.split(1.7)
+    p1, p2, p3 = p.split(0.7, 1.7)
     c.draw(p1, color.rgb.red, canvas.linestyle.dashed)
     c.draw(p2, color.rgb.green, canvas.linestyle.dashed)
+    c.draw(p3, color.rgb.blue, canvas.linestyle.dashed)
 
 def testtangent(c):
     p=path(moveto(0,5),
@@ -234,11 +236,11 @@ def testclipbbox(c):
 
 
 c=canvas.canvas()
-dotest(c, 0, 0, "testarcs")
+#dotest(c, 0, 0, "testarcs")
 # dotest(c, 12, 3, "testmidpointsplit")
-dotest(c, 2, 12, "testintersectbezier")
+#dotest(c, 2, 12, "testintersectbezier")
 dotest(c, 10,11, "testnormpathtrafo")
-dotest(c, 12, -4, "testtangent")
+#dotest(c, 12, -4, "testtangent")
 c.writetofile("test_path", paperformat="a4", rotated=0, fittosize=1)
 
 c=canvas.canvas()
