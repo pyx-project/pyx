@@ -37,6 +37,8 @@ PyX
   - bbox module:
     - new methods height and width
     - TODO: document me!
+  - epsfile module:
+    - TODO: epsfile(x, y, filename, **additional_args)
   - data module:
     - removed additional column support in addcolumn; removed _addcolumn (done except for the documentation)
     - TODO: line reduction for datafile like the every parameter in gnuplot
