@@ -687,19 +687,19 @@ class _alignbox:
         return self._linealignvector(unit.topt(a), dx, dy)
 
     def _circlealign(self, *args):
-        self.transform(trafo._translate(*self._circlealignvector(*args)))
+        self.transform(trafo._translation(*self._circlealignvector(*args)))
         return self
 
     def _linealign(self, *args):
-        self.transform(trafo._translate(*self._linealignvector(*args)))
+        self.transform(trafo._translation(*self._linealignvector(*args)))
         return self
 
     def circlealign(self, *args):
-        self.transform(trafo._translate(*self.circlealignvector(*args)))
+        self.transform(trafo._translation(*self.circlealignvector(*args)))
         return self
 
     def linealign(self, *args):
-        self.transform(trafo._translate(*self.linealignvector(*args)))
+        self.transform(trafo._translation(*self.linealignvector(*args)))
         return self
 
     def extent(self, dx, dy):
@@ -764,7 +764,7 @@ class textbox(_rectbox, attrlist.attrlist):
                 xorigin = self.wd
         _rectbox.__init__(self, 0, -self.dp, self.wd, self.ht, xorigin, self.shiftht)
         if self.direction is not None:
-            self.transform(trafo._rotate(self.direction.value))
+            self.transform(trafo._rotation(self.direction.value))
 
     def transform(self, trafo):
         _rectbox.transform(self, trafo)

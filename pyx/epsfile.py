@@ -95,10 +95,10 @@ class epsfile(base.PSCmd):
 
         file.write("BeginEPSF\n")
         
-        trafo._translate(self.x, self.y).write(file)
+        trafo._translation(self.x, self.y).write(file)
         
         if self.translatebb:
-            trafo._translate(-self.mybbox.llx, -self.mybbox.lly).write(file)
+            trafo._translation(-self.mybbox.llx, -self.mybbox.lly).write(file)
 
         bbrect = path._rect(self.mybbox.llx,
                             self.mybbox.lly, 
