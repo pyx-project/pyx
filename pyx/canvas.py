@@ -102,6 +102,9 @@ class fontdefinition(prologitem):
                 file.write(" %d" % i)
         file.write("\n")
         pfbname = pykpathsea.find_file("%s.pfb" % self.name, pykpathsea.kpse_type1_format)
+        if pfbname is None:
+            # XXX Exception
+            raise "cannot find type 1 font %s" % self.name
         t1strip.t1strip(file, pfbname, self.usedchars)
         file.write("%%EndFont\n")
 

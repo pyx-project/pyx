@@ -305,8 +305,10 @@ class TFMFile:
 class Font:
     def __init__(self, name, c, q, d, tfmconv, debug=0):
         self.name = name
-        self.tfmfile = TFMFile(pykpathsea.find_file("%s.tfm" % self.name, 
-                                                    pykpathsea.kpse_tfm_format), debug)
+        self.path = pykpathsea.find_file("%s.tfm" % self.name, pykpathsea.kpse_tfm_format)
+        if self.path is None:
+            raise TFMError("cannot find %f.tfm" % self.name)
+        self.tfmfile = TFMFile(self.path, debug)
 
         if self.tfmfile.checksum!=c:
             raise DVIError("check sums do not agree: %d vs. %d" %
@@ -317,11 +319,8 @@ class Font:
         if abs(self.tfmdesignsize - d) > 2:
             raise DVIError("design sizes do not agree: %d vs. %d" %
                            (self.tfmdesignsize, d))
-
-
         if q < 0 or q > 134217728:
             raise DVIError("font '%s' not loaded: bad scale" % self.name)
-
         if d < 0 or d > 134217728:
             raise DVIError("font '%s' not loaded: bad design size" % self.name)
 
