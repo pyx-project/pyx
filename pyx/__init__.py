@@ -29,6 +29,6 @@ are build out of these primitives.
 
 """
 
-__version__ = "0.1+"
+__version__ = "0.2"
 
 __all__ = ["canvas", "color", "graph", "path", "tex", "unit", "graph", "trafo", "epsfile", "data"]
