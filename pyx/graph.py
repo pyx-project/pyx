@@ -151,11 +151,10 @@ class DataFile:
                 else:
                     Row = Line.split()
                 if self.Columns < len(Row):
-                    List = []
-                    for i in range(self.Rows):
-                        List.append(None)
-                    print len(List)
                     for i in range(self.Columns, len(Row)):
+                        List = []
+                        for i in range(self.Rows):
+                            List.append(None)
                         self.data.append(List)
                     self.Columns = len(Row)
                 for i in range(len(Row)):
