@@ -1,6 +1,7 @@
 Attributes. Design summary.
 ===========================
 
+
 What are attributes?
 --------------------
 
@@ -54,7 +55,7 @@ Operations usually allow for certain attibute categories only. For
 example when stroking a path, text attributes are not allowed, while
 stroke attributes and decoraters are. Some attributes might belong to
 several attribute categories like colors, which are both, stroke and
-fill attributes.
+fill attributes. This is described by multiple inheritance.
 
 
 Attribute instances as member variables
@@ -76,8 +77,8 @@ Thus there are different possibilities to get a linewidth: by
 linewidth("0.25 mm") and by linewidth.normal (and the like).
 
 
-Specializing instances
-----------------------
+Specializing attribute instances
+--------------------------------
 
 There might be more complicated attributes, where it is more
 questionable, how attribute instances should be used. An easy, yet not
@@ -101,30 +102,24 @@ constructor (__init__ method). It might be consistent to provide the
 specialization possibility for all attribute instances.
 
 
-Attribute lists
----------------
+Merging attribute lists
+-----------------------
 
-XXX I cannot decode the next sentence
+Attributes allow for exclusion, overwriting each other and ordering.
+This process is called merging of attributes and it is performed by
+the function merge from attr.py.
 
-Sometimes it is needed to collect attributes in lists to provide them
-to a single keyword argument. At the same time we want to be able to
-complete the attribute lists without removing the already defined
-(default?) entries. This can be done via the merge function from the
-attr module. The prototype of this technique looks like:
+The merging process might take into account some default attributes.
+They should be added in front of the list of attributes.
 
-    def f(kwarg=[]):
-        use_attr_list = attr.merge([<default arguments>] + kwarg)
+    Example:
 
-There is also the possibility to clear attributes by clear instances.
-See attr.py for details.
+    use_attr_list = attr.merge(default_attr_list + orginial_attr_list)
 
-
-Attribute exclusion, overwriting and ordering
----------------------------------------------
-
-Attributes can force some exclusion, overwriting and ordering to each
-other. Clearing instances mentioned above are just a special case.
-Further information is provided in attr.py.
+There are special clearing attributes, which overwrite other
+attributes and do not add themself when merging an attribute list.
+By that it is possible to certain or all default attributes. There are
+prototypes for clearing attributes defined in attr.py.
 
 
 Comments.
