@@ -345,8 +345,7 @@ class TFMFile:
 class Font:
     def __init__(self, name, c, q, d, tfmconv):
         self.name = name
-        path = os.popen("kpsewhich %s.tfm" % self.name, "r").readline()[:-1]
-        self.tfmfile = TFMFile(path)
+        self.tfmfile = TFMFile(pykpathsea.find_file("%s.tfm" % self.name))
 
         if self.tfmfile.checksum!=c:
             raise DVIError("check sums do not agree: %d vs. %d" %
@@ -415,10 +414,9 @@ class Font:
     def markcharused(self, charcode):
         self.usedchars[charcode] = 1
 
-    def write(self, file):
-        """ write used glyps of font into file """
-        pfbname = pykpathsea.find_file("%s.pfb" % self.name)
-        t1strip.t1strip(file, pfbname, self.usedchars)
+    def mergeusedchars(self, otherfont):
+        for i in range(len(self.usedchars)):
+            self.usedchars[i] = self.usedchars[i] or otherfont.usedchars[i]
 
 
 class DVIFile:
@@ -694,11 +692,21 @@ class DVIFile:
 
     def writeheader(self, file):
         """write PostScript font header"""
+
+        # generate list of used fonts
+	usedfonts = {}
         for font in self.fonts:
-            if font:
-                file.write("%%%%BeginFont: %s\n" % font.name.upper())
-                font.write(file)
-                file.write("%%EndFont\n")
+	    if font: 
+	        if font.name not in usedfonts:
+	            usedfonts[font.name] = font
+	        else:
+	            usedfonts[font.name].mergeusedchars(font)
+
+	for font in usedfonts.values():
+            file.write("%%%%BeginFont: %s\n" % font.name.upper())
+            pfbname = pykpathsea.find_file("%s.pfb" % font.name)
+            t1strip.t1strip(file, pfbname, font.usedchars)
+            file.write("%%EndFont\n")
 
     FontSizePattern= re.compile(r"([0-9]+)$")
 
