@@ -401,6 +401,22 @@ _ReEncodeFont = prolog.definition("ReEncodeFont", """{
 # PostScript font selection and output primitives
 #
 
+class _begintextobject(base.PSOp):
+    def outputPS(self, file):
+        pass
+    
+    def outputPDF(self, file):
+        file.write("BT\n")
+
+
+class _endtextobject(base.PSOp):
+    def outputPS(self, file):
+        pass
+    
+    def outputPDF(self, file):
+        file.write("ET\n")
+
+
 class _selectfont(base.PSOp):
     def __init__(self, name, size):
         self.name = name
@@ -408,6 +424,9 @@ class _selectfont(base.PSOp):
 
     def outputPS(self, file):
         file.write("/%s %f selectfont\n" % (self.name, self.size))
+
+    def outputPDF(self, file):
+        file.write("/%s %f Tf\n" % (self.name, self.size))
 
 
 class selectfont(_selectfont):
@@ -446,7 +465,7 @@ class _show(base.PSCmd):
         self.chars.append(char)
 
     def bbox(self):
-        return bbox._bbox(self.x, self.y-self.depth, self.x+self.width, self.y+self.height)
+        return bbox.bbox_pt(self.x, self.y-self.depth, self.x+self.width, self.y+self.height)
 
     def outputPS(self, file):
         outstring = ""
@@ -456,7 +475,18 @@ class _show(base.PSCmd):
             else:
                 ascii = "\\%03o" % char
             outstring += ascii
-        file.write("%f %f moveto (%s) show\n" % (self.x, self.y, outstring))
+        file.write("%g %g moveto (%s) show\n" % (self.x, self.y, outstring))
+
+    def outputPDF(self, file):
+        outstring = ""
+        for char in self.chars:
+            if char > 32 and char < 127 and chr(char) not in "()[]<>\\":
+                ascii = "%s" % chr(char)
+            else:
+                ascii = "\\%03o" % char
+            outstring += ascii
+        # file.write("%f %f Td (%s) Tj\n" % (self.x, self.y, outstring))
+        file.write("1 0 0 1 %f %f Tm (%s) Tj\n" % (self.x, self.y, outstring))
 
 
 class fontmapping:
@@ -765,9 +795,10 @@ class dvifile:
         # pointer to currently active page
         self.actpage = None
 
-        # currently active output: show instance being filled and actoutfont
+        # currently active output: show instance currently used and
+        # the corresponding type 1 font
         self.activeshow = None
-        self.actoutfont = None
+        self.activetype1font = None
 
         # stack for self.file, self.fonts and self.stack, needed for VF inclusion
         self.statestack = []
@@ -789,8 +820,24 @@ class dvifile:
             self.actpage.insert(self.activeshow)
             self.activeshow = None
 
-    def putrule(self, height, width, advancepos=1):
+    def begintext(self):
+        """ activate the font if is not yet active, closing a currently active
+        text object and flushing the output"""
+        if isinstance(self.activefont, type1font):
+            self.endtext()
+            if self.activetype1font != self.activefont and self.activefont:
+                self.actpage.insert(_begintextobject())
+                self.actpage.insert(selectfont(self.activefont))
+                self.activetype1font = self.activefont
+
+    def endtext(self):
         self.flushout()
+        if self.activetype1font:
+            self.actpage.insert(_endtextobject())
+            self.activetype1font = None
+
+    def putrule(self, height, width, advancepos=1):
+        self.endtext()
         x1 =  self.pos[_POS_H] * self.conv
         y1 = -self.pos[_POS_V] * self.conv
         w = width * self.conv
@@ -857,14 +904,7 @@ class dvifile:
                     fontnum, self.fonts[fontnum].name))
 
         self.activefont = self.fonts[fontnum]
-
-        # if the new font is a type 1 font and if it is not already the 
-        # font being currently used for the output, we have to flush the
-        # output and insert a selectfont statement in the PS code
-        if isinstance(self.activefont, type1font) and self.actoutfont!=self.activefont:
-            self.flushout()
-            self.actpage.insert(selectfont(self.activefont))
-            self.actoutfont = self.activefont
+        self.begintext()
 
     def definefont(self, cmdnr, num, c, q, d, fontname):
         # cmdnr: type of fontdef command (only used for debugging output)
@@ -892,13 +932,6 @@ class dvifile:
 #                print " (this font is magnified %d%%)" % round(scale/10)
 
     def special(self, s):
-        self.flushout()
-
-        # it is in general not safe to continue using the currently active font because
-        # the specials may involve some gsave/grestore operations
-        # XXX: reset actoutfont only where strictly needed
-        self.actoutfont = None
-
         x =  self.pos[_POS_H] * self.conv
         y = -self.pos[_POS_V] * self.conv
         if self.debug:
@@ -909,6 +942,11 @@ class dvifile:
                 return
             else:
                 raise RuntimeError("the special '%s' cannot be handled by PyX, aborting" % s)
+
+        # it is in general not safe to continue using the currently active font because
+        # the specials may involve some gsave/grestore operations
+        self.endtext()
+
         command, args = s[4:].split()[0], s[4:].split()[1:]
         if command=="color_begin":
             if args[0]=="cmyk":
@@ -952,7 +990,7 @@ class dvifile:
             # construct kwargs for epsfile constructor
             epskwargs = {}
             epskwargs["filename"] = argdict["file"]
-            epskwargs["bbox"] = bbox._bbox(float(argdict["llx"]), float(argdict["lly"]),
+            epskwargs["bbox"] = bbox.bbox_pt(float(argdict["llx"]), float(argdict["lly"]),
                                            float(argdict["urx"]), float(argdict["ury"]))
             if argdict.has_key("width"):
                 epskwargs["width"] = float(argdict["width"]) * unit.t_pt
@@ -972,6 +1010,7 @@ class dvifile:
             self.actpage.markers[args[0]] = x * unit.t_pt, y * unit.t_pt
         else:
             raise RuntimeError("unknown PyX special '%s', aborting" % command)
+        self.begintext()
 
     # routines for pushing and popping different dvi chunks on the reader
 
@@ -1070,7 +1109,7 @@ class dvifile:
             if cmd == _DVI_NOP:
                 pass
             elif cmd == _DVI_BOP:
-                self.flushout()
+                # self.endtext()
                 ispageid = [self.file.readuint32() for i in range(10)]
                 #if ispageid[:3] != [ord("P"), ord("y"), ord("X")] or ispageid[4:] != [0, 0, 0, 0, 0, 0]:
                 if pageid is not None and ispageid != pageid:
@@ -1089,7 +1128,7 @@ class dvifile:
         self.actpage = actpage # XXX should be removed ...
         self.actpage.markers = {}
         self.pos = [0, 0, 0, 0, 0, 0]
-        self.actoutfont = None
+        self.activetype1font = None
 
         # Since we do not know which dvi pages the actual PS file contains later on,
         # we have to keep track of used char informations separately for each dvi page.
@@ -1122,7 +1161,7 @@ class dvifile:
             elif cmd == _DVI_PUTRULE:
                 self.putrule(afile.readint32(), afile.readint32(), 0)
             elif cmd == _DVI_EOP:
-                self.flushout()
+                self.endtext()
                 if self.debug:
                     print "%d: eop" % self.filepos
                     print

@@ -649,6 +649,10 @@ class textbox(box.rect, canvas._canvas):
         self.ensuredvicanvas()
         canvas._canvas.outputPS(self, file)
 
+    def outputPDF(self, file):
+        self.ensuredvicanvas()
+        canvas._canvas.outputPDF(self, file)
+
 
 def _cleantmp(texrunner):
     """get rid of temporary files

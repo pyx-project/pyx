@@ -82,10 +82,10 @@ class fontdefinition(prologitem):
 
     """ PostScript font definition included in the prolog """
 
-    def __init__(self, name, filename, encfilename, usedchars):
+    def __init__(self, fontname, filename, encfilename, usedchars):
         """ include type 1 font defined by the following parameters
 
-        - name:        PostScript FontName of font
+        - fontname:    PostScript FontName of font
         - filename:    name (without path) of file containing the font definition
         - encfilename: name (without path) of file containing used encoding of font
                        or None (if no encoding file used)
@@ -95,7 +95,7 @@ class fontdefinition(prologitem):
 
         # Note that here we only need the encoding for selecting the used glyphs!
 
-        self.name = name
+        self.fontname = fontname
         self.filename = filename
         self.encfilename = encfilename
         self.usedchars = usedchars
@@ -103,7 +103,7 @@ class fontdefinition(prologitem):
     def merge(self, other):
         if not isinstance(other, fontdefinition):
             return other
-        if self.name==other.name and self.encfilename==other.encfilename:
+        if self.fontname==other.fontname and self.encfilename==other.encfilename:
             for i in range(len(self.usedchars)):
                 self.usedchars[i] = self.usedchars[i] or other.usedchars[i]
             return None
@@ -112,7 +112,7 @@ class fontdefinition(prologitem):
 
     def outputPS(self, file):
         if self.filename:
-            file.write("%%%%BeginFont: %s\n" % self.name)
+            file.write("%%%%BeginFont: %s\n" % self.fontname)
             file.write("%Included char codes:")
             for i in range(len(self.usedchars)):
                 if self.usedchars[i]:
