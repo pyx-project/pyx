@@ -538,53 +538,99 @@ class momrate:
 #    print
 
 
+################################################################################
+# box alignment, connections, distances ...
+# (we may create a box drawing package and move all this stuff there)
+################################################################################
 
+class rectbox(path.path):
+
+    def __init__(self, x1, y1, x2, y2, x0=0, y0=0, radius=unit.length(0.1)):
+        self.x0, self.y0, self.radius = x0, y0, radius
+        if x1 < x2:
+            self.llx, self.urx = x1, x2
+        else:
+            self.llx, self.urx = x2, x1
+        if y1 < y2:
+            self.lly, self.ury = y1, y2
+        else:
+            self.lly, self.ury = y2, y1
+        path.path.__init__(self, path.moveto(self.llx, self.lly),
+                                 path.lineto(self.llx, self.ury),
+                                 path.lineto(self.urx, self.ury),
+                                 path.lineto(self.urx, self.lly),
+                                 path.closepath(),
+                                 path.moveto(self.x0 + self.radius, self.y0),
+                                 path.arc(self.x0, self.y0, self.radius, 0, 360))
+
+    def translatetodistance(self, rx, ry):
+        mx, my = self.x0, self.y0
+        if rx > 0:
+            ex = self.llx
+        else:
+            ex = self.urx
+        if ry > 0:
+            ey = self.lly
+        else:
+            ey = self.ury
+        p = 2 * ((ex-mx)*rx + (ey-my)*ry) / (rx*rx + ry*ry)
+        q = ((ex-mx)*(ex-mx) + (ey-my)*(ey-my) - rx*rx - ry*ry) / (rx*rx + ry*ry)
+        a = - p / 2 + math.sqrt(p*p/4 - q) # TODO: cases, where no solution exists
+        if (a*rx - mx + ex) * rx < 1e-10:
+            if ry > 0:
+                a += (math.sqrt(rx*rx+ry*ry) - (a*ry - my))/ry
+            else:
+                a += (-math.sqrt(rx*rx+ry*ry) - (a*ry - my) - self.ury+self.lly)/ry
+        elif (a*ry - my + ey) * ry < 1e-10:
+            if rx > 0:
+                a += (math.sqrt(rx*rx+ry*ry) - (a*rx - mx))/rx
+            else:
+                a += (-math.sqrt(rx*rx+ry*ry) - (a*rx - mx) - self.urx+self.llx)/rx
+        vx = a*rx - mx
+        vy = a*ry - my
+        return vx, vy
+
+import trafo
+if __name__=="__main__": 
+    c=canvas.canvas()
+    b=rectbox(0, 0, 5, 3, 3, 1)
+    r = 3
+    c.draw(path.path(path.arc(0, 0, r, 0, 360)))
+    phi = 0
+    while phi < 2 * math.pi - 1e-10:
+      translate = b.translatetodistance(r * math.cos(phi), r * math.sin(phi))
+      c.draw(b.bpath().transform(trafo.translate(*translate)))
+      c.draw(path.line(0, 0, b.x0 + translate[0], b.y0 + translate[1]))
+      phi += math.pi / 20
+    c.writetofile("boxtest")
 
 ################################################################################
-# painter
+# axis painter
 ################################################################################
 
-class tickpainter:
+class axispainter:
 
-    def __init__(self, value, factor = goldenrule, drawgrid = 0, gridstyles = canvas.linestyle.dotted):
-        self.value = value
-        self.factor = factor
+    def __init__(self, innerticklength="0.25 cm",
+                       outerticklength="0 cm",
+                       tickstyles=(),
+                       subticklengthfactor=1/goldenrule,
+                       drawgrid=0,
+                       gridstyles=canvas.linestyle.dotted):
+        self.innerticklength = unit.topt(unit.length(innerticklength, default_type="v"))
+        self.outerticklength = unit.topt(unit.length(outerticklength, default_type="v"))
+        self.subticklengthfactor = subticklengthfactor
         self.drawgrid = drawgrid
+        if type(tickstyles) not in (types.TupleType, types.ListType):
+            self.tickstyles = (tickstyles, )
+        else:
+            self.tickstyles = tickstyles
         if type(gridstyles) not in (types.TupleType, types.ListType):
             self.gridstyles = (gridstyles, )
         else:
             self.gridstyles = gridstyles
 
-    def length(self, power):
-        return pow(self.factor, power) * unit.topt(self.value)
-
-    def paint(self, graph, x, y, dx, dy, tick, gridpath):
-        graph.draw(path._line(x, y, x + dx * self.length(-tick.ticklevel), y + dy * self.length(-tick.ticklevel)))
-        if self.drawgrid:
-            graph.draw(gridpath, *self.gridstyles)
-
-_base=0.2
-
-tickpainter.SHORT  = tickpainter("%f v cm" % (_base/math.sqrt(64)))
-tickpainter.SHORt  = tickpainter("%f v cm" % (_base/math.sqrt(32)))
-tickpainter.SHOrt  = tickpainter("%f v cm" % (_base/math.sqrt(16)))
-tickpainter.SHort  = tickpainter("%f v cm" % (_base/math.sqrt(8)))
-tickpainter.Short  = tickpainter("%f v cm" % (_base/math.sqrt(4)))
-tickpainter.short  = tickpainter("%f v cm" % (_base/math.sqrt(2)))
-tickpainter.normal = tickpainter("%f v cm" % _base)
-tickpainter.long   = tickpainter("%f v cm" % (_base*math.sqrt(2)))
-tickpainter.Long   = tickpainter("%f v cm" % (_base*math.sqrt(4)))
-tickpainter.LOng   = tickpainter("%f v cm" % (_base*math.sqrt(8)))
-tickpainter.LONg   = tickpainter("%f v cm" % (_base*math.sqrt(16)))
-tickpainter.LONG   = tickpainter("%f v cm" % (_base*math.sqrt(32)))
-
-
-class labelpainter:
-
-    def __init__(self):
-        pass
-
     def gcd(self, m, n):
+        # calculate greates common divisor
         if m < n:
             m, n = n, m
         while n > 0:
@@ -599,21 +645,46 @@ class labelpainter:
         rest = m % n
         if rest:
             frac += "."
+        oldrest = []
         while (rest):
+            if rest in oldrest:
+                periodstart = len(frac) - (len(oldrest) - oldrest.index(rest))
+                frac = frac[:periodstart] + r"\overline{" + frac[periodstart:] + "}"
+                break
+            oldrest += [rest]
             rest *= 10
             frac += str(rest / n)
             rest = rest % n
         return frac
 
-    def paint(self, graph, x, y, dx, dy, tick):
-        graph.tex._text(x - 10 * dx, y - 10 * dy, self.decimalfrac(tick.enum, tick.denom))
+    def rationalfrac(self, m, n):
+        # XXX ensure integer division!
+        gcd = self.gcd(m, n)
+        m, n = int(m / gcd), int(n / gcd)
+        if n != 1:
+            frac = "{{%s}\over{%s}}" % (m, n)
+        else:
+            frac = str(m)
+        return frac
 
+    def paint(self, graph, axis):
+        for tick in axis.part:
+            virtual = axis.convert(float(tick))
+            x, y = axis.tickpoint(axis, virtual)
+            dx, dy = axis.tickdirection(axis, virtual)
+            if tick.ticklevel is not None:
+                if self.drawgrid:
+                    gridpath = axis.gridpath(axis, virtual)
+                    graph.draw(gridpath, *self.gridstyles)
+                factor = math.pow(self.subticklengthfactor, tick.ticklevel)
+                x1 = x - dx * self.innerticklength * factor
+                y1 = y - dy * self.innerticklength * factor
+                x2 = x + dx * self.outerticklength * factor
+                y2 = y + dy * self.outerticklength * factor
+                graph.draw(path._line(x1, y1, x2, y2), *self.tickstyles)
+            if tick.labellevel is not None:
+                graph.tex._text(x + 10 * dx, y + 10 * dy, self.decimalfrac(tick.enum, tick.denom), tex.style.math)
 
-labelpainter.normal = labelpainter()
-
-
-#print labelpainter.normal.decimalfrac(32, 33)
-#assert 0
 
 ################################################################################
 # axes
@@ -621,7 +692,7 @@ labelpainter.normal = labelpainter()
 
 class _axis:
 
-    def __init__(self, min=None, max=None, reverse=0, title=None, titleattr=None, tickpainter = tickpainter.normal, labelpainter = labelpainter.normal):
+    def __init__(self, min=None, max=None, reverse=0, title=None, titleattr=None, painter = axispainter()):
         self.fixmin = min is not None
         self.fixmax = max is not None
         self.min = min
@@ -629,8 +700,7 @@ class _axis:
         self.reverse = reverse
         self.title = title
         self.titleattr = titleattr
-        self.tickpainter = tickpainter
-        self.labelpainter = labelpainter
+        self.painter = painter
         self.setrange()
 
     def setrange(self, min=None, max=None):
@@ -644,12 +714,12 @@ class _axis:
             else:
                 self.setbasepts(((self.min, 0), (self.max, 1)))
 
-    def saverange(self):
-        return (self.min, self.max)
-
-    def restorerange(self, savedrange):
-        self.min, self.max = savedrange
-        self.setrange()
+#    def saverange(self):
+#        return (self.min, self.max)
+#
+#    def restorerange(self, savedrange):
+#        self.min, self.max = savedrange
+#        self.setrange()
 
 
 class linaxis(_axis, _linmap):
@@ -752,24 +822,23 @@ class graphxy(canvas.canvas):
         for key, axis in self.axes.items():
             axis.parts = axis.part.getparts(axis.min, axis.max) # TODO: make use of stretch
             if len(axis.parts) > 1:
-                axis.bestnum = 0
+                axis.partnum = 0
                 axis.rates = []
                 bestrate = None
                 for i in range(len(axis.parts)):
                     rate = axis.rate.getrate(axis.parts[i], 1) # TODO: make use of stretch
                     axis.rates.append(rate)
                     if (bestrate is None) or ((rate is not None) and (bestrate > rate)):
-                        axis.bestnum = i
+                        axis.partnum = i
                         bestrate = rate
             else:
                 axis.rates = [0, ]
-                axis.bestnum = 0
+                axis.usenum = 0
 
-            # axis.savedrange = axis.saverange()
             # TODO: Additional ratings (spacing of text etc.)
-            axis.bestpart = axis.parts[axis.bestnum]
-            axis.setrange(min=float(axis.bestpart[0]),
-                          max=float(axis.bestpart[-1]))
+            axis.part = axis.parts[axis.partnum]
+            axis.setrange(min=float(axis.part[0]),
+                          max=float(axis.part[-1]))
 
         self.xmap = _linmap().setbasepts(((0, self.xpos), (1, self.xpos + self.width)))
         self.ymap = _linmap().setbasepts(((0, self.ypos), (1, self.ypos + self.height)))
@@ -784,28 +853,47 @@ class graphxy(canvas.canvas):
                              self.ymap.convert(1) - self.ymap.convert(0)))
         self._drawstate = self.drawaxes
 
+    def xtickpoint(self, axis, virtual):
+        return (self.xmap.convert(virtual), axis.yaxispos)
+
+    def ytickpoint(self, axis, virtual):
+        return (axis.xaxispos, self.ymap.convert(virtual))
+
+    def tickdirection(self, axis, virtual):
+        return axis.fixtickdirection
+
+    def xgridpath(self, axis, virtual):
+        return path._line(self.xmap.convert(virtual), self.ymap.convert(0), self.xmap.convert(virtual), self.ymap.convert(1))
+    def ygridpath(self, axis, virtual):
+        return path._line(self.xmap.convert(0), self.ymap.convert(virtual), self.xmap.convert(1), self.ymap.convert(virtual))
+
+    def keynum(self, key):
+        try:
+            while key[0] in string.letters:
+                key = key[1:]
+            return int(key)
+        except IndexError:
+            return 1
+
     def drawaxes(self):
         if self._drawstate != self.drawaxes:
             raise PyxGraphDrawstateError
         for key, axis in self.axes.items():
+            num = self.keynum(key)
             if _XPattern.match(key):
-                for tick in axis.bestpart:
-                    x = self.xmap.convert(axis.convert(float(tick)))
-                    if tick.ticklevel is not None:
-                        axis.tickpainter.paint(self, x, self.ymap.convert(0), 0, 1, tick,
-                                               path._line(x, self.ymap.convert(0), x, self.ymap.convert(1)))
-                    if tick.labellevel is not None:
-                        axis.labelpainter.paint(self, x, self.ymap.convert(0), 0, 1, tick)
+                 axis.yaxispos = self.ymap.convert(1 - num % 2)
+                 axis.tickpoint = self.xtickpoint
+                 axis.fixtickdirection = (0, 1 - 2 * (num % 2))
+                 axis.gridpath = self.xgridpath
             elif _YPattern.match(key):
-                for tick in axis.bestpart:
-                    y = self.ymap.convert(axis.convert(float(tick)))
-                    if tick.ticklevel is not None:
-                        axis.tickpainter.paint(self, self.xmap.convert(0), y, 1, 0, tick,
-                                               path._line(self.xmap.convert(0), y, self.xmap.convert(1), y))
-                    if tick.labellevel is not None:
-                        axis.labelpainter.paint(self, self.xmap.convert(0), y, 1, 0, tick)
+                 axis.xaxispos = self.xmap.convert(1 - num % 2)
+                 axis.tickpoint = self.ytickpoint
+                 axis.fixtickdirection = (1 - 2 * (num % 2), 0)
+                 axis.gridpath = self.ygridpath
             else:
                 assert 0, "Axis key %s not allowed" % key
+            axis.tickdirection = self.tickdirection
+            axis.painter.paint(self, axis)
         self._drawstate = self.drawdata
 
     def drawdata(self):
@@ -878,12 +966,9 @@ class mark(_PlotStyle):
         for pt in data:
             graph.draw(path.path(path._moveto(graph.xmap.convert(xaxis.convert(pt[xindex])) - self.size,
                                               graph.ymap.convert(yaxis.convert(pt[yindex])) - self.size),
-                                 path._lineto(graph.xmap.convert(xaxis.convert(pt[xindex])) + self.size,
-                                              graph.ymap.convert(yaxis.convert(pt[yindex])) + self.size),
-                                 path._moveto(graph.xmap.convert(xaxis.convert(pt[xindex])) - self.size,
-                                              graph.ymap.convert(yaxis.convert(pt[yindex])) + self.size),
-                                 path._lineto(graph.xmap.convert(xaxis.convert(pt[xindex])) + self.size,
-                                              graph.ymap.convert(yaxis.convert(pt[yindex])) - self.size)))
+                                 path._rlineto(2 * self.size, 2 * self.size),
+                                 path._rmoveto(- 2 * self.size, 0),
+                                 path._rlineto(2 * self.size, - 2 * self.size)))
 
 
 ################################################################################
