@@ -369,9 +369,9 @@ class filled(PathDeco):
 
 def _arrowhead(anormpath, size, angle, constriction):
 
-    """helper routine, which returns an arrowhead for an bpath 
+    """helper routine, which returns an arrowhead for a normpath
 
-    returns arrowhead at pos (0: begin, !=0: end) of abpath with size,
+    returns arrowhead at pos (0: begin, !=0: end) of anormpath with size,
     opening angle and relative constriction
     """
 
@@ -818,7 +818,7 @@ class canvas(base.PSCmd):
         return self
         
     def draw(self, path, *args):
-        """draw path/bpath on canvas using the style given by args
+        """draw path on canvas using the style given by args
 
         The argument list args consists of PathStyles, which modify
         the appearance of the path, or PathDecos,
@@ -842,7 +842,7 @@ class canvas(base.PSCmd):
         return self
         
     def fill(self, path, *args):
-        """fill path/bpath on canvas using the style given by args
+        """fill path on canvas using the style given by args
 
         The argument list args consists of PathStyles, which modify
         the appearance of the path, or PathDecos,
