@@ -11,6 +11,9 @@ PyX
   - graph module:
     - removed manualpart and partitioners mix keyword (documentation already updated)
     - results of the splitting at "=" in graph.function were not stripped
+    - rect style (and errorbars?) should use clipping
+  - canvas module:
+    - stroke and fill now support trafos (TODO: documentation)
   TODO:
   - graph module
     - another (the last?!) axis redesign: axispos -> class of its own; remove axis.axiscanvas
@@ -26,9 +29,7 @@ PyX
     - rect style (and errorbars?) should use clipping
   - canvas module:
     - default patterns
-    - stroke and fill should support trafos
     - make dash length available
-    - shouldn't strokepath/fillpath be validated by "strokepath is not None" instead of just "strokepath"
   - path module:
     - reverse needs to be fixed
   - text module:

@@ -230,7 +230,7 @@ class decoratedpath(base.PSCmd):
             _gsave().write(file)
             _writestyles(self.styles)
 
-        if self.fillpath:
+        if self.fillpath is not None:
             _newpath().write(file)
             self.fillpath.write(file)
 
@@ -263,7 +263,7 @@ class decoratedpath(base.PSCmd):
                 if self.fillstyles:
                     _grestore().write(file)
 
-        if self.strokepath and self.strokepath!=self.fillpath:
+        if self.strokepath is not None and self.strokepath!=self.fillpath:
             # this is the only relevant case still left
             # Note that a possible stroking has already been done.
 
@@ -278,7 +278,7 @@ class decoratedpath(base.PSCmd):
             if self.strokestyles:
                 _grestore().write(file)
 
-        if not self.strokepath and not self.fillpath:
+        if not self.strokepath is not None and not self.fillpath:
             raise RuntimeError("Path neither to be stroked nor filled")
 
         # now, draw additional subdps
@@ -704,14 +704,18 @@ class _canvas(base.PSCmd, attrlist.attrlist):
         """draw path on canvas using the style given by args
 
         The argument list args consists of PathStyles, which modify
-        the appearance of the path, or PathDecos,
-        which add some new visual elements to the path.
+        the appearance of the path, PathDecos, which add some new
+        visual elements to the path, or trafos, which are applied
+        before drawing the path.
 
         returns the canvas
 
         """
 
-        self.attrcheck(args, allowmulti=(base.PathStyle, PathDeco))
+        self.attrcheck(args, allowmulti=(base.PathStyle, PathDeco, trafo._trafo))
+
+        for t in self.attrgetall(args, trafo._trafo, ()):
+            path = path.transformed(t)
 
         dp = decoratedpath(path)
 
@@ -730,8 +734,9 @@ class _canvas(base.PSCmd, attrlist.attrlist):
         """stroke path on canvas using the style given by args
 
         The argument list args consists of PathStyles, which modify
-        the appearance of the path, or PathDecos,
-        which add some new visual elements to the path.
+        the appearance of the path, PathDecos, which add some new
+        visual elements to the path, or trafos, which are applied
+        before drawing the path.
 
         returns the canvas
 
@@ -743,8 +748,9 @@ class _canvas(base.PSCmd, attrlist.attrlist):
         """fill path on canvas using the style given by args
 
         The argument list args consists of PathStyles, which modify
-        the appearance of the path, or PathDecos,
-        which add some new visual elements to the path.
+        the appearance of the path, PathDecos, which add some new
+        visual elements to the path, or trafos, which are applied
+        before drawing the path.
 
         returns the canvas
 

@@ -19,6 +19,8 @@ c.stroke(c.bbox().rect())
 
 c.stroke(p.transformed(t1*t2*t3), color.rgb.green, canvas.linestyle.dashed)
 
+c.stroke(p, color.rgb.red, canvas.linestyle.dotted, t3, t2, t1)
+
 # c.stroke(p.transformed(trafo.mirror(10)*trafo.translate(5,0)*trafo.rotate(22.5)), canvas.linestyle.dashed, color.rgb.red)
 
 
