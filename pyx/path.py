@@ -42,6 +42,9 @@ class PathException(Exception): pass
 class pathel(base.PSOp):
 
     """element of a PS style path"""
+
+    # is pathel normalized, i.e. moveto, lineto, curveto or closepath?
+    _isnormalized = None
     
     def _bbox(self, currentpoint, currentsubpath):
         """calculate bounding box of pathel
@@ -62,7 +65,7 @@ class pathel(base.PSOp):
         """write pathel to file in the context of canvas"""
         
         pass
-        
+
     def _bpath(self, currentpoint, currentsubpath):
         """convert pathel to bpath 
 
@@ -76,6 +79,22 @@ class pathel(base.PSOp):
         
         pass
 
+    def _normalized(self, currentpoint, currentsubpath):
+        """used for the construction of a normalized path, i.e. a path consisting
+        only of moveto, lineto, curveto and closepath
+
+        returns tuple consisting of:
+         - new currentpoint
+         - new currentsubpath (i.e. first point of current subpath)
+         - tuple of corresponding pathels
+
+        """     
+        
+        pass
+
+        
+
+
 # now come the various pathels. Each one comes in two variants:
 #  - one with an preceding underscore, which does no coordinate to pt conversion
 #  - the other without preceding underscore, which converts to pts 
@@ -84,6 +103,8 @@ class pathel(base.PSOp):
 class closepath(pathel): 
 
     """Connect subpath back to its starting point"""
+
+    _isnormalized = 1
 
     def _bbox(self, currentpoint, currentsubpath):
         return (None,
@@ -102,12 +123,21 @@ class closepath(pathel):
                 bpath._bline(currentpoint[0], currentpoint[1], 
                              currentsubpath[0], currentsubpath[1]) )
 
+    def _normalized(self, currentpoint, currentsubpath):
+        return (None,
+                None,
+                (closepath(),))
+
+
 #
 # moveto, rmoveto
 #
  
 class _moveto(pathel):
+    
     """Set current point to (x, y) (coordinates in pts)"""
+
+    _isnormalized = 1
 
     def __init__(self, x, y):
          self.x = x
@@ -120,11 +150,18 @@ class _moveto(pathel):
          
     def write(self, file):
         file.write("%f %f moveto\n" % (self.x, self.y) )
+        
 
     def _bpath(self, currentpoint, currentsubpath):
         return ((self.x, self.y),
                 (self.x, self.y),
                 None)
+    
+    def _normalized(self, currentpoint, currentsubpath):
+        return ((self.x, self.y),
+                (self.x, self.y),
+                (_moveto(self.x, self.y),))
+
 
  
 class moveto(_moveto):
@@ -138,6 +175,8 @@ class moveto(_moveto):
 class _rmoveto(pathel):
 
     """Perform relative moveto (coordinates in pts)"""
+
+    _isnormalized = 0
 
     def __init__(self, dx, dy):
          self.dx = dx
@@ -156,6 +195,14 @@ class _rmoveto(pathel):
                 (self.dx+currentpoint[0], self.dy+currentpoint[1]),
                 None)
 
+    def _normalized(self, currentpoint, currentsubpath):
+        x = self.dx+currentpoint[0]
+        y = self.dy+currentpoint[1]
+        return ((x, y),
+                (x, y),
+                (_moveto(x,y),))
+
+
 
 class rmoveto(_rmoveto):
 
@@ -171,6 +218,8 @@ class rmoveto(_rmoveto):
 class _lineto(pathel):
 
     """Append straight line to (x, y) (coordinates in pts)"""
+
+    _isnormalized = 1
 
     def __init__(self, x, y):
          self.x = x
@@ -192,6 +241,11 @@ class _lineto(pathel):
                 currentsubpath or currentpoint,
                 bpath._bline(currentpoint[0], currentpoint[1], self.x, self.y))
 
+    def _normalized(self, currentpoint, currentsubpath):
+        return ((self.x, self.y), 
+                currentsubpath or currentpoint,
+                (_lineto(self.x, self.y),))
+
 
 class lineto(_lineto):
 
@@ -204,6 +258,8 @@ class lineto(_lineto):
 class _rlineto(pathel):
 
     """Perform relative lineto (coordinates in pts)"""
+
+    _isnormalized = 0
 
     def __init__(self, dx, dy):
          self.dx = dx
@@ -221,10 +277,19 @@ class _rlineto(pathel):
         file.write("%f %f rlineto\n" % (self.dx, self.dy) )
         
     def _bpath(self, currentpoint, currentsubpath):
-        return ((currentpoint[0]+self.dx, currentpoint[1]+self.dy), 
+        x = currentpoint[0]+self.dx
+        y = currentpoint[1]+self.dy
+        return ((x, y), 
                 currentsubpath or currentpoint,
                 bpath._bline(currentpoint[0], currentpoint[1], 
-                             currentpoint[0]+self.dx, currentpoint[1]+self.dy) )
+                             x, y) )
+
+    def _normalized(self, currentpoint, currentsubpath):
+        x = currentpoint[0]+self.dx
+        y = currentpoint[1]+self.dy
+        return ((x, y), 
+                currentsubpath or currentpoint,
+                (_lineto(x,y),))
 
 
 class rlineto(_rlineto):
@@ -238,7 +303,10 @@ class rlineto(_rlineto):
 #
 
 class _arc(pathel):
+    
     """Append counterclockwise arc (coordinates in pts)"""
+
+    _isnormalized = 0
 
     def __init__(self, x, y, r, angle1, angle2):
         self.x = x
@@ -326,32 +394,72 @@ class _arc(pathel):
                                             self.r,
                                             self.angle1,
                                             self.angle2 ) )
+
+    def _sarc(self):
+        """Return starting point of arc segment"""
+        return (self.x+self.r*cos(pi*self.angle1/180),
+                self.y+self.r*sin(pi*self.angle1/180))
+
+    def _earc(self):
+        """Return end point of arc segment"""
+        return (self.x+self.r*cos(pi*self.angle2/180),
+                self.y+self.r*sin(pi*self.angle2/180))
         
     def _bpath(self, currentpoint, currentsubpath):
-        # starting point of arc segment
-        sarcx = self.x+self.r*cos(pi*self.angle1/180)
-        sarcy = self.y+self.r*sin(pi*self.angle1/180)
-
-        # end point of arc segment
-        earcx = self.x+self.r*cos(pi*self.angle2/180)
-        earcy = self.y+self.r*sin(pi*self.angle2/180)
+        # get starting and end point of arc segment and bpath corresponding to arc
+        sarcx, sarcy = self._sarc()
+        earcx, earcy = self._earc()
+        barc = bpath._barc(self.x, self.y, self.r, self.angle1, self.angle2)
 
         # Note that if there is a currentpoint defined, we also
         # have to include the straight line from this point
         # to the first point of the arc segment
         if currentpoint:
-             return ( (earcx, earcy),
-                      currentsubpath or currentpoint,
-                      bpath._bline(currentpoint[0], currentpoint[1], sarcx, sarcy) +
-                      bpath._barc(self.x, self.y, self.r, self.angle1, self.angle2)
-                    )
+            return ( (earcx, earcy),
+                     currentsubpath or currentpoint,
+                     bpath._bline(currentpoint[0], currentpoint[1],
+                                  sarcx, sarcy) + 
+                     barc
+                     )
         else:  # we assert that currentsubpath is also None
-             return ( (earcx, earcy),
-                      (sarcx, sarcy),
-                      bpath._barc(self.x, self.y, self.r, self.angle1, self.angle2)
-                    )
+            return ( (earcx, earcy),
+                     (sarcx, sarcy),
+                     barc
+                     )
+
+    def _normalized(self, currentpoint, currentsubpath):
+        # get starting and end point of arc segment and bpath corresponding to arc
+        sarcx, sarcy = self._sarc()
+        earcx, earcy = self._earc()
+        barc = bpath._barc(self.x, self.y, self.r, self.angle1, self.angle2)
+
+        # convert to list of curvetos omitting movetos
+        nbarc = []
+        
+        for bpathel in barc:
+            nbarc.append(_curveto(bpathel.x1, bpathel.y1,
+                                  bpathel.x2, bpathel.y2,
+                                  bpathel.x3, bpathel.y3))
+
+        # Note that if there is a currentpoint defined, we also
+        # have to include the straight line from this point
+        # to the first point of the arc segment.
+        # Otherwise, we have to add a moveto at the beginning
+        if currentpoint:
+            return ( (earcx, earcy),
+                     currentsubpath or currentpoint,
+                     tuple([_lineto(sarcx, sarcy)] + nbarc)
+                     
+                     )
+        else:  # we assert that currentsubpath is also None
+            return ( (earcx, earcy),
+                     (sarcx, sarcy),
+                     tuple([_moveto(sarcx, sarcy)] + nbarc)
+                     )
+
         
 class arc(_arc):
+    
     """Append counterclockwise arc"""
 
     def __init__(self, x, y, r, angle1, angle2):
@@ -360,7 +468,10 @@ class arc(_arc):
 
 
 class _arcn(pathel):
+    
     """Append clockwise arc (coordinates in pts)"""
+
+    _isnormalized = 0
     
     def __init__(self, x, y, r, angle1, angle2):
         self.x = x
@@ -406,33 +517,76 @@ class _arcn(pathel):
                                              self.angle1,
                                              self.angle2 ) )
 
-    def _bpath(self, currentpoint, currentsubpath):
-        # starting point of arc segment
-        sarcx = self.x+self.r*cos(pi*self.angle1/180)
-        sarcy = self.y+self.r*sin(pi*self.angle1/180)
+    def _sarc(self):
+        """Return starting point of arc segment"""
+        return (self.x+self.r*cos(pi*self.angle1/180),
+                self.y+self.r*sin(pi*self.angle1/180))
+    
+    def _earc(self):
+        """Return end point of arc segment"""
+        return (self.x+self.r*cos(pi*self.angle2/180),
+                self.y+self.r*sin(pi*self.angle2/180))
+    
 
-        # end point of arc segment
-        earcx = self.x+self.r*cos(pi*self.angle2/180)
-        earcy = self.y+self.r*sin(pi*self.angle2/180)
+    def _bpath(self, currentpoint, currentsubpath):
+        # get starting and end point of arc segment and bpath corresponding to arc
+        # starting point of arc segment
+        sarcx, sarcy = self._sarc()
+        earcx, earcy = self._earc()
+        barc = bpath._barc(self.x, self.y, self.r, self.angle2, self.angle1).reverse()
 
         # Note that if there is a currentpoint defined, we also
         # have to include the straight line from this point
         # to the first point of the arc segment
         if currentpoint:
-             return ( (earcx, earcy),
-                      currentsubpath or currentpoint,
-                      bpath._bline(currentpoint[0], currentpoint[1], sarcx, sarcy) +
-                      bpath._barc(self.x, self.y, self.r, self.angle2, self.angle1)
-                    )
+            return ( (earcx, earcy),
+                     currentsubpath or currentpoint,
+                     bpath._bline(currentpoint[0], currentpoint[1], sarcx, sarcy) +
+                     barc
+                     )
         else:  # we assert that currentsubpath is also None
-             return ( (earcx, earcy),
-                      (sarcx, sarcy),
-                      bpath._barc(self.x, self.y, self.r, self.angle2, self.angle1)
-                    )
+            return ( (earcx, earcy),
+                     (sarcx, sarcy),
+                     barc
+                     )
+
+
+    def _normalized(self, currentpoint, currentsubpath):
+        # get starting and end point of arc segment and bpath corresponding to arc
+        sarcx, sarcy = self._sarc()
+        earcx, earcy = self._earc()
+        barc = bpath._barc(self.x, self.y, self.r, self.angle2, self.angle1).reverse()
+
+        # convert to list of curvetos omitting movetos
+        nbarc = []
+        
+        for bpathel in barc:
+            nbarc.append(_curveto(bpathel.x1, bpathel.y1,
+                                  bpathel.x2, bpathel.y2,
+                                  bpathel.x3, bpathel.y3))
+            
+        # Note that if there is a currentpoint defined, we also
+        # have to include the straight line from this point
+        # to the first point of the arc segment.
+        # Otherwise, we have to add a moveto at the beginning
+        if currentpoint:
+            return ( (earcx, earcy),
+                     currentsubpath or currentpoint,
+                     tuple([_lineto(sarcx, sarcy)] + nbarc)
+                     
+                     )
+        else:  # we assert that currentsubpath is also None
+            return ( (earcx, earcy),
+                     (sarcx, sarcy),
+                     tuple([_moveto(sarcx, sarcy)] + nbarc)
+                     )
+
 
 class arcn(_arcn):
 
     """Append clockwise arc"""
+
+    _isnormalized = 0
     
     def __init__(self, x, y, r, angle1, angle2):
         _arcn.__init__(self, 
@@ -441,7 +595,10 @@ class arcn(_arcn):
 
 
 class _arct(pathel):
+    
     """Append tangent arc (coordinates in pts)"""
+
+    _isnormalized = 0
 
     def __init__(self, x1, y1, x2, y2, r):
         self.x1 = x1
@@ -524,14 +681,12 @@ class _arct(pathel):
                       currentsubpath or (self.x1, self.y1),
                       _line(currentpoint[0], currentpoint[1], self.x1, self.y1) )
 
-
     def _bbox(self, currentpoint, currentsubpath):
         (currentpoint, currentsubpath, p) = self._path(currentpoint, currentsubpath)
         
         return ( currentpoint,
                  currentsubpath,
                  p.bbox() )
-
     
     def _bpath(self, currentpoint, currentsubpath):
         (currentpoint, currentsubpath, p) = self._path(currentpoint, currentsubpath)
@@ -539,6 +694,14 @@ class _arct(pathel):
         return ( currentpoint,
                  currentsubpath,
                  p.bpath() )
+
+    def _normalized(self, currentpoint, currentsubpath):
+        (currentpoint, currentsubpath, p) = self._path(currentpoint, currentsubpath)
+        
+        return ( currentpoint,
+                 currentsubpath,
+                 p.normalized() )
+
                 
 class arct(_arct):
 
@@ -556,6 +719,8 @@ class arct(_arct):
 class _curveto(pathel):
 
     """Append curveto (coordinates in pts)"""
+
+    _isnormalized = 1
 
     def __init__(self, x1, y1, x2, y2, x3, y3):
         self.x1 = x1
@@ -586,6 +751,13 @@ class _curveto(pathel):
                               self.x2, self.y2, 
                               self.x3, self.y3))
 
+    def _normalized(self, currentpoint, currentsubpath):
+        return ((self.x3, self.y3),
+                currentsubpath or currentpoint, 
+                (_curveto(self.x1, self.y1, 
+                          self.x2, self.y2, 
+                          self.x3, self.y3),))
+
 
 class curveto(_curveto):
 
@@ -601,6 +773,8 @@ class curveto(_curveto):
 class _rcurveto(pathel):
 
     """Append rcurveto (coordinates in pts)"""
+
+    _isnormalized = 0
         
     def __init__(self, dx1, dy1, dx2, dy2, dx3, dy3):
         self.dx1 = dx1
@@ -641,6 +815,18 @@ class _rcurveto(pathel):
         return ((x4, y4),
                 currentsubpath or currentpoint,
                 bpath._bcurve(currentpoint[0],currentpoint[1], x2, y2, x3, y3, x4, y4))
+
+    def _normalized(self, currentpoint, currentsubpath):
+        x2=currentpoint[0]+self.dx1
+        y2=currentpoint[1]+self.dy1
+        x3=currentpoint[0]+self.dx2
+        y3=currentpoint[1]+self.dy2
+        x4=currentpoint[0]+self.dx3
+
+        y4=currentpoint[1]+self.dy3
+        return ((x4, y4),
+                currentsubpath or currentpoint,
+                (_curveto(x2, y2, x3, y3, x4, y4),))
 
 
 class rcurveto(_rcurveto):
@@ -708,6 +894,25 @@ class path(base.PSCmd):
                 for bpel in nbp.bpath:
                     bp.append(bpel)
         return bp
+
+    def normalized(self):
+        currentpoint = None
+        currentsubpath = None
+        p = path()
+        for pel in self.path:
+            (currentpoint, currentsubpath, npels) = \
+                           pel._normalized(currentpoint, currentsubpath)
+            if npels:
+                for npel in npels:
+                    p.append(npel)
+        return p
+
+    def isnormalized(self):
+        for pel in self.path:
+            if not pel.isnormalized:
+                return 0
+        return 1
+
 
 # some special kinds of path, again in two variants
 
