@@ -1,1 +1,1 @@
-*.aux *.log *.dvi *.toc *.size *.eps *.ps *.pdf pyxversion.tex
+*.out *.aux *.log *.dvi *.toc *.size *.eps *.ps *.pdf pyxversion.tex
