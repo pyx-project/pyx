@@ -27,7 +27,7 @@ import Numeric, LinearAlgebra
 valuetypes = (types.IntType, types.LongType, types.FloatType)
 
 
-class var:
+class scalar:
     # this class represents a scalar variable
 
     def __init__(self, varname="(no variable name provided)"):
@@ -36,60 +36,45 @@ class var:
         self.varname = varname
         self.value = None
 
+    def term(self):
+        return term([1], [self], 0)
+
     def __add__(self, other):
-        if isinstance(other, valuetypes):
-            return term([1], [self], other)
-        elif isinstance(other, var):
-            if other.id == self.id:
-                return term([2], [self], 0)
-            else:
-                return term([1, 1], [self, other], 0)
-        else:
-            assert isinstance(other, term)
-            return term([1], [self], 0) + other
+        return term([1], [self], 0) + other
 
     __radd__ = __add__
 
     def __sub__(self, other):
-        if isinstance(other, valuetypes):
-            return term([1], [self], -other)
-        elif isinstance(other, var):
-            if other.id == self.id:
-                return term([], [], 0)
-            else:
-                return term([1, -1], [self, other], 0)
-        else:
-            assert isinstance(other, term)
-            return term([1], [self], 0) - other
+        return term([1], [self], 0) - other
 
     def __rsub__(self, other):
-        return -self+other
+        return term([-1], [self], 0) + other
 
     def __neg__(self):
         return term([-1], [self], 0)
 
     def __mul__(self, other):
-        assert isinstance(other, valuetypes)
         return term([other], [self], 0)
 
     __rmul__ = __mul__
 
     def __div__(self, other):
-        assert isinstance(other, valuetypes)
         return term([1/other], [self], 0)
 
     def __eq__(self, other):
         return term([1], [self], 0) == other
 
-    def set(self, value):
-        assert isinstance(value, valuetypes)
-        self.value = value
-
     def is_set(self):
         return self.value is not None
 
+    def set(self, value):
+        if self.is_set():
+            raise RuntimeError("variable already defined")
+        self.value = value
+
     def get(self):
-        assert self.is_set()
+        if not self.is_set():
+            raise RuntimeError("variable not yet defined")
         return self.value
 
     def __str__(self):
@@ -99,13 +84,7 @@ class var:
             return self.varname
 
     def __float__(self):
-        if self.is_set():
-            return self.value
-
-
-def indexviaid(vars, var):
-    ids = [v.id for v in vars]
-    return ids.index(id(var))
+        return self.get()
 
 
 class term:
@@ -113,61 +92,36 @@ class term:
     # sum([p*v.value for p, v in zip(self.prefactors, self.vars]) + self.const
 
     def __init__(self, prefactors, vars, const):
+        assert len(prefactors) == len(vars)
         self.id = id(self) # compare the id to check for the same term
                            # (the __eq__ method is used to define "equalities")
         self.prefactors = prefactors
         self.vars = vars
         self.const = const
 
+    def term(self):
+        return self
+
     def __add__(self, other):
-        if isinstance(other, valuetypes):
-            return term(self.prefactors, self.vars, self.const + other)
-        elif isinstance(other, var):
-            vars = self.vars[:]
-            prefactors = self.prefactors[:]
+        try:
+            other = other.term()
+        except:
+            other = term([], [], other)
+        vars = self.vars[:]
+        prefactors = self.prefactors[:]
+        vids = [v.id for v in vars]
+        for p, v in zip(other.prefactors, other.vars):
             try:
-                prefactors[indexviaid(vars, other)] += 1
+                prefactors[vids.index(v.id)] += p
             except ValueError:
-                vars.append(other)
-                prefactors.append(+1)
-            return term(prefactors, vars, self.const)
-        else:
-            assert isinstance(other, term)
-            vars = self.vars[:]
-            prefactors = self.prefactors[:]
-            for p, v in zip(other.prefactors, other.vars):
-                try:
-                    prefactors[indexviaid(vars, v)] += p
-                except ValueError:
-                    vars.append(v)
-                    prefactors.append(p)
-            return term(prefactors, vars, self.const + other.const)
+                vars.append(v)
+                prefactors.append(p)
+        return term(prefactors, vars, self.const + other.const)
 
     __radd__ = __add__
 
     def __sub__(self, other):
-        if isinstance(other, valuetypes):
-            return term(self.prefactors, self.vars, self.const - other)
-        elif isinstance(other, var):
-            vars = self.vars[:]
-            prefactors = self.prefactors[:]
-            try:
-                prefactors[indexviaid(vars, other)] -= 1
-            except ValueError:
-                vars.append(other)
-                prefactors.append(-1)
-            return term(prefactors, vars, self.const)
-        else:
-            assert isinstance(other, term)
-            vars = self.vars[:]
-            prefactors = self.prefactors[:]
-            for p, v in zip(other.prefactors, other.vars):
-                try:
-                    prefactors[indexviaid(vars, v)] -= p
-                except ValueError:
-                    vars.append(v)
-                    prefactors.append(-p)
-            return term(prefactors, vars, self.const - other.const)
+        return self + (-other)
 
     def __neg__(self):
         return term([-p for p in self.prefactors], self.vars, -self.const)
@@ -176,22 +130,14 @@ class term:
         return -self+other
 
     def __mul__(self, other):
-        assert isinstance(other, valuetypes)
         return term([p*other for p in self.prefactors], self.vars, self.const*other)
 
     __rmul__ = __mul__
 
     def __div__(self, other):
-        assert isinstance(other, valuetypes)
         return term([p/other for p in self.prefactors], self.vars, self.const/other)
 
     def __eq__(self, other):
-        if isinstance(other, valuetypes):
-            other = term([], [], other)
-        elif isinstance(other, var):
-            other = term([1], [other], 0)
-        else:
-            assert isinstance(other, term)
         solver.add(self-other)
 
     def __str__(self):
@@ -214,7 +160,7 @@ class Solver:
                 if self.solve(eqs):
                     break # restart for loop
             else:
-                break # quite while loop
+                break # quit while loop
 
     def combine(self, eqs):
         # create combinations of equations
@@ -262,9 +208,9 @@ solver = Solver()
 
 if __name__ == "__main__":
 
-    x = var("x")
-    y = var("y")
-    z = var("z")
+    x = scalar("x")
+    y = scalar("y")
+    z = scalar("z")
 
     x + y == 2*x - y + 3
     x - y == z
