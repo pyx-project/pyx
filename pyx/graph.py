@@ -641,7 +641,7 @@ class momrate:
             return None
         rate = 0
         weight = 0
-        (tickcounts, labelcounts, ) = self.getcounts(ticks)
+        tickcounts, labelcounts = self.getcounts(ticks)
         try:
             for (tickcount, rateparam, ) in zip(tickcounts, self.tickrateparams, ):
                 rate += self.evalrate(tickcount, stretch, rateparam) * rateparam.weight
@@ -1407,11 +1407,13 @@ class graphxy(canvas.canvas):
                 # XXX: lesspart and morepart can be called after defaultpart, although some
                 #      axes may share their autoparting, because the axes are processed sequentially
                 rate = axis.rate.getrate(axis.ticks, 1)
-                maxworse = 2
+                #print rate, axis.ticks
+                maxworse = 4
                 worse = 0
                 while worse < maxworse:
                     newticks = axis.part.lesspart()
                     newrate = axis.rate.getrate(newticks, 1)
+                    #print newrate, newticks
                     if newrate is not None and (rate is None or newrate < rate):
                         axis.ticks = newticks
                         rate = newrate
@@ -1422,6 +1424,7 @@ class graphxy(canvas.canvas):
                 while worse < maxworse:
                     newticks = axis.part.morepart()
                     newrate = axis.rate.getrate(newticks, 1)
+                    #print newrate, newticks
                     if newrate is not None and (rate is None or newrate < rate):
                         axis.ticks = newticks
                         rate = newrate

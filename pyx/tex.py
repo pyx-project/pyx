@@ -354,7 +354,6 @@ missextents.raiseerror = _missextentsraiseerror()
 class _missextentscreateextents(missextents):
 
     def misshandler(self, texinstance):
-        print "missextents.createextents"
         if isinstance(texinstance, latex):
             storeauxfilename = texinstance.auxfilename
             texinstance.auxfilename = None
@@ -373,7 +372,6 @@ missextents.createextents = _missextentscreateextents()
 class _missextentscreateallextents(missextents):
 
     def misshandler(self, texinstance):
-        print "missextents.createallextents"
         if isinstance(texinstance, latex):
             storeauxfilename = texinstance.auxfilename
             texinstance.auxfilename = None
