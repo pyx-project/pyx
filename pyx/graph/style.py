@@ -43,82 +43,62 @@ class _style:
     def key_pt(self, c, x_pt, y_pt, width_pt, height_pt, styledata):
         raise RuntimeError("style doesn't provide a key")
 
+    def adjustaxes(self, points, columns, styledata):
+        return
 
-class symbolline(_style):
+    def setdata(self, graph, columns, styledata):
+        return columns
 
-    def cross(self, x_pt, y_pt, size_pt):
-        return (path.moveto_pt(x_pt-0.5*size_pt, y_pt-0.5*size_pt),
-                path.lineto_pt(x_pt+0.5*size_pt, y_pt+0.5*size_pt),
-                path.moveto_pt(x_pt-0.5*size_pt, y_pt+0.5*size_pt),
-                path.lineto_pt(x_pt+0.5*size_pt, y_pt-0.5*size_pt))
+    def selectstyle(self, selectindex, selecttotal, styledata):
+        pass
 
-    def plus(self, x_pt, y_pt, size_pt):
-        return (path.moveto_pt(x_pt-0.707106781*size_pt, y_pt),
-                path.lineto_pt(x_pt+0.707106781*size_pt, y_pt),
-                path.moveto_pt(x_pt, y_pt-0.707106781*size_pt),
-                path.lineto_pt(x_pt, y_pt+0.707106781*size_pt))
+    def initdrawpoints(self, graph, styledata):
+        pass
 
-    def square(self, x_pt, y_pt, size_pt):
-        return (path.moveto_pt(x_pt-0.5*size_pt, y_pt-0.5*size_pt),
-                path.lineto_pt(x_pt+0.5*size_pt, y_pt-0.5*size_pt),
-                path.lineto_pt(x_pt+0.5*size_pt, y_pt+0.5*size_pt),
-                path.lineto_pt(x_pt-0.5*size_pt, y_pt+0.5*size_pt),
-                path.closepath())
+    def drawpoint(self, graph, styledata):
+        pass
 
-    def triangle(self, x_pt, y_pt, size_pt):
-        return (path.moveto_pt(x_pt-0.759835685*size_pt, y_pt-0.438691337*size_pt),
-                path.lineto_pt(x_pt+0.759835685*size_pt, y_pt-0.438691337*size_pt),
-                path.lineto_pt(x_pt, y_pt+0.877382675*size_pt),
-                path.closepath())
+    def donedrawpoints(self, graph, styledata):
+        pass
 
-    def circle(self, x_pt, y_pt, size_pt):
-        return (path.arc_pt(x_pt, y_pt, 0.564189583*size_pt, 0, 360),
-                path.closepath())
 
-    def diamond(self, x_pt, y_pt, size_pt):
-        return (path.moveto_pt(x_pt-0.537284965*size_pt, y_pt),
-                path.lineto_pt(x_pt, y_pt-0.930604859*size_pt),
-                path.lineto_pt(x_pt+0.537284965*size_pt, y_pt),
-                path.lineto_pt(x_pt, y_pt+0.930604859*size_pt),
-                path.closepath())
+class pointpos(_style):
 
-    changecross = attr.changelist([cross, plus, square, triangle, circle, diamond])
-    changeplus = attr.changelist([plus, square, triangle, circle, diamond, cross])
-    changesquare = attr.changelist([square, triangle, circle, diamond, cross, plus])
-    changetriangle = attr.changelist([triangle, circle, diamond, cross, plus, square])
-    changecircle = attr.changelist([circle, diamond, cross, plus, square, triangle])
-    changediamond = attr.changelist([diamond, cross, plus, square, triangle, circle])
-    changesquaretwice = attr.changelist([square, square, triangle, triangle, circle, circle, diamond, diamond])
-    changetriangletwice = attr.changelist([triangle, triangle, circle, circle, diamond, diamond, square, square])
-    changecircletwice = attr.changelist([circle, circle, diamond, diamond, square, square, triangle, triangle])
-    changediamondtwice = attr.changelist([diamond, diamond, square, square, triangle, triangle, circle, circle])
-
-    changestrokedfilled = attr.changelist([deco.stroked, deco.filled])
-    changefilledstroked = attr.changelist([deco.filled, deco.stroked])
-
-    changelinestyle = attr.changelist([style.linestyle.solid,
-                                       style.linestyle.dashed,
-                                       style.linestyle.dotted,
-                                       style.linestyle.dashdotted])
-
-    defaultsymbolattrs = [deco.stroked]
-    defaulterrorbarattrs = []
-    defaultlineattrs = [changelinestyle]
-
-    def __init__(self, symbol=changecross,
-                       size="0.2 cm",
-                       errorscale=0.5,
-                       symbolattrs=[],
-                       errorbarattrs=[],
-                       lineattrs=[],
-                       epsilon=1e-10):
-        self.size_str = size
-        self.symbol = symbol
-        self.errorscale = errorscale
-        self.symbolattrs = symbolattrs
-        self.errorbarattrs = errorbarattrs
-        self.lineattrs = lineattrs
+    def __init__(self, epsilon=1e-10):
         self.epsilon = epsilon
+
+    def setdata(self, graph, columns, styledata):
+        # analyse column information
+        styledata.pointposaxisindex = []
+        columns = columns.copy()
+        for axisname in graph.axisnames:
+            pattern = re.compile(r"(%s([2-9]|[1-9][0-9]+)?)$" % axisname)
+            styledata.pointposaxisindex.append(self.setdatapattern(graph, columns, pattern)) # TODO: append "needed=1"
+        return columns
+
+    def adjustaxes(self, points, columns, styledata):
+        for axis, index in styledata.pointposaxisindex:
+            axis.adjustrange(points, index)
+
+    def drawpoint(self, graph, styledata):
+        # calculate vpos
+        styledata.validvpos = 1 # valid position (but might be outside of the graph)
+        styledata.drawsymbol = 1 # valid position inside the graph
+        styledata.vpos = [axis.convert(styledata.point[index]) for axis, index in styledata.pointposaxisindex]
+        # for axisname in graph.axisnames:
+        #     try:
+        #         v = styledata.axes[axisname].convert(styledata.point[styledata.index[axisname]["x"]])
+        #     except (ArithmeticError, KeyError, ValueError, TypeError):
+        #         styledata.validvpos = 0
+        #         styledata.drawsymbol = 0
+        #         styledata.vpos.append(None)
+        #     else:
+        #         if v < - self.epsilon or v > 1 + self.epsilon:
+        #             styledata.drawsymbol = 0
+        #         styledata.vpos.append(v)
+
+
+class rangepos(_style):
 
     def setdata(self, graph, columns, styledata):
         """
@@ -169,23 +149,6 @@ class symbolline(_style):
                 raise ValueError("errorbar definition start value missing for axis name '%s'" % axisname)
         return columns
 
-    def selectstyle(self, selectindex, selecttotal, styledata):
-        styledata.symbol = attr.selectattr(self.symbol, selectindex, selecttotal)
-        styledata.size_pt = unit.topt(unit.length(attr.selectattr(self.size_str, selectindex, selecttotal), default_type="v"))
-        styledata.errorsize_pt = self.errorscale * styledata.size_pt
-        if self.symbolattrs is not None:
-            styledata.symbolattrs = attr.selectattrs(self.defaultsymbolattrs + self.symbolattrs, selectindex, selecttotal)
-        else:
-            styledata.symbolattrs = None
-        if self.errorbarattrs is not None:
-            styledata.errorbarattrs = attr.selectattrs(self.defaulterrorbarattrs + self.errorbarattrs, selectindex, selecttotal)
-        else:
-            styledata.errorbarattrs = None
-        if self.lineattrs is not None:
-            styledata.lineattrs = attr.selectattrs(self.defaultlineattrs + self.lineattrs, selectindex, selecttotal)
-        else:
-            styledata.lineattrs = None
-
     def adjustaxes(self, points, columns, styledata):
         # reverse lookup for axisnames
         # TODO: the reverse lookup is ugly
@@ -209,150 +172,6 @@ class symbolline(_style):
                 styledata.axes[axisname].adjustrange(points, styledata.index[axisname]["x"], deltaminindex=styledata.index[axisname]["dmin"])
             if styledata.index[axisname].has_key("dmax"):
                 styledata.axes[axisname].adjustrange(points, styledata.index[axisname]["x"], deltamaxindex=styledata.index[axisname]["dmax"])
-
-    def drawsymbol_pt(self, c, x_pt, y_pt, styledata, point=None):
-        if styledata.symbolattrs is not None:
-            c.draw(path.path(*styledata.symbol(self, x_pt, y_pt, styledata.size_pt)), styledata.symbolattrs)
-
-    def vpos(self, styledata):
-        # calculate vpos
-        styledata.vpos = [] # list containing the graph coordinates of the point
-        styledata.validvpos = 1 # valid position (but might be outside of the graph)
-        styledata.drawsymbol = 1 # valid position inside the graph
-        for axisname in styledata.graph.axisnames:
-            try:
-                v = styledata.axes[axisname].convert(styledata.point[styledata.index[axisname]["x"]])
-            except (ArithmeticError, KeyError, ValueError, TypeError):
-                styledata.validvpos = 0
-                styledata.drawsymbol = 0
-                styledata.vpos.append(None)
-            else:
-                if v < - self.epsilon or v > 1 + self.epsilon:
-                    styledata.drawsymbol = 0
-                styledata.vpos.append(v)
-
-    def appendlinebasepoints(self, styledata):
-        # append linebasepoints
-        if styledata.validvpos:
-            if len(styledata.linebasepoints):
-                # the last point was inside the graph
-                if styledata.drawsymbol:
-                    styledata.linebasepoints.append((styledata.xpos, styledata.ypos))
-                else:
-                    # cut end
-                    cut = 1
-                    for vstart, vend in zip(styledata.lastvpos, styledata.vpos):
-                        newcut = None
-                        if vend > 1:
-                            # 1 = vstart + (vend - vstart) * cut
-                            try:
-                                newcut = (1 - vstart)/(vend - vstart)
-                            except ArithmeticError:
-                                break
-                        if vend < 0:
-                            # 0 = vstart + (vend - vstart) * cut
-                            try:
-                                newcut = - vstart/(vend - vstart)
-                            except ArithmeticError:
-                                break
-                        if newcut is not None and newcut < cut:
-                            cut = newcut
-                    else:
-                        cutvpos = []
-                        for vstart, vend in zip(styledata.lastvpos, styledata.vpos):
-                            cutvpos.append(vstart + (vend - vstart) * cut)
-                        styledata.linebasepoints.append(styledata.graph.vpos_pt(*cutvpos))
-                        styledata.validvpos = 0 # clear linebasepoints below
-            else:
-                # the last point was outside the graph
-                if styledata.lastvpos is not None:
-                    if styledata.drawsymbol:
-                        # cut beginning
-                        cut = 0
-                        for vstart, vend in zip(styledata.lastvpos, styledata.vpos):
-                            newcut = None
-                            if vstart > 1:
-                                # 1 = vstart + (vend - vstart) * cut
-                                try:
-                                    newcut = (1 - vstart)/(vend - vstart)
-                                except ArithmeticError:
-                                    break
-                            if vstart < 0:
-                                # 0 = vstart + (vend - vstart) * cut
-                                try:
-                                    newcut = - vstart/(vend - vstart)
-                                except ArithmeticError:
-                                    break
-                            if newcut is not None and newcut > cut:
-                                cut = newcut
-                        else:
-                            cutvpos = []
-                            for vstart, vend in zip(styledata.lastvpos, styledata.vpos):
-                                cutvpos.append(vstart + (vend - vstart) * cut)
-                            styledata.linebasepoints.append(styledata.graph.vpos_pt(*cutvpos))
-                            styledata.linebasepoints.append(styledata.graph.vpos_pt(*styledata.vpos))
-                    else:
-                        # sometimes cut beginning and end
-                        cutfrom = 0
-                        cutto = 1
-                        for vstart, vend in zip(styledata.lastvpos, styledata.vpos):
-                            newcutfrom = None
-                            if vstart > 1:
-                                if vend > 1:
-                                    break
-                                # 1 = vstart + (vend - vstart) * cutfrom
-                                try:
-                                    newcutfrom = (1 - vstart)/(vend - vstart)
-                                except ArithmeticError:
-                                    break
-                            if vstart < 0:
-                                if vend < 0:
-                                    break
-                                # 0 = vstart + (vend - vstart) * cutfrom
-                                try:
-                                    newcutfrom = - vstart/(vend - vstart)
-                                except ArithmeticError:
-                                    break
-                            if newcutfrom is not None and newcutfrom > cutfrom:
-                                cutfrom = newcutfrom
-                            newcutto = None
-                            if vend > 1:
-                                # 1 = vstart + (vend - vstart) * cutto
-                                try:
-                                    newcutto = (1 - vstart)/(vend - vstart)
-                                except ArithmeticError:
-                                    break
-                            if vend < 0:
-                                # 0 = vstart + (vend - vstart) * cutto
-                                try:
-                                    newcutto = - vstart/(vend - vstart)
-                                except ArithmeticError:
-                                    break
-                            if newcutto is not None and newcutto < cutto:
-                                cutto = newcutto
-                        else:
-                            if cutfrom < cutto:
-                                cutfromvpos = []
-                                cuttovpos = []
-                                for vstart, vend in zip(styledata.lastvpos, styledata.vpos):
-                                    cutfromvpos.append(vstart + (vend - vstart) * cutfrom)
-                                    cuttovpos.append(vstart + (vend - vstart) * cutto)
-                                styledata.linebasepoints.append(styledata.graph.vpos_pt(*cutfromvpos))
-                                styledata.linebasepoints.append(styledata.graph.vpos_pt(*cuttovpos))
-                        styledata.validvpos = 0 # clear linebasepoints below
-            styledata.lastvpos = styledata.vpos
-        else:
-            styledata.lastvpos = None
-
-    def addpointstopath(self, styledata):
-        # add baselinepoints to styledata.path
-        if len(styledata.linebasepoints) > 1:
-            styledata.path.append(path.moveto_pt(*styledata.linebasepoints[0]))
-            if len(styledata.linebasepoints) > 2:
-                styledata.path.append(path.multilineto_pt(styledata.linebasepoints[1:]))
-            else:
-                styledata.path.append(path.lineto_pt(*styledata.linebasepoints[1]))
-        styledata.linebasepoints = []
 
     def doerrorbars(self, styledata):
         # errorbar loop over the different direction having errorbars
@@ -423,6 +242,279 @@ class symbolline(_style):
                 else:
                     break
 
+
+class symbol(_style):
+
+    def cross(self, x_pt, y_pt, size_pt):
+        return (path.moveto_pt(x_pt-0.5*size_pt, y_pt-0.5*size_pt),
+                path.lineto_pt(x_pt+0.5*size_pt, y_pt+0.5*size_pt),
+                path.moveto_pt(x_pt-0.5*size_pt, y_pt+0.5*size_pt),
+                path.lineto_pt(x_pt+0.5*size_pt, y_pt-0.5*size_pt))
+
+    def plus(self, x_pt, y_pt, size_pt):
+        return (path.moveto_pt(x_pt-0.707106781*size_pt, y_pt),
+                path.lineto_pt(x_pt+0.707106781*size_pt, y_pt),
+                path.moveto_pt(x_pt, y_pt-0.707106781*size_pt),
+                path.lineto_pt(x_pt, y_pt+0.707106781*size_pt))
+
+    def square(self, x_pt, y_pt, size_pt):
+        return (path.moveto_pt(x_pt-0.5*size_pt, y_pt-0.5*size_pt),
+                path.lineto_pt(x_pt+0.5*size_pt, y_pt-0.5*size_pt),
+                path.lineto_pt(x_pt+0.5*size_pt, y_pt+0.5*size_pt),
+                path.lineto_pt(x_pt-0.5*size_pt, y_pt+0.5*size_pt),
+                path.closepath())
+
+    def triangle(self, x_pt, y_pt, size_pt):
+        return (path.moveto_pt(x_pt-0.759835685*size_pt, y_pt-0.438691337*size_pt),
+                path.lineto_pt(x_pt+0.759835685*size_pt, y_pt-0.438691337*size_pt),
+                path.lineto_pt(x_pt, y_pt+0.877382675*size_pt),
+                path.closepath())
+
+    def circle(self, x_pt, y_pt, size_pt):
+        return (path.arc_pt(x_pt, y_pt, 0.564189583*size_pt, 0, 360),
+                path.closepath())
+
+    def diamond(self, x_pt, y_pt, size_pt):
+        return (path.moveto_pt(x_pt-0.537284965*size_pt, y_pt),
+                path.lineto_pt(x_pt, y_pt-0.930604859*size_pt),
+                path.lineto_pt(x_pt+0.537284965*size_pt, y_pt),
+                path.lineto_pt(x_pt, y_pt+0.930604859*size_pt),
+                path.closepath())
+
+    changecross = attr.changelist([cross, plus, square, triangle, circle, diamond])
+    changeplus = attr.changelist([plus, square, triangle, circle, diamond, cross])
+    changesquare = attr.changelist([square, triangle, circle, diamond, cross, plus])
+    changetriangle = attr.changelist([triangle, circle, diamond, cross, plus, square])
+    changecircle = attr.changelist([circle, diamond, cross, plus, square, triangle])
+    changediamond = attr.changelist([diamond, cross, plus, square, triangle, circle])
+    changesquaretwice = attr.changelist([square, square, triangle, triangle, circle, circle, diamond, diamond])
+    changetriangletwice = attr.changelist([triangle, triangle, circle, circle, diamond, diamond, square, square])
+    changecircletwice = attr.changelist([circle, circle, diamond, diamond, square, square, triangle, triangle])
+    changediamondtwice = attr.changelist([diamond, diamond, square, square, triangle, triangle, circle, circle])
+
+    changestrokedfilled = attr.changelist([deco.stroked, deco.filled])
+    changefilledstroked = attr.changelist([deco.filled, deco.stroked])
+
+    defaultsymbolattrs = [deco.stroked]
+
+    def __init__(self, symbol=changecross,
+                       size="0.2 cm",
+                       symbolattrs=[],
+                       epsilon=1e-10):
+        self.size_str = size
+        self.symbol = symbol
+        self.symbolattrs = symbolattrs
+        self.epsilon = epsilon
+
+    def selectstyle(self, selectindex, selecttotal, styledata):
+        styledata.symbol = attr.selectattr(self.symbol, selectindex, selecttotal)
+        styledata.size_pt = unit.topt(unit.length(attr.selectattr(self.size_str, selectindex, selecttotal), default_type="v"))
+        if self.symbolattrs is not None:
+            styledata.symbolattrs = attr.selectattrs(self.defaultsymbolattrs + self.symbolattrs, selectindex, selecttotal)
+        else:
+            styledata.symbolattrs = None
+
+    def drawsymbol_pt(self, c, x_pt, y_pt, styledata, point=None):
+        if styledata.symbolattrs is not None:
+            c.draw(path.path(*styledata.symbol(self, x_pt, y_pt, styledata.size_pt)), styledata.symbolattrs)
+
+    def drawpoint(self, graph, styledata):
+        if styledata.drawsymbol:
+            styledata.xpos, styledata.ypos = graph.vpos_pt(*styledata.vpos)
+            self.drawsymbol_pt(graph, styledata.xpos, styledata.ypos, styledata, point=styledata.point)
+
+    def key_pt(self, c, x_pt, y_pt, width_pt, height_pt, styledata):
+        self.drawsymbol_pt(c, x_pt+0.5*width_pt, y_pt+0.5*height_pt, styledata)
+        if styledata.lineattrs is not None:
+            c.stroke(path.line_pt(x_pt, y_pt+0.5*height_pt, x_pt+width_pt, y_pt+0.5*height_pt), styledata.lineattrs)
+
+
+class line(_style):
+
+    changelinestyle = attr.changelist([style.linestyle.solid,
+                                       style.linestyle.dashed,
+                                       style.linestyle.dotted,
+                                       style.linestyle.dashdotted])
+
+    defaultlineattrs = [changelinestyle]
+
+    def __init__(self, lineattrs=[]):
+        self.lineattrs = lineattrs
+
+    def selectstyle(self, selectindex, selecttotal, styledata):
+        styledata.lineattrs = attr.selectattrs(self.defaultlineattrs + self.lineattrs, selectindex, selecttotal)
+
+    def initdrawpoints(self, graph, styledata):
+        styledata.linecanvas = graph.insert(canvas.canvas())
+        styledata.path = path.path()
+        styledata.linebasepoints = []
+        styledata.lastvpos = None
+        styledata.errorlist = []
+
+    def appendlinebasepoints(self, graph, styledata):
+        # append linebasepoints
+        if styledata.validvpos:
+            if len(styledata.linebasepoints):
+                # the last point was inside the graph
+                if styledata.drawsymbol: # this is wrong
+                    # we always need the following line here:
+                    styledata.xpos, styledata.ypos = graph.vpos_pt(*styledata.vpos)
+                    styledata.linebasepoints.append((styledata.xpos, styledata.ypos))
+                else:
+                    # cut end
+                    cut = 1
+                    for vstart, vend in zip(styledata.lastvpos, styledata.vpos):
+                        newcut = None
+                        if vend > 1:
+                            # 1 = vstart + (vend - vstart) * cut
+                            try:
+                                newcut = (1 - vstart)/(vend - vstart)
+                            except ArithmeticError:
+                                break
+                        if vend < 0:
+                            # 0 = vstart + (vend - vstart) * cut
+                            try:
+                                newcut = - vstart/(vend - vstart)
+                            except ArithmeticError:
+                                break
+                        if newcut is not None and newcut < cut:
+                            cut = newcut
+                    else:
+                        cutvpos = []
+                        for vstart, vend in zip(styledata.lastvpos, styledata.vpos):
+                            cutvpos.append(vstart + (vend - vstart) * cut)
+                        styledata.linebasepoints.append(styledata.graph.vpos_pt(*cutvpos))
+                        styledata.validvpos = 0 # clear linebasepoints below
+            else:
+                # the last point was outside the graph
+                if styledata.lastvpos is not None:
+                    if styledata.drawsymbol:
+                        # cut beginning
+                        cut = 0
+                        for vstart, vend in zip(styledata.lastvpos, styledata.vpos):
+                            newcut = None
+                            if vstart > 1:
+                                # 1 = vstart + (vend - vstart) * cut
+                                try:
+                                    newcut = (1 - vstart)/(vend - vstart)
+                                except ArithmeticError:
+                                    break
+                            if vstart < 0:
+                                # 0 = vstart + (vend - vstart) * cut
+                                try:
+                                    newcut = - vstart/(vend - vstart)
+                                except ArithmeticError:
+                                    break
+                            if newcut is not None and newcut > cut:
+                                cut = newcut
+                        else:
+                            cutvpos = []
+                            for vstart, vend in zip(styledata.lastvpos, styledata.vpos):
+                                cutvpos.append(vstart + (vend - vstart) * cut)
+                            styledata.linebasepoints.append(graph.vpos_pt(*cutvpos))
+                            styledata.linebasepoints.append(graph.vpos_pt(*styledata.vpos))
+                    else:
+                        # sometimes cut beginning and end
+                        cutfrom = 0
+                        cutto = 1
+                        for vstart, vend in zip(styledata.lastvpos, styledata.vpos):
+                            newcutfrom = None
+                            if vstart > 1:
+                                if vend > 1:
+                                    break
+                                # 1 = vstart + (vend - vstart) * cutfrom
+                                try:
+                                    newcutfrom = (1 - vstart)/(vend - vstart)
+                                except ArithmeticError:
+                                    break
+                            if vstart < 0:
+                                if vend < 0:
+                                    break
+                                # 0 = vstart + (vend - vstart) * cutfrom
+                                try:
+                                    newcutfrom = - vstart/(vend - vstart)
+                                except ArithmeticError:
+                                    break
+                            if newcutfrom is not None and newcutfrom > cutfrom:
+                                cutfrom = newcutfrom
+                            newcutto = None
+                            if vend > 1:
+                                # 1 = vstart + (vend - vstart) * cutto
+                                try:
+                                    newcutto = (1 - vstart)/(vend - vstart)
+                                except ArithmeticError:
+                                    break
+                            if vend < 0:
+                                # 0 = vstart + (vend - vstart) * cutto
+                                try:
+                                    newcutto = - vstart/(vend - vstart)
+                                except ArithmeticError:
+                                    break
+                            if newcutto is not None and newcutto < cutto:
+                                cutto = newcutto
+                        else:
+                            if cutfrom < cutto:
+                                cutfromvpos = []
+                                cuttovpos = []
+                                for vstart, vend in zip(styledata.lastvpos, styledata.vpos):
+                                    cutfromvpos.append(vstart + (vend - vstart) * cutfrom)
+                                    cuttovpos.append(vstart + (vend - vstart) * cutto)
+                                styledata.linebasepoints.append(styledata.graph.vpos_pt(*cutfromvpos))
+                                styledata.linebasepoints.append(styledata.graph.vpos_pt(*cuttovpos))
+                        styledata.validvpos = 0 # clear linebasepoints below
+            styledata.lastvpos = styledata.vpos
+        else:
+            styledata.lastvpos = None
+
+    def addpointstopath(self, styledata):
+        # add baselinepoints to styledata.path
+        if len(styledata.linebasepoints) > 1:
+            styledata.path.append(path.moveto_pt(*styledata.linebasepoints[0]))
+            if len(styledata.linebasepoints) > 2:
+                styledata.path.append(path.multilineto_pt(styledata.linebasepoints[1:]))
+            else:
+                styledata.path.append(path.lineto_pt(*styledata.linebasepoints[1]))
+        styledata.linebasepoints = []
+
+    def donedrawpoints(self, graph, styledata):
+        self.addpointstopath(styledata)
+        if styledata.lineattrs is not None:
+            styledata.linecanvas.stroke(styledata.path, styledata.lineattrs)
+
+    def drawpoint(self, graph, styledata):
+        self.appendlinebasepoints(graph, styledata)
+        if not styledata.validvpos:
+            self.addpointstopath(styledata)
+
+
+class errorbars(_style):
+
+    defaulterrorbarattrs = []
+
+    def __init__(self, size="0.1 cm",
+                       errorbarattrs=[],
+                       epsilon=1e-10):
+        self.size_str = size
+        self.errorbarattrs = errorbarattrs
+        self.epsilon = epsilon
+
+    def selectstyle(self, selectindex, selecttotal, styledata):
+        styledata.errorsize_pt = unit.topt(unit.length(attr.selectattr(self.size_str, selectindex, selecttotal), default_type="v"))
+        styledata.errorbarattrs = attr.selectattrs(self.defaulterrorbarattrs + self.errorbarattrs, selectindex, selecttotal)
+
+    def initdrawpoints(self, graph, styledata):
+        styledata.errorbarcanvas = graph.insert(canvas.canvas())
+        styledata.errorlist = []
+        if styledata.errorbarattrs is not None:
+            axisindex = 0
+            for axisname in graph.axisnames:
+                if styledata.index[axisname].keys() != ["x"]:
+                    styledata.errorlist.append((axisname, axisindex))
+                axisindex += 1
+
+    def doerrorbars(self, styledata):
+        # errorbar loop over the different direction having errorbars
+        for erroraxisname, erroraxisindex in styledata.errorlist:
                 # create path for errorbars
                 errorpath = path.path()
                 errorpath += styledata.graph.vgeodesic(*(vminpos + vmaxpos))
@@ -435,58 +527,8 @@ class symbolline(_style):
                 if len(errorpath.path):
                     styledata.errorbarcanvas.stroke(errorpath, styledata.errorbarattrs)
 
-    def initdrawpoints(self, graph, styledata):
-        if styledata.lineattrs is not None:
-            # TODO: bbox shortcut
-            linecanvas = graph.insert(canvas.canvas())
-        if styledata.errorbarattrs is not None:
-            # TODO: bbox shortcut
-            styledata.errorbarcanvas = graph.insert(canvas.canvas())
-        styledata.path = path.path()
-        styledata.linebasepoints = []
-        styledata.lastvpos = None
-        styledata.errorlist = []
-        styledata.graph = graph
-        if styledata.errorbarattrs is not None:
-            axisindex = 0
-            for axisname in graph.axisnames:
-                if styledata.index[axisname].keys() != ["x"]:
-                    styledata.errorlist.append((axisname, axisindex))
-                axisindex += 1
-
     def drawpoint(self, graph, styledata):
-        self.vpos(styledata)
-        if styledata.drawsymbol:
-            styledata.xpos, styledata.ypos = graph.vpos_pt(*styledata.vpos)
-            self.drawsymbol_pt(graph, styledata.xpos, styledata.ypos, styledata, point=styledata.point)
-        self.appendlinebasepoints(styledata)
-        if not styledata.validvpos:
-            self.addpointstopath(styledata)
         self.doerrorbars(styledata)
-
-    def donedrawpoints(self, graph, styledata):
-        self.addpointstopath(styledata)
-
-        # stroke styledata.path
-        if styledata.lineattrs is not None:
-            linecanvas.stroke(styledata.path, styledata.lineattrs)
-
-    def key_pt(self, c, x_pt, y_pt, width_pt, height_pt, styledata):
-        self.drawsymbol_pt(c, x_pt+0.5*width_pt, y_pt+0.5*height_pt, styledata)
-        if styledata.lineattrs is not None:
-            c.stroke(path.line_pt(x_pt, y_pt+0.5*height_pt, x_pt+width_pt, y_pt+0.5*height_pt), styledata.lineattrs)
-
-
-class symbol(symbolline):
-
-    def __init__(self, *args, **kwargs):
-        symbolline.__init__(self, lineattrs=None, *args, **kwargs)
-
-
-class line(symbolline):
-
-    def __init__(self, lineattrs=[]):
-        symbolline.__init__(self, symbolattrs=None, errorbarattrs=None, lineattrs=lineattrs)
 
 
 class text(symbol):

@@ -503,8 +503,9 @@ class function:
         self.mathtree = parser.parse(expression)
         self.variable = None
 
-    def setstyles(self, graph, style):
-        self.style = style
+    def setstyles(self, graph, styles):
+        self.styles = styles
+        self.styledata = styledata()
         for variable in self.mathtree.VarList():
             if variable in graph.axes.keys():
                 if self.variable is None:
@@ -515,13 +516,16 @@ class function:
             raise ValueError("no variable found")
         self.xaxis = graph.axes[self.variable]
         self.columns = {self.variable: 1, self.result: 2}
-        unhandledcolumns = self.style.setdata(graph, self.columns, self.styledata)
+        unhandledcolumns = self.columns
+        for style in self.styles:
+            unhandledcolumns = style.setdata(graph, unhandledcolumns, self.styledata)
         unhandledcolumnkeys = unhandledcolumns.keys()
         if len(unhandledcolumnkeys):
             raise ValueError("style couldn't handle column keys %s" % unhandledcolumnkeys)
 
     def selectstyle(self, graph, selectindex, selecttotal):
-        self.style.selectstyle(selectindex, selecttotal, self.styledata)
+        for style in self.styles:
+            style.selectstyle(selectindex, selecttotal, self.styledata)
 
     def adjustaxes(self, graph, step):
         """
@@ -537,7 +541,8 @@ class function:
                 self.points.append([None, self.min])
             if self.max is not None:
                 self.points.append([None, self.max])
-            self.style.adjustaxes(self.points, [1], self.styledata)
+            for style in self.styles:
+                style.adjustaxes(self.points, [1], self.styledata)
         elif step == 1:
             min, max = graph.axes[self.variable].getrange()
             if self.min is not None: min = self.min
@@ -558,11 +563,19 @@ class function:
                 except (ArithmeticError, ValueError):
                     pass
         elif step == 2:
-            self.style.adjustaxes(self.points, [2], self.styledata)
+            for style in self.styles:
+                style.adjustaxes(self.points, [2], self.styledata)
 
     def draw(self, graph):
-        raise # TODO
-        self.style.drawpoints(self.points, graph, self.styledata)
+        # TODO code dublication
+        for style in self.styles:
+            style.initdrawpoints(graph, self.styledata)
+        for point in self.points:
+            self.styledata.point = point
+            for style in self.styles:
+                style.drawpoint(graph, self.styledata)
+        for style in self.styles:
+            style.donedrawpoints(graph, self.styledata)
 
 
 class paramfunction:
