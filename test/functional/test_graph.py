@@ -8,13 +8,14 @@ from pyx import mathtree, attr
 text.set(mode="latex")
 
 def test_multiaxes_data(c, x, y):
-    g = c.insert(graph.graphxy(x, y, height=5, key=graph.key(pos="tl"),
+    #g = c.insert(graph.graphxy(x, y, height=5, key=graph.key(pos="tl"),
+    g = c.insert(graph.graphxy(x, y, height=5,
                                x=graph.logaxis(title="$W$", manualticks=[graph.tick(math.sqrt(8)*100, label="?"), graph.tick(math.sqrt(8), label="$\sqrt{8}$")]),
                                y=graph.logaxis(title=r"$PPP_1$",
                                                painter=graph.axispainter(titledirection=None)),
                                y2=graph.logaxis(title="$P_2$"),
                                y3=graph.logaxis(title="$PPP_3$",
-                                                painter=graph.axispainter(titledirection=graph.rotatetext(45), gridattrs=[attr.changelist([color.rgb.red, color.rgb.green])]),
+                                                painter=graph.axispainter(titledirection=graph.rotatetext(45), gridattrs=[color.palette.RedGreen]),
                                                 texter=graph.decimaltexter(equalprecision=1)),
                                y5=graph.logaxis(title="$P_5$")))
     df = data.datafile("data/testdata")
@@ -22,7 +23,7 @@ def test_multiaxes_data(c, x, y):
             graph.data(df, x=1, y2=4),
             graph.data(df, x=1, y3=5),
             graph.data(df, x=1, y5=6)),
-           style=graph.symbol(symbolattrs=(graph.changecolor.RedGreen(), graph.changestrokedfilled()), symbol=graph.changesymbol.squaretwice()))
+           style=graph.symbol(symbolattrs=[deco.stroked.clear, color.palette.RedGreen, graph.symbol.changestrokedfilled], symbol=graph.symbol.changesquaretwice))
     g.finish()
 
 def test_piaxis_function(c, x, y):
@@ -30,7 +31,7 @@ def test_piaxis_function(c, x, y):
     g = c.insert(graph.graphxy(x, y, height=5, x=xaxis))
     # g = c.insert(graph.graphxy(x, y, height=5, x=xaxis, x2=xaxis)) # TODO
     g.plot([graph.function("y=sin(x-i*pi/10)", context={"i": i}) for i in range(20)],
-           style=graph.line(lineattrs=(graph.changecolor.Hue(), graph.changelinestyle())))
+           style=graph.line(lineattrs=[color.palette.Hue]))
     g.finish()
 
 def test_textaxis_errorbars(c, x, y):
@@ -71,8 +72,7 @@ def test_ownmark(c, x, y):
 def test_allerrorbars(c, x, y):
     df = data.datafile("data/testdata3")
     g = c.insert(graph.graphxy(x, y, height=5, width=5))
-    #g.plot(graph.data(df, x="x", y="y", xmin="xmin", xmax="xmax", ymin="ymin", ymax="ymax", text="text"), graph.text())
-    g.plot(graph.data(df, x="x", y="y", xmin="xmin", xmax="xmax", ymin="ymin", ymax="ymax"))
+    g.plot(graph.data(df, x="x", y="y", xmin="xmin", xmax="xmax", ymin="ymin", ymax="ymax", text="text"), graph.text())
     g.finish()
 
 #def test_3d(c, x, y):
@@ -121,8 +121,8 @@ def test_bar(c, x, y):
     g.finish()
 
 c = canvas.canvas()
-#test_multiaxes_data(c, 0, 21)
-#test_piaxis_function(c, 0, 14)
+test_multiaxes_data(c, 0, 21)
+test_piaxis_function(c, 0, 14)
 #test_textaxis_errorbars(c, 0, 7)
 #test_ownmark(c, 0, 0)
 test_allerrorbars(c, -7, 0)

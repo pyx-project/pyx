@@ -191,7 +191,7 @@ class palette(attr.changeattr):
         return self.colorclass(**color)
 
     def select(self, index, total):
-        return self.getcolor(self, float(index)/total)
+        return self.getcolor(index/(total-1.0))
 
 
 palette.Gray           = palette(gray.white, gray.black)

@@ -3045,14 +3045,6 @@ class lineaxisposlinegrid(lineaxispos):
                           (1-v)*self.y1_pt+v*self.y2_pt+self.fixtickdirection[1]*self.endgridlength_pt)
 
 
-class plotinfo:
-
-    def __init__(self, data, style):
-        self.data = data
-        self.style = style
-
-
-
 class graphxy(canvas.canvas):
 
     axisnames = "x", "y"
@@ -3076,33 +3068,25 @@ class graphxy(canvas.canvas):
         return self.insert(canvas.canvas(canvas.clip(path.rect_pt(self.xpos_pt, self.ypos_pt, self.width_pt, self.height_pt))))
 
     def plot(self, data, style=None):
-        #if self.haslayout:
-        #    raise RuntimeError("layout setup was already performed")
-        #if style is None:
-        #    if helper.issequence(data):
-        #        raise RuntimeError("list plot needs an explicit style")
-        #    if self.defaultstyle.has_key(data.defaultstyle):
-        #        style = self.defaultstyle[data.defaultstyle].iterate()
-        #    else:
-        #        style = data.defaultstyle()
-        #        self.defaultstyle[data.defaultstyle] = style
-        #plotinfos = []
-        #first = 1
-        #for d in helper.ensuresequence(data):
-        #    if not first:
-        #        style = style.iterate()
-        #    first = 0
-        #    if d is not None:
-        #        d.setstyle(self, style)
-        #        plotinfos.append(plotinfo(d, style))
-        #self.plotinfos.extend(plotinfos)
-        #if helper.issequence(data):
-        #    return plotinfos
-        #return plotinfos[0]
+        if self.haslayout:
+            raise RuntimeError("layout setup was already performed")
+        try:
+            for d in data:
+                pass
+        except:
+            usedata = [data]
+        else:
+            usedata = data
         if style is None:
-            style = data.defaultstyle
-        data.setstyle(self, style)
-        self.plotinfos.append(plotinfo(data, style))
+            for d in usedata:
+                if style is None:
+                    style = d.defaultstyle
+                elif style != d.defaultstyle:
+                    raise RuntimeError("defaultstyles differ")
+        for d in usedata:
+            d.setstyle(style)
+            self.plotdata.append(d)
+        return data
 
     def addkey(self, key, *plotinfos):
         if self.haslayout:
@@ -3158,11 +3142,36 @@ class graphxy(canvas.canvas):
             return path.line_pt(xpos, ypos + start_pt, xpos, ypos + end_pt)
         raise RuntimeError("invalid isometric direction '%s'" % direction)
 
-    #def visometric(self, vx1, vy1):
-    #    return path.line_pt(self.xpos_pt+vx1*self.width_pt,
-    #                        self.ypos_pt+vy1*self.height_pt,
-    #                        self.xpos_pt+vx2*self.width_pt,
-    #                        self.ypos_pt+vy2*self.height_pt)
+    def isometric(self, x, y, direction, start, end, xaxis=None, yaxis=None):
+        if xaxis is None:
+            xaxis = self.axes["x"]
+        if yaxis is None:
+            yaxis = self.axes["y"]
+        xpos = self.xpos_pt+xaxis.convert(x)*self.width_pt
+        ypos = self.ypos_pt+yaxis.convert(y)*self.height_pt
+        if direction == "x":
+            return path.line_pt(xpos + unit.topt(start), ypos, xpos + unit.topt(end), ypos)
+        elif direction == "y":
+            return path.line_pt(xpos, ypos + unit.topt(start), xpos, ypos + unit.topt(end))
+        raise RuntimeError("invalid isometric direction '%s'" % direction)
+
+    def visometric_pt(self, vx, vy, direction, start_pt, end_pt):
+        xpos = self.xpos_pt+vx*self.width_pt
+        ypos = self.ypos_pt+vy*self.height_pt
+        if direction == "x":
+            return path.line_pt(xpos + start_pt, ypos, xpos + end_pt, ypos)
+        elif direction == "y":
+            return path.line_pt(xpos, ypos + start_pt, xpos, ypos + end_pt)
+        raise RuntimeError("invalid isometric direction '%s'" % direction)
+
+    def visometric(self, vx, vy, direction, start, end):
+        xpos = self.xpos_pt+vx*self.width_pt
+        ypos = self.ypos_pt+vy*self.height_pt
+        if direction == "x":
+            return path.line_pt(xpos + unit.topt(start), ypos, xpos + unit.topt(end), ypos)
+        elif direction == "y":
+            return path.line_pt(xpos, ypos + unit.topt(start), xpos, ypos + unit.topt(end))
+        raise RuntimeError("invalid isometric direction '%s'" % direction)
 
     def keynum(self, key):
         try:
@@ -3183,10 +3192,28 @@ class graphxy(canvas.canvas):
 
     def dolayout(self):
         if not self.removedomethod(self.dolayout): return
-        for step in range(3):
-            for plotinfo in self.plotinfos:
-                plotinfo.data.adjustaxes(self, step)
 
+        # count the usage of styles and perform selects
+        styletotal = {}
+        for data in self.plotdata:
+            try:
+                styletotal[id(data.style)] += 1
+            except:
+                styletotal[id(data.style)] = 1
+        styleindex = {}
+        for data in self.plotdata:
+            try:
+                styleindex[id(data.style)] += 1
+            except:
+                styleindex[id(data.style)] = 0
+            data.selectstyle(self, styleindex[id(data.style)], styletotal[id(data.style)])
+
+        # adjust the axes ranges
+        for step in range(3):
+            for data in self.plotdata:
+                data.adjustaxes(self, step)
+
+        # finish all axes
         axesdist = unit.length(self.axesdist_str, default_type="v")
         XPattern = re.compile(r"%s([2-9]|[1-9][0-9]+)?$" % self.axisnames[0])
         YPattern = re.compile(r"%s([2-9]|[1-9][0-9]+)?$" % self.axisnames[1])
@@ -3269,8 +3296,8 @@ class graphxy(canvas.canvas):
     def dodata(self):
         self.dolayout()
         if not self.removedomethod(self.dodata): return
-        for plotinfo in self.plotinfos:
-            plotinfo.data.draw(self)
+        for data in self.plotdata:
+            data.draw(self)
 
     def _dokey(self, key, *plotinfos):
         key.setplotinfos(*plotinfos)
@@ -3352,7 +3379,7 @@ class graphxy(canvas.canvas):
         self.key = key
         self.backgroundattrs = backgroundattrs
         self.axesdist_str = axesdist
-        self.plotinfos = []
+        self.plotdata = []
         self.domethods = [self.dolayout, self.dobackground, self.doaxes, self.dodata, self.dokey]
         self.haslayout = 0
         self.addkeys = []
@@ -3612,20 +3639,6 @@ class graphxy(canvas.canvas):
 
 
 ################################################################################
-# some changeable attr (should be moved elsewhere)
-################################################################################
-
-
-changelinestyle = attr.changelist([style.linestyle.solid,
-                                   style.linestyle.dashed,
-                                   style.linestyle.dotted,
-                                   style.linestyle.dashdotted])
-
-changestrokedfilled = attr.changelist([deco.stroked, deco.filled])
-changefilledstroked = attr.changelist([deco.filled, deco.stroked])
-
-
-################################################################################
 # styles
 ################################################################################
 
@@ -3668,23 +3681,43 @@ class symbolline:
                 path.lineto_pt(x_pt, y_pt+0.930604859*size_pt),
                 path.closepath())
 
-    defaultsymbolattrs = [deco.stroked]
     changecross = attr.changelist([cross, plus, square, triangle, circle, diamond])
+    changeplus = attr.changelist([plus, square, triangle, circle, diamond, cross])
+    changesquare = attr.changelist([square, triangle, circle, diamond, cross, plus])
+    changetriangle = attr.changelist([triangle, circle, diamond, cross, plus, square])
+    changecircle = attr.changelist([circle, diamond, cross, plus, square, triangle])
+    changediamond = attr.changelist([diamond, cross, plus, square, triangle, circle])
+    changesquaretwice = attr.changelist([square, square, triangle, triangle, circle, circle, diamond, diamond])
+    changetriangletwice = attr.changelist([triangle, triangle, circle, circle, diamond, diamond, square, square])
+    changecircletwice = attr.changelist([circle, circle, diamond, diamond, square, square, triangle, triangle])
+    changediamondtwice = attr.changelist([diamond, diamond, square, square, triangle, triangle, circle, circle])
+
+    changestrokedfilled = attr.changelist([deco.stroked, deco.filled])
+    changefilledstroked = attr.changelist([deco.filled, deco.stroked])
+
+    changelinestyle = attr.changelist([style.linestyle.solid,
+                                       style.linestyle.dashed,
+                                       style.linestyle.dotted,
+                                       style.linestyle.dashdotted])
+
+    defaultsymbolattrs = [deco.stroked]
+    defaulterrorbarattrs = []
+    defaultlineattrs = [changelinestyle]
 
     def __init__(self, symbol=changecross,
                        size="0.2 cm",
-                       symbolattrs=[],
                        errorscale=0.5,
+                       symbolattrs=[],
                        errorbarattrs=[],
                        lineattrs=[]):
         self.size_str = size
         self.symbol = symbol
-        self.symbolattrs = symbolattrs
         self.errorscale = errorscale
+        self.symbolattrs = symbolattrs
         self.errorbarattrs = errorbarattrs
         self.lineattrs = lineattrs
 
-    def set(self, graph, columns, selectindex, selecttotal, data):
+    def setdata(self, graph, columns, selectindex, selecttotal, data):
         """
         - the instance should be considered read-only
           (it might be shared between several data)
@@ -3695,9 +3728,18 @@ class symbolline:
         data.symbol = attr.selectattr(self.symbol, selectindex, selecttotal)
         data.size_pt = unit.topt(unit.length(attr.selectattr(self.size_str, selectindex, selecttotal), default_type="v"))
         data.errorsize_pt = self.errorscale * data.size_pt
-        data.symbolattrs = attr.selectattrs(self.symbolattrs, selectindex, selecttotal)
-        data.errorbarattrs = attr.selectattrs(self.errorbarattrs, selectindex, selecttotal)
-        data.lineattrs = attr.selectattrs(self.lineattrs, selectindex, selecttotal)
+        if self.symbolattrs is not None:
+            data.symbolattrs = attr.selectattrs(self.defaultsymbolattrs + self.symbolattrs, selectindex, selecttotal)
+        else:
+            data.symbolattrs = None
+        if self.errorbarattrs is not None:
+            data.errorbarattrs = attr.selectattrs(self.defaulterrorbarattrs + self.errorbarattrs, selectindex, selecttotal)
+        else:
+            data.errorbarattrs = None
+        if self.lineattrs is not None:
+            data.lineattrs = attr.selectattrs(self.defaultlineattrs + self.lineattrs, selectindex, selecttotal)
+        else:
+            data.lineattrs = None
 
         # analyse column information
         data.index = {} # a nested index dictionary containing
@@ -3766,17 +3808,14 @@ class symbolline:
             if data.index[axisname].has_key("dmax"):
                 data.axes[axisname].adjustrange(data.points, data.index[axisname]["x"], deltamaxindex=data.index[axisname]["dmax"])
 
-    def drawsymbol_pt(self, c, x, y, data, point=None):
-        c.draw(path.path(*data.symbol(self, x, y, data.size_pt)), self.defaultsymbolattrs + data.symbolattrs)
-
-    def drawsymbol(self, c, x, y, **kwargs):
-        self.drawsymbol_pt(c, unit.topt(x), unit.topt(y), **kwargs)
-
-    def key(self, c, x_pt, y_pt, width_pt, height_pt, data):
+    def drawsymbol_pt(self, c, x_pt, y_pt, data, point=None):
         if data.symbolattrs is not None:
-            self.drawsymbol_pt(c, x+0.5*width, y+0.5*height, data)
+            c.draw(path.path(*data.symbol(self, x_pt, y_pt, data.size_pt)), data.symbolattrs)
+
+    def key_pt(self, c, x_pt, y_pt, width_pt, height_pt, data):
+        self.drawsymbol_pt(c, x_pt+0.5*width, y_pt+0.5*height, data)
         if data.lineattrs is not None:
-            c.stroke(path.line_pt(x, y + 0.5 * height, x + width, y + 0.5 * height), data.lineattrs)
+            c.stroke(path.line_pt(x_pt, y_pt+0.5*height, x_pt+width, y_pt+0.5*height), data.lineattrs)
 
     def drawpoints(self, graph, data):
         if data.lineattrs is not None or data.errorbarattrs is not None:
@@ -3885,79 +3924,25 @@ class symbolline:
 
                 # stroke errorpath
                 if len(errorpath.path):
-                    clipcanvas.stroke(errorpath, self.errorbarattrs)
+                    clipcanvas.stroke(errorpath, data.errorbarattrs)
 
         if data.lineattrs is not None:
-            clipcanvas.stroke(data.line, self.lineattrs)
+            clipcanvas.stroke(data.line, data.lineattrs)
 
 
-# class changesymbol(attr.changelist): pass
-# 
-# 
-# class _changesymbolcross(changesymbol):
-#     defaultsequence = (symbol.cross, symbol.plus, symbol.square, symbol.triangle, symbol.circle, symbol.diamond)
-# 
-# 
-# class _changesymbolplus(changesymbol):
-#     defaultsequence = (symbol.plus, symbol.square, symbol.triangle, symbol.circle, symbol.diamond, symbol.cross)
-# 
-# 
-# class _changesymbolsquare(changesymbol):
-#     defaultsequence = (symbol.square, symbol.triangle, symbol.circle, symbol.diamond, symbol.cross, symbol.plus)
-# 
-# 
-# class _changesymboltriangle(changesymbol):
-#     defaultsequence = (symbol.triangle, symbol.circle, symbol.diamond, symbol.cross, symbol.plus, symbol.square)
-# 
-# 
-# class _changesymbolcircle(changesymbol):
-#     defaultsequence = (symbol.circle, symbol.diamond, symbol.cross, symbol.plus, symbol.square, symbol.triangle)
-# 
-# 
-# class _changesymboldiamond(changesymbol):
-#     defaultsequence = (symbol.diamond, symbol.cross, symbol.plus, symbol.square, symbol.triangle, symbol.circle)
-# 
-# 
-# class _changesymbolsquaretwice(changesymbol):
-#     defaultsequence = (symbol.square, symbol.square, symbol.triangle, symbol.triangle,
-#                        symbol.circle, symbol.circle, symbol.diamond, symbol.diamond)
-# 
-# 
-# class _changesymboltriangletwice(changesymbol):
-#     defaultsequence = (symbol.triangle, symbol.triangle, symbol.circle, symbol.circle,
-#                        symbol.diamond, symbol.diamond, symbol.square, symbol.square)
-# 
-# 
-# class _changesymbolcircletwice(changesymbol):
-#     defaultsequence = (symbol.circle, symbol.circle, symbol.diamond, symbol.diamond,
-#                        symbol.square, symbol.square, symbol.triangle, symbol.triangle)
-# 
-# 
-# class _changesymboldiamondtwice(changesymbol):
-#     defaultsequence = (symbol.diamond, symbol.diamond, symbol.square, symbol.square,
-#                        symbol.triangle, symbol.triangle, symbol.circle, symbol.circle)
-# 
-# 
-# changesymbol.cross         = _changesymbolcross
-# changesymbol.plus          = _changesymbolplus
-# changesymbol.square        = _changesymbolsquare
-# changesymbol.triangle      = _changesymboltriangle
-# changesymbol.circle        = _changesymbolcircle
-# changesymbol.diamond       = _changesymboldiamond
-# changesymbol.squaretwice   = _changesymbolsquaretwice
-# changesymbol.triangletwice = _changesymboltriangletwice
-# changesymbol.circletwice   = _changesymbolcircletwice
-# changesymbol.diamondtwice  = _changesymboldiamondtwice
-# 
-# 
-# class line(symbol):
-# 
-#     def __init__(self, lineattrs=helper.nodefault):
-#         if lineattrs is helper.nodefault:
-#             lineattrs = (changelinestyle(), style.linejoin.round)
-#         symbol.__init__(self, symbolattrs=None, errorbarattrs=None, lineattrs=lineattrs)
-# 
-# 
+class line(symbolline):
+
+    def __init__(self, lineattrs=[]):
+        symbolline.__init__(self, symbolattrs=None, errorbarattrs=None, lineattrs=lineattrs)
+
+
+class symbol(symbolline):
+
+    def __init__(self, **kwargs):
+        symbolline.__init__(self, lineattrs=None, **kwargs)
+
+
+
 # class rect(symbol):
 # 
 #     def __init__(self, palette=color.palette.Gray):
@@ -4005,51 +3990,47 @@ class symbolline:
 # 
 #     def key(self, c, x, y, width, height):
 #         raise RuntimeError("style doesn't yet provide a key")
-# 
-# 
-# class text(symbol):
-# 
-#     def __init__(self, textdx="0", textdy="0.3 cm", textattrs=textmodule.halign.center, **args):
-#         self.textindex = None
-#         self.textdx_str = textdx
-#         self.textdy_str = textdy
-#         self._textattrs = textattrs
-#         symbol.__init__(self, **args)
-# 
-#     def iteratedict(self):
-#         result = symbol.iteratedict()
-#         result["textattrs"] = _iterateattr(self._textattrs)
-#         return result
-# 
-#     def iterate(self):
-#         return textsymbol(**self.iteratedict())
-# 
-#     def othercolumnkey(self, key, index):
-#         if key == "text":
-#             self.textindex = index
-#         else:
-#             symbol.othercolumnkey(self, key, index)
-# 
-#     def drawsymbol_pt(self, graph, x, y, point=None):
-#         symbol.drawsymbol_pt(self, graph, x, y, point)
-#         if None not in (x, y, point[self.textindex]) and self._textattrs is not None:
-#             graph.text_pt(x + self.textdx_pt, y + self.textdy_pt, str(point[self.textindex]), helper.ensuresequence(self.textattrs))
-# 
-#     def drawpoints(self, graph, points):
-#         self.textdx = unit.length(_getattr(self.textdx_str), default_type="v")
-#         self.textdy = unit.length(_getattr(self.textdy_str), default_type="v")
-#         self.textdx_pt = unit.topt(self.textdx)
-#         self.textdy_pt = unit.topt(self.textdy)
-#         if self._textattrs is not None:
-#             self.textattrs = _getattr(self._textattrs)
-#         if self.textindex is None:
-#             raise RuntimeError("column 'text' not set")
-#         symbol.drawpoints(self, graph, points)
-# 
-#     def key(self, c, x, y, width, height):
-#         raise RuntimeError("style doesn't yet provide a key")
-# 
-# 
+
+
+class text(symbol):
+
+    defaulttextattrs = [textmodule.halign.center, textmodule.vshift.mathaxis]
+
+    def __init__(self, textdx="0", textdy="0.3 cm", textattrs=[], **kwargs):
+        self.textdx_str = textdx
+        self.textdy_str = textdy
+        self.textattrs = textattrs
+        symbol.__init__(self, **kwargs)
+
+    def setdata(self, graph, columns, selectindex, selecttotal, data):
+        # select style
+        if self.textattrs is not None:
+            data.textattrs = attr.selectattrs(self.defaulttextattrs + self.textattrs, selectindex, selecttotal)
+        else:
+            data.textattrs = None
+
+        # analyse column information
+        columns = columns.copy()
+        data.textindex = columns["text"]
+        del columns["text"]
+        return symbol.setdata(self, graph, columns, selectindex, selecttotal, data)
+
+    def drawsymbol_pt(self, c, x, y, data, point=None):
+        symbol.drawsymbol_pt(self, c, x, y, data, point)
+        if None not in (x, y, point[data.textindex]) and data.textattrs is not None:
+            c.text_pt(x + data.textdx_pt, y + data.textdy_pt, str(point[data.textindex]), data.textattrs)
+
+    def drawpoints(self, graph, points):
+        data.textdx = unit.length(self.textdx_str, default_type="v")
+        data.textdy = unit.length(self.textdy_str, default_type="v")
+        data.textdx_pt = unit.topt(data.textdx)
+        data.textdy_pt = unit.topt(data.textdy)
+        symbol.drawpoints(self, graph, points)
+
+    def key(self, c, x, y, width, height):
+        raise RuntimeError("style doesn't yet provide a key")
+
+
 # class arrow(symbol):
 # 
 #     def __init__(self, linelength="0.2 cm", arrowattrs=(), arrowsize="0.1 cm", arrowdict={}, epsilon=1e-10):
@@ -4275,7 +4256,7 @@ class symbolline:
 
 class data:
 
-    defaultstyle = symbolline()
+    defaultstyle = symbol()
 
     def __init__(self, file, title=helper.nodefault, context={}, **columns):
         self.title = title
@@ -4296,9 +4277,11 @@ class data:
                 self.data.addcolumn(column, context=context)
         self.points = self.data.data
 
-    def setstyle(self, graph, style, selectindex=0, selecttotal=1):
+    def setstyle(self, style):
         self.style = style
-        unhandledcolumns = self.style.set(graph, self.columns, selectindex, selecttotal, self)
+
+    def selectstyle(self, graph, selectindex, selecttotal):
+        unhandledcolumns = self.style.setdata(graph, self.columns, selectindex, selecttotal, self)
         unhandledcolumnkeys = unhandledcolumns.keys()
         if len(unhandledcolumnkeys):
             raise ValueError("style couldn't handle column keys %s" % unhandledcolumnkeys)
@@ -4320,8 +4303,7 @@ class data:
 
 class function:
 
-    #defaultstyle = line
-    defaultstyle = symbolline
+    defaultstyle = line()
 
     def __init__(self, expression, title=helper.nodefault, min=None, max=None, points=100, parser=mathtree.parser(), context={}):
         if title is helper.nodefault:
@@ -4330,14 +4312,16 @@ class function:
             self.title = title
         self.min = min
         self.max = max
-        self.points = points
+        self.nopoints = points
         self.context = context
         self.result, expression = [x.strip() for x in expression.split("=")]
         self.mathtree = parser.parse(expression)
         self.variable = None
-        self.evalranges = 0
 
-    def setstyle(self, graph, style):
+    def setstyle(self, style):
+        self.style = style
+
+    def selectstyle(self, graph, selectindex, selecttotal):
         for variable in self.mathtree.VarList():
             if variable in graph.axes.keys():
                 if self.variable is None:
@@ -4347,40 +4331,47 @@ class function:
         if self.variable is None:
             raise ValueError("no variable found")
         self.xaxis = graph.axes[self.variable]
-        self.style = style
-        self.style.setcolumns(graph, {self.variable: 0, self.result: 1})
+        unhandledcolumns = self.style.setdata(graph, {self.variable: 0, self.result: 1}, selectindex, selecttotal, self)
+        unhandledcolumnkeys = unhandledcolumns.keys()
+        if len(unhandledcolumnkeys):
+            raise ValueError("style couldn't handle column keys %s" % unhandledcolumnkeys)
 
-    def getranges(self):
-        if self.evalranges:
-            return self.style.getranges(self.data)
-        if None not in (self.min, self.max):
-            return {self.variable: (self.min, self.max)}
-
-    def setranges(self, ranges):
-        if ranges.has_key(self.variable):
-            min, max = ranges[self.variable]
-        if self.min is not None: min = self.min
-        if self.max is not None: max = self.max
-        vmin = self.xaxis.convert(min)
-        vmax = self.xaxis.convert(max)
-        self.data = []
-        for i in range(self.points):
-            self.context[self.variable] = x = self.xaxis.invert(vmin + (vmax-vmin)*i / (self.points-1.0))
-            try:
-                y = self.mathtree.Calc(**self.context)
-            except (ArithmeticError, ValueError):
-                y = None
-            self.data.append((x, y))
-        self.evalranges = 1
+    def adjustaxes(self, graph, step):
+        """
+        - on step == 0 axes with fixed data should be adjusted
+        - on step == 1 the current axes ranges might be used to
+          calculate further data (e.g. y data for a function y=f(x)
+          where the y range depends on the x range)
+        - on step == 2 axes ranges not previously set should be
+          updated by data accumulated by step 1"""
+        if step == 0:
+            min, max = graph.axes[self.variable].getrange()
+            if self.min is not None: min = self.min
+            if self.max is not None: max = self.max
+            vmin = self.xaxis.convert(min)
+            vmax = self.xaxis.convert(max)
+            self.points = []
+            for i in range(self.nopoints):
+                x = self.xaxis.invert(vmin + (vmax-vmin)*i / (self.nopoints-1.0))
+                self.points.append([x])
+            self.style.adjustaxes([self.variable], self)
+        elif step == 1:
+            for point in self.points:
+                self.context[self.variable] = point[0]
+                try:
+                    point.append(self.mathtree.Calc(**self.context))
+                except (ArithmeticError, ValueError):
+                    point.append(None)
+        elif step == 2:
+            self.style.adjustaxes([self.result], self)
 
     def draw(self, graph):
-        self.style.drawpoints(graph, self.data)
+        self.style.drawpoints(graph, self)
 
 
 class paramfunction:
 
-    #defaultstyle = line
-    defaultstyle = symbolline
+    defaultstyle = line()
 
     def __init__(self, varname, min, max, expression, title=helper.nodefault, points=100, parser=mathtree.parser(), context={}):
         if title is helper.nodefault:
