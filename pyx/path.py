@@ -245,9 +245,10 @@ class bcurve_pt:
             (a, b) = self.MidPointSplit()
             return a.seglengths(0.5*paraminterval, epsilon) + b.seglengths(0.5*paraminterval, epsilon)
 
-    def _lentopar(self, lengths, epsilon=1e-5):
+    def _lentopar_pt(self, lengths, epsilon=1e-5):
         """computes the parameters [t] of bpathel where the given lengths (in pts) are assumed
-        returns ( [parameter], total arclength)"""
+        returns ( [parameters], total arclength)
+        A negative length gives a parameter 0"""
 
         # create the list of accumulated lengths
         # and the length of the parameters
@@ -259,7 +260,7 @@ class bcurve_pt:
             cumlengths[i] = cumlengths[i][0] + cumlengths[i-1]
 
         # create the list of parameters to be returned
-        tt = []
+        params = []
         for length in lengths:
             # find the last index that is smaller than length
             try:
@@ -269,19 +270,19 @@ class bcurve_pt:
                 while lindex and (lindex >= len(cumlengths) or
                                   cumlengths[lindex] >= length):
                     lindex -= 1
-            if lindex==0:
-                t = length * 1.0 / cumlengths[0]
-                t *= parlengths[0]
-            elif lindex>=l-2:
-                t = 1
+            if lindex == 0:
+                param = length * 1.0 / cumlengths[0]
+                param *= parlengths[0]
+            elif lindex >= l-2:
+                param = 1
             else:
-                t = (length - cumlengths[lindex]) * 1.0 / (cumlengths[lindex+1] - cumlengths[lindex])
-                t *= parlengths[lindex+1]
+                param = (length - cumlengths[lindex]) * 1.0 / (cumlengths[lindex+1] - cumlengths[lindex])
+                param *= parlengths[lindex+1]
                 for i in range(lindex+1):
-                    t += parlengths[i]
-            t = max(min(t,1),0)
-            tt.append(t)
-        return [tt, cumlengths[-1]]
+                    param += parlengths[i]
+            param = max(min(param,1),0)
+            params.append(param)
+        return [params, cumlengths[-1]]
 
 #
 # bline_pt: Bezier curve segment corresponding to straight line (coordinates in pts)
@@ -1384,7 +1385,7 @@ class normpathel:
         # XXX make this more efficient by treating special cases separately
         return  _bcurvesIntersect([self._bcurve()], 0, 1, [other._bcurve()], 0, 1, epsilon)
 
-    def lentopar(self, lengths, epsilon=1e-5):
+    def _lentopar_pt(self, lengths, epsilon=1e-5):
         """returns tuple (t,l) with
           t the parameter where the arclength of normpathel is length and
           l the total arclength
@@ -1461,8 +1462,8 @@ class normline(normpathel):
     def end_pt(self):
         return self.x1, self.y1
 
-    def lentopar(self, lengths, epsilon=1e-5):
-        l = math.sqrt((self.x0-self.x1)*(self.x0-self.x1)+(self.y0-self.y1)*(self.y0-self.y1))
+    def _lentopar_pt(self, lengths, epsilon=1e-5):
+        l = self.arclength_pt(epsilon)
         return ([max(min(1.0*length/l,1),0) for length in lengths], l)
 
     def reverse(self):
@@ -1558,8 +1559,8 @@ class normcurve(normpathel):
     def end_pt(self):
         return self.x3, self.y3
 
-    def lentopar(self, lengths, epsilon=1e-5):
-        return self._bcurve()._lentopar(lengths, epsilon)
+    def _lentopar_pt(self, lengths, epsilon=1e-5):
+        return self._bcurve()._lentopar_pt(lengths, epsilon)
 
     def reverse(self):
         self.x0, self.y0, self.x1, self.y1, self.x2, self.y2, self.x3, self.y3 = \
@@ -1697,6 +1698,26 @@ class normsubpath:
                         intersections[0].append(intersection[0]+t_a)
                         intersections[1].append(intersection[1]+t_b)
         return intersections
+
+    def _lentopar_pt(self, lengths, epsilon=1e-5):
+        """returns [t, l] where t are parameter value(s) matching given length(s)
+        and l is the total length of the normsubpath
+        The parameters are with respect to the normsubpath: t in [0, self.range()]
+        lengths that are < 0 give parameter 0"""
+
+        allarclength = 0
+        allparams = [0]*len(lengths)
+        rests = [length for length in lengths]
+
+        for pel in self.normpathels:
+            params, arclength = pel._lentopar_pt(rests, epsilon)
+            allarclength += arclength
+            for i in range(len(rests)):
+                if rests[i] >= 0:
+                    rests[i] -= arclength
+                    allparams[i] += params[i]
+
+        return [allparams, allarclength]
 
     def range(self):
         """return maximal parameter value, i.e. number of line/curve segments"""
@@ -2051,58 +2072,57 @@ class normpath(path):
                 st_b += sp_b.range()
             st_a += sp_a.range()
         return intersections
-    
+
     def lentopar(self, lengths, epsilon=1e-5):
         # XXX TODO for Michael
-        """returns [t,l] with t the parameter value(s) matching given length(s)
-        and l the total length"""
-
-        context = _pathcontext()
-        l = len(helper.ensuresequence(lengths))
+        """returns the parameter value(s) matching given length(s)"""
 
         # split the list of lengths apart for positive and negative values
-        t = [[],[]]
         rests = [[],[]] # first the positive then the negative lengths
-        retrafo = [] # for resorting the rests into lengths
+        remap = [] # for resorting the rests into lengths
         for length in helper.ensuresequence(lengths):
             length = unit.topt(length)
-            if length>=0.0:
+            if length >= 0.0:
                 rests[0].append(length)
-                retrafo.append( [0, len(rests[0])-1] )
-                t[0].append(0)
+                remap.append([0,len(rests[0])-1])
             else:
                 rests[1].append(-length)
-                retrafo.append( [1, len(rests[1])-1] )
-                t[1].append(0)
+                remap.append([1,len(rests[1])-1])
+
+        allparams = [[0]*len(rests[0]),[0]*len(rests[1])]
 
         # go through the positive lengths
-        for pel in self.path:
+        for sp in self.subpaths:
             # we need arclength for knowing when all the parameters are done
-            pars, arclength = pel._lentopar(context, rests[0], epsilon)
-            finis = 0
+            # for lengths that are done: rests[i] is negative
+            # sp._lentopar has to ignore such lengths
+            params, arclength = sp._lentopar_pt(rests[0], epsilon)
+            finis = 0 # number of lengths that are done
             for i in range(len(rests[0])):
-                t[0][i] += pars[i]
-                rests[0][i] -= arclength
-                if rests[0][i]<0: finis += 1
-            if finis==len(rests[0]): break
-            pel._updatecontext(context)
+                if rests[0][i] >= 0:
+                  rests[0][i] -= arclength
+                  allparams[0][i] += params[i]
+                else:
+                    finis += 1
+            if finis == len(rests[0]): break
 
         # go through the negative lengths
-        for pel in self.reversed().path:
-            pars, arclength = pel._lentopar(context, rests[1], epsilon)
+        for sp in self.reversed().subpaths:
+            params, arclength = sp._lentopar_pt(rests[1], epsilon)
             finis = 0
             for i in range(len(rests[1])):
-                t[1][i] -= pars[i]
-                rests[1][i] -= arclength
-                if rests[1][i]<0: finis += 1
+                if rests[1][i] >= 0:
+                  rests[1][i] -= arclength
+                  allparams[1][i] -= params[i]
+                else:
+                    finis += 1
             if finis==len(rests[1]): break
-            pel._updatecontext(context)
 
         # re-sort the positive and negative values into one list
-        tt = [ t[p[0]][p[1]] for p in retrafo ]
-        if not helper.issequence(lengths): tt = tt[0]
+        allparams = [allparams[p[0]][p[1]] for p in remap]
+        if not helper.issequence(lengths): allparams = allparams[0]
 
-        return tt
+        return allparams
 
     def range(self):
         """return maximal value for parameter value t"""

@@ -33,7 +33,6 @@ TODO:
      - consider rewrite using the python compiler module
   - path module:
     - _lentopar return value should not contain total length
-    - fix lentopar 
     - write split tests
   - data module:
     - data.data should add line number like data.datafile
