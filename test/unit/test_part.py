@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-import sys, unittest
-sys.path[:0] = [".."]
+import unittest
 
 from pyx import *
 from pyx.graph import frac, tick, manualpart, linpart, logpart

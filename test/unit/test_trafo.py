@@ -20,9 +20,6 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import sys
-sys.path[:0] = [".."]
-
 import unittest
 from pyx import *
 
@@ -35,15 +32,15 @@ def isEqual(trafo1, trafo2):
                         trafo1.vector[1]-trafo2.vector[1]]))<1e-7
 
 def correctOnBasis(t, tesx, tesy):
-    esx=unit.convert_to(t.apply(1,0), "cm")
+    esx = unit.tocm(t.apply("1 t cm", "0 t cm"))
+    esy = unit.tocm(t.apply("0 t cm", "1 t cm"))
+
 #    esx=esx[0].convert_to("cm"), esx[1].convert_to("cm")
-    
-    esy=unit.convert_to(t.apply(0,1), "cm")
 #    esy=esy[0].convert_to("cm"), esy[1].convert_to("cm")
-    
-#    print "  (1,0) => (%f, %f)" % (unit.tom(esx[0])*100, unit.tom(esx[1])*100)
-#    print "  (0,1) => (%f, %f)" % (unit.tom(esy[0])*100, unit.tom(esy[1])*100)
-    
+
+#    print "  (1,0) => (%f, %f)" % (esx[0], esx[1])
+#    print "  (0,1) => (%f, %f)" % (esy[0], esy[1])
+
     return max(map(abs,[esx[0]-tesx[0], esx[1]-tesx[1],
                         esy[0]-tesy[0], esy[1]-tesy[1]]))<1e-7
 
@@ -66,7 +63,7 @@ class TrafoTestCase(unittest.TestCase):
 
     def testRotate(self):
         assert correctOnBasis(trafo.rotate(90),
-                              (0,1), (-1,0)), \
+                              (0, 1), (-1, 0)), \
                "wrong definition of trafo.rotation"
         assert isEqual(trafo.rotate(360), trafo.trafo()), \
                 "trafo.rotation by 360 deg is not 1"
@@ -102,7 +99,7 @@ class TrafoTestCase(unittest.TestCase):
         assert isEqual(trafo.slant(2)*trafo.slant(-2),
                        trafo.trafo()), \
                 "trafo.slant definition wrong"
-   
+
     def testMultVsMethods(self):
         "test multiplication vs trafo methods"
         assert isEqual(trafo.rotate(72).translated(1,2),
@@ -116,7 +113,7 @@ class TrafoTestCase(unittest.TestCase):
                        trafo.rotate(72)*
                        trafo.translate(1,2)), \
                 "trafo.translate/rotate not consistent with multiplication result"
-   
+
     def testTranslateCombined(self):
         assert correctOnBasis(trafo.translate(1,0)*trafo.rotate(90),
                               (1,1), (0,0)), \
@@ -127,7 +124,7 @@ class TrafoTestCase(unittest.TestCase):
         assert isEqual(trafo.rotate(72,1,2),
                        trafo.translate(-1,-2).rotated(72).translated(1,2)), \
                "wrong translate/rotate definition"
-        
+
         assert correctOnBasis(trafo.translate(1,0)*
                               trafo.scale(0.5),
                               (1.5, 0), (1.0,0.5)), \
@@ -136,7 +133,7 @@ class TrafoTestCase(unittest.TestCase):
                               trafo.translate(1,0),
                               (1, 0), (0.5,0.5)), \
                "wrong trafo.translation/trafo.scaling definition"
-                
+
         assert correctOnBasis(trafo.translate(1,0)*
                               trafo.rotate(90)*
                               trafo.scale(0.5),
@@ -150,27 +147,3 @@ class TrafoTestCase(unittest.TestCase):
         assert correctOnBasis(trafo.rotate(90)*trafo.scale(0.5)*trafo.translate(1,0),
                               (0,1), (-0.5,0.5)), \
                "wrong trafo.translation/trafo.rotation/trafo.scaling definition"
-
-class UnitTestCase(unittest.TestCase):
-    def testTrueUnits(self):
-        assert unit.topt(unit.t_pt(42)) == 42, "wrong unit definition"
-        assert unit.tom(unit.t_m(42)) == 42, "wrong unit definition"
-
-    def testUserUnits(self):
-        unit.set(uscale=2)
-        assert unit.topt(unit.pt(42)) == 84, "wrong unit definition"
-        assert unit.tom(unit.m(42)) == 84, "wrong unit definition"
-      
-
-# construct the test suite automagically
-
-suite = unittest.TestSuite((unittest.makeSuite(TrafoTestCase, 'test'),
-                            unittest.makeSuite(UnitTestCase, 'test')))
-
-if __name__ == "__main__":
-    runner = unittest.TextTestRunner()
-    runner.run(suite)
-    
-
-
-

@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-import sys, unittest, StringIO, ConfigParser, types
-sys.path[:0] = [".."]
+import unittest, StringIO, ConfigParser, types
 
 from pyx import *
 
