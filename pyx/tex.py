@@ -808,7 +808,7 @@ In order to achieve this, you have to specify a texfilename in the
 constructor of the class pyx.tex. You can then try to run dvips
 by yourself.\n""")
             else:
-                aepsfile = epsfile.epsfile(tempname + ".eps", translatebb=0, clip=0)
+                aepsfile = epsfile.epsfile(tempname + ".eps", translatebbox=0, clip=0)
                 self.abbox = aepsfile.bbox()
                 epsdatafile = StringIO.StringIO()
                 aepsfile.write(epsdatafile)
