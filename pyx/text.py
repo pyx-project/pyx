@@ -25,7 +25,7 @@
 # TODO: check whether Knuth's division can be simplified within Python
 
 import glob, os, threading, Queue, traceback, re, struct, tempfile
-import helper, bbox, unit, box, base, trafo, canvas, pykpathsea, t1strip
+import helper, unit, box, base, trafo, canvas, pykpathsea
 
 ###############################################################################
 # this is the old stuff
@@ -359,7 +359,7 @@ class Font:
 
         if self.tfmfile.checksum!=c:
             raise DVIError("check sums do not agree: %d vs. %d" %
-                           (self.checksum, c))
+                           (self.tfmfile.checksum, c))
 
         self.tfmdesignsize = round(tfmconv*self.tfmfile.designsizeraw)
 
@@ -369,10 +369,10 @@ class Font:
 
 
         if q<0 or q>134217728:
-            raise DVIError("font '%s' not loaded: bad scale" % fontname)
+            raise DVIError("font '%s' not loaded: bad scale" % self.name)
 
         if d<0 or d>134217728:
-            raise DVIError("font '%s' not loaded: bad design size" % fontname)
+            raise DVIError("font '%s' not loaded: bad design size" % self.name)
 
         self.scale = 1.0*q/d
         self.alpha = 16;
@@ -581,9 +581,9 @@ class DVIFile:
                     if self.debug:
                         print "%d: beginning of page" % self.filepos,
                         print file.readuint32()
-                        for i in range(9): file.readuint32(),
+                        for i in range(9): file.readuint32()
                     else:
-                        for i in range(10): file.readuint32(),
+                        for i in range(10): file.readuint32()
                     file.readuint32()
 
                     self.pos = [0, 0, 0, 0, 0, 0]
