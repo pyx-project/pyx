@@ -10,8 +10,9 @@ of these primitives.
 """
 
 from distutils.core import setup, Extension
+from distutils.command.install import install
 import ConfigParser
-import sys
+import sys, os
 import pyx
 
 #
@@ -38,17 +39,53 @@ if cfg.has_section("PyX"):
 # data files
 #
 
-data_files = [('share/pyx', ['pyx/lfs/10pt.lfs',
-                             'pyx/lfs/11pt.lfs',
-                             'pyx/lfs/12pt.lfs',
-                             'pyx/lfs/10ptex.lfs',
-                             'pyx/lfs/11ptex.lfs',
-                             'pyx/lfs/12ptex.lfs',
-                             'pyx/lfs/foils17pt.lfs',
-                             'pyx/lfs/foils20pt.lfs',
-                             'pyx/lfs/foils25pt.lfs',
-                             'pyx/lfs/foils30pt.lfs',
-                             'contrib/pyx.def'])]
+data_files = [("share/pyx", ["pyx/lfs/10pt.lfs",
+                             "pyx/lfs/11pt.lfs",
+                             "pyx/lfs/12pt.lfs",
+                             "pyx/lfs/10ptex.lfs",
+                             "pyx/lfs/11ptex.lfs",
+                             "pyx/lfs/12ptex.lfs",
+                             "pyx/lfs/foils17pt.lfs",
+                             "pyx/lfs/foils20pt.lfs",
+                             "pyx/lfs/foils25pt.lfs",
+                             "pyx/lfs/foils30pt.lfs",
+                             "contrib/pyx.def"])]
+
+#
+# install enhanced by siteconfig
+#
+
+class pyxinstall(install):
+
+    def run(self):
+        # name of the siteconfig file
+        siteconfigname = os.path.join("pyx", "siteconfig.py")
+
+        # read existing siteconfig
+        try:
+            f = open(siteconfigname, "rb")
+            oldsiteconfig = f.read()
+            f.close()
+        except:
+            oldsiteconfig = None
+
+        # fill siteconfig data
+        sharedir = os.path.join(self.install_data, "share", "pyx")
+        f = open(siteconfigname, "w")
+        f.write("lfsdir = %r\n" % sharedir)
+        f.write("sharedir = %r\n" % sharedir)
+        f.close()
+
+        # perform install
+        install.run(self)
+
+        # restore existing siteconfig
+        if oldsiteconfig is not None:
+            f = open(siteconfigname, "wb")
+            f.write(oldsiteconfig)
+            f.close()
+        else:
+            os.unlink(siteconfigname)
 
 #
 # additional package metadata (only available in Python 2.3 and above)
@@ -84,7 +121,8 @@ setup(name="PyX",
       description=doclines[0],
       long_description="\n".join(doclines[2:]),
       license="GPL",
-      packages=['pyx', 'pyx/graph', 'pyx/graph/axis', 'pyx/t1strip', 'pyx/pykpathsea'],
+      packages=["pyx", "pyx/graph", "pyx/graph/axis", "pyx/t1strip", "pyx/pykpathsea"],
       ext_modules=ext_modules,
       data_files=data_files,
+      cmdclass = {"install": pyxinstall},
       **addargs)

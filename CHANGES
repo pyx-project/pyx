@@ -96,6 +96,8 @@ TODO:
       of length
   - canvas module:
     - added new classes page and document for multipage PostScript output
+  - setup.py and distribution:
+    - create siteconfig on install to store position of the share directory
 
 0.6.2 (2004/04/07):
   - graph module:

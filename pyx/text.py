@@ -23,7 +23,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import glob, os, threading, Queue, traceback, re, tempfile, sys, atexit, time
-import config, unit, box, canvas, trafo, version, attr, style, dvifile
+import config, siteconfig, unit, box, canvas, trafo, version, attr, style, dvifile
 
 ###############################################################################
 # texmessages
@@ -873,8 +873,7 @@ class texrunner:
                 else:
                     lfsname = "%s.lfs" % self.lfs
                 for fulllfsname in [lfsname,
-                                    os.path.join(sys.prefix, "share", "pyx", lfsname),
-                                    os.path.join(os.path.dirname(__file__), "lfs", lfsname)]:
+                                    os.path.join(siteconfig.lfsdir, lfsname)]:
                     try:
                         lfsfile = open(fulllfsname, "r")
                         lfsdef = lfsfile.read()
@@ -884,8 +883,7 @@ class texrunner:
                         pass
                 else:
                     allfiles = (glob.glob("*.lfs") +
-                                glob.glob(os.path.join(sys.prefix, "share", "pyx", "*.lfs")) +
-                                glob.glob(os.path.join(os.path.dirname(__file__), "lfs", "*.lfs")))
+                                glob.glob(os.path.join(siteconfig.lfsdir, "*.lfs")))
                     lfsnames = []
                     for f in allfiles:
                         try:
@@ -903,15 +901,9 @@ class texrunner:
                 self.execute("\\newdimen\\linewidth%\n", [])
             elif self.mode == "latex":
                 if self.pyxgraphics:
-                    for pyxdef in ["pyx.def",
-                                   os.path.join(sys.prefix, "share", "pyx", "pyx.def"),
-                                   os.path.join(os.path.dirname(__file__), "..", "contrib", "pyx.def")]:
-                        try:
-                            open(pyxdef, "r").close()
-                            break
-                        except IOError:
-                            pass
-                    else:
+                    try:
+                        open(os.path.join(siteconfig.sharedir, "pyx.def"), "r").close()
+                    except IOError:
                         IOError("file 'pyx.def' is not available or not readable. Check your installation or turn off the pyxgraphics option.")
                     pyxdef = os.path.abspath(pyxdef).replace(os.sep, "/")
                     self.execute("\\makeatletter%\n"
