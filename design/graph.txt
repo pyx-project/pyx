@@ -121,23 +121,6 @@ graph/axis/axis.py
                - pyx.graph.axis.linkedbar = pyx.graph.axis.axis.linkedbar
                - pyx.graph.axis.pathaxis = pyx.graph.axis.axis.pathaxis
 
-<JL> Warum eigentlich axis statt type? Gibt es dafür einen speziellen Grund?
-     (Nicht dass dagegen wäre, ich frage nur)
-<AW> Ich hab das gestern abend umgestellt. Ich war ziemlich unglücklich, weil es
-     ein graph.type und ein graph.axis.type gab. Das ist verwirrend im Einsatz.
-     Man importiert beispielsweise im graph.type (alte Bezeichnung) das graph.axis.type,
-     damit man die Standard lineare Achse anlegen kann. Dass klappt auch alles prima.
-     Da beim Schreiben der Beispiele sowieso schnell klar wird, dass man graph.type.irgendwas
-     und auch graph.axis.type.irgendwas eh nie schreibt, sondern immer den shortcut nimmt,
-     hab ich mir gedacht, die Umbenennung von type nach graph bzw. axis ist ziemlich sinnvoll.
-     Jetzt ist auch offensichtlich, warum dieses Modul so besonders importiert wird. Und
-     gleichzeitig gibt es den ausgezeichneten Namen "type" nicht mehr. Das könnte man auch
-     relativ leicht wieder umstellen (die Änderungen betreffen nur sehr wenige imports und nach
-     aussen ist das eh nicht sichtbar (wenn man den shortcut verwendet)). Ich denke, das ist
-     aber auch ohne Diskussion gut so, wie ich es jetzt gemacht habe ...
-
-     pathaxis sollte wohl auch nicht path werden. Ich bin nur neugierig...
-
 
 key.py
 
