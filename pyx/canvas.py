@@ -360,8 +360,8 @@ if __name__=="__main__":
 
    
     for angle in range(20):
-#       s=c.canvas(trafo=translate(10,10)*rotate(angle)).draw(p, canvas.linestyle.dashed, canvas.linewidth(0.01*angle))
-       s=c.canvas(trafo=translate(10,10)*rotate(angle)).draw(p, canvas.linestyle.dashed, canvas.linewidth(0.01))
+       s=c.canvas(trafo=translate(10,10)*rotate(angle)).draw(p, 
+           canvas.linestyle.dashed, canvas.linewidth(0.01*angle), grey(angle/20))
  
     c.set(linestyle.solid)
     g=GraphXY(c, t, 10, 15, 8, 6)
@@ -370,7 +370,7 @@ if __name__=="__main__":
     g.plot(Data(DataFile("testdata"), x=0, y=1))
     g.run()
 
-#    c.canvas(trafo=scale(0.5,0.5).rotate(20).translate("10 u mm","50 v mm")).inserteps(0,0,"ratchet_f.eps")
+    c.canvas(trafo=scale(0.5,0.5).rotate(20).translate("10 u mm","50 v mm")).inserteps(0,0,"ratchet_f.eps")
 
     c.write("example", 21, 29.7)
 
