@@ -23,6 +23,8 @@ def test1():
 
     c1.writetofile("test")
 
+def testarc():
+
 def testarcbbox():
 
     c=canvas.canvas()
@@ -89,16 +91,16 @@ def testintersectbezier():
     p=path([moveto(10,10), curveto(12,16,14,15,12,19)])
     q=path([moveto(12,10), curveto(12,16,14,22,11,16)])
 
-    p.ConvertToBezier()
-    q.ConvertToBezier()
+    bp=p.bpath()
+    bq=q.bpath()
 
     c.draw(q)
     c.draw(p)
 
-    isect = p.bpath.intersect(c, q.bpath)
+    isect = bp.intersect(c, bq)
 
     for i in isect:
-        (x, y) = p.bpath.pos(i[0])
+        (x, y) = bp.pos(i[0])
         c.draw(path([moveto(x,y),
                      rmoveto(-0.1, -0.1), rlineto(0.2, 0.2), rmoveto(-0.1, -0.1),
                      rmoveto(-0.1, +0.1), rlineto(0.2, -0.2)]))
