@@ -54,8 +54,10 @@ PyX
   - box module:
     - correct rounding algorithm (Michael Schindler)
   - graph module:
-    - refer to the graphs texrunner instead of the defaulttexrunner
+    - refer to the graphs texrunner instead of the defaulttexrunner (cf. #728209)
     - rounding towards zero bugfix in autolinpart
+  - mathtree module:
+    - addarg bugs (#738724)
 
 0.3.1 (2003/04/04):
   - text module:
