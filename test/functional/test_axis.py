@@ -4,7 +4,7 @@ import sys; sys.path[:0] = ["../.."]
 import math
 from pyx import *
 from pyx.graph.axis.parter import linear as linparter
-from pyx.graph.axis.painter import plain, ticklength, rotatetext
+from pyx.graph.axis.painter import regular, ticklength, rotatetext
 from pyx.graph.axis.texter import rational, exponential
 from pyx.graph.axis.axis import lin, pathaxis
 
@@ -16,16 +16,16 @@ c.insert(pathaxis(path.path(path.moveto(0, 0), path.lineto(0, 8)),
 c.insert(pathaxis(path.path(path.moveto(1, 0), path.lineto(1, 8)),
                         lin(**lintest)))
 c.insert(pathaxis(path.path(path.moveto(5, 0), path.lineto(5, 8)),
-                        lin(painter=plain(labelattrs=[trafo.rotate(45)], titleattrs=[trafo.rotate(45)]), **lintest),
+                        lin(painter=regular(labelattrs=[trafo.rotate(45)], titleattrs=[trafo.rotate(45)]), **lintest),
                         direction=-1))
 c.insert(pathaxis(path.path(path.moveto(8, 0), path.lineto(8, 8)),
-                        lin(painter=plain(labelattrs=[trafo.rotate(45), text.halign.right], titleattrs=[trafo.rotate(-45)]), **lintest),
+                        lin(painter=regular(labelattrs=[trafo.rotate(45), text.halign.right], titleattrs=[trafo.rotate(-45)]), **lintest),
                         direction=-1))
 c.insert(pathaxis(path.path(path.moveto(11, 0), path.lineto(11, 8)),
-                        lin(painter=plain(tickattrs=[color.rgb.red], innerticklength=0, outerticklength=ticklength.normal), **lintest),
+                        lin(painter=regular(tickattrs=[color.rgb.red], innerticklength=0, outerticklength=ticklength.normal), **lintest),
                         direction=-1))
 c.insert(pathaxis(path.path(path.moveto(12, 0), path.lineto(12, 8)),
-                        lin(painter=plain(tickattrs=[attr.changelist([None, color.rgb.green])]), **lintest)))
+                        lin(painter=regular(tickattrs=[attr.changelist([None, color.rgb.green])]), **lintest)))
 c.insert(pathaxis(path.path(path.moveto(16, 0), path.lineto(16, 8)),
                         lin(texter=exponential(), **lintest),
                         direction=-1))
@@ -43,6 +43,6 @@ c.insert(pathaxis(path.circle(4, 17, 4),
                         lin(texter=rational(suffix="\pi"), **lintest)))
 lintest = {"min": 0, "max": 2*math.pi, "divisor": math.pi/180, "parter": linparter("30")}
 c.insert(pathaxis(path.circle(14, 17, 4),
-                        lin(painter=plain(labeldirection=rotatetext.parallel), **lintest)))
+                        lin(painter=regular(labeldirection=rotatetext.parallel), **lintest)))
 c.writeEPSfile("test_axis", paperformat="a4")
 
