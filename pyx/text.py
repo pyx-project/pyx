@@ -1221,7 +1221,7 @@ class texrunner:
                 m = self.PyXVariableBoxPattern.search(self.texmessage, nextpos)
             result = []
             for i in range(pages):
-                result.append(self.dvifile.readpage([ord("P"), ord("y"), ord("X"), i, 0, 0, 0, 0, 0, 0]))
+                result.append(self.dvifile.readpage([i + 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
             if parnos == lastparnos and parshapes == lastparshapes:
                 return result
             loop += 1
