@@ -1924,7 +1924,6 @@ class texrunner:
         savetempdir = tempfile.tempdir
         tempfile.tempdir = os.curdir
         self.texfilename = os.path.basename(tempfile.mktemp())
-        print self.texfilename
         tempfile.tempdir = savetempdir
 
     def execute(self, expr, *checks):
