@@ -6,7 +6,9 @@ import profile
 import pstats
 
 def drawpathwbbox(c, p):
-    c.draw(p)
+    c.draw(p, color.rgb.red)
+    bp=p.bpath()
+    c.draw(bp, color.rgb.green, canvas.linestyle.dashed)
     bbox=p.bbox(c)
     c.draw(rect("%f t pt" % bbox.llx,            "%f t pt" % bbox.lly,
    	        "%f t pt" % (bbox.urx-bbox.llx), "%f t pt" % (bbox.ury-bbox.lly)))
@@ -94,6 +96,48 @@ def testarcbbox(c):
 
     for phi in range(0,360,30):
        drawpathwbbox(c,path([arc(phi*0.1, 30+phi*0.1, 1, phi, phi+390)]))
+       
+
+    for phi in range(0,360,30):
+       drawpathwbbox(c,path([moveto(20+phi*0.1, phi*0.09),
+                             arc(20+phi*0.1, phi*0.1, 1, 0, phi)]))
+
+    for phi in range(0,360,30):
+       drawpathwbbox(c,path([moveto(20+phi*0.1, 5+phi*0.11),
+                             arc(20+phi*0.1, 5+phi*0.1, 1, 0, phi)]))
+
+    for phi in range(0,360,30):
+       drawpathwbbox(c,path([moveto(20+phi*0.1, 10+phi*0.09),
+                             arcn(20+phi*0.1, 10+phi*0.1, 1, 0, phi)]))
+
+    for phi in range(0,360,30):
+       drawpathwbbox(c,path([moveto(20+phi*0.1, 15+phi*0.11),
+                             arcn(20+phi*0.1, 15+phi*0.1, 1, 0, phi)]))
+
+       
+
+    for phi in range(0,360,30):
+       drawpathwbbox(c,path([moveto(50+phi*0.1, phi*0.09),
+                             arc(50+phi*0.1, phi*0.1, 1, 0, phi),
+                             rlineto(1,1)]))
+
+    for phi in range(0,360,30):
+       drawpathwbbox(c,path([moveto(50+phi*0.1, 5+phi*0.11),
+                             arc(50+phi*0.1, 5+phi*0.1, 1, 0, phi),
+                             rlineto(1,1)]))
+
+    for phi in range(0,360,30):
+       drawpathwbbox(c,path([moveto(50+phi*0.1, 10+phi*0.09),
+                             arcn(50+phi*0.1, 10+phi*0.1, 1, 0, phi),
+                             rlineto(1,1)]))
+
+    for phi in range(0,360,30):
+       drawpathwbbox(c,path([moveto(50+phi*0.1, 15+phi*0.11),
+                             arcn(50+phi*0.1, 15+phi*0.1, 1, 0, phi),
+                             rlineto(1,1)]))
+
+
+
 
 
 def testcurvetobbox(c):
