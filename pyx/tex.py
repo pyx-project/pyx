@@ -277,7 +277,7 @@ class tex:
         file.write("\\nonstopmode\n")
         if self.type == mode.LaTeX:
             file.write("\\documentclass[" + self.latexclassopt + "]{" + self.latexclass + "}\n")
-        file.write("\\hsize0truept\n\\vsize0truept\n\\hoffset0truein\n\\voffset0truein\n")
+        file.write("\\hsize0truept\n\\vsize0truept\n\\hoffset0truept\n\\voffset0truept\n")
 
         file.write(self.TexCmds[0].Cmd)
 
@@ -374,7 +374,7 @@ class tex:
         if os.system("dvips -E -o " + TempName + ".eps " + TempName + ".dvi > /dev/null 2>&1"):
             assert 0, "dvips exit code non-zero"
 
-        result = str(canvas.epsfile(self.unit.pt("0.37 t inch"), self.unit.pt("0.37 t inch"), TempName + ".eps", clip = 0))
+        result = str(canvas.epsfile(self.unit.pt("-1 t inch"), self.unit.pt("-10 t inch"), TempName + ".eps", clip = 0, ignorebb = 1))
 
         # merge new sizes
         

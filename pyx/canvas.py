@@ -320,14 +320,14 @@ if __name__=="__main__":
     print "Tiefe von 'Hello world!': ",t.textdp("Hello world!")
     print "Tiefe von 'was mit q': ",t.textdp("was mit q")
     t.text(5, 1, "Hello world!")
-    t.text(5, 2, "Hello world!", halign.center)
-    t.text(5, 3, "Hello world!", halign.right)
-    for a in (-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90):
-        t.text(11+a/10, 5, str(a), angle(a))
-        t.text(11+a/10, 6, str(a), angle(a), halign.center)
-        t.text(11+a/10, 7, str(a), angle(a), halign.right)
-    for pos in range(1,21):
-        t.text(pos, 7.5, ".")
+    #t.text(5, 2, "Hello world!", halign.center)
+    #t.text(5, 3, "Hello world!", halign.right)
+    #for a in (-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90):
+    #    t.text(11+a/10, 5, str(a), angle(a))
+    #    t.text(11+a/10, 6, str(a), angle(a), halign.center)
+    #    t.text(11+a/10, 7, str(a), angle(a), halign.right)
+    #for pos in range(1,21):
+    #    t.text(pos, 7.5, ".")
    
     p=path([ moveto(5,12), 
              lineto(7,12), 
