@@ -87,9 +87,9 @@ class _logmap(_linmap):
 class frac:
 
     def __init__(self, enum, denom, power=None):
-        assert type(enum) in (types.IntType, types.LongType, )
-        assert type(denom) in (types.IntType, types.LongType, )
-        assert denom != 0
+        if type(enum) not in (types.IntType, types.LongType, ): raise ValueError
+        if type(denom) not in (types.IntType, types.LongType, ): raise ValueError
+        if denom == 0: raise ValueError
         if power != None:
             if power > 0:
                 self.enum = self._powi(long(enum), power)
@@ -105,11 +105,10 @@ class frac:
             self.denom = denom
 
     def _powi(self, x, y):
-        assert type(y) == types.IntType
-        assert y >= 0
+        if type(y) != types.IntType: raise ValueError
+        if y < 0: raise ValueError
         if y:
-            y2 = y / 2 # integer division!
-            yr = y % 2
+            y2, yr = divmod(y, 2)
             res = self._powi(x, y2)
             if yr:
                 return x * res * res
@@ -148,7 +147,7 @@ class tick(frac):
         return "tick(%r, %r, %s, %s)" % (self.enum, self.denom, self.ticklevel, self.labellevel)
 
     def merge(self, other):
-        assert self == other
+        if self != other: raise ValueError
         if (self.ticklevel == None) or ((other.ticklevel != None) and (other.ticklevel < self.ticklevel)):
             self.ticklevel = other.ticklevel
         if (self.labellevel == None) or ((other.labellevel != None) and (other.labellevel < self.labellevel)):
@@ -185,6 +184,43 @@ class anypart:
             for tick, label in zip([tick for tick in part if tick.labellevel == 0], self.labels):
                 tick.text = label
 
+    def ensuretuple(self, arg):
+        if arg is not None:
+            try:
+                arg[0]
+                try:
+                    arg + ''
+                    return (arg,)
+                except:
+                    pass
+            except AttributeError:
+                return (arg,)
+        return arg
+
+    def ensurefrac(self, arg):
+
+        def createfrac(str):
+            commaparts = str.split(".")
+            for part in commaparts:
+                if not part.isdigit(): raise ValueError
+            if len(commaparts) == 1:
+                return frac(int(commaparts[0]), 1)
+            elif len(commaparts) == 2:
+                result = frac(1, 10l, power=len(commaparts[1]))
+                result.enum = int(commaparts[0])*result.denom + int(commaparts[1])
+                return result
+            else: raise ValueError
+
+        if not isinstance(arg, frac):
+            fraction = arg.split("/")
+            if len(fraction) > 2: raise ValueError
+            value = createfrac(fraction[0])
+            if len(fraction) == 2:
+                value2 = createfrac(fraction[1])
+                value = frac(value.enum * value2.denom, value.denom * value2.enum)
+            return value
+        return arg
+
 
 class linpart(anypart):
 
@@ -201,8 +237,8 @@ class linpart(anypart):
         parameters of getticks. That can be used to create other partition schemes
         (which create several posibilities) by derivating this class.
         """
-        self.tickfracs = tickfracs
-        self.labelfracs = labelfracs
+        self.tickfracs = self.ensuretuple(tickfracs)
+        self.labelfracs = self.ensuretuple(labelfracs)
         self.extendtoticklevel = extendtoticklevel
         self.extendtolabellevel = extendtolabellevel
         self.epsilon = epsilon
@@ -214,6 +250,7 @@ class linpart(anypart):
 
     def getticklist(self, min, max, frac, ticklevel=None, labellevel=None):
         ticks = []
+        frac = self.ensurefrac(frac)
         imin = int(math.ceil(min / float(frac) - 0.5 * self.epsilon))
         imax = int(math.floor(max / float(frac) + 0.5 * self.epsilon))
         for i in range(imin, imax + 1):
@@ -230,8 +267,8 @@ class linpart(anypart):
             tickfracs = self.tickfracs
             labelfracs = self.labelfracs
         else:
-            assert self.tickfracs is None
-            assert self.labelfracs is None
+            if self.tickfracs is not None: raise ValueError
+            if self.labelfracs is not None: raise ValueError
         if tickfracs == None:
             if labelfracs == None:
                 tickfracs = ()
@@ -363,8 +400,8 @@ class logpart(anypart):
             tickshiftfracslist = self.tickshiftfracslist
             labelshiftfracslist = self.labelshiftfracslist
         else:
-            assert self.tickshiftfracslist == None
-            assert self.labelshiftfracslist == None
+            if self.tickshiftfracslist is not None: raise ValueError
+            if self.labelshiftfracslist is not None: raise ValueError
         if tickshiftfracslist == None:
             if labelshiftfracslist == None:
                 tickshiftfracslist = (shiftfracs(10), )
@@ -449,29 +486,29 @@ class autologpart(logpart):
 #print autologpart().getparts(0.0432, 24.623)
 
 
-class favorautolinpart(autolinpart):
-    """favorfixfrac - shift - frac - partitioning"""
-    # TODO: just to be done ... throw out parts within the favor region -- or what else to do?
-    degreefracs = ((frac( 15, 1), frac(  5, 1)),
-                   (frac( 30, 1), frac( 15, 1)),
-                   (frac( 45, 1), frac( 15, 1)),
-                   (frac( 60, 1), frac( 30, 1)),
-                   (frac( 90, 1), frac( 30, 1)),
-                   (frac( 90, 1), frac( 45, 1)),
-                   (frac(180, 1), frac( 45, 1)),
-                   (frac(180, 1), frac( 90, 1)),
-                   (frac(360, 1), frac( 90, 1)),
-                   (frac(360, 1), frac(180, 1)))
-    # favouring some fixed fracs, e.g. partitioning of an axis in degree
-    def __init__(self, fixfracs, **args):
-        sfpart.__init__(self, **args)
-        self.fixfracs = fixfracs
-
-
-class timepart:
-    """partitioning of times and dates"""
-    # TODO: this will be a difficult subject ...
-    pass
+#class favorautolinpart(autolinpart):
+#    """favorfixfrac - shift - frac - partitioning"""
+#    # TODO: just to be done ... throw out parts within the favor region -- or what else to do?
+#    degreefracs = ((frac( 15, 1), frac(  5, 1)),
+#                   (frac( 30, 1), frac( 15, 1)),
+#                   (frac( 45, 1), frac( 15, 1)),
+#                   (frac( 60, 1), frac( 30, 1)),
+#                   (frac( 90, 1), frac( 30, 1)),
+#                   (frac( 90, 1), frac( 45, 1)),
+#                   (frac(180, 1), frac( 45, 1)),
+#                   (frac(180, 1), frac( 90, 1)),
+#                   (frac(360, 1), frac( 90, 1)),
+#                   (frac(360, 1), frac(180, 1)))
+#    # favouring some fixed fracs, e.g. partitioning of an axis in degree
+#    def __init__(self, fixfracs, **args):
+#        sfpart.__init__(self, **args)
+#        self.fixfracs = fixfracs
+#
+#
+#class timepart:
+#    """partitioning of times and dates"""
+#    # TODO: this will be a difficult subject ...
+#    pass
 
 
 
@@ -798,18 +835,20 @@ class axispainter(attrlist.attrlist):
                        drawgrid=0,
                        gridstyles=canvas.linestyle.dotted,
                        labeldist="0.3 cm",
-                       labelstyles=((), (tex.fontsize.footnotesize,)),
+                       labelstyles=(),
                        labeldirection=None,
                        labelhequalize=0,
                        labelvequalize=1,
                        titledist="0.3 cm",
                        fractype=fractypeauto,
+                       ratfracsuffixenum=1,
+                       ratfracover=r"\over",
                        decfracpoint=".",
-                       expfractimes="\cdot",
+                       expfractimes=r"\cdot",
                        expfracpre1=0,
                        expfracminexp=4,
-                       presuf0=0,
-                       presuf1=0):
+                       suffix0=0,
+                       suffix1=0):
         self.innerticklength_str = innerticklength
         self.outerticklength_str = outerticklength
         self.tickstyles = tickstyles
@@ -823,12 +862,14 @@ class axispainter(attrlist.attrlist):
         self.labelvequalize = labelvequalize
         self.titledist_str = titledist
         self.fractype = fractype
+        self.ratfracsuffixenum = ratfracsuffixenum
+        self.ratfracover = ratfracover
         self.decfracpoint = decfracpoint
         self.expfractimes = expfractimes
         self.expfracpre1 = expfracpre1
         self.expfracminexp = expfracminexp
-        self.presuf0 = presuf0
-        self.presuf1 = presuf1
+        self.suffix0 = suffix0
+        self.suffix1 = suffix1
 
     def reldirection(self, direction, dx, dy, epsilon=1e-10):
         direction += math.atan2(dy, dx) * 180 / math.pi
@@ -839,14 +880,50 @@ class axispainter(attrlist.attrlist):
         return direction
 
     def gcd(self, m, n):
-        # calculate greates common divisor, m & n must be non-negative
+        # greates common divisor, m & n must be non-negative
         if m < n:
             m, n = n, m
         while n > 0:
             m, (dummy, n) = n, divmod(m, n)
         return m
 
-    def decfrac(self, m, n):
+    def attachsuffix(self, tick, str):
+        if self.suffix0 or tick.enum:
+            if tick.suffix is not None and not self.suffix1:
+                if str == "1":
+                    str = ""
+                elif str == "-1":
+                    str = "-"
+            if tick.suffix is not None:
+                str = str + tick.suffix
+        return str
+
+    def ratfrac(self, tick):
+        m, n = tick.enum, tick.denom
+        sign = 1
+        if m < 0: m, sign = -m, -sign
+        if n < 0: n, sign = -n, -sign
+        gcd = self.gcd(m, n)
+        (m, dummy1), (n, dummy2) = divmod(m, gcd), divmod(n, gcd)
+        if n != 1:
+            if self.ratfracsuffixenum:
+                if sign == -1:
+                    return "-{{%s}%s{%s}}" % (self.attachsuffix(tick, str(m)), self.ratfracover, n)
+                else:
+                    return "{{%s}%s{%s}}" % (self.attachsuffix(tick, str(m)), self.ratfracover, n)
+            else:
+                if sign == -1:
+                    return self.attachsuffix(tick, "-{{%s}%s{%s}}" % (m, self.ratfracover, n))
+                else:
+                    return self.attachsuffix(tick, "{{%s}%s{%s}}" % (m, self.ratfracover, n))
+        else:
+            if sign == -1:
+                return self.attachsuffix(tick, "-%s" % m)
+            else:
+                return self.attachsuffix(tick, "%s" % m)
+
+    def decfrac(self, tick):
+        m, n = tick.enum, tick.denom
         sign = 1
         if m < 0: m, sign = -m, -sign
         if n < 0: n, sign = -n, -sign
@@ -868,11 +945,12 @@ class axispainter(attrlist.attrlist):
             frac, rest = divmod(rest, n)
             strfrac += str(frac)
         if sign == -1:
-            return "-%s" % strfrac
+            return self.attachsuffix(tick, "-%s" % strfrac)
         else:
-            return strfrac
+            return self.attachsuffix(tick, strfrac)
 
-    def expfrac(self, m, n, minexp = None):
+    def expfrac(self, tick, minexp = None):
+        m, n = tick.enum, tick.denom
         sign = 1
         if m < 0: m, sign = -m, -sign
         if n < 0: n, sign = -n, -sign
@@ -886,35 +964,38 @@ class axispainter(attrlist.attrlist):
                 exp -= 1
         if minexp is not None and ((exp < 0 and -exp < minexp) or (exp >= 0 and exp < minexp)):
             return None
-        prefactor = self.decfrac(m, n)
+        dummy = frac(m, n)
+        dummy.suffix = None
+        prefactor = self.decfrac(dummy)
         if prefactor == "1" and not self.expfracpre1:
             if sign == -1:
-                return r"-10^{%i}" % exp
+                return self.attachsuffix(tick, "-10^{%i}" % exp)
             else:
-                return r"10^{%i}" % exp
+                return self.attachsuffix(tick, "10^{%i}" % exp)
         else:
             if sign == -1:
-                return "-%s%s10^{%i}" % (prefactor, self.expfractimes, exp)
+                return self.attachsuffix(tick, "-%s%s10^{%i}" % (prefactor, self.expfractimes, exp))
             else:
-                return "%s%s10^{%i}" % (prefactor, self.expfractimes, exp)
+                return self.attachsuffix(tick, "%s%s10^{%i}" % (prefactor, self.expfractimes, exp))
 
-    def ratfrac(self, m, n):
-        sign = 1
-        if m < 0: m, sign = -m, -sign
-        if n < 0: n, sign = -n, -sign
-        gcd = self.gcd(m, n)
-        (m, dummy1), (n, dummy2) = divmod(m, gcd), divmod(n, gcd)
-        if n != 1:
-            if sign == -1:
-                frac = "-{{%s}\over{%s}}" % (m, n)
+    def createtext(self, tick):
+        if self.fractype == axispainter.fractypeauto:
+            if tick.suffix is not None:
+                tick.text = self.ratfrac(tick)
             else:
-                frac = "{{%s}\over{%s}}" % (m, n)
+                tick.text = self.expfrac(tick, self.expfracminexp)
+                if tick.text is None:
+                    tick.text = self.decfrac(tick)
+        elif self.fractype == axispainter.fractypedec:
+            tick.text = self.decfrac(tick)
+        elif self.fractype == axispainter.fractypeexp:
+            tick.text = self.expfrac(tick)
+        elif self.fractype == axispainter.fractyperat:
+            tick.text = self.ratfrac(tick)
         else:
-            if sign == -1:
-                frac = "-%s" % m
-            else:
-                frac = "%s" % m
-        return frac
+            raise ValueError("fractype invalid")
+        if not self.attrcount(tick.labelstyles, tex.style):
+            tick.labelstyles += [tex.style.math]
 
     def selectstyle(self, number, styles):
         if type(styles) not in (types.TupleType, types.ListType):
@@ -947,33 +1028,8 @@ class axispainter(attrlist.attrlist):
                 if tick.labellevel is not None:
                     tick.labelstyles = self.selectstyle(tick.labellevel, self.labelstyles)
                     if not hasattr(tick, "text"):
-                        if self.fractype == axispainter.fractypeauto:
-                            if axis.prefix is not None or axis.suffix is not None:
-                                tick.text = self.ratfrac(tick.enum, tick.denom)
-                            else:
-                                tick.text = self.expfrac(tick.enum, tick.denom, self.expfracminexp)
-                                if tick.text is None:
-                                    tick.text = self.decfrac(tick.enum, tick.denom)
-                        elif self.fractype == axispainter.fractypedec:
-                            tick.text = self.decfrac(tick.enum, tick.denom)
-                        elif self.fractype == axispainter.fractypeexp:
-                            tick.text = self.expfrac(tick.enum, tick.denom)
-                        elif self.fractype == axispainter.fractyperat:
-                            tick.text = self.ratfrac(tick.enum, tick.denom)
-                        else:
-                            raise ValueError("fractype invalid")
-                        if self.presuf0 or tick.enum:
-                            if (axis.prefix is not None or axis.suffix is not None) and not self.presuf1:
-                              if tick.enum == tick.denom:
-                                  tick.text = ""
-                              elif tick.enum == -tick.denom:
-                                  tick.text = "-"
-                            if axis.prefix is not None:
-                                tick.text = axis.prefix + tick.text
-                            if axis.suffix is not None:
-                                tick.text = tick.text + axis.suffix
-                        if not self.attrcount(tick.labelstyles, tex.direction):
-                            tick.labelstyles += [tex.style.math]
+                        tick.suffix = axis.suffix
+                        self.createtext(tick)
                     if self.labeldirection is not None and not self.attrcount(axis.labelstyles, tex.direction):
                         tick.labelstyles += [tex.direction(self.reldirection(self.labeldirection, tick.dx, tick.dy))]
                     tick.textbox = textbox(graph.tex, tick.text, textstyles = tick.labelstyles)
@@ -1073,7 +1129,7 @@ class _axis:
     def __init__(self, min=None, max=None, reverse=0,
                        title=None, titlestyles=(), titledirection=axispainter.paralleltext,
                        painter = axispainter(),
-                       factor = 1, prefix = None, suffix = None):
+                       factor = 1, suffix = None):
         self.fixmin = min is not None
         self.fixmax = max is not None
         self.min = min
@@ -1084,7 +1140,6 @@ class _axis:
         self.titledirection = titledirection
         self.painter = painter
         self.factor = factor
-        self.prefix = prefix
         self.suffix = suffix
         self.setrange()
 
@@ -1150,8 +1205,8 @@ class graphxy(canvas.canvas):
              height = width / ratio
         if (height is not None) and (width is None):
              width = height * ratio
-        assert width > 0
-        assert height > 0
+        if width <= 0: raise ValueError
+        if height <= 0: raise ValueError
         self.width = unit.topt(width)
         self.height = unit.topt(height)
         if not axes.has_key("x"):
@@ -1335,7 +1390,7 @@ class graphxy(canvas.canvas):
                      x2, y2 = self.ytickpoint(axis, 1)
                      self.draw(path._line(x1, y1, x2, y2))
             else:
-                assert 0, "Axis key %s not allowed" % key
+                raise ValueError("Axis key %s not allowed" % key)
             axis.tickdirection = self.tickdirection
             axis.painter.paint(self, axis)
             if self.XPattern.match(key):
@@ -1370,16 +1425,7 @@ class graphxy(canvas.canvas):
 
 
 ################################################################################
-# draw styles -- planed are things like:
-#     * chain
-#         just connect points by lines
-#     * mark
-#         place markers at the points
-#         there is a hole lot of specialized markers (derived from mark):
-#             * text-mark (put a text (additional column!) there)
-#             * fill/size-mark (changes filling or size of the marker by an additional column)
-#             * vector-mark (puts a small vector with direction given by an additional column)
-#     * bar
+# styles
 ################################################################################
 
 
