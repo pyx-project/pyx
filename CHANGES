@@ -1,0 +1,12 @@
+PyX
+
+0.2 (????/??/??):
+  - small logo modifications
+  - allow division of length by numbers
+  - return linewidth upon calculation with linewidths
+
+0.1.1 (????/??/??):
+  - transformation bug fixed (#624068)
+
+0.1 (2002/10/07):
+  - initial release
