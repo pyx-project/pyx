@@ -24,7 +24,7 @@ install: html
 	cp ../examples/*.eps ../examples/*/*.eps $(builddir)
 	cp ../manual/manual.pdf $(builddir)
 	chmod -R 664 $(builddir)/*
-	scp -oCompression=yes -r $(builddir)/* shell.sourceforge.net:/home/groups/p/py/pyx/htdocs
+	scp -oCompression=yes -p -r $(builddir)/* shell.sourceforge.net:/home/groups/p/py/pyx/htdocs
 
 %.html: %.pt maintemplate.pt pt2html.py
 	PYTHONPATH=/usr/src/ZopeCVS/Zope3/src:~/bin/python/Zope3/src ./pt2html.py $<
