@@ -1255,7 +1255,7 @@ class normsubpathitem:
         """returns the curvature radiuses in pts at params.
         This is the inverse of the curvature at these parameters.
 
-        Please note that this radius can be negative or positive,
+        Note that this radius can be negative or positive,
         depending on the sign of the curvature."""
         pass
 
@@ -2444,7 +2444,7 @@ class normpath(base.canvasitem):
         at parameter param or arc length arclen.  This is the inverse
         of the curvature at this parameter
 
-        Please note that this radius can be negative or positive,
+        Note that this radius can be negative or positive,
         depending on the sign of the curvature"""
 
         result = [None] * len(params)
@@ -2458,7 +2458,7 @@ class normpath(base.canvasitem):
         at parameter param or arc length arclen.  This is the inverse
         of the curvature at this parameter
 
-        Please note that this radius can be negative or positive,
+        note that this radius can be negative or positive,
         depending on the sign of the curvature"""
         return self._curveradius_pt(self._convertparams(params, self.arclentoparam_pt))
     curveradius_pt = _valueorlistmethod(curveradius_pt)
@@ -2468,7 +2468,7 @@ class normpath(base.canvasitem):
         parameter param or arc length arclen.  This is the inverse of
         the curvature at this parameter
 
-        Please note that this radius can be negative or positive,
+        Note that this radius can be negative or positive,
         depending on the sign of the curvature"""
         result = []
         for radius_pt in self._curveradius_pt(self._convertparams(params, self.arclentoparam)):
