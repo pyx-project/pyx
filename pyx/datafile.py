@@ -92,29 +92,49 @@ class _datafile:
 
 
 class datafile(_datafile):
+    defaultcommentpattern = re.compile(r"(#+|!+|%+)\s*")
+    defaultstringpattern = re.compile(r"\"(.*?)\"(\s+|$)")
+    defaultcolumnpattern = re.compile(r"(.*?)(\s+|$)")
 
     def splitline(self, line, stringpattern, columnpattern, tofloat=1):
         result = []
-        while len(line):
-            match = stringpattern.match(line)
-            if match:
-                result.append(match.groups()[0])
-                line = line[match.end():]
-            else:
-                match = columnpattern.match(line)
-                if tofloat:
-                    try:
-                        result.append(float(match.groups()[0]))
-                    except (TypeError, ValueError):
-                        result.append(match.groups()[0])
-                else:
+        if line.find('"')!=-1 or \
+           stringpattern is not self.defaultstringpattern or \
+           columnpattern is not self.defaultcolumnpattern:
+            while len(line):
+                match = stringpattern.match(line)
+                if match:
                     result.append(match.groups()[0])
-                line = line[match.end():]
+                    line = line[match.end():]
+                else:
+                    match = columnpattern.match(line)
+                    if tofloat:
+                        try:
+                            result.append(float(match.groups()[0]))
+                        except (TypeError, ValueError):
+                            result.append(match.groups()[0])
+                    else:
+                        result.append(match.groups()[0])
+                    line = line[match.end():]
+        else:
+            if tofloat:
+                try:
+                    return map(float, line.split())
+                except (TypeError, ValueError):
+                    result = []
+                    for r in line.split():
+                        try:
+                            result.append(float(r))
+                        except (TypeError, ValueError):
+                            result.append(r)
+            else:
+                return line.split()
+
         return result
 
-    def __init__(self, file, commentpattern=re.compile(r"(#+|!+|%+)\s*"),
-                             stringpattern=re.compile(r"\"(.*?)\"(\s+|$)"),
-                             columnpattern=re.compile(r"(.*?)(\s+|$)"), **args):
+    def __init__(self, file, commentpattern=defaultcommentpattern,
+                             stringpattern=defaultstringpattern,
+                             columnpattern=defaultcolumnpattern, **args):
         _datafile.__init__(self, **args)
         try:
             file + ''
