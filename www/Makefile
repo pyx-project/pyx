@@ -27,4 +27,4 @@ install: html
 	scp -oCompression=yes -r $(builddir)/* shell.sourceforge.net:/home/groups/p/py/pyx/htdocs
 
 %.html: %.pt maintemplate.pt pt2html.py
-	PYTHONPATH=/usr/src/ZopeCVS/Zope3/src ./pt2html.py $<
+	PYTHONPATH=/usr/src/ZopeCVS/Zope3/src:~/bin/python/Zope3/src ./pt2html.py $<
