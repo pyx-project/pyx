@@ -11,7 +11,7 @@
 </p>
 
 <span class="example" tal:repeat="example options/examples">
-  <div style="border-top:1px solid #88a;margin-bottom:10px;" tal:condition="options/abstract | not: repeat/example/start"></div>
+  <div style="border-top:1px solid #88a;margin-bottom:10px;" tal:condition="python: options['abstract'] or not repeat['example'].start()"></div>
   <h2 tal:content="example/name">Name</h2>
   <div style="text-align:center;">
   <a href="link" tal:attributes="href example/eps"><img src="example.png" alt="example" tal:attributes="src example/png"></a>
