@@ -835,7 +835,7 @@ class _canvas(base.PSCmd, attrlist.attrlist):
 # canvas for patterns
 #
 
-class patterncanvas(_canvas, base.PathStyle):
+class pattern(_canvas, base.PathStyle):
 
     def __init__(self, patterntype=1, painttype=1, tilingtype=1, xstep=None, ystep=None):
         _canvas.__init__(self)
