@@ -20,7 +20,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import unit, canvas
+import unit, canvas, math
 
 # TODO: 
 # - switch to affine space description (i.e. represent transformation by
@@ -30,18 +30,18 @@ import unit, canvas
 # some helper routines
 
 def _rmatrix(angle):
-    from math import pi, cos, sin
-    phi = 2*pi*angle/360
+    phi = 2.0*math.pi*angle/360
 	
-    return  (( cos(phi), sin(phi)), 
-             (-sin(phi), cos(phi)))
+    return  (( math.cos(phi), math.sin(phi)), 
+             (-math.sin(phi), math.cos(phi)))
 
 def _mmatrix(angle):
-    from math import pi, cos, sin
-    phi = 2*pi*angle/360
+    phi = 2.0*math.pi*angle/360
     
-    return ( (cos(phi)*cos(phi)-sin(phi)*sin(phi), -2*sin(phi)*cos(phi)                ),
-	     (-2*sin(phi)*cos(phi),                sin(phi)*sin(phi)-cos(phi)*cos(phi) ) )
+    return ( (math.cos(phi)*math.cos(phi)-math.sin(phi)*math.sin(phi),
+              -2*math.sin(phi)*math.cos(phi)                ),
+	     (-2*math.sin(phi)*math.cos(phi),
+              math.sin(phi)*math.sin(phi)-math.cos(phi)*math.cos(phi) ) )
 
 def _det(matrix):
     return matrix[0][0]*matrix[1][1] - matrix[0][1]*matrix[1][0]
@@ -85,7 +85,7 @@ class transformation:
 	return (self.matrix[0][0]*point[0] + self.matrix[1][0]*point[1]+self.vector[0],
                 self.matrix[0][1]*point[0] + self.matrix[1][1]*point[1]+self.vector[1])
 
-    def matrix():
+    def matrix(self):
         return self.matrix
 
     def vector(self):
@@ -115,7 +115,8 @@ class transformation:
         except ZeroDivisionError:
 	   raise UndefinedResultError, "transformation matrix must not be singular" 
         return transformation(matrix=matrix) * \
-               transformation(vector=("% t pt" % -self.vector[0],"% t pt" % -self.vector[1]))
+               transformation(vector=("%f t pt" % -self.vector[0],
+                                      "%f t pt" % -self.vector[1]))
 
     def bbox(self):
         # assert 0, "this shouldn't be called!"
