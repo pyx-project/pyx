@@ -1414,17 +1414,13 @@ class _texmessagetexend(texmessage):
 
 
 class _texmessageemptylines(texmessage):
-    """validates empty and "*-only" (TeX/LaTeX input marker in interactive mode) lines"""
+    """validates "*-only" (TeX/LaTeX input marker in interactive mode) and empty lines"""
 
     __implements__ = _Itexmessage
 
-    pattern = re.compile(r"^\*?\n", re.M)
-
     def check(self, texrunner):
-        m = self.pattern.search(texrunner.texmessageparsed)
-        while m:
-            texrunner.texmessageparsed = texrunner.texmessageparsed[:m.start()] + texrunner.texmessageparsed[m.end():]
-            m = self.pattern.search(texrunner.texmessageparsed)
+        texrunner.texmessageparsed = texrunner.texmessageparsed.replace("*\n", "")
+        texrunner.texmessageparsed = texrunner.texmessageparsed.replace("\n", "")
 
 
 class _texmessageload(texmessage):
@@ -1436,7 +1432,7 @@ class _texmessageload(texmessage):
 
     __implements__ = _Itexmessage
 
-    pattern = re.compile(r"\((?P<filename>[^()\s\n]+)[^()]*\)")
+    pattern = re.compile(r" *\((?P<filename>[^()\s\n]+)[^()]*\) *")
 
     def baselevels(self, s, maxlevel=1, brackets="()"):
         """strip parts of a string above a given bracket level
@@ -1480,7 +1476,7 @@ class _texmessageloadfd(_texmessageload):
     - works like _texmessageload
     - filename must end with .fd and no further text is allowed"""
 
-    pattern = re.compile(r"\((?P<filename>[^)]+.fd)\)")
+    pattern = re.compile(r" *\((?P<filename>[^)]+.fd)\) *")
 
 
 class _texmessagegraphicsload(_texmessageload):
@@ -1488,7 +1484,7 @@ class _texmessagegraphicsload(_texmessageload):
     - works like _texmessageload, but using "<" and ">" as delimiters
     - filename must end with .eps and no further text is allowed"""
 
-    pattern = re.compile(r"<(?P<filename>[^>]+.eps)>")
+    pattern = re.compile(r" *<(?P<filename>[^>]+.eps)> *")
 
     def baselevels(self, s, brackets="<>", **args):
         return _texmessageload.baselevels(self, s, brackets=brackets, **args)
@@ -2230,7 +2226,10 @@ class texrunner:
                     check.check(self)
                 except TexResultWarning:
                     traceback.print_exc()
+            print "expr>>>%s<<<" % self.expr
+            print "aaa>>>%s<<<" % self.texmessageparsed
             texmessage.emptylines.check(self)
+            print "bbb>>>%s<<<" % self.texmessageparsed
             if len(self.texmessageparsed):
                 raise TexResultError("unhandled TeX response (might be an error)", self)
         else:
