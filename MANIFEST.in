@@ -11,5 +11,4 @@ recursive-include pyx/lfs *.lfs *.py *.tex
 recursive-include examples *.py
 
 prune test
-exclude setup.cfg
 exclude pyx/axis.py
