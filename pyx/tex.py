@@ -40,7 +40,7 @@ The method tex.text is used to print out text, while tex.textwd, tex.textht,
 and tex.textdp appraise the width, height, and depth of a text, respectively.
 """
 
-import canvas, unit, epsfile, color
+import base, unit, epsfile, color
 import os, string, tempfile, sys, md5, traceback, time, StringIO
 
 class _Attr:
@@ -433,7 +433,7 @@ class _InstanceList:
             return Result
 
 
-class tex(canvas.PSCommand, _InstanceList):
+class tex(base.PSCommand, _InstanceList):
 
     def __init__(self, *styleparams):
         self.AllowedInstances(styleparams, [_mode, texfilename, latexsize, docclass, docopt, ])

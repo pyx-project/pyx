@@ -26,49 +26,7 @@
 
 import types, math
 import base, unit, trafo
-
-# PostScript-procedure definitions
-# cf. file: 5002.EPSF_Spec_v3.0.pdf     
-
-_PSProlog = """/rect {
-  4 2 roll moveto 
-  1 index 0 rlineto 
-  0 exch rlineto 
-  neg 0 rlineto 
-  closepath 
-} bind def
-/BeginEPSF {
-  /b4_Inc_state save def
-  /dict_count countdictstack def
-  /op_count count 1 sub def
-  userdict begin
-  /showpage { } def
-  0 setgray 0 setlinecap
-  1 setlinewidth 0 setlinejoin
-  10 setmiterlimit [ ] 0 setdash newpath
-  /languagelevel where
-  {pop languagelevel
-  1 ne
-    {false setstrokeadjust false setoverprint
-    } if
-  } if
-} bind def
-/EndEPSF {
-  count op_count sub {pop} repeat % Clean up stacks
-  countdictstack dict_count sub {end} repeat
-  b4_Inc_state restore
-} bind def"""
-
-# known paperformats as tuple(width, height)
-
-_paperformats = { "a4"      : ("210 t mm",  "297 t mm"), 
-                  "a3"      : ("297 t mm",  "420 t mm"), 
-                  "a2"      : ("420 t mm",  "594 t mm"), 
-                  "a1"      : ("594 t mm",  "840 t mm"), 
-                  "a0"      : ("840 t mm", "1188 t mm"), 
-                  "a0b"     : ("910 t mm", "1350 t mm"), 
-                  "letter"  : ("8.5 t in",   "11 t in"),
-                  "legal"   : ("8.5 t in",   "14 t in")}
+import bpath
 
 # helper routine for bbox manipulations
 
@@ -235,93 +193,135 @@ linewidth.THIck  = linewidth("%f cm" % (_base*math.sqrt(16)))
 linewidth.THICk  = linewidth("%f cm" % (_base*math.sqrt(32)))
 linewidth.THICK  = linewidth("%f cm" % (_base*math.sqrt(64)))
 
-###   doesn't yet run -> comment --- just remove this later (AW)
-###   
-###   #
-###   # Path decorations (i.e. mainly arrows)
-###   #
-###   
-###   class PathDeco(base.PSCommand, base.PSAttr):
-###       """Path decorators
-###   
-###       In contrast to path styles, path decorators depend on the concrete
-###       path to which they are applied. In particular, they don't make
-###       sense without any path and can thus not be used in canvas.set!
-###   
-###       The corresponding path is passed as first argument in the
-###       constructor
-###   
-###       """
-###       pass
-###   
-###   class arrow(PathDeco):
-###       """A general arrow"""
-###   
-###       def __init__(self, bpath, position, size, angle=45, constriction=0.8):
-###           """constructs an arrow at pos (0: begin, !=0: end) of path with size,
-###           opening angle and relative constriction"""
-###   
-###           # convert to bpath if necessary
-###           if not isinstance(bpath, bpath.bpath):
-###               bpath=bpath.bpath()
-###   
-###           if position:
-###               bpath=bpath.reverse()
-###   
-###           # first order conversion from pts to the bezier curve's
-###           # parametrization
-###           
-###           lbpel = bp[0]
-###           tlen  = math.sqrt((lbpel.x3-lbpel.x2)*(lbpel.x3-lbpel.x2)+
-###                             (lbpel.y3-lbpel.y2)*(lbpel.y3-lbpel.y2))
-###   
-###           # TODO: why factor 0.5?
-###           len  = 0.5*unit.topt(size)/tlen
-###           ilen = constriction*len
-###   
-###           # get end point (ex, ey) and constriction point (cx, cy)
-###           ex, ey = lbpel[0]
-###           cx, cy = bp[ilen]
-###   
-###           # now we construct the template for our arrow but cutting
-###           # the path a the corresponding length
-###           arrowtemplate = bp.split(len)[0]
-###   
-###           # from this template, we construct the two outer curves
-###           # of the arrow
-###           arrowl = arrowtemplate.transform(trafo.rotate(-aangle, ex, ey))
-###           arrowr = arrowtemplate.transform(trafo.rotate( aangle, ex, ey))
-###   
-###           # now come the joining backward parts
-###           arrow3 = bpath.bline(*(arrowl.pos(0)+arrowr.pos(0)))
-###           arrow3a= bpath.bline(*(arrowr.pos(0)+(mx,my)))
-###           arrow3b= bpath.bline(*((mx,my)+arrowl.pos(0)))
-###   
-###           # and here the comlete arrow
-###           self.arrow = arrowl+arrowr.reverse()+arrow3a+arrow3b
-###   
-###       def bbox(self):
-###           return self.arrow.bbox()
-###   
-###       def write(self, file):
-###           for psop in (_newpath(), self.arrow,
-###                        _gsave(),
-###                        canvas.linejoin.round, _stroke(), _grestore(), _fill())):
-###               psop.write(file)
-###   
-###       
-###   class barrow(arrow):
-###       """arrow at begin of path"""
-###       def __init__(self, bpath, size, angle=45, constriction=0.8):
-###           arrow.__int__(self, bpath, position=0, size, angle, constriction)
-###   
-###   
-###   class earrow(arrow):
-###       """arrow at end of path"""
-###       def __init__(self, bpath, size="5 t pt", angle=45, constriction=0.8):
-###           arrow.__int__(self, bpath, position=1, size, angle, constriction)
-###   
-###   
+#
+# arrowheads are simple PSCommands
+#
+
+class arrowhead(base.PSCommand):
+
+    """represents and arrowhead, which is usually constructed by an
+    arrow.attach call"""
+  
+    def __init__(self, abpath, size, angle, constriction):
+        """arrow at pos (0: begin, !=0: end) of path with size,
+        opening angle and relative constriction"""
+        
+        # first order conversion from pts to the bezier curve's
+        # parametrization
+          
+        lbpel = abpath[0]
+        tlen  = math.sqrt((lbpel.x3-lbpel.x2)*(lbpel.x3-lbpel.x2)+
+                          (lbpel.y3-lbpel.y2)*(lbpel.y3-lbpel.y2))
+  
+        # TODO: why factor 0.5?
+        len  = 0.5*unit.topt(size)/tlen
+        ilen = constriction*len
+        
+        # get tip (ex, ey) and constriction point (cx, cy)
+        tx, ty = abpath.begin()
+        cx, cy = abpath.pos(ilen)
+        
+        # now we construct the template for our arrow but cutting
+        # the path a the corresponding length
+        arrowtemplate = abpath.split(len)[0]
+  
+        # from this template, we construct the two outer curves
+        # of the arrow
+        arrowl = arrowtemplate.transform(trafo.rotate(-angle/2.0, tx, ty))
+        arrowr = arrowtemplate.transform(trafo.rotate( angle/2.0, tx, ty))
+        
+        # now come the joining backward parts
+        # arrow3 = bpath.bline(*(arrowl.pos(ilen)+arrowr.pos(ilen)))
+        arrow3a= bpath.bline(*(arrowl.end()+(cx,cy)))
+        arrow3b= bpath.bline(*((cx,cy)+arrowr.end()))
+        
+        # and here the comlete arrow
+        self.arrow = arrowl+arrow3a+arrow3b+arrowr.reverse()
+        
+    def bbox(self):
+        return self.arrow.bbox()
+  
+    def write(self, file):
+        for psop in (_newpath(),
+                     self.arrow,
+                     _gsave(),
+                     linejoin.round, _stroke(), _grestore(), _fill()):
+            psop.write(file)
+
+#
+# Path decorations (i.e. mainly arrows)
+#
+
+class PathDeco:
+    
+    """Path decorators
+    
+    In contrast to path styles, path decorators depend on the concrete
+    path to which they are applied. In particular, they don't make
+    sense without any path and can thus not be used in canvas.set!
+    
+    The corresponding path is passed as first argument in the
+    constructor
+    
+    """
+
+    def decoration(self, path):
+        """return decoratorion of path as PSCommand"""
+        pass
+
+class arrow(PathDeco):
+    
+    """A general arrow"""
+
+    def __init__(self, position, size, angle=45, constriction=0.8):
+        self.position = position
+        self.size = size
+        self.angle = angle
+        self.constriction = constriction
+
+    def decoration(self, path):
+        # convert to bpath if necessary
+        if isinstance(path, bpath.bpath):
+            abpath=path
+        else:
+            abpath=path.bpath()
+            
+        if self.position:
+            abpath=abpath.reverse()
+
+        return arrowhead(abpath, self.size, self.angle, self.constriction)
+    
+        
+class barrow(arrow):
+    
+    """arrow at begin of path"""
+    
+    def __init__(self, size, angle=45, constriction=0.8):
+        arrow.__init__(self, 0, size, angle, constriction)
+
+_base = 5
+
+barrow.tiny   = barrow("%f t pt" % (_base/math.sqrt(4)))
+barrow.small  = barrow("%f t pt" % (_base/math.sqrt(2)))
+barrow.normal = barrow("%f t pt" % _base)
+barrow.large  = barrow("%f t pt" % (_base*math.sqrt(2)))
+barrow.huge   = barrow("%f t pt" % (_base*math.sqrt(4)))
+                
+  
+class earrow(arrow):
+    
+    """arrow at end of path"""
+    
+    def __init__(self, size, angle=45, constriction=0.8):
+        arrow.__init__(self, 1, size, angle, constriction)
+
+earrow.tiny   = earrow("%f t pt" % (_base/math.sqrt(4)))
+earrow.small  = earrow("%f t pt" % (_base/math.sqrt(2)))
+earrow.normal = earrow("%f t pt" % _base)
+earrow.large  = earrow("%f t pt" % (_base*math.sqrt(2)))
+earrow.huge   = earrow("%f t pt" % (_base*math.sqrt(4)))
+      
+
 #
 # some very primitive Postscript operators
 #
@@ -356,111 +356,10 @@ class _grestore(base.PSOp):
        file.write("grestore\n")
 
 #
-# PSCommand class
-#
-
-class PSCommand:
-
-    """ PSCommand is the base class of all visible elements
-
-    Visible elements, are those, that can be embedded in the Canvas
-    and possed a bbox. Furthermore, they can write themselves to
-    an open file and to an EPS file
-    
-    """
-    
-    def bbox(self):
-       raise NotImplementedError, "cannot call virtual method bbox()"
-       
-    def write(self, file):
-        raise NotImplementedError, "cannot call virtual method write()"
-
-    def writetofile(self, filename, paperformat=None, rotated=0, fittosize=0, margin="1 t cm"):
-        """write canvas to EPS file
-
-        If paperformat is set to a known paperformat, the output will be centered on 
-        the page (and optionally rotated)
-
-        If fittosize is set as well, then the output is scaled to the size of the
-        page (minus margin).
-
-        """
-        try:
-            file = open(filename + ".eps", "w")
-        except IOError:
-            assert 0, "cannot open output file"                 # TODO: Fehlerbehandlung...
-
-        abbox=self.bbox()
-        ctrafo=None     # global transformation of canvas
-
-        if rotated:
-            ctrafo = trafo._rotate(90,
-                                   0.5*(abbox.llx+abbox.urx),
-                                   0.5*(abbox.lly+abbox.ury))
-
-        if paperformat:
-            # center (optionally rotated) output on page
-            try:
-                width, height = _paperformats[paperformat]
-                width = unit.topt(width)
-                height = unit.topt(height)
-            except KeyError:
-                raise KeyError, "unknown paperformat '%s'" % paperformat
-
-            ctrafo = ctrafo._translate(0.5*(width -(abbox.urx-abbox.llx))-
-                                       abbox.llx, 
-                                       0.5*(height-(abbox.ury-abbox.lly))-
-                                       abbox.lly)
-            
-            if fittosize:
-                # scale output to pagesize - margins
-                margin=unit.topt(margin)
-
-                if rotated:
-                    sfactor = min((height-2*margin)/(abbox.urx-abbox.llx), 
-                                  (width-2*margin)/(abbox.ury-abbox.lly))
-                else:
-                    sfactor = min((width-2*margin)/(abbox.urx-abbox.llx), 
-                                  (height-2*margin)/(abbox.ury-abbox.lly))
-                    
-                ctrafo = ctrafo._scale(sfactor, sfactor, 0.5*width, 0.5*height)
-                          
-                
-        elif fittosize:
-            assert 0, "must specify paper size for fittosize" # TODO: exception...
-
-        # if there has been a global transformation, adjust the bounding box
-        # accordingly
-        if ctrafo:
-            abbox = abbox.transform(ctrafo) 
-
-        file.write("%!PS-Adobe-3.0 EPSF 3.0\n")
-        abbox.write(file)
-        file.write("%%Creator: pyx 0.0.1\n") 
-        file.write("%%%%Title: %s.eps\n" % filename) 
-        # file.write("%%CreationDate: %s" % ) 
-        file.write("%%EndComments\n") 
-        file.write("%%BeginProlog\n") 
-        file.write(_PSProlog)
-        file.write("\n%%EndProlog\n") 
-
-        # now apply a potential global transformation
-        if ctrafo: ctrafo.write(file)   
-
-        file.write("%f setlinewidth\n" % unit.topt(linewidth.normal))
-        
-        # here comes the actual content
-        self.write(file)
-        
-        file.write("showpage\n")
-        file.write("%%Trailer\n")
-        file.write("%%EOF\n")
-
-#
 # The main canvas class
 #
 
-class canvas(PSCommand):
+class canvas(base.PSCommand):
 
     """a canvas is a collection of PSCommands together with PSAttrs"""
 
@@ -483,7 +382,7 @@ class canvas(PSCommand):
 
     def bbox(self):
         obbox = reduce(lambda x,y:
-                       isinstance(y, PSCommand) and x+y.bbox() or x,
+                       isinstance(y, base.PSCommand) and x+y.bbox() or x,
                        self.PSOps,
                        bbox())
 
@@ -496,33 +395,54 @@ class canvas(PSCommand):
         for cmd in self.PSOps:
             cmd.write(file)
             
-    def insert(self, cmds, *args):
-        if args: 
-           self.PSOps.append(_gsave())
-           self.set(*args)
+    def insert(self, cmds, *styles):
+        """insert one or more PSOps in the canvas applying styles if given
 
-        if type(cmds) in (types.TupleType, types.ListType):
-           for cmd in list(cmds): 
-              if isinstance(cmd, canvas): self.PSOps.append(_gsave())
-              self.PSOps.append(cmd)
-              if isinstance(cmd, canvas): self.PSOps.append(_grestore())
-        else: 
-           if isinstance(cmds, canvas): self.PSOps.append(_gsave())
-           self.PSOps.append(cmds)
-           if isinstance(cmds, canvas): self.PSOps.append(_grestore())
+        returns the (last) cmd
+        """
+
+        # encapsulate in gsave/grestore command if necessary
+        if styles:
+            self.PSOps.append(_gsave())
+
+        # add path styles if present
+        if styles:
+            self.set(*styles)
+
+        if not type(cmds) in (types.TupleType, types.ListType):
+            cmds = (cmds,)
+            
+        for cmd in cmds:
+            if isinstance(cmd, canvas):
+                self.PSOps.append(_gsave())
+                
+            self.PSOps.append(cmd)
+            
+            if isinstance(cmd, canvas):
+                self.PSOps.append(_gsave())
+
+            # save last command for return value
+            lastcmd = cmd
            
-        if args:
-           self.PSOps.append(_grestore())
+        if styles:
+            self.PSOps.append(_grestore())
            
-        return cmds
+        return lastcmd
 
     def set(self, *args):
         for arg in args:
-            assert isinstance(arg, base.PSAttr), "can only set attributes"
+            if not isinstance(arg, base.PSAttr):
+                raise NotImplementedError, "can only set attribute"
             self.PSOps.append(arg)
         
     def draw(self, path, *args):
-        self.insert((_newpath(), path, _stroke()), *args)
+        self.insert((_newpath(), path, _stroke()),
+                    *filter(lambda x: not isinstance(x, PathDeco), args))
+        
+        # add path decorations
+        for deco in filter(lambda x: isinstance(x, PathDeco), args):
+            self.insert(deco.decoration(path))
+            
         return self
         
     def fill(self, path, *args):

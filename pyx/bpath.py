@@ -24,10 +24,11 @@
 #         (maybe we still need the current bbox implementation (then maybe called
 #          cbox = control box) for bpathel for the use during the
 #          intersection of bpaths) 
- 
 
-import base, unit, canvas, math
+import math
 from math import cos, sin, pi
+import base, unit, canvas
+
 
 class PathException(Exception): pass
 
@@ -174,7 +175,6 @@ class _bpathel(base.PSOp):
                               x2_2, y2_2,
                               x3_2, y3_2))
         
-        
 
     def MidPointSplit(self):
         """splits bpathel at midpoint returning bpath with two bpathels"""
@@ -227,7 +227,7 @@ class bpathel(_bpathel):
 # bpath: Bezier path
 ################################################################################
 
-class bpath(canvas.PSCommand):
+class bpath(base.PSCommand):
 
     """path consisting of bezier curves"""
     
@@ -294,6 +294,15 @@ class bpath(canvas.PSCommand):
             return self.bpath[t-1][1]
         else:
             return self.bpath[int(t)][t-math.floor(t)]
+
+    def begin(self):
+        """return first point"""
+        return self.bpath[0][0]
+
+    def end(self):
+        """return last point"""
+        return self.bpath[-1][1]
+
         
     def transform(self, trafo):
         """return transformed bpath"""

@@ -29,9 +29,9 @@
 #          intersection of bpaths) 
 #       - intersection of bpaths: use estimate for number of subdivisions
 
-import base, unit, canvas, bpath
 import math
 from math import cos, sin, pi
+import base, unit, canvas, bpath
 
 
 class PathException(Exception): pass
@@ -659,7 +659,7 @@ class rcurveto(_rcurveto):
 # path: PS style path 
 ################################################################################
         
-class path(canvas.PSCommand):
+class path(base.PSCommand):
     
     """PS style path"""
     

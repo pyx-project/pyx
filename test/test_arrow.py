@@ -31,9 +31,10 @@ def drawarrow(c, bp, alen=4, aangle=25, cfactor=0.8):
 
 def drawpathwarrowboth(c, p):
     bp=p.bpath()
-    c.draw(p)
-    drawarrow(c, bp)
-    drawarrow(c, bp.reverse())
+#    c.draw(p)
+    c.draw(p, canvas.barrow.normal, canvas.earrow.small)
+#    drawarrow(c, bp)
+#    drawarrow(c, bp.reverse())
 
 
 def testarrow(c):
