@@ -366,22 +366,11 @@ class arct(pathel):
         dx1  = currentpoint[0]-self.x1
         dy1  = currentpoint[1]-self.y1
         l1   = math.sqrt(dx1*dx1+dy1*dy1)
-        if dx1==0:
-            phi1=90
-        else:
-            phi1 = math.atan(dy1/dx1)/math.pi*180
 
         # direction and length of tangent 2
         dx2  = self.x2-self.x1
         dy2  = self.y2-self.y1
         l2   = math.sqrt(dx2*dx2+dy2*dy2)
-        if dx2==0:
-            phi2=90
-        else:
-            phi2 = math.atan(dy2/dx2)/math.pi*180
-
-        phi=0.5*(phi2-phi1)
-
 
         # intersection angle between two tangents
         alpha = math.acos((dx1*dx2+dy1*dy2)/(l1*l2))
@@ -397,6 +386,13 @@ class arct(pathel):
         rx = 0.5*(xt1+xt2)-self.x1
         ry = 0.5*(yt1+yt2)-self.y1
         lr = math.sqrt(rx*rx+ry*ry)
+        if rx==0:
+            phi=90
+        elif rx<0:
+            phi = math.atan(ry/rx)/math.pi*180
+        else:
+            phi = math.atan(ry/rx)/math.pi*180-180
+
 
         # center of arc
         mx = self.x1+rx*self.r/(lr*sin(alpha/2))
@@ -407,8 +403,8 @@ class arct(pathel):
                 bline(currentpoint[0], currentpoint[1], xt1, yt1) +
                 arc(mx, my,
                     self.r,
-                    phi-1,
-                    phi+1)._bpath(None, None)[2] )
+                    phi-alpha/math.pi*45,
+                    phi+alpha/math.pi*45)._bpath(None, None)[2] )
 
 	
 class curveto(pathel):
