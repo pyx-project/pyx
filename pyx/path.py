@@ -38,7 +38,7 @@ class _pathel2(pathel):
     ' element of a path with args=(x,y), used for r?(move|line)to'
     
     def draw(self, canvas):
-        canvas._PSAddCmd("%f %f " % canvas.unit.point(self.args) + self.command )
+        canvas._PSAddCmd("%f %f " % canvas.unit.pt(self.args) + self.command )
 
 class moveto(_pathel2):
     ' Set current point to (x, y) '
@@ -64,7 +64,7 @@ class rlineto(_pathel2):
 
 class _pathelarc(pathel):
     def draw(self, canvas):
-        canvas._PSAddCmd("%f %f %f " % canvas.unit.point(self.args[:3]) + "%f %f " % self.args[3:] + self.command )
+        canvas._PSAddCmd("%f %f %f " % canvas.unit.pt(self.args[:3]) + "%f %f " % self.args[3:] + self.command )
  
 class arc(_pathelarc):
     ' Append counterclockwise arc '
@@ -81,13 +81,13 @@ class arct(pathel):
     def __init__(self, x1, y1, x2, y2, r):
         pathel.__init__(self, "arct", (x1, y1, x2, y2, r))
     def draw(self, canvas):
-        canvas._PSAddCmd("%f %f %f %f " % canvas.unit.point(self.args[:4]) + "%f " % self.args[4] + self.command )
+        canvas._PSAddCmd("%f %f %f %f " % canvas.unit.pt(self.args[:4]) + "%f " % self.args[4] + self.command )
 	
 # path elements with 6 arguments
 
 class _pathel6(pathel):
     def draw(self, canvas):
-        canvas._PSAddCmd("%f %f %f %f %f %f " %  canvas.unit.point(self.args) + self.command )
+        canvas._PSAddCmd("%f %f %f %f %f %f " %  canvas.unit.pt(self.args) + self.command )
 
 class curveto(_pathel6):
     def __init__(self, x1, y1, x2, y2, x3, y3):
