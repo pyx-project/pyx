@@ -54,7 +54,7 @@ class _bcurve:
         self.y3 = y3
 
     def __str__(self):
-        return "%f %f moveto %f %f %f %f %f %f curveto" % \
+        return "%g %g moveto %g %g %g %g %g %g curveto" % \
                ( self.x0, self.y0,
                  self.x1, self.y1,
                  self.x2, self.y2,
@@ -635,7 +635,7 @@ class _moveto(normpathel):
          self.y = y
 
     def __str__(self):
-        return "%f %f moveto" % (self.x, self.y)
+        return "%g %g moveto" % (self.x, self.y)
 
     def _at(self, context, t):
         return None
@@ -666,7 +666,7 @@ class _moveto(normpathel):
         return None
 
     def write(self, file):
-        file.write("%f %f moveto\n" % (self.x, self.y) )
+        file.write("%g %g moveto\n" % (self.x, self.y) )
 
     def transformed(self, trafo):
         return _moveto(*trafo._apply(self.x, self.y))
@@ -680,7 +680,7 @@ class _lineto(normpathel):
          self.y = y
 
     def __str__(self):
-        return "%f %f lineto" % (self.x, self.y)
+        return "%g %g lineto" % (self.x, self.y)
 
     def _updatecontext(self, context):
         context.currentsubpath = context.currentsubpath or context.currentpoint
@@ -752,7 +752,7 @@ class _lineto(normpathel):
         return _line(tx, ty, tx+tvectx, ty+tvecty)
 
     def write(self, file):
-        file.write("%f %f lineto\n" % (self.x, self.y) )
+        file.write("%g %g lineto\n" % (self.x, self.y) )
 
     def transformed(self, trafo):
         return _lineto(*trafo._apply(self.x, self.y))
@@ -771,7 +771,7 @@ class _curveto(normpathel):
         self.y3 = y3
 
     def __str__(self):
-        return "%f %f %f %f %f %f curveto" % (self.x1, self.y1,
+        return "%g %g %g %g %g %g curveto" % (self.x1, self.y1,
                                               self.x2, self.y2,
                                               self.x3, self.y3)
 
@@ -855,7 +855,7 @@ class _curveto(normpathel):
         return _line(tpx, tpy, tpx+tvectx, tpy+tvecty)
 
     def write(self, file):
-        file.write("%f %f %f %f %f %f curveto\n" % ( self.x1, self.y1,
+        file.write("%g %g %g %g %g %g curveto\n" % ( self.x1, self.y1,
                                                      self.x2, self.y2,
                                                      self.x3, self.y3 ) )
 
@@ -921,7 +921,7 @@ class _rmoveto(pathel):
         return [_moveto(x, y)]
 
     def write(self, file):
-        file.write("%f %f rmoveto\n" % (self.dx, self.dy) )
+        file.write("%g %g rmoveto\n" % (self.dx, self.dy) )
 
 
 class _rlineto(pathel):
@@ -952,7 +952,7 @@ class _rlineto(pathel):
         return [_lineto(x, y)]
 
     def write(self, file):
-        file.write("%f %f rlineto\n" % (self.dx, self.dy) )
+        file.write("%g %g rlineto\n" % (self.dx, self.dy) )
 
 
 class _rcurveto(pathel):
@@ -968,7 +968,7 @@ class _rcurveto(pathel):
         self.dy3 = dy3
 
     def write(self, file):
-        file.write("%f %f %f %f %f %f rcurveto\n" % ( self.dx1, self.dy1,
+        file.write("%g %g %g %g %g %g rcurveto\n" % ( self.dx1, self.dy1,
                                                     self.dx2, self.dy2,
                                                     self.dx3, self.dy3 ) )
 
@@ -1125,7 +1125,7 @@ class _arc(pathel):
 
 
     def write(self, file):
-        file.write("%f %f %f %f %f arc\n" % ( self.x, self.y,
+        file.write("%g %g %g %g %g arc\n" % ( self.x, self.y,
                                             self.r,
                                             self.angle1,
                                             self.angle2 ) )
@@ -1213,7 +1213,7 @@ class _arcn(pathel):
 
 
     def write(self, file):
-        file.write("%f %f %f %f %f arcn\n" % ( self.x, self.y,
+        file.write("%g %g %g %g %g arcn\n" % ( self.x, self.y,
                                              self.r,
                                              self.angle1,
                                              self.angle2 ) )
@@ -1231,7 +1231,7 @@ class _arct(pathel):
         self.r  = r
 
     def write(self, file):
-        file.write("%f %f %f %f %f arct\n" % ( self.x1, self.y1,
+        file.write("%g %g %g %g %g arct\n" % ( self.x1, self.y1,
                                              self.x2, self.y2,
                                              self.r ) )
     def _path(self, currentpoint, currentsubpath):
