@@ -88,7 +88,13 @@ TODO:
 
 0.8 (????/??/??):
   - path module:
-    - work in progress: path parameters and argument handling
+    - path parameters and argument handling
+  - document module: new
+    - container classes for document and pages
+  - canvas module:
+    - writeEPSfile wraps a canvas in a single page document and performs the output
+  - bbox module:
+    - add _pt methods
 
 
 0.7.1 (2004/12/15):
