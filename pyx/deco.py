@@ -719,7 +719,7 @@ class smoothed(deco, attr.attr):
         # be switched but the tangent may not.
 
         def sign(x):
-            try: return abs(a) / a
+            try: return abs(x) / x
             except ZeroDivisionError: return 0
 
         # normalise the tangent vectors
