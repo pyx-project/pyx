@@ -74,11 +74,13 @@ def testarrow(c):
     c.draw(path(moveto(11,13), rlineto(5,0)),
            lt,
            canvas.barrow("%f t pt" % (base*math.sqrt(8)), constriction=None),
-           canvas.earrow.LArge)
+           canvas.earrow.LArge(canvas.linestyle.dashed, color.rgb.green))
     c.draw(path(moveto(11,13.5), rlineto(5,0)),
            lt,
            canvas.barrow("%f t pt" % (base*math.sqrt(16)), constriction=None),
-           canvas.earrow.LARge)
+           canvas.earrow.LARge(color.rgb.red, 
+                               canvas.stroked(canvas.linejoin.round),
+                               canvas.filled(color.rgb.blue)))
 
 
 
