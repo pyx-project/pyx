@@ -80,6 +80,13 @@ class _bpathel:
                            max(self.x0, self.x1, self.x2, self.x3), 
                            max(self.y0, self.y1, self.y2, self.y3))
 
+    def transform(self, trafo):
+        return _bpathel(*(trafo.apply((self.x0, self.y0))+
+                          trafo.apply((self.x1, self.y1))+
+                          trafo.apply((self.x2, self.y2))+
+                          trafo.apply((self.x3, self.y3))))
+
+
     def MidPointSplit(self):
         """splits bpathel at midpoint returning bpath with two bpathels"""
         
@@ -161,6 +168,9 @@ class bpath:
 
     def pos(self, t):
         return self.bpath[int(t)][t-math.floor(t)]
+
+    def transform(self, trafo):
+        return bpath(reduce(lambda x, y, trafo=trafo: x+[y.transform(trafo)], self.bpath, []))
 
     def MidPointSplit(self):
         result = []

@@ -205,6 +205,13 @@ def testintersectbezier(c):
                      rmoveto(-0.1, -0.1), rlineto(0.2, 0.2), rmoveto(-0.1, -0.1),
                      rmoveto(-0.1, +0.1), rlineto(0.2, -0.2)]))
 
+def testbpathtrafo(c):
+    p=path([moveto(10,20), curveto(12,16,14,15,12,19)])
+    bp=p.bpath()
+
+    c.draw(bp.transform(trafo.translate(2,3)), color.rgb.red)
+    c.insert(canvas.canvas(trafo.translate(2,3))).draw(p, color.rgb.green, canvas.linestyle.dashed)
+
 c=canvas.canvas()
 testarcs(c)
 testmidpointsplit(c)
@@ -213,6 +220,7 @@ testcurvetobbox(c)
 testtrafobbox(c)
 testclipbbox(c)
 testintersectbezier(c)
+testbpathtrafo(c)
 c.writetofile("test")
 
 #testspeed()
