@@ -129,7 +129,7 @@ class decoratedpath(base.PSCmd):
             # Note that a possible stroking has already been done.
 
             if self.strokestyles:
-                _gsave().write(file)
+                canvas._gsave().write(file)
                 _writestyles(self.strokestyles)
 
             canvas._newpath().write(file)
@@ -334,7 +334,7 @@ class barrow(arrow):
 
     """arrow at begin of path"""
 
-    def __init__(self, size, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         arrow.__init__(self, 0, *args, **kwargs)
 
 class _barrow_SMALL(barrow):
