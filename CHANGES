@@ -19,6 +19,8 @@ PyX
     - fix: print warning at syntax errors in font mapping file and continue (cf. bug #795271)
     - remove limitation on number of fonts in dvi file
     - added native virtual font support
+    - dvicopy support not needed anymore (it is still available, but obsolete and
+      removed from the documentation)
     - do not include too many glyphs in the eps file
   - graph module:
     - removed manualpart and partitioners mix keyword (documentation already updated)
@@ -53,12 +55,13 @@ PyX
     - support relative dash lengths
   - path module:
     - reverse needs to be fixed
+    - path.split takes several points (as *args) while lentopar takes a list of points
+    - there should be a path._at, path._begin, path._end
+    - path.tangent is missing in the documentation
   - text module:
     - dvifile class:
        - if possible remove readfile, write and prolog methods and use readpage instead
     - SlantFont & Co support
-    - at some point, we may remove the dvicopy support again. For the moment, we should
-      remove it from the documentation
   - data module:
     - data.data should add line number like data.datafile
     - use csv module (new in 2.3)

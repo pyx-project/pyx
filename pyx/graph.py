@@ -877,14 +877,14 @@ class axisrater:
             rate += rater.rate(numlabel, density)
             weight += rater.weight
         if len(ticks):
-            # XXX: tickrange was not yet applied
+            # XXX: tickrange was not yet applied !!! TODO!!!
             # TODO: density == 1?
-            if axis.divisor is not None: # XXX workaround for timeaxis
+#            if axis.divisor is not None: # XXX workaround for timeaxis
                 rate += self.tickrange.rate(axis.convert(float(ticks[-1]) * axis.divisor) -
                                             axis.convert(float(ticks[0]) * axis.divisor), 1)
-            else:
-                rate += self.tickrange.rate(axis.convert(ticks[-1]) -
-                                            axis.convert(ticks[0]), 1)
+#            else:
+#                rate += self.tickrange.rate(axis.convert(ticks[-1]) -
+#                                            axis.convert(ticks[0]), 1)
         else:
             rate += self.tickrange.rate(0, 1)
         weight += self.tickrange.weight
@@ -1324,13 +1324,13 @@ class defaulttexter:
 
 class axiscanvas(canvas._canvas):
     """axis canvas
-    - an axis canvas is a regular canvas to be filled by
-      a axispainters painter method
+    - an axis canvas is a regular canvas returned by an
+      axispainters painter method
     - it contains a PyX length extent to be used for the
       alignment of additional axes; the axis extent should
-      be filled by the axispainters painter method; you may
-      grasp this as a size information comparable to a bounding
-      box
+      be handled by the axispainters painter method; you may
+      apprehend this as a size information comparable to a
+      bounding box, which must be handled manually
     - it contains a list of textboxes called labels which are
       used to rate the distances between the labels if needed
       by the axis later on; the painter method has not only to
@@ -1340,13 +1340,11 @@ class axiscanvas(canvas._canvas):
 
     # __implements__ = sole implementation
 
-    def __init__(self, texrunner, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """initializes the instance
-        - sets the texrunner
         - sets extent to zero
         - sets labels to an empty list"""
         canvas._canvas.__init__(self, *args, **kwargs)
-        self.settexrunner(texrunner)
         self.extent = 0
         self.labels = []
 
@@ -1383,8 +1381,13 @@ rotatetext.orthogonal = rotatetext(0)
 class _Iaxispainter:
     "class for painting axes"
 
-    def paint(self, axispos, axis, axiscanvas):
-        """paint the axis into the axiscanvas
+    def paint(self, axispos, axis, ac=None):
+        """paint the axis into an axiscanvas
+        - returns the axiscanvas
+        - when no axiscanvas is provided (the typical case), a new
+          axiscanvas is created. however, when extending an painter
+          by inheritance, painting on the same axiscanvas is supported
+          by setting the axiscanvas attribute
         - axispos is an instance, which implements _Iaxispos to
           define the tick positions
         - the axis and should not be modified (we may
@@ -1393,7 +1396,7 @@ class _Iaxispainter:
           all things can be used several times
         - also do not modify the instance (self) -- even this
           instance might be used several times; thus do not modify
-          attributes like self.titleattrs etc. (just use a copy of it)
+          attributes like self.titleattrs etc. (use local copies)
         - the method might access some additional attributes from
           the axis, e.g. the axis title -- the axis painter should
           document this behavior and rely on the availability of
@@ -1401,8 +1404,140 @@ class _Iaxispainter:
           usage of the combination of axis & axispainter
         - the axiscanvas is a axiscanvas instance and should be
           filled with ticks, labels, title, etc.; note that the
-          extent and labels instance variables should be filled as
-          documented in the axiscanvas"""
+          extent and labels instance variables should be handled
+          as documented in the axiscanvas"""
+
+
+class _Iaxispos:
+    """interface definition of axis tick position methods
+    - these methods are used for the postitioning of the ticks
+      when painting an axis"""
+    # TODO: should we add a local transformation (for label text etc?)
+    #       (this might replace tickdirection (and even tickposition?))
+
+    def baseline(self, x1=None, x2=None):
+        """return the baseline as a path
+        - x1 is the start position; if not set, the baseline starts
+          from the beginning of the axis, which might imply a
+          value outside of the graph coordinate range [0; 1]
+        - x2 is analogous to x1, but for the end position"""
+
+    def vbaseline(self, v1=None, v2=None):
+        """return the baseline as a path
+        - like baseline, but for graph coordinates"""
+
+    def gridline(self, x):
+        """return the gridline as a path for a given position x
+        - might return None when no gridline is available"""
+
+    def vgridline(self, v):
+        """return the gridline as a path for a given position v
+        in graph coordinates
+        - might return None when no gridline is available"""
+
+    def _tickpoint(self, x):
+        """return the position at the baseline as a tuple (x, y) in
+        postscript points for the position x"""
+
+    def tickpoint(self, x):
+        """return the position at the baseline as a tuple (x, y) in
+        in PyX length for the position x"""
+
+    def _vtickpoint(self, v):
+        "like _tickpoint, but for graph coordinates"
+
+    def vtickpoint(self, v):
+        "like tickpoint, but for graph coordinates"
+
+    def tickdirection(self, x):
+        """return the direction of a tick as a tuple (dx, dy) for the
+        position x"""
+
+    def vtickdirection(self, v):
+        """like tickposition, but for graph coordinates"""
+
+
+class _axispos:
+    """implements those parts of _Iaxispos which can be build
+    out of the axis convert method and other _Iaxispos methods
+    (its designed to be inherited)"""
+
+    def __init__(self, a):
+        """initializes the instance
+        - only the convert method is needed from the axis a"""
+        self.axis = a
+
+    def baseline(self, x1=None, x2=None):
+        if x1 is None:
+            if x2 is None:
+                return self.vbaseline()
+            else:
+                return self.vbaseline(v2=self.axis.convert(x2))
+        else:
+            if x2 is None:
+                return self.vbaseline(v1=self.axis.convert(x1))
+            else:
+                return self.vbaseline(v1=self.axis.convert(x1), v2=self.axis.convert(x2))
+
+    def gridline(self, x):
+        return self.vgridline(self.axis.convert(x))
+
+    def _tickpoint(self, x):
+        return self._vtickpoint(self.axis.convert(x))
+
+    def tickpoint(self, x):
+        return self.vtickpoint(self.axis.convert(x))
+
+    def _vtickpoint(self, v):
+        return map(unit.topt, self.vtickpoint(v))
+
+    def tickdirection(self, x):
+        return self.vtickdirection(self.axis.convert(x))
+
+
+class pathaxispos(_axispos):
+    """axis tick position methods along an arbitrary path"""
+
+    __implements__ = _Iaxispos
+
+    def __init__(self, p, a, direction=1):
+        self.path = p
+        self.normpath = path.normpath(p)
+        self.arclength = self.normpath.arclength(p)
+        _axispos.__init__(self, a)
+        self.direction = direction
+
+    def vbaseline(self, v1=None, v2=None):
+        if v1 is None:
+            if v2 is None:
+                return self.path
+            else:
+                return self.normpath.split(self.normpath.lentopar(v2 * self.arclength))[0]
+        else:
+            if v2 is None:
+                return self.normpath.split(self.normpath.lentopar(v1 * self.arclength))[1]
+            else:
+                return self.normpath.split(*self.normpath.lentopar([v1 * self.arclength, v2 * self.arclength]))[1]
+
+    def vgridline(self, v):
+        return None
+
+    def vtickpoint(self, v):
+        return self.normpath.at(self.normpath.lentopar(v * self.arclength))
+
+    def vtickdirection(self, v):
+        t = self.normpath.tangent(self.normpath.lentopar(v * self.arclength))
+        # XXX: path._begin and path._end missing!
+        tbegin = map(unit.topt, t.begin())
+        tend = map(unit.topt, t.end())
+        dx = tend[0]-tbegin[0]
+        dy = tend[1]-tbegin[1]
+        norm = math.sqrt(dx*dx + dy*dy)
+        if self.direction == 1:
+            return dy/norm, -dx/norm
+        elif self.direction == -1:
+            return -dy/norm, dx/norm
+        raise RuntimeError("unknown direction")
 
 
 class axistitlepainter:
@@ -1415,7 +1550,8 @@ class axistitlepainter:
     def __init__(self, titledist="0.3 cm",
                        titleattrs=(textmodule.halign.center, textmodule.vshift.mathaxis),
                        titledirection=rotatetext.parallel,
-                       titlepos=0.5):
+                       titlepos=0.5,
+                       texrunner=textmodule.defaulttexrunner):
         """initialized the instance
         - titledist is a visual PyX length giving the distance
           of the title from the axis extent already there (a title might
@@ -1424,25 +1560,32 @@ class axistitlepainter:
           method; a single is allowed without being a list; None
           turns off the title
         - titledirection is an instance of rotatetext or None
-        - titlepos is the position of the title in graph coordinates"""
+        - titlepos is the position of the title in graph coordinates
+        - texrunner is the texrunner to be used to create text
+          (the texrunner is available for further use in derived
+          classes as instance variable texrunner)"""
         self.titledist_str = titledist
         self.titleattrs = titleattrs
         self.titledirection = titledirection
         self.titlepos = titlepos
+        self.texrunner = texrunner
 
-    def paint(self, axispos, axis, axiscanvas):
+    def paint(self, axispos, axis, ac=None):
+        if ac is None:
+            ac = axiscanvas()
         if axis.title is not None and self.titleattrs is not None:
             titledist = unit.length(self.titledist_str, default_type="v")
-            x, y = axispos._vtickpoint(self.titlepos, axis=axis)
-            dx, dy = axispos.vtickdirection(self.titlepos, axis=axis)
+            x, y = axispos._vtickpoint(self.titlepos)
+            dx, dy = axispos.vtickdirection(self.titlepos)
             titleattrs = helper.ensurelist(self.titleattrs)
             if self.titledirection is not None:
                 titleattrs.append(self.titledirection.trafo(dx, dy))
-            title = axiscanvas.texrunner._text(x, y, axis.title, *titleattrs)
-            axiscanvas.extent += titledist
-            title.linealign(axiscanvas.extent, dx, dy)
-            axiscanvas.extent += title.extent(dx, dy)
-            axiscanvas.insert(title)
+            title = self.texrunner._text(x, y, axis.title, *titleattrs)
+            ac.extent += titledist
+            title.linealign(ac.extent, dx, dy)
+            ac.extent += title.extent(dx, dy)
+            ac.insert(title)
+        return ac
 
 
 class axispainter(axistitlepainter):
@@ -1512,15 +1655,19 @@ class axispainter(axistitlepainter):
         self.labelvequalize = labelvequalize
         axistitlepainter.__init__(self, **kwargs)
 
-    def paint(self, axispos, axis, axiscanvas):
+    def paint(self, axispos, axis, ac=None):
+        if ac is None:
+            ac = axiscanvas()
+        else:
+            raise RuntimeError("XXX") # XXX debug only
         labeldist = unit.length(self.labeldist_str, default_type="v")
         for tick in axis.ticks:
             if axis.divisor is not None: # XXX workaround for timeaxis
                 tick.temp_v = axis.convert(float(tick) * axis.divisor)
             else:
                 tick.temp_v = axis.convert(tick)
-            tick.temp_x, tick.temp_y = axispos._vtickpoint(tick.temp_v, axis=axis)
-            tick.temp_dx, tick.temp_dy = axispos.vtickdirection(tick.temp_v, axis=axis)
+            tick.temp_x, tick.temp_y = axispos._vtickpoint(tick.temp_v)
+            tick.temp_dx, tick.temp_dy = axispos.vtickdirection(tick.temp_v)
 
         # create & align tick.temp_labelbox
         for tick in axis.ticks:
@@ -1532,7 +1679,7 @@ class axispainter(axistitlepainter):
                         labelattrs.append(self.labeldirection.trafo(tick.temp_dx, tick.temp_dy))
                     if tick.labelattrs is not None:
                         labelattrs.extend(helper.ensurelist(tick.labelattrs))
-                    tick.temp_labelbox = axiscanvas.texrunner._text(tick.temp_x, tick.temp_y, tick.label, *labelattrs)
+                    tick.temp_labelbox = self.texrunner._text(tick.temp_x, tick.temp_y, tick.label, *labelattrs)
         if len(axis.ticks) > 1:
             equaldirection = 1
             for tick in axis.ticks[1:]:
@@ -1575,26 +1722,26 @@ class axispainter(axistitlepainter):
                         y1 = tick.temp_y - tick.temp_dy * _innerticklength
                         x2 = tick.temp_x + tick.temp_dx * _outerticklength
                         y2 = tick.temp_y + tick.temp_dy * _outerticklength
-                        axiscanvas.stroke(path._line(x1, y1, x2, y2), *helper.ensuresequence(tickattrs))
+                        ac.stroke(path._line(x1, y1, x2, y2), *helper.ensuresequence(tickattrs))
                 if tick != frac((0, 1)) or self.zerolineattrs is None:
                     gridattrs = helper.getsequenceno(self.gridattrs, tick.ticklevel)
                     if gridattrs is not None:
-                        axiscanvas.stroke(axispos.vgridline(tick.temp_v, axis=axis), *helper.ensuresequence(gridattrs))
-                if outerticklength is not None and unit.topt(outerticklength) > unit.topt(axiscanvas.extent):
-                    axiscanvas.extent = outerticklength
-                if outerticklength is not None and unit.topt(-innerticklength) > unit.topt(axiscanvas.extent):
-                    axiscanvas.extent = -innerticklength
+                        self.stroke(axispos.vgridline(tick.temp_v), *helper.ensuresequence(gridattrs))
+                if outerticklength is not None and unit.topt(outerticklength) > unit.topt(ac.extent):
+                    ac.extent = outerticklength
+                if outerticklength is not None and unit.topt(-innerticklength) > unit.topt(ac.extent):
+                    ac.extent = -innerticklength
             if tick.labellevel is not None and self.labelattrs is not None:
-                axiscanvas.insert(tick.temp_labelbox)
-                axiscanvas.labels.append(tick.temp_labelbox)
+                ac.insert(tick.temp_labelbox)
+                ac.labels.append(tick.temp_labelbox)
                 extent = tick.temp_labelbox.extent(tick.temp_dx, tick.temp_dy) + labeldist
-                if unit.topt(extent) > unit.topt(axiscanvas.extent):
-                    axiscanvas.extent = extent
+                if unit.topt(extent) > unit.topt(ac.extent):
+                    ac.extent = extent
         if self.baselineattrs is not None:
-            axiscanvas.stroke(axispos.vbaseline(axis=axis), *helper.ensuresequence(self.baselineattrs))
+            ac.stroke(axispos.vbaseline(), *helper.ensuresequence(self.baselineattrs))
         if self.zerolineattrs is not None:
             if len(axis.ticks) and axis.ticks[0] * axis.ticks[-1] < frac((0, 1)):
-                axiscanvas.stroke(axispos.gridline(0, axis=axis), *helper.ensuresequence(self.zerolineattrs))
+                ac.stroke(axispos.gridline(0), *helper.ensuresequence(self.zerolineattrs))
 
         # for tick in axis.ticks:
         #     del tick.temp_v    # we've inserted those temporary variables ... and do not care any longer about them
@@ -1605,7 +1752,9 @@ class axispainter(axistitlepainter):
         #     if tick.labellevel is not None and self.labelattrs is not None:
         #         del tick.temp_labelbox
 
-        axistitlepainter.paint(self, axispos, axis, axiscanvas)
+        axistitlepainter.paint(self, axispos, axis, ac=ac)
+
+        return ac
 
 
 class linkaxispainter(axispainter):
@@ -1659,12 +1808,16 @@ class splitaxispainter(axistitlepainter):
         self.breaklinesattrs = breaklinesattrs
         axistitlepainter.__init__(self, **args)
 
-    def paint(self, axispos, axis, axiscanvas):
+    def paint(self, axispos, axis, ac=None):
+        if ac is None:
+            ac = axiscanvas()
+        else:
+            raise RuntimeError("XXX") # XXX debug only
         for subaxis in axis.subaxes:
-            subaxis.finish(axis, axiscanvas.texrunner)
-            axiscanvas.insert(subaxis.axiscanvas)
-            if unit.topt(axiscanvas.extent) < unit.topt(subaxis.axiscanvas.extent):
-                axiscanvas.extent = subaxis.axiscanvas.extent
+            subac = subaxis.finish(axispos)
+            ac.insert(subac)
+            if unit.topt(ac.extent) < unit.topt(subac.extent):
+                ac.extent = subac.extent
         if self.breaklinesattrs is not None:
             self.breaklinesdist = unit.length(self.breaklinesdist_str, default_type="v")
             self.breaklineslength = unit.length(self.breaklineslength_str, default_type="v")
@@ -1672,26 +1825,28 @@ class splitaxispainter(axistitlepainter):
             self.cos = math.cos(self.breaklinesangle*math.pi/180.0)
             breaklinesextent = (0.5*self.breaklinesdist*math.fabs(self.cos) +
                                 0.5*self.breaklineslength*math.fabs(self.sin))
-            if unit.topt(axiscanvas.extent) < unit.topt(breaklinesextent):
-                axiscanvas.extent = breaklinesextent
+            if unit.topt(ac.extent) < unit.topt(breaklinesextent):
+                ac.extent = breaklinesextent
             for subaxis1, subaxis2 in zip(axis.subaxes[:-1], axis.subaxes[1:]):
                 # use a tangent of the baseline (this is independent of the tickdirection)
                 v = 0.5 * (subaxis1.vmax + subaxis2.vmin)
-                breakline = path.normpath(axispos.vbaseline(v, None, axis=axis)).tangent(0, self.breaklineslength)
-                widthline = path.normpath(axispos.vbaseline(v, None, axis=axis)).tangent(0, self.breaklinesdist).transformed(trafomodule.rotate(self.breaklinesangle+90, *breakline.begin()))
+                p = path.normpath(axispos.vbaseline(v, None))
+                breakline = p.tangent(0, self.breaklineslength)
+                widthline = p.tangent(0, self.breaklinesdist).transformed(trafomodule.rotate(self.breaklinesangle+90, *breakline.begin()))
                 tocenter = map(lambda x: 0.5*(x[0]-x[1]), zip(breakline.begin(), breakline.end()))
                 towidth = map(lambda x: 0.5*(x[0]-x[1]), zip(widthline.begin(), widthline.end()))
                 breakline = breakline.transformed(trafomodule.translate(*tocenter).rotated(self.breaklinesangle, *breakline.begin()))
                 breakline1 = breakline.transformed(trafomodule.translate(*towidth))
                 breakline2 = breakline.transformed(trafomodule.translate(-towidth[0], -towidth[1]))
-                axiscanvas.fill(path.path(path.moveto(*breakline1.begin()),
+                ac.fill(path.path(path.moveto(*breakline1.begin()),
                                           path.lineto(*breakline1.end()),
                                           path.lineto(*breakline2.end()),
                                           path.lineto(*breakline2.begin()),
                                           path.closepath()), color.gray.white)
-                axiscanvas.stroke(breakline1, *helper.ensuresequence(self.breaklinesattrs))
-                axiscanvas.stroke(breakline2, *helper.ensuresequence(self.breaklinesattrs))
-        axistitlepainter.paint(self, axispos, axis, axiscanvas)
+                ac.stroke(breakline1, *helper.ensuresequence(self.breaklinesattrs))
+                ac.stroke(breakline2, *helper.ensuresequence(self.breaklinesattrs))
+        axistitlepainter.paint(self, axispos, axis, ac=ac)
+        return ac
 
 
 class linksplitaxispainter(splitaxispainter):
@@ -1757,18 +1912,22 @@ class baraxispainter(axistitlepainter):
         self.namevequalize = namevequalize
         axistitlepainter.__init__(self, **args)
 
-    def paint(self, axispos, axis, axiscanvas):
+    def paint(self, axispos, axis, ac=None):
+        if ac is None:
+            ac = axiscanvas()
+        else:
+            raise RuntimeError("XXX") # XXX debug only
         if axis.multisubaxis is not None:
             for subaxis in axis.subaxis:
-                subaxis.finish(axis, axiscanvas.texrunner)
-                axiscanvas.insert(subaxis.axiscanvas)
-                if unit.topt(axiscanvas.extent) < unit.topt(subaxis.axiscanvas.extent):
-                    axiscanvas.extent = subaxis.axiscanvas.extent
+                subac = subaxis.finish(axis, self.texrunner)
+                ac.insert(subac)
+                if unit.topt(ac.extent) < unit.topt(subac.extent):
+                    ac.extent = subac.extent
         namepos = []
         for name in axis.names:
             v = axis.convert((name, self.namepos))
-            x, y = axispos._vtickpoint(v, axis=axis)
-            dx, dy = axispos.vtickdirection(v, axis=axis)
+            x, y = axispos._vtickpoint(v)
+            dx, dy = axispos.vtickdirection(v)
             namepos.append((v, x, y, dx, dy))
         nameboxes = []
         if self.nameattrs is not None:
@@ -1777,12 +1936,12 @@ class baraxispainter(axistitlepainter):
                 if self.namedirection is not None:
                     nameattrs.append(self.namedirection.trafo(tick.temp_dx, tick.temp_dy))
                 if axis.texts.has_key(name):
-                    nameboxes.append(axiscanvas.texrunner._text(x, y, str(axis.texts[name]), *nameattrs))
+                    nameboxes.append(self.texrunner._text(x, y, str(axis.texts[name]), *nameattrs))
                 elif axis.texts.has_key(str(name)):
-                    nameboxes.append(axiscanvas.texrunner._text(x, y, str(axis.texts[str(name)]), *nameattrs))
+                    nameboxes.append(self.texrunner._text(x, y, str(axis.texts[str(name)]), *nameattrs))
                 else:
-                    nameboxes.append(axiscanvas.texrunner._text(x, y, str(name), *nameattrs))
-        labeldist = axiscanvas.extent + unit.length(self.namedist_str, default_type="v")
+                    nameboxes.append(self.texrunner._text(x, y, str(name), *nameattrs))
+        labeldist = ac.extent + unit.length(self.namedist_str, default_type="v")
         if len(namepos) > 1:
             equaldirection = 1
             for np in namepos[1:]:
@@ -1799,21 +1958,21 @@ class baraxispainter(axistitlepainter):
         if self.innerticklength_str is not None:
             innerticklength = unit.length(self.innerticklength_str, default_type="v")
             _innerticklength = unit.topt(innerticklength)
-            if self.tickattrs is not None and unit.topt(axiscanvas.extent) < -_innerticklength:
-                axiscanvas.extent = -innerticklength
+            if self.tickattrs is not None and unit.topt(ac.extent) < -_innerticklength:
+                ac.extent = -innerticklength
         elif self.outerticklength_str is not None:
             innerticklength = _innerticklength = 0
         if self.outerticklength_str is not None:
             outerticklength = unit.length(self.outerticklength_str, default_type="v")
             _outerticklength = unit.topt(outerticklength)
-            if self.tickattrs is not None and unit.topt(axiscanvas.extent) < _outerticklength:
-                axiscanvas.extent = outerticklength
+            if self.tickattrs is not None and unit.topt(ac.extent) < _outerticklength:
+                ac.extent = outerticklength
         elif self.innerticklength_str is not None:
             outerticklength = _outerticklength = 0
         for (v, x, y, dx, dy), namebox in zip(namepos, nameboxes):
             newextent = namebox.extent(dx, dy) + labeldist
-            if unit.topt(axiscanvas.extent) < unit.topt(newextent):
-                axiscanvas.extent = newextent
+            if unit.topt(ac.extent) < unit.topt(newextent):
+                ac.extent = newextent
         if self.tickattrs is not None and (self.innerticklength_str is not None or self.outerticklength_str is not None):
             for pos in axis.relsizes:
                 if pos == axis.relsizes[0]:
@@ -1821,20 +1980,20 @@ class baraxispainter(axistitlepainter):
                 elif pos != axis.relsizes[-1]:
                     pos -= 0.5 * axis.dist
                 v = pos / axis.relsizes[-1]
-                x, y = axispos._vtickpoint(v, axis=axis)
-                dx, dy = axispos.vtickdirection(v, axis=axis)
+                x, y = axispos._vtickpoint(v)
+                dx, dy = axispos.vtickdirection(v)
                 x1 = x - dx * _innerticklength
                 y1 = y - dy * _innerticklength
                 x2 = x + dx * _outerticklength
                 y2 = y + dy * _outerticklength
-                axiscanvas.stroke(path._line(x1, y1, x2, y2), *helper.ensuresequence(self.tickattrs))
+                ac.stroke(path._line(x1, y1, x2, y2), *helper.ensuresequence(self.tickattrs))
         if self.baselineattrs is not None:
-            p = axispos.vbaseline(axis=axis)
+            p = axispos.vbaseline()
             if p is not None:
-                axiscanvas.stroke(axispos.vbaseline(axis=axis), *helper.ensuresequence(self.baselineattrs))
+                ac.stroke(p, *helper.ensuresequence(self.baselineattrs))
         for namebox in nameboxes:
-            axiscanvas.insert(namebox)
-        axistitlepainter.paint(self, axispos, axis, axiscanvas)
+            ac.insert(namebox)
+        axistitlepainter.paint(self, axispos, axis, ac=ac)
 
 
 class linkbaraxispainter(baraxispainter):
@@ -1859,25 +2018,10 @@ class linkbaraxispainter(baraxispainter):
 
 class _Iaxis:
     """interface definition of a axis
-    - data and tick range are handled separately
     - an axis should implement an convert and invert method like
       _Imap, but this is not part of this interface definition;
       one possibility is to mix-in a proper map class, but special
-      purpose axes might do something else
-    - instance variables:
-      - axiscanvas: an axiscanvas instance, which is available after
-        calling the finish method (the idea is, that an axis might
-        fill different axiscanvas instances by calling the painter
-        for different ticks and rate those ticks afterwards -- thus
-        the axis finally can set this best canvas as its axis canvas)
-      - relsize: relative size (width) of the axis (for use
-        in splitaxis, baraxis etc.) -- this might not be available for
-        all axes, which will just create an name error right now
-    - configuration of the range handling is not subject
-      of this interface definition"""
-    # TODO: - add a mechanism to allow for a different range
-    #         handling of x and y ranges
-    #       - should we document instance variables this way?
+      purpose axes might do something else"""
 
     def convert(self, x):
         "convert a value into graph coordinates"
@@ -1885,43 +2029,39 @@ class _Iaxis:
     def invert(self, v):
         "invert a graph coordinate to a axis value"
 
-    def setdatarange(self, min, max):
+    def getrelsize(self):
+        """returns the relative size (width) of the axis
+        - for use in splitaxis, baraxis etc.
+        - might return None if no size is available"""
+
+    def setrange(self, min=None, max=None):
         """set the axis data range
         - the type of min and max must fit to the axis
         - min<max; the axis might be reversed, but this is
-          expressed internally only
-        - the axis might not apply this change of the range
-          (e.g. when the axis range is fixed by the user)
+          expressed internally only (min<max all the time)
+        - the axis might not apply the change of the range
+          (e.g. when the axis range is fixed by the user),
+          but usually the range is extended to contain the
+          given range
         - for invalid parameters (e.g. negativ values at an
-          logarithmic axis), an exception should be raised"""
-        # TODO: be more specific about exceptions
+          logarithmic axis), an exception should be raised
+        - a RuntimeError is raised, when setrange is called
+          after the finish method"""
 
-    def settickrange(self, min, max):
-        """set the axis tick range
-        - as before, but for the tick range (whatever this
-          means for the axis)"""
-
-    def getdatarange(self):
+    def getrange(self):
         """return data range as a tuple (min, max)
         - min<max; the axis might be reversed, but this is
-          expressed internally only"""
-        # TODO: be more specific about exceptions
+          expressed internally only
+        - a RuntimeError exception is raised when no
+          range is available"""
 
-    def gettickrange(self):
-        """return tick range as a tuple (min, max)
-        - as before, but for the tick range"""
-        # TODO: be more specific about exceptions
-
-    def finish(self, axispos, texrunner):
+    def finish(self, axispos):
         """finishes the axis
-        - axispos implements _Iaxispos (usually the graph itself
-          can be used here)
-        - the finish method creates an axiscanvas, which should be
+        - axispos implements _Iaxispos
+        - the finish method returns an axiscanvas, which should be
           insertable into the graph to finally paint the axis
         - any modification of the axis range should be disabled after
-          the finish method was called; a possible implementation
-          would be to raise an error in these methods as soon as an
-          axiscanvas is available"""
+          the finish method was called"""
         # TODO: be more specific about exceptions
 
     def createlinkaxis(self, **kwargs):
@@ -1932,60 +2072,12 @@ class _Iaxis:
           which doesn't put any text to the axis"""
 
 
-class _Iaxispos:
-    """interface definition of axis tick position methods
-    - these methods are used for the postitioning of the ticks
-      when painting an axis
-    - you may try to avoid calling of these methods from each
-      other to gain speed"""
-
-    def baseline(self, x1=None, x2=None, axis=None):
-        """return the baseline as a path
-        - x1 is the start position; if not set, the baseline starts
-          from the beginning of the axis, which might imply a
-          value outside of the graph coordinate range [0; 1]
-        - x2 is analogous to x1, but for the end position"""
-
-    def vbaseline(self, v1=None, v2=None, axis=None):
-        """return the baseline as a path
-        - like baseline, but for graph coordinates"""
-
-    def gridline(self, x, axis=None):
-        "return the gridline as a path for a given position x"
-
-    def vgridline(self, v, axis=None):
-        """return the gridline as a path for a given position v
-        in graph coordinates"""
-
-    def _tickpoint(self, x, axis=None):
-        """return the position at the baseline as a tuple (x, y) in
-        postscript points for the position x"""
-
-    def tickpoint(self, x, axis=None):
-        """return the position at the baseline as a tuple (x, y) in
-        in PyX length for the position x"""
-
-    def _vtickpoint(self, v, axis=None):
-        "like _tickpoint, but for graph coordinates"
-
-    def vtickpoint(self, v, axis=None):
-        "like tickpoint, but for graph coordinates"
-
-    def tickdirection(self, x, axis=None):
-        """return the direction of a tick as a tuple (dx, dy) for the
-        position x"""
-
-    def vtickdirection(self, v, axis=None):
-        """like tickposition, but for graph coordinates"""
-
-
 class _axis:
     """base implementation a regular axis
     - typical usage is to mix-in a linmap or a logmap to
       complete the definition"""
 
     def __init__(self, min=None, max=None, reverse=0, divisor=1,
-                       datavmin=None, datavmax=None, tickvmin=0, tickvmax=1,
                        title=None, painter=axispainter(), texter=defaulttexter(),
                        density=1, maxworse=2):
         """initializes the instance
@@ -1994,10 +2086,6 @@ class _axis:
         - reverse (boolean) reverses the minimum and the maximum of
           the axis
         - numerical divisor for the axis partitioning
-        - datavmin and datavmax are the minimal and maximal graph
-          coordinate when adjusting the axis to the data range
-          (likely to be changed in the future)
-        - as before, but for the tick range
         - title is a string containing the axis title
         - axispainter is the axis painter (should implement _Ipainter)
         - texter is the texter (should implement _Itexter)
@@ -2013,98 +2101,46 @@ class _axis:
           part and a rating attribute of the instance; those
           attributes should be initialized by the constructors
           of derived classes"""
-        # TODO: improve datavmin/datavmax/tickvmin/tickvmax
         if None not in (min, max) and min > max:
             min, max, reverse = max, min, not reverse
         self.fixmin, self.fixmax, self.min, self.max, self.reverse = min is not None, max is not None, min, max, reverse
-
-        self.datamin = self.datamax = self.tickmin = self.tickmax = None
-        if datavmin is None:
-            if self.fixmin:
-                self.datavmin = 0
-            else:
-                self.datavmin = 0.05
-        else:
-            self.datavmin = datavmin
-        if datavmax is None:
-            if self.fixmax:
-                self.datavmax = 1
-            else:
-                self.datavmax = 0.95
-        else:
-            self.datavmax = datavmax
-        self.tickvmin = tickvmin
-        self.tickvmax = tickvmax
-
         self.divisor = divisor
         self.title = title
         self.painter = painter
         self.texter = texter
         self.density = density
         self.maxworse = maxworse
-        self.axiscanvas = None
         self.canconvert = 0
         self.finished = 0
-        self.__setinternalrange()
+        self._setinternalrange()
 
-    def __setinternalrange(self, min=None, max=None):
+    def _setinternalrange(self, min=None, max=None):
         if not self.fixmin and min is not None and (self.min is None or min < self.min):
             self.min = min
         if not self.fixmax and max is not None and (self.max is None or max > self.max):
             self.max = max
         if None not in (self.min, self.max):
-            min, max, vmin, vmax = self.min, self.max, 0, 1
             self.canconvert = 1
-            self.setbasepoints(((min, vmin), (max, vmax)))
-            if not self.fixmin:
-                if self.datamin is not None and self.convert(self.datamin) < self.datavmin:
-                    min, vmin = self.datamin, self.datavmin
-                    self.setbasepoints(((min, vmin), (max, vmax)))
-                if self.tickmin is not None and self.convert(self.tickmin) < self.tickvmin:
-                    min, vmin = self.tickmin, self.tickvmin
-                    self.setbasepoints(((min, vmin), (max, vmax)))
-            if not self.fixmax:
-                if self.datamax is not None and self.convert(self.datamax) > self.datavmax:
-                    max, vmax = self.datamax, self.datavmax
-                    self.setbasepoints(((min, vmin), (max, vmax)))
-                if self.tickmax is not None and self.convert(self.tickmax) > self.tickvmax:
-                    max, vmax = self.tickmax, self.tickvmax
-                    self.setbasepoints(((min, vmin), (max, vmax)))
-            if self.reverse:
-                self.setbasepoints(((min, vmax), (max, vmin)))
-
-    def __getinternalrange(self):
-        return self.min, self.max, self.datamin, self.datamax, self.tickmin, self.tickmax
-
-    def __forceinternalrange(self, range):
-        self.min, self.max, self.datamin, self.datamax, self.tickmin, self.tickmax = range
-        self.__setinternalrange()
-
-    def setdatarange(self, min, max):
-        if self.axiscanvas is not None:
-            raise RuntimeError("axis was already finished")
-        self.datamin, self.datamax = min, max
-        self.__setinternalrange(min, max)
-
-    def settickrange(self, min, max):
-        if self.axiscanvas is not None:
-            raise RuntimeError("axis was already finished")
-        self.tickmin, self.tickmax = min, max
-        self.__setinternalrange(min, max)
-
-    def getdatarange(self):
-        if self.canconvert:
-            if self.reverse:
-                return self.invert(1-self.datavmin), self.invert(1-self.datavmax)
+            if not self.reverse:
+                self.setbasepoints(((self.min, 1), (self.max, 0)))
             else:
-                return self.invert(self.datavmin), self.invert(self.datavmax)
+                self.setbasepoints(((self.min, 0), (self.max, 1)))
 
-    def gettickrange(self):
-        if self.canconvert:
-            if self.reverse:
-                return self.invert(1-self.tickvmin), self.invert(1-self.tickvmax)
-            else:
-                return self.invert(self.tickvmin), self.invert(self.tickvmax)
+    def _getinternalrange(self):
+        return self.min, self.max
+
+    def _forceinternalrange(self, range):
+        self.min, self.max = range
+        self._setinternalrange()
+
+    def setrange(self, min=None, max=None):
+        if self.finished:
+            raise RuntimeError("axis was already finished")
+        self._setinternalrange(min, max)
+
+    def getrange(self):
+        if self.min is not None and self.max is not None:
+            return self.min, self.max
 
     def checkfraclist(self, fracs):
         "orders a list of fracs, equal entries are not allowed"
@@ -2121,9 +2157,8 @@ class _axis:
     def finish(self, axispos, texrunner):
         if self.finished:
             return
-        self.finished = 1
 
-        min, max = self.gettickrange()
+        min, max = self.getrange()
         parter = parterpos = None
         if self.part is not None:
             self.part = helper.ensurelist(self.part)
@@ -2138,22 +2173,22 @@ class _axis:
             else:
                 self.part[:parterpos] = self.checkfraclist(self.part[:parterpos])
                 self.part[parterpos+1:] = self.checkfraclist(self.part[parterpos+1:])
-                if self.divisor is not None: # XXX workaround for timeaxis
-                    self.ticks = _mergeticklists(
+#                if self.divisor is not None: # XXX workaround for timeaxis
+                self.ticks = _mergeticklists(
                                      _mergeticklists(self.part[:parterpos],
                                                      parter.defaultpart(min/self.divisor,
                                                                         max/self.divisor,
                                                                         not self.fixmin,
                                                                         not self.fixmax)),
                                      self.part[parterpos+1:])
-                else:
-                    self.ticks = _mergeticklists(
-                                     _mergeticklists(self.part[:parterpos],
-                                                     parter.defaultpart(min,
-                                                                        max,
-                                                                        not self.fixmin,
-                                                                        not self.fixmax)),
-                                     self.part[parterpos+1:])
+#                else:
+#                    self.ticks = _mergeticklists(
+#                                     _mergeticklists(self.part[:parterpos],
+#                                                     parter.defaultpart(min,
+#                                                                        max,
+#                                                                        not self.fixmin,
+#                                                                        not self.fixmax)),
+#                                     self.part[parterpos+1:])
         else:
             self.ticks = []
         # lesspart and morepart can be called after defaultpart;
@@ -2211,16 +2246,15 @@ class _axis:
                 i = 0
                 bestrate = None
                 while i < len(variants) and (bestrate is None or variants[i][0] < bestrate):
-                    saverange = self.__getinternalrange()
+                    saverange = self._getinternalrange()
                     self.ticks = variants[i][1]
                     if len(self.ticks):
-                        if self.divisor is not None: # XXX workaround for timeaxis
-                            self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
-                        else:
-                            self.settickrange(self.ticks[0], self.ticks[-1])
-                    ac = axiscanvas(texrunner)
+#                        if self.divisor is not None: # XXX workaround for timeaxis
+                            self.setrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
+#                        else:
+#                            self.setrange(self.ticks[0], self.ticks[-1])
                     self.texter.labels(self.ticks)
-                    self.painter.paint(axispos, self, ac)
+                    ac = self.painter.paint(axispos, self)
                     ratelayout = self.rater.ratelayout(ac, self.density)
                     if ratelayout is not None:
                         variants[i][0] += ratelayout
@@ -2229,7 +2263,7 @@ class _axis:
                         variants[i][0] = None
                     if variants[i][0] is not None and (bestrate is None or variants[i][0] < bestrate):
                         bestrate = variants[i][0]
-                    self.__forceinternalrange(saverange)
+                    self._forceinternalrange(saverange)
                     i += 1
                 if bestrate is None:
                     raise RuntimeError("no valid axis partitioning found")
@@ -2237,27 +2271,28 @@ class _axis:
                 variants.sort()
                 self.ticks = variants[0][1]
                 if len(self.ticks):
-                    if self.divisor is not None: # XXX workaround for timeaxis
-                        self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
-                    else:
-                        self.settickrange(self.ticks[0], self.ticks[-1])
-                self.axiscanvas = variants[0][2]
+#                    if self.divisor is not None: # XXX workaround for timeaxis
+                        self.setrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
+#                    else:
+#                        self.setrange(self.ticks[0], self.ticks[-1])
+                ac = variants[0][2]
             else:
                 if len(self.ticks):
-                    if self.divisor is not None: # XXX workaround for timeaxis
-                        self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
-                    else:
-                        self.settickrange(self.ticks[0], self.ticks[-1])
-                self.axiscanvas = axiscanvas(texrunner)
+#                    if self.divisor is not None: # XXX workaround for timeaxis
+                        self.setrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
+#                    else:
+#                        self.setrange(self.ticks[0], self.ticks[-1])
+                ac = axiscanvas()
         else:
             if len(self.ticks):
-                if self.divisor is not None: # XXX workaround for timeaxis
-                    self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
-                else:
-                    self.settickrange(self.ticks[0], self.ticks[-1])
-            self.axiscanvas = axiscanvas(texrunner)
+#                if self.divisor is not None: # XXX workaround for timeaxis
+                    self.setrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
+#                else:
+#                    self.setrange(self.ticks[0], self.ticks[-1])
             self.texter.labels(self.ticks)
-            self.painter.paint(axispos, self, self.axiscanvas)
+            ac = self.painter.paint(axispos, self)
+        self.finished = 1
+        return ac
 
     def createlinkaxis(self, **args):
         return linkaxis(self, **args)
@@ -2348,9 +2383,8 @@ class linkaxis:
         if self.finished:
             return
         self.finished = 1
-        self.linkedaxis.finish(axispos, texrunner)
-        self.axiscanvas = axiscanvas(texrunner)
-        self.painter.paint(axispos, self, self.axiscanvas)
+        self.linkedaxis.finish(axispos, texrunner) # multiple calls to finish!
+        return self.painter.paint(axispos, self)
 
 
 class _subaxispos:
@@ -2494,9 +2528,9 @@ class splitaxis(_subaxispos):
             self.max = self.subaxes[-1].max
         self.finished = 0
 
-    def getdatarange(self):
-        min = self.subaxes[0].getdatarange()
-        max = self.subaxes[-1].getdatarange()
+    def getrange(self):
+        min = self.subaxes[0].getrange()
+        max = self.subaxes[-1].getrange()
         try:
             return min[0], max[1]
         except TypeError:
@@ -2559,8 +2593,7 @@ class splitaxis(_subaxispos):
         for subaxis in self.subaxes:
             subaxis.baseaxispos = axispos
             subaxis.baseaxis = self
-        self.axiscanvas = axiscanvas(texrunner)
-        self.painter.paint(axispos, self, self.axiscanvas)
+        return self.painter.paint(axispos, self)
 
     def createlinkaxis(self, **args):
         return linksplitaxis(self, **args)
@@ -2693,19 +2726,11 @@ class baraxis(_subaxispos):
                        texts=self.multisubaxis.texts,
                        painter=self.multisubaxis.painter)
 
-    def getdatarange(self):
+    def getrange(self):
         # TODO: we do not yet have a proper range handling for a baraxis
         return None
 
-    def gettickrange(self):
-        # TODO: we do not yet have a proper range handling for a baraxis
-        raise RuntimeError("range handling for a baraxis is not implemented")
-
-    def setdatarange(self):
-        # TODO: we do not yet have a proper range handling for a baraxis
-        raise RuntimeError("range handling for a baraxis is not implemented")
-
-    def settickrange(self):
+    def setrange(self, min=None, max=None):
         # TODO: we do not yet have a proper range handling for a baraxis
         raise RuntimeError("range handling for a baraxis is not implemented")
 
@@ -2796,8 +2821,7 @@ class baraxis(_subaxispos):
                 subaxis.vmax = self.convert((name, 1))
                 subaxis.baseaxispos = axispos
                 subaxis.baseaxis = self
-        self.axiscanvas = axiscanvas(texrunner)
-        self.painter.paint(axispos, self, self.axiscanvas)
+        return self.painter.paint(axispos, self)
 
     def createlinkaxis(self, **args):
         return linkbaraxis(self, **args)
@@ -2921,6 +2945,41 @@ class key:
 ################################################################################
 
 
+class lineaxispos(_axispos): # XXX: optimize by full implementation
+
+    __implements__ = _Iaxispos
+
+    def __init__(self, axis, x1, y1, x2, y2, fixtickdirection):
+        """initializes the instance
+        - only the convert method is needed from the axis a"""
+        _axispos.__init__(self, axis)
+        self.x1 = x1
+        self.x2 = x2
+        self.y1 = y1
+        self.y2 = y2
+        self.fixtickdirection = fixtickdirection
+
+    def vbaseline(self, v1=None, v2=None):
+        if v1 is None:
+            v1 = 0 # XXX reversed?
+        if v2 is None:
+            v2 = 1
+        return path.line((1-v1)*self.x1+v1*self.x2,
+                         (1-v1)*self.y1+v1*self.y2,
+                         (1-v2)*self.x1+v2*self.x2,
+                         (1-v2)*self.y1+v2*self.y2)
+
+    def vgridline(self, v):
+        # TODO: stub!
+        raise RuntimeError("gridline implementation missing")
+
+    def vtickpoint(self, v):
+        return (1-v)*self.x1+v*self.x2, (1-v)*self.y1+v*self.y2
+
+    def vtickdirection(self, v):
+        return self.fixtickdirection
+
+
 class plotinfo:
 
     def __init__(self, data, style):
@@ -2995,269 +3054,146 @@ class graphxy(canvas.canvas):
             yaxis = self.axes["y"]
         return self.xpos+xaxis.convert(x)*self.width, self.ypos+yaxis.convert(y)*self.height
 
-    def _vpos(self, vx, vy, xaxis=None, yaxis=None):
-        if xaxis is None:
-            xaxis = self.axes["x"]
-        if yaxis is None:
-            yaxis = self.axes["y"]
+    def _vpos(self, vx, vy):
         return self._xpos+vx*self._width, self._ypos+vy*self._height
 
-    def vpos(self, vx, vy, xaxis=None, yaxis=None):
-        if xaxis is None:
-            xaxis = self.axes["x"]
-        if yaxis is None:
-            yaxis = self.axes["y"]
+    def vpos(self, vx, vy):
         return self.xpos+vx*self.width, self.ypos+vy*self.height
 
-    def baseline(self, x1=None, x2=None, axis=None):
-        if x1 is not None:
-            v1 = axis.convert(x1)
-        else:
-            v1 = 0
-        if x2 is not None:
-            v2 = axis.convert(x2)
-        else:
-            v2 = 1
-        if axis.axisposdata.type:
-            return path._line(axis.axisposdata._axispos, self._ypos+v1*self._height,
-                              axis.axisposdata._axispos, self._ypos+v2*self._height)
-        else:
-            return path._line(self._xpos+v1*self._width, axis.axisposdata._axispos,
-                              self._xpos+v2*self._width, axis.axisposdata._axispos)
-
-    def xbaseline(self, x1=None, x2=None, axis=None):
-        if axis is None:
-            axis = self.axes["x"]
-        if axis.axisposdata.type != 0:
-            raise RuntimeError("wrong axisposdata.type")
-        if x1 is not None:
-            v1 = axis.convert(x1)
-        else:
-            v1 = 0
-        if x2 is not None:
-            v2 = axis.convert(x2)
-        else:
-            v2 = 1
-        return path._line(self._xpos+v1*self._width, axis.axisposdata._axispos,
-                          self._xpos+v2*self._width, axis.axisposdata._axispos)
-
-    def ybaseline(self, x1=None, x2=None, axis=None):
-        if axis is None:
-            axis = self.axes["y"]
-        if axis.axisposdata.type != 1:
-            raise RuntimeError("wrong axisposdata.type")
-        if x1 is not None:
-            v1 = axis.convert(x1)
-        else:
-            v1 = 0
-        if x2 is not None:
-            v2 = axis.convert(x2)
-        else:
-            v2 = 1
-        return path._line(axis.axisposdata._axispos, self._ypos+v1*self._height,
-                          axis.axisposdata._axispos, self._ypos+v2*self._height)
-
-    def vbaseline(self, v1=None, v2=None, axis=None):
-        if v1 is None:
-            v1 = 0
-        if v2 is None:
-            v2 = 1
-        if axis.axisposdata.type:
-            return path._line(axis.axisposdata._axispos, self._ypos+v1*self._height,
-                              axis.axisposdata._axispos, self._ypos+v2*self._height)
-        else:
-            return path._line(self._xpos+v1*self._width, axis.axisposdata._axispos,
-                              self._xpos+v2*self._width, axis.axisposdata._axispos)
-
-    def vxbaseline(self, v1=None, v2=None, axis=None):
-        if axis is None:
-            axis = self.axes["x"]
-        if axis.axisposdata.type != 0:
-            raise RuntimeError("wrong axisposdata.type")
-        if v1 is None:
-            v1 = 0
-        if v2 is None:
-            v2 = 1
-        return path._line(self._xpos+v1*self._width, axis.axisposdata._axispos,
-                          self._xpos+v2*self._width, axis.axisposdata._axispos)
-
-    def vybaseline(self, v1=None, v2=None, axis=None):
-        if axis is None:
-            axis = self.axes["y"]
-        if axis.axisposdata.type != 1:
-            raise RuntimeError("wrong axisposdata.type")
-        if v1 is None:
-            v1 = 0
-        if v2 is None:
-            v2 = 1
-        return path._line(axis.axisposdata._axispos, self._ypos+v1*self._height,
-                          axis.axisposdata._axispos, self._ypos+v2*self._height)
-
-    def gridline(self, x, axis=None):
-        v = axis.convert(x)
-        if axis.axisposdata.type:
-            return path._line(self._xpos, self._ypos+v*self._height,
-                              self._xpos+self._width, self._ypos+v*self._height)
-        else:
-            return path._line(self._xpos+v*self._width, self._ypos,
-                              self._xpos+v*self._width, self._ypos+self._height)
-
-    def xgridline(self, x, axis=None):
-        if axis is None:
-            axis = self.axes["x"]
-        v = axis.convert(x)
-        if axis.axisposdata.type != 0:
-            raise RuntimeError("wrong axisposdata.type")
-        return path._line(self._xpos+v*self._width, self._ypos,
-                          self._xpos+v*self._width, self._ypos+self._height)
-
-    def ygridline(self, x, axis=None):
-        if axis is None:
-            axis = self.axes["y"]
-        v = axis.convert(x)
-        if axis.axisposdata.type != 1:
-            raise RuntimeError("wrong axisposdata.type")
-        return path._line(self._xpos, self._ypos+v*self._height,
-                          self._xpos+self._width, self._ypos+v*self._height)
-
-    def vgridline(self, v, axis=None):
-        if axis.axisposdata.type:
-            return path._line(self._xpos, self._ypos+v*self._height,
-                              self._xpos+self._width, self._ypos+v*self._height)
-        else:
-            return path._line(self._xpos+v*self._width, self._ypos,
-                              self._xpos+v*self._width, self._ypos+self._height)
-
-    def vxgridline(self, v, axis=None):
-        if axis is None:
-            axis = self.axes["x"]
-        if axis.axisposdata.type != 0:
-            raise RuntimeError("wrong axisposdata.type")
-        return path._line(self._xpos+v*self._width, self._ypos,
-                          self._xpos+v*self._width, self._ypos+self._height)
-
-    def vygridline(self, v, axis=None):
-        if axis is None:
-            axis = self.axes["y"]
-        if axis.axisposdata.type != 1:
-            raise RuntimeError("wrong axisposdata.type")
-        return path._line(self._xpos, self._ypos+v*self._height,
-                          self._xpos+self._width, self._ypos+v*self._height)
-
-    def _tickpoint(self, x, axis=None):
-        if axis.axisposdata.type:
-            return axis.axisposdata._axispos, self._ypos+axis.convert(x)*self._height
-        else:
-            return self._xpos+axis.convert(x)*self._width, axis.axisposdata._axispos
-
-    def _xtickpoint(self, x, axis=None):
-        if axis is None:
-            axis = self.axes["x"]
-        if axis.axisposdata.type != 0:
-            raise RuntimeError("wrong axisposdata.type")
-        return self._xpos+axis.convert(x)*self._width, axis.axisposdata._axispos
-
-    def _ytickpoint(self, x, axis=None):
-        if axis is None:
-            axis = self.axes["y"]
-        if axis.axisposdata.type != 1:
-            raise RuntimeError("wrong axisposdata.type")
-        return axis.axisposdata._axispos, self._ypos+axis.convert(x)*self._height
-
-    def tickpoint(self, x, axis=None):
-        if axis.axisposdata.type:
-            return axis.axisposdata.axispos, self.ypos+axis.convert(x)*self.height
-        else:
-            return self.xpos+axis.convert(x)*self.width, axis.axisposdata.axispos
-
-    def xtickpoint(self, x, axis=None):
-        if axis is None:
-            axis = self.axes["x"]
-        if axis.axisposdata.type != 0:
-            raise RuntimeError("wrong axisposdata.type")
-        return self.xpos+axis.convert(x)*self.width, axis.axisposdata.axispos
-
-    def ytickpoint(self, x, axis=None):
-        if axis is None:
-            axis = self.axes["y"]
-        if axis.axisposdata.type != 1:
-            raise RuntimeError("wrong axisposdata.type")
-        return axis.axisposdata.axispos, self.ypos+axis.convert(x)*self.height
-
-    def _vtickpoint(self, v, axis=None):
-        if axis.axisposdata.type:
-            return axis.axisposdata._axispos, self._ypos+v*self._height
-        else:
-            return self._xpos+v*self._width, axis.axisposdata._axispos
-
-    def _vxtickpoint(self, v, axis=None):
-        if axis is None:
-            axis = self.axes["x"]
-        if axis.axisposdata.type != 0:
-            raise RuntimeError("wrong axisposdata.type")
-        return self._xpos+v*self._width, axis.axisposdata._axispos
-
-    def _vytickpoint(self, v, axis=None):
-        if axis is None:
-            axis = self.axes["y"]
-        if axis.axisposdata.type != 1:
-            raise RuntimeError("wrong axisposdata.type")
-        return axis.axisposdata._axispos, self._ypos+v*self._height
-
-    def vtickpoint(self, v, axis=None):
-        if axis.axisposdata.type:
-            return axis.axisposdata.axispos, self.ypos+v*self.height
-        else:
-            return self.xpos+v*self.width, axis.axisposdata.axispos
-
-    def vxtickpoint(self, v, axis=None):
-        if axis is None:
-            axis = self.axes["x"]
-        if axis.axisposdata.type != 0:
-            raise RuntimeError("wrong axisposdata.type")
-        return self.xpos+v*self.width, axis.axisposdata.axispos
-
-    def vytickpoint(self, v, axis=None):
-        if axis is None:
-            axis = self.axes["y"]
-        if axis.axisposdata.type != 1:
-            raise RuntimeError("wrong axisposdata.type")
-        return axis.axisposdata.axispos, self.ypos+v*self.height
-
-    def tickdirection(self, x, axis=None):
-        return axis.axisposdata.tickdirection
-
-    def xtickdirection(self, x, axis=None):
-        if axis is None:
-            axis = self.axes["x"]
-        if axis.axisposdata.type != 0:
-            raise RuntimeError("wrong axisposdata.type")
-        return axis.axisposdata.tickdirection
-
-    def ytickdirection(self, x, axis=None):
-        if axis is None:
-            axis = self.axes["y"]
-        if axis.axisposdata.type != 1:
-            raise RuntimeError("wrong axisposdata.type")
-        return axis.axisposdata.tickdirection
-
-    def vtickdirection(self, v, axis=None):
-        return axis.axisposdata.tickdirection
-
-    def vxtickdirection(self, v, axis=None):
-        if axis is None:
-            axis = self.axes["x"]
-        if axis.axisposdata.type != 0:
-            raise RuntimeError("wrong axisposdata.type")
-        return axis.axisposdata.tickdirection
-
-    def vytickdirection(self, v, axis=None):
-        if axis is None:
-            axis = self.axes["y"]
-        if axis.axisposdata.type != 1:
-            raise RuntimeError("wrong axisposdata.type")
-        return axis.axisposdata.tickdirection
-
+#     def xbaseline(self, x1=None, x2=None, axis=None):
+#         if axis is None:
+#             axis = self.axes["x"]
+#         if x1 is not None:
+#             v1 = axis.convert(x1)
+#         else:
+#             v1 = 0
+#         if x2 is not None:
+#             v2 = axis.convert(x2)
+#         else:
+#             v2 = 1
+#         return path._line(self._xpos+v1*self._width, axis.axisposdata._axispos,
+#                           self._xpos+v2*self._width, axis.axisposdata._axispos)
+# 
+#     def ybaseline(self, x1=None, x2=None, axis=None):
+#         if axis is None:
+#             axis = self.axes["y"]
+#         if x1 is not None:
+#             v1 = axis.convert(x1)
+#         else:
+#             v1 = 0
+#         if x2 is not None:
+#             v2 = axis.convert(x2)
+#         else:
+#             v2 = 1
+#         return path._line(axis.axisposdata._axispos, self._ypos+v1*self._height,
+#                           axis.axisposdata._axispos, self._ypos+v2*self._height)
+# 
+#     def vxbaseline(self, v1=None, v2=None, axis=None):
+#         if axis is None:
+#             axis = self.axes["x"]
+#         if v1 is None:
+#             v1 = 0
+#         if v2 is None:
+#             v2 = 1
+#         return path._line(self._xpos+v1*self._width, axis.axisposdata._axispos,
+#                           self._xpos+v2*self._width, axis.axisposdata._axispos)
+# 
+#     def vybaseline(self, v1=None, v2=None, axis=None):
+#         if axis is None:
+#             axis = self.axes["y"]
+#         if v1 is None:
+#             v1 = 0
+#         if v2 is None:
+#             v2 = 1
+#         return path._line(axis.axisposdata._axispos, self._ypos+v1*self._height,
+#                           axis.axisposdata._axispos, self._ypos+v2*self._height)
+# 
+#     def xgridline(self, x, axis=None):
+#         if axis is None:
+#             axis = self.axes["x"]
+#         v = axis.convert(x)
+#         return path._line(self._xpos+v*self._width, self._ypos,
+#                           self._xpos+v*self._width, self._ypos+self._height)
+# 
+#     def ygridline(self, x, axis=None):
+#         if axis is None:
+#             axis = self.axes["y"]
+#         v = axis.convert(x)
+#         return path._line(self._xpos, self._ypos+v*self._height,
+#                           self._xpos+self._width, self._ypos+v*self._height)
+# 
+#     def vxgridline(self, v, axis=None):
+#         if axis is None:
+#             axis = self.axes["x"]
+#         return path._line(self._xpos+v*self._width, self._ypos,
+#                           self._xpos+v*self._width, self._ypos+self._height)
+# 
+#     def vygridline(self, v, axis=None):
+#         if axis is None:
+#             axis = self.axes["y"]
+#         return path._line(self._xpos, self._ypos+v*self._height,
+#                           self._xpos+self._width, self._ypos+v*self._height)
+# 
+#     def _xtickpoint(self, x, axis=None):
+#         if axis is None:
+#             axis = self.axes["x"]
+#         return self._xpos+axis.convert(x)*self._width, axis.axisposdata._axispos
+# 
+#     def _ytickpoint(self, x, axis=None):
+#         if axis is None:
+#             axis = self.axes["y"]
+#         return axis.axisposdata._axispos, self._ypos+axis.convert(x)*self._height
+# 
+#     def xtickpoint(self, x, axis=None):
+#         if axis is None:
+#             axis = self.axes["x"]
+#         return self.xpos+axis.convert(x)*self.width, axis.axisposdata.axispos
+# 
+#     def ytickpoint(self, x, axis=None):
+#         if axis is None:
+#             axis = self.axes["y"]
+#         return axis.axisposdata.axispos, self.ypos+axis.convert(x)*self.height
+# 
+#     def _vxtickpoint(self, v, axis=None):
+#         if axis is None:
+#             axis = self.axes["x"]
+#         return self._xpos+v*self._width, axis.axisposdata._axispos
+# 
+#     def _vytickpoint(self, v, axis=None):
+#         if axis is None:
+#             axis = self.axes["y"]
+#         return axis.axisposdata._axispos, self._ypos+v*self._height
+# 
+#     def vxtickpoint(self, v, axis=None):
+#         if axis is None:
+#             axis = self.axes["x"]
+#         return self.xpos+v*self.width, axis.axisposdata.axispos
+# 
+#     def vytickpoint(self, v, axis=None):
+#         if axis is None:
+#             axis = self.axes["y"]
+#         return axis.axisposdata.axispos, self.ypos+v*self.height
+# 
+#     def xtickdirection(self, x, axis=None):
+#         if axis is None:
+#             axis = self.axes["x"]
+#         return axis.axisposdata.tickdirection
+# 
+#     def ytickdirection(self, x, axis=None):
+#         if axis is None:
+#             axis = self.axes["y"]
+#         return axis.axisposdata.tickdirection
+# 
+#     def vxtickdirection(self, v, axis=None):
+#         if axis is None:
+#             axis = self.axes["x"]
+#         return axis.axisposdata.tickdirection
+# 
+#     def vytickdirection(self, v, axis=None):
+#         if axis is None:
+#             axis = self.axes["y"]
+#         return axis.axisposdata.tickdirection
+# 
     def _addpos(self, x, y, dx, dy):
         return x+dx, y+dy
 
@@ -3286,8 +3222,8 @@ class graphxy(canvas.canvas):
         # known ranges are also set as ranges for the axes
         for key, axis in self.axes.items():
             if key in ranges.keys():
-                axis.setdatarange(*ranges[key])
-            ranges[key] = axis.getdatarange()
+                axis.setrange(*ranges[key])
+            ranges[key] = axis.getrange()
             if ranges[key] is None:
                 del ranges[key]
         return ranges
@@ -3329,19 +3265,29 @@ class graphxy(canvas.canvas):
             if XPattern.match(key):
                 if needxaxisdist[num2]:
                     xaxisextents[num2] += axesdist
-                axis.axisposdata = self.axisposdata(0, self.ypos + num2*self.height + num3*xaxisextents[num2], (0, num3))
+                self.axespos[key] = lineaxispos(self.axes[key],
+                                                self.xpos,
+                                                self.ypos + num2*self.height + num3*xaxisextents[num2],
+                                                self.xpos + self.width,
+                                                self.ypos + num2*self.height + num3*xaxisextents[num2],
+                                                (0, num3))
             elif YPattern.match(key):
                 if needyaxisdist[num2]:
                     yaxisextents[num2] += axesdist
-                axis.axisposdata = self.axisposdata(1, self.xpos + num2*self.width + num3*yaxisextents[num2], (num3, 0))
+                self.axespos[key] = lineaxispos(self.axes[key],
+                                                self.xpos + num2*self.width + num3*yaxisextents[num2],
+                                                self.ypos,
+                                                self.xpos + num2*self.width + num3*yaxisextents[num2],
+                                                self.ypos + self.height,
+                                                (num3, 0))
             else:
                 raise ValueError("Axis key '%s' not allowed" % key)
-            axis.finish(self, self.texrunner)
+            self.axescanvas[key] = axis.finish(self.axespos[key], self.texrunner)
             if XPattern.match(key):
-                xaxisextents[num2] += axis.axiscanvas.extent
+                xaxisextents[num2] += self.axescanvas[key].extent
                 needxaxisdist[num2] = 1
             if YPattern.match(key):
-                yaxisextents[num2] += axis.axiscanvas.extent
+                yaxisextents[num2] += self.axescanvas[key].extent
                 needyaxisdist[num2] = 1
 
     def dobackground(self):
@@ -3354,8 +3300,8 @@ class graphxy(canvas.canvas):
     def doaxes(self):
         self.dolayout()
         if not self.removedomethod(self.doaxes): return
-        for axis in self.axes.values():
-            self.insert(axis.axiscanvas)
+        for axiscanvas in self.axescanvas.values():
+            self.insert(axiscanvas)
 
     def dodata(self):
         self.dolayout()
@@ -3438,6 +3384,8 @@ class graphxy(canvas.canvas):
         self._ypos = unit.topt(self.ypos)
         self.initwidthheight(width, height, ratio)
         self.initaxes(axes, 1)
+        self.axescanvas = {}
+        self.axespos = {}
         self.key = key
         self.backgroundattrs = backgroundattrs
         self.axesdist_str = axesdist
@@ -4378,8 +4326,8 @@ class symbol:
             c.stroke(path._line(x, y + 0.5 * height, x + width, y + 0.5 * height), *self.lineattrs)
 
     def drawpoints(self, graph, points):
-        xaxismin, xaxismax = self.xaxis.getdatarange()
-        yaxismin, yaxismax = self.yaxis.getdatarange()
+        xaxismin, xaxismax = self.xaxis.getrange()
+        yaxismin, yaxismax = self.yaxis.getrange()
         self.size = unit.length(_getattr(self.size_str), default_type="v")
         self._size = unit.topt(self.size)
         self.symbol = _getattr(self._symbol)
@@ -4761,7 +4709,7 @@ class bar:
                      (self.stacked != 1 or index))
         if self.stacked > 1:
             index = divmod(index, self.stacked)[0]
-        vmin, vmax = self.vaxis.getdatarange()
+        vmin, vmax = self.vaxis.getrange()
         self.barattrs = _getattrs(helper.ensuresequence(self._barattrs))
         if self.stacked:
             self.stackedvalue = {}
