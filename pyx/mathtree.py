@@ -176,8 +176,8 @@ class MathTreeValConst(MathTreeVal):
     def VarList(self):
         return [ ]
 
-    def Calc(self, **args):
-        return self.Args[0]
+    def Calc(HIDDEN_self, **args):
+        return HIDDEN_self.Args[0]
 
 
 VarPattern = re.compile(r"[a-z_][a-z0-9_]*", re.IGNORECASE)
@@ -206,10 +206,10 @@ class MathTreeValVar(MathTreeVal):
             return []
         return [self.Args[0]]
 
-    def Calc(self, **args):
-        if self.Args[0] in args.keys():
-            return float(args[self.Args[0]])
-        return MathConst[self.Args[0]]
+    def Calc(HIDDEN_self, **args):
+        if HIDDEN_self.Args[0] in args.keys():
+            return float(args[HIDDEN_self.Args[0]])
+        return MathConst[HIDDEN_self.Args[0]]
 
 
 class MathTreeFunc(MathTree):
@@ -244,8 +244,8 @@ class MathTreeFunc1Neg(MathTreeFunc1):
     def CalcDerivative(self, arg):
         return MathTreeFunc1Neg(self.Args[0].CalcDerivative(arg))
 
-    def Calc(self, **args):
-        return -self.Args[0].Calc(**args)
+    def Calc(HIDDEN_self, **args):
+        return -HIDDEN_self.Args[0].Calc(**args)
 
 
 class MathTreeFunc1Abs(MathTreeFunc1):
@@ -258,8 +258,8 @@ class MathTreeFunc1Abs(MathTreeFunc1):
                    MathTreeFunc1Sgn(self.Args[0]),
                    self.Args[0].CalcDerivative(arg))
 
-    def Calc(self, **args):
-        return abs(self.Args[0].Calc(**args))
+    def Calc(HIDDEN_self, **args):
+        return abs(HIDDEN_self.Args[0].Calc(**args))
 
 
 class MathTreeFunc1Sgn(MathTreeFunc1):
@@ -270,8 +270,8 @@ class MathTreeFunc1Sgn(MathTreeFunc1):
     def CalcDerivative(self, arg):
         return MathTreeValConst(0.0)
 
-    def Calc(self, **args):
-        if self.Args[0].Calc(**args) < 0:
+    def Calc(HIDDEN_self, **args):
+        if HIDDEN_self.Args[0].Calc(**args) < 0:
             return -1.0
         return 1.0
 
@@ -288,8 +288,8 @@ class MathTreeFunc1Sqrt(MathTreeFunc1):
                        self),
                    self.Args[0].CalcDerivative(arg))
 
-    def Calc(self, **args):
-        return math.sqrt(self.Args[0].Calc(**args))
+    def Calc(HIDDEN_self, **args):
+        return math.sqrt(HIDDEN_self.Args[0].Calc(**args))
 
 
 class MathTreeFunc1Exp(MathTreeFunc1):
@@ -300,8 +300,8 @@ class MathTreeFunc1Exp(MathTreeFunc1):
     def CalcDerivative(self, arg):
         return MathTreeOpMul(self, self.Args[0].CalcDerivative(arg))
 
-    def Calc(self, **args):
-        return math.exp(self.Args[0].Calc(**args))
+    def Calc(HIDDEN_self, **args):
+        return math.exp(HIDDEN_self.Args[0].Calc(**args))
 
 
 class MathTreeFunc1Log(MathTreeFunc1):
@@ -312,8 +312,8 @@ class MathTreeFunc1Log(MathTreeFunc1):
     def CalcDerivative(self, arg):
         return MathTreeOpDiv(self.Args[0].CalcDerivative(arg), self.Args[0])
 
-    def Calc(self, **args):
-        return math.log(self.Args[0].Calc(**args))
+    def Calc(HIDDEN_self, **args):
+        return math.log(HIDDEN_self.Args[0].Calc(**args))
 
 
 class MathTreeFunc1Sin(MathTreeFunc1):
@@ -326,8 +326,8 @@ class MathTreeFunc1Sin(MathTreeFunc1):
                    MathTreeFunc1Cos(self.Args[0]),
                    self.Args[0].CalcDerivative(arg))
 
-    def Calc(self, **args):
-        return math.sin(self.Args[0].Calc(**args))
+    def Calc(HIDDEN_self, **args):
+        return math.sin(HIDDEN_self.Args[0].Calc(**args))
 
 
 class MathTreeFunc1Cos(MathTreeFunc1):
@@ -340,8 +340,8 @@ class MathTreeFunc1Cos(MathTreeFunc1):
                    MathTreeFunc1Neg(MathTreeFunc1Sin(self.Args[0])),
                    self.Args[0].CalcDerivative(arg))
 
-    def Calc(self, **args):
-        return math.cos(self.Args[0].Calc(**args))
+    def Calc(HIDDEN_self, **args):
+        return math.cos(HIDDEN_self.Args[0].Calc(**args))
 
 
 class MathTreeFunc1Tan(MathTreeFunc1):
@@ -356,8 +356,8 @@ class MathTreeFunc1Tan(MathTreeFunc1):
                        MathTreeFunc1Cos(self.Args[0]),
                        MathTreeValConst(2.0)))
 
-    def Calc(self, **args):
-        return math.tan(self.Args[0].Calc(**args))
+    def Calc(HIDDEN_self, **args):
+        return math.tan(HIDDEN_self.Args[0].Calc(**args))
 
 
 class MathTreeFunc1ASin(MathTreeFunc1):
@@ -375,8 +375,8 @@ class MathTreeFunc1ASin(MathTreeFunc1):
                                self.Args[0],
                                MathTreeValConst(2.0)))))
 
-    def Calc(self, **args):
-        return math.asin(self.Args[0].Calc(**args))
+    def Calc(HIDDEN_self, **args):
+        return math.asin(HIDDEN_self.Args[0].Calc(**args))
 
 
 class MathTreeFunc1ACos(MathTreeFunc1):
@@ -394,8 +394,8 @@ class MathTreeFunc1ACos(MathTreeFunc1):
                                self.Args[0],
                                MathTreeValConst(2.0)))))
 
-    def Calc(self, **args):
-        return math.acos(self.Args[0].Calc(**args))
+    def Calc(HIDDEN_self, **args):
+        return math.acos(HIDDEN_self.Args[0].Calc(**args))
 
 
 class MathTreeFunc1ATan(MathTreeFunc1):
@@ -412,8 +412,8 @@ class MathTreeFunc1ATan(MathTreeFunc1):
                            self.Args[0],
                            MathTreeValConst(2.0))))
 
-    def Calc(self, **args):
-        return math.atan(self.Args[0].Calc(**args))
+    def Calc(HIDDEN_self, **args):
+        return math.atan(HIDDEN_self.Args[0].Calc(**args))
 
 
 class MathTreeFunc1SinD(MathTreeFunc1):
@@ -428,8 +428,8 @@ class MathTreeFunc1SinD(MathTreeFunc1):
                        MathTreeValConst(math.pi/180.0),
                        self.Args[0].CalcDerivative(arg)))
 
-    def Calc(self, **args):
-        return math.sin(math.pi/180.0*self.Args[0].Calc(**args))
+    def Calc(HIDDEN_self, **args):
+        return math.sin(math.pi/180.0*HIDDEN_self.Args[0].Calc(**args))
 
 
 class MathTreeFunc1CosD(MathTreeFunc1):
@@ -444,8 +444,8 @@ class MathTreeFunc1CosD(MathTreeFunc1):
                        MathTreeValConst(math.pi/180.0),
                        self.Args[0].CalcDerivative(arg)))
 
-    def Calc(self, **args):
-        return math.cos(math.pi/180.0*self.Args[0].Calc(**args))
+    def Calc(HIDDEN_self, **args):
+        return math.cos(math.pi/180.0*HIDDEN_self.Args[0].Calc(**args))
 
 
 class MathTreeFunc1TanD(MathTreeFunc1):
@@ -462,8 +462,8 @@ class MathTreeFunc1TanD(MathTreeFunc1):
                        MathTreeFunc1Cos(self.Args[0]),
                        MathTreeValConst(2.0)))
 
-    def Calc(self, **args):
-        return math.tan(math.pi/180.0*self.Args[0].Calc(**args))
+    def Calc(HIDDEN_self, **args):
+        return math.tan(math.pi/180.0*HIDDEN_self.Args[0].Calc(**args))
 
 
 class MathTreeFunc1ASinD(MathTreeFunc1):
@@ -483,8 +483,8 @@ class MathTreeFunc1ASinD(MathTreeFunc1):
                                self.Args[0],
                                MathTreeValConst(2.0)))))
 
-    def Calc(self, **args):
-        return 180.0/math.pi*math.asin(self.Args[0].Calc(**args))
+    def Calc(HIDDEN_self, **args):
+        return 180.0/math.pi*math.asin(HIDDEN_self.Args[0].Calc(**args))
 
 
 class MathTreeFunc1ACosD(MathTreeFunc1):
@@ -505,8 +505,8 @@ class MathTreeFunc1ACosD(MathTreeFunc1):
                                self.Args[0],
                                MathTreeValConst(2.0)))))
 
-    def Calc(self, **args):
-        return 180.0/math.pi*math.acos(self.Args[0].Calc(**args))
+    def Calc(HIDDEN_self, **args):
+        return 180.0/math.pi*math.acos(HIDDEN_self.Args[0].Calc(**args))
 
 
 class MathTreeFunc1ATanD(MathTreeFunc1):
@@ -525,8 +525,8 @@ class MathTreeFunc1ATanD(MathTreeFunc1):
                            self.Args[0],
                            MathTreeValConst(2.0))))
 
-    def Calc(self, **args):
-        return 180.0/math.pi*math.atan(self.Args[0].Calc(**args))
+    def Calc(HIDDEN_self, **args):
+        return 180.0/math.pi*math.atan(HIDDEN_self.Args[0].Calc(**args))
 
 
 class MathTreeFunc2(MathTreeFunc):
@@ -566,9 +566,9 @@ class MathTreeFunc2Norm(MathTreeFunc2):
                                self.Args[1].CalcDerivative(arg)),
                            self)
 
-    def Calc(self, **args):
-        return math.sqrt(self.Args[0].Calc(**args) ** 2 +
-                         self.Args[1].Calc(**args) ** 2)
+    def Calc(HIDDEN_self, **args):
+        return math.sqrt(HIDDEN_self.Args[0].Calc(**args) ** 2 +
+                         HIDDEN_self.Args[1].Calc(**args) ** 2)
 
 
 FuncExternPattern = re.compile(r"([a-z_][a-z0-9_]*)\s*\(", re.IGNORECASE)
@@ -584,8 +584,8 @@ class MathTreeFuncExtern(MathTreeFunc):
             self.name = Match[:-1].strip()
             return self.name
 
-    def Calc(self, **args):
-        return args[self.name](*[arg.Calc(**args) for arg in self.Args])
+    def Calc(HIDDEN_self, **args):
+        return args[HIDDEN_self.name](*[arg.Calc(**args) for arg in HIDDEN_self.Args])
 
 
 class MathTreeOp(MathTree):
@@ -632,8 +632,8 @@ class MathTreeOpAdd(MathTreeOp):
             if self.Args[1].DependOn(arg):
                 return self.Args[1].CalcDerivative(arg)
 
-    def Calc(self, **args):
-        return self.Args[0].Calc(**args) + self.Args[1].Calc(**args)
+    def Calc(HIDDEN_self, **args):
+        return HIDDEN_self.Args[0].Calc(**args) + HIDDEN_self.Args[1].Calc(**args)
 
 
 class MathTreeOpSub(MathTreeOp):
@@ -653,8 +653,8 @@ class MathTreeOpSub(MathTreeOp):
             if self.Args[1].DependOn(arg):
                 return MathTreeFunc1Neg(self.Args[1].CalcDerivative(arg))
 
-    def Calc(self, **args):
-        return self.Args[0].Calc(**args) - self.Args[1].Calc(**args)
+    def Calc(HIDDEN_self, **args):
+        return HIDDEN_self.Args[0].Calc(**args) - HIDDEN_self.Args[1].Calc(**args)
 
 
 class MathTreeOpMul(MathTreeOp):
@@ -682,8 +682,8 @@ class MathTreeOpMul(MathTreeOp):
                            self.Args[0],
                            self.Args[1].CalcDerivative(arg))
 
-    def Calc(self, **args):
-        return self.Args[0].Calc(**args) * self.Args[1].Calc(**args)
+    def Calc(HIDDEN_self, **args):
+        return HIDDEN_self.Args[0].Calc(**args) * HIDDEN_self.Args[1].Calc(**args)
 
 
 class MathTreeOpDiv(MathTreeOp):
@@ -719,8 +719,8 @@ class MathTreeOpDiv(MathTreeOp):
                                    MathTreeValConst(-2.0))),
                            self.Args[1].CalcDerivative(arg))
 
-    def Calc(self, **args):
-        return self.Args[0].Calc(**args) / self.Args[1].Calc(**args)
+    def Calc(HIDDEN_self, **args):
+        return HIDDEN_self.Args[0].Calc(**args) / HIDDEN_self.Args[1].Calc(**args)
 
 
 class MathTreeOpPow(MathTreeOp):
@@ -771,8 +771,8 @@ class MathTreeOpPow(MathTreeOp):
                                MathTreeFunc1Log(self.Args[0])),
                            self.Args[1].CalcDerivative(arg))
 
-    def Calc(self, **args):
-        return self.Args[0].Calc(**args) ** self.Args[1].Calc(**args)
+    def Calc(HIDDEN_self, **args):
+        return HIDDEN_self.Args[0].Calc(**args) ** HIDDEN_self.Args[1].Calc(**args)
 
 
 
