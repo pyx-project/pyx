@@ -35,7 +35,8 @@ PyX
     - default_unit now has to be set via unit.set. For instance: unit.set(defaultunit="m").
     - convert_to is now internal function, which moreover does not longer accept tuples or lists
   - bbox module:
-    - new methods height and width
+    - new methods height, width, top, bottom, left, right
+    - ll & ur ???, what about ul and lr -> ugly!
     - TODO: document me!
   - epsfile module:
     - TODO: epsfile(x, y, filename, **additional_args)

@@ -107,3 +107,19 @@ class bbox:
     def width(self):
         """return width of bbox"""
         return unit.t_pt(self.urx-self.llx)
+
+    def top(self):
+        """return top coordinate of bbox"""
+        return unit.t_pt(self.ury)
+
+    def bottom(self):
+        """return bottom coordinate of bbox"""
+        return unit.t_pt(self.lly)
+
+    def left(self):
+        """return left coordinate of bbox"""
+        return unit.t_pt(self.llx)
+
+    def right(self):
+        """return right coordinate of bbox"""
+        return unit.t_pt(self.urx)
