@@ -10,7 +10,7 @@ text.preamble(r"\renewcommand{\familydefault}{\ttdefault}")
 c = canvas.canvas()
 
 # data to be plotted
-pf = graph.paramfunction("k", 0, 1, "color, xmin, xmax, ymin, ymax= k, k, 1, 0, 1")
+pf = graph.data.paramfunction("k", 0, 1, "color, xmin, xmax, ymin, ymax= k, k, 1, 0, 1")
 
 # positioning is quite ugly ... but it works at the moment
 y = 0
@@ -24,21 +24,24 @@ first = 1
 for line in lines: # we yet don't use a file iterator
     m = p.match(line)
     if m:
-        xaxis = graph.linaxis(parter=graph.linparter(tickdist=("0.5","0.1"), labeldist="1"),
-                              painter=graph.axispainter(innerticklength=None, labelattrs=None))
+        xaxis = graph.axis.linaxis(
+                parter=graph.parter.linparter(tickdist=("0.5","0.1"), labeldist="1"),
+                painter=graph.painter.axispainter(innerticklength=None, labelattrs=None))
         if first:
-            x2axis=graph.linkaxis(xaxis, painter=graph.linkaxispainter(innerticklength=None,
-                                                                       outerticklength=graph.ticklength.normal,
-                                                                       labelattrs=[]))
+            x2axis=graph.axis.linkaxis(xaxis,
+                painter=graph.painter.linkaxispainter(
+                    innerticklength=None,
+                    outerticklength=graph.painter.ticklength.normal,
+                    labelattrs=[]))
             first = 0
         else:
-            x2axis=graph.linkaxis(xaxis, painter=graph.linkaxispainter(innerticklength=None))
-        g = c.insert(graph.graphxy(ypos=y, width=10, height=0.5, x=xaxis, x2=x2axis, y=graph.linaxis(parter=None)))
-        g.plot(pf, graph.rect(getattr(pyx.color.palette, m.group("name"))))
+            x2axis=graph.axis.linkaxis(xaxis, painter=graph.painter.linkaxispainter(innerticklength=None))
+        g = c.insert(graph.type.graphxy(ypos=y, width=10, height=0.5, x=xaxis, x2=x2axis, y=graph.axis.linaxis(parter=None)))
+        g.plot(pf, graph.style.rect(getattr(pyx.color.palette, m.group("name"))))
         g.dodata()
         g.finish()
         c.text(10.2, y + 0.15, m.group("id"), [text.size.footnotesize])
         y += dy
 
 
-c.writetofile("palettename", paperformat="a4")
+c.writeEPSfile("palettename", paperformat="a4")
