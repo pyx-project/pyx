@@ -453,8 +453,8 @@ class symbol(_styleneedingpointpos):
 
     def drawpoint(self, privatedata, sharedata, graph, point):
         if sharedata.vposvalid and privatedata.symbolattrs is not None:
-            xpos, ypos = graph.vpos_pt(*sharedata.vpos)
-            privatedata.symbol(privatedata.symbolcanvas, xpos, ypos, privatedata.size_pt, privatedata.symbolattrs)
+            x_pt, y_pt = graph.vpos_pt(*sharedata.vpos)
+            privatedata.symbol(privatedata.symbolcanvas, x_pt, y_pt, privatedata.size_pt, privatedata.symbolattrs)
 
     def donedrawpoints(self, privatedata, sharedata, graph):
         graph.insert(privatedata.symbolcanvas)
