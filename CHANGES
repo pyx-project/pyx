@@ -38,16 +38,28 @@ TODO:
   - deco module:
     - think hard about different paths in decoratedpath class
     - adjust parameters of cycloid and smoothed
-      AW suggests to use cycloid with default curvesperloop=5.
+      AW: I suggest to use cycloid with default curvesperloop=5.
   - dvifile module:
     - support single-character mode
   - path module:
     - arclentoparam should raise an exception when the arclen is out of range
     - it seems to be, that epsilon is a feature of normsubpath;
-      Why is there (also) a self.epsilon?
+      AW: Why is there (also) a self.epsilon?
       JL: What class does self refer to?
+      AW: I'm sorry for not being precise. Both, normpath and normsubpath do
+          have an epsilon. I'm not sure if we should do that (its slightly
+          confusing). In normpath._findsubpath we should refer to the
+          epsilons of the subpath. The only usage of epsilon left in normpath
+          is in the constructor and in append (BTW -- we do have some code
+          dublication here). A possibility would be to add a keyword-argument
+          epsilon to append. The point is, that I would like to get rid of
+          self.epsilon, where self is a normpath instance ...
     - How about normpathel.begintrafo() and normpathel.endtrafo()?
       JL: -1
+      AW: May I be able to change your rank to -0 when comming up with a
+          profile for typical use cases of (new style) boxes? We do have
+          begin, at and end for the normpathel's. Why is the analogous for
+          normpathel.trafo a bad idea?
   - color module:
     - what should we do for palette when only one entry
 
