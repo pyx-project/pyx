@@ -19,4 +19,4 @@ for X,Y in [[A,B], [B,C], [C,D], [D,A]]:
 c.stroke(connector.curve(D, B, boxdists=0.2, relangle1=45, relangle2=-45, relbulge=0.8),
          color.rgb.blue, canvas.earrow.normal)
 
-c.writetofile("connect", paperformat="a4", fittosize=1, margin="3 t cm")
+c.writetofile("connect")
