@@ -24,14 +24,11 @@
 #       - strokepath ?
 #       - nocurrentpoint exception?
 #       - implement bbox and _bpath for arct
-#         we need canvas for that, which is not very nice for _bpath :((((
 #       - correct bbox for curveto and bpathel
 #         (maybe we still need the current bbox implementation (then maybe called
 #          cbox = control box) for bpathel for the use during the
 #          intersection of bpaths) 
 #       - intersection of bpaths: use estimate for number of subdivisions
-#       - is it really necessary (apart from technical reasons)
-#         to specify a canvas for the intersection of two bpaths? 
 
 import unit, canvas, math
 from math import floor, cos, sin, pi
