@@ -27,6 +27,12 @@ import re, ConfigParser
 from pyx import mathtree
 from pyx.graph import style
 
+try:
+    enumerate([])
+except NameError:
+    # fallback implementation for Python 2.2. and below
+    def enumerate(list):
+        return zip(xrange(len(list)), list)
 
 class _Idata:
     """Interface for graph data

@@ -27,6 +27,12 @@ import math
 from pyx import attr, deco, style, color, unit, canvas, path
 from pyx import text as textmodule
 
+try:
+    enumerate([])
+except NameError:
+    # fallback implementation for Python 2.2. and below
+    def enumerate(list):
+        return zip(xrange(len(list)), list)
 
 class _style:
     """Interface class for graph styles
