@@ -26,6 +26,12 @@ PyX
     - TODO: remove the support for variables given within the argument dictionary in data constructor
     - TODO: graph keys; titles in data/function/etc.
     - TODO: 3d graphs --- leave it for pyx-0.4
+  - unit module:
+    - new classes for visual and width lengths, aliases for user length (u_pt = pt)
+    - TODO: document me!
+  - bbox module:
+    - new methods height and width
+    - TODO: document me!
   - data module:
     - TODO: line reduction for datafile like the every parameter in gnuplot
   - canvas module:
