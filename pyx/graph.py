@@ -680,7 +680,7 @@ class axispainter(axistitlepainter):
                        baselineattrs=canvas.linecap.square,
                        labeldist="0.3 cm",
                        labelattrs=((text.halign.center, text.valign.centerline()),
-                                   (text.halign.center, text.valign.centerline(), text.size.footnotesize)),
+                                   (text.size.footnotesize, text.halign.center, text.valign.centerline())),
                        labeldirection=None,
                        labelhequalize=0,
                        labelvequalize=1,
@@ -832,7 +832,7 @@ class axispainter(axistitlepainter):
         else:
             raise ValueError("fractype invalid")
         if textmodule.mathmode not in tick.labelattrs:
-            tick.labelattrs = [textmodule.mathmode] + tick.labelattrs
+            tick.labelattrs.append(textmodule.mathmode)
 
     def dolayout(self, graph, axis):
         labeldist = unit.topt(unit.length(self.labeldist_str, default_type="v"))
