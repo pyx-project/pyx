@@ -117,7 +117,7 @@ class transformation:
         return transformation(matrix=matrix) * \
                transformation(vector=("% t pt" % -self.vector[0],"% t pt" % -self.vector[1]))
 
-    def bbox(self, acanvas):
+    def bbox(self):
         # assert 0, "this shouldn't be called!"
         return canvas.bbox()
 

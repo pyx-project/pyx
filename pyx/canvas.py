@@ -153,7 +153,7 @@ class epsfile:
                    (llx, lly, urx, ury) = (0, 0, urx - llx, ury - lly)
 	       return bbox(llx, lly, urx, ury)
 
-    def bbox(self, canvas=None):
+    def bbox(self):
         return self.getbbox(self.translatebb)
 
     def write(self, file):
@@ -200,7 +200,7 @@ class CanvasException(Exception): pass
 #
 
 class PyxAttributes:
-    def bbox(self, canvas):
+    def bbox(self):
 	return bbox()
 
     def write(self, file):
@@ -294,7 +294,7 @@ class linewidth(_linewidth):
 #
 
 class CanvasCmds:
-    def bbox(self, canvas):
+    def bbox(self):
        return bbox()
        
     def write(self, file):
@@ -352,13 +352,11 @@ class canvas(CanvasCmds):
         if self.clip:
             self.insert((_newpath(), self.clip, _clip()))     # insert clipping path
 
-    def bbox(self, canvas):
-        obbox = reduce(lambda x,y, canvas=canvas: x+y.bbox(canvas),
-                       self.PSCmds,
-                       bbox())
+    def bbox(self):
+        obbox = reduce(lambda x,y: x+y.bbox(), self.PSCmds, bbox())
 
         if self.clip:
-            obbox=obbox*self.clip.bbox(canvas)    # intersect with clipping bounding boxes
+            obbox=obbox*self.clip.bbox()    # intersect with clipping bounding boxes
             
         # we have to transform all four corner points of the bbox
         (llx, lly)=self.trafo.apply((obbox.llx, obbox.lly))
@@ -423,7 +421,7 @@ class canvas(CanvasCmds):
 	    assert "cannot open output file"		        # TODO: Fehlerbehandlung...
 
         file.write("%!PS-Adobe-3.0 EPSF 3.0\n")
-	abbox=self.bbox(self)
+	abbox=self.bbox()
 	abbox.write(file)
         file.write("%%Creator: pyx 0.0.1\n") 
         file.write("%%%%Title: %s.eps\n" % filename) 

@@ -608,7 +608,7 @@ class tex(_InstanceList):
         os.chdir(WorkDir)
         self.DoneRunTex = 1
 
-    def bbox(self, acanvas):
+    def bbox(self):
         self.RunTex()
         return self.bbox
 

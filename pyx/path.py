@@ -657,10 +657,7 @@ class path:
     def __getitem__(self, i):
         return self.path[i]
 
-    def bbox(self, acanvas=None):
-
-        # note, that we don't really need a acanvas
-        
+    def bbox(self):
         currentpoint = None
         currentsubpath = None
         abbox = canvas.bbox()
@@ -845,7 +842,7 @@ class bpath:
     def __str__(self):
         return reduce(lambda x,y: x+"%s\n" % str(y), self.bpath, "")
 
-    def bbox(self, acanvas=None):
+    def bbox(self):
         abbox = canvas.bbox()
         for bpel in self.bpath:
            abbox = abbox + bpel.bbox()

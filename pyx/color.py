@@ -24,7 +24,7 @@ import canvas
 
 class color:
 
-    def bbox(self, acanvas):
+    def bbox(self):
 	return canvas.bbox()
 
     def write(self, file):
@@ -37,7 +37,7 @@ class _grey(color):
         assert 0<=level and level<=1, "grey value must be between 0 and 1"
         self.level=level
 
-    def _PSCmd(self, canvas):
+    def _PSCmd(self):
         return "%f setgray" % self.level
 
 class grey(_grey):
