@@ -227,6 +227,19 @@ class graphxy(canvas.canvas):
             except ValueError:
                 return hadmethod
 
+    def axistrafo(self, axis, t):
+        c = canvas.canvas([t])
+        c.insert(axis.canvas)
+        axis.canvas = c
+
+    def axisatv(self, axis, v):
+        if axis.positioner.fixtickdirection[0]:
+            # it is a y-axis
+            self.axistrafo(axis, trafo.translate_pt(self.xpos_pt + v*self.width_pt - axis.positioner.x1_pt, 0))
+        else:
+            # it is an x-axis
+            self.axistrafo(axis, trafo.translate_pt(0, self.ypos_pt + v*self.height_pt - axis.positioner.y1_pt))
+
     def dolayout(self):
         if not self.removedomethod(self.dolayout): return
 
@@ -279,6 +292,11 @@ class graphxy(canvas.canvas):
                                                                 x_pt, self.ypos_pt + self.height_pt,
                                                                 (sign, 0), self.yvgridpath)
                     self.axes[nextkey].setpositioner(apositioner)
+
+        if self.xaxisat is not None:
+            self.axisatv(self.axes["x"], self.axes["y"].convert(self.xaxisat))
+        if self.yaxisat is not None:
+            self.axisatv(self.axes["y"], self.axes["x"].convert(self.yaxisat))
 
         self.haslayout = 1
 
@@ -344,7 +362,7 @@ class graphxy(canvas.canvas):
                     self.axes[key] = axis.anchoredaxis(aaxis, key)
                 else:
                     self.axes[key] = aaxis
-        for key in ["x", "y"]:
+        for key, axisat in [("x", self.xaxisat), ("y", self.yaxisat)]:
             okey = key + "2"
             if not axes.has_key(key):
                 if not axes.has_key(okey):
@@ -352,7 +370,7 @@ class graphxy(canvas.canvas):
                     self.axes[okey] = axis.linkedaxis(self.axes[key], okey)
                 else:
                     self.axes[key] = axis.linkedaxis(self.axes[keyo], key)
-            elif not axes.has_key(okey):
+            elif not axes.has_key(okey) and axisat is None:
                 self.axes[okey] = axis.linkedaxis(self.axes[key], okey)
 
         if self.axes.has_key("x"):
@@ -404,12 +422,15 @@ class graphxy(canvas.canvas):
                 raise ValueError("invalid axis name")
 
     def __init__(self, xpos=0, ypos=0, width=None, height=None, ratio=goldenmean,
-                 key=None, backgroundattrs=None, axesdist=0.8*unit.v_cm, **axes):
+                 key=None, backgroundattrs=None, axesdist=0.8*unit.v_cm,
+                 xaxisat=None, yaxisat=None, **axes):
         canvas.canvas.__init__(self)
         self.xpos = xpos
         self.ypos = ypos
         self.xpos_pt = unit.topt(self.xpos)
         self.ypos_pt = unit.topt(self.ypos)
+        self.xaxisat = xaxisat
+        self.yaxisat = yaxisat
         self.initwidthheight(width, height, ratio)
         self.initaxes(axes)
         self.key = key

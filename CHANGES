@@ -117,6 +117,10 @@ TODO:
       - unification of split and bar axes; removed some black magic in baraxis in favor of a nestedbar axis
       - x linked to x2 etc. is now possible
       - axis.inverse was removed (the only place it was (mis)used was by a function)
+    - graphxy:
+      - allow to transform axis after layout
+      - [xy]axisat arguments in the constructor to easily move [xy]-axes to the position
+        defined the orthogonal axis
     - TODO: update documentation
   - prolog module: deleted (replaced by resource module)
   - resource module: new
