@@ -587,9 +587,9 @@ class MathTreeFuncExtern(MathTreeFunc):
             self.name = Match[:-1].strip()
             return self.name
 
-    def InitByAST(self, arg):
+    def SetName(self, arg):
         self.name = arg.strip()
-        return self.name
+        return self
 
     def Calc(HIDDEN_self, **args):
         return args[HIDDEN_self.name](*[arg.Calc(**args) for arg in HIDDEN_self.Args])
@@ -821,14 +821,14 @@ class parser:
         self.MathTreeFuncs = MathTreeFuncs
         self.MathTreeVals = MathTreeVals
 
-    def parse(self, str):
-        return self.ParseMathTree(ParseStr(str))
 #    def parse(self, str):
-#        # prepare raw string:
-#        # "^" -> "**"
-#        thestr = re.sub("\^","**", str) # to be removed <joergl>
-#        thestr = re.sub("\$","_col_", str)
-#        return self.astseq2mtree(pythonparser.expr(thestr).totuple())
+#        return self.ParseMathTree(ParseStr(str))
+    def parse(self, str):
+        # prepare raw string:
+        # "^" -> "**"
+        thestr = re.sub("\^","**", str) # to be removed <joergl>
+        thestr = re.sub("\$","_col_", str)
+        return self.astseq2mtree(pythonparser.expr(thestr).totuple())
 
     def ParseMathTree(self, arg):
         Tree = None
@@ -944,28 +944,30 @@ class parser:
                 raise OperatorExpectedMathTreeParseError(arg, Tree)
 
 
-    def astseq2mtree(self, astseq):
+    def astseq2mtree(self, astseq, isfunc=0):
+        # astseq has to be a sequence!
         tree = None
 
-        # astseq has to be a sequence!
+        if token.ISTERMINAL(astseq[0]):
+            raise Exception("")
 
         if astseq[0] == symbol.arith_expr: # {{{
             try:
                 # 1. arith_expr "PLUS" term
                 if astseq[-2][0] == token.PLUS:
                     tree = MathTreeOpAdd(
-                        self.astseq2mtree(astseq[:-2]),
-                        self.astseq2mtree(astseq[-1]))
+                        self.astseq2mtree(astseq[:-2], isfunc=isfunc),
+                        self.astseq2mtree(astseq[-1], isfunc=isfunc))
                 # 2. arith_expr "MINUS" term
                 elif astseq[-2][0] == token.MINUS:
                     tree = MathTreeOpSub(
-                        self.astseq2mtree(astseq[:-2]),
-                        self.astseq2mtree(astseq[-1]))
+                        self.astseq2mtree(astseq[:-2], isfunc=isfunc),
+                        self.astseq2mtree(astseq[-1], isfunc=isfunc))
                 else:
                     raise Exception("")
             except:
                 # 3. term
-                tree = self.astseq2mtree(astseq[1])
+                tree = self.astseq2mtree(astseq[1], isfunc=isfunc)
             return tree # }}}
 
         if astseq[0] == symbol.term: # {{{
@@ -973,33 +975,33 @@ class parser:
                 # 1. term "STAR" factor
                 if astseq[-2][0] == token.STAR:
                     tree = MathTreeOpMul(
-                        self.astseq2mtree(astseq[:-2]),
-                        self.astseq2mtree(astseq[-1]))
+                        self.astseq2mtree(astseq[:-2], isfunc=isfunc),
+                        self.astseq2mtree(astseq[-1], isfunc=isfunc))
                 # 2. term "SLASH" factor
                 elif astseq[-2][0] == token.SLASH:
                     tree = MathTreeOpDiv(
-                        self.astseq2mtree(astseq[:-2]),
-                        self.astseq2mtree(astseq[-1]))
+                        self.astseq2mtree(astseq[:-2], isfunc=isfunc),
+                        self.astseq2mtree(astseq[-1], isfunc=isfunc))
                 else:
                     raise Exception("")
             except:
                 # 3. factor
-                tree = self.astseq2mtree(astseq[1])
+                tree = self.astseq2mtree(astseq[1], isfunc=isfunc)
             return tree # }}}
 
         if astseq[0] == symbol.factor: # {{{
             if len(astseq) == 3:
                 # 1. "PLUS" factor
                 if astseq[1][0] == token.PLUS:
-                    tree = self.astseq2mtree(astseq[2])
+                    tree = self.astseq2mtree(astseq[2], isfunc=isfunc)
                 # 2. "MINUS" factor
                 elif astseq[1][0] == token.MINUS:
-                    tree = MathTreeFunc1Neg(self.astseq2mtree(astseq[2]))
+                    tree = MathTreeFunc1Neg(self.astseq2mtree(astseq[2], isfunc=isfunc))
                 else:
                     raise Exception("unknown factor")
             elif len(astseq) == 2:
                 # 3. power
-                tree = self.astseq2mtree(astseq[1])
+                tree = self.astseq2mtree(astseq[1], isfunc=isfunc)
             else:
                 raise Exception("wrong length of factor")
             return tree # }}}
@@ -1009,8 +1011,8 @@ class parser:
                 # 1. "DOUBLESTAR" factor
                 if astseq[-2][0] == token.DOUBLESTAR:
                     tree = MathTreeOpPow(
-                        self.astseq2mtree(astseq[:-2]),
-                        self.astseq2mtree(astseq[-1]))
+                        self.astseq2mtree(astseq[:-2], isfunc=isfunc),
+                        self.astseq2mtree(astseq[-1], isfunc=isfunc))
                 else:
                     raise Exception("")
             except:
@@ -1019,13 +1021,14 @@ class parser:
                     # we have a function call atom + "LPAR" + argumentlist + "RPAR"
                     if astseq[2][0] != symbol.trailer or \
                        astseq[2][1][0] != token.LPAR or \
-                       astseq[2][2][0] != symbol.argumentlist or \
+                       astseq[2][2][0] != symbol.arglist or \
                        astseq[2][3][0] != token.RPAR:
                         raise Exception("wrong function call")
-                    tree = self.astseq2mtree(astseq[1])
-                    tree.AddArg(self.astseq2mtree(astseq[2]))
+                    tree = self.astseq2mtree(astseq[1], isfunc=1)
+                    for subtree in self.astseq2mtree(astseq[2][2], isfunc=0):
+                        tree.AddArg(subtree)
                 else:
-                    tree = self.astseq2mtree(astseq[1])
+                    tree = self.astseq2mtree(astseq[1], isfunc=0)
 
             return tree # }}}
 
@@ -1037,32 +1040,39 @@ class parser:
                 # XXX: for evaluation of brackets we will need integers as well
                     tree = MathTreeValConst(string.atof(astseq[1][1]))
                 elif astseq[1][0] == token.NAME:
-                # 2. a known function
-                    for funcclass in self.MathTreeFuncs:
-                        func = funcclass() # ist das guenstig, da jedesmal eine Instanz zu erzeugen?
-                        if func.name == astseq[1][1]:
-                            return func
+                # 2. a function
+                    if isfunc:
+                        # a known function
+                        for funcclass in self.MathTreeFuncs:
+                            func = funcclass() # ist das guenstig, da jedesmal eine Instanz zu erzeugen?
+                            if func.name == astseq[1][1]:
+                                return func
+                        # an unknown function
+                        tree = MathTreeFuncExtern()
+                        tree.SetName(astseq[1][1])
+                    else:
                 # 3. a named constant
-                    for const in MathConst.keys():
-                        if const == astseq[1][1]:
-                            return MathTreeValConst(MathConst[const])
+                        for const in MathConst.keys():
+                            if const == astseq[1][1]:
+                                return MathTreeValConst(MathConst[const])
                 # 4. a variable
-                    tree = MathTreeValVar(astseq[1][1])
-                    return tree
+                        return MathTreeValVar(astseq[1][1])
             elif len(astseq) == 4:
                 # parentheses or brackets for structuring an atom
                 if (astseq[1][0] == token.LPAR and astseq[3][0] == token.RPAR) or \
                    (astseq[1][0] == token.LSQB and astseq[3][0] == token.RSQB):
-                    tree = self.astseq2mtree(astseq[2])
+                    tree = self.astseq2mtree(astseq[2], isfunc=isfunc)
             return tree # }}}
 
-        if astseq[0] == symbol.trailer: # {{{
-            if astseq[1][0] == token.LPAR:
-                if astseq[3][0] != token.RPAR:
-                    raise Exception("too strange expressions within parentheses")
-                return self.astseq2mtree(astseq[2])
-            return tree # }}}
+        if astseq[0] == symbol.arglist: # {{{
+            treelist = []
+            for arg in astseq[1:]:
+                if arg[0] == token.COMMA:
+                    continue
+                elif arg[0] == symbol.argument:
+                    treelist.append(self.astseq2mtree(arg, isfunc=isfunc))
+            return treelist # }}}
 
-        return self.astseq2mtree(astseq[1])
+        return self.astseq2mtree(astseq[1], isfunc=isfunc)
 
 
