@@ -144,14 +144,14 @@ class normpathel(pathel):
 
         pass
 
-    def _split(self, context, t):
+    def _split(self, context, parameters):
         """splits normpathel
 
         context: contex of normpathel
-        t: parameter value (0<=t<=1) at which to split
+        parameters: list of parameter values (0<=t<=1) at which to split
 
-        returns None or two tuples of normpathels corresponding to
-        the two parts of the orginal normpathel.
+        returns None or list of tuple of normpathels corresponding to 
+        the orginal normpathel.
 
         """
 
@@ -217,13 +217,24 @@ class closepath(normpathel):
     def _reversed(self, context):
         return _lineto(*context.currentsubpath)
 
-    def _split(self, context, t):
+    def _split(self, context, parameters):
         x0, y0 = context.currentpoint
         x1, y1 = context.currentsubpath
-        xs, ys = x0 + (x1-x0)*t, y0 + (y1-y0)*t
-
-        return ((_lineto(xs, ys),),
-                (_moveto(xs, ys), _lineto(x1, y1)))
+        if parameters:
+            lastpoint = None
+            result = []
+            for t in parameters:
+                xs, ys = x0 + (x1-x0)*t, y0 + (y1-y0)*t
+                if lastpoint is None:
+                    result.append((_lineto(xs, ys),))
+                else:
+                    result.append((_moveto(*lastpoint), _lineto(xs, ys)))
+                lastpoint = xs, ys
+            result.append((_moveto(*lastpoint), _lineto(x1, y1)))
+        else:
+            result = (_moveto(x0, y0), _lineto(x1, y1))
+            
+        return result
 
     def _tangent(self, context, t):
         x0, y0 = context.currentpoint
@@ -270,7 +281,7 @@ class _moveto(normpathel):
     def _reversed(self, context):
         return None
 
-    def _split(self, context, t):
+    def _split(self, context, parameters):
         return None
 
     def _tangent(self, context, t):
@@ -319,9 +330,27 @@ class _lineto(normpathel):
     def _reversed(self, context):
         return _lineto(*context.currentpoint)
 
-    def _split(self, context, t):
+    def _split(self, context, parameters):
         x0, y0 = context.currentpoint
-        xs, ys = x0 + (self.x-x0)*t, y0 + (self.y-y0)*t
+        x1, y1 = self.x, self.y
+
+        if parameters:
+            lastpoint = None
+            result = []
+            for t in parameters:
+                xs, ys = x0 + (x1-x0)*t, y0 + (y1-y0)*t
+                if lastpoint is None:
+                    result.append((_lineto(xs, ys),))
+                else:
+                    result.append((_moveto(*lastpoint), _lineto(xs, ys)))
+                lastpoint = xs, ys
+            result.append((_moveto(*lastpoint), _lineto(x1, y1)))
+        else:
+            result = (_moveto(x0, y0), _lineto(x1, y1))
+            
+        return result
+
+        
 
         return ((_lineto(xs, ys),),
                 (_moveto(xs, ys), _lineto(self.x, self.y)))
@@ -393,12 +422,18 @@ class _curveto(normpathel):
                         self.x1, self.y1,
                         context.currentpoint[0], context.currentpoint[1])
 
-    def _split(self, context, t):
-        bp1, bp2 = self._bcurve(context).split(t)
+    def _split(self, context, parameters):
+        bps = self._bcurve(context).split(parameters)
 
-        return ((_curveto(bp1.x1, bp1.y1, bp1.x2, bp1.y2, bp1.x3, bp1.y3),),
-                (_moveto(bp2.x0, bp2.y0),
-                _curveto(bp2.x1, bp2.y1, bp2.x2, bp2.y2, bp2.x3, bp2.y3)))
+        bp0 = bps[0]
+
+        result = [(_curveto(bp0.x1, bp0.y1, bp0.x2, bp0.y2, bp0.x3, bp0.y3),)]
+
+        for bp in bps[1:]:
+            result.append((_moveto(bp.x0, bp.y0),
+                           _curveto(bp.x1, bp.y1, bp.x2, bp.y2, bp.x3, bp.y3)))
+
+        return result
 
     def _tangent(self, context, t):
         x0, y0 = context.currentpoint
@@ -1008,9 +1043,9 @@ class path(base.PSCmd):
         """return reversed path"""
         return normpath(self).reversed()
 
-    def split(self, t):
+    def split(self, parameters):
         """return corresponding normpaths split at parameter value t"""
-        return normpath(self).split(t)
+        return normpath(self).split(parameters)
 
     def tangent(self, t, length=None):
         """return tangent vector at parameter value t of corr. normpath"""
@@ -1193,8 +1228,11 @@ class normpath(path):
 
         return np
 
-    def split(self, t):
-        """split path at parameter value t"""
+    def split(self, parameters):
+        """split path at parameter values parameters"""
+
+        try: parameters[0]
+        except TypeError: parameters = [parameters]
 
         context = _pathcontext()
 
@@ -1384,7 +1422,7 @@ class circle(_circle):
 # _bcurve: Bezier curve segment with four control points (coordinates in pts)
 #
 
-class _bcurve(base.PSOp):
+class _bcurve:
 
     """element of Bezier path (coordinates in pts)"""
 
@@ -1404,13 +1442,6 @@ class _bcurve(base.PSOp):
                  self.x1, self.y1,
                  self.x2, self.y2,
                  self.x3, self.y3 )
-
-    def write(self, file):
-         file.write( "%f %f moveto %f %f %f %f %f %f curveto\n" % \
-                     ( self.x0, self.y0,
-                       self.x1, self.y1,
-                       self.x2, self.y2,
-                       self.x3, self.y3 ) )
 
     def __getitem__(self, t):
         """return pathel at parameter value t (0<=t<=1)"""
@@ -1433,18 +1464,6 @@ class _bcurve(base.PSOp):
                          max(self.x0, self.x1, self.x2, self.x3), 
                          max(self.y0, self.y1, self.y2, self.y3))
 
-    def transform(self, trafo):
-        return _bcurve(*(trafo._apply(self.x0, self.y0)+
-                         trafo._apply(self.x1, self.y1)+
-                         trafo._apply(self.x2, self.y2)+
-                         trafo._apply(self.x3, self.y3)))
-
-    def reverse(self):
-        return _bcurve(self.x3, self.y3,
-                       self.x2, self.y2,
-                       self.x1, self.y1,
-                       self.x0, self.y0)
-
     def isStraight(self, epsilon=1e-5):
         """check wheter the _bcurve is approximately straight"""
 
@@ -1462,8 +1481,8 @@ class _bcurve(base.PSOp):
                    math.sqrt((self.x3-self.x0)*(self.x3-self.x0)+
                              (self.y3-self.y0)*(self.y3-self.y0)))<epsilon
 
-    def split(self, t):
-        """return tuple consisting of two _bcurves corresponding to split at 0<=t<=1"""
+    def split(self, parameters):
+        """return list of _bcurves corresponding to split at parameters"""
 
         # first, we calculate the coefficients corresponding to our
         # original bezier curve. These represent a useful starting
@@ -1477,51 +1496,47 @@ class _bcurve(base.PSOp):
         a3x = -self.x0+3*(self.x1-self.x2)+self.x3
         a3y = -self.y0+3*(self.y1-self.y2)+self.y3
 
-        # [0,t] part
-        #
-        # the new coefficients of the [0,t] part of the bezier curve
-        # are then given by a0, a0*t, a0*t**2, a0*t**3
-        # from this values we obtain the new control points by inversion
-        x0_1 = a0x
-        y0_1 = a0y
-        x1_1 = a1x*t/3.0+x0_1
-        y1_1 = a1y*t/3.0+y0_1
-        x2_1 = a2x*t*t/3.0-x0_1+2*x1_1
-        y2_1 = a2y*t*t/3.0-y0_1+2*y1_1
-        x3_1 = a3x*t*t*t+x0_1-3*x1_1+3*x2_1 
-        y3_1 = a3y*t*t*t+y0_1-3*y1_1+3*y2_1
+        if parameters[0]!=0:
+            parameters = [0] + parameters
+        if parameters[-1]!=1:
+            parameters = parameters + [1]
 
-        # [t,1] part
-        #
-        # the new coefficients of the [0,t] part of the bezier curve
-        # are then given by expanding a0+a1*(t+(1-t)*u)+a2*(t+(1-t)*u)**2+
-        # a3*(t+(1-t)*u)**3 in u, yielding:
-        #   a0+a1*t+a2*t**2+a3*t**3             +
-        #   (a1*+2*a2*t+3*a3*t**2)*(1-t) * u    + 
-        #   (a2+3*a3*t)*(1-t)**2         * u**2 +
-        #   a3*(1-t)**3                  * u**3
-        #
-        # from this values we obtain the new control points by inversion
-        # exactly like above, except that we don't have to calculate
-        # the first and the last control point
-        x0_2 = x3_1
-        y0_2 = y3_1
-        x1_2 = (a1x+2*a2x*t+3*a3x*t*t)*(1-t)/3.0+x0_2
-        y1_2 = (a1y+2*a2y*t+3*a3y*t*t)*(1-t)/3.0+y0_2
-        x2_2 = (a2x+3*a3x*t)*(1-t)*(1-t)/3.0-x0_2+2*x1_2
-        y2_2 = (a2y+3*a3y*t)*(1-t)*(1-t)/3.0-y0_2+2*y1_2
-        x3_2 = self.x3
-        y3_2 = self.y3
+        result = []
 
-        return (_bcurve(x0_1, y0_1,
-                        x1_1, y1_1,
-                        x2_1, y2_1,
-                        x3_1, y3_1),
-                _bcurve(x0_2, y0_2,
-                        x1_2, y1_2,
-                        x2_2, y2_2,
-                        x3_2, y3_2))
+        for i in range(len(parameters)-1):
+            t1 = parameters[i]
+            t2 = parameters[i+1]
 
+            # [t1,t2] part
+            #
+            # the new coefficients of the [0,t] part of the bezier curve
+            # are then given by expanding
+            #  a0 + a1*(t1+(t2-t1)*u) + a2*(t1+(t2-t1)*u)**2 +
+            #  a3*(t1+(t2-t1)*u)**3 in u, yielding
+            #
+            #   a0 + a1*t1 + a2*t1**2 + a3*t1**3          +
+            #   ( a1 + 2*a2 + 3*a3*t1**2 )*(t2-t1) * u    + 
+            #   ( a2 + 3*a3*t1 )*(t2-t1)**2        * u**2 +
+            #   a3*(t2-t1)**3                      * u**3
+            #
+            # from this values we obtain the new control points by inversion
+            #
+            # XXX: we could do this more efficiently by reusing for
+            # (x0, y0) the control point (x3, y3) from the previous
+            # Bezier curve
+            
+            x0 = a0x + a1x*t1 + a2x*t1*t1 + a3x*t1*t1*t1 
+            y0 = a0y + a1y*t1 + a2y*t1*t1 + a3y*t1*t1*t1 
+            x1 = (a1x+2*a2x*t1+3*a3x*t1*t1)*(t2-t1)/3.0+x0_2
+            y1 = (a1y+2*a2y*t1+3*a3y*t1*t1)*(t2-t1)/3.0+y0_2
+            x2 = (a2x+3*a3x*t1)*(t2-t1)*(t2-t1)/3.0-x0_2+2*x1_2
+            y2 = (a2y+3*a3y*t1)*(t2-t1)*(t2-t1)/3.0-y0_2+2*y1_2
+            x3 = a3x*(t2-t1)*(t2-t1)*(t2-t1)+x0_1-3*x1_1+3*x2_1 
+            y3 = a3y*(t2-t1)*(t2-t1)*(t2-t1)+y0_1-3*y1_1+3*y2_1
+
+            result.append(_bcurve(x0, y0, x1, y1, x2, y2, y3, y3))
+
+        return result
 
     def MidPointSplit(self):
         """splits bpathel at midpoint returning bpath with two bpathels"""
