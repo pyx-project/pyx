@@ -47,8 +47,23 @@ class _polygon:
         else:
             # curved box plotting by Michael Schindler
             l = len(self.corners)
-            x = beziersoftness
-            r = unit.topt(bezierradius)
+            if helper.issequence(beziersoftness):
+                if not (len(beziersoftness) == l): raise ValueError
+            else:
+                beziersoftness = [float(beziersoftness)]*l
+            if helper.issequence(bezierradius):
+                r = list(bezierradius)
+                if len(bezierradius) == l:
+                    for oner, i in zip(r, range(l)):
+                        if helper.issequence(oner):
+                            if len(oner) == 2:
+                                r[i] = [unit.topt(oner[0]), unit.topt(oner[1])]
+                            else: raise ValueError
+                        else:
+                            r[i] = [unit.topt(oner)]*2
+                else: raise ValueError
+            else:
+                r = [[unit.topt(bezierradius)]*2]*l
             for i in range(l):
                 c = self.corners[i]
                 def normed(*v):
@@ -59,14 +74,14 @@ class _polygon:
                 d2 = normed(self.corners[(i + 1 + l) % l][0] - c[0],
                             self.corners[(i + 1 + l) % l][1] - c[1])
                 dc = normed(d1[0] + d2[0], d1[1] + d2[1])
-                f = 0.3192 * x * r
-                g = (15.0 * f + math.sqrt(-15.0*f*f + 24.0*f*r))/12.0
-                f1 = c[0] + f * d1[0], c[1] + f * d1[1]
-                f2 = c[0] + f * d2[0], c[1] + f * d2[1]
-                g1 = c[0] + g * d1[0], c[1] + g * d1[1]
-                g2 = c[0] + g * d2[0], c[1] + g * d2[1]
-                d1 = c[0] + r * d1[0], c[1] + r * d1[1]
-                d2 = c[0] + r * d2[0], c[1] + r * d2[1]
+                f = 0.3192 * beziersoftness[i]
+                g = (15.0 * f + math.sqrt(-15.0*f*f + 24.0*f))/12.0
+                f1 = c[0] + f * d1[0] * r[i][0], c[1] + f * d1[1] * r[i][0]
+                f2 = c[0] + f * d2[0] * r[i][1], c[1] + f * d2[1] * r[i][1]
+                g1 = c[0] + g * d1[0] * r[i][0], c[1] + g * d1[1] * r[i][0]
+                g2 = c[0] + g * d2[0] * r[i][1], c[1] + g * d2[1] * r[i][1]
+                d1 = c[0] +     d1[0] * r[i][0], c[1] +     d1[1] * r[i][0]
+                d2 = c[0] +     d2[0] * r[i][1], c[1] +     d2[1] * r[i][1]
                 e  = 0.5 * (f1[0] + f2[0]), 0.5 * (f1[1] + f2[1])
                 if i:
                     pathels.append(path._lineto(*d1))
