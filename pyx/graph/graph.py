@@ -191,9 +191,9 @@ class plotitem:
     def gettitle(self):
         return self.data.gettitle()
 
-    def key_pt(self, graph, x_pt, y_pt, width_pt, height_pt, dy_pt, selectindex, selecttotal):
+    def key_pt(self, graph, x_pt, y_pt, width_pt, height_pt):
         for privatedata, style in zip(self.privatedatalist, self.styles):
-            style.key_pt(privatedata, self.sharedata, graph, x_pt, y_pt, width_pt, height_pt, dy_pt, selectindex, selecttotal)
+            style.key_pt(privatedata, self.sharedata, graph, x_pt, y_pt, width_pt, height_pt)
 
     def __getattr__(self, attr):
         # read only access to the styles privatedata

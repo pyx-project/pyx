@@ -24,7 +24,7 @@
 
 
 import re, ConfigParser
-from pyx import mathtree
+from pyx import mathtree, text
 from pyx.graph import style
 
 try:
@@ -100,9 +100,9 @@ class _Idata:
     def initplotitem(self, plotitem, graph):
         """Initialize plotitem
 
-        This function within the plotitem initialization procedure
-        and allows to initialize the plotitem as a data container.
-        For static data the method might just do nothing."""
+        This function is called within the plotitem initialization
+        procedure and allows to initialize the plotitem as a data
+        container. For static data the method might just do nothing."""
         raise NotImplementedError("call to an abstract method of %r" % self)
 
     def getcolumnpointsindex_plotitem(self, plotitem, column):
@@ -352,7 +352,10 @@ class data(_staticdata):
         if title is notitle:
             items = columns.items()
             items.sort() # we want sorted items (otherwise they would be unpredictable scrambled)
-            self.title = data.title + ": " + ", ".join(["%s=%s" % item for item in items])
+            self.title = "%s: %s" % (data.title,
+                                     ", ".join(["%s=%s" % (text.escapestring(key),
+                                                           text.escapestring(value))
+                                                for key, value in items]))
         else:
             self.title = title
 

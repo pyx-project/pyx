@@ -79,24 +79,15 @@ class key:
         self.symbolspace_pt = unit.topt(self.symbolspace)
         titleboxes = []
         for plotitem in plotitems:
-            try:
-                plotitem.gettitle() + ""
-            except:
-                titles = plotitem.gettitle()
-            else:
-                titles = [plotitem.gettitle()]
-            plotitem.titlecount = len(titles)
-            for title in titles:
-                titleboxes.append(c.texrunner.text_pt(0, 0, title, self.defaulttextattrs + self.textattrs))
+            titlebox = c.texrunner.text_pt(0, 0, plotitem.gettitle(), self.defaulttextattrs + self.textattrs)
+            titlebox.plotitem = plotitem
+            titleboxes.append(titlebox)
         dy_pt = box.tile_pt(titleboxes, self.dist_pt, 0, -1)
         box.linealignequal_pt(titleboxes, self.symbolwidth_pt + self.symbolspace_pt, 1, 0)
         y_pt = -0.5 * self.symbolheight_pt + titleboxes[0].center[1]
-        for plotitem in plotitems:
-            for selectindex in range(plotitem.titlecount):
-                plotitem.key_pt(c, 0, y_pt, self.symbolwidth_pt, self.symbolheight_pt, dy_pt, selectindex, plotitem.titlecount)
-                y_pt -= dy_pt
+        for titlebox in titleboxes:
+            titlebox.plotitem.key_pt(c, 0, y_pt, self.symbolwidth_pt, self.symbolheight_pt)
+            y_pt -= dy_pt
         for titlebox in titleboxes:
             c.insert(titlebox)
-        # for plotitem in plotitems:
-        #     del plotitem.titlecount
         return c

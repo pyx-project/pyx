@@ -114,15 +114,8 @@ class _style:
         drawn using the drawpoint method above."""
         pass
 
-    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt, dy_pt, selectindex, selecttotal):
-        """Draw graph key
-
-        This method draws a key for the style to graph at the given
-        position x_pt, y_pt indicating the lower left corner of the
-        given area width_pt, height_pt. The style might draw several
-        key entries shifted vertically by dy_pt. The method returns
-        the number of key entries or None, when nothing was drawn."""
-        return None
+    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
+        """Draw graph key"""
 
 
 # The following two methods are used to register and get a default provider
@@ -146,7 +139,7 @@ def getdefaultprovider(key):
     return _defaultprovider[key]
 
 
-class _pos(_style):
+class pos(_style):
 
     providesdata = ["vpos", "vposmissing", "vposavailable", "vposvalid"]
 
@@ -195,10 +188,10 @@ class _pos(_style):
                 sharedata.vpos[index] = v
 
 
-registerdefaultprovider(_pos(), _pos.providesdata)
+registerdefaultprovider(pos(), pos.providesdata)
 
 
-class _range(_style):
+class range(_style):
 
     providesdata = ["vrange", "vrangemissing", "vrangeminmissing", "vrangemaxmissing"]
 
@@ -300,7 +293,7 @@ class _range(_style):
                         del d[k]
 
     def initdrawpoints(self, privatedata, sharedata, graph):
-        sharedata.vrange = [[None for x in range(2)] for y in privatedata.rangeposcolumns + sharedata.vrangemissing]
+        sharedata.vrange = [[None for x in xrange(2)] for y in privatedata.rangeposcolumns + sharedata.vrangemissing]
         privatedata.rangepostmplist = [[column, mask, index, graph.axes[column]] # temporarily used by drawpoint only
                                      for index, (column, mask) in enumerate(privatedata.rangeposcolumns)]
         for missing in sharedata.vrangemissing:
@@ -341,7 +334,7 @@ class _range(_style):
             #    raise ValueError("negative maximum errorbar")
 
 
-registerdefaultprovider(_range(), _range.providesdata)
+registerdefaultprovider(range(), range.providesdata)
 
 
 def _crosssymbol(c, x_pt, y_pt, size_pt, attrs):
@@ -443,10 +436,9 @@ class symbol(_styleneedingpointpos):
             xpos, ypos = graph.vpos_pt(*sharedata.vpos)
             privatedata.symbol(privatedata.symbolcanvas, xpos, ypos, privatedata.size_pt, privatedata.symbolattrs)
 
-    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt, dy_pt, selectindex, selecttotal):
+    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
         if privatedata.symbolattrs is not None:
             privatedata.symbol(graph, x_pt+0.5*width_pt, y_pt+0.5*height_pt, privatedata.size_pt, privatedata.symbolattrs)
-        return 1
 
 
 class line(_styleneedingpointpos):
@@ -605,10 +597,9 @@ class line(_styleneedingpointpos):
         if privatedata.lineattrs is not None and len(privatedata.path.path):
             privatedata.linecanvas.stroke(privatedata.path)
 
-    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt, dy_pt, selectindex, selecttotal):
+    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
         if privatedata.lineattrs is not None:
             graph.stroke(path.line_pt(x_pt, y_pt+0.5*height_pt, x_pt+width_pt, y_pt+0.5*height_pt), privatedata.lineattrs)
-        return 1
 
 
 class errorbar(_style):
@@ -638,7 +629,7 @@ class errorbar(_style):
         if privatedata.errorbarattrs is not None:
             privatedata.errorbarcanvas = graph.insert(canvas.canvas())
             privatedata.errorbarcanvas.set(privatedata.errorbarattrs)
-            privatedata.dimensionlist = range(len(sharedata.vpos))
+            privatedata.dimensionlist = list(xrange(len(sharedata.vpos)))
 
     def drawpoint(self, privatedata, sharedata, graph):
         if privatedata.errorbarattrs is not None:
@@ -721,6 +712,9 @@ class text(_styleneedingpointpos):
             else:
                 graph.text_pt(x_pt + privatedata.textdx_pt, y_pt + privatedata.textdy_pt, text, privatedata.textattrs)
 
+    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
+        raise RuntimeError("Style currently doesn't provide a graph key")
+
 
 class arrow(_styleneedingpointpos):
 
@@ -778,8 +772,8 @@ class arrow(_styleneedingpointpos):
                     privatedata.arrowcanvas.stroke(path.line_pt(x1, y1, x2, y2), privatedata.lineattrs +
                                                  [deco.earrow(privatedata.arrowattrs, size=self.arrowsize*size)])
 
-    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt, dy_pt, selectindex, selecttotal):
-        raise "TODO"
+    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
+        raise RuntimeError("Style currently doesn't provide a graph key")
 
 
 class rect(_style):
@@ -833,8 +827,8 @@ class rect(_style):
             else:
                 privatedata.rectcanvas.fill(p)
 
-    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt, dy_pt, selectindex, selecttotal):
-        raise "TODO"
+    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
+        raise RuntimeError("Style currently doesn't provide a graph key")
 
 
 class barpos(_style):
@@ -909,8 +903,8 @@ class barpos(_style):
 
     def initdrawpoints(self, privatedata, sharedata, graph):
         sharedata.vpos = [None]*(len(sharedata.barcolumns))
-        sharedata.vbarrange = [[None for i in range(2)] for x in sharedata.barcolumns]
-        sharedata.stackedbar = 0
+        sharedata.vbarrange = [[None for i in xrange(2)] for x in sharedata.barcolumns]
+        sharedata.stackedbar = sharedata.stackedbardraw = 0
 
         if self.fromvalue is not None:
             privatedata.vfromvalue = graph.axes[sharedata.barcolumns[sharedata.barvalueindex][0]].convert(self.fromvalue)
@@ -935,7 +929,7 @@ class barpos(_style):
                 except (ArithmeticError, ValueError, TypeError):
                     sharedata.vpos[i] = sharedata.vbarrange[i][1] = None
             else:
-                for j in range(2):
+                for j in xrange(2):
                     try:
                         if i == privatedata.barpossubindex:
                             sharedata.vbarrange[i][j] = graph.axes[barname[:-4]].convert(([sharedata.point[barname]] + privatedata.barpossubname + [j]))
@@ -972,6 +966,10 @@ class stackedbarpos(_style):
     def adjustaxis(self, privatedata, sharedata, graph, column, data, index):
         if column == self.stackname:
             graph.axes[sharedata.barcolumns[sharedata.barvalueindex]].adjustrange(data, index)
+
+    def initdrawpoints(self, privatedata, sharedata, graph):
+        if sharedata.stackedbardraw: # do not count the start bar when not gets painted
+            sharedata.stackedbar += 1
 
     def drawpoint(self, privatedata, sharedata, graph):
         sharedata.vbarrange[sharedata.barvalueindex][0] = sharedata.vbarrange[sharedata.barvalueindex][1]
@@ -1013,14 +1011,26 @@ class bar(_style):
 
     def initdrawpoints(self, privatedata, sharedata, graph):
         privatedata.rectcanvas = graph.insert(canvas.canvas())
+        sharedata.stackedbardraw = 1
+        privatedata.stackedbar = sharedata.stackedbar
 
     def drawpoint(self, privatedata, sharedata, graph):
         xvmin = sharedata.vbarrange[0][0]
         xvmax = sharedata.vbarrange[0][1]
         yvmin = sharedata.vbarrange[1][0]
         yvmax = sharedata.vbarrange[1][1]
-        if None not in [xvmin, xvmax, yvmin, yvmax]:
-            # TODO range check
+        if (xvmin is not None and xvmin < 1 and
+            xvmax is not None and xvmax > 0 and
+            yvmin is not None and yvmin < 1 and
+            yvmax is not None and yvmax > 0):
+            if xvmin < 0:
+                xvmin = 0
+            elif xvmax > 1:
+                xvmax = 1
+            if yvmin < 0:
+                yvmin = 0
+            elif yvmax > 1:
+                yvmax = 1
             p = graph.vgeodesic(xvmin, yvmin, xvmax, yvmin)
             p.append(graph.vgeodesic_el(xvmax, yvmin, xvmax, yvmax))
             p.append(graph.vgeodesic_el(xvmax, yvmax, xvmin, yvmax))
@@ -1028,8 +1038,8 @@ class bar(_style):
             p.append(path.closepath())
             privatedata.rectcanvas.fill(p, privatedata.barattrs)
 
-    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt, dy_pt, selectindex, selecttotal):
-        #raise "TODO"
-        pass
-
+    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
+        selectindex = privatedata.stackedbar
+        selecttotal = sharedata.stackedbar + 1
+        graph.fill(path.rect_pt(x_pt + width_pt*selectindex/float(selecttotal), y_pt, width_pt/float(selecttotal), height_pt), privatedata.barattrs)
 
