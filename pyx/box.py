@@ -336,5 +336,5 @@ class rect(_rect):
 
     def __init__(self, x, y, width, height, relcenter=(0, 0), abscenter=(0, 0), **args):
         _rect.__init__(self, unit.topt(x), unit.topt(y), unit.topt(width), unit.topt(height),
-                             relcenter=relcenter, abscenter=(unit.topt(center[0]), unit.topt(center[1])), **args)
+                             relcenter=relcenter, abscenter=(unit.topt(abscenter[0]), unit.topt(abscenter[1])), **args)
 
