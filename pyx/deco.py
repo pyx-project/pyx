@@ -41,10 +41,9 @@ class decoratedpath(base.PSCmd):
     stroke and/or fill operations.
     """
 
-    def __init__(self,
-                 path, strokepath=None, fillpath=None,
-                 styles=None, strokestyles=None, fillstyles=None,
-                 subdps=None):
+    def __init__(self, path, strokepath=None, fillpath=None,
+                 styles=None, strokestyles=None, fillstyles=None, 
+                 subcanvas=None):
 
         self.path = path
 
@@ -59,23 +58,22 @@ class decoratedpath(base.PSCmd):
         self.strokestyles = helper.ensurelist(strokestyles)
         self.fillstyles = helper.ensurelist(fillstyles)
 
-        # additional elements of the path, e.g., arrowheads,
-        # which are by themselves decoratedpaths
-        self.subdps = helper.ensurelist(subdps)
+        # the canvas can contain additional elements of the path, e.g.,
+        # arrowheads,
+        if subcanvas is None:
+            self.subcanvas = canvas.canvas()
+        else:
+            self.subcanvas = subcanvas
 
-    def addsubdp(self, subdp):
-        """add a further decorated path to the list of subdps"""
-        self.subdps.append(subdp)
 
     def bbox(self):
-        return reduce(lambda x,y: x+y.bbox(),
-                      self.subdps,
-                      self.path.bbox())
+        return self.subcanvas.bbox() + self.path.bbox()
 
     def prolog(self):
         result = []
         for style in list(self.styles) + list(self.fillstyles) + list(self.strokestyles):
             result.extend(style.prolog())
+        result.extend(self.subcanvas.prolog())
         return result
 
     def write(self, file):
@@ -144,9 +142,8 @@ class decoratedpath(base.PSCmd):
         if not self.strokepath is not None and not self.fillpath:
             raise RuntimeError("Path neither to be stroked nor filled")
 
-        # now, draw additional subdps
-        for subdp in self.subdps:
-            subdp.write(file)
+        # now, draw additional elements of decoratedpath
+        self.subcanvas.write(file)
 
         # restore global styles
         if self.styles:
@@ -190,7 +187,6 @@ class stroked(deco):
     def decorate(self, dp):
         dp.strokepath = dp.path
         dp.strokestyles = self.styles
-
         return dp
 
 stroked.clear = attr.clearclass(stroked)
@@ -206,7 +202,6 @@ class filled(deco):
     def decorate(self, dp):
         dp.fillpath = dp.path
         dp.fillstyles = self.styles
-
         return dp
 
 filled.clear = attr.clearclass(filled)
@@ -295,23 +290,17 @@ class arrow(deco):
 
         # convert to normpath if necessary
         if isinstance(dp.strokepath, path.normpath):
-            anormpath=dp.strokepath
+            anormpath = dp.strokepath
         else:
-            anormpath=path.normpath(dp.path)
+            anormpath = path.normpath(dp.path)
         if self.position:
-            anormpath=anormpath.reversed()
+            anormpath = anormpath.reversed()
 
-        ahead = _arrowhead(anormpath, self.size, self.angle, self.constriction)
-        # XXX code duplication: see canvas.draw
-        # XXX this should disappear, if we attach a canvas to the decorated path
-        aheaddp = decoratedpath(ahead)
-        # set global styles
-        aheaddp.styles = attr.getattrs(self.attrs, [style.fillstyle, style.strokestyle])
-        # add arrowhead decorations
-        for adeco in attr.getattrs(self.attrs, [deco]):
-            aheaddp = adeco.decorate(aheaddp)
-        dp.addsubdp(aheaddp)
+        # add arrowhead to decoratedpath
+        dp.subcanvas.draw(_arrowhead(anormpath, self.size, self.angle, self.constriction),
+                          *self.attrs)
 
+        # calculate new strokepath
         alen = _arrowheadtemplatelength(anormpath, self.size)
         if self.constriction:
             ilen = alen*self.constriction
