@@ -32,6 +32,7 @@ PyX
     - copy lfs handling from text module (share the same source???)
   - data module:
     - full documentation via doc strings
+    - data.data should add line number like data.datafile
 
   enhancements:
   - box module:
