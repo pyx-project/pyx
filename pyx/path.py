@@ -30,7 +30,7 @@
 #          intersection of bpaths)
 #       - correct behaviour of closepath() in reversed()
 
-import copy, math, string, bisect
+import copy, math, bisect
 from math import cos, sin, pi
 try:
     from math import radians, degrees
