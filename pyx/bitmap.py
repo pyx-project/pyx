@@ -44,28 +44,32 @@ def ascii85stream(file, data):
     into account in the ascii85lines function."""
     i = 3 # go on smoothly in case of data length equals zero
     l = 0
+    l = [None, None, None, None]
     for i in range(len(data)):
         c = data[i]
-        l = l*256 + ord(c)
+        l[i%4] = ord(c)
         if i%4 == 3:
             if i%60 == 3 and i != 3:
                 file.write("\n")
             if l:
-                l, c5 = divmod(l, 85)
-                l, c4 = divmod(l, 85)
-                l, c3 = divmod(l, 85)
-                c1, c2 = divmod(l, 85)
+                # instead of
+                # l[3], c5 = divmod(256*256*256*l[0]+256*256*l[1]+256*l[2]+l[3], 85)
+                # l[2], c4 = divmod(l[3], 85)
+                # we have to avoid number > 2**31 by
+                l[3], c5 = divmod(256*256*l[0]+256*256*l[1]+256*l[2]+l[3], 85)
+                l[2], c4 = divmod(256*256*3*l[0]+l[3], 85)
+                l[1], c3 = divmod(l[2], 85)
+                c1  , c2 = divmod(l[1], 85)
                 file.write(struct.pack('BBBBB', c1+33, c2+33, c3+33, c4+33, c5+33))
-                l = 0
             else:
                 file.write("z")
     if i%4 != 3:
-        for x in range(3-(i%4)):
-            l *= 256
-        l, c5 = divmod(l, 85)
-        l, c4 = divmod(l, 85)
-        l, c3 = divmod(l, 85)
-        c1, c2 = divmod(l, 85)
+        for j in range((i%4) + 1, 4):
+            l[j] = 0
+        l[3], c5 = divmod(256*256*l[0]+256*256*l[1]+256*l[2]+l[3], 85)
+        l[2], c4 = divmod(256*256*3*l[0]+l[3], 85)
+        l[1], c3 = divmod(l[2], 85)
+        c1  , c2 = divmod(l[1], 85)
         file.write(struct.pack('BBBB', c1+33, c2+33, c3+33, c4+33)[:(i%4)+2])
 
 
