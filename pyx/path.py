@@ -1875,9 +1875,9 @@ class normpath(path):
         self.subpaths += normpath(other).subpaths
         return self
 
-    def __len__(self, other):
+    def __len__(self):
         # XXX ok?
-        return self.subpaths
+        return len(self.subpaths)
 
     def __str__(self):
         return "normpath(%s)" % ", ".join(map(str, self.subpaths))
