@@ -25,6 +25,7 @@ PyX
   - text module:
     - pdf(la)tex support (will hopefully lead to markers in text)
     TODO:
+    - reset() method for the texrunner
     - further improve lfs handling
   - tex module:
     - copy lfs handling from text module (share the same source???)
