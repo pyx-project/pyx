@@ -50,9 +50,9 @@ class grey(color):
 
     def outputPDF(self, file, strokeattr=1, fillattr=1):
         if strokeattr:
-            file.write("%(gray)f g\n" % self.color)
-        if fillattr:
             file.write("%(gray)f G\n" % self.color)
+        if fillattr:
+            file.write("%(gray)f g\n" % self.color)
 
 grey.black = grey(0.0)
 grey.white = grey(1.0)
