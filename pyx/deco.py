@@ -25,11 +25,9 @@
 # TODO:
 # - should we improve on the arc length -> arg parametrization routine or
 #   should we at least factor it out?
-# - How should we handle the passing of stroke and fill styles to
-#   arrows? Calls, new instances, ...?
 
 import math
-import attr, base, canvas, helper, path, trafo, unit
+import attr, base, canvas, helper, path, style, trafo, unit
 
 #
 # Decorated path
@@ -279,63 +277,44 @@ def _arrowhead(anormpath, size, angle, constriction):
 # XXX rewrite arrow without using __call__
 # XXX do not forget arrow.clear
 
+_base = unit.v_pt(4)
+
 class arrow(deco):
 
     """arrow is a decorator which adds an arrow to either side of the path"""
 
-    def __init__(self,
-                 position, size, angle=45, constriction=0.8,
-                 styles=None, strokestyles=None, fillstyles=None):
+    def __init__(self, position=0, size=_base, attrs=[], angle=45, constriction=0.8):
         self.position = position
         self.size = size
         self.angle = angle
         self.constriction = constriction
-        self.styles = helper.ensurelist(styles)
-        self.strokestyles = helper.ensurelist(strokestyles)
-        self.fillstyles = helper.ensurelist(fillstyles)
-
-    def __call__(self, *styles):
-        fillstyles = [ style for s in styles if isinstance(s, filled) 
-                       for style in s.styles ]
-
-        strokestyles = [ style for s in styles if isinstance(s, stroked) 
-                         for style in s.styles ]
-
-        styles = [ style for style in styles 
-                   if not (isinstance(style, filled) or
-                           isinstance(style, stroked)) ]
-
-        return arrow(position=self.position,
-                     size=self.size,
-                     angle=self.angle,
-                     constriction=self.constriction,
-                     styles=styles,
-                     strokestyles=strokestyles,
-                     fillstyles=fillstyles)
+        self.attrs = [stroked(), filled()] + helper.ensurelist(attrs)
+        attr.mergeattrs(self.attrs)
+        attr.checkattrs(self.attrs, [deco, style.fillstyle, style.strokestyle])
 
     def decorate(self, dp):
-
-        # TODO: error, when strokepath is not defined
+        # XXX raise exception error, when strokepath is not defined
 
         # convert to normpath if necessary
         if isinstance(dp.strokepath, path.normpath):
             anormpath=dp.strokepath
         else:
             anormpath=path.normpath(dp.path)
-
         if self.position:
             anormpath=anormpath.reversed()
 
         ahead = _arrowhead(anormpath, self.size, self.angle, self.constriction)
-
-        dp.addsubdp(decoratedpath(ahead,
-                                  strokepath=ahead, fillpath=ahead,
-                                  styles=self.styles,
-                                  strokestyles=self.strokestyles,
-                                  fillstyles=self.fillstyles))
+        # XXX code duplication: see canvas.draw
+        # XXX this should disappear, if we attach a canvas to the decorated path
+        aheaddp = decoratedpath(ahead)
+        # set global styles
+        aheaddp.styles = attr.getattrs(self.attrs, [style.fillstyle, style.strokestyle])
+        # add arrowhead decorations
+        for adeco in attr.getattrs(self.attrs, [deco]):
+            aheaddp = adeco.decorate(aheaddp)
+        dp.addsubdp(aheaddp)
 
         alen = _arrowheadtemplatelength(anormpath, self.size)
-
         if self.constriction:
             ilen = alen*self.constriction
         else:
@@ -356,65 +335,149 @@ class arrow(deco):
 
         return dp
 
+_base = unit.v_pt(4)
 
 class barrow(arrow):
 
     """arrow at begin of path"""
 
-    def __init__(self, size, angle=45, constriction=0.8,
-                 styles=None, strokestyles=None, fillstyles=None):
-        arrow.__init__(self,
-                       position=0,
-                       size=size,
-                       angle=angle,
-                       constriction=constriction,
-                       styles=styles,
-                       strokestyles=strokestyles,
-                       fillstyles=fillstyles)
+    def __init__(self, size, *args, **kwargs):
+        arrow.__init__(self, 0, *args, **kwargs)
 
-_base = unit.v_pt(4)
+class _barrow_SMALL(barrow):
+    def __init__(self, *args, **kwargs):
+        barrow.__init__(self, _base/math.sqrt(64), *args, **kwargs)
+barrow.SMALL = _barrow_SMALL
 
-barrow.SMALL  = barrow(_base/math.sqrt(64))
-barrow.SMALl  = barrow(_base/math.sqrt(32))
-barrow.SMAll  = barrow(_base/math.sqrt(16))
-barrow.SMall  = barrow(_base/math.sqrt(8))
-barrow.Small  = barrow(_base/math.sqrt(4))
-barrow.small  = barrow(_base/math.sqrt(2))
-barrow.normal = barrow(_base)
-barrow.large  = barrow(_base*math.sqrt(2))
-barrow.Large  = barrow(_base*math.sqrt(4))
-barrow.LArge  = barrow(_base*math.sqrt(8))
-barrow.LARge  = barrow(_base*math.sqrt(16))
-barrow.LARGe  = barrow(_base*math.sqrt(32))
-barrow.LARGE  = barrow(_base*math.sqrt(64))
+class _barrow_SMALl(barrow):
+    def __init__(self, *args, **kwargs):
+        barrow.__init__(self, _base/math.sqrt(32), *args, **kwargs)
+barrow.SMALl = _barrow_SMALl
+
+class _barrow_SMAll(barrow):
+    def __init__(self, *args, **kwargs):
+        barrow.__init__(self, _base/math.sqrt(16), *args, **kwargs)
+barrow.SMAll = _barrow_SMAll
+
+class _barrow_SMall(barrow):
+    def __init__(self, *args, **kwargs):
+        barrow.__init__(self, _base/math.sqrt(8), *args, **kwargs)
+barrow.SMall = _barrow_SMall
+
+class _barrow_Small(barrow):
+    def __init__(self, *args, **kwargs):
+        barrow.__init__(self, _base/math.sqrt(4), *args, **kwargs)
+barrow.Small = _barrow_Small
+
+class _barrow_small(barrow):
+    def __init__(self, *args, **kwargs):
+        barrow.__init__(self, _base/math.sqrt(2), *args, **kwargs)
+barrow.small = _barrow_small
+
+class _barrow_normal(barrow):
+    def __init__(self, *args, **kwargs):
+        barrow.__init__(self, _base, *args, **kwargs)
+barrow.normal = _barrow_normal
+
+class _barrow_large(barrow):
+    def __init__(self, *args, **kwargs):
+        barrow.__init__(self, _base*math.sqrt(2), *args, **kwargs)
+barrow.large = _barrow_large
+
+class _barrow_Large(barrow):
+    def __init__(self, *args, **kwargs):
+        barrow.__init__(self, _base*math.sqrt(4), *args, **kwargs)
+barrow.Large = _barrow_Large
+
+class _barrow_LArge(barrow):
+    def __init__(self, *args, **kwargs):
+        barrow.__init__(self, _base*math.sqrt(8), *args, **kwargs)
+barrow.LArge = _barrow_LArge
+
+class _barrow_LARge(barrow):
+    def __init__(self, *args, **kwargs):
+        barrow.__init__(self, _base*math.sqrt(16), *args, **kwargs)
+barrow.LARge = _barrow_LARge
+
+class _barrow_LARGe(barrow):
+    def __init__(self, *args, **kwargs):
+        barrow.__init__(self, _base*math.sqrt(32), *args, **kwargs)
+barrow.LARGe = _barrow_LARGe
+
+class _barrow_LARGE(barrow):
+    def __init__(self, *args, **kwargs):
+        barrow.__init__(self, _base*math.sqrt(64), *args, **kwargs)
+barrow.LARGE = _barrow_LARGE
 
 
 class earrow(arrow):
 
     """arrow at end of path"""
 
-    def __init__(self, size, angle=45, constriction=0.8,
-                 styles=[], strokestyles=[], fillstyles=[]):
-        arrow.__init__(self,
-                       position=1,
-                       size=size,
-                       angle=angle,
-                       constriction=constriction,
-                       styles=styles,
-                       strokestyles=strokestyles,
-                       fillstyles=fillstyles)
+    def __init__(self, *args, **kwargs):
+        arrow.__init__(self, 1, *args, **kwargs)
 
+class _earrow_SMALL(earrow):
+    def __init__(self, *args, **kwargs):
+        earrow.__init__(self, _base/math.sqrt(64), *args, **kwargs)
+earrow.SMALL = _earrow_SMALL
 
-earrow.SMALL  = earrow(_base/math.sqrt(64))
-earrow.SMALl  = earrow(_base/math.sqrt(32))
-earrow.SMAll  = earrow(_base/math.sqrt(16))
-earrow.SMall  = earrow(_base/math.sqrt(8))
-earrow.Small  = earrow(_base/math.sqrt(4))
-earrow.small  = earrow(_base/math.sqrt(2))
-earrow.normal = earrow(_base)
-earrow.large  = earrow(_base*math.sqrt(2))
-earrow.Large  = earrow(_base*math.sqrt(4))
-earrow.LArge  = earrow(_base*math.sqrt(8))
-earrow.LARge  = earrow(_base*math.sqrt(16))
-earrow.LARGe  = earrow(_base*math.sqrt(32))
-earrow.LARGE  = earrow(_base*math.sqrt(64))
+class _earrow_SMALl(earrow):
+    def __init__(self, *args, **kwargs):
+        earrow.__init__(self, _base/math.sqrt(32), *args, **kwargs)
+earrow.SMALl = _earrow_SMALl
+
+class _earrow_SMAll(earrow):
+    def __init__(self, *args, **kwargs):
+        earrow.__init__(self, _base/math.sqrt(16), *args, **kwargs)
+earrow.SMAll = _earrow_SMAll
+
+class _earrow_SMall(earrow):
+    def __init__(self, *args, **kwargs):
+        earrow.__init__(self, _base/math.sqrt(8), *args, **kwargs)
+earrow.SMall = _earrow_SMall
+
+class _earrow_Small(earrow):
+    def __init__(self, *args, **kwargs):
+        earrow.__init__(self, _base/math.sqrt(4), *args, **kwargs)
+earrow.Small = _earrow_Small
+
+class _earrow_small(earrow):
+    def __init__(self, *args, **kwargs):
+        earrow.__init__(self, _base/math.sqrt(2), *args, **kwargs)
+earrow.small = _earrow_small
+
+class _earrow_normal(earrow):
+    def __init__(self, *args, **kwargs):
+        earrow.__init__(self, _base, *args, **kwargs)
+earrow.normal = _earrow_normal
+
+class _earrow_large(earrow):
+    def __init__(self, *args, **kwargs):
+        earrow.__init__(self, _base*math.sqrt(2), *args, **kwargs)
+earrow.large = _earrow_large
+
+class _earrow_Large(earrow):
+    def __init__(self, *args, **kwargs):
+        earrow.__init__(self, _base*math.sqrt(4), *args, **kwargs)
+earrow.Large = _earrow_Large
+
+class _earrow_LArge(earrow):
+    def __init__(self, *args, **kwargs):
+        earrow.__init__(self, _base*math.sqrt(8), *args, **kwargs)
+earrow.LArge = _earrow_LArge
+
+class _earrow_LARge(earrow):
+    def __init__(self, *args, **kwargs):
+        earrow.__init__(self, _base*math.sqrt(16), *args, **kwargs)
+earrow.LARge = _earrow_LARge
+
+class _earrow_LARGe(earrow):
+    def __init__(self, *args, **kwargs):
+        earrow.__init__(self, _base*math.sqrt(32), *args, **kwargs)
+earrow.LARGe = _earrow_LARGe
+
+class _earrow_LARGE(earrow):
+    def __init__(self, *args, **kwargs):
+        earrow.__init__(self, _base*math.sqrt(64), *args, **kwargs)
+earrow.LARGE = _earrow_LARGE
