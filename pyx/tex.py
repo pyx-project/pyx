@@ -11,6 +11,7 @@
 
 from const import *
 from canvas import epsfile
+import os, string, tempfile, sys, md5, string, traceback, time
 
 # tex processor types
 
@@ -61,7 +62,6 @@ class TexRightParenthesisError(TexException):
 
 class tex:
 
-    #def __init__(self, canvas, type = "TeX", latexstyle = "10pt", latexclass = "article", latexclassopt = "", texinit = "", TexInitIgnoreMsgLevel = 1):
     def __init__(self, type = "TeX", latexstyle = "10pt", latexclass = "article", latexclassopt = "", texinit = "", TexInitIgnoreMsgLevel = 1):
         assert type == TeX or type == LaTeX, "invalid type"
         if type == TeX:
@@ -73,12 +73,17 @@ class tex:
         self.latexclassopt = latexclassopt
         self.TexAddCmd(texinit, TexInitIgnoreMsgLevel)
 
+        if len(os.path.basename(sys.argv[0])):
+            basename = os.path.basename(sys.argv[0])
+            if basename[-3:] == ".py":
+                basename = basename[:-3]
+            self.SizeFileName = os.path.join(os.getcwd(), basename + ".size")
+        else:
+            self.SizeFileName = os.path.join(os.getcwd(), "pyxput.size")
+
     TexMarker = "ThisIsThePyxTexMarker"
     TexMarkerBegin = TexMarker + "Begin"
     TexMarkerEnd = TexMarker + "End"
-
-#    def __del__(self):
-#        self.TexRun()
 
     TexCmds = [ ]
         # stores the TexCmds; note that the first element has a special
@@ -167,7 +172,6 @@ class tex:
 
         'creates an MD5 hex string for texinit + Cmd'
     
-        import md5, string
         h = string.hexdigits
         r = ''
         s = md5.md5(self.TexCmds[0].Cmd + Cmd).digest()
@@ -183,7 +187,6 @@ class tex:
         if self.TexCmds == [ ]:
             self.TexParenthesisCheck(Cmd)
 
-        import sys, traceback
         try:
             raise ZeroDivisionError
         except ZeroDivisionError:
@@ -197,27 +200,29 @@ class tex:
 
     def __str__(self):
 
-        'run LaTeX&dvips for TexCmds, add postscript to canvas, report errors'
+        'run LaTeX&dvips for TexCmds, report errors, return postscript string'
     
         # TODO 7: file handling
         #         Be sure to delete all temporary files (signal handling???)
         #         and check for the files before reading them (including the
         #         dvi before it is converted by dvips and the resulting ps)
 
-        import os, string
+        WorkDir = os.getcwd()
+        MkTemp = tempfile.mktemp()
+        TempDir = os.path.dirname(MkTemp)
+        TempName = os.path.basename(MkTemp)
+        os.chdir(TempDir)
 
-        file = open("basefilename.tex", "w")
+        file = open(TempName + ".tex", "w")
 
         file.write("\\nonstopmode\n")
         if self.type == LaTeX:
             file.write("\\documentclass[" + self.latexclassopt + "]{" + self.latexclass + "}\n")
-        #file.write("\\hsize" + str(self.canvas.Width) + "truecm\n\\vsize" + str(self.canvas.Height) + "truecm\n\\hoffset-1truein\n\\voffset-1truein\n")
         file.write("\\hsize0truecm\n\\vsize0truecm\n\\hoffset-1truein\n\\voffset-1truein\n")
 
         file.write(self.TexCmds[0].Cmd)
 
-        #file.write("\\newwrite\\sizefile\n\\newbox\\localbox\n\\newbox\\pagebox\n\\immediate\\openout\\sizefile=" + self.canvas.BaseFilename + ".size\n")
-        file.write("\\newwrite\\sizefile\n\\newbox\\localbox\n\\newbox\\pagebox\n\\immediate\\openout\\sizefile=basefilename.size\n")
+        file.write("\\newwrite\\sizefile\n\\newbox\\localbox\n\\newbox\\pagebox\n\\immediate\\openout\\sizefile=" + TempName + ".size\n")
         if self.type == LaTeX:
             file.write("\\begin{document}\n")
         file.write("\\setbox\\pagebox=\\vbox{%\n")
@@ -233,15 +238,12 @@ class tex:
             file.write("\\end{document}\n")
         file.close()
 
-        #if os.system(string.lower(self.type) +" " + self.canvas.BaseFilename + " > " + self.canvas.BaseFilename + ".stdout 2> " + self.canvas.BaseFilename + ".stderr"):
-        if os.system(string.lower(self.type) +" basefilename > basefilename.stdout 2> basefilename.stderr"):
-            #print "The " + self.type + " exit code was non-zero. This may happen due to mistakes within your\nLaTeX commands as listed below. Otherwise you have to check your local\nenvironment and the files \"" + self.canvas.BaseFilename + ".tex\" and \"" + self.canvas.BaseFilename + ".log\" manually."
-            print "The " + self.type + " exit code was non-zero. This may happen due to mistakes within your\nLaTeX commands as listed below. Otherwise you have to check your local\nenvironment and the files \"basefilename.tex\" and \"basefilename.log\" manually."
+        if os.system(string.lower(self.type) + " " + TempName + ".tex > " + TempName + ".out 2> " + TempName + ".err"):
+            print "The " + self.type + " exit code was non-zero. This may happen due to mistakes within your\nLaTeX commands as listed below. Otherwise you have to check your local\nenvironment and the files \"" + TempName + ".tex\" and \"" + TempName + ".log\" manually."
 
         try:
             # check output
-            #file = open(self.canvas.BaseFilename + ".stdout", "r")
-            file = open("basefilename.stdout", "r")
+            file = open(TempName + ".out", "r")
             for Cmd in self.TexCmds:
 
                 # read markers and identify the message
@@ -295,7 +297,6 @@ class tex:
 
                 # print the message if needed
                 if doprint:
-                    import traceback
                     print "Traceback (innermost last):"
                     traceback.print_list(Cmd.Stack)
                     print "LaTeX Message:"
@@ -303,23 +304,53 @@ class tex:
             file.close()
 
         except IOError:
-            #print "Error reading the " + self.type + " output. Check your local environment and the files\n\"" + self.canvas.BaseFilename + ".tex\" and \"" + self.canvas.BaseFilename + ".log\"."
-            print "Error reading the " + self.type + " output. Check your local environment and the files\n\"" + self.canvas.BaseFilename + ".tex\" and \"basefilename.log\"."
+            print "Error reading the " + self.type + " output. Check your local environment and the files\n\"" + TempName + ".tex\" and \"" + TempName + ".log\"."
             raise
         
         # TODO 7: dvips error handling
         #         interface for modification of the dvips command line
 
-        #if os.system("dvips -P pyx -T" + str(self.canvas.Width) + "cm," + str(self.canvas.Height) + "cm -o " + self.canvas.BaseFilename + ".tex.eps " + self.canvas.BaseFilename + " > /dev/null 2>&1"):
-        if os.system("dvips -P pyx -T0cm,0cm -o basefilename.eps basefilename > /dev/null 2>&1"):
+        if os.system("dvips -P pyx -T0cm,0cm -o " + TempName + ".eps " + TempName + ".dvi > /dev/null 2>&1"):
             assert 0, "dvips exit code non-zero"
+
+        result = str(epsfile(TempName + ".eps"))
+
+        # merge new sizes
         
-        # TODO 8: don't write save/restore directly
-        #self.canvas.PSAddCmd("save")
-        #self.canvas.PSInsertEPS(0, 0, self.canvas.BaseFilename + ".tex.eps")
-        #self.canvas.PSAddCmd("restore")
-        #return str(epsfile(self.canvas.BaseFilename + ".tex.eps"))
-        return str(epsfile("basefilename.eps"))
+        try:
+            OldSizeFile = open(self.SizeFileName, "r")
+            OldSizes = OldSizeFile.readlines()
+            OldSizeFile.close()
+            os.unlink(self.SizeFileName)
+        except IOError:
+            OldSizes = []
+
+        NewSizeFile = open(TempName + ".size", "r")
+        NewSizes = NewSizeFile.readlines()
+
+        SizeFile = open(self.SizeFileName, "w")
+        SizeFile.writelines(NewSizes)
+
+        for OldSize in OldSizes:
+            OldSizeSplit = OldSize.split(":")
+            for NewSize in NewSizes:
+                NewSizeSplit = NewSize.split(":")
+                if (NewSizeSplit[0] == OldSizeSplit[0]) and (NewSizeSplit[1] == OldSizeSplit[1]):
+                    break
+            else:
+                if time.time() < float(OldSizeSplit[2]) + 60*60*24:   # we keep it for one day
+                    SizeFile.write(OldSize)
+
+        os.unlink(TempName + ".tex")
+        os.unlink(TempName + ".dvi")
+        os.unlink(TempName + ".eps")
+        os.unlink(TempName + ".out")
+        os.unlink(TempName + ".err")
+        os.unlink(TempName + ".size")
+        
+        os.chdir(WorkDir)
+        
+        return result
 
     TexResults = None
 
@@ -329,7 +360,7 @@ class tex:
 
         if self.TexResults == None:
             try:
-                file = open("basefilename.size", "r")
+                file = open(self.SizeFileName, "r")
                 self.TexResults = file.readlines()
                 file.close()
             except IOError:
@@ -337,7 +368,7 @@ class tex:
 
         for TexResult in self.TexResults:
             if TexResult[:len(Str)] == Str:
-                return TexResult[len(Str):-1]
+                return string.rstrip(TexResult.split(":")[3])
  
         return 1
 
@@ -357,7 +388,7 @@ class tex:
         TexHexMD5 = self.TexHexMD5(TexCreateBoxCmd)
         self.TexAddCmd(TexCreateBoxCmd +
                        "\\immediate\\write\\sizefile{" + TexHexMD5 +
-                       ":wd:\\the\\wd\\localbox}\n", IgnoreMsgLevel)
+                       ":wd:" + str(time.time()) + ":\\the\\wd\\localbox}\n", IgnoreMsgLevel)
         return self.TexResult(TexHexMD5 + ":wd:")
 
     def textht(self, Cmd, size = normalsize, hsize = None, valign = None, IgnoreMsgLevel = 1):
@@ -368,7 +399,7 @@ class tex:
         TexHexMD5 = self.TexHexMD5(TexCreateBoxCmd)
         self.TexAddCmd(TexCreateBoxCmd +
                        "\\immediate\\write\\sizefile{" + TexHexMD5 +
-                       ":ht:\\the\\ht\\localbox}\n", IgnoreMsgLevel)
+                       ":ht:" + str(time.time()) + ":\\the\\ht\\localbox}\n", IgnoreMsgLevel)
         return self.TexResult(TexHexMD5 + ":ht:")
 
     def textdp(self, Cmd, size = normalsize, hsize = None, valign = None, IgnoreMsgLevel = 1):
@@ -379,5 +410,5 @@ class tex:
         TexHexMD5 = self.TexHexMD5(TexCreateBoxCmd)
         self.TexAddCmd(TexCreateBoxCmd +
                        "\\immediate\\write\\sizefile{" + TexHexMD5 +
-                       ":dp:\\the\\dp\\localbox}\n", IgnoreMsgLevel)
+                       ":dp:" + str(time.time()) + ":\\the\\dp\\localbox}\n", IgnoreMsgLevel)
         return self.TexResult(TexHexMD5 + ":dp:")
