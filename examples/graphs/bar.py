@@ -5,8 +5,8 @@ from pyx import *                   # bar.dat looks like:
 # we prepare some stuff first                   ...
 bap = graph.baraxispainter # just an abbreviation
 a1 = graph.baraxis(painter=bap(nameattrs=None)) # for single bars
-a2 = graph.baraxis(painter=bap(nameattrs=(trafo.rotate(45),
-                                          text.halign.right),
+a2 = graph.baraxis(painter=bap(nameattrs=[trafo.rotate(45),
+                                          text.halign.right],
                                           innerticklength=0.2),
                    subaxis=graph.baraxis(dist=0)) # for several bars
 df = data.datafile("bar.dat") # read the datafile just once
