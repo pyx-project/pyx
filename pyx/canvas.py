@@ -67,7 +67,8 @@ _paperformats = { "a4"      : ("210 t mm",  "297 t mm"),
                   "a2"      : ("420 t mm",  "594 t mm"), 
                   "a1"      : ("594 t mm",  "840 t mm"), 
                   "a0"      : ("840 t mm", "1188 t mm"), 
-                  "letter"  : ("8.5 t in",   "11 t in")}
+                  "letter"  : ("8.5 t in",   "11 t in"),
+                  "legal"   : ("8.5 t in",   "14 t in")}
 
 # helper routine for bbox manipulations
 
