@@ -193,7 +193,7 @@ class decoratedpath(base.canvasitem):
                 if self.fillstyles:
                     file.write("grestore\n")
 
-        if (self.strokestyles is not None and strokepath is not fillpath) or self.fillstyles is None:
+        if self.strokestyles is not None and (strokepath is not fillpath or self.fillstyles is None):
             # this is the only relevant case still left
             # Note that a possible stroking has already been done.
 
@@ -272,7 +272,7 @@ class decoratedpath(base.canvasitem):
                 if self.fillstyles:
                     file.write("Q\n") # grestore
 
-        if (self.strokestyles is not None and strokepath is not fillpath) or self.fillstyles is None:
+        if self.strokestyles is not None and (strokepath is not fillpath or self.fillstyles is None):
             # this is the only relevant case still left
             # Note that a possible stroking has already been done.
 
