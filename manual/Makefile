@@ -23,8 +23,8 @@ manual.dvi: $(wildcard *.tex) $(patsubst %.py, %.eps, $(wildcard *.py)) pyxversi
 	./runlatex.sh manual.tex
 	-rm manual.ps manual.pdf
 
-pyxversion.tex: ../pyx/__init__.py
-	python -c "import sys;sys.path[:0]=[\"..\"];import pyx;print pyx.__version__" > pyxversion.tex
+pyxversion.tex: ../pyx/version.py
+	python -c "import sys;sys.path[:0]=[\"..\"];import pyx.version;print pyx.version.version" > pyxversion.tex
 
 %.eps: %.py
 	export PYTHONPATH=$(PWD)/.. ; python $^
