@@ -82,8 +82,8 @@ TODO:
     - _xxx -> xxx_pt renaming
     - part -> parter renaming
   - canvas module:
-    - stroke, fill and draw do no longer accept variable length argument lists but
-      an attribute list as last argument (TODO: documentation)
+    - stroke, fill, draw, set and insert do no longer accept variable length argument lists but
+      an attribute list as last argument
     - stroke and fill now support trafos (TODO: documentation)
     - uppercase version of a4, a3, ... paperformats
   - config module:
