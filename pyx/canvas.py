@@ -127,7 +127,13 @@ class miterlimit(base.PathStyle):
         
     def write(self, file):
         file.write("%f setmiterlimit\n" % self.value)
-        
+
+
+miterlimit.lessthan180deg = miterlimit(1/math.sin(math.pi*180/360))
+miterlimit.lessthan90deg  = miterlimit(1/math.sin(math.pi*90/360))
+miterlimit.lessthan60deg  = miterlimit(1/math.sin(math.pi*60/360))
+miterlimit.lessthan45deg  = miterlimit(1/math.sin(math.pi*45/360))
+miterlimit.lessthan11deg  = miterlimit(10) # the default, approximately 11.4783 degress
 
 class dash(base.PathStyle):
 
@@ -555,19 +561,19 @@ class earrow(arrow):
                        fillstyles=fillstyles)
 
     
-earrow.SMALL  = earrow("%f t pt" % (_base/math.sqrt(64)))
-earrow.SMALl  = earrow("%f t pt" % (_base/math.sqrt(32)))
-earrow.SMAll  = earrow("%f t pt" % (_base/math.sqrt(16)))
-earrow.SMall  = earrow("%f t pt" % (_base/math.sqrt(8)))
-earrow.Small  = earrow("%f t pt" % (_base/math.sqrt(4)))
-earrow.small  = earrow("%f t pt" % (_base/math.sqrt(2)))
-earrow.normal = earrow("%f t pt" % _base)
-earrow.large  = earrow("%f t pt" % (_base*math.sqrt(2)))
-earrow.Large  = earrow("%f t pt" % (_base*math.sqrt(4)))
-earrow.LArge  = earrow("%f t pt" % (_base*math.sqrt(8)))
-earrow.LARge  = earrow("%f t pt" % (_base*math.sqrt(16)))
-earrow.LARGe  = earrow("%f t pt" % (_base*math.sqrt(32)))
-earrow.LARGE  = earrow("%f t pt" % (_base*math.sqrt(64)))
+earrow.SMALL  = earrow("%f v pt" % (_base/math.sqrt(64)))
+earrow.SMALl  = earrow("%f v pt" % (_base/math.sqrt(32)))
+earrow.SMAll  = earrow("%f v pt" % (_base/math.sqrt(16)))
+earrow.SMall  = earrow("%f v pt" % (_base/math.sqrt(8)))
+earrow.Small  = earrow("%f v pt" % (_base/math.sqrt(4)))
+earrow.small  = earrow("%f v pt" % (_base/math.sqrt(2)))
+earrow.normal = earrow("%f v pt" % _base)
+earrow.large  = earrow("%f v pt" % (_base*math.sqrt(2)))
+earrow.Large  = earrow("%f v pt" % (_base*math.sqrt(4)))
+earrow.LArge  = earrow("%f v pt" % (_base*math.sqrt(8)))
+earrow.LARge  = earrow("%f v pt" % (_base*math.sqrt(16)))
+earrow.LARGe  = earrow("%f v pt" % (_base*math.sqrt(32)))
+earrow.LARGE  = earrow("%f v pt" % (_base*math.sqrt(64)))
 
 #
 # clipping class
