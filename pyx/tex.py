@@ -9,7 +9,7 @@
 #         ggf. sonst Diskussion Seitengröße etc.
 #         weitere Schicht postscript-file notwendig ?!?
 
-from const import *
+import const
 from canvas import epsfile
 import os, string, tempfile, sys, md5, string, traceback, time
 
@@ -17,19 +17,6 @@ import os, string, tempfile, sys, md5, string, traceback, time
 
 TeX = "TeX"
 LaTeX = "LaTeX"
-
-# tex size constants
-
-tiny = "tiny"
-scriptsize = "scriptsize"
-footnotesize = "footnotesize"
-small = "small"
-normalsize = "normalsize"
-large = "large"
-Large = "Large"
-LARGE = "LARGE"
-huge = "huge"
-Huge = "Huge"
 
 # structure to store TexCmds
 
@@ -125,11 +112,10 @@ class tex:
         CmdEnd = "}"
 
         if hsize != None:
-             isnumber(hsize)
-             if valign == top or valign == None:
+             if valign == const.valign.top or valign == None:
                   CmdBegin = CmdBegin + "\\vtop{\hsize" + str(hsize) + "truecm{"
                   CmdEnd = "}}" + CmdEnd
-             elif valign == bottom:
+             elif valign == const.valign.bottom:
                   CmdBegin = CmdBegin + "\\vbox{\hsize" + str(hsize) + "truecm{"
                   CmdEnd = "}}" + CmdEnd
              else:
@@ -151,16 +137,15 @@ class tex:
         CmdEnd = "}\\vss}\\nointerlineskip}"
 
         if angle != None and angle != 0:
-            isnumber(angle)
             CmdBegin = CmdBegin + "\\special{ps:gsave currentpoint currentpoint translate " + str(angle) + " rotate neg exch neg exch translate}"
             CmdEnd = "\\special{ps:currentpoint grestore moveto}" + CmdEnd
 
         if halign != None:
-            if halign == left:
+            if halign == const.halign.left:
                 pass
-            elif halign == center:
+            elif halign == const.halign.center:
                 CmdBegin = CmdBegin + "\kern-.5\wd\localbox"
-            elif halign == right:
+            elif halign == const.halign.right:
                 CmdBegin = CmdBegin + "\kern-\wd\localbox"
             else:
                 assert 0, "halign unknown"
@@ -372,7 +357,7 @@ class tex:
  
         return 1
 
-    def text(self, x, y, Cmd, size = normalsize, halign = None, hsize = None, valign = None, angle = None, IgnoreMsgLevel = 1):
+    def text(self, x, y, Cmd, size = const.fontsize.normalsize, halign = None, hsize = None, valign = None, angle = None, IgnoreMsgLevel = 1):
 
         'print Cmd at (x, y)'
         
@@ -380,7 +365,7 @@ class tex:
         TexCopyBoxCmd = self.TexCopyBoxCmd(x, y, Cmd, halign, angle)
         self.TexAddCmd(TexCreateBoxCmd + TexCopyBoxCmd, IgnoreMsgLevel)
 
-    def textwd(self, Cmd, size = normalsize, hsize = None, IgnoreMsgLevel = 1):
+    def textwd(self, Cmd, size = const.fontsize.normalsize, hsize = None, IgnoreMsgLevel = 1):
     
         'get width of Cmd'
 
@@ -391,7 +376,7 @@ class tex:
                        ":wd:" + str(time.time()) + ":\\the\\wd\\localbox}\n", IgnoreMsgLevel)
         return self.TexResult(TexHexMD5 + ":wd:")
 
-    def textht(self, Cmd, size = normalsize, hsize = None, valign = None, IgnoreMsgLevel = 1):
+    def textht(self, Cmd, size = const.fontsize.normalsize, hsize = None, valign = None, IgnoreMsgLevel = 1):
 
         'get height of Cmd'
 
@@ -402,7 +387,7 @@ class tex:
                        ":ht:" + str(time.time()) + ":\\the\\ht\\localbox}\n", IgnoreMsgLevel)
         return self.TexResult(TexHexMD5 + ":ht:")
 
-    def textdp(self, Cmd, size = normalsize, hsize = None, valign = None, IgnoreMsgLevel = 1):
+    def textdp(self, Cmd, size = const.fontsize.normalsize, hsize = None, valign = None, IgnoreMsgLevel = 1):
    
         'get depth of Cmd'
 

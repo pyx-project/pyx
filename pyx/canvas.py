@@ -1,31 +1,8 @@
 #!/usr/bin/env python
 
-# TODO:
-# - think a little bit more about abstractcanvas, canvas, and subcanvas
-
-# current issues:
-#  - __del__ is not necessarily run immediately (we had this problem before), so that some important 
-#    cleanup of the canvas (grestore!) maybe doesn't happen at the right moment!
-#  - how to deal with the units? How do transformation classes no of them? Should u2p & friends
-#    be moved to another place?
-
-
-from const import *
-from unit import unit
+import const 
 import string
-
-linecap_butt   = 0
-linecap_round  = 1
-linecap_square = 2
-
-linejoin_miter = 0
-linejoin_round = 1
-linejoin_bevel = 2
-
-linestyle_solid      = (linecap_butt,  [])
-linestyle_dashed     = (linecap_butt,  [2])
-linestyle_dotted     = (linecap_round, [0, 3])
-linestyle_dashdotted = (linecap_round, [0, 3, 3, 3])
+from unit import unit
 
 # PostScript-procedure definitions
 # cf. file: 5002.EPSF_Spec_v3.0.pdf     
@@ -224,7 +201,7 @@ class canvas:
         file.write("%%BeginProlog\n") 
         file.write(PSProlog)
         file.write("%%EndProlog\n") 
-        file.write("%f setlinewidth\n" % 1)	# TODO: fixme
+        file.write("%f setlinewidth\n" % self.unit.pt(const.linewidth.normal))
         file.write(str(self))
 
 
@@ -235,6 +212,7 @@ if __name__=="__main__":
     from path import *
     from trafo import *
     from graph import *
+    from const import *
 
     t=c.tex()
  
@@ -255,18 +233,18 @@ if __name__=="__main__":
  
     print "Breite von 'Hello world!': ",t.textwd("Hello  world!")
     print "Höhe von 'Hello world!': ",t.textht("Hello world!")
-    print "Höhe von 'Hello world!' in large: ",t.textht("Hello world!", size = large)
-    print "Höhe von 'Hello world!' in Large: ",t.textht("Hello world!", size = Large)
-    print "Höhe von 'Hello world' in huge: ",t.textht("Hello world!", size = huge)
+    print "Höhe von 'Hello world!' in large: ",t.textht("Hello world!", size = fontsize.large)
+    print "Höhe von 'Hello world!' in Large: ",t.textht("Hello world!", size = fontsize.Large)
+    print "Höhe von 'Hello world' in huge: ",t.textht("Hello world!", size = fontsize.huge)
     print "Tiefe von 'Hello world!': ",t.textdp("Hello world!")
     print "Tiefe von 'was mit q': ",t.textdp("was mit q")
     t.text(5, 1, "Hello world!")
-    t.text(5, 2, "Hello world!", halign = center)
-    t.text(5, 3, "Hello world!", halign = right)
+    t.text(5, 2, "Hello world!", halign = halign.center)
+    t.text(5, 3, "Hello world!", halign = halign.right)
     for angle in (-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90):
         t.text(11+angle/10, 5, str(angle), angle = angle)
-        t.text(11+angle/10, 6, str(angle), angle = angle, halign = center)
-        t.text(11+angle/10, 7, str(angle), angle=angle, halign=right)
+        t.text(11+angle/10, 6, str(angle), angle = angle, halign = halign.center)
+        t.text(11+angle/10, 7, str(angle), angle=angle, halign=halign.right)
     for pos in range(1,21):
         t.text(pos, 7.5, ".")
    
@@ -277,7 +255,7 @@ if __name__=="__main__":
              moveto(7,10), 
              lineto(7,14)])
    
-    c.setlinestyle(linestyle_dotted)
+    c.setlinestyle(linestyle.dotted)
     t.text(5, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize = 2)
     c.draw(p)
  
@@ -287,8 +265,8 @@ if __name__=="__main__":
              lineto(10,14), 
              moveto(12,10), 
              lineto(12,14)])
-    c.setlinestyle(linestyle_dashdotted)
-    t.text(10, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize = 2, valign = bottom)
+    c.setlinestyle(linestyle.dashdotted)
+    t.text(10, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize = 2, valign = valign.bottom)
     c.draw(p)
  
     p=path([moveto(5,15), arc(5,15, 1, 0, 45), closepath()])
