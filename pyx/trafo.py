@@ -78,8 +78,8 @@ class transformation:
     def mirror(self,angle):
 	return transformation(matrix=_mmatrix(angle))*self
 
-    def scale(self, x, y):
-        return transformation(matrix=((x, 0), (0,y)))*self
+    def scale(self, x, y=None):
+        return transformation(matrix=((x, 0), (0,y or x)))*self
 
     def inverse(self):
         det = _det(self.matrix)				# shouldn't be zero, but
@@ -114,8 +114,8 @@ class mirror(transformation):
         transformation.__init__(self, matrix=_mmatrix(angle))
 
 class scale(transformation):
-    def __init__(self,x,y):
-        transformation.__init__(self, matrix=((x,0),(0,y)))
+    def __init__(self,x,y=None):
+        transformation.__init__(self, matrix=((x,0),(0,y or x)))
         
 
 if __name__=="__main__":

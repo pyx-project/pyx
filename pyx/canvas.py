@@ -7,8 +7,7 @@ from math import sqrt
 # PostScript-procedure definitions
 # cf. file: 5002.EPSF_Spec_v3.0.pdf     
 
-PSProlog = """
-/rect {
+PSProlog = """/rect {
   4 2 roll moveto 
   1 index 0 rlineto 
   0 exch rlineto 
@@ -107,8 +106,8 @@ class CanvasException(Exception): pass
 class _linecap:
     def __init__(self, value=0):
         self.value=value
-    def _PSAddCmd(self, canvas):
-        canvas._PSAddCmd( "%d setlinecap" % self.value)
+    def _PSCmd(self, canvas):
+        return "%d setlinecap" % self.value
 
 class linecap:
     butt   = _linecap(0)
@@ -118,7 +117,7 @@ class linecap:
 class _linejoin:
     def __init__(self, value=0):
         self.value=value
-    def _PSAddCmd(self, canvas):
+    def _PSCmd(self, canvas):
         return "%d setlinejoin" % self.value
  
 class linejoin(_linejoin):
@@ -131,8 +130,8 @@ linejoinmiter=_linejoin(0)
 class _miterlimit:
     def __init__(self, value=10.0):
         self.value=value
-    def _PSAddCmd(self, canvas):
-        canvas._PSAddCmd("%f setmiterlimit" % self.value)
+    def _PSCmd(self, canvas):
+        return "%f setmiterlimit" % self.value
 
 class miterlimit(_miterlimit):
     pass
@@ -141,12 +140,12 @@ class _dash:
     def __init__(self, pattern=[], offset=0):
         self.pattern=pattern
         self.offset=offset
-    def _PSAddCmd(self, canvas):
+    def _PSCmd(self, canvas):
         patternstring=""
         for element in self.pattern:
             patternstring=patternstring + `element` + " "
                               
-        canvas._PSAddCmd("[%s] %d setdash" % (patternstring, self.offset))
+        return "[%s] %d setdash" % (patternstring, self.offset)
 
 class dash(_dash):
     pass
@@ -155,9 +154,8 @@ class _linestyle:
     def __init__(self, c=linecap.butt, d=dash([])):
         self.c=c
         self.d=d
-    def _PSAddCmd(self, canvas):
-        self.c._PSAddCmd(canvas)
-        self.d._PSAddCmd(canvas)
+    def _PSCmd(self, canvas):
+        return self.c._PSCmd(canvas) + "\n" + self.d._PSCmd(canvas)
        
 class linestyle(_linestyle):
     solid      = _linestyle(linecap.butt,  dash([]))
@@ -168,8 +166,8 @@ class linestyle(_linestyle):
 class _linewidth(unit.length):
     def __init__(self, l):
         unit.length.__init__(self, l=l, default_type="w")
-    def _PSAddCmd(self, canvas):
-        canvas._PSAddCmd("%f setlinewidth" % canvas.unit.pt(self))
+    def _PSCmd(self, canvas):
+        return "%f setlinewidth" % canvas.unit.pt(self)
     
 
 class linewidth(_linewidth):
@@ -241,7 +239,7 @@ class canvas:
 
     def set(self, *args):
         for arg in args: 
-           arg._PSAddCmd(self)
+           self._PSAddCmd(arg._PSCmd(self))
 	
     def draw(self, path, *args):
         if args: 
@@ -278,16 +276,18 @@ class canvas:
 	    assert "cannot open output file"		        # TODO: Fehlerbehandlung...
 
         file.write("%!PS-Adobe-3.0 EPSF 3.0\n")
-        file.write("%%BoundingBox: 0 0 %d %d\n" % (1000,1000))  # TODO: richtige Boundingbox!
+        file.write("%%%%BoundingBox: 0 0 %d %d\n" % (1000,1000))  # TODO: richtige Boundingbox!
         file.write("%%Creator: pyx 0.0.1\n") 
-        file.write("%%Title: %s.eps\n" % filename) 
+        file.write("%%%%Title: %s.eps\n" % filename) 
         # file.write("%%CreationDate: %s" % ) 
         file.write("%%EndComments\n") 
         file.write("%%BeginProlog\n") 
         file.write(PSProlog)
-        file.write("%%EndProlog\n") 
+        file.write("\n%%EndProlog\n") 
         file.write("%f setlinewidth\n" % self.unit.pt(linewidth.normal))
         file.write(str(self))
+        file.write("\nshowpage\n")
+        file.write("%%Trailer\n")
 
 if __name__=="__main__":
     from tex   import *
@@ -312,6 +312,8 @@ if __name__=="__main__":
                   lineto(2,1) ] 
         	)
           )
+
+
     c.draw(line(1, 1, 1,2)) 
  
     print "Breite von 'Hello world!': ",t.textwd("Hello  world!")
@@ -370,7 +372,10 @@ if __name__=="__main__":
     g.plot(Data(DataFile("testdata"), x=0, y=1))
     g.run()
 
-    c.canvas(trafo=scale(0.5,0.5).rotate(20).translate("10 u mm","50 v mm")).inserteps(0,0,"ratchet_f.eps")
+    c.canvas(trafo=scale(0.5, 0.4).rotate(10).translate("2 cm","200 mm")).inserteps(0,0,"ratchet_f.eps")
+    c.canvas(trafo=scale(0.2, 0.1).rotate(10).translate("6 cm","180 mm")).inserteps(0,0,"ratchet_f.eps")
+    
+    c.draw(path([moveto("5 cm", "5 cm"), rlineto(0.1,0.1)]), linewidth.THICK)
 
     c.write("example", 21, 29.7)
 
