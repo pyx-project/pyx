@@ -588,12 +588,14 @@ class canvas(_canvas):
                 reflist.append(file.tell())
                 file.write("%d 0 obj\n"
                            "[\n" % (fontnr+fontstartref))
+                tfmconv_times_conv = 9.50111398661e-07 # FIXME this is the product of tfmconv and conv
+                                                       #       we need to get that from the dvifile!?
                 for i in range(256):
                     try:
-                        width = pritem.font.getwidth(i)*72/72.27
+                        width = pritem.font.getwidth(i)*tfmconv_times_conv*1000/pritem.font.getsize()
                     except:
                         width = 0
-                    file.write("%f\n" % (width/pritem.font.getsize()/1000))
+                    file.write("%f\n" % width)
                 file.write("]\n"
                            "endobj\n")
                 fontnr += 1
