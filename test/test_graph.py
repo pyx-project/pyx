@@ -53,26 +53,26 @@ from pyx import *
 # c.draw(g.ygridpath(g.axes["y"].convert(0)))
 # c.writetofile("test_graph", paperformat="a4")
 
-c = canvas.canvas()
-t = c.insert(tex.tex())
-df = datafile.datafile("testdata2")
-g = c.insert(graph.graphxy(t, width=10,
-                           x=graph.linaxis(min=0.5, max=12.5, title="Month",
-                                           part=graph.linpart((graph.frac(1, 1),), labels=df.getcolumn("month")),
-                                           painter=graph.axispainter(labelstyles=(tex.direction(45),tex.halign.right))),
-                           y=graph.linaxis(min=-10, max=30, title="Temperature [$^\circ$C]")))
-df.addcolumn("av=(min+max)/2")
-g.plot(graph.data(df, x=0, y="av", dymin="min", dymax="max"))
-g.drawall()
-c.draw(g.ygridpath(g.axes["y"].convert(0)))
-c.writetofile("test_graph", paperformat="a4")
-
 # c = canvas.canvas()
 # t = c.insert(tex.tex())
-# g = c.insert(graph.graphxy(t, width=10))
-# g.plot(graph.paramfunction("k", 0, 2*math.pi, x="sin(k)", y="cos(3*k)"))
+# df = datafile.datafile("testdata2")
+# g = c.insert(graph.graphxy(t, width=10,
+#                            x=graph.linaxis(min=0.5, max=12.5, title="Month",
+#                                            part=graph.linpart((graph.frac(1, 1),), labels=df.getcolumn("month")),
+#                                            painter=graph.axispainter(labelstyles=(tex.direction(45),tex.halign.right))),
+#                            y=graph.linaxis(min=-10, max=30, title="Temperature [$^\circ$C]")))
+# df.addcolumn("av=(min+max)/2")
+# g.plot(graph.data(df, x=0, y="av", dymin="min", dymax="max"))
 # g.drawall()
-# c.draw(g.xgridpath(g.axes["x"].convert(0)))
 # c.draw(g.ygridpath(g.axes["y"].convert(0)))
 # c.writetofile("test_graph", paperformat="a4")
+
+c = canvas.canvas()
+t = c.insert(tex.tex())
+g = c.insert(graph.graphxy(t, width=10))
+g.plot(graph.paramfunction("k", 0, 2*math.pi, "x, y, dx, dy = sin(k), cos(3*k), 0.05, 0.05"), style = graph.mark.ftriangle())
+g.drawall()
+c.draw(g.xgridpath(g.axes["x"].convert(0)))
+c.draw(g.ygridpath(g.axes["y"].convert(0)))
+c.writetofile("test_graph", paperformat="a4")
 

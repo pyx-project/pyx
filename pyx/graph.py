@@ -1743,17 +1743,28 @@ class paramfunction:
 
     defaultstyle = line
 
-    def __init__(self, varname, min, max, points = 100, **expressions):
+    def __init__(self, varname, min, max, expression, points = 100):
         self.varname = varname
         self.min = min
         self.max = max
         self.points = points
+        self.expression = {}
         self.mathtrees = {}
-        for key, expression in self.expressions.items():
-            if isinstance(expression):
-                self.mathtrees[key] = expression
-            else:
-                self.mathtrees[key] = mathtree.ParseMathTree(mathtree.ParseStr(expression))
+        varlist, expressionlist = expression.split("=") 
+        for key in varlist.split(","):
+            key = key.strip()
+            if self.mathtrees.has_key(key):
+                raise ValueError("multiple assignment in tuple")
+            try:
+                self.mathtrees[key] = mathtree.ParseMathTree(mathtree.ParseStr(expressionlist))
+                break
+            except mathtree.CommaFoundMathTreeParseError, exception:
+                self.mathtrees[key] = mathtree.ParseMathTree(mathtree.ParseStr(expressionlist[:exception.ParseStr.Pos-1]))
+                expressionlist = expressionlist[exception.ParseStr.Pos:]
+        else:
+            raise ValueError("unpack tuple of wrong size")
+        if len(varlist.split(",")) != len(self.mathtrees.keys()):
+            raise ValueError("unpack tuple of wrong size")
         self.data = []
         for i in range(self.points):
             value = self.min + (self.max-self.min)*i / (self.points-1.0)
@@ -1765,10 +1776,8 @@ class paramfunction:
     def setstyle(self, graph, style):
         self.style = style
         columns = {}
-        i = 0
-        for key in self.mathtrees.keys():
-            columns[key] = i
-            i += 1
+        for key, index in zip(self.mathtrees.keys(), xrange(sys.maxint)):
+            columns[key] = index
         self.style.setcolumns(graph, columns)
 
     def getranges(self):
@@ -1779,8 +1788,6 @@ class paramfunction:
 
     def draw(self, graph):
         self.style.drawpointlist(graph, self.data)
-
-
 
 
 ################################################################################
