@@ -1175,7 +1175,7 @@ class linkaxispainter(axispainter):
     def __init__(self, skipticklevel = None, skiplabellevel = 0, zerolinestyles=None, **args):
         self.skipticklevel = skipticklevel
         self.skiplabellevel = skiplabellevel
-        self.zerolinestyles = zerolinestyles
+        args["zerolinestyles"] = zerolinestyles
         axispainter.__init__(self, **args)
 
     def paint(self, graph, axis):
