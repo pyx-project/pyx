@@ -316,7 +316,7 @@ def _arrowheadtemplatelength(anormpath, size):
     else:
         # if this doesn't work, use first order conversion from pts to
         # the bezier curve's parametrization
-        tlen = anormpath.tangent(0).arclength_pt()
+        tlen = anormpath.tangent(0).arclen_pt()
         try:
             alen = unit.topt(size)/tlen
         except ArithmeticError:
@@ -487,7 +487,7 @@ class wriggle(deco, attr.attr):
 
         skipleft = unit.topt(unit.length(self.skipleft_str, default_type="v"))
         skipright = unit.topt(unit.length(self.skipright_str, default_type="v"))
-        startpar, endpar = basepath.lentopar(map(unit.t_pt, [skipleft, basepath.arclength_pt() - skipright]))
+        startpar, endpar = basepath.lentopar(map(unit.t_pt, [skipleft, basepath.arclen_pt() - skipright]))
         radius = unit.topt(unit.length(self.radius_str))
 
         # search for the first intersection of a circle around start point x, y bigger than startpar
@@ -500,7 +500,7 @@ class wriggle(deco, attr.attr):
             raise RuntimeError("couldn't find wriggle start point")
         # calculate start position and angle
         xcenter, ycenter = basepath.at_pt(startcircpar)
-        startpos = basepath.split([startcircpar])[0].arclength_pt()
+        startpos = basepath.split([startcircpar])[0].arclen_pt()
         startangle = math.atan2(y-ycenter, x-xcenter)
 
         # find the last intersection of a circle around x, y smaller than endpar
@@ -513,7 +513,7 @@ class wriggle(deco, attr.attr):
             raise RuntimeError("couldn't find wriggle end point")
         # calculate end position and angle
         x2, y2 = basepath.at_pt(endcircpar)
-        endpos = basepath.split([endcircpar])[0].arclength_pt()
+        endpos = basepath.split([endcircpar])[0].arclen_pt()
         endangle = math.atan2(y-y2, x-x2)
 
         if endangle < startangle:

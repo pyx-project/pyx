@@ -97,7 +97,7 @@ XXX terminology: subpath, \dots
   consisting of \texttt{pathels}\\
   \texttt{append(pathel)} & appends \texttt{pathel} to the end of 
   \texttt{path}\\
-  \texttt{arclength(epsilon=1e-5)} & returns the total arc length of
+  \texttt{arclen(epsilon=1e-5)} & returns the total arc length of
   all \texttt{path} segments in PostScript points with accuracy
   \texttt{epsilon}.$^\dagger$\\
   \texttt{at(t)} & returns the coordinates of the point of
@@ -105,7 +105,7 @@ XXX terminology: subpath, \dots
   \texttt{t}.$^\dagger$\\
   \texttt{lentopar(l, \newline\phantom{lentopar(}epsilon=1e-5)} & returns the
   parameter value corresponding to the lengths \texttt{l} (one or a list of
-  lengths). This uses arclength-calculations with accuracy
+  lengths). This uses arclen-calculations with accuracy
   \texttt{epsilon}.$^\dagger$\\
   \texttt{bbox()} & returns the bounding box of the \texttt{path}\\
   \texttt{begin()} & return first point of first subpath of

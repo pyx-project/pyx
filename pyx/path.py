@@ -989,13 +989,13 @@ class path(base.PSCmd):
     def append(self, pathel):
         self.path.append(pathel)
 
-    def arclength_pt(self, epsilon=1e-5):
+    def arclen_pt(self, epsilon=1e-5):
         """returns total arc length of path in pts with accuracy epsilon"""
-        return normpath(self).arclength_pt(epsilon)
+        return normpath(self).arclen_pt(epsilon)
 
-    def arclength(self, epsilon=1e-5):
+    def arclen(self, epsilon=1e-5):
         """returns total arc length of path with accuracy epsilon"""
-        return normpath(self).arclength(epsilon)
+        return normpath(self).arclen(epsilon)
 
     def lentopar(self, lengths, epsilon=1e-5):
         """returns the parameter value(s) matching the given length(s)"""
@@ -1204,7 +1204,7 @@ class normpathel:
         """returns coordinates of point in pts at parameter t (0<=t<=1) """
         pass
 
-    def arclength_pt(self, epsilon=1e-5):
+    def arclen_pt(self, epsilon=1e-5):
         """returns arc length of normpathel in pts with given accuracy epsilon"""
         pass
 
@@ -1218,8 +1218,8 @@ class normpathel:
 
     def _lentopar_pt(self, lengths, epsilon=1e-5):
         """returns tuple (t,l) with
-          t the parameter where the arclength of normpathel is length and
-          l the total arclength
+          t the parameter where the arclen of normpathel is length and
+          l the total arclen
 
         length:  length (in pts) to find the parameter for
         epsilon: epsilon controls the accuracy for calculation of the
@@ -1284,7 +1284,7 @@ class normline(normpathel):
         yb = self.y0+2.0*(self.y1-self.y0)/3.0
         return normcurve(self.x0, self.y0, xa, ya, xb, yb, self.x1, self.y1)
 
-    def arclength_pt(self,  epsilon=1e-5):
+    def arclen_pt(self,  epsilon=1e-5):
         return math.sqrt((self.x0-self.x1)*(self.x0-self.x1)+(self.y0-self.y1)*(self.y0-self.y1))
     
     def at_pt(self, t):
@@ -1307,7 +1307,7 @@ class normline(normpathel):
             return  _intersectnormcurves(self._normcurve(), 0, 1, other, 0, 1, epsilon)
 
     def _lentopar_pt(self, lengths, epsilon=1e-5):
-        l = self.arclength_pt(epsilon)
+        l = self.arclen_pt(epsilon)
         return ([max(min(1.0*length/l,1),0) for length in lengths], l)
 
     def reverse(self):
@@ -1377,14 +1377,14 @@ class normcurve(normpathel):
         return "normcurve(%g, %g, %g, %g, %g, %g, %g, %g)" % (self.x0, self.y0, self.x1, self.y1,
                                                               self.x2, self.y2, self.x3, self.y3)
 
-    def arclength_pt(self, epsilon=1e-5):
-        """computes arclength of bpathel in pts using successive midpoint split"""
+    def arclen_pt(self, epsilon=1e-5):
+        """computes arclen of bpathel in pts using successive midpoint split"""
         if self.isstraight(epsilon):
             return math.sqrt((self.x3-self.x0)*(self.x3-self.x0)+
                              (self.y3-self.y0)*(self.y3-self.y0))
         else:
             (a, b) = self.midpointsplit()
-            return a.arclength_pt(epsilon) + b.arclength_pt(epsilon)
+            return a.arclen_pt(epsilon) + b.arclen_pt(epsilon)
 
     def at_pt(self, t):
         xt = (  (-self.x0+3*self.x1-3*self.x2+self.x3)*t*t*t +
@@ -1481,7 +1481,7 @@ class normcurve(normpathel):
         """returns the list of segment line lengths (in pts) of the bpathel
            together with the length of the parameterinterval"""
 
-        # lower and upper bounds for the arclength
+        # lower and upper bounds for the arclen
         lowerlen = \
             math.sqrt((self.x3-self.x0)*(self.x3-self.x0) + (self.y3-self.y0)*(self.y3-self.y0))
         upperlen = \
@@ -1498,7 +1498,7 @@ class normcurve(normpathel):
 
     def _lentopar_pt(self, lengths, epsilon=1e-5):
         """computes the parameters [t] of bpathel where the given lengths (in pts) are assumed
-        returns ( [parameters], total arclength)
+        returns ( [parameters], total arclen)
         A negative length gives a parameter 0"""
 
         # create the list of accumulated lengths
@@ -1669,9 +1669,9 @@ class normsubpath:
         return "subpath(%s, [%s])" % (self.closed and "closed" or "open",
                                     ", ".join(map(str, self.normpathels)))
 
-    def arclength_pt(self, epsilon=1e-5):
+    def arclen_pt(self, epsilon=1e-5):
         """returns total arc length of normsubpath in pts with accuracy epsilon"""
-        return sum([npel.arclength_pt(epsilon) for npel in self.normpathels])
+        return sum([npel.arclen_pt(epsilon) for npel in self.normpathels])
 
     def at_pt(self, t):
         """return coordinates in pts of sub path at parameter value t
@@ -1731,19 +1731,19 @@ class normsubpath:
         The parameters are with respect to the normsubpath: t in [0, self.range()]
         lengths that are < 0 give parameter 0"""
 
-        allarclength = 0
+        allarclen = 0
         allparams = [0]*len(lengths)
         rests = [length for length in lengths]
 
         for pel in self.normpathels:
-            params, arclength = pel._lentopar_pt(rests, epsilon)
-            allarclength += arclength
+            params, arclen = pel._lentopar_pt(rests, epsilon)
+            allarclen += arclen
             for i in range(len(rests)):
                 if rests[i] >= 0:
-                    rests[i] -= arclength
+                    rests[i] -= arclen
                     allparams[i] += params[i]
 
-        return [allparams, allarclength]
+        return [allparams, allarclen]
 
     def range(self):
         """return maximal parameter value, i.e. number of line/curve segments"""
@@ -1994,13 +1994,13 @@ class normpath(path):
             # append open sub path
             self.subpaths.append(normsubpath(currentsubpathels, 0))
         
-    def arclength_pt(self, epsilon=1e-5):
+    def arclen_pt(self, epsilon=1e-5):
         """returns total arc length of normpath in pts with accuracy epsilon"""
-        return sum([sp.arclength_pt(epsilon) for sp in self.subpaths])
+        return sum([sp.arclen_pt(epsilon) for sp in self.subpaths])
 
-    def arclength(self, epsilon=1e-5):
+    def arclen(self, epsilon=1e-5):
         """returns total arc length of normpath with accuracy epsilon"""
-        return unit.t_pt(self.arclength_pt(epsilon))
+        return unit.t_pt(self.arclen_pt(epsilon))
 
     def at_pt(self, t):
         """return coordinates in pts of path at parameter value t
@@ -2132,14 +2132,14 @@ class normpath(path):
 
         # go through the positive lengths
         for sp in self.subpaths:
-            # we need arclength for knowing when all the parameters are done
+            # we need arclen for knowing when all the parameters are done
             # for lengths that are done: rests[i] is negative
             # sp._lentopar has to ignore such lengths
-            params, arclength = sp._lentopar_pt(rests[0], epsilon)
+            params, arclen = sp._lentopar_pt(rests[0], epsilon)
             finis = 0 # number of lengths that are done
             for i in range(len(rests[0])):
                 if rests[0][i] >= 0:
-                  rests[0][i] -= arclength
+                  rests[0][i] -= arclen
                   allparams[0][i] += params[i]
                 else:
                     finis += 1
@@ -2147,11 +2147,11 @@ class normpath(path):
 
         # go through the negative lengths
         for sp in self.reversed().subpaths:
-            params, arclength = sp._lentopar_pt(rests[1], epsilon)
+            params, arclen = sp._lentopar_pt(rests[1], epsilon)
             finis = 0
             for i in range(len(rests[1])):
                 if rests[1][i] >= 0:
-                  rests[1][i] -= arclength
+                  rests[1][i] -= arclen
                   allparams[1][i] -= params[i]
                 else:
                     finis += 1
@@ -2266,7 +2266,7 @@ class normpath(path):
         result = self._findsubpath(t)
         if result:
             tvec = result[0].tangent(result[1])
-            tlen = tvec.arclength_pt()
+            tlen = tvec.arclen_pt()
             if length is None or tlen==0:
                 return tvec
             else:

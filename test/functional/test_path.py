@@ -281,7 +281,7 @@ def testclipbbox(c):
 def testlentopar(c):
     curve=path(moveto(0,0), lineto(0,5), curveto(5,0,0,10,5,5), closepath(),
                moveto(5,0), lineto(10,5))
-    ll = curve.arclength()
+    ll = curve.arclen()
     l=[-0.8*ll, -0.6*ll, -0.4*ll, -0.2*ll, 0, 0.1*ll, 0.3*ll, 0.5*ll, 0.7*ll, 0.9*ll]
     cols=[color.gray.black, color.gray(0.3), color.gray(0.7), color.rgb.red,
           color.rgb.green, color.rgb.blue, color.cmyk(1,0,0,0),

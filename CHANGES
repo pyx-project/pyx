@@ -88,6 +88,7 @@ TODO:
       This is much more convenient for any routines working with normpaths.
     - reversing of closed sub paths does not change the first point of the
       sub path
+    - arclength -> arclen
   - connnector module:
     - renamed _xxx -> xxx_pt
   - deco module:
