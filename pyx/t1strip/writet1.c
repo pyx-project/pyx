@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define enc_open()      \
     open_input(&enc_file, kpse_tex_ps_header_format, FOPEN_RBIN_MODE)
 #define external_enc()      enc_tab[fm_cur->encoding].glyph_names
-#define full_file_name()    nameoffile + 1
+#define full_file_name()    (char*)nameoffile + 1
 #define get_length1()       t1_length1 = t1_offset() - t1_save_offset
 #define get_length2()       t1_length2 = t1_offset() - t1_save_offset
 #define get_length3()       t1_length3 = t1_offset() - t1_save_offset
@@ -122,7 +122,7 @@ static char notdef[] = ".notdef";
 
 #define valid_code(c)   (c >= 0 && c <= MAX_CHAR_CODE)
 
-static char *standard_glyph_names[MAX_CHAR_CODE + 1] = {
+static const char *standard_glyph_names[MAX_CHAR_CODE + 1] = {
 notdef, notdef, notdef, notdef, notdef, notdef, notdef, notdef, notdef,
 notdef, notdef, notdef, notdef, notdef, notdef, notdef, notdef, notdef,
 notdef, notdef, notdef, notdef, notdef, notdef, notdef, notdef, notdef,
@@ -241,7 +241,7 @@ static int subr_max, subr_size, subr_size_pos;
 
 /* This array contains the begin/end tokens commonly used in the */
 /* /Subrs array of a Type 1 font.                                */
-static char *cs_token_pairs[4][2] = {
+static const char *cs_token_pairs[4][2] = {
   {"RD", "NP"},
   {"-|", "|"},
   {"RD", "noaccess put"},
@@ -490,7 +490,7 @@ static float t1_scan_num(char *p, char **r)
     return f;
 }
 
-static boolean t1_suffix(char *s) 
+static boolean t1_suffix(const char *s) 
 {
     char *s1 = t1_line_ptr - 1, 
          *s2 = strend(s) - 1;
@@ -503,7 +503,7 @@ static boolean t1_suffix(char *s)
     return s1 >= t1_line - 1;
 }
 
-static boolean t1_buf_suffix(char *s, char *r)
+static boolean t1_buf_suffix(const char *s, char *r)
 {
     char *s1 = r - 1,
          *s2 = strend(s) - 1;
@@ -577,7 +577,7 @@ static void t1_putline(void)
             t1_putchar(*p++);
 }
 
-static void t1_puts(char *s)
+static void t1_puts(const char *s)
 {
     if (s != t1_line)
         strcpy(t1_line, s);
@@ -585,7 +585,7 @@ static void t1_puts(char *s)
     t1_putline();
 }
 
-static void t1_printf(char *fmt,...)
+static void t1_printf(const char *fmt,...)
 {
     va_list args;
     va_start(args, fmt);
@@ -594,7 +594,7 @@ static void t1_printf(char *fmt,...)
     va_end(args);
 }
 
-static void t1_init_params(char *open_name_prefix) 
+static void t1_init_params(const char *open_name_prefix) 
 {
     t1_log(open_name_prefix);
     t1_log(cur_file_name);
@@ -610,7 +610,7 @@ static void t1_init_params(char *open_name_prefix)
     t1_check_pfa();
 }
 
-static void t1_close_font_file(char *close_name_suffix)
+static void t1_close_font_file(const char *close_name_suffix)
 {
     t1_log(close_name_suffix);
     t1_close();
@@ -830,7 +830,7 @@ static void t1_scan_keys(void)
 
 static void t1_scan_param(void) 
 {
-    static char *lenIV = "/lenIV";
+    static const char *lenIV = "/lenIV";
     if (!t1_scan || *t1_line != '/')
         return;
     if (t1_prefix(lenIV)) {
@@ -844,7 +844,7 @@ static void copy_glyph_names(char **glyph_names, int a, int b)
 {
     if (glyph_names[b] != notdef) {
         free(glyph_names[b]);
-        glyph_names[b] = notdef;
+        glyph_names[b] = xstrdup(notdef);
     }
     if (glyph_names[a] != notdef) {
         glyph_names[b] = xstrdup(glyph_names[a]);
@@ -863,7 +863,7 @@ static void t1_builtin_enc(void)
         if (strcmp(t1_buf, "StandardEncoding") == 0) {
             for (i = 0; i <= MAX_CHAR_CODE; i++)
                 if (standard_glyph_names[i] == notdef)
-                    t1_builtin_glyph_names[i] = notdef;
+                    t1_builtin_glyph_names[i] = xstrdup(notdef);
                 else
                     t1_builtin_glyph_names[i] = xstrdup(standard_glyph_names[i]);
             t1_encoding = ENC_STANDARD;
@@ -891,7 +891,7 @@ static void t1_builtin_enc(void)
     *     readonly def
     */
     for (i = 0; i <= MAX_CHAR_CODE; i++)
-        t1_builtin_glyph_names[i] = notdef;
+        t1_builtin_glyph_names[i] = xstrdup(notdef);
     if (t1_prefix("/Encoding [") || t1_prefix("/Encoding[")) { /* the first case */
         r = strchr(t1_line, '[') + 1;
         skip(r, ' ');
@@ -977,10 +977,6 @@ static void t1_builtin_enc(void)
     }
 }
 
-static void t1_check_predef_enc(void)
-{
-}
-
 static void t1_check_end(void)
 {
     if (t1_eof())
@@ -991,7 +987,7 @@ static void t1_check_end(void)
 }
 
 #ifdef pdfTeX
-static boolean t1_open_fontfile(char *open_name_prefix)
+static boolean t1_open_fontfile(const char *open_name_prefix)
 {
     char *ex_ffname = 0;
     if (fm_cur->expansion != 0) {
@@ -1111,7 +1107,7 @@ static void cs_store(boolean is_subr)
         if (cs_ptr - cs_tab > cs_size)
             pdftex_fail("CharStrings dict: more entries than dict size (%i)", cs_size);
         if (strcmp(t1_buf + 1, notdef) == 0) /* skip the slash */
-            ptr->name = notdef;
+            ptr->name = xstrdup(notdef);
         else
             ptr->name = xstrdup(t1_buf + 1); 
     }
@@ -1229,7 +1225,7 @@ static void cc_init(void)
 #define mark_subr(n)    cs_mark(0, n)
 #define mark_cs(s)      cs_mark(s, 0)
 
-static void cs_warn(char *cs_name, int subr, char *fmt,...)
+static void cs_warn(const char *cs_name, int subr, const char *fmt,...)
 {
     char buf[SMALL_BUF_SIZE];
     va_list args;
@@ -1242,7 +1238,7 @@ static void cs_warn(char *cs_name, int subr, char *fmt,...)
         pdftex_warn("CharString (/%s): %s", cs_name, buf);
 }
 
-static void cs_mark(char *cs_name, int subr)
+static void cs_mark(const char *cs_name, int subr)
 {
     byte *data;
     int i, b, cs_len;
