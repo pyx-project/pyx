@@ -301,6 +301,7 @@ class _axis:
             nextpart = self.parter.lesspart
             while nextpart is not None:
                 newticks = nextpart()
+                worse += 1
                 if newticks is not None:
                     newticks = tick.mergeticklists(self.manualticks, newticks)
                     if first:
@@ -318,13 +319,9 @@ class _axis:
                         newrate += self.rater.raterange(self.convert(newticks[-1])-
                                                         self.convert(newticks[0]), 1)
                         variants.append([newrate, newticks])
-                    if newrate is not None and (bestrate is None or newrate < bestrate):
-                        bestrate = newrate
-                        worse = 0
-                    else:
-                        worse += 1
-                else:
-                    worse += 1
+                        if bestrate is None or newrate < bestrate:
+                            bestrate = newrate
+                            worse = 0
                 if worse == self.maxworse and nextpart == self.parter.lesspart:
                     worse = 0
                     nextpart = self.parter.morepart
