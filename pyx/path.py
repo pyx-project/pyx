@@ -2038,9 +2038,8 @@ class normpath(path):
         self.subpaths += normpath(other).subpaths
         return self
 
-    def __len__(self):
-        # XXX ok?
-        return len(self.subpaths)
+    def __nonzero__(self):
+        return len(self.subpaths)>0
 
     def __str__(self):
         return "normpath(%s)" % ", ".join(map(str, self.subpaths))
@@ -2254,7 +2253,7 @@ class normpath(path):
         return intersections
 
     def range(self):
-        """return maximal value for parameter value t"""
+        """return maximal value for parameter value param"""
         return sum([sp.range() for sp in self.subpaths])
 
     def reverse(self):
