@@ -43,8 +43,6 @@ TODO:
     - set method???
     - PDF support
     - SVG support
-  - connnector module:
-    - _xxx -> xxx_pt renaming
   - deco module:
     - arrows should not be stroked by default
   - style and color module:
@@ -78,6 +76,8 @@ TODO:
     - lentopar returns tuple not list
     - added path.arclength_pt, path.at_pt, path.begin_pt, path.end_pt (and 
       correspondingly for normpath) (TODO: documentation)
+  - connnector module:
+    - renamed _xxx -> xxx_pt
 
 
 0.5.1 (2004/01/22):
