@@ -70,6 +70,7 @@ TODO:
     - section titles: "Axes" -> "Axes - module axis" or similar
     - box module:
       - linealign and circlealign
+    - unit module
 
   FAQ:
     - describe creation and modification (inplace and ``modify by new'') of
@@ -94,11 +95,11 @@ TODO:
     - never convert implicitly into visual/width, etc. lengths (this is more
       about usage of the unit module in various other modules) (TODO: update
       documentation)
-    - support for string initialization commented out, so its currently still
-      easy to turn it on again (TODO: documentation)
+    - support for string initialization removed
+    - support for initialisation with other length removed
   - canvas module:
     - added new classes page and document for multipage PostScript output
-  - style module: 
+  - style module:
     - decrease interval for dotted and dash-dotted lines for better visual
       appearance
   - setup.py and distribution:
