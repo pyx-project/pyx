@@ -20,7 +20,7 @@ examples.ps: examples.dvi
 
 files = $(foreach item, $(shell cat INDEX), $(if $(wildcard $(item)/INDEX), $(addprefix $(item)/, $(shell cat $(item)/INDEX)), $(item)))
 pyfiles = $(addsuffix .py, $(files))
-htmlfiles = $(addsuffix .html, $(files))
+htmlfiles = $(addsuffix .py.html, $(files))
 epsfiles = $(addsuffix .eps, $(files))
 pngfiles = $(addsuffix .png, $(files))
 
