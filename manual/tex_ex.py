@@ -4,8 +4,8 @@ sys.path.append("..")
 from pyx import *
 
 
-c=canvas.canvas()
-t=c.insert(tex.tex())
+c = canvas.canvas()
+t = c.insert(tex.tex())
 t.text(0, 0, "Hello, world!")
 print "width:", t.textwd("Hello, world!")
 print "height:", t.textht("Hello, world!")
@@ -13,8 +13,8 @@ print "depth:", t.textdp("Hello, world!")
 c.writetofile("tex_ex1")
 
 
-c=canvas.canvas()
-t=c.insert(tex.tex())
+c = canvas.canvas()
+t = c.insert(tex.tex())
 t.text(0, 0, "Hello, world!")
 t.text(0, -0.5, "Hello, world!", tex.fontsize.large)
 t.text(0, -1.5,

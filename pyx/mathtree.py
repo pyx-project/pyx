@@ -104,7 +104,7 @@ class MathTree:
                 result = result + SubTree.__repr__(depth + 1)
             else:
                 result = result + indent + SingleIndent + repr(SubTree)
-            
+
             if SubTree != self.ArgV[-1]:
                 result = result + ",\n"
             else:

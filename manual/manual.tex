@@ -1,6 +1,18 @@
-\documentclass{article}
+\documentclass{scrreprt}
 \usepackage{pyx,tabularx,graphicx}
+% \includeonly{...} % for temporarily skipping of chapters
 \setlength{\parindent}{0pt}
 \begin{document}
-\input tex.tex
+\subject{\texttt{http://pyx.sourceforge.net/}}
+\title{\PyX{} 0.1\\User Manual}
+\author{J\"org Lehmann \texttt{<joergl@users.sourceforge.net>}\and
+Andr\'e Wobst \texttt{<wobsta@users.sourceforge.net>}}
+\maketitle
+\tableofcontents
+\include{intro}
+\include{unit}
+\include{tex}
+\include{color}
+\appendix
+\include{colorname}
 \end{document}
