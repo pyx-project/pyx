@@ -307,7 +307,7 @@ class pattern(_canvas, attr.exclusiveattr, style.fillstyle):
         file.write("%s setpattern\n" % self.id)
 
     def resources(self):
-        resources = _canvas.resources(self, registry)
+        resources = _canvas.resources(self)
         realpatternbbox = _canvas.bbox(self)
         if self.xstep is None:
            xstep = unit.topt(realpatternbbox.width())

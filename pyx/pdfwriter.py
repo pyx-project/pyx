@@ -181,7 +181,7 @@ class PDFpage(PDFobject):
             file.write("/Resources << /ProcSet [ /PDF /Text ]\n")
         else:
             file.write("/Resources << /ProcSet [ /PDF ]\n")
-        if self.registry.types["font"]:
+        if self.registry.types.has_key("font"):
             file.write("/Font << %s >>" % " ".join(["/%s %i 0 R" % (font.fontname, font.refno)
                                                     for font in self.registry.types["font"].values()]))
         file.write(">>\n")

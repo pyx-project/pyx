@@ -157,7 +157,7 @@ class bitmap(canvas.canvasitem):
         self.storedata = storedata
         self.maxstrlen = maxstrlen
         self.imagedataid = "imagedata%d" % id(self)
-        self.resources = []
+        self._resources = []
 
         if width is not None or height is not None:
             self.width = width
@@ -252,7 +252,7 @@ class bitmap(canvas.canvasitem):
                 self.datasource = "/%s load" % self.imagedataid
             else:
                 self.datasource = "/imagedataaccess load" # some printers do not allow for inline code here
-                self.resources.append(resource.definition("imagedataaccess",
+                self._resources.append(resource.definition("imagedataaccess",
                                                           "{ /imagedataindex load " # get list index
                                                           "dup 1 add /imagedataindex exch store " # store increased index
                                                           "/imagedataid load exch get }")) # select string from array
@@ -293,14 +293,14 @@ class bitmap(canvas.canvasitem):
                     ascii85stream(buffer, self.data[tailpos:])
                     buffer.write("~>")
                 buffer.write("]\n%%EndData\n")
-            self.resources.append(resource.definition(self.imagedataid, buffer.getvalue()))
+            self._resources.append(resource.definition(self.imagedataid, buffer.getvalue()))
 
     def bbox(self):
         return bbox.bbox_pt(self.xpos_pt, self.ypos_pt,
                             self.xpos_pt+self.width_pt, self.ypos_pt+self.height_pt)
 
     def resources(self):
-        return self.resources
+        return self._resources
 
     def outputPS(self, file):
         file.write("gsave\n"

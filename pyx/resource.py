@@ -38,7 +38,8 @@ class resource:
         self.id = id
 
     def PSregister(self, registry):
-        return []
+        """ register PSresources in registry """
+        pass
 
 
 #
@@ -54,7 +55,7 @@ class definition(resource):
         self.body = body
 
     def PSregister(self, registry):
-        pswriter.PSdefinition(self.id, self.body).register(registry)
+        registry.add(pswriter.PSdefinition(self.id, self.body))
 
 
 class font(resource):

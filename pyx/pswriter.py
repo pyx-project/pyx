@@ -29,31 +29,24 @@ import pykpathsea, t1strip
 class PSregistry:
 
     def __init__(self):
-        self.resources = []
-        self.types = {}
+        # in order to keep a consistent order of the registered resources we
+        # not only store them in a hash but also keep an ordered list (up to a
+        # possible merging of resources, in which case the first instance is
+        # kept)
+        self.resourceshash = {}
+        self.resourceslist = []
 
     def add(self, resource):
-        # XXX actually, we do not need the types hash.
-        # We could just require unique ids across all resources 
-        # or we just use the tuple (type, id) as key:
-        # rkey = (type, id)
-        # if resourceshash.has_key(rkey):
-        #    resourceshash[rkey].merge(resource)
-        # else:
-        #    resourceshash[rkey] = resource
-        #    resourceslist.append(resource)
-        # AFAIKS, the same holds true for the PDFregistry.
-        # If there comes no objection, I'll rewrite this code 
-        resources = self.types.setdefault(resource.type, {})
-        if resources.has_key(resource.id):
-            resources[resource.id].merge(resource)
+        rkey = (resource.type, resource.id)
+        if self.resourceshash.has_key(rkey):
+           self.resourceshash[rkey].merge(resource)
         else:
-            self.resources.append(resource)
-            resources[resource.id] = resource
+           self.resourceshash[rkey] = resource
+           self.resourceslist.append(resource)
 
     def outputPS(self, file):
         """ write all PostScript code of the prolog resources """
-        for resource in self.resources:
+        for resource in self.resourceslist:
             resource.outputPS(file)
 
 #
