@@ -600,8 +600,8 @@ def readfontmap(filenames):
 class font:
     def __init__(self, name, c, q, d, tfmconv, pyxconv, debug=0):
         self.name = name
-        self.q = q                  # desired size of font (fix_word) in tex points
-        self.d = d                  # design size of font (fix_word) in tex points
+        self.q = q                  # desired size of font (fix_word) in TeX points
+        self.d = d                  # design size of font (fix_word) in TeX points
         self.tfmconv = tfmconv      # conversion factor from tfm units to dvi units
         self.pyxconv = pyxconv      # conversion factor from dvi units to PostScript points
         tfmpath = pykpathsea.find_file("%s.tfm" % self.name, pykpathsea.kpse_tfm_format)
@@ -632,7 +632,7 @@ class font:
         self.usedchars = [0] * 256
 
     def __str__(self):
-        return "font %s designed at %g tex pts used at %g tex pts" % (self.name, 
+        return "font %s designed at %g TeX pts used at %g TeX pts" % (self.name, 
                                                                       16.0*self.d/16777216L,
                                                                       16.0*self.q/16777216L)
 
