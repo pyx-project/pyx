@@ -274,9 +274,6 @@ The file \verb|tex2.eps| is created and looks like:
 \includegraphics{tex2}
 \end{quote}
 
-\section{Implementation details}
-to be written
-
 \section{Known bugs}
 \begin{itemize}
 \item The end of the last paragraph in a vertical box
@@ -294,3 +291,10 @@ For the message handlers \verb|msghandler.hideload| and
 \verb|msghandler.hidegraphicsload| it is known, that they do not
 correctly handle long filenames splited on several lines by \TeX.
 \end{itemize}
+
+\section{Future of the module tex}
+While we will certainly keep this module working at least for a while,
+it is likely that another \TeX{} interface will occure soon. The idea
+is to get rid of \verb|dvips| and integrate \TeX{} more directly into
+\PyX.
+

@@ -1,5 +1,6 @@
 % $Header$
 \chapter{Module datafile: reading a datafile}
+\label{datafile}
 
 \section{Reading a table from a file}
 
@@ -9,7 +10,7 @@ instance and provide a filename as the parameter, e.g.
 \verb|datafile("testdata")|. The parsing of the file, namely the
 columns of the table, is done by matching regular expressions. They
 can be modified, as they are additional named arguments of the
-constructor:
+constructor, which are:
 
 \medskip
 \begin{tabularx}{\linewidth}{ll>{\raggedright\arraybackslash}X}
@@ -18,6 +19,7 @@ argument name&default&description\\
 \texttt{commentpattern}&\texttt{re.compile(r"(\#+|!+|\%+)\textbackslash s*")}&start a comment line\\
 \texttt{stringpattern}&\texttt{re.compile(r"\textbackslash"(.*?)\textbackslash"(\textbackslash s+|\$)}&a string column\\
 \texttt{columnpattern}&\texttt{re.compile(r"(.*?)(\textbackslash s+|\$)}&any other column\\
+\texttt{parser}&\texttt{mathtree.parser()}&see section~\ref{datafile:cumulate}\\
 \end{tabularx}
 \medskip
 
@@ -76,7 +78,7 @@ number of this element is returned. Otherwise the parameter should be
 an integer and it is checked, if this integer is a valid column index.
 It still might be negative (counting the columns from the end).
 When an error occurres, the exception \verb|ColumnError| is raised.
-Examples are \verb|getcolumn(1)| or \verb|getcolumn("title")|.
+Examples are \verb|getcolumnno(1)| or \verb|getcolumnno("title")|.
 
 The method \verb|getcolumn| takes the same argument as the method
 \verb|getcolumnno| described above, but it returns a list with the
@@ -90,12 +92,13 @@ as an expression. Then the expression contains an equal sign
 (\verb|=|), everything left to the last equal sign will become the
 title of the new column. When no equal sign is found, the title will
 be set to \verb|None|. The part right to the last equal sign is
-interpreted as an mathematical expression. This expression might
-contain variable names. These names can either directly be a column
-title, but this is only allowed for column titles which are valid
-variable names (e.g. they should start with a letter and contain only
-letters, digits and the underscore). Alternatively, temporary names
-for columns can be given by additional named parameters of the
+interpreted as an mathematical expression. A list of functions and
+operators can be found in appendix~\ref{mathtree}. The expression
+might contain variable names. These names can either directly be a
+column title, but this is only allowed for column titles which are
+valid variable names (e.g. they should start with a letter and contain
+only letters, digits and the underscore). Alternatively, temporary
+names for columns can be given by additional named parameters of the
 \verb|addcolumn| method. The named parameters are stronger compared to
 column titles in the determination of the appropriate column. The name
 of a named parameter will be the variable name in the expression. The
@@ -104,4 +107,56 @@ value of a named parameter should be a valid parameter of the
 expression need to be floats, otherwise the result for that data line
 will be \verb|None|. Examples are \verb|addcolumn("av=(min+max)/2")|
 or \verb|addcolumn("av=(a+b)/2", a=1, b="max")|.
+
+\section{Dirty tricks for mathematics on columns}
+\label{datafile:cumulate}
+
+I want to present a solution for cumulating data in a new column.
+As told in the title of this section, it is considered to be a dirty
+trick, because it relies on side effects in the calculation of the new
+column, namely it sums the result up in a hidden variable. In some
+way, it's exactly wanted, on the other hand, it is nothing I would
+ever consider to do officially (don't expect the following lines to
+become part of \PyX{} in the future). On the other hand, nothing could
+be told about using this tick and I don't expect that this feature
+will break in future versions. Somehow, this is needed and the
+possibility to implement something like this has to stay.
+
+What we want to do is to add another function within the allowed
+expression syntax for doing mathematics on columns. We supply a class
+which we can hook it into the mathematical expression parser later on:
+
+\begin{quote}
+\begin{verbatim}
+from pyx import mathtree
+
+class Cumulate(mathtree.MathTreeFunc1):
+
+    def __init__(self, *args):
+        mathtree.MathTreeFunc1.__init__(self, "cumulate", *args)
+        self.sum = 0
+
+    def Calc(self, VarDict):
+        self.sum += self.ArgV[0].Calc(VarDict)
+        return self.sum
+
+MyFuncs = mathtree.DefaultMathTreeFuncs + (Cumulate,)
+\end{verbatim}
+\end{quote}
+
+Please note, that you explicitly have to import \verb|mathtree|,
+because its not usually needed in \PyX{} applications and thus it is
+not imported by \verb|from pyx import *|.
+
+To finally use \verb|cumulate|, you have to supply a new parser to the
+datafile, where the new generated list of available functions is
+placed in:
+
+\begin{quote}
+\begin{verbatim}
+df = datafile.datafile("mydata",
+         parser=mathtree.parser(MathTreeFuncs=MyFuncs))
+df.addcolumn("sum=cumulate(costs)")
+\end{verbatim}
+\end{quote}
 

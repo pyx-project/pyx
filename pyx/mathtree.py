@@ -86,6 +86,8 @@ class ParseStr:
         return 0
 
 
+class DerivativeError(Exception): pass
+
 class MathTree:
 
     def __init__(self, *args):
@@ -161,7 +163,7 @@ class MathTreeValConst(MathTreeVal):
             return 1
 
     def CalcDerivative(self, arg):
-        assert 0, "expression doesn't depend on " + arg
+        raise DerivativeError("expression doesn't depend on %s" % arg)
 
     def Derivative(self, arg):
         return MathTreeValConst(0.0)
@@ -189,7 +191,7 @@ class MathTreeValVar(MathTreeVal):
 
     def CalcDerivative(self, arg):
         if arg != self.ArgV[0]:
-            assert 0, "expression doesn't depend on " + arg
+            raise DerivativeError("expression doesn't depend on %s" % arg)
         return MathTreeValConst(1.0)
 
     def DependOn(self,arg):
@@ -225,8 +227,6 @@ class MathTreeFunc(MathTree):
                 args = args + ","
         return self.name + "(" + args + ")"
 
-MathTreeFuncList = ( )
-
 
 class MathTreeFunc1(MathTreeFunc):
 
@@ -246,8 +246,6 @@ class MathTreeFunc1Neg(MathTreeFunc1):
     def Calc(self, VarDict):
         return -self.ArgV[0].Calc(VarDict)
 
-MathTreeFuncList = MathTreeFuncList + (MathTreeFunc1Neg, )
-
 
 class MathTreeFunc1Sgn(MathTreeFunc1):
 
@@ -261,8 +259,6 @@ class MathTreeFunc1Sgn(MathTreeFunc1):
         if self.ArgV[0].Calc(VarDict) < 0:
             return -1.0
         return 1.0
-
-MathTreeFuncList = MathTreeFuncList + (MathTreeFunc1Sgn, )
 
 
 class MathTreeFunc1Sqrt(MathTreeFunc1):
@@ -280,8 +276,6 @@ class MathTreeFunc1Sqrt(MathTreeFunc1):
     def Calc(self, VarDict):
         return math.sqrt(self.ArgV[0].Calc(VarDict))
 
-MathTreeFuncList = MathTreeFuncList + (MathTreeFunc1Sqrt, )
-
 
 class MathTreeFunc1Exp(MathTreeFunc1):
 
@@ -294,8 +288,6 @@ class MathTreeFunc1Exp(MathTreeFunc1):
     def Calc(self, VarDict):
         return math.exp(self.ArgV[0].Calc(VarDict))
 
-MathTreeFuncList = MathTreeFuncList + (MathTreeFunc1Exp, )
-
 
 class MathTreeFunc1Log(MathTreeFunc1):
 
@@ -307,8 +299,6 @@ class MathTreeFunc1Log(MathTreeFunc1):
 
     def Calc(self, VarDict):
         return math.log(self.ArgV[0].Calc(VarDict))
-
-MathTreeFuncList = MathTreeFuncList + (MathTreeFunc1Log, )
 
 
 class MathTreeFunc1Sin(MathTreeFunc1):
@@ -324,8 +314,6 @@ class MathTreeFunc1Sin(MathTreeFunc1):
     def Calc(self, VarDict):
         return math.sin(self.ArgV[0].Calc(VarDict))
 
-MathTreeFuncList = MathTreeFuncList + (MathTreeFunc1Sin, )
-
 
 class MathTreeFunc1Cos(MathTreeFunc1):
 
@@ -339,8 +327,6 @@ class MathTreeFunc1Cos(MathTreeFunc1):
 
     def Calc(self, VarDict):
         return math.cos(self.ArgV[0].Calc(VarDict))
-
-MathTreeFuncList = MathTreeFuncList + (MathTreeFunc1Cos, )
 
 
 class MathTreeFunc1Tan(MathTreeFunc1):
@@ -357,8 +343,6 @@ class MathTreeFunc1Tan(MathTreeFunc1):
 
     def Calc(self, VarDict):
         return math.tan(self.ArgV[0].Calc(VarDict))
-
-MathTreeFuncList = MathTreeFuncList + (MathTreeFunc1Tan, )
 
 
 class MathTreeFunc1ASin(MathTreeFunc1):
@@ -379,8 +363,6 @@ class MathTreeFunc1ASin(MathTreeFunc1):
     def Calc(self, VarDict):
         return math.asin(self.ArgV[0].Calc(VarDict))
 
-MathTreeFuncList = MathTreeFuncList + (MathTreeFunc1ASin, )
-
 
 class MathTreeFunc1ACos(MathTreeFunc1):
 
@@ -400,8 +382,6 @@ class MathTreeFunc1ACos(MathTreeFunc1):
     def Calc(self, VarDict):
         return math.acos(self.ArgV[0].Calc(VarDict))
 
-MathTreeFuncList = MathTreeFuncList + (MathTreeFunc1ACos, )
-
 
 class MathTreeFunc1ATan(MathTreeFunc1):
 
@@ -419,8 +399,6 @@ class MathTreeFunc1ATan(MathTreeFunc1):
 
     def Calc(self, VarDict):
         return math.atan(self.ArgV[0].Calc(VarDict))
-
-MathTreeFuncList = MathTreeFuncList + (MathTreeFunc1ATan, )
 
 
 class MathTreeFunc2(MathTreeFunc):
@@ -464,8 +442,6 @@ class MathTreeFunc2Norm(MathTreeFunc2):
     def Calc(self, VarDict):
         return math.sqrt(self.ArgV[0].Calc(VarDict) ** 2 +
                          self.ArgV[1].Calc(VarDict) ** 2)
-
-MathTreeFuncList = MathTreeFuncList + (MathTreeFunc2Norm, )
 
 
 class MathTreeOp(MathTree):
@@ -655,129 +631,133 @@ class MathTreeOpPow(MathTreeOp):
     def Calc(self, VarDict):
         return self.ArgV[0].Calc(VarDict) ** self.ArgV[1].Calc(VarDict)
 
-MathTreeOpList = (MathTreeOpPow, MathTreeOpDiv, MathTreeOpMul, MathTreeOpSub, MathTreeOpAdd)
 
 
 class UndefinedMathTreeParseError(Exception):
-    
+
     def __init__(self, ParseStr, MathTree):
         self.ParseStr = ParseStr
         self.MathTree = MathTree
     def __str__(self):
         return "\n" + str(self.ParseStr)
 
-class RightParenthesisExpectedMathTreeParseError(UndefinedMathTreeParseError):
-    pass
 
-class RightParenthesisFoundMathTreeParseError(UndefinedMathTreeParseError):
-    pass
-
-class CommaExpectedMathTreeParseError(UndefinedMathTreeParseError):
-    pass
-
-class CommaFoundMathTreeParseError(UndefinedMathTreeParseError):
-    pass
-
-class OperatorExpectedMathTreeParseError(UndefinedMathTreeParseError):
-    pass
-
-class OperandExpectedMathTreeParseError(UndefinedMathTreeParseError):
-    pass
+class RightParenthesisExpectedMathTreeParseError(UndefinedMathTreeParseError): pass
+class RightParenthesisFoundMathTreeParseError(UndefinedMathTreeParseError): pass
+class CommaExpectedMathTreeParseError(UndefinedMathTreeParseError): pass
+class CommaFoundMathTreeParseError(UndefinedMathTreeParseError): pass
+class OperatorExpectedMathTreeParseError(UndefinedMathTreeParseError): pass
+class OperandExpectedMathTreeParseError(UndefinedMathTreeParseError): pass
 
 
-NegPattern = re.compile(r"\s*-(?![0-9\.])")
+DefaultMathTreeOps = (MathTreeOpPow, MathTreeOpDiv, MathTreeOpMul, MathTreeOpSub, MathTreeOpAdd)
+DefaultMathTreeFuncs = (MathTreeFunc1Neg, MathTreeFunc1Sgn, MathTreeFunc1Sqrt,
+                        MathTreeFunc1Exp, MathTreeFunc1Log,
+                        MathTreeFunc1Sin, MathTreeFunc1Cos, MathTreeFunc1Tan,
+                        MathTreeFunc1ASin, MathTreeFunc1ACos, MathTreeFunc1ATan,
+                        MathTreeFunc2Norm)
 
-def ParseMathTree(arg):
-    Tree = None
-    Match = arg.MatchPattern(NegPattern)
-    if Match:
-        Tree = MathTreeFunc1Neg()
-    while 1:
-        i = arg.MatchStr("(")
-        if i:
-            try:
-                ParseMathTree(arg)
-                raise RightParenthesisExpectedMathTreeParseError(arg, Tree)
-            except RightParenthesisFoundMathTreeParseError, e:
-                if isinstance(e.MathTree, MathTreeOp):
-                    e.MathTree.ParenthesisBarrier = 1
-                if Tree:
-                    Tree.AddArg(e.MathTree)
-                else:
-                    Tree = e.MathTree
-        else:
-            for FuncClass in MathTreeFuncList:
-                Func = FuncClass()
-                if Func.InitByParser(arg):
+class parser:
+
+    def __init__(self, MathTreeOps=DefaultMathTreeOps, MathTreeFuncs=DefaultMathTreeFuncs):
+        self.MathTreeOps = MathTreeOps
+        self.MathTreeFuncs = MathTreeFuncs
+
+    def parse(self, str):
+        return self.ParseMathTree(ParseStr(str))
+
+    def ParseMathTree(self, arg):
+        Tree = None
+        Match = arg.MatchPattern(re.compile(r"\s*-(?![0-9\.])"))
+        if Match:
+            Tree = MathTreeFunc1Neg()
+        while 1:
+            i = arg.MatchStr("(")
+            if i:
+                try:
+                    self.ParseMathTree(arg)
+                    raise RightParenthesisExpectedMathTreeParseError(arg, Tree)
+                except RightParenthesisFoundMathTreeParseError, e:
+                    if isinstance(e.MathTree, MathTreeOp):
+                        e.MathTree.ParenthesisBarrier = 1
                     if Tree:
-                        Tree.AddArg(Func)
+                        Tree.AddArg(e.MathTree)
                     else:
-                        Tree = Func
-                    for i in range(Func.ArgC - 1):
-                        try:
-                            ParseMathTree(arg)
-                            raise CommaExpectedMathTreeParseError(arg, Tree)
-                        except CommaFoundMathTreeParseError, e:
-                            Func.AddArg(e.MathTree)
-                    try:
-                        ParseMathTree(arg)
-                        raise RightParenthesisExpectedMathTreeParseError(arg, Tree)
-                    except RightParenthesisFoundMathTreeParseError, e:
-                        Func.AddArg(e.MathTree)
-                    break
+                        Tree = e.MathTree
             else:
-                for Val in (MathTreeValConst(), MathTreeValVar()):
-                    i = Val.InitByParser(arg)
-                    if i:
+                for FuncClass in self.MathTreeFuncs:
+                    Func = FuncClass()
+                    if Func.InitByParser(arg):
                         if Tree:
-                            Tree.AddArg(Val)
+                            Tree.AddArg(Func)
                         else:
-                            Tree = Val
+                            Tree = Func
+                        for i in range(Func.ArgC - 1):
+                            try:
+                                self.ParseMathTree(arg)
+                                raise CommaExpectedMathTreeParseError(arg, Tree)
+                            except CommaFoundMathTreeParseError, e:
+                                Func.AddArg(e.MathTree)
+                        try:
+                            self.ParseMathTree(arg)
+                            raise RightParenthesisExpectedMathTreeParseError(arg, Tree)
+                        except RightParenthesisFoundMathTreeParseError, e:
+                            Func.AddArg(e.MathTree)
                         break
                 else:
-                    raise OperandExpectedMathTreeParseError(arg, Tree)
-        if arg.AllDone():
-            return Tree
-        i = arg.MatchStr(")")
-        if i:
-            raise RightParenthesisFoundMathTreeParseError(arg, Tree)
-        i = arg.MatchStr(",")
-        if i:
-            raise CommaFoundMathTreeParseError(arg, Tree)
-        for OpClass in MathTreeOpList:
-            Op = OpClass()
-            if Op.InitByParser(arg):
-                SubTree = Tree
-                SubTreeRoot = None
-                while isinstance(SubTree, MathTreeOp) and\
-                      Op.level > SubTree.level and\
-                      not SubTree.ParenthesisBarrier:
-                    SubTreeRoot = SubTree
-                    SubTree = SubTree.ArgV[1]
-                if SubTreeRoot:
-                    Op.AddArg(SubTree)
-                    SubTreeRoot.ArgV[1] = Op
-                else:
-                    Op.AddArg(Tree)
-                    Tree = Op
-                break
-        else:
-            raise OperatorExpectedMathTreeParseError(arg, Tree)
+                    for Val in (MathTreeValConst(), MathTreeValVar()):
+                        i = Val.InitByParser(arg)
+                        if i:
+                            if Tree:
+                                Tree.AddArg(Val)
+                            else:
+                                Tree = Val
+                            break
+                    else:
+                        raise OperandExpectedMathTreeParseError(arg, Tree)
+            if arg.AllDone():
+                return Tree
+            i = arg.MatchStr(")")
+            if i:
+                raise RightParenthesisFoundMathTreeParseError(arg, Tree)
+            i = arg.MatchStr(",")
+            if i:
+                raise CommaFoundMathTreeParseError(arg, Tree)
+            for OpClass in self.MathTreeOps:
+                Op = OpClass()
+                if Op.InitByParser(arg):
+                    SubTree = Tree
+                    SubTreeRoot = None
+                    while isinstance(SubTree, MathTreeOp) and\
+                          Op.level > SubTree.level and\
+                          not SubTree.ParenthesisBarrier:
+                        SubTreeRoot = SubTree
+                        SubTree = SubTree.ArgV[1]
+                    if SubTreeRoot:
+                        Op.AddArg(SubTree)
+                        SubTreeRoot.ArgV[1] = Op
+                    else:
+                        Op.AddArg(Tree)
+                        Tree = Op
+                    break
+            else:
+                raise OperatorExpectedMathTreeParseError(arg, Tree)
 
 
 if __name__=="__main__":
-    print ParseMathTree(ParseStr("a+b-c*d/e**f"))
-    print ParseMathTree(ParseStr("a**b/c*d-e+f"))
-    print ParseMathTree(ParseStr("a+b-c"))
-    print ParseMathTree(ParseStr("(a+b)-c"))
-    print ParseMathTree(ParseStr("a+(b-c)")), " <= this is somehow wrong (needs no parenthesis)"
-    print ParseMathTree(ParseStr("a-b+c"))
-    print ParseMathTree(ParseStr("(a-b)+c"))
-    print ParseMathTree(ParseStr("a-(b+c)"))
-    print ParseMathTree(ParseStr("((a-(b+c))/(d*e))**f"))
-    print repr(ParseMathTree(ParseStr("((a-(b+c))/(d*e))**f")))
-    print ParseMathTree(ParseStr("sin(pi/2)"))
-    print repr(ParseMathTree(ParseStr("sin(pi/2)")))
+    myparser = parser()
+    print myparser.parse("a+b-c*d/e**f")
+    print myparser.parse("a**b/c*d-e+f")
+    print myparser.parse("a+b-c")
+    print myparser.parse("(a+b)-c")
+    print myparser.parse("a+(b-c)"), " <= this is somehow wrong (needs no parenthesis)"
+    print myparser.parse("a-b+c")
+    print myparser.parse("(a-b)+c")
+    print myparser.parse("a-(b+c)")
+    print myparser.parse("((a-(b+c))/(d*e))**f")
+    print repr(myparser.parse("((a-(b+c))/(d*e))**f"))
+    print myparser.parse("sin(pi/2)")
+    print repr(myparser.parse("sin(pi/2)"))
     x = MathTreeFunc1Sin(
             MathTreeOpDiv(
                 MathTreeValVar(
@@ -785,7 +765,7 @@ if __name__=="__main__":
                 MathTreeValConst(
                     2.0)))
     print x
-    print ParseMathTree(ParseStr("norm(a,b)"))
+    print myparser.parse("norm(a,b)")
 
     choise = ""
     while choise not in ["y","n"]:
@@ -795,7 +775,7 @@ if __name__=="__main__":
     while choise != "7":
         if choise == "6":
             expression = raw_input("\nexpression? ")
-            MyTree=ParseMathTree(ParseStr(expression))
+            MyTree=myparser.parse(expression)
         choise = "0"
         while choise not in map(lambda x: chr(x + ord("1")), range(7)):
             choise = raw_input("\n1) view expression\

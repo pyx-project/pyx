@@ -1712,9 +1712,9 @@ class function:
 
     defaultstyle = line
 
-    def __init__(self, expression, points = 100):
+    def __init__(self, expression, points = 100, parser=mathtree.parser()):
         self.result, expression = expression.split("=")
-        self.mathtree = mathtree.ParseMathTree(mathtree.ParseStr(expression))
+        self.mathtree = parser.parse(expression)
         self.variable, = self.mathtree.VarList()
         self.evalranges = 0
         self.points = points
@@ -1743,7 +1743,7 @@ class paramfunction:
 
     defaultstyle = line
 
-    def __init__(self, varname, min, max, expression, points = 100):
+    def __init__(self, varname, min, max, expression, points = 100, parser=mathtree.parser()):
         self.varname = varname
         self.min = min
         self.max = max
@@ -1756,10 +1756,10 @@ class paramfunction:
             if self.mathtrees.has_key(key):
                 raise ValueError("multiple assignment in tuple")
             try:
-                self.mathtrees[key] = mathtree.ParseMathTree(mathtree.ParseStr(expressionlist))
+                self.mathtrees[key] = parser.parse(expressionlist)
                 break
             except mathtree.CommaFoundMathTreeParseError, exception:
-                self.mathtrees[key] = mathtree.ParseMathTree(mathtree.ParseStr(expressionlist[:exception.ParseStr.Pos-1]))
+                self.mathtrees[key] = parser.parse(expressionlist[:exception.ParseStr.Pos-1])
                 expressionlist = expressionlist[exception.ParseStr.Pos:]
         else:
             raise ValueError("unpack tuple of wrong size")

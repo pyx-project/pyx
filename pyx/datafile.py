@@ -51,8 +51,10 @@ class datafile:
 
     def __init__(self, filename, commentpattern=re.compile(r"(#+|!+|%+)\s*"),
                                  stringpattern=re.compile(r"\"(.*?)\"(\s+|$)"),
-                                 columnpattern=re.compile(r"(.*?)(\s+|$)")):
+                                 columnpattern=re.compile(r"(.*?)(\s+|$)"),
+                                 parser=mathtree.parser()):
         self.filename = filename
+        self.parser = parser
         file = open(filename, "r")
         self.titles = []
         self.data = []
@@ -67,13 +69,14 @@ class datafile:
                     if len(newtitles):
                         self.titles = newtitles
             else:
-                linedata = [linenumber]
+                linedata = []
                 for value in self.splitline(line, stringpattern, columnpattern, tofloat=1):
                     linedata.append(value)
-                if len(linedata) > 1:
+                if len(linedata):
+                    linenumber += 1
+                    linedata = [linenumber] + linedata
                     if len(linedata) > maxcolumns:
                         maxcolumns = len(linedata)
-                    linenumber += 1
                     self.data.append(linedata)
         if linenumber:
             self.titles = [None] + self.titles[:maxcolumns-1]
@@ -101,7 +104,7 @@ class datafile:
             expression = expression[split+1:]
         else:
             self.titles.append(None)
-        tree = mathtree.ParseMathTree(mathtree.ParseStr(expression))
+        tree = self.parser.parse(expression)
         columnlist = {}
         for key, column in columns.items():
             columnlist[key] = self.getcolumnno(column)
