@@ -3,6 +3,20 @@
 from globex import *
 from const import *
 
+class TexCmdSaveStruc:
+    def __init__(self, Cmd, Stack, IgnoreMessageLevel):
+        self.Cmd = Cmd
+        self.Stack = Stack
+        self.IgnoreMessageLevel = IgnoreMessageLevel
+            # 0 - ignore no messages (except empty "messages")
+            # 1 - ignore messages inside proper "()"
+            # 2 - ignore all messages without a line starting with "! "
+            # 3 - ignore all messages
+
+            # typically Level 1 shows all interesting messages (errors,
+            # overfull boxes etc.) and Level 2 shows only error messages
+            # Level 1 will be the default Level
+
 class Canvas(Globex):
 
     ExportMethods = [ "amove", "aline", "rmove", "rline", 
@@ -15,7 +29,8 @@ class Canvas(Globex):
         self.PSInit()
 
     def TexCreateBoxCmd(self, texstr, parmode, valign):
-
+        # TODO: we should check the proper usage of "{}" here ...
+        
         # we use two "{{" to ensure, that everything goes into the box
         CmdBegin = "\\setbox\\localbox=\\hbox{{"
         CmdEnd = "}}"
@@ -73,16 +88,25 @@ class Canvas(Globex):
             r = r + h[(i >> 4) & 0xF] + h[i & 0xF]
         return r
         
-    TexExpressions = [ ]
+    TexMarker = "ThisIsThePyxTexMarker"
+    TexMarkerBegin = TexMarker + "Begin"
+    TexMarkerEnd = TexMarker + "End"
+    TexCmds = [ ]
     TexInitStr = ""
     
-    def TexAddToFile(self, Cmd):
-        # TODO: store stack in markers to create detailed error messages
-        MarkerBegin = "\\immediate\\write16{MarkerBegin}\n"
-        MarkerEnd = "\\immediate\\write16{MarkerEnd}\n"
+    def TexAddToFile(self, Cmd, IgnoreMessageLevel):
+        import sys,traceback
+        try:
+            raise ZeroDivisionError
+        except ZeroDivisionError:
+            #traceback.print_list(traceback.extract_stack(sys.exc_info()[2].tb_frame.f_back.f_back))
+            Stack = traceback.extract_stack(sys.exc_info()[2].tb_frame.f_back.f_back)
+
+        MarkerBegin = "\\immediate\\write16{" + self.TexMarkerBegin + str(len(self.TexCmds)) + "}\n"
+        MarkerEnd = "\\immediate\\write16{" + self.TexMarkerEnd + str(len(self.TexCmds)) + "}\n"
 
         Cmd = MarkerBegin + Cmd + MarkerEnd
-        self.TexExpressions = self.TexExpressions + [ Cmd, ]
+        self.TexCmds = self.TexCmds + [ TexCmdSaveStruc(Cmd, Stack, IgnoreMessageLevel), ]
 
     def TexRun(self):
 
@@ -115,7 +139,8 @@ class Canvas(Globex):
 \\immediate\\openout\\sizefile=""" + self.BaseFilename + """.size
 \\setbox\\pagebox=\\vbox{""")
 
-        file.writelines(self.TexExpressions)
+        for Cmd in self.TexCmds:
+            file.write(Cmd.Cmd)
 
         file.write("""}
 \\immediate\\closeout\sizefile
@@ -137,7 +162,7 @@ class Canvas(Globex):
 
         # TODO: ordentliche Fehlerbehandlung,
         #       Auswertung der Marker auf Fehler beim TeX'en
-        if os.system("latex " + self.BaseFilename + " > /dev/null 2>&1"):
+        if os.system("latex " + self.BaseFilename + " > " + self.BaseFilename + ".stdout 2> " + self.BaseFilename + ".stderr"):
             assert "LaTeX exit code not zero"
         
         # TODO: ordentliche Fehlerbehandlung,
@@ -162,33 +187,33 @@ class Canvas(Globex):
  
         return 1
 
-    def text(self, texstr, halign=None, parmode=None, valign=None, angle=None):
+    def text(self, texstr, halign = None, parmode = None, valign = None, angle = None, IgnoreMessageLevel = 1):
         TexCreateBoxCmd = self.TexCreateBoxCmd(texstr, parmode, valign)
         TexCopyBoxCmd = self.TexCopyBoxCmd(texstr, halign, angle)
-        self.TexAddToFile(TexCreateBoxCmd + TexCopyBoxCmd)
+        self.TexAddToFile(TexCreateBoxCmd + TexCopyBoxCmd, IgnoreMessageLevel)
 
-    def textwd(self, texstr, parmode=None):
+    def textwd(self, texstr, parmode = None, IgnoreMessageLevel = 1):
         TexCreateBoxCmd = self.TexCreateBoxCmd(texstr, parmode, None)
         TexHexMD5=self.TexHexMD5(TexCreateBoxCmd)
         self.TexAddToFile(TexCreateBoxCmd +
                           "\\immediate\\write\\sizefile{" + TexHexMD5 +
-                          ":wd:\\the\\wd\\localbox}\n")
+                          ":wd:\\the\\wd\\localbox}\n", IgnoreMessageLevel)
         return self.TexResult(TexHexMD5 + ":wd:")
 
-    def textht(self, texstr, parmode=None, valign=None):
+    def textht(self, texstr, parmode=None, valign=None, IgnoreMessageLevel = 1):
         TexCreateBoxCmd = self.TexCreateBoxCmd(texstr, parmode, valign)
         TexHexMD5=self.TexHexMD5(TexCreateBoxCmd)
         self.TexAddToFile(TexCreateBoxCmd +
                           "\\immediate\\write\\sizefile{" + TexHexMD5 +
-                          ":ht:\\the\\ht\\localbox}\n")
+                          ":ht:\\the\\ht\\localbox}\n", IgnoreMessageLevel)
         return self.TexResult(TexHexMD5 + ":ht:")
 
-    def textdp(self, texstr, parmode=None, valign=None):
+    def textdp(self, texstr, parmode=None, valign=None, IgnoreMessageLevel = 1):
         TexCreateBoxCmd = self.TexCreateBoxCmd(texstr, parmode, valign)
         TexHexMD5=self.TexHexMD5(TexCreateBoxCmd)
         self.TexAddToFile(TexCreateBoxCmd +
                           "\\immediate\\write\\sizefile{" + TexHexMD5 +
-                          ":dp:\\the\\dp\\localbox}\n")
+                          ":dp:\\the\\dp\\localbox}\n", IgnoreMessageLevel)
         return self.TexResult(TexHexMD5 + ":dp:")
 
 #
