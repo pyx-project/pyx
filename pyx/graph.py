@@ -128,9 +128,60 @@ class GraphRPhi:
 # data part
 
 from fit import *
+import re
+
+CommentPattern = re.compile(r"\s*(#|!)")
+EntryPattern = re.compile(r"\s+")
+
+class DataFile:
+
+    def __init__(self, FileName):
+        # read data file -> create KindTypeColumn
+        File = open(FileName, "r")
+        Lines = File.readlines()
+        self.Columns = 0
+        self.Rows = 0
+        self.data = []
+        for Line in Lines:
+            if not CommentPattern.match(Line):
+                Row = Line.split()
+                if self.Columns < len(Row):
+                    List = []
+                    for i in range(self.Rows):
+                        List.append(None)
+                    for i in range(self.Columns, len(Row)):
+                        self.data.append(List)
+                    self.Columns = len(Row)
+                for i in range(len(Row)):
+                    self.data[i].append(Row[i])
+                self.Rows = self.Rows + 1
+        print self.Rows, self.Columns
+
+    def GetKindList(self):
+        return (KindTypeColumn, KindTypeColumn, )
+        # KindTypeColumn
+
+    def GetList(self, Number):
+        return self.Column[Number]
+
+class Data:
+
+    def __init__(self):
+        pass
+    def GetKindList(self):
+        # KindTypeX
+        # KindTypeY
+        # KindTypeDX
+        # KindTypeDY
+        pass
+    def GetRange(self, Kind):
+        pass
 
 class Function:
 
     def __init__(self, Expression):
         self.MT = ParseMathTree(ParseStr(Expression))
 
+
+if __name__=="__main__":
+    DataFile("testdata")
