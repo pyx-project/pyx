@@ -84,16 +84,19 @@ class _data:
         columnno = self.getcolumnnumber(key)
         return [point[columnno] for point in self.points]
 
-    def setstyle(self, graph, style):
-        self.style = style
+    def setstyles(self, graph, styles):
+        self.styles = styles
         self.styledata = styledata()
-        unhandledcolumns = self.style.setdata(graph, self.columns, self.styledata)
+        unhandledcolumns = self.columns
+        for style in self.styles:
+            unhandledcolumns = style.setdata(graph, unhandledcolumns, self.styledata)
         unhandledcolumnkeys = unhandledcolumns.keys()
         if len(unhandledcolumnkeys):
             raise ValueError("style couldn't handle column keys %s" % unhandledcolumnkeys)
 
     def selectstyle(self, graph, selectindex, selecttotal):
-        self.style.selectstyle(selectindex, selecttotal, self.styledata)
+        for style in self.styles:
+            style.selectstyle(selectindex, selecttotal, self.styledata)
 
     def adjustaxes(self, graph, step):
         """
@@ -104,10 +107,12 @@ class _data:
         - on step == 2 axes ranges not previously set should be
           updated by data accumulated by step 1"""
         if step == 0:
-            self.style.adjustaxes(self.points, self.columns.values(), self.styledata)
+            for style in self.styles:
+                style.adjustaxes(self.points, self.columns.values(), self.styledata)
 
     def draw(self, graph):
-        self.style.drawpoints(self.points, graph, self.styledata)
+        for style in self.styles:
+            style.drawpoints(self.points, graph, self.styledata)
 
 
 class list(_data):
@@ -492,7 +497,7 @@ class function:
         self.mathtree = parser.parse(expression)
         self.variable = None
 
-    def setstyle(self, graph, style):
+    def setstyles(self, graph, style):
         self.style = style
         for variable in self.mathtree.VarList():
             if variable in graph.axes.keys():
@@ -550,6 +555,7 @@ class function:
             self.style.adjustaxes(self.points, [2], self.styledata)
 
     def draw(self, graph):
+        raise # TODO
         self.style.drawpoints(self.points, graph, self.styledata)
 
 
@@ -588,7 +594,7 @@ class paramfunction:
                 self.points[i][column] = mathtrees[column-1].Calc(**context)
                 column += 1
 
-    def setstyle(self, graph, style):
+    def setstyles(self, graph, style):
         self.style = style
         unhandledcolumns = self.style.setdata(graph, self.columns, self.styledata)
         unhandledcolumnkeys = unhandledcolumns.keys()
@@ -603,5 +609,6 @@ class paramfunction:
             self.style.adjustaxes(self.points, self.columns.values(), self.styledata)
 
     def draw(self, graph):
+        raise # TODO
         self.style.drawpoints(self.points, graph, self.styledata)
 

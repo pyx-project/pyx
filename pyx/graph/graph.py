@@ -139,7 +139,7 @@ class graphxy(canvas.canvas):
 
     axisnames = "x", "y"
 
-    def plot(self, data, style=None):
+    def plot(self, data, styles=None):
         if self.haslayout:
             raise RuntimeError("layout setup was already performed")
         try:
@@ -149,14 +149,15 @@ class graphxy(canvas.canvas):
             usedata = [data]
         else:
             usedata = data
-        if style is None:
+        if styles is None:
+            raise RuntimeError() # TODO: default styles handling ...
             for d in usedata:
                 if style is None:
                     style = d.defaultstyle
                 elif style != d.defaultstyle:
                     raise RuntimeError("defaultstyles differ")
         for d in usedata:
-            d.setstyle(self, style)
+            d.setstyles(self, styles)
             self.plotdata.append(d)
         return data
 
@@ -229,19 +230,27 @@ class graphxy(canvas.canvas):
         if not self.removedomethod(self.dolayout): return
 
         # count the usage of styles and perform selects
+        # TODO: move it into the styles
         styletotal = {}
         for data in self.plotdata:
-            try:
-                styletotal[id(data.style)] += 1
-            except:
-                styletotal[id(data.style)] = 1
+            for style in data.styles:
+                try:
+                    styletotal[id(style)] += 1
+                except:
+                    styletotal[id(style)] = 1
         styleindex = {}
         for data in self.plotdata:
-            try:
-                styleindex[id(data.style)] += 1
-            except:
-                styleindex[id(data.style)] = 0
-            data.selectstyle(self, styleindex[id(data.style)], styletotal[id(data.style)])
+            for style in data.styles:
+                try:
+                    styleindex[id(style)] += 1
+                except:
+                    styleindex[id(style)] = 0
+            index = styleindex[id(data.styles[0])]
+            total = styletotal[id(data.styles[0])]
+            for style in data.styles[1:]:
+                if index != styleindex[id(style)] or total != styletotal[id(style)]:
+                    raise RuntimeError("inconsistent style modification not yet supported")
+            data.selectstyle(self, index, total)
 
         # adjust the axes ranges
         for step in range(3):
