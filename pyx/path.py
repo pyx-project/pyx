@@ -1620,6 +1620,8 @@ class normpath(path):
 
         """
 
+        # XXX make this recursive! 
+
         if not isinstance(other, normpath):
             other = normpath(other)
 
