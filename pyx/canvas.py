@@ -428,7 +428,7 @@ def _arrowheadtemplatelength(anormpath, size):
         tlen = unit.topt(anormpath.tangent(0).arclength())
         try:
             alen = unit.topt(size)/tlen
-        except ZeroDivisionError:
+        except ArithmeticError:
             # take maximum, we can get
             alen = anormpath.range()
         if alen>anormpath.range(): alen=anormpath().range()
