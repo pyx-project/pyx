@@ -24,7 +24,7 @@
 # - arrows
 
 
-import string, re, unit, trafo, types
+import re, unit, trafo, types
 from math import sqrt
 
 # PostScript-procedure definitions
@@ -139,11 +139,11 @@ class epsfile:
         while 1:
             line=file.readline()
             if not line:
-                assert "bounding box not found in EPS file"
+                assert 0, "bounding box not found in EPS file"
                 raise IOError			# TODO: Fehlerbehandlung
             if line=="%%EndComments\n": 
                 # TODO: BoundingBox-Deklaration kann auch an Ende von Datei verschoben worden sein
-                assert "bounding box not found in EPS file"
+                assert 0, "bounding box not found in EPS file"
                 raise IOError			# TODO: Fehlerbehandlung
             
             bbmatch = bbpattern.match(line)
@@ -162,7 +162,7 @@ class epsfile:
         try:
 	    epsfile=open(self.filename,"r")
 	except:
-	    assert "cannot open EPS file"	               # TODO: Fehlerbehandlung
+	    assert 0, "cannot open EPS file"	               # TODO: Fehlerbehandlung
 
         file.write("BeginEPSF\n")
         file.write("%f %f translate\n" % (self.x, self.y))
@@ -203,12 +203,16 @@ class PyxAttributes:
     def bbox(self):
 	return bbox()
 
+    def _PSCmd(self):
+        return ""
+
     def write(self, file):
         file.write(self._PSCmd())
 
 class _linecap(PyxAttributes):
     def __init__(self, value=0):
         self.value=value
+        
     def _PSCmd(self):
         return "%d setlinecap" % self.value
 
@@ -330,7 +334,7 @@ class _translate(CanvasCmds):
         self.y = unit.topt(y)
         
     def write(self, file):
-        file.write("%f %f translate" % (x, y) )
+        file.write("%f %f translate" % (self.x, self.y) )
 
 
 class canvas(CanvasCmds):
@@ -399,7 +403,7 @@ class canvas(CanvasCmds):
         return cmds
 
     def create(self, pyxclass, *args, **kwargs):
-        instance = pyxclass(unit = self.unit.copy(), *args, **kwargs)
+        instance = pyxclass( *args, **kwargs)
         return instance
 
     def set(self, *args):
@@ -418,7 +422,7 @@ class canvas(CanvasCmds):
         try:
   	    file = open(filename + ".eps", "w")
 	except IOError:
-	    assert "cannot open output file"		        # TODO: Fehlerbehandlung...
+	    assert 0, "cannot open output file"		        # TODO: Fehlerbehandlung...
 
         file.write("%!PS-Adobe-3.0 EPSF 3.0\n")
 	abbox=self.bbox()
