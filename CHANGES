@@ -1,8 +1,6 @@
 PyX
 
 0.4 (????/??/??):
-  - text module:
-    fix bug in dvi rule code where width was height
   TODOs:
   - examples:
     - to be included in source distribution
