@@ -181,13 +181,14 @@ class LinAxis(_Axis, _LinMap):
             for frac in self.fracshift:
                 fracs = []
                 rate = 0
+                l = (self.Max - self.Min) / self.factor
                 enlargerange = 1
                 min = self.Min
                 max = self.Max
                 for ((subenum, subdenom, ), (min, max, opt, ), ) in zip(frac, self.tickopt):
                     subenum *= enum
                     subdenom *= denom
-                    self.enlarge
+                    #self.enlarge
                     #print self.Min / self.factor, self.Max / self.factor, (self.Max - self.Min) / self.factor
                     ticks = l * subdenom / subenum
                     if (ticks < min) or (ticks > max):
