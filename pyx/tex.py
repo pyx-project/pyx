@@ -20,42 +20,58 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+"""
+(La)TeX interface of PyX
 
+This module provides the class tex, which can be inserted into a PyX canvas.
+The method tex.text is used to print out text, while tex.textwd, tex.textht,
+and tex.textdp appraise the width, height, and depth of a text, respectively.
+"""
 
 import canvas, os, string, tempfile, sys, md5, string, traceback, time, unit, math, types, color, StringIO
 
 class _Attr:
+    """base class for all PyX attributes (TODO: has to be defined somewhere else)"""
     pass
 
 class _AttrTex(_Attr):
+    """base class for all attributes handed to methods of class tex"""
     pass
 
 class _AttrTexVal(_AttrTex):
+    """an attribute, which has a value"""
     def __init__(self, value):
         self.value = value
 
 class _AttrTexStr(_AttrTex):
+    """makes a _AttrTexVal string-able"""
     def __str__(self):
         return str(self.value)
 
 class _AttrTexCmp(_AttrTex):
+    """makes a _AttrTexVal comparable"""
     def __cmp__(self, other):
         return cmp(self.value, other.value)
     __rcmp__ = __cmp__
 
-class _AttrTexValCmp(_AttrTexVal, _AttrTexCmp):
-    pass
-
 class _AttrTexValStr(_AttrTexVal, _AttrTexStr):
+    """an attribute with a string-able value"""
     pass
 
-class _AttrTexValCmpStr(_AttrTexVal, _AttrTexCmp, _AttrTexStr):
+class _AttrTexValCmp(_AttrTexVal, _AttrTexCmp):
+    """an attribute with a comparable value"""
+    pass
+
+class _AttrTexValCmpStr(_AttrTexVal, _AttrTexStr, _AttrTexCmp):
+    """an attribute with a string-able and comparable value"""
     pass
 
 class _halign(_AttrTexValCmp):
+    """base attribute for halign, an comparable value"""
     pass
 
 class halign:
+    """ """
     left   = _halign("left")
     center = _halign("center")
     right  = _halign("right")
@@ -102,7 +118,7 @@ class _style(_AttrTex):
     def ModifyCmd(self, str):
         return self.praefix + str + self.suffix
 
-class style(_style):
+class style:
     text = _style("", "")
     math = _style("$\displaystyle{}", "$")
 
@@ -130,7 +146,7 @@ class msglevel:
 class _mode(_AttrTexValCmpStr):
     pass
 
-class mode(_mode):
+class mode:
     TeX = _mode("TeX")
     LaTeX = _mode("LaTeX")
 
@@ -476,7 +492,10 @@ class tex(_InstanceList):
         if self.texfilename:
             MkTemp = str(self.texfilename)
         else:
+            storetempdir = tempfile.tempdir
+            tempfile.tempdir = "."
             MkTemp = tempfile.mktemp()
+            tempfile.tempdir = storetempdir
         TempDir = os.path.dirname(MkTemp)
         TempName = os.path.basename(MkTemp)
         try:
@@ -511,7 +530,7 @@ class tex(_InstanceList):
             auxfile.write("\\relax\n")
             auxfile.close()
 
-        self.execute(string.lower(str(self.mode)) + " " + TempName + ".tex > " + TempName + ".texout 2> " + TempName + ".texerr")
+        self.execute("TEXINPUTS=" + WorkDir + ": " + string.lower(str(self.mode)) + " " + TempName + ".tex > " + TempName + ".texout 2> " + TempName + ".texerr")
 
         try:
             outfile = open(TempName + ".texout", "r")
