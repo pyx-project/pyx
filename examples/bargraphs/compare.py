@@ -8,8 +8,8 @@ from pyx import *
 bap = graph.axis.painter.bar
 a = graph.axis.bar(painter=bap(nameattrs=[trafo.rotate(45),
                                           text.halign.right],
-                                          innerticklength=0.2),
-                               subaxis=graph.axis.bar(dist=0))
+                               innerticklength=0.2),
+                   subaxis=graph.axis.bar(dist=0))
 
 g = graph.graphxy(width=8, x=a)
 g.plot([graph.data.file("bar.dat", xname=1, y=2),
