@@ -852,7 +852,7 @@ class canvas(base.PSCmd):
 
         """
 
-        return self.draw(path, *([stroked()] + list(args)))
+        return self.draw(path, stroked(), *args)
         
     def fill(self, path, *args):
         """fill path on canvas using the style given by args
@@ -865,6 +865,4 @@ class canvas(base.PSCmd):
 
         """
 
-        return self.draw(path, *([filled()] + list(args)))
-
-
+        return self.draw(path, filled(), *args)
