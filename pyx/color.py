@@ -30,7 +30,7 @@ class color:
         return ""
 
     def write(self, file):
-        file.write(self._PSCmd())
+        file.write("%s\n" % self._PSCmd())
 
 
 class _grey(color):

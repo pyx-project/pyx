@@ -24,6 +24,7 @@ from types import *
 import re
 
 unit_ps = 1.0
+
 scale = { 't':1, 'u':1, 'v':1, 'w':1 }
 
 default_unit = "cm"
@@ -44,24 +45,26 @@ _m = {
     }
 
 def set(uscale=None, vscale=None, wscale=None):
-        if uscale:
-            scale['u'] = uscale
-        if vscale:
-            scale['v'] = vscale
-        if wscale:
-            scale['w'] = wscale
+    if uscale:
+        scale['u'] = uscale
+    if vscale:
+        scale['v'] = vscale
+    if wscale:
+        scale['w'] = wscale
+    
             
 def convert_to(l, dest_unit="m"):
 
-#     if type(l) is TupleType:
-#         return tuple(map(lambda x, self=self, dest_unit=dest_unit:
-#                          self.convert_to(x,dest_unit), l))
+    if type(l) is TupleType:
+        return tuple(map(lambda x, self=self, dest_unit=dest_unit:
+                         self.convert_to(x,dest_unit), l))
 
     if type(l) in (IntType, LongType, FloatType):
         return l*_m[default_unit]*scale['u']/_m[dest_unit]
-    elif not isinstance(l,length): l=length(l)       # convert to length instance if necessary
+    elif not isinstance(l,length): 
+        l=length(l)       # convert to length instance if necessary
 
-    return ( l.length['t']                 +
+    return ( l.length['t']            +
 	     l.length['u']*scale['u'] +
 	     l.length['v']*scale['v'] +
 	     l.length['w']*scale['w'] ) / _m[dest_unit]

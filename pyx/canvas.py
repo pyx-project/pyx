@@ -207,7 +207,7 @@ class PyxAttributes:
         return ""
 
     def write(self, file):
-        file.write(self._PSCmd())
+        file.write("%s\n" % self._PSCmd())
 
 
 class _linecap(PyxAttributes):
@@ -319,32 +319,32 @@ class CanvasCmds:
 
 class _newpath(CanvasCmds):
     def write(self, file):
-       file.write("newpath")
+       file.write("newpath\n")
        
 
 class _stroke(CanvasCmds):
     def write(self, file):
-       file.write("stroke")
+       file.write("stroke\n")
        
 
 class _fill(CanvasCmds):
     def write(self, file):
-        file.write("fill")
+        file.write("fill\n")
         
 
 class _clip(CanvasCmds):
     def write(self, file):
-       file.write("clip")
+       file.write("clip\n")
        
 
 class _gsave(CanvasCmds):
     def write(self, file):
-       file.write("gsave")
+       file.write("gsave\n")
        
 
 class _grestore(CanvasCmds):
     def write(self, file):
-       file.write("grestore")
+       file.write("grestore\n")
        
 
 class _translate(CanvasCmds):
@@ -353,7 +353,7 @@ class _translate(CanvasCmds):
         self.y = unit.topt(y)
         
     def write(self, file):
-        file.write("%f %f translate" % (self.x, self.y) )
+        file.write("%f %f translate\n" % (self.x, self.y) )
 
 
 class canvas(CanvasCmds):
@@ -398,7 +398,6 @@ class canvas(CanvasCmds):
     def write(self, file):
         for cmd in self.PSCmds:
             cmd.write(file)
-            file.write("\n")
             
     def insert(self, cmds, *args):
         if args: 
@@ -436,6 +435,10 @@ class canvas(CanvasCmds):
         self.insert((_newpath(), path, _fill()), *args)
         return self
 
+    def drawfilled(self, path, *args):
+        self.insert((_newpath(), path, _gsave(), _stroke(), _grestore(), _fill()), *args)
+        return self
+
     def writetofile(self, filename):
         try:
             file = open(filename + ".eps", "w")
@@ -457,6 +460,6 @@ class canvas(CanvasCmds):
         # here comes the actual content
         self.write(file)
         
-        file.write("\nshowpage\n")
+        file.write("showpage\n")
         file.write("%%Trailer\n")
         file.write("%%EOF\n")

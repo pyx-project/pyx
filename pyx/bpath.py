@@ -20,8 +20,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-# TODO: - reversepath ?
-#       - correct bbox for bpathel
+# TODO: - correct bbox for bpathel
 #         (maybe we still need the current bbox implementation (then maybe called
 #          cbox = control box) for bpathel for the use during the
 #          intersection of bpaths) 
@@ -59,7 +58,7 @@ class _bpathel:
                  self.x3, self.y3 )
 
     def write(self, file):
-         file.write( "%f %f moveto %f %f %f %f %f %f curveto" % \
+         file.write( "%f %f moveto %f %f %f %f %f %f curveto\n" % \
                      ( self.x0, self.y0,
                        self.x1, self.y1,
                        self.x2, self.y2,

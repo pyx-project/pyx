@@ -95,7 +95,7 @@ class closepath(pathel):
                             max(currentpoint[1], currentsubpath[1])))
 
     def write(self, file):
-        file.write("closepath")
+        file.write("closepath\n")
 
     def _bpath(self, currentpoint, currentsubpath):
         return (None,
@@ -120,7 +120,7 @@ class _moveto(pathel):
                 canvas.bbox())
          
     def write(self, file):
-        file.write("%f %f moveto" % (self.x, self.y) )
+        file.write("%f %f moveto\n" % (self.x, self.y) )
 
     def _bpath(self, currentpoint, currentsubpath):
         return ((self.x, self.y),
@@ -150,7 +150,7 @@ class _rmoveto(pathel):
                 canvas.bbox())
 
     def write(self, file):
-        file.write("%f %f rmoveto" % (self.dx, self.dy) )
+        file.write("%f %f rmoveto\n" % (self.dx, self.dy) )
         
     def _bpath(self, currentpoint, currentsubpath):
         return ((self.dx+currentpoint[0], self.dy+currentpoint[1]), 
@@ -186,7 +186,7 @@ class _lineto(pathel):
                             max(currentpoint[1], self.y)))
 
     def write(self, file):
-        file.write("%f %f lineto" % (self.x, self.y) )
+        file.write("%f %f lineto\n" % (self.x, self.y) )
        
     def _bpath(self, currentpoint, currentsubpath):
         return ((self.x, self.y), 
@@ -219,7 +219,7 @@ class _rlineto(pathel):
                             max(currentpoint[1], currentpoint[1]+self.dy)))
 
     def write(self, file):
-        file.write("%f %f rlineto" % (self.dx, self.dy) )
+        file.write("%f %f rlineto\n" % (self.dx, self.dy) )
         
     def _bpath(self, currentpoint, currentsubpath):
         return ((currentpoint[0]+self.dx, currentpoint[1]+self.dy), 
@@ -323,7 +323,7 @@ class _arc(pathel):
 
                             
     def write(self, file):
-        file.write("%f %f %f %f %f arc" % ( self.x, self.y,
+        file.write("%f %f %f %f %f arc\n" % ( self.x, self.y,
                                             self.r,
                                             self.angle1,
                                             self.angle2 ) )
@@ -402,7 +402,7 @@ class _arcn(pathel):
                     )
 
     def write(self, file):
-        file.write("%f %f %f %f %f arcn" % ( self.x, self.y,
+        file.write("%f %f %f %f %f arcn\n" % ( self.x, self.y,
                                              self.r,
                                              self.angle1,
                                              self.angle2 ) )
@@ -452,7 +452,7 @@ class _arct(pathel):
         self.r  = r
 
     def write(self, file):
-        file.write("%f %f %f %f %f arct" % ( self.x1, self.y1,
+        file.write("%f %f %f %f %f arct\n" % ( self.x1, self.y1,
                                              self.x2, self.y2,
                                              self.r ) )
     def _path(self, currentpoint, currentsubpath):
@@ -575,7 +575,7 @@ class _curveto(pathel):
                             max(currentpoint[1], self.y1, self.y2, self.y3)))
 
     def write(self, file):
-        file.write("%f %f %f %f %f %f curveto" % ( self.x1, self.y1,
+        file.write("%f %f %f %f %f %f curveto\n" % ( self.x1, self.y1,
                                                    self.x2, self.y2,
                                                    self.x3, self.y3 ) )
         
@@ -612,7 +612,7 @@ class _rcurveto(pathel):
         self.dy3 = dy3
         
     def write(self, file):
-        file.write("%f %f %f %f %f %f rcurveto" % ( self.dx1, self.dy1,
+        file.write("%f %f %f %f %f %f rcurveto\n" % ( self.dx1, self.dy1,
                                                     self.dx2, self.dy2,
                                                     self.dx3, self.dy3 ) )
 
@@ -694,7 +694,6 @@ class path:
             raise PathException, "first path element must be either moveto, arc, or arcn"
         for pel in self.path:
             pel.write(file)
-            file.write("\n")
 
     def append(self, pathel):
         self.path.append(pathel)
