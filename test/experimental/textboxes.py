@@ -3,7 +3,7 @@ import random, string
 from pyx import *
 
 text.set(texipc=1)
-text.set(texdebug="debug.tex", usefiles=["debug.dvi", "debug.log"])
+text.set(mode="tex", texdebug="debug.tex", usefiles=["debug.dvi", "debug.log"])
 
 def randpar():
     return " ".join(["".join([random.choice(string.lowercase)
@@ -26,6 +26,7 @@ def randtext():
 def output(boxes, shapes):
     c = canvas.canvas()
     y = 0
+    tr = text.texrunner()
     for i in range(len(boxes)):
         if i < len(shapes):
             shape = shapes[i]
@@ -34,6 +35,7 @@ def output(boxes, shapes):
         c.insert(boxes[i], [trafo.translate(0, y)])
         for mark in boxes[i].markers.keys():
             mx, my = boxes[i].markers[mark]
+            c.insert(tr.text(mx,my+y, mark+"~", [text.size.tiny, text.halign.right]))
             if mark[:5] == "start":
                 c.fill(path.circle(mx, my+y, 0.05), [color.rgb.red])
             elif mark[:3] == "end":
@@ -62,7 +64,7 @@ while only is None or n <= only:
     if only is not None and n <= only:
         continue
     boxes = text.defaulttexrunner.textboxes(thistext, shapes)
-    #output(boxes, shapes)
+    output(boxes, shapes)
     for i in range(len(boxes)):
         if i < len(shapes):
             shape = shapes[i]
