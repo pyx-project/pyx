@@ -54,6 +54,8 @@ TODO:
       Why is there (also) a self.epsilon?
     - Why is there no normpathel.trafo()? And how about
       normpathel.begintrafo() and normpathel.endtrafo()?
+  - color module:
+    - what should we do for palette when only one entry
 
   Documentation:
     - path module:
