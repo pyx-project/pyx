@@ -67,6 +67,12 @@ TODO:
     - describe creation and modification (inplace and ``modify by new'') of
       graph data
 
+
+0.6.x (????/??/??):
+   - graph/axis module:
+     - fix errorbar range adjustment
+
+
 0.6.3 (2004/04/27):
    - graph module:
      - fix drawing with background
