@@ -79,13 +79,20 @@ def topt(l):
 ################################################################################
 
 class length:
-    """ general lengths
+    """ PyX lengths
 
-    XXX write me
-
+    PyX lengths are composed of five components (t=true, u=user, v=visual,
+    w=width, and x=TeX) which can be scaled separately (except for the true
+    component, which is always unscaled). Lengths can be constructed in units
+    of "pt", "mm", "cm", "m" and "inch". When no unit is given, a module
+    default is used, which can be changed with the help of the set method of
+    the present module.
     """
 
     def __init__(self, f, type="u", unit=None):
+        """ create a length instance of the given type with a length f
+        in the given unit. If unit is not set, the currently set default unit is used.
+        """
         self.t = self.u = self.v = self.w = self.x = 0
         l = f * _m[unit or _default_unit]
         if type == "t":
