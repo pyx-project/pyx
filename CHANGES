@@ -71,7 +71,7 @@ TODO:
     - added new pathel multilineto_pt which allows to specify a list of points
       and can thus be much more efficient
     - internal methods return coordinates in pts
-    - lentopar return tuple not list
+    - lentopar returns tuple not list
     - added path.arclength_pt, path.at_pt, path.begin_pt, path.end_pt (and 
       correspondingly for normpath) (TODO: documentation)
 
