@@ -23,7 +23,11 @@ c.stroke(p, [color.rgb.red, style.linestyle.dotted, t3, t2, t1])
 
 c.writeEPSfile("test_canvas", paperformat="a4")
 
-pages = canvas.pages([c, c])
+d = canvas.document()
 
-# pages.writePSfile("test_canvas", paperformat="a4")
-pages.writePSfile("test_canvas")
+for nr in range(1, 10):
+     page = canvas.page(pagename = "i"*nr, rotated=(nr-1)%2)
+     page.text(0, 0, "page %d" % nr)
+     d.append(page)
+
+d.writePSfile("test_document")

@@ -81,7 +81,9 @@ TODO:
   - unit module:
     - unit.cm, unit.t_cm, etc. are no longer sub classes but instances
       of length
-    
+  - canvas module:
+    - added new classes page and document for multipage PostScript output
+
 0.6.? (xxxx/xx/xx):
   - graph module:
     - fixed title=None + graph key issue reported by Gabriel Vasseur
