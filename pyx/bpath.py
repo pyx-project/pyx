@@ -365,7 +365,7 @@ class bpath(base.PSCmd):
 
     def length(self, epsilon=1e-5):
         """returns length of bpath"""
-        return reduce(lambda x, y: x+y.length(), self.bpath, 0)
+        return reduce(lambda x, y, epsilon=epsilon: x+y.length(epsilon), self.bpath, 0)
 
 #
 # now some special kinds of bpaths (always in pairs)
@@ -415,11 +415,12 @@ class _barc(bpath):
 
     """bpath consisting of arc segment (coordinates in pts)"""
 
-    def __init__(self, x, y, r, phi1, phi2, dphimax=pi/4):
+    def __init__(self, x, y, r, phi1, phi2, dphimax=45):
         bpath.__init__(self)
 
         phi1 = phi1*pi/180
         phi2 = phi2*pi/180
+        dphimax = dphimax*pi/180
 
         if phi2<phi1:        
             # guarantee that phi2>phi1 ...
@@ -443,10 +444,28 @@ class barc(_barc):
 
     """bpath consisting of arc segment"""
 
-    def __init__(self, x, y, r, phi1, phi2, dphimax=pi/4):
+    def __init__(self, x, y, r, phi1, phi2, dphimax=45):
         _barc.__init__(self, 
                        unit.topt(x), unit.topt(y), unit.topt(r), 
                        phi1, phi2, dphimax)
+
+
+class _bcircle(_barc):
+
+    """bpath corresponding to a circle (coordinates in pts)"""
+
+    def __init__(self, x, y, r, dphimax=45):
+        _barc.__init__(self, x, y, r, 0, 360, dphimax) 
+                               
+
+class bcircle(_bcircle):
+
+    """bpath corresponding to a circle"""
+
+    def __init__(self, x, y, r, dphimax=45):
+        _bcircle.__init__(self, 
+                          unit.topt(x), unit.topt(y), unit.topt(r), 
+                          dphimax)
 
 
 ################################################################################
