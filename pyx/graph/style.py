@@ -445,8 +445,8 @@ class symbolline(_style):
 
 class symbol(symbolline):
 
-    def __init__(self, **kwargs):
-        symbolline.__init__(self, lineattrs=None, **kwargs)
+    def __init__(self, *args, **kwargs):
+        symbolline.__init__(self, lineattrs=None, *args, **kwargs)
 
 
 class line(symbolline):
