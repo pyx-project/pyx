@@ -16,7 +16,7 @@ horiz = path.normpath(horiz.style.path)
 # intersect the lines
 splith, splitf = horiz.intersect(fline)
 
-# create gray area
+# create gray area (we do not use simple clipping)
 area = horiz.split(splith[0])[0]
 for i in range(0, len(splith)-2, 2):
     area = area.glue(fline.split(splitf[i], splitf[i+1])[1])

@@ -14,6 +14,7 @@ cssfiles = main.css
 builddir = build
 
 html: $(htmlfiles) $(pngfiles)
+	cd png; make
 
 install: html
 	-mkdir $(builddir)
@@ -27,7 +28,3 @@ install: html
 
 %.html: %.pt maintemplate.pt pt2html.py
 	PYTHONPATH=/usr/src/ZopeCVS/Zope3/src ./pt2html.py $<
-
-%.eps.png: %.eps
-	@# -dEPSCrop needs gs version >= 8.0
-	gs8.0 -dEPSCrop -dNOPAUSE -dQUIET -dBATCH -sDEVICE=ppmraw -sOutputFile=- -r400 $^|pnmscale 0.25|pnmtopng > $^.png
