@@ -1,3 +1,4 @@
+# -*- coding: ISO-8859-1 -*-
 # fractal tree
 # contributed by Gerhard Schmid and André Wobst
 
