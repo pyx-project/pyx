@@ -68,10 +68,17 @@ def convert_to(l, dest_unit="m"):
              l.length['v']*scale['v'] +
              l.length['w']*scale['w'] ) / _m[dest_unit]
 
-
-
 def tom(l):
     return convert_to(l, "m")
+
+def tocm(l):
+    return convert_to(l, "cm")
+
+def tomm(l):
+    return convert_to(l, "mm")
+
+def toinch(l):
+    return convert_to(l, "inch")
         
 def topt(l):
     return convert_to(l, "pt")
@@ -84,14 +91,19 @@ class length:
     """ general lengths
     
     Lengths can either be a initialized with a number or a string:
-     - a length specified as a number corresponds to the default values of unit_type
-       and unit_name
+    
+     - a length specified as a number corresponds to the default values of
+       unit_type and unit_name
      - a string has to consist of a maximum of three parts:
        -quantifier: integer/float value
-       -unit_type:  "t", "u", "v", or "w". Optional, defaults to "u"
-       -unit_name:  "m", "cm", "mm", "inch", "pt". Optional, defaults to default_unit
+       -unit_type:  "t", "u", "v", or "w".
+                    Optional, defaults to "u"
+       -unit_name:  "m", "cm", "mm", "inch", "pt".
+                    Optional, defaults to default_unit
 
-    Internally all length are stored in units of m as a quadruple for the four unit_types
+    Internally all length are stored in units of m as a quadruple of the four
+    unit_types.
+    
     """
 
     def __init__(self, l=None, default_type="u", dunit=None, glength=None):
