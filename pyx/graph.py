@@ -118,7 +118,7 @@ class frac:
         if len(commaparts) > 2:
             raise ValueError("multiple '.' found in '%s'" % expparts[0])
         if len(commaparts) == 1:
-            commaparts = commaparts[0], ""
+            commaparts = [commaparts[0], ""]
         result = frac((1, 10l), power=len(commaparts[1]))
         neg = len(commaparts[0]) and commaparts[0][0] == "-"
         if neg:
