@@ -1,75 +1,158 @@
-use cases
+Attributes. Design summary.
+===========================
 
-canvas.stroke(path, attr1, attr2, ...)
-canvas.stroke([path, path2], attr1, attr2, ...)
+What are attributes?
+--------------------
 
-graph.axispainter(labelattrs=attr.text.size.small)
-graph.axispainter(labelattrs=[attr.text.size.small, attr.color.rgb.red])
-graph.axispainter(labelattrs=[attr.text.halign.left])
-graph.axispainter(labelattrs=[attr.text.halign.left, attr.text.vshift.clear, attr.text.vshift.char0center])
+Attributes define properties of a given object at the point of using
+this object. Typically, there are different kind of attributes which
+are usually orthogonal to each other while for one attribute kind,
+several choices are possible.
 
-brain storming:
+    Example:
 
-Aufrufkonventionen:
-
-clear vs. clear()
-arrow.normal vs. arrow.normal(size=5)
-canvas.stroke vs. canvas.stroked()
-
-canvas.stroke(..., canvas.filled())
-canvas.fill(..., pattern)
-canvas.draw(..., canvas.stroked(), canvas.filled(canvas.linestyle.dashed()), color.rgb.red)
+    When stroking a path, the linewidth and the linestyle are
+    different kind of attributes. The linewidth might be normal, thin,
+    thick, or whatever else. The linestyle might be solid, dashed etc.
 
 
-Stichworte:
+Where are attributes used?
+--------------------------
 
-- Definition erlaubter Attribute
-- Sortierung/Abhaengigkeit von Attributen
-- Ausschluss/Ueberschreiben/Loeschen von Attributes untereinander
-- Vorgehen:
-  - Container macht Sortierung etc.
-  - Methode (stroke, text, fill) weiss, was sie will
-  - Attribute machen was ...
-- Reihenfolge von Attributen spielt keine Rolle (ausser, dass sie sich gegenseitig ueberschreiben koennen)
+Typically, attributes occure in lists.  There basic usage form is in
+methods, where the object the attribute is attached to is the first
+argument (not taking into account the self argument) followed by
+several attritutes.
 
-Attributtypen:
+    Example:
 
-- canvasattrs:
-  - strokeattrs
-  - fillattrs
+    canvas.stroke(path, attr1, attr2, attr3)
 
-- decorators: (drawattrs)
-  - stroked (takes strokeattrs)
-  - filled (takes fillattrs)
-  - arrows
+For more complicated cases, the attributes are collcted as lists
+in keyword arguments.
 
-- color
+    Example:
 
-- trafos (drawattrs)
-
-- clip (drawattrs)
-
-- strokeattrs (drawattrs)
-  - linewidth
-  - linestyle
-  - color
-
-- fillattrs (drawattrs)
-  - pattern
-  - color
-
-- textattrs:
-  - halign
-  - valign
-  - parbox
-  - color
+    graph.axispainter(labelattrs=[textattr1, textattr2],
+                      titleattrs=[textattr3, textattr4])
 
 
-canvas.stroke, path, attr.color.rgb() -> draw
+Attribute categories
+--------------------
 
-canvas.draw, decoratedpath, attr.stroked(), ... -> insert
+There are different categories of attributes. We give a (not yet?)
+complete list here:
+
+    - stroke attributes, aka strokestyles (style module)
+      inherited from style.strokestyle
+    - fill attributes, aka fillstyles
+      inherited from style.fillstyle
+    - text attributes, aka textattrs (text module)
+      inherited from style.textattr
+    - decorators (deco module)
+      inherited from deco.deco
+    - transformations? (trafo module)
+      (AW: these should be attributes)
+    - clippings?
+      (AW: might go away; boxes could do that)
+
+Operations usually allow for certain attibute categories only. For
+example when stroking a path, text attributes are not allowed, while
+stroke attributes and decoraters are. Some attributes might belong to
+several attribute categories like colors, which are both, stroke and
+fill attributes.
 
 
+Attribute instances as member variables
+---------------------------------------
+
+Usable attributes are always instances. For simple mind attributes, we
+have the following technology:
+
+    class linewidth(strokestyle):
+
+        def __init__(...)
+        etc.
+
+    linewidth.normal = linewidth("0.2 mm")
+    linewidth.thick = linewidth("0.2828 mm")
+    etc.
+
+Thus there are different possibilities to get a linewidth: by
+linewidth("0.25 mm") and by linewidth.normal (and the like).
 
 
+Specializing instances
+----------------------
 
+There might be more complicated attributes, where it is more
+questionable, how attribute instances should be used. An easy, yet not
+striking, example would be changes in some color parameters of a color
+attribute. Consider a CMYK color, where only the blackness should be
+changed. Thus we need to have a syntax for further specializing an
+already existing attribute instance. This could be done by __call__
+(or some arbitrary other named method --- the later would not really
+be helpfull in the authors eyes). The code would look like:
+
+    some_cmyk_color = color.cmyk(0.1, 0.2, 0.3, 0.4)
+    darker_version = some_cmyk_color(b=1)
+
+Both, some_cmyk_color and darker_version are instances of color.cmyk.
+Since usually only some parameters are to be changed only, the
+parameters should be accessable by keyword arguments. Attribute lists
+in keyword arguments could gain from the attribute replacement and
+clearing functionality described below. Basically, the specialization
+(__call__ method) should take exactly the same arguments like the
+constructor (__init__ method). It might be consistent to provide the
+specialization possibility for all attribute instances.
+
+
+Attribute lists
+---------------
+
+Sometimes it is needed to collect attributes in lists to provide them
+to a single keyword argument. At the same time we want to be able to
+complete the attribute lists without removing the already defined
+(default?) entries. This can be done via the merge function from the
+attr module. The prototype of this technique looks like:
+
+    def f(kwarg=[]):
+        use_attr_list = attr.merge([<default arguments>] + kwarg)
+
+There is also the possibility to clear attributes by clear instances.
+See attr.py for details.
+
+
+Attribute exclusion, overwriting and ordering
+---------------------------------------------
+
+Attributes can force some exclusion, overwriting and ordering to each
+other. Clearing instances mentioned above are just a special case.
+Further information is provided in attr.py.
+
+
+Comments.
+=========
+
+Enforce named parameters
+------------------------
+
+To ensure the correct usage of keyword arguments, we could enforce the
+usage of keyword arguments by the following construct:
+
+def f(unusedparam=helper.nodefault,
+      firstparam=None,
+      secondparam=None):
+    if unusedparam is not None:
+        raise RuntimeError("we enforce the use of named parameters")
+
+Is this really necessary?
+
+
+Generic __call__ method
+-----------------------
+
+It should be possible to write a generic __call__ method for all
+attributes. It would need to use self.__class__. I (AW) remember that
+I was strongly against this construction. As far as I can tell, I have
+changed my mind.
