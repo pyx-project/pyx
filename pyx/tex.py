@@ -2,6 +2,8 @@
 
 import const, canvas, os, string, tempfile, sys, md5, string, traceback, time, unit
 
+# TODO 7: make an addtexdefinition
+
 # tex processor types
 
 TeX = "TeX"
@@ -38,10 +40,11 @@ class TexRightParenthesisError(TexException):
 
 class tex:
 
-    def __init__(self, type = "TeX", latexstyle = "10pt", latexclass = "article", latexclassopt = "", texinit = "", TexInitIgnoreMsgLevel = 1):
+    def __init__(self, unit, type = "TeX", latexstyle = "10pt", latexclass = "article", latexclassopt = "", texinit = "", TexInitIgnoreMsgLevel = 1):
+        self.unit = unit
         assert type == TeX or type == LaTeX, "invalid type"
         if type == TeX:
-            # TODO 5: error handling lts-file not found
+            # TODO 7: error handling lts-file not found
             # TODO 3: other ways creating font sizes?
             texinit = open("lts/" + latexstyle + ".lts", "r").read() + texinit
         self.type = type
@@ -121,8 +124,7 @@ class tex:
 
         # TODO 3: color support
 
-        #CmdBegin = "{\\vbox to0pt{\\kern" + str(self.canvas.Height - y) + "truecm\\hbox{\\kern" + str(x) + "truecm\\ht\\localbox0pt"
-        CmdBegin = "{\\vbox to0pt{\\kern" + str(-y) + "truecm\\hbox{\\kern" + str(x) + "truecm\\ht\\localbox0pt"
+        CmdBegin = "{\\vbox to0pt{\\kern" + str(self.unit.tpt(-y)) + "truept\\hbox{\\kern" + str(self.unit.tpt(x)) + "truept\\ht\\localbox0pt"
         CmdEnd = "}\\vss}\\nointerlineskip}"
 
         if angle != None and angle != 0:
