@@ -34,7 +34,7 @@ Walter Brisken, Jörg Lehmann, Michael Schindler, Andr{\'e} Wobst.
 \newpage
 
 \section{General aspects of \PyX}
-\question{a}{The name of the game \new}
+\question{a}{The name of the game}
 {}
 {Originally, the name \PyX{} was constructed as a combination of 
 \textbf{P}ostscript, i.e.\ the first output format supported by \PyX{}, 
@@ -53,7 +53,8 @@ different. According to the developers of \PyX{}, it should be pronounced as
 
 \question{a}{Where do I get the latest version of \PyX?}
 {}
-{The current release of \PyX{} (as well as older ones) is freely available 
+{\label{q:where_do_I_get_PyX}
+The current release of \PyX{} (as well as older ones) is freely available 
 from \url{http://pyx.sourceforge.net} where also a CVS repository with the 
 latest patches can be found. Possibly older versions of \PyX{} are
 also available as package for
@@ -76,6 +77,37 @@ prompt)
 >>> import pyx\\
 >>> pyx.\us\us{}version\us\us
 \end{progcode}
+}
+
+\question{a}{How can I access older versions of \PyX? \new}
+{}
+{As at present it is not guaranteed that \PyX{} is backward compatible, it may
+be desirable to access an older version of \PyX{} instead of adapting older 
+code to the current version of \PyX. In order to do that, one needs the 
+corresponding \PyX{} package (see \uaref{q:where_do_I_get_PyX} if you need to
+download it), which should be unpacked below a directory, e.g.\ 
+\texttt{/home/xyz/Python},  where you want to keep the various \PyX{} versions.
+This will result in a subdirectory with a name like \texttt{PyX-0.6.3} which
+contains the contents of the corresponding package. You can then ask Python to 
+first look in the appropriate directory before looking for the current version 
+of \PyX{} by inserting the following code (appropriately modified according 
+to your needs) into your program:
+\begin{progcode}
+import sys\\
+sys.path[:0]~=~["/home/xyz/Python/PyX-0.6.3"]
+\end{progcode}
+Including appropriate lines even if the current version of \PyX{} is used, 
+might turn out to be helpful when the current version has become an old 
+version (unless you have no difficulties determining the \PyX{} version by 
+looking at your code).
+
+If your operating system supports path expansion, you might use as an
+alternative:
+\begin{progcode}
+import sys, os\\
+sys.path[:0]~=~[os.path.expanduser("\char126/Python/PyX-0.6.3")]
+\end{progcode}
+which will expand the tilde to your home directory.
 }
 
 \question{c}{Does \PyX{} run under my favorite operating system?}
@@ -312,7 +344,7 @@ in the last line requests to write the contents of this canvas to a file.
 %\end{progcode}
 }
 
-\question{a}{How can I plot grid data? \changed}
+\question{a}{How can I plot grid data?}
 {}
 {\PyX{} offers support for plotting three-dimensional data as two-dimensional
 color plots or grey-scale plots and of vector fields by providing ways to
@@ -368,7 +400,7 @@ Complete code examples can be found in \path{examples/graphs/mandel.py} and
 \path{examples/graphs/arrows.py}\,.
 }
 
-\question{a}{How can I access points in problem coordinates of a graph? \new}
+\question{a}{How can I access points in problem coordinates of a graph?}
 {}
 {\label{q:problemcoord}
 Sometimes it may be necessary to add graphical elements to a graph in addition
@@ -447,7 +479,7 @@ g.stroke(g.ygridpath(0))
 \end{progcode}
 }
 
-\question{a}{How can I add grid lines to a graph? \new}
+\question{a}{How can I add grid lines to a graph?}
 {}
 {
 Specifying \texttt{gridattrs} for the painter of an axis will generate grid
@@ -490,7 +522,7 @@ for ticks but not subticks.
 
 \subsection{Data properties}
 
-\question{a}{How do I choose the symbol? \changed}
+\question{a}{How do I choose the symbol?}
 {}
 {\label{q:choose_symbol}
 Suppose a graph called \texttt{g} has been initialized, e.g.\ by using
@@ -504,7 +536,7 @@ g.plot(graph.data.file("test.dat"),\\
 \end{progcode}
 }
 
-\question{a}{How do I choose the color of the symbols? \changed}
+\question{a}{How do I choose the color of the symbols?}
 {}
 {Colors are not properties of the symbol as such and can therefore not
 be specified in \texttt{symbolattrs} directly. The color is rather related
@@ -519,7 +551,7 @@ graph.style.symbol(graph.style.symbol.circle,\\
 you will obtain a circle filled in green with a red borderline.
 }
 
-\question{a}{How do I choose the line style? \changed}
+\question{a}{How do I choose the line style?}
 {}
 {If you do not want to use symbols, you can set the line style as in this
 example
@@ -665,8 +697,7 @@ it, you should consult the documentation
 \uaref{q:intro_tex_latex}. 
 }
 
-\question{a}{Why do environments like itemize or eqnarray seem not to work?
-\new}
+\question{a}{Why do environments like itemize or eqnarray seem not to work?}
 {}
 {An itemize environment might result in a \LaTeX{} error complaining about
 a ``\texttt{missing \cs item}'' or an eqnarray might lead to a \LaTeX{} message
@@ -725,7 +756,7 @@ If the file exists, the problem can be solved by changing the permissions to
 allow read access.}
 
 \question{a}{No information for font `cmr10' found in font mapping 
-file \changed}
+file}
 {}
 {\label{q:no_cmr10}
 Such an error message can already be encountered by simply running the example
