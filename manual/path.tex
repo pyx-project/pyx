@@ -1,4 +1,4 @@
-\chapter{Module path: PostScript like paths}
+\chapter{Basic graphics}
 
 \label{path}
 
@@ -17,40 +17,39 @@ primitives \verb|moveto|, \verb|lineto|, \verb|curveto|, etc., to the
 constructor of the \verb|path| class. The following code snippet, for
 instance, defines a path \verb|p| that consists of a straight line
 from the point $(0, 0)$ to the point $(1, 1)$
-\begin{quote}
 \begin{verbatim}
 from pyx import *
 p = path.path(path.moveto(0, 0), path.lineto(1, 1))
 \end{verbatim}
-\end{quote}
 Equivalently, one can also use the predefined \verb|path| subclass
 \verb|line| and write
-\begin{quote}
 \begin{verbatim}
 p = path.line(0, 0, 1, 1)
 \end{verbatim}
-\end{quote}
 
-Usually, one wants to draw the path on a canvas, which can be done
-using the \verb|stroke| method of the \verb|canvas| class, i.e.,
-\begin{quote}
+While you can already do some geometrical operations with the
+just create path (see next section), we need another \PyX{} object
+in order to produce the output corresponding to the path, namely
+an instance of the \verb|canvas| class. By convetion, we use
+the name \verb|c| for this instance:
 \begin{verbatim}
 c = canvas.canvas()
+\end{verbatim}
+In order to draw the path on the canvas, we use the \verb|stroke| method
+of the \verb|canvas| class, i.e.,
+\begin{verbatim}
 c.stroke(p)
 c.writeEPSfile("line")
 \end{verbatim}
-\end{quote}
 To complete the example, we have added a \verb|writeEPSfile| call,
 which writes the contents of the canvas into the given file.
 
 Let us as second example define a path which consists of more than 
 one sub path:
-\begin{quote}
 \begin{verbatim}
 cross = path.path(path.moveto(0, 0), path.rlineto(1, 1),
                   path.moveto(1, 0), path.rlineto(-1, 1))
 \end{verbatim}
-\end{quote}
 The first sub path is again a straight line from $(0, 0)$ to $(1, 1)$,
 with the only difference that we now have used the \verb|rlineto|
 class, whose arguments count relative from the last point in the path.
@@ -60,7 +59,6 @@ intersect at the point $(1/2, 1/2)$, they count as separate sub paths.
 The general rule is that each occurence of \verb|moveto| opens a new
 sub path. This means that if one wants to draw a rectangle, one should
 not use
-\begin{quote}
 \begin{verbatim}
 # wrong: do not use moveto when you want a single sub path
 rect1 = path.path(path.moveto(0, 0), path.lineto(0, 1),
@@ -68,17 +66,14 @@ rect1 = path.path(path.moveto(0, 0), path.lineto(0, 1),
                   path.moveto(1, 1), path.lineto(1, 1),
                   path.moveto(0, 1), path.lineto(0, 0))
 \end{verbatim}
-\end{quote}
 which would construct a rectangle consisting of four disconnected
 sub paths. Instead the correct way of defining a rectangle is 
-\begin{quote}
 \begin{verbatim}
 # correct: a rectangle consisting of a single closed sub path
 rect2 = path.path(path.moveto(0, 0), path.lineto(0, 1), 
                   path.lineto(1, 1), path.lineto(1, 0),
                   path.closepath())
 \end{verbatim}
-\end{quote}
 %
 \begin{figure}
 \centerline{\includegraphics{rects}}
@@ -94,21 +89,17 @@ path, i.e., it joins the beginning and the end of the line segment.
 The difference can be appreciated in Fig.~\ref{fig:rects}, where
 also a filled (and at the same time stroked) rectangle is shown.
 The corresponding code looks like
-\begin{quote}
 \begin{verbatim}
 c.stroke(rect1, [deco.filled([color.grey(0.95)])])
 \end{verbatim}
-\end{quote}
 The important point to remember here is that when filling a path, PostScript
 automatically closes it.
 
 Of course, rectangles are also predefined in \PyX{}, so above we could
 have as well written
-\begin{quote}
 \begin{verbatim}
 rect2 = path.rect(0, 0, 1, 1)
 \end{verbatim}
-\end{quote}
 Here, the first two arguments specify the origin of the rectangle
 while the second two arguments define its width and height,
 respectively.
@@ -127,24 +118,7 @@ of path methods, which we will introduce in the following.
 Suppose you want to draw the radii to the intersection points of a
 circle with a straight line. This task can be done using the following
 code which gives the result shown in Fig.~\ref{fig:radii}
-\begin{quote}
-\begin{verbatim}
-from pyx import *
-
-c = canvas.canvas()
-
-circle = path.circle(0, 0, 5)
-line = path.line(-7, 2, 7, 5)
-c.stroke(circle, [style.linewidth.Thick])
-c.stroke(line, [style.linewidth.Thick])
-
-isects_circle, isects_line = circle.intersect(line)
-for isect in isects_circle:
-    c.stroke(path.line(0, 0, *circle.at(isect)))
-
-c.writeEPSfile("radii")
-\end{verbatim}
-\end{quote}
+\verbatiminput{radii.py}
 \begin{figure}
 \centerline{\includegraphics{radii}}
 %\caption{}
@@ -167,7 +141,6 @@ previous example the segment of the circle delimited by the straight
 line (cf.\ Fig.~\ref{fig:radii2}), you first have to construct a path
 corresponding to the outline of this segment. The following code
 snippet does yield this \verb|segment|
-\begin{quote}
 \begin{verbatim}
 arc1, arc2 = circle.split(isects_circle)
 arc = arc1.arclen()<arc2.arclen() and arc1 or arc2
@@ -177,7 +150,6 @@ line1, line2, line3 = line.split(isects_line)
 
 segment = line2 << arc
 \end{verbatim}
-\end{quote}
 \begin{figure}
 \centerline{\includegraphics{radii2}}
 %\caption{}
@@ -357,11 +329,9 @@ which are denoted by a $\dagger$ in the above table.
 
 Any path can easily be converted to its normalized form by passing it
 as parameter to the \texttt{normpath} constructor,
-\begin{quote}
 \begin{verbatim}
 np = normpath(p)
 \end{verbatim}
-\end{quote}
 Additionally, you can specify the accuracy (in points) which is used
 in all \verb|normpath| calculations by means of the keyword argument
 \verb|epsilon|, which defaults to $10^{-5}$.  Note that the sum of a

@@ -128,9 +128,13 @@ The \verb|canvas| class provides the following methods:
   {>{\hsize=.85\hsize}X>{\raggedright\arraybackslash\hsize=1.15\hsize}X}
   \texttt{canvas} method & function \\
   \hline
-  \texttt{\_\_init\_\_(*args)} & Construct new canvas. \texttt{args}
-  can be instances of \texttt{trafo.trafo}, \texttt{canvas.clip}
-  and/or \texttt{canvas.PathStyle}.\\
+  \texttt{\_\_init\_\_(attrs=[],\newline
+  \phantom{\_\_init\_\_(}texrunner=None)} & Construct new
+  canvas, applying the given \texttt{attrs}. can be instances of \texttt{trafo.trafo}, \texttt{canvas.clip}
+  and/or \texttt{canvas.PathStyle}. 
+  The texrunner instance used for the text method can be
+  specified using the \texttt{texrunner} argument. It defaults to
+  \texttt{text.defaulttexrunner}.\\
   \texttt{bbox()} &
   Returns the bounding box enclosing all elements of the canvas.\\
   \texttt{draw(path, attrs)} &
@@ -141,18 +145,18 @@ The \verb|canvas| class provides the following methods:
   Fills the given \texttt{path} on the canvas, \textit{i.e.}\
   \texttt{insert}s it together with the necessary \texttt{newpath},
   \texttt{fill} sequence, applying the given \texttt{attrs}. \\
-  \texttt{insert(PSOp, *args)} &
+  \texttt{insert(PSOp, attrs=[])} &
   Inserts an instance of \texttt{base.PSOp} into the canvas.
-  If \texttt{args} are present, create a new \texttt{canvas}instance passing
-  \texttt{args} as arguments and insert it. Returns \texttt{PSOp}.\\
-  \texttt{set(*styles)} &
+  If \texttt{attrs} are present, create a new \texttt{canvas}instance passing
+  \texttt{attrs} as arguments and insert it. Returns \texttt{PSOp}.\\
+  \texttt{set(styles)} &
   Sets the given \texttt{styles} (instances of \texttt{base.PathStyle} or
   subclasses) for the rest of the canvas.\\
   \texttt{stroke(path, attrs=[])} & 
   Strokes the given \texttt{path} on the canvas, \textit{i.e.}\
   \texttt{insert}s it togeither with the necessary \texttt{newpath},
   \texttt{stroke} sequence, applying the given \texttt{attrs}. \\
-  \texttt{text(x, y, text, *args)} &
+  \texttt{text(x, y, text, attrs=[])} &
   Inserts \texttt{text} into the
   canvas (shortcut for
   \texttt{insert(texrunner.text(x, y, text, *args))}).\\
