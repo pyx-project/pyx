@@ -8,25 +8,25 @@ l = unit.topt(8)
 def hpaint(c, x, y, axis, reverse = 0):
     x, y = map(unit.topt, (x, y))
     axis.ticks = axis.part.defaultpart(axis.min/axis.factor, axis.max/axis.factor)
-    axis.tickpoint = lambda axis, v: (x+v*l, y)
-    axis.tickdirection = lambda axis, v: (0, -1 + 2*reverse)
-    c.draw(path._line(x, y, x + l, y))
+    axis.tickpoint = lambda axis, v, x=x, y=y, l=l: (x+v*l, y)
+    axis.tickdirection = lambda axis, v, reverse=reverse: (0, -1 + 2*reverse)
+    c.stroke(path._line(x, y, x + l, y))
     axis.painter.paint(c, axis)
 
 def vpaint(c, x, y, axis, reverse = 0):
     x, y = map(unit.topt, (x, y))
     axis.ticks = axis.part.defaultpart(axis.min/axis.factor, axis.max/axis.factor)
-    axis.tickpoint = lambda axis, v: (x, y+v*l)
-    axis.tickdirection = lambda axis, v: (-1 + 2*reverse, 0)
-    c.draw(path._line(x, y, x, y + l))
+    axis.tickpoint = lambda axis, v, x=x, y=y, l=l: (x, y+v*l)
+    axis.tickdirection = lambda axis, v, reverse=reverse: (-1 + 2*reverse, 0)
+    c.stroke(path._line(x, y, x, y + l))
     axis.painter.paint(c, axis)
 
 def cpaint(c, x, y, axis):
     x, y = map(unit.topt, (x, y))
     axis.ticks = axis.part.defaultpart(axis.min/axis.factor, axis.max/axis.factor)
-    axis.tickpoint = lambda axis, v: (x+l/2*math.cos(v*2*math.pi), y+l/2*math.sin(v*2*math.pi))
+    axis.tickpoint = lambda axis, v, x=x, y=y, l=l: (x+l/2*math.cos(v*2*math.pi), y+l/2*math.sin(v*2*math.pi))
     axis.tickdirection = lambda axis, v: (math.cos(v*2*math.pi), math.sin(v*2*math.pi))
-    c.draw(path._circle(x, y, l/2))
+    c.stroke(path._circle(x, y, l/2))
     axis.painter.paint(c, axis)
 
 c = canvas.canvas()

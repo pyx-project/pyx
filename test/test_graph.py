@@ -80,10 +80,10 @@ def test_ownmark(c, t, x, y):
                 x = graph.xconvert(xaxis.convert(point[self.xindex]))
                 y = graph.yconvert(yaxis.convert(point[self.yindex]))
                 angle = point[self.angleindex]
-                graph.draw(path._line(x - 0.5 * size * math.cos(angle),
-                                      y - 0.5 * size * math.sin(angle),
-                                      x + 0.5 * size * math.cos(angle),
-                                      y + 0.5 * size * math.sin(angle)), canvas.earrow.normal)
+                graph.stroke(path._line(x - 0.5 * size * math.cos(angle),
+                                        y - 0.5 * size * math.sin(angle),
+                                        x + 0.5 * size * math.cos(angle),
+                                        y + 0.5 * size * math.sin(angle)), canvas.earrow.normal)
 
     class Div(mathtree.MathTreeFunc2):
         def __init__(self, *args):
@@ -112,10 +112,10 @@ def test_ownmark(c, t, x, y):
     g.plot(graph.function("y=25*x^-1.6", xmin = 1, ymax = 10), style = line4)
     g.drawall()
 
-    g.draw(line1.path, color.rgb.blue)
-    g.draw(line2.path, color.rgb.red)
-    g.draw(line3.path, color.rgb.green)
-    g.draw(line4.path, color.gray.black)
+    g.stroke(line1.path, color.rgb.blue)
+    g.stroke(line2.path, color.rgb.red)
+    g.stroke(line3.path, color.rgb.green)
+    g.stroke(line4.path, color.gray.black)
     p1=line1.path
     p2=line2.path.reversed()
     p3=line3.path.reversed()
@@ -124,10 +124,10 @@ def test_ownmark(c, t, x, y):
     seg2b, seg3b = p2.intersect(p3)[0]
     seg3c, seg4c = p3.intersect(p4)[0]
     seg4d, seg1d = p4.intersect(p1)[0]
-    g.draw(p1.split(seg1a, seg1d)[1] <<
-           p4.split(seg4d, seg4c)[1] <<
-           p3.split(seg3c, seg3b)[1] <<
-           p2.split(seg2b, seg2a)[1], canvas.linewidth.THick, canvas.filled(color.gray(0.5)))
+    g.stroke(p1.split(seg1a, seg1d)[1] <<
+             p4.split(seg4d, seg4c)[1] <<
+             p3.split(seg3c, seg3b)[1] <<
+             p2.split(seg2b, seg2a)[1], canvas.linewidth.THick, canvas.filled(color.gray(0.5)))
 
 c = canvas.canvas()
 t = c.insert(tex.tex())

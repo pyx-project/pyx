@@ -238,6 +238,26 @@ def _nonemap(method, list):
     return map(method, list)
 
 
+class manualpart(anypart):
+
+    def __init__(self, tickfracs=None, labelfracs=None, **args):
+        self.multipart = 0
+        self.tickfracs = _nonemap(_ensurefrac, _ensuresequence(tickfracs))
+        self.labelfracs = _nonemap(_ensurefrac, _ensuresequence(labelfracs))
+        anypart.__init__(self, **args)
+
+    def getpart(self, min, max, extendmin=0, extendmax=0, epsilon=1e-10):
+        if self.labelfracs is not None:
+            ticks = [tick(frac.enum, frac.denom, ticklevel = 0, labellevel = None) for frac in self.tickfracs]
+            ticks = self.mergeticklists(ticks, [tick(frac.enum, frac.denom, ticklevel = None, labellevel = 0) for frac in self.labelfracs])
+        else:
+            ticks = [tick(frac.enum, frac.denom, ticklevel = 0, labellevel = 0) for frac in self.tickfracs]
+        self.setlabels(ticks)
+        return ticks
+
+    defaultpart = getpart
+
+
 class linpart(anypart):
 
     def __init__(self, tickfracs=None, labelfracs=None,
@@ -282,12 +302,11 @@ class linpart(anypart):
         values provided to the constructor. It is not allowed to provide something
         to tickfracs and labelfracs here and at the constructor at the same time.
         """
-        if tickfracs is None and tickfracs is None:
+        if tickfracs is None and labelfracs is None:
             tickfracs = self.tickfracs
             labelfracs = self.labelfracs
         else:
-            if self.tickfracs is not None: raise ValueError
-            if self.labelfracs is not None: raise ValueError
+            if self.tickfracs is not None or self.labelfracs is not None: raise ValueError
         if tickfracs is None:
             if labelfracs is None:
                 tickfracs = ()
@@ -447,8 +466,7 @@ class logpart(anypart):
             tickshiftfracslist = self.tickshiftfracslist
             labelshiftfracslist = self.labelshiftfracslist
         else:
-            if self.tickshiftfracslist is not None: raise ValueError
-            if self.labelshiftfracslist is not None: raise ValueError
+            if self.tickshiftfracslist is not None or self.labelshiftfracslist is not None: raise ValueError
         if tickshiftfracslist is None:
             if labelshiftfracslist is None:
                 tickshiftfracslist = (shiftfracs(10), )
@@ -1139,18 +1157,18 @@ class axispainter(attrlist.attrlist):
             if tick.ticklevel is not None:
                 if self.drawgrid > tick.ticklevel and (tick != frac(0, 1) or self.zerolinestyles is None):
                     gridpath = axis.gridpath(tick.virtual)
-                    graph.draw(gridpath, *self.selectstyle(tick.ticklevel, self.gridstyles))
+                    graph.stroke(gridpath, *self.selectstyle(tick.ticklevel, self.gridstyles))
                 factor = math.pow(self.subticklengthfactor, tick.ticklevel)
                 x1 = tick.x - tick.dx * innerticklength * factor
                 y1 = tick.y - tick.dy * innerticklength * factor
                 x2 = tick.x + tick.dx * outerticklength * factor
                 y2 = tick.y + tick.dy * outerticklength * factor
-                graph.draw(path._line(x1, y1, x2, y2), *self.selectstyle(tick.ticklevel, self.tickstyles))
+                graph.stroke(path._line(x1, y1, x2, y2), *self.selectstyle(tick.ticklevel, self.tickstyles))
             if tick.labellevel is not None:
                 tick.textbox._printtext(tick.x, tick.y)
         if self.zerolinestyles is not None:
             if axis.ticks[0] * axis.ticks[-1] < frac(0, 1):
-                graph.draw(axis.gridpath(axis.convert(0)), *_ensuresequence(self.zerolinestyles))
+                graph.stroke(axis.gridpath(axis.convert(0)), *_ensuresequence(self.zerolinestyles))
 
 
         if axis.title is not None:
@@ -1204,7 +1222,7 @@ class linkaxispainter(axispainter):
 class _axis:
 
     def __init__(self, min=None, max=None, reverse=0, title=None, painter = axispainter(),
-                       factor = 1, suffix = None):
+                       factor = 1, suffix = None, baselinestyles=()):
         if min is not None and max is not None and min > max:
             min, max = max, min
             if reverse:
@@ -1220,6 +1238,7 @@ class _axis:
         self.painter = painter
         self.factor = factor
         self.suffix = suffix
+        self.baselinestyles = baselinestyles
         self.setrange()
 
     def setrange(self, min=None, max=None):
@@ -1273,7 +1292,8 @@ class graphxy(canvas.canvas):
     DXMaxPattern = re.compile(r"dxmax$")
     DYMaxPattern = re.compile(r"dymax$")
 
-    def __init__(self, tex, xpos=0, ypos=0, width=None, height=None, ratio=goldenrule, axesdist="0.8 cm", **axes):
+    def __init__(self, tex, xpos=0, ypos=0, width=None, height=None, ratio=goldenrule,
+                 backgroundstyles=None, axesdist="0.8 cm", **axes):
         canvas.canvas.__init__(self)
         self.tex = tex
         self.xpos = unit.topt(xpos)
@@ -1286,20 +1306,27 @@ class graphxy(canvas.canvas):
         if height <= 0: raise ValueError
         self.width = unit.topt(width)
         self.height = unit.topt(height)
+        for key in axes.keys():
+            if not self.XPattern.match(key) and not self.YPattern.match(key):
+                raise TypeError("got an unexpected keyword argument '%s'" % key)
         if not axes.has_key("x"):
             axes["x"] = linaxis()
         if not axes.has_key("x2"):
             axes["x2"] = linkaxis(axes["x"])
+        elif axes["x2"] is None:
+            del axes["x2"]
         if not axes.has_key("y"):
             axes["y"] = linaxis()
         if not axes.has_key("y2"):
             axes["y2"] = linkaxis(axes["y"])
+        elif axes["y2"] is None:
+            del axes["y2"]
         self.axes = axes
         self.axesdist_str = axesdist
-        self.data = [ ]
+        self.backgroundstyles = backgroundstyles
+        self.data = []
         self._drawstate = self.drawlayout
         self.previousstyle = {}
-        self.previouscolorchange = {}
 
     def plot(self, data, style = None):
         if self._drawstate != self.drawlayout:
@@ -1443,10 +1470,12 @@ class graphxy(canvas.canvas):
     def drawbackground(self):
         if self._drawstate != self.drawbackground:
             raise PyxGraphDrawstateError
-        self.fill(path._rect(self.xmap.convert(0),
-                             self.ymap.convert(0),
-                             self.xmap.convert(1) - self.xmap.convert(0),
-                             self.ymap.convert(1) - self.ymap.convert(0)), color.gray.white)
+        if self.backgroundstyles is not None:
+            self.draw(path._rect(self.xmap.convert(0),
+                                 self.ymap.convert(0),
+                                 self.xmap.convert(1) - self.xmap.convert(0),
+                                 self.ymap.convert(1) - self.ymap.convert(0)),
+                      *_ensuresequence(self.backgroundstyles))
         self._drawstate = self.drawdata
 
     def drawdata(self):
@@ -1488,15 +1517,18 @@ class graphxy(canvas.canvas):
                 raise ValueError("Axis key %s not allowed" % key)
             x1, y1 = axis.tickpoint(axis, 0)
             x2, y2 = axis.tickpoint(axis, 1)
-            self.draw(path._line(x1, y1, x2, y2))
+            if axis.baselinestyles is not None:
+                self.stroke(path._line(x1, y1, x2, y2),
+                            *_ensuresequence(axis.baselinestyles))
             axis.tickdirection = self.tickdirection
-            axis.painter.paint(self, axis)
+            if axis.painter is not None:
+                axis.painter.paint(self, axis)
             if self.XPattern.match(key):
-                 self.xaxisextents[num2] += axis.extent
-                 needxaxisdist[num2] = 1
+                self.xaxisextents[num2] += axis.extent
+                needxaxisdist[num2] = 1
             if self.YPattern.match(key):
-                 self.yaxisextents[num2] += axis.extent
-                 needyaxisdist[num2] = 1
+                self.yaxisextents[num2] += axis.extent
+                needyaxisdist[num2] = 1
         self._drawstate = None
 
     def drawall(self):
@@ -1649,12 +1681,12 @@ class mark(plotstyle):
                     else:
                         xmin = graph.xconvert(xaxis.convert(point[self.dxminindex]))
                         xmax = graph.xconvert(xaxis.convert(point[self.dxmaxindex]))
-                    graph.draw(path.path(path._moveto(xmin, y-self.errorscale*self.size),
-                                         path._lineto(xmin, y+self.errorscale*self.size),
-                                         path._moveto(xmin, y),
-                                         path._lineto(xmax, y),
-                                         path._moveto(xmax, y-self.errorscale*self.size),
-                                         path._lineto(xmax, y+self.errorscale*self.size)))
+                    graph.stroke(path.path(path._moveto(xmin, y-self.errorscale*self.size),
+                                           path._lineto(xmin, y+self.errorscale*self.size),
+                                           path._moveto(xmin, y),
+                                           path._lineto(xmax, y),
+                                           path._moveto(xmax, y-self.errorscale*self.size),
+                                           path._lineto(xmax, y+self.errorscale*self.size)))
             except (TypeError, ValueError):
                 pass
             try:
@@ -1665,11 +1697,11 @@ class mark(plotstyle):
                     else:
                         ymin = graph.yconvert(yaxis.convert(point[self.dyminindex]))
                         ymax = graph.yconvert(yaxis.convert(point[self.dymaxindex]))
-                    graph.draw(path.path(path._moveto(x-self.errorscale*self.size, ymin),
-                                         path._lineto(x+self.errorscale*self.size, ymin),
-                                         path._moveto(x, ymin),
-                                         path._lineto(x, ymax),
-                                         path._moveto(x-self.errorscale*self.size, ymax),
+                    graph.stroke(path.path(path._moveto(x-self.errorscale*self.size, ymin),
+                                           path._lineto(x+self.errorscale*self.size, ymin),
+                                           path._moveto(x, ymin),
+                                           path._lineto(x, ymax),
+                                           path._moveto(x-self.errorscale*self.size, ymax),
                                          path._lineto(x+self.errorscale*self.size, ymax)))
             except (TypeError, ValueError):
                 pass
@@ -1677,7 +1709,7 @@ class mark(plotstyle):
                 self._drawsymbol(graph, x, y)
 
     def _drawsymbol(self, canvas, x, y):
-        canvas.draw(path.path(*self._symbol(x, y)), *self.symbolstyles)
+        canvas.stroke(path.path(*self._symbol(x, y)), *self.symbolstyles)
 
     def drawsymbol(self, canvas, *args):
         return self._drawsymbol(canvas, *map(unit.topt, args))
@@ -1840,7 +1872,7 @@ class line(plotstyle):
                 moveto = 1
         self.path = path.path(*line)
         if self.dodrawline:
-            graph.draw(self.path, *self.linestyles)
+            graph.stroke(self.path, *self.linestyles)
 
 
 class _solidline(line, attrlist.attrlist):
