@@ -1,5 +1,5 @@
-PyX
-===
+                      PyX - Python graphics package
+                      =============================
 
 PyX is a Python package to create encapsulated PostScript figures. It provides
 classes and methods to access basic PostScript functionality at an abstract
@@ -12,3 +12,33 @@ typesetting within the figures.
 A major part of PyX on top of the already described basis is the provision of
 high level functionality for complex tasks like 2d plots in publication-ready
 quality.
+
+Installation
+------------
+
+The installation of PyX is described in the file INSTALL.
+
+Documentation
+-------------
+
+A prebuilt version of the manual is distributed in manual/manual.ps. For
+answers to frequently asked questions, we refer to pyx/pyxfaq.pdf. We also
+recommend taking a look on the nice examples for the use of PyX, which can be
+found in the examples directory.
+
+License
+-------
+
+PyX is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+PyX is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with PyX; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
