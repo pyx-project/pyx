@@ -31,6 +31,6 @@ c = canvas.canvas()
 
 # draw first the area, then the function
 c.fill(area, color.gray(0.6))
-c.stroke(fline, canvas.linewidth.Thick, canvas.linejoin.round)
+c.stroke(fline, style.linewidth.Thick, style.linejoin.round)
 
 c.writetofile("partialfill")

@@ -2,7 +2,8 @@
 
 from math import pi, cos
 from pyx import *
-from pyx.canvas import barrow, earrow, linewidth, linestyle
+from pyx.deco import barrow, earrow
+from pyx.style import linewidth, linestyle
 from pyx.graph import graphxy, linaxis, axispainter, function, line
 
 mypainter = axispainter(baselineattrs=earrow.normal, titlepos=1)
