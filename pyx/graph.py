@@ -2840,7 +2840,7 @@ class symbol:
             if x is not None and y is not None:
                 try:
                     center = xpos, ypos = graph._pos(x, y, xaxis=self.xaxis, yaxis=self.yaxis)
-                except ValueError:
+                except (ValueError, OverflowError): # XXX: exceptions???
                     pass
             if haserror:
                 if y is not None:
