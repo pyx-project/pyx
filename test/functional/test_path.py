@@ -112,6 +112,18 @@ def testintersectcircle(c):
         x, y = k.at(i)
         c.stroke(cross(x, y), [style.linewidth.THIN])
 
+def testintersectline(c):
+    l1=line(0, 0, 1, 1)
+    l2=line(0, 1, 1, 0)
+    c.stroke(l1, [style.linewidth.THIN])
+    c.stroke(l2, [style.linewidth.THIN])
+
+    isect = l1.intersect(l2)
+
+    for i in isect[0]:
+        x, y = l1.at(i)
+        c.stroke(circle(x, y, 0.1), [style.linewidth.THIN])
+
 
 def testnormpathtrafo(c):
     p=path(moveto(0,5),
@@ -287,6 +299,7 @@ dotest(c, 2, 12, "testintersectbezier")
 dotest(c, 10,11, "testnormpathtrafo")
 dotest(c, 12, -4, "testtangent")
 dotest(c, 5, -4, "testintersectcircle")
+dotest(c, 9, -4, "testintersectline")
 dotest(c, 21, 12, "testlentopar")
 c.writeEPSfile("test_path", paperformat="a4", rotated=0, fittosize=1)
 
