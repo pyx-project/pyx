@@ -1001,37 +1001,6 @@ class canvas(_canvas):
 
     """a canvas is a collection of PSCmds together with PSAttrs"""
 
-    def __init__(self, *args):
-
-        """construct a canvas
-
-        The canvas can be modfied by supplying args, which have
-        to be instances of one of the following classes:
-         - trafo.trafo (leading to a global transformation of the canvas)
-         - canvas.clip (clips the canvas)
-         - base.PathStyle (sets some global attributes of the canvas)
-
-        Note that, while the first two properties are fixed for the
-        whole canvas, the last one can be changed via canvas.set()
-
-        """
-
-        self.PSOps     = []
-        self.trafo     = trafo.trafo()
-        self.clipbbox  = bbox._bbox()
-        self.texrunner = text.defaulttexrunner
-
-        for arg in args:
-            if isinstance(arg, trafo._trafo):
-                self.trafo = self.trafo*arg
-                self.PSOps.append(arg)
-            elif isinstance(arg, clip):
-                self.clipbbox=(self.clipbbox*
-                               arg.clipbbox().transformed(self.trafo))
-                self.PSOps.append(arg)
-            else:
-                self.set(arg)
-
     def writetofile(self, filename, paperformat=None, rotated=0, fittosize=0, margin="1 t cm",
                     bbox=None, bboxenlarge="1 t pt"):
         """write canvas to EPS file
