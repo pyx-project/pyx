@@ -51,16 +51,16 @@ def test_ownmark(c, x, y):
     mod = lambda x, y: int(x)%int(y)
     g = c.insert(graph.graphxy(x, y, height=5, x=graph.linaxis(min=0, max=10), y=graph.linaxis(min=0, max=10)))
     g.plot(graph.paramfunction("k", 0, 120, "x, y, size, angle = mod(k, 11), div(k, 11), (1+sin(k*pi/120))/2, 3*k", points=121, context=locals()), style = graph.arrow())
-    line1 = g.plot(graph.function("y=10/x")).style
-    line2 = g.plot(graph.function("y=12*x^-1.6")).style
-    line3 = g.plot(graph.function("y=7/x")).style
-    line4 = g.plot(graph.function("y=25*x^-1.6")).style
+    line1 = g.plot(graph.function("y=10/x"))
+    line2 = g.plot(graph.function("y=12*x^-1.6"))
+    line3 = g.plot(graph.function("y=7/x"))
+    line4 = g.plot(graph.function("y=25*x^-1.6"))
     g.finish()
 
-    p1=line1.path
-    p2=line2.path.reversed()
-    p3=line3.path.reversed()
-    p4=line4.path
+    p1=line1.line
+    p2=line2.line.reversed()
+    p3=line3.line.reversed()
+    p4=line4.line
     (seg1a,), (seg2a,) = p1.intersect(p2)
     (seg2b,), (seg3b,) = p2.intersect(p3)
     (seg3c,), (seg4c,) = p3.intersect(p4)
@@ -111,7 +111,7 @@ def test_split(c, x, y):
 def test_bar(c, x, y):
     df = data.datafile("data/testdata2")
     g = c.insert(graph.graphxy(x, y, height=5, width=5, x=graph.baraxis(title="Month", painter=graph.baraxispainter(nameattrs=[text.halign.right, trafo.rotate(90)]))))
-    g.plot(graph.data(df, x=1, y=2), graph.bar(fromzero=0))
+    g.plot(graph.data(df, xname=1, y=2), graph.bar(fromvalue=0))
     #g = c.insert(graph.graphxy(x, y, height=5, width=5, y=graph.baraxis(title="Month")))
     #g.plot(graph.data(df, x=2, y=1), graph.bar(xbar=1, fromzero=0))
     #g = c.insert(graph.graphxy(x, y, height=5, width=20, x=graph.baraxis(multisubaxis=graph.baraxis(dist=0), painter=graph.baraxispainter(innerticklength=0.3))))
@@ -123,12 +123,12 @@ def test_bar(c, x, y):
 c = canvas.canvas()
 test_multiaxes_data(c, 0, 21)
 test_piaxis_function(c, 0, 14)
-#test_textaxis_errorbars(c, 0, 7)
-#test_ownmark(c, 0, 0)
+test_textaxis_errorbars(c, 0, 7)
+test_ownmark(c, 0, 0)
 test_allerrorbars(c, -7, 0)
 ##test_3d(c, -7, 7)
-#test_split(c, -7, 7)
-#test_bar(c, -7, 14)
+test_split(c, -7, 7)
+test_bar(c, -7, 14)
 
 c.writetofile("test_graph", paperformat="a4")
 

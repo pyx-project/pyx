@@ -63,8 +63,8 @@ TODO:
     - TODO: general documentation about attributes, clearing, merging?
     - TODO: general documentation about changeable attributes?
   - graph module:
-    - painters are using the new attribute scheme including changeable attributes (TODO: documentation!)
-    - zero line feature removed (TODO: documentation)
+    - painters are using the new attribute scheme including changeable attributes (TODO: documentation)
+    - axis zeropath feature removed (TODO: documentation)
     - styles rewrite (under construction --> graph is currently broken)
   - text module:
     - default handling of texmessages as in the new attribute scheme
@@ -72,8 +72,8 @@ TODO:
   - examples:
     - mandel.py (contributed by Stephen Phillips)
   - path:
-    - added new pathel multilineto_pt which allows to specify a list of points
-      and can thus be much more efficient
+    - added new pathel multilineto_pt and multicurveto which allows to specify
+      a list of points and can thus be much more efficient
     - internal methods return coordinates in pts
     - lentopar returns tuple not list
     - added path.arclength_pt, path.at_pt, path.begin_pt, path.end_pt (and 
