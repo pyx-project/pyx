@@ -5,9 +5,10 @@ from pyx import *
 from pyx.path import *
 
 def bboxrect(cmd):
-   bbox=cmd.bbox()
-   return rect("%f t pt" % bbox.llx,            "%f t pt" % bbox.lly,
-               "%f t pt" % (bbox.urx-bbox.llx), "%f t pt" % (bbox.ury-bbox.lly))
+#   bbox=cmd.bbox()
+#   return rect("%f t pt" % bbox.llx,            "%f t pt" % bbox.lly,
+#               "%f t pt" % (bbox.urx-bbox.llx), "%f t pt" % (bbox.ury-bbox.lly))
+    return cmd.bbox().rect()
 
 
 def dotest(c, x, y, test):
@@ -168,11 +169,22 @@ def testtangent(c):
            curveto(2,1,4,0,2,4),
            rcurveto(-3,2,1,2,3,6),
            rlineto(2,3))+circle(5,5,1)
-    c.stroke(p)
+    c.stroke(p, [style.linewidth.THick])
     for i in range(int(p.range())*2):
         c.stroke(p.tangent(i/2.0, "20 t pt"), [color.rgb.blue, deco.earrow.normal])
         c.stroke(line(0, 0, 1, 0).transformed(p.trafoat(i/2.0)), [color.rgb.green, deco.earrow.normal])
         c.stroke(line(0, 0, 0, 1).transformed(p.trafoat(i/2.0)), [color.rgb.red, deco.earrow.normal])
+
+    # test the curvature
+    cc = canvas.canvas()
+    for i in range(int(p.range())*2):
+        radius = p.curvradius(i/2.0)
+        radius = unit.tocm(radius)
+        if radius < 10000:
+            pos = p.trafoat(i/2.0).apply(0,radius*radius/abs(radius))
+            cc.stroke(circle(0,0,abs(radius)), [color.grey(0.5), trafo.translate(*pos)])
+
+    c.insert(cc)#, [canvas.clip(c.bbox().enlarge(1).rect())])
 
 
 def testarcbbox(c):
@@ -292,7 +304,7 @@ def testarclentoparam(c):
 
 c=canvas.canvas()
 dotest(c, 0, 0, "testarcs")
-# dotest(c, 12, 3, "testmidpointsplit")
+#dotest(c, 12, 3, "testmidpointsplit")
 dotest(c, 2, 12, "testintersectbezier")
 dotest(c, 10,11, "testnormpathtrafo")
 dotest(c, 12, -4, "testtangent")
