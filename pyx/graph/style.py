@@ -326,12 +326,13 @@ class range(_style):
             if (sharedata.vrange[index][0] is not None and sharedata.vrange[index][1] is not None and
                 sharedata.vrange[index][0] > sharedata.vrange[index][1] + self.epsilon):
                 raise ValueError("inverse range")
-            #if (sharedata.vrange[index][0] is not None and sharedata.vpos[index] is not None and
-            #    sharedata.vrange[index][0] > sharedata.vpos[index] + self.epsilon):
-            #    raise ValueError("negative minimum errorbar")
-            #if (sharedata.vrange[index][1] is not None and sharedata.vpos[index] is not None and
-            #    sharedata.vrange[index][1] < sharedata.vpos[index] - self.epsilon):
-            #    raise ValueError("negative maximum errorbar")
+            # disabled due to missing vpos access:
+            # if (sharedata.vrange[index][0] is not None and sharedata.vpos[index] is not None and
+            #     sharedata.vrange[index][0] > sharedata.vpos[index] + self.epsilon):
+            #     raise ValueError("negative minimum errorbar")
+            # if (sharedata.vrange[index][1] is not None and sharedata.vpos[index] is not None and
+            #     sharedata.vrange[index][1] < sharedata.vpos[index] - self.epsilon):
+            #     raise ValueError("negative maximum errorbar")
 
 
 registerdefaultprovider(range(), range.providesdata)
@@ -682,15 +683,16 @@ class text(_styleneedingpointpos):
 
     defaulttextattrs = [textmodule.halign.center, textmodule.vshift.mathaxis]
 
-    def __init__(self, textdx=0*unit.v_cm, textdy=0.3*unit.v_cm, textattrs=[], **kwargs):
+    def __init__(self, textname="text", textdx=0*unit.v_cm, textdy=0.3*unit.v_cm, textattrs=[]):
+        self.textname = textname
         self.textdx = textdx
         self.textdy = textdy
         self.textattrs = textattrs
 
     def columns(self, privatedata, sharedata, graph, columns):
-        if "text" not in columns:
-            raise ValueError("text missing")
-        return ["text"] + _styleneedingpointpos.columns(self, privatedata, sharedata, graph, columns)
+        if self.textname not in columns:
+            raise ValueError("column '%s' missing" % self.textname)
+        return [self.textname] + _styleneedingpointpos.columns(self, privatedata, sharedata, graph, columns)
 
     def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
         if self.textattrs is not None:
@@ -706,7 +708,7 @@ class text(_styleneedingpointpos):
         if privatedata.textattrs is not None and sharedata.vposvalid:
             x_pt, y_pt = graph.vpos_pt(*sharedata.vpos)
             try:
-                text = str(sharedata.point["text"])
+                text = str(sharedata.point[self.textname])
             except:
                 pass
             else:
@@ -723,7 +725,7 @@ class arrow(_styleneedingpointpos):
     defaultlineattrs = []
     defaultarrowattrs = []
 
-    def __init__(self, linelength=0.25*unit.v_cm, arrowsize=0.15*unit.v_cm, lineattrs=[], arrowattrs=[], epsilon=1e-10):
+    def __init__(self, linelength=0.25*unit.v_cm, arrowsize=0.15*unit.v_cm, lineattrs=[], arrowattrs=[], epsilon=1e-5):
         self.linelength = linelength
         self.arrowsize = arrowsize
         self.lineattrs = lineattrs
@@ -780,7 +782,7 @@ class rect(_style):
 
     needsdata = ["vrange", "vrangeminmissing", "vrangemaxmissing"]
 
-    def __init__(self, palette=color.palette.Gray):
+    def __init__(self, palette=color.palette.Grey):
         self.palette = palette
 
     def columns(self, privatedata, sharedata, graph, columns):
@@ -993,7 +995,7 @@ class bar(_style):
 
     needsdata = ["vbarrange"]
 
-    defaultbarattrs = [color.palette.Rainbow, deco.stroked([color.gray.black])]
+    defaultbarattrs = [color.palette.Rainbow, deco.stroked([color.grey.black])]
 
     def __init__(self, barattrs=[]):
         self.barattrs = barattrs

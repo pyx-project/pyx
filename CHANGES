@@ -108,7 +108,7 @@ TODO:
   - text module:
     - postpone reading of fontmap files until TeX/LaTeX is started
     - sign of font number in dvifile (reported by Michael Gruber)
-    - phantom attribute (TODO documentation)
+    - phantom attribute
   - canvas module:
     - added new classes page and document for multipage PostScript output
     - apply deformers (instead of trafos) in draw method
@@ -119,9 +119,9 @@ TODO:
     - create siteconfig on install to store positions of the shared data
       and the global pyxrc
   - graph modules:
-    - graph style + data reorganization (TODO: documentation)
+    - graph style + data reorganization
     - enum -> num renaming
-    - allow for horizontally and vertically centered graph key alignment (TODO: documentation)
+    - allow for horizontally and vertically centered graph key alignment
     - fix bug that graph was not finished automatically when a bbox was specified
       manually (reported by David Barton)
   - path module:
