@@ -22,7 +22,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import math
-import base, bbox, unit
+import attr, base, bbox, unit
 
 # some helper routines
 
@@ -57,7 +57,7 @@ class UndefinedResultError(ArithmeticError):
 
 # trafo: affine transformations
 
-class _trafo(base.PSOp):
+class _trafo(base.PSOp, attr.attr):
 
     """affine transformation (coordinates in constructor in pts)
 
