@@ -23,11 +23,6 @@
 # TODO:
 # - should we improve on the arc length -> arg parametrization routine or
 #   should we at least factor it out?
-# - Should we really set linewidth in canvas.writetofile. Why don't we
-#   rely on the PS default (like for all other PathStyles)
-#   AW remarks: - our default linewidth is not the Postscript default!!!
-#               - our default linewidth depends on the unit-settings
-#               => leave it and remove that point here
 # - How should we handle the passing of stroke and fill styles to
 #   arrows? Calls, new instances, ...?
 
