@@ -2259,12 +2259,12 @@ class _axis:
     def finish(self, axispos):
         if self.axiscanvas is not None: return
 
-        min, max = self.getrange()
         # lesspart and morepart can be called after defaultpart;
         # this works although some axes may share their autoparting,
         # because the axes are processed sequentially
         first = 1
         if self.parter is not None:
+            min, max = self.getrange()
             self.ticks = _mergeticklists(self.manualticks,
                                          self.parter.defaultpart(min/self.divisor,
                                                                  max/self.divisor,
@@ -2298,6 +2298,10 @@ class _axis:
                     nextpart = self.parter.morepart
                 if worse == self.maxworse and nextpart == self.parter.morepart:
                     nextpart = None
+        else:
+            self.ticks =self.manualticks
+
+        # rating, when several choises are available
         if not first:
             variants.sort()
             if self.painter is not None:
@@ -2327,18 +2331,21 @@ class _axis:
                 self.ticks = variants[0][1]
                 if len(self.ticks):
                     self.setrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
-                ac = variants[0][2]
+                self.axiscanvas = variants[0][2]
             else:
+                self.ticks = variants[0][1]
+                self.texter.labels(self.ticks)
                 if len(self.ticks):
                     self.setrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
-                ac = axiscanvas()
+                self.axiscanvas = axiscanvas()
         else:
-            self.ticks =self.manualticks
             if len(self.ticks):
                 self.setrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
             self.texter.labels(self.ticks)
-            ac = self.painter.paint(axispos, self)
-        self.axiscanvas = ac
+            if painter is not None:
+                self.axiscanvas = self.painter.paint(axispos, self)
+            else:
+                self.axiscanvas = axiscanvas()
 
     def createlinkaxis(self, **args):
         return linkaxis(self, **args)
