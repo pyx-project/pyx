@@ -153,7 +153,7 @@ class char_info_word:
         self.remainder    = (word & 0x000000FF)
 
 
-class TFMFile:
+class tfmfile:
     def __init__(self, name, debug=0):
         self.file = binfile(name, "rb")
         self.debug = debug
@@ -512,56 +512,44 @@ def readfontmap(filenames):
     return fontmap
 
 
-class type1font:
-    def __init__(self, name, c, q, d, tfmconv, fontmap, debug=0):
+class font:
+    def __init__(self, name, c, q, d, tfmconv, debug=0):
         self.name = name
-        self.tfmpath = pykpathsea.find_file("%s.tfm" % self.name, pykpathsea.kpse_tfm_format)
-        if not self.tfmpath:
+        self.q = q
+        tfmpath = pykpathsea.find_file("%s.tfm" % self.name, pykpathsea.kpse_tfm_format)
+        if not tfmpath:
             raise TFMError("cannot find %s.tfm" % self.name)
-        self.tfmfile = TFMFile(self.tfmpath, debug)
-        self.fontmapping = fontmap.get(name)
-        if self.fontmapping is None:
-            raise RuntimeError("no information for font '%s' found in font mapping file, aborting" % name)
-        # print "found mapping %s for font %s" % (self.fontmapping, self.name)
+        self.tfmfile = tfmfile(tfmpath, debug)
 
-        # We only check for equality of font checksums if none of them is zero
-        # c == 0 appeared in VF files and according to the VFtoVP 40. a check
-        # is only performed if tfmfile.checksum > 0. Anyhow, begin more generous
-        # here seems to be reasonable
+        # We only check for equality of font checksums if none of them
+        # is zero. The case c == 0 happend in some VF files and
+        # according to the VFtoVP documentation, paragraph 40, a check
+        # is only performed if tfmfile.checksum > 0. Anyhow, begin
+        # more generous here seems to be reasonable
         if self.tfmfile.checksum != c and self.tfmfile.checksum != 0 and c !=0:
             raise DVIError("check sums do not agree: %d vs. %d" %
                            (self.tfmfile.checksum, c))
 
-        self.tfmdesignsize = round(tfmconv*self.tfmfile.designsizeraw)
-
-        if abs(self.tfmdesignsize - d) > 2:
-            raise DVIError("design sizes do not agree: %d vs. %d" %
-                           (self.tfmdesignsize, d))
+        tfmdesignsize = round(self.tfmfile.designsizeraw*tfmconv)
+        if abs(tfmdesignsize - d) > 2:
+            raise DVIError("design sizes do not agree: %d vs. %d" % (tfmdesignsize, d))
         if q < 0 or q > 134217728:
             raise DVIError("font '%s' not loaded: bad scale" % self.name)
         if d < 0 or d > 134217728:
             raise DVIError("font '%s' not loaded: bad design size" % self.name)
 
         self.scale = 1.0*q/d
-        self.alpha = 16;
-        self.q = self.qorig = q
-        while self.q >= 8388608:
-            self.q = self.q/2
-            self.alpha *= 2
-
-        self.beta = 256/self.alpha;
-        self.alpha = self.alpha*self.q;
 
         # for bookkeeping of used characters
         self.usedchars = [0] * 256
 
     def __str__(self):
-        return "type1font(%s, %d)" % (self.name, self.tfmdesignsize)
+        return "font(%s, %f)" % (self.name, self.scale)
 
     __repr__ = __str__
 
     def convert(self, width):
-        return 16L*width*self.qorig/16777216L
+        return 16L*width*self.q/16777216L
 
     def getwidth(self, charcode):
         return self.convert(self.tfmfile.width[self.tfmfile.char_info[charcode].width_index])
@@ -582,6 +570,14 @@ class type1font:
         for i in range(len(self.usedchars)):
             self.usedchars[i] = self.usedchars[i] or otherfont.usedchars[i]
 
+
+class type1font(font):
+    def __init__(self, name, c, q, d, tfmconv, fontmap, debug=0):
+        font.__init__(self, name, c, q, d, tfmconv, debug)
+        self.fontmapping = fontmap.get(name)
+        if self.fontmapping is None:
+            raise RuntimeError("no information for font '%s' found in font mapping file, aborting" % name)
+
     def getbasepsname(self):
         return self.fontmapping.basepsname
 
@@ -599,6 +595,8 @@ class type1font:
 
     def getencodingfile(self):
         return self.fontmapping.encodingfile
+
+
 
 ##############################################################################
 # DVI file handling
@@ -694,7 +692,7 @@ class dvifile:
         self.debug = debug
         self.ipcmode = ipcmode
 
-    # helper routines 
+    # helper routines
 
     def flushout(self):
         """ flush currently active string """
@@ -884,7 +882,7 @@ class dvifile:
                 den = file.readuint32()
                 mag = file.readuint32()
 
-                self.tfmconv = (25400000.0/num)*(den/473628672)/16.0;
+                self.tfmconv = (25400000.0/num)*(den/473628672.0)/16.0
                 # resolution in dpi
                 self.resolution = 300.0
                 # self.trueconv = conv in DVIType docu
@@ -1197,6 +1195,7 @@ class vffile:
                 s = file.readint32()     # scaling used for font (fix_word)
                 d = file.readint32()     # design size of font
                 fontname = file.read(file.readuchar()+file.readuchar())
+
                 self.fonts[num] =  type1font(fontname, c, s, d, self.tfmconv, self.fontmap, self.debug > 1)
             elif cmd == _VF_LONG_CHAR:
                 # character packet (long form)
