@@ -61,6 +61,10 @@ class PDFregistry:
         for type, resources in self.merged.items():
             for resource in resources:
                 resource.setrefno(self.types[type][resource.id].refno)
+                # TODO: its questionable whether this is a good idea or if we should do
+                # the following instead:
+                # resource.refno = self.types[type][resource.id].refno
+                # ... for the moment it doesn't really matter
         return refno
 
     def outputPDFobjects(self, file):
