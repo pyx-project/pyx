@@ -137,7 +137,7 @@ class Canvas(Globex):
         
         # TODO: ordentliche Fehlerbehandlung,
         #       Schnittstelle zur Kommandozeile
-        if os.system("dvips -E -o " + self.BaseFilename + ".tex.eps " +
+        if os.system("dvips -T21cm,29.7cm -E -o " + self.BaseFilename + ".tex.eps " +
                      self.BaseFilename + " > /dev/null 2>&1"):
             assert "dvips exit code not zero"
         
@@ -231,9 +231,8 @@ class Canvas(Globex):
 	self.PSFile.write("0 0 moveto\n")
 
     def PSEnd(self):
-    	self.PSFile.write("100 100 moveto\n")
     	self.PSFile.write("stroke\n")
-    	self.PSFile.write("0 0 moveto\n")
+    	self.PSFile.write("0 50 translate\n")
 	self.PSInsertEPS(self.BaseFilename + ".tex.eps")
 	self.PSFile.close()
 	
