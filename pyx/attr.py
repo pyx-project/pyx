@@ -43,18 +43,16 @@ def mergeattrs(attrs):
 def getattrs(attrs, getclasses):
     """return all attributes in the attribute list attrs, which are
     instances of one of the classes in getclasses"""
-    result = []
     try:
-        for attr in attrs:
-            if isinstance(attr, getclasses):
-                result.append(attr)
+        return [attr for attr in attrs if isinstance(attr, getclasses)]
     except TypeError: # workaround for Python 2.1 and older
+        result = []
         for attr in attrs:
             for getclass in getclasses:
                 if isinstance(attr, getclass):
                     result.append(attr)
                     break
-    return result
+        return result
 
 
 def checkattrs(attrs, allowedclasses):
