@@ -4,9 +4,9 @@ sys.path[:0] = [".."]
 import pyx
 from pyx import *
 
+text.set(mode="latex")
+text.preamble(r"\renewcommand{\familydefault}{\ttdefault}")
 c = canvas.canvas()
-t = tex.latex()
-t.define(r"\renewcommand{\familydefault}{\ttdefault}")
 
 # positioning is quite ugly ... but it works at the moment
 x = 0
@@ -32,12 +32,11 @@ for line in lines: # we yet don't use a file iterator
         c.stroke(path.line(x + 0.9, y + 0.1, x + 0.6, y + 0.4), [color.gray.black])
         c.stroke(path.line(x + 1.1, y + 0.1, x + 1.4, y + 0.4), [color.gray.white])
         c.stroke(path.line(x + 1.4, y + 0.1, x + 1.1, y + 0.4), [color.gray.white])
-        t.text(x + 1.7, y + 0.15, m.group("id"), tex.fontsize.footnotesize)
+        c.text(x + 1.7, y + 0.15, m.group("id"), [text.size.footnotesize])
         y += dy
         lastmodel = m.group("model")
         if y < -16.5:
             y = 0
             x += dx
 
-c.insert(t)
-c.writetofile("colorname", paperformat="a4")
+c.writeEPSfile("colorname", paperformat="a4")

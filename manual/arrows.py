@@ -3,9 +3,9 @@ import sys
 sys.path[:0] = [".."]
 from pyx import *
 
+text.set(mode="latex")
+text.preamble(r"\renewcommand{\familydefault}{\ttdefault}")
 c = canvas.canvas()
-t = tex.latex()
-t.define(r"\renewcommand{\familydefault}{\ttdefault}")
 
 # positioning is quite ugly ... but it works at the moment
 x = 0
@@ -24,7 +24,7 @@ def drawdeco(name, showpath=0, default=0):
         c.stroke(p, [style.linewidth.Thin, color.gray.white])
     if default:
         name = name + r"\rm\quad (default)"
-    t.text(x + 1.5, y + 0.15, name, tex.fontsize.footnotesize)
+    c.text(x + 1.5, y + 0.15, name, [text.size.footnotesize])
     y += dy
     if y < -16:
         y = 0
@@ -49,5 +49,4 @@ drawdeco("earrow.normal(constriction=0)")
 drawdeco("earrow.Large([style.linejoin.round])")
 drawdeco("earrow.Large([deco.stroked.clear])")
 
-c.insert(t)
-c.writetofile("arrows")
+c.writeEPSfile("arrows")
