@@ -1610,7 +1610,7 @@ class normpath(path):
         if isinstance(other, normpath):
             return normpath(*(self.path+other.path[1:]))
         else:
-            return path(*(self.path+normpath(other).path[1]))
+            return path(*(self.path+normpath(other).path[1:]))
 
     def intersect(self, other, epsilon=1e-5):
         """intersect self with other path
