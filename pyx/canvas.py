@@ -37,7 +37,7 @@ transformed (i.e. translated, rotated, etc.) and clipped.
 """
 
 import types, math, time
-import base, bbox, unit, trafo, path, text, version
+import attrlist, base, bbox, helper, path, unit, text, trafo, version
 
 # PostScript-procedure definitions
 # cf. file: 5002.EPSF_Spec_v3.0.pdf
@@ -218,19 +218,18 @@ class DecoratedPath(base.PSCmd):
         self.fillpath = fillpath
 
         # global style for stroking and filling and subdps
-        self.styles = styles or []
+        self.styles = helper.ensurelist(styles)
 
         # styles which apply only for stroking and filling
-        self.strokestyles = strokestyles or []
-        self.fillstyles = fillstyles or []
+        self.strokestyles = helper.ensurelist(strokestyles)
+        self.fillstyles = helper.ensurelist(fillstyles)
 
         # additional elements of the path, e.g., arrowheads,
         # which are by themselves DecoratedPaths
-        self.subdps = subdps or []
+        self.subdps = helper.ensurelist(subdps)
 
     def addsubdp(self, subdp):
         """add a further decorated path to the list of subdps"""
-
         self.subdps.append(subdp)
 
     def bbox(self):
@@ -248,7 +247,6 @@ class DecoratedPath(base.PSCmd):
         def _writestyles(styles, file=file):
             for style in styles:
                 style.write(file)
-
 
         # apply global styles
         if self.styles:
@@ -337,7 +335,6 @@ class PathDeco:
 
         pass
 
-
 #
 # stroked and filled: basic PathDecos which stroked and fill,
 # respectively the path
@@ -348,11 +345,11 @@ class stroked(PathDeco):
     """stroked is a PathDecorator, which draws the outline of the path"""
 
     def __init__(self, *styles):
-        self.styles=list(styles)
+        self.styles = list(styles)
 
     def decorate(self, dp):
-        dp.strokepath=dp.path
-        dp.strokestyles=self.styles
+        dp.strokepath = dp.path
+        dp.strokestyles = self.styles
 
         return dp
 
@@ -362,14 +359,13 @@ class filled(PathDeco):
     """filled is a PathDecorator, which fills the interior of the path"""
 
     def __init__(self, *styles):
-        self.styles=list(styles)
+        self.styles = list(styles)
 
     def decorate(self, dp):
-        dp.fillpath=dp.path
-        dp.fillstyles=self.styles
+        dp.fillpath = dp.path
+        dp.fillstyles = self.styles
 
         return dp
-
 
 #
 # _arrowhead: helper routine
@@ -433,20 +429,20 @@ class arrow(PathDeco):
         self.size = size
         self.angle = angle
         self.constriction = constriction
-        self.styles = styles or []
-        self.strokestyles = strokestyles or []
-        self.fillstyles = fillstyles or []
+        self.styles = helper.ensurelist(styles)
+        self.strokestyles = helper.ensurelist(strokestyles)
+        self.fillstyles = helper.ensurelist(fillstyles)
 
     def __call__(self, *styles):
-        fillstyles = reduce(lambda x, y:list(x)+(y.styles or []),
-                            filter(lambda x: isinstance(x, filled),
-                                   styles),
+        # XXX please shorten me!
+
+        fillstyles = reduce(lambda x, y:x+helper.ensurelist(y.styles),
+                            filter(lambda x: isinstance(x, filled), styles),
                             [])
 
-        strokestyles = reduce(lambda x, y:list(x)+(y.styles or []),
-                              filter(lambda x: isinstance(x, stroked),
-                                     styles),
-                            [])
+        strokestyles = reduce(lambda x, y:x+helper.ensurelist(y.styles),
+                              filter(lambda x: isinstance(x, stroked), styles),
+                              [])
 
         styles = filter(lambda x:
                         not (isinstance(x,filled) or
@@ -639,7 +635,7 @@ class _grestore(base.PSOp):
 # The main canvas class
 #
 
-class canvas(base.PSText):
+class canvas(base.PSText, attrlist.attrlist):
 
     """a canvas is a collection of PSCmds together with PSAttrs"""
 
@@ -832,18 +828,15 @@ class canvas(base.PSText):
 
         """
 
+        self.attrcheck(args, allowmulti=(base.PathStyle, PathDeco))
+
         dp = DecoratedPath(path)
 
-        # XXX: use attrlist
-        if [x for x in args if not (isinstance(x, base.PathStyle) or
-                                    isinstance(x, PathDeco))]:
-            raise ValueError("Only instances of base.PathStyle or canvas.PathDeco are allowed")
-
         # set global styles
-        dp.styles = filter(lambda x: isinstance(x, base.PathStyle), args)
+        dp.styles = self.attrgetall(args, base.PathStyle, ())
 
         # add path decorations and modify path accordingly
-        for deco in filter(lambda x: isinstance(x, PathDeco), args):
+        for deco in self.attrgetall(args, PathDeco):
             dp = deco.decorate(dp)
 
         self.insert(dp)
