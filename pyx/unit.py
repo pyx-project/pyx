@@ -25,7 +25,7 @@ import re
 
 unit_ps = 1.0
 scale = { 't':1, 'u':1, 'v':1, 'w':1 }
-default_type = "u"
+
 default_unit = "cm"
 
 unit_pattern = re.compile(r"""^\s*([+-]?\d*((\d\.?)|(\.?\d))\d*(E[+-]?\d+)?)
@@ -194,27 +194,3 @@ class t_tpt(length):
 class t_m(length):
     def __init__(self, l=None):
        length.__init__(self, l, default_type="t", dunit="m")
-    
-
-if __name__ == "__main__":
-     length.default_unit="cm"
-     print unit().m(1)
-     print unit().m("1.e-3 v cm")
-     print unit().m("1.e-3 v mm")
-     print unit().pt("1.e-3 v")
-     print unit().tpt("1.e-3")
-     print unit().pt("1.e-3 inch")
-
-     length.default_unit="inch"
-     print unit().m(1)
-     print unit().m("1.e-3 v cm")
-     print unit().m(length("1.e-3 v mm")*5)
-     print unit().m(length("1.e-3 v mm")+length("2e-3 v mm"))
-     print unit().pt("1.e-3 v")
-     print unit().tpt("1.e-3")
-     print unit().pt("1.e-3 inch")
-     
-     length.default_unit="cm"
-     print length("1 t") + length("2 u") + length("3 v") + length("4 w") - length("1 t") - length("2 u") - length("3 v") - length("4 w")
-
-     
