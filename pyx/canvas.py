@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from globex import *
 from const import *
 import string
 
@@ -18,11 +17,7 @@ linestyle_dotted     = (linecap_round, [0, 3])
 linestyle_dashdotted = (linecap_round, [0, 3, 3, 3])
 
 
-class Canvas(Globex):
-
-    ExportMethods = [ "stroke", "newpath", "closepath", 
-    		      "amove", "aline", "rmove", "rline", 
-                      "setlinecap", "setlinejoin", "setmiterlimit", "setdash", "setlinestyle" ]
+class canvas:
 
     def __init__(self,width,height,basefilename):
         self.Width=width
@@ -31,6 +26,9 @@ class Canvas(Globex):
         self.PSInit()
 
     PSPositionCorrect = 0		# does actual PS position coincide with our x,y
+    
+    def __del__(self):
+        print "canvas.__del__()"
     
     def PSCmd(self, cmd):
         try:
@@ -172,47 +170,47 @@ class Canvas(Globex):
     	self.PSCmd("closepath")
 	    
     def amove(self,x,y):
-        isnumber(x)
-        isnumber(y)
+        #isnumber(x)
+        #isnumber(y)
 	
         (self.x, self.y)=(x,y)
 	self.PSPositionCorrect = 0 			 
 	
     def rmove(self,x,y):
-        isnumber(x)
-        isnumber(y)
+        #isnumber(x)
+        #isnumber(y)
 	
         (self.x, self.y)=(self.x+x,self.y+y)
 	self.PSPositionCorrect = 0 			 
 	
     def aline(self,x,y):
-        isnumber(x)
-        isnumber(y)
+        #isnumber(x)
+        #isnumber(y)
 	
 	self.PSUpdatePosition()			# insert moveto if needed
         (self.x, self.y)=(x,y)
 	self.PSCmd("%f %f lineto" % self.PScm2po(x,y))
     
     def rline(self,x,y):
-        isnumber(x)
-        isnumber(y)
+        #isnumber(x)
+        #isnumber(y)
 	
 	self.PSUpdatePosition()			# insert moveto if needed
         (self.x, self.y)=(self.x+x,self.y+y)
 	self.PSCmd("%f %f rlineto" % self.PScm2po(x,y))
 
     def setlinecap(self, cap):
-        isnumber(cap)
+        #isnumber(cap)
 
 	self.PSCmd("%d setlinecap" % cap)
 
     def setlinejoin(self, join):
-        isnumber(join)
+        #isnumber(join)
 
 	self.PSCmd("%d setlinejoin" % join)
 	
     def setmiterlimit(self, limit):
-        isnumber(join)
+        #isnumber(join)
 
 	self.PSCmd("%f setmiterlimit" % limit)
 
@@ -226,17 +224,13 @@ class Canvas(Globex):
     def setlinestyle(self, style, offset=0):
         self.setlinecap(style[0])
 	self.setdash   (style[1], offset)
-    	
-def canvas(width, height, basefilename):
-    DefaultCanvas=Canvas(width, height, basefilename)
-    DefaultCanvas.AddNamespace("DefaultCanvas", GetCallerGlobalNamespace())
-
 
 if __name__=="__main__":
-    canvas(21, 29.7, "example")
+    c=canvas(21, 29.7, "example")
 
     from tex import *
-    tex()
+    t=tex(c)
+    t.c=c
 
     #for x in range(11):
     #    amove(x,0)
@@ -245,57 +239,55 @@ if __name__=="__main__":
     #   amove(0,y)
     #   rline(10,0)
 
-    amove(1,1)
-    aline(2,2)
-    amove(1,2)
-    aline(2,1)
+    c.amove(1,1)
+    c.aline(2,2)
+    c.amove(1,2)
+    c.aline(2,1)
 
 
-    print "Breite von 'Hello world!': ",textwd("Hello world!")
-    print "Höhe von 'Hello world!': ",textht("Hello world!")
-    print "Höhe von 'Hello world!' in large: ",textht("Hello world!", size = large)
-    print "Höhe von 'Hello world!' in Large: ",textht("Hello world!", size = Large)
-    print "Höhe von 'Hello world' in huge: ",textht("Hello world!", size = huge)
-    print "Tiefe von 'Hello world!': ",textdp("Hello world!")
-    print "Tiefe von 'was mit q': ",textdp("was mit q")
-    amove(5,1)
-    text("Hello world!")
-    amove(5,2)
-    text("Hello world!",halign=center)
-    amove(5,3)
-    text("Hello world!",halign=right)
+    print "Breite von 'Hello world!': ",t.textwd("Hello world!")
+    print "Höhe von 'Hello world!': ",t.textht("Hello world!")
+    print "Höhe von 'Hello world!' in large: ",t.textht("Hello world!", size = large)
+    print "Höhe von 'Hello world!' in Large: ",t.textht("Hello world!", size = Large)
+    print "Höhe von 'Hello world' in huge: ",t.textht("Hello world!", size = huge)
+    print "Tiefe von 'Hello world!': ",t.textdp("Hello world!")
+    print "Tiefe von 'was mit q': ",t.textdp("was mit q")
+    c.amove(5,1)
+    t.text("Hello world!")
+    c.amove(5,2)
+    t.text("Hello world!",halign=center)
+    c.amove(5,3)
+    t.text("Hello world!",halign=right)
     for angle in (-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90):
-        amove(11+angle/10,5)
-        text(str(angle),angle=angle)
-	amove(11+angle/10,6)
-	text(str(angle),angle=angle,halign=center)
-	amove(11+angle/10,7)
-	text(str(angle),angle=angle,halign=right)
+        c.amove(11+angle/10,5)
+        t.text(str(angle),angle=angle)
+	c.amove(11+angle/10,6)
+	t.text(str(angle),angle=angle,halign=center)
+	c.amove(11+angle/10,7)
+	t.text(str(angle),angle=angle,halign=right)
     for pos in range(1,21):
-        amove(pos,7.5)
-        text(".")
+        c.amove(pos,7.5)
+        t.text(".")
    
-    stroke()
-    setlinestyle(linestyle_dotted)
-    amove(5,12)
-    text("a b c d e f g h i j k l m n o p q r s t u v w x y z",hsize=2)
-    aline(7,12)
-    amove(5,10)
-    aline(5,14)
-    amove(7,10)
-    aline(7,14)
+    c.stroke()
+    c.setlinestyle(linestyle_dotted)
+    c.amove(5,12)
+    t.text("a b c d e f g h i j k l m n o p q r s t u v w x y z",hsize=2)
+    c.aline(7,12)
+    c.amove(5,10)
+    c.aline(5,14)
+    c.amove(7,10)
+    c.aline(7,14)
 
-    stroke()
-    setlinestyle(linestyle_dashdotted)
-    amove(10,12)
-    text("a b c d e f g h i j k l m n o p q r s t u v w x y z",hsize=2,valign=bottom)
-    aline(12,12)
-    amove(10,10)
-    aline(10,14)
-    amove(12,10)
-    aline(12,14)
+    c.stroke()
+    c.setlinestyle(linestyle_dashdotted)
+    c.amove(10,12)
+    t.text("a b c d e f g h i j k l m n o p q r s t u v w x y z",hsize=2,valign=bottom)
+    c.aline(12,12)
+    c.amove(10,10)
+    c.aline(10,14)
+    c.amove(12,10)
+    c.aline(12,14)
 
     #DefaultTex.TexRun()
-    deltex()
     #text("a b c d e f g h i j k l m n o p q r s t u v w x y z",hsize=2,valign=bottom)
-    DefaultCanvas.PSEnd()

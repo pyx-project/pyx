@@ -9,7 +9,6 @@
 #         ggf. sonst Diskussion Seitengröße etc.
 #         weitere Schicht postscript-file notwendig ?!?
 
-from globex import *
 from const import *
 
 # tex processor types
@@ -59,9 +58,7 @@ class TexRightParenthesisError(TexException):
     def __str__(self):
         return "no matching parenthesis for '}' found"
 
-class Tex(Globex):
-
-    ExportMethods = [ "text", "textwd", "textht", "textdp" ]
+class tex:
 
     def __init__(self, canvas, type = "TeX", latexstyle = "10pt", latexclass = "article", latexclassopt = "", texinit = "", TexInitIgnoreMsgLevel = 1):
         assert type == TeX or type == LaTeX, "invalid type"
@@ -80,8 +77,8 @@ class Tex(Globex):
     TexMarkerEnd = TexMarker + "End"
 
     def __del__(self):
-        self.canvas.amove(0,0)
-        # self.TexRun()
+        print "tex.__del__()"
+        self.TexRun()
 
     TexCmds = [ ]
         # stores the TexCmds; note that the first element has a special
@@ -309,10 +306,18 @@ class Tex(Globex):
             assert 0, "dvips exit code non-zero"
         
         # TODO 8: don't write save/restore directly
+        print "hier"
+        self.c.PSCmd("save")
+        print "hier2"
         self.canvas.PSCmd("save")
+        print "hier3"
+        self.c.amove(0,0)
+        print "hier4"
         self.canvas.amove(0,0)
+        print "hier5"
         self.canvas.PSInsertEPS(self.canvas.BaseFilename + ".tex.eps")
         self.canvas.PSCmd("restore")
+        print "da"
 
     TexResults = None
 
@@ -374,30 +379,3 @@ class Tex(Globex):
                        "\\immediate\\write\\sizefile{" + TexHexMD5 +
                        ":dp:\\the\\dp\\localbox}\n", IgnoreMsgLevel)
         return self.TexResult(TexHexMD5 + ":dp:")
-
-
-def tex(latexstyle = "10pt", texinit = "", TexInitIgnoreMsgLevel = 1):
-    try:
-        exec "DefaultTex" in GetCallerGlobalNamespace()
-    except:
-        pass
-    else:
-        assert 0, "DefaultTex already defined"
-    exec "__pyx__canvas = DefaultCanvas" in GetCallerGlobalNamespace(), locals()
-    DefaultTex = Tex(__pyx__canvas, TeX, latexstyle, None, None, texinit, TexInitIgnoreMsgLevel)
-    DefaultTex.AddNamespace("DefaultTex", GetCallerGlobalNamespace())
-
-def addtex(tex):
-    tex.AddNamespace("DefaultTex", GetCallerGlobalNamespace())
-
-def deltex():
-    exec "__pyx__tex = DefaultTex" in GetCallerGlobalNamespace(), locals()
-    __pyx__tex.DelNamespace("DefaultTex", GetCallerGlobalNamespace())
-
-def latex(latexclass = "article", latexclassopt = "", texinit = "", TexInitIgnoreMsgLevel = 1):
-    exec "__pyx__canvas = DefaultCanvas" in GetCallerGlobalNamespace(), locals()
-    DefaultTex = Tex(__pyx__canvas, LaTeX, None, latexclass, latexclassopt, texinit, TexInitIgnoreMsgLevel)
-    DefaultTex.AddNamespace("DefaultTex", GetCallerGlobalNamespace())
-
-addlatex=addtex
-dellatex=deltex
