@@ -2,6 +2,13 @@
 
 default: examples.dvi
 
+clean:
+	-rm examples.dvi examples.ps examples.pdf *.eps */*.eps
+
+all:
+	make clean
+	make pdf
+
 pdf: examples.pdf
 ps: examples.ps
 dvi: examples.dvi
