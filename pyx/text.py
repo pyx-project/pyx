@@ -21,7 +21,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import exceptions, glob, os, threading, Queue, traceback, re, struct, tempfile, sys, atexit
-import helper, unit, box, base, trafo, canvas, path, pykpathsea
+import helper, unit, box, base, color, trafo, canvas, path, pykpathsea
 
 class fix_word:
     def __init__(self, word):
@@ -557,11 +557,36 @@ class DVIFile:
 #                print " (this font is magnified %d%%)" % round(scale/10)
 
     def special(self, s):
+
+        if self.debug:
+            print "%d: special %s" % (self.filepos, s)
         if not s.startswith("PyX:"):
             raise RuntimeError("the special '%s' cannot be handled by PyX, aborting" % s)
         command, args = s[4:].split()[0], s[4:].split()[1:]
         if command=="color_begin":
-            print "begin color"
+            if args[0]=="cmyk":
+                c = color.cmyk(float(args[1]), float(args[2]), float(args[3]), float(args[4]))
+            elif args[0]=="gray":
+                c = color.gray(float(args[1]))
+            elif args[0]=="hsb":
+                c = color.hsb(float(args[1]), float(args[2]), float(args[3]))
+            elif args[0]=="rgb":
+                c = color.rgb(float(args[1]), float(args[2]), float(args[3]))
+            elif args[0]=="RGB":
+                c = color.rgb(int(args[1])/255.0, int(args[2])/255.0, int(args[3])/255.0)
+
+            # XXX when do we have to flush?
+            self.flushout()
+
+            self.colorstack.append(c)
+            self.actpage.insert(c)
+        if command=="color_end":
+            self.colorstack.pop()
+            # XXX merge color changes
+            self.actpage.insert(self.colorstack[-1])
+            # XXX when do we have to flush?
+            self.flushout()
+
 
     # routines corresponding to the different reader states of the dvi maschine
 
@@ -616,6 +641,8 @@ class DVIFile:
         self.pos = [0, 0, 0, 0, 0, 0]
         self.pages.append(canvas.canvas())
         self.actpage = self.pages[-1]
+        # we always keep black on the color stack
+        self.colorstack = [color.gray.black]
         file = self.file
         while 1:
             self.filepos = file.tell()
