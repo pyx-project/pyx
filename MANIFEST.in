@@ -8,4 +8,5 @@ recursive-include pyx *.h
 recursive-include pyx/lfs *.lfs *.py *.tex
 
 prune test
+exclude setup.cfg
 exclude pyx/axis.py
