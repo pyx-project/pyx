@@ -83,11 +83,35 @@ def testclipbbox():
 
     c.writetofile("test")
 
+def testintersectbezier():
+    c=canvas.canvas()
+
+    p=path([moveto(10,10), curveto(12,16,14,15,12,19)])
+    q=path([moveto(12,10), curveto(12,16,14,22,11,16)])
+
+    p.ConvertToBezier()
+    q.ConvertToBezier()
+
+    c.draw(q)
+    c.draw(p)
+
+    isect = p.bpath.intersect(c, q.bpath)
+
+    for i in isect:
+        (x, y) = p.bpath.pos(i[0])
+        c.draw(path([moveto(x,y),
+                     rmoveto(-0.1, -0.1), rlineto(0.2, 0.2), rmoveto(-0.1, -0.1),
+                     rmoveto(-0.1, +0.1), rlineto(0.2, -0.2)]))
+                      
+    
+
+    c.writetofile("test")
 
 #testarcbbox()    
 #testcurvetobbox()
 #testtrafobbox()
-testclipbbox()
+#testclipbbox()
+testintersectbezier()
 
 #test()
 #profile.run('test()', 'test.prof')

@@ -34,16 +34,21 @@ from canvas import bbox
 
 class PathException(Exception): pass
 
-# 
+################################################################################ 
 # pathel: element of a PS style path 
-#
+################################################################################
 
 class pathel:
 
     ' element of a PS style path '
     
     def bbox(self, canvas, currentpoint, currentsubpath):
-	''' return bounding box of pathel 
+	''' calculate bounding box of pathel
+
+        returns tuple consisting of:
+         - new currentpoint
+         - new currentsubpath (i.e. first point of current subpath)
+         - bounding box of pathel (using currentpoint and currentsubpath)
 	
 	Important note: all coordinates in bbox, currentpoint, and 
 	currrentsubpath have to be converted to pts.
@@ -241,7 +246,7 @@ class arc(pathel):
             maxarcy = canvas.unit.pt(self.y+self.r)
 
 	# Finally, we are able to construct the bbox for the arc segment.
-	# Note, that if there is a currentpoint defined, we also
+	# Note that if there is a currentpoint defined, we also
 	# have to include the straight line from this point
 	# to the first point of the arc segment
 
@@ -276,6 +281,10 @@ class arc(pathel):
 	# end point of arc segment
 	earcx = self.x+self.r*cos(pi*self.angle2/180)
 	earcy = self.y+self.r*sin(pi*self.angle2/180)
+
+        # Note that if there is a currentpoint defined, we also
+	# have to include the straight line from this point
+	# to the first point of the arc segment
         if currentpoint:
              return ( (earcx, earcy),
                       currentsubpath or currentpoint,
@@ -363,8 +372,9 @@ class curveto(pathel):
                                                    canvas.unit.pt(self.x3),
                                                    canvas.unit.pt(self.y3)) )
         
-    def ConvertToBezier(self, currentpoint):
-        return ((self.x3, self.y3), 
+    def ConvertToBezier(self, currentpoint, currentsubpath):
+        return ((self.x3, self.y3),
+                currentsubpath or currentpoint, 
                 bcurve(currentpoint[0], currentpoint[1],
                         self.x1, self.y1, self.x2, self.y2, self.x3, self.y3))
 
@@ -399,18 +409,20 @@ class rcurveto(pathel):
                 bbox(min(currentpoint[0], x1, x2, x3), min(currentpoint[1], y1, y2, y3), 
  	             max(currentpoint[0], x1, x2, x3), max(currentpoint[1], y1, y2, y3)))
         
-    def ConvertToBezier(self, currentpoint):
-        x2=currenpoint(0)+self.dx1
-        y2=currenpoint(1)+self.dy1
-        x3=currenpoint(0)+self.dx2
-        y3=currenpoint(1)+self.dy2
-        x4=currenpoint(0)+self.dx3
-        y4=currenpoint(1)+self.dy3
-        return ((x4, y4), bcurve(x2, y2, x3, y3, x4, y4))
+    def ConvertToBezier(self, currentpoint, currentsubpath):
+        x2=currentpoint(0)+self.dx1
+        y2=currentpoint(1)+self.dy1
+        x3=currentpoint(0)+self.dx2
+        y3=currentpoint(1)+self.dy2
+        x4=currentpoint(0)+self.dx3
+        y4=currentpoint(1)+self.dy3
+        return ((x4, y4),
+                currentsubpath or currentpoint,
+                bcurve(x2, y2, x3, y3, x4, y4))
 
-#
+################################################################################
 # path: PS style path 
-#
+################################################################################
 	
 class path:
     """ PS style path """
@@ -450,13 +462,14 @@ class path:
     def ConvertToBezier(self):
         currentpoint = None
         currentsubpath = None
-        self.bpath = bpath()
+        self.bpath = bpath([])
         for pathel in self.path:
-           (currentpoint, currentsubpath, bp) = pathel.ConvertToBezier(currentpoint, currentsubpath)
-           if bp:
-               for bpel in bp:
-                  self.bpath.append(bpel)
+            (currentpoint, currentsubpath, bp) = pathel.ConvertToBezier(currentpoint, currentsubpath)
+            if bp:
+                for bpel in bp:
+                    self.bpath.append(bpel)
 
+# some special kinds of path 
 
 class line(path):
    def __init__(self, x1, y1, x2, y2):
@@ -471,9 +484,9 @@ class rect(path):
 			     rlineto(-unit.length(width),0),
 			     closepath()] )
 
-#
+################################################################################
 # bpathel: element of Bezier path
-#
+################################################################################
 
 class bpathel:
     def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
@@ -491,6 +504,49 @@ class bpathel:
                                                            self.x1, self.y1,
                                                            self.x2, self.y2,
                                                            self.x3, self.y3)
+
+    def write(self, canvas, file):
+         file.write( "%f %f moveto %f %f %f %f %f %f curveto" % \
+                     ( canvas.unit.pt(self.x0),
+                       canvas.unit.pt(self.y0),
+                       canvas.unit.pt(self.x1),
+                       canvas.unit.pt(self.y1),
+                       canvas.unit.pt(self.x2),
+                       canvas.unit.pt(self.y2),
+                       canvas.unit.pt(self.x3),
+                       canvas.unit.pt(self.y3) ) )
+                     
+
+    def __getitem__(self, t):
+        ' return pathel at parameter value t (0<=t<=1) '
+
+        assert 0 <= t <= 1, "parameter t of pathel out of range [0,1]"
+
+
+        return ( (-self.x0+3*self.x1-3*self.x2+self.x3)*t*t*t +
+                 (3*self.x0-6*self.x1+3*self.x2)*t*t +
+                 (-3*self.x0+3*self.x1)*t +
+                 self.x0,
+                 (-self.y0+3*self.y1-3*self.y2+self.y3)*t*t*t +
+                 (3*self.y0-6*self.y1+3*self.y2)*t*t +
+                 (-3*self.y0+3*self.y1)*t +
+                 self.y0
+               )
+    
+    def bbox(self, canvas):
+	x0=canvas.unit.pt(self.x0)
+        y0=canvas.unit.pt(self.y0)
+        x1=canvas.unit.pt(self.x1)
+        y1=canvas.unit.pt(self.y1)
+	x2=canvas.unit.pt(self.x2)
+        y2=canvas.unit.pt(self.y2)
+        x3=canvas.unit.pt(self.x3)
+        y3=canvas.unit.pt(self.y3)
+
+        return bbox(min(x0, x1, x2, x3), min(y0, y1, y2, y3), 
+                    max(x0, x1, x2, x3), max(y0, y1, y2, y3))
+
+        
 
     def midpointsplit(self):
         ' splits bpathel at midpoint returning bpath with two bpathels '
@@ -521,12 +577,13 @@ class bpathel:
                               x23, y23, self.x3, self.y3)])
                        
 
-#
+################################################################################
 # bpath: Bezier path
-#
+################################################################################
 
 class bpath:
     """ path consisting of bezier curves"""
+    
     def __init__(self, bpath=[]):
         self.bpath = bpath
 	
@@ -539,11 +596,29 @@ class bpath:
     def __len__(self):
         return len(self.bpath)
 
-    def __getitem__(self, i):
-        return self.bpath[i]
+    def __getitem__(self, t):
+        ' return path at parameter value t '
+        
+#        return self.bpath[int(t)][t-floor(t)]
+        return self.bpath[t]
 
     def __str__(self):
         return reduce(lambda x,y: x+"%s\n" % str(y), self.bpath, "")
+
+    def bbox(self, canvas):
+        abbox = bbox()
+        for bpathel in self.bpath:
+           abbox = abbox + bpathel.bbox(canvas)
+	return abbox
+
+    def write(self, canvas, file):
+        for bpathel in self.bpath:
+	    bpathel.write(canvas, file)
+            file.write("\n")
+
+
+    def pos(self, t):
+        return self.bpath[int(t)][t-floor(t)]
 
     def midpointsplit(self):
         result = []
@@ -552,16 +627,39 @@ class bpath:
             for sbpel in sbp:
                 result.append(sbpel)
         return bpath(result)
-       
+
+    def intersect(self, canvas, other):
+        """ intersect two bpaths
+
+        returns a list of tuples consisting of the corresponding parameters of the
+        two bpaths """
+
+        intersections = ()
+        (ta, tb) = (0,0)
+        maxsubdiv = 5
+        
+        for s_bpel in self.bpath:
+            ta = ta+1
+            for o_bpel in other.bpath:
+                tb = tb+1
+                intersections = intersections + \
+                                bpathelIntersect(canvas,
+                                                 s_bpel, ta-1, ta, maxsubdiv,
+                                                 o_bpel, tb-1, tb, maxsubdiv)
+
+        return intersections
+
 
 class bcurve(bpath):
     """ bpath consisting of one bezier curve"""
+    
     def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
         bpath.__init__(self, [bpathel(x0, y0, x1, y1, x2, y2, x3, y3)]) 
 
 
 class bline(bpath):
     """ bpath consisting of one straight line"""
+    
     def __init__(self, x0, y0, x1, y1):
         bpath.__init__(self, 
                       [bpathel(x0, y0, 
@@ -613,9 +711,87 @@ def arctobpathel(x, y, r, phi1, phi2):
     (x1, y1) = ( x0-l*sin(phi1), y0+l*cos(phi1) )
     (x2, y2) = ( x3+l*sin(phi2), y3-l*cos(phi2) )
     
-    return bpathel(x0, y0, x1, y1, x2, y2, x3, y3)   
+    return bpathel(x0, y0, x1, y1, x2, y2, x3, y3)
 
+def bpathelIntersect(canvas,
+                     a, a_t0, a_t1, a_subdiv,
+                     b, b_t0, b_t1, b_subdiv):
+    """ intersect two bpathels
 
+    a and b are bpathels with parameter ranges [a_t0, a_t1],
+    respectively [b_t0, b_t1] and a_subdiv, respectively
+    b_subdiv subdivisions left. """
+
+    # intersection of bboxes is a necessary criterium for intersection
+    if not a.bbox(canvas).intersects(b.bbox(canvas)): return ()
+
+    if a_subdiv>0:
+        (aa, ab) = a.midpointsplit()
+        a_tm = 0.5*(a_t0+a_t1)
+
+        if b_subdiv>0:
+            (ba, bb) = b.midpointsplit()
+            b_tm = 0.5*(b_t0+b_t1)
+
+            return ( bpathelIntersect(canvas,
+                                      aa, a_t0, a_tm, a_subdiv-1,
+                                      ba, b_t0, b_tm, b_subdiv-1) + 
+                     bpathelIntersect(canvas,
+                                      ab, a_tm, a_t1, a_subdiv-1,
+                                      ba, b_t0, b_tm, b_subdiv-1) + 
+                     bpathelIntersect(canvas,
+                                      aa, a_t0, a_tm, a_subdiv-1,
+                                      bb, b_tm, b_t1, b_subdiv-1) +
+                     bpathelIntersect(canvas,
+                                      ab, a_tm, a_t1, a_subdiv-1,
+                                      bb, b_tm, b_t1, b_subdiv-1) )
+        else:
+            return ( bpathelIntersect(canvas,
+                                      aa, a_t0, a_tm, a_subdiv-1,
+                                      b, b_t0, b_t1, b_subdiv) +
+                     bpathelIntersect(canvas,
+                                      ab, a_tm, a_t1, a_subdiv-1,
+                                      b, b_t0, b_t1, b_subdiv) )
+    else:
+        if b_subdiv>0:
+            (ba, bb) = b.midpointsplit()
+            b_tm = 0.5*(b_t0+b_t1)
+
+            return  ( bpathelIntersect(canvas,
+                                       a, a_t0, a_t1, a_subdiv,
+                                       ba, b_t0, b_t1, b_subdiv-1) +
+                      bpathelIntersect(canvas,
+                                       a, a_tm, a_t1, a_subdiv,
+                                       ba, b_t0, b_tm, b_subdiv-1) )
+        else:
+            # no more subdivisions of either a or b
+            # => try to intersect a and b as straight line segments
+
+            a_deltax = canvas.unit.pt(a.x3 - a.x0)
+            a_deltay = canvas.unit.pt(a.y3 - a.y0)
+            b_deltax = canvas.unit.pt(b.x3 - b.x0)
+            b_deltay = canvas.unit.pt(b.y3 - b.y0)
+            
+            det = b_deltax*a_deltay - b_deltay*a_deltax
+
+            # check for parallel lines
+            if 1.0+det==1.0: return ()
+
+            ba_deltax0 = canvas.unit.pt(b.x0 - a.x0)
+            ba_deltay0 = canvas.unit.pt(b.y0 - a.y0)
+
+            a_t = ( b_deltax*ba_deltay0 - b_deltay*ba_deltax0)/det
+            b_t = ( a_deltax*ba_deltay0 - a_deltay*ba_deltax0)/det
+
+            # check for intersections out of bound
+            if not ( 0<=a_t<=1 and 0<=b_t<=1): return ()
+
+            # return rescaled parameters of the intersection
+            return ( ( a_t0 + a_t * (a_t1 - a_t0),
+                       b_t0 + b_t * (b_t1 - b_t0) ),
+                   )
+    
+    
 if __name__=="__main__":
     def testarc(x, y, phi1, phi2):
         print "1 0 0 setrgbcolor"
@@ -643,33 +819,36 @@ if __name__=="__main__":
     #print arctobpath(100,100,100,0,90)
     #print "stroke"
 
-    testarc(100, 200, 0, 90)
-    testarc(200, 200, -90, 90)
-    testarc(300, 200, 270, 90)
-    testarc(400, 200, 90, -90)
-    testarc(500, 200, 90, 270)
-    testarc(400, 300, 45, -90)
-    testarc(200, 300, 45, -90-2*360)
-    testarc(100, 300, 45, +90+2*360)
+##     testarc(100, 200, 0, 90)
+##     testarc(200, 200, -90, 90)
+##     testarc(300, 200, 270, 90)
+##     testarc(400, 200, 90, -90)
+##     testarc(500, 200, 90, 270)
+##     testarc(400, 300, 45, -90)
+##     testarc(200, 300, 45, -90-2*360)
+##     testarc(100, 300, 45, +90+2*360)
 
-    testarcn(100, 500, 0, 90) 
-    testarcn(200, 500, -90, 90) 
-    testarcn(300, 500, 270, 90) 
-    testarcn(400, 500, 90, -90) 
-    testarcn(500, 500, 90, 270) 
-    testarcn(400, 600, 45, -90) 
-    testarcn(200, 600, 45, -90-360) 
-    testarcn(100, 600, 45, -90+360) 
+##     testarcn(100, 500, 0, 90) 
+##     testarcn(200, 500, -90, 90) 
+##     testarcn(300, 500, 270, 90) 
+##     testarcn(400, 500, 90, -90) 
+##     testarcn(500, 500, 90, 270) 
+##     testarcn(400, 600, 45, -90) 
+##     testarcn(200, 600, 45, -90-360) 
+##     testarcn(100, 600, 45, -90+360) 
 
     p=path([moveto(100,100), rlineto(20,20), arc(150,120,10,30,300),closepath()])
     p.ConvertToBezier()
-    print p.bpath
     bpsplit=p.bpath.midpointsplit()
     print "stroke"
     print "1 0 0 setrgbcolor"
     print "newpath"
     print bpsplit
     print "stroke"
+
+    q = path([moveto(120,100), rlineto(20,20), arc(150,120,10,30,300),closepath()])
+    q.ConvertToBezier()
+
 #    p=path([arc(120,120,10,30,360)])
 #    p.ConvertToBezier()
 #    print p.bpath
