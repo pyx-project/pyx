@@ -1367,7 +1367,7 @@ class baraxispainter(axistitlepainter):
                        tickattrs=(),
                        baselineattrs=canvas.linecap.square,
                        namedist="0.3 cm",
-                       nameattrs=(textmodule.halign.center, textmodule.valign.centerline),
+                       nameattrs=(textmodule.halign.center, textmodule.valign.centerline()),
                        namedirection=None,
                        namepos=0.5,
                        namehequalize=0,
@@ -1406,7 +1406,7 @@ class baraxispainter(axistitlepainter):
             axis.namepos.append((v, x, y, dx, dy))
         axis.nameboxes = []
         for (v, x, y, dx, dy), name in zip(axis.namepos, axis.names):
-            nameattrs = list(helper.ensuresequence(self.nameattrs))
+            nameattrs = helper.ensurelist(self.nameattrs)
             if self.namedirection is not None:
                 nameattrs += [trafo.rotate(self.reldirection(self.namedirection, dx, dy))]
             if axis.texts.has_key(name):
@@ -3441,11 +3441,12 @@ class _bariterator(changeattr):
 
 class bar:
 
-    def __init__(self, fromzero=1, stacked=0, xbar=0,
+    def __init__(self, fromzero=1, stacked=0, skipmissing=1, xbar=0,
                        barattrs=(canvas.stroked(color.gray.black), changecolor.Rainbow()),
                        _bariterator=_bariterator(), _previousbar=None):
         self.fromzero = fromzero
         self.stacked = stacked
+        self.skipmissing = skipmissing
         self.xbar = xbar
         self._barattrs = barattrs
         self.bariterator = _bariterator
@@ -3499,6 +3500,11 @@ class bar:
 
         vmin = vmax = None
         for point in points:
+            if not self.skipmissing:
+                if count == 1:
+                    self.naxis.setname(point[self.ni])
+                else:
+                    self.naxis.setname(point[self.ni], index)
             try:
                 v = point[self.vi] + 0.0
                 if vmin is None or v < vmin: vmin = v
@@ -3506,10 +3512,11 @@ class bar:
             except (TypeError, ValueError):
                 pass
             else:
-                if count == 1:
-                    self.naxis.setname(point[self.ni])
-                else:
-                    self.naxis.setname(point[self.ni], index)
+                if self.skipmissing:
+                    if count == 1:
+                        self.naxis.setname(point[self.ni])
+                    else:
+                        self.naxis.setname(point[self.ni], index)
         if self.fromzero:
             if vmin > 0: vmin = 0
             if vmax < 0: vmax = 0

@@ -111,7 +111,7 @@ def checkattr(attrs, allowonce=(), allowmulti=()):
         for once in allowonce:
             if isinstance(attr, once):
                 if once in hadonce:
-                    raise AttrError
+                    raise AttrError("only a single instance of %r allowed" % once)
                 else:
                     hadonce += [once]
                     break
@@ -120,7 +120,7 @@ def checkattr(attrs, allowonce=(), allowmulti=()):
                 if isinstance(attr, multi):
                     break
             else:
-                raise AttrError
+                raise AttrError("%r not allowed" % attr)
 
 def getattrs(attrs, get, default=nodefault):
     """creates a list of instances of class get out of the sequence attrs

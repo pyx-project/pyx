@@ -24,7 +24,7 @@
 # this code will be part of PyX 0.3
 
 import glob, os, threading, Queue, traceback, re, struct, tempfile
-import helper, attrlist, bbox, unit, box, base, trafo, canvas, pykpathsea, t1strip
+import helper, bbox, unit, box, base, trafo, canvas, pykpathsea, t1strip
 
 ###############################################################################
 # joergl would mainly work here ...
@@ -1138,7 +1138,7 @@ class TexDoneError(Exception): pass
 class TexNotInDefineModeError(Exception): pass
 
 
-class texrunner(attrlist.attrlist):
+class texrunner:
 
     def __init__(self, mode="tex",
                        docclass="article",
@@ -1151,7 +1151,7 @@ class texrunner(attrlist.attrlist):
                        texmessagedocclass=texmessage.load,
                        texmessagebegindoc=(texmessage.load, texmessage.noaux),
                        texmessageend=texmessage.texend,
-                       texmessagedefaultpreamble=(),
+                       texmessagedefaultpreamble=texmessage.load,
                        texmessagedefaultrun=()):
         self.mode = mode
         self.docclass = docclass
@@ -1355,7 +1355,7 @@ class texrunner(attrlist.attrlist):
         if not self.preamblemode:
             raise TexNotInDefineModeError
         self.bracketcheck(expr)
-        self.execute(expr, *self.attrgetall(args, texmessage, default=self.texmessagedefaultpreamble))
+        self.execute(expr, *helper.getattrs(args, texmessage, default=self.texmessagedefaultpreamble))
 
     PyXBoxPattern = re.compile(r"PyXBox\(page=(?P<page>\d+),wd=(?P<wd>-?\d*((\d\.?)|(\.?\d))\d*)pt,ht=(?P<ht>-?\d*((\d\.?)|(\.?\d))\d*)pt,dp=(?P<dp>-?\d*((\d\.?)|(\.?\d))\d*)pt\)")
 
@@ -1368,22 +1368,22 @@ class texrunner(attrlist.attrlist):
             if self.mode == "latex":
                 self.execute("\\begin{document}", *self.texmessagebegindoc)
             self.preamblemode = 0
-        self.attrcheck(args, allowmulti=(halign, _texsetting, texmessage, trafo._trafo, base.PathStyle))
-                                                 #XXX: should we distiguish between StrokeStyle and FillStyle?
+        helper.checkattr(args, allowmulti=(halign, _texsetting, texmessage, trafo._trafo, base.PathStyle))
+                                                   #XXX: should we distiguish between StrokeStyle and FillStyle?
         texsettings = helper.getattrs(args, _texsetting, default=[])
         texsettings.reverse()
         for texsetting in texsettings:
             expr = texsetting.modifyexpr(expr)
         self.bracketcheck(expr)
-        self.execute(expr, *self.attrgetall(args, texmessage, default=self.texmessagedefaultrun))
+        self.execute(expr, *helper.getattrs(args, texmessage, default=self.texmessagedefaultrun))
         match = self.PyXBoxPattern.search(self.texmsg)
         if not match or int(match.group("page")) != self.page:
             raise TexResultError("box extents not found", self)
         width, height, depth = map(lambda x: float(x) * 72.0 / 72.27, match.group("wd", "ht", "dp"))
-        hratio = self.attrgetall(args, halign, default=(halign.left,))[0].hratio
+        hratio = helper.getattrs(args, halign, default=(halign.left,))[0].hratio
         box = _textbox(x, y, hratio * width, (1 - hratio) * width, height, depth, self, self.page,
                        *helper.getattrs(args, base.PathStyle, default=[]))
-        for t in self.attrgetall(args, trafo._trafo, default=()):
+        for t in helper.getattrs(args, trafo._trafo, default=()):
             box.reltransform(t)
         return box
 

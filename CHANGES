@@ -22,8 +22,7 @@ PyX
     - removed some code duplication (various axis painters)
     - use text module instead of the obsolete tex module (done, check the documentation)
     - allow for tailing zeros of automatic generated labels (done up to documentation)
-    - allow for missing data in bar graphs
-      (not yet tested --- check skat graph; check, whether this change needs to be documented in the manual)
+    - allow for missing data in bar graphs -> skipmissing parameter (done up to documentation)
     - TODO: remove the support for variables given within the argument dictionary in data constructor
     - TODO: graph keys; titles in data/function/etc.
     - TODO: 3d graphs --- leave it for pyx-0.4
