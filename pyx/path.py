@@ -1473,9 +1473,10 @@ def _splitopensubpath(subpath, parameters):
         if not parameters or t+1<parameters[0]:
             np.path.append(pel)
         else:
-            dummy = list(parameters) + [t+1]
-            for i in range(len(dummy)):
-                if dummy[i]>t+1: break
+            for i in range(len(parameters)):
+                if parameters[i]>t+1: break
+            else:
+                i = len(parameters)
                 
             pieces = pel._split(context,
                                 [x-t for x in parameters[:i]])
@@ -1718,9 +1719,10 @@ class normpath(path):
 
                     # first we determine the relevant splitting
                     # parameters
-                    dummy = list(parameters) + [tf]
-                    for i in range(len(dummy)):
-                        if dummy[i]>tf: break
+                    for i in range(len(parameters)):
+                        if parameters[i]>tf: break
+                    else:
+                        i = len(parameters)
 
                     # the rest we delegate to helper functions
                     if closed:
