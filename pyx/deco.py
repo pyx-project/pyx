@@ -196,7 +196,7 @@ class _stroked(deco, attr.exclusiveattr):
         return dp
 
 stroked = _stroked()
-stroked.clear = attr.clearclass(stroked)
+stroked.clear = attr.clearclass(_stroked)
 
 
 class _filled(deco, attr.exclusiveattr):
@@ -218,7 +218,7 @@ class _filled(deco, attr.exclusiveattr):
         return dp
 
 filled = _filled()
-filled.clear = attr.clearclass(filled)
+filled.clear = attr.clearclass(_filled)
 
 # 
 # Arrows
