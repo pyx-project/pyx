@@ -8,10 +8,12 @@ from const import *
 
 class Tick:
 
-    def __init__(self, ValuePos, VirtualPos, Label):
+    def __init__(self, ValuePos, VirtualPos, Label=None, TickLevel=1, LabelLevel=1):
         self.ValuePos = ValuePos
         self.VirtualPos = VirtualPos
+        self.TickLevel = TickLevel
         self.Label = Label
+
 
 class Axis:
 
@@ -61,7 +63,7 @@ class Graph:
 
 class GraphXY(Graph):
 
-    #plotdata = [ ]
+    plotdata = [ ]
 
     def __init__(self, canvas, tex, x, y, width, height):
         Graph.__init__(self, canvas, tex, x, y)
@@ -70,8 +72,8 @@ class GraphXY(Graph):
         self.XAxis = LinAxis()
         self.YAxis = LinAxis()
 
-    #def plot(self, Data, style)
-        #plotdata.append( {pd_data: Data, pd_style: style} )
+    def plot(self, data, style = None):
+        self.plotdata.append( {'pd_data': data, 'pd_style': style} )
 
     def XPos(self, Values):
         if isnumber(Values):
@@ -105,9 +107,16 @@ class GraphXY(Graph):
              y = self.YPos(yv)
              self.canvas.draw(line(self.XPos(0), y, self.XPos(0)+0.2, y))
              self.tex.text(self.XPos(0)-0.2, y, l, halign=right)
-        #for pd in self.plotdata:
-        #    for Data in pd[pd_data]
-
+        for pd in self.plotdata:
+             for i in range(201):
+                 x = (i-100)/10.0
+                 y = pd['pd_data'].MT.Calc({'x':x})
+                 xnew = self.XPos(self.XAxis.ValueToVirtual(x))
+                 ynew = self.YPos(self.YAxis.ValueToVirtual(y))
+                 if i > 0:
+                     self.canvas.draw(line(xold, yold, xnew, ynew))
+                 xold = xnew
+                 yold = ynew
 
 class GraphRPhi:
 
@@ -117,3 +126,11 @@ class GraphRPhi:
 
 ###############################################################################
 # data part
+
+from fit import *
+
+class Function:
+
+    def __init__(self, Expression):
+        self.MT = ParseMathTree(ParseStr(Expression))
+

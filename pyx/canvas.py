@@ -339,6 +339,8 @@ if __name__=="__main__":
 
     c.setlinestyle(linestyle_solid)
     g=GraphXY(c, t, 10, 15, 8, 6)
+    g.plot(Function("5*sin(x)"))
+    g.plot(Function("(x+5)*x*(x-5)/100"))
     g.run()
 
     t.TexRun()
