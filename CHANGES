@@ -73,7 +73,7 @@ TODO:
     - mandel.py (contributed by Stephen Phillips)
   - path:
     - added new pathel multilineto_pt which allows to specify a list of points
-    and can thus be much more efficient
+      and can thus be much more efficient
 
 
 0.5.1 (2004/01/22):
