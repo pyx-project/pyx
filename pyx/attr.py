@@ -22,6 +22,27 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+# check for an isinstance which accepts both a class and a sequence of classes
+# as second argument and emulate this behaviour if necessary
+try:
+    isinstance(1, (int, float))
+except TypeError:
+    # workaround for Python 2.1 and older
+    _isinstance = isinstance
+    def isinstance(instance, clsarg):
+        # we explicitely check for clsarg being a sequence, because
+        # a Leap Before Look pattern, i.e., just trying out
+        # _isinstance(instance, clsarg) within an try/except 
+        # block may mask a TypeError occuring when clsarg is
+        # not a class
+        import helper
+        if not helper.issequence(clsarg):
+            return _isinstance(instance, clsarg)
+        else:
+            for cls in clsarg:
+                if _isinstance(instance, cls):
+                    return 1
+            return 0
 
 #
 # some helper functions for the attribute handling
@@ -43,16 +64,7 @@ def mergeattrs(attrs):
 def getattrs(attrs, getclasses):
     """return all attributes in the attribute list attrs, which are
     instances of one of the classes in getclasses"""
-    try:
-        return [attr for attr in attrs if isinstance(attr, getclasses)]
-    except TypeError: # workaround for Python 2.1 and older
-        result = []
-        for attr in attrs:
-            for getclass in getclasses:
-                if isinstance(attr, getclass):
-                    result.append(attr)
-                    break
-        return result
+    return [attr for attr in attrs if isinstance(attr, tuple(getclasses))]
 
 
 def checkattrs(attrs, allowedclasses):
@@ -107,26 +119,16 @@ class sortbeforeattr(attr):
     in the beforetheclasses argument to the constructor"""
 
     def __init__(self, beforetheclasses):
-        self.beforetheclasses = beforetheclasses
+        self.beforetheclasses = tuple(beforetheclasses)
 
     def merge(self, attrs):
         first = 1
         result = []
-        try:
-            for attr in attrs:
-                if first and isinstance(attr, self.beforetheclasses):
-                    result.append(self)
-                    first = 0
-                result.append(attr)
-        except TypeError: # workaround for Python 2.1 and older
-            for attr in attrs:
-                if first:
-                    for dependedclass in self.beforetheclasses:
-                        if isinstance(attr, dependedclass):
-                            result.append(self)
-                            first = 0
-                            break
-                result.append(attr)
+        for attr in attrs:
+            if first and isinstance(attr, self.beforetheclasses):
+                result.append(self)
+                first = 0
+            result.append(attr)
         if first:
             result.append(self)
         return result
@@ -141,28 +143,17 @@ class sortbeforeexclusiveattr(attr):
 
     def __init__(self, exclusiveclass, beforetheclasses):
         self.exclusiveclass = exclusiveclass
-        self.beforetheclasses = beforetheclasses
+        self.beforetheclasses = tuple(beforetheclasses)
 
     def merge(self, attrs):
         first = 1
         result = []
-        try:
-            for attr in attrs:
-                if first and isinstance(attr, self.beforetheclasses):
-                    result.append(self)
-                    first = 0
-                if not isinstance(attr, self.exclusiveclass):
-                    result.append(attr)
-        except TypeError: # workaround for Python 2.1 and older
-            for attr in attrs:
-                if first:
-                    for dependedclass in self.beforetheclasses:
-                        if isinstance(attr, dependedclass):
-                            result.append(self)
-                            first = 0
-                            break
-                if not isinstance(attr, self.exclusiveclass):
-                    result.append(attr)
+        for attr in attrs:
+            if first and isinstance(attr, self.beforetheclasses):
+                result.append(self)
+                first = 0
+            if not isinstance(attr, self.exclusiveclass):
+                result.append(attr)
         if first:
             result.append(self)
         return result
