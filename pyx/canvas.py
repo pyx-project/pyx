@@ -21,17 +21,25 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 # TODO:
-# - canvas.__init__() rewrite
 # - check the factor 0.5 in arrowhead and PathDeco.modfication
 # - should we improve on the arc length -> arg parametrization routine or
 #   should we at least factor it out in bpath.bpath?
 # - PathDeco cannot be a PSAttr (because it cannot be set via canvas.set())
 #   (at the moment it derives from nothing)
+# - Should we really set linewidth in canvas.writetofile. Why don't we
+#   rely on the PS default (like for all other PathStyles)
 
 """The canvas module provides a PostScript canvas class and related classes
+
+A PostScript canvas is the pivotal object for the creation of (E)PS-Files.
+It collects all the elements that should be displayed (PSCmds) together
+with attributes if applicable. Furthermore, a canvas can be globally
+transformed (i.e. translated, rotated, etc.) and clipped.
+
 """
 
-import types, math
+import types, math, time
+import pyx
 import base
 import bbox, unit, trafo
 import bpath
@@ -568,10 +576,12 @@ class canvas(base.PSCmd):
 
         file.write("%!PS-Adobe-3.0 EPSF 3.0\n")
         abbox.write(file)
-        file.write("%%Creator: pyx 0.0.1\n") 
+        file.write("%%%%Creator: PyX %s\n" % pyx.__version__) 
         file.write("%%%%Title: %s.eps\n" % filename) 
-        # file.write("%%CreationDate: %s" % ) 
-        file.write("%%EndComments\n") 
+        file.write("%%%%CreationDate: %s\n" %
+                   time.asctime(time.localtime(time.time())))
+        file.write("%%EndComments\n")
+        
         file.write("%%BeginProlog\n") 
         file.write(_PSProlog)
         file.write("\n%%EndProlog\n") 
@@ -599,7 +609,7 @@ class canvas(base.PSCmd):
         returns the (last) PSOp
         
         """
-
+        
         # encapsulate in gsave/grestore command if necessary
         if styles:
             self.PSOps.append(_gsave())
@@ -629,7 +639,6 @@ class canvas(base.PSCmd):
         return lastop
 
     def set(self, *args):
-
         """sets PSAttrs args globally for the rest of the canvas
 
         returns canvas
@@ -673,7 +682,6 @@ class canvas(base.PSCmd):
         returns the canvas
 
         """
-
         self.insert((_newpath(), path, _fill()), *args)
         return self
 
@@ -686,6 +694,5 @@ class canvas(base.PSCmd):
         returns the canvas
 
         """
-
         self.insert((_newpath(), path, _gsave(), _stroke(), _grestore(), _fill()), *args)
         return self
