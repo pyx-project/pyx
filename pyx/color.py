@@ -21,7 +21,9 @@ class _rgb:
         canvas._PSAddCmd("%f %f %f setrgbcolor" % (self.r, self.g, self.b))
 
 class rgb(_rgb):
-    pass
+    red   = _rgb(1,0,0)
+    green = _rgb(0,1,0)
+    blue  = _rgb(0,0,1)
        
 
 class _hsb:

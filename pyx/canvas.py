@@ -293,9 +293,8 @@ if __name__=="__main__":
     from path  import *
     from trafo import *
     from graph import *
+    from color import *
 
-
-    linewidth("0.02")
     c=canvas.canvas()
     t=c.tex()
  
@@ -348,7 +347,7 @@ if __name__=="__main__":
              lineto(10,14), 
              moveto(12,10), 
              lineto(12,14)])
-    c.set(canvas.linestyle.dashdotted)
+    c.set(canvas.linestyle.dashdotted, rgb(1,0,0))
     t.text(10, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize = 2, valign = valign.bottom)
     c.draw(p)
  
