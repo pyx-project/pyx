@@ -21,7 +21,7 @@
 #       - this is much too slow --- consider a rewrite in C
 
 
-import getopt, sys, os, StringIO, re
+import getopt, sys, os, StringIO, re, math
 import Image # we use the python image library (PIL)
 
 
@@ -96,12 +96,8 @@ def main():
         if o in ("-o", "--output"):
             output = a
         if o in ("-r", "--resolution"):
-            if math.ceil(a) != math.floor(a):
-                raise RuntimeError("integer resolution expected")
-            resolution = a
+            resolution = int(a)
         if o in ("-s", "--scale"):
-            if math.ceil(a) != math.floor(a):
-                raise RuntimeError("integer scale expected")
             scale = int(a)
         if o in ("-t", "--transparent"):
             m = re.compile(r"\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d)\s*\)\s*$").match(a)
