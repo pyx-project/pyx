@@ -73,7 +73,9 @@ class definition(prologitem):
            return other
 
     def write(self, file):
+        file.write("%%%%BeginRessource: %s\n" % self.id)
         file.write("%(body)s /%(id)s exch def\n" % self.__dict__)
+        file.write("%%EndRessource\n")
 
 
 class fontdefinition(prologitem):
