@@ -10,6 +10,7 @@ PyX
     - moved the attrlist into helper -- as plain functions; attrlist becomes obsolete
   - text module:
     - to be included in 0.3 -> finish base functionality
+    - TODO: remove stale @* files remaining upon error
     - documentation!!!
   - t1strip module:
     - strip glyphs from pfa/pfb-fonts
