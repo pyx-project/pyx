@@ -21,7 +21,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import exceptions, glob, os, threading, Queue, traceback, re, struct, tempfile, sys, atexit
-import helper, unit, box, base, color, trafo, canvas, path, pykpathsea
+import helper, unit, bbox, box, base, canvas, color, trafo, path, pykpathsea
 
 class fix_word:
     def __init__(self, word):
@@ -460,6 +460,14 @@ class _restorecolor(base.PSOp):
     def write(self, file):
         file.write("setcolorspace setcolor\n")
 
+class _savetrafo(base.PSOp):
+    def write(self, file):
+        file.write("matrix currentmatrix\n")
+
+
+class _restoretrafo(base.PSOp):
+    def write(self, file):
+        file.write("setmatrix\n")
 
 class DVIFile:
 
@@ -571,7 +579,7 @@ class DVIFile:
     def special(self, s):
 
         if self.debug:
-            print "%d: special %s" % (self.filepos, s)
+            print "%d: xxx '%s'" % (self.filepos, s)
         if not s.startswith("PyX:"):
             raise RuntimeError("the special '%s' cannot be handled by PyX, aborting" % s)
         command, args = s[4:].split()[0], s[4:].split()[1:]
@@ -586,16 +594,63 @@ class DVIFile:
                 c = color.rgb(float(args[1]), float(args[2]), float(args[3]))
             elif args[0]=="RGB":
                 c = color.rgb(int(args[1])/255.0, int(args[2])/255.0, int(args[3])/255.0)
-
+            elif args[0]=="texnamed":
+                try:
+                    c = getattr(color.cmyk, args[1])
+                except AttributeError:
+                    raise RuntimeError("unknown TeX color '%s', aborting" % args[1])
+            else:
+                raise RuntimeError("color model '%s' cannot be handled by PyX, aborting" % args[0])
             # XXX when do we have to flush?
             self.flushout()
             self.actpage.insert(_savecolor())
             self.actpage.insert(c)
-        if command=="color_end":
+        elif command=="color_end":
             self.actpage.insert(_restorecolor())
             # XXX when do we have to flush?
             self.flushout()
+        elif command=="rotate_begin":
+            self.flushout()
+            self.actpage.insert(_savetrafo())
+            self.actpage.insert(trafo.rotate(float(args[0])))
+        elif command=="rotate_end":
+            self.actpage.insert(_restoretrafo())
+            self.flushout()
+        elif command=="scale_begin":
+            self.flushout()
+            self.actpage.insert(_savetrafo())
+            self.actpage.insert(trafo.scale(float(args[0]), float(args[1])))
+        elif command=="scale_end":
+            self.actpage.insert(_restoretrafo())
+            self.flushout()
+        elif command=="epsinclude":
+            # XXX: we cannot include epsfile in the header because this would
+            # generate a cyclic import with the canvas and text modules
+            import epsfile
 
+            # parse arguments
+            argdict = {}
+            for arg in args:
+                name, value = arg.split("=")
+                argdict[name] = value
+
+            x =  unit.t_m(self.pos[_POS_H] * self.conv * 0.0254 / self.resolution)
+            y = -unit.t_m(self.pos[_POS_V] * self.conv * 0.0254 / self.resolution)
+
+            # construct kwargs for epsfile constructor
+            epskwargs = {}
+            epskwargs["filename"] = argdict["file"]
+            if argdict.has_key("width"):
+                epskwargs["width"] = unit.t_pt(float(argdict["width"]))
+            if argdict.has_key("height"):
+                epskwargs["height"] = unit.t_pt(float(argdict["height"]))
+            if argdict.has_key("clip"):
+               epskwargs["clip"] = int(argdict["clip"])
+            #epskwargs["bbox"] = bbox._bbox(float(argdict["llx"]), float(argdict["lly"]),
+            #                               float(argdict["urx"]), float(argdict["ury"]))
+            self.actpage.insert(epsfile.epsfile(x, y, **epskwargs))
+        else:
+            raise RuntimeError("unknown PyX special '%s', aborting" % command)
 
     # routines corresponding to the different reader states of the dvi maschine
 
@@ -842,6 +897,7 @@ class DVIFile:
         result = []
         for font in self.fonts:
             if font: result.append(canvas.fontdefinition(font))
+        result.extend(self.pages[page-1].prolog())
         return result
 
     def write(self, file, page):
