@@ -30,13 +30,11 @@ def drawdeco(name, showpath=0, default=0):
         y = 0
         x += dx
 
-drawdeco("earrow.SMall")
 drawdeco("earrow.Small")
 drawdeco("earrow.small")
 drawdeco("earrow.normal")
 drawdeco("earrow.large")
 drawdeco("earrow.Large")
-drawdeco("earrow.LArge")
 
 y += dy
 
