@@ -95,8 +95,6 @@ class _Idata:
         """Perform select on the styles
 
         This method should perfrom selectstyle calls on all styles."""
-        for style in self.styles:
-            style.selectstyle(self.styledata, graph, selectindex, selecttotal)
 
     def adjustaxes(self, graph, step):
         """Adjust axes ranges
@@ -128,8 +126,11 @@ class styledata:
     """Styledata storage class
 
     Instances of this class are used to store data from the styles
-    and to pass point data to the styles.  is shared
-    between all the style(s) in use by a data instance"""
+    and to pass point data to the styles by instances named privatedata
+    and sharedata. sharedata is shared between all the style(s) in use
+    by a data instance, while privatedata is private to each style and
+    used as a storage place instead of self to prevent side effects when
+    using a style several times."""
     pass
 
 
@@ -142,7 +143,8 @@ class _data(_Idata):
         self.data:
         self.columns:
         self.styles:
-        self.styledata:
+        self.sharedata:
+        self.privatedatalist: a list of privatedata containers
         self.title: the title of the data
         self.defaultstyles:"""
 
@@ -166,42 +168,44 @@ class _data(_Idata):
         This is a helper method, which returns a list of styles where
         provider styles are added in front to fullfill all needs of the
         given styles."""
-        provided = [] # already provided styledata variables
+        provided = [] # already provided sharedata variables
         addstyles = [] # a list of style instances to be added in front
         for s in styles:
-            for n in s.need:
+            for n in s.needsdata:
                 if n not in provided:
-                    addstyles.append(style.provider[n])
-                    provided.extend(style.provider[n].provide)
-            provided.extend(s.provide)
+                    defaultprovider = style.getdefaultprovider(n)
+                    addstyles.append(defaultprovider)
+                    provided.extend(defaultprovider.providesdata)
+            provided.extend(s.providesdata)
         return addstyles + styles
 
-    def setcolumns(self, styledata, graph, styles, columns):
+    def setcolumns(self, privatedatalist, sharedata, graph, styles, columns):
         """helper method (not part of the interface)
 
         This is a helper method to perform setcolumn to all styles."""
         usedcolumns = []
-        for style in styles:
-            usedcolumns.extend(style.columns(self.styledata, graph, columns))
+        for privatedata, style in zip(privatedatalist, styles):
+            usedcolumns.extend(style.columns(privatedata, sharedata, graph, columns))
         for column in columns:
             if column not in usedcolumns:
                 raise ValueError("unused column '%s'" % column)
 
     def setstyles(self, graph, styles):
-        self.styledata = styledata()
         self.styles = self.addneededstyles(styles)
-        self.setcolumns(self.styledata, graph, self.styles, self.columns.keys())
+        self.privatedatalist = [styledata() for x in self.styles]
+        self.sharedata = styledata()
+        self.setcolumns(self.privatedatalist, self.sharedata, graph, self.styles, self.columns.keys())
 
     def selectstyles(self, graph, selectindex, selecttotal):
-        for style in self.styles:
-            style.selectstyle(self.styledata, graph, selectindex, selecttotal)
+        for privatedata, style in zip(self.privatedatalist, self.styles):
+            style.selectstyle(privatedata, self.sharedata, graph, selectindex, selecttotal)
 
     def adjustaxes(self, graph, step):
         if step == 0:
             for column in self.columns.keys():
                 data, index = self.getcolumndataindex(column)
-                for style in self.styles:
-                    style.adjustaxis(self.styledata, graph, column, data, index)
+                for privatedata, style in zip(self.privatedatalist, self.styles):
+                    style.adjustaxis(privatedata, self.sharedata, graph, column, data, index)
 
     def draw(self, graph):
         columndataindex = []
@@ -214,24 +218,24 @@ class _data(_Idata):
             for column, data, index in columndataindex[1:]:
                 if l != len(data):
                     raise ValueError("data len differs")
-            self.styledata.point = {}
-            for style in self.styles:
-                style.initdrawpoints(self.styledata, graph)
+            self.sharedata.point = {}
+            for privatedata, style in zip(self.privatedatalist, self.styles):
+                style.initdrawpoints(privatedata, self.sharedata, graph)
             for i in xrange(l):
                 for column, data, index in columndataindex:
                     if index is not None:
-                        self.styledata.point[column] = data[i][index]
+                        self.sharedata.point[column] = data[i][index]
                     else:
-                        self.styledata.point[column] = data[i]
-                for style in self.styles:
-                    style.drawpoint(self.styledata, graph)
-            for style in self.styles:
-                style.donedrawpoints(self.styledata, graph)
+                        self.sharedata.point[column] = data[i]
+                for privatedata, style in zip(self.privatedatalist, self.styles):
+                    style.drawpoint(privatedata, self.sharedata, graph)
+            for privatedata, style in zip(self.privatedatalist, self.styles):
+                style.donedrawpoints(privatedata, self.sharedata, graph)
 
     def key_pt(self, graph, x_pt, y_pt, width_pt, height_pt, dy_pt):
         i = None
-        for style in self.styles:
-            j = style.key_pt(self.styledata, graph, x_pt, y_pt, width_pt, height_pt)
+        for privatedata, style in zip(self.privatedatalist, self.styles):
+            j = style.key_pt(privatedata, self.sharedata, graph, x_pt, y_pt, width_pt, height_pt, dy_pt)
             if i is None:
                 if j is not None:
                     i = j
@@ -628,8 +632,8 @@ class function(_linedata):
                 self.points.append(self.min)
             if self.max is not None:
                 self.points.append(self.max)
-            for style in self.styles:
-                style.adjustaxis(self.styledata, graph, self.xname, data, None)
+            for privatedata, style in zip(self.privatedatalist, self.styles):
+                style.adjustaxis(privatedata, self.sharedata, graph, self.xname, data, None)
         elif step == 1:
             xaxis = graph.axes[self.xname]
             min, max = xaxis.getrange()
@@ -648,8 +652,8 @@ class function(_linedata):
                     y = None
                 self.data.append([x, y])
         elif step == 2:
-            for style in self.styles:
-                style.adjustaxis(self.styledata, graph, self.yname, self.data, 1)
+            for privatedata, style in zip(self.privatedatalist, self.styles):
+                style.adjustaxis(privatedata, self.sharedata, graph, self.yname, self.data, 1)
 
 
 class paramfunction(_linedata):

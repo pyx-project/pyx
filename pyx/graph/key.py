@@ -92,9 +92,7 @@ class key:
         box.linealignequal_pt(titleboxes, self.symbolwidth_pt + self.symbolspace_pt, 1, 0)
         y_pt = -0.5 * self.symbolheight_pt + titleboxes[0].center[1]
         for plotdat in plotdata:
-            # TODO: loop over styles
-            count = plotdat.styles[-1].key_pt(plotdat.styledata, c, 0, y_pt,
-                                              self.symbolwidth_pt, self.symbolheight_pt, dy_pt)
+            count = plotdat.key_pt(c, 0, y_pt, self.symbolwidth_pt, self.symbolheight_pt, dy_pt)
             y_pt -= dy_pt*count
             if count != plotdat.titlecount:
                 raise ValueError("key count/title count mismatch")
