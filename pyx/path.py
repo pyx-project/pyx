@@ -56,6 +56,15 @@ except NameError:
 __metaclass__ = type
 
 ################################################################################
+
+# global epsilon (default precision of normsubpaths)
+_epsilon = 1e-5
+
+def set(epsilon=None):
+    if epsilon is not None:
+        _epsilon = epsilon
+
+################################################################################
 # Bezier helper functions
 ################################################################################
 
@@ -2526,3 +2535,4 @@ class normpath(path):
     def outputPDF(self, file):
         for sp in self.subpaths:
             sp.outputPDF(file)
+
