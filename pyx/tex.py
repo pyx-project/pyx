@@ -757,7 +757,7 @@ command by yourself.\n""")
         texfile.write("\\nonstopmode%\n")
         texfile.write("\\def\PyX{P\\kern-.3em\\lower.5ex\\hbox{Y}\\kern-.18em X}%\n")
         texfile.write("\\newwrite\\sizefile%\n\\newbox\\localbox%\n\\newbox\\pagebox%\n")
-        texfile.write("\\immediate\\openout\\sizefile=%s.size%%\n" % tempname)
+        texfile.write("{\\catcode`\\~=12\\immediate\\openout\\sizefile=%s.size\\relax}%%\n" % tempname)
 
         for Cmd in self.DefCmds:
             Cmd.write(texfile)
@@ -823,6 +823,7 @@ by yourself.\n""")
         try:
             NewSizeFile = open(tempname + ".size", "r")
             NewSizes = NewSizeFile.readlines()
+            NewSizeFile.close()
         except IOError:
             NewSizes = []
 
