@@ -71,6 +71,8 @@ argument name&description\\
 \texttt{tickvmin}&minimal graph coordinate for placing ticks to the axis; default is 0\\
 \texttt{tickvmax}&as above, but for the maximum; default is 1\\
 \texttt{part}&axis partitioning (described below)\\
+\texttt{rate}&axis partition rating (described below)\\
+\texttt{dense}&dense parameter for the axis partition rating; if not set, the dense value for the graph is used\\
 \texttt{painter}&axis painter (described below)\\
 \end{tabularx}
 \medskip
@@ -89,20 +91,16 @@ tick or label, respectively, \verb|1| means subtick or sublevel and so
 on. When \verb|labellevel| is not \verb|None|, a \verb|text| might be
 explicitly given, which will get used as the text of that label.
 
-Although there is a rudimentary automatic axis partitioning, the
-recommended solution at the moment is a manual axis partitioning,
-because the manual axis partitioning will hopefully not break in
-future versions, while the automatic axis breaking will change for
-sure at least in the results it creates.
-
-There are three different manual partition schemes, a manual
-partition, another appropriate for linear axes and a third one for
-logarithmic axes.
+We will first discuss manual partitioning schemes, namely a plain
+manual partition, another appropriate for linear axes and a third one
+for logarithmic axes. These partition schemes might be used directly
+or indirectly via automatic axis partioning schemes.
 
 \subsubsection{Manual partitioning}
 
-The class \verb|manualpart| creates a manual partition as described by
-named parameters of the constructor:
+The class \verb|manualpart| creates a manual partition where every
+single tick, label etc. is set independendly from each other as
+described by named parameters of the constructor:
 
 \medskip
 \begin{tabularx}{\linewidth}{ll>{\raggedright\arraybackslash}X}
@@ -122,7 +120,7 @@ When it is a sequence of sequences, than the first sequence stands for
 the ticks, labels, and texts of the labels, the second sequence stands
 for the subticks, sublabels, and texts of the sublabels, and so on.
 When it is just a sequence, it stands for the ticks, labels and texts
-of the labels.
+of the labels and no subticks, sublabels and subtexts will be created.
 
 The single entries of \verb|ticks| and \verb|labels| can either be a
 frac or a string, which will be converted to a frac. However, a float
@@ -182,23 +180,110 @@ name&values it descibes\\
 \end{tabular}
 \end{center}
 
-\subsubsection{Automatic partitioning}
+\subsubsection{Automatic partitioning of linear axes}
 
-When no explicit axis partitioning is given, an automatic axis
-partitioning is already available, but it is still considered to be
-under development. A major feature is missing, namely the rating of
-possible partitions does not yet attend the label texts, which is
-important in order to avoid overlap of label texts. In order to
-provide it, the rating of axis partitions has to be moved into the
-axis painter. That has just to be done and is considered for the next
-major release of \PyX.
+When no explicit axis partitioning is given in the constructor of an
+linear axis, it is initialized with an automatic partitioning schemes
+for linear axes. This scheme is provided by the class
+\verb|autolinpart|, where the constructor takes the following
+arguments:
+
+\medskip
+\begin{tabularx}{\linewidth}{ll>{\raggedright\arraybackslash}X}
+argument name&default&description\\
+\hline
+\texttt{list}&\texttt{defaultlist}&list of possible values for the ticks parameter of \texttt{linpart} (labels are placed at the position of ticks)\\
+\texttt{extendtick}&\texttt{0}&allow for a range extention to include the next tick of the given level\\
+\texttt{epsilon}&\texttt{1e-10}&allow for exceeding the range by that relative value\\
+\texttt{mix}&\texttt{()}&as in manualpart\\
+\end{tabularx}
+\medskip
+
+The default value for the argument \verb|list|, namely
+\verb|defaultlist|, is defined as a class variable of
+\verb|autolinpart| and has the value \texttt{((frac(1, 1), frac(1,
+2)), (frac(2, 1), frac(1, 1)), (frac(5, 2), frac(5, 4)), (frac(5, 1),
+frac(5, 2)))}. This implies, that the automatic axis partitioning
+scheme allows for partitions using (ticks, subticks) with at distances
+(1, 1/2), (2, 1), (5/2, 5/4), (5, 5/2). This list must be sorted by
+the number of ticks the entries will lead to. Additionally, as most
+likely already from the default value of the argument \verb|list|, the
+given fractions are automatically multiplied or divided by 10 in order
+to fit better to the axis range. Therefore these additional
+partitioning possibilities must not be given explicitly.
+
+\subsubsection{Automatic partitioning of logarithmic axes}
+
+When no explicit axis partitioning is given in the constructor of an
+logarithmic axis, it is initialized with an automatic partitioning
+schemes for logarithmic axes. This scheme is provided by the class
+\verb|autologpart|, where the constructor takes the following
+arguments:
+
+\medskip
+\begin{tabularx}{\linewidth}{ll>{\raggedright\arraybackslash}X}
+argument name&default&description\\
+\hline
+\texttt{list}&\texttt{defaultlist}&list of pairs with possible values for the ticks and labels parameters of \texttt{logpart}\\
+\texttt{extendtick}&\texttt{0}&allow for a range extention to include the next tick of the given level\\
+\texttt{extendlabel}&\texttt{None}&as above, but for labels\\
+\texttt{epsilon}&\texttt{1e-10}&allow for exceeding the range by that relative value\\
+\texttt{mix}&\texttt{()}&as in manualpart\\
+\end{tabularx}
+\medskip
+
+The default value for the argument \verb|list|, namely
+\verb|defaultlist|, is defined as a class variable of
+\verb|autologpart| and has the value:
+\begin{verbatim}
+(((shiftfracs1, shiftfracs1to9),        # ticks & subticks,
+         (shiftfracs1, shiftfracs125)), # labels & sublevels
+ ((shiftfracs1, shiftfracs1to9), None), # ticks & subticks, labels=ticks
+ ((shift2fracs1, shiftfracs1), None),   # ticks & subticks, labels=ticks
+ ((shift3fracs1, shiftfracs1), None),   # ticks & subticks, labels=ticks
+ ((shift4fracs1, shiftfracs1), None),   # ticks & subticks, labels=ticks
+ ((shift5fracs1, shiftfracs1), None))   # ticks & subticks, labels=ticks
+\end{verbatim}
+As for the \verb|autolinaxis|, this list must be sorted by the number
+of ticks the entries will lead to.
+
+\subsubsection{Rating of axes partitionings}
+
+When an axis partitioning scheme returns several partitioning
+possibilities, the partitions are rated by an instance of a rater
+class provided as the parameter \verb|rate| at the axis constructor.
+It is used to calculate a positive rating number for a given axis
+partition. The lowest rated axis will be drawn in the end.
+
+The rating consists of two steps. The first takes into account only
+the number of ticks, subticks, labels and so on in comparison to an
+optimal number. Additionally, the transgression of the axis range by
+ticks and labels is taken into account. This rating leads to a
+preselection of possible partitions. In the second step the layout of
+a partition gets acknowledged by rating the distance of the labels to
+each other. Thereby partitions with overlapping labels get quashed
+out.
+
+The class \verb|axisrater| implements a rating with quite some
+parameters especially adjusted to linear and logarithmic axes. A
+detailed description of the hole system goes beyond the scope of that
+manual. Take your freedom and have a look at the \PyX{} source code if
+you wish to adopt the rating to personal preferences.
+
+The overall optimal partition properties, namely the density of ticks
+and labels, can be easily adjusted by the single parameter
+\verb|dense| of the axis (or graph) constructor. The rating is
+adjusted to the default densitiy value of \verb|1|, but modifications
+of this parameter in the range of 0.5 (for less ticks) to 2 or even 3
+(for more ticks) might be usefull. This parameter was taken out of the
+rating class for easier access.
 
 \subsection{Painting of axes}
 
-A major task of an axis is the painting of itself. It is done by
-instances of \verb|axispainter|, provided to the constructor of an
-axis as its painter. The constructor of the axis painter receives a
-numerous list of named parameters to modify the axis look. A list of
+A major task for an axis is its painting. It is done by instances of
+\verb|axispainter|, provided to the constructor of an axis as its
+\verb|painter| argument. The constructor of the axis painter receives
+a numerous list of named parameters to modify the axis look. A list of
 parameters is provided in the following table:
 
 \medskip

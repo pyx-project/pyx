@@ -7,7 +7,7 @@ from pyx import mathtree
 
 
 def test_multiaxes_data(c, t, x, y):
-    g = c.insert(graph.graphxy(t, x, y, height=5,
+    g = c.insert(graph.graphxy(t, x, y, height=7,
                                x=graph.logaxis(title="$W$", part=graph.autologpart(mix=graph.manualpart(ticks="2.2360679775", texts="$\sqrt{5}$").part())),
                                y=graph.logaxis(title=r"$PPP_1$",
                                                painter=graph.axispainter(titleattrs=tex.direction.horizontal)),
@@ -107,7 +107,7 @@ def test_split(c, t, x, y):
     g.finish()
 
 c = canvas.canvas()
-t = c.insert(tex.tex(texfilename="bla"))
+t = c.insert(tex.tex())
 test_multiaxes_data(c, t, 0, 21)
 test_piaxis_function(c, t, 0, 14)
 test_textaxis_errorbars(c, t, 0, 7)

@@ -554,12 +554,13 @@ class autologpart(logpart):
                      logpart.shiftfracs1),     # subticks
                     None))                     # labels like ticks
 
-    def __init__(self, list=defaultlist, listindex=None, extendtick=0, extendlabel=None, epsilon=1e-10, mix=()):
+    def __init__(self, list=defaultlist, extendtick=0, extendlabel=None, epsilon=1e-10, mix=()):
         self.multipart = 1
         self.list = list
-        if listindex is None:
-            listindex = divmod(len(list), 2)[0]
-        self.listindex = listindex
+        if len(list) > 2:
+            self.listindex = divmod(len(list), 2)[0]
+        else:
+            self.listindex = 0
         self.extendtick = extendtick
         self.extendlabel = extendlabel
         self.epsilon = epsilon
@@ -608,42 +609,44 @@ class cuberate:
         self.right = right
         self.weight = weight
 
-    def rate(self, value, stretch = 1):
-        opt = stretch * self.opt
+    def rate(self, value, dense=1):
+        opt = self.opt * dense
         if value < opt:
-            other = stretch * self.left
+            other = self.left * dense
         elif value > opt:
-            other = stretch * self.right
+            other = self.right * dense
         else:
             return 0
         factor = (value - opt) / float(other - opt)
         return self.weight * (factor ** 3)
 
+
 class distancerate:
 
-    def __init__(self, opt, weight=0.01):
+    def __init__(self, opt, weight=0.1):
         self.opt_str = opt
         self.weight = weight
 
-    def _rate(self, distances, stretch = 1):
+    def _rate(self, distances, dense=1):
         if len(distances):
-            opt = unit.topt(unit.length(self.opt_str, default_type="v")) / stretch
+            opt = unit.topt(unit.length(self.opt_str, default_type="v")) / dense
             rate = 0
             for distance in distances:
                 if distance < opt:
                     rate += self.weight * (opt / distance - 1)
                 else:
-                    rate += self.weight * (distance - opt)
+                    rate += self.weight * (distance / opt - 1)
             return rate / float(len(distances))
 
-class rater:
+
+class axisrater:
 
     linticks = (cuberate(4), cuberate(10, weight=0.5), )
     linlabels = (cuberate(4), )
     logticks = (cuberate(5, right=20), cuberate(20, right=100, weight=0.5), )
     loglabels = (cuberate(5, right=20), cuberate(5, left=-20, right=20, weight=0.5), )
     stdtickrange = cuberate(1, weight=2)
-    stddistance = distancerate("1.5 v cm")
+    stddistance = distancerate("1 cm")
 
     def __init__(self, ticks=linticks, labels=linlabels, tickrange=stdtickrange, distance=stddistance):
         self.ticks = ticks
@@ -651,7 +654,7 @@ class rater:
         self.tickrange = tickrange
         self.distance = distance
 
-    def ratepart(self, axis, part, stretch):
+    def ratepart(self, axis, part, dense=1):
         tickslen = len(self.ticks)
         labelslen = len(self.labels)
         ticks = [0]*tickslen
@@ -667,10 +670,10 @@ class rater:
         rate = 0
         weight = 0
         for tick, rater in zip(ticks, self.ticks):
-            rate += rater.rate(tick, stretch=stretch)
+            rate += rater.rate(tick, dense=dense)
             weight += rater.weight
         for label, rater in zip(labels, self.labels):
-            rate += rater.rate(label, stretch=stretch)
+            rate += rater.rate(label, dense=dense)
             weight += rater.weight
         if part is not None and len(part):
             tickmin, tickmax = axis.gettickrange() # tickrange was not yet applied!
@@ -680,8 +683,8 @@ class rater:
         weight += self.tickrange.weight
         return rate/weight
 
-    def _ratedistances(self, distances, stretch):
-        return self.distance._rate(distances, stretch=stretch)
+    def _ratedistances(self, distances, dense=1):
+        return self.distance._rate(distances, dense=dense)
 
 
 ################################################################################
@@ -1226,14 +1229,14 @@ class axispainter(attrlist.attrlist):
             axis.titlebox.transform(trafo._translation(*axis._vtickpoint(axis, self.titlepos)))
             axis._extent += axis.titlebox._extent(dx, dy)
 
-    def ratelayout(self, graph, axis, stretch):
+    def ratelayout(self, graph, axis, dense=1):
         ticktextboxes = [tick.textbox for tick in axis.ticks if tick.textbox is not None]
         if len(ticktextboxes) > 1:
             try:
                 distances = [ticktextboxes[i]._boxdistance(ticktextboxes[i+1]) for i in range(len(ticktextboxes) - 1)]
             except BoxCrossError:
                 return None
-            rate = axis.rate._ratedistances(distances, stretch)
+            rate = axis.rate._ratedistances(distances, dense)
             return rate
 
     def paint(self, graph, axis):
@@ -1331,7 +1334,7 @@ class _axis:
 
     def __init__(self, min=None, max=None, reverse=0, divisor=1,
                        datavmin=None, datavmax=None, tickvmin=0, tickvmax=1,
-                       title=None, suffix=None, painter=axispainter()):
+                       title=None, suffix=None, painter=axispainter(), dense=None):
         if None not in (min, max) and min > max:
             min, max = max, min
             if reverse:
@@ -1361,10 +1364,11 @@ class _axis:
         self.tickvmin = tickvmin
         self.tickvmax = tickvmax
 
-        self.title = title
-        self.painter = painter
         self.divisor = divisor
+        self.title = title
         self.suffix = suffix
+        self.painter = painter
+        self.dense = dense
         self.canconvert = 0
         self.__setinternalrange()
 
@@ -1424,21 +1428,24 @@ class _axis:
                 return self.invert(self.tickvmin), self.invert(self.tickvmax)
 
     def dolayout(self, graph):
-        # TODO: make use of stretch
+        if self.dense is not None:
+            dense = self.dense
+        else:
+            dense = graph.dense
         min, max = self.gettickrange()
         self.ticks = self.part.defaultpart(min/self.divisor, max/self.divisor, not self.fixmin, not self.fixmax)
         if self.part.multipart:
             # lesspart and morepart can be called after defaultpart,
             # although some axes may share their autoparting ---
             # it works, because the axes are processed sequentially
-            bestrate = self.rate.ratepart(self, self.ticks, 1)
+            bestrate = self.rate.ratepart(self, self.ticks, dense)
             variants = [[bestrate, self.ticks]]
             maxworse = 2
             worse = 0
             while worse < maxworse:
                 newticks = self.part.lesspart()
                 if newticks is not None:
-                    newrate = self.rate.ratepart(self, newticks, 1)
+                    newrate = self.rate.ratepart(self, newticks, dense)
                     variants.append([newrate, newticks])
                     if newrate < bestrate:
                         bestrate = newrate
@@ -1451,7 +1458,7 @@ class _axis:
             while worse < maxworse:
                 newticks = self.part.morepart()
                 if newticks is not None:
-                    newrate = self.rate.ratepart(self, newticks, 1)
+                    newrate = self.rate.ratepart(self, newticks, dense)
                     variants.append([newrate, newticks])
                     if newrate < bestrate:
                         bestrate = newrate
@@ -1468,7 +1475,7 @@ class _axis:
                 if len(self.ticks):
                     self.settickrange(float(self.ticks[0])*self.divisor, float(self.ticks[-1])*self.divisor)
                 self.painter.dolayout(graph, self)
-                ratelayout = self.painter.ratelayout(graph, self, 1)
+                ratelayout = self.painter.ratelayout(graph, self, dense)
                 if ratelayout is not None:
                     variants[i][0] += ratelayout
                 else:
@@ -1498,7 +1505,7 @@ class _axis:
 
 class linaxis(_axis, _linmap):
 
-    def __init__(self, part=autolinpart(), rate=rater(), **args):
+    def __init__(self, part=autolinpart(), rate=axisrater(), **args):
         _axis.__init__(self, **args)
         self.part = part
         self.rate = rate
@@ -1506,7 +1513,7 @@ class linaxis(_axis, _linmap):
 
 class logaxis(_axis, _logmap):
 
-    def __init__(self, part=autologpart(), rate=rater(ticks=rater.logticks, labels=rater.loglabels), **args):
+    def __init__(self, part=autologpart(), rate=axisrater(ticks=axisrater.logticks, labels=axisrater.loglabels), **args):
         _axis.__init__(self, **args)
         self.part = part
         self.rate = rate
@@ -1944,7 +1951,7 @@ class graphxy(canvas.canvas):
         self.axes = axes
 
     def __init__(self, tex, xpos=0, ypos=0, width=None, height=None, ratio=goldenrule,
-                 backgroundattrs=None, axesdist="0.8 cm", **axes):
+                 backgroundattrs=None, dense=1, axesdist="0.8 cm", **axes):
         canvas.canvas.__init__(self)
         self.tex = tex
         self.xpos = xpos
@@ -1953,6 +1960,7 @@ class graphxy(canvas.canvas):
         self._ypos = unit.topt(ypos)
         self.initwidthheight(width, height, ratio)
         self.initaxes(axes, 1)
+        self.dense = dense
         self.axesdist_str = axesdist
         self.backgroundattrs = backgroundattrs
         self.data = []

@@ -7,7 +7,6 @@ PyX
     - new transformation: slant
   - graph module:
     - (text-)box distance measurement; used for rating of automatic axis partitioning
-    - get stretch parameter working and document automatic axis partitioning (to be done)
     - new bar class (work in progress)
     - splitaxis (work in progress)
     - move axis partitioning into the axis painter (work in progress)
