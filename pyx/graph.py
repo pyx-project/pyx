@@ -1329,7 +1329,11 @@ class splitaxispainter:
                 graph.stroke(breakline1, *_ensuresequence(self.breaklinesattrs))
                 graph.stroke(breakline2, *_ensuresequence(self.breaklinesattrs))
 
-class baraxispainter(attrlist.attrlist):
+
+class baraxispainter(attrlist.attrlist): # XXX: avoid code duplication with axispainter via inheritance
+
+    paralleltext = -90
+    orthogonaltext = 0
 
     def __init__(self, innerticklength=None,
                        outerticklength=None,
@@ -1383,7 +1387,7 @@ class baraxispainter(attrlist.attrlist):
         for (v, x, y, dx, dy), name in zip(axis.namepos, axis.names):
             nameattrs = list(_ensuresequence(self.nameattrs))
             if self.namedirection is not None and not self.attrcount(nameattrs, tex.direction):
-                nameattrs += [tex.direction(self.reldirection(self.labeldirection, dx, dy))]
+                nameattrs += [tex.direction(self.reldirection(self.namedirection, dx, dy))]
             axis.nameboxes.append(textbox(graph.tex, name, textattrs=nameattrs))
         if equaldirection:
             maxht, maxwd, maxdp = 0, 0, 0
@@ -1850,6 +1854,11 @@ class baraxis:
             return ((value[0] - self.minid) * (1 + self.dist) + 0.5 * self.dist + subvalue)/((self.maxid - self.minid + 1.0) * (1 + self.dist))
         else:
             return None
+
+    def setnames(self, names):
+        if self.names is not None and names != self.names:
+            raise ValueError("incompatible names setting")
+        self.names = names
 
     def dolayout(self, graph):
         self._extent = 0
@@ -3377,14 +3386,16 @@ class bar:
                      isindex = index
              return key, iskey, isindex
 
-        self.xkey = self.ykey = None
+        self.xkey = self.ykey = self.nkey = None
         if len(graph.Names) != 2: raise TypeError("style not applicable in graph")
         XPattern = re.compile(r"(%s([2-9]|[1-9][0-9]+)?)$" % graph.Names[0])
         YPattern = re.compile(r"(%s([2-9]|[1-9][0-9]+)?)$" % graph.Names[1])
+        #NPattern = re.compile(r"(name([2-9]|[1-9][0-9]+)?)$")
         self.xi = self.yi = None
         for key, index in columns.items():
             key, self.xkey, self.xi = checkpattern(key, index, XPattern, self.xkey, self.xi)
             key, self.ykey, self.yi = checkpattern(key, index, YPattern, self.ykey, self.yi)
+            #key, self.nkey, self.ni = checkpattern(key, index, NPattern, self.nkey, self.ni)
             if key is not None:
                 self.othercolumnkey(key, index)
         if None in (self.xkey, self.ykey): raise ValueError("incomplete axis specification")
@@ -3443,7 +3454,30 @@ class bar:
                 if self.xbar:
                     if self.stacked:
                         self.stackedvalue[y] = x
-                    raise Exception("not yet implemented") # TODO!
+                    if count != 1 and self.stacked != 1:
+                        minid = (y, index, 0)
+                        maxid = (y, index, 1)
+                    else:
+                        minid = (y, 0)
+                        maxid = (y, 1)
+                    x1pos, y1pos = graph._pos(x, minid, xaxis=xaxis, yaxis=yaxis)
+                    x2pos, y2pos = graph._pos(x, maxid, xaxis=xaxis, yaxis=yaxis)
+                    if dostacked:
+                        x3pos, y3pos = graph._pos(self.previousbar.stackedvalue[y], maxid, xaxis=xaxis, yaxis=yaxis)
+                        x4pos, y4pos = graph._pos(self.previousbar.stackedvalue[y], minid, xaxis=xaxis, yaxis=yaxis)
+                    else:
+                        if self.fromzero:
+                            x3pos, y3pos = graph._pos(0, maxid, xaxis=xaxis, yaxis=yaxis)
+                            x4pos, y4pos = graph._pos(0, minid, xaxis=xaxis, yaxis=yaxis)
+                        else:
+                            x3pos, y3pos = yaxis._vtickpoint(yaxis, yaxis.convert(maxid))
+                            x4pos, y4pos = yaxis._vtickpoint(yaxis, yaxis.convert(minid))
+                    graph.fill(path.path(path._moveto(x1pos, y1pos),
+                                         graph._connect(x1pos, y1pos, x2pos, y2pos),
+                                         graph._connect(x2pos, y2pos, x3pos, y3pos),
+                                         graph._connect(x3pos, y3pos, x4pos, y4pos),
+                                         graph._connect(x4pos, y4pos, x1pos, y1pos), # might not be straight
+                                         path.closepath()), *self.barattrs)
                 else:
                     if self.stacked:
                         self.stackedvalue[x] = y
