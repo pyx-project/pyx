@@ -9,13 +9,13 @@ def test_multiaxes_data(c, t, x, y):
     g = c.insert(graph.graphxy(t, x, y, height=5,
                                x=graph.logaxis(title="$W$"),
                                y=graph.logaxis(title=r"$PPP_1$",
-                                               painter=graph.axispainter(titlestyles=tex.direction.horizontal)),
+                                               painter=graph.axispainter(titleattrs=tex.direction.horizontal)),
                                y2=graph.logaxis(title="$P_2$"),
                                y3=graph.logaxis(title="$PPP_3$",
-                                                painter=graph.axispainter(titlestyles=tex.direction(45))),
+                                                painter=graph.axispainter(titleattrs=tex.direction(45))),
                                y5=graph.logaxis(title="$P_5$")))
     df = datafile.datafile("testdata")
-    g.plot(graph.data(df, x=1, y=3), style=graph.mark(symbolstyles=(graph.changecolor.redgreen, graph.changestrokedfilled), marker=graph.mark.square2))
+    g.plot(graph.data(df, x=1, y=3), style=graph.mark(markattrs=(graph.changecolor.redgreen, graph.changestrokedfilled), mark=graph.mark.square2))
     g.plot(graph.data(df, x=1, y2=4))
     g.plot(graph.data(df, x=1, y3=5))
     g.plot(graph.data(df, x=1, y5=6))
@@ -24,9 +24,8 @@ def test_multiaxes_data(c, t, x, y):
 def test_piaxis_function(c, t, x, y):
     g = c.insert(graph.graphxy(t, x, y, height=5,
                                x=graph.linaxis(min=0, max=2*math.pi, factor=math.pi, suffix=r"\pi")))
-    colors = graph.changecolor.rainbow
     g.plot(graph.function("y=sin(x)", points=1000),
-           style=graph.line(linestyles=(graph.changecolor.rainbow, graph.changelinestyle)))
+           style=graph.line(lineattrs=(graph.changecolor.hue, graph.changelinestyle)))
     for i in range(1, 20):
         g.plot(graph.function("y=sin(x-%i*pi/10)" % i))
     g.drawall()
@@ -36,12 +35,12 @@ def test_textaxis_errorbars(c, t, x, y):
     g = c.insert(graph.graphxy(t, x, y, height=5,
                                x=graph.linaxis(min=0.5, max=12.5, title="Month",
                                                part=graph.linpart("1", texts=df.getcolumn("month"), extendtick=None),
-                                               painter=graph.axispainter(labelstyles=(tex.direction(30),tex.halign.right, tex.fontsize.scriptsize))),
+                                               painter=graph.axispainter(labeldist=0.1, titledist=0, labelattrs=(tex.direction(45),tex.halign.right, tex.fontsize.scriptsize))),
                                y=graph.linaxis(min=-10, max=30, title="Temperature [$^\circ$C]"),
                                x2=graph.linaxis(), y2=graph.linaxis()))
     df.addcolumn("av=(min+max)/2")
-    g.plot(graph.data(df, x=0, y="av", dymin="min", dymax="max"))
-    g.plot(graph.paramfunction("k", 0, 2*math.pi, "x2, y2, dx2, dy2 = 0.9*sin(k), 0.9*cos(3*k), 0.05, 0.05"), style = graph.mark(marker=graph.mark.triangle))
+    g.plot(graph.data(df, x=0, y="av", ymin="min", ymax="max"))
+    g.plot(graph.paramfunction("k", 0, 2*math.pi, "x2, y2, dx2, dy2 = 0.9*sin(k), 0.9*cos(3*k), 0.05, 0.05"), style = graph.mark(mark=graph.mark.triangle))
     g.drawall()
 
 def test_ownmark(c, t, x, y):
@@ -99,10 +98,10 @@ def test_ownmark(c, t, x, y):
 
     MyFuncs = mathtree.DefaultMathTreeFuncs + (Div, Mod)
 
-    line1 = graph.line(linestyles=None)
-    line2 = graph.line(linestyles=None)
-    line3 = graph.line(linestyles=None)
-    line4 = graph.line(linestyles=None)
+    line1 = graph.line(lineattrs=None)
+    line2 = graph.line(lineattrs=None)
+    line3 = graph.line(lineattrs=None)
+    line4 = graph.line(lineattrs=None)
 
     g = c.insert(graph.graphxy(t, x, y, height=5))
     g.plot(graph.paramfunction("k", 0, 120, "x, y, angle = mod(k, 11), div(k, 11), 0.05*k", points=121, parser=mathtree.parser(MathTreeFuncs=MyFuncs)), style = arrowmark())
@@ -112,22 +111,28 @@ def test_ownmark(c, t, x, y):
     g.plot(graph.function("y=25*x^-1.6", xmin = 1, ymax = 10), style = line4)
     g.drawall()
 
-    g.stroke(line1.path, color.rgb.blue)
-    g.stroke(line2.path, color.rgb.red)
-    g.stroke(line3.path, color.rgb.green)
-    g.stroke(line4.path, color.gray.black)
-    p1=line1.path
-    p2=line2.path.reversed()
-    p3=line3.path.reversed()
-    p4=line4.path
-    (seg1a,), (seg2a,) = p1.intersect(p2)
-    (seg2b,), (seg3b,) = p2.intersect(p3)
-    (seg3c,), (seg4c,) = p3.intersect(p4)
-    (seg4d,), (seg1d,) = p4.intersect(p1)
-    g.stroke(p1.split(seg1a, seg1d)[1] <<
-             p4.split(seg4d, seg4c)[1] <<
-             p3.split(seg3c, seg3b)[1] <<
-             p2.split(seg2b, seg2a)[1], canvas.linewidth.THick, canvas.filled(color.gray(0.5)))
+#    g.stroke(line1.path, color.rgb.blue)
+#    g.stroke(line2.path, color.rgb.red)
+#    g.stroke(line3.path, color.rgb.green)
+#    g.stroke(line4.path, color.gray.black)
+#    p1=line1.path
+#    p2=line2.path.reversed()
+#    p3=line3.path.reversed()
+#    p4=line4.path
+#    (seg1a,), (seg2a,) = p1.intersect(p2)
+#    (seg2b,), (seg3b,) = p2.intersect(p3)
+#    (seg3c,), (seg4c,) = p3.intersect(p4)
+#    (seg4d,), (seg1d,) = p4.intersect(p1)
+#    g.stroke(p1.split(seg1a, seg1d)[1] <<
+#             p4.split(seg4d, seg4c)[1] <<
+#             p3.split(seg3c, seg3b)[1] <<
+#             p2.split(seg2b, seg2a)[1], canvas.linewidth.THick, canvas.filled(color.gray(0.5)))
+
+def test_allerrorbars(c, t, x, y):
+    df = datafile.datafile("testdata3")
+    g = c.insert(graph.graphxy(t, x, y, height=5, width=4))
+    g.plot(graph.data(df, x="x", y="y", xmin="xmin", xmax="xmax", ymin="ymin", ymax="ymax"))
+    g.drawall()
 
 c = canvas.canvas()
 t = c.insert(tex.tex())
@@ -135,6 +140,7 @@ test_multiaxes_data(c, t, 0, 21)
 test_piaxis_function(c, t, 0, 14)
 test_textaxis_errorbars(c, t, 0, 7)
 test_ownmark(c, t, 0, 0)
+test_allerrorbars(c, t, -7, 0)
 
 c.writetofile("test_graph", paperformat="a4")
 

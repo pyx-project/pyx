@@ -17,9 +17,9 @@ method&task&allowed attributes in \texttt{*attr}\\
 \hline
 \texttt{text(x, y, cmd, *attr)}&print \texttt{cmd}&\texttt{style, fontsize, halign, valign, direction, color, msghandler(s)}\\
 \texttt{define(cmd, *attr)}&execute \texttt{cmd}&\texttt{msghandler(s)}\\
-\texttt{textwd(cmd, *attr)}&width of \texttt{cmd}&\texttt{style, fontsize, missextent, msghandler(s)}\\
-\texttt{textht(cmd, *attr)}&height of \texttt{cmd}&\texttt{style, fontsize, valign, missextent, msghandler(s)}\\
-\texttt{textdp(cmd, *attr)}&depth of \texttt{cmd}&\texttt{style, fontsize, valign, missextent, msghandler(s)}\\
+\texttt{textwd(cmd, *attr)}&width of \texttt{cmd}&\texttt{style, fontsize, missextents, msghandler(s)}\\
+\texttt{textht(cmd, *attr)}&height of \texttt{cmd}&\texttt{style, fontsize, valign, missextents, msghandler(s)}\\
+\texttt{textdp(cmd, *attr)}&depth of \texttt{cmd}&\texttt{style, fontsize, valign, missextents, msghandler(s)}\\
 \end{tabularx}
 \smallskip
 
@@ -38,7 +38,7 @@ postponed.
 Usually, the evaluation takes place when performing a write and the
 results are stored in a file with the suffix \verb|.size|. Therefore
 you have to run your file twice at first to get the correct value.
-This default behaviour can be changed by the \verb|missextent|
+This default behaviour can be changed by the \verb|missextents|
 attribute.
 \item All commands are passed to \TeX{} or \LaTeX{} in the calling
 order of the methods with one exception: if the same command is used
@@ -88,20 +88,20 @@ stands for \verb|horizontal| (default), \verb|vertical|,
 \verb|angle| (in degree) is allowed in \verb|direction(angle)|.
 \item[\texttt{color:}] stands for any \PyX{} color (see
 section~\ref{color}), default is \verb|color.gray.black|
-\item[\texttt{missextent:}] provides a routine, which is called when a
+\item[\texttt{missextents:}] provides a routine, which is called when a
 requested extent is not yet available. In the following table a list
 of choises for this parameter is described:
 
 \begin{tabularx}{\linewidth}{l>{\raggedright\arraybackslash}X}
-missextent&description\\
+missextents&description\\
 \hline
-\texttt{missextent.returnzero}&returns zero (default)\\
-\texttt{missextent.returnzeroquiet}&as above, but does not return a
+\texttt{missextents.returnzero}&returns zero (default)\\
+\texttt{missextents.returnzeroquiet}&as above, but does not return a
 warning via \texttt{atexit}\\
-\texttt{missextent.raiseerror}&raise \texttt{TexMissExtentError}\\
-\texttt{missextent.createextent}&run \TeX{} or \LaTeX{} immediately to
+\texttt{missextents.raiseerror}&raise \texttt{TexMissExtentError}\\
+\texttt{missextents.createextent}&run \TeX{} or \LaTeX{} immediately to
 get the requested size\\
-\texttt{missextent.createallextent}&run \TeX{} or \LaTeX{} immediately
+\texttt{missextents.createallextent}&run \TeX{} or \LaTeX{} immediately
 to get the hight, width, and depth of the given text at once\\
 \end{tabularx}
 \item[\texttt{msghandler:}] provides a filter for \TeX{} and \LaTeX{}
@@ -142,7 +142,7 @@ parameter name&default value&description\\
 \hline
 \texttt{defaultmsghandler}&\texttt{msghandler.hideload}&default
 message handler (tuple of message handlers is possible)\\
-\texttt{defaultmissextent}&\texttt{missextent.returnzero}&default missing extent handler\\
+\texttt{defaultmissextents}&\texttt{missextents.returnzero}&default missing extent handler\\
 \texttt{texfilename}&\texttt{None}&Filename used for running \TeX{} or
 \LaTeX. If \texttt{None}, a temporary name is used and the files are
 removed automatically. It can be used to trace errors.\\

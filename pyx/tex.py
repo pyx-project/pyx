@@ -859,7 +859,7 @@ by yourself.\n""")
         if len(self.BoxCmds):
             raise TexDefAfterBoxError
         self.DoneRunTex = 0
-        self.attrcheck(attrs, None, (msghandler,))
+        self.attrcheck(attrs, (), (msghandler,))
         self.DefCmds.append(_DefCmd(Cmd + "%\n",
                                     len(self.DefCmds)+ len(self.BoxCmds),
                                     self._getstack(),

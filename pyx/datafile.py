@@ -98,12 +98,13 @@ class datafile:
         return [x[columnno] for x in self.data]
 
     def addcolumn(self, expression, **columns):
-        split = expression.rindex("=")
-        if split > 0:
+        try:
+            split = expression.rindex("=")
+        except ValueError:
+            self.titles.append(None)
+        else:
             self.titles.append(expression[:split])
             expression = expression[split+1:]
-        else:
-            self.titles.append(None)
         tree = self.parser.parse(expression)
         columnlist = {}
         for key, column in columns.items():
