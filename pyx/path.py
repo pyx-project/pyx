@@ -26,7 +26,7 @@
 #          cbox = control box) for bpathel for the use during the
 #          intersection of bpaths) 
 
-import math
+import math, string
 from math import cos, sin, pi
 import base, bbox, trafo, unit
 
@@ -491,6 +491,9 @@ class closepath(normpathel):
 
     """Connect subpath back to its starting point"""
 
+    def __str__(self):
+        return "closepath"
+
     def _updatecontext(self, context):
         context.currentpoint = None
         context.currentsubpath = None
@@ -523,7 +526,7 @@ class closepath(normpathel):
         return [closepath()]
 
     def _reversed(self, context):
-        return _lineto(*context.currentsubpath)
+        return None
 
     def _split(self, context, parameters):
         x0, y0 = context.currentpoint
@@ -567,6 +570,9 @@ class _moveto(normpathel):
          self.x = x
          self.y = y
 
+    def __str__(self):
+        return "%f %f moveto" % (self.x, self.y)
+
     def _at(self, context, t):
         return None
 
@@ -608,6 +614,9 @@ class _lineto(normpathel):
     def __init__(self, x, y):
          self.x = x
          self.y = y
+
+    def __str__(self):
+        return "%f %f lineto" % (self.x, self.y)
 
     def _updatecontext(self, context):
         context.currentsubpath = context.currentsubpath or context.currentpoint
@@ -683,6 +692,11 @@ class _curveto(normpathel):
         self.y2 = y2
         self.x3 = x3
         self.y3 = y3
+
+    def __str__(self):
+        return "%f %f %f %f %f %f curveto" % (self.x1, self.y1,
+                                              self.x2, self.y2,
+                                              self.x3, self.y3)
 
     def _updatecontext(self, context):
         context.currentsubpath = context.currentsubpath or context.currentpoint
@@ -1395,6 +1409,9 @@ class normpath(path):
     def __add__(self, other):
         return normpath(*(self.path+other.path))
 
+    def __str__(self):
+        return string.join(map(str, self.path), "\n")
+
     def append(self, pathel):
         self.path.append(pathel)
         self.path = _normalizepath(self.path)
@@ -1511,6 +1528,8 @@ class normpath(path):
         subpath = []
         np = normpath()
 
+        print self
+
         # we append a _moveto operation at the end to end the last
         # subpath explicitely.
         for pel in self.path+[_moveto(0,0)]:
@@ -1518,13 +1537,27 @@ class normpath(path):
             if pelr:
                 subpath.append(pelr)
 
-            if subpath and (isinstance(pel, _moveto) or isinstance(pel, closepath)):
+            if subpath and isinstance(pel, _moveto):
                 subpath.append(_moveto(*context.currentpoint))
                 subpath.reverse()
-                if isinstance(pel, closepath):
-                     subpath.append(closepath())
                 np = np + normpath(*subpath) 
                 subpath = []
+            elif subpath and isinstance(pel, closepath):
+                print ":::"
+                print string.join(map(str, subpath), "\n")
+                print ":::"
+
+                subpath.append(_moveto(*context.currentsubpath))
+                subpath.reverse()
+                subpath.append(closepath())
+                
+                print string.join(map(str, subpath), "\n")
+                print 
+
+                np = np + normpath(*subpath) 
+                subpath = []
+
+
 
             pel._updatecontext(context)
 
