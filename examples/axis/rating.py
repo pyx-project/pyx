@@ -13,7 +13,7 @@
 
 from pyx import *
 
-p = path.path(path.moveto(0, 0), path.curveto(3, 0, 1, 4, 4, 4))
+p = path.curve(0, 0, 3, 0, 1, 4, 4, 4)
 
 c = canvas.canvas()
 c.insert(graph.pathaxis(p.transformed(trafo.translate(-4, 0).scaled(0.75)),

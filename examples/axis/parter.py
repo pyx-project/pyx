@@ -11,7 +11,7 @@
 import math
 from pyx import *
 
-p = path.path(path.moveto(0, 0), path.curveto(3, 0, 1, 4, 4, 4))
+p = path.curve(0, 0, 3, 0, 1, 4, 4, 4)
 
 myparter = graph.linparter(["1/3", "1/6"])
 

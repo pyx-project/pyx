@@ -11,8 +11,7 @@ from pyx import *
 ap = graph.axispainter(outerticklengths=graph.axispainter.defaultticklengths)
 
 c = canvas.canvas()
-c.insert(graph.pathaxis(path.path(path.moveto(0, 0),
-                                  path.curveto(3, 0, 1, 4, 4, 4)),
+c.insert(graph.pathaxis(path.curve(0, 0, 3, 0, 1, 4, 4, 4),
                         graph.linaxis(min=0, max=10, title="axis title",
                                       painter=ap)))
 c.writetofile("painter")
