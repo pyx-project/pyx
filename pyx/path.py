@@ -1910,12 +1910,11 @@ class normsubpath:
         intersections_b = zip(intersections_b, range(len(intersections_b)))
         intersections_a.sort()
         intersections_b.sort()
-        split_a = self.split([intersection for intersection, index in intersections_a])
-        split_b = other.split([intersection for intersection, index in intersections_b])
 
         # now we search for intersections points which are closer together than epsilon
 
-        def closepoints(split, intersections):
+        def closepoints(normsubpath, intersections):
+            split = normsubpath.split([intersection for intersection, index in intersections])
             result = []
             i = 1
             while i < len(split)-1:
@@ -1929,15 +1928,23 @@ class normsubpath:
                     else:
                         result.append((ip2, ip1))
                     j += 1
-                    if j < len(split)-1:
-                        normsubpath.join(split[j])
+                    if normsubpath.closed:
+                        if j == len(split)-1:
+                            j = 0
+                        if i != j:
+                            normsubpath = normsubpath.joined(split[j])
+                        else:
+                            break
                     else:
-                        break
+                        if j < len(split)-1:
+                            normsubpath.join(split[j])
+                        else:
+                            break
                 i += 1
             return result
 
-        closepoints_a = closepoints(split_a, intersections_a)
-        closepoints_b = closepoints(split_b, intersections_b)
+        closepoints_a = closepoints(self, intersections_a)
+        closepoints_b = closepoints(other, intersections_b)
 
         # mapping: intersection point no to lowest point no which is
         # equivalent to the point
@@ -1949,6 +1956,8 @@ class normsubpath:
                     for i in range(closepoint_a[1], len(equivalentpoints)):
                         if equivalentpoints[i] == closepoint_a[1]:
                             equivalentpoints[i] = closepoint_a[0]
+
+        print equivalentpoints
 
         # determine the remaining intersection points
         intersectionpoints = {}
@@ -1973,6 +1982,12 @@ class normsubpath:
             self.append(othernormpathitem)
         if other.skippedline is not None:
             self.append(other.skippedline)
+
+    def joined(self, other):
+        result = normsubpath(self.normsubpathitems, self.closed, self.epsilon)
+        result.skippedline = self.skippedline
+        result.join(other)
+        return result
 
     def range(self):
         """return maximal parameter value, i.e. number of line/curve segments"""
@@ -2013,7 +2028,7 @@ class normsubpath:
             if params:
                 # join last and first segment together if the normsubpath was originally closed and it has been split
                 result[-1].normsubpathitems.extend(result[0].normsubpathitems)
-                result = result[-1] + result[1:-1]
+                result = result[-1:] + result[1:-1]
             else:
                 # otherwise just close the copied path again
                 result[0].close()
@@ -2325,6 +2340,7 @@ class normpath(path):
         self.subpaths += other.subpaths[1:]
 
     def joined(self, other):
+        # NOTE we skip a deep copy for performance reasons
         result = normpath(self.subpaths)
         result.join(other)
         return result
