@@ -71,13 +71,9 @@ class GraphXY(Graph):
         self.height = height
         self.XAxis = LinAxis()
         self.YAxis = LinAxis()
-        self.XAxis.Min = 0
-        self.XAxis.Max = 30
-        self.YAxis.Min = 0
-        self.YAxis.Max = 0.01
 
     def plot(self, data, style = None):
-        self.plotdata.append((data, style))
+        self.plotdata.append(data)
 
     def XPos(self, Values):
         if type(Values) in (types.IntType, types.LongType, types.FloatType, ):
@@ -93,12 +89,29 @@ class GraphXY(Graph):
     
     def run(self):
         self.XPos(0.0)
-        p=path([moveto(self.XPos(0),self.YPos(0)),
-                lineto(self.XPos(1),self.YPos(0)),
-                lineto(self.XPos(1),self.YPos(1)),
-                lineto(self.XPos(0),self.YPos(1)),
-                closepath()])
-        self.canvas.draw(p)
+        self.canvas.draw(rect(self.XPos(0), self.YPos(0), self.XPos(1) - self.XPos(0), self.YPos(1) - self.YPos(0)))
+        xranges = []
+        for pd in self.plotdata:
+            #try:
+                xranges.append(pd.GetRange("x"))
+            #except DataRangeUnkownExcetion:
+            #    pass
+        if len(xranges) == 0:
+            assert 0, "xrange unknown"
+        self.XAxis.Min = min( map (lambda x: x[0], xranges))
+        self.XAxis.Max = max( map (lambda x: x[1], xranges))
+
+        yranges = []
+        for pd in self.plotdata:
+            #try:
+                yranges.append(pd.GetRange("y"))
+            #except DataRangeUnkownExcetion:
+            #    pass
+        if len(yranges) == 0:
+            assert 0, "yrange unknown"
+        self.YAxis.Min = min( map (lambda y: y[0], yranges))
+        self.YAxis.Max = max( map (lambda y: y[1], yranges))
+
         for tick in self.XAxis.TickList():
              xv = tick.VirtualPos
              l = tick.Label
@@ -112,24 +125,24 @@ class GraphXY(Graph):
              self.canvas.draw(line(self.XPos(0), y, self.XPos(0)+0.2, y))
              self.tex.text(self.XPos(0)-0.2, y, l, halign=halign.right)
         for pd in self.plotdata:
-             p = None
-             for pt in zip(self.XPos(self.XAxis.ValueToVirtual(pd[0].GetValues("x"))),
-                           self.YPos(self.YAxis.ValueToVirtual(pd[0].GetValues("y")))):
-                 if p:
-                     p.append(lineto(pt[0],pt[1]))
-                 else:
-                     p = [moveto(pt[0],pt[1]), ]
-             self.canvas.draw(path(p))
-             # path.__init__(self, [ moveto(x1,y1), lineto(x2, y2) ] )
-             #for i in range(201):
-             #    x = (i-100)/10.0
-             #    y = pd[0].MT.Calc({'x':x})
-             #    xnew = self.XPos(self.XAxis.ValueToVirtual(x))
-             #    ynew = self.YPos(self.YAxis.ValueToVirtual(y))
-             #    if i > 0:
-             #        self.canvas.draw(line(xold, yold, xnew, ynew))
-             #    xold = xnew
-             #    yold = ynew
+            p = None
+            for pt in zip(self.XPos(self.XAxis.ValueToVirtual(pd.GetValues("x"))),
+                          self.YPos(self.YAxis.ValueToVirtual(pd.GetValues("y")))):
+                if p:
+                    p.append(lineto(pt[0],pt[1]))
+                else:
+                    p = [moveto(pt[0],pt[1]), ]
+            self.canvas.draw(path(p))
+            # path.__init__(self, [ moveto(x1,y1), lineto(x2, y2) ] )
+            #for i in range(201):
+            #    x = (i-100)/10.0
+            #    y = pd[0].MT.Calc({'x':x})
+            #    xnew = self.XPos(self.XAxis.ValueToVirtual(x))
+            #    ynew = self.YPos(self.YAxis.ValueToVirtual(y))
+            #    if i > 0:
+            #        self.canvas.draw(line(xold, yold, xnew, ynew))
+            #    xold = xnew
+            #    yold = ynew
 
 
 ###############################################################################
@@ -210,7 +223,7 @@ class Data:
     def GetValues(self, Kind):
         return self.datafile.GetColumn(self.columns[Kind])
 
-    def GetRange(self, Kind):
+    def GetRange(self, Kind): # DESIGN: raise exception if unknown
         return (min(self.GetValues(Kind)), max(self.GetValues(Kind)), )
 
     def GetName(self):

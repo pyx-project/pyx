@@ -44,12 +44,13 @@ bbpattern = re.compile( r"^%%BoundingBox:\s+([+-]?\d+)\s+([+-]?\d+)\s+([+-]?\d+)
 
 class epsfile:
 
-    def __init__(self, x, y, epsname, clip = 1, ignorebb=0):
-        self.x        = x
-        self.y        = y
-        self.epsname  = epsname
-        self.clip     = clip
-        self.ignorebb = ignorebb
+    def __init__(self, x, y, epsname, clip = 1, translatebb = 1, showbb = 0):
+        self.x           = x
+        self.y           = y
+        self.epsname     = epsname
+        self.clip        = clip
+        self.translatebb = translatebb
+        self.showbb      = showbb
         self._ReadEPSBoundingBox()                         
 
     def _ReadEPSBoundingBox(self):
@@ -82,11 +83,13 @@ class epsfile:
 
         preamble = "BeginEPSF\n"
         preamble = preamble + "%f %f translate\n" % (self.x, self.y)
-        if not self.ignorebb:
+        if self.translatebb:
             preamble = preamble + "%f %f translate\n" % (-self.llx, -self.lly)
-            if self.clip:
-                preamble = preamble + "%f %f %f %f rect\n" % ( self.llx, self.lly, self.urx-self.llx,self.ury-self.lly)
-                preamble = preamble + "clip newpath\n"
+        if self.showbb:
+            preamble = preamble + "newpath\n%f %f moveto\n%f 0 rlineto\n0 %f rlineto\n%f 0 rlineto\nclosepath\nstroke\n" % ( self.llx, self.lly, self.urx-self.llx, self.ury-self.lly, -(self.urx-self.llx))
+        if self.clip:
+            preamble = preamble + "%f %f %f %f rect\n" % ( self.llx, self.lly, self.urx-self.llx,self.ury-self.lly)
+            preamble = preamble + "clip newpath\n"
         preamble = preamble + "%%%%BeginDocument: %s\n" % self.epsname
         
         return preamble + file.read() + "%%EndDocument\nEndEPSF\n"
@@ -320,13 +323,14 @@ if __name__=="__main__":
     print "Höhe von 'Hello world' in huge: ",t.textht("Hello world!", fontsize.huge)
     print "Tiefe von 'Hello world!': ",t.textdp("Hello world!")
     print "Tiefe von 'was mit q': ",t.textdp("was mit q")
+    print "Tiefe von 'was mit q': ",t.textdp("was mit q")
     t.text(5, 1, "Hello world!")
     t.text(5, 2, "Hello world!", halign.center)
     t.text(5, 3, "Hello world!", halign.right)
-    for a in (-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90):
-        t.text(11+a/10, 5, str(a), angle(a))
-        t.text(11+a/10, 6, str(a), angle(a), halign.center)
-        t.text(11+a/10, 7, str(a), angle(a), halign.right)
+    for angle in (-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90):
+        t.text(11+angle/10, 5, str(angle), direction(angle))
+        t.text(11+angle/10, 6, str(angle), direction(angle), halign.center)
+        t.text(11+angle/10, 7, str(angle), direction(angle), halign.right)
     for pos in range(1,21):
         t.text(pos, 7.5, ".")
    
@@ -348,7 +352,7 @@ if __name__=="__main__":
              moveto(12,10), 
              lineto(12,14)])
     c.set(canvas.linestyle.dashdotted, rgb(1,0,0))
-    t.text("10 cm", 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize("2 cm"), valign.bottom)
+    t.text("10 cm", 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize("2 cm"), valign.bottom, grey(0.5))
     c.draw(p)
  
     p=path([moveto(5,15), arc(5,15, 1, 0, 45), closepath()])
@@ -358,14 +362,20 @@ if __name__=="__main__":
     c.draw(p, canvas.linestyle.dashed)
 
    
-    for a in range(20):
-       s=c.canvas(translate(10,10)*rotate(a)).draw(p, canvas.linestyle.dashed, canvas.linewidth(0.01*a), grey((20-a)/20.0))
+    for angle in range(20):
+       s=c.canvas(translate(10,10)*rotate(angle)).draw(p, canvas.linestyle.dashed, canvas.linewidth(0.01*angle), grey((20-angle)/20.0))
  
     c.set(linestyle.solid)
     g=GraphXY(c, t, 10, 15, 8, 6)
     #g.plot(Function("5*sin(x)"))
     #g.plot(Function("(x+5)*x*(x-5)/100"))
-    g.plot(Data(DataFile("testdata"), x=0, y=1))
+    df = DataFile("testdata")
+    g.plot(Data(df, x=1, y=2))
+    g.plot(Data(df, x=1, y=3))
+    g.plot(Data(df, x=1, y=4))
+    g.plot(Data(df, x=1, y=5))
+    g.plot(Data(df, x=1, y=6))
+    g.plot(Data(df, x=1, y=7))
     g.run()
 
     c.canvas(scale(0.5, 0.4).rotate(10).translate("2 cm","200 mm")).inserteps(0,0,"ratchet_f.eps")

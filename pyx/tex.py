@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import canvas, os, string, tempfile, sys, md5, string, traceback, time, unit, math, types
+import canvas, os, string, tempfile, sys, md5, string, traceback, time, unit, math, types, color
 
 class _halign:
     def __init__(self, value):
@@ -48,23 +48,23 @@ class fontsize:
     huge         = _fontsize("huge")
     Huge         = _fontsize("Huge")
 
-class _angle:
+class _direction:
     def __init__(self, value):
         self.value = value
     def __str__(self):
         return str(self.value)
 
-class angle(_angle):
-    horizontal = _angle(0)
-    vertical   = _angle(90)
-    upsidedown = _angle(180)
-    rvertical  = _angle(270)
+class direction(_direction):
+    horizontal = _direction(0)
+    vertical   = _direction(90)
+    upsidedown = _direction(180)
+    rvertical  = _direction(270)
     def __init__(self, value):
-        _angle.__init__(self, value)
+        _direction.__init__(self, value)
     def deg(self, value):
-        return _angle(value)
+        return _direction(value)
     def rad(self, value):
-        return _angle(value * 180 / math.pi)
+        return _direction(value * 180 / math.pi)
 
 class _msglevel:
     showall     = 0
@@ -120,7 +120,39 @@ class TexRightParenthesisError(TexException):
     def __str__(self):
         return "no matching parenthesis for '}' found"
 
-class tex:
+class InstanceList:
+
+    def AllowedInstances(self, Instances, AllowedClassesOnce, AllowedClassesMultiple = []):
+        for i in range(len(Instances)):
+            for j in range(len(AllowedClassesOnce)):
+                if isinstance(Instances[i], AllowedClassesOnce[j]):
+                    del AllowedClassesOnce[j]
+                    break
+            else:
+                for j in range(len(AllowedClassesMultiple)):
+                    if isinstance(Instances[i], AllowedClassesMultiple[j]):
+                        break
+                else:
+                    assert 0, "instance not allowed"
+
+    def ExtractInstance(self, Instances, Class, DefaultInstance = None):
+        for Instance in Instances:
+            if isinstance(Instance, Class):
+                return Instance
+        return DefaultInstance
+
+    def ExtractInstances(self, Instances, Class, DefaultInstances = []):
+        Result = []
+        for Instance in Instances:
+            if isinstance(Instance, Class):
+                Result = Result + [ Instance, ]
+        if len(Result) == 0:
+            return DefaultInstance
+        else:
+            return Result
+
+
+class tex(InstanceList):
 
     def __init__(self, unit, type = mode.TeX, latexstyle = "10pt", latexclass = "article", latexclassopt = "", texinit = "", lmsglevel = msglevel.hideload):
         self.unit = unit
@@ -200,18 +232,22 @@ class tex:
         Cmd = CmdBegin + Cmd + CmdEnd + "\n"
         return Cmd
     
-    def TexCopyBoxCmd(self, x, y, Cmd, lhalign, angle):
+    LastColor = None
+
+    def TexCopyBoxCmd(self, x, y, Cmd, lhalign, direction, color):
 
         'creates the TeX commands to put \\localbox at the current position'
-
-        # TODO 3: color support
 
         CmdBegin = "{\\vbox to0pt{\\kern" + str(11*72.27+self.unit.tpt(-y)) + "truept\\hbox{\\kern" + str(self.unit.tpt(x)) + "truept\\ht\\localbox0pt"
         CmdEnd = "}\\vss}\\nointerlineskip}"
 
-        if angle != None and angle != 0:
-            CmdBegin = CmdBegin + "\\special{ps:gsave currentpoint currentpoint translate " + str(angle) + " rotate neg exch neg exch translate}"
-            CmdEnd = "\\special{ps:currentpoint grestore moveto}" + CmdEnd
+        if direction != None and direction != 0:
+            CmdBegin = CmdBegin + "\\special{ps: gsave currentpoint currentpoint translate " + str(direction) + " rotate neg exch neg exch translate }"
+            CmdEnd = "\\special{ps: currentpoint grestore moveto }" + CmdEnd
+
+        if self.LastColor != color:
+            CmdBegin = CmdBegin + "\\special{ps: " + color._PSCmd(None) + " }"
+        self.LastColor = color
 
         if type(lhalign) == types.NoneType or lhalign == halign.left:
             pass
@@ -264,8 +300,6 @@ class tex:
         #         and check for the files before reading them (including the
         #         dvi before it is converted by dvips and the resulting ps)
 
-        # TODO 7: avoid system calls, set environment variables by themselfs
-
         WorkDir = os.getcwd()
         MkTemp = tempfile.mktemp()
         TempDir = os.path.dirname(MkTemp)
@@ -302,6 +336,7 @@ class tex:
 
         try:
             # check output
+            # TODO 7: what happens if *.out doesn't exists?
             file = open(TempName + ".out", "r")
             for Cmd in self.TexCmds:
 
@@ -369,12 +404,10 @@ class tex:
         # TODO 7: dvips error handling
         #         interface for modification of the dvips command line
 
-        #if os.system("TEXCONFIG=" + WorkDir + " dvips -E -o " + TempName + ".eps " + TempName + ".dvi > /dev/null 2>&1"):
-        #    assert 0, "dvips exit code non-zero"
         if os.system("dvips -E -o " + TempName + ".eps " + TempName + ".dvi > /dev/null 2>&1"):
             assert 0, "dvips exit code non-zero"
 
-        result = str(canvas.epsfile( 0, 0, TempName + ".eps", clip = 0, ignorebb = 1))
+        result = str(canvas.epsfile( 0, 0, TempName + ".eps", translatebb = 0))
 
         # merge new sizes
         
@@ -399,7 +432,7 @@ class tex:
                     if NewSize.split(":")[0:2] == OldSizeSplit[0:2]:
                         break
                 else:
-                    if time.time() < float(OldSizeSplit[2]) + 60*60*24:   # we keep it for one day
+                    if time.time() < float(OldSizeSplit[2]) + 60*60*24:   # we keep size results for one day
                         SizeFile.write(OldSize)
 
         os.unlink(TempName + ".tex")
@@ -434,84 +467,82 @@ class tex:
                 return unit.length(string.rstrip(TexResult.split(":")[3]).replace("pt"," t tpt"))
         return unit.length("10 t tpt")
 
-    def allowparam(self, params, allowedtypes):
-        for i in range(len(params)):
-            for j in range(len(allowedtypes)):
-                if isinstance(params[i], allowedtypes[j]):
-                    del allowedtypes[j]
-                    break
-            else:
-                assert 0, "multiple definition of style parameter not allowed"
-
-    def extractparam(self, params, gettype, default = None):
-        for param in params:
-            if isinstance(param, gettype):
-                return param
-        return default
-
     def text(self, x, y, Cmd, *styleparams):
 
         'print Cmd at (x, y)'
 
-        self.allowparam(styleparams, [_fontsize, _halign, _hsize, _valign, _angle, _msglevel, ])
+        self.AllowedInstances(styleparams, [_fontsize, _halign, _hsize, _valign, _direction, _msglevel, color.color, ])
         
         TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd,
-                                               self.extractparam(styleparams, _fontsize, fontsize.normalsize),
-                                               self.extractparam(styleparams, _hsize),
-                                               self.extractparam(styleparams, _valign))
+                                               self.ExtractInstance(styleparams, _fontsize, fontsize.normalsize),
+                                               self.ExtractInstance(styleparams, _hsize),
+                                               self.ExtractInstance(styleparams, _valign))
         TexCopyBoxCmd = self.TexCopyBoxCmd(x, y, Cmd, 
-                                           self.extractparam(styleparams, _halign),
-                                           self.extractparam(styleparams, _angle))
+                                           self.ExtractInstance(styleparams, _halign),
+                                           self.ExtractInstance(styleparams, _direction),
+                                           self.ExtractInstance(styleparams, color.color, color.grey.black))
         self.TexAddCmd(TexCreateBoxCmd + TexCopyBoxCmd,
-                       self.extractparam(styleparams, _msglevel, msglevel.hideload))
+                       self.ExtractInstance(styleparams, _msglevel, msglevel.hideload))
+
+    wdTexHexMD5 = []
 
     def textwd(self, Cmd, *styleparams):
     
         'get width of Cmd'
 
-        self.allowparam(styleparams, [_fontsize, _hsize, _msglevel, ])
+        self.AllowedInstances(styleparams, [_fontsize, _hsize, _msglevel, ])
 
         TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, 
-                                               self.extractparam(styleparams, _fontsize, fontsize.normalsize),
-                                               self.extractparam(styleparams, _hsize),
+                                               self.ExtractInstance(styleparams, _fontsize, fontsize.normalsize),
+                                               self.ExtractInstance(styleparams, _hsize),
                                                None)
         TexHexMD5 = self.TexHexMD5(TexCreateBoxCmd)
-        self.TexAddCmd(TexCreateBoxCmd +
-                       "\\immediate\\write\\sizefile{" + TexHexMD5 +
-                       ":wd:" + str(time.time()) + ":\\the\\wd\\localbox}\n",
-                       self.extractparam(styleparams, _msglevel, msglevel.hideload))
+        if TexHexMD5 not in self.wdTexHexMD5:
+            self.wdTexHexMD5.append(TexHexMD5)
+            self.TexAddCmd(TexCreateBoxCmd +
+                           "\\immediate\\write\\sizefile{" + TexHexMD5 +
+                           ":wd:" + str(time.time()) + ":\\the\\wd\\localbox}\n",
+                           self.ExtractInstance(styleparams, _msglevel, msglevel.hideload))
         return self.TexResult(TexHexMD5 + ":wd:")
 
+    htTexHexMD5 = []
+    
     def textht(self, Cmd, *styleparams):
 
         'get height of Cmd'
 
-        self.allowparam(styleparams, [_fontsize, _hsize, _valign, _msglevel, ])
+        self.AllowedInstances(styleparams, [_fontsize, _hsize, _valign, _msglevel, ])
 
         TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd,
-                                               self.extractparam(styleparams, _fontsize, fontsize.normalsize),
-                                               self.extractparam(styleparams, _hsize, None),
-                                               self.extractparam(styleparams, _valign, None))
+                                               self.ExtractInstance(styleparams, _fontsize, fontsize.normalsize),
+                                               self.ExtractInstance(styleparams, _hsize, None),
+                                               self.ExtractInstance(styleparams, _valign, None))
         TexHexMD5 = self.TexHexMD5(TexCreateBoxCmd)
-        self.TexAddCmd(TexCreateBoxCmd +
-                       "\\immediate\\write\\sizefile{" + TexHexMD5 +
-                       ":ht:" + str(time.time()) + ":\\the\\ht\\localbox}\n",
-                       self.extractparam(styleparams, _msglevel, msglevel.hideload))
+        if TexHexMD5 not in self.htTexHexMD5:
+            self.htTexHexMD5.append(TexHexMD5)
+            self.TexAddCmd(TexCreateBoxCmd +
+                           "\\immediate\\write\\sizefile{" + TexHexMD5 +
+                           ":ht:" + str(time.time()) + ":\\the\\ht\\localbox}\n",
+                           self.ExtractInstance(styleparams, _msglevel, msglevel.hideload))
         return self.TexResult(TexHexMD5 + ":ht:")
 
+    dpTexHexMD5 = []
+    
     def textdp(self, Cmd, *styleparams):
    
         'get depth of Cmd'
 
-        self.allowparam(styleparams, [_fontsize, _hsize, _valign, _msglevel, ])
+        self.AllowedInstances(styleparams, [_fontsize, _hsize, _valign, _msglevel, ])
 
         TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd,
-                                               self.extractparam(styleparams, _fontsize, fontsize.normalsize),
-                                               self.extractparam(styleparams, _hsize, None),
-                                               self.extractparam(styleparams, _valign, None))
+                                               self.ExtractInstance(styleparams, _fontsize, fontsize.normalsize),
+                                               self.ExtractInstance(styleparams, _hsize, None),
+                                               self.ExtractInstance(styleparams, _valign, None))
         TexHexMD5 = self.TexHexMD5(TexCreateBoxCmd)
-        self.TexAddCmd(TexCreateBoxCmd +
-                       "\\immediate\\write\\sizefile{" + TexHexMD5 +
-                       ":dp:" + str(time.time()) + ":\\the\\dp\\localbox}\n",
-                       self.extractparam(styleparams, _msglevel, msglevel.hideload))
+        if TexHexMD5 not in self.dpTexHexMD5:
+            self.dpTexHexMD5.append(TexHexMD5)
+            self.TexAddCmd(TexCreateBoxCmd +
+                           "\\immediate\\write\\sizefile{" + TexHexMD5 +
+                           ":dp:" + str(time.time()) + ":\\the\\dp\\localbox}\n",
+                           self.ExtractInstance(styleparams, _msglevel, msglevel.hideload))
         return self.TexResult(TexHexMD5 + ":dp:")
