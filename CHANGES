@@ -1,5 +1,7 @@
 PyX
 
+- ATT: refactoring of attributes in progress!!!
+
 0.5 (????/??/??):
   - setup.py and distribution:
     - allow customization of the extension modules built (via setup.cfg)
@@ -49,6 +51,7 @@ PyX
       lines not symbolattrs
     - allow for graph.changesymbol.square(size=0.15) etc.
     - rect style (and errorbars?) should use clipping
+    - paths are to be drawn instead of inserted
   - canvas module:
     - default patterns
     - make dash length available

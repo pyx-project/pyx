@@ -1,0 +1,75 @@
+use cases
+
+canvas.stroke(path, attr1, attr2, ...)
+canvas.stroke([path, path2], attr1, attr2, ...)
+
+graph.axispainter(labelattrs=attr.text.size.small)
+graph.axispainter(labelattrs=[attr.text.size.small, attr.color.rgb.red])
+graph.axispainter(labelattrs=[attr.text.halign.left])
+graph.axispainter(labelattrs=[attr.text.halign.left, attr.text.vshift.clear, attr.text.vshift.char0center])
+
+brain storming:
+
+Aufrufkonventionen:
+
+clear vs. clear()
+arrow.normal vs. arrow.normal(size=5)
+canvas.stroke vs. canvas.stroked()
+
+canvas.stroke(..., canvas.filled())
+canvas.fill(..., pattern)
+canvas.draw(..., canvas.stroked(), canvas.filled(canvas.linestyle.dashed()), color.rgb.red)
+
+
+Stichworte:
+
+- Definition erlaubter Attribute
+- Sortierung/Abhaengigkeit von Attributen
+- Ausschluss/Ueberschreiben/Loeschen von Attributes untereinander
+- Vorgehen:
+  - Container macht Sortierung etc.
+  - Methode (stroke, text, fill) weiss, was sie will
+  - Attribute machen was ...
+- Reihenfolge von Attributen spielt keine Rolle (ausser, dass sie sich gegenseitig ueberschreiben koennen)
+
+Attributtypen:
+
+- canvasattrs:
+  - strokeattrs
+  - fillattrs
+
+- decorators: (drawattrs)
+  - stroked (takes strokeattrs)
+  - filled (takes fillattrs)
+  - arrows
+
+- color
+
+- trafos (drawattrs)
+
+- clip (drawattrs)
+
+- strokeattrs (drawattrs)
+  - linewidth
+  - linestyle
+  - color
+
+- fillattrs (drawattrs)
+  - pattern
+  - color
+
+- textattrs:
+  - halign
+  - valign
+  - parbox
+  - color
+
+
+canvas.stroke, path, attr.color.rgb() -> draw
+
+canvas.draw, decoratedpath, attr.stroked(), ... -> insert
+
+
+
+
+

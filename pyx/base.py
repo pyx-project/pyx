@@ -58,6 +58,58 @@ class PSCmd(PSOp):
         raise NotImplementedError, "cannot call virtual method bbox()"
 
 #
+# attr class
+#
+
+class attr(PSOp):
+
+     """ attr is the base class of all attributes, i.e., colors, decorators,
+     styles, text attributes and trafos
+     """
+
+    def merge(self, attrs):
+        """merge self into list of attrs
+
+        self may either be appended to attrs or inserted at a proper position
+        immediately before a dependent attribute. Attributes of the same type
+        should be removed, if redundant. Note that it is safe to modify
+        attrs."""
+
+        attrs.append(self)
+        return attrs
+
+
+class exclusiveattr(attr):
+
+    def __init__(self, exclusiveclass):
+        attr.__init__(self)
+        self.exclusiveclass = exclusiveclass
+
+    def merge(self, attrs):
+        # remove all previous instances of exclusiveclass
+        attrs = [attr for attr in attrs if not isinstance(attr, self.exclusiveclass)]
+        attrs.append(self)
+        return attrs
+
+
+class _clear(_attr):
+
+    def merge(self, attrs):
+        return []
+
+clear = _clear()
+
+
+class classclear(_attr):
+
+    def __init__(self, clearclass):
+        _attr.__init__(self)
+        self.clearclass = clearclass
+
+    def merge(self, attrs):
+        return [attr for attr in attrs if not isinstance(attr, self.clearclass)]
+
+#
 # Path style classes
 #
 # note that as usual in PyX most classes have default instances as members
