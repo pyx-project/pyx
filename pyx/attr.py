@@ -98,27 +98,27 @@ class exclusiveattr(attr):
         return attrs
 
 
-class sortattr(attr):
+class sortbeforeattr(attr):
 
     """an attribute which places itself previous to all attributes given
-    in the dependedclasses argument to the constructor"""
+    in the beforetheclasses argument to the constructor"""
 
-    def __init__(self, dependedclasses):
-        self.dependedclasses = dependedclasses
+    def __init__(self, beforetheclasses):
+        self.beforetheclasses = beforetheclasses
 
     def merge(self, attrs):
         first = 1
         result = []
         try:
             for attr in attrs:
-                if first and isinstance(attr, self.dependedclasses):
+                if first and isinstance(attr, self.beforetheclasses):
                     result.append(self)
                     first = 0
                 result.append(attr)
         except TypeError: # workaround for Python 2.1 and older
             for attr in attrs:
                 if first:
-                    for dependedclass in self.dependedclasses:
+                    for dependedclass in self.beforetheclasses:
                         if isinstance(attr, dependedclass):
                             result.append(self)
                             first = 0

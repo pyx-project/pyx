@@ -821,14 +821,14 @@ class parser:
         self.MathTreeFuncs = MathTreeFuncs
         self.MathTreeVals = MathTreeVals
 
-#    def parse(self, str):
-#        return self.ParseMathTree(ParseStr(str))
     def parse(self, str):
+        return self.ParseMathTree(ParseStr(str))
+#    def parse(self, str): # XXX wieder umkommentiert, damit es erstmal läuft <wobsta>
         # prepare raw string:
         # "^" -> "**"
-        thestr = re.sub("\^","**", str) # to be removed <joergl>
-        thestr = re.sub("\$","_col_", str)
-        return self.astseq2mtree(pythonparser.expr(thestr).totuple())
+#        thestr = re.sub("\^","**", str) # to be removed <joergl>
+#        thestr = re.sub("\$","_col_", str)
+#        return self.astseq2mtree(pythonparser.expr(thestr).totuple())
 
     def ParseMathTree(self, arg):
         Tree = None
@@ -1045,6 +1045,7 @@ class parser:
                         # a known function
                         for funcclass in self.MathTreeFuncs:
                             func = funcclass() # ist das guenstig, da jedesmal eine Instanz zu erzeugen?
+                                               # doofe Frage, nein! <wobsta>
                             if func.name == astseq[1][1]:
                                 return func
                         # an unknown function

@@ -11,8 +11,8 @@ class A2(exclusiveattr): pass
 class B2(exclusiveattr): pass
 class C2(exclusiveattr): pass
 
-class A3(sortattr): pass
-class B3(sortattr): pass
+class A3(sortbeforeattr): pass
+class B3(sortbeforeattr): pass
 class C3(attr): pass
 
 

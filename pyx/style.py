@@ -127,17 +127,17 @@ linestyle.dashdotted = linestyle(linecap.round, dash([0, 3, 3, 3]))
 linestyle.clear = attr.clearclass(linestyle)
 
 
-class linewidth(unit.length, attr.exclusiveattr, attr.sortattr, strokestyle):
+class linewidth(unit.length, attr.exclusiveattr, attr.sortbeforeattr, strokestyle):
 
     """linewidth of paths"""
 
     def __init__(self, l="0 cm"):
         unit.length.__init__(self, l=l, default_type="w")
         attr.exclusiveattr.__init__(self, linewidth)
-        attr.sortattr.__init__(self, linestyle)
+        attr.sortbeforeattr.__init__(self, linestyle)
 
     def merge(self, attrs):
-        return attr.sortattr.merge(self, attr.exclusiveattr.merge(self, attrs))
+        return attr.sortbeforeattr.merge(self, attr.exclusiveattr.merge(self, attrs))
 
     def write(self, file):
         file.write("%f setlinewidth\n" % unit.topt(self))

@@ -1727,11 +1727,11 @@ nomathmode = attr.clearclass(_mathmode)
 
 defaultsizelist = ["normalsize", "large", "Large", "LARGE", "huge", "Huge", None, "tiny", "scriptsize", "footnotesize", "small"]
 
-class size(attr.sortattr, textattr, _localattr):
+class size(attr.sortbeforeattr, textattr, _localattr):
     "font size"
 
     def __init__(self, expr, sizelist=defaultsizelist):
-        attr.sortattr.__init__(self, [_mathmode])
+        attr.sortbeforeattr.__init__(self, [_mathmode])
         if helper.isinteger(expr):
             if expr >= 0 and expr < sizelist.index(None):
                 self.size = sizelist[expr]
@@ -1752,7 +1752,7 @@ for s in defaultsizelist:
 
 _textattrspreamble += "\\newbox\\PyXBoxVBox%\n\\newdimen\PyXDimenVBox%\n"
 
-class parbox_pt(attr.exclusiveattr, attr.sortattr, textattr):
+class parbox_pt(attr.exclusiveattr, attr.sortbeforeattr, textattr):
 
     top = 1
     middle = 2
@@ -1761,7 +1761,7 @@ class parbox_pt(attr.exclusiveattr, attr.sortattr, textattr):
     def __init__(self, width, baseline=middle):
         self.width = width
         self.baseline = baseline
-        attr.sortattr.__init__(self, [_localattr])
+        attr.sortbeforeattr.__init__(self, [_localattr])
         attr.exclusiveattr.__init__(self, parbox_pt)
 
     def apply(self, expr):
@@ -1782,11 +1782,11 @@ class parbox(parbox_pt):
 
 _textattrspreamble += "\\newbox\\PyXBoxVAlign%\n\\newdimen\PyXDimenVAlign%\n"
 
-class valign(attr.exclusiveattr, attr.sortattr, textattr):
+class valign(attr.exclusiveattr, attr.sortbeforeattr, textattr):
 
     def __init__(self):
         attr.exclusiveattr.__init__(self, valign)
-        attr.sortattr.__init__(self, [parbox_pt, _localattr])
+        attr.sortbeforeattr.__init__(self, [parbox_pt, _localattr])
 
 class _valigntop(valign):
 
@@ -1805,10 +1805,10 @@ valign.clear = attr.clearclass(valign)
 valign.baseline = valign.clear
 
 
-class _vshift(attr.sortattr, textattr):
+class _vshift(attr.sortbeforeattr, textattr):
 
     def __init__(self):
-        attr.sortattr.__init__(self, [valign, parbox_pt, _localattr])
+        attr.sortbeforeattr.__init__(self, [valign, parbox_pt, _localattr])
 
 class vshift(_vshift):
     "vertical down shift by a fraction of a character height"
