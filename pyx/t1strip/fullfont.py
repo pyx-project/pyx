@@ -26,9 +26,8 @@ _PFA = "%!"
 
 def fullfont(file, filename):
     """inserts full pfa or pfb fonts
-    - file is a filehandle where the pfa output is written to
-    - pfbfilename is the full filename of the pfa or pfb input
-      file
+    - file is a file instance where the pfa output is written to
+    - pfbfilename is the full filename of the pfa or pfb input file
     - the input type pfa or pfb is autodetected"""
 
     infile = open(filename, "rb")
@@ -61,6 +60,4 @@ def fullfont(file, filename):
                 if len(block):
                     file.write("%02x"*len(block) % tuple(block) + "\n")
             blockid = infile.read(2)
-
-# fullfont(open("cmr10.pfa", "wb"), "cmr10.pfb")
 
