@@ -253,10 +253,10 @@ class cycloid(deformer): # {{{
                        curvesperhloop=curvesperhloop, sign=sign, turnangle=turnangle)
 
     def deform(self, abasepath):
-        basepath = path.normpath(abasepath)
+        basepath = abasepath.normpath()
 
-        for sp in basepath.subpaths:
-            if sp == basepath.subpaths[0]:
+        for sp in basepath.normsubpaths:
+            if sp == basepath.normsubpaths[0]:
                 cycloidpath = self.deformsubpath(sp)
             else:
                 cycloidpath.join(self.deformsubpath(sp))
@@ -388,10 +388,10 @@ class smoothed(deformer): # {{{
         return smoothed(radius=radius, softness=softness, obeycurv=obeycurv)
 
     def deform(self, abasepath):
-        basepath = path.normpath(abasepath)
+        basepath = abasepath.normpath()
         smoothpath = path.path()
 
-        for sp in basepath.subpaths:
+        for sp in basepath.normsubpaths:
             smoothpath += self.deformsubpath(sp)
 
         return smoothpath
@@ -400,21 +400,21 @@ class smoothed(deformer): # {{{
 
         radius = unit.topt(self.radius)
 
-        npitems = normsubpath.normpathitems
+        npitems = normsubpath.normsubpathitems
         arclens = [npitem.arclen_pt() for npitem in npitems]
 
-        # 1. Build up a list of all relevant normpathitems
+        # 1. Build up a list of all relevant normsubpathitems
         #    and the lengths where they will be cut (length with respect to the normsubpath)
         npitemnumbers = []
         cumalen = 0
         for no in range(len(arclens)):
             alen = arclens[no]
-            # a first selection criterion for skipping too short normpathitems
+            # a first selection criterion for skipping too short normsubpathitems
             # the rest will queeze the radius
             if alen > radius:
                 npitemnumbers.append(no)
             else:
-                sys.stderr.write("*** PyX Warning: smoothed is skipping a normpathitem that is too short\n")
+                sys.stderr.write("*** PyX Warning: smoothed is skipping a normsubpathitem that is too short\n")
             cumalen += alen
         # XXX: what happens, if 0 or -1 is skipped and path not closed?
 
@@ -436,7 +436,7 @@ class smoothed(deformer): # {{{
             # find points, tangents and curvatures
             ts,cs,ps = [],[],[]
             for par in pars:
-                # XXX: there is no trafo method for normpathitems?
+                # XXX: there is no trafo method for normsubpathitems?
                 thetrafo = normsubpath.trafo(par + no)
                 p = thetrafo._apply(0,0)
                 # XXX thetrafo._apply(1,0) causes numeric instabilities in
