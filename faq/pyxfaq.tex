@@ -3,7 +3,6 @@
 \usepackage[latin1]{inputenc}
 \usepackage{url}
 \usepackage{mathptmx}
-\usepackage{tipa}
 %\usepackage[all,comments]{glifaq}
 \usepackage[answered]{glifaq}
 \usepackage[pdftex]{hyperref}
@@ -29,7 +28,7 @@ Gert-Ludwig Ingold \par
 
 \vspace{2truecm}
 \section*{Acknowledgements}
-The following persons have in one way or the other, e.g. by asking good 
+The following persons have in one way or the other, e.g.\ by asking good 
 questions or providing answers, contributed to this FAQ:\\ 
 Walter Brisken, Jörg Lehmann, Michael Schindler, Andr{\'e} Wobst.
 \newpage
@@ -48,8 +47,8 @@ pronunciation are explained.
 
 Despite the ties between \TeX{} and \PyX{}, their pronunciation is quite
 different. According to the developers of \PyX{}, it should be pronounced as 
-\textipa{[pYks]}. Please do not pronounce it as \textipa{[pYx]} or 
-\textipa{[pY\c c]}.
+\tipagraph{[pYks]}{tipa1.pdf}. Please do not pronounce it as 
+\tipagraph{[pYx]}{tipa2.pdf} or \tipagraph{[pY\c c]}{tipa3.pdf}.
 }
 
 \question{a}{Where do I get the latest version of \PyX?}
@@ -448,12 +447,53 @@ g.stroke(g.ygridpath(0))
 \end{progcode}
 }
 
+\question{a}{How can I add grid lines to a graph? \new}
+{}
+{
+Specifying \texttt{gridattrs} for the painter of an axis will generate grid
+lines orthogonal to this axis. At least an empty list is needed like in
+\begin{progcode}
+g = graph.graphxy(width=10,\\
+~~~~~~~~~~~~~~~~~~x=graph.axis.linear(painter=graph.axis.painter.regular(gridattrs=[])),\\
+%~~~~~~~~~~~~~~~~~~~~~~~~~~painter=graph.axis.painter.regular(gridattrs=[])\\
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~),\\
+~~~~~~~~~~~~~~~~~~y=graph.axis.linear()\\
+~~~~~~~~~~~~~~~~~~)
+\end{progcode}
+where grid lines in vertical direction are drawn in default style.
+
+Occassionally, one might want to draw grid lines corresponding to ticks and
+subticks in a different style. This can be achieved by specifiying
+changeable attributes using \texttt{changelist}. The following code
+\begin{progcode}
+my\_xpainter = graph.axis.painter.regular(gridattrs=\\
+~~~~~~~~~~~~~~~~~~~~[attr.changelist([style.linestyle.solid, style.linestyle.dashed])]\\
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~)\\
+my\_ypainter = graph.axis.painter.regular(gridattrs=\\
+~~~~~~~~~~~~~~~~~~~~[attr.changelist([color.rgb.red, color.rgb.blue])]\\
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~)\\
+\\
+g = graph.graphxy(width=10,\\
+~~~~~~~~~~~~~~~~~~x=graph.axis.linear(painter=my\_xpainter),\\
+~~~~~~~~~~~~~~~~~~y=graph.axis.linear(painter=my\_ypainter)\\
+~~~~~~~~~~~~~~~~~~)
+\end{progcode}
+will create vertical solid and dashed grid lines for ticks and subticks, 
+respectively. The horizontal grid lines will be red for ticks and blue for
+subticks. The changeable attributes are applied in a cyclic manner. Therefore, 
+in this example grid lines at subsubticks would be plotted in the same style 
+as for ticks. If this is not desired, the list of attributes should be extended 
+by an appropriate third style. The keyword \texttt{None} will switch off
+the respective level of grid lines in case you want to draw them only e.g.\
+for ticks but not subticks.
+}
+
 \subsection{Data properties}
 
 \question{a}{How do I choose the symbol? \changed}
 {}
 {\label{q:choose_symbol}
-Suppose a graph called \texttt{g} has been initialized, e.g. by using
+Suppose a graph called \texttt{g} has been initialized, e.g.\ by using
 \texttt{graph.graphxy}. Then, data and the style of their representation
 in the graph are defined by calling \texttt{g.plot} like in the following
 example in which filled circles are requested:
@@ -555,7 +595,7 @@ everything related to \TeX{} and friends. The main CTAN servers are
 FTP mirrors can be found at \ctan{CTAN.sites}. 
 
 In this FAQ, \texttt{CTAN:} refers to the root of an anonymous ftp CTAN tree, 
-e.g.  \url{ftp://ctan.tug.org/tex-archive/}, 
+e.g.\  \url{ftp://ctan.tug.org/tex-archive/}, 
 \url{ftp://ftp.dante.de/tex-archive/},
 and \url{ftp://ftp.tex.ac.uk/tex-archive/}. The links to CTAN in this document
 point to one of these servers but you might consider using a FTP mirror closer
