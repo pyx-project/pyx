@@ -10,11 +10,17 @@
       We might have a short abstract about the examples shown on this page.
     </p>
 
-    <span class="example" tal:repeat="example options/examples" tal:omit-tag="">
+    <span class="example" tal:repeat="example options/examples">
       <div class="exampleseparator" tal:condition="python: options['abstract'] or not repeat['example'].start()"></div>
+      <div class="exampledownloads">
+        <div tal:repeat="download example/downloads" class="exampledownload">
+          <div><a tal:attributes="href download/filename"><img tal:attributes="alt download/filename; src python: options['mkrellink']('icons/' + download['iconname'], options)" width=48 height=48 border=0></a></div>
+          <div class="exampledownloadsize" tal:content="download/filesize">0 KB</div>
+        </div>
+      </div>
       <h2 tal:content="example/name">Name</h2>
       <div class="exampleimage">
-        <a href="link" tal:attributes="href example/eps"><img tal:attributes="alt example/png; src example/png; width example/width; height example/height"></a>
+        <img tal:attributes="alt example/png; src example/png; width example/width; height example/height">
       </div>
       <div class="examplecode" tal:content="structure example/code">Code</div>
     </span>

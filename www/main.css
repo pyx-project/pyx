@@ -190,9 +190,23 @@ a:hover {
         border-bottom: 1px solid #88a;
 }
 
+#content .exampledownloads {
+        float: right;
+}
+
+#content .exampledownload {
+        text-align: center;
+        float: left;
+}
+
+#content .exampledownloadsize {
+        font-size: 8pt;
+}
+
 #content .exampleimage {
         padding-bottom: 15px;
         text-align: center;
+        clear: both;
 }
 
 #content .examplecode {

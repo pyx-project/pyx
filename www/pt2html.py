@@ -64,18 +64,29 @@ class py2html:
             if newline != -1:
                 self.col = len(toktext) - newline - 1
 
+
 class example:
 
     def __init__(self, name):
         if name.startswith("./"):
             name = name[2:]
         self.name = name
-        self.png = "%s.png" % os.path.basename(self.name)
-        self.eps = "%s.eps" % os.path.basename(self.name)
+        relname = os.path.join("..", "examples", name)
         htmlbuffer = StringIO.StringIO()
-        self.width, self.height = Image.open("../examples/%s.png" % name).size
-        py2html(codecs.open("../examples/%s.py" % name, encoding="iso-8859-1"), htmlbuffer)
+        py2html(codecs.open("%s.py" % relname, encoding="iso-8859-1"), htmlbuffer)
         self.code = htmlbuffer.getvalue()
+        self.png = "%s.png" % os.path.basename(name)
+        self.width, self.height = Image.open("%s.png" % relname).size
+        self.downloads = []
+        for suffix in ["py", "dat", "eps"]:
+            try:
+                filesize = "%.1f KB" % (os.path.getsize("%s.%s" % (relname, suffix)) / 1024.0)
+            except OSError:
+                pass
+            else:
+                self.downloads.append({"filename": "%s.%s" % (name, suffix),
+                                       "filesize": filesize,
+                                       "iconname": "%s.png" % suffix})
 
 
 class MyPageTemplateFile(PageTemplateFile):

@@ -1,8 +1,6 @@
 default: build
 
 htmlfiles = $(patsubst %.pt, %.html, $(filter-out maintemplate.pt examples.pt, $(wildcard *.pt))) examples/index.html $(patsubst %, examples/%index.html, $(shell grep / ../examples/INDEX))
-imagefiles = valid-html401.png vcss.png pyx.ico
-cssfiles = main.css
 publicserver = shell.sourceforge.net
 publicpath = /home/groups/p/py/pyx/htdocs
 
@@ -22,7 +20,8 @@ chmod:
 
 build: always
 	-mkdir build
-	cp $(imagefiles) $(cssfiles) build
+	cp main.css build
+	cp -r icons build
 	cp png/*.png ../manual/manual.pdf ../faq/pyxfaq.pdf build
 	cp -r ../manual/manual build
 	for d in "" $(shell grep / ../examples/INDEX); do mkdir build/examples/$$d; cp ../examples/$$d*.png ../examples/$$d*.eps build/examples/$$d; done
