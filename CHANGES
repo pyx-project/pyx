@@ -112,6 +112,10 @@ TODO:
   - prolog module: deleted (replaced by resource module)
   - resource module: new
     - resources: fonts and definitions
+  - dvifile:
+    - minimal dvitype.py
+    - dvitype unit test
+    - tfm->dvi conversion rounding bugfix
   - changed requirements to python 2.1:
     - nested scopes are needed without fallback solution by the path module
     - use warning module for warnings
