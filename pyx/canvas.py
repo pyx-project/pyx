@@ -59,7 +59,7 @@ PSProlog = """/rect {
 } bind def"""
 
 #
-# class representing bound boxes
+# class representing bounding boxes
 #
 
 class bbox:
