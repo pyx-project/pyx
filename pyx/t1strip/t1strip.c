@@ -29,9 +29,10 @@ static PyObject *py_t1strip(PyObject *self, PyObject *args)
   PyObject *py_glyphs;
   PyObject *py_file;
   char *fontname;
+  char *encname;
   unsigned char glyphs[256];
 
-  if (PyArg_ParseTuple(args, "O!sO!", &PyFile_Type, &py_file, &fontname, &PyList_Type, &py_glyphs)) {
+  if (PyArg_ParseTuple(args, "O!ssO!", &PyFile_Type, &py_file, &fontname, &encname, &PyList_Type, &py_glyphs)) {
       int i;
       int size = PyList_Size(py_glyphs);
       if (size>256) 
@@ -48,8 +49,8 @@ static PyObject *py_t1strip(PyObject *self, PyObject *args)
 
       bitfile = PyFile_AsFile(py_file);
 
-      /* t1_subset(fontname, "ad.enc", glyphs); */
-      t1_subset_2(fontname, glyphs, 0);
+      t1_subset(fontname, encname, glyphs); 
+      /* t1_subset_2(fontname, glyphs, 0); */
   }
   else return NULL;
 

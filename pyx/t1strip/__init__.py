@@ -3,7 +3,7 @@ try:
     t1strip = _t1strip.t1strip
 except:
     import os, tempfile
-    def t1strip(file, pfbfilename, glyphs):
+    def t1strip(file, pfbfilename, encname, glyphs):
         tmpfilename = tempfile.mktemp(suffix=".pfa")
         os.system("pfb2pfa %s %s" % (pfbfilename, tmpfilename))
         pfa = open(tmpfilename, "r")

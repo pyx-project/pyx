@@ -80,20 +80,41 @@ class definition(prologitem):
         file.write("%%EndRessource\n")
 
 
+# XXX: we have to define this here and not in text.py to avoid problems with cyclic imports!?
+_ReEncodeFont = definition("ReEncodeFont", """{
+  5 dict
+  begin
+    /newencoding exch def
+    /newfontname exch def
+    /basefontname exch def
+    /basefontdict basefontname findfont def
+    /newfontdict basefontdict maxlength dict def 
+    basefontdict {
+      exch dup dup /FID ne exch /Encoding ne and
+      { exch newfontdict 3 1 roll put }
+      { pop pop }
+      ifelse
+    } forall
+    newfontdict /FontName newfontname put
+    newfontdict /Encoding newencoding put
+    newfontname newfontdict definefont pop
+  end
+}""")
+
 class fontdefinition(prologitem):
 
     """ PostScript font definition included in the prolog """
 
     def __init__(self, font):
-        self.psname = font.getpsname()
+        self.basepsname = font.getbasepsname()
         self.fontfile = font.getfontfile()
-        self.encoding = font.getencoding()
+        self.encfilename = font.getencodingfile()
         self.usedchars = font.usedchars
 
     def merge(self, other):
         if not isinstance(other, fontdefinition):
             return other
-        if self.psname==other.psname:
+        if self.basepsname==other.basepsname:
             for i in range(len(self.usedchars)):
                 self.usedchars[i] = self.usedchars[i] or other.usedchars[i]
             return None
@@ -101,17 +122,73 @@ class fontdefinition(prologitem):
             return other
 
     def write(self, file):
-        file.write("%%%%BeginFont: %s\n" % self.psname)
-        file.write("%Included char codes:")
-        for i in range(len(self.usedchars)):
-            if self.usedchars[i]:
-                file.write(" %d" % i)
-        file.write("\n")
-        pfbname = pykpathsea.find_file(self.fontfile, pykpathsea.kpse_type1_format)
-        if pfbname is None:
-            raise RuntimeError("cannot find type 1 font %s" % self.fontfile)
-        t1strip.t1strip(file, pfbname, self.usedchars)
-        file.write("%%EndFont\n")
+        if self.fontfile:
+            file.write("%%%%BeginFont: %s\n" % self.basepsname)
+            file.write("%Included char codes:")
+            for i in range(len(self.usedchars)):
+                if self.usedchars[i]:
+                    file.write(" %d" % i)
+            file.write("\n")
+            pfbpath = pykpathsea.find_file(self.fontfile, pykpathsea.kpse_type1_format)
+            if pfbpath is None:
+                raise RuntimeError("cannot find type 1 font %s" % self.fontfile)
+            encpath = pykpathsea.find_file(self.encfilename, pykpathsea.kpse_tex_ps_header_format)
+            if encpath is None:
+                raise RuntimeError("cannot find font encoding file %s" % self.encfilename)
+            t1strip.t1strip(file, pfbpath, encpath, self.usedchars)
+            file.write("%%EndFont\n")
+
+
+class fontencoding(prologitem):
+
+    """ PostScript font re-encoding vector included in the prolog """
+
+    def __init__(self, font):
+        self.name = font.getencoding()
+        self.filename = font.getencodingfile()
+
+    def merge(self, other):
+        if not isinstance(other, fontencoding):
+            return other
+        if self.name==other.name:
+            if self.filename==other.filename:
+                return None
+            raise ValueError("Conflicting encodings!")
+        else:
+           return other
+
+    def write(self, file):
+        file.write("%%%%BeginProcSet: %s\n" % self.name)
+        path = pykpathsea.find_file(self.filename, pykpathsea.kpse_tex_ps_header_format)
+        encfile = open(path, "r")
+        file.write(encfile.read())
+        encfile.close()
+
+
+class fontreencoding(prologitem):
+
+    """ PostScript font re-encoding directive included in the prolog """
+
+    def __init__(self, font):
+        self.psname = font.getpsname()
+        self.basepsname = font.getbasepsname()
+        self.encoding = font.getencoding()
+
+    def merge(self, other):
+        if not isinstance(other, fontreencoding):
+            return other
+        if self.psname!=other.psname:
+            if self.basepsname==other.basepsname and self.encoding==other.encoding:
+                return None
+            raise ValueError("Conflicting font reencodings!")
+        else:
+            return other
+
+    def write(self, file):
+        file.write("%%%%BeginProcSet: %s\n" % self.psname)
+        file.write("/%s /%s %s ReEncodeFont\n" % (self.basepsname, self.psname, self.encoding))
+        file.write("%%EndProcSet\n")
+
 
 # known paperformats as tuple(width, height)
 

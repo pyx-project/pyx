@@ -102,6 +102,7 @@ class binfile:
         assert l <= bytes-1, "inconsistency in file: string too long"
         return self.file.read(bytes-1)[:l]
 
+
 class tokenfile:
     """ ascii file containing tokens separated by spaces.
 
@@ -367,10 +368,10 @@ class FontMapping:
 
     def __init__(self, s):
         """ construct font mapping from line s of dvips mapping file """
-        self.texname = self.psname = self.fontfile = None
+        self.texname = self.basepsname = self.fontfile = None
 
         # standard encoding
-        self.encoding = "ad.enc"
+        self.encodingfile = "ad.enc"
 
         # supported postscript fragments occuring in psfonts.map
         self.reencodefont = self.extendfont = self.slantfont = None
@@ -393,11 +394,11 @@ class FontMapping:
                     # XXX: support non-partial download here
                     self.fontfile = token[2:]
                 elif token.startswith("<["):
-                    self.encoding = token[2:]
+                    self.encodingfile = token[2:]
                 elif token.endswith(".pfa") or token.endswith(".pfb"):
                     self.fontfile = token[1:]
                 elif token.endswith(".enc"):
-                    self.encoding = token[1:]
+                    self.encodingfile = token[1:]
                 else:
                     raise RuntimeError("wrong syntax in font catalog file 'psfonts.map'")
             elif token.startswith('"'):
@@ -421,13 +422,13 @@ class FontMapping:
                 if self.texname is None:
                     self.texname = token
                 else:
-                    self.psname = token
-        if self.psname is None:
-            self.psname = self.texname
+                    self.basepsname = token
+        if self.basepsname is None:
+            self.basepsname = self.texname
 
     def __str__(self):
         return ("'%s' is '%s' read from '%s' encoded as '%s'" %
-                (self.texname, self.psname, self.fontfile, repr(self.encoding)))
+                (self.texname, self.basepsname, self.fontfile, repr(self.encodingfile)))
 
 
 # generate fontmap
@@ -448,6 +449,7 @@ for line in mapfile.readlines():
 mapfile.close()
 del mappath
 del mapfile
+
 
 class Font:
     def __init__(self, name, c, q, d, tfmconv, debug=0):
@@ -520,9 +522,6 @@ class Font:
     def getitalic(self, charcode):
         return self.convert(self.tfmfile.italic[self.tfmfile.char_info[charcode].italic_index])
 
-    def getencodedchar(self, charcode):
-        return self.getencoding().encode(charcode)
-
     def markcharused(self, charcode):
         self.usedchars[charcode] = 1
 
@@ -530,10 +529,21 @@ class Font:
         for i in range(len(self.usedchars)):
             self.usedchars[i] = self.usedchars[i] or otherfont.usedchars[i]
 
+    def getbasepsname(self):
+        if self.fontmapping:
+            return self.fontmapping.basepsname
+        else:
+            #XXX Hack !!!
+            return self.name.upper()
+
     def getpsname(self):
         if self.fontmapping:
-            return self.fontmapping.psname
+            if self.fontmapping.reencodefont:
+                return "%s-%s" % (self.fontmapping.basepsname, self.fontmapping.reencodefont)
+            else:
+                return self.fontmapping.basepsname
         else:
+            #XXX Hack !!!
             return self.name.upper()
 
     def getfontfile(self):
@@ -544,12 +554,16 @@ class Font:
 
     def getencoding(self):
         if self.fontmapping:
-            encoding = self.fontmapping.encoding
-            if encoding and not encodings.has_key(encoding):
-                encoding = encodings[encoding] = FontEncoding(encoding)
-            else:
-                encoding = encodings[encoding]
-            return encoding
+            return self.fontmapping.reencodefont
+        return None
+
+    def getencodingfile(self):
+        if self.fontmapping:
+            return self.fontmapping.encodingfile
+        else:
+            # XXX hack!!!
+            return "ad.enc"
+
 
 
 _DVI_CHARMIN     =   0 # typeset a character and move right (range min)
@@ -667,11 +681,10 @@ class DVIFile:
         if self.actoutstart is None:
             self.actoutstart = self.pos[_POS_H], self.pos[_POS_V]
             self.actoutstring = ""
-        ascii = self.fonts[self.activefont].getencodedchar(char)
-#        if char > 32 and char < 128 and chr(char) not in "()[]<>":
-#            ascii = "%s" % chr(char)
-#        else:
-#            ascii = "\\%03o" % char
+        if char > 32 and char < 128 and chr(char) not in "()[]<>":
+            ascii = "%s" % chr(char)
+        else:
+            ascii = "\\%03o" % char
         self.actoutstring = self.actoutstring + ascii
         dx = inch and self.fonts[self.activefont].getwidth(char) or 0
         self.fonts[self.activefont].markcharused(char)
@@ -1060,9 +1073,13 @@ class DVIFile:
     def prolog(self, page): # TODO: AW inserted this page argument -> should return the prolog needed for that page only!
         """ return prolog corresponding to contents of dvi file """
         # XXX replace this by prolog method in _selectfont
-        result = []
+        result = [canvas._ReEncodeFont]
         for font in self.fonts:
-            if font: result.append(canvas.fontdefinition(font))
+            if font:
+                result.append(canvas.fontdefinition(font))
+                if font.getencoding():
+                    result.append(canvas.fontencoding(font))
+                    result.append(canvas.fontreencoding(font))
         result.extend(self.pages[page-1].prolog())
         return result
 
