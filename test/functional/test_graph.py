@@ -19,7 +19,7 @@ def test_multiaxes_data(c, x, y):
                                y5=graph.axis.log(title="$P_5$")))
     g.plot((graph.data.file("data/testdata", x=1, y="sqrt(sqrt($3))", title="mytitle"),
             graph.data.file("data/testdata", x=1, y2=4),
-            graph.data.file("data/testdata", x=1, y3=5),
+            graph.data.file("data/testdata", x=1, y3=5, title=None),
             graph.data.file("data/testdata", x=1, y5=6)),
            style=graph.style.symbol(symbolattrs=[deco.stroked.clear, color.palette.RedGreen, graph.style.symbol.changestrokedfilled], symbol=graph.style.symbol.changesquaretwice))
     g.finish()

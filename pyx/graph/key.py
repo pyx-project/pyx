@@ -69,7 +69,8 @@ class key:
         self.symbolspace_pt = unit.topt(unit.length(self.symbolspace_str, default_type="v"))
         titles = []
         for plotdat in plotdata:
-            titles.append(c.texrunner.text_pt(0, 0, plotdat.title, self.defaulttextattrs + self.textattrs))
+            if plotdat.title is not None:
+                titles.append(c.texrunner.text_pt(0, 0, plotdat.title, self.defaulttextattrs + self.textattrs))
         box.tile_pt(titles, self.dist_pt, 0, -1)
         box.linealignequal_pt(titles, self.symbolwidth_pt + self.symbolspace_pt, 1, 0)
         for plotdat, title in zip(plotdata, titles):

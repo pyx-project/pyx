@@ -74,6 +74,11 @@ TODO:
       graph data
 
 
+0.?.? (xxxx/xx/xx):
+  - graph module:
+    - fixed title=None + graph key issue reported by Gabriel Vasseur
+
+
 0.6.1 (2004/03/31):
   - fixes missing install of the graph and axis directories introduced in 0.6
   - some minor updates to the faq
