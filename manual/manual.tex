@@ -4,11 +4,9 @@
 % \includeonly{graph}
 
 \usepackage{pyx}
-\ifhtml % redefine the PyX macro for html (the other makes trouble)
-\def\PyX{PyX}
-\fi
-\ifhtml % make double quotes available in html
-\def\textquotedbl{"}
+\ifhtml
+\def\PyX{PyX} % redefine the PyX macro for html (the other makes trouble)
+\def\textquotedbl{"} % make double quotes available in html
 \fi
 \usepackage{graphicx}
 \usepackage[T1]{fontenc}
@@ -19,7 +17,7 @@
 \author{J\"org Lehmann\\
 Andr\'e Wobst}
 \authoraddress{http://pyx.sourceforge.net/}
-\date{\today}
+\date{\input{pyxdate.tex}}
 \release{\input{pyxversion.tex}}
 
 \makeindex

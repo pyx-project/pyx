@@ -1,1 +1,13 @@
-*.out *.aux *.log *.dvi *.toc *.pdf *.sty *.glo *.idx
+glifaq.aux
+glifaq.glo
+glifaq.idx
+glifaq.log
+glifaq.pdf
+glifaq.sty
+pyxfaq.aux
+pyxfaq.log
+pyxfaq.out
+pyxfaq.pdf
+pyxfaq.toc
+pyxdate.tex
+pyxversion.tex

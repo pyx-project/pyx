@@ -17,7 +17,7 @@ all:
 	make dvi
 	make ps
 
-src=$(wildcard *.tex) pyxversion.tex
+src=$(wildcard *.tex) pyxversion.tex pyxdate.tex
 
 dvi:manual.dvi
 ps:manual.ps
@@ -44,6 +44,9 @@ manual/manual.html: $(src) eps
 
 pyxversion.tex: ../pyx/version.py
 	python -c "import sys;sys.path[:0]=[\"..\"];import pyx.version;print pyx.version.version+'%'" > pyxversion.tex
+
+pyxdate.tex: ../pyx/version.py
+	python -c "import sys;sys.path[:0]=[\"..\"];import pyx.version;print pyx.version.date+'%'" > pyxdate.tex
 
 eps: $(patsubst %.py, %.eps, $(wildcard *.py))
 png: $(patsubst %.py, %.png, $(wildcard *.py))

@@ -9,3 +9,4 @@ recursive-include pyx *.c *.h *.py
 recursive-include pyx/lfs *.lfs createlfs.tex
 recursive-include contrib *
 recursive-include examples *.py *.dat
+exclude manual/pyxversion.py manual/pyxdate.py faq/pyxversion.py faq/pyxdate.py
