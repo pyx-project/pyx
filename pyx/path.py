@@ -747,9 +747,9 @@ class arct_pt(pathitem):
         return self._path(context.currentpoint, context.currentsubpath)[2].bbox()
 
     def _normalized(self, context):
-        # XXX TODO
-        return normpath(self._path(context.currentpoint,
-                                   context.currentsubpath)[2]).subpaths[0].normsubpathitems
+        # XXX TODO NOTE
+        return self._path(context.currentpoint,
+                          context.currentsubpath)[2].normpath().normsubpaths[0].normsubpathitems
     def outputPS(self, file):
         file.write("%g %g %g %g %g arct\n" % ( self.x1_pt, self.y1_pt,
                                                self.x2_pt, self.y2_pt,
@@ -972,15 +972,15 @@ class path(base.canvasitem):
 
     def arclen_pt(self):
         """returns total arc length of path in pts"""
-        return normpath(self).arclen_pt()
+        return self.normpath().arclen_pt()
 
     def arclen(self):
         """returns total arc length of path"""
-        return normpath(self).arclen()
+        return self.normpath().arclen()
 
     def arclentoparam(self, lengths):
         """returns the parameter value(s) matching the given length(s)"""
-        return normpath(self).arclentoparam(lengths)
+        return self.normpath().arclentoparam(lengths)
 
     def at_pt(self, param=None, arclen=None):
         """return coordinates of path in pts at either parameter value param
@@ -988,7 +988,7 @@ class path(base.canvasitem):
 
         At discontinuities in the path, the limit from below is returned
         """
-        return normpath(self).at_pt(param, arclen)
+        return self.normpath().at_pt(param, arclen)
 
     def at(self, param=None, arclen=None):
         """return coordinates of path at either parameter value param
@@ -996,7 +996,7 @@ class path(base.canvasitem):
 
         At discontinuities in the path, the limit from below is returned
         """
-        return normpath(self).at(param, arclen)
+        return self.normpath().at(param, arclen)
 
     def bbox(self):
         context = _pathcontext()
@@ -1014,11 +1014,11 @@ class path(base.canvasitem):
 
     def begin_pt(self):
         """return coordinates of first point of first subpath in path (in pts)"""
-        return normpath(self).begin_pt()
+        return self.normpath().begin_pt()
 
     def begin(self):
         """return coordinates of first point of first subpath in path"""
-        return normpath(self).begin()
+        return self.normpath().begin()
 
     def curvradius_pt(self, param=None, arclen=None):
         """Returns the curvature radius in pts (or None if infinite)
@@ -1027,7 +1027,7 @@ class path(base.canvasitem):
 
         Please note that this radius can be negative or positive,
         depending on the sign of the curvature"""
-        return normpath(self).curvradius_pt(param, arclen)
+        return self.normpath().curvradius_pt(param, arclen)
 
     def curvradius(self, param=None, arclen=None):
         """Returns the curvature radius (or None if infinite) at
@@ -1036,38 +1036,71 @@ class path(base.canvasitem):
 
         Please note that this radius can be negative or positive,
         depending on the sign of the curvature"""
-        return normpath(self).curvradius(param, arclen)
+        return self.normpath().curvradius(param, arclen)
 
     def end_pt(self):
         """return coordinates of last point of last subpath in path (in pts)"""
-        return normpath(self).end_pt()
+        return self.normpath().end_pt()
 
     def end(self):
         """return coordinates of last point of last subpath in path"""
-        return normpath(self).end()
+        return self.normpath().end()
 
     def joined(self, other):
         """return path consisting of self and other joined together"""
-        return normpath(self).joined(other)
+        return self.normpath().joined(other)
 
     # << operator also designates joining
     __lshift__ = joined
 
     def intersect(self, other):
         """intersect normpath corresponding to self with other path"""
-        return normpath(self).intersect(other)
+        return self.normpath().intersect(other)
+
+    def normpath(self, epsilon=None):
+        """converts the path into a normpath"""
+        # use global epsilon if it is has not been specified
+        if epsilon is None:
+            epsilon = _epsilon
+        # split path in sub paths
+        subpaths = []
+        currentsubpathitems = []
+        context = _pathcontext()
+        for pitem in self.path:
+            for npitem in pitem._normalized(context):
+                if isinstance(npitem, moveto_pt):
+                    if currentsubpathitems:
+                        # append open sub path
+                        subpaths.append(normsubpath(currentsubpathitems, closed=0, epsilon=epsilon))
+                    # start new sub path
+                    currentsubpathitems = []
+                elif isinstance(npitem, closepath):
+                    if currentsubpathitems:
+                        # append closed sub path
+                        currentsubpathitems.append(normline(context.currentpoint[0], context.currentpoint[1],
+                                                            context.currentsubpath[0], context.currentsubpath[1]))
+                    subpaths.append(normsubpath(currentsubpathitems, closed=1, epsilon=epsilon))
+                    currentsubpathitems = []
+                else:
+                    currentsubpathitems.append(npitem)
+            pitem._updatecontext(context)
+
+        if currentsubpathitems:
+            # append open sub path
+            subpaths.append(normsubpath(currentsubpathitems, 0, epsilon))
+        return normpath(subpaths)
 
     def range(self):
         """return maximal value for parameter value t for corr. normpath"""
-        return normpath(self).range()
+        return self.normpath().range()
 
     def reversed(self):
         """return reversed path"""
-        return normpath(self).reversed()
+        return self.normpath().reversed()
 
     def split(self, params):
         """return corresponding normpaths split at parameter values params"""
-        return normpath(self).split(params)
+        return self.normpath().split(params)
 
     def tangent(self, param=None, arclen=None, length=None):
         """return tangent vector of path at either parameter value param
@@ -1077,15 +1110,15 @@ class path(base.canvasitem):
         If length is not None, the tangent vector will be scaled to
         the desired length.
         """
-        return normpath(self).tangent(param, arclen, length)
+        return self.normpath().tangent(param, arclen, length)
 
     def trafo(self, param=None, arclen=None):
         """return transformation at either parameter value param or arc length arclen"""
-        return normpath(self).trafo(param, arclen)
+        return self.normpath().trafo(param, arclen)
 
     def transformed(self, trafo):
         """return transformed path"""
-        return normpath(self).transformed(trafo)
+        return self.normpath().transformed(trafo)
 
     def outputPS(self, file):
         if not (isinstance(self.path[0], moveto_pt) or
@@ -1844,21 +1877,23 @@ class normsubpath:
             index = 0
         return self.normsubpathitems[index], param - index
 
-    def append(self, normsubpathitem):
+    def append(self, anormsubpathitem):
+        assert isinstance(anormsubpathitem, normsubpathitem), "only normsubpathitem instances allowed"
+                    
         if self.closed:
             raise PathException("Cannot append to closed normsubpath")
 
         if self.skippedline:
             xs_pt, ys_pt = self.skippedline.begin_pt()
         else:
-            xs_pt, ys_pt = normsubpathitem.begin_pt()
-        xe_pt, ye_pt = normsubpathitem.end_pt()
+            xs_pt, ys_pt = anormsubpathitem.begin_pt()
+        xe_pt, ye_pt = anormsubpathitem.end_pt()
 
         if (math.hypot(xe_pt-xs_pt, ye_pt-ys_pt) >= self.epsilon or
-            normsubpathitem.arclen_pt(self.epsilon) >= self.epsilon):
+            anormsubpathitem.arclen_pt(self.epsilon) >= self.epsilon):
             if self.skippedline:
-                normsubpathitem = normsubpathitem.modified(xs_pt=xs_pt, ys_pt=ys_pt)
-            self.normsubpathitems.append(normsubpathitem)
+                anormsubpathitem = anormsubpathitem.modified(xs_pt=xs_pt, ys_pt=ys_pt)
+            self.normsubpathitems.append(anormsubpathitem)
             self.skippedline = None
         else:
             self.skippedline = normline(xs_pt, ys_pt, xe_pt, ye_pt)
@@ -2190,63 +2225,32 @@ class normpath(path):
 
     """
 
-    def __init__(self, arg=[], epsilon=1e-5):
+    def __init__(self, normsubpaths=None):
         """ construct a normpath from another normpath passed as arg,
         a path or a list of normsubpaths. An accuracy of epsilon pts
         is used for numerical calculations.
         """
-
-        if isinstance(arg, normpath):
-            self.subpaths = arg.subpaths[:]
-            return
-        elif isinstance(arg, path):
-            # split path in sub paths
-            self.subpaths = []
-            currentsubpathitems = []
-            context = _pathcontext()
-            for pitem in arg.path:
-                for npitem in pitem._normalized(context):
-                    if isinstance(npitem, moveto_pt):
-                        if currentsubpathitems:
-                            # append open sub path
-                            self.subpaths.append(normsubpath(currentsubpathitems, 0, epsilon))
-                        # start new sub path
-                        currentsubpathitems = []
-                    elif isinstance(npitem, closepath):
-                        if currentsubpathitems:
-                            # append closed sub path
-                            currentsubpathitems.append(normline(context.currentpoint[0], context.currentpoint[1],
-                                                              context.currentsubpath[0], context.currentsubpath[1]))
-                        self.subpaths.append(normsubpath(currentsubpathitems, 1, epsilon))
-                        currentsubpathitems = []
-                    else:
-                        currentsubpathitems.append(npitem)
-                pitem._updatecontext(context)
-
-            if currentsubpathitems:
-                # append open sub path
-                self.subpaths.append(normsubpath(currentsubpathitems, 0, epsilon))
+        if normsubpaths is None:
+            self.normsubpaths = []
         else:
-            # we expect a list of normsubpaths
-            self.subpaths = list(arg)
+            self.normsubpaths = normsubpaths
+            for subpath in normsubpaths:
+                assert isinstance(subpath, normsubpath), "only list of normsubpath instances allowed"
 
     def __add__(self, other):
-        result = normpath(other)
-        result.subpaths = self.subpaths + result.subpaths
+        result = other.normpath()
+        result.normsubpaths = self.normsubpaths + result.normsubpaths
         return result
 
     def __getitem__(self, i):
-        return self.subpaths[i]
+        return self.normsubpaths[i]
 
     def __iadd__(self, other):
-        self.subpaths += normpath(other).subpaths
+        self.normsubpaths += other.normpath().normsubpaths
         return self
 
-    def __nonzero__(self):
-        return len(self.subpaths)>0
-
     def __str__(self):
-        return "normpath(%s)" % ", ".join(map(str, self.subpaths))
+        return "normpath(%s)" % ", ".join(map(str, self.normsubpaths))
 
     def _findsubpath(self, param, arclen):
         """return a tuple (subpath, rparam), where subpath is the subpath
@@ -2258,19 +2262,21 @@ class normpath(path):
             raise PathException("either param or arclen has to be specified, but not both")
 
         if param is not None:
+            # XXX Bad code which is too strict at the beginning and at the end of the
+            # parameter range
             try:
                 subpath, param = param
             except TypeError:
                 # determine subpath from param 
-                spt = 0
-                for sp in self.subpaths:
-                    sprange = sp.range()
-                    if spt <= param < sprange+spt:
-                        return sp, param-spt
-                    spt += sprange
+                normsubpathindex = 0
+                for normsubpath in self.normsubpaths:
+                    normsubpathrange = normsubpath.range()
+                    if normsubpathindex <= param < normsubpathrange+normsubpathindex:
+                        return normsubpath, param-normsubpathindex
+                    normsubpathindex += normsubpathrange
                 raise PathException("parameter value out of range")
             try:
-                return self.subpaths[subpath], param
+                return self.normsubpaths[subpath], param
             except IndexError:
                 raise PathException("subpath index out of range")
 
@@ -2278,31 +2284,32 @@ class normpath(path):
         try:
             subpath, arclen = arclen
         except:
+            # XXX Bad code which is too strict at the beginning and at the end of the
+            # parameter range
             # determine subpath from arclen
             param = self.arclentoparam(arclen)
-            for sp in self.subpaths:
-                sprange = sp.range()
-                if spt < param <= sprange+spt:
-                    return sp, param-spt
-                spt += sprange
+            for normsubpath in self.normsubpaths:
+                normsubpathrange = normsubpath.range()
+                if normsubpathindex < param <= normsubpathrange+normsubpathindex:
+                    return normsubpath, param-normsubpathindex
+                normsubpathindex += normsubpathrange
             raise PathException("parameter value out of range")
         
         try:
-            sp = self.subpaths[subpath]
+            normsubpath = self.normsubpaths[subpath]
         except IndexError:
             raise PathException("subpath index out of range")
-        return sp, sp.arclentoparam(arclen)
+        return normsubpath, normsubpath.arclentoparam(arclen)
 
     def append(self, normsubpath):
-        self.subpaths.append(normsubpath)
+        self.normsubpaths.append(normsubpath)
 
     def extend(self, normsubpaths):
         self.subpaths.extend(normsubpaths)
 
-
     def arclen_pt(self):
         """returns total arc length of normpath in pts"""
-        return sum([sp.arclen_pt() for sp in self.subpaths])
+        return sum([normsubpath.arclen_pt() for normsubpath in self.normsubpaths])
 
     def arclen(self):
         """returns total arc length of normpath"""
@@ -2312,11 +2319,11 @@ class normpath(path):
         rests = lengths[:]
         allparams = [0] * len(lengths)
 
-        for sp in self.subpaths:
+        for normsubpath in self.normsubpaths:
             # we need arclen for knowing when all the parameters are done
             # for lengths that are done: rests[i] is negative
-            # sp._arclentoparam has to ignore such lengths
-            params, arclen = sp._arclentoparam_pt(rests)
+            # normsubpath._arclentoparam has to ignore such lengths
+            params, arclen = normsubpath._arclentoparam_pt(rests)
             finis = 0 # number of lengths that are done
             for i in range(len(rests)):
                 if rests[i] >= 0:
@@ -2344,8 +2351,8 @@ class normpath(path):
 
         At discontinuities in the path, the limit from below is returned.
         """
-        sp, param = self._findsubpath(param, arclen)
-        return sp.at_pt(param)
+        normsubpath, param = self._findsubpath(param, arclen)
+        return normsubpath.at_pt(param)
 
     def at(self, param=None, arclen=None):
         """return coordinates of path at either parameter value param
@@ -2358,8 +2365,8 @@ class normpath(path):
 
     def bbox(self):
         abbox = None
-        for sp in self.subpaths:
-            nbbox =  sp.bbox()
+        for normsubpath in self.normsubpaths:
+            nbbox =  normsubpath.bbox()
             if abbox is None:
                 abbox = nbbox
             elif nbbox:
@@ -2368,8 +2375,8 @@ class normpath(path):
 
     def begin_pt(self):
         """return coordinates of first point of first subpath in path (in pts)"""
-        if self.subpaths:
-            return self.subpaths[0].begin_pt()
+        if self.normsubpaths:
+            return self.normsubpaths[0].begin_pt()
         else:
             raise PathException("cannot return first point of empty path")
 
@@ -2385,8 +2392,8 @@ class normpath(path):
 
         Please note that this radius can be negative or positive,
         depending on the sign of the curvature"""
-        sp, param = self._findsubpath(param, arclen)
-        return sp.curvradius_pt(param)
+        normsubpath, param = self._findsubpath(param, arclen)
+        return normsubpath.curvradius_pt(param)
 
     def curvradius(self, param=None, arclen=None):
         """Returns the curvature radius (or None if infinite) at
@@ -2402,8 +2409,8 @@ class normpath(path):
 
     def end_pt(self):
         """return coordinates of last point of last subpath in path (in pts)"""
-        if self.subpaths:
-            return self.subpaths[-1].end_pt()
+        if self.normsubpaths:
+            return self.normsubpaths[-1].end_pt()
         else:
             raise PathException("cannot return last point of empty path")
 
@@ -2413,20 +2420,20 @@ class normpath(path):
         return x_pt * unit.t_pt, y_pt * unit.t_pt
 
     def join(self, other):
-        if not self.subpaths:
+        if not self.normsubpaths:
             raise PathException("cannot join to end of empty path")
-        if self.subpaths[-1].closed:
+        if self.normsubpaths[-1].closed:
             raise PathException("cannot join to end of closed sub path")
-        other = normpath(other)
-        if not other.subpaths:
+        other = other.normpath()
+        if not other.normsubpaths:
             raise PathException("cannot join empty path")
 
-        self.subpaths[-1].normsubpathitems += other.subpaths[0].normsubpathitems
-        self.subpaths += other.subpaths[1:]
+        self.normsubpaths[-1].normsubpathitems += other.normsubpaths[0].normsubpathitems
+        self.normsubpaths += other.normsubpaths[1:]
 
     def joined(self, other):
         # NOTE we skip a deep copy for performance reasons
-        result = normpath(self.subpaths)
+        result = normpath(self.normsubpaths)
         result.join(other)
         return result
 
@@ -2437,36 +2444,38 @@ class normpath(path):
         of the intersection points of the corresponding normpath
 
         """
-        if not isinstance(other, normpath):
-            other = normpath(other)
-
+        other = other.normpath()
+        
         # here we build up the result
         intersections = ([], [])
 
-        # Intersect all subpaths of self with the subpaths of
+        # Intersect all normsubpaths of self with the normsubpaths of
         # other.
-        for ia, sp_a in enumerate(self.subpaths):
-            for ib, sp_b in enumerate(other.subpaths):
-                for intersection in zip(*sp_a.intersect(sp_b)):
+        for ia, normsubpath_a in enumerate(self.normsubpaths):
+            for ib, normsubpath_b in enumerate(other.normsubpaths):
+                for intersection in zip(*normsubpath_a.intersect(normsubpath_b)):
                     intersections[0].append((ia, intersection[0]))
                     intersections[1].append((ib, intersection[1]))
         return intersections
 
+    def normpath(self):
+        return self
+
     def range(self):
         """return maximal value for parameter value param"""
-        return sum([sp.range() for sp in self.subpaths])
+        return sum([normsubpath.range() for normsubpath in self.normsubpaths])
 
     def reverse(self):
         """reverse path"""
-        self.subpaths.reverse()
-        for sp in self.subpaths:
-            sp.reverse()
+        self.normsubpaths.reverse()
+        for normsubpath in self.normsubpaths:
+            normsubpath.reverse()
 
     def reversed(self):
         """return reversed path"""
         nnormpath = normpath()
-        for i in range(len(self.subpaths)):
-            nnormpath.subpaths.append(self.subpaths[-(i+1)].reversed())
+        for i in range(len(self.normsubpaths)):
+            nnormpath.normsubpaths.append(self.normsubpaths[-(i+1)].reversed())
         return nnormpath
 
     def split(self, params):
@@ -2493,12 +2502,12 @@ class normpath(path):
         # the currently built up normpath
         np = normpath()
 
-        for subpath in self.subpaths:
-            splitsubpaths = subpath.split([param for sp, param in tparams if sp is subpath])
-            np.subpaths.append(splitsubpaths[0])
-            for sp in splitsubpaths[1:]:
+        for subpath in self.normsubpaths:
+            splitnormsubpaths = subpath.split([param for normsubpath, param in tparams if normsubpath is subpath])
+            np.normsubpaths.append(splitnormsubpaths[0])
+            for normsubpath in splitnormsubpaths[1:]:
                 result.append(np)
-                np = normpath([sp])
+                np = normpath([normsubpath])
 
         result.append(np)
         return result
@@ -2511,28 +2520,28 @@ class normpath(path):
         If length is not None, the tangent vector will be scaled to
         the desired length.
         """
-        sp, param = self._findsubpath(param, arclen)
-        return sp.tangent(param, length)
+        normsubpath, param = self._findsubpath(param, arclen)
+        return normsubpath.tangent(param, length)
 
     def transform(self, trafo):
         """transform path according to trafo"""
-        for sp in self.subpaths:
-            sp.transform(trafo)
+        for normsubpath in self.normsubpaths:
+            normsubpath.transform(trafo)
 
     def transformed(self, trafo):
         """return path transformed according to trafo"""
-        return normpath([sp.transformed(trafo) for sp in self.subpaths])
+        return normpath([normsubpath.transformed(trafo) for normsubpath in self.normsubpaths])
 
     def trafo(self, param=None, arclen=None):
         """return transformation at either parameter value param or arc length arclen"""
-        sp, param = self._findsubpath(param, arclen)
-        return sp.trafo(param)
+        normsubpath, param = self._findsubpath(param, arclen)
+        return normsubpath.trafo(param)
 
     def outputPS(self, file):
-        for sp in self.subpaths:
-            sp.outputPS(file)
+        for normsubpath in self.normsubpaths:
+            normsubpath.outputPS(file)
 
     def outputPDF(self, file):
-        for sp in self.subpaths:
-            sp.outputPDF(file)
+        for normsubpath in self.normsubpaths:
+            normsubpath.outputPDF(file)
 
