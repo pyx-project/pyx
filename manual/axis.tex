@@ -579,15 +579,15 @@ above.
 
   The strings \var{prefix}, \var{infix}, and \var{suffix} are added to
   the label at the beginning, immediately after the plus or minus, and at
-  the end, respectively. The strings \var{prefixnum},
-  \var{infixnum}, and \var{suffixnum} are added to the labels
-  numerator accordingly whereas \var{prefixdenom}, \var{infixdenom},
-  and \var{suffixdenom} do the same for the denominator.
+  the end, respectively. The strings \var{numprefix},
+  \var{numinfix}, and \var{numsuffix} are added to the labels
+  numerator accordingly whereas \var{denomprefix}, \var{denominfix},
+  and \var{denomsuffix} do the same for the denominator.
 
   The strings \var{plus} and \var{minus} are inserted in front of the
   unsigned value. The position of the sign is defined by
   \var{minuspos} with values \code{1} (at the numerator), \code{0}
-  (in front of the fraction), and \code{-1} (at the denomerator).
+  (in front of the fraction), and \code{-1} (at the denominator).
 
   The format string \var{over} should generate the fraction. It
   must contain two string insert operators \samp{\%s}, the first for
