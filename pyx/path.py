@@ -1601,22 +1601,6 @@ class normcurve_pt(normsubpathitem):
     def reversed(self):
         return normcurve_pt(self.x3_pt, self.y3_pt, self.x2_pt, self.y2_pt, self.x1_pt, self.y1_pt, self.x0_pt, self.y0_pt)
 
-    def seglengths(self, paraminterval, epsilon):
-        """returns the list of segment line lengths (in pts) of the normcurve
-           together with the length of the parameterinterval"""
-
-        # lower and upper bounds for the arclen (cf. _midpointsplit method)
-        lowerlen = math.hypot(self.x3_pt-self.x0_pt, self.y3_pt-self.y0_pt)
-        upperlen = ( math.hypot(self.x1_pt-self.x0_pt, self.y1_pt-self.y0_pt) +
-                     math.hypot(self.x2_pt-self.x1_pt, self.y2_pt-self.y1_pt) +
-                     math.hypot(self.x3_pt-self.x2_pt, self.y3_pt-self.y2_pt) )
-
-        if upperlen-lowerlen < epsilon:
-            return [( 0.5*(upperlen+lowerlen), paraminterval )]
-        else:
-            a, b = self._midpointsplit(epsilon)
-            return a.seglengths(0.5*paraminterval, epsilon) + b.seglengths(0.5*paraminterval, epsilon)
-
     def split(self, params):
         """return list of normcurves corresponding to split at parameters"""
 
