@@ -13,13 +13,15 @@
             ,linkcolor=blue}
 \begin{document}
 \RCS $Id$
+\RCS $Revision$
+\RCS $Date$
 \begin{center}
 \LARGE\sffamily Some frequently and\\ 
 not so frequently asked questions\\ 
 about \PyX\footnote{This version of the FAQ is intended for use with \PyX\ 
 version 0.5.1.}\\
 \par
-{\small\sffamily (\today)}\\[1truecm]
+{\small\sffamily (version \RCSRevision\ of \RCSDate)}\\[1truecm]
 \large
 Gert-Ludwig Ingold \par
 \href{mailto:gert.ingold@physik.uni-augsburg.de}{\url{<gert.ingold@physik.uni-augsburg.de>}}
@@ -354,7 +356,7 @@ that?}
 
 \subsection{Axis properties}
 
-\question{a}{How do I specify the tick increment?}
+\question{a}{How do I specify the tick increment? \changed}
 {}
 {In the partition of a linear axis, the increments associated with ticks,
 subticks etc.\ can be specified as argument of \texttt{linpart}. In the
@@ -363,7 +365,7 @@ be drawn at all integers:
 \begin{progcode}
 tg = graph.graphxy(width=10,\\
 ~~~~~~~~~~~~~~~~~~~x=graph.linaxis(min=1, max=10,\\
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~part=graph.linpart(tickdist=[2,1]))\\
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~parter=graph.linparter(tickdist=[2,1]))\\
 ~~~~~~~~~~~~~~~~~~~)
 \end{progcode}
 }
@@ -397,7 +399,7 @@ in the graph are defined by calling \texttt{g.plot} like in the following
 example in which filled circles are requested:
 \begin{progcode}
 g.plot(graph.data("test.dat"),\\
-~~~~~~~graph.symbol(graph.symbol.circle, symbolattrs=[deco.filled]\\
+~~~~~~~graph.symbol(graph.symbol.circle, symbolattrs=[deco.filled])\\
 ~~~~~~~)
 \end{progcode}
 }
