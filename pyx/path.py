@@ -1734,25 +1734,6 @@ class normsubpath:
         if closed:
             self.close()
 
-    def __add__(self, other):
-        """create new normsubpath out of self and other"""
-        # we take self.epsilon as accuracy for the resulting normsubpath
-        result = self.copy()
-        result += other
-        return result
-
-    def __iadd__(self, other):
-        """add other normsubpath inplace
-
-        Fails on closed normsubpath. Fails to add closed normsubpath.
-        """
-        if other.closed:
-            raise PathException("Cannot add closed normsubpath")
-        self.extend(other.normsubpathitems)
-        if other.skippedline:
-            self.append(other.skippedline)
-        return self
-
     def __getitem__(self, i):
         """return normsubpathitem i"""
         return self.normsubpathitems[i]
@@ -2066,8 +2047,14 @@ class normsubpath:
         """
         if other.closed:
             raise PathException("Cannot join closed normsubpath")
-        if len(other):
-            self.extend(other.normsubpathitems)
+
+        # insert connection line
+        x0_pt, y0_pt = self.atend_pt()
+        x1_pt, y1_pt = other.atbegin_pt()
+        self.append(normline_pt(x0_pt, y0_pt, x1_pt, y1_pt))
+
+        # append other normsubpathitems
+        self.extend(other.normsubpathitems)
         if other.skippedline:
             self.append(other.skippedline)
 
@@ -2336,11 +2323,14 @@ class normpath(base.canvasitem):
 
     def __add__(self, other):
         """create new normpath out of self and other"""
-        return normpath(self.normsubpaths + other.normpath().normsubpaths)
+        result = self.copy()
+        result += other
+        return result
 
     def __iadd__(self, other):
         """add other inplace"""
-        self.normsubpaths += other.normpath().normsubpaths
+        for normsubpath in other.normpath().normsubpaths:
+            self.normsubpaths.append(normsubpath.copy())
         return self
 
     def __getitem__(self, i):
@@ -2509,6 +2499,13 @@ class normpath(base.canvasitem):
         else:
             raise PathException("empty path")
 
+    def copy(self):
+        """return copy of normpath"""
+        result = normpath()
+        for normsubpath in self.normsubpaths:
+            result.append(normsubpath.copy())
+        return result
+
     def _curveradius_pt(self, params):
         """return the curvature radius at params in pts
 
@@ -2581,9 +2578,29 @@ class normpath(base.canvasitem):
                     intersections[1].append(normpathparam(other, ib, intersection[1]))
         return intersections
 
+    def join(self, other):
+        """join other normsubpath inplace
+
+        Both normpaths must contain at least one normsubpath.
+        The last normsubpath of self will be joined to the first
+        normsubpath of other.
+        """
+        if not self.normsubpaths:
+            raise PathException("cannot join to empty path")
+        if not other.normsubpaths:
+            raise PathException("cannot join empty path")
+        self.normsubpaths[-1].join(other.normsubpaths[0])
+        self.normsubpaths.extend(other.normsubpaths[1:])
+
     def joined(self, other):
-        result = normpath(self.normsubpaths)
-        result.join(other)
+        """return joined self and other
+
+        Both normpaths must contain at least one normsubpath.
+        The last normsubpath of self will be joined to the first
+        normsubpath of other.
+        """
+        result = self.copy()
+        result.join(other.normpath())
         return result
 
     # << operator also designates joining
