@@ -17,8 +17,7 @@ exampledirs = $(shell cd ..; find examples -type d|grep -v CVS)
 publicserver = shell.sourceforge.net
 publicpath = /home/groups/p/py/pyx/htdocs
 
-public:
-	make build
+public: build
 	scp -oCompression=yes -r $(builddir)/* $(publicserver):$(publicpath)
 	-ssh $(publicserver) "cd $(publicpath); chmod -R g+w *"
 
