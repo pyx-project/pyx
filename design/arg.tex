@@ -281,4 +281,52 @@ with default values
 instances) are a little bulky
 \end{itemize}
 
+\section*{Comments}
+
+\begin{itemize}
+\item In my opinion, it is still not entirely clear, how we
+  distinguish the use of \verb|arglist| and \verb|argdict| type
+  parameters. Specifically, I think that a combination of both may in
+  some cases be desirable. Consider for instance in the \verb|axis|
+  example the case, where one wants to specify additionally the font
+  size of the title. Would this not justify the use of an
+  \verb|arglist| type argument? 
+\item Probably the distinction is already clear, if one draws the line
+  between graphical properties (color, line/text style/width, etc.)
+  and other things. But where exactly then do fit in transformations,
+  clipping, arrows, \dots?
+\item Maybe we should make \verb|arglist| type arguments the special
+  case of \verb|argdict| arguments, namely \'a la 
+\begin{verbatim}
+class main:
+    def show(self, style=(), *args):
+        for arg in args + tuple(style):
+            print arg
+
+\end{verbatim}
+We could even think of something like the following:
+\begin{verbatim}
+class main:
+    def show(self, style=(), trafo=(), *args):
+        for arg in args + tuple(style) + tuple(trafo):
+            print arg
+
+\end{verbatim}
+or maybe better 
+\begin{verbatim}
+class main:
+    def show(self, style=(), trafo=(), *args):
+         for t in select_args(args, trafo, trafo.trafo):
+            print t
+
+\end{verbatim}
+where \verb|select_arg(args, inst, _class)| is a helper routine, which
+selects all instances of the class \verb|_class| out of the lists
+\verb|args| and \verb|inst|, where in the latter one only instances of
+\verb|_class| are allowed. Maybe, we could also convert \verb|args| in
+advance to a list which can the modified in place by
+\verb|select_args|, and all found instances of \verb|_class| can be deleted.
+
+\end{itemize}
+
 \end{document}
