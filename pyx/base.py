@@ -36,8 +36,8 @@ class PSOp:
         """writing into a file is the only routine, a PSOp has to supply"""
         raise NotImplementedError, "cannot call virtual method write()"
 
-    def prologue(self):
-        """return list of prologue items, if present, otherwise None"""
+    def prolog(self):
+        """return list of prolog items, if present, otherwise None"""
         pass 
 
 #

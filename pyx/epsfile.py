@@ -175,7 +175,7 @@ class epsfile(base.PSCmd):
     def bbox(self):
         return self.mybbox.transformed(self.trafo)
 
-    def prologue(self):
+    def prolog(self):
         return [_BeginEPSF, _EndEPSF]
 
     def write(self, file):

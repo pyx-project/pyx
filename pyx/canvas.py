@@ -39,65 +39,65 @@ transformed (i.e. translated, rotated, etc.) and clipped.
 import types, math, string, time
 import attrlist, base, bbox, helper, path, unit, text, t1strip, pykpathsea, trafo, version
 
-class prologueitem:
+class prologitem:
 
-    """Part of the PostScript Prologue"""
+    """Part of the PostScript Prolog"""
 
     def merge(self, other):
-        """ try to merge self with other prologueitem
+        """ try to merge self with other prologitem
  
         If the merge succeeds, return None. Otherwise return other.
-	Raise ValueError, if conflicts arise!"""
+        Raise ValueError, if conflicts arise!"""
 
-	pass
-	
+        pass
+        
     def write(self, file):
         """ write self in file """
         pass
 
 
-class definition(prologueitem):
+class definition(prologitem):
 
     def __init__(self, id, body):
         self.id = id
-	self.body = body
+        self.body = body
 
     def merge(self, other):
         if not isinstance(other, definition):
-	    return other
+            return other
         if self.id==other.id:
-	    if self.body==other.body:
-	        return None
-	    raise ValueError("Conflicting function definitions!")
-	else:
-	   return other
+            if self.body==other.body:
+                return None
+            raise ValueError("Conflicting function definitions!")
+        else:
+           return other
 
     def write(self, file):
         file.write("%(body)s /%(id)s exch def\n" % self.__dict__)
 
 
-class fontdefinition(prologueitem):
+class fontdefinition(prologitem):
 
     def __init__(self, font):
         self.name = font.name
-	self.usedchars = font.usedchars
+        self.usedchars = font.usedchars
 
     def merge(self, other):
         if not isinstance(other, fontdefinition):
-	    return other
+            return other
         if self.name==other.name:
             for i in range(len(self.usedchars)):
                 self.usedchars[i] = self.usedchars[i] or other.usedchars[i]
-	    return None
-	else:
-	    return other
+            return None
+        else:
+            return other
 
     def write(self, file):
         file.write("%%%%BeginFont: %s\n" % self.name.upper())
         file.write("%Included char codes:")
-	for i in range(len(self.usedchars)):
-	    if self.usedchars[i]:
-	        file.write(" %d" % i)
+        for i in range(len(self.usedchars)):
+            if self.usedchars[i]:
+                file.write(" %d" % i)
         file.write("\n")
         pfbname = pykpathsea.find_file("%s.pfb" % self.name, pykpathsea.kpse_type1_format)
         t1strip.t1strip(file, pfbname, self.usedchars)
@@ -272,12 +272,12 @@ class DecoratedPath(base.PSCmd):
                       self.subdps,
                       self.path.bbox())
 
-    def prologue(self):
+    def prolog(self):
         result = []
         for style in list(self.styles) + list(self.fillstyles) + list(self.strokestyles):
-	    pr = style.prologue()
-	    if pr: result.extend(pr)
-	return result
+            pr = style.prolog()
+            if pr: result.extend(pr)
+        return result
 
     def write(self, file):
         # draw (stroke and/or fill) the DecoratedPath on the canvas
@@ -716,12 +716,12 @@ class _canvas(base.PSCmd, attrlist.attrlist):
         # transformed in canvas.__init__())
         return obbox.transformed(self.trafo)*self.clipbbox
 
-    def prologue(self):
+    def prolog(self):
         result = []
         for cmd in self.PSOps:
-	    pr = cmd.prologue()
-	    if pr: result.extend(pr)
-	return result
+            pr = cmd.prolog()
+            if pr: result.extend(pr)
+        return result
 
     def write(self, file):
         for cmd in self.PSOps:
@@ -840,7 +840,7 @@ class patterncanvas(_canvas, base.PathStyle):
     def __init__(self, patterntype=1, painttype=1, tilingtype=1, xstep=None, ystep=None):
         _canvas.__init__(self)
         self.id = "pattern%d" % id(self)
-	# XXX: some checks are in order
+        # XXX: some checks are in order
         self.patterntype = patterntype
         self.painttype = painttype
         self.tilingtype = tilingtype
@@ -853,7 +853,7 @@ class patterncanvas(_canvas, base.PathStyle):
     def write(self, file):
         file.write("%s setpattern\n" % self.id)
 
-    def prologue(self):
+    def prolog(self):
         import StringIO, string
         patternbbox = _canvas.bbox(self)
         if self.xstep is None:
@@ -877,9 +877,9 @@ class patterncanvas(_canvas, base.PathStyle):
         patternproc = stringfile.getvalue()
         stringfile.close()
         patternsuffix = "end\n} bind\n>>\nmatrix\nmakepattern"
-        pr = _canvas.prologue(self)	
-	pr.append(definition(self.id, string.join((patternprefix, patternproc, patternsuffix), "")))
-	return pr
+        pr = _canvas.prolog(self)     
+        pr.append(definition(self.id, string.join((patternprefix, patternproc, patternsuffix), "")))
+        return pr
 
 #
 # The main canvas class
@@ -1004,16 +1004,16 @@ class canvas(_canvas):
 
         file.write("%%BeginProlog\n")
 
-	mergedprologue = []
+        mergedprolog = []
 
-	for pritem in self.prologue():
-	    for mpritem in mergedprologue:
-	        if mpritem.merge(pritem) is None: break
-	    else:
-	        mergedprologue.append(pritem)
+        for pritem in self.prolog():
+            for mpritem in mergedprolog:
+                if mpritem.merge(pritem) is None: break
+            else:
+                mergedprolog.append(pritem)
 
-	for pritem in mergedprologue:
-	    pritem.write(file)
+        for pritem in mergedprolog:
+            pritem.write(file)
 
         file.write("%%EndProlog\n")
 

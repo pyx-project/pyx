@@ -726,11 +726,11 @@ class DVIFile:
             else: raise DVIError # unexpected reader state
         self.flushout()
 
-    def prologue(self):
+    def prolog(self):
         result = []
         for font in self.fonts:
-	    if font: result.append(canvas.fontdefinition(font))
-	return result
+            if font: result.append(canvas.fontdefinition(font))
+        return result
 
     FontSizePattern= re.compile(r"([0-9]+)$")
 
@@ -1091,8 +1091,8 @@ class _textbox(box._rect, base.PSCmd):
         box._rect.transform(self, trafo)
         self.texttrafo = trafo * self.texttrafo
 
-    def prologue(self):
-        return self.texrunner.prologue()
+    def prolog(self):
+        return self.texrunner.prolog()
 
     def write(self, file):
         canvas._gsave().write(file) # XXX: canvas?, constructor call needed?
@@ -1237,11 +1237,11 @@ class texrunner(attrlist.attrlist):
             self.texruns = 0
             self.texdone = 1
 
-    def prologue(self):
+    def prolog(self):
         if not self.texdone:
             self.execute(None, *self.checkmsgend)
             self.dvifile = DVIFile("%s.dvi" % self.texfilename, debug=self.dvidebug)
-	return self.dvifile.prologue()
+        return self.dvifile.prolog()
 
     def write(self, file, page):
         if not self.texdone:
