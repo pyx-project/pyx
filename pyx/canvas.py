@@ -254,11 +254,15 @@ class subcanvas(abstractcanvas):
 	self.basecanvas=basecanvas
 
 	abstractcanvas.__init__(self, **kwargs)
+
+    def __del__(self):
+        self.grestore()
 		
     def PSAddCmd(self, cmd):
         self.basecanvas.PSAddCmd(cmd)
 
     def PSInit(self):
+        self.gsave()
         self.PSAddCmd("[" + `self.trafo` + " ] concat")
 
 if __name__=="__main__":
