@@ -47,9 +47,9 @@ def test_ownmark(c, x, y):
     g = c.insert(graph.graphxy(x, y, height=5, x=graph.axis.lin(min=0, max=10), y=graph.axis.lin(min=0, max=10)))
     g.plot(graph.data.paramfunction("k", 0, 120, "x, y, size, angle = mod(k, 11), div(k, 11), (1+sin(k*pi/120))/2, 3*k", points=121, context=locals()), style = graph.style.arrow())
     line1 = g.plot(graph.data.function("y=10/x"))
-    line2 = g.plot(graph.data.function("y=12*x^-1.6"))
+    line2 = g.plot(graph.data.function("y=12*x**-1.6"))
     line3 = g.plot(graph.data.function("y=7/x"))
-    line4 = g.plot(graph.data.function("y=25*x^-1.6"))
+    line4 = g.plot(graph.data.function("y=25*x**-1.6"))
     g.plot(graph.data.list([[-1, 1], [5, 2], [11, 5], [5, 11], [4, -1]], x=1, y=2), graph.style.line(lineattrs=[color.rgb.red]))
     g.finish()
 
