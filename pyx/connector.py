@@ -51,29 +51,33 @@ class connector_pt(path.normpath):
         # cut off the start of self
         # XXX how can decoration of this box1.path() be handled?
         sp = self.intersect(box1.path())[0]
-        try: self.path = self.split(sp[:1])[1].path
-        except: pass
+        sp.sort()
+        if sp:
+            self.subpaths = self.split(sp[-1:])[1].subpaths
 
         # cut off the end of self
         sp = self.intersect(box2.path())[0]
-        try: self.path = self.split(sp[-1:])[0].path
-        except: pass
+        sp.sort()
+        if sp:
+            self.subpaths = self.split(sp[1:])[0].subpaths
 
     def shortenpath(self, dists):
         """shorten a path by the given distances"""
 
         # cut off the start of self
         # XXX should path.lentopar used here?
-        center = [unit.topt(self.begin()[i]) for i in [0,1]]
+        center = (unit.topt(self.begin()[0]), unit.topt(self.begin()[1]))
         sp = self.intersect(path.circle_pt(center[0], center[1], dists[0]))[0]
-        try: self.path = self.split(sp[:1])[1].path
-        except: pass
+        sp.sort()
+        if sp:
+            self.subpaths = self.split(sp[-1:])[1].subpaths
 
         # cut off the end of self
-        center = [unit.topt(self.end()[i]) for i in [0,1]]
+        center = (unit.topt(self.end()[0]), unit.topt(self.end()[1]))
         sp = self.intersect(path.circle_pt(center[0], center[1], dists[1]))[0]
-        try: self.path = self.split(sp[-1:])[0].path
-        except: pass
+        sp.sort()
+        if sp:
+            self.subpaths = self.split(sp[:1])[0].subpaths
 
 
 ################
@@ -139,8 +143,8 @@ class arc_pt(connector_pt):
 
         # up to here center is only the distance from the middle of the
         # straight connection
-        center = [0.5 * (self.box1.center[0] + self.box2.center[0] - rel[1]*center),
-                  0.5 * (self.box1.center[1] + self.box2.center[1] + rel[0]*center)]
+        center = (0.5 * (self.box1.center[0] + self.box2.center[0] - rel[1]*center),
+                  0.5 * (self.box1.center[1] + self.box2.center[1] + rel[0]*center))
         angle1 = atan2(*[self.box1.center[i] - center[i]  for i in [1,0]])
         angle2 = atan2(*[self.box2.center[i] - center[i]  for i in [1,0]])
 
@@ -201,15 +205,15 @@ class curve_pt(connector_pt):
             angle2 = dangle + radians(relangle2)
 
         # get the control points
-        control1 = [cos(angle1), sin(angle1)]
-        control2 = [cos(angle2), sin(angle2)]
-        control1 = [self.box1.center[i] + control1[i] * bulge  for i in [0,1]]
-        control2 = [self.box2.center[i] - control2[i] * bulge  for i in [0,1]]
+        control1 = (cos(angle1), sin(angle1))
+        control2 = (cos(angle2), sin(angle2))
+        control1 = (self.box1.center[0] + control1[0] * bulge, self.box1.center[1] + control1[1] * bulge)
+        control2 = (self.box2.center[0] - control2[0] * bulge, self.box2.center[1] - control2[1] * bulge)
 
         connector_pt.__init__(self,
-               [path.normsubpath([path.normcurve(*(self.box1.center + 
+               [path.normsubpath([path.normcurve(*(self.box1.center +
                                                    control1 +
-                                                   control2 + helper.ensurelist(self.box2.center)))], 0)])
+                                                   control2 + self.box2.center))], 0)])
 
         self.omitends(box1, box2)
         self.shortenpath(boxdists)
