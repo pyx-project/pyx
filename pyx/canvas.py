@@ -691,7 +691,7 @@ class canvas(base.PSCmd):
         for cmd in self.PSOps:
             cmd.write(file)
 
-    def writetofile(self, filename, paperformat=None, rotated=0, fittosize=0, margin="1 t cm"):
+    def writetofile(self, filename, paperformat=None, rotated=0, fittosize=0, margin="1 t cm", bboxenhance="1 t pt"):
         """write canvas to EPS file
 
         If paperformat is set to a known paperformat, the output will be centered on 
@@ -715,7 +715,7 @@ class canvas(base.PSCmd):
         except IOError:
             assert 0, "cannot open output file"                 # TODO: Fehlerbehandlung...
 
-        abbox=self.bbox().enhance("1 t pt")
+        abbox=self.bbox().enhance(bboxenhance)
         ctrafo=None     # global transformation of canvas
 
         if rotated:
