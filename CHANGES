@@ -47,6 +47,8 @@ TODO:
     - think hard about different paths in decoratedpath class
     - adjust parameters of cycloid and smoothed
       AW suggests to use cycloid with default curvesperloop=5.
+  - dvifile module:
+    - support single-character mode
 
   Documentation:
     - deco module:
@@ -58,9 +60,7 @@ TODO:
 
 TODO for 0.6:
   - Documentation:
-    - graph module: (in progress)
-      - axis zeropath feature removed
-      AW: Why bother with that in the documentation at all?
+    - graph module (in progress)
     - path module:
       - describe + vs <<
       - more details in path constructor: allowed pathels, first pathel...
