@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import sys, imp, re
-sys.path.append("..")
+sys.path[:0] = [".."]
 import pyx
 from pyx import *
 
@@ -27,10 +27,10 @@ for line in lines: # we yet don't use a file iterator
                               painter=graph.axispainter(innerticklengths=None, labelattrs=None))
         g = c.insert(graph.graphxy(t, ypos=y, width=10, height=0.5, x=xaxis,
                                    x2=graph.linkaxis(xaxis,
-                                                     painter=graph.linkaxispainter(skipticklevel=skiplevel,
-                                                                                   skiplabellevel=skiplevel,
-                                                                                   innerticklengths=None,
-                                                                                   outerticklengths=graph.axispainter.defaultticklengths)),
+                                                     skipticklevel=skiplevel,
+                                                     skiplabellevel=skiplevel,
+                                                     painter=graph.axispainter(innerticklengths=None,
+                                                                               outerticklengths=graph.axispainter.defaultticklengths)),
                                    y=graph.linaxis(datavmin=0, datavmax=1, part=graph.manualpart(ticks=None))))
         g.plot(pf, graph.rect(pyx.color.gradient.__dict__[m.group("name")]))
         g.dodata()

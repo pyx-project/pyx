@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import sys, imp, re
-sys.path.append("..")
+sys.path[:0] = [".."]
 import pyx
 from pyx import *
 
