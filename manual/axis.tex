@@ -271,8 +271,8 @@ The following classes are part of the module \module{graph.axis.tick}.
 
 \begin{classdesc}{rational}{x, power=1, floatprecision=10}
   This class implements a rational number with infinite precision. For
-  that it stores two integers, the enumerator \code{enum} and a
-  denomintor \code{denom}. Note that the implementation of rational
+  that it stores two integers, the numerator \code{num} and a
+  denominator \code{denom}. Note that the implementation of rational
   number arithmetics is not at all complete and designed for its
   special use case of axis parititioning in \PyX{} preventing any
   roundoff errors.
@@ -286,8 +286,8 @@ The following classes are part of the module \module{graph.axis.tick}.
     precision. It is also allowed to provide a fraction like
     \samp{1/3}.
   \item A sequence of two integers. Those integers are taken as
-    enumerator and denominator of the rational.
-  \item An instance defining instance variables \code{enum} and
+    numerator and denominator of the rational.
+  \item An instance defining instance variables \code{num} and
   \code{denom} like \class{rational} itself.
   \end{itemize}
 
@@ -381,7 +381,7 @@ This class is an abbreviation of \class{autolinear} described above.
 \end{classdesc}
 
 \begin{classdesc}{preexp}{pres, exp}
-  This is a storrage class defining positions of ticks on a
+  This is a storage class defining positions of ticks on a
   logarithmic scale. It contains a list \var{pres} of positions $p_i$
   and \var{exp}, a multiplicator $m$. Valid tick positions are defined
   by $p_im^n$ for any integer $n$.
@@ -570,31 +570,31 @@ above.
 \end{classdesc}
 
 \begin{classdesc}{rational}{prefix="", infix="", suffix="",
-                            enumprefix="", enuminfix="", enumsuffix="",
+                            numprefix="", numinfix="", numsuffix="",
                             denomprefix="", denominfix="", denomsuffix="",
                             plus="", minus="-", minuspos=0, over=r"{{\%s}\textbackslash over{\%s}}",
-                            equaldenom=0, skip1=1, skipenum0=1, skipenum1=1, skipdenom1=1,
+                            equaldenom=0, skip1=1, skipnum0=1, skipnum1=1, skipdenom1=1,
                             labelattrs=[text.mathmode]}
   Instances of this class create labels formated as fractions.
 
   The strings \var{prefix}, \var{infix}, and \var{suffix} are added to
   the label at the begin, immediately after the plus or minus, and at
-  the end, respectively. The strings \var{prefixenum},
-  \var{infixenum}, and \var{suffixenum} are added to the labels
-  enumerator accordingly whereas \var{prefixdenom}, \var{infixdenom},
+  the end, respectively. The strings \var{prefixnum},
+  \var{infixnum}, and \var{suffixnum} are added to the labels
+  numerator accordingly whereas \var{prefixdenom}, \var{infixdenom},
   and \var{suffixdenom} do the same for the denominator.
 
   The strings \var{plus} and \var{minus} are inserted in front of the
   unsigned value. The position of the sign is defined by
-  \var{minuspos} with values \code{1} (at the enumerator), \code{0}
+  \var{minuspos} with values \code{1} (at the numerator), \code{0}
   (in front of the fraction), and \code{-1} (at the denomerator).
 
   The format string \var{over} should generate the fraction. It
   must contain two string insert operators \samp{\%s}, the first for
-  the enumerator and the second for the denominator. An alternative to
+  the numerator and the second for the denominator. An alternative to
   the default is \samp{\textquotedbl\{\{\%s\}/\{\%s\}\}\textquotedbl}.
 
-  Usually, the enumerator and denominator are canceled, while, when
+  Usually, the numerator and denominator are canceled, while, when
   \var{equaldenom} is set, the least common multiple of all
   denominators is used.
 
@@ -603,10 +603,10 @@ above.
   \code{1} or \code{-1} and at least one of \var{prefix}, \var{infix}
   and \var{suffix} is present.
 
-  The boolean \var{skipenum0} indicates, that only a \code{0} is
-  printed when the enumerator is zero.
+  The boolean \var{skipnum0} indicates, that only a \code{0} is
+  printed when the numerator is zero.
 
-  \var{skipenum1} is like \var{skip1} but for the enumerator.
+  \var{skipnum1} is like \var{skip1} but for the numerator.
 
   \var{skipdenom1} skips the denominator, when it is \code{1} taking
   into account \var{denomprefix}, \var{denominfix}, \var{denomsuffix}
