@@ -220,7 +220,7 @@ class linpart(anypart):
             ticks.append(tick(long(i) * frac.enum, frac.denom, ticklevel = ticklevel, labellevel = labellevel))
         return ticks
 
-    def getticks(self, min, max, tickfracs=None, labelfracs=None):
+    def getticks(self, min, max, allowextent, tickfracs=None, labelfracs=None):
         """
         When tickfracs or labelfracs are set, they will be taken instead of the
         values provided to the constructor. It is not allowed to provide something
@@ -243,10 +243,11 @@ class linpart(anypart):
             else:
                 labelfracs = ()
 
-        if self.extendtoticklevel != None:
-            (min, max, ) = self.extendminmax(min, max, tickfracs[self.extendtoticklevel])
-        if self.extendtolabellevel != None:
-            (min, max, ) = self.extendminmax(min, max, labelfracs[self.extendtolabellevel])
+        if allowextent:
+            if self.extendtoticklevel != None:
+                (min, max, ) = self.extendminmax(min, max, tickfracs[self.extendtoticklevel])
+            if self.extendtolabellevel != None:
+                (min, max, ) = self.extendminmax(min, max, labelfracs[self.extendtolabellevel])
 
         ticks = []
         for i in range(len(tickfracs)):
@@ -257,8 +258,8 @@ class linpart(anypart):
         self.setlabels(ticks)
         return ticks
 
-    def getparts(self, min, max):
-        return [self.getticks(min, max), ]
+    def getparts(self, min, max, allowextent):
+        return [self.getticks(min, max, allowextent), ]
 
 
 class autolinpart(linpart):
@@ -275,7 +276,7 @@ class autolinpart(linpart):
         self.minpower = minpower
         self.maxpower = maxpower
 
-    def getparts(self, min, max):
+    def getparts(self, min, max, allowextent):
         parts = []
         e = int(math.log(max - min) / math.log(10))
         for shift in range(e + self.minpower, e + self.maxpower + 1):
@@ -283,7 +284,7 @@ class autolinpart(linpart):
             for tickfracs in self.tickfracslist:
                 tickcount = (max - min) / float(tickfracs[0] * basefrac)
                 if (tickcount > self.minticks) and (tickcount < self.maxticks):
-                    parts.append(self.getticks(min, max, map(lambda f, bf = basefrac: f * bf, tickfracs)))
+                    parts.append(self.getticks(min, max, allowextent, map(lambda f, bf = basefrac: f * bf, tickfracs)))
         return parts
 
 
@@ -353,7 +354,7 @@ class logpart(anypart):
             ticks = self.mergeticklists(ticks, fracticks)
         return ticks
 
-    def getticks(self, min, max, tickshiftfracslist=None, labelshiftfracslist=None):
+    def getticks(self, min, max, allowextent, tickshiftfracslist=None, labelshiftfracslist=None):
         """
         For the parameters tickshiftfracslist and labelshiftfracslist apply
         rules like for tickfracs and labelfracs in linpart.
@@ -375,22 +376,24 @@ class logpart(anypart):
             else:
                 labelshiftfracslist = ()
 
-        if self.extendtoticklevel != None:
-            (min, max, ) = self.extendminmax(min, max, tickshiftfracslist[self.extendtoticklevel])
-        if self.extendtolabellevel != None:
-            (min, max, ) = self.extendminmax(min, max, labelshiftfracslist[self.extendtolabellevel])
+        if allowextent:
+            if self.extendtoticklevel is not None:
+                (min, max, ) = self.extendminmax(min, max, tickshiftfracslist[self.extendtoticklevel])
+            if self.extendtolabellevel is not None:
+                (min, max, ) = self.extendminmax(min, max, labelshiftfracslist[self.extendtolabellevel])
 
         ticks = []
-        for i in range(len(tickshiftfracslist)):
-            ticks = self.mergeticklists(ticks, self.getticklist(min, max, tickshiftfracslist[i], ticklevel = i))
-        for i in range(len(labelshiftfracslist)):
-            ticks = self.mergeticklists(ticks, self.getticklist(min, max, labelshiftfracslist[i], labellevel = i))
+        if allowextent:
+            for i in range(len(tickshiftfracslist)):
+                ticks = self.mergeticklists(ticks, self.getticklist(min, max, tickshiftfracslist[i], ticklevel = i))
+            for i in range(len(labelshiftfracslist)):
+                ticks = self.mergeticklists(ticks, self.getticklist(min, max, labelshiftfracslist[i], labellevel = i))
 
         self.setlabels(ticks)
         return ticks
 
-    def getparts(self, min, max):
-        return [self.getticks(min, max), ]
+    def getparts(self, min, max, allowextent):
+        return [self.getticks(min, max, allowextent), ]
 
 class autologpart(logpart):
     shift5fracs1   = shiftfracs(100000, frac(1, 10))
@@ -432,10 +435,10 @@ class autologpart(logpart):
         logpart.__init__(self, **args)
         self.shiftfracslists = shiftfracslists
 
-    def getparts(self, min, max):
+    def getparts(self, min, max, allowextent):
         parts = []
         for (tickshiftfracslist, labelshiftfracslist, ) in self.shiftfracslists:
-            parts.append(self.getticks(min, max, tickshiftfracslist, labelshiftfracslist))
+            parts.append(self.getticks(min, max, allowextent, tickshiftfracslist, labelshiftfracslist))
         return parts
 
 
@@ -836,9 +839,7 @@ class axispainter(attrlist.attrlist):
         return direction
 
     def gcd(self, m, n):
-        # calculate greates common divisor
-        if m < 0: m = -m
-        if n < 0: n = -n
+        # calculate greates common divisor, m & n must be non-negative
         if m < n:
             m, n = n, m
         while n > 0:
@@ -846,6 +847,9 @@ class axispainter(attrlist.attrlist):
         return m
 
     def decfrac(self, m, n):
+        sign = 1
+        if m < 0: m, sign = -m, -sign
+        if n < 0: n, sign = -n, -sign
         gcd = self.gcd(m, n)
         (m, dummy1), (n, dummy2) = divmod(m, gcd), divmod(n, gcd)
         frac, rest = divmod(m, n)
@@ -863,31 +867,53 @@ class axispainter(attrlist.attrlist):
             rest *= 10
             frac, rest = divmod(rest, n)
             strfrac += str(frac)
-        return strfrac
+        if sign == -1:
+            return "-%s" % strfrac
+        else:
+            return strfrac
 
     def expfrac(self, m, n, minexp = None):
+        sign = 1
+        if m < 0: m, sign = -m, -sign
+        if n < 0: n, sign = -n, -sign
         exp = 0
-        while divmod(m, n)[0] > 9:
-            n *= 10
-            exp += 1
-        while divmod(m, n)[0] < 1:
-            m *= 10
-            exp -= 1
+        if m:
+            while divmod(m, n)[0] > 9:
+                n *= 10
+                exp += 1
+            while divmod(m, n)[0] < 1:
+                m *= 10
+                exp -= 1
         if minexp is not None and ((exp < 0 and -exp < minexp) or (exp >= 0 and exp < minexp)):
             return None
         prefactor = self.decfrac(m, n)
         if prefactor == "1" and not self.expfracpre1:
-            return r"10^{%i}" % exp
+            if sign == -1:
+                return r"-10^{%i}" % exp
+            else:
+                return r"10^{%i}" % exp
         else:
-            return prefactor + r"%s10^{%i}" % (self.expfractimes, exp)
+            if sign == -1:
+                return "-%s%s10^{%i}" % (prefactor, self.expfractimes, exp)
+            else:
+                return "%s%s10^{%i}" % (prefactor, self.expfractimes, exp)
 
     def ratfrac(self, m, n):
+        sign = 1
+        if m < 0: m, sign = -m, -sign
+        if n < 0: n, sign = -n, -sign
         gcd = self.gcd(m, n)
         (m, dummy1), (n, dummy2) = divmod(m, gcd), divmod(n, gcd)
         if n != 1:
-            frac = "{{%s}\over{%s}}" % (m, n)
+            if sign == -1:
+                frac = "-{{%s}\over{%s}}" % (m, n)
+            else:
+                frac = "{{%s}\over{%s}}" % (m, n)
         else:
-            frac = str(m)
+            if sign == -1:
+                frac = "-%s" % m
+            else:
+                frac = "%s" % m
         return frac
 
     def selectstyle(self, number, styles):
@@ -1094,6 +1120,7 @@ class linkaxis(_axis):
         if not args.has_key("painter"):
             args["painter"] = linkaxispainter()
         _axis.__init__(self, **args)
+        self.factor = linkedaxis.factor # XXX: not nice ...
 
 
 ################################################################################
@@ -1123,6 +1150,7 @@ class graphxy(canvas.canvas):
     DYMinPattern = re.compile(r"dymin$")
     DXMaxPattern = re.compile(r"dxmax$")
     DYMaxPattern = re.compile(r"dymax$")
+    DefaultResult = "y"
 
     def __init__(self, tex, xpos=0, ypos=0, width=None, height=None, ratio=goldenrule, axesdist="0.8 cm", styleiterator=defaultstyleiterator(), **axes):
         canvas.canvas.__init__(self)
@@ -1197,12 +1225,21 @@ class graphxy(canvas.canvas):
         ranges = {}
         for data in self.data:
             pdranges = data.ranges()
-            for kind in pdranges.keys():
-                if kind not in ranges.keys():
-                    ranges[kind] = pdranges[kind]
-                else:
-                    ranges[kind] = (min(ranges[kind][0], pdranges[kind][0]),
-                                    max(ranges[kind][1], pdranges[kind][1]))
+            if pdranges is not None:
+                for key in pdranges.keys():
+                    if key not in ranges.keys():
+                        ranges[key] = pdranges[key]
+                    else:
+                        ranges[key] = (min(ranges[key][0], pdranges[key][0]),
+                                       max(ranges[key][1], pdranges[key][1]))
+        for key, axis in self.axes.items():
+            if key in ranges.keys():
+                if axis.min is not None:
+                    ranges[key] = axis.min, ranges[key][1]
+                if axis.max is not None:
+                    ranges[key] = ranges[key][0], axis.max
+            elif axis.min is not None and axis.max is not None:
+                ranges[key] = axis.min, axis.max
         return ranges
 
     def drawlayout(self):
@@ -1233,7 +1270,7 @@ class graphxy(canvas.canvas):
                 axis.part
             except AttributeError:
                 continue
-            axis.parts = axis.part.getparts(axis.min / axis.factor, axis.max / axis.factor) # TODO: make use of pinch
+            axis.parts = axis.part.getparts(axis.min / axis.factor, axis.max / axis.factor, not axis.fixmin and not axis.fixmax) # TODO: make use of pinch
             if len(axis.parts) > 1:
                 axis.partnum = 0
                 axis.rates = []
@@ -1646,59 +1683,50 @@ class data:
 AssignPattern = re.compile(r"\s*([a-z][a-z0-9_]*)\s*=", re.IGNORECASE)
 
 
-# class function:
-# 
-#     defaultstyle = line()
-# 
-#     def __init__(self, expression, points = 100):
-#         self.name = expression
-#         self.points = points
-#         Match = AssignPattern.match(Expression)
-#         if Match:
-#             self.ResKind = Match.group(1)
-#             Expression = Expression[Match.end(): ]
-#         else:
-#             self.ResKind = None
-#         self.MT = ParseMathTree(ParseStr(Expression))
-#         self.VarList = self.MT.VarList()
-# 
-#     def GetName(self):
-#         return self.name
-# 
-#     def GetKindList(self, DefaultResult = "y"):
-#         if self.ResKind:
-#             return self.MT.VarList() + [self.ResKind, ]
-#         else:
-#             return self.MT.VarList() + [DefaultResult, ]
-# 
-# #    def GetRange(self, Kind):
-# #        raise DataRangeUndefinedException
-# #
-# #    def SetAxis(self, Axis, DefaultResult = "y"):
-# #        if self.ResKind:
-# #            self.YAxis = Axis[self.ResKind]
-# #        else:
-# #            self.YAxis = Axis[DefaultResult]
-# #        self.XAxis = { }
-# #        self.XValues = { }
-# #        for key in self.MT.VarList():
-# #            self.XAxis[key] = Axis[key]
-# #            values = []
-# #            for x in range(self.Points + 1):
-# #                values.append(self.XAxis[key].invert(x * 1.0 / self.Points))
-# #            self.XValues[key] = values
-# #        # this isn't smart ... we should walk only once throu the mathtree
-# #        self.YValues = map(lambda i, self = self: self.MT.Calc(self.XValues, i), range(self.Points + 1))
-# 
-#     def GetValues(self, Kind, DefaultResult = "y"):
-#         if (self.ResKind and (Kind == self.ResKind)) or ((not self.ResKind) and (Kind == DefaultResult)):
-#             return self.YValues
-#         return self.XValues[Kind]
-# 
-# 
-# class ParamFunction(Function):
-#     # TODO: to be written
-#     pass
+class function:
+
+    defaultstyle = line
+
+    def __init__(self, expression, points = 100):
+        self.expression = expression
+        self.points = points
+        match = AssignPattern.match(self.expression)
+        if match:
+            self.reskind = match.group(1)
+            self.expression = self.expression[match.end(): ]
+        else:
+            self.reskind = None
+        self.mathtree = mathtree.ParseMathTree(mathtree.ParseStr(self.expression))
+        varlist = self.mathtree.VarList()
+        if len(varlist) != 1: raise ValueError
+        self.var = varlist[0]
+        self.evalranges = 0
+
+    def setstyle(self, graph, style):
+        self.style = style
+        if self.reskind is None:
+            self.reskind = graph.DefaultResult
+        self.style.setcolumns(graph, {self.var: 1, self.reskind: 2})
+
+    def ranges(self):
+        if self.evalranges:
+            return self.style.ranges(self.data)
+
+    def newranges(self, ranges):
+        min, max = ranges[self.var]
+        self.data = []
+        for i in range(self.points):
+            value = min + (max-min)*i / (self.points-1.0)
+            self.data.append((value, self.mathtree.Calc({self.var: value})))
+        self.evalranges = 1
+
+    def draw(self, graph):
+        self.style.drawpointlist(graph, self.data)
+
+
+#class ParamFunction(Function):
+#    # TODO: to be written
+#    pass
 
 
 
