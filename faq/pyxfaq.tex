@@ -29,10 +29,18 @@ Gert-Ludwig Ingold \par
 {}
 {The current release of \PyX{} (as well as older ones) is freely available 
 from \url{http://pyx.sourceforge.net} where also a CVS repository with the 
-latest patches can be found.
+latest patches can be found. Possibly older versions of \PyX{} are
+also available as package for
+various Linux distributions: see, for instance,  
+\url{http://packages.debian.org/testing/python/python-pyx.html} for
+information on the \PyX{} package in Debian GNU/Linux, 
+\url{http://packages.gentoo.org/ebuilds/?pyx-0.3.1} for a Gentoo Linux
+ebuild, and
+\url{http://www.suse.de/en/private/products/suse_linux/i386/packages_professional/python-pyx.html}
+for the \PyX{} package in the SUSE LINUX professional distribution.
 }
 
-\question{a}{How can I determine the version of \PyX{} running on my 
+\question{c}{How can I determine the version of \PyX{} running on my 
 machine?}
 {}
 {Start a python session (usually by typing \texttt{python} at the system
@@ -44,7 +52,7 @@ prompt)
 \end{progcode}
 }
 
-\question{a}{Does \PyX{} run under my favorite operating system?}
+\question{c}{Does \PyX{} run under my favorite operating system?}
 {}
 {Yes, if you have installed Python (\uaref{q:what_is_python})
 and \TeX{} (\uaref{q:what_is_tex}). Both are available for
@@ -52,7 +60,7 @@ a large variety of operating systems so chances are pretty good that you will
 get \PyX{} to work on your system.
 }
 
-\question{a}{Under which versions of Python will \PyX{} run?}
+\question{c}{Under which versions of Python will \PyX{} run?}
 {}
 {\PyX{} will definitely run under Python 2.2 and higher and it is supposed
 to work under Python 2.1. Your are likely to encounter problems with Python 2.0
@@ -77,7 +85,7 @@ the discussion list is available at \url{http://sourceforge.net/mailarchive/foru
 
 \section{Python}
 
-\question{a}{What is Python?}
+\question{c}{What is Python?}
 {}
 {\label{q:what_is_python}
 From \url{www.python.org}:
@@ -110,7 +118,7 @@ but \textbf{freely usable and distributable, even for commercial use}.
 information on Python including tutorials.
 }
 
-\question{a}{What do I need to import in order to use \PyX?}
+\question{c}{What do I need to import in order to use \PyX?}
 {}
 {It is recommended to begin your Python code with 
 \begin{progcode}
@@ -133,7 +141,8 @@ All code segments in this document assume that the import line mentioned in
 the first code snippet is present.
 }
 
-\question{a}{What is a raw string?}
+\question{a}{What is a raw string and why should I know about it when
+  using \PyX?}
 {}
 {\label{q:raw_string}
 
@@ -152,7 +161,7 @@ c.text(0, 0, r"\${\cs alpha}{\cs beta}{\cs gamma}\$")
 
 \subsection{General aspects}
 
-\question{a}{How do I generate a graph from data as simply as possible?}
+\question{c}{How do I generate a graph from data as simply as possible?}
 {}
 {Suppose that you have a data file \texttt{x.dat} containing values for
 $x$ and $y$ in two columns. Then the following code will do the job
@@ -175,8 +184,9 @@ generate the postscript file \texttt{x.eps} which you can view or print.
 {}
 {}
 
-\question{a}{How can I stack graphs?}
-{}
+\question{t}{How can I stack graphs?}
+{maybe we should recommend using the bbox.height() method instead of
+  using g.height?)}
 {\PyX{} always needs a canvas to draw on. One possibility therefore consists
 in creating a new canvas with
 \begin{progcode}
@@ -471,8 +481,8 @@ you should take a look at the subdirectories of
 \path{TEXMF/fonts/type1}.
 }
 
-\question{a}{No information for font `cmr10' found in font mapping file}
-{}
+\question{t}{No information for font `cmr10' found in font mapping file}
+{rewrite this taking into account the pyxrc file}
 {\label{q:no_cmr10}
 Such an error message can already be encountered by simply running the example
 file \texttt{hello.py} included in the \PyX{} distribution. The likely reason
@@ -538,7 +548,7 @@ one needs no longer to worry about \texttt{psfonts.map}, at least for the
 standard cmr fonts.
 }
 
-\question{a}{No information for font `xyz7t' found in font mapping file}
+\question{t}{No information for font `xyz7t' found in font mapping file}
 {I think we should delete this question for the release, because it
   should no longer be applicable to PyX 0.5 and above.}
 {After verifying that your problem was not addressed in \uaref{q:no_cmr10}, 
