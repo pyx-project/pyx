@@ -99,3 +99,11 @@ class bbox:
         """return rectangle corresponding to bbox"""
         import path
         return path._rect(self.llx, self.lly, self.urx-self.llx, self.ury-self.lly)
+
+    def height(self):
+        """return height of bbox"""
+        return unit.t_pt(self.ury-self.lly)
+
+    def width(self):
+        """return width of bbox"""
+        return unit.t_pt(self.urx-self.llx)
