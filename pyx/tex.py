@@ -82,6 +82,7 @@ class Tex(Globex):
 
     def __del__(self):
         # FIXME: self.TexRun()
+	pass
 
     TexCmds = [ ]
         # stores the TexCmds; note that the first element has a special
