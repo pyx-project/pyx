@@ -24,12 +24,12 @@ between the connecting arc and the straight connecting line.
 (Default: \verb|relangle=45|, \verb|relbulge=None|,
 \verb|absbulge=None|)\medskip
 
-Note that the bulge- override the angle-keyword. When both \verb|relbulge| and
-\verb|absbulge| are given they will be added.
+Note that the bulge-keywords override the angle-keyword. When both 
+\verb|relbulge| and \verb|absbulge| are given they will be added.
 
 \section{Class curve}
 
-The construktor takes both angle- and bulge-keywords. Here, the bulges are
+The constructor takes both angle- and bulge-keywords. Here, the bulges are
 used as distances between bezier-curve control points:\medskip
 
 \verb|absangle1| or \verb|relangle1|\\
@@ -38,8 +38,8 @@ relative if both are given. (Default: \verb|relangle1=45|,
 \verb|relangle2=45|, \verb|absangle1=None|, \verb|absangle2=None|)\medskip
 
 \verb|absbulge| and \verb|relbulge|, where they will be added if both are
-given.\\ (Default: \verb|absbulge|=None \verb|relbulge|=0.39; these default
-values produce similar output like the defaults of the arc-class.)\medskip
+given.\\ (Default: \verb|absbulge|=None, \verb|relbulge|=0.39; these default
+values produce output similar to the defaults of the arc-class.)\medskip
 
 
 Note that relative angle-keywords are counted in the following way:

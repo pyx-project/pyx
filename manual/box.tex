@@ -16,7 +16,7 @@ Directions (for the alignment etc.) are usually provided as pairs
 (dx, dy) within this module. It is required, that at least one of
 these two numbers is unequal to zero. No further assumptions are taken.
 
-\section{polygon}
+\section{Polygon}
 
 A polygon is the most general case of a box. It is an instance of the
 class \verb|polygon|. The constructor takes a list of points (which
@@ -67,7 +67,7 @@ raised
 the box
 \end{description}
 
-\section{functions working on a box list}
+\section{Functions working on a box list}
 
 \begin{description}
 \raggedright
@@ -79,12 +79,12 @@ cases.
 \item[\texttt{linealignequal(boxes, a, dx, dy)}:] as above, but
 performing a line alignment
 \item[\texttt{tile(boxes, a, dx, dy)}:] tiles the boxes \verb|boxes|
-with a distance \verb|a| between the boxes (additional the maximal box
+with a distance \verb|a| between the boxes (in addition the maximal box
 extent in the given direction (\verb|dx|, \verb|dy|) is taken into
 account)
 \end{description}
 
-\section{rectangular boxes}
+\section{Rectangular boxes}
 
 For easier creation of rectangular boxes, the module provides the
 specialized class \verb|rect|. Its constructor first takes four

@@ -6,7 +6,7 @@
 The \verb|text| module seamlessly integrates the famous typesetting
 technique of \TeX/\LaTeX{} into \PyX. The basic procedure is:
 \begin{itemize}
-\item start a \TeX/\LaTeX{} instance as soon as an \TeX/\LaTeX{}
+\item start a \TeX/\LaTeX{} instance as soon as a \TeX/\LaTeX{}
 preamble setting or a text creation is requested
 \item create boxes containing the requested text and shipout those
 boxes to the dvi file
@@ -70,8 +70,8 @@ The \verb|texrunner| instance provides several methods to be called by
 the user. First there is a method called \verb|set|. It takes the same
 kewword arguments as the constructor and its purpose is to provide an
 access to the \verb|texrunner| settings for a given instance. This is
-important for the \verb|defaulttextunner|. The \verb|set| method
-fails, when a modification can't be applied anymore (e.g.
+important for the \verb|defaulttexrunner|. The \verb|set| method
+fails, when a modification cannot be applied anymore (e.g.
 \TeX/\LaTeX{} was already started).
 
 The \verb|preamble| method can be called before the \verb|text| method
@@ -156,7 +156,7 @@ in \verb|\displaystyle| (\verb|nomathmode| removes this attribute)
 
 \section{Using the graphics-bundle with \LaTeX}
 
-The packages in \LaTeX-graphics bundle (color.sty, graphics.sty,
+The packages in the \LaTeX-graphics bundle (color.sty, graphics.sty,
 graphicx.sty, \ldots) make extensive use of \verb|\special| commands.
 Here are some notes on this topic. Please install the appropriate
 driver file \verb|pyx.def|, which defines all the specials, in your
@@ -217,7 +217,7 @@ For reference purpose, the following specials can be handled by the
 
 Message parsers are used to scan the output of \TeX/\LaTeX. The output
 is analysed by a sequence of message parsers. Each of them analyses
-the output and remove those parts of the output, it feels responsible
+the output and removes those parts of the output, it feels responsible
 for. If there is nothing left in the end, the message got validated,
 otherwise an exception is raised reporting the problem.
 
@@ -233,7 +233,7 @@ parser name&purpose\\
 \medskip
 
 More specialised message parsers should become available as required.
-Please feal free to contribute (e.g. with ideas/problems; code is
+Please feel free to contribute (e.g. with ideas/problems; code is
 desired as well, of course). There are further message parsers for
 \PyX{}s internal use, but we skip them here as they are not
 interesting from the users point of view.
