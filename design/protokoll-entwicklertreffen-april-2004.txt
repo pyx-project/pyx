@@ -10,7 +10,7 @@ Annahmen über ein epsilon mehr (Achtung: nicht vor den ersten und nach
 den letzten laufen). [DONE]
 
 Auch der Subnormpfad schleift zunächst ungültige Parameter und
-Längenwerte durch. [TODO: an manchen Stellen noch vorhanden]
+Längenwerte durch. [DONE]
 
 Was die Normpfadelemente machen, wenn sie ausserhalb ihres
 Parameterbereichs aufgerufen werden, ist strittig: es gibt zwei
