@@ -26,10 +26,11 @@
 #         (maybe we still need the current bbox implementation (then maybe called
 #          cbox = control box) for bpathel for the use during the
 #          intersection of bpaths)
+#       - correct behaviour of closepath() in reversed()
 
-import math, string
+import math, string, bisect
 from math import cos, sin, pi
-import base, bbox, trafo, unit
+import base, bbox, trafo, unit, helper
 
 ################################################################################
 # helper classes and routines for Bezier curves
@@ -198,6 +199,57 @@ class _bcurve:
         else:
             (a, b) = self.MidPointSplit()
             return a.arclength()+b.arclength()
+
+    def seglengths(self, paraminterval, epsilon=1e-5):
+        """returns the list of segment line lengths (in pts) of the bpathel
+           together with the length of the parameterinterval"""
+
+        # lower and upper bounds for the arclength
+        lowerlen = \
+            math.sqrt((self.x3-self.x0)*(self.x3-self.x0) + (self.y3-self.y0)*(self.y3-self.y0))
+        upperlen = \
+            math.sqrt((self.x1-self.x0)*(self.x1-self.x0) + (self.y1-self.y0)*(self.y1-self.y0)) + \
+            math.sqrt((self.x2-self.x1)*(self.x2-self.x1) + (self.y2-self.y1)*(self.y2-self.y1)) + \
+            math.sqrt((self.x3-self.x2)*(self.x3-self.x2) + (self.y3-self.y2)*(self.y3-self.y2))
+
+        # instead of isStraight method:
+        if abs(upperlen-lowerlen)<epsilon:
+            return [( 0.5*(upperlen+lowerlen), paraminterval )]
+        else:
+            (a, b) = self.MidPointSplit()
+            return a.seglengths(0.5*paraminterval, epsilon) + b.seglengths(0.5*paraminterval, epsilon)
+
+    def lengthparam(self, lengths, epsilon=1e-5):
+        """computes the parameters [t] of bpathel where the given lengths (in pts) are assumed
+        returns [ [parameter], total arclength]"""
+
+        # create the list of accumulated lengths
+        # and the length of the parameters
+        cumlengths = self.seglengths(1, epsilon)
+        l = len(cumlengths)
+        parlengths = [cumlengths[i][1] for i in range(l)]
+        cumlengths[0] = cumlengths[0][0]
+        for i in range(1,l):
+            cumlengths[i] = cumlengths[i][0] + cumlengths[i-1]
+
+        # create the list of parameters to be returned
+        tt = []
+        for length in lengths:
+            # find the last index that is smaller than length
+            lindex = bisect.bisect_left(cumlengths, length)
+            if lindex==0:
+                t = 1.0 * length / cumlengths[0]
+                t *= parlengths[0]
+            if lindex>=l-2:
+                t = 1
+            else:
+                t = 1.0 * (length - cumlengths[lindex]) / (cumlengths[lindex+1] - cumlengths[lindex])
+                t *= parlengths[lindex+1]
+                for i in range(lindex+1):
+                    t += parlengths[i]
+            t = max(min(t,1),0)
+            tt.append(t)
+        return [tt, cumlengths[-1]]
 
 #
 # _bline: Bezier curve segment corresponding to straight line (coordinates in pts)
@@ -493,6 +545,21 @@ class normpathel(pathel):
 
         """
 
+        pass
+
+    def _lengthparam(self, lengths, context, epsilon=1e-5):
+        """returns [t,l] with
+          t the parameter where the arclength of normpathel is length and
+          l the total arclength
+
+        length:  length (in pts) to find the parameter for
+        context: context of normpathel
+        epsilon: epsilon controls the accuracy for calculation of the
+                 length of the Bezier elements
+        """
+
+        pass
+
     def _reversed(self, context):
         """return reversed normpathel
 
@@ -571,6 +638,13 @@ class closepath(normpathel):
         x1, y1 = context.currentsubpath
 
         return unit.t_pt(math.sqrt((x0-x1)*(x0-x1)+(y0-y1)*(y0-y1)))
+
+    def _lengthparam(self, lengths, context, epsilon=1e-5):
+        x0, y0 = context.currentpoint
+        x1, y1 = context.currentsubpath
+
+        l = math.sqrt((x0-x1)*(x0-x1)+(y0-y1)*(y0-y1))
+        return [ [max(min(1.0*length/l,1),0) for length in lengths], l]
 
     def _normalized(self, context):
         return [closepath()]
@@ -653,6 +727,9 @@ class _moveto(normpathel):
     def _arclength(self, context, epsilon=1e-5):
         return 0
 
+    def _lengthparam(self, lengths, context, epsilon=1e-5):
+        return [ [0]*len(lengths), 0]
+
     def _normalized(self, context):
         return [_moveto(self.x, self.y)]
 
@@ -704,6 +781,12 @@ class _lineto(normpathel):
         x0, y0 = context.currentpoint
 
         return unit.t_pt(math.sqrt((x0-self.x)*(x0-self.x)+(y0-self.y)*(y0-self.y)))
+
+    def _lengthparam(self, lengths, context, epsilon=1e-5):
+        x0, y0 = context.currentpoint
+        l = math.sqrt((x0-self.x)*(x0-self.x)+(y0-self.y)*(y0-self.y))
+
+        return [ [max(min(1.0*length/l,1),0) for length in lengths], l]
 
     def _normalized(self, context):
         return [_lineto(self.x, self.y)]
@@ -805,6 +888,9 @@ class _curveto(normpathel):
 
     def _arclength(self, context, epsilon=1e-5):
         return self._bcurve(context).arclength(epsilon)
+
+    def _lengthparam(self, lengths, context, epsilon=1e-5):
+        return self._bcurve(context).lengthparam(lengths, epsilon)
 
     def _normalized(self, context):
         return [_curveto(self.x1, self.y1,
@@ -1378,7 +1464,7 @@ class arct(_arct):
                              unit.topt(r))
 
 ################################################################################
-# path: PS style path 
+# path: PS style path
 ################################################################################
 
 class path(base.PSCmd):
@@ -1406,6 +1492,11 @@ class path(base.PSCmd):
     def arclength(self, epsilon=1e-5):
         """returns total arc length of path in pts with accuracy epsilon"""
         return normpath(self).arclength(epsilon)
+
+    def lengthparam(self, lengths, epsilon=1e-5):
+        """returns [t,l] with t the parameter value(s) matching given length,
+        l the total length"""
+        return normpath(self).lengthparam(lengths, epsilon)
 
     def at(self, t):
         """return coordinates of corresponding normpath at parameter value t"""
@@ -1619,6 +1710,56 @@ class normpath(path):
 
         return length
 
+    def lengthparam(self, lengths, epsilon=1e-5):
+        """returns [t,l] with t the parameter value(s) matching given length(s)
+        and l the total length"""
+
+        context = _pathcontext()
+        l = len(helper.ensuresequence(lengths))
+
+        # split the list of lengths apart for positive and negative values
+        t = [[],[]]
+        rests = [[],[]] # first the positive then the negative lengths
+        retrafo = [] # for resorting the rests into lengths
+        for length in helper.ensuresequence(lengths):
+            length = unit.topt(length)
+            if length>=0.0:
+                rests[0].append(length)
+                retrafo.append( [0, len(rests[0])-1] )
+                t[0].append(0)
+            else:
+                rests[1].append(-length)
+                retrafo.append( [1, len(rests[1])-1] )
+                t[1].append(0)
+
+        # go through the positive lengths
+        for pel in self.path:
+            pars, arclength = pel._lengthparam(rests[0], context, epsilon)
+            finis = 0
+            for i in range(len(rests[0])):
+                t[0][i] += pars[i]
+                rests[0][i] -= arclength
+                if rests[0][i]<0: finis += 1
+            if finis==len(rests[0]): break
+            pel._updatecontext(context)
+
+        # go through the negative lengths
+        for pel in self.reversed().path:
+            pars, arclength = pel._lengthparam(rests[1], context, epsilon)
+            finis = 0
+            for i in range(len(rests[1])):
+                t[1][i] -= pars[i]
+                rests[1][i] -= arclength
+                if rests[1][i]<0: finis += 1
+            if finis==len(rests[1]): break
+            pel._updatecontext(context)
+
+        # resort the positive and negative values into one list
+        tt = [ t[p[0]][p[1]] for p in retrafo ]
+        if not helper.issequence(lengths): tt = tt[0]
+
+        return tt
+
     def at(self, t):
         """return coordinates of path at parameter value t
 
@@ -1689,7 +1830,7 @@ class normpath(path):
             if isinstance(normpathel, closepath):
                 subpathends_a.append(t)
             t += 1
-
+                
         context = _pathcontext()
         bpathels_b = []
         subpathends_b = []
@@ -1702,7 +1843,7 @@ class normpath(path):
             if isinstance(normpathel, closepath):
                 subpathends_b.append(t)
             t += 1
-
+            
         intersections = ([], [])
         # change grouping order and check whether an intersection
         # occurs at the end of a subpath. If yes, don't include

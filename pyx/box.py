@@ -32,6 +32,15 @@ class _polygon:
     def __init__(self, corners=None, center=None):
         self.corners = corners
         self.center = center
+        if self.center is None:
+            self._ensurecenter()
+
+    def _ensurecenter(self):
+        if self.center is None:
+            self.center = [0,0]
+            for corn in self.corners:
+                self.center = [self.center[0] + corn[0], self.center[1] + corn[1]]
+            self.center = [self.center[0]/len(self.corners), self.center[1]/len(self.corners)]
 
     def path(self, centerradius=None, bezierradius=None, beziersoftness=1):
         pathels = []

@@ -35,11 +35,17 @@ PyX
   - data module:
     - full documentation via doc strings
     - data.data should add line number like data.datafile
-
-  enhancements:
+  - connector module:
+    - some preliminary version
+    - TODO: documentation
   - box module:
     - multiple radii (up to two per point) and softnesses
       (TODO: documentation)
+    - ensurecenter added --- do we always force the creation of a center?
+  - path module:
+    - lengthparam methods added including some tests (TODO: documentation)
+    TODO:
+    - reverse needs to be fixed
 
   bugfixes:
   - text module:
