@@ -1,3 +1,6 @@
+# some thoughts one the class naming:
+# - PSCommand -> PSCmd
+
 PSOp +--- PSCommand ---+--- canvas
      |                 +--- epsfile
      |                 +--- tex
