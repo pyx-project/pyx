@@ -1038,7 +1038,7 @@ class path(base.canvasitem):
         return self.normpath().end()
 
     def extend(self, pathitems):
-        """extent path by pathitems"""
+        """extend path by pathitems"""
         self.path.extend(pathitems)
         self._normpath = None
 
@@ -1909,7 +1909,7 @@ class normsubpath:
         return result
 
     def extend(self, normsubpathitems):
-        """extent path by normsubpathitems
+        """extend path by normsubpathitems
 
         Fails on closed normsubpath.
         """
@@ -2553,7 +2553,7 @@ class normpath(base.canvasitem):
             raise PathException("empty path")
 
     def extend(self, normsubpaths):
-        """extent path by normsubpaths or pathitems"""
+        """extend path by normsubpaths or pathitems"""
         for anormsubpath in normsubpaths:
             # use append to properly handle regular path items as well as normsubpaths
             self.append(anormsubpath)
