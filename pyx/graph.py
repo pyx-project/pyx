@@ -1170,7 +1170,7 @@ class axispainter(axistitlepainter):
             tick.text = self.ratfrac(tick)
         else:
             raise ValueError("fractype invalid")
-        if textmodule.mathmode not in tick.labelattrs:
+        if textmodule.mathmode not in helper.getattrs(tick.labelattrs, textmodule._texsetting, []):
             tick.labelattrs.append(textmodule.mathmode)
 
     def dolayout(self, graph, axis):
@@ -1410,16 +1410,17 @@ class baraxispainter(axistitlepainter):
             dx, dy = axis.vtickdirection(axis, v)
             axis.namepos.append((v, x, y, dx, dy))
         axis.nameboxes = []
-        for (v, x, y, dx, dy), name in zip(axis.namepos, axis.names):
-            nameattrs = helper.ensurelist(self.nameattrs)
-            if self.namedirection is not None:
-                nameattrs += [trafo.rotate(self.reldirection(self.namedirection, dx, dy))]
-            if axis.texts.has_key(name):
-                axis.nameboxes.append(textmodule._text(x, y, str(axis.texts[name]), *nameattrs))
-            elif axis.texts.has_key(str(name)):
-                axis.nameboxes.append(textmodule._text(x, y, str(axis.texts[str(name)]), *nameattrs))
-            else:
-                axis.nameboxes.append(textmodule._text(x, y, str(name), *nameattrs))
+        if self.nameattrs is not None:
+            for (v, x, y, dx, dy), name in zip(axis.namepos, axis.names):
+                nameattrs = helper.ensurelist(self.nameattrs)
+                if self.namedirection is not None:
+                    nameattrs += [trafo.rotate(self.reldirection(self.namedirection, dx, dy))]
+                if axis.texts.has_key(name):
+                    axis.nameboxes.append(textmodule._text(x, y, str(axis.texts[name]), *nameattrs))
+                elif axis.texts.has_key(str(name)):
+                    axis.nameboxes.append(textmodule._text(x, y, str(axis.texts[str(name)]), *nameattrs))
+                else:
+                    axis.nameboxes.append(textmodule._text(x, y, str(name), *nameattrs))
         labeldist = axis.layoutdata._extent + unit.topt(unit.length(self.namedist_str, default_type="v"))
         if len(axis.namepos) > 1:
             equaldirection = 1
@@ -1454,8 +1455,8 @@ class baraxispainter(axistitlepainter):
             newextent = namebox._extent(dx, dy) + labeldist
             if axis.layoutdata._extent < newextent:
                 axis.layoutdata._extent = newextent
-        axistitlepainter.dolayout(self, graph, axis)
         graph.mindbbox(*[namebox.bbox() for namebox in axis.nameboxes])
+        axistitlepainter.dolayout(self, graph, axis)
 
     def paint(self, graph, axis):
         if axis.subaxis is not None:
@@ -1913,6 +1914,7 @@ class baraxis:
                 if self.subaxis[self.names.index(name)].setname(*subnames):
                     self.relsizes = None
             else:
+                #print self.subaxis, self.multisubaxis, subnames, name
                 if self.subaxis.setname(*subnames):
                     self.relsizes = None
         return self.relsizes is not None
@@ -2713,10 +2715,11 @@ def _getattrs(attrs):
         result = []
         for attr in helper.ensuresequence(attrs):
             if isinstance(attr, _changeattr):
-                result.append(attr.getattr())
-            else:
+                attr = attr.getattr()
+            if attr is not None:
                 result.append(attr)
-        return result
+        if len(result) or not len(attrs):
+            return result
 
 
 def _iterateattr(attr):
@@ -3536,7 +3539,7 @@ class text(symbol):
 
     def _drawsymbol(self, graph, x, y, point=None):
         symbol._drawsymbol(self, graph, x, y, point)
-        if None not in (x, y, point[self.textindex], self._textattrs):
+        if None not in (x, y, point[self.textindex]) and self._textattrs is not None:
             graph._text(x + self._textdx, y + self._textdy, str(point[self.textindex]), *helper.ensuresequence(self.textattrs))
 
     def drawpoints(self, graph, points):
@@ -3613,14 +3616,19 @@ class _bariterator(changeattr):
 class bar:
 
     def __init__(self, fromzero=1, stacked=0, skipmissing=1, xbar=0,
-                       barattrs=(canvas.stroked(color.gray.black), changecolor.Rainbow()),
-                       _bariterator=_bariterator(), _previousbar=None):
+                       barattrs=helper.nodefault, _usebariterator=helper.nodefault, _previousbar=None):
         self.fromzero = fromzero
         self.stacked = stacked
         self.skipmissing = skipmissing
         self.xbar = xbar
-        self._barattrs = barattrs
-        self.bariterator = _bariterator
+        if barattrs is helper.nodefault:
+            self._barattrs = (canvas.stroked(color.gray.black), changecolor.Rainbow())
+        else:
+            self._barattrs = barattrs
+        if _usebariterator is helper.nodefault:
+            self.bariterator = _bariterator()
+        else:
+            self.bariterator = _usebariterator
         self.previousbar = _previousbar
 
     def iteratedict(self):
@@ -3630,7 +3638,7 @@ class bar:
 
     def iterate(self):
         return bar(fromzero=self.fromzero, stacked=self.stacked, xbar=self.xbar,
-                   _bariterator=_iterateattr(self.bariterator), _previousbar=self, **self.iteratedict())
+                   _usebariterator=_iterateattr(self.bariterator), _previousbar=self, **self.iteratedict())
 
     def setcolumns(self, graph, columns):
         def checkpattern(key, index, pattern, iskey, isindex):
@@ -3667,15 +3675,15 @@ class bar:
         index, count = _getattr(self.bariterator)
         if count != 1 and self.stacked != 1:
             if self.stacked > 1:
-                index = divmod(index, self.stacked)[0] # TODO: use this
+                index = divmod(index, self.stacked)[0]
 
         vmin = vmax = None
         for point in points:
             if not self.skipmissing:
-                if count == 1:
-                    self.naxis.setname(point[self.ni])
-                else:
+                if count != 1 and self.stacked != 1:
                     self.naxis.setname(point[self.ni], index)
+                else:
+                    self.naxis.setname(point[self.ni])
             try:
                 v = point[self.vi] + 0.0
                 if vmin is None or v < vmin: vmin = v
@@ -3684,10 +3692,10 @@ class bar:
                 pass
             else:
                 if self.skipmissing:
-                    if count == 1:
-                        self.naxis.setname(point[self.ni])
-                    else:
+                    if count != 1 and self.stacked != 1:
                         self.naxis.setname(point[self.ni], index)
+                    else:
+                        self.naxis.setname(point[self.ni])
         if self.fromzero:
             if vmin > 0: vmin = 0
             if vmax < 0: vmax = 0
@@ -3740,12 +3748,13 @@ class bar:
                     else:
                         x3pos, y3pos = self.naxis._vtickpoint(self.naxis, self.naxis.convert(maxid))
                         x4pos, y4pos = self.naxis._vtickpoint(self.naxis, self.naxis.convert(minid))
-                graph.fill(path.path(path._moveto(x1pos, y1pos),
-                                     graph._connect(x1pos, y1pos, x2pos, y2pos),
-                                     graph._connect(x2pos, y2pos, x3pos, y3pos),
-                                     graph._connect(x3pos, y3pos, x4pos, y4pos),
-                                     graph._connect(x4pos, y4pos, x1pos, y1pos), # no closepath (might not be straight)
-                                     path.closepath()), *self.barattrs)
+                if self.barattrs is not None:
+                    graph.fill(path.path(path._moveto(x1pos, y1pos),
+                                         graph._connect(x1pos, y1pos, x2pos, y2pos),
+                                         graph._connect(x2pos, y2pos, x3pos, y3pos),
+                                         graph._connect(x3pos, y3pos, x4pos, y4pos),
+                                         graph._connect(x4pos, y4pos, x1pos, y1pos), # no closepath (might not be straight)
+                                         path.closepath()), *self.barattrs)
             except (TypeError, ValueError): pass
 
     def key(self, c, x, y, width, height):

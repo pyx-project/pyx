@@ -19,14 +19,14 @@ c.stroke(path.line(7, 6.01, 7, 7), canvas.linewidth.THIN)
 c.stroke(path.line(8, 6.01, 8, 7), canvas.linewidth.THIN)
 c.text(7, 5, "\\vrule width1truecm height1truecm")
 
-c.text(6.2, 0, "0", text.valign.centerline())
-c.text(-1.2, 0, "abc", text.valign.centerline(), text.halign.right)
+c.text(6.2, 0, "0", text.vshift.middlezero)
+c.text(-1.2, 0, "abc", text.vshift.mathaxis, text.halign.right)
 
-t1 = text.text(0, 0, "a b c d e f g h i j k l m n o p q r s t u v w x y z", text.valign.bottomline("2 cm"))
+t1 = text.text(0, 0, "a b c d e f g h i j k l m n o p q r s t u v w x y z", text.vbox(2), text.valign.bottombaseline)
 c.insert(t1)
 c.stroke(t1.path())
 
-t2 = c.insert(text.text(3, 0, "a b c d e f g h i j k l m n o p q r s t u v w x y z", text.valign.topline("2 cm")))
+t2 = c.insert(text.text(3, 0, "a b c d e f g h i j k l m n o p q r s t u v w x y z", text.vbox(2)))
 c.stroke(t2.path())
 
 c.text(0, 3, r"\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} = \sqrt{\pi\over a}", text.mathmode)

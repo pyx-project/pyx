@@ -184,7 +184,7 @@ class datafile(data):
                     linedata.append(value)
                 if len(linedata):
                     if linenumber >= skiphead and not ((linenumber - skiphead) % every):
-                        linedata = [linenumber] + linedata
+                        linedata = [linenumber + 1] + linedata
                         if len(linedata) > maxcolumns:
                             maxcolumns = len(linedata)
                         usedata.append(linedata)
