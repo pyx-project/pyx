@@ -147,30 +147,40 @@ class canvas:
         return subcanvas
         
     def tex(self, **kwargs):
-        texcanvas = tex.tex(**kwargs)
+        texcanvas = tex.tex(self.unit.copy(), **kwargs)
         self._translate(0,0)
         self._PSAddCmd(texcanvas)
         return texcanvas
 
     def set(self, *args):
         for arg in args:
-           if   isinstance(arg, attrib.linecap):    self.setlinecap   (arg)
-           elif isinstance(arg, attrib.linejoin):   self.setlinejoin  (arg)
-           elif isinstance(arg, attrib.miterlimit): self.setmiterlimit(arg.value)
-           elif isinstance(arg, attrib.dash):       self.setdash      (arg.value)
-           elif isinstance(arg, attrib.linestyle):  self.setlinestyle (arg)
-           elif isinstance(arg, attrib.linewidth):  self.setlinewidth (arg)
+           if   isinstance(arg, attrib._linecap):    self.setlinecap   (arg)
+           elif isinstance(arg, attrib._linejoin):   self.setlinejoin  (arg)
+           elif isinstance(arg, attrib._miterlimit): self.setmiterlimit(arg)
+           elif isinstance(arg, attrib._dash):       self.setdash      (arg.pattern, arg.offset)
+           elif isinstance(arg, attrib._linestyle):  self.setlinestyle (arg)
+           elif isinstance(arg, attrib._linewidth):  self.setlinewidth (arg)
 	
-    def draw(self, path, **kwargs):
+    def draw(self, path, *args):
+        if args: 
+           self._gsave()
+           self.set(*args)
         self._newpath()
         path.draw(self)
 	self._stroke()
+        if args:
+           self._grestore()
         return self
 	
-    def fill(self, path):
+    def fill(self, path, *args):
+        if args: 
+           self._gsave()
+           self.set(args)
         self._newpath()
         path.fill(self)
 	self._fill()
+        if args:
+           self._grestore()
         return self
 
     def setlinecap(self, cap):
@@ -185,7 +195,7 @@ class canvas:
 	self._PSAddCmd("%f setmiterlimit" % limit)
         return self
 
-    def setdash(self, pattern=0, offset=0):
+    def setdash(self, pattern=[], offset=0):
     	patternstring=""
     	for element in pattern:
 		patternstring=patternstring + `element` + " "
@@ -193,10 +203,13 @@ class canvas:
     	self._PSAddCmd("[%s] %d setdash" % (patternstring, offset))
         return self
 
-    def setlinestyle(self, style, offset=0):
-        self.setlinecap(style[0])
-	self.setdash   (style[1], offset)
+    def setlinestyle(self, style):
+        self.setlinecap(style.cap)
+        self.setdash   (style.pattern, style.offset)
         return self
+
+    def setlinewidth(self, lwidth=attrib.linewidth.normal):
+        self._PSAddCmd("%f setlinewidth" % self.unit.pt(lwidth))
 
     def inserteps(self, x, y, filename, clipping=1):
         self._translate(x,y)
@@ -288,13 +301,13 @@ if __name__=="__main__":
     c.draw(p)
  
     p=path([moveto(5,15), arc(5,15, 1, 0, 45), closepath()])
-    c.draw(p)
+    c.draw(p, linestyle.dotted, linewidth.THICK)
  
     p=path([moveto(5,17), curveto(6,18, 5,16, 7,15)])
-    c.draw(p)
+    c.draw(p, linestyle.dashed)
    
     for angle in range(20):
-       s=c.canvas(trafo=translate(10,10)*rotate(angle)).draw(p)
+       s=c.canvas(trafo=translate(10,10)*rotate(angle)).draw(p, linestyle.dashed)
 #
 #   c.setlinestyle(linestyle_solid)
 #   g=GraphXY(c, t, 10, 15, 8, 6)
