@@ -6,9 +6,8 @@
 
 <h1>PyX - Examples</h1>
 
-<p>
-On this page, you find some examples of figures created with PyX 0.6.2. The EPS version
-can be obtained by clicking on the image.
+<p tal:condition="options/abstract" tal:content="options/abstract">
+    We might have a short abstract about the examples shown on this page.
 </p>
 
 <div class="example" tal:repeat="example options/examples" style="border-top:1px solid #88a;margin-bottom:10px;">

@@ -1,14 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: ISO-8859-1 -*-
 
-import sys, os.path, codecs, encodings
+import sys, os, os.path
 from zope.pagetemplate.pagetemplate import PageTemplate
+
+sys.path[:0]=[".."]
+import pyx
 
 class example:
     def __init__(self, name):
         self.name = name
-        self.png = "examples/%s.png" % self.name
-        self.eps = "examples/%s.eps" % self.name
+        self.png = "%s.png" % os.path.basename(self.name)
+        self.eps = "%s.eps" % os.path.basename(self.name)
         self.code = open("../examples/%s.py.html" % name, "r").read()
         self.code = self.code.replace("ä", "&auml;")
         self.code = self.code.replace("Ä", "&Auml;")
@@ -27,48 +30,48 @@ def PageTemplateFromFile(filename):
     return pt
 
 def write_file(filename, string):
-    # path = os.path.join(os.path.expanduser(outpath), filename)
-    # print "Writing %s ..." % path
-    open(filename, "w").write(string)
+    try:
+        open(filename, "w").write(string)
+    except IOError:
+        os.mkdir(os.path.dirname(filename)) # do not need to create directory recursively when called in proper order
+        open(filename, "w").write(string)
 
 maintemplate = PageTemplateFromFile("maintemplate.pt")
 
-pagename = sys.argv[1]
-if pagename.endswith(".pt"): pagename = pagename[:-3]
+htmlname = sys.argv[1]
 
-examples = [example("hello"),
-            example("latex"),
-            example("pattern"),
-            example("circles"),
-            example("vector"),
-            example("box"),
-            example("connect"),
-            example("valign"),
-            example("tree"),
-            example("sierpinski"),
-            example("graphs/minimal"),
-            example("graphs/lissajous"),
-            example("graphs/piaxis"),
-            example("graphs/manyaxes"),
-            example("graphs/inset"),
-            example("graphs/link"),
-            example("graphs/change"),
-            example("graphs/bar"),
-            example("graphs/arrows"),
-            example("graphs/mandel"),
-            example("graphs/integral"),
-            example("graphs/partialfill"),
-            example("graphs/washboard"),
-            example("axis/simple"),
-            example("axis/painter"),
-            example("axis/rating"),
-            example("axis/manualticks"),
-            example("axis/parter"),
-            example("axis/texter"),
-            example("axis/log")]
+def mkrellink(linkname, options):
+    # returns a string containing the relative url for linkname (an absolute url)
+    pagename = options["pagename"]
+    while linkname.find("/") != -1 and pagename.find("/") != -1:
+        linknamefirst, linknameother = linkname.split("/", 1)
+        pagenamefirst, pagenameother = pagename.split("/", 1)
+        if linknamefirst == pagenamefirst:
+            linkname = linknameother
+            pagename = pagenameother
+        else:
+            break
+    for i in pagename.split("/")[:-1]:
+        linkname = "../" + linkname
+    return linkname
 
-write_file("%s.html" % pagename,
-           PageTemplateFromFile("%s.pt" % pagename)(maintemplate=maintemplate,
-                                                   pagename="%s.html" % pagename,
-                                                   examples=examples))
+if htmlname.startswith("examples"):
+    dir = htmlname[9:-10]
+    examplepages = [item[:-2] for item in open("../examples/INDEX").readlines() if item[-2] == "/"]
+    try:
+        abstract = open("../examples/%sREADME" % dir).read().replace("__version__", pyx.__version__).replace("\PyX{}", "PyX")
+    except IOError:
+        abstract = ""
+    examples = [example(dir + item.strip()) for item in open("../examples/%sINDEX" % dir).readlines() if item[-2] != "/"]
+    write_file("build/%s" % htmlname, PageTemplateFromFile("examples.pt")(pagename=htmlname,
+                                                                          maintemplate=maintemplate,
+                                                                          abstract=abstract,
+                                                                          examples=examples,
+                                                                          examplepages=examplepages,
+                                                                          mkrellink=mkrellink))
+else:
+    write_file("build/%s" % htmlname, PageTemplateFromFile("%s.pt" % htmlname[:-5])(pagename=htmlname,
+                                                                                    maintemplate=maintemplate,
+                                                                                    examplepages=[],
+                                                                                    mkrellink=mkrellink))
 

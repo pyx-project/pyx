@@ -3,21 +3,24 @@
 <head>
    <title>PyX - Python graphics package</title>
    <link rel="shortcut icon" href="pyx.ico" type="image/x-icon">
-   <link rel="stylesheet" type="text/css" href="main.css">
+   <link rel="stylesheet" type="text/css" tal:attributes="href python:options['mkrellink']('main.css', options)">
 </head>
 
 <body>
 
 <div id="navbar">
 
-  <div id="title"><a href="http://pyx.sourceforge.net/"><img src="pyxlogo.png" alt="PyX" style="border:0px;"></a></div>
+  <div id="title"><a href="http://pyx.sourceforge.net/"><img tal:attributes="src python:options['mkrellink']('pyxlogo.png', options)" alt="PyX" style="border:0px;"></a></div>
 
   <div class="box">
     <div id="navboxtitle">Navigation</div>
 
-    <a href="index.html">Home</a><br>
-    <a href="documentation.html">Documentation</a><br>
-    <a href="examples.html">Examples</a><br>
+    <a tal:attributes="href python:options['mkrellink']('index.html', options)">Home</a><br>
+    <a tal:attributes="href python:options['mkrellink']('documentation.html', options)">Dokumentation</a><br>
+    <a tal:attributes="href python:options['mkrellink']('examples/index.html', options)">Examples</a><br>
+    <span tal:repeat="item options/examplepages" tal:omit-tag="">
+      &nbsp;&nbsp;-&nbsp;&nbsp;<a tal:attributes="href python:options['mkrellink']('examples/'+item+'/index.html', options)" tal:content="item">Examples</a><br>
+    </span>
     <a href="http://sourceforge.net/project/showfiles.php?group_id=45430">Downloads</a><br>
     <a href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/pyx/pyx/CHANGES?rev=HEAD&content-type=text/vnd.viewcvs-markup">ChangeLog</a><br>
     <a href="http://sourceforge.net/projects/pyx/">Project page</a>
@@ -38,13 +41,13 @@
 
   <p>
     <a href="http://validator.w3.org/check/referer"><img style="border:0;width:88px;height:31px"
-           src="valid-html401.png"
+           tal:attributes="src python:options['mkrellink']('valid-html401.png', options)"
            alt="Valid HTML 4.01!"/></a>
   </p>
   <!--
   <p>
     <a href="http://jigsaw.w3.org/css-validator/check/referer"><img style="border:0;width:88px;height:31px"
-           src="vcss.png" 
+           tal:attributes="src python:options['mkrellink']('vcss.png', options)"
            alt="Valid CSS!"/></a>
   </p>
   -->
