@@ -1942,7 +1942,7 @@ class mark:
                 path._lineto(x, y+0.930604859*self.size),
                 path.closepath())
 
-    def __init__(self, mark=_nodefault, xmin=None, xmax=None, ymin=None, ymax=None,
+    def __init__(self, mark=_nodefault,
                        size="0.2 cm", markattrs=canvas.stroked(),
                        errorscale=0.5, errorbarattrs=(),
                        lineattrs=None):
@@ -1955,11 +1955,9 @@ class mark:
         self.errorscale = errorscale
         self._errorbarattrs = errorbarattrs
         self._lineattrs = lineattrs
-        self.xmin, self.xmax, self.ymin, self.ymax = xmin, xmax, ymin, ymax
 
     def iterate(self):
         return mark(mark=_iterateattr(self.mark),
-                    xmin=self.xmin, xmax=self.xmax, ymin=self.ymin, ymax=self.ymax,
                     size=_iterateattr(self.size_str), markattrs=_iterateattrs(self._markattrs),
                     errorscale=_iterateattr(self.errorscale), errorbarattrs=_iterateattrs(self._errorbarattrs),
                     lineattrs=_iterateattrs(self._lineattrs))
@@ -2061,10 +2059,6 @@ class mark:
     def getranges(self, points):
         xmin, xmax = self.keyrange(points, self.xi, self.xmini, self.xmaxi, self.dxi, self.dxmini, self.dxmaxi)
         ymin, ymax = self.keyrange(points, self.yi, self.ymini, self.ymaxi, self.dyi, self.dymini, self.dymaxi)
-        if self.xmin is not None: xmin = self.xmin
-        if self.xmax is not None: xmax = self.xmax
-        if self.ymin is not None: ymin = self.ymin
-        if self.ymax is not None: ymax = self.ymax
         return {self.xkey: (xmin, xmax), self.ykey: (ymin, ymax)}
 
     def drawerrorbar(self, graph, point, xmin, x, xmax, ymin, y, ymax, attrs):
@@ -2176,15 +2170,10 @@ class mark:
             graph.draw(path.path(*mark(self, x, y)), *attrs)
 
     def drawpointlist(self, graph, points):
-        forcexmin, forcexmax, forceymin, forceymax = self.xmin, self.xmax, self.ymin, self.ymax
         xaxis = graph.axes[self.xkey]
         yaxis = graph.axes[self.ykey]
         xaxismin, xaxismax = xaxis.getdatarange()
         yaxismin, yaxismax = yaxis.getdatarange()
-        if forcexmin is None or forcexmin < xaxismin: forcexmin = xaxismin
-        if forcexmax is None or forcexmax > xaxismax: forcexmax = xaxismax
-        if forceymin is None or forceymin < yaxismin: forceymin = yaxismin
-        if forceymax is None or forceymax > yaxismax: forceymax = yaxismax
         self.size = unit.topt(unit.length(_getattr(self.size_str), default_type="v"))
         mark = _getattr(self.mark)
         self.markattrs = _getattrs(_ensuresequence(self._markattrs))
@@ -2198,18 +2187,18 @@ class mark:
             drawmark = 1
             xmin, x, xmax = self.minmidmax(point, self.xi, self.xmini, self.xmaxi, self.dxi, self.dxmini, self.dxmaxi)
             ymin, y, ymax = self.minmidmax(point, self.yi, self.ymini, self.ymaxi, self.dyi, self.dymini, self.dymaxi)
-            if xmin is not None and xmin < forcexmin: drawmark = 0
-            elif x is not None and x < forcexmin: drawmark = 0
-            elif xmax is not None and xmax < forcexmin: drawmark = 0
-            elif xmax is not None and xmax > forcexmax: drawmark = 0
-            elif x is not None and x > forcexmax: drawmark = 0
-            elif xmin is not None and xmin > forcexmax: drawmark = 0
-            elif ymin is not None and ymin < forceymin: drawmark = 0
-            elif y is not None and y < forceymin: drawmark = 0
-            elif ymax is not None and ymax < forceymin: drawmark = 0
-            elif ymax is not None and ymax > forceymax: drawmark = 0
-            elif y is not None and y > forceymax: drawmark = 0
-            elif ymin is not None and ymin > forceymax: drawmark = 0
+            if xmin is not None and xmin < xaxismin: drawmark = 0
+            elif x is not None and x < xaxismin: drawmark = 0
+            elif xmax is not None and xmax < xaxismin: drawmark = 0
+            elif xmax is not None and xmax > xaxismax: drawmark = 0
+            elif x is not None and x > xaxismax: drawmark = 0
+            elif xmin is not None and xmin > xaxismax: drawmark = 0
+            elif ymin is not None and ymin < yaxismin: drawmark = 0
+            elif y is not None and y < yaxismin: drawmark = 0
+            elif ymax is not None and ymax < yaxismin: drawmark = 0
+            elif ymax is not None and ymax > yaxismax: drawmark = 0
+            elif y is not None and y > yaxismax: drawmark = 0
+            elif ymin is not None and ymin > yaxismax: drawmark = 0
             xmin, x, xmax = [graph.xconvert(xaxis.convert(x)) for x in xmin, x, xmax]
             ymin, y, ymax = [graph.yconvert(yaxis.convert(y)) for y in ymin, y, ymax]
             if drawmark:
@@ -2294,11 +2283,10 @@ changemark.diamondtwice  = _changemarkdiamondtwice
 
 class line(mark):
 
-    def __init__(self, xmin=None, xmax=None, ymin=None, ymax=None, lineattrs=_nodefault):
+    def __init__(self, lineattrs=_nodefault):
         if lineattrs is _nodefault:
             lineattrs = changelinestyle()
-        mark.__init__(self, xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
-                      markattrs=None, errorbarattrs=None, lineattrs=lineattrs)
+        mark.__init__(self, markattrs=None, errorbarattrs=None, lineattrs=lineattrs)
 
 
 
