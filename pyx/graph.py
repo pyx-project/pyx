@@ -133,9 +133,11 @@ import re
 CommentPattern = re.compile(r"\s*(#|!)")
 EntryPattern = re.compile(r"\s+")
 
+KindTypeColumn = 1
+
 class DataFile:
 
-    def __init__(self, FileName):
+    def __init__(self, FileName, sep = None):
         # read data file -> create KindTypeColumn
         File = open(FileName, "r")
         Lines = File.readlines()
@@ -144,25 +146,30 @@ class DataFile:
         self.data = []
         for Line in Lines:
             if not CommentPattern.match(Line):
-                Row = Line.split()
+                if sep:
+                    Row = Line.split(sep)
+                else:
+                    Row = Line.split()
                 if self.Columns < len(Row):
                     List = []
                     for i in range(self.Rows):
                         List.append(None)
+                    print len(List)
                     for i in range(self.Columns, len(Row)):
                         self.data.append(List)
                     self.Columns = len(Row)
                 for i in range(len(Row)):
                     self.data[i].append(Row[i])
+                for i in range(len(Row), self.Columns):
+                    self.data[i].append(None)
                 self.Rows = self.Rows + 1
-        print self.Rows, self.Columns
 
     def GetKindList(self):
-        return (KindTypeColumn, KindTypeColumn, )
+        return reduce(lambda x,y: x + (KindTypeColumn, ), range(self.Columns), ())
         # KindTypeColumn
 
     def GetList(self, Number):
-        return self.Column[Number]
+        return self.data[Number]
 
 class Data:
 
@@ -184,4 +191,7 @@ class Function:
 
 
 if __name__=="__main__":
-    DataFile("testdata")
+    d = DataFile("testdata")
+    print d.GetKindList()
+    for i in range(len(d.GetKindList())):
+        print d.GetList(i),len(d.GetList(i))

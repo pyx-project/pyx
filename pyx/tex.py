@@ -1,15 +1,6 @@
 #!/usr/bin/env python
 
-# Design TODO's:
-
-# TODO 7: nur ein size-file bei mehreren TeX Klassen
-#         derzeit überschreiben der size-files -- verhindern!
-
-# TODO 7: Diskussion ein canvas pro postscript-file? (ggf. canvas umbenennen)
-#         ggf. sonst Diskussion Seitengröße etc.
-#         weitere Schicht postscript-file notwendig ?!?
-
-import const, canvas, os, string, tempfile, sys, md5, string, traceback, time
+import const, canvas, os, string, tempfile, sys, md5, string, traceback, time, unit
 
 # tex processor types
 
@@ -351,7 +342,8 @@ class tex:
 
         for TexResult in self.TexResults:
             if TexResult[:len(Str)] == Str:
-                return string.rstrip(TexResult.split(":")[3])
+                string.rstrip(TexResult.split(":")[3])
+                return unit.unit().convert_to(string.rstrip(TexResult.split(":")[3]).replace("pt"," t tpt"))
  
         return 1
 
