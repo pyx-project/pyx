@@ -67,6 +67,7 @@ def ensuresequence(arg):
     if issequence(arg): return arg
     return (arg,)
 
+
 def ensurelist(arg):
     """return list(arg) or [arg] depending on the result of isequence,
        None is converted to []"""
@@ -102,7 +103,6 @@ def getsequenceno(arg, n):
         return arg
 
 
-
 class AttrError(base.PyXExcept): pass
 
 
@@ -126,6 +126,7 @@ def checkattr(attrs, allowonce=(), allowmulti=()):
             else:
                 raise AttrError("%r not allowed" % attr)
 
+
 def getattrs(attrs, get, default=nodefault):
     """creates a list of instances of class get out of the sequence attrs
        when no instances are found it returns default when set (whatever it is)
@@ -145,9 +146,11 @@ def getattrs(attrs, get, default=nodefault):
             return default
     return result
 
+
 def countattrs(attrs, check):
     "count the occurancies of instances of class get out of the sequence attrs"
     return len(getattrs(attrs, check, ()))
+
 
 def getattr(attrs, get, default=nodefault):
     """get the instance of class get out of the sequence attrs
@@ -165,6 +168,7 @@ def getattr(attrs, get, default=nodefault):
         raise AttrError
     return result[0]
 
+
 def getfirstattr(attrs, get, default=nodefault):
     """get the first instance of class get out of the sequence attrs
        when no instances are found it returns default when set (whatever it is)
@@ -178,6 +182,7 @@ def getfirstattr(attrs, get, default=nodefault):
             return default
     return result[0]
 
+
 def getlastattr(attrs, get, default=nodefault):
     """get the last instance of class get out of the sequence attrs
        when no instances are found it returns default when set (whatever it is)
@@ -190,6 +195,7 @@ def getlastattr(attrs, get, default=nodefault):
         else:
             return default
     return result[-1]
+
 
 def delattr(attrs, remove):
     """create a new list of instances out of the sequence attrs
