@@ -952,48 +952,48 @@ class path(base.canvasitem):
         return self.path[i]
 
     def __len__(self):
-        """returns the number of path items"""
+        """return the number of path items"""
         return len(self.path)
 
     def append(self, pathitem):
-        """appends a path item"""
+        """append a path item"""
         self.path.append(pathitem)
         self._normpath = None
 
     def arclen_pt(self):
-        """returns total arc length of path in pts"""
+        """return the total arc length of path in pts"""
         return self.normpath().arclen_pt()
 
     def arclen(self):
-        """returns total arc length of path"""
+        """return the total arc length of path"""
         return self.normpath().arclen()
 
     def arclentoparam(self, lengths):
-        """returns the parameter value(s) matching the given length(s)"""
+        """return the param(s) matching the given length(s)_pt"""
         return self.normpath().arclentoparam(lengths)
 
     def at_pt(self, params):
-        """return coordinates of path in pts at param(s)."""
+        """return coordinates of path in pts at param(s)"""
         return self.normpath().at_pt(params)
 
     def at(self, params):
-        """return coordinates of path at param(s)."""
+        """return coordinates of path at param(s)"""
         return self.normpath().at(params)
 
     def atbegin_pt(self):
-        """return coordinates of first point of first subpath in path in pts"""
+        """return coordinates of the beginning of first subpath in path in pts"""
         return self.normpath().atbegin_pt()
 
     def atbegin(self):
-        """return coordinates of first point of first subpath in path"""
+        """return coordinates of the beginning of first subpath in path"""
         return self.normpath().atbegin()
 
     def atend_pt(self):
-        """return coordinates of last point of last subpath in path in pts"""
+        """return coordinates of the end of last subpath in path in pts"""
         return self.normpath().atend_pt()
 
     def atend(self):
-        """return coordinates of last point of last subpath in path"""
+        """return coordinates of the end of last subpath in path"""
         return self.normpath().atend()
 
     def bbox(self):
@@ -1012,27 +1012,27 @@ class path(base.canvasitem):
         return abbox
 
     def begin(self):
-        """return param corresponding to begin of path"""
+        """return param corresponding of the beginning of the path"""
         return self.normpath().begin()
 
     def curveradius_pt(self, params):
-        """Returns the curvature radius in pts (or None if infinite)
-        at param(s). This is the inverse of the curvature.
+        """return the curvature radius in pts at param(s)
 
-        Note that this radius can be negative or positive,
-        depending on the sign of the curvature."""
+        The curvature radius is the inverse of the curvature. When the
+        curvature is 0, None is returned. Note that this radius can be negative
+        or positive, depending on the sign of the curvature."""
         return self.normpath().curveradius_pt(params)
 
     def curveradius(self, params):
-        """Returns the curvature radius (or None if infinite)
-        at param(s).  This is the inverse of the curvature.
+        """return the curvature radius at param(s)
 
-        Note that this radius can be negative or positive,
-        depending on the sign of the curvature."""
+        The curvature radius is the inverse of the curvature. When the
+        curvature is 0, None is returned. Note that this radius can be negative
+        or positive, depending on the sign of the curvature."""
         return self.normpath().curveradius(params)
 
     def end(self):
-        """return param corresponding to end of path"""
+        """return param corresponding of the end of the path"""
         return self.normpath().end()
 
     def extend(self, pathitems):
@@ -1042,18 +1042,18 @@ class path(base.canvasitem):
 
     def joined(self, other):
         """return path consisting of self and other joined together"""
-        # TODO the other is a path as well, we might not switch to a normpath
+        # TODO other might be a path as well -> we might not switch to a normpath
         return self.normpath().joined(other)
 
     # << operator also designates joining
     __lshift__ = joined
 
     def intersect(self, other):
-        """intersect normpath corresponding to self with other path"""
+        """intersect normpath with other path"""
         return self.normpath().intersect(other)
 
     def normpath(self, epsilon=None):
-        """converts the path into a normpath"""
+        """convert the path into a normpath"""
         # use cached value if existent
         if self._normpath is not None:
             return self._normpath
@@ -1088,12 +1088,18 @@ class path(base.canvasitem):
 
     def reversed(self):
         """return reversed path"""
-        # TODO: couldn't we try to return a path instead of a normpath
-        #       (might not be worth the trouble)
+        # TODO: couldn't we try to return a path instead of converting it
+        #       to a normpath (but this might not be worth the trouble)
         return self.normpath().reversed()
 
     def split(self, params):
-        """return corresponding normpaths split at param(s)"""
+        """return corresponding normpaths by splitting at param(s)
+
+        The result is always a list even when just a single parameter
+        was provided. This is also true when splitting a closed path,
+        which will result in a single but cutted path (its not closed
+        anymore).
+        """
         return self.normpath().split(params)
 
     def tangent(self, params, length=None):
@@ -1105,7 +1111,7 @@ class path(base.canvasitem):
         return self.normpath().tangent(params, length)
 
     def trafo(self, params):
-        """return transformation at param(s)"""
+        """returns transformation at param(s)"""
         return self.normpath().trafo(params)
 
     def transformed(self, trafo):
@@ -1119,7 +1125,9 @@ class path(base.canvasitem):
 
     def outputPDF(self, file):
         """write PDF code to file"""
-        # PDF only supports normsubpathitems
+        # PDF only supports normsubpathitems but instead of
+        # converting to a normpath, which will fail for short
+        # closed paths, we use outputPDF of the normalized paths
         context = _pathcontext()
         for pitem in self.path:
             for npitem in pitem._normalized(context):
@@ -1127,9 +1135,9 @@ class path(base.canvasitem):
             pitem._updatecontext(context)
 
 
-################################################################################
+#
 # some special kinds of path, again in two variants
-################################################################################
+#
 
 class line_pt(path):
 
@@ -1207,143 +1215,36 @@ class circle(circle_pt):
 
 
 ################################################################################
-# normpath and corresponding classes
-################################################################################
-
-# two helper functions for the intersection of normsubpathitems
-
-def _intersectnormcurves(a, a_t0, a_t1, b, b_t0, b_t1, epsilon):
-    """intersect two bpathitems
-
-    a and b are bpathitems with parameter ranges [a_t0, a_t1],
-    respectively [b_t0, b_t1].
-    epsilon determines when the bpathitems are assumed to be straight
-    """
-
-    # intersection of bboxes is a necessary criterium for intersection
-    if not a.bbox().intersects(b.bbox()): return []
-
-    if not a.isstraight(epsilon):
-        (aa, ab) = a.midpointsplit()
-        a_tm = 0.5*(a_t0+a_t1)
-
-        if not b.isstraight(epsilon):
-            (ba, bb) = b.midpointsplit()
-            b_tm = 0.5*(b_t0+b_t1)
-
-            return ( _intersectnormcurves(aa, a_t0, a_tm,
-                                          ba, b_t0, b_tm, epsilon) + 
-                     _intersectnormcurves(ab, a_tm, a_t1,
-                                          ba, b_t0, b_tm, epsilon) + 
-                     _intersectnormcurves(aa, a_t0, a_tm,
-                                          bb, b_tm, b_t1, epsilon) +
-                     _intersectnormcurves(ab, a_tm, a_t1,
-                                          bb, b_tm, b_t1, epsilon) )
-        else:
-            return ( _intersectnormcurves(aa, a_t0, a_tm,
-                                          b, b_t0, b_t1, epsilon) +
-                     _intersectnormcurves(ab, a_tm, a_t1,
-                                          b, b_t0, b_t1, epsilon) )
-    else:
-        if not b.isstraight(epsilon):
-            (ba, bb) = b.midpointsplit()
-            b_tm = 0.5*(b_t0+b_t1)
-
-            return  ( _intersectnormcurves(a, a_t0, a_t1,
-                                           ba, b_t0, b_tm, epsilon) +
-                      _intersectnormcurves(a, a_t0, a_t1,
-                                           bb, b_tm, b_t1, epsilon) )
-        else:
-            # no more subdivisions of either a or b
-            # => try to intersect a and b as straight line segments
-
-            a_deltax = a.x3_pt - a.x0_pt
-            a_deltay = a.y3_pt - a.y0_pt
-            b_deltax = b.x3_pt - b.x0_pt
-            b_deltay = b.y3_pt - b.y0_pt
-
-            det = b_deltax*a_deltay - b_deltay*a_deltax
-
-            ba_deltax0_pt = b.x0_pt - a.x0_pt
-            ba_deltay0_pt = b.y0_pt - a.y0_pt
-
-            try:
-                a_t = ( b_deltax*ba_deltay0_pt - b_deltay*ba_deltax0_pt)/det
-                b_t = ( a_deltax*ba_deltay0_pt - a_deltay*ba_deltax0_pt)/det
-            except ArithmeticError:
-                return []
-
-            # check for intersections out of bound
-            if not (0<=a_t<=1 and 0<=b_t<=1): return []
-
-            # return rescaled parameters of the intersection
-            return [ ( a_t0 + a_t * (a_t1 - a_t0),
-                       b_t0 + b_t * (b_t1 - b_t0) ) ]
-
-
-def _intersectnormlines(a, b):
-    """return one-element list constisting either of tuple of
-    parameters of the intersection point of the two normlines a and b
-    or empty list if both normlines do not intersect each other"""
-
-    a_deltax_pt = a.x1_pt - a.x0_pt
-    a_deltay_pt = a.y1_pt - a.y0_pt
-    b_deltax_pt = b.x1_pt - b.x0_pt
-    b_deltay_pt = b.y1_pt - b.y0_pt
-
-    det = 1.0*(b_deltax_pt * a_deltay_pt - b_deltay_pt * a_deltax_pt)
-
-    ba_deltax0_pt = b.x0_pt - a.x0_pt
-    ba_deltay0_pt = b.y0_pt - a.y0_pt
-
-    try:
-        a_t = ( b_deltax_pt * ba_deltay0_pt - b_deltay_pt * ba_deltax0_pt)/det
-        b_t = ( a_deltax_pt * ba_deltay0_pt - a_deltay_pt * ba_deltax0_pt)/det
-    except ArithmeticError:
-        return []
-
-    # check for intersections out of bound
-    if not (0<=a_t<=1 and 0<=b_t<=1): return []
-
-    # return parameters of the intersection
-    return [( a_t, b_t)]
-
-
-################################################################################
-# normsubpathitem class
+# normsubpathitems
 ################################################################################
 
 class normsubpathitem:
 
-    """element of a normalized sub path"""
+    """element of a normalized sub path
 
-    def _arclentoparam_pt(self, lengths, epsilon):
-        """returns tuple (t,l) with
-          t the parameter where the arclen of normsubpathitem is length and
-          l the total arclen
+    Various operations on normsubpathitems might be subject of
+    approximitions. Those methods get the finite precision epsilon,
+    which is the accuracy needed expressed as a length in pts.
+    """
 
-        length:  length (in pts) to find the parameter for
-        epsilon: epsilon controls the accuracy for calculation of the
-                 length of the Bezier elements
-        """
-        # Note: _arclentoparam returns both, parameters and total lengths
-        # while  arclentoparam returns only parameters
+    def _arclentoparam_pt(self, lengths_pt, epsilon):
+        """return a tuple of params and the total length arc length in pts"""
         pass
 
     def arclen_pt(self, epsilon):
-        """returns arc length of normsubpathitem in pts with given accuracy epsilon"""
+        """return arc length of normsubpathitem in pts"""
         pass
 
-    def at_pt(self, t):
-        """returns coordinates of point in pts at parameter t"""
+    def at_pt(self, params):
+        """return coordinates of normsubpathitem in pts at param(s)"""
         pass
 
     def atbegin_pt(self):
-        """returns coordinates in pts of begin of normsubpathitem """
+        """return coordinates of first point in pts"""
         pass
 
     def atend_pt(self):
-        """returns coordinates in pts of end of normsubpathitem """
+        """return coordinates of last point in pts"""
         pass
 
     def bbox(self):
@@ -1351,11 +1252,11 @@ class normsubpathitem:
         pass
 
     def curveradius_pt(self, params):
-        """Returns the curvature radiuses in pts at params.
-        This is the inverse of the curvature at these parameters
+        """returns the curvature radiuses in pts at params.
+        This is the inverse of the curvature at these parameters.
 
         Please note that this radius can be negative or positive,
-        depending on the sign of the curvature"""
+        depending on the sign of the curvature."""
         pass
 
     def intersect(self, other, epsilon):
@@ -1363,12 +1264,16 @@ class normsubpathitem:
         pass
 
     def modified(self, xs_pt=None, ys_pt=None, xe_pt=None, ye_pt=None):
-        """returns a (new) modified normpath with different start and
-        end points as provided"""
+        """returns a modified normpath
+
+        The start and end points are replaced when the coordinates
+        are set. The method returns a new normpathitem and keeps
+        the original intact.
+        """
         pass
 
-    def paramtoarclen_pt(self, param, epsilon):
-        """ return arc length in pts corresponding to param """
+    def _paramtoarclen_pt(self, param, epsilon):
+        """returns a tuple of arc lengths and the total arc length in pts"""
         pass
 
     def reversed(self):
@@ -1380,9 +1285,8 @@ class normsubpathitem:
 
         parameters: list of parameter values (0<=t<=1) at which to split
 
-        returns None or list of tuple of normsubpathitems corresponding to 
+        returns None or list of tuple of normsubpathitems corresponding to
         the orginal normsubpathitem.
-
         """
         pass
 
@@ -1402,19 +1306,6 @@ class normsubpathitem:
         """write PDF code corresponding to normsubpathitem to file"""
         pass
 
-################################################################################
-# there are only two normsubpathitems: normline and normcurve
-################################################################################
-
-def _valueorlistmethod(method):
-    def wrappedmethod(self, valueorlist, *args, **kwargs):
-        try:
-            for item in valueorlist:
-                break
-        except:
-            return method(self, [valueorlist], *args, **kwargs)[0]
-        return method(self, valueorlist, *args, **kwargs)
-    return wrappedmethod
 
 class normline_pt(normsubpathitem):
 
@@ -1423,25 +1314,18 @@ class normline_pt(normsubpathitem):
     __slots__ = "x0_pt", "y0_pt", "x1_pt", "y1_pt"
 
     def __init__(self, x0_pt, y0_pt, x1_pt, y1_pt):
-         self.x0_pt = x0_pt
-         self.y0_pt = y0_pt
-         self.x1_pt = x1_pt
-         self.y1_pt = y1_pt
+        self.x0_pt = x0_pt
+        self.y0_pt = y0_pt
+        self.x1_pt = x1_pt
+        self.y1_pt = y1_pt
 
     def __str__(self):
         return "normline_pt(%g, %g, %g, %g)" % (self.x0_pt, self.y0_pt, self.x1_pt, self.y1_pt)
 
     def _arclentoparam_pt(self, lengths, epsilon):
+        # do self.arclen_pt inplace for performance reasons
         l = math.hypot(self.x0_pt-self.x1_pt, self.y0_pt-self.y1_pt)
         return [length/l for length in lengths], l
-
-    def _normcurve(self):
-        """ return self as equivalent normcurve """
-        xa_pt = self.x0_pt+(self.x1_pt-self.x0_pt)/3.0
-        ya_pt = self.y0_pt+(self.y1_pt-self.y0_pt)/3.0
-        xb_pt = self.x0_pt+2.0*(self.x1_pt-self.x0_pt)/3.0
-        yb_pt = self.y0_pt+2.0*(self.y1_pt-self.y0_pt)/3.0
-        return normcurve_pt(self.x0_pt, self.y0_pt, xa_pt, ya_pt, xb_pt, yb_pt, self.x1_pt, self.y1_pt)
 
     def arclen_pt(self,  epsilon):
         return math.hypot(self.x0_pt-self.x1_pt, self.y0_pt-self.y1_pt)
@@ -1465,12 +1349,30 @@ class normline_pt(normsubpathitem):
 
     def intersect(self, other, epsilon):
         if isinstance(other, normline_pt):
-            return _intersectnormlines(self, other)
-        else:
-            return  _intersectnormcurves(self._normcurve(), 0, 1, other, 0, 1, epsilon)
+            a_deltax_pt = self.x1_pt - self.x0_pt
+            a_deltay_pt = self.y1_pt - self.y0_pt
 
-    def isstraight(self, epsilon):
-        return 1
+            b_deltax_pt = other.x1_pt - other.x0_pt
+            b_deltay_pt = other.y1_pt - other.y0_pt
+            try:
+                det = 1.0 / (b_deltax_pt * a_deltay_pt - b_deltay_pt * a_deltax_pt)
+            except ArithmeticError:
+                return []
+
+            ba_deltax0_pt = other.x0_pt - self.x0_pt
+            ba_deltay0_pt = other.y0_pt - self.y0_pt
+
+            a_t = (b_deltax_pt * ba_deltay0_pt - b_deltay_pt * ba_deltax0_pt) * det
+            b_t = (a_deltax_pt * ba_deltay0_pt - a_deltay_pt * ba_deltax0_pt) * det
+
+            # check for intersections out of bound
+            if not (0<=a_t<=1 and 0<=b_t<=1):
+               return []
+
+            # return parameters of intersection
+            return [(a_t, b_t)]
+        else:
+            return [(s_t, o_t) for o_t, s_t in other.intersect(self, epsilon)]
 
     def modified(self, xs_pt=None, ys_pt=None, xe_pt=None, ye_pt=None):
         if xs_pt is None:
@@ -1495,7 +1397,6 @@ class normline_pt(normsubpathitem):
         return normline_pt(self.x1_pt, self.y1_pt, self.x0_pt, self.y0_pt)
 
     def split(self, params):
-        # just for performance reasons
         x0_pt, y0_pt = self.x0_pt, self.y0_pt
         x1_pt, y1_pt = self.x1_pt, self.y1_pt
 
@@ -1544,51 +1445,94 @@ class normcurve_pt(normsubpathitem):
         return "normcurve_pt(%g, %g, %g, %g, %g, %g, %g, %g)" % (self.x0_pt, self.y0_pt, self.x1_pt, self.y1_pt,
                                                                  self.x2_pt, self.y2_pt, self.x3_pt, self.y3_pt)
 
-    def _arclentoparam_pt(self, lengths, epsilon):
-        """computes the parameters [t] of bpathitem where the given lengths (in pts) are assumed
-        returns ( [parameters], total arclen)
-        A negative length gives a parameter 0"""
+    def _isstraight(self, epsilon):
+        """check whether the normcurve is approximately straight
 
-        # create the list of accumulated lengths
-        # and the length of the parameters
-        seg = self.seglengths(1, epsilon)
-        arclens = [seg[i][0] for i in range(len(seg))]
-        Dparams = [seg[i][1] for i in range(len(seg))]
-        l = len(arclens)
-        for i in range(1,l):
-            arclens[i] += arclens[i-1]
+        helper method for internal use only
+        """
 
-        # create the list of parameters to be returned
+        # Just check, whether the modulus of the difference between
+        # the length of the control polygon
+        # (i.e. |P1-P0|+|P2-P1|+|P3-P2|) and the length of the
+        # straight line between starting and ending point of the
+        # normcurve_pt (i.e. |P3-P1|) is smaller the epsilon.
+        # We do not construct the corresponding normline_pt first
+        # but the the calculation inplace to gain performance.
+        return abs( math.hypot(self.x1_pt-self.x0_pt, self.y1_pt-self.y0_pt) +
+                    math.hypot(self.x2_pt-self.x1_pt, self.y2_pt-self.y1_pt) +
+                    math.hypot(self.x3_pt-self.x2_pt, self.y3_pt-self.y2_pt) -
+                    math.hypot(self.x3_pt-self.x0_pt, self.y3_pt-self.y0_pt) ) < epsilon
+
+    def _midpointsplit(self, epsilon):
+        """split curve into two parts
+
+        Helper method to reduce the complexity of a problem by turning
+        a normcurve_pt into several normline_pt segments. This method
+        returns normcurve_pt instances only, when they are not yet straight
+        enough to be replaceable by normcurve_pt instances. Thus a recursive
+        midpointsplitting will turn a curve into line segments with the
+        given precision epsilon.
+        """
+
+        # first, we have to calculate the  midpoints between adjacent
+        # control points
+        x01_pt = 0.5*(self.x0_pt + self.x1_pt)
+        y01_pt = 0.5*(self.y0_pt + self.y1_pt)
+        x12_pt = 0.5*(self.x1_pt + self.x2_pt)
+        y12_pt = 0.5*(self.y1_pt + self.y2_pt)
+        x23_pt = 0.5*(self.x2_pt + self.x3_pt)
+        y23_pt = 0.5*(self.y2_pt + self.y3_pt)
+
+        # In the next iterative step, we need the midpoints between 01 and 12
+        # and between 12 and 23
+        x01_12_pt = 0.5*(x01_pt + x12_pt)
+        y01_12_pt = 0.5*(y01_pt + y12_pt)
+        x12_23_pt = 0.5*(x12_pt + x23_pt)
+        y12_23_pt = 0.5*(y12_pt + y23_pt)
+
+        # Finally the midpoint is given by
+        xmidpoint_pt = 0.5*(x01_12_pt + x12_23_pt)
+        ymidpoint_pt = 0.5*(y01_12_pt + y12_23_pt)
+
+        # We now can construct the normcurves
+        c1 = normcurve_pt(self.x0_pt, self.y0_pt,
+                          x01_pt, y01_pt,
+                          x01_12_pt, y01_12_pt,
+                          xmidpoint_pt, ymidpoint_pt)
+        c2 = normcurve_pt(xmidpoint_pt, ymidpoint_pt,
+                          x12_23_pt, y12_23_pt,
+                          x23_pt, y23_pt,
+                          self.x3_pt, self.y3_pt)
+
+        # Before returning the normcurves we check whether we could
+        # replace them by normlines. We could short cut this isstraight
+        # test happen before constructing the normcurve_pt instances
+        # by reimplementing the isstraight test on the coordinates.
+        # TODO: Do some profiling on whether a _instraight code
+        #       dublication would be worth its speed gain.
+        # BTW it turns out that this is the only place where _isstraight
+        # is needed.
+        if c1._isstraight(epsilon):
+            c1 = normline_pt(self.x0_pt, self.y0_pt, xmidpoint_pt, ymidpoint_pt)
+        if c2._isstraight(epsilon):
+            c2 = normline_pt(xmidpoint_pt, ymidpoint_pt, self.x3_pt, self.y3_pt)
+        return c1, c2
+
+    def _arclentoparam_pt(self, lengths_pt, epsilon):
+        a, b = self._midpointsplit(epsilon)
+        params_a, arclen_a = a._arclentoparam_pt(lengths_pt, epsilon)
+        params_b, arclen_b = b._arclentoparam_pt([length_pt - arclen_a for length_pt in lengths_pt], epsilon)
         params = []
-        for length in lengths:
-            # find the last index that is smaller than length
-            try:
-                lindex = bisect.bisect_left(arclens, length)
-            except: # workaround for python 2.0
-                lindex = bisect.bisect(arclens, length)
-                while lindex and (lindex >= len(arclens) or
-                                  arclens[lindex] >= length):
-                    lindex -= 1
-            if lindex == 0:
-                param = Dparams[0] * length * 1.0 / arclens[0]
-            elif lindex < l-1:
-                param = Dparams[lindex+1] * (length - arclens[lindex]) * 1.0 / (arclens[lindex+1] - arclens[lindex])
-                for i in range(lindex+1):
-                    param += Dparams[i]
+        for param_a, param_b, length_pt in zip(params_a, params_b, lengths_pt):
+            if length_pt > arclen_a:
+                params.append(param_b)
             else:
-                param = 1 + Dparams[-1] * (length - arclens[-1]) * 1.0 / (arclens[-1] - arclens[-2])
-
-            # param = max(min(param,1),0)
-            params.append(param)
-        return (params, arclens[-1])
+                params.append(param_a)
+        return params, arclen_a + arclen_b
 
     def arclen_pt(self, epsilon):
-        """computes arclen of bpathitem in pts using successive midpoint split"""
-        if self.isstraight(epsilon):
-            return math.hypot(self.x3_pt-self.x0_pt, self.y3_pt-self.y0_pt)
-        else:
-            a, b = self.midpointsplit()
-            return a.arclen_pt(epsilon) + b.arclen_pt(epsilon)
+        a, b = self._midpointsplit(epsilon)
+        return a.arclen_pt(epsilon) + b.arclen_pt(epsilon)
 
     def at_pt(self, params):
         return [( (-self.x0_pt+3*self.x1_pt-3*self.x2_pt+self.x3_pt)*t*t*t +
@@ -1609,9 +1553,9 @@ class normcurve_pt(normsubpathitem):
 
     def bbox(self):
         return bbox.bbox_pt(min(self.x0_pt, self.x1_pt, self.x2_pt, self.x3_pt),
-                          min(self.y0_pt, self.y1_pt, self.y2_pt, self.y3_pt),
-                          max(self.x0_pt, self.x1_pt, self.x2_pt, self.x3_pt),
-                          max(self.y0_pt, self.y1_pt, self.y2_pt, self.y3_pt))
+                            min(self.y0_pt, self.y1_pt, self.y2_pt, self.y3_pt),
+                            max(self.x0_pt, self.x1_pt, self.x2_pt, self.x3_pt),
+                            max(self.y0_pt, self.y1_pt, self.y2_pt, self.y3_pt))
 
     def curveradius_pt(self, params):
         result = []
@@ -1630,57 +1574,13 @@ class normcurve_pt(normsubpathitem):
         return result
 
     def intersect(self, other, epsilon):
-        if isinstance(other, normline_pt):
-            return  _intersectnormcurves(self, 0, 1, other._normcurve(), 0, 1, epsilon)
-        else:
-            return  _intersectnormcurves(self, 0, 1, other, 0, 1, epsilon)
-
-    def isstraight(self, epsilon):
-        """check wheter the normcurve is approximately straight"""
-
-        # just check, whether the modulus of the difference between
-        # the length of the control polygon
-        # (i.e. |P1-P0|+|P2-P1|+|P3-P2|) and the length of the
-        # straight line between starting and ending point of the
-        # normcurve (i.e. |P3-P1|) is smaller the epsilon
-        return abs(math.hypot(self.x1_pt-self.x0_pt, self.y1_pt-self.y0_pt)+
-                   math.hypot(self.x2_pt-self.x1_pt, self.y2_pt-self.y1_pt)+
-                   math.hypot(self.x3_pt-self.x2_pt, self.y3_pt-self.y2_pt)-
-                   math.hypot(self.x3_pt-self.x0_pt, self.y3_pt-self.y0_pt))<epsilon
-
-    def midpointsplit(self):
-        """splits bpathitem at midpoint returning bpath with two bpathitems"""
-
-        # for efficiency reason, we do not use self.split(0.5)!
-
-        # first, we have to calculate the  midpoints between adjacent
-        # control points
-        x01_pt = 0.5*(self.x0_pt + self.x1_pt)
-        y01_pt = 0.5*(self.y0_pt + self.y1_pt)
-        x12_pt = 0.5*(self.x1_pt + self.x2_pt)
-        y12_pt = 0.5*(self.y1_pt + self.y2_pt)
-        x23_pt = 0.5*(self.x2_pt + self.x3_pt)
-        y23_pt = 0.5*(self.y2_pt + self.y3_pt)
-
-        # In the next iterative step, we need the midpoints between 01 and 12
-        # and between 12 and 23 
-        x01_12_pt = 0.5*(x01_pt + x12_pt)
-        y01_12_pt = 0.5*(y01_pt + y12_pt)
-        x12_23_pt = 0.5*(x12_pt + x23_pt)
-        y12_23_pt = 0.5*(y12_pt + y23_pt)
-
-        # Finally the midpoint is given by
-        xmidpoint_pt = 0.5*(x01_12_pt + x12_23_pt)
-        ymidpoint_pt = 0.5*(y01_12_pt + y12_23_pt)
-
-        return (normcurve_pt(self.x0_pt, self.y0_pt,
-                          x01_pt, y01_pt,
-                          x01_12_pt, y01_12_pt,
-                          xmidpoint_pt, ymidpoint_pt),
-                normcurve_pt(xmidpoint_pt, ymidpoint_pt,
-                          x12_23_pt, y12_23_pt,
-                          x23_pt, y23_pt,
-                          self.x3_pt, self.y3_pt))
+        if not self.bbox().intersects(other.bbox()):
+            return []
+        a, b = self._midpointsplit(epsilon)
+        # To improve the performance we alternate the splitting process
+        # between the two normsubpathitems
+        return ( [(    0.5*a_t, o_t) for o_t, a_t in other.intersect(a, epsilon)] +
+                 [(0.5+0.5*b_t, o_t) for o_t, b_t in other.intersect(b, epsilon)] )
 
     def modified(self, xs_pt=None, ys_pt=None, xe_pt=None, ye_pt=None):
         if xs_pt is None:
@@ -1692,9 +1592,9 @@ class normcurve_pt(normsubpathitem):
         if ye_pt is None:
             ye_pt = self.y3_pt
         return normcurve_pt(xs_pt, ys_pt,
-                         self.x1_pt, self.y1_pt,
-                         self.x2_pt, self.y2_pt,
-                         xe_pt, ye_pt)
+                            self.x1_pt, self.y1_pt,
+                            self.x2_pt, self.y2_pt,
+                            xe_pt, ye_pt)
 
     def _paramtoarclen_pt(self, params, epsilon):
         arclens_pt = [splitpath.arclen_pt(epsilon) for splitpath in self.split(params)]
@@ -1719,11 +1619,11 @@ class normcurve_pt(normsubpathitem):
                      math.hypot(self.x2_pt-self.x1_pt, self.y2_pt-self.y1_pt) +
                      math.hypot(self.x3_pt-self.x2_pt, self.y3_pt-self.y2_pt) )
 
-        # instead of isstraight method:
+        # instead of _isstraight method:
         if abs(upperlen-lowerlen)<epsilon:
             return [( 0.5*(upperlen+lowerlen), paraminterval )]
         else:
-            a, b = self.midpointsplit()
+            a, b = self._midpointsplit(epsilon)
             return a.seglengths(0.5*paraminterval, epsilon) + b.seglengths(0.5*paraminterval, epsilon)
 
     def split(self, params):
@@ -1756,7 +1656,7 @@ class normcurve_pt(normsubpathitem):
             #  a3*(t1+dt*u)**3 in u, yielding
             #
             #   a0 + a1*t1 + a2*t1**2 + a3*t1**3        +
-            #   ( a1 + 2*a2 + 3*a3*t1**2 )*dt    * u    + 
+            #   ( a1 + 2*a2 + 3*a3*t1**2 )*dt    * u    +
             #   ( a2 + 3*a3*t1 )*dt**2           * u**2 +
             #   a3*dt**3                         * u**3
             #
@@ -1809,8 +1709,9 @@ class normcurve_pt(normsubpathitem):
     def outputPDF(self, file):
         file.write("%f %f %f %f %f %f c\n" % (self.x1_pt, self.y1_pt, self.x2_pt, self.y2_pt, self.x3_pt, self.y3_pt))
 
+
 ################################################################################
-# normsubpath class 
+# normsubpath
 ################################################################################
 
 class normsubpath:
@@ -2282,7 +2183,7 @@ class normsubpath:
 
 
 ################################################################################
-# normpathparam class
+# normpath
 ################################################################################
 
 class normpathparam:
@@ -2344,10 +2245,16 @@ class normpathparam:
         return self.normpath.paramtoarclen(self)
 
 
+def _valueorlistmethod(method):
+    def wrappedmethod(self, valueorlist, *args, **kwargs):
+        try:
+            for item in valueorlist:
+                break
+        except:
+            return method(self, [valueorlist], *args, **kwargs)[0]
+        return method(self, valueorlist, *args, **kwargs)
+    return wrappedmethod
 
-################################################################################
-# normpath class
-################################################################################
 
 class normpath(base.canvasitem):
 
@@ -2734,7 +2641,7 @@ class normpath(base.canvasitem):
 
     def _tangent(self, params, length=None):
         """return tangent vector of path at the parameter values params.
-        
+
         If length is not None, the tangent vector will be scaled to
         the desired length.
         """
@@ -2751,7 +2658,7 @@ class normpath(base.canvasitem):
 
     def tangent_pt(self, params, length=None):
         """return tangent vector of path at the parameter values params.
-        
+
         If length is not None, the tangent vector will be scaled to
         the desired length.
         """
@@ -2761,7 +2668,7 @@ class normpath(base.canvasitem):
 
     def tangent(self, params, length=None):
         """return tangent vector of path at the parameter values params.
-        
+
         If length is not None, the tangent vector will be scaled to
         the desired length.
         """
