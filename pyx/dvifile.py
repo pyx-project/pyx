@@ -861,6 +861,7 @@ class dvifile:
             self.endtext()
             if self.activetype1font != self.activefont and self.activefont:
                 self.actpage.insert(_begintextobject())
+                print self.activetype1font, self.activefont
                 self.actpage.insert(selectfont(self.activefont))
                 self.activetype1font = self.activefont
 
@@ -868,6 +869,7 @@ class dvifile:
         self.flushout()
         if self.activetype1font:
             self.actpage.insert(_endtextobject())
+            print "xxx"
             self.activetype1font = None
 
     def putrule(self, height, width, advancepos=1):
@@ -911,7 +913,9 @@ class dvifile:
 
         if isinstance(self.activefont, type1font):
             if self.activeshow is None:
-                self.begintext()
+                # XXX: begintext would lead to massive number of selectfonts being issued
+                #      OTOH is it save to remove begintext here? I think so ...
+                # self.begintext()
                 self.activeshow = _show(self.pos[_POS_H] * self.conv, -self.pos[_POS_V] * self.conv)
             width = self.activefont.getwidth_dvi(char)  * self.conv
             height = self.activefont.getheight_dvi(char) * self.conv

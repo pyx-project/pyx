@@ -2279,14 +2279,13 @@ class normsubpath:
         if not self.normsubpathitems:
             return
         if self.closed and isinstance(self.normsubpathitems[-1], normline_pt):
+            assert len(self.normsubpathitems) > 1, "a closed normsubpath should contain more than a single normline_pt"
             normsubpathitems = self.normsubpathitems[:-1]
         else:
             normsubpathitems = self.normsubpathitems
-        # XXX why is this check necessary
-        if normsubpathitems:
-            file.write("%g %g moveto\n" % self.atbegin_pt())
-            for anormsubpathitem in normsubpathitems:
-                anormsubpathitem.outputPS(file)
+        file.write("%g %g moveto\n" % self.atbegin_pt())
+        for anormsubpathitem in normsubpathitems:
+            anormsubpathitem.outputPS(file)
         if self.closed:
             file.write("closepath\n")
 
@@ -2297,14 +2296,13 @@ class normsubpath:
         if not self.normsubpathitems:
             return
         if self.closed and isinstance(self.normsubpathitems[-1], normline_pt):
+            assert len(self.normsubpathitems) > 1, "a closed normsubpath should contain more than a single normline_pt"
             normsubpathitems = self.normsubpathitems[:-1]
         else:
             normsubpathitems = self.normsubpathitems
-        # XXX why is this check necessary
-        if normsubpathitems:
-            file.write("%f %f m\n" % self.atbegin_pt())
-            for anormsubpathitem in normsubpathitems:
-                anormsubpathitem.outputPDF(file)
+        file.write("%f %f m\n" % self.atbegin_pt())
+        for anormsubpathitem in normsubpathitems:
+            anormsubpathitem.outputPDF(file)
         if self.closed:
             file.write("h\n")
 
