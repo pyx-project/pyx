@@ -8,11 +8,13 @@
 
 The path module allows one to construct PostScript-like
 \textit{paths}, which are one of the main building blocks for the
-generation of drawings. A PostScript path is an arbitrary shape built
-up of straight lines, arc segments and cubic Bezier curves. Such a
-path does not have to be connected but may also consist of multiple
-connected segments, which will be called \textit{sub paths} in the
-following.
+generation of drawings. A PostScript path is an arbitrary shape
+consisting of straight lines, arc segments and cubic B\'ezier curves.
+Such a path does not have to be connected but may also comprise
+several disconnected segments, which will be called \textit{subpaths}
+in the following.
+
+XXX example for paths and subpaths
 
 Usually, a path is constructed by passing a list of the path
 primitives \class{moveto}, \class{lineto}, \class{curveto}, etc., to the
@@ -29,11 +31,11 @@ Equivalently, one can also use the predefined \class{path} subclass
 p = path.line(0, 0, 1, 1)
 \end{verbatim}
 
-While you can already do some geometrical operations with the
-just created path (see next section), we need another \PyX{} object
-in order to be actually able to draw the path, namely
-an instance of the \class{canvas} class. By convention, we use
-the name \var{c} for this instance:
+While already some geometrical operations can be performed with this
+path (see next section), another \PyX{} object is needed in order to
+actually being able to draw the path, namely an instance of the
+\class{canvas} class. By convention, we use the name \var{c} for this
+instance:
 \begin{verbatim}
 c = canvas.canvas()
 \end{verbatim}
@@ -44,34 +46,36 @@ c.stroke(p)
 c.writeEPSfile("line")
 \end{verbatim}
 To complete the example, we have added a \method{writeEPSfile()} call,
-which writes the contents of the canvas into the given file.
+which writes the contents of the canvas to the file \file{line.eps}.
+Note that an extension \file{.eps} is added automatically, if not
+already present in the given filename.
 
-Let us as second example define a path which consists of more than 
-one sub path:
+As a second example, let us define a path which consists of more than 
+one subpath:
 \begin{verbatim}
 cross = path.path(path.moveto(0, 0), path.rlineto(1, 1),
                   path.moveto(1, 0), path.rlineto(-1, 1))
 \end{verbatim}
-The first sub path is again a straight line from $(0, 0)$ to $(1, 1)$,
+The first subpath is again a straight line from $(0, 0)$ to $(1, 1)$,
 with the only difference that we now have used the \class{rlineto}
 class, whose arguments count relative from the last point in the path.
-The second \class{moveto} instance opens a new sub path starting at the
+The second \class{moveto} instance opens a new subpath starting at the
 point $(1, 0)$ and ending at $(0, 1)$. Note that although both lines
-intersect at the point $(1/2, 1/2)$, they count as separate sub paths.
+intersect at the point $(1/2, 1/2)$, they count as separate subpaths.
 The general rule is that each occurence of \class{moveto} opens a new
-sub path. This means that if one wants to draw a rectangle, one should
+subpath. This means that if one wants to draw a rectangle, one should
 not use
 \begin{verbatim}
-# wrong: do not use moveto when you want a single sub path
+# wrong: do not use moveto when you want a single subpath
 rect1 = path.path(path.moveto(0, 0), path.lineto(0, 1),
                   path.moveto(1, 0), path.lineto(1, 1),
                   path.moveto(1, 1), path.lineto(1, 1),
                   path.moveto(0, 1), path.lineto(0, 0))
 \end{verbatim}
 which would construct a rectangle consisting of four disconnected
-sub paths. Instead the correct way of defining a rectangle is 
+subpaths. Instead the correct way of defining a rectangle is 
 \begin{verbatim}
-# correct: a rectangle consisting of a single closed sub path
+# correct: a rectangle consisting of a single closed subpath
 rect2 = path.path(path.moveto(0, 0), path.lineto(0, 1), 
                   path.lineto(1, 1), path.lineto(1, 0),
                   path.closepath())
@@ -86,7 +90,7 @@ rect2 = path.path(path.moveto(0, 0), path.lineto(0, 1),
 Note that for the last straight line of the rectangle (from $(0, 1)$
 back to the origin at $(0, 0)$)) we have used \class{closepath}.  This
 directive adds a straight line from the current point to the first
-point of the current sub path and furthermore \textit{closes} the sub
+point of the current subpath and furthermore \textit{closes} the sub
 path, i.e., it joins the beginning and the end of the line segment.
 The difference can be appreciated in Fig.~\ref{fig:rects}, where
 also a filled (and at the same time stroked) rectangle is shown.
@@ -168,8 +172,8 @@ the \method{split()} method only accepts a sorted list of parameters.
 Finally, we join the straight line and the arc segment. For
 this, we make use of the \verb|<<| operator, which not only adds
 the paths (which could be done using \samp{line2 + arc}), but also
-joins the last sub path of \var{line2} and the first one of
-\var{arc}. Thus, \var{segment} consists of only a single sub path
+joins the last subpath of \var{line2} and the first one of
+\var{arc}. Thus, \var{segment} consists of only a single subpath
 and filling works as expected.
 
 An important issue when operating on paths is the parametrisation
@@ -192,7 +196,7 @@ handling of \PyX: Before performing any non-trivial geometrical
 operation with a path, it will automatically be converted into an
 instance of the \class{normpath} class (see also
 Sect.~\ref{path:normpath}). These so generated paths are already
-separated in their sub paths and only contain straight lines and
+separated in their subpaths and only contain straight lines and
 B\'ezier curve segments. Thus, as is easily imaginable, they are much
 simpler to deal with.
 
