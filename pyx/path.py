@@ -21,7 +21,6 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 # TODO: - reversepath ?
-#       - strokepath ?
 #       - nocurrentpoint exception?
 #       - correct bbox for curveto and bpathel
 #         (maybe we still need the current bbox implementation (then maybe called
@@ -31,7 +30,7 @@
 
 import math
 from math import cos, sin, pi
-import base, unit, canvas, bpath
+import base, PSCmd, bbox, unit, bpath
 
 
 class PathException(Exception): pass
@@ -89,10 +88,10 @@ class closepath(pathel):
     def _bbox(self, currentpoint, currentsubpath):
         return (None,
                 None, 
-                canvas.bbox(min(currentpoint[0], currentsubpath[0]), 
-                            min(currentpoint[1], currentsubpath[1]), 
-                            max(currentpoint[0], currentsubpath[0]), 
-                            max(currentpoint[1], currentsubpath[1])))
+                bbox.bbox(min(currentpoint[0], currentsubpath[0]), 
+                          min(currentpoint[1], currentsubpath[1]), 
+                          max(currentpoint[0], currentsubpath[0]), 
+                          max(currentpoint[1], currentsubpath[1])))
 
     def write(self, file):
         file.write("closepath\n")
@@ -117,7 +116,7 @@ class _moveto(pathel):
     def _bbox(self, currentpoint, currentsubpath):
         return ((self.x, self.y),
                 (self.x, self.y),
-                canvas.bbox())
+                bbox.bbox())
          
     def write(self, file):
         file.write("%f %f moveto\n" % (self.x, self.y) )
@@ -147,7 +146,7 @@ class _rmoveto(pathel):
     def _bbox(self, currentpoint, currentsubpath):
         return ((self.dx+currentpoint[0], self.dy+currentpoint[1]), 
                 (self.dx+currentpoint[0], self.dy+currentpoint[1]),
-                canvas.bbox())
+                bbox.bbox())
 
     def write(self, file):
         file.write("%f %f rmoveto\n" % (self.dx, self.dy) )
@@ -180,10 +179,10 @@ class _lineto(pathel):
     def _bbox(self, currentpoint, currentsubpath):
         return ((self.x, self.y),
                 currentsubpath or currentpoint,
-                canvas.bbox(min(currentpoint[0], self.x),
-                            min(currentpoint[1], self.y), 
-                            max(currentpoint[0], self.x),
-                            max(currentpoint[1], self.y)))
+                bbox.bbox(min(currentpoint[0], self.x),
+                          min(currentpoint[1], self.y), 
+                          max(currentpoint[0], self.x),
+                          max(currentpoint[1], self.y)))
 
     def write(self, file):
         file.write("%f %f lineto\n" % (self.x, self.y) )
@@ -213,10 +212,10 @@ class _rlineto(pathel):
     def _bbox(self, currentpoint, currentsubpath):
         return ((currentpoint[0]+self.dx, currentpoint[1]+self.dy),
                 currentsubpath or currentpoint,
-                canvas.bbox(min(currentpoint[0], currentpoint[0]+self.dx),
-                            min(currentpoint[1], currentpoint[1]+self.dy), 
-                            max(currentpoint[0], currentpoint[0]+self.dx),
-                            max(currentpoint[1], currentpoint[1]+self.dy)))
+                bbox.bbox(min(currentpoint[0], currentpoint[0]+self.dx),
+                          min(currentpoint[1], currentpoint[1]+self.dy), 
+                          max(currentpoint[0], currentpoint[0]+self.dx),
+                          max(currentpoint[1], currentpoint[1]+self.dy)))
 
     def write(self, file):
         file.write("%f %f rlineto\n" % (self.dx, self.dy) )
@@ -309,16 +308,16 @@ class _arc(pathel):
         if currentpoint:
              return ( (earcx, earcy),
                       currentsubpath or currentpoint,
-                      canvas.bbox(min(currentpoint[0], sarcx),
-                                  min(currentpoint[1], sarcy), 
-                                  max(currentpoint[0], sarcx),
-                                  max(currentpoint[1], sarcy))+
-                      canvas.bbox(minarcx, minarcy, maxarcx, maxarcy)
+                      bbox.bbox(min(currentpoint[0], sarcx),
+                                min(currentpoint[1], sarcy), 
+                                max(currentpoint[0], sarcx),
+                                max(currentpoint[1], sarcy))+
+                      bbox.bbox(minarcx, minarcy, maxarcx, maxarcy)
                     )
         else:  # we assert that currentsubpath is also None
              return ( (earcx, earcy),
                       (sarcx, sarcy),
-                      canvas.bbox(minarcx, minarcy, maxarcx, maxarcy)
+                      bbox.bbox(minarcx, minarcy, maxarcx, maxarcy)
                     )
 
                             
@@ -389,10 +388,10 @@ class _arcn(pathel):
         if currentpoint:
              return ( (sarc[0], sarc[1]),
                       currentsubpath or currentpoint,
-                      canvas.bbox(min(currentpoint[0], sarc[0]),
-                                  min(currentpoint[1], sarc[1]), 
-                                  max(currentpoint[0], sarc[0]),
-                                  max(currentpoint[1], sarc[1]))+
+                      bbox.bbox(min(currentpoint[0], sarc[0]),
+                                min(currentpoint[1], sarc[1]), 
+                                max(currentpoint[0], sarc[0]),
+                                max(currentpoint[1], sarc[1]))+
                       arcbb
                     )
         else:  # we assert that currentsubpath is also None
@@ -569,10 +568,10 @@ class _curveto(pathel):
     def _bbox(self, currentpoint, currentsubpath):
         return ((self.x3, self.y3),
                 currentsubpath or currentpoint,
-                canvas.bbox(min(currentpoint[0], self.x1, self.x2, self.x3), 
-                            min(currentpoint[1], self.y1, self.y2, self.y3), 
-                            max(currentpoint[0], self.x1, self.x2, self.x3), 
-                            max(currentpoint[1], self.y1, self.y2, self.y3)))
+                bbox.bbox(min(currentpoint[0], self.x1, self.x2, self.x3), 
+                          min(currentpoint[1], self.y1, self.y2, self.y3), 
+                          max(currentpoint[0], self.x1, self.x2, self.x3), 
+                          max(currentpoint[1], self.y1, self.y2, self.y3)))
 
     def write(self, file):
         file.write("%f %f %f %f %f %f curveto\n" % ( self.x1, self.y1,
@@ -626,10 +625,10 @@ class _rcurveto(pathel):
 
         return ((x3, y3),
                 currentsubpath or currentpoint,
-                canvas.bbox(min(currentpoint[0], x1, x2, x3),
-                            min(currentpoint[1], y1, y2, y3), 
-                            max(currentpoint[0], x1, x2, x3),
-                            max(currentpoint[1], y1, y2, y3)))
+                bbox.bbox(min(currentpoint[0], x1, x2, x3),
+                          min(currentpoint[1], y1, y2, y3), 
+                          max(currentpoint[0], x1, x2, x3),
+                          max(currentpoint[1], y1, y2, y3)))
     
     def _bpath(self, currentpoint, currentsubpath):
         x2=currentpoint[0]+self.dx1
@@ -659,7 +658,7 @@ class rcurveto(_rcurveto):
 # path: PS style path 
 ################################################################################
         
-class path(base.PSCommand):
+class path(PSCmd.PSCmd):
     
     """PS style path"""
     
@@ -678,7 +677,7 @@ class path(base.PSCommand):
     def bbox(self):
         currentpoint = None
         currentsubpath = None
-        abbox = canvas.bbox()
+        abbox = bbox.bbox()
         
         for pel in self.path:
            (currentpoint, currentsubpath, nbbox) = \

@@ -21,9 +21,9 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import re
-import base, canvas, path, unit, trafo
+import base, PSCmd, bbox, canvas, path, unit, trafo
 
-class epsfile(base.PSCommand):
+class epsfile(PSCmd.PSCmd):
 
     """class for epsfiles"""
 
@@ -79,7 +79,7 @@ class epsfile(base.PSCommand):
                 (llx, lly, urx, ury) = map(int, bbmatch.groups()) 
                 if translatebb:
                     (llx, lly, urx, ury) = (0, 0, urx - llx, ury - lly)
-                return canvas.bbox(llx, lly, urx, ury)
+                return bbox.bbox(llx, lly, urx, ury)
         else:
             raise IOError, \
                   "bounding box not found in EPS file '%s'" % self.filename

@@ -27,7 +27,7 @@
 
 import math
 from math import cos, sin, pi
-import base, unit, canvas
+import base, PSCmd, bbox, unit
 
 
 class PathException(Exception): pass
@@ -81,7 +81,7 @@ class _bpathel(base.PSOp):
     pos = __getitem__
     
     def bbox(self):
-        return canvas.bbox(min(self.x0, self.x1, self.x2, self.x3), 
+        return bbox.bbox(min(self.x0, self.x1, self.x2, self.x3), 
                            min(self.y0, self.y1, self.y2, self.y3), 
                            max(self.x0, self.x1, self.x2, self.x3), 
                            max(self.y0, self.y1, self.y2, self.y3))
@@ -227,7 +227,7 @@ class bpathel(_bpathel):
 # bpath: Bezier path
 ################################################################################
 
-class bpath(base.PSCommand):
+class bpath(PSCmd.PSCmd):
 
     """path consisting of bezier curves"""
     
@@ -251,7 +251,7 @@ class bpath(base.PSCommand):
         return reduce(lambda x,y: x+"%s\n" % str(y), self.bpath, "")
 
     def bbox(self):
-        abbox = canvas.bbox()
+        abbox = bbox.bbox()
         for bpel in self.bpath:
            abbox = abbox + bpel.bbox()
         return abbox

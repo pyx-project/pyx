@@ -40,8 +40,8 @@ The method tex.text is used to print out text, while tex.textwd, tex.textht,
 and tex.textdp appraise the width, height, and depth of a text, respectively.
 """
 
-import base, unit, epsfile, color
 import os, string, tempfile, sys, md5, traceback, time, StringIO
+import PSCmd, unit, epsfile, color
 
 class _Attr:
     """base class for all PyX attributes (TODO: has to be defined somewhere else)"""
@@ -433,7 +433,7 @@ class _InstanceList:
             return Result
 
 
-class tex(base.PSCommand, _InstanceList):
+class tex(PSCmd.PSCmd, _InstanceList):
 
     def __init__(self, *styleparams):
         self.AllowedInstances(styleparams, [_mode, texfilename, latexsize, docclass, docopt, ])

@@ -20,12 +20,12 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import base, unit, canvas, math
+import math
+import base, bbox, unit
 
 # TODO: 
 # - switch to affine space description (i.e. represent transformation by
 #   3x3 matrix (cf. PLRM Sect. 4.3.3)? Cooler!
-#
 
 # some helper routines
 
@@ -112,7 +112,7 @@ class _trafo(base.PSAttr):
                       self.vector[0], self.vector[1] ) )
 
     def bbox(self):
-        return canvas.bbox()
+        return bbox.bbox()
 
     def _apply(self, x, y):
         """apply transformation to point (x,y) (coordinates in pts)"""
