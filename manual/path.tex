@@ -121,9 +121,19 @@ XXX terminology: subpath, \dots
   intersection points of \texttt{path} and \texttt{opath}, respectively.$^\dagger$\\
   \texttt{reversed()} & returns the normalized reversed
   \texttt{path}.$^\dagger$\\
-  \texttt{split(t)} & returns a tuple consisting of two
-  \texttt{normpath}s corresponding to the \texttt{path} split at
-  the parameter value \texttt{t}.$^\dagger$\\
+  \texttt{split(parameters)} & splits the path at the given list of
+  parameters (which have to be sorted in ascending order) and returns
+  a corresponding list of 
+  \texttt{normpath}s.$^\dagger$\\
+    \texttt{tangent(t, length=None)} & return the tangent (as \texttt{normpath}) to
+    the path at the 
+    parameter value \texttt{t}.  Negative values of \texttt{t} count
+    from the end of the path. The absolute value of \texttt{t} must be
+    smaller or equal to the number of segments in the normpath,
+    otherwise None is returned.  At discontinuities in the path, the
+    limit from below is returned. If \texttt{length} is not
+  \texttt{None}, the tangent vector will be scaled correspondingly.
+  \\
   \texttt{transformed(trafo)} & returns the normalized and accordingly
   to the linear transformation \texttt{trafo} transformed path. Here,
   \texttt{trafo} must be an instance of the \texttt{trafo.trafo}

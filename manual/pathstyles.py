@@ -76,6 +76,7 @@ drawstyle("dash((1, 1, 2, 2, 3, 3), 1)")
 drawstyle("dash((1, 2, 3), 2)")
 drawstyle("dash((1, 2, 3), 3)")
 drawstyle("dash((1, 2, 3), 4)")
+drawstyle("dash((1, 2, 3), rellengths=1)")
 
 
 c.insert(t)
