@@ -1769,6 +1769,7 @@ boolean t1_subset(char *fontfile, char *encfile, unsigned char *g)
 boolean t1_subset_2(char *fontfile, unsigned char *g, char *extraGlyphs)
 {
     int i;
+    cur_enc_name = 0; /* PyX */
     for (i = 0; i <= MAX_CHAR_CODE; i++)
         ext_glyph_names[i] = notdef;
     grid = g;
