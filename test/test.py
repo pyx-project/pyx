@@ -6,6 +6,16 @@ from pyx.path import *
 import profile
 import pstats
 
+class cross(path):
+   def __init__(self, x, y):
+       self.path=[moveto(x,y),
+                  rmoveto(-0.1, -0.1), 
+		  rlineto(0.2, 0.2), 
+		  rmoveto(-0.1, -0.1),
+                  rmoveto(-0.1, +0.1), 
+		  rlineto(0.2, -0.2)]
+
+
 def drawpathwbbox(c, p):
     c.draw(p, color.rgb.red)
     bp=p.bpath()
@@ -166,9 +176,6 @@ def testarcbbox(c):
                              rlineto(1,1)]))
 
 
-
-
-
 def testcurvetobbox(c):
     drawpathwbbox(c,path([moveto(10,10), curveto(12,16,14,15,12,19)]))
 
@@ -200,10 +207,9 @@ def testintersectbezier(c):
     isect = bp.intersect(bq)
 
     for i in isect:
-        (x, y) = bp.pos(i[0])
-        c.draw(path([moveto(x,y),
-                     rmoveto(-0.1, -0.1), rlineto(0.2, 0.2), rmoveto(-0.1, -0.1),
-                     rmoveto(-0.1, +0.1), rlineto(0.2, -0.2)]))
+        x, y = bp.pos(i[0])
+        c.draw(cross(x, y))
+
 
 def testbpathtrafo(c):
     p=path([moveto(10,20), curveto(12,16,14,15,12,19)])
@@ -211,6 +217,17 @@ def testbpathtrafo(c):
 
     c.draw(bp.transform(trafo.translate(2,3)), color.rgb.red)
     c.insert(canvas.canvas(trafo.translate(2,3))).draw(p, color.rgb.green, canvas.linestyle.dashed)
+
+    c.draw(bp)
+    c.draw(bp.reverse())
+
+    c.draw(cross(*(bp.pos(0))))
+    c.draw(cross(*(bp.reverse().pos(0))))
+
+    bp1, bp2 = bp.split(0.7)
+    c.draw(bp1, color.rgb.red, canvas.linestyle.dashed)
+    c.draw(bp2, color.rgb.green, canvas.linestyle.dashed)
+
 
 c=canvas.canvas()
 testarcs(c)
@@ -223,7 +240,6 @@ testintersectbezier(c)
 testbpathtrafo(c)
 c.writetofile("test")
 
-#testspeed()
 profile.run('testspeed()', 'test.prof')
 pstats.Stats("test.prof").sort_stats('time').print_stats(10)
 

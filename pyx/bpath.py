@@ -62,14 +62,14 @@ class _bpathel:
     def __getitem__(self, t):
         """return pathel at parameter value t (0<=t<=1)"""
         assert 0 <= t <= 1, "parameter t of pathel out of range [0,1]"
-        return ( "%f t pt" % ((-self.x0+3*self.x1-3*self.x2+self.x3)*t*t*t +
-                              (3*self.x0-6*self.x1+3*self.x2)*t*t +
-                              (-3*self.x0+3*self.x1)*t +
-                              self.x0) ,
-                 "%f t pt" % ((-self.y0+3*self.y1-3*self.y2+self.y3)*t*t*t +
-                              (3*self.y0-6*self.y1+3*self.y2)*t*t +
-                              (-3*self.y0+3*self.y1)*t +
-                              self.y0)
+        return ( "%f t pt" % ((  -self.x0+3*self.x1-3*self.x2+self.x3)*t*t*t +
+                              ( 3*self.x0-6*self.x1+3*self.x2        )*t*t +
+                              (-3*self.x0+3*self.x1                  )*t +
+                                  self.x0) ,
+                 "%f t pt" % ((  -self.y0+3*self.y1-3*self.y2+self.y3)*t*t*t +
+                              ( 3*self.y0-6*self.y1+3*self.y2        )*t*t +
+                              (-3*self.y0+3*self.y1                  )*t +
+                                  self.y0)
                )
     
     def bbox(self):
@@ -84,9 +84,78 @@ class _bpathel:
                           trafo.apply((self.x2, self.y2))+
                           trafo.apply((self.x3, self.y3))))
 
+    def reverse(self):
+        return _bpathel(self.x3, self.y3,
+                        self.x2, self.y2,
+                        self.x1, self.y1,
+                        self.x0, self.y0)
+
+    def split(self, t):
+        """return bpath consisting of two bpathels due to split at 0<=t<=1"""
+
+        # first, we calculate the coefficients corresponding to our
+        # original bezier curve. These represent a useful starting
+        # point for the following change of the polynomial parameter
+        a0x = self.x0
+        a0y = self.y0
+        a1x = 3*(-self.x0+self.x1)
+        a1y = 3*(-self.y0+self.y1)
+        a2x = 3*(self.x0-2*self.x1+self.x2)
+        a2y = 3*(self.y0-2*self.y1+self.y2)
+        a3x = -self.x0+3*(self.x1-self.x2)+self.x3
+        a3y = -self.y0+3*(self.y1-self.y2)+self.y3
+
+        # [0,t] part
+        #
+        # the new coefficients of the [0,t] part of the bezier curve
+        # are then given by a0, a0*t, a0*t**2, a0*t**3
+        # from this values we obtain the new control points by inversion
+        x0_1 = a0x
+        y0_1 = a0y
+        x1_1 = a1x*t/3.0+x0_1
+        y1_1 = a1y*t/3.0+y0_1
+        x2_1 = a2x*t*t/3.0-x0_1+2*x1_1
+        y2_1 = a2y*t*t/3.0-y0_1+2*y1_1
+        x3_1 = a3x*t*t*t+x0_1-3*x1_1+3*x2_1 
+        y3_1 = a3y*t*t*t+y0_1-3*y1_1+3*y2_1
+
+        # [t,1] part
+        #
+        # the new coefficients of the [0,t] part of the bezier curve
+        # are then given by expanding a0+a1*(t+(1-t)*u)+a2*(t+(1-t)*u)**2+
+        # a3*(t+(1-t)*u)**3 in u, giving:
+        # a0+a1*t+a2*t**2+a3*t**3             +
+        # (a1*+2*a2*t+3*a3*t**2)*(1-t) * u    + 
+        # (a2+3*a3*t)*(1-t)**2         * u**2 +
+        # a3*(1-t)**3                  * u**3
+        #
+        # from this values we obtain the new control points by inversion
+        # exactly like above, except that we don't have to calculate
+        # the first and the last control point
+        x0_2 = x3_1
+        y0_2 = y3_1
+        x1_2 = (a1x+2*a2x*t+3*a3x*t*t)*(1-t)/3.0+x0_2
+        y1_2 = (a1y+2*a2y*t+3*a3y*t*t)*(1-t)/3.0+y0_2
+        x2_2 = (a2x+3*a3x*t)*(1-t)*(1-t)/3.0-x0_2+2*x1_2
+        y2_2 = (a2y+3*a3y*t)*(1-t)*(1-t)/3.0-y0_2+2*y1_2
+        x3_2 = self.x3
+        y3_2 = self.y3
+        
+        return bpath([_bpathel(x0_1, y0_1,
+                               x1_1, y1_1,
+                               x2_1, y2_1,
+                               x3_1, y3_1),
+                      _bpathel(x0_2, y0_2,
+                               x1_2, y1_2,
+                               x2_2, y2_2,
+                               x3_2, y3_2)])
+        
+        
 
     def MidPointSplit(self):
         """splits bpathel at midpoint returning bpath with two bpathels"""
+
+        # for efficiency reason, we do not use self.split(0.5)!
         
         # first, we have to calculate the  midpoints between adjacent
         # control points
@@ -108,8 +177,14 @@ class _bpathel:
         xmidpoint = 0.5*(x01_12+x12_23)
         ymidpoint = 0.5*(y01_12+y12_23)
         
-        return bpath([_bpathel(self.x0, self.y0, x01, y01, x01_12, y01_12, xmidpoint, ymidpoint),
-                      _bpathel(xmidpoint, ymidpoint, x12_23, y12_23, x23, y23, self.x3, self.y3)])
+        return bpath([_bpathel(self.x0, self.y0,
+                               x01, y01,
+                               x01_12, y01_12,
+                               xmidpoint, ymidpoint),
+                      _bpathel(xmidpoint, ymidpoint,
+                               x12_23, y12_23,
+                               x23, y23,
+                               self.x3, self.y3)])
 
                        
 class bpathel(_bpathel):
@@ -165,10 +240,21 @@ class bpath:
             file.write("\n")
 
     def pos(self, t):
+        """return point at respective parameter value t (0<=t<=len(self))"""
         return self.bpath[int(t)][t-math.floor(t)]
 
     def transform(self, trafo):
-        return bpath(map(lambda x, trafo=trafo: x.transform(trafo), self.bpath))
+        """return transformed bpath"""
+        return bpath(map(lambda x, trafo=trafo: x.transform(trafo),
+                         self.bpath))
+
+    def reverse(self):
+        """return reversed bpath"""
+        return bpath(map(lambda x: x.reverse(), self.bpath))
+
+    def split(self, t):
+        """return bpath splitted at parameter value t (0<=t<=len(self))"""
+        return self.bpath[int(t)].split(t-math.floor(t))
 
     def MidPointSplit(self):
         result = []
@@ -181,8 +267,10 @@ class bpath:
     def intersect(self, other):
         """intersect two bpaths
 
-        returns a list of tuples consisting of the corresponding parameters of the
-        two bpaths"""
+        returns a list of tuples consisting of the corresponding parameters
+        of the two bpaths
+
+        """
 
         intersections = ()
         (ta, tb) = (0,0)
@@ -199,6 +287,10 @@ class bpath:
         return intersections
 
     __mul__ = intersect
+
+#
+# now some special kinds of bpaths (always in pairs)
+#
 
 class _bcurve(bpath):
 
