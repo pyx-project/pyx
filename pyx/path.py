@@ -2160,48 +2160,52 @@ class normpath(path):
         # the currently built up normpath
         np = normpath()
 
-        firstsplit = 1
-
         t0 = 0
         for subpath in self.subpaths:
             tf = t0+subpath.range()
-            if parameters and t0 < parameters[0]:
-                if tf < parameters[0]:
-                    np.subpaths.append(subpath)
-                    firstsplit = 0
+            if parameters and tf>=parameters[0]:
+                # split this subpath
+                # determine the relevant splitting parameters
+                for i in range(len(parameters)):
+                    if parameters[i]>tf: break
                 else:
-                    # we have to split this subpath
+                    i = len(parameters)
 
-                    # first we determine the relevant splitting
-                    # parameters
-                    for i in range(len(parameters)):
-                        if parameters[i]>tf: break
+                splitsubpaths = subpath.split([x-t0 for x in parameters[:i]])
+                # handle first element, which may be None, separately
+                if splitsubpaths[0] is None:
+                    if not np.subpaths:
+                        result.append(None)
                     else:
-                        i = len(parameters)
+                        result.append(np)
+                        np = normpath()
+                    splitsubpaths.pop(0)
 
-                    for sp in subpath.split([x-t0 for x in parameters[:i]]):
-                        if sp is None:
-                            if firstsplit:
-                                result.append(None)
-                            else:
-                                result.append(np)
-                                np = normpath()
-                        else:
-                            np.subpaths.append(sp)
+                for sp in splitsubpaths[:-1]:
+                    np.subpaths.append(sp)
+                    result.append(np)
+                    np = normpath()
+
+                # handle last element which may be None, separately
+                if splitsubpaths:
+                    if splitsubpaths[-1] is None:
+                        if np.subpaths:
                             result.append(np)
                             np = normpath()
-                        firstsplit = 0
-               
-                    parameters = parameters[i:]
+                    else:
+                        np.subpaths.append(splitsubpaths[-1])
+
+                parameters = parameters[i:]
             else:
+                # append whole subpath to current normpath
                 np.subpaths.append(subpath)
+            t0 = tf
 
         if np.subpaths:
             result.append(np)
         else:
             # mark split at the end of the normsubpath
-            #result.append(None)
-            pass
+            result.append(None)
 
         return result
 
