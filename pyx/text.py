@@ -172,7 +172,7 @@ class DVIError(Exception): pass
 class TFMError(Exception): pass
 
 class TFMFile:
-    def __init__(self, name, debug=1):
+    def __init__(self, name, debug=0):
         self.file = binfile(name, "rb")
         self.debug = debug
 
@@ -352,10 +352,10 @@ class TFMFile:
 
 
 class Font:
-    def __init__(self, name, c, q, d, tfmconv):
+    def __init__(self, name, c, q, d, tfmconv, debug=0):
         self.name = name
         self.tfmfile = TFMFile(pykpathsea.find_file("%s.tfm" % self.name, 
-                                                    pykpathsea.kpse_tfm_format))
+                                                    pykpathsea.kpse_tfm_format), debug)
 
         if self.tfmfile.checksum!=c:
             raise DVIError("check sums do not agree: %d vs. %d" %
@@ -518,7 +518,7 @@ class DVIFile:
         #    Note that q is actually s in large parts of the documentation.
         # d: design size
 
-        self.fonts[num] =  Font(fontname, c, q, d, self.tfmconv)
+        self.fonts[num] =  Font(fontname, c, q, d, self.tfmconv, self.debug>1)
 
         if self.debug:
             print "%d: fntdefx %i: %s" % (self.filepos, num, fontname)
