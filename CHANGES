@@ -49,13 +49,15 @@ PyX
   - canvas module:
     - default patterns
     - make dash length available
+    - support relative dash lengths
   - path module:
     - reverse needs to be fixed
   - text module:
-    - There is a maximal number of fonts which can be handled by the dvi subsystem. This is bad design and additionally, this small default number of fonts can easily be reached!
-    - the prolog method of the dvifile class recieves the page now -> return the prolog needed by this page only
+    - dvifile class:
+       - clear used char information after each page in dvifile
+       - if possible remove readfile, write and prolog methods and use readpage instead
     - SlantFont & Co support
-    - dvicopy: stdout handling
+    - remove dvicopy support again because it is not needed anymore
   - data module:
     - data.data should add line number like data.datafile
     - use csv module (new in 2.3)
