@@ -14,9 +14,12 @@ text.preamble(r"""%
       \def\Gin@driver{../../contrib/pyx.def}%
       \def\c@lor@namefile{dvipsnam.def}}
     \makeatother
+
     \usepackage{graphicx}
     \usepackage{color}
     \usepackage{rotating}
+%    \graphicspath{{eps/}}
+
     \definecolor{col0}{gray}{0.1}
     \definecolor{col1}{cmyk}{0.3, 0.2, 0.1, 0.1}
     \definecolor{col2}{rgb}{0.4, 0.3, 0.1}
@@ -52,15 +55,17 @@ c.text(0, 3, r"\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} = \sqrt{\pi\
 c.text(0, 6, r"\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} = \sqrt{\pi\over a}", text.size.LARGE, text.mathmode)
 
 c.stroke(c.text(1, 2, r"Hello, world!").path())
-c.stroke(c.text(1, 2, r"Hello, \color{green}world!", trafo.slant(1)).path())
-c.stroke(c.text(4, 0, r"\begin{rotate}{90}Rotated Text\end{rotate}"))
+
+# test the specials
+c.stroke(c.text(10, 2, r"Hello, \color{green}world!", trafo.slant(1)).path())
+c.stroke(c.text(10, 0, r"\begin{rotate}{90}\parbox{5cm}{rotated\\ in \LaTeX}\end{rotate}"))
 
 d = canvas.canvas()
 d.stroke(path.rect(0,0, 1,1))
 d.stroke(path.line(0,0, 1,1))
 d.stroke(path.line(1,0, 0,1))
 d.writetofile("sample")
-c.stroke(c.text(6, 0, r"""%
+c.stroke(c.text(10, 4, r"""%
     \fbox{\includegraphics[%
     %type=eps,             %% type of the file ... should not change anything --
                            %   BUG!!!!!!  size and filename information gets
@@ -81,14 +86,14 @@ c.stroke(c.text(6, 0, r"""%
     clip=]%                %! directly in dvi
     {sample}}""", text.texmessage.graphicsload))
 c.stroke(c.text(10, 0, r"""
-    \textcolor{col0}{abcdef}\\
-    \textcolor{col1}{abcdef}\\
-    \textcolor{col2}{abcdef}\\
-    \textcolor{col3}{abcdef}\\
-    \textcolor{col4}{abcdef}\\
-    \textcolor{col5}{abcdef}\\
-%    \textcolor{col6}{abcdef}%
-    """))
+    \textcolor{col0}{abc}
+    \textcolor{col1}{abc}
+    \textcolor{col2}{abc}
+    \textcolor{col3}{abc}
+    \textcolor{col4}{abc}
+    \textcolor{col5}{abc}
+%    \textcolor{col6}{abc}%
+    """, text.parbox(3)))
 c.stroke(c.text(15, 0, r"""
     \colorbox{col2}{ColorBox}\\
     \fcolorbox{col3}{col4}{FColorBox}"""))
