@@ -1633,6 +1633,7 @@ class normpath(path):
             p = self.path
         else:
             p = self.reversed().path
+            t = -t
 
         context=_pathcontext()
 
@@ -1766,21 +1767,21 @@ class normpath(path):
         # we append a _moveto operation at the end to end the last
         # subpath explicitely.
         for pel in self.path+[_moveto(0,0)]:
-            pelr =pel._reversed(context)
+            pelr = pel._reversed(context)
             if pelr:
                 subpath.append(pelr)
 
             if subpath and isinstance(pel, _moveto):
                 subpath.append(_moveto(*context.currentpoint))
                 subpath.reverse()
-                np = np + normpath(*subpath) 
+                np = normpath(*subpath) + np
                 subpath = []
             elif subpath and isinstance(pel, closepath):
                 subpath.append(_moveto(*context.currentpoint))
                 subpath.reverse()
                 subpath.append(closepath())
                 
-                np = np + normpath(*subpath) 
+                np = normpath(*subpath) + np
                 subpath = []
 
             pel._updatecontext(context)
