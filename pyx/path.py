@@ -136,7 +136,7 @@ class normpathparam:
         self.normsubpathparam = normsubpathparam
 
     def __add__(self, length):
-        print self.normpath.paramtoarclen_pt(self)
+        #print self.normpath.paramtoarclen_pt(self)
         return self.normpath.arclentoparam_pt([self.normpath.paramtoarclen_pt(self) + unit.topt(length)])[0]
 
 #        return self.normpath.arclentoparam(self.normpath.split((self.normsubpathindex, self.normsubpathparam))[0].arclen()
@@ -1466,8 +1466,8 @@ class normline_pt(normsubpathitem):
         return "normline(%g, %g, %g, %g)" % (self.x0_pt, self.y0_pt, self.x1_pt, self.y1_pt)
 
     def _arclentoparam_pt(self, lengths, epsilon):
-        l = self.arclen_pt(epsilon)
-        return ([max(min(1.0 * length / l, 1), 0) for length in lengths], l)
+        l = math.hypot(self.x0_pt-self.x1_pt, self.y0_pt-self.y1_pt)
+        return [length/l for length in lengths], l
 
     def _normcurve(self):
         """ return self as equivalent normcurve """
@@ -1621,7 +1621,7 @@ class normcurve_pt(normsubpathitem):
             else:
                 param = 1 + Dparams[-1] * (length - arclens[-1]) * 1.0 / (arclens[-1] - arclens[-2])
 
-            param = max(min(param,1),0)
+            # param = max(min(param,1),0)
             params.append(param)
         return (params, arclens[-1])
 
@@ -1993,25 +1993,24 @@ class normsubpath:
         """returns total arc length of normsubpath"""
         return self.arclen_pt() * unit.t_pt
 
-    def _arclentoparam_pt(self, lengths):
-        """returns [t, l] where t are parameter value(s) matching given length(s)
-        and l is the total length of the normsubpath
-        The parameters are with respect to the normsubpath: t in [0, self.range()]
-        lengths that are < 0 give parameter 0"""
+    def _arclentoparam_pt(self, lengths_pt):
+        """ returns [t, l] where t are parameter values matching given lengths
+        and l is the total length of the normsubpath """
+        # work on a copy which is counted down to negative values
+        lengths_pt = lengths_pt[:]
+        results = [0] * len(lengths_pt)
 
-        allarclen = 0
-        allparams = [0] * len(lengths)
-        rests = lengths[:]
+        totalarclen = 0
+        for normsubpathindex, normsubpathitem in enumerate(self.normsubpathitems):
+            params, arclen = normsubpathitem._arclentoparam_pt(lengths_pt, self.epsilon)
+            for i in range(len(results)):
+                if lengths_pt[i] > 0:
+                    lengths_pt[i] -= arclen
+                    # overwrite the results until the length has become negative
+                    results[i] = normsubpathindex + params[i]
+            totalarclen += arclen
 
-        for pitem in self.normsubpathitems:
-            params, arclen = pitem._arclentoparam_pt(rests, self.epsilon)
-            allarclen += arclen
-            for i in range(len(rests)):
-                if rests[i] >= 0:
-                    rests[i] -= arclen
-                    allparams[i] += params[i]
-
-        return (allparams, allarclen)
+        return results, totalarclen
 
     def arclentoparam_pt(self, lengths):
         if len(lengths)==1:

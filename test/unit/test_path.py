@@ -7,7 +7,7 @@ import unittest
 from pyx import *
 from pyx.path import *
 import math
-set(epsilon=1e-7)
+#set(epsilon=1e-10)
 
 class NormpathTestCase(unittest.TestCase):
 
@@ -29,16 +29,17 @@ class NormpathTestCase(unittest.TestCase):
         self.failUnlessEqual(param.normsubpathindex, 0)
         self.failUnlessAlmostEqual(param.normsubpathparam, 3.995)
         param = param + 0.1 * unit.t_pt
-        param = param + circle_pt(0, 0, 10).arclen()
-
+        self.failUnlessEqual(param.normsubpathindex, 1)
+        self.failUnlessAlmostEqual(param.normsubpathparam,  0)
+        param = param + 0.5*circle_pt(0, 0, 10).arclen()
         circlerange = p.normsubpaths[1].range()
         self.failUnlessEqual(param.normsubpathindex, 1)
-        self.failUnlessAlmostEqual(param.normsubpathparam,  circlerange)
-        self.failUnlessAlmostEqual(param.normsubpathparam,  0.1 * circlerange / ( 2*math.pi*10))
-        
-        
-        param = param + 20 * math.pi * unit.t_pt
-
+        self.failUnlessAlmostEqual(param.normsubpathparam,  0.5*circlerange, 3)
+        param = param + 0.5*circle_pt(0, 0, 10).arclen()
+        self.failUnlessEqual(param.normsubpathindex, 1)
+        self.failUnlessAlmostEqual(param.normsubpathparam,  circlerange, 3)
+        print param.normsubpathindex, param.normsubpathparam
+        param = param + circle_pt(0, 0, 10).arclen()/circlerange
         print param.normsubpathindex, param.normsubpathparam
 
     def testsplit(self):
