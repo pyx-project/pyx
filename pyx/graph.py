@@ -21,7 +21,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-import types, re, math, string, sys
+import re, math, string, sys
 import bbox, box, canvas, path, unit, mathtree, color, helper
 import text as textmodule
 import data as datamodule
