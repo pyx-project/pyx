@@ -6,7 +6,7 @@ from pyx.deco import barrow, earrow
 from pyx.style import linewidth, linestyle
 from pyx.graph import graphxy, linaxis, axispainter, function, line
 
-mypainter = axispainter(basepathattrs=earrow.normal(), titlepos=1)
+mypainter = axispainter(basepathattrs=[earrow.normal], titlepos=1)
 def mycos(x): return -cos(x)+.10*x
 
 g = graphxy(height=5, x2=None, y2=None,
@@ -14,7 +14,7 @@ g = graphxy(height=5, x2=None, y2=None,
                       painter=mypainter, title=r"$\delta\phi$"),
             y=linaxis(min=-2.3, max=2, painter=None))
 g.plot(function("y=mycos(x)", context=locals()),
-       line(lineattrs=linewidth.Thick))
+       line(lineattrs=[linewidth.Thick]))
 g.finish()
 
 x1, y1 = g.pos(-pi+.1, mycos(-pi+.1))
