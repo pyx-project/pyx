@@ -1517,7 +1517,7 @@ class _bcurve(base.PSOp):
         """splits bpathel at midpoint returning bpath with two bpathels"""
 
         # for efficiency reason, we do not use self.split(0.5)!
-        
+
         # first, we have to calculate the  midpoints between adjacent
         # control points
         x01 = 0.5*(self.x0+self.x1)
@@ -1537,7 +1537,7 @@ class _bcurve(base.PSOp):
         # Finally the midpoint is given by
         xmidpoint = 0.5*(x01_12+x12_23)
         ymidpoint = 0.5*(y01_12+y12_23)
-        
+
         return (_bcurve(self.x0, self.y0,
                         x01, y01,
                         x01_12, y01_12,
@@ -1549,7 +1549,7 @@ class _bcurve(base.PSOp):
 
     def arclength(self, epsilon=1e-5):
         """computes arclength of bpathel using successive midpoint split"""
-        
+
         if self.isStraight(epsilon):
             return unit.t_pt(math.sqrt((self.x3-self.x0)*(self.x3-self.x0)+
                                        (self.y3-self.y0)*(self.y3-self.y0)))
@@ -1579,39 +1579,39 @@ class _bline(_bcurve):
 
 def _arctobcurve(x, y, r, phi1, phi2):
     """generate the best bpathel corresponding to an arc segment"""
-    
+
     dphi=phi2-phi1
 
     if dphi==0: return None
-    
+
     # the two endpoints should be clear 
     (x0, y0) = ( x+r*cos(phi1), y+r*sin(phi1) )
     (x3, y3) = ( x+r*cos(phi2), y+r*sin(phi2) )
-   
+
     # optimal relative distance along tangent for second and third
     # control point
     l = r*4*(1-cos(dphi/2))/(3*sin(dphi/2))
 
     (x1, y1) = ( x0-l*sin(phi1), y0+l*cos(phi1) )
     (x2, y2) = ( x3+l*sin(phi2), y3-l*cos(phi2) )
-    
+
     return _bcurve(x0, y0, x1, y1, x2, y2, x3, y3)
 
 
 def _arctobezierpath(x, y, r, phi1, phi2, dphimax=45):
     path = []
-    
+
     phi1 = phi1*pi/180
     phi2 = phi2*pi/180
     dphimax = dphimax*pi/180
 
-    if phi2<phi1:        
+    if phi2<phi1:
         # guarantee that phi2>phi1 ...
         phi2 = phi2 + (math.floor((phi1-phi2)/(2*pi))+1)*2*pi
     elif phi2>phi1+2*pi:
         # ... or remove unnecessary multiples of 2*pi
         phi2 = phi2 - (math.floor((phi2-phi1)/(2*pi))-1)*2*pi
-            
+
     if r==0 or phi1-phi2==0: return []
 
     subdivisions = abs(int((1.0*(phi1-phi2))/dphimax))+1
@@ -1620,7 +1620,7 @@ def _arctobezierpath(x, y, r, phi1, phi2, dphimax=45):
 
     for i in range(subdivisions):
         path.append(_arctobcurve(x, y, r, phi1+i*dphi, phi1+(i+1)*dphi))
-        
+
     return path
 
 
@@ -1630,7 +1630,7 @@ def _bcurveIntersect(a, a_t0, a_t1, b, b_t0, b_t1, epsilon=1e-5):
     a and b are bpathels with parameter ranges [a_t0, a_t1],
     respectively [b_t0, b_t1].
     epsilon determines when the bpathels are assumed to be straight
-    
+
     """
 
     # intersection of bboxes is a necessary criterium for intersection
@@ -1674,7 +1674,7 @@ def _bcurveIntersect(a, a_t0, a_t1, b, b_t0, b_t1, epsilon=1e-5):
             a_deltay = a.y3 - a.y0
             b_deltax = b.x3 - b.x0
             b_deltay = b.y3 - b.y0
-            
+
             det = b_deltax*a_deltay - b_deltay*a_deltax
 
             # check for parallel lines
