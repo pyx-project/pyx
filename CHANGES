@@ -68,6 +68,7 @@ TODO:
   - text module:
     - default handling of texmessages as in the new attribute scheme
     - multiple insert bug fixed
+    - added textboxes that are sequentially filled (experimental)
   - examples:
     - mandel.py (contributed by Stephen Phillips)
   - path:
