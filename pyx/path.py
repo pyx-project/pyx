@@ -565,7 +565,7 @@ class normpathel(pathel):
 
         pass
 
-    def _lentopar(self, lengths, context, epsilon=1e-5):
+    def _lentopar(self, context, lengths, epsilon=1e-5):
         """returns [t,l] with
           t the parameter where the arclength of normpathel is length and
           l the total arclength
@@ -658,7 +658,7 @@ class closepath(normpathel):
 
         return unit.t_pt(math.sqrt((x0-x1)*(x0-x1)+(y0-y1)*(y0-y1)))
 
-    def _lentopar(self, lengths, context, epsilon=1e-5):
+    def _lentopar(self, context, lengths, epsilon=1e-5):
         x0, y0 = context.currentpoint
         x1, y1 = context.currentsubpath
 
@@ -746,7 +746,7 @@ class moveto_pt(normpathel):
     def _arclength(self, context, epsilon=1e-5):
         return 0
 
-    def _lentopar(self, lengths, context, epsilon=1e-5):
+    def _lentopar(self, context, lengths, epsilon=1e-5):
         return [ [0]*len(lengths), 0]
 
     def _normalized(self, context):
@@ -801,7 +801,7 @@ class lineto_pt(normpathel):
 
         return unit.t_pt(math.sqrt((x0-self.x)*(x0-self.x)+(y0-self.y)*(y0-self.y)))
 
-    def _lentopar(self, lengths, context, epsilon=1e-5):
+    def _lentopar(self, context, lengths, epsilon=1e-5):
         x0, y0 = context.currentpoint
         l = math.sqrt((x0-self.x)*(x0-self.x)+(y0-self.y)*(y0-self.y))
 
@@ -908,7 +908,7 @@ class curveto_pt(normpathel):
     def _arclength(self, context, epsilon=1e-5):
         return self._bcurve(context).arclength(epsilon)
 
-    def _lentopar(self, lengths, context, epsilon=1e-5):
+    def _lentopar(self, context, lengths, epsilon=1e-5):
         return self._bcurve(context).lentopar(lengths, epsilon)
 
     def _normalized(self, context):
@@ -1582,7 +1582,7 @@ class path(base.PSCmd):
         if not (isinstance(self.path[0], moveto_pt) or
                 isinstance(self.path[0], arc_pt) or
                 isinstance(self.path[0], arcn_pt)):
-            raise PathException, "first path element must be either moveto, arc, or arcn"
+            raise PathException("first path element must be either moveto, arc, or arcn")
         for pel in self.path:
             pel.write(file)
 
@@ -1763,7 +1763,7 @@ class normpath(path):
 
         # go through the positive lengths
         for pel in self.path:
-            pars, arclength = pel._lentopar(rests[0], context, epsilon)
+            pars, arclength = pel._lentopar(context, rests[0], epsilon)
             finis = 0
             for i in range(len(rests[0])):
                 t[0][i] += pars[i]
@@ -1774,7 +1774,7 @@ class normpath(path):
 
         # go through the negative lengths
         for pel in self.reversed().path:
-            pars, arclength = pel._lentopar(rests[1], context, epsilon)
+            pars, arclength = pel._lentopar(context, rests[1], epsilon)
             finis = 0
             for i in range(len(rests[1])):
                 t[1][i] -= pars[i]
