@@ -1,6 +1,7 @@
 include AUTHORS
 include LICENSE
 include manual/manual.pdf
+recursive-include pyx/lfs *.lfs *.py *.tex
 
 prune test
 exclude pyx/axis.py pyx/text.py
