@@ -20,7 +20,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import base, trafo, unit, canvas
+import base
 
 # PostScript-procedure definitions
 # cf. file: 5002.EPSF_Spec_v3.0.pdf     
@@ -89,6 +89,7 @@ class PSCmd(base.PSOp):
 
         """
 
+        import trafo, unit, canvas
 
         try:
             file = open(filename + ".eps", "w")
