@@ -228,15 +228,25 @@ def arctobpathel(x, y, r, phi1, phi2):
     
     return bpathel(x0, y0, x1, y1, x2, y2, x3, y3)   
 
-def arctobpath(x, y, r, phi1, phi2, dphimax=pi/16):
-    phi1 = (phi1-math.floor(phi1/360)*360)*pi/180
-    phi2 = (phi2-math.floor(phi2/360)*360)*pi/180
+def arctobpath(x, y, r, phi1, phi2, clockwise=0, dphimax=pi/4):
+    phi1 = phi1*pi/180
+    phi2 = phi2*pi/180
 
-    if phi2<phi1: phi2 = phi2 + 2*pi
+    if not clockwise:  
+        if phi2<phi1: 
+            phi2 = phi2 + (math.floor((phi1-phi2)/(2*pi))+1)*2*pi       # guarantee that phi2>phi1
+        elif phi2>phi1+2*pi:
+            phi2 = phi2 - (math.floor((phi2-phi1)/(2*pi))-1)*2*pi
+        
+    else:
+        if phi1<phi2: 
+            phi1 = phi1 + (math.floor((phi2-phi1)/(2*pi))+1)*2*pi
+        elif phi1>phi2+2*pi:
+            phi1 = phi1 - (math.floor((phi1-phi2)/(2*pi))-1)*2*pi
 
     if r==0 or phi1-phi2==0: return None
 
-    subdivisions = abs(int((1.0*(phi1-phi2))/dphimax))
+    subdivisions = abs(int((1.0*(phi1-phi2))/dphimax)+1)
 
     dphi=(1.0*(phi2-phi1))/subdivisions
 
@@ -252,23 +262,45 @@ if __name__=="__main__":
     def testarc(x, y, phi1, phi2):
         print "1 0 0 setrgbcolor"
         print "newpath"
-        print "%f %f 47 %f %f arc" % (x, y, phi1, phi2)
+        print "%f %f 48 %f %f arc" % (x, y, phi1, phi2)
         print "stroke"
         print "0 1 0 setrgbcolor"
         print "newpath"
         print arctobpath(x,y,50,phi1,phi2)
         print "stroke"
+
+    def testarcn(x, y, phi1, phi2):
+        print "1 0 0 setrgbcolor"
+        print "newpath"
+        print "%f %f 48 %f %f arcn" % (x, y, phi1, phi2)
+        print "stroke"
+        print "0 1 0 setrgbcolor"
+        print "newpath"
+        print arctobpath(x,y,50,phi1,phi2, clockwise=1)
+        print "stroke"
        
-       
+    print "%!PS-Adobe-2.0"
     #print "newpath" 
     #print arctobpath(100,100,100,0,90,dphimax=90)
     #print arctobpath(100,100,100,0,90)
     #print "stroke"
 
-    testarc(100, 200, 0, 90) 
-    testarc(200, 200, -90, 90) 
-    testarc(300, 200, 270, 90) 
-    testarc(400, 200, 90, -90) 
-    testarc(500, 200, 90, 270) 
-    testarc(400, 400, 45, -90) 
-    testarc(200, 400, 45, -90-360) 
+    testarc(100, 200, 0, 90)
+    testarc(200, 200, -90, 90)
+    testarc(300, 200, 270, 90)
+    testarc(400, 200, 90, -90)
+    testarc(500, 200, 90, 270)
+    testarc(400, 300, 45, -90)
+    testarc(200, 300, 45, -90-2*360)
+    testarc(100, 300, 45, +90+2*360)
+
+    testarcn(100, 500, 0, 90) 
+    testarcn(200, 500, -90, 90) 
+    testarcn(300, 500, 270, 90) 
+    testarcn(400, 500, 90, -90) 
+    testarcn(500, 500, 90, 270) 
+    testarcn(400, 600, 45, -90) 
+    testarcn(200, 600, 45, -90-360) 
+    testarcn(100, 600, 45, -90+360) 
+    print "showpage"
+    print "showpage"
