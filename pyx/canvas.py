@@ -371,7 +371,6 @@ class Canvas(Globex):
 	self.PSInsertEPS(self.BaseFilename + ".tex.eps")
 	self.PSFile.close()
 	
-	
     def PSInsertEPS(self, epsname):
         try:
 	    epsfile=open(epsname,"r")
@@ -394,6 +393,7 @@ class Canvas(Globex):
     def PSUpdatePosition(self):
         if self.PSPositionCorrect == 0:		# actual PS position doesn't coincide with our x,y
 	    self.PSCmd("%f %f moveto" % self.PScm2po(self.x,self.y))
+	    self.PSPositionCorrect = 1
 	    
     def amove(self,x,y):
         isnumber(x)
@@ -413,7 +413,7 @@ class Canvas(Globex):
         isnumber(x)
         isnumber(y)
 	
-	self.PSUpdatePosition()
+	self.PSUpdatePosition()			# insert moveto if needed
         (self.x, self.y)=(x,y)
 	self.PSCmd("%f %f lineto" % self.PScm2po(x,y))
     
@@ -421,7 +421,7 @@ class Canvas(Globex):
         isnumber(x)
         isnumber(y)
 	
-	self.PSUpdatePosition()
+	self.PSUpdatePosition()			# insert moveto if needed
         (self.x, self.y)=(self.x+x,self.y+y)
 	self.PSCmd("%f %f rlineto" % self.PScm2po(x,y))
 
