@@ -670,7 +670,7 @@ you should take a look at the subdirectories of
 \path{TEXMF/fonts/type1}.
 }
 
-\question{a}{File \dots\ is not available or not readable \changed}
+\question{a}{File \dots\ is not available or not readable}
 {}
 {\label{q:no_lfs}
 Such an error message might already occur when running the example file 
@@ -683,7 +683,8 @@ change the file permissions back to readable for everyone.
 If the file exists, the problem can be solved by changing the permissions to 
 allow read access.}
 
-\question{a}{No information for font `cmr10' found in font mapping file}
+\question{a}{No information for font `cmr10' found in font mapping 
+file \changed}
 {}
 {\label{q:no_cmr10}
 Such an error message can already be encountered by simply running the example
@@ -735,8 +736,9 @@ fontmaps = psfonts.map psfonts.cmz psfonts.amz
 The same effect can be achieved by inserting the following line into the
 \PyX{} code:
 \begin{progcode}
-text.set(fontmaps="psfonts.cmz psfonts.amz")
+text.set(fontmaps="psfonts.map psfonts.cmz psfonts.amz")
 \end{progcode}
+Note that the default map (psfonts.map) has to be specified explicitly.
 
 An alternative approach consists in modifying the \TeX{} installation by 
 inserting the contents of the desired map files like \texttt{psfonts.cmz} into 
