@@ -10,8 +10,8 @@ from pyx.graph import axis
 
 p = path.curve(0, 0, 3, 0, 1, 4, 4, 4)
 
-log2parter = axis.parter.log([axis.parter.preexp(axis.tick.rational(1), 4),
-                              axis.parter.preexp(axis.tick.rational(1), 2)])
+log2parter = axis.parter.log([axis.parter.preexp([axis.tick.rational(1)], 4),
+                              axis.parter.preexp([axis.tick.rational(1)], 2)])
 log2texter = axis.texter.exponential(nomantissaexp=r"{2^{%s}}",
                                      mantissamax=axis.tick.rational(2))
 

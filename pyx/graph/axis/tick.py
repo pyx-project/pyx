@@ -200,11 +200,11 @@ class tick(rational):
     When label is None, it should be automatically created (and stored), once the
     an axis painter needs it. Classes, which implement _Itexter do precisely that."""
 
-    def __init__(self, pos, ticklevel=0, labellevel=0, label=None, labelattrs=[], **kwargs):
+    def __init__(self, x, ticklevel=0, labellevel=0, label=None, labelattrs=[], **kwargs):
         """initializes the instance
         - see class description for the parameter description
         - **kwargs are passed to the rational constructor"""
-        rational.__init__(self, pos, **kwargs)
+        rational.__init__(self, x, **kwargs)
         self.ticklevel = ticklevel
         self.labellevel = labellevel
         self.label = label

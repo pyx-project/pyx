@@ -322,21 +322,21 @@ class geometricseries(attr.changeattr):
 
 class ticklength(geometricseries): pass
 
-_base = 0.2
+_base = 0.12
 
 #ticklength.short = ticklength("%f cm" % (_base/math.sqrt(64)), 1/goldenmean)
-ticklength.short = ticklength(_base/math.sqrt(64), 1/goldenmean)
-ticklength.short = ticklength(_base/math.sqrt(32), 1/goldenmean)
-ticklength.short = ticklength(_base/math.sqrt(16), 1/goldenmean)
-ticklength.short = ticklength(_base/math.sqrt(8), 1/goldenmean)
-ticklength.short = ticklength(_base/math.sqrt(4), 1/goldenmean)
+ticklength.SHORT = ticklength(_base/math.sqrt(64), 1/goldenmean)
+ticklength.SHORt = ticklength(_base/math.sqrt(32), 1/goldenmean)
+ticklength.SHOrt = ticklength(_base/math.sqrt(16), 1/goldenmean)
+ticklength.SHort = ticklength(_base/math.sqrt(8), 1/goldenmean)
+ticklength.Short = ticklength(_base/math.sqrt(4), 1/goldenmean)
 ticklength.short = ticklength(_base/math.sqrt(2), 1/goldenmean)
 ticklength.normal = ticklength(_base, 1/goldenmean)
 ticklength.long = ticklength(_base*math.sqrt(2), 1/goldenmean)
-ticklength.long = ticklength(_base*math.sqrt(4), 1/goldenmean)
-ticklength.long = ticklength(_base*math.sqrt(8), 1/goldenmean)
-ticklength.long = ticklength(_base*math.sqrt(16), 1/goldenmean)
-ticklength.long = ticklength(_base*math.sqrt(32), 1/goldenmean)
+ticklength.Long = ticklength(_base*math.sqrt(4), 1/goldenmean)
+ticklength.LOng = ticklength(_base*math.sqrt(8), 1/goldenmean)
+ticklength.LONg = ticklength(_base*math.sqrt(16), 1/goldenmean)
+ticklength.LONG = ticklength(_base*math.sqrt(32), 1/goldenmean)
 
 
 class plain(_title):
@@ -354,7 +354,7 @@ class plain(_title):
     defaultbasepathattrs = [style.linecap.square]
     defaultlabelattrs = [text.halign.center, text.vshift.mathaxis]
 
-    def __init__(self, innerticklength=ticklength.short,
+    def __init__(self, innerticklength=ticklength.normal,
                        outerticklength=None,
                        tickattrs=[],
                        gridattrs=None,
@@ -366,27 +366,21 @@ class plain(_title):
                        labelvequalize=1,
                        **kwargs):
         """initializes the instance
-        - innerticklength and outerticklength are two lists of
+        - innerticklength and outerticklength are changable
           visual PyX lengths for ticks, subticks, etc. plotted inside
-          and outside of the graph; when a single value is given, it
-          is used for all tick levels; None turns off ticks inside or
+          and outside of the graph; None turns off ticks inside or
           outside of the graph
         - tickattrs are a list of stroke attributes for the ticks;
-          a single entry is allowed without being a list; None turns
-          off ticks
+          None turns off ticks
         - gridattrs are a list of lists used as stroke
-          attributes for ticks, subticks etc.; when a single list
-          is given, it is used for ticks, subticks, etc.; a single
-          entry is allowed without being a list; None turns off
+          attributes for ticks, subticks etc.; None turns off
           the grid
-        - basepathattrs are a list of stroke attributes for a grid
-          line at axis value zero; a single entry is allowed without
-          being a list; None turns off the basepath
+        - basepathattrs are a list of stroke attributes for the base line
+          of the axis; None turns off the basepath
         - labeldist is a visual PyX length for the distance of the labels
           from the axis basepath
         - labelattrs is a list of attributes for a texrunners text
-          method; a single entry is allowed without being a list;
-          None turns off the labels
+          method; None turns off the labels
         - labeldirection is an instance of rotatetext or None
         - labelhequalize and labelvequalize (booleans) perform an equal
           alignment for straight vertical and horizontal axes, respectively

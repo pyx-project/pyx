@@ -59,7 +59,7 @@ be used once only.
 \begin{classdesc}{linear}{min=None, max=None, reverse=0, divisor=None, title=None,
                           parter=parter.autolinear(), manualticks=[],
                           density=1, maxworse=2, rater=rater.linear(),
-                          texter=texter.default(), painter=painter.plain()}
+                          texter=texter.mixed(), painter=painter.plain()}
   This class provides a linear axis. \var{min} and \var{max} are the
   axis range. When not set, they are adjusted automatically by the
   data to be plotted in the graph. Note, that some data might want to
@@ -109,7 +109,7 @@ be used once only.
 \begin{classdesc}{logarithmic}{min=None, max=None, reverse=0, divisor=None, title=None,
                                parter=parter.autologarithmic(), manualticks=[],
                                density=1, maxworse=2, rater=rater.logarithmic(),
-                               texter=texter.default(), painter=painter.plain()}
+                               texter=texter.mixed(), painter=painter.plain()}
   This class provides a logarithmic axis. All parameters work like
   \class{linear}. Only two parameters have a different default:
   \var{parter} and \var{rater}. Furthermore and most importantly, the
@@ -215,29 +215,54 @@ This class is an abbreviation of \class{logarithmic} described above.
   taken into account.
 \end{classdesc}
 
+\begin{funcdesc}{pathaxis}{path, axis, direction=1}
+  This function returns a (specialized) canvas containing the axis
+  \var{axis} painted along the path \var{path}. \var{direction}
+  defines the direction of the ticks. Allowed values are \code{1}
+  (left) and \code{-1} (right).
+\end{funcdesc}
+
 \section{Ticks}
 
 \declaremodule{}{graph.axis.tick}
 \modulesynopsis{Axes ticks}
 
-We describe only one class of the module \module{graph.axis.tick}
-here. Instances of this class are usefill in the \code{manualticks}
-parameter of a regular axis.
+The following classes are part of the module \module{graph.axis.tick}.
 
-\begin{classdesc}{tick}{pos, ticklevel=0, labellevel=0, label=None,
-                        labelattrs=[], power=1, floatprecision=10}
-  \var{pos} is the position of the tick. Since ticks use rational
-  number arithmetics, a convertion to a rational number needs to be
-  performed. \var{pos} can hold different types for that:
+\begin{classdesc}{rational}{x, power=1, floatprecision=10}
+  This class implements a rational number with infinite precision. For
+  that it stores two integers, the enumerator \code{enum} and a
+  denomintor \code{denom}. Note that the implementation of rational
+  number arithmetics is not at all complete and designed for its
+  special use case of axis parititioning in \PyX{} preventing any
+  roundoff errors.
+
+  \var{x} is the value of the rational created by a conversion from
+  one of the following input values:
   \begin{itemize}
   \item A float. It is converted to a rational with finite precision
     determined by \var{floatprecision}.
   \item A string, which is parsed to a rational number with full
     precision. It is also allowed to provide a fraction like
     \samp{1/3}.
-  \item A tuple of two integers. Those integers are taken as
+  \item A sequence of two integers. Those integers are taken as
     enumerator and denominator of the rational.
+  \item An instance defining instance variables \code{enum} and
+  \code{denom} like \class{rational} itself.
   \end{itemize}
+
+  \var{power} is an integer to calculate \code{\var{x}**\var{power}}.
+  This is usefull at certain places in partitioners.
+\end{classdesc}
+
+\begin{classdesc}{tick}{x, ticklevel=0, labellevel=0, label=None,
+                        labelattrs=[], power=1, floatprecision=10}
+  This class implements ticks based on rational numbers. Instances of
+  this class can be passed to the \code{manualticks} parameter of a
+  regular axis.
+
+  The parameters \var{x}, \var{power}, and \var{floatprecision} share
+  its meaning with \class{rational}.
 
   A tick has a tick level (\emph{i.e.} markers at the axis path) and a
   label lavel (\emph{e.i.} place text at the axis path),
@@ -248,9 +273,6 @@ parameter of a regular axis.
   tick or label. \var{label} is the text of the label. When not set,
   it can be created automatically by a texter. \var{labelattrs} are
   the attributes for the labels.
-
-  \var{power} is an integer to calculate \samp{pos**code}. This is
-  usefull at certain places in partitioners.
 \end{classdesc}
 
 \section{Partitioners}
@@ -265,7 +287,27 @@ of regular axes.
 \begin{classdesc}{linear}{tickdist=None, labeldist=None,
                           extendtick=0, extendlabel=None,
                           epsilon=1e-10}
-  TODO: to be continued ...
+  Instances of this class creates equally spaced tick lists. The
+  distances between the ticks, subticks, subsubticks \emph{etc.}
+  starting from a tick at zero are given as first, second, third
+  \emph{etc.} item of the list \var{ticklist}. For a tick position,
+  the lowest level wins, \emph{i.e.} for \code{[2, 1]} even numbers
+  will have ticks whereas subticks are placed at odd integer. The
+  items of \var{ticklist} might be strings, floats or tuples as
+  described for the \var{pos} parameter of class \class{tick}.
+
+  \var{labeldist} works equally for placing labels. When
+  \var{labeldist} is kept \code{None}, labels will be placed at each
+  tick position, but sublabels \emph{etc.} will not be used. This copy
+  behaviour is also available \emph{vice versa} and can be disabled by
+  an empty list.
+
+  \var{extendtick} can be set to a tick level for including the next
+  tick of that level when the data exceed the range covered by the
+  ticks by more then \var{epsilon}. \var{epsilon} is taken relative
+  to the axis range. \var{extendtick} is disabled when set to
+  \code{None} or for fixed range axes. \var{extendlabel} works similar
+  to \var{extendtick} but for labels.
 \end{classdesc}
 
 \begin{classdesc}{lin}{...}
@@ -275,18 +317,84 @@ This class is an abbreviation of \class{linear} described above.
 \begin{classdesc}{autolinear}{variants=defaultvariants,
                               extendtick=0,
                               epsilon=1e-10}
-  TODO: to be continued ...
+  Instances of this class creates equally spaced tick lists, where the
+  distance between the ticks is adjusted to the range of the axis
+  automatically. Variants are a list of possible choices for
+  \var{tickdist} of \class{linear}. Further variants are build out of
+  these by multiplying or dividing all the values by multiples of
+  \code{10}. \var{variants} should be ordered that way, that the
+  number of ticks for a given range will decrease, hence the distances
+  between the ticks should increase within the \var{variants} list.
+  \var{extendtick} and \var{epsilon} have the same meaning as in
+  \class{linear}.
 \end{classdesc}
+
+\begin{memberdesc}{defaultvariants}
+  \code{[[tick.rational((1, 1)),
+  tick.rational((1, 2))], [tick.rational((2, 1)), tick.rational((1,
+  1))], [tick.rational((5, 2)), tick.rational((5, 4))],
+  [tick.rational((5, 1)), tick.rational((5, 2))]]}
+\end{memberdesc}
 
 \begin{classdesc}{autolin}{...}
 This class is an abbreviation of \class{autolinear} described above.
 \end{classdesc}
 
+\begin{classdesc}{preexp}{pres, exp}
+  This is a storrage class defining positions of ticks on a
+  logarithmic scale. It contains a list \var{pres} of positions $p_i$
+  and \var{exp}, a multiplicator $m$. Valid tick positions are defined
+  by $p_im^n$ for any integer $n$.
+\end{classdesc}
+
 \begin{classdesc}{logarithmic}{tickpos=None, labelpos=None,
                                extendtick=0, extendlabel=None,
                                epsilon=1e-10}
-  TODO: to be continued ...
+  Instances of this class creates tick lists suitable to logarithmic
+  axes. The positions of the ticks, subticks, subsubticks \emph{etc.}
+  are defined by the first, second, third \emph{etc.} item of the list
+  \var{tickpos}, which are all \class{preexp} instances.
+
+  \var{labelpos} works equally for placing labels. When \var{labelpos}
+  is kept \code{None}, labels will be placed at each tick position,
+  but sublabels \emph{etc.} will not be used. This copy behaviour is
+  also available \emph{vice versa} and can be disabled by an empty
+  list.
+
+  \var{extendtick}, \var{extendlabel} and \var{epsilon} have the same
+  meaning as in \class{linear}.
 \end{classdesc}
+
+Some \class{preexp} instances for the use in \class{logarithmic} are
+available as instance variables (should be used read-only):
+
+\begin{memberdesc}{pre1exp5}
+  \code{preexp([tick.rational((1, 1))], 100000)}
+\end{memberdesc}
+
+\begin{memberdesc}{pre1exp4}
+  \code{preexp([tick.rational((1, 1))], 10000)}
+\end{memberdesc}
+
+\begin{memberdesc}{pre1exp3}
+  \code{preexp([tick.rational((1, 1))], 1000)}
+\end{memberdesc}
+
+\begin{memberdesc}{pre1exp2}
+  \code{preexp([tick.rational((1, 1))], 100)}
+\end{memberdesc}
+
+\begin{memberdesc}{pre1exp}
+  \code{preexp([tick.rational((1, 1))], 10)}
+\end{memberdesc}
+
+\begin{memberdesc}{pre125exp}
+  \code{preexp([tick.rational((1, 1)), tick.rational((2, 1)), tick.rational((5, 1))], 10)}
+\end{memberdesc}
+
+\begin{memberdesc}{pre1to9exp}
+  \code{preexp([tick.rational((1, 1)) for x in range(1, 10)], 10)}
+\end{memberdesc}
 
 \begin{classdesc}{log}{...}
 This class is an abbreviation of \class{logarithmic} described above.
@@ -295,10 +403,459 @@ This class is an abbreviation of \class{logarithmic} described above.
 \begin{classdesc}{autologarithmic}{variants=defaultvariants,
                                    extendtick=0, extendlabel=None,
                                    epsilon=1e-10}
-  TODO: to be continued ...
+  Instances of this class creates tick lists suitable to logarithmic
+  axes, where the distance between the ticks is adjusted to the range
+  of the axis automatically. Variants are a list of tuples with
+  possible choices for \var{tickpos} and \var{labelpos} of
+  \class{logarithmic}. \var{variants} should be ordered that way, that
+  the number of ticks for a given range will decrease within the
+  \var{variants} list.
+
+  \var{extendtick}, \var{extendlabel} and \var{epsilon} have the same
+  meaning as in \class{linear}.
 \end{classdesc}
+
+\begin{memberdesc}{defaultvariants}
+  \code{[([log.pre1exp, log.pre1to9exp], [log.pre1exp,
+  log.pre125exp]), ([log.pre1exp, log.pre1to9exp], None),
+  ([log.pre1exp2, log.pre1exp], None), ([log.pre1exp3,
+  log.pre1exp], None), ([log.pre1exp4, log.pre1exp], None),
+  ([log.pre1exp5, log.pre1exp], None)]}
+\end{memberdesc}
 
 \begin{classdesc}{autolog}{...}
 This class is an abbreviation of \class{autologarithmic} described above.
+\end{classdesc}
+
+\section{Texter}
+
+\declaremodule{}{graph.axis.texter}
+\modulesynopsis{Axes texters}
+
+The following classes are part of the module \module{graph.axis.texter}.
+Instances of the classes can be passed to the texter keyword argument
+of regular axes. Texters are used to define the label text for ticks,
+which request to have a label, but not label text was specified
+actually. A typical case are ticks created by partitioners described
+above.
+
+\begin{classdesc}{decimal}{prefix="", infix="", suffix="", equalprecision=0,
+                           decimalsep=".", thousandsep="", thousandthpartsep="",
+                           plus="", minus="-", period=r"\textbackslash overline\{\%s\}",
+                           labelattrs=[text.mathmode]}
+  Instances of this class create decimal formatted labels.
+
+  The strings \var{prefix}, \var{infix}, and \var{suffix} are added to
+  the label at the begin, immediately after the plus or minus, and at
+  the end, respectively. \var{decimalsep}, \var{thousandsep}, and
+  \var{thousandthpartsep} are strings used to separate integer from
+  fractional part and three-digit groups in the integer and fractional
+  part. The strings \var{plus} and \var{minus} are inserted in front
+  of the unsigned value for non-negative and negative numbers,
+  respectively.
+
+  The format string \var{period} should generate a period. It must
+  contain one string insert operators \samp{\%s} for the period.
+
+  \var{labelattrs} is a list of attributes to be added to the label
+  attributes given in the painter. It should be used to setup TeX
+  features like \code{text.mathmode}. Text format options like
+  \code{text.size} should instead be set at the painter.
+\end{classdesc}
+
+\begin{classdesc}{exponential}{plus="", minus="-",
+                               mantissaexp=r"\{\{\%s\}\textbackslash cdot10\textasciicircum\{\%s\}\}",
+                               skipexp0=r"\{\%s\}",
+                               skipexp1=None,
+                               nomantissaexp=r"\{10\textasciicircum\{\%s\}\}",
+                               minusnomantissaexp=r"\{-10\textasciicircum\{\%s\}\}",
+                               mantissamin=tick.rational((1, 1)), mantissamax=tick.rational((10L, 1)),
+                               skipmantissa1=0, skipallmantissa1=1,
+                               mantissatexter=decimal()}
+  Instances of this class create decimal formatted labels with an
+  exponential.
+
+  The strings \var{plus} and \var{minus} are inserted in front of the
+  unsigned value of the exponent.
+
+  The format string \var{mantissaexp} should generate the exponent. It
+  must contain two string insert operators \samp{\%s}, the first for
+  the mantissa and the second for the exponent. An alternative to the
+  default is \samp{r\textquotedbl\{\{\%s\}\{\e rm e\}\{\%s\}\}\textquotedbl}.
+
+  The format string \var{skipexp0} is used to skip exponent \code{0} and must
+  contain one string insert operator \samp{\%s} for the mantissa.
+  \code{None} turns off the special handling of exponent \code{0}.
+  The format string \var{skipexp1} is similar to \var{skipexp0}, but
+  for exponent \code{1}.
+
+  The format string \var{nomantissaexp} is used to skip the mantissa
+  \code{1} and must contain one string insert operator \samp{\%s} for
+  the exponent. \code{None} turns off the special handling of mantissa
+  \code{1}. The format string \var{minusnomantissaexp} is similar
+  to \var{nomantissaexp}, but for mantissa \code{-1}.
+
+  The \class{tick.rational} instances \var{mantissamin}\textless
+  \var{mantissamax} are minimum (including) and maximum (excluding) of
+  the mantissa.
+
+  The boolean \var{skipmantissa1} enables the skipping of any mantissa
+  equals \code{1} and \code{-1}, when \var{minusnomantissaexp} is set.
+  When the boolean \var{skipallmantissa1} is set, a mantissa equals
+  \code{1} is skipped only, when all mantissa values are \code{1}.
+  Skipping of a mantissa is stronger than the skipping of an exponent.
+
+  \var{mantissatexter} is a texter instance for the mantissa.
+\end{classdesc}
+
+\begin{classdesc}{mixed}{smallestdecimal=tick.rational((1, 1000)),
+                         biggestdecimal=tick.rational((9999, 1)),
+                         equaldecision=1,
+                         decimal=decimal(),
+                         exponential=exponential()}
+  Instances of this class create decimal formatted labels with an
+  exponential, when the unsigned values are small or large compared to
+  \var{1}.
+
+  The rational instances \var{smallestdecimal} and
+  \var{biggestdecimal} are the smallest and biggest decimal values,
+  where the decimal texter should be used. The sign of the value is
+  ignored here. For a tick at zero the decimal texter is considered
+  best as well. \var{equaldecision} is a boolean to indicate whether
+  the decision for the decimal or exponential texter should be done
+  globally for all ticks.
+
+  \var{decimal} and \var{exponential} are a decimal and an exponential
+  texter instance, respectively.
+\end{classdesc}
+
+\begin{classdesc}{rational}{prefix="", infix="", suffix="",
+                            enumprefix="", enuminfix="", enumsuffix="",
+                            denomprefix="", denominfix="", denomsuffix="",
+                            plus="", minus="-", minuspos=0, over=r"{{\%s}\textbackslash over{\%s}}",
+                            equaldenom=0, skip1=1, skipenum0=1, skipenum1=1, skipdenom1=1,
+                            labelattrs=[text.mathmode]}
+  Instances of this class create labels formated as fractions.
+
+  The strings \var{prefix}, \var{infix}, and \var{suffix} are added to
+  the label at the begin, immediately after the plus or minus, and at
+  the end, respectively. The strings \var{prefixenum},
+  \var{infixenum}, and \var{suffixenum} are added to the labels
+  enumerator accordingly whereas \var{prefixdenom}, \var{infixdenom},
+  and \var{suffixdenom} do the same for the denominator.
+
+  The strings \var{plus} and \var{minus} are inserted in front of the
+  unsigned value. The position of the sign is defined by
+  \var{minuspos} with values \code{1} (at the enumerator), \code{0}
+  (in front of the fraction), and \code{-1} (at the denomerator).
+
+  The format string \var{over} should generate the fraction. It
+  must contain two string insert operators \samp{\%s}, the first for
+  the enumerator and the second for the denominator. An alternative to
+  the default is \samp{\textquotedbl\{\{\%s\}/\{\%s\}\}\textquotedbl}.
+
+  Usually, the enumerator and denominator are canceled, while, when
+  \var{equaldenom} is set, the least common multiple of all
+  denominators is used.
+
+  The boolean \var{skip1} indicates, that only the prefix, plus or minus,
+  the infix and the suffix should be printed, when the value is
+  \code{1} or \code{-1} and at least one of \var{prefix}, \var{infix}
+  and \var{suffix} is present.
+
+  The boolean \var{skipenum0} indicates, that only a \code{0} is
+  printed when the enumerator is zero.
+
+  \var{skipenum1} is like \var{skip1} but for the enumerator.
+
+  \var{skipdenom1} skips the denominator, when it is \code{1} taking
+  into account \var{denomprefix}, \var{denominfix}, \var{denomsuffix}
+  \var{minuspos} and the sign of the number.
+
+  \var{labelattrs} has the same meaning than for \var{decimal}.
+\end{classdesc}
+
+\section{Painter}
+
+\declaremodule{}{graph.axis.painter}
+\modulesynopsis{Axes painters}
+
+The following classes are part of the module
+\module{graph.axis.painter}. Instances of the painter classes can be
+passed to the painter keyword argument of regular axes.
+
+\begin{classdesc}{rotatetext}{direction, epsilon=1e-10}
+  This helper class is used in direction arguments of the painters
+  below to prevent axis labels and titles being written upside down.
+  In those cases the text will be rotated by 180 degrees.
+  \var{direction} is an angle to be used relative to the tick
+  direction. \var{epsilon} is the value by which 90 degrees can be
+  exceeded before an 180 degree rotation is performed.
+\end{classdesc}
+
+The following two class variables are initialized with the most common
+use case:
+
+\begin{memberdesc}{parallel}
+  \code{rotatetext(90)}
+\end{memberdesc}
+
+\begin{memberdesc}{orthogonal}
+  \code{rotatetext(180)}
+\end{memberdesc}
+
+\begin{classdesc}{ticklength}{initial, factor}
+  This helper class provides changeable \PyX{} lengths starting from
+  an initial value \var{initial} multiplied by \var{factor} again and
+  again. The resulting lengths are thus a geometric series.
+\end{classdesc}
+
+There are some class variables initialized with suitable values for
+tick stroking. They are named \code{ticklength.SHORT},
+\code{ticklength.SHORt}, \dots, \code{ticklength.short},
+\code{ticklength.normal}, \code{ticklength.long}, \dots,
+\code{ticklength.LONG}. \code{ticklength.normal} is initialized with
+a length of \code{0.12} and the reciprocal of the golden mean as
+\code{factor} whereas the others have a modified inital value by
+multiplication or division by multiples of $\sqrt{2}$ appropriately.
+
+\begin{classdesc}{regular}{innerticklength=ticklength.normal,
+                           outerticklength=None,
+                           tickattrs=[],
+                           gridattrs=None,
+                           basepathattrs=[],
+                           labeldist="0.3 cm",
+                           labelattrs=[],
+                           labeldirection=None,
+                           labelhequalize=0,
+                           labelvequalize=1,
+                           titledist="0.3 cm",
+                           titleattrs=[],
+                           titledirection=rotatetext.parallel,
+                           titlepos=0.5,
+                           texrunner=text.defaulttexrunner}
+  Instances of this class are painters for regular axes like linear
+  and logarithmic axes.
+
+  \var{innerticklength} and \var{outerticklength} are visual \PyX{}
+  lengths of the ticks, subticks, subsubticks \emph{etc.} plotted
+  along the axis inside and outside of the graph. Provide changeable
+  attributes to modify the lengths of ticks compared to subticks
+  \emph{etc.} \code{None} turns off the ticks inside and outside the
+  graph, respectively.
+
+  \var{tickattrs} and \var{gridattrs} are changeable stroke attributes
+  for the ticks and the grid, where \code{None} turns off the feature.
+  \var{basepathattrs} are stroke attributes for the axis or
+  \code{None} to turn it off. \var{basepathattrs} is merged with
+  \samp{[style.linecap.square]}.
+
+  \var{labeldist} is the distance of the labels from the axis base path
+  as a visual \PyX{} length. \var{labelattrs} is a list of text
+  attributes for the labels. It is merged with
+  \samp{[text.halign.center, text.vshift.mathaxis]}.
+  \var{labeldirection} is an instance of \var{rotatetext} to rotate
+  the labels relative to the axis tick direction or \code{None}.
+
+  The boolean values \var{labelhequalize} and \var{labelvequalize}
+  force an equal alignment of all labels for straight vertical and
+  horizontal axes, respectively.
+
+  \var{titledist} is the distance of the title from the rest of the
+  axis as a visual \PyX{}. \var{titleattrs} is a list of text
+  attributes for the title. It is merged with
+  \samp{[text.halign.center, text.vshift.mathaxis]}.
+  \var{titledirection} is an instance of \var{rotatetext} to rotate
+  the title relative to the axis tick direction or \code{None}.
+  \var{titlepos} is the position of the title in graph coordinates.
+
+  \var{texrunner} is the texrunner instance to create axis text like
+  the axis title or labels.
+\end{classdesc}
+
+\begin{classdesc}{linked}{innerticklength=ticklength.short,
+                         outerticklength=None,
+                         tickattrs=[],
+                         gridattrs=None,
+                         basepathattrs=[],
+                         labeldist="0.3 cm",
+                         labelattrs=None,
+                         labeldirection=None,
+                         labelhequalize=0,
+                         labelvequalize=1,
+                         titledist="0.3 cm",
+                         titleattrs=None,
+                         titledirection=rotatetext.parallel,
+                         titlepos=0.5,
+                         texrunner=text.defaulttexrunner}
+  This class is identical to \class{plain} up to the default values of
+  \var{labelattrs} and \var{titleattrs}. By turning off those
+  features, this painter is suitable for linked axes.
+\end{classdesc}
+
+\begin{classdesc}{split}{breaklinesdist="0.05 cm",
+                         breaklineslength="0.5 cm",
+                         breaklinesangle=-60,
+                         titledist="0.3 cm",
+                         titleattrs=None,
+                         titledirection=rotatetext.parallel,
+                         titlepos=0.5,
+                         texrunner=text.defaulttexrunner}
+  Instances of this class are suitable painters for split axes.
+
+  \var{breaklinesdist} and \var{breaklineslength} are the distance
+  between axes break markers in visual \PyX{} lengths.
+  \var{breaklinesangle} is the angle of the axis break marker with
+  respect to the base path of the axis. All other parameters have the
+  same meaning as in \class{plain}.
+\end{classdesc}
+
+\begin{classdesc}{linkedsplit}{breaklinesdist="0.05 cm",
+                               breaklineslength="0.5 cm",
+                               breaklinesangle=-60,
+                               titledist="0.3 cm",
+                               titleattrs=None,
+                               titledirection=rotatetext.parallel,
+                               titlepos=0.5,
+                               texrunner=text.defaulttexrunner}
+  This class is identical to \class{split} up to the default value of
+  \var{titleattrs}. By turning off this feature, this painter is
+  suitable for linked split axes.
+\end{classdesc}
+
+\begin{classdesc}{bar}{innerticklength=None,
+                       outerticklength=None,
+                       tickattrs=[],
+                       basepathattrs=[],
+                       namedist="0.3 cm",
+                       nameattrs=[],
+                       namedirection=None,
+                       namepos=0.5,
+                       namehequalize=0,
+                       namevequalize=1,
+                       titledist="0.3 cm",
+                       titleattrs=[],
+                       titledirection=rotatetext.parallel,
+                       titlepos=0.5,
+                       texrunner=text.defaulttexrunner}
+  Instances of this class are suitable painters for bar axes.
+
+  \var{innerticklength} and \var{outerticklength} are visual \PyX{}
+  length to mark the different bar regions along the axis inside and
+  outside of the graph. \code{None} turns off the ticks inside and
+  outside the graph, respectively. \var{tickattrs} are stroke
+  attributes for the ticks or \code{None} to turns all ticks off.
+
+  The parameters with prefix \var{name} are identical to their
+  \var{label} counterparts in \class{plain}. All other parameters have
+  the same meaning as in \class{plain}.
+\end{classdesc}
+
+\begin{classdesc}{linkedbar}{innerticklength=None,
+                             outerticklength=None,
+                             tickattrs=[],
+                             basepathattrs=[],
+                             namedist="0.3 cm",
+                             nameattrs=None,
+                             namedirection=None,
+                             namepos=0.5,
+                             namehequalize=0,
+                             namevequalize=1,
+                             titledist="0.3 cm",
+                             titleattrs=None,
+                             titledirection=rotatetext.parallel,
+                             titlepos=0.5,
+                             texrunner=text.defaulttexrunner}
+  This class is identical to \class{bar} up to the default values of
+  \var{nameattrs} and \var{titleattrs}. By turning off those features,
+  this painter is suitable for linked bar axes.
+\end{classdesc}
+
+\section{Rater}
+
+\declaremodule{}{graph.axis.rater}
+\modulesynopsis{Axes raters}
+
+The rating of axes is implemented in \module{graph.axis.rater}. When
+an axis partitioning scheme returns several partitioning
+possibilities, the partitions needs to be rated by a positive number.
+The lowest rated axis partitioning is considered best.
+
+The rating consists of two steps. The first takes into account only
+the number of ticks, subticks, labels and so on in comparison to
+optimal numbers. Additionally, the extension of the axis range by
+ticks and labels is taken into account. This rating leads to a
+preselection of possible partitions. In the second step, after the
+layout of prefered partitionings is calculated, the distance of the
+labels in a partition is taken into account as well at a smaller
+weight factor by default. Thereby partitions with overlapping labels
+will be rejected completely. Exceptionally sparse or dense labels will
+receive a bad rating as well.
+
+\begin{classdesc}{cube}{opt, left=None, right=None, weight=1}
+  Instances of this class provide a number rater. \var{opt} is the
+  optimal value. When not provided, \var{left} is set to \code{0} and
+  \var{right} is set to \code{3*\var{opt}}. Weight is a multiplicator
+  to the result.
+
+  The rater calculates
+  \code{\var{widht}*((x-\var{opt})/(other-\var{opt}))**3} to rate the
+  value \code{x}, where \code{other} is \var{left}
+  (\code{x}\textless\var{opt}) or \var{right}
+  (\code{x}\textgreater\var{opt}).
+\end{classdesc}
+
+\begin{classdesc}{distance}{opt, weight=0.1}
+  Instances of this class provide a rater for a list of numbers.
+  The purpose is to rate the distance between label boxes. \var{opt}
+  is the optimal value.
+
+  The rater calculates the sum of \code{\var{weight}*(\var{opt}/x-1)}
+  (\code{x}\textless\var{opt}) or \code{\var{weight}*(x/\var{opt}-1)}
+  (\code{x}\textgreater\var{opt}) for all elements \code{x} of the
+  list. It returns this value divided by the number of elements in the
+  list.
+\end{classdesc}
+
+\begin{classdesc}{rater}{ticks, labels, range, distance}
+  Instances of this class are raters for axes partitionings.
+
+  \var{ticks} and \var{labels} are both lists of number rater
+  instances, where the first items are used for the number of ticks
+  and labels, the second items are used for the number of subticks
+  (including the ticks) and sublabels (including the labels) and so on
+  until the end of the list is reached or no corresponding ticks are
+  available.
+
+  \var{range} is a number rater instance which rates the range of the
+  ticks relative to the range of the data.
+
+  \var{distance} is an distance rater instance.
+\end{classdesc}
+
+\begin{classdesc}{linear}{ticks=[cube(4), cube(10, weight=0.5)],
+                          labels=[cube(4)],
+                          range=cube(1, weight=2),
+                          distance=distance("1 cm")}
+  This class is suitable to rate partitionings of linear axes. It is
+  equal to \class{rater} but defines predefined values for the
+  arguments.
+\end{classdesc}
+
+\begin{classdesc}{lin}{...}
+  This class is an abbreviation of \class{linear} described above.
+\end{classdesc}
+
+\begin{classdesc}{logarithmic}{ticks=[cube(5, right=20), cube(20, right=100, weight=0.5)],
+                               labels=[cube(5, right=20), cube(5, right=20, weight=0.5)],
+                               range=cube(1, weight=2),
+                               distance=distance("1 cm")}
+  This class is suitable to rate partitionings of logarithmic axes. It
+  is equal to \class{rater} but defines predefined values for the
+  arguments.
+\end{classdesc}
+
+\begin{classdesc}{log}{...}
+  This class is an abbreviation of \class{logarithmic} described above.
 \end{classdesc}
 

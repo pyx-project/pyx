@@ -60,7 +60,6 @@ TODO:
 
 TODO for 0.6:
   - Documentation:
-    - graph module (in progress)
     - path module:
       - describe + vs <<
       - more details in path constructor: allowed pathels, first pathel...

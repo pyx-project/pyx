@@ -6,7 +6,7 @@ import unittest
 
 from pyx import *
 from pyx.graph.axis.tick import tick
-from pyx.graph.axis.texter import rational, decimal, exponential, default
+from pyx.graph.axis.texter import rational, decimal, exponential, mixed
 
 
 class TexterTestCase(unittest.TestCase):
@@ -49,13 +49,13 @@ class TexterTestCase(unittest.TestCase):
 
     def testDefault(self):
         ticks = [tick((0, 10), labellevel=0), tick((1, 10), labellevel=0), tick((1, 1), labellevel=0), tick((10, 1), labellevel=0)]
-        default().labels(ticks)
+        mixed().labels(ticks)
         self.failUnlessEqual([t.label for t in ticks], ["0", "0.1", "1", "10"])
         ticks = [tick((0, 10), labellevel=0), tick((1, 10), labellevel=0), tick((1, 1), labellevel=0), tick((10000, 1), labellevel=0)]
-        default().labels(ticks)
+        mixed().labels(ticks)
         self.failUnlessEqual([t.label for t in ticks], [r"{0}", r"{{1}\cdot10^{-1}}", r"{1}", r"{{1}\cdot10^{4}}"])
         ticks = [tick((0, 10), labellevel=0), tick((1, 10), labellevel=0), tick((1, 1), labellevel=0), tick((10000, 1), labellevel=0)]
-        default(equaldecision=0).labels(ticks)
+        mixed(equaldecision=0).labels(ticks)
         self.failUnlessEqual([t.label for t in ticks], ["0", "0.1", "1", r"{10^{4}}"])
 
 

@@ -153,10 +153,10 @@ class autolinear:
 
     __implements__ = _Iparter
 
-    defaultvariants = ((tick.rational((1, 1)), tick.rational((1, 2))),
-                       (tick.rational((2, 1)), tick.rational((1, 1))),
-                       (tick.rational((5, 2)), tick.rational((5, 4))),
-                       (tick.rational((5, 1)), tick.rational((5, 2))))
+    defaultvariants = [[tick.rational((1, 1)), tick.rational((1, 2))],
+                       [tick.rational((2, 1)), tick.rational((1, 1))],
+                       [tick.rational((5, 2)), tick.rational((5, 4))],
+                       [tick.rational((5, 1)), tick.rational((5, 2))]]
 
     def __init__(self, variants=defaultvariants, extendtick=0, epsilon=1e-10):
         """configuration of the partition scheme
@@ -230,7 +230,7 @@ class preexp:
 
     def __init__(self, pres, exp):
          "create a preexp instance and store its pres and exp information"
-         self.pres = helper.ensuresequence(pres)
+         self.pres = pres
          self.exp = exp
 
 
@@ -240,13 +240,13 @@ class logarithmic(linear):
 
     __implements__ = _Iparter
 
-    pre1exp5   = preexp(tick.rational((1, 1)), 100000)
-    pre1exp4   = preexp(tick.rational((1, 1)), 10000)
-    pre1exp3   = preexp(tick.rational((1, 1)), 1000)
-    pre1exp2   = preexp(tick.rational((1, 1)), 100)
-    pre1exp    = preexp(tick.rational((1, 1)), 10)
-    pre125exp  = preexp((tick.rational((1, 1)), tick.rational((2, 1)), tick.rational((5, 1))), 10)
-    pre1to9exp = preexp(map(lambda x: tick.rational((x, 1)), range(1, 10)), 10)
+    pre1exp5   = preexp([tick.rational((1, 1))], 100000)
+    pre1exp4   = preexp([tick.rational((1, 1))], 10000)
+    pre1exp3   = preexp([tick.rational((1, 1))], 1000)
+    pre1exp2   = preexp([tick.rational((1, 1))], 100)
+    pre1exp    = preexp([tick.rational((1, 1))], 10)
+    pre125exp  = preexp([tick.rational((1, 1)), tick.rational((2, 1)), tick.rational((5, 1))], 10)
+    pre1to9exp = preexp([tick.rational((x, 1)) for x in range(1, 10)], 10)
     #  ^- we always include 1 in order to get extendto(tick|label)level to work as expected
 
     def __init__(self, tickpos=None, labelpos=None, extendtick=0, extendlabel=None, epsilon=1e-10):
@@ -341,30 +341,30 @@ class autologarithmic(logarithmic):
 
     __implements__ = _Iparter
 
-    defaultvariants = (((logarithmic.pre1exp,      # ticks
-                         logarithmic.pre1to9exp),  # subticks
-                        (logarithmic.pre1exp,      # labels
-                         logarithmic.pre125exp)),  # sublevels
+    defaultvariants = [([logarithmic.pre1exp,      # ticks
+                         logarithmic.pre1to9exp],  # subticks
+                        [logarithmic.pre1exp,      # labels
+                         logarithmic.pre125exp]),  # sublevels
 
-                       ((logarithmic.pre1exp,      # ticks
-                         logarithmic.pre1to9exp),  # subticks
+                       ([logarithmic.pre1exp,      # ticks
+                         logarithmic.pre1to9exp],  # subticks
                         None),                     # labels like ticks
 
-                       ((logarithmic.pre1exp2,     # ticks
-                         logarithmic.pre1exp),     # subticks
+                       ([logarithmic.pre1exp2,     # ticks
+                         logarithmic.pre1exp],     # subticks
                         None),                     # labels like ticks
 
-                       ((logarithmic.pre1exp3,     # ticks
-                         logarithmic.pre1exp),     # subticks
+                       ([logarithmic.pre1exp3,     # ticks
+                         logarithmic.pre1exp],     # subticks
                         None),                     # labels like ticks
 
-                       ((logarithmic.pre1exp4,     # ticks
-                         logarithmic.pre1exp),     # subticks
+                       ([logarithmic.pre1exp4,     # ticks
+                         logarithmic.pre1exp],     # subticks
                         None),                     # labels like ticks
 
-                       ((logarithmic.pre1exp5,     # ticks
-                         logarithmic.pre1exp),     # subticks
-                        None))                     # labels like ticks
+                       ([logarithmic.pre1exp5,     # ticks
+                         logarithmic.pre1exp],     # subticks
+                        None)]                     # labels like ticks
 
     def __init__(self, variants=defaultvariants, extendtick=0, extendlabel=None, epsilon=1e-10):
         """configuration of the partition scheme

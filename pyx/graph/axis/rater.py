@@ -139,18 +139,7 @@ class rater:
 
     # __implements__ = sole implementation
 
-    linearticks = [cube(4), cube(10, weight=0.5)]
-    linearlabels = [cube(4)]
-    linticks = linearticks
-    linlabels = linearlabels
-    logarithmicticks = [cube(5, right=20), cube(20, right=100, weight=0.5)]
-    logarithmiclabels = [cube(5, right=20), cube(5, left=-20, right=20, weight=0.5)]
-    logticks = logarithmicticks
-    loglabels = logarithmiclabels
-    stdrange = cube(1, weight=2)
-    stddistance = distance("1 cm")
-
-    def __init__(self, ticks, labels, range=stdrange, distance=stddistance):
+    def __init__(self, ticks, labels, range, distance):
         """initializes the axis rater
         - ticks and labels are lists of instances of a value rater
         - the first entry in ticks rate the number of ticks, the
@@ -237,8 +226,11 @@ class rater:
 class linear(rater):
     """a rater with predefined constructor arguments suitable for a linear axis"""
 
-    def __init__(self, ticks=rater.linearticks, labels=rater.linearlabels, **kwargs):
-        rater.__init__(self, ticks, labels, **kwargs)
+    def __init__(self, ticks=[cube(4), cube(10, weight=0.5)],
+                       labels=[cube(4)],
+                       range=cube(1, weight=2),
+                       distance=distance("1 cm")):
+        rater.__init__(self, ticks, labels, range, distance)
 
 lin = linear
 
@@ -246,7 +238,10 @@ lin = linear
 class logarithmic(rater):
     """a rater with predefined constructor arguments suitable for a logarithmic axis"""
 
-    def __init__(self, ticks=rater.logarithmicticks, labels=rater.logarithmiclabels, **kwargs):
-        rater.__init__(self, ticks, labels, **kwargs)
+    def __init__(self, ticks=[cube(5, right=20), cube(20, right=100, weight=0.5)],
+                       labels=[cube(5, right=20), cube(5, right=20, weight=0.5)],
+                       range=cube(1, weight=2),
+                       distance=distance("1 cm")):
+        rater.__init__(self, ticks, labels, range, distance)
 
 log = logarithmic
