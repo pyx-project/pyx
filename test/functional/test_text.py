@@ -10,6 +10,7 @@ text.preamble(r"""%
     \usepackage{graphicx}
     \usepackage{color}
     \usepackage{rotating}
+    \usepackage{helvet}
 %    \graphicspath{{eps/}}
 
     \definecolor{col0}{gray}{0.1}
@@ -49,6 +50,9 @@ c.text(0, 3, r"\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} = \sqrt{\pi\
 c.text(0, 6, r"\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} = \sqrt{\pi\over a}", text.size.LARGE, text.mathmode)
 
 c.stroke(c.text(1, 2, r"Hello, world!").path())
+
+# test a virtual font with encoding
+c.text(0, 8, r"\sffamily Helvetica test: \"o\ss")
 
 # test the specials
 c.stroke(c.text(10, 2, r"Hello, \color{green}world!", trafo.slant(1)).path())
