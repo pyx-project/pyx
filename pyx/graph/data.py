@@ -481,7 +481,7 @@ class file(data):
                        **kwargs):
 
         def readfile(file, title, self=self, commentpattern=commentpattern, stringpattern=stringpattern, columnpattern=columnpattern, skiphead=skiphead, skiptail=skiptail, every=every):
-            columns = {}
+            columns = []
             points = []
             linenumber = 0
             maxcolumns = 0
@@ -490,11 +490,7 @@ class file(data):
                 match = commentpattern.match(line)
                 if match:
                     if not len(points):
-                        keys = self.splitline(line[match.end():], stringpattern, columnpattern, tofloat=0)
-                        i = 0
-                        for key in keys:
-                            i += 1 # the first column is number 1 since a linenumber is added in front
-                            columns[key] = i
+                        columns = self.splitline(line[match.end():], stringpattern, columnpattern, tofloat=0)
                 else:
                     linedata = []
                     for value in self.splitline(line, stringpattern, columnpattern, tofloat=1):
@@ -512,7 +508,8 @@ class file(data):
             for i in xrange(len(points)):
                 if len(points[i]) != maxcolumns:
                     points[i].extend([None]*(maxcolumns-len(points[i])))
-            return list(points, title=title, addlinenumbers=0, **columns)
+            return list(points, title=title, addlinenumbers=0,
+                        **dict([(column, i+1) for i, column in enumerate(columns[:maxcolumns-1])]))
 
         try:
             filename.readlines

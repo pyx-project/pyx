@@ -91,6 +91,7 @@ TODO:
     - support windows line endings (patch by Hans-Andreas Engel, cf. bug #1071160)
   - graph modules:
     - line attributes handling fixed (reported by Andrea Riciputi)
+    - cut column name list at the max. number of columns (reported by Arnd Baecker)
 
 
 0.7 (2004/10/21):
