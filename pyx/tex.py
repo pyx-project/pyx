@@ -940,13 +940,18 @@ class tex(_tex):
             lfsdef = open(LocalLfsName, "r").read()
         except IOError:
             try:
-                SysLfsName = os.path.join(sys.prefix, "share", "pyx", str(lfs) + ".lfs")
-                lfsdef = open(SysLfsName, "r").read()
+                try:
+                    SysLfsName = os.path.join(sys.prefix, "share", "pyx", str(lfs) + ".lfs")
+                    lfsdef = open(SysLfsName, "r").read()
+                except IOError:
+                    SysLfsName = os.path.join(os.path.dirname(__file__), "lfs", str(lfs) + ".lfs")
+                    lfsdef = open(SysLfsName, "r").read()
             except IOError:
                 files = map(lambda x: x[:-4],
-                            filter(lambda x: x[-4:] == ".lfs", 
+                            filter(lambda x: x[-4:] == ".lfs",
                                    os.listdir(".") +
-                                   os.listdir(os.path.join(sys.prefix, "share", "pyx"))))
+                                   os.listdir(os.path.join(sys.prefix, "share", "pyx")),
+                                   os.listdir(os.path.join(os.path.dirname(__file__), "lfs"))))
                 raise IOError("file '%s.lfs' not found. Available latex font sizes:\n%s" % (lfs, files))
         self.define(lfsdef)
         self.define("\\newdimen\\linewidth%\n\\hsize0truein%\n\\vsize0truein%\n\\hoffset-1truein%\n\\voffset-1truein")
