@@ -15,6 +15,8 @@ def drawpathwbbox(c, p):
    	        "%f t pt" % (bbox.urx-bbox.llx), "%f t pt" % (bbox.ury-bbox.lly)))
 
 def testspeed():
+    "coordinates as strings"
+    
     c=canvas.canvas()
     p=path([moveto(0,0)])
 
@@ -25,6 +27,20 @@ def testspeed():
     c.writetofile("testspeed")
 
 def testspeed2():
+    "coordinates in user units"
+
+    c=canvas.canvas()
+    p=path([moveto(0,0)])
+
+    for i in xrange(1000):
+        p.append(lineto(i,i))
+
+    c.draw(p)
+    c.writetofile("testspeed")
+
+def testspeed3():
+    "coordinates in pts (internal routines)"
+
     c=canvas.canvas()
     p=path([pyx.path._moveto(0,0)])
 
@@ -204,4 +220,7 @@ profile.run('testspeed()', 'test.prof')
 pstats.Stats("test.prof").sort_stats('time').print_stats(10)
 
 profile.run('testspeed2()', 'test.prof')
+pstats.Stats("test.prof").sort_stats('time').print_stats(10)
+
+profile.run('testspeed3()', 'test.prof')
 pstats.Stats("test.prof").sort_stats('time').print_stats(10)
