@@ -1541,9 +1541,9 @@ class path(base.PSCmd):
         """return reversed path"""
         return normpath(self).reversed()
 
-    def split(self, *parameters):
+    def split(self, parameters):
         """return corresponding normpaths split at parameter value t"""
-        return normpath(self).split(*parameters)
+        return normpath(self).split(parameters)
 
     def tangent(self, t, length=None):
         """return tangent vector at parameter value t of corr. normpath"""
@@ -1928,7 +1928,7 @@ class normpath(path):
 
         return np
 
-    def split(self, *parameters):
+    def split(self, parameters):
         """split path at parameter values parameters
 
         Note that the parameter list has to be sorted.
