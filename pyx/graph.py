@@ -181,7 +181,12 @@ class frac:
         self.denom = denom
 
     def __cmp__(self, other):
+        if other == None:
+            return 1
         return cmp(self.enum * other.denom, other.enum * self.denom)
+
+    def __mul__(self, other):
+        return frac(self.enum * other.enum, self.denom * other.denom)
 
     def __float__(self):
         return float(self.enum) / self.denom
@@ -190,7 +195,7 @@ class frac:
         return "%i/%i" % (self.enum, self.denom)
 
     def __repr__(self):
-        return "frac(%i, %i)" % (self.enum, self.denom)
+        return "frac(%s, %s)" % (repr(self.enum), repr(self.denom)) # I want to see the "L"
 
 
 class tick(frac):
@@ -202,7 +207,7 @@ class tick(frac):
         self.labellevel = labellevel
 
     def __repr__(self):
-        return "tick(%i, %i, %s, %s)" % (self.enum, self.denom, self.ticklevel, self.labellevel)
+        return "tick(%s, %s, %s, %s)" % (repr(self.enum), repr(self.denom), self.ticklevel, self.labellevel)
 
     def merge(self, other):
         assert self == other
@@ -216,44 +221,22 @@ class linpart:
 
     def __init__(self, min, max, tickfracs = None, labelfracs = None, extendtoticklevel = 0, extendtolabellevel = None):
         """
-        zero-level labelfracs are created out of the zero-level tickfracs, when labelfracs are None
-        all-level tickfracs are created out of the all-level labelfracs, when tickfracs are None
+        zero-level labelfracs are created out of the zero-level tickfracs when labelfracs are None
+        all-level tickfracs are created out of the all-level labelfracs when tickfracs are None
         get ticks but avoid labels by labelfracs = ()
         get labels but avoid ticks by tickfracs = ()
+
+        We do not perform the adjustment of tickfracs or labelfracs within this
+        constructor, but later in getticks in order to allow for a change by
+        parameters of getticks. That can be used to create other partition schemes
+        (which create several posibilities) by derivating this class.
         """
         self.min = min
         self.max = max
-
-        if isinstance(tickfracs, frac):
-            self.tickfracs = (tickfracs, )
-        else:
-            if tickfracs == None:
-                if isinstance(labelfracs, frac):
-                    self.tickfracs = (labelfracs, )
-                elif labelfracs == None:
-                    self.tickfracs = ()
-                else:
-                    self.tickfracs = labelfracs
-            else:
-                self.tickfracs = tickfracs
-        if isinstance(labelfracs, frac):
-            self.labelfracs = (labelfracs, )
-        else:
-            if labelfracs == None:
-                if len(self.tickfracs):
-                    self.labelfracs = (self.tickfracs[0], )
-                else:
-                    self.labelfracs = ()
-            else:
-                self.labelfracs = labelfracs
-
-        print self.tickfracs
-        print self.labelfracs
-
-        if extendtoticklevel != None:
-            self.extendminmax(self.tickfracs[extendtoticklevel])
-        if extendtolabellevel != None:
-            self.extendminmax(self.labelfracs[extendtolabellevel])
+        self.tickfracs = tickfracs
+        self.labelfracs = labelfracs
+        self.extendtoticklevel = extendtoticklevel
+        self.extendtolabellevel = extendtolabellevel
 
     def extendminmax(self, frac):
         self.min = float(frac) * math.floor(self.min / float(frac) + epsilon)
@@ -286,35 +269,94 @@ class linpart:
                 list1 += list2[j:]
         return list1
 
-    def getticks(self):
+    def getticks(self, tickfracs = None, labelfracs = None):
+        """
+        When tickfracs or labelfracs are set, they will be taken instead of the
+        values provided to the constructor. It is not allowed to provide something
+        to tickfracs and labelfracs here and at the constructor at the same time.
+        """
+        if (tickfracs == None) and (labelfracs == None):
+            tickfracs = self.tickfracs
+            labelfracs = self.labelfracs
+        else:
+            assert self.tickfracs == None
+            assert self.labelfracs == None
+        if isinstance(tickfracs, frac):
+            tickfracs = (tickfracs, )
+        else:
+            if tickfracs == None:
+                if isinstance(labelfracs, frac):
+                    tickfracs = (labelfracs, )
+                elif labelfracs == None:
+                    tickfracs = ()
+                else:
+                    tickfracs = labelfracs
+        if isinstance(labelfracs, frac):
+            labelfracs = (labelfracs, )
+        else:
+            if labelfracs == None:
+                if len(tickfracs):
+                    labelfracs = (tickfracs[0], )
+                else:
+                    labelfracs = ()
+
+        minrestore = self.min
+        maxrestore = self.max
+
+        if self.extendtoticklevel != None:
+            self.extendminmax(tickfracs[self.extendtoticklevel])
+        if self.extendtolabellevel != None:
+            self.extendminmax(labelfracs[self.extendtolabellevel])
+
         ticks = []
-        for i in range(len(self.tickfracs)):
-            ticks = self.mergeticklists(ticks, self.getticklist(self.tickfracs[i], ticklevel = i))
-        for i in range(len(self.labelfracs)):
-            ticks = self.mergeticklists(ticks, self.getticklist(self.labelfracs[i], labellevel = i))
+        for i in range(len(tickfracs)):
+            ticks = self.mergeticklists(ticks, self.getticklist(tickfracs[i], ticklevel = i))
+        for i in range(len(labelfracs)):
+            ticks = self.mergeticklists(ticks, self.getticklist(labelfracs[i], labellevel = i))
+
+        self.min = minrestore
+        self.max = maxrestore
+
         return ticks
 
     def getparts(self):
         return [getticks(self), ]
 
 
-# print linpart(0, 1.9, (frac(1, 3), frac(1, 4), ), extendtoticklevel = None, extendtolabellevel = 0).getticks()
-
-class sfpart:
+class sflinpart(linpart):
     """shift - frac - partitioning"""
-    defaultfracs = ((frac(1, 1), frac(1, 2), ),
-                    (frac(2, 1), frac(1, 1), ),
-                    (frac(5, 2), frac(5, 4), ),
-                    (frac(5, 1), frac(5, 2), ), )
+    defaultfracses = ((frac(1, 1), frac(1, 2), ),
+                      (frac(2, 1), frac(1, 1), ),
+                      (frac(5, 2), frac(5, 4), ),
+                      (frac(5, 1), frac(5, 2), ), )
 
-    def __init__(self, fracs = defaultfracs):
-        self.fracs = fracs
+    def __init__(self, min, max, minticks = 0.5, maxticks = 25, fracses = defaultfracses, **args):
+        linpart.__init__(self, min, max, **args)
+        self.minticks = minticks
+        self.maxticks = maxticks
+        self.fracses = fracses
 
     def getparts(self):
-        pass
+        parts = []
+        e = int(log(self.max - self.min) / log(10))
+        for shift in range(e - 5, e + 5): # TODO: what about that 5???
+            if shift > 0:
+                bf = frac(_powi(10L, shift), 1)
+            elif shift < 0:
+                bf = frac(1, _powi(10L, -shift))
+            else:
+                bf = frac(1, 1)
 
+            for fracs in self.fracses:
+                tickcount = (self.max - self.min) / float(fracs[0] * bf)
+                if (tickcount > self.minticks) and (tickcount < self.maxticks):
+                    parts.append(self.getticks(map(lambda f, bf = bf: f * bf, fracs)))
+        return parts
 
-class fffsfpart(sfpart):
+# print linpart(0, 1.9, (frac(1, 3), frac(1, 4), ), extendtoticklevel = None, extendtolabellevel = 0).getticks()
+print sflinpart(0, 1.9).getparts()
+
+class fffsflinpart(sflinpart):
     """favorfixfrac - shift - frac - partitioning"""
     # TODO: just to be done
     degreefracs = ((frac( 15, 1), frac(  5, 1), ),
@@ -351,10 +393,10 @@ class momrate:
 
 class LinAxis(_Axis, _LinMap):
 
-    def __init__(self, part = sfpart(), rate = momrate(), **args):
+    def __init__(self):#, part = sfpart(), rate = momrate(), **args):
         _Axis.__init__(self, **args)
-        self.part = part
-        self.rate = rate
+        #self.part = part
+        #self.rate = rate
 
         self.enclosezero = 0.25 # maximal factor allowed to extend axis to enclose zero
         self.enlargerange = 1 # should we enlarge ranges?
