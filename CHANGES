@@ -11,8 +11,7 @@ PyX
       -> manualpart and the mix technique is not needed anymore
          (both things are still available and working, but they will be removed in the future)
       (done up to documentation)
-    - _ensurefrac is implemented inside the frac constructor now; initialization
-      is possible by:
+    - _ensurefrac is implemented inside the frac constructor now; initialization is possible by:
       - a (enum, denom) tuple now (previously there were two arguments)
       - a string (as before via _ensurefrac)
       - exponential strings are allowed as well (e.g. "1e10" etc.)
