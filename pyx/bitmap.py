@@ -30,12 +30,26 @@ except:
 
 import base, bbox, prolog, trafo, unit
 
+def ascii85lines(datalen):
+    if datalen < 4:
+        return 1
+    return (datalen + 56)/60
+
 def ascii85stream(file, data):
+    """Encodes the string data in ASCII85 and writes it to
+    the stream file. The number of lines written to the stream
+    is known just from the length of the data by means of the
+    ascii85lines function. Note that the tailing newline character
+    of the last line is not added by this function, but it is taken
+    into account in the ascii85lines function."""
+    i = 3 # go on smoothly in case of data length equals zero
     l = 0
     for i in range(len(data)):
         c = data[i]
         l = l*256 + ord(c)
         if i%4 == 3:
+            if i%60 == 3 and i != 3:
+                file.write("\n")
             if l:
                 l, c5 = divmod(l, 85)
                 l, c4 = divmod(l, 85)
@@ -45,8 +59,6 @@ def ascii85stream(file, data):
                 l = 0
             else:
                 file.write("z")
-            if i%64 == 63:
-                file.write("\n")
     if i%4 != 3:
         for x in range(3-(i%4)):
             l *= 256
@@ -258,13 +270,16 @@ class bitmap(base.PSCmd):
             #      after proper code reorganization
             buffer = cStringIO.StringIO()
             if self.singlestring:
-                buffer.write("<~")
+                buffer.write("%%%%BeginData: %i ASCII Lines\n"
+                             "<~" % ascii85lines(len(self.data)))
                 ascii85stream(buffer, self.data)
-                buffer.write("~>")
+                buffer.write("~>\n%%EndData\n")
             else:
-                buffer.write("[ ")
                 datalen = len(self.data)
                 tailpos = datalen - datalen % self.maxstrlen
+                buffer.write("%%%%BeginData: %i ASCII Lines\n" %
+                             ((tailpos/self.maxstrlen) * ascii85lines(self.maxstrlen) + ascii85lines(datalen-tailpos)))
+                buffer.write("[ ")
                 for i in xrange(0, tailpos, self.maxstrlen):
                     buffer.write("<~")
                     ascii85stream(buffer, self.data[i: i+self.maxstrlen])
@@ -272,9 +287,8 @@ class bitmap(base.PSCmd):
                 if datalen != tailpos:
                     buffer.write("<~")
                     ascii85stream(buffer, self.data[tailpos:])
-                    buffer.write("~> ]")
-                else:
-                    buffer.write("]")
+                    buffer.write("~>")
+                buffer.write("]\n%%EndData\n")
             self.prologs.append(prolog.definition(self.imagedataid, buffer.getvalue()))
 
     def bbox(self):
@@ -306,11 +320,15 @@ class bitmap(base.PSCmd):
                    "/ImageMatrix %s\n" # imagematrix
                    "/Decode %s\n" # decode
                    "/DataSource %s\n" # datasource
-                   ">>\n"
-                   "image\n" % (self.imagewidth, self.imageheight,
-                                       self.imagematrix, self.decode, self.datasource))
-        if not self.storedata:
+                   ">>\n" % (self.imagewidth, self.imageheight,
+                             self.imagematrix, self.decode, self.datasource))
+        if self.storedata:
+            file.write("image\n")
+        else:
+            # the datasource is currentstream (plus some filters)
+            file.write("%%%%BeginData: %i ASCII Lines\n"
+                       "image\n" % (ascii85lines(len(self.data)) + 1))
             ascii85stream(file, self.data)
-            file.write("~>\n")
+            file.write("~>\n%%EndData\n")
 
         file.write("grestore\n")
