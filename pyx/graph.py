@@ -140,7 +140,7 @@ class frac:
 
 def _ensurefrac(arg):
     """helper function to convert arg into a frac
-    strings like 0.123, 1/-2, 1.23/34.21 are converted to a frac"""
+    - strings like 0.123, 1/-2, 1.23/34.21 are converted to a frac"""
     # TODO: exponentials are not yet supported, e.g. 1e-10, etc.
     # XXX: we don't need to force long on newer python versions
 
@@ -315,16 +315,15 @@ class manualpart:
           mergelabels function (additional information available there)
         - mix specifies another partition to be merged into the
           created partition"""
-# XXX CONTINUE ticks -> tickpos etc.
-        if ticks is None and labels is not None:
-            self.ticks = helper.ensuresequence(helper.getsequenceno(labels, 0))
+        if tickpos is None and labelpos is not None:
+            self.tickpos = helper.ensuresequence(helper.getsequenceno(labelpos, 0))
         else:
-            self.ticks = ticks
-        if labels is None and ticks is not None:
-            self.labels = helper.ensuresequence(helper.getsequenceno(ticks, 0))
+            self.tickpos = tickpos
+        if labelpos is None and tickpos is not None:
+            self.labelpos = helper.ensuresequence(helper.getsequenceno(tickpos, 0))
         else:
-            self.labels = labels
-        self.texts = texts
+            self.labelpos = labelpos
+        self.labels = labels
         self.mix = mix
 
     def checkfraclist(self, *fracs):
@@ -342,21 +341,21 @@ class manualpart:
     def part(self):
         "create the partition as described in the constructor"
         ticks = list(self.mix)
-        if helper.issequenceofsequences(self.ticks):
-            for fracs, level in zip(self.ticks, xrange(sys.maxint)):
-                ticks = _mergeticklists(ticks, [tick(frac.enum, frac.denom, ticklevel = level)
+        if helper.issequenceofsequences(self.tickpos):
+            for fracs, level in zip(self.tickpos, xrange(sys.maxint)):
+                ticks = _mergeticklists(ticks, [tick(frac.enum, frac.denom, ticklevel=level)
                                                 for frac in self.checkfraclist(*map(_ensurefrac, helper.ensuresequence(fracs)))])
         else:
-            ticks = _mergeticklists(ticks, [tick(frac.enum, frac.denom, ticklevel = 0)
-                                            for frac in self.checkfraclist(*map(_ensurefrac, helper.ensuresequence(self.ticks)))])
+            ticks = _mergeticklists(ticks, [tick(frac.enum, frac.denom, ticklevel=0)
+                                            for frac in self.checkfraclist(*map(_ensurefrac, helper.ensuresequence(self.tickpos)))])
 
-        if helper.issequenceofsequences(self.labels):
-            for fracs, level in zip(self.labels, xrange(sys.maxint)):
+        if helper.issequenceofsequences(self.labelpos):
+            for fracs, level in zip(self.labelpos, xrange(sys.maxint)):
                 ticks = _mergeticklists(ticks, [tick(frac.enum, frac.denom, labellevel = level)
                                                 for frac in self.checkfraclist(*map(_ensurefrac, helper.ensuresequence(fracs)))])
         else:
             ticks = _mergeticklists(ticks, [tick(frac.enum, frac.denom, labellevel = 0)
-                                            for frac in self.checkfraclist(*map(_ensurefrac, helper.ensuresequence(self.labels)))])
+                                            for frac in self.checkfraclist(*map(_ensurefrac, helper.ensuresequence(self.labelpos)))])
 
         _mergelabels(ticks, self.labels)
 
@@ -382,19 +381,19 @@ class linpart:
 
     __implements__ = _Ipart
 
-    def __init__(self, ticks=None, labels=None, texts=None, extendtick=0, extendlabel=None, epsilon=1e-10, mix=()):
+    def __init__(self, tickdist=None, labeldist=None, labels=None, extendtick=0, extendlabel=None, epsilon=1e-10, mix=()):
         """configuration of the partition scheme
-        - ticks and labels should be a sequence, where the first value
+        - tickdist and labeldist should be a sequence, where the first value
           is the distance between ticks with ticklevel/labellevel 0,
           the second sequence for ticklevel/labellevel 1, etc.
-        - tick and label values must be frac instances or
-          strings convertable to fracs by the _ensurefrac function
+        - tickdist and labeldist values must be frac instances or
+          something convertable to fracs by the _ensurefrac function
         - when the maximum ticklevel/labellevel is 0, just a single value
-          might be provided in ticks and labels
-        - when labels is None and ticks is not None, the tick entries
+          might be provided in tickdist and labeldist
+        - when labeldist is None and tickdist is not None, the tick entries
           for ticklevel 0 are used for labels and vice versa (ticks<->labels)
-        - texts are applied to the resulting partition via the
-          mergetexts function (additional information available there)
+        - labels are applied to the resulting partition via the
+          mergelabels function (additional information available there)
         - extendtick allows for the extension of the range given to the
           defaultpart method to include the next tick with the specified
           level (None turns off this feature); note, that this feature is
@@ -406,14 +405,14 @@ class linpart:
           without creating another tick specified by extendtick/extendlabel
         - mix specifies another partition to be merged into the
           created partition"""
-        if ticks is None and labels is not None:
-            self.ticks = (_ensurefrac(helper.ensuresequence(labels)[0]),)
+        if tickdist is None and labeldist is not None:
+            self.ticklist = (_ensurefrac(helper.ensuresequence(labeldist)[0]),)
         else:
-            self.ticks = map(_ensurefrac, helper.ensuresequence(ticks))
-        if labels is None and ticks is not None:
-            self.labels = (_ensurefrac(helper.ensuresequence(ticks)[0]),)
+            self.ticklist = map(_ensurefrac, helper.ensuresequence(tickdist))
+        if labeldist is None and tickdist is not None:
+            self.labellist = (_ensurefrac(helper.ensuresequence(tickdist)[0]),)
         else:
-            self.labels = map(_ensurefrac, helper.ensuresequence(labels))
+            self.labellist = map(_ensurefrac, helper.ensuresequence(labeldist))
         self.labels = labels
         self.extendtick = extendtick
         self.extendlabel = extendlabel
@@ -422,8 +421,8 @@ class linpart:
 
     def extendminmax(self, min, max, frac, extendmin, extendmax):
         """return new min, max tuple extending the range min, max
-        frac is the tick distance to be used
-        extendmin and extendmax are booleans to allow for the extension"""
+        - frac is the tick distance to be used
+        - extendmin and extendmax are booleans to allow for the extension"""
         if extendmin:
             min = float(frac) * math.floor(min / float(frac) + self.epsilon)
         if extendmax:
@@ -444,16 +443,16 @@ class linpart:
 
     def defaultpart(self, min, max, extendmin, extendmax):
         "method is part of the implementation of _Ipart"
-        if self.extendtick is not None and len(self.ticks) > self.extendtick:
-            min, max = self.extendminmax(min, max, self.ticks[self.extendtick], extendmin, extendmax)
-        if self.extendlabel is not None and len(self.labels) > self.extendlabel:
-            min, max = self.extendminmax(min, max, self.labels[self.extendlabel], extendmin, extendmax)
+        if self.extendtick is not None and len(self.ticklist) > self.extendtick:
+            min, max = self.extendminmax(min, max, self.ticklist[self.extendtick], extendmin, extendmax)
+        if self.extendlabel is not None and len(self.labellist) > self.extendlabel:
+            min, max = self.extendminmax(min, max, self.labellist[self.extendlabel], extendmin, extendmax)
 
         ticks = list(self.mix)
-        for i in range(len(self.ticks)):
-            ticks = _mergeticklists(ticks, self.getticks(min, max, self.ticks[i], ticklevel = i))
-        for i in range(len(self.labels)):
-            ticks = _mergeticklists(ticks, self.getticks(min, max, self.labels[i], labellevel = i))
+        for i in range(len(self.ticklist)):
+            ticks = _mergeticklists(ticks, self.getticks(min, max, self.ticklist[i], ticklevel = i))
+        for i in range(len(self.labellist)):
+            ticks = _mergeticklists(ticks, self.getticks(min, max, self.labellist[i], labellevel = i))
 
         _mergelabels(ticks, self.labels)
 
@@ -475,18 +474,18 @@ class autolinpart:
 
     __implements__ = _Ipart
 
-    defaultlist = ((frac(1, 1), frac(1, 2)),
-                   (frac(2, 1), frac(1, 1)),
-                   (frac(5, 2), frac(5, 4)),
-                   (frac(5, 1), frac(5, 2)))
+    defaultvariants = ((frac(1, 1), frac(1, 2)),
+                       (frac(2, 1), frac(1, 1)),
+                       (frac(5, 2), frac(5, 4)),
+                       (frac(5, 1), frac(5, 2)))
 
-    def __init__(self, list=defaultlist, extendtick=0, epsilon=1e-10, mix=()):
+    def __init__(self, variants=defaultvariants, extendtick=0, epsilon=1e-10, mix=()):
         """configuration of the partition scheme
-        - list should be a sequence of fracs
-        - ticks should be a sequence, where the first value
+        - variants is a sequence of tickdist
+        - tickdist should be a sequence, where the first value
           is the distance between ticks with ticklevel 0,
           the second for ticklevel 1, etc.
-        - tick values must be frac instances or
+        - tickdist values must be frac instances or
           strings convertable to fracs by the _ensurefrac function
         - labellevel is set to None except for those ticks in the partitions,
           where ticklevel is zero. There labellevel is also set to zero.
@@ -500,7 +499,7 @@ class autolinpart:
           without creating another tick specified by extendtick
         - mix specifies another partition to be merged into the
           created partition"""
-        self.list = list
+        self.variants = variants
         self.extendtick = extendtick
         self.epsilon = epsilon
         self.mix = mix
@@ -508,7 +507,7 @@ class autolinpart:
     def defaultpart(self, min, max, extendmin, extendmax):
         "method is part of the implementation of _Ipart"
         base = frac(10L, 1, int(math.log(max - min) / math.log(10)))
-        ticks = self.list[0]
+        ticks = _ensurefrac(self.variants[0])
         useticks = [tick * base for tick in ticks]
         self.lesstickindex = self.moretickindex = 0
         self.lessbase = frac(base.enum, base.denom)
@@ -519,12 +518,12 @@ class autolinpart:
 
     def lesspart(self):
         "method is part of the implementation of _Ipart"
-        if self.lesstickindex < len(self.list) - 1:
+        if self.lesstickindex < len(self.variants) - 1:
             self.lesstickindex += 1
         else:
             self.lesstickindex = 0
             self.lessbase.enum *= 10
-        ticks = self.list[self.lesstickindex]
+        ticks = _ensurefrac(self.variants[self.lesstickindex])
         useticks = [tick * self.lessbase for tick in ticks]
         part = linpart(ticks=useticks, extendtick=self.extendtick, epsilon=self.epsilon, mix=self.mix)
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
@@ -534,27 +533,27 @@ class autolinpart:
         if self.moretickindex:
             self.moretickindex -= 1
         else:
-            self.moretickindex = len(self.list) - 1
+            self.moretickindex = len(self.variants) - 1
             self.morebase.denom *= 10
-        ticks = self.list[self.moretickindex]
+        ticks = _ensurefrac(self.variants[self.moretickindex])
         useticks = [tick * self.morebase for tick in ticks]
         part = linpart(ticks=useticks, extendtick=self.extendtick, epsilon=self.epsilon, mix=self.mix)
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
 
-class shiftfracs:
+class preexp:
     """storage class for the definition of logarithmic axes partitions
     instances of this class define tick positions suitable for
     logarithmic axes by the following instance variables:
-    - shift: integer, which defines multiplicator
-    - fracs: list of tick positions (rational numbers, e.g. instances of frac)
+    - exp: integer, which defines multiplicator (usually 10)
+    - pres: sequence of tick positions (rational numbers, e.g. instances of frac)
     possible positions are these tick positions and arbitrary divisions
-    and multiplications by the shift value"""
+    and multiplications by the exp value"""
 
-    def __init__(self, shift, *fracs):
-         "create a shiftfracs instance and store its shift and fracs information"
-         self.shift = shift
-         self.fracs = fracs
+    def __init__(self, pres, exp):
+         "create a preexp instance and store its pres and exp information"
+         self.pres = helper.ensuresequence(pres)
+         self.exp = exp
 
 
 class logpart(linpart):
@@ -563,25 +562,25 @@ class logpart(linpart):
 
     __implements__ = _Ipart
 
-    shift5fracs1   = shiftfracs(100000, frac(1, 1))
-    shift4fracs1   = shiftfracs(10000, frac(1, 1))
-    shift3fracs1   = shiftfracs(1000, frac(1, 1))
-    shift2fracs1   = shiftfracs(100, frac(1, 1))
-    shiftfracs1    = shiftfracs(10, frac(1, 1))
-    shiftfracs125  = shiftfracs(10, frac(1, 1), frac(2, 1), frac(5, 1))
-    shiftfracs1to9 = shiftfracs(10, *map(lambda x: frac(x, 1), range(1, 10)))
-    #         ^- we always include 1 in order to get extendto(tick|label)level to work as expected
+    pre1exp5   = preexp(frac(1, 1), 100000)
+    pre1exp4   = preexp(frac(1, 1), 10000)
+    pre1exp3   = preexp(frac(1, 1), 1000)
+    pre1exp2   = preexp(frac(1, 1), 100)
+    pre1exp    = preexp(frac(1, 1), 10)
+    pre125exp  = preexp((frac(1, 1), frac(2, 1), frac(5, 1)), 10)
+    pre1to9exp = preexp(map(lambda x: frac(x, 1), range(1, 10)), 10)
+    #  ^- we always include 1 in order to get extendto(tick|label)level to work as expected
 
-    def __init__(self, ticks=None, labels=None, texts=None, extendtick=0, extendlabel=None, epsilon=1e-10, mix=()):
+    def __init__(self, tickpos=None, labelpos=None, labels=None, extendtick=0, extendlabel=None, epsilon=1e-10, mix=()):
         """configuration of the partition scheme
-        - ticks and labels should be a sequence, where the first value
-          is a shiftfracs instance describing ticks with ticklevel/labellevel 0,
-          the second sequence for ticklevel/labellevel 1, etc.
+        - tickpos and labelpos should be a sequence, where the first entry
+          is a preexp instance describing ticks with ticklevel/labellevel 0,
+          the second is a preexp instance for ticklevel/labellevel 1, etc.
         - when the maximum ticklevel/labellevel is 0, just a single
-          shiftfracs instance might be provided in ticks and labels
-        - when labels is None and ticks is not None, the tick entries
+          preexp instance might be provided in tickpos and labelpos
+        - when labelpos is None and tickpos is not None, the tick entries
           for ticklevel 0 are used for labels and vice versa (ticks<->labels)
-        - texts are applied to the resulting partition via the
+        - labels are applied to the resulting partition via the
           mergetexts function (additional information available there)
         - extendtick allows for the extension of the range given to the
           defaultpart method to include the next tick with the specified
@@ -595,69 +594,69 @@ class logpart(linpart):
           specified by extendtick/extendlabel
         - mix specifies another partition to be merged into the
           created partition"""
-        if ticks is None and labels is not None:
-            self.ticks = (helper.ensuresequence(labels)[0],)
+        if tickpos is None and labels is not None:
+            self.ticklist = (helper.ensuresequence(labelpos)[0],)
         else:
-            self.ticks = helper.ensuresequence(ticks)
+            self.ticklist = helper.ensuresequence(tickpos)
 
-        if labels is None and ticks is not None:
-            self.labels = (helper.ensuresequence(ticks)[0],)
+        if labelpos is None and tickpos is not None:
+            self.labellist = (helper.ensuresequence(tickpos)[0],)
         else:
-            self.labels = helper.ensuresequence(labels)
+            self.labellist = helper.ensuresequence(labelpos)
         self.labels = labels
         self.extendtick = extendtick
         self.extendlabel = extendlabel
         self.epsilon = epsilon
         self.mix = mix
 
-    def extendminmax(self, min, max, shiftfracs, extendmin, extendmax):
+    def extendminmax(self, min, max, preexp, extendmin, extendmax):
         """return new min, max tuple extending the range min, max
-        shiftfracs describes the allowed tick positions
+        preexp describes the allowed tick positions
         extendmin and extendmax are booleans to allow for the extension"""
         minpower = None
         maxpower = None
-        for i in xrange(len(shiftfracs.fracs)):
-            imin = int(math.floor(math.log(min / float(shiftfracs.fracs[i])) /
-                                  math.log(shiftfracs.shift) + self.epsilon)) + 1
-            imax = int(math.ceil(math.log(max / float(shiftfracs.fracs[i])) /
-                                 math.log(shiftfracs.shift) - self.epsilon)) - 1
+        for i in xrange(len(preexp.pres)):
+            imin = int(math.floor(math.log(min / float(preexp.pres[i])) /
+                                  math.log(preexp.exp) + self.epsilon)) + 1
+            imax = int(math.ceil(math.log(max / float(preexp.pres[i])) /
+                                 math.log(preexp.exp) - self.epsilon)) - 1
             if minpower is None or imin < minpower:
                 minpower, minindex = imin, i
             if maxpower is None or imax >= maxpower:
                 maxpower, maxindex = imax, i
         if minindex:
-            minfrac = shiftfracs.fracs[minindex - 1]
+            minfrac = preexp.pres[minindex - 1]
         else:
-            minfrac = shiftfracs.fracs[-1]
+            minfrac = preexp.pres[-1]
             minpower -= 1
-        if maxindex != len(shiftfracs.fracs) - 1:
-            maxfrac = shiftfracs.fracs[maxindex + 1]
+        if maxindex != len(preexp.pres) - 1:
+            maxfrac = preexp.pres[maxindex + 1]
         else:
-            maxfrac = shiftfracs.fracs[0]
+            maxfrac = preexp.pres[0]
             maxpower += 1
         if extendmin:
-            min = float(minfrac) * float(shiftfracs.shift) ** minpower
+            min = float(minfrac) * float(preexp.exp) ** minpower
         if extendmax:
-            max = float(maxfrac) * float(shiftfracs.shift) ** maxpower
+            max = float(maxfrac) * float(preexp.exp) ** maxpower
         return min, max
 
-    def getticks(self, min, max, shiftfracs, ticklevel=None, labellevel=None):
+    def getticks(self, min, max, preexp, ticklevel=None, labellevel=None):
         """return a list of ticks
-        - shiftfracs describes the allowed tick positions
+        - preexp describes the allowed tick positions
         - the ticklevel of the ticks is set to ticklevel and
           the labellevel is set to labellevel
         -  min, max is the range where ticks should be placed"""
         ticks = list(self.mix)
         minimin = 0
         maximax = 0
-        for f in shiftfracs.fracs:
+        for f in preexp.pres:
             fracticks = []
             imin = int(math.ceil(math.log(min / float(f)) /
-                                 math.log(shiftfracs.shift) - 0.5 * self.epsilon))
+                                 math.log(preexp.exp) - 0.5 * self.epsilon))
             imax = int(math.floor(math.log(max / float(f)) /
-                                  math.log(shiftfracs.shift) + 0.5 * self.epsilon))
+                                  math.log(preexp.exp) + 0.5 * self.epsilon))
             for i in range(imin, imax + 1):
-                pos = f * frac(shiftfracs.shift, 1, i)
+                pos = f * frac(preexp.exp, 1, i)
                 fracticks.append(tick(pos.enum, pos.denom, ticklevel = ticklevel, labellevel = labellevel))
             ticks = _mergeticklists(ticks, fracticks)
         return ticks
@@ -669,38 +668,38 @@ class autologpart(logpart):
 
     __implements__ = _Ipart
 
-    defaultlist = (((logpart.shiftfracs1,      # ticks
-                     logpart.shiftfracs1to9),  # subticks
-                    (logpart.shiftfracs1,      # labels
-                     logpart.shiftfracs125)),  # sublevels
+    defaultvariants = (((logpart.pre1exp,      # ticks
+                         logpart.pre1to9exp),  # subticks
+                        (logpart.pre1exp,      # labels
+                         logpart.pre125exp)),  # sublevels
 
-                   ((logpart.shiftfracs1,      # ticks
-                     logpart.shiftfracs1to9),  # subticks
-                    None),                     # labels like ticks
+                       ((logpart.pre1exp,      # ticks
+                         logpart.pre1to9exp),  # subticks
+                        None),                 # labels like ticks
 
-                   ((logpart.shift2fracs1,     # ticks
-                     logpart.shiftfracs1),     # subticks
-                    None),                     # labels like ticks
+                       ((logpart.pre1exp2,     # ticks
+                         logpart.pre1exp),     # subticks
+                        None),                 # labels like ticks
 
-                   ((logpart.shift3fracs1,     # ticks
-                     logpart.shiftfracs1),     # subticks
-                    None),                     # labels like ticks
+                       ((logpart.pre1exp3,     # ticks
+                         logpart.pre1exp),     # subticks
+                        None),                 # labels like ticks
 
-                   ((logpart.shift4fracs1,     # ticks
-                     logpart.shiftfracs1),     # subticks
-                    None),                     # labels like ticks
+                       ((logpart.pre1exp4,     # ticks
+                         logpart.pre1exp),     # subticks
+                        None),                 # labels like ticks
 
-                   ((logpart.shift5fracs1,     # ticks
-                     logpart.shiftfracs1),     # subticks
-                    None))                     # labels like ticks
+                       ((logpart.pre1exp5,     # ticks
+                         logpart.pre1exp),     # subticks
+                        None))                 # labels like ticks
 
-    def __init__(self, list=defaultlist, extendtick=0, extendlabel=None, epsilon=1e-10, mix=()):
+    def __init__(self, variants=defaultvariants, extendtick=0, extendlabel=None, epsilon=1e-10, mix=()):
         """configuration of the partition scheme
-        - list should be a sequence of pairs of sequences of shiftfracs
+        - variants should be a sequence of pairs of sequences of preexp
           instances
-        - within each pair the first sequence contains shiftfracs, where
-          the first shiftfracs instance describes ticks positions with
-          ticklevel 0, the second shiftfracs for ticklevel 1, etc.
+        - within each pair the first sequence contains preexp, where
+          the first preexp instance describes ticks positions with
+          ticklevel 0, the second preexp for ticklevel 1, etc.
         - the second sequence within each pair describes the same as
           before, but for labels
         - within each pair: when the second entry (for the labels) is None
@@ -719,11 +718,11 @@ class autologpart(logpart):
           specified by extendtick/extendlabel
         - mix specifies another partition to be merged into the
           created partition"""
-        self.list = list
-        if len(list) > 2:
-            self.listindex = divmod(len(list), 2)[0]
+        self.variants = variants
+        if len(variants) > 2:
+            self.variantsindex = divmod(len(variants), 2)[0]
         else:
-            self.listindex = 0
+            self.variantsindex = 0
         self.extendtick = extendtick
         self.extendlabel = extendlabel
         self.epsilon = epsilon
@@ -732,25 +731,25 @@ class autologpart(logpart):
     def defaultpart(self, min, max, extendmin, extendmax):
         "method is part of the implementation of _Ipart"
         self.min, self.max, self.extendmin, self.extendmax = min, max, extendmin, extendmax
-        self.morelistindex = self.listindex
-        self.lesslistindex = self.listindex
-        part = logpart(ticks=self.list[self.listindex][0], labels=self.list[self.listindex][1],
+        self.morevariantsindex = self.variantsindex
+        self.lessvariantsindex = self.variantsindex
+        part = logpart(ticks=self.variants[self.variantsindex][0], labels=self.variants[self.variantsindex][1],
                        extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon, mix=self.mix)
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
     def lesspart(self):
         "method is part of the implementation of _Ipart"
-        self.lesslistindex += 1
-        if self.lesslistindex < len(self.list):
-            part = logpart(ticks=self.list[self.lesslistindex][0], labels=self.list[self.lesslistindex][1],
+        self.lessvariantsindex += 1
+        if self.lessvariantsindex < len(self.variants):
+            part = logpart(ticks=self.variants[self.lessvariantsindex][0], labels=self.variants[self.lessvariantsindex][1],
                            extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon, mix=self.mix)
             return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
     def morepart(self):
         "method is part of the implementation of _Ipart"
-        self.morelistindex -= 1
-        if self.morelistindex >= 0:
-            part = logpart(ticks=self.list[self.morelistindex][0], labels=self.list[self.morelistindex][1],
+        self.morevariantsindex -= 1
+        if self.morevariantsindex >= 0:
+            part = logpart(ticks=self.variants[self.morevariantsindex][0], labels=self.variants[self.morevariantsindex][1],
                            extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon, mix=self.mix)
             return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
 
@@ -962,45 +961,34 @@ class _Itexter:
           of the ticks"""
 
 
-class notexter:
-    """a texter, which does just nothing (I'm not sure, if this makes sense)"""
-
-    __implements__ = _Itexter
-
-    def labels(self, ticks):
-        pass
-
-
 class rationaltexter:
     """a texter creating rational labels (e.g. "a/b" or even "a \over b")"""
-    # XXX: we use divmod here to be more portable
+    # XXX: we use divmod here to be more expicit
 
     __implements__ = _Itexter
 
-    def __init__(self, prefix="", suffix="",
-                       enumprefix="", enumsuffix="",
-                       denomprefix="", denomsuffix="",
-                       equaldenom=0, minuspos=0, over=r"{{%s}\over{%s}}",
-                       skipenum0=1, skipenum1=1, skipdenom1=1,
+    def __init__(self, prefix="", infix="", suffix="",
+                       enumprefix="", enuminfix="", enumsuffix="",
+                       denomprefix="", denominfix="", denomsuffix="",
+                       minus="-", minuspos=0, over=r"{{%s}\over{%s}}",
+                       equaldenom=0, skipenum0=1, skipenum1=1, skipdenom1=1,
                        labelattrs=textmodule.mathmode):
         """initializes the instance
-        - prefix and suffix (strings) are just added to the begin and to
-          the end of the label, respectively
-        - prefixenum and suffixenum (strings) are added to the labels
-          enumerator simularly
-        - prefixdenom and suffixdenom (strings) are added to the labels
-          denominator simularly
-        - the enumerator and denominator are +++TODO: KÜRZEN+++; however,
+        - prefix, infix, and suffix (strings) are added at the begin,
+          immediately after the minus, and at the end of the label,
+          respectively
+        - prefixenum, infixenum, and suffixenum (strings) are added
+          to the labels enumerator correspondingly
+        - prefixdenom, infixdenom, and suffixdenom (strings) are added
+          to the labels denominator correspondingly
+        - usually the enumerator and denominator are canceled; however,
           when equaldenom is set, the least common multiple of all
           denominators is used
         - minuspos is an integer, which determines the position, where the
           minus sign has to be placed; the following values are allowed:
-            0 - written immediately before the prefix
-            1 - written immediately after the prefix
-            2 - written immediately before the enumprefix
-            3 - written immediately after the enumprefix
-            4 - written immediately before the denomprefix
-            5 - written immediately after the denomprefix
+            1 - writes the minus in front of the enumerator
+            0 - writes the minus in front of the hole fraction
+           -1 - writes the minus in front of the denominator
         - over (string) is taken as a format string generating the
           fraction bar; it has to contain exactly two string insert
           operators "%s" - the first for the enumerator and the second
@@ -1008,30 +996,35 @@ class rationaltexter:
           r"{{%s}\over{%s}}" and "{{%s}/{%s}}"
         - skipenum0 (boolean) just prints a zero instead of
           the hole fraction, when the enumerator is zero;
-          all prefixes and suffixes are omitted as well
+          all prefixes, infixes and suffixes are omitted as well
         - skipenum1 (boolean) just prints the enumprefix directly followed
-          by the enumsuffix, when the enum value is one and at least either,
-          the enumprefix or the enumsuffix is present
+          by the enuminfix and the enumsuffix, when the enum value is one
+          and at least one of enumprefix, enuminfix and the enumsuffix is present
         - skipdenom1 (boolean) just prints the enumerator instead of
-          the hole fraction, when the denominator is one
+          the hole fraction, when the denominator is one and all the parameters
+          denomprefix, denominfix and denomsuffix are not present
         - labelattrs is a sequence of texsetting instances; also just a single
           instance is allowed; an empty sequence is allowed as well, but None
           is not valid"""
         self.prefix = prefix
+        self.infix = infix
         self.suffix = suffix
         self.enumprefix = enumprefix
+        self.enuminfix = enuminfix
         self.enumsuffix = enumsuffix
         self.denomprefix = denomprefix
+        self.denominfix = denominfix
         self.denomsuffix = denomsuffix
-        self.equaldenom = equaldenom
+        self.minus = minus
         self.minuspos = minuspos
-        if self.minuspos < 0 or self.minuspos > 5:
+        if self.minuspos < -1 or self.minuspos > 1:
             raise RuntimeError("invalid minuspos")
         self.over = over
+        self.equaldenom = equaldenom
         self.skipenum0 = skipenum0
         self.skipenum1 = skipenum1
         self.skipdenom1 = skipdenom1
-        self.labelattrs = helper.ensuresequence(labelattrs)
+        self.labelattrs = helper.ensurelist(labelattrs)
 
     def gcd(self, *n):
         """returns the greates common divisor of all elements in n
@@ -1129,6 +1122,92 @@ class rationaltexter:
                     tick.label = "%s%s%s%s" % (self.prefix, tick.fracminus, frac, self.suffix)
                 else:
                     tick.label = "%s%s%s" % (self.prefix, frac, self.suffix)
+                self.labelattrs.extend(self.labelattrs)
+
+
+class decimaltexter:
+    """a texter creating decimal labels (e.g. "1.234" or even "0.\overline{3}")"""
+
+    __implements__ = _Itexter
+
+    def __init__(self, prefix="", suffix="", minuspos=0,
+                       decimalsep=".", thousandsep="", equalprecision=0,
+                       period=r"\overline{%s}", labelattrs=textmodule.mathmode):
+        """initializes the instance
+        - prefix and suffix (strings) are just added to the begin and to
+          the end of the label, respectively
+        - minuspos is an integer, which determines the position, where the
+          minus sign has to be placed; the following values are allowed:
+            0 - written immediately before the prefix
+            1 - written immediately after the prefix"""
+        self.prefix = prefix
+        self.suffix = suffix
+        self.minuspos = minuspos
+        self.decimalsep = decimalsep
+        self.thousandsep = thousandsep
+        self.equalprecision = equalprecision
+        self.period = period
+        self.labelattrs = helper.ensurelist(labelattrs)
+
+    def labels(self, ticks):
+        # the temporary variable decprecision is
+        # inserted into all tick instances, where label is not None
+        for tick in ticks:
+            if tick.label is None:
+                m, n = tick.enum, tick.denom
+                if m < 0: m = -m
+                if n < 0: n = -n
+                whole, reminder = divmod(m, n)
+                tick.label = str(whole)
+                if reminder:
+                    tick.label += self.decimalsep
+                oldreminders = []
+                tick.decprecision = 0
+                while (reminder):
+                    tick.decprecision += 1
+                    if reminder in oldreminders:
+                        periodstart = len(tick.label) - (len(oldreminders) - oldreminders.index(reminder))
+                        tick.label = tick.label[:periodstart] + self.period % tick.label[periodstart:]
+                        break
+                    oldreminders += [reminder]
+                    reminder *= 10
+                    whole, reminder = divmod(reminder, n)
+                    tick.label += str(whole)
+        # equalprecision
+        # prefix/suffix
+        # sign
+
+class exponentialtexter:
+    """a texter creating decimal labels with exponentials (e.g. "2\cdot10^5")"""
+
+    def expfrac(self, tick, minexp = None):
+        m, n = tick.enum, tick.denom
+        sign = 1
+        if m < 0: m, sign = -m, -sign
+        if n < 0: n, sign = -n, -sign
+        exp = 0
+        if m:
+            while divmod(m, n)[0] > 9:
+                n *= 10
+                exp += 1
+            while divmod(m, n)[0] < 1:
+                m *= 10
+                exp -= 1
+        if minexp is not None and ((exp < 0 and -exp < minexp) or (exp >= 0 and exp < minexp)):
+            return None
+        dummy = frac(m, n)
+        dummy.suffix = None
+        prefactor = self.decfrac(dummy)
+        if prefactor == "1" and not self.expfracpre1:
+            if sign == -1:
+                return self.attachsuffix(tick, "-10^{%i}" % exp)
+            else:
+                return self.attachsuffix(tick, "10^{%i}" % exp)
+        else:
+            if sign == -1:
+                return self.attachsuffix(tick, "-%s%s10^{%i}" % (prefactor, self.expfractimes, exp))
+            else:
+                return self.attachsuffix(tick, "%s%s10^{%i}" % (prefactor, self.expfractimes, exp))
 
 
 
@@ -1248,93 +1327,6 @@ class axispainter(axistitlepainter):
             if tick.suffix is not None:
                 str = str + tick.suffix
         return str
-
-    def ratfrac(self, tick):
-        m, n = tick.enum, tick.denom
-        sign = 1
-        if m < 0: m, sign = -m, -sign
-        if n < 0: n, sign = -n, -sign
-        gcd = self.gcd(m, n)
-        (m, dummy1), (n, dummy2) = divmod(m, gcd), divmod(n, gcd)
-        if n != 1:
-            if self.ratfracsuffixenum:
-                if sign == -1:
-                    return "-{{%s}%s{%s}}" % (self.attachsuffix(tick, str(m)), self.ratfracover, n)
-                else:
-                    return "{{%s}%s{%s}}" % (self.attachsuffix(tick, str(m)), self.ratfracover, n)
-            else:
-                if sign == -1:
-                    return self.attachsuffix(tick, "-{{%s}%s{%s}}" % (m, self.ratfracover, n))
-                else:
-                    return self.attachsuffix(tick, "{{%s}%s{%s}}" % (m, self.ratfracover, n))
-        else:
-            if sign == -1:
-                return self.attachsuffix(tick, "-%s" % m)
-            else:
-                return self.attachsuffix(tick, "%s" % m)
-
-    def decfrac(self, tick, decfraclength=None):
-        m, n = tick.enum, tick.denom
-        sign = 1
-        if m < 0: m, sign = -m, -sign
-        if n < 0: n, sign = -n, -sign
-        gcd = self.gcd(m, n)
-        (m, dummy1), (n, dummy2) = divmod(m, gcd), divmod(n, gcd)
-        frac, rest = divmod(m, n)
-        strfrac = str(frac)
-        rest = m % n
-        if rest:
-            strfrac += self.decfracpoint
-        oldrest = []
-        tick.decfraclength = 0
-        while (rest):
-            tick.decfraclength += 1
-            if rest in oldrest:
-                periodstart = len(strfrac) - (len(oldrest) - oldrest.index(rest))
-                strfrac = strfrac[:periodstart] + r"\overline{" + strfrac[periodstart:] + "}"
-                break
-            oldrest += [rest]
-            rest *= 10
-            frac, rest = divmod(rest, n)
-            strfrac += str(frac)
-        else:
-            if decfraclength is not None:
-                while tick.decfraclength < decfraclength:
-                    strfrac += "0"
-                    tick.decfraclength += 1
-        if sign == -1:
-            return self.attachsuffix(tick, "-%s" % strfrac)
-        else:
-            return self.attachsuffix(tick, strfrac)
-
-    def expfrac(self, tick, minexp = None):
-        m, n = tick.enum, tick.denom
-        sign = 1
-        if m < 0: m, sign = -m, -sign
-        if n < 0: n, sign = -n, -sign
-        exp = 0
-        if m:
-            while divmod(m, n)[0] > 9:
-                n *= 10
-                exp += 1
-            while divmod(m, n)[0] < 1:
-                m *= 10
-                exp -= 1
-        if minexp is not None and ((exp < 0 and -exp < minexp) or (exp >= 0 and exp < minexp)):
-            return None
-        dummy = frac(m, n)
-        dummy.suffix = None
-        prefactor = self.decfrac(dummy)
-        if prefactor == "1" and not self.expfracpre1:
-            if sign == -1:
-                return self.attachsuffix(tick, "-10^{%i}" % exp)
-            else:
-                return self.attachsuffix(tick, "10^{%i}" % exp)
-        else:
-            if sign == -1:
-                return self.attachsuffix(tick, "-%s%s10^{%i}" % (prefactor, self.expfractimes, exp))
-            else:
-                return self.attachsuffix(tick, "%s%s10^{%i}" % (prefactor, self.expfractimes, exp))
 
     def createtext(self, tick):
         tick.decfraclength = None
