@@ -397,9 +397,9 @@ argument name&description\\
 \texttt{innerticklengths}$^{1,4}$&tick length of inner ticks (visual length);\newline default: \texttt{axispainter.defaultticklengths}\\
 \texttt{outerticklengths}$^{1,4}$&as before, but for outer ticks; default: \texttt{None}\\
 \texttt{tickattrs}$^{2,4}$&stroke attributes for ticks; default: \texttt{()}\\
-\texttt{gridattrs}$^{2,4}$&stroke attributes for grid lines; default: \texttt{None}\\
-\texttt{zerolineattrs}$^{3,4}$&stroke attributes for a grid line at axis value 0; default: \texttt{()}\\
-\texttt{baselineattrs}$^{3,4}$&stroke attributes for the axis baseline;\newline default: \texttt{canvas.linecap.square}\\
+\texttt{gridattrs}$^{2,4}$&stroke attributes for grid paths; default: \texttt{None}\\
+\texttt{zeropathattrs}$^{3,4}$&stroke attributes for a grid path at axis value 0; default: \texttt{()}\\
+\texttt{basepathattrs}$^{3,4}$&stroke attributes for the axis base path;\newline default: \texttt{canvas.linecap.square}\\
 \texttt{labeldist}&label distance from axis (visual length); default: \texttt{"0.3 cm"}\\
 \texttt{labelattrs}$^{2,4}$&text attributes for labels;\newline default: \texttt{(text.halign.center, text.vshift.mathaxis)}\\
 \texttt{labeldirection}$^4$&relative label direction (see below); default: \texttt{None}\\
@@ -458,7 +458,7 @@ recalculate the axis partition etc.). The constructor of
 and in the named parameter \verb|painter| a new painter for the axis.
 By default, \verb|linkaxispainter| is used, which differs from the
 standard \verb|axispainter| by some default values for the arguments
-only. Namely, the arguments \verb|zerolineattrs|, \verb|labelattrs|,
+only. Namely, the arguments \verb|zeropathattrs|, \verb|labelattrs|,
 and \verb|titleattrs| are set to \verb|None| turing off these
 features.
 

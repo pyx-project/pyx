@@ -4,10 +4,10 @@ unit.set(uscale=3)
 
 c = canvas.canvas()
 
-A = c.text(0,0, r"\bf A", text.halign.center, text.vshift.char(0.5))
-B = c.text(1,0, r"\bf B", text.halign.center, text.vshift.char(0.5))
-C = c.text(1,1, r"\bf C", text.halign.center, text.vshift.char(0.5))
-D = c.text(0,1, r"\bf D", text.halign.center, text.vshift.char(0.5))
+A = c.text(0,0, r"\bf A", text.halign.center, text.vshift.middlezero)
+B = c.text(1,0, r"\bf B", text.halign.center, text.vshift.middlezero)
+C = c.text(1,1, r"\bf C", text.halign.center, text.vshift.middlezero)
+D = c.text(0,1, r"\bf D", text.halign.center, text.vshift.middlezero)
 
 for X in [A,B,C,D]:
     # center is in true points

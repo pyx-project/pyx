@@ -60,7 +60,8 @@ TODO:
     - removed manualpart and partitioners mix keyword
     - results of the splitting at "=" in graph.function were not stripped
     - skip title=None in key (cf. bug #821284), properly align a single key entry
-    - another (the last?!) axis redesign: axispos -> class of its own; remove axis.axiscanvas
+    - another (the last?!) axis redesign: axispos -> class of its own
+    - some axispos name have changed slightly (zeroline -> zeropath etc.)
     - tick/data-vmin/vmax removed (TODO: documentation)
     - pathaxis (TODO: example and documentation)
     - various linkaxis (TODO: example and documentation, FAQ?)

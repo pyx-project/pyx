@@ -3246,6 +3246,17 @@ class graphxy(canvas.canvas):
                                                         self.ypos + num2*self.height - num3*xaxisextents[num2],
                                                         (0, num3),
                                                         xaxisextents[num2], xaxisextents[num2] + self.height)
+                if num == 1:
+                    self.xbasepath = self.axespos[key].basepath
+                    self.xvbasepath = self.axespos[key].vbasepath
+                    self.xgridpath = self.axespos[key].gridpath
+                    self.xvgridpath = self.axespos[key].vgridpath
+                    self.xtickpoint_pt = self.axespos[key].tickpoint_pt
+                    self.xtickpoint = self.axespos[key].tickpoint
+                    self.xvtickpoint_pt = self.axespos[key].vtickpoint_pt
+                    self.xvtickpoint = self.axespos[key].tickpoint
+                    self.xtickdirection = self.axespos[key].tickdirection
+                    self.xvtickdirection = self.axespos[key].vtickdirection
             elif YPattern.match(key):
                 if needyaxisdist[num2]:
                     yaxisextents[num2] += axesdist
@@ -3256,6 +3267,17 @@ class graphxy(canvas.canvas):
                                                         self.ypos + self.height,
                                                         (num3, 0),
                                                         yaxisextents[num2], yaxisextents[num2] + self.width)
+                if num == 1:
+                    self.ybasepath = self.axespos[key].basepath
+                    self.yvbasepath = self.axespos[key].vbasepath
+                    self.ygridpath = self.axespos[key].gridpath
+                    self.yvgridpath = self.axespos[key].vgridpath
+                    self.ytickpoint_pt = self.axespos[key].tickpoint_pt
+                    self.ytickpoint = self.axespos[key].tickpoint
+                    self.yvtickpoint_pt = self.axespos[key].vtickpoint_pt
+                    self.yvtickpoint = self.axespos[key].tickpoint
+                    self.ytickdirection = self.axespos[key].tickdirection
+                    self.yvtickdirection = self.axespos[key].vtickdirection
             else:
                 raise ValueError("Axis key '%s' not allowed" % key)
             self.axescanvas[key] = axis.finish(self.axespos[key], self.texrunner)

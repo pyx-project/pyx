@@ -2,7 +2,7 @@ from pyx import *
 
 a, b = 2, 9 # integral area
 
-p = graph.axispainter(baselineattrs=deco.earrow.normal(),
+p = graph.axispainter(basepathattrs=deco.earrow.normal(),
                       titlepos=0.98, titledirection=None)
 g = graph.graphxy(width=8, x2=None, y2=None,
                   x=graph.linaxis(title="$x$", min=0, max=10,
@@ -14,8 +14,8 @@ g = graph.graphxy(width=8, x2=None, y2=None,
 style = g.plot(graph.function("y=(x-3)*(x-5)*(x-7)")).style
 g.finish()
 
-pa = g.xgridline(a)
-pb = g.xgridline(b)
+pa = g.xgridpath(a)
+pb = g.xgridpath(b)
 (splita,), (splitpa,) = style.path.intersect(pa)
 (splitb,), (splitpb,) = style.path.intersect(pb)
 area = (pa.split(splitpa)[0] <<
