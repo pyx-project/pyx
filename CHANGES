@@ -84,7 +84,7 @@ TODO:
   - canvas module:
     - added new classes page and document for multipage PostScript output
 
-0.6.? (xxxx/xx/xx):
+0.6.2 (2004/04/07):
   - graph module:
     - fixed title=None + graph key issue reported by Gabriel Vasseur
     - graph.axis.painter.plain -> graph.axis.painter.regular
