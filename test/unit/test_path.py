@@ -140,30 +140,100 @@ class NormpathTestCase(unittest.TestCase):
         self.failUnlessEqual(str(sp), "subpath(open, [normline(0, 0, 1.5, 0), normline(1.5, 0, 1.5, 1.2), normcurve(1.2, 1.5, 2.4, 2.7, 3.3, 3.7, 1.4, 1.8)])")
 
     def testintersectnormsubpath(self):
-        p1 = normsubpath([normline(0, 0, 2, 0)], epsilon=1)
-        p2 = normsubpath([normline(0, -1, 1, 0.1),
-                          normline(1, 0.1, 2, -1),
-                          normline(2, -1, 1, -1),
-                          normline(1, -1, 1, 1)], epsilon=1)
-        self.failUnlessEqual(len(p1.intersect(p2)[0]), 2)
-
-        p1 = normsubpath([normline(1, 1, 0, -0.1),
-                          normline(0, -0.1, -1, 1),
-                          normline(-1, 1, 0.1, 1),
-                          normline(0.1, 1, 0.1, -1.5)], epsilon=1)
-        p2 = normsubpath([normline(-1, -1, 0, 0.1),
-                          normline(0, 0.1, 1, -1),
-                          normline(1, -1, -0.1, -1),
-                          normline(-0.1, -1, -0.1, 1.5)], epsilon=1)
-        self.failUnlessEqual(len(p1.intersect(p2)[0]), 5)
-
+        smallposy = 0.09
+        smallnegy = -0.01
         p1 = normsubpath([normline(-1, 0, 1, 0)])
-        p2 = normsubpath([normline(0, 0.1, 0.1, -0.1),
-                          normline(0.1, -0.1, 0, 1),
-                          normline(0, 1, -0.1, -0.1),
-                          normline(-0.1, -0.1, 0, 0.1)], closed=1)
-        p1.epsilon = p2.epsilon = 0.2
-        print p1.intersect(p2)
+        p2 = normsubpath([normline(0, smallposy, 0, smallnegy),
+                          normline(0, smallnegy, 0, 1+smallnegy),
+                          normline(0, 1+smallnegy, 0, smallnegy),
+                          normline(0, smallnegy, 0, smallposy)], closed=0)
+        p1.epsilon = p2.epsilon = 0.05
+        intersect = p2.intersect(p1)
+        self.failUnlessEqual(len(intersect[0]), 2)
+        self.failUnlessAlmostEqual(intersect[0][0], 0.9)
+        self.failUnlessAlmostEqual(intersect[0][1], 2.99)
+
+        smallposy = 0.09
+        smallnegy = -0.01
+        p1 = normsubpath([normline(-1, 0, 1, 0)])
+        p2 = normsubpath([normline(0, smallposy, 0, smallnegy),
+                          normline(0, smallnegy, 0, 1+smallnegy),
+                          normline(0, 1+smallnegy, 0, smallnegy),
+                          normline(0, smallnegy, 0, smallposy)], closed=1)
+        p1.epsilon = p2.epsilon = 0.05
+        intersect = p2.intersect(p1)
+        self.failUnlessEqual(len(intersect[0]), 2)
+        self.failUnlessAlmostEqual(intersect[0][0], 0.9)
+        self.failUnlessAlmostEqual(intersect[0][1], 2.99)
+
+        smallposy = 0.01
+        smallnegy = -0.09
+        p1 = normsubpath([normline(-1, 0, 1, 0)])
+        p2 = normsubpath([normline(0, smallposy, 0, smallnegy),
+                          normline(0, smallnegy, 0, 1+smallnegy),
+                          normline(0, 1+smallnegy, 0, smallnegy),
+                          normline(0, smallnegy, 0, smallposy)], closed=0)
+        p1.epsilon = p2.epsilon = 0.05
+        intersect = p2.intersect(p1)
+        self.failUnlessEqual(len(intersect[0]), 4)
+        self.failUnlessAlmostEqual(intersect[0][0], 0.1)
+        self.failUnlessAlmostEqual(intersect[0][1], 1.09)
+        self.failUnlessAlmostEqual(intersect[0][2], 2.91)
+        self.failUnlessAlmostEqual(intersect[0][3], 3.9)
+
+        smallposy = 0.01
+        smallnegy = -0.09
+        p1 = normsubpath([normline(-1, 0, 1, 0)])
+        p2 = normsubpath([normline(0, smallposy, 0, smallnegy),
+                          normline(0, smallnegy, 0, 1+smallnegy),
+                          normline(0, 1+smallnegy, 0, smallnegy),
+                          normline(0, smallnegy, 0, smallposy)], closed=1)
+        p1.epsilon = p2.epsilon = 0.05
+        intersect = p2.intersect(p1)
+        self.failUnlessEqual(len(intersect[0]), 3)
+        self.failUnlessAlmostEqual(intersect[0][0], 0.1)
+        self.failUnlessAlmostEqual(intersect[0][1], 1.09)
+        self.failUnlessAlmostEqual(intersect[0][2], 2.91)
+
+        smallposy = 0.01
+        smallnegy = -0.01
+        p1 = normsubpath([normline(-1, 0, 1, 0)])
+        p2 = normsubpath([normline(0, smallposy, 0, smallnegy),
+                          normline(0, smallnegy, 0, 1+smallnegy),
+                          normline(0, 1+smallnegy, 0, smallnegy),
+                          normline(0, smallnegy, 0, smallposy)], closed=0)
+        p1.epsilon = p2.epsilon = 0.05
+        intersect = p2.intersect(p1)
+        self.failUnlessEqual(len(intersect[0]), 2)
+        self.failUnlessAlmostEqual(intersect[0][0], 0.5)
+        self.failUnlessAlmostEqual(intersect[0][1], 2.99)
+
+        smallposy = 0.01
+        smallnegy = -0.01
+        p1 = normsubpath([normline(-1, 0, 1, 0)])
+        p2 = normsubpath([normline(0, smallposy, 0, smallnegy),
+                          normline(0, smallnegy, 0, 1+smallnegy),
+                          normline(0, 1+smallnegy, 0, smallnegy),
+                          normline(0, smallnegy, 0, smallposy)], closed=1)
+        p1.epsilon = p2.epsilon = 0.05
+        intersect = p2.intersect(p1)
+        self.failUnlessEqual(len(intersect[0]), 1)
+        self.failUnlessAlmostEqual(intersect[0][0], 0.5)
+
+        smallposy = 0.1
+        smallnegy = -0.1
+        p1 = normsubpath([normline(-1, 0, 1, 0)])
+        p2 = normsubpath([normline(0, smallposy, 0, smallnegy),
+                          normline(0, smallnegy, 0, 1+smallnegy),
+                          normline(0, 1+smallnegy, 0, smallnegy),
+                          normline(0, smallnegy, 0, smallposy)], closed=0)
+        p1.epsilon = p2.epsilon = 0.05
+        intersect = p2.intersect(p1)
+        self.failUnlessEqual(len(intersect[0]), 4)
+        self.failUnlessAlmostEqual(intersect[0][0], 0.5)
+        self.failUnlessAlmostEqual(intersect[0][1], 1.1)
+        self.failUnlessAlmostEqual(intersect[0][2], 2.9)
+        self.failUnlessAlmostEqual(intersect[0][3], 3.5)
 
 
 if __name__ == "__main__":
