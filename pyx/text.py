@@ -22,12 +22,10 @@
 
 
 # this code will be part of PyX 0.3
+# TODO: check whether Knuth's division can be simplified within Python
 
 import glob, os, threading, Queue, traceback, re, struct, tempfile
 import helper, bbox, unit, box, base, trafo, canvas, pykpathsea, t1strip
-
-###############################################################################
-# joergl would mainly work here ...
 
 ###############################################################################
 # this is the old stuff
@@ -477,7 +475,7 @@ class DVIFile:
         y1 = -unit.t_m(self.pos[_POS_V] * self.conv * 0.0254 / self.resolution)
         w = unit.t_m(width * self.conv * 0.0254 / self.resolution)
         h = unit.t_m(height * self.conv * 0.0254 / self.resolution)
-        
+
         if height > 0 and width > 0:
             if self.debug:
                 pixelw = int(width*self.conv)
@@ -495,22 +493,19 @@ class DVIFile:
         else:
             if self.debug:
                 print "%d: putrule height %d, width %d (invisible)" % (self.filepos, height, width)
-            
+
         if inch:
             pass # TODO: increment h
 
     def usefont(self, fontnum):
         self.flushout()
         self.activefont = fontnum
-        
+
         fontname = self.fonts[self.activefont].name
         fontscale = self.fonts[self.activefont].scale
-        match = self.FontSizePattern.search(fontname)
-        if match:
-            self.actpage.append("/%s %f selectfont\n" % (fontname.upper(),
-                                                         int(match.group(1))*fontscale))
-        else:
-            raise RuntimeError("cannot determine font size from name '%s'" % fontname)
+        fontdesignsize = float(self.fonts[self.activefont].tfmfile.designsize)
+        self.actpage.append("/%s %f selectfont\n" % (fontname.upper(), fontscale*fontdesignsize*72/72.27))
+
 
         if self.debug:
             print ("%d: fntnum%i current font is %s" %
@@ -745,8 +740,6 @@ class DVIFile:
         for font in self.fonts:
             if font: result.append(canvas.fontdefinition(font))
         return result
-
-    FontSizePattern= re.compile(r"([0-9]+)$")
 
     def write(self, file, page):
         """write PostScript code for page into file"""
