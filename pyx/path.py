@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import unit
+
 class PathException(Exception): pass
 
 # 
@@ -121,5 +123,5 @@ class rect(path):
        path.__init__(self, [ moveto(x,y), 
                              rlineto(width,0), 
 			     rlineto(0,height), 
-			     rlineto(-width,0),
+			     rlineto(-unit.length(width),0),
 			     closepath()] )

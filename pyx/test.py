@@ -16,6 +16,7 @@ c2.write("test2", 21, 29.7)
 c3.draw(rect(5,5,5,5))
 t3=c3.tex()
 t3.text(5,5,"hello world!")
+c3.draw(rect(str(141)+" t pt",str(141)+" t pt",str(193-141)+" t pt",str(150-141)+" t pt"))
 c3.write("test3", 21, 29.7)
 
 c4.draw(rect(5,5,5,5))
