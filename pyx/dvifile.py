@@ -381,23 +381,26 @@ class _selectfont(canvas.canvasitem):
 
 
 class selectfont(canvas.canvasitem):
+
     def __init__(self, font):
         # XXX maybe we should change the calling convention here and only pass the
         # name, size, encoding, usedchars of the font
         self.font = font
         self.size = font.getsize_pt()
-        self.fontid = None
+        self.psname = font.getpsname()
 
     def registerresources(self, registry):
-        fontresource = resource.font(self.font)
-        registry.registerresource(fontresource)
-        self.fontid = fontresource.id
+        if self.font.getfontfile():
+            registry.registerresource(resource.type1font(self.font.getfontfile(), self.font.getfontfile(), self.font.usedchars, self.font.getencodingfile()))
+        if self.font.getencoding():
+            registry.registerresource(resource.fontencoding(self.font.getencodingfile(), self.font.getencoding(), self.font.getencodingfile()))
+            registry.registerresource(resource.fontreencoding(self.psname, self.psname, self.font.getbasepsname(), self.font.getencoding()))
 
     def outputPS(self, file):
-        file.write("/%s %f selectfont\n" % (self.fontid, self.size))
+        file.write("/%s %f selectfont\n" % (self.psname, self.size))
 
     def outputPDF(self, file):
-        file.write("/%s %f Tf\n" % (self.fontid, self.size))
+        file.write("/%s %f Tf\n" % (self.psname, self.size))
 
 
 class _show(canvas.canvasitem):

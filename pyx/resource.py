@@ -28,80 +28,72 @@ needed by canvasitems and a resource registry class.
 
 """
 
-import pswriter
+class _resource:
 
-class resource:
+    """ a generic resource as needed by some canvas item """
 
-    """ a resource needed by a canvasitem """
-
-    def __init__(self):
-        self.id = None
-
-    def __str__(self):
-        return "resource(%s)" % self.id
+    def __init__(self, type, id):
+        self.type = type
+        self.id = id
 
     def merge(self, other):
-        """ merge contents of similar resource with self """
-        assert self.id == other.id, "Cannot merge resources with different ids"
+        """ merge other to self by modifying self
 
-    def PSprolog(self):
-        """ return list of PS prolog items needed for resource """
-        return []
+        since type and id of other are identical to self, we usually
+        do not need to modify self at all"""
+        pass
 
 
-#
-# various standard resources
-#
+class definition(_resource):
 
-class definition(resource):
-
-    """ function definition """
+    """ a definition """
 
     def __init__(self, id, body):
-        self.id = id
+        _resource.__init__(self, "definition", id)
         self.body = body
 
-    def merge(self, other):
-        assert self.id == other.id, "Cannot merge resources with different ids"
-        if self.body != other.body:
-            raise ValueError("Conflicting function definitions!")
 
-    def PSprolog(self):
-        return [pswriter.PSdefinition(self.id, self.body)]
+class type1font(_resource):
 
+    """ a type1 font (*.pfb file) """
 
-class font(resource):
-
-    """ font definition """
-
-    def __init__(self, font):
-        """ include Type 1 font defined by the following parameters """
-        # XXX passing the font instance is probably not so nice
-        self.id = self.fontname = font.getpsname()
-        self.basepsname = font.getbasepsname()
-        self.fontfile = font.getfontfile()
-        self.encodingfile = font.getencodingfile()
-        self.encoding = font.getencoding()
-        self.usedchars = font.usedchars
+    def __init__(self, id, fontfile, usedchars, encodingfile):
+        _resource.__init__(self, "type1font", id)
+        self.fontfile = fontfile
+        self.usedchars = usedchars
+        self.encodingfile = encodingfile
 
     def merge(self, other):
-        assert self.id == other.id, "Cannot merge resources with different ids"
-        assert self.fontname == other.fontname and self.encoding == other.encoding, "font and/or encoding do not match"
+        # TODO: As far as I understand, the following is a totally unnecessary
+        # restriction. We should, in the future, translate "usedchars" to glyph
+        # names and merge those. The font stripping should work on the glyph
+        # names. A type1font should not even know which reencoding are applied
+        # to it later on. And it should be possible to reencode a font with
+        # different encodings. However, for the moment it works ...
+        assert self.encodingfile == other.encodingfile, "different encoding not supported"
         for i in range(len(self.usedchars)):
             self.usedchars[i] = self.usedchars[i] or other.usedchars[i]
 
-    def PSprolog(self):
-        # XXX maybe we should move this into pswriter.py
-        result = [pswriter.PSfontfile(None,
-                                      self.basepsname,
-                                      self.fontfile,
-                                      self.encodingfile,
-                                      self.usedchars)]
-        if self.encoding:
-            result.append(pswriter._ReEncodeFont)
-            result.append(pswriter.PSfontencoding(self.encoding, self.encodingfile))
-            result.append(pswriter.PSfontreencoding(self.fontname, self.basepsname, self.encoding))
-        return result
+
+class fontencoding(_resource):
+
+    """ a encoding vector (*.enc file) """
+
+    def __init__(self, id, encoding, encodingfile):
+        _resource.__init__(self, "encoding", id)
+        self.encoding = encoding
+        self.encodingfile = encodingfile
+
+
+class fontreencoding(_resource):
+
+    """ a reencoded font """
+
+    def __init__(self, id, psname, basepsname, encoding):
+        _resource.__init__(self, "reencoding", id)
+        self.psname = psname
+        self.basepsname = basepsname
+        self.encoding = encoding
 
 
 class resourceregistry:
@@ -113,11 +105,9 @@ class resourceregistry:
 
     def registerresource(self, resource):
         """registers resource and merge it with possibly already existing ones"""
-        resourceid = resource.id
-        if self.resources.has_key(resourceid):
-             self.resources[resourceid].merge(resource)
+        resourcesoftype = self.resources.setdefault(resource.type, {})
+        if resourcesoftype.has_key(resource.id):
+             resourcesoftype[resource.id].merge(resource)
         else:
-             self.resources[resourceid] = resource
+             resourcesoftype[resource.id] = resource
 
-    def queryresource(self, resourceid):
-        return self.resources[resourceid]
