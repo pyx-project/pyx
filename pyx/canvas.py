@@ -877,8 +877,8 @@ class pattern(_canvas, base.PathStyle):
                           "/PaintType %d\n" % self.painttype +
                           "/TilingType %d\n" % self.tilingtype +
                           "/BBox[%s]\n" % str(patternbbox.enlarged("5 pt")) + 
-                          "/XStep %f\n" % xstep + 
-                          "/YStep %f\n" % ystep + 
+                          "/XStep %g\n" % xstep + 
+                          "/YStep %g\n" % ystep + 
                           "/PaintProc {\nbegin\n")
         stringfile = StringIO.StringIO()
         _canvas.write(self, stringfile)
