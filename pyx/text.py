@@ -178,18 +178,18 @@ class TFMFile:
         self.file = binfile(name, "rb")
 
         #
-	# read pre header
+        # read pre header
         #
 
-	self.lf = self.file.readint16()
-	self.lh = self.file.readint16()
-	self.bc = self.file.readint16()
-	self.ec = self.file.readint16()
-	self.nw = self.file.readint16()
-	self.nh = self.file.readint16()
-	self.nd = self.file.readint16()
-	self.ni = self.file.readint16()
-	self.nl = self.file.readint16()
+        self.lf = self.file.readint16()
+        self.lh = self.file.readint16()
+        self.bc = self.file.readint16()
+        self.ec = self.file.readint16()
+        self.nw = self.file.readint16()
+        self.nh = self.file.readint16()
+        self.nd = self.file.readint16()
+        self.ni = self.file.readint16()
+        self.nl = self.file.readint16()
         self.nk = self.file.readint16()
         self.ne = self.file.readint16()
         self.np = self.file.readint16()
@@ -262,7 +262,7 @@ class TFMFile:
         #
 
         self.char_info = [None for charcode in range(self.ec+1)]
-        
+
         for charcode in range(self.bc, self.ec+1):
             self.char_info[charcode] = char_info_word(self.file.readint32())
 
@@ -278,7 +278,7 @@ class TFMFile:
         #
         # read heights
         #
-            
+
         self.height = [None for height_index in range(self.nh)]
         for height_index in range(self.nh):
             # self.height[height_index] = fix_word(self.file.readint32())
@@ -301,7 +301,7 @@ class TFMFile:
         for italic_index in range(self.ni):
             # self.italic[italic_index] = fix_word(self.file.readint32())
             self.italic[italic_index] = self.file.readint32()
-        
+
         #
         # read lig_kern
         #
@@ -351,7 +351,7 @@ class Font:
         if self.tfmfile.checksum!=c:
             raise DVIError("check sums do not agree: %d vs. %d" %
                            (self.checksum, c))
-        
+
         self.tfmdesignsize = round(tfmconv*self.tfmfile.designsizeraw)
 
         if abs(self.tfmdesignsize - d)>2:
@@ -361,7 +361,7 @@ class Font:
 
         if q<0 or q>134217728:
             raise DVIError("font '%s' not loaded: bad scale" % fontname)
-        
+
         if d<0 or d>134217728:
             raise DVIError("font '%s' not loaded: bad design size" % fontname)
 
@@ -382,15 +382,15 @@ class Font:
 
     def convert(self, width):
         b0 = width >> 24
-        b1 = (width >> 16) & 0xf
-        b2 = (width >> 8 ) & 0xf
-        b3 = (width      ) & 0xf
+        b1 = (width >> 16) & 0xff
+        b2 = (width >> 8 ) & 0xff
+        b3 = (width      ) & 0xff
 #        print width*self.qorig*16/ 16777216, (((((b3*self.q)/256)+(b2*self.q))/256)+(b1*self.q))/self.beta
 
         if b0==0:
             return (((((b3*self.q)/256)+(b2*self.q))/256)+(b1*self.q))/self.beta
         elif b0==255:
-	    return (((((b3*self.q)/256)+(b2*self.q))/256)+(b1*self.q))/self.beta-self.alpha
+            return (((((b3*self.q)/256)+(b2*self.q))/256)+(b1*self.q))/self.beta-self.alpha
         else:
             raise TFMError("error in font size")
 
@@ -435,9 +435,9 @@ class DVIFile:
                     0))
 
         self.pos[_POS_H] += dx
-        
+
         ascii = (char > 32 and char < 128) and "%s" % chr(char) or "\\%03o" % char
-        
+
         if self.actoutstart is None:
             self.actoutstart = unit.t_cm(x), unit.t_cm(y)
             self.actoutstring = ""
@@ -450,11 +450,11 @@ class DVIFile:
     def putrule(self, height, width, inch=1):
         if height > 0 and width > 0:
             x1 = self.pos[_POS_H] * self.conv * 1e-5
-            y1 = self.pos[_POS_V] * self.conv * 1e-5
+            y1 = -self.pos[_POS_V] * self.conv * 1e-5
             w = width * self.conv * 1e-5
             h = height * self.conv * 1e-5
             if self.debug:
-                print "rule ((%.3f..%.3f cm), (%.3f..%.3f cm))" % (x1, y1, w, h)
+                print "%d: putrule height %d, width %d" % (self.filepos, height, width)
             self.actpage.append(("r",
                                  unit.t_cm(x1), unit.t_cm(y1),
                                  unit.t_cm(w), unit.t_cm(h)))
@@ -475,7 +475,7 @@ class DVIFile:
         # q: scaling factor
         #    Note that q is actually s in large parts of the documentation.
         # d: design size
-        
+
         self.fonts[num] =  Font(fontname, c, q, d, self.tfmconv)
 
         scale = round((1000.0*self.conv*q)/(self.trueconv*d))
@@ -497,7 +497,7 @@ class DVIFile:
         file = binfile(self.filename, "rb")
         state = _READ_PRE
         stack = []
-        
+
         # XXX max number of fonts
         self.fonts = [None for i in range(64)]
         self.activefont = None
@@ -534,7 +534,6 @@ class DVIFile:
                     comment = file.read(file.readuchar())
                     state = _READ_NOPAGE
                 else: raise DVIError
-
             elif state == _READ_NOPAGE:
                 if cmd == _DVI_BOP:
                     self.flushout()
@@ -553,7 +552,6 @@ class DVIFile:
                 elif cmd == _DVI_POST:
                     state = _READ_DONE # we skip the rest
                 else: raise DVIError
-
             elif state == _READ_PAGE:
                if cmd >= _DVI_CHARMIN and cmd <= _DVI_CHARMAX:
                    self.putchar(cmd)
@@ -598,7 +596,6 @@ class DVIFile:
                                dh,
                                self.pos[_POS_H]+dh))
                    self.pos[_POS_H] += dh
-                   
                elif cmd == _DVI_W0:
                    self.flushout()
                    if self.debug:
@@ -642,18 +639,18 @@ class DVIFile:
                    self.pos[_POS_V] += dv
                elif cmd == _DVI_Y0:
                    self.flushout()
-                   self.pos[_POS_V] -= self.pos[_POS_Y]
+                   self.pos[_POS_V] += self.pos[_POS_Y]
                elif cmd >= _DVI_Y1234 and cmd < _DVI_Y1234 + 4:
                    self.flushout()
                    self.pos[_POS_Y] = file.readint(cmd - _DVI_Y1234 + 1, 1)
-                   self.pos[_POS_V] -= self.pos[_POS_Y]
+                   self.pos[_POS_V] += self.pos[_POS_Y]
                elif cmd == _DVI_Z0:
                    self.flushout()
-                   self.pos[_POS_V] -= self.pos[_POS_Z]
+                   self.pos[_POS_V] += self.pos[_POS_Z]
                elif cmd >= _DVI_Z1234 and cmd < _DVI_Z1234 + 4:
                    self.flushout()
                    self.pos[_POS_Z] = file.readint(cmd - _DVI_Z1234 + 1, 1)
-                   self.pos[_POS_V] -= self.pos[_POS_Z]
+                   self.pos[_POS_V] += self.pos[_POS_Z]
                elif cmd >= _DVI_FNTNUMMIN and cmd <= _DVI_FNTNUMMAX:
                    self.usefont(cmd - _DVI_FNTNUMMIN)
                elif cmd >= _DVI_FNT1234 and cmd < _DVI_FNT1234 + 4:
@@ -1212,7 +1209,7 @@ class texrunner(attrlist.attrlist):
     def writefontheader(self, file, containsfonts):
         if not self.texdone:
             _default.execute(None, *self.checkmsgend)
-            self.dvifile = DVIFile("%s.dvi" % self.texfilename, debug=0)
+            self.dvifile = DVIFile("%s.dvi" % self.texfilename, debug=self.dvidebug)
         if self not in containsfonts:
             self.dvifile.writeheader(file)
             containsfonts.append(self)

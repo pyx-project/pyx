@@ -5,12 +5,12 @@ from pyx import *
 from pyx import text
 
 c = canvas.canvas()
-text.set(mode="latex")
+text.set(mode="latex", dvidebug=1)
 
 c.stroke(path.line(-1, 0, 6, 0))
 
 c.text(6.2, 0, "0", text.valign.centerline())
-c.text(-1.2, 0, "aaa", text.valign.centerline(), text.halign.right)
+c.text(-1.2, 0, "abc", text.valign.centerline(), text.halign.right)
 
 t1 = text.text(0, 0, "a b c d e f g h i j k l m n o p q r s t u v w x y z", text.valign.bottomline("2 cm"))
 c.insert(t1)
