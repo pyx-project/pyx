@@ -97,8 +97,8 @@ class PDFpage(PDFobject):
         file.write("/MediaBox [0 0 %d %d]\n" % (unit.topt(paperformat.width), unit.topt(paperformat.height)))
         file.write("/CropBox " )
         self.bbox.outputPDF(file)
-        file.write("/Resources << /ProcSet [ /PDF ] >>\n"
-                   "/Contents %i 0 R\n"
+        file.write("/Resources << /ProcSet [ /PDF ] >>\n")
+        file.write("/Contents %i 0 R\n"
                    ">>\n" % (self.content.refno))
 
 
@@ -118,7 +118,7 @@ class PDFcontent(PDFobject):
         #     self.write("/Filter /FlateDecode\n")
         file.write(">>\n")
         file.write("stream\n")
-        self.beginstreampos = file.tell()
+        beginstreampos = file.tell()
 
         # if self.compress:
         #     if self.compressstream is not None:
@@ -136,7 +136,7 @@ class PDFcontent(PDFobject):
         #     self.file.write(self.compressstream.flush())
         #     self.compressstream = None
 
-        self.contentlength.contentlength = file.tell() - self.beginstreampos
+        self.contentlength.contentlength = file.tell() - beginstreampos
         file.write("endstream\n")
 
 
@@ -144,10 +144,118 @@ class PDFcontentlength(PDFobject):
 
     def __init__(self, writer, refno):
         PDFobject.__init__(self, writer, refno)
+        # initially we do not know about the content length, we
+        # has to be written into the instance later on
         self.contentlength = None
 
     def outputPDF(self, file):
         file.write("%d\n" % self.contentlength)
+
+
+class PDFfont(PDFobject):
+    def __init__(self, writer, refno, font):
+        PDFobject.__init__(self, writer, refno)
+        self.font = font
+        self.fontwidths = writer.addobject(PDFfontwidths, font)
+        self.fontdescriptor = writer.addobject(PDFfontdescriptor, font)
+
+    def outputPDF(self, file):
+       self.write("<<\n"
+                  "/Type /Font\n"
+                  "/Subtype /Type1\n"
+                  "/Name /%s\n"
+                  "/BaseFont /%s\n"
+                  "/FirstChar 0\n"
+                  "/LastChar 255\n"
+                  "/Widths %d 0 R\n"
+                  "/FontDescriptor %d 0 R\n"
+                  "/Encoding /StandardEncoding\n" # FIXME
+                  ">>\n" % (self.font.getpsname(), self.font.getbasepsname(),
+                            self.fontwidths.refno, self.fontdescriptor.refno))
+
+class PDFfontwidths(PDFobject):
+    def __init__(self, writer, refno, font):
+        PDFobject.__init__(self, writer, refno)
+        self.font = font
+
+    def outputPDF(self, file):
+        self.write("[\n")
+        for i in range(256):
+            try:
+                width = self.font.getwidth_pt(i)*1000/self.font.getsize_pt()
+            except:
+                width = 0
+            self.write("%f\n" % width)
+        self.write("]\n")
+
+
+class PDFfontdescriptor(PDFobject):
+
+    def __init__(self, writer, refno, font):
+        PDFobject.__init__(self, writer, refno)
+        self.font = font
+        path = pykpathsea.find_file(font.filename, pykpathsea.kpse_type1_format)
+        self.fontfile = writer.addobject(PDFfontfile, path)
+
+    def outputPDF(self, file):
+        self.write("<<\n"
+                   "/Type /FontDescriptor\n"
+                   "/FontName /%s\n"
+                   "/Flags 4\n" # FIXME
+                   "/FontBBox [-10 -10 1000 1000]\n" # FIXME
+                   "/ItalicAngle 0\n" # FIXME
+                   "/Ascent 20\n" # FIXME
+                   "/Descent -5\n" # FIXME
+                   "/CapHeight 15\n" # FIXME
+                   "/StemV 3\n" # FIXME
+                   "/FontFile %d 0 R\n" # FIXME
+                   # "/CharSet \n" # fill in when stripping
+                   ">>\n" % (self.font.getbasepsname(), self.fontfile.refno))
+
+class PDFfontfile(PDFobject):
+
+    def __init__(self, writer, refno, path):
+        PDFobject.__init__(self, writer, refno)
+        self.path = path
+
+    def outputPDF(self, file):
+        fontfile = open(self.path)
+        fontdata = fontfile.read()
+        fontfile.close()
+        if fontdata[0:2] != fullfont._PFB_ASCII:
+            raise RuntimeError("PFB_ASCII mark expected")
+        length1 = fullfont.pfblength(fontdata[2:6])
+        if fontdata[6+length1:8+length1] != fullfont._PFB_BIN:
+            raise RuntimeError("PFB_BIN mark expected")
+        length2 = fullfont.pfblength(fontdata[8+length1:12+length1])
+        if fontdata[12+length1+length2:14+length1+length2] != fullfont._PFB_ASCII:
+            raise RuntimeError("PFB_ASCII mark expected")
+        length3 = fullfont.pfblength(fontdata[14+length1+length2:18+length1+length2])
+        if fontdata[18+length1+length2+length3:20+length1+length2+length3] != fullfont._PFB_DONE:
+            raise RuntimeError("PFB_DONE mark expected")
+        if len(fontdata) != 20 + length1 + length2 + length3:
+            raise RuntimeError("end of pfb file expected")
+
+        # we might be allowed to skip the third part ...
+        if fontdata[18+length1+length2:18+length1+length2+length3].replace("\n", "").replace("\r", "").replace("\t", "").replace(" ", "") == "0"*512 + "cleartomark":
+            length3 = 0
+
+        uncompresseddata = fontdata[6:6+length1] + fontdata[12+length1:12+length1+length2] + fontdata[18+length1+length2:18+length1+length2+length3]
+        compresseddata = zlib.compress(uncompresseddata)
+
+        self.write("<<\n"
+                   "/Length %d\n"
+                   "/Length1 %d\n"
+                   "/Length2 %d\n"
+                   "/Length3 %d\n"
+                   "/Filter /FlateDecode\n"
+                   ">>\n"
+                   "stream\n" % (len(compresseddata), length1, length2, length3))
+        #file.write(fontdata[6:6+length1])
+        #file.write(fontdata[12+length1:12+length1+length2])
+        #file.write(fontdata[18+length1+length2:18+length1+length2+length3])
+        self.write(compresseddata)
+        self.write("endstream\n")
 
 
 class PDFwriter:
@@ -173,13 +281,16 @@ class PDFwriter:
 
         self.file.write("%%PDF-1.4\n%%%s%s%s%s\n" % (chr(195), chr(182), chr(195), chr(169)))
 
+        # the PDFcatalog class automatically builds up the pdfobjects from a document
         catalog = self.addobject(PDFcatalog, document)
 
+        # by recursively appending to the list of pdfobjects, we create this list in reverse
+        # order and thus need to reverse it before writing it in the output file
         self.pdfobjects.reverse()
         for pdfobject in self.pdfobjects:
             pdfobject.outputPDFobject(self.file)
 
-        # xref
+        # create xref list
         xrefpos = self.file.tell()
         self.file.write("xref\n"
                         "0 %d\n"
@@ -198,9 +309,15 @@ class PDFwriter:
                         "%%%%EOF\n" % (len(self.pdfobjects)+1, catalog.refno, xrefpos))
         self.file.close()
 
-    def addobject(self, objectclass, *args, **kwargs):
+    def addobject(self, pdfobjectclass, *args, **kwargs):
+        """ create an instance of pdfobjectclass, append it to the list of pdfobjects
+        and return it to the caller.
+
+        The constructor of pdfobjectclass gets as arguments the PDFwriter and the
+        refno of the new object well as further arguments *args and **kwargs."""
+
         self.pdfobjectcount += 1
-        pdfobject = objectclass(self, self.pdfobjectcount, *args, **kwargs)
+        pdfobject = pdfobjectclass(self, self.pdfobjectcount, *args, **kwargs)
         self.pdfobjects.append(pdfobject)
         return pdfobject
 #         # During the creating of object other objects may already have been added.
@@ -213,103 +330,13 @@ class PDFwriter:
 #         return pdfobject
 
 
-
     def page(self, abbox, canvas, mergedprolog, ctrafo):
-        # media box
-        self.beginobj(PDFmediabox % self.pages)
-        abbox.outputPDF(self)
-        self.endobj()
-
         # insert resources
         for pritem in mergedprolog:
             if isinstance(pritem, prolog.fontdefinition):
                 if pritem.filename:
+                    pass
                     # fontfile
-                    fontdata = open(pykpathsea.find_file(pritem.filename, pykpathsea.kpse_type1_format)).read()
-                    if fontdata[0:2] != fullfont._PFB_ASCII:
-                        raise RuntimeError("PFB_ASCII mark expected")
-                    length1 = fullfont.pfblength(fontdata[2:6])
-                    if fontdata[6+length1:8+length1] != fullfont._PFB_BIN:
-                        raise RuntimeError("PFB_BIN mark expected")
-                    length2 = fullfont.pfblength(fontdata[8+length1:12+length1])
-                    if fontdata[12+length1+length2:14+length1+length2] != fullfont._PFB_ASCII:
-                        raise RuntimeError("PFB_ASCII mark expected")
-                    length3 = fullfont.pfblength(fontdata[14+length1+length2:18+length1+length2])
-                    if fontdata[18+length1+length2+length3:20+length1+length2+length3] != fullfont._PFB_DONE:
-                        raise RuntimeError("PFB_DONE mark expected")
-                    if len(fontdata) != 20 + length1 + length2 + length3:
-                        raise RuntimeError("end of pfb file expected")
-
-                    # we might be allowed to skip the third part ...
-                    if fontdata[18+length1+length2:18+length1+length2+length3].replace("\n", "").replace("\r", "").replace("\t", "").replace(" ", "") == "0"*512 + "cleartomark":
-                        length3 = 0
-
-                    uncompresseddata = fontdata[6:6+length1] + fontdata[12+length1:12+length1+length2] + fontdata[18+length1+length2:18+length1+length2+length3]
-                    compresseddata = zlib.compress(uncompresseddata)
-
-                    self.beginobj(PDFfontfile % pritem.font.getpsname())
-                    self.write("<<\n"
-                               "/Length %d\n"
-                               "/Length1 %d\n"
-                               "/Length2 %d\n"
-                               "/Length3 %d\n"
-                               "/Filter /FlateDecode\n"
-                               ">>\n"
-                               "stream\n" % (len(compresseddata), length1, length2, length3))
-                    #file.write(fontdata[6:6+length1])
-                    #file.write(fontdata[12+length1:12+length1+length2])
-                    #file.write(fontdata[18+length1+length2:18+length1+length2+length3])
-                    self.write(compresseddata)
-                    self.write("endstream\n")
-                    self.endobj()
-
-                    # fontdescriptor
-                    self.beginobj(PDFfontdescriptor % pritem.font.getpsname())
-                    self.write("<<\n"
-                               "/Type /FontDescriptor\n"
-                               "/FontName /%s\n"
-                               "/Flags 4\n" # FIXME
-                               "/FontBBox [-10 -10 1000 1000]\n" # FIXME
-                               "/ItalicAngle 0\n" # FIXME
-                               "/Ascent 20\n" # FIXME
-                               "/Descent -5\n" # FIXME
-                               "/CapHeight 15\n" # FIXME
-                               "/StemV 3\n" # FIXME
-                               "/FontFile %d 0 R\n" # FIXME
-                               # "/CharSet \n" # fill in when stripping
-                               ">>\n" % (pritem.font.getbasepsname(),
-                                         self.refdict[PDFfontfile % pritem.font.getpsname()]))
-                    self.endobj()
-
-
-                # width
-                self.beginobj(PDFwidths % pritem.font.getpsname())
-                self.write("[\n")
-                for i in range(256):
-                    try:
-                        width = pritem.font.getwidth_pt(i)*1000/pritem.font.getsize_pt()
-                    except:
-                        width = 0
-                    self.write("%f\n" % width)
-                self.write("]\n")
-                self.endobj()
-
-                # font
-                self.beginobj(PDFfont % pritem.font.getpsname())
-                self.write("<<\n"
-                           "/Type /Font\n"
-                           "/Subtype /Type1\n"
-                           "/Name /%s\n"
-                           "/BaseFont /%s\n"
-                           "/FirstChar 0\n"
-                           "/LastChar 255\n"
-                           "/Widths %d 0 R\n"
-                           "/FontDescriptor %d 0 R\n"
-                           "/Encoding /StandardEncoding\n" # FIXME
-                           ">>\n" % (pritem.font.getpsname(), pritem.font.getbasepsname(),
-                                     self.refdict[PDFwidths % pritem.font.getpsname()],
-                                     self.refdict[PDFfontdescriptor % pritem.font.getpsname()]))
-                self.endobj()
 
         # resources
         self.beginobj(PDFresources % self.pages)
@@ -325,29 +352,6 @@ class PDFwriter:
         self.write(">>\n")
         self.endobj()
 
-        # contents
-        contentslengthref = len(self.refs) + 2
-        self.beginobj(PDFcontents % self.pages)
-        self.write("<<\n"
-                   "/Length %i 0 R\n" % contentslengthref)
-        if self.compress:
-            self.write("/Filter /FlateDecode\n")
-        self.write(">>\n")
-        self.beginstream()
-        # apply a possible global transformation
-        if ctrafo: ctrafo.outputPDF(self)
-        style.linewidth.normal.outputPDF(self)
-        canvas.outputPDF(self)
-        contentslength = self.endstream()
-        self.endobj()
-
-        # contents length
-        self.beginobj(PDFcontentslength % self.pages)
-        self.write("%i\n" % contentslength)
-        self.endobj()
-        assert contentslengthref == self.refdict[PDFcontentslength % self.pages]
-
-        self.pages += 1
 
 # some ideas...
 
