@@ -61,7 +61,7 @@ class rgb(color):
 
 rgb.red   = rgb(1,0,0)
 rgb.green = rgb(0,1,0)
-yblue     = rgb(0,0,1)
+rgb.blue  = rgb(0,0,1)
        
 
 class hsb(color):

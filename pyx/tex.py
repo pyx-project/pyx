@@ -20,11 +20,6 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-# TODO: - set linewidth in latex-mode (also in tex-mode?) in a vbox
-#       - documentation & bug (side effect) description:
-#                           - par-bug in vbox
-#                           - double {} for color etc.
-
 
 """
 (La)TeX interface of PyX
@@ -91,7 +86,7 @@ halign.center = halign("center")
 halign.right  = halign("right")
 
    
-class _valign(_texattr):
+class valign(_texattr):
 
     """abstract tex vertical align attribute"""
 
@@ -99,18 +94,24 @@ class _valign(_texattr):
         self.hsize = hsize
 
 
-class vtop(_valign):
+class _valignvtop(valign):
 
     """tex top vertical align attribute"""
 
     pass
 
 
-class vbox(_valign):
+valign.top = _valignvtop
+
+
+class _valignvbox(valign):
 
     """tex bottom vertical align attribute"""
 
     pass
+
+
+valign.bottom = _valignvbox
 
 
 class direction(_texattr):
@@ -121,7 +122,8 @@ class direction(_texattr):
         self.value = value
 
     def __str__(self):
-        return value
+        return "%.5f" % self.value
+
 
 
 direction.horizontal = direction(0)
@@ -488,10 +490,10 @@ class _BoxCmd(_TexCmd):
 
         self.BoxCmd = style.ModifyCmd(self.BoxCmd)
         if valign is not None:
-            if isinstance(valign, vtop):
+            if isinstance(valign, _valignvtop):
                 self.BoxCmd = "\\linewidth%.5ftruept\\vtop{\\hsize\\linewidth{%s}}" % \
                                (unit.topt(valign.hsize) * 72.27/72, self.BoxCmd, )
-            elif isinstance(valign, vbox):
+            elif isinstance(valign, _valignvbox):
                 self.BoxCmd = "\\linewidth%.5ftruept\\vbox{\\hsize\\linewidth{%s}}" % \
                                (unit.topt(valign.hsize) * 72.27/72, self.BoxCmd, )
             else:
@@ -516,8 +518,8 @@ class _BoxCmd(_TexCmd):
                         (-CmdPut.y, CmdPut.x))
 
             if CmdPut.direction != direction.horizontal:
-                file.write("\\special{ps: gsave currentpoint currentpoint translate %s neg " +
-                           "rotate neg exch neg exch translate }" % CmdPut.direction )
+                file.write("\\special{ps: gsave currentpoint currentpoint translate " +
+                           str(CmdPut.direction) + " neg rotate neg exch neg exch translate }")
             if CmdPut.color != color.grey.black:
                 file.write("\\special{ps: ")
                 CmdPut.color.write(file)
@@ -599,7 +601,7 @@ class _tex(base.PSCmd, instancelist.InstanceList):
             self.Sizes = [ ]
 
     def _getstack(self):
-        return traceback.extract_stack(sys._getframe().f_back.f_back.f_back)
+        return traceback.extract_stack(sys._getframe())
     
     def _execute(self, command):
         if os.system(command):
@@ -698,7 +700,7 @@ class _tex(base.PSCmd, instancelist.InstanceList):
                 print "constructor of the class pyx.tex. You can then try to run dvips"
                 print "by yourself."
             else:
-                aepsfile = epsfile.epsfile(tempname + ".eps", translatebb = 0)
+                aepsfile = epsfile.epsfile(tempname + ".eps", translatebb=0, clip=0)
                 self.bbox = aepsfile.bbox()
                 epsdatafile = StringIO.StringIO()
                 aepsfile.write(epsdatafile)
@@ -756,7 +758,7 @@ class _tex(base.PSCmd, instancelist.InstanceList):
                                     self._getstack(),
                                     self.ExtractInstance(styleparams, msghandler, self.defaultmsghandler)))
 
-    def InsertCmd(self, Cmd, *styleparams):
+    def _insertcmd(self, Cmd, *styleparams):
         if not len(self.BoxCmds):
             self._beginboxcmds()
             self.DefCmdsStr = reduce(lambda x,y: x + y.DefCmd, self.DefCmds, "")
@@ -764,7 +766,7 @@ class _tex(base.PSCmd, instancelist.InstanceList):
                         Cmd,
                         self.ExtractInstance(styleparams, style, style.text),
                         self.ExtractInstance(styleparams, fontsize, fontsize.normalsize),
-                        self.ExtractInstance(styleparams, _valign),
+                        self.ExtractInstance(styleparams, valign),
                         len(self.DefCmds)+ len(self.BoxCmds),
                         self._getstack(),
                         self.ExtractInstance(styleparams, msghandler, self.defaultmsghandler))
@@ -780,12 +782,12 @@ class _tex(base.PSCmd, instancelist.InstanceList):
     def _text(self, x, y, Cmd, *styleparams):
         """print Cmd at (x, y) --- position parameters in postscipt points"""
         self.DoneRunTex = 0
-        self.AllowedInstances(styleparams, [style, fontsize, halign, _valign, direction, msghandler, color.color, ])
-        self.InsertCmd(Cmd, *styleparams).Put(x * 72.27 / 72.0,
-                                              y * 72.27 / 72.0,
-                                              self.ExtractInstance(styleparams, halign, halign.left),
-                                              self.ExtractInstance(styleparams, direction, direction.horizontal),
-                                              self.ExtractInstance(styleparams, color.color, color.grey.black))
+        self.AllowedInstances(styleparams, [style, fontsize, halign, valign, direction, msghandler, color.color, ])
+        self._insertcmd(Cmd, *styleparams).Put(x * 72.27 / 72.0,
+                                               y * 72.27 / 72.0,
+                                               self.ExtractInstance(styleparams, halign, halign.left),
+                                               self.ExtractInstance(styleparams, direction, direction.horizontal),
+                                               self.ExtractInstance(styleparams, color.color, color.grey.black))
 
 
     def text(self, x, y, Cmd, *styleparams):
@@ -796,19 +798,19 @@ class _tex(base.PSCmd, instancelist.InstanceList):
         """get width of Cmd"""
         self.DoneRunTex = 0
         self.AllowedInstances(styleparams, [style, fontsize, msghandler, ])
-        return self.InsertCmd(Cmd, *styleparams).Extent(_extent.wd, self.Sizes)
+        return self._insertcmd(Cmd, *styleparams).Extent(_extent.wd, self.Sizes)
 
     def textht(self, Cmd, *styleparams):
         """get height of Cmd"""
         self.DoneRunTex = 0
-        self.AllowedInstances(styleparams, [style, fontsize, _valign, msghandler, ])
-        return self.InsertCmd(Cmd, *styleparams).Extent(_extent.ht, self.Sizes)
+        self.AllowedInstances(styleparams, [style, fontsize, valign, msghandler, ])
+        return self._insertcmd(Cmd, *styleparams).Extent(_extent.ht, self.Sizes)
 
     def textdp(self, Cmd, *styleparams):
         """get depth of Cmd"""
         self.DoneRunTex = 0
-        self.AllowedInstances(styleparams, [style, fontsize, _valign, msghandler, ])
-        return self.InsertCmd(Cmd, *styleparams).Extent(_extent.dp, self.Sizes)
+        self.AllowedInstances(styleparams, [style, fontsize, valign, msghandler, ])
+        return self._insertcmd(Cmd, *styleparams).Extent(_extent.dp, self.Sizes)
 
 
 class tex(_tex):
