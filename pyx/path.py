@@ -1542,7 +1542,6 @@ class normcurve(normsubpathitem):
             a, b = self.midpointsplit()
             return a.arclen_pt(epsilon) + b.arclen_pt(epsilon)
 
-
     def at_pt(self, t):
         xt_pt = ( (-self.x0_pt+3*self.x1_pt-3*self.x2_pt+self.x3_pt)*t*t*t +
                   (3*self.x0_pt-6*self.x1_pt+3*self.x2_pt          )*t*t +
@@ -2287,6 +2286,10 @@ class normpath(path):
 
     def append(self, normsubpath):
         self.subpaths.append(normsubpath)
+
+    def extend(self, normsubpaths):
+        self.subpaths.extend(normsubpaths)
+
 
     def arclen_pt(self):
         """returns total arc length of normpath in pts"""
