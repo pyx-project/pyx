@@ -27,8 +27,6 @@ TODO:
     - set method???
     - PDF support
     - SVG support
-  - deco module:
-    - the name wriggle has to replaced by something better (e.g. wriggled?)
   - style and color module:
     - support modification of existing styles via __call__
   - bbox module:
@@ -48,7 +46,8 @@ TODO:
 
 TODO for 0.6:
   - deco module:
-    - the name wriggle has to replaced by something better (e.g. wriggled?)
+    - wriggle should be replaced by cycloid
+    - name for cycloid OK?
   - Documentation:
     - graph module:
       - documentation of the new class layout
@@ -58,7 +57,7 @@ TODO for 0.6:
       - graph styles rewrite
       - part -> parter, tickdist->tickpos argument of parter
     - deco module:
-      - wriggle decorator
+      - cycloid decorator
       - smoothed decorator
     - unit module:
       -> not always returns true
@@ -125,7 +124,7 @@ TODO for 0.6:
   - connnector module:
     - renamed _xxx -> xxx_pt
   - deco module:
-    - wriggle decorator
+    - cycloid decorator
     - smoothed decorator
     - arrow heads are no longer stroked (as suggested by Magnus Lie Hetland)
   - canvas:
