@@ -43,7 +43,7 @@ and tex.textdp appraise the width, height, and depth of a text, respectively.
 """
 
 import os, string, tempfile, sys, md5, traceback, time, StringIO
-import PSCmd, unit, epsfile, color
+import base, unit, epsfile, color
 
 class _Attr:
     """base class for all PyX attributes (TODO: has to be defined somewhere else)"""
@@ -435,7 +435,7 @@ class _InstanceList:
             return Result
 
 
-class tex(PSCmd.PSCmd, _InstanceList):
+class tex(base.PSCmd, _InstanceList):
 
     def __init__(self, *styleparams):
         self.AllowedInstances(styleparams, [_mode, texfilename, latexsize, docclass, docopt, ])

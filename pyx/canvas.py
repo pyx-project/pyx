@@ -24,9 +24,46 @@
 # - canvas.__init__() rewrite
 
 import types, math
-import base, PSCmd
+import base
 import bbox, unit, trafo
 import bpath
+
+# PostScript-procedure definitions
+# cf. file: 5002.EPSF_Spec_v3.0.pdf     
+
+_PSProlog = """/BeginEPSF {
+  /b4_Inc_state save def
+  /dict_count countdictstack def
+  /op_count count 1 sub def
+  userdict begin
+  /showpage { } def
+  0 setgray 0 setlinecap
+  1 setlinewidth 0 setlinejoin
+  10 setmiterlimit [ ] 0 setdash newpath
+  /languagelevel where
+  {pop languagelevel
+  1 ne
+    {false setstrokeadjust false setoverprint
+    } if
+  } if
+} bind def
+/EndEPSF {
+  count op_count sub {pop} repeat % Clean up stacks
+  countdictstack dict_count sub {end} repeat
+  b4_Inc_state restore
+} bind def"""
+
+# known paperformats as tuple(width, height)
+
+_paperformats = { "a4"      : ("210 t mm",  "297 t mm"), 
+                  "a3"      : ("297 t mm",  "420 t mm"), 
+                  "a2"      : ("420 t mm",  "594 t mm"), 
+                  "a1"      : ("594 t mm",  "840 t mm"), 
+                  "a0"      : ("840 t mm", "1188 t mm"), 
+                  "a0b"     : ("910 t mm", "1350 t mm"), 
+                  "letter"  : ("8.5 t in",   "11 t in"),
+                  "legal"   : ("8.5 t in",   "14 t in")}
+
 
 #
 # Exceptions
@@ -133,7 +170,7 @@ linewidth.THICK  = linewidth("%f cm" % (_base*math.sqrt(64)))
 # arrowheads are simple PSCmds
 #
 
-class arrowhead(PSCmd.PSCmd):
+class arrowhead(base.PSCmd):
 
     """represents and arrowhead, which is usually constructed by an
     arrow.attach call"""
@@ -295,7 +332,7 @@ class _grestore(base.PSOp):
 # The main canvas class
 #
 
-class canvas(PSCmd.PSCmd):
+class canvas(base.PSCmd):
 
     """a canvas is a collection of PSCmds together with PSAttrs"""
 
@@ -324,7 +361,7 @@ class canvas(PSCmd.PSCmd):
 
     def bbox(self):
         obbox = reduce(lambda x,y:
-                       isinstance(y, PSCmd.PSCmd) and x+y.bbox() or x,
+                       isinstance(y, base.PSCmd) and x+y.bbox() or x,
                        self.PSOps,
                        bbox.bbox())
 
@@ -336,6 +373,89 @@ class canvas(PSCmd.PSCmd):
     def write(self, file):
         for cmd in self.PSOps:
             cmd.write(file)
+
+    def writetofile(self, filename, paperformat=None, rotated=0, fittosize=0, margin="1 t cm"):
+        """write canvas to EPS file
+
+        If paperformat is set to a known paperformat, the output will be centered on 
+        the page (and optionally rotated)
+
+        If fittosize is set as well, then the output is scaled to the size of the
+        page (minus margin).
+
+        """
+
+        try:
+            file = open(filename + ".eps", "w")
+        except IOError:
+            assert 0, "cannot open output file"                 # TODO: Fehlerbehandlung...
+
+        abbox=self.bbox()
+        ctrafo=None     # global transformation of canvas
+
+        if rotated:
+            ctrafo = trafo._rotate(90,
+                                   0.5*(abbox.llx+abbox.urx),
+                                   0.5*(abbox.lly+abbox.ury))
+
+        if paperformat:
+            # center (optionally rotated) output on page
+            try:
+                width, height = _paperformats[paperformat]
+                width = unit.topt(width)
+                height = unit.topt(height)
+            except KeyError:
+                raise KeyError, "unknown paperformat '%s'" % paperformat
+
+            if not ctrafo: ctrafo=trafo.trafo()
+
+            ctrafo = ctrafo._translate(0.5*(width -(abbox.urx-abbox.llx))-
+                                       abbox.llx, 
+                                       0.5*(height-(abbox.ury-abbox.lly))-
+                                       abbox.lly)
+            
+            if fittosize:
+                # scale output to pagesize - margins
+                margin=unit.topt(margin)
+
+                if rotated:
+                    sfactor = min((height-2*margin)/(abbox.urx-abbox.llx), 
+                                  (width-2*margin)/(abbox.ury-abbox.lly))
+                else:
+                    sfactor = min((width-2*margin)/(abbox.urx-abbox.llx), 
+                                  (height-2*margin)/(abbox.ury-abbox.lly))
+                    
+                ctrafo = ctrafo._scale(sfactor, sfactor, 0.5*width, 0.5*height)
+                          
+                
+        elif fittosize:
+            assert 0, "must specify paper size for fittosize" # TODO: exception...
+
+        # if there has been a global transformation, adjust the bounding box
+        # accordingly
+        if ctrafo: abbox = abbox.transform(ctrafo) 
+
+        file.write("%!PS-Adobe-3.0 EPSF 3.0\n")
+        abbox.write(file)
+        file.write("%%Creator: pyx 0.0.1\n") 
+        file.write("%%%%Title: %s.eps\n" % filename) 
+        # file.write("%%CreationDate: %s" % ) 
+        file.write("%%EndComments\n") 
+        file.write("%%BeginProlog\n") 
+        file.write(_PSProlog)
+        file.write("\n%%EndProlog\n") 
+
+        # again, if there has occured global transformation, apply it now
+        if ctrafo: ctrafo.write(file)   
+
+        file.write("%f setlinewidth\n" % unit.topt(linewidth.normal))
+        
+        # here comes the actual content
+        self.write(file)
+        
+        file.write("showpage\n")
+        file.write("%%Trailer\n")
+        file.write("%%EOF\n")
             
     def insert(self, cmds, *styles):
         """insert one or more PSOps in the canvas applying styles if given

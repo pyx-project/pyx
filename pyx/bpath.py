@@ -27,7 +27,7 @@
 
 import math
 from math import cos, sin, pi
-import base, PSCmd, bbox, unit
+import base, bbox, unit
 
 
 class PathException(Exception): pass
@@ -227,7 +227,7 @@ class bpathel(_bpathel):
 # bpath: Bezier path
 ################################################################################
 
-class bpath(PSCmd.PSCmd):
+class bpath(base.PSCmd):
 
     """path consisting of bezier curves"""
     

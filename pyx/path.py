@@ -30,7 +30,7 @@
 
 import math
 from math import cos, sin, pi
-import base, PSCmd, bbox, unit, bpath
+import base, bbox, unit, bpath
 
 
 class PathException(Exception): pass
@@ -658,7 +658,7 @@ class rcurveto(_rcurveto):
 # path: PS style path 
 ################################################################################
         
-class path(PSCmd.PSCmd):
+class path(base.PSCmd):
     
     """PS style path"""
     

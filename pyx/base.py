@@ -46,3 +46,20 @@ class PSAttr(PSOp):
     """attributes for PSCmds"""
     
     pass
+
+#
+# PSCmd class
+#
+
+class PSCmd(PSOp):
+
+    """ PSCmd is the base class of all visible elements
+
+    Visible elements, are those, that can be embedded in the Canvas
+    and posses a bbox. Furthermore, they can write themselves to
+    an open file and to an EPS file
+    
+    """
+    
+    def bbox(self):
+       raise NotImplementedError, "cannot call virtual method bbox()"
