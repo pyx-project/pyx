@@ -43,8 +43,6 @@ TODO:
       we should use compiled code instead of eval)
   - deco module:
     - think hard about different paths in decoratedpath class
-    - adjust parameters of cycloid and smoothed
-      AW: I suggest to use cycloid with default curvesperloop=5.
   - dvifile module:
     - support single-character mode
   - path module:
@@ -56,6 +54,8 @@ TODO:
     - what should we do for palette when only one entry
   - connector module:
     - is the early conversion with unit.topt unit-modification-save?
+  - deformer module:
+    - better names for the helper functions ?
 
   Documentation:
     - path module:
@@ -109,6 +109,8 @@ TODO:
     - enum -> num renaming
   - path module:
     - pathel -> pathitem, etc. renaming 
+  - deformer module: new
+    - moved cycloid and smoothed from deco into deformer
   
 
 0.6.3 (2004/04/27):
