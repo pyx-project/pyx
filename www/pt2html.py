@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.2
+#!/usr/bin/env python
 
 import sys, os.path, codecs, encodings
 from zope.pagetemplate.pagetemplate import PageTemplate
