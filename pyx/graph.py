@@ -1458,8 +1458,12 @@ class baraxispainter(attrlist.attrlist): # XXX: avoid code duplication with axis
                 for subaxis in axis.subaxis:
                     subaxis.dopaint(graph)
         if None not in (self.tickattrs, axis.innerticklength, axis.outerticklength):
-            for i in xrange(axis.maxid - axis.minid + 2):
-                v = i / float(axis.maxid - axis.minid + 1)
+            for pos in axis.relsizes:
+                if pos == axis.relsizes[0]:
+                    pos -= axis.ldist
+                elif pos != axis.relsizes[-1]:
+                    pos -= 0.5 * axis.dist
+                v = pos / axis.relsizes[-1]
                 x, y = axis._vtickpoint(axis, v)
                 dx, dy = axis.vtickdirection(axis, v)
                 x1 = x - dx * axis.innerticklength
@@ -1837,69 +1841,93 @@ class splitaxis:
             painter = self.painter
         return splitaxis([x.createlinkaxis(**arg) for x, arg in zip(self.axislist, args)], painter=painter)
 
+
 class baraxis:
 
-    def __init__(self, subaxis=None, multisubaxis=0, title=None, dist=0.5, names=None, texts={}, painter=baraxispainter()):
+    def __init__(self, subaxis=None, multisubaxis=0, title=None, dist=0.5, ldist=None, rdist=None, names=None, texts={}, painter=baraxispainter()):
+        self.dist = dist
+        if ldist is not None:
+            self.ldist = ldist
+        else:
+            self.ldist = 0.5 * dist
+        if rdist is not None:
+            self.rdist = rdist
+        else:
+            self.rdist = 0.5 * dist
+        self.relsizes = None
+        self.fixnames = 0
+        self.names = []
+        for name in _ensuresequence(names):
+            self.setname(name)
+        self.fixnames = names is not None
         self.multisubaxis = multisubaxis
-        self.names = list(_ensuresequence(names))
         if self.multisubaxis:
             self.createsubaxis = subaxis
             self.subaxis = [self.createsubaxis.createsubaxis() for name in self.names]
         else:
             self.subaxis = subaxis
         self.title = title
-        self.dist = dist
-        self.fixnames = names is not None
+        self.fixnames = 0
         self.texts = texts
         self.painter = painter
-        self.hasrange = 0
 
     def getdatarange(self):
         return None
 
-    def getrelsize(self, pos=None):
-        if pos is None:
-            pos = len(self.names)
-        if self.subaxis is None:
-            return pos * (1 + self.dist)
-        else:
+    def setname(self, name, *subnames):
+        # setting self.relsizes to None forces later recalculation
+        if not self.fixnames:
+            if name not in self.names:
+                self.relsizes = None
+                self.names.append(name)
+                if self.multisubaxis:
+                    self.subaxis.append(self.createsubaxis.createsubaxis())
+        if (not self.fixnames or name in self.names) and len(subnames):
             if self.multisubaxis:
-                relsize = 0
-                for subaxis in self.subaxis[:pos]:
-                    relsize += subaxis.getrelsize() + self.dist
-                return relsize
+                if self.subaxis[self.names.index(name)].setname(*subnames):
+                    self.relsizes = None
             else:
-                return pos * (self.subaxis.getrelsize() + self.dist)
+                if self.subaxis.setname(*subnames):
+                    self.relsizes = None
+        return self.relsizes is not None
+
+    def updaterelsizes(self):
+        self.relsizes = [i*self.dist + self.ldist for i in range(len(self.names) + 1)]
+        self.relsizes[-1] += self.rdist - self.dist
+        if self.multisubaxis:
+            subrelsize = 0
+            for i in range(1, len(self.relsizes)):
+                self.subaxis[i-1].updaterelsizes()
+                subrelsize += self.subaxis[i-1].relsizes[-1]
+                self.relsizes[i] += subrelsize
+        else:
+            if self.subaxis is None:
+                subrelsize = 1
+            else:
+                self.subaxis.updaterelsizes()
+                subrelsize = self.subaxis.relsizes[-1]
+            for i in range(1, len(self.relsizes)):
+                self.relsizes[i] += i * subrelsize
 
     def convert(self, value):
-        pos = self.names.index(value[0])
         # TODO: proper raising exceptions (which exceptions go thru, which are handled before?)
+        if not self.relsizes:
+            self.updaterelsizes()
+        pos = self.names.index(value[0])
         if len(value) == 2:
             if self.subaxis is None:
                 subvalue = value[1]
             else:
                 if self.multisubaxis:
-                    subvalue = value[1] * self.subaxis[pos].getrelsize()
+                    subvalue = value[1] * self.subaxis[pos].relsizes[-1]
                 else:
-                    subvalue = value[1] * self.subaxis.getrelsize()
+                    subvalue = value[1] * self.subaxis.relsizes[-1]
         else:
             if self.multisubaxis:
-                subvalue = self.subaxis[pos].convert(value[1:]) * self.subaxis[pos].getrelsize()
+                subvalue = self.subaxis[pos].convert(value[1:]) * self.subaxis[pos].relsizes[-1]
             else:
-                subvalue = self.subaxis.convert(value[1:]) * self.subaxis.getrelsize()
-        return (self.getrelsize(pos) + 0.5 * self.dist + subvalue) / float(self.getrelsize())
-
-    def setname(self, name, *subnames):
-        if not self.fixnames:
-            if name not in self.names:
-                self.names.append(name)
-                if self.multisubaxis:
-                    self.subaxis.append(self.createsubaxis.createsubaxis())
-        if len(subnames):
-            if self.multisubaxis:
-                self.subaxis[self.names.index(name)].setname(*subnames)
-            else:
-                self.subaxis.setname(*subnames)
+                subvalue = self.subaxis.convert(value[1:]) * self.subaxis.relsizes[-1]
+        return (self.relsizes[pos] + subvalue) / float(self.relsizes[-1])
 
     def dolayout(self, graph):
         self.painter.dolayout(graph, self)
@@ -1907,7 +1935,7 @@ class baraxis:
     def dopaint(self, graph):
         self.painter.paint(graph, self)
 
-    def createlinkaxis(self):
+    def createlinkaxis(self, **args):
         if self.subaxis is not None:
             if self.multisubaxis:
                 subaxis = [subaxis.createlinkaxis() for subaxis in self.subaxis]
@@ -1915,7 +1943,7 @@ class baraxis:
                 subaxis = self.subaxis.createlinkaxis()
         else:
             subaxis = None
-        return baraxis(subaxis=subaxis, dist=self.dist, painter=self.painter)
+        return baraxis(subaxis=subaxis, dist=self.dist, ldist=self.ldist, rdist=self.rdist, **args)
 
     createsubaxis = createlinkaxis
 
@@ -3461,12 +3489,13 @@ class bar:
                 v = point[self.vi] + 0.0
                 if vmin is None or v < vmin: vmin = v
                 if vmax is None or v > vmax: vmax = v
+            except (TypeError, ValueError):
+                pass
+            else:
                 if count == 1:
                     self.naxis.setname(point[self.ni])
                 else:
                     self.naxis.setname(point[self.ni], index)
-            except (TypeError, ValueError):
-                pass
         if self.fromzero:
             if vmin > 0: vmin = 0
             if vmax < 0: vmax = 0

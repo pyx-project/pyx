@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import sys, math
-sys.path[:0] = [".."]
+sys.path[:0] = ["../.."]
 
 from pyx import *
 from pyx import mathtree
@@ -106,25 +106,26 @@ def test_split(c, t, x, y):
 
 def test_bar(c, t, x, y):
     df = data.datafile("data/testdata2")
-    g = c.insert(graph.graphxy(t, x, y, height=5, width=5, x=graph.baraxis(names=("J","F","M","A","M","J","J","A","S","O","N","D"), title="Month")))
-    g.plot(graph.data(df, x=0, y=2), graph.bar(fromzero=0))
-    #g = c.insert(graph.graphxy(t, x, y, height=5, width=5, y=graph.baraxis(names=("J","F","M","A","M","J","J","A","S","O","N","D"), title="Month")))
-    #g.plot(graph.data(df, x=2, y=0), graph.bar(xbar=1, fromzero=0))
-    #g = c.insert(graph.graphxy(t, x, y, height=5, width=5, x2=None, x=graph.baraxis(graph.baraxis(dist=0))))
-    #g.plot([graph.data(df, x=0, y=2), graph.data(df, x=0, y=3), graph.data(df, x=0, y=3)], graph.bar())
-    #g = c.insert(graph.graphxy(t, x, y, height=5, width=5, x2=None, x=graph.baraxis(graph.baraxis(dist=0))))
+    g = c.insert(graph.graphxy(t, x, y, height=5, width=5, x=graph.baraxis(title="Month", painter=graph.baraxispainter(nameattrs=(tex.halign.right, tex.direction(90))))))
+    g.plot(graph.data(df, x=1, y=2), graph.bar(fromzero=0))
+    #g = c.insert(graph.graphxy(t, x, y, height=5, width=5, y=graph.baraxis(title="Month")))
+    #g.plot(graph.data(df, x=2, y=1), graph.bar(xbar=1, fromzero=0))
+    #g = c.insert(graph.graphxy(t, x, y, height=5, width=20, x=graph.baraxis(graph.baraxis(dist=0), multisubaxis=1, painter=graph.baraxispainter(innerticklength=0.2))))
+    #g.plot([graph.data(df, x=1, y=2), graph.data(df, x=1, y=3), graph.data(df, x=1, y=3)], graph.bar())
+    #g = c.insert(graph.graphxy(t, x, y, height=5, width=20, x=graph.baraxis(graph.baraxis(dist=0))))
     #g.plot([graph.data(df, x=0, y=2), graph.data(df, x=0, y=3), graph.data(df, x=0, y=2), None, graph.data(df, x=0, y=3)], graph.bar(stacked=2))
     g.finish()
 
 c = canvas.canvas()
 t = c.insert(tex.tex())
-#test_multiaxes_data(c, t, 0, 21)
-#test_piaxis_function(c, t, 0, 14)
-#test_textaxis_errorbars(c, t, 0, 7)
-#test_ownmark(c, t, 0, 0)
-#test_allerrorbars(c, t, -7, 0)
+test_multiaxes_data(c, t, 0, 21)
+test_piaxis_function(c, t, 0, 14)
+test_textaxis_errorbars(c, t, 0, 7)
+test_ownmark(c, t, 0, 0)
+test_allerrorbars(c, t, -7, 0)
 #test_3d(c, t, -7, 7)
-#test_split(c, t, -7, 7)
+test_split(c, t, -7, 7)
 test_bar(c, t, -7, 14)
 
 c.writetofile("test_graph", paperformat="a4")
+
