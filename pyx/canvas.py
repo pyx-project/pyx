@@ -39,10 +39,8 @@ PSProlog = """/rect {
 } bind def"""
 
 #
-# helper class for EPS files
+# class representing bound boxes
 #
-
-bbpattern = re.compile( r"^%%BoundingBox:\s+([+-]?\d+)\s+([+-]?\d+)\s+([+-]?\d+)\s+([+-]?\d+)\s*$" )
 
 class bbox:
 
@@ -61,19 +59,26 @@ class bbox:
                     min(self.lly, other.lly) or self.lly or other.lly,
                     max(self.urx, other.urx), max(self.ury, other.ury))
 
-#	if other:
-#        return bbox(min(self.llx, other.llx), min(self.lly, other.lly),
-#                        max(self.urx, other.urx), max(self.ury, other.ury))
-#        else:
-#            return self
-
     __radd__=__add__
+
+    def intersect(self, other):
+        ' check, if two bboxes intersect eachother '
+        return not (self.llx > other.urx or
+                    self.lly > other.ury or
+                    self.urx < other.llx or
+                    self.ury < other.lly)
 
     def write(self, canvas, file):
         file.write("%%%%BoundingBox: %d %d %d %d\n" % (self.llx-1, self.lly-1, self.urx+1, self.ury+1)) 
 
     def __str__(self):
 	return "%s %s %s %s" % (self.llx, self.lly, self.urx, self.ury)
+    
+#
+# helper class for EPS files
+#
+
+bbpattern = re.compile( r"^%%BoundingBox:\s+([+-]?\d+)\s+([+-]?\d+)\s+([+-]?\d+)\s+([+-]?\d+)\s*$" )
 
 
 class epsfile:
@@ -293,15 +298,20 @@ class canvas(CanvasCmds):
             self.set(arg)
 
     def bbox(self, canvas):
-        obbox = reduce(lambda x,y, canvas=canvas: x+y.bbox(canvas), self.PSCmds, bbox())
-	(llx, lly)=self.trafo.apply((unit.length("%d t pt" % obbox.llx), unit.length("%d t pt" % obbox.lly)))
-        (urx, ury)=self.trafo.apply((unit.length("%d t pt" % obbox.urx), unit.length("%d t pt" % obbox.ury)))
+        obbox = reduce(lambda x,y, canvas=canvas: x+y.bbox(canvas),
+                       self.PSCmds,
+                       bbox())
+	(llx, lly)=self.trafo.apply((unit.length("%d t pt" % obbox.llx),
+                                     unit.length("%d t pt" % obbox.lly)))
+        (urx, ury)=self.trafo.apply((unit.length("%d t pt" % obbox.urx),
+                                     unit.length("%d t pt" % obbox.ury)))
 	llx=self.unit.pt(llx)
 	lly=self.unit.pt(lly)
 	urx=self.unit.pt(urx)
 	ury=self.unit.pt(ury)
 
-	abbox= bbox(min(llx, urx)-1, min(lly, ury)-1, max(llx, urx)+1, max(lly, ury)+1)
+	abbox= bbox(min(llx, urx)-1, min(lly, ury)-1,
+                    max(llx, urx)+1, max(lly, ury)+1)
 	return abbox
     
     def write(self, canvas, file):

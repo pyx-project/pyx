@@ -433,7 +433,9 @@ class path:
         self.bpath = bpath()
         for pathel in self.path:
            (currentpoint, currentsubpath, bp) = pathel.ConvertToBezier(currentpoint, currentsubpath)
-           if bp: self.bpath.append(bp)
+           if bp:
+               for bpel in bp:
+                  self.bpath.append(bpel)
 
 
 class line(path):
@@ -455,10 +457,49 @@ class rect(path):
 
 class bpathel:
     def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
-        self.cpoints = (x0, y0, x1, y1, x2, y2, x3, y3)
+        self.x0 = x0
+        self.y0 = y0
+        self.x1 = x1
+        self.y1 = y1
+        self.x2 = x2
+        self.y2 = y2
+        self.x3 = x3
+        self.y3 = y3
 
     def __str__(self):
-        return "%f %f moveto %f %f %f %f %f %f curveto" % self.cpoints
+        return "%f %f moveto %f %f %f %f %f %f curveto" % (self.x0, self.y0,
+                                                           self.x1, self.y1,
+                                                           self.x2, self.y2,
+                                                           self.x3, self.y3)
+
+    def midpointsplit(self):
+        ' splits bpathel at midpoint returning bpath with two bpathels '
+        
+        # first, we have to calculate the  midpoints between adjacent
+        # control points
+        x01 = 0.5*(self.x0+self.x1)
+        y01 = 0.5*(self.y0+self.y1)
+        x12 = 0.5*(self.x1+self.x2)
+        y12 = 0.5*(self.y1+self.y2)
+        x23 = 0.5*(self.x2+self.x3)
+        y23 = 0.5*(self.y2+self.y3)
+
+        # In the next iterative step, we need the midpoints between 01 and 12
+        # and between 12 and 23 
+        x01_12 = 0.5*(x01+x12)
+        y01_12 = 0.5*(y01+y12)
+        x12_23 = 0.5*(x12+x23)
+        y12_23 = 0.5*(y12+y23)
+
+        # Finally the midpoint is given by
+        xmidpoint = 0.5*(x01_12+x12_23)
+        ymidpoint = 0.5*(y01_12+y12_23)
+        
+        return bpath([bpathel(self.x0, self.y0, x01, y01,
+                              x01_12, y01_12, xmidpoint, ymidpoint),
+                      bpathel(xmidpoint, ymidpoint, x12_23, y12_23,
+                              x23, y23, self.x3, self.y3)])
+                       
 
 #
 # bpath: Bezier path
@@ -483,6 +524,14 @@ class bpath:
 
     def __str__(self):
         return reduce(lambda x,y: x+"%s\n" % str(y), self.bpath, "")
+
+    def midpointsplit(self):
+        result = []
+        for bpel in self.bpath:
+            sbp = bpel.midpointsplit()
+            for sbpel in sbp:
+                result.append(sbpel)
+        return bpath(result)
        
 
 class bcurve(bpath):
@@ -595,9 +644,14 @@ if __name__=="__main__":
     p=path([moveto(100,100), rlineto(20,20), arc(150,120,10,30,300),closepath()])
     p.ConvertToBezier()
     print p.bpath
+    bpsplit=p.bpath.midpointsplit()
     print "stroke"
-    p=path([arc(120,120,10,30,360)])
-    p.ConvertToBezier()
-    print p.bpath
+    print "1 0 0 setrgbcolor"
+    print "newpath"
+    print bpsplit
     print "stroke"
+#    p=path([arc(120,120,10,30,360)])
+#    p.ConvertToBezier()
+#    print p.bpath
+#    print "stroke"
     print "showpage"
