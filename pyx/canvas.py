@@ -828,7 +828,7 @@ class canvas(base.PSCmd):
 
         """
 
-        dp = stroked().decorate(DecoratedPath(path))
+        dp = DecoratedPath(path)
 
         # set global styles
         dp.styles = filter(lambda x: isinstance(x, base.PathStyle), args)
@@ -840,6 +840,19 @@ class canvas(base.PSCmd):
         self.insert(dp)
         
         return self
+
+    def stroke(self, path, *args):
+        """stroke path on canvas using the style given by args
+
+        The argument list args consists of PathStyles, which modify
+        the appearance of the path, or PathDecos,
+        which add some new visual elements to the path.
+
+        returns the canvas
+
+        """
+
+        return self.draw(path, *([stroked()] + list(args)))
         
     def fill(self, path, *args):
         """fill path on canvas using the style given by args
@@ -852,16 +865,6 @@ class canvas(base.PSCmd):
 
         """
 
-        dp = filled().decorate(DecoratedPath(path))
+        return self.draw(path, *([filled()] + list(args)))
 
-        # set global styles
-        dp.styles = filter(lambda x: isinstance(x, base.PathStyle), args)
-        
-        # add path decorations and modify path accordingly
-        for deco in filter(lambda x: isinstance(x, PathDeco), args):
-            dp = deco.decorate(dp)
-
-        self.insert(dp)
-        
-        return self
 
