@@ -443,16 +443,16 @@ class symbolline(_style):
             c.stroke(path.line_pt(x_pt, y_pt+0.5*height_pt, x_pt+width_pt, y_pt+0.5*height_pt), data.lineattrs)
 
 
-class line(symbolline):
-
-    def __init__(self, lineattrs=[]):
-        symbolline.__init__(self, symbolattrs=None, errorbarattrs=None, lineattrs=lineattrs)
-
-
 class symbol(symbolline):
 
     def __init__(self, **kwargs):
         symbolline.__init__(self, lineattrs=None, **kwargs)
+
+
+class line(symbolline):
+
+    def __init__(self, lineattrs=[]):
+        symbolline.__init__(self, symbolattrs=None, errorbarattrs=None, lineattrs=lineattrs)
 
 
 class text(symbol):
