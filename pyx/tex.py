@@ -432,8 +432,7 @@ class tex:
             if TexResult[:len(Str)] == Str:
                 string.rstrip(TexResult.split(":")[3])
                 return unit.length(string.rstrip(TexResult.split(":")[3]).replace("pt"," t tpt"))
- 
-        return 1
+        return unit.length("10 t tpt")
 
     def allowparam(self, params, allowedtypes):
         for i in range(len(params)):
