@@ -1528,7 +1528,7 @@ class normpath(path):
         subpath = []
         np = normpath()
 
-        print self
+        #print self
 
         # we append a _moveto operation at the end to end the last
         # subpath explicitely.
@@ -1543,16 +1543,16 @@ class normpath(path):
                 np = np + normpath(*subpath) 
                 subpath = []
             elif subpath and isinstance(pel, closepath):
-                print ":::"
-                print string.join(map(str, subpath), "\n")
-                print ":::"
+                #print ":::"
+                #print string.join(map(str, subpath), "\n")
+                #print ":::"
 
                 subpath.append(_moveto(*context.currentsubpath))
                 subpath.reverse()
                 subpath.append(closepath())
                 
-                print string.join(map(str, subpath), "\n")
-                print 
+                #print string.join(map(str, subpath), "\n")
+                #print 
 
                 np = np + normpath(*subpath) 
                 subpath = []

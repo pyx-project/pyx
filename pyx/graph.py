@@ -276,7 +276,7 @@ class linpart(anypart):
             ticks.append(tick(long(i) * frac.enum, frac.denom, ticklevel = ticklevel, labellevel = labellevel))
         return ticks
 
-    def getpart(self, min, max, extendmin=1, extendmax=1, tickfracs=None, labelfracs=None):
+    def getpart(self, min, max, extendmin=0, extendmax=0, tickfracs=None, labelfracs=None):
         """
         When tickfracs or labelfracs are set, they will be taken instead of the
         values provided to the constructor. It is not allowed to provide something
@@ -328,7 +328,7 @@ class autolinpart(linpart):
         self.multipart = 1
         self.tickfracslist = tickfracslist
 
-    def defaultpart(self, min, max, extendmin, extendmax):
+    def defaultpart(self, min, max, extendmin=0, extendmax=0):
         basefrac = frac(10L, 1, int(math.log(max - min) / math.log(10)))
         tickfracs = self.tickfracslist[0]
         usefracs = [tickfrac*basefrac for tickfrac in tickfracs]
@@ -438,7 +438,7 @@ class logpart(anypart):
             ticks = self.mergeticklists(ticks, fracticks)
         return ticks
 
-    def getpart(self, min, max, extendmin=1, extendmax=1, tickshiftfracslist=None, labelshiftfracslist=None):
+    def getpart(self, min, max, extendmin=0, extendmax=0, tickshiftfracslist=None, labelshiftfracslist=None):
         """
         For the parameters tickshiftfracslist and labelshiftfracslist apply
         rules like for tickfracs and labelfracs in linpart.
@@ -513,7 +513,7 @@ class autologpart(logpart):
             shiftfracslistsindex, dummy = divmod(len(shiftfracslists), 2)
         self.shiftfracslistsindex = shiftfracslistsindex
 
-    def defaultpart(self, min, max, extendmin, extendmax):
+    def defaultpart(self, min, max, extendmin=0, extendmax=0):
         self.usemin, self.usemax, self.useextendmin, self.useextendmax = min, max, extendmin, extendmax
         self.moreshiftfracslistsindex = self.shiftfracslistsindex
         self.lessshiftfracslistsindex = self.shiftfracslistsindex
@@ -882,9 +882,9 @@ class axispainter(attrlist.attrlist):
     orthogonaltext = 0
 
     fractypeauto = 1
-    fractypedec = 2
-    fractypeexp = 3
-    fractyperat = 4
+    fractyperat = 2
+    fractypedec = 3
+    fractypeexp = 4
 
     def __init__(self, innerticklength="0.2 cm",
                        outerticklength="0 cm",
@@ -912,13 +912,13 @@ class axispainter(attrlist.attrlist):
                        suffix1=0):
         self.innerticklength_str = innerticklength
         self.outerticklength_str = outerticklength
-        self.tickstyles = _ensuresequence(tickstyles)
+        self.tickstyles = tickstyles
         self.subticklengthfactor = subticklengthfactor
         self.drawgrid = drawgrid
         self.gridstyles = gridstyles
         self.zerolinestyles = zerolinestyles
         self.labeldist_str = labeldist
-        self.labelstyles = _ensuresequence(labelstyles)
+        self.labelstyles = labelstyles
         self.labeldirection = labeldirection
         self.labelhequalize = labelhequalize
         self.labelvequalize = labelvequalize
@@ -1096,7 +1096,7 @@ class axispainter(attrlist.attrlist):
                     if not hasattr(tick, "text"):
                         tick.suffix = axis.suffix
                         self.createtext(tick)
-                    if self.labeldirection is not None and not self.attrcount(axis.labelstyles, tex.direction):
+                    if self.labeldirection is not None and not self.attrcount(tick.labelstyles, tex.direction):
                         tick.labelstyles += [tex.direction(self.reldirection(self.labeldirection, tick.dx, tick.dy))]
                     tick.textbox = textbox(graph.tex, tick.text, textstyles = tick.labelstyles)
 
@@ -1151,7 +1151,7 @@ class axispainter(attrlist.attrlist):
         if self.zerolinestyles is not None:
             if axis.ticks[0] * axis.ticks[-1] < frac(0, 1):
                 graph.draw(axis.gridpath(axis.convert(0)), *_ensuresequence(self.zerolinestyles))
-            
+
 
         if axis.title is not None:
             x, y = axis.tickpoint(axis, 0.5)
@@ -1576,31 +1576,31 @@ class mark(plotstyle):
                                   symbolstyles=self.symbolstyles)
 
     def setcolumns(self, graph, columns):
-        self.dxindex = self.dxminindex = self.dxmaxindex = self.dyindex = self.dyminindex = self.dymaxindex = None
+        self.xindex = self.dxindex = self.dxminindex = self.dxmaxindex = None
+        self.yindex = self.dyindex = self.dyminindex = self.dymaxindex = None
         for key, index in columns.items():
-            if graph.XPattern.match(key):
+            if graph.XPattern.match(key) and self.xindex is None:
                 self.xkey = key
                 self.xindex = index
-            elif graph.YPattern.match(key):
+            elif graph.YPattern.match(key) and self.yindex is None:
                 self.ykey = key
                 self.yindex = index
-            elif graph.DXPattern.match(key):
+            elif graph.DXPattern.match(key) and self.dxindex is None:
                 self.dxindex = index
-            elif graph.DXMinPattern.match(key):
+            elif graph.DXMinPattern.match(key) and self.dxminindex is None:
                 self.dxminindex = index
-            elif graph.DXMaxPattern.match(key):
+            elif graph.DXMaxPattern.match(key) and self.dxmaxindex is None:
                 self.dxmaxindex = index
-            elif graph.DYPattern.match(key):
+            elif graph.DYPattern.match(key) and self.dyindex is None:
                 self.dyindex = index
-            elif graph.DYMinPattern.match(key):
+            elif graph.DYMinPattern.match(key) and self.dyminindex is None:
                 self.dyminindex = index
-            elif graph.DYMaxPattern.match(key):
+            elif graph.DYMaxPattern.match(key) and self.dymaxindex is None:
                 self.dymaxindex = index
             else:
                 raise ValueError
 
-        if self.xindex is None: raise ValueError
-        if self.yindex is None: raise ValueError
+        if None in (self.xindex, self.yindex): raise ValueError
         if self.dxindex is not None and (self.dxminindex is not None or
                                          self.dxmaxindex is not None): raise ValueError
         if self.dyindex is not None and (self.dyminindex is not None or 
@@ -1793,17 +1793,17 @@ class line(plotstyle):
                                   linestyles=self.linestyles)
 
     def setcolumns(self, graph, columns):
+        self.xindex = self.yindex = None
         for key, index in columns.items():
-            if graph.XPattern.match(key):
+            if graph.XPattern.match(key) and self.xindex is None:
                 self.xkey = key
                 self.xindex = index
-            elif graph.YPattern.match(key):
+            elif graph.YPattern.match(key) and self.yindex is None:
                 self.ykey = key
                 self.yindex = index
             else:
                 raise ValueError
-        if self.xindex is None: raise ValueError
-        if self.yindex is None: raise ValueError
+        if None in (self.xindex, self.yindex): raise ValueError
 
     def keyrange(self, points, index):
         min = max = None
@@ -1868,11 +1868,12 @@ class _dottedline(line, attrlist.attrlist):
 line.nextclass = _dashedline
 _dashedline.nextclass = _dottedline
 _dottedline.nextclass = _solidline
-_solidline.nextclass = _dottedline
+_solidline.nextclass = _dashedline
 
 line.solid = _solidline
 line.dashed = _dashedline
 line.dotted = _dottedline
+
 
 ################################################################################
 # data
@@ -1907,12 +1908,13 @@ class function:
 
     defaultstyle = line()
 
-    def __init__(self, expression, points = 100, parser=mathtree.parser()):
+    def __init__(self, expression, xmin=None, xmax=None, ymin=None, ymax=None, points = 100, parser=mathtree.parser()):
+        self.xmin, self.xmax, self.ymin, self.ymax = xmin, xmax, ymin, ymax
+        self.points = points
         self.result, expression = expression.split("=")
         self.mathtree = parser.parse(expression)
         self.variable, = self.mathtree.VarList()
         self.evalranges = 0
-        self.points = points
 
     def setstyle(self, graph, style):
         self.style = style
@@ -1923,11 +1925,20 @@ class function:
             return self.style.getranges(self.data)
 
     def setranges(self, ranges):
-        min, max = ranges[self.variable]
+        if None in (self.xmin, self.xmax):
+            min, max = ranges[self.variable]
+            if self.xmin is not None and min < self.xmin: min = self.xmin
+            if self.xmax is not None and max > self.xmax: max = self.xmax
+        else:
+            min, max = self.xmin, self.xmax
         self.data = []
         for i in range(self.points):
-            value = min + (max-min)*i / (self.points-1.0)
-            self.data.append((value, self.mathtree.Calc({self.variable: value})))
+            x = min + (max-min)*i / (self.points-1.0)
+            y = self.mathtree.Calc({self.variable: x})
+            if ((self.ymin is not None and y < self.ymin) or
+                (self.ymax is not None and y > self.ymax)):
+                y = None
+            self.data.append((x, y))
         self.evalranges = 1
 
     def draw(self, graph):
