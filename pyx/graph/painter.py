@@ -630,8 +630,8 @@ class splitaxispainter(axistitlepainter):
                 # use a tangent of the basepath (this is independent of the tickdirection)
                 v = 0.5 * (subaxis1.vmax + subaxis2.vmin)
                 p = path.normpath(axispos.vbasepath(v, None))
-                breakline = p.tangent(0, self.breaklineslength)
-                widthline = p.tangent(0, self.breaklinesdist).transformed(trafomodule.rotate(self.breaklinesangle+90, *breakline.begin()))
+                breakline = p.tangent(0, length=self.breaklineslength)
+                widthline = p.tangent(0, length=self.breaklinesdist).transformed(trafomodule.rotate(self.breaklinesangle+90, *breakline.begin()))
                 # XXX Uiiii
                 tocenter = map(lambda x: 0.5*(x[0]-x[1]), zip(breakline.begin(), breakline.end()))
                 towidth = map(lambda x: 0.5*(x[0]-x[1]), zip(widthline.begin(), widthline.end()))
