@@ -206,10 +206,14 @@ class tex:
             CmdBegin = CmdBegin + "\\special{ps:gsave currentpoint currentpoint translate " + str(angle) + " rotate neg exch neg exch translate}"
             CmdEnd = "\\special{ps:currentpoint grestore moveto}" + CmdEnd
 
-        if type(lhalign) == types.NoneType or lhalign == halign.center:
+        if type(lhalign) == types.NoneType or lhalign == halign.left:
+            pass
+        elif type(lhalign) == types.NoneType or lhalign == halign.center:
             CmdBegin = CmdBegin + "\kern-.5\wd\localbox"
         elif lhalign == halign.right:
             CmdBegin = CmdBegin + "\kern-\wd\localbox"
+        else:
+            assert 0, "halign unknown"
 
         Cmd = CmdBegin + "\\copy\\localbox" + CmdEnd + "\n"
         return Cmd
