@@ -1,0 +1,19 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+            "http://www.w3.org/TR/html4/strict.dtd">
+<html metal:use-macro="options/maintemplate/macros/page">
+
+<div metal:fill-slot="body">
+
+<h1>PyX - Examples</h1>
+
+<div tal:repeat="example options/examples" style="border-bottom:1px solid #88a;margin-bottom:10px;">
+    <h2 tal:content="example/name">Name</h2>
+    <img src="example.png" alt="example" tal:attributes="src example/path">
+    <br>
+    <div tal:content="structure example/code">Code</div>
+</div>
+
+
+</div>
+
+</html>
