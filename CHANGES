@@ -58,6 +58,7 @@ PyX
   - graph module:
     - refer to the graphs texrunner instead of the defaulttexrunner (cf. #728209)
     - rounding towards zero bugfix in autolinpart
+    - log axis range rating bugfix
   - mathtree module:
     - addarg bugs (#738724)
 

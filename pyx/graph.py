@@ -928,8 +928,9 @@ class axisrater:
             rate += rater.rate(label, dense=dense)
             weight += rater.weight
         if part is not None and len(part):
-            tickmin, tickmax = axis.gettickrange() # XXX: tickrange was not yet applied!?
-            rate += self.tickrange.rate((float(part[-1]) - float(part[0])) * axis.divisor / (tickmax - tickmin))
+            # XXX: tickrange was not yet applied
+            rate += self.tickrange.rate(axis.convert(float(part[-1]) * axis.divisor) -
+                                        axis.convert(float(part[0]) * axis.divisor))
         else:
             rate += self.tickrange.rate(0)
         weight += self.tickrange.weight
