@@ -1,6 +1,6 @@
 # A multisubaxis allows for subtitles at a multibar
-# plot. Furthermore it can handle different number of
-# subbars per main baraxis.
+# plot. Furthermore using multibars a different number
+# of subbars per main item becomes possible.
 
 from pyx import *
 
