@@ -66,17 +66,17 @@ c.stroke(c.text(6, 0, r"""%
                            %   BUG!!!!!!  size and filename information gets
                            %   wrong when this is used  ===> not supported!
     %command=...,          %% not supported!
-    bb = 0 0 20 20,        %% bounding box in original size
+    %bb = 0 0 20 20,        %% bounding box in original size
     hiresbb=,              %! read high resolution in original file (if not bb)
-    viewport= 0 0 15 15,   %% bounding box with respect to bb
-    trim=1 1 2 2,          %% correction of the bounding box with respect to bb
+    %viewport= 0 0 15 15,   %% bounding box with respect to bb
+    %trim=1 1 1 1,          %% correction of the bounding box with respect to bb
     width=1in,             %! final width
     height=2in,            %! final height
     %totalheight=3in,       %% final height+depth
-    keepaspectratio=,      %! keep aspect ratio, but do not exceed width nor height
-    angle=50,              %! wraps around include
-    origin=cr,             %% one or two chars of 'lrtcbB' (B for baseline)
-    scale=5,               %! wraps around rotating and include
+    %keepaspectratio=,      %! keep aspect ratio, but do not exceed width nor height
+    angle=30,              %! wraps around include
+    origin=tr,             %% one or two chars of 'lrtcbB' (B for baseline)
+    %scale=2,               %! wraps around rotating and include
     %draft=,               %% do not print anything,
     clip=]%                %! directly in dvi
     {sample}}""", text.texmessage.graphicsload))
