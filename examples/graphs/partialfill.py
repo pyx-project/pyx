@@ -17,12 +17,12 @@ horiz = path.normpath(horiz.style.path)
 splith, splitf = horiz.intersect(fline)
 
 # create gray area (we do not use simple clipping)
-area = horiz.split(splith[0])[0]
+area = horiz.split([splith[0]])[0]
 for i in range(0, len(splith)-2, 2):
-    area = area.glue(fline.split(splitf[i], splitf[i+1])[1])
-    area = area.glue(horiz.split(splith[i+1], splith[i+2])[1])
-area = area.glue(fline.split(splitf[-2], splitf[-1])[1])
-area = area.glue(horiz.split(splith[-1])[1])
+    area = area.glue(fline.split([splitf[i], splitf[i+1]])[1])
+    area = area.glue(horiz.split([splith[i+1], splith[i+2]])[1])
+area = area.glue(fline.split([splitf[-2], splitf[-1]])[1])
+area = area.glue(horiz.split([splith[-1]])[1])
 area.append(path.lineto(*g.vpos(1, 0)))
 area.append(path.lineto(*g.vpos(0, 0)))
 area.append(path.closepath())

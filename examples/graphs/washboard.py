@@ -10,7 +10,7 @@ mypainter = axispainter(basepathattrs=earrow.normal(), titlepos=1)
 def mycos(x): return -cos(x)+.10*x
 
 g = graphxy(height=5, x2=None, y2=None,
-            x=linaxis(min=-2.5*pi, max=3.3*pi, part=None,
+            x=linaxis(min=-2.5*pi, max=3.3*pi, parter=None,
                       painter=mypainter, title=r"$\delta\phi$"),
             y=linaxis(min=-2.3, max=2, painter=None))
 g.plot(function("y=mycos(x)", context=locals()),
