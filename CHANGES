@@ -43,6 +43,8 @@ PyX
     - derive TFMError and DVIError correctly from exceptions.Exception
   - box module:
     - correct rounding algorithm (Michael Schindler)
+  - graph module:
+    - refer to the graphs texrunner instead of the defaulttexrunner
 
 0.3.1 (2003/04/04):
   - text module:
