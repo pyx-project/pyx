@@ -52,6 +52,8 @@ except NameError:
     # fallback implementation for Python 2.2. and below
     def enumerate(list):
         return zip(xrange(len(list)), list)
+
+__metaclass__ = type
     
 ################################################################################
 # Bezier helper functions
@@ -273,6 +275,8 @@ class moveto_pt(pathel):
 
     """Set current point to (x, y) (coordinates in pts)"""
 
+    __slots__ = "x", "y"
+
     def __init__(self, x, y):
          self.x = x
          self.y = y
@@ -300,6 +304,8 @@ class moveto_pt(pathel):
 class lineto_pt(pathel):
 
     """Append straight line to (x, y) (coordinates in pts)"""
+
+    __slots__ = "x", "y"
 
     def __init__(self, x, y):
          self.x = x
@@ -331,6 +337,8 @@ class lineto_pt(pathel):
 class curveto_pt(pathel):
 
     """Append curveto (coordinates in pts)"""
+
+    __slots__ = "x1", "y1", "x2", "y2", "x3", "y3"
 
     def __init__(self, x1, y1, x2, y2, x3, y3):
         self.x1 = x1
@@ -376,6 +384,8 @@ class rmoveto_pt(pathel):
 
     """Perform relative moveto (coordinates in pts)"""
 
+    __slots__ = "dx", "dy"
+
     def __init__(self, dx, dy):
          self.dx = dx
          self.dy = dy
@@ -402,6 +412,8 @@ class rmoveto_pt(pathel):
 class rlineto_pt(pathel):
 
     """Perform relative lineto (coordinates in pts)"""
+
+    __slots__ = "dx", "dy"
 
     def __init__(self, dx, dy):
          self.dx = dx
@@ -434,6 +446,8 @@ class rlineto_pt(pathel):
 class rcurveto_pt(pathel):
 
     """Append rcurveto (coordinates in pts)"""
+
+    __slots__ = "dx1", "dy1", "dx2", "dy2", "dx3", "dy3"
 
     def __init__(self, dx1, dy1, dx2, dy2, dx3, dy3):
         self.dx1 = dx1
@@ -479,6 +493,8 @@ class rcurveto_pt(pathel):
 class arc_pt(pathel):
 
     """Append counterclockwise arc (coordinates in pts)"""
+
+    __slots__ = "x", "y", "r", "angle1", "angle2"
 
     def __init__(self, x, y, r, angle1, angle2):
         self.x = x
@@ -608,6 +624,8 @@ class arcn_pt(pathel):
 
     """Append clockwise arc (coordinates in pts)"""
 
+    __slots__ = "x", "y", "r", "angle1", "angle2"
+
     def __init__(self, x, y, r, angle1, angle2):
         self.x = x
         self.y = y
@@ -688,9 +706,9 @@ class arcn_pt(pathel):
 
     def outputPS(self, file):
         file.write("%g %g %g %g %g arcn\n" % ( self.x, self.y,
-                                             self.r,
-                                             self.angle1,
-                                             self.angle2 ) )
+                                               self.r,
+                                               self.angle1,
+                                               self.angle2 ) )
 
     # TODO: outputPDF
 
@@ -698,6 +716,8 @@ class arcn_pt(pathel):
 class arct_pt(pathel):
 
     """Append tangent arc (coordinates in pts)"""
+
+    __slots__ = "x1", "y1", "x2", "y2", "r"
 
     def __init__(self, x1, y1, x2, y2, r):
         self.x1 = x1
@@ -806,6 +826,8 @@ class moveto(moveto_pt):
 
     """Set current point to (x, y)"""
 
+    __slots__ = "x", "y"
+
     def __init__(self, x, y):
          moveto_pt.__init__(self, unit.topt(x), unit.topt(y))
 
@@ -814,6 +836,8 @@ class lineto(lineto_pt):
 
     """Append straight line to (x, y)"""
 
+    __slots__ = "x", "y"
+
     def __init__(self, x, y):
         lineto_pt.__init__(self, unit.topt(x), unit.topt(y))
 
@@ -821,6 +845,8 @@ class lineto(lineto_pt):
 class curveto(curveto_pt):
 
     """Append curveto"""
+
+    __slots__ = "x1", "y1", "x2", "y2", "x3", "y3"
 
     def __init__(self, x1, y1, x2, y2, x3, y3):
         curveto_pt.__init__(self,
@@ -832,6 +858,8 @@ class rmoveto(rmoveto_pt):
 
     """Perform relative moveto"""
 
+    __slots__ = "dx", "dy"
+
     def __init__(self, dx, dy):
         rmoveto_pt.__init__(self, unit.topt(dx), unit.topt(dy))
 
@@ -840,6 +868,8 @@ class rlineto(rlineto_pt):
 
     """Perform relative lineto"""
 
+    __slots__ = "dx", "dy"
+
     def __init__(self, dx, dy):
         rlineto_pt.__init__(self, unit.topt(dx), unit.topt(dy))
 
@@ -847,6 +877,8 @@ class rlineto(rlineto_pt):
 class rcurveto(rcurveto_pt):
 
     """Append rcurveto"""
+
+    __slots__ = "dx1", "dy1", "dx2", "dy2", "dx3", "dy3"
 
     def __init__(self, dx1, dy1, dx2, dy2, dx3, dy3):
         rcurveto_pt.__init__(self,
@@ -859,6 +891,8 @@ class arcn(arcn_pt):
 
     """Append clockwise arc"""
 
+    __slots__ = "x", "y", "r", "angle1", "angle2"
+
     def __init__(self, x, y, r, angle1, angle2):
         arcn_pt.__init__(self, 
                        unit.topt(x), unit.topt(y), unit.topt(r), 
@@ -869,6 +903,8 @@ class arc(arc_pt):
 
     """Append counterclockwise arc"""
 
+    __slots__ = "x", "y", "r", "angle1", "angle2"
+
     def __init__(self, x, y, r, angle1, angle2):
         arc_pt.__init__(self, unit.topt(x), unit.topt(y), unit.topt(r), 
                       angle1, angle2)
@@ -877,6 +913,8 @@ class arc(arc_pt):
 class arct(arct_pt):
 
     """Append tangent arc"""
+
+    __slots__ = "x1", "y1", "x2", "y2", "r"
 
     def __init__(self, x1, y1, x2, y2, r):
         arct_pt.__init__(self, unit.topt(x1), unit.topt(y1),
@@ -890,6 +928,8 @@ class arct(arct_pt):
 class multilineto_pt(pathel):
 
     """Perform multiple linetos (coordinates in pts)"""
+
+    __slots__ = "points"
 
     def __init__(self, points):
          self.points = points
@@ -966,6 +1006,8 @@ class multicurveto_pt(pathel):
 class path(base.PSCmd):
 
     """PS style path"""
+
+    __slots__ = "path"
 
     def __init__(self, *args):
         if len(args)==1 and isinstance(args[0], path):
@@ -1113,6 +1155,9 @@ class path(base.PSCmd):
             pel.outputPS(file)
 
     def outputPDF(self, file):
+        # PDF practically only supports normpathels
+        normpath(self).outputPDF(file)
+        return
         if not (isinstance(self.path[0], moveto_pt) or
                 isinstance(self.path[0], arc_pt) or # outputPDF
                 isinstance(self.path[0], arcn_pt)): # outputPDF
@@ -1490,7 +1535,7 @@ class normline(normpathel):
         file.write("%g %g lineto\n" % (self.x1, self.y1))
 
     def outputPDF(self, file):
-        file.write("%g %g l\n" % (self.x1, self.y1))
+        file.write("%f %f l\n" % (self.x1, self.y1))
 
 
 class normcurve(normpathel):
@@ -1782,7 +1827,7 @@ class normcurve(normpathel):
         file.write("%g %g %g %g %g %g curveto\n" % (self.x1, self.y1, self.x2, self.y2, self.x3, self.y3))
 
     def outputPDF(self, file):
-        file.write("%g %g %g %g %g %g c\n" % (self.x1, self.y1, self.x2, self.y2, self.x3, self.y3))
+        file.write("%f %f %f %f %f %f c\n" % (self.x1, self.y1, self.x2, self.y2, self.x3, self.y3))
 
 #
 # normpaths are made up of normsubpaths, which represent connected line segments
@@ -2009,6 +2054,8 @@ class normsubpath:
     def outputPS(self, file):
         # if the normsubpath is closed, we must not output a normline at
         # the end
+        if not self.normpathels:
+            return
         if self.closed and isinstance(self.normpathels[-1], normline):
             normpathels = self.normpathels[:-1]
         else:
@@ -2023,16 +2070,18 @@ class normsubpath:
     def outputPDF(self, file):
         # if the normsubpath is closed, we must not output a normline at
         # the end
+        if not self.normpathels:
+            return
         if self.closed and isinstance(self.normpathels[-1], normline):
             normpathels = self.normpathels[:-1]
         else:
             normpathels = self.normpathels
         if normpathels:
-            file.write("%g %g m\n" % self.begin_pt())
+            file.write("%f %f m\n" % self.begin_pt())
             for anormpathel in normpathels:
                 anormpathel.outputPDF(file)
         if self.closed:
-            file.write("closepath\n")
+            file.write("h\n")
 
 #
 # the normpath class
