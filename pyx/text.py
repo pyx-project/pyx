@@ -1161,6 +1161,29 @@ class DVIFile:
         self.pages[page-1].write(file)
 
 
+_VF_ID = 202
+
+class VFError(exceptions.Exception): pass
+
+class VFFile(DVIFile):
+    def _read_pre(self):
+        file = self.file
+        while 1:
+            self.filepos = file.tell()
+            cmd = file.readuchar()
+            if cmd == _DVI_PRE:
+                if self.file.readuchar() != _VF_ID: raise VFError
+
+                comment = file.read(file.readuchar())
+                cs = file.readuint32()
+                ds = file.readuint32()
+
+                return _READ_NOPAGE
+            else:
+                raise VFError
+
+
+
 ###############################################################################
 # texmessages
 # - please don't get confused:
