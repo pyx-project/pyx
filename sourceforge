@@ -16,17 +16,17 @@ classes and methods to access basic postscript functionality at an abstract
 level. At the same time the emerging structures are very convenient to produce
 all kind of drawings in a non-interactive way. In combination with the python
 language itself the user can just code any complexity of the figure wanted.
-Additionally the integration of a TeX/LaTeX interface into PyX leads to the
-famous high quality typesetting within the figures.
+Additionally an TeX/LaTeX interface leads to the famous high quality
+typesetting within the figures.
 
-A major part of PyX on top of the already discribed functionallity is the
-provision of high level functionallity for complex tasks like 2d plots in
-publication-ready quality.
+A major part of PyX on top of the already discribed basis is the provision of
+high level functionality for complex tasks like 2d plots in publication-ready
+quality.
 
-The project started mid of last year and is developed by Jörg Lehmann and André
-Wobst. While we want to use pyx ourself (and already do) we want to take the
-opportunity to share our project with others under the GPL. We would greatly
-appreciate sourceforge for the hosting of this project.
+The project started in the middle of last year and is developed by Jörg Lehmann
+and André Wobst. While we want to use pyx ourself (and already do) we want to
+take the opportunity to share our project with others under the GPL. We would
+greatly appreciate sourceforge for the hosting of this project.
 > 
 > 3. License
 > 
@@ -40,7 +40,8 @@ GPL
 > catchy wording. Maximum length is 255 chars.
 
 PyX is a python package to create encapsulated postscript figures. As
-basic functionality it provides both an abstraction of PostScript 
+basic functionality it provides both an abstraction of PostScript and an
+TeX/LaTeX interface. (2d-plots)
 - abtraction of postscript in python classes
 - TeX/LaTeX interface
 - 2d plots
