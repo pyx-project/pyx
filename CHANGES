@@ -91,9 +91,6 @@ TODO:
   - path module:
     - path.split takes several points (as *args) while lentopar takes a list of points
     - path.tangent is missing in the documentation
-  - text module:
-    - documentation of the text attributes
-    - valign.middle is missing (removed by exident?)
   - color module:
      - should colors and palettes exclude each other?
   - documentation!!!

@@ -148,7 +148,7 @@ class linewidth(unit.length, attr.exclusiveattr, attr.sortbeforeattr, strokestyl
         attr.sortbeforeattr.__init__(self, [dash, linestyle])
 
     def merge(self, attrs):
-        return attr.sortbeforeattr.merge(self, attr.exclusiveattr.merge(self, attrs))
+        return attr.sortbeforeattr.merge(self, attr.exclusiveattr.merge(self, attrs)[:-1])
 
     def write(self, file):
         file.write("%f setlinewidth\n" % unit.topt(self))

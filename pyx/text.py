@@ -1695,8 +1695,11 @@ class parbox_pt(attr.exclusiveattr, attr.sortbeforeattr, textattr):
     def __init__(self, width, baseline=top):
         self.width = width
         self.baseline = baseline
-        attr.sortbeforeattr.__init__(self, [_localattr])
         attr.exclusiveattr.__init__(self, parbox_pt)
+        attr.sortbeforeattr.__init__(self, [_localattr])
+
+    def merge(self, attrs):
+        return attr.sortbeforeattr.merge(self, attr.exclusiveattr.merge(self, attrs)[:-1])
 
     def apply(self, expr):
         if self.baseline == self.top:
@@ -1722,19 +1725,26 @@ class valign(attr.exclusiveattr, attr.sortbeforeattr, textattr):
         attr.exclusiveattr.__init__(self, valign)
         attr.sortbeforeattr.__init__(self, [parbox_pt, _localattr])
 
+    def merge(self, attrs):
+        return attr.sortbeforeattr.merge(self, attr.exclusiveattr.merge(self, attrs)[:-1])
+
 class _valigntop(valign):
 
     def apply(self, expr):
         return r"\setbox\PyXBoxVAlign=\hbox{{%s}}\lower\ht\PyXBoxVAlign\box\PyXBoxVAlign" % expr
+
+class _valignmiddle(valign):
+
+    def apply(self, expr):
+        return r"\setbox\PyXBoxVAlign=\hbox{{%s}}\PyXDimenVAlign=0.5\ht\PyXBoxVAlign\advance\PyXDimenVAlign by -0.5\dp\PyXBoxVAlign\lower\PyXDimenVAlign\box\PyXBoxVAlign" % expr
 
 class _valignbottom(valign):
 
     def apply(self, expr):
         return r"\setbox\PyXBoxVAlign=\hbox{{%s}}\raise\dp\PyXBoxVAlign\box\PyXBoxVAlign" % expr
 
-# class _valignmiddle is missing!
-
 valign.top = _valigntop()
+valign.middle = _valignmiddle()
 valign.bottom = _valignbottom()
 valign.clear = attr.clearclass(valign)
 valign.baseline = valign.clear

@@ -14,9 +14,9 @@ c.text(4, 4, r"spam \& eggs", text.parbox(w), text.valign.bottom)
 
 # vertical alignments by baselines
 c.stroke(path.line(0, 2, 6, 2), style.linewidth.THin)
-c.text(0, 2, r"spam \& eggs", text.parbox(w), text.valign.topbaseline)
-c.text(2, 2, r"spam \& eggs", text.parbox(w), text.valign.middlebaseline)
-c.text(4, 2, r"spam \& eggs", text.parbox(w), text.valign.bottombaseline)
+c.text(0, 2, r"spam \& eggs", text.parbox(w, baseline=text.parbox.top))
+c.text(2, 2, r"spam \& eggs", text.parbox(w, baseline=text.parbox.middle))
+c.text(4, 2, r"spam \& eggs", text.parbox(w, baseline=text.parbox.bottom))
 
 # vertical shifts
 c.stroke(path.line(0, 0, 8, 0), style.linewidth.THin)
