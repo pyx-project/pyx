@@ -13,9 +13,9 @@ the class \texttt{canvas.clip} which allows clipping of the output.
 
 \section{Class canvas}
 
-This is the basic class of the canvas module, the purpose of which is
-the collection of various graphical and text elements you want to
-write eventually to an (E)PS file. 
+This is the basic class of the canvas module, which serves to collect
+various graphical and text elements you want to write eventually to an 
+(E)PS file. 
 
 \subsection{Basic usage}
 
@@ -29,8 +29,8 @@ from pyx import *
 c = canvas.canvas()
 \end{verbatim}
 \end{quote}
-Basic drawing proceeds then via the construction of a \verb|path|, which 
-can subsequently be drawn on the canvas using the method \verb|stoke()|:
+Basic drawing then proceeds via the construction of a \verb|path|, which 
+can subsequently be drawn on the canvas using the method \verb|stroke()|:
 \begin{quote}
 \begin{verbatim}
 p = path.line(0, 0, 10, 10)
@@ -45,7 +45,7 @@ c.stroke(path.line(0, 0, 10, 10))
 \end{quote}
 You can modify the appearance of a path by additionally passing 
 instances of the class \verb|PathStyle|. For instance, you can draw the 
-the above path \verb|p| in blue, as well:
+the above path \verb|p| in blue:
 \begin{quote}
 \begin{verbatim}
 c.stroke(p, color.rgb.blue)
@@ -89,7 +89,7 @@ c.stroke(r, canvas.filled())
 \end{quote}
 
 To conclude the section on the drawing of paths, we consider a pretty
-sophisicated combination of the above presented \verb|PathStyle|s:
+sophisticated combination of the above presented \verb|PathStyle|s:
 \begin{quote}
 \begin{verbatim}
 c.stroke(p, 
@@ -109,7 +109,7 @@ a whole set of operations. XXX: Example
 
 After you have finished the composition of the canvas, you can
 write it to a file using the method \verb|writetofile()|. It expects the
-obligatory argument \verb|filename|, the name of the output
+required argument \verb|filename|, the name of the output
 file. To write your results to the file "test.eps" just call it as follows:
 \begin{quote}
 \begin{verbatim}

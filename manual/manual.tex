@@ -1,14 +1,23 @@
 \documentclass{scrreprt}
 \usepackage{pyx,tabularx,graphicx}
+\usepackage[latin1]{inputenc}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{units}
+\hypersetup{
+   pdftitle={PyX User Manual},
+   pdfauthor={Jörg Lehmann, André Wobst},
+   colorlinks={true}
+}
 % \includeonly{graph} % for temporarily skipping of chapters
 \setlength{\parindent}{0pt}
 \begin{document}
-\subject{\texttt{http://pyx.sourceforge.net/}}
+\subject{\href{http://pyx.sourceforge.net/}{\url{http://pyx.sourceforge.net/}}}
 \title{\PyX{} 
 \input pyxversion.tex
 \\User Manual}
-\author{J\"org Lehmann \texttt{<joergl@users.sourceforge.net>}\and
-Andr\'e Wobst \texttt{<wobsta@users.sourceforge.net>}}
+\author{J\"org Lehmann \href{mailto:joergl@users.sourceforge.net}{\url{<joergl@users.sourceforge.net>}}\and
+Andr\'e Wobst \href{mailto:wobsta@users.sourceforge.net}{\url{<wobsta@users.sourceforge.net>}}}
 \maketitle
 \quad\vfill\centerline{PostScript is a trademark of Adobe Systems Incorporated.}
 \tableofcontents

@@ -4,14 +4,14 @@
 With the \verb|unit| module \PyX{} makes available classes and
 functions for the specification and manipulation of lengths. As usual,
 lengths consist of a number together with a measurement unit,
-\textit{e.g.}\ $1$ cm, $50$ points, $0.42$ inch.  In addition, lengths
-in \PyX{} are composed of the four types ``true'', ``user'',
-``visual'' and ``width'', \textit{e.g.}\ $1$ user cm, $50$ true
-points, $(0.42\ \mathrm{visual} + 0.2\ \mathrm{width})$ inch.  As
-their name tells, they serve different purposes. True lengths are not
+\textit{e.g.}\ \unit[1]{cm}, \unit[50]{points}, \unit[0.42]{inch}.  In 
+addition, lengths in \PyX{} are composed of the four types ``true'', 
+``user'', ``visual'' and ``width'', \textit{e.g.}\ \unit[1]{user cm}, 
+\unit[50]{true points}, $(0.42\ \mathrm{visual} + 0.2\ \mathrm{width})$ inch.  
+As their names indicate, they serve different purposes. True lengths are not
 scalable and serve mainly for return values of \PyX{} functions.  The
-other length types allow a rescaling by the user and are differ with
-respect to the type of object they are applied:
+other length types allow a rescaling by the user and differ with
+respect to the type of object they are applied to:
 
 \begin{description}
 \item[user length:] used for lengths of graphical objects like
@@ -21,7 +21,7 @@ respect to the type of object they are applied:
 \item[width length:] used for line widths
 \end{description}
 
-For instance, if you just want thicker lines for a publication
+For instance, if you only want thicker lines for a publication
 version of your figure, you can just rescale the width lengths. How
 this all works, is described in the following sections.
 
@@ -65,7 +65,7 @@ unit.set(wscale = 2)
 at the beginning of your program.
 
 To complete the discussion of the \verb|length| class, we mention,
-that as expected \PyX{} length can be added, subtracted, multiplied by
+that as expected \PyX{} lengths can be added, subtracted, multiplied by
 a numerical factor and converted to a string.
 
 \section{Subclasses of length}
@@ -118,7 +118,7 @@ function & result \\
 \end{tabular}
 \end{center}
 If \verb|l| is not yet a \verb|length| instance, it is converted first
-to a such, as described above. You can also specify a tuple, if you
+into one, as described above. You can also specify a tuple, if you
 want to convert multiple lengths at once.
 
 

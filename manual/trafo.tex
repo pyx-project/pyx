@@ -2,15 +2,15 @@
 
 \label{trafo}
 
-With the  \verb|trafo| modulo \PyX\ provides linear transformations, which can then
-be applied to canvases,  B\'ezier paths and other objects. It consists
+With the  \verb|trafo| modulo \PyX\ supports linear transformations, which can 
+then be applied to canvases,  B\'ezier paths and other objects. It consists
 of the main class \verb|trafo| representing a general linear
-transformation and subclasses thereof, which give special operations
+transformation and subclasses thereof, which provide special operations
 like translation, rotation, scaling, and mirroring.
 
 \section{Class trafo}
 
-The \verb|trafo| class represents a general
+The \verb|trafo| class represents a general linear
 transformation, which is defined for a vector $\vec{x}$ as
 \[
   \vec{x}' = \mathsf{A}\, \vec{x} + \vec{b}\ ,
@@ -23,14 +23,14 @@ translation vector. The transformation matrix must not be singular,
 
 Multiple \verb|trafo| instances can be multiplied, corresponding to a
 consecutive application of the respective transformation. Note that
-\verb|trafo1*trafo2| means that first \verb|trafo2| gets applied and
-then \verb|trafo1|, \textit{i.e.} the new transformation is given in
-obvious notation by $\mathsf{A} = \mathsf{A}_1 \mathsf{A}_2$ and
+\verb|trafo1*trafo2| means that \verb|trafo1| is applied after
+\verb|trafo2|, \textit{i.e.} the new transformation is given 
+by $\mathsf{A} = \mathsf{A}_1 \mathsf{A}_2$ and
 $\vec{b} = \mathsf{A}_1 \vec{b}_2 + \vec{b}_1$.  Use the \verb|trafo|
 methods described below, if you prefer thinking the other way round.
 The inverse of a transformation can be obtained via the \verb|trafo|
 method \verb|inverse()|, defined by the inverse $\mathsf{A}^{-1}$ of
-the transformation matrix and the transformation vector
+the transformation matrix and the translation vector
 $-\mathsf{A}^{-1}\vec{b}$.
 
 The methods of the \verb|trafo| class are summarized in the following
