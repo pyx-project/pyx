@@ -111,6 +111,8 @@ class length:
 
         if isinstance(l, length):
             self.length = l.length
+        elif helper.isnumber(l):
+            self.length[default_type] = l*_m[dunit or _default_unit]
         elif helper.isstring(l):
             unit_match = re.match(unit_pattern, l)
             if unit_match is None:
@@ -121,8 +123,6 @@ class length:
                 self.unit_name = unit_match.group(9) or dunit or _default_unit
 
                 self.length[self.unit_type] = self.prefactor*_m[self.unit_name]
-        elif helper.isnumber(l):
-            self.length[default_type] = l*_m[dunit or _default_unit]
         else:
             raise ( NotImplementedError,
                     "cannot convert given argument to length type" )
