@@ -27,13 +27,13 @@ def drawexample(canvas, corner, linealign):
         phi += math.pi / 50
 
 c = canvas.canvas()
-sc = c.insert(canvas.canvas(trafo.translate(0, 6)))
+sc = c.insert(canvas.canvas([trafo.translate(0, 6)]))
 drawexample(sc, 0, 0)
-sc = c.insert(canvas.canvas(trafo.translate(6, 6)))
+sc = c.insert(canvas.canvas([trafo.translate(6, 6)]))
 drawexample(sc, 0, 1)
-sc = c.insert(canvas.canvas(trafo.translate(0, 0)))
+sc = c.insert(canvas.canvas([trafo.translate(0, 0)]))
 drawexample(sc, 1, 0)
-sc = c.insert(canvas.canvas(trafo.translate(6, 0)))
+sc = c.insert(canvas.canvas([trafo.translate(6, 0)]))
 drawexample(sc, 1, 1)
 c.writeEPSfile("test_box", paperformat="a4")
 

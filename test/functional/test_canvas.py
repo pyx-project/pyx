@@ -12,7 +12,7 @@ t1 = trafo.rotate(20)
 t2 = trafo.translate(5,0)
 t3 = trafo.mirror(10)
 
-sc = canvas.canvas(t1, t2, t3)
+sc = canvas.canvas([t1, t2, t3])
 c.insert(sc).stroke(p)
 
 c.stroke(c.bbox().rect())

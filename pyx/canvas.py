@@ -86,7 +86,7 @@ class _canvas(base.PSCmd):
 
     """a canvas is a collection of PSCmds together with PSAttrs"""
 
-    def __init__(self, *args):
+    def __init__(self, attrs=[], texrunner=None):
 
         """construct a canvas
 
@@ -97,30 +97,35 @@ class _canvas(base.PSCmd):
          - base.PathStyle (sets some global attributes of the canvas)
 
         Note that, while the first two properties are fixed for the
-        whole canvas, the last one can be changed via canvas.set()
+        whole canvas, the last one can be changed via canvas.set().
+
+        The texrunner instance used for the text method can be specified
+        using the texrunner argument. It defaults to text.defaulttexrunner
 
         """
 
         self.PSOps     = []
         self.trafo     = trafo.trafo()
         self.clipbbox  = None
+        if texrunner is not None:
+            self.texrunner = texrunner
+        else:
+            # prevent cyclic imports
+            import text
+            self.texrunner = text.defaulttexrunner
 
-        # prevent cyclic imports
-        import text
-        self.texrunner = text.defaulttexrunner
-
-        for arg in args:
-            if isinstance(arg, trafo.trafo_pt):
-                self.trafo = self.trafo*arg
-                self.PSOps.append(arg)
-            elif isinstance(arg, clip):
+        for attr in attrs:
+            if isinstance(attr, trafo.trafo_pt):
+                self.trafo = self.trafo*attr
+                self.PSOps.append(attr)
+            elif isinstance(attr, clip):
                 if self.clipbbox is None:
-                    self.clipbbox = arg.clipbbox().transformed(self.trafo)
+                    self.clipbbox = attr.clipbbox().transformed(self.trafo)
                 else:
-                    self.clippbox *= arg.clipbbox().transformed(self.trafo)
-                self.PSOps.append(arg)
+                    self.clippbox *= attr.clipbbox().transformed(self.trafo)
+                self.PSOps.append(attr)
             else:
-                self.set([arg])
+                self.set([attr])
 
     def bbox(self):
         """returns bounding box of canvas"""
@@ -163,7 +168,7 @@ class _canvas(base.PSCmd):
                 cmd.outputPDF(file)
             file.write("Q\n") # grestore
 
-    def insert(self, PSOp, args=[]):
+    def insert(self, PSOp, attrs=[]):
         """insert PSOp in the canvas.
 
         If args are given, then insert a canvas containing PSOp applying args.
@@ -174,8 +179,8 @@ class _canvas(base.PSCmd):
 
         # XXX check for PSOp
 
-        if args:
-            sc = _canvas(*args)
+        if attrs:
+            sc = _canvas(attrs)
             sc.insert(PSOp)
             self.PSOps.append(sc)
         else:

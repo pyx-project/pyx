@@ -9,7 +9,7 @@ startbox = box.polygon(corners=[[0,0], [1,0.2], [0.5,2]])
 endbox = box.polygon(corners=[[10,3.8], [13,5.2], [12.5,4.0]])
 
 def dotest(c, x, y, test):
-   c2 = c.insert(canvas.canvas(trafo.translate(x, y)))
+   c2 = c.insert(canvas.canvas([trafo.translate(x, y)]))
    c2.stroke(startbox.path())
    c2.stroke(endbox.path())
    c2.stroke(path.circle( unit.pt(startbox.center[0]), unit.pt(startbox.center[1]), 0.1))

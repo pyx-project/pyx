@@ -62,6 +62,9 @@ TODO for 0.6:
       - smoothed decorator
     - unit module:
       -> not always returns true
+    - canvas constructor no longer accepts variable argument list but
+      expects a list of attrs as first argument (defaulting to []) and
+      a texrunner as second argument (defaulting to text.defaulttexrunner)
     - path module:
       in the introduction mention the canvas
       describe + vs <<
@@ -131,6 +134,9 @@ TODO for 0.6:
   - canvas:
     - writeEPSfile deprecates writetofile
     - internally, write methods are renamed in outputPS
+    - canvas constructor no longer accepts variable argument list but
+      expects a list of attrs as first argument (defaulting to []) and
+      a texrunner as second argument (defaulting to text.defaulttexrunner)
   - tex module:
     - not imported by default anymore
     - obsolete warning when importing this module
