@@ -968,7 +968,7 @@ class path(base.canvasitem):
 
     def arclentoparam_pt(self, lengths_pt):
         """return the param(s) matching the given length(s)_pt in pts"""
-        return self.normpath().arclentoparam(lengths_pt)
+        return self.normpath().arclentoparam_pt(lengths_pt)
 
     def arclentoparam(self, lengths):
         """return the param(s) matching the given length(s)"""
