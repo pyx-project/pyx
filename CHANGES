@@ -56,7 +56,8 @@ PyX
     - canvas.insert() now supports arguments
     - bbox of canvas can be specified in writetofile command explicitely
     - writetofile does not return self anymore
-    - TODO: document patterns and new writetofile syntax
+    - defered TODOs:
+      default patterns
   - mathtree module:
     - added abs function
     - changed the handling of extern functions and all variables
