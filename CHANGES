@@ -51,7 +51,6 @@ TODO:
     - is the early conversion with unit.topt unit-modification-save?
   - deformer module:
     - better names for the helper functions ?
-    - should deformers or trafos be applied first?
   - open discussion:
     - clearly distingish between readers and writers. dvifile, epsfile, etc. might
       be renamed to dvireader, epsreader ...
@@ -108,6 +107,7 @@ TODO:
     - sign of font number in dvifile (reported by Michael Gruber)
   - canvas module:
     - added new classes page and document for multipage PostScript output
+    - apply deformers (instead of trafos) in draw method
   - style module:
     - decrease interval for dotted and dash-dotted lines for better visual
       appearance
@@ -146,6 +146,8 @@ TODO:
     - decorated path no longer allows modification of its path
     - new method excluderange which allows to remove certain parameter ranges from the stroked path
     - additional canvas provided by decorated path is now called ornaments
+  - trafo module:
+    - trafos are now deformers
 
 
 0.6.x (????/??/??):
