@@ -111,13 +111,17 @@ class _moveto(pathel):
          self.y = y
 
     def _bbox(self, currentpoint, currentsubpath):
-        return ((self.x, self.y), (self.x, self.y) , canvas.bbox())
+        return ((self.x, self.y),
+                (self.x, self.y),
+                canvas.bbox())
 	 
     def write(self, file):
         file.write("%f %f moveto" % (self.x, self.y) )
 
     def _bpath(self, currentpoint, currentsubpath):
-        return ((self.x, self.y), (self.x, self.y) , None)
+        return ((self.x, self.y),
+                (self.x, self.y),
+                None)
 
  
 class moveto(_moveto):
