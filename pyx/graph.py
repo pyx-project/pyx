@@ -1530,7 +1530,7 @@ class pathaxispos(_axispos):
     def __init__(self, p, convert, direction=1):
         self.path = p
         self.normpath = path.normpath(p)
-        self.arclength = self.normpath.arclength(p)
+        self.arclength = self.normpath.arclength()
         _axispos.__init__(self, convert)
         self.direction = direction
 
@@ -2240,7 +2240,7 @@ class _axis:
         oldmin, oldmax = self.min, self.max
         self._setrange(min, max)
         if self.axiscanvas is not None and ((oldmin != self.min) or (oldmax != self.max)):
-            raise RuntimeError("axis was already finished")
+            raise RuntimeError("range modification while axis was already finished")
 
     def getrange(self):
         if self.min is not None and self.max is not None:
@@ -2426,7 +2426,8 @@ class linkaxis:
           (paritioning, rating, etc.) just a painter call
           is performed"""
         if self.axiscanvas is None:
-            self.linkedaxis.finish(axispos)
+            if self.linkedaxis.axiscanvas is None:
+                raise RuntimeError("link axis finish method previous to the original axis")
             self.axiscanvas = self.painter.paint(axispos, self)
 
 
