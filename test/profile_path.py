@@ -37,10 +37,10 @@ def testspeed3():
     "coordinates in pts (internal routines)"
 
     c=canvas.canvas()
-    p=path(pyx.path._moveto(0,0))
+    p=path(pyx.path.moveto_pt(0,0))
 
     for i in xrange(1000):
-        p.append(pyx.path._lineto(i, i))
+        p.append(pyx.path.lineto_pt(i, i))
 
     c.stroke(p)
     c.writetofile("testspeed")
