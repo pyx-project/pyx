@@ -38,6 +38,8 @@ def _nmin(*args):
     else:
         return None
 
+# XXX isn't _nmax = max?
+
 def _nmax(*args):
     """maximum of a list of values, where None represents +infinity, not -infinity as
     in standard max implementation of python 2.0"""
@@ -46,6 +48,8 @@ def _nmax(*args):
         return max(args)
     else:
         return None
+
+_nmax = max
 
 #
 # classes representing bounding boxes
@@ -69,6 +73,21 @@ class _bbox:
 
         return _bbox(_nmin(self.llx, other.llx), _nmin(self.lly, other.lly),
                      _nmax(self.urx, other.urx), _nmax(self.ury, other.ury))
+
+    def __iadd__(self, other):
+        """join two bboxes inplace"""
+
+        if self.llx is not None and other.llx is not None:
+            self.llx = min(self.llx, other.llx)
+        elif other.llx is not None:
+            self.llx = other.llx
+        if self.lly is not None and other.lly is not None:
+            self.lly = min(self.lly, other.lly)
+        elif other.lly is not None:
+            self.lly = other.lly
+        self.urx = max(self.urx, other.urx)
+        self.ury = max(self.ury, other.ury)
+        return self
 
     def __mul__(self, other):
         """return intersection of two bboxes"""
