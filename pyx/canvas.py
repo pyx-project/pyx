@@ -118,7 +118,7 @@ class epsfile:
         self.translatebb = translatebb
         self.showbb      = showbb
 
-    def bbox(self, canvas=None):
+    def getbbox(self, translatebb):
         'determines bounding box of EPS file filename as 4-tuple (llx, lly, urx, ury)'
         try:
             file = open(self.filename,"r")
@@ -138,12 +138,15 @@ class epsfile:
             bbmatch = bbpattern.match(line)
             if bbmatch is not None:
                (llx, lly, urx, ury) = map(int, bbmatch.groups()) # conversion strings->int
-               if self.translatebb:
+               if translatebb:
                    (llx, lly, urx, ury) = (0, 0, urx - llx, ury - lly)
 	       return bbox(llx, lly, urx, ury)
 
+    def bbox(self, canvas=None):
+        return self.getbbox(self.translatebb)
+
     def write(self, canvas, file):
-	mybbox=self.bbox()
+	mybbox = self.getbbox(0)
 
         try:
 	    epsfile=open(self.filename,"r")
