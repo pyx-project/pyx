@@ -467,12 +467,12 @@ class line(_styleneedingpointpos):
         self.lineattrs = lineattrs
 
     def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
-        privatedata.lineattrs = attr.selectattrs(self.defaultlineattrs + self.lineattrs, selectindex, selecttotal)
+        if self.lineattrs is not None:
+            privatedata.lineattrs = attr.selectattrs(self.defaultlineattrs + self.lineattrs, selectindex, selecttotal)
+        else:
+            privatedata.lineattrs = None
 
     def initdrawpoints(self, privatedata, sharedata, graph):
-        if privatedata.lineattrs is not None:
-            privatedata.linecanvas = canvas.canvas()
-            privatedata.linecanvas.set(privatedata.lineattrs)
         privatedata.path = path.path()
         privatedata.linebasepoints = []
         privatedata.lastvpos = None
@@ -606,8 +606,7 @@ class line(_styleneedingpointpos):
         if len(privatedata.linebasepoints) > 1:
             self.addpointstopath(privatedata, sharedata)
         if privatedata.lineattrs is not None and len(privatedata.path.path):
-            graph.insert(privatedata.linecanvas)
-            privatedata.linecanvas.stroke(privatedata.path)
+            graph.stroke(privatedata.path, privatedata.lineattrs)
 
     def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
         if privatedata.lineattrs is not None:
