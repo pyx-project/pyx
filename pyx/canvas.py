@@ -28,6 +28,7 @@
 #   (at the moment it derives from nothing)
 # - Should we really set linewidth in canvas.writetofile. Why don't we
 #   rely on the PS default (like for all other PathStyles)
+# - detect .[e]ps as extension in writetofile
 
 """The canvas module provides a PostScript canvas class and related classes
 
@@ -467,7 +468,7 @@ class canvas(base.PSCmd):
         """construct a canvas
 
         The canvas can be modfied by supplying args, which have
-        to instances of one of the following classes:
+        to be instances of one of the following classes:
          - trafo.trafo (leading to a global transformation of the canvas)
          - canvas.clip (clips the canvas)
          - base.PSAttr (sets some global attributes of the canvas)
@@ -638,18 +639,18 @@ class canvas(base.PSCmd):
            
         return lastop
 
-    def set(self, *args):
+    def set(self, *styles):
         """sets PSAttrs args globally for the rest of the canvas
 
         returns canvas
 
         """
         
-        for arg in args:
-            if not isinstance(arg, base.PSAttr):
+        for style in styles:
+            if not isinstance(style, base.PSAttr):
                 raise NotImplementedError, "can only set attribute"
 
-            self.PSOps.append(arg)
+            self.PSOps.append(style)
 
         return self
         
