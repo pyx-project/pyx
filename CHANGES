@@ -75,7 +75,8 @@ TODO:
     - section titles: "Axes" -> "Axes - module axis" or similar
     - box module:
       - linealign and circlealign
-    - unit module
+    - unit module:
+      update length constructor description (strings are no longer supported, etc.)
 
   FAQ:
     - describe creation and modification (inplace and ``modify by new'') of
