@@ -63,7 +63,9 @@ class timetexter:
 
 class timeaxis(axis._axis, _timemap):
 
-     def __init__(self, parter=None, rater=rater.linear(), **args):
+    zero = datetime.timedelta(0)
+
+    def __init__(self, parter=None, rater=rater.linear(), **args):
         axis._axis.__init__(self, divisor=None, **args)
         if self.fixmin and self.fixmax:
             self.relsize = self.max - self.min
