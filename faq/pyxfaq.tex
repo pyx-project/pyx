@@ -3,6 +3,7 @@
 \usepackage[latin1]{inputenc}
 \usepackage{url}
 \usepackage{mathptmx}
+\usepackage{tipa}
 %\usepackage[all,comments]{glifaq}
 \usepackage[answered]{glifaq}
 \usepackage[pdftex]{hyperref}
@@ -34,6 +35,23 @@ Walter Brisken, Jörg Lehmann, Michael Schindler, Andr{\'e} Wobst.
 \newpage
 
 \section{General aspects of \PyX}
+\question{a}{The name of the game \new}
+{}
+{Originally, the name \PyX{} was constructed as a combination of 
+\textbf{P}ostscript, i.e.\ the first output format supported by \PyX{}, 
+P\textbf{y}thon, i.e.\ the language in which \PyX{} is written, and 
+Te\textbf{X}, i.e.\ the program which \PyX{} uses for typesetting purposes. 
+Actually, the title of this question is a tribute to \TeX{} because it is
+taken from the first chapter of the \TeX{}book\footnote{D.~Knuth, \textit{The
+\TeX{}book} (Addison-Wesley, 1984)} where the origin of the name \TeX{} and its 
+pronunciation are explained.
+
+Despite the ties between \TeX{} and \PyX{}, their pronunciation is quite
+different. According to the developers of \PyX{}, it should be pronounced as 
+\textipa{[pYks]}. Please do not pronounce it as \textipa{[pYx]} or 
+\textipa{[pY\c c]}.
+}
+
 \question{a}{Where do I get the latest version of \PyX?}
 {}
 {The current release of \PyX{} (as well as older ones) is freely available 
@@ -652,7 +670,7 @@ you should take a look at the subdirectories of
 \path{TEXMF/fonts/type1}.
 }
 
-\question{a}{File \dots\ is not available or not readable}
+\question{a}{File \dots\ is not available or not readable \changed}
 {}
 {\label{q:no_lfs}
 Such an error message might already occur when running the example file 
