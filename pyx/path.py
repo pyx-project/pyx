@@ -1665,8 +1665,8 @@ class normpath(path):
     def intersect(self, other, epsilon=1e-5):
         """intersect self with other path
 
-        returns a list of tuples consisting of the corresponding parameters
-        of the two bpaths
+        returns a tuple of lists consisting of the parameter values
+        of the intersection points of the corresponding normpath
 
         """
 
@@ -1709,21 +1709,19 @@ class normpath(path):
         for intersection in  _bcurvesIntersect(bpathels_a, 0, len(bpathels_a),
                                                bpathels_b, 0, len(bpathels_b),
                                                epsilon):
-            for subpathend_a in subpathends_a:
-                if abs(intersection[0]-subpathend_a)<epsilon:
-                    break
-            else:
-                for subpathend_b in subpathends_b:
-                    if abs(intersection[1]-subpathend_b)<epsilon:
-                        break
-                else:
-                    intersections[0].append(intersection[0])
-                    intersections[1].append(intersection[1])
+            if not ([subpathend_a
+                     for subpathend_a in subpathends_a
+                     if abs(intersection[0]-subpathend_a)<epsilon] or
+                    [subpathend_b
+                     for subpathend_b in subpathends_b
+                     if abs(intersection[1]-subpathend_b)<epsilon]):
+                intersections[0].append(intersection[0])
+                intersections[1].append(intersection[1])
 
         return intersections
 
-        # XXX: the following code is not used, but probably
-        # we could use it for short lists of bpathels 
+        # XXX: the following code is not used, but probably we could
+        # use it for short lists of bpathels
 
         # alternative implementation (not recursive, probably more efficient
         # for short lists bpathel_a and bpathel_b)
