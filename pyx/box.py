@@ -29,28 +29,26 @@ class BoxCrossError(Exception): pass
 
 class _poly:
 
-    def __init__(self, corners=None, center=None, trafo=None):
+    def __init__(self, corners=None, center=None):
         self.corners = corners
         self.center = center
-        if trafo is not None:
-            self.transform(trafo)
 
-    def path(self, centerradius=None, beziercorner=None):
-        # TODO: - supply curved box plotting (Michael Schindler)
+    def path(self, centerradius=None, bezierradius=None, beziersoftness=1):
         pathels = []
         if centerradius is not None and self.center is not None:
             r = unit.topt(unit.length(centerradius, default_type="v"))
             pathels.append(path._arc(self.center[0], self.center[1], r, 0, 360))
             pathels.append(path.closepath())
-        if beziercorner is None:
+        if bezierradius is None:
             pathels.append(path._moveto(self.corners[0][0], self.corners[0][1]))
             for x, y in self.corners[1:]:
                 pathels.append(path._lineto(x, y))
             pathels.append(path.closepath())
         else:
-            # curved box plotting according to a suggestion by Michael Schindler
+            # curved box plotting by Michael Schindler
             l = len(self.corners)
-            r = unit.topt(beziercorner)
+            x = beziersoftness
+            r = unit.topt(bezierradius)
             for i in range(l):
                 c = self.corners[i]
                 def normed(*v):
@@ -61,21 +59,17 @@ class _poly:
                 d2 = normed(self.corners[(i + 1 + l) % l][0] - c[0],
                             self.corners[(i + 1 + l) % l][1] - c[1])
                 dc = normed(d1[0] + d2[0], d1[1] + d2[1])
-                cosa = d1[0] * d2[0] + d1[1] * d2[1]
-                sina2 = math.sqrt(0.5 - 0.5 * cosa)
-                cosa2 = math.sqrt(0.5 + 0.5 * cosa)
-                R = r * cosa2 / sina2
-                x = 0.75
-                f = x * r * (1 - sina2) / sina2
-                e = f * cosa2
+                f = 0.375 * x * r
                 g = 1.25 * f + math.sqrt(1.5625 * f * f + f * r / 6.0)
+                e = f * math.sqrt(0.5 + 0.5 * (d1[0] * d2[0] + d1[1] * d2[1]))
+                print r, g, f, e
                 e = c[0] + e * dc[0], c[1] + e * dc[1]
                 f1 = c[0] + f * d1[0], c[1] + f * d1[1]
                 f2 = c[0] + f * d2[0], c[1] + f * d2[1]
                 g1 = c[0] + g * d1[0], c[1] + g * d1[1]
                 g2 = c[0] + g * d2[0], c[1] + g * d2[1]
-                d1 = c[0] + R * d1[0], c[1] + R * d1[1]
-                d2 = c[0] + R * d2[0], c[1] + R * d2[1]
+                d1 = c[0] + r * d1[0], c[1] + r * d1[1]
+                d2 = c[0] + r * d2[0], c[1] + r * d2[1]
                 if i:
                     pathels.append(path._lineto(*d1))
                 else:
@@ -85,10 +79,18 @@ class _poly:
             pathels.append(path.closepath())
         return path.path(*pathels)
 
-    def transform(self, trafo):
+    def transform(self, *trafos):
+        for trafo in trafos:
+            if self.center is not None:
+                self.center = trafo._apply(*self.center)
+            self.corners = [trafo._apply(*point) for point in self.corners]
+
+    def reltransform(self, *trafos):
         if self.center is not None:
-            self.center = trafo._apply(*self.center)
-        self.corners = [trafo._apply(*point) for point in self.corners]
+            trafos = ([trafo._translate(-self.center[0], -self.center[1])] +
+                      list(trafos) +
+                      [trafo._translate(self.center[0], self.center[1])])
+        self.transform(*trafos)
 
     def successivepointnumbers(self):
         return [i and (i - 1, i) or (len(self.corners) - 1, 0) for i in range(len(self.corners))]
@@ -159,6 +161,8 @@ class _poly:
         return a*dx - beta*dy - px + cx, a*dy + beta*dx - py + cy
 
     def _alignvector(self, a, dx, dy, alignlinevector, alignpointvector):
+        n = math.sqrt(dx * dx + dy * dy)
+        dx, dy = dx / n, dy / n
         linevectors = map(lambda (p1, p2), self=self, a=a, dx=dx, dy=dy, alignlinevector=alignlinevector:
                                 alignlinevector(a, dx, dy, *(p1 + p2)), self.successivepoints())
         for linevector in linevectors:
@@ -199,6 +203,8 @@ class _poly:
         return self
 
     def _extent(self, dx, dy):
+        n = math.sqrt(dx * dx + dy * dy)
+        dx, dy = dx / n, dy / n
         x1, y1 = self._linealignvector(0, dx, dy)
         x2, y2 = self._linealignvector(0, -dx, -dy)
         return (x1-x2)*dx + (y1-y2)*dy
