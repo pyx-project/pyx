@@ -34,6 +34,8 @@ c.text(0, 3, r"\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} = \sqrt{\pi\
 c.text(0, 6, r"\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} = \sqrt{\pi\over a}", text.size.LARGE, text.mathmode)
 
 c.stroke(c.text(1, 2, r"Hello, world!").path())
-c.stroke(c.text(1, 2, r"Hello, \color{green}world!", trafo.slant(1)).path())
+c.stroke(c.text(1, 2, r"Hello, world!", trafo.slant(1)).path())
+
+c.text(4, 2, r"{\color[cmyk]{0.1,0.2,0.3,0.4}c\color[gray]{0.5}o\color[hsb]{0.2,0.3,0.4}l\color[rgb]{0.2,0.4,0.6}o\color[RGB]{100,200,50}r}s!")
 
 c.writetofile("test_text", paperformat="a4")
