@@ -22,7 +22,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import copy, cStringIO, exceptions, glob, os, threading, Queue, traceback, re, struct, string, tempfile, sys, atexit, time
+import glob, os, threading, Queue, traceback, re, tempfile, sys, atexit, time
 import config, helper, unit, box, canvas, trafo, pykpathsea, version, attr, style, dvifile
 
 ###############################################################################
