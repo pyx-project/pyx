@@ -222,7 +222,7 @@ class pathaxispos(_axispos):
 
     def __init__(self, p, convert, direction=1):
         self.path = p
-        self.normpath = path.normpath(p)
+        self.normpath = p.normpath()
         self.arclen_pt = self.normpath.arclen_pt()
         self.arclen = self.arclen_pt * unit.t_pt
         _axispos.__init__(self, convert)
@@ -615,7 +615,7 @@ class split(_title):
             for subaxis1, subaxis2 in zip(axis.subaxes[:-1], axis.subaxes[1:]):
                 # use a tangent of the basepath (this is independent of the tickdirection)
                 v = 0.5 * (subaxis1.vmax + subaxis2.vmin)
-                p = path.normpath(axispos.vbasepath(v, None))
+                p = axispos.vbasepath(v, None).normpath()
                 breakline = p.tangent(0, length=self.breaklineslength)
                 widthline = p.tangent(0, length=self.breaklinesdist).transformed(trafomodule.rotate(self.breaklinesangle+90, *breakline.begin()))
                 # XXX Uiiii
