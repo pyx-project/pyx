@@ -77,6 +77,10 @@ TODO:
       - linealign and circlealign
     - unit module:
       update length constructor description (strings are no longer supported, etc.)
+    - graph module:
+      styles: document what data name the styles accept (require). Try also to be more
+      userfriendly and not to describe immediately the internals of the implementation:
+      (see e.g. class.style.symbol)
 
   FAQ:
     - describe creation and modification (inplace and ``modify by new'') of
