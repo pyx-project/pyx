@@ -12,7 +12,7 @@ x = 0
 y = 0
 dx = 6
 dy = -0.65
-length = 0.8
+length = 1.2
 
 def drawdeco(name, showpath=0, default=0):
     global x,y
