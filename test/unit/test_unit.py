@@ -54,11 +54,10 @@ class UnitTestCase(unittest.TestCase):
 
     def testMixedUnits(self):
         unit.set(uscale=2, vscale=3, wscale=4, xscale=5)
-        self.failUnlessAlmostEqual(unit.tom(unit.length("42 t m") + unit.length("42 u m") +  unit.length("42 v m") + unit.length("42 w m") + unit.length("42 x m")), 630)
-        self.failUnlessAlmostEqual(unit.tocm(unit.length("42 t cm") + unit.length("42 u cm") +  unit.length("42 v cm") + unit.length("42 w cm") + unit.length("42 x cm")), 630)
-        self.failUnlessAlmostEqual(unit.tomm(unit.length("42 t mm") + unit.length("42 u mm") +  unit.length("42 v mm") + unit.length("42 w mm") + unit.length("42 x mm")), 630)
-        self.failUnlessAlmostEqual(unit.toinch(unit.length("42 t inch") + unit.length("42 u inch") +  unit.length("42 v inch") + unit.length("42 w inch") + unit.length("42 x inch")), 630)
-        self.failUnlessAlmostEqual(unit.topt(unit.length("42 t pt") + unit.length("42 u pt") +  unit.length("42 v pt") + unit.length("42 w pt") + unit.length("42 x pt")), 630)
+        self.failUnlessAlmostEqual(unit.tom(42*unit.t_m + 42*unit.m + 42*unit.v_m + 42*unit.w_m + 42*unit.x_m), 630)
+        self.failUnlessAlmostEqual(unit.tocm(42*unit.t_cm + 42*unit.cm + 42*unit.v_cm + 42*unit.w_cm + 42*unit.x_cm), 630)
+        self.failUnlessAlmostEqual(unit.toinch(42*unit.t_inch + 42*unit.inch + 42*unit.v_inch + 42*unit.w_inch + 42*unit.x_inch), 630)
+        self.failUnlessAlmostEqual(unit.topt(42*unit.t_pt + 42*unit.pt + 42*unit.v_pt + 42*unit.w_pt + 42*unit.x_pt), 630)
         unit.set(uscale=1, vscale=1, wscale=1, xscale=1)
 
     def testCompareUnits(self):

@@ -15,8 +15,8 @@ def isEqual(trafo1, trafo2):
                         trafo1.vector[1]-trafo2.vector[1]]))<1e-7
 
 def correctOnBasis(t, tesx, tesy):
-    esx = t.apply("1 t cm", "0 t cm")
-    esy = t.apply("0 t cm", "1 t cm")
+    esx = t.apply(1 * unit.t_cm, 0)
+    esy = t.apply(0, 1 * unit.t_cm)
 
     esx = unit.tocm(esx[0]), unit.tocm(esx[1])
     esy = unit.tocm(esy[0]), unit.tocm(esy[1])
