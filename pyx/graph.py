@@ -2204,11 +2204,15 @@ class _changecolorgray(changecolor):
     def __init__(self, gradient=color.gradient.Gray):
         changecolor.__init__(self, gradient)
 
+_changecolorgrey = _changecolorgray
+
 
 class _changecolorreversegray(changecolor):
 
     def __init__(self, gradient=color.gradient.ReverseGray):
         changecolor.__init__(self, gradient)
+
+_changecolorreversegrey = _changecolorreversegray
 
 
 class _changecolorredblack(changecolor):
@@ -2344,7 +2348,9 @@ class _changecolorreversehue(changecolor):
 
 
 changecolor.Gray           = _changecolorgray
+changecolor.Grey           = _changecolorgrey
 changecolor.Reversegray    = _changecolorreversegray
+changecolor.Reversegrey    = _changecolorreversegrey
 changecolor.Redblack       = _changecolorredblack
 changecolor.Blackred       = _changecolorblackred
 changecolor.Redwhite       = _changecolorredwhite
