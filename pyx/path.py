@@ -424,10 +424,6 @@ class _curveto(normpathel):
 
     def _split(self, context, parameters):
         bps = self._bcurve(context).split(parameters)
-
-        print bps[0]
-        print bps[1]
-
         bp0 = bps[0]
 
         result = [(_curveto(bp0.x1, bp0.y1, bp0.x2, bp0.y2, bp0.x3, bp0.y3),)]
@@ -1258,11 +1254,11 @@ class normpath(path):
             elif npisfirstsubpath and isinstance(pel, closepath):
                 # closepath and _moveto both end a subpath, but we 
                 # don't want to append a closepath for the
-                # first subpath
+                # first subpath, instead we append a straight line
+                np.append(_lineto(*context.currentsubpath))
                 npisfirstsubpath = 0
                 t += 1
             else:
-                print t
                 if not parameters or t+1<parameters[0]:
                     np.path.append(pel)
                 else:
@@ -1530,8 +1526,6 @@ class _bcurve:
         for i in range(len(parameters)-1):
             t1 = parameters[i]
             dt = parameters[i+1]-t1
-
-            print ":::", t1, dt
 
             # [t1,t2] part
             #
