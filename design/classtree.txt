@@ -1,5 +1,7 @@
-# some thoughts one the class naming:
-# - PSCommand -> PSCmd
+# some thoughts: 
+# - naming: PSCommand -> PSCmd ? 
+# - arrow is a PSCommand (an arrow has a bbox!)
+#   for the moment, I derive pathdeco(PSCommand, PSAttr)
 
 PSOp +--- PSCommand ---+--- canvas
      |                 +--- epsfile
