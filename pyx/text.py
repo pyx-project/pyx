@@ -560,9 +560,8 @@ class DVIFile:
         if not s.startswith("PyX:"):
             raise RuntimeError("the special '%s' cannot be handled by PyX, aborting" % s)
         command, args = s[4:].split()[0], s[4:].split()[1:]
-        if command=="begin_color":
+        if command=="color_begin":
             print "begin color"
-        
 
     # routines corresponding to the different reader states of the dvi maschine
 
