@@ -202,6 +202,10 @@ class _texmessagetexend(texmessage):
     __implements__ = _Itexmessage
 
     def check(self, texrunner):
+        # skip when the message is empty (this occurs after LaTeX's message about Font Substitutions)
+        if not texrunner.texmessageparsed:
+            return
+
         try:
             s1, s2 = texrunner.texmessageparsed.split("(%s.aux)" % texrunner.texfilename, 1)
             texrunner.texmessageparsed = s1 + s2
