@@ -401,6 +401,119 @@ class MathTreeFunc1ATan(MathTreeFunc1):
         return math.atan(self.ArgV[0].Calc(VarDict))
 
 
+class MathTreeFunc1SinD(MathTreeFunc1):
+
+    def __init__(self, *args):
+        MathTreeFunc1.__init__(self, "sind", *args)
+
+    def CalcDerivative(self, arg):
+        return MathTreeOpMul(
+                   MathTreeFunc1CosD(self.ArgV[0]),
+                   MathTreeOpMul(
+                       MathTreeValConst(math.pi/180.0),
+                       self.ArgV[0].CalcDerivative(arg)))
+
+    def Calc(self, VarDict):
+        return math.sin(math.pi/180.0*self.ArgV[0].Calc(VarDict))
+
+
+class MathTreeFunc1CosD(MathTreeFunc1):
+
+    def __init__(self, *args):
+        MathTreeFunc1.__init__(self, "cosd", *args)
+
+    def CalcDerivative(self, arg):
+        return MathTreeOpMul(
+                   MathTreeFunc1Neg(MathTreeFunc1Sin(self.ArgV[0])),
+                   MathTreeOpMul(
+                       MathTreeValConst(math.pi/180.0),
+                       self.ArgV[0].CalcDerivative(arg)))
+
+    def Calc(self, VarDict):
+        return math.cos(math.pi/180.0*self.ArgV[0].Calc(VarDict))
+
+
+class MathTreeFunc1TanD(MathTreeFunc1):
+
+    def __init__(self, *args):
+        MathTreeFunc1.__init__(self, "tand", *args)
+
+    def CalcDerivative(self, arg):
+        return MathTreeOpDiv(
+                   MathTreeOpMul(
+                       MathTreeValConst(math.pi/180.0),
+                       self.ArgV[0].CalcDerivative(arg)),
+                   MathTreeOpPow(
+                       MathTreeFunc1Cos(self.ArgV[0]),
+                       MathTreeValConst(2.0)))
+
+    def Calc(self, VarDict):
+        return math.tan(math.pi/180.0*self.ArgV[0].Calc(VarDict))
+
+
+class MathTreeFunc1ASinD(MathTreeFunc1):
+
+    def __init__(self, *args):
+        MathTreeFunc1.__init__(self, "asind", *args)
+
+    def CalcDerivative(self, arg):
+        return MathTreeOpDiv(
+                   MathTreeOpMul(
+                       MathTreeValConst(180.0/math.pi),
+                       self.ArgV[0].CalcDerivative(arg)),
+                   MathTreeFunc1Sqrt(
+                       MathTreeOpSub(
+                           MathTreeValConst(1.0),
+                           MathTreeOpPow(
+                               self.ArgV[0],
+                               MathTreeValConst(2.0)))))
+
+    def Calc(self, VarDict):
+        return 180.0/math.pi*math.asin(self.ArgV[0].Calc(VarDict))
+
+
+class MathTreeFunc1ACosD(MathTreeFunc1):
+
+    def __init__(self, *args):
+        MathTreeFunc1.__init__(self, "acosd", *args)
+
+    def CalcDerivate(self, arg):
+        return MathTreeOpDiv(
+                   MathTreeFunc1Neg(
+                       MathTreeOpMul(
+                           MathTreeValConst(180.0/math.pi),
+                           self.ArgV[0].CalcDerivative(arg))),
+                   MathTreeFunc1Sqrt(
+                       MathTreeOpSub(
+                           MathTreeValConst(1.0),
+                           MathTreeOpPow(
+                               self.ArgV[0],
+                               MathTreeValConst(2.0)))))
+
+    def Calc(self, VarDict):
+        return 180.0/math.pi*math.acos(self.ArgV[0].Calc(VarDict))
+
+
+class MathTreeFunc1ATanD(MathTreeFunc1):
+
+    def __init__(self, *args):
+        MathTreeFunc1.__init__(self, "atand", *args)
+
+    def CalcDerivate(self, arg):
+        return MathTreeOpDiv(
+                   MathTreeOpMul(
+                       MathTreeValConst(180.0/math.pi),
+                       self.ArgV[0].CalcDerivative(arg)),
+                   MathTreeOpAdd(
+                       MathTreeValConst(1.0),
+                       MathTreeOpPow(
+                           self.ArgV[0],
+                           MathTreeValConst(2.0))))
+
+    def Calc(self, VarDict):
+        return 180.0/math.pi*math.atan(self.ArgV[0].Calc(VarDict))
+
+
 class MathTreeFunc2(MathTreeFunc):
 
     def __init__(self, name, *args):

@@ -1293,6 +1293,9 @@ class _axis:
             if self.reverse:
                 self.setbasepoints(((min, vmax), (max, vmin)))
 
+    def gridpath(self, x):
+        return self.vgridpath(self.convert(x))
+
     def setdatarange(self, min, max):
         self.datamin, self.datamax = min, max
         self._setrange(min, max)
@@ -1397,13 +1400,13 @@ class graphxy(canvas.canvas):
         return axis.fixtickdirection
 
     def _pos(self, x, y, xaxis=None, yaxis=None):
-        if xaxis is None: xaxis = self.axis["x"]
-        if yaxis is None: yaxis = self.axis["y"]
+        if xaxis is None: xaxis = self.axes["x"]
+        if yaxis is None: yaxis = self.axes["y"]
         return self._xpos+xaxis.convert(x)*self._width, self._ypos+yaxis.convert(y)*self._height
 
     def pos(self, x, y, xaxis=None, yaxis=None):
-        if xaxis is None: xaxis = self.axis["x"]
-        if yaxis is None: yaxis = self.axis["y"]
+        if xaxis is None: xaxis = self.axes["x"]
+        if yaxis is None: yaxis = self.axes["y"]
         return self.xpos+xaxis.convert(x)*self.width, self.ypos+yaxis.convert(y)*self.height
 
     def _vpos(self, vx, vy):
@@ -1413,13 +1416,13 @@ class graphxy(canvas.canvas):
         return self.xpos+vx*self.width, self.ypos+vy*self.height
 
     def xbaseline(self, axis, x1, x2, shift=0, xaxis=None):
-        if xaxis is None: xaxis = self.axis["x"]
+        if xaxis is None: xaxis = self.axes["x"]
         v1, v2 = xaxis.convert(x1), xaxis.convert(x2)
         return path._line(self._xpos+v1*self._width, axis.axispos+shift,
                           self._xpos+v2*self._width, axis.axispos+shift)
 
     def ybaseline(self, axis, y1, y2, shift=0, yaxis=None):
-        if yaxis is None: yaxis = self.axis["y"]
+        if yaxis is None: yaxis = self.axes["y"]
         v1, v2 = yaxis.convert(y1), yaxis.convert(y2)
         return path._line(axis.axispos+shift, self._ypos+v1*self._height,
                           axis.axispos+shift, self._ypos+v2*self._height)
@@ -1433,13 +1436,13 @@ class graphxy(canvas.canvas):
                           axis.axispos+shift, self._ypos+v2*self._height)
 
     def xgridpath(self, x, xaxis=None):
-        if xaxis is None: xaxis = self.axis["x"]
+        if xaxis is None: xaxis = self.axes["x"]
         v = xaxis.convert(x)
         return path._line(self._xpos+v*self._width, self._ypos,
                           self._xpos+v*self._width, self._ypos+self._height)
 
     def ygridpath(self, y, yaxis=None):
-        if yaxis is None: yaxis = self.axis["y"]
+        if yaxis is None: yaxis = self.axes["y"]
         v = yaxis.convert(y)
         return path._line(self._xpos, self._ypos+v*self._height,
                           self._xpos+self._width, self._ypos+v*self._height)
@@ -1624,13 +1627,17 @@ class graphxy(canvas.canvas):
         if self._height <= 0: raise ValueError("height < 0")
         if not axes.has_key("x"):
             axes["x"] = linaxis()
-        if not axes.has_key("x2"):
+        elif axes["x"] is None:
+            del axes["x"]
+        if not axes.has_key("x2") and axes.has_key("x"):
             axes["x2"] = linkaxis(axes["x"])
         elif axes["x2"] is None:
             del axes["x2"]
         if not axes.has_key("y"):
             axes["y"] = linaxis()
-        if not axes.has_key("y2"):
+        elif axes["y"] is None:
+            del axes["y"]
+        if not axes.has_key("y2") and axes.has_key("y"):
             axes["y2"] = linkaxis(axes["y"])
         elif axes["y2"] is None:
             del axes["y2"]

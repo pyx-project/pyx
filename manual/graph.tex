@@ -1,6 +1,7 @@
 \chapter{Module graph: graph plotting}
 \label{graph}
 \section{Introductory notes}
+
 The graph module is considered to be in constant, gradual development.
 For the moment we concentrate ourself on standard 2d xy-graphs taking
 all kind of possible specialties into account like any number of axes.
@@ -12,13 +13,12 @@ those parts of the graph module here, which are in a totally usable
 state already and are hopefully not to be changed later on. However,
 future developments certainly will cause incompatibilities, for
 example they are expected to happen for automatic axis ticking (which
-will therefore not yet be covered in this manual) or just by splitting
-the graph module into several parts. But at least be warned: Nobody
-knows the hole list of things that will break. At the moment, keeping
-backwards compatibility in the graph module is not at all an issue.
-Although we do not yet claim any backwards compatibility for the
-future at all, the graph module is certainly one of the biggest
-construction sites within \PyX.
+will therefore not yet be covered within this manual). At least be
+warned: Nobody knows the hole list of things that will break. At the
+moment, keeping backwards compatibility in the graph module is not at
+all an issue. Although we do not yet claim any backwards compatibility
+for the future at all, the graph module is certainly one of the
+biggest construction sites within \PyX.
 
 The task of drawing graphs is splitted in quite some subtasks, which
 are implemented by classes of its own. We tried to make those
@@ -33,6 +33,7 @@ By that, all other components can be reused for different graph
 geometries.
 
 \section{Axes}
+\label{graph:axes}
 
 A common feature of a graph are axes. An axis is responsible for the
 conversion of values to graph coordinates. There are predefined axis
@@ -305,6 +306,7 @@ ignore any ticks) for the ticks and \verb|0| (ignore all labels) for
 the labels.
 
 \section{Data}
+\label{graph:data}
 
 \subsection{List of points}
 
@@ -388,6 +390,7 @@ Additionally, the two named parameters \verb|points| and \verb|parser|
 behave like their equally named counterparts in \verb|function|.
 
 \section{Styles}
+\label{graph:styles}
 
 Styles are used to draw data at a graph. A style determines what is
 painted and how it is painted. Due to this powerfull approach there
@@ -402,44 +405,314 @@ now.
 
 \subsection{Marks}
 
-The class \verb|mark| can be used to plot symbols, errorbars and
-lines configurable by parameters of the constructor. Providing
-\verb|None| to attributes hides the according component.
+The class \verb|mark| can be used to plot markers, errorbars and lines
+configurable by parameters of the constructor. Providing \verb|None|
+to attributes hides the according component.
 
 \medskip
 \begin{tabularx}{\linewidth}{ll>{\raggedright\arraybackslash}X}
 argument name&default&description\\
 \hline
-\texttt{mark}&\texttt{changemark.cross()}&symbol to be used\\
-\texttt{size}&\texttt{"0.2 cm"}&size of the symbol (visual length)\\
-\texttt{markattrs}&\texttt{canvas.stroked()}&draw attributes for the symbol\\
-\texttt{errorscale}&\texttt{0.5}&size of the errorbar caps (relative to the symbol size)\\
+\texttt{mark}&\texttt{changemark.cross()}&marker to be used (see below)\\
+\texttt{size}&\texttt{"0.2 cm"}&size of the marker (visual length)\\
+\texttt{markattrs}&\texttt{canvas.stroked()}&draw attributes for the marker\\
+\texttt{errorscale}&\texttt{0.5}&size of the errorbar caps (relative to the marker size)\\
 \texttt{errorbarattrs}&\texttt{()}&stroke attributes for the errorbars\\
 \texttt{lineattrs}&\texttt{None}&stroke attributes for the line\\
 \end{tabularx}
 \medskip
+
+The parameter \verb|mark| has to be a routine, which returns a path to
+be drawn (e.g. stoked or filled). There are several those routines
+already available in the class \verb|mark|, namely \verb|cross|,
+\verb|plus|, \verb|square|, \verb|triangle|, \verb|circle|, and
+\verb|diamond|. Furthermore, changeable attributes might be used here
+(like the default value \verb|changemark.cross|), see
+section~\ref{graph:changeattrs} for details.
 
 The attributes are available as class variables after plotting the
 style for outside usage. Additionally, the variable \verb|path|
 contains the path of the line (even when it wasn't plotted), which
 might be used to get crossing points, fill areas, etc.
 
+Valid data names to be used when providing data to markers are listed
+in the following table. The character \verb|X| stands for axis names
+like \verb|x|, \verb|x2|, \verb|y|, etc.
+
+\begin{center}
+\begin{tabular}{ll}
+data name&description\\
+\hline
+\texttt{X}&position of the marker\\
+\texttt{Xmin}&minimum for the errorbar\\
+\texttt{Xmax}&maximum for the errorbar\\
+\texttt{dX}&relative size of the errorbar: \texttt{Xmin, Xmax = X-dX, X+Xd}\\
+\texttt{dXmin}&relative minimum \texttt{Xmin = X-dXmin}\\
+\texttt{dXmax}&relative maximum \texttt{Xmax = X+dXmax}\\
+\end{tabular}
+\end{center}
+
 \subsection{Lines}
 
-The class \verb|line| is a inherited and constricted \verb|mark|. The
-constructor takes only \verb|lineattrs| and its default is set to
-\verb|changelinestyle()|.
+The class \verb|line| is inherited from \verb|mark| and is restricted
+to line drawing. The constructor takes only \verb|lineattrs| and its
+default is set to \verb|changelinestyle()|. The other features of the
+mark style are turned off.
 
-\subsection{Rectangular marks}
+\subsection{Rectangles}
 
-\subsection{Text marks}
+The class \verb|rect| draws filled rectangles into a graph. The size
+and the position of the rectangles to be plotted can be provided by
+the same data names like for the errorbars of the class \verb|mark|.
+Indeed, the class \verb|mark| reuses most of the marker code by
+inheritance, while modifying the errorbar look into a colored filled
+rectangle and turing off the marker itself.
 
-\subsection{Arrow marks}
+The color to be used for the filling of the rectangles is taken from a
+gradient provided to the constructor by the named parameter
+\verb|gradient| (default is \verb|color.gradient.Gray|). The data
+name \verb|color| is used to select the color out of this gradient.
+
+\subsection{Texts}
+
+Another style to be used within graphs is the class \verb|text|, which
+adds the output of text to the class \verb|mark|. The text
+position relative to the markers is defined by the two named
+parameters \verb|textdx| and \verb|textdy| having a default of
+\verb|"0 cm"| and \verb|"0.3 cm"|, respectively, which are by default
+interpreted as visual length. A further named parameter
+\verb|textattrs| may contain a sequence of text attributes (or just a
+single attribute). The default for this parameter is
+\verb|tex.halign.center|. Furthermore the constructor of this class
+allows all other attributes of the class \verb|mark|.
+
+\subsection{Arrows}
+
+The class \verb|arrow| can be used to plot small arrows into a graph
+where the size and direction of the arrows has to be given within the
+data. The constructor of the class takes the following parameters:
+
+\medskip
+\begin{tabularx}{\linewidth}{ll>{\raggedright\arraybackslash}X}
+argument name&default&description\\
+\hline
+\texttt{linelength}&\texttt{"0.2 cm"}&length of a the arrow line (visual length)\\
+\texttt{arrowattrs}&\texttt{()}&stroke attributes\\
+\texttt{arrowsize}&\texttt{"0.1 cm"}&size of the arrow (visual length)\\
+\texttt{arrowdict}&\texttt{\{\}}&attributes to be used in the \texttt{earrow} constructor\\
+\texttt{epsilon}&1e-10&smallest allowed arrow size factor for a arrow to become plotted (avoid numerical instabilities)\\
+\end{tabularx}
+\medskip
+
+The arrow allows for data names like the mark and introduces
+additionally the data names \verb|size| for the arrow size (as an
+multiplicator for the sizes provided to the constructor) and
+\verb|angle| for the arrow direction (in degree).
 
 \subsection{Iterateable style attributes}
+\label{graph:changeattrs}
+
+The attributes provided to the constructors of styles can usually
+handle so called iterateable attributes, which are changing itself
+when plotting several data sets. Iterateable attributes can be easily
+written, but there are already some iterateable attributes available
+for the most common cases. For example a color change is done by
+instances of the class \verb|colorchange|, where the constructor takes
+a gradient. Applying this attribute to a style and using this style at
+a sequence of data, the color will get changed lineary along the
+gradient from one end to the other. The class \verb|colorchange|
+includes inherited classes as class variables, which are called like
+the color gradients shown in appendix~\ref{gradientname}. For them the
+default gradient is set to the appropriate color gradient.
+
+Another attribute changer is called \verb|changesequence|. The
+constructor takes a list of attributes and the attribute changer
+cycles through this list whenever a new attribute is requested.
+This attribute changer is used to implement the following attribute
+changers:
+
+\begin{center}
+\begin{tabular}{ll}
+attribute changer&description\\
+\hline
+\texttt{changelinestyle}&iterates linestyles solid, dashed, dotted, dasheddotted\\
+\texttt{changestrokedfilled}&iterates \texttt{(canvas.stroked(), canvas.filled())}\\
+\texttt{changefilledstroked}&iterates \texttt{(canvas.filled(), canvas.stroked())}\\
+\end{tabular}
+\end{center}
+
+The class \verb|changemark| can be used to cycle throu markers and it
+provides already various specialized classes as class variables. To
+loop over all available markers (cross, plus, square, triangle,
+circle, and diamond) the equal named class variables can be used. They
+start at that marker they are named of. Thus \verb|changemark.cross()|
+cycles throu the sequence starting at the cross marker. Furthermore
+there are four class variables called \verb|squaretwice|,
+\verb|triangletwice|, \verb|circletwice|, and \verb|diamondtwice|.
+They cycle throu the four fillable markers, but returning the markers
+twice before they go on to the next one. They are intented to be used
+in combination with \verb|changestrokedfilled| and
+\verb|changefilledstroked|.
 
 \section{Keys}
 Sorry, there is not yet any support for graph keys.
 
 \section{X-Y-Graph}
+
+The class \verb|graphxy| draws standard x-y-graphs. It is a subcanvas
+and can thus be just inserted into a canvas. The x-axes are named
+\verb|x|, \verb|x2|, \verb|x3|, \dots and equally the y-axes. The
+number of axes is not limited. All odd numbered axes are plotted at
+the bottom (for x axes) and at the left (for y axes) and all even
+numbered axes are plotted opposite to them. The lower numbers are
+closer to the graph.
+
+The constructor of \verb|graphxy| takes axes as named parameters where
+the parameter name is an axis name as just described. Those parameters
+refer to an axis instance as they where described in
+section~\ref{graph:axes}. When no \verb|x| or \verb|y| is provided,
+they are automatically set to instances of \verb|linaxis|. When no
+\verb|x2| or \verb|y2| axes are given they are initialized as standard
+linkaxis to the axis \verb|x| and \verb|y|. However, you can turn off
+the automatism by setting those axes explicitly to \verb|None|.
+
+However, the constructor takes some more attributes, namely first of
+all a tex canvas. (This ugly construction is likely to be ommited in
+future versions of \PyX{} once a new \TeX{} binding becomes
+available.) Other parameters are named and listed in the following
+table:
+
+\medskip
+\begin{tabularx}{\linewidth}{ll>{\raggedright\arraybackslash}X}
+argument name&default&description\\
+\hline
+\texttt{xpos}&\texttt{"0"}&x position of the graph (user length)\\
+\texttt{ypos}&\texttt{"0"}&y position of the graph (user length)\\
+\texttt{width}&\texttt{None}&width of the graph area (axes are outside of that range)\\
+\texttt{height}&\texttt{None}&as abovem, but for the height\\
+\texttt{ratio}&\texttt{goldenrule}&width/height ratio when only a width or height is provided\\
+\texttt{backgroundattrs}&\texttt{None}&background attributes for the graph area\\
+\texttt{axisdist}&\texttt{"0.8 cm"}&distance between axis (visual length)\\
+\end{tabularx}
+\medskip
+
+After a graph is constructed, data can be plotted via the \verb|plot|
+method. The first argument should be an instance of the data providing
+classes described in section~\ref{graph:data}. This first parameter
+can also be a list of those instances when you want to iterate the
+style you explicitly provide as a second parameter to the plot method.
+The plot method returns the style (or a list of styles when a data
+list was provided) which was used for plotting. Just as an example you
+can thus access the path of a line and fill areas with it and so on.
+
+After the plot method was called once or several times, you should
+call the method \verb|finish|. (This is actually needed as long as a
+tex canvas gets used for text output and the tex canvas is inserted
+into the main canvas before the graph gets inserted.) Finishing a
+graph allows for the access to positioning routines which can be quite
+usefull to plot additional information into a graph.
+
+Sometimes it is also nice to partly finish a graph. By that you can
+even modify the order in which a graph performs its drawing process.
+By default the four methods \verb|dolayout|, \verb|dobackground|,
+\verb|doaxis|, and \verb|dodata| are called in that order. The method
+\verb|dolayout| must always be called first, but this is internally
+ensured once you call any of the routines yourself. After
+\verb|dolayout| gets called, the method \verb|plot| can not be used
+anymore.
+
+To get a position within a graph as a tuple out of some axes values,
+the method \verb|pos| can be used. It takes two values for a position
+at the x and y axis. By default, the axes named \verb|x| or \verb|y|
+are used, but this is changed when the named parameters \verb|xaxis|
+and \verb|yaxis| are set to other axes. The graph axes are available
+by their name using the dictionary \verb|axes|. Each axis has a method
+\verb|gridpath| which is set by the graph. It returns a gridpath for a
+given position at the axis.
+
+\section{Examples}
+
+\subsection{A minimal example: plot data from a file}
+
+We plot data from the file \verb|"graph.dat"|:
+
+\begin{quote}
+\begin{verbatim}
+1   2
+2   3
+3   8
+4  13
+5  18
+6  21
+\end{verbatim}
+\end{quote}
+
+The following script creates the file \verb|"graph.eps"|:
+
+\begin{quote}
+\begin{verbatim}
+from pyx import *
+
+c = canvas.canvas()
+t = c.insert(tex.tex())
+g = c.insert(graph.graphxy(t, width=10))
+g.plot(graph.data("graph.dat", x=1, y=2))
+g.finish()
+c.writetofile("graph")
+\end{verbatim}
+\end{quote}
+
+The result looks like:
+\begin{quote}
+\includegraphics{graph1}
+\end{quote}
+
+\subsection{A more advanced function plot}
+
+\begin{quote}
+\begin{verbatim}
+from pyx import *
+from pyx.graph import *
+
+c = canvas.canvas()
+t = tex.tex()
+
+a, b = 2, 9
+
+mypainter=axispainter(baselineattrs=canvas.earrow.normal)
+
+g = c.insert(graphxy(t, width=10, x2=None, y2=None,
+                     x=linaxis(min=0, max=10,
+                               part=manualpart(ticks=(frac(a, 1),
+                                                      frac(b, 1)),
+                                               texts=("a", "b")),
+                               painter=mypainter),
+                     y=linaxis(painter=mypainter,
+                               part=manualpart())))
+
+line = g.plot(function("y=(x-3)*(x-5)*(x-7)"))
+g.finish()
+
+pa = path.path(g.axes["x"].gridpath(a))
+pb = path.path(g.axes["x"].gridpath(b))
+(splita,), (splitpa,) = line.path.intersect(pa)
+(splitb,), (splitpb,) = line.path.intersect(pb)
+area = (pa.split(splitpa)[0] <<
+        line.path.split(splita, splitb)[1] <<
+        pb.split(splitpb)[0].reversed())
+area.append(path.closepath())
+g.stroke(area, canvas.linewidth.THick,
+         canvas.filled(color.gray(0.8)))
+t.text(g.pos(0.5*(a+b), 0)[0], 1,
+       r"\int_a^b f(x) {\rm d}x", tex.halign.center, tex.style.math)
+
+c.insert(t)
+c.writetofile("graph2")
+\end{verbatim}
+\end{quote}
+
+The result looks like:
+\begin{quote}
+\includegraphics{graph2}
+\end{quote}
 
