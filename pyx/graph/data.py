@@ -351,7 +351,7 @@ class dataparser(mathtree.parser):
 ##############################################################
 
 
-class _notitle:
+class notitle:
     """this is a helper class to mark, that no title was privided
     (since a title equals None is a valid input, it needs to be
     distinguished from providing no title when a title will be
@@ -361,9 +361,9 @@ class _notitle:
 class data(_data):
     "creates a new data set out of an existing data set"
 
-    def __init__(self, data, title=_notitle, parser=dataparser(), context={}, **columns):
+    def __init__(self, data, title=notitle, parser=dataparser(), context={}, **columns):
         # build a nice title
-        if title is _notitle:
+        if title is notitle:
             items = columns.items()
             items.sort() # we want sorted items (otherwise they would be unpredictable scrambled)
             self.title = data.title + ": " + ", ".join(["%s=%s" % item for item in items])
@@ -594,10 +594,10 @@ class _linedata(_data):
 
 class function(_linedata):
 
-    def __init__(self, expression, title=_notitle, min=None, max=None,
+    def __init__(self, expression, title=notitle, min=None, max=None,
                  points=100, parser=mathtree.parser(), context={}):
 
-        if title is _notitle:
+        if title is notitle:
             self.title = expression
         else:
             self.title = title
@@ -654,8 +654,8 @@ class function(_linedata):
 
 class paramfunction(_linedata):
 
-    def __init__(self, varname, min, max, expression, title=_notitle, points=100, parser=mathtree.parser(), context={}):
-        if title is _notitle:
+    def __init__(self, varname, min, max, expression, title=notitle, points=100, parser=mathtree.parser(), context={}):
+        if title is notitle:
             self.title = expression
         else:
             self.title = title

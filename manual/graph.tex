@@ -1,4 +1,5 @@
-\chapter{Graphs\label{graph}}
+\chapter{Graphs}
+\label{graph}
 \section{Introduction}
 \PyX{} can be used for data and function plotting. At present only
 x-y-graphs are supported. However, the component architecture of the
@@ -22,13 +23,13 @@ To plot these data into the graph \code{g} you must perform:
 g.plot(graph.data.file("graph.dat", x=1, y=2))
 \end{verbatim}
 The method \method{plot()} takes the data to be plotted and optionally
-a graph style to be used to plot the data. When no style is provided,
-a default style defined by the data instance is used. For data read
-from a file by an instance of \class{graph.data.file}, the default are
-symbols. When instantiating \class{graph.data.file}, you not only
-specify the file name, but also a mapping from columns to axis names
-and other information the style might use (\emph{e.g.} data for error
-bars for the symbol style).
+a list of graph styles to be used to plot the data. When no styles are
+provided, a default style defined by the data instance is used. For
+data read from a file by an instance of \class{graph.data.file}, the
+default are symbols. When instantiating \class{graph.data.file}, you
+not only specify the file name, but also a mapping from columns to
+axis names and other information the styles might make use of
+(\emph{e.g.} data for error bars to be used by the errorbar style).
 
 While the graph is already created by that, we still need to perform a
 write of the result into a file. Since the graph instance is a canvas,
@@ -36,8 +37,7 @@ we can just call its \method{writeEPSfile()} method.
 \begin{verbatim}
 g.writeEPSfile("graph")
 \end{verbatim}
-will create the file \file{graph.eps} as shown in
-figure~\ref{fig:graph}.
+The result \file{graph.eps} is shown in figure~\ref{fig:graph}.
 
 \begin{figure}[ht]
 \centerline{\includegraphics{graph}}
@@ -45,35 +45,53 @@ figure~\ref{fig:graph}.
 \label{fig:graph}
 \end{figure}
 
-Instead of plotting data from a file, we could also use other data
-sources like functions. The procedure would be as before, but we would
-place different data into \method{plot()}:
+Instead of plotting data from a file, other data source are available
+as well. For example function data is created and placed into
+\method{plot()} by the following line:
 \begin{verbatim}
 g.plot(graph.data.function("y=x**2"))
 \end{verbatim}
-You can plot different data into a single graph by calling the
-\method{plot()} several times. Thus the command above might just be
-inserted before \method{writeEPSfile()} of the original example.
-Note that a call to \method{plot()} will fail once you forced the
-graph to ``finish'' itself. This happens automatically, when you
-write the output. Thus it is not an option to call \method{plot()}
+You can plot different data in a single graph by calling
+\method{plot()} several times before \method{writeEPSfile()}. Note
+that a calling \method{plot()} will fail once a graph was forced to
+``finish'' itself. This happens automatically, when the graph is
+written to a file. Thus it is not an option to call \method{plot()}
 after \method{writeEPSfile()}. The topic of the finalization of a
-graph is addressed in more detail in section~\ref{graph:graph}. As
-you can see in figure~\ref{fig:graph2}, a function is plotted as a
-line by default.
+graph is addressed in more detail in section~\ref{graph:graph}. As you
+can see in figure~\ref{fig:graph2}, a function is plotted as a line by
+default.
+
 \begin{figure}[ht]
 \centerline{\includegraphics{graph2}}
 \caption{Plotting data from a file together with a function.}
 \label{fig:graph2}
 \end{figure}
 
-\section{Component architecture \label{graph:components}}
+While the axes ranges got adjusted automatically in the previous
+example, they might be fixed by keyword options in axes constructors.
+Plotting only a function will need such a setting at least in the
+variable coordinate. The following code also shows how to set a
+logathmic axis in y-direction:
+
+\verbatiminput{graph3.py}
+
+The result is shown in figure~\ref{fig:graph3}.
+
+\begin{figure}[ht]
+\centerline{\includegraphics{graph3}}
+\caption{Plotting a function for a given axis range and use a
+logarithmic y-axis.}
+\label{fig:graph3}
+\end{figure}
+
+\section{Component architecture}
+\label{graph:components}
 
 Creating a graph involves a variety of tasks, which thus can be
 separated into components without significant additional costs.
 This structure manifests itself also in the \PyX{} source, where there
 are different modules for the different tasks. They interact by some
-welldefined interfaces. They certainly have to be completed and
+well-defined interfaces. They certainly have to be completed and
 stabilized in their details, but the basic structure came up in the
 continuous development quite clearly. The basic parts of a graph are:
 
@@ -97,7 +115,8 @@ continuous development quite clearly. The basic parts of a graph are:
   subtasks. Axes are discussed separately in chapter~\ref{axis}.
 \end{definitions}
 
-\section{X-Y-Graphs\label{graph:graph}}
+\section{Module \code{graph/graph}: X-Y-Graphs}
+\label{graph:graph}
 
 \declaremodule{}{graph.graph}
 \modulesynopsis{Graph geometry}
@@ -158,17 +177,18 @@ Those are:
 To actually plot something into the graph, the following instance
 method \method{plot()} is provided:
 
-\begin{methoddesc}{plot}{data, style=None}
-  Adds \var{data} to the list of data to be plotted. Sets \var{style}
-  to be used for plotting the data. When \var{style} is \code{None},
-  the default style for the data as provided by \var{data} is used.
+\begin{methoddesc}{plot}{data, styles=None}
+  Adds \var{data} to the list of data to be plotted. Sets \var{styles}
+  to be used for plotting the data. When \var{styles} is \code{None},
+  the default styles for the data as provided by \var{data} is used.
 
   \var{data} should be an instance of any of the data described in
   section~\ref{graph:data}. This instance should only be used once.
 
-  When a style is used several times within the same graph instance,
-  it is kindly asked by the graph to iterate its appearence. Its up
-  to the style how this is performed.
+  When the same combination of styles (\emph{i.e.} the same
+  references) are used several times within the same graph instance,
+  the styles are kindly asked by the graph to iterate their
+  appearence. Its up to the styles how this is performed.
 
   Instead of calling the plot method several times with different
   \var{data} but the same style, you can use a list (or something
@@ -181,9 +201,9 @@ of \method{plot()} will fail. Usually you do not need to take care
 about the finalization of the graph, because it happens automatically
 once you write the plot into a file. However, sometimes position
 methods (described below) are nice to be accessible. For that, at
-least the layout of the graph must be done. By calling the
-\method{do}-methods yourself you can also alter the order in which
-the graph is plotted. Multiple calls to any of the
+least the layout of the graph must have been finished. By calling the
+\method{do}-methods yourself you can also alter the order in which the
+graph components are plotted. Multiple calls to any of the
 \method{do}-methods have no effect (only the first call counts). The
 orginal order in which the \method{do}-methods are called is:
 
@@ -264,13 +284,14 @@ The graph provides some methods to access its geometry:
 
 Further geometry information is available by the \member{axespos}
 instance variable. Shortcuts to the \class{axispos} methods for the
-\code{x} and \code{y} axis become available after \method{dolayout()}
+\code{x}- and \code{y}-axis become available after \method{dolayout()}
 as \class{graphxy} methods \code{Xbasepath}, \code{Xvbasepath},
 \code{Xgridpath}, \code{Xvgridpath}, \code{Xtickpoint},
 \code{Xvtickpoint}, \code{Xtickdirection}, and \code{Xvtickdirection}
 where the prefix \code{X} stands for \code{x} and \code{y}.
 
-\section{Data\label{graph:data}}
+\section{Module \code{graph/data}: Data}
+\label{graph:data}
 
 \declaremodule{}{graph.data}
 \modulesynopsis{Graph data}
@@ -293,8 +314,10 @@ graph. The classes are implemented in \module{graph.data}.
   line of the file. Lines matching \var{commentpattern} are ignored
   except for the column name search of the last non-emtpy comment line
   before the data. By default a line starting with one of the
-  characters \character{\#}, \character{\%}, or \character{!} is
-  treated as comment. A line is analysed by repeatedly matching
+  characters \character{\#}, \character{\%}, or \character{!} as well
+  as an empty line is treated as a comment.
+
+  A non-comment line is analysed by repeatedly matching
   \var{stringpattern} and, whenever the stringpattern does not match,
   by \var{columnpattern}. When the \var{stringpattern} matches, the
   result is taken as the value for the next column without further
@@ -305,7 +328,7 @@ graph. The classes are implemented in \module{graph.data}.
   spaces or begin/end of line in the data file. Otherwise
   \character{\textquotedbl} is not taken to be special.
 
-  \var{skiphead} and \var{skipfoot} are numbers of data lines to be
+  \var{skiphead} and \var{skiptail} are numbers of data lines to be
   ignored at the beginning and end of the file while \var{every}
   selects only every \var{every} line from the data.
 
@@ -322,25 +345,33 @@ graph. The classes are implemented in \module{graph.data}.
 
   Finally, \var{columns} defines the data columns. To make it a bit
   more complicated, there are file column names and new created data
-  column names, namely the keywords of \var{**columns}. File column
-  names occur when the data file contains a comment line immediately
-  in front of the data. This line will be parsed skipping the comment
-  character (even if it occurs multiple times) as if it would be
-  regular data, but it will not be converted to floats even if it
-  would be possible to convert them. The values of \var{**columns} can
-  refer to column numbers in the file (starting with \code{1}). The
-  column \code{0} is also available and contains the line number
-  starting from \code{1} not counting comment lines. Furthermore
-  values of \var{**columns} can be strings: file column names or
-  mathematical expressions. To refer to columns within mathematical
-  expressions you can also use file column names when they are valid
-  variable names or by the syntax \code{\$\textless
-  number\textgreater} or even \code{\$(\textless
-  expression\textgreater)}, where \code{\textless number\textgreater}
-  is a non-negative integer and \code{\textless
-  expression\textgreater} a valid mathematical expression itself. For
-  the latter, negative numbers count the columns from the end.
-  Example:
+  column names, namely the keys of the dictionary \var{**columns}.
+  Only the later, the data column names, are valid identifiers for the
+  data columns at later usage (by the graph styles).
+
+  File column names occur when the data file contains a comment line
+  immediately in front of the data (except for empty or empty comment
+  lines). This line will be parsed skipping the matched comment
+  identifier as if the line would be regular data, but it will not be
+  converted to floats even if it would be possible to convert the
+  items. The result is taken as file column names, \emph{i.e.} a
+  string representation for the columns in the file.
+
+  The values of \var{**columns} can refer to column numbers in the
+  file starting at \code{1}. The column \code{0} is also available
+  and contains the line number starting from \code{1} not counting
+  comment lines, but lines skiped by \var{skiphead}, \var{skiptail},
+  and \var{every}. Furthermore values of \var{**columns} can be
+  strings: file column names or complex mathematical expressions. To
+  refer to columns within mathematical expressions you can also use
+  file column names when they are valid variable names or by the
+  syntax \code{\$\textless number\textgreater} or even
+  \code{\$(\textless expression\textgreater)}, where \code{\textless
+  number\textgreater} is a non-negative integer and \code{\textless
+  expression\textgreater} a valid mathematical expression itself. In
+  those mathematical expressions the \var{context} is available, but
+  data from other columns are not. Negative numbers count the columns
+  from the end. Example:
   \begin{verbatim}
 graph.data.file("test.dat", a=1, b="B", c="2*B+$3")
   \end{verbatim}
@@ -434,32 +465,19 @@ For the sake of completeness we list the default patterns:
   may use \code{context=locals()} or something similar.
 \end{classdesc}
 
-\begin{classdesc}{list}{points, title="user provided list",
-                        maxcolumns=None, addlinenumbers=1, **columns}
+\begin{classdesc}{list}{data, title="user provided list",
+                        addlinenumbers=1, **columns}
   This class creates graph data from externally provided data.
-  \var{points} is a list of lines, where each line is a list of data
+  \var{data} is a list of lines, where each line is a list of data
   values for the columns.
 
   \var{title} is the title of the data to be used in the graph key.
 
-  \var{maxcolumn} is the number of columns in the points list. If set
-  to \code{None}, the number of columns will be calculated by cycling
-  through the points. Each element of \var{points}, \emph{i.e.} each
-  line, will be checked and adjusted to the number of columns.
-
-  \var{addlinenumbers} is a boolean indicating whether line numbers
-  should be added or not. Note that the line numbers are stored in
-  column \code{0}. A transformation (see \class{data} below) will
-  always keep the first column. When not adding line numbers, you
-  should be aware, that the numbering in \var{**columns} becomes
-  different from the usual case, where the first column containing
-  data (not the line number) has column number \code{1}.
-
   The keywords of \var{**columns} become the data column names. The
   values are the column numbers starting from one, when
-  \var{addlinenumbers} is turned on (the zeroth column is the line
-  number then), while the column numbers starts from zero, when
-  \var{addlinenumbers} is switched off.
+  \var{addlinenumbers} is turned on (the zeroth column is added to
+  contain a line number in that case), while the column numbers starts
+  from zero, when \var{addlinenumbers} is switched off.
 \end{classdesc}
 
 \begin{classdesc}{data}{data, title=notitle, parser=dataparser(),
@@ -469,14 +487,11 @@ For the sake of completeness we list the default patterns:
   called parameters in \class{graph.data.file}. Indeed, the latter is
   built on top of this class by reading the file and caching its
   contents in a \class{graph.data.list} instance. The columns are then
-  selected by creating new data out of the existing data. Note that
-  the data themselves are not copied as long as no new columns need to be
-  calculated.
+  selected by creating new data out of the existing data.
 \end{classdesc}
 
-\begin{classdesc}{conffile}{filename, title=notitle,
-                            parser=dataparser(), context={},
-                            **columns}
+\begin{classdesc}{conffile}{filename, title=notitle, parser=dataparser(),
+                            context={}, **columns}
   This class reads data from a config file with the file name
   \var{filename}. The format of a config file is described within the
   documentation of the \module{ConfigParser} module of the Python
@@ -489,7 +504,8 @@ For the sake of completeness we list the default patterns:
   the same code.
 \end{classdesc}
 
-\section{Styles\label{graph:style}}
+\section{Module \code{graph/style}: Styles}
+\label{graph:style}
 
 \declaremodule{}{graph.style}
 \modulesynopsis{Graph style}
@@ -714,7 +730,8 @@ defined as:
   both possibilities, you may use nested changeable styles.
 \end{classdesc}
 
-\section{Keys\label{graph:key}}
+\section{Module \code{graph/key}: Keys}
+\label{graph:key}
 
 \declaremodule{}{graph.key}
 \modulesynopsis{Graph keys}
