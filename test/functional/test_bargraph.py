@@ -20,9 +20,9 @@ def test_bar3(c, x, y):
             graph.data.file("data/testdata2", xname=1, y=3, title=None)], [graph.style.bar()])
 
 def test_bar4(c, x, y):
-    g = c.insert(graph.graphxy(x, y, height=5, width=12, x=graph.axis.nestedbar(graph.axis.bar(dist=0)), key=graph.key.key()))
+    g = c.insert(graph.graphxy(x, y, height=5, width=12, x=graph.axis.nestedbar(graph.axis.bar(dist=0, painter=graph.axis.painter.bar(basepathattrs=None))), key=graph.key.key()))
     g.plot([graph.data.file("data/testdata2", xname=0, y=2, ystack1=3, title="test"),
-            graph.data.file("data/testdata2", xname=0, y="$2-1", ystack1=3)],
+            graph.data.file("data/testdata2", xname=0, y="$2-1", ystack1=3, every=2)],
            [graph.style.bar(), graph.style.stackedbarpos("ystack1"), graph.style.bar([color.palette.ReverseRainbow])])
 
 c = canvas.canvas()

@@ -405,8 +405,8 @@ class bar(_title):
             p = axispos.vbasepath()
             if p is not None:
                 canvas.stroke(p, self.defaultbasepathattrs + self.basepathattrs)
-        if self.tickattrs is not None and (self.innerticklength is not None or
-                                           self.outerticklength is not None):
+        if ( self.tickattrs is not None and data.subaxes and
+             (self.innerticklength is not None or self.outerticklength is not None) ):
             if self.innerticklength is not None:
                 innerticklength_pt = unit.topt(self.innerticklength)
                 if canvas.extent_pt < -innerticklength_pt:
@@ -419,19 +419,14 @@ class bar(_title):
                     canvas.extent_pt = outerticklength_pt
             elif innerticklength_pt is not None:
                 outerticklength_pt = 0
-            #for pos in axis.relsizes:
-            #    if pos == axis.relsizes[0]:
-            #        pos -= axis.firstdist
-            #    elif pos != axis.relsizes[-1]:
-            #        pos -= 0.5 * axis.dist
-            #    v = pos / axis.relsizes[-1]
-            #    x, y = axispos.vtickpoint_pt(v)
-            #    dx, dy = axispos.vtickdirection(v)
-            #    x1 = x + dx * innerticklength_pt
-            #    y1 = y + dy * innerticklength_pt
-            #    x2 = x - dx * outerticklength_pt
-            #    y2 = y - dy * outerticklength_pt
-            #    canvas.stroke(path.line_pt(x1, y1, x2, y2), self.defaulttickattrs + self.tickattrs)
+            for v in [subaxis.vminover for subaxis in data.subaxes.values()] + [1]:
+                x, y = axispos.vtickpoint_pt(v)
+                dx, dy = axispos.vtickdirection(v)
+                x1 = x + dx * innerticklength_pt
+                y1 = y + dy * innerticklength_pt
+                x2 = x - dx * outerticklength_pt
+                y2 = y - dy * outerticklength_pt
+                canvas.stroke(path.line_pt(x1, y1, x2, y2), self.defaulttickattrs + self.tickattrs)
         for (v, x, y, dx, dy), namebox in zip(namepos, nameboxes):
             newextent_pt = namebox.extent_pt(dx, dy) + labeldist_pt
             if canvas.extent_pt < newextent_pt:

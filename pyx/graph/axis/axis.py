@@ -464,7 +464,7 @@ class bar(_axis):
         return axis.vmin + axis.convert(self.subvalue(value)) * (axis.vmax - axis.vmin)
 
     def create(self, data, positioner, graphtexrunner=None):
-        vminover = 0
+        v = 0
         position = self.firstdist
         for name in data.names:
             subaxis = data.subaxes[name]
@@ -472,13 +472,14 @@ class bar(_axis):
             position += subaxis.data.max - subaxis.data.min
             subaxis.vmax = position / float(data.size)
             position += 0.5*self.dist
+            subaxis.vminover = v
             if name == data.names[-1]:
-                vmaxover = 1
+                subaxis.vmaxover = 1
             else:
-                vmaxover = position / float(data.size)
-            subaxis.setpositioner(subaxispos(positioner, subaxis.vmin, subaxis.vmax, vminover, vmaxover))
+                subaxis.vmaxover = position / float(data.size)
+            subaxis.setpositioner(subaxispos(positioner, subaxis.vmin, subaxis.vmax, subaxis.vminover, subaxis.vmaxover))
             position += 0.5*self.dist
-            vminover = vmaxover
+            v = subaxis.vmaxover
         canvas = painter.axiscanvas(self.painter, graphtexrunner)
         if self.painter:
             self.painter.paint(canvas, data, self, positioner)
