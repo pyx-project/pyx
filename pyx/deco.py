@@ -583,7 +583,7 @@ class smoothed(deco, attr.attr):
     - Path elements that are too short (shorter than the radius) are skipped
     """
 
-    def __init__(self, radius=None, softness=1, strict=0):
+    def __init__(self, radius, softness=1, strict=0):
         self.radius = unit.length(radius, default_type="v")
         self.softness = softness
         self.strict = strict
