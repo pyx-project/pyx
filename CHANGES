@@ -104,6 +104,7 @@ TODO:
     - support for initialisation with other length removed
   - text module:
     - postpone reading of fontmap files until TeX/LaTeX is started
+    - sign of font number in dvifile (reported by Michael Gruber)
   - canvas module:
     - added new classes page and document for multipage PostScript output
   - style module:
