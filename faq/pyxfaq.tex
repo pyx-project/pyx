@@ -11,6 +11,7 @@
                        <gert.ingold@physik.uni-augsburg.de>}%
             ,colorlinks=true%
             ,linkcolor=blue}
+\def\pyxversion{\input{pyxversion}}
 \begin{document}
 \RCS $Id$
 \RCS $Revision$
@@ -19,10 +20,9 @@
 \begin{center}
 \LARGE\sffamily Some frequently and\\ 
 not so frequently asked questions\\ 
-about \PyX\footnote{This version of the FAQ is intended for use with \PyX\ 
-versions 0.6.1 -- 0.6.3.}\\
+about \PyX
 \par
-{\small\sffamily (version \RCSRevision\ of \RCSDate)}\\[1truecm]
+{\small\sffamily (version \pyxversion)}\\[1truecm]
 \large
 Gert-Ludwig Ingold \par
 \href{mailto:gert.ingold@physik.uni-augsburg.de}{\url{<gert.ingold@physik.uni-augsburg.de>}}
@@ -385,8 +385,7 @@ x, y = g.pos(px, py)
 By default, the problem coordinates will refer to the ranges of the $x$ and $y$
 axes. If several axes with different ranges exist, the
 instances of the desired axes should be passed to the \texttt{pos} method by 
-means of the keyword arguments \texttt{xaxis} and \texttt{yaxis}, e.g. as
-\texttt{g.pos(px,py,xaxis=x2)}.
+means of the keyword arguments \texttt{xaxis} and \texttt{yaxis}.
 
 We remark that the drawing of lines parallel to one of the axes at specific
 problem coordinates can also be done by adapting the method described in
