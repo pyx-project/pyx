@@ -187,18 +187,11 @@ class canvas:
 	self.PSAddCmd("EndEPSF")
 
 
-    def PSUpdatePosition(self):
-        if self.PSPositionCorrect == 0:		# actual PS position doesn't coincide with our x,y
-	    self.PSAddCmd("%f %f moveto" % self.u2p((self.x,self.y)))
-	    self.PSPositionCorrect = 1
-
     def stroke(self):
     	self.PSAddCmd("stroke")
-	self.PSPositionCorrect = 0		# in fact, current point is undefined after stroke
 	
     def newpath(self):
     	self.PSAddCmd("newpath")
-	self.PSPositionCorrect = 0		# in fact, current point is undefined after newpath
 	
     def closepath(self):
     	self.PSAddCmd("closepath")
@@ -245,7 +238,6 @@ if __name__=="__main__":
     from tex import *
     from path import *
     t=tex(c)
-    #t.c=c
 
     #for x in range(11):
     #    amove(x,0)
@@ -261,7 +253,6 @@ if __name__=="__main__":
 		)
           )
     c.draw(line(1, 1, 1,2)) 
-
 
     print "Breite von 'Hello world!': ",t.textwd("Hello  world!")
     print "Höhe von 'Hello world!': ",t.textht("Hello world!")
@@ -282,24 +273,20 @@ if __name__=="__main__":
    
     c.stroke()
     c.setlinestyle(linestyle_dotted)
-#    c.amove(5,12)
     t.text(5, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize = 2)
-    c.draw(path ([moveto(5,12), lineto (7,12), moveto(5,10), lineto(5,14), moveto(7,10), lineto(7,14)]))
-#    c.aline(7,12)
-#    c.amove(5,10)
-#    c.aline(5,14)
-#    c.amove(7,10)
-#    c.aline(7,14)
+    c.draw(path ([ moveto(5,12), 
+                   lineto (7,12), 
+		   moveto(5,10), 
+		   lineto(5,14), 
+		   moveto(7,10), 
+		   lineto(7,14)]))
 
-#    c.stroke()
     c.setlinestyle(linestyle_dashdotted)
     t.text(10, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize = 2, valign = bottom)
-    c.draw(path([moveto(10,12),lineto(12,12),moveto(10,10),lineto(10,14),moveto(12,10),lineto(12,14)]))
-#    c.amove(10,12)
-#    c.aline(12,12)
-#    c.amove(10,10)
-#    c.aline(10,14)
-#    c.amove(12,10)
-#    c.aline(12,14)
+    c.draw(path ([ moveto(10,12),
+                   lineto(12,12),
+		   moveto(10,10),
+		   lineto(10,14),
+		   moveto(12,10),
+		   lineto(12,14)]))
     t.TexRun()
-
