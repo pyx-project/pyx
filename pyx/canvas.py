@@ -46,6 +46,8 @@ import path
 
 # PostScript-procedure definitions
 # cf. file: 5002.EPSF_Spec_v3.0.pdf     
+# with important correction in EndEPSF: 
+#   end operator is missing in the spec!
 
 _PSProlog = """/BeginEPSF {
   /b4_Inc_state save def
@@ -64,7 +66,8 @@ _PSProlog = """/BeginEPSF {
   } if
 } bind def
 /EndEPSF {
-  count op_count sub {pop} repeat % Clean up stacks
+  end
+  count op_count sub {pop} repeat 
   countdictstack dict_count sub {end} repeat
   b4_Inc_state restore
 } bind def"""
