@@ -677,12 +677,13 @@ class arct_pt(pathitem):
         self.y2_pt = y2_pt
         self.r_pt = r_pt
 
-    def _path(self, context):
-        """returns the path consisting of arc and/or line which corresponds
-        to arct
+    def _pathitem(self, context):
+        """return pathitem which corresponds to arct in the given context.
 
-        this is a helper routine for _bbox and _normalized, which both need
-        this path. Note: we don't want to calculate the bbox from a bpath
+        The return value is either a arc_pt, a arcn_pt or a line_pt instance.
+
+        This is a helper routine for _updatecontext, _bbox and _normalized,
+        which will all deligate the work to the constructed pathitem.
         """
 
         # direction and length of tangent 1
@@ -707,7 +708,7 @@ class arct_pt(pathitem):
             xt2_pt = self.x1_pt + dx2_pt*self.r_pt*cotalpha2/l2
             yt2_pt = self.y1_pt + dy2_pt*self.r_pt*cotalpha2/l2
 
-            # direction of center of arc 
+            # direction of center of arc
             rx_pt = self.x1_pt - 0.5*(xt1_pt+xt2_pt)
             ry_pt = self.y1_pt - 0.5*(yt1_pt+yt2_pt)
             lr = math.hypot(rx_pt, ry_pt)
@@ -716,39 +717,32 @@ class arct_pt(pathitem):
             if rx_pt >= 0:
                 phi = degrees(math.atan2(ry_pt, rx_pt))
             else:
-                # XXX why is rx_pt/ry_pt and not ry_pt/rx_pt used??? 
+                # XXX why is rx_pt/ry_pt and not ry_pt/rx_pt used???
                 phi = degrees(math.atan(rx_pt/ry_pt))+180
 
-            # half angular width of arc 
+            # half angular width of arc
             deltaphi = 90*(1-alpha/pi)
 
             # center position of arc
             mx_pt = self.x1_pt - rx_pt*self.r_pt/(lr*sin(alpha/2))
             my_pt = self.y1_pt - ry_pt*self.r_pt/(lr*sin(alpha/2))
 
-            # now we are in the position to construct the path
-            p = path(moveto_pt(context.x_pt, context.y_pt))
-
             if phi<0:
-                p.append(arc_pt(mx_pt, my_pt, self.r_pt, phi-deltaphi, phi+deltaphi))
+                return arc_pt(mx_pt, my_pt, self.r_pt, phi-deltaphi, phi+deltaphi)
             else:
-                p.append(arcn_pt(mx_pt, my_pt, self.r_pt, phi+deltaphi, phi-deltaphi))
-
-            return p
+                return arcn_pt(mx_pt, my_pt, self.r_pt, phi+deltaphi, phi-deltaphi)
 
         else:
-            # we need no arc, so just return a straight line from context to x1_pt, y1_pt
-            return line_pt(context.x_pt, context.y_pt, self.x1_pt, self.y1_pt)
+            return lineto_pt(self.x1_pt, self.y1_pt)
 
     def _updatecontext(self, context):
-        self._path(context)[-1]._updatecontext(context)
+        self._pathitem(context)._updatecontext(context)
 
     def _bbox(self, context):
-        return self._path(context).bbox()
+        return self._pathitem(context).bbox()
 
     def _normalized(self, context):
-        # XXX TODO NOTE
-        return self._path(context).normpath().normsubpaths[0].normsubpathitems
+        return self._pathitem(context)._normalized(context)
 
     def outputPS(self, file):
         file.write("%g %g %g %g %g arct\n" % ( self.x1_pt, self.y1_pt,
