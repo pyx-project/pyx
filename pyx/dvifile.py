@@ -789,7 +789,7 @@ class dvifile:
             self.actpage.insert(self.activeshow)
             self.activeshow = None
 
-    def putrule(self, height, width, inch=1):
+    def putrule(self, height, width, advancepos=1):
         self.flushout()
         x1 =  self.pos[_POS_H] * self.conv
         y1 = -self.pos[_POS_V] * self.conv
@@ -804,26 +804,26 @@ class dvifile:
                 if pixelh < height*self.conv: pixelh += 1
 
                 print ("%d: %srule height %d, width %d (%dx%d pixels)" %
-                       (self.filepos, inch and "set" or "put", height, width, pixelh, pixelw))
+                       (self.filepos, advancepos and "set" or "put", height, width, pixelh, pixelw))
             self.actpage.fill(path.rect_pt(x1, y1, w, h))
         else:
             if self.debug:
                 print ("%d: %srule height %d, width %d (invisible)" %
-                       (self.filepos, inch and "set" or "put", height, width))
+                       (self.filepos, advancepos and "set" or "put", height, width))
 
-        if inch:
+        if advancepos:
             if self.debug:
                 print (" h:=%d+%d=%d, hh:=%d" %
                    (self.pos[_POS_H], width, self.pos[_POS_H]+width, 0))
             self.pos[_POS_H] += width
 
-    def putchar(self, char, inch=1):
-        dx = inch and int(round(self.activefont.getwidth(char)*self.tfmconv)) or 0
+    def putchar(self, char, advancepos=1):
+        dx = advancepos and int(round(self.activefont.getwidth(char)*self.tfmconv)) or 0
 
         if self.debug:
             print ("%d: %schar%d h:=%d+%d=%d, hh:=%d" %
                    (self.filepos,
-                    inch and "set" or "put",
+                    advancepos and "set" or "put",
                     char,
                     self.pos[_POS_H], dx, self.pos[_POS_H]+dx,
                     0))
@@ -846,7 +846,7 @@ class dvifile:
                                  self.activefont.getsize())
 
 
-        if not inch:
+        if not advancepos:
             # XXX: correct !?
             self.flushout()
 
@@ -1118,7 +1118,7 @@ class dvifile:
             elif cmd == _DVI_SETRULE:
                 self.putrule(afile.readint32(), afile.readint32())
             elif cmd >= _DVI_PUT1234 and cmd < _DVI_PUT1234 + 4:
-                self.putchar(afile.readint(cmd - _DVI_PUT1234 + 1), inch=0)
+                self.putchar(afile.readint(cmd - _DVI_PUT1234 + 1), advancepos=0)
             elif cmd == _DVI_PUTRULE:
                 self.putrule(afile.readint32(), afile.readint32(), 0)
             elif cmd == _DVI_EOP:
