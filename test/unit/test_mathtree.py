@@ -127,6 +127,18 @@ class MathTreeTestCase(unittest.TestCase):
             'pi'),
         MathTreeValConst(
             2.0)))"""
+        assert repr(myparser.parse("a+b*sin(c)**d")) == """MathTreeOpAdd(
+    MathTreeValVar(
+        'a'),
+    MathTreeOpMul(
+        MathTreeValVar(
+            'b'),
+        MathTreeOpPow(
+            MathTreeFunc1Sin(
+                MathTreeValVar(
+                    'c')),
+            MathTreeValVar(
+                'd'))))"""
         assert repr(myparser.parse("norm(a,b)")) == """MathTreeFunc2Norm(
     MathTreeValVar(
         'a'),
