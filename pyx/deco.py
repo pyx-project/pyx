@@ -181,7 +181,7 @@ class decoratedpath(base.PSCmd):
             _writestyles(self.styles)
 
         if self.fillpath is not None:
-            canvas._newpath().outputPDF(file)
+            # canvas._newpath().outputPDF(file)
             self.fillpath.outputPDF(file)
 
             if self.strokepath==self.fillpath:
@@ -215,7 +215,7 @@ class decoratedpath(base.PSCmd):
                 canvas._gsave().outputPDF(file)
                 _writestrokestyles(self.strokestyles)
 
-            canvas._newpath().outputPDF(file)
+            # canvas._newpath().outputPDF(file)
             self.strokepath.outputPDF(file)
             canvas._stroke().outputPDF(file)
 

@@ -75,7 +75,7 @@ class clip(base.PSCmd):
         _clip().outputPS(file)
 
     def outputPDF(self, file):
-        _newpath().outputPDF(file)
+        # _newpath().outputPDF(file)
         self.path.outputPDF(file)
         _clip().outputPDF(file)
 

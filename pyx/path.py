@@ -219,9 +219,8 @@ class pathel(base.PSOp):
 
         context: context of pathel
 
-        returns list consisting of corresponding normalized pathels
-        normline and normcurve as well as the two pathels moveto_pt and
-        closepath
+        Returns the path converted into a list of closepath, moveto_pt,
+        normline, or normcurve instances.
 
         """
 
@@ -438,8 +437,6 @@ class rlineto_pt(pathel):
     def outputPS(self, file):
         file.write("%g %g rlineto\n" % (self.dx, self.dy) )
 
-    # TODO: outputPDF
-
 
 class rcurveto_pt(pathel):
 
@@ -604,8 +601,7 @@ class arc_pt(pathel):
         if context.currentpoint:
             return [normline(context.currentpoint[0], context.currentpoint[1], sarcx, sarcy)] + nbarc
         else:
-            return nbarc
-
+            return [moveto_pt(sarcx, sarcy)] + nbarc
 
     def outputPS(self, file):
         file.write("%g %g %g %g %g arc\n" % ( self.x, self.y,
@@ -1149,8 +1145,7 @@ class path(base.PSCmd):
                 isinstance(self.path[0], arcn_pt)):
             raise PathException("first path element must be either moveto, arc, or arcn")
         # PDF practically only supports normpathels
-        normpath(self).outputPDF(file)
-        return
+        # return normpath(self).outputPDF(file)
         context = _pathcontext()
         for pel in self.path:
             for npel in pel._normalized(context):
@@ -2207,7 +2202,7 @@ class normpath(path):
         A length greater than the total arclength will give self.range()"""
 
         rests = [unit.topt(length) for length in helper.ensuresequence(lengths)]
-        allparams = [0] * len(lengths)
+        allparams = [0] * len(helper.ensuresequence(lengths))
 
         for sp in self.subpaths:
             # we need arclen for knowing when all the parameters are done
