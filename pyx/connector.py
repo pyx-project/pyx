@@ -46,13 +46,13 @@ class connector_pt(path.normpath):
         sp = self.intersect(box1.path())[0]
         sp.sort()
         if sp:
-            self.subpaths = self.split(sp[-1:])[1].subpaths
+            self.normsubpaths = self.split(sp[-1:])[1].normsubpaths
 
         # cut off the end of self
         sp = self.intersect(box2.path())[0]
         sp.sort()
         if sp:
-            self.subpaths = self.split(sp[:1])[0].subpaths
+            self.normsubpaths = self.split(sp[:1])[0].normsubpaths
 
     def shortenpath(self, dists):
         """shorten a path by the given distances"""
@@ -63,14 +63,14 @@ class connector_pt(path.normpath):
         sp = self.intersect(path.circle_pt(center[0], center[1], dists[0]))[0]
         sp.sort()
         if sp:
-            self.subpaths = self.split(sp[-1:])[1].subpaths
+            self.normsubpaths = self.split(sp[-1:])[1].normsubpaths
 
         # cut off the end of self
         center = (unit.topt(self.end()[0]), unit.topt(self.end()[1]))
         sp = self.intersect(path.circle_pt(center[0], center[1], dists[1]))[0]
         sp.sort()
         if sp:
-            self.subpaths = self.split(sp[:1])[0].subpaths
+            self.normsubpaths = self.split(sp[:1])[0].normsubpaths
 
 
 ################
@@ -144,13 +144,13 @@ class arc_pt(connector_pt):
         # draw the arc in positive direction by default
         # negative direction if relangle<0 or bulge<0
         if (relangle is not None and relangle < 0) or (bulge is not None and bulge < 0):
-            connector_pt.__init__(self,
-                path.path(path.moveto_pt(*self.box1.center),
-                          path.arcn_pt(center[0], center[1], radius, degrees(angle1), degrees(angle2))))
+            connectorpath = path.path(path.moveto_pt(*self.box1.center),
+                                      path.arcn_pt(center[0], center[1], radius, degrees(angle1), degrees(angle2)))
+            connector_pt.__init__(self, connectorpath.normpath().normsubpaths)
         else:
-            connector_pt.__init__(self,
-                path.path(path.moveto_pt(*self.box1.center),
-                          path.arc_pt(center[0], center[1], radius, degrees(angle1), degrees(angle2))))
+            connectorpath = path.path(path.moveto_pt(*self.box1.center),
+                                      path.arc_pt(center[0], center[1], radius, degrees(angle1), degrees(angle2)))
+            connector_pt.__init__(self, connectorpath.normpath().normsubpaths)
 
         self.omitends(box1, box2)
         self.shortenpath(boxdists)
@@ -303,10 +303,10 @@ class twolines_pt(connector_pt):
             else:
                 raise NotImplementedError, "I found a strange combination of arguments"
 
-        connector_pt.__init__(self,
-            path.path(path.moveto_pt(*self.box1.center),
-                      path.lineto_pt(*middle),
-                      path.lineto_pt(*self.box2.center)))
+        connectorpath = path.path(path.moveto_pt(*self.box1.center),
+                                  path.lineto_pt(*middle),
+                                  path.lineto_pt(*self.box2.center))
+        connector_pt.__init__(self, connectorpath.normpath().normsubpaths)
 
         self.omitends(box1, box2)
         self.shortenpath(boxdists)
@@ -357,10 +357,10 @@ class curve(curve_pt):
                        unit.topt(helper.getitemno(boxdists, 1)))
 
         curve_pt.__init__(self, box1, box2,
-                        relangle1=relangle1, relangle2=relangle2,
-                        absangle1=absangle1, absangle2=absangle2,
-                        absbulge=unit.topt(absbulge), relbulge=relbulge,
-                        boxdists=boxdists_pt)
+                          relangle1=relangle1, relangle2=relangle2,
+                          absangle1=absangle1, absangle2=absangle2,
+                          absbulge=unit.topt(absbulge), relbulge=relbulge,
+                          boxdists=boxdists_pt)
 
 class arc(arc_pt):
 
@@ -379,9 +379,9 @@ class arc(arc_pt):
         if absbulge is not None:
             absbulge = unit.topt(absbulge)
         arc_pt.__init__(self, box1, box2,
-                      relangle=relangle,
-                      absbulge=absbulge, relbulge=relbulge,
-                      boxdists=boxdists_pt)
+                        relangle=relangle,
+                        absbulge=absbulge, relbulge=relbulge,
+                        boxdists=boxdists_pt)
 
 
 class twolines(twolines_pt):
@@ -412,13 +412,13 @@ class twolines(twolines_pt):
         if arcradius is not None:
             arcradius = unit.topt(arcradius)
         twolines_pt.__init__(self, box1, box2,
-                       absangle1=absangle1, absangle2=absangle2,
-                       relangle1=relangle1, relangle2=relangle2,
-                       relangleM=relangleM,
-                       length1=length1, length2=length2,
-                       bezierradius=bezierradius, beziersoftness=1,
-                       arcradius=arcradius,
-                       boxdists=boxdists_pt)
+                             absangle1=absangle1, absangle2=absangle2,
+                             relangle1=relangle1, relangle2=relangle2,
+                             relangleM=relangleM,
+                             length1=length1, length2=length2,
+                             bezierradius=bezierradius, beziersoftness=1,
+                             arcradius=arcradius,
+                             boxdists=boxdists_pt)
 
 
 
