@@ -103,14 +103,19 @@ class _texmessagestart(texmessage):
     startpattern = re.compile(r"This is [-0-9a-zA-Z\s_]*TeX")
 
     def check(self, texrunner):
+        # check for "This is e-TeX"
         m = self.startpattern.search(texrunner.texmessageparsed)
         if not m:
             raise TexResultError("TeX startup failed", texrunner)
         texrunner.texmessageparsed = texrunner.texmessageparsed[m.end():]
+
+        # check for filename to be processed
         try:
             texrunner.texmessageparsed = texrunner.texmessageparsed.split("%s.tex" % texrunner.texfilename, 1)[1]
         except (IndexError, ValueError):
             raise TexResultError("TeX running startup file failed", texrunner)
+
+        # check for \raiseerror -- just to be sure that communication works
         try:
             texrunner.texmessageparsed = texrunner.texmessageparsed.split("*! Undefined control sequence.\n<*> \\raiseerror\n               %\n", 1)[1]
         except (IndexError, ValueError):
@@ -177,6 +182,20 @@ class _texmessagepyxpageout(texmessage):
             raise TexResultError("PyXPageOutMarker expected", texrunner)
 
 
+class _texmessagefontsubstitution(texmessage):
+    """validates the font substituion Warning"""
+
+    __implements__ = _Itexmessage
+
+    pattern = re.compile("LaTeX Font Warning: Font shape (?P<font>.*) in size <(?P<orig>.*)> not available\s*\(Font\)(.*) size <(?P<subst>.*)> substituted on input line (?P<line>.*)\.")
+
+    def check(self, texrunner):
+        m = self.pattern.search(texrunner.texmessageparsed)
+        if m:
+            texrunner.texmessageparsed = texrunner.texmessageparsed[:m.start()] + texrunner.texmessageparsed[m.end():]
+            raise TexResultWarning("LaTeX Font Warning on input line %s" % (m.group('line')), texrunner)
+
+
 class _texmessagetexend(texmessage):
     """validates TeX/LaTeX finish"""
 
@@ -194,11 +213,22 @@ class _texmessagetexend(texmessage):
                 texrunner.texmessageparsed = s1 + s2
             except (IndexError, ValueError):
                 pass
+
+        # pass font size summary over to PyX user
+        fontpattern = re.compile(r"LaTeX Font Warning: Size substitutions with differences\s*\(Font\).* have occurred.\s*")
+        m = fontpattern.search(texrunner.texmessageparsed)
+        if m:
+            sys.stderr.write("LaTeX has detected Font Size substituion differences.\n")
+            texrunner.texmessageparsed = texrunner.texmessageparsed[:m.start()] + texrunner.texmessageparsed[m.end():]
+
+        # check for "(see the transcript file for additional information)"
         try:
             s1, s2 = texrunner.texmessageparsed.split("(see the transcript file for additional information)", 1)
             texrunner.texmessageparsed = s1 + s2
         except (IndexError, ValueError):
             pass
+
+        # check for "Output written on ...dvi (1 page, 220 bytes)."
         dvipattern = re.compile(r"Output written on %s\.dvi \((?P<page>\d+) pages?, \d+ bytes\)\." % texrunner.texfilename)
         m = dvipattern.search(texrunner.texmessageparsed)
         if texrunner.page:
@@ -213,6 +243,8 @@ class _texmessagetexend(texmessage):
                 texrunner.texmessageparsed = s1 + s2
             except (IndexError, ValueError):
                 raise TexResultError("no dvifile expected", texrunner)
+
+        # check for "Transcript written on ...log."
         try:
             s1, s2 = texrunner.texmessageparsed.split("Transcript written on %s.log." % texrunner.texfilename, 1)
             texrunner.texmessageparsed = s1 + s2
@@ -340,6 +372,7 @@ texmessage.loadfd = _texmessageloadfd()
 texmessage.graphicsload = _texmessagegraphicsload()
 texmessage.ignore = _texmessageignore()
 texmessage.warning = _texmessagewarning()
+texmessage.fontsubstitution = _texmessagefontsubstitution()
 
 
 ###############################################################################
