@@ -219,11 +219,9 @@ class bpath:
     def __len__(self):
         return len(self.bpath)
 
-    def __getitem__(self, t):
-        ' return path at parameter value t '
-        
-#        return self.bpath[int(t)][t-math.floor(t)]
-        return self.bpath[t]
+    def __getitem__(self, i):
+        """return bpathel nr i"""
+        return self.bpath[i]
 
     def __str__(self):
         return reduce(lambda x,y: x+"%s\n" % str(y), self.bpath, "")
@@ -254,7 +252,9 @@ class bpath:
 
     def split(self, t):
         """return bpath splitted at parameter value t (0<=t<=len(self))"""
-        return self.bpath[int(t)].split(t-math.floor(t))
+        bpel1, bpel2  = self.bpath[int(t)].split(t-math.floor(t))
+        return ( bpath(self.bpath[:int(t)]+[bpel1]), 
+                 bpath([bpel2]+self.bpath[int(t)+1:]) )
 
     def MidPointSplit(self):
         result = []

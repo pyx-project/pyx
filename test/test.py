@@ -212,7 +212,7 @@ def testintersectbezier(c):
 
 
 def testbpathtrafo(c):
-    p=path([moveto(10,20), curveto(12,16,14,15,12,19)])
+    p=path([moveto(10,20), curveto(12,16,14,15,12,19), rcurveto(-3,2,1,2,3,6), rlineto(2,3)])
     bp=p.bpath()
 
     c.draw(bp.transform(trafo.translate(2,3)), color.rgb.red)
@@ -224,7 +224,7 @@ def testbpathtrafo(c):
     c.draw(cross(*(bp.pos(0))))
     c.draw(cross(*(bp.reverse().pos(0))))
 
-    bp1, bp2 = bp.split(0.7)
+    bp1, bp2 = bp.split(1.7)
     c.draw(bp1, color.rgb.red, canvas.linestyle.dashed)
     c.draw(bp2, color.rgb.green, canvas.linestyle.dashed)
 
