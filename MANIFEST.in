@@ -9,6 +9,7 @@ recursive-include contrib *
 recursive-include pyx *.h
 recursive-include pyx/lfs *.lfs *.py *.tex
 recursive-include examples *.py
+recursive-include examples *.dat
 
 prune test
 exclude pyx/axis.py
