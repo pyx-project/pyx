@@ -10,8 +10,8 @@ from pyx.graph.axis.tick import rational
 
 class RationalTestCase(unittest.TestCase):
 
-    def RationalEqual(self, enum, denom, r):
-        self.failUnlessEqual(enum*r.denom, r.enum*denom)
+    def RationalEqual(self, num, denom, r):
+        self.failUnlessEqual(num*r.denom, r.num*denom)
 
     def testRationalInitSeq(self):
         self.RationalEqual(1, 1, rational((2, 2)))

@@ -13,13 +13,13 @@ class TexterTestCase(unittest.TestCase):
 
     def testFrac(self):
         ticks = [tick((1, 4), labellevel=0), tick((2, 4), labellevel=0)]
-        rational(enumsuffix=r"\pi").labels(ticks)
+        rational(numsuffix=r"\pi").labels(ticks)
         self.failUnlessEqual([t.label for t in ticks], [r"{{\pi}\over{4}}", r"{{\pi}\over{2}}"])
         ticks = [tick((0, 3), labellevel=0), tick((3, 3), labellevel=0), tick((6, 3), labellevel=0)]
-        rational(enumsuffix=r"\pi").labels(ticks)
+        rational(numsuffix=r"\pi").labels(ticks)
         self.failUnlessEqual([t.label for t in ticks], ["0", r"\pi", r"2\pi"])
         ticks = [tick((2, 3), labellevel=0), tick((4, 5), labellevel=0)]
-        rational(enumsuffix=r"\pi", equaldenom=1).labels(ticks)
+        rational(numsuffix=r"\pi", equaldenom=1).labels(ticks)
         self.failUnlessEqual([t.label for t in ticks], [r"{{10\pi}\over{15}}", r"{{12\pi}\over{15}}"])
 
     def testDec(self):
