@@ -115,6 +115,22 @@ class NormpathTestCase(unittest.TestCase):
         sp = np.split([0, 0.5, 1, 1.5, 2])
         assert len(sp)==6 and sp[0] is None and isEqual(sp[1].arclen(), 0.5) and isEqual(sp[2].arclen(), 0.5) and isEqual(sp[3].arclen(), 0.5) and isEqual(sp[4].arclen(), 0.5) and sp[5] is None
 
+    def testshortnormsubpath(self):
+        sp = normsubpath(epsilon=1)
+        sp.append(normline(0,0, 0.5, 0))
+        sp.append(normline(0.5,0, 1.5, 0))
+
+        sp.append(normline(1.5,0, 1.5, 0.3))
+        sp.append(normline(1.5,0.3, 1.5, 0.6))
+        sp.append(normline(1.5,0.6, 1.5, 0.9))
+        sp.append(normline(1.5,0.9, 1.5, 1.2))
+
+        sp.append(normline(1.2, 1.5, 1.3, 1.6))
+        sp.append(normcurve(1.3, 1.6, 1.4, 1.7, 1.3, 1.7, 1.3, 1.8))
+        sp.append(normcurve(1.3, 1.8, 2.4, 2.7, 3.3, 3.7, 1.4, 1.8))
+
+        self.failUnlessEqual(str(sp), "subpath(open, [normline(0, 0, 1.5, 0), normline(1.5, 0, 1.5, 1.2), normcurve(1.5, 1.2, 2.4, 2.7, 3.3, 3.7, 1.4, 1.8)])")
+
 
 if __name__ == "__main__":
     unittest.main()
