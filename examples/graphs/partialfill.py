@@ -10,9 +10,10 @@ fline = g.plot(graph.function("y=sin(1.0/(x**2+0.02122))", points=1000))
 horiz = g.plot(graph.function("y=0.5*x", points=2))
 g.dodata()
 
+# convert paths to normpaths (for efficiency reasons only)
+fline = path.normpath(fline.style.path)
+horiz = path.normpath(horiz.style.path)
 # intersect the lines
-fline = fline.style.path
-horiz = horiz.style.path
 splith, splitf = horiz.intersect(fline)
 
 # create gray area
