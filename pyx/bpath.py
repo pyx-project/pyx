@@ -21,9 +21,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 # TODO: - reversepath ?
-#       - strokepath ?
-#       - nocurrentpoint exception?
-#       - correct bbox for curveto and bpathel
+#       - correct bbox for bpathel
 #         (maybe we still need the current bbox implementation (then maybe called
 #          cbox = control box) for bpathel for the use during the
 #          intersection of bpaths) 
@@ -170,7 +168,7 @@ class bpath:
         return self.bpath[int(t)][t-math.floor(t)]
 
     def transform(self, trafo):
-        return bpath(reduce(lambda x, y, trafo=trafo: x+[y.transform(trafo)], self.bpath, []))
+        return bpath(map(lambda x, trafo=trafo: x.transform(trafo), self.bpath))
 
     def MidPointSplit(self):
         result = []
