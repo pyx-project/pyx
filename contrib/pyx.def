@@ -127,7 +127,7 @@
   \dimen@=0.996264009963\Gin@req@width
   \@tempdima=0.996264009963\Gin@req@height
   \special{PyX:epsinclude\space
-    file="#1"\space
+    file=#1\space
     llx=\Gin@llx\space
     lly=\Gin@lly\space
     urx=\Gin@urx\space
@@ -165,13 +165,13 @@
 % //\
 %
 % %%%%%%  (3) rotations  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ///
-\def\Grot@start{\special{PyX:rotate_begin angle=\Grot@angle}}
+\def\Grot@start{\special{PyX:rotate_begin \Grot@angle}}
 \def\Grot@end{\special{PyX:rotate_end}}
 % //\
 %
 % %%%%%%  (4) scalings  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ///
 %
-\def\Gscale@start{\special{PyX:scale_begin xscale=\Gscale@x\space yscale=\Gscale@y}}
+\def\Gscale@start{\special{PyX:scale_begin \Gscale@x\space \Gscale@y}}
 \def\Gscale@end{\special{PyX:scale_end}}
 % //\
 \endinput
