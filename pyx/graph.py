@@ -354,7 +354,7 @@ class sflinpart(linpart):
         return parts
 
 # print linpart(0, 1.9, (frac(1, 3), frac(1, 4), ), extendtoticklevel = None, extendtolabellevel = 0).getticks()
-print sflinpart(0, 1.9).getparts()
+# print sflinpart(0, 1.9).getparts()
 
 class fffsflinpart(sflinpart):
     """favorfixfrac - shift - frac - partitioning"""

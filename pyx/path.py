@@ -23,7 +23,6 @@
 # TODO: - reversepath ?
 #       - strokepath ?
 #       - nocurrentpoint exception?
-#       - implement bbox and _bpath for arct
 #       - correct bbox for curveto and bpathel
 #         (maybe we still need the current bbox implementation (then maybe called
 #          cbox = control box) for bpathel for the use during the
@@ -155,7 +154,8 @@ class lineto(pathel):
     def _bpath(self, currentpoint, currentsubpath):
         return ((self.x, self.y), 
                 currentsubpath or currentpoint,
-                bline(currentpoint[0], currentpoint[1], self.x, self.y))
+                bline("%f t pt" % currentpoint[0], "%f t pt" % currentpoint[1],
+                      "%f t pt" % self.x, "%f t pt" % self.y))
 
 
 class rlineto(pathel):
@@ -322,9 +322,32 @@ class arcn(pathel):
                                              self.angle2 ) )
 
     def _bpath(self, currentpoint, currentsubpath):
-        return arc("%f t pt" % self.x, "%f t pt" % self.y, 
-                   "%f t pt" % self.r, 
-		   self.angle2, self.angle1)._bpath(currentpoint,currentsubpath)
+        # starting point of arc segment
+	sarcx = self.x+self.r*cos(pi*self.angle1/180)
+	sarcy = self.y+self.r*sin(pi*self.angle1/180)
+
+	# end point of arc segment
+	earcx = self.x+self.r*cos(pi*self.angle2/180)
+	earcy = self.y+self.r*sin(pi*self.angle2/180)
+
+        # Note that if there is a currentpoint defined, we also
+	# have to include the straight line from this point
+	# to the first point of the arc segment
+        if currentpoint:
+             return ( (earcx, earcy),
+                      currentsubpath or currentpoint,
+                      bline("%f t pt" % currentpoint[0], "%f t pt" % currentpoint[1],
+                            "%f t pt" % sarcx, "%f t pt" % sarcy) +
+                      barc("%f t pt" % self.x, "%f t pt" % self.y, 
+                           "%f t pt" % self.r, self.angle2, self.angle1)
+                    )
+        else:  # we assert that currentsubpath is also None
+             return ( (earcx, earcy),
+                      (sarcx, sarcy),
+                      barc("%f t pt" % self.x, "%f t pt" % self.y, 
+                           "%f t pt" % self.r, self.angle2, self.angle1)
+                    )
+
 
 class arct(pathel):
     ' Append tangent arc '
@@ -340,11 +363,13 @@ class arct(pathel):
         file.write("%f %f %f %f %f arct" % ( self.x1, self.y1,
                                              self.x2, self.y2,
                                              self.r ) )
+    def _path(self, currentpoint, currentsubpath):
+        """returns new currentpoint, currentsubpath and path consisting
+        of arc and/or line which corresponds to arct
 
-    def bbox(self, canvas, currentpoint, currentsubpath):
-        return (currentpoint, currentsubpath, bbox(100,200,150,300))
-    
-    def _bpath(self, currentpoint, currentsubpath):
+        this is a helper routine for _bpath and bbox, which both need this
+        path. Note: we don't want to calculate the bbox from a bpath"""
+        
         # direction and length of tangent 1
         dx1  = currentpoint[0]-self.x1
         dy1  = currentpoint[1]-self.y1
@@ -357,44 +382,82 @@ class arct(pathel):
 
         # intersection angle between two tangents
         alpha = math.acos((dx1*dx2+dy1*dy2)/(l1*l2))
-        cotalpha2 = 1.0/math.tan(alpha/2)
 
-        # two tangent points
-        xt1 = self.x1+dx1*self.r*cotalpha2/l1
-        yt1 = self.y1+dy1*self.r*cotalpha2/l1
-        xt2 = self.x1+dx2*self.r*cotalpha2/l2
-        yt2 = self.y1+dy2*self.r*cotalpha2/l2
+	if math.fabs(sin(alpha))>=1e-15 and 1.0+self.r!=1.0:
+            cotalpha2 = 1.0/math.tan(alpha/2)
 
-        # direction of center of arc 
-        rx = self.x1-0.5*(xt1+xt2)
-        ry = self.y1-0.5*(yt1+yt2)
-        lr = math.sqrt(rx*rx+ry*ry)
+            # two tangent points
+            xt1 = self.x1+dx1*self.r*cotalpha2/l1
+            yt1 = self.y1+dy1*self.r*cotalpha2/l1
+            xt2 = self.x1+dx2*self.r*cotalpha2/l2
+            yt2 = self.y1+dy2*self.r*cotalpha2/l2
 
-        # angle around which arc is centered
+            # direction of center of arc 
+            rx = self.x1-0.5*(xt1+xt2)
+            ry = self.y1-0.5*(yt1+yt2)
+            lr = math.sqrt(rx*rx+ry*ry)
 
-        if rx==0:
-            phi=90
-        elif rx>0:
-            phi = math.atan(ry/rx)/math.pi*180
+            # angle around which arc is centered
+            
+            if rx==0:
+                phi=90
+            elif rx>0:
+                phi = math.atan(ry/rx)/math.pi*180
+            else:
+                phi = math.atan(rx/ry)/math.pi*180+180
+                
+            # half angular width of arc 
+            deltaphi = 90*(1-alpha/math.pi)
+            
+            # center position of arc
+            mx = self.x1-rx*self.r/(lr*sin(alpha/2))
+            my = self.y1-ry*self.r/(lr*sin(alpha/2))
+            
+            # now we are in the position to construct the path
+            p = path([moveto("%f t pt" % currentpoint[0], "%f t pt" % currentpoint[1])])
+
+            # add straight line from currentpoint to t1 if necessary
+            #            if (currentpoint[0]!=xt1 or currentpoint[1]!=yt1):
+            #                p.append(lineto("%f t pt" % xt1, "%f t pt" % yt1))
+
+            if phi<0:
+                p.append(arc("%f t pt" % mx, "%f t pt" % my,
+                             "%f t pt" % self.r,
+                             phi-deltaphi,
+                             phi+deltaphi))
+            else:
+                p.append(arcn("%f t pt" % mx, "%f t pt" % my,
+                             "%f t pt" % self.r,
+                             phi+deltaphi,
+                             phi-deltaphi))
+
+            return ( (xt2, yt2) ,
+                     currentsubpath or (xt2, yt2),
+                     p )
+
         else:
-            phi = math.atan(rx/ry)/math.pi*180+180
+            # we need no arc, so just return a straight line to currentpoint to x1, y1
+            return  ( (self.x1, self.y1),
+                      currentsubpath or (self.x1, self.y1),
+                      line("%f t pt" % currentpoint[0], "%f t pt" % currentpoint[1], 
+                           "%f t pt" % self.x1, "%f t pt" % self.y1) )
 
-        # half angular width of arc 
-        deltaphi = 90*(1-alpha/math.pi)
 
-        # center position of arc
-        mx = self.x1-rx*self.r/(lr*sin(alpha/2))
-        my = self.y1-ry*self.r/(lr*sin(alpha/2))
+    def bbox(self, canvas, currentpoint, currentsubpath):
+        (currentpoint, currentsubpath, p) = self._path(currentpoint, currentsubpath)
+        
+        return ( currentpoint,
+                 currentsubpath,
+                 p.bbox(canvas) )
 
-        return ((xt2, yt2),
-                currentsubpath or (xt2, yt2),
-                bline("%f t pt" % currentpoint[0], "%f t pt" % currentpoint[1], 
-                      "%f t pt" % xt1, "%f t pt" % yt1) +
-                arc("%f t pt" % mx, "%f t pt" % my,
-                    "%f t pt" % self.r,
-                    phi-deltaphi,
-                    phi+deltaphi)._bpath(None, None)[2] )
-
+    
+    def _bpath(self, currentpoint, currentsubpath):
+        (currentpoint, currentsubpath, p) = self._path(currentpoint, currentsubpath)
+        
+        return ( currentpoint,
+                 currentsubpath,
+                 p.bpath() )
+                
 	
 class curveto(pathel):
 

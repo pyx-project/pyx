@@ -32,8 +32,8 @@ def testarcs(c):
         c.draw(p, color.rgb.red)
         c.draw(bp, color.rgb.green, canvas.linestyle.dashed)
 
-    def testarct(c, x0, y0, dx1, dy1, dx2, dy2):
-        p=path([moveto(x0,y0), arct(x0+dx1,y0+dy1, x0+dx2, y0+dy2, 0.5)])
+    def testarct(c, r, x0, y0, dx1, dy1, dx2, dy2):
+        p=path([moveto(x0,y0), arct(x0+dx1,y0+dy1, x0+dx2, y0+dy2, r), rlineto(dx2-dx1, dy2-dy1)])
         bp=p.bpath()
         c.draw(p, color.rgb.red, canvas.linewidth.Thick)
         c.draw(bp, color.rgb.green, canvas.linewidth.THin)
@@ -57,9 +57,13 @@ def testarcs(c):
     testarcn(c, 2, 6, 45, -90-360) 
     testarcn(c, 1, 6, 45, -90+360)
 
-    testarct(c, 1, 8, 0, 1, 1, 1)
-    testarct(c, 2, 8, 1, 1, 1, 2)
-    testarct(c, 3, 8, 1, 0, 2, 1)
+    testarct(c, 0.5, 1, 8, 0, 1, 1, 1)
+    testarct(c, 0.5, 3, 8, 1, 1, 1, 2)
+    testarct(c, 0.5, 5, 8, 1, 0, 2, 1)
+    testarct(c, 0.5, 7, 8, 1, 0, 2, 0)
+    testarct(c, 0.0, 9, 8, 0, 1, 1, 1)
+
+#    testarct(c, 0.5, 11, 8, 0, 1, 0, 0) # not allowed
 
 
 def testmidpointsplit(c):
