@@ -3,6 +3,26 @@
 from globex import *
 from const import *
 
+# tex processor types
+
+TeX="TeX"
+LaTeX="LaTeX"
+
+# tex size constants
+
+tiny = "tiny"
+scriptsize = "scriptsize"
+footnotesize = "footnotesize"
+small = "small"
+normalsize = "normalsize"
+large = "large"
+Large = "Large"
+LARGE = "LARGE"
+huge = "huge"
+Huge = "Huge"
+
+# structure to store TexCmds
+
 class TexCmdSaveStruc:
     def __init__(self, Cmd, MarkerBegin, MarkerEnd, Stack, IgnoreMsgLevel):
         self.Cmd = Cmd
@@ -15,9 +35,9 @@ class TexCmdSaveStruc:
             # 2 - ignore all messages without a line starting with "! "
             # 3 - ignore all messages
 
-            # typically Level 1 shows all interesting messages (errors,
-            # overfull boxes etc.) and Level 2 shows only error messages
-            # Level 1 is the default Level
+            # typically level 1 shows all interesting messages (errors,
+            # overfull boxes etc.) and level 2 shows only error messages
+            # level 1 is the default level
 
 class TexException(Exception):
     pass
@@ -34,7 +54,10 @@ class Tex(Globex):
 
     ExportMethods = [ "text", "textwd", "textht", "textdp" ]
 
-    def __init__(self,canvas,texinit,TexInitIgnoreMsgLevel):
+    def __init__(self, canvas, type = "TeX", texinit = "", TexInitIgnoreMsgLevel = 1):
+        if type != TeX or type != LaTeX:
+            assert "unknown type"
+        self.type = type
         self.canvas = canvas
         self.TexAddToFile(texinit,TexInitIgnoreMsgLevel)
 
@@ -43,7 +66,7 @@ class Tex(Globex):
     TexMarkerEnd = TexMarker + "End"
 
     TexCmds = [ ]
-        # stores the TexCmds; note that the first element has a different
+        # stores the TexCmds; note that the first element has a special
         # meaning: it is the initial command "texinit", which is added by
         # the constructor (there has to be always a - may be empty - initial
         # command) -- the TexParenthesisCheck is automaticlly called in
@@ -163,19 +186,19 @@ class Tex(Globex):
     
         # TODO: clean file handling. Be sure to delete all temporary files (signal handling???) and check for the files before reading them (including the dvi-file before it's converted by dvips)
 
-        import os
+        import os, string
 
         file = open(self.canvas.BaseFilename + ".tex", "w")
 
-#tex
-#        file.write("""\\nonstopmode
-#\\hsize21truecm
-#\\vsize29.7truecm
-#\\hoffset-1truein
-#\\voffset-1truein\n""")
+        if self.type == TeX:
+            file.write("""\\nonstopmode
+\\hsize21truecm
+\\vsize29.7truecm
+\\hoffset-1truein
+\\voffset-1truein\n""")
 
-#latex
-        file.write("""\\nonstopmode
+        if self.type == LaTeX:
+            file.write("""\\nonstopmode
 \\documentclass{article}
 \\hsize21truecm
 \\vsize29.7truecm
@@ -184,15 +207,15 @@ class Tex(Globex):
 
         file.write(self.TexCmds[0].Cmd)
 
-#tex
-#        file.write("""\\newwrite\\sizefile
-#\\newbox\\localbox
-#\\newbox\\pagebox
-#\\immediate\\openout\\sizefile=""" + self.BaseFilename + """.size
-#\\setbox\\pagebox=\\vbox{%\n""")
+        if self.type == TeX:
+            file.write("""\\newwrite\\sizefile
+\\newbox\\localbox
+\\newbox\\pagebox
+\\immediate\\openout\\sizefile=""" + self.canvas.BaseFilename + """.size
+\\setbox\\pagebox=\\vbox{%\n""")
 
-#latex
-        file.write("""\\newwrite\\sizefile
+        if self.type == LaTeX:
+            file.write("""\\newwrite\\sizefile
 \\newbox\\localbox
 \\newbox\\pagebox
 \\immediate\\openout\\sizefile=""" + self.canvas.BaseFilename + """.size
@@ -201,14 +224,15 @@ class Tex(Globex):
 
         for Cmd in self.TexCmds[1:]:
             file.write(Cmd.Cmd)
-#tex
-#        file.write("""}
-#\\immediate\\closeout\sizefile
-#\\shipout\\copy\\pagebox
-#\\end\n""")
 
-#latex
-        file.write("""}
+        if self.type == TeX:
+            file.write("""}
+\\immediate\\closeout\sizefile
+\\shipout\\copy\\pagebox
+\\end\n""")
+
+        if self.type == LaTeX:
+            file.write("""}
 \\immediate\\closeout\sizefile
 \\shipout\\copy\\pagebox
 \\end{document}\n""")
@@ -224,11 +248,11 @@ class Tex(Globex):
 #%\\end{picture}%
         file.close()
 
-        if os.system("latex " + self.canvas.BaseFilename + " > " + self.canvas.BaseFilename + ".stdout 2> " + self.canvas.BaseFilename + ".stderr"):
-            print "The LaTeX exit code was non-zero. This may happen due to mistakes within your\nLaTeX commands as listed below. Otherwise you have to check your local\nenvironment and the files \"" + self.canvas.BaseFilename + ".tex\" and \"" + self.canvas.BaseFilename + ".log\" manually."
+        if os.system(string.lower(self.type) +" " + self.canvas.BaseFilename + " > " + self.canvas.BaseFilename + ".stdout 2> " + self.canvas.BaseFilename + ".stderr"):
+            print "The " + self.type + " exit code was non-zero. This may happen due to mistakes within your\nLaTeX commands as listed below. Otherwise you have to check your local\nenvironment and the files \"" + self.canvas.BaseFilename + ".tex\" and \"" + self.canvas.BaseFilename + ".log\" manually."
 
         try:
-            # check LaTeX output
+            # check output
             file = open(self.canvas.BaseFilename + ".stdout", "r")
             for Cmd in self.TexCmds:
             # TODO: readline blocks if eof is reached, but we want an exception
@@ -263,7 +287,6 @@ class Tex(Globex):
                             doprint = 1
                 elif Cmd.IgnoreMsgLevel == 2:
                     doprint = 0
-                    import string
                     # the "\n" + msg instead of msg itself is needed, if
                     # the message starts with "! "
                     if string.find("\n" + msg, "\n! ") != -1 or string.find(msg, "\r! ") != -1:
@@ -285,7 +308,7 @@ class Tex(Globex):
             file.close()
 
         except IOError:
-            print "Error reading the LaTeX output. Check your local environment and the files\n\"" + self.canvas.BaseFilename + ".tex\" and \"" + self.canvas.BaseFilename + ".log\"."
+            print "Error reading the " + self.type + " output. Check your local environment and the files\n\"" + self.canvas.BaseFilename + ".tex\" and \"" + self.canvas.BaseFilename + ".log\"."
             raise
         
         # TODO: ordentliche Fehlerbehandlung,
@@ -355,8 +378,13 @@ class Tex(Globex):
         return self.TexResult(TexHexMD5 + ":dp:")
 
 
-def tex(texinit="", TexInitIgnoreMsgLevel=1):
+def tex(texinit = "", TexInitIgnoreMsgLevel = 1):
     exec "canvas=DefaultCanvas" in GetCallerGlobalNamespace(),locals()
-    DefaultTex=Tex(canvas, texinit, TexInitIgnoreMsgLevel)
+    DefaultTex=Tex(canvas, TeX, texinit, TexInitIgnoreMsgLevel)
+    DefaultTex.AddNamespace("DefaultTex", GetCallerGlobalNamespace())
+
+def latex(texinit = "", TexInitIgnoreMsgLevel = 1):
+    exec "canvas=DefaultCanvas" in GetCallerGlobalNamespace(),locals()
+    DefaultTex=Tex(canvas, LaTeX, texinit, TexInitIgnoreMsgLevel)
     DefaultTex.AddNamespace("DefaultTex", GetCallerGlobalNamespace())
 
