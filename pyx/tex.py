@@ -299,7 +299,7 @@ class _BoxCmd(_TexCmd):
             file.write("{\\vbox to0pt{\\kern" + str(11*72.27+canvas.unit.tpt(-CmdPut.y)) + "truept\\hbox{\\kern" + str(canvas.unit.tpt(CmdPut.x)) + "truept\\ht\\localbox0pt")
 
             if CmdPut.direction != direction.horizontal:
-                file.write("\\special{ps: gsave currentpoint currentpoint translate " + str(CmdPut.direction) + " rotate neg exch neg exch translate }")
+                file.write("\\special{ps: gsave currentpoint currentpoint translate " + str(CmdPut.direction) + " neg rotate neg exch neg exch translate }")
             if CmdPut.color != color.grey.black:
                 file.write("\\special{ps: ")
                 CmdPut.color.write(canvas, file)

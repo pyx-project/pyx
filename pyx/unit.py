@@ -120,6 +120,8 @@ class length:
            newlength[unit_type] = newlength[unit_type] + ll.length[unit_type]
         return length(glength=newlength)
 
+    __radd__=__add__
+
     def __sub__(self, l):
         ll=length(l)                    # convert to length if necessary
         newlength = self.length.copy()
@@ -127,13 +129,18 @@ class length:
            newlength[unit_type] = newlength[unit_type] - ll.length[unit_type]
         return length(glength=newlength)
 
+    def __rsub__(self, l):
+        ll=length(l)                    # convert to length if necessary
+        newlength = self.length.copy()
+        for unit_type in newlength.keys():
+           newlength[unit_type] = ll.length[unit_type] - newlength[unit_type]
+        return length(glength=newlength)
+
     def __neg__(self):
         newlength = self.length.copy()
         for unit_type in newlength.keys():
            newlength[unit_type] = -newlength[unit_type]
         return length(glength=newlength)
-
-    __radd__=__add__
 
     def __str__(self):
         return "(%(t)f t + %(u)f u + %(v)f v + %(w)f w) m" % self.length
