@@ -269,70 +269,41 @@ class linked(regular):
 
 
 class subaxispos:
-    pass
-#    """implementation of the _Iaxispos interface for a subaxis"""
-#
-#    __implements__ = _Iaxispos
-#
-#    def __init__(self, convert, baseaxispos, vmin, vmax, vminover, vmaxover):
-#        """initializes the instance
-#        - convert is the subaxis convert method
-#        - baseaxispos is the axispos instance of the base axis
-#        - vmin, vmax is the range covered by the subaxis in graph coordinates
-#        - vminover, vmaxover is the extended range of the subaxis including
-#          regions between several subaxes (for basepath drawing etc.)"""
-#        self.convert = convert
-#        self.baseaxispos = baseaxispos
-#        self.vmin = vmin
-#        self.vmax = vmax
-#        self.vminover = vminover
-#        self.vmaxover = vmaxover
-#
-#    def basepath(self, x1=None, x2=None):
-#        if x1 is not None:
-#            v1 = self.vmin+self.convert(x1)*(self.vmax-self.vmin)
-#        else:
-#            v1 = self.vminover
-#        if x2 is not None:
-#            v2 = self.vmin+self.convert(x2)*(self.vmax-self.vmin)
-#        else:
-#            v2 = self.vmaxover
-#        return self.baseaxispos.vbasepath(v1, v2)
-#
-#    def vbasepath(self, v1=None, v2=None):
-#        if v1 is not None:
-#            v1 = self.vmin+v1*(self.vmax-self.vmin)
-#        else:
-#            v1 = self.vminover
-#        if v2 is not None:
-#            v2 = self.vmin+v2*(self.vmax-self.vmin)
-#        else:
-#            v2 = self.vmaxover
-#        return self.baseaxispos.vbasepath(v1, v2)
-#
-#    def gridpath(self, x):
-#        return self.baseaxispos.vgridpath(self.vmin+self.convert(x)*(self.vmax-self.vmin))
-#
-#    def vgridpath(self, v):
-#        return self.baseaxispos.vgridpath(self.vmin+v*(self.vmax-self.vmin))
-#
-#    def tickpoint_pt(self, x, axis=None):
-#        return self.baseaxispos.vtickpoint_pt(self.vmin+self.convert(x)*(self.vmax-self.vmin))
-#
-#    def tickpoint(self, x, axis=None):
-#        return self.baseaxispos.vtickpoint(self.vmin+self.convert(x)*(self.vmax-self.vmin))
-#
-#    def vtickpoint_pt(self, v, axis=None):
-#        return self.baseaxispos.vtickpoint_pt(self.vmin+v*(self.vmax-self.vmin))
-#
-#    def vtickpoint(self, v, axis=None):
-#        return self.baseaxispos.vtickpoint(self.vmin+v*(self.vmax-self.vmin))
-#
-#    def tickdirection(self, x, axis=None):
-#        return self.baseaxispos.vtickdirection(self.vmin+self.convert(x)*(self.vmax-self.vmin))
-#
-#    def vtickdirection(self, v, axis=None):
-#        return self.baseaxispos.vtickdirection(self.vmin+v*(self.vmax-self.vmin))
+    """implementation of the _Iaxispos interface for a subaxis"""
+
+    def __init__(self, convert, baseaxispos, vmin, vmax, vminover, vmaxover):
+        """initializes the instance
+        - convert is the subaxis convert method
+        - baseaxispos is the axispos instance of the base axis
+        - vmin, vmax is the range covered by the subaxis in graph coordinates
+        - vminover, vmaxover is the extended range of the subaxis including
+          regions between several subaxes (for basepath drawing etc.)"""
+        self.convert = convert
+        self.baseaxispos = baseaxispos
+        self.vmin = vmin
+        self.vmax = vmax
+        self.vminover = vminover
+        self.vmaxover = vmaxover
+
+    def vbasepath(self, v1=None, v2=None):
+        if v1 is not None:
+            v1 = self.vmin+v1*(self.vmax-self.vmin)
+        else:
+            v1 = self.vminover
+        if v2 is not None:
+            v2 = self.vmin+v2*(self.vmax-self.vmin)
+        else:
+            v2 = self.vmaxover
+        return self.baseaxispos.vbasepath(v1, v2)
+
+    def vgridpath(self, v):
+        return self.baseaxispos.vgridpath(self.vmin+v*(self.vmax-self.vmin))
+
+    def vtickpoint_pt(self, v, axis=None):
+        return self.baseaxispos.vtickpoint_pt(self.vmin+v*(self.vmax-self.vmin))
+
+    def vtickdirection(self, v, axis=None):
+        return self.baseaxispos.vtickdirection(self.vmin+v*(self.vmax-self.vmin))
 
 
 class split(_title):
@@ -438,24 +409,27 @@ class bar(_title):
     def paint(self, canvas, data, axis, axispos):
         if axis.multisubaxis is not None:
             for subaxis in axis.subaxis:
-                subaxis.finish(subaxispos(subaxis.convert, axispos, subaxis.vmin, subaxis.vmax, None, None))
-                canvas.insert(subaxis.axiscanvas)
-                if canvas.extent_pt < subaxis.axiscanvas.extent_pt:
-                    canvas.extent_pt = subaxis.axiscanvas.extent_pt
+                from axis import anchoredaxis
+                anchoredsubaxis = anchoredaxis(subaxis)
+                anchoredsubaxis.setpositioner(subaxispos(subaxis.convert, axispos, subaxis.vmin, subaxis.vmax, None, None))
+                subcanvas = anchoredsubaxis.create()
+                canvas.insert(subcanvas)
+                if canvas.extent_pt < subcanvas.extent_pt:
+                    canvas.extent_pt = subcanvas.extent_pt
         namepos = []
-        for name in axis.names:
-            v = axis.convert((name, self.namepos))
+        for name in data.names:
+            v = axis.convert(data, (name, self.namepos))
             x, y = axispos.vtickpoint_pt(v)
             dx, dy = axispos.vtickdirection(v)
             namepos.append((v, x, y, dx, dy))
         nameboxes = []
         if self.nameattrs is not None:
-            for (v, x, y, dx, dy), name in zip(namepos, axis.names):
+            for (v, x, y, dx, dy), name in zip(namepos, data.names):
                 nameattrs = self.defaultnameattrs + self.nameattrs
                 if self.namedirection is not None:
                     nameattrs.append(self.namedirection.trafo(tick.temp_dx, tick.temp_dy))
                 nameboxes.append(canvas.texrunner.text_pt(x, y, str(name), nameattrs))
-        labeldist_pt = canvas.extent_pt + unit.topt(namedist_pt)
+        labeldist_pt = canvas.extent_pt + unit.topt(self.namedist)
         if len(namepos) > 1:
             equaldirection = 1
             for np in namepos[1:]:

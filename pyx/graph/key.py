@@ -71,7 +71,7 @@ class key:
 
     def paint(self, plotitems):
         "creates the layout of the key"
-        plotitems = [plotitem for plotitem in plotitems if plotitem.gettitle() is not None]
+        plotitems = [plotitem for plotitem in plotitems if plotitem.title is not None]
         c = canvas.canvas()
         self.dist_pt = unit.topt(self.dist)
         self.hdist_pt = unit.topt(self.hdist)
@@ -81,7 +81,7 @@ class key:
         self.symbolspace_pt = unit.topt(self.symbolspace)
         titleboxes = []
         for plotitem in plotitems:
-            titlebox = c.texrunner.text_pt(0, 0, plotitem.gettitle(), self.defaulttextattrs + self.textattrs)
+            titlebox = c.texrunner.text_pt(0, 0, plotitem.title, self.defaulttextattrs + self.textattrs)
             titlebox.plotitem = plotitem
             titleboxes.append(titlebox)
         dy_pt = box.tile_pt(titleboxes, self.dist_pt, 0, -1)

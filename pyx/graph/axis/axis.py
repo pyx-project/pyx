@@ -40,6 +40,10 @@ class axisdata:
             setattr(self, key, value)
 
 
+class _axis:
+    """axis"""
+
+
 class _linmap:
     "linear conversion methods"
 
@@ -65,7 +69,7 @@ class _logmap:
         return math.exp(math.log(data.min) + value * (math.log(data.max) - math.log(data.min)))
 
 
-class _axis:
+class _regularaxis(_axis):
     """base implementation a regular axis
 
     Regular axis have a continuous variable like linear axes,
@@ -88,62 +92,23 @@ class _axis:
         self.maxworse = maxworse
         self.manualticks = self.checkfraclist(manualticks)
 
-    zero = 0.0
-
     def createdata(self):
         return axisdata(min=self.min, max=self.max)
 
-    def adjustrange(self, data, points, index, deltamindata=None, deltaminindex=None, deltamaxdata=None, deltamaxindex=None):
-        assert deltamindata is None or deltamaxdata is None
+    zero = 0.0
+
+    def adjustaxis(self, data, columndata):
         if self.min is None or self.max is None:
-            if deltamindata is not None:
-                for point, minpoint in zip(points, deltamindata):
-                    try:
-                        if index is not None:
-                            if deltaminindex is not None:
-                                value = point[index] - minpoint[deltaminindex] + self.zero
-                            else:
-                                value = point[index] - minpoint + self.zero
-                        else:
-                            if deltaminindex is not None:
-                                value = point - minpoint[deltaminindex] + self.zero
-                            else:
-                                value = point - minpoint + self.zero
-                    except:
-                        pass
-                    else:
-                        if self.min is None and (data.min is None or value < data.min): data.min = value
-                        if self.max is None and (data.max is None or value > data.max): data.max = value
-            elif deltamaxdata is not None:
-                for point, maxpoint in zip(points, deltamaxdata):
-                    try:
-                        if index is not None:
-                            if deltamaxindex is not None:
-                                value = point[index] + maxpoint[deltamaxindex] + self.zero
-                            else:
-                                value = point[index] + maxpoint + self.zero
-                        else:
-                            if deltamaxindex is not None:
-                                value = point + maxpoint[deltamaxindex] + self.zero
-                            else:
-                                value = point + maxpoint + self.zero
-                    except:
-                        pass
-                    else:
-                        if self.min is None and (data.min is None or value < data.min): data.min = value
-                        if self.max is None and (data.max is None or value > data.max): data.max = value
-            else:
-                for point in points:
-                    try:
-                        if index is not None:
-                            value = point[index] + self.zero
-                        else:
-                            value = point + self.zero
-                    except:
-                        pass
-                    else:
-                        if self.min is None and (data.min is None or value < data.min): data.min = value
-                        if self.max is None and (data.max is None or value > data.max): data.max = value
+            for value in columndata:
+                try:
+                    value = value + self.zero
+                except:
+                    pass
+                else:
+                    if self.min is None and (data.min is None or value < data.min):
+                        data.min = value
+                    if self.max is None and (data.max is None or value > data.max):
+                        data.max = value
 
     def checkfraclist(self, fracs):
         "orders a list of fracs, equal entries are not allowed"
@@ -178,9 +143,11 @@ class _axis:
         bestrate = None
         if self.parter is not None:
             if self.divisor is not None:
-                partfunctions = self.parter.partfunctions(data.min/self.divisor, data.max/self.divisor, self.min is None, self.max is None)
+                partfunctions = self.parter.partfunctions(data.min/self.divisor, data.max/self.divisor,
+                                                          self.min is None, self.max is None)
             else:
-                partfunctions = self.parter.partfunctions(data.min, data.max, self.min is None, self.max is None)
+                partfunctions = self.parter.partfunctions(data.min, data.max,
+                                                          self.min is None, self.max is None)
             variants = []
             for partfunction in partfunctions:
                 worse = 0
@@ -206,7 +173,7 @@ class _axis:
         # get best variant
         if self.painter is None or len(variants) == 1:
             # in case of a single variant we're almost done
-            self.adjustrange(data, variants[0].ticks, None)
+            self.adjustaxis(data, variants[0].ticks)
             self.texter.labels(variants[0].ticks)
             if self.divisor:
                 for t in variants[0].ticks:
@@ -222,7 +189,7 @@ class _axis:
                 variant.storedcanvas = None
             variants.sort()
             while not variants[0].storedcanvas:
-                self.adjustrange(variants[0], variants[0].ticks, None)
+                self.adjustaxis(variants[0], variants[0].ticks)
                 self.texter.labels(variants[0].ticks)
                 if self.divisor:
                     for t in variants[0].ticks:
@@ -238,34 +205,31 @@ class _axis:
                     variants[0].rate += ratelayout
                     variants[0].storedcanvas = canvas
                 variants.sort()
-            self.adjustrange(data, variants[0].ticks, None)
+            self.adjustaxis(data, variants[0].ticks)
             data.ticks = variants[0].ticks
             return variants[0].storedcanvas
 
-    def createlinkaxis(self, **args):
-        return linked(self, **args)
 
-
-class linear(_axis, _linmap):
+class linear(_regularaxis, _linmap):
     """linear axis"""
 
     def __init__(self, parter=parter.autolinear(), rater=rater.linear(), **args):
-        _axis.__init__(self, **args)
-        if self.min is not None and self.max is not None:
-            self.relsize = self.max - self.min
+        _regularaxis.__init__(self, **args)
+        # if self.min is not None and self.max is not None:
+        #     self.relsize = self.max - self.min
         self.parter = parter
         self.rater = rater
 
 lin = linear
 
 
-class logarithmic(_axis, _logmap):
+class logarithmic(_regularaxis, _logmap):
     """logarithmic axis"""
 
     def __init__(self, parter=parter.autologarithmic(), rater=rater.logarithmic(), **args):
-        _axis.__init__(self, **args)
-        if self.min is not None and self.max is not None:
-            self.relsize = math.log(self.max) - math.log(self.min)
+        _regularaxis.__init__(self, **args)
+        # if self.min is not None and self.max is not None:
+        #     self.relsize = math.log(self.max) - math.log(self.min)
         self.parter = parter
         self.rater = rater
 
@@ -361,9 +325,8 @@ log = logarithmic
 #         self.subaxes[0].setrange(min, None)
 #         self.subaxes[-1].setrange(None, max)
 # 
-#     def adjustrange(self, *args, **kwargs):
-#         self.subaxes[0].adjustrange(*args, **kwargs)
-#         self.subaxes[-1].adjustrange(*args, **kwargs)
+#     def adjustaxis(self, data, columndata):
+#         pass # TODO ???
 # 
 #     def convert(self, value):
 #         # TODO: proper raising exceptions (which exceptions go thru, which are handled before?)
@@ -409,176 +372,101 @@ log = logarithmic
 #                 self.subaxes.append(subaxis.createlinkaxis())
 #             else:
 #                 self.subaxes.append(subaxis.createlinkaxis(painter=painter))
-# 
-# 
-# class bar:
-#     """implementation of a axis for bar graphs
-#     - a bar axes is different from a split axis by the way it
-#       selects its subaxes: the convert method gets a list,
-#       where the first entry is a name selecting a subaxis out
-#       of a list; instead of the term "bar" or "subaxis" the term
-#       "item" will be used here
-#     - the bar axis stores a list of names be identify the items;
-#       the names might be of any time (strings, integers, etc.)
-#     - usually, there is only one subaxis, which is used as
-#       the subaxis for all items
-#     - alternatively it is also possible to use another bar axis
-#       as a multisubaxis; it is copied via the createsubaxis
-#       method whenever another subaxis is needed (by that a
-#       nested bar axis with a different number of subbars at
-#       each item can be created)
-#     - any axis can be a subaxis of a bar axis; if no subaxis
-#       is specified at all, the bar axis simulates a linear
-#       subaxis with a fixed range of 0 to 1"""
-# 
-#     def __init__(self, subaxis=None, multisubaxis=None,
-#                        dist=0.5, firstdist=None, lastdist=None,
-#                        title=None, painter=painter.bar()):
-#         """initialize the instance
-#         - subaxis contains a axis to be used as the subaxis
-#           for all items
-#         - multisubaxis might contain another bar axis instance
-#           to be used to construct a new subaxis for each item;
-#           (by that a nested bar axis with a different number
-#           of subbars at each item can be created)
-#         - only one of subaxis or multisubaxis can be set; if neither
-#           of them is set, the bar axis behaves like having a linear axis
-#           as its subaxis with a fixed range 0 to 1
-#         - the title attribute contains the axis title as a string
-#         - the dist is a relsize to be used as the distance between
-#           the items
-#         - the firstdist and lastdist are the distance before the
-#           first and after the last item, respectively; when set
-#           to None (the default), 0.5*dist is used
-#         - the relsize of the bar axis is the sum of the
-#           relsizes including all distances between the items"""
-#         self.dist = dist
-#         if firstdist is not None:
-#             self.firstdist = firstdist
-#         else:
-#             self.firstdist = 0.5 * dist
-#         if lastdist is not None:
-#             self.lastdist = lastdist
-#         else:
-#             self.lastdist = 0.5 * dist
-#         self.relsizes = None
-#         self.multisubaxis = multisubaxis
-#         if self.multisubaxis is not None:
-#             if subaxis is not None:
-#                 raise RuntimeError("either use subaxis or multisubaxis")
-#             self.subaxis = []
-#         else:
-#             self.subaxis = subaxis
-#         self.title = title
-#         self.painter = painter
-#         self.axiscanvas = None
-#         self.names = []
-# 
-#     def createsubaxis(self):
-#         return bar(subaxis=self.multisubaxis.subaxis,
-#                    multisubaxis=self.multisubaxis.multisubaxis,
-#                    title=self.multisubaxis.title,
-#                    dist=self.multisubaxis.dist,
-#                    firstdist=self.multisubaxis.firstdist,
-#                    lastdist=self.multisubaxis.lastdist,
-#                    painter=self.multisubaxis.painter)
-# 
-#     def getrange(self):
-#         # TODO: we do not yet have a proper range handling for a bar axis
-#         return None
-# 
-#     def setrange(self, min=None, max=None):
-#         # TODO: we do not yet have a proper range handling for a bar axis
-#         raise RuntimeError("range handling for a bar axis is not implemented")
-# 
-#     def setname(self, name, *subnames):
-#         """add a name to identify an item at the bar axis
-#         - by using subnames, nested name definitions are
-#           possible
-#         - a style (or the user itself) might use this to
-#           insert new items into a bar axis
-#         - setting self.relsizes to None forces later recalculation"""
-#         if name not in self.names:
-#             self.relsizes = None
-#             self.names.append(name)
-#             if self.multisubaxis is not None:
-#                 self.subaxis.append(self.createsubaxis())
-#         if len(subnames):
-#             if self.multisubaxis is not None:
-#                 if self.subaxis[self.names.index(name)].setname(*subnames):
-#                     self.relsizes = None
-#             else:
-#                 if self.subaxis.setname(*subnames):
-#                     self.relsizes = None
-#         return self.relsizes is not None
-# 
-#     def adjustrange(self, points, index, subnames=[]):
-#         for point in points:
-#             if index is not None:
-#                 self.setname(point[index], *subnames)
-#             else:
-#                 self.setname(point, *subnames)
-# 
-#     def updaterelsizes(self):
-#         # guess what it does: it recalculates relsize attribute
-#         self.relsizes = [i*self.dist + self.firstdist for i in range(len(self.names) + 1)]
-#         self.relsizes[-1] += self.lastdist - self.dist
-#         if self.multisubaxis is not None:
-#             subrelsize = 0
-#             for i in range(1, len(self.relsizes)):
-#                 self.subaxis[i-1].updaterelsizes()
-#                 subrelsize += self.subaxis[i-1].relsizes[-1]
-#                 self.relsizes[i] += subrelsize
-#         else:
-#             if self.subaxis is None:
-#                 subrelsize = 1
-#             else:
-#                 self.subaxis.updaterelsizes()
-#                 subrelsize = self.subaxis.relsizes[-1]
-#             for i in range(1, len(self.relsizes)):
-#                 self.relsizes[i] += i * subrelsize
-# 
-#     def convert(self, value):
-#         """bar axis convert method
-#         - the value should be a list, where the first entry is
-#           a member of the names (set in the constructor or by the
-#           setname method); this first entry identifies an item in
-#           the bar axis
-#         - following values are passed to the appropriate subaxis
-#           convert method
-#         - when there is no subaxis, the convert method will behave
-#           like having a linear axis from 0 to 1 as subaxis"""
-#         # TODO: proper raising exceptions (which exceptions go thru, which are handled before?)
-#         if not self.relsizes:
-#             self.updaterelsizes()
-#         pos = self.names.index(value[0])
-#         if len(value) == 2:
-#             if self.subaxis is None:
-#                 subvalue = value[1]
-#             else:
-#                 if self.multisubaxis is not None:
-#                     subvalue = value[1] * self.subaxis[pos].relsizes[-1]
-#                 else:
-#                     subvalue = value[1] * self.subaxis.relsizes[-1]
-#         else:
-#             if self.multisubaxis is not None:
-#                 subvalue = self.subaxis[pos].convert(value[1:]) * self.subaxis[pos].relsizes[-1]
-#             else:
-#                 subvalue = self.subaxis.convert(value[1:]) * self.subaxis.relsizes[-1]
-#         return (self.relsizes[pos] + subvalue) / float(self.relsizes[-1])
-# 
-#     def finish(self, axispos):
-#         if self.axiscanvas is None:
-#             if self.multisubaxis is not None:
-#                 for name, subaxis in zip(self.names, self.subaxis):
-#                     subaxis.vmin = self.convert((name, 0))
-#                     subaxis.vmax = self.convert((name, 1))
-#             self.axiscanvas = self.painter.paint(axispos, self)
-# 
-#     def createlinkaxis(self, **args):
-#         return linkedbar(self, **args)
-# 
-# 
+
+
+class bar(_axis):
+
+    def __init__(self, subaxes=None, equalsubaxes=0,
+                       dist=0.5, firstdist=None, lastdist=None, title=None,
+                       painter=painter.bar(), linkpainter=painter.linkedbar()):
+        if subaxes:
+            try:
+                subaxes = list(subaxes)
+            except:
+                for key, subaxis in subaxes.values():
+                    subaxes[key] = anchoredaxis(subaxis)
+            else:
+                for i in range(len(subaxes)):
+                    subaxes[i] = anchoedaxis(subaxes[i])
+        self.subaxes = subaxes
+        self.equalsubaxes = equalsubaxes
+        self.dist = dist
+        if firstdist is not None:
+            self.firstdist = firstdist
+        else:
+            self.firstdist = 0.5 * dist
+        if lastdist is not None:
+            self.lastdist = lastdist
+        else:
+            self.lastdist = 0.5 * dist
+        self.title = title
+        self.painter = painter
+        self.linkpainter = linkpainter
+
+    def createdata(self):
+        return axisdata(axes={})
+
+    def setname(self, data, name, *subnames):
+        if not data.axes.has_key(name):
+            data.axes[name] = anchoredaxis(self)
+        if subnames:
+            if self.equalsubaxes:
+                for axis in data.axes.values():
+                    axis.axis.setname(axis.data, *subnames)
+            else:
+                axis = data.axes[name]
+                axis.axis.setname(axis.data, *subnames)
+
+    def adjustaxis(self, data, columndata):
+        for value in columndata:
+            self.setname(data, *value)
+
+#    def updaterelsizes(self, data):
+#        # guess what it does: it recalculates relsize attribute
+#        data.relsizes = [i*self.dist + self.firstdist for i in range(len(data.names) + 1)]
+#        data.relsizes[-1] += self.lastdist - self.dist
+#        if self.multisubaxis is not None:
+#            subrelsize = 0
+#            for i in range(1, len(data.relsizes)):
+#                data.subaxis[i-1].updaterelsizes(data.subaxis[i-1].data)
+#                subrelsize += data.subaxis[i-1].data.relsizes[-1]
+#                data.relsizes[i] += subrelsize
+#        else:
+#            if data.subaxis is None:
+#                subrelsize = 1
+#            else:
+#                data.subaxis.updaterelsizes(data.subaxis.data)
+#                subrelsize = data.subaxis.data.relsizes[-1]
+#            for i in range(1, len(data.relsizes)):
+#                data.relsizes[i] += i * subrelsize
+
+    def convert(self, data, value):
+        pos = data.names.index(value[0])
+        if len(value) == 2:
+            if data.subaxis is None:
+                subvalue = value[1]
+            else:
+                if self.multisubaxis is not None:
+                    subvalue = value[1] * data.subaxis[pos].data.relsizes[-1]
+                else:
+                    subvalue = value[1] * data.subaxis.data.relsizes[-1]
+        else:
+            if self.multisubaxis is not None:
+                subvalue = data.subaxis[pos].convert(value[1:]) * data.subaxis[pos].data.relsizes[-1]
+            else:
+                subvalue = data.subaxis.convert(value[1:]) * data.subaxis.data.relsizes[-1]
+        return (data.relsizes[pos] + subvalue) / float(data.relsizes[-1])
+
+    def create(self, data, positioner, graphtexrunner=None):
+        if self.multisubaxis is not None:
+            for name, subaxis in zip(data.names, data.subaxis):
+                subaxis.vmin = self.convert((name, 0))
+                subaxis.vmax = self.convert((name, 1))
+        canvas = painter.axiscanvas(self.painter, graphtexrunner)
+        self.painter.paint(canvas, data, self, positioner)
+        return canvas
+
+
 # class linkedbar(_linked):
 #     """a bar axis linked to an already existing bar axis
 #     - inherits the access to a linked axis -- as before,
@@ -612,11 +500,14 @@ class anchoredaxis:
     def invert(self, y):
         return self.axis.invert(self.data, y)
 
-    def adjustrange(self, *args, **kwargs):
-        self.axis.adjustrange(self.data, *args, **kwargs)
+    def adjustaxis(self, columndata):
+        self.axis.adjustaxis(self.data, columndata)
 
     def setpositioner(self, positioner):
         self.positioner = positioner
+
+    def vbasepath(self, v1=None, v2=None):
+        return self.positioner.vbasepath(v1=v1, v2=v2)
 
     def basepath(self, x1=None, x2=None):
         if x1 is None:
@@ -631,14 +522,26 @@ class anchoredaxis:
                 return self.positioner.vbasepath(v1=self.axis.convert(self.data, x1),
                                                  v2=self.axis.convert(self.data, x2))
 
+    def vgridpath(self, v):
+        return self.positioner.vgridpath(v)
+
     def gridpath(self, x):
         return self.positioner.vgridpath(self.axis.convert(self.data, x))
+
+    def vtickpoint_pt(self, v):
+        return self.positioner.vtickpoint_pt(v)
+
+    def vtickpoint(self, v):
+        return self.positioner.vtickpoint(v) * unit.t_pt
 
     def tickpoint_pt(self, x):
         return self.positioner.vtickpoint_pt(self.axis.convert(self.data, x))
 
     def tickpoint(self, x):
-        return self.positioner.vtickpoint(self.axis.convert(self.data, x))
+        return self.positioner.vtickpoint(self.axis.convert(self.data, x)) * unit.t_pt
+
+    def vtickdirection(self, v):
+        return self.positioner.vtickdirection(v)
 
     def tickdirection(self, x):
         return self.positioner.vtickdirection(self.axis.convert(self.data, x))

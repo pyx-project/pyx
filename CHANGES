@@ -109,6 +109,7 @@ TODO:
       - histogram style added; TODO documentation
     - graph data:
       - function needs explicit variable definition (implicit variable definition is deprecated); TODO: documentation
+      - column names are inherited; unused columns are silently ignored now
   - prolog module: deleted (replaced by resource module)
   - resource module: new
     - resources: fonts and definitions

@@ -48,6 +48,7 @@ class plotitem:
 
     def __init__(self, graph, data, styles):
         self.data = data
+        self.title = data.title
 
         # add styles to ensure all needs of the given styles
         provided = [] # already provided sharedata variables
@@ -65,27 +66,47 @@ class plotitem:
         self.privatedatalist = [styledata() for s in self.styles]
 
         # perform setcolumns to all styles
-        self.data.initplotitem(self, graph)
-        columnnames = self.data.getcolumnnames(self)
-        usedcolumnnames = []
+        columnnames = self.data.columnnames(graph)
+        self.usedcolumnnames = []
         for privatedata, s in zip(self.privatedatalist, self.styles):
-            usedcolumnnames.extend(s.columnnames(privatedata, self.sharedata, graph, columnnames))
-        for columnname in columnnames:
-            if columnname not in usedcolumnnames:
-                raise ValueError("unused column '%s'" % columnname)
+            self.usedcolumnnames.extend(s.columnnames(privatedata, self.sharedata, graph, columnnames))
 
     def selectstyles(self, graph, selectindex, selecttotal):
         for privatedata, style in zip(self.privatedatalist, self.styles):
             style.selectstyle(privatedata, self.sharedata, graph, selectindex, selecttotal)
 
-    def adjustaxes(self, graph, step):
-        self.data.adjustaxes(self, graph, step)
+    def adjustaxesstatic(self, graph):
+        for columnname, data in self.data.columns.items():
+            for privatedata, style in zip(self.privatedatalist, self.styles):
+                style.adjustaxis(privatedata, self.sharedata, graph, columnname, data)
+
+    def makedynamicdata(self, graph):
+        self.dynamiccolumns = self.data.dynamiccolumns(graph)
+
+    def adjustaxesdynamic(self, graph):
+        for columnname, data in self.dynamiccolumns.items():
+            for privatedata, style in zip(self.privatedatalist, self.styles):
+                style.adjustaxis(privatedata, self.sharedata, graph, columnname, data)
 
     def draw(self, graph):
-        self.data.draw(self, graph)
-
-    def gettitle(self):
-        return self.data.gettitle()
+        for privatedata, style in zip(self.privatedatalist, self.styles):
+            style.initdrawpoints(privatedata, self.sharedata, graph)
+        point = {}
+        useitems = []
+        for columnname in self.usedcolumnnames:
+            try:
+                useitems.append((columnname, self.data.columns[columnname]))
+            except:
+                useitems.append((columnname, self.dynamiccolumns[columnname]))
+        if not useitems:
+            raise ValueError("cannot draw empty data")
+        for i in xrange(len(useitems[0][1])):
+            for columnname, data in useitems:
+                point[columnname] = data[i]
+            for privatedata, style in zip(self.privatedatalist, self.styles):
+                style.drawpoint(privatedata, self.sharedata, graph, point)
+        for privatedata, style in zip(self.privatedatalist, self.styles):
+            style.donedrawpoints(privatedata, self.sharedata, graph)
 
     def key_pt(self, graph, x_pt, y_pt, width_pt, height_pt):
         for privatedata, style in zip(self.privatedatalist, self.styles):
@@ -100,7 +121,7 @@ class plotitem:
             return stylesdata
         elif len(stylesdata) == 1:
             return stylesdata[0]
-        raise AttributeError("access to styledata attributes failed")
+        raise AttributeError("access to styledata attribute '%s' failed" % attr)
 
 
 
@@ -121,8 +142,8 @@ class graphxy(canvas.canvas):
         if styles is None:
             for d in usedata:
                 if styles is None:
-                    styles = d.getdefaultstyles()
-                elif styles != d.getdefaultstyles():
+                    styles = d.defaultstyles
+                elif styles != d.defaultstyles:
                     raise RuntimeError("defaultstyles differ")
         plotitems = []
         for d in usedata:
@@ -238,9 +259,12 @@ class graphxy(canvas.canvas):
             plotitem.selectstyles(self, styleindex[stylesid(plotitem.styles)], styletotal[stylesid(plotitem.styles)])
 
         # adjust the axes ranges
-        for step in range(3):
-            for plotitem in self.plotitems:
-                plotitem.adjustaxes(self, step)
+        for plotitem in self.plotitems:
+            plotitem.adjustaxesstatic(self)
+        for plotitem in self.plotitems:
+            plotitem.makedynamicdata(self)
+        for plotitem in self.plotitems:
+            plotitem.adjustaxesdynamic(self)
 
         # finish all axes
         keys = list(self.axes.keys())

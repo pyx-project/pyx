@@ -63,9 +63,6 @@ class _positioner:
     def vtickpoint_pt(self, v):
         "like tickpoint_pt, but for graph coordinates"
 
-    def vtickpoint(self, v):
-        "like tickpoint, but for graph coordinates"
-
 #    def tickdirection(self, x):
 #        """return the direction of a tick as a tuple (dx, dy) for the
 #        position x (the direction points towards the graph)"""

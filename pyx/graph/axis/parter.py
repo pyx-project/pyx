@@ -142,9 +142,6 @@ class autolinear(_parter):
         self.variants = variants
         self.extendtick = extendtick
         self.epsilon = epsilon
-        self.state_less = 1
-        self.state_more = 2
-        self.state_done = 3
 
     def partfunctions(self, min, max, extendmin, extendmax):
         logmm = math.log(max - min) / math.log(10)
