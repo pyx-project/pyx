@@ -311,10 +311,37 @@ class arcn(pathel):
 	self.angle2 = angle2
 
     def bbox(self, canvas, currentpoint, currentsubpath):
-        # TODO: correct me ! 
-        return arc("%f t pt" % self.x, "%f t pt" % self.y, 
-                   "%f t pt" % self.r, 
-		   self.angle2, self.angle1).bbox(canvas, currentpoint, currentsubpath)
+        # in principle, we obtain bbox of an arcn element from 
+	# the bounding box of the corrsponding arc element with
+	# angle1 and angle2 interchanged. Though, we have to be carefull
+	# with the straight line segment, which is added if currentpoint 
+	# is defined.
+
+	# Hence, we first compute the bbox of the arc without this line:
+
+        (earc, sarc, arcbb) = arc("%f t pt" % self.x, 
+	                          "%f t pt" % self.y, 
+                                  "%f t pt" % self.r, 
+		                  self.angle2, 
+			          self.angle1).bbox(canvas, None, None)
+
+	# Then, we repeat the logic from arc.bbox, but with interchanged
+	# start and end points of the arc
+
+	if currentpoint:
+             return ( (sarc[0], sarc[1]),
+                      currentsubpath or currentpoint,
+                      bbox(min(currentpoint[0], sarc[0]),
+		                  min(currentpoint[1], sarc[1]), 
+			          max(currentpoint[0], sarc[0]),
+			          max(currentpoint[1], sarc[1]))+
+	              arcbb
+                    )
+        else:  # we assert that currentsubpath is also None
+             return ( (sarc[0], sarc[1]),
+                      (earc[0], earc[1]),
+	              arcbb
+                    )
 
     def write(self, canvas, file):
         file.write("%f %f %f %f %f arcn" % ( self.x, self.y,
@@ -462,6 +489,8 @@ class arct(pathel):
 	
 class curveto(pathel):
 
+    ' Append curveto '
+
     def __init__(self, x1, y1, x2, y2, x3, y3):
         self.x1 = unit.topt(x1)
 	self.y1 = unit.topt(y1)
@@ -493,6 +522,8 @@ class curveto(pathel):
 
 
 class rcurveto(pathel):
+
+    ' Append rcurveto '
 	
     def __init__(self, dx1, dy1, dx2, dy2, dx3, dy3):
         self.dx1 = unit.topt(dx1)
@@ -537,7 +568,9 @@ class rcurveto(pathel):
 ################################################################################
 	
 class path:
-    """ PS style path """
+    
+    ' PS style path '
+    
     def __init__(self, path=[]):
         self.path = path
         
@@ -578,7 +611,7 @@ class path:
         for pathel in self.path:
             (currentpoint, currentsubpath, nbp) = pathel._bpath(currentpoint, currentsubpath)
             if nbp:
-                for bpel in nbp:
+                for bpel in nbp.bpath:
                     bp.append(bpel)
         return bp
 
@@ -602,6 +635,7 @@ class rect(path):
 ################################################################################
 
 class bpathel:
+    
     def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
         self.x0 = unit.topt(x0)
         self.y0 = unit.topt(y0)
@@ -766,10 +800,12 @@ class bline(bpath):
         y0 = unit.topt(y0)
         x1 = unit.topt(x1)
         y1 = unit.topt(y1)
+
         xa = x0+(x1-x0)/3.0
         ya = y0+(y1-y0)/3.0
         xb = x0+2.0*(x1-x0)/3.0
         yb = y0+2.0*(y1-y0)/3.0
+	
         bpath.__init__(self, 
                       [bpathel("%f t pt" % x0, "%f t pt" % y0, 
                                "%f t pt" % xa, "%f t pt" % ya,
@@ -779,6 +815,8 @@ class bline(bpath):
 
 class barc(bpath):
     def __init__(self, x, y, r, phi1, phi2, dphimax=pi/4):
+
+        self.bpath = []    
 
         phi1 = phi1*pi/180
         phi2 = phi2*pi/180
@@ -796,10 +834,13 @@ class barc(bpath):
 
         dphi=(1.0*(phi2-phi1))/subdivisions
 
-        self.bpath = []    
 
         for i in range(subdivisions):
-            self.bpath.append(arctobpathel(unit.topt(x), unit.topt(y), unit.topt(r), phi1+i*dphi, phi1+(i+1)*dphi))
+            self.bpath.append(arctobpathel(unit.topt(x),
+                                           unit.topt(y),
+                                           unit.topt(r),
+                                           phi1+i*dphi,
+                                           phi1+(i+1)*dphi))
 
 ################################################################################
 # some helper routines            
