@@ -1,1 +1,304 @@
 \chapter{Axes\label{axis}}
+
+Axes are a fundamental component of graphs although there might be use
+cases outside of the graph system. Internally axes are constructed out
+of components, which handle different tasks and axis need to fullfill:
+
+\begin{definitions}
+\term{axis}
+  Basically a container for axis data and the components. It
+  implements the conversion of a data value to a graph coordinate of
+  range [0:1]. It does also handle the proper usage of the components
+  in complicated tasks (\emph{i.e.} combine the partitioner, texter,
+  painter and rater to find the best partitioning).
+\term{tick}
+  Ticks are plotted along the axis. They might be labeled with text as
+  well.
+\term{partitioner, in the code the short form ``parter'' is used}
+  Creates one or several choises of tick lists suitable to a certain
+  axis range.
+\term{texter}
+  Creates labels for ticks when they are not set manually.
+\term{painter}
+  Responsible to paint the axis.
+\term{rater}
+  Calculate ratings, which can be used to select the best suitable
+  partitioning.
+\end{definitions}
+
+The names above map directly to modules, which are provided in the
+directory \file{graph/axis}. Sometimes it might be conventient to
+import the axis directory directly rather access them through the
+graph. This would look like:
+\begin{verbatim}
+  from pyx import *
+  graph.axis.painter() # and the like
+
+  from pyx.graph import axis
+  axis.painter() # this is shorter ...
+\end{verbatim}
+
+In most cases different implementations are available through
+different classes, which can be combined in various ways. There are
+various axis examples distributed with \PyX{}, where you can see some
+of the features of the axis with a few lines of code each. Hence we
+can here directly step on to the reference of the available
+components.
+
+\section{Axes}
+
+\declaremodule{}{graph.axis.axis}
+\modulesynopsis{Axes}
+
+The following classes are part of the module \module{graph.axis.axis}.
+However, there is a shortcut to access those classes via
+\code{graph.axis} directly. Instances of the classes can be passed to
+the \var{**axes} keyword arguments of a graph. Those instances should
+be used once only.
+
+\begin{classdesc}{linear}{min=None, max=None, reverse=0, divisor=None, title=None,
+                          parter=parter.autolinear(), manualticks=[],
+                          density=1, maxworse=2, rater=rater.linear(),
+                          texter=texter.default(), painter=painter.plain()}
+  This class provides a linear axis. \var{min} and \var{max} are the
+  axis range. When not set, they are adjusted automatically by the
+  data to be plotted in the graph. Note, that some data might want to
+  access the range of an axis (\emph{e.g.} the \class{function} class
+  when no range was provided there) or you need to specify a range
+  when using the axis without plugging it into a graph (\emph{e.g.}
+  when drawing a axis along a path).
+
+  \var{reverse} can be set to indicate a reversed axis starting with
+  bigger values first. Alternatively you can fix the axis range by
+  \var{min} and \var{max} accordingly. When divisor is set, it is
+  taken to divide all data range and position informations while
+  creating ticks. You can create ticks not taking into account a
+  factor by that. \var{title} is the title of the axis.
+
+  \var{parter} is a partitioner instance, which creates suitable ticks
+  for the axis range. Those ticks are merged with manual given ticks
+  by \var{manualticks} before proceeding with rating, painting
+  \emph{etc.} Manually placed ticks win against those created by the
+  partitioner. For automatic partitioners, which are able to calculate
+  several possible tick lists for a given axis range, the
+  \var{density} is a (linear) factor to favour more or less ticks. It
+  should not be stressed to much (its likely, that the result would be
+  unappropriate or not at all valid in terms of rating label
+  distances). But within a range of say 0.5 to 2 (even bigger for
+  large graphs) it can help to get less or more ticks than the default
+  would lead to. \var{maxworse} is a the number of trials with more
+  and less ticks when a better rating was already found. \var{rater}
+  is a rater instance, which rates the ticks and the label distances
+  for being best suitable. It also takes into account \var{density}.
+  The rater is only needed, when the partitioner creates several tick
+  lists.
+
+  \var{texter} is a texter instance. It creates labels for those
+  ticks, which claim to have a label, but do not have a label string
+  set already. Ticks created by partitioners typically receive their
+  label strings by texters. The \var{painter} is finally used to
+  construct the output. Note, that usually several output
+  constructions are needed, since the rater is also used to rate the
+  distances between the label for an optimum.
+\end{classdesc}
+
+\begin{classdesc}{lin}{...}
+  This class is an abbreviation of \class{linear} described above.
+\end{classdesc}
+
+\begin{classdesc}{logarithmic}{min=None, max=None, reverse=0, divisor=None, title=None,
+                               parter=parter.autologarithmic(), manualticks=[],
+                               density=1, maxworse=2, rater=rater.logarithmic(),
+                               texter=texter.default(), painter=painter.plain()}
+  This class provides a logarithmic axis. All parameters work like
+  \class{linear}. Only two parameters have a different default:
+  \var{parter} and \var{rater}. Furthermore and most importantly, the
+  mapping between data and graph coordinates is logarithmic.
+\end{classdesc}
+
+\begin{classdesc}{log}{...}
+This class is an abbreviation of \class{logarithmic} described above.
+\end{classdesc}
+
+\begin{classdesc}{linked}{linkedaxis, painter=painter.linked()}
+  This class provides an axis, which is linked to another axis
+  instance. This means, it shares all its properties with the axis it
+  is linked too except for the painter. Thus a linked axis is painted
+  differently.
+
+  A standard use case are the \code{x2} and \code{y2} axes in an
+  x-y-graph. Linked axes to the \code{x} and \code{y} axes are created
+  automatically when not disabled by setting those axes to
+  \code{None}. By that, ticks are stroked at both sides of an
+  x-y-graph. However, linked axes can be used for in other cases as
+  well. You can link axes within a graph or between different graphs
+  as long as the orgininal axis is finished first (it must fix its
+  layout first).
+\end{classdesc}
+
+\begin{classdesc}{split}{subaxes, splitlist=[0.5],
+                         splitdist=0.1, relsizesplitdist=1,
+                         title=None, painter=painter.split()}
+  This class provides an axis, splitting the input values to its
+  subaxes depeding on the range of the subaxes. Thus the subaxes
+  need to have fixed range, up to the minimum of the first axis and
+  the maximum of the last axis. \var{subaxes} actually takes the list
+  of subaxes. \var{splitlist} defines the positions of the spliting
+  in graph coordinates. Thus the length of \var{subaxes} must be the
+  length of \var{splitlist} plus one. If an entry in \var{splitlist}
+  is \code{None}, the axes aside define the split position taking into
+  account the ratio of the axes ranges (meassured by an internal
+  \code{relsize} attribute of each axis).
+
+  \var{splitdist} is the space reserved for a splitting in graph
+  coordinates, when the corresponding entry in \var{splitlist} is not
+  \code{None}. \var{relsizesplitdist} is the space reserved for the
+  splitting in terms, when the corresponding entry in \var{splitlist}
+  is \code{None} compared to the \code{relsize} of the axes aside.
+
+  \var{title} is the title of the split axes and \var{painter} is a
+  specialized painter, which takes care of marking the axes breaks,
+  while the painting of the subaxes are performed by their painters
+  themself.
+\end{classdesc}
+
+\begin{classdesc}{linkedsplit}{linkedaxis,
+                               painter=painter.linkedsplit(),
+                               subaxispainter=omitsubaxispainter}
+  This class provides an axis, which is linked to an instance of
+  \class{split}. The purpose of a linked axis is described in class
+  \class{linked} above. \var{painter} replaces the painter from the
+  \var{linkedaxis} instance.
+
+  While this class creates linked axes for the subaxes of
+  \var{linkedsplit} as well, the question arises what painters to use
+  there. When \var{subaxispainter} is not set, no painter is given
+  explicitly leaving this decision to the subaxes themself. This will
+  lead to omitting all labels and the title. However, you can use a
+  changeable attribute of painters in \var{subaxispainter} to replace
+  the default.
+\end{classdesc}
+
+\begin{classdesc}{bar}{subaxis=None, multisubaxis=None,
+                       dist=0.5, firstdist=None, lastdist=None,
+                       title=None, painter=painter.bar()}
+  This class provides an axis suitable for a bar style. It handles a
+  discrete set of values and maps them to distinct ranges in graph
+  coordinates. For that, the axis gets a list as data values. The
+  first entry is taken to be one of the discrete values valid on this
+  axis. All other parameters, lets call them others, are passed to a
+  subaxis. When others has only one entry, it is passed as a value,
+  otherwise as a list. The result of the conversion done by the
+  subaxis is mapped into the graph coordinate range for this discrete
+  value. When neigher \var{subaxis} nor \var{multisubaxis} is set,
+  others must be a single value in range [0:1]. This value is used for
+  the position at the subaxis without converion.
+
+  When \var{subaxis} is set, it is used for the conversion of others.
+  When \var{multisubaxis} is set, it must be an instance of \var{bar}
+  as well. It is than dublicated for each of the discrete values
+  allowed for the axis. By that, you can create nested bar axes with
+  a different discrete values for each discrete value of the axis. It
+  is not allowed to set both, \var{subaxis} and \var{multisubaxis}.
+
+  \var{dist} is used as the spacing between the ranges for each
+  distinct value. It is measured in the same units as the subaxis
+  results, thus the default value of \code{0.5} means halve the width
+  between the distinct values as the width for each distinct value.
+  \var{firstdist} and \var{lastdist} are used before the first and
+  after the last value. When set to \code{None}, halve of \var{dist}
+  is used.
+
+  \var{title} is the title of the split axes and \var{painter} is a
+  specialized painter for an bar axis. When \var{multisubaxis} is
+  used, their painters are called as well, otherwise they are not
+  taken into account.
+\end{classdesc}
+
+\section{Ticks}
+
+\declaremodule{}{graph.axis.tick}
+\modulesynopsis{Axes ticks}
+
+We describe only one class of the module \module{graph.axis.tick}
+here. Instances of this class are usefill in the \code{manualticks}
+parameter of a regular axis.
+
+\begin{classdesc}{tick}{pos, ticklevel=0, labellevel=0, label=None,
+                        labelattrs=[], power=1, floatprecision=10}
+  \var{pos} is the position of the tick. Since ticks use rational
+  number arithmetics, a convertion to a rational number needs to be
+  performed. \var{pos} can hold different types for that:
+  \begin{itemize}
+  \item A float. It is converted to a rational with finite precision
+    determined by \var{floatprecision}.
+  \item A string, which is parsed to a rational number with full
+    precision. It is also allowed to provide a fraction like
+    \samp{1/3}.
+  \item A tuple of two integers. Those integers are taken as
+    enumerator and denominator of the rational.
+  \end{itemize}
+
+  A tick has a tick level (\emph{i.e.} markers at the axis path) and a
+  label lavel (\emph{e.i.} place text at the axis path),
+  \var{ticklevel} and \var{labellevel}. These are non-negative
+  integers or \var{None}. A value of \code{0} means a regular tick or
+  label, \code{1} stands for a subtick or sublabel, \code{2} for
+  subsubtick or subsublabel and so on. \code{None} means omitting the
+  tick or label. \var{label} is the text of the label. When not set,
+  it can be created automatically by a texter. \var{labelattrs} are
+  the attributes for the labels.
+
+  \var{power} is an integer to calculate \samp{pos**code}. This is
+  usefull at certain places in partitioners.
+\end{classdesc}
+
+\section{Partitioners}
+
+\declaremodule{}{graph.axis.parter}
+\modulesynopsis{Axes partitioners}
+
+The following classes are part of the module \module{graph.axis.parter}.
+Instances of the classes can be passed to the parter keyword argument
+of regular axes.
+
+\begin{classdesc}{linear}{tickdist=None, labeldist=None,
+                          extendtick=0, extendlabel=None,
+                          epsilon=1e-10}
+  TODO: to be continued ...
+\end{classdesc}
+
+\begin{classdesc}{lin}{...}
+This class is an abbreviation of \class{linear} described above.
+\end{classdesc}
+
+\begin{classdesc}{autolinear}{variants=defaultvariants,
+                              extendtick=0,
+                              epsilon=1e-10}
+  TODO: to be continued ...
+\end{classdesc}
+
+\begin{classdesc}{autolin}{...}
+This class is an abbreviation of \class{autolinear} described above.
+\end{classdesc}
+
+\begin{classdesc}{logarithmic}{tickpos=None, labelpos=None,
+                               extendtick=0, extendlabel=None,
+                               epsilon=1e-10}
+  TODO: to be continued ...
+\end{classdesc}
+
+\begin{classdesc}{log}{...}
+This class is an abbreviation of \class{logarithmic} described above.
+\end{classdesc}
+
+\begin{classdesc}{autologarithmic}{variants=defaultvariants,
+                                   extendtick=0, extendlabel=None,
+                                   epsilon=1e-10}
+  TODO: to be continued ...
+\end{classdesc}
+
+\begin{classdesc}{autolog}{...}
+This class is an abbreviation of \class{autologarithmic} described above.
+\end{classdesc}
+

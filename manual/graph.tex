@@ -58,7 +58,7 @@ Note that a call to \method{plot()} will fail once you forced the
 graph to ``finish'' itself. This happens automatically, when you
 write the output. Thus it is not an option to call \method{plot()}
 after \method{writeEPSfile()}. The topic of the finalization of a
-graph is addressed in more detail in section~\ref{graph:graphxy}. As
+graph is addressed in more detail in section~\ref{graph:graph}. As
 you can see in figure~\ref{fig:graph2}, a function is plotted as a
 line by default.
 \begin{figure}[ht]
@@ -97,10 +97,10 @@ continuous development quite clearly. The basic parts of a graph are:
   subtasks. Axes are discussed separately in chapter~\ref{axis}.
 \end{definitions}
 
-\section{X-Y-Graphs\label{graph:graphxy}}
+\section{X-Y-Graphs\label{graph:graph}}
 
 \declaremodule{}{graph.graph}
-\modulesynopsis{graph geometry}
+\modulesynopsis{Graph geometry}
 
 The class \class{graphxy} is part of the module \module{graph.graph}.
 However, there is a shortcut to access this class via
@@ -242,7 +242,7 @@ The graph provides some methods to access its geometry:
 \section{Data\label{graph:data}}
 
 \declaremodule{}{graph.data}
-\modulesynopsis{graph data}
+\modulesynopsis{Graph data}
 
 The following classes provide data for the \method{plot()} method of a
 graph. The classes are implemented in \module{graph.data}.
@@ -414,7 +414,7 @@ For the sake of completeness the default patterns:
   \var{maxcolumn} is the number of columns in the points list. If set
   to \code{None}, the number of columns will be calculated by cycling
   through the points. Each element of \var{points}, \emph{i.e.} each
-  line, whill be checked and adjusted to the number of columns.
+  line, will be checked and adjusted to the number of columns.
 
   \var{addlinenumbers} is a boolean indicating whether line numbers
   should be added or not. Note that the line numbers are storred in
@@ -461,7 +461,7 @@ For the sake of completeness the default patterns:
 \section{Styles\label{graph:style}}
 
 \declaremodule{}{graph.style}
-\modulesynopsis{graph style}
+\modulesynopsis{Graph style}
 
 Please note that we're talking about graph styles here. Those are
 responsible for plotting symbols, lines, bars and whatever else into a
@@ -475,8 +475,8 @@ method of a graph. The classes are implemented in \module{graph.style}.
                               errorscale=0.5, symbolattrs=[],
                               errorbarattrs=[], lineattrs=[],
                               epsilon=1e-10}
-  This class provides a style for drawing symbols, lines and
-  errorbars. \var{symbol} refers to a (changable) symbol method (see
+  This class is a style for plot symbols, lines and errorbars into a
+  graph. \var{symbol} refers to a (changable) symbol method (see
   below). The symbol is drawn at size \var{size} (a visual \PyX{}
   length; also changeable) using \var{symbolattrs}. \var{symbolattrs}
   are merged with the decorator \class{deco.stroked}. \var{errorscale}
@@ -487,12 +487,12 @@ method of a graph. The classes are implemented in \module{graph.style}.
   to determine, when a symbol is outside of the graph (in graph
   coordinates).
 
-  \var{symbolline} is useable on graph with arbitrary dimension and
-  geometry. It needs data for each graph dimension. The data names
-  must be equal to an axis name. Furthermore there can be data names
-  constructed out of the axis names for identifying data for the error
-  bars. Suppose \code{X} is an axis name. Then \class{symbolline}
-  allows for the following data names as well:
+  \var{symbolline} is useable on graphs with arbitrary dimension and
+  geometry. It needs one data column for each graph dimension. The
+  data names must be equal to an axis name. Furthermore there can be
+  data names constructed out of the axis names for identifying data
+  for the error bars. Suppose \code{X} is an axis name. Then
+  \class{symbolline} allows for the following data names as well:
 
   \begin{tableii}{l|l}{}{data name}{description}
     \lineii{\code{Xmin}}{minimal value}
@@ -598,20 +598,120 @@ defined as:
 \begin{classdesc}{symbol}{symbol=changecross, size="0.2 cm",
                           errorscale=0.5, symbolattrs=[],
                           errorbarattrs=[], epsilon=1e-10}
-  This class provides a style for drawing symbols and errorbars.
-  It is equivalent to \class{symbollines} except that it does not
-  allow for lines. An instance of \class{symbol} is the default style
-  for all data classes described in section~\ref{graph:data} except
-  for \class{function} and \class{paramfunction}.
+  This class is a style to plot symbols and errorbars into a graph. It
+  is equivalent to \class{symbollines} except that it does not allow
+  for lines. An instance of \class{symbol} is the default style for
+  all data classes described in section~\ref{graph:data} except for
+  \class{function} and \class{paramfunction}.
 \end{classdesc}
 
-\begin{classdesc}{lines}{errorbarattrs=[]}
-  This class provides a style for stroking lines. It is equivalent to
-  \class{symbollines} except that it does not allow for symbols and
+\begin{classdesc}{line}{errorbarattrs=[]}
+  This class is a style to stroke lines into graph. It is equivalent
+  to \class{symbollines} except that it does not allow for symbols and
   errorbars. Thus it also does not accept data names for error bars.
   Instances of \class{line} are the default style for the data classes
   \class{function} and \class{paramfunction}.
 \end{classdesc}
 
+\begin{classdesc}{text}{textdx="0", textdy="0.3 cm", textattrs=[],
+                        symbol=changecross, size="0.2 cm",
+                        errorscale=0.5, symbolattrs=[],
+                        errorbarattrs=[], epsilon=1e-10}
+  This class enhances \class{symbol} by adding text to the symbol. The
+  text to be written has provided in the additional data column named
+  \code{text}. \var{textdx} and \var{textdy} are the position of the
+  text with respect of the symbol. \var{textattrs} are text
+  attributes for the output of the text. All other parameters have the
+  same meaning as in the \class{symbol} class.
+\end{classdesc}
+
+\begin{classdesc}{arrow}{linelength="0.25 cm", arrowsize="0.15 cm",
+                         lineattrs=[], arrowattrs=[], epsilon=1e-10}
+  This class is a style to plot short lines with arrows into a
+  two-dimensional graph. The position of the arrow is defined by two
+  data columns named like an axes for each graph dimension. Two
+  additional data columns named \code{size} and \code{angle} define
+  the size and angle for each arrow. \code{size} is taken as a factor
+  to \var{arrowsize} and \var{linelength}, the size of the arrow and
+  the length of the line the arrow is plotted at. \code{angle} is the
+  angle the arrow points to with respect to a horizonal lines. The
+  \code{angle} is taken in degree and use in mathematical positive
+  sense. \var{lineattrs} and \var{arrowattrs} are styles for the arrow
+  line and arrow head respectively. \var{epsilon} is used to
+  determine, when the arrow is outside of the graph (in graph
+  coordinates).
+\end{classdesc}
+
+\begin{classdesc}{rect}{palette=color.palette.Gray}
+  This class is a style to plot coloured rectangles into a
+  two-dimensional graph. The position of the rectangles are given by 4
+  data columns named \code{Xmin} and \code{Xmax} where \code{X} stands
+  for two axes names, one for each graph dimension. The additional
+  data column named \code{color} specifies the color of the rectangle
+  defined by \var{palette}. Thus the valid color range is [0:1].
+
+  \begin{note}
+    Although this style can be used for plotting coloured surfaces, it
+    will lead to a huge memory footprint of \PyX together with a
+    long running time and large outputs. Improved support for coloured
+    surfaces are planned for the future.
+  \end{note}
+\end{classdesc}
+
+\begin{classdesc}{bar}{fromvalue=None, frompathattrs=[], barattrs=[],
+                       subnames=None, epsilon=1e-10}
+  This class is a style to plot bars into a two-dimensional graph. The
+  bars are plotted on top of a specialized axis, namely a bar axis.
+  The data column for this bar axis is named \code{Xname} where
+  \code{X} is an axis name. The bar value have a name an axis of the
+  other graph dimension. Suppose the name of this value axis is
+  \code{Y} than you can stack further bars on top of this bar by
+  providing additional data columns consecutively named
+  \code{Ystack1}, \code{Ystack2}, \code{Ystack3}, \emph{etc.}
+  When plotting several bars in a single graph, those bars are placed
+  side by side (at the same value of \code{Xname}). The name axis, a
+  bar axis, must then be a nested bar axis. The names used for the
+  subaxis can be set by \var{subnames}. When not set, integer numbers
+  starting from zero will be used.
+
+  The bars start at \var{fromvalue} when provided. The \var{fromvalue}
+  is marked by a gridline stroked using \var{frompathattrs}. The bars
+  are filled using \var{barattrs}. \var{barattrs} is merged with
+  \samp{[color.palette.Rainbow, deco.stroked([color.gray.black])]} and
+  iterated independently when several bars are plotted side by side
+  and when several bars are plotted on top of each other. When mixing
+  both possibilities, you may use nested changeable styles.
+\end{classdesc}
+
 \section{Keys\label{graph:key}}
 
+\declaremodule{}{graph.key}
+\modulesynopsis{Graph keys}
+
+The following class provides a key, whose instances can be passed to
+the constructor keyword argument \code{key} of a graph. The class is
+implemented in \module{graph.key}.
+
+\begin{classdesc}{key}{dist="0.2 cm", pos="tr", hinside=1, vinside=1,
+                       hdist="0.6 cm", vdist="0.4 cm",
+                       symbolwidth="0.5 cm", symbolheight="0.25 cm",
+                       symbolspace="0.2 cm", textattrs=[]}
+  This class writes the title of the data in a plot together with a
+  small illustration of the style. The style is responsible for its
+  illustration.
+
+  \var{dist} is a visual length and a distance between the key
+  entries. \var{pos} is the position of the key with respect to the
+  graph. Allowed values are combinations of \samp{t} (top) and
+  \samp{b} (bottom) with \samp{l} (left) and \samp{r} (right).
+  \var{hdist} and \var{vdist} are the distances from the specified
+  corner of the graph. \var{hinside} and \var{vinside} are booleans to
+  define whether the key should be placed horizontally and vertically
+  inside of the graph or not.
+
+  \var{symbolwidth} and \var{symbolheight} is passed to the style to
+  control the size of the style illustration. \var{symbolspace} is the
+  space between the illustration and the text. \var{textattrs} are
+  attributes for the text creation. They are merged with
+  \samp{[text.vshift.mathaxis]}.
+\end{classdesc}

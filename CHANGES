@@ -48,22 +48,24 @@ TODO for 0.6:
   - deco module:
     - wriggle should be replaced by cycloid
     - name for cycloid OK?
+      AW: Fine to me. I suggest to use curvesperloop=5. I think, it is not
+          crucial to 0.6 at all. Those decorators are working but are not yet
+          documented. We also need to think hard about decorators for 0.7 ...
   - Documentation:
-    - graph module:
-      - documentation of the new class layout
-      - painters are using the new attribute scheme including changeable
-        attributes
+    - graph module: (in progress)
       - axis zeropath feature removed
-      - graph styles rewrite
-      - part -> parter, tickdist->tickpos argument of parter
+      AW: Why bother with that in the documentation at all?
     - deco module:
       - cycloid decorator
       - smoothed decorator
     - unit module:
       -> not always returns true
+      AW: HÄÄÄ???
     - path module:
       in the introduction mention the canvas
       describe + vs <<
+    - AW remarks: Attributes and changeable attributes should be explained in a
+                  central place. I guess that will not happen within 0.6 ...
 
 0.6 (XXXX/XX/XX):
   - bbox module:
