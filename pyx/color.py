@@ -23,11 +23,14 @@
 
 import attr
 
-class color(attr._attr):
+class color(attr._exclusiveattr):
 
     """base class for all colors"""
 
     pass
+
+
+clear = attr._classclear(color)
 
 
 class grey(color):
@@ -60,6 +63,8 @@ class rgb(color):
 rgb.red   = rgb(1,0,0)
 rgb.green = rgb(0,1,0)
 rgb.blue  = rgb(0,0,1)
+rgb.white = rgb(1,1,1)
+rgb.black = rgb(0,0,0)
 
 
 class hsb(color):
@@ -155,9 +160,13 @@ cmyk.Gray           = cmyk(0, 0, 0, 0.50)
 cmyk.Grey           = cmyk.Gray
 cmyk.Black          = cmyk(0, 0, 0, 1)
 cmyk.White          = cmyk(0, 0, 0, 0)
+cmyk.white          = cmyk.White
+cmyk.black          = cmyk.Black
 
 
-class palette:
+class palette(attr._exclusiveattr):
+
+    """palette is a collection of two colors for calculating transitions between them"""
 
     def __init__(self, mincolor, maxcolor, min=0, max=1):
         if mincolor.__class__ != maxcolor.__class__:
@@ -172,9 +181,10 @@ class palette:
         color = {}
         for key in self.mincolor.color.keys():
             color[key] = ((index - self.min) * self.maxcolor.color[key] +
-                          (self.max - index) * self.mincolor.color[key])/float(self.max - self.min)
+                          (self.max - index) * self.mincolor.color[key]) / float(self.max - self.min)
         return self.colorclass(**color)
 
+palette.clear = attr._classclear(palette)
 
 palette.Gray           = palette(gray.white, gray.black)
 palette.Grey           = palette.Gray
@@ -186,18 +196,18 @@ palette.GreenRed       = palette(rgb.green, rgb.red)
 palette.GreenBlue      = palette(rgb.green, rgb.blue)
 palette.BlueRed        = palette(rgb.blue, rgb.red)
 palette.BlueGreen      = palette(rgb.blue, rgb.green)
-palette.RedBlack       = palette(rgb.red, rgb(0, 0, 0))
-palette.BlackRed       = palette(rgb(0, 0, 0), rgb.red)
-palette.RedWhite       = palette(rgb.red, rgb(1, 1, 1))
-palette.WhiteRed       = palette(rgb(1, 1, 1), rgb.red)
-palette.GreenBlack     = palette(rgb.green, rgb(0, 0, 0))
-palette.BlackGreen     = palette(rgb(0, 0, 0), rgb.green)
-palette.GreenWhite     = palette(rgb.green, rgb(1, 1, 1))
-palette.WhiteGreen     = palette(rgb(1, 1, 1), rgb.green)
-palette.BlueBlack      = palette(rgb.blue, rgb(0, 0, 0))
-palette.BlackBlue      = palette(rgb(0, 0, 0), rgb.blue)
-palette.BlueWhite      = palette(rgb.blue, rgb(1, 1, 1))
-palette.WhiteBlue      = palette(rgb(1, 1, 1), rgb.blue)
+palette.RedBlack       = palette(rgb.red, rgb.black)
+palette.BlackRed       = palette(rgb.black, rgb.red)
+palette.RedWhite       = palette(rgb.red, rgb.white)
+palette.WhiteRed       = palette(rgb.white, rgb.red)
+palette.GreenBlack     = palette(rgb.green, rgb.black)
+palette.BlackGreen     = palette(rgb.black, rgb.green)
+palette.GreenWhite     = palette(rgb.green, rgb.white)
+palette.WhiteGreen     = palette(rgb.white, rgb.green)
+palette.BlueBlack      = palette(rgb.blue, rgb.black)
+palette.BlackBlue      = palette(rgb.black, rgb.blue)
+palette.BlueWhite      = palette(rgb.blue, rgb.white)
+palette.WhiteBlue      = palette(rgb.white, rgb.blue)
 palette.Rainbow        = palette(hsb(0, 1, 1), hsb(2.0/3.0, 1, 1))
 palette.ReverseRainbow = palette(hsb(2.0/3.0, 1, 1), hsb(0, 1, 1))
 palette.Hue            = palette(hsb(0, 1, 1), hsb(1, 1, 1))
