@@ -103,17 +103,38 @@ class _data:
 
 
 class list(_data):
-    "creates data out of points"
+    "creates data out of a list"
 
-    def __init__(self, points, title="unknown", maxcolumns=None, addlinenumbers=1, **columns):
-        if maxcolumns is None and len(points):
+    def checkmaxcolumns(self, points, maxcolumns=None):
+        if maxcolumns is None:
             maxcolumns = max([len(point) for point in points])
+        for i in xrange(len(points)):
+            l = len(points[i])
+            if l < maxcolumns:
+                try:
+                    p = points[i] + [None] * (maxcolumns - l)
+                except:
+                    # points[i] are not a list
+                    p = __builtins__.list(points[i]) + [None] * (maxcolumns - l)
+                try:
+                    points[i] = p
+                except:
+                    # points are not a list -> end loop without step into else
+                    break
+        else:
+            # the loop finished successfull
+            return points
+        # since points are not a list, convert them and try again
+        return checkmaxcolumns(__builtins__.list(points))
+
+    def __init__(self, points, title="user provided list", maxcolumns=None, addlinenumbers=1, **columns):
+        points = self.checkmaxcolumns(points, maxcolumns)
         if addlinenumbers:
             for i in xrange(len(points)):
-                points[i] = [i+1] + points[i] + [None] * (maxcolumns - len(points[i]))
-        else:
-            for i in xrange(len(points)):
-                points[i] = points[i] + [None] * (maxcolumns - len(points[i]))
+                try:
+                    points[i].insert(0, i+1)
+                except:
+                    points[i] = [i+1] + __builtins__.list(points[i])
         self.points = points
         self.columns = columns
         self.title = title
@@ -457,7 +478,7 @@ class function:
             self.title = title
         self.min = min
         self.max = max
-        self.nopoints = points
+        self.numberofpoints = points
         self.context = context.copy() # be save on late evaluations
         self.result, expression = [x.strip() for x in expression.split("=")]
         self.mathtree = parser.parse(expression)
@@ -474,7 +495,8 @@ class function:
         if self.variable is None:
             raise ValueError("no variable found")
         self.xaxis = graph.axes[self.variable]
-        unhandledcolumns = self.style.setdata(graph, {self.variable: 0, self.result: 1}, self)
+        self.columns = {self.variable: 1, self.result: 2}
+        unhandledcolumns = self.style.setdata(graph, self.columns, self)
         unhandledcolumnkeys = unhandledcolumns.keys()
         if len(unhandledcolumnkeys):
             raise ValueError("style couldn't handle column keys %s" % unhandledcolumnkeys)
@@ -493,28 +515,31 @@ class function:
         if step == 0:
             self.points = []
             if self.min is not None:
-                self.points.append([self.min])
+                self.points.append([None, self.min])
             if self.max is not None:
-                self.points.append([self.max])
-            self.style.adjustaxes([0], self)
-        if step == 1:
+                self.points.append([None, self.max])
+            self.style.adjustaxes([1], self)
+        elif step == 1:
             min, max = graph.axes[self.variable].getrange()
             if self.min is not None: min = self.min
             if self.max is not None: max = self.max
             vmin = self.xaxis.convert(min)
             vmax = self.xaxis.convert(max)
             self.points = []
-            for i in range(self.nopoints):
-                x = self.xaxis.invert(vmin + (vmax-vmin)*i / (self.nopoints-1.0))
-                self.points.append([x])
+            for i in range(self.numberofpoints):
+                v = vmin + (vmax-vmin)*i / (self.numberofpoints-1.0)
+                x = self.xaxis.invert(v)
+                # caution: the virtual coordinate might differ once
+                # the axis rescales itself to include further ticks etc.
+                self.points.append([v, x, None])
             for point in self.points:
-                self.context[self.variable] = point[0]
+                self.context[self.variable] = point[1]
                 try:
-                    point.append(self.mathtree.Calc(**self.context))
+                    point[2] = self.mathtree.Calc(**self.context)
                 except (ArithmeticError, ValueError):
-                    point.append(None)
+                    pass
         elif step == 2:
-            self.style.adjustaxes([1], self)
+            self.style.adjustaxes([2], self)
 
     def draw(self, graph):
         self.style.drawpoints(graph, self)
@@ -532,37 +557,32 @@ class paramfunction:
         self.varname = varname
         self.min = min
         self.max = max
-        self.nopoints = points
+        self.numberofpoints = points
         self.expression = {}
-        self.mathtrees = {}
         varlist, expressionlist = expression.split("=")
         keys = varlist.split(",")
-        mtrees = parser.parse(expressionlist)
-        if len(keys) != len(mtrees):
+        mathtrees = parser.parse(expressionlist)
+        if len(keys) != len(mathtrees):
             raise ValueError("unpack tuple of wrong size")
-        for i in range(len(keys)):
-            key = keys[i].strip()
-            if self.mathtrees.has_key(key):
-                raise ValueError("multiple assignment in tuple")
-            self.mathtrees[key] = mtrees[i]
-        if len(keys) != len(self.mathtrees.keys()):
-            raise ValueError("unpack tuple of wrong size")
-        self.points = []
-        for i in range(self.nopoints):
-            context[self.varname] = self.min + (self.max-self.min)*i / (self.nopoints-1.0)
-            line = []
-            for key, tree in self.mathtrees.items():
-                line.append(tree.Calc(**context))
-            self.points.append(line)
+        self.points = [None]*self.numberofpoints
+        emptyresult = [None]*len(keys)
+        self.columns = {}
+        i = 1
+        for key in keys:
+            self.columns[key.strip()] = i
+            i += 1
+        for i in range(self.numberofpoints):
+            param = self.min + (self.max-self.min)*i / (self.numberofpoints-1.0)
+            context[self.varname] = param
+            self.points[i] = [param] + emptyresult
+            column = 1
+            for key, column in self.columns.items():
+                self.points[i][column] = mathtrees[column-1].Calc(**context)
+                column += 1
 
     def setstyle(self, graph, style):
         self.style = style
-        columns = {}
-        index = 0
-        for key in self.mathtrees.keys():
-            columns[key] = index
-            index += 1
-        unhandledcolumns = self.style.setdata(graph, columns, self)
+        unhandledcolumns = self.style.setdata(graph, self.columns, self)
         unhandledcolumnkeys = unhandledcolumns.keys()
         if len(unhandledcolumnkeys):
             raise ValueError("style couldn't handle column keys %s" % unhandledcolumnkeys)
@@ -572,7 +592,7 @@ class paramfunction:
 
     def adjustaxes(self, graph, step):
         if step == 0:
-            self.style.adjustaxes(range(len(self.mathtrees.items())), self)
+            self.style.adjustaxes(self.columns.values(), self)
 
     def draw(self, graph):
         self.style.drawpoints(graph, self)
