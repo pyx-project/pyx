@@ -371,7 +371,7 @@ class FontMapping:
         self.texname = self.basepsname = self.fontfile = None
 
         # standard encoding
-        self.encodingfile = "ad.enc"
+        self.encodingfile = None
 
         # supported postscript fragments occuring in psfonts.map
         self.reencodefont = self.extendfont = self.slantfont = None

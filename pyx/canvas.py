@@ -116,6 +116,8 @@ class fontdefinition(prologitem):
         if not isinstance(other, fontdefinition):
             return other
         if self.basepsname==other.basepsname:
+            if self.encfilename!=other.encfilename:
+                raise ValueError("Multiple encodings for the same type 1 font are not supported")
             for i in range(len(self.usedchars)):
                 self.usedchars[i] = self.usedchars[i] or other.usedchars[i]
             return None
@@ -133,10 +135,13 @@ class fontdefinition(prologitem):
             pfbpath = pykpathsea.find_file(self.fontfile, pykpathsea.kpse_type1_format)
             if pfbpath is None:
                 raise RuntimeError("cannot find type 1 font %s" % self.fontfile)
-            encpath = pykpathsea.find_file(self.encfilename, pykpathsea.kpse_tex_ps_header_format)
-            if encpath is None:
-                raise RuntimeError("cannot find font encoding file %s" % self.encfilename)
-            t1strip.t1strip(file, pfbpath, encpath, self.usedchars)
+            if self.encfilename is not None:
+                encpath = pykpathsea.find_file(self.encfilename, pykpathsea.kpse_tex_ps_header_format)
+                if encpath is None:
+                    raise RuntimeError("cannot find font encoding file %s" % self.encfilename)
+                t1strip.t1strip(file, pfbpath, self.usedchars, encpath)
+            else:
+                t1strip.t1strip(file, pfbpath, self.usedchars)
             file.write("%%EndFont\n")
 
 
