@@ -955,11 +955,11 @@ class path(base.PSCmd):
     def __add__(self, other):
         return path(*(self.path+other.path))
 
-    def __len__(self):
-        return len(self.path)
-
     def __getitem__(self, i):
         return self.path[i]
+
+    def __len__(self):
+        return len(self.path)
 
     def append(self, pathel):
         self.path.append(pathel)
@@ -990,6 +990,13 @@ class path(base.PSCmd):
     def end(self):
         """return last point of last subpath in path"""
         return normpath(self).end()
+
+    def glue(self, other):
+        """return path consisting of self and other glued together"""
+        return normpath(self).glue(other)
+
+    # << operator also designates glueing
+    __lshift__ = glue
 
     def intersect(self, other, epsilon=1e-5):
         """intersect normpath corresponding to self with other path"""
@@ -1051,10 +1058,7 @@ class normpath(path):
             path.__init__(self, *_normalizepath(args))
 
     def __add__(self, other):
-        if isinstance(other, normpath):
-            return normpath(*(self.path+other.path))
-        else:
-            return path(*(self.path+other.path))
+        return normpath(*(self.path+other.path))
 
     def append(self, pathel):
         self.path.append(pathel)
@@ -1323,15 +1327,15 @@ class curve(_curve):
 
 # rectangles
 
-class _rect(path):
+class _rect(normpath):
 
    """rectangle at position (x,y) with width and height (coordinates in pts)"""
 
    def __init__(self, x, y, width, height):
        path.__init__(self, _moveto(x, y), 
-                           _rlineto(width, 0), 
-                           _rlineto(0, height), 
-                           _rlineto(-width, 0),
+                           _lineto(x+width, y), 
+                           _lineto(x+width, y+height), 
+                           _lineto(x, y+height),
                            closepath())
 
 
