@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+# TODO: - clipping (especially bounding boxes, which are then limited
+#         by the bounding box of the clipping path)
+
 import string, re, tex, unit, trafo, types
 from math import sqrt
 

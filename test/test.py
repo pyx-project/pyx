@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-from canvas import *
-from path import *
-import unit
+from pyx import *
+from pyx.path import *
+
 import profile
 import pstats
 def drawpathwbbox(c, p):
