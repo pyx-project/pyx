@@ -36,8 +36,6 @@ TODO:
      - consider rewrite using the python compiler module
   - path module:
     - _lentopar return value should not contain total length
-    - should normpaths not allow for very short path elements?
-      (currently, the closepath does prevent short paths at the end)
   - data module:
     - data.data should add line number like data.datafile
     - use csv module (new in 2.3)
@@ -54,6 +52,9 @@ TODO:
     - support modification of existing styles via __call__
   - bbox module:
     - height -> getheight, ...
+  - connector module:
+    - never use lists instead of tuples
+    - never use [x for y in [0,1]]
 
 0.6 (XXXX/XX/XX):
   - bbox module:
