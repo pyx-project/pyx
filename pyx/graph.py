@@ -93,11 +93,14 @@ class _logmap:
 
 
 ################################################################################
-# partitioner (abbreviation parter)
+# partitioner
 # please note the nomenclature:
-# - a partition is a ordered sequence of tick instances; to reduce name
-#   clashes, a partition is called ticks ticks
-# - a parter is a class creating a single or several parts
+# - a partition is a list of tick instances; to reduce name clashes, a
+#   partition is called ticks
+# - a partitioner is a class creating a single or several ticks
+# - a axis has a part attribute where it stores a partitioner or/and some
+#   (manually set) ticks -> the part attribute is used to create the ticks
+#   in the axis finish method
 ################################################################################
 
 
@@ -106,8 +109,9 @@ class frac:
     the axis partitioning uses rational arithmetics (with infinite accuracy)
     basically it contains self.enum and self.denom"""
 
-    def __init__(self, enum, denom, power=None):
+    def __init__(self, pos, power=None):
         "for power!=None: frac=(enum/denom)**power"
+        enum, denom = pos
         if not helper.isinteger(enum) or not helper.isinteger(denom): raise TypeError("integer type expected")
         if not denom: raise ZeroDivisionError("zero denominator")
         if power != None:
@@ -128,13 +132,13 @@ class frac:
         return cmp(self.enum * other.denom, other.enum * self.denom)
 
     def __abs__(self):
-        return frac(abs(self.enum), abs(self.denom))
+        return frac((abs(self.enum), abs(self.denom)))
 
     def __mul__(self, other):
-        return frac(self.enum * other.enum, self.denom * other.denom)
+        return frac((self.enum * other.enum, self.denom * other.denom))
 
     def __div__(self, other):
-        return frac(self.enum * other.denom, self.denom * other.enum)
+        return frac((self.enum * other.denom, self.denom * other.enum))
 
     def __float__(self):
         "caution: avoid final precision of floats"
@@ -156,9 +160,9 @@ def _ensurefrac(arg):
         for part in commaparts:
             if not part.isdigit(): raise ValueError("non-digits found in '%s'" % part)
         if len(commaparts) == 1:
-            return frac(long(commaparts[0]), 1)
+            return frac((long(commaparts[0]), 1))
         elif len(commaparts) == 2:
-            result = frac(1, 10l, power=len(commaparts[1]))
+            result = frac((1, 10l), power=len(commaparts[1]))
             result.enum = long(commaparts[0])*result.denom + long(commaparts[1])
             return result
         else: raise ValueError("multiple '.' found in '%s'" % str)
@@ -169,7 +173,7 @@ def _ensurefrac(arg):
         value = createfrac(fraction[0])
         if len(fraction) == 2:
             value2 = createfrac(fraction[1])
-            value = frac(value.enum * value2.denom, value.denom * value2.enum)
+            value = value / value2
         return value
     if not isinstance(arg, frac): raise ValueError("can't convert argument to frac")
     return arg
@@ -185,8 +189,8 @@ class tick(frac):
     When label is None, it should be automatically created (and stored), once the
     an axis painter needs it. Classes, which implement _Itexter do precisely that."""
 
-    def __init__(self, enum, denom, ticklevel=None, labellevel=None, label=None, labelattrs=[]):
-        frac.__init__(self, enum, denom)
+    def __init__(self, pos, ticklevel=None, labellevel=None, label=None, labelattrs=[]):
+        frac.__init__(self, pos)
         self.ticklevel = ticklevel
         self.labellevel = labellevel
         self.label = label
@@ -219,6 +223,8 @@ def _mergeticklists(list1, list2):
     - CAUTION: original lists are modified and they share references to
       the result list!"""
     # TODO: improve this using bisect?!
+    if list1 is None: return list2
+    if list2 is None: return list1
     i = 0
     j = 0
     try:
@@ -350,18 +356,18 @@ class manualpart:
         ticks = list(self.mix)
         if helper.issequenceofsequences(self.tickpos):
             for fracs, level in zip(self.tickpos, xrange(sys.maxint)):
-                ticks = _mergeticklists(ticks, [tick(frac.enum, frac.denom, ticklevel=level)
+                ticks = _mergeticklists(ticks, [tick((frac.enum, frac.denom), ticklevel=level, labellevel=None)
                                                 for frac in self.checkfraclist(*map(_ensurefrac, helper.ensuresequence(fracs)))])
         else:
-            ticks = _mergeticklists(ticks, [tick(frac.enum, frac.denom, ticklevel=0)
+            ticks = _mergeticklists(ticks, [tick((frac.enum, frac.denom), ticklevel=0, labellevel=None)
                                             for frac in self.checkfraclist(*map(_ensurefrac, helper.ensuresequence(self.tickpos)))])
 
         if helper.issequenceofsequences(self.labelpos):
             for fracs, level in zip(self.labelpos, xrange(sys.maxint)):
-                ticks = _mergeticklists(ticks, [tick(frac.enum, frac.denom, labellevel = level)
+                ticks = _mergeticklists(ticks, [tick((frac.enum, frac.denom), ticklevel=None, labellevel = level)
                                                 for frac in self.checkfraclist(*map(_ensurefrac, helper.ensuresequence(fracs)))])
         else:
-            ticks = _mergeticklists(ticks, [tick(frac.enum, frac.denom, labellevel = 0)
+            ticks = _mergeticklists(ticks, [tick((frac.enum, frac.denom), ticklevel=None, labellevel = 0)
                                             for frac in self.checkfraclist(*map(_ensurefrac, helper.ensuresequence(self.labelpos)))])
 
         _mergelabels(ticks, self.labels)
@@ -441,7 +447,7 @@ class linpart:
         imax = int(math.floor(max / float(frac) + 0.5 * self.epsilon))
         ticks = []
         for i in range(imin, imax + 1):
-            ticks.append(tick(long(i) * frac.enum, frac.denom, ticklevel=ticklevel, labellevel=labellevel))
+            ticks.append(tick((long(i) * frac.enum, frac.denom), ticklevel=ticklevel, labellevel=labellevel))
         return ticks
 
     def defaultpart(self, min, max, extendmin, extendmax):
@@ -474,10 +480,10 @@ class autolinpart:
 
     __implements__ = _Ipart
 
-    defaultvariants = ((frac(1, 1), frac(1, 2)),
-                       (frac(2, 1), frac(1, 1)),
-                       (frac(5, 2), frac(5, 4)),
-                       (frac(5, 1), frac(5, 2)))
+    defaultvariants = ((frac((1, 1)), frac((1, 2))),
+                       (frac((2, 1)), frac((1, 1))),
+                       (frac((5, 2)), frac((5, 4))),
+                       (frac((5, 1)), frac((5, 2))))
 
     def __init__(self, variants=defaultvariants, extendtick=0, epsilon=1e-10, mix=()):
         """configuration of the partition scheme
@@ -507,14 +513,14 @@ class autolinpart:
     def defaultpart(self, min, max, extendmin, extendmax):
         logmm = math.log(max - min) / math.log(10)
         if logmm < 0: # correction for rounding towards zero of the int routine
-            base = frac(10L, 1, int(logmm - 1))
+            base = frac((10L, 1), int(logmm - 1))
         else:
-            base = frac(10L, 1, int(logmm))
+            base = frac((10L, 1), int(logmm))
         ticks = map(_ensurefrac, self.variants[0])
         useticks = [tick * base for tick in ticks]
         self.lesstickindex = self.moretickindex = 0
-        self.lessbase = frac(base.enum, base.denom)
-        self.morebase = frac(base.enum, base.denom)
+        self.lessbase = frac((base.enum, base.denom))
+        self.morebase = frac((base.enum, base.denom))
         self.min, self.max, self.extendmin, self.extendmax = min, max, extendmin, extendmax
         part = linpart(tickdist=useticks, extendtick=self.extendtick, epsilon=self.epsilon, mix=self.mix)
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
@@ -563,13 +569,13 @@ class logpart(linpart):
 
     __implements__ = _Ipart
 
-    pre1exp5   = preexp(frac(1, 1), 100000)
-    pre1exp4   = preexp(frac(1, 1), 10000)
-    pre1exp3   = preexp(frac(1, 1), 1000)
-    pre1exp2   = preexp(frac(1, 1), 100)
-    pre1exp    = preexp(frac(1, 1), 10)
-    pre125exp  = preexp((frac(1, 1), frac(2, 1), frac(5, 1)), 10)
-    pre1to9exp = preexp(map(lambda x: frac(x, 1), range(1, 10)), 10)
+    pre1exp5   = preexp(frac((1, 1)), 100000)
+    pre1exp4   = preexp(frac((1, 1)), 10000)
+    pre1exp3   = preexp(frac((1, 1)), 1000)
+    pre1exp2   = preexp(frac((1, 1)), 100)
+    pre1exp    = preexp(frac((1, 1)), 10)
+    pre125exp  = preexp((frac((1, 1)), frac((2, 1)), frac((5, 1))), 10)
+    pre1to9exp = preexp(map(lambda x: frac((x, 1)), range(1, 10)), 10)
     #  ^- we always include 1 in order to get extendto(tick|label)level to work as expected
 
     def __init__(self, tickpos=None, labelpos=None, labels=None, extendtick=0, extendlabel=None, epsilon=1e-10, mix=()):
@@ -656,8 +662,8 @@ class logpart(linpart):
             imax = int(math.floor(math.log(max / float(f)) /
                                   math.log(preexp.exp) + 0.5 * self.epsilon))
             for i in range(imin, imax + 1):
-                pos = f * frac(preexp.exp, 1, i)
-                fracticks.append(tick(pos.enum, pos.denom, ticklevel = ticklevel, labellevel = labellevel))
+                pos = f * frac((preexp.exp, 1), i)
+                fracticks.append(tick((pos.enum, pos.denom), ticklevel = ticklevel, labellevel = labellevel))
             ticks = _mergeticklists(ticks, fracticks)
         return ticks
 
@@ -847,19 +853,19 @@ class distancerater:
 
 
 class axisrater:
-    """a rater for axis partitions
+    """a rater for ticks
     - the rating of axes is splited into two separate parts:
-      - rating of the partitions in terms of the number of ticks,
-        subticks, labels, etc.
+      - rating of the ticks in terms of the number of ticks, subticks,
+        labels, etc.
       - rating of the label distances
-    - in the end, a rate for an axis partition is the sum of these rates
+    - in the end, a rate for ticks is the sum of these rates
     - it is useful to first just rate the number of ticks etc.
       and selecting those partitions, where this fits well -> as soon
       as an complete rate (the sum of both parts from the list above)
-      of a first partition is below a rate of just the ticks of another
-      partition, this second partition will never be better than the
-      first one -> we gain speed by minimizing the number of partitions,
-      where label distances have to be taken into account)
+      of a first ticks is below a rate of just the number of ticks,
+      subticks labels etc. of other ticks, those other ticks will never
+      be better than the first one -> we gain speed by minimizing the
+      number of ticks, where label distances have to be taken into account)
     - both parts of the rating are shifted into instances of raters
       defined above --- right now, there is not yet a strict interface
       for this delegation (should be done as soon as it is needed)"""
@@ -890,16 +896,15 @@ class axisrater:
           partition schemes an extention of the axis range is normal
           and should get some penalty)
         - distance is an distance rater instance"""
-        self.ticks = ticks
-        self.labels = labels
+        self.rateticks = ticks
+        self.ratelabels = labels
         self.tickrange = tickrange
         self.distance = distance
 
-    def ratepart(self, axis, part, density):
-        """rates a partition by some global parameters
-        - takes into account the number of ticks, subticks, etc.,
-          number of labels, etc., and the coverage of the axis
-          range by the ticks
+    def ratepart(self, axis, ticks, density):
+        """rates ticks by the number of ticks, subticks, labels etc.
+        - takes into account the number of ticks, subticks, labels
+          etc. and the coverage of the axis range by the ticks
         - when there are no ticks of a level or there was not rater
           given in the constructor for a level, the level is just
           ignored
@@ -908,45 +913,44 @@ class axisrater:
         - within the rating, all ticks with a higher level are
           considered as ticks for a given level"""
         maxticklevel = maxlabellevel = 0
-        for tick in part:
+        for tick in ticks:
             if tick.ticklevel >= maxticklevel:
                 maxticklevel = tick.ticklevel + 1
             if tick.labellevel >= maxlabellevel:
                 maxlabellevel = tick.labellevel + 1
-        ticks = [0]*maxticklevel
-        labels = [0]*maxlabellevel
-        if part is not None:
-            for tick in part:
-                if tick.ticklevel is not None:
-                    for level in range(tick.ticklevel, maxticklevel):
-                        ticks[level] += 1
-                if tick.labellevel is not None:
-                    for level in range(tick.labellevel, maxlabellevel):
-                        labels[level] += 1
+        numticks = [0]*maxticklevel
+        numlabels = [0]*maxlabellevel
+        for tick in ticks:
+            if tick.ticklevel is not None:
+                for level in range(tick.ticklevel, maxticklevel):
+                    numticks[level] += 1
+            if tick.labellevel is not None:
+                for level in range(tick.labellevel, maxlabellevel):
+                    numlabels[level] += 1
         rate = 0
         weight = 0
-        for tick, rater in zip(ticks, self.ticks):
-            rate += rater.rate(tick, density)
+        for numtick, rater in zip(numticks, self.rateticks):
+            rate += rater.rate(numtick, density)
             weight += rater.weight
-        for label, rater in zip(labels, self.labels):
-            rate += rater.rate(label, density)
+        for numlabel, rater in zip(numlabels, self.ratelabels):
+            rate += rater.rate(numlabel, density)
             weight += rater.weight
-        if part is not None and len(part):
+        if len(ticks):
             # XXX: tickrange was not yet applied
-            rate += self.tickrange.rate(axis.convert(float(part[-1]) * axis.divisor) -
-                                        axis.convert(float(part[0]) * axis.divisor), 1)
+            rate += self.tickrange.rate(axis.convert(float(ticks[-1]) * axis.divisor) -
+                                        axis.convert(float(ticks[0]) * axis.divisor), 1)
         else:
             rate += self.tickrange.rate(0)
         weight += self.tickrange.weight
         return rate/weight
 
     def ratelayout(self, axiscanvas, density):
-        # TODO: update docstring
-        """rate distances
+        """rate distances of the labels in an axis canvas
         - the distances should be collected as box distances of
-          subsequent labels (of any level))
-        - the distances are a sequence of positive floats in
-          PostScript points
+          subsequent labels
+        - the axiscanvas provides a labels attribute for easy
+          access to the labels whose distances have to be taken
+          into account
         - the density is used within the distancerate instance"""
         if len(axiscanvas.labels) > 1:
             try:
@@ -1133,10 +1137,12 @@ class rationaltexter:
                     tick.temp_fracdenom = "%s%s%s%i%s" % (self.denomprefix, fracdenomminus, self.denominfix, tick.temp_fracdenom, self.denomsuffix)
                     frac = self.over % (tick.temp_fracenum, tick.temp_fracdenom)
                 tick.label = "%s%s%s%s%s" % (self.prefix, fracminus, self.infix, frac, self.suffix)
+            tick.labelattrs.extend(self.labelattrs)
+
             # del tick.temp_fracenum    # we've inserted those temporary variables ... and do not care any longer about them
             # del tick.temp_fracdenom
             # del tick.temp_fracminus
-            tick.labelattrs.extend(self.labelattrs)
+
 
 
 class decimaltexter:
@@ -1226,6 +1232,7 @@ class decimaltexter:
                 minus = ""
             tick.label = "%s%s%s%s%s" % (self.prefix, minus, self.infix, tick.label, self.suffix)
             tick.labelattrs.extend(self.labelattrs)
+
             # del tick.temp_decprecision  # we've inserted this temporary variable ... and do not care any longer about it
 
 
@@ -1238,7 +1245,7 @@ class exponentialtexter:
                        mantissaexp=r"{{%s}\cdot10^{%s}}",
                        nomantissaexp=r"{10^{%s}}",
                        minusnomantissaexp=r"{-10^{%s}}",
-                       mantissamin=frac(1, 1), mantissamax=frac(10, 1),
+                       mantissamin=frac((1, 1)), mantissamax=frac((10, 1)),
                        skipmantissa1=0, skipallmantissa1=1,
                        mantissatexter=decimaltexter()):
         r"""initializes the instance
@@ -1312,6 +1319,7 @@ class exponentialtexter:
             else:
                 tick.label = self.mantissaexp % (tick.label, tick.temp_exp)
             tick.enum, tick.denom = tick.temp_orgenum, tick.temp_orgdenom
+
             # del tick.temp_orgenum    # we've inserted those temporary variables ... and do not care any longer about them
             # del tick.temp_orgdenom
             # del tick.temp_exp
@@ -1322,8 +1330,8 @@ class defaulttexter:
 
     __implements__ = _Itexter
 
-    def __init__(self, smallestdecimal=frac(1, 1000),
-                       biggestdecimal=frac(9999, 1),
+    def __init__(self, smallestdecimal=frac((1, 1000)),
+                       biggestdecimal=frac((9999, 1)),
                        equaldecision=1,
                        decimaltexter=decimaltexter(),
                        exponentialtexter=exponentialtexter()):
@@ -1424,10 +1432,10 @@ orthogonaltext = rotatetext(0)
 class _Iaxispainter:
     "class for painting axes"
 
-    def paint(self, axis, part, axiscanvas):
+    def paint(self, axis, ticks, axiscanvas):
         """paint ticks into the axiscanvas
         - the axis and the ticks should not be modified (we may
-          add some temporary variables like part[i].temp_xxx,
+          add some temporary variables like ticks[i].temp_xxx,
           which might be used just temporary) -- the idea is that
           all things can be used several times
         - also do not modify the instance (self) -- even this
@@ -1476,7 +1484,7 @@ class axistitlepainter:
         self.titledirection = titledirection
         self.titlepos = titlepos
 
-    def paint(self, axis, part, axiscanvas):
+    def paint(self, axis, ticks, axiscanvas):
         if axis.title is not None and self.titleattrs is not None:
             titledist = unit.length(self.titledist_str, default_type="v")
             x, y = axis._vtickpoint(self.titlepos, axis=axis)
@@ -1558,15 +1566,15 @@ class axispainter(axistitlepainter):
         self.labelvequalize = labelvequalize
         axistitlepainter.__init__(self, **kwargs)
 
-    def paint(self, axis, part, axiscanvas):
+    def paint(self, axis, ticks, axiscanvas):
         labeldist = unit.length(self.labeldist_str, default_type="v")
-        for tick in part:
+        for tick in ticks:
             tick.temp_v = axis.convert(float(tick) * axis.divisor)
             tick.temp_x, tick.temp_y = axis._vtickpoint(tick.temp_v, axis=axis)
             tick.temp_dx, tick.temp_dy = axis.vtickdirection(tick.temp_v, axis=axis)
 
         # create & align tick.temp_labelbox
-        for tick in part:
+        for tick in ticks:
             if tick.labellevel is not None:
                 labelattrs = helper.getsequenceno(self.labelattrs, tick.labellevel)
                 if labelattrs is not None:
@@ -1576,20 +1584,20 @@ class axispainter(axistitlepainter):
                     if tick.labelattrs is not None:
                         labelattrs.extend(helper.ensurelist(tick.labelattrs))
                     tick.temp_labelbox = axiscanvas.texrunner._text(tick.temp_x, tick.temp_y, tick.label, *labelattrs)
-        if len(part) > 1:
+        if len(ticks) > 1:
             equaldirection = 1
-            for tick in part[1:]:
-                if tick.temp_dx != part[0].temp_dx or tick.temp_dy != part[0].temp_dy:
+            for tick in ticks[1:]:
+                if tick.temp_dx != ticks[0].temp_dx or tick.temp_dy != ticks[0].temp_dy:
                     equaldirection = 0
         else:
             equaldirection = 0
-        if equaldirection and ((not part[0].temp_dx and self.labelvequalize) or
-                               (not part[0].temp_dy and self.labelhequalize)):
+        if equaldirection and ((not ticks[0].temp_dx and self.labelvequalize) or
+                               (not ticks[0].temp_dy and self.labelhequalize)):
             if self.labelattrs is not None:
-                box.linealignequal([tick.temp_labelbox for tick in part if tick.labellevel is not None],
-                                   labeldist, part[0].temp_dx, part[0].temp_dy)
+                box.linealignequal([tick.temp_labelbox for tick in ticks if tick.labellevel is not None],
+                                   labeldist, ticks[0].temp_dx, ticks[0].temp_dy)
         else:
-            for tick in part:
+            for tick in ticks:
                 if tick.labellevel is not None and self.labelattrs is not None:
                     tick.temp_labelbox.linealign(labeldist, tick.temp_dx, tick.temp_dy)
 
@@ -1601,7 +1609,7 @@ class axispainter(axistitlepainter):
         innerticklengths = mkv(self.innerticklengths_str)
         outerticklengths = mkv(self.outerticklengths_str)
 
-        for tick in part:
+        for tick in ticks:
             if tick.ticklevel is not None:
                 innerticklength = helper.getitemno(innerticklengths, tick.ticklevel)
                 outerticklength = helper.getitemno(outerticklengths, tick.ticklevel)
@@ -1619,7 +1627,7 @@ class axispainter(axistitlepainter):
                         x2 = tick.temp_x + tick.temp_dx * _outerticklength
                         y2 = tick.temp_y + tick.temp_dy * _outerticklength
                         axiscanvas.stroke(path._line(x1, y1, x2, y2), *helper.ensuresequence(tickattrs))
-                if tick != frac(0, 1) or self.zerolineattrs is None:
+                if tick != frac((0, 1)) or self.zerolineattrs is None:
                     gridattrs = helper.getsequenceno(self.gridattrs, tick.ticklevel)
                     if gridattrs is not None:
                         axiscanvas.stroke(axis.vgridline(tick.temp_v, axis=axis), *helper.ensuresequence(gridattrs))
@@ -1636,10 +1644,10 @@ class axispainter(axistitlepainter):
         if self.baselineattrs is not None:
             axiscanvas.stroke(axis.vbaseline(axis=axis), *helper.ensuresequence(self.baselineattrs))
         if self.zerolineattrs is not None:
-            if len(part) and part[0] * part[-1] < frac(0, 1):
+            if len(ticks) and ticks[0] * ticks[-1] < frac((0, 1)):
                 axiscanvas.stroke(axis.gridline(0, axis=axis), *helper.ensuresequence(self.zerolineattrs))
 
-        # for tick in part:
+        # for tick in ticks:
         #     del tick.temp_v    # we've inserted those temporary variables ... and do not care any longer about them
         #     del tick.temp_x
         #     del tick.temp_y
@@ -1648,7 +1656,7 @@ class axispainter(axistitlepainter):
         #     if tick.labellevel is not None and self.labelattrs is not None:
         #         del tick.temp_labelbox
 
-        axistitlepainter.paint(self, axis, part, axiscanvas)
+        axistitlepainter.paint(self, axis, ticks, axiscanvas)
 
 
 class linkaxispainter(axispainter):
@@ -2006,6 +2014,9 @@ class _axis:
                        datavmin=None, datavmax=None, tickvmin=0, tickvmax=1,
                        title=None, painter=axispainter(), texter=defaulttexter(),
                        density=1, maxworse=2):
+# - a axis has a part attribute where it stores a partitioner or/and some
+#   (manually set) ticks -> the part attribute is used to create the ticks
+#   in the axis finish method
         if None not in (min, max) and min > max:
             min, max, reverse = max, min, not reverse
         self.fixmin, self.fixmax, self.min, self.max, self.reverse = min is not None, max is not None, min, max, reverse
@@ -2102,12 +2113,26 @@ class _axis:
         if self.finished:
             return
         self.finished = 1
+
         min, max = self.gettickrange()
-        if self.parter is not None:
-            self.ticks = self.parter.defaultpart(min/self.divisor,
-                                                 max/self.divisor,
-                                                 not self.fixmin,
-                                                 not self.fixmax)
+        if self.part is not None:
+            parter = parterpos = None
+            if helper.issequence(self.part):
+                for p, i in zip(self.part, xrange(sys.maxint)):
+                    if hasattr(p, "defaultpart"):
+                        if parter is not None:
+                            raise RuntimeError("only one partitioner allowed")
+                        parter = p
+                        parterpos = i
+            else:
+                parter = self.part
+            if parter is not None:
+                self.ticks = parter.defaultpart(min/self.divisor,
+                                                max/self.divisor,
+                                                not self.fixmin,
+                                                not self.fixmax)
+            if parterpos is not None:
+                self.ticks = _mergeticklists(_mergeticklists(self.part[:parterpos], self.ticks), self.part[parterpos+1:])
         else:
             self.ticks = []
         # lesspart and morepart can be called after defaultpart;
@@ -2116,8 +2141,10 @@ class _axis:
         first = 1
         worse = 0
         while worse < self.maxworse:
-            if self.parter is not None:
-                newticks = self.parter.lesspart()
+            if parter is not None:
+                newticks = parter.lesspart()
+                if parterpos is not None:
+                    newticks = _mergeticklists(_mergeticklists(self.part[:parterpos], newticks), self.part[parterpos+1:])
             else:
                 newticks = None
             if newticks is not None:
@@ -2136,8 +2163,10 @@ class _axis:
                 worse += 1
         worse = 0
         while worse < self.maxworse:
-            if self.parter is not None:
-                newticks = self.parter.morepart()
+            if parter is not None:
+                newticks = parter.morepart()
+                if parterpos is not None:
+                    newticks = _mergeticklists(_mergeticklists(self.part[:parterpos], newticks), self.part[parterpos+1:])
             else:
                 newticks = None
             if newticks is not None:
@@ -2154,6 +2183,7 @@ class _axis:
                     worse += 1
             else:
                 worse += 1
+
         if not first:
             variants.sort()
             if self.painter is not None:
@@ -2205,21 +2235,21 @@ class _axis:
 
 class linaxis(_axis, _linmap):
 
-    def __init__(self, parter=autolinpart(), rater=axisrater(), **args):
+    def __init__(self, part=autolinpart(), rater=axisrater(), **args):
         _axis.__init__(self, **args)
         if self.fixmin and self.fixmax:
             self.relsize = self.max - self.min
-        self.parter = parter
+        self.part = part
         self.rater = rater
 
 
 class logaxis(_axis, _logmap):
 
-    def __init__(self, parter=autologpart(), rater=axisrater(ticks=axisrater.logticks, labels=axisrater.loglabels), **args):
+    def __init__(self, part=autologpart(), rater=axisrater(ticks=axisrater.logticks, labels=axisrater.loglabels), **args):
         _axis.__init__(self, **args)
         if self.fixmin and self.fixmax:
             self.relsize = math.log(self.max) - math.log(self.min)
-        self.parter = parter
+        self.part = part
         self.rater = rater
 
 

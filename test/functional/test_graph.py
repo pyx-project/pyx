@@ -9,7 +9,7 @@ text.set(mode="latex")
 
 def test_multiaxes_data(c, x, y):
     g = c.insert(graph.graphxy(x, y, height=5, key=graph.key(pos="tl"),
-                               x=graph.logaxis(title="$W$", parter=graph.autologpart(mix=graph.manualpart(tickpos="4.12310562562", labels="$\sqrt{17}$").part())),
+                               x=graph.logaxis(title="$W$", part=[graph.tick((2828, 1000), ticklevel=0, labellevel=0, label="\sqrt{8}", labelattrs=text.mathmode), graph.autologpart()]),
                                #x=graph.logaxis(title="$W$",
                                #                texter=graph.decimaltexter()),
                                y=graph.logaxis(title=r"$PPP_1$",
@@ -122,10 +122,10 @@ def test_bar(c, x, y):
 
 c = canvas.canvas()
 test_multiaxes_data(c, 0, 21)
-#test_piaxis_function(c, 0, 14)
-#test_textaxis_errorbars(c, 0, 7)
-#test_ownmark(c, 0, 0)
-#test_allerrorbars(c, -7, 0)
+test_piaxis_function(c, 0, 14)
+test_textaxis_errorbars(c, 0, 7)
+test_ownmark(c, 0, 0)
+test_allerrorbars(c, -7, 0)
 #test_3d(c, -7, 7)
 #test_split(c, -7, 7)
 #test_bar(c, -7, 14)
