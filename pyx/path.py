@@ -1129,7 +1129,7 @@ class normpath(path):
             other = normpath(other)
 
         intersections = ()
-        t_a, t_b = 0,0
+        t_a = 0
         context_a = _pathcontext()
         context_b = _pathcontext()
 
@@ -1139,6 +1139,7 @@ class normpath(path):
 
             if bpathel_a:
                 t_a += 1
+                t_b = 0
                 for normpathel_b in other.path:
                     bpathel_b = normpathel_b._bcurve(context_b)
                     normpathel_b._updatecontext(context_b)
