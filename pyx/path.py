@@ -1433,7 +1433,7 @@ class normline(normpathel):
         return self.x0, self.y0
 
     def curvradius_pt(self, param):
-        return float("inf")
+        return None
 
     def end_pt(self):
         return self.x1, self.y1
@@ -2259,7 +2259,10 @@ class normpath(path):
 
         Please note that this radius can be negative or positive,
         depending on the sign of the curvature"""
-        return unit.t_pt(self.curvradius_pt(param, arclen))
+        radius = self.curvradius_pt(param, arclen)
+        if radius is not None:
+            radius = unit.t_pt(radius)
+        return radius
 
     def end_pt(self):
         """return coordinates of last point of last subpath in path (in pts)"""
