@@ -52,7 +52,7 @@ class py2html:
                 tokclass = None
             if self.tokclass is not None and tokclass != self.tokclass:
                 self.output.write('</span>')
-            if tokclass is not None:
+            if tokclass is not None and tokclass != self.tokclass:
                 self.output.write('<span class="%s">' % tokclass)
             self.output.write(cgi.escape(toktext))
             self.tokclass = tokclass
