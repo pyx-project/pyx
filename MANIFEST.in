@@ -5,5 +5,5 @@ include examples/Makefile examples/pyx.sty
 recursive-include pyx *.c *.h *.py
 recursive-include pyx/lfs *.lfs createlfs.tex
 recursive-include contrib *
-recursive-include examples INDEX *.py *.dat
+recursive-include examples INDEX README *.py *.dat
 exclude manual/pyxversion.py manual/pyxdate.py faq/pyxversion.py faq/pyxdate.py

@@ -95,7 +95,7 @@ TODO:
     - fix typos in predefined symbols (reported by Andrea Riciputi)
     - cut column name list at the max. number of columns (reported by Arnd Baecker)
   - examples:
-    - add INDEX files to distribution
+    - add INDEX and README files to distribution
     - new errorbar and julia example
   - faq:
     - pdf snippets for tipa based phonetic transliterations
