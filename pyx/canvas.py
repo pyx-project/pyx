@@ -1,5 +1,15 @@
 #!/usr/bin/env python
 
+# TODO:
+# - think a little bit more about abstractcanvas, canvas, and subcanvas
+
+# current issues:
+#  - __del__ is not necessarily run immediately (we had this problem before), so that some important 
+#    cleanup of the canvas (grestore!) maybe doesn't happen at the right moment!
+#  - how to deal with the units? How do transformation classes no of them? Should u2p & friends
+#    be moved to another place?
+
+
 from const import *
 import string
 
@@ -55,93 +65,68 @@ unit_u2p	= 28.346456693*unit_ps
 unit_v2p	= 28.346456693*unit_ps
 unit_w2p	= 28.346456693*unit_ps
 
+#
+# helper routines
+#
+
+def PSGetEPSBoundingBox(self, epsname):
+
+    'returns bounding box of EPS file epsname as 4-tuple (llx, lly, urx, ury)'
+
+    try:
+        epsfile=open(epsname,"r")
+    except:
+        assert "cannot open EPS file"	# TODO: Fehlerbehandlung
+
+    import re
+
+    bbpattern = re.compile( r"^%%BoundingBox:\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s*$" )
+
+    while 1:
+        line=epsfile.readline()
+        if not line:
+	    assert "bounding box not found in EPS file"
+	    raise IOError			# TODO: Fehlerbehandlung
+        if line=="%%EndComments\n": 
+	    # TODO: BoundingBox-Deklaration kann auch an Ende von Datei verschoben worden sein
+	    assert "bounding box not found in EPS file"
+	    raise IOError			# TODO: Fehlerbehandlung
+	
+        bbmatch = bbpattern.match(line)
+        if bbmatch is not None:
+           (llx, lly, urx, ury) = map(int, bbmatch.groups())		# conversion strings->int
+	   break
+    epsfile.close()
+    return (llx, lly, urx, ury)
+    
+#
+# Exceptions
+#
+    
 class CanvasException(Exception): pass
 
-class canvas:
+#
+# classes
+#
 
-    PSCmds = [] 				# stores all PS commands of the canvas
+class abstractcanvas:
 
-    def __init__(self, base, width, height ):
-        self.Width=width
-        self.Height=height
-	if type(base)==type(""):
-	    self.BaseFilename = base
-	    self.isPrimaryCanvas = 1
-	else: 
-	    if isinstance(base, canvas): 
-	        self.isPrimaryCanvas = 0
-	    else:
-	        raise CanvasException, "base should be either a filename or a canvas"
+    def __init__(self, **kwargs):
+        from trafo import transformation
+        self.trafo = kwargs.get("trafo", transformation())
         self.PSInit()
-
-    
-    def __del__(self):
-        self.PSRun()
     
     def PSAddCmd(self, cmd):
-        self.PSCmds = self.PSCmds + [ cmd ]
+        if self.isPrimaryCanvas==1: 
+            self.PSFile.write("%s\n" % cmd)
+	else:
+	    self.base.PSAddCmd(cmd)
 	
     def PSInit(self):
-    	if self.isPrimaryCanvas:
-           self.PSAddCmd("%!PS-Adobe-3.0 EPSF 3.0")
-           self.PSAddCmd("%%BoundingBox: 0 0 %d %d" % (1000,1000)) # TODO: richtige Boundingbox!
-           self.PSAddCmd("%%Creator: pyx 0.0.1") 
-           self.PSAddCmd("%%Title: %s.eps" % self.BaseFilename) 
-           # self.PSAddCmd("%%CreationDate: %s" % ) 
-           self.PSAddCmd("%%EndComments") 
-           self.PSAddCmd("%%BeginProlog") 
-	   self.PSAddCmd(PSProlog)
-           self.PSAddCmd("%%EndProlog") 
+         raise NotImplementedError, "cannot initialized abstract canvas"
 
-	   
-        self.gsave()						# encapsulate canvas
-	self.PSAddCmd("%f %f scale" % (1/unit_ps, 1/unit_ps))
-        self.PSAddCmd("%f setlinewidth" % self.w2p(0.02))	# TODO: fixme
-
-    def PSRun(self):
-	self.grestore()						# canvas has been encapsulated
-	
-	if self.isPrimaryCanvas:
-           try:
-  	      PSFile = open(self.BaseFilename + ".eps", "w")
-	   except IOError:
-	      assert "cannot open output file"		# TODO: Fehlerbehandlung...
-  	   for cmd in self.PSCmds:
-	      PSFile.write("%s\n" % cmd)
-	   PSFile.close()
-        else:
-  	   for cmd in self.PSCmds:			# maybe, we should be more efficient here
-	      self.base.PSAddCmd(cmd)
-	      
-    def PSGetEPSBoundingBox(self, epsname):
-    
-        'returns bounding box of EPS file epsname as 4-tuple (llx, lly, urx, ury)'
-	
-        try:
-	    epsfile=open(epsname,"r")
-	except:
-	    assert "cannot open EPS file"	# TODO: Fehlerbehandlung
-
-        import re
-
-	bbpattern = re.compile( r"^%%BoundingBox:\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s*$" )
-
-	while 1:
-	    line=epsfile.readline()
-	    if not line:
-	        assert "bounding box not found in EPS file"
-		raise IOError			# TODO: Fehlerbehandlung
-	    if line=="%%EndComments\n": 
-		# TODO: BoundingBox-Deklaration kann auch an Ende von Datei verschoben worden sein
-	        assert "bounding box not found in EPS file"
-		raise IOError			# TODO: Fehlerbehandlung
-		
-            bbmatch = bbpattern.match(line)
-	    if bbmatch is not None:
-	        (llx, lly, urx, ury) = map(int, bbmatch.groups())		# conversion strings->int
-		break
-        epsfile.close()
-	return (llx, lly, urx, ury)
+    def subcanvas(self, **kwargs):
+        return subcanvas(self, **kwargs)
 
     def u2p(self, lengths):
     	if isnumber(lengths): 
@@ -233,12 +218,56 @@ class canvas:
     def grestore(self):
         self.PSAddCmd("grestore")
     
+class canvas(abstractcanvas):
+    def __init__(self, filename, width, height, **kwargs):
+        self.Width=width
+        self.Height=height
+	self.BaseFilename=filename
+        try:
+  	    self.PSFile = open(self.BaseFilename + ".eps", "w")
+	except IOError:
+	    assert "cannot open output file"		# TODO: Fehlerbehandlung...
+
+	abstractcanvas.__init__(self, **kwargs)
+	
+	
+    def PSAddCmd(self, cmd):
+        self.PSFile.write("%s\n" % cmd)
+
+    def PSInit(self):
+        self.PSAddCmd("%!PS-Adobe-3.0 EPSF 3.0")
+        self.PSAddCmd("%%BoundingBox: 0 0 %d %d" % (1000,1000)) # TODO: richtige Boundingbox!
+        self.PSAddCmd("%%Creator: pyx 0.0.1") 
+        self.PSAddCmd("%%Title: %s.eps" % self.BaseFilename) 
+        # self.PSAddCmd("%%CreationDate: %s" % ) 
+        self.PSAddCmd("%%EndComments") 
+        self.PSAddCmd("%%BeginProlog") 
+        self.PSAddCmd(PSProlog)
+        self.PSAddCmd("%%EndProlog") 
+        self.PSAddCmd("%f %f scale" % (1/unit_ps, 1/unit_ps))
+
+        self.PSAddCmd("[" + `self.trafo` + " ] concat")
+        self.PSAddCmd("%f setlinewidth" % self.w2p(0.02))	# TODO: fixme
+
+class subcanvas(abstractcanvas):
+    def __init__(self, basecanvas, **kwargs):
+	self.basecanvas=basecanvas
+
+	abstractcanvas.__init__(self, **kwargs)
+		
+    def PSAddCmd(self, cmd):
+        self.basecanvas.PSAddCmd(cmd)
+
+    def PSInit(self):
+        self.PSAddCmd("[" + `self.trafo` + " ] concat")
 
 if __name__=="__main__":
     c=canvas("example", 21, 29.7)
 
     from tex import *
     from path import *
+    from trafo import *
+
     t=tex(c)
 
     #for x in range(11):
@@ -299,5 +328,8 @@ if __name__=="__main__":
 
     p=path([moveto(5,17), curveto(6,18, 5,16, 7,15)])
     c.draw(p)
+    
+    for angle in range(20):
+       c.subcanvas(trafo=translate(10,10)*rotate(angle)).draw(p)
 
-    t.TexRun()
+#    t.TexRun()

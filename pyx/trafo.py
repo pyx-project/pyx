@@ -29,18 +29,18 @@ def _det(matrix):
 class UndefinedResultError(ArithmeticError):
     pass
 
-# trafo: affine transformations
+# transformation: affine transformations
 	     
-class trafo:
+class transformation:
     def __init__(self, matrix=((1,0),(0,1)), vector=(0,0)):
         if _det(matrix)==0:		
-	    raise UndefinedResultError, "trafo matrix must not be singular" 
+	    raise UndefinedResultError, "transformation matrix must not be singular" 
 	else:
             self.matrix=matrix
         self.vector=vector
 
     def __mul__(self, other):
-        if isinstance(other, trafo):
+        if isinstance(other, transformation):
             matrix = ( ( self.matrix[0][0]*other.matrix[0][0] + self.matrix[0][1]*other.matrix[1][0],
                          self.matrix[0][0]*other.matrix[0][1] + self.matrix[0][1]*other.matrix[1][1] ),
                        ( self.matrix[1][0]*other.matrix[0][0] + self.matrix[1][1]*other.matrix[1][0],
@@ -49,11 +49,11 @@ class trafo:
             vector = ( self.matrix[0][0]*other.vector[0] + self.matrix[0][1]*other.vector[1] + self.vector[0],
                        self.matrix[1][0]*other.vector[0] + self.matrix[1][1]*other.vector[1] + self.vector[1] )
 
-            # print " ( %s * %s => %s ) "% (self, other, trafo(angle=angle, vector=vector))
+            # print " ( %s * %s => %s ) "% (self, other, transformation(angle=angle, vector=vector))
 		      
-	    return trafo(matrix=matrix, vector=vector)
+	    return transformation(matrix=matrix, vector=vector)
 	else:
-	    raise NotImplementedError, "can only multiply two trafos"
+	    raise NotImplementedError, "can only multiply two transformations"
     def __rmul__(self, other):				# TODO: not needed!?
         print "!"
         return other.__mul__(self)
@@ -68,16 +68,16 @@ class trafo:
         return self.angle
     
     def translate(self,x,y):
-	return trafo(vector=(x,y))*self
+	return transformation(vector=(x,y))*self
 	
     def rotate(self,angle):
-	return trafo(matrix=_rmatrix(angle))*self
+	return transformation(matrix=_rmatrix(angle))*self
 	
     def mirror(self,angle):
-	return trafo(matrix=_mmatrix(angle))*self
+	return transformation(matrix=_mmatrix(angle))*self
 
     def scale(self, x, y):
-        return trafo(matrix=((x, 0), (0,y)))*self
+        return transformation(matrix=((x, 0), (0,y)))*self
 
     def inverse(self):
         det = _det(self.matrix)				# shouldn't be zero, but
@@ -86,27 +86,29 @@ class trafo:
 	             (-self.matrix[1][0]/det,  self.matrix[0][0]/det)
 	 	   )
         except ZeroDivisionError:
-	   raise UndefinedResultError, "trafo matrix must not be singular" 
-        return trafo(matrix=matrix) * trafo(vector=(-self.vector[0],-self.vector[1]))
+	   raise UndefinedResultError, "transformation matrix must not be singular" 
+        return transformation(matrix=matrix) * transformation(vector=(-self.vector[0],-self.vector[1]))
 	
     def __repr__(self):
-        return "matrix=%s, vector=%s" % (self.matrix, self.vector)
+        return "%f %f %f %f %f %f" % ( self.matrix[0][0], self.matrix[0][1], 
+	                               self.matrix[1][0], self.matrix[1][1], 
+				       self.vector[0], self.vector[1]) 
 
-class translate(trafo):
+class translate(transformation):
     def __init__(self,x,y):
-        trafo.__init__(self, vector=(x,y))
+        transformation.__init__(self, vector=(x,y))
    
-class rotate(trafo):
+class rotate(transformation):
     def __init__(self,angle):
-        trafo.__init__(self, matrix=_rmatrix(angle))
+        transformation.__init__(self, matrix=_rmatrix(angle))
 	
-class mirror(trafo):
+class mirror(transformation):
     def __init__(self,angle=0):
-        trafo.__init__(self, matrix=_mmatrix(angle))
+        transformation.__init__(self, matrix=_mmatrix(angle))
 
-class scale(trafo):
+class scale(transformation):
     def __init__(self,x,y):
-        trafo.__init__(self, matrix=((x,0),(0,y)))
+        transformation.__init__(self, matrix=((x,0),(0,y)))
         
 
 if __name__=="__main__":
@@ -123,8 +125,8 @@ if __name__=="__main__":
        assert m<1e-7, "tests for invariants failed" 
 	    
 
-   # trafo(angle=angle, vector=(x,y)) == translate(x,y) * rotate(angle)
-   checkforidentity( translate(1,3) * rotate(15)  * trafo(matrix=_rmatrix(15),vector=(1,3)).inverse())
+   # transformation(angle=angle, vector=(x,y)) == translate(x,y) * rotate(angle)
+   checkforidentity( translate(1,3) * rotate(15)  * transformation(matrix=_rmatrix(15),vector=(1,3)).inverse())
    
    # t*t.inverse() == 1
    t = translate(-1,-1)*rotate(72)*translate(1,1)
@@ -142,5 +144,3 @@ if __name__=="__main__":
    checkforidentity( rotate(40).rotate(120).rotate(90).rotate(110) )
 
    checkforidentity( scale(2,3).scale(1/2.0, 1/3.0) )
-   
-  
