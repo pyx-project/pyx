@@ -215,7 +215,7 @@ class t_m(length):
        length.__init__(self, l, default_type="t", dunit="m")
 
 
-class t_mm(length):
+class t_cm(length):
     def __init__(self, l=None):
        length.__init__(self, l, default_type="t", dunit="cm")
 
