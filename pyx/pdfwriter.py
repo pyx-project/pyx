@@ -1,4 +1,5 @@
-import sys
+import sys, prolog, pykpathsea
+from t1strip import fullfont
 try:
     import zlib
     haszlib = 1
@@ -14,6 +15,10 @@ PDFmediabox = "MediaBox%i"
 PDFresources = "Resources%i"
 PDFcontents = "Contents%i"
 PDFcontentslength = "ContentsLength%i"
+PDFfont = "Font%s"
+PDFwidths = "Widths%s"
+PDFfontdescriptor = "FontDescriptor%s"
+PDFfontfile = "FontFile%s"
 
 class pdfwriter:
 
@@ -69,6 +74,97 @@ class pdfwriter:
         abbox.outputPDF(self)
         self.endobj()
 
+        # insert resources
+        for pritem in mergedprolog:
+            if isinstance(pritem, prolog.fontdefinition):
+                if pritem.filename:
+                    # fontfile
+                    fontdata = open(pykpathsea.find_file(pritem.filename, pykpathsea.kpse_type1_format)).read()
+                    if fontdata[0:2] != fullfont._PFB_ASCII:
+                        raise RuntimeError("PFB_ASCII mark expected")
+                    length1 = fullfont.pfblength(fontdata[2:6])
+                    if fontdata[6+length1:8+length1] != fullfont._PFB_BIN:
+                        raise RuntimeError("PFB_BIN mark expected")
+                    length2 = fullfont.pfblength(fontdata[8+length1:12+length1])
+                    if fontdata[12+length1+length2:14+length1+length2] != fullfont._PFB_ASCII:
+                        raise RuntimeError("PFB_ASCII mark expected")
+                    length3 = fullfont.pfblength(fontdata[14+length1+length2:18+length1+length2])
+                    if fontdata[18+length1+length2+length3:20+length1+length2+length3] != fullfont._PFB_DONE:
+                        raise RuntimeError("PFB_DONE mark expected")
+                    if len(fontdata) != 20 + length1 + length2 + length3:
+                        raise RuntimeError("end of pfb file expected")
+
+                    # we might be allowed to skip the third part ...
+                    if fontdata[18+length1+length2:18+length1+length2+length3].replace("\n", "").replace("\r", "").replace("\t", "").replace(" ", "") == "0"*512 + "cleartomark":
+                        length3 = 0
+
+                    uncompresseddata = fontdata[6:6+length1] + fontdata[12+length1:12+length1+length2] + fontdata[18+length1+length2:18+length1+length2+length3]
+                    compresseddata = zlib.compress(uncompresseddata)
+
+                    self.beginobj(PDFfontfile % pritem.font.getpsname())
+                    self.write("<<\n"
+                               "/Length %d\n"
+                               "/Length1 %d\n"
+                               "/Length2 %d\n"
+                               "/Length3 %d\n"
+                               "/Filter /FlateDecode\n"
+                               ">>\n"
+                               "stream\n" % (len(compresseddata), length1, length2, length3))
+                    #file.write(fontdata[6:6+length1])
+                    #file.write(fontdata[12+length1:12+length1+length2])
+                    #file.write(fontdata[18+length1+length2:18+length1+length2+length3])
+                    self.write(compresseddata)
+                    self.write("endstream\n")
+                    self.endobj()
+
+                    # fontdescriptor
+                    self.beginobj(PDFfontdescriptor % pritem.font.getpsname())
+                    self.write("<<\n"
+                               "/Type /FontDescriptor\n"
+                               "/FontName /%s\n"
+                               "/Flags 4\n" # FIXME
+                               "/FontBBox [-10 -10 1000 1000]\n" # FIXME
+                               "/ItalicAngle 0\n" # FIXME
+                               "/Ascent 20\n" # FIXME
+                               "/Descent -5\n" # FIXME
+                               "/CapHeight 15\n" # FIXME
+                               "/StemV 3\n" # FIXME
+                               "/FontFile %d 0 R\n" # FIXME
+                               # "/CharSet \n" # fill in when stripping
+                               ">>\n" % (pritem.font.getbasepsname(),
+                                         self.refdict[PDFfontfile % pritem.font.getpsname()]))
+                    self.endobj()
+
+
+                # width
+                self.beginobj(PDFwidths % pritem.font.getpsname())
+                self.write("[\n")
+                for i in range(256):
+                    try:
+                        width = pritem.font.getwidth_pt(i)*1000/pritem.font.getsize_pt()
+                    except:
+                        width = 0
+                    self.write("%f\n" % width)
+                self.write("]\n")
+                self.endobj()
+
+                # font
+                self.beginobj(PDFfont % pritem.font.getpsname())
+                self.write("<<\n"
+                           "/Type /Font\n"
+                           "/Subtype /Type1\n"
+                           "/Name /%s\n"
+                           "/BaseFont /%s\n"
+                           "/FirstChar 0\n"
+                           "/LastChar 255\n"
+                           "/Widths %d 0 R\n"
+                           "/FontDescriptor %d 0 R\n"
+                           "/Encoding /StandardEncoding\n" # FIXME
+                           ">>\n" % (pritem.font.getpsname(), pritem.font.getbasepsname(),
+                                     self.refdict[PDFwidths % pritem.font.getpsname()],
+                                     self.refdict[PDFfontdescriptor % pritem.font.getpsname()]))
+                self.endobj()
+
         # resources
         self.beginobj(PDFresources % self.pages)
         self.write("<<\n")
@@ -78,7 +174,7 @@ class pdfwriter:
             for pritem in mergedprolog:
                 if isinstance(pritem, prolog.fontdefinition):
                     self.write("/%s %d 0 R\n" % (pritem.font.getpsname(),
-                                                 self.refdict[pritem.font.getpsname()]))
+                                                 self.refdict[PDFfont % pritem.font.getpsname()]))
             self.write(">>\n")
         self.write(">>\n")
         self.endobj()
