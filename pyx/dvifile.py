@@ -23,7 +23,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import copy, cStringIO, exceptions, re, struct, string, sys
-import unit, epsfile, bbox, base, canvas, color, trafo, path, prolog, pykpathsea
+import unit, epsfile, bbox, base, canvas, color, trafo, path, prolog, pykpathsea, resource
 
 class fix_word:
     def __init__(self, word):
@@ -418,6 +418,7 @@ class _endtextobject(base.canvasitem):
 
 
 class _selectfont(base.canvasitem):
+    # XXX this should go away and be merged with selectfont
     def __init__(self, name, size):
         self.name = name
         self.size = size
@@ -429,10 +430,14 @@ class _selectfont(base.canvasitem):
         file.write("/%s %f Tf\n" % (self.name, self.size))
 
 
-class selectfont(_selectfont):
+class selectfont(base.canvasitem):
     def __init__(self, font):
-        _selectfont.__init__(self, font.getpsname(), font.getsize_pt())
+        # XXX maybe we should change the calling convention here and only pass the
+        # name, size, encoding, usedchars of the font
         self.font = font
+        self.size = font.getsize_pt()
+        # self.fontid = None
+        self.fontid = font.getpsname()
 
     def prolog(self):
         result = [prolog.fontdefinition(self.font,
@@ -445,6 +450,17 @@ class selectfont(_selectfont):
             result.append(prolog.fontencoding(self.font.getencoding(), self.font.getencodingfile()))
             result.append(prolog.fontreencoding(self.font.getpsname(), self.font.getbasepsname(), self.font.getencoding()))
         return result
+
+    def outputPS(self, file):
+        file.write("/%s %f selectfont\n" % (self.fontid, self.size))
+
+    def outputPDF(self, file):
+        file.write("/%s %f Tf\n" % (self.fontid, self.size))
+
+    def registerresources(self, registry):
+        fontresource = resource.font(self.font.getpsname(), self.font.getencoding(), self.font.usedchars)
+        registry.registerresource(fontresource)
+        self.fontid = fontresource.id
 
 
 class _show(base.canvasitem):
@@ -587,12 +603,12 @@ def readfontmap(filenames):
 
 
 class font:
-    def __init__(self, name, c, q, d, tfmconv, conv, debug=0):
+    def __init__(self, name, c, q, d, tfmconv, pyxconv, debug=0):
         self.name = name
         self.q = q                  # desired size of font (fix_word) in tex points
         self.d = d                  # design size of font (fix_word) in tex points
         self.tfmconv = tfmconv      # conversion factor from tfm units to dvi units
-        self.conv = conv            # conversion factor from dvi units to PostScript points
+        self.pyxconv = pyxconv      # conversion factor from dvi units to PostScript points
         tfmpath = pykpathsea.find_file("%s.tfm" % self.name, pykpathsea.kpse_tfm_format)
         if not tfmpath:
             raise TFMError("cannot find %s.tfm" % self.name)
@@ -639,7 +655,7 @@ class font:
         return int(round(16L*length*self.q/16777216L*self.tfmconv))
 
     def _convert_tfm_to_pt(self, length):
-        return int(round(16L*length*self.q/16777216L*self.tfmconv)) * self.conv
+        return int(round(16L*length*self.q/16777216L*self.tfmconv)) * self.pyxconv
 
     # routines returning lengths as integers in dvi units
 
@@ -681,8 +697,8 @@ class font:
 
 
 class type1font(font):
-    def __init__(self, name, c, q, d, tfmconv, conv, fontmap, debug=0):
-        font.__init__(self, name, c, q, d, tfmconv, conv, debug)
+    def __init__(self, name, c, q, d, tfmconv, pyxconv, fontmap, debug=0):
+        font.__init__(self, name, c, q, d, tfmconv, pyxconv, debug)
         self.fontmapping = fontmap.get(name)
         if self.fontmapping is None:
             raise RuntimeError("no information for font '%s' found in font mapping file, aborting" % name)
@@ -707,12 +723,12 @@ class type1font(font):
 
 
 class virtualfont(font):
-    def __init__(self, name, c, q, d, tfmconv, conv, fontmap, debug=0):
-        font.__init__(self, name, c, q, d, tfmconv, conv, debug)
+    def __init__(self, name, c, q, d, tfmconv, pyxconv, fontmap, debug=0):
+        font.__init__(self, name, c, q, d, tfmconv, pyxconv, debug)
         fontpath = pykpathsea.find_file(name, pykpathsea.kpse_vf_format)
         if fontpath is None or not len(fontpath):
             raise RuntimeError
-        self.vffile = vffile(fontpath, self.scale, tfmconv, conv, fontmap, debug > 1)
+        self.vffile = vffile(fontpath, self.scale, tfmconv, pyxconv, fontmap, debug > 1)
 
     def getfonts(self):
         """ return fonts used in virtual font itself """
@@ -872,17 +888,17 @@ class dvifile:
 
     def putrule(self, height, width, advancepos=1):
         self.endtext()
-        x1 =  self.pos[_POS_H] * self.conv
-        y1 = -self.pos[_POS_V] * self.conv
-        w = width * self.conv
-        h = height * self.conv
+        x1 =  self.pos[_POS_H] * self.pyxconv
+        y1 = -self.pos[_POS_V] * self.pyxconv
+        w = width * self.pyxconv
+        h = height * self.pyxconv
 
         if height > 0 and width > 0:
             if self.debug:
                 pixelw = int(width*self.trueconv*self.mag/1000.0)
-                if pixelw < width*self.conv: pixelw += 1
+                if pixelw < width*self.pyxconv: pixelw += 1
                 pixelh = int(height*self.trueconv*self.mag/1000.0)
-                if pixelh < height*self.conv: pixelh += 1
+                if pixelh < height*self.pyxconv: pixelh += 1
 
                 print ("%d: %srule height %d, width %d (%dx%d pixels)" %
                        (self.filepos, advancepos and "set" or "put", height, width, pixelh, pixelw))
@@ -914,10 +930,10 @@ class dvifile:
                 # XXX: begintext would lead to massive number of selectfonts being issued
                 #      OTOH is it save to remove begintext here? I think so ...
                 # self.begintext()
-                self.activeshow = _show(self.pos[_POS_H] * self.conv, -self.pos[_POS_V] * self.conv)
-            width = self.activefont.getwidth_dvi(char)  * self.conv
-            height = self.activefont.getheight_dvi(char) * self.conv
-            depth = self.activefont.getdepth_dvi(char) * self.conv
+                self.activeshow = _show(self.pos[_POS_H] * self.pyxconv, -self.pos[_POS_V] * self.pyxconv)
+            width = self.activefont.getwidth_dvi(char) * self.pyxconv
+            height = self.activefont.getheight_dvi(char) * self.pyxconv
+            depth = self.activefont.getdepth_dvi(char) * self.pyxconv
             self.activeshow.addchar(width, height, depth, char)
 
             self.activefont.markcharused(char)
@@ -951,9 +967,9 @@ class dvifile:
         # d:     design size (fix_word)
 
         try:
-            font = virtualfont(fontname, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.conv, self.fontmap, self.debug > 1)
+            font = virtualfont(fontname, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.fontmap, self.debug > 1)
         except (TypeError, RuntimeError):
-            font = type1font(fontname, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.conv, self.fontmap, self.debug > 1)
+            font = type1font(fontname, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.fontmap, self.debug > 1)
 
         self.fonts[num] = font
 
@@ -969,8 +985,8 @@ class dvifile:
 #                print " (this font is magnified %d%%)" % round(scale/10)
 
     def special(self, s):
-        x =  self.pos[_POS_H] * self.conv
-        y = -self.pos[_POS_V] * self.conv
+        x =  self.pos[_POS_H] * self.pyxconv
+        y = -self.pos[_POS_V] * self.pyxconv
         if self.debug:
             print "%d: xxx '%s'" % (self.filepos, s)
         if not s.startswith("PyX:"):
@@ -1062,13 +1078,13 @@ class dvifile:
 
         if self.debug:
             print "executing new dvi chunk"
-        self.statestack.append((self.file, self.fonts, self.activefont, afterpos, self.stack, self.conv, self.tfmconv))
+        self.statestack.append((self.file, self.fonts, self.activefont, afterpos, self.stack, self.pyxconv, self.tfmconv))
 
         # units in vf files are relative to the size of the font and given as fix_words
         # which can be converted to floats by diving by 2**20
-        oldconv = self.conv
-        self.conv = fontsize/2**20
-        rescale = self.conv/oldconv
+        oldpyxconv = self.pyxconv
+        self.pyxconv = fontsize/2**20
+        rescale = self.pyxconv/oldpyxconv
 
         self.file = stringbinfile(dvi)
         self.fonts = fonts
@@ -1088,7 +1104,7 @@ class dvifile:
         if self.debug:
             print "finished executing dvi chunk"
         self.file.close()
-        self.file, self.fonts, self.activefont, self.pos, self.stack, self.conv, self.tfmconv = self.statestack.pop()
+        self.file, self.fonts, self.activefont, self.pos, self.stack, self.pyxconv, self.tfmconv = self.statestack.pop()
 
     # routines corresponding to the different reader states of the dvi maschine
 
@@ -1108,24 +1124,24 @@ class dvifile:
                 # for the interpretation of all quantities, two conversion factors
                 # are relevant:
                 # - self.tfmconv (tfm units->dvi units)
-                # - self.conv (dvi units-> (PostScript) points)
+                # - self.pyxconv (dvi units-> (PostScript) points)
 
                 self.tfmconv = (25400000.0/num)*(den/473628672.0)/16.0
 
-                # calculate self.conv as described in the DVIType docu
+                # calculate conv as described in the DVIType docu
 
                 # resolution in dpi
                 self.resolution = 300.0
                 # self.trueconv = conv in DVIType docu
                 self.trueconv = (num/254000.0)*(self.resolution/den)
 
-                # self.conv is the conversion factor from the dvi units
+                # self.pyxconv is the conversion factor from the dvi units
                 # to (PostScript) points. It consists of
                 # - self.mag/1000.0:   magstep scaling
                 # - self.trueconv:     conversion from dvi units to pixels
                 # - 1/self.resolution: conversion from pixels to inch
                 # - 72               : conversion from inch to points
-                self.conv = self.mag/1000.0*self.trueconv/self.resolution*72
+                self.pyxconv = self.mag/1000.0*self.trueconv/self.resolution*72
 
                 comment = afile.read(afile.readuchar())
                 return
@@ -1340,11 +1356,11 @@ _VF_ID         = 202              # VF id byte
 class VFError(exceptions.Exception): pass
 
 class vffile:
-    def __init__(self, filename, scale, tfmconv, conv, fontmap, debug=0):
+    def __init__(self, filename, scale, tfmconv, pyxconv, fontmap, debug=0):
         self.filename = filename
         self.scale = scale
         self.tfmconv = tfmconv
-        self.conv = conv
+        self.pyxconv = pyxconv
         self.fontmap = fontmap
         self.debug = debug
         self.fonts = {}            # used fonts
@@ -1390,7 +1406,7 @@ class vffile:
                 # reald = int(d)
 
                 # XXX allow for virtual fonts here too
-                self.fonts[num] =  type1font(fontname, c, reals, d, self.tfmconv, self.conv, self.fontmap, self.debug > 1)
+                self.fonts[num] =  type1font(fontname, c, reals, d, self.tfmconv, self.pyxconv, self.fontmap, self.debug > 1)
             elif cmd == _VF_LONG_CHAR:
                 # character packet (long form)
                 pl = afile.readuint32()   # packet length
