@@ -726,11 +726,6 @@ class dvifile:
             self.actpage.insert(_show(unit.topt(x), unit.topt(y), self.actoutstring))
             self.actoutstart = None
 
-            # we also reset the currently active type 1 font. This is save but
-            # not always necessary
-            # XXX: relax this assumption
-            self.actoutfont = None
-
     def putrule(self, height, width, inch=1):
         self.flushout()
         x1 =  unit.t_m(self.pos[_POS_H] * self.conv * 0.0254 / self.resolution)
@@ -837,6 +832,12 @@ class dvifile:
 
     def special(self, s):
         self.flushout()
+
+        # it is in general not safe to continue using the currently active font because
+        # the specials may involve some gsave/grestore operations
+        # XXX: reset actoutfont only where strictly needed
+        self.actoutfont = None
+        
         x =  unit.t_m(self.pos[_POS_H] * self.conv * 0.0254 / self.resolution)
         y = -unit.t_m(self.pos[_POS_V] * self.conv * 0.0254 / self.resolution)
         if self.debug:
@@ -985,6 +986,7 @@ class dvifile:
         self.actpage = self.pages[-1]
         self.actpage.markers = {}
         self.pos = [0, 0, 0, 0, 0, 0]
+        self.actoutfont = None
         while 1:
             file = self.file
             self.filepos = file.tell()
@@ -1244,7 +1246,8 @@ class vffile:
         self.tfmconv = 1
         self.debug = debug
         self.fonts = {}            # used fonts
-        self.chars = {}            # defined chars
+        self.widths = {}           # widths of defined chars
+        self.chardefs = {}         # dvi chunks for defined chars
 
         file = binfile(self.filename, "rb")
 
@@ -1286,14 +1289,16 @@ class vffile:
                 pl = file.readuint32()   # packet length
                 cc = file.readuint32()   # char code (assumed unsigned, but anyhow only 0 <= cc < 255 is actually used)
                 tfm = file.readuint24()  # character width
-                dvi = file.read(pl)      # dvi code of character 
-                self.chars[cc] = (tfm, dvi)
+                dvi = file.read(pl)      # dvi code of character
+                self.widths[cc] = tfm
+                self.chardefs[cc] = dvi
             elif cmd < _VF_LONG_CHAR:
                 # character packet (short form)
                 cc = file.readuchar()    # char code
                 tfm = file.readuint24()  # character width
                 dvi = file.read(cmd)
-                self.chars[cc] = (tfm, dvi)
+                self.widths[cc] = tfm
+                self.chardefs[cc] = dvi
             elif cmd == _VF_POST:
                 break
             else:
@@ -1305,7 +1310,7 @@ class vffile:
         return self.fonts
 
     def getchar(self, cc):
-        return self.chars[cc][1]
+        return self.chardefs[cc]
 
 
 ###############################################################################
