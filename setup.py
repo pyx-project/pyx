@@ -32,15 +32,19 @@ data_files = [('share/pyx', ['pyx/lfs/10pt.lfs',
 
 if sys.version_info >= (2, 3):
     addargs = { "classifiers":
-                ["Development Status :: 3 - Alpha",
-                 "Intended Audience :: Developers",
-                 "Intended Audience :: End Users/Desktop",
-                 "License :: OSI Approved :: GNU General Public License (GPL)",
-                 "Operating System :: OS Independent",
-                 "Programming Language :: Python",
-                 "Topic :: Multimedia :: Graphics",
-                 "Topic :: Scientific/Engineering :: Visualization",
-		 "Topic :: Software Development :: Libraries :: Python Modules"]
+                    [ "Development Status :: 3 - Alpha",
+                      "Intended Audience :: Developers",
+                      "Intended Audience :: End Users/Desktop",
+                      "License :: OSI Approved :: GNU General Public License (GPL)",
+                      "Operating System :: OS Independent",
+                      "Programming Language :: Python",
+                      "Topic :: Multimedia :: Graphics",
+                      "Topic :: Scientific/Engineering :: Visualization",
+                      "Topic :: Software Development :: Libraries :: Python Modules" ],
+                "download_url":
+                    "http://sourceforge.net/project/showfiles.php?group_id=45430",
+                "platform":
+                    "OS independent",
               }
 else:
     addargs = {}
@@ -53,11 +57,9 @@ setup(name="PyX",
       author="Jörg Lehmann, André Wobst",
       author_email="pyx-devel@lists.sourceforge.net",
       url="http://pyx.sourceforge.net/",
-      download_url="http://sourceforge.net/project/showfiles.php?group_id=45430",
       description=doclines[0],
       long_description="\n".join(doclines[2:]),
       license="GPL",
-      platform="OS independent",
       packages=['pyx', 'pyx/t1strip', 'pyx/pykpathsea'],
       ext_modules=ext_modules,
       data_files=data_files,
