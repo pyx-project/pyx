@@ -31,7 +31,7 @@ def testarc(c):
     c.stroke(l, color.rgb.blue, canvas.earrow.normal)
 
     for a in [-135, -90, 0.0001, 45, 90]:
-        l = arc(startbox, endbox, angle=a, boxdists=1)
+        l = arc(startbox, endbox, relangle=a, boxdists=1)
         c.stroke(l, color.rgb.red, canvas.earrow.normal)
 
     for b in [-1.1, -0.4, 0.01, 0.5]:
