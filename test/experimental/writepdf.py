@@ -8,7 +8,7 @@ c = canvas.canvas()
 b = 0.75
 for h in range(11):
     for s in range(11):
-        c.fill(path.rect(h, s, 1, 1), [color.hsb(h/10.0, s/10.0, b)])
+        c.draw(path.rect(h, s, 1, 1), [deco.stroked(), deco.filled([color.hsb(h/10.0, s/10.0, b)])])
 c.writePDFfile("writepdf")
 c.writeEPSfile("writepdf")
 

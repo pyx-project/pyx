@@ -27,7 +27,7 @@
 #   should we at least factor it out?
 
 import math
-import attr, base, canvas, helper, path, style, trafo, unit
+import attr, base, canvas, color, helper, path, style, trafo, unit
 
 #
 # Decorated path
@@ -161,6 +161,20 @@ class decoratedpath(base.PSCmd):
             for style in styles:
                 style.outputPDF(file)
 
+        def _writestrokestyles(strokestyles, file=file):
+            for style in strokestyles:
+                if isinstance(style, color.color):
+                    style.outputPDF(file, fillattr=0)
+                else:
+                    style.outputPDF(file)
+
+        def _writefillstyles(fillstyles, file=file):
+            for style in fillstyles:
+                if isinstance(style, color.color):
+                    style.outputPDF(file, strokeattr=0)
+                else:
+                    style.outputPDF(file)
+
         # apply global styles
         if self.styles:
             canvas._gsave().outputPDF(file)
@@ -175,24 +189,18 @@ class decoratedpath(base.PSCmd):
                 canvas._gsave().outputPDF(file)
 
                 if self.fillstyles:
-                    _writestyles(self.fillstyles)
+                    _writefillstyles(self.fillstyles)
+                if self.strokestyles:
+                    _writestrokestyles(self.strokestyles)
 
-                canvas._fill().outputPDF(file)
+                canvas._strokefill().outputPDF(file)
+
                 canvas._grestore().outputPDF(file)
-
-                if self.strokestyles:
-                    canvas._gsave().outputPDF(file)
-                    _writestyles(self.strokestyles)
-
-                canvas._stroke().outputPDF(file)
-
-                if self.strokestyles:
-                    canvas._grestore().outputPDF(file)
             else:
                 # only fill fillpath - for the moment
                 if self.fillstyles:
                     canvas._gsave().outputPDF(file)
-                    _writestyles(self.fillstyles)
+                    _writefillstyles(self.fillstyles)
 
                 canvas._fill().outputPDF(file)
 
@@ -205,7 +213,7 @@ class decoratedpath(base.PSCmd):
 
             if self.strokestyles:
                 canvas._gsave().outputPDF(file)
-                _writestyles(self.strokestyles)
+                _writestrokestyles(self.strokestyles)
 
             canvas._newpath().outputPDF(file)
             self.strokepath.outputPDF(file)

@@ -96,6 +96,12 @@ class _fill(base.PSOp):
     def outputPDF(self, file):
         file.write("f\n")
 
+class _strokefill(base.PSOp):
+    def outputPS(self, file):
+        pass
+    def outputPDF(self, file):
+        file.write("B\n")
+
 class _clip(base.PSOp):
     def outputPS(self, file):
         file.write("clip\n")
