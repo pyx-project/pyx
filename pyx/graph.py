@@ -20,11 +20,20 @@ class LinAxis:
     TickDist = 5
 
     def TickList(self):
-        return self.ValueToVirtual(map(lambda x,self=self: self.TickStart + x * self.TickDist, range(self.TickCount)))
+        return map(lambda x,self=self: self.TickStart + x * self.TickDist, range(self.TickCount))
+
+    def TickPosList(self):
+        return self.ValueToVirtual(self.TickList())
+
+    def TickPosLabelDict(self):
+        result = { }
+        for x in self.TickList():
+            result[self.ValueToVirtual(x)] = str(x)
+        return result
 
     def ValueToVirtual(self, Values):
         if isnumber(Values):
-            return (Values - self.Min)/(self.Max - self.Min)
+            return (Values - self.Min)/float(self.Max - self.Min)
         else:
             return map(lambda x,self=self: (x - self.Min)/float(self.Max - self.Min), Values)
 
@@ -80,10 +89,14 @@ class GraphXY(Graph):
                 lineto(self.XPos(0),self.YPos(1)),
                 closepath()])
         self.canvas.draw(p)
-        for x in self.XPos(self.XAxis.TickList()):
+        for x in self.XPos(self.XAxis.TickPosList()):
              self.canvas.draw(line(x,self.YPos(0),x,self.YPos(0)+0.2))
-        for y in self.YPos(self.YAxis.TickList()):
+        for x in self.XAxis.TickPosLabelDict().keys():
+             self.tex.text(self.XPos(x),self.YPos(0)-0.5,self.XAxis.TickPosLabelDict()[x], halign=center)
+        for y in self.YPos(self.YAxis.TickPosList()):
              self.canvas.draw(line(self.XPos(0),y,self.XPos(0)+0.2,y))
+        for y in self.YAxis.TickPosLabelDict().keys():
+             self.tex.text(self.XPos(0)-0.2,self.YPos(y),self.YAxis.TickPosLabelDict()[y], halign=right)
         #for pd in self.plotdata:
         #    for Data in pd[pd_data]
 
