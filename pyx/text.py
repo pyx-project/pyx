@@ -673,9 +673,11 @@ class TexResultError(Exception):
     def __str__(self):
         return ("%s\n" % self.description +
                 "The expression passed to TeX was:\n" +
-                "%s\n" % self.texrunner.expression +
-                "The return message from TeX was:\n"
-                "%s" % self.texrunner.texresult)
+                "  %s\n" % self.texrunner.expression.replace("\n", "\n  ").rstrip() +
+                "The return message from TeX was:\n" +
+                "  %s\n" % self.texrunner.texresult.replace("\n", "\n  ").rstrip() +
+                "After parsing this message, the following was left:\n" +
+                "  %s" % self.texrunner.texparsedresult.replace("\n", "\n  ").rstrip())
 
 class TexResultWarning(TexResultError): pass
 
@@ -683,13 +685,68 @@ class texcheckres: pass
 
 class _texcheckresstart(texcheckres):
 
+    pattern = re.compile(r"This is TeX, Version 3.[0-9a-zA-Z\.\s()]*\n\((?P<texfilename>[a-z]+).tex\)\n\*! Undefined control sequence.\n<\*\> \\raiseerror\n               %\n\? OK, entering \\scrollmode\.\.\.\n\n", re.M)
+
     def check(self, texrunner):
-        if not texrunner.texresult.startswith("This is TeX, Version 3."):
-            raise TexResultError("TeX starting message missing", texrunner)
-        if texrunner.texresult.find("OK, entering \scrollmode...") == -1:
-            raise TexResultError("switching to scrollmode seemingly failed", texrunner)
+        m = self.pattern.match(texrunner.texparsedresult)
+        if m and m.group("texfilename") == texrunner.texfilename:
+            texrunner.texparsedresult = texrunner.texparsedresult[:m.start()] + texrunner.texparsedresult[m.end():]
+        else:
+            raise TexResultError("TeX startup failed", texrunner)
+
+
+class _texcheckresremoveinputmarker(texcheckres):
+
+    pattern = re.compile(r"PyXInputMarker\((\d+)\)", re.M)
+
+    def check(self, texrunner, id):
+        m = self.pattern.search(texrunner.texparsedresult)
+        if m and m.group(1) == str(id):
+            texrunner.texparsedresult = texrunner.texparsedresult[:m.start()] + texrunner.texparsedresult[m.end():]
+        else:
+            raise TexResultError("PyXInputMarker expected", texrunner)
+
+
+class _texcheckresremovepyxbox(texcheckres):
+
+    pattern = re.compile(r"PyXBox\(page=(?P<page>\d+),wd=-?\d*((\d\.?)|(\.?\d))\d*pt,ht=-?\d*((\d\.?)|(\.?\d))\d*pt,dp=-?\d*((\d\.?)|(\.?\d))\d*pt\)\n\[80.121.88.(?P=page)]")
+
+    def check(self, texrunner, id):
+        m = self.pattern.search(texrunner.texparsedresult)
+        if m and m.group("page") == str(texrunner.page):
+            texrunner.texparsedresult = texrunner.texparsedresult[:m.start()] + texrunner.texparsedresult[m.end():]
+        else:
+            raise TexResultError("PyXBox expected", texrunner)
+
+
+class _texcheckresremovetexend(texcheckres):
+
+    pattern = re.compile(r"\(see the transcript file for additional information\)\nOutput written on (?P<texfilename>[a-z]+).dvi \((?P<page>\d+) pages?, \d+ bytes\)\.\nTranscript written on (?P=texfilename)\.log\.")
+
+    def check(self, texrunner, id):
+        m = self.pattern.search(texrunner.texparsedresult)
+        if m and m.group("page") == str(texrunner.page) and m.group("texfilename") == texrunner.texfilename:
+            texrunner.texparsedresult = texrunner.texparsedresult[:m.start()] + texrunner.texparsedresult[m.end():]
+        else:
+            raise TexResultError("TeX termination messages expected", texrunner)
+
+
+class _texcheckresremoveemptylines(texcheckres):
+
+    pattern = re.compile(r"^\*?\n", re.M)
+
+    def check(self, texrunner):
+        m = self.pattern.search(texrunner.texparsedresult)
+        while m:
+            texrunner.texparsedresult = texrunner.texparsedresult[:m.start()] + texrunner.texparsedresult[m.end():]
+            m = self.pattern.search(texrunner.texparsedresult)
+
 
 texcheckres.start = _texcheckresstart()
+texcheckres.removeinputmarker = _texcheckresremoveinputmarker()
+texcheckres.removepyxbox = _texcheckresremovepyxbox()
+texcheckres.removetexend = _texcheckresremovetexend()
+texcheckres.removeemptylines = _texcheckresremoveemptylines()
 
 class _readpipe(threading.Thread):
 
@@ -705,6 +762,9 @@ class _readpipe(threading.Thread):
     def run(self):
         read = self.pipe.readline()
         while len(read):
+            read.replace("\r", "")
+            if not len(read) or read[-1] != "\n":
+                read += "\n"
             self.gotqueue.put(read)
             try:
                 self.expect = self.expectqueue.get_nowait()
@@ -713,6 +773,8 @@ class _readpipe(threading.Thread):
             if read.find(self.expect) != -1:
                 self.gotevent.set()
             read = self.pipe.readline()
+        if self.expect.find("PyXInputMarker") != -1:
+            raise RuntimeError("TeX finished unexpectedly")
 
 
 class textbox(graph._rectbox):
@@ -752,8 +814,8 @@ class texrunner:
         self.auxfilename = None
         self.waitfortex = 3
         self.executeid = -1
-        self.page = -1
-        self.texfilename = "notemprightnow"
+        self.page = 0
+        self.texfilename = "text"
         self.usefiles = None
 
     def execute(self, expression, *checks):
@@ -773,13 +835,14 @@ class texrunner:
             self.execute("\\raiseerror%\ns\n" + # switch to nonstop-mode
                          "\\def\\PyX{P\\kern-.3em\\lower.5ex\hbox{Y}\kern-.18em X}%\n" +
                          "\\newbox\\PyXBox%\n" +
-                         "\\def\\ProcessPyXBox#1{%\n" +
-                         "\\immediate\\write16{PyXBox(page=#1," +
+                         "\\def\\ProcessPyXBox#1#2{%\n" +
+                         "\\setbox\\PyXBox=\\hbox{{#1}}%\n" +
+                         "\\immediate\\write16{PyXBox(page=#2," +
                                                      "wd=\\the\\wd\\PyXBox," +
                                                      "ht=\\the\\ht\\PyXBox," +
                                                      "dp=\\the\\dp\\PyXBox)}%\n" +
-                         "{\\count0=80\\count1=121\\count2=88\\count3=#1\\shipout\\copy\\PyXBox}}%\n" +
-                         "\\def\\ProcessPyXFinished#1{\\immediate\\write16{ProcessPyXFinishedMarker(#1)}}",
+                         "{\\count0=80\\count1=121\\count2=88\\count3=#2\\shipout\\copy\\PyXBox}}%\n" +
+                         "\\def\\PyXInput#1{\\immediate\\write16{PyXInputMarker(#1)}}",
                          texcheckres.start)
             os.remove("%s.tex" % self.texfilename)
             if self.mode == "latex":
@@ -790,15 +853,14 @@ class texrunner:
             self.definemode = olddefinemode
         self.executeid += 1
         if expression is not None:
-            self.expectqueue.put_nowait("ProcessPyXFinishedMarker(%i)" % self.executeid)
+            self.expectqueue.put_nowait("PyXInputMarker(%i)" % self.executeid)
             if self.definemode:
                 self.expression = ("%s%%\n" % expression +
-                                   "\\ProcessPyXFinished{%i}%%\n" % self.executeid)
+                                   "\\PyXInput{%i}%%\n" % self.executeid)
             else:
                 self.page += 1
-                self.expression = ("\\setbox\\PyXBox=\\hbox{{%s}}%%\n" % expression +
-                                   "\\ProcessPyXBox{%i}%%\n" % self.page +
-                                   "\\ProcessPyXFinished{%i}%%\n" % self.executeid)
+                self.expression = ("\\ProcessPyXBox{%s}{%i}%%\n" % (expression, self.page) +
+                                   "\\PyXInput{%i}%%\n" % self.executeid)
             self.texinput.write(self.expression)
         else:
             self.expectqueue.put_nowait("Transcript written on %s.log" % self.texfilename)
@@ -819,18 +881,27 @@ class texrunner:
         if nogotevent:
             raise TexResultError("TeX didn't respond as expected within %i seconds." % self.waitfortex, self)
         else:
+            self.texparsedresult = self.texresult
+            if expression is None:
+                texcheckres.removetexend.check(self, self.executeid)
+            else:
+                texcheckres.removeinputmarker.check(self, self.executeid)
+                if not self.definemode:
+                    texcheckres.removepyxbox.check(self, self.executeid)
             for check in checks:
                 try:
                     check.check(self)
                 except TexResultWarning:
                     traceback.print_exc()
+            texcheckres.removeemptylines.check(self)
+            if len(self.texparsedresult):
+                raise TexResultError("unhandled TeX response (might be an error)", self)
         if expression is None:
             self.texruns = 0
             self.texdone = 1
 
     def write(self, file, page):
         if not self.texdone:
-            self.page += 1
             _default.execute(None)
             self.dvifile = DVIFile("%s.dvi" % self.texfilename)
             self.dvifile.writeheader(file)
@@ -887,14 +958,13 @@ if __name__=="__main__":
 
     res1 = text(r"""\hbox{$\displaystyle\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} =
     \sqrt{\pi\over a}$} """)
-#    res1 = text("x y z")
-#    print res1.bbox()
-#    res2 = text("test", 1, 1)
-#    res3 = text("bla und nochmals bla", 2, 2)
+    print res1.bbox()
+#    res2 = text("aaa")
+#    res3 = text("bla und nochmals bla")
 #    print res2.bbox()
 #    print res3.bbox()
 
-    file = open("test.ps", "w")
+    file = open("text.ps", "w")
     
     file.write("%!PS-Adobe-3.0 EPSF 3.0\n")
     file.write("%%BoundingBox: -10 -100 100 100\n")
