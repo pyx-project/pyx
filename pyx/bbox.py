@@ -20,8 +20,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-# TODO: - shouldn't we rename bbox.transform to bbox.transformed? (AW, 23.1.03)
-#       - it would be nice to have a real bbox.transform (AW, 23.1.03)
+# TODO: - it would be nice to have a real bbox.transform (AW, 23.1.03)
 
 import unit
 
@@ -76,7 +75,7 @@ class bbox:
                     self.urx < other.llx or
                     self.ury < other.lly)
 
-    def transform(self, trafo):
+    def transformed(self, trafo):
         """return bbox transformed by trafo"""
         # we have to transform all four corner points of the bbox
         (llx, lly)=trafo._apply(self.llx, self.lly)
@@ -90,8 +89,8 @@ class bbox:
         return bbox(min(llx, lrx, urx, ulx), min(lly, lry, ury, uly),
                     max(llx, lrx, urx, ulx), max(lly, lry, ury, uly))
 
-    def enhance(self, size):
-        """return bbox enhanced in all directions by size"""
+    def enlarged(self, size):
+        """return bbox enlargedd in all directions by size"""
         size = unit.topt(unit.length(size, default_type="v"))
         return bbox(self.llx-size, self.lly-size, 
                     self.urx+size, self.ury+size)

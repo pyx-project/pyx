@@ -26,7 +26,6 @@
 #         (maybe we still need the current bbox implementation (then maybe called
 #          cbox = control box) for bpathel for the use during the
 #          intersection of bpaths)
-#       - shouldn't we rename path.transformed
 
 import math, string
 from math import cos, sin, pi

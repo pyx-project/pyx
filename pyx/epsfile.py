@@ -144,7 +144,7 @@ class epsfile(base.PSCmd):
             self.trafo = self.trafo * trafo._translate(-self.mybbox.llx, -self.mybbox.lly)
 
     def bbox(self):
-        return self.mybbox.transform(self.trafo)
+        return self.mybbox.transformed(self.trafo)
 
     def write(self, file):
         try:

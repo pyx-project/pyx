@@ -303,6 +303,9 @@ class DecoratedPath(base.PSCmd):
             if self.strokestyles:
                 _grestore().write(file)
 
+        if not self.strokepath and not self.fillpath:
+            raise RuntimeError("Path neither to be stroked nor filled")
+
         # now, draw additional subdps
         for subdp in self.subdps:
             subdp.write(file)
@@ -665,7 +668,7 @@ class canvas(base.PSText):
                 self.PSOps.append(arg)
             elif isinstance(arg, clip):
                 self.clipbbox=(self.clipbbox*
-                               arg.clipbbox().transform(self.trafo))
+                               arg.clipbbox().transformed(self.trafo))
                 self.PSOps.append(arg)
             else:
                 self.set(arg)
@@ -680,7 +683,7 @@ class canvas(base.PSText):
         # transform according to our global transformation and
         # intersect with clipping bounding box (which have already been
         # transformed in canvas.__init__())
-        return obbox.transform(self.trafo)*self.clipbbox
+        return obbox.transformed(self.trafo)*self.clipbbox
 
     def writefontheader(self, file, collectfontheader):
         for cmd in self.PSOps:
@@ -717,7 +720,7 @@ class canvas(base.PSText):
         except IOError:
             assert 0, "cannot open output file"                 # TODO: Fehlerbehandlung...
 
-        abbox=self.bbox().enhance(bboxenhance)
+        abbox=self.bbox().enlarged(bboxenhance)
         ctrafo=None     # global transformation of canvas
 
         if rotated:
@@ -760,7 +763,7 @@ class canvas(base.PSText):
 
         # if there has been a global transformation, adjust the bounding box
         # accordingly
-        if ctrafo: abbox = abbox.transform(ctrafo)
+        if ctrafo: abbox = abbox.transformed(ctrafo)
 
         file.write("%!PS-Adobe-3.0 EPSF 3.0\n")
         abbox.write(file)
