@@ -1196,7 +1196,7 @@ class _texmessagestart(texmessage):
 
     __implements__ = _Itexmessage
 
-    startpattern = re.compile(r"This is [0-9a-zA-Z\s_]*TeX")
+    startpattern = re.compile(r"This is [-0-9a-zA-Z\s_]*TeX")
 
     def check(self, texrunner):
         m = self.startpattern.search(texrunner.texmessageparsed)
