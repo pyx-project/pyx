@@ -147,6 +147,7 @@ axis.py
                     gebracht? Das ist hinsichtlich der Verkürzung der Namen viel wirksamer ...
 
 <JL>                Benutzer schmidg ist eher pro graph.axis (aus Gründen der Ordnung und Logik)
+                    Benutzer strasmic ist pro axis ("kürzer")
           - linaxis -> linear
           - logaxis -> logarithmic
           - linkaxis -> linked
