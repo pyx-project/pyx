@@ -321,7 +321,7 @@ class graphxy(canvas.canvas):
         if not self.removedomethod(self.dobackground): return
         if self.backgroundattrs is not None:
             self.draw(path.rect_pt(self.xpos_pt, self.ypos_pt, self.width_pt, self.height_pt),
-                      helper.ensurelist(self.backgroundattrs))
+                      self.backgroundattrs)
 
     def doaxes(self):
         self.dolayout()

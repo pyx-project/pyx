@@ -67,6 +67,9 @@ TODO:
     - describe creation and modification (inplace and ``modify by new'') of
       graph data
 
+0.6.3 (xxxx/xx/xx):
+   - graph module:
+     - fix drawing with background
 
 0.6.2 (2004/04/07):
   - graph module:
