@@ -26,7 +26,7 @@ for line in lines: # we yet don't use a file iterator
     if m:
         xaxis = graph.axis.lin(
                 parter=graph.axis.parter.lin(tickdist=("0.5","0.1"), labeldist="1"),
-                painter=graph.axis.painter.plain(innerticklength=None, labelattrs=None))
+                painter=graph.axis.painter.regular(innerticklength=None, labelattrs=None))
         if first:
             x2axis=graph.axis.linked(xaxis,
                 painter=graph.axis.painter.linked(
