@@ -1445,24 +1445,6 @@ class normcurve_pt(normsubpathitem):
         return "normcurve_pt(%g, %g, %g, %g, %g, %g, %g, %g)" % (self.x0_pt, self.y0_pt, self.x1_pt, self.y1_pt,
                                                                  self.x2_pt, self.y2_pt, self.x3_pt, self.y3_pt)
 
-    def _isstraight(self, epsilon):
-        """check whether the normcurve is approximately straight
-
-        helper method for internal use only
-        """
-
-        # Just check, whether the modulus of the difference between
-        # the length of the control polygon
-        # (i.e. |P1-P0|+|P2-P1|+|P3-P2|) and the length of the
-        # straight line between starting and ending point of the
-        # normcurve_pt (i.e. |P3-P1|) is smaller the epsilon.
-        # We do not construct the corresponding normline_pt first
-        # but the the calculation inplace to gain performance.
-        return abs( math.hypot(self.x1_pt-self.x0_pt, self.y1_pt-self.y0_pt) +
-                    math.hypot(self.x2_pt-self.x1_pt, self.y2_pt-self.y1_pt) +
-                    math.hypot(self.x3_pt-self.x2_pt, self.y3_pt-self.y2_pt) -
-                    math.hypot(self.x3_pt-self.x0_pt, self.y3_pt-self.y0_pt) ) < epsilon
-
     def _midpointsplit(self, epsilon):
         """split curve into two parts
 
@@ -1494,28 +1476,38 @@ class normcurve_pt(normsubpathitem):
         xmidpoint_pt = 0.5*(x01_12_pt + x12_23_pt)
         ymidpoint_pt = 0.5*(y01_12_pt + y12_23_pt)
 
-        # We now can construct the normcurves
-        c1 = normcurve_pt(self.x0_pt, self.y0_pt,
-                          x01_pt, y01_pt,
-                          x01_12_pt, y01_12_pt,
-                          xmidpoint_pt, ymidpoint_pt)
-        c2 = normcurve_pt(xmidpoint_pt, ymidpoint_pt,
-                          x12_23_pt, y12_23_pt,
-                          x23_pt, y23_pt,
-                          self.x3_pt, self.y3_pt)
-
-        # Before returning the normcurves we check whether we could
-        # replace them by normlines. We could short cut this isstraight
-        # test happen before constructing the normcurve_pt instances
-        # by reimplementing the isstraight test on the coordinates.
-        # TODO: Do some profiling on whether a _instraight code
-        #       dublication would be worth its speed gain.
-        # BTW it turns out that this is the only place where _isstraight
-        # is needed.
-        if c1._isstraight(epsilon):
+        # Before returning the normcurves we check whether we can
+        # replace them by normlines within an error of epsilon pts.
+        # The maximal error value is given by the modulus of the
+        # difference between the length of the control polygon
+        # (i.e. |P1-P0|+|P2-P1|+|P3-P2|), which consitutes an upper
+        # bound for the length, and the length of the straight line
+        # between start and end point of the normcurve (i.e. |P3-P1|),
+        # which represents a lower bound.
+        upperlen1 = (math.hypot(x01_pt - self.x0_pt, y01_pt - self.y0_pt) +
+                     math.hypot(x01_12_pt - x01_pt, y01_12_pt - y01_pt) +
+                     math.hypot(xmidpoint_pt - x01_12_pt, ymidpoint_pt - y01_12_pt))
+        lowerlen1 = math.hypot(xmidpoint_pt - self.x0_pt, ymidpoint_pt - self.y0_pt)
+        if upperlen1-lowerlen1 < epsilon:
             c1 = normline_pt(self.x0_pt, self.y0_pt, xmidpoint_pt, ymidpoint_pt)
-        if c2._isstraight(epsilon):
+        else:
+            c1 = normcurve_pt(self.x0_pt, self.y0_pt,
+                              x01_pt, y01_pt,
+                              x01_12_pt, y01_12_pt,
+                              xmidpoint_pt, ymidpoint_pt)
+
+        upperlen2 = (math.hypot(x12_23_pt - xmidpoint_pt, y12_23_pt - ymidpoint_pt) +
+                     math.hypot(x23_pt - x12_23_pt, y23_pt - y12_23_pt) +
+                     math.hypot(self.x3_pt - x23_pt, self.y3_pt - y23_pt))
+        lowerlen2 = math.hypot(self.x3_pt - xmidpoint_pt, self.y3_pt - ymidpoint_pt)
+        if upperlen2-lowerlen2 < epsilon:
             c2 = normline_pt(xmidpoint_pt, ymidpoint_pt, self.x3_pt, self.y3_pt)
+        else:
+            c2 = normcurve_pt(xmidpoint_pt, ymidpoint_pt,
+                              x12_23_pt, y12_23_pt,
+                              x23_pt, y23_pt,
+                              self.x3_pt, self.y3_pt)
+
         return c1, c2
 
     def _arclentoparam_pt(self, lengths_pt, epsilon):
@@ -1613,14 +1605,13 @@ class normcurve_pt(normsubpathitem):
         """returns the list of segment line lengths (in pts) of the normcurve
            together with the length of the parameterinterval"""
 
-        # lower and upper bounds for the arclen
+        # lower and upper bounds for the arclen (cf. _midpointsplit method)
         lowerlen = math.hypot(self.x3_pt-self.x0_pt, self.y3_pt-self.y0_pt)
         upperlen = ( math.hypot(self.x1_pt-self.x0_pt, self.y1_pt-self.y0_pt) +
                      math.hypot(self.x2_pt-self.x1_pt, self.y2_pt-self.y1_pt) +
                      math.hypot(self.x3_pt-self.x2_pt, self.y3_pt-self.y2_pt) )
 
-        # instead of _isstraight method:
-        if abs(upperlen-lowerlen)<epsilon:
+        if upperlen-lowerlen < epsilon:
             return [( 0.5*(upperlen+lowerlen), paraminterval )]
         else:
             a, b = self._midpointsplit(epsilon)
