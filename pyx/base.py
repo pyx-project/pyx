@@ -25,6 +25,8 @@
 # Postscript operators
 #
 
+__metaclass__ = type
+
 class PSOp:
 
     """Poscript Operators
