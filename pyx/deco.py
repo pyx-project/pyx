@@ -206,6 +206,11 @@ class filled(deco):
 
 filled.clear = attr.clearclass(filled)
 
+# 
+# Arrows
+#
+
+# two helper functions which construct the arrowhead and return its size, respectively
 
 def _arrowheadtemplatelength(anormpath, size):
     "calculate length of arrowhead template (in parametrisation of anormpath)"
