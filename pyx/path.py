@@ -842,7 +842,7 @@ class arct(arct_pt):
 
     """Append tangent arc"""
 
-    __slots__ = "x1_pt", "y1_pt", "x2_pt", "y2_pt", "r"
+    __slots__ = "x1_pt", "y1_pt", "x2_pt", "y2_pt", "r_pt"
 
     def __init__(self, x1, y1, x2, y2, r):
         arct_pt.__init__(self, unit.topt(x1), unit.topt(y1),
@@ -934,10 +934,6 @@ class path(base.canvasitem):
 
     def __init__(self, *args):
         """construct a path from pathitems *args"""
-        # if not (isinstance(args[0], moveto_pt) or
-        #         isinstance(args[0], arc_pt) or
-        #         isinstance(args[0], arcn_pt)):
-        #     raise PathException("first path element must be either moveto, arc, or arcn")
         self.path = list(args)
         # normpath cache
         self._normpath = None
@@ -1016,6 +1012,10 @@ class path(base.canvasitem):
 
         return abbox
 
+    def begin(self):
+        """return param corresponding to begin of path"""
+        return self.normpath().begin()
+
     def curveradius_pt(self, params):
         """Returns the curvature radius in pts (or None if infinite)
         at param(s). This is the inverse of the curvature.
@@ -1031,6 +1031,10 @@ class path(base.canvasitem):
         Note that this radius can be negative or positive,
         depending on the sign of the curvature."""
         return self.normpath().curveradius(params)
+
+    def end(self):
+        """return param corresponding to end of path"""
+        return self.normpath().end()
 
     def extend(self, pathitems):
         """extent path by pathitems"""
@@ -1332,7 +1336,7 @@ class normsubpathitem:
         pass
 
     def at_pt(self, t):
-        """returns coordinates of point in pts at parameter t (0<=t<=1) """
+        """returns coordinates of point in pts at parameter t"""
         pass
 
     def atbegin_pt(self):
