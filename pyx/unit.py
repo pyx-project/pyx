@@ -56,8 +56,8 @@ def set(uscale=None, vscale=None, wscale=None):
 def convert_to(l, dest_unit="m"):
 
     if type(l) is TupleType:
-        return tuple(map(lambda x, self=self, dest_unit=dest_unit:
-                         self.convert_to(x,dest_unit), l))
+        return tuple(map(lambda x, dest_unit=dest_unit:
+                         convert_to(x,dest_unit), l))
 
     if type(l) in (IntType, LongType, FloatType):
         return l*_m[default_unit]*scale['u']/_m[dest_unit]
