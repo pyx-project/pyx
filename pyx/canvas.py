@@ -930,7 +930,8 @@ class canvas(_canvas):
             else:
                 self.set(arg)
 
-    def writetofile(self, filename, paperformat=None, rotated=0, fittosize=0, margin="1 t cm", bboxenlarge="1 t pt"):
+    def writetofile(self, filename, paperformat=None, rotated=0, fittosize=0, margin="1 t cm",
+                    bbox=None, bboxenlarge="1 t pt"):
         """write canvas to EPS file
 
         If paperformat is set to a known paperformat, the output will be centered on
@@ -942,10 +943,9 @@ class canvas(_canvas):
         page (minus margin). In that case, the paperformat the specification
         of the paperformat is obligatory.
 
-        bboxenlarge may be used to enlarge the bbox of the canvas.
-
-        returns the canvas
-
+        The bbox parameter overrides the automatic bounding box determination.
+        bboxenlarge may be used to enlarge the bbox of the canvas (or the
+        manually specified bbox).
         """
 
         if filename[-4:]!=".eps":
@@ -956,8 +956,9 @@ class canvas(_canvas):
         except IOError:
             assert 0, "cannot open output file"                 # TODO: Fehlerbehandlung...
 
-        abbox=self.bbox().enlarged(bboxenlarge)
-        ctrafo=None     # global transformation of canvas
+        abbox = bbox is not None and bbox or self.bbox()
+        abbox = abbox.enlarged(bboxenlarge)
+        ctrafo = None     # global transformation of canvas
 
         if rotated:
             ctrafo = trafo._rotate(90,
@@ -1035,5 +1036,3 @@ class canvas(_canvas):
         file.write("showpage\n")
         file.write("%%Trailer\n")
         file.write("%%EOF\n")
-
-        return self
