@@ -5,7 +5,8 @@ TODO:
     - common bboxes for different graphs
     - exceptions in drawsymbol & friends...
     - 3d graphs, circular graphs
-    - shall we call it graph.axis.plain or graph.axis.regular?
+    - shall we call it graph.axis.painter.regular instead of
+      graph.axis.painter.plain (as in the doc of 0.6 by accident)?
   - style module:
     - default patterns
     - make dash length available
@@ -16,8 +17,6 @@ TODO:
     - messageparser for size differences at the end: Warning not Exception
     - messageparser for overfull/underfull vbox/hbox: Warning not Exception
     - newline removal when not disturbing texmessages only
-  - mathtree module:
-     - consider rewrite using the python compiler module
   - graph.data module:
     - use csv module (new in 2.3)
     - Check for "inf" and "nan" in datafiles.
@@ -53,6 +52,10 @@ TODO:
   - path module:
     - arclentoparam should raise an exception when the arclen is out of range
     - use _pt for variable names 
+    - it seems to be, that epsilon is a feature of normsubpath;
+      Why is there (also) a self.epsilon?
+    - Why is there no normpathel.trafo()? And how about
+      normpathel.begintrafo() and normpathel.endtrafo()?
 
   Documentation:
     - path module:
