@@ -44,22 +44,19 @@ _m = {
       'pt':   0.01*2.54/72,
     }
 
-def set(uscale=None, vscale=None, wscale=None, default_unit=None):
+def set(uscale=None, vscale=None, wscale=None, defaultunit=None):
     if uscale:
         scale['u'] = uscale
     if vscale:
         scale['v'] = vscale
     if wscale:
         scale['w'] = wscale
-    if default_unit:
+    if defaultunit:
         global _default_unit
-        _default_unit = default_unit
+        _default_unit = defaultunit
  
 
-def convert_to(l, dest_unit="m"):
-    if type(l) is types.TupleType:
-        return tuple(map(lambda x, dest_unit=dest_unit:
-                         convert_to(x, dest_unit), l))
+def _convert_to(l, dest_unit="m"):
     if type(l) in (types.IntType, types.LongType, types.FloatType):
         return l*_m[_default_unit]*scale['u']/_m[dest_unit]
     elif not isinstance(l,length): 
@@ -71,19 +68,19 @@ def convert_to(l, dest_unit="m"):
              l.length['w']*scale['w'] ) / _m[dest_unit]
 
 def tom(l):
-    return convert_to(l, "m")
+    return _convert_to(l, "m")
 
 def tocm(l):
-    return convert_to(l, "cm")
+    return _convert_to(l, "cm")
 
 def tomm(l):
-    return convert_to(l, "mm")
+    return _convert_to(l, "mm")
 
 def toinch(l):
-    return convert_to(l, "inch")
+    return _convert_to(l, "inch")
 
 def topt(l):
-    return convert_to(l, "pt")
+    return _convert_to(l, "pt")
 
 ################################################################################
 # class for generic length
