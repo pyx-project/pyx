@@ -34,6 +34,8 @@ def _nmin(*args):
     args = [x for x in args if x is not None]
     if len(args):
         return min(args)
+    else:
+        return None
 
 #
 # classes representing bounding boxes
