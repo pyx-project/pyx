@@ -1,5 +1,3 @@
-#TODO: - mutliple python runs when appropriate (new tex handling will render it unnecessary)
-
 default: examples.dvi
 
 clean:
@@ -20,15 +18,16 @@ examples.pdf: examples.ps
 examples.ps: examples.dvi
 	dvips -o examples.ps examples.dvi
 
-pyfiles = $(filter-out examples.py,$(wildcard *.py)) $(wildcard */*.py)
-htmlfiles = $(patsubst %.py, %.py.html, $(pyfiles))
-epsfiles = $(patsubst %.py, %.eps, $(pyfiles))
-pngfiles = $(patsubst %.py, %.png, $(pyfiles))
+files = $(foreach item, $(shell cat INDEX), $(if $(wildcard $(item)/INDEX), $(addprefix $(item)/, $(shell cat $(item)/INDEX)), $(item)))
+pyfiles = $(addsuffix .py, $(files))
+htmlfiles = $(addsuffix .html, $(files))
+epsfiles = $(addsuffix .eps, $(files))
+pngfiles = $(addsuffix .png, $(files))
 
 eps: $(epsfiles)
 
 examples.dvi: examples.py $(epsfiles)
-	python examples.py $(basename $(epsfiles))
+	python examples.py $(basename $(pyfiles))
 	latex examples.tex
 	-rm -f examples.ps examples.pdf
 

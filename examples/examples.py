@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys; sys.path[:0]=[".."]
+import os.path
 import pyx
 
 tex = open("examples.tex", "w")
@@ -17,14 +18,16 @@ tex.write(r"""
 \author{J\"org Lehmann \texttt{<joergl@users.sourceforge.net>}\and
 Andr\'e Wobst \texttt{<wobsta@users.sourceforge.net>}}
 \maketitle
-\begin{abstract}
-This is an automatically generated document from the \PyX{} examples directory. For
-each \PyX{} example file its name, source code and the corresponding postscript output are
-shown. Please pay attention to source code comments within the examples for
-further information.
-\end{abstract}
 """ % pyx.__version__)
+dirs = []
 for file in sys.argv[1:]:
+    dir = os.path.dirname(file)
+    if dir not in dirs:
+        try:
+            tex.write("\\begin{abstract}\n%s\\end{abstract}\n" % open(os.path.join(dir, "README")).read().replace("__version__", pyx.__version__))
+        except IOError:
+            print "ignore missing README in %s" % dir
+        dirs.append(dir)
     tex.write("\\deftripstyle{mypagestyle}{}{%s}{}{}{\\pagemark}{}\n" % file)
     tex.write("\\pagestyle{mypagestyle}{}\n")
     tex.write("\\section*{%s}\n" % file)
