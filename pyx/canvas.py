@@ -41,7 +41,7 @@ class canvasitem:
         """write PS code corresponding to canvasitem to file"""
         pass
 
-    def outputPDF(self, file):
+    def outputPDF(self, file, writer, context):
         """write PDF code corresponding to canvasitem to file"""
         pass
 
@@ -83,8 +83,8 @@ class clip(canvasitem):
         self.path.outputPS(file)
         file.write("clip\n")
 
-    def outputPDF(self, file):
-        self.path.outputPDF(file)
+    def outputPDF(self, file, writer, context):
+        self.path.outputPDF(file, writer, context)
         file.write("W n\n")
 
 
@@ -170,11 +170,11 @@ class _canvas(canvasitem):
                 cmd.outputPS(file)
             file.write("grestore\n")
 
-    def outputPDF(self, file):
+    def outputPDF(self, file, writer, context):
         if self.items:
             file.write("q\n") # gsave
             for cmd in self.items:
-                cmd.outputPDF(file)
+                cmd.outputPDF(file, writer, context)
             file.write("Q\n") # grestore
 
     def insert(self, item, attrs=None):

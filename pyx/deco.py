@@ -215,26 +215,26 @@ class decoratedpath(canvas.canvasitem):
         if self.styles:
             file.write("grestore\n")
 
-    def outputPDF(self, file):
+    def outputPDF(self, file, writer, context):
         # draw (stroke and/or fill) the decoratedpath on the canvas
 
         def _writestyles(styles, file=file):
             for style in styles:
-                style.outputPDF(file)
+                style.outputPDF(file, writer, context)
 
         def _writestrokestyles(strokestyles, file=file):
             for style in strokestyles:
                 if isinstance(style, color.color):
-                    style.outputPDF(file, fillattr=0)
+                    style.outputPDF(file, writer, context(fillattr=0))
                 else:
-                    style.outputPDF(file)
+                    style.outputPDF(file, writer, context)
 
         def _writefillstyles(fillstyles, file=file):
             for style in fillstyles:
                 if isinstance(style, color.color):
-                    style.outputPDF(file, strokeattr=0)
+                    style.outputPDF(file, writer, context(strokeattr=0))
                 else:
-                    style.outputPDF(file)
+                    style.outputPDF(file, writer, context)
 
         if self.strokestyles is None and self.fillstyles is None:
             raise RuntimeError("Path neither to be stroked nor filled")
@@ -248,7 +248,7 @@ class decoratedpath(canvas.canvasitem):
             _writestyles(self.styles)
 
         if self.fillstyles is not None:
-            fillpath.outputPDF(file)
+            fillpath.outputPDF(file, writer, context)
 
             if self.strokestyles is not None and strokepath is fillpath:
                 # do efficient stroking + filling
@@ -280,14 +280,14 @@ class decoratedpath(canvas.canvasitem):
                 file.write("q\n") # gsave
                 _writestrokestyles(self.strokestyles)
 
-            strokepath.outputPDF(file)
+            strokepath.outputPDF(file, writer, context)
             file.write("S\n") # stroke
 
             if self.strokestyles:
                 file.write("Q\n") # grestore
 
         # now, draw additional elements of decoratedpath
-        self.ornaments.outputPDF(file)
+        self.ornaments.outputPDF(file, writer, context)
 
         # restore global styles
         if self.styles:

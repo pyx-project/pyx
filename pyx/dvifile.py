@@ -355,7 +355,7 @@ class _begintextobject(canvas.canvasitem):
     def outputPS(self, file):
         pass
     
-    def outputPDF(self, file):
+    def outputPDF(self, file, writer, context):
         file.write("BT\n")
 
 
@@ -363,7 +363,7 @@ class _endtextobject(canvas.canvasitem):
     def outputPS(self, file):
         pass
     
-    def outputPDF(self, file):
+    def outputPDF(self, file, writer, context):
         file.write("ET\n")
 
 
@@ -376,7 +376,7 @@ class _selectfont(canvas.canvasitem):
     def outputPS(self, file):
         file.write("/%s %f selectfont\n" % (self.name, self.size))
 
-    def outputPDF(self, file):
+    def outputPDF(self, file, writer, context):
         file.write("/%s %f Tf\n" % (self.name, self.size))
 
 
@@ -397,7 +397,7 @@ class selectfont(canvas.canvasitem):
     def outputPS(self, file):
         file.write("/%s %f selectfont\n" % (self.fontid, self.size))
 
-    def outputPDF(self, file):
+    def outputPDF(self, file, writer, context):
         file.write("/%s %f Tf\n" % (self.fontid, self.size))
 
 
@@ -432,7 +432,7 @@ class _show(canvas.canvasitem):
             outstring += ascii
         file.write("%g %g moveto (%s) show\n" % (self.x, self.y, outstring))
 
-    def outputPDF(self, file):
+    def outputPDF(self, file, writer, context):
         outstring = ""
         for char in self.chars:
             if char > 32 and char < 127 and chr(char) not in "()[]<>\\":
@@ -765,7 +765,7 @@ class _savecolor(canvas.canvasitem):
     def outputPS(self, file):
         file.write("currentcolor currentcolorspace\n")
 
-    def outputPDF(self, file):
+    def outputPDF(self, file, writer, context):
         file.write("q\n")
 
 
@@ -773,14 +773,14 @@ class _restorecolor(canvas.canvasitem):
     def outputPS(self, file):
         file.write("setcolorspace setcolor\n")
 
-    def outputPDF(self, file):
+    def outputPDF(self, file, writer, context):
         file.write("Q\n")
 
 class _savetrafo(canvas.canvasitem):
     def outputPS(self, file):
         file.write("matrix currentmatrix\n")
 
-    def outputPDF(self, file):
+    def outputPDF(self, file, writer, context):
         file.write("q\n")
 
 
@@ -788,7 +788,7 @@ class _restoretrafo(canvas.canvasitem):
     def outputPS(self, file):
         file.write("setmatrix\n")
 
-    def outputPDF(self, file):
+    def outputPDF(self, file, writer, context):
         file.write("Q\n")
 
 

@@ -49,7 +49,7 @@ class linecap(attr.exclusiveattr, strokestyle):
     def outputPS(self, file):
         file.write("%d setlinecap\n" % self.value)
 
-    def outputPDF(self, file):
+    def outputPDF(self, file, writer, context):
         file.write("%d J\n" % self.value)
 
 linecap.butt = linecap(0)
@@ -69,7 +69,7 @@ class linejoin(attr.exclusiveattr, strokestyle):
     def outputPS(self, file):
         file.write("%d setlinejoin\n" % self.value)
 
-    def outputPDF(self, file):
+    def outputPDF(self, file, writer, context):
         file.write("%d j\n" % self.value)
 
 linejoin.miter = linejoin(0)
@@ -122,7 +122,7 @@ class dash(attr.exclusiveattr, strokestyle):
         patternstring = sep.join(["%f" % element for element in self.pattern])
         file.write("[%s] %d setdash\n" % (patternstring, self.offset))
 
-    def outputPDF(self, file):
+    def outputPDF(self, file, writer, context):
         if self.rellengths:
             raise RuntimeError("rellengths currently not supported in pdf output")
         file.write("[%s] %d d\n" % (" ".join(["%f" % element for element in self.pattern]), self.offset))
@@ -145,9 +145,9 @@ class linestyle(attr.exclusiveattr, strokestyle):
         self.c.outputPS(file)
         self.d.outputPS(file)
 
-    def outputPDF(self, file):
-        self.c.outputPDF(file)
-        self.d.outputPDF(file)
+    def outputPDF(self, file, writer, context):
+        self.c.outputPDF(file, writer, context)
+        self.d.outputPDF(file, writer, context)
 
 linestyle.solid = linestyle(linecap.butt, dash([]))
 linestyle.dashed = linestyle(linecap.butt, dash([2]))
@@ -167,7 +167,7 @@ class linewidth(unit.length, attr.sortbeforeexclusiveattr, strokestyle):
     def outputPS(self, file):
         file.write("%f setlinewidth\n" % unit.topt(self))
 
-    def outputPDF(self, file):
+    def outputPDF(self, file, writer, context):
         file.write("%f w\n" % unit.topt(self))
 
 _base = 0.02

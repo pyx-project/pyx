@@ -201,7 +201,7 @@ class pathitem:
         """write PS code corresponding to pathitem to file"""
         raise NotImplementedError()
 
-    def outputPDF(self, file):
+    def outputPDF(self, file, writer, context):
         """write PDF code corresponding to pathitem to file
 
         Since PDF is limited to lines and curves, _normalized is used to
@@ -241,7 +241,7 @@ class closepath(pathitem):
     def outputPS(self, file):
         file.write("closepath\n")
 
-    def outputPDF(self, file):
+    def outputPDF(self, file, writer, context):
         file.write("h\n")
 
 
@@ -271,7 +271,7 @@ class moveto_pt(pathitem):
     def outputPS(self, file):
         file.write("%g %g moveto\n" % (self.x_pt, self.y_pt) )
 
-    def outputPDF(self, file):
+    def outputPDF(self, file, writer, context):
         file.write("%f %f m\n" % (self.x_pt, self.y_pt) )
 
 
@@ -1203,7 +1203,7 @@ class path(canvas.canvasitem):
         for pitem in self.pathitems:
             pitem.outputPS(file)
 
-    def outputPDF(self, file):
+    def outputPDF(self, file, writer, context):
         """write PDF code to file"""
         # PDF only supports normsubpathitems but instead of
         # converting to a normpath, which will fail for short
@@ -1211,7 +1211,7 @@ class path(canvas.canvasitem):
         currentpoint = _currentpoint()
         for pitem in self.pathitems:
             for npitem in pitem._normalized(currentpoint):
-                npitem.outputPDF(file)
+                npitem.outputPDF(file, writer, context)
             pitem._updatecurrentpoint(currentpoint)
 
 
@@ -1384,7 +1384,7 @@ class normsubpathitem:
         """write PS code corresponding to normsubpathitem to file"""
         pass
 
-    def outputPDF(self, file):
+    def outputPDF(self, file, writer, context):
         """write PDF code corresponding to normsubpathitem to file"""
         pass
 
@@ -1499,7 +1499,7 @@ class normline_pt(normsubpathitem):
     def outputPS(self, file):
         file.write("%g %g lineto\n" % (self.x1_pt, self.y1_pt))
 
-    def outputPDF(self, file):
+    def outputPDF(self, file, writer, context):
         file.write("%f %f l\n" % (self.x1_pt, self.y1_pt))
 
 
@@ -1752,7 +1752,7 @@ class normcurve_pt(normsubpathitem):
     def outputPS(self, file):
         file.write("%g %g %g %g %g %g curveto\n" % (self.x1_pt, self.y1_pt, self.x2_pt, self.y2_pt, self.x3_pt, self.y3_pt))
 
-    def outputPDF(self, file):
+    def outputPDF(self, file, writer, context):
         file.write("%f %f %f %f %f %f c\n" % (self.x1_pt, self.y1_pt, self.x2_pt, self.y2_pt, self.x3_pt, self.y3_pt))
 
 
@@ -2289,7 +2289,7 @@ class normsubpath:
         if self.closed:
             file.write("closepath\n")
 
-    def outputPDF(self, file):
+    def outputPDF(self, file, writer, context):
         """write PDF code to file"""
         # if the normsubpath is closed, we must not output a normline at
         # the end
@@ -2302,7 +2302,7 @@ class normsubpath:
             normsubpathitems = self.normsubpathitems
         file.write("%f %f m\n" % self.atbegin_pt())
         for anormsubpathitem in normsubpathitems:
-            anormsubpathitem.outputPDF(file)
+            anormsubpathitem.outputPDF(file, writer, context)
         if self.closed:
             file.write("h\n")
 
@@ -2857,7 +2857,7 @@ class normpath(canvas.canvasitem):
         for normsubpath in self.normsubpaths:
             normsubpath.outputPS(file)
 
-    def outputPDF(self, file):
+    def outputPDF(self, file, writer, context):
         """write PDF code to file"""
         for normsubpath in self.normsubpaths:
-            normsubpath.outputPDF(file)
+            normsubpath.outputPDF(file, writer, context)
