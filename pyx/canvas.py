@@ -190,15 +190,11 @@ class _canvas(base.PSCmd):
 
     def set(self, attrs):
         """sets styles args globally for the rest of the canvas
-
-        returns canvas
-
         """
 
         attr.checkattrs(attrs, [style.strokestyle, style.fillstyle])
         for astyle in attrs:
             self.insert(astyle)
-        return self
 
     def draw(self, path, attrs):
         """draw path on canvas using the style given by args
@@ -207,8 +203,6 @@ class _canvas(base.PSCmd):
         the appearance of the path, PathDecos, which add some new
         visual elements to the path, or trafos, which are applied
         before drawing the path.
-
-        returns the canvas
 
         """
 
@@ -229,8 +223,6 @@ class _canvas(base.PSCmd):
 
         self.insert(dp)
 
-        return self
-
     def stroke(self, path, attrs=[]):
         """stroke path on canvas using the style given by args
 
@@ -239,11 +231,9 @@ class _canvas(base.PSCmd):
         visual elements to the path, or trafos, which are applied
         before drawing the path.
 
-        returns the canvas
-
         """
 
-        return self.draw(path, [deco.stroked]+list(attrs))
+        self.draw(path, [deco.stroked]+list(attrs))
 
     def fill(self, path, attrs=[]):
         """fill path on canvas using the style given by args
@@ -253,11 +243,9 @@ class _canvas(base.PSCmd):
         visual elements to the path, or trafos, which are applied
         before drawing the path.
 
-        returns the canvas
-
         """
 
-        return self.draw(path, [deco.filled]+list(attrs))
+        self.draw(path, [deco.filled]+list(attrs))
 
     def settexrunner(self, texrunner):
         """sets the texrunner to be used to within the text and text_pt methods"""

@@ -133,6 +133,7 @@ TODO for 0.6:
     - canvas constructor no longer accepts variable argument list but
       expects a list of attrs as first argument (defaulting to []) and
       a texrunner as second argument (defaulting to text.defaulttexrunner)
+    - set, draw, stroke and fill no longer return self, i.e., the canvas, but None
   - tex module:
     - not imported by default anymore
     - obsolete warning when importing this module
