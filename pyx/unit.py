@@ -132,41 +132,47 @@ class length:
             self.length=glength
 
     def __mul__(self, factor):
-        newlength = self.length.copy()
-        for unit_type in newlength.keys():
-           newlength[unit_type] = newlength[unit_type]*factor
-        return length(glength=newlength)
+        newlength = self.__class__()
+        for unit_type in newlength.length.keys():
+           newlength.length[unit_type] = self.length[unit_type]*factor
+        return newlength
 
     __rmul__=__mul__
 
+    def __div__(self, factor):
+        newlength = self.__class__()
+        for unit_type in newlength.length.keys():
+           newlength.length[unit_type] = self.length[unit_type]/factor
+        return newlength
+
     def __add__(self, l):
         ll=length(l)                    # convert to length if necessary
-        newlength = self.length.copy()
-        for unit_type in newlength.keys():
-           newlength[unit_type] = newlength[unit_type] + ll.length[unit_type]
-        return length(glength=newlength)
+        newlength = self.__class__()
+        for unit_type in newlength.length.keys():
+           newlength.length[unit_type] = self.length[unit_type] + ll.length[unit_type]
+        return newlength
 
     __radd__=__add__
 
     def __sub__(self, l):
         ll=length(l)                    # convert to length if necessary
-        newlength = self.length.copy()
-        for unit_type in newlength.keys():
-           newlength[unit_type] = newlength[unit_type] - ll.length[unit_type]
-        return length(glength=newlength)
+        newlength = self.__class__()
+        for unit_type in newlength.length.keys():
+           newlength.length[unit_type] = self.length[unit_type] - ll.length[unit_type]
+        return newlength
 
     def __rsub__(self, l):
         ll=length(l)                    # convert to length if necessary
-        newlength = self.length.copy()
-        for unit_type in newlength.keys():
-           newlength[unit_type] = ll.length[unit_type] - newlength[unit_type]
-        return length(glength=newlength)
+        newlength = self.__class__()
+        for unit_type in newlength.length.keys():
+           newlength.length[unit_type] = ll.length[unit_type] - self.length[unit_type]
+        return newlength
 
     def __neg__(self):
-        newlength = self.length.copy()
-        for unit_type in newlength.keys():
-           newlength[unit_type] = -newlength[unit_type]
-        return length(glength=newlength)
+        newlength = self.__class__()
+        for unit_type in newlength.length.keys():
+           newlength.length[unit_type] = -self.length[unit_type]
+        return newlength
 
     def __str__(self):
         return "(%(t)f t + %(u)f u + %(v)f v + %(w)f w) m" % self.length

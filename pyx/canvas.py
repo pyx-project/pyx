@@ -176,7 +176,7 @@ class linewidth(base.PathStyle, unit.length):
 
     """linewidth of paths"""
 
-    def __init__(self, l):
+    def __init__(self, l="0 cm"):
         unit.length.__init__(self, l=l, default_type="w")
         
     def write(self, file):
