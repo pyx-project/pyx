@@ -996,7 +996,7 @@ class axisrater:
                 return None
             return self.distance.rate(distances, density)
         else:
-            return 0
+            return None
 
 
 ################################################################################
