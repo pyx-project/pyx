@@ -26,6 +26,7 @@ PyX
   enhancements:
   - box module:
     - multiple radii (up to two per point) and softnesses
+      (TODO: documentation)
 
   bugfixes:
   - text module:
