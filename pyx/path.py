@@ -28,7 +28,7 @@
 
 import math
 from math import cos, sin, pi
-import base, bbox, unit
+import base, bbox, trafo, unit
 
 
 class PathException(Exception): pass
@@ -231,7 +231,7 @@ class closepath(normpathel):
         tx, ty = x0 + (x1-x0)*t, y0 + (y1-y0)*t
         tvectx, tvecty = x1-x0, y1-y0
 
-        return _line(tx, ty, tx+tvectx, tx+tvecty)
+        return _line(tx, ty, tx+tvectx, ty+tvecty)
 
     def write(self, file):
         file.write("closepath\n")
@@ -1012,9 +1012,9 @@ class path(base.PSCmd):
         """return corresponding normpaths split at parameter value t"""
         return normpath(self).split(t)
 
-    def tangent(self, t):
+    def tangent(self, t, length=None):
         """return tangent vector at parameter value t of corr. normpath"""
-        return normpath(self).tangent(t)
+        return normpath(self).tangent(t, length)
 
     def transformed(self, trafo):
         """return transformed path"""
@@ -1244,13 +1244,16 @@ class normpath(path):
 
         return np1, np2
 
-    def tangent(self, t):
+    def tangent(self, t, length=None):
         """return tangent vector of path at parameter value t
 
         Negative values of t count from the end of the path. The absolute
         value of t must be smaller or equal to the number of segments in
         the normpath, otherwise None is returned.
         At discontinuities in the path, the limit from below is returned
+
+        if length is not None, the tangent vector will be scaled to
+        the desired length
 
         """
 
@@ -1266,7 +1269,13 @@ class normpath(path):
                 if t>1:
                     t -= 1
                 else:
-                    return pel._tangent(context, t)
+                    tvec = pel._tangent(context, t)
+                    tlen = unit.topt(tvec.arclength())
+                    if length is None or tlen==0:
+                        return tvec
+                    else:
+                        sfactor = unit.topt(length)/tlen
+                        return tvec.transformed(trafo.scaling(sfactor, sfactor, *tvec.begin()))
 
             pel._updatecontext(context)
 
