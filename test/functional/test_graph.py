@@ -36,7 +36,7 @@ def test_textaxis_errorbars(c, x, y):
     g = c.insert(graph.graphxy(x, y, height=5,
                                x=graph.axis.lin(min=0.5, max=12.5, parter=graph.axis.parter.lin("1", extendtick=None)),
                                y=graph.axis.lin(min=-10, max=30, title="Temperature [$^\circ$C]"),
-                               x2=graph.axis.lin(), y2=graph.axis.lin()))
+                               x2=graph.axis.lin(painter=graph.axis.painter.regular(labelattrs=None)), y2=graph.axis.lin()))
     g.plot(graph.data.file("data/testdata2", x=0, ymin="min", ymax="max"), [graph.style.errorbar()])
     a = graph.style.symbol.triangle
     g.plot(graph.data.paramfunction("k", 0, 2*math.pi, "x2, y2, dx2, dy2 = 0.8*sin(k), 0.8*cos(3*k), 0.05, 0.05"), [graph.style.symbol(symbol=a), graph.style.errorbar()])
@@ -63,7 +63,7 @@ def test_ownmark(c, x, y):
     (seg3c,), (seg4c,) = p3.intersect(p4)
     (seg4d,), (seg1d,) = p4.intersect(p1)
     area = p1.split([seg1a, seg1d])[1] << p4.split([seg4d, seg4c])[1] << p3.split([seg3c, seg3b])[1] << p2.split([seg2b, seg2a])[1]
-    area.append(path.closepath())
+    area.normsubpaths[-1].close()
     g.stroke(area, [style.linewidth.THick, deco.filled([color.gray(0.5)])])
 
 def test_allerrorbars(c, x, y):
