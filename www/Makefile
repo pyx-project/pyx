@@ -19,7 +19,7 @@ publicpath = /home/groups/p/py/pyx/htdocs
 
 public: build
 	scp -oCompression=yes -r $(builddir)/* $(publicserver):$(publicpath)
-	-ssh $(publicserver) "cd $(publicpath); chmod -R g+w *"
+	-ssh $(publicserver) "cd $(publicpath); chmod -fR g+w *"
 
 build: htmlfiles otherhtml
 	-rm -r $(builddir)
