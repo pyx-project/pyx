@@ -35,3 +35,12 @@ public:
 	@bash -c 'yn=""; while [ "x"$$yn != "xy" ]; do echo -n "upload pyxfaq.pdf? [y/n] "; read yn; if [ "x"$$yn == "xn" ]; then exit 1; fi; done'
 	scp pyxfaq.pdf $(publicserver):$(publicpath)
 	-ssh $(publicserver) "cd $(publicpath); chmod -fR g+w pyxfaq.pdf"
+
+tipasnippets: $(patsubst %.tex, %.pdf, $(wildcard tipa?.tex))
+
+tipa%.pdf: tipa%.tex
+	latex tipa$*
+	dvips -E tipa$*
+	ps2pdf -dEPSCrop tipa$*.ps
+	rm tipa$*.log tipa$*.aux tipa$*.dvi tipa$*.ps
+
