@@ -134,6 +134,8 @@ TODO:
     - use warning module for warnings
   - tex module:
     - the very old tex module finally got removed completely
+  - style module:
+    - correctly call base class constructor in linewidth
 
 
 0.7.1 (2004/12/15):

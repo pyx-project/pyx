@@ -160,13 +160,8 @@ class linewidth(unit.length, attr.sortbeforeexclusiveattr, strokestyle):
 
     """linewidth of paths"""
 
-    def __init__(self, l):
-        unit.length.__init__(self, 0)
-        self.t = l.t
-        self.u = l.u
-        self.v = l.v
-        self.w = l.w
-        self.x = l.x
+    def __init__(self, f=0, type="u", unit=None):
+        unit.length.__init__(self, f, type, unit)
         attr.sortbeforeexclusiveattr.__init__(self, linewidth, [dash, linestyle])
 
     def outputPS(self, file):
