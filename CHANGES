@@ -26,6 +26,7 @@ PyX
     - SlantFont & Co support
     - dvicopy: stdout handling
   - data module:
+    - data.data should add line number like data.datafile
     - use csv module (new in 2.3)
   - box module:
     - multiple radii: documentation
@@ -62,7 +63,6 @@ PyX
     - copy lfs handling from text module (share the same source???)
   - data module:
     - full documentation via doc strings
-    - data.data should add line number like data.datafile
   - connector module:
     - some preliminary version
   - box module:
@@ -71,7 +71,7 @@ PyX
   - path module:
     - lentopar methods added including some tests
   - epsfile module:
-     - new parameter bbox allows to override the bounding box of the eps file
+    - new parameter bbox allows to override the bounding box of the eps file
 
   bugfixes:
   - text module:
