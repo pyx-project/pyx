@@ -489,18 +489,30 @@ class ratepart:
 class momrate:
     """min - opt - max - rating of axes partitioning"""
 
-    class rateparam:
+    class momrateparam:
         """mom rate parameter set"""
-        def __init__(self, min = None, opt = None, max = None, factor = 1):
-            self.min = float(min)
-            self.max = float(max)
-            self.opt = float(opt)
-            self.factor = float(factor)
 
-    lindefaulttickrateparams = (rateparam(1, 4, 25), rateparam(1, 10, 100, 0.5), )
-    lindefaultlabelrateparams = (rateparam(1, 4, 15), )
-    logdefaulttickrateparams = (rateparam(1, 4, 25), rateparam(1, 25, 100, 0.5), )
-    logdefaultlabelrateparams = (rateparam(1, 4, 15), rateparam(-2.5, 2.5, 10, 0.5), )
+        def __init__(self, optfactor, minoffset, minfactor, maxoffset, maxfactor, weight=1):
+            self.optfactor = optfactor
+            self.minoffset = minoffset
+            self.minfactor = minfactor
+            self.maxoffset = maxoffset
+            self.maxfactor = maxfactor
+            self.weight = weight
+
+        def min(self, stretch):
+            return self.minoffset + self.minfactor * (stretch - 1.0) * self.optfactor
+
+        def opt(self, stretch):
+            return float(self.optfactor * stretch)
+
+        def max(self, stretch):
+            return self.maxoffset + self.maxfactor * (stretch - 1.0) * self.optfactor
+
+    lindefaulttickrateparams = (momrateparam(4, 1, 1, 20, 5), momrateparam(10, 2, 1, 100, 10, 0.5), )
+    lindefaultlabelrateparams = (momrateparam(4, 1, 1, 16, 4), )
+    logdefaulttickrateparams = (momrateparam(5, 1, 1, 30, 6), momrateparam(25, 5, 1, 100, 4, 0.5), )
+    logdefaultlabelrateparams = (momrateparam(5, 1, 1, 20, 4), momrateparam(3, -3, -1, 9, 3, 0.5), )
 
     def __init__(self, tickrateparams = lindefaulttickrateparams, labelrateparams = lindefaultlabelrateparams):
         self.tickrateparams = tickrateparams
@@ -516,43 +528,39 @@ class momrate:
                 labelcounts[tick.labellevel] += 1
         return (tickcounts, labelcounts, )
 
-    def evalrate(self, val, rateparam):
-        opt = rateparam.opt
-        min = rateparam.min
-        max = rateparam.max
+    def evalrate(self, val, stretch, rateparam):
+        opt = rateparam.opt(stretch)
+        min = rateparam.min(stretch)
+        max = rateparam.max(stretch)
         rate = ((opt - min) * log((opt - min) / (val - min)) +
                 (max - opt) * log((max - opt) / (max - val))) / (max - min)
         return rate
     
-    def getrate(self, part):
+    def getrate(self, part, stretch):
         rate = 0
+        weight = 0
         (tickcounts, labelcounts, ) = self.getcounts(part)
         try:
             for (tickcount, rateparam, ) in zip(tickcounts, self.tickrateparams, ):
-                rate += self.evalrate(tickcount, rateparam)
+                rate += self.evalrate(tickcount, stretch, rateparam) * rateparam.weight
+                weight += rateparam.weight
             for (labelcount, rateparam, ) in zip(labelcounts, self.labelrateparams, ):
-                rate += self.evalrate(labelcount, rateparam)
-        except (ZeroDivisionError, ValueError, ):
+                rate += self.evalrate(labelcount, stretch, rateparam) * rateparam.weight
+                weight += rateparam.weight
+            rate /= weight
+        except (ZeroDivisionError, ValueError):
             rate = None
         return rate
     
-    def getrateparts(self, parts):
-        rateparts = []
-        for part in parts:
-            rate = self.getrate(part)
-            if rate != None:
-                rateparts.append(ratepart(part, rate))
-        return rateparts
-
 #min = 1
 #for i in range(1, 10000):
-#    max = min * pow(1.05, i)
+#    max = min * pow(1.5, i)
 #    if max > 1e10:
 #        break
 #    print max/min,
 #    for part in autologpart(extendtoticklevel = None).getparts(min, max):
 #        rate = momrate(momrate.logdefaulttickrateparams,
-#                       momrate.logdefaultlabelrateparams).getrate(part)
+#                       momrate.logdefaultlabelrateparams).getrate(part, 1)
 #        print rate,
 #    print
 
@@ -584,6 +592,13 @@ class _axis:
                 self.setbasepts(((self.min, 1), (self.max, 0)))
             else:
                 self.setbasepts(((self.min, 0), (self.max, 1)))
+
+    def saverange(self):
+        return (self.min, self.max)
+
+    def restorerange(self, savedrange):
+        self.min, self.max = savedrange
+        self.setrange()
 
 
 class linaxis(_axis, _linmap):
@@ -685,18 +700,24 @@ class graphxy(canvas.canvas):
 
         for key, axis in self.axes.items():
             axis.parts = axis.part.getparts(axis.min, axis.max)
-            if len(axis.parts)>1:
-                axis.rateparts = axis.rate.getrateparts(axis.parts)
-                axis.bestratepart = axis.rateparts[0]
-                for ratepart in axis.rateparts[1:]:
-                    if axis.bestratepart.rate > ratepart.rate:
-                        axis.bestratepart = ratepart
+            if len(axis.parts) > 1:
+                axis.bestnum = 0
+                axis.rates = []
+                bestrate = None
+                for i in range(len(axis.parts)):
+                    rate = axis.rate.getrate(axis.parts[i], 1)
+                    axis.rates.append(rate)
+                    if (bestrate is None) or (bestrate > rate):
+                        axis.bestnum = i
+                        bestrate = rate
             else:
-                axis.rateparts = (ratepart(axis.parts[0], 0), )
-                #axis.bestratepart = ...
+                axis.rates = [0, ]
+                axis.bestnum = 0
 
-            axis.setrange(min=float(axis.bestratepart.part[0]),
-                          max=float(axis.bestratepart.part[-1]))
+            axis.savedrange = axis.saverange()
+            axis.bestpart = axis.parts[axis.bestnum]
+            axis.setrange(min=float(axis.bestpart[0]),
+                          max=float(axis.bestpart[-1]))
 
         self.left = unit.topt(1)
         self.buttom = unit.topt(1)
@@ -722,13 +743,13 @@ class graphxy(canvas.canvas):
             raise PyxGraphDrawstateError
         for key, axis in self.axes.items():
             if _XPattern.match(key):
-                for tick in axis.bestratepart.part:
+                for tick in axis.bestpart:
                     x = self.xmap.convert(axis.convert(float(tick)))
                     if tick.ticklevel is not None:
                         self.draw(path._line(x, self.ymap.convert(0),
                                              x, self.ymap.convert(0)+10))
             elif _YPattern.match(key):
-                for tick in axis.bestratepart.part:
+                for tick in axis.bestpart:
                     y = self.ymap.convert(axis.convert(float(tick)))
                     if tick.ticklevel is not None:
                         self.draw(path._line(self.xmap.convert(0), y,
