@@ -691,7 +691,7 @@ class arcn_pt(pathel):
         if context.currentpoint:
             return [normline(context.currentpoint[0], context.currentpoint[1], sarcx, sarcy)] + nbarc
         else:
-            return nbarc
+            return [moveto_pt(sarcx, sarcy)] + nbarc
 
 
     def outputPS(self, file):
