@@ -68,7 +68,7 @@ def test_ownmark(c, x, y):
 
 def test_allerrorbars(c, x, y):
     g = c.insert(graph.graphxy(x, y, height=5, width=5))
-    g.plot(graph.data.file("data/testdata3", x="x", y="y", xmin="xmin", xmax="xmax", ymin="ymin", ymax="ymax", text="text"), graph.style.text())
+    g.plot(graph.data.file("data/testdata3", x="x", y="y", xmin="xmin", xmax="xmax", ymin="ymin", ymax="ymax", text="text"), [graph.style.text(), graph.style.errorbar(), graph.style.symbol()])
     g.finish()
 
 def test_split(c, x, y):
@@ -91,9 +91,9 @@ test_multiaxes_data(c, 0, 21)
 test_piaxis_function(c, 0, 14)
 test_textaxis_errorbars(c, 0, 7)
 test_ownmark(c, 0, 0)
-#test_allerrorbars(c, -7, 0)
-#test_split(c, -7, 7)
-#test_split2(c, -7, 14)
+test_allerrorbars(c, -7, 0)
+test_split(c, -7, 7)
+test_split2(c, -7, 14)
 
 c.writeEPSfile("test_graph", paperformat="a4")
 c.writePDFfile("test_graph", paperformat="a4")

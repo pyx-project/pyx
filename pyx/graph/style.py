@@ -655,38 +655,41 @@ class errorbar(_style):
                             styledata.errorbarcanvas.stroke(graph.vcap_pt(j, styledata.errorsize_pt, *vmaxpos))
 
 
-# class text(symbol):
-# 
-#     defaulttextattrs = [textmodule.halign.center, textmodule.vshift.mathaxis]
-# 
-#     def __init__(self, textdx=0*unit.v_cm, textdy=0.3*unit.v_cm, textattrs=[], **kwargs):
-#         self.textdx = textdx
-#         self.textdy = textdy
-#         self.textattrs = textattrs
-#         symbol.__init__(self, **kwargs)
-# 
-#     def setdata(self, graph, columns, styledata):
-#         columns = columns.copy()
-#         styledata.textindex = columns["text"]
-#         del columns["text"]
-#         return symbol.setdata(self, graph, columns, styledata)
-# 
-#     def selectstyle(self, selectindex, selecttotal, styledata):
-#         if self.textattrs is not None:
-#             styledata.textattrs = attr.selectattrs(self.defaulttextattrs + self.textattrs, selectindex, selecttotal)
-#         else:
-#             styledata.textattrs = None
-#         symbol.selectstyle(self, selectindex, selecttotal, styledata)
-# 
-#     def drawsymbol_pt(self, c, x, y, styledata, point=None):
-#         symbol.drawsymbol_pt(self, c, x, y, styledata, point)
-#         if None not in (x, y, point[styledata.textindex]) and styledata.textattrs is not None:
-#             c.text_pt(x + styledata.textdx_pt, y + styledata.textdy_pt, str(point[styledata.textindex]), styledata.textattrs)
-# 
-#     def drawpoints(self, points, graph, styledata):
-#         styledata.textdx_pt = unit.topt(self.textdx)
-#         styledata.textdy_pt = unit.topt(self.textdy)
-#         symbol.drawpoints(self, points, graph, styledata)
+class text(_styleneedingpointpos):
+
+    need = ["vpos", "vposmissing", "vposvalid"]
+
+    defaulttextattrs = [textmodule.halign.center, textmodule.vshift.mathaxis]
+
+    def __init__(self, textdx=0*unit.v_cm, textdy=0.3*unit.v_cm, textattrs=[], **kwargs):
+        self.textdx = textdx
+        self.textdy = textdy
+        self.textattrs = textattrs
+
+    def columns(self, styledata, graph, columns):
+        if "text" not in columns:
+            raise ValueError("text missing")
+        return ["text"] + _styleneedingpointpos.columns(self, styledata, graph, columns)
+
+    def selectstyle(self, styledata, graph, selectindex, selecttotal):
+        if self.textattrs is not None:
+            styledata.textattrs = attr.selectattrs(self.defaulttextattrs + self.textattrs, selectindex, selecttotal)
+        else:
+            styledata.textattrs = None
+
+    def initdrawpoints(self, styledata, grap):
+        styledata.textdx_pt = unit.topt(self.textdx)
+        styledata.textdy_pt = unit.topt(self.textdy)
+
+    def drawpoint(self, styledata, graph):
+        if styledata.textattrs is not None and styledata.vposvalid:
+            x_pt, y_pt = graph.vpos_pt(*styledata.vpos)
+            try:
+                text = str(styledata.point["text"])
+            except:
+                pass
+            else:
+                graph.text_pt(x_pt + styledata.textdx_pt, y_pt + styledata.textdy_pt, text, styledata.textattrs)
 
 
 class arrow(_styleneedingpointpos):
@@ -725,21 +728,22 @@ class arrow(_styleneedingpointpos):
     def drawpoint(self, styledata, graph):
         if styledata.lineattrs is not None and styledata.arrowattrs is not None and styledata.vposvalid:
             linelength_pt = unit.topt(self.linelength)
-            xpos, ypos = graph.vpos_pt(*styledata.vpos)
+            x_pt, y_pt = graph.vpos_pt(*styledata.vpos)
             try:
                 angle = styledata.point["angle"] + 0.0
                 size = styledata.point["size"] + 0.0
             except:
                 pass
-            if styledata.point["size"] > self.epsilon:
-                dx = math.cos(angle*math.pi/180)
-                dy = math.sin(angle*math.pi/180)
-                x1 = xpos-0.5*dx*linelength_pt*size
-                y1 = ypos-0.5*dy*linelength_pt*size
-                x2 = xpos+0.5*dx*linelength_pt*size
-                y2 = ypos+0.5*dy*linelength_pt*size
-                graph.stroke(path.line_pt(x1, y1, x2, y2), styledata.lineattrs +
-                             [deco.earrow(styledata.arrowattrs, size=self.arrowsize*size)])
+            else:
+                if styledata.point["size"] > self.epsilon:
+                    dx = math.cos(angle*math.pi/180)
+                    dy = math.sin(angle*math.pi/180)
+                    x1 = x_pt-0.5*dx*linelength_pt*size
+                    y1 = y_pt-0.5*dy*linelength_pt*size
+                    x2 = x_pt+0.5*dx*linelength_pt*size
+                    y2 = y_pt+0.5*dy*linelength_pt*size
+                    graph.stroke(path.line_pt(x1, y1, x2, y2), styledata.lineattrs +
+                                 [deco.earrow(styledata.arrowattrs, size=self.arrowsize*size)])
 
     def key_pt(self, styledata, graph, x_pt, y_pt, width_pt, height_pt):
         raise "TODO"
