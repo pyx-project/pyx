@@ -260,25 +260,25 @@ class Canvas(Globex):
         isnumber(x)
         isnumber(y)
         (self.x, self.y)=(x,y)
-	self.PSFile.write("%d %d moveto\n" % self.PScm2po(x,y))
+	self.PSFile.write("%f %f moveto\n" % self.PScm2po(x,y))
 	
     def aline(self,x,y):
         isnumber(x)
         isnumber(y)
         (self.x, self.y)=(x,y)
-	self.PSFile.write("%d %d lineto\n" % self.PScm2po(x,y))
+	self.PSFile.write("%f %f lineto\n" % self.PScm2po(x,y))
     
     def rmove(self,x,y):
         isnumber(x)
         isnumber(y)
         (self.x, self.y)=(self.x+x,self.y+y)
-	self.PSFile.write("%d %d rmoveto\n" % self.PScm2po(x,y))
+	self.PSFile.write("%f %f rmoveto\n" % self.PScm2po(x,y))
 
     def rline(self,x,y):
         isnumber(x)
         isnumber(y)
         (self.x, self.y)=(self.x+x,self.y+y)
-	self.PSFile.write("%d %d rlineto\n" % self.PScm2po(x,y))
+	self.PSFile.write("%f %f rlineto\n" % self.PScm2po(x,y))
 
 
 def canvas():
@@ -315,6 +315,10 @@ if __name__=="__main__":
 	text(str(angle),angle=angle,halign=center)
 	amove(11+angle/10,7)
 	text(str(angle),angle=angle,halign=right)
+    for pos in range(1,21):
+        amove(pos,7.5)
+        text(".")
+        
     amove(5,12)
     text("Beispiel:\\begin{itemize}\\item$\\alpha$\\item$\\beta$\\item$\\gamma$\\end{itemize}",parmode="2cm")
     amove(10,12)
