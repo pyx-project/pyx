@@ -482,7 +482,8 @@ class arrow(PathDeco):
                          for style in s.styles ]
 
         styles = [ style for style in styles 
-                   if not isinstance(style, (filled, stroked)) ]
+                   if not (isinstance(style, filled) or
+                           isinstance(style, stroked)) ]
 
         return arrow(position=self.position,
                      size=self.size,
@@ -560,21 +561,21 @@ class barrow(arrow):
                        strokestyles=strokestyles,
                        fillstyles=fillstyles)
 
-_base = 4
+_base = unit.v_pt(4)
 
-barrow.SMALL  = barrow("%f v pt" % (_base/math.sqrt(64)))
-barrow.SMALl  = barrow("%f v pt" % (_base/math.sqrt(32)))
-barrow.SMAll  = barrow("%f v pt" % (_base/math.sqrt(16)))
-barrow.SMall  = barrow("%f v pt" % (_base/math.sqrt(8)))
-barrow.Small  = barrow("%f v pt" % (_base/math.sqrt(4)))
-barrow.small  = barrow("%f v pt" % (_base/math.sqrt(2)))
-barrow.normal = barrow("%f v pt" % _base)
-barrow.large  = barrow("%f v pt" % (_base*math.sqrt(2)))
-barrow.Large  = barrow("%f v pt" % (_base*math.sqrt(4)))
-barrow.LArge  = barrow("%f v pt" % (_base*math.sqrt(8)))
-barrow.LARge  = barrow("%f v pt" % (_base*math.sqrt(16)))
-barrow.LARGe  = barrow("%f v pt" % (_base*math.sqrt(32)))
-barrow.LARGE  = barrow("%f v pt" % (_base*math.sqrt(64)))
+barrow.SMALL  = barrow(_base/math.sqrt(64))
+barrow.SMALl  = barrow(_base/math.sqrt(32))
+barrow.SMAll  = barrow(_base/math.sqrt(16))
+barrow.SMall  = barrow(_base/math.sqrt(8))
+barrow.Small  = barrow(_base/math.sqrt(4))
+barrow.small  = barrow(_base/math.sqrt(2))
+barrow.normal = barrow(_base)
+barrow.large  = barrow(_base*math.sqrt(2))
+barrow.Large  = barrow(_base*math.sqrt(4))
+barrow.LArge  = barrow(_base*math.sqrt(8))
+barrow.LARge  = barrow(_base*math.sqrt(16))
+barrow.LARGe  = barrow(_base*math.sqrt(32))
+barrow.LARGE  = barrow(_base*math.sqrt(64))
 
 
 class earrow(arrow):
@@ -593,19 +594,19 @@ class earrow(arrow):
                        fillstyles=fillstyles)
 
 
-earrow.SMALL  = earrow("%f v pt" % (_base/math.sqrt(64)))
-earrow.SMALl  = earrow("%f v pt" % (_base/math.sqrt(32)))
-earrow.SMAll  = earrow("%f v pt" % (_base/math.sqrt(16)))
-earrow.SMall  = earrow("%f v pt" % (_base/math.sqrt(8)))
-earrow.Small  = earrow("%f v pt" % (_base/math.sqrt(4)))
-earrow.small  = earrow("%f v pt" % (_base/math.sqrt(2)))
-earrow.normal = earrow("%f v pt" % _base)
-earrow.large  = earrow("%f v pt" % (_base*math.sqrt(2)))
-earrow.Large  = earrow("%f v pt" % (_base*math.sqrt(4)))
-earrow.LArge  = earrow("%f v pt" % (_base*math.sqrt(8)))
-earrow.LARge  = earrow("%f v pt" % (_base*math.sqrt(16)))
-earrow.LARGe  = earrow("%f v pt" % (_base*math.sqrt(32)))
-earrow.LARGE  = earrow("%f v pt" % (_base*math.sqrt(64)))
+earrow.SMALL  = earrow(_base/math.sqrt(64))
+earrow.SMALl  = earrow(_base/math.sqrt(32))
+earrow.SMAll  = earrow(_base/math.sqrt(16))
+earrow.SMall  = earrow(_base/math.sqrt(8))
+earrow.Small  = earrow(_base/math.sqrt(4))
+earrow.small  = earrow(_base/math.sqrt(2))
+earrow.normal = earrow(_base)
+earrow.large  = earrow(_base*math.sqrt(2))
+earrow.Large  = earrow(_base*math.sqrt(4))
+earrow.LArge  = earrow(_base*math.sqrt(8))
+earrow.LARge  = earrow(_base*math.sqrt(16))
+earrow.LARGe  = earrow(_base*math.sqrt(32))
+earrow.LARGE  = earrow(_base*math.sqrt(64))
 
 #
 # clipping class
