@@ -23,7 +23,7 @@
 
 # this code will be part of PyX 0.2 (or 0.3, or ... ???)
 
-import os, threading, Queue, traceback, re, struct
+import os, threading, Queue, traceback, re, struct, tempfile
 import graph, bbox, unit
 
 ###############################################################################
@@ -366,7 +366,7 @@ class Font:
         self.alpha = self.alpha*self.q;
 
     def __str__(self):
-        return "Font(%s)" % self.name
+        return "Font(%s, %d)" % (self.name, self.tfmdesignsize)
 
     __repr__ = __str__
 
@@ -402,12 +402,27 @@ class Font:
 
 class DVIFile:
 
+    def flushout(self):
+        if self.actoutstart:
+            print "show '%s' at (%.3f cm, %.3f cm)" % (self.actoutstring,
+                                                       unit.tocm(self.actoutstart[0]),
+                                                       unit.tocm(self.actoutstart[1]))
+            self.actpage.append(("c",
+                                 self.actoutstart[0], self.actoutstart[1],
+                                 self.actoutstring))
+            self.actoutstart = None
+
     def putchar(self, char, inch=1):
         x = self.pos[_POS_H] * self.conv * 1e-5
         y = self.pos[_POS_V] * self.conv * 1e-5
         ascii = (char > 32 and char < 128) and "(%s)" % chr(char) or "???"
-        self.actpage.append(("c", unit.t_cm(x), unit.t_cm(y), char))
         print "type 0x%08x %s at (%.3f cm, %.3f cm)" % (char, ascii, x, y)
+        
+        if self.actoutstart is None:
+            self.actoutstart = unit.t_cm(x), unit.t_cm(y)
+            self.actoutstring = ""
+        self.actoutstring = self.actoutstring + chr(char)
+
         if inch:
             self.pos[_POS_H] += self.fonts[self.activefont].getwidth(char)
 
@@ -423,6 +438,7 @@ class DVIFile:
             pass # TODO: increment h
 
     def usefont(self, fontnum):
+        self.flushout()
         self.activefont = fontnum
         self.actpage.append(("f", self.fonts[fontnum]))
         print "use font %i" % self.activefont
@@ -454,6 +470,10 @@ class DVIFile:
         # pointer to currently active page
         self.actpage = None
 
+        # currently active output: position and content
+        self.actoutstart = None
+        self.actoutstring = ""
+
         while state != _READ_DONE:
             cmd = file.readuchar()
             if cmd == _DVI_NOP: pass
@@ -478,10 +498,12 @@ class DVIFile:
 
             elif state == _READ_NOPAGE:
                 if cmd == _DVI_BOP:
+                    self.flushout()
                     print "page",
                     for i in range(10): print file.readuint32(),
                     print
                     file.readuint32()
+
                     self.pos = [0, 0, 0, 0, 0, 0]
                     self.pages.append([])
                     self.actpage = self.pages[-1]
@@ -506,30 +528,41 @@ class DVIFile:
                elif cmd == _DVI_PUSH:
                    stack.append(tuple(self.pos))
                elif cmd == _DVI_POP:
+                   self.flushout()
                    self.pos = list(stack[-1])
                    del stack[-1]
                elif cmd >= _DVI_RIGHT1234 and cmd < _DVI_RIGHT1234 + 4:
+                   self.flushout()
                    self.pos[_POS_H] += file.readint(cmd - _DVI_RIGHT1234 + 1, 1)
                elif cmd == _DVI_W0:
+                   self.flushout()
                    self.pos[_POS_H] += self.pos[_POS_W]
                elif cmd >= _DVI_W1234 and cmd < _DVI_W1234 + 4:
+                   self.flushout()
                    self.pos[_POS_W] = file.readint(cmd - _DVI_W1234 + 1, 1)
                    self.pos[_POS_H] += self.pos[_POS_W]
                elif cmd == _DVI_X0:
+                   self.flushout()
                    self.pos[_POS_H] += self.pos[_POS_X]
                elif cmd >= _DVI_X1234 and cmd < _DVI_X1234 + 4:
+                   self.flushout()
                    self.pos[_POS_X] = file.readint(cmd - _DVI_X1234 + 1, 1)
                    self.pos[_POS_H] += self.pos[_POS_X]
                elif cmd >= _DVI_DOWN1234 and cmd < _DVI_DOWN1234 + 4:
+                   self.flushout()
                    self.pos[_POS_V] += file.readint(cmd - _DVI_DOWN1234 + 1, 1)
                elif cmd == _DVI_Y0:
+                   self.flushout()
                    self.pos[_POS_V] += self.pos[_POS_Y]
                elif cmd >= _DVI_Y1234 and cmd < _DVI_Y1234 + 4:
+                   self.flushout()
                    self.pos[_POS_Y] = file.readint(cmd - _DVI_Y1234 + 1, 1)
                    self.pos[_POS_V] += self.pos[_POS_Y]
                elif cmd == _DVI_Z0:
+                   self.flushout()
                    self.pos[_POS_V] += self.pos[_POS_Z]
                elif cmd >= _DVI_Z1234 and cmd < _DVI_Z1234 + 4:
+                   self.flushout()
                    self.pos[_POS_Z] = file.readint(cmd - _DVI_Z1234 + 1, 1)
                    self.pos[_POS_V] += self.pos[_POS_Z]
                elif cmd >= _DVI_FNTNUMMIN and cmd <= _DVI_FNTNUMMAX:
@@ -563,11 +596,14 @@ class DVIFile:
         for font in self.fonts:
             if font:
                 file.write("%%%%BeginFont: %s\n" % font.name.upper())
-                # pfbpath = os.popen("kpsewhich %s.pfb" % font.name, "r").readline()[:-1]
-                os.system("pfb2pfa `kpsewhich %s.pfb` /tmp/f.pfa" % font.name)
-                pfa = open("/tmp/f.pfa", "r")
+                
+                tmpfilename = tempfile.mktemp(suffix="pfa")
+                os.system("pfb2pfa `kpsewhich %s.pfb` %s" %
+                          (font.name, tmpfilename))
+                pfa = open(tmpfilename, "r")
                 file.write(pfa.read())
                 pfa.close()
+                
                 file.write("%%%%EndFont\n")
 
     def write(self, file, page):
@@ -575,10 +611,10 @@ class DVIFile:
         print "dvifile(\"%s\").write() for page %s called" % (self.filename, page)
         for el in self.pages[page-1]:
             command, arg = el[0], el[1:]
-#            print "\t", command, arg
+            print "\t", command, arg
             if command=="c":
                 x, y, c = arg
-                file.write("%f %f moveto (%c) show\n" %
+                file.write("%f %f moveto (%s) show\n" %
                            (unit.topt(x), unit.topt(y), c))
             elif command=="f":
                 file.write("/%s %d selectfont\n" % (arg[0].name.upper(), 10))
