@@ -38,13 +38,13 @@ class LinAxis:
         return map(lambda x, self=self: Tick(x, self.ValueToVirtual(x), self.ValueToLabel(x)), self.TickValuePosList())
 
     def ValueToVirtual(self, Values):
-        if isnumber(Values):
+        if type(Values) in (types.IntType, types.LongType, types.FloatType, ):
             return (Values - self.Min)/float(self.Max - self.Min)
         else:
             return map(lambda x, self=self: (x - self.Min)/float(self.Max - self.Min), Values)
 
     def VirtualToValue(self, Values):
-        if isnumber(Values):
+        if type(Values) in (types.IntType, types.LongType, types.FloatType, ):
             return self.Min + Values * (self.Max - self.Min)
         else:
             return map(lambda x,self=self: self.Min + x * (self.Max - self.Min), Values)
@@ -80,13 +80,13 @@ class GraphXY(Graph):
         self.plotdata.append((data, style))
 
     def XPos(self, Values):
-        if isnumber(Values):
+        if type(Values) in (types.IntType, types.LongType, types.FloatType, ):
             return self.x + 1 + Values * (self.width - 1)
         else:
             return map(lambda x,self=self: self.x + 1 + x * (self.width - 1), Values)
 
     def YPos(self, Values):
-        if isnumber(Values):
+        if type(Values) in (types.IntType, types.LongType, types.FloatType, ):
             return self.y + 1 + Values * (self.height - 1)
         else:
             return map(lambda y,self=self: self.y + 1 + y * (self.height - 1), Values)
