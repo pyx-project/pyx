@@ -26,9 +26,10 @@
 import sys
 
 # test automatic long conversion
-if type(sys.maxint+1) is type(0L):
+try:
+    sys.maxint+1
     autolong = 1
-else:
+except OverflowError:
     autolong = 0
 
 
@@ -153,8 +154,8 @@ class rational:
                 self.enum = self.enum ** power
                 self.denom = self.denom ** power
             else:
-                self.enum = self.long(enum) ** power
-                self.denom = self.long(denom) ** power
+                self.enum = long(self.enum) ** power
+                self.denom = long(self.denom) ** power
 
     def __cmp__(self, other):
         try:
