@@ -1,44 +1,56 @@
 #!/usr/bin/env python
 
-import canvas, os, string, tempfile, sys, md5, string, traceback, time, unit, math, types, color
+import canvas, os, string, tempfile, sys, md5, string, traceback, time, unit, math, types, color, StringIO
 
-# TODO: AttribCmdValue, AttribStrValue(AttribCmpValue)
+class _Attr:
+    pass
 
-class _halign:
+class _AttrTex(_Attr):
+    pass
+
+class _AttrTexVal(_AttrTex):
     def __init__(self, value):
         self.value = value
+
+class _AttrTexStr(_AttrTex):
+    def __str__(self):
+        return str(self.value)
+
+class _AttrTexCmp(_AttrTex):
     def __cmp__(self, other):
         return cmp(self.value, other.value)
     __rcmp__ = __cmp__
+
+class _AttrTexValCmp(_AttrTexVal, _AttrTexCmp):
+    pass
+
+class _AttrTexValStr(_AttrTexVal, _AttrTexStr):
+    pass
+
+class _AttrTexValCmpStr(_AttrTexVal, _AttrTexCmp, _AttrTexStr):
+    pass
+
+class _halign(_AttrTexValCmp):
+    pass
 
 class halign:
     left   = _halign("left")
     center = _halign("center")
     right  = _halign("right")
    
-class hsize(unit.length):
-    pass
+class hsize(_AttrTexStr):
+    def __init__(self, value, canvas):
+        self.value = canvas.unit.tpt(value)
 
-_hsize = hsize
-   
-class _valign:
-    def __init__(self, value):
-        self.value = value
-    def __str__(self):
-        return str(self.value)
-    def __cmp__(self, other):
-        return cmp(self.value, other.value)
-    __rcmp__ = __cmp__
+class _valign(_AttrTexValCmpStr):
+    pass
 
 class valign:
     top    = _valign("vtop")
     bottom = _valign("vbox")
 
-class _fontsize:
-    def __init__(self, value):
-        self.value = value
-    def __str__(self):
-        return str(self.value)
+class _fontsize(_AttrTexValStr):
+    pass
 
 class fontsize:
     tiny         = _fontsize("tiny")
@@ -52,30 +64,28 @@ class fontsize:
     huge         = _fontsize("huge")
     Huge         = _fontsize("Huge")
 
-class _direction:
-    def __init__(self, value):
-        self.value = value
-    def __str__(self):
-        return str(self.value)
+class _direction(_AttrTexValStr):
+    pass
 
 class direction(_direction):
     horizontal = _direction(0)
     vertical   = _direction(90)
     upsidedown = _direction(180)
     rvertical  = _direction(270)
-    def __init__(self, value = 0):
-        _direction.__init__(self, value)
-    def deg(self, value):
-        return _direction(value)
-    def rad(self, value):
-        return _direction(value * 180 / math.pi)
 
-class _msglevel:
-    def __init__(self, value):
-        self.value = value
-    def __cmp__(self, other):
-        return cmp(self.value, other.value)
-    __rcmp__ = __cmp__
+class _style(_AttrTex):
+    def __init__(self, praefix, suffix):
+        self.praefix = praefix
+        self.suffix = suffix
+    def ModifyCmd(self, str):
+        return self.praefix + str + self.suffix
+
+class style(_style):
+    text = _style("", "")
+    math = _style("$\displaystyle{}", "$")
+
+class _msglevel(_AttrTexValCmp):
+    pass
 
 class msglevel:
     #
@@ -95,50 +105,32 @@ class msglevel:
     hidewarning = _msglevel(2)
     hideall     = _msglevel(3)
 
-class _mode:
-    def __init__(self, value):
-        self.value = value
-    def __str__(self):
-        return str(self.value)
-    def __cmp__(self, other):
-        return cmp(self.value, other.value)
-    __rcmp__ = __cmp__
+class _mode(_AttrTexValCmpStr):
+    pass
 
 class mode(_mode):
     TeX = _mode("TeX")
     LaTeX = _mode("LaTeX")
 
-class AttribStr:
-    def __init__(self, value):
-        self.value = value
-    def __str__(self):
-        return str(self.value)
-
-class latexstyle(AttribStr):
+class latexsize(_AttrTexValStr):
     pass
 
-class docclass(AttribStr):
+class docclass(_AttrTexValStr):
     pass
 
-class docopt(AttribStr):
+class docopt(_AttrTexValStr):
     pass
 
-class texfilename(AttribStr):
+class texfilename(_AttrTexValStr):
+    pass
+
+class _aextent(_AttrTexValCmpStr):
     pass
 
 class _extent:
-    def __init__(self, value):
-        self.value = value
-    def __str__(self):
-        return str(self.value)
-    def __cmp__(self, other):
-        return cmp(self.value, other.value)
-    __rcmp__ = __cmp__
-
-class extent:
-    wd = _extent("wd")
-    ht = _extent("ht")
-    dp = _extent("dp")
+    wd = _aextent("wd")
+    ht = _aextent("ht")
+    dp = _aextent("dp")
    
 
 class TexException(Exception):
@@ -152,7 +144,7 @@ class TexRightParenthesisError(TexException):
     def __str__(self):
         return "no matching parenthesis for '}' found"
 
-class TexCmd:
+class _TexCmd:
 
     PyxMarker = "PyxMarker"
     BeginPyxMarker = "Begin" + PyxMarker
@@ -248,10 +240,10 @@ class TexCmd:
                 print "(La)TeX Message:"
                 print msg
 
-class DefCmd(TexCmd):
+class _DefCmd(_TexCmd):
 
     def __init__(self, DefCmd, Marker, Stack, msglevel):
-        TexCmd.__init__(self, Marker, Stack, msglevel)
+        _TexCmd.__init__(self, Marker, Stack, msglevel)
         self.TexParenthesisCheck(DefCmd)
         self.DefCmd = DefCmd
 
@@ -260,7 +252,7 @@ class DefCmd(TexCmd):
         file.write(self.DefCmd)
         self.WriteEndMarker(file)
 
-class CmdPut:
+class _CmdPut:
 
     def __init__(self, x, y, halign, direction, color):
         self.x = x
@@ -269,45 +261,34 @@ class CmdPut:
         self.direction = direction
         self.color = color
 
-class BoxCmd(TexCmd):
+class _BoxCmd(_TexCmd):
 
-    def __init__(self, DefCmdsStr, BoxCmd, fontsize, hsize, valign, Marker, Stack, msglevel):
-        TexCmd.__init__(self, Marker, Stack, msglevel)
+    def __init__(self, DefCmdsStr, BoxCmd, style, fontsize, hsize, valign, Marker, Stack, msglevel):
+        _TexCmd.__init__(self, Marker, Stack, msglevel)
         self.TexParenthesisCheck(BoxCmd)
         self.DefCmdsStr = DefCmdsStr
         self.BoxCmd = "{%s}" % BoxCmd # add another "{" to ensure, that everything goes into the Box
-        self.fontsize = fontsize
-        self.hsize = hsize
-        self.valign = valign
         self.CmdPuts = []
         self.CmdExtents = []
 
-    def GetBoxCmd(self, canvas = None):
-        # we're in trouble here:
-        # we want to get extents of a BoxCmd, but we have no units
-        # -> we don't evaluate the hsize for that case
-        BoxCmd = self.BoxCmd
-        if self.hsize:
-            if canvas:
-                hsize = str(canvas.unit.tpt(self.hsize))
+        self.BoxCmd = style.ModifyCmd(self.BoxCmd)
+        if hsize:
+            if valign:
+                self.BoxCmd = "\\%s{\hsize%struept{%s}}" % (valign, hsize, self.BoxCmd, )
             else:
-                hsize = str(self.hsize)
-            if self.valign:
-                BoxCmd = "\\%s{\hsize%struept{%s}}" % (self.valign, hsize, BoxCmd, )
-            else:
-                BoxCmd = "\\%s{\hsize%struept{%s}}" % (valign.top, hsize, BoxCmd, )
+                self.BoxCmd = "\\vtop{\hsize%struept{%s}}" % (hsize, self.BoxCmd, )
         else:
-            assert not self.valign, "hsize needed to use valign"
-        return "\\setbox\\localbox=\\hbox{\\%s%s}%%\n" % (str(self.fontsize), BoxCmd, )
+            assert not valign, "hsize needed to use valign"
+        self.BoxCmd = "\\setbox\\localbox=\\hbox{\\%s%s}%%\n" % (fontsize, self.BoxCmd, )
 
     def __cmp__(self, other):
-        return cmp(self.GetBoxCmd(), other.GetBoxCmd())
+        return cmp(self.BoxCmd, other.BoxCmd)
     __rcmp__ = __cmp__
 
     def write(self, canvas, file):
 
         self.WriteBeginMarker(file)
-        file.write(self.GetBoxCmd(canvas))
+        file.write(self.BoxCmd)
         self.WriteEndMarker(file)
         for CmdExtent in self.CmdExtents:
             file.write("\\immediate\\write\\sizefile{%s:%s:%s:\\the\\%s\\localbox}%%\n" % (self.MD5(), CmdExtent, time.time(), CmdExtent, ))
@@ -347,14 +328,14 @@ class BoxCmd(TexCmd):
     
         h = string.hexdigits
         r = ''
-        s = md5.md5(self.DefCmdsStr + self.GetBoxCmd()).digest()
+        s = md5.md5(self.DefCmdsStr + self.BoxCmd).digest()
         for c in s:
             i = ord(c)
             r = r + h[(i >> 4) & 0xF] + h[i & 0xF]
         return r
 
     def Put(self, x, y, halign, direction, color):
-        self.CmdPuts.append(CmdPut(x, y, halign, direction, color))
+        self.CmdPuts.append(_CmdPut(x, y, halign, direction, color))
 
     def Extent(self, extent, Sizes):
 
@@ -371,7 +352,7 @@ class BoxCmd(TexCmd):
         return unit.length("10 t tpt")
 
 
-class InstanceList:
+class _InstanceList:
 
     def AllowedInstances(self, Instances, AllowedClassesOnce, AllowedClassesMultiple = []):
         for i in range(len(Instances)):
@@ -403,15 +384,15 @@ class InstanceList:
             return Result
 
 
-class tex(InstanceList):
+class tex(_InstanceList):
 
     def __init__(self, *styleparams):
-        self.AllowedInstances(styleparams, [_mode, texfilename, latexstyle, docclass, docopt, ])
+        self.AllowedInstances(styleparams, [_mode, texfilename, latexsize, docclass, docopt, ])
         self.mode = self.ExtractInstance(styleparams, _mode, mode.TeX)
         self.texfilename = self.ExtractInstance(styleparams, texfilename)
         if self.mode == mode.TeX:
-            self.AllowedInstances(styleparams, [_mode, latexstyle, texfilename])
-            self.latexstyle = self.ExtractInstance(styleparams, latexstyle, latexstyle("10pt"))
+            self.AllowedInstances(styleparams, [_mode, latexsize, texfilename])
+            self.latexsize = self.ExtractInstance(styleparams, latexsize, latexsize("10pt"))
         else:
             self.AllowedInstances(styleparams, [_mode, docclass, docopt, texfilename])
             self.docclass = self.ExtractInstance(styleparams, docclass, docclass("article"))
@@ -419,6 +400,7 @@ class tex(InstanceList):
         self.DefCmds = []
         self.DefCmdsStr = None
         self.BoxCmds = []
+        self.DoneRunTex = 0
 
         if len(os.path.basename(sys.argv[0])):
             basename = os.path.basename(sys.argv[0])
@@ -436,13 +418,14 @@ class tex(InstanceList):
 
         if self.mode == mode.TeX:
             # TODO: other ways for creating font sizes?
-            LtsName = os.path.join(os.path.dirname(__file__), "lts", str(self.latexstyle) + ".lts")
+            LtsName = os.path.join(os.path.dirname(__file__), "lts", str(self.latexsize) + ".lts")
             self.define(open(LtsName, "r").read())
         if self.mode == mode.LaTeX:
             if self.docopt:
                 self.define("\\documentclass[" + str(self.docopt) + "]{" + str(self.docclass) + "}\n")
             else:
                 self.define("\\documentclass{" + str(self.docclass) + "}\n")
+
 
     def GetStack(self):
         return traceback.extract_stack(sys._getframe().f_back.f_back.f_back)
@@ -457,11 +440,14 @@ class tex(InstanceList):
             print "constructor of the class pyx.tex. You can then try to run the command"
             print "by yourself."
 
-    def runtex(self, acanvas):
+    def RunTex(self, acanvas):
 
         'run LaTeX&dvips for TexCmds, report errors, return postscript string'
     
         # TODO: improve file handling (although it's quite usable now, those things can always be improved)
+
+        if self.DoneRunTex:
+            return
 
         WorkDir = os.getcwd()
         if self.texfilename:
@@ -538,6 +524,12 @@ class tex(InstanceList):
                 print "In order to achieve this, you have to specify a texfilename in the"
                 print "constructor of the class pyx.tex. You can then try to run dvips"
                 print "by yourself."
+            else:
+                epsfile = canvas.epsfile(TempName + ".eps", translatebb = 0)
+                self.bbox = epsfile.bbox(acanvas)
+                epsdatafile = StringIO.StringIO()
+                epsfile.write(acanvas, epsdatafile)
+                self.epsdata = epsdatafile.getvalue()
 
         # merge new sizes
         
@@ -563,53 +555,51 @@ class tex(InstanceList):
                         SizeFile.write(OldSize)
 
         if not self.texfilename:
-            for suffix in ("tex", "log", "aux", "size", "dvi", "texout", "texerr", "dvipsout", "dvipserr", ):
+            for suffix in ("tex", "log", "aux", "size", "dvi", "eps", "texout", "texerr", "dvipsout", "dvipserr", ):
                 try:
                     os.unlink(TempName + "." + suffix)
                 except:
                     pass
         
         os.chdir(WorkDir)
+        self.DoneRunTex = 1
 
-        return os.path.join(TempDir, TempName + ".eps")
-
-       
     def bbox(self, acanvas):
-        EpsFile = self.runtex(acanvas)
-        Result = canvas.epsfile(EpsFile, translatebb = 0).bbox(acanvas)
-        os.unlink(EpsFile)
-        return Result
+        self.RunTex(acanvas)
+        return self.bbox
 
     def write(self, acanvas, file):
-        EpsFile = self.runtex(acanvas)
-        canvas.epsfile(EpsFile, translatebb = 0).write(acanvas, file)
-        os.unlink(EpsFile)
+        self.RunTex(acanvas)
+        file.writelines(self.epsdata)
        
     def define(self, Cmd, *styleparams):
 
         if len(self.BoxCmds):
             assert 0, "tex definitions not allowed after output commands"
 
+        self.DoneRunTex = 0
+
         self.AllowedInstances(styleparams, [_msglevel, ])
 
-        self.DefCmds.append(DefCmd(Cmd,
-                                   len(self.DefCmds)+ len(self.BoxCmds),
-                                   self.GetStack(),
-                                   self.ExtractInstance(styleparams, _msglevel, msglevel.hideload)))
+        self.DefCmds.append(_DefCmd(Cmd,
+                                    len(self.DefCmds)+ len(self.BoxCmds),
+                                    self.GetStack(),
+                                    self.ExtractInstance(styleparams, _msglevel, msglevel.hideload)))
 
     def InsertCmd(self, Cmd, styleparams):
 
         if not self.DefCmdsStr:
             self.DefCmdsStr = reduce(lambda x,y: x + y.DefCmd, self.DefCmds, "")
 
-        MyCmd = BoxCmd(self.DefCmdsStr,
-                       Cmd,
-                       self.ExtractInstance(styleparams, _fontsize, fontsize.normalsize),
-                       self.ExtractInstance(styleparams, _hsize),
-                       self.ExtractInstance(styleparams, _valign),
-                       len(self.DefCmds)+ len(self.BoxCmds),
-                       self.GetStack(),
-                       self.ExtractInstance(styleparams, _msglevel, msglevel.hideload))
+        MyCmd = _BoxCmd(self.DefCmdsStr,
+                        Cmd,
+                        self.ExtractInstance(styleparams, _style, style.text),
+                        self.ExtractInstance(styleparams, _fontsize, fontsize.normalsize),
+                        self.ExtractInstance(styleparams, hsize),
+                        self.ExtractInstance(styleparams, _valign),
+                        len(self.DefCmds)+ len(self.BoxCmds),
+                        self.GetStack(),
+                        self.ExtractInstance(styleparams, _msglevel, msglevel.hideload))
         if MyCmd not in self.BoxCmds:
             self.BoxCmds.append(MyCmd)
         for Cmd in self.BoxCmds:
@@ -622,8 +612,10 @@ class tex(InstanceList):
     def text(self, x, y, Cmd, *styleparams):
 
         'print Cmd at (x, y)'
+        
+        self.DoneRunTex = 0
 
-        self.AllowedInstances(styleparams, [_fontsize, _halign, _hsize, _valign, _direction, _msglevel, color.color, ])
+        self.AllowedInstances(styleparams, [_style, _fontsize, _halign, hsize, _valign, _direction, _msglevel, color.color, ])
         
         self.InsertCmd(Cmd, styleparams).Put(x,
                                              y,
@@ -635,20 +627,26 @@ class tex(InstanceList):
     
         'get width of Cmd'
 
-        self.AllowedInstances(styleparams, [_fontsize, _msglevel, ])
-        return self.InsertCmd(Cmd, styleparams).Extent(extent.wd, self.Sizes)
+        self.DoneRunTex = 0
+
+        self.AllowedInstances(styleparams, [_style, _fontsize, _msglevel, ])
+        return self.InsertCmd(Cmd, styleparams).Extent(_extent.wd, self.Sizes)
 
     def textht(self, Cmd, *styleparams):
     
         'get height of Cmd'
 
-        self.AllowedInstances(styleparams, [_fontsize, _hsize, _valign, _msglevel, ])
-        return self.InsertCmd(Cmd, styleparams).Extent(extent.ht, self.Sizes)
+        self.DoneRunTex = 0
+
+        self.AllowedInstances(styleparams, [_style, _fontsize, hsize, _valign, _msglevel, ])
+        return self.InsertCmd(Cmd, styleparams).Extent(_extent.ht, self.Sizes)
 
     def textdp(self, Cmd, *styleparams):
     
         'get depth of Cmd'
 
-        self.AllowedInstances(styleparams, [_fontsize, _hsize, _valign, _msglevel, ])
-        return self.InsertCmd(Cmd, styleparams).Extent(extent.dp, self.Sizes)
+        self.DoneRunTex = 0
+
+        self.AllowedInstances(styleparams, [_style, _fontsize, hsize, _valign, _msglevel, ])
+        return self.InsertCmd(Cmd, styleparams).Extent(_extent.dp, self.Sizes)
 

@@ -87,7 +87,7 @@ class epsfile:
         self.unit        = unit
         self.x           = unit.pt(x)
         self.y           = unit.pt(y)
-        self.filename     = filename
+        self.filename    = filename
         self.clip        = clip
         self.translatebb = translatebb
         self.showbb      = showbb
@@ -133,9 +133,9 @@ class epsfile:
         if self.showbb:
             file.write("newpath\n")
 	    file.write("%f %f moveto\n"  % (mybbox.llx, mybbox.lly))
-	    file.write("%f 0 rlineto\n" % mybbox.urx-mybbox.llx)
-	    file.write("0 %f rlineto\n" % mybbox.ury-mybbox.lly)
-	    file.write("%f 0 rlineto\n" % -(mybbox.urx-mybbox.llx))
+	    file.write("%f 0 rlineto\n" % mybbox.urx - mybbox.llx)
+	    file.write("0 %f rlineto\n" % mybbox.ury - mybbox.lly)
+	    file.write("%f 0 rlineto\n" % -(mybbox.urx - mybbox.llx))
 	    file.write("closepath\nstroke\n")
 	    
         if self.clip:
@@ -380,10 +380,10 @@ class canvas(CanvasCmds):
         file.write("%%EOF\n")
 
 if __name__=="__main__":
+    from graph import *
     from tex   import *
     from path  import *
     from trafo import *
-    from graph import *
     from color import *
     import unit
 
@@ -436,7 +436,7 @@ if __name__=="__main__":
              lineto(7,14)])
    
     c.set(canvas.linestyle.dotted)
-    t.text(5, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize("2 cm"))
+    t.text(5, 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize("2 cm", c))
     c.draw(p)
  
     p=path([ moveto(10,12), 
@@ -446,7 +446,7 @@ if __name__=="__main__":
              moveto(12,10), 
              lineto(12,14)])
     c.set(canvas.linestyle.dashdotted, rgb(1,0,0))
-    t.text("10 cm", 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize("2 cm"), valign.bottom, grey(0.5))
+    t.text("10 cm", 12, "a b c d e f g h i j k l m n o p q r s t u v w x y z", hsize("2 cm", c), valign.bottom, grey(0.5))
     c.draw(p)
  
     p=path([moveto(5,15), arc(5,15, 1, 0, 45), closepath()])
@@ -460,17 +460,18 @@ if __name__=="__main__":
        s=c.insert(canvas.canvas(translate(10,10)*rotate(angle))).draw(p, canvas.linestyle.dashed, canvas.linewidth(0.01*angle), grey((20-angle)/20.0))
  
     c.set(linestyle.solid)
-    g=GraphXY(c, t, 10, 15, 8, 6, y2=LinAxis())
+    g=GraphXY(c, t, 10, 15, 8, 6 ) #, y2=LinAxis())
     df = DataFile("testdata")
     g.plot(Data(df, x=2, y=3))
-    g.plot(Data(df, x=2, y2=4))
-    g.plot(Data(df, x=2, y=5))
-    g.plot(Data(df, x=2, y=6))
-    g.plot(Data(df, x=2, y=7))
-    g.plot(Data(df, x=2, y=8))
+    #g.plot(Data(df, x=2, y2=4))
+    g.plot(Data(df, x=2, y=5), mark(0.01))
+    g.plot(Data(df, x=2, y=6), chain())
+    #g.plot(Data(df, x=2, y=7))
+    #g.plot(Data(df, x=2, y=8))
 #    g.plot(Function("0.01*sin(x)",Points=1000))
-    g.plot(Function("0*x", Points=2000))
-    g.plot(Function("0.01*sin(x)"))
+#    g.plot(Function("0", Points=2000)) # <- make this working!
+    #g.plot(Function("0*x"))
+    #g.plot(Function("0.01*sin(x)"), chain())
     g.plot(Function("x=2*sin(1000*y)"))
     g.run()
     

@@ -1,7 +1,31 @@
 #!/usr/bin/env python
 
 from path import *
-import types, re
+import types, re, tex
+
+class _Map:
+    def forward(self, Values):
+        if type(Values) in (types.IntType, types.LongType, types.FloatType, ):
+            return self._forward(Values)
+        else:
+            return map(lambda x, self = self: self._forward(x), Values)
+
+    def reverse(self, Values):
+        if type(Values) in (types.IntType, types.LongType, types.FloatType, ):
+            return self._reverse(Values)
+        else:
+            return map(lambda x, self = self: self._reverse(x), Values)
+
+class _LinMap(_Map):
+    def set(self, m, n):
+        self.m = float(m)
+        self.n = float(n)
+        return self
+    def _forward(self, Value):
+        return self.m * Value + self.n
+    def _reverse(self, Value):
+        return (Value - self.n) / self.m
+
 
 ###############################################################################
 # axis part
@@ -21,34 +45,49 @@ class Axis:
     pass
 
 
-class LinAxis:
+class LinAxis(_LinMap):
 
-    Min = -10
-    Max = 10
-    TickStart = -10
-    TickCount = 0
-    TickDist = 5
+    def __init__(self, Min = None, Max = None):
+        self.Min = None
+        self.Max = None
+        if Min:
+            self.Min = Min
+            self.InitMin = 1
+        else:
+            self.InitMin = 0
+        if Max:
+            self.Max = Max
+            self.InitMax = 1
+        else:
+            self.InitMax = 0
+        self.set(self.Min, self.Max)
+
+    def set(self, Min = None, Max = None):
+        if Min and not self.InitMax:
+            self.Min = Min
+        if Max and not self.InitMax:
+            self.Max = Max
+        if self.Min and self.Max:
+            _LinMap.set(self, 1 / float(self.Max - self.Min), -self.Min / float(self.Max - self.Min))
 
     def TickValPosList(self):
+        self.TickStart = self.Min
+        self.TickCount = 5
+        self.TickDist = (self.Max - self.Min) / float(self.TickCount - 1)
         return map(lambda x, self=self: self.TickStart + x * self.TickDist, range(self.TickCount))
 
     def ValToLab(self, x):
-        return str(x)
+        return "%.3f" % x
 
     def TickList(self):
-        return map(lambda x, self=self: Tick(x, self.ValToVirt(x), self.ValToLabel(x)), self.TickValPosList())
+        return map(lambda x, self=self: Tick(x, self.ValToVirt(x), self.ValToLab(x)), self.TickValPosList())
 
     def ValToVirt(self, Values):
-        if type(Values) in (types.IntType, types.LongType, types.FloatType, ):
-            return (Values - self.Min)/float(self.Max - self.Min)
-        else:
-            return map(lambda x, self=self: (x - self.Min)/float(self.Max - self.Min), Values)
+        return self.forward(Values)
 
     def VirtToVal(self, Values):
-        if type(Values) in (types.IntType, types.LongType, types.FloatType, ):
-            return self.Min + Values * (self.Max - self.Min)
-        else:
-            return map(lambda x,self=self: self.Min + x * (self.Max - self.Min), Values)
+        return self.reverse(Values)
+
 
 ###############################################################################
 # graph part
@@ -60,6 +99,11 @@ class Graph:
         self.tex = tex
         self.x = x
         self.y = y
+
+class _PlotData:
+    def __init__(self, Data, PlotStyle):
+        self.Data = Data
+        self.PlotStyle = PlotStyle
 
 _XPattern = re.compile(r"x([2-9]|[1-9][0-9]+)?$")
 _YPattern = re.compile(r"y([2-9]|[1-9][0-9]+)?$")
@@ -80,67 +124,109 @@ class GraphXY(Graph):
             Axis["y"] = LinAxis()
         self.Axis = Axis
 
-    def plot(self, data, style = None):
-        self.plotdata.append(data)
-
-    def VirToXPos(self, Values):
-        if type(Values) in (types.IntType, types.LongType, types.FloatType, ):
-            return self.x + 1 + Values * (self.width - 1)
-        else:
-            return map(lambda x, self = self: self.x + 1 + x * (self.width - 1), Values)
-
-    def VirToYPos(self, Values):
-        if type(Values) in (types.IntType, types.LongType, types.FloatType, ):
-            return self.y + 1 + Values * (self.height - 1)
-        else:
-            return map(lambda y, self = self: self.y + 1 + y * (self.height - 1), Values)
+    def plot(self, Data, PlotStyle = None):
+        if not PlotStyle:
+            PlotStyle = Data.DefaultPlotStyle
+        self.plotdata.append(_PlotData(Data, PlotStyle))
     
     def run(self):
-        self.VirToXPos(0.0)
-        self.canvas.draw(rect(self.VirToXPos(0), self.VirToYPos(0), self.VirToXPos(1) - self.VirToXPos(0), self.VirToYPos(1) - self.VirToYPos(0)))
 
         for key in self.Axis.keys():
             ranges = []
             for pd in self.plotdata:
                 try:
-                    ranges.append(pd.GetRange(key))
+                    ranges.append(pd.Data.GetRange(key))
                 except DataRangeUndefinedException:
                     pass
             if len(ranges) == 0:
                 assert 0, "range for %s unknown" % key
-            self.Axis[key].Min = min( map (lambda x: x[0], ranges))
-            self.Axis[key].Max = max( map (lambda x: x[1], ranges))
+            self.Axis[key].set(min( map (lambda x: x[0], ranges)),
+                               max( map (lambda x: x[1], ranges)))
 
         for pd in self.plotdata:
-            pd.SetAxis(self.Axis)
+            pd.Data.SetAxis(self.Axis)
 
-        #for tick in self.XAxis.TickList():
-        #     xv = tick.VirtualPos
-        #     l = tick.Label
-        #     x = self.VirToXPos(xv)
-        #     self.canvas.draw(line(x, self.VirToYPos(0), x, self.VirToYPos(0)+0.2))
-        #     self.tex.text(x, self.VirToYPos(0)-0.5, l, halign=halign.center)
-        #for tick in self.YAxis.TickList():
-        #     yv = tick.VirtualPos
-        #     l = tick.Label
-        #     y = self.VirToYPos(yv)
-        #     self.canvas.draw(line(self.VirToXPos(0), y, self.VirToXPos(0)+0.2, y))
-        #     self.tex.text(self.VirToXPos(0)-0.2, y, l, halign=halign.right)
+        # this should be done after axis-size calculation
+        self.left = 1   # convert everything to plain numbers here already, no length !!!
+        self.buttom = 1 # should we use the final postscript points already ???
+        self.top = 0
+        self.right = 0
+        self.VirMap = (_LinMap().set(self.width - self.left - self.right, self.x + self.left),
+                       _LinMap().set(self.height - self.buttom - self.left, self.y + self.buttom), )
+
+        self.canvas.draw(rect(self.VirMap[0].forward(0),
+                              self.VirMap[1].forward(0),
+                              self.VirMap[0].forward(1) - self.VirMap[0].forward(0),
+                              self.VirMap[1].forward(1) - self.VirMap[1].forward(0)))
+
+        for key in self.Axis.keys():
+            if _XPattern.match(key):
+                Type = 0
+            if _YPattern.match(key):
+                Type = 1
+            for tick in self.Axis[key].TickList():
+                xv = tick.VirtualPos
+                l = tick.Label
+                x = self.VirMap[Type].forward(xv)
+                if Type == 0:
+                    self.canvas.draw(line(x, self.VirMap[1].forward(0), x, self.VirMap[1].forward(0) + 0.2))
+                    self.tex.text(x, self.VirMap[1].forward(0)-0.5, l, tex.halign.center)
+                if Type == 1:
+                    self.canvas.draw(line(self.VirMap[0].forward(0), x, self.VirMap[0].forward(0) + 0.2, x))
+                    self.tex.text(self.VirMap[0].forward(0)-0.5, x, l, tex.halign.right)
 
         for pd in self.plotdata:
-            p = [ ]
-            (xkey, ) = filter(lambda x: _XPattern.match(x), pd.GetKindList())
-            (ykey, ) = filter(lambda y: _YPattern.match(y), pd.GetKindList())
-            for pt in zip(self.VirToXPos(self.Axis[xkey].ValToVirt(pd.GetValues(xkey))),
-                          self.VirToYPos(self.Axis[ykey].ValToVirt(pd.GetValues(ykey)))):
-                if p:
-                    p.append(lineto(pt[0],pt[1]))
-                else:
-                    p = [moveto(pt[0],pt[1]), ]
-                pass
-            # the following line is extremly time consuming !!!
-            self.canvas.draw(path(p))
+            pd.PlotStyle.LoopOverPoints(self, pd.Data)
 
+    def VirToPos(self, Type, List):
+        return self.VirMap[Type].forward(List)
+
+    def ValueList(self, Pattern, Type, Data):
+        (key, ) = filter(lambda x, Pattern = Pattern: Pattern.match(x), Data.GetKindList())
+        return self.VirToPos(Type, self.Axis[key].ValToVirt(Data.GetValues(key)))
+
+
+
+###############################################################################
+# draw styles -- planed are things like:
+#     * chain
+#         just connect points by lines
+#     * mark
+#         place markers at the points
+#         there is a hole lot of specialized markers (derived from mark):
+#             * text-mark (put a text (additional column!) there)
+#             * fill/size-mark (changes filling or size of the marker by an additional column)
+#             * vector-mark (puts a small vector with direction given by an additional column)
+#     * bar
+
+class _PlotStyle:
+
+    pass
+
+class chain(_PlotStyle):
+
+    def LoopOverPoints(self, Graph, Data):
+        p = [ ]
+        for pt in zip(Graph.ValueList(_XPattern, 0, Data),
+                      Graph.ValueList(_YPattern, 1, Data)):
+            if p:
+                p.append(lineto(pt[0],pt[1]))
+            else:
+                p = [moveto(pt[0],pt[1]), ]
+        Graph.canvas.draw(path(p))
+
+class mark(_PlotStyle):
+
+    def __init__(self, size = 0.05):
+        self.size = size
+
+    def LoopOverPoints(self, Graph, Data):
+        for pt in zip(Graph.ValueList(_XPattern, 0, Data),
+                      Graph.ValueList(_YPattern, 1, Data)):
+            Graph.canvas.draw(path([moveto(pt[0] - self.size, pt[1] - self.size),
+                                    lineto(pt[0] + self.size, pt[1] + self.size),
+                                    moveto(pt[0] - self.size, pt[1] + self.size),
+                                    lineto(pt[0] + self.size, pt[1] - self.size), ]))
 
 ###############################################################################
 # data part
@@ -211,6 +297,8 @@ class DataRangeAlreadySetException(DataException):
 
 class Data:
 
+    DefaultPlotStyle = mark()
+
     def __init__(self, datafile, **columns):
         self.datafile = datafile
         self.columns = columns
@@ -241,6 +329,8 @@ AssignPattern = re.compile(r"\s*([a-z][a-z0-9_]*)\s*=", re.IGNORECASE)
 
 class Function:
 
+    DefaultPlotStyle = chain()
+    
     def __init__(self, Expression, Points = 100):
         self.name = Expression
         self.Points = Points
@@ -290,4 +380,5 @@ class Function:
 
 class ParamFunction(Function):
     pass
+
 
