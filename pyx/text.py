@@ -425,15 +425,20 @@ class DVIFile:
 
         if inch:
             self.pos[_POS_H] += self.fonts[self.activefont].getwidth(char)
+        else:
+            # XXX: correct !?
+            self.flushout()
 
     def putrule(self, height, width, inch=1):
         if height > 0 and width > 0:
             x1 = self.pos[_POS_H] * self.conv * 1e-5
             y1 = self.pos[_POS_V] * self.conv * 1e-5
-            x2 = (self.pos[_POS_H] + width) * self.conv * 1e-5
-            y2 = (self.pos[_POS_V] + height) * self.conv * 1e-5
-            print "rule ((%.3f..%.3f cm), (%.3f..%.3f cm))" % (x1, x2, y1, y2)
-            self.actpage.append(("r", x1, y1, x2, y2))
+            w = width * self.conv * 1e-5
+            h = height * self.conv * 1e-5
+            print "rule ((%.3f..%.3f cm), (%.3f..%.3f cm))" % (x1, y1, w, h)
+            self.actpage.append(("r",
+                                 unit.t_cm(x1), unit.t_cm(y1),
+                                 unit.t_cm(w), unit.t_cm(h)))
         if inch:
             pass # TODO: increment h
 
@@ -520,7 +525,7 @@ class DVIFile:
                elif cmd == _DVI_SETRULE:
                    self.putrule(file.readint32(), file.readint32())
                elif cmd >= _DVI_PUT1234 and cmd < _DVI_PUT1234 + 4:
-                   self.putchar(file.readint(cmd - _DVI_PUT1234 + 1))
+                   self.putchar(file.readint(cmd - _DVI_PUT1234 + 1), inch=0)
                elif cmd == _DVI_PUTRULE:
                    self.putrule(file.readint32(), file.readint32(), 0)
                elif cmd == _DVI_EOP:
@@ -550,21 +555,21 @@ class DVIFile:
                    self.pos[_POS_H] += self.pos[_POS_X]
                elif cmd >= _DVI_DOWN1234 and cmd < _DVI_DOWN1234 + 4:
                    self.flushout()
-                   self.pos[_POS_V] += file.readint(cmd - _DVI_DOWN1234 + 1, 1)
+                   self.pos[_POS_V] -= file.readint(cmd - _DVI_DOWN1234 + 1, 1)
                elif cmd == _DVI_Y0:
                    self.flushout()
-                   self.pos[_POS_V] += self.pos[_POS_Y]
+                   self.pos[_POS_V] -= self.pos[_POS_Y]
                elif cmd >= _DVI_Y1234 and cmd < _DVI_Y1234 + 4:
                    self.flushout()
                    self.pos[_POS_Y] = file.readint(cmd - _DVI_Y1234 + 1, 1)
-                   self.pos[_POS_V] += self.pos[_POS_Y]
+                   self.pos[_POS_V] -= self.pos[_POS_Y]
                elif cmd == _DVI_Z0:
                    self.flushout()
-                   self.pos[_POS_V] += self.pos[_POS_Z]
+                   self.pos[_POS_V] -= self.pos[_POS_Z]
                elif cmd >= _DVI_Z1234 and cmd < _DVI_Z1234 + 4:
                    self.flushout()
                    self.pos[_POS_Z] = file.readint(cmd - _DVI_Z1234 + 1, 1)
-                   self.pos[_POS_V] += self.pos[_POS_Z]
+                   self.pos[_POS_V] -= self.pos[_POS_Z]
                elif cmd >= _DVI_FNTNUMMIN and cmd <= _DVI_FNTNUMMAX:
                    self.usefont(cmd - _DVI_FNTNUMMIN)
                elif cmd >= _DVI_FNT1234 and cmd < _DVI_FNT1234 + 4:
@@ -618,6 +623,15 @@ class DVIFile:
                 x, y, c = arg
                 file.write("%f %f moveto (%s) show\n" %
                            (unit.topt(x), unit.topt(y), c))
+            if command=="r":
+                x1, y1, w, h = arg
+                file.write("%f %f moveto %f 0 rlineto 0 %f rlineto %f 0 rlineto closepath fill\n" %
+                           (unit.topt(x1), unit.topt(y1),
+                            unit.topt(w),
+                            unit.topt(h),
+                            -unit.topt(w)))
+
+            
             elif command=="f":
                 fontname = arg[0].name
                 match = self.FontSizePattern.search(fontname)
@@ -872,17 +886,18 @@ text = _default.text
 
 if __name__=="__main__":
 
-    res1 = text("\\hbox{$x$}")
+    res1 = text(r"""\hbox{$\int\limits_{-\infty}^\infty \!{\rm d}x\, e^{-a x^2} =
+    \sqrt{\pi\over a}$} """)
     print res1.bbox()
-    res2 = text("test", 1, 1)
-    res3 = text("bla und nochmals bla", 2, 2)
-    print res2.bbox()
-    print res3.bbox()
+#    res2 = text("test", 1, 1)
+#    res3 = text("bla und nochmals bla", 2, 2)
+#    print res2.bbox()
+#    print res3.bbox()
 
     file = open("test.ps", "w")
     
     file.write("%!PS-Adobe-3.0 EPSF 3.0\n")
-    file.write("%%BoundingBox: -10 -10 100 100\n")
+    file.write("%%BoundingBox: -10 -30 100 100\n")
     file.write("%%EndComments\n")
 
     file.write("%%BeginProlog\n")
@@ -895,8 +910,8 @@ if __name__=="__main__":
 
     
     res1.write(file)
-    res3.write(file)
-    res2.write(file)
+#    res3.write(file)
+#    res2.write(file)
     
     file.write("showpage\n")
     file.write("%%Trailer\n")
