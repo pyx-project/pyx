@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 #
+# $Header$
+#
 #
 # Copyright (C) 2002 Jörg Lehmann <joergl@users.sourceforge.net>
 # Copyright (C) 2002 André Wobst <wobsta@users.sourceforge.net>
@@ -158,9 +160,9 @@ class LinAxis(_Axis, _LinMap):
                           ((5, 1, ), (5, 2, ), ), )
         self.shift = 10 # need to be an integer!
         self.factor = 1 # e.g. pi
-        self.tickopt = ((1, 30, 3, ), (2.5, 75, 7.5, ), ) # min, max, opt
+        self.tickopt = ((1, 25, 4, 1, ), (1, 100, 8, 0.5, ), ) # min, max, opt, ratefactor
 
-    def prepare(self):
+    def calcpart(self):
         if self.Min * self.Max > 0:
             if (self.Min > 0) and (self.Max * self.enclosezero > self.Min):
                 self.set(Min = 0)
@@ -169,8 +171,8 @@ class LinAxis(_Axis, _LinMap):
         e = int(math.ceil(log((self.Max - self.Min) / self.factor) / log(self.shift)))
         #print e, pow(self.shift, e)
         for shift in range(e - 4, e + 1): # TODO: automatically estimate this range
-                                          #       lower bound is related to the maxticks
-                                          #       upper bound is related to the minticks
+                                          #       lower bound is related to the max
+                                          #       upper bound is related to the min
             enum = 1
             denom = 1
             if shift > 0:
@@ -181,28 +183,34 @@ class LinAxis(_Axis, _LinMap):
             for frac in self.fracshift:
                 fracs = []
                 rate = 0
-                l = (self.Max - self.Min) / self.factor
                 enlargerange = 1
                 min = self.Min
                 max = self.Max
-                for ((subenum, subdenom, ), (min, max, opt, ), ) in zip(frac, self.tickopt):
+                l = (max - min) / self.factor
+                for ((subenum, subdenom, ), (minticks, maxticks, opt, ratefactor, ), ) in zip(frac, self.tickopt):
                     subenum *= enum
                     subdenom *= denom
-                    #self.enlarge
-                    #print self.Min / self.factor, self.Max / self.factor, (self.Max - self.Min) / self.factor
+                    if enlargerange:
+                        min = math.floor(min * subdenom / subenum / self.factor + 1e-10 * l) * subenum * self.factor / subdenom
+                        max = math.ceil(max * subdenom / subenum / self.factor - 1e-10 * l) * subenum * self.factor / subdenom
+                        l = (max - min) / float(self.factor)
+                    fromfact = int(round(min * subdenom / subenum / self.factor))
+                    tofact = int(round(max * subdenom / subenum / self.factor))
+                    enlargerange = 0
                     ticks = l * subdenom / subenum
-                    if (ticks < min) or (ticks > max):
+                    if (ticks < minticks + 1e-10) or (ticks > maxticks - 1e-10):
                         break
                     else:
-                        rate += ((opt - min) * log((opt - min) / (ticks - min)) +
-                                 (max - opt) * log((max - opt) / (max - ticks))) / (max - min)
-                        fracs.append((subenum, subdenom, float(subenum) / subdenom, ticks, ), )
+                        rate += ratefactor * ((opt - minticks) * log((opt - minticks) / (ticks - minticks)) +
+                                              (maxticks - opt) * log((maxticks - opt) / (maxticks - ticks))) / (maxticks - minticks)
+                        fracs.append((subenum, subdenom, float(subenum) / subdenom, ticks, fromfact, tofact, ), )
                 else:
                     print rate, fracs
 
+
 class LogAxis(_Axis, _LogMap):
 
-    def prepare(self):
+    def calcpart(self):
         pass
     
 
@@ -277,7 +285,7 @@ class GraphXY(Graph):
                               self.VirMap[1].convert(1) - self.VirMap[1].convert(0)))
 
         for key in self.Axis.keys():
-            self.Axis[key].prepare()
+            self.Axis[key].calcpart()
             if _XPattern.match(key):
                 Type = 0
             elif _YPattern.match(key):
