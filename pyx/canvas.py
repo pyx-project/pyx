@@ -343,11 +343,6 @@ class canvas(CanvasCmds):
         instance = pyxclass(unit = self.unit.copy(), *args, **kwargs)
         return instance
 
-    def inserttex(self, pyxclass, *args, **kwargs):
-        instance = self.create(pyxclass, *args, **kwargs)
-        self.insert(instance)
-        return instance
-
     def set(self, *args):
         for arg in args: 
            self.insert(arg)
@@ -391,7 +386,7 @@ if __name__=="__main__":
     import unit
 
     c=canvas.canvas(unit=unit.unit())
-    t=c.inserttex(tex)
+    t=c.insert(tex())
  
     #for x in range(11):
     #    amove(x,0)
@@ -415,10 +410,13 @@ if __name__=="__main__":
     print "Höhe von 'Hello world!' in large: ",t.textht("Hello world!", fontsize.large)
     print "Höhe von 'Hello world!' in Large: ",t.textht("Hello world!", fontsize.Large)
     print "Höhe von 'Hello world' in huge: ",t.textht("Hello world!", fontsize.huge)
+    print "Tiefe von 'Hello world!': ",t.textwd("Hello world!")
+    print "Tiefe von 'Hello world!': ",t.textht("Hello world!")
     print "Tiefe von 'Hello world!': ",t.textdp("Hello world!")
     print "Tiefe von 'was mit q': ",t.textdp("was mit q")
     print "Tiefe von 'was mit q': ",t.textdp("was mit q")
     t.text(5, 1, "Hello world!")
+    t.text(15, 1, "Hello world!", fontsize.huge)
     t.text(5, 2, "Hello world!", halign.center)
     t.text(5, 3, "Hello world!", halign.right)
     for angle in (-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90):
