@@ -2,6 +2,7 @@
 
 import sys, os, os.path, cgi, StringIO, codecs, glob
 import keyword, token, tokenize
+import xml.dom.minidom
 from zope.pagetemplate.pagetemplatefile import PageTemplateFile
 import Image
 
@@ -102,6 +103,12 @@ def mkrellink(linkname, options):
 
 maintemplate = MyPageTemplateFile("maintemplate.pt")
 
+latestnews = 2
+newsdom = xml.dom.minidom.parse("news.pt")
+news = "".join(["%s%s" % (dt.toxml(), dd.toxml())
+                for dt, dd in zip(newsdom.getElementsByTagName("dt")[:latestnews],
+                                  newsdom.getElementsByTagName("dd")[:latestnews])])
+
 for ptname in glob.glob("*.pt"):
     if ptname in ["maintemplate.pt", "examples.pt"]:
         continue
@@ -112,7 +119,8 @@ for ptname in glob.glob("*.pt"):
                        maintemplate=maintemplate,
                        examplepages=[],
                        mkrellink=mkrellink,
-                       version=pyx.__version__)
+                       version=pyx.__version__,
+                       news=news)
     codecs.open("build/%s" % htmlname, "w", encoding="iso-8859-1").write(content)
 
 examplestemplate = MyPageTemplateFile("examples.pt")
