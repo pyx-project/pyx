@@ -22,8 +22,8 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import exceptions, glob, os, threading, Queue, traceback, re, struct, tempfile, sys, atexit
-import helper, unit, bbox, box, base, canvas, color, trafo, path, prolog, pykpathsea
+import exceptions, glob, os, threading, Queue, traceback, re, struct, tempfile, sys, atexit, time
+import helper, unit, bbox, box, base, canvas, color, trafo, path, prolog, pykpathsea, version
 
 class fix_word:
     def __init__(self, word):
@@ -1845,7 +1845,7 @@ class texrunner:
                        docopt=None,
                        usefiles=None,
                        waitfortex=5,
-                       texdebug=0,
+                       texdebug=None,
                        dvidebug=0,
                        errordebug=1,
                        dvicopy=0,
@@ -1865,7 +1865,13 @@ class texrunner:
         self.docopt = docopt
         self.usefiles = helper.ensurelist(usefiles)
         self.waitfortex = waitfortex
-        self.texdebug = texdebug
+        if texdebug is not None:
+            if texdebug[-4:] == ".tex":
+                self.texdebug = open(texdebug, "w")
+            else:
+                self.texdebug = open("%s.tex" % texdebug, "w")
+        else:
+            self.texdebug = None
         self.dvidebug = dvidebug
         self.errordebug = errordebug
         self.dvicopy = dvicopy
@@ -1896,6 +1902,7 @@ class texrunner:
         self.page = 0
         self.dvinumber = 0
         self.dvifiles = []
+        self.preambles = []
         savetempdir = tempfile.tempdir
         tempfile.tempdir = os.curdir
         self.texfilename = os.path.basename(tempfile.mktemp())
@@ -1913,6 +1920,10 @@ class texrunner:
         - when self.preamblemode is unset, the expr is passed to \ProcessPyXBox
         """
         if not self.texruns:
+            if self.texdebug is not None:
+                self.texdebug.write("%% PyX %s texdebug file\n" % version.version)
+                self.texdebug.write("%% mode: %s\n" % self.mode)
+                self.texdebug.write("%% date: %s\n" % time.asctime(time.localtime(time.time())))
             for usefile in self.usefiles:
                 extpos = usefile.rfind(".")
                 try:
@@ -1962,43 +1973,43 @@ class texrunner:
                          *self.texmessagestart)
             os.remove("%s.tex" % self.texfilename)
             if self.mode == "tex":
-                try:
-                    LocalLfsName = str(self.lfs) + ".lfs"
-                    lfsdef = open(LocalLfsName, "r").read()
-                except IOError:
+                if len(self.lfs) > 4 and self.lfs[-4:] == ".lfs":
+                    lfsname = self.lfs
+                else:
+                    lfsname = "%s.lfs" % self.lfs
+                for fulllfsname in [lfsname,
+                                    os.path.join(sys.prefix, "share", "pyx", lfsname),
+                                    os.path.join(os.path.dirname(__file__), "lfs", lfsname)]:
                     try:
-                        try:
-                            SysLfsName = os.path.join(sys.prefix, "share", "pyx", str(self.lfs) + ".lfs")
-                            lfsdef = open(SysLfsName, "r").read()
-                        except IOError:
-                            SysLfsName = os.path.join(os.path.dirname(__file__), "lfs", str(self.lfs) + ".lfs")
-                            lfsdef = open(SysLfsName, "r").read()
+                        lfsdef = open(fulllfsname, "r").read()
+                        break
                     except IOError:
-                        allfiles = []
-                        try:
-                            allfiles += os.listdir(".")
-                        except OSError:
-                            pass
-                        try:
-                            allfiles += os.listdir(os.path.join(sys.prefix, "share", "pyx"))
-                        except OSError:
-                            pass
-                        try:
-                            allfiles += os.listdir(os.path.join(os.path.dirname(__file__), "lfs"))
-                        except OSError:
-                            pass
-                        files = map(lambda x: x[:-4], filter(lambda x: x[-4:] == ".lfs", allfiles))
-                        raise IOError("file '%s.lfs' not found. Available latex font sizes:\n%s" % (self.lfs, files))
+                        pass
+                else:
+                    allfiles = (glob.glob("*.lfs") +
+                                glob.glob(os.path.join(sys.prefix, "share", "pyx", "*.lfs")) +
+                                glob.glob(os.path.join(os.path.dirname(__file__), "lfs", "*.lfs")))
+                    lfsnames = [os.path.basename(x)[:-4] for x in allfiles]
+                    lfsnames.sort()
+                    raise IOError("file '%s' not found. Available latex font sizes: %s" % (lfsname, lfsnames))
                 self.execute(lfsdef)
                 self.execute("\\normalsize%\n")
                 self.execute("\\newdimen\\linewidth%\n")
             elif self.mode == "latex":
                 if self.pyxgraphics:
+                    for pyxdef in ["pyx.def",
+                                   os.path.join(sys.prefix, "share", "pyx", "pyx.def"),
+                                   os.path.join(os.path.dirname(__file__), "..", "contrib", "pyx.def")]:
+                        if os.path.isfile(pyxdef):
+                            break
+                    else:
+                        IOError("could not find 'pyx.def'")
+                    pyxdef = os.path.abspath(pyxdef).replace(os.sep, "/")
                     self.execute("\\makeatletter%\n"
                                  "\\let\\saveProcessOptions=\\ProcessOptions%\n"
                                  "\\def\\ProcessOptions{%\n"
                                  "\\saveProcessOptions%\n"
-                                 "\\def\\Gin@driver{../../contrib/pyx.def}%\n"
+                                 "\\def\\Gin@driver{" + pyxdef + "}%\n"
                                  "\\def\\c@lor@namefile{dvipsnam.def}}%\n"
                                  "\\makeatother")
                 if self.docopt is not None:
@@ -2022,8 +2033,8 @@ class texrunner:
                 self.expr = "\\end{document}\n"
             else:
                 self.expr = "\\end\n"
-        if self.texdebug:
-            print "pass the following expression to TeX/LaTeX:\n  %s" % self.expr.replace("\n", "\n  ").rstrip()
+        if self.texdebug is not None:
+            self.texdebug.write(self.expr)
         self.texinput.write(self.expr)
         self.gotevent.wait(self.waitfortex) # wait for the expected output
         gotevent = self.gotevent.isSet()
@@ -2081,7 +2092,7 @@ class texrunner:
             self.getdvi()
         return self.dvifiles[dvinumber].write(file, page)
 
-    def reset(self):
+    def reset(self, reinit=0):
         "resets the tex runner to its initial state (upto its record to old dvi file(s))"
         if self.texruns:
             if not self.texdone:
@@ -2090,26 +2101,33 @@ class texrunner:
         self.executeid = 0
         self.page = 0
         self.texdone = 0
+        if self.reinit:
+            for expr, args in self.preambles:
+                self.execute(expr, *args)
+        else:
+            self.preambles = []
 
-    def settex(self, mode=None,
-                     lfs=None,
-                     docclass=None,
-                     docopt=None,
-                     usefiles=None,
-                     waitfortex=None,
-                     dvicopy=None,
-                     pyxgraphics=None,
-                     texmessagestart=None,
-                     texmessagedocclass=None,
-                     texmessagebegindoc=None,
-                     texmessageend=None,
-                     texmessagedefaultpreamble=None,
-                     texmessagedefaultrun=None):
+    def set(self, mode=None,
+                  lfs=None,
+                  docclass=None,
+                  docopt=None,
+                  usefiles=None,
+                  waitfortex=None,
+                  texdebug=None,
+                  dvidebug=0,
+                  errordebug=None,
+                  dvicopy=None,
+                  pyxgraphics=None,
+                  texmessagestart=None,
+                  texmessagedocclass=None,
+                  texmessagebegindoc=None,
+                  texmessageend=None,
+                  texmessagedefaultpreamble=None,
+                  texmessagedefaultrun=None):
         """provide a set command for TeX/LaTeX settings
         - TeX/LaTeX must not yet been started
         - especially needed for the defaultrunner, where no access to
-          the constructor is available
-        - do not call this method directly; better use the set method below"""
+          the constructor is available"""
         if self.texruns:
             raise TexRunsError
         if mode is not None:
@@ -2127,10 +2145,21 @@ class texrunner:
             self.usefiles = helper.ensurelist(usefiles)
         if waitfortex is not None:
             self.waitfortex = waitfortex
+        if texdebug is not None:
+            if texdebug[-4:] == ".tex":
+                self.texdebug = open(texdebug, "w")
+            else:
+                self.texdebug = open("%s.tex" % texdebug, "w")
+        if dvidebug is not None:
+            self.dvidebug = dvidebug
+        if errordebug is not None:
+            self.errordebug = errordebug
         if dvicopy is not None:
             self.dvicopy = dvicopy
-        if dvicopy is not None:
+        if pyxgraphics is not None:
             self.pyxgraphics = pyxgraphics
+        if errordebug is not None:
+            self.errordebug = errordebug
         if texmessagestart is not None:
             texmessagestart = helper.ensuresequence(texmessagestart)
             helper.checkattr(texmessagestart, allowmulti=(texmessage,))
@@ -2156,23 +2185,8 @@ class texrunner:
             helper.checkattr(texmessagedefaultrun, allowmulti=(texmessage,))
             self.texmessagedefaultrun = texmessagedefaultrun
 
-    def set(self, texdebug=None, dvidebug=None, errordebug=None, **args):
-        """as above, but contains all settings
-        - the debug level might be changed during TeX/LaTeX execution
-        - dvidebug gets used only once, namely when TeX/LaTeX is being finished"""
-        if self.texdone:
-            raise TexDoneError
-        if texdebug is not None:
-            self.texdebug = texdebug
-        if dvidebug is not None:
-            self.dvidebug = dvidebug
-        if errordebug is not None:
-            self.errordebug = errordebug
-        if len(args.keys()):
-            self.settex(**args)
-
     def bracketcheck(self, expr):
-        """a helper method for consistant usage of "{" and "}"
+        """a helper method to check the usage of "{" and "}"
         - Michael Schindler claims that this is not necessary"""
         pass
 
@@ -2208,13 +2222,13 @@ class texrunner:
         - preamble expressions must not create any dvi output
         - args might contain texmessage instances
         - a bracketcheck is performed on the expression"""
-        if self.texdone:
-            raise TexDoneError
-        if not self.preamblemode:
+        if self.texdone or not self.preamblemode:
             raise TexNotInPreambleModeError
         self.bracketcheck(expr)
         helper.checkattr(args, allowmulti=(texmessage,))
-        self.execute(expr, *helper.getattrs(args, texmessage, default=self.texmessagedefaultpreamble))
+        args = helper.getattrs(args, texmessage, default=self.texmessagedefaultpreamble)
+        self.execute(expr, *args)
+        self.preambles.append((expr, args))
 
     PyXBoxPattern = re.compile(r"PyXBox:page=(?P<page>\d+),lt=(?P<lt>-?\d*((\d\.?)|(\.?\d))\d*)pt,rt=(?P<rt>-?\d*((\d\.?)|(\.?\d))\d*)pt,ht=(?P<ht>-?\d*((\d\.?)|(\.?\d))\d*)pt,dp=(?P<dp>-?\d*((\d\.?)|(\.?\d))\d*)pt:")
 
@@ -2232,7 +2246,10 @@ class texrunner:
         if expr is None:
             raise ValueError("None expression is invalid")
         if self.texdone:
-            raise TexDoneError
+            if self.texdebug is not None:
+                self.texdebug.write("%s\n" % reduce(lambda x, y: "%" + x, range(80), ""))
+                self.texdebug.write("%% a new instance of %s is started\n" % self.mode)
+            self.reset(reinit=1)
         if self.preamblemode:
             if self.mode == "latex":
                 self.execute("\\begin{document}", *self.texmessagebegindoc)

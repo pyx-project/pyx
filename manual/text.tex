@@ -27,19 +27,22 @@ following table:
 keyword&description\\
 \hline
 \texttt{mode}&\texttt{"tex"} (default) or \texttt{"latex"}\\
-\texttt{lfs}&Specifies a latex font size file to be used with \TeX. Those files (with the suffix \texttt{.lfs}) can be created by \texttt{createlfs.tex}. Possible values are listed when a requested name could not be found.\\
+\texttt{lfs}&Specifies a latex font size file to be used with \TeX{} (not in \LaTeX). Those files (with the suffix \texttt{.lfs}) can be created by \texttt{createlfs.tex}. Possible values are listed when a requested name could not be found.\\
 \texttt{docclass}&\LaTeX{} document class; default is \texttt{"article"}\\
 \texttt{docopt}&specifies options for the document class; default is \texttt{None}\\
-\texttt{usefiles}$^1$&filenames to be as jobname files for \TeX/\LaTeX{}; default: \texttt{None}; example: \texttt{("spam.aux", "eggs.log")}\\
+\texttt{usefiles}$^1$&access to \TeX/\LaTeX{} jobname files; default: \texttt{None}; example: \texttt{("spam.aux", "eggs.log")}\\
 \texttt{waitfortex}&wait this number of seconds for a \TeX/\LaTeX{} response; default \texttt{5}\\
-\texttt{texdebug}&\TeX/\LaTeX{} debug messages (boolean); default \texttt{0}\\
+\texttt{texdebug}&filename to store \TeX/\LaTeX{} commands; default \texttt{None}\\
 \texttt{dvidebug}&dvi debug messages like \texttt{dvitype} (boolean); default \texttt{0}\\
+\texttt{errordebug}&verbose level of \TeX/\LaTeX{} error messages; valid values are \texttt{0}, \texttt{1} (default), \texttt{2}\\
+\texttt{dvicopy}&get rid of virtual fonts which \PyX{} cannot handle (boolean); default \texttt{0}\\
+\texttt{pyxgraphics}&enables the usage of the graphics package without further configuration (boolean); default 1\\
 \texttt{texmessagestart}$^{1,2}$&parsers for the \TeX/\LaTeX{} start message; default: \texttt{texmessage.start}\\
 \texttt{texmessagedocclass}$^{1,2}$&parsers for \LaTeX{}s \texttt{\textbackslash{}documentclass} statement; default: \texttt{texmessage.load}\\
 \texttt{texmessagebegindoc}$^{1,2}$&parsers for \LaTeX{}s \texttt{\textbackslash{}begin\{document\}} statement; default: \texttt{(texmessage.load, texmessage.noaux)}\\
 \texttt{texmessageend}$^{1,2}$&parsers for \TeX{}s \texttt{\textbackslash{}end}/ \LaTeX{}s \texttt{\textbackslash{}end\{document\}} statement; default: \texttt{texmessage.texend}\\
 \texttt{texmessagedefaultpreamble}$^{1,2}$&default parsers for preamble statements; default: \texttt{texmessage.load}\\
-\texttt{texmessagedefaultrun}$^{1,2}$&default parsers for text statements; default: \texttt{None}\\
+\texttt{texmessagedefaultrun}$^{1,2}$&default parsers for text statements; default: \texttt{(texmessage.loadfd, texmessage.graphicsload)}\\
 \end{tabularx}
 \medskip
 
@@ -50,24 +53,25 @@ $^2$
 \TeX/\LaTeX{} message parsers are described in more detail below.
 
 \medskip
-The \verb|texrunner| instance provides three methods to be called by
-the user. The first method is called \verb|set|. It takes the same
+The \verb|texrunner| instance provides several methods to be called by
+the user. First there is a method called \verb|set|. It takes the same
 kewword arguments as the constructor and its purpose is to provide an
-access to the \verb|texrunner|s settings for a given instance. This is
+access to the \verb|texrunner| settings for a given instance. This is
 important for the \verb|defaulttextunner|. The \verb|set| method
 fails, when a modification can't be applied anymore (e.g.
 \TeX/\LaTeX{} was already started).
 
-Secondly there is a \verb|preamble| method, which can be called before
-the \verb|text| method only (see below). It takes a \TeX/\LaTeX{}
-expression and optionally one or several \TeX/\LaTeX{} message
-parsers. The preamble expressions should be used to perform global
-settings, but should not create any \TeX/\LaTeX{} dvi output. In
-\LaTeX, the preamble expressions are inserted before the
-\verb|\begin{document}| statement.
+The \verb|preamble| method can be called before the \verb|text| method
+only (see below). It takes a \TeX/\LaTeX{} expression and optionally
+one or several \TeX/\LaTeX{} message parsers. The preamble expressions
+should be used to perform global settings, but should not create any
+\TeX/\LaTeX{} dvi output. In \LaTeX, the preamble expressions are
+inserted before the \verb|\begin{document}| statement. Note, that you
+can use \verb|\AtBeginDocument{...}| to postpone the direct
+evaluation.
 
-Last, but first, there is a \verb|text| method. The first two
-parameters are the x, y position of the output to be generated. The
+Finally there is a \verb|text| method. The first two parameters are
+the \verb|x| and \verb|y| position of the output to be generated. The
 third parameter is a \TeX/\LaTeX{} expression and further parameters
 are attributes for this command. Those attributes might be
 \TeX/\LaTeX{} settings as described below, \TeX/\LaTeX{} message
@@ -75,6 +79,14 @@ parsers as described below as well, \PyX{} transformations, and \PyX{}
 fill styles (like colors). The \verb|text| method returns a box (see
 chapter~\ref{module:box}), which can be inserted into a canvas
 instance by its \verb|insert| method to get the text.
+
+Note that for the generation of the PostScript code the \TeX/\LaTeX{}
+instance must be terminated. However, a \TeX/\LaTeX{} instance is
+started again when the \verb|text| method is called again. A call of
+the \verb|preamble| method will still fail, but you can explicitly
+call the \verb|reset| method to allow for new \verb|preamble| settings
+as well. The \verb|reset| method takes a boolean parameter
+\verb|reinit| which can be set to run the old preamble settings.
 
 \section{\TeX/\LaTeX{} settings}
 
@@ -186,7 +198,8 @@ otherwise an exception is raised reporting the problem.
 parser name&purpose\\
 \hline
 \texttt{texmessage.load}&loading of files (accept \texttt{(file ...)})\\
-\texttt{texmessage.graphicsload}&loading of graphic files (accept \texttt{<file ...>})\\
+\texttt{texmessage.loadfd}&loading of files (accept \texttt{(file.fd)})\\
+\texttt{texmessage.graphicsload}&loading of graphic files (accept \texttt{<file.eps>})\\
 \texttt{texmessage.ignore}&accept everything as a valid output\\
 \end{tabular}
 \medskip

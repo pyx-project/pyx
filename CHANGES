@@ -41,16 +41,15 @@ PyX
     - shouldn't strokepath/fillpath be validated by "strokepath is not None" instead of just "strokepath"
   - text module:
     - reset() method for the texrunner (done except for the documentation)
-    - texmessage.loadfd for accepting font description loading -> used as texmessagedefaultrun (done except for the documentation)
+    - automatic restart of a TeX instance with the same preamble (preamble changes are not possible)
+    - texmessage.loadfd for accepting font description loading
     - don't bail out on width_index == 0, but mark character invalid instead
-    - dvicopy flag
-    - preliminary version of pyxgraphics flag (handling of file names, no documentation)
+    - dvicopy flag (TODO: stdout handling)
+    - support for specials; pyxgraphics flag
     - support psfonts.map: font names, font encodings
     TODO:
     - the prolog method of the dvifile class recieves the page now -> return the prolog needed by this page only
-    - further improve lfs handling; pyxgraphics handling of file names
     - SlantFont & Co support
-    - document dvicopy
     - mention psfonts.map in docu
   - tex module:
     - bugfix \def\ProcessPyXBox -> \long\def\ProcessPyXBox
