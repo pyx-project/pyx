@@ -612,14 +612,18 @@ class DVIFile:
         elif command=="rotate_begin":
             self.flushout()
             self.actpage.insert(_savetrafo())
-            self.actpage.insert(trafo.rotate(float(args[0])))
+            x =  unit.t_m(self.pos[_POS_H] * self.conv * 0.0254 / self.resolution)
+            y = -unit.t_m(self.pos[_POS_V] * self.conv * 0.0254 / self.resolution)
+            self.actpage.insert(trafo.rotate(float(args[0]), x, y))
         elif command=="rotate_end":
             self.actpage.insert(_restoretrafo())
             self.flushout()
         elif command=="scale_begin":
             self.flushout()
             self.actpage.insert(_savetrafo())
-            self.actpage.insert(trafo.scale(float(args[0]), float(args[1])))
+            x =  unit.t_m(self.pos[_POS_H] * self.conv * 0.0254 / self.resolution)
+            y = -unit.t_m(self.pos[_POS_V] * self.conv * 0.0254 / self.resolution)
+            self.actpage.insert(trafo.scale(float(args[0]), float(args[1]), x, y))
         elif command=="scale_end":
             self.actpage.insert(_restoretrafo())
             self.flushout()
@@ -640,14 +644,14 @@ class DVIFile:
             # construct kwargs for epsfile constructor
             epskwargs = {}
             epskwargs["filename"] = argdict["file"]
+            epskwargs["bbox"] = bbox._bbox(float(argdict["llx"]), float(argdict["lly"]),
+                                           float(argdict["urx"]), float(argdict["ury"]))
             if argdict.has_key("width"):
                 epskwargs["width"] = unit.t_pt(float(argdict["width"]))
             if argdict.has_key("height"):
                 epskwargs["height"] = unit.t_pt(float(argdict["height"]))
             if argdict.has_key("clip"):
                epskwargs["clip"] = int(argdict["clip"])
-            #epskwargs["bbox"] = bbox._bbox(float(argdict["llx"]), float(argdict["lly"]),
-            #                               float(argdict["urx"]), float(argdict["ury"]))
             self.actpage.insert(epsfile.epsfile(x, y, **epskwargs))
         else:
             raise RuntimeError("unknown PyX special '%s', aborting" % command)
