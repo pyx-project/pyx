@@ -1,0 +1,22 @@
+from pyx import *
+
+text.preamble(r"\parindent0pt")
+
+c = canvas.canvas()
+t = c.text(0, 0, r"spam \& eggs", trafo.scale(6), text.valign.topbaseline, text.vbox(1.2))
+t2 = text.text(0, 0, "eggs", trafo.scale(6))
+b, b2 = t.bbox(), t2.bbox()
+c.stroke(t.path(), canvas.linewidth.THin)
+c.stroke(path.line(-0.3, b.top(), 0, b.top()))
+c.text(-0.5, b.top(), "valign.top", text.vshift.mathaxis, text.halign.right)
+c.stroke(path.line(-0.3, 0.5*(b.top()+b.bottom()), 0, 0.5*(b.top()+b.bottom())))
+c.text(-0.5, 0.5*(b.top()+b.bottom()), "valign.middle", text.vshift.mathaxis, text.halign.right)
+c.stroke(path.line(-0.3, b.bottom(), 0, b.bottom()))
+c.text(-0.5, b.bottom(), "valign.bottom", text.vshift.mathaxis, text.halign.right)
+c.stroke(path.line(0, 0, 7.5, 0))
+c.text(7.7, 0, "valign.topbaseline", text.vshift.mathaxis)
+c.stroke(path.line(7.2, 0.5*(b.bottom()-b2.bottom()), 7.5, 0.5*(b.bottom()-b2.bottom())))
+c.text(7.7, 0.5*(b.bottom()-b2.bottom()), "valign.middlebaseline", text.vshift.mathaxis)
+c.stroke(path.line(0, b.bottom()-b2.bottom(), 7.5, b.bottom()-b2.bottom()))
+c.text(7.7, b.bottom()-b2.bottom(), "valign.bottombaseline", text.vshift.mathaxis)
+c.writetofile("textvalign", paperformat="a4")
