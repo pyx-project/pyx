@@ -832,7 +832,10 @@ class parser:
                     if isinstance(e.MathTree, MathTreeOp):
                         e.MathTree.ParenthesisBarrier = 1
                     if Tree is not None:
-                        Tree.AddArg(e.MathTree)
+                        SubTree = Tree # XXX: four lines code dublication
+                        while isinstance(SubTree, MathTreeOp) and len(SubTree.Args) == 2:
+                            SubTree = SubTree.Args[1]
+                        SubTree.AddArg(e.MathTree)
                     else:
                         Tree = e.MathTree
             else:
@@ -840,7 +843,7 @@ class parser:
                     Func = FuncClass()
                     if Func.InitByParser(arg):
                         if Tree is not None:
-                            SubTree = Tree # XXX 1: four lines code dublication (see 2)
+                            SubTree = Tree # XXX: four lines code dublication
                             while isinstance(SubTree, MathTreeOp) and len(SubTree.Args) == 2:
                                 SubTree = SubTree.Args[1]
                             SubTree.AddArg(Func)
@@ -867,7 +870,10 @@ class parser:
                     FuncExtern = MathTreeFuncExtern()
                     if FuncExtern.InitByParser(arg):
                         if Tree is not None:
-                            Tree.AddArg(FuncExtern)
+                            SubTree = Tree # XXX: four lines code dublication
+                            while isinstance(SubTree, MathTreeOp) and len(SubTree.Args) == 2:
+                                SubTree = SubTree.Args[1]
+                            SubTree.AddArg(FuncExtern)
                         else:
                             Tree = FuncExtern
                         while 1:
@@ -885,7 +891,7 @@ class parser:
                             Val = ValClass()
                             if Val.InitByParser(arg):
                                 if Tree is not None:
-                                    SubTree = Tree # XXX 2: four lines code dublication (see 1)
+                                    SubTree = Tree # XXX: four lines code dublication
                                     while isinstance(SubTree, MathTreeOp) and len(SubTree.Args) == 2:
                                         SubTree = SubTree.Args[1]
                                     SubTree.AddArg(Val)

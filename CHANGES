@@ -17,6 +17,7 @@ PyX
     - dense -> density
     - symbols + lines -> symbollines (??). Symbols should not allow setting lineattrs, and
       lines not symbolattrs
+    - allow for graph.changesymbol.square(size=0.15) etc.
     - rect style (and errorbars?) should use clipping
   - canvas module:
     - default patterns
