@@ -208,7 +208,9 @@ class sectionfile(data):
             config.readfp(open(file, "r"))
         usedata = []
         usetitles = [sectionstr]
-        for section in config.sections():
+        sections = config.sections()
+        sections.sort()
+        for section in sections:
             usedata.append([section] + [None for x in range(len(usetitles) - 1)])
             for option in config.options(section):
                 if option == sectionstr:

@@ -23,7 +23,7 @@ PyX
     - extern variables and functions (support in graph.function, graph.paramfunction and data.data)
     - testsuite
   - text module:
-    - is it TODO for 0.2 ???
+    - deferred to Version 0.3
     - running TeX "on the fly" is basically implemented
   - numerous bugfixes (remove detailed list?):
     - transformation bug (#624068, trafo module)
