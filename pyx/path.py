@@ -28,7 +28,7 @@
 
 import math
 from math import cos, sin, pi
-import base, bbox, unit, bpath
+import base, bbox, unit
 
 
 class PathException(Exception): pass
@@ -116,7 +116,7 @@ class normpathel(pathel):
 
         pass
 
-    def _bpathel(self, context):
+    def _bcurve(self, context):
         """convert normpathel to bpathel
 
         context: context of normpathel
@@ -136,7 +136,7 @@ class normpathel(pathel):
 
         """
 
-    def _reverse(self, context):
+    def _reversed(self, context):
         """return reversed normpathel
 
         context: context of normpathel
@@ -158,7 +158,15 @@ class normpathel(pathel):
 
         pass
 
-        
+    def _tangent(self, context, t):
+        """returns tangent vector of _normpathel at parameter t (0<=t<=1)
+
+        context: context of normpathel
+
+        """
+
+        pass
+
 
     def transformed(self, trafo):
         """return transformed normpathel according to trafo"""
@@ -192,22 +200,22 @@ class closepath(normpathel):
         return bbox.bbox(min(x0, x1), min(y0, y1), 
                          max(x0, x1), max(y0, y1))
 
-    def _bpathel(self, context):
+    def _bcurve(self, context):
         x0, y0 = context.currentpoint
         x1, y1 = context.currentsubpath
 
-        return bpath._blineel(x0, y0, x1, y1)
+        return _bline(x0, y0, x1, y1)
 
     def _arclength(self, context, epsilon=1e-5):
         x0, y0 = context.currentpoint
         x1, y1 = context.currentsubpath
-        
+
         return unit.t_pt(math.sqrt((x0-x1)*(x0-x1)+(y0-y1)*(y0-y1)))
 
     def _normalized(self, context):
         return [closepath()]
 
-    def _reverse(self, context):
+    def _reversed(self, context):
         return _lineto(*context.currentsubpath)
 
     def _split(self, context, t):
@@ -217,6 +225,16 @@ class closepath(normpathel):
 
         return ((_lineto(xs, ys),),
                 (_moveto(xs, ys), _lineto(x1, y1)))
+
+    def _tangent(self, context, t):
+        x0, y0 = context.currentpoint
+        x1, y1 = context.currentsubpath
+        tx, ty = x0 + (x1-x0)*t, y0 + (y1-y0)*t
+        tvectx, tvecty = x1-x0, y1-y0
+
+        return _line(tx, ty, tx+tvectx, tx+tvecty)
+
+        return (unit.t_pt(x1-x0), unit.t_pt(y1-y0))
 
     def write(self, file):
         file.write("closepath\n")
@@ -243,7 +261,7 @@ class _moveto(normpathel):
     def _bbox(self, context):
         return bbox.bbox()
 
-    def _bpathel(self, context):
+    def _bcurve(self, context):
         return None
 
     def _arclength(self, context, epsilon=1e-5):
@@ -252,10 +270,13 @@ class _moveto(normpathel):
     def _normalized(self, context):
         return [_moveto(self.x, self.y)]
 
-    def _reverse(self, context):
+    def _reversed(self, context):
         return None
 
     def _split(self, context, t):
+        return None
+
+    def _tangent(self, context, t):
         return None
 
     def write(self, file):
@@ -286,19 +307,19 @@ class _lineto(normpathel):
                          max(context.currentpoint[0], self.x),
                          max(context.currentpoint[1], self.y))
 
-    def _bpathel(self, context):
-        return bpath._blineel(context.currentpoint[0], context.currentpoint[1],
-                              self.x, self.y)
+    def _bcurve(self, context):
+        return _bline(context.currentpoint[0], context.currentpoint[1],
+                      self.x, self.y)
 
     def _arclength(self, context, epsilon=1e-5):
         x0, y0 = context.currentpoint
-             
+
         return unit.t_pt(math.sqrt((x0-self.x)*(x0-self.x)+(y0-self.y)*(y0-self.y)))
 
     def _normalized(self, context):
         return [_lineto(self.x, self.y)]
 
-    def _reverse(self, context):
+    def _reversed(self, context):
         return _lineto(*context.currentpoint)
 
     def _split(self, context, t):
@@ -307,7 +328,14 @@ class _lineto(normpathel):
 
         return ((_lineto(xs, ys),),
                 (_moveto(xs, ys), _lineto(self.x, self.y)))
-    
+
+    def _tangent(self, context, t):
+        x0, y0 = context.currentpoint
+        tx, ty = x0 + (self.x-x0)*t, y0 + (self.y-y0)*t
+        tvectx, tvecty = self.x-x0, self.y-y0
+
+        return _line(tx, ty, tx+tvectx, tx+tvecty)
+
     def write(self, file):
         file.write("%f %f lineto\n" % (self.x, self.y) )
 
@@ -330,7 +358,7 @@ class _curveto(normpathel):
     def _updatecontext(self, context):
         context.currentsubpath = context.currentsubpath or context.currentpoint
         context.currentpoint = self.x3, self.y3
-        
+
     def _at(self, context, t):
         x0, y0 = context.currentpoint
         return ( unit.t_pt((  -x0+3*self.x1-3*self.x2+self.x3)*t*t*t +
@@ -349,32 +377,44 @@ class _curveto(normpathel):
                          max(context.currentpoint[0], self.x1, self.x2, self.x3),
                          max(context.currentpoint[1], self.y1, self.y2, self.y3))
 
-    def _bpathel(self, context):
-        return bpath._bpathel(context.currentpoint[0], context.currentpoint[1],
-                              self.x1, self.y1,
-                              self.x2, self.y2,
-                              self.x3, self.y3)
+    def _bcurve(self, context):
+        return _bcurve(context.currentpoint[0], context.currentpoint[1],
+                        self.x1, self.y1,
+                        self.x2, self.y2,
+                        self.x3, self.y3)
 
     def _arclength(self, context, epsilon=1e-5):
-        return self._bpathel(context).length(epsilon)
+        return self._bcurve(context).arclength(epsilon)
 
     def _normalized(self, context):
         return [_curveto(self.x1, self.y1,
                          self.x2, self.y2,
                          self.x3, self.y3)]
 
-    def _reverse(self, context):
+    def _reversed(self, context):
         return _curveto(self.x2, self.y2,
                         self.x1, self.y1,
                         context.currentpoint[0], context.currentpoint[1])
 
     def _split(self, context, t):
-        bp1, bp2 = self._bpathel(context).split(t)
+        bp1, bp2 = self._bcurve(context).split(t)
 
         return ((_curveto(bp1.x1, bp1.y1, bp1.x2, bp1.y2, bp1.x3, bp1.y3),),
                 (_moveto(bp2.x0, bp2.y0),
                 _curveto(bp2.x1, bp2.y1, bp2.x2, bp2.y2, bp2.x3, bp2.y3)))
 
+    def _tangent(self, context, t):
+        x0, y0 = context.currentpoint
+        tp = self._at(context, t)
+        tpx, tpy = unit.topt(tp[0]), unit.topt(tp[1])
+        tvectx = (3*(  -x0+3*self.x1-3*self.x2+self.x3)*t*t +
+                  2*( 3*x0-6*self.x1+3*self.x2        )*t +
+                    (-3*x0+3*self.x1                  ))
+        tvecty = (3*(  -y0+3*self.y1-3*self.y2+self.y3)*t*t +
+                  2*( 3*y0-6*self.y1+3*self.y2        )*t +
+                    (-3*y0+3*self.y1                  ))
+
+        return _line(tpx, tpy, tvectx, tvecty)
 
     def write(self, file):
         file.write("%f %f %f %f %f %f curveto\n" % ( self.x1, self.y1,
@@ -626,7 +666,7 @@ class _arc(pathel):
         # get starting and end point of arc segment and bpath corresponding to arc
         sarcx, sarcy = self._sarc()
         earcx, earcy = self._earc()
-        barc = bpath._arctobezier(self.x, self.y, self.r, self.angle1, self.angle2)
+        barc = _arctobezierpath(self.x, self.y, self.r, self.angle1, self.angle2)
 
         # convert to list of curvetos omitting movetos
         nbarc = []
@@ -713,7 +753,7 @@ class _arcn(pathel):
         # get starting and end point of arc segment and bpath corresponding to arc
         sarcx, sarcy = self._sarc()
         earcx, earcy = self._earc()
-        barc = bpath._arctobezier(self.x, self.y, self.r, self.angle2, self.angle1)
+        barc = _arctobezierpath(self.x, self.y, self.r, self.angle2, self.angle1)
         barc.reverse()
 
         # convert to list of curvetos omitting movetos
@@ -940,9 +980,6 @@ class path(base.PSCmd):
 
         return abbox
 
-    def bpath(self):
-        return normpath(self).bpath()
-
     def reversed(self):
         """return reversed path"""
         return normpath(self).reversed()
@@ -998,7 +1035,7 @@ class normpath(path):
 
     def arclength(self, epsilon=1e-5):
         """returns total arc length of normpath in pts with accuracy epsilon"""
-        
+
         context = _pathcontext()
         length = 0
 
@@ -1031,30 +1068,24 @@ class normpath(path):
                     t -= 1
                 else:
                     return pel._at(context, t)
-                
+
             pel._updatecontext(context)
-            
+
         return None
 
     def begin(self):
         """return first point of first subpath in path"""
         return self.at(0)
 
-    def bpath(self):
-        context = _pathcontext()
-        bp = bpath.bpath()
-
-        for pel in self.path:
-            bpathel = pel._bpathel(context)
-            pel._updatecontext(context)
-            if bpathel:
-                bp.append(bpathel)
-
-        return bp
-
     def end(self):
         """return last point of last subpath in path"""
-        return self.reversed.at(0)
+        return self.reversed().at(0)
+
+    def glue(self, other):
+        if isinstance(other, normpath):
+            return normpath(*(self.path+other.path[1:]))
+        else:
+            return path(*(self.path+normpath(other).path[1]))
 
     def intersect(self, other, epsilon=1e-5):
         """intersect two normpaths
@@ -1068,30 +1099,43 @@ class normpath(path):
         t_a, t_b = 0,0
         context_a = _pathcontext()
         context_b = _pathcontext()
-        
+
         for normpathel_a in self.path:
-            bpathel_a = normpathel_a._bpathel(context_a)
+            bpathel_a = normpathel_a._bcurve(context_a)
             normpathel_a._updatecontext(context_a)
-            
+
             if bpathel_a:
                 t_a += 1
                 for normpathel_b in other.path:
-                    bpathel_b = normpathel_b._bpathel(context_b)
+                    bpathel_b = normpathel_b._bcurve(context_b)
                     normpathel_b._updatecontext(context_b)
-                    
+
                     if bpathel_b:
                         t_b += 1
                         intersections = intersections + \
-                                        bpath._bpathelIntersect(bpathel_a, t_a-1, t_a,
-                                                                bpathel_b, t_b-1, t_b, epsilon)
+                                        _bcurveIntersect(bpathel_a, t_a-1, t_a,
+                                                         bpathel_b, t_b-1, t_b, epsilon)
 
         return intersections
+
+    def range(self):
+        """return maximal value for parameter value t"""
+
+        context=_pathcontext()
+        t=0
+
+        for pel in self.path:
+            if not isinstance(pel, _moveto):
+                t += 1
+            pel._updatecontext(context)
+
+        return t
 
     def reversed(self):
         """return reversed path"""
 
         context = _pathcontext()
-        
+
         # we have to reverse subpath by subpath to get the closepaths right
         subpath = []
         np = normpath()
@@ -1099,7 +1143,7 @@ class normpath(path):
         # we append a _moveto operation at the end to end the last
         # subpath explicitely.
         for pel in self.path+[_moveto(0,0)]:
-            pelr =pel._reverse(context)
+            pelr =pel._reversed(context)
             if pelr:
                 subpath.append(pelr)
 
@@ -1115,12 +1159,11 @@ class normpath(path):
 
         return np
 
-
     def split(self, t):
         """split path at parameter value t"""
 
         context = _pathcontext()
-        
+
         np1 = normpath()
         # np2 is None is a marker, that we still have to append to np1
         np2 = None
@@ -1136,18 +1179,18 @@ class normpath(path):
                         np1.path.append(pel)
                     else:
                         pels1, pels2 = pel._split(context, t)
-                        
+
                         for pel1 in pels1:
                             np1.path.append(pel1)
-                            
+
                         np2 = normpath(*pels2)
-                        
+
                         # marker: we are creating the first subpath of np2
                         np2isfirstsubpath = 1
             else:
                 # construction of np2
                 # Note: We have to be careful to not close the first subpath!
-                
+
                 if np2isfirstsubpath :
                     # closepath and _moveto both end a subpath, but we 
                     # don't want to append a closepath for the
@@ -1166,6 +1209,34 @@ class normpath(path):
             pel._updatecontext(context)
 
         return np1, np2
+
+    def tangent(self, t):
+        """return tangent vector of path at parameter value t
+
+        Negative values of t count from the end of the path. The absolute
+        value of t must be smaller or equal to the number of segments in
+        the normpath, otherwise None is returned.
+        At discontinuities in the path, the limit from below is returned
+
+        """
+
+        if t>=0:
+            p = self.path
+        else:
+            p = self.reversed().path
+
+        context=_pathcontext()
+
+        for pel in p:
+            if not isinstance(pel, _moveto):
+                if t>1:
+                    t -= 1
+                else:
+                    return pel._tangent(context, t)
+
+            pel._updatecontext(context)
+
+        return None
 
     def transformed(self, trafo):
         """return transformed path"""
@@ -1262,4 +1333,330 @@ class circle(_circle):
                         unit.topt(x), unit.topt(y),
                         unit.topt(radius))
 
+################################################################################
+# helper classes and routines for Bezier curves
+################################################################################
 
+#
+# _bcurve: Bezier curve segment with four control points (coordinates in pts)
+#
+
+class _bcurve(base.PSOp):
+
+    """element of Bezier path (coordinates in pts)"""
+
+    def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
+        self.x0 = x0
+        self.y0 = y0
+        self.x1 = x1
+        self.y1 = y1
+        self.x2 = x2
+        self.y2 = y2
+        self.x3 = x3
+        self.y3 = y3
+
+    def __str__(self):
+        return "%f %f moveto %f %f %f %f %f %f curveto" % \
+               ( self.x0, self.y0,
+                 self.x1, self.y1,
+                 self.x2, self.y2,
+                 self.x3, self.y3 )
+
+    def write(self, file):
+         file.write( "%f %f moveto %f %f %f %f %f %f curveto\n" % \
+                     ( self.x0, self.y0,
+                       self.x1, self.y1,
+                       self.x2, self.y2,
+                       self.x3, self.y3 ) )
+
+    def __getitem__(self, t):
+        """return pathel at parameter value t (0<=t<=1)"""
+        assert 0 <= t <= 1, "parameter t of pathel out of range [0,1]"
+        return ( unit.t_pt((  -self.x0+3*self.x1-3*self.x2+self.x3)*t*t*t +
+                           ( 3*self.x0-6*self.x1+3*self.x2        )*t*t +
+                           (-3*self.x0+3*self.x1                  )*t +
+                               self.x0) ,
+                 unit.t_pt((  -self.y0+3*self.y1-3*self.y2+self.y3)*t*t*t +
+                           ( 3*self.y0-6*self.y1+3*self.y2        )*t*t +
+                           (-3*self.y0+3*self.y1                  )*t +
+                               self.y0)
+               )
+
+    pos = __getitem__
+
+    def bbox(self):
+        return bbox.bbox(min(self.x0, self.x1, self.x2, self.x3), 
+                         min(self.y0, self.y1, self.y2, self.y3), 
+                         max(self.x0, self.x1, self.x2, self.x3), 
+                         max(self.y0, self.y1, self.y2, self.y3))
+
+    def transform(self, trafo):
+        return _bcurve(*(trafo._apply(self.x0, self.y0)+
+                         trafo._apply(self.x1, self.y1)+
+                         trafo._apply(self.x2, self.y2)+
+                         trafo._apply(self.x3, self.y3)))
+
+    def reverse(self):
+        return _bcurve(self.x3, self.y3,
+                       self.x2, self.y2,
+                       self.x1, self.y1,
+                       self.x0, self.y0)
+
+    def isStraight(self, epsilon=1e-5):
+        """check wheter the _bcurve is approximately straight"""
+
+        # just check, whether the modulus of the difference between
+        # the length of the control polygon
+        # (i.e. |P1-P0|+|P2-P1|+|P3-P2|) and the length of the
+        # straight line between starting and ending point of the
+        # _bcurve (i.e. |P3-P1|) is smaller the epsilon
+        return abs(math.sqrt((self.x1-self.x0)*(self.x1-self.x0)+
+                             (self.y1-self.y0)*(self.y1-self.y0)) +
+                   math.sqrt((self.x2-self.x1)*(self.x2-self.x1)+
+                             (self.y2-self.y1)*(self.y2-self.y1)) +
+                   math.sqrt((self.x3-self.x2)*(self.x3-self.x2)+
+                             (self.y3-self.y2)*(self.y3-self.y2)) -
+                   math.sqrt((self.x3-self.x0)*(self.x3-self.x0)+
+                             (self.y3-self.y0)*(self.y3-self.y0)))<epsilon
+
+    def split(self, t):
+        """return tuple consisting of two _bcurves corresponding to split at 0<=t<=1"""
+
+        # first, we calculate the coefficients corresponding to our
+        # original bezier curve. These represent a useful starting
+        # point for the following change of the polynomial parameter
+        a0x = self.x0
+        a0y = self.y0
+        a1x = 3*(-self.x0+self.x1)
+        a1y = 3*(-self.y0+self.y1)
+        a2x = 3*(self.x0-2*self.x1+self.x2)
+        a2y = 3*(self.y0-2*self.y1+self.y2)
+        a3x = -self.x0+3*(self.x1-self.x2)+self.x3
+        a3y = -self.y0+3*(self.y1-self.y2)+self.y3
+
+        # [0,t] part
+        #
+        # the new coefficients of the [0,t] part of the bezier curve
+        # are then given by a0, a0*t, a0*t**2, a0*t**3
+        # from this values we obtain the new control points by inversion
+        x0_1 = a0x
+        y0_1 = a0y
+        x1_1 = a1x*t/3.0+x0_1
+        y1_1 = a1y*t/3.0+y0_1
+        x2_1 = a2x*t*t/3.0-x0_1+2*x1_1
+        y2_1 = a2y*t*t/3.0-y0_1+2*y1_1
+        x3_1 = a3x*t*t*t+x0_1-3*x1_1+3*x2_1 
+        y3_1 = a3y*t*t*t+y0_1-3*y1_1+3*y2_1
+
+        # [t,1] part
+        #
+        # the new coefficients of the [0,t] part of the bezier curve
+        # are then given by expanding a0+a1*(t+(1-t)*u)+a2*(t+(1-t)*u)**2+
+        # a3*(t+(1-t)*u)**3 in u, yielding:
+        #   a0+a1*t+a2*t**2+a3*t**3             +
+        #   (a1*+2*a2*t+3*a3*t**2)*(1-t) * u    + 
+        #   (a2+3*a3*t)*(1-t)**2         * u**2 +
+        #   a3*(1-t)**3                  * u**3
+        #
+        # from this values we obtain the new control points by inversion
+        # exactly like above, except that we don't have to calculate
+        # the first and the last control point
+        x0_2 = x3_1
+        y0_2 = y3_1
+        x1_2 = (a1x+2*a2x*t+3*a3x*t*t)*(1-t)/3.0+x0_2
+        y1_2 = (a1y+2*a2y*t+3*a3y*t*t)*(1-t)/3.0+y0_2
+        x2_2 = (a2x+3*a3x*t)*(1-t)*(1-t)/3.0-x0_2+2*x1_2
+        y2_2 = (a2y+3*a3y*t)*(1-t)*(1-t)/3.0-y0_2+2*y1_2
+        x3_2 = self.x3
+        y3_2 = self.y3
+
+        return (_bcurve(x0_1, y0_1,
+                        x1_1, y1_1,
+                        x2_1, y2_1,
+                        x3_1, y3_1),
+                _bcurve(x0_2, y0_2,
+                        x1_2, y1_2,
+                        x2_2, y2_2,
+                        x3_2, y3_2))
+
+
+    def MidPointSplit(self):
+        """splits bpathel at midpoint returning bpath with two bpathels"""
+
+        # for efficiency reason, we do not use self.split(0.5)!
+        
+        # first, we have to calculate the  midpoints between adjacent
+        # control points
+        x01 = 0.5*(self.x0+self.x1)
+        y01 = 0.5*(self.y0+self.y1)
+        x12 = 0.5*(self.x1+self.x2)
+        y12 = 0.5*(self.y1+self.y2)
+        x23 = 0.5*(self.x2+self.x3)
+        y23 = 0.5*(self.y2+self.y3)
+
+        # In the next iterative step, we need the midpoints between 01 and 12
+        # and between 12 and 23 
+        x01_12 = 0.5*(x01+x12)
+        y01_12 = 0.5*(y01+y12)
+        x12_23 = 0.5*(x12+x23)
+        y12_23 = 0.5*(y12+y23)
+
+        # Finally the midpoint is given by
+        xmidpoint = 0.5*(x01_12+x12_23)
+        ymidpoint = 0.5*(y01_12+y12_23)
+        
+        return (_bcurve(self.x0, self.y0,
+                        x01, y01,
+                        x01_12, y01_12,
+                        xmidpoint, ymidpoint),
+                _bcurve(xmidpoint, ymidpoint,
+                        x12_23, y12_23,
+                        x23, y23,
+                        self.x3, self.y3))
+
+    def arclength(self, epsilon=1e-5):
+        """computes arclength of bpathel using successive midpoint split"""
+        
+        if self.isStraight(epsilon):
+            return unit.t_pt(math.sqrt((self.x3-self.x0)*(self.x3-self.x0)+
+                                       (self.y3-self.y0)*(self.y3-self.y0)))
+        else:
+            (a, b) = self.MidPointSplit()
+            return a.arclength()+b.arclength()
+
+#
+# _bline: Bezier curve segment corresponding to straight line (coordinates in pts)
+#
+
+class _bline(_bcurve):
+
+    """_bcurve corresponding to straight line (coordiates in pts)"""
+
+    def __init__(self, x0, y0, x1, y1):
+        xa = x0+(x1-x0)/3.0
+        ya = y0+(y1-y0)/3.0
+        xb = x0+2.0*(x1-x0)/3.0
+        yb = y0+2.0*(y1-y0)/3.0
+
+        _bcurve.__init__(self, x0, y0, xa, ya, xb, yb, x1, y1)
+
+################################################################################
+# Bezier helper functions
+################################################################################
+
+def _arctobcurve(x, y, r, phi1, phi2):
+    """generate the best bpathel corresponding to an arc segment"""
+    
+    dphi=phi2-phi1
+
+    if dphi==0: return None
+    
+    # the two endpoints should be clear 
+    (x0, y0) = ( x+r*cos(phi1), y+r*sin(phi1) )
+    (x3, y3) = ( x+r*cos(phi2), y+r*sin(phi2) )
+   
+    # optimal relative distance along tangent for second and third
+    # control point
+    l = r*4*(1-cos(dphi/2))/(3*sin(dphi/2))
+
+    (x1, y1) = ( x0-l*sin(phi1), y0+l*cos(phi1) )
+    (x2, y2) = ( x3+l*sin(phi2), y3-l*cos(phi2) )
+    
+    return _bcurve(x0, y0, x1, y1, x2, y2, x3, y3)
+
+
+def _arctobezierpath(x, y, r, phi1, phi2, dphimax=45):
+    path = []
+    
+    phi1 = phi1*pi/180
+    phi2 = phi2*pi/180
+    dphimax = dphimax*pi/180
+
+    if phi2<phi1:        
+        # guarantee that phi2>phi1 ...
+        phi2 = phi2 + (math.floor((phi1-phi2)/(2*pi))+1)*2*pi
+    elif phi2>phi1+2*pi:
+        # ... or remove unnecessary multiples of 2*pi
+        phi2 = phi2 - (math.floor((phi2-phi1)/(2*pi))-1)*2*pi
+            
+    if r==0 or phi1-phi2==0: return []
+
+    subdivisions = abs(int((1.0*(phi1-phi2))/dphimax))+1
+
+    dphi=(1.0*(phi2-phi1))/subdivisions
+
+    for i in range(subdivisions):
+        path.append(_arctobcurve(x, y, r, phi1+i*dphi, phi1+(i+1)*dphi))
+        
+    return path
+
+
+def _bcurveIntersect(a, a_t0, a_t1, b, b_t0, b_t1, epsilon=1e-5):
+    """intersect two bpathels
+
+    a and b are bpathels with parameter ranges [a_t0, a_t1],
+    respectively [b_t0, b_t1].
+    epsilon determines when the bpathels are assumed to be straight
+    
+    """
+
+    # intersection of bboxes is a necessary criterium for intersection
+    if not a.bbox().intersects(b.bbox()): return ()
+
+    if not a.isStraight(epsilon):
+        (aa, ab) = a.MidPointSplit()
+        a_tm = 0.5*(a_t0+a_t1)
+
+        if not b.isStraight(epsilon):
+            (ba, bb) = b.MidPointSplit()
+            b_tm = 0.5*(b_t0+b_t1)
+
+            return ( _bcurveIntersect(aa, a_t0, a_tm,
+                                       ba, b_t0, b_tm, epsilon) + 
+                     _bcurveIntersect(ab, a_tm, a_t1,
+                                       ba, b_t0, b_tm, epsilon) + 
+                     _bcurveIntersect(aa, a_t0, a_tm,
+                                       bb, b_tm, b_t1, epsilon) +
+                     _bcurveIntersect(ab, a_tm, a_t1,
+                                       bb, b_tm, b_t1, epsilon) )
+        else:
+            return ( _bcurveIntersect(aa, a_t0, a_tm,
+                                       b, b_t0, b_t1, epsilon) +
+                     _bcurveIntersect(ab, a_tm, a_t1,
+                                       b, b_t0, b_t1, epsilon) )
+    else:
+        if not b.isStraight(epsilon):
+            (ba, bb) = b.MidPointSplit()
+            b_tm = 0.5*(b_t0+b_t1)
+
+            return  ( _bcurveIntersect(a, a_t0, a_t1,
+                                        ba, b_t0, b_tm, epsilon) +
+                      _bcurveIntersect(a, a_t0, a_t1,
+                                        ba, b_tm, b_t1, epsilon) )
+        else:
+            # no more subdivisions of either a or b
+            # => try to intersect a and b as straight line segments
+
+            a_deltax = a.x3 - a.x0
+            a_deltay = a.y3 - a.y0
+            b_deltax = b.x3 - b.x0
+            b_deltay = b.y3 - b.y0
+            
+            det = b_deltax*a_deltay - b_deltay*a_deltax
+
+            # check for parallel lines
+            if 1.0+det==1.0: return ()
+
+            ba_deltax0 = b.x0 - a.x0
+            ba_deltay0 = b.y0 - a.y0
+
+            a_t = ( b_deltax*ba_deltay0 - b_deltay*ba_deltax0)/det
+            b_t = ( a_deltax*ba_deltay0 - a_deltay*ba_deltax0)/det
+
+            # check for intersections out of bound
+            if not ( 0<=a_t<=1 and 0<=b_t<=1): return ()
+
+            # return rescaled parameters of the intersection
+            return ( ( a_t0 + a_t * (a_t1 - a_t0),
+                       b_t0 + b_t * (b_t1 - b_t0) ),
+                   )
