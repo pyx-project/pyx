@@ -1214,6 +1214,7 @@ class _valignbaseline(valign):
         for texsetting in texsettings:
             if isinstance(texsetting, parbox):
                 raise RuntimeError("valign.baseline: specify top/middle/bottom baseline for parbox")
+        return expr
 
 
 class _valignxxxbaseline(valign):
