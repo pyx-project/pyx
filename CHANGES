@@ -27,7 +27,6 @@ PyX
     - remove the support for variables given within the argument dictionary in data constructor (done except for the documentation)
     - changed the handling of extern variables and functions for expressions in data, function and paramfunction (done except for the documentation)
     - graph keys; titles in data/function/etc. (work in progress)
-    - TODO: include the labels
     - deferred:
       - TODO: exceptions in drawsymbol & friends...
       - TODO: separate texter out of the axispainter
