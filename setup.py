@@ -11,6 +11,7 @@ of these primitives.
 
 from distutils import log
 from distutils.core import setup, Extension
+from distutils.util import change_root, convert_path
 from distutils.command.build_py import build_py
 from distutils.command.install_data import install_data
 from distutils.command.install_lib import install_lib
@@ -38,33 +39,50 @@ if cfg.has_section("PyX"):
     if cfg.has_option("PyX", "build_t1strip") and cfg.getboolean("PyX", "build_t1strip"):
         ext_modules.append(t1strip_ext_module)
 
-#
+################################################################################
 # data files
 #
 
-data_files = [# share/pyx is taken relative to "setup.py install --home=..."
-              ("share/pyx", ["pyx/lfs/10pt.lfs",
-                             "pyx/lfs/11pt.lfs",
-                             "pyx/lfs/12pt.lfs",
-                             "pyx/lfs/10ptex.lfs",
-                             "pyx/lfs/11ptex.lfs",
-                             "pyx/lfs/12ptex.lfs",
-                             "pyx/lfs/foils17pt.lfs",
-                             "pyx/lfs/foils20pt.lfs",
-                             "pyx/lfs/foils25pt.lfs",
-                             "pyx/lfs/foils30pt.lfs",
-                             "contrib/pyx.def"]),
-              # /etc is taken relative to "setup.py install --root=..."
-              ("/etc", ["pyxrc"])]
+# share/pyx is taken relative to "setup.py install --home=..."
+# whereas /etc is taken relative to "setup.py install --root=..."
 
+data_files = []
+
+# variable names in siteconfig.py for a list of files in data_files
+siteconfignames = {}
+
+def adddatafiles(siteconfigname, dir, files):
+    """store siteconfigname for files in siteconfignames and add (dir, files) to data_files"""
+    # convert files to a tuple to make it hashable
+    files = tuple(files)
+    data_files.append((dir, files))
+    siteconfignames[files] = siteconfigname
+
+adddatafiles("lfsdir", "share/pyx", ["pyx/lfs/10pt.lfs",
+                                     "pyx/lfs/11pt.lfs",
+                                     "pyx/lfs/12pt.lfs",
+                                     "pyx/lfs/10ptex.lfs",
+                                     "pyx/lfs/11ptex.lfs",
+                                     "pyx/lfs/12ptex.lfs",
+                                     "pyx/lfs/foils17pt.lfs",
+                                     "pyx/lfs/foils20pt.lfs",
+                                     "pyx/lfs/foils25pt.lfs",
+                                     "pyx/lfs/foils30pt.lfs"])
+adddatafiles("sharedir", "share/pyx", ["contrib/pyx.def"])
+
+# Note that on windows we can't install to absolute paths. Hence
+# we put the global pyxrc into the share directory as well.
+adddatafiles("pyxrcdir", os.name != "nt" and "/etc" or "share/pyx", ["pyxrc"])
+
+################################################################################
+# extend install commands to overwrite siteconfig.py during build and install
 #
-# extend install commands to overwrite the original siteconfig.py
-#
+
 
 class pyx_build_py(build_py):
 
     def build_module(self, module, module_file, package):
-        if module == "siteconfig":
+        if package == "pyx" and module == "siteconfig":
             # generate path information as the original build_module does it
             outfile = self.get_module_outfile(self.build_lib, [package], module)
             outdir = os.path.dirname(outfile)
@@ -72,9 +90,13 @@ class pyx_build_py(build_py):
 
             log.info("creating proper %s" % outfile)
 
+            # create the additional relative path parts to be inserted into the
+            # os.path.join methods in the original siteconfig.py
             indir = os.path.dirname(module_file)
             addjoinstring = ", ".join(["'..'" for d in outdir.split(os.path.sep)] +
                                       ["'%s'" % d for d in indir.split(os.path.sep)])
+
+            # write a modifed version of siteconfig.py
             fin = open(module_file, "r")
             fout = open(outfile, "w")
             for line in fin.readlines():
@@ -85,12 +107,26 @@ class pyx_build_py(build_py):
         else:
             return build_py.build_module(self, module, module_file, package)
 
+
 class pyx_install_data(install_data):
 
     def run(self):
-        self.pyx_lfsdir = self.pyx_sharedir = os.path.join(self.install_dir, "share", "pyx")
-        self.pyx_pyxrc = os.path.join(self.root or "/", "etc", "pyxrc")
+        self.siteconfiglines = []
+        for dir, files in self.data_files:
+            # append siteconfiglines by "<siteconfigname> = <dir>"
+
+            # get the install directory
+            # (the following four lines are copied from within the install_data.run loop)
+            dir = convert_path(dir)
+            if not os.path.isabs(dir):
+                dir = os.path.join(self.install_dir, dir)
+            elif self.root:
+                dir = change_root(self.root, dir)
+
+            self.siteconfiglines.append("%s = '%s'\n" % (siteconfignames[files], dir))
+
         install_data.run(self)
+
 
 class pyx_install_lib(install_lib):
 
@@ -100,18 +136,22 @@ class pyx_install_lib(install_lib):
         install_lib.run(self)
 
     def install(self):
+        # first we perfrom the tree_copy
         result = install_lib.install(self)
-        install_data = self.distribution.command_obj["install_data"]
+
+        # siteconfiglines have been created by install_data
+        siteconfiglines = self.distribution.command_obj["install_data"].siteconfiglines
+
+        # such that we can easily overwrite siteconfig.py
         outfile = os.path.join(self.install_dir, "pyx", "siteconfig.py")
         log.info("creating proper %s" % outfile)
         f = open(outfile, "w")
-        f.write("lfsdir = %r\n" % install_data.pyx_lfsdir)
-        f.write("sharedir = %r\n" % install_data.pyx_sharedir)
-        f.write("pyxrc = %r\n" % install_data.pyx_pyxrc)
+        f.writelines(siteconfiglines)
         f.close()
+
         return result
 
-#
+################################################################################
 # additional package metadata (only available in Python 2.3 and above)
 #
 
