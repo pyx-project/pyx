@@ -26,8 +26,7 @@
 # - should we improve on the arc length -> arg parametrization routine or
 #   should we at least factor it out in bpath.bpath?
 # - PathDeco cannot be a PSAttr (because it cannot be set via canvas.set())
-# - The user should not be able to set a trafo via canvas.set()!
-# - Test nesting of translated canvases
+#   (at the moment it derives from nothing)
 
 """The canvas module provides a PostScript canvas class and related classes
 """
