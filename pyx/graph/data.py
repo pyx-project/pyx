@@ -685,19 +685,15 @@ class paramfunction(_linedata):
         mathtrees = parser.parse(expressionlist)
         if len(keys) != len(mathtrees):
             raise ValueError("unpack tuple of wrong size")
+        l = len(keys)
         self.data = [None]*points
-        emptyresult = [None]*len(keys)
         self.columns = {}
-        i = 1
-        for key in keys:
-            self.columns[key.strip()] = i
-            i += 1
+        for index, key in enumerate(keys):
+            self.columns[key.strip()] = index
         for i in range(points):
             param = min + (max-min)*i / (points-1.0)
             context[varname] = param
-            self.data[i] = [param] + emptyresult
-            column = 1
-            for key, column in self.columns.items():
-                self.data[i][column] = mathtrees[column-1].Calc(**context)
-                column += 1
+            self.data[i] = [None]*l
+            for index, mathtree in enumerate(mathtrees):
+                self.data[i][index] = mathtree.Calc(**context)
 

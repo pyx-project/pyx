@@ -98,6 +98,12 @@ opt3=a3""")
         self.failUnlessAlmostEqual(mydata.getcolumn("d")[0], 2.0)
         self.failUnlessAlmostEqual(mydata.getcolumn("d")[1], 1.0)
 
+    def testParamfunction(self):
+        mydata = data.paramfunction("k", 0, 9, "x, y = k, -k", points=10)
+        for i in range(10):
+            self.failUnlessEqual(mydata.getcolumn("x")[i], i)
+            self.failUnlessEqual(mydata.getcolumn("y")[i], -i)
+
 
 if __name__ == "__main__":
     unittest.main()
