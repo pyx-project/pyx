@@ -1889,7 +1889,7 @@ class graphxy(canvas.canvas):
         self.defaultstyle = {}
 
     def bbox(self):
-        self.dolayout()
+        self.finish()
         return bbox.bbox(self._xpos - self._yaxisextents[0],
                          self._ypos - self._xaxisextents[0],
                          self._xpos + self._width + self._yaxisextents[1],

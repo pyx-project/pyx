@@ -18,6 +18,5 @@ g.plot(graph.data(df, x=1, y="y1a"), graph.line(color.rgb.red))
 g.plot(graph.data(df, x=1, y="y1b"), graph.line(color.rgb.blue))
 g.plot(graph.data(df, x=1, y="y2a"), graph.line(color.rgb.red))
 g.plot(graph.data(df, x=1, y="y2b"), graph.line(color.rgb.blue))
-g.finish()
 c.writetofile("step")
 
