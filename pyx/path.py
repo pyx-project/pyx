@@ -229,7 +229,7 @@ class closepath(pathitem):
     __slots__ = ()
 
     def __str__(self):
-        return "closepath"
+        return "closepath()"
 
     def _updatecurrentpoint(self, currentpoint):
         if not currentpoint.valid():
@@ -260,7 +260,7 @@ class moveto_pt(pathitem):
         self.y_pt = y_pt
 
     def __str__(self):
-        return "%g %g moveto" % (self.x_pt, self.y_pt)
+        return "moveto_pt(%g, %g)" % (self.x_pt, self.y_pt)
 
     def _updatecurrentpoint(self, currentpoint):
         currentpoint.x_pt = self.x_pt
@@ -290,7 +290,7 @@ class lineto_pt(pathitem):
         self.y_pt = y_pt
 
     def __str__(self):
-        return "%g %g lineto" % (self.x_pt, self.y_pt)
+        return "lineto_pt(%g, %g)" % (self.x_pt, self.y_pt)
 
     def _updatecurrentpoint(self, currentpoint):
         currentpoint.x_pt = self.x_pt
@@ -324,9 +324,9 @@ class curveto_pt(pathitem):
         self.y3_pt = y3_pt
 
     def __str__(self):
-        return "%g %g %g %g %g %g curveto" % (self.x1_pt, self.y1_pt,
-                                              self.x2_pt, self.y2_pt,
-                                              self.x3_pt, self.y3_pt)
+        return "curveto_pt(%g,%g, %g, %g, %g, %g)" % (self.x1_pt, self.y1_pt,
+                                                      self.x2_pt, self.y2_pt,
+                                                      self.x3_pt, self.y3_pt)
 
     def _updatecurrentpoint(self, currentpoint):
         currentpoint.x_pt = self.x3_pt
@@ -360,6 +360,9 @@ class rmoveto_pt(pathitem):
          self.dx_pt = dx_pt
          self.dy_pt = dy_pt
 
+    def __str__(self):
+        return "rmoveto_pt(%g, %g)" % (self.dx_pt, self.dy_pt)
+
     def _updatecurrentpoint(self, currentpoint):
         currentpoint.x_pt += self.dx_pt
         currentpoint.y_pt += self.dy_pt
@@ -383,6 +386,9 @@ class rlineto_pt(pathitem):
     def __init__(self, dx_pt, dy_pt):
         self.dx_pt = dx_pt
         self.dy_pt = dy_pt
+
+    def __str__(self):
+        return "rlineto_pt(%g %g)" % (self.dx_pt, self.dy_pt)
 
     def _updatecurrentpoint(self, currentpoint):
         currentpoint.x_pt += self.dx_pt
@@ -418,10 +424,10 @@ class rcurveto_pt(pathitem):
         self.dx3_pt = dx3_pt
         self.dy3_pt = dy3_pt
 
-    def outputPS(self, file):
-        file.write("%g %g %g %g %g %g rcurveto\n" % ( self.dx1_pt, self.dy1_pt,
-                                                      self.dx2_pt, self.dy2_pt,
-                                                      self.dx3_pt, self.dy3_pt ) )
+    def __str__(self):
+        return "rcurveto_pt(%g, %g, %g, %g, %g, %g)" % (self.dx1_pt, self.dy1_pt,
+                                                        self.dx2_pt, self.dy2_pt,
+                                                        self.dx3_pt, self.dy3_pt)
 
     def _updatecurrentpoint(self, currentpoint):
         currentpoint.x_pt += self.dx3_pt
@@ -445,6 +451,11 @@ class rcurveto_pt(pathitem):
                              currentpoint.x_pt + self.dx2_pt, currentpoint.y_pt + self.dy2_pt,
                              currentpoint.x_pt + self.dx3_pt, currentpoint.y_pt + self.dy3_pt)]
 
+    def outputPS(self, file):
+        file.write("%g %g %g %g %g %g rcurveto\n" % (self.dx1_pt, self.dy1_pt,
+                                                     self.dx2_pt, self.dy2_pt,
+                                                     self.dx3_pt, self.dy3_pt))
+
 
 class arc_pt(pathitem):
 
@@ -458,6 +469,10 @@ class arc_pt(pathitem):
         self.r_pt = r_pt
         self.angle1 = angle1
         self.angle2 = angle2
+
+    def __str__(self):
+        return "arc_pt(%g, %g, %g, %g, %g)" % (self.x_pt, self.y_pt, self.r_pt,
+                                               self.angle1, self.angle2)
 
     def _sarc(self):
         """Return starting point of arc segment"""
@@ -561,10 +576,10 @@ class arc_pt(pathitem):
             return [moveto_pt(sarcx_pt, sarcy_pt)] + nbarc
 
     def outputPS(self, file):
-        file.write("%g %g %g %g %g arc\n" % ( self.x_pt, self.y_pt,
-                                              self.r_pt,
-                                              self.angle1,
-                                              self.angle2 ) )
+        file.write("%g %g %g %g %g arc\n" % (self.x_pt, self.y_pt,
+                                             self.r_pt,
+                                             self.angle1,
+                                             self.angle2))
 
 
 class arcn_pt(pathitem):
@@ -579,6 +594,10 @@ class arcn_pt(pathitem):
         self.r_pt = r_pt
         self.angle1 = angle1
         self.angle2 = angle2
+
+    def __str__(self):
+        return "arcn_pt(%g, %g, %g, %g, %g)" % (self.x_pt, self.y_pt, self.r_pt,
+                                                self.angle1, self.angle2)
 
     def _sarc(self):
         """Return starting point of arc segment"""
@@ -649,10 +668,10 @@ class arcn_pt(pathitem):
 
 
     def outputPS(self, file):
-        file.write("%g %g %g %g %g arcn\n" % ( self.x_pt, self.y_pt,
-                                               self.r_pt,
-                                               self.angle1,
-                                               self.angle2 ) )
+        file.write("%g %g %g %g %g arcn\n" % (self.x_pt, self.y_pt,
+                                              self.r_pt,
+                                              self.angle1,
+                                              self.angle2))
 
 
 class arct_pt(pathitem):
@@ -667,6 +686,11 @@ class arct_pt(pathitem):
         self.x2_pt = x2_pt
         self.y2_pt = y2_pt
         self.r_pt = r_pt
+
+    def __str__(self):
+        return "arct_pt(%g, %g, %g, %g, %g)" % (self.x1_pt, self.y1_pt,
+                                                self.x2_pt, self.y2_pt,
+                                                self.r_pt)
 
     def _pathitem(self, currentpoint):
         """return pathitem which corresponds to arct with the given currentpoint.
@@ -736,9 +760,9 @@ class arct_pt(pathitem):
         return self._pathitem(currentpoint)._normalized(currentpoint)
 
     def outputPS(self, file):
-        file.write("%g %g %g %g %g arct\n" % ( self.x1_pt, self.y1_pt,
-                                               self.x2_pt, self.y2_pt,
-                                               self.r_pt ) )
+        file.write("%g %g %g %g %g arct\n" % (self.x1_pt, self.y1_pt,
+                                              self.x2_pt, self.y2_pt,
+                                              self.r_pt))
 
 #
 # now the pathitems that convert from user coordinates to pts
@@ -852,6 +876,12 @@ class multilineto_pt(pathitem):
     def __init__(self, points_pt):
         self.points_pt = points_pt
 
+    def __str__(self):
+        result = []
+        for point_pt in self.points_pt:
+            result.append("(%g, %g)" % point_pt )
+        return "multilineto_pt([%s])" % (", ".join(result))
+
     def _updatecurrentpoint(self, currentpoint):
         currentpoint.x_pt, currentpoint.y_pt = self.points_pt[-1]
 
@@ -885,6 +915,12 @@ class multicurveto_pt(pathitem):
 
     def __init__(self, points_pt):
         self.points_pt = points_pt
+
+    def __str__(self):
+        result = []
+        for point_pt in self.points_pt:
+            result.append("(%g, %g, %g, %g, %g, %g)" % point_pt )
+        return "multicurveto_pt([%s])" % (", ".join(result))
 
     def _updatecurrentpoint(self, currentpoint):
         currentpoint.x_pt, currentpoint.y_pt = self.points_pt[-1]
@@ -956,6 +992,10 @@ class path(base.canvasitem):
     def __len__(self):
         """return the number of path items"""
         return len(self.pathitems)
+
+    def __str__(self):
+        l = ", ".join(map(str, self.pathitems))
+        return "path(%s)" % l
 
     def append(self, apathitem):
         """append a path item"""
