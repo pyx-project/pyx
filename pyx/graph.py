@@ -174,7 +174,7 @@ class tick(frac):
     a tick is a frac enhanced by
     - self.ticklevel (0 = tick, 1 = subtick, etc.)
     - self.labellevel (0 = label, 1 = sublabel, etc.)
-    - self.label (a string) and self.labelttrs (a list, defaults to [])
+    - self.label (a string) and self.labelattrs (a list, defaults to [])
     When ticklevel or labellevel is None, no tick or label is present at that value.
     When label is None, it should be automatically created (and stored), once the
     an axis painter needs it. Classes, which implement _Itexter do precisely that."""
@@ -190,9 +190,9 @@ class tick(frac):
         """merges two ticks together:
           - the lower ticklevel/labellevel wins
           - when present, self.label is taken over; otherwise the others label is taken
+            (when self.label and other.label is present, the first wins)
           - the ticks should be at the same position (otherwise it doesn't make sense)
-            -> this is NOT checked
-        """
+            -> this is NOT checked"""
         if self.ticklevel is None or (other.ticklevel is not None and other.ticklevel < self.ticklevel):
             self.ticklevel = other.ticklevel
         if self.labellevel is None or (other.labellevel is not None and other.labellevel < self.labellevel):
@@ -206,11 +206,11 @@ class tick(frac):
 
 def _mergeticklists(list1, list2):
     """helper function to merge tick lists
-    return a merged list of ticks out of list1 and list2
-    caution: original lists have to be ordered
-             (the returned list is also ordered)
-    caution: original lists are modified and they share references to
-             the result list!"""
+    - return a merged list of ticks out of list1 and list2
+    - CAUTION: original lists have to be ordered
+      (the returned list is also ordered)
+    - CAUTION: original lists are modified and they share references to
+      the result list!"""
     # TODO: improve this using bisect
     i = 0
     j = 0
@@ -233,8 +233,7 @@ def _mergeticklists(list1, list2):
 def _mergelabels(ticks, labels):
     """helper function to merge labels into ticks
     - when labels is not None, the label of all ticks with
-      labellevel
-      different from None are set
+      labellevel different from None are set
     - labels need to be a sequence of sequences of strings,
       where the first sequence contain the strings to be
       used as labels for the ticks with labellevel 0,
@@ -300,22 +299,23 @@ class manualpart:
 
     __implements__ = _Ipart
 
-    def __init__(self, ticks=None, labels=None, texts=None, mix=()):
+    def __init__(self, tickpos=None, labelpos=None, labels=None, mix=()):
         """configuration of the partition scheme
-        - ticks and labels should be a sequence of sequences, where
+        - tickpos and labelpos should be a sequence of sequences, where
           the first sequence contains the values to be used for
           ticks with ticklevel/labellevel 0, the second sequence for
           ticklevel/labellevel 1, etc.
-        - tick and label values must be frac instances or
-          strings convertable to fracs by the _ensurefrac function
+        - tickpos and labelpos values must be frac instances or
+          something convertable to fracs by the _ensurefrac function
         - when the maximum ticklevel/labellevel is 0, just a sequence
-          might be provided in ticks and labels
-        - when labels is None and ticks is not None, the tick entries
+          might be provided in tickpos and labelpos
+        - when labelpos is None and tickpos is not None, the tick entries
           for ticklevel 0 are used for labels and vice versa (ticks<->labels)
         - labels are applied to the resulting partition via the
           mergelabels function (additional information available there)
         - mix specifies another partition to be merged into the
           created partition"""
+# XXX CONTINUE ticks -> tickpos etc.
         if ticks is None and labels is not None:
             self.ticks = helper.ensuresequence(helper.getsequenceno(labels, 0))
         else:
@@ -1033,21 +1033,37 @@ class rationaltexter:
         self.skipdenom1 = skipdenom1
         self.labelattrs = helper.ensuresequence(labelattrs)
 
-    def gcd(self, m, n):
-        """returns the greates common divisor
-        - m and n must be non-negative integers"""
-        if m < n:
-            m, n = n, m
-        while n > 0:
-            m, (dummy, n) = n, divmod(m, n) # ensure portable integer division
-        return m
+    def gcd(self, *n):
+        """returns the greates common divisor of all elements in n
+        - the elements of n must be non-negative integers
+        - return None if the number of elements is zero
+        - the greates common divisor is not affected when some
+          of the elements are zero, but it becomes zero when
+          all elements are zero"""
+        if len(n) == 2:
+            i, j = n
+            if i < j:
+                i, j = j, i
+            while j > 0:
+                i, (dummy, j) = j, divmod(i, j)
+            return i
+        if len(n):
+            res = n[0]
+            for i in n[1:]:
+                res = self.gcd(res, i)
+            return res
 
     def lcm(self, *n):
         """returns the least common multiple of all elements in n
-        - the elements of n must be integers
-        - return None if the number of elements is zero"""
-        "TODO: fill it from knuth"
-        pass
+        - the elements of n must be non-negative integers
+        - return None if the number of elements is zero
+        - the least common multiple is zero when some of the
+          elements are zero"""
+        if len(n):
+            res = n[0]
+            for i in n[1:]:
+                res = divmod(res * i, self.gcd(res, i))[0]
+            return res
 
     def labels(self, ticks):
         # the temporary variables fracenum, fracdenom, and fracminus are
@@ -1066,12 +1082,11 @@ class rationaltexter:
                 gcd = self.gcd(tick.fracenum, tick.fracdenom)
                 (tick.fracenum, dummy1), (tick.fracdenom, dummy2) = divmod(tick.enum, gcd), divmod(tick.fracdenom, gcd)
         if self.equaldenom:
-            equaldenom = self.lcm([tick.fracdenom for tick in ticks if tick.label is None])
+            equaldenom = self.lcm(*[tick.fracdenom for tick in ticks if tick.label is None])
             if equaldenom is not None:
                 for tick in ticks:
                     if tick.label is None:
                         factor, dummy = divmod(equaldenom, tick.fracdenom)
-                        assert dummy != 0, "internal error: wrong lowest common multiple?" # TODO: remove that check
                         tick.fracenum, tick.fracdenom = factor * tick.fracenum, factor * tick.fracdenom
         for tick in ticks:
             if tick.label is None:
