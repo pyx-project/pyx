@@ -1132,34 +1132,34 @@ class decimaltexter:
                 m, n = tick.enum, tick.denom
                 if m < 0: m = -m
                 if n < 0: n = -n
-                whole, reminder = divmod(m, n)
-                whole = str(whole)
+                quotient, remainder = divmod(m, n)
+                quotient = str(quotient)
                 if len(self.thousandsep):
-                    l = len(whole)
+                    l = len(quotient)
                     tick.label = ""
                     for i in range(l):
-                        tick.label += whole[i]
+                        tick.label += quotient[i]
                         if not ((l-i-1) % 3) and l > i+1:
                             tick.label += self.thousandsep
                 else:
-                    tick.label = whole
-                if reminder:
+                    tick.label = quotient
+                if remainder:
                     tick.label += self.decimalsep
-                oldreminders = []
+                oldremainders = []
                 tick.temp_decprecision = 0
-                while (reminder):
+                while (remainder):
                     tick.temp_decprecision += 1
-                    if reminder in oldreminders:
+                    if remainder in oldremainders:
                         tick.temp_decprecision = None
-                        periodstart = len(tick.label) - (len(oldreminders) - oldreminders.index(reminder))
+                        periodstart = len(tick.label) - (len(oldremainders) - oldremainders.index(remainder))
                         tick.label = tick.label[:periodstart] + self.period % tick.label[periodstart:]
                         break
-                    oldreminders += [reminder]
-                    reminder *= 10
-                    whole, reminder = divmod(reminder, n)
+                    oldremainders += [remainder]
+                    remainder *= 10
+                    quotient, remainder = divmod(remainder, n)
                     if not ((tick.temp_decprecision - 1) % 3) and tick.temp_decprecision > 1:
                         tick.label += self.thousandthpartsep
-                    tick.label += str(whole)
+                    tick.label += str(quotient)
                 if maxdecprecision < tick.temp_decprecision:
                     maxdecprecision = tick.temp_decprecision
         if self.equalprecision:
