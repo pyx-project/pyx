@@ -29,7 +29,7 @@ A canvas holds a collection of all elements and corresponding attributes to be
 displayed. """
 
 import sys, cStringIO
-import attr, base, deco, deformer, unit, style, trafo
+import attr, base, deco, deformer, unit, resource, style, trafo
 
 #
 # clipping class
@@ -277,7 +277,7 @@ class pattern(_canvas, attr.exclusiveattr, style.fillstyle):
         file.write("%s setpattern\n" % self.id)
 
     def registerresources(self, registry):
-        _canvas.registerresources(registry)
+        _canvas.registerresources(self, registry)
         realpatternbbox = _canvas.bbox(self)
         if self.xstep is None:
            xstep = unit.topt(realpatternbbox.width())
