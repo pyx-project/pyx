@@ -91,8 +91,8 @@ class Canvas(Globex):
 
     def PSEnd(self):
     	self.PSCmd("stroke")
-	self.amove(0,0)
-	self.PSInsertEPS(self.BaseFilename + ".tex.eps")
+	#self.amove(0,0)
+	#self.PSInsertEPS(self.BaseFilename + ".tex.eps")
 	self.PSFile.close()
 	
     def PSGetEPSBoundingBox(self, epsname):
@@ -235,14 +235,17 @@ if __name__=="__main__":
     #   amove(0,y)
     #   rline(10,0)
 
-    #amove(1,1)
-    #aline(2,2)
-    #amove(1,2)
-    #aline(2,1)
+    amove(1,1)
+    aline(2,2)
+    amove(1,2)
+    aline(2,1)
 
 
     print "Breite von 'Hello world!': ",textwd("Hello world!")
     print "Höhe von 'Hello world!': ",textht("Hello world!")
+    print "Höhe von 'Hello world!' in large: ",textht("Hello world!", size = large)
+    print "Höhe von 'Hello world!' in Large: ",textht("Hello world!", size = Large)
+    print "Höhe von 'Hello world' in huge: ",textht("Hello world!", size = huge)
     print "Tiefe von 'Hello world!': ",textdp("Hello world!")
     print "Tiefe von 'was mit q': ",textdp("was mit q")
     amove(5,1)

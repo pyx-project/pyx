@@ -36,7 +36,7 @@ Z
 % Partially download Type 1 fonts by default.  Only reason not to do
 % this is if you encounter bugs.  (Please report them to
 % @email{tex-k@@mail.tug.org} if you do.)
-j
+% j
 
 % Configuration of postscript type 1 fonts:
 p psfonts.map

@@ -1,12 +1,21 @@
 #!/usr/bin/env python
 
+# Design TODO's:
+
+# TODO7: nur ein size-file bei mehreren TeX Klassen
+#        derzeit überschreiben der size-files -- verhindern!
+
+# TODO7: Diskussion ein canvas pro postscript-file? (ggf. canvas umbenennen)
+#        ggf. sonst Diskussion Seitengröße etc.
+#        weitere Schicht postscript-file notwendig ?!?
+
 from globex import *
 from const import *
 
 # tex processor types
 
-TeX="TeX"
-LaTeX="LaTeX"
+TeX = "TeX"
+LaTeX = "LaTeX"
 
 # tex size constants
 
@@ -31,7 +40,7 @@ class TexCmdSaveStruc:
         self.Stack = Stack
         self.IgnoreMsgLevel = IgnoreMsgLevel
             # 0 - ignore no messages (except empty "messages")
-            # 1 - ignore messages inside proper "()"
+            # 1 - ignore only messages inside proper "()"
             # 2 - ignore all messages without a line starting with "! "
             # 3 - ignore all messages
 
@@ -54,23 +63,32 @@ class Tex(Globex):
 
     ExportMethods = [ "text", "textwd", "textht", "textdp" ]
 
-    def __init__(self, canvas, type = "TeX", texinit = "", TexInitIgnoreMsgLevel = 1):
+    def __init__(self, canvas, type = "TeX", latexstyle = "10pt", latexclass = "article", latexclassopt = "", texinit = "", TexInitIgnoreMsgLevel = 1):
         if type != TeX or type != LaTeX:
-            assert "unknown type"
+            assert "invalid type"
+        if type == TeX:
+            # TODO5: error handling lts-file not found
+            # TODO3: other ways creating font sizes?
+            texinit = open("lts/" + latexstyle + ".lts", "r").read() + texinit
         self.type = type
         self.canvas = canvas
-        self.TexAddToFile(texinit,TexInitIgnoreMsgLevel)
+        self.latexclass = latexclass
+        self.latexclassopt = latexclassopt
+        self.TexAddCmd(texinit, TexInitIgnoreMsgLevel)
 
     TexMarker = "ThisIsThePyxTexMarker"
     TexMarkerBegin = TexMarker + "Begin"
     TexMarkerEnd = TexMarker + "End"
+
+    def __del__(self):
+        # FIXME: self.TexRun()
 
     TexCmds = [ ]
         # stores the TexCmds; note that the first element has a special
         # meaning: it is the initial command "texinit", which is added by
         # the constructor (there has to be always a - may be empty - initial
         # command) -- the TexParenthesisCheck is automaticlly called in
-        # TexAddToFile for this initial command
+        # TexAddCmd for this initial command
 
     def TexParenthesisCheck(self, Cmd):
 
@@ -92,7 +110,7 @@ class Tex(Globex):
         if depth > 0:
             raise TexLeftParenthesisError
 
-    def TexCreateBoxCmd(self, Cmd, hsize, valign):
+    def TexCreateBoxCmd(self, Cmd, size, hsize, valign):
 
         'creates the TeX box \\localbox containing Cmd'
 
@@ -101,7 +119,7 @@ class Tex(Globex):
         # we add another "{" to ensure, that everything goes into the Cmd
         Cmd = "{" + Cmd + "}"
 
-        CmdBegin = "\\setbox\\localbox=\\hbox{"
+        CmdBegin = "\\setbox\\localbox=\\hbox{\\" + size
         CmdEnd = "}"
 
         if hsize != None:
@@ -125,7 +143,7 @@ class Tex(Globex):
 
         'creates the TeX commands to put \\localbox at the current position'
 
-        # TODO (?): Farbunterstützung
+        # TODO3: color support
 
         CmdBegin = "{\\vbox to0pt{\\kern" + str(self.canvas.Height - self.canvas.y) + "truecm\\hbox{\\kern" + str(self.canvas.x) + "truecm\\ht\\localbox0pt"
         CmdEnd = "}\\vss}\\nointerlineskip}"
@@ -161,14 +179,14 @@ class Tex(Globex):
             r = r + h[(i >> 4) & 0xF] + h[i & 0xF]
         return r
         
-    def TexAddToFile(self, Cmd, IgnoreMsgLevel):
+    def TexAddCmd(self, Cmd, IgnoreMsgLevel):
 
         'save Cmd to TexCmds, store "stack[2:]" for later error report'
         
         if self.TexCmds == [ ]:
             self.TexParenthesisCheck(Cmd)
 
-        import sys,traceback
+        import sys, traceback
         try:
             raise ZeroDivisionError
         except ZeroDivisionError:
@@ -184,68 +202,36 @@ class Tex(Globex):
 
         'run LaTeX&dvips for TexCmds, add postscript to canvas, report errors'
     
-        # TODO: clean file handling. Be sure to delete all temporary files (signal handling???) and check for the files before reading them (including the dvi-file before it's converted by dvips)
+        # TODO7: file handling
+        #        Be sure to delete all temporary files (signal handling???)
+        #        and check for the files before reading them (including the
+        #        dvi before it is converted by dvips and the resulting ps)
 
         import os, string
 
         file = open(self.canvas.BaseFilename + ".tex", "w")
 
-        if self.type == TeX:
-            file.write("""\\nonstopmode
-\\hsize21truecm
-\\vsize29.7truecm
-\\hoffset-1truein
-\\voffset-1truein\n""")
-
+        file.write("\\nonstopmode\n")
         if self.type == LaTeX:
-            file.write("""\\nonstopmode
-\\documentclass{article}
-\\hsize21truecm
-\\vsize29.7truecm
-\\hoffset-1truein
-\\voffset-1truein\n""")
+            file.write("\\documentclass[" + self.latexclassopt + "]{" + self.latexclass + "}\n")
+        file.write("\\hsize" + str(self.canvas.Width) + "truecm\n\\vsize" + str(self.canvas.Height) + "truecm\n\\hoffset-1truein\n\\voffset-1truein\n")
 
         file.write(self.TexCmds[0].Cmd)
 
-        if self.type == TeX:
-            file.write("""\\newwrite\\sizefile
-\\newbox\\localbox
-\\newbox\\pagebox
-\\immediate\\openout\\sizefile=""" + self.canvas.BaseFilename + """.size
-\\setbox\\pagebox=\\vbox{%\n""")
-
+        file.write("\\newwrite\\sizefile\n\\newbox\\localbox\n\\newbox\\pagebox\n\\immediate\\openout\\sizefile=" + self.canvas.BaseFilename + ".size\n")
         if self.type == LaTeX:
-            file.write("""\\newwrite\\sizefile
-\\newbox\\localbox
-\\newbox\\pagebox
-\\immediate\\openout\\sizefile=""" + self.canvas.BaseFilename + """.size
-\\begin{document}
-\\setbox\\pagebox=\\vbox{%\n""")
+            file.write("\\begin{document}\n")
+        file.write("\\setbox\\pagebox=\\vbox{%\n")
 
         for Cmd in self.TexCmds[1:]:
             file.write(Cmd.Cmd)
 
+        file.write("}\n\\immediate\\closeout\\sizefile\n\\shipout\\copy\\pagebox\n")
         if self.type == TeX:
-            file.write("""}
-\\immediate\\closeout\sizefile
-\\shipout\\copy\\pagebox
-\\end\n""")
+            file.write("\\end\n")
 
         if self.type == LaTeX:
-            file.write("""}
-\\immediate\\closeout\sizefile
-\\shipout\\copy\\pagebox
-\\end{document}\n""")
-
-#%\\setlength{\\unitlength}{1truecm}
-#%\\begin{picture}(0,""" + str(self.Height) + """)(0,0)
-#%\\put(0,0){\line(1,1){1}}
-#%\\put(2,2){\line(1,1){1}}
-#%\\put(0,3){\line(1,-1){1}}
-#%\\put(2,1){\line(1,-1){1}}
-#%\\multiput(0,0)(1,0){11}{\line(0,1){20}}
-#%\\multiput(0,0)(0,1){21}{\line(1,0){10}}
-#%\\end{picture}%
+            file.write("\\end{document}\n")
         file.close()
 
         if os.system(string.lower(self.type) +" " + self.canvas.BaseFilename + " > " + self.canvas.BaseFilename + ".stdout 2> " + self.canvas.BaseFilename + ".stderr"):
@@ -255,17 +241,24 @@ class Tex(Globex):
             # check output
             file = open(self.canvas.BaseFilename + ".stdout", "r")
             for Cmd in self.TexCmds:
-            # TODO: readline blocks if eof is reached, but we want an exception
 
                 # read markers and identify the message
                 line = file.readline()
+                if line == None:
+                    raise IOError
                 while line[:-1] != Cmd.MarkerBegin:
                     line = file.readline()
+                    if line == None:
+                        raise IOError
                 msg = ""
                 line = file.readline()
+                if line == None:
+                    raise IOError
                 while line[:-1] != Cmd.MarkerEnd:
                     msg = msg + line
                     line = file.readline()
+                    if line == None:
+                        raise IOError
 
                 # check if message can be ignored
                 if Cmd.IgnoreMsgLevel == 0:
@@ -311,11 +304,17 @@ class Tex(Globex):
             print "Error reading the " + self.type + " output. Check your local environment and the files\n\"" + self.canvas.BaseFilename + ".tex\" and \"" + self.canvas.BaseFilename + ".log\"."
             raise
         
-        # TODO: ordentliche Fehlerbehandlung,
-        #       Schnittstelle zur Kommandozeile
+        # TODO7: dvips error handling
+        #        interface for modification of the dvips command line
         if os.system("dvips -P pyx -T" + str(self.canvas.Width) + "cm," + str(self.canvas.Height) + "cm -o " + self.canvas.BaseFilename + ".tex.eps " + self.canvas.BaseFilename + " > /dev/null 2>&1"):
             assert "dvips exit code non-zero"
         
+        # TODO8: don't write save/restore directly
+        self.canvas.PSCmd("save")
+        self.canvas.amove(0,0)
+        self.canvas.PSInsertEPS(self.canvas.BaseFilename + ".tex.eps")
+        self.canvas.PSCmd("restore")
+
     TexResults = None
 
     def TexResult(self, Str):
@@ -336,55 +335,55 @@ class Tex(Globex):
  
         return 1
 
-    def text(self, Cmd, halign = None, hsize = None, valign = None, angle = None, IgnoreMsgLevel = 1):
+    def text(self, Cmd, size = normalsize, halign = None, hsize = None, valign = None, angle = None, IgnoreMsgLevel = 1):
 
         'print Cmd at the current position'
         
-        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, hsize, valign)
+        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, size, hsize, valign)
         TexCopyBoxCmd = self.TexCopyBoxCmd(Cmd, halign, angle)
-        self.TexAddToFile(TexCreateBoxCmd + TexCopyBoxCmd, IgnoreMsgLevel)
+        self.TexAddCmd(TexCreateBoxCmd + TexCopyBoxCmd, IgnoreMsgLevel)
 
-    def textwd(self, Cmd, hsize = None, IgnoreMsgLevel = 1):
+    def textwd(self, Cmd, size = normalsize, hsize = None, IgnoreMsgLevel = 1):
     
         'get width of Cmd'
 
-        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, hsize, None)
-        TexHexMD5=self.TexHexMD5(TexCreateBoxCmd)
-        self.TexAddToFile(TexCreateBoxCmd +
-                          "\\immediate\\write\\sizefile{" + TexHexMD5 +
-                          ":wd:\\the\\wd\\localbox}\n", IgnoreMsgLevel)
+        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, size, hsize, None)
+        TexHexMD5 = self.TexHexMD5(TexCreateBoxCmd)
+        self.TexAddCmd(TexCreateBoxCmd +
+                       "\\immediate\\write\\sizefile{" + TexHexMD5 +
+                       ":wd:\\the\\wd\\localbox}\n", IgnoreMsgLevel)
         return self.TexResult(TexHexMD5 + ":wd:")
 
-    def textht(self, Cmd, hsize=None, valign=None, IgnoreMsgLevel = 1):
+    def textht(self, Cmd, size = normalsize, hsize = None, valign = None, IgnoreMsgLevel = 1):
 
         'get height of Cmd'
 
-        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, hsize, valign)
-        TexHexMD5=self.TexHexMD5(TexCreateBoxCmd)
-        self.TexAddToFile(TexCreateBoxCmd +
-                          "\\immediate\\write\\sizefile{" + TexHexMD5 +
-                          ":ht:\\the\\ht\\localbox}\n", IgnoreMsgLevel)
+        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, size, hsize, valign)
+        TexHexMD5 = self.TexHexMD5(TexCreateBoxCmd)
+        self.TexAddCmd(TexCreateBoxCmd +
+                       "\\immediate\\write\\sizefile{" + TexHexMD5 +
+                       ":ht:\\the\\ht\\localbox}\n", IgnoreMsgLevel)
         return self.TexResult(TexHexMD5 + ":ht:")
 
-    def textdp(self, Cmd, hsize=None, valign=None, IgnoreMsgLevel = 1):
+    def textdp(self, Cmd, size = normalsize, hsize = None, valign = None, IgnoreMsgLevel = 1):
    
         'get depth of Cmd'
 
-        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, hsize, valign)
-        TexHexMD5=self.TexHexMD5(TexCreateBoxCmd)
-        self.TexAddToFile(TexCreateBoxCmd +
-                          "\\immediate\\write\\sizefile{" + TexHexMD5 +
-                          ":dp:\\the\\dp\\localbox}\n", IgnoreMsgLevel)
+        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, size, hsize, valign)
+        TexHexMD5 = self.TexHexMD5(TexCreateBoxCmd)
+        self.TexAddCmd(TexCreateBoxCmd +
+                       "\\immediate\\write\\sizefile{" + TexHexMD5 +
+                       ":dp:\\the\\dp\\localbox}\n", IgnoreMsgLevel)
         return self.TexResult(TexHexMD5 + ":dp:")
 
 
-def tex(texinit = "", TexInitIgnoreMsgLevel = 1):
-    exec "canvas=DefaultCanvas" in GetCallerGlobalNamespace(),locals()
-    DefaultTex=Tex(canvas, TeX, texinit, TexInitIgnoreMsgLevel)
+def tex(latexstyle = "10pt", texinit = "", TexInitIgnoreMsgLevel = 1):
+    exec "canvas = DefaultCanvas" in GetCallerGlobalNamespace(), locals()
+    DefaultTex = Tex(canvas, TeX, latexstyle, None, None, texinit, TexInitIgnoreMsgLevel)
     DefaultTex.AddNamespace("DefaultTex", GetCallerGlobalNamespace())
 
-def latex(texinit = "", TexInitIgnoreMsgLevel = 1):
-    exec "canvas=DefaultCanvas" in GetCallerGlobalNamespace(),locals()
-    DefaultTex=Tex(canvas, LaTeX, texinit, TexInitIgnoreMsgLevel)
+def latex(latexclass = "article", latexclassopt = "", texinit = "", TexInitIgnoreMsgLevel = 1):
+    exec "canvas = DefaultCanvas" in GetCallerGlobalNamespace(), locals()
+    DefaultTex = Tex(canvas, LaTeX, None, latexclass, latexclassopt, texinit, TexInitIgnoreMsgLevel)
     DefaultTex.AddNamespace("DefaultTex", GetCallerGlobalNamespace())
 
