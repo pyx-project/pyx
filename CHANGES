@@ -100,6 +100,8 @@ TODO:
       documentation)
     - support for string initialization removed
     - support for initialisation with other length removed
+  - text module:
+    - postpone reading of fontmap files until TeX/LaTeX is started
   - canvas module:
     - added new classes page and document for multipage PostScript output
   - style module:

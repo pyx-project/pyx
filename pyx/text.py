@@ -735,7 +735,7 @@ class texrunner:
         self.docclass = docclass
         self.docopt = docopt
         self.usefiles = usefiles
-        self.fontmap = dvifile.readfontmap(fontmaps.split())
+        self.fontmaps = fontmaps
         self.waitfortex = waitfortex
         self.showwaitfortex = showwaitfortex
         self.texipc = texipc
@@ -838,6 +838,7 @@ class texrunner:
             self.quitevent = threading.Event() # keeps for end of terminal event
             self.readoutput = _readpipe(self.texoutput, self.expectqueue, self.gotevent, self.gotqueue, self.quitevent)
             self.texruns = 1
+            self.fontmap = dvifile.readfontmap(self.fontmaps.split())
             oldpreamblemode = self.preamblemode
             self.preamblemode = 1
             self.execute("\\scrollmode\n\\raiseerror%\n" # switch to and check scrollmode
@@ -1055,7 +1056,7 @@ class texrunner:
         if usefiles is not None:
             self.usefiles = usefiles
         if fontmaps is not None:
-            self.fontmap = dvifile.readfontmap(fontmaps.split())
+            self.fontmaps = fontmaps
         if waitfortex is not None:
             self.waitfortex = waitfortex
         if showwaitfortex is not None:
