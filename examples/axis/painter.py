@@ -7,10 +7,11 @@
 # behaviour.
 
 from pyx import *
+from pyx.graph import axis
 
-ap = graph.axis.painter.plain(outerticklength=graph.axis.painter.ticklength.normal)
+ap = axis.painter.plain(outerticklength=axis.painter.ticklength.normal)
 
-c = graph.axis.pathaxis(path.curve(0, 0, 3, 0, 1, 4, 4, 4),
-                        graph.axis.linear(min=0, max=10, title="axis title",
-                                          painter=ap))
+c = axis.pathaxis(path.curve(0, 0, 3, 0, 1, 4, 4, 4),
+                        axis.linear(min=0, max=10, title="axis title",
+                                    painter=ap))
 c.writeEPSfile("painter")

@@ -1,4 +1,5 @@
 from pyx import *
+from pyx.connector import arc, curve
 
 unit.set(uscale=3)
 
@@ -16,9 +17,9 @@ for X in [A, B, C, D]:
     c.insert(X)
 
 for X,Y in [[A, B], [B, C], [C, D], [D, A]]:
-    c.stroke(connector.arc(X, Y, boxdists=0.2), [color.rgb.red, deco.earrow.normal])
+    c.stroke(arc(X, Y, boxdists=0.2), [color.rgb.red, deco.earrow.normal])
 
-c.stroke(connector.curve(D, B, boxdists=0.2, relangle1=45, relangle2=-45, relbulge=0.8),
+c.stroke(curve(D, B, boxdists=0.2, relangle1=45, relangle2=-45, relbulge=0.8),
          [color.rgb.blue, deco.earrow.normal])
 
 c.writeEPSfile("connect")
