@@ -2226,10 +2226,7 @@ class texrunner:
                     check.check(self)
                 except TexResultWarning:
                     traceback.print_exc()
-            print "expr>>>%s<<<" % self.expr
-            print "aaa>>>%s<<<" % self.texmessageparsed
             texmessage.emptylines.check(self)
-            print "bbb>>>%s<<<" % self.texmessageparsed
             if len(self.texmessageparsed):
                 raise TexResultError("unhandled TeX response (might be an error)", self)
         else:
