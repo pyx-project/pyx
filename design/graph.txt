@@ -121,6 +121,11 @@ graph/axis/axis.py
                - pyx.graph.axis.linkedbar = pyx.graph.axis.axis.linkedbar
                - pyx.graph.axis.pathaxis = pyx.graph.axis.axis.pathaxis
 
+<JL> Warum eigentlich axis statt type? Gibt es dafür einen speziellen Grund?
+     (Nicht dass dagegen wäre, ich frage nur)
+
+     pathaxis sollte wohl auch nicht path werden. Ich bin nur neugierig...
+
 
 key.py
 
