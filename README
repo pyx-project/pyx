@@ -1,10 +1,10 @@
 PyX
 ===
 
-PyX is a python package to create encapsulated PostScript figures. It provides
+PyX is a Python package to create encapsulated PostScript figures. It provides
 classes and methods to access basic PostScript functionality at an abstract
 level. At the same time the emerging structures are very convenient to produce
-all kinds of drawings in a non-interactive way. In combination with the python
+all kinds of drawings in a non-interactive way. In combination with the Python
 language itself the user can just code any complexity of the figure wanted.
 Additionally an TeX/LaTeX interface enables one to use the famous high quality
 typesetting within the figures.
