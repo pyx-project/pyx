@@ -30,9 +30,19 @@ from pyx.graph import style
 try:
     enumerate([])
 except NameError:
-    # fallback implementation for Python 2.2. and below
+    # fallback implementation for Python 2.2 and below
     def enumerate(list):
         return zip(xrange(len(list)), list)
+
+try:
+    dict()
+except NameError:
+    # fallback implementation for Python 2.1 and below
+    def dict(items):
+        result = {}
+        for key, value in items:
+            result[key] = value
+        return result
 
 class _Idata:
     """Interface for graph data
