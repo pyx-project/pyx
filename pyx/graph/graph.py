@@ -170,13 +170,13 @@ class plotitem:
 
         # perform setcolumns to all styles
         self.data.initplotitem(self, graph)
-        columns = self.data.getcolumnnames(self)
-        usedcolumns = []
+        columnnames = self.data.getcolumnnames(self)
+        usedcolumnnames = []
         for privatedata, s in zip(self.privatedatalist, self.styles):
-            usedcolumns.extend(s.columns(privatedata, self.sharedata, graph, columns))
-        for column in columns:
-            if column not in usedcolumns:
-                raise ValueError("unused column '%s'" % column)
+            usedcolumnnames.extend(s.columnnames(privatedata, self.sharedata, graph, columnnames))
+        for columnname in columnnames:
+            if columnname not in usedcolumnnames:
+                raise ValueError("unused column '%s'" % columnname)
 
     def selectstyles(self, graph, selectindex, selecttotal):
         for privatedata, style in zip(self.privatedatalist, self.styles):

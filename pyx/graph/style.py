@@ -27,6 +27,8 @@ import math
 from pyx import attr, deco, style, color, unit, canvas, path
 from pyx import text as textmodule
 
+builtinrange = range
+
 try:
     enumerate([])
 except NameError:
@@ -63,14 +65,13 @@ class _style:
     providesdata = [] # by default, we provide nothing
     needsdata = [] # and do not depend on anything
 
-    def columns(self, privatedata, sharedata, graph, columns):
+    def columnnames(self, privatedata, sharedata, graph, columnnames):
         """Set column information
 
-        This method is used setup the column information to be
+        This method is used setup the column name information to be
         accessible to the style later on. The style should analyse
-        the list of strings columns, which contain the column names
-        of the data. The method should return a list of column names
-        which the style will make use of."""
+        the list of column names. The method should return a list of
+        column names which the style will make use of."""
         return []
 
     def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
@@ -80,12 +81,12 @@ class _style:
         changable attributes of a style."""
         pass
 
-    def adjustaxis(self, privatedata, sharedata, graph, column, data, index):
+    def adjustaxis(self, privatedata, sharedata, graph, columnname, data, index):
         """Adjust axis range
 
         This method is called in order to adjust the axis range to
-        the provided data. Column is the name of the column (each
-        style is subsequently called for all column names). If index
+        the provided data. columnname is the column name (each style
+        is subsequently called for all column names). If index
         is not None, data is a list of points and index is the index
         of the column within a point. Otherwise data is already the
         axis data. Note, that data might be different for different
@@ -141,33 +142,34 @@ def getdefaultprovider(key):
 
 class pos(_style):
 
-    providesdata = ["vpos", "vposmissing", "vposavailable", "vposvalid"]
+    providesdata = ["vpos", "vposmissing", "vposavailable", "vposvalid", "poscolumnnames"]
 
     def __init__(self, epsilon=1e-10):
         self.epsilon = epsilon
 
-    def columns(self, privatedata, sharedata, graph, columns):
-        privatedata.pointposcolumns = []
+    def columnnames(self, privatedata, sharedata, graph, columnnames):
+        sharedata.poscolumnnames = []
         sharedata.vposmissing = []
         for count, axisnames in enumerate(graph.axesnames):
             for axisname in axisnames:
-                for column in columns:
-                    if axisname == column:
-                         privatedata.pointposcolumns.append(column)
-            if len(privatedata.pointposcolumns) + len(sharedata.vposmissing) > count+1:
+                for columnname in columnnames:
+                    if axisname == columnname:
+                         sharedata.poscolumnnames.append(columnname)
+            if len(sharedata.poscolumnnames) > count+1:
                 raise ValueError("multiple axes per graph dimension")
-            elif len(privatedata.pointposcolumns) + len(sharedata.vposmissing) < count+1:
+            elif len(sharedata.poscolumnnames) < count+1:
                 sharedata.vposmissing.append(count)
-        return privatedata.pointposcolumns
+                sharedata.poscolumnnames.append(None)
+        return [columnname for columnname in sharedata.poscolumnnames if columnname is not None]
 
-    def adjustaxis(self, privatedata, sharedata, graph, column, data, index):
-        if column in privatedata.pointposcolumns:
-            graph.axes[column].adjustrange(data, index)
+    def adjustaxis(self, privatedata, sharedata, graph, columnname, data, index):
+        if columnname in sharedata.poscolumnnames:
+            graph.axes[columnname].adjustrange(data, index)
 
     def initdrawpoints(self, privatedata, sharedata, graph):
-        sharedata.vpos = [None]*(len(privatedata.pointposcolumns) + len(sharedata.vposmissing))
-        privatedata.pointpostmplist = [[column, index, graph.axes[column]] # temporarily used by drawpoint only
-                                     for index, column in enumerate(privatedata.pointposcolumns)]
+        sharedata.vpos = [None]*(len(graph.axesnames))
+        privatedata.pointpostmplist = [[columnname, index, graph.axes[columnname]] # temporarily used by drawpoint only
+                                       for index, columnname in enumerate([columnname for columnname in sharedata.poscolumnnames if columnname is not None])]
         for missing in sharedata.vposmissing:
             for pointpostmp in privatedata.pointpostmplist:
                 if pointpostmp[1] >= missing:
@@ -176,9 +178,9 @@ class pos(_style):
     def drawpoint(self, privatedata, sharedata, graph):
         sharedata.vposavailable = 1 # valid position (but might be outside of the graph)
         sharedata.vposvalid = 1 # valid position inside the graph
-        for column, index, axis in privatedata.pointpostmplist:
+        for columnname, index, axis in privatedata.pointpostmplist:
             try:
-                v = axis.convert(sharedata.point[column])
+                v = axis.convert(sharedata.point[columnname])
             except (ArithmeticError, ValueError, TypeError):
                 sharedata.vposavailable = sharedata.vposvalid = 0
                 sharedata.vpos[index] = None
@@ -215,7 +217,7 @@ class range(_style):
         else:
             return self._numberofbits(mask >> 1)
 
-    def columns(self, privatedata, sharedata, graph, columns):
+    def columnnames(self, privatedata, sharedata, graph, columnnames):
         usecolumns = []
         privatedata.rangeposcolumns = []
         sharedata.vrangemissing = []
@@ -229,24 +231,24 @@ class range(_style):
                 except KeyError:
                     usename = axisname
                 mask = 0
-                for column in columns:
+                for columnname in columnnames:
                     addusecolumns = 1
-                    if usename == column:
+                    if usename == columnname:
                         mask += self.mask_value
-                    elif usename + "min" == column:
+                    elif usename + "min" == columnname:
                         mask += self.mask_min
-                    elif usename + "max" == column:
+                    elif usename + "max" == columnname:
                         mask += self.mask_max
-                    elif "d" + usename + "min" == column:
+                    elif "d" + usename + "min" == columnname:
                         mask += self.mask_dmin
-                    elif "d" + usename + "max" == column:
+                    elif "d" + usename + "max" == columnname:
                         mask += self.mask_dmax
-                    elif "d" + usename == column:
+                    elif "d" + usename == columnname:
                         mask += self.mask_d
                     else:
                         addusecolumns = 0
                     if addusecolumns:
-                        usecolumns.append(column)
+                        usecolumns.append(columnname)
                 if mask & (self.mask_min | self.mask_max | self.mask_dmin | self.mask_dmax | self.mask_d):
                     if (self._numberofbits(mask & (self.mask_min | self.mask_dmin | self.mask_d)) > 1 or
                         self._numberofbits(mask & (self.mask_max | self.mask_dmax | self.mask_d)) > 1):
@@ -262,6 +264,8 @@ class range(_style):
                 raise ValueError("multiple axes per graph dimension")
             elif len(privatedata.rangeposcolumns) + len(sharedata.vrangemissing) < count+1:
                 sharedata.vrangemissing.append(count)
+                sharedata.vrangeminmissing.append(count)
+                sharedata.vrangemaxmissing.append(count)
             else:
                 if not (privatedata.rangeposcolumns[-1][2] & (self.mask_min | self.mask_dmin | self.mask_d)):
                     sharedata.vrangeminmissing.append(count)
@@ -269,21 +273,21 @@ class range(_style):
                     sharedata.vrangemaxmissing.append(count)
         return usecolumns
 
-    def adjustaxis(self, privatedata, sharedata, graph, column, data, index):
-        if column in [c + "min" for a, c, m in privatedata.rangeposcolumns if m & self.mask_min]:
-            graph.axes[column[:-3]].adjustrange(data, index)
-        if column in [c + "max" for a, c, m in privatedata.rangeposcolumns if m & self.mask_max]:
-            graph.axes[column[:-3]].adjustrange(data, index)
+    def adjustaxis(self, privatedata, sharedata, graph, columnname, data, index):
+        if columnname in [c + "min" for a, c, m in privatedata.rangeposcolumns if m & self.mask_min]:
+            graph.axes[columnname[:-3]].adjustrange(data, index)
+        if columnname in [c + "max" for a, c, m in privatedata.rangeposcolumns if m & self.mask_max]:
+            graph.axes[columnname[:-3]].adjustrange(data, index)
 
         # delta handling: fill rangeposdeltacolumns
         for axisname, usename, mask in privatedata.rangeposcolumns:
-            if column == usename and mask & (self.mask_dmin | self.mask_dmax | self.mask_d):
+            if columnname == usename and mask & (self.mask_dmin | self.mask_dmax | self.mask_d):
                 privatedata.rangeposdeltacolumns[axisname][self.mask_value] = data, index
-            if column == "d" + usename + "min" and mask & self.mask_dmin:
+            if columnname == "d" + usename + "min" and mask & self.mask_dmin:
                 privatedata.rangeposdeltacolumns[axisname][self.mask_dmin] = data, index
-            if column == "d" + usename + "max" and mask & self.mask_dmax:
+            if columnname == "d" + usename + "max" and mask & self.mask_dmax:
                 privatedata.rangeposdeltacolumns[axisname][self.mask_dmax] = data, index
-            if column == "d" + usename and mask & self.mask_d:
+            if columnname == "d" + usename and mask & self.mask_d:
                 privatedata.rangeposdeltacolumns[axisname][self.mask_d] = data, index
 
         # delta handling: process rangeposdeltacolumns
@@ -302,7 +306,7 @@ class range(_style):
     def initdrawpoints(self, privatedata, sharedata, graph):
         sharedata.vrange = [[None for x in xrange(2)] for y in privatedata.rangeposcolumns + sharedata.vrangemissing]
         privatedata.rangepostmplist = [[usename, mask, index, graph.axes[axisname]] # temporarily used by drawpoint only
-                                     for index, (axisname, usename, mask) in enumerate(privatedata.rangeposcolumns)]
+                                       for index, (axisname, usename, mask) in enumerate(privatedata.rangeposcolumns)]
         for missing in sharedata.vrangemissing:
             for rangepostmp in privatedata.rangepostmplist:
                 if rangepostmp[2] >= missing:
@@ -386,9 +390,9 @@ class _styleneedingpointpos(_style):
 
     needsdata = ["vposmissing"]
 
-    def columns(self, privatedata, sharedata, graph, columns):
+    def columnnames(self, privatedata, sharedata, graph, columnnames):
         if len(sharedata.vposmissing):
-            raise ValueError("position columns incomplete")
+            raise ValueError("incomplete position information")
         return []
 
 
@@ -620,7 +624,7 @@ class line(_styleneedingpointpos):
 
 class errorbar(_style):
 
-    needsdata = ["vpos", "vposmissing", "vposavailable", "vposvalid", "vrange", "vrangemissing"]
+    needsdata = ["vpos", "vposmissing", "vposavailable", "vposvalid", "vrange", "vrangeminmissing", "vrangemaxmissing"]
 
     defaulterrorbarattrs = []
 
@@ -631,9 +635,9 @@ class errorbar(_style):
         self.errorbarattrs = errorbarattrs
         self.epsilon = epsilon
 
-    def columns(self, privatedata, sharedata, graph, columns):
+    def columnnames(self, privatedata, sharedata, graph, columnnames):
         for i in sharedata.vposmissing:
-            if i in sharedata.vrangemissing:
+            if i in sharedata.vrangeminmissing and i in sharedata.vrangemaxmissing:
                 raise ValueError("position and range for a graph dimension missing")
         return []
 
@@ -708,10 +712,10 @@ class text(_styleneedingpointpos):
         self.textdy = textdy
         self.textattrs = textattrs
 
-    def columns(self, privatedata, sharedata, graph, columns):
-        if self.textname not in columns:
+    def columnnames(self, privatedata, sharedata, graph, columnnames):
+        if self.textname not in columnnames:
             raise ValueError("column '%s' missing" % self.textname)
-        return [self.textname] + _styleneedingpointpos.columns(self, privatedata, sharedata, graph, columns)
+        return [self.textname] + _styleneedingpointpos.columnnames(self, privatedata, sharedata, graph, columnnames)
 
     def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
         if self.textattrs is not None:
@@ -751,14 +755,14 @@ class arrow(_styleneedingpointpos):
         self.arrowattrs = arrowattrs
         self.epsilon = epsilon
 
-    def columns(self, privatedata, sharedata, graph, columns):
+    def columnnames(self, privatedata, sharedata, graph, columnnames):
         if len(graph.axesnames) != 2:
             raise ValueError("arrow style restricted on two-dimensional graphs")
-        if "size" not in columns:
+        if "size" not in columnnames:
             raise ValueError("size missing")
-        if "angle" not in columns:
+        if "angle" not in columnnames:
             raise ValueError("angle missing")
-        return ["size", "angle"] + _styleneedingpointpos.columns(self, privatedata, sharedata, graph, columns)
+        return ["size", "angle"] + _styleneedingpointpos.columnnames(self, privatedata, sharedata, graph, columnnames)
 
     def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
         if self.lineattrs is not None:
@@ -807,13 +811,13 @@ class rect(_style):
     def __init__(self, palette=color.palette.Grey):
         self.palette = palette
 
-    def columns(self, privatedata, sharedata, graph, columns):
+    def columnnames(self, privatedata, sharedata, graph, columnnames):
         if len(graph.axesnames) != 2:
             raise TypeError("arrow style restricted on two-dimensional graphs")
-        if "color" not in columns:
+        if "color" not in columnnames:
             raise ValueError("color missing")
         if len(sharedata.vrangeminmissing) + len(sharedata.vrangemaxmissing):
-            raise ValueError("range columns incomplete")
+            raise ValueError("incomplete range")
         return ["color"]
 
     def initdrawpoints(self, privatedata, sharedata, graph):
@@ -855,9 +859,238 @@ class rect(_style):
         raise RuntimeError("Style currently doesn't provide a graph key")
 
 
+class histogram(_style):
+
+    needsdata = ["vpos", "vposmissing", "vrange", "vrangeminmissing", "vrangemaxmissing"]
+
+    defaultlineattrs = []
+    defaultfrompathattrs = []
+
+    def __init__(self, lineattrs=[], steps=0, fromvalue=0, frompathattrs=[],
+                       autohistogramaxisindex=0, autohistogrampointpos=0.5, epsilon=1e-10):
+        self.lineattrs = lineattrs
+        self.steps = steps
+        self.fromvalue = fromvalue
+        self.frompathattrs = frompathattrs
+        self.autohistogramaxisindex = autohistogramaxisindex
+        self.autohistogrampointpos = autohistogrampointpos
+        self.epsilon = epsilon
+
+    def columnnames(self, privatedata, sharedata, graph, columnnames):
+        if len(graph.axesnames) != 2:
+            raise TypeError("histogram style restricted on two-dimensional graphs")
+        privatedata.rangeaxisindex = None
+        for i in builtinrange(len(graph.axesnames)):
+            if i in sharedata.vrangeminmissing or i in sharedata.vrangemaxmissing:
+                if i in sharedata.vposmissing:
+                    raise ValueError("pos and range missing")
+            else:
+                if privatedata.rangeaxisindex is not None:
+                    raise ValueError("multiple ranges")
+                privatedata.rangeaxisindex = i
+        if privatedata.rangeaxisindex is None:
+            privatedata.rangeaxisindex = self.autohistogramaxisindex
+            privatedata.autohistogram = 1
+        else:
+            privatedata.autohistogram = 0
+        return []
+
+    def adjustaxis(self, privatedata, sharedata, graph, columnname, data, index):
+        if privatedata.autohistogram and columnname == sharedata.poscolumnnames[privatedata.rangeaxisindex]:
+            if len(data) == 1:
+                raise ValueError("several data points needed for automatic histogram width calculation")
+            if data:
+                if index is not None:
+                    delta = data[1][index] - data[0][index]
+                    min = data[0][index] - self.autohistogrampointpos * delta
+                    max = data[-1][index] + (1-self.autohistogrampointpos) * delta
+                else:
+                    delta = data[1] - data[0]
+                    min = data[0] - self.autohistogrampointpos * delta
+                    max = data[-1] + (1-self.autohistogrampointpos) * delta
+                graph.axes[columnname].adjustrange([min, max], None)
+
+    def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
+        if self.lineattrs is not None:
+            privatedata.lineattrs = attr.selectattrs(self.defaultlineattrs + self.lineattrs, selectindex, selecttotal)
+        else:
+            privatedata.lineattrs = None
+
+    def vmoveto(self, privatedata, sharedata, graph, vpos, vvalue):
+        if -self.epsilon < vpos < 1+self.epsilon and -self.epsilon < vvalue < 1+self.epsilon:
+            if privatedata.rangeaxisindex:
+                privatedata.path.append(path.moveto_pt(*graph.vpos_pt(vvalue, vpos)))
+            else:
+                privatedata.path.append(path.moveto_pt(*graph.vpos_pt(vpos, vvalue)))
+
+    def vposline(self, privatedata, sharedata, graph, vpos, vvalue1, vvalue2):
+        if -self.epsilon < vpos < 1+self.epsilon:
+            change1 = 0 # begin changed
+            change = 0 # has a sign
+            if vvalue1 < 0:
+                vvalue1 = 0
+                change1 = 1
+                change -= 1
+            elif vvalue1 > 1:
+                vvalue1 = 1
+                change1 = 1
+                change += 1
+            if vvalue2 < 0:
+                vvalue2 = 0
+                change -= 1
+            elif vvalue2 > 1:
+                vvalue2 = 1
+                change += 1
+            if abs(change) <= 1:
+                if change1:
+                    if privatedata.rangeaxisindex:
+                        privatedata.path.append(path.moveto_pt(*graph.vpos_pt(vvalue1, vpos)))
+                    else:
+                        privatedata.path.append(path.moveto_pt(*graph.vpos_pt(vpos, vvalue1)))
+                if privatedata.rangeaxisindex:
+                    privatedata.path.append(graph.vgeodesic_el(vvalue1, vpos, vvalue2, vpos))
+                else:
+                    privatedata.path.append(graph.vgeodesic_el(vpos, vvalue1, vpos, vvalue2))
+
+    def vvalueline(self, privatedata, sharedata, graph, vvalue, vpos1, vpos2):
+        if -self.epsilon < vvalue < 1+self.epsilon:
+            change1 = 0 # begin changed
+            change = 0 # has a sign
+            if vpos1 < 0:
+                vpos1 = 0
+                change1 = 1
+                change -= 1
+            elif vpos1 > 1:
+                vpos1 = 1
+                change1 = 1
+                change += 1
+            if vpos2 < 0:
+                vpos2 = 0
+                change -= 1
+            elif vpos2 > 1:
+                vpos2 = 1
+                change += 1
+            if abs(change) <= 1:
+                if change1:
+                    if privatedata.rangeaxisindex:
+                        privatedata.path.append(path.moveto_pt(*graph.vpos_pt(vvalue, vpos1)))
+                    else:
+                        privatedata.path.append(path.moveto_pt(*graph.vpos_pt(vpos1, vvalue)))
+                if privatedata.rangeaxisindex:
+                    privatedata.path.append(graph.vgeodesic_el(vvalue, vpos1, vvalue, vpos2))
+                else:
+                    privatedata.path.append(graph.vgeodesic_el(vpos1, vvalue, vpos2, vvalue))
+
+    def drawvalue(self, privatedata, sharedata, graph, vmin, vmax, vvalue):
+        currentvalid = vmin is not None and vmax is not None and vvalue is not None
+        try:
+            gap = abs(vmin - privatedata.lastvmax) > self.epsilon
+        except (ArithmeticError, ValueError, TypeError):
+            gap = 1
+        if (privatedata.lastvvalue is not None and
+            currentvalid and
+            not gap and
+            (self.steps or
+             (privatedata.lastvvalue-privatedata.vfromvalue)*(vvalue-privatedata.vfromvalue) < 0)):
+            self.vposline(privatedata, sharedata, graph,
+                          vmin, privatedata.lastvvalue, vvalue)
+        else:
+            if (privatedata.lastvvalue is not None and
+                (not currentvalid or
+                 privatedata.lastvvalue > vvalue or
+                 gap)):
+                self.vposline(privatedata, sharedata, graph,
+                              privatedata.lastvmax, privatedata.lastvvalue, privatedata.vfromvalue)
+                if currentvalid:
+                    self.vmoveto(privatedata, sharedata, graph,
+                                 vmin, vvalue)
+            if (currentvalid and
+                (privatedata.lastvvalue is None or
+                 privatedata.lastvvalue < vvalue or
+                 gap)):
+                self.vmoveto(privatedata, sharedata, graph,
+                             vmin, privatedata.vfromvalue)
+                self.vposline(privatedata, sharedata, graph,
+                              vmin, privatedata.vfromvalue, vvalue)
+        if currentvalid:
+            self.vvalueline(privatedata, sharedata, graph,
+                            vvalue, vmin, vmax)
+            privatedata.lastvvalue = vvalue
+            privatedata.lastvmax = vmax
+        else:
+            privatedata.lastvvalue = privatedata.lastvmax = None
+
+    def initdrawpoints(self, privatedata, sharedata, graph):
+        privatedata.path = path.path()
+        privatedata.lastvvalue = privatedata.lastvmax = None
+        privatedata.vcurrentpoint = None
+        privatedata.count = 0
+        if self.fromvalue is not None:
+            valueaxisname = sharedata.poscolumnnames[1-privatedata.rangeaxisindex]
+            privatedata.vfromvalue = graph.axes[valueaxisname].convert(self.fromvalue)
+            if privatedata.vfromvalue < 0:
+                privatedata.vfromvalue = 0
+            if privatedata.vfromvalue > 1:
+                privatedata.vfromvalue = 1
+            if self.frompathattrs is not None:
+                graph.stroke(graph.axespos[valueaxisname].vgridpath(privatedata.vfromvalue),
+                             self.defaultfrompathattrs + self.frompathattrs)
+        else:
+            privatedata.vfromvalue = 0
+
+    def drawpoint(self, privatedata, sharedata, graph):
+        if privatedata.autohistogram:
+            # automatic range handling
+            privatedata.count += 1
+            if privatedata.count == 2:
+                if privatedata.rangeaxisindex:
+                    privatedata.vrange = sharedata.vpos[1] - privatedata.lastvpos[1]
+                    self.drawvalue(privatedata, sharedata, graph,
+                                   privatedata.lastvpos[1] - self.autohistogrampointpos*privatedata.vrange,
+                                   privatedata.lastvpos[1] + (1-self.autohistogrampointpos)*privatedata.vrange,
+                                   privatedata.lastvpos[0])
+                else:
+                    privatedata.vrange = sharedata.vpos[0] - privatedata.lastvpos[0]
+                    self.drawvalue(privatedata, sharedata, graph,
+                                   privatedata.lastvpos[0] - self.autohistogrampointpos*privatedata.vrange,
+                                   privatedata.lastvpos[0] + (1-self.autohistogrampointpos)*privatedata.vrange,
+                                   privatedata.lastvpos[1])
+            elif privatedata.count > 2:
+                if privatedata.rangeaxisindex:
+                    vrange = sharedata.vpos[1] - privatedata.lastvpos[1]
+                else:
+                    vrange = sharedata.vpos[0] - privatedata.lastvpos[0]
+                if abs(privatedata.vrange - vrange) > self.epsilon:
+                    raise ValueError("equal steps (in graph coordinates) needed for automatic width calculation")
+            if privatedata.count > 1:
+                if privatedata.rangeaxisindex:
+                    self.drawvalue(privatedata, sharedata, graph,
+                                   sharedata.vpos[1] - self.autohistogrampointpos*privatedata.vrange,
+                                   sharedata.vpos[1] + (1-self.autohistogrampointpos)*privatedata.vrange,
+                                   sharedata.vpos[0])
+                else:
+                    self.drawvalue(privatedata, sharedata, graph,
+                                   sharedata.vpos[0] - self.autohistogrampointpos*privatedata.vrange,
+                                   sharedata.vpos[0] + (1-self.autohistogrampointpos)*privatedata.vrange,
+                                   sharedata.vpos[1])
+            privatedata.lastvpos = sharedata.vpos[:]
+        else:
+            if privatedata.rangeaxisindex:
+                self.drawvalue(privatedata, sharedata, graph,
+                               sharedata.vrange[1][0], sharedata.vrange[1][1], sharedata.vpos[0])
+            else:
+                self.drawvalue(privatedata, sharedata, graph,
+                               sharedata.vrange[0][0], sharedata.vrange[0][1], sharedata.vpos[1])
+
+    def donedrawpoints(self, privatedata, sharedata, graph):
+        self.drawvalue(privatedata, sharedata, graph, None, None, None)
+        if privatedata.lineattrs is not None and len(privatedata.path):
+           graph.stroke(privatedata.path, privatedata.lineattrs)
+
+
 class barpos(_style):
 
-    providesdata = ["vpos", "vposmissing", "vposavailable", "vposvalid", "vbarrange", "barcolumns", "barvalueindex", "lastbarvalue", "stackedbar", "stackedbardraw"]
+    providesdata = ["vpos", "vposmissing", "vposavailable", "vposvalid", "vbarrange", "barposcolumnnames", "barvalueindex", "lastbarvalue", "stackedbar", "stackedbardraw"]
 
     defaultfrompathattrs = []
 
@@ -870,20 +1103,20 @@ class barpos(_style):
         self.subnames = subnames
         self.epsilon = epsilon
 
-    def columns(self, privatedata, sharedata, graph, columns):
-        sharedata.barcolumns = []
+    def columnnames(self, privatedata, sharedata, graph, columnnames):
+        sharedata.barposcolumnnames = []
         sharedata.barvalueindex = None
         for dimension, axisnames in enumerate(graph.axesnames):
             found = 0
             for axisname in axisnames:
-                if axisname in columns:
+                if axisname in columnnames:
                     if sharedata.barvalueindex is not None:
                         raise ValueError("multiple values")
                     sharedata.barvalueindex = dimension
-                    sharedata.barcolumns.append(axisname)
+                    sharedata.barposcolumnnames.append(axisname)
                     found += 1
-                if (axisname + "name") in columns:
-                    sharedata.barcolumns.append(axisname + "name")
+                if (axisname + "name") in columnnames:
+                    sharedata.barposcolumnnames.append(axisname + "name")
                     found += 1
                 if found > 1:
                     raise ValueError("multiple names and value")
@@ -896,7 +1129,7 @@ class barpos(_style):
         else:
             privatedata.barpossubindex = self.subindex
         sharedata.vposmissing = []
-        return sharedata.barcolumns
+        return sharedata.barposcolumnnames
 
     def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
         if selecttotal == 1:
@@ -909,43 +1142,43 @@ class barpos(_style):
             else:
                 privatedata.barpossubname = [selectindex]
 
-    def adjustaxis(self, privatedata, sharedata, graph, column, data, index):
+    def adjustaxis(self, privatedata, sharedata, graph, columnname, data, index):
         try:
-            i = sharedata.barcolumns.index(column)
+            i = sharedata.barposcolumnnames.index(columnname)
         except ValueError:
             pass
         else:
             if i == sharedata.barvalueindex:
                 if self.fromvalue is not None:
-                    graph.axes[sharedata.barcolumns[i]].adjustrange([self.fromvalue], None)
-                graph.axes[sharedata.barcolumns[i]].adjustrange(data, index)
+                    graph.axes[sharedata.barposcolumnnames[i]].adjustrange([self.fromvalue], None)
+                graph.axes[sharedata.barposcolumnnames[i]].adjustrange(data, index)
             else:
                 if i == privatedata.barpossubindex:
-                    graph.axes[sharedata.barcolumns[i][:-4]].adjustrange(data, index, privatedata.barpossubname)
+                    graph.axes[sharedata.barposcolumnnames[i][:-4]].adjustrange(data, index, privatedata.barpossubname)
                 else:
-                    graph.axes[sharedata.barcolumns[i][:-4]].adjustrange(data, index)
+                    graph.axes[sharedata.barposcolumnnames[i][:-4]].adjustrange(data, index)
 
     def initdrawpoints(self, privatedata, sharedata, graph):
-        sharedata.vpos = [None]*(len(sharedata.barcolumns))
-        sharedata.vbarrange = [[None for i in xrange(2)] for x in sharedata.barcolumns]
+        sharedata.vpos = [None]*(len(sharedata.barposcolumnnames))
+        sharedata.vbarrange = [[None for i in xrange(2)] for x in sharedata.barposcolumnnames]
         sharedata.stackedbar = sharedata.stackedbardraw = 0
 
         if self.fromvalue is not None:
-            privatedata.vfromvalue = graph.axes[sharedata.barcolumns[sharedata.barvalueindex][0]].convert(self.fromvalue)
+            privatedata.vfromvalue = graph.axes[sharedata.barposcolumnnames[sharedata.barvalueindex][0]].convert(self.fromvalue)
             if privatedata.vfromvalue < 0:
                 privatedata.vfromvalue = 0
             if privatedata.vfromvalue > 1:
                 privatedata.vfromvalue = 1
             if self.frompathattrs is not None:
                 # TODO 2d only
-                graph.stroke(graph.axespos[sharedata.barcolumns[sharedata.barvalueindex][0]].vgridpath(privatedata.vfromvalue),
+                graph.stroke(graph.axespos[sharedata.barposcolumnnames[sharedata.barvalueindex][0]].vgridpath(privatedata.vfromvalue),
                              self.defaultfrompathattrs + self.frompathattrs)
         else:
             privatedata.vfromvalue = 0
 
     def drawpoint(self, privatedata, sharedata, graph):
         sharedata.vposavailable = sharedata.vposvalid = 1
-        for i, barname in enumerate(sharedata.barcolumns):
+        for i, barname in enumerate(sharedata.barposcolumnnames):
             if i == sharedata.barvalueindex:
                 sharedata.vbarrange[i][0] = privatedata.vfromvalue
                 sharedata.lastbarvalue = sharedata.point[barname]
@@ -971,27 +1204,27 @@ class barpos(_style):
             elif sharedata.vpos[i] < -self.epsilon or sharedata.vpos[i] > 1+self.epsilon:
                 sharedata.vposvalid = 0
 
-registerdefaultprovider(barpos(), ["vbarrange", "barcolumns", "barvalueindex"])
+registerdefaultprovider(barpos(), ["vbarrange", "barposcolumnnames", "barvalueindex", "lastbarvalue", "stackedbar", "stackedbardraw"])
 
 
 class stackedbarpos(_style):
 
     # provides no additional data, but needs some data (and modifies some of them)
-    needsdata = ["vbarrange", "barcolumns", "barvalueindex", "lastbarvalue", "stackedbar", "stackedbardraw"]
+    needsdata = ["vbarrange", "barposcolumnnames", "barvalueindex", "lastbarvalue", "stackedbar", "stackedbardraw"]
 
     def __init__(self, stackname, addontop=0, epsilon=1e-10):
         self.stackname = stackname
         self.epsilon = epsilon
         self.addontop = addontop
 
-    def columns(self, privatedata, sharedata, graph, columns):
-        if self.stackname not in columns:
-            raise ValueError("stackname column missing")
+    def columnnames(self, privatedata, sharedata, graph, columnnames):
+        if self.stackname not in columnnames:
+            raise ValueError("column '%s' missing" % self.stackname)
         return [self.stackname]
 
-    def adjustaxis(self, privatedata, sharedata, graph, column, data, index):
-        if column == self.stackname:
-            graph.axes[sharedata.barcolumns[sharedata.barvalueindex]].adjustrange(data, index)
+    def adjustaxis(self, privatedata, sharedata, graph, columnname, data, index):
+        if columnname == self.stackname:
+            graph.axes[sharedata.barposcolumnnames[sharedata.barvalueindex]].adjustrange(data, index)
 
     def initdrawpoints(self, privatedata, sharedata, graph):
         if sharedata.stackedbardraw: # do not count the start bar when not gets painted
@@ -1007,7 +1240,7 @@ class stackedbarpos(_style):
         else:
             sharedata.lastbarvalue = sharedata.point[self.stackname]
         try:
-            sharedata.vpos[sharedata.barvalueindex] = sharedata.vbarrange[sharedata.barvalueindex][1] = graph.axes[sharedata.barcolumns[sharedata.barvalueindex]].convert(sharedata.lastbarvalue)
+            sharedata.vpos[sharedata.barvalueindex] = sharedata.vbarrange[sharedata.barvalueindex][1] = graph.axes[sharedata.barposcolumnnames[sharedata.barvalueindex]].convert(sharedata.lastbarvalue)
         except (ArithmeticError, ValueError, TypeError):
             sharedata.vpos[sharedata.barvalueindex] = sharedata.vbarrange[sharedata.barvalueindex][1] = None
             sharedata.vposavailable = sharedata.vposvalid = 0
@@ -1031,7 +1264,7 @@ class bar(_style):
     def __init__(self, barattrs=[]):
         self.barattrs = barattrs
 
-    def columns(self, privatedata, sharedata, graph, columns):
+    def columnnames(self, privatedata, sharedata, graph, columnnames):
         if len(graph.axesnames) != 2:
             raise TypeError("bar style restricted on two-dimensional graphs")
         return []
