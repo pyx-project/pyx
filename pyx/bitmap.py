@@ -4,9 +4,21 @@
 #
 # Copyright (C) 2004 André Wobst <wobsta@users.sourceforge.net>
 #
-# This file adds bitmap functionality to PyX. Its designed for usage
-# with PyX 0.6.x and will, in a similar form, become part of future
-# PyX releases.
+# This file is part of PyX (http://pyx.sourceforge.net/).
+#
+# PyX is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# PyX is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PyX; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
 import cStringIO, struct, sys
