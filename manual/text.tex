@@ -8,7 +8,7 @@ technique of \TeX/\LaTeX{} into \PyX. The basic procedure is:
 \begin{itemize}
 \item start \TeX/\LaTeX{} as soon as text creation is requested
 \item create boxes containing the requested text on the fly
-\item immediately analyze the \TeX/\LaTeX{} output for errors etc.
+\item immediately analyse the \TeX/\LaTeX{} output for errors etc.
 \item boxes are written into the dvi output
 \item box extents are immediately available (they are contained in the
 \TeX/\LaTeX{} output)
@@ -26,14 +26,14 @@ following table:
 \begin{tabularx}{\linewidth}{l>{\raggedright\arraybackslash}X}
 keyword&description\\
 \hline
-\texttt{mode}&\texttt{tex} (default) or \texttt{latex}\\
-\texttt{lfs}&Specifies a latex font size file to be used with \TeX. Those files with the suffix \texttt{.lfs} are created by \texttt{createlfs.tex}. Possible values are listed when a requested name couldn't be found.\\
+\texttt{mode}&\texttt{"tex"} (default) or \texttt{"latex"}\\
+\texttt{lfs}&Specifies a latex font size file to be used with \TeX. Those files (with the suffix \texttt{.lfs}) can be created by \texttt{createlfs.tex}. Possible values are listed when a requested name could not be found.\\
 \texttt{docclass}&\LaTeX{} document class; default is \texttt{"article"}\\
 \texttt{docopt}&specifies options for the document class; default is \texttt{None}\\
-\texttt{usefiles}$^1$&filenames to be as jobname files for \TeX/\LaTeX{}; default: \texttt{None}\\
+\texttt{usefiles}$^1$&filenames to be as jobname files for \TeX/\LaTeX{}; default: \texttt{None}; example: \texttt{("spam.aux", "eggs.log")}\\
 \texttt{waitfortex}&wait this number of seconds for a \TeX/\LaTeX{} response; default \texttt{5}\\
-\texttt{texdebug}&\TeX/\LaTeX{} debug messages; default \texttt{0}\\
-\texttt{dvidebug}&dvi debug messages (like \texttt{dvitype}); default \texttt{0}\\
+\texttt{texdebug}&\TeX/\LaTeX{} debug messages (boolean); default \texttt{0}\\
+\texttt{dvidebug}&dvi debug messages like \texttt{dvitype} (boolean); default \texttt{0}\\
 \texttt{texmessagestart}$^{1,2}$&parsers for the \TeX/\LaTeX{} start message; default: \texttt{texmessage.start}\\
 \texttt{texmessagedocclass}$^{1,2}$&parsers for \LaTeX{}s \texttt{\textbackslash{}documentclass} statement; default: \texttt{texmessage.load}\\
 \texttt{texmessagebegindoc}$^{1,2}$&parsers for \LaTeX{}s \texttt{\textbackslash{}begin\{document\}} statement; default: \texttt{(texmessage.load, texmessage.noaux)}\\
@@ -58,22 +58,23 @@ important for the \verb|defaulttextunner|. The \verb|set| method
 fails, when a modification can't be applied anymore (e.g.
 \TeX/\LaTeX{} was already started).
 
-Secondly there is a \verb|preamble| method. It takes a \TeX/\LaTeX{}
+Secondly there is a \verb|preamble| method, which can be called before
+the \verb|text| method only (see below). It takes a \TeX/\LaTeX{}
 expression and optionally one or several \TeX/\LaTeX{} message
-parsers. The preamlbe expressions should be used to perform global
+parsers. The preamble expressions should be used to perform global
 settings, but should not create any \TeX/\LaTeX{} dvi output. In
 \LaTeX, the preamble expressions are inserted before the
 \verb|\begin{document}| statement.
 
-Last but first, there is a \verb|text| method. The first two
+Last, but first, there is a \verb|text| method. The first two
 parameters are the x, y position of the output to be generated. The
 third parameter is a \TeX/\LaTeX{} expression and further parameters
 are attributes for this command. Those attributes might be
 \TeX/\LaTeX{} settings as described below, \TeX/\LaTeX{} message
-parsers as described below as well, \PyX{} transformations (like
-rotations), and \PyX{} fill styles (like colors). The \verb|text|
-method returns a box (see chapter~\ref{module:box}), which can be inserted
-into a canvas instance by its \verb|insert| method to get the text.
+parsers as described below as well, \PyX{} transformations, and \PyX{}
+fill styles (like colors). The \verb|text| method returns a box (see
+chapter~\ref{module:box}), which can be inserted into a canvas
+instance by its \verb|insert| method to get the text.
 
 \section{\TeX/\LaTeX{} settings}
 
@@ -81,10 +82,11 @@ into a canvas instance by its \verb|insert| method to get the text.
 \raggedright
 \item[Horizontal alignment:] \verb|halign.left| (default),
 \verb|halign.center|, \verb|halign.right|, \verb|halign(x)| (\verb|x|
-is a value between \verb|0| and \verb|1|)
+is a value between \verb|0| and \verb|1| standing for left and right,
+respectively)
 \item[Vertical box:] Usually, \TeX/\LaTeX{} expressions are handled in
-horizontal mode (its called LR-mode in \TeX/\LaTeX; everything goes
-into a single line). You may use \verb|vbox(x)|, where \verb|x| is the
+horizontal mode (so-called LR-mode in \TeX/\LaTeX; everything goes
+into a single line). You may use \verb|parbox(x)|, where \verb|x| is the
 width of the text, to switch to a multiline mode (its called vertical
 mode in \TeX/\LaTeX).
 \begin{figure}
@@ -104,7 +106,7 @@ example
 have an effect), \verb|vshift.middlezero=vshift.char(0.5)| (shifts
 down by halve of the height of a \verb|0|),
 \verb|vshift.topzero=vshift.char(1)| (shifts down by the height of the a
-\verb|0|), vshift.mathaxis (shifts down by the height of the
+\verb|0|), \verb|vshift.mathaxis| (shifts down by the height of the
 mathematical axis)
 \item[Mathmode:] \verb|mathmode| switches the mathmode of \TeX/\LaTeX
 \item[Font size:] \verb|size.tiny|, \verb|size.scriptsize|,
@@ -116,8 +118,8 @@ mathematical axis)
 \section{\TeX/\LaTeX{} message parsers}
 
 Message parsers are used to scan the output of \TeX/\LaTeX. The output
-is analyzed by a sequence of message parsers. Each of them do analyze
-the output and remove those parts of the output, they feal responsible
+is analysed by a sequence of message parsers. Each of them analyses
+the output and remove those parts of the output, it feels responsible
 for. If there is nothing left in the end, the message got validated,
 otherwise an exception is raised reporting the problem.
 
@@ -131,7 +133,7 @@ parser name&purpose\\
 \end{tabular}
 \medskip
 
-More specialized message parsers should become available as required.
+More specialised message parsers should become available as required.
 Please feal free to contribute (e.g. with ideas/problems; code is
 desired as well, of course). There are further message parsers for
 \PyX{}s internal use, but we skip them here as they are not

@@ -1,20 +1,20 @@
 \chapter{Module box: convex box handling}
 \label{module:box}
 
-This module has a quite internal character, but might still be usefull
+This module has a quite internal character, but might still be useful
 from the users point of view. It might also get further enhanced to
-cover a broader range of standard problems in arranging content.
+cover a broader range of standard arranging problems.
 
 In the context of this module a box is a convex polygon having
-optionally a center coordinate, which play an important role for the
+optionally a center coordinate, which plays an important role for the
 box alignment. The center might not at all be central, but it should
-be within the box. The convexity is postulated in order to keep the
+be within the box. The convexity is necessary in order to keep the
 problems to be solved by this module quite a bit easier and
 unambiguous.
 
 Directions (for the alignment etc.) are usually provided as pairs
 (dx, dy) within this module. It is required, that at least one of
-these two numbers is unequal zero. No further assumptions are taken.
+these two numbers is unequal to zero. No further assumptions are taken.
 
 \section{polygon}
 
@@ -73,7 +73,7 @@ alignment of the boxes \verb|boxes| using the parameters \verb|a|,
 \verb|dx|, and \verb|dy| as in the \verb|circlealign| method. For the
 length of the alignment vector its largest value is taken for all
 cases.
-\item[\texttt{linealignequal(boxes, a, dx, dy}:] as above, but
+\item[\texttt{linealignequal(boxes, a, dx, dy)}:] as above, but
 performing a line alignment
 \item[\texttt{tile(boxes, a, dx, dy)}:] tiles the boxes \verb|boxes|
 with a distance \verb|a| between the boxes (additional the maximal box
@@ -84,15 +84,15 @@ account)
 \section{regtangular boxes}
 
 For easier creation of rectangular boxes, the module provides the
-specialized class \verb|rect|. Its constructor takes at first four
+specialized class \verb|rect|. Its constructor first takes four
 parameters, namely the x, y position and the box width and height.
-Addtionally, for the definition of the position of the center, two
+Additionally, for the definition of the position of the center, two
 keyword arguments are available. The parameter \verb|relcenter| takes
 a tuple containing a relative x, y position of the center (they are
 relative to the box extent, thus values between \verb|0| and
 \verb|1| should be used). The parameter \verb|abscenter| takes a tuple
 containing the x and y position of the center. This values are
-meassured with respect to the lower left corner of the box. By
+measured with respect to the lower left corner of the box. By
 default, the center of the rectangular box is set to this lower left
 corner.
 
