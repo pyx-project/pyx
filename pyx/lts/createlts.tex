@@ -1,19 +1,18 @@
-\def\stripspace#1 \next{#1}
+\endlinechar=-1 % don't add tailing space while \read
 
 \message{latex style name (e.g. 12ptex)? }
 \read-1 to\latexstylename
-\edef\latexstylename{\expandafter\stripspace\latexstylename\next}
 
 \message{latex class name (e.g. article)? }
 \read-1 to\latexclassname
-\edef\latexclassname{\expandafter\stripspace\latexclassname\next}
 
 \message{latex class options (e.g. 12pt)? }
 \read-1 to\latexclassopt
-\edef\latexclassopt{\expandafter\stripspace\latexclassopt\next}
 
 \message{initial commands (e.g. \string\usepackage\string{exscale\string})? }
 \read-1 to\texinit
+
+\endlinechar=13
 
 \newwrite\myfile
 \immediate\openout\myfile=\latexstylename.lts
@@ -55,7 +54,7 @@
         \string\scriptfont3=\string\pyxfontsfd
         \string\font\string\pyxfontssfd=\fontname\scriptscriptfont3
         \string\scriptscriptfont3=\string\pyxfontssfd
-      }
+      }%
     }
   }
 }
