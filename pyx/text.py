@@ -58,7 +58,7 @@ class binfile:
     def read(self, bytes):
         return self.file.read(bytes)
 
-    def readint(self, bytes = 4, signed = 0):
+    def readint(self, bytes=4, signed=0):
         first = 1
         result = 0
         while bytes:
@@ -101,9 +101,12 @@ class binfile:
         assert l <= bytes-1, "inconsistency in file: string too long"
         return self.file.read(bytes-1)[:l]
 
+
 class DVIError(exceptions.Exception): pass
 
+
 class TFMError(exceptions.Exception): pass
+
 
 class char_info_word:
     def __init__(self, word):
@@ -298,6 +301,60 @@ class TFMFile:
             self.param[param_index] = self.file.readint32()
 
         self.file.file.close()
+
+mappath = pykpathsea.find_file("psfonts.map", pykpathsea.kpse_fontmap_format)
+if path is None:
+    raise RuntimeError("cannot find dvips font catalog 'psfonts.map'")
+mapfile = open(mappath, "r")
+tokenpattern = re.compile(r'"(.*?)("\s+|$)|(.*?)(\s+|$)')
+
+for line in mapfile.readlines():
+    line = line.rstrip()
+    if line=="" or line[0] in (" ", "%", "*", ";" , "#"):
+        continue
+    tokens = []
+    while len(line):
+        match = tokenpattern.match(line)
+        if match:
+            if match.groups()[0]:
+                tokens.append('"%s"' % match.groups()[0])
+            else:
+                tokens.append(match.groups()[2])
+            line = line[match.end():]
+        else:
+            raise RuntimeError("wrong syntax in font catalog file 'psfonts.map'")
+        
+    encoding = None
+    fontfile = None
+    pscode = None
+    texname = None
+    psname = None
+    for token in tokens:
+        if token.startswith("<"):
+            if token.startswith("<<"):
+                # XXX: support non-partial download here
+                fontfile = token[2:]
+            if token.startswith("<["):
+                encoding = token[2:]
+            elif token.endswith(".pfa") or token.endswith(".pfb"):
+                fontfile = token[1:]
+            elif token.endswith(".enc"):
+                encoding = token[1:]
+        elif token.startswith('"'):
+            pscode = token[1:-1]
+        else:
+            if texname is None:
+                texname = token
+            else:
+                psname = token
+
+    if psname is None:
+        psname = texname
+            
+    print texname, "is", psname, "read from", fontfile, "encoded as", encoding, "used with", pscode
+
+mapfile.close()
+
 
 
 class Font:
