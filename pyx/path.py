@@ -325,7 +325,7 @@ def _bcurveIntersect(a, a_t0, a_t1, b, b_t0, b_t1, epsilon=1e-5):
             try:
                 a_t = ( b_deltax*ba_deltay0 - b_deltay*ba_deltax0)/det
                 b_t = ( a_deltax*ba_deltay0 - a_deltay*ba_deltax0)/det
-            except MathError:
+            except ArithmeticError:
                 return ()
 
             # check for intersections out of bound

@@ -417,21 +417,24 @@ def _arrowhead(anormpath, size, angle, constriction):
 
     """helper routine, which returns an arrowhead for a normpath
 
-    returns arrowhead at pos (0: begin, !=0: end) of anormpath with size,
+    returns arrowhead at begin of anormpath with size,
     opening angle and relative constriction
     """
 
-    # first order conversion from pts to the bezier curve's
-    # parametrization
-
-    tlen = unit.topt(anormpath.tangent(0).arclength())
-
-    alen  = unit.topt(size)/tlen
-
-    if alen>anormpath.range(): alen=anormpath().range()
-
     # get tip (tx, ty)
     tx, ty = anormpath.begin()
+
+    # obtain arrow template by using path up to first intersection
+    # with circle around tip (as suggested by Michael Schindler)
+    ipar = anormpath.intersect(path.circle(tx, ty, size))
+    if ipar:
+        alen = ipar[0][0]
+    else:
+        # if this doesn't work, use first order conversion from pts to
+        # the bezier curve's parametrization
+        tlen = unit.topt(anormpath.tangent(0).arclength())
+        alen  = unit.topt(size)/tlen
+        if alen>anormpath.range(): alen=anormpath().range()
 
     # now we construct the template for our arrow but cutting
     # the path a the corresponding length

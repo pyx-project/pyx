@@ -60,6 +60,8 @@ PyX
     - canvas.insert() now supports arguments
     - bbox of canvas can be specified in writetofile command explicitely
     - writetofile does not return self anymore
+    - arrow template now uses intersection with circle to get size right
+      (as per a suggestion by Michael Schindler)
     - defered TODOs:
       default patterns
   - mathtree module:
@@ -75,6 +77,7 @@ PyX
     - traverse when adding functions as arguments of operators (mathtree module)
     - allow for extern functions in addcolumn (data module)
     - just one common place for the version number
+    - fix incorrect exception name MathError (path module)
     - ...
 
 0.2 (2003/01/17):
