@@ -23,6 +23,7 @@ install: html
 	cp png/*.png ../examples/*.png ../examples/*/*.png $(builddir)
 	cp ../examples/*.eps ../examples/*/*.eps $(builddir)
 	cp ../manual/manual.pdf $(builddir)
+	cp ../pyxfaq/pyxfaq.pdf $(builddir)
 	chmod -R 664 $(builddir)/*
 	scp -oCompression=yes -p -r $(builddir)/* shell.sourceforge.net:/home/groups/p/py/pyx/htdocs
 
