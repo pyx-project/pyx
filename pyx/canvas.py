@@ -628,6 +628,14 @@ class canvas(_canvas):
                 if fontdata[12+length1+length2:14+length1+length2] != fullfont._PFB_ASCII:
                     raise RuntimeError("PFB_ASCII mark expected")
                 length3 = fullfont.pfblength(fontdata[14+length1+length2:18+length1+length2])
+                if fontdata[18+length1+length2+length3:20+length1+length2+length3] != fullfont._PFB_DONE:
+                    raise RuntimeError("PFB_DONE mark expected")
+                if len(fontdata) != 20 + length1 + length2 + length3:
+                    raise RuntimeError("end of pfb file expected")
+
+                # we might be allowed to skip the third part ...
+                if fontdata[18+length1+length2:18+length1+length2+length3].replace("\n", "").replace("\r", "").replace("\t", "").replace(" ", "") == "0"*512 + "cleartomark":
+                    length3 = 0
 
                 uncompresseddata = fontdata[6:6+length1] + fontdata[12+length1:12+length1+length2] + fontdata[18+length1+length2:18+length1+length2+length3]
                 compresseddata = zlib.compress(uncompresseddata)
