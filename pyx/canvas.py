@@ -23,7 +23,7 @@
 # TODO:
 # - arrows
 
-import string, re, tex, unit, trafo, types
+import string, re, unit, trafo, types
 from math import sqrt
 
 # PostScript-procedure definitions
@@ -445,7 +445,10 @@ class canvas(CanvasCmds):
         file.write(PSProlog)
         file.write("\n%%EndProlog\n") 
         file.write("%f setlinewidth\n" % self.unit.pt(linewidth.normal))
+        
+        # here comes the actual content
         self.write(self, file)
+        
         file.write("\nshowpage\n")
         file.write("%%Trailer\n")
         file.write("%%EOF\n")
