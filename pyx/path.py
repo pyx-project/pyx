@@ -42,10 +42,10 @@ class PathException(Exception): pass
 
 class pathel:
 
-    ' element of a PS style path '
+    """element of a PS style path"""
     
     def _bbox(self, currentpoint, currentsubpath):
-	''' calculate bounding box of pathel
+	"""calculate bounding box of pathel
 
         returns tuple consisting of:
          - new currentpoint
@@ -54,24 +54,26 @@ class pathel:
 	
 	Important note: all coordinates in bbox, currentpoint, and 
 	currrentsubpath have to be floats (in the unit.topt)
-	'''
+
+	"""
 
 	pass
 
     def write(self, file):
-	' write pathel to file in the context of canvas '
+	"""write pathel to file in the context of canvas"""
 	
         pass
 	
     def _bpath(self, currentpoint, currentsubpath):
-	''' convert pathel to bpath 
+	"""convert pathel to bpath 
 
         returns tuple consisting of:
          - new currentpoint
          - new currentsubpath (i.e. first point of current subpath)
          - bpath corresponding to pathel in the context of currentpoint and 
 	   currentsubpath
-	'''
+
+        """	
 	
         pass
 
@@ -81,7 +83,8 @@ class pathel:
 
 
 class closepath(pathel): 
-    ' Connect subpath back to its starting point '
+
+    """Connect subpath back to its starting point"""
 
     def _bbox(self, currentpoint, currentsubpath):
 	return (None,
@@ -105,7 +108,7 @@ class closepath(pathel):
 #
  
 class _moveto(pathel):
-    ' Set current point to (x, y) (coordinates in pts) '
+    """Set current point to (x, y) (coordinates in pts)"""
 
     def __init__(self, x, y):
          self.x = x
@@ -126,14 +129,16 @@ class _moveto(pathel):
 
  
 class moveto(_moveto):
-    ' Set current point to (x, y) '
+
+    """Set current point to (x, y)"""
 
     def __init__(self, x, y):
          _moveto.__init__(self, unit.topt(x), unit.topt(y))
 
 
 class _rmoveto(pathel):
-    ' Perform relative moveto (coordinates in pts) '
+
+    """Perform relative moveto (coordinates in pts)"""
 
     def __init__(self, dx, dy):
          self.dx = dx
@@ -154,7 +159,8 @@ class _rmoveto(pathel):
 
 
 class rmoveto(_rmoveto):
-    ' Perform relative moveto '
+
+    """Perform relative moveto"""
 
     def __init__(self, dx, dy):
         _rmoveto.__init__(self, unit.topt(dx), unit.topt(dy))
@@ -164,7 +170,8 @@ class rmoveto(_rmoveto):
 #
 
 class _lineto(pathel):
-    ' Append straight line to (x, y) (coordinates in pts) '
+
+    """Append straight line to (x, y) (coordinates in pts)"""
 
     def __init__(self, x, y):
          self.x = x
@@ -188,14 +195,16 @@ class _lineto(pathel):
 
 
 class lineto(_lineto):
-    ' Append straight line to (x, y) '
+
+    """Append straight line to (x, y)"""
 
     def __init__(self, x, y):
         _lineto.__init__(self, unit.topt(x), unit.topt(y))
     
 
 class _rlineto(pathel):
-    ' Perform relative lineto (coordinates in pts) '
+
+    """Perform relative lineto (coordinates in pts)"""
 
     def __init__(self, dx, dy):
          self.dx = dx
@@ -220,7 +229,7 @@ class _rlineto(pathel):
 
 
 class rlineto(_rlineto):
-    ' Perform relative lineto '
+    """Perform relative lineto"""
 
     def __init__(self, dx, dy):
         _rlineto.__init__(self, unit.topt(dx), unit.topt(dy))
@@ -230,7 +239,7 @@ class rlineto(_rlineto):
 #
 
 class _arc(pathel):
-    ' Append counterclockwise arc (coordinates in pts)'
+    """Append counterclockwise arc (coordinates in pts)"""
 
     def __init__(self, x, y, r, angle1, angle2):
         self.x = x
@@ -344,7 +353,7 @@ class _arc(pathel):
                     )
 	
 class arc(_arc):
-    ' Append counterclockwise arc '
+    """Append counterclockwise arc"""
 
     def __init__(self, x, y, r, angle1, angle2):
         _arc.__init__(self, unit.topt(x), unit.topt(y), unit.topt(r), 
@@ -352,7 +361,7 @@ class arc(_arc):
 
 
 class _arcn(pathel):
-    ' Append clockwise arc (coordinates in pts) '
+    """Append clockwise arc (coordinates in pts)"""
     
     def __init__(self, x, y, r, angle1, angle2):
         self.x = x
@@ -423,7 +432,8 @@ class _arcn(pathel):
                     )
 
 class arcn(_arcn):
-    ' Append clockwise arc  '
+
+    """Append clockwise arc"""
     
     def __init__(self, x, y, r, angle1, angle2):
         _arcn.__init__(self, 
@@ -432,7 +442,7 @@ class arcn(_arcn):
 
 
 class _arct(pathel):
-    ' Append tangent arc (coordinates in pts) '
+    """Append tangent arc (coordinates in pts)"""
 
     def __init__(self, x1, y1, x2, y2, r):
         self.x1 = x1
@@ -450,7 +460,9 @@ class _arct(pathel):
         of arc and/or line which corresponds to arct
 
         this is a helper routine for _bpath and bbox, which both need this
-        path. Note: we don't want to calculate the bbox from a bpath"""
+        path. Note: we don't want to calculate the bbox from a bpath
+        
+        """
         
         # direction and length of tangent 1
         dx1  = currentpoint[0]-self.x1
@@ -530,7 +542,8 @@ class _arct(pathel):
                  p.bpath() )
                 
 class arct(_arct):
-    ' Append tangent arc '
+
+    """Append tangent arc"""
 
     def __init__(self, x1, y1, x2, y2, r):
         _arct.__init__(self, unit.topt(x1), unit.topt(y1),
@@ -543,7 +556,7 @@ class arct(_arct):
 	
 class _curveto(pathel):
 
-    ' Append curveto (coordinates in pts) '
+    """Append curveto (coordinates in pts)"""
 
     def __init__(self, x1, y1, x2, y2, x3, y3):
         self.x1 = x1
@@ -577,7 +590,7 @@ class _curveto(pathel):
 
 class curveto(_curveto):
 
-    ' Append curveto '
+    """Append curveto"""
 
     def __init__(self, x1, y1, x2, y2, x3, y3):
         _curveto.__init__(self,
@@ -588,7 +601,7 @@ class curveto(_curveto):
     
 class _rcurveto(pathel):
 
-    ' Append rcurveto (coordinates in pts) '
+    """Append rcurveto (coordinates in pts)"""
 	
     def __init__(self, dx1, dy1, dx2, dy2, dx3, dy3):
         self.dx1 = dx1
@@ -633,7 +646,7 @@ class _rcurveto(pathel):
 
 class rcurveto(_rcurveto):
 
-    ' Append rcurveto '
+    """Append rcurveto"""
 	
     def __init__(self, dx1, dy1, dx2, dy2, dx3, dy3):
         _rcurveto.__init__(self,
@@ -648,7 +661,7 @@ class rcurveto(_rcurveto):
 	
 class path:
     
-    ' PS style path '
+    """PS style path"""
     
     def __init__(self, path=[]):
         self.path = path
@@ -702,7 +715,7 @@ class path:
 
 class _line(path):
 
-   ' straight line from (x1, y1) to (x2, y2) (coordinates in pts) '
+   """straight line from (x1, y1) to (x2, y2) (coordinates in pts)"""
 
    def __init__(self, x1, y1, x2, y2):
        path.__init__(self, [ _moveto(x1,y1), _lineto(x2, y2) ] )
@@ -710,13 +723,16 @@ class _line(path):
 
 class line(path):
 
-   ' straight line from (x1, y1) to (x2, y2) '
+   """straight line from (x1, y1) to (x2, y2)"""
 
    def __init__(self, x1, y1, x2, y2):
        path.__init__(self, [ moveto(x1,y1), lineto(x2, y2) ] )
        
 
 class _rect(path):
+
+   """rectangle at position (x,y) with width and height (coordinates in pts)"""
+
    def __init__(self, x, y, width, height):
        path.__init__(self, [ _moveto(x,y), 
                              _rlineto(width,0), 
@@ -726,6 +742,9 @@ class _rect(path):
        
 
 class rect(path):
+
+   """rectangle at position (x,y) with width and height"""
+
    def __init__(self, x, y, width, height):
        path.__init__(self, [ moveto(x,y), 
                              rlineto(width,0), 
