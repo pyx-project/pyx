@@ -2255,7 +2255,7 @@ class _axis:
         while worse < self.maxworse:
             if parter is not None:
                 newticks = parter.lesspart()
-                if parterpos is not None:
+                if parterpos is not None and newticks is not None:
                     newticks = _mergeticklists(_mergeticklists(self.part[:parterpos], newticks), self.part[parterpos+1:])
             else:
                 newticks = None
@@ -2277,7 +2277,7 @@ class _axis:
         while worse < self.maxworse:
             if parter is not None:
                 newticks = parter.morepart()
-                if parterpos is not None:
+                if parterpos is not None and newticks is not None:
                     newticks = _mergeticklists(_mergeticklists(self.part[:parterpos], newticks), self.part[parterpos+1:])
             else:
                 newticks = None
