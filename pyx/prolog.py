@@ -162,6 +162,7 @@ class fontencoding(prologitem):
         encfile = open(path, "r")
         file.write(encfile.read())
         encfile.close()
+        file.write("%%EndProcSet\n")
 
 
 class fontreencoding(prologitem):
