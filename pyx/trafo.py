@@ -48,6 +48,7 @@ class transformation:
                        ( self.matrix[1][0]*other.matrix[0][0] + self.matrix[1][1]*other.matrix[1][0],
                          self.matrix[1][0]*other.matrix[0][1] + self.matrix[1][1]*other.matrix[1][1] )
                      )
+
             vector = ( self.matrix[0][0]*other.vector[0] + self.matrix[0][1]*other.vector[1] + self.vector[0],
                        self.matrix[1][0]*other.vector[0] + self.matrix[1][1]*other.vector[1] + self.vector[1] )
 
@@ -57,7 +58,6 @@ class transformation:
 	else:
 	    raise NotImplementedError, "can only multiply two transformations"
     def __rmul__(self, other):				# TODO: not needed!?
-        print "!"
         return other.__mul__(self)
 
     def matrix():
