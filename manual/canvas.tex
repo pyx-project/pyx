@@ -108,12 +108,12 @@ method. This may be useful when you want to apply a transformation on
 a whole set of operations. XXX: Example
 
 After you have finished the composition of the canvas, you can
-write it to a file using the method \verb|writetofile()|. It expects the
+write it to a file using the method \verb|writeEPSfile()|. It expects the
 required argument \verb|filename|, the name of the output
 file. To write your results to the file "test.eps" just call it as follows:
 \begin{quote}
 \begin{verbatim}
-c.writetofile("test")
+c.writeEPSfile("test")
 \end{verbatim}
 \end{quote}
 
@@ -159,13 +159,13 @@ The \verb|canvas| class provides the following methods:
   \texttt{settexrunner(texrunner)} &
   Sets the \texttt{texrunner}; default is \texttt{defaulttexrunner}
   from the \texttt{text} module.\\
-    \texttt{writetofile(filename, 
-      \newline\phantom{writetofile(}paperformat=None, 
-      \newline\phantom{writetofile(}rotated=0,
-      \newline\phantom{writetofile(}fittosize=0, 
-      \newline\phantom{writetofile(}margin="1 t cm",
-      \newline\phantom{writetofile(}bbox=None,
-      \newline\phantom{writetofile(}bboxenlarge="1 t pt")} &
+    \texttt{writeEPSfile(filename, 
+      \newline\phantom{writeEPSfile(}paperformat=None, 
+      \newline\phantom{writeEPSfile(}rotated=0,
+      \newline\phantom{writeEPSfile(}fittosize=0, 
+      \newline\phantom{writeEPSfile(}margin="1 t cm",
+      \newline\phantom{writeEPSfile(}bbox=None,
+      \newline\phantom{writeEPSfile(}bboxenlarge="1 t pt")} &
   Writes the canvas to \texttt{filename}. Optionally, a
   \texttt{paperformat} can be specified, in which case the output will
   be centered with respect to the corresponding size using the given
@@ -189,7 +189,7 @@ The \texttt{pattern} class allows the definition of PostScript Tiling
 patterns (cf.\ Sect.~4.9 of the PostScript Language Reference Manual)
 which may then be used to fill paths. The classes \texttt{pattern} and
 \texttt{canvas} differ only in their constructor and in the absence of
-a \texttt{writetofile} method in the former. The \texttt{pattern}
+a \texttt{writeEPSfile} method in the former. The \texttt{pattern}
 constructor accepts the following keyword arguments:
 
 \medskip
