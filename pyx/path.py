@@ -1925,7 +1925,7 @@ class normpath(path):
         # XXX factor parts of this code out
         if self.subpaths[-1].closed:
             context = _pathcontext(self.end_pt(), None)
-            currensubpathels = []
+            currentsubpathels = []
         else:
             context = _pathcontext(self.end_pt(), self.subpaths[-1].begin_pt())
             currentsubpathels = self.subpaths[-1].normpathels
