@@ -1,4 +1,6 @@
 #!/usr/bin/python 
+import sys
+sys.path.append("..")
 
 #from canvas import *
 #from graph import *
