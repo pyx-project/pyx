@@ -316,8 +316,8 @@ def _arrowheadtemplatelength(anormpath, size):
     else:
         # if this doesn't work, use first order conversion from pts to
         # the bezier curve's parametrization
-        tvecx, tvecy = anormpath.tangent_pt(0)
-        tlen = math.sqrt(tvecx*tvecx + tvecy*tvecy)
+        tvec = anormpath.tangent(0)
+        tlen = tvec.arclen_pt()
         try:
             alen = unit.topt(size)/tlen
         except ArithmeticError:

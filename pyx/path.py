@@ -1,4 +1,4 @@
-#rrrrrrr!/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: ISO-8859-1 -*-
 #
 #
@@ -23,10 +23,10 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 # TODO: - glue -> glue & glued
-#       - nocurrentpoint exception?
-#       - correct bbox for curveto and bpathel
+#       - exceptions: nocurrentpoint, paramrange
+#       - correct bbox for curveto and normcurve
 #         (maybe we still need the current bbox implementation (then maybe called
-#          cbox = control box) for bpathel for the use during the
+#          cbox = control box) for normcurve for the use during the
 #          intersection of bpaths)
 
 import copy, math, bisect
@@ -1001,13 +1001,13 @@ class path(base.PSCmd):
         """returns the parameter value(s) matching the given length(s)"""
         return normpath(self).arclentoparam(lengths, epsilon)
 
-    def at_pt(self, t):
-        """return coordinates in pts of corresponding normpath at parameter value t"""
-        return normpath(self).at_pt(t)
+    def at_pt(self, param):
+        """return coordinates in pts of corresponding normpath at parameter value param"""
+        return normpath(self).at_pt(param)
 
-    def at(self, t):
-        """return coordinates of corresponding normpath at parameter value t"""
-        return normpath(self).at(t)
+    def at(self, param):
+        """return coordinates of corresponding normpath at parameter value param"""
+        return normpath(self).at(param)
 
     def bbox(self):
         context = _pathcontext()
@@ -1058,13 +1058,17 @@ class path(base.PSCmd):
         """return reversed path"""
         return normpath(self).reversed()
 
-    def split(self, parameters):
-        """return corresponding normpaths split at parameter value t"""
-        return normpath(self).split(parameters)
+    def split(self, params):
+        """return corresponding normpaths split at parameter values params"""
+        return normpath(self).split(params)
 
-    def tangent(self, t, length=None):
-        """return tangent vector at parameter value t of corr. normpath"""
-        return normpath(self).tangent(t, length)
+    def tangent(self, param, length=None):
+        """return tangent vector at parameter value param of corresponding normpath"""
+        return normpath(self).tangent(param, length)
+
+    def trafoat(self, param):
+        """return transformation at parameter value param"""
+        return normpath(self).trafoat(param)
 
     def transformed(self, trafo):
         """return transformed path"""
@@ -1245,7 +1249,7 @@ class normpathel:
 
         pass
 
-    def tangent_pt(self, t):
+    def tangentvector_pt(self, t):
         """returns tangent vector of normpathel in pts at parameter t (0<=t<=1)"""
         pass
 
@@ -1345,7 +1349,7 @@ class normline(normpathel):
             result = []
         return result
 
-    def tangent_pt(self, t):
+    def tangentvector_pt(self, t):
         return (self.x1-self.x0, self.y1-self.y0)
 
     def transformed(self, trafo):
@@ -1612,7 +1616,7 @@ class normcurve(normpathel):
             result = []
         return result
 
-    def tangent_pt(self, t):
+    def tangentvector_pt(self, t):
         tvectx = (3*(  -self.x0+3*self.x1-3*self.x2+self.x3)*t*t +
                   2*( 3*self.x0-6*self.x1+3*self.x2        )*t +
                     (-3*self.x0+3*self.x1                  ))
@@ -1758,38 +1762,38 @@ class normsubpath:
             nnormpathels.append(self.normpathels[-(i+1)].reversed())
         return normsubpath(nnormpathels, self.closed)
 
-    def split(self, ts):
-        """split normsubpath at list of parameter values ts and return list
+    def split(self, params):
+        """split normsubpath at list of parameter values params and return list
         of normsubpaths
 
         Negative values of t count from the end of the sub path.
-        After taking this rule into account, the parameter list ts has
+        After taking this rule into account, the parameter list params has
         to be sorted and all parameters t have to fulfil
         0<=t<=self.range().  Note that each element of the resulting
         list is an _open_ normsubpath.
-        
+
         """
 
-        for i in range(len(ts)):
-            if ts[i]<0:
-                ts[i] += self.range()
-            if not (0<=ts[i]<=self.range()):
+        for i in range(len(params)):
+            if params[i]<0:
+                params[i] += self.range()
+            if not (0<=params[i]<=self.range()):
                 raise RuntimeError("parameter for split of subpath out of range")
 
         result = []
         npels = None
         for t, pel in enumerate(self.normpathels):
             # determine list of splitting parameters relevant for pel
-            nts = []
-            for nt in ts:
+            nparams = []
+            for nt in params:
                 if t+1 >= nt:
-                    nts.append(nt-t)
-                    ts = ts[1:]
+                    nparams.append(nt-t)
+                    params = params[1:]
 
             # now we split the path at the filtered parameter values
             # This yields a list of normpathels and possibly empty
             # segments marked by None
-            splitresult = pel.split(nts)
+            splitresult = pel.split(nparams)
             if splitresult:
                 # first split?
                 if npels is None:
@@ -1818,7 +1822,7 @@ class normsubpath:
         else:
             # mark split at the end of the normsubpath
             result.append(None)
-            
+
         # glue last and first segment together if the normsubpath was originally closed 
         if self.closed:
             if result[0] is None:
@@ -1830,13 +1834,26 @@ class normsubpath:
                 result = result[1:]
         return result
 
-    def tangent_pt(self, t):
-        if t<0:
-            t += self.range()
+    def tangent(self, t, length=None):
+        tx, ty = self.at_pt(t)
         if 0<=t<self.range():
-            return self.normpathels[int(t)].tangent_pt(t-int(t))
+            tdx, tdy = self.normpathels[int(t)].tangentvector_pt(t-int(t))
         if t==self.range():
-            return self.normpathels[-1].tangent_pt(1)
+            tdx, tdy = self.normpathels[-1].tangentvector_pt(1)
+        tlen = math.sqrt(tdx*tdx + tdy*tdy)
+        if not (length is None or tlen==0):
+            sfactor = unit.topt(length)/tlen
+            tdx *= sfactor
+            tdy *= sfactor
+        return line_pt(tx, ty, tx+tdx, ty+tdy)
+
+    def trafoat(self, t):
+        tx, ty = self.at_pt(t)
+        if 0<=t<self.range():
+            tdx, tdy = self.normpathels[int(t)].tangentvector_pt(t-int(t))
+        if t==self.range():
+            tdx, tdy = self.normpathels[-1].tangentvector_pt(1)
+        return trafo.translate_pt(tx, ty)*trafo.rotate(degrees(math.atan2(tdy, tdx)))
 
     def transform(self, trafo):
         """transform sub path according to trafo"""
@@ -1941,26 +1958,27 @@ class normpath(path):
     def __str__(self):
         return "normpath(%s)" % ", ".join(map(str, self.subpaths))
 
-    def _findsubpath(self, t):
+    def _findsubpath(self, param):
         """return a tuple (subpath, relativet),
-        where subpath is the subpath containing the parameter value t and t is the
-        renormalized value of t in this subpath
+        where subpath is the subpath containing the parameter value param and param is the
+        renormalized value of param in this subpath
 
-        Negative values of t count from the end of the path.  At
+        Negative values of param count from the end of the path.  At
         discontinuities in the path, the limit from below is returned.
-        None is returned, if the parameter t is out of range.
+        An exception is raise, if the parameter t is out of range.
         """
 
-        if t<0:
-            t += self.range()
+        if param<0:
+            param += self.range()
 
         spt = 0
         for sp in self.subpaths:
             sprange = sp.range()
-            if spt <= t <= sprange+spt:
-                return sp, t-spt
+            if spt <= param <= sprange+spt:
+                return sp, param-spt
             spt += sprange
-        return None
+        # XXX we need better exception
+        raise RuntimeError("parameter value out of range")
 
     def append(self, pathel):
         # XXX factor parts of this code out
@@ -1987,11 +2005,11 @@ class normpath(path):
                 currentsubpathels = []
             else:
                 currentsubpathels.append(npel)
-                
+
         if currentsubpathels:
             # append open sub path
             self.subpaths.append(normsubpath(currentsubpathels, 0))
-        
+
     def arclen_pt(self, epsilon=1e-5):
         """returns total arc length of normpath in pts with accuracy epsilon"""
         return sum([sp.arclen_pt(epsilon) for sp in self.subpaths])
@@ -2000,35 +2018,29 @@ class normpath(path):
         """returns total arc length of normpath with accuracy epsilon"""
         return unit.t_pt(self.arclen_pt(epsilon))
 
-    def at_pt(self, t):
-        """return coordinates in pts of path at parameter value t
+    def at_pt(self, param):
+        """return coordinates in pts of path at parameter value param
 
-        Negative values of t count from the end of the path. The absolute
-        value of t must be smaller or equal to the number of segments in
-        the normpath, otherwise None is returned.
+        Negative values of param count from the end of the path. The absolute
+        value of param must be smaller or equal to the number of segments in
+        the normpath, otherwise an exception is raised.
         At discontinuities in the path, the limit from below is returned
 
         """
-        result = self._findsubpath(t)
-        if result:
-            return result[0].at_pt(result[1])
-        else:
-            return None
+        sp, param = self._findsubpath(param)
+        return sp.at_pt(param)
 
-    def at(self, t):
-        """return coordinates of path at parameter value t
+    def at(self, param):
+        """return coordinates of path at parameter value param
 
-        Negative values of t count from the end of the path. The absolute
-        value of t must be smaller or equal to the number of segments in
-        the normpath, otherwise None is returned.
+        Negative values of param count from the end of the path. The absolute
+        value of param must be smaller or equal to the number of segments in
+        the normpath, otherwise an exception is raised.
         At discontinuities in the path, the limit from below is returned
 
         """
-        result = self.at_pt(t)
-        if result:
-            return unit.t_pt(result[0]), unit.t_pt(result[1])
-        else:
-            return result
+        x, y = self.at_pt(param)
+        return unit.t_pt(x), unit.t_pt(y)
 
     def bbox(self):
         abbox = None
@@ -2036,7 +2048,7 @@ class normpath(path):
             nbbox =  sp.bbox()
             if abbox is None:
                 abbox = nbbox
-            elif nbbox: 
+            elif nbbox:
                 abbox += nbbox
         return abbox
 
@@ -2045,30 +2057,24 @@ class normpath(path):
         if self.subpaths:
             return self.subpaths[0].begin_pt()
         else:
-            return None
+            raise RuntimeError("cannot return first point of empty path")
 
     def begin(self):
         """return coordinates of first point of first subpath in path"""
-        result = self.begin_pt()
-        if result:
-            return unit.t_pt(result[0]), unit.t_pt(result[1])
-        else:
-            return result
+        x, y = self.begin_pt()
+        return unit.t_pt(x), unit.t_pt(y)
 
     def end_pt(self):
         """return coordinates of last point of last subpath in path (in pts)"""
         if self.subpaths:
             return self.subpaths[-1].end_pt()
         else:
-            return None
+            raise RuntimeError("cannot return last point of empty path")
 
     def end(self):
         """return coordinates of last point of last subpath in path"""
-        result = self.end_pt()
-        if result:
-            return unit.t_pt(result[0]), unit.t_pt(result[1])
-        else:
-            return result
+        x, y = self.end_pt()
+        return unit.t_pt(x), unit.t_pt(y)
 
     def glue(self, other):
         if not self.subpaths:
@@ -2100,7 +2106,7 @@ class normpath(path):
         # other. Here, st_a, st_b are the parameter values
         # corresponding to the first point of the subpaths sp_a and
         # sp_b, respectively.
-        st_a = 0          
+        st_a = 0
         for sp_a in self.subpaths:
             st_b =0
             for sp_b in other.subpaths:
@@ -2178,21 +2184,20 @@ class normpath(path):
             nnormpath.subpaths.append(self.subpaths[-(i+1)].reversed())
         return nnormpath
 
-    def split(self, parameters):
-        """split path at parameter values parameters
+    def split(self, params):
+        """split path at parameter values params
 
         Note that the parameter list has to be sorted.
 
         """
 
         # XXX support negative arguments
-        # XXX None at the end of last subpath is not handled correctly
 
         # check whether parameter list is really sorted
-        sortedparams = list(parameters)
+        sortedparams = list(params)
         sortedparams.sort()
-        if sortedparams!=list(parameters):
-            raise ValueError("split parameters have to be sorted")
+        if sortedparams!=list(params):
+            raise ValueError("split params have to be sorted")
 
         # we build up this list of normpaths
         result = []
@@ -2203,15 +2208,15 @@ class normpath(path):
         t0 = 0
         for subpath in self.subpaths:
             tf = t0+subpath.range()
-            if parameters and tf>=parameters[0]:
+            if params and tf>=params[0]:
                 # split this subpath
-                # determine the relevant splitting parameters
-                for i in range(len(parameters)):
-                    if parameters[i]>tf: break
+                # determine the relevant splitting params
+                for i in range(len(params)):
+                    if params[i]>tf: break
                 else:
-                    i = len(parameters)
+                    i = len(params)
 
-                splitsubpaths = subpath.split([x-t0 for x in parameters[:i]])
+                splitsubpaths = subpath.split([x-t0 for x in params[:i]])
                 # handle first element, which may be None, separately
                 if splitsubpaths[0] is None:
                     if not np.subpaths:
@@ -2235,7 +2240,7 @@ class normpath(path):
                     else:
                         np.subpaths.append(splitsubpaths[-1])
 
-                parameters = parameters[i:]
+                params = params[i:]
             else:
                 # append whole subpath to current normpath
                 np.subpaths.append(subpath)
@@ -2249,47 +2254,16 @@ class normpath(path):
 
         return result
 
-    def tangent_pt(self, t, length=None):
-        """return tuple in pts corresponding to tangent vector of path at parameter value t
+    def tangent(self, param, length=None):
+        """return tangent vector of path at parameter value param
 
-        Negative values of t count from the end of the path. The absolute
-        value of t must be smaller or equal to the number of segments in
-        the normpath, otherwise None is returned.
-        At discontinuities in the path, the limit from below is returned
+        Negative values of t count from the end of the path. At discontinuities
+        in the path, the limit from below is returned
 
-        if length is not None, the tangent vector will be scaled to
-        the desired length
-
-        """
-        result = self._findsubpath(t)
-        if result:
-            tdx, tdy = result[0].tangent_pt(result[1])
-            tlen = math.sqrt(tdx*tdx + tdy*tdy)
-            if not (length is None or tlen==0):
-                sfactor = unit.topt(length)/tlen
-                tdx *= sfactor
-                tdy *= sfactor
-            return (tdx, tdy)
-        else:
-            return None
-
-    def tangent(self, t, length=None):
-        """return tuple corresponding to tangent vector of path at parameter value t
-
-        Negative values of t count from the end of the path. The absolute
-        value of t must be smaller or equal to the number of segments in
-        the normpath, otherwise None is returned.
-        At discontinuities in the path, the limit from below is returned
-
-        if length is not None, the tangent vector will be scaled to
-        the desired length
-
-        """
-        tvec = self.tangent_pt(t, length)
-        if tvec:
-            return (unit.t_pt(tvec[0]), unit.t_pt(tvec[1]))
-        else:
-            return None
+        If length is not None, the tangent vector will be scaled to
+        the desired length"""
+        sp, param = self._findsubpath(param)
+        return sp.tangent(param, length)
 
     def transform(self, trafo):
         """transform path according to trafo"""
@@ -2299,6 +2273,11 @@ class normpath(path):
     def transformed(self, trafo):
         """return path transformed according to trafo"""
         return normpath([sp.transformed(trafo) for sp in self.subpaths])
+
+    def trafoat(self, param):
+        """return transformation at parameter value t"""
+        sp, param = self._findsubpath(param)
+        return sp.trafoat(param)
 
     def outputPS(self, file):
         for sp in self.subpaths:

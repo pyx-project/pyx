@@ -92,6 +92,8 @@ TODO:
     - renamed: lentopar -> arclentoparam
     - normpath.tangent now returns tuple corresponding to direction and
       magnitude of tangent vector instead of normline
+    - path and normpath method raise exception instead of returning None
+      when parameter is out of range
   - connnector module:
     - renamed _xxx -> xxx_pt
   - deco module:

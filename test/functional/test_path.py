@@ -174,9 +174,9 @@ def testtangent(c):
            rlineto(2,3))+circle(5,5,1)
     c.stroke(p)
     for i in range(int(p.range())*2):
-        t0x, t0y = p.at(i/2.0)
-        tdx, tdy = p.tangent(i/2.0, "20 t pt")
-        c.stroke(line(t0x, t0y, t0x+tdx, t0y+tdy), [color.rgb.blue, deco.earrow.normal])
+        c.stroke(p.tangent(i/2.0, "20 t pt"), [color.rgb.blue, deco.earrow.normal])
+        c.stroke(line(0, 0, 1, 0).transformed(p.trafoat(i/2.0)), [color.rgb.green, deco.earrow.normal])
+        c.stroke(line(0, 0, 0, 1).transformed(p.trafoat(i/2.0)), [color.rgb.red, deco.earrow.normal])
 
 
 def testarcbbox(c):
