@@ -366,24 +366,27 @@ class symbol(_styleneedingpointpos):
 
     need = ["vpos", "vposmissing", "vposvalid"]
 
-    # insert symbols like staticmethods
-    cross = _crosssymbol
-    plus = _plussymbol
-    square = _squaresymbol
-    triangle = _trianglesymbol
-    circle = _circlesymbol
-    diamond = _diamondsymbol
+    # insert symbols
+    # note, that statements like cross = _crosssymbol are
+    # invalid, since the would lead to unbound methods, but
+    # a single entry changeable list does the trick
+    cross = attr.changelist([_crosssymbol])
+    plus = attr.changelist([_plussymbol])
+    square = attr.changelist([_squaresymbol])
+    triangle = attr.changelist([_trianglesymbol])
+    circle = attr.changelist([_circlesymbol])
+    diamond = attr.changelist([_diamondsymbol])
 
-    changecross = attr.changelist([cross, plus, square, triangle, circle, diamond])
-    changeplus = attr.changelist([plus, square, triangle, circle, diamond, cross])
-    changesquare = attr.changelist([square, triangle, circle, diamond, cross, plus])
-    changetriangle = attr.changelist([triangle, circle, diamond, cross, plus, square])
-    changecircle = attr.changelist([circle, diamond, cross, plus, square, triangle])
-    changediamond = attr.changelist([diamond, cross, plus, square, triangle, circle])
-    changesquaretwice = attr.changelist([square, square, triangle, triangle, circle, circle, diamond, diamond])
-    changetriangletwice = attr.changelist([triangle, triangle, circle, circle, diamond, diamond, square, square])
-    changecircletwice = attr.changelist([circle, circle, diamond, diamond, square, square, triangle, triangle])
-    changediamondtwice = attr.changelist([diamond, diamond, square, square, triangle, triangle, circle, circle])
+    changecross = attr.changelist([_crosssymbol, _plussymbol, _squaresymbol, _trianglesymbol, _circlesymbol, _diamondsymbol])
+    changeplus = attr.changelist([_plussymbol, _squaresymbol, _trianglesymbol, _circlesymbol, _diamondsymbol, cross])
+    changesquare = attr.changelist([_squaresymbol, _trianglesymbol, _circlesymbol, _diamondsymbol, cross, _plussymbol])
+    changetriangle = attr.changelist([_trianglesymbol, _circlesymbol, _diamondsymbol, cross, _plussymbol, _squaresymbol])
+    changecircle = attr.changelist([_circlesymbol, _diamondsymbol, cross, _plussymbol, _squaresymbol, _trianglesymbol])
+    changediamond = attr.changelist([_diamondsymbol, cross, _plussymbol, _squaresymbol, _trianglesymbol, _circlesymbol])
+    changesquaretwice = attr.changelist([_squaresymbol, _squaresymbol, _trianglesymbol, _trianglesymbol, _circlesymbol, _circlesymbol, _diamondsymbol, _diamondsymbol])
+    changetriangletwice = attr.changelist([_trianglesymbol, _trianglesymbol, _circlesymbol, _circlesymbol, _diamondsymbol, _diamondsymbol, _squaresymbol, _squaresymbol])
+    changecircletwice = attr.changelist([_circlesymbol, _circlesymbol, _diamondsymbol, _diamondsymbol, _squaresymbol, _squaresymbol, _trianglesymbol, _trianglesymbol])
+    changediamondtwice = attr.changelist([_diamondsymbol, _diamondsymbol, _squaresymbol, _squaresymbol, _trianglesymbol, _trianglesymbol, _circlesymbol, _circlesymbol])
 
     changestrokedfilled = attr.changelist([deco.stroked, deco.filled])
     changefilledstroked = attr.changelist([deco.filled, deco.stroked])
@@ -481,7 +484,7 @@ class line(_styleneedingpointpos):
                         cutvpos = []
                         for vstart, vend in zip(styledata.lastvpos, styledata.vpos):
                             cutvpos.append(vstart + (vend - vstart) * cut)
-                        styledata.linebasepoints.append(styledata.graph.vpos_pt(*cutvpos))
+                        styledata.linebasepoints.append(graph.vpos_pt(*cutvpos))
                     self.addpointstopath(styledata)
             else:
                 # the last point was outside the graph
@@ -557,8 +560,8 @@ class line(_styleneedingpointpos):
                                 for vstart, vend in zip(styledata.lastvpos, styledata.vpos):
                                     cutfromvpos.append(vstart + (vend - vstart) * cutfrom)
                                     cuttovpos.append(vstart + (vend - vstart) * cutto)
-                                styledata.linebasepoints.append(styledata.graph.vpos_pt(*cutfromvpos))
-                                styledata.linebasepoints.append(styledata.graph.vpos_pt(*cuttovpos))
+                                styledata.linebasepoints.append(graph.vpos_pt(*cutfromvpos))
+                                styledata.linebasepoints.append(graph.vpos_pt(*cuttovpos))
                                 self.addpointstopath(styledata)
             styledata.lastvpos = styledata.vpos[:]
         else:
@@ -652,8 +655,6 @@ class errorbar(_style):
                             styledata.errorbarcanvas.stroke(graph.vcap_pt(j, styledata.errorsize_pt, *vmaxpos))
 
 
-# not yet ported to the new style scheme
-# 
 # class text(symbol):
 # 
 #     defaulttextattrs = [textmodule.halign.center, textmodule.vshift.mathaxis]
@@ -686,64 +687,64 @@ class errorbar(_style):
 #         styledata.textdx_pt = unit.topt(self.textdx)
 #         styledata.textdy_pt = unit.topt(self.textdy)
 #         symbol.drawpoints(self, points, graph, styledata)
-# 
-# 
-# class arrow(_style):
-# 
-#     defaultlineattrs = []
-#     defaultarrowattrs = []
-# 
-#     def __init__(self, linelength=0.25*unit.v_cm, arrowsize=0.15*unit.v_cm, lineattrs=[], arrowattrs=[], epsilon=1e-10):
-#         self.linelength = linelength
-#         self.arrowsize = arrowsize
-#         self.lineattrs = lineattrs
-#         self.arrowattrs = arrowattrs
-#         self.epsilon = epsilon
-# 
-#     def setdata(self, graph, columns, styledata):
-#         if len(graph.axisnames) != 2:
-#             raise TypeError("arrow style restricted on two-dimensional graphs")
-#         columns = columns.copy()
-#         styledata.xaxis, styledata.xindex = _style.setdatapattern(self, graph, columns, re.compile(r"(%s([2-9]|[1-9][0-9]+)?)$" % graph.axisnames[0]))
-#         styledata.yaxis, styledata.yindex = _style.setdatapattern(self, graph, columns, re.compile(r"(%s([2-9]|[1-9][0-9]+)?)$" % graph.axisnames[1]))
-#         styledata.sizeindex = columns["size"]
-#         del columns["size"]
-#         styledata.angleindex = columns["angle"]
-#         del columns["angle"]
-#         return columns
-# 
-#     def adjustaxes(self, points, columns, styledata):
-#         if styledata.xindex in columns:
-#             styledata.xaxis.adjustrange(points, styledata.xindex)
-#         if styledata.yindex in columns:
-#             styledata.yaxis.adjustrange(points, styledata.yindex)
-# 
-#     def selectstyle(self, selectindex, selecttotal, styledata):
-#         if self.lineattrs is not None:
-#             styledata.lineattrs = attr.selectattrs(self.defaultlineattrs + self.lineattrs, selectindex, selecttotal)
-#         else:
-#             styledata.lineattrs = None
-#         if self.arrowattrs is not None:
-#             styledata.arrowattrs = attr.selectattrs(self.defaultarrowattrs + self.arrowattrs, selectindex, selecttotal)
-#         else:
-#             styledata.arrowattrs = None
-# 
-#     def drawpoints(self, points, graph, styledata):
-#         if styledata.lineattrs is not None and styledata.arrowattrs is not None:
-#             linelength_pt = unit.topt(self.linelength)
-#             for point in points:
-#                 xpos, ypos = graph.pos_pt(point[styledata.xindex], point[styledata.yindex], xaxis=styledata.xaxis, yaxis=styledata.yaxis)
-#                 if point[styledata.sizeindex] > self.epsilon:
-#                     dx = math.cos(point[styledata.angleindex]*math.pi/180)
-#                     dy = math.sin(point[styledata.angleindex]*math.pi/180)
-#                     x1 = xpos-0.5*dx*linelength_pt*point[styledata.sizeindex]
-#                     y1 = ypos-0.5*dy*linelength_pt*point[styledata.sizeindex]
-#                     x2 = xpos+0.5*dx*linelength_pt*point[styledata.sizeindex]
-#                     y2 = ypos+0.5*dy*linelength_pt*point[styledata.sizeindex]
-#                     graph.stroke(path.line_pt(x1, y1, x2, y2), styledata.lineattrs +
-#                                  [deco.earrow(styledata.arrowattrs, size=self.arrowsize*point[styledata.sizeindex])])
-# 
-# 
+
+
+class arrow(_styleneedingpointpos):
+
+    need = ["vpos", "vposmissing", "vposvalid"]
+
+    defaultlineattrs = []
+    defaultarrowattrs = []
+
+    def __init__(self, linelength=0.25*unit.v_cm, arrowsize=0.15*unit.v_cm, lineattrs=[], arrowattrs=[], epsilon=1e-10):
+        self.linelength = linelength
+        self.arrowsize = arrowsize
+        self.lineattrs = lineattrs
+        self.arrowattrs = arrowattrs
+        self.epsilon = epsilon
+
+    def columns(self, styledata, graph, columns):
+        if len(graph.axesnames) != 2:
+            raise ValueError("arrow style restricted on two-dimensional graphs")
+        if "size" not in columns:
+            raise ValueError("size missing")
+        if "angle" not in columns:
+            raise ValueError("angle missing")
+        return ["size", "angle"] + _styleneedingpointpos.columns(self, styledata, graph, columns)
+
+    def selectstyle(self, styledata, graph, selectindex, selecttotal):
+        if self.lineattrs is not None:
+            styledata.lineattrs = attr.selectattrs(self.defaultlineattrs + self.lineattrs, selectindex, selecttotal)
+        else:
+            styledata.lineattrs = None
+        if self.arrowattrs is not None:
+            styledata.arrowattrs = attr.selectattrs(self.defaultarrowattrs + self.arrowattrs, selectindex, selecttotal)
+        else:
+            styledata.arrowattrs = None
+
+    def drawpoint(self, styledata, graph):
+        if styledata.lineattrs is not None and styledata.arrowattrs is not None and styledata.vposvalid:
+            linelength_pt = unit.topt(self.linelength)
+            xpos, ypos = graph.vpos_pt(*styledata.vpos)
+            try:
+                angle = styledata.point["angle"] + 0.0
+                size = styledata.point["size"] + 0.0
+            except:
+                pass
+            if styledata.point["size"] > self.epsilon:
+                dx = math.cos(angle*math.pi/180)
+                dy = math.sin(angle*math.pi/180)
+                x1 = xpos-0.5*dx*linelength_pt*size
+                y1 = ypos-0.5*dy*linelength_pt*size
+                x2 = xpos+0.5*dx*linelength_pt*size
+                y2 = ypos+0.5*dy*linelength_pt*size
+                graph.stroke(path.line_pt(x1, y1, x2, y2), styledata.lineattrs +
+                             [deco.earrow(styledata.arrowattrs, size=self.arrowsize*size)])
+
+    def key_pt(self, styledata, graph, x_pt, y_pt, width_pt, height_pt):
+        raise "TODO"
+
+
 # class rect(_style):
 # 
 #     def __init__(self, palette=color.palette.Gray):

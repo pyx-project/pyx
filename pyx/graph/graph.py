@@ -148,11 +148,10 @@ class graphxy(canvas.canvas):
         else:
             usedata = data
         if styles is None:
-            raise RuntimeError() # TODO: default styles handling ...
             for d in usedata:
-                if style is None:
-                    style = d.defaultstyle
-                elif style != d.defaultstyle:
+                if styles is None:
+                    styles = d.getdefaultstyles()
+                elif styles != d.getdefaultstyles():
                     raise RuntimeError("defaultstyles differ")
         for d in usedata:
             d.setstyles(self, styles)

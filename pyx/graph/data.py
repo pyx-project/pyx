@@ -71,7 +71,7 @@ class _Idata:
         Returns a list of default styles for the data. Note to
         return the same instances when the graph should iterate
         over the styles using selectstyles. The following default
-        implementation returns the value of the defaultstyle
+        implementation returns the value of the defaultstyles
         class variable."""
 
     def gettitle(self):
@@ -576,7 +576,7 @@ class conffile(data):
 
 class _linedata(_data):
 
-    defaultstyle = [style.line()]
+    defaultstyles = [style.line()]
 
 
 class function(_linedata):
@@ -632,7 +632,7 @@ class function(_linedata):
                 try:
                     y = self.mathtree.Calc(**self.context)
                 except (ArithmeticError, ValueError):
-                    pass
+                    y = None
                 self.data.append([x, y])
         elif step == 2:
             for style in self.styles:
