@@ -4771,20 +4771,33 @@ class paramfunction:
         self.expression = {}
         self.mathtrees = {}
         varlist, expressionlist = expression.split("=")
-        parsestr = mathtree.ParseStr(expressionlist)
-        for key in varlist.split(","):
-            key = key.strip()
-            if self.mathtrees.has_key(key):
-                raise ValueError("multiple assignment in tuple")
-            try:
-                self.mathtrees[key] = parser.ParseMathTree(parsestr)
-                break
-            except mathtree.CommaFoundMathTreeParseError, e:
-                self.mathtrees[key] = e.MathTree
+        if parser.isnewparser == 1: # XXX: switch between mathtree-parsers
+            keys = varlist.split(",")
+            mtrees = helper.ensurelist(parser.parse(expressionlist))
+            if len(keys) != len(mtrees):
+                raise ValueError("unpack tuple of wrong size")
+            for i in range(len(keys)):
+                key = keys[i].strip()
+                if self.mathtrees.has_key(key):
+                    raise ValueError("multiple assignment in tuple")
+                self.mathtrees[key] = mtrees[i]
+            if len(keys) != len(self.mathtrees.keys()):
+                raise ValueError("unpack tuple of wrong size")
         else:
-            raise ValueError("unpack tuple of wrong size")
-        if len(varlist.split(",")) != len(self.mathtrees.keys()):
-            raise ValueError("unpack tuple of wrong size")
+            parsestr = mathtree.ParseStr(expressionlist)
+            for key in varlist.split(","):
+                key = key.strip()
+                if self.mathtrees.has_key(key):
+                    raise ValueError("multiple assignment in tuple")
+                try:
+                    self.mathtrees[key] = parser.ParseMathTree(parsestr)
+                    break
+                except mathtree.CommaFoundMathTreeParseError, e:
+                    self.mathtrees[key] = e.MathTree
+            else:
+                raise ValueError("unpack tuple of wrong size")
+            if len(varlist.split(",")) != len(self.mathtrees.keys()):
+                raise ValueError("unpack tuple of wrong size")
         self.data = []
         for i in range(self.points):
             context[self.varname] = self.min + (self.max-self.min)*i / (self.points-1.0)

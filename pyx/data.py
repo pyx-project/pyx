@@ -28,8 +28,28 @@ import helper, mathtree
 
 class ColumnError(Exception): pass
 
+# XXX: for new mathtree parser
+class MathTreeFuncCol(mathtree.MathTreeValVar):
 
+    def __init__(self, *args):
+        self.name = "_col_"
+        self.VarName = None
+        mathtree.MathTreeValVar.__init__(self, *args)
 
+    def VarList(self):
+        return [self]
+
+    def ColNo(HIDDEN_self, **args):
+        i = int(HIDDEN_self.Args[0].Calc(**args))
+        HIDDEN_self.VarName = "_col_%d" % (i)
+        return i
+
+    def Calc(HIDDEN_self, **args):
+        return mathtree.MathTreeValVar(HIDDEN_self.VarName).Calc(**args)
+
+MathTreeFuncsWithCol = list(mathtree.DefaultMathTreeFuncs) + [MathTreeFuncCol]
+# XXX: end of snip for new mathtree-parser
+# XXX: begin of snip for old mathtree-parser
 ColPattern = re.compile(r"\$(\(-?[0-9]+\)|-?[0-9]+)")
 
 class MathTreeValCol(mathtree.MathTreeValVar):
@@ -48,6 +68,7 @@ class MathTreeValCol(mathtree.MathTreeValVar):
 
 # extent the list of possible values by MathTreeValCol
 MathTreeValsWithCol = tuple(list(mathtree.DefaultMathTreeVals) + [MathTreeValCol])
+# XXX: end of snip for old mathtree-parser
 
 
 class _Idata:
@@ -106,7 +127,8 @@ class _data:
 
     __implements__ = _Idata
 
-    def __init__(self, data, titles, parser=mathtree.parser(MathTreeVals=MathTreeValsWithCol)):
+    def __init__(self, data, titles, parser=mathtree.parser(
+           MathTreeVals=MathTreeValsWithCol, MathTreeFuncs=MathTreeFuncsWithCol)):
         """initializes an instance
         - data and titles are just set as instance variables without further checks ---
           they must be valid in terms of _Idata (expecially their sizes must fit)
@@ -139,25 +161,48 @@ class _data:
             expression = expression[split+1:]
         tree = self.parser.parse(expression)
         columnlist = {}
-        for key in tree.VarList():
-            if key[0] == "$":
-                if key[1] == "(":
-                    column = int(key[2:-1])
-                else:
-                    column = int(key[1:])
-                try:
-                    self.titles[column]
-                except:
-                    raise ColumnError
-                columnlist[key] = column
-            else:
-                try:
-                    columnlist[key] = self.getcolumnno(key)
-                except ColumnError, e:
-                    if key not in context.keys():
-                        raise e
-
         varlist = context.copy() # do not modify context
+        if self.parser.isnewparser == 1: # XXX: switch between mathtree-parsers
+            for key in tree.VarList():
+                if isinstance(key, MathTreeFuncCol):
+                    column = int(key.ColNo(**varlist))
+                    try:
+                        self.titles[column]
+                    except:
+                        raise ColumnError
+                    columnlist["_col_%d" % (column)] = column
+                elif key[0:5] == "_col_":
+                    column = int(key[5:])
+                    try:
+                        self.titles[column]
+                    except:
+                        raise ColumnError
+                    columnlist[key] = column
+                else:
+                    try:
+                        columnlist[key] = self.getcolumnno(key)
+                    except ColumnError, e:
+                        if key not in context.keys():
+                            raise e
+        else:
+            for key in tree.VarList():
+                if key[0] == "$":
+                    if key[1] == "(":
+                        column = int(key[2:-1])
+                    else:
+                        column = int(key[1:])
+                    try:
+                        self.titles[column]
+                    except:
+                        raise ColumnError
+                    columnlist[key] = column
+                else:
+                    try:
+                        columnlist[key] = self.getcolumnno(key)
+                    except ColumnError, e:
+                        if key not in context.keys():
+                            raise e
+
         for data in self.data:
             try:
                 for key in columnlist.keys():
