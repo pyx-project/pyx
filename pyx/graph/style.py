@@ -108,15 +108,6 @@ class _style:
         drawn using the drawpoint method above."""
         pass
 
-    def styledata(self, privatedata, sharedata):
-        """Access to data from the style
-
-        By that method a style can return some data to the user after
-        drawing was completed. A typical example is the path as
-        created by the line style. Return values None are not passed
-        to the user."""
-        return None
-
     def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt, dy_pt):
         """Draw graph key
 
@@ -607,9 +598,6 @@ class line(_styleneedingpointpos):
             self.addpointstopath(privatedata, sharedata)
         if privatedata.lineattrs is not None and len(privatedata.path.path):
             privatedata.linecanvas.stroke(privatedata.path)
-
-    def styledata(self, privatedata, sharedata):
-        return privatedata.path
 
     def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt, dy_pt):
         if privatedata.lineattrs is not None:

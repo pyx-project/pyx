@@ -33,46 +33,53 @@ class _Idata:
 
     Graph data consists in columns, where each column might
     be identified by a string or an integer. Each row in the
-    resulting table refers to a data point."""
+    resulting table refers to a data point.
 
-    def getcolumndataindex(self, column):
+    All methods except for the constructor should consider
+    self to be readonly, since the data instance might be shared
+    between several graphs simultaniously. The plotitem instance
+    created by the graph is available as a container class."""
+
+    def getcolumnpointsindex(self, column):
         """Data for a column
 
         This method returns data of a column by a tuple data, index.
         column identifies the column. If index is not None, the data
         of the column is found at position index for each element of
         the list data. If index is None, the data is the list of
-        data."""
+        data.
+
+        Some data might not be available by this function since it
+        is dynamic, i.e. it depends on plotitem. An example are
+        function data, which is available within a graph only. Thus
+        this method might raise an exception."""
+        raise NotImplementedError("call to an abstract method of %r" % self)
 
     def getcolumn(self, column):
         """Data for a column
 
         This method returns the data of a column in a list. column
-        has the same meaning as in getcolumndataindex. Note, that
-        this method typically has to create this list, which needs
-        time and memory. While its easy to the user, internally it
-        should be avoided in favor of getcolumndataindex. The method
-        can be implemented as follows:"""
-        data, index = self.getcolumndataindex(column)
-        if index is None:
-            return data
-        else:
-            return [point[index] for point in data]
+        has the same meaning as in getcolumnpointsindex. Note, that
+        this method typically has to create a new list, which needs
+        time and memory. While its easy to the user, internally
+        it should be avoided in favor of getcolumnpointsindex."""
+        raise NotImplementedError("call to an abstract method of %r" % self)
 
     def getcount(self):
         """Number of points
 
         This method returns the number of points. All results by
-        getcolumndataindex and getcolumn will fit this number."""
+        getcolumnpointsindex and getcolumn will fit this number.
+        It might raise an exception as getcolumnpointsindex."""
+        raise NotImplementedError("call to an abstract method of %r" % self)
 
     def getdefaultstyles(self):
         """Default styles for the data
 
         Returns a list of default styles for the data. Note to
         return the same instances when the graph should iterate
-        over the styles using selectstyles. The following default
-        implementation returns the value of the defaultstyles
-        class variable."""
+        over the styles using selectstyles."""
+        raise NotImplementedError("call to an abstract method of %r" % self)
 
     def gettitle(self):
         """Title of the data
@@ -80,23 +87,38 @@ class _Idata:
         This method returns a title string for the data to be used
         in graph keys and probably other locations. The method might
         return None to indicate, that there is no title and the data
-        should be skiped in a graph key. Alternatively, the title
-        might contain a list of strings. The list should fit the
-        return value of the key_pt method. Data titles does not need
+        should be skiped in a graph key. Data titles does not need
         to be unique."""
+        raise NotImplementedError("call to an abstract method of %r" % self)
 
-    def setstyles(self, graph, styles):
-        """Attach graph styles to data
+    def initplotitem(self, plotitem, graph):
+        """Initialize plotitem
 
-        This method is called by the graph to attach styles to the
-        data instance."""
+        This function within the plotitem initialization procedure
+        and allows to initialize the plotitem as a data container.
+        For static data the method might just do nothing."""
+        raise NotImplementedError("call to an abstract method of %r" % self)
 
-    def selectstyles(self, graph, selectindex, selecttotal):
-        """Perform select on the styles
+    def getcolumnpointsindex_plotitem(self, plotitem, column):
+        """Data for a column with plotitem
 
-        This method should perfrom selectstyle calls on all styles."""
+        Like getcolumnpointsindex but for use within a graph, i.e. with
+        a plotitem container class. For static data being defined within
+        the constructor already, the plotitem reference is not needed and
+        the method can be implemented by calling getcolumnpointsindex."""
+        raise NotImplementedError("call to an abstract method of %r" % self)
 
-    def adjustaxes(self, graph, step):
+    def getcolumnnames(self, plotitem):
+        """Return list of column names of the data
+
+        This method returns a list of column names. It might
+        depend on the graph. (*YES*, it might depend on the graph
+        in case of a function, where function variables might be
+        axis names. Other variables, not available by axes, will
+        be taken from the context.)"""
+        raise NotImplementedError("call to an abstract method of %r" % self)
+
+    def adjustaxes(self, plotitem, graph, step):
         """Adjust axes ranges
 
         This method should call adjustaxis for all styles.
@@ -106,174 +128,113 @@ class _Idata:
         where the y range depends on the x range). On step == 2
         axes ranges not previously set should be updated by data
         accumulated by step 1."""
+        raise NotImplementedError("call to an abstract method of %r" % self)
 
-    def draw(self, graph):
+    def draw(self, plotitem, graph):
         """Draw data
 
-        This method should draw the data."""
+        This method should draw the data. Its called by plotinfo,
+        since it can be implemented here more efficiently by avoiding
+        some additional function calls."""
+        raise NotImplementedError("call an abstract method of %r" % self)
 
-    def stylesdata(self, graph):
-        """Collects data from a style to return it to the user
-
-        This method returns a collection of the return values of
-        the styledata method for all styles. In case all return
-        values of the styledata methods were None, None is returned.
-        When only a single return value of the styledata methods is
-        different from None, it is returned directly. Otherwise a
-        list of the return values is created."""
-
-    def key_pt(self, graph, x_pt, y_pt, width_pt, height_pt, dy_pt):
-        """Draw graph key
-
-        This method should draw a graph key at the given position
-        x_pt, y_pt indicating the lower left corner of the given
-        area width_pt, height_pt. The styles might draw several
-        key entries shifted vertically by dy_pt. The method returns
-        the number of key entries."""
-
-
-class styledata:
-    """Styledata storage class
-
-    Instances of this class are used to store data from the styles
-    and to pass point data to the styles by instances named privatedata
-    and sharedata. sharedata is shared between all the style(s) in use
-    by a data instance, while privatedata is private to each style and
-    used as a storage place instead of self to prevent side effects when
-    using a style several times."""
-    pass
+#    def key_pt(self, plotitem, graph, x_pt, y_pt, width_pt, height_pt, dy_pt):
+#        """Draw graph key
+#
+#        This method should draw a graph key at the given position
+#        x_pt, y_pt indicating the lower left corner of the given
+#        area width_pt, height_pt. The styles might draw several
+#        key entries shifted vertically by dy_pt. The method returns
+#        the number of key entries."""
 
 
 class _data(_Idata):
-    """Partly implements the _Idata interface
-
-    This class partly implements the _Idata interface. In order
-    to do so, it makes use of various instance variables:
-
-        self.data:
-        self.columns:
-        self.styles:
-        self.sharedata:
-        self.privatedatalist: a list of privatedata containers
-        self.title: the title of the data
-        self.defaultstyles:"""
+    """Partly implements the _Idata interface"""
 
     defaultstyles = [style.symbol()]
 
-    def getcolumndataindex(self, column):
-        return self.data, self.columns[column]
-
-    def getcount(self):
-        return len(self.data)
-
-    def gettitle(self):
-        return self.title
+    def getcolumn(self, column):
+        data, index = self.getcolumnpointsindex(column)
+        if index is None:
+            return data
+        else:
+            return [point[index] for point in data]
 
     def getdefaultstyles(self):
         return self.defaultstyles
 
-    def addneededstyles(self, styles):
-        """helper method (not part of the interface)
+    def gettitle(self):
+        return self.title
 
-        This is a helper method, which returns a list of styles where
-        provider styles are added in front to fullfill all needs of the
-        given styles."""
-        provided = [] # already provided sharedata variables
-        addstyles = [] # a list of style instances to be added in front
-        for s in styles:
-            for n in s.needsdata:
-                if n not in provided:
-                    defaultprovider = style.getdefaultprovider(n)
-                    addstyles.append(defaultprovider)
-                    provided.extend(defaultprovider.providesdata)
-            provided.extend(s.providesdata)
-        return addstyles + styles
+    def initplotitem(self, plotitem, graph):
+        pass
 
-    def setcolumns(self, privatedatalist, sharedata, graph, styles, columns):
-        """helper method (not part of the interface)
-
-        This is a helper method to perform setcolumn to all styles."""
-        usedcolumns = []
-        for privatedata, style in zip(privatedatalist, styles):
-            usedcolumns.extend(style.columns(privatedata, sharedata, graph, columns))
-        for column in columns:
-            if column not in usedcolumns:
-                raise ValueError("unused column '%s'" % column)
-
-    def setstyles(self, graph, styles):
-        self.styles = self.addneededstyles(styles)
-        self.privatedatalist = [styledata() for x in self.styles]
-        self.sharedata = styledata()
-        self.setcolumns(self.privatedatalist, self.sharedata, graph, self.styles, self.columns.keys())
-
-    def selectstyles(self, graph, selectindex, selecttotal):
-        for privatedata, style in zip(self.privatedatalist, self.styles):
-            style.selectstyle(privatedata, self.sharedata, graph, selectindex, selecttotal)
-
-    def adjustaxes(self, graph, step):
-        if step == 0:
-            for column in self.columns.keys():
-                data, index = self.getcolumndataindex(column)
-                for privatedata, style in zip(self.privatedatalist, self.styles):
-                    style.adjustaxis(privatedata, self.sharedata, graph, column, data, index)
-
-    def draw(self, graph):
-        columndataindex = []
-        for column in self.columns.keys():
-            data, index = self.getcolumndataindex(column)
-            columndataindex.append((column, data, index))
-        for privatedata, style in zip(self.privatedatalist, self.styles):
-            style.initdrawpoints(privatedata, self.sharedata, graph)
-        if len(columndataindex):
-            column, data, index = columndataindex[0]
-            l = len(data)
-            for column, data, index in columndataindex[1:]:
-                if l != len(data):
-                    raise ValueError("data len differs")
-            self.sharedata.point = {}
+    def draw(self, plotitem, graph):
+        columnpointsindex = []
+        l = None
+        for column in self.getcolumnnames(plotitem):
+            points, index = self.getcolumnpointsindex_plotitem(plotitem, column)
+            columnpointsindex.append((column, points, index))
+            if l is None:
+                l = len(points)
+            else:
+                if l != len(points):
+                    raise ValueError("points len differs")
+        for privatedata, style in zip(plotitem.privatedatalist, plotitem.styles):
+            style.initdrawpoints(privatedata, plotitem.sharedata, graph)
+        if len(columnpointsindex):
+            plotitem.sharedata.point = {}
             for i in xrange(l):
-                for column, data, index in columndataindex:
+                for column, points, index in columnpointsindex:
                     if index is not None:
-                        self.sharedata.point[column] = data[i][index]
+                        plotitem.sharedata.point[column] = points[i][index]
                     else:
-                        self.sharedata.point[column] = data[i]
-                for privatedata, style in zip(self.privatedatalist, self.styles):
-                    style.drawpoint(privatedata, self.sharedata, graph)
-        for privatedata, style in zip(self.privatedatalist, self.styles):
-            style.donedrawpoints(privatedata, self.sharedata, graph)
-
-    def stylesdata(self):
-        stylesdata = []
-        for privatedata, style in zip(self.privatedatalist, self.styles):
-            styledata = style.styledata(privatedata, self.sharedata)
-            if styledata is not None:
-                stylesdata.append(styledata)
-        if len(stylesdata) > 1:
-            return stylesdata
-        elif len(stylesdata) == 1:
-            return stylesdata[0]
-        else:
-            return None
+                        plotitem.sharedata.point[column] = points[i]
+                for privatedata, style in zip(plotitem.privatedatalist, plotitem.styles):
+                    style.drawpoint(privatedata, plotitem.sharedata, graph)
+        for privatedata, style in zip(plotitem.privatedatalist, plotitem.styles):
+            style.donedrawpoints(privatedata, plotitem.sharedata, graph)
 
 
-    def key_pt(self, graph, x_pt, y_pt, width_pt, height_pt, dy_pt):
-        i = None
-        for privatedata, style in zip(self.privatedatalist, self.styles):
-            j = style.key_pt(privatedata, self.sharedata, graph, x_pt, y_pt, width_pt, height_pt, dy_pt)
-            if i is None:
-                if j is not None:
-                    i = j
-            elif j is not None and i != j:
-                raise ValueError("different number of graph keys")
-        if i is None:
-            raise ValueError("no graph key available")
-        return i
+class _staticdata(_data):
+    """Partly implements the _Idata interface
+
+    This class partly implements the _Idata interface for static data
+    using self.columns and self.points to be initialized by the constructor."""
+
+    def getcolumnpointsindex(self, column):
+        return self.points, self.columns[column]
+
+    def getcount(self):
+        return len(self.points)
+
+    def getcolumnnames(self, plotitem):
+        return self.columns.keys()
+
+    def getcolumnpointsindex_plotitem(self, plotitem, column):
+        return self.getcolumnpointsindex(column)
+
+    def adjustaxes(self, plotitem, graph, step):
+        if step == 0:
+            for column in self.getcolumnnames(plotitem):
+                points, index = self.getcolumnpointsindex_plotitem(plotitem, column)
+                for privatedata, style in zip(plotitem.privatedatalist, plotitem.styles):
+                    style.adjustaxis(privatedata, plotitem.sharedata, graph, column, points, index)
 
 
-class list(_data):
+class _dynamicdata(_data):
+
+    def getcolumnpointsindex(self, column):
+        raise RuntimeError("dynamic data not available outside a graph")
+
+    def getcount(self):
+        raise RuntimeError("dynamic data typically has no fixed number of points")
+
+
+class list(_staticdata):
     "Graph data from a list of points"
 
-    def getcolumndataindex(self, column):
+    def getcolumnpointsindex(self, column):
         try:
             if self.addlinenumbers:
                 index = self.columns[column]-1
@@ -291,22 +252,22 @@ class list(_data):
                 elif column < 0:
                     index = column
                 else:
-                    return range(1, 1+len(self.data)), None
+                    return range(1, 1+len(self.points)), None
             else:
                 index = column
-        return self.data, index
+        return self.points, index
 
-    def __init__(self, data, title="user provided list", addlinenumbers=1, **columns):
-        if len(data):
-            # be paranoid and check each row to have the same number of data
-            l = len(data[0])
-            for p in data[1:]:
+    def __init__(self, points, title="user provided list", addlinenumbers=1, **columns):
+        if len(points):
+            # be paranoid and check each row to have the same number of points
+            l = len(points[0])
+            for p in points[1:]:
                 if l != len(p):
                     raise ValueError("different number of columns per point")
             for v in columns.values():
                 if abs(v) > l or (not addlinenumbers and abs(v) == l):
                     raise ValueError("column number bigger than number of columns")
-        self.data = data
+        self.points = points
         self.columns = columns
         self.title = title
         self.addlinenumbers = addlinenumbers
@@ -386,7 +347,7 @@ class notitle:
     created automatically)"""
     pass
 
-class data(_data):
+class data(_staticdata):
     "creates a new data set out of an existing data set"
 
     def __init__(self, data, title=notitle, parser=dataparser(), context={}, **columns):
@@ -406,35 +367,35 @@ class data(_data):
         for column, value in columns.items():
             try:
                 # try if it is a valid column identifier
-                self.columns[column] = self.orgdata.getcolumndataindex(value)
+                self.columns[column] = self.orgdata.getcolumnpointsindex(value)
             except (KeyError, ValueError):
                 # take it as a mathematical expression
                 tree = parser.parse(value)
                 columndict = tree.columndict(**context)
-                vardataindex = []
+                varpointsindex = []
                 for var, value in columndict.items():
                     # column data accessed via $<column number>
-                    data, index = self.orgdata.getcolumndataindex(value)
-                    vardataindex.append((var, data, index))
+                    points, index = self.orgdata.getcolumnpointsindex(value)
+                    varpointsindex.append((var, points, index))
                 for var in tree.VarList():
                     try:
                         # column data accessed via the name of the column
-                        data, index = self.orgdata.getcolumndataindex(var)
+                        points, index = self.orgdata.getcolumnpointsindex(var)
                     except (KeyError, ValueError):
                         # other data available in context
                         if var not in context.keys():
                             raise ValueError("undefined variable '%s'" % var)
                     else:
-                        vardataindex.append((var, data, index))
+                        varpointsindex.append((var, points, index))
                 newdata = [None]*self.getcount()
                 vars = context.copy() # do not modify context, use a copy vars instead
                 for i in xrange(self.getcount()):
-                    # insert column data as prepared in vardataindex
-                    for var, data, index in vardataindex:
+                    # insert column data as prepared in varpointsindex
+                    for var, point, index in varpointsindex:
                         if index is not None:
-                            vars[var] = data[i][index]
+                            vars[var] = points[i][index]
                         else:
-                            vars[var] = data[i]
+                            vars[var] = points[i]
                     # evaluate expression
                     newdata[i] = tree.Calc(**vars)
                     # we could also do:
@@ -446,14 +407,14 @@ class data(_data):
 
                 self.columns[column] = newdata, None
 
-    def getcolumndataindex(self, column):
+    def getcolumnpointsindex(self, column):
         return self.columns[column]
 
     def getcount(self):
         return self.orgdata.getcount()
 
-    def getdefaultstyle(self):
-        return self.orgdata.getdefaultstyle()
+    def getdefaultstyles(self):
+        return self.orgdata.getdefaultstyles()
 
 
 filecache = {}
@@ -615,12 +576,9 @@ class conffile(data):
             data.__init__(self, readfile(filename, "user provided file-like object"), **kwargs)
 
 
-class _linedata(_data):
+class function(_dynamicdata):
 
     defaultstyles = [style.line()]
-
-
-class function(_linedata):
 
     def __init__(self, expression, title=notitle, min=None, max=None,
                  points=100, parser=mathtree.parser(), context={}):
@@ -636,7 +594,10 @@ class function(_linedata):
         self.yname, expression = [x.strip() for x in expression.split("=")]
         self.mathtree = parser.parse(expression)
 
-    def setstyles(self, graph, styles):
+    def getcolumnpointsindex_plotitem(self, plotitem, column):
+        return plotitem.points, plotitem.columns[column]
+
+    def initplotitem(self, plotitem, graph):
         self.xname = None
         for xname in self.mathtree.VarList():
             if xname in graph.axes.keys():
@@ -646,18 +607,20 @@ class function(_linedata):
                     raise ValueError("multiple variables found")
         if self.xname is None:
             raise ValueError("no variable found")
-        self.columns = {self.xname: 0, self.yname: 1}
-        _linedata.setstyles(self, graph, styles)
+        plotitem.columns = {self.xname: 0, self.yname: 1}
 
-    def adjustaxes(self, graph, step):
+    def getcolumnnames(self, plotitem):
+        return [self.xname, self.yname]
+
+    def adjustaxes(self, plotitem, graph, step):
         if step == 0:
-            data = []
+            points = []
             if self.min is not None:
-                self.points.append(self.min)
+                points.append(self.min)
             if self.max is not None:
-                self.points.append(self.max)
-            for privatedata, style in zip(self.privatedatalist, self.styles):
-                style.adjustaxis(privatedata, self.sharedata, graph, self.xname, data, None)
+                points.append(self.max)
+            for privatedata, style in zip(plotitem.privatedatalist, plotitem.styles):
+                style.adjustaxis(privatedata, plotitem.sharedata, graph, self.xname, points, None)
         elif step == 1:
             xaxis = graph.axes[self.xname]
             min, max = xaxis.getrange()
@@ -665,7 +628,7 @@ class function(_linedata):
             if self.max is not None: max = self.max
             vmin = xaxis.convert(min)
             vmax = xaxis.convert(max)
-            self.data = []
+            plotitem.points = []
             for i in range(self.numberofpoints):
                 v = vmin + (vmax-vmin)*i / (self.numberofpoints-1.0)
                 x = xaxis.invert(v)
@@ -674,13 +637,15 @@ class function(_linedata):
                     y = self.mathtree.Calc(**self.context)
                 except (ArithmeticError, ValueError):
                     y = None
-                self.data.append([x, y])
+                plotitem.points.append([x, y])
         elif step == 2:
-            for privatedata, style in zip(self.privatedatalist, self.styles):
-                style.adjustaxis(privatedata, self.sharedata, graph, self.yname, self.data, 1)
+            for privatedata, style in zip(plotitem.privatedatalist, plotitem.styles):
+                style.adjustaxis(privatedata, plotitem.sharedata, graph, self.yname, plotitem.points, 1)
 
 
-class paramfunction(_linedata):
+class paramfunction(_staticdata):
+
+    defaultstyles = [style.line()]
 
     def __init__(self, varname, min, max, expression, title=notitle, points=100, parser=mathtree.parser(), context={}):
         if title is notitle:
@@ -693,14 +658,14 @@ class paramfunction(_linedata):
         if len(keys) != len(mathtrees):
             raise ValueError("unpack tuple of wrong size")
         l = len(keys)
-        self.data = [None]*points
+        self.points = [None]*points
         self.columns = {}
         for index, key in enumerate(keys):
             self.columns[key.strip()] = index
         for i in range(points):
             param = min + (max-min)*i / (points-1.0)
             context[varname] = param
-            self.data[i] = [None]*l
+            self.points[i] = [None]*l
             for index, mathtree in enumerate(mathtrees):
-                self.data[i][index] = mathtree.Calc(**context)
+                self.points[i][index] = mathtree.Calc(**context)
 

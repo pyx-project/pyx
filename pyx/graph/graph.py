@@ -25,6 +25,7 @@
 
 import math, re, string
 from pyx import canvas, path, trafo, unit
+from pyx.graph import style
 from pyx.graph.axis import painter, axis
 
 
@@ -135,16 +136,83 @@ class lineaxisposlinegrid(lineaxispos):
                           (1-v)*self.y1_pt+v*self.y2_pt+self.fixtickdirection[1]*self.endgridlength_pt)
 
 
+class styledata:
+    """Styledata storage class
+
+    Instances of this class are used to store data from the styles
+    and to pass point data to the styles by instances named privatedata
+    and sharedata. sharedata is shared between all the style(s) in use
+    by a data instance, while privatedata is private to each style and
+    used as a storage place instead of self to prevent side effects when
+    using a style several times."""
+    pass
+
+
+class plotitem:
+
+    def __init__(self, graph, data, styles):
+        self.data = data
+
+        # add styles to ensure all needs of the given styles
+        provided = [] # already provided sharedata variables
+        addstyles = [] # a list of style instances to be added in front
+        for s in styles:
+            for n in s.needsdata:
+                if n not in provided:
+                    defaultprovider = style.getdefaultprovider(n)
+                    addstyles.append(defaultprovider)
+                    provided.extend(defaultprovider.providesdata)
+            provided.extend(s.providesdata)
+
+        self.styles = addstyles + styles
+        self.sharedata = styledata()
+        self.privatedatalist = [styledata() for s in self.styles]
+
+        # perform setcolumns to all styles
+        self.data.initplotitem(self, graph)
+        columns = self.data.getcolumnnames(self)
+        usedcolumns = []
+        for privatedata, s in zip(self.privatedatalist, self.styles):
+            usedcolumns.extend(s.columns(privatedata, self.sharedata, graph, columns))
+        for column in columns:
+            if column not in usedcolumns:
+                raise ValueError("unused column '%s'" % column)
+
+    def selectstyles(self, graph, selectindex, selecttotal):
+        for privatedata, style in zip(self.privatedatalist, self.styles):
+            style.selectstyle(privatedata, self.sharedata, graph, selectindex, selecttotal)
+
+    def adjustaxes(self, graph, step):
+        self.data.adjustaxes(self, graph, step)
+
+    def draw(self, graph):
+        self.data.draw(self, graph)
+
+    def __getattr__(self, attr):
+        # read only access to the styles privatedata
+        stylesdata = [getattr(styledata, attr)
+                      for styledata in self.privatedatalist
+                      if hasattr(styledata, attr)]
+        if len(stylesdata) > 1:
+            return stylesdata
+        elif len(stylesdata) == 1:
+            return stylesdata[0]
+        raise AttributeError("access to styledata attributes failed")
+
+
+
 class graphxy(canvas.canvas):
 
     def plot(self, data, styles=None):
         if self.haslayout:
             raise RuntimeError("layout setup was already performed")
+        singledata = 0
         try:
             for d in data:
                 pass
         except:
             usedata = [data]
+            singledata = 1
         else:
             usedata = data
         if styles is None:
@@ -153,10 +221,14 @@ class graphxy(canvas.canvas):
                     styles = d.getdefaultstyles()
                 elif styles != d.getdefaultstyles():
                     raise RuntimeError("defaultstyles differ")
+        plotitems = []
         for d in usedata:
-            d.setstyles(self, styles)
-            self.plotdata.append(d)
-        return data
+            plotitems.append(plotitem(self, d, styles))
+        self.plotitems.extend(plotitems)
+        if singledata:
+            return plotitems[0]
+        else:
+            return plotitems
 
     def pos_pt(self, x, y, xaxis=None, yaxis=None):
         if xaxis is None:
@@ -230,23 +302,23 @@ class graphxy(canvas.canvas):
         styletotal = {}
         def stylesid(styles):
             return ":".join([str(id(style)) for style in styles])
-        for data in self.plotdata:
+        for plotitem in self.plotitems:
             try:
-                styletotal[stylesid(data.styles)] += 1
+                styletotal[stylesid(plotitem.styles)] += 1
             except:
-                styletotal[stylesid(data.styles)] = 1
+                styletotal[stylesid(plotitem.styles)] = 1
         styleindex = {}
-        for data in self.plotdata:
+        for plotitem in self.plotitems:
             try:
-                styleindex[stylesid(data.styles)] += 1
+                styleindex[stylesid(plotitem.styles)] += 1
             except:
-                styleindex[stylesid(data.styles)] = 0
-            data.selectstyles(self, styleindex[stylesid(data.styles)], styletotal[stylesid(data.styles)])
+                styleindex[stylesid(plotitem.styles)] = 0
+            plotitem.selectstyles(self, styleindex[stylesid(plotitem.styles)], styletotal[stylesid(plotitem.styles)])
 
         # adjust the axes ranges
         for step in range(3):
-            for data in self.plotdata:
-                data.adjustaxes(self, step)
+            for plotitem in self.plotitems:
+                plotitem.adjustaxes(self, step)
 
         # finish all axes
         XPattern = re.compile(r"x([2-9]|[1-9][0-9]+)?$")
@@ -331,26 +403,26 @@ class graphxy(canvas.canvas):
     def dodata(self):
         self.dolayout()
         if not self.removedomethod(self.dodata): return
-        for data in self.plotdata:
-            data.draw(self)
+        for plotitem in self.plotitems:
+            plotitem.draw(self)
 
     def dokey(self):
         self.dolayout()
         if not self.removedomethod(self.dokey): return
-        if self.key is not None:
-            c = self.key.paint(self.plotdata)
-            bbox = c.bbox()
-            def parentchildalign(pmin, pmax, cmin, cmax, pos, dist, inside):
-                ppos = pmin+0.5*(cmax-cmin)+dist+pos*(pmax-pmin-cmax+cmin-2*dist)
-                cpos = 0.5*(cmin+cmax)+(1-inside)*(1-2*pos)*(cmax-cmin+2*dist)
-                return ppos-cpos
-            x = parentchildalign(self.xpos_pt, self.xpos_pt+self.width_pt,
-                                 bbox.llx_pt, bbox.urx_pt,
-                                 self.key.hpos, unit.topt(self.key.hdist), self.key.hinside)
-            y = parentchildalign(self.ypos_pt, self.ypos_pt+self.height_pt,
-                                 bbox.lly_pt, bbox.ury_pt,
-                                 self.key.vpos, unit.topt(self.key.vdist), self.key.vinside)
-            self.insert(c, [trafo.translate_pt(x, y)])
+    #    if self.key is not None:
+    #        c = self.key.paint([plotitem.data for plotitem in self.plotitems])
+    #        bbox = c.bbox()
+    #        def parentchildalign(pmin, pmax, cmin, cmax, pos, dist, inside):
+    #            ppos = pmin+0.5*(cmax-cmin)+dist+pos*(pmax-pmin-cmax+cmin-2*dist)
+    #            cpos = 0.5*(cmin+cmax)+(1-inside)*(1-2*pos)*(cmax-cmin+2*dist)
+    #            return ppos-cpos
+    #        x = parentchildalign(self.xpos_pt, self.xpos_pt+self.width_pt,
+    #                             bbox.llx_pt, bbox.urx_pt,
+    #                             self.key.hpos, unit.topt(self.key.hdist), self.key.hinside)
+    #        y = parentchildalign(self.ypos_pt, self.ypos_pt+self.height_pt,
+    #                             bbox.lly_pt, bbox.ury_pt,
+    #                             self.key.vpos, unit.topt(self.key.vdist), self.key.vinside)
+    #        self.insert(c, [trafo.translate_pt(x, y)])
 
     def finish(self):
         while len(self.domethods):
@@ -408,7 +480,7 @@ class graphxy(canvas.canvas):
         self.key = key
         self.backgroundattrs = backgroundattrs
         self.axesdist = axesdist
-        self.plotdata = []
+        self.plotitems = []
         self.domethods = [self.dolayout, self.dobackground, self.doaxes, self.dodata, self.dokey]
         self.haslayout = 0
         self.addkeys = []
