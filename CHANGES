@@ -115,6 +115,8 @@ TODO:
       manually (reported by David Barton)
   - path module:
     - pathel -> pathitem, etc. renaming
+    - methods accepting a parameter value / arc length now also allow the user to 
+      pass a tuple (subpath, param) / (subpath, arclen)
   - deformer module: new
     - moved cycloid and smoothed from deco into deformer
   - bbox module:

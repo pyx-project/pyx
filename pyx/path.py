@@ -28,7 +28,7 @@
 #          cbox = control box) for normcurve for the use during the
 #          intersection of bpaths)
 
-import copy, math, bisect
+import math, bisect
 from math import cos, sin, pi
 try:
     from math import radians, degrees
@@ -1807,7 +1807,7 @@ class normsubpath:
 
         allarclen = 0
         allparams = [0] * len(lengths)
-        rests = copy.copy(lengths)
+        rests = lengths[:]
 
         for pitem in self.normpathitems:
             params, arclen = pitem._arclentoparam_pt(rests, self.epsilon)
@@ -2037,7 +2037,7 @@ class normpath(path):
 
         self.epsilon = epsilon
         if isinstance(arg, normpath):
-            self.subpaths = copy.copy(arg.subpaths)
+            self.subpaths = arg.subpaths[:]
             return
         elif isinstance(arg, path):
             # split path in sub paths
@@ -2093,16 +2093,42 @@ class normpath(path):
 
         if param is not None and arclen is not None:
             raise PathException("either param or arclen has to be specified, but not both")
-        elif arclen is not None:
-            param = self.arclentoparam(arclen)
 
-        spt = 0
-        for sp in self.subpaths:
-            sprange = sp.range()
-            if spt <= param <= sprange+spt+self.epsilon:
-                return sp, param-spt
-            spt += sprange
-        raise PathException("parameter value out of range")
+        if param is not None:
+            try:
+                subpath, param = param
+            except TypeError:
+                # determine subpath from param 
+                spt = 0
+                for sp in self.subpaths:
+                    sprange = sp.range()
+                    if spt <= param <= sprange+spt+self.epsilon:
+                        return sp, param-spt
+                    spt += sprange
+                raise PathException("parameter value out of range")
+            try:
+                return self.subpaths[subpath], param
+            except IndexError:
+                raise PathException("subpath index out of range")
+
+        # we have been passed an arclen (or a tuple (subpath, arclen))
+        try:
+            subpath, arclen = arclen
+        except:
+            # determine subpath from arclen
+            param = self.arclentoparam(arclen)
+            for sp in self.subpaths:
+                sprange = sp.range()
+                if spt <= param <= sprange+spt+self.epsilon:
+                    return sp, param-spt
+                spt += sprange
+            raise PathException("parameter value out of range")
+        
+        try:
+            sp = self.subpaths[subpath]
+        except IndexError:
+            raise PathException("subpath index out of range")
+        return sp, sp.arclentoparam(arclen)
 
     def append(self, pathitem):
         # XXX factor parts of this code out
@@ -2143,7 +2169,7 @@ class normpath(path):
         return self.arclen_pt() * unit.t_pt
 
     def arclentoparam_pt(self, lengths):
-        rests = copy.copy(lengths)
+        rests = lengths[:]
         allparams = [0] * len(lengths)
 
         for sp in self.subpaths:

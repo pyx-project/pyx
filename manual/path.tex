@@ -42,12 +42,10 @@ Returns the total arc length of the path.$^\dagger$
 \end{methoddesc}
 
 \begin{methoddesc}{at}{param=None, arclen=None}
-  Returns the coordinates (as 2-tuple) of the path point corresponding to the
-  parameter value \var{param} or, alternatively, the arc length
-  \var{arclen}. The parameter value \var{param} (\var{arclen}) has to be smaller
-  or equal to \method{self.range()} (\method{self.arclen()}),
-  otherwise an exception is raised.  At discontinuities in the path,
-  the limit from below is returned.$^\dagger$
+  Returns the coordinates (as 2-tuple) of the path point corresponding
+  to the parameter value \var{param} or, alternatively, the arc length
+  \var{arclen}.$^\ddagger$ At discontinuities in the path, the limit
+  from below is returned.$^\dagger$
 \end{methoddesc}
 
 \begin{methoddesc}{bbox}{}
@@ -64,8 +62,8 @@ Returns the total arc length of the path.$^\dagger$
 
 \begin{methoddesc}{curvradius}{param=None, arclen=None}
   Returns the curvature radius (or None if infinite) at parameter
-  param or, alternatively, arc length \var{arclen}.  This is the
-  inverse of the curvature at this parameter Please note that this
+  param or, alternatively, arc length \var{arclen}.$^\ddagger$ This is
+  the inverse of the curvature at this parameter. Note that this
   radius can be negative or positive, depending on the sign of the
   curvature.$^\dagger$
 \end{methoddesc}
@@ -103,22 +101,19 @@ Returns the total arc length of the path.$^\dagger$
 
 \begin{methoddesc}{tangent}{param=None, arclen=None, length=None}
   Return a \class{line} instance corresponding to the tangent vector
-  to the path at the parameter value \var{param} or, alternatively, the arc length
-  \var{arclen}. The parameter value \var{param} (\var{arclen}) has to be smaller
-  or equal to \method{self.range()} (\method{self.arclen()}),
-  otherwise an exception is raised.  At discontinuities in the path,
-  the limit from below is returned. If \var{length} is not
-  \texttt{None}, the tangent vector will be scaled correspondingly.$^\dagger$
+  to the path at the parameter value \var{param} or, alternatively,
+  the arc length \var{arclen}.$^\ddagger$ At discontinuities in the
+  path, the limit from below is returned. If \var{length} is not
+  \texttt{None}, the tangent vector will be scaled
+  correspondingly.$^\dagger$
 \end{methoddesc}
 
 
 \begin{methoddesc}{trafo}{param=None, arclen=None}
   Returns a trafo which maps a point $(0, 1)$ to the tangent vector to
   the path at the parameter value \var{param} or, alternatively, the
-  arc length \var{arclen}.  The parameter value \var{param} (\var{arclen}) has to
-  be smaller or equal to \method{self.range()}
-  (\method{self.arclen()}), otherwise an exception is raised.  At
-  discontinuities in the path, the limit from below is returned.$^\dagger$
+  arc length \var{arclen}.$^\ddagger$ At discontinuities in the path,
+  the limit from below is returned.$^\dagger$
 \end{methoddesc}
 
 \begin{methoddesc}{transformed}{trafo}
@@ -137,9 +132,16 @@ Some notes on the above:
 \item Instead of using the \method{joined()} method, you can also join two
 paths together with help of the \verb|<<| operator, for instance
 \samp{p = p1 << p2}.
-\item In the methods accepting both a parameter value \var{param} and
-  an arc length \var{arclen}, exactly one of these arguments has to
-  provided.
+\item $^\ddagger$ In the methods accepting both a parameter value
+  \var{param} and an arc length \var{arclen}, exactly one of these
+  arguments has to provided.  Each argument can either be a
+  number/length or a tuple.  In the former case, the parameter value
+  \var{param} (\var{arclen}) refers to the whole path and has to be
+  smaller or equal to \method{self.range()} (\method{self.arclen()}),
+  otherwise an exception is raised.  In the latter case, the first
+  element has to be an integer specifying the subpath and the second
+  element specifies the parameter value or the arc length inside of
+  this subpath.
 \end{itemize}
 
 \subsection{Path elements}
