@@ -44,7 +44,7 @@ MathTreeValsWithCol = (mathtree.MathTreeValConst,
                        MathTreeValCol)
 
 
-class data:
+class _data:
 
     def __init__(self, titles, data, parser=mathtree.parser(MathTreeVals=MathTreeValsWithCol)):
         self.titles = titles
@@ -100,6 +100,24 @@ class data:
                 data.append(tree.Calc(**varlist))
 
 
+class data(_data):
+
+    def __init__(self, titles=[], data=[], maxcolumns=helper.nodefault, **kwargs):
+        if len(data):
+            if maxcolumns is helper.nodefault:
+                maxcolumns = len(data[0])
+                for line in data[1:]:
+                    if len(line) > maxcolumns:
+                        maxcolumns = len(line)
+            titles = titles[:maxcolumns]
+            titles += [None] * (maxcolumns - len(titles))
+            for line in data:
+                line += [None] * (maxcolumns - len(line))
+        else:
+            titles = []
+        _data.__init__(self, titles, data, **kwargs)
+
+
 class datafile(data):
 
     defaultcommentpattern = re.compile(r"(#+|!+|%+)\s*")
@@ -144,7 +162,7 @@ class datafile(data):
 
     def __init__(self, file, commentpattern=defaultcommentpattern,
                              stringpattern=defaultstringpattern,
-                             columnpattern=defaultcolumnpattern, **args):
+                             columnpattern=defaultcolumnpattern, **kwargs):
         if helper.isstring(file):
             file = open(file, "r")
         usetitles = []
@@ -169,20 +187,13 @@ class datafile(data):
                     if len(linedata) > maxcolumns:
                         maxcolumns = len(linedata)
                     usedata.append(linedata)
-        if linenumber:
-            usetitles = [None] + usetitles[:maxcolumns-1]
-            usetitles += [None] * (maxcolumns - len(usetitles))
-            for line in usedata:
-                line += [None] * (maxcolumns - len(line))
-        else:
-            usetitles = []
-        data.__init__(self, usetitles, usedata, **args)
+        data.__init__(self, titles=[None] + usetitles, data=usedata, maxcolumns=maxcolumns, **kwargs)
 
 
 
-class sectionfile(data):
+class sectionfile(_data):
 
-    def __init__(self, file, sectionstr = "section", **args):
+    def __init__(self, file, sectionstr = "section", **kwargs):
         config = ConfigParser.ConfigParser()
         config.optionxform = str
         try:
@@ -212,5 +223,5 @@ class sectionfile(data):
                     usedata[-1][index] = float(value)
                 except (TypeError, ValueError):
                     usedata[-1][index] = value
-        data.__init__(self, usetitles, usedata, **args)
+        _data.__init__(self, usetitles, usedata, **kwargs)
 
