@@ -36,7 +36,8 @@ class PSOp:
         """writing into a file is the only routine, a PSOp has to supply"""
         raise NotImplementedError, "cannot call virtual method write()"
 
-    def writefontheader(self, file, containsfonts):
+    def prologue(self):
+        """return a prologue item, if present, otherwise none"""
         pass 
 
 #

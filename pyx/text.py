@@ -726,23 +726,11 @@ class DVIFile:
             else: raise DVIError # unexpected reader state
         self.flushout()
 
-    def writeheader(self, file):
-        """write PostScript font header"""
-
-        # generate list of used fonts
-        usedfonts = {}
+    def prologue(self):
+        result = []
         for font in self.fonts:
-            if font: 
-                if usedfonts.has_key(font.name):
-                    usedfonts[font.name].mergeusedchars(font)
-                else:
-                    usedfonts[font.name] = font
-
-        for font in usedfonts.values():
-            file.write("%%%%BeginFont: %s\n" % font.name.upper())
-            pfbname = pykpathsea.find_file("%s.pfb" % font.name, pykpathsea.kpse_type1_format)
-            t1strip.t1strip(file, pfbname, font.usedchars)
-            file.write("%%EndFont\n")
+	    if font: result.append(canvas.fontdefinition(font))
+	return result
 
     FontSizePattern= re.compile(r"([0-9]+)$")
 
@@ -1103,8 +1091,8 @@ class _textbox(box._rect, base.PSCmd):
         box._rect.transform(self, trafo)
         self.texttrafo = trafo * self.texttrafo
 
-    def writefontheader(self, file, containsfonts):
-        self.texrunner.writefontheader(file, containsfonts)
+    def prologue(self):
+        return self.texrunner.prologue()
 
     def write(self, file):
         canvas._gsave().write(file) # XXX: canvas?, constructor call needed?
@@ -1249,14 +1237,11 @@ class texrunner(attrlist.attrlist):
             self.texruns = 0
             self.texdone = 1
 
-    def writefontheader(self, file, containsfonts):
+    def prologue(self):
         if not self.texdone:
             self.execute(None, *self.checkmsgend)
             self.dvifile = DVIFile("%s.dvi" % self.texfilename, debug=self.dvidebug)
-        if self not in containsfonts:
-            self.dvifile.writeheader(file)
-            containsfonts.append(self)
-            # TODO: - containfonts should contain font/glyph information instead of texrunner references
+	return self.dvifile.prologue()
 
     def write(self, file, page):
         if not self.texdone:

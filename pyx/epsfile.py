@@ -23,6 +23,35 @@
 import re
 import base, bbox, canvas, path, unit, trafo
 
+# PostScript-procedure definitions
+# cf. file: 5002.EPSF_Spec_v3.0.pdf
+# with important correction in EndEPSF:
+#   end operator is missing in the spec!
+
+_BeginEPSF = canvas.definition("BeginEPSF", """{
+  /b4_Inc_state save def
+  /dict_count countdictstack def
+  /op_count count 1 sub def
+  userdict begin
+  /showpage { } def
+  0 setgray 0 setlinecap
+  1 setlinewidth 0 setlinejoin
+  10 setmiterlimit [ ] 0 setdash newpath
+  /languagelevel where
+  {pop languagelevel
+  1 ne
+    {false setstrokeadjust false setoverprint
+    } if
+  } if 
+} bind""")
+
+_EndEPSF = canvas.definition("EndEPSF", """{
+  end
+  count op_count sub {pop} repeat
+  countdictstack dict_count sub {end} repeat
+  b4_Inc_state restore 
+} bind""")
+
 def _readbbox(filename):
     """returns bounding box of EPS file filename as 4-tuple (llx, lly, urx, ury)"""
 
@@ -145,6 +174,9 @@ class epsfile(base.PSCmd):
 
     def bbox(self):
         return self.mybbox.transformed(self.trafo)
+
+    def prologue(self):
+        return [_BeginEPSF, _EndEPSF]
 
     def write(self, file):
         try:

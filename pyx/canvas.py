@@ -37,36 +37,66 @@ transformed (i.e. translated, rotated, etc.) and clipped.
 """
 
 import types, math, time
-import attrlist, base, bbox, helper, path, unit, text, trafo, version
+import attrlist, base, bbox, helper, path, unit, text, t1strip, pykpathsea, trafo, version
 
-# PostScript-procedure definitions
-# cf. file: 5002.EPSF_Spec_v3.0.pdf
-# with important correction in EndEPSF:
-#   end operator is missing in the spec!
+class prologueitem:
 
-_PSProlog = """/BeginEPSF {
-  /b4_Inc_state save def
-  /dict_count countdictstack def
-  /op_count count 1 sub def
-  userdict begin
-  /showpage { } def
-  0 setgray 0 setlinecap
-  1 setlinewidth 0 setlinejoin
-  10 setmiterlimit [ ] 0 setdash newpath
-  /languagelevel where
-  {pop languagelevel
-  1 ne
-    {false setstrokeadjust false setoverprint
-    } if
-  } if
-} bind def
-/EndEPSF {
-  end
-  count op_count sub {pop} repeat
-  countdictstack dict_count sub {end} repeat
-  b4_Inc_state restore
-} bind def
-"""
+    """Part of the PostScript Prologue"""
+
+    def merge(self, other):
+        """ try to merge self with other prologueitem
+ 
+        If the merge succeeds, return None. Otherwise return other.
+	Raise ValueError, if conflicts arise!"""
+
+	pass
+	
+    def write(self, file):
+        """ write self in file """
+        pass
+
+
+class definition(prologueitem):
+
+    def __init__(self, id, body):
+        self.id = id
+	self.body = body
+
+    def merge(self, other):
+        if not isinstance(other, definition):
+	    return other
+        if self.id==other.id:
+	    if self.body==other.body:
+	        return None
+	    raise ValueError("Conflicting function definitions!")
+	else:
+	   return other
+
+    def write(self, file):
+        file.write("%(body)s /%(id)s exch def\n" % self.__dict__)
+
+
+class fontdefinition(prologueitem):
+
+    def __init__(self, font):
+        self.name = font.name
+	self.usedchars = font.usedchars
+
+    def merge(self, other):
+        if not isinstance(other, fontdefinition):
+	    return other
+        if self.name==other.name:
+            for i in range(len(self.usedchars)):
+                self.usedchars[i] = self.usedchars[i] or other.usedchars[i]
+	    return None
+	else:
+	    return other
+
+    def write(self, file):
+        file.write("%%%%BeginFont: %s\n" % self.name.upper())
+        pfbname = pykpathsea.find_file("%s.pfb" % self.name, pykpathsea.kpse_type1_format)
+        t1strip.t1strip(file, pfbname, self.usedchars)
+        file.write("%%EndFont\n")
 
 # known paperformats as tuple(width, height)
 
@@ -237,9 +267,12 @@ class DecoratedPath(base.PSCmd):
                       self.subdps,
                       self.path.bbox())
 
-    def writefontheader(self, file, containsfonts):
+    def prologue(self):
+        result = []
         for style in list(self.styles) + list(self.fillstyles) + list(self.strokestyles):
-            style.writefontheader(file, containsfonts)
+	    pr = style.prologue()
+	    if pr: result.extend(pr)
+	return result
 
     def write(self, file):
         # draw (stroke and/or fill) the DecoratedPath on the canvas
@@ -678,10 +711,12 @@ class _canvas(base.PSCmd, attrlist.attrlist):
         # transformed in canvas.__init__())
         return obbox.transformed(self.trafo)*self.clipbbox
 
-    def writefontheader(self, file, collectfontheader):
-        # XXX: refactor me
+    def prologue(self):
+        result = []
         for cmd in self.PSOps:
-            cmd.writefontheader(file, collectfontheader)
+	    pr = cmd.prologue()
+	    if pr: result.extend(pr)
+	return result
 
     def write(self, file):
         for cmd in self.PSOps:
@@ -797,23 +832,23 @@ class _canvas(base.PSCmd, attrlist.attrlist):
 
 class patterncanvas(_canvas, base.PathStyle):
 
-    def __init__(self, *args):
-        _canvas.__init__(self, *args)
-        self.id = "patternid"
-        self.patterntype = 1
-        self.painttype = 1
-        self.tilingtype = 1
-        self.xstep = None
-        self.ystep = None
+    def __init__(self, patterntype=1, painttype=1, tilingtype=1, xstep=None, ystep=None):
+        _canvas.__init__(self)
+        self.id = "pattern%d" % id(self)
+	# XXX: some checks are in order
+        self.patterntype = patterntype
+        self.painttype = painttype
+        self.tilingtype = tilingtype
+        self.xstep = xstep
+        self.ystep = ystep
 
     def bbox(self):
         return bbox.bbox()
 
     def write(self, file):
-        file.write("/Pattern setcolorspace\n")
-        file.write("%s setcolor\n" % self.id)
+        file.write("%s setpattern\n" % self.id)
 
-    def writefontheader(self, file, containsfonts):
+    def prologue(self):
         import StringIO, string
         patternbbox = _canvas.bbox(self)
         if self.xstep is None:
@@ -831,13 +866,15 @@ class patterncanvas(_canvas, base.PathStyle):
                           "/BBox[%s]\n" % str(patternbbox.enlarged("5 pt")) + 
                           "/XStep %f\n" % xstep + 
                           "/YStep %f\n" % ystep + 
-                          "/PaintProc {\n begin\n")
+                          "/PaintProc {\nbegin\n")
         stringfile = StringIO.StringIO()
         _canvas.write(self, stringfile)
         patternproc = stringfile.getvalue()
         stringfile.close()
-        patternsuffix = "end\n} bind\n>>\nmatrix\nmakepattern /%s exch def\n" % self.id
-        file.write(string.join((patternprefix, patternproc, patternsuffix)))
+        patternsuffix = "end\n} bind\n>>\nmatrix\nmakepattern"
+        pr = _canvas.prologue(self)	
+	pr.append(definition(self.id, string.join((patternprefix, patternproc, patternsuffix), "")))
+	return pr
 
 #
 # The main canvas class
@@ -961,9 +998,18 @@ class canvas(_canvas):
         file.write("%%EndComments\n")
 
         file.write("%%BeginProlog\n")
-        file.write(_PSProlog)
-        containsfonts = []
-        self.writefontheader(file, containsfonts)
+
+	mergedprologue = []
+
+	for pritem in self.prologue():
+	    for mpritem in mergedprologue:
+	        if mpritem.merge(pritem) is None: break
+	    else:
+	        mergedprologue.append(pritem)
+
+	for pritem in mergedprologue:
+	    pritem.write(file)
+
         file.write("%%EndProlog\n")
 
         # again, if there has occured global transformation, apply it now
