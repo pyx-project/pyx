@@ -19,9 +19,25 @@ def drawstyle(name, showpath=0, default=0):
     p = path.path(path.moveto(x + 0.1, y+0.1 ),
                        path.rlineto(length/2.0, 0.3),
                        path.rlineto(length/2.0, -0.3))
-    c.stroke(p, canvas.linewidth.THIck,  eval("canvas."+name))
+    c.stroke(p, style.linewidth.THIck,  eval("style."+name))
     if showpath:
-        c.stroke(p, canvas.linewidth.Thin, color.gray.white)
+        c.stroke(p, style.linewidth.Thin, color.gray.white)
+    if default:
+        name = name + r"\rm\quad (default)"
+    t.text(x + 1.5, y + 0.15, name, tex.fontsize.footnotesize)
+    y += dy
+    if y < -16:
+        y = 0
+        x += dx
+
+def drawdeco(name, showpath=0, default=0):
+    global x,y
+    p = path.path(path.moveto(x + 0.1, y+0.1 ),
+                       path.rlineto(length/2.0, 0.3),
+                       path.rlineto(length/2.0, -0.3))
+    c.stroke(p, style.linewidth.THIck,  eval("deco."+name))
+    if showpath:
+        c.stroke(p, style.linewidth.Thin, color.gray.white)
     if default:
         name = name + r"\rm\quad (default)"
     t.text(x + 1.5, y + 0.15, name, tex.fontsize.footnotesize)
@@ -78,17 +94,17 @@ drawstyle("dash((1, 2, 3), 4)")
 
 y += dy
 
-drawstyle("earrow.SMall")
-drawstyle("earrow.Small")
-drawstyle("earrow.small")
-drawstyle("earrow.normal")
-drawstyle("earrow.large")
-drawstyle("earrow.Large")
-drawstyle("earrow.LArge")
+drawdeco("earrow.SMall()")
+drawdeco("earrow.Small()")
+drawdeco("earrow.small()")
+drawdeco("earrow.normal()")
+drawdeco("earrow.large()")
+drawdeco("earrow.Large()")
+drawdeco("earrow.LArge()")
 
 y += dy
 
-drawstyle("barrow.normal")
+drawdeco("barrow.normal()")
 
 c.insert(t)
 c.writetofile("pathstyles")

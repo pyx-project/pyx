@@ -55,13 +55,13 @@ c.stroke(p, color.rgb.blue)
 Similarly, it is possible to draw a dashed version of \verb|p|:
 \begin{quote}
 \begin{verbatim}
-c.stroke(p, canvas.linestyle.dashed)
+c.stroke(p, style.linestyle.dashed)
 \end{verbatim}
 \end{quote}
 Combining of several \verb|PathStyle|s is of course also possible:
 \begin{quote}
 \begin{verbatim}
-c.stroke(p, color.rgb.blue, canvas.linestyle.dashed)
+c.stroke(p, color.rgb.blue, style.linestyle.dashed)
 \end{verbatim}
 \end{quote}
 Furthermore, drawing an arrow at the begin or end of the path is done
@@ -85,7 +85,7 @@ Alternatively, you can use the class \verb|filled| of the canvas module
 in combination with the \verb|stroke| method:
 \begin{quote}
 \begin{verbatim}
-c.stroke(r, canvas.filled())
+c.stroke(r, deco.filled())
 \end{verbatim}
 \end{quote}
 
@@ -96,8 +96,8 @@ sophisticated combination of the above presented \verb|PathStyle|s:
 c.stroke(p, 
          color.rgb.blue, 
          canvas.earrow.LARge(color.rgb.red,
-                             canvas.stroked(canvas.linejoin.round),
-                             canvas.filled(color.rgb.green)))
+                             deco.stroked(style.linejoin.round),
+                             deco.filled(color.rgb.green)))
                                                               
 \end{verbatim}
 \end{quote}

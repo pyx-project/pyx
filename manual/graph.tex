@@ -661,7 +661,7 @@ argument name&default&description\\
 \hline
 \texttt{symbol}&\texttt{changesymbol.cross()}&symbol to be used (see below)\\
 \texttt{size}&\texttt{"0.2 cm"}&size of the symbol (visual length)\\
-\texttt{symbolattrs}&\texttt{canvas.stroked()}&draw attributes for the symbol\\
+\texttt{symbolattrs}&\texttt{deco.stroked()}&draw attributes for the symbol\\
 \texttt{errorscale}&\texttt{0.5}&size of the errorbar caps (relative to the symbol size)\\
 \texttt{errorbarattrs}&\texttt{()}&stroke attributes for the errorbars\\
 \texttt{lineattrs}&\texttt{None}&stroke attributes for the line\\
@@ -703,7 +703,7 @@ data name&description\\
 The class \verb|line| is inherited from the class \verb|symbol| and
 restricted itself to line drawing. The constructor takes only the
 \verb|lineattrs| keyword argment, which is by default set to
-\verb|(changelinestyle(), canvas.linejoin.round)|. The other features
+\verb|(changelinestyle(), style.linejoin.round)|. The other features
 of the symbol style are turned off.
 
 \subsection{Rectangles}
@@ -770,7 +770,7 @@ argument name&description\\
 \texttt{stacked}&stack bars (boolean/integer); for values bigger than 1 it is the number of bars to be stacked; default: \texttt{0}\\
 \texttt{skipmissing}&skip entries in the bar axis, when datapoints are missing; default: \texttt{1}\\
 \texttt{xbar}&bars parallel to the graphs x-direction (boolean); default: \texttt{0}\\
-\texttt{barattrs}&fill attributes; default: \texttt{(canvas.stroked(color.gray.black), changecolor.Rainbow())}\\
+\texttt{barattrs}&fill attributes; default: \texttt{(deco.stroked(color.gray.black), changecolor.Rainbow())}\\
 \end{tabularx}
 
 Additionally, the bar style takes two data names appropriate to the
@@ -803,8 +803,8 @@ changers:
 attribute changer&description\\
 \hline
 \texttt{changelinestyle}&iterates linestyles solid, dashed, dotted, dashdotted\\
-\texttt{changestrokedfilled}&iterates \texttt{(canvas.stroked(), canvas.filled())}\\
-\texttt{changefilledstroked}&iterates \texttt{(canvas.filled(), canvas.stroked())}\\
+\texttt{changestrokedfilled}&iterates \texttt{(deco.stroked(), deco.filled())}\\
+\texttt{changefilledstroked}&iterates \texttt{(deco.filled(), deco.stroked())}\\
 \end{tabular}
 \end{center}
 
