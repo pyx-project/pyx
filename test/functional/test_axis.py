@@ -44,6 +44,6 @@ c.insert(pathaxis(path.circle(4, 17, 4),
 lintest = {"min": 0, "max": 2*math.pi, "divisor": math.pi/180, "parter": linparter("30")}
 c.insert(pathaxis(path.circle(14, 17, 4),
                         lin(painter=regular(labeldirection=rotatetext.parallel), **lintest)))
-c.writeEPSfile("test_axis", paperformat="a4")
-c.writePDFfile("test_axis", paperformat="a4")
+c.writeEPSfile("test_axis", paperformat=document.paperformat.A4)
+c.writePDFfile("test_axis", paperformat=document.paperformat.A4)
 

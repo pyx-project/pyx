@@ -30,5 +30,5 @@ test_bar(c, 0, 0)
 test_bar2(c, 7, 0)
 test_bar3(c, 0, -7)
 test_bar4(c, 0, -14)
-c.writeEPSfile("test_bargraph", paperformat="a4")
+c.writeEPSfile("test_bargraph", paperformat=document.paperformat.A4)
 

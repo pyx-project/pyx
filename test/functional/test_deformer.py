@@ -68,6 +68,6 @@ def testsmoothed(c):
 c=canvas.canvas()
 dotest(c, 0, 0, "testcycloid")
 dotest(c, 15, 0, "testsmoothed")
-c.writeEPSfile("test_deformer", paperformat="a4", rotated=0, fittosize=1)
+c.writeEPSfile("test_deformer", paperformat=document.paperformat.A4, rotated=0, fittosize=1)
 c.writePDFfile("test_deformer")
 
