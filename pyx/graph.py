@@ -2089,6 +2089,7 @@ class mark:
         if self.errorbarattrs is not None:
             errorbarattrs = _getattrs(self.errorbarattrs)
         self.errorsize = self.errorscale * self.size
+        clipcanvas = graph.clipcanvas()
         lineels = []
         moveto = 1
         for point in points:
@@ -2127,7 +2128,7 @@ class mark:
                 moveto = 1
         self.path = path.path(*lineels)
         if self.lineattrs is not None:
-            graph.clipcanvas().stroke(self.path, *_getattrs(self.lineattrs))
+            clipcanvas.stroke(self.path, *_getattrs(self.lineattrs))
 
 
 class _changecross(changesequence):
