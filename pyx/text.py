@@ -1090,8 +1090,7 @@ class DVIFile:
         """
 
         if self.file is None:
-            # XXX max number of fonts
-            self.fonts = [None for i in range(64)]
+            self.fonts = {}
             self.activefont = None
 
             self.stack = []
@@ -1143,15 +1142,14 @@ class DVIFile:
         """ return prolog corresponding to contents of dvi file """
         # XXX replace this by prolog method in _selectfont
         result = [_ReEncodeFont]
-        for font in self.fonts:
-            if font:
-                result.append(prolog.fontdefinition(font.getbasepsname(),
-                                                    font.getfontfile(),
-                                                    font.getencodingfile(),
-                                                    font.usedchars))
-                if font.getencoding():
-                    result.append(prolog.fontencoding(font.getencoding(), font.getencodingfile()))
-                    result.append(prolog.fontreencoding(font.getpsname(), font.getbasepsname(), font.getencoding()))
+        for font in self.fonts.values():
+            result.append(prolog.fontdefinition(font.getbasepsname(),
+                                                font.getfontfile(),
+                                                font.getencodingfile(),
+                                                font.usedchars))
+            if font.getencoding():
+                result.append(prolog.fontencoding(font.getencoding(), font.getencodingfile()))
+                result.append(prolog.fontreencoding(font.getpsname(), font.getbasepsname(), font.getencoding()))
         result.extend(self.pages[page-1].prolog())
         return result
 
