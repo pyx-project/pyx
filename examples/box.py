@@ -15,5 +15,5 @@ for b in boxes:
     # plot the boxes path
     c.stroke(b.path(), [color.rgb.green])
     # a second time with bezier rounded corners
-    c.stroke(b.path(), [deco.smoothed(radius=0.5), color.rgb.red])
+    c.stroke(deformer.smoothed(radius=0.5).deform(b.path()), [color.rgb.red])
 c.writeEPSfile("box")
