@@ -566,21 +566,33 @@ class wriggle(deco, attr.attr):
 
 class smoothed(deco, attr.attr):
 
-    """bends corners in a path
+    """Bends corners in a path.
 
-    curvecorners replaces corners between two lines in a path by an optimized
-    curve that has zero curvature at the connections to the lines.
-    Corners between curves and lines are left as they are."""
+    This decorator replaces corners in a path with bezier curves. There are two cases:
+    - If the corner lies between two lines, _two_ bezier curves will be used
+      that are highly optimized to look good (their curvature is to be zero at the ends
+      and has to have zero derivative in the middle).
+      Additionally, it can controlled by the softness-parameter.
+    - If the corner lies between curves then _one_ bezier is used that is (except in some
+      special cases) uniquely determined by the tangents and curvatures at its end-points.
+      In some cases it is necessary to use only the absolute value of the curvature to avoid a
+      cusp-shaped connection of the new bezier to the old path. In this case the use of
+      "strict=0" allows the sign of the curvature to switch.
+    - The radius argument gives the arclength-distance of the corner to the points where the
+      old path is cut and the beziers are inserted.
+    - Path elements that are too short (shorter than the radius) are skipped
+    """
 
     def __init__(self, radius=None, softness=1, strict=0):
-        self.radius = unit.topt(radius)
+        self.radius = unit.length(radius, default_type="v")
         self.softness = softness
         self.strict = strict
 
-    def twobeziersbetweentolines_pt(self, B, tangent1, tangent2, r1, r2, softness=1):
-        # Takes three endpoints of two straight lines:
-        # start A, connecting midpoint B, endpoint C
+    def _twobeziersbetweentolines(self, B, tangent1, tangent2, r1, r2, softness=1):
+        # Takes the corner B
+        # and two tangent vectors heading to and from B
         # and two radii r1 and r2:
+        # All arguments must be in Points
         # Returns the seven control points of the two bezier curves:
         #  - start d1
         #  - control points g1 and f1
@@ -609,7 +621,7 @@ class smoothed(deco, attr.attr):
 
         return [d1, g1, f1, e, f2, g2, d2]
 
-    def onebezierbetweentwopathels_pt(self, A, B, tangentA, tangentB, curvA, curvB, strict=0):
+    def _onebezierbetweentwopathels(self, A, B, tangentA, tangentB, curvA, curvB, strict=0):
         # connects points A and B with a bezier curve that has
         # prescribed tangents dirA, dirB and curvatures curA, curB.
         # If strict, the sign of the curvature will be forced which may invert
@@ -684,6 +696,7 @@ class smoothed(deco, attr.attr):
 
 
     def decorate(self, dp):
+        radius = unit.topt(self.radius)
         # XXX: is this the correct way to select the basepath???!!!
         # compare to wriggle()
         if isinstance(dp.strokepath, path.normpath):
@@ -708,7 +721,7 @@ class smoothed(deco, attr.attr):
                 alen = arclens[no]
                 # a first selection criterion for skipping too short normpathels
                 # the rest will queeze the radius
-                if alen > self.radius:
+                if alen > radius:
                     npelnumbers.append(no)
                 else:
                     sys.stderr.write("*** PyX Warning: smoothed is skipping a normpathel that is too short\n")
@@ -724,9 +737,9 @@ class smoothed(deco, attr.attr):
 
                 # find the parameter(s): either one or two
                 if no is npelnumbers[0] and not normsubpath.closed:
-                    pars = npel._arclentoparam_pt([max(0, alen - self.radius)])[0]
-                elif alen > 2 * self.radius:
-                    pars = npel._arclentoparam_pt([self.radius, alen - self.radius])[0]
+                    pars = npel._arclentoparam_pt([max(0, alen - radius)])[0]
+                elif alen > 2 * radius:
+                    pars = npel._arclentoparam_pt([radius, alen - radius])[0]
                 else:
                     pars = npel._arclentoparam_pt([0.5 * alen])[0]
 
@@ -784,7 +797,7 @@ class smoothed(deco, attr.attr):
                 # add the curve(s) replacing the corner
                 if isinstance(thisnpel, path.normline) and isinstance(nextnpel, path.normline) \
                    and (next-this == 1 or (this==0 and next==len(npels)-1)):
-                    d1,g1,f1,e,f2,g2,d2 = self.twobeziersbetweentolines_pt(
+                    d1,g1,f1,e,f2,g2,d2 = self._twobeziersbetweentolines(
                         thisnpel.end_pt(), tangents[this][-1], tangents[next][0],
                         math.hypot(points[this][-1][0] - thisnpel.end_pt()[0], points[this][-1][1] - thisnpel.end_pt()[1]),
                         math.hypot(points[next][0][0] - nextnpel.begin_pt()[0], points[next][0][1] - nextnpel.begin_pt()[1]),
@@ -804,7 +817,7 @@ class smoothed(deco, attr.attr):
                         sign = sign / abs(sign)
                         curvatures[this][-1] = sign * abs(curvatures[this][-1])
                         curvatures[next][0] = sign * abs(curvatures[next][0])
-                    A,B,C,D = self.onebezierbetweentwopathels_pt(
+                    A,B,C,D = self._onebezierbetweentwopathels(
                         points[this][-1], points[next][0], tangents[this][-1], tangents[next][0],
                         curvatures[this][-1], curvatures[next][0], strict=self.strict)
                     if do_moveto:
@@ -816,7 +829,7 @@ class smoothed(deco, attr.attr):
             if normsubpath.closed:
                 if do_moveto:
                     newpath.append(path.moveto_pt(*dp.strokepath.begin()))
-                    sys.stderr.write("The whole path has been smoothed away -- sorry\n")
+                    sys.stderr.write("*** PyXWarning: The whole path has been smoothed away -- sorry\n")
                 newpath.append(path.closepath())
             else:
                 epart = npels[npelnumbers[-1]].split([params[-1][0]])[-1]
@@ -830,4 +843,21 @@ class smoothed(deco, attr.attr):
 
         dp.strokepath = newpath
         return dp
+
+smoothed.clear = attr.clearclass(smoothed)
+
+_base = 1
+smoothed.SHARP = smoothed(radius="%f cm" % (_base/math.sqrt(64)))
+smoothed.SHARp = smoothed(radius="%f cm" % (_base/math.sqrt(32)))
+smoothed.SHArp = smoothed(radius="%f cm" % (_base/math.sqrt(16)))
+smoothed.SHarp = smoothed(radius="%f cm" % (_base/math.sqrt(8)))
+smoothed.Sharp = smoothed(radius="%f cm" % (_base/math.sqrt(4)))
+smoothed.sharp = smoothed(radius="%f cm" % (_base/math.sqrt(2)))
+smoothed.normal = smoothed(radius="%f cm" % (_base))
+smoothed.round = smoothed(radius="%f cm" % (_base*math.sqrt(2)))
+smoothed.Round = smoothed(radius="%f cm" % (_base*math.sqrt(4)))
+smoothed.ROund = smoothed(radius="%f cm" % (_base*math.sqrt(8)))
+smoothed.ROUnd = smoothed(radius="%f cm" % (_base*math.sqrt(16)))
+smoothed.ROUNd = smoothed(radius="%f cm" % (_base*math.sqrt(32)))
+smoothed.ROUND = smoothed(radius="%f cm" % (_base*math.sqrt(64)))
 
