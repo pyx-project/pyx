@@ -1,6 +1,6 @@
 PyX
 
-0.5 (????/??/??)
+0.5 (????/??/??):
   TODO:
   - graph module
     - another (the last?!) axis redesign: axispos -> class of its own; remove axis.axiscanvas
@@ -16,11 +16,18 @@ PyX
     - rect style (and errorbars?) should use clipping
   - path module:
     - reverse needs to be fixed
+  - text module:
+    - the prolog method of the dvifile class recieves the page now -> return the prolog needed by this page only
+    - SlantFont & Co support
+    - dvicopy: stdout handling
+  - data module:
+    - use csv module (new in 2.3)
+  - box module:
+    - multiple radii: documentation
+  - bbox module:
+     - __iadd__ and inplace enlarge, transform,...
 
-0.4 (????/??/??):
-  - manual:
-    TODO:
-    - include sources in source distribution
+0.4 (2003/08/22):
   - graph module:
     - separate texter out of the axispainter
     - axis/partitioner/texter/painter/axispos redesign & interfaces
@@ -47,28 +54,22 @@ PyX
     - automatic restart of a TeX instance with the same preamble (preamble changes are not possible)
     - texmessage.loadfd for accepting font description loading
     - don't bail out on width_index == 0, but mark character invalid instead
-    - dvicopy flag (TODO: stdout handling)
+    - dvicopy flag
     - support for specials; pyxgraphics flag
     - support psfonts.map: font names, font encodings
-    TODO:
-    - the prolog method of the dvifile class recieves the page now -> return the prolog needed by this page only
-    - SlantFont & Co support
   - tex module:
     - bugfix \def\ProcessPyXBox -> \long\def\ProcessPyXBox
     - copy lfs handling from text module (share the same source???)
   - data module:
     - full documentation via doc strings
     - data.data should add line number like data.datafile
-    - TODO: use csv module (new in 2.3)
   - connector module:
     - some preliminary version
-    - TODO: documentation
   - box module:
     - multiple radii (up to two per point) and softnesses
-      (TODO: documentation)
     - ensurecenter added --- do we always force the creation of a center?
   - path module:
-    - lentopar methods added including some tests (TODO: documentation)
+    - lentopar methods added including some tests
   - epsfile module:
      - new parameter bbox allows to override the bounding box of the eps file
 
@@ -109,7 +110,7 @@ PyX
   - canvas module:
     - correct arrow template calculation for very short paths
 
-0.3 (2003/03/31)
+0.3 (2003/03/31):
   - examples
     - new easy to use example generation (will hopefully lead to nice examples)
   - unit box:
@@ -149,8 +150,6 @@ PyX
     - enlarge (was enhance) now allows selective enlargement to the left, bottom, right and top
     - output HiResBoundingBox
     - never reduce bbox upon output
-    - defered TODOs:
-      __iadd__ and inplace enlarge, transform,...
   - epsfile module:
     - new constructor signature, more in line with rest of PyX:
       epsfile(x, y, filename, **additional_args)
