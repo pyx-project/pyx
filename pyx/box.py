@@ -80,7 +80,7 @@ class polygon_pt:
             for i in range(l):
                 c = self.corners[i]
                 def normed(*v):
-                    n = math.sqrt(v[0] * v[0] + v[1] * v[1])
+                    n = math.hypot(*v)
                     return v[0] / n, v[1] / n
                 d1 = normed(self.corners[(i - 1 + l) % l][0] - c[0],
                             self.corners[(i - 1 + l) % l][1] - c[1])
@@ -187,7 +187,7 @@ class polygon_pt:
         return a*dx - beta*dy - px + cx, a*dy + beta*dx - py + cy
 
     def alignvector_pt(self, a, dx, dy, alignlinevector, alignpointvector):
-        n = math.sqrt(dx * dx + dy * dy)
+        n = math.hypot(dx, dy)
         dx, dy = dx / n, dy / n
         linevectors = map(lambda (p1, p2), self=self, a=a, dx=dx, dy=dy, alignlinevector=alignlinevector:
                                 alignlinevector(a, dx, dy, *(p1 + p2)), self.successivepoints())
@@ -229,7 +229,7 @@ class polygon_pt:
         return self
 
     def extent_pt(self, dx, dy):
-        n = math.sqrt(dx * dx + dy * dy)
+        n = math.hypot(dx, dy)
         dx, dy = dx / n, dy / n
         oldcenter = self.center
         if self.center is None:
@@ -256,7 +256,7 @@ class polygon_pt:
                     dx, dy = p2[0] - x, p2[1] - y
                 else:
                     dx, dy = x - p1[0] - a * gx, y - p1[1] - a * gy
-            new = math.sqrt(dx * dx + dy * dy)
+            new = math.hypot(dx, dy)
             if result is None or new < result:
                 result = new
         return result

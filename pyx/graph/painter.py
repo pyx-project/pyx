@@ -252,7 +252,7 @@ class pathaxispos(_axispos):
         tend = t.end_pt()
         dx = tend[0]-tbegin[0]
         dy = tend[1]-tbegin[1]
-        norm = math.sqrt(dx*dx + dy*dy)
+        norm = math.hypot(dx, dy)
         if self.direction == 1:
             return -dy/norm, dx/norm
         elif self.direction == -1:

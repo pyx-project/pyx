@@ -729,12 +729,12 @@ class arct_pt(pathel):
         # direction and length of tangent 1
         dx1  = currentpoint[0]-self.x1
         dy1  = currentpoint[1]-self.y1
-        l1   = math.sqrt(dx1*dx1+dy1*dy1)
+        l1   = math.hypot(dx1, dy1)
 
         # direction and length of tangent 2
         dx2  = self.x2-self.x1
         dy2  = self.y2-self.y1
-        l2   = math.sqrt(dx2*dx2+dy2*dy2)
+        l2   = math.hypot(dx2, dy2)
 
         # intersection angle between two tangents
         alpha = math.acos((dx1*dx2+dy1*dy2)/(l1*l2))
@@ -751,7 +751,7 @@ class arct_pt(pathel):
             # direction of center of arc 
             rx = self.x1-0.5*(xt1+xt2)
             ry = self.y1-0.5*(yt1+yt2)
-            lr = math.sqrt(rx*rx+ry*ry)
+            lr = math.hypot(rx, ry)
 
             # angle around which arc is centered
 
@@ -1459,7 +1459,7 @@ class normline(normpathel):
         return normcurve(self.x0, self.y0, xa, ya, xb, yb, self.x1, self.y1)
 
     def arclen_pt(self,  epsilon=1e-5):
-        return math.sqrt((self.x0-self.x1)*(self.x0-self.x1)+(self.y0-self.y1)*(self.y0-self.y1))
+        return math.hypot(self.x0-self.x1, self.y0-self.y1)
 
     def at_pt(self, t):
         return (self.x0+(self.x1-self.x0)*t, self.y0+(self.y1-self.y0)*t)
@@ -1594,8 +1594,7 @@ class normcurve(normpathel):
     def arclen_pt(self, epsilon=1e-5):
         """computes arclen of bpathel in pts using successive midpoint split"""
         if self.isstraight(epsilon):
-            return math.sqrt((self.x3-self.x0)*(self.x3-self.x0)+
-                             (self.y3-self.y0)*(self.y3-self.y0))
+            return math.hypot(self.x3-self.x0, self.y3-self.y0)
         else:
             (a, b) = self.midpointsplit()
             return a.arclen_pt(epsilon) + b.arclen_pt(epsilon)
@@ -1651,14 +1650,10 @@ class normcurve(normpathel):
         # (i.e. |P1-P0|+|P2-P1|+|P3-P2|) and the length of the
         # straight line between starting and ending point of the
         # normcurve (i.e. |P3-P1|) is smaller the epsilon
-        return abs(math.sqrt((self.x1-self.x0)*(self.x1-self.x0)+
-                             (self.y1-self.y0)*(self.y1-self.y0)) +
-                   math.sqrt((self.x2-self.x1)*(self.x2-self.x1)+
-                             (self.y2-self.y1)*(self.y2-self.y1)) +
-                   math.sqrt((self.x3-self.x2)*(self.x3-self.x2)+
-                             (self.y3-self.y2)*(self.y3-self.y2)) -
-                   math.sqrt((self.x3-self.x0)*(self.x3-self.x0)+
-                             (self.y3-self.y0)*(self.y3-self.y0)))<epsilon
+        return abs(math.hypot(self.x1-self.x0, self.y1-self.y0)+
+                   math.hypot(self.x2-self.x1, self.y2-self.y1)+
+                   math.hypot(self.x3-self.x2, self.y3-self.y2)-
+                   math.hypot(self.x3-self.x0, self.y3-self.y0))<epsilon
 
     def midpointsplit(self):
         """splits bpathel at midpoint returning bpath with two bpathels"""
@@ -1706,12 +1701,10 @@ class normcurve(normpathel):
            together with the length of the parameterinterval"""
 
         # lower and upper bounds for the arclen
-        lowerlen = \
-            math.sqrt((self.x3-self.x0)*(self.x3-self.x0) + (self.y3-self.y0)*(self.y3-self.y0))
-        upperlen = \
-            math.sqrt((self.x1-self.x0)*(self.x1-self.x0) + (self.y1-self.y0)*(self.y1-self.y0)) + \
-            math.sqrt((self.x2-self.x1)*(self.x2-self.x1) + (self.y2-self.y1)*(self.y2-self.y1)) + \
-            math.sqrt((self.x3-self.x2)*(self.x3-self.x2) + (self.y3-self.y2)*(self.y3-self.y2))
+        lowerlen = math.hypot(self.x3-self.x0, self.y3-self.y0)
+        upperlen = ( math.hypot(self.x1-self.x0, self.y1-self.y0) +
+                     math.hypot(self.x2-self.x1, self.y2-self.y1) +
+                     math.hypot(self.x3-self.x2, self.y3-self.y2) )
 
         # instead of isstraight method:
         if abs(upperlen-lowerlen)<epsilon:
@@ -2022,7 +2015,7 @@ class normsubpath:
             tdx, tdy = self.normpathels[int(param-self.epsilon)].tangentvector_pt(param-int(param-self.epsilon))
         except:
             raise PathException("parameter value param out of range")
-        tlen = math.sqrt(tdx*tdx + tdy*tdy)
+        tlen = math.hypot(tdx, tdy)
         if not (length is None or tlen==0):
             sfactor = unit.topt(length)/tlen
             tdx *= sfactor

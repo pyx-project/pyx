@@ -711,7 +711,7 @@ class smoothed(deco, attr.attr):
                 if alen > self.radius:
                     npelnumbers.append(no)
                 else:
-                    sys.stderr.write("Skipping a normpathel that is too short\n")
+                    sys.stderr.write("*** PyX Warning: smoothed is skipping a normpathel that is too short\n")
                 cumalen += alen
             # XXX: what happens, if 0 or -1 is skipped and path not closed?
 

@@ -442,14 +442,14 @@ class graphxy(canvas.canvas):
 #         x1, y1 = self._vpos(v, axis.vypos, axis.vzpos)
 #         x2, y2 = self._vpos(v, 0.5, 0)
 #         dx, dy = x1 - x2, y1 - y2
-#         norm = math.sqrt(dx*dx + dy*dy)
+#         norm = math.hypot(dx, dy)
 #         return dx/norm, dy/norm
 # 
 #     def vytickdirection(self, axis, v):
 #         x1, y1 = self._vpos(axis.vxpos, v, axis.vzpos)
 #         x2, y2 = self._vpos(0.5, v, 0)
 #         dx, dy = x1 - x2, y1 - y2
-#         norm = math.sqrt(dx*dx + dy*dy)
+#         norm = math.hypot(dx, dy)
 #         return dx/norm, dy/norm
 # 
 #     def vztickdirection(self, axis, v):
@@ -457,7 +457,7 @@ class graphxy(canvas.canvas):
 #         x1, y1 = self._vpos(axis.vxpos, axis.vypos, v)
 #         x2, y2 = self._vpos(0.5, 0.5, v)
 #         dx, dy = x1 - x2, y1 - y2
-#         norm = math.sqrt(dx*dx + dy*dy)
+#         norm = math.hypot(dx, dy)
 #         return dx/norm, dy/norm
 # 
 #     def _pos(self, x, y, z, xaxis=None, yaxis=None, zaxis=None):
