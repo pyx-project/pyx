@@ -288,6 +288,9 @@ class bpath:
 
     def reverse(self):
         """return reversed bpath"""
+        # note, that this does not do an in place reversion, like
+        # for instance the reverse method of the buitin sequence
+        # types
         bp=map(lambda x: x.reverse(), self.bpath)
         bp.reverse()
         return bpath(bp)
