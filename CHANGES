@@ -24,6 +24,7 @@ PyX
     - skip title=None in key (cf. bug #821284), properly align a single key entry
   - canvas module:
     - stroke and fill now support trafos (TODO: documentation)
+    - uppercase version of a4, a3, ... paperformats
   - config module:
     - new module for loading PyX configuration information
   - pyx module:

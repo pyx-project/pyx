@@ -43,10 +43,15 @@ import attrlist, base, bbox, helper, path, unit, prolog, text, trafo, version
 # known paperformats as tuple(width, height)
 
 _paperformats = { "a4"      : ("210 t mm",  "297 t mm"),
+                  "A4"      : ("210 t mm",  "297 t mm"),
                   "a3"      : ("297 t mm",  "420 t mm"),
+                  "A3"      : ("297 t mm",  "420 t mm"),
                   "a2"      : ("420 t mm",  "594 t mm"),
+                  "A2"      : ("420 t mm",  "594 t mm"),
                   "a1"      : ("594 t mm",  "840 t mm"),
+                  "A1"      : ("594 t mm",  "840 t mm"),
                   "a0"      : ("840 t mm", "1188 t mm"),
+                  "A0"      : ("840 t mm", "1188 t mm"),
                   "a0b"     : ("910 t mm", "1370 t mm"),
                   "letter"  : ("8.5 t inch",   "11 t inch"),
                   "legal"   : ("8.5 t inch",   "14 t inch")}
