@@ -92,7 +92,8 @@ TODO:
     - unit.cm, unit.t_cm, etc. are no longer sub classes but instances
       of length
     - never convert implicitly into visual/width, etc. lengths (this is more
-      about usage of the unit module in various other modules)
+      about usage of the unit module in various other modules) (TODO: update
+      documentation)
     - support for string initialization commented out, so its currently still
       easy to turn it on again (TODO: documentation)
   - canvas module:
