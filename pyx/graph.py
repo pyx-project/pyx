@@ -179,7 +179,7 @@ class frac:
         else:
             try:
                 enum, denom = x
-            except TypeError:
+            except (TypeError, AttributeError):
                 enum, denom = x.enum, x.denom
             if not helper.isinteger(enum) or not helper.isinteger(denom): raise TypeError("integer type expected")
         if not denom: raise ZeroDivisionError("zero denominator")
