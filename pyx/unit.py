@@ -127,6 +127,9 @@ class length:
             raise ( NotImplementedError,
                     "cannot convert given argument to length type" )
 
+    def __cmp__(self, other):
+        return cmp(tom(self), tom(length(other)))
+
     def __mul__(self, factor):
         newlength = self.__class__()
         for unit_type in newlength.length.keys():
