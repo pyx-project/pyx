@@ -96,7 +96,9 @@ void init_pykpathsea(void)
   AddInt(kpse_program_text_format);
   AddInt(kpse_program_binary_format);
   AddInt(kpse_miscfonts_format);
+  /*
   AddInt(kpse_web_format);
   AddInt(kpse_cweb_format);
+  */
 
 }
