@@ -26,7 +26,7 @@ class cross(path):
 
 def drawpathwbbox(c, p):
     c.stroke(p, [color.rgb.red])
-    np=normpath(p)
+    np = p.normpath()
     c.stroke(np, [color.rgb.green, style.linestyle.dashed])
     c.stroke(bboxrect(p))
 
@@ -34,19 +34,19 @@ def drawpathwbbox(c, p):
 def testarcs(c):
     def testarc(c, x, y, phi1, phi2):
         p=path(arc(x,y, 0.5, phi1, phi2))
-        np=normpath(p)
+        np = p.normpath()
         c.stroke(p, [color.rgb.red])
         c.stroke(np, [color.rgb.green, style.linestyle.dashed])
 
     def testarcn(c, x, y, phi1, phi2):
         p=path(arcn(x,y, 0.5, phi1, phi2))
-        np=normpath(p)
+        np = p.normpath()
         c.stroke(p, [color.rgb.red])
         c.stroke(np, [color.rgb.green, style.linestyle.dashed])
 
     def testarct(c, r, x0, y0, dx1, dy1, dx2, dy2):
         p=path(moveto(x0,y0), arct(x0+dx1,y0+dy1, x0+dx2, y0+dy2, r), rlineto(dx2-dx1, dy2-dy1), closepath())
-        np=normpath(p)
+        np = p.normpath()
         c.stroke(p, [color.rgb.red, style.linewidth.Thick])
         c.stroke(np, [color.rgb.green, style.linewidth.THin, deco.filled([color.rgb.green])])
 
@@ -78,8 +78,8 @@ def testarcs(c):
 
 
 def testintersectbezier(c):
-    p=normpath(path(moveto(0,0), curveto(2,6,4,5,2,9)), epsilon=1e-4)
-    q=normpath(path(moveto(2,0), curveto(2,6,4,12,1,6)), epsilon=1e-4)
+    p=path(moveto(0,0), curveto(2,6,4,5,2,9)).normpath(epsilon=1e-4)
+    q=path(moveto(2,0), curveto(2,6,4,12,1,6)).normpath(epsilon=1e-4)
 
     c.stroke(q, [style.linewidth.THIN])
     c.stroke(p, [style.linewidth.THIN])
@@ -124,7 +124,7 @@ def testnormpathtrafo(c):
              closepath())
 
     c.stroke(p)
-    c.stroke(normpath(p), [color.rgb.green, style.linestyle.dashed])
+    c.stroke(p.normpath(), [color.rgb.green, style.linestyle.dashed])
     c.stroke(p.transformed(trafo.translate(3,1)), [color.rgb.red])
     c.insert(canvas.canvas([trafo.translate(3,1)])).stroke(p,
                                                           [color.rgb.green,
@@ -150,7 +150,7 @@ def testnormpathtrafo(c):
     segment2 = circ2.split(isectcirc2)[1]
 
     segment = segment1 << segment2
-    segment.append(closepath())
+    segment[-1].close()
 
     c.stroke(segment, [style.linewidth.THick, deco.filled([color.rgb.green])])
 
