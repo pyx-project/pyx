@@ -2,8 +2,6 @@ PyX
 
 0.4 (????/??/??):
   TODOs:
-  - examples:
-    - to be included in source distribution
   - manual:
     - include sources in source distribution
   - graph module:
@@ -22,7 +20,7 @@ PyX
   - tex module:
     - copy lfs handling from text module (share the same source???)
 
-0.3.1 BUGFIX RELEASE:
+0.3.1 (2003/04/04):
   - text module:
     - fix bug in dvi rule code where width was height
     - fix preamble attribute checking bug
@@ -38,7 +36,7 @@ PyX
     - added a attributechange example (requested)
     - added back the integral example (requested; prior PyX 0.3 it was part of the user manual)
     - small change in vector example (allow for the access to the texrunner)
-    - TODO: include examples in source distribution
+    - examples included in source distribution
   - canvas module:
     - correct arrow template calculation for very short paths
 
