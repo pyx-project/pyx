@@ -86,6 +86,10 @@ TODO:
     - describe creation and modification (inplace and ``modify by new'') of
       graph data
 
+0.8 (????/??/??):
+  - path module:
+    - work in progress: path parameters and argument handling
+
 
 0.7.1 (2004/12/15):
   - canvas module:
