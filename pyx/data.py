@@ -46,9 +46,9 @@ MathTreeValsWithCol = (mathtree.MathTreeValConst,
 
 class _data:
 
-    def __init__(self, titles, data, parser=mathtree.parser(MathTreeVals=MathTreeValsWithCol)):
-        self.titles = titles
+    def __init__(self, data, titles, parser=mathtree.parser(MathTreeVals=MathTreeValsWithCol)):
         self.data = data
+        self.titles = titles
         self.parser = parser
 
     def getcolumnno(self, column):
@@ -102,7 +102,7 @@ class _data:
 
 class data(_data):
 
-    def __init__(self, titles=[], data=[], maxcolumns=helper.nodefault, **kwargs):
+    def __init__(self, data=[], titles=[], maxcolumns=helper.nodefault, **kwargs):
         if len(data):
             if maxcolumns is helper.nodefault:
                 maxcolumns = len(data[0])
@@ -116,7 +116,7 @@ class data(_data):
                 data[i] = list(data[i]) + [None] * (maxcolumns - len(data[i]))
         else:
             titles = []
-        _data.__init__(self, titles, data, **kwargs)
+        _data.__init__(self, data, titles, **kwargs)
 
 
 class datafile(data):
@@ -192,7 +192,7 @@ class datafile(data):
                     linenumber += 1
         if skiptail:
             del usedata[-skiptail:]
-        data.__init__(self, titles=[None] + usetitles, data=usedata, maxcolumns=maxcolumns, **kwargs)
+        data.__init__(self, data=usedata, titles=[None] + usetitles, maxcolumns=maxcolumns, **kwargs)
 
 
 
@@ -228,5 +228,5 @@ class sectionfile(_data):
                     usedata[-1][index] = float(value)
                 except (TypeError, ValueError):
                     usedata[-1][index] = value
-        _data.__init__(self, usetitles, usedata, **kwargs)
+        _data.__init__(self, usedata, usetitles, **kwargs)
 

@@ -5,7 +5,7 @@ from pyx import *
 class DataTestCase(unittest.TestCase):
 
     def testAccess(self):
-        mydata = data.data(["a", "b", "b"], [[1, 2, 3], [4, 5, 6]])
+        mydata = data.data([[1, 2, 3], [4, 5, 6]], ["a", "b", "b"])
         assert mydata.getcolumnno("a") == 0
         assert mydata.getcolumnno(1) == 1
         try:
@@ -24,7 +24,7 @@ class DataTestCase(unittest.TestCase):
         assert mydata.getcolumn(1) == [2, 5]
 
     def testAdd(self):
-        mydata = data.data(["a"], [[1], [2]])
+        mydata = data.data([[1], [2]], ["a"])
         mydata.addcolumn("b=2*a")
         mydata.addcolumn("2*$1*a")
         assert mydata.titles == ["a", "b", None]
@@ -33,7 +33,7 @@ class DataTestCase(unittest.TestCase):
         a = "nothing"
         two = 2
         f = lambda x: x*x
-        mydata = data.data(["a"], [[1], [2]])
+        mydata = data.data([[1], [2]], ["a"])
         mydata.addcolumn("b=two*a", context=locals())
         mydata.addcolumn("two*$-1*a", context=locals())
         mydata.addcolumn("f($-1)", context=locals())
