@@ -322,7 +322,7 @@ argument name&default&description\\
 \texttt{plus}&\texttt{""}&plus sign for the exponent\\
 \texttt{minus}&\texttt{"-"}&minus sign for the exponent\\
 \texttt{mantissaexp}&\texttt{r"\{\{\%s\}\textbackslash cdot10\textasciicircum\{\%s\}\}"}&format string for manissa and exponent\\
-\texttt{skipexp0}&\texttt{r"\{\%s\}&format string for manissa, when exponent is \texttt{0}; use \texttt{None} to turn off this feature\\
+\texttt{skipexp0}&\texttt{r"\{\%s\}}&format string for manissa, when exponent is \texttt{0}; use \texttt{None} to turn off this feature\\
 \texttt{skipexp1}&\texttt{None}&as \texttt{skipexp0}, but for exponent \texttt{1}\\
 \texttt{nomantissaexp}&\texttt{r"\{10\textbackslash\{\%s\}\}"}&format string when skipping a manissa equals 1\\
 \texttt{minusnomantissaexp}&\texttt{r"\{-1\textbackslash\{\%s\}\}"}&format string when skipping a manstissa equals -1\\
@@ -470,7 +470,7 @@ features.
 
 The standard \verb|linkaxis| can be used for a \verb|linaxis| or
 \verb|logaxis|, other axes might have different \verb|linkaxis|
-classes, \emph{e.g. \verb|linksplitaxis| and \verb|linkbaraxis|}.
+classes, {\it e.g. \verb|linksplitaxis| and \verb|linkbaraxis|}.
 While those linked axes might be used by graphs to plot the same axis
 at both sides of the graph (when appropriate), every axis has a
 \verb|createlinkaxis| method, which returns a standard linked axis.
