@@ -51,7 +51,7 @@ class timetick(datetime.datetime):
 
 class timetexter:
 
-    def __init__(self, formats="%c")
+    def __init__(self, formats="%c"):
         self.formats = formats
 
     def labels(self, ticks):
