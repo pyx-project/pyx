@@ -1068,8 +1068,8 @@ class DVIFile:
 # - please don't get confused:
 #   - there is a texmessage (and a texmessageparsed) attribute within the
 #     texrunner; it contains TeX/LaTeX response from the last command execution
-#   - instances of classes derived from the class texmessage get used to
-#     parse the TeX/LaTeX response as it is storred in the texmessageparsed
+#   - instances of classes derived from the class texmessage are used to
+#     parse the TeX/LaTeX response as it is stored in the texmessageparsed
 #     attribute of a texrunner instance
 #   - the multiple usage of the name texmessage might be removed in the future
 # - texmessage instances should implement _Itexmessage
@@ -1086,14 +1086,27 @@ class TexResultError(Exception):
         self.texrunner = texrunner
 
     def __str__(self):
-        "prints a detailed report about the problem"
-        return ("%s\n" % self.description +
-                "The expression passed to TeX was:\n"
-                "  %s\n" % self.texrunner.expr.replace("\n", "\n  ").rstrip() +
-                "The return message from TeX was:\n"
-                "  %s\n" % self.texrunner.texmessage.replace("\n", "\n  ").rstrip() +
-                "After parsing this message, the following was left:\n"
-                "  %s" % self.texrunner.texmessageparsed.replace("\n", "\n  ").rstrip())
+        """prints a detailed report about the problem
+        - the verbose level is controlled by texrunner.errordebug"""
+        if self.texrunner.errordebug >= 2:
+            return ("%s\n" % self.description +
+                    "The expression passed to TeX was:\n"
+                    "  %s\n" % self.texrunner.expr.replace("\n", "\n  ").rstrip() +
+                    "The return message from TeX was:\n"
+                    "  %s\n" % self.texrunner.texmessage.replace("\n", "\n  ").rstrip() +
+                    "After parsing this message, the following was left:\n"
+                    "  %s" % self.texrunner.texmessageparsed.replace("\n", "\n  ").rstrip())
+        elif self.texrunner.errordebug == 1:
+            firstlines = self.texrunner.texmessageparsed.split("\n")
+            if len(firstlines) > 5:
+                firstlines = firstlines[:5] + ["(cut after 5 lines, increase errordebug for more output)"]
+            return ("%s\n" % self.description +
+                    "The expression passed to TeX was:\n"
+                    "  %s\n" % self.texrunner.expr.replace("\n", "\n  ").rstrip() +
+                    "After parsing the return message from TeX, the following was left:\n" +
+                    reduce(lambda x, y: "%s  %s\n" % (x,y), firstlines, "").rstrip())
+        else:
+            return self.description
 
 
 class TexResultWarning(TexResultError):
@@ -1766,7 +1779,15 @@ class TexNotInPreambleModeError(Exception): pass
 class texrunner:
     """TeX/LaTeX interface
     - runs TeX/LaTeX expressions instantly
-    - checks TeX/LaTeX response"""
+    - checks TeX/LaTeX response
+    - the instance variable texmessage stores the last TeX
+      response as a string
+    - the instance variable texmessageparsed stores a parsed
+      version of texmessage; it should be empty after
+      texmessage.check was called, otherwise a TexResultError
+      is raised
+    - the instance variable errordebug controls the verbose
+      level of TexResultError"""
 
     def __init__(self, mode="tex",
                        lfs="10pt",
@@ -1776,6 +1797,7 @@ class texrunner:
                        waitfortex=5,
                        texdebug=0,
                        dvidebug=0,
+                       errordebug=1,
                        dvicopy=0,
                        pyxgraphics=1,
                        texmessagestart=texmessage.start,
@@ -1795,6 +1817,7 @@ class texrunner:
         self.waitfortex = waitfortex
         self.texdebug = texdebug
         self.dvidebug = dvidebug
+        self.errordebug = errordebug
         self.dvicopy = dvicopy
         self.pyxgraphics = pyxgraphics
         texmessagestart = helper.ensuresequence(texmessagestart)
@@ -1938,11 +1961,11 @@ class texrunner:
             self.expectqueue.put_nowait("PyXInputMarker:executeid=%i:" % self.executeid)
             if self.preamblemode:
                 self.expr = ("%s%%\n" % expr +
-                                   "\\PyXInput{%i}%%\n" % self.executeid)
+                             "\\PyXInput{%i}%%\n" % self.executeid)
             else:
                 self.page += 1
-                self.expr = ("\\ProcessPyXBox{%s}{%i}%%\n" % (expr, self.page) +
-                                   "\\PyXInput{%i}%%\n" % self.executeid)
+                self.expr = ("\\ProcessPyXBox{%s%%\n}{%i}%%\n" % (expr, self.page) +
+                             "\\PyXInput{%i}%%\n" % self.executeid)
         else: # TeX/LaTeX should be finished
             self.expectqueue.put_nowait("Transcript written on %s.log" % self.texfilename)
             if self.mode == "latex":
@@ -2083,7 +2106,7 @@ class texrunner:
             helper.checkattr(texmessagedefaultrun, allowmulti=(texmessage,))
             self.texmessagedefaultrun = texmessagedefaultrun
 
-    def set(self, texdebug=None, dvidebug=None, **args):
+    def set(self, texdebug=None, dvidebug=None, errordebug=None, **args):
         """as above, but contains all settings
         - the debug level might be changed during TeX/LaTeX execution
         - dvidebug gets used only once, namely when TeX/LaTeX is being finished"""
@@ -2093,28 +2116,35 @@ class texrunner:
             self.texdebug = texdebug
         if dvidebug is not None:
             self.dvidebug = dvidebug
+        if errordebug is not None:
+            self.errordebug = errordebug
         if len(args.keys()):
             self.settex(**args)
 
     def bracketcheck(self, expr):
         """a helper method for consistant usage of "{" and "}"
-        - prevent to pass unbalanced expressions to TeX
-        - raises an appropriate ValueError"""
-        depth = 0
-        esc = 0
-        for c in expr:
-            if c == "{" and not esc:
-                depth = depth + 1
-            if c == "}" and not esc:
-                depth = depth - 1
-                if depth < 0:
-                    raise ValueError("unmatched '}'")
-            if c == "\\":
-                esc = (esc + 1) % 2
-            else:
-                esc = 0
-        if depth > 0:
-            raise ValueError("unmatched '{'")
+        - Michael Schindler claims that this is not necessary"""
+        pass
+
+#    def bracketcheck(self, expr):
+#        """a helper method for consistant usage of "{" and "}"
+#        - prevent to pass unbalanced expressions to TeX
+#        - raises an appropriate ValueError"""
+#        depth = 0
+#        esc = 0
+#        for c in expr:
+#            if c == "{" and not esc:
+#                depth = depth + 1
+#            if c == "}" and not esc:
+#                depth = depth - 1
+#                if depth < 0:
+#                    raise ValueError("unmatched '}'")
+#            if c == "\\":
+#                esc = (esc + 1) % 2
+#            else:
+#                esc = 0
+#        if depth > 0:
+#            raise ValueError("unmatched '{'")
 
     def preamble(self, expr, *args):
         r"""put something into the TeX/LaTeX preamble
