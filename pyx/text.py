@@ -488,7 +488,7 @@ def readfontmap(filenames):
     for filename in filenames:
         mappath = pykpathsea.find_file(filename, pykpathsea.kpse_dvips_config_format)
         if mappath is None:
-            raise RuntimeError("cannot find dvips font catalog 'filename', aborting")
+            raise RuntimeError("cannot find dvips font catalog '%s', aborting" % filename)
         mapfile = open(mappath, "r")
         for line in mapfile.readlines():
             line = line.rstrip()
