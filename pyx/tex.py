@@ -77,7 +77,6 @@ class tex:
     TexMarkerEnd = TexMarker + "End"
 
     def __del__(self):
-        print "tex.__del__()"
         self.TexRun()
 
     TexCmds = [ ]
@@ -302,22 +301,15 @@ class tex:
         
         # TODO 7: dvips error handling
         #         interface for modification of the dvips command line
+
         if os.system("dvips -P pyx -T" + str(self.canvas.Width) + "cm," + str(self.canvas.Height) + "cm -o " + self.canvas.BaseFilename + ".tex.eps " + self.canvas.BaseFilename + " > /dev/null 2>&1"):
             assert 0, "dvips exit code non-zero"
         
         # TODO 8: don't write save/restore directly
-        print "hier"
-        self.c.PSCmd("save")
-        print "hier2"
         self.canvas.PSCmd("save")
-        print "hier3"
-        self.c.amove(0,0)
-        print "hier4"
         self.canvas.amove(0,0)
-        print "hier5"
         self.canvas.PSInsertEPS(self.canvas.BaseFilename + ".tex.eps")
         self.canvas.PSCmd("restore")
-        print "da"
 
     TexResults = None
 

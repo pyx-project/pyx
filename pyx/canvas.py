@@ -2,6 +2,7 @@
 
 from const import *
 import string
+import regex
 
 linecap_butt   = 0
 linecap_round  = 1
@@ -28,7 +29,7 @@ class canvas:
     PSPositionCorrect = 0		# does actual PS position coincide with our x,y
     
     def __del__(self):
-        print "canvas.__del__()"
+        self.PSEnd()
     
     def PSCmd(self, cmd):
         try:
@@ -101,7 +102,7 @@ class canvas:
 	except:
 	    assert "cannot open EPS file"	# TODO: Fehlerbehandlung
 
-	import regex
+        import regex
 
 	bbpattern = regex.compile(
 	     "^%%BoundingBox:[\t ]+\([0-9]+\)[\t ]+\([0-9]+\)[\t ]+\([0-9]+\)[\t ]+\([0-9]+\)[\t ]*$")
@@ -230,7 +231,7 @@ if __name__=="__main__":
 
     from tex import *
     t=tex(c)
-    t.c=c
+    #t.c=c
 
     #for x in range(11):
     #    amove(x,0)
@@ -289,5 +290,3 @@ if __name__=="__main__":
     c.amove(12,10)
     c.aline(12,14)
 
-    #DefaultTex.TexRun()
-    #text("a b c d e f g h i j k l m n o p q r s t u v w x y z",hsize=2,valign=bottom)
