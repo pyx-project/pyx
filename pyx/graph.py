@@ -26,19 +26,6 @@ from path import *
 import types, re, tex, unit, math
 from math import log, exp, sqrt, pow
 
-def _powi(x, y):
-    assert type(y) == types.IntType
-    assert y >= 0
-    if y:
-        y2 = y / 2 # integer division!
-        yr = y % 2
-        res = _powi(x, y2)
-        if yr:
-           return x * res * res
-        else:
-           return res * res
-    else:
-        return 1
 
 class _ticklength(unit.length):
 
