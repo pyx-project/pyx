@@ -1,20 +1,21 @@
-PSOp +---PSCommand ---+--- canvas
-     |                +--- epsfile
-     |                +--- tex
-     |                +--- _path ---+--- line
-     |                |             +--- rect
-     |                +--- _bpath --+--- bline
-     |                |             +--- bcurve
-     |                |             +--- barc
-     |                +--- graph --- graphxy
+PSOp +--- PSCommand ---+--- canvas
+     |                 +--- epsfile
+     |                 +--- tex
+     |                 +--- _path ---+--- line
+     |                 |             +--- rect
+     |                 +--- _bpath --+--- bline
+     |                 |             +--- bcurve
+     |                 |             +--- barc
+     |                 +--- graph --- graphxy
      |        
-     +---PSAttr ---+--- pathdeco-----+---arrow---+---barrow
+     +--- PSAttr ---+--- pathdeco-----+---arrow---+---barrow
      |              |                             +---earrow
      |              +--- pathstyle ---+--- linewidth
-     |                                +--- linestyle
-     |                                +--- linecap
-     +---bpathel
-     +---pathel
+     |              |                 +--- linestyle
+     |              |                 +--- linecap
+     |              +--- _trafo
+     +--- _bpathel
+     +--- _pathel
 
 bbox
                             
