@@ -9,32 +9,32 @@
     <h1>PyX - News</h1>
 
     <dl>
-      <dt>2004-10-21: PyX 0.7</dt>
+      <dt>2004-10-21: PyX 0.7 released</dt>
       <dd>
-        PyX 0.7 adds support for inclusion of bitmaps. The path system
-        has undergone a major revision and cleanup. The handling of short
-        path elements was enhanced considerably to prevent numerical
-        instabilities. The data and style handling in the graph system was
+        This release adds support for the inclusion of bitmaps. The internals of the path system
+        have undergone a major revision and cleanup. The handling of short
+        path elements has been enhanced considerably to prevent numerical
+        instabilities. The data and style handling in the graph system has been
         completely reorganized. It is now possible to combine several graph
         styles within a single plot instruction.
       </dd>
-      <dt>2004-04-27: PyX 0.6.3</dt>
+      <dt>2004-04-27: PyX 0.6.3 released</dt>
       <dd>
-        PyX 0.6.3 contains a few bug fixes and includes the source for the faq
+        PyX 0.6.3 contains a few bug fixes and includes the source for the FAQ
         and the manual as requested by a package maintainer.
       </dd>
-      <dt>2004-04-07: PyX 0.6.2</dt>
+      <dt>2004-04-07: PyX 0.6.2 released</dt>
       <dd>
         PyX 0.6.2 fixes a few bugs in the graph system.
       </dd>
-      <dt>2004-03-31: PyX 0.6.1</dt>
+      <dt>2004-03-31: PyX 0.6.1 released</dt>
       <dd>
         PyX 0.6.1 fixes a brown paper bag bug in the distribtion which missed
         to contain the new directories for the graph and the axis system.
       </dd>
-      <dt>2004-03-30: PyX 0.6</dt>
+      <dt>2004-03-30: PyX 0.6 released</dt>
       <dd>
-        PyX 0.6 further improves the internal design and visible interfaces
+        This release further improves the internal design and visible interfaces
         of PyX. The path system has undergone a major revision and cleanup.
         The graph module has been split into several smaller modules,
         reflecting its component architecture. Moreover, PyX now makes use of
@@ -52,12 +52,12 @@
         <a href="foils_dante2004_de.pdf">German (pdf, 18 Pages, 425 KB)</a> and
         <a href="foils_dante2004_en.pdf">English</a>.
       </dd>
-      <dt>2004-01-22: PyX 0.5.1</dt>
+      <dt>2004-01-22: PyX 0.5.1 released</dt>
       <dd>
         This release fixed a distribution error (missing C files) and a
         PostScript DSC bug.
       </dd>
-      <dt>2004-01-20: PyX 0.5</dt>
+      <dt>2004-01-20: PyX 0.5 released</dt>
       <dd>
         PyX 0.5 introduces a more consistent and flexible attribute system is
         included. The TeX integration has been improved: native support for
@@ -67,35 +67,35 @@
         been streamlined. Lots of other small improvements and bugfixes were
         made.
       </dd>
-      <dt>2003-09-17: PyX 0.4.1</dt>
+      <dt>2003-09-17: PyX 0.4.1 released</dt>
       <dd>
         This release fixed some bugs mostly releated to the additions in the
         TeX/LaTeX handling.
       </dd>
-      <dt>2003-08-22: PyX 0.4</dt>
+      <dt>2003-08-22: PyX 0.4 released</dt>
       <dd>
         This release improves the special and font handling of the TeX/LaTeX
         interface. The graph module has undergone extensive restructuring of
         the axis component. Furthermore, various known bugs and shortcomings
         have been fixed.
       </dd>
-      <dt>2003-04-04: PyX 0.3.1</dt>
+      <dt>2003-04-04: PyX 0.3.1 released</dt>
       <dd>
         This release adds the examples to the tarball and fixes various bugs.
       </dd>
-      <dt>2003-03-31: PyX 0.3</dt>
+      <dt>2003-03-31: PyX 0.3 released</dt>
       <dd>
         PyX 0.3 features a new seamless TeX/LaTeX integration (internal
         dvi reader), nice examples, and huge improvements all over the
         place.
       </dd>
-      <dt>2003-01-17: PyX 0.2</dt>
+      <dt>2003-01-17: PyX 0.2 released</dt>
       <dd>
         PyX 0.2 contains a variety of bug fixes and improvements. In
         particular the axis handling of the graph module was enhanced
         considerably.
       </dd>
-      <dt>2002-10-07: PyX 0.1</dt>
+      <dt>2002-10-07: PyX 0.1 released</dt>
       <dd>
         The first public release, PyX 0.1, has been uploaded to SourceForge.
         It allows the creation of encapsulated PostScript drawings
