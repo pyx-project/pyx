@@ -25,9 +25,8 @@
 
 """The canvas module provides a PostScript canvas class and related classes
 
-A canvas holds a collection of all elements that should be displayed together
-with their attributes.
-"""
+A canvas holds a collection of all elements and corresponding attributes to be
+displayed. """
 
 import sys, cStringIO, time
 import attr, base,  bbox, deco, deformer, unit, prolog, style, trafo, version
@@ -146,7 +145,7 @@ class _canvas(base.canvasitem):
                 obbox += abbox
 
         # transform according to our global transformation and
-        # intersect with clipping bounding box (which have already been
+        # intersect with clipping bounding box (which has already been
         # transformed in canvas.__init__())
         if obbox is not None and self.clipbbox is not None:
             return obbox.transformed(self.trafo)*self.clipbbox
