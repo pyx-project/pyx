@@ -170,11 +170,7 @@ cmyk.white          = cmyk.White
 cmyk.black          = cmyk.Black
 
 
-# TODO: - a palette is not a style (as it is not an PSOp)
-#       - should we have a changeable attribute instead
-#         those may define a method get etc.
-
-class palette:
+class palette(attr.changeattr):
 
     """palette is a collection of two colors for calculating transitions between them"""
 
@@ -194,7 +190,9 @@ class palette:
                           (self.max - index) * self.mincolor.color[key]) / float(self.max - self.min)
         return self.colorclass(**color)
 
-#palette.clear = attr._classclear(palette)
+    def select(self, index, total):
+        return self.getcolor(self, float(index)/total)
+
 
 palette.Gray           = palette(gray.white, gray.black)
 palette.Grey           = palette.Gray

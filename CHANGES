@@ -2,7 +2,6 @@ PyX
 
 TODO:
   - graph module
-    - rect style (and errorbars?) should use clipping (should they or do they already?)
     - do not include unneeded line segments when the axis range is set manually
     - allow for an iteration of a graph style, when it is used several times
     - symbols should become decorators
@@ -14,7 +13,6 @@ TODO:
       lines not symbolattrs
     - allow for graph.changesymbol.square(size=0.15) etc.
     - rect style (and errorbars?) should use clipping
-    - paths are to be drawn instead of inserted
     - should the divisor argument be moved to the texters?
     - is the divisor argument really necessary?
     - _mergelabels should work differently (perhaps a single list or a special texter?!)
@@ -43,10 +41,11 @@ TODO:
     - multi page PostScript output
     - contructor should only take a texrunner keyword argument
     - set method???
+    - PDF support
+    - SVG support
   - connnector module:
     - _xxx -> xxx_pt renaming
   - deco module:
-    - consider rewriting decoratedpath as canvas
     - arrows should not be stroked by default
   - style and color module:
     - support modification of existing styles via __call__
@@ -64,8 +63,10 @@ TODO:
   - graph module:
     - painters are using the new attribute scheme including changeable attributes (TODO: documentation!)
     - zero line feature removed (TODO: documentation)
+    - styles rewrite (under construction --> graph is currently broken)
   - text module:
     - default handling of texmessages as in the new attribute scheme
+    - multiple insert bug fixed
   - examples:
     - mandel.py (contributed by Stephen Phillips)
 

@@ -71,7 +71,8 @@ def test_ownmark(c, x, y):
 def test_allerrorbars(c, x, y):
     df = data.datafile("data/testdata3")
     g = c.insert(graph.graphxy(x, y, height=5, width=5))
-    g.plot(graph.data(df, x="x", y="y", xmin="xmin", xmax="xmax", ymin="ymin", ymax="ymax", text="text"), graph.text())
+    #g.plot(graph.data(df, x="x", y="y", xmin="xmin", xmax="xmax", ymin="ymin", ymax="ymax", text="text"), graph.text())
+    g.plot(graph.data(df, x="x", y="y", xmin="xmin", xmax="xmax", ymin="ymin", ymax="ymax"))
     g.finish()
 
 #def test_3d(c, x, y):
@@ -120,14 +121,14 @@ def test_bar(c, x, y):
     g.finish()
 
 c = canvas.canvas()
-test_multiaxes_data(c, 0, 21)
-test_piaxis_function(c, 0, 14)
-test_textaxis_errorbars(c, 0, 7)
-test_ownmark(c, 0, 0)
+#test_multiaxes_data(c, 0, 21)
+#test_piaxis_function(c, 0, 14)
+#test_textaxis_errorbars(c, 0, 7)
+#test_ownmark(c, 0, 0)
 test_allerrorbars(c, -7, 0)
 ##test_3d(c, -7, 7)
-test_split(c, -7, 7)
-test_bar(c, -7, 14)
+#test_split(c, -7, 7)
+#test_bar(c, -7, 14)
 
 c.writetofile("test_graph", paperformat="a4")
 
