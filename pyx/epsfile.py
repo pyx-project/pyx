@@ -84,7 +84,7 @@ def _readbbox(filename):
         if bbmatch is not None:
             # conversion strings->int
             (llx_pt, lly_pt, urx_pt, ury_pt) = map(int, bbmatch.groups()) 
-            return bbox._bbox(llx_pt, lly_pt, urx_pt, ury_pt)
+            return bbox.bbox_pt(llx_pt, lly_pt, urx_pt, ury_pt)
     else:
         raise IOError, \
               "bounding box not found in EPS file '%s'" % filename

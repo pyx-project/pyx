@@ -28,7 +28,7 @@ import unit
 # classes representing bounding boxes
 #
 
-class _bbox:
+class bbox_pt:
     
     """class for bounding boxes
 
@@ -43,7 +43,7 @@ class _bbox:
 
     def __add__(self, other):
         """join two bboxes"""
-        return _bbox(min(self.llx_pt, other.llx_pt), min(self.lly_pt, other.lly_pt),
+        return bbox_pt(min(self.llx_pt, other.llx_pt), min(self.lly_pt, other.lly_pt),
                      max(self.urx_pt, other.urx_pt), max(self.ury_pt, other.ury_pt))
 
     def __iadd__(self, other):
@@ -56,7 +56,7 @@ class _bbox:
 
     def __mul__(self, other):
         """return intersection of two bboxes"""
-        return _bbox(max(self.llx_pt, other.llx_pt), max(self.lly_pt, other.lly_pt),
+        return bbox_pt(max(self.llx_pt, other.llx_pt), max(self.lly_pt, other.lly_pt),
                      min(self.urx_pt, other.urx_pt), min(self.ury_pt, other.ury_pt))
 
     def __imul__(self, other):
@@ -114,7 +114,7 @@ class _bbox:
 
         # Now, by sorting, we obtain the lower left and upper right corner
         # of the new bounding box. 
-        return _bbox(min(llx_pt, lrx, urx_pt, ulx), min(lly_pt, lry, ury_pt, uly),
+        return bbox_pt(min(llx_pt, lrx, urx_pt, ulx), min(lly_pt, lry, ury_pt, uly),
                      max(llx_pt, lrx, urx_pt, ulx), max(lly_pt, lry, ury_pt, uly))
 
     def enlarge(self, all=0, bottom=None, left=None, top=None, right=None):
@@ -152,7 +152,7 @@ class _bbox:
            top_pt = unit.topt(unit.length(top, default_type="v"))
         if right is not None:
            right_pt = unit.topt(unit.length(right, default_type="v"))
-        return _bbox(self.llx_pt-left_pt, self.lly_pt-bottom_pt, self.urx_pt+right_pt, self.ury_pt+top_pt)
+        return bbox_pt(self.llx_pt-left_pt, self.lly_pt-bottom_pt, self.urx_pt+right_pt, self.ury_pt+top_pt)
 
     def rect(self):
         """return rectangle corresponding to bbox"""
@@ -163,30 +163,34 @@ class _bbox:
 
     def height(self):
         """return height of bbox"""
-        return unit.t_pt*(self.ury_pt-self.lly_pt)
+        return (self.ury_pt-self.lly_pt) * unit.t_pt
 
     def width(self):
         """return width of bbox"""
-        return unit.t_pt*(self.urx_pt-self.llx_pt)
+        return (self.urx_pt-self.llx_pt) * unit.t_pt
 
     def top(self):
         """return top coordinate of bbox"""
-        return unit.t_pt*(self.ury_pt)
+        return self.ury_pt * unit.t_pt
 
     def bottom(self):
         """return bottom coordinate of bbox"""
-        return unit.t_pt*(self.lly_pt)
+        return self.lly_pt * unit.t_pt
 
     def left(self):
         """return left coordinate of bbox"""
-        return unit.t_pt*(self.llx_pt)
+        return self.llx_pt * unit.t_pt
 
     def right(self):
         """return right coordinate of bbox"""
-        return unit.t_pt*(self.urx_pt)
+        return self.urx_pt * unit.t_pt
+
+    def center(self):
+        """return coordinates of the center of the bbox"""
+        return 0.5 * (self.llx_pt+self.urx_pt) * unit.t_pt, 0.5 * (self.lly_pt+self.ury_pt) * unit.t_pt
 
 
-class bbox(_bbox):
+class bbox(bbox_pt):
 
     """class for bounding boxes"""
 
@@ -195,5 +199,4 @@ class bbox(_bbox):
         lly_pt = unit.topt(lly_pt)
         urx_pt = unit.topt(urx_pt)
         ury_pt = unit.topt(ury_pt)
-        _bbox.__init__(self, llx_pt, lly_pt, urx_pt, ury_pt)
-
+        bbox_pt.__init__(self, llx_pt, lly_pt, urx_pt, ury_pt)

@@ -292,7 +292,7 @@ class polygon_pt:
         return self.boxdistance_pt(other) * unit.t_pt
 
     def bbox(self):
-        return bbox._bbox(min([x[0] for x in self.corners]),
+        return bbox.bbox_pt(min([x[0] for x in self.corners]),
                           min([x[1] for x in self.corners]),
                           max([x[0] for x in self.corners]),
                           max([x[1] for x in self.corners]))
