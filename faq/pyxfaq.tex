@@ -91,7 +91,8 @@ This will result in a subdirectory with a name like \texttt{PyX-0.6.3} which
 contains the contents of the corresponding package. You can then ask Python to 
 first look in the appropriate directory before looking for the current version 
 of \PyX{} by inserting the following code (appropriately modified according 
-to your needs) into your program:
+to your needs) at the beginning of your program before importing the \PyX{} 
+module:
 \begin{progcode}
 import sys\\
 sys.path[:0]~=~["/home/xyz/Python/PyX-0.6.3"]
