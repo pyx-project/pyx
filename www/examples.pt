@@ -20,6 +20,13 @@
   <div tal:content="structure example/code" style="margin-bottom:10px;">Code</div>
 </span>
 
+<div style="border-top:1px solid #88a;margin-bottom:10px;" tal:condition="python: options['pagename'] == 'examples/index.html'">
+  <p>Further examples are available on separate pages:
+    <span tal:repeat="item options/examplepages" tal:omit-tag="">
+      <a tal:attributes="href python:item+'/index.html'" tal:content="item">Examples</a><span tal:omit-tag="" tal:condition="not: repeat/item/end">,</span>
+    </span>
+  </p>
+</div>
 
 </div>
 
