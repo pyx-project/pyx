@@ -56,6 +56,20 @@ TODO:
   - unit module:
     - what about unit.cm() -> unit.cm, ...
 
+TODO for 0.6:
+  - deco module:
+    - the name wriggle has to replaced by something better (e.g. wriggled?)
+  - Documentation:
+    - graph module:
+      - documentation of the new class layout
+      - painters are using the new attribute scheme including changeable
+        attributes
+      - axis zeropath feature removed
+      - graph styles rewrite
+    - deco module:
+      - wriggle decorator
+      - smoothed decorator
+
 0.6 (XXXX/XX/XX):
   - bbox module:
      - added inplace add (__iadd__), enlarge and transform methods
@@ -65,9 +79,9 @@ TODO:
       the bounding box operations much more efficient.
   - graph module:
     - painters are using the new attribute scheme including changeable
-      attributes (TODO: documentation)
-    - axis zeropath feature removed (TODO: documentation)
-    - graph styles rewrite (TODO: documentation)
+      attributes
+    - axis zeropath feature has been removed
+    - graph styles rewrite
     - graph splitted into several modules in pyx/graph and pyx/graph/axis
     - mergelabels removed; linpart doesn't have a label argument anymore
   - text module:
@@ -85,7 +99,7 @@ TODO:
     - internal methods return coordinates in pts
     - arclentoparam returns only parameters not total length
     - added path.arclength_pt, path.at_pt, path.begin_pt, path.end_pt (and
-      correspondingly for normpath) (TODO: documentation)
+      correspondingly for normpath)
     - complete refactoring of the normpath class: normpaths now consist of
       normsubpaths which themselves consist of normlines and normcurves This is
       much more convenient for any routines working with normpaths.
@@ -103,8 +117,8 @@ TODO:
   - connnector module:
     - renamed _xxx -> xxx_pt
   - deco module:
-    - wriggle decorator (TODO: documentation)
-    - smoothed decorator (TODO: documentation)
+    - wriggle decorator
+    - smoothed decorator
     - arrow heads are no longer stroked (as suggested by Magnus Lie Hetland)
   - canvas:
     - writeEPSfile deprecates writetofile
