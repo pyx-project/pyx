@@ -21,7 +21,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import sys
-sys.path[:0] = [".."]
+sys.path.append("..")
 
 import unittest
 from pyx import *
@@ -95,6 +95,13 @@ class TrafoTestCase(unittest.TestCase):
                        trafo.trafo()), \
                 "trafo.scaling definition wrong"
 
+    def testSlant(self):
+        assert correctOnBasis(trafo.slant(0.5),
+                              (1,0), (0.5, 1)), \
+               "wrong definition of trafo.slant"
+        assert isEqual(trafo.slant(2)*trafo.slant(-2),
+                       trafo.trafo()), \
+                "trafo.slant definition wrong"
    
     def testMultVsMethods(self):
         "test multiplication vs trafo methods"
