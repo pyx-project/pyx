@@ -148,6 +148,8 @@ TODO for 0.6:
   - data module:
     - removed, it all lives in the graph.data module now, while before it
       was splitted into two separate modules
+  - epsfile module:
+    - remove showbbox argument of epsfile class
 
 0.5.1 (2004/01/22):
   - distribution:

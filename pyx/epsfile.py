@@ -99,7 +99,6 @@ class epsfile(base.PSCmd):
                  width=None, height=None, scale=None,
                  align="bl",
                  clip=1,
-                 showbbox = 0,
                  translatebbox = 1,
                  bbox = None):
         """inserts epsfile
@@ -107,9 +106,8 @@ class epsfile(base.PSCmd):
         inserts EPS file named filename at position (x,y).  If clip is
         set, the result gets clipped to the bbox of the EPS file. If
         translatebbox is not set, the EPS graphics is not translated to
-        the corresponding origin. With showbb set, the bbox is drawn.
-        If bbox is specified, it overrides the bounding box in the epsfile
-        itself.
+        the corresponding origin. If bbox is not None, it overrides 
+        the bounding box in the epsfile itself.
 
         """
 
@@ -163,10 +161,9 @@ class epsfile(base.PSCmd):
             self._x -= self._width
         else:
             raise ValueError("horizontal alignment can only be l (left), c (center), or r (right)")
-        
+
         self.clip = clip
         self.translatebbox = translatebbox
-        self.showbbox = showbbox
 
         self.trafo = trafo.translate_pt(self._x, self._y)
 
@@ -191,11 +188,6 @@ class epsfile(base.PSCmd):
         file.write("BeginEPSF\n")
 
         bbrect = self.mybbox.rect().transformed(self.trafo)
-
-        if self.showbbox:
-            file.write("newpath\n")
-            bbrect.outputPS(file)
-            file.write("stroke\n")
 
         if self.clip:
             file.write("newpath\n")
