@@ -70,6 +70,8 @@ TODO:
 0.6.3 (xxxx/xx/xx):
    - graph module:
      - fix drawing with background
+     - fix insertion of a zero length path when the whole line is outside
+       the valid axis range (reported by Marko Vendelin)
 
 0.6.2 (2004/04/07):
   - graph module:

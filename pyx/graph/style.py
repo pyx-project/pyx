@@ -465,7 +465,7 @@ class symbolline(_style):
                 data.path.append(path.lineto_pt(*linebasepoints[1]))
 
         # stroke data.path
-        if data.lineattrs is not None:
+        if data.lineattrs is not None and len(data.path.path):
             linecanvas.stroke(data.path, data.lineattrs)
 
     def key_pt(self, c, x_pt, y_pt, width_pt, height_pt, data):
