@@ -1,5 +1,7 @@
 \chapter{Basic graphics}
 
+\sectionauthor{J\"org Lehmann}{joergl@users.sourceforge.net} 
+
 \label{path}
 
 \section{Introduction}
@@ -173,6 +175,136 @@ XXX reverse, reversed, parametrisation, arclen parameters
 
 \section{Module path}
 
+The module path defines several classes which are documented
+in the present section.
+
+\declaremodule{}{path}
+
+\begin{classdesc}{path}{*pathels}
+
+This class represents a PostScript like path consisting of the
+elements \var{pathels}.
+
+Instances of the class \class{path} provide the following
+methods (in alphabetic order):
+
+\begin{methoddesc}{append}{pathel}
+Appends a \var|pathel| to the end of the path.
+\end{methoddesc}
+
+\begin{methoddesc}{arclen}{epsilon=1e-5}
+Returns the total arc length of the path with an accuracy of
+\var{epsilon} points.$^\dagger$
+\end{methoddesc}
+
+\begin{methoddesc}{arclentoparam}{lengths, epsilon=1e-5}
+  Returns the parameter values corresponding to the arc lengths
+  \var{lengths} with an accuracy of \var{epsilon} points.$^\dagger$
+\end{methoddesc}
+
+\begin{methoddesc}{at}{param=None, arclen=None}
+  Returns the coordinates (as 2-tuple) of the path point corresponding to the
+  parameter value \var{param} or, alternatively, the arc length
+  \var{arclen}. The parameter value \var{param} (\var{arclen}) has to be smaller
+  or equal to \method{self.range()} (\method{self.arclen()}),
+  otherwise an exception is raised.  At discontinuities in the path,
+  the limit from below is returned.$^\dagger$
+\end{methoddesc}
+
+\begin{methoddesc}{bbox}{}
+  Returns the bounding box of the path. Note that this returned
+  bounding box may be too large, if the path contains any
+  \class{curveto} elements, since for these the control box, i.e., the
+  bounding box enclosing the control points of the B\'ezier curve is
+  returned.
+\end{methoddesc}
+
+\begin{methoddesc}{begin}{}
+  Returns the coordinates (as 2-tuple) of the first point of the path.$^\dagger$
+\end{methoddesc}
+
+\begin{methoddesc}{curvradius(param=None, arclen=None}
+  Returns the curvature radius (or None if infinite) at parameter
+  param or, alternatively, arc length \var{arclen}.  This is the
+  inverse of the curvature at this parameter Please note that this
+  radius can be negative or positive, depending on the sign of the
+  curvature.$^\dagger$
+\end{methoddesc}
+
+\begin{methoddesc}{end}{}
+  Returns the coordinates (as 2-tuple) of the end point of the path.$^\dagger$
+\end{methoddesc}
+
+\begin{methoddesc}{intersect}{opath, epsilon=1e-5}
+  Returns a tuple consisting of two lists of parameter values
+  corresponding to the intersection points of the path with the other
+  path \var{opath}, respectively.$^\dagger$
+\end{methoddesc}
+
+\begin{methoddesc}{joined}{opath}
+  Appends \var{opath} to the end of the path, thereby merging the last
+  sub path (which must not be closed) of the path with the first sub
+  path of \var{opath} and returns the resulting new path.$^\dagger$
+\end{methoddesc}
+
+\begin{methoddesc}{range}{}
+  Returns the maximal parameter value \var{param} that is allowed in the
+  path methods.
+\end{methoddesc}
+
+\begin{methoddesc}{reversed}{}
+  Returns the reversed path.$^\dagger$
+\end{methoddesc}
+
+\begin{methoddesc}{split}{params}
+  Splits the path at the parameters \var{params}, which have to be
+  sorted in ascending order, and returns a corresponding list of
+  \class{normpath} instances.$^\dagger$
+\end{methoddesc}
+
+\begin{methoddesc}{tangent}{param=None, arclen=None, length=None}
+  Return a \class{line} instance corresponding to the tangent vector
+  to the path at the parameter value \var{param} or, alternatively, the arc length
+  \var{arclen}. The parameter value \var{param} (\var{arclen}) has to be smaller
+  or equal to \method{self.range()} (\method{self.arclen()}),
+  otherwise an exception is raised.  At discontinuities in the path,
+  the limit from below is returned. If \var{length} is not
+  \texttt{None}, the tangent vector will be scaled correspondingly.$^\dagger$
+\end{methoddesc}
+
+
+\begin{methoddesc}{trafo}{param=None, arclen=None}
+  Returns a trafo which maps a point $(0, 1)$ to the tangent vector to
+  the path at the parameter value \var{param} or, alternatively, the
+  arc length \var{arclen}.  The parameter value \var{param} (\var{arclen}) has to
+  be smaller or equal to \method{self.range()}
+  (\method{self.arclen()}), otherwise an exception is raised.  At
+  discontinuities in the path, the limit from below is returned.$^\dagger$
+\end{methoddesc}
+
+\begin{methoddesc}{tranformed}{trafo}
+  Returns the path tranformed according to the linear transformation
+  \var{trafo}. Here, \texttt{trafo} must be an instance of the
+  \class{trafo.trafo} class.$^\dagger$
+\end{methoddesc}
+
+Some notes on the above:
+\begin{itemize}
+\item The $\dagger$ denotes methods which require a prior
+  conversion of the path into a \verb|normpath| instance. This is
+  done automatically, but if you need to call such methods often,
+  it is a good idea to do the conversion once for performance reasons.
+\item Instead of using the \verb|glue| method, you can also glue two
+paths together with help of the \verb|<<| operator, for instance
+\verb|p = p1 << p2|.
+\item In the methods accepting both a parameter value \verb|param| and
+  an arc length \verb|arclen|, exactly one of these arguments has to
+  provided.
+\end{itemize}
+
+\end{classdesc}
+
+
 \subsection{Class pathel}
 
 The class \verb|pathel| is the superclass of all PostScript path
@@ -219,104 +351,6 @@ Some notes on the above:
   smallest rectangle enclosing the B\'ezier curve.
 \end{itemize}
 
-
-\subsection{Class path}
-
-The methods provided by instance of the class \verb|path| are
-summarized in the following table:
-
-\medskip
-\begin{tabularx}{1.04\linewidth}{>{\hsize=.7\hsize}X>{\raggedright\arraybackslash\hsize=1.3\hsize}X}
-  \texttt{path} method & function \\
-  \hline \texttt{\_\_init\_\_(*pathels)} & construct new \texttt{path}
-  consisting of \texttt{pathels}\\
-  \texttt{append(pathel)} & appends \texttt{pathel} to the end of 
-  \texttt{path}\\
-  \texttt{arclen(epsilon=1e-5)} & returns the total arc length of
-  all \texttt{path} segments in PostScript points with accuracy
-  \texttt{epsilon}.$^\dagger$\\
-  \texttt{arclentoparam(lengths, \newline\phantom{arclentoparam(}epsilon=1e-5)} & returns the
-  parameter value corresponding to the lengths \texttt{lengths} (one or a list of
-  lengths). This uses arclen-calculations with accuracy
-  \texttt{epsilon}.$^\dagger$\\
-  \texttt{at(param=None,
-    \newline\phantom{at(}arclen=None)} & returns the coordinates of the point of
-  \texttt{path} corresponding to the parameter value
-  \texttt{param} or the arc length \verb|arclen|.$^\dagger$\\
-  \texttt{bbox()} & returns the bounding box of the \texttt{path}\\
-  \texttt{begin()} & return first point of first subpath of
-  \texttt{path}.$^\dagger$\\
-   \texttt{curvradius(self, 
-    \newline\phantom{curvradius(}param=None,
-    \newline\phantom{curvradius(}arclen=None)} &
-        Returns the curvature radius (or None if infinite) at parameter param.
-        This is the inverse of the curvature at this parameter
-        Please note that this radius can be negative or positive,
-        depending on the sign of the curvature.
-        $^\dagger$
-        \\
-  \texttt{end()} & return last point of last subpath of
-  \texttt{path}.$^\dagger$\\
-  \texttt{glue(opath)} & returns the \texttt{path} glued together with
-  \texttt{opath}, \textit{i.e.}\ the last subpath of \texttt{path}
-  and the first one of \texttt{opath} are joined.$^\dagger$\\
-  \texttt{intersect(opath, \newline\phantom{intersect(}epsilon=1e-5)}
-  & returns tuple consisting of two lists of parameter values
-  corresponding to the
-  intersection points of \texttt{path} and \texttt{opath},
-  respectively.$^\dagger$\\
-  \texttt{range()} & returns the maximal value of the parameter value
-  \texttt{param} in the path methods\\
-  \texttt{reversed()} & returns the normalized reversed
-  \texttt{path}.$^\dagger$\\
-  \texttt{split(parameters)} & splits the path at the given list of
-  parameters (which have to be sorted in ascending order) and returns
-  a corresponding list of 
-  \texttt{normpath}s.$^\dagger$\\
-  \texttt{tangent(param=None, 
-      \newline\phantom{tangent(}arclen=None,
-      \newline\phantom{tangent(}length=None)} & return the tuple corresponding to
-    the tangent vector to the path at the parameter value
-  \texttt{param} or the arc length \texttt{arclen}.
-    \texttt{param} (\texttt{arclen}) has to be
-    smaller or equal to \texttt{self.range()} (\texttt{self.arclen()}), 
-    otherwise an exception is raised.  At discontinuities in the path, the
-    limit from below is returned. If \texttt{length} is not
-    \texttt{None}, the tangent vector will be scaled correspondingly.
-  \\
-  \texttt{trafo(param=None, 
-      \newline\phantom{trafo(}arclen=None} & return a trafo which maps 
-    a point $(0, 1)$ to the tangent vector to the path at the parameter value
-    \texttt{param} or the arc length \texttt{arclen}.
-    \texttt{param} (\texttt{arclen}) has to be
-    smaller or equal to \texttt{self.range()} (\texttt{self.arclen()}), 
-    otherwise an exception is raised.  At discontinuities in the path, the
-    limit from below is returned.
-  \\
-  \texttt{transformed(trafo)} & returns the normalized and accordingly
-  to the linear transformation \texttt{trafo} transformed path. Here,
-  \texttt{trafo} must be an instance of the \texttt{trafo.trafo}
-  class.$^\dagger$
-\end{tabularx} 
-\medskip
-
-Some notes on the above:
-\begin{itemize}
-\item The bounding box may be too large, if the path contains any
-  \texttt{curveto} elements, since for these the control box,
-  \textit{i.e.}, the bounding box enclosing the control points of
-  the B\'ezier curve is returned.
-\item The $\dagger$ denotes methods which require a prior
-  conversion of the path into a \verb|normpath| instance. This is
-  done automatically, but if you need to call such methods often,
-  it is a good idea to do the conversion once for performance reasons.
-\item Instead of using the \verb|glue| method, you can also glue two
-paths together with help of the \verb|<<| operator, for instance
-\verb|p = p1 << p2|.
-\item In the methods accepting both a parameter value \verb|param| and
-  an arc length \verb|arclen|, exactly one of these arguments has to
-  provided.
-\end{itemize}
 
 \subsection{Class normpath}
 
@@ -366,4 +400,5 @@ control points  (\texttt{x0}, \texttt{y0}), $\dots$, (\texttt{x3}, \texttt{y3}).
 %%% Local Variables:
 %%% mode: latex
 %%% TeX-master: "manual.tex"
+%%% ispell-dictionary: "british"
 %%% End:

@@ -1,14 +1,52 @@
 \chapter{Introduction}
 \label{intro}
-PyX is a python package to create encapsulated PostScript figures. It
-provides classes and methods to access basic PostScript functionality
-at an abstract level. At the same time the emerging structures are
-very convenient to produce all kinds of drawings in a non-interactive
-way. In combination with the python language itself the user can just
-code any complexity of the figure wanted. Additionally an
-\TeX{}/\LaTeX{} interface enables one to use the famous high quality
-typesetting within the figures.
+
+\PyX{} is a Python package for the creation of vector drawings. As
+such it allows one to readily generate encapsulated PostScript files
+by providing an abstraction of the PostScript graphics model.  Based
+on this layer and in combination with the full power of the Python
+language itself, the user can just code any complexity of the figure
+wanted. \PyX{} distinguishes itself from other similar solution by its
+\TeX{}/\LaTeX{} interface that enables one to make directly use of the
+famous high quality typesetting of these programs.
 
 A major part of \PyX{} on top of the already described basis is the
 provision of high level functionality for complex tasks like 2d plots
 in publication-ready quality.
+
+\section{Organisation of the \PyX{} package}
+
+The \PyX{} package is split in several modules, which can be
+categorised in the following groups
+
+\begin{tableii}{ll}{textit}{Functionality}{Modules}
+  basic graphics functionality &   \module{canvas}, \module{path}, \module{deco}, \module{style}, \module{color},
+  and \module{connector}
+  \\
+  text output via \TeX{}/\LaTeX{} &   \module{text} and \module{box}
+  \\
+  linear transformations and units &   \module{trafo} and \module{unit}
+  \\
+  graph plotting functionality &  \module{graph} (including sub modules)
+  and \module{graph.axis} (including sub modules)
+  \\
+  EPS file inclusion & \module{epsfile}
+\end{tableii}
+
+These modules (and some other less import ones) are imported into the
+module namespace by using 
+\begin{verbatim}
+from pyx import *
+\end{verbatim}
+at the beginning of your Python program.  However, in order to prevent
+namespace pollution, you may also simply use \bfcode{import pyx}.
+Throughout this manual, we shall always assume that former import line
+form has been used.
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "manual.tex"
+%%% ispell-dictionary: "british"
+%%% End:
