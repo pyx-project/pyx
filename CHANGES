@@ -30,16 +30,12 @@ TODO:
   - path module:
     - reverse needs to be fixed
     - there should be a path._at, path._begin, path._end
-    - use math.degrees and math.radians
   - data module:
     - data.data should add line number like data.datafile
     - use csv module (new in 2.3)
   - canvas module:
     - multi page PostScript output
   - connnector module:
-    - use math.degrees and math.radians instead of self-written functions
-      (try to be compatible with old python versions, we should consider
-      support down to python2.0!) DEFERRED
     - _xxx -> xxx_pt renaming
 
 0.5 (????/??/??):
@@ -119,9 +115,6 @@ TODO:
     - _xxx -> xxx_pt renaming
 
   TODO for PyX 0.5 (please feel free to move items up to the general TODO list)
-  - path module:
-    - path.split takes several points (as *args) while lentopar takes a list of points (done, but fix docu)
-    - path.tangent is missing in the documentation
   - color module:
      - should colors and palettes exclude each other?
   - graph module:

@@ -31,6 +31,12 @@
 
 import copy, math, string, bisect
 from math import cos, sin, pi
+try:
+    from math import radians, degrees
+except ImportError:
+    # fallback implementation for Python 2.1 and below
+    def radians(x): return x*pi/180
+    def degrees(x): return x*180/pi
 import base, bbox, trafo, unit, helper
 
 ################################################################################
@@ -301,9 +307,9 @@ def _arctobcurve(x, y, r, phi1, phi2):
 def _arctobezierpath(x, y, r, phi1, phi2, dphimax=45):
     apath = []
 
-    phi1 = phi1*pi/180
-    phi2 = phi2*pi/180
-    dphimax = dphimax*pi/180
+    phi1 = radians(phi1)
+    phi2 = radians(phi2)
+    dphimax = radians(dphimax)
 
     if phi2<phi1:
         # guarantee that phi2>phi1 ...
@@ -1112,13 +1118,13 @@ class arc_pt(pathel):
 
     def _sarc(self):
         """Return starting point of arc segment"""
-        return (self.x+self.r*cos(pi*self.angle1/180),
-                self.y+self.r*sin(pi*self.angle1/180))
+        return (self.x+self.r*cos(radians(self.angle1)),
+                self.y+self.r*sin(radians(self.angle1)))
 
     def _earc(self):
         """Return end point of arc segment"""
-        return (self.x+self.r*cos(pi*self.angle2/180),
-                self.y+self.r*sin(pi*self.angle2/180))
+        return (self.x+self.r*cos(radians(self.angle2)),
+                self.y+self.r*sin(radians(self.angle2)))
 
     def _updatecontext(self, context):
         if context.currentpoint:
@@ -1130,8 +1136,8 @@ class arc_pt(pathel):
         context.currentpoint = self._earc()
 
     def _bbox(self, context):
-        phi1=pi*self.angle1/180
-        phi2=pi*self.angle2/180
+        phi1 = radians(self.angle1)
+        phi2 = radians(self.angle2)
 
         # starting end end point of arc segment
         sarcx, sarcy = self._sarc()
@@ -1237,13 +1243,13 @@ class arcn_pt(pathel):
 
     def _sarc(self):
         """Return starting point of arc segment"""
-        return (self.x+self.r*cos(pi*self.angle1/180),
-                self.y+self.r*sin(pi*self.angle1/180))
+        return (self.x+self.r*cos(radians(self.angle1)),
+                self.y+self.r*sin(radians(self.angle1)))
 
     def _earc(self):
         """Return end point of arc segment"""
-        return (self.x+self.r*cos(pi*self.angle2/180),
-                self.y+self.r*sin(pi*self.angle2/180))
+        return (self.x+self.r*cos(radians(self.angle2)),
+                self.y+self.r*sin(radians(self.angle2)))
 
     def _updatecontext(self, context):
         if context.currentpoint:
@@ -1368,12 +1374,12 @@ class arct_pt(pathel):
             if rx==0:
                 phi=90
             elif rx>0:
-                phi = math.atan(ry/rx)/math.pi*180
+                phi = degrees(math.atan(ry/rx))
             else:
-                phi = math.atan(rx/ry)/math.pi*180+180
+                phi = degrees(math.atan(rx/ry))+180
 
             # half angular width of arc 
-            deltaphi = 90*(1-alpha/math.pi)
+            deltaphi = 90*(1-alpha/pi)
 
             # center position of arc
             mx = self.x1-rx*self.r/(lr*sin(alpha/2))

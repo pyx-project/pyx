@@ -1,6 +1,12 @@
 import math
 from math import sin, cos, atan2, tan, hypot, acos, sqrt
 import path, trafo, unit, helper
+try:
+    from math import radians, degrees
+except ImportError:
+    # fallback implementation for Python 2.1 and below
+    def radians(x): return x*pi/180
+    def degrees(x): return x*180/pi
 
 
 #########################
@@ -13,12 +19,6 @@ def _topt(length, default_type=None):
         return unit.topt(unit.length(length, default_type=default_type))
     else:
         return unit.topt(unit.length(length))
-
-def _torad(deg):
-    return deg * math.pi / 180
-
-def _todeg(rad):
-    return rad * 180.0 / math.pi
 
 class _connector(path.normpath):
 
@@ -96,9 +96,9 @@ class _arc(_connector):
         # otherwise use relangle
         else:
             bulge=None
-            try: radius = 0.5 * distance / abs(cos(0.5*math.pi - _torad(relangle)))
+            try: radius = 0.5 * distance / abs(cos(0.5*math.pi - radians(relangle)))
             except: radius = 10 * distance
-            try: center = tan(0.5*math.pi - _torad(relangle))
+            try: center = tan(0.5*math.pi - radians(relangle))
             except: center = 0
 
         # up to here center is only
@@ -113,11 +113,11 @@ class _arc(_connector):
         if (relangle is not None and relangle < 0) or (bulge is not None and bulge < 0):
             _connector.__init__(self,
                 path.moveto_pt(*self.box1.center),
-                path.arcn_pt(center[0], center[1], radius, _todeg(angle1), _todeg(angle2)))
+                path.arcn_pt(center[0], center[1], radius, degrees(angle1), degrees(angle2)))
         else:
             _connector.__init__(self,
                 path.moveto_pt(*self.box1.center),
-                path.arc_pt(center[0], center[1], radius, _todeg(angle1), _todeg(angle2)))
+                path.arc_pt(center[0], center[1], radius, degrees(angle1), degrees(angle2)))
 
         self.omitends(box1, box2)
         self.shortenpath(boxdists)
@@ -144,13 +144,13 @@ class _curve(_connector):
         bulge = abs(distance*relbulge + absbulge)
 
         if absangle1 is not None:
-            angle1 = _torad(absangle1)
+            angle1 = radians(absangle1)
         else:
-            angle1 = dangle - _torad(relangle1)
+            angle1 = dangle - radians(relangle1)
         if absangle2 is not None:
-            angle2 = _torad(absangle2)
+            angle2 = radians(absangle2)
         else:
-            angle2 = dangle + _torad(relangle2)
+            angle2 = dangle + radians(relangle2)
 
         control1 = [cos(angle1), sin(angle1)]
         control2 = [cos(angle2), sin(angle2)]
@@ -185,12 +185,12 @@ class _twolines(_connector):
         distance = hypot(*rel)
         dangle = atan2(rel[1], rel[0])
 
-        if relangle1 is not None: relangle1 = _torad(relangle1)
-        if relangle2 is not None: relangle2 = _torad(relangle2)
-        if relangleM is not None: relangleM = _torad(relangleM)
+        if relangle1 is not None: relangle1 = radians(relangle1)
+        if relangle2 is not None: relangle2 = radians(relangle2)
+        if relangleM is not None: relangleM = radians(relangleM)
         # absangle has priority over relangle:
-        if absangle1 is not None: relangle1 = dangle - _torad(absangle1)
-        if absangle2 is not None: relangle2 = math.pi - dangle + _torad(absangle2)
+        if absangle1 is not None: relangle1 = dangle - radians(absangle1)
+        if absangle2 is not None: relangle2 = math.pi - dangle + radians(absangle2)
 
         # check integrity of arguments
         no_angles, no_lengths=0,0
