@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name="PyX",
-      version="0.1",
+      version="0.1.1",
       author="Jörg Lehmann, André Wobst",
       author_email="pyx-devel@lists.sourceforge.net",
       url="http://pyx.sourceforge.net/",
