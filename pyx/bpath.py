@@ -26,7 +26,6 @@
 #          cbox = control box) for bpathel for the use during the
 #          intersection of bpaths) 
 #       - intersection of bpaths: use estimate for number of subdivisions
-#       - think a little bit more about closed bpaths...
 
 import unit, canvas, math
 from math import cos, sin, pi
@@ -42,7 +41,7 @@ class _bpathel:
 
     """element of Bezier path (coordinates in pts)"""
     
-    def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3, closed=0):
+    def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
         self.x0 = x0
         self.y0 = y0
         self.x1 = x1
@@ -51,23 +50,20 @@ class _bpathel:
         self.y2 = y2
         self.x3 = x3
         self.y3 = y3
-        self.closed = closed
 
     def __str__(self):
-        return "%f %f moveto %f %f %f %f %f %f curveto%s" % \
+        return "%f %f moveto %f %f %f %f %f %f curveto" % \
                ( self.x0, self.y0,
                  self.x1, self.y1,
                  self.x2, self.y2,
-                 self.x3, self.y3,
-                 self.closed and " closepath" or "") 
+                 self.x3, self.y3 )
 
     def write(self, file):
-         file.write( "%f %f moveto %f %f %f %f %f %f curveto%s" % \
+         file.write( "%f %f moveto %f %f %f %f %f %f curveto" % \
                      ( self.x0, self.y0,
                        self.x1, self.y1,
                        self.x2, self.y2,
-                       self.x3, self.y3,
-                       self.closed and " closepath" or "") )
+                       self.x3, self.y3 ) )
                      
 
     def __getitem__(self, t):
@@ -95,23 +91,13 @@ class _bpathel:
         return _bpathel(*(trafo._apply(self.x0, self.y0)+
                           trafo._apply(self.x1, self.y1)+
                           trafo._apply(self.x2, self.y2)+
-                          trafo._apply(self.x3, self.y3)+
-                          (self.closed,)))
+                          trafo._apply(self.x3, self.y3)))
 
     def reverse(self):
-        # TODO: what happens with close here? Is this well-defined?
         return _bpathel(self.x3, self.y3,
                         self.x2, self.y2,
                         self.x1, self.y1,
                         self.x0, self.y0)
-
-    def close(self):
-        """return closed version of path"""
-        return _bpathel(self.x0, self.y0,
-                        self.x1, self.y1,
-                        self.x2, self.y2,
-                        self.x3, self.y3,
-                        1)
 
     def isStraight(self, epsilon=1e-7):
         """check wheter the bpathel is approximately straight"""
@@ -188,8 +174,7 @@ class _bpathel:
                       _bpathel(x0_2, y0_2,
                                x1_2, y1_2,
                                x2_2, y2_2,
-                               x3_2, y3_2,
-                               self.closed)])
+                               x3_2, y3_2)])
         
         
 
@@ -225,21 +210,19 @@ class _bpathel:
                       _bpathel(xmidpoint, ymidpoint,
                                x12_23, y12_23,
                                x23, y23,
-                               self.x3, self.y3,
-                               self.closed)])
+                               self.x3, self.y3)])
 
                        
 class bpathel(_bpathel):
 
     """element of Bezier path"""
     
-    def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3, closed=0):
+    def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
         _bpathel.__init__(self, 
                           unit.topt(x0), unit.topt(y0),
                           unit.topt(x1), unit.topt(y1),
                           unit.topt(x2), unit.topt(y2),
-                          unit.topt(x3), unit.topt(y3),
-                          closed)
+                          unit.topt(x3), unit.topt(y3))
 
 
 ################################################################################
@@ -277,21 +260,35 @@ class bpath:
 
     def write(self, file):
         currentpoint = None
+        currentsubpath = None
+
         # some arbitrary small value, used to distinguis identical points
         eps = 1e-6
+
         for bpel in self.bpath:
-            # eliminate unnecessary moveto
+            # preserve subpath
             if not currentpoint or \
                abs(currentpoint[0]-bpel.x0)+abs(currentpoint[1]-bpel.y0)>eps:
+                # close currentsubpath if necessary
+                if currentsubpath and \
+                   (abs(currentsubpath[0]-currentpoint[0])+
+                    abs(currentsubpath[1]-currentpoint[1]))<eps:
+                    file.write("closepath\n")
+                    
                 file.write("%f %f moveto\n" % (bpel.x0, bpel.y0))
+                currentsubpath=bpel.x0, bpel.y0
                 
-            currentpoint=(bpel.x3, bpel.y3)
+            currentpoint=bpel.x3, bpel.y3
             file.write("%f %f %f %f %f %f curveto\n" %
                        (bpel.x1, bpel.y1,
                         bpel.x2, bpel.y2,
                         bpel.x3, bpel.y3))
-            if bpel.closed:
-                file.write("closepath\n")
+
+        # close currentsubpath if necessary
+        if currentpoint and currentsubpath and \
+           (abs(currentsubpath[0]-currentpoint[0])+
+            abs(currentsubpath[1]-currentpoint[1]))<eps:
+            file.write("closepath\n")
 
     def pos(self, t):
         """return point at respective parameter value t (0<=t<=len(self))"""

@@ -33,7 +33,7 @@ def drawarrow(c, bp, alen=4, aangle=25, cfactor=0.8):
     arrow2 = bpath.bpath([end.transform(trafo.rotate( aangle, ex, ey))])
     arrow3 = bpath.bline(*(arrow2.pos(0)+arrow1.pos(0)))
     arrow3a= bpath.bline(*(arrow2.pos(0)+(mx,my)))
-    arrow3b= bpath.bpath([bpath.bline(*((mx,my)+arrow1.pos(0)))[0].close()])
+    arrow3b= bpath.bline(*((mx,my)+arrow1.pos(0)))
     arrow  = arrow1+arrow2.reverse()+arrow3a+arrow3b
     
     c.draw(arrow, canvas.linejoin.round)
@@ -61,5 +61,6 @@ def testarrow(c):
 
 c=canvas.canvas()
 testarrow(c)
+#c.draw(rect(0,0,10,10).bpath())
 c.writetofile("test_arrow")
 
