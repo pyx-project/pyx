@@ -789,7 +789,7 @@ class _checkmsgstart(checkmsg):
         except IndexError:
             raise TexResultError("TeX running startup file failed", texrunner)
         try:
-            texrunner.texmsgparsed = texrunner.texmsgparsed.split("*! Undefined control sequence.\n<*> \\raiseerror\n               %\n? OK, entering \\scrollmode...\n\n", 1)[1]
+            texrunner.texmsgparsed = texrunner.texmsgparsed.split("*! Undefined control sequence.\n<*> \\raiseerror\n               %\n", 1)[1]
         except IndexError:
             raise TexResultError("TeX switch to scrollmode failed", texrunner)
 
@@ -1139,7 +1139,11 @@ class texrunner(attrlist.attrlist):
             texfile = open("%s.tex" % self.texfilename, "w") # start with filename -> creates dvi file with that name
             texfile.write("\\relax\n")
             texfile.close()
-            self.texinput, self.texoutput = os.popen4("%s %s" % (self.mode, self.texfilename), "t", 0)
+            try:
+                self.texinput, self.texoutput = os.popen4("%s %s" % (self.mode, self.texfilename), "t", 0)
+            except ValueError:
+                # workaround for MS Windows
+                self.texinput, self.texoutput = os.popen4("%s %s" % (self.mode, self.texfilename), "t")
             self.expectqueue = Queue.Queue(1) # allow for a single entry only
             self.gotevent = threading.Event()
             self.gotqueue = Queue.Queue(0) # allow arbitrary number of entries
@@ -1147,8 +1151,7 @@ class texrunner(attrlist.attrlist):
             self.texruns = 1
             olddefinemode = self.definemode
             self.definemode = 1
-            # self.execute("\\raiseerror") # timeout test
-            self.execute("\\raiseerror%\ns\n" + # switch to nonstop-mode
+            self.execute("\\scrollmode\n\\raiseerror%\n" + # switch to and check scrollmode
                          "\\def\\PyX{P\\kern-.3em\\lower.5ex\hbox{Y}\kern-.18em X}%\n" +
                          "\\newbox\\PyXBox%\n" +
                          "\\def\\ProcessPyXBox#1#2{%\n" +
