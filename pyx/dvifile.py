@@ -1056,7 +1056,7 @@ class dvifile:
             else:
                 raise DVIError
 
-    def readpage(self, pageid):
+    def readpage(self, pageid=None):
         """ reads a page from the dvi file
 
         This routine reads a page from the dvi file which is
