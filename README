@@ -1,5 +1,5 @@
-PyX 0.1
-=======
+PyX
+===
 
 PyX is a python package to create encapsulated PostScript figures. It provides
 classes and methods to access basic PostScript functionality at an abstract

@@ -42,11 +42,7 @@ transformed (i.e. translated, rotated, etc.) and clipped.
 """
 
 import types, math, time
-
-#import pyx
-import __init__ as pyx # what should we do here???
-
-import base, bbox, unit, trafo, path, text
+import base, bbox, unit, trafo, path, text, version
 
 # PostScript-procedure definitions
 # cf. file: 5002.EPSF_Spec_v3.0.pdf
@@ -773,7 +769,7 @@ class canvas(base.PSText):
 
         file.write("%!PS-Adobe-3.0 EPSF 3.0\n")
         abbox.write(file)
-        file.write("%%%%Creator: PyX %s\n" % pyx.__version__)
+        file.write("%%%%Creator: PyX %s\n" % version.version)
         file.write("%%%%Title: %s\n" % filename)
         file.write("%%%%CreationDate: %s\n" %
                    time.asctime(time.localtime(time.time())))
