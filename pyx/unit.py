@@ -93,7 +93,7 @@ class length:
         in the given unit. If unit is not set, the currently set default unit is used.
         """
         self.t = self.u = self.v = self.w = self.x = 0
-        l = f * _m[unit or _default_unit]
+        l = float(f) * _m[unit or _default_unit]
         if type == "t":
             self.t = l
         elif type == "u":
@@ -106,7 +106,13 @@ class length:
             self.x = l
 
     def __cmp__(self, other):
-        return cmp(tom(self), tom(other))
+        # we try to convert self and other into meters and
+        # if this fails, we give other a chance to do the comparison
+        try:
+            return cmp(tom(self), tom(other))
+        except:
+            # why does -cmp(other, self) not work?
+            return -other.__cmp__(self)
 
     def __mul__(self, factor):
         result = length()
@@ -133,7 +139,12 @@ class length:
     def __add__(self, other):
         # convert to length if necessary
         if not isinstance(other, length):
-            other = length(other)
+            # if other is not a length, we try to convert it into a length and
+            # if this fails, we give other a chance to do the addition
+            try:
+                other = length(other)
+            except:
+                return other + self
         result = length()
         result.t = self.t + other.t
         result.u = self.u + other.u
@@ -142,12 +153,17 @@ class length:
         result.x = self.x + other.x
         return result
 
-    __radd__=__add__
+    __radd__ = __add__
 
     def __sub__(self, other):
         # convert to length if necessary
         if not isinstance(other, length):
-            other = length(other)
+            # if other is not a length, we try to convert it into a length and
+            # if this fails, we give other a chance to do the subtraction
+            try:
+                other = length(other)
+            except:
+                return -other + self
         result = length()
         result.t = self.t - other.t
         result.u = self.u - other.u
