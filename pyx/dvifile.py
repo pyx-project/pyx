@@ -258,7 +258,6 @@ class tfmfile:
         #
 
         self.char_info = [None]*(self.ec+1)
-
         for charcode in range(self.bc, self.ec+1):
             self.char_info[charcode] = char_info_word(self.file.readint32())
             if self.char_info[charcode].width_index == 0:
@@ -979,7 +978,7 @@ class dvifile:
     def _push_dvistring(self, dvi, fonts, afterpos, fontsize):
         """ push dvi string with defined fonts on top of reader
         stack. Every positions gets scaled relatively by the factor
-        scale. When finished with interpreting the dvi chunk, we
+        scale. After the interpreting of the dvi chunk has been finished,
         continue with self.pos=afterpos. The designsize of the virtual
         font is passed as a fix_word
 
@@ -1000,10 +999,10 @@ class dvifile:
         self.stack = []
         self.filepos = 0
 
-        # we have to rescale self.pos in order to be consistent with the new scaling
+        # rescale self.pos in order to be consistent with the new scaling
         self.pos = map(lambda x, rescale=rescale:1.0*x/rescale, self.pos)
 
-        # since tfmconv converts from tfm units to dvi units, we have to rescale it as well
+        # since tfmconv converts from tfm units to dvi units, rescale it as well
         self.tfmconv /= rescale
 
         self.usefont(0)
@@ -1092,7 +1091,7 @@ class dvifile:
         self.pos = [0, 0, 0, 0, 0, 0]
         self.actoutfont = None
 
-        # Since we do not know, which dvi pages the actual PS file contains later on,
+        # Since we do not know which dvi pages the actual PS file contains later on,
         # we have to keep track of used char informations separately for each dvi page.
         # In order to do so, the already defined fonts have to be copied and their
         # used char informations have to be reset
