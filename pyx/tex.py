@@ -436,7 +436,7 @@ class tex(InstanceList):
 
         if self.mode == mode.TeX:
             # TODO: other ways for creating font sizes?
-            LtsName = os.path.dirname(__file__) + os.sep + "lts" + os.sep + str(self.latexstyle) + ".lts"
+            LtsName = os.path.join(os.path.dirname(__file__), "lts", str(self.latexstyle) + ".lts")
             self.define(open(LtsName, "r").read())
         if self.mode == mode.LaTeX:
             if self.docopt:
@@ -444,13 +444,9 @@ class tex(InstanceList):
             else:
                 self.define("\\documentclass{" + str(self.docclass) + "}\n")
 
-
     def GetStack(self):
         return traceback.extract_stack(sys._getframe().f_back.f_back.f_back)
     
-    def bbox(self, acanvas):
-	return canvas.bbox()
-
     def execute(self, command):
         if os.system(command):
             print "The exit code of the following command was non-zero:"
@@ -461,7 +457,7 @@ class tex(InstanceList):
             print "constructor of the class pyx.tex. You can then try to run the command"
             print "by yourself."
 
-    def write(self, acanvas, file):
+    def runtex(self, acanvas):
 
         'run LaTeX&dvips for TexCmds, report errors, return postscript string'
     
@@ -533,10 +529,7 @@ class tex(InstanceList):
 
         else:
             self.execute("dvips -E -o " + TempName + ".eps " + TempName + ".dvi > " + TempName + ".dvipsout 2> " + TempName + ".dvipserr")
-            try:
-                # TODO: the following line shouldn't raise asserts but should raise some exceptions!
-                canvas.epsfile(TempName + ".eps", translatebb = 0).write(acanvas, file)
-            except IOError:
+            if not os.access(TempName + ".eps", 0):
                 print "Error reading the eps file which should be produced by dvips."
                 print "May be, you just have no disk space available. Or something badly"
                 print "in your commands caused dvips to give up completely. Or your"
@@ -570,13 +563,27 @@ class tex(InstanceList):
                         SizeFile.write(OldSize)
 
         if not self.texfilename:
-            for suffix in ("tex", "log", "aux", "size", "dvi", "eps", "texout", "texerr", "dvipsout", "dvipserr", ):
+            for suffix in ("tex", "log", "aux", "size", "dvi", "texout", "texerr", "dvipsout", "dvipserr", ):
                 try:
                     os.unlink(TempName + "." + suffix)
                 except:
                     pass
         
         os.chdir(WorkDir)
+
+        return os.path.join(TempDir, TempName + ".eps")
+
+       
+    def bbox(self, acanvas):
+        EpsFile = self.runtex(acanvas)
+        Result = canvas.epsfile(EpsFile, translatebb = 0).bbox(acanvas)
+        os.unlink(EpsFile)
+        return Result
+
+    def write(self, acanvas, file):
+        EpsFile = self.runtex(acanvas)
+        canvas.epsfile(EpsFile, translatebb = 0).write(acanvas, file)
+        os.unlink(EpsFile)
        
     def define(self, Cmd, *styleparams):
 
