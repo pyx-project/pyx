@@ -2,7 +2,9 @@ PyX
 
 0.3.1 (????/??/??)
   - text module:
-     fix bug in dvi rule code where width was height
+    - fix bug in dvi rule code where width was height
+    - fix preamble attribute checking bug
+    - fix texmessage.hideload pattern search instead of match bug
 
 0.3 (2003/03/31)
   - examples
