@@ -27,7 +27,7 @@ unit_ps = 1.0
 
 scale = { 't':1, 'u':1, 'v':1, 'w':1 }
 
-default_unit = "cm"
+_default_unit = "cm"
 
 unit_pattern = re.compile(r"""^\s*([+-]?\d*((\d\.?)|(\.?\d))\d*(E[+-]?\d+)?)
                               (\s+([t-w]))?
@@ -43,14 +43,17 @@ _m = {
       'pt':   0.01*2.54/72,
     }
 
-def set(uscale=None, vscale=None, wscale=None):
+def set(uscale=None, vscale=None, wscale=None, default_unit=None):
     if uscale:
         scale['u'] = uscale
     if vscale:
         scale['v'] = vscale
     if wscale:
         scale['w'] = wscale
-
+    if default_unit:
+        global _default_unit
+        _default_unit = default_unit
+ 
 
 def convert_to(l, dest_unit="m"):
 
@@ -59,7 +62,7 @@ def convert_to(l, dest_unit="m"):
                          convert_to(x, dest_unit), l))
 
     if type(l) in (IntType, LongType, FloatType):
-        return l*_m[default_unit]*scale['u']/_m[dest_unit]
+        return l*_m[_default_unit]*scale['u']/_m[dest_unit]
     elif not isinstance(l,length): 
         l=length(l)       # convert to length instance if necessary
 
@@ -99,7 +102,7 @@ class length:
        -unit_type:  "t", "u", "v", or "w".
                     Optional, defaults to "u"
        -unit_name:  "m", "cm", "mm", "inch", "pt".
-                    Optional, defaults to default_unit
+                    Optional, defaults to _default_unit
 
     Internally all length are stored in units of m as a quadruple of the four
     unit_types.
@@ -119,12 +122,12 @@ class length:
                 else:
                     self.prefactor = float(unit_match.group(1))
                     self.unit_type = unit_match.group(7) or default_type
-                    self.unit_name = unit_match.group(9) or dunit or default_unit
+                    self.unit_name = unit_match.group(9) or dunit or _default_unit
 
                     self.length[self.unit_type] = self.prefactor*_m[self.unit_name]
 
             elif type(l) in (IntType, LongType, FloatType):
-                self.length[default_type] = l*_m[dunit or default_unit]
+                self.length[default_type] = l*_m[dunit or _default_unit]
             else:
                 raise ( NotImplementedError,
                         "cannot convert given argument to length type" )
@@ -188,23 +191,27 @@ class length:
 # lengths with user units as default
 
 class u_pt(length):
-    def __init__(self, l=None, default_type="u"):
+    def __init__(self, l=1, default_type="u"):
        length.__init__(self, l, default_type=default_type, dunit="pt")
 
 
 class u_m(length):
-    def __init__(self, l=None, default_type="u"):
+    def __init__(self, l=1, default_type="u"):
        length.__init__(self, l, default_type=default_type, dunit="m")
 
 
 class u_mm(length):
-    def __init__(self, l=None, default_type="u"):
+    def __init__(self, l=1, default_type="u"):
        length.__init__(self, l, default_type=default_type, dunit="mm")
 
-u_cm = length
+
+class u_cm(length):
+    def __init__(self, l=1, default_type="u"):
+       length.__init__(self, l, default_type=default_type, dunit="cm")
+
 
 class u_inch(length):
-    def __init__(self, l=None, default_type="u"):
+    def __init__(self, l=1, default_type="u"):
        length.__init__(self, l, default_type=default_type, dunit="inch")
 
 # without further specification, length are user length. Hence we
@@ -219,77 +226,77 @@ inch = u_inch
 # true lengths
 
 class t_pt(length):
-    def __init__(self, l=None):
+    def __init__(self, l=1):
        length.__init__(self, l, default_type="t", dunit="pt")
 
 
 class t_m(length):
-    def __init__(self, l=None):
+    def __init__(self, l=1):
        length.__init__(self, l, default_type="t", dunit="m")
 
 
 class t_cm(length):
-    def __init__(self, l=None):
+    def __init__(self, l=1):
        length.__init__(self, l, default_type="t", dunit="cm")
 
 
 class t_mm(length):
-    def __init__(self, l=None):
+    def __init__(self, l=1):
        length.__init__(self, l, default_type="t", dunit="mm")
 
 
 class t_inch(length):
-    def __init__(self, l=None):
+    def __init__(self, l=1):
        length.__init__(self, l, default_type="t", dunit="inch")
 
 # visual lengths
 
 class v_pt(length):
-    def __init__(self, l=None):
+    def __init__(self, l=1):
        length.__init__(self, l, default_type="v", dunit="pt")
 
 
 class v_m(length):
-    def __init__(self, l=None):
+    def __init__(self, l=1):
        length.__init__(self, l, default_type="v", dunit="m")
 
 
 class v_cm(length):
-    def __init__(self, l=None):
+    def __init__(self, l=1):
        length.__init__(self, l, default_type="v", dunit="cm")
 
 
 class v_mm(length):
-    def __init__(self, l=None):
+    def __init__(self, l=1):
        length.__init__(self, l, default_type="v", dunit="mm")
 
 
 class v_inch(length):
-    def __init__(self, l=None):
+    def __init__(self, l=1):
        length.__init__(self, l, default_type="v", dunit="inch")
 
 # width lengths
 
 class w_pt(length):
-    def __init__(self, l=None):
+    def __init__(self, l=1):
        length.__init__(self, l, default_type="w", dunit="pt")
 
 
 class w_m(length):
-    def __init__(self, l=None):
+    def __init__(self, l=1):
        length.__init__(self, l, default_type="w", dunit="m")
 
 
 class w_cm(length):
-    def __init__(self, l=None):
+    def __init__(self, l=1):
        length.__init__(self, l, default_type="w", dunit="cm")
 
 
 class w_mm(length):
-    def __init__(self, l=None):
+    def __init__(self, l=1):
        length.__init__(self, l, default_type="w", dunit="mm")
 
 
 class w_inch(length):
-    def __init__(self, l=None):
+    def __init__(self, l=1):
        length.__init__(self, l, default_type="w", dunit="inch")
