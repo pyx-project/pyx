@@ -52,7 +52,7 @@ eps: $(patsubst %.py, %.eps, $(wildcard *.py))
 png: $(patsubst %.py, %.png, $(wildcard *.py))
 
 %.eps: %.py
-	export PYTHONPATH=$(PWD)/.. ; python $^
+	export PYTHONPATH=$(CURDIR)/.. ; python $^
 
 %.png: %.eps
 	gs -dEPSCrop -dNOPAUSE -dQUIET -dBATCH -sDEVICE=png16m -sOutputFile=$@ -r600 $^

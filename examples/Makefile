@@ -33,7 +33,7 @@ examples.dvi: examples.py $(epsfiles)
 png: $(pngfiles)
 
 %.eps: %.py
-	cd $(dir $^); PYTHONPATH=$(PWD)/.. python $(notdir $^)
+	cd $(dir $^); PYTHONPATH=$(CURDIR)/.. python $(notdir $^)
 
 %.png: %.eps
 	python ../contrib/epstopng.py -o $@ $^

@@ -84,8 +84,9 @@ TODO:
 
 0.x (xxxx/xx/xx):
   - canvas module:
-    - EPS header fixed (bug #1065099 but Russell Lang)
-
+    - EPS header fixed (reported by Russell Lang, cf. bug #1065099)
+  - Makefile fixes:
+    - use CURDIR instead of PWD (reported by David M. Cooke, bug #1070285)
 
 0.7 (2004/10/21):
   - bitmap module:
