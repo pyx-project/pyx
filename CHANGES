@@ -32,11 +32,11 @@ TODO:
     - messageparser for overfull/underfull vbox/hbox: Warning not Exception
   - mathtree module:
      - consider rewrite using the python compiler module
-  - path module:
-    - _lentopar return value should not contain total length
   - data module:
     - data.data should add line number like data.datafile
     - use csv module (new in 2.3)
+    - Check for "inf" and "nan" in datafiles.
+      (When plotted, the graph does not complain, the postscript will be broken)
   - canvas module:
     - multi page PostScript output
     - contructor should only take a texrunner keyword argument
