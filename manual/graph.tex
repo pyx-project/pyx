@@ -499,7 +499,7 @@ default.
 \subsection{List of points}
 
 Instances of the class \verb|data| link a \verb|datafile| and a
-\verb|style| (see below; default is \verb|mark|). The link object is
+\verb|style| (see below; default is \verb|symbol|). The link object is
 needed in order to be able to plot several data from a singe file
 without reading the file several times which would just be a bad
 design. However, for easy usage, it is possible to provide a filename
@@ -539,9 +539,9 @@ parameter. The expression must be a string with exactly one equal sign
 (\verb|=|). At the left side the result axis identifier must be placed
 and at the right side the expression must depend on exactly one
 variable axis identifier. Hence, a valid expression looks like
-\verb|"y=sin(x)"|. You may use the string format syntax to insert
-external parameters, \textit{e.g.} \verb|"y=sin(%f*x)" % a| where
-\verb|a| is a float variable.
+\verb|"y=sin(x)"|. You can access own variables and functions by
+providing them as a dictionary to the constructors \verb|extern|
+argument.
 
 Additional named parameters of the constructor are:
 
@@ -553,6 +553,7 @@ argument name&default&description\\
 \texttt{max}&\texttt{None}&as above, but for the maximum\\
 \texttt{points}&\texttt{100}&number of points to be calculated\\
 \texttt{parser}&\texttt{mathtree.parser()}&parser for the mathematical expression\\
+\texttt{extern}&\texttt{None}&dictionary of extern variables and functions\\
 \end{tabularx}
 \medskip
 
@@ -574,26 +575,21 @@ expression assigning functions to the axis identifiers in a quite
 pythonic tuple notation. As an example, such an expression could look
 like \verb|"x, y = sin(k), cos(3*k)"|.
 
-Additionally, the two named parameters \verb|points| and \verb|parser|
-behave like their equally named counterparts in \verb|function|.
+Additionally, the named parameters \verb|points|, \verb|parser|, and
+\verb|extern| behave like their equally named counterparts in
+\verb|function|.
 
 \section{Styles}
 \label{graph:styles}
 
 Styles are used to draw data at a graph. A style determines what is
 painted and how it is painted. Due to this powerfull approach there
-are already some different marker types available and the possibility
-to introduce other styles opens even more prospects.
+are already some different styles available and the possibility to
+introduce other styles opens even more prospects.
 
-On the other hand there is not yet any support for bar graphs. This is
-due to the fact that it might be better implemented together with some
-specialized axes. It will be shown in the future, what solution will
-arise out of that idea instead of an disposable implementation right
-now.
+\subsection{Symbols}
 
-\subsection{Marks}
-
-The class \verb|mark| can be used to plot markers, errorbars and lines
+The class \verb|symbol| can be used to plot symbols, errorbars and lines
 configurable by parameters of the constructor. Providing \verb|None|
 to attributes hides the according component.
 
@@ -601,21 +597,21 @@ to attributes hides the according component.
 \begin{tabularx}{\linewidth}{ll>{\raggedright\arraybackslash}X}
 argument name&default&description\\
 \hline
-\texttt{mark}&\texttt{changemark.cross()}&marker to be used (see below)\\
-\texttt{size}&\texttt{"0.2 cm"}&size of the marker (visual length)\\
-\texttt{markattrs}&\texttt{canvas.stroked()}&draw attributes for the marker\\
-\texttt{errorscale}&\texttt{0.5}&size of the errorbar caps (relative to the marker size)\\
+\texttt{symbol}&\texttt{changesymbol.cross()}&symbol to be used (see below)\\
+\texttt{size}&\texttt{"0.2 cm"}&size of the symbol (visual length)\\
+\texttt{symbolattrs}&\texttt{canvas.stroked()}&draw attributes for the symbol\\
+\texttt{errorscale}&\texttt{0.5}&size of the errorbar caps (relative to the symbol size)\\
 \texttt{errorbarattrs}&\texttt{()}&stroke attributes for the errorbars\\
 \texttt{lineattrs}&\texttt{None}&stroke attributes for the line\\
 \end{tabularx}
 \medskip
 
-The parameter \verb|mark| has to be a routine, which returns a path to
+The parameter \verb|symbol| has to be a routine, which returns a path to
 be drawn (e.g. stoked or filled). There are several those routines
-already available in the class \verb|mark|, namely \verb|cross|,
+already available in the class \verb|symbol|, namely \verb|cross|,
 \verb|plus|, \verb|square|, \verb|triangle|, \verb|circle|, and
 \verb|diamond|. Furthermore, changeable attributes might be used here
-(like the default value \verb|changemark.cross|), see
+(like the default value \verb|changesymbol.cross|), see
 section~\ref{graph:changeattrs} for details.
 
 The attributes are available as class variables after plotting the
@@ -623,7 +619,7 @@ style for outside usage. Additionally, the variable \verb|path|
 contains the path of the line (even when it wasn't plotted), which
 might be used to get crossing points, fill areas, etc.
 
-Valid data names to be used when providing data to markers are listed
+Valid data names to be used when providing data to symbols are listed
 in the following table. The character \verb|X| stands for axis names
 like \verb|x|, \verb|x2|, \verb|y|, etc.
 
@@ -631,7 +627,7 @@ like \verb|x|, \verb|x2|, \verb|y|, etc.
 \begin{tabular}{ll}
 data name&description\\
 \hline
-\texttt{X}&position of the marker\\
+\texttt{X}&position of the symbol\\
 \texttt{Xmin}&minimum for the errorbar\\
 \texttt{Xmax}&maximum for the errorbar\\
 \texttt{dX}&relative size of the errorbar: \texttt{Xmin, Xmax = X-dX, X+Xd}\\
@@ -642,19 +638,19 @@ data name&description\\
 
 \subsection{Lines}
 
-The class \verb|line| is inherited from \verb|mark| and is restricted
+The class \verb|line| is inherited from \verb|symbol| and is restricted
 to line drawing. The constructor takes only \verb|lineattrs| and its
 default is set to \verb|changelinestyle()|. The other features of the
-mark style are turned off.
+symbol style are turned off.
 
 \subsection{Rectangles}
 
 The class \verb|rect| draws filled rectangles into a graph. The size
 and the position of the rectangles to be plotted can be provided by
-the same data names like for the errorbars of the class \verb|mark|.
-Indeed, the class \verb|mark| reuses most of the marker code by
+the same data names like for the errorbars of the class \verb|symbol|.
+Indeed, the class \verb|symbol| reuses most of the symbol code by
 inheritance, while modifying the errorbar look into a colored filled
-rectangle and turing off the marker itself.
+rectangle and turing off the symbol itself.
 
 The color to be used for the filling of the rectangles is taken from a
 gradient provided to the constructor by the named parameter
@@ -664,15 +660,15 @@ name \verb|color| is used to select the color out of this gradient.
 \subsection{Texts}
 
 Another style to be used within graphs is the class \verb|text|, which
-adds the output of text to the class \verb|mark|. The text
-position relative to the markers is defined by the two named
+adds the output of text to the class \verb|symbol|. The text
+position relative to the symbol is defined by the two named
 parameters \verb|textdx| and \verb|textdy| having a default of
 \verb|"0 cm"| and \verb|"0.3 cm"|, respectively, which are by default
 interpreted as visual length. A further named parameter
 \verb|textattrs| may contain a sequence of text attributes (or just a
 single attribute). The default for this parameter is
 \verb|tex.halign.center|. Furthermore the constructor of this class
-allows all other attributes of the class \verb|mark|.
+allows all other attributes of the class \verb|symbol|.
 
 \subsection{Arrows}
 
@@ -692,7 +688,7 @@ argument name&default&description\\
 \end{tabularx}
 \medskip
 
-The arrow allows for data names like the mark and introduces
+The arrow allows for data names like the symbol and introduces
 additionally the data names \verb|size| for the arrow size (as an
 multiplicator for the sizes provided to the constructor) and
 \verb|angle| for the arrow direction (in degree).
@@ -748,15 +744,15 @@ attribute changer&description\\
 \end{tabular}
 \end{center}
 
-The class \verb|changemark| can be used to cycle throu markers and it
+The class \verb|changesymbol| can be used to cycle throu symbols and it
 provides already various specialized classes as class variables. To
-loop over all available markers (cross, plus, square, triangle,
+loop over all available symbols (cross, plus, square, triangle,
 circle, and diamond) the equal named class variables can be used. They
-start at that marker they are named of. Thus \verb|changemark.cross()|
-cycles throu the sequence starting at the cross marker. Furthermore
+start at that symbol they are named of. Thus \verb|changesymbol.cross()|
+cycles throu the sequence starting at the cross symbol. Furthermore
 there are four class variables called \verb|squaretwice|,
 \verb|triangletwice|, \verb|circletwice|, and \verb|diamondtwice|.
-They cycle throu the four fillable markers, but returning the markers
+They cycle throu the four fillable symbols, but returning the symbols
 twice before they go on to the next one. They are intented to be used
 in combination with \verb|changestrokedfilled| and
 \verb|changefilledstroked|.

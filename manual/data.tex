@@ -1,5 +1,4 @@
-% $Header$
-\chapter{Module datafile: reading a datafile}
+\chapter{Module data}
 \label{datafile}
 
 \section{Reading a table from a file}
@@ -78,10 +77,13 @@ expression. When the expression contains an equal sign (\verb|=|),
 everything left to the last equal sign will become the title of the
 new column. If no equal sign is found, the title will be set to
 \verb|None|. The part right to the last equal sign is interpreted as
-an mathematical expression. A list of functions and operators can be
-found in appendix~\ref{mathtree}. The expression might contain
-variable names. The interpretation of this names is done in the
-following way:
+an mathematical expression. A list of functions, predefined variables
+and operators can be found in appendix~\ref{mathtree}. The list of
+available functions and predefined variables can be extended by a
+dictionary passed as the argument \verb|extern| to the constructor.
+
+The expression might contain variable names. The interpretation of
+this names is done in the following way:
 \begin{itemize}
 \item The names can be a column title, but this is only allowed for
 column titles which are valid variable names (e.g. they should start
@@ -95,78 +97,81 @@ parameter should be a valid parameter of the \verb|getcolumnno|
 method.
 \item A variable name can start with the dollar symbol (\verb|$|) and
 the following integer number will directly refer to a column number.
-To implement this third possibility, the mathematical expression
-parser is extended within the datafile module (cf. section
-\ref{datafile:cumulate}).
 \end{itemize}
 The data referenced by variables in the expression need to be
 floats, otherwise the result for that data line will be \verb|None|.
 Examples are \verb|addcolumn("av=(min+max)/2")|,
 \verb|addcolumn("av=(a+b+$3)/2", a=1, b="max")|.
 
-\section{Dirty tricks for mathematics on columns}
-\label{datafile:cumulate}
+% \section{Dirty tricks for mathematics on columns}
+% \label{datafile:cumulate}
+% 
+% I want to present a solution for cumulating data in a new column.
+% As told in the title of this section, it is considered to be a dirty
+% trick, because it relies on side effects in the calculation of the new
+% column, namely it sums up the result in a hidden variable. While
+% that is wanted, it is nothing I would ever consider to do officially
+% (don't expect the following lines to become part of \PyX{} in the
+% future). On the other hand, nothing could be told about using this
+% tick and I don't expect that this feature will break in future
+% versions. Somehow, it is needed and the possibility to implement this
+% trick has to stay.
+% 
+% What we want to do is to add another function within the allowed
+% expression syntax for doing mathematics on columns. We supply a class
+% which we can hook it into the mathematical expression parser later on:
+% 
+% \begin{quote}
+% \begin{verbatim}
+% from pyx import mathtree
+% 
+% class Cumulate(mathtree.MathTreeFunc1):
+% 
+%     def __init__(self, *args):
+%         mathtree.MathTreeFunc1.__init__(self, "cumulate", *args)
+%         self.sum = 0
+% 
+%     def Calc(self, VarDict):
+%         self.sum += self.ArgV[0].Calc(VarDict)
+%         return self.sum
+% 
+% MyFuncs = mathtree.DefaultMathTreeFuncs + (Cumulate,)
+% \end{verbatim}
+% \end{quote}
+% 
+% Please note, that you explicitly have to import \verb|mathtree|,
+% because its not usually needed in \PyX{} applications and thus it is
+% not imported by \verb|from pyx import *|.
+% 
+% To finally use \verb|cumulate|, you have to supply a new parser to the
+% datafile, where the new generated list of available functions is
+% placed in:
+% 
+% \begin{quote}
+% \begin{verbatim}
+% df = datafile.datafile("mydata",
+%          parser=mathtree.parser(
+%                     MathTreeFuncs=MyFuncs,
+%                     MathTreeVals=datafile.MathTreeValsWithCol))
+% df.addcolumn("sum=cumulate(costs)")
+% \end{verbatim}
+% \end{quote}
+% 
+% The explicit setting of \verb|MathTreeVals| is needed in order to keep
+% column variables working. Variables starting with the dollar symbol
+% (\verb|$|) are not allowed within the original mathtree.
 
-I want to present a solution for cumulating data in a new column.
-As told in the title of this section, it is considered to be a dirty
-trick, because it relies on side effects in the calculation of the new
-column, namely it sums up the result in a hidden variable. While
-that is wanted, it is nothing I would ever consider to do officially
-(don't expect the following lines to become part of \PyX{} in the
-future). On the other hand, nothing could be told about using this
-tick and I don't expect that this feature will break in future
-versions. Somehow, it is needed and the possibility to implement this
-trick has to stay.
+\section{reading data from a sectioned config file}
 
-What we want to do is to add another function within the allowed
-expression syntax for doing mathematics on columns. We supply a class
-which we can hook it into the mathematical expression parser later on:
-
-\begin{quote}
-\begin{verbatim}
-from pyx import mathtree
-
-class Cumulate(mathtree.MathTreeFunc1):
-
-    def __init__(self, *args):
-        mathtree.MathTreeFunc1.__init__(self, "cumulate", *args)
-        self.sum = 0
-
-    def Calc(self, VarDict):
-        self.sum += self.ArgV[0].Calc(VarDict)
-        return self.sum
-
-MyFuncs = mathtree.DefaultMathTreeFuncs + (Cumulate,)
-\end{verbatim}
-\end{quote}
-
-Please note, that you explicitly have to import \verb|mathtree|,
-because its not usually needed in \PyX{} applications and thus it is
-not imported by \verb|from pyx import *|.
-
-To finally use \verb|cumulate|, you have to supply a new parser to the
-datafile, where the new generated list of available functions is
-placed in:
-
-\begin{quote}
-\begin{verbatim}
-df = datafile.datafile("mydata",
-         parser=mathtree.parser(
-                    MathTreeFuncs=MyFuncs,
-                    MathTreeVals=datafile.MathTreeValsWithCol))
-df.addcolumn("sum=cumulate(costs)")
-\end{verbatim}
-\end{quote}
-
-The explicit setting of \verb|MathTreeVals| is needed in order to keep
-column variables working. Variables starting with the dollar symbol
-(\verb|$|) are not allowed within the original mathtree.
+The class \verb|sectionfile| provides a reader for files in the
+ConfigFile format (see \verb|ConfigFile| from the pyx standard
+library).
 
 \section{Own datafile readers}
 
 The development of other datafile readers should be based on the
-helper class \verb|_datafile| by inheritance. When doing so, the
-methods \verb|getcolumnno|, \verb|getcolumn|, and \verb|addcolumn| are
+helper class \verb|data| by inheritance. When doing so, the methods
+\verb|getcolumnno|, \verb|getcolumn|, and \verb|addcolumn| are
 immediately available and the cooperation with other parts of \PyX{}
 is assured. All what has to be done, is a call to the inherited
 constructor supplying the title list and a list of data points. A data
