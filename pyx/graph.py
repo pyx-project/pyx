@@ -545,91 +545,176 @@ class momrate:
 # (we may create a box drawing module and move all this stuff there)
 ################################################################################
 
-class rectbox:
+class _alignbox:
 
-    def __init__(self, llx, lly, urx, ury, x0=0, y0=0):
-        if llx > urx: llx, urx = urx, llx
-        if lly > ury: lly, ury = ury, lly
-        self.points = 4
-        self.x = x0, llx, urx, urx, llx
-        self.y = y0, lly, lly, ury, ury
+    def __init__(self, *points):
+        self.points = len(points) - 1
+        self.x, self.y = zip(*points)
 
-    def successivepoints(self):
-        return map(lambda i, max = self.points: i and (i, i + 1) or (max, 1), range(self.points))
-
-    def alignlinesolution(self, r, dx, dy, ex, ey, fx, fy, epsilon=1e-10):
-        mx, my = self.x[0], self.y[0]
-        gx, gy = ex - fx, ey - fy # direction vector
-        if gx*gx + gy*gy < epsilon: # zero line length
-            return None             # no solution -> return None
-        rsplit = (dx*gx + dy*gy) * 1.0 / (gx*gx + gy*gy)
-        sx, sy = dx - gx * rsplit, dy - gy * rsplit
-        if sx*sx + sy*sy < epsilon: # zero projection
-            return None             # no solution -> return None
-        if sx*gy - sy*gx < 0:       # half space
-            return None             # no solution -> return None
-        sfactor = math.sqrt((dx*dx + dy*dy) / (sx*sx + sy*sy))
-        sx, sy = r * sx * sfactor, r * sy * sfactor
-        a = ((sx+mx-ex)*dy - (sy+my-ey)*dx) * 1.0 / (gy*dx - gx*dy)
-        if a > 0 - epsilon and a < 1 + epsilon:
-            b = ((ex-sx-mx)*gy - (ey-sy-my)*gx) * 1.0 / (gx*dy - gy*dx)
-            return b*dx - mx, b*dy - my # valid solution -> return align tuple
-        # crossing point at the line, but outside a valid range
-        if a < 0:
-            return 0 # crossing point outside e
-        return 1 # crossing point outside f
-
-    def alignpointsolution(self, r, dx, dy, hx, hy, epsilon=1e-10):
-        if r*r < epsilon:
-            return None
-        mx, my = self.x[0], self.y[0]
-        p = 2 * ((hx-mx)*dx + (hy-my)*dy)
-        q = ((hx-mx)*(hx-mx) + (hy-my)*(hy-my) - r*r)
-        if p*p/4 - q < 0:
-            return None
-        if r > 0:
-            a = - p / 2 + math.sqrt(p*p/4 - q)
-        else:
-            a = - p / 2 - math.sqrt(p*p/4 - q)
-        return a*dx - mx, a*dy - my
-
-    def alignsolution(self, r, dx, dy):
-        linesolutions = map(lambda (i, j), self=self, r=r, dx=dx, dy=dy, x=self.x, y=self.y:
-                                self.alignlinesolution(r, dx, dy, x[i], y[i], x[j], y[j]), self.successivepoints())
-        for linesolution in linesolutions:
-            if type(linesolution) is types.TupleType:
-                return linesolution
-        for i, j in self.successivepoints():
-            if ((linesolutions[i-1] == 0 and linesolutions[j-1] == 1) or
-                (linesolutions[i-1] == 1 and linesolutions[j-1] == 0)):
-                k = j == 1 and self.points or j - 1
-                return self.alignpointsolution(r, dx, dy, self.x[k], self.y[k])
-        return r*dx, r*dy
-
-    def align(self, *args):
-        self.transform(trafo._translate(*self.alignsolution(*args)))
+    def path(self, centerradius = "0.05 v cm"):
+        r = unit.topt(unit.length(centerradius, default_type="v"))
+        pathels = [path._arc(self.x[0], self.y[0], r, 0, 360)]
+        pathels.append(path._moveto(self.x[1], self.y[1]))
+        for x, y in zip(self.x, self.y)[2:]:
+            pathels.append(path._lineto(x, y))
+        pathels.append(path.closepath())
+        return path.path(*pathels)
 
     def transform(self, trafo):
         self.x, self.y = zip(*map(lambda i, trafo=trafo, x=self.x, y=self.y:
                                       trafo._apply(x[i], y[i]), range(self.points + 1)))
 
+    def successivepoints(self):
+        return map(lambda i, max = self.points: i and (i, i + 1) or (max, 1), range(self.points))
+
+    def _circlealignlinevector(self, a, dx, dy, ex, ey, fx, fy, epsilon=1e-10):
+        cx, cy = self.x[0], self.y[0]
+        gx, gy = ex - fx, ey - fy # direction vector
+        if gx*gx + gy*gy < epsilon: # zero line length
+            return None             # no solution -> return None
+        rsplit = (dx*gx + dy*gy) * 1.0 / (gx*gx + gy*gy)
+        bx, by = dx - gx * rsplit, dy - gy * rsplit
+        if bx*bx + by*by < epsilon: # zero projection
+            return None             # no solution -> return None
+        if bx*gy - by*gx < 0: # half space
+            return None       # no solution -> return None
+        sfactor = math.sqrt((dx*dx + dy*dy) / (bx*bx + by*by))
+        bx, by = a * bx * sfactor, a * by * sfactor
+        alpha = ((bx+cx-ex)*dy - (by+cy-ey)*dx) * 1.0 / (gy*dx - gx*dy)
+        if alpha > 0 - epsilon and alpha < 1 + epsilon:
+                beta = ((ex-bx-cx)*gy - (ey-by-cy)*gx) * 1.0 / (gx*dy - gy*dx)
+                return beta*dx - cx, beta*dy - cy # valid solution -> return align tuple
+        # crossing point at the line, but outside a valid range
+        if alpha < 0:
+            return 0 # crossing point outside e
+        return 1 # crossing point outside f
+
+    def _linealignlinevector(self, a, dx, dy, ex, ey, fx, fy, epsilon=1e-10):
+        cx, cy = self.x[0], self.y[0]
+        gx, gy = ex - fx, ey - fy # direction vector
+        if gx*gx + gy*gy < epsilon: # zero line length
+            return None             # no solution -> return None
+        if gy*dx - gx*dy < -epsilon: # half space
+            return None              # no solution -> return None
+        if dx*gx + dy*gy > epsilon or dx*gx + dy*gy < -epsilon:
+            if dx*gx + dy*gy < 0: # angle bigger 90 degree
+                return 0 # use point e
+            return 1 # use point f
+        # a and g are othorgonal
+        alpha = ((a*dx+cx-ex)*dy - (a*dy+cy-ey)*dx) * 1.0 / (gy*dx - gx*dy)
+        if alpha > 0 - epsilon and alpha < 1 + epsilon:
+            beta = ((ex-a*dx-cx)*gy - (ey-a*dy-cy)*gx) * 1.0 / (gx*dy - gy*dx)
+            return beta*dx - cx, beta*dy - cy # valid solution -> return align tuple
+        # crossing point at the line, but outside a valid range
+        if alpha < 0:
+            return 0 # crossing point outside e
+        return 1 # crossing point outside f
+
+    def _circlealignpointvector(self, a, dx, dy, px, py, epsilon=1e-10):
+        if a*a < epsilon:
+            return None
+        cx, cy = self.x[0], self.y[0]
+        p = 2 * ((px-cx)*dx + (py-cy)*dy)
+        q = ((px-cx)*(px-cx) + (py-cy)*(py-cy) - a*a)
+        if p*p/4 - q < 0:
+            return None
+        if a > 0:
+            alpha = - p / 2 + math.sqrt(p*p/4 - q)
+        else:
+            alpha = - p / 2 - math.sqrt(p*p/4 - q)
+        return alpha*dx - cx, alpha*dy - cy
+
+    def _linealignpointvector(self, a, dx, dy, px, py):
+        cx, cy = self.x[0], self.y[0]
+        beta = (a*dx+cx-px)*dy - (a*dy+cy-py)*dx
+        return a*dx - beta*dy - px, a*dy + beta*dx - py
+
+    def _alignvector(self, a, dx, dy, alignlinevector, alignpointvector):
+        linevectors = map(lambda (i, j), self=self, a=a, dx=dx, dy=dy, x=self.x, y=self.y, alignlinevector=alignlinevector:
+                                alignlinevector(a, dx, dy, x[i], y[i], x[j], y[j]), self.successivepoints())
+        for linevector in linevectors:
+            if type(linevector) is types.TupleType:
+                return linevector
+        for i, j in self.successivepoints():
+            if linevectors[i-1] == 1 and linevectors[j-1] == 0:
+                k = j == 1 and self.points or j - 1
+                return alignpointvector(a, dx, dy, self.x[k], self.y[k])
+        for i in range(self.points):
+            if linevectors[i] == 0:
+                k = i or self.points
+                return alignpointvector(a, dx, dy, self.x[k], self.y[k])
+            elif linevectors[i] == 1:
+                return alignpointvector(a, dx, dy, self.x[i+1], self.y[i+1])
+        return a*dx, a*dy
+
+    def _circlealignvector(self, a, dx, dy):
+        return self._alignvector(a, dx, dy, self._circlealignlinevector, self._circlealignpointvector)
+
+    def _linealignvector(self, a, dx, dy):
+        return self._alignvector(a, dx, dy, self._linealignlinevector, self._linealignpointvector)
+
+    def circlealignvector(self, a, dx, dy):
+        return self._circlealignvector(unit.topt(a), dx, dy)
+
+    def linealignvector(self, a, dx, dy):
+        return self._linealignvector(unit.topt(a), dx, dy)
+
+    def _circlealign(self, *args):
+        self.transform(trafo._translate(*self._circlealignvector(*args)))
+        return self
+
+    def _linealign(self, *args):
+        self.transform(trafo._translate(*self._linealignvector(*args)))
+        return self
+
+    def circlealign(self, *args):
+        self.transform(trafo._translate(*self.circlealignvector(*args)))
+        return self
+
+    def linealign(self, *args):
+        self.transform(trafo._translate(*self.linealignvector(*args)))
+        return self
+
     def extent(self, dx, dy):
-        x1, y1 = self.alignsolution(1, dx, dy)
-        x2, y2 = self.alignsolution(1, -dx, -dy)
-        return (x1-x2)*dx + (y1-y2)*dy - 2
+        x1, y1 = self._linealignvector(0, dx, dy)
+        x2, y2 = self._linealignvector(0, -dx, -dy)
+        return (x1-x2)*dx + (y1-y2)*dy
 
 
-class textbox(rectbox, attrlist.attrlist):
+class alignbox(_alignbox):
+
+    def __init__(self, *args):
+        args = map(lambda x: x, map(lambda x, unit=unit: unit.topt(x), args))
+        _alignbox.__init__(self, *args)
+
+
+class _rectbox(_alignbox):
+
+    def __init__(self, llx, lly, urx, ury, x0=0, y0=0):
+        if llx > urx: llx, urx = urx, llx
+        if lly > ury: lly, ury = ury, lly
+        _alignbox.__init__(self, (x0, y0), (llx, lly), (urx, lly), (urx, ury), (llx, ury))
+
+
+class rectbox(_rectbox):
+
+    def __init__(self, *arglist, **argdict):
+        arglist = map(lambda x, unit=unit: unit.topt(x), arglist)
+        for key in argdict.keys():
+            argdict[key] = unit.topt(argdict[key])
+        _rectbox.__init__(self, *argslist, **argdict)
+
+
+class textbox(_rectbox, attrlist.attrlist):
 
     def __init__(self, _tex, text, textstyles = (), vtext="0"):
         self.tex = _tex
         self.text = text
-        try:
-            self.direction = self.attrget(textstyles, tex.direction)
-            self.textstyles = self.attrdel(textstyles, tex.direction)
-        except attrlist.AttrlistExcept:
-            self.direction = None
-            self.textstyles = textstyles
+        self.textstyles = textstyles
+        self.halign = self.attrget(self.textstyles, tex.halign, None)
+        self.textstyles = self.attrdel(self.textstyles, tex.halign)
+        self.direction = self.attrget(self.textstyles, tex.direction, None)
+        self.textstyles = self.attrdel(self.textstyles, tex.direction)
         self.ht = unit.topt(self.tex.textht(text, *self.textstyles))
         self.wd = unit.topt(self.tex.textwd(text, *self.textstyles))
         self.dp = unit.topt(self.tex.textdp(text, *self.textstyles))
@@ -643,34 +728,29 @@ class textbox(rectbox, attrlist.attrlist):
         if shiftht is not None: self.shiftht = None
         self.xtext = 0
         self.ytext = 0
-        rectbox.__init__(self, 0, -self.dp, self.wd, self.ht, self.wd/2, self.shiftht)
+        xorigin = 0.5 * self.wd
+        if self.halign is not None:
+            if self.halign == tex.halign.left:
+                xorigin = 0
+            if self.halign == tex.halign.right:
+                xorigin = self.wd
+        _rectbox.__init__(self, 0, -self.dp, self.wd, self.ht, xorigin, self.shiftht)
         if self.direction is not None:
             self.transform(trafo._rotate(self.direction.value))
 
     def transform(self, trafo):
-        rectbox.transform(self, trafo)
+        _rectbox.transform(self, trafo)
         self.xtext, self.ytext = trafo._apply(self.xtext, self.ytext)
 
-    def printtext(self, x, y):
+    def _printtext(self, x, y):
         if self.direction is not None:
             styles = self.textstyles + [self.direction]
         else:
             styles = self.textstyles
         self.tex._text(x + self.xtext, y + self.ytext, self.text, *styles)
 
-
-#if __name__=="__main__": 
-#    c=canvas.canvas()
-#    t=c.insert(tex.tex())
-#    b=textbox(t, "XXX")
-#    r = 5.0
-#    c.draw(path.path(path.arc(0, 0, r, 0, 360)))
-#    phi = 0
-#    while phi < 2 * math.pi + 1e-10:
-#        b.align(unit.topt(r), math.cos(phi), math.sin(phi))
-#        b.printtext(0, 0)
-#        phi += math.pi / 50
-#    c.writetofile("boxtest")
+    def printtext(self, x, y):
+        self._printtext(unit.topt(x), unit.topt(y))
 
 
 ################################################################################
@@ -748,7 +828,6 @@ class axispainter:
         while divmod(m, n)[0] < 1:
             m *= 10
             exp -= 1
-        #TODO: if xxx.ratprefactor: prefactor = self.ratfrac(m, n); else:
         prefactor = self.decfrac(m, n)
         if exp: #TODO: and xxx.noexp0
             if prefactor == "1":
@@ -786,11 +865,6 @@ class axispainter:
                     haslabel = tick.labellevel + 1
 
         if haslabel:
-            zeroht = []
-            for labellevel in range(haslabel):
-                labelstyles = [tex.style.math] + self.selectstyle(labellevel, self.labelstyles)
-                zeroht.append(unit.topt(graph.tex.textht("0", *labelstyles)))
-
             for tick in axis.ticks:
                 if tick.labellevel is not None:
                     if not hasattr(tick, "text"):
@@ -798,6 +872,7 @@ class axispainter:
                         #tick.text = self.decfrac(tick.enum, tick.denom)
                         #tick.text = self.ratfrac(tick.enum, tick.denom)
                         tick.text = self.expfrac(tick.enum, tick.denom)
+                        #tick.text = "abcdefghijklmnopqrstuvwxyz"
                     tick.labelstyles = [tex.style.math] + self.selectstyle(tick.labellevel, self.labelstyles)
                     tick.textbox = textbox(graph.tex, tick.text, textstyles = tick.labelstyles)
 
@@ -809,18 +884,23 @@ class axispainter:
                 equaldirection = 1
 
             if equaldirection:
-                maxht, maxdp = 0, 0
+                maxht, maxwd, maxdp = 0, 0, 0
                 for tick in axis.ticks:
                     if tick.labellevel is not None:
                         if maxht < tick.textbox.ht: maxht = tick.textbox.ht
+                        if maxwd < tick.textbox.wd: maxwd = tick.textbox.wd
                         if maxdp < tick.textbox.dp: maxdp = tick.textbox.dp
                 for tick in axis.ticks:
                     if tick.labellevel is not None:
-                        tick.textbox.manualextents(ht = maxht, dp = maxdp)
+                        pass
+                        #TODO: if xxx.vequalize
+                        #tick.textbox.manualextents(ht = maxht, dp = maxdp)
+                        #TODO: if xxx.hequalize
+                        #tick.textbox.manualextents(wd = maxwd)
 
             for tick in axis.ticks:
                 if tick.labellevel is not None:
-                    tick.textbox.align(labeldist, tick.dx, tick.dy)
+                    tick.textbox._linealign(labeldist, tick.dx, tick.dy)
                     tick.extent = tick.textbox.extent(tick.dx, tick.dy) + labeldist
 
         # we could now measure distances between labels rectboxes -> TODO: rating
@@ -844,15 +924,15 @@ class axispainter:
                 y2 = tick.y + tick.dy * outerticklength * factor
                 graph.draw(path._line(x1, y1, x2, y2), *self.selectstyle(tick.ticklevel, self.tickstyles))
             if tick.labellevel is not None:
-                tick.textbox.printtext(tick.x, tick.y)
+                tick.textbox._printtext(tick.x, tick.y)
 
         if axis.title is not None:
             x, y = axis.tickpoint(axis, 0.5)
             dx, dy = axis.tickdirection(axis, 0.5)
             axis.titlebox = textbox(graph.tex, axis.title, textstyles = axis.titlestyles)
             axis.extent += titledist
-            axis.titlebox.align(axis.extent, dx, dy)
-            axis.titlebox.printtext(x, y)
+            axis.titlebox._linealign(axis.extent, dx, dy)
+            axis.titlebox._printtext(x, y)
             axis.extent += axis.titlebox.extent(dx, dy)
 
 class linkaxispainter(axispainter):
@@ -949,11 +1029,14 @@ class linkaxis(_axis):
 class defaultstyleiterator:
 
     def __init__(self):
-        self.i = 0
+        self.laststyles = {}
 
-    def iteratestyle(self, style):
-        self.i += 1
-        return style(self.i)
+    def iteratestyle(self, defaultstyle):
+        if self.laststyles.has_key(defaultstyle):
+            self.laststyles[defaultstyle] = self.laststyles[defaultstyle].next
+        else:
+            self.laststyles[defaultstyle] = defaultstyle
+        return self.laststyles[defaultstyle]()
 
 
 _XPattern = re.compile(r"x([2-9]|[1-9][0-9]+)?$")
@@ -1153,7 +1236,7 @@ class graphxy(canvas.canvas):
         if self._drawstate != self.drawdata:
             raise PyxGraphDrawstateError
         for data in self.data:
-            data.loop(self)
+            data.draw(self)
         self._drawstate = None
 
     def bbox(self):
@@ -1200,19 +1283,7 @@ class plotstyle:
 
 class mark(plotstyle):
 
-    _cross = 1
-    _plus = 2
-    _square = 3
-    _triangle = 4
-    _circle = 5
-    _diamond = 6
-    _fsquare = 7
-    _ftriangle = 8
-    _fcircle = 9
-    _fdiamond = 10
-
-    def __init__(self, style = _cross, size = "0.1 cm"):
-        self.style = style
+    def __init__(self, size = "0.1 cm"):
         self.size_str = size
 
     def draw(self, graph, keys, data):
@@ -1222,84 +1293,72 @@ class mark(plotstyle):
         xaxis = graph.axes[keys[xindex]]
         yaxis = graph.axes[keys[yindex]]
         for pt in data:
-            if self.style == mark._cross:
-                graph.draw(path.path(path._moveto(graph.xmap.convert(xaxis.convert(pt[xindex])) - 0.5 * size,
-                                                  graph.ymap.convert(yaxis.convert(pt[yindex])) - 0.5 * size),
-                                     path._rlineto(size, size),
-                                     path._rmoveto(- size, 0),
-                                     path._rlineto(size, - size)))
+            graph.draw(self.drawsymbol(size, graph.xmap.convert(xaxis.convert(pt[xindex])),
+                                             graph.ymap.convert(yaxis.convert(pt[yindex]))))
 
-            if self.style == mark._plus:
-                graph.draw(path.path(path._moveto(graph.xmap.convert(xaxis.convert(pt[xindex])) - 0.707 * size,
-                                                  graph.ymap.convert(yaxis.convert(pt[yindex]))),
-                                     path._rlineto(1.414 * size, 0),
-                                     path._rmoveto(- 0.707 * size, - 0.707 * size),
-                                     path._rlineto(0, 1.414 * size)))
 
-            if self.style == mark._square:
-                graph.draw(path.path(path._moveto(graph.xmap.convert(xaxis.convert(pt[xindex])) - 0.5 * size,
-                                                  graph.ymap.convert(yaxis.convert(pt[yindex])) - 0.5 * size),
-                                     path._rlineto(size, 0),
-                                     path._rlineto(0, size),
-                                     path._rlineto(- size, 0),
-                                     path.closepath()))
+class markcross(mark):
 
-            if self.style == mark._triangle:
-                graph.draw(path.path(path._moveto(graph.xmap.convert(xaxis.convert(pt[xindex])) - 0.760 * size,
-                                                  graph.ymap.convert(yaxis.convert(pt[yindex])) - 0.439 * size),
-                                     path._rlineto(1.520 * size, 0),
-                                     path._rlineto(- 0.760 * size, 1.316 * size),
-                                     path.closepath()))
+    def drawsymbol(self, size, x, y):
+        return path.path(path._moveto(x - 0.5 * size, y - 0.5 * size),
+                         path._lineto(x + 0.5 * size, y + 0.5 * size),
+                         path._moveto(x - 0.5 * size, y + 0.5 * size),
+                         path._lineto(x + 0.5 * size, y - 0.5 * size))
 
-            if self.style == mark._circle:
-                graph.draw(path.path(path._moveto(graph.xmap.convert(xaxis.convert(pt[xindex])) + 0.564 * size,
-                                                  graph.ymap.convert(yaxis.convert(pt[yindex]))),
-                                     path._arc(graph.xmap.convert(xaxis.convert(pt[xindex])),
-                                               graph.ymap.convert(yaxis.convert(pt[yindex])),
-                                               0.564 * size, 0, 360),
-                                     path.closepath()))
 
-            if self.style == mark._diamond:
-                graph.draw(path.path(path._moveto(graph.xmap.convert(xaxis.convert(pt[xindex])) - 0.537 * size,
-                                                  graph.ymap.convert(yaxis.convert(pt[yindex]))),
-                                     path._rlineto(0.537 * size, - 0.931*size),
-                                     path._rlineto(0.537 * size, 0.931 * size),
-                                     path._rlineto(- 0.537 * size, 0.931 * size),
-                                     path.closepath()))
+class markplus(mark):
 
-            if self.style == mark._fsquare:
-                graph.fill(path.path(path._moveto(graph.xmap.convert(xaxis.convert(pt[xindex])) - 0.5 * size,
-                                                  graph.ymap.convert(yaxis.convert(pt[yindex])) - 0.5 * size),
-                                     path._rlineto(size, 0),
-                                     path._rlineto(0, size),
-                                     path._rlineto(- size, 0),
-                                     path.closepath()))
+    def drawsymbol(self, size, x, y):
+        return path.path(path._moveto(x - 0.707106781 * size, y),
+                         path._lineto(x + 0.707106781 * size, y),
+                         path._moveto(x, y - 0.707106781 * size),
+                         path._lineto(x, y + 0.707106781 * size))
 
-            if self.style == mark._ftriangle:
-                graph.fill(path.path(path._moveto(graph.xmap.convert(xaxis.convert(pt[xindex])) - 0.760 * size,
-                                                  graph.ymap.convert(yaxis.convert(pt[yindex])) - 0.439 * size),
-                                     path._rlineto(1.520 * size, 0),
-                                     path._rlineto(- 0.760 * size, 1.316 * size),
-                                     path.closepath()))
 
-            if self.style == mark._fcircle:
-                graph.fill(path.path(path._moveto(graph.xmap.convert(xaxis.convert(pt[xindex])) + 0.564 * size,
-                                                  graph.ymap.convert(yaxis.convert(pt[yindex]))),
-                                     path._arc(graph.xmap.convert(xaxis.convert(pt[xindex])),
-                                               graph.ymap.convert(yaxis.convert(pt[yindex])),
-                                               0.564 * size, 0, 360),
-                                     path.closepath()))
+class marksquare(mark):
 
-mark.cross = mark(style = mark._cross)
-mark.plus = mark(style = mark._plus)
-mark.square = mark(style = mark._square)
-mark.triangle = mark(style = mark._triangle)
-mark.circle = mark(style = mark._circle)
-mark.diamond = mark(style = mark._diamond)
-mark.fsquare = mark(style = mark._fsquare)
-mark.ftriangle = mark(style = mark._ftriangle)
-mark.fcircle = mark(style = mark._fcircle)
-mark.fdiamond = mark(style = mark._fdiamond)
+    def drawsymbol(self, size, x, y):
+        return path.path(path._moveto(x - 0.5 * size, y - 0.5 * size),
+                         path._lineto(x + 0.5 * size, y - 0.5 * size),
+                         path._lineto(x + 0.5 * size, y + 0.5 * size),
+                         path._lineto(x - 0.5 * size, y + 0.5 * size),
+                         path.closepath())
+
+
+class marktriangle(mark):
+
+    def drawsymbol(self, size, x, y):
+        return path.path(path._moveto(x - 0.759835685 * size, y - 0.438691337 * size),
+                         path._lineto(x + 0.759835685 * size, y - 0.438691337 * size),
+                         path._lineto(x, y + 0.877382675 * size),
+                         path.closepath())
+
+
+class markcircle(mark):
+
+    def drawsymbol(self, size, x, y):
+        return path.path(path._moveto(x + 0.564189583 * size, y),
+                         path._arc(x, y, 0.564189583 * size, 0, 360),
+                         path.closepath())
+
+
+class markdiamond(mark):
+
+    def drawsymbol(self, size, x, y):
+        return path.path(path._moveto(x - 0.537284965 * size, y),
+                         path._lineto(x, y - 0.930604859 * size),
+                         path._lineto(x + 0.537284965 * size, y),
+                         path._lineto(x, y + 0.930604859 * size),
+                         path.closepath())
+
+
+markcross.next = markplus
+markplus.next = marksquare
+marksquare.next = marktriangle
+marktriangle.next = markcircle
+markcircle.next = markdiamond
+markdiamond.next = markcross
+
 
 ################################################################################
 # data
@@ -1377,7 +1436,7 @@ class DataRangeAlreadySetException(DataException):
 
 class data:
 
-    defaultstyle = mark
+    defaultstyle = markcross
 
     def __init__(self, datafile, **columns):
         self.datafile = datafile
@@ -1395,29 +1454,11 @@ class data:
     def newranges(self, ranges):
         pass
 
-    def GetName(self):
-        return self.datafile.name
-
-    def GetKindList(self):
-        return self.columns.keys()
-
-    def GetTitle(self, Kind):
-        return self.datafile.GetTitle(self.columns[Kind] - 1)
-
-    def GetValues(self, Kind):
-        return self.datafile.GetColumn(self.columns[Kind] - 1)
-
-    def loop(self, graph):
+    def draw(self, graph):
         columns = {}
-        for kind in self.GetKindList():
-            columns[kind] = self.GetValues(kind)
+        for kind in self.columns.keys():
+            columns[kind] = self.datafile.GetColumn(self.columns[kind] - 1)
         self.style.draw(graph, columns.keys(), zip(*columns.values()))
-
-#    def GetRange(self, Kind):
-#        # handle non-numeric things properly
-#        if Kind not in self.columns.keys():
-#            raise DataRangeUndefinedException
-#        return (min(self.GetValues(Kind)), max(self.GetValues(Kind)), )
 
 
 AssignPattern = re.compile(r"\s*([a-z][a-z0-9_]*)\s*=", re.IGNORECASE)

@@ -1,0 +1,113 @@
+% $Header$
+%
+\documentclass{article}
+\usepackage{pyx,graphicx}
+\begin{document}
+\noindent\textbf{\huge Relative box alignment}\medskip
+\section{Introduction}
+The relative alignment of boxes is an important part in many drawing
+tasks. At the moment the main focus is the flexible alignment of text,
+because it is an essential ingredience for the drawing of axes in the
+graph module. Therefore, the implementation is part of the graph
+module at the moment, but the alignment of any kind of boxes is
+expected be become of general interest in the future. Later on it will
+certainly become a module for itself. Alternatively the alignment
+techniques might become a feature of path elements, which sounds quite
+sophisticated but it might turn out to be inadequate.
+
+We consider boxes to be two dimensional convex polygons. We may
+introduce round corners and other goodies later on, but for the moment
+polygons are everything we are in need for.
+
+The relative alignment takes place respecting an alignment vector
+$\vec a$. The box has a central point $\vec c$, which can be placed
+anywhere within the polygon. Otherwise some alignment requests might
+fail or result in unexpected alignments. An alignment request has to
+calculate a translation vector $t$ so that the center point is on the
+line defined by the alignment vector.
+\begin{equation}
+\label{eq:center}
+\alpha\vec a=\vec c+\vec t
+\end{equation}
+The alignment vector $\vec a$ is described by a normalized direction
+vector, which is provided as a tuple \verb|(dx, dy)| to the alignment
+routine. The absolute value of the alignment vector is given by
+\verb|a| and might be zero or even negative. The distance of the box
+is calculated out of the alignment vector so that an additional
+alignment condition is met.
+
+The task of box alignment is splitted into the task of aligning a line
+segment (a segment of the polygon). The polygon and thus the line
+segments are considered to be vectored in mathematically positive
+orientation. Thus the alignment request for a line segment predefines
+a half space. It might happen, that the alignment of a line segment
+is restrained by the finite length of the segment in that way, that
+the alignment should take place based on an end point of the line
+segment. When this happens for the end point of a line segment and a
+starting of the following line segment, this very point has to be
+considered for the alignment.
+
+\pagebreak
+\section{Alignment Primitives}
+\subsection{Align a point relative to an infinite line}
+The point $\vec p$ should be aligned at the dotted line:
+
+\centerline{\includegraphics{boxalignpal}}
+
+We introduce the normalized tangential vector $\vec b$ to the
+alignment vector $\vec a$, $\vec b\perp\vec a$.
+
+The solution is defined by equation~(\ref{eq:center}) and
+\begin{equation}
+\vec a+\beta\vec b=\vec p+\vec t\,.
+\end{equation}
+
+\subsection{Align a line segment relative to an infinite line}
+The line segment has to be perpendicular to the alignment vector.
+We can than continue as in section \ref{s:calignline}. However, if the
+line segment is not perpendicular to the alignment vector, the
+starting point or end point of the line segment (whichever is closer
+in terms of the aligment direction) should be considered for the
+alignment.
+
+\subsection{Align a point relative to a circle}
+The point $\vec p$ should be aligned at the dotted circle:
+
+\centerline{\includegraphics{boxalignpac}}
+
+The solution is defined by equation~(\ref{eq:center}) and
+\begin{equation}
+|\vec a|=|\vec p+\vec t|\,.
+\end{equation}
+
+\subsection{Align a line segment relative to a circle}
+\label{s:calignline}
+The line segment between the points $\vec e$ and $\vec f$ should have
+a single point of contact with the dotted circle:
+
+\centerline{\includegraphics{boxalignlac}}
+
+We introduce $\vec g=\vec e-\vec f$. Thus the line segment is
+described by $\vec e-\beta \vec g$ for $\beta=[0;1]$. We introduce the
+vector $\vec b$ and ask for $\vec b\perp\vec g$. Therefore $\vec b$ is
+the contract point and it can be calculated by
+\begin{equation}
+\vec b=|\vec a|\frac{\vec a-\frac{\vec a\vec g}{\vec g\vec g}\vec g}
+                    {\left|\vec a-\frac{\vec a\vec g}{\vec g\vec g}\vec g\right|}\,.
+\end{equation}
+We can neglect solutions where the z-component of $\vec b\times\vec g$
+is negative in order to restrict the solution to a half space.
+
+The solution is defined by equation~(\ref{eq:center}) and
+\begin{equation}
+\vec b=\vec e-\beta\vec g+\vec t\,.
+\end{equation}
+
+The solution has to fullfill the condition $\beta=[0;1]$, otherwise
+the starting point ($\beta<0$) or end point ($\beta>1$) of the line
+segment should be considered for the alignment.
+
+\section{Examples}
+\hbox{\kern-2.3truecm\includegraphics{boxalignexample}}
+
+\end{document}

@@ -1,0 +1,23 @@
+\chapter{Module graph: graph plotting}
+\label{graph}
+\section{A short introduction note}
+This module is considered to be in constant, gradual development. For
+the moment we concentrate ourself on standard 2d xy-graphs taking all
+kind of possible specialties into account, like any number of axes,
+axis with any number of axis breaks and so on. Architectural decisions
+play the most substantial role at the moment and have hopefully
+already been done that way, that their flexibility will suffice for
+future usages in quite different graph types, \emph{e.g.} circular 2d
+graphs or even 3d graphs. We will describe those parts of the graph
+module here, which are in a totally usable state already and are
+hopefully not to be changed later on. However, future developments
+certainly will cause incompatibilities, for example they are expected
+to happen for automatic axis ticking and labeling or just by splitting
+the graph module into several parts later on. But at least be warned:
+Nobody knows the hole list of things that will break. At the moment,
+keeping backwards compatibility in the graph module is not at all an
+issue for us. Although we do not claim any backwards compatibility
+anywhere in \PyX, the graph module is certainly one of the biggest
+construction site within \PyX.
+\section{Keys}
+Sorry, there is not yet any support for graph keys.
