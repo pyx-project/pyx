@@ -415,13 +415,13 @@ class DVIFile:
     def putchar(self, char, inch=1):
         x = self.pos[_POS_H] * self.conv * 1e-5
         y = self.pos[_POS_V] * self.conv * 1e-5
-        ascii = (char > 32 and char < 128) and "(%s)" % chr(char) or "???"
-        print "type 0x%08x %s at (%.3f cm, %.3f cm)" % (char, ascii, x, y)
+        ascii = (char > 32 and char < 128) and "%s" % chr(char) or "\\%03o" % char
+        print "type 0x%08x (%s) at (%.3f cm, %.3f cm)" % (char, ascii, x, y)
         
         if self.actoutstart is None:
             self.actoutstart = unit.t_cm(x), unit.t_cm(y)
             self.actoutstring = ""
-        self.actoutstring = self.actoutstring + chr(char)
+        self.actoutstring = self.actoutstring + ascii
 
         if inch:
             self.pos[_POS_H] += self.fonts[self.activefont].getwidth(char)
@@ -602,14 +602,15 @@ class DVIFile:
         for font in self.fonts:
             if font:
                 file.write("%%%%BeginFont: %s\n" % font.name.upper())
-                
+
                 tmpfilename = tempfile.mktemp(suffix="pfa")
-                os.system("pfb2pfa `kpsewhich %s.pfb` %s" %
-                          (font.name, tmpfilename))
+                pfbfilename = os.popen("kpsewhich %s.pfb" % font.name).readlines()[-1][:-1]
+                os.system("pfb2pfa %s %s" % (pfbfilename, tmpfilename))
+
                 pfa = open(tmpfilename, "r")
                 file.write(pfa.read())
                 pfa.close()
-                
+
                 file.write("%%%%EndFont\n")
 
     FontSizePattern= re.compile(r"([0-9]+)$")
@@ -622,8 +623,7 @@ class DVIFile:
             print "\t", command, arg
             if command=="c":
                 x, y, c = arg
-                file.write("%f %f moveto (%s) show\n" %
-                           (unit.topt(x), unit.topt(y), c))
+                file.write("%f %f moveto (%s) show\n" % (unit.topt(x), unit.topt(y), c))
             if command=="r":
                 x1, y1, w, h = arg
                 file.write("%f %f moveto %f 0 rlineto 0 %f rlineto %f 0 rlineto closepath fill\n" %
