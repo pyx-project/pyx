@@ -17,48 +17,10 @@ linestyle_dashed     = (linecap_butt,  [2])
 linestyle_dotted     = (linecap_round, [0, 3])
 linestyle_dashdotted = (linecap_round, [0, 3, 3, 3])
 
-unit_ps		= 1.0
+# PostScript-procedure definitions
+# cf. file: 5002.EPSF_Spec_v3.0.pdf     
 
-unit_u2p	= 28.346456693*unit_ps
-unit_v2p	= 28.346456693*unit_ps
-unit_w2p	= 28.346456693*unit_ps
-
-class canvas:
-
-    PSCmds = [] 	# stores all PS commands of the canvas
-    
-    def __init__(self,width,height,basefilename):
-        self.Width=width
-        self.Height=height
-        self.BaseFilename=basefilename
-        self.PSInit()
-
-    PSPositionCorrect = 0		# does actual PS position coincide with our x,y
-    
-    def __del__(self):
-        self.PSRun()
-    
-    def PSAddCmd(self, cmd):
-
-        self.PSCmds = self.PSCmds + [ cmd ]
-	
-    def PSInit(self):
-        try:
-	    self.PSFile = open(self.BaseFilename + ".eps", "w")
-	except IOError:
-	    assert "cannot open output file"		# TODO: Fehlerbehandlung...
-	
-        self.PSFile.write("%!PS-Adobe-3.0 EPSF 3.0\n")
-        self.PSFile.write("%%BoundingBox: 0 0 %d %d\n" % (1000,1000)) # TODO: richtige Boundingbox!
-        self.PSFile.write("%%Creator: pyx 0.0.1\n") 
-        self.PSFile.write("%%Title: %s.eps\n" % self.BaseFilename) 
-        # self.PSFile.write("%%CreationDate: %s\n" % ) 
-        self.PSFile.write("%%EndComments\n") 
-        self.PSFile.write("%%BeginProlog\n") 
-
-	# PostScript-procedure definitions
-	# cf. file: 5002.EPSF_Spec_v3.0.pdf     
-	self.PSAddCmd("""
+PSProlog = """
 /rect {
   4 2 roll moveto 
   1 index 0 rlineto 
@@ -86,20 +48,77 @@ class canvas:
   count op_count sub {pop} repeat % Clean up stacks
   countdictstack dict_count sub {end} repeat
   b4_Inc_state restore
-} bind def""")
-        self.PSFile.write("%%EndProlog\n") 
+} bind def"""
 
+unit_ps		= 1.0
+
+unit_u2p	= 28.346456693*unit_ps
+unit_v2p	= 28.346456693*unit_ps
+unit_w2p	= 28.346456693*unit_ps
+
+class canvas:
+
+    PSCmds = [] 				# stores all PS commands of the canvas
+
+    isCanvas = 1				# identifies a canvas
+    
+    PSPositionCorrect = 0			# does actual PS position coincide with our x,y
+    
+    def __init__(self, base, width, height ):
+        self.Width=width
+        self.Height=height
+	if type(base)==type(""):
+	    self.BaseFilename = base
+	    self.isPrimaryCanvas = 1
+	else: 
+#	    try: 
+	    	if base.isCanvas: self.isPrimaryCanvas = 0
+#	    except:
+#	        assert("base should be either a filename or a canvas")
+        self.PSInit()
+
+    
+    def __del__(self):
+        self.PSRun()
+    
+    def PSAddCmd(self, cmd):
+        self.PSCmds = self.PSCmds + [ cmd ]
+	
+    def PSInit(self):
+    	if self.isPrimaryCanvas:
+           self.PSAddCmd("%!PS-Adobe-3.0 EPSF 3.0")
+           self.PSAddCmd("%%BoundingBox: 0 0 %d %d" % (1000,1000)) # TODO: richtige Boundingbox!
+           self.PSAddCmd("%%Creator: pyx 0.0.1") 
+           self.PSAddCmd("%%Title: %s.eps" % self.BaseFilename) 
+           # self.PSAddCmd("%%CreationDate: %s" % ) 
+           self.PSAddCmd("%%EndComments") 
+           self.PSAddCmd("%%BeginProlog") 
+	   self.PSAddCmd(PSProlog)
+           self.PSAddCmd("%%EndProlog") 
+
+	   
+        self.gsave()						# encapsulate canvas
 	self.PSAddCmd("%f %f scale" % (1/unit_ps, 1/unit_ps))
-	self.PSAddCmd("%f setlinewidth" % self.w2p(0.02))
-	self.newpath()
-	self.amove(0,0)
+        self.PSAddCmd("%f setlinewidth" % self.w2p(0.02))	# TODO: fixme
+	self.newpath()						# delete eventually
+	self.amove(0,0)						#       ""
 
     def PSRun(self):
-    	self.stroke()
-	for cmd in self.PSCmds:
-	    self.PSFile.write("%s\n" % cmd)
-	self.PSFile.close()
+    	self.stroke()						# delete eventually
+	self.grestore()						# canvas has been encapsulated
 	
+	if self.isPrimaryCanvas:
+           try:
+  	      PSFile = open(self.BaseFilename + ".eps", "w")
+	   except IOError:
+	      assert "cannot open output file"		# TODO: Fehlerbehandlung...
+  	   for cmd in self.PSCmds:
+	      PSFile.write("%s\n" % cmd)
+	   PSFile.close()
+        else:
+  	   for cmd in self.PSCmds:			# maybe, we should be more efficient here
+	      self.base.PSAddCmd(cmd)
+	      
     def PSGetEPSBoundingBox(self, epsname):
     
         'returns bounding box of EPS file epsname as 4-tuple (llx, lly, urx, ury)'
@@ -244,8 +263,15 @@ class canvas:
         self.setlinecap(style[0])
 	self.setdash   (style[1], offset)
 
+    def gsave(self):
+        self.PSAddCmd("gsave")
+	
+    def grestore(self):
+        self.PSAddCmd("grestore")
+    
+
 if __name__=="__main__":
-    c=canvas(21, 29.7, "example")
+    c=canvas("example", 21, 29.7)
 
     from tex import *
     from path import *
