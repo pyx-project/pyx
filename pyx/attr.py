@@ -31,8 +31,11 @@ def mergeattrs(attrs):
     """perform merging of the attribute list attrs as defined by the
     merge methods of the attributes"""
     newattrs = []
-    for attr in attrs:
-        newattrs = attr.merge(newattrs)
+    for aattr in attrs:
+        if isinstance(aattr, attr):
+            newattrs = aattr.merge(newattrs)
+        else:
+            raise TypeError("only instances of class attr.attr are allowed")
     return newattrs
 
 
