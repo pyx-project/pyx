@@ -21,7 +21,6 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import copy
 import types
 import helper
 
@@ -89,7 +88,7 @@ class length:
     the present module.
     """
 
-    def __init__(self, f, type="u", unit=None):
+    def __init__(self, f=0, type="u", unit=None):
         """ create a length instance of the given type with a length f
         in the given unit. If unit is not set, the currently set default unit is used.
         """
@@ -110,35 +109,37 @@ class length:
         return cmp(tom(self), tom(other))
 
     def __mul__(self, factor):
-        result = copy.copy(self)
-        result.t *= factor
-        result.u *= factor
-        result.v *= factor
-        result.w *= factor
-        result.x *= factor
+        result = length()
+        result.t = factor * self.t
+        result.u = factor * self.u
+        result.v = factor * self.v
+        result.w = factor * self.w
+        result.x = factor * self.x
         return result
 
     __rmul__=__mul__
 
     def __div__(self, factor):
-        result = copy.copy(self)
-        result.t /= factor
-        result.u /= factor
-        result.v /= factor
-        result.w /= factor
-        result.x /= factor
+        if isinstance(factor, length):
+            return tom(self)/tom(factor)
+        result = length()
+        result.t = self.t / factor
+        result.u = self.u / factor
+        result.v = self.v / factor
+        result.w = self.w / factor
+        result.x = self.x / factor
         return result
 
     def __add__(self, other):
         # convert to length if necessary
         if not isinstance(other, length):
             other = length(other)
-        result = copy.copy(self)
-        result.t += other.t
-        result.u += other.u
-        result.v += other.v
-        result.w += other.w
-        result.x += other.x
+        result = length()
+        result.t = self.t + other.t
+        result.u = self.u + other.u
+        result.v = self.v + other.v
+        result.w = self.w + other.w
+        result.x = self.x + other.x
         return result
 
     __radd__=__add__
@@ -147,19 +148,18 @@ class length:
         # convert to length if necessary
         if not isinstance(other, length):
             other = length(other)
-        result = copy.copy(self)
-        result.t -= other.t
-        result.u -= other.u
-        result.v -= other.v
-        result.w -= other.w
-        result.x -= other.x
+        result.t = self.t - other.t
+        result.u = self.u - other.u
+        result.v = self.v - other.v
+        result.w = self.w - other.w
+        result.x = self.x - other.x
         return result
 
     def __rsub__(self, other):
         # convert to length if necessary
         if not isinstance(other, length):
             other = length(other)
-        result = copy.copy(self)
+        result = length()
         result.t = other.t - self.t
         result.u = other.u - self.u
         result.v = other.v - self.v
@@ -168,12 +168,12 @@ class length:
         return result
 
     def __neg__(self):
-        result = copy.copy(self)
-        result.t *= -1
-        result.u *= -1
-        result.v *= -1
-        result.w *= -1
-        result.x *= -1
+        result = length()
+        result.t = -self.t
+        result.u = -self.u
+        result.v = -self.v
+        result.w = -self.w
+        result.x = -self.x
         return result
 
     def __str__(self):

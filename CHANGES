@@ -107,6 +107,8 @@ TODO:
       documentation)
     - support for string initialization removed
     - support for initialisation with other length removed
+    - lengths can now be divided by other lengths (as suggested by Michael Gruber
+      and Magnus Lie HHetland)
   - text module:
     - postpone reading of fontmap files until TeX/LaTeX is started
     - sign of font number in dvifile (reported by Michael Gruber)
