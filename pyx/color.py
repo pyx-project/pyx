@@ -1,4 +1,9 @@
+import canvas
+
 class color:
+
+    def bbox(self, acanvas):
+	return canvas.bbox()
 
     def write(self, canvas, file):
         file.write(self._PSCmd(canvas))

@@ -3,7 +3,6 @@
 import string, re, tex, unit, trafo, types
 from math import sqrt
 
-
 # PostScript-procedure definitions
 # cf. file: 5002.EPSF_Spec_v3.0.pdf     
 
@@ -42,6 +41,38 @@ PSProlog = """/rect {
 
 bbpattern = re.compile( r"^%%BoundingBox:\s+([+-]?\d+)\s+([+-]?\d+)\s+([+-]?\d+)\s+([+-]?\d+)\s*$" )
 
+class bbox:
+
+    ' class for bounding boxes '
+
+    def __init__(self, llx=None, lly=None, urx=None, ury=None):
+	self.llx=llx
+	self.lly=lly
+	self.urx=urx
+	self.ury=ury
+    
+    def __add__(self, other):
+        ' join to bboxes '
+
+        return bbox(min(self.llx, other.llx) or self.llx or other.llx, 
+                    min(self.lly, other.lly) or self.lly or other.lly,
+                    max(self.urx, other.urx), max(self.ury, other.ury))
+
+#	if other:
+#        return bbox(min(self.llx, other.llx), min(self.lly, other.lly),
+#                        max(self.urx, other.urx), max(self.ury, other.ury))
+#        else:
+#            return self
+
+    __radd__=__add__
+
+    def write(self, canvas, file):
+        file.write("%%%%BoundingBox: %d %d %d %d\n" % (self.llx-1, self.lly-1, self.urx+1, self.ury+1)) 
+
+    def __str__(self):
+	return "%s %s %s %s" % (self.llx, self.lly, self.urx, self.ury)
+
+
 class epsfile:
 
     def __init__(self, filename, x = "0 t m", y = "0 t m", unit = unit.unit(), clip = 1, translatebb = 1, showbb = 0):
@@ -52,9 +83,8 @@ class epsfile:
         self.clip        = clip
         self.translatebb = translatebb
         self.showbb      = showbb
-        self._ReadEPSBoundingBox()                         
 
-    def _ReadEPSBoundingBox(self):
+    def bbox(self, canvas=None):
         'determines bounding box of EPS file filename as 4-tuple (llx, lly, urx, ury)'
         try:
             file = open(self.filename,"r")
@@ -73,10 +103,12 @@ class epsfile:
             
             bbmatch = bbpattern.match(line)
             if bbmatch is not None:
-               (self.llx, self.lly, self.urx, self.ury) = map(int, bbmatch.groups())		# conversion strings->int
-               break
+               (llx, lly, urx, ury) = map(int, bbmatch.groups()) # conversion strings->int
+	       return bbox(llx, lly, urx, ury)
 
     def write(self, canvas, file):
+	mybbox=self.bbox()
+
         try:
 	    epsfile=open(self.filename,"r")
 	except:
@@ -84,15 +116,26 @@ class epsfile:
 
         file.write("BeginEPSF\n")
         file.write("%f %f translate\n" % (self.x, self.y))
+	
         if self.translatebb:
-            file.write("%f %f translate\n" % (-self.llx, -self.lly))
+            file.write("%f %f translate\n" % (-mybbox.llx, -mybbox.lly))
+	    
         if self.showbb:
-            file.write("newpath\n%f %f moveto\n%f 0 rlineto\n0 %f rlineto\n%f 0 rlineto\nclosepath\nstroke\n" % ( self.llx, self.lly, self.urx-self.llx, self.ury-self.lly, -(self.urx-self.llx)))
+            file.write("newpath\n")
+	    file.write("%f %f moveto\n"  % (mybbox.llx, mybbox.lly))
+	    file.write("%f 0 rlineto\n" % mybbox.urx-mybbox.llx)
+	    file.write("0 %f rlineto\n" % mybbox.ury-mybbox.lly)
+	    file.write("%f 0 rlineto\n" % -(mybbox.urx-mybbox.llx))
+	    file.write("closepath\nstroke\n")
+	    
         if self.clip:
-            file.write("%f %f %f %f rect\n" % ( self.llx, self.lly, self.urx-self.llx,self.ury-self.lly))
+            file.write("%f %f %f %f rect\n" % (mybbox.llx, 
+	                                       mybbox.lly, 
+	                                       mybbox.urx-mybbox.llx,
+					       mybbox.ury-mybbox.lly))
             file.write("clip newpath\n")
+
         file.write("%%%%BeginDocument: %s\n" % self.filename)
-        
         file.write(epsfile.read()) 
         file.write("%%EndDocument\nEndEPSF\n")
 
@@ -107,6 +150,9 @@ class CanvasException(Exception): pass
 #
 
 class PyxAttributes:
+    def bbox(self, canvas):
+	return bbox()
+
     def write(self, canvas, file):
         file.write(self._PSCmd(canvas))
 
@@ -198,6 +244,9 @@ class linewidth(_linewidth):
 #
 
 class CanvasCmds:
+    def bbox(self, canvas):
+       return bbox()
+       
     def write(self, canvas, file):
        pass
 
@@ -233,9 +282,24 @@ class canvas(CanvasCmds):
         
         self.PSCmds = []
         self.unit   = kwargs.get("unit", unit.unit())
+	self.trafo  = trafo.transformation()
 
         for arg in args:
-            self.set(*args)
+  	    if isinstance(arg, trafo.transformation):
+	        self.trafo=arg*self.trafo
+            self.set(arg)
+
+    def bbox(self, canvas):
+        obbox = reduce(lambda x,y, canvas=canvas: x+y.bbox(canvas), self.PSCmds, bbox())
+	(llx, lly)=self.trafo.apply((unit.length("%d t pt" % obbox.llx), unit.length("%d t pt" % obbox.lly)))
+        (urx, ury)=self.trafo.apply((unit.length("%d t pt" % obbox.urx), unit.length("%d t pt" % obbox.ury)))
+	llx=self.unit.pt(llx)
+	lly=self.unit.pt(lly)
+	urx=self.unit.pt(urx)
+	ury=self.unit.pt(ury)
+
+	abbox= bbox(min(llx, urx)-1, min(lly, ury)-1, max(llx, urx)+1, max(lly, ury)+1)
+	return abbox
     
     def write(self, canvas, file):
         for cmd in self.PSCmds:
@@ -246,28 +310,29 @@ class canvas(CanvasCmds):
         if args: 
            self.PSCmds.append(_gsave())
            self.set(*args)
+
         if type(cmds) in (types.TupleType, types.ListType):
            for cmd in list(cmds): 
+              if isinstance(cmd, canvas): self.PSCmds.append(_gsave())
               self.PSCmds.append(cmd)
+              if isinstance(cmd, canvas): self.PSCmds.append(_grestore())
         else: 
+           if isinstance(cmds, canvas): self.PSCmds.append(_gsave())
            self.PSCmds.append(cmds)
+           if isinstance(cmds, canvas): self.PSCmds.append(_grestore())
+	   
         if args:
            self.PSCmds.append(_grestore())
+	   
         return cmds
 
     def create(self, pyxclass, *args, **kwargs):
         instance = pyxclass(unit = self.unit.copy(), *args, **kwargs)
         return instance
 
-    def stick(self, instance):
-        self.insert(_gsave()) # we need this at the moment for subcanvas, but it should be avoided here!
-        self.insert(instance)
-        self.insert(_grestore())
-        return self
-        
     def inserttex(self, pyxclass, *args, **kwargs):
         instance = self.create(pyxclass, *args, **kwargs)
-        self.stick(instance)
+        self.insert(instance)
         return instance
 
     def set(self, *args):
@@ -282,14 +347,15 @@ class canvas(CanvasCmds):
         self.insert((_newpath(), path, _fill()), *args)
         return self
 
-    def writetofile(self, filename, width, height, **kwargs):
+    def writetofile(self, filename):
         try:
   	    file = open(filename + ".eps", "w")
 	except IOError:
 	    assert "cannot open output file"		        # TODO: Fehlerbehandlung...
 
         file.write("%!PS-Adobe-3.0 EPSF 3.0\n")
-        file.write("%%%%BoundingBox: 0 0 %d %d\n" % (1000,1000))  # TODO: richtige Boundingbox!
+	abbox=self.bbox(self)
+	abbox.write(self, file)
         file.write("%%Creator: pyx 0.0.1\n") 
         file.write("%%%%Title: %s.eps\n" % filename) 
         # file.write("%%CreationDate: %s" % ) 
@@ -378,7 +444,7 @@ if __name__=="__main__":
 
    
     for angle in range(20):
-       s=c.inserttex(canvas.canvas,translate(10,10)*rotate(angle)).draw(p, canvas.linestyle.dashed, canvas.linewidth(0.01*angle), grey((20-angle)/20.0))
+       s=c.insert(canvas.canvas(translate(10,10)*rotate(angle))).draw(p, canvas.linestyle.dashed, canvas.linewidth(0.01*angle), grey((20-angle)/20.0))
  
     c.set(linestyle.solid)
     g=GraphXY(c, t, 10, 15, 8, 6, y2=LinAxis())
@@ -389,15 +455,16 @@ if __name__=="__main__":
     g.plot(Data(df, x=2, y=6))
     g.plot(Data(df, x=2, y=7))
     g.plot(Data(df, x=2, y=8))
-    g.plot(Function("0.01*sin(x)",Points=10000))
+#    g.plot(Function("0.01*sin(x)",Points=1000))
+    g.plot(Function("0*x",Points=2000))
     g.plot(Function("0.01*sin(x)"))
     g.plot(Function("x=2*sin(1000*y)"))
     g.run()
     
-#    c.inserttex(canvas.canvas, scale(0.5, 0.4).rotate(10).translate("2 cm","200 mm")).insert(epsfile,"ratchet_f.eps")
-#    c.inserttex(canvas.canvas, scale(0.2, 0.1).rotate(10).translate("6 cm","180 mm")).insert(epsfile,"ratchet_f.eps")
+    c.insert(canvas.canvas(scale(0.5, 0.4).rotate(10).translate("2 cm","200 mm"))).insert(epsfile("ratchet_f.eps"))
+    c.insert(canvas.canvas(scale(0.2, 0.1).rotate(10).translate("6 cm","180 mm"))).insert(epsfile("ratchet_f.eps"))
     
     c.draw(path([moveto("5 cm", "5 cm"), rlineto(0.1,0.1)]), linewidth.THICK)
 
-    c.writetofile("example", 21, 29.7)
+    c.writetofile("example")
 

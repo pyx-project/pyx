@@ -293,6 +293,9 @@ class tex(InstanceList):
         Cmd = "\\immediate\\write16{" + MarkerBegin + "}\n" + Cmd + "\\immediate\\write16{" + MarkerEnd + "}\n"
         self.TexCmds = self.TexCmds + [ TexCmdSaveStruc(Cmd, MarkerBegin, MarkerEnd, Stack, lmsglevel), ]
 
+    def bbox(self, acanvas):
+	return canvas.bbox()
+
     def write(self, acanvas, afile):
 
         'run LaTeX&dvips for TexCmds, report errors, return postscript string'
