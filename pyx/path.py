@@ -1737,15 +1737,20 @@ class normsubpath:
     def __add__(self, other):
         """create new normsubpath out of self and other"""
         # we take self.epsilon as accuracy for the resulting normsubpath
-        result = normsubpath(self.normsubpathitems, self.closed, self.epsilon)
+        result = self.copy()
         result += other
         return result
 
     def __iadd__(self, other):
-        """add other normsubpath inplace"""
+        """add other normsubpath inplace
+
+        Fails on closed normsubpath. Fails to add closed normsubpath.
+        """
         if other.closed:
-            raise PathException("Cannot extend normsubpath by closed normsubpath")
+            raise PathException("Cannot add closed normsubpath")
         self.extend(other.normsubpathitems)
+        if other.skippedline:
+            self.append(other.skippedline)
         return self
 
     def __getitem__(self, i):
@@ -1787,7 +1792,10 @@ class normsubpath:
         return result
 
     def append(self, anormsubpathitem):
-        """append normsubpathitem"""
+        """append normsubpathitem
+
+        Fails on closed normsubpath.
+        """
         # consitency tests (might be temporary)
         assert isinstance(anormsubpathitem, normsubpathitem), "only normsubpathitem instances allowed"
         if self.skippedline:
@@ -1867,7 +1875,10 @@ class normsubpath:
             return None
 
     def close(self):
-        """close subnormpath"""
+        """close subnormpath
+
+        Fails on closed normsubpath.
+        """
         if self.closed:
             raise PathException("Cannot close already closed normsubpath")
         if not self.normsubpathitems:
@@ -1888,6 +1899,22 @@ class normsubpath:
 
         self.closed = 1
 
+    def copy(self):
+        """return copy of normsubpath"""
+        # Since normsubpathitems are never modified inplace, we just
+        # need to copy the normsubpathitems list. We do not pass the
+        # normsubpathitems to the constructor to not repeat the checks
+        # for minimal length of each normsubpathitem.
+        result = normsubpath(epsilon=self.epsilon)
+        result.normsubpathitems = self.normsubpathitems[:]
+        result.closed = self.closed
+
+        # We can share the reference to skippedline, since it is a
+        # normsubpathitem as well and thus not modified in place either.
+        result.skippedline = self.skippedline
+
+        return result
+
     def curveradius_pt(self, params):
         """return the curvature radius at params in pts
 
@@ -1901,7 +1928,10 @@ class normsubpath:
         return result
 
     def extend(self, normsubpathitems):
-        """extent path by normsubpathitems"""
+        """extent path by normsubpathitems
+
+        Fails on closed normsubpath.
+        """
         for normsubpathitem in normsubpathitems:
             self.append(normsubpathitem)
 
@@ -1970,11 +2000,7 @@ class normsubpath:
                         if j == len(split):
                             j = 0
                         if j < len(split):
-                            splitnormsubpath = joinnormsubpaths(splitnormsubpath, split[j])
-                            #splitnormsubpath = splitnormsubpath.joined(split[j])
-                            # splitnormsubpath.extend(split[j].normsubpathitems)
-                            # if split[j].skippedline:
-                            #     splitnormsubpath.append(split[j].skippedline)
+                            splitnormsubpath = splitnormsubpath.joined(split[j])
                         else:
                             break
                     i += 1
@@ -1991,11 +2017,7 @@ class normsubpath:
                             result.append((ip2, ip1))
                         j += 1
                         if j < len(split)-1:
-                            splitnormsubpath = joinnormsubpaths(splitnormsubpath, split[j])
-                            #splitnormsubpath = splitnormsubpath.joined(split[j])
-                            # splitnormsubpath.extend(split[j].normsubpathitems)
-                            # if split[j].skippedline:
-                            #     splitnormsubpath.append(split[j].skippedline)
+                            splitnormsubpath = splitnormsubpath.joined(split[j])
                         else:
                             break
                     i += 1
@@ -2036,6 +2058,27 @@ class normsubpath:
         # intersections_a in the very beginning
 
         return [x for x, y in result], [y for x, y in result]
+
+    def join(self, other):
+        """join other normsubpath inplace
+
+        Fails on closed normsubpath. Fails to join closed normsubpath.
+        """
+        if other.closed:
+            raise PathException("Cannot join closed normsubpath")
+        if len(other):
+            self.extend(other.normsubpathitems)
+        if other.skippedline:
+            self.append(other.skippedline)
+
+    def joined(self, other):
+        """return joined self and other
+
+        Fails on closed normsubpath. Fails to join closed normsubpath.
+        """
+        result = self.copy()
+        result.join(other)
+        return result
 
     def _paramtoarclen_pt(self, params):
         """returns a tuple of arc lengths and the total arc length in pts"""
@@ -2538,23 +2581,7 @@ class normpath(base.canvasitem):
                     intersections[1].append(normpathparam(other, ib, intersection[1]))
         return intersections
 
-    # XXX joining is certainly broken
-    def join(self, other):
-        """return path consisting of self and other joined together"""
-        if not self.normsubpaths:
-            raise PathException("cannot join to end of empty path")
-        if self.normsubpaths[-1].closed:
-            raise PathException("cannot join to end of closed sub path")
-        other = other.normpath()
-        if not other.normsubpaths:
-            raise PathException("cannot join empty path")
-
-        # XXX insert connection line?
-        self.normsubpaths[-1].normsubpathitems += other.normsubpaths[0].normsubpathitems
-        self.normsubpaths += other.normsubpaths[1:]
-
     def joined(self, other):
-        # NOTE we skip a deep copy for performance reasons
         result = normpath(self.normsubpaths)
         result.join(other)
         return result
