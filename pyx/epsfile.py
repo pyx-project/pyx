@@ -164,8 +164,8 @@ class epsfile(base.PSCmd):
 
         """
 
-        self._x = unit.topt(x)
-        self._y = unit.topt(y)
+        self.x_pt = unit.topt(x)
+        self.y_pt = unit.topt(y)
         self.filename = filename
         self.mybbox = bbox or _readbbox(self.filename)
 
@@ -187,38 +187,38 @@ class epsfile(base.PSCmd):
 
         # set the actual width and height of the eps file (after a
         # possible scaling)
-        self._width  = self.mybbox.urx_pt-self.mybbox.llx_pt
+        self.width_pt  = self.mybbox.urx_pt-self.mybbox.llx_pt
         if self.scalex:
-            self._width *= self.scalex
+            self.width_pt *= self.scalex
 
-        self._height = self.mybbox.ury_pt-self.mybbox.lly_pt
+        self.height_pt = self.mybbox.ury_pt-self.mybbox.lly_pt
         if self.scaley:
-            self._height *= self.scaley
+            self.height_pt *= self.scaley
 
         # take alignment into account
         self.align       = align
         if self.align[0]=="b":
             pass
         elif self.align[0]=="c":
-            self._y -= self._height/2.0
+            self.y_pt -= self.height_pt/2.0
         elif self.align[0]=="t":
-            self._y -= self._height
+            self.y_pt -= self.height_pt
         else:
             raise ValueError("vertical alignment can only be b (bottom), c (center), or t (top)")
 
         if self.align[1]=="l":
             pass
         elif self.align[1]=="c":
-            self._x -= self._width/2.0
+            self.x_pt -= self.width_pt/2.0
         elif self.align[1]=="r":
-            self._x -= self._width
+            self.x_pt -= self.width_pt
         else:
             raise ValueError("horizontal alignment can only be l (left), c (center), or r (right)")
 
         self.clip = clip
         self.translatebbox = translatebbox
 
-        self.trafo = trafo.translate_pt(self._x, self._y)
+        self.trafo = trafo.translate_pt(self.x_pt, self.y_pt)
 
         if self.scalex is not None:
             self.trafo = self.trafo * trafo.scale_pt(self.scalex, self.scaley)
