@@ -5,7 +5,7 @@ from pyx import *
 from pyx import text
 
 c = canvas.canvas()
-text.set(mode="latex", dvidebug=1)
+text.set(mode="latex", dvidebug=1, usefiles="test_text.dvi")
 
 c.stroke(path.line(-1, 0, 6, 0))
 
