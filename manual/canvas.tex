@@ -88,8 +88,8 @@ A canvas also allows one to set global options:
 The contents of the canvas can be written using:
 
 \begin{methoddesc}{writeEPSfile}{filename, paperformat=None,
-    rotated=0, fittosize=0, margin="1 t cm", bbox=None, bboxenlarge="1
-    t pt"} 
+    rotated=0, fittosize=0, margin=1*unit.t_cm, bbox=None,
+    bboxenlarge=1*unit.t_pt}
   Writes the canvas to \var{filename} (the extension \texttt{.eps} is
   appended automatically). Optionally, a \var{paperformat} can be
   specified, in which case the output will be centered with respect to
