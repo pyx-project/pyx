@@ -1232,7 +1232,7 @@ class texrunner:
                 return result
             loop += 1
             if loop > 10:
-                raise Error
+                raise TexResultError("Too many loops in textboxes ", texrunner)
 
 
 # the module provides an default texrunner and methods for direct access
