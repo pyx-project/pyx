@@ -71,6 +71,7 @@ TODO:
 0.6.x (????/??/??):
    - graph/axis module:
      - fix errorbar range adjustment
+     - fix empty tick lists bug (reported by Marko Vendelin, cf. bug #977323)
 
 
 0.6.3 (2004/04/27):
@@ -81,6 +82,7 @@ TODO:
    - distribution:
      - include source for faq and manual
      - distribute the pdf instead of postscript (manual, faq, examples)
+
 
 0.6.2 (2004/04/07):
   - graph module:
