@@ -2,8 +2,8 @@
 \usepackage[latin1]{inputenc}
 \usepackage{url}
 \usepackage{mathptmx}
-\usepackage[all,comments]{glifaq}
-%\usepackage[answered]{glifaq}
+%\usepackage[all,comments]{glifaq}
+\usepackage[answered]{glifaq}
 \usepackage[pdftex]{hyperref}
 \hypersetup{pdftitle={PyX FAQ}%
             ,pdfauthor={\textcopyright\ Gert-Ludwig Ingold
@@ -14,7 +14,8 @@
 \begin{center}
 \LARGE\sffamily Some frequently and\\ 
 not so frequently asked questions\\ 
-about \PyX\\
+about \PyX\footnote{This version of the FAQ is intended for use with \PyX\ 
+version 0.5.}\\
 \par
 {\small\sffamily (\today)}\\[1truecm]
 \large
@@ -22,6 +23,12 @@ Gert-Ludwig Ingold \par
 \href{mailto:gert.ingold@physik.uni-augsburg.de}{\url{<gert.ingold@physik.uni-augsburg.de>}}
 \end{center}
 \toc
+
+\vspace{2truecm}
+\section*{Acknowledgements}
+The following persons have in one way or the other contributed to the answers
+given in this FAQ:\\ 
+Jörg Lehmann, Michael Schindler, Andr{\'e} Wobst.
 \newpage
 
 \section{General aspects of \PyX}
@@ -43,7 +50,7 @@ for the \PyX{} package in the SUSE LINUX professional distribution.
 \question{c}{How can I determine the version of \PyX{} running on my 
 machine?}
 {}
-{Start a python session (usually by typing \texttt{python} at the system
+{Start a python session (usually by typing \texttt{python} at the system 
 prompt) and then type the following two commands (\texttt{>>>} is the python 
 prompt)
 \begin{progcode}
@@ -60,21 +67,19 @@ a large variety of operating systems so chances are pretty good that you will
 get \PyX{} to work on your system.
 }
 
-\question{t}{Under which versions of Python will \PyX{} run?}
-{AW: this is 0.5 already, but the english might be improved}
+\question{c}{Under which versions of Python will \PyX{} run?}
+{}
 {\PyX{} is supposed to work with Python 2.0 and above. However, most of the
-development takes place under the current production version of Python (by time of
-this writing Python 2.3.3) and thus \PyX{} is better tested with this version. On the
-other hand, the examples and tests are being run with all Python
-versions 2.x. \PyX{} will not work with Python 1.x
-due to missing language features. The version of your Python
-interpreter can be determined by calling it with the option
-\texttt{-V}. Alternatively, you can simply start the interpreter and
-take a look at the startup message. Note that there may be different
-versions of Python installed on your system at the same time. The
-default Python version might also depend on the account in use
-(regular user vs. system administrator) which should be carefully
-checked when installing \PyX.
+development takes place under the current production version of Python (2.3.3
+by the time of this writing) and thus \PyX{} is better tested with this version. On the other hand, the examples and tests are verified to run with all Python
+versions 2.x. \PyX{} will not work with Python 1.x due to missing language 
+features. 
+
+The version of your Python interpreter can be determined by calling 
+it with the option \texttt{-V}. Alternatively, you can simply start the 
+interpreter and take a look at the startup message. Note that there may be 
+different versions of Python installed on your system at the same time. The
+default Python version need not be the same for all users.
 }
 
 \question{a}{Where can I get help if my question is not answered in this FAQ?}
@@ -87,6 +92,9 @@ your purposes may help.
 There is also a user discussion list about \PyX{} which you can subscribe to
 at \url{http://lists.sourceforge.net/lists/listinfo/pyx-user}. The archive of
 the discussion list is available at \url{http://sourceforge.net/mailarchive/forum.php?forum_id=23700}.
+
+Finally, it might be worth checking \url{http://pyx.sourceforge.net/pyxfaq.pdf}
+for an updated version of this FAQ.
 }
 
 \section{Python}
@@ -180,7 +188,7 @@ g.plot(graph.data("x.dat", x=1, y=2))\\
 g.writetofile("x")
 \end{progcode}
 \texttt{graphxy} creates a canvas (called \texttt{g} in this example) onto 
-which the graph will be drawn and sets the default behavior including the 
+which the graph will be drawn and it sets the default behavior including the 
 axis. There is, however, no default value for the width of the graph. In 
 \texttt{plot} you have to specify the name of the data file and the columns 
 from which the data should be taken. Finally, \texttt{writetofile} will 
@@ -200,7 +208,7 @@ g = graph.graphxy(width=10,\\
 ~~~~~~~~~~~~~~~~~~x=graph.linaxis(min=-2, max=2)\\
 ~~~~~~~~~~~~~~~~~~)\\
 \\
-g.plot(graph.function("y=x\^{}2"))\\
+g.plot(graph.function("y=x**2"))\\
 \\
 g.writetofile("x")
 \end{progcode}
@@ -215,9 +223,8 @@ Another, slightly more complex, example is also provided in the \PyX{}
 distribution as \path{examples/graphs/piaxis.py}.
 }
 
-\question{t}{How can I stack graphs?}
-{maybe we should recommend using the bbox.height() method instead of
-  using g.height?)}
+\question{a}{How can I stack graphs?}
+{}
 {\PyX{} always needs a canvas to draw on. One possibility therefore consists
 in creating a new canvas with
 \begin{progcode}
@@ -298,16 +305,6 @@ tg = graph.graphxy(width=10,\\
 \end{progcode}
 }
 
-\question{a}{Why are the axes extended beyond the data range?}
-{}
-{Because the developers like it this way (God knows why). One way to avoid
-this extension is to explicitly specify the minimum and maximum values for
-the axis. The other possibility is to set \texttt{datavmin=0} and/or
-\texttt{datavmax=1} in \texttt{linaxis} or \texttt{logaxis}. 
-
-Changes in the extension of axes are announced for version 0.5.
-}
-
 \question{a}{How do I get rid of the zero line?}
 {}
 {\label{q:zeropathattrs}
@@ -331,7 +328,7 @@ This will keep the horizontal zero line but discard the vertical one.
 \question{a}{How do I choose the symbol?}
 {}
 {\label{q:choose_symbol}
-Suppose a graph called \texttt{g} has been initialized, e.g. using
+Suppose a graph called \texttt{g} has been initialized, e.g. by using
 \texttt{graph.graphxy}. Then, data and the style of their representation
 in the graph are defined by calling \texttt{g.plot} like in the following
 example in which filled circles are requested:
@@ -513,19 +510,21 @@ you should take a look at the subdirectories of
 \path{TEXMF/fonts/type1}.
 }
 
-\question{t}{File \dots is not available or not readable}
-{AW: this is 0.5 already, but the english might be improved}
+\question{a}{File \dots\ is not available or not readable}
+{}
 {\label{q:no_lfs}
-Such an error message can already be encountered by simply running the
-example file \texttt{hello.py} included in the \PyX{} distribution.
-Usually, the error occures due to some restrictiv umask setting when
-unpacking the tar.gz sources. This may render the file mentioned in
-the above error message unreadable and the python distutil
-installation package doesn't change these file permissions back to be
-readable by everyone.}
+Such an error message might already occur when running the example file 
+\texttt{hello.py} included in the \PyX{} distribution. Usually, the error 
+occurs due to an overly restrictive umask setting applied when unpacking the 
+\texttt{tar.gz} sources. This may render the file mentioned in the error 
+message unreadable because the python distutil installation package doesn't 
+change the file permissions back to readable for everyone. 
 
-\question{t}{No information for font `cmr10' found in font mapping file}
-{rewrite this taking into account the pyxrc file}
+If the file exists, the problem can be solved by changing the permissions to 
+allow read access.}
+
+\question{a}{No information for font `cmr10' found in font mapping file}
+{}
 {\label{q:no_cmr10}
 Such an error message can already be encountered by simply running the example
 file \texttt{hello.py} included in the \PyX{} distribution. The likely reason
@@ -553,70 +552,41 @@ so it is important to find out which one TeX is actually using.
 \texttt{kpsewhich psfonts.map} might give this information.
 
 The most likely problem is that this file does not contain a line telling TeX
-what to do if it encounters a request for font cmr10, i.e. the following line 
+what to do if it encounters a request for font \texttt{cmr10}, i.e. the 
+following line 
 may be missing
 \begin{progcode}
 ~~~cmr10~~~~~~~~~~~CMR10~~~~~~~~~~~<cmr10.pfb
 \end{progcode}
 It is probable that the required lines (in practice, you do not just need 
-cmr10) are found in a file named \texttt{psfonts.cmz} which resides in 
-\path{TEXMF/dvips/bluesky}. The contents of \texttt{psfonts.cmz} should
-be inserted into \texttt{psfonts.map}. Probably, \texttt{psfonts.map} recommends
-not to do this by hand. In this case the instructions should be followed. 
-Otherwise, \texttt{psfonts.cmz} should be copied into \texttt{psfonts.map}
-while keeping a backup of the old \texttt{psfonts.map} just in case. After
-these changes \PyX{} most likely will be happy. When inserting 
-\texttt{psfonts.cmz} into \texttt{psfonts.map} it may be a good idea to 
-include \texttt{psfonts.amz} as well. \texttt{psfonts.amz} contains information 
-about some more fonts which might be needed at some point.
+\texttt{cmr10}) are found in a file named \texttt{psfonts.cmz} which resides in 
+\path{TEXMF/dvips/bluesky}. 
 
-Making these changes will imply that the \TeX{} system will use the cmr fonts 
-in Type1 format instead of pk format which is actually not a bad thing, in 
-particular if \texttt{latex}~/ \texttt{dvips}~/ \texttt{ps2pdf} is used to 
-generate PDF output. With fonts in pk format this will look ugly and using 
-Type1 fonts solves this problem as well. When \texttt{pdflatex} is used to 
-create PDF files, Type1 fonts will be used anyway.
-
-An alternative to changing the file \texttt{psfonts.map} in the \TeX{} system 
-consists in instructing \PyX{} to read other map files like 
-\texttt{psfonts.cmz} as well. This can be achieved by adding map files in the 
-following line of 
-\texttt{pyx/text.py}:
+One solution is to instruct \PyX{} to read additional map files like 
+\texttt{psfonts.cmz} or \texttt{psfonts.amz}. This can be achieved by modifying 
+the appropriate \texttt{pyxrc} file which is either the systemwide 
+\texttt{/etc/pyxrc} or \texttt{.pyxrc} in the user's home directory. Here, the 
+names of the map files to be read by \PyX{} should be appended separated by 
+whitespaces like in the following example:
 \begin{progcode}
-fontmap = readfontmap(["psfonts.map"])
+fontmaps = psfonts.map psfonts.cmz psfonts.amz
 \end{progcode}
 
-It may well be that future versions of \PyX{} take care of this problem so that
-one needs no longer to worry about \texttt{psfonts.map}, at least for the
-standard cmr fonts.
-}
-
-\question{o}{No information for font `xyz7t' found in font mapping file}
-{I think we should delete this question for the release, because it
-  should no longer be applicable to PyX 0.5 and above.}
-{After verifying that your problem was not addressed in \uaref{q:no_cmr10}, 
-you should switch on virtual font support by using \texttt{text.set(dvicopy=1)}.
-For those interested in more details: setting this option will cause
-\texttt{dvicopy} to be run after a \texttt{dvi}-file has been created by a call 
-to \TeX/\LaTeX. \texttt{dvicopy} expands any references to virtual fonts to
-base fonts and thus produces a modified copy of the original \texttt{dvi}-file.
-
-If this does not help, verify the existence of \texttt{xyz7t.vf} in one of the 
-subdirectories of \path{TEXMF/fonts/vf} (again, a TDS compliant \TeX{} 
-system is assumed \uaref{q:fontshape_undefined}). If the 
-virtual font file exists, find out which font it requests. A human readable 
-version of the virtual font file can be obtained with the help of 
-\texttt{vftovp}. A Unix operating system should allow you to obtain the 
-fontname by means of
-\begin{progcode}
-vftovp xyz7t.vf|grep FONTNAME
-\end{progcode}
-The resulting fontname has to be listed in \texttt{psfonts.map}. Use
-\begin{progcode}
-kpsewhich psfonts.map
-\end{progcode}
-to find out where this file resides (there may be more than one and it is
-important to know which one is actually read).
+Alternatively, the contents of \texttt{psfonts.cmz} can be inserted into 
+\texttt{psfonts.map}. Probably, \texttt{psfonts.map} recommends not to do this 
+by hand. In this case the instructions given in the file should be followed.  
+Otherwise, \texttt{psfonts.cmz} should be copied into \texttt{psfonts.map} while 
+keeping a backup of the old \texttt{psfonts.map} just in case. After these 
+changes, \PyX{} most likely will be happy. When inserting \texttt{psfonts.cmz} 
+into \texttt{psfonts.map} it may be a good idea to include \texttt{psfonts.amz} 
+as well. \texttt{psfonts.amz} contains information about some more fonts which 
+might be needed at some point. Making these changes ot \texttt{psfonts.map} 
+will imply that the \TeX{} system will use the cmr fonts in Type1 format 
+instead of pk format which is actually not a bad thing, in particular if 
+\texttt{latex}~/ \texttt{dvips}~/ \texttt{ps2pdf} is used to generate PDF 
+output. With fonts in pk format this will look ugly and using Type1 fonts 
+solves this problem as well. When \texttt{pdflatex} is used to create PDF files, 
+Type1 fonts will be used anyway.
 }
 
 \subsection{Fonts}
