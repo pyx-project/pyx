@@ -66,7 +66,7 @@ def test_ownmark(c, x, y):
     (seg2b,), (seg3b,) = p2.intersect(p3)
     (seg3c,), (seg4c,) = p3.intersect(p4)
     (seg4d,), (seg1d,) = p4.intersect(p1)
-    area = p1.split(seg1a, seg1d)[1] << p4.split(seg4d, seg4c)[1] << p3.split(seg3c, seg3b)[1] << p2.split(seg2b, seg2a)[1]
+    area = p1.split([seg1a, seg1d])[1] << p4.split([seg4d, seg4c])[1] << p3.split([seg3c, seg3b])[1] << p2.split([seg2b, seg2a])[1]
     area.append(path.closepath())
     g.stroke(area, style.linewidth.THick, deco.filled(color.gray(0.5)))
 

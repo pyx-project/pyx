@@ -134,7 +134,7 @@ def testnormpathtrafo(c):
     c.stroke(p.reversed().tangent(0, "30 pt"), deco.earrow.normal())
 
     #    p1, p2, p3 = p.split(1.0, 2.1)
-    p1, p2 = p.split(1.0, 2.1)
+    p1, p2 = p.split([1.0, 2.1])
     c.stroke(p1, color.rgb.red, style.linestyle.dashed)
     c.stroke(p2, color.rgb.green, style.linestyle.dashed)
     #    c.stroke(p3, color.rgb.blue, style.linestyle.dashed)
@@ -146,8 +146,8 @@ def testnormpathtrafo(c):
     c.stroke(circ2)
 
     isectcirc1, isectcirc2 = circ1.intersect(circ2)
-    segment1 = circ1.split(*isectcirc1)[0]
-    segment2 = circ2.split(*isectcirc2)[1]
+    segment1 = circ1.split(isectcirc1)[0]
+    segment2 = circ2.split(isectcirc2)[1]
 
     segment = segment1 << segment2
     segment.append(closepath())
