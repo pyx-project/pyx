@@ -574,10 +574,9 @@ class _readpipe(threading.Thread):
             pass
         while len(read):
             # universal EOL handling (convert everything into unix like EOLs)
-            read.replace("\r", "")
-            if not len(read) or read[-1] != "\n":
-                read += "\n"
-            self.gotqueue.put(read) # report, whats readed
+            # XXX is this necessary on pipes?
+            read = read.replace("\r", "").replace("\n", "") + "\n"
+            self.gotqueue.put(read) # report, whats read
             if self.expect is not None and read.find(self.expect) != -1:
                 self.gotevent.set() # raise the got event, when the output was expected (XXX: within a single line)
             read = self.pipe.readline() # read again
@@ -659,8 +658,6 @@ def _cleantmp(texrunner):
     - function to be registered by atexit
     - files contained in usefiles are kept"""
     if texrunner.texruns: # cleanup while TeX is still running?
-        texrunner.texruns = 0
-        texrunner.texdone = 1
         texrunner.expectqueue.put_nowait(None)              # do not expect any output anymore
         if texrunner.mode == "latex":                       # try to immediately quit from TeX or LaTeX
             texrunner.texinput.write("\n\\catcode`\\@11\\relax\\@@end\n")
@@ -669,6 +666,8 @@ def _cleantmp(texrunner):
         texrunner.texinput.close()                          # close the input queue and
         if not texrunner.waitforevent(texrunner.quitevent): # wait for finish of the output
             return                                          # didn't got a quit from TeX -> we can't do much more
+        texrunner.texruns = 0
+        texrunner.texdone = 1
     for usefile in texrunner.usefiles:
         extpos = usefile.rfind(".")
         try:
@@ -805,7 +804,7 @@ class texrunner:
         - the method must not be called, when self.texdone is already set
         - expr should be a string or None
         - when expr is None, TeX/LaTeX is stopped, self.texruns is unset and
-          while self.texdone becomes set
+          self.texdone becomes set
         - when self.preamblemode is set, the expr is passed directly to TeX/LaTeX
         - when self.preamblemode is unset, the expr is passed to \ProcessPyXBox
         - texmessages is a list of texmessage instances"""
