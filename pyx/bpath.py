@@ -172,7 +172,7 @@ class bpath:
                 result.append(sbpel)
         return bpath(result)
 
-    def intersect(self, canvas, other):
+    def intersect(self, other):
         """ intersect two bpaths
 
         returns a list of tuples consisting of the corresponding parameters of the
@@ -187,8 +187,7 @@ class bpath:
             for o_bpel in other.bpath:
                 tb = tb+1
                 intersections = intersections + \
-                                bpathelIntersect(canvas,
-                                                 s_bpel, ta-1, ta, maxsubdiv,
+                                bpathelIntersect(s_bpel, ta-1, ta, maxsubdiv,
                                                  o_bpel, tb-1, tb, maxsubdiv)
 
         return intersections
@@ -286,8 +285,7 @@ def arctobpathel(x, y, r, phi1, phi2):
     
     return _bpathel(x0, y0, x1, y1, x2, y2, x3, y3)
 
-def bpathelIntersect(canvas,
-                     a, a_t0, a_t1, a_subdiv,
+def bpathelIntersect(a, a_t0, a_t1, a_subdiv,
                      b, b_t0, b_t1, b_subdiv):
     """ intersect two bpathels
 
@@ -306,35 +304,27 @@ def bpathelIntersect(canvas,
             (ba, bb) = b.MidPointSplit()
             b_tm = 0.5*(b_t0+b_t1)
 
-            return ( bpathelIntersect(canvas,
-                                      aa, a_t0, a_tm, a_subdiv-1,
+            return ( bpathelIntersect(aa, a_t0, a_tm, a_subdiv-1,
                                       ba, b_t0, b_tm, b_subdiv-1) + 
-                     bpathelIntersect(canvas,
-                                      ab, a_tm, a_t1, a_subdiv-1,
+                     bpathelIntersect(ab, a_tm, a_t1, a_subdiv-1,
                                       ba, b_t0, b_tm, b_subdiv-1) + 
-                     bpathelIntersect(canvas,
-                                      aa, a_t0, a_tm, a_subdiv-1,
+                     bpathelIntersect(aa, a_t0, a_tm, a_subdiv-1,
                                       bb, b_tm, b_t1, b_subdiv-1) +
-                     bpathelIntersect(canvas,
-                                      ab, a_tm, a_t1, a_subdiv-1,
+                     bpathelIntersect(ab, a_tm, a_t1, a_subdiv-1,
                                       bb, b_tm, b_t1, b_subdiv-1) )
         else:
-            return ( bpathelIntersect(canvas,
-                                      aa, a_t0, a_tm, a_subdiv-1,
+            return ( bpathelIntersect(aa, a_t0, a_tm, a_subdiv-1,
                                       b, b_t0, b_t1, b_subdiv) +
-                     bpathelIntersect(canvas,
-                                      ab, a_tm, a_t1, a_subdiv-1,
+                     bpathelIntersect(ab, a_tm, a_t1, a_subdiv-1,
                                       b, b_t0, b_t1, b_subdiv) )
     else:
         if b_subdiv>0:
             (ba, bb) = b.MidPointSplit()
             b_tm = 0.5*(b_t0+b_t1)
 
-            return  ( bpathelIntersect(canvas,
-                                       a, a_t0, a_t1, a_subdiv,
+            return  ( bpathelIntersect(a, a_t0, a_t1, a_subdiv,
                                        ba, b_t0, b_t1, b_subdiv-1) +
-                      bpathelIntersect(canvas,
-                                       a, a_tm, a_t1, a_subdiv,
+                      bpathelIntersect(a, a_tm, a_t1, a_subdiv,
                                        ba, b_t0, b_tm, b_subdiv-1) )
         else:
             # no more subdivisions of either a or b

@@ -197,7 +197,7 @@ def testintersectbezier(c):
     c.draw(q)
     c.draw(p)
 
-    isect = bp.intersect(c, bq)
+    isect = bp.intersect(bq)
 
     for i in isect:
         (x, y) = bp.pos(i[0])
