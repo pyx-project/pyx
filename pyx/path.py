@@ -2105,6 +2105,56 @@ class normpath(path):
         """returns total arc length of normpath with accuracy epsilon"""
         return unit.t_pt(self.arclen_pt(epsilon))
 
+    def arclentoparam(self, lengths, epsilon=1e-5):
+        """returns the parameter value(s) matching the given length(s)"""
+
+        # split the list of lengths apart for positive and negative values
+        rests = [[],[]] # first the positive then the negative lengths
+        remap = [] # for resorting the rests into lengths
+        for length in helper.ensuresequence(lengths):
+            length = unit.topt(length)
+            if length >= 0.0:
+                rests[0].append(length)
+                remap.append([0,len(rests[0])-1])
+            else:
+                rests[1].append(-length)
+                remap.append([1,len(rests[1])-1])
+
+        allparams = [[0]*len(rests[0]),[0]*len(rests[1])]
+
+        # go through the positive lengths
+        for sp in self.subpaths:
+            # we need arclen for knowing when all the parameters are done
+            # for lengths that are done: rests[i] is negative
+            # sp._arclentoparam has to ignore such lengths
+            params, arclen = sp._arclentoparam_pt(rests[0], epsilon)
+            finis = 0 # number of lengths that are done
+            for i in range(len(rests[0])):
+                if rests[0][i] >= 0:
+                  rests[0][i] -= arclen
+                  allparams[0][i] += params[i]
+                else:
+                    finis += 1
+            if finis == len(rests[0]): break
+
+        # go through the negative lengths
+        for sp in self.reversed().subpaths:
+            params, arclen = sp._arclentoparam_pt(rests[1], epsilon)
+            finis = 0
+            for i in range(len(rests[1])):
+                if rests[1][i] >= 0:
+                  rests[1][i] -= arclen
+                  allparams[1][i] -= params[i]
+                else:
+                    finis += 1
+            if finis==len(rests[1]): break
+
+        # re-sort the positive and negative values into one list
+        allparams = [allparams[p[0]][p[1]] for p in remap]
+        if not helper.issequence(lengths): allparams = allparams[0]
+
+        return allparams
+
     def at_pt(self, param):
         """return coordinates in pts of path at parameter value param
 
@@ -2203,56 +2253,6 @@ class normpath(path):
                 st_b += sp_b.range()
             st_a += sp_a.range()
         return intersections
-
-    def arclentoparam(self, lengths, epsilon=1e-5):
-        """returns the parameter value(s) matching the given length(s)"""
-
-        # split the list of lengths apart for positive and negative values
-        rests = [[],[]] # first the positive then the negative lengths
-        remap = [] # for resorting the rests into lengths
-        for length in helper.ensuresequence(lengths):
-            length = unit.topt(length)
-            if length >= 0.0:
-                rests[0].append(length)
-                remap.append([0,len(rests[0])-1])
-            else:
-                rests[1].append(-length)
-                remap.append([1,len(rests[1])-1])
-
-        allparams = [[0]*len(rests[0]),[0]*len(rests[1])]
-
-        # go through the positive lengths
-        for sp in self.subpaths:
-            # we need arclen for knowing when all the parameters are done
-            # for lengths that are done: rests[i] is negative
-            # sp._arclentoparam has to ignore such lengths
-            params, arclen = sp._arclentoparam_pt(rests[0], epsilon)
-            finis = 0 # number of lengths that are done
-            for i in range(len(rests[0])):
-                if rests[0][i] >= 0:
-                  rests[0][i] -= arclen
-                  allparams[0][i] += params[i]
-                else:
-                    finis += 1
-            if finis == len(rests[0]): break
-
-        # go through the negative lengths
-        for sp in self.reversed().subpaths:
-            params, arclen = sp._arclentoparam_pt(rests[1], epsilon)
-            finis = 0
-            for i in range(len(rests[1])):
-                if rests[1][i] >= 0:
-                  rests[1][i] -= arclen
-                  allparams[1][i] -= params[i]
-                else:
-                    finis += 1
-            if finis==len(rests[1]): break
-
-        # re-sort the positive and negative values into one list
-        allparams = [allparams[p[0]][p[1]] for p in remap]
-        if not helper.issequence(lengths): allparams = allparams[0]
-
-        return allparams
 
     def range(self):
         """return maximal value for parameter value t"""
