@@ -18,7 +18,7 @@
       <table cellpadding=5 cellspacing=0 border=1>
         <tr><th class="tablehead">Goal</th><th class="tablehead">Status</th><th class="tablehead">Comment</th></tr>
         <tr><td colspan=3 class="tablehead">path system</td></tr>
-        <tr><td>argument handling of multi-parameter path methods</td><td>needs to be discussed</td><td>planned for one of the next releases</td></tr>
+        <tr><td>argument handling of multi-parameter path methods</td><td>done</td><td>will be in 0.8</td></tr>
         <tr><td>MetaPost-like equation arithmetics</td><td>experimental code</td><td>low priority</td></tr>
         <tr><td colspan=3 class="tablehead">boxes</td></tr>
         <tr><td>arbitrarily shaped boxes</td><td>experimental code</td><td>planned for one of the next releases</td></tr>
