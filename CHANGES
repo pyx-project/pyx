@@ -16,16 +16,17 @@ PyX
     - default patterns
     - stroke and fill should support trafos
     - make dash length available
+    - AW asks: shouldn't strokepath/fillpath be validated by "strokepath is not None" instead of just "strokepath"
   - text module:
     - further improve lfs handling
   - tex module:
     - copy lfs handling from text module (share the same source???)
 
-0.3.1 BUGFIX RELEASE (scheduled for 2003/04/04)
+0.3.1 BUGFIX RELEASE:
   - text module:
     - fix bug in dvi rule code where width was height
     - fix preamble attribute checking bug
-    - fix texmessage.load pattern search instead of match bug
+    - fix texmessage.load pattern search instead of pattern match bug
     - renamed vbox to parbox (was done in 0.3 partially only)
   - data module:
     - allow for tuples in arguments of the data class
@@ -33,12 +34,13 @@ PyX
   - graph module:
     - convenience: allow for part=None in _axis (base of linaxis and logaxis)
   - examples:
-    - added a latex example (requested by users)
-    - added back the integral example (prior part of the user manual)
+    - added a latex example (requested)
+    - added a attributechange example (requested)
+    - added back the integral example (requested; prior PyX 0.3 it was part of the user manual)
     - small change in vector example (allow for the access to the texrunner)
     - TODO: include examples in source distribution
   - canvas module:
-    correct arrow template calculation for very short paths
+    - correct arrow template calculation for very short paths
 
 0.3 (2003/03/31)
   - examples

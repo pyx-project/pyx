@@ -7,6 +7,7 @@ g = graph.graphxy(width=8, y=graph.logaxis(), y2=graph.linaxis(),
                   y3=graph.linaxis(min=0, max=1),
                   y4=graph.linaxis(min=0, max=2))
 
+# we generate some data and a function with multiple arguments
 r = random.Random()
 d = [(i, math.exp(0.8*i+r.random())) for i in range(1,10)]
 f = lambda x, a: x*a
