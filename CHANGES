@@ -36,7 +36,7 @@ TODO:
     - data.data should add line number like data.datafile
     - use csv module (new in 2.3)
     - Check for "inf" and "nan" in datafiles.
-      (When plotted, the graph does not complain, the postscript will be broken)
+      (When plotted, the graph does not complain, but the postscript will be broken)
   - canvas module:
     - multi page PostScript output
     - contructor should only take a texrunner keyword argument
@@ -44,11 +44,14 @@ TODO:
     - PDF support
     - SVG support
   - deco module:
-    - Think about names wriggle and curvecorners
+    - the name wriggle has to replaced by something better (e.g. wriggled?)
   - style and color module:
     - support modification of existing styles via __call__
   - bbox module:
     - height -> getheight, ...
+  - attr module:
+    - TODO: general documentation about attributes, clearing, merging?
+    - TODO: general documentation about changeable attributes?
 
 0.6 (XXXX/XX/XX):
   - bbox module:
@@ -57,9 +60,6 @@ TODO:
        speedup)
     - "undefined" corners of bounding boxes are no longer supported which makes
       the bounding box operations much more efficient.
-  - attr module:
-    - TODO: general documentation about attributes, clearing, merging?
-    - TODO: general documentation about changeable attributes?
   - graph module:
     - painters are using the new attribute scheme including changeable
       attributes (TODO: documentation)
@@ -100,7 +100,7 @@ TODO:
     - renamed _xxx -> xxx_pt
   - deco module:
     - wriggle decorator (TODO: documentation)
-    - curvecorners decorator (TODO: documentation)
+    - smoothed decorator (TODO: documentation)
     - arrow heads are no longer stroked (as suggested by Magnus Lie Hetland)
   - canvas:
     - writeEPSfile deprecates writetofile
@@ -112,7 +112,6 @@ TODO:
     - length comparision (David Beach) (TODO: documentation)
     - x-scale for TeX (TODO: documenation)
     - more unit tests
-
 
 0.5.1 (2004/01/22):
   - distribution:
