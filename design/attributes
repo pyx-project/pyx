@@ -20,10 +20,10 @@ other, while for one attribute kind, several choices are possible.
 Where are attributes used?
 --------------------------
 
-Typically, attributes occur in lists passed as an optional keyword
-argument to a method or a function. The object the attributes refer to
-might be the first argument (not taking into account the self
-argument) of the method, like in
+Typically, attributes occur in lists passed as an optional keyword argument to
+a method or a function. The object the attributes are refering to is usually
+the first argument (not taking into account the self argument) of the method,
+like in
 
     canvas.stroke(path, [attr1, attr2, attr3])
 
@@ -46,18 +46,18 @@ complete list here:
     - clippings?
       (AW: might go away; boxes could do that)
 
-Operations usually allow for certain attibute categories only. For
-example when stroking a path, text attributes are not allowed, while
-stroke attributes and decoraters are. Some attributes might belong to
-several attribute categories like colors, which are both, stroke and
-fill attributes. This is described by multiple inheritance and the
-attribute categories can be fetched by the buildin isinstance method.
+Operations usually allow for certain attibute categories only. For example when
+stroking a path, text attributes are not allowed, while stroke attributes and
+decoraters are. Some attributes might belong to several attribute categories
+like colors, which are both, stroke and fill attributes. This is described by
+multiple inheritance and the attribute categories can be queried using the
+builtin isinstance method.
 
 
 Attribute instances as member variables
 ---------------------------------------
 
-Usable attributes are always instances. For simple mind attributes, we
+Usable attributes are always instances. For simple attributes, we
 have the following technology:
 
     class linewidth(strokestyle):
@@ -71,6 +71,9 @@ have the following technology:
 
 Thus there are different possibilities to get a linewidth: by
 linewidth("0.25 mm") and by linewidth.normal (and the like).
+Note that attribute classes usually contain a set of special
+attribute values as member variables. This is done in order
+to group the attributes in a nice way.
 
 
 Specializing attribute instances
@@ -82,7 +85,7 @@ striking, example would be changes in some color parameters of a color
 attribute. Consider a CMYK color, where only the blackness should be
 changed. Thus we need to have a syntax for further specializing an
 already existing attribute instance. This could be done by __call__
-(or some arbitrary other named method --- the later would not really
+(or some arbitrary other named method --- the latter would not really
 be helpfull in the authors eyes). The code would look like:
 
     some_cmyk_color = color.cmyk(0.1, 0.2, 0.3, 0.4)
@@ -110,17 +113,14 @@ They are passed in a special keyword argument.
 
     Example:
 
-    use_attr_list = attr.merge(original_attr_list, defaults=default_attr_list)
+    use_attr_list = attr.mergeattrs(original_attr_list)
 
-When original_attr_list or a member of original_attr_list is None, the
-result use_attr_list is None.
-
-There are special clearing attributes, which overwrite other
-attributes and do not add themself when merging an attribute list.
-By that it is possible to certain or all default attributes. There are
-prototypes for clearing attributes defined in attr.py.
-
-XXX We might be more explicit about clearing attributes.
+There are special clearing attributes, which overwrite other attributes and do
+not add themself when merging an attribute list. By that it is possible to
+change certain or all default attributes. To construct an instance of a
+clearing attributes which removes all preceding attributes of a certain
+class c use attr.clearclass(c). The attr module also contains a predefined
+instance attr.clear which clears all preceding attributes.
 
 
 Changeable attributes
