@@ -396,10 +396,15 @@ class symbol(_styleneedingpointpos):
 
     needsdata = ["vpos", "vposmissing", "vposvalid"]
 
-    # insert symbols
-    # note, that statements like cross = _crosssymbol are
+    # "inject" the predefinied symbols into the class:
+    #
+    # Note, that statements like cross = _crosssymbol are
     # invalid, since the would lead to unbound methods, but
-    # a single entry changeable list does the trick
+    # a single entry changeable list does the trick.
+    #
+    # Once we require Python 2.2+ we should use staticmethods
+    # to implement the default symbols inplace.
+
     cross = attr.changelist([_crosssymbol])
     plus = attr.changelist([_plussymbol])
     square = attr.changelist([_squaresymbol])
