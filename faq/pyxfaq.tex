@@ -507,6 +507,17 @@ you should take a look at the subdirectories of
 \path{TEXMF/fonts/type1}.
 }
 
+\question{t}{File \dots is not available or not readable}
+{this is for 0.5 already, please make it nice, since it is AW-englisch}
+{\label{q:no_lfs}
+Such an error message can already be encountered by simply running the
+example file \texttt{hello.py} included in the \PyX{} distribution.
+Usually, the error occures due to some restrictiv umask setting when
+unpacking the tar.gz sources. This may render the file mentioned in
+the above error message unreadable and the python distutil
+installation package doesn't change these file permissions back to be
+readable by everyone.}
+
 \question{t}{No information for font `cmr10' found in font mapping file}
 {rewrite this taking into account the pyxrc file}
 {\label{q:no_cmr10}
