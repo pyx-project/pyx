@@ -27,6 +27,7 @@ TODO:
     - keep an eye on PEP 324 (popen 5): it could make the texrunner much easier
     - empty lines in the preamble should not raise an error
     - depth information should be accessible
+    - texmessage.ignore should be allowed _everywhere_
   - unit and text module:
     - introduce xscale for scaling the TeX output
   - mathtree module:
