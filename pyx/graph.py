@@ -109,10 +109,78 @@ class frac:
     the axis partitioning uses rational arithmetics (with infinite accuracy)
     basically it contains self.enum and self.denom"""
 
-    def __init__(self, pos, power=None):
+    def stringfrac(self, s):
+        "converts a string 0.123 into a frac"
+        expparts = s.split("e")
+        if len(expparts) > 2:
+            raise ValueError("multiple 'e' found in '%s'" % s)
+        commaparts = expparts[0].split(".")
+        if len(commaparts) > 2:
+            raise ValueError("multiple '.' found in '%s'" % expparts[0])
+        if len(commaparts) == 1:
+            commaparts = commaparts[0], ""
+        result = frac((1, 10l), power=len(commaparts[1]))
+        neg = len(commaparts[0]) and commaparts[0][0] == "-"
+        if neg:
+            commaparts[0] = commaparts[0][1:]
+        elif len(commaparts[0]) and commaparts[0][0] == "+":
+            commaparts[0] = commaparts[0][1:]
+        if len(commaparts[0]):
+            if not commaparts[0].isdigit():
+                raise ValueError("unrecognized characters in '%s'" % s)
+            x = long(commaparts[0])
+        else:
+            x = 0
+        if len(commaparts[1]):
+            if not commaparts[1].isdigit():
+                raise ValueError("unrecognized characters in '%s'" % s)
+            y = long(commaparts[1])
+        else:
+            y = 0
+        result.enum = x*result.denom+y
+        if neg:
+            result.enum = -result.enum
+        if len(expparts) == 2:
+            neg = expparts[1][0] == "-"
+            if neg:
+                expparts[1] = expparts[1][1:]
+            elif expparts[1][0] == "+":
+                expparts[1] = expparts[1][1:]
+            if not expparts[1].isdigit():
+                raise ValueError("unrecognized characters in '%s'" % s)
+            if neg:
+                result *= frac((1, 10l),  power=long(expparts[1]))
+            else:
+                result *= frac((10, 1l),  power=long(expparts[1]))
+        return result
+
+    def floatfrac(self, x, floatprecision):
+        "converts a float into a frac with final resolution"
+        if helper.isinteger(floatprecision) and floatprecision < 0:
+            # this would be extremly vulnerable
+            raise RuntimeError("float resolution must be non-negative integer")
+        return self.stringfrac(("%%.%ig" % floatprecision) % x)
+
+    def __init__(self, x, power=None, floatprecision=10):
         "for power!=None: frac=(enum/denom)**power"
-        enum, denom = pos
-        if not helper.isinteger(enum) or not helper.isinteger(denom): raise TypeError("integer type expected")
+        if helper.isnumber(x):
+            value = self.floatfrac(x, floatprecision)
+            enum, denom = value.enum, value.denom
+        elif helper.isstring(x):
+            fraction = x.split("/")
+            if len(fraction) > 2:
+                raise ValueError("multiple '/' found in '%s'" % x)
+            value = self.stringfrac(fraction[0])
+            if len(fraction) == 2:
+                value2 = self.stringfrac(fraction[1])
+                value = value / value2
+            enum, denom = value.enum, value.denom
+        else:
+            try:
+                enum, denom = x
+            except TypeError:
+                enum, denom = x.enum, x.denom
+            if not helper.isinteger(enum) or not helper.isinteger(denom): raise TypeError("integer type expected")
         if not denom: raise ZeroDivisionError("zero denominator")
         if power != None:
             if not helper.isinteger(power): raise TypeError("integer type expected")
@@ -148,37 +216,6 @@ class frac:
         return "%i/%i" % (self.enum, self.denom)
 
 
-def _ensurefrac(arg):
-    """helper function to convert arg into a frac
-    - strings like 0.123, 1/-2, 1.23/34.21 are converted to a frac"""
-    # TODO: exponentials are not yet supported, e.g. 1e-10, etc.
-    # XXX: we don't need to force long on newer python versions
-
-    def createfrac(str):
-        "converts a string 0.123 into a frac"
-        commaparts = str.split(".")
-        for part in commaparts:
-            if not part.isdigit(): raise ValueError("non-digits found in '%s'" % part)
-        if len(commaparts) == 1:
-            return frac((long(commaparts[0]), 1))
-        elif len(commaparts) == 2:
-            result = frac((1, 10l), power=len(commaparts[1]))
-            result.enum = long(commaparts[0])*result.denom + long(commaparts[1])
-            return result
-        else: raise ValueError("multiple '.' found in '%s'" % str)
-
-    if helper.isstring(arg):
-        fraction = arg.split("/")
-        if len(fraction) > 2: raise ValueError("multiple '/' found in '%s'" % arg)
-        value = createfrac(fraction[0])
-        if len(fraction) == 2:
-            value2 = createfrac(fraction[1])
-            value = value / value2
-        return value
-    if not isinstance(arg, frac): raise ValueError("can't convert argument to frac")
-    return arg
-
-
 class tick(frac):
     """tick class
     a tick is a frac enhanced by
@@ -189,8 +226,11 @@ class tick(frac):
     When label is None, it should be automatically created (and stored), once the
     an axis painter needs it. Classes, which implement _Itexter do precisely that."""
 
-    def __init__(self, pos, ticklevel=None, labellevel=None, label=None, labelattrs=[]):
-        frac.__init__(self, pos)
+    def __init__(self, pos, ticklevel=0, labellevel=0, label=None, labelattrs=[], **kwargs):
+        """initializes the instance
+        - see class description for the parameter description
+        - **kwargs are passed to the frac constructor"""
+        frac.__init__(self, pos, **kwargs)
         self.ticklevel = ticklevel
         self.labellevel = labellevel
         self.label = label
@@ -199,17 +239,13 @@ class tick(frac):
     def merge(self, other):
         """merges two ticks together:
           - the lower ticklevel/labellevel wins
-          - when present, self.label is taken over; otherwise the others label is taken
-            (when self.label and other.label is present, the first wins)
+          - the label is *never* taken over from other
           - the ticks should be at the same position (otherwise it doesn't make sense)
             -> this is NOT checked"""
-        # TODO: shouldn't we change the merging of label (always take the first one) ... if it's None, leave it that way
         if self.ticklevel is None or (other.ticklevel is not None and other.ticklevel < self.ticklevel):
             self.ticklevel = other.ticklevel
         if self.labellevel is None or (other.labellevel is not None and other.labellevel < self.labellevel):
             self.labellevel = other.labellevel
-        if self.label is None:
-            self.label = other.label
 
     def __repr__(self):
         return "tick(%r, %r, %s, %s, %s)" % (self.enum, self.denom, self.ticklevel, self.labellevel, self.label)
@@ -318,8 +354,7 @@ class manualpart:
           the first sequence contains the values to be used for
           ticks with ticklevel/labellevel 0, the second sequence for
           ticklevel/labellevel 1, etc.
-        - tickpos and labelpos values must be frac instances or
-          something convertable to fracs by the _ensurefrac function
+        - tickpos and labelpos values are passed to the frac constructor
         - when the maximum ticklevel/labellevel is 0, just a sequence
           might be provided in tickpos and labelpos
         - when labelpos is None and tickpos is not None, the tick entries
@@ -356,19 +391,20 @@ class manualpart:
         ticks = list(self.mix)
         if helper.issequenceofsequences(self.tickpos):
             for fracs, level in zip(self.tickpos, xrange(sys.maxint)):
-                ticks = _mergeticklists(ticks, [tick((frac.enum, frac.denom), ticklevel=level, labellevel=None)
-                                                for frac in self.checkfraclist(*map(_ensurefrac, helper.ensuresequence(fracs)))])
+                ticks = _mergeticklists(ticks, [tick((f.enum, f.denom), ticklevel=level, labellevel=None)
+                                                for f in self.checkfraclist(*map(frac, helper.ensuresequence(fracs)))])
         else:
-            ticks = _mergeticklists(ticks, [tick((frac.enum, frac.denom), ticklevel=0, labellevel=None)
-                                            for frac in self.checkfraclist(*map(_ensurefrac, helper.ensuresequence(self.tickpos)))])
+            map(frac, helper.ensuresequence(self.tickpos))
+            ticks = _mergeticklists(ticks, [tick((f.enum, f.denom), ticklevel=0, labellevel=None)
+                                            for f in self.checkfraclist(*map(frac, helper.ensuresequence(self.tickpos)))])
 
         if helper.issequenceofsequences(self.labelpos):
             for fracs, level in zip(self.labelpos, xrange(sys.maxint)):
-                ticks = _mergeticklists(ticks, [tick((frac.enum, frac.denom), ticklevel=None, labellevel = level)
-                                                for frac in self.checkfraclist(*map(_ensurefrac, helper.ensuresequence(fracs)))])
+                ticks = _mergeticklists(ticks, [tick((f.enum, f.denom), ticklevel=None, labellevel = level)
+                                                for f in self.checkfraclist(*map(frac, helper.ensuresequence(fracs)))])
         else:
-            ticks = _mergeticklists(ticks, [tick((frac.enum, frac.denom), ticklevel=None, labellevel = 0)
-                                            for frac in self.checkfraclist(*map(_ensurefrac, helper.ensuresequence(self.labelpos)))])
+            ticks = _mergeticklists(ticks, [tick((f.enum, f.denom), ticklevel=None, labellevel = 0)
+                                            for f in self.checkfraclist(*map(frac, helper.ensuresequence(self.labelpos)))])
 
         _mergelabels(ticks, self.labels)
 
@@ -397,8 +433,7 @@ class linpart:
           is the distance between ticks with ticklevel/labellevel 0,
           the second sequence for ticklevel/labellevel 1, etc.;
           a single entry is allowed without being a sequence
-        - tickdist and labeldist values must be frac instances or
-          something convertable to fracs by the _ensurefrac function
+        - tickdist and labeldist values are passed to the frac constructor
         - when labeldist is None and tickdist is not None, the tick entries
           for ticklevel 0 are used for labels and vice versa (ticks<->labels)
         - labels are applied to the resulting partition via the
@@ -415,13 +450,13 @@ class linpart:
         - mix specifies another partition to be merged into the
           created partition"""
         if tickdist is None and labeldist is not None:
-            self.ticklist = (_ensurefrac(helper.ensuresequence(labeldist)[0]),)
+            self.ticklist = (frac(helper.ensuresequence(labeldist)[0]),)
         else:
-            self.ticklist = map(_ensurefrac, helper.ensuresequence(tickdist))
+            self.ticklist = map(frac, helper.ensuresequence(tickdist))
         if labeldist is None and tickdist is not None:
-            self.labellist = (_ensurefrac(helper.ensuresequence(tickdist)[0]),)
+            self.labellist = (frac(helper.ensuresequence(tickdist)[0]),)
         else:
-            self.labellist = map(_ensurefrac, helper.ensuresequence(labeldist))
+            self.labellist = map(frac, helper.ensuresequence(labeldist))
         self.labels = labels
         self.extendtick = extendtick
         self.extendlabel = extendlabel
@@ -491,8 +526,7 @@ class autolinpart:
         - tickdist should be a sequence, where the first value
           is the distance between ticks with ticklevel 0,
           the second for ticklevel 1, etc.
-        - tickdist values must be frac instances or
-          strings convertable to fracs by the _ensurefrac function
+        - tickdist values are passed to the frac constructor
         - labellevel is set to None except for those ticks in the partitions,
           where ticklevel is zero. There labellevel is also set to zero.
         - extendtick allows for the extension of the range given to the
@@ -516,7 +550,7 @@ class autolinpart:
             base = frac((10L, 1), int(logmm - 1))
         else:
             base = frac((10L, 1), int(logmm))
-        ticks = map(_ensurefrac, self.variants[0])
+        ticks = map(frac, self.variants[0])
         useticks = [tick * base for tick in ticks]
         self.lesstickindex = self.moretickindex = 0
         self.lessbase = frac((base.enum, base.denom))
@@ -531,7 +565,7 @@ class autolinpart:
         else:
             self.lesstickindex = 0
             self.lessbase.enum *= 10
-        ticks = map(_ensurefrac, self.variants[self.lesstickindex])
+        ticks = map(frac, self.variants[self.lesstickindex])
         useticks = [tick * self.lessbase for tick in ticks]
         part = linpart(tickdist=useticks, extendtick=self.extendtick, epsilon=self.epsilon, mix=self.mix)
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
@@ -542,7 +576,7 @@ class autolinpart:
         else:
             self.moretickindex = len(self.variants) - 1
             self.morebase.denom *= 10
-        ticks = map(_ensurefrac, self.variants[self.moretickindex])
+        ticks = map(frac, self.variants[self.moretickindex])
         useticks = [tick * self.morebase for tick in ticks]
         part = linpart(tickdist=useticks, extendtick=self.extendtick, epsilon=self.epsilon, mix=self.mix)
         return part.defaultpart(self.min, self.max, self.extendmin, self.extendmax)
@@ -1097,7 +1131,7 @@ class rationaltexter:
                     tick.temp_fracminus *= -1
                     tick.temp_fracdenom *= -1
                 gcd = self.gcd(tick.temp_fracenum, tick.temp_fracdenom)
-                (tick.temp_fracenum, dummy1), (tick.temp_fracdenom, dummy2) = divmod(tick.enum, gcd), divmod(tick.temp_fracdenom, gcd)
+                (tick.temp_fracenum, dummy1), (tick.temp_fracdenom, dummy2) = divmod(tick.temp_fracenum, gcd), divmod(tick.temp_fracdenom, gcd)
         if self.equaldenom:
             equaldenom = self.lcm(*[tick.temp_fracdenom for tick in ticks if tick.label is None])
             if equaldenom is not None:
@@ -1105,9 +1139,7 @@ class rationaltexter:
                     factor, dummy = divmod(equaldenom, tick.temp_fracdenom)
                     tick.temp_fracenum, tick.temp_fracdenom = factor * tick.temp_fracenum, factor * tick.temp_fracdenom
         for tick in labeledticks:
-            fracminus = ""
-            fracenumminus = ""
-            fracdenomminus = ""
+            fracminus = fracenumminus = fracdenomminus = ""
             if tick.temp_fracminus == -1:
                 if self.minuspos == 0:
                     fracminus = self.minus
@@ -1117,8 +1149,6 @@ class rationaltexter:
                     fracdenomminus = self.minus
                 else:
                     raise RuntimeError("invalid minuspos")
-            else:
-                tick.temp_fracminus = ""
             if self.skipenum0 and tick.temp_fracenum == 0:
                 tick.label = "0"
             elif (self.skip1 and self.skipdenom1 and tick.temp_fracenum == 1 and tick.temp_fracdenom == 1 and
@@ -1347,7 +1377,7 @@ class defaulttexter:
         self.biggestdecimal = biggestdecimal
         self.equaldecision = equaldecision
         self.decimaltexter = decimaltexter
-        self.exponentialtexter= exponentialtexter
+        self.exponentialtexter = exponentialtexter
 
     def labels(self, ticks):
         decticks = []
@@ -1578,9 +1608,9 @@ class axispainter(axistitlepainter):
             if tick.labellevel is not None:
                 labelattrs = helper.getsequenceno(self.labelattrs, tick.labellevel)
                 if labelattrs is not None:
-                    labelattrs = list(labelattrs[:])
+                    labelattrs = helper.ensurelist(labelattrs)[:]
                     if self.labeldirection is not None:
-                        labelattrs.append(self.labeldirection.trafo(dx, dy))
+                        labelattrs.append(self.labeldirection.trafo(tick.temp_dx, tick.temp_dy))
                     if tick.labelattrs is not None:
                         labelattrs.extend(helper.ensurelist(tick.labelattrs))
                     tick.temp_labelbox = axiscanvas.texrunner._text(tick.temp_x, tick.temp_y, tick.label, *labelattrs)
@@ -2109,6 +2139,18 @@ class _axis:
             else:
                 return self.invert(self.tickvmin), self.invert(self.tickvmax)
 
+    def checkfraclist(self, fracs):
+        "orders a list of fracs, equal entries are not allowed"
+        if not len(fracs): return []
+        sorted = list(fracs)
+        sorted.sort()
+        last = sorted[0]
+        for item in sorted[1:]:
+            if last == item:
+                raise ValueError("duplicate entry found")
+            last = item
+        return sorted
+
     def finish(self, graph):
         if self.finished:
             return
@@ -2124,6 +2166,8 @@ class _axis:
                             raise RuntimeError("only one partitioner allowed")
                         parter = p
                         parterpos = i
+                self.part[:parterpos] = self.checkfraclist(self.part[:parterpos])
+                self.part[parterpos+1:] = self.checkfraclist(self.part[parterpos+1:])
             else:
                 parter = self.part
             if parter is not None:

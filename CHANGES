@@ -7,11 +7,20 @@ PyX
   - graph module:
     - tick.text is renamed to tick.label
     - ticks and labels are renamed to tickpos/tickdist and labelpos/labeldist in partitioning
+    - ticks can be used in the part to mix a partitioner with some manual ticks
+      -> manualpart and the mix technique is not needed anymore
+         (both things are still available and working, but they will be removed in the future)
+      (done up to documentation)
+    - _ensurefrac is implemented inside the frac constructor now; initialization
+      is possible by:
+      - a (enum, denom) tuple now (previously there were two arguments)
+      - a string (as before via _ensurefrac)
+      - exponential strings are allowed as well (e.g. "1e10" etc.)
+      - a float (precision is determined by floatprecision -- the number of decimal places)
     - separate texter out of the axispainter (done up to the documentation)
     - dense -> density (done including the documentation; TODO in tests/examples?)
     - axis.maxworse (done up to the documentation)
-    IN PROGRESS:
-    - axis interface
+    - axis interface (done up to the documentation)
     TODO:
     - do not include unneeded line segments when the axis range is set manually
     - allow for an iteration of a graph style, when it is used several times
