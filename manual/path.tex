@@ -1,186 +1,13 @@
-\chapter{Basic graphics}
-
-\sectionauthor{J\"org Lehmann}{joergl@users.sourceforge.net} 
+\section{Module \module{path}}
 
 \label{path}
-
-\section{Introduction}
-
-The path module allows one to construct PostScript-like
-\textit{paths}, which are one of the main building blocks for the
-generation of drawings. A PostScript path is an arbitrary shape built
-up of straight lines, arc segments and cubic Bezier curves. Such a
-path does not have to be connected but may also consist of multiple
-connected segments, which will be called \textit{sub paths} in the
-following.
-
-Usually, a path is constructed by passing a list of the path
-primitives \class{moveto}, \class{lineto}, \class{curveto}, etc., to the
-constructor of the \class{path} class. The following code snippet, for
-instance, defines a path \var{p} that consists of a straight line
-from the point $(0, 0)$ to the point $(1, 1)$
-\begin{verbatim}
-from pyx import *
-p = path.path(path.moveto(0, 0), path.lineto(1, 1))
-\end{verbatim}
-Equivalently, one can also use the predefined \class{path} subclass
-\class{line} and write
-\begin{verbatim}
-p = path.line(0, 0, 1, 1)
-\end{verbatim}
-
-While you can already do some geometrical operations with the
-just created path (see next section), we need another \PyX{} object
-in order to be actually able to draw the path, namely
-an instance of the \class{canvas} class. By convention, we use
-the name \var{c} for this instance:
-\begin{verbatim}
-c = canvas.canvas()
-\end{verbatim}
-In order to draw the path on the canvas, we use the \method{stroke()} method
-of the \class{canvas} class, i.e.,
-\begin{verbatim}
-c.stroke(p)
-c.writeEPSfile("line")
-\end{verbatim}
-To complete the example, we have added a \method{writeEPSfile()} call,
-which writes the contents of the canvas into the given file.
-
-Let us as second example define a path which consists of more than 
-one sub path:
-\begin{verbatim}
-cross = path.path(path.moveto(0, 0), path.rlineto(1, 1),
-                  path.moveto(1, 0), path.rlineto(-1, 1))
-\end{verbatim}
-The first sub path is again a straight line from $(0, 0)$ to $(1, 1)$,
-with the only difference that we now have used the \class{rlineto}
-class, whose arguments count relative from the last point in the path.
-The second \class{moveto} instance opens a new sub path starting at the
-point $(1, 0)$ and ending at $(0, 1)$. Note that although both lines
-intersect at the point $(1/2, 1/2)$, they count as separate sub paths.
-The general rule is that each occurence of \class{moveto} opens a new
-sub path. This means that if one wants to draw a rectangle, one should
-not use
-\begin{verbatim}
-# wrong: do not use moveto when you want a single sub path
-rect1 = path.path(path.moveto(0, 0), path.lineto(0, 1),
-                  path.moveto(1, 0), path.lineto(1, 1),
-                  path.moveto(1, 1), path.lineto(1, 1),
-                  path.moveto(0, 1), path.lineto(0, 0))
-\end{verbatim}
-which would construct a rectangle consisting of four disconnected
-sub paths. Instead the correct way of defining a rectangle is 
-\begin{verbatim}
-# correct: a rectangle consisting of a single closed sub path
-rect2 = path.path(path.moveto(0, 0), path.lineto(0, 1), 
-                  path.lineto(1, 1), path.lineto(1, 0),
-                  path.closepath())
-\end{verbatim}
-%
-\begin{figure}
-\centerline{\includegraphics{rects}}
-\caption{Not closed (left) and closed (midlle) rectangle. Filling a
-  path (right) always closes it automatically.}
-\label{fig:rects}
-\end{figure}
-Note that for the last straight line of the rectangle (from $(0, 1)$
-back to the origin at $(0, 0)$)) we have used \class{closepath}.  This
-directive adds a straight line from the current point to the first
-point of the current sub path and furthermore \textit{closes} the sub
-path, i.e., it joins the beginning and the end of the line segment.
-The difference can be appreciated in Fig.~\ref{fig:rects}, where
-also a filled (and at the same time stroked) rectangle is shown.
-The corresponding code looks like
-\begin{verbatim}
-c.stroke(rect1, [deco.filled([color.grey(0.95)])])
-\end{verbatim}
-The important point to remember here is that when filling a path, PostScript
-automatically closes it.
-
-XXX more on styles and attributes and reference to corresponding section
-
-Of course, rectangles are also predefined in \PyX{}, so above we could
-have as well written
-\begin{verbatim}
-rect2 = path.rect(0, 0, 1, 1)
-\end{verbatim}
-Here, the first two arguments specify the origin of the rectangle
-while the second two arguments define its width and height,
-respectively.
-
-XXX arc, bezier example
-
-\section{Path operations}
-
-Often, one not only wants to stroke or fill a path on the canvas
-but before do some geometrical operations with it. For instance, one
-might want to intersect one path with another one and the split the
-paths at the intersection points and then join the segments together
-in a new way. \PyX{} supports such tasks by means of a number
-of path methods, which we will introduce in the following.
-
-Suppose you want to draw the radii to the intersection points of a
-circle with a straight line. This task can be done using the following
-code which gives the result shown in Fig.~\ref{fig:radii}
-\verbatiminput{radii.py}
-\begin{figure}
-\centerline{\includegraphics{radii}}
-%\caption{}
-\label{fig:radii}
-\end{figure}
-Passing another path, here \var{line}, to the \method{intersect()} method
-of \var{circle}, we obtain a tuple of parameter values of the
-intersection points. The first element of the tuple is a list of
-parameter values for the path whose \method{intersect()} method we have
-called, the second element is the corresponding list for the path
-passed as argument to this method. In the present example, we only
-need one list of parameter values, namely \var{isects_circle}.
-Iterating over the elements of this list, we draw the radii, using the
-\method{at()} path method to obtain the point corresponding to the
-parameter value.
-
-Another powerful feature of \PyX{} is its ability to split paths at a
-given set of parameters. For instance, in order to fill in the
-previous example the segment of the circle delimited by the straight
-line (cf.\ Fig.~\ref{fig:radii2}), you first have to construct a path
-corresponding to the outline of this segment. The following code
-snippet does yield this \var{segment}
-\begin{verbatim}
-arc1, arc2 = circle.split(isects_circle)
-arc = arc1.arclen()<arc2.arclen() and arc1 or arc2
-
-isects_line.sort()
-line1, line2, line3 = line.split(isects_line)
-
-segment = line2 << arc
-\end{verbatim}
-\begin{figure}
-\centerline{\includegraphics{radii2}}
-%\caption{}
-\label{fig:radii2}
-\end{figure}
-Here, we first split the circle using the \method{split()} method passing
-the list of parameters obtained above. Since the circle is closed,
-this yields two arc segments. We then use the \method{arclen()}, which
-returns the arc length of the path, to find the shorter of the two
-arcs. Before splitting the line, we have to take into account that
-the \method{split()} method only accepts a sorted list of parameters.
-Finally, we join the straight line and the arc segment. For
-this, we make use of the \verb|<<| operator, which not only adds
-the paths (which could be done using \samp{line2 + arc}), but also
-joins the last sub path of \var{line2} and the first one of
-\var{arc}. Thus, \var{segment} consists of only a single sub path
-and filling works as expected.
-
-XXX reverse, reversed, parametrisation, arclen parameters
-
-
-\section{Module path}
 
 The \module{path} module defines several important classes which are
 documented in the present section.
 
 \subsection{Class \class{path} --- PostScript-like paths}
+
+\label{path:path}
 
 \declaremodule{}{path}
 
@@ -353,7 +180,7 @@ a point with relative coordinates (\var{dx}, \var{dy}), which becomes
 the new current point.
 \end{classdesc}
 
-For the construction of arc segment, the following three operations
+For the construction of arc segments, the following three operations
 are available:
 
 \begin{classdesc}{arc}{x, y, r, angle1, angle2}
@@ -429,6 +256,8 @@ points given in the \var{points} argument.
 
 \subsection{Class \class{normpath}}
 
+\label{path:normpath}
+
 The \class{normpath} class represents a specialized form of a
 \class{path} containing only the elements \class{moveto},
 \class{lineto}, \class{curveto} and \class{closepath}. Such normalized
@@ -445,6 +274,14 @@ Additionally, you can specify the accuracy (in points) which is used
 in all \class{normpath} calculations by means of the keyword argument
 \var{epsilon}, which defaults to $10^{-5}$.  Note that the sum of a
 \class{normpath} and a \class{path} always yields a \class{normpath}.
+
+\begin{classdesc}{normpath}{arg=[], epsilon=1e-5}
+  Construct a normpath from \var{arg}. All numerical calculations will
+  be performed using an accuracy of the order of \var{epsilon} points.
+  The first argument \var{arg} can be a \class{path} or a another
+  \class{normpath} instance. Alternatively, a list of
+  \class{normsubpath} instances can be supplied as argument.
+\end{classdesc}
 
 In addition to the \class{path} methods, a \class{normpath} instance
 also offers the following methods, which operate on the instance itself:
@@ -464,6 +301,8 @@ also offers the following methods, which operate on the instance itself:
 \end{methoddesc}
 
 \subsection{Predefined paths}
+
+\label{path:predefined}
 
 For your convenience, some oft-used paths are already pre-defined. All
 of them are sub classes of the \class{path} class.
