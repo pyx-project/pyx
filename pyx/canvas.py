@@ -28,7 +28,7 @@
 A canvas holds a collection of all elements and corresponding attributes to be
 displayed. """
 
-import sys, cStringIO
+import cStringIO
 import attr, base, deco, deformer, unit, resource, style, trafo
 
 #
@@ -327,13 +327,11 @@ class canvas(_canvas):
     def writePDFfile(self, filename, **kwargs):
         import document
         document.document([document.page(self, **kwargs)]).writePDFfile(filename)
-        
+
     def writetofile(self, filename, *args, **kwargs):
         if filename[-4:] == ".eps":
             self.writeEPSfile(filename, *args, **kwargs)
         elif filename[-4:] == ".pdf":
             self.writePDFfile(filename, *args, **kwargs)
-        else:
-            sys.stderr.write("*** PyX Warning: deprecated usage of writetofile -- writetofile needs a filename extension or use an explicit call to writeEPSfile or the like\n")
-            self.writeEPSfile(filename, *args, **kwargs)
+        raise ValueError("writetofile needs a filename extension")
 

@@ -26,5 +26,7 @@ c = canvas.canvas()
 for t in tree(7):
     # apply the transformation to a "sub"-canvas and insert it into the "main" canvas
     c.insert(canvas.canvas([t])).stroke(path.line(0, 0, 0, l))
-c.writeEPSfile("tree", paperformat="a4")
-
+    # note that there is a difference when only transforming the line as in:
+    # c.stroke(path.line(0, 0, 0, l), [t])
+    # The difference is, that the linewidth would not be scaled down.
+c.writeEPSfile("tree")

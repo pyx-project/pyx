@@ -22,7 +22,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import colorsys, sys
+import colorsys
 import attr, style
 
 class color(attr.exclusiveattr, style.strokestyle, style.fillstyle):
@@ -216,7 +216,6 @@ class palette(color, attr.changeattr):
 
     def select(self, index, total):
         if total == 1:
-            sys.stderr.write("*** PyX Info: invalid palette range in palette.select, continue with mincolor\n")
             return self.mincolor
         return self.getcolor(index/(total-1.0))
 

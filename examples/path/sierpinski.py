@@ -19,9 +19,8 @@ for i in range(6):
     p = p.transformed(trafo.scale(0.5))
     # ... and three times plotted (translated accordingly)
     p += ( p.transformed(trafo.translate(0.5 * l, 0)) +
-           p.transformed(trafo.translate(0.25 * l, 0.5 * h)) )
+           p.transformed(trafo.translate(0.25 * l, 0.5 * h)))
 
 c = canvas.canvas()
 c.stroke(p, [style.linewidth.Thin])
-c.writeEPSfile("sierpinski", paperformat="a4")
-
+c.writeEPSfile("sierpinski")

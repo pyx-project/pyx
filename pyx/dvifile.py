@@ -22,7 +22,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import copy, cStringIO, exceptions, re, struct, string, sys
+import copy, cStringIO, exceptions, re, struct, string, sys, warnings
 import unit, epsfile, bbox, base, canvas, color, trafo, path, pykpathsea, resource
 
 
@@ -532,7 +532,7 @@ def readfontmap(filenames):
                 try:
                     fm = fontmapping(line)
                 except RuntimeError, e:
-                    sys.stderr.write("*** PyX Warning: Ignoring line %i in mapping file '%s': %s\n" % (lineno, filename, e))
+                    warnings.warn("Ignoring line %i in mapping file '%s': %s" % (lineno, filename, e))
                 else:
                     fontmap[fm.texname] = fm
         mapfile.close()
@@ -563,8 +563,8 @@ class font:
         # Check whether the given design size matches the one defined in the tfm file
         if abs(self.tfmfile.designsize - d) > 2:
             raise DVIError("design sizes do not agree: %d vs. %d" % (self.tfmfile.designsize, d))
-        if q < 0 or q > 134217728:
-            raise DVIError("font '%s' not loaded: bad scale" % self.name)
+        #if q < 0 or q > 134217728:
+        #    raise DVIError("font '%s' not loaded: bad scale" % self.name)
         if d < 0 or d > 134217728:
             raise DVIError("font '%s' not loaded: bad design size" % self.name)
 
@@ -589,21 +589,33 @@ class font:
         return 16L*self.q/16777216L*72/72.27
 
     def _convert_tfm_to_dvi(self, length):
-        return 16L*long(round(length*self.q*self.tfmconv))/16777216
+        # doing the integer math with long integers will lead to different roundings
+        # return 16*length*int(round(self.q*self.tfmconv))/16777216
 
-        # Knuth instead suggests the following algorithm based on integer logic only
-        # For z < 8388608 the result was checked and seemed to be equal.
+        # Knuth instead suggests the following algorithm based on 4 byte integer logic only
         # z = int(round(self.q*self.tfmconv))
         # b0, b1, b2, b3 = [ord(c) for c in struct.pack(">L", length)]
         # assert b0 == 0 or b0 == 255
-        # beta = 4
+        # shift = 4
         # while z >= 8388608:
-        #     z /= 2
-        #     beta -= 1
-        # result = ( ( ( ( ( b3 * z ) >> 8 ) + ( b2 * z ) ) >> 8 ) + ( b1 * z ) ) >> beta
+        #     z >>= 1
+        #     shift -= 1
+        # assert shift >= 0
+        # result = ( ( ( ( ( b3 * z ) >> 8 ) + ( b2 * z ) ) >> 8 ) + ( b1 * z ) ) >> shift
         # if b0 == 255:
-        #     result = result - (z << beta)
-        # assert result == 16*int(round(length*self.q*self.tfmconv))/16777216
+        #     result = result - (z << (8-shift))
+
+        # however, we can simplify this using a single long integer multiplication,
+        # but take into account the transformation of z
+        z = int(round(self.q*self.tfmconv))
+        assert -16777216 <= length < 16777216 # -(1 << 24) <= length < (1 << 24)
+        assert z < 134217728 # 1 << 27
+        shift = 20 # 1 << 20
+        while z >= 8388608: # 1 << 23
+            z >>= 1
+            shift -= 1
+        # length*z is a long integer, but the result will be a regular integer
+        return int(length*long(z) >> shift)
 
 #    we do not need that ...
 #    def _convert_tfm_to_pt(self, length):
@@ -917,10 +929,10 @@ class dvifile:
         #        Note that q is actually s in large parts of the documentation.
         # d:     design size (fix_word)
 
-        try:
-            font = virtualfont(fontname, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.fontmap, self.debug > 1)
-        except (TypeError, RuntimeError):
-            font = type1font(fontname, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.fontmap, self.debug > 1)
+        #try:
+        #    font = virtualfont(fontname, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.fontmap, self.debug > 1)
+        #except (TypeError, RuntimeError):
+        font = type1font(fontname, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.fontmap, self.debug > 1)
 
         self.fonts[num] = font
 
@@ -941,11 +953,8 @@ class dvifile:
         if self.debug:
             self.debugfile.write("%d: xxx '%s'\n" % (self.filepos, s))
         if not s.startswith("PyX:"):
-            #if s.startswith("Warning:"):
-                sys.stderr.write("*** PyX Warning: ignoring special '%s'\n" % s)
-                return
-            #else:
-            #    raise RuntimeError("the special '%s' cannot be handled by PyX, aborting" % s)
+            warnings.warn("ignoring special '%s'" % s)
+            return
 
         # it is in general not safe to continue using the currently active font because
         # the specials may involve some gsave/grestore operations

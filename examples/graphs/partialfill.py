@@ -6,8 +6,8 @@ from pyx import *
 xax = graph.axis.linear(min=-1, max=1.0, painter=None)
 yax = graph.axis.linear(min=-1.3, max=1.3, painter=None)
 g = graph.graphxy(width=10, ratio=2, x=xax, y=yax)
-pifline = g.plot(graph.data.function("y=sin(1.0/(x**2+0.02122))", points=1000))
-pihoriz = g.plot(graph.data.function("y=0.5*x", points=2))
+pifline = g.plot(graph.data.function("y(x)=sin(1.0/(x**2+0.02122))", points=1000))
+pihoriz = g.plot(graph.data.function("y(x)=0.5*x", points=2))
 g.finish()
 
 # fetch path from info returned by plot method of graph

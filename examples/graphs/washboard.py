@@ -17,7 +17,7 @@ g = graphxy(height=5, x2=None, y2=None,
             x=linear(min=-2.5*pi, max=3.3*pi, parter=None,
                       painter=mypainter, title=r"$\delta\phi$"),
             y=linear(min=-2.3, max=2, painter=None))
-g.plot(function("y=mycos(x)", context=locals()),
+g.plot(function("y(x)=mycos(x)", context=locals()),
        [line(lineattrs=[linewidth.Thick])])
 g.finish()
 

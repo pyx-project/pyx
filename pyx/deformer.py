@@ -22,7 +22,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-import sys, math
+import math, warnings
 import attr, base, canvas, color, helper, path, style, trafo, unit
 
 ### helpers
@@ -140,8 +140,7 @@ def curveparams_from_endpoints_pt(A, B, tangentA, tangentB, curvA, curvB, obeycu
             b = -2.0 * E / curvB
             b = math.sqrt(abs(b)) * sign1(b)
         except ZeroDivisionError:
-            sys.stderr.write("*** PyX Warning: The connecting bezier is not uniquely determined. "
-                "The simple heuristic solution may not be optimal.\n")
+            warnings.warn("The connecting bezier is not uniquely determined. The simple heuristic solution may not be optimal.")
             a = b = 1.5 * math.hypot(A[0] - B[0], A[1] - B[1])
     else:
         if abs(curvA) < epsilon:
@@ -276,7 +275,7 @@ class cycloid(deformer): # {{{
         # make list of the lengths and parameters at points on subpath where we will add cycloid-points
         totlength = subpath.arclen_pt()
         if totlength <= skipfirst + skiplast + 2*radius*sinTurn:
-            sys.stderr.write("*** PyX Warning: subpath is too short for deformation with cycloid -- skipping...\n")
+            warnings.warn("subpath is too short for deformation with cycloid -- skipping...")
             return path.normpath([subpath])
 
         # parametrisation is in rotation-angle around the basepath
@@ -335,7 +334,7 @@ class cycloid(deformer): # {{{
                           basetrafo._apply(postZ, self.sign * postY))
 
         if len(points) <= 1:
-            sys.stderr.write("*** PyX Warning: subpath is too short for deformation with cycloid -- skipping...\n")
+            warnings.warn("subpath is too short for deformation with cycloid -- skipping...")
             return path.normpath([subpath])
 
         # Build the path from the pointlist
@@ -349,7 +348,7 @@ class cycloid(deformer): # {{{
         for i in range(1, len(points)-1):
             cycloidpath.normsubpaths[-1].append(path.normcurve_pt(*(points[i][2:6] + points[i+1][0:4])))
         if skiplast > subpath.epsilon:
-            cycloidpath.join(path.normpath(subpath.segments([params[-1], 1])))
+            cycloidpath.join(path.normpath(subpath.segments([params[-1], len(subpath)])))
 
         # That's it
         return cycloidpath
@@ -415,7 +414,7 @@ class smoothed(deformer): # {{{
             if alen > radius:
                 npitemnumbers.append(no)
             else:
-                sys.stderr.write("*** PyX Warning: smoothed is skipping a normsubpathitem that is too short\n")
+                warnings.warn("smoothed is skipping a normsubpathitem that is too short")
             cumalen += alen
         # XXX: what happens, if 0 or -1 is skipped and path not closed?
 
@@ -520,7 +519,7 @@ class smoothed(deformer): # {{{
         if normsubpath.closed:
             if do_moveto:
                 smoothpath.append(path.moveto_pt(*dp.strokepath.atbegin()))
-                sys.stderr.write("*** PyXWarning: The whole subpath has been smoothed away -- sorry\n")
+                warnings.warn("The whole subpath has been smoothed away -- sorry")
             smoothpath.append(path.closepath())
         else:
             epart = npitems[npitemnumbers[-1]].segments([params[-1][0], 1])[0]

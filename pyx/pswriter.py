@@ -205,6 +205,7 @@ class epswriter:
             raise IOError("cannot open output file")
 
         bbox = canvas.bbox()
+        bbox.enlarge(page.bboxenlarge)
         pagetrafo = page.pagetrafo(bbox)
 
         # if a page transformation is necessary, we have to adjust the bounding box

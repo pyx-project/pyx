@@ -21,7 +21,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import copy, sys
+import copy, warnings
 import pykpathsea, unit, style
 from t1strip import fullfont
 try:
@@ -84,6 +84,7 @@ class PDFpage(PDFobject):
         self.pagesrefno = pagesrefno
         self.page = page
         self.bbox = page.canvas.bbox()
+        self.bbox.enlarge(page.bboxenlarge)
         self.pagetrafo = page.pagetrafo(self.bbox)
         if self.pagetrafo:
             self.bbox.transform(self.pagetrafo)
@@ -261,7 +262,7 @@ class PDFfontfile(PDFobject):
 class PDFwriter:
 
     def __init__(self, document, filename, compress=1, compresslevel=6):
-        sys.stderr.write("*** PyX Warning: writePDFfile is experimental and supports only a subset of PyX's features\n")
+        warnings.warn("writePDFfile is experimental and supports only a subset of PyX's features")
 
         if filename[-4:] != ".pdf":
             filename = filename + ".pdf"
@@ -272,7 +273,7 @@ class PDFwriter:
 
         if compress and not haszlib:
             compress = 0
-            sys.stderr.write("*** PyX Warning: compression disabled due to missing zlib module\n")
+            warnings.warn("compression disabled due to missing zlib module")
         self.compress = compress
         self.compresslevel = compresslevel
 

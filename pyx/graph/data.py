@@ -23,7 +23,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-import re, ConfigParser
+import re, ConfigParser, warnings
 from pyx import mathtree, text
 from pyx.graph import style
 
@@ -588,6 +588,7 @@ class conffile(data):
 
 class function(_dynamicdata):
 
+    assignmentpattern = re.compile(r"\s*([a-z_][a-z0-9_]*)\s*\(\s*([a-z_][a-z0-9_]*)\s*\)\s*=", re.IGNORECASE)
     defaultstyles = [style.line()]
 
     def __init__(self, expression, title=notitle, min=None, max=None,
@@ -601,22 +602,29 @@ class function(_dynamicdata):
         self.max = max
         self.numberofpoints = points
         self.context = context.copy() # be save on late evaluations
-        self.yname, expression = [x.strip() for x in expression.split("=")]
+        m = self.assignmentpattern.match(expression)
+        if m:
+            self.yname, self.xname = m.groups()
+            expression = expression[m.end():]
+        else:
+            warnings.warn("implicit variables are deprecated, use y(x)=... and the like", DeprecationWarning)
+            self.xname = None
+            self.yname, expression = [x.strip() for x in expression.split("=")]
         self.mathtree = parser.parse(expression)
 
     def getcolumnpointsindex_plotitem(self, plotitem, column):
         return plotitem.points, plotitem.columns[column]
 
     def initplotitem(self, plotitem, graph):
-        self.xname = None
-        for xname in self.mathtree.VarList():
-            if xname in graph.axes.keys():
-                if self.xname is None:
-                    self.xname = xname
-                else:
-                    raise ValueError("multiple variables found")
         if self.xname is None:
-            raise ValueError("no variable found")
+            for xname in self.mathtree.VarList():
+                if xname in graph.axes.keys():
+                    if self.xname is None:
+                        self.xname = xname
+                    else:
+                        raise ValueError("multiple variables found")
+            if self.xname is None:
+                raise ValueError("no variable found")
         plotitem.columns = {self.xname: 0, self.yname: 1}
 
     def getcolumnnames(self, plotitem):

@@ -12,15 +12,15 @@ class changesymbol(graph.style.symbol):
         self.palette = palette
         graph.style.symbol.__init__(self, **kwargs)
 
-    def columns(self, privatedata, sharedata, agraph, columns):
+    def columnnames(self, privatedata, sharedata, agraph, columnnames):
         # register the new column names
-        if self.sizename not in columns:
+        if self.sizename not in columnnames:
             raise ValueError("column '%s' missing" % self.sizename)
-        if self.colorname not in columns:
+        if self.colorname not in columnnames:
             raise ValueError("column '%s' missing" % self.colorname)
         return ([self.sizename, self.colorname] +
-                graph.style.symbol.columns(self, privatedata,
-                                           sharedata, agraph, columns))
+                graph.style.symbol.columnnames(self, privatedata,
+                                               sharedata, agraph, columnnames))
 
     def drawpoint(self, privatedata, sharedata, agraph):
         # replace the original drawpoint method by a slightly revised one

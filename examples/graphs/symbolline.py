@@ -18,7 +18,7 @@ g = graphxy(width=10,
             y=axis.linear(title=r"$x\sin(x^2)$", painter=p,
                           manualticks=[tick.tick(3, None, None)]))
 
-g.plot(data.function("y=x*sin(x**2)"),
+g.plot(data.function("y(x)=x*sin(x**2)"),
        # Line style is set before symbol style -> symbols will be draw
        # above the line.
        [graph.style.line([style.linewidth.Thin, style.linestyle.solid]),

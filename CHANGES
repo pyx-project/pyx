@@ -91,6 +91,7 @@ TODO:
     - path parameters and argument handling
   - document module: new
     - container classes for document and pages
+    - document.paperformat class (strings are deprecated)
   - canvas module:
     - writeEPSfile wraps a canvas in a single page document and performs the output
   - bbox module:
@@ -104,9 +105,18 @@ TODO:
   - graph modules:
     - graph styles:
       - addontop added to stackedbarpos; TODO: documentation
-  - prolog module: deleted
+      - column -> columnname renaming where appropriate; TODO: documentation
+      - histogram style added; TODO documentation
+    - graph data:
+      - function needs explicit variable definition (implicit variable definition is deprecated); TODO: documentation
+  - prolog module: deleted (replaced by resource module)
   - resource module: new
     - resources: fonts and definitions
+  - changed requirements to python 2.1:
+    - nested scopes are needed without fallback solution by the path module
+    - use warning module for warnings
+  - tex module:
+    - the very old tex module finally got removed completely
 
 
 0.7.1 (2004/12/15):

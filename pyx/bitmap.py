@@ -21,7 +21,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-import cStringIO, struct, sys
+import cStringIO, struct, warnings
 try:
     import zlib
     haszlib = 1
@@ -203,11 +203,11 @@ class bitmap(base.canvasitem):
                 self.decode = "[0 1 0 1 0 1]"
                 self.colorspace = "/DeviceRGB"
                 self.palettedata = None
-                sys.stderr.write("*** PyX Info: image with unknown palette mode converted to rgb image\n")
+                warnings.warn("image with unknown palette mode converted to rgb image")
         elif len(image.mode) == 1:
             if image.mode != "L":
                 image = image.convert("L")
-                sys.stderr.write("*** PyX Info: specific single channel image mode not natively supported, converted to regular grayscale\n")
+                warnings.warn("specific single channel image mode not natively supported, converted to regular grayscale")
             self.decode = "[0 1]"
             self.colorspace = "/DeviceGray"
         elif image.mode == "CMYK":
@@ -216,7 +216,7 @@ class bitmap(base.canvasitem):
         else:
             if image.mode != "RGB":
                 image = image.convert("RGB")
-                sys.stderr.write("*** PyX Info: image with unknown mode converted to rgb\n")
+                warnings.warn("image with unknown mode converted to rgb")
             self.decode = "[0 1 0 1 0 1]"
             self.colorspace = "/DeviceRGB"
 
@@ -233,7 +233,7 @@ class bitmap(base.canvasitem):
         if compressmode != None and imagecompressed != None:
             raise ValueError("compression of a compressed image not supported")
         if not haszlib and compressmode == "Flate":
-            sys.stderr.write("*** PyX Info: zlib module not available, disable compression\n")
+            warnings.warn("zlib module not available, disable compression")
             compressmode = None
 
         # create data

@@ -21,7 +21,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import sys
+import warnings
 import pswriter, pdfwriter, trafo, unit
 
 
@@ -47,7 +47,7 @@ def _paperformatfromstring(name):
 
 class page:
 
-    def __init__(self, canvas, pagename=None, paperformat=paperformat.A4, rotated=0, centered=1, fittosize=0, 
+    def __init__(self, canvas, pagename=None, paperformat=paperformat.A4, rotated=0, centered=1, fittosize=0,
                  margin=1 * unit.t_cm, bboxenlarge=1 * unit.t_pt, bbox=None):
         self.canvas = canvas
         self.pagename = pagename
@@ -58,8 +58,8 @@ class page:
             self.paperformat = paperformat
         else:
             self.paperformat = _paperformatfromstring(paperformat)
-            sys.stderr.write("*** PyX Warning: specification of paperformat by string is deprecated, use document.paperformat.%s instead\n" % paperformat.capitalize())
-            
+            warnings.warn("specification of paperformat by string is deprecated, use document.paperformat.%s instead" % paperformat.capitalize(), DeprecationWarning)
+
         self.rotated = rotated
         self.centered = centered
         self.fittosize = fittosize
@@ -110,7 +110,7 @@ class page:
                 atrafo = atrafo.scaled(sfactor, sfactor, self.margin + 0.5*paperwidth, self.margin + 0.5*paperheight)
 
             return atrafo
-        
+
         return None # no page transformation needed
 
 

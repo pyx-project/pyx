@@ -22,7 +22,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import glob, os, threading, Queue, traceback, re, tempfile, sys, atexit, time
+import glob, os, threading, Queue, traceback, re, tempfile, atexit, time, warnings
 import config, siteconfig, unit, box, canvas, trafo, version, attr, style, dvifile
 
 ###############################################################################
@@ -218,7 +218,7 @@ class _texmessagetexend(texmessage):
         fontpattern = re.compile(r"LaTeX Font Warning: Size substitutions with differences\s*\(Font\).* have occurred.\s*")
         m = fontpattern.search(texrunner.texmessageparsed)
         if m:
-            sys.stderr.write("LaTeX has detected Font Size substituion differences.\n")
+            warnings.warn("LaTeX has detected Font Size substituion differences.")
             texrunner.texmessageparsed = texrunner.texmessageparsed[:m.start()] + texrunner.texmessageparsed[m.end():]
 
         # check for "(see the transcript file for additional information)"
@@ -799,9 +799,9 @@ class texrunner:
                 hasevent = event.isSet()
                 if not hasevent:
                     if waited < self.waitfortex:
-                        sys.stderr.write("*** PyX Info: still waiting for %s after %i (of %i) seconds...\n" % (self.mode, waited, self.waitfortex))
+                        warnings.warn("still waiting for %s after %i (of %i) seconds..." % (self.mode, waited, self.waitfortex))
                     else:
-                        sys.stderr.write("*** PyX Error: the timeout of %i seconds expired and %s did not respond.\n" % (waited, self.mode))
+                        warnings.warn("the timeout of %i seconds expired and %s did not respond." % (waited, self.mode))
             return hasevent
         else:
             event.wait(self.waitfortex)

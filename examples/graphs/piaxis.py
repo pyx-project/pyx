@@ -7,8 +7,8 @@ g = graph.graphxy(width=8, key=graph.key.key(pos="bl"),
                            texter=axis.texter.rational(suffix=r"\pi")),
         y=axis.linear(title="$y$"))
 
-g.plot(graph.data.function("y=sin(x)", title=r"$\sin(x)$"))
-g.plot(graph.data.function("y=cos(x)", title=r"$\cos(x)$"))
+g.plot(graph.data.function("y(x)=sin(x)", title=r"$\sin(x)$"))
+g.plot(graph.data.function("y(x)=cos(x)", title=r"$\cos(x)$"))
 
 g.finish()
 g.stroke(g.ygridpath(0))
