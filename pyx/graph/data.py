@@ -61,6 +61,13 @@ class _Idata:
         - the column is identified by the parameter column as in getcolumnnumber"""
 
 
+class styledata:
+    """instances of this class are used to store data from the style(s)
+    and to pass point data to the style(s) -- this storrage class is shared
+    between all the style(s) in use by a data instance"""
+    pass
+
+
 class _data:
 
     defaultstyle = style.symbol()

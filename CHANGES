@@ -1,10 +1,6 @@
 PyX
 
 TODO:
-  - graph module
-    - common bboxes for different graphs
-    - exceptions in drawsymbol & friends...
-    - 3d graphs, circular graphs
   - style module:
     - default patterns
     - make dash length available
@@ -15,6 +11,15 @@ TODO:
     - messageparser for size differences at the end: Warning not Exception
     - messageparser for overfull/underfull vbox/hbox: Warning not Exception
     - newline removal when not disturbing texmessages only
+  - graph.graph module
+    - common bboxes for different graphs
+    - 3d graphs, circular graphs
+  - graph.style and graph.data modules
+    - exceptions in drawsymbol & friends...
+    - caution: another reorganization round is in progress
+      (its goal is to make graph styles combinable which will also
+      split up the style code in smaller parts -- those will then be
+      easier to substitute by inheritance)
   - graph.data module:
     - use csv module (new in 2.3)
     - Check for "inf" and "nan" in datafiles.
