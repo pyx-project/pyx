@@ -145,6 +145,21 @@ class normpathel(pathel):
 
         pass
 
+    def _split(self, context, t):
+        """splits normpathel
+
+        context: contex of normpathel
+        t: parameter value (0<=t<=1) at which to split
+
+        returns None or two tuples of normpathels corresponding to
+        the two parts of the orginal normpathel.
+
+        """
+
+        pass
+
+        
+
     def transformed(self, trafo):
         """return transformed normpathel according to trafo"""
 
@@ -195,6 +210,14 @@ class closepath(normpathel):
     def _reverse(self, context):
         return _lineto(*context.currentsubpath)
 
+    def _split(self, context, t):
+        x0, y0 = context.currentpoint
+        x1, y1 = context.currentsubpath
+        xs, ys = x0 + (x1-x0)*t, y0 + (y1-y0)*t
+
+        return ((_lineto(xs, ys),),
+                (_moveto(xs, ys), _lineto(x1, y1)))
+
     def write(self, file):
         file.write("closepath\n")
 
@@ -230,6 +253,9 @@ class _moveto(normpathel):
         return [_moveto(self.x, self.y)]
 
     def _reverse(self, context):
+        return None
+
+    def _split(self, context, t):
         return None
 
     def write(self, file):
@@ -275,6 +301,13 @@ class _lineto(normpathel):
     def _reverse(self, context):
         return _lineto(*context.currentpoint)
 
+    def _split(self, context, t):
+        x0, y0 = context.currentpoint
+        xs, ys = x0 + (self.x-x0)*t, y0 + (self.y-y0)*t
+
+        return ((_lineto(xs, ys),),
+                (_moveto(xs, ys), _lineto(self.x, self.y)))
+    
     def write(self, file):
         file.write("%f %f lineto\n" % (self.x, self.y) )
 
@@ -334,6 +367,14 @@ class _curveto(normpathel):
         return _curveto(self.x2, self.y2,
                         self.x1, self.y1,
                         context.currentpoint[0], context.currentpoint[1])
+
+    def _split(self, context, t):
+        bp1, bp2 = self._bpathel(context).split(t)
+
+        return ((_curveto(bp1.x1, bp1.y1, bp1.x2, bp1.y2, bp1.x3, bp1.y3),),
+                (_moveto(bp2.x0, bp2.y0),
+                _curveto(bp2.x1, bp2.y1, bp2.x2, bp2.y2, bp2.x3, bp2.y3)))
+
 
     def write(self, file):
         file.write("%f %f %f %f %f %f curveto\n" % ( self.x1, self.y1,
@@ -884,6 +925,10 @@ class path(base.PSCmd):
     def append(self, pathel):
         self.path.append(pathel)
 
+    def arclength(self, epsilon=1e-5):
+        """returns total arc length of path in pts with accuracy epsilon"""
+        return normpath(self).arclength(epsilon)
+
     def bbox(self):
         context = _pathcontext()
         abbox = bbox.bbox()
@@ -1046,25 +1091,81 @@ class normpath(path):
         """return reversed path"""
 
         context = _pathcontext()
+        
+        # we have to reverse subpath by subpath to get the closepaths right
         subpath = []
         np = normpath()
 
         # we append a _moveto operation at the end to end the last
         # subpath explicitely.
         for pel in self.path+[_moveto(0,0)]:
-            subpath.append(pel._reverse(context))
+            pelr =pel._reverse(context)
+            if pelr:
+                subpath.append(pelr)
 
             if subpath and (isinstance(pel, _moveto) or isinstance(pel, closepath)):
                 subpath.append(_moveto(*context.currentpoint))
                 subpath.reverse()
                 if isinstance(pel, closepath):
                      subpath.append(closepath())
-                np = np + path(*subpath) 
+                np = np + normpath(*subpath) 
                 subpath = []
 
             pel._updatecontext(context)
 
         return np
+
+
+    def split(self, t):
+        """split path at parameter value t"""
+
+        context = _pathcontext()
+        
+        np1 = normpath()
+        # np2 is None is a marker, that we still have to append to np1
+        np2 = None
+
+        for pel in self.path:
+            if np2 is None:
+                # we still have to construct np1
+                if isinstance(pel, _moveto):
+                    np1.path.append(pel)
+                else:
+                    if t>1:
+                        t -= 1
+                        np1.path.append(pel)
+                    else:
+                        pels1, pels2 = pel._split(context, t)
+                        
+                        for pel1 in pels1:
+                            np1.path.append(pel1)
+                            
+                        np2 = normpath(*pels2)
+                        
+                        # marker: we are creating the first subpath of np2
+                        np2isfirstsubpath = 1
+            else:
+                # construction of np2
+                # Note: We have to be careful to not close the first subpath!
+                
+                if np2isfirstsubpath :
+                    # closepath and _moveto both end a subpath, but we 
+                    # don't want to append a closepath for the
+                    # first subpath
+                    if isinstance(pel, closepath):
+                        np2isfirstsubpath = 0
+                    elif isinstance(pel, _moveto):
+                        np2isfirstsubpath = 0
+                        np2.path.append(pel)
+                    else:
+                        np2.path.append(pel)
+                else:
+                    np2.path.append(pel)
+
+            # go further along path
+            pel._updatecontext(context)
+
+        return np1, np2
 
     def transformed(self, trafo):
         """return transformed path"""
