@@ -1255,13 +1255,36 @@ class axispainter(attrlist.attrlist):
         if axis.title is not None and self.titleattrs is not None:
             axis.titlebox.printtext()
 
-class splitaxispainter:
+class splitaxispainter(attrlist.attrlist): # XXX: avoid code duplication with axispainter via inheritance
 
-    def __init__(self, breaklinesdist=0.05, breaklineslength=0.5, breaklinesangle=-60, breaklinesattrs=()):
+    paralleltext = -90
+    orthogonaltext = 0
+
+    def __init__(self, breaklinesdist=0.05,
+                       breaklineslength=0.5,
+                       breaklinesangle=-60,
+                       breaklinesattrs=(),
+                       titledist="0.3 cm",
+                       titleattrs=(),
+                       titledirection=-90,
+                       titlepos=0.5):
         self.breaklinesdist_str = breaklinesdist
         self.breaklineslength_str = breaklineslength
         self.breaklinesangle = breaklinesangle
         self.breaklinesattrs = breaklinesattrs
+        self.titledist_str = titledist
+        self.titleattrs = titleattrs
+        self.titledirection = titledirection
+        self.titlepos = titlepos
+
+    def reldirection(self, direction, dx, dy, epsilon=1e-10):
+        # XXX: direct code duplication from axispainter
+        direction += math.atan2(dy, dx) * 180 / math.pi
+        while (direction > 90 + epsilon):
+            direction -= 180
+        while (direction < -90 - epsilon):
+            direction += 180
+        return direction
 
     def subvbaseline(self, axis, v1=None, v2=None):
         if v1 is None:
@@ -1306,6 +1329,17 @@ class splitaxispainter:
             subaxis.dolayout(graph)
             if axis._extent < subaxis._extent:
                 axis._extent = subaxis._extent
+        titledist = unit.topt(unit.length(self.titledist_str, default_type="v"))
+        if axis.title is not None and self.titleattrs is not None:
+            dx, dy = axis.vtickdirection(axis, self.titlepos)
+            titleattrs = list(_ensuresequence(self.titleattrs))
+            if self.titledirection is not None and not self.attrcount(titleattrs, tex.direction):
+                titleattrs = titleattrs + [tex.direction(self.reldirection(self.titledirection, dx, dy))]
+            axis.titlebox = textbox(graph.tex, axis.title, textattrs=titleattrs)
+            axis._extent += titledist
+            axis.titlebox._linealign(axis._extent, dx, dy)
+            axis.titlebox.transform(trafo._translate(*axis._vtickpoint(axis, self.titlepos)))
+            axis._extent += axis.titlebox._extent(dx, dy)
 
     def paint(self, graph, axis):
         for subaxis in axis.axislist:
@@ -1328,6 +1362,8 @@ class splitaxispainter:
                                      path.closepath()), color.gray.white)
                 graph.stroke(breakline1, *_ensuresequence(self.breaklinesattrs))
                 graph.stroke(breakline2, *_ensuresequence(self.breaklinesattrs))
+        if axis.title is not None and self.titleattrs is not None:
+            axis.titlebox.printtext()
 
 
 class baraxispainter(attrlist.attrlist): # XXX: avoid code duplication with axispainter via inheritance
@@ -1460,7 +1496,7 @@ class baraxispainter(attrlist.attrlist): # XXX: avoid code duplication with axis
         if None not in (self.tickattrs, axis.innerticklength, axis.outerticklength):
             for pos in axis.relsizes:
                 if pos == axis.relsizes[0]:
-                    pos -= axis.ldist
+                    pos -= axis.firstdist
                 elif pos != axis.relsizes[-1]:
                     pos -= 0.5 * axis.dist
                 v = pos / axis.relsizes[-1]
@@ -1731,7 +1767,8 @@ class linkaxis:
 
 class splitaxis:
 
-    def __init__(self, axislist, splitlist=0.5, splitdist=0.1, relsizesplitdist=None, painter=splitaxispainter()):
+    def __init__(self, axislist, splitlist=0.5, splitdist=0.1, relsizesplitdist=1, title=None, painter=splitaxispainter()):
+        self.title = title
         self.axislist = axislist
         self.painter = painter
         self.splitlist = list(_ensuresequence(splitlist))
@@ -1844,16 +1881,16 @@ class splitaxis:
 
 class baraxis:
 
-    def __init__(self, subaxis=None, multisubaxis=0, title=None, dist=0.5, ldist=None, rdist=None, names=None, texts={}, painter=baraxispainter()):
+    def __init__(self, subaxis=None, multisubaxis=0, title=None, dist=0.5, firstdist=None, lastdist=None, names=None, texts={}, painter=baraxispainter()):
         self.dist = dist
-        if ldist is not None:
-            self.ldist = ldist
+        if firstdist is not None:
+            self.firstdist = firstdist
         else:
-            self.ldist = 0.5 * dist
-        if rdist is not None:
-            self.rdist = rdist
+            self.firstdist = 0.5 * dist
+        if lastdist is not None:
+            self.lastdist = lastdist
         else:
-            self.rdist = 0.5 * dist
+            self.lastdist = 0.5 * dist
         self.relsizes = None
         self.fixnames = 0
         self.names = []
@@ -1892,8 +1929,8 @@ class baraxis:
         return self.relsizes is not None
 
     def updaterelsizes(self):
-        self.relsizes = [i*self.dist + self.ldist for i in range(len(self.names) + 1)]
-        self.relsizes[-1] += self.rdist - self.dist
+        self.relsizes = [i*self.dist + self.firstdist for i in range(len(self.names) + 1)]
+        self.relsizes[-1] += self.lastdist - self.dist
         if self.multisubaxis:
             subrelsize = 0
             for i in range(1, len(self.relsizes)):
@@ -1943,7 +1980,7 @@ class baraxis:
                 subaxis = self.subaxis.createlinkaxis()
         else:
             subaxis = None
-        return baraxis(subaxis=subaxis, dist=self.dist, ldist=self.ldist, rdist=self.rdist, **args)
+        return baraxis(subaxis=subaxis, dist=self.dist, firstdist=self.firstdist, lastdist=self.lastdist, **args)
 
     createsubaxis = createlinkaxis
 
@@ -3429,7 +3466,9 @@ class _bariterator(changeattr):
 
 class bar:
 
-    def __init__(self, fromzero=1, stacked=0, xbar=0, barattrs=(canvas.stroked(color.gray.black), changecolor.Rainbow()), _bariterator=_bariterator(), _previousbar=None):
+    def __init__(self, fromzero=1, stacked=0, xbar=0,
+                       barattrs=(canvas.stroked(color.gray.black), changecolor.Rainbow()),
+                       _bariterator=_bariterator(), _previousbar=None):
         self.fromzero = fromzero
         self.stacked = stacked
         self.xbar = xbar

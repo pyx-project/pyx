@@ -11,12 +11,9 @@ PyX
     - mark class renamed to symbol
     - (text-)box distance measurement
     - moved axis partitioning to axis and axis painter
-    - automatic axis partitioning (general cleanup, distance measurement, documentation)
-    - splitaxis (done, but documentation missing)
-    - baraxis, baraxispainter, and bar style (implemented upto some goodies)
-    - histogramm style (not yet started; takes an hour :-))
-    - date and time axis (not yet started; takes probably a bit more than an hour)
-    - 3d graphs (some preliminary work done, but deferred for the moment)
+    - automatic axis partitioning (now officially: general cleanup, distance measurement, documentation)
+    - splitaxis
+    - baraxis, baraxispainter, and bar style
   - data module:
     - previously named datafile module
     - class "_datafile" renamed to class "data"

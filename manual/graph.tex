@@ -47,14 +47,16 @@ axis type&description\\
 \end{tabular}
 \end{center}
 
-Additional axis types are likely to be added in the future.
+Further axes types are available to support axes splitting and bar
+graphs (other axes types might be added in the future as well), but
+they behave quite different from the generic case and are thus
+described separately below.
 
 \subsection{Axes properties}
 
 Global properties of an axis are set as named parameters in the axis
-constructor. Both predefined axis, the \verb|linaxis| and the
-\verb|logaxis|, have the same set of named parameters listed in the
-following table:
+constructor. Both, the \verb|linaxis| and the \verb|logaxis|, have the
+same set of named parameters listed in the following table:
 
 \medskip
 \begin{tabularx}{\linewidth}{l>{\raggedright\arraybackslash}X}
@@ -64,12 +66,12 @@ argument name&description\\
 \texttt{min}&fixes axis minimum; if not set, it is automatically determined, but this might fail, for example for the $x$-range of functions, when it is not specified there\\
 \texttt{max}&as above, but for the maximum\\
 \texttt{reverse}&boolean; exchange minimum and maximum (might be used without setting minimum and maximum); if min>max and reverse is set, they cancel each other\\
-\texttt{divisor}&numerical divisor for the axis partitioning (its default value is 1)\\
+\texttt{divisor}&numerical divisor for the axis partitioning; default: \texttt{1}\\
 \texttt{suffix}&a suffix to indicate the divisor within an automatic axis labeling\\
-\texttt{datavmin}&minimal graph coordinate when adjusting the axis minima to the graph data; default is 0.05 (or 0, when min is present)\\
-\texttt{datavmax}&as above, but for the maximum; default is 0.95 (or 1, when max is present)\\
-\texttt{tickvmin}&minimal graph coordinate for placing ticks to the axis; default is 0\\
-\texttt{tickvmax}&as above, but for the maximum; default is 1\\
+\texttt{datavmin}&minimal graph coordinate when adjusting the axis minima to the graph data; default: \texttt{0.05} (or \texttt{0}, when min is present)\\
+\texttt{datavmax}&as above, but for the maximum; default: \texttt{0.95} (or \texttt{1}, when max is present)\\
+\texttt{tickvmin}&minimal graph coordinate for placing ticks to the axis; default: \texttt{0}\\
+\texttt{tickvmax}&as above, but for the maximum; default: \texttt{1}\\
 \texttt{part}&axis partitioning (described below)\\
 \texttt{rate}&axis partition rating (described below)\\
 \texttt{dense}&dense parameter for the axis partition rating; if not set, the dense value for the graph is used\\
@@ -85,11 +87,13 @@ arithmetics, which avoids any kind of rounding problems to the cost of
 performance. The class \verb|frac| supplies a rational number.
 However, a partitioning is composed out of a sorted list of ticks,
 where the class \verb|tick| is derived from \verb|frac| and has
-additional properties called \verb|ticklevel|, \verb|labellevel|. If
-those values are \verb|None| it just means not present, \verb|0| means
-tick or label, respectively, \verb|1| means subtick or sublevel and so
-on. When \verb|labellevel| is not \verb|None|, a \verb|text| might be
-explicitly given, which will get used as the text of that label.
+additional properties called \verb|ticklevel| and \verb|labellevel|.
+When those values are \verb|None|, it just means not present, \verb|0|
+means tick or label, respectively, \verb|1| means subtick or sublevel
+and so on. When \verb|labellevel| is not \verb|None|, a \verb|text|
+might be explicitly given, which will get used as the text of that
+label. Otherwise the axis painter has to create an appropriate text
+for the label.
 
 We will first discuss manual partitioning schemes, namely a plain
 manual partition, another appropriate for linear axes and a third one
@@ -253,7 +257,8 @@ When an axis partitioning scheme returns several partitioning
 possibilities, the partitions are rated by an instance of a rater
 class provided as the parameter \verb|rate| at the axis constructor.
 It is used to calculate a positive rating number for a given axis
-partition. The lowest rated axis will be drawn in the end.
+partitioning. In the end, the lowest rated axis partitioning gets
+used.
 
 The rating consists of two steps. The first takes into account only
 the number of ticks, subticks, labels and so on in comparison to an
@@ -265,7 +270,7 @@ each other. Thereby partitions with overlapping labels get quashed
 out.
 
 The class \verb|axisrater| implements a rating with quite some
-parameters especially adjusted to linear and logarithmic axes. A
+parameters specifically adjusted to linear and logarithmic axes. A
 detailed description of the hole system goes beyond the scope of that
 manual. Take your freedom and have a look at the \PyX{} source code if
 you wish to adopt the rating to personal preferences.
@@ -389,6 +394,104 @@ plotted at the linked axis. Ticks and labels at levels equal or higher
 as the provided values get ignored. The default is \verb|None| (do not
 ignore any ticks) for the ticks and \verb|0| (ignore all labels) for
 the labels.
+
+\subsection{Special purpose axes}
+
+\subsubsection{Splitable axes}
+
+Axes with breaks are created by instances of the class
+\verb|splitaxis|. Its constructor takes the following parameters:
+
+\medskip
+\begin{tabularx}{\linewidth}{l>{\raggedright\arraybackslash}X}
+argument name&description\\
+\hline
+(axis list)&a list of axes to be used as subaxes (this is the first parameter of the constructor; it has no name)\\
+\texttt{splitlist}&a single number or a list split points of the possitions of the axis breaks in graph coordinates; the value \texttt{None} forces \texttt{relsizesplitdist} to be used; default: \texttt{0.5}\\
+\texttt{splitdist}&gap of the axis break; default: \texttt{0.1}\\
+\texttt{relsizesplitdist}&used when \texttt{splitlist} entries are \texttt{None}; gap of the axis break in values of the surrounding axes (on logarithmic axes, a decade corresponds to 1); the split position is adjusted to give both surrounding axes the same scale (thus, their range must be completely fixed); default: \texttt{1}\\
+\texttt{title}&axis title\\
+\texttt{painter}&axis painter; default: \texttt{splitaxispainter()} (described below)\\
+\end{tabularx}
+\medskip
+
+A split axis is build up from a list of ``subaxes''. Those subaxes
+have to provide some range information needed to identify the subaxis
+to be used out of a plain number (thus all axes minima and maxima has
+to be set except for the two subaxes at the egde, where for the first
+only the maximum is needed, while for the last only the minimum is
+needed). The only point left is the description of the specialized
+\verb|splitaxispainter|, where the constructor takes the following
+parameters:
+
+\medskip
+\begin{tabularx}{\linewidth}{l>{\raggedright\arraybackslash}X}
+argument name&description\\
+\hline
+\texttt{breaklinesdist}&(visual) distance between the break lines; default: \texttt{0.05}\\
+\texttt{breaklineslength}&(visual) length of break lines; default: \texttt{0.5}\\
+\texttt{breaklinesangle}&angle of the breakline with respect to the axis; default: \texttt{-60}\\
+\texttt{breaklinesattrs}&stroke attributes for the break lines (\texttt{None} to turn off the break lines, otherwise a single value or a tuple); default: \texttt{()}\\
+\end{tabularx}
+
+Additionally, the painter takes parameters for the axis title
+formatting like the standard axis painter class \verb|axispainter|.
+The parameters are \verb|titledist|, \verb|titleattrs|,
+\verb|titledirection|, and \verb|titlepos|.
+
+\subsubsection{Bar axes}
+
+Axes appropriate for bar graphs are created by instances of the class
+\verb|baraxis|. Its constructor takes the following parameters:
+
+\medskip
+\begin{tabularx}{\linewidth}{l>{\raggedright\arraybackslash}X}
+argument name&description\\
+\hline
+\texttt{subaxis}&baraxis can be recursive by having another axis as its subaxis; default: \texttt{None}\\
+\texttt{multisubaxis}&allow for multiple subaxis (boolean); default: \texttt{0}\\
+\texttt{title}&axis title\\
+\texttt{dist}&distance between bars (relative to the bar width); default: \texttt{0.5}\\
+\texttt{firstdist}&distance of the first bar to the border; default: \texttt{0.5*dist}\\
+\texttt{lastdist}&as before but for the last bar\\
+\texttt{names}&tuple of name identifiers for bars; when set, no other identifiers are allowed; default: \texttt{None}\\
+\texttt{texts}&dictionary translating names into label texts (otherwise just the names are used); default: \texttt{\{\}}\\
+\texttt{painter}&axis painter; default: \texttt{baraxispainter} (described below)\\
+\end{tabularx}
+\medskip
+
+In contrast to other axes, a bar axis uses name identifiers to
+calculate a possition at the axis. Usually, a style appropriate to a
+bar axis (this is right now just the bar style) set those names out of
+the data it recieves. However, the names can be forced and fixed.
+
+Bar axes can be recursive. Thus for a given value, an appropriate
+subaxis is choosen (usually another bar axis). Usually only a single
+subaxis is needed, because for each value the same recursive subaxis
+transformation has to be applied. However, this prevents the subaxis
+to be painted, but as soon as multisubaxis is turned on, the subaxes
+(note axes instead of axis) are painted as well (however their painter
+can be set to not paint anything). For that, duplications of the
+subaxis are created for each name (right now, this is only available
+for the bar axis). By that, each subaxis can have different names, in
+particular different number of names.
+
+The only point left is the description of the specialized
+\verb|baraxispainter|. It works quite similar as the
+\verb|axispainter|. Thus the constructor have quite some parameters in
+common, namely \verb|titledist|, \verb|titleattrs|,
+\verb|titledirection|, \verb|titlepos|, and \verb|baselineattrs|.
+Furthermore the two parameters \verb|innerticklength| and
+\verb|outerticklength| work like their counterparts in the
+\verb|axispainter|, but only plain values are allowed there (no
+tuples). However, they are both \verb|None| by default and no ticks
+get plotted. Then there is a hole bunch of name
+attribute identifiers, namely \verb|namedist|, \verb|nameattrs|,
+\verb|namedirection|, \verb|namehequalize|, \verb|namevequalize| which
+are identical to their counterparts called \verb|label...| instead of
+\verb|name|. Last but not least, there is a parameter \verb|namepos|
+which is analogous to \verb|titlepos| and set to \verb|0.5| by
+default.
 
 \section{Data}
 \label{graph:data}
@@ -593,6 +696,25 @@ The arrow allows for data names like the mark and introduces
 additionally the data names \verb|size| for the arrow size (as an
 multiplicator for the sizes provided to the constructor) and
 \verb|angle| for the arrow direction (in degree).
+
+\subsection{Bars}
+
+The class \verb|bar| must be used in combination with an
+\verb|baraxis| in order to create bar plots. The constructor takes the
+following parameters:
+
+\medskip
+\begin{tabularx}{\linewidth}{l>{\raggedright\arraybackslash}X}
+argument name&description\\
+\hline
+\texttt{fromzero}&bars start at zero (boolean); default: \texttt{1}\\
+\texttt{stacked}&stack bars (boolean/integer); for values bigger than 1 it is the number of bars to be stacked; default: \texttt{0}\\
+\texttt{xbar}&bars parallel to the graphs x-direction (boolean); default: \texttt{0}\\
+\texttt{barattrs}&fill attributes; default: \texttt{(canvas.stroked(color.gray.black), changecolor.Rainbow())}\\
+\end{tabularx}
+
+Additionally, the bar style takes two data names appropriate to the
+graph (like \verb|x|, \verb|x2|, and \verb|y|).
 
 \subsection{Iterateable style attributes}
 \label{graph:changeattrs}

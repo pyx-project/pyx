@@ -71,35 +71,35 @@ def test_allerrorbars(c, t, x, y):
     g.plot(graph.data(df, x="x", y="y", xmin="xmin", xmax="xmax", ymin="ymin", ymax="ymax", text="text"), graph.text())
     g.finish()
 
-def test_3d(c, t, x, y):
-
-    class Div(mathtree.MathTreeFunc2):
-        def __init__(self, *args):
-            mathtree.MathTreeFunc2.__init__(self, "div", *args)
-        def Calc(self, VarDict):
-            return divmod(self.ArgV[0].Calc(VarDict), self.ArgV[1].Calc(VarDict))[0]
-
-    class Mod(mathtree.MathTreeFunc2):
-        def __init__(self, *args):
-            mathtree.MathTreeFunc2.__init__(self, "mod", *args)
-        def Calc(self, VarDict):
-            return divmod(self.ArgV[0].Calc(VarDict), self.ArgV[1].Calc(VarDict))[1]
-
-    MyFuncs = mathtree.DefaultMathTreeFuncs + (Div, Mod)
-
-    g = c.insert(graph.graphxyz(t, x, y, height=5, width=5, depth=5,
-                                x=graph.linaxis(min=0, max=10, painter=graph.axispainter(baselineattrs=color.rgb.red)),
-                                y=graph.linaxis(min=0, max=10, painter=graph.axispainter(baselineattrs=color.rgb.green)),
-                                z=graph.linaxis(min=0, max=10, painter=graph.axispainter(baselineattrs=color.rgb.blue))))
-    g.plot(graph.paramfunction("k", 0, 120, "x, y, z = mod(k, 11), div(k, 11), exp(-0.1*(mod(k, 11)-5)*(mod(k, 11)-5)-0.1*(div(k, 11)-5)*(div(k, 11)-5))", points=121, parser=mathtree.parser(MathTreeFuncs=MyFuncs)), style = graph.surface())
-    g.finish()
+#def test_3d(c, t, x, y):
+#
+#    class Div(mathtree.MathTreeFunc2):
+#        def __init__(self, *args):
+#            mathtree.MathTreeFunc2.__init__(self, "div", *args)
+#        def Calc(self, VarDict):
+#            return divmod(self.ArgV[0].Calc(VarDict), self.ArgV[1].Calc(VarDict))[0]
+#
+#    class Mod(mathtree.MathTreeFunc2):
+#        def __init__(self, *args):
+#            mathtree.MathTreeFunc2.__init__(self, "mod", *args)
+#        def Calc(self, VarDict):
+#            return divmod(self.ArgV[0].Calc(VarDict), self.ArgV[1].Calc(VarDict))[1]
+#
+#    MyFuncs = mathtree.DefaultMathTreeFuncs + (Div, Mod)
+#
+#    g = c.insert(graph.graphxyz(t, x, y, height=5, width=5, depth=5,
+#                                x=graph.linaxis(min=0, max=10, painter=graph.axispainter(baselineattrs=color.rgb.red)),
+#                                y=graph.linaxis(min=0, max=10, painter=graph.axispainter(baselineattrs=color.rgb.green)),
+#                                z=graph.linaxis(min=0, max=10, painter=graph.axispainter(baselineattrs=color.rgb.blue))))
+#    g.plot(graph.paramfunction("k", 0, 120, "x, y, z = mod(k, 11), div(k, 11), exp(-0.1*(mod(k, 11)-5)*(mod(k, 11)-5)-0.1*(div(k, 11)-5)*(div(k, 11)-5))", points=121, parser=mathtree.parser(MathTreeFuncs=MyFuncs)), style = graph.surface())
+#    g.finish()
 
 def test_split(c, t, x, y):
     g = c.insert(graph.graphxy(t, x, y, height=5, width=5,
                                x=graph.logaxis(),
                                #y=graph.splitaxis((graph.linaxis(max=0.002), graph.splitaxis((graph.linaxis(min=0.01, max=0.015), graph.linaxis(min=0.017)))))))
                                #y=graph.splitaxis((graph.linaxis(max=0.002), graph.linaxis(min=0.01, max=0.015), graph.linaxis(min=0.017)), splitlist=(0.15, 0.75))))
-                               y=graph.splitaxis((graph.linaxis(min=0, max=0.005), graph.linaxis(min=0.01, max=0.015), graph.linaxis(min=0.02, max=0.025)), splitlist=(None, None), relsizesplitdist=0.005)))
+                               y=graph.splitaxis((graph.linaxis(min=0, max=0.005), graph.linaxis(min=0.01, max=0.015), graph.linaxis(min=0.02, max=0.025)), title="axis title", splitlist=(None, None), relsizesplitdist=0.005)))
     df = data.datafile("data/testdata")
     g.plot(graph.data(df, x=1, y=3))
     g.finish()
