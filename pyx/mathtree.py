@@ -163,7 +163,16 @@ class MathTreeValConst(MathTreeVal):
         assert 0, "expression doesn't depend on " + arg
 
     def DependOn(self, arg):
+        for Arg in self.ArgV:
+            if Arg.DependOn(arg):
+                return 1
         return 0
+
+    def Derivative(self, arg):
+        return MathTreeValConst(0.0)
+
+    def VarList(self):
+        return [ ]
 
     def Calc(self, VarDict):
         return self.ArgV[0]

@@ -28,22 +28,22 @@ class LinAxis:
     TickCount = 0
     TickDist = 5
 
-    def TickValuePosList(self):
+    def TickValPosList(self):
         return map(lambda x, self=self: self.TickStart + x * self.TickDist, range(self.TickCount))
 
-    def ValueToLabel(self, x):
+    def ValToLab(self, x):
         return str(x)
 
     def TickList(self):
-        return map(lambda x, self=self: Tick(x, self.ValueToVirtual(x), self.ValueToLabel(x)), self.TickValuePosList())
+        return map(lambda x, self=self: Tick(x, self.ValToVirt(x), self.ValToLabel(x)), self.TickValPosList())
 
-    def ValueToVirtual(self, Values):
+    def ValToVirt(self, Values):
         if type(Values) in (types.IntType, types.LongType, types.FloatType, ):
             return (Values - self.Min)/float(self.Max - self.Min)
         else:
             return map(lambda x, self=self: (x - self.Min)/float(self.Max - self.Min), Values)
 
-    def VirtualToValue(self, Values):
+    def VirtToVal(self, Values):
         if type(Values) in (types.IntType, types.LongType, types.FloatType, ):
             return self.Min + Values * (self.Max - self.Min)
         else:
@@ -92,21 +92,24 @@ class GraphXY(Graph):
         self.canvas.draw(rect(self.XPos(0), self.YPos(0), self.XPos(1) - self.XPos(0), self.YPos(1) - self.YPos(0)))
         xranges = []
         for pd in self.plotdata:
-            #try:
+            try:
                 xranges.append(pd.GetRange("x"))
-            #except DataRangeUnkownExcetion:
-            #    pass
+            except DataRangeUndefinedException:
+                pass
         if len(xranges) == 0:
             assert 0, "xrange unknown"
         self.XAxis.Min = min( map (lambda x: x[0], xranges))
         self.XAxis.Max = max( map (lambda x: x[1], xranges))
 
+        for pd in self.plotdata:
+            pd.SetXAxis({"x": self.XAxis, })
+
         yranges = []
         for pd in self.plotdata:
-            #try:
+            try:
                 yranges.append(pd.GetRange("y"))
-            #except DataRangeUnkownExcetion:
-            #    pass
+            except DataRangeUndefinedException:
+                pass
         if len(yranges) == 0:
             assert 0, "yrange unknown"
         self.YAxis.Min = min( map (lambda y: y[0], yranges))
@@ -126,8 +129,8 @@ class GraphXY(Graph):
              self.tex.text(self.XPos(0)-0.2, y, l, halign=halign.right)
         for pd in self.plotdata:
             p = None
-            for pt in zip(self.XPos(self.XAxis.ValueToVirtual(pd.GetValues("x"))),
-                          self.YPos(self.YAxis.ValueToVirtual(pd.GetValues("y")))):
+            for pt in zip(self.XPos(self.XAxis.ValToVirt(pd.GetValues("x"))),
+                          self.YPos(self.YAxis.ValToVirt(pd.GetValues("y")))):
                 if p:
                     p.append(lineto(pt[0],pt[1]))
                 else:
@@ -137,8 +140,8 @@ class GraphXY(Graph):
             #for i in range(201):
             #    x = (i-100)/10.0
             #    y = pd[0].MT.Calc({'x':x})
-            #    xnew = self.XPos(self.XAxis.ValueToVirtual(x))
-            #    ynew = self.YPos(self.YAxis.ValueToVirtual(y))
+            #    xnew = self.XPos(self.XAxis.ValToVirt(x))
+            #    ynew = self.YPos(self.YAxis.ValToVirt(y))
             #    if i > 0:
             #        self.canvas.draw(line(xold, yold, xnew, ynew))
             #    xold = xnew
@@ -151,24 +154,21 @@ class GraphXY(Graph):
 from fit import *
 import re
 
-CommentPattern = re.compile(r"\s*(#|!)")
-EntryPattern = re.compile(r"\s+")
-
-KindTypeColumn = 1
+CommentPattern = re.compile(r"\s*(#|!)+\s*")
 
 class DataFile:
 
     def __init__(self, FileName, sep = None, titlesep = None):
         # TODO 9: title in comment above data
-        # read data file -> create KindTypeColumn
-        self.FileName = FileName
+        self.name = FileName
         File = open(FileName, "r")
         Lines = File.readlines()
         self.Columns = 0
         self.Rows = 0
         self.data = []
         for Line in Lines:
-            if not CommentPattern.match(Line):
+            Match = CommentPattern.match(Line)
+            if not Match:
                 if sep:
                     Row = Line.split(sep)
                 else:
@@ -186,30 +186,35 @@ class DataFile:
                 for i in range(len(Row), self.Columns):
                     self.data[i].append(None)
                 self.Rows = self.Rows + 1
-        self.HasTitles = 0
-        for i in range(self.Columns):
-            if type(self.data[i][0]) in (types.IntType, types.LongType, types.FloatType, ):
-                break
-        else:
-            self.HasTitles = 1
-        if self.HasTitles:
-            self.titles = []
-            for i in range(self.Columns):
-                self.titles.append(self.data[i][0])
-                del self.data[i][0]
-        else:
-            self.titles = reduce(lambda x,y: x + [None, ], range(self.Columns), [])
+            else:
+                if self.Rows == 0:
+                    self.titleline = Line[Match.end(): ]
+                    if sep:
+                        self.titles = self.titleline.split(sep)
+                    else:
+                        self.titles = self.titleline.split()
 
     def GetTitle(self, Number):
-        return self.titles[Number]
+        if (Number < len(self.titles)):
+            return self.titles[Number]
+        else:
+            return None
 
     def GetColumn(self, Number):
         return self.data[Number]
 
-KindTypeX = 1
-KindTypeY = 2
-KindTypeDX = 3
-KindTypeDY = 4
+
+class DataException(Exception):
+    pass
+
+class DataKindMissingException(DataException):
+    pass
+
+class DataRangeUndefinedException(DataException):
+    pass
+
+class DataRangeAlreadySetException(DataException):
+    pass
 
 class Data:
 
@@ -217,36 +222,82 @@ class Data:
         self.datafile = datafile
         self.columns = columns
 
+    def GetName(self):
+        return self.datafile.name
+
     def GetKindList(self):
         return self.columns.keys()
 
-    def GetValues(self, Kind):
-        return self.datafile.GetColumn(self.columns[Kind])
+    def GetTitle(self, Kind):
+        return self.datafile.GetTitle(self.columns[Kind] - 1)
 
-    def GetRange(self, Kind): # DESIGN: raise exception if unknown
+    def GetValues(self, Kind):
+        return self.datafile.GetColumn(self.columns[Kind] - 1)
+    
+    def GetRange(self, Kind):
+        # handle non-numeric things properly
         return (min(self.GetValues(Kind)), max(self.GetValues(Kind)), )
 
-    def GetName(self):
-        return self.datafile.FileName
+    def SetXAxis(self, XAxis):
+        pass
 
-    def GetTitle(self, Kind):
-        return self.datafile.GetTitle(self.columns[Kind])
+
+AssignPattern = re.compile(r"\s*([a-z][a-z0-9_]*)\s*=", re.IGNORECASE)
 
 class Function:
 
-    def __init__(self, Expression):
+    def __init__(self, Expression, Points = 100):
+        self.name = Expression
+        self.Points = Points
+        Match = AssignPattern.match(Expression)
+        if Match:
+            self.ResKind = Match.group(1)
+            Expression = Expression[Match.end(): ]
+        else:
+            self.ResKind = "y"
         self.MT = ParseMathTree(ParseStr(Expression))
+        self.VarList = self.MT.VarList()
+    
 
+    def GetName(self):
+        return self.name
+    
+    def GetKindList(self, DefaultResult = 'y'):
+        if self.ResKind:
+            return self.MT.VarList() + [self.ResKind, ]
+        else:
+            return self.MT.VarList() + [DefaultResult, ]
+    
+    def GetRange(self, Kind):
+        raise DataRangeUndefinedException
+        # try to get y range after x range was set
+
+    def SetXAxis(self, XAxis):
+        self.XAxis = XAxis
+        self.XValues = []
+        for x in range(self.Points + 1):
+            self.XValues.append(self.XAxis["x"].VirtToVal(x * 1.0 / self.Points))
+        self.YValues = map(lambda x, self=self: self.MT.Calc({"x": x, }), self.XValues)
+
+    def GetValues(self, Kind):
+        if Kind == "x":
+            return self.XValues
+        if Kind == self.ResKind:
+            return self.YValues
+    
+class ParamFunction(Function):
+    pass
 
 if __name__=="__main__":
-    df = DataFile("testdata")
-    for i in range(df.Columns):
-        print df.GetTitle(i),len(df.GetColumn(i)),df.GetColumn(i)
-    d = Data(df, x=0, y=1)
-    print d.GetKindList()
-    print d.GetValues("x")
-    print d.GetValues("y")
-    print d.GetRange("x"), d.GetRange("y")
-    print d.GetName()
-    print d.GetTitle("x"), d.GetTitle("y")
+    print Function("sin(x)").GetKindList()
+    #df = DataFile("testdata")
+    #for i in range(df.Columns):
+    #    print df.GetTitle(i),len(df.GetColumn(i)),df.GetColumn(i)
+    #d = Data(df, x=0, y=1)
+    #print d.GetKindList()
+    #print d.GetValues("x")
+    #print d.GetValues("y")
+    #print d.GetRange("x"), d.GetRange("y")
+    #print d.GetName()
+    #print d.GetTitle("x"), d.GetTitle("y")
 
