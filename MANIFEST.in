@@ -1,7 +1,4 @@
-include AUTHORS
-include LICENSE
-include INSTALL
-include CHANGES
+include AUTHORS CHANGES INSTALL LICENSE PKG-INFO README pyxrc setup.cfg setup.py
 include manual/Makefile manual/pyx.sty manual/*.tex manual/*.py manual/*.dat
 include faq/Makefile faq/pyxfaq.tex faq/glifaq.dtx faq/glifaq.ins
 include examples/Makefile examples/pyx.sty
