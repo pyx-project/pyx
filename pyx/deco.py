@@ -26,7 +26,7 @@
 # - should we improve on the arc length -> arg parametrization routine or
 #   should we at least factor it out?
 
-import math
+import sys, math
 import attr, base, canvas, color, helper, path, style, trafo, unit
 
 #
@@ -564,7 +564,7 @@ class wriggle(deco, attr.attr):
         return dp
 
 
-class curvecorners(deco, attr.attr):
+class smoothed(deco, attr.attr):
 
     """bends corners in a path
 
@@ -572,11 +572,12 @@ class curvecorners(deco, attr.attr):
     curve that has zero curvature at the connections to the lines.
     Corners between curves and lines are left as they are."""
 
-    def __init__(self, radius=None, softness=1):
+    def __init__(self, radius=None, softness=1, strict=0):
         self.radius = unit.topt(radius)
         self.softness = softness
+        self.strict = strict
 
-    def controlpoints_pt(self, A, B, C, r1, r2, softness):
+    def twobeziersbetweentolines_pt(self, B, tangent1, tangent2, r1, r2, softness=1):
         # Takes three endpoints of two straight lines:
         # start A, connecting midpoint B, endpoint C
         # and two radii r1 and r2:
@@ -587,13 +588,10 @@ class curvecorners(deco, attr.attr):
         #  - control points f2 and g2
         #  - endpoint d2
 
-        def normed(v):
-            n = math.sqrt(v[0] * v[0] + v[1] * v[1])
-            return v[0] / n, v[1] / n
         # make direction vectors d1: from B to A
         #                        d2: from B to C
-        d1 = normed([A[i] - B[i] for i in [0,1]])
-        d2 = normed([C[i] - B[i] for i in [0,1]])
+        d1 = -tangent1[0] / math.hypot(*tangent1), -tangent1[1] / math.hypot(*tangent1)
+        d2 =  tangent2[0] / math.hypot(*tangent2),  tangent2[1] / math.hypot(*tangent2)
 
         # 0.3192 has turned out to be the maximum softness available
         # for straight lines ;-)
@@ -601,15 +599,89 @@ class curvecorners(deco, attr.attr):
         g = (15.0 * f + math.sqrt(-15.0*f*f + 24.0*f))/12.0
 
         # make the control points
-        f1 = [B[i] + f * r1 * d1[i] for i in [0,1]]
-        f2 = [B[i] + f * r2 * d2[i] for i in [0,1]]
-        g1 = [B[i] + g * r1 * d1[i] for i in [0,1]]
-        g2 = [B[i] + g * r2 * d2[i] for i in [0,1]]
-        d1 = [B[i] +     r1 * d1[i] for i in [0,1]]
-        d2 = [B[i] +     r2 * d2[i] for i in [0,1]]
-        e  = [0.5 * (f1[i] + f2[i]) for i in [0,1]]
+        f1 = B[0] + f * r1 * d1[0], B[1] + f * r1 * d1[1]
+        f2 = B[0] + f * r2 * d2[0], B[1] + f * r2 * d2[1]
+        g1 = B[0] + g * r1 * d1[0], B[1] + g * r1 * d1[1]
+        g2 = B[0] + g * r2 * d2[0], B[1] + g * r2 * d2[1]
+        d1 = B[0] +     r1 * d1[0], B[1] +     r1 * d1[1]
+        d2 = B[0] +     r2 * d2[0], B[1] +     r2 * d2[1]
+        e  = 0.5 * (f1[0] + f2[0]), 0.5 * (f1[1] + f2[1])
 
         return [d1, g1, f1, e, f2, g2, d2]
+
+    def onebezierbetweentwopathels_pt(self, A, B, tangentA, tangentB, curvA, curvB, strict=0):
+        # connects points A and B with a bezier curve that has
+        # prescribed tangents dirA, dirB and curvatures curA, curB.
+        # If strict, the sign of the curvature will be forced which may invert
+        # the sign of the tangents. If not strict, the sign of the curvature may
+        # be switched but the tangent may not.
+
+        def sign(x):
+            try: return abs(a) / a
+            except ZeroDivisionError: return 0
+
+        # normalise the tangent vectors
+        dirA = (tangentA[0] / math.hypot(*tangentA), tangentA[1] / math.hypot(*tangentA))
+        dirB = (tangentB[0] / math.hypot(*tangentB), tangentB[1] / math.hypot(*tangentB))
+        # some shortcuts
+        T = dirA[0] * dirB[1] - dirA[1] * dirB[0]
+        D = 3 * (dirA[0] * (B[1]-A[1]) - dirA[1] * (B[0]-A[0]))
+        E = 3 * (dirB[0] * (B[1]-A[1]) - dirB[1] * (B[0]-A[0]))
+        # the variables: \dot X(0) = a * dirA
+        #                \dot X(1) = b * dirB
+        a, b = None, None
+
+        # ask for some special cases:
+        # Newton iteration is likely to fail if T==0 or curvA,curvB==0
+        if abs(T) < 1e-10:
+            try:
+                a = 2.0 * D / curvA
+                a = math.sqrt(abs(a)) * sign(a)
+                b = -2.0 * E / curvB
+                b = math.sqrt(abs(b)) * sign(b)
+            except ZeroDivisionError:
+                sys.stderr.write("*** PyX Warning: The connecting bezier is not uniquely determined."
+                    "The simple heuristic solution may not be optimal.")
+                a = b = 1.5 * hypot(A[0] - B[0], A[1] - B[1])
+        else:
+            if abs(curvA) < 1.0e-4:
+                b = D / T
+                a = - (E + b*abs(b)*curvB*0.5) / T
+            elif abs(curvB) < 1.0e-4:
+                a = -E / T
+                b = (D - a*abs(a)*curvA*0.5) / T
+            else:
+                a, b = None, None
+
+        # do the general case: Newton iteration
+        if a is None:
+            # solve the coupled system
+            #     0 = Ga(a,b) = 0.5 a |a| curvA + b * T - D
+            #     0 = Gb(a,b) = 0.5 b |b| curvB + a * T + E
+            # this system is equivalent to the geometric contraints:
+            #     the curvature and the normal tangent vectors
+            #     at parameters 0 and 1 are to be continuous
+            # the system is solved by 2-dim Newton-Iteration
+            # (a,b)^{i+1} = (a,b)^i - (DG)^{-1} (Ga(a^i,b^i), Gb(a^i,b^i))
+            a = b = 0
+            Ga = Gb = 1
+            while max(abs(Ga),abs(Gb)) > 1.0e-5:
+                detDG = abs(a*b) * curvA*curvB - T*T
+                invDG = [[curvB*abs(b)/detDG, -T/detDG], [-T/detDG, curvA*abs(a)/detDG]]
+
+                Ga = a*abs(a)*curvA*0.5 + b*T - D
+                Gb = b*abs(b)*curvB*0.5 + a*T + E
+
+                a, b = a - invDG[0][0]*Ga - invDG[0][1]*Gb, b - invDG[1][0]*Ga - invDG[1][1]*Gb
+
+        # the curvature may change its sign if we would get a cusp
+        # in the optimal case we have a>0 and b>0
+        if not strict:
+            a, b = abs(a), abs(b)
+
+        return [A, (A[0] + a * dirA[0] / 3.0, A[1] + a * dirA[1] / 3.0),
+                   (B[0] - b * dirB[0] / 3.0, B[1] - b * dirB[1] / 3.0), B]
+
 
     def decorate(self, dp):
         # XXX: is this the correct way to select the basepath???!!!
@@ -624,61 +696,138 @@ class curvecorners(deco, attr.attr):
             basepath = path.normpath(dp.path)
 
         newpath = path.path()
-        for subpath in basepath.subpaths:
-            newpels = []
-            # it is not clear yet, where to moveto (e.g. with a closed subpath we
-            # will get the starting point when inserting the bended corner)
-            domoveto = subpath.begin_pt()
-            dolineto = None
+        for normsubpath in basepath.subpaths:
+            npels = normsubpath.normpathels
+            arclens = [npel.arclen_pt() for npel in npels]
 
-            # for a closed subpath we eventually have to bend the initial corner
-            if subpath.closed:
-                A = subpath.normpathels[-1].begin_pt()
-                previsline = isinstance(subpath.normpathels[-1], path.normline)
-            else:
-                A = subpath.begin_pt()
-                previsline = 0
+            # 1. Build up a list of all relevant normpathels
+            #    and the lengths where they will be cut (length with respect to the normsubpath)
+            npelnumbers = []
+            cumalen = 0
+            for no in range(len(arclens)):
+                alen = arclens[no]
+                # a first selection criterion for skipping too short normpathels
+                # the rest will queeze the radius
+                if alen > self.radius:
+                    npelnumbers.append(no)
+                else:
+                    sys.stderr.write("Skipping a normpathel that is too short\n")
+                cumalen += alen
+            # XXX: what happens, if 0 or -1 is skipped and path not closed?
 
-            # go through the list of normpathels in this subpath
-            for i in range(len(subpath.normpathels)):
-                # XXX: at the moment, we have to build up a path, not a normpath
-                # this should be changed later
-                thispel = subpath.normpathels[i]
-                prevpel = subpath.normpathels[i-1]
-                # from this pel: B,C, thisstraight
-                # from previus pel: A, prevstraight
-                B, C = thispel.begin_pt(), thispel.end_pt()
-                thisisline = isinstance(thispel, path.normline)
-                if thisisline and previsline:
-                    d1,g1,f1,e,f2,g2,d2 = self.controlpoints_pt(A,B,C, self.radius, self.radius, self.softness)
-                    if domoveto is not None:
-                        newpath.append(path.moveto_pt(d1[0],d1[1]))
-                    if dolineto is not None:
-                        newpath.append(path.lineto_pt(d1[0],d1[1]))
+            # 2. Find the parameters, points,
+            #    and calculate tangents and curvatures
+            params, tangents, curvatures, points = [], [], [], []
+            for no in npelnumbers:
+                npel = npels[no]
+                alen = arclens[no]
+
+                # find the parameter(s): either one or two
+                if no is npelnumbers[0] and not normsubpath.closed:
+                    pars = npel._arclentoparam_pt([max(0, alen - self.radius)])[0]
+                elif alen > 2 * self.radius:
+                    pars = npel._arclentoparam_pt([self.radius, alen - self.radius])[0]
+                else:
+                    pars = npel._arclentoparam_pt([0.5 * alen])[0]
+
+                # find points, tangents and curvatures
+                ts,cs,ps = [],[],[]
+                for par in pars:
+                    # XXX: there is no trafo method for normpathels?
+                    thetrafo = normsubpath.trafo(par + no)
+                    p = thetrafo._apply(0,0)
+                    t = thetrafo._apply(1,0)
+                    ps.append(p)
+                    ts.append((t[0]-p[0], t[1]-p[1]))
+                    c = npel.curvradius_pt(par)
+                    if c is None: cs.append(0)
+                    else: cs.append(1.0/c)
+                    #dp.subcanvas.stroke(path.circle_pt(p[0], p[1], 3), [color.grey.black, style.linewidth.THin])
+                    #dp.subcanvas.stroke(path.line_pt(p[0], p[1], p[0] + 10*(t[0]-p[0]), p[1] + 10*(t[1]-p[1])), [color.grey.black, earrow.small, style.linewidth.THin])
+
+                params.append(pars)
+                points.append(ps)
+                tangents.append(ts)
+                curvatures.append(cs)
+
+            do_moveto = 1 # we do not know yet where to moveto
+            # 3. First part of extra handling of closed paths
+            if not normsubpath.closed:
+                bpart = npels[npelnumbers[0]].split(params[0])[0]
+                if do_moveto:
+                    newpath.append(path.moveto_pt(*bpart.begin_pt()))
+                    do_moveto = 0
+                if isinstance(bpart, path.normline):
+                    newpath.append(path.lineto_pt(*bpart.end_pt()))
+                elif isinstance(bpart, path.normcurve):
+                    newpath.append(path.curveto_pt(bpart.x1, bpart.y1, bpart.x2, bpart.y2, bpart.x3, bpart.y3))
+                do_moveto = 0
+
+            # 4. Do the splitting for the first to the last element,
+            #    a closed path must be closed later
+            for i in range(len(npelnumbers)-1+(normsubpath.closed==1)):
+                this = npelnumbers[i]
+                next = npelnumbers[(i+1) % len(npelnumbers)]
+                thisnpel, nextnpel = npels[this], npels[next]
+
+                # split thisnpel apart and take the middle peace
+                if len(points[this]) == 2:
+                    mpart = thisnpel.split(params[this])[1]
+                    if do_moveto:
+                        newpath.append(path.moveto_pt(*mpart.begin_pt()))
+                        do_moveto = 0
+                    if isinstance(mpart, path.normline):
+                        newpath.append(path.lineto_pt(*mpart.end_pt()))
+                    elif isinstance(mpart, path.normcurve):
+                        newpath.append(path.curveto_pt(mpart.x1, mpart.y1, mpart.x2, mpart.y2, mpart.x3, mpart.y3))
+
+                # add the curve(s) replacing the corner
+                if isinstance(thisnpel, path.normline) and isinstance(nextnpel, path.normline) \
+                   and (next-this == 1 or (this==0 and next==len(npels)-1)):
+                    d1,g1,f1,e,f2,g2,d2 = self.twobeziersbetweentolines_pt(
+                        thisnpel.end_pt(), tangents[this][-1], tangents[next][0],
+                        math.hypot(points[this][-1][0] - thisnpel.end_pt()[0], points[this][-1][1] - thisnpel.end_pt()[1]),
+                        math.hypot(points[next][0][0] - nextnpel.begin_pt()[0], points[next][0][1] - nextnpel.begin_pt()[1]),
+                        softness=self.softness)
+                    if do_moveto:
+                        newpath.append(path.moveto_pt(*d1))
+                        do_moveto = 0
                     newpath.append(path.curveto_pt(*(g1 + f1 + e)))
                     newpath.append(path.curveto_pt(*(f2 + g2 + d2)))
-                    dolineto = C
                 else:
-                    if domoveto is not None:
-                        newpath.append(path.moveto_pt(*domoveto))
-                    if dolineto is not None:
-                        newpath.append(path.lineto_pt(*dolineto))
-                    if isinstance(thispel, path.normcurve):
-                        # convert the normcurve to a curveto
-                        newpath.append(path.curveto_pt(thispel.x1,thispel.y1,thispel.x2,thispel.y2,thispel.x3,thispel.y3))
-                        dolineto = None
-                    elif isinstance (thispel, path.normline):
-                        dolineto = C # just store something here which is not None
+                    #dp.subcanvas.fill(path.circle_pt(points[next][0][0], points[next][0][1], 2))
+                    if not self.strict:
+                        # the curvature may have the wrong sign -- produce a heuristic for the sign:
+                        vx, vy = thisnpel.end_pt()[0] - points[this][-1][0], thisnpel.end_pt()[1] - points[this][-1][1]
+                        wx, wy = points[next][0][0] - thisnpel.end_pt()[0], points[next][0][1] - thisnpel.end_pt()[1]
+                        sign = vx * wy - vy * wx
+                        sign = sign / abs(sign)
+                        curvatures[this][-1] = sign * abs(curvatures[this][-1])
+                        curvatures[next][0] = sign * abs(curvatures[next][0])
+                    A,B,C,D = self.onebezierbetweentwopathels_pt(
+                        points[this][-1], points[next][0], tangents[this][-1], tangents[next][0],
+                        curvatures[this][-1], curvatures[next][0], strict=self.strict)
+                    if do_moveto:
+                        newpath.append(path.moveto_pt(*A))
+                        do_moveto = 0
+                    newpath.append(path.curveto_pt(*(B + C + D)))
 
-                domoveto = None
-                previsline = thisisline
-                A = B
-
-            if dolineto is not None:
-                newpath.append(path.lineto_pt(*dolineto))
-            if subpath.closed:
+            # 5. Second part of extra handling of closed paths
+            if normsubpath.closed:
+                if do_moveto:
+                    newpath.append(path.moveto_pt(*dp.strokepath.begin()))
+                    sys.stderr.write("The whole path has been smoothed away -- sorry\n")
                 newpath.append(path.closepath())
+            else:
+                epart = npels[npelnumbers[-1]].split([params[-1][0]])[-1]
+                if do_moveto:
+                    newpath.append(path.moveto_pt(*epart.begin_pt()))
+                    do_moveto = 0
+                if isinstance(epart, path.normline):
+                    newpath.append(path.lineto_pt(*epart.end_pt()))
+                elif isinstance(epart, path.normcurve):
+                    newpath.append(path.curveto_pt(epart.x1, epart.y1, epart.x2, epart.y2, epart.x3, epart.y3))
 
-        dp.path = newpath
         dp.strokepath = newpath
         return dp
+
