@@ -367,7 +367,10 @@ class FontMapping:
 
     def __init__(self, s):
         """ construct font mapping from line s of dvips mapping file """
-        self.texname = self.psname = self.fontfile = self.encoding = None
+        self.texname = self.psname = self.fontfile = None
+
+        # standard encoding
+        self.encoding = "ad.enc"
 
         # supported postscript fragments occuring in psfonts.map
         self.reencodefont = self.extendfont = self.slantfont = None
@@ -430,6 +433,7 @@ class FontMapping:
 # generate fontmap
 
 fontmap = {}
+encodings = {}
 mappath = pykpathsea.find_file("psfonts.map", pykpathsea.kpse_dvips_config_format)
 if mappath is None:
     raise RuntimeError("cannot find dvips font catalog 'psfonts.map'")
@@ -516,6 +520,9 @@ class Font:
     def getitalic(self, charcode):
         return self.convert(self.tfmfile.italic[self.tfmfile.char_info[charcode].italic_index])
 
+    def getencodedchar(self, charcode):
+        return self.getencoding().encode(charcode)
+
     def markcharused(self, charcode):
         self.usedchars[charcode] = 1
 
@@ -537,9 +544,12 @@ class Font:
 
     def getencoding(self):
         if self.fontmapping:
-            return self.fontmapping.encoding
-        else:
-            return None
+            encoding = self.fontmapping.encoding
+            if encoding and not encodings.has_key(encoding):
+                encoding = encodings[encoding] = FontEncoding(encoding)
+            else:
+                encoding = encodings[encoding]
+            return encoding
 
 
 _DVI_CHARMIN     =   0 # typeset a character and move right (range min)
@@ -657,10 +667,11 @@ class DVIFile:
         if self.actoutstart is None:
             self.actoutstart = self.pos[_POS_H], self.pos[_POS_V]
             self.actoutstring = ""
-        if char > 32 and char < 128 and chr(char) not in "()[]<>":
-            ascii = "%s" % chr(char)
-        else:
-            ascii = "\\%03o" % char
+        ascii = self.fonts[self.activefont].getencodedchar(char)
+#        if char > 32 and char < 128 and chr(char) not in "()[]<>":
+#            ascii = "%s" % chr(char)
+#        else:
+#            ascii = "\\%03o" % char
         self.actoutstring = self.actoutstring + ascii
         dx = inch and self.fonts[self.activefont].getwidth(char) or 0
         self.fonts[self.activefont].markcharused(char)
