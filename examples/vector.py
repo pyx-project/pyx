@@ -4,7 +4,7 @@ from pyx import *
 def vector(x1, y1, x2, y2, t, pos=0.5, distance=0.1,
            texrunner=text.defaulttexrunner):
     c = canvas.canvas()
-    c.stroke(path.line(x1, y1, x2, y2), canvas.earrow.normal)
+    c.stroke(path.line(x1, y1, x2, y2), deco.earrow.normal())
     textbox = texrunner.text((1-pos)*x1 + pos*x2, (1-pos)*y1 + pos*y2, t,
                              text.halign.center, text.vshift.mathaxis)
     if distance < 0:
