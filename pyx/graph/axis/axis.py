@@ -303,6 +303,9 @@ class _axis:
     def finish(self, axispos):
         if self.axiscanvas is not None: return
 
+        if self.min is None or self.max is None:
+            raise RuntimeError("incomplete axis range")
+
         # temorarily enable the axis divisor
         self.usedivisor = 1
         self._setrange()
