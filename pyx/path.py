@@ -923,41 +923,47 @@ class normpath(path):
 
 # straight lines
 
-class _line(path):
+class _line(normpath):
 
    """straight line from (x1, y1) to (x2, y2) (coordinates in pts)"""
 
    def __init__(self, x1, y1, x2, y2):
-       path.__init__(self, _moveto(x1, y1), _lineto(x2, y2))
+       normpath.__init__(self, _moveto(x1, y1), _lineto(x2, y2))
 
 
-class line(path):
+class line(_line):
 
    """straight line from (x1, y1) to (x2, y2)"""
 
    def __init__(self, x1, y1, x2, y2):
-       path.__init__(self, moveto(x1, y1), lineto(x2, y2))
+       _line.__init__(self,
+                      unit.topt(x1), unit.topt(y1),
+                      unit.topt(x2), unit.topt(y2)
+                      )
 
 # bezier curves
 
-class _curve(path):
+class _curve(normpath):
 
    """Bezier curve with control points (x0, y1),..., (x3, y3)
    (coordinates in pts)"""
 
    def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
-       path.__init__(self,
-                     _moveto(x0, y0),
-                     _curveto(x1, y1, x2, y2, x3, y3))
+       normpath.__init__(self,
+                         _moveto(x0, y0),
+                         _curveto(x1, y1, x2, y2, x3, y3))
 
-class curve(path):
+class curve(_curve):
 
    """Bezier curve with control points (x0, y1),..., (x3, y3)"""
 
    def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
-       path.__init__(self,
-                     moveto(x0, y0),
-                     curveto(x1, y1, x2, y2, x3, y3))
+       _curve.__init__(self,
+                       unit.topt(x0), unit.topt(y0),
+                       unit.topt(x1), unit.topt(y1),
+                       unit.topt(x2), unit.topt(y2),
+                       unit.topt(x3), unit.topt(y3)
+                      )
 
 # rectangles
 
@@ -973,16 +979,14 @@ class _rect(path):
                            closepath())
 
 
-class rect(path):
+class rect(_rect):
 
    """rectangle at position (x,y) with width and height"""
 
    def __init__(self, x, y, width, height):
-       path.__init__(self, moveto(x, y), 
-                           rlineto(width, 0), 
-                           rlineto(0, height), 
-                           rlineto(-unit.length(width), 0),
-                           closepath())
+       _rect.__init__(self,
+                      unit.topt(x), unit.topt(y),
+                      unit.topt(width), unit.topt(height))
 
 # circles
 
@@ -995,11 +999,13 @@ class _circle(path):
                            closepath())
 
 
-class circle(path):
+class circle(_circle):
 
    """circle with center (x,y) and radius"""
 
    def __init__(self, x, y, radius):
-       path.__init__(self, arc(x, y, radius, 0, 360),
-                           closepath())
+       _circle.__init__(self,
+                        unit.topt(x), unit.topt(y),
+                        unit.topt(radius))
+
 
