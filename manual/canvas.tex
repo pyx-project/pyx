@@ -37,7 +37,7 @@ c.draw(path.line(0, 0, 10, 10))
 \end{verbatim}
 \end{quote}
 You can modify the appearance of a path by additionally passing 
-instances of the class \verb|PSAttr|. For instance, you can draw the 
+instances of the class \verb|PathStyle|. For instance, you can draw the 
 the above path \verb|p| in blue, as well:
 \begin{quote}
 \begin{verbatim}
@@ -50,12 +50,52 @@ Similarly, it is possible to draw a dashed version of \verb|p|:
 c.draw(p, canvas.linestyle.dashed)
 \end{verbatim}
 \end{quote}
-Combining of several \verb|PSAttr|s is of course also possible:
+Combining of several \verb|PathStyle|s is of course also possible:
 \begin{quote}
 \begin{verbatim}
 c.draw(p, color.rgb.blue, canvas.linestyle.dashed)
 \end{verbatim}
 \end{quote}
+Furthermore, drawing an arrow at the begin or end of the path is done
+in a similar way. You just have to use the provided \verb|barrow| and 
+\verb|earrow| instances:
+\begin{quote}
+\begin{verbatim}
+c.draw(p, canvas.barrow.normal, canvas.earrow.large)
+\end{verbatim}
+\end{quote}
+
+Filling of a path is possible via the \verb|fill| method of the canvas.
+Let us for example draw a filled rectangle 
+\begin{quote}
+\begin{verbatim}
+r = path.rect(0, 0, 10, 5)
+c.fill(r)
+\end{verbatim}
+\end{quote}
+Alternatively, you can use the class \verb|filled| of the canvas module
+in combination with the \verb|draw| method:
+\begin{quote}
+\begin{verbatim}
+c.draw(r, canvas.filled())
+\end{verbatim}
+\end{quote}
+
+To conclude the section on the drawing of paths, we consider a pretty
+sophisicated combination of the above presented \verb|PathStyle|s:
+\begin{quote}
+\begin{verbatim}
+c.draw(p, 
+       color.rgb.blue, 
+       canvas.earrow.LARge(color.rgb.red,
+                           canvas.stroked(canvas.linejoin.round),
+	                                  canvas.filled(color.rgb.green)))
+							      
+\end{verbatim}
+\end{quote}
+This draws the path in blue with a pretty large arrow at the end, the outline
+of which is red and rounded and which is filled with green.
+
 After you are finished with the composition of your canvas, you can
 write it to a file using the method \verb|writetofile()|. It expects the
 obligatory argument \verb|filename|, the name of the output
