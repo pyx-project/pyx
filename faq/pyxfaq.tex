@@ -12,7 +12,6 @@
             ,colorlinks=true%
             ,linkcolor=blue}
 \def\pyxversion{\input{pyxversion}}
-%\def\pyxversion{0.6\,a}
 \begin{document}
 
 \begin{center}
@@ -29,9 +28,9 @@ Gert-Ludwig Ingold \par
 
 \vspace{2truecm}
 \section*{Acknowledgements}
-The following persons have in one way or the other contributed to the answers
-given in this FAQ:\\ 
-Jörg Lehmann, Michael Schindler, Andr{\'e} Wobst.
+The following persons have in one way or the other, e.g. by asking good 
+questions or providing answers, contributed to this FAQ:\\ 
+Walter Brisken, Jörg Lehmann, Michael Schindler, Andr{\'e} Wobst.
 \newpage
 
 \section{General aspects of \PyX}
@@ -605,6 +604,41 @@ exist other ways to specify math mode in \TeX{} and \LaTeX{} which are
 particularly useful for more complex typesetting tasks. To learn more about 
 it, you should consult the documentation 
 \uaref{q:intro_tex_latex}. 
+}
+
+\question{a}{Why do environments like itemize or eqnarray seem not to work?
+\new}
+{}
+{An itemize environment might result in a \LaTeX{} error complaining about
+a ``\texttt{missing \cs item}'' or an eqnarray might lead to a \LaTeX{} message
+``\texttt{missing \cs endgroup inserted}'' even though the syntax appears to be
+correct. The \TeX{}nical reason is that in \PyX{} text is typeset in left-right 
+mode (LR mode) which does not allow linebreaks to occur. There are two ways out.
+
+If the text material should go in a box of given width, a parbox can be used
+like in the following example:
+\begin{progcode}
+text.set(mode="latex")\\
+c = canvas.canvas()\\
+w = 2\\
+c.text(0, 0, r"\cs begin\cb{itemize}\cs item a\cs item b\cs end\cb{itemize}", [text.parbox(w)])
+\end{progcode}
+
+Occasionally, one would like to have the box in which the text appears to be as
+small as possible. Then the \texttt{fancybox} package developed by Timothy Van
+Zandt is useful which provides several environments like \texttt{Bitemize} and 
+\texttt{Beqnarray} which can be processed in LR mode. The relevant part of the 
+code could look like:
+\begin{progcode}
+text.set(mode="latex")\\
+text.preamble(r"\cs usepackage\cb{fancybox}")\\
+c = canvas.canvas()\\
+c.text(0, 0, r"\cs begin\cb{Bitemize}\cs item a\cs item b\cs end\cb{Bitemize}")
+\end{progcode}
+Other environments provided by the \texttt{fancybox} package include 
+\texttt{Bcenter}, \texttt{Bflushleft}, \texttt{Bflushright}, 
+\texttt{Benumerate}, and \texttt{Bdescription}. For more details, the 
+documentation of the package should be consulted.
 }
 
 \question{a}{Font shape `OT1/xyz/m/n' undefined}
