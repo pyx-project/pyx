@@ -500,7 +500,7 @@ def readfontmap(filenames):
     return fontmap
 
 
-fontmap = readfontmap(["psfonts.map", "ecpfb.map"])
+fontmap = readfontmap(["psfonts.map"])
 
 
 class Font:
