@@ -30,7 +30,7 @@ with their attributes.
 """
 
 import sys, cStringIO, time
-import attr, base,  bbox, deco, unit, prolog, style, trafo, version
+import attr, base,  bbox, deco, deformer, unit, prolog, style, trafo, version
 
 # temporarily needed for pdf fonts
 import zlib
@@ -215,7 +215,10 @@ class _canvas(base.canvasitem):
         """
 
         attrs = attr.mergeattrs(attrs)
-        attr.checkattrs(attrs, [deco.deco, style.fillstyle, style.strokestyle, trafo.trafo_pt])
+        attr.checkattrs(attrs, [deco.deco, deformer.deformer, style.fillstyle, style.strokestyle, trafo.trafo_pt])
+
+        for adeformer in attr.getattrs(attrs, [deformer.deformer]):
+            path = adeformer.deform(path)
 
         for t in attr.getattrs(attrs, [trafo.trafo_pt]):
             path = path.transformed(t)
