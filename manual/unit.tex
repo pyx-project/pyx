@@ -30,7 +30,8 @@ this all works, is described in the following sections.
 The constructor of the \verb|length| class accepts as first argument
 either a number or a string:
 \begin{itemize}
-\item \verb|length(number)| means a user length in units of \verb|unit.default_unit|.
+\item \verb|length(number)| means a user length in units of the default
+unit, defined via \verb|unit.set(defaultunit=defaultunit)|.
 \item For \verb|length(string)|, the \verb|string| has to consist of a
   maximum of three parts separated by one or more whitespaces:
 \begin{description}
@@ -38,16 +39,16 @@ either a number or a string:
 \item[type:] \verb|"t"| (true), \verb|"u"| (user), \verb|"v"| (visual), or \verb|"w"| (width).
   Optional, defaults to \verb|"u"|.
 \item[unit:] \verb|"m"|, \verb|"cm"|, \verb|"mm"|, \verb|"inch"|, or
-  \verb|"pt"|. Optional, defaults to \verb|default_unit|
+  \verb|"pt"|. Optional, defaults to the default unit.
 \end{description}
 \end{itemize}
 The default for the first argument is chosen in such a way that
-\texttt{5*length()==length(5)}.  Note that \verb|default_unit| is
+\texttt{5*length()==length(5)}.  Note that the default unit  is
 initially set to \verb|"cm"|, but can be changed at any time by the
 user. For instance, use
 \begin{quote}
 \begin{verbatim}
-unit.set(default_unit="inch")
+unit.set(defaultunit="inch")
 \end{verbatim}
 \end{quote}
 if you want to specify per default every length in inches.

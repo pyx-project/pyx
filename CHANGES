@@ -31,7 +31,8 @@ PyX
     - new classes for visual and width lengths, aliases for user length (u_pt = pt)
     - all length classes have now by default a quantifier 1 (instead of 0), such that, 
       for instance, 5*unit.t_cm() == unit.t_cm(5)
-    - default_unit now has to be set via unit.set. For instance: unit.set(default_unit="m").
+    - default_unit now has to be set via unit.set. For instance: unit.set(defaultunit="m").
+    - convert_to is now internal function, which moreover does not longer accept tuples or lists
   - bbox module:
     - new methods height and width
     - TODO: document me!
