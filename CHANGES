@@ -29,9 +29,12 @@ TODO:
   - path module:
     - reverse needs to be fixed
     - there should be a path._at, path._begin, path._end
+    - use math.degrees and math.radians
   - data module:
     - data.data should add line number like data.datafile
     - use csv module (new in 2.3)
+  - connnector module:
+    - use math.degrees and math.radians instead of self-written functions
 
 0.5 (????/??/??):
   - setup.py and distribution:
