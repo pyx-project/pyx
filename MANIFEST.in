@@ -2,11 +2,10 @@ include AUTHORS
 include LICENSE
 include INSTALL
 include CHANGES
-include manual/manual.pdf manual/Makefile manual/pyx.sty manual/*.tex manual/*.py manual/*.dat
-include faq/pyxfaq.pdf faq/Makefile faq/pyxfaq.tex faq/glifaq.dtx faq/glifaq.ins
-include examples/examples.pdf
+include manual/Makefile manual/pyx.sty manual/*.tex manual/*.py manual/*.dat
+include faq/Makefile faq/pyxfaq.tex faq/glifaq.dtx faq/glifaq.ins
+include examples/Makefile examples/pyx.sty
 recursive-include pyx *.c *.h *.py
 recursive-include pyx/lfs *.lfs createlfs.tex
 recursive-include contrib *
 recursive-include examples *.py *.dat
-exclude examples/examples.py
