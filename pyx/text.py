@@ -30,7 +30,7 @@ import helper, unit, box, base, trafo, canvas, pykpathsea
 
 class fix_word:
     def __init__(self, word):
-        if word>=0:
+        if word >= 0:
             self.sign = 1
         else:
             self.sign = -1
@@ -61,7 +61,7 @@ class char_info_word:
         self.tag          = (word & 0x00000300) >> 8
         self.remainder    = (word & 0x000000FF)
 
-        if self.width_index==0:
+        if self.width_index == 0:
             raise TFMError, "width_index should not be zero"
 
 class binfile:
@@ -115,7 +115,7 @@ class binfile:
 
     def readstring(self, bytes):
         l = self.readuchar()
-        assert l<=bytes-1, "inconsistency in file: string too long"
+        assert l <= bytes-1, "inconsistency in file: string too long"
         return self.file.read(bytes-1)[:l]
 
 class DVIError(Exception): pass
@@ -144,9 +144,9 @@ class TFMFile:
         self.ne = self.file.readint16()
         self.np = self.file.readint16()
 
-        if not (self.bc-1<=self.ec<=255 and
-                self.ne<=256 and
-                self.lf==6+self.lh+(self.ec-self.bc+1)+self.nw+self.nh+self.nd
+        if not (self.bc-1 <= self.ec <= 255 and
+                self.ne <= 256 and
+                self.lf == 6+self.lh+(self.ec-self.bc+1)+self.nw+self.nh+self.nd
                 +self.ni+self.nl+self.nk+self.ne+self.np):
             raise TFMError, "error in TFM pre-header"
 
@@ -159,16 +159,16 @@ class TFMFile:
 
         self.checksum = self.file.readint32()
         self.designsizeraw = self.file.readint32()
-        assert self.designsizeraw>0, "invald design size"
+        assert self.designsizeraw > 0, "invald design size"
         self.designsize = fix_word(self.designsizeraw)
-        if self.lh>2:
-            assert self.lh>11, "inconsistency in TFM file: incomplete field"
+        if self.lh > 2:
+            assert self.lh > 11, "inconsistency in TFM file: incomplete field"
             self.charcoding = self.file.readstring(40)
         else:
             self.charcoding = None
 
-        if self.lh>12:
-            assert self.lh>16, "inconsistency in TFM file: incomplete field"
+        if self.lh > 12:
+            assert self.lh > 16, "inconsistency in TFM file: incomplete field"
             self.fontfamily = self.file.readstring(20)
         else:
             self.fontfamily = None
@@ -178,32 +178,32 @@ class TFMFile:
             print "(CODINGSCHEME %s)" % self.charcoding
             print "(DESINGSIZE R %f)" % self.designsize
 
-        if self.lh>17:
+        if self.lh > 17:
             self.sevenbitsave = self.file.readuchar()
             # ignore the following two bytes
             self.file.readint16()
             facechar = self.file.readuchar()
             # decode ugly face specification into the Knuth suggested string
-            if facechar<18:
-                if facechar>=12:
+            if facechar < 18:
+                if facechar >= 12:
                     self.face = "E"
                     facechar -= 12
-                elif facechar>=6:
+                elif facechar >= 6:
                     self.face = "C"
                     facechar -= 6
                 else:
                     self.face = "R"
 
-                if facechar>=4:
+                if facechar >= 4:
                     self.face = "L" + self.face
                     facechar -= 4
-                elif facechar>=2:
+                elif facechar >= 2:
                     self.face = "B" + self.face
                     facechar -= 2
                 else:
                     self.face = "M" + self.face
 
-                if facechar==1:
+                if facechar == 1:
                     self.face = self.face[0] + "I" + self.face[1]
                 else:
                     self.face = self.face[0] + "R" + self.face[1]
@@ -213,7 +213,7 @@ class TFMFile:
         else:
             self.sevenbitsave = self.face = None
 
-        if self.lh>18:
+        if self.lh > 18:
             # just ignore the rest
             print self.file.read((self.lh-18)*4)
 
@@ -314,21 +314,21 @@ class Font:
 
         self.tfmdesignsize = round(tfmconv*self.tfmfile.designsizeraw)
 
-        if abs(self.tfmdesignsize - d)>2:
+        if abs(self.tfmdesignsize - d) > 2:
             raise DVIError("design sizes do not agree: %d vs. %d" %
                            (self.tfmdesignsize, d))
 
 
-        if q<0 or q>134217728:
+        if q < 0 or q > 134217728:
             raise DVIError("font '%s' not loaded: bad scale" % self.name)
 
-        if d<0 or d>134217728:
+        if d < 0 or d > 134217728:
             raise DVIError("font '%s' not loaded: bad design size" % self.name)
 
         self.scale = 1.0*q/d
         self.alpha = 16;
         self.q = self.qorig = q
-        while self.q>=8388608:
+        while self.q >= 8388608:
             self.q = self.q/2
             self.alpha *= 2
 
@@ -353,9 +353,9 @@ class Font:
         b2 = (width >> 8 ) & 0xff
         b3 = (width      ) & 0xff
 
-        if b0==0:
+        if b0 == 0:
             return (((((b3*self.q)/256)+(b2*self.q))/256)+(b1*self.q))/self.beta
-        elif b0==255:
+        elif b0 == 255:
             return (((((b3*self.q)/256)+(b2*self.q))/256)+(b1*self.q))/self.beta-self.alpha
         else:
             raise TFMError("error in font size")
@@ -451,16 +451,13 @@ class DVIFile:
         if self.actoutstart is None:
             self.actoutstart = self.pos[_POS_H], self.pos[_POS_V]
             self.actoutstring = ""
-
         if char > 32 and char < 128 and chr(char) not in "()[]<>":
             ascii = "%s" % chr(char)
         else:
             ascii = "\\%03o" % char
         self.actoutstring = self.actoutstring + ascii
-
         dx = inch and self.fonts[self.activefont].getwidth(char) or 0
         self.fonts[self.activefont].markcharused(char)
-
         if self.debug:
             print ("%d: %schar%d h:=%d+%d=%d, hh:=%d" %
                    (self.filepos,
@@ -468,9 +465,7 @@ class DVIFile:
                     char,
                     self.pos[_POS_H], dx, self.pos[_POS_H]+dx,
                     0))
-
         self.pos[_POS_H] += dx
-
         if not inch:
             # XXX: correct !?
             self.flushout()
@@ -485,9 +480,9 @@ class DVIFile:
         if height > 0 and width > 0:
             if self.debug:
                 pixelw = int(width*self.conv)
-                if pixelw<width*self.conv: pixelw += 1
+                if pixelw < width*self.conv: pixelw += 1
                 pixelh = int(height*self.conv)
-                if pixelh<height*self.conv: pixelh += 1
+                if pixelh < height*self.conv: pixelh += 1
 
                 print ("%d: %srule height %d, width %d (%dx%d pixels)" %
                        (self.filepos, inch and "set" or "put", height, width, pixelh, pixelw))
@@ -531,7 +526,7 @@ class DVIFile:
         #        Note that q is actually s in large parts of the documentation.
         # d:     design size
 
-        self.fonts[num] =  Font(fontname, c, q, d, self.tfmconv, self.debug>1)
+        self.fonts[num] =  Font(fontname, c, q, d, self.tfmconv, self.debug > 1)
 
         if self.debug:
             print "%d: fntdef%d %i: %s" % (self.filepos, cmdnr, num, fontname)
@@ -724,15 +719,15 @@ class DVIFile:
                 print "special %s" % file.read(file.readint(cmd - _DVI_SPECIAL1234 + 1))
                 raise RuntimeError("specials are not yet handled, abort")
             elif cmd >= _DVI_FNTDEF1234 and cmd < _DVI_FNTDEF1234 + 4:
-                if cmd==_DVI_FNTDEF1234:
+                if cmd == _DVI_FNTDEF1234:
                     num=file.readuchar()
-                elif cmd==_DVI_FNTDEF1234+1:
+                elif cmd == _DVI_FNTDEF1234+1:
                     num=file.readuint16()
-                elif cmd==_DVI_FNTDEF1234+2:
+                elif cmd == _DVI_FNTDEF1234+2:
                     num=file.readuint24()
-                elif cmd==_DVI_FNTDEF1234+3:
+                elif cmd == _DVI_FNTDEF1234+3:
                     # Cool, here we have according to docu a signed int. Why?
-                    num=file.readint32()
+                    num = file.readint32()
                 self.definefont(cmd-_DVI_FNTDEF1234+1,
                                 num,
                                 file.readint32(),
@@ -775,11 +770,11 @@ class DVIFile:
         # start up reading process
         state = _READ_PRE
         while state!=_READ_DONE:
-            if state==_READ_PRE:
+            if state == _READ_PRE:
                 state = self._read_pre()
-            elif state==_READ_NOPAGE:
+            elif state == _READ_NOPAGE:
                 state = self._read_nopage()
-            elif state==_READ_PAGE:
+            elif state == _READ_PAGE:
                 state = self._read_page()
             else:
                 raise DVIError # unexpected reader state, should not happen
