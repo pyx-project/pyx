@@ -65,8 +65,7 @@ TODO:
     - path module:
       - describe + vs <<
       - more details in path constructor: allowed pathels, first pathel...
-      - normsubpath: new method close, new default arguments
-      - normpath: append method
+      - set method
     - deco module:
       - cycloid decorator
       - smoothed decorator
@@ -81,8 +80,6 @@ TODO:
   FAQ:
     - describe creation and modification (inplace and ``modify by new'') of
       graph data
-
-  MISSING CHANGES OF BASEL SPRINT
 
 0.7 (xxxx/xx/xx):
   - bitmap module:
