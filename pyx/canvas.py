@@ -49,12 +49,39 @@ class Canvas(Globex):
     TexMarker = "ThisIsThePyxTexMarker"
     TexMarkerBegin = TexMarker + "Begin"
     TexMarkerEnd = TexMarker + "End"
-    TexCmds = [ ]
-    TexBracketCheck = 1
 
-    PSPositionCorrect = 0		# does actual PS position coincide with our x,y
-    
-    def TexCreateBoxCmd(self, texstr, parmode, valign):
+    TexCmds = [ ]
+        # stores the TexCmds; note that the first element has a different
+        # meaning: it is the initial command "texinit", which is added by
+        # the constructor (there has to be always a - may be empty - initial
+        # command) -- the TexParenthesisCheck is automaticlly called in
+        # TexAddToFile for this initial command
+
+    def TexParenthesisCheck(self, Cmd):
+
+        'check for the proper usage of "{" and "}" in Cmd'
+
+        depth = 0
+        esc = 0
+        for c in Cmd:
+            if c == "{" and not esc:
+                depth = depth + 1
+            if c == "}" and not esc:
+                depth = depth - 1
+                if depth < 0:
+                    raise TexRightParenthesisError
+            if c == "\\":
+                esc = (esc + 1) % 2
+            else:
+                esc = 0
+        if depth > 0:
+            raise TexLeftParenthesisError
+
+    def TexCreateBoxCmd(self, Cmd, parmode, valign):
+
+        'creates the TeX box \\localbox containing Cmd'
+
+        self.TexParenthesisCheck(Cmd)
 
         # we use two "{{" to ensure, that everything goes into the box
         CmdBegin = "\\setbox\\localbox=\\hbox{{"
@@ -77,10 +104,12 @@ class Canvas(Globex):
              if valign != None:
                   assert "parmode needed to use valign"
         
-        Cmd = CmdBegin + texstr + CmdEnd + "\n"
+        Cmd = CmdBegin + Cmd + CmdEnd + "\n"
         return Cmd
     
-    def TexCopyBoxCmd(self, texstr, halign, angle):
+    def TexCopyBoxCmd(self, Cmd, halign, angle):
+
+        'creates the TeX commands to put \\localbox at the current position'
 
         # TODO (?): Farbunterstützung
 
@@ -106,6 +135,9 @@ class Canvas(Globex):
         return Cmd
 
     def TexHexMD5(self, Cmd):
+
+        'creates an MD5 hex string for texinit + Cmd'
+    
         import md5, string
         h = string.hexdigits
         r = ''
@@ -117,23 +149,10 @@ class Canvas(Globex):
         
     def TexAddToFile(self, Cmd, IgnoreMsgLevel):
 
-        # check for the proper usage of "{" and "}" in Cmd
-        if self.TexBracketCheck:
-            depth = 0
-            esc = 0
-            for c in Cmd:
-                if c == "{" and not esc:
-                    depth = depth + 1
-                if c == "}" and not esc:
-                    depth = depth - 1
-                    if depth < 0:
-                        raise TexRightParenthesisError
-                if c == "\\":
-                    esc = (esc + 1) % 2
-                else:
-                    esc = 0
-            if depth > 0:
-                raise TexLeftParenthesisError
+        'save Cmd to TexCmds, store "stack[2:]" for later error report'
+        
+        if self.TexCmds == [ ]:
+            self.TexParenthesisCheck(Cmd)
 
         import sys,traceback
         try:
@@ -148,6 +167,9 @@ class Canvas(Globex):
         self.TexCmds = self.TexCmds + [ TexCmdSaveStruc(Cmd, MarkerBegin, MarkerEnd, Stack, IgnoreMsgLevel), ]
 
     def TexRun(self):
+
+        'run LaTeX&dvips for TexCmds, add postscript to canvas, report errors'
+    
         # TODO: clean file handling. Be sure to delete all temporary files (signal handling???) and check for the files before reading them (including the dvi-file before it's converted by dvips)
 
         import os
@@ -272,6 +294,8 @@ class Canvas(Globex):
     TexResults = None
 
     def TexResult(self, Str):
+ 
+        'get sizes from previous LaTeX run'
 
         if self.TexResults == None:
             try:
@@ -287,29 +311,41 @@ class Canvas(Globex):
  
         return 1
 
-    def text(self, texstr, halign = None, parmode = None, valign = None, angle = None, IgnoreMsgLevel = 1):
-        TexCreateBoxCmd = self.TexCreateBoxCmd(texstr, parmode, valign)
-        TexCopyBoxCmd = self.TexCopyBoxCmd(texstr, halign, angle)
+    def text(self, Cmd, halign = None, parmode = None, valign = None, angle = None, IgnoreMsgLevel = 1):
+
+        'print Cmd at the current position'
+        
+        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, parmode, valign)
+        TexCopyBoxCmd = self.TexCopyBoxCmd(Cmd, halign, angle)
         self.TexAddToFile(TexCreateBoxCmd + TexCopyBoxCmd, IgnoreMsgLevel)
 
-    def textwd(self, texstr, parmode = None, IgnoreMsgLevel = 1):
-        TexCreateBoxCmd = self.TexCreateBoxCmd(texstr, parmode, None)
+    def textwd(self, Cmd, parmode = None, IgnoreMsgLevel = 1):
+    
+        'get width of Cmd'
+
+        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, parmode, None)
         TexHexMD5=self.TexHexMD5(TexCreateBoxCmd)
         self.TexAddToFile(TexCreateBoxCmd +
                           "\\immediate\\write\\sizefile{" + TexHexMD5 +
                           ":wd:\\the\\wd\\localbox}\n", IgnoreMsgLevel)
         return self.TexResult(TexHexMD5 + ":wd:")
 
-    def textht(self, texstr, parmode=None, valign=None, IgnoreMsgLevel = 1):
-        TexCreateBoxCmd = self.TexCreateBoxCmd(texstr, parmode, valign)
+    def textht(self, Cmd, parmode=None, valign=None, IgnoreMsgLevel = 1):
+
+        'get height of Cmd'
+
+        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, parmode, valign)
         TexHexMD5=self.TexHexMD5(TexCreateBoxCmd)
         self.TexAddToFile(TexCreateBoxCmd +
                           "\\immediate\\write\\sizefile{" + TexHexMD5 +
                           ":ht:\\the\\ht\\localbox}\n", IgnoreMsgLevel)
         return self.TexResult(TexHexMD5 + ":ht:")
 
-    def textdp(self, texstr, parmode=None, valign=None, IgnoreMsgLevel = 1):
-        TexCreateBoxCmd = self.TexCreateBoxCmd(texstr, parmode, valign)
+    def textdp(self, Cmd, parmode=None, valign=None, IgnoreMsgLevel = 1):
+   
+        'get depth of Cmd'
+
+        TexCreateBoxCmd = self.TexCreateBoxCmd(Cmd, parmode, valign)
         TexHexMD5=self.TexHexMD5(TexCreateBoxCmd)
         self.TexAddToFile(TexCreateBoxCmd +
                           "\\immediate\\write\\sizefile{" + TexHexMD5 +
@@ -320,6 +356,8 @@ class Canvas(Globex):
 # PS code
 #
 
+    PSPositionCorrect = 0		# does actual PS position coincide with our x,y
+    
     def PSCmd(self, cmd):
         try:
             self.PSFile.write("%s\n" % cmd)
