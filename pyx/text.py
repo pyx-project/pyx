@@ -115,13 +115,19 @@ class char_info_word:
         if self.width_index==0:
             raise TFMError, "width_index should not be zero"
 
-class binfile(file): # TODO: we should not yet depend on python2.2
+class binfile:
+
+    def __init__(self, filename, mode="r"):
+        self.file = open(filename, mode)
+
+    def read(self, bytes):
+        return self.file.read(bytes)
 
     def readint(self, bytes = 4, signed = 0):
         first = 1
         result = 0
         while bytes:
-            value = ord(self.read(1))
+            value = ord(self.file.read(1))
             if first and signed and value > 127:
                 value -= 256
             first = 0
@@ -130,35 +136,35 @@ class binfile(file): # TODO: we should not yet depend on python2.2
         return result
 
     def readint32(self):
-        return struct.unpack(">l", self.read(4))[0]
-    
+        return struct.unpack(">l", self.file.read(4))[0]
+
     def readuint32(self):
-        return struct.unpack(">L", self.read(4))[0]
+        return struct.unpack(">L", self.file.read(4))[0]
 
     def readint24(self):
         # XXX: checkme
-        return struct.unpack(">l", "\0"+self.read(3))[0]
+        return struct.unpack(">l", "\0"+self.file.read(3))[0]
 
     def readuint24(self):
         # XXX: checkme
-        return struct.unpack(">L", "\0"+self.read(3))[0]
+        return struct.unpack(">L", "\0"+self.file.read(3))[0]
 
     def readint16(self):
-        return struct.unpack(">h", self.read(2))[0]
+        return struct.unpack(">h", self.file.read(2))[0]
     
     def readuint16(self):
-        return struct.unpack(">H", self.read(2))[0]
+        return struct.unpack(">H", self.file.read(2))[0]
 
     def readchar(self):
-        return struct.unpack("b", self.read(1))[0]
+        return struct.unpack("b", self.file.read(1))[0]
 
     def readuchar(self):
-        return struct.unpack("B", self.read(1))[0]
+        return struct.unpack("B", self.file.read(1))[0]
 
     def readstring(self, bytes):
         l = self.readuchar()
         assert l<bytes-1, "inconsistency in file: string too long"
-        return self.read(bytes-1)[:l]
+        return self.file.read(bytes-1)[:l]
 
 class DVIError(Exception): pass
 
@@ -489,14 +495,14 @@ class DVIFile:
                     num = file.readuint32()
                     den = file.readuint32()
                     mag = file.readuint32()
-                    
+
                     # self.trueconv = conv in DVIType docu
                     # if resolution = 254000.0
 
                     self.tfmconv = (25400000.0/num)*(den/473628672)/16.0;
                     self.trueconv = 1.0*num/den
                     self.conv = self.trueconv*(mag/1000.0)
-                    
+
                     comment = file.read(file.readuchar())
                     state = _READ_NOPAGE
                 else: raise DVIError
