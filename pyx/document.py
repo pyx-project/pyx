@@ -58,7 +58,7 @@ class page:
             self.paperformat = paperformat
         else:
             self.paperformat = _paperformatfromstring(paperformat)
-            sys.stderr.write("*** PyX Warning: specification of paperformat by string is depricated, use document.paperformat.%s instead\n" % paperformat.capitalize())
+            sys.stderr.write("*** PyX Warning: specification of paperformat by string is deprecated, use document.paperformat.%s instead\n" % paperformat.capitalize())
             
         self.rotated = rotated
         self.centered = centered
