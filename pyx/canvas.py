@@ -300,7 +300,7 @@ if __name__=="__main__":
     #c.aline(2,1)
 
 
-    print "Breite von 'Hello world!': ",t.textwd("Hello world!")
+    print "Breite von 'Hello world!': ",t.textwd("Hello  world!")
     print "Höhe von 'Hello world!': ",t.textht("Hello world!")
     print "Höhe von 'Hello world!' in large: ",t.textht("Hello world!", size = large)
     print "Höhe von 'Hello world!' in Large: ",t.textht("Hello world!", size = Large)
