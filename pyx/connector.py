@@ -52,12 +52,14 @@ class connector_pt(path.normpath):
         # XXX how can decoration of this box1.path() be handled?
         sp = self.intersect(box1.path())[0]
         sp.sort()
-        self.subpaths = self.split(sp[-1:])[1].subpaths
+        if sp:
+            self.subpaths = self.split(sp[-1:])[1].subpaths
 
         # cut off the end of self
         sp = self.intersect(box2.path())[0]
         sp.sort()
-        self.subpaths = self.split(sp[:1])[0].subpaths
+        if sp:
+            self.subpaths = self.split(sp[:1])[0].subpaths
 
     def shortenpath(self, dists):
         """shorten a path by the given distances"""
