@@ -571,8 +571,14 @@ whitespaces like in the following example:
 \begin{progcode}
 fontmaps = psfonts.map psfonts.cmz psfonts.amz
 \end{progcode}
+The same effect can be achieved by inserting the following line into the
+\PyX{} code:
+\begin{progcode}
+text.set(fontmaps="psfonts.cmz psfonts.amz")
+\end{progcode}
 
-Alternatively, the contents of \texttt{psfonts.cmz} can be inserted into 
+An alternative approach consists in modifying the \TeX{} installation by 
+inserting the contents of the desired map files like \texttt{psfonts.cmz} into 
 \texttt{psfonts.map}. Probably, \texttt{psfonts.map} recommends not to do this 
 by hand. In this case the instructions given in the file should be followed.  
 Otherwise, \texttt{psfonts.cmz} should be copied into \texttt{psfonts.map} while 
