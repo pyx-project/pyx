@@ -154,7 +154,7 @@ class InstanceList:
 
 class tex(InstanceList):
 
-    def __init__(self, unit, type = mode.TeX, latexstyle = "10pt", latexclass = "article", latexclassopt = "", texinit = "", lmsglevel = msglevel.hideload):
+    def __init__(self, unit = unit.unit(), type = mode.TeX, latexstyle = "10pt", latexclass = "article", latexclassopt = "", texinit = "", lmsglevel = msglevel.hideload):
         self.unit = unit
         assert type == mode.TeX or type == mode.LaTeX, "invalid type"
         if type == mode.TeX:
@@ -407,7 +407,7 @@ class tex(InstanceList):
         if os.system("dvips -E -o " + TempName + ".eps " + TempName + ".dvi > /dev/null 2>&1"):
             assert 0, "dvips exit code non-zero"
 
-        result = str(canvas.epsfile( 0, 0, TempName + ".eps", translatebb = 0))
+        result = str(canvas.epsfile( TempName + ".eps", translatebb = 0))
 
         # merge new sizes
         

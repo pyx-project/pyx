@@ -44,19 +44,20 @@ bbpattern = re.compile( r"^%%BoundingBox:\s+([+-]?\d+)\s+([+-]?\d+)\s+([+-]?\d+)
 
 class epsfile:
 
-    def __init__(self, x, y, epsname, clip = 1, translatebb = 1, showbb = 0):
-        self.x           = x
-        self.y           = y
-        self.epsname     = epsname
+    def __init__(self, filename, x = "0 t m", y = "0 t m", unit = unit.unit(), clip = 1, translatebb = 1, showbb = 0):
+        self.unit        = unit
+        self.x           = unit.pt(x)
+        self.y           = unit.pt(y)
+        self.filename     = filename
         self.clip        = clip
         self.translatebb = translatebb
         self.showbb      = showbb
         self._ReadEPSBoundingBox()                         
 
     def _ReadEPSBoundingBox(self):
-        'determines bounding box of EPS file epsname as 4-tuple (llx, lly, urx, ury)'
+        'determines bounding box of EPS file filename as 4-tuple (llx, lly, urx, ury)'
         try:
-            file = open(self.epsname,"r")
+            file = open(self.filename,"r")
         except:
             assert 0, "cannot open EPS file"	# TODO: Fehlerbehandlung
 
@@ -77,7 +78,7 @@ class epsfile:
 
     def __str__(self):
         try:
-	    file=open(self.epsname,"r")
+	    file=open(self.filename,"r")
 	except:
 	    assert "cannot open EPS file"	                          # TODO: Fehlerbehandlung
 
@@ -90,7 +91,7 @@ class epsfile:
         if self.clip:
             preamble = preamble + "%f %f %f %f rect\n" % ( self.llx, self.lly, self.urx-self.llx,self.ury-self.lly)
             preamble = preamble + "clip newpath\n"
-        preamble = preamble + "%%%%BeginDocument: %s\n" % self.epsname
+        preamble = preamble + "%%%%BeginDocument: %s\n" % self.filename
         
         return preamble + file.read() + "%%EndDocument\nEndEPSF\n"
 
@@ -225,17 +226,20 @@ class canvas:
     def _translate(self, x, y):
         self._PSAddCmd("%f %f translate" % self.unit.pt((x, y)))
         
-    def canvas(self, *args):
-        subcanvas = canvas(*args)
-        self._gsave()
-        self._PSAddCmd(subcanvas)
+    def create(self, pyxclass, *args, **kwargs):
+        instance = pyxclass(unit = self.unit.copy(), *args, **kwargs)
+        return instance
+
+    def stick(self, instance):
+        self._gsave() # we need this at the moment for subcanvas, but it should be avoided here!
+        self._PSAddCmd(instance)
         self._grestore()
-        return subcanvas
+        return self
         
-    def tex(self, **kwargs):
-        texcanvas = tex.tex(self.unit.copy(), **kwargs)
-        self._PSAddCmd(texcanvas)
-        return texcanvas
+    def insert(self, pyxclass, *args, **kwargs):
+        instance = self.create(pyxclass, *args, **kwargs)
+        self.stick(instance)
+        return instance
 
     def set(self, *args):
         for arg in args: 
@@ -263,10 +267,6 @@ class canvas:
            self._grestore()
         return self
 
-    def inserteps(self, x, y, filename, clip=1):
-        self._PSAddCmd(str(epsfile(self.unit.pt(x), self.unit.pt(y), filename, clip)))
-        return self
-        
     def write(self, filename, width, height, **kwargs):
         try:
   	    file = open(filename + ".eps", "w")
@@ -297,7 +297,7 @@ if __name__=="__main__":
     import unit
 
     c=canvas.canvas(unit=unit.unit())
-    t=c.tex()
+    t=c.insert(tex)
  
     #for x in range(11):
     #    amove(x,0)
@@ -363,7 +363,7 @@ if __name__=="__main__":
 
    
     for angle in range(20):
-       s=c.canvas(translate(10,10)*rotate(angle)).draw(p, canvas.linestyle.dashed, canvas.linewidth(0.01*angle), grey((20-angle)/20.0))
+       s=c.insert(canvas.canvas,translate(10,10)*rotate(angle)).draw(p, canvas.linestyle.dashed, canvas.linewidth(0.01*angle), grey((20-angle)/20.0))
  
     c.set(linestyle.solid)
     g=GraphXY(c, t, 10, 15, 8, 6)
@@ -379,8 +379,8 @@ if __name__=="__main__":
     g.plot(Function("0.01*sin(x)"))
     g.run()
     
-    c.canvas(scale(0.5, 0.4).rotate(10).translate("2 cm","200 mm")).inserteps(0,0,"ratchet_f.eps")
-    c.canvas(scale(0.2, 0.1).rotate(10).translate("6 cm","180 mm")).inserteps(0,0,"ratchet_f.eps")
+    c.insert(canvas.canvas, scale(0.5, 0.4).rotate(10).translate("2 cm","200 mm")).insert(epsfile,"ratchet_f.eps")
+    c.insert(canvas.canvas, scale(0.2, 0.1).rotate(10).translate("6 cm","180 mm")).insert(epsfile,"ratchet_f.eps")
     
     c.draw(path([moveto("5 cm", "5 cm"), rlineto(0.1,0.1)]), linewidth.THICK)
 
