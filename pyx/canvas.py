@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 #
 #
-# Copyright (C) 2002 Jörg Lehmann <joergl@users.sourceforge.net>
-# Copyright (C) 2002 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2002, 2003 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2002, 2003 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
@@ -36,163 +36,8 @@ transformed (i.e. translated, rotated, etc.) and clipped.
 
 """
 
-import types, math, string, StringIO, time
-import attrlist, base, bbox, helper, path, unit, text, t1strip, pykpathsea, trafo, version
-
-class prologitem:
-
-    """Part of the PostScript Prolog"""
-
-    def merge(self, other):
-        """ try to merge self with other prologitem
-
-        If the merge succeeds, return None. Otherwise return other.
-        Raise ValueError, if conflicts arise!"""
-
-        pass
-
-    def write(self, file):
-        """ write self in file """
-        pass
-
-
-class definition(prologitem):
-
-    """ PostScript function definition included in the prolog """
-
-    def __init__(self, id, body):
-        self.id = id
-        self.body = body
-
-    def merge(self, other):
-        if not isinstance(other, definition):
-            return other
-        if self.id==other.id:
-            if self.body==other.body:
-                return None
-            raise ValueError("Conflicting function definitions!")
-        else:
-           return other
-
-    def write(self, file):
-        file.write("%%%%BeginRessource: %s\n" % self.id)
-        file.write("%(body)s /%(id)s exch def\n" % self.__dict__)
-        file.write("%%EndRessource\n")
-
-
-# XXX: we have to define this here and not in text.py to avoid problems with cyclic imports!?
-_ReEncodeFont = definition("ReEncodeFont", """{
-  5 dict
-  begin
-    /newencoding exch def
-    /newfontname exch def
-    /basefontname exch def
-    /basefontdict basefontname findfont def
-    /newfontdict basefontdict maxlength dict def 
-    basefontdict {
-      exch dup dup /FID ne exch /Encoding ne and
-      { exch newfontdict 3 1 roll put }
-      { pop pop }
-      ifelse
-    } forall
-    newfontdict /FontName newfontname put
-    newfontdict /Encoding newencoding put
-    newfontname newfontdict definefont pop
-  end
-}""")
-
-
-class fontdefinition(prologitem):
-
-    """ PostScript font definition included in the prolog """
-
-    def __init__(self, font):
-        self.basepsname = font.getbasepsname()
-        self.fontfile = font.getfontfile()
-        self.encfilename = font.getencodingfile()
-        self.usedchars = font.usedchars
-
-    def merge(self, other):
-        if not isinstance(other, fontdefinition):
-            return other
-        if self.basepsname==other.basepsname and self.encfilename==other.encfilename:
-            for i in range(len(self.usedchars)):
-                self.usedchars[i] = self.usedchars[i] or other.usedchars[i]
-            return None
-        else:
-            return other
-
-    def write(self, file):
-        if self.fontfile:
-            file.write("%%%%BeginFont: %s\n" % self.basepsname)
-            file.write("%Included char codes:")
-            for i in range(len(self.usedchars)):
-                if self.usedchars[i]:
-                    file.write(" %d" % i)
-            file.write("\n")
-            pfbpath = pykpathsea.find_file(self.fontfile, pykpathsea.kpse_type1_format)
-            if pfbpath is None:
-                raise RuntimeError("cannot find type 1 font %s" % self.fontfile)
-            if self.encfilename is not None:
-                encpath = pykpathsea.find_file(self.encfilename, pykpathsea.kpse_tex_ps_header_format)
-                if encpath is None:
-                    raise RuntimeError("cannot find font encoding file %s" % self.encfilename)
-                t1strip.t1strip(file, pfbpath, self.usedchars, encpath)
-            else:
-                t1strip.t1strip(file, pfbpath, self.usedchars)
-            file.write("%%EndFont\n")
-
-
-class fontencoding(prologitem):
-
-    """ PostScript font re-encoding vector included in the prolog """
-
-    def __init__(self, font):
-        self.name = font.getencoding()
-        self.filename = font.getencodingfile()
-
-    def merge(self, other):
-        if not isinstance(other, fontencoding):
-            return other
-        if self.name==other.name:
-            if self.filename==other.filename:
-                return None
-            raise ValueError("Conflicting encodings!")
-        else:
-           return other
-
-    def write(self, file):
-        file.write("%%%%BeginProcSet: %s\n" % self.name)
-        path = pykpathsea.find_file(self.filename, pykpathsea.kpse_tex_ps_header_format)
-        encfile = open(path, "r")
-        file.write(encfile.read())
-        encfile.close()
-
-
-class fontreencoding(prologitem):
-
-    """ PostScript font re-encoding directive included in the prolog """
-
-    def __init__(self, font):
-        self.psname = font.getpsname()
-        self.basepsname = font.getbasepsname()
-        self.encoding = font.getencoding()
-
-    def merge(self, other):
-        if not isinstance(other, fontreencoding):
-            return other
-        if self.psname==other.psname:
-            if self.basepsname==other.basepsname and self.encoding==other.encoding:
-                return None
-            raise ValueError("Conflicting font reencodings!")
-        else:
-            return other
-
-    def write(self, file):
-        file.write("%%%%BeginProcSet: %s\n" % self.psname)
-        file.write("/%s /%s %s ReEncodeFont\n" % (self.basepsname, self.psname, self.encoding))
-        file.write("%%EndProcSet\n")
-
+import math, string, StringIO, time
+import attrlist, base, bbox, helper, path, unit, prolog, text, trafo, version
 
 # known paperformats as tuple(width, height)
 
@@ -990,7 +835,7 @@ class pattern(_canvas, base.PathStyle):
         patternsuffix = "end\n} bind\n>>\n%s\nmakepattern" % patterntrafostring
 
         pr = _canvas.prolog(self)
-        pr.append(definition(self.id, string.join((patternprefix, patternproc, patternsuffix), "")))
+        pr.append(prolog.definition(self.id, string.join((patternprefix, patternproc, patternsuffix), "")))
         return pr
 
 #
@@ -1025,7 +870,7 @@ class canvas(_canvas):
         try:
             file = open(filename, "w")
         except IOError:
-            assert 0, "cannot open output file"                 # TODO: Fehlerbehandlung...
+            raise IOError("cannot open output file")
 
         abbox = bbox is not None and bbox or self.bbox()
         abbox = abbox.enlarged(bboxenlarge)
@@ -1067,7 +912,7 @@ class canvas(_canvas):
 
 
         elif fittosize:
-            assert 0, "must specify paper size for fittosize" # TODO: exception...
+            raise ValueError("must specify paper size for fittosize")
 
         # if there has been a global transformation, adjust the bounding box
         # accordingly

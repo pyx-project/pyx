@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 #
 #
-# Copyright (C) 2002 Jörg Lehmann <joergl@users.sourceforge.net>
-# Copyright (C) 2002 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2002, 2003 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2002, 2003 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
@@ -21,13 +21,13 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import re
-import base, bbox, canvas, unit, trafo
+import base, bbox, canvas, prolog, unit, trafo
 
 # PostScript-procedure definitions (cf. 5002.EPSF_Spec_v3.0.pdf)
 # with important correction in EndEPSF:
 #   end operator is missing in the spec!
 
-_BeginEPSF = canvas.definition("BeginEPSF", """{
+_BeginEPSF = prolog.definition("BeginEPSF", """{
   /b4_Inc_state save def
   /dict_count countdictstack def
   /op_count count 1 sub def
@@ -41,14 +41,14 @@ _BeginEPSF = canvas.definition("BeginEPSF", """{
   1 ne
     {false setstrokeadjust false setoverprint
     } if
-  } if 
+  } if
 } bind""")
 
-_EndEPSF = canvas.definition("EndEPSF", """{
+_EndEPSF = prolog.definition("EndEPSF", """{
   end
   count op_count sub {pop} repeat
   countdictstack dict_count sub {end} repeat
-  b4_Inc_state restore 
+  b4_Inc_state restore
 } bind""")
 
 def _readbbox(filename):

@@ -22,7 +22,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import exceptions, glob, os, threading, Queue, traceback, re, struct, tempfile, sys, atexit
-import helper, unit, bbox, box, base, canvas, color, trafo, path, pykpathsea
+import helper, unit, bbox, box, base, canvas, color, trafo, path, prolog, pykpathsea
 
 class fix_word:
     def __init__(self, word):
@@ -408,7 +408,7 @@ class FontMapping:
                     try:
                         arg, cmd = pscode[:2]
                     except:
-                        raise RuntimeError("Unsupported Postscript fragment '%s' in psfonts.map" % pscode) 
+                        raise RuntimeError("Unsupported Postscript fragment '%s' in psfonts.map" % pscode)
                     pscode = pscode[2:]
                     if cmd == "ReEncodeFont":
                         self.reencodefont = arg
@@ -417,7 +417,7 @@ class FontMapping:
                     elif cmd == "SlantFont":
                         self.slantfont = arg
                     else:
-                        raise RuntimeError("Unsupported Postscript fragment '%s %s' in psfonts.map" % (arg, cmd)) 
+                        raise RuntimeError("Unsupported Postscript fragment '%s %s' in psfonts.map" % (arg, cmd))
             else:
                 if self.texname is None:
                     self.texname = token
@@ -434,7 +434,6 @@ class FontMapping:
 # generate fontmap
 
 fontmap = {}
-encodings = {}
 mappath = pykpathsea.find_file("psfonts.map", pykpathsea.kpse_dvips_config_format)
 if mappath is None:
     raise RuntimeError("cannot find dvips font catalog 'psfonts.map'")
@@ -449,6 +448,27 @@ for line in mapfile.readlines():
 mapfile.close()
 del mappath
 del mapfile
+
+_ReEncodeFont = prolog.definition("ReEncodeFont", """{
+  5 dict
+  begin
+    /newencoding exch def
+    /newfontname exch def
+    /basefontname exch def
+    /basefontdict basefontname findfont def
+    /newfontdict basefontdict maxlength dict def 
+    basefontdict {
+      exch dup dup /FID ne exch /Encoding ne and
+      { exch newfontdict 3 1 roll put }
+      { pop pop }
+      ifelse
+    } forall
+    newfontdict /FontName newfontname put
+    newfontdict /Encoding newencoding put
+    newfontname newfontdict definefont pop
+  end
+}""")
+
 
 
 class Font:
@@ -1055,13 +1075,13 @@ class DVIFile:
     def prolog(self, page): # TODO: AW inserted this page argument -> should return the prolog needed for that page only!
         """ return prolog corresponding to contents of dvi file """
         # XXX replace this by prolog method in _selectfont
-        result = [canvas._ReEncodeFont]
+        result = [_ReEncodeFont]
         for font in self.fonts:
             if font:
-                result.append(canvas.fontdefinition(font))
+                result.append(prolog.fontdefinition(font))
                 if font.getencoding():
-                    result.append(canvas.fontencoding(font))
-                    result.append(canvas.fontreencoding(font))
+                    result.append(prolog.fontencoding(font))
+                    result.append(prolog.fontreencoding(font))
         result.extend(self.pages[page-1].prolog())
         return result
 
@@ -1751,9 +1771,9 @@ class _textbox(box._rect, base.PSCmd):
 
 class textbox(_textbox):
 
-    def __init__(self, x, y, left, right, height, depth, texrunner, page):
-        _textbox.__init__(unit.topt(x), unit.topt(y), unit.topt(left), unit.topt(right),
-                          unit.topt(height), unit.topt(depth), texrunner, page)
+    def __init__(self, x, y, left, right, height, depth, texrunner, dvinumber, page, *styles):
+        _textbox.__init__(self, unit.topt(x), unit.topt(y), unit.topt(left), unit.topt(right),
+                          unit.topt(height), unit.topt(depth), texrunner, dvinumber, page, *styles)
 
 
 def _cleantmp(texrunner):
