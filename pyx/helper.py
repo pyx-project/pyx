@@ -76,6 +76,9 @@ def ensurelist(arg):
     return [arg]
 
 def getitemno(arg, n):
+    """get item number n if arg is a sequence (when the sequence
+       is not long enough, None is returned), otherweise arg is
+       returned"""
     if issequence(arg):
         try: return arg[n]
         except: return None
@@ -89,8 +92,9 @@ def issequenceofsequences(arg):
 
 
 def getsequenceno(arg, n):
-    """get sequence number n if arg is a sequence of sequences,
-       otherwise it gets just arg"""
+    """get sequence number n if arg is a sequence of sequences (when
+       the sequence is not long enough, None is returned), otherwise
+       arg is returned"""
     if issequenceofsequences(arg):
         try: return arg[n]
         except: return None
