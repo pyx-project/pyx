@@ -79,8 +79,8 @@ TODO for 0.6:
     - axis zeropath feature has been removed
     - mergelabels removed; linpart doesn't have a label argument anymore
     - iteration on graph style, when it is used several times in the same graph
-    - symbols + lines -> symbollines (??). symbols do not allow setting
-      lineattrs, and lines not symbolattrs
+    - symbols + lines -> symbollines; symbols do not allow setting lineattrs,
+      and lines not symbolattrs
     - manual line clipping (do not include unneeded line segments when the
       axis range is set manually etc.)
     - automatic file key titles
