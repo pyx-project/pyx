@@ -10,12 +10,12 @@ PyX
     - moved the attrlist into helper -- as plain functions; attrlist becomes obsolete
   - text module:
     - to be included in 0.3 -> finish base functionality
-    - TODO: remove stale @* files remaining upon error
+    - access to different baselines
     - documentation!!!
   - t1strip module:
     - strip glyphs from pfa/pfb-fonts
     - there is a C implementation taken from pdftex
-    - fallback solution via an external program (pfb2pfa --- included in teTeX???, not in MikTeX???)
+    - fallback solution via an external program (pfb2pfa)
   - pykpathsea module:
     - (partial) C binding to libkpathsea
     - fallback solution via an external program (kpsewhich)
@@ -24,16 +24,18 @@ PyX
     - use text module instead of the obsolete tex module (done except for the documentation)
     - allow for tailing zeros of automatic generated labels (done except for the documentation)
     - allow for missing data in bar graphs -> skipmissing parameter (done except for the documentation)
-    - remove the support for variables given within the argument dictionary in data constructor (done except for the documentation)
-    - changed the handling of extern variables and functions for expressions in data, function and paramfunction (done except for the documentation)
-    - graph keys; titles in data/function/etc. (work in progress)
-    - deferred:
-      - TODO: exceptions in drawsymbol & friends...
-      - TODO: separate texter out of the axispainter
-      - TODO: 3d graphs
+    - remove the support for variables given as keyword arguemtns in data constructor (done except for the documentation)
+    - use context instead of extern for extern variables and functions (done except for the documentation)
+    - graph keys; titles in data/function/etc. (done except for the documentation)
+    - deferred TODOs:
+      - common bboxes for different graphs
+      - automatic datafile key title
+      - exceptions in drawsymbol & friends...
+      - separate texter out of the axispainter
+      - 3d graphs
   - unit module:
     - new classes for visual and width lengths, aliases for user length (u_pt = pt)
-    - all length classes have now by default a quantifier 1 (instead of 0), such that, 
+    - all length classes have now by default a quantifier 1 (instead of 0), such that,
       for instance, 5*unit.t_cm() == unit.t_cm(5)
     - default_unit now has to be set via unit.set. For instance: unit.set(defaultunit="m").
     - convert_to is now internal function, which moreover does not longer accept tuples or lists
@@ -45,11 +47,11 @@ PyX
     - never reduce bbox upon output
     - TODO: document me!
   - epsfile module:
-    - new constructor signature, more in line with rest of PyX: 
+    - new constructor signature, more in line with rest of PyX:
       epsfile(x, y, filename, **additional_args)
   - data module:
     - removed additional column support in addcolumn; removed _addcolumn (done except for the documentation)
-    - TODO: line reduction for datafile like the every parameter in gnuplot
+    - line reduction for datafile like the every parameter in gnuplot (done except for the documentation)
   - canvas module:
     - new way of PS prolog generation that writes only necessary parts
     - added support for patterns

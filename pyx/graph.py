@@ -3779,6 +3779,8 @@ class data:
             self.data = file
         if title is helper.nodefault:
             self.title = "(unknown)"
+        else:
+            self.title = title
         self.columns = {}
         for key, column in columns.items():
             try:

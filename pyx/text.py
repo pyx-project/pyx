@@ -1095,32 +1095,39 @@ for s in defaultsizelist:
 
 class _readpipe(threading.Thread):
 
-    def __init__(self, pipe, expectqueue, gotevent, gotqueue):
+    def __init__(self, pipe, expectqueue, gotevent, gotqueue, quitevent):
         threading.Thread.__init__(self)
         self.setDaemon(1)
         self.pipe = pipe
         self.expectqueue = expectqueue
         self.gotevent = gotevent
         self.gotqueue = gotqueue
+        self.quitevent = quitevent
         self.expect = None
         self.start()
 
     def run(self):
         read = self.pipe.readline()
+        try:
+            self.expect = self.expectqueue.get_nowait()
+        except Queue.Empty:
+            pass
         while len(read):
             read.replace("\r", "")
             if not len(read) or read[-1] != "\n":
                 read += "\n"
             self.gotqueue.put(read)
+            if self.expect is not None and read.find(self.expect) != -1:
+                self.gotevent.set()
+            read = self.pipe.readline()
             try:
                 self.expect = self.expectqueue.get_nowait()
             except Queue.Empty:
                 pass
-            if self.expect is not None and read.find(self.expect) != -1:
-                self.gotevent.set()
-            read = self.pipe.readline()
-        if self.expect.find("PyXInputMarker") != -1:
+        if self.expect is not None and self.expect.find("PyXInputMarker") != -1:
+            print self.expect
             raise RuntimeError("TeX finished unexpectedly")
+        self.quitevent.set()
 
 
 
@@ -1226,7 +1233,8 @@ class texrunner:
             self.expectqueue = Queue.Queue(1) # allow for a single entry only
             self.gotevent = threading.Event()
             self.gotqueue = Queue.Queue(0) # allow arbitrary number of entries
-            self.readoutput = _readpipe(self.texoutput, self.expectqueue, self.gotevent, self.gotqueue)
+            self.quitevent = threading.Event()
+            self.readoutput = _readpipe(self.texoutput, self.expectqueue, self.gotevent, self.gotqueue, self.quitevent)
             self.texruns = 1
             oldpreamblemode = self.preamblemode
             self.preamblemode = 1
@@ -1251,7 +1259,7 @@ class texrunner:
                     self.execute("\\documentclass{%s}" % self.docclass, *self.texmessagedocclass)
             self.preamblemode = oldpreamblemode
         self.executeid += 1
-        if expr is not None:
+        if expr is not None: # TeX/LaTeX should process expr
             self.expectqueue.put_nowait("PyXInputMarker(%i)" % self.executeid)
             if self.preamblemode:
                 self.expr = ("%s%%\n" % expr +
@@ -1260,7 +1268,7 @@ class texrunner:
                 self.page += 1
                 self.expr = ("\\ProcessPyXBox{%s}{%i}%%\n" % (expr, self.page) +
                                    "\\PyXInput{%i}%%\n" % self.executeid)
-        else:
+        else: # TeX/LaTeX should be finished
             self.expectqueue.put_nowait("Transcript written on %s.log" % self.texfilename)
             if self.mode == "latex":
                 self.expr = "\\end{document}\n"
@@ -1269,9 +1277,15 @@ class texrunner:
         if self.texdebug:
             print "pass the following expression to (La)TeX:\n  %s" % self.expr.replace("\n", "\n  ").rstrip()
         self.texinput.write(self.expr)
-        self.gotevent.wait(self.waitfortex)
-        nogotevent = not self.gotevent.isSet()
+        self.gotevent.wait(self.waitfortex) # wait for the expected output
+        gotevent = self.gotevent.isSet()
         self.gotevent.clear()
+        if expr is None and gotevent:        # TeX/LaTeX should have finished
+            self.texruns = 0
+            self.texdone = 1
+            self.texinput.close()                # close the input queue and
+            self.quitevent.wait(self.waitfortex) # wait for finish of the output
+            gotevent = self.quitevent.isSet()
         try:
             self.texmsg = ""
             while 1:
@@ -1279,9 +1293,7 @@ class texrunner:
         except Queue.Empty:
             pass
         self.texmsgparsed = self.texmsg
-        if nogotevent:
-            raise TexResultError("TeX didn't respond as expected within the timeout period (%i seconds)." % self.waitfortex, self)
-        else:
+        if gotevent:
             if expr is not None:
                 texmessage.inputmarker.check(self)
                 if not self.preamblemode:
@@ -1294,19 +1306,30 @@ class texrunner:
                     traceback.print_exc()
             texmessage.emptylines.check(self)
             if len(self.texmsgparsed):
+                self.cleantmp()
                 raise TexResultError("unhandled TeX response (might be an error)", self)
-        if expr is None:
+        else:
+            self.cleantmp()
+            raise TexResultError("TeX didn't respond as expected within the timeout period (%i seconds)." % self.waitfortex, self)
+
+    def cleantmp(self):
+        if self.texruns: # cleanup while TeX is still running?
             self.texruns = 0
             self.texdone = 1
-
-    def getdvi(self):
-        self.execute(None, *self.texmessageend)
-        self.dvifile = DVIFile("%s.dvi" % self.texfilename, debug=self.dvidebug)
+            self.expectqueue.put_nowait(None)     # do not expect any output anymore
+            self.texinput.close()                 # close the input queue and
+            self.quitevent.wait(self.waitfortex)  # wait for finish of the output
+            if not self.quitevent.isSet(): return # didn't got a quit from TeX -> we can't do much more
         for usefile in self.usefiles:
             extpos = usefile.rfind(".")
             os.rename(self.texfilename + usefile[extpos:], usefile)
         for file in glob.glob("%s.*" % self.texfilename):
             os.unlink(file)
+
+    def getdvi(self):
+        self.execute(None, *self.texmessageend)
+        self.dvifile = DVIFile("%s.dvi" % self.texfilename, debug=self.dvidebug)
+        self.cleantmp()
 
     def prolog(self):
         if not self.texdone:
@@ -1392,7 +1415,7 @@ class texrunner:
 
     def _text(self, x, y, expr, *args):
         if expr is None:
-            raise ValueError("None is invalid")
+            raise ValueError("None expression is invalid")
         if self.texdone:
             raise TexDoneError
         if self.preamblemode:

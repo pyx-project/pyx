@@ -162,7 +162,8 @@ class datafile(data):
 
     def __init__(self, file, commentpattern=defaultcommentpattern,
                              stringpattern=defaultstringpattern,
-                             columnpattern=defaultcolumnpattern, **kwargs):
+                             columnpattern=defaultcolumnpattern,
+                             skiphead=0, skiptail=0, every=1,**kwargs):
         if helper.isstring(file):
             file = open(file, "r")
         usetitles = []
@@ -182,11 +183,14 @@ class datafile(data):
                 for value in self.splitline(line, stringpattern, columnpattern, tofloat=1):
                     linedata.append(value)
                 if len(linedata):
+                    if linenumber >= skiphead and not ((linenumber - skiphead) % every):
+                        linedata = [linenumber] + linedata
+                        if len(linedata) > maxcolumns:
+                            maxcolumns = len(linedata)
+                        usedata.append(linedata)
                     linenumber += 1
-                    linedata = [linenumber] + linedata
-                    if len(linedata) > maxcolumns:
-                        maxcolumns = len(linedata)
-                    usedata.append(linedata)
+        if skiptail:
+            del usedata[-skiptail:]
         data.__init__(self, titles=[None] + usetitles, data=usedata, maxcolumns=maxcolumns, **kwargs)
 
 
