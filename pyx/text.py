@@ -546,20 +546,26 @@ class textbox_pt(box.rect_pt, canvas._canvas):
         self.dvicanvas = None
         for attr in attrs:
             self.set(attr)
+        self.insertdvicanvas = 0
 
     def transform(self, *trafos):
+        if self.insertdvicanvas:
+            raise RuntimeError("can't apply transformation after dvicanvas was inserted")
         box.rect_pt.transform(self, *trafos)
         for trafo in trafos:
             self.texttrafo = trafo * self.texttrafo
 
     def setdvicanvas(self, dvicanvas):
-        self.insert(dvicanvas, self.texttrafo)
+        if self.dvicanvas is not None:
+            raise RuntimeError("multiple call to setdvicanvas")
         self.dvicanvas = dvicanvas
 
     def ensuredvicanvas(self):
         if self.dvicanvas is None:
             self.finishdvi()
             assert self.dvicanvas is not None, "finishdvi is broken"
+        if not self.insertdvicanvas:
+            self.insert(self.dvicanvas, self.texttrafo)
 
     def marker(self, marker):
         self.ensuredvicanvas()
