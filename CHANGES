@@ -27,6 +27,10 @@ PyX
     - TODO: 3d graphs --- leave it for pyx-0.4
   - data module:
     - TODO: line reduction for datafile like the every parameter in gnuplot
+  - canvas module:
+    - new way of PS prologue generation that writes only necessary parts
+    - added support for patterns 
+    - TODO: document patterns
   - numerous bugfixes:
     - problem with sizefile on windows (tex module)
     - allow for strings in graphxy's width and height; allow for width only (graph module)
