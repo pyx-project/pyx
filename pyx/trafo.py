@@ -155,10 +155,10 @@ class _trafo(base.PSOp):
         return scale(sx, sy, x, y)*self
 
     def _slanted(self, a, angle=0, x=None, y=None):
-        return _slanted(a, angle, x, y)*self
+        return _slant(a, angle, x, y)*self
 
     def slanted(self, a, angle=0, x=None, y=None):
-        return slanted(a, angle, x, y)*self
+        return slant(a, angle, x, y)*self
 
     def _translated(self, x, y):
         return _translate(x,y)*self
