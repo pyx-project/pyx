@@ -37,7 +37,7 @@ transformed (i.e. translated, rotated, etc.) and clipped.
 """
 
 import types, math, string, time
-import attrlist, base, bbox, helper, path, unit, text, t1strip, pykpathsea, trafo, version
+import attrlist, base, bbox, helper, path, unit, string, StringIO, text, t1strip, pykpathsea, trafo, version
 
 class prologitem:
 
@@ -233,7 +233,7 @@ linewidth.THICK  = linewidth("%f cm" % (_base*math.sqrt(64)))
 # Decorated path
 #
 
-class DecoratedPath(base.PSCmd):
+class decoratedpath(base.PSCmd):
     """Decorated path
 
     The main purpose of this class is during the drawing
@@ -260,7 +260,7 @@ class DecoratedPath(base.PSCmd):
         self.fillstyles = helper.ensurelist(fillstyles)
 
         # additional elements of the path, e.g., arrowheads,
-        # which are by themselves DecoratedPaths
+        # which are by themselves decoratedpaths
         self.subdps = helper.ensurelist(subdps)
 
     def addsubdp(self, subdp):
@@ -280,7 +280,7 @@ class DecoratedPath(base.PSCmd):
         return result
 
     def write(self, file):
-        # draw (stroke and/or fill) the DecoratedPath on the canvas
+        # draw (stroke and/or fill) the decoratedpath on the canvas
         # while trying to produce an efficient output, e.g., by
         # not writing one path two times
 
@@ -368,9 +368,9 @@ class PathDeco:
     """
 
     def decorate(self, dp):
-        """apply a style to a given DecoratedPath object dp
+        """apply a style to a given decoratedpath object dp
 
-        decorate accepts a DecoratedPath object dp, applies PathStyle
+        decorate accepts a decoratedpath object dp, applies PathStyle
         by modifying dp in place and returning the new dp.
         """
 
@@ -507,7 +507,7 @@ class arrow(PathDeco):
 
         ahead = _arrowhead(anormpath, self.size, self.angle, self.constriction)
 
-        dp.addsubdp(DecoratedPath(ahead,
+        dp.addsubdp(decoratedpath(ahead,
                                   strokepath=ahead, fillpath=ahead,
                                   styles=self.styles,
                                   strokestyles=self.strokestyles,
@@ -768,7 +768,7 @@ class _canvas(base.PSCmd, attrlist.attrlist):
 
         self.attrcheck(args, allowmulti=(base.PathStyle, PathDeco))
 
-        dp = DecoratedPath(path)
+        dp = decoratedpath(path)
 
         # set global styles
         dp.styles = self.attrgetall(args, base.PathStyle, ())
@@ -854,7 +854,6 @@ class pattern(_canvas, base.PathStyle):
         file.write("%s setpattern\n" % self.id)
 
     def prolog(self):
-        import StringIO, string
         patternbbox = _canvas.bbox(self)
         if self.xstep is None:
            xstep = patternbbox.urx-patternbbox.llx
