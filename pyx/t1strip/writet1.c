@@ -2,6 +2,7 @@
 Copyright (c) 1996-2002 Han The Thanh, <thanh@pdftex.org>
 
 This file is part of pdfTeX.
+It was adapted for the use in PyX by André Wobst.
 
 pdfTeX is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,7 +18,6 @@ You should have received a copy of the GNU General Public License
 along with pdfTeX; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-$Id$
 */
 #include "pyxadapt.h"   /* PyX */
 
