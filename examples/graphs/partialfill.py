@@ -11,8 +11,8 @@ horiz = g.plot(graph.data.function("y=0.5*x", points=2))
 g.finish()
 
 # convert paths to normpaths (for efficiency reasons only)
-fline = path.normpath(fline.styledata.path)
-horiz = path.normpath(horiz.styledata.path)
+fline = fline.styledata.path.normpath()
+horiz = horiz.styledata.path.normpath()
 # intersect the lines
 splith, splitf = horiz.intersect(fline)
 
@@ -25,7 +25,7 @@ area = area.joined(fline.split([splitf[-2], splitf[-1]])[1])
 area = area.joined(horiz.split([splith[-1]])[1])
 area.append(path.lineto(*g.vpos(1, 0)))
 area.append(path.lineto(*g.vpos(0, 0)))
-area.append(path.closepath())
+area[-1].close()
 
 c = canvas.canvas()
 

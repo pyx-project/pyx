@@ -1,16 +1,16 @@
 from pyx import *
 
-circ1 = path.normpath(path.circle(0, 0, 1)) # you don't really need normpath,
-circ2 = path.normpath(path.circle(1, 1, 1)) # but its better to have it once
-                                            # for those operations
+circ1 = path.circle(0, 0, 1).normpath() # you don't really need normpath,
+circ2 = path.circle(1, 1, 1).normpath() # but its better to have it once
+                                        # for those operations
 (circ1a, circ1b), (circ2a, circ2b) = circ1.intersect(circ2)
 intersection = (circ1.split([circ1a, circ1b])[0]
                 << circ2.split([circ2b, circ2a])[0])
-intersection.append(path.closepath())
+intersection[-1].close()
 
 union = (circ1.split([circ1a, circ1b])[1]
          << circ2.split([circ2b, circ2a])[1])
-union.append(path.closepath())
+union[-1].close()
 
 c = canvas.canvas()
 c.fill(union, [color.rgb.blue])
