@@ -820,6 +820,7 @@ class parser:
         self.MathTreeOps = MathTreeOps
         self.MathTreeFuncs = MathTreeFuncs
         self.MathTreeVals = MathTreeVals
+        self.isnewparser = 0
 
     def parse(self, str):
         return self.old_parse(str)
