@@ -120,11 +120,27 @@ def testnormpathtrafo(c):
     c.stroke(p.tangent(0, "30 pt"), canvas.earrow.normal)
     c.stroke(p.reversed().tangent(0, "30 pt"), canvas.earrow.normal)
 
-#    p1, p2, p3 = p.split(1.0, 2.1)
+    #    p1, p2, p3 = p.split(1.0, 2.1)
     p1, p2 = p.split(1.0, 2.1)
     c.stroke(p1, color.rgb.red, canvas.linestyle.dashed)
     c.stroke(p2, color.rgb.green, canvas.linestyle.dashed)
-#    c.stroke(p3, color.rgb.blue, canvas.linestyle.dashed)
+    #    c.stroke(p3, color.rgb.blue, canvas.linestyle.dashed)
+
+    circ1 = circle(0, 10, 1)
+    circ2 = circle(1.7, 10, 1)
+
+    c.stroke(circ1)
+    c.stroke(circ2)
+
+    isectcirc1, isectcirc2 = circ1.intersect(circ2)
+    segment1 = circ1.split(*isectcirc1)[0]
+    segment2 = circ2.split(*isectcirc2)[1]
+
+    segment = segment1 << segment2
+    segment.append(closepath())
+
+    c.stroke(segment, canvas.linewidth.THick, canvas.filled(color.rgb.green))
+
 
 def testtangent(c):
     p=path(moveto(0,5),
