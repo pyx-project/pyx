@@ -14,6 +14,11 @@ PyX
       lines not symbolattrs
     - allow for graph.changesymbol.square(size=0.15) etc.
     - rect style (and errorbars?) should use clipping
+  - canvas module:
+    - default patterns
+    - stroke and fill should support trafos
+    - make dash length available
+    - shouldn't strokepath/fillpath be validated by "strokepath is not None" instead of just "strokepath"
   - path module:
     - reverse needs to be fixed
   - text module:
@@ -44,11 +49,6 @@ PyX
     - dense -> density
     - axis.maxworse
     - axis interface
-  - canvas module:
-    - default patterns
-    - stroke and fill should support trafos
-    - make dash length available
-    - shouldn't strokepath/fillpath be validated by "strokepath is not None" instead of just "strokepath"
   - text module:
     - reset() method for the texrunner (done except for the documentation)
     - automatic restart of a TeX instance with the same preamble (preamble changes are not possible)
