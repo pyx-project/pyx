@@ -129,9 +129,12 @@ TODO:
       from a path.
     - normsubpath can now deal with short (i.e. shorter than epsilon) segments correctly
     - the intersect and split methods of normpath and normsubpath have been completely rewritten and
-      now take the accuracy epsilon correctly into account
+      now take the accuracy epsilon correctly into account. Note that for a closed subpath the
+      split function now returns the segment containing the closing point as first element
+      in the result list (before, it was returned as last element).
     - normsubpathitems and normsubpath now implement much more methods also provided by
       path and normpath instances
+    - normpath.append no longer accepts pathitems but only normsubpaths
   - deformer module: new
     - moved cycloid and smoothed from deco into deformer
   - bbox module:
