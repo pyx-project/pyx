@@ -53,3 +53,21 @@ or install PyX system wide by using
     python setup.py install
 
 or an appropriate variant thereof.
+
+Compiling the manual
+--------------------
+
+For the layout of the manual we have made use of the standard Python
+documentation framework. For building the manual, you will need the script
+"mkhowto" of your Python distribution. Please make a soft-link of this script
+into the manual directory
+
+    cd manual/
+    ln -s </usr/lib/>python/Doc/tools/mkhowto mkhowto
+    make
+
+Note that this requires Python version 2.3. In former versions (2.2 and 2.1)
+you will need to get the Python sources from www.python.org and try to find the
+script there. For users of the older Python versions we have included a
+ready-made pdf of the manual.
+
