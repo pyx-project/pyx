@@ -536,6 +536,8 @@ def readfontmap(filenames):
     for filename in filenames:
         mappath = pykpathsea.find_file(filename, pykpathsea.kpse_dvips_config_format)
         if not mappath:
+            mappath = pykpathsea.find_file(filename, pykpathsea.kpse_fontmap_format)
+        if not mappath:
             raise RuntimeError("cannot find font mapping file '%s'" % filename)
         mapfile = open(mappath, "r")
         lineno = 0
