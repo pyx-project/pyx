@@ -429,13 +429,22 @@ class selectfont(_selectfont):
 
 
 class _show(base.PSCmd):
-    def __init__(self, x, y, width, height, depth, chars):
+
+    def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.width = width
-        self.height = height
-        self.depth = depth
-        self.chars = chars
+        self.width = 0
+        self.height = 0
+        self.depth = 0
+        self.chars = []
+
+    def addchar(self, width, height, depth, char):
+        self.width += width
+        if height > self.height:
+            self.height = height
+        if depth > self.depth:
+            self.depth = depth
+        self.chars.append(char)
 
     def bbox(self):
         return bbox._bbox(self.x, self.y-self.depth, self.x+self.width, self.y+self.height)
@@ -754,9 +763,8 @@ class dvifile:
         # pointer to currently active page
         self.actpage = None
 
-        # currently active output: position, content and type 1 font
-        self.actoutstart = None
-        self.actoutchars = []
+        # currently active output: show instance being filled and actoutfont
+        self.activeshow = None
         self.actoutfont = None
 
         # stack for self.file, self.fonts and self.stack, needed for VF inclusion
@@ -773,16 +781,11 @@ class dvifile:
 
     def flushout(self):
         """ flush currently active string """
-        if self.actoutstart:
-            x =  self.actoutstart[0] * self.conv
-            y = -self.actoutstart[1] * self.conv
-            width = self.actoutstart[2]
-            height = self.actoutstart[3]
-            depth = self.actoutstart[4]
+        if self.activeshow is not None:
             if self.debug:
-                print "[%s]" % "".join([chr(char) for char in self.actoutchars])
-            self.actpage.insert(_show(x, y, width, height, depth, self.actoutchars))
-            self.actoutstart = None
+                print "[%s]" % "".join([chr(char) for char in self.activeshow.chars])
+            self.actpage.insert(self.activeshow)
+            self.activeshow = None
 
     def putrule(self, height, width, inch=1):
         self.flushout()
@@ -824,18 +827,12 @@ class dvifile:
                     0))
 
         if isinstance(self.activefont, type1font):
-            if self.actoutstart is None:
-                self.actoutstart = [self.pos[_POS_H], self.pos[_POS_V], 0, 0, 0]
-                self.actoutchars = []
+            if self.activeshow is None:
+                self.activeshow = _show(self.pos[_POS_H] * self.conv, -self.pos[_POS_V] * self.conv)
             width = self.activefont.getwidth(char) * self.tfmconv * self.conv
             height = self.activefont.getheight(char) * self.tfmconv * self.conv
             depth = self.activefont.getdepth(char) * self.tfmconv * self.conv
-            self.actoutstart[2] += width
-            if height > self.actoutstart[3]:
-                self.actoutstart[3] = height
-            if depth > self.actoutstart[4]:
-                self.actoutstart[4] = depth
-            self.actoutchars.append(char)
+            self.activeshow.addchar(width, height, depth, char)
 
             self.activefont.markcharused(char)
             self.pos[_POS_H] += dx
