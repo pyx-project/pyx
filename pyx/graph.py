@@ -741,7 +741,7 @@ class chain(_PlotStyle):
                 p.append(path._lineto(pt[0],pt[1]))
             else:
                 p = [path._moveto(pt[0],pt[1]), ]
-        Graph.canvas.draw(path(p))
+        Graph.canvas.draw(path(*p))
 
 class mark(_PlotStyle):
 
@@ -751,10 +751,10 @@ class mark(_PlotStyle):
     def LoopOverPoints(self, Graph, Data):
         for pt in zip(Graph.ValueList(_XPattern, 0, Data),
                       Graph.ValueList(_YPattern, 1, Data)):
-            Graph.canvas.draw(path.path([path._moveto(pt[0] - self.size, pt[1] - self.size),
-                                         path._lineto(pt[0] + self.size, pt[1] + self.size),
-                                         path._moveto(pt[0] - self.size, pt[1] + self.size),
-                                         path._lineto(pt[0] + self.size, pt[1] - self.size), ]))
+            Graph.canvas.draw(path.path(path._moveto(pt[0] - self.size, pt[1] - self.size),
+                                        path._lineto(pt[0] + self.size, pt[1] + self.size),
+                                        path._moveto(pt[0] - self.size, pt[1] + self.size),
+                                        path._lineto(pt[0] + self.size, pt[1] - self.size)))
 
 ###############################################################################
 # data part
