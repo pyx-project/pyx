@@ -619,8 +619,8 @@ class font:
         return int(length*long(z) >> shift)
 
 #    we do not need that ...
-#    def _convert_tfm_to_pt(self, length):
-#        return (16*long(round(length*self.q*self.tfmconv))/16777216) * self.pyxconv
+    def _convert_tfm_to_pt(self, length):
+        return (16*long(round(length*self.q*self.tfmconv))/16777216) * self.pyxconv
 
     # routines returning lengths as integers in dvi units
 
@@ -638,8 +638,8 @@ class font:
 
     # routines returning lengths as floats in PostScript points
 
-#    def getwidth_pt(self, charcode):
-#        return self._convert_tfm_to_pt(self.tfmfile.width[self.tfmfile.char_info[charcode].width_index])
+    def getwidth_pt(self, charcode):
+        return self._convert_tfm_to_pt(self.tfmfile.width[self.tfmfile.char_info[charcode].width_index])
 #
 #    def getheight_pt(self, charcode):
 #        return self._convert_tfm_to_pt(self.tfmfile.height[self.tfmfile.char_info[charcode].height_index])

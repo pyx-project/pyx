@@ -28,7 +28,7 @@ needed by canvasitems and a resource registry class.
 
 """
 
-import pswriter
+import pswriter, pdfwriter
 
 class _resource:
 
@@ -38,7 +38,6 @@ class _resource:
         self.id = id
 
     def PSregister(self, registry):
-        """ return a list of PS resources corresponding to the resource """
         return []
 
 
@@ -71,6 +70,7 @@ class font(_resource):
         self.encodingfile = font.getencodingfile()
         self.encoding = font.getencoding()
         self.usedchars = font.usedchars
+        self.font = font
 
     def PSregister(self, registry):
         if self.fontfile:
@@ -79,3 +79,6 @@ class font(_resource):
             pswriter._ReEncodeFont.register(registry)
             pswriter.PSfontencoding(self.encoding, self.encodingfile).register(registry)
             pswriter.PSfontreencoding(self.fontname, self.basepsname, self.encoding).register(registry)
+
+    def PDFregister(self, registry):
+        pdfwriter.PDFfont(self.fontname, self.basepsname, self.font).register(registry)
