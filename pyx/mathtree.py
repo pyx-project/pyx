@@ -178,8 +178,8 @@ class MathTreeValConst(MathTreeVal):
         return self.ArgV[0]
 
 
-VarPattern = re.compile(r"[a-z][a-z0-9_]*", re.IGNORECASE)
-MathConst = { "pi": math.pi, "e": math.e }
+VarPattern = re.compile(r"[a-z_][a-z0-9_]*", re.IGNORECASE)
+MathConst = {"pi": math.pi, "e": math.e}
 
 class MathTreeValVar(MathTreeVal):
 
@@ -191,7 +191,7 @@ class MathTreeValVar(MathTreeVal):
 
     def CalcDerivative(self, arg):
         if arg != self.ArgV[0]:
-            raise DerivativeError("expression doesn't depend on %s" % arg)
+            raise DerivativeError("expression doesn't depend on '%s'" % arg)
         return MathTreeValConst(1.0)
 
     def DependOn(self,arg):
@@ -201,13 +201,24 @@ class MathTreeValVar(MathTreeVal):
 
     def VarList(self):
         if self.ArgV[0] in MathConst.keys():
-            return [ ]
-        return [self.ArgV[0], ]
+            return []
+        return [self.ArgV[0]]
 
     def Calc(self, VarDict):
         if self.ArgV[0] in MathConst.keys():
             return MathConst[self.ArgV[0]]
         return VarDict[self.ArgV[0]]
+
+
+ColPattern = re.compile(r"\$-?[1-9][0-9]*")
+
+class MathTreeValCol(MathTreeValVar):
+
+    def InitByParser(self, arg):
+        Match = arg.MatchPattern(ColPattern)
+        if Match:
+            self.AddArg(Match)
+            return 1
 
 
 class MathTreeFunc(MathTree):
@@ -657,11 +668,17 @@ DefaultMathTreeFuncs = (MathTreeFunc1Neg, MathTreeFunc1Sgn, MathTreeFunc1Sqrt,
                         MathTreeFunc1ASin, MathTreeFunc1ACos, MathTreeFunc1ATan,
                         MathTreeFunc2Norm)
 
+DefaultMathTreeVals = (MathTreeValConst, MathTreeValVar)
+MathTreeValsWithCol = (MathTreeValConst, MathTreeValVar, MathTreeValCol)
+
 class parser:
 
-    def __init__(self, MathTreeOps=DefaultMathTreeOps, MathTreeFuncs=DefaultMathTreeFuncs):
+    def __init__(self, MathTreeOps=DefaultMathTreeOps,
+                       MathTreeFuncs=DefaultMathTreeFuncs,
+                       MathTreeVals=DefaultMathTreeVals):
         self.MathTreeOps = MathTreeOps
         self.MathTreeFuncs = MathTreeFuncs
+        self.MathTreeVals = MathTreeVals
 
     def parse(self, str):
         return self.ParseMathTree(ParseStr(str))
@@ -705,9 +722,9 @@ class parser:
                             Func.AddArg(e.MathTree)
                         break
                 else:
-                    for Val in (MathTreeValConst(), MathTreeValVar()):
-                        i = Val.InitByParser(arg)
-                        if i:
+                    for ValClass in self.MathTreeVals:
+                        Val = ValClass()
+                        if Val.InitByParser(arg):
                             if Tree:
                                 Tree.AddArg(Val)
                             else:

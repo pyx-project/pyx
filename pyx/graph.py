@@ -1160,7 +1160,7 @@ class linkaxispainter(axispainter):
         axispainter.__init__(self, **args)
 
     def paint(self, graph, axis):
-        axis.ticks = []
+        ticks = []
         for _tick in axis.linkedaxis.ticks:
             ticklevel = _tick.ticklevel
             labellevel = _tick.labellevel
@@ -1169,13 +1169,38 @@ class linkaxispainter(axispainter):
             if self.skiplabellevel is not None and labellevel >= self.skiplabellevel:
                 labellevel = None
             if ticklevel is not None or labellevel is not None:
-                axis.ticks.append(tick(_tick.enum, _tick.denom, ticklevel, labellevel))
-        axis.convert = axis.linkedaxis.convert
-
+                ticks.append(tick(_tick.enum, _tick.denom, ticklevel, labellevel))
         # XXX: don't forget to calculate new text positions as soon as this is moved
         #      outside of the paint method (when rating is moved into the axispainter)
 
-        axispainter.paint(self, graph, axis)
+        dummy = axis.linkedaxis.ticks
+        axis.linkedaxis.ticks = ticks
+
+        dummy2 = (axis.linkedaxis.axispos,
+                  axis.linkedaxis.tickpoint,
+                  axis.linkedaxis.fixtickdirection,
+                  axis.linkedaxis.gridpath)
+        (axis.linkedaxis.axispos,
+         axis.linkedaxis.tickpoint,
+         axis.linkedaxis.fixtickdirection,
+         axis.linkedaxis.gridpath) = (axis.axispos,
+                                      axis.tickpoint,
+                                      axis.fixtickdirection,
+                                      axis.gridpath)
+
+        dummy3 = axis.linkedaxis.title
+        axis.linkedaxis.title = None
+
+        axispainter.paint(self, graph, axis.linkedaxis)
+
+        axis.linkedaxis.ticks = dummy
+
+        (axis.linkedaxis.axispos,
+         axis.linkedaxis.tickpoint,
+         axis.linkedaxis.fixtickdirection,
+         axis.linkedaxis.gridpath) = dummy2
+
+        axis.linkedaxis.title = dummy3
 
 
 
@@ -1186,9 +1211,9 @@ class linkaxispainter(axispainter):
 
 class _axis:
 
-    def __init__(self, min=None, max=None, reverse=0, title=None, painter=axispainter(),
-                       divisor=1, suffix=None, baselineattrs=canvas.linecap.square,
-                       datavmin=None, datavmax=None, tickvmin=None, tickvmax=None):
+    def __init__(self, min=None, max=None, reverse=0, divisor=1,
+                       datavmin=None, datavmax=None, tickvmin=None, tickvmax=None,
+                       title=None, suffix=None, painter=axispainter(), baselineattrs=canvas.linecap.square):
         if None not in (min, max) and min > max:
             min, max = max, min
             if reverse:
@@ -1297,12 +1322,15 @@ class logaxis(_axis, _logmap):
         self.rate = rate
 
 
-class linkaxis(_axis):
+class linkaxis:
 
-    def __init__(self, linkedaxis, title=None, painter=linkaxispainter()):
+    def __init__(self, linkedaxis, painter=linkaxispainter()):
         self.linkedaxis = linkedaxis
-        _axis.__init__(self, title=title, painter=painter)
-        self.divisor = linkedaxis.divisor # XXX: not nice ...
+        self.painter = painter
+        self.getdatarange = linkedaxis.getdatarange
+        self.setdatarange = linkedaxis.setdatarange
+        self.baselineattrs = linkedaxis.baselineattrs
+        self._extent = 0
 
 
 
@@ -1335,10 +1363,10 @@ class graphxy(canvas.canvas):
         return styles[0]
 
     def xtickpoint(self, axis, virtual):
-        return (self.xmap.convert(virtual), axis.yaxispos)
+        return (self.xmap.convert(virtual), axis.axispos)
 
     def ytickpoint(self, axis, virtual):
-        return (axis.xaxispos, self.ymap.convert(virtual))
+        return (axis.axispos, self.ymap.convert(virtual))
 
     def tickdirection(self, axis, virtual):
         return axis.fixtickdirection
@@ -1410,10 +1438,7 @@ class graphxy(canvas.canvas):
 
         # TODO: move rating into the painter
         for key, axis in self.axes.items():
-            # XXX: linkaxis handling
-            try:
-                axis.part
-            except AttributeError:
+            if isinstance(axis, linkaxis):
                 continue
 
             # TODO: make use of stretch
@@ -1477,14 +1502,14 @@ class graphxy(canvas.canvas):
             if self.XPattern.match(key):
                  if needxaxisdist[num2]:
                      self._xaxisextents[num2] += axesdist
-                 axis.yaxispos = self.ymap.convert(num2) + num3*self._xaxisextents[num2]
+                 axis.axispos = self.ymap.convert(num2) + num3*self._xaxisextents[num2]
                  axis.tickpoint = self.xtickpoint
                  axis.fixtickdirection = (0, num3)
                  axis.gridpath = self.xgridpath
             elif self.YPattern.match(key):
                  if needyaxisdist[num2]:
                      self._yaxisextents[num2] += axesdist
-                 axis.xaxispos = self.xmap.convert(num2) + num3*self._yaxisextents[num2]
+                 axis.axispos = self.xmap.convert(num2) + num3*self._yaxisextents[num2]
                  axis.tickpoint = self.ytickpoint
                  axis.fixtickdirection = (num3, 0)
                  axis.gridpath = self.ygridpath
@@ -1675,6 +1700,78 @@ class _changecolorreversegray(changecolor):
         changecolor.__init__(self, gradient)
 
 
+class _changecolorredblack(changecolor):
+
+    def __init__(self, gradient=color.gradient.redblack):
+        changecolor.__init__(self, gradient)
+
+
+class _changecolorblackred(changecolor):
+
+    def __init__(self, gradient=color.gradient.blackred):
+        changecolor.__init__(self, gradient)
+
+
+class _changecolorredwhite(changecolor):
+
+    def __init__(self, gradient=color.gradient.redwhite):
+        changecolor.__init__(self, gradient)
+
+
+class _changecolorwhitered(changecolor):
+
+    def __init__(self, gradient=color.gradient.whitered):
+        changecolor.__init__(self, gradient)
+
+
+class _changecolorgreenblack(changecolor):
+
+    def __init__(self, gradient=color.gradient.greenblack):
+        changecolor.__init__(self, gradient)
+
+
+class _changecolorblackgreen(changecolor):
+
+    def __init__(self, gradient=color.gradient.blackgreen):
+        changecolor.__init__(self, gradient)
+
+
+class _changecolorgreenwhite(changecolor):
+
+    def __init__(self, gradient=color.gradient.greenwhite):
+        changecolor.__init__(self, gradient)
+
+
+class _changecolorwhitegreen(changecolor):
+
+    def __init__(self, gradient=color.gradient.whitegreen):
+        changecolor.__init__(self, gradient)
+
+
+class _changecolorblueblack(changecolor):
+
+    def __init__(self, gradient=color.gradient.blueblack):
+        changecolor.__init__(self, gradient)
+
+
+class _changecolorblackblue(changecolor):
+
+    def __init__(self, gradient=color.gradient.blackblue):
+        changecolor.__init__(self, gradient)
+
+
+class _changecolorbluewhite(changecolor):
+
+    def __init__(self, gradient=color.gradient.bluewhite):
+        changecolor.__init__(self, gradient)
+
+
+class _changecolorwhiteblue(changecolor):
+
+    def __init__(self, gradient=color.gradient.whiteblue):
+        changecolor.__init__(self, gradient)
+
+
 class _changecolorredgreen(changecolor):
 
     def __init__(self, gradient=color.gradient.redgreen):
@@ -1737,6 +1834,18 @@ class _changecolorreversehue(changecolor):
 
 changecolor.gray           = _changecolorgray
 changecolor.reversegray    = _changecolorreversegray
+changecolor.redblack       = _changecolorredblack
+changecolor.blackred       = _changecolorblackred
+changecolor.redwhite       = _changecolorredwhite
+changecolor.whitered       = _changecolorwhitered
+changecolor.greenblack     = _changecolorgreenblack
+changecolor.blackgreen     = _changecolorblackgreen
+changecolor.greenwhite     = _changecolorgreenwhite
+changecolor.whitegreen     = _changecolorwhitegreen
+changecolor.blueblack      = _changecolorblueblack
+changecolor.blackblue      = _changecolorblackblue
+changecolor.bluewhite      = _changecolorbluewhite
+changecolor.whiteblue      = _changecolorwhiteblue
 changecolor.redgreen       = _changecolorredgreen
 changecolor.redblue        = _changecolorredblue
 changecolor.greenred       = _changecolorgreenred
@@ -1834,7 +1943,7 @@ class mark:
                        lineattrs=None):
         self.size_str = size
         if mark == _nodefault:
-            self.mark = self.changecross()
+            self.mark = changemark.cross()
         else:
             self.mark = mark
         self._markattrs = markattrs
@@ -2119,60 +2228,63 @@ class mark:
             clipcanvas.stroke(self.path, *self.lineattrs)
 
 
-class _changecross(changesequence):
+class changemark(changesequence): pass
+
+
+class _changemarkcross(changemark):
     defaultsequence = (mark.cross, mark.plus, mark.square, mark.triangle, mark.circle, mark.diamond)
 
 
-class _changeplus(changesequence):
+class _changemarkplus(changemark):
     defaultsequence = (mark.plus, mark.square, mark.triangle, mark.circle, mark.diamond, mark.cross)
 
 
-class _changesquare(changesequence):
+class _changemarksquare(changemark):
     defaultsequence = (mark.square, mark.triangle, mark.circle, mark.diamond, mark.cross, mark.plus)
 
 
-class _changetriangle(changesequence):
+class _changemarktriangle(changemark):
     defaultsequence = (mark.triangle, mark.circle, mark.diamond, mark.cross, mark.plus, mark.square)
 
 
-class _changecircle(changesequence):
+class _changemarkcircle(changemark):
     defaultsequence = (mark.circle, mark.diamond, mark.cross, mark.plus, mark.square, mark.triangle)
 
 
-class _changediamond(changesequence):
+class _changemarkdiamond(changemark):
     defaultsequence = (mark.diamond, mark.cross, mark.plus, mark.square, mark.triangle, mark.circle)
 
 
-class _changesquaretwice(changesequence):
+class _changemarksquaretwice(changemark):
     defaultsequence = (mark.square, mark.square, mark.triangle, mark.triangle,
                        mark.circle, mark.circle, mark.diamond, mark.diamond)
 
 
-class _changetriangletwice(changesequence):
+class _changemarktriangletwice(changemark):
     defaultsequence = (mark.triangle, mark.triangle, mark.circle, mark.circle,
                        mark.diamond, mark.diamond, mark.square, mark.square)
 
 
-class _changecircletwice(changesequence):
+class _changemarkcircletwice(changemark):
     defaultsequence = (mark.circle, mark.circle, mark.diamond, mark.diamond,
                        mark.square, mark.square, mark.triangle, mark.triangle)
 
 
-class _changediamondtwice(changesequence):
+class _changemarkdiamondtwice(changemark):
     defaultsequence = (mark.diamond, mark.diamond, mark.square, mark.square,
                        mark.triangle, mark.triangle, mark.circle, mark.circle)
 
 
-mark.changecross         = _changecross
-mark.changeplus          = _changeplus
-mark.changesquare        = _changesquare
-mark.changetriangle      = _changetriangle
-mark.changecircle        = _changecircle
-mark.changediamond       = _changediamond
-mark.changesquaretwice   = _changesquaretwice
-mark.changetriangletwice = _changetriangletwice
-mark.changecircletwice   = _changecircletwice
-mark.changediamondtwice  = _changediamondtwice
+changemark.cross         = _changemarkcross
+changemark.plus          = _changemarkplus
+changemark.square        = _changemarksquare
+changemark.triangle      = _changemarktriangle
+changemark.circle        = _changemarkcircle
+changemark.diamond       = _changemarkdiamond
+changemark.squaretwice   = _changemarksquaretwice
+changemark.triangletwice = _changemarktriangletwice
+changemark.circletwice   = _changemarkcircletwice
+changemark.diamondtwice  = _changemarkdiamondtwice
 
 
 class line(mark):

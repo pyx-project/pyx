@@ -32,6 +32,9 @@ class ColumnError(Exception): pass
 
 class _datafile:
 
+    def __init__(self, parser=mathtree.parser(MathTreeVals=mathtree.MathTreeValsWithCol)):
+        self.parser = parser
+
     def getcolumnno(self, column):
         if self.titles.count(column) == 1:
             return self.titles.index(column)
@@ -56,10 +59,18 @@ class _datafile:
         tree = self.parser.parse(expression)
         columnlist = {}
         for key in tree.VarList():
-            try:
-                columnlist[key] = self.getcolumnno(columns[key])
-            except KeyError:
-                columnlist[key] = self.getcolumnno(key)
+            if key[0] == "$":
+                column = int(key[1])
+                try:
+                    self.titles[column]
+                except:
+                    raise ColumnError
+                columnlist[key] = column
+            else:
+                try:
+                    columnlist[key] = self.getcolumnno(columns[key])
+                except KeyError:
+                    columnlist[key] = self.getcolumnno(key)
         varlist = {}
         for data in self.data:
             try:
@@ -77,6 +88,7 @@ class _datafile:
         if len(unusedkeys):
             raise KeyError("unused keys %s" % unusedkeys)
         return self
+
 
 
 class datafile(_datafile):
@@ -102,9 +114,8 @@ class datafile(_datafile):
 
     def __init__(self, file, commentpattern=re.compile(r"(#+|!+|%+)\s*"),
                              stringpattern=re.compile(r"\"(.*?)\"(\s+|$)"),
-                             columnpattern=re.compile(r"(.*?)(\s+|$)"),
-                             parser=mathtree.parser()):
-        self.parser = parser
+                             columnpattern=re.compile(r"(.*?)(\s+|$)"), **args):
+        _datafile.__init__(self, **args)
         try:
             file + ''
         except TypeError:
