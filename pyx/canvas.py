@@ -190,19 +190,19 @@ class _canvas(base.PSCmd):
 
         return PSOp
 
-    def set(self, *styles):
+    def set(self, *attrs):
         """sets styles args globally for the rest of the canvas
 
         returns canvas
 
         """
 
-        attr.checkattrs(styles, [style.strokestyle, style.fillstyle])
-        for astyle in styles:
+        attr.checkattrs(attrs, [style.strokestyle, style.fillstyle])
+        for astyle in attrs:
             self.insert(astyle)
         return self
 
-    def draw(self, path, *args):
+    def draw(self, path, *attrs):
         """draw path on canvas using the style given by args
 
         The argument list args consists of PathStyles, which modify
@@ -214,26 +214,26 @@ class _canvas(base.PSCmd):
 
         """
 
-        attr.mergeattrs(args)
-        attr.checkattrs(args, [deco.deco, style.fillstyle, style.strokestyle, trafo._trafo])
+        attr.mergeattrs(attrs)
+        attr.checkattrs(attrs, [deco.deco, style.fillstyle, style.strokestyle, trafo._trafo])
 
-        for t in attr.getattrs(args, [trafo._trafo]):
+        for t in attr.getattrs(attrs, [trafo._trafo]):
             path = path.transformed(t)
 
         dp = deco.decoratedpath(path)
 
         # set global styles
-        dp.styles = attr.getattrs(args, [style.fillstyle, style.strokestyle])
+        dp.styles = attr.getattrs(attrs, [style.fillstyle, style.strokestyle])
 
         # add path decorations and modify path accordingly
-        for adeco in attr.getattrs(args, [deco.deco]):
+        for adeco in attr.getattrs(attrs, [deco.deco]):
             dp = adeco.decorate(dp)
 
         self.insert(dp)
 
         return self
 
-    def stroke(self, path, *args):
+    def stroke(self, path, *attrs):
         """stroke path on canvas using the style given by args
 
         The argument list args consists of PathStyles, which modify
@@ -245,9 +245,9 @@ class _canvas(base.PSCmd):
 
         """
 
-        return self.draw(path, deco.stroked(), *args)
+        return self.draw(path, deco.stroked(), *attrs)
 
-    def fill(self, path, *args):
+    def fill(self, path, *attrs):
         """fill path on canvas using the style given by args
 
         The argument list args consists of PathStyles, which modify
@@ -259,7 +259,7 @@ class _canvas(base.PSCmd):
 
         """
 
-        return self.draw(path, deco.filled(), *args)
+        return self.draw(path, deco.filled(), *attrs)
 
     def settexrunner(self, texrunner):
         """sets the texrunner to be used to within the text and _text methods"""
