@@ -194,7 +194,13 @@
     % set the outputtype
     \global\outputtype=1
     % and re-inject the whole page with the original penalty
-    \unvbox255 \advance\outputpenalty by 100000 \penalty\outputpenalty
+    \unvbox255%
+    \setbox0=\lastbox%
+    \setbox0=\hbox to \the\wd0{\PyXMarker{start@\the\parno@\the\myprevgraf}%
+                               \unhbox0%
+                               \PyXMarker{end@\the\parno@\the\myprevgraf}}%
+    \nointerlineskip\box0%
+    \advance\outputpenalty by 100000 \penalty\outputpenalty
   \else\advance\razor by -100000 \ifnum\outputpenalty>\razor
     %%%%%%%%%% PreDisplayPenalty: -200000 %%%%%%%%%%
     \ifverbose\immediate\write16{******** PreDisplayPenalty ********}\fi
