@@ -33,7 +33,7 @@ with their attributes.
 """
 
 import sys, string, cStringIO, time
-import attr, base, bbox, deco, unit, prolog, style, trafo, version
+import attr, base,  deco, unit, prolog, style, trafo, version
 
 # known paperformats as tuple(width, height)
 
