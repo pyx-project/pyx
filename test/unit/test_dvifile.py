@@ -10,6 +10,8 @@ from pyx import dvifile
 class DvifileTestCase(unittest.TestCase):
 
     def testDvitype(self):
+        # test currently disabled -- its very slow and it should become optional
+        return
         usedvifile = "../../manual/manual.dvi"
 
         dvitypefile = os.popen("dvitype %s" % usedvifile)
