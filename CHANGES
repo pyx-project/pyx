@@ -18,6 +18,7 @@ PyX
     - fix: allow for e-tex in texmessage.start (reported by Andrea Riciputi)
     - fix: print warning at syntax errors in font mapping file and continue (cf. bug #795271)
     - remove limitation on number of fonts in dvi file
+    - added native virtual font support
   - graph module:
     - removed manualpart and partitioners mix keyword (documentation already updated)
     - results of the splitting at "=" in graph.function were not stripped

@@ -22,7 +22,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import exceptions, glob, os, threading, Queue, traceback, re, struct, tempfile, sys, atexit, time, string
+import exceptions, glob, os, threading, Queue, traceback, re, struct, tempfile, sys, atexit, time, string, cStringIO
 import config, helper, unit, bbox, box, base, canvas, color, trafo, path, prolog, pykpathsea, version
 
 class fix_word:
@@ -54,14 +54,14 @@ class binfile:
     def __init__(self, filename, mode="r"):
         self.file = open(filename, mode)
 
-    def __del__(self):
-        self.file.close()
-
     def close(self):
         self.file.close()
 
     def tell(self):
         return self.file.tell()
+
+    def eof(self):
+        return self.file.eof()
 
     def read(self, bytes):
         return self.file.read(bytes)
@@ -108,6 +108,11 @@ class binfile:
         l = self.readuchar()
         assert l <= bytes-1, "inconsistency in file: string too long"
         return self.file.read(bytes-1)[:l]
+
+class stringbinfile(binfile):
+
+    def __init__(self, s):
+        self.file = cStringIO.StringIO(s)
 
 
 # class tokenfile:
@@ -405,8 +410,22 @@ class _selectfont(base.PSOp):
     def write(self, file):
         file.write("/%s %f selectfont\n" % (self.name, self.size))
 
-    # XXX: should we provide a prolog method for the font inclusion
-    # instead of using the coarser logic in dvifile.prolog
+
+class selectfont(_selectfont):
+    def __init__(self, font, size):
+        _selectfont.__init__(self, font.getpsname(), size)
+        self.font = font
+
+    def prolog(self):
+        result = [prolog.fontdefinition(self.font.getbasepsname(),
+                                        self.font.getfontfile(),
+                                        self.font.getencodingfile(),
+                                        self.font.usedchars)]
+        if self.font.getencoding():
+            result.append(_ReEncodeFont)
+            result.append(prolog.fontencoding(self.font.getencoding(), self.font.getencodingfile()))
+            result.append(prolog.fontreencoding(self.font.getpsname(), self.font.getbasepsname(), self.font.getencoding()))
+        return result
 
 
 class _show(base.PSOp):
@@ -597,6 +616,20 @@ class type1font(font):
         return self.fontmapping.encodingfile
 
 
+class virtualfont(font):
+    def __init__(self, name, c, q, d, tfmconv, fontmap, debug=0):
+        font.__init__(self, name, c, q, d, tfmconv, debug)
+        fontpath = pykpathsea.find_file(name, pykpathsea.kpse_vf_format)
+        self.vffile = vffile(fontpath, self.scale, fontmap, debug > 1)
+
+    def getfonts(self):
+        """ return fonts used in virtual font itself """
+        return self.vffile.getfonts()
+
+    def getchar(self, cc):
+        """ return dvi chunk corresponding to char code cc """
+        return self.vffile.getchar(cc)
+        
 
 ##############################################################################
 # DVI file handling
@@ -693,28 +726,10 @@ class dvifile:
             self.actpage.insert(_show(unit.topt(x), unit.topt(y), self.actoutstring))
             self.actoutstart = None
 
-    def putchar(self, char, inch=1):
-        if self.actoutstart is None:
-            self.actoutstart = self.pos[_POS_H], self.pos[_POS_V]
-            self.actoutstring = ""
-        if char > 32 and char < 127 and chr(char) not in "()[]<>":
-            ascii = "%s" % chr(char)
-        else:
-            ascii = "\\%03o" % char
-        self.actoutstring = self.actoutstring + ascii
-        dx = inch and self.fonts[self.activefont].getwidth(char) or 0
-        self.fonts[self.activefont].markcharused(char)
-        if self.debug:
-            print ("%d: %schar%d h:=%d+%d=%d, hh:=%d" %
-                   (self.filepos,
-                    inch and "set" or "put",
-                    char,
-                    self.pos[_POS_H], dx, self.pos[_POS_H]+dx,
-                    0))
-        self.pos[_POS_H] += dx
-        if not inch:
-            # XXX: correct !?
-            self.flushout()
+            # we also reset the currently active type 1 font. This is save but
+            # not always necessary
+            # XXX: relax this assumption
+            self.actoutfont = None
 
     def putrule(self, height, width, inch=1):
         self.flushout()
@@ -744,30 +759,70 @@ class dvifile:
                    (self.pos[_POS_H], width, self.pos[_POS_H]+width, 0))
             self.pos[_POS_H] += width
 
+    def putchar(self, char, inch=1):
+        dx = inch and self.activefont.getwidth(char) or 0
+
+        if self.debug:
+            print ("%d: %schar%d h:=%d+%d=%d, hh:=%d" %
+                   (self.filepos,
+                    inch and "set" or "put",
+                    char,
+                    self.pos[_POS_H], dx, self.pos[_POS_H]+dx,
+                    0))
+
+        if isinstance(self.activefont, type1font):
+            if self.actoutstart is None:
+                self.actoutstart = self.pos[_POS_H], self.pos[_POS_V]
+                self.actoutstring = ""
+            if char > 32 and char < 127 and chr(char) not in "()[]<>":
+                ascii = "%s" % chr(char)
+            else:
+                ascii = "\\%03o" % char
+            self.actoutstring = self.actoutstring + ascii
+
+            self.activefont.markcharused(char)
+            self.pos[_POS_H] += dx
+        else:
+            # virtual font handling
+            afterpos = list(self.pos)
+            afterpos[_POS_H] += dx
+            self._push_dvistring(self.activefont.getchar(char), self.activefont.getfonts(), afterpos)
+            
+        if not inch:
+            # XXX: correct !?
+            self.flushout()
 
     def usefont(self, fontnum):
-        self.flushout()
-        self.activefont = fontnum
-
-        fontpsname = self.fonts[self.activefont].getpsname()
-        fontscale = self.fonts[self.activefont].scale
-        fontdesignsize = float(self.fonts[self.activefont].tfmfile.designsize)
-        self.actpage.insert(_selectfont(fontpsname,
-                                        fontscale*fontdesignsize*72/72.27))
-
         if self.debug:
             print ("%d: fntnum%i current font is %s" %
                    (self.filepos,
-                    self.activefont, self.fonts[fontnum].name))
+                    fontnum, self.fonts[fontnum].name))
+
+        self.activefont = self.fonts[fontnum]
+
+        # if the new font is a type 1 font and if it is not already the 
+        # font being currently used for the output, we have to flush the
+        # output and insert a selectfont statement in the PS code
+        if isinstance(self.activefont, type1font) and self.actoutfont!=self.activefont:
+            self.flushout()
+            fontscale = self.activefont.scale
+            fontdesignsize = float(self.activefont.tfmfile.designsize)
+            self.actpage.insert(selectfont(self.activefont, fontscale*fontdesignsize*72/72.27))
+            self.actoutfont = self.activefont
 
     def definefont(self, cmdnr, num, c, q, d, fontname):
         # cmdnr: type of fontdef command (only used for debugging output)
         # c:     checksum
-        # q:     scaling factor
+        # q:     scaling factor (fix_word)
         #        Note that q is actually s in large parts of the documentation.
-        # d:     design size
+        # d:     design size (fix_word)
 
-        self.fonts[num] =  type1font(fontname, c, q, d, self.tfmconv, self.fontmap, self.debug > 1)
+        try:
+            font = virtualfont(fontname, c, q, d, self.tfmconv, self.fontmap, self.debug > 1)
+        except TypeError:
+            font = type1font(fontname, c, q, d, self.tfmconv, self.fontmap, self.debug > 1)
+
+        self.fonts[num] = font
 
         if self.debug:
             print "%d: fntdef%d %i: %s" % (self.filepos, cmdnr, num, fontname)
@@ -856,6 +911,27 @@ class dvifile:
         else:
             raise RuntimeError("unknown PyX special '%s', aborting" % command)
 
+    # routines for pushing and popping different dvi chunks on the reader
+
+    def _push_dvistring(self, dvi, fonts, afterpos):
+        """ push dvi string with defined fonts on top of reader stack.
+        When finished with interpreting the dvi chunk, we continue with self.pos=afterpos
+
+        """
+        if self.debug:
+            print "executing new dvi chunk"
+        self.statestack.append((self.file, self.fonts, self.activefont, afterpos, self.stack))
+        self.file = stringbinfile(dvi)
+        self.fonts = fonts
+        self.stack = []
+        self.usefont(0)
+
+    def _pop_dvistring(self):
+        if self.debug:
+            print "finished executing new dvi chunk"
+        self.file.close()
+        self.file, self.fonts, self.activefont, self.pos, self.stack = self.statestack.pop()
+
     # routines corresponding to the different reader states of the dvi maschine
 
     def _read_pre(self):
@@ -909,10 +985,16 @@ class dvifile:
         self.actpage = self.pages[-1]
         self.actpage.markers = {}
         self.pos = [0, 0, 0, 0, 0, 0]
-        file = self.file
         while 1:
+            file = self.file
             self.filepos = file.tell()
-            cmd = file.readuchar()
+            try:
+                cmd = file.readuchar()
+            except struct.error:
+                # we most probably (if the dvi file is not corrupt) hit the end of dvi chunk,
+                # so we have to continue with the rest of the dvi file
+                self._pop_dvistring()
+                continue
             if cmd == _DVI_NOP:
                 pass
             if cmd >= _DVI_CHARMIN and cmd <= _DVI_CHARMAX:
@@ -932,15 +1014,14 @@ class dvifile:
                     print
                 return _READ_NOPAGE
             elif cmd == _DVI_PUSH:
-                self.stack.append(tuple(self.pos))
+                self.stack.append(list(self.pos))
                 if self.debug:
                     print "%d: push" % self.filepos
                     print ("level %d:(h=%d,v=%d,w=%d,x=%d,y=%d,z=%d,hh=,vv=)" %
                            (( len(self.stack)-1,)+tuple(self.pos)))
             elif cmd == _DVI_POP:
                 self.flushout()
-                self.pos = list(self.stack[-1])
-                del self.stack[-1]
+                self.pos = self.stack.pop()
                 if self.debug:
                     print "%d: pop" % self.filepos
                     print ("level %d:(h=%d,v=%d,w=%d,x=%d,y=%d,z=%d,hh=,vv=)" %
@@ -1053,8 +1134,12 @@ class dvifile:
 
     def readpreamble(self):
         """ opens the dvi file and reads the preamble """
+        # XXX shouldn't we put this into the constructor?
         self.fonts = {}
         self.activefont = None
+
+        # stack of fonts and fontscale currently used (used for VFs)
+        self.fontstack = []
 
         self.stack = []
 
@@ -1064,9 +1149,13 @@ class dvifile:
         # pointer to currently active page
         self.actpage = None
 
-        # currently active output: position and content
+        # currently active output: position, content and type 1 font
         self.actoutstart = None
         self.actoutstring = ""
+        self.actoutfont = None
+
+        # stack for self.file, self.fonts and self.stack, needed for VF inclusion
+        self.statestack = []
 
         self.file = binfile(self.filename, "rb")
 
@@ -1077,6 +1166,7 @@ class dvifile:
             raise DVIError
 
     def readpage(self):
+        # XXX shouldn't return this the next page (insted of appending to self.pages)
         """ reads a page from the dvi file
 
         This routine reads a page from the dvi file. The page
@@ -1098,7 +1188,11 @@ class dvifile:
         """ reads and parses the hole dvi file """
         self.readpreamble()
         # XXX its unknown how often readpage should be called so we
-        #     do it differently ... :-(
+        # XXX do it differently ... :-(
+        # XXX 
+        # XXX do we realy need this method at all?
+        # XXX why can't we just return the page on readpage? Isn't this all we need in the end?
+        
         state = _READ_NOPAGE
         while state != _READ_DONE:
             if state == _READ_NOPAGE:
@@ -1113,28 +1207,25 @@ class dvifile:
         """return marker from page"""
         return self.pages[page-1].markers[marker]
 
-    def prolog(self, page): # TODO: AW inserted this page argument -> should return the prolog needed for that page only!
+    def prolog(self, page): 
         """ return prolog corresponding to contents of dvi file """
-        # XXX replace this by prolog method in _selectfont
-        result = [_ReEncodeFont]
-        for font in self.fonts.values():
-            result.append(prolog.fontdefinition(font.getbasepsname(),
-                                                font.getfontfile(),
-                                                font.getencodingfile(),
-                                                font.usedchars))
-            if font.getencoding():
-                result.append(prolog.fontencoding(font.getencoding(), font.getencodingfile()))
-                result.append(prolog.fontreencoding(font.getpsname(), font.getbasepsname(), font.getencoding()))
-        result.extend(self.pages[page-1].prolog())
-        return result
+        # XXX: can nearly be remove (see write below) but:
+        # XXX: we still have to separate the glyphs used for the different pages
+        # XXX: maybe we just clear the markused arrays of the fonts after each page
+        return self.pages[page-1].prolog()
 
     def write(self, file, page):
         """write PostScript output for page into file"""
         # XXX: remove this method by return canvas to TexRunner
+        # XXX: we should do this by removing readfile and changing readpage to return
+        # XXX: the canvas
         if self.debug:
             print "dvifile(\"%s\").write() for page %s called" % (self.filename, page)
         self.pages[page-1].write(file)
 
+##############################################################################
+# VF file handling
+##############################################################################
 
 _VF_LONG_CHAR  = 242              # character packet (long version)
 _VF_FNTDEF1234 = _DVI_FNTDEF1234  # font definition
@@ -1146,8 +1237,9 @@ _VF_ID         = 202              # VF id byte
 class VFError(exceptions.Exception): pass
 
 class vffile:
-    def __init__(self, filename, fontmap, debug=0):
+    def __init__(self, filename, scale, fontmap, debug=0):
         self.filename = filename
+        self.scale = scale
         self.fontmap = fontmap
         self.tfmconv = 1
         self.debug = debug
@@ -1160,8 +1252,8 @@ class vffile:
         if cmd == _VF_PRE:
             if file.readuchar() != _VF_ID: raise VFError
             comment = file.read(file.readuchar())
-            cs = file.readuint32()
-            ds = file.readuint32()
+            self.cs = file.readuint32()
+            self.ds = file.readuint32()
         else:
             raise VFError
 
@@ -1178,11 +1270,17 @@ class vffile:
                 elif cmd == _VF_FNTDEF1234+3:
                     num = file.readint32()
                 c = file.readint32()
-                s = file.readint32()     # scaling used for font (fix_word)
+                s = file.readint32()     # relative scaling used for font (fix_word)
                 d = file.readint32()     # design size of font
                 fontname = file.read(file.readuchar()+file.readuchar())
 
-                self.fonts[num] =  type1font(fontname, c, s, d, self.tfmconv, self.fontmap, self.debug > 1)
+                # rescaled size of font: s is relative to the scaling
+                # of the virtual font itself.  Note that realscale has
+                # to be a fix_word (like s)
+                realscale = int(self.scale * float(fix_word(self.ds))*s)
+
+                # XXX allow for virtual fonts here too
+                self.fonts[num] =  type1font(fontname, c, realscale, d, self.tfmconv, self.fontmap, self.debug > 1)
             elif cmd == _VF_LONG_CHAR:
                 # character packet (long form)
                 pl = file.readuint32()   # packet length
@@ -1202,6 +1300,12 @@ class vffile:
                 raise VFError
 
         file.close()
+
+    def getfonts(self):
+        return self.fonts
+
+    def getchar(self, cc):
+        return self.chars[cc][1]
 
 
 ###############################################################################
