@@ -52,7 +52,8 @@ examples = [example("hello"),
             example("graphs/bar"),
             example("graphs/arrows"),
             example("graphs/integral"),
-            example("graphs/partialfill")]
+            example("graphs/partialfill"),
+            example("graphs/washboard")]
 
 write_file("%s.html" % pagename,
            PageTemplateFromFile("%s.pt" % pagename)(maintemplate=maintemplate,
