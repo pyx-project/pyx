@@ -187,6 +187,16 @@ class m(length):
        length.__init__(self, l, default_type=default_type, dunit="m")
 
 
+class mm(length):
+    def __init__(self, l=None, default_type="u"):
+       length.__init__(self, l, default_type=default_type, dunit="mm")
+
+cm = length
+
+class inch(length):
+    def __init__(self, l=None, default_type="u"):
+       length.__init__(self, l, default_type=default_type, dunit="inch")
+
 # true lengths 
 
 class t_pt(length):
@@ -197,3 +207,21 @@ class t_pt(length):
 class t_m(length):
     def __init__(self, l=None):
        length.__init__(self, l, default_type="t", dunit="m")
+
+
+class t_mm(length):
+    def __init__(self, l=None):
+       length.__init__(self, l, default_type="t", dunit="cm")
+
+
+class t_mm(length):
+    def __init__(self, l=None):
+       length.__init__(self, l, default_type="t", dunit="mm")
+
+
+class t_inch(length):
+    def __init__(self, l=None):
+       length.__init__(self, l, default_type="t", dunit="inch")
+
+
+
