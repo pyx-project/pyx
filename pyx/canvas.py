@@ -284,7 +284,6 @@ class _canvas(base.canvasitem):
 class pattern(_canvas, attr.exclusiveattr, style.fillstyle):
 
     def __init__(self, painttype=1, tilingtype=1, xstep=None, ystep=None, bbox=None, trafo=None):
-        attr.exclusiveattr.__init__(self, pattern)
         _canvas.__init__(self)
         attr.exclusiveattr.__init__(self, pattern)
         self.id = "pattern%d" % id(self)
