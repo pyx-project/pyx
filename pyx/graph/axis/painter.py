@@ -339,7 +339,7 @@ ticklength.LONg = ticklength(_base*math.sqrt(16), 1/goldenmean)
 ticklength.LONG = ticklength(_base*math.sqrt(32), 1/goldenmean)
 
 
-class plain(_title):
+class regular(_title):
     """class for painting the ticks and labels of an axis
     - the inherited _title is used to paint the title of
       the axis
@@ -487,9 +487,9 @@ class plain(_title):
         return ac
 
 
-class linked(plain):
+class linked(regular):
     """class for painting a linked axis
-    - the inherited plain is used to paint the axis
+    - the inherited regular is used to paint the axis
     - modifies some constructor defaults"""
 
     __implements__ = _Iaxispainter
@@ -500,10 +500,10 @@ class linked(plain):
         """initializes the instance
         - the labelattrs default is set to None thus skipping the labels
         - the titleattrs default is set to None thus skipping the title
-        - all keyword arguments are passed to plain"""
-        plain.__init__(self, labelattrs=labelattrs,
-                             titleattrs=titleattrs,
-                             **kwargs)
+        - all keyword arguments are passed to regular"""
+        regular.__init__(self, labelattrs=labelattrs,
+                               titleattrs=titleattrs,
+                               **kwargs)
 
 
 class subaxispos:
