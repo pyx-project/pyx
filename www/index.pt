@@ -2,66 +2,71 @@
             "http://www.w3.org/TR/html4/strict.dtd">
 <html metal:use-macro="options/maintemplate/macros/page">
 
-<div metal:fill-slot="body">
+  <div metal:fill-slot="body">
 
-<h1>PyX - Python graphics package</h1>
+    <h1>PyX - Python graphics package</h1>
 
-<h2>Summary</h2>
+    <div class="image">
+      <img src="example.png" alt="3d plot example">
+      <div>3d plot example</div>
+    </div>
 
-<div class="image">
-  <img src="example.png" alt="3d plot example">
-  <br>
-  3d plot example
-</div>
+    <h2>Summary</h2>
 
-<p> PyX is a Python package for the creation of encapsulated PostScript
-figures. It provides both an abstraction of PostScript and a TeX/LaTeX
-interface. Complex tasks like 2d and 3d plots in publication-ready quality are built
-out of these primitives. </p>
+    <p>
+      PyX is a Python package for the creation of encapsulated PostScript
+      figures. It provides both an abstraction of PostScript and a TeX/LaTeX
+      interface. Complex tasks like 2d and 3d plots in publication-ready quality
+      are built out of these primitives.
+    </p>
 
-<h2>Features</h2>
-<ul>
-  <li>PostScript output for device independent, free scalable figures</li>
-  <li>seamless TeX/LaTeX integration</li>
-  <li>full access to PostScript features like paths, linestyles, fill patterns, transformations, clipping, etc.</li>
-  <li>advanced geometric operations on paths like intersections, transformations, splitting, etc.</li>
-  <li>sophisticated graph generation: modular design, pluggable axes, axes partitioning based on rational number arithmetics, flexible graph styles, etc.</li>
-</ul>
+    <h2>Features</h2>
 
-<h2>Status and Availability</h2>
+    <ul>
+      <li>PostScript output for device independent, free scalable figures</li>
+      <li>seamless TeX/LaTeX integration</li>
+      <li>full access to PostScript features like paths, linestyles, fill patterns, transformations, clipping, etc.</li>
+      <li>advanced geometric operations on paths like intersections, transformations, splitting, etc.</li>
+      <li>sophisticated graph generation: modular design, pluggable axes, axes partitioning based on rational number arithmetics, flexible graph styles, etc.</li>
+    </ul>
 
-<p> PyX is in steady development. Alpha releases are available
-in the <a href="http://sourceforge.net/project/showfiles.php?group_id=45430">download
-section</a> of the SourceForge project page. You may also join discussions on the PyX
-<a href="http://sourceforge.net/mail/?group_id=45430">mailing lists</a>. </p>
+    <h2>Status and Availability</h2>
 
-<h2>News</h2>
+    <p>
+      PyX is in steady development. News are available on the
+      <a href="news.html">news page</a>.
+      Some development goals are listed on the
+      <a href="roadmap.html">roadmap</a>.
+      The current release,
+      PyX <span tal:content="options/version" tal:omit-tag="">version</span>,
+      is available at the
+      <a href="http://sourceforge.net/project/showfiles.php?group_id=45430">download section</a>
+      of the SourceForge
+      <a href="http://sourceforge.net/projects/pyx">project page</a>.
+    </p>
 
-<ul>
-  <li><b>2004-10-21</b> PyX 0.7 was released.</li>
-  <li><b>2004-04-27</b> PyX 0.6.3 was released.</li>
-  <li><b>2004-04-07</b> PyX 0.6.2 was released.</li>
-  <li><b>2004-03-31</b> PyX 0.6.1 was released.</li>
-  <li><b>2004-03-30</b> PyX 0.6 was released.</li>
-  <li><b>2004-03-05</b> PyX was presented at the <a href="http://www.dante.de/dante2004/">annual meeting of the German Speaking TeX User Group DANTE e.V. (March 2nd to 6th, Darmstadt)</a>. The presentation is available in <a href="foils_dante2004_de.pdf">German (pdf, 18 Pages, 425 KB)</a> and <a href="foils_dante2004_en.pdf">English</a>.</li>
-  <li><b>2004-01-22</b> PyX 0.5.1 was released.</li>
-  <li><b>2004-01-20</b> PyX 0.5 was released.</li>
-  <li><b>2003-09-17</b> PyX 0.4.1 was released.</li>
-  <li><b>2003-08-22</b> PyX 0.4 was released.</li>
-  <li><b>2003-04-04</b> PyX 0.3.1 was released.</li>
-  <li><b>2003-03-31</b> PyX 0.3 was released.</li>
-  <li><b>2003-01-17</b> PyX 0.2 was released.</li>
-  <li><b>2002-10-07</b> The first public release, PyX 0.1, was uploaded to SourceForge.</li>
-</ul>
+    <h2>Authors and License</h2>
 
+    <p>
+      PyX is written by
+      <a href="http://www.physik.uni-augsburg.de/~joergl/">J&ouml;rg Lehmann</a> and
+      <a href="http://www.wobsta.de/">Andr&eacute; Wobst</a>. PyX is free
+      software licensed under the GNU GPL Version&nbsp;2. Other licensing
+      schemes might be available upon request. Refer to the
+      <a href="license.html">license page</a> for further information.
+    </p>
 
-<h2>Authors and License</h2>
+    <h2>Thanks</h2>
 
-<p> PyX is written by <a href="http://www.physik.uni-augsburg.de/~joergl/">J&ouml;rg Lehmann</a> and <a href="http://www.wobsta.de/">Andr&eacute; Wobst</a>.
-PyX is free software licensed under the GNU GPL Version&nbsp;2. </p>
+    <p>
+      The authors acknowledge support for developer meetings
+      granted by the German Speaking TeX User Group
+      <a href="http://www.dante.de/">DANTE e.V.</a>
+    </p>
 
-<!--#exec cmd="/home/groups/p/py/pyx/htdocs/access.sh"-->
+    <!--#exec cmd="/home/groups/p/py/pyx/htdocs/access.sh"-->
 
-</div>
+  </div>
 
 </html>
+<!-- vim:set syntax=html: -->

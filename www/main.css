@@ -1,151 +1,190 @@
-body { 
-        background-color:#ffe;
-        color:#333; 
-        margin:20px;
-        padding:0px;
-        font:14px verdana,helvetica,sans-serif;
-}
-
-h1 {
-        padding-bottom: 3px;
-        /* padding-left: 15px; */
-        font-size:200%;
-        border-bottom: 1px solid #88a;
-}
-
-h2 { 
-        font-size: 130%;
-        font-weight: bolder;
-        margin: 5px 5px 5px 0px;
+body {
+        margin: 0px;
         padding: 0px;
+        color: #333;
+        background-color: #ffe;
+        font: 11pt verdana,helvetica,sans-serif;
 }
 
-h3 {
-        font-size: 120%;
-        margin: 0px 0px 5px 1em;
-        padding: 0px;
-}
-
-h4 {
-        font-size: 100%;
-        margin: 0px 0px 5px 1.5em;
-        padding: 0px;
-}
-
-table caption {
-        font-weight: bold;
-        text-align: center;
-}
-
-pre { 
-        margin-left: 3em;
-}
-
-address { 
-        margin-left: 3em; 
-        margin-bottom: 15px; 
-}
-
-table { 
-        margin-left: 3em 
+img {
+        border-width: 0px;
 }
 
 a {
-        color:#b44;
+        color:#a33;
         text-decoration: None;
 }
 
-
-a:link:hover {
+a:hover {
         text-decoration: underline;
 }
 
-a:visited:hover {
-        text-decoration: underline;
-}
+/* page layout */
 
-#navbar {
-        position:fixed;
-        width:200px;
-        height:100%;
-        top:0px;
-        left:0px; 
+/* background needed when both, navigation and content
+   doesn't fill the available vertical space
+   (its a workaround for browsers which do not support
+   min-height properly) */
+#background {
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        width: 200px;
+        height: 100%;
         border-right: 1px solid #88a;
-        text-align:center;
-        background-color:#eed;
-        z-index:3;
+        background-color: #eed;
+        z-index: 1;
 }
 
-#title {
-        width:100%;
-        color:#888;
-        margin-top:15px;
-        margin-bottom:10px;
-        padding:0px;
-        font-size:28px;
-        font-weight:900;
-        text-align: center;
+#navigation {
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        width: 200px;
+        border-right: 1px solid #88a;
+        background-color: #eed;
+        z-index: 3;
 }
 
-#subtitle {
-        padding:0px;
-        font-style: italic;
-        text-align: right;
-}
+/* the content is placed into a wrapper to enlarge
+   the navigation area to the size of the content */
 
-.box {
-        background-color:#c8c8f0;
-        width:140px; 
-        margin-left:20px; 
-        margin-bottom:20px;
-        border: 1px dashed #668;
-        font-size: 90%;
-        padding: 5px 10px 10px 10px;
-        text-align:left; 
-}
-
-#navboxtitle, #linkboxtitle {
-        margin:0px 0px 10px 0px;
-        padding:0px;
-        font-size:120%;
-        font-weight:bold;
-        border-bottom:1px solid black;
+#contentwrapper {
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        border-left: 200px solid #eed;
+        z-index: 2;
 }
 
 #content {
-        margin-left:201px;
-        background-color:#ffe;
-        padding-top:0px;
-        padding-left:10px;
-        padding-right:5px;
-        min-width: 450px;
+        min-width: 600px;
+        padding-left: 25px;
+        padding-right: 25px;
+        border-left: 1px solid #88a;
+}
+
+/* navigation elements */
+
+#navigation .logo {
+        margin-top: 20px;
+        margin-left: 39px;
+}
+
+#navigation .box {
+        width: 140px;
+        margin-top: 20px;
+        margin-left: 19px;
+        padding: 10px;
+        border: 1px dashed #88a;
+        background-color: #dcf;
+}
+
+#navigation .title {
+        margin-bottom: 10px;
+        border-bottom: 1px solid #88a;
+        font-size: 13pt;
+        font-weight: bolder;
+}
+
+#navigation .link {
+        font-size: 10pt;
+}
+
+#navigation .sublink {
+        margin-left: 10px;
+        font-size: 10pt;
+}
+
+#navigation .sflink {
+        padding-top: 60px;
+        padding-left: 56px;
+        padding-bottom: 20px;
+}
+
+#navigation .w3clink {
+        padding-left: 58px;
+        padding-bottom: 20px;
+}
+
+/* content elements */
+
+#content h1 {
+        padding: 0px;
+        margin: 0px;
+        margin-top: 15px;
+        margin-bottom: 15px;
+        padding-bottom: 3px;
+        border-bottom: 1px solid #88a;
+        font-size: 18pt;
+        font-weight: bolder;
+}
+
+#content h2 {
+        padding: 0px;
+        margin: 0px;
+        padding-bottom: 10px;
+        font-size: 14pt;
+        font-weight: bolder;
 }
 
 #content .image {
+        margin-left: 10px;
+        margin-bottom: 10px;
+        padding: 10px;
+        border: 1px dashed #88a;
+        background-color: #eed;
         float:right;
-        background-color:#eed;
-        padding:10px;
-        margin:10px;
-        border:1px dashed #668;
-        text-align:center;
-        font-style:italic;
+        font-size: 9pt;
+        text-align: center;
+        font-style: italic;
 }
 
-#content table {
-        background-color:#f3f3f3;
-        border:1px solid black;
-        width: 700px;
-        padding: 5px;
-        margin-bottom: 20px;
+#content p {
+        padding: 0px;
+        margin: 0px;
+        padding-bottom: 15pt;
 }
 
-
-.PY_KEYWORD { color:#0000C0; font-weight:bold; }
-.PY_COMMENT { color:#000080; }
-.PY_PARAMETER { color:#C00000; }
-.PY_IDENTIFIER { color:#C00000; font-weight:bold; }
-.PY_STRING { color:#008000; }
-
-.example pre {
-        margin-left:0px;
+#content dl {
+        padding: 0px;
+        margin: 0px;
+        padding-bottom: 15pt;
 }
+
+#content dt {
+        padding: 0px;
+        margin: 0px;
+        padding-bottom: 5pt;
+        font-weight: bold;
+}
+
+#content dd {
+        padding: 0px;
+        margin: 0px;
+        padding-left: 25px;
+        padding-bottom: 15pt;
+}
+
+#content ul {
+        padding: 0px;
+        margin: 0px;
+        padding-left: 25px;
+        padding-bottom: 15pt;
+}
+
+#content li {
+        padding: 0px;
+        margin: 0px;
+}
+
+#content .tablepar {
+        padding: 0px;
+        margin: 0px;
+        padding-bottom: 15pt;
+}
+
+#content .tablehead {
+        background-color: #dcf;
+}
+

@@ -73,5 +73,6 @@ else:
     write_file("build/%s" % htmlname, PageTemplateFromFile("%s.pt" % htmlname[:-5])(pagename=htmlname,
                                                                                     maintemplate=maintemplate,
                                                                                     examplepages=[],
-                                                                                    mkrellink=mkrellink))
+                                                                                    mkrellink=mkrellink,
+                                                                                    version=pyx.__version__))
 

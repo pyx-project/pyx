@@ -1,0 +1,29 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+            "http://www.w3.org/TR/html4/strict.dtd">
+<html metal:use-macro="options/maintemplate/macros/page">
+
+  <div metal:fill-slot="body">
+
+    <h1>PyX - License</h1>
+
+    <p>
+      PyX is free software licensed under the GNU GPL Version&nbsp;2. However,
+      since the source code is currently owned by a few people only, we are able
+      to offer different licensing upon request. While this renders the
+      inclusion of external contributions more difficult, it allows us to
+      perform commercial development for PyX after selling a commercial license.
+      Due to special agreements with the principal we could already include some
+      remittance work to the GPL version of PyX, namely the bitmap support as
+      added in PyX 0.7.
+    </p>
+
+    <p>
+      In case you want to use PyX under a different license, seek for
+      professional support or need additional features to be added to PyX, get
+      in touch with <a href="mailto:contact@wobsta.de">Andr&eacute; Wobst</a>.
+    </p>
+
+  </div>
+
+</html>
+<!-- vim:set syntax=html: -->

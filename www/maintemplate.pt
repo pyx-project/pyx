@@ -1,63 +1,69 @@
 <html metal:define-macro="page">
 
-<head>
-   <title>PyX - Python graphics package</title>
-   <link rel="shortcut icon" href="pyx.ico" type="image/x-icon">
-   <link rel="stylesheet" type="text/css" tal:attributes="href python:options['mkrellink']('main.css', options)">
-</head>
+  <head>
+    <title>PyX - Python graphics package</title>
+    <link rel="shortcut icon" href="pyx.ico" type="image/x-icon">
+    <link rel="stylesheet" type="text/css" href="main.css">
+    <link rel="stylesheet" type="text/css" tal:attributes="href python:options['mkrellink']('main.css', options)">
+  </head>
 
-<body>
+  <body>
 
-<div id="navbar">
+    <div id="background"></div>
 
-  <div id="title"><a href="http://pyx.sourceforge.net/"><img tal:attributes="src python:options['mkrellink']('pyxlogo.png', options)" alt="PyX" style="border:0px;"></a></div>
+    <div id="navigation">
 
-  <div class="box">
-    <div id="navboxtitle">Navigation</div>
+      <div class="logo">
+        <a href="http://pyx.sourceforge.net/"><img alt="PyX" src="pyxlogo.png"></a>
+      </div>
 
-    <a tal:attributes="href python:options['mkrellink']('index.html', options)">Home</a><br>
-    <a tal:attributes="href python:options['mkrellink']('documentation.html', options)">Documentation</a><br>
-    <a tal:attributes="href python:options['mkrellink']('examples/index.html', options)">Examples</a><br>
-    <span tal:repeat="item options/examplepages" tal:omit-tag="">
-      &nbsp;&nbsp;-&nbsp;&nbsp;<a tal:attributes="href python:options['mkrellink']('examples/'+item+'/index.html', options)" tal:content="item">Examples</a><br>
-    </span>
-    <a href="http://sourceforge.net/project/showfiles.php?group_id=45430">Downloads</a><br>
-    <a href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/pyx/pyx/CHANGES?rev=HEAD&content-type=text/vnd.viewcvs-markup">ChangeLog</a><br>
-    <a href="http://sourceforge.net/projects/pyx/">Project page</a>
-  </div>
+      <div class="box">
+        <div class="title">Navigation</div>
+        <div class="link"><a tal:attributes="href python:options['mkrellink']('index.html', options)">Home</a></div>
+        <div class="link"><a href="news.html">News</a></div>
+        <div class="link"><a href="roadmap.html">Roadmap</a></div>
+        <div class="link"><a href="documentation.html">Documentation</a></div>
+        <div class="link"><a href="examples/index.html">Examples</a></div>
+        <div class="sublink">- <a href="examples/index.html">Examples1</a></div>
+        <div class="sublink">- <a href="examples/index.html">Examples2</a></div>
+        <div class="link"><a href="license.html">License</a></div>
+      </div>
 
-  <div class="box">
-    <div id="linkboxtitle">Links</div>
+      <div class="box">
+        <div class="title">SF-Resources</div>
+        <div class="link"><a href="http://sourceforge.net/project/showfiles.php?group_id=45430">Downloads</a></div>
+        <div class="link"><a href="http://sourceforge.net/mail/?group_id=45430">Mailing lists</a></div>
+        <div class="link"><a href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/pyx/pyx/CHANGES?rev=HEAD&amp;content-type=text/vnd.viewcvs-markup">ChangeLog</a></div>
+        <div class="link"><a href="http://sourceforge.net/projects/pyx/">Project page</a></div>
+      </div>
 
-    <a href="http://www.python.org/">Python</a><br>
-    <a href="http://www.tug.org/">TeX</a><br>
-    <a href="http://partners.adobe.com/asn/tech/ps/index.jsp">PostScript</a>
-  </div>
+      <div class="box">
+        <div class="title">Links</div>
+        <div class="link"><a href="http://www.python.org/">Python</a></div>
+        <div class="link"><a href="http://www.tug.org/">TeX</a></div>
+        <div class="link"><a href="http://partners.adobe.com/asn/tech/ps/index.jsp">PostScript</a></div>
+      </div>
 
-  <p>
-     <a href="http://sourceforge.net"><img src="http://sourceforge.net/sflogo.php?group_id=45430&type=1" 
-     style="border:0;width:88px;height:31px" alt="SourceForge Logo"></a>
-  </p>
+      <div class="sflink">
+        <a href="http://sourceforge.net/"><img src="http://sourceforge.net/sflogo.php?group_id=45430&amp;type=1" width=88 height=31 alt="SourceForge Logo"></a>
+      </div>
 
-  <p>
-    <a href="http://validator.w3.org/check/referer"><img style="border:0;width:88px;height:31px"
-           tal:attributes="src python:options['mkrellink']('valid-html401.png', options)"
-           alt="Valid HTML 4.01!"/></a>
-  </p>
-  <!--
-  <p>
-    <a href="http://jigsaw.w3.org/css-validator/check/referer"><img style="border:0;width:88px;height:31px"
-           tal:attributes="src python:options['mkrellink']('vcss.png', options)"
-           alt="Valid CSS!"/></a>
-  </p>
-  -->
+      <div class="w3clink">
+        <a href="http://validator.w3.org/check/referer"><img alt="Valid HTML 4.01!" width=88 height=31 src="valid-html401.png"></a>
+      </div>
 
-</div>
+      <div class="w3clink">
+        <a href="http://jigsaw.w3.org/css-validator/check/referer"><img alt="Valid CSS!" width=88 height=31 src="vcss.png"></a>
+      </div>
+    </div>
 
-<div id="content">
-<div metal:define-slot="body">
-  Content
-</div>
-</div>
-</body>
+
+    <div id="contentwrapper">
+      <div id="content">
+        <div metal:define-slot="body">Content</div>
+      </div>
+    </div>
+
+  </body>
 </html>
+<!-- vim:set syntax=html: -->

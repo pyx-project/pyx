@@ -2,39 +2,36 @@
             "http://www.w3.org/TR/html4/strict.dtd">
 <html metal:use-macro="options/maintemplate/macros/page">
 
-<div metal:fill-slot="body">
+  <div metal:fill-slot="body">
 
-<h1>PyX - Documentation</h1>
+    <h1>PyX - Documentation</h1>
 
+    <h2>Manual</h2>
 
-<h2>Manual</h2> 
+    <p>Detailed information about PyX can be found in the PyX manual, which
+    is available both as PDF and as online HTML version:</p>
 
+    <ul>
+      <li><a href="manual.pdf">manual (PDF version)</a></li>
+      <li><a href="manual/index.html">online manual (HTML version)</a></li>
+    </ul>
 
-<p>Detailed information about PyX can be found in the PyX manual, which
-is available both as PDF and as online HTML version:</p>
+    <h2>FAQ</h2>
 
-<ul>
-  <li><a href="manual.pdf">manual (PDF version)</a></li>
-  <li><a href="manual/index.html">online manual (HTML version)</a></li>
-</ul>
+    <p>A further resource containing tips and tricks for PyX users is the FAQ
+    contributed by Gert-Ludwig Ingold. At the moment, it is only available as PDF:</p>
 
+    <ul>
+      <li><a href="pyxfaq.pdf">FAQ (PDF version)</a></li>
+    </ul>
 
-<h2>FAQ</h2>
+    <h2>Examples</h2>
 
-<p>A further resource containing tips and tricks for PyX users is the FAQ
-contributed by Gert-Ludwig Ingold. At the moment, it is only available as PDF
-version.</p>
+    <p>Please have also a look on our <a href="examples/index.html">examples</a> page,
+    which contains a comprehensive set of PyX drawings together with the
+    corresponding Python source code.</p>
 
-<ul>
-  <li><a href="pyxfaq.pdf">FAQ (PDF version)</a></li>
-</ul>
-
-<h2>Examples</h2>
-
-<p>Please have also a look on our <a href="examples/">examples</a> page,
-which contains a comprehensive set of PyX drawings together with the
-corresponding Python source code. </p>
-
-</div>
+  </div>
 
 </html>
+<!-- vim:set syntax=html: -->
