@@ -7,14 +7,6 @@ from pyx import text
 c = canvas.canvas()
 text.set(mode="latex", dvidebug=1, usefiles=("test_text.dvi","test_text.log"))
 text.preamble(r"""%
-    \makeatletter
-    \let\saveProcessOptions=\ProcessOptions
-    \def\ProcessOptions{%
-      \saveProcessOptions
-      \def\Gin@driver{../../contrib/pyx.def}%
-      \def\c@lor@namefile{dvipsnam.def}}
-    \makeatother
-
     \usepackage{graphicx}
     \usepackage{color}
     \usepackage{rotating}

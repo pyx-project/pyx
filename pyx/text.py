@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 #
 #
-# Copyright (C) 2002 Jörg Lehmann <joergl@users.sourceforge.net>
-# Copyright (C) 2002 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2002-2003 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2002-2003 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2003 Michael Schindler <m-schindler@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
@@ -1699,6 +1700,8 @@ class texrunner:
                        waitfortex=5,
                        texdebug=0,
                        dvidebug=0,
+                       dvicopy=0,
+                       pyxgraphics=1,
                        texmessagestart=texmessage.start,
                        texmessagedocclass=texmessage.load,
                        texmessagebegindoc=(texmessage.load, texmessage.noaux),
@@ -1706,8 +1709,8 @@ class texrunner:
                        texmessagedefaultpreamble=texmessage.load,
                        texmessagedefaultrun=texmessage.loadfd):
         mode = mode.lower()
-        if mode != "tex" and mode != "latex" and mode != "pdftex" and mode != "pdflatex":
-            raise ValueError("mode \"TeX\", \"LaTeX\", \"pdfTeX\", or \"pdfLaTeX\" expected")
+        if mode != "tex" and mode != "latex":
+            raise ValueError("mode \"TeX\" or \"LaTeX\" expected")
         self.mode = mode
         self.lfs = lfs
         self.docclass = docclass
@@ -1716,6 +1719,8 @@ class texrunner:
         self.waitfortex = waitfortex
         self.texdebug = texdebug
         self.dvidebug = dvidebug
+        self.dvicopy = dvicopy
+        self.pyxgraphics = pyxgraphics
         texmessagestart = helper.ensuresequence(texmessagestart)
         helper.checkattr(texmessagestart, allowmulti=(texmessage,))
         self.texmessagestart = texmessagestart
@@ -1807,15 +1812,6 @@ class texrunner:
                          "\\def\\PyXInput#1{\\immediate\\write16{PyXInputMarker:executeid=#1:}}", # write PyXInputMarker to stdout
                          *self.texmessagestart)
             os.remove("%s.tex" % self.texfilename)
-            if self.mode == "pdftex" or self.mode == "pdflatex":
-                raise RuntimeError("pdftex in dvi-mode not yet supported")
-                self.execute("\\pdfoutput=0%\n"
-                             "\\def\\marker#1{%\n"
-                             "\\pdfsavepos%\n" # needs a modified pdf(La)TeX version!
-                             "\\write16{PyXMarker:name=#1,"
-                                                 "xpos=\\the\\pdflastxpos,"
-                                                 "ypos=\\the\\pdflastypos:}%\n"
-                             "}%\n")
             if self.mode == "tex":
                 try:
                     LocalLfsName = str(self.lfs) + ".lfs"
@@ -1847,7 +1843,15 @@ class texrunner:
                 self.execute(lfsdef)
                 self.execute("\\normalsize%\n")
                 self.execute("\\newdimen\\linewidth%\n")
-            elif self.mode == "latex" or self.mode == "pdflatex":
+            elif self.mode == "latex":
+                if self.pyxgraphics:
+                    self.execute("\\makeatletter%\n"
+                                 "\\let\\saveProcessOptions=\\ProcessOptions%\n"
+                                 "\\def\\ProcessOptions{%\n"
+                                 "\\saveProcessOptions%\n"
+                                 "\\def\\Gin@driver{../../contrib/pyx.def}%\n"
+                                 "\\def\\c@lor@namefile{dvipsnam.def}}%\n"
+                                 "\\makeatother")
                 if self.docopt is not None:
                     self.execute("\\documentclass[%s]{%s}" % (self.docopt, self.docclass), *self.texmessagedocclass)
                 else:
@@ -1865,7 +1869,7 @@ class texrunner:
                                    "\\PyXInput{%i}%%\n" % self.executeid)
         else: # TeX/LaTeX should be finished
             self.expectqueue.put_nowait("Transcript written on %s.log" % self.texfilename)
-            if self.mode == "latex" or self.mode == "pdflatex":
+            if self.mode == "latex":
                 self.expr = "\\end{document}\n"
             else:
                 self.expr = "\\end\n"
@@ -1908,7 +1912,12 @@ class texrunner:
     def getdvi(self):
         "finish TeX/LaTeX and read the dvifile"
         self.execute(None, *self.texmessageend)
-        self.dvifiles.append(DVIFile("%s.dvi" % self.texfilename, debug=self.dvidebug))
+        if self.dvicopy:
+            os.system("dvicopy %s.dvi %s.dvicopy")
+            dvifilename = "%s.dvicopy" % self.texfilename
+        else:
+            dvifilename = "%s.dvi" % self.texfilename
+        self.dvifiles.append(DVIFile(dvifilename, debug=self.dvidebug))
         self.dvinumber += 1
 
     def prolog(self, dvinumber, page):
@@ -1933,7 +1942,14 @@ class texrunner:
         self.page = 0
         self.texdone = 0
 
-    def settex(self, mode=None, lfs=None, docclass=None, docopt=None, usefiles=None, waitfortex=None,
+    def settex(self, mode=None,
+                     lfs=None,
+                     docclass=None,
+                     docopt=None,
+                     usefiles=None,
+                     waitfortex=None,
+                     dvicopy=None,
+                     pyxgraphics=None,
                      texmessagestart=None,
                      texmessagedocclass=None,
                      texmessagebegindoc=None,
@@ -1949,8 +1965,8 @@ class texrunner:
             raise TexRunsError
         if mode is not None:
             mode = mode.lower()
-            if mode != "tex" and mode != "latex" and mode != "pdftex" and mode != "pdflatex":
-                raise ValueError("mode \"TeX\", \"LaTeX\", \"pdfTeX\", or \"pdfLaTeX\" expected")
+            if mode != "tex" and mode != "latex":
+                raise ValueError("mode \"TeX\" or \"LaTeX\" expected")
             self.mode = mode
         if lfs is not None:
             self.lfs = lfs
@@ -1962,6 +1978,10 @@ class texrunner:
             self.usefiles = helper.ensurelist(usefiles)
         if waitfortex is not None:
             self.waitfortex = waitfortex
+        if dvicopy is not None:
+            self.dvicopy = dvicopy
+        if dvicopy is not None:
+            self.pyxgraphics = pyxgraphics
         if texmessagestart is not None:
             texmessagestart = helper.ensuresequence(texmessagestart)
             helper.checkattr(texmessagestart, allowmulti=(texmessage,))
@@ -2058,7 +2078,7 @@ class texrunner:
         if self.texdone:
             raise TexDoneError
         if self.preamblemode:
-            if self.mode == "latex" or self.mode == "pdflatex":
+            if self.mode == "latex":
                 self.execute("\\begin{document}", *self.texmessagebegindoc)
             self.preamblemode = 0
         helper.checkattr(args, allowmulti=(_texsetting, texmessage, trafo._trafo, base.PathStyle))
