@@ -1001,13 +1001,21 @@ class path(base.PSCmd):
         """returns the parameter value(s) matching the given length(s)"""
         return normpath(self).arclentoparam(lengths)
 
-    def at_pt(self, param):
-        """return coordinates in pts of corresponding normpath at parameter value param"""
-        return normpath(self).at_pt(param)
+    def at_pt(self, param, arclen=None):
+        """return coordinates of path in pts at either parameter value param
+        or arc length arclen.
 
-    def at(self, param):
-        """return coordinates of corresponding normpath at parameter value param"""
-        return normpath(self).at(param)
+        At discontinuities in the path, the limit from below is returned
+        """
+        return normpath(self).at_pt(param, arclen)
+
+    def at(self, param, arclen=None):
+        """return coordinates of path at either parameter value param
+        or arc length arclen.
+
+        At discontinuities in the path, the limit from below is returned
+        """
+        return normpath(self).at(param, arclen)
 
     def bbox(self):
         context = _pathcontext()
@@ -1031,13 +1039,21 @@ class path(base.PSCmd):
         """return coordinates of first point of first subpath in path"""
         return normpath(self).begin()
 
-    def curvradius(self, param):
+    def curvradius_pt(self, param, arclen=None):
+        """Returns the curvature radius in pts at parameter param.
+        This is the inverse of the curvature at this parameter
+
+        Please note that this radius can be negative or positive,
+        depending on the sign of the curvature"""
+        return normpath(self).curvradius_pt(param, arclen)
+
+    def curvradius(self, param, arclen=None):
         """Returns the curvature radius at parameter param.
         This is the inverse of the curvature at this parameter
 
         Please note that this radius can be negative or positive,
         depending on the sign of the curvature"""
-        return normpath(self).curvradius(param)
+        return normpath(self).curvradius(param, arclen)
 
     def end_pt(self):
         """return coordinates of last point of last subpath in path (in pts)"""
@@ -1070,13 +1086,19 @@ class path(base.PSCmd):
         """return corresponding normpaths split at parameter values params"""
         return normpath(self).split(params)
 
-    def tangent(self, param, length=None):
-        """return tangent vector at parameter value param of corresponding normpath"""
-        return normpath(self).tangent(param, length)
+    def tangent(self, param, arclen=None, length=None):
+        """return tangent vector of path at either parameter value param
+        or arc length arclen.
 
-    def trafoat(self, param):
-        """return transformation at parameter value param"""
-        return normpath(self).trafoat(param)
+        At discontinuities in the path, the limit from below is returned.
+        If length is not None, the tangent vector will be scaled to
+        the desired length.
+        """
+        return normpath(self).tangent(param, arclen, length)
+
+    def trafo(self, param, arclen=None):
+        """return transformation at either parameter value param or arc length arclen"""
+        return normpath(self).trafo(param, arclen)
 
     def transformed(self, trafo):
         """return transformed path"""
@@ -1324,8 +1346,8 @@ class normpathel:
         """return bounding box of normpathel"""
         pass
 
-    def curvradius(self, param):
-        """Returns the curvature radius at parameter param.
+    def curvradius_pt(self, param):
+        """Returns the curvature radius in pts at parameter param.
         This is the inverse of the curvature at this parameter
 
         Please note that this radius can be negative or positive,
@@ -1489,15 +1511,6 @@ class normcurve(normpathel):
         return "normcurve(%g, %g, %g, %g, %g, %g, %g, %g)" % (self.x0, self.y0, self.x1, self.y1,
                                                               self.x2, self.y2, self.x3, self.y3)
 
-    def arclen_pt(self, epsilon=1e-5):
-        """computes arclen of bpathel in pts using successive midpoint split"""
-        if self.isstraight(epsilon):
-            return math.sqrt((self.x3-self.x0)*(self.x3-self.x0)+
-                             (self.y3-self.y0)*(self.y3-self.y0))
-        else:
-            (a, b) = self.midpointsplit()
-            return a.arclen_pt(epsilon) + b.arclen_pt(epsilon)
-
     def _arclentoparam_pt(self, lengths, epsilon=1e-5):
         """computes the parameters [t] of bpathel where the given lengths (in pts) are assumed
         returns ( [parameters], total arclen)
@@ -1536,6 +1549,16 @@ class normcurve(normpathel):
             param = max(min(param,1),0)
             params.append(param)
         return [params, cumlengths[-1]]
+
+    def arclen_pt(self, epsilon=1e-5):
+        """computes arclen of bpathel in pts using successive midpoint split"""
+        if self.isstraight(epsilon):
+            return math.sqrt((self.x3-self.x0)*(self.x3-self.x0)+
+                             (self.y3-self.y0)*(self.y3-self.y0))
+        else:
+            (a, b) = self.midpointsplit()
+            return a.arclen_pt(epsilon) + b.arclen_pt(epsilon)
+
 
     def at_pt(self, t):
         xt = (  (-self.x0+3*self.x1-3*self.x2+self.x3)*t*t*t +
@@ -1815,20 +1838,16 @@ class normsubpath:
 
         return [allparams, allarclen]
 
-    def at_pt(self, t):
-        """return coordinates in pts of sub path at parameter value t
+    def at_pt(self, param):
+        """return coordinates in pts of sub path at parameter value param
 
-        Negative values of t count from the end of the path. The absolute
-        value of t must be smaller or equal to the number of segments in
-        the normpath, otherwise None is returned.
-
+        The parameter param must be smaller or equal to the number of
+        segments in the normpath, otherwise None is returned.
         """
-        if t<0:
-            t += self.range()
-        if 0<=t<self.range():
-            return self.normpathels[int(t)].at_pt(t-int(t))
-        if t==self.range():
-            return self.end_pt()
+        try:
+            return self.normpathels[int(param-self.epsilon)].at_pt(param-int(param-self.epsilon))
+        except:
+            raise PathException("parameter value param out of range")
 
     def bbox(self):
         if self.normpathels:
@@ -1843,9 +1862,10 @@ class normsubpath:
         return self.normpathels[0].begin_pt()
 
     def curvradius_pt(self, param):
-        while param < 0:
-            param += self.range()
-        return self.normpathels[int(param)].curvradius_pt(param-int(param))
+        try:
+            return self.normpathels[int(param-self.epsilon)].curvradius_pt(param-int(param-self.epsilon))
+        except:
+            raise PathException("parameter value param out of range")
 
     def end_pt(self):
         return self.normpathels[-1].end_pt()
@@ -1960,12 +1980,12 @@ class normsubpath:
                 result = result[1:]
         return result
 
-    def tangent(self, t, length=None):
-        tx, ty = self.at_pt(t)
-        if 0<=t<self.range():
-            tdx, tdy = self.normpathels[int(t)].tangentvector_pt(t-int(t))
-        if t==self.range():
-            tdx, tdy = self.normpathels[-1].tangentvector_pt(1)
+    def tangent(self, param, length=None):
+        tx, ty = self.at_pt(param)
+        try:
+            tdx, tdy = self.normpathels[int(param-self.epsilon)].tangentvector_pt(param-int(param-self.epsilon))
+        except:
+            raise PathException("parameter value param out of range")
         tlen = math.sqrt(tdx*tdx + tdy*tdy)
         if not (length is None or tlen==0):
             sfactor = unit.topt(length)/tlen
@@ -1973,12 +1993,12 @@ class normsubpath:
             tdy *= sfactor
         return line_pt(tx, ty, tx+tdx, ty+tdy)
 
-    def trafoat(self, t):
-        tx, ty = self.at_pt(t)
-        if 0<=t<self.range():
-            tdx, tdy = self.normpathels[int(t)].tangentvector_pt(t-int(t))
-        if t==self.range():
-            tdx, tdy = self.normpathels[-1].tangentvector_pt(1)
+    def trafo(self, param):
+        tx, ty = self.at_pt(param)
+        try:
+            tdx, tdy = self.normpathels[int(param-self.epsilon)].tangentvector_pt(param-int(param-self.epsilon))
+        except:
+            raise PathException("parameter value param out of range")
         return trafo.translate_pt(tx, ty)*trafo.rotate(degrees(math.atan2(tdy, tdx)))
 
     def transform(self, trafo):
@@ -2029,14 +2049,15 @@ class normpath(path):
 
     """normalized path
 
-    a normalized path consits of a list of normsubpaths
+    A normalized path consists of a list of normalized sub paths.
 
     """
 
     def __init__(self, arg=[], epsilon=1e-5):
         """ construct a normpath from another normpath passed as arg,
         a path or a list of normsubpaths. An accuracy of epsilon pts
-        is used for numerical calculations"""
+        is used for numerical calculations.
+        """
 
         self.epsilon = epsilon
         if isinstance(arg, normpath):
@@ -2088,23 +2109,21 @@ class normpath(path):
     def __str__(self):
         return "normpath(%s)" % ", ".join(map(str, self.subpaths))
 
-    def _findsubpath(self, param):
-        """return a tuple (subpath, relativet),
-        where subpath is the subpath containing the parameter value param and param is the
-        renormalized value of param in this subpath
-
-        Negative values of param count from the end of the path.  At
-        discontinuities in the path, the limit from below is returned.
-        An exception is raised, if the parameter t is out of range.
+    def _findsubpath(self, param, arclen):
+        """return a tuple (subpath, rparam), where subpath is the subpath
+        containing the position specified by either param or arclen and rparam
+        is the corresponding parameter value in this subpath. 
         """
 
-        if param<0:
-            param += self.range()
+        if param is not None and arclen is not None:
+            raise PathException("either param or arclen has to be specified, but not both")
+        elif arclen is not None:
+            param = self.arclentoparam(arclen)
 
         spt = 0
         for sp in self.subpaths:
             sprange = sp.range()
-            if spt <= param <= sprange+spt:
+            if spt <= param <= sprange+spt+self.epsilon:
                 return sp, param-spt
             spt += sprange
         raise PathException("parameter value out of range")
@@ -2140,11 +2159,11 @@ class normpath(path):
             self.subpaths.append(normsubpath(currentsubpathels, 0, self.epsilon))
 
     def arclen_pt(self):
-        """returns total arc length of normpath in pts with accuracy epsilon"""
+        """returns total arc length of normpath in pts"""
         return sum([sp.arclen_pt() for sp in self.subpaths])
 
     def arclen(self):
-        """returns total arc length of normpath with accuracy epsilon"""
+        """returns total arc length of normpath"""
         return unit.t_pt(self.arclen_pt())
 
     def arclentoparam(self, lengths):
@@ -2197,28 +2216,22 @@ class normpath(path):
 
         return allparams
 
-    def at_pt(self, param):
-        """return coordinates in pts of path at parameter value param
+    def at_pt(self, param, arclen=None):
+        """return coordinates in pts of path at either parameter value param
+        or arc length arclen.
 
-        Negative values of param count from the end of the path. The absolute
-        value of param must be smaller or equal to the number of segments in
-        the normpath, otherwise an exception is raised.
-        At discontinuities in the path, the limit from below is returned
-
+        At discontinuities in the path, the limit from below is returned.
         """
-        sp, param = self._findsubpath(param)
+        sp, param = self._findsubpath(param, arclen)
         return sp.at_pt(param)
 
-    def at(self, param):
-        """return coordinates of path at parameter value param
+    def at(self, param, arclen=None):
+        """return coordinates of path at either parameter value param
+        or arc length arclen.
 
-        Negative values of param count from the end of the path. The absolute
-        value of param must be smaller or equal to the number of segments in
-        the normpath, otherwise an exception is raised.
         At discontinuities in the path, the limit from below is returned
-
         """
-        x, y = self.at_pt(param)
+        x, y = self.at_pt(param, arclen)
         return unit.t_pt(x), unit.t_pt(y)
 
     def bbox(self):
@@ -2243,17 +2256,17 @@ class normpath(path):
         x, y = self.begin_pt()
         return unit.t_pt(x), unit.t_pt(y)
 
-    def curvradius_pt(self, param):
-        sp, param = self._findsubpath(param)
+    def curvradius_pt(self, param, arclen=None):
+        sp, param = self._findsubpath(param, arclen)
         return sp.curvradius_pt(param)
 
-    def curvradius(self, param):
-        """Returns the curvature radius at parameter param.
+    def curvradius(self, param, arclen=None):
+        """Returns the curvature radius at either parameter param or arc length arclen.
         This is the inverse of the curvature at this parameter
 
         Please note that this radius can be negative or positive,
         depending on the sign of the curvature"""
-        return unit.t_pt(self.curvradius_pt(param))
+        return unit.t_pt(self.curvradius_pt(param, arclen))
 
     def end_pt(self):
         """return coordinates of last point of last subpath in path (in pts)"""
@@ -2332,8 +2345,6 @@ class normpath(path):
 
         """
 
-        # XXX support negative arguments
-
         # check whether parameter list is really sorted
         sortedparams = list(params)
         sortedparams.sort()
@@ -2395,15 +2406,15 @@ class normpath(path):
 
         return result
 
-    def tangent(self, param, length=None):
-        """return tangent vector of path at parameter value param
+    def tangent(self, param, arclen=None, length=None):
+        """return tangent vector of path at either parameter value param
+        or arc length arclen.
 
-        Negative values of t count from the end of the path. At discontinuities
-        in the path, the limit from below is returned
-
+        At discontinuities in the path, the limit from below is returned.
         If length is not None, the tangent vector will be scaled to
-        the desired length"""
-        sp, param = self._findsubpath(param)
+        the desired length.
+        """
+        sp, param = self._findsubpath(param, arclen)
         return sp.tangent(param, length)
 
     def transform(self, trafo):
@@ -2415,10 +2426,10 @@ class normpath(path):
         """return path transformed according to trafo"""
         return normpath([sp.transformed(trafo) for sp in self.subpaths])
 
-    def trafoat(self, param):
-        """return transformation at parameter value t"""
-        sp, param = self._findsubpath(param)
-        return sp.trafoat(param)
+    def trafo(self, param, arclen=None):
+        """return transformation at either parameter value param or arc length arclen"""
+        sp, param = self._findsubpath(param, arclen)
+        return sp.trafo(param)
 
     def outputPS(self, file):
         for sp in self.subpaths:

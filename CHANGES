@@ -98,6 +98,9 @@ TODO:
     - the accuracy epsilon can now only be specified in normpath and normsubpath
       constructor and no longer in arguments of path and normpath methods
       (TODO: documentation)
+    - negative parameters are no longer supported in path and normpath methods
+    - path and normpath methods which accept parameter value param now
+      alternatively accept an arc length
   - connnector module:
     - renamed _xxx -> xxx_pt
   - deco module:

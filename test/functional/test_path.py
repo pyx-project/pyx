@@ -171,9 +171,9 @@ def testtangent(c):
            rlineto(2,3))+circle(5,5,1)
     c.stroke(p, [style.linewidth.THick])
     for i in range(int(p.range())*2):
-        c.stroke(p.tangent(i/2.0, "20 t pt"), [color.rgb.blue, deco.earrow.normal])
-        c.stroke(line(0, 0, 1, 0).transformed(p.trafoat(i/2.0)), [color.rgb.green, deco.earrow.normal])
-        c.stroke(line(0, 0, 0, 1).transformed(p.trafoat(i/2.0)), [color.rgb.red, deco.earrow.normal])
+        c.stroke(p.tangent(i/2.0, length="20 t pt"), [color.rgb.blue, deco.earrow.normal])
+        c.stroke(line(0, 0, 1, 0).transformed(p.trafo(i/2.0)), [color.rgb.green, deco.earrow.normal])
+        c.stroke(line(0, 0, 0, 1).transformed(p.trafo(i/2.0)), [color.rgb.red, deco.earrow.normal])
 
     # test the curvature
     cc = canvas.canvas()
@@ -181,7 +181,7 @@ def testtangent(c):
         radius = p.curvradius(i/2.0)
         radius = unit.tocm(radius)
         if radius < 10000:
-            pos = p.trafoat(i/2.0).apply(0,radius*radius/abs(radius))
+            pos = p.trafo(i/2.0).apply(0,radius*radius/abs(radius))
             cc.stroke(circle(0,0,abs(radius)), [color.grey(0.5), trafo.translate(*pos)])
 
     c.insert(cc)#, [canvas.clip(c.bbox().enlarge(1).rect())])
@@ -292,7 +292,8 @@ def testarclentoparam(c):
     curve=path(moveto(0,0), lineto(0,5), curveto(5,0,0,10,5,5), closepath(),
                moveto(5,0), lineto(10,5))
     ll = curve.arclen()
-    l=[-0.8*ll, -0.6*ll, -0.4*ll, -0.2*ll, 0, 0.1*ll, 0.3*ll, 0.5*ll, 0.7*ll, 0.9*ll]
+    # l=[-0.8*ll, -0.6*ll, -0.4*ll, -0.2*ll, 0, 0.1*ll, 0.3*ll, 0.5*ll, 0.7*ll, 0.9*ll]
+    l=[0, 0.1*ll, 0.2*ll, 0.3*ll, 0.4*ll, 0.5*ll, 0.6*ll, 0.7*ll, 0.8*ll, 0.9*ll]
     cols=[color.gray.black, color.gray(0.3), color.gray(0.7), color.rgb.red,
           color.rgb.green, color.rgb.blue, color.cmyk(1,0,0,0),
           color.cmyk(0,1,0,0), color.cmyk(0,0,1,0), color.gray.black]
