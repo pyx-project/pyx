@@ -37,14 +37,18 @@ TODO:
     - multi page PostScript output
   - connnector module:
     - _xxx -> xxx_pt renaming
+  - style and color module:
+    - support modification of existing styles via __call__
 
 0.5 (????/??/??):
   - setup.py and distribution:
     - allow customization of the extension modules built (via setup.cfg)
     - disable building pykpathsea module by default
     - more detailed description of install process in INSTALL
+    - provide more information and pointers to other files in README
     - include example data files in distribution (suggested by Andrea Riciputi)
     - force dvips to write ps files instead of printing them (suggested by Otto Tronarp)
+    - includ pyxfaq.pdf in distribution
   - text module:
     - improved is-readable test for lfs files and pyx.def file
     - explicitly quit (La)TeX in cleantmp (helps when quitting with <Ctrl>C)
