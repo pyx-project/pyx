@@ -1,4 +1,5 @@
 import random
+import sys; sys.path[:0] = ["../.."]
 from pyx import *
 
 d1 = graph.data.list([(1.5, 1, 0.3),
@@ -19,22 +20,22 @@ d3 = graph.data.list([(1, 0.3),
 d4 = graph.data.data(d3, y="x", x="y")
 
 c = canvas.canvas()
-g1 = c.insert(graph.graphxy(10, 0, width=8))
-g1.plot(d1, [graph.style.histogram(steps=1, lineattrs=[color.rgb.red, style.linewidth.Thick])])
-g1.plot(d1, [graph.style.histogram(steps=0)])
-g2 = c.insert(graph.graphxy(0, 0, width=8))
-g2.plot(d2, [graph.style.histogram(steps=1, lineattrs=[color.rgb.red, style.linewidth.Thick])])
-g2.plot(d2, [graph.style.histogram(steps=0)])
-g3 = c.insert(graph.graphxy(10, 7, width=8))
-g3.plot(d3, [graph.style.histogram(steps=1, lineattrs=[color.rgb.red, style.linewidth.Thick], autohistogrampointpos=0)])
-g3.plot(d3, [graph.style.histogram(steps=0, autohistogrampointpos=0)])
-g4 = c.insert(graph.graphxy(0, 7, width=8))
-g4.plot(d4, [graph.style.histogram(steps=1, lineattrs=[color.rgb.red, style.linewidth.Thick], autohistogramaxisindex=1, autohistogrampointpos=1)])
-g4.plot(d4, [graph.style.histogram(steps=0, autohistogramaxisindex=1, autohistogrampointpos=1)])
-g5 = c.insert(graph.graphxy(10, 14, width=8, x=graph.axis.lin(min=3, max=14), y=graph.axis.lin(min=-0.1, max=0.45)))
-g5.plot(d1, [graph.style.histogram(steps=1, lineattrs=[color.rgb.red, style.linewidth.Thick])])
-g5.plot(d1, [graph.style.histogram(steps=0)])
-g6 = c.insert(graph.graphxy(0, 14, width=8, y=graph.axis.lin(min=3, max=14), x=graph.axis.lin(min=-0.1, max=0.45)))
-g6.plot(d2, [graph.style.histogram(steps=1, lineattrs=[color.rgb.red, style.linewidth.Thick])])
-g6.plot(d2, [graph.style.histogram(steps=0)])
+
+def draw(d, xpos, ypos, autohistogramaxisindex=0, autohistogrampointpos=0, fillablesteps=0, **kwargs):
+    g = c.insert(graph.graphxy(xpos, ypos, width=8, **kwargs))
+    g.plot(d, [graph.style.histogram(fillable=1, steps=fillablesteps, lineattrs=[color.rgb.green, style.linewidth.THIck, deco.filled([color.rgb.blue])],
+                                     autohistogramaxisindex=autohistogramaxisindex, autohistogrampointpos=autohistogrampointpos)])
+    g.plot(d, [graph.style.histogram(steps=1, lineattrs=[color.rgb.red, style.linewidth.Thick],
+                                     autohistogramaxisindex=autohistogramaxisindex, autohistogrampointpos=autohistogrampointpos)])
+    g.plot(d, [graph.style.histogram(steps=0,
+                                     autohistogramaxisindex=autohistogramaxisindex, autohistogrampointpos=autohistogrampointpos)])
+
+draw(d1, 10, 0)
+draw(d2, 0, 0)
+draw(d3, 10, 7, autohistogramaxisindex=0, autohistogrampointpos=0)
+draw(d4, 0, 7, autohistogramaxisindex=1, autohistogrampointpos=1)
+draw(d1, 10, 14, x=graph.axis.lin(min=3, max=14), y=graph.axis.lin(min=-0.1, max=0.45))
+draw(d2, 0, 14, y=graph.axis.lin(min=3, max=14), x=graph.axis.lin(min=-0.1, max=0.45))
+draw(d1, 10, 21, fillablesteps=1, x=graph.axis.lin(min=3, max=14), y=graph.axis.lin(min=-0.1, max=0.45))
+draw(d2, 0, 21, fillablesteps=1, y=graph.axis.lin(min=3, max=14), x=graph.axis.lin(min=-0.1, max=0.45))
 c.writeEPSfile("test_histogram")

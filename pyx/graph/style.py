@@ -23,7 +23,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-import math
+import math, warnings
 from pyx import attr, deco, style, color, unit, canvas, path
 from pyx import text as textmodule
 
@@ -866,12 +866,13 @@ class histogram(_style):
     defaultlineattrs = []
     defaultfrompathattrs = []
 
-    def __init__(self, lineattrs=[], steps=0, fromvalue=0, frompathattrs=[],
+    def __init__(self, lineattrs=[], steps=0, fromvalue=0, frompathattrs=[], fillable=0,
                        autohistogramaxisindex=0, autohistogrampointpos=0.5, epsilon=1e-10):
         self.lineattrs = lineattrs
         self.steps = steps
         self.fromvalue = fromvalue
         self.frompathattrs = frompathattrs
+        self.fillable = fillable # TODO: fillable paths might not properly be closed by straight lines on curved graph geometries
         self.autohistogramaxisindex = autohistogramaxisindex
         self.autohistogrampointpos = autohistogrampointpos
         self.epsilon = epsilon
@@ -925,24 +926,22 @@ class histogram(_style):
 
     def vposline(self, privatedata, sharedata, graph, vpos, vvalue1, vvalue2):
         if -self.epsilon < vpos < 1+self.epsilon:
-            change1 = 0 # begin changed
-            change = 0 # has a sign
+            vvalue1cut = 0
             if vvalue1 < 0:
                 vvalue1 = 0
-                change1 = 1
-                change -= 1
+                vvalue1cut = -1
             elif vvalue1 > 1:
                 vvalue1 = 1
-                change1 = 1
-                change += 1
+                vvalue1cut = 1
+            vvalue2cut = 0
             if vvalue2 < 0:
                 vvalue2 = 0
-                change -= 1
+                vvalue2cut = -1
             elif vvalue2 > 1:
                 vvalue2 = 1
-                change += 1
-            if abs(change) <= 1:
-                if change1:
+                vvalue2cut = 1
+            if abs(vvalue1cut + vvalue2cut) <= 1:
+                if vvalue1cut and not self.fillable:
                     if privatedata.rangeaxisindex:
                         privatedata.path.append(path.moveto_pt(*graph.vpos_pt(vvalue1, vpos)))
                     else:
@@ -953,72 +952,185 @@ class histogram(_style):
                     privatedata.path.append(graph.vgeodesic_el(vpos, vvalue1, vpos, vvalue2))
 
     def vvalueline(self, privatedata, sharedata, graph, vvalue, vpos1, vpos2):
-        if -self.epsilon < vvalue < 1+self.epsilon:
-            change1 = 0 # begin changed
-            change = 0 # has a sign
+        if self.fillable:
+            if vvalue < -self.epsilon:
+                vvalue = 0
+                warnings.warn("cut at graph boundary adds artificial lines to fillable step histogram path")
+            if vvalue > 1+self.epsilon:
+                vvalue = 1
+                warnings.warn("cut at graph boundary adds artificial lines to fillable step histogram path")
+        if self.fillable or (-self.epsilon < vvalue < 1+self.epsilon):
+            vpos1cut = 0
             if vpos1 < 0:
                 vpos1 = 0
-                change1 = 1
-                change -= 1
+                vpos1cut = -1
             elif vpos1 > 1:
                 vpos1 = 1
-                change1 = 1
-                change += 1
+                vpos1cut = 1
+            vpos2cut = 0
             if vpos2 < 0:
                 vpos2 = 0
-                change -= 1
+                vpos2cut = -1
             elif vpos2 > 1:
                 vpos2 = 1
-                change += 1
-            if abs(change) <= 1:
-                if change1:
-                    if privatedata.rangeaxisindex:
-                        privatedata.path.append(path.moveto_pt(*graph.vpos_pt(vvalue, vpos1)))
+                vpos2cut = 1
+            if abs(vpos1cut + vpos2cut) <= 1:
+                if vpos1cut:
+                    if self.fillable:
+                        if privatedata.rangeaxisindex:
+                            privatedata.path.append(path.moveto_pt(*graph.vpos_pt(privatedata.vfromvalue, vpos1)))
+                            privatedata.path.append(graph.vgeodesic_el(privatedata.vfromvalue, vpos1, vvalue, vpos1))
+                        else:
+                            privatedata.path.append(path.moveto_pt(*graph.vpos_pt(vpos1, privatedata.vfromvalue)))
+                            privatedata.path.append(graph.vgeodesic_el(vpos1, privatedata.vfromvalue, vpos1, vvalue))
                     else:
-                        privatedata.path.append(path.moveto_pt(*graph.vpos_pt(vpos1, vvalue)))
+                        if privatedata.rangeaxisindex:
+                            privatedata.path.append(path.moveto_pt(*graph.vpos_pt(vvalue, vpos1)))
+                        else:
+                            privatedata.path.append(path.moveto_pt(*graph.vpos_pt(vpos1, vvalue)))
                 if privatedata.rangeaxisindex:
                     privatedata.path.append(graph.vgeodesic_el(vvalue, vpos1, vvalue, vpos2))
                 else:
                     privatedata.path.append(graph.vgeodesic_el(vpos1, vvalue, vpos2, vvalue))
+                if self.fillable and vpos2cut:
+                    warnings.warn("cut at graph boundary adds artificial lines to fillable step histogram path")
+                    if privatedata.rangeaxisindex:
+                        privatedata.path.append(graph.vgeodesic_el(vvalue, vpos2, privatedata.vfromvalue, vpos2))
+                    else:
+                        privatedata.path.append(graph.vgeodesic_el(vpos2, vvalue, vpos2, privatedata.vfromvalue))
 
     def drawvalue(self, privatedata, sharedata, graph, vmin, vmax, vvalue):
         currentvalid = vmin is not None and vmax is not None and vvalue is not None
-        try:
-            gap = abs(vmin - privatedata.lastvmax) > self.epsilon
-        except (ArithmeticError, ValueError, TypeError):
-            gap = 1
-        if (privatedata.lastvvalue is not None and
-            currentvalid and
-            not gap and
-            (self.steps or
-             (privatedata.lastvvalue-privatedata.vfromvalue)*(vvalue-privatedata.vfromvalue) < 0)):
-            self.vposline(privatedata, sharedata, graph,
-                          vmin, privatedata.lastvvalue, vvalue)
+        if self.fillable and not self.steps:
+            if not currentvalid:
+                return
+            vmincut = 0
+            if vmin < -self.epsilon:
+                vmin = 0
+                vmincut = -1
+            elif vmin > 1+self.epsilon:
+                vmin = 1
+                vmincut = 1
+            vmaxcut = 0
+            if vmax < -self.epsilon:
+                vmax = 0
+                vmaxcut = -1
+            if vmax > 1+self.epsilon:
+                vmax = 1
+                vmaxcut = 1
+            vvaluecut = 0
+            if vvalue < -self.epsilon:
+                vvalue = 0
+                vvaluecut = -1
+            if vvalue > 1+self.epsilon:
+                vvalue = 1
+                vvaluecut = 1
+            done = 0
+            if abs(vmincut) + abs(vmaxcut) + abs(vvaluecut) + abs(privatedata.vfromvaluecut) > 1:
+                if abs(vmincut + vmaxcut) > 1 or abs(vvaluecut+privatedata.vfromvaluecut) > 1:
+                    done = 1
+                else:
+                    warnings.warn("multiple cuts at graph boundary add artificial lines to fillable rectangle histogram path")
+            elif vmincut:
+                done = 1
+                if privatedata.rangeaxisindex:
+                    privatedata.path.append(path.moveto_pt(*graph.vpos_pt(privatedata.vfromvalue, vmin)))
+                    privatedata.path.append(graph.vgeodesic_el(privatedata.vfromvalue, vmin, privatedata.vfromvalue, vmax))
+                    privatedata.path.append(graph.vgeodesic_el(privatedata.vfromvalue, vmax, vvalue, vmax))
+                    privatedata.path.append(graph.vgeodesic_el(vvalue, vmax, vvalue, vmin))
+                else:
+                    privatedata.path.append(path.moveto_pt(*graph.vpos_pt(vmin, privatedata.vfromvalue)))
+                    privatedata.path.append(graph.vgeodesic_el(vmin, privatedata.vfromvalue, vmax, privatedata.vfromvalue))
+                    privatedata.path.append(graph.vgeodesic_el(vmax, privatedata.vfromvalue, vmax, vvalue))
+                    privatedata.path.append(graph.vgeodesic_el(vmax, vvalue, vmin, vvalue))
+            elif vmaxcut:
+                done = 1
+                if privatedata.rangeaxisindex:
+                    privatedata.path.append(path.moveto_pt(*graph.vpos_pt(vvalue, vmax)))
+                    privatedata.path.append(graph.vgeodesic_el(vvalue, vmax, vvalue, vmin))
+                    privatedata.path.append(graph.vgeodesic_el(vvalue, vmin, privatedata.vfromvalue, vmin))
+                    privatedata.path.append(graph.vgeodesic_el(privatedata.vfromvalue, vmin, privatedata.vfromvalue, vmax))
+                else:
+                    privatedata.path.append(path.moveto_pt(*graph.vpos_pt(vmax, vvalue)))
+                    privatedata.path.append(graph.vgeodesic_el(vmax, vvalue, vmin, vvalue))
+                    privatedata.path.append(graph.vgeodesic_el(vmin, vvalue, vmin, privatedata.vfromvalue))
+                    privatedata.path.append(graph.vgeodesic_el(vmin, privatedata.vfromvalue, vmax, privatedata.vfromvalue))
+            elif privatedata.vfromvaluecut:
+                done = 1
+                if privatedata.rangeaxisindex:
+                    privatedata.path.append(path.moveto_pt(*graph.vpos_pt(privatedata.vfromvalue, vmax)))
+                    privatedata.path.append(graph.vgeodesic_el(privatedata.vfromvalue, vmax, vvalue, vmax))
+                    privatedata.path.append(graph.vgeodesic_el(vvalue, vmax, vvalue, vmin))
+                    privatedata.path.append(graph.vgeodesic_el(vvalue, vmin, privatedata.vfromvalue, vmin))
+                else:
+                    privatedata.path.append(path.moveto_pt(*graph.vpos_pt(vmax, privatedata.vfromvalue)))
+                    privatedata.path.append(graph.vgeodesic_el(vmax, privatedata.vfromvalue, vmax, vvalue))
+                    privatedata.path.append(graph.vgeodesic_el(vmax, vvalue, vmin, vvalue))
+                    privatedata.path.append(graph.vgeodesic_el(vmin, vvalue, vmin, privatedata.vfromvalue))
+            elif vvaluecut:
+                done = 1
+                if privatedata.rangeaxisindex:
+                    privatedata.path.append(path.moveto_pt(*graph.vpos_pt(vvalue, vmin)))
+                    privatedata.path.append(graph.vgeodesic_el(vvalue, vmin, privatedata.vfromvalue, vmin))
+                    privatedata.path.append(graph.vgeodesic_el(privatedata.vfromvalue, vmin, privatedata.vfromvalue, vmax))
+                    privatedata.path.append(graph.vgeodesic_el(privatedata.vfromvalue, vmax, vvalue, vmax))
+                else:
+                    privatedata.path.append(path.moveto_pt(*graph.vpos_pt(vmin, vvalue)))
+                    privatedata.path.append(graph.vgeodesic_el(vmin, vvalue, vmin, privatedata.vfromvalue))
+                    privatedata.path.append(graph.vgeodesic_el(vmin, privatedata.vfromvalue, vmax, privatedata.vfromvalue))
+                    privatedata.path.append(graph.vgeodesic_el(vmax, privatedata.vfromvalue, vmax, vvalue))
+            if not done:
+                if privatedata.rangeaxisindex:
+                    privatedata.path.append(path.moveto_pt(*graph.vpos_pt(privatedata.vfromvalue, vmin)))
+                    privatedata.path.append(graph.vgeodesic_el(privatedata.vfromvalue, vmin, privatedata.vfromvalue, vmax))
+                    privatedata.path.append(graph.vgeodesic_el(privatedata.vfromvalue, vmax, vvalue, vmax))
+                    privatedata.path.append(graph.vgeodesic_el(vvalue, vmax, vvalue, vmin))
+                    privatedata.path.append(graph.vgeodesic_el(vvalue, vmin, privatedata.vfromvalue, vmin))
+                    privatedata.path.append(path.closepath())
+                else:
+                    privatedata.path.append(path.moveto_pt(*graph.vpos_pt(vmin, privatedata.vfromvalue)))
+                    privatedata.path.append(graph.vgeodesic_el(vmin, privatedata.vfromvalue, vmax, privatedata.vfromvalue))
+                    privatedata.path.append(graph.vgeodesic_el(vmax, privatedata.vfromvalue, vmax, vvalue))
+                    privatedata.path.append(graph.vgeodesic_el(vmax, vvalue, vmin, vvalue))
+                    privatedata.path.append(graph.vgeodesic_el(vmin, vvalue, vmin, privatedata.vfromvalue))
+                    privatedata.path.append(path.closepath())
         else:
+            try:
+                gap = abs(vmin - privatedata.lastvmax) > self.epsilon
+            except (ArithmeticError, ValueError, TypeError):
+                gap = 1
             if (privatedata.lastvvalue is not None and
-                (not currentvalid or
-                 privatedata.lastvvalue > vvalue or
-                 gap)):
+                currentvalid and
+                not gap and
+                (self.steps or
+                 (privatedata.lastvvalue-privatedata.vfromvalue)*(vvalue-privatedata.vfromvalue) < 0)):
                 self.vposline(privatedata, sharedata, graph,
-                              privatedata.lastvmax, privatedata.lastvvalue, privatedata.vfromvalue)
-                if currentvalid:
+                              vmin, privatedata.lastvvalue, vvalue)
+            else:
+                if (privatedata.lastvvalue is not None and
+                    (not currentvalid or
+                     privatedata.lastvvalue > vvalue or
+                     gap)):
+                    self.vposline(privatedata, sharedata, graph,
+                                  privatedata.lastvmax, privatedata.lastvvalue, privatedata.vfromvalue)
+                    if currentvalid:
+                        self.vmoveto(privatedata, sharedata, graph,
+                                     vmin, vvalue)
+                if (currentvalid and
+                    (privatedata.lastvvalue is None or
+                     privatedata.lastvvalue < vvalue or
+                     gap)):
                     self.vmoveto(privatedata, sharedata, graph,
-                                 vmin, vvalue)
-            if (currentvalid and
-                (privatedata.lastvvalue is None or
-                 privatedata.lastvvalue < vvalue or
-                 gap)):
-                self.vmoveto(privatedata, sharedata, graph,
-                             vmin, privatedata.vfromvalue)
-                self.vposline(privatedata, sharedata, graph,
-                              vmin, privatedata.vfromvalue, vvalue)
-        if currentvalid:
-            self.vvalueline(privatedata, sharedata, graph,
-                            vvalue, vmin, vmax)
-            privatedata.lastvvalue = vvalue
-            privatedata.lastvmax = vmax
-        else:
-            privatedata.lastvvalue = privatedata.lastvmax = None
+                                 vmin, privatedata.vfromvalue)
+                    self.vposline(privatedata, sharedata, graph,
+                                  vmin, privatedata.vfromvalue, vvalue)
+            if currentvalid:
+                self.vvalueline(privatedata, sharedata, graph,
+                                vvalue, vmin, vmax)
+                privatedata.lastvvalue = vvalue
+                privatedata.lastvmax = vmax
+            else:
+                privatedata.lastvvalue = privatedata.lastvmax = None
 
     def initdrawpoints(self, privatedata, sharedata, graph):
         privatedata.path = path.path()
@@ -1028,10 +1140,13 @@ class histogram(_style):
         if self.fromvalue is not None:
             valueaxisname = sharedata.poscolumnnames[1-privatedata.rangeaxisindex]
             privatedata.vfromvalue = graph.axes[valueaxisname].convert(self.fromvalue)
+            privatedata.vfromvaluecut = 0
             if privatedata.vfromvalue < 0:
                 privatedata.vfromvalue = 0
+                privatedata.vfromvaluecut = -1
             if privatedata.vfromvalue > 1:
                 privatedata.vfromvalue = 1
+                privatedata.vfromvaluecut = 1
             if self.frompathattrs is not None:
                 graph.stroke(graph.axespos[valueaxisname].vgridpath(privatedata.vfromvalue),
                              self.defaultfrompathattrs + self.frompathattrs)
