@@ -23,7 +23,7 @@
 
 # this code will be part of PyX 0.3
 
-import os, threading, Queue, traceback, re, struct, tempfile
+import glob, os, threading, Queue, traceback, re, struct, tempfile
 import helper, attrlist, bbox, unit, box, base, trafo, canvas, pykpathsea, t1strip
 
 ###############################################################################
@@ -853,11 +853,10 @@ class _texmessagepyxpageout(texmessage):
 
 class _texmessagetexend(texmessage):
 
-    auxpattern = re.compile(r"\([^()]*\.aux\)")
-    dvipattern = re.compile(r"Output written on (?P<texfilename>[a-z]+).dvi \((?P<page>\d+) pages?, \d+ bytes\)\.")
-
     def check(self, texrunner):
-        m = self.auxpattern.search(texrunner.texmsgparsed)
+        auxpattern = re.compile(r"\(%s\.aux\)" % texrunner.texfilename)
+        dvipattern = re.compile(r"Output written on %s\.dvi \((?P<page>\d+) pages?, \d+ bytes\)\." % texrunner.texfilename)
+        m = auxpattern.search(texrunner.texmsgparsed)
         if m:
             texrunner.texmsgparsed = texrunner.texmsgparsed[:m.start()] + texrunner.texmsgparsed[m.end():]
         try:
@@ -865,14 +864,12 @@ class _texmessagetexend(texmessage):
             texrunner.texmsgparsed = s1 + s2
         except IndexError:
             pass
-        m = self.dvipattern.search(texrunner.texmsgparsed)
+        m = dvipattern.search(texrunner.texmsgparsed)
         if texrunner.page:
             if not m:
                 raise TexResultError("TeX dvifile messages expected", texrunner)
             if m.group("page") != str(texrunner.page):
                 raise TexResultError("wrong number of pages reported", texrunner)
-            if m.group("texfilename") != texrunner.texfilename:
-                raise TexResultError("wrong filename of the dvifile reported", texrunner)
             texrunner.texmsgparsed = texrunner.texmsgparsed[:m.start()] + texrunner.texmsgparsed[m.end():]
         else:
             try:
@@ -1143,7 +1140,7 @@ class texrunner(attrlist.attrlist):
         self.mode = mode
         self.docclass = docclass
         self.docopt = docopt
-        self.usefiles = usefiles
+        self.usefiles = helper.ensurelist(usefiles)
         self.waitfortex = waitfortex
         self.texdebug = texdebug
         self.dvidebug = dvidebug
@@ -1159,10 +1156,18 @@ class texrunner(attrlist.attrlist):
         self.preamblemode = 1
         self.executeid = 0
         self.page = 0
-        self.texfilename = "text"
+        savetempdir = tempfile.tempdir
+        tempfile.tempdir = os.curdir
+        self.texfilename = os.path.basename(tempfile.mktemp())
+        tempfile.tempdir = savetempdir
 
     def execute(self, expr, *checks):
         if not self.texruns:
+            for usefile in self.usefiles:
+                extpos = usefile.rfind(".")
+                try:
+                    os.rename(usefile, self.texfilename + usefile[extpos:])
+                except OSError: pass
             texfile = open("%s.tex" % self.texfilename, "w") # start with filename -> creates dvi file with that name
             texfile.write("\\relax\n")
             texfile.close()
@@ -1247,19 +1252,32 @@ class texrunner(attrlist.attrlist):
             self.texruns = 0
             self.texdone = 1
 
+    def getdvi(self):
+        self.execute(None, *self.texmessageend)
+        self.dvifile = DVIFile("%s.dvi" % self.texfilename, debug=self.dvidebug)
+        for usefile in self.usefiles:
+            extpos = usefile.rfind(".")
+            os.rename(self.texfilename + usefile[extpos:], usefile)
+        for file in glob.glob("%s.*" % self.texfilename):
+            os.unlink(file)
+
     def prolog(self):
         if not self.texdone:
-            self.execute(None, *self.texmessageend)
-            self.dvifile = DVIFile("%s.dvi" % self.texfilename, debug=self.dvidebug)
+            self.getdvi()
         return self.dvifile.prolog()
 
     def write(self, file, page):
         if not self.texdone:
-            self.execute(None, *self.texmessageend)
-            self.dvifile = DVIFile("%s.dvi" % self.texfilename)
+            self.getdvi()
         return self.dvifile.write(file, page)
 
-    def settex(self, mode=None, waitfortex=None):
+    def settex(self, mode=None, docclass=None, docopt=None, usefiles=None, waitfortex=None,
+                     texmessagestart=None,
+                     texmessagedocclass=None,
+                     texmessagebegindoc=None,
+                     texmessageend=None,
+                     texmessagedefaultpreamble=None,
+                     texmessagedefaultrun=None):
         if self.texruns:
             raise TexRunsError
         if mode is not None:
@@ -1267,8 +1285,26 @@ class texrunner(attrlist.attrlist):
             if mode != "tex" and mode != "latex":
                 raise ValueError("mode \"TeX\" or \"LaTeX\" expected")
             self.mode = mode
+        if docclass is not None:
+            self.docclass = docclass
+        if docopt is not None:
+            self.docopt = docopt
+        if self.usefiles is not None:
+            self.usefiles = helper.ensurelist(usefiles)
         if waitfortex is not None:
             self.waitfortex = waitfortex
+        if texmessagestart is not None:
+            self.texmessagestart = texmessagestart
+        if texmessagedocclass is not None:
+            self.texmessagedocclass = texmessagedocclass
+        if texmessagebegindoc is not None:
+            self.texmessagebegindoc = texmessagebegindoc
+        if texmessageend is not None:
+            self.texmessageend = texmessageend
+        if texmessagedefaultpreamble is not None:
+            self.texmessagedefaultpreamble = texmessagedefaultpreamble
+        if texmessagedefaultrun is not None:
+            self.texmessagedefaultrun = texmessagedefaultrun
 
     def set(self, texdebug=None, dvidebug=None, **args):
         if self.texdone:
