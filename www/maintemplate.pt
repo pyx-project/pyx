@@ -2,8 +2,7 @@
 
 <head>
    <title>PyX - Python graphics package</title>
-   <!--base href="http://pyx.sourceforge.net"-->
-   <!--link rel="SHORTCUT ICON" href="pyx.ico"-->
+   <link rel="shortcut icon" href="pyx.ico" type="image/x-icon">
    <link rel="stylesheet" type="text/css" href="main.css">
 </head>
 
