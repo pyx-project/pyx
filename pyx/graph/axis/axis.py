@@ -55,7 +55,10 @@ class _linmap:
 
     def convert(self, data, value):
         """axis coordinates -> graph coordinates"""
-        return (float(value) - data.min) / (data.max - data.min)
+        if self.reverse:
+            return (data.max - float(value)) / (data.max - data.min)
+        else:
+            return (float(value) - data.min) / (data.max - data.min)
 
 
 class _logmap:
@@ -64,7 +67,10 @@ class _logmap:
     def convert(self, data, value):
         """axis coordinates -> graph coordinates"""
         # TODO: store log(data.min) and log(data.max)
-        return (math.log(float(value)) - math.log(data.min)) / (math.log(data.max) - math.log(data.min))
+        if self.reverse:
+            return (math.log(data.max) - math.log(float(value))) / (math.log(data.max) - math.log(data.min))
+        else:
+            return (math.log(float(value)) - math.log(data.min)) / (math.log(data.max) - math.log(data.min))
 
 
 class _regularaxis(_axis):
@@ -267,7 +273,7 @@ class subaxispositioner(positioner._positioner):
 class bar(_axis):
 
     def __init__(self, subaxes=None, defaultsubaxis=linear(painter=None, linkpainter=None, parter=None, texter=None),
-                       dist=0.5, firstdist=None, lastdist=None, title=None,
+                       dist=0.5, firstdist=None, lastdist=None, title=None, reverse=0,
                        painter=painter.bar(), linkpainter=painter.linkedbar()):
         self.subaxes = subaxes
         self.defaultsubaxis = defaultsubaxis
@@ -281,6 +287,7 @@ class bar(_axis):
         else:
             self.lastdist = 0.5 * dist
         self.title = title
+        self.reverse = reverse
         self.painter = painter
         self.linkpainter = linkpainter
 
@@ -304,7 +311,10 @@ class bar(_axis):
             data.size += 1
         data.size += self.dist
         data.subaxes[name] = subaxis
-        data.names.append(name)
+        if self.reverse:
+            data.names.insert(0, name)
+        else:
+            data.names.append(name)
 
     def adjustaxis(self, data, columndata, errorname):
         for value in columndata:
