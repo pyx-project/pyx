@@ -60,14 +60,18 @@ class connector_pt(path.normpath):
         # cut off the start of self
         # XXX should path.lentopar used here?
         center = (unit.topt(self.begin()[0]), unit.topt(self.begin()[1]))
-        sp = self.intersect(path.circle_pt(center[0], center[1], dists[0]))[0]
+        #sp = self.intersect(path.circle_pt(center[0], center[1], dists[0]))[0]
+        cutpath = path.path(path.arc(center[0], center[1], dists[0], -179, 179))
+        sp = self.intersect(cutpath.transformed(self.trafo(0)))[0]
         sp.sort()
         if sp:
             self.normsubpaths = self.split(sp[-1:])[1].normsubpaths
 
         # cut off the end of self
         center = (unit.topt(self.end()[0]), unit.topt(self.end()[1]))
-        sp = self.intersect(path.circle_pt(center[0], center[1], dists[1]))[0]
+        #sp = self.intersect(path.circle_pt(center[0], center[1], dists[1]))[0]
+        cutpath = path.path(path.arc(center[0], center[1], dists[0], 1, 359))
+        sp = self.intersect(cutpath.transformed(self.trafo(self.range()-0.001)))[0]
         sp.sort()
         if sp:
             self.normsubpaths = self.split(sp[:1])[0].normsubpaths
