@@ -649,9 +649,10 @@ class bar:
       is specified at all, the bar axis simulates a linear
       subaxis with a fixed range of 0 to 1"""
 
-    def __init__(self, subaxis=None, multisubaxis=None, title=None,
-                       dist=0.5, firstdist=None, lastdist=None, names=None,
-                       texts={}, painter=painter.bar()):
+    def __init__(self, subaxis=None, multisubaxis=None,
+                       dist=0.5, firstdist=None, lastdist=None,
+                       names=None, texts={},
+                       title=None, painter=painter.bar()):
         """initialize the instance
         - subaxis contains a axis to be used as the subaxis
           for all items
@@ -668,11 +669,6 @@ class bar:
         - the firstdist and lastdist are the distance before the
           first and after the last item, respectively; when set
           to None (the default), 0.5*dist is used
-        - names is a predefined list of names to identify the
-          items; if set, the name list is fixed
-        - texts is a dictionary transforming a name to a text in
-          the painter; if a name isn't found in the dictionary
-          it gets used itself
         - the relsize of the bar axis is the sum of the
           relsizes including all distances between the items"""
         self.dist = dist
@@ -685,23 +681,17 @@ class bar:
         else:
             self.lastdist = 0.5 * dist
         self.relsizes = None
-        self.fixnames = 0
-        self.names = []
-        for name in helper.ensuresequence(names):
-            self.setname(name)
-        self.fixnames = names is not None
         self.multisubaxis = multisubaxis
         if self.multisubaxis is not None:
             if subaxis is not None:
                 raise RuntimeError("either use subaxis or multisubaxis")
-            self.subaxis = [self.createsubaxis() for name in self.names]
+            self.subaxis = []
         else:
             self.subaxis = subaxis
         self.title = title
-        self.fixnames = 0
-        self.texts = texts
         self.painter = painter
         self.axiscanvas = None
+        self.names = []
 
     def createsubaxis(self):
         return bar(subaxis=self.multisubaxis.subaxis,
@@ -710,8 +700,6 @@ class bar:
                    dist=self.multisubaxis.dist,
                    firstdist=self.multisubaxis.firstdist,
                    lastdist=self.multisubaxis.lastdist,
-                   names=self.multisubaxis.names,
-                   texts=self.multisubaxis.texts,
                    painter=self.multisubaxis.painter)
 
     def getrange(self):
@@ -729,13 +717,12 @@ class bar:
         - a style (or the user itself) might use this to
           insert new items into a bar axis
         - setting self.relsizes to None forces later recalculation"""
-        if not self.fixnames:
-            if name not in self.names:
-                self.relsizes = None
-                self.names.append(name)
-                if self.multisubaxis is not None:
-                    self.subaxis.append(self.createsubaxis())
-        if (not self.fixnames or name in self.names) and len(subnames):
+        if name not in self.names:
+            self.relsizes = None
+            self.names.append(name)
+            if self.multisubaxis is not None:
+                self.subaxis.append(self.createsubaxis())
+        if len(subnames):
             if self.multisubaxis is not None:
                 if self.subaxis[self.names.index(name)].setname(*subnames):
                     self.relsizes = None

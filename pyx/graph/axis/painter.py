@@ -667,7 +667,7 @@ class bar(_title):
     """class for painting a baraxis
     - the inherited _title is used to paint the title of
       the axis
-    - the bar access the multisubaxis, subaxis names, texts, and
+    - the bar access the multisubaxis, names, and subaxis
       relsizes attributes"""
 
     __implements__ = _Iaxispainter
@@ -737,12 +737,7 @@ class bar(_title):
                 nameattrs = self.defaultnameattrs + self.nameattrs
                 if self.namedirection is not None:
                     nameattrs.append(self.namedirection.trafo(tick.temp_dx, tick.temp_dy))
-                if axis.texts.has_key(name):
-                    nameboxes.append(self.texrunner.text_pt(x, y, str(axis.texts[name]), nameattrs))
-                elif axis.texts.has_key(str(name)):
-                    nameboxes.append(self.texrunner.text_pt(x, y, str(axis.texts[str(name)]), nameattrs))
-                else:
-                    nameboxes.append(self.texrunner.text_pt(x, y, str(name), nameattrs))
+                nameboxes.append(self.texrunner.text_pt(x, y, str(name), nameattrs))
         labeldist = ac.extent + unit.length(self.namedist_str, default_type="v")
         if len(namepos) > 1:
             equaldirection = 1

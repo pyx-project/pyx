@@ -83,6 +83,7 @@ TODO for 0.6:
       - graph data rewrite
     - axis zeropath feature has been removed
     - mergelabels removed; linpart doesn't have a label argument anymore
+    - names and texts removed from baraxis
     - iteration on graph style, when it is used several times in the same graph
     - symbols + lines -> symbollines; symbols do not allow setting lineattrs,
       and lines not symbolattrs
