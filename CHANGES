@@ -51,6 +51,7 @@ TODO:
       might be a misdesign; a solution is still pending ...
   - color module:
     - what should we do for palette when only one entry
+    - palette is actually a gradient (as pointed out by Hansres Engel)
   - connector module:
     - is the early conversion with unit.topt unit-modification-save?
   - deformer module:
