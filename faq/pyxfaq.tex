@@ -1,0 +1,614 @@
+\documentclass[11pt,DIV14]{scrartcl}
+\usepackage[latin1]{inputenc}
+\usepackage{url}
+\usepackage{mathptmx}
+%\usepackage[all,comments]{glifaq}
+\usepackage[answered]{glifaq}
+\usepackage[pdftex]{hyperref}
+\hypersetup{pdftitle={PyX FAQ}%
+            ,pdfauthor={\textcopyright\ Gert-Ludwig Ingold
+	               <gert.ingold@physik.uni-augsburg.de>}%
+            ,colorlinks=true%
+            ,linkcolor=blue}
+\begin{document}
+\begin{center}
+\LARGE\sffamily Some frequently and\\ 
+not so frequently asked questions\\ 
+about \PyX\\
+\par
+{\small\sffamily (\today)}\\[1truecm]
+\large
+Gert-Ludwig Ingold \par
+\href{mailto:gert.ingold@physik.uni-augsburg.de}{\url{<gert.ingold@physik.uni-augsburg.de>}}
+\end{center}
+\toc
+\newpage
+
+\section{General aspects of \PyX}
+\question{a}{Where do I get the latest version of \PyX?}
+{}
+{The current release of \PyX{} (as well as older ones) is freely available 
+from \url{http://pyx.sourceforge.net} where also a CVS repository with the 
+latest patches can be found.
+}
+
+\question{a}{How can I determine the version of \PyX{} running on my 
+machine?}
+{}
+{Start a python session (usually by typing \texttt{python} at the system
+prompt) and then type the following two commands (\texttt{>>>} is the python 
+prompt)
+\begin{progcode}
+>>> import pyx\\
+>>> pyx.\us\us{}version\us\us
+\end{progcode}
+}
+
+\question{a}{Does \PyX{} run under my favorite operating system?}
+{}
+{Yes, if you have installed Python (\uaref{q:what_is_python})
+and \TeX{} (\uaref{q:what_is_tex}). Both are available for
+a large variety of operating systems so chances are pretty good that you will 
+get \PyX{} to work on your system.
+}
+
+\question{a}{Under which versions of Python will \PyX{} run?}
+{}
+{\PyX{} will definitely run under Python 2.2 and higher and it is supposed
+to work under Python 2.1. Your are likely to encounter problems with Python 2.0
+and with Python 1.x \PyX{} will not work. The version of your Python interpreter
+can be determined by calling it with the option \texttt{-V}. Alternatively,
+you can simply start the interpreter and take a look at the startup message.
+Note that there may be different versions of Python installed on your system
+at the same time.
+}
+
+\question{a}{Where can I get help if my question is not answered in this FAQ?}
+{}
+{The \PyX{} sources contain a reference manual and a set of examples 
+demonstrating various features of \PyX. If the feature you are looking for is
+among them, using the appropriate part of the example code or adapting it for
+your purposes may help.
+
+There is also a user discussion list about \PyX{} which you can subscribe to
+at \url{http://lists.sourceforge.net/lists/listinfo/pyx-user}. The archive of
+the discussion list is available at \url{http://sourceforge.net/mailarchive/forum.php?forum_id=23700}.
+}
+
+\section{Python}
+
+\question{a}{What is Python?}
+{}
+{\label{q:what_is_python}
+From \url{www.python.org}:
+\begin{quote}
+Python is an \textit{interpreted, interactive, object-oriented} programming 
+language. It is often compared to Tcl, Perl, Scheme or Java.
+
+Python combines remarkable power with very clear syntax. It has modules, 
+classes, exceptions, very high level dynamic data types, and dynamic typing. 
+There are interfaces to many system calls and libraries, as well as to various 
+windowing systems (X11, Motif, Tk, Mac, MFC). New built-in modules are easily 
+written in C or C++. Python is also usable as an extension language for 
+applications that need a programmable interface.
+
+The Python implementation is portable: it runs on many brands of UNIX, on 
+Windows, OS/2, Mac, Amiga, and many other platforms. If your favorite system 
+isn't listed here, it may still be supported, if there's a C compiler for it. 
+Ask around on \href{news:comp.lang.python}{news:comp.lang.python} --- or just 
+try compiling Python yourself.
+
+The Python implementation is 
+\href{http://www.python.org/doc/Copyright.html}{copyrighted} 
+but \textbf{freely usable and distributable, even for commercial use}.
+\end{quote}
+}
+
+\question{a}{Where can I learn more about Python?}
+{}
+{The place to start is \url{www.python.org} where you will find plenty of
+information on Python including tutorials.
+}
+
+\question{a}{What do I need to import in order to use \PyX?}
+{}
+{It is recommended to begin your Python code with 
+\begin{progcode}
+from pyx import *
+\end{progcode}
+when using \PyX. This allows you for example to write simply 
+\texttt{graph.graphxy}
+instead of \texttt{pyx.graph.graphxy}. The following modules will be loaded:
+\texttt{box}, \texttt{connector}, \texttt{canvas}, \texttt{epsfile},
+\texttt{color}, \texttt{text}, \texttt{tex}, \texttt{graph}, \texttt{path},
+\texttt{data}, \texttt{unit}, and \texttt{trafo}.
+
+For convenience, you might import specific objects of a module like in
+\begin{progcode}
+from graph import graphxy
+\end{progcode}
+which allows you to write \texttt{graphxy()} instead of \texttt{graph.graphxy()}.
+
+All code segments in this document assume that the import line mentioned in
+the first code snippet is present.
+}
+
+\question{a}{What is a raw string?}
+{}
+{\label{q:raw_string}
+
+The backslash serves in standard Python strings to start an escape sequence.
+For example {\cs n} corresponds to a newline character. On the other hand,
+\TeX{} and \LaTeX{}, which do the typesetting in \PyX, use the backslash to
+indicate the start of a command. In order to avoid the standard interpretation,
+the string should be marked as a raw string by prepending it by an \texttt{r} 
+like in
+\begin{progcode}
+c.text(0, 0, r"\${\cs alpha}{\cs beta}{\cs gamma}\$")
+\end{progcode}
+}
+
+\section{Plotting of graphs}
+
+\subsection{General aspects}
+
+\question{a}{How do I generate a graph from data as simply as possible?}
+{}
+{Suppose that you have a data file \texttt{x.dat} containing values for
+$x$ and $y$ in two columns. Then the following code will do the job
+\begin{progcode}
+from pyx import *\\
+\\
+g = graph.graphxy(width=10)\\
+g.plot(graph.data("x.dat", x=1, y=2))\\
+g.writetofile("x")
+\end{progcode}
+\texttt{graphxy} creates a canvas (called \texttt{g} in this example) onto 
+which the graph will be drawn and sets the default behavior including the 
+axis. There is, however, no default value for the width of the graph. In 
+\texttt{plot} you have to specify the name of the data file and the columns 
+from which the data should be taken. Finally, \texttt{writetofile} will 
+generate the postscript file \texttt{x.eps} which you can view or print.
+}
+
+\question{t}{How do I generate a graph of a function as simply as possible?}
+{}
+{}
+
+\question{a}{How can I stack graphs?}
+{}
+{\PyX{} always needs a canvas to draw on. One possibility therefore consists
+in creating a new canvas with
+\begin{progcode}
+c = canvas.canvas()
+\end{progcode}
+and inserting the graphs into this canvas with \texttt{c.insert(...)}. Here,
+\texttt{...} has to be replaced by the name of the graph. Alternatively, the
+canvas created with \texttt{graph.graphxy} for one of the graphs can be used
+to insert the other graphs even if they will be positioned outside the
+first graph.
+
+The second issue to address is positioning of the graphs. By specifying
+\texttt{xpos} and \texttt{ypos} when calling \texttt{graphxy}, you can
+define the position of a graph. Later on, the position and size of a 
+graph \texttt{g} can be referred to as \texttt{g.xpos}, \texttt{g.ypos},
+\texttt{g.width}, and \texttt{g.height} even if for example the height has 
+never been specified explicitly but is only defined by a \PyX{} default. 
+
+The following example shows how to put graph \texttt{gupper} above graph 
+\texttt{glower} on a canvas \texttt{c}:
+\begin{progcode}
+from pyx import *\\
+from graph import graphxy\\
+\\
+c = canvas.canvas()\\
+\\
+glower = graphxy(width=10)\\
+glower.plot(...)\\
+c.insert(glower)\\
+\\
+gupper = graphxy(width=10, ypos=glower.ypos+glower.height+2)\\
+gupper.plot(...)\\
+\\
+c.insert(gupper)\\
+c.writetofile(...)
+\end{progcode}
+where \texttt{...} has to be replaced by the appropriate information like
+data and symbol specifications and the name of the output file. Here,
+\texttt{c.insert} is used to actually insert the subcanvasses 
+for the graphs into the main canvas \texttt{c} and \texttt{c.writetofile}
+in the last line requests to write the contents of this canvas to a file.
+
+%In order to suppress the labels of the $x$-axis of the upper graph, use
+%\begin{progcode}
+%myaxispainter = graph.axispainter(labelattrs=None)
+%
+%gupper = graph.graphxy(...,
+%                       x=graph.linaxis(...,
+%		                       part=graph.linpart(),
+%                                       painter=myaxispainter)
+%                       )
+%\end{progcode}
+}
+
+\question{t}{How can I plot grid data?}
+{}
+{}
+
+\question{t}{I would like a key for only some of my data sets. How do I do
+that?}
+{}
+{
+}
+
+\subsection{Axis properties}
+
+\question{a}{How do I specify the tick increment?}
+{}
+{In the partition of a linear axis, the increments associated with ticks,
+subticks etc.\ can be specified as argument of \texttt{linpart}. In the
+following example, ticks will be drawn at even values while subticks will
+be drawn at all integers:
+\begin{progcode}
+tg = graph.graphxy(width=10,\\
+~~~~~~~~~~~~~~~~~~~x=graph.linaxis(min=1, max=10,\\
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~part=graph.linpart(tickdist=[2,1])),\\
+~~~~~~~~~~~~~~~~~~~)
+\end{progcode}
+}
+
+\question{a}{Why are the axes extended beyond the data range?}
+{}
+{Because the developers like it this way (God knows why). One way to avoid
+this extension is to explicitly specify the minimum and maximum values for
+the axis. The other possibility is to set \texttt{datavmin=0} and/or
+\texttt{datavmax=1} in \texttt{linaxis} or \texttt{logaxis}. 
+
+Changes in the extension of axes are announced for version 0.5.
+}
+
+\question{a}{How do I get rid of the zero line?}
+{}
+{The \texttt{axispainter} takes an argument \texttt{zerolineattrs} which 
+defaults to an empty list. Setting the \texttt{axispainter} for the
+appropriate axis to \texttt{None} will remove the zero line like in this
+example:
+\begin{progcode}
+myaxispainter = graph.axispainter(zerolineattrs=None)\\
+\\
+g = graph.graphxy(width=10,\\
+~~~~~~~~~~~~~~~~~~x=graph.linaxis(min=-5, max=5, painter=myaxispainter),\\
+~~~~~~~~~~~~~~~~~~y=graph.linaxis(min=-5, max=5)\\
+~~~~~~~~~~~~~~~~~~)
+\end{progcode}
+This will keep the horizontal zero line but discard the vertical one.
+}
+
+\subsection{Data properties}
+
+\question{a}{How do I choose the symbol?}
+{}
+{\label{q:choose_symbol}
+Suppose a graph called \texttt{g} has been initialized, e.g. using
+\texttt{graph.graphxy}. Then, data and the style of their representation
+in the graph are defined by calling \texttt{g.plot} like in the following
+example in which filled circles are requested:
+\begin{progcode}
+g.plot(graph.data("test.dat"),\\
+~~~~~~~graph.symbol(graph.symbol.circle,symbolattrs=canvas.filled()\\
+~~~~~~~)
+\end{progcode}
+}
+
+\question{a}{How do I choose the color of the symbols?}
+{}
+{Colors are not properties of the symbol as such and can therefore not
+be specified in \texttt{symbolattrs} directly. The color is rather related
+to the plotting of the symbol as defined by \texttt{canvas.stroked} or
+\texttt{canvas.filled}. With
+\begin{progcode}
+graph.symbol(graph.symbol.circle,\\
+~~~~~~~~~~~~~symbolattrs=[canvas.stroked(color.rgb.red),\\
+~~~~~~~~~~~~~~~~~~~~~~~~~~canvas.filled(color.rgb.green)]\\
+~~~~~~~~~~~~~)
+\end{progcode}
+you will obtain a circle filled in green with a red borderline.
+}
+
+\question{a}{How do I choose the line style?}
+{}
+{If you do not want to use symbols, you can set the line style as in this
+example
+\begin{progcode}
+g.plot(graph.data("test.dat"),\\
+~~~~~~~graph.line(lineattrs=canvas.linewidth.Thin)\\
+~~~~~~~)
+\end{progcode}
+where the linewidth is set.
+
+If you also want to use symbols, you can set the line attributes together
+with the symbols.  Extending the example in \ref{q:choose_symbol}),
+you could use
+\begin{progcode}
+g.plot(graph.data("test.dat"),\\
+~~~~~~~graph.symbol(graph.symbol.circle, \\
+~~~~~~~~~~~~~~~~~~~~symbolattrs=canvas.filled(),\\
+~~~~~~~~~~~~~~~~~~~~lineattrs=[canvas.linewidth.Thin,canvas.linestyle.dashed]\\
+~~~~~~~~~~~~~~~~~~~~)\\
+~~~~~~~)
+\end{progcode}
+to set the linewidth and to choose dashed lines. 
+}
+
+\section{\TeX{} and \LaTeX{}}
+
+\subsection{General aspects}
+
+\question{a}{What is \TeX/\LaTeX{} and why do I need it?}
+{}
+{\label{q:what_is_tex}
+\TeX{} is a high quality typesetting system developed by Donald E. Knuth 
+which is available for a wide variety of operating systems. \LaTeX{} is a 
+macro package originally developed by Leslie Lamport which makes life with 
+\TeX{} easier, in particular for complex typesetting tasks. The current 
+version of \LaTeX{} is referred to as \LaTeXe{} and offers e.g.\ improved 
+font selection as compared to the older \LaTeX{} 2.09 which should no longer 
+be used. 
+
+All typesetting tasks in \PyX{} are finally handed over to \TeX{} (which is the
+default) or \LaTeX{}, so that \PyX{} cannot do without it. On the other hand,
+the capabilities of \TeX{} and \LaTeX{} can be used for complex tasks where
+both graphics and typesetting are needed.
+}
+
+\question{a}{I don't know anything about \TeX{} and \LaTeX{}. Where can I read 
+something about it?}
+{}
+{\label{q:intro_tex_latex}
+Take a look at CTAN (\uaref{q:ctan}) where in \ctan{info}
+you may be able to find some useful information. There exists for example 
+``A Gentle Introduction to \TeX'' by M.~Doob (\ctan{gentle/gentle.pdf}) and
+``The Not So Short Introduction to \LaTeXe'' 
+(\ctan{info/lshort/english/lshort.pdf}) by T.~Oetiker et al. The latter has
+been translated into a variety of languages among them korean (which you will
+not be able to read unless you have appropriate fonts installed) and mongolian.
+
+Of course, it is likely that these documents will go way beyond what you 
+will need for generating graphics with \PyX{} so you don't have to read all
+of it (unless you want to use \TeX{} or \LaTeX{} for typesetting which can be
+highly recommended). 
+
+There exists also a number of FAQs on \TeX{} at \ctan{help}.
+}
+
+\question{a}{What is CTAN?}
+{}
+{\label{q:ctan}
+CTAN is the Comprehensive TeX Archive Network where you will find almost
+everything related to \TeX{} and friends. The main CTAN servers are 
+\url{tug.ctan.org}, \url{dante.ctan.org}, and \url{cam.ctan.org}. A list of 
+FTP mirrors can be found at \ctan{CTAN.sites}. 
+
+In this FAQ, \texttt{CTAN:} refers to the root of an anonymous ftp CTAN tree, 
+e.g.  \url{ftp://ctan.tug.org/tex-archive/}, 
+\url{ftp://ftp.dante.de/tex-archive/},
+and \url{ftp://ftp.tex.ac.uk/tex-archive/}. The links to CTAN in this document
+point to one of these servers but you might consider using a FTP mirror closer
+to you in order to reduce traffic load.
+}
+
+\question{a}{Is there support for Con\TeX{}t?}
+{}
+{No, and as far as I know there no plans to provide it in the near future. 
+Given the close ties between Con\TeX{}t and Meta\-Post, Con\TeX{}t users 
+probably prefer to stick with the latter anyway.
+}
+
+\subsection{\TeX{} and \LaTeX{} commands useful for \PyX}
+
+\question{a}{How do I get a specific symbol with \TeX{} or \LaTeX?}
+{}
+{A list of mathematical symbols together with the appropriate command name
+can be found at \ctan{info/symbols/math/symbols.ps}. A comprehensive list
+containing more than 2500 symbols for use with \LaTeX{} can be obtained from 
+\ctan{info/symbols/comprehensive/symbols-a4.pdf}. In some cases it might be 
+necessary to install fonts or packages available from CTAN 
+(\uaref{q:ctan}).
+}
+
+\subsection{\TeX{} and \LaTeX{} errors}
+
+\question{a}{Undefined control sequence \cs{usepackage}}
+{}
+{\label{q:undefined_usepackage}
+The command \cs usepackage is specific to \LaTeX{}. Since by default \PyX{}
+uses \TeX{}, you have to specify the correct mode:
+\begin{progcode}
+text.set(mode="latex")
+\end{progcode}
+}
+
+\question{a}{Undefined control sequence \cs{frac}}
+{}
+{\label{q:undefined_frac}
+The command \cs frac is only available in \LaTeX{}. In \TeX{} you should
+use \texttt{\cb{a\cs over b}} in math mode to produce ${a\over b}$. As an 
+alternative you may ask for the \LaTeX{} mode as explained in 
+\ref{q:undefined_usepackage}.
+}
+
+\question{a}{Missing \$ inserted}
+{}
+{You have specified \TeX- or \LaTeX-code which is only valid in math mode. 
+Typical examples are greek symbols, sub- and superscripts or fractions. 
+
+On the \PyX{} level, you can specify math mode for the whole string by using
+\texttt{text.mathmode} as in
+\begin{progcode}
+c.text(0, 0, r"{\cs alpha}", text.mathmode)
+\end{progcode}
+Keep also in mind that the standard Python interpretation of the backslash as 
+introducing escape sequences needs to be prevented 
+\uaref{q:raw_string}.
+
+On the \TeX/\LaTeX{} level you should enclose the commands requiring math
+mode in \$'s. As an example, \texttt{\$\cs alpha\us i\hat j\$} will produce 
+$\alpha_i^j$. This allows you to specify math mode also for substrings. There 
+exist other ways to specify math mode in \TeX{} and \LaTeX{} which are 
+particularly useful for more complex typesetting tasks. To learn more about 
+it, you should consult the documentation 
+\uaref{q:intro_tex_latex}. 
+}
+
+\question{a}{Font shape `OT1/xyz/m/n' undefined}
+{}
+{\label{q:fontshape_undefined}
+You have asked to use font \texttt{xyz} which is not available. Make sure that
+you have this font available in Type1 format, i.e.\ there should be a 
+file \texttt{xyz.pfb} somewhere. If your \TeX{} system is TDS compliant 
+(TDS=\TeX{} directory structure, cf.\ \ctan{tds/draft-standard/tds/tds.pdf}) 
+you should take a look at the subdirectories of 
+\path{TEXMF/fonts/type1}.
+}
+
+\question{a}{No information for font `cmr10' found in font mapping file}
+{}
+{\label{q:no_cmr10}
+Such an error message can already be encountered by simply running the example
+file \texttt{hello.py} included in the \PyX{} distribution. The likely reason
+is that the \TeX{} system does not find the cmr fonts in Type1 format.
+\PyX{} depends on these fonts as it does not work with the traditional
+pk fonts which are stored as bitmaps.
+
+Therefore, the first thing to make sure is that the cmr Type1 fonts are
+installed. In some \TeX{} installations, the command \texttt{kpsewhich 
+cmr10.pfb} will return the appropriate path if the cmr fonts exist in the 
+binary Type1 format (extension \texttt{pfb}) required by \PyX. If the command 
+does not work but the TeX{} system is TDS compliant 
+(\uaref{q:fontshape_undefined}), a look should be taken at 
+\path{TEXMF/fonts/type1/bluesky/cm} where \texttt{TEXMF} is the root of the 
+\texttt{texmf} tree.
+
+If the Type1 fonts do not exist on the system, they may be obtained from
+the CTAN \uaref{q:ctan} at \ctan{fonts/cm/ps-type1/bluesky}. See the 
+\texttt{README} for information about who produced these fonts and why they
+are freely available.
+
+If the Type1 fonts exist, the next step is to take a look at 
+\texttt{psfonts.map}. There may be several files with this name on the system, 
+so it is important to find out which one TeX is actually using. 
+\texttt{kpsewhich psfonts.map} might give this information.
+
+The most likely problem is that this file does not contain a line telling TeX
+what to do if it encounters a request for font cmr10, i.e. the following line 
+may be missing
+\begin{progcode}
+~~~cmr10~~~~~~~~~~~CMR10~~~~~~~~~~~<cmr10.pfb
+\end{progcode}
+It is probable that the required lines (in practice, you do not just need 
+cmr10) are found in a file named \texttt{psfonts.cmz} which resides in 
+\path{TEXMF/dvips/bluesky}. The contents of \texttt{psfonts.cmz} should
+be inserted into \texttt{psfonts.map}. Probably, \texttt{psfonts.map} recommends
+not to do this by hand. In this case the instructions should be followed. 
+Otherwise, \texttt{psfonts.cmz} should be copied into \texttt{psfonts.map}
+while keeping a backup of the old \texttt{psfonts.map} just in case. After
+these changes \PyX{} most likely will be happy. When inserting 
+\texttt{psfonts.cmz} into \texttt{psfonts.map} it may be a good idea to 
+include \texttt{psfonts.amz} as well. \texttt{psfonts.amz} contains information 
+about some more fonts which might be needed at some point.
+
+Making these changes will imply that the \TeX{} system will use the cmr fonts 
+in Type1 format instead of pk format which is actually not a bad thing, in 
+particular if \texttt{latex}~/ \texttt{dvips}~/ \texttt{ps2pdf} is used to 
+generate PDF output. With fonts in pk format this will look ugly and using 
+Type1 fonts solves this problem as well. When \texttt{pdflatex} is used to 
+create PDF files, Type1 fonts will be used anyway.
+
+An alternative to changing the file \texttt{psfonts.map} in the \TeX{} system 
+consists in instructing \PyX{} to read other map files like 
+\texttt{psfonts.cmz} as well. This can be achieved by adding map files in the 
+following line of 
+\texttt{pyx/text.py}:
+\begin{progcode}
+fontmap = readfontmap(["psfonts.map"])
+\end{progcode}
+
+It may well be that future versions of \PyX{} take care of this problem so that
+one needs no longer to worry about \texttt{psfonts.map}, at least for the
+standard cmr fonts.
+}
+
+\question{a}{No information for font `xyz7t' found in font mapping file}
+{}
+{After verifying that your problem was not addressed in \uaref{q:no_cmr10}, 
+you should switch on virtual font support by using \texttt{text.set(dvicopy=1)}.
+For those interested in more details: setting this option will cause
+\texttt{dvicopy} to be run after a \texttt{dvi}-file has been created by a call 
+to \TeX/\LaTeX. \texttt{dvicopy} expands any references to virtual fonts to
+base fonts and thus produces a modified copy of the original \texttt{dvi}-file.
+
+If this does not help, verify the existence of \texttt{xyz7t.vf} in one of the 
+subdirectories of \path{TEXMF/fonts/vf} (again, a TDS compliant \TeX{} 
+system is assumed \uaref{q:fontshape_undefined}). If the 
+virtual font file exists, find out which font it requests. A human readable 
+version of the virtual font file can be obtained with the help of 
+\texttt{vftovp}. A Unix operating system should allow you to obtain the 
+fontname by means of
+\begin{progcode}
+vftovp xyz7t.vf|grep FONTNAME
+\end{progcode}
+The resulting fontname has to be listed in \texttt{psfonts.map}. Use
+\begin{progcode}
+kpsewhich psfonts.map
+\end{progcode}
+to find out where this file resides (there may be more than one and it is
+important to know which one is actually read).
+}
+
+\subsection{Fonts}
+
+\question{t}{I have Type1 fonts in \texttt{pfa} format. How do I obtain the 
+corresponding \texttt{pfb} files needed by \PyX?}
+{}
+{
+}
+
+\question{a}{I want to use a font other than computer modern roman}
+{}
+{\label{q:other_font}
+As long as you have a font in Type1 format available, this should be no
+problem (even though it may cost you some time to set up things properly).
+
+In the simplest case, your \LaTeX{} system contains everything needed. 
+Including the following line into your code will probably work
+\begin{progcode}
+text.set(mode="latex")\\
+text.preamble(r"\cs{usepackage}\cb{mathptmx}")
+\end{progcode}
+and give you Times as roman font. 
+
+If you own one of the more common commercial fonts, take a look at
+\ctan{fonts} and its subdirectories as well as at the web page
+\url{http://home.vr-web.de/was/fonts.html} of Walter Schmidt. It is not
+unlikely that somebody has already done most of the work for you and created
+the files needed for the font to work properly with \LaTeX. But remember:
+we are talking about commercial fonts here, so do not expect to find the fonts
+themselves for free.
+
+If none of these cases applies, you should spend some time reading
+manuals about font installation, e.g.\ \ctan{macros/latex/doc/fntguide.pdf}
+(of course, I do not expect font wizards to read the last few lines).
+}
+
+\question{a}{Can I use a TrueType font with \PyX?}
+{}
+{Not directly as \PyX{} only knows how to handle Type1 fonts (although it is
+possible to get \LaTeX{} to work with TrueType fonts). However, you may use
+\texttt{ttf2pt1} (from \url{http://ttf2pt1.sourceforge.net}) to convert a 
+TrueType font into a Type1 font which you then install in your \TeX{} system 
+\uaref{q:other_font}. You will loose hinting information 
+in the conversion process but this should not really matter on output devices 
+with not too low resolution.
+}
+
+\end{document}

@@ -1,0 +1,388 @@
+% \iffalse
+%<package>\NeedsTeXFormat{LaTeX2e}
+%<*driver>
+\def\fileversion{0.1b}
+\def\filedate{2003/10/16}
+\ProvidesFile{glifaq.drv}
+%</driver>
+%<package>\ProvidesPackage{glifaq}
+           [2003/10/16 Style for PyX FAQ (gli) v0.1b]
+%<*driver>
+\documentclass{ltxdoc}
+\usepackage{url}
+\EnableCrossrefs
+\CodelineIndex
+\RecordChanges
+\newcommand\PyX{P\kern-.3em\lower.5ex\hbox{Y}\kern-.18em X}
+\newcommand{\acro}[1]{\textsc{#1}}
+\begin{document}
+   \DocInput{glifaq.dtx}
+\end{document}
+%</driver>
+% \fi
+%
+% \CharacterTable
+%  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
+%   Lower-case    \a\b\c\d\e\f\g\h\i\j\k\l\m\n\o\p\q\r\s\t\u\v\w\x\y\z
+%   Digits        \0\1\2\3\4\5\6\7\8\9
+%   Exclamation   \!     Double quote  \"     Hash (number) \#
+%   Dollar        \$     Percent       \%     Ampersand     \&
+%   Acute accent  \'     Left paren    \(     Right paren   \)
+%   Asterisk      \*     Plus          \+     Comma         \,
+%   Minus         \-     Point         \.     Solidus       \/
+%   Colon         \:     Semicolon     \;     Less than     \<
+%   Equals        \=     Greater than  \>     Question mark \?
+%   Commercial at \@     Left bracket  \[     Backslash     \\
+%   Right bracket \]     Circumflex    \^     Underscore    \_
+%   Grave accent  \`     Left brace    \{     Vertical bar  \|
+%   Right brace   \}     Tilde         \~}
+%
+% \CheckSum{197}
+%
+%
+% \title{The \texttt{glifaq} package}
+%
+% \author{Gert-Ludwig Ingold\\\small\url{<gert.ingold@physik.uni-augsburg.de>}}
+% \date{(v.\fileversion\ -- \filedate)}
+% \maketitle
+%
+% \section{Introduction}
+% The \texttt{glifaq} package has been developed to typeset the \acro{faq} of 
+% the \PyX{} graphics package for \acro{Python}. It might contain a few
+% commands which are useful for other \acro{faq}s as well.
+%
+% \section{Usage}
+% \label{sec:usage}
+% The package \texttt{glifaq} is intended for use with the \texttt{scrartcl}
+% class which is part of \acro{KOMA-Script}. \texttt{scrartcl} should therefore
+% be chosen as document class. 
+%  
+% The options of the package \texttt{glifaq} mostly control the kind of 
+% questions which will be typeset. There are three kinds of questions:
+% \begin{center}
+% \begin{tabular}{ll}
+% |a| & answered question\\
+% |c| & question where the answer has been checked by an expert\\
+% |t| & question not fully answered yet (= to do)
+% \end{tabular}
+% \end{center}
+% The following options are recognized by the package:
+% \begin{description}
+% \item[all] prints all questions
+% \item[answered] prints only questions which have no ``to do'' status, i.e.
+%            they have a satisfying answer and might even have been checked
+% \item[checked] prints only questions where the answers have been checked
+% \item[todo] prints all questions where no satisfying answer has been 
+%            formulated yet
+% \item[unchecked] prints all questions which have not been checked yet
+% \item[comments] if comments exist, they will be printed as well and a 
+%            special mark will be put in the margin
+% \item[notoc] the table of contents will not be printed
+% \end{description}
+% By default, all questions and the table of contents but no comments will be
+% printed. If questions with ``to do'' status are printed, a special mark will
+% be put in the margin.
+%
+% \DescribeMacro\question
+% The most important task of the package \texttt{glifaq} is to define a command
+% \begin{quote}
+% |\question{|\meta{status}|}{|\meta{title}|}{|\meta{comment}|}{|^^A
+%    \meta{answer}|}|
+% \end{quote}
+% to handle the typesetting of questions and their answers. As indicated, this 
+% command takes four arguments:
+% \begin{center}
+% \begin{tabular}{ll}
+% 1: & class of the question according to the table given above\\
+%    & allowed values: |a|, |c|, |t|\\
+% 2: & title of the question\\
+% 3: & comments related to this question\\
+% 4: & the answer to the question
+% \end{tabular}
+% \end{center}
+%
+% \DescribeEnv{progcode}
+% For the typesetting of code snippets, an environment |progcode| has been
+% defined which will use a fixed space font. Unfortunately, verbatim code
+% cannot be used in arguments as is the case here in macro |\question|.
+% To guarantee proper spaces and in particular indenting, a tilde has to
+% used instead of a space.
+%
+% In addition, there exist a few simple definitions which may be useful:
+%
+% \DescribeMacro\uaref
+% The macro |\uaref| acts like the usual |\ref| command but puts an $\uparrow$
+% (|\uparrow|) in front of the reference.
+%
+% \DescribeMacro\toc
+% The macro |\toc| replaces the usual |\tableofcontents| to allow for control
+% via the |notoc| option.
+%
+% \DescribeMacro\PyX
+% The macro |\PyX| defines the \PyX{} logo as employed by the developers of 
+% \PyX{} in their manual.
+%
+% \DescribeMacro\cs
+% In some places, a backslash cannot be used verbatim, in particular in an
+% argument of the |\question| macro. Using
+% \begin{quote}
+% \verb*+\cs +\meta{command name}
+% \end{quote}
+% will result in a backslash followed directly by the command name.
+%
+% \DescribeMacro\us
+% The macro |\us| can be used to produce an underscore if there is no more
+% direct way to do so.
+%
+% \DescribeMacro\hat
+% Sometimes it may also be difficult to produce a hat character. In such cases, 
+% |\hat| can be useful.
+%
+% \DescribeMacro\cb
+% The last macro of this type is |\cb| which allows to enclose an argument in
+% curly braces.
+%
+% \DescribeMacro\ctan
+% For references to files on \acro{ctan}, the macro |\ctan| can be used where 
+% the single argument should be the location of the file relative to the 
+% \acro{ctan} root.
+% \DescribeMacro\ftpCTAN
+% One of the \acro{ctan} ftp servers is coded into the package via the 
+% |\ftpCTAN| macro for direct reference from the \acro{pdf} version of the 
+% \acro{faq}.
+%
+% \DescribeMacro\new\DescribeMacro\changed
+% Finally, the two macros |\new| and |\changed| allow to mark questions as
+% new or changed with respect to an earlier version of the \acro{faq}. These 
+% macros should be used in the second argument of |\question| just behind the 
+% text defining the title of a question.
+%
+% \section{The Description of the Package Code}
+% \StopEventually
+%
+% We first define a few new switches:
+% \begin{center} 
+% \begin{tabular}{ll}
+% |\if@a|& print answered questions if true\\
+% |\if@c|& print corrected questions if true\\
+% |\if@t|& print unanswered or not fully answered questions if true\\
+% |\ifc@mments|& print comments if true\\
+% |\ift@c|& insert table of contents if true
+% \end{tabular}
+% \end{center}
+% By default, we print all questions and the table of contents but no comments.
+%    \begin{macrocode}
+\newif\if@a \@atrue
+\newif\if@c \@ctrue
+\newif\if@t \@ttrue
+\newif\ifc@mments \c@mmentsfalse
+\newif\ift@c \t@ctrue
+%    \end{macrocode}
+% Now we define the various options and set the switches according to the
+% options' definition given in section~\ref{sec:usage}.
+%    \begin{macrocode}
+\DeclareOption{all}{\@atrue \@ctrue \@ttrue}
+\DeclareOption{answered}{\@atrue \@ctrue \@tfalse}
+\DeclareOption{checked}{\@afalse \@ctrue \@tfalse}
+\DeclareOption{todo}{\@afalse \@cfalse \@ttrue}
+\DeclareOption{unchecked}{\@atrue \@cfalse \@ttrue}
+\DeclareOption{comments}{\c@mmentstrue}
+\DeclareOption{notoc}{\t@cfalse}
+\ProcessOptions\relax
+%    \end{macrocode}
+% Next, we load some needed packages if they have not been loaded before. 
+%    \begin{macrocode}
+\RequirePackage{ifthen}
+\RequirePackage{remreset}
+\RequirePackage{pifont}
+%    \end{macrocode}
+% The following macro will put a large cross in the margin to mark comments or
+% questions with ``to do'' status.
+%    \begin{macrocode}
+\newcommand{\put@ding}{\mbox{}\marginpar{\Huge\ding{56}}}
+%    \end{macrocode}
+%
+% Now comes the most important part of this package, the macro |\question|.
+% This macro has to decide on the basis of the first argument and the
+% options used with the package whether the current question is to be printed
+% or not.
+%
+% It is assumed that in the section hierarchy, the question can take the role
+% of a subsection or a subsubsection. Therefore, a mechanism has to be 
+% provided which tells the question its place in the hierarchy. Independent
+% of whether the question acts like a subsection or subsubsection, the layout
+% of the question title should be the one of a subsubsection.
+%
+% We introduce two switches: |\@printtrue| indicates that the question has
+% to be printed while |\@margtrue| request a mark to be put into the margin
+% to indicate a question with ``to do'' status.
+%    \begin{macrocode}
+\newif\if@print
+\newif\if@marg 
+%    \end{macrocode}
+% Below we will need to find out which level a question corresponds to. If the
+% value of the counter \texttt{question} is not equal to 0, the level is
+% already known. A value of 1 indicates that the questions are on the level
+% of a \texttt{subsection} while a value of 2 implies that the questions are
+% on the \texttt{subsubsection} level. Whenever a new section is started, we
+% will need to find out the level of the questions in this section. Therefore,
+% we reset the counter \texttt{question} whenever a new section is started.
+%    \begin{macrocode}
+\newcounter{question}[section]
+\setcounter{question}{0}
+%    \end{macrocode}
+% Since we want to set the title of a question always in the fontsize of a 
+% \texttt{subsubsection}, we might need to temporarily change the fontsize 
+% of the \texttt{subsection} title. In order to be able to restore the original
+% value, we save the value of |\size@subsection| which is used in the 
+% \acro{KOMA-Script} classes to define the fontsize of the \texttt{subsection} 
+% title.
+%    \begin{macrocode}
+\let\save@sizesubsection\size@subsection
+%    \end{macrocode}
+%
+% Now we are ready to define the |\question| macro. First, defaults are set
+% not to print the question and not to print a mark in the margin. If the status
+% of the question corresponds to one asked for by the option passed to the
+% package, we change the print switch to |\@printtrue|. A ``to do'' question
+% will in addition ask to print a mark in the margin by setting |\@margtrue|.
+%    \begin{macrocode}
+\newcommand{\question}[4]%
+{\@printfalse\@margfalse%
+ \ifthenelse{\equal{a}{#1}\and\boolean{@a}}{\@printtrue}{}%
+ \ifthenelse{\equal{c}{#1}\and\boolean{@c}}{\@printtrue}{}%
+ \ifthenelse{\equal{t}{#1}\and\boolean{@t}}{\@printtrue\@margtrue}{}%
+%    \end{macrocode}
+% If the \texttt{question} counter has the value 0, we need to determine the
+% level of the question. The question should at least be on 
+% \texttt{subsubsection} level if not higher. So we first assume it to be
+% of this level and make corrections later on if necessary. The counter
+% \texttt{question} is set to a level different from 0 (in this case to a
+% value of 2 although this is nowhere exploited in the code). This counter
+% will now be reset not only by a |\section| but also by a |\subsection|.
+% Finally, we set the command |\questi@n| which will typeset the question title
+% as \texttt{subsubsection}.
+%
+% In a second step, we check whether the question is on |\subsection| level
+% instead of |\subsubsection| level as was assumed before. In this case,
+% the counter \texttt{question} is set to 1 (again it is only important that
+% the value is different from 0). This counter should no longer be reset
+% by a |\subsection| so we remove the corresponding entry from the reset list.
+% Finally, the command |\questi@n| typesetting the title of the question is
+% set to |\subsection|.
+%    \begin{macrocode}
+ \ifthenelse{\value{question} = 0}{%
+   \setcounter{question}{2}%
+   \@addtoreset{question}{subsection}%
+   \let\questi@n\subsubsection%
+   \ifthenelse{\value{subsection} = 0}%
+      {\setcounter{question}{1}%
+       \@removefromreset{question}{subsection}%
+       \let\questi@n\subsection}%
+      {}%
+  }{}
+%    \end{macrocode}
+% Now we are ready to typeset the question if this is what the options passed
+% to the package ask for. Before typesetting the question title, we temporarily
+% set the fontsize of the |\subsection| title to the fontsize of the 
+% |\subsubsection| just in case we are on the |\subsection| level. |\questi@n|
+% does the typesetting of the title and a mark is put into the margin if
+% requested by |\@margtrue|. 
+%
+% After the title, a comment, if present, is typeset in sans serif and small
+% fontsize. Finally, the answer, i.e. the contents of argument 4, is typeset.
+%    \begin{macrocode}
+  \if@print%
+    \let\size@subsection\size@subsubsection
+     \questi@n{#2}\if@marg\put@ding\else\fi%
+    \let\size@subsection\save@sizesubsection
+   \ifc@mments
+    \ifthenelse{\equal{}{#3}}{}
+    {\putding{\sffamily\small#3}\par}%
+   \else\fi
+    #4
+  \else\fi}
+%    \end{macrocode}  
+%
+% Since it is not possible to use verbatim code in macro arguments, we cannot
+% typeset code snippets in an answer by using a \texttt{verbatim} environment.
+% We therefore define the environment \texttt{progcode}. In order to ensure
+% proper indentation, we make the tilde an active character and define
+% it as space preceded by a |\strut| so that the space is not ignored.
+% In addition, several layout parameters are set like a global indentation
+% of the code and the use of a small fixed space font.
+%    \begin{macrocode}
+\newenvironment{progcode}
+  {\list{}{\leftmargin\parindent\rightmargin\z@}%
+         \ttfamily\small%
+         \catcode`\~=13%
+         \def~{\strut\ }%
+         \item\relax}
+        {\endlist}
+%    \end{macrocode}
+% To facilitate references preceded by a $\uparrow$ we define |\uaref| which
+% works like the standard |\ref|.
+%    \begin{macrocode}
+\DeclareRobustCommand\uaref[1]{$\uparrow$\ref{#1}}
+%    \end{macrocode}
+% The option \texttt{notoc} only works if instead of |\tableofcontents| the
+% command |\toc| defined here is used.
+%    \begin{macrocode}
+\DeclareRobustCommand\toc[0]{\ift@c\tableofcontents\else\fi}
+%    \end{macrocode}
+% The definition of the \PyX{} logo is copied from the code used by the \PyX{}
+% developers in their manual. Here, we also provide the simple string ``PyX''
+% for use in the \acro{pdf} bookmarks.
+%    \begin{macrocode}
+\DeclareRobustCommand\PyX[0]{\texorpdfstring%
+           {P\kern-.3em\lower.5ex\hbox{Y}\kern-.18em X}{PyX}%
+          }
+%    \end{macrocode}  
+% When a backslash character is needed as part of a verbatim command name,
+% but verbatim code cannot be used, the macro |\cs| can be employed.
+% Again, we take care of the requirements of the \acro{pdf} bookmarks.
+%    \begin{macrocode}
+\DeclareRobustCommand\cs[1]{%
+    \texorpdfstring{\texttt{\char`\\}}{\textbackslash}#1%
+    }
+%    \end{macrocode}
+% In order to avoid problems with verbatim code, we define |\us| and |\hat|
+% to produce an underscore and a hat, respectively.
+%    \begin{macrocode}
+\DeclareRobustCommand\us[0]{\texttt{\char`\_}}
+\DeclareRobustCommand\hat[0]{\texttt{\char`\^}}
+%    \end{macrocode}
+% The macro |\cb| encloses its argument in curly braces and should be used
+% when verbatim code does not work.
+%    \begin{macrocode}
+\DeclareRobustCommand\cb[1]{\texttt{\char`\{#1\char`\}}}
+%    \end{macrocode}
+% For files on \acro{ctan}, we define the macro |\ctan| which is used as follows
+% \begin{quote}
+% |\ctan{|\meta{file location relative to CTAN root}|}|
+% \end{quote}
+% In order for the link to connect to a \acro{ctan} server, |\ftpCTAN| contains
+% the URL of one of the \acro{ctan} servers which is chosen quite arbitrarily 
+% and could be replaced by another \acro{ctan} server. Note that we use
+% |\path| instead of |\url| to avoid that a link is created to the second
+% argument instead of the first one.
+%    \begin{macrocode}
+\def\ftpCTAN{ftp://ctan.tug.org/tex-archive/}
+\DeclareRobustCommand\ctan[1]{%
+    \href{\ftpCTAN#1}{\path{CTAN:#1}}%
+}
+%    \end{macrocode}
+% In order to mark questions as new or changed with respect to a previous
+% release of the \acro{faq}, we define the macros |\new| and |\changed| which 
+% are intended to be used at the end of the second argument of |\question|.
+% No output is generated for \acro{pdf} bookmarks.
+%    \begin{macrocode}
+\DeclareRobustCommand\new[0]{\texorpdfstring%
+           {\quad\raisebox{0.3ex}{\fbox{\tiny\normalfont NEW}}}{}
+	  }
+\DeclareRobustCommand\changed[0]{\texorpdfstring%
+           {\quad\raisebox{0.3ex}{\fbox{\tiny\normalfont CHANGED}}}{}
+	  }
+%    \end{macrocode}
+% \Finale
+\endinput
