@@ -406,20 +406,17 @@ class Font:
         else:
             raise TFMError("error in font size")
 
-    def __getattr__(self, attr):
-        return self.tfmfile.__dict__[attr]
-
     def getwidth(self, charcode):
-        return self.convert(self.tfmfile.width[self.char_info[charcode].width_index])
+        return self.convert(self.tfmfile.width[self.tfmfile.char_info[charcode].width_index])
 
     def getheight(self, charcode):
-        return self.convert(self.tfmfile.height[self.char_info[charcode].height_index])
+        return self.convert(self.tfmfile.height[self.tfmfile.char_info[charcode].height_index])
 
     def getdepth(self, charcode):
-        return self.convert(self.tfmfile.depth[self.char_info[charcode].depth_index])
+        return self.convert(self.tfmfile.depth[self.tfmfile.char_info[charcode].depth_index])
 
     def getitalic(self, charcode):
-        return self.convert(self.tfmfile.italic[self.char_info[charcode].italic_index])
+        return self.convert(self.tfmfile.italic[self.tfmfile.char_info[charcode].italic_index])
 
     def markcharused(self, charcode):
         self.usedchars[charcode] = 1
