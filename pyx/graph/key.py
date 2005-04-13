@@ -23,7 +23,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-from pyx import box, canvas, text, unit
+from pyx import box, canvas, text, trafo, unit
 
 
 class key:
@@ -33,7 +33,8 @@ class key:
     def __init__(self, dist=0.2*unit.v_cm, pos="tr", hpos=None, vpos=None,
                  hinside=1, vinside=1, hdist=0.6*unit.v_cm, vdist=0.4*unit.v_cm,
                  symbolwidth=0.5*unit.v_cm, symbolheight=0.25*unit.v_cm, symbolspace=0.2*unit.v_cm,
-                 textattrs=[], border=0.3*unit.v_cm, keyattrs=None):
+                 textattrs=[], columns=1, columndist=0.5*unit.v_cm,
+                 border=0.3*unit.v_cm, keyattrs=None):
         self.dist = dist
         self.hinside = hinside
         self.vinside = vinside
@@ -43,6 +44,8 @@ class key:
         self.symbolheight = symbolheight
         self.symbolspace = symbolspace
         self.textattrs = textattrs
+        self.columns = columns
+        self.columndist = columndist
         self.border = border
         self.keyattrs = keyattrs
         if pos is not None:
@@ -69,9 +72,8 @@ class key:
             self.hpos = hpos
             self.vpos = vpos
 
-    def paint(self, plotitems):
-        "creates the layout of the key"
-        plotitems = [plotitem for plotitem in plotitems if plotitem.title is not None]
+    def paintcolumn(self, plotitems):
+        "creates the layout of a key column"
         c = canvas.canvas()
         self.dist_pt = unit.topt(self.dist)
         self.hdist_pt = unit.topt(self.hdist)
@@ -92,6 +94,20 @@ class key:
             y_pt -= dy_pt
         for titlebox in titleboxes:
             c.insert(titlebox)
+        return c
+
+    def paint(self, plotitems):
+        "creates the layout of the key"
+        columndist_pt = unit.topt(self.columndist)
+        c = canvas.canvas()
+        plotitems = [plotitem for plotitem in plotitems if plotitem.title is not None]
+        itemspercolumn = (len(plotitems) + self.columns - 1) / self.columns # integer division
+        x_pt = 0
+        while plotitems:
+            subc = self.paintcolumn(plotitems[:itemspercolumn])
+            c.insert(subc, [trafo.translate_pt(x_pt, 0)])
+            x_pt += unit.topt(subc.bbox().width()) + columndist_pt
+            del plotitems[:itemspercolumn]
         if self.keyattrs is not None:
             newc = canvas.canvas()
             newc.draw(c.bbox().enlarged(self.border).path(), self.keyattrs)

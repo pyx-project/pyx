@@ -110,6 +110,8 @@ TODO:
       - function needs explicit variable definition (implicit variable definition is deprecated)
       - column names are inherited by data.data() except when copy=0; unused columns are silently ignored now
       - dynamic function data on a logarithmic axis uses isinstance check now
+    - graph key:
+      - extend graph keys to allow for several columns (TODO: documentation)
     - axis data handling refactureing:
       - introcuded an axis positioner
       - introduced anchoredaxis to make axis data and positioning local to a graph
