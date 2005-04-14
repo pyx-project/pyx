@@ -21,6 +21,8 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+from __future__ import nested_scopes
+
 import string
 import canvas, bbox, pykpathsea, unit, trafo, resource
 
@@ -55,14 +57,25 @@ _EndEPSF = resource.definition("EndEPSF", """{
 def _readbbox(filename):
     """returns bounding box of EPS file filename"""
 
-    file = open(filename, "r")
+    file = open(filename, "rb")
 
+    buffer = []
     # readline
-    def readlinewithexception(file=file):
-        line = file.readline()
-        if not len(line):
-            raise IOError("unexpected end of file")
-        return line
+    def readlinewithexception():
+        # note: \n\r is not considered to be a linebreak as its documented
+        #       in the DSC spec #5001, while \n\r *is* a *single* linebreak
+        #       according to the EPSF spec #5002
+        if not buffer:
+            line = file.readline()
+            if not line:
+                raise IOError("unexpected end of file")
+            buffer.extend(line.split("\r"))
+        if len(buffer) == 2 and buffer[1] == "\n":
+            return "%s\r%s" % (buffer.pop(0), buffer.pop(0))
+        elif len(buffer) == 1:
+            return buffer.pop(0)
+        else:
+            return buffer.pop(0) + "\r"
 
     # check the %! header comment
     if not readlinewithexception().startswith("%!"):
@@ -236,7 +249,7 @@ class epsfile(canvas.canvasitem):
 
     def outputPS(self, file):
         try:
-            epsfile=open(self.filename,"r")
+            epsfile=open(self.filename,"rb")
         except:
             raise IOError, "cannot open EPS file '%s'" % self.filename 
 

@@ -138,6 +138,8 @@ TODO:
     - the very old tex module finally got removed completely
   - style module:
     - correctly call base class constructor in linewidth
+  - epsfile module:
+    - correct EOL handling while reading DSC's (reported by Markus Meyer)
 
 
 0.7.1 (2004/12/15):
