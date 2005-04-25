@@ -372,5 +372,6 @@ class canvas(_canvas):
             self.writeEPSfile(filename, *args, **kwargs)
         elif filename[-4:] == ".pdf":
             self.writePDFfile(filename, *args, **kwargs)
-        raise ValueError("writetofile needs a filename extension")
+        else:
+            raise ValueError("writetofile needs a filename extension")
 
