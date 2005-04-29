@@ -193,7 +193,7 @@ class _compressstream:
 
     def __init__(self, file, compresslevel):
         self.file = file
-        self.compressobj = zlib.compressobj(writer.compresslevel)
+        self.compressobj = zlib.compressobj(compresslevel)
 
     def write(self, string):
         self.file.write(self.compressobj.compress(string))
