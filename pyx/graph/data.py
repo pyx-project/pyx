@@ -23,7 +23,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-import re, ConfigParser, warnings
+import math, re, ConfigParser, warnings
 from pyx import mathtree, text
 from pyx.graph import style
 
@@ -476,7 +476,7 @@ class function(_data):
 
         xaxis = graph.axes[self.xname]
         from pyx.graph.axis import logarithmic
-        log = isinstance(xaxis, logarithmic)
+        logaxis = isinstance(xaxis.axis, logarithmic)
         if self.min is not None:
             min = self.min
         else:
@@ -485,13 +485,13 @@ class function(_data):
             max = self.max
         else:
             max = xaxis.data.max
-        if log:
-            min = log(min)
-            max = log(max)
+        if logaxis:
+            min = math.log(min)
+            max = math.log(max)
         for i in range(self.numberofpoints):
             x = min + (max-min)*i / (self.numberofpoints-1.0)
-            if log:
-                x = exp(x)
+            if logaxis:
+                x = math.exp(x)
             dynamiccolumns[self.xname].append(x)
             self.context[self.xname] = x
             try:
