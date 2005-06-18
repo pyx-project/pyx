@@ -131,6 +131,7 @@ TODO:
     - minimal dvitype.py
     - dvitype unit test
     - tfm->dvi conversion rounding bugfix
+    - fix parsing of empty strings ("") in fontmap files (reported by John Owens, bug #1218983)
   - changed requirements to python 2.1:
     - nested scopes are needed without fallback solution by the path module
     - use warning module for warnings

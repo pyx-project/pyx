@@ -462,7 +462,7 @@ class fontmapping:
         while len(s):
             match = self.tokenpattern.match(s)
             if match:
-                if match.groups()[0]:
+                if match.groups()[0] is not None:
                     tokens.append('"%s"' % match.groups()[0])
                 else:
                     tokens.append(match.groups()[2])
