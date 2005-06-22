@@ -44,10 +44,6 @@ TODO:
       we should use compiled code instead of eval)
   - dvifile module:
     - support single-character mode
-  - path module:
-    - should split also allow the user to pass arclens (instead of params)
-    - there are many occurences of 1e-5 left. Should they be replaced by the global _epsilon,
-      which would change the constructors to epsilon=None... if epsilon is None: epsilon=_epsilon
   - color module:
     - what should we do for palette when only one entry
   - connector module:
