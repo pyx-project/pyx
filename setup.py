@@ -136,7 +136,7 @@ class pyx_install_lib(install_lib):
         install_lib.run(self)
 
     def install(self):
-        # first we perfrom the tree_copy
+        # first we perform the tree_copy
         result = install_lib.install(self)
 
         # siteconfiglines have been created by install_data
