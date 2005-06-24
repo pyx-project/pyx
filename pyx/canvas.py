@@ -37,6 +37,10 @@ class canvasitem:
 
     """Base class for everything which can be inserted into a canvas"""
 
+    def registerPDF(self, registry):
+        """register resources needed for the canvasitem in the PDF registry"""
+        pass
+
     def outputPS(self, file):
         """write PS code corresponding to canvasitem to file"""
         pass
@@ -51,6 +55,7 @@ class canvasitem:
         for the emulation of PS behaviour regarding fill and stroke styles.
         """
         pass
+
 
     def resources(self):
         """return a list of resources needed by canvas items"""
@@ -169,6 +174,10 @@ class _canvas(canvasitem):
         for item in self.items:
             resources.extend(item.resources())
         return resources
+
+    def registerPDF(self, registry):
+        for item in self.items:
+            item.registerPDF(registry)
 
     def outputPS(self, file):
         if self.items:

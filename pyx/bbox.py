@@ -77,7 +77,7 @@ class bbox_pt:
         file.write("%%%%HiResBoundingBox: %g %g %g %g\n" %
                    (self.llx_pt, self.lly_pt, self.urx_pt, self.ury_pt))
 
-    def outputPDF(self, file, writer, context):
+    def outputPDF(self, file, writer):
         file.write("[%d %d %d %d]\n" %
                    (math.floor(self.llx_pt), math.floor(self.lly_pt),
                     math.ceil(self.urx_pt), math.ceil(self.ury_pt)))

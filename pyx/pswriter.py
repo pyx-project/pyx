@@ -91,6 +91,23 @@ class PSdefinition(PSresource):
         file.write("%%EndRessource\n")
 
 
+class PSfont:
+
+    def __init__(self, font, registry):
+        if font.getfontfile():
+            registry.add(PSfontfile(font.getbasepsname(),
+                                    font.getfontfile(),
+                                    font.getencodingfile(),
+                                    font.usedchars))
+        if font.getencoding():
+            registry.add(_ReEncodeFont)
+            registry.add(PSfontencoding(font.getencoding(),
+                                        font.getencodingfile()))
+            registry.add(PSfontreencoding(font.getpsname(),
+                                          font.getbasepsname(),
+                                          font.getencoding()))
+
+
 class PSfontfile(PSresource):
 
     """ PostScript font definition included in the prolog """

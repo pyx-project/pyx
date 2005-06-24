@@ -34,159 +34,158 @@ except:
 class PDFregistry:
 
     def __init__(self):
-        self.resources = []
         self.types = {}
-        self.merged = {} # contains merged resources, where refno's need to be injected
-                         # (this is necessary, since some components, which depend on a
-                         # given resource might want to lookup the refno, so it needs to
-                         # be available even for objects, which have been removed due to
-                         # merging)
+        # we need to keep the original order of the resources (for PDFcontentlength)
+        self.resources = []
 
     def add(self, resource):
+        """ register resource, merging it with an already registered resource of the same type and id"""
+        print str(resource), id(self)
         resources = self.types.setdefault(resource.type, {})
         if resources.has_key(resource.id):
             resources[resource.id].merge(resource)
-            self.merged.setdefault(resource.type, []).append(resource)
         else:
             self.resources.append(resource)
             resources[resource.id] = resource
 
-    def merge(self, registry):
+    def getrefno(self, resource):
+        return self.types[resource.type][resource.id].refno
+
+    def mergeregistry(self, registry):
         for resource in registry.resources:
             self.add(resource)
 
-    def setrefno(self, refno):
-        for resource in self.resources:
-            refno = resource.setrefno(refno)
-        for type, resources in self.merged.items():
-            for resource in resources:
-                resource.refno = self.types[type][resource.id].refno
-        return refno
+    def write(self, file, writer, catalog):
+        # first we set all refnos
+        refno = 1
 
-    def outputPDFobjects(self, file, writer, context):
+        # we recursively inserted the resources such that the topmost resources in
+        # the dependency tree of the resources come last. Hence, we need to 
+        # reverse the resources list before writing the output
+        self.resources.reverse()
         for resource in self.resources:
-            resource.outputPDFobjects(file, writer, context)
+            resource.refno = refno
+            refno += 1
 
-    def outputPDFxref(self, file):
+        # second, all objects are written, keeping the positions in the output file
+        fileposes = []
         for resource in self.resources:
-            resource.outputPDFxref(file)
+            fileposes.append(file.tell())
+            file.write("%i 0 obj\n" % resource.refno)
+            resource.outputPDF(file, writer, self)
+            file.write("endobj\n")
+
+        # xref
+        xrefpos = file.tell()
+        file.write("xref\n"
+                   "0 %d\n"
+                   "0000000000 65535 f \n" % refno)
+
+        for filepos in fileposes:
+            file.write("%010i 00000 n \n" % filepos)
+
+        # trailer
+        file.write("trailer\n"
+                   "<<\n"
+                   "/Size %i\n"
+                   "/Root %i 0 R\n"
+                   ">>\n"
+                   "startxref\n"
+                   "%i\n"
+                   "%%%%EOF\n" % (refno, catalog.refno, xrefpos))
 
 
 class PDFobject:
 
-    def __init__(self, childs=[]):
-        self.childs = childs
+    def __init__(self, type, _id=None):
+        self.type = type
+        if _id is None:
+            self.id = id(self)
+        else:
+            self.id = _id
+        self.refno = None
 
     def merge(self, other):
         pass
 
-    def setrefno(self, refno):
-        self.refno = refno
-        refno += 1
-        for child in self.childs:
-            refno = child.setrefno(refno)
-        return refno
-
-    def outputPDFobjects(self, file, writer, context):
-        self.outputPDFobject(file, writer, context)
-        for child in self.childs:
-            child.outputPDFobjects(file, writer, context)
-
-    def outputPDFobject(self, file, writer, context):
-        self.filepos = file.tell()
-        file.write("%i 0 obj\n" % self.refno)
-        self.outputPDF(file, writer, context)
-        file.write("endobj\n")
-
-    def outputPDF(self, file, writer, context):
+    def outputPDF(self, file, writer, registry):
         raise NotImplementedError("outputPDF method has to be provided by PDFobject subclass")
-
-    def outputPDFxref(self, file):
-        file.write("%010i 00000 n \n" % self.filepos)
-        for child in self.childs:
-            child.outputPDFxref(file)
 
 
 class PDFcatalog(PDFobject):
 
-    def __init__(self, document):
-        self.PDFpages = PDFpages(document)
-        self.registry = PDFregistry()
-        for page in self.PDFpages.PDFpagelist:
-            self.registry.merge(page.registry)
-        PDFobject.__init__(self, [self.PDFpages])
+    def __init__(self, document, registry):
+        PDFobject.__init__(self, "catalog")
+        self.PDFpages = PDFpages(document, registry)
+        registry.add(self.PDFpages)
 
-    def setrefno(self, refno):
-        refno = PDFobject.setrefno(self, refno)
-        return self.registry.setrefno(refno)
-
-    def outputPDFobjects(self, file, writer, context):
-        PDFobject.outputPDFobjects(self, file, writer, context)
-        self.registry.outputPDFobjects(file, writer, context)
-
-    def outputPDF(self, file, writer, context):
+    def outputPDF(self, file, writer, registry):
         file.write("<<\n"
                    "/Type /Catalog\n"
                    "/Pages %i 0 R\n"
-                   ">>\n" % self.PDFpages.refno)
-
-    def outputPDFxref(self, file):
-        PDFobject.outputPDFxref(self, file)
-        self.registry.outputPDFxref(file)
+                   ">>\n" % registry.getrefno(self.PDFpages))
 
 
 class PDFpages(PDFobject):
 
-    def __init__(self, document):
+    def __init__(self, document, registry):
+        PDFobject.__init__(self, "pages")
         self.PDFpagelist = []
-        for page in document.pages:
-            self.PDFpagelist.append(PDFpage(page, self))
-        PDFobject.__init__(self, self.PDFpagelist)
+        for pageno, page in enumerate(document.pages):
+            page = PDFpage(page, pageno, self, registry)
+            registry.add(page)
+            self.PDFpagelist.append(page)
 
-    def outputPDF(self, file, writer, context):
+    def outputPDF(self, file, writer, registry):
         file.write("<<\n"
                    "/Type /Pages\n"
                    "/Kids [%s]\n"
                    "/Count %i\n"
-                   ">>\n" % (" ".join(["%i 0 R" % page.refno
+                   ">>\n" % (" ".join(["%i 0 R" % registry.getrefno(page)
                                        for page in self.PDFpagelist]),
                              len(self.PDFpagelist)))
 
 
 class PDFpage(PDFobject):
 
-    def __init__(self, page, PDFpages):
+    def __init__(self, page, pageno, PDFpages, registry):
+        PDFobject.__init__(self, "page", pageno)
         self.PDFpages = PDFpages
         self.page = page
+
+        # every page uses its own registry in order to find out which
+        # resources are used within the page. However, the
+        # pageregistry is also merged in the global registry
+        self.pageregistry = PDFregistry()
+
         self.bbox = page.canvas.bbox()
         self.bbox.enlarge(page.bboxenlarge)
         self.pagetrafo = page.pagetrafo(self.bbox)
         if self.pagetrafo:
             self.bbox.transform(self.pagetrafo)
-        self.PDFcontent = PDFcontent(page.canvas, self.pagetrafo)
-        self.registry = PDFregistry()
-        for resource in page.canvas.resources():
-            resource.PDFregister(self.registry)
-        PDFobject.__init__(self, [self.PDFcontent])
+        self.PDFcontent = PDFcontent(page.canvas, self.pagetrafo, self.pageregistry)
+        self.pageregistry.add(self.PDFcontent)
+        self.page.canvas.registerPDF(self.pageregistry)
+        registry.mergeregistry(self.pageregistry)
 
-    def outputPDF(self, file, writer, context):
+    def outputPDF(self, file, writer, registry):
         file.write("<<\n"
                    "/Type /Page\n"
-                   "/Parent %i 0 R\n" % self.PDFpages.refno)
+                   "/Parent %i 0 R\n" % registry.getrefno(self.PDFpages))
         paperformat = self.page.paperformat
         file.write("/MediaBox [0 0 %d %d]\n" % (unit.topt(paperformat.width), unit.topt(paperformat.height)))
         file.write("/CropBox " )
-        self.bbox.outputPDF(file, writer, context)
-        if self.registry.types["font"]:
+        self.bbox.outputPDF(file, writer)
+        if self.pageregistry.types.has_key("font"):
             file.write("/Resources << /ProcSet [ /PDF /Text ]\n")
+            file.write("/Font << %s >>" % " ".join(["/%s %i 0 R" % (font.font.getpsname(), registry.getrefno(font))
+                                                    for font in self.pageregistry.types["font"].values()]))
         else:
             file.write("/Resources << /ProcSet [ /PDF ]\n")
-        if self.registry.types.has_key("font"):
-            file.write("/Font << %s >>" % " ".join(["/%s %i 0 R" % (font.fontname, font.refno)
-                                                    for font in self.registry.types["font"].values()]))
+
         file.write(">>\n")
         file.write("/Contents %i 0 R\n"
-                   ">>\n" % (self.PDFcontent.refno))
+                   ">>\n" % registry.getrefno(self.PDFcontent))
 
 
 class _compressstream:
@@ -204,15 +203,16 @@ class _compressstream:
 
 class PDFcontent(PDFobject):
 
-    def __init__(self, canvas, pagetrafo):
+    def __init__(self, canvas, pagetrafo, registry):
+        PDFobject.__init__(self, "content")
         self.canvas = canvas
         self.pagetrafo = pagetrafo
         self.PDFcontentlength = PDFcontentlength()
-        PDFobject.__init__(self, [self.PDFcontentlength])
+        registry.add(self.PDFcontentlength)
 
-    def outputPDF(self, file, writer, context):
+    def outputPDF(self, file, writer, registry):
         file.write("<<\n"
-                   "/Length %i 0 R\n" % (self.PDFcontentlength.refno))
+                   "/Length %i 0 R\n" % registry.getrefno(self.PDFcontentlength))
         if writer.compress:
             file.write("/Filter /FlateDecode\n")
         file.write(">>\n")
@@ -224,12 +224,13 @@ class PDFcontent(PDFobject):
         else:
             stream = file
 
+        acontext = context()
         # apply a possible global transformation
         if self.pagetrafo:
-            self.pagetrafo.outputPDF(stream, writer, context)
-        style.linewidth.normal.outputPDF(stream, writer, context)
+            self.pagetrafo.outputPDF(stream, writer, acontext)
+        style.linewidth.normal.outputPDF(stream, writer, acontext)
 
-        self.canvas.outputPDF(stream, writer, context)
+        self.canvas.outputPDF(stream, writer, acontext)
         if writer.compress:
             stream.flush()
 
@@ -239,7 +240,10 @@ class PDFcontent(PDFobject):
 
 class PDFcontentlength(PDFobject):
 
-    def outputPDF(self, file, writer, context):
+    def __init__(self):
+        PDFobject.__init__(self, "_contentlength")
+
+    def outputPDF(self, file, writer, registry):
         # initially we do not know about the content length
         # -> it has to be written into the instance later on
         file.write("%d\n" % self.contentlength)
@@ -247,18 +251,15 @@ class PDFcontentlength(PDFobject):
 
 class PDFfont(PDFobject):
 
-    def __init__(self, fontname, basepsname, font):
-        self.type = "font"
-        self.id = self.fontname = fontname
-        self.basepsname = basepsname
-        self.fontwidths = PDFfontwidths(font)
-        self.fontdescriptor = PDFfontdescriptor(font)
-        PDFobject.__init__(self, [self.fontwidths, self.fontdescriptor])
+    def __init__(self, font, registry):
+        PDFobject.__init__(self, "font", font.getpsname())
+        self.font = font
+        self.fontwidths = PDFfontwidths(self.font)
+        registry.add(self.fontwidths)
+        self.fontdescriptor = PDFfontdescriptor(self.font, registry)
+        registry.add(self.fontdescriptor)
 
-    def register(self, registry):
-        registry.addresource(registry.fonts, self)
-
-    def outputPDF(self, file, writer, context):
+    def outputPDF(self, file, writer, registry):
         file.write("<<\n"
                    "/Type /Font\n"
                    "/Subtype /Type1\n"
@@ -269,20 +270,17 @@ class PDFfont(PDFobject):
                    "/Widths %d 0 R\n"
                    "/FontDescriptor %d 0 R\n"
                    "/Encoding /StandardEncoding\n" # FIXME
-                   ">>\n" % (self.fontname, self.basepsname,
-                             self.fontwidths.refno, self.fontdescriptor.refno))
+                   ">>\n" % (self.font.getpsname(), self.font.getbasepsname(),
+                             registry.getrefno(self.fontwidths),
+                             registry.getrefno(self.fontdescriptor)))
 
 class PDFfontwidths(PDFobject):
 
     def __init__(self, font):
-        self.type = "fontwidth"
+        PDFobject.__init__(self, "fontwidths")
         self.font = font
-        PDFobject.__init__(self)
 
-    def register(self, registry):
-        registry.addresource(registry.fontwidths, self)
-
-    def outputPDF(self, file, writer, context):
+    def outputPDF(self, file, writer, registry):
         file.write("[\n")
         for i in range(256):
             try:
@@ -295,20 +293,13 @@ class PDFfontwidths(PDFobject):
 
 class PDFfontdescriptor(PDFobject):
 
-    def __init__(self, font):
-        self.type = "fontdescriptor"
+    def __init__(self, font, registry):
+        PDFobject.__init__(self, "fontdescriptor")
         self.font = font
-        path = pykpathsea.find_file(font.getfontfile(), pykpathsea.kpse_type1_format)
-        self.fontfile = PDFfontfile(path)
-        PDFobject.__init__(self, [self.fontfile])
+        self.fontfile = PDFfontfile(self.font)
+        registry.add(self.fontfile)
 
-    def register(self, registry):
-        registry.addresource(registry.fontdescriptors, self)
-
-    def arrange(self, refno):
-        return PDFobject.arrangeselfandchilds(self, refno, self.fontfile)
-
-    def outputPDF(self, file, writer, context):
+    def outputPDF(self, file, writer, registry):
         file.write("<<\n"
                    "/Type /FontDescriptor\n"
                    "/FontName /%s\n"
@@ -321,20 +312,16 @@ class PDFfontdescriptor(PDFobject):
                    "/StemV 3\n" # FIXME
                    "/FontFile %d 0 R\n" # FIXME
                    # "/CharSet \n" # fill in when stripping
-                   ">>\n" % (self.font.getbasepsname(), self.fontfile.refno))
+                   ">>\n" % (self.font.getbasepsname(), registry.getrefno(self.fontfile)))
 
 class PDFfontfile(PDFobject):
 
-    def __init__(self, path):
-        self.type = "fontfile"
-        self.path = path
-        PDFobject.__init__(self)
+    def __init__(self, font):
+        PDFobject.__init__(self, "fontfile", font.getfontfile())
+        self.font = font
 
-    def register(self, registry):
-        registry.addresource(registry.fontfiles, self)
-
-    def outputPDF(self, file, writer, context):
-        fontfile = open(self.path)
+    def outputPDF(self, file, writer, registry):
+        fontfile = open(self.font.getfontfile())
         fontdata = fontfile.read()
         fontfile.close()
         if fontdata[0:2] != fullfont._PFB_ASCII:
@@ -377,13 +364,13 @@ class PDFfontfile(PDFobject):
 
 class PDFwriter:
 
-    def __init__(self, document, filename, compress=1, compresslevel=6):
+    def __init__(self, document, filename, compress=0, compresslevel=6):
         warnings.warn("writePDFfile is experimental and supports only a subset of PyX's features")
 
         if filename[-4:] != ".pdf":
             filename = filename + ".pdf"
         try:
-            self.file = open(filename, "wb")
+            file = open(filename, "wb")
         except IOError:
             raise IOError("cannot open output file")
 
@@ -393,32 +380,14 @@ class PDFwriter:
         self.compress = compress
         self.compresslevel = compresslevel
 
-        self.file.write("%%PDF-1.4\n%%%s%s%s%s\n" % (chr(195), chr(182), chr(195), chr(169)))
+        file.write("%%PDF-1.4\n%%%s%s%s%s\n" % (chr(195), chr(182), chr(195), chr(169)))
 
         # the PDFcatalog class automatically builds up the pdfobjects from a document
-        catalog = PDFcatalog(document)
-        pdfobjects = catalog.setrefno(1)
-
-        # objects
-        catalog.outputPDFobjects(self.file, self, context())
-
-        # xref
-        xrefpos = self.file.tell()
-        self.file.write("xref\n"
-                        "0 %d\n"
-                        "0000000000 65535 f \n" % pdfobjects)
-        catalog.outputPDFxref(self.file)
-
-        # trailer
-        self.file.write("trailer\n"
-                        "<<\n"
-                        "/Size %i\n"
-                        "/Root %i 0 R\n"
-                        ">>\n"
-                        "startxref\n"
-                        "%i\n"
-                        "%%%%EOF\n" % (pdfobjects, catalog.refno, xrefpos))
-        self.file.close()
+        registry = PDFregistry()
+        catalog = PDFcatalog(document, registry)
+        registry.add(catalog)
+        registry.write(file, self, catalog)
+        file.close()
 
 
 class context:

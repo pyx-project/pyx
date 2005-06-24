@@ -34,9 +34,6 @@ class resource:
 
     """ a resource needed by a canvasitem """
 
-    def __init__(self, id):
-        self.id = id
-
     def PSregister(self, registry):
         """ register PSresources in registry """
         pass
@@ -64,22 +61,7 @@ class font(resource):
 
     def __init__(self, font):
         """ include Type 1 font defined by the following parameters """
-        # XXX passing the font instance is probably not so nice
-        self.id = self.fontname = font.getpsname()
-        self.basepsname = font.getbasepsname()
-        self.fontfile = font.getfontfile()
-        self.encodingfile = font.getencodingfile()
-        self.encoding = font.getencoding()
-        self.usedchars = font.usedchars
         self.font = font
 
     def PSregister(self, registry):
-        if self.fontfile:
-            registry.add(pswriter.PSfontfile(self.basepsname, self.fontfile, self.encodingfile, self.usedchars))
-        if self.encoding:
-            registry.add(pswriter._ReEncodeFont)
-            registry.add(pswriter.PSfontencoding(self.encoding, self.encodingfile))
-            registry.add(pswriter.PSfontreencoding(self.fontname, self.basepsname, self.encoding))
-
-    def PDFregister(self, registry):
-        registry.add(pdfwriter.PDFfont(self.fontname, self.basepsname, self.font))
+        pswriter.PSfont(self.font, registry)
