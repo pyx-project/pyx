@@ -21,8 +21,6 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-from __future__ import nested_scopes
-
 import string
 import canvas, bbox, pykpathsea, unit, trafo, resource
 
@@ -54,37 +52,106 @@ _EndEPSF = resource.definition("EndEPSF", """{
   b4_Inc_state restore
 } bind""")
 
+
+class linefilereader:
+    """a line by line file reader
+
+    This line by line file reader allows for '\n', '\r' and
+    '\r\n' as line separation characters. Line separation
+    characters are not modified (binary mode). It implements
+    a readline, a read and a close method similar to a regular
+    file object."""
+
+    # note: '\n\r' is not considered to be a linebreak as its documented
+    #       in the DSC spec #5001, while '\n\r' *is* a *single* linebreak
+    #       according to the EPSF spec #5002
+
+    def __init__(self, filename, typicallinelen=257):
+        """Opens the file filename for reading.
+
+        typicallinelen defines the default buffer increase
+        to find the next linebreak."""
+
+        # note: The maximal line size in an EPS is 255 plus the
+        #       linebreak characters. However, we also handle
+        #       lines longer than that.
+
+        self.file = file.open(filename, "rb")
+        self.buffer = ""
+        self.typicallinelen = typicallinelen
+
+    def read(self, count=None, EOFmsg="unexpected end of file"):
+        """read bytes from the file
+
+        count is the number of bytes to be read when set. Then count
+        is unset, the rest of the file is returned. EOFmsg is used
+        to raise a IOError, when the end of the file is reached while
+        reading count bytes or when the rest of the file is empty when
+        count is unset. When EOFmsg is set to None, less than the
+        requested number of bytes might be returned."""
+        if count is not None:
+            if count > len(self.buffer):
+                self.buffer += self.file.read(count - len(self.buffer))
+            if EOFmsg is not None and len(buffer) < count:
+                raise IOError(EOFmsg)
+            result = self.buffer[:count]
+            self.buffer = self.buffer[count:]
+            return result
+        else:
+            self.buffer += self.file.read()
+            if EOFmsg is not None and not len(self.buffer):
+                raise IOError(EOFmsg)
+            result = self.buffer
+            self.buffer = ""
+            return result
+
+    def readline(self, EOFmsg="unexpected end of file"):
+        """reads a line from the file
+
+        Lines are separated by '\n', '\r' or '\r\n'. The line separation
+        strings are included in the return value. The last line might not
+        end with an line separation string. Reading beyond the file generates
+        an IOError with the EOFmsg message. When EOFmsg is None, an empty
+        string is returned when reading beyond the end of the file."""
+        EOF = 0
+        while 1:
+            crpos = self.buffer.find("\r")
+            nlpos = self.buffer.find("\n")
+            if nlpos == -1 and (crpos == -1 or crpos == len(self.buffer) - 1) and not EOF:
+                newbuffer = self.file.read(self.typicallinelen)
+                if not len(newbuffer):
+                    EOF = 1
+                self.buffer += newbuffer
+            else:
+                eol = len(self.buffer)
+                if not eol and EOFmsgo is not None:
+                    raise IOError(EOFmsg)
+                if nlpos != -1:
+                    eol = nlpos
+                if crpos != -1 and crpos < nlpos - 1:
+                    eol = crpos
+                result = self.buffer[:eol]
+                self.buffer = self.buffer[eol:]
+                return result
+
+    def close(self):
+        "closes the file"
+        self.file.close()
+
+
 def _readbbox(filename):
     """returns bounding box of EPS file filename"""
 
-    file = open(filename, "rb")
-
-    buffer = []
-    # readline
-    def readlinewithexception():
-        # note: \n\r is not considered to be a linebreak as its documented
-        #       in the DSC spec #5001, while \n\r *is* a *single* linebreak
-        #       according to the EPSF spec #5002
-        if not buffer:
-            line = file.readline()
-            if not line:
-                raise IOError("unexpected end of file")
-            buffer.extend(line.split("\r"))
-        if len(buffer) == 2 and buffer[1] == "\n":
-            return "%s\r%s" % (buffer.pop(0), buffer.pop(0))
-        elif len(buffer) == 1:
-            return buffer.pop(0)
-        else:
-            return buffer.pop(0) + "\r"
+    file = linefilereader(filename)
 
     # check the %! header comment
-    if not readlinewithexception().startswith("%!"):
+    if not file.readline().startswith("%!"):
         raise IOError("file doesn't start with a '%!' header comment")
 
     bboxatend = 0
     # parse the header (use the first BoundingBox)
     while 1:
-        line = readlinewithexception()
+        line = file.readline()
         if line.startswith("%%BoundingBox:") and not bboxatend:
             values = line.split(":", 1)[1].split()
             if values == ["(atend)"]:
@@ -102,7 +169,7 @@ def _readbbox(filename):
     # parse the body
     nesting = 0 # allow for nested documents
     while 1:
-        line = readlinewithexception()
+        line = file.readline()
         if line.startswith("%%BeginData:"):
             values = line.split(":", 1)[1].split()
             if len(values) > 3:
@@ -110,25 +177,25 @@ def _readbbox(filename):
             if len(values) == 3:
                 if values[2] == "Lines":
                     for i in xrange(int(values[0])):
-                        readlinewithexception()
+                        file.readline()
                 elif values[2] != "Bytes":
                     raise IOError("invalid bytesorlines-value")
                 else:
                     file.read(int(values[0]))
             else:
                 file.read(int(values[0]))
-            line = readlinewithexception()
+            line = file.readline()
             # ignore tailing whitespace/newline for binary data
             if (len(values) < 3 or values[2] != "Lines") and not len(line.strip()):
-                line = readlinewithexception()
+                line = file.readline()
             if line.rstrip() != "%%EndData":
                 raise IOError("missing EndData")
         elif line.startswith("%%BeginBinary:"):
             file.read(int(line.split(":", 1)[1]))
-            line = readlinewithexception()
+            line = file.readline()
             # ignore tailing whitespace/newline
             if not len(line.strip()):
-                line = readlinewithexception()
+                line = file.readline()
             if line.rstrip() != "%%EndBinary":
                 raise IOError("missing EndBinary")
         elif line.startswith("%%BeginDocument:"):
@@ -143,15 +210,13 @@ def _readbbox(filename):
     usebbox = None
     # parse the trailer (use the last BoundingBox)
     while 1:
-        line = file.readline()
+        line = file.readline(EOFmsg=None)
         if line.startswith("%%BoundingBox:"):
             values = line.split(":", 1)[1].split()
             if len(values) != 4:
                 raise IOError("invalid number of bounding box values")
             usebbox = bbox.bbox_pt(*map(int, values))
-        elif not len(line):
-            break
-    if usebbox is None:
+    if not usebbox:
         raise IOError("missing bounding box information in document trailer")
     return usebbox
 
