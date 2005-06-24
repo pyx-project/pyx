@@ -234,7 +234,7 @@ class PDFcontent(PDFobject):
             stream.flush()
 
         self.PDFcontentlength.contentlength = file.tell() - beginstreampos
-        file.write("endstream\n")
+        file.write("\nendstream\n")
 
 
 class PDFcontentlength(PDFobject):
@@ -372,7 +372,7 @@ class PDFfontfile(PDFobject):
         file.write(">>\n"
                    "stream\n")
         file.write(data)
-        file.write("endstream\n")
+        file.write("\nendstream\n")
 
 
 class PDFwriter:
