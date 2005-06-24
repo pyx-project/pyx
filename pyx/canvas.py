@@ -37,6 +37,14 @@ class canvasitem:
 
     """Base class for everything which can be inserted into a canvas"""
 
+    def bbox(self):
+        """return bounding box of canvasitem or None"""
+        pass
+    
+    def registerPS(self, registry):
+        """register resources needed for the canvasitem in the PS registry"""
+        pass
+
     def registerPDF(self, registry):
         """register resources needed for the canvasitem in the PDF registry"""
         pass
@@ -57,17 +65,10 @@ class canvasitem:
         pass
 
 
-    def resources(self):
-        """return a list of resources needed by canvas items"""
-        return []
-
-    def bbox(self):
-        """return bounding box of canvasitem or None"""
-        pass
 
 
 import cStringIO
-import attr, deco, deformer, unit, resource, style, trafo
+import attr, deco, deformer, unit, resource, style, trafo, pswriter
 
 
 #
@@ -169,11 +170,9 @@ class _canvas(canvasitem):
         else:
             return self.clipbbox
 
-    def resources(self):
-        resources = []
+    def registerPS(self, registry):
         for item in self.items:
-            resources.extend(item.resources())
-        return resources
+            item.registerPS(registry)
 
     def registerPDF(self, registry):
         for item in self.items:
@@ -322,8 +321,8 @@ class pattern(_canvas, attr.exclusiveattr, style.fillstyle):
     def outputPS(self, file):
         file.write("%s setpattern\n" % self.id)
 
-    def resources(self):
-        resources = _canvas.resources(self)
+    def registerPS(self, registry):
+        _canvas.registerPS(self, registry)
         realpatternbbox = _canvas.bbox(self)
         if self.xstep is None:
            xstep = unit.topt(realpatternbbox.width())
@@ -354,8 +353,7 @@ class pattern(_canvas, attr.exclusiveattr, style.fillstyle):
         patterntrafostring = self.patterntrafo is None and "matrix" or str(self.patterntrafo)
         patternsuffix = "end\n} bind\n>>\n%s\nmakepattern" % patterntrafostring
 
-        resources.append(resource.definition(self.id, "".join((patternprefix, patternproc, patternsuffix))))
-        return resources
+        registry.add(pswriter.PSdefinition(self.id, "".join((patternprefix, patternproc, patternsuffix))))
 
 pattern.clear = attr.clearclass(pattern)
 

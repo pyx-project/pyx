@@ -110,19 +110,29 @@ class decoratedpath(canvas.canvasitem):
         else:
             return pathbbox
 
-    def resources(self):
-        resources = []
+    def registerPS(self, registry):
         if self.styles:
             for style in self.styles: 
-                resources.extend(style.resources())
+                style.registerPS(registry)
         if self.fillstyles:
             for style in self.fillstyles: 
-                resources.extend(style.resources())
+                style.registerPS(registry)
         if self.strokestyles:
             for style in self.strokestyles: 
-                resources.extend(style.resources())
-        resources.extend(self.ornaments.resources())
-        return resources
+                style.registerPS(registry)
+        self.ornaments.registerPS(registry)
+
+    def registerPDF(self, registry):
+        if self.styles:
+            for style in self.styles: 
+                style.registerPDF(registry)
+        if self.fillstyles:
+            for style in self.fillstyles: 
+                style.registerPDF(registry)
+        if self.strokestyles:
+            for style in self.strokestyles: 
+                style.registerPDF(registry)
+        self.ornaments.registerPDF(registry)
 
     def strokepath(self):
         if self.nostrokeranges:

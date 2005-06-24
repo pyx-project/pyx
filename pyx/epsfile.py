@@ -22,13 +22,13 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import string
-import canvas, bbox, pykpathsea, unit, trafo, resource
+import canvas, bbox, pykpathsea, unit, trafo, pswriter
 
 # PostScript-procedure definitions (cf. 5002.EPSF_Spec_v3.0.pdf)
 # with important correction in EndEPSF:
 #   end operator is missing in the spec!
 
-_BeginEPSF = resource.definition("BeginEPSF", """{
+_BeginEPSF = pswriter.PSdefinition("BeginEPSF", """{
   /b4_Inc_state save def
   /dict_count countdictstack def
   /op_count count 1 sub def
@@ -45,7 +45,7 @@ _BeginEPSF = resource.definition("BeginEPSF", """{
   } if
 } bind""")
 
-_EndEPSF = resource.definition("EndEPSF", """{
+_EndEPSF = pswriter.PSdefinition("EndEPSF", """{
   end
   count op_count sub {pop} repeat
   countdictstack dict_count sub {end} repeat
@@ -76,7 +76,7 @@ class linefilereader:
         #       linebreak characters. However, we also handle
         #       lines longer than that.
 
-        self.file = file.open(filename, "rb")
+        self.file = open(filename, "rb")
         self.buffer = ""
         self.typicallinelen = typicallinelen
 
@@ -127,9 +127,9 @@ class linefilereader:
                 if not eol and EOFmsgo is not None:
                     raise IOError(EOFmsg)
                 if nlpos != -1:
-                    eol = nlpos
+                    eol = nlpos + 1
                 if crpos != -1 and crpos < nlpos - 1:
-                    eol = crpos
+                    eol = crpos + 1
                 result = self.buffer[:eol]
                 self.buffer = self.buffer[eol:]
                 return result
@@ -152,6 +152,8 @@ def _readbbox(filename):
     # parse the header (use the first BoundingBox)
     while 1:
         line = file.readline()
+        if not line:
+            break
         if line.startswith("%%BoundingBox:") and not bboxatend:
             values = line.split(":", 1)[1].split()
             if values == ["(atend)"]:
@@ -161,7 +163,8 @@ def _readbbox(filename):
                     raise IOError("invalid number of bounding box values")
                 return bbox.bbox_pt(*map(int, values))
         elif (line.rstrip() == "%%EndComments" or
-              (line[0] != "%" and line[1] not in string.whitespace)): # implicit end of comments section
+              (len(line) >= 2 and line[0] != "%" and line[1] not in string.whitespace)):
+            # implicit end of comments section
             break
     if not bboxatend:
         raise IOError("no bounding box information found")
@@ -309,8 +312,9 @@ class epsfile(canvas.canvasitem):
     def bbox(self):
         return self.mybbox.transformed(self.trafo)
 
-    def resources(self):
-        return [_BeginEPSF, _EndEPSF]
+    def registerPS(self, registry):
+        registry.add(_BeginEPSF)
+        registry.add(_EndEPSF)
 
     def outputPS(self, file):
         try:

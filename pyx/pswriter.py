@@ -270,8 +270,7 @@ class epswriter:
 
         file.write("%%BeginProlog\n")
         registry = PSregistry()
-        for resource in canvas.resources():
-            resource.PSregister(registry)
+        canvas.registerPS(registry)
         registry.outputPS(file)
         file.write("%%EndProlog\n")
 

@@ -23,7 +23,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import copy, cStringIO, exceptions, re, struct, string, sys, warnings
-import unit, epsfile, bbox, canvas, color, trafo, path, pykpathsea, resource, pdfwriter
+import unit, epsfile, bbox, canvas, color, trafo, path, pykpathsea, pswriter, pdfwriter
 
 
 class binfile:
@@ -389,9 +389,10 @@ class selectfont(canvas.canvasitem):
         self.size = font.getsize_pt()
         self.fontid = None
 
-    def resources(self):
-        fontresource = resource.font(self.font)
-        return [fontresource]
+    def registerPS(self, registry):
+        # note that we don't register PSfont as it is just a helper resource
+        # which registers the needed components
+        pswriter.PSfont(self.font, registry)
 
     def registerPDF(self, registry):
         registry.add(pdfwriter.PDFfont(self.font, registry))
@@ -680,7 +681,10 @@ class type1font(font):
             return self.fontmapping.basepsname
 
     def getfontfile(self):
-        return pykpathsea.find_file(self.fontmapping.fontfile, pykpathsea.kpse_type1_format)
+        if self.fontmapping.fontfile is None:
+            return None
+        else:
+            return pykpathsea.find_file(self.fontmapping.fontfile, pykpathsea.kpse_type1_format)
 
     def getencoding(self):
         return self.fontmapping.reencodefont

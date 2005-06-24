@@ -650,9 +650,13 @@ class textbox(box.rect, canvas._canvas):
         self.ensuredvicanvas()
         return self.texttrafo.apply(*self.dvicanvas.markers[marker])
 
-    def resources(self):
+    def registerPS(self, registry):
         self.ensuredvicanvas()
-        return canvas._canvas.resources(self)
+        canvas._canvas.registerPS(self, registry)
+
+    def registerPDF(self, registry):
+        self.ensuredvicanvas()
+        canvas._canvas.registerPDF(self, registry)
 
     def outputPS(self, file):
         self.ensuredvicanvas()

@@ -40,7 +40,6 @@ class PDFregistry:
 
     def add(self, resource):
         """ register resource, merging it with an already registered resource of the same type and id"""
-        print str(resource), id(self)
         resources = self.types.setdefault(resource.type, {})
         if resources.has_key(resource.id):
             resources[resource.id].merge(resource)
