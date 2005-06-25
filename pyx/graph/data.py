@@ -23,8 +23,9 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-import math, re, ConfigParser, warnings
+import math, re, ConfigParser, struct, warnings
 from pyx import mathtree, text
+from pyx.style import linestyle
 from pyx.graph import style
 
 try:
@@ -429,6 +430,112 @@ class conffile(data):
             data.__init__(self, filecache[filename], **kwargs)
         else:
             data.__init__(self, readfile(filename, "user provided file-like object"), **kwargs)
+
+
+cbdfilecache = {}
+
+class cbdfile(data):
+
+    def getcachekey(self, *args):
+        return ":".join([str(x) for x in args])
+
+    def __init__(self, filename, minrank=None, maxrank=None, **kwargs):
+
+        class cbdhead:
+
+            def __init__(self, file):
+                (self.magic,
+                 self.dictaddr,
+                 self.segcount,
+                 self.segsize,
+                 self.segmax,
+                 self.fill) = struct.unpack("<5i20s", file.read(40))
+                if self.magic != 0x20770002:
+                    raise ValueError("bad magic number")
+
+        class segdict:
+
+            def __init__(self, file, i):
+                self.index = i
+                (self.segid,
+                 self.maxlat,
+                 self.minlat,
+                 self.maxlong,
+                 self.minlong,
+                 self.absaddr,
+                 self.nbytes,
+                 self.rank) = struct.unpack("<6i2h", file.read(28))
+
+        class segment:
+
+            def __init__(self, file, sd):
+                file.seek(sd.absaddr)
+                (self.orgx,
+                 self.orgy,
+                 self.id,
+                 self.nstrokes,
+                 self.dummy) = struct.unpack("<3i2h", file.read(16))
+                oln, olt = self.orgx, self.orgy
+                self.points = [(olt, oln)]
+                for i in range(self.nstrokes):
+                    c1, c2 = struct.unpack("2c", file.read(2))
+                    if ord(c2) & 0x40:
+                        if c1 > "\177":
+                            dy = ord(c1) - 256
+                        else:
+                            dy = ord(c1)
+                        if c2 > "\177":
+                            dx = ord(c2) - 256
+                        else:
+                            dx = ord(c2) - 64
+                    else:
+                        c3, c4, c5, c6, c7, c8 = struct.unpack("6c", file.read(6))
+                        if c2 > "\177":
+                            c2 = chr(ord(c2) | 0x40)
+                        dx, dy = struct.unpack("<2i", c3+c4+c1+c2+c7+c8+c5+c6)
+                    oln += dx
+                    olt += dy
+                    self.points.append((olt, oln))
+                sd.nstrokes = self.nstrokes
+
+        def readfile(file, title):
+            h = cbdhead(file)
+            file.seek(h.dictaddr)
+            sds = [segdict(file, i+1) for i in range(h.segcount)]
+            sbs = [segment(file, sd) for sd in sds]
+
+            # remove jumps at long +/- 180
+            for sd, sb in zip(sds, sbs):
+                if sd.minlong < -150*3600 and sd.maxlong > 150*3600:
+                    for i, (lat, long) in enumerate(sb.points):
+                         if long < 0:
+                             sb.points[i] = lat, long + 360*3600
+
+            columndata = []
+            for sd, sb in zip(sds, sbs):
+                if ((minrank is None or sd.rank >= minrank) and
+                    (maxrank is None or sd.rank <= maxrank)):
+                    if columndata:
+                        columndata.append((None, None))
+                    columndata.extend([(long/3600.0, lat/3600.0)
+                                       for lat, long in sb.points])
+
+            result = list(columndata, title=title)
+            result.defaultstyles = [style.line()]
+            return result
+
+
+        try:
+            filename.readlines
+        except:
+            # not a file-like object -> open it
+            cachekey = self.getcachekey(filename, minrank, maxrank)
+            if not cbdfilecache.has_key(cachekey):
+                cbdfilecache[cachekey] = readfile(open(filename, "rb"), filename)
+            data.__init__(self, cbdfilecache[cachekey], **kwargs)
+        else:
+            data.__init__(self, readfile(filename, "user provided file-like object"), **kwargs)
+
 
 
 class function(_data):
