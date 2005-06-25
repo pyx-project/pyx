@@ -90,7 +90,6 @@ class example:
                                        "suffixname": ".%s" % suffix,
                                        "filesize": filesize,
                                        "iconname": "%s.png" % suffix})
-                print self.downloads[-1]["filename"]
 
 
 class MyPageTemplateFile(PageTemplateFile):
@@ -128,7 +127,6 @@ for ptname in glob.glob("*.pt"):
     if ptname in ["maintemplate.pt", "examples.pt"]:
         continue
     htmlname = "%s.html" % ptname[:-3]
-    print htmlname
     template = MyPageTemplateFile(ptname)
     content = template(pagename=htmlname,
                        maintemplate=maintemplate,
@@ -158,7 +156,6 @@ for dir in [None] + examplepages:
                 for item in open(os.path.join(srcdir, "INDEX")).readlines()
                 if item[-2] != "/"]
     htmlname = os.path.join(destdir, "index.html")
-    print htmlname
     content = examplestemplate(pagename=htmlname,
                                maintemplate=maintemplate,
                                abstract=abstract,
