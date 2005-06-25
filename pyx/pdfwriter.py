@@ -176,8 +176,8 @@ class PDFpage(PDFobject):
         file.write("/CropBox " )
         self.bbox.outputPDF(file, writer)
         if self.pageregistry.types.has_key("font"):
-            file.write("/Resources << /ProcSet [ /PDF /Text ]\n")
-            file.write("/Font << %s >>" % " ".join(["/%s %i 0 R" % (font.font.getpsname(), registry.getrefno(font))
+            file.write("/Resources <<\n/ProcSet [ /PDF /Text ]\n")
+            file.write("/Font << %s >>\n" % " ".join(["/%s %i 0 R" % (font.font.getpsname(), registry.getrefno(font))
                                                     for font in self.pageregistry.types["font"].values()]))
         else:
             file.write("/Resources << /ProcSet [ /PDF ]\n")
@@ -234,7 +234,7 @@ class PDFcontent(PDFobject):
             stream.flush()
 
         self.PDFcontentlength.contentlength = file.tell() - beginstreampos
-        file.write("\nendstream\n")
+        file.write("endstream\n")
 
 
 class PDFcontentlength(PDFobject):
@@ -253,10 +253,10 @@ class PDFfont(PDFobject):
     def __init__(self, font, registry):
         PDFobject.__init__(self, "font", font.getpsname())
         self.font = font
-        self.fontwidths = PDFfontwidths(self.font)
-        registry.add(self.fontwidths)
         self.fontdescriptor = PDFfontdescriptor(self.font, registry)
         registry.add(self.fontdescriptor)
+        self.fontwidths = PDFfontwidths(self.font)
+        registry.add(self.fontwidths)
 
     def outputPDF(self, file, writer, registry):
         file.write("<<\n"
@@ -280,14 +280,18 @@ class PDFfontwidths(PDFobject):
         self.font = font
 
     def outputPDF(self, file, writer, registry):
-        file.write("[\n")
+        file.write("[")
         for i in range(256):
+            if i and not (i % 8):
+                file.write("\n")
+            else:
+                file.write(" ")
             try:
                 width = self.font.getwidth_pt(i)*1000/self.font.getsize_pt()
             except:
                 width = 0
-            file.write("%f\n" % width)
-        file.write("]\n")
+            file.write("%f" % width)
+        file.write(" ]\n")
 
 
 class PDFfontdescriptor(PDFobject):
