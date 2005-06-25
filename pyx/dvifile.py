@@ -23,7 +23,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import copy, cStringIO, exceptions, re, struct, string, sys, warnings
-import unit, epsfile, bbox, canvas, color, trafo, path, pykpathsea, pswriter, pdfwriter
+import unit, epsfile, bbox, canvas, color, trafo, path, pykpathsea, pswriter, pdfwriter, type1font
 
 
 class binfile:
@@ -92,30 +92,30 @@ class stringbinfile(binfile):
         self.file = cStringIO.StringIO(s)
 
 
-# class tokenfile:
-#     """ ascii file containing tokens separated by spaces.
-#
-#     Comments beginning with % are ignored. Strings containing spaces
-#     are not handled correctly
-#     """
-#
-#     def __init__(self, filename):
-#         self.file = open(filename, "r")
-#         self.line = None
-#
-#     def gettoken(self):
-#         """ return next token or None if EOF """
-#         while not self.line:
-#             line = self.file.readline()
-#             if line == "":
-#                 return None
-#             self.line = line.split("%")[0].split()
-#         token = self.line[0]
-#         self.line = self.line[1:]
-#         return token
-#
-#     def close(self):
-#         self.file.close()
+class tokenfile:
+    """ ascii file containing tokens separated by spaces.
+
+    Comments beginning with % are ignored. Strings containing spaces
+    are not handled correctly
+    """
+
+    def __init__(self, filename):
+        self.file = open(filename, "r")
+        self.line = None
+
+    def gettoken(self):
+        """ return next token or None if EOF """
+        while not self.line:
+            line = self.file.readline()
+            if line == "":
+                return None
+            self.line = line.split("%")[0].split()
+        token = self.line[0]
+        self.line = self.line[1:]
+        return token
+
+    def close(self):
+        self.file.close()
 
 
 ##############################################################################
@@ -312,36 +312,36 @@ class tfmfile:
         self.file.close()
 
 
-# class FontEncoding:
-#
-#     def __init__(self, filename):
-#         """ font encoding contained in filename """
-#         encpath = pykpathsea.find_file(filename, pykpathsea.kpse_tex_ps_header_format)
-#         encfile = tokenfile(encpath)
-#
-#         # name of encoding
-#         self.encname = encfile.gettoken()
-#         token = encfile.gettoken()
-#         if token != "[":
-#             raise RuntimeError("cannot parse encoding file '%s', expecting '[' got '%s'" % (filename, token))
-#         self.encvector = []
-#         for i in range(256):
-#             token = encfile.gettoken()
-#             if token is None or token=="]":
-#                 raise RuntimeError("not enough charcodes in encoding file '%s'" % filename)
-#             self.encvector.append(token)
-#         if encfile.gettoken() != "]":
-#             raise RuntimeError("too many charcodes in encoding file '%s'" % filename)
-#         token = encfile.gettoken()
-#         if token != "def":
-#             raise RuntimeError("cannot parse encoding file '%s', expecting 'def' got '%s'" % (filename, token))
-#         token = encfile.gettoken()
-#         if token != None:
-#             raise RuntimeError("encoding file '%s' too long" % filename)
-#         encfile.close()
-#
-#     def encode(self, charcode):
-#         return self.encvector[charcode]
+class fontencoding:
+
+    def __init__(self, filename):
+        """ font encoding contained in filename """
+        encpath = pykpathsea.find_file(filename, pykpathsea.kpse_tex_ps_header_format)
+        encfile = tokenfile(encpath)
+
+        # name of encoding
+        self.encname = encfile.gettoken()
+        token = encfile.gettoken()
+        if token != "[":
+            raise RuntimeError("cannot parse encoding file '%s', expecting '[' got '%s'" % (filename, token))
+        self.encvector = []
+        for i in range(256):
+            token = encfile.gettoken()
+            if token is None or token=="]":
+                raise RuntimeError("not enough charcodes in encoding file '%s'" % filename)
+            self.encvector.append(token)
+        if encfile.gettoken() != "]":
+            raise RuntimeError("too many charcodes in encoding file '%s'" % filename)
+        token = encfile.gettoken()
+        if token != "def":
+            raise RuntimeError("cannot parse encoding file '%s', expecting 'def' got '%s'" % (filename, token))
+        token = encfile.gettoken()
+        if token != None:
+            raise RuntimeError("encoding file '%s' too long" % filename)
+        encfile.close()
+
+    def encode(self, charcode):
+        return self.encvector[charcode]
 
 ##############################################################################
 # Font handling
@@ -351,100 +351,6 @@ class tfmfile:
 # PostScript font selection and output primitives
 #
 
-class _begintextobject(canvas.canvasitem):
-    def outputPS(self, file):
-        pass
-    
-    def outputPDF(self, file, writer, context):
-        file.write("BT\n")
-
-
-class _endtextobject(canvas.canvasitem):
-    def outputPS(self, file):
-        pass
-    
-    def outputPDF(self, file, writer, context):
-        file.write("ET\n")
-
-
-class _selectfont(canvas.canvasitem):
-    # XXX this should go away and be merged with selectfont
-    def __init__(self, name, size):
-        self.name = name
-        self.size = size
-
-    def outputPS(self, file):
-        file.write("/%s %f selectfont\n" % (self.name, self.size))
-
-    def outputPDF(self, file, writer, context):
-        file.write("/%s %f Tf\n" % (self.name, self.size))
-
-
-class selectfont(canvas.canvasitem):
-
-    def __init__(self, font):
-        # XXX maybe we should change the calling convention here and only pass the
-        # name, size, encoding, usedchars of the font
-        self.font = font
-        self.size = font.getsize_pt()
-        self.fontid = None
-
-    def registerPS(self, registry):
-        # note that we don't register PSfont as it is just a helper resource
-        # which registers the needed components
-        pswriter.PSfont(self.font, registry)
-
-    def registerPDF(self, registry):
-        registry.add(pdfwriter.PDFfont(self.font, registry))
-
-    def outputPS(self, file):
-        file.write("/%s %f selectfont\n" % (self.font.getpsname(), self.size))
-
-    def outputPDF(self, file, writer, context):
-        file.write("/%s %f Tf\n" % (self.font.getpsname(), self.size))
-
-
-class _show(canvas.canvasitem):
-
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        self.width = 0
-        self.height = 0
-        self.depth = 0
-        self.chars = []
-
-    def addchar(self, width, height, depth, char):
-        self.width += width
-        if height > self.height:
-            self.height = height
-        if depth > self.depth:
-            self.depth = depth
-        self.chars.append(char)
-
-    def bbox(self):
-        return bbox.bbox_pt(self.x, self.y-self.depth, self.x+self.width, self.y+self.height)
-
-    def outputPS(self, file):
-        outstring = ""
-        for char in self.chars:
-            if char > 32 and char < 127 and chr(char) not in "()[]<>\\":
-                ascii = "%s" % chr(char)
-            else:
-                ascii = "\\%03o" % char
-            outstring += ascii
-        file.write("%g %g moveto (%s) show\n" % (self.x, self.y, outstring))
-
-    def outputPDF(self, file, writer, context):
-        outstring = ""
-        for char in self.chars:
-            if char > 32 and char < 127 and chr(char) not in "()[]<>\\":
-                ascii = "%s" % chr(char)
-            else:
-                ascii = "\\%03o" % char
-            outstring += ascii
-        # file.write("%f %f Td (%s) Tj\n" % (self.x, self.y, outstring))
-        file.write("1 0 0 1 %f %f Tm (%s) Tj\n" % (self.x, self.y, outstring))
 
 
 class fontmapping:
@@ -544,12 +450,13 @@ def readfontmap(filenames):
 
 
 class font:
-    def __init__(self, name, c, q, d, tfmconv, pyxconv, debug=0):
+    def __init__(self, name, c, q, d, tfmconv, pyxconv, fontmap, debug=0):
         self.name = name
         self.q = q                  # desired size of font (fix_word) in TeX points
         self.d = d                  # design size of font (fix_word) in TeX points
         self.tfmconv = tfmconv      # conversion factor from tfm units to dvi units
         self.pyxconv = pyxconv      # conversion factor from dvi units to PostScript points
+        self.fontmap = fontmap
         tfmpath = pykpathsea.find_file("%s.tfm" % self.name, pykpathsea.kpse_tfm_format)
         if not tfmpath:
             raise TFMError("cannot find %s.tfm" % self.name)
@@ -621,7 +528,6 @@ class font:
         # length*z is a long integer, but the result will be a regular integer
         return int(length*long(z) >> shift)
 
-#    we do not need that ...
     def _convert_tfm_to_pt(self, length):
         return (16*long(round(length*self.q*self.tfmconv))/16777216) * self.pyxconv
 
@@ -639,20 +545,6 @@ class font:
     def getitalic_dvi(self, charcode):
         return self._convert_tfm_to_dvi(self.tfmfile.italic[self.tfmfile.char_info[charcode].italic_index])
 
-    # routines returning lengths as floats in PostScript points
-
-    def getwidth_pt(self, charcode):
-        return self._convert_tfm_to_pt(self.tfmfile.width[self.tfmfile.char_info[charcode].width_index])
-
-    def getheight_pt(self, charcode):
-        return self._convert_tfm_to_pt(self.tfmfile.height[self.tfmfile.char_info[charcode].height_index])
-
-    def getdepth_pt(self, charcode):
-        return self._convert_tfm_to_pt(self.tfmfile.depth[self.tfmfile.char_info[charcode].depth_index])
-
-    def getitalic_pt(self, charcode):
-        return self._convert_tfm_to_pt(self.tfmfile.italic[self.tfmfile.char_info[charcode].italic_index])
-
     def markcharused(self, charcode):
         self.usedchars[charcode] = 1
 
@@ -664,38 +556,18 @@ class font:
         self.usedchars = [0] * 256
 
 
-class type1font(font):
-    def __init__(self, name, c, q, d, tfmconv, pyxconv, fontmap, debug=0):
-        font.__init__(self, name, c, q, d, tfmconv, pyxconv, debug)
-        self.fontmapping = fontmap.get(name)
-        if self.fontmapping is None:
-            raise RuntimeError("no information for font '%s' found in font mapping file, aborting" % name)
+# class type1font(font):
+#     def __init__(self, name, c, q, d, tfmconv, pyxconv, fontmap, debug=0):
+#         font.__init__(self, name, c, q, d, tfmconv, pyxconv, debug)
+#         self.fontmapping = fontmap.get(name)
+#         if self.fontmapping is None:
+#             raise RuntimeError("no information for font '%s' found in font mapping file, aborting" % name)
 
-    def getbasepsname(self):
-        return self.fontmapping.basepsname
-
-    def getpsname(self):
-        if self.fontmapping.reencodefont:
-            return "%s-%s" % (self.fontmapping.basepsname, self.fontmapping.reencodefont)
-        else:
-            return self.fontmapping.basepsname
-
-    def getfontfile(self):
-        if self.fontmapping.fontfile is None:
-            return None
-        else:
-            return pykpathsea.find_file(self.fontmapping.fontfile, pykpathsea.kpse_type1_format)
-
-    def getencoding(self):
-        return self.fontmapping.reencodefont
-
-    def getencodingfile(self):
-        return self.fontmapping.encodingfile
 
 
 class virtualfont(font):
     def __init__(self, name, c, q, d, tfmconv, pyxconv, fontmap, debug=0):
-        font.__init__(self, name, c, q, d, tfmconv, pyxconv, debug)
+        font.__init__(self, name, c, q, d, tfmconv, pyxconv, fontmap, debug)
         fontpath = pykpathsea.find_file(name, pykpathsea.kpse_vf_format)
         if fontpath is None or not len(fontpath):
             raise RuntimeError
@@ -818,11 +690,6 @@ class dvifile:
         # pointer to currently active page
         self.actpage = None
 
-        # currently active output: show instance currently used and
-        # the corresponding type 1 font
-        self.activeshow = None
-        self.activetype1font = None
-
         # stack for self.file, self.fonts and self.stack, needed for VF inclusion
         self.statestack = []
 
@@ -835,32 +702,14 @@ class dvifile:
 
     # helper routines
 
-    def flushout(self):
-        """ flush currently active string """
-        if self.activeshow is not None:
-            if self.debug:
-                self.debugfile.write("[%s]\n" % "".join([chr(char) for char in self.activeshow.chars]))
-            self.actpage.insert(self.activeshow)
-            self.activeshow = None
-
-    def begintext(self):
-        """ activate the font if is not yet active, closing a currently active
-        text object and flushing the output"""
-        if isinstance(self.activefont, type1font):
-            self.endtext()
-            if self.activetype1font != self.activefont and self.activefont:
-                self.actpage.insert(_begintextobject())
-                self.actpage.insert(selectfont(self.activefont))
-                self.activetype1font = self.activefont
-
-    def endtext(self):
-        self.flushout()
-        if self.activetype1font:
-            self.actpage.insert(_endtextobject())
-            self.activetype1font = None
+    def flushtext(self):
+        """ finish currently active text object """
+        if self.debug:
+            self.debugfile.write("[%s]\n" % "".join([chr(char) for char in self.activetext.chars]))
+        self.activetext = None
 
     def putrule(self, height, width, advancepos=1):
-        self.endtext()
+        self.flushtext()
         x1 =  self.pos[_POS_H] * self.pyxconv
         y1 = -self.pos[_POS_V] * self.pyxconv
         w = width * self.pyxconv
@@ -893,34 +742,25 @@ class dvifile:
                                   char,
                                   self.pos[_POS_H], dx, self.pos[_POS_H]+dx))
 
-        if isinstance(self.activefont, type1font):
-            if self.activeshow is None:
-                # XXX: begintext would lead to massive number of selectfonts being issued
-                #      OTOH is it save to remove begintext here? I think so ...
-                # self.begintext()
-                self.activeshow = _show(self.pos[_POS_H] * self.pyxconv, -self.pos[_POS_V] * self.pyxconv)
-            width = self.activefont.getwidth_dvi(char) * self.pyxconv
-            height = self.activefont.getheight_dvi(char) * self.pyxconv
-            depth = self.activefont.getdepth_dvi(char) * self.pyxconv
-            self.activeshow.addchar(width, height, depth, char)
-
-            self.activefont.markcharused(char)
-            self.pos[_POS_H] += dx
-        else:
+        if isinstance(self.activefont, virtualfont):
             # virtual font handling
             afterpos = list(self.pos)
             afterpos[_POS_H] += dx
             self._push_dvistring(self.activefont.getchar(char), self.activefont.getfonts(), afterpos,
                                  self.activefont.getsize_pt())
-
+        else:
+            if self.activetext is None:
+                self.activetext = type1font.text_pt(self.pos[_POS_H] * self.pyxconv, -self.pos[_POS_V] * self.pyxconv,
+                                                    type1font.type1font(self.activefont))
+                self.actpage.insert(self.activetext)
+            self.activetext.addchar(char)
+            self.pos[_POS_H] += dx
 
         if not advancepos:
-            # XXX: correct !?
-            self.flushout()
+            self.flushtext()
 
     def usefont(self, fontnum, id1234=0):
         self.activefont = self.fonts[fontnum]
-        self.begintext()
         if self.debug:
             self.debugfile.write("%d: fnt%s%i current font is %s\n" %
                                  (self.filepos,
@@ -937,11 +777,11 @@ class dvifile:
         # d:     design size (fix_word)
 
         try:
-            font = virtualfont(fontname, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.fontmap, self.debug > 1)
+            afont = virtualfont(fontname, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.fontmap, self.debug > 1)
         except (TypeError, RuntimeError):
-            font = type1font(fontname, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.fontmap, self.debug > 1)
+            afont = font(fontname, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.fontmap, self.debug > 1)
 
-        self.fonts[num] = font
+        self.fonts[num] = afont
 
         if self.debug:
             self.debugfile.write("%d: fntdef%d %i: %s\n" % (self.filepos, cmdnr, num, fontname))
@@ -965,21 +805,21 @@ class dvifile:
 
         # it is in general not safe to continue using the currently active font because
         # the specials may involve some gsave/grestore operations
-        self.endtext()
+        self.flushtext()
 
         command, args = s[4:].split()[0], s[4:].split()[1:]
-        if command=="color_begin":
-            if args[0]=="cmyk":
+        if command == "color_begin":
+            if args[0] == "cmyk":
                 c = color.cmyk(float(args[1]), float(args[2]), float(args[3]), float(args[4]))
-            elif args[0]=="gray":
+            elif args[0] == "gray":
                 c = color.gray(float(args[1]))
-            elif args[0]=="hsb":
+            elif args[0] == "hsb":
                 c = color.hsb(float(args[1]), float(args[2]), float(args[3]))
-            elif args[0]=="rgb":
+            elif args[0] == "rgb":
                 c = color.rgb(float(args[1]), float(args[2]), float(args[3]))
-            elif args[0]=="RGB":
+            elif args[0] == "RGB":
                 c = color.rgb(int(args[1])/255.0, int(args[2])/255.0, int(args[3])/255.0)
-            elif args[0]=="texnamed":
+            elif args[0] == "texnamed":
                 try:
                     c = getattr(color.cmyk, args[1])
                 except AttributeError:
@@ -988,19 +828,19 @@ class dvifile:
                 raise RuntimeError("color model '%s' cannot be handled by PyX, aborting" % args[0])
             self.actpage.insert(_savecolor())
             self.actpage.insert(c)
-        elif command=="color_end":
+        elif command == "color_end":
             self.actpage.insert(_restorecolor())
-        elif command=="rotate_begin":
+        elif command == "rotate_begin":
             self.actpage.insert(_savetrafo())
             self.actpage.insert(trafo.rotate_pt(float(args[0]), x, y))
-        elif command=="rotate_end":
+        elif command == "rotate_end":
             self.actpage.insert(_restoretrafo())
-        elif command=="scale_begin":
+        elif command == "scale_begin":
             self.actpage.insert(_savetrafo())
             self.actpage.insert(trafo.scale_pt(float(args[0]), float(args[1]), x, y))
-        elif command=="scale_end":
+        elif command == "scale_end":
             self.actpage.insert(_restoretrafo())
-        elif command=="epsinclude":
+        elif command == "epsinclude":
             # parse arguments
             argdict = {}
             for arg in args:
@@ -1019,7 +859,7 @@ class dvifile:
             if argdict.has_key("clip"):
                epskwargs["clip"] = int(argdict["clip"])
             self.actpage.insert(epsfile.epsfile(x * unit.t_pt, y * unit.t_pt, **epskwargs))
-        elif command=="marker":
+        elif command == "marker":
             if len(args) != 1:
                 raise RuntimeError("marker contains spaces")
             for c in args[0]:
@@ -1030,7 +870,6 @@ class dvifile:
             self.actpage.markers[args[0]] = x * unit.t_pt, y * unit.t_pt
         else:
             raise RuntimeError("unknown PyX special '%s', aborting" % command)
-        self.begintext()
 
     # routines for pushing and popping different dvi chunks on the reader
 
@@ -1070,7 +909,7 @@ class dvifile:
         self.usefont(0)
 
     def _pop_dvistring(self):
-        self.flushout()
+        self.flushtext()
         #if self.debug:
         #    self.debugfile.write("finished executing dvi chunk\n")
         self.debug = self.debugstack.pop()
@@ -1131,7 +970,6 @@ class dvifile:
             if cmd == _DVI_NOP:
                 pass
             elif cmd == _DVI_BOP:
-                # self.endtext()
                 ispageid = [self.file.readuint32() for i in range(10)]
                 if pageid is not None and ispageid != pageid:
                     raise DVIError("invalid pageid")
@@ -1145,19 +983,12 @@ class dvifile:
             else:
                 raise DVIError
 
-        actpage = canvas.canvas()
-        self.actpage = actpage # XXX should be removed ...
+        self.actpage = canvas.canvas()
         self.actpage.markers = {}
         self.pos = [0, 0, 0, 0, 0, 0]
-        self.activetype1font = None
 
-        # Since we do not know which dvi pages the actual PS file contains later on,
-        # we have to keep track of used char informations separately for each dvi page.
-        # In order to do so, the already defined fonts have to be copied and their
-        # used char informations have to be reset
-        for nr in self.fonts.keys():
-            self.fonts[nr] = copy.copy(self.fonts[nr])
-            self.fonts[nr].clearusedchars()
+        # currently active output: text instance currently used
+        self.activetext = None
 
         while 1:
             afile = self.file
@@ -1182,10 +1013,10 @@ class dvifile:
             elif cmd == _DVI_PUTRULE:
                 self.putrule(afile.readint32(), afile.readint32(), 0)
             elif cmd == _DVI_EOP:
-                self.endtext()
+                self.flushtext()
                 if self.debug:
                     self.debugfile.write("%d: eop\n \n" % self.filepos)
-                return actpage
+                return self.actpage
             elif cmd == _DVI_PUSH:
                 self.stack.append(list(self.pos))
                 if self.debug:
@@ -1193,14 +1024,14 @@ class dvifile:
                                          "level %d:(h=%d,v=%d,w=%d,x=%d,y=%d,z=%d,hh=???,vv=???)\n" %
                                          ((self.filepos, len(self.stack)-1) + tuple(self.pos)))
             elif cmd == _DVI_POP:
-                self.flushout()
+                self.flushtext()
                 self.pos = self.stack.pop()
                 if self.debug:
                     self.debugfile.write("%s: pop\n"
                                          "level %d:(h=%d,v=%d,w=%d,x=%d,y=%d,z=%d,hh=???,vv=???)\n" %
                                          ((self.filepos, len(self.stack)) + tuple(self.pos)))
             elif cmd >= _DVI_RIGHT1234 and cmd < _DVI_RIGHT1234 + 4:
-                self.flushout()
+                self.flushtext()
                 dh = afile.readint(cmd - _DVI_RIGHT1234 + 1, 1)
                 if self.debug:
                     self.debugfile.write("%d: right%d %d h:=%d%+d=%d, hh:=???\n" %
@@ -1212,7 +1043,7 @@ class dvifile:
                                           self.pos[_POS_H]+dh))
                 self.pos[_POS_H] += dh
             elif cmd == _DVI_W0:
-                self.flushout()
+                self.flushtext()
                 if self.debug:
                     self.debugfile.write("%d: w0 %d h:=%d%+d=%d, hh:=???\n" %
                                          (self.filepos,
@@ -1222,7 +1053,7 @@ class dvifile:
                                           self.pos[_POS_H]+self.pos[_POS_W]))
                 self.pos[_POS_H] += self.pos[_POS_W]
             elif cmd >= _DVI_W1234 and cmd < _DVI_W1234 + 4:
-                self.flushout()
+                self.flushtext()
                 self.pos[_POS_W] = afile.readint(cmd - _DVI_W1234 + 1, 1)
                 if self.debug:
                     self.debugfile.write("%d: w%d %d h:=%d%+d=%d, hh:=???\n" %
@@ -1234,7 +1065,7 @@ class dvifile:
                                           self.pos[_POS_H]+self.pos[_POS_W]))
                 self.pos[_POS_H] += self.pos[_POS_W]
             elif cmd == _DVI_X0:
-                self.flushout()
+                self.flushtext()
                 if self.debug:
                     self.debugfile.write("%d: x0 %d h:=%d%+d=%d, hh:=???\n" %
                                          (self.filepos,
@@ -1244,7 +1075,7 @@ class dvifile:
                                           self.pos[_POS_H]+self.pos[_POS_X]))
                 self.pos[_POS_H] += self.pos[_POS_X]
             elif cmd >= _DVI_X1234 and cmd < _DVI_X1234 + 4:
-                self.flushout()
+                self.flushtext()
                 self.pos[_POS_X] = afile.readint(cmd - _DVI_X1234 + 1, 1)
                 if self.debug:
                     self.debugfile.write("%d: x%d %d h:=%d%+d=%d, hh:=???\n" %
@@ -1256,7 +1087,7 @@ class dvifile:
                                           self.pos[_POS_H]+self.pos[_POS_X]))
                 self.pos[_POS_H] += self.pos[_POS_X]
             elif cmd >= _DVI_DOWN1234 and cmd < _DVI_DOWN1234 + 4:
-                self.flushout()
+                self.flushtext()
                 dv = afile.readint(cmd - _DVI_DOWN1234 + 1, 1)
                 if self.debug:
                     self.debugfile.write("%d: down%d %d v:=%d%+d=%d, vv:=???\n" %
@@ -1268,7 +1099,7 @@ class dvifile:
                                           self.pos[_POS_V]+dv))
                 self.pos[_POS_V] += dv
             elif cmd == _DVI_Y0:
-                self.flushout()
+                self.flushtext()
                 if self.debug:
                     self.debugfile.write("%d: y0 %d v:=%d%+d=%d, vv:=???\n" %
                                          (self.filepos,
@@ -1278,7 +1109,7 @@ class dvifile:
                                           self.pos[_POS_V]+self.pos[_POS_Y]))
                 self.pos[_POS_V] += self.pos[_POS_Y]
             elif cmd >= _DVI_Y1234 and cmd < _DVI_Y1234 + 4:
-                self.flushout()
+                self.flushtext()
                 self.pos[_POS_Y] = afile.readint(cmd - _DVI_Y1234 + 1, 1)
                 if self.debug:
                     self.debugfile.write("%d: y%d %d v:=%d%+d=%d, vv:=???\n" %
@@ -1290,7 +1121,7 @@ class dvifile:
                                           self.pos[_POS_V]+self.pos[_POS_Y]))
                 self.pos[_POS_V] += self.pos[_POS_Y]
             elif cmd == _DVI_Z0:
-                self.flushout()
+                self.flushtext()
                 if self.debug:
                     self.debugfile.write("%d: z0 %d v:=%d%+d=%d, vv:=???\n" %
                                          (self.filepos,
@@ -1300,7 +1131,7 @@ class dvifile:
                                           self.pos[_POS_V]+self.pos[_POS_Z]))
                 self.pos[_POS_V] += self.pos[_POS_Z]
             elif cmd >= _DVI_Z1234 and cmd < _DVI_Z1234 + 4:
-                self.flushout()
+                self.flushtext()
                 self.pos[_POS_Z] = afile.readint(cmd - _DVI_Z1234 + 1, 1)
                 if self.debug:
                     self.debugfile.write("%d: z%d %d v:=%d%+d=%d, vv:=???\n" %

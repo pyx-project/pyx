@@ -22,7 +22,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import copy, warnings
-import pykpathsea, unit, resource, style, type1font
+import pykpathsea, unit, resource, style, dvifile, type1font
 # from t1strip import fullfont
 try:
     import zlib
@@ -177,7 +177,7 @@ class PDFpage(PDFobject):
         self.bbox.outputPDF(file, writer)
         if self.pageregistry.types.has_key("font"):
             file.write("/Resources <<\n/ProcSet [ /PDF /Text ]\n")
-            file.write("/Font << %s >>\n" % " ".join(["/%s %i 0 R" % (font.font.getpsname(), registry.getrefno(font))
+            file.write("/Font << %s >>\n" % " ".join(["/%s %i 0 R" % (font.type1font.getpsname(), registry.getrefno(font))
                                                     for font in self.pageregistry.types["font"].values()]))
         else:
             file.write("/Resources << /ProcSet [ /PDF ]\n")
@@ -250,63 +250,59 @@ class PDFcontentlength(PDFobject):
 
 class PDFfont(PDFobject):
 
-    def __init__(self, font, registry):
-        PDFobject.__init__(self, "font", font.getpsname())
-        self.font = font
-        self.fontdescriptor = PDFfontdescriptor(self.font, registry)
+    def __init__(self, type1font, usedchars, registry):
+        PDFobject.__init__(self, "font", type1font.getpsname())
+        self.type1font = type1font
+        self.usedchars = usedchars
+        self.fontdescriptor = PDFfontdescriptor(self.type1font, registry)
         registry.add(self.fontdescriptor)
-        self.fontwidths = PDFfontwidths(self.font)
-        registry.add(self.fontwidths)
+        if self.type1font.getencoding():
+            self.encoding = PDFencoding(self.type1font.getencodingfile())
+            registry.add(self.encoding)
+        else:
+            self.encoding = None
 
     def outputPDF(self, file, writer, registry):
         file.write("<<\n"
                    "/Type /Font\n"
-                   "/Subtype /Type1\n"
-                   "/Name /%s\n"
-                   "/BaseFont /%s\n"
-                   "/FirstChar 0\n"
-                   "/LastChar 255\n"
-                   "/Widths %d 0 R\n"
-                   "/FontDescriptor %d 0 R\n"
-                   "/Encoding /StandardEncoding\n" # FIXME
-                   ">>\n" % (self.font.getpsname(), self.font.getbasepsname(),
-                             registry.getrefno(self.fontwidths),
-                             registry.getrefno(self.fontdescriptor)))
-
-class PDFfontwidths(PDFobject):
-
-    def __init__(self, font):
-        PDFobject.__init__(self, "fontwidths")
-        self.font = font
-
-    def outputPDF(self, file, writer, registry):
-        file.write("[")
+                   "/Subtype /Type1\n")
+        file.write("/Name /%s\n" % self.type1font.getpsname())
+        file.write("/BaseFont /%s\n" % self.type1font.getbasepsname())
+        file.write("/FirstChar 0\n" # FIXME
+                   "/LastChar 255\n") # FIXME
+        file.write("/Widths\n"
+                   "[")
         for i in range(256):
             if i and not (i % 8):
                 file.write("\n")
             else:
                 file.write(" ")
             try:
-                width = self.font.getwidth_pt(i)*1000/self.font.getsize_pt()
-            except:
+                width = self.type1font.getwidth_pt(i)*1000/self.type1font.font.getsize_pt()
+            except IndexError:
                 width = 0
             file.write("%f" % width)
         file.write(" ]\n")
+        file.write("/FontDescriptor %d 0 R\n" % registry.getrefno(self.fontdescriptor))
+        if self.encoding:
+            file.write("/Encoding %d 0 R\n" % registry.getrefno(self.encoding))
+        else:
+            file.write("/Encoding /StandardEncoding\n")
+        file.write(">>\n")
 
 
 class PDFfontdescriptor(PDFobject):
 
-    def __init__(self, font, registry):
+    def __init__(self, type1font, registry):
         PDFobject.__init__(self, "fontdescriptor")
-        self.font = font
-        self.type1font = type1font.type1font(self.font)
+        self.type1font = type1font
         self.fontfile = PDFfontfile(self.type1font)
         registry.add(self.fontfile)
 
     def outputPDF(self, file, writer, registry):
         file.write("<<\n"
                    "/Type /FontDescriptor\n"
-                   "/FontName /%s\n" % self.font.getbasepsname())
+                   "/FontName /%s\n" % self.type1font.getbasepsname())
         file.write("/Flags %d\n" % self.type1font.flags)
         file.write("/FontBBox [%d %d %d %d]\n" % self.type1font.fontbbox)
         file.write("/ItalicAngle %d\n" % self.type1font.italicangle)
@@ -321,7 +317,7 @@ class PDFfontdescriptor(PDFobject):
 class PDFfontfile(PDFobject):
 
     def __init__(self, type1font):
-        PDFobject.__init__(self, "fontfile", type1font.font.getfontfile())
+        PDFobject.__init__(self, "fontfile", type1font.getfontfile())
         self.type1font = type1font
 
     def outputPDF(self, file, writer, registry):
@@ -336,33 +332,8 @@ class PDFfontfile(PDFobject):
             fontdata3 = self.type1font.fontdata3
         data = self.type1font.fontdata1 + self.type1font.fontdata2 + fontdata3
         
-        # fontfile = open(self.font.getfontfile())
-        # fontdata = fontfile.read()
-        # fontfile.close()
-        # if fontdata[0:2] != fullfont._PFB_ASCII:
-        #     raise RuntimeError("PFB_ASCII mark expected")
-        # length1 = fullfont.pfblength(fontdata[2:6])
-        # if fontdata[6+length1:8+length1] != fullfont._PFB_BIN:
-        #     raise RuntimeError("PFB_BIN mark expected")
-        # length2 = fullfont.pfblength(fontdata[8+length1:12+length1])
-        # if fontdata[12+length1+length2:14+length1+length2] != fullfont._PFB_ASCII:
-        #     raise RuntimeError("PFB_ASCII mark expected")
-        # length3 = fullfont.pfblength(fontdata[14+length1+length2:18+length1+length2])
-        # if fontdata[18+length1+length2+length3:20+length1+length2+length3] != fullfont._PFB_DONE:
-        #     raise RuntimeError("PFB_DONE mark expected")
-        # if len(fontdata) != 20 + length1 + length2 + length3:
-        #     raise RuntimeError("end of pfb file expected")
-
-        # # we might be allowed to skip the third part ...
-        # if fontdata[18+length1+length2:18+length1+length2+length3].replace("\n", "").replace("\r", "").replace("\t", "").replace(" ", "") == "0"*512 + "cleartomark":
-        #     length3 = 0
-
-        # if length3:
-        #     data = fontdata[6:6+length1] + fontdata[12+length1:12+length1+length2] + fontdata[18+length1+length2:18+length1+length2+length3]
-        # else:
-        #     data = fontdata[6:6+length1] + fontdata[12+length1:12+length1+length2]
-        # if writer.compress:
-        #     data = zlib.compress(data)
+        if writer.compress:
+            data = zlib.compress(data)
 
         file.write("<<\n"
                    "/Length %d\n"
@@ -375,6 +346,20 @@ class PDFfontfile(PDFobject):
                    "stream\n")
         file.write(data)
         file.write("\nendstream\n")
+
+class PDFencoding(PDFobject):
+
+    def __init__(self, encodingfilename):
+        PDFobject.__init__(self, "encoding", encodingfilename)
+        self.encoding = dvifile.fontencoding(encodingfilename)
+
+    def outputPDF(self, file, writer, registry):
+        file.write("<<\n"
+                   "/Type /Encoding\n"
+                   "/Differences\n"
+                   "[ 0 %s ]\n" % "".join(self.encoding.encvector))
+        file.write(">>\n")
+
 
 
 class PDFwriter:
@@ -412,6 +397,8 @@ class context:
         self.colorspace = None
         self.strokeattr = 1
         self.fillattr = 1
+        self.font = None
+        self.textregion = 0
 
     def __call__(self, **kwargs):
         newcontext = copy.copy(self)

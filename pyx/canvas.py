@@ -68,7 +68,7 @@ class canvasitem:
 
 
 import cStringIO
-import attr, deco, deformer, unit, resource, style, trafo, pswriter
+import attr, deco, deformer, unit, resource, style, trafo, pswriter, type1font
 
 
 #
@@ -181,15 +181,27 @@ class _canvas(canvasitem):
     def outputPS(self, file):
         if self.items:
             file.write("gsave\n")
-            for cmd in self.items:
-                cmd.outputPS(file)
+            for item in self.items:
+                item.outputPS(file)
             file.write("grestore\n")
 
     def outputPDF(self, file, writer, context):
+        context = context()
         if self.items:
             file.write("q\n") # gsave
-            for cmd in self.items:
-                cmd.outputPDF(file, writer, context)
+            for item in self.items:
+                if isinstance(item, type1font.text_pt):
+                    if not context.textregion:
+                        file.write("BT\n")
+                        context.textregion = 1
+                else:
+                    if context.textregion:
+                        file.write("ET\n")
+                        context.textregion = 0
+                item.outputPDF(file, writer, context)
+            if context.textregion:
+                file.write("ET\n")
+                context.textregion = 0
             file.write("Q\n") # grestore
 
     def insert(self, item, attrs=None):

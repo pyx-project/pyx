@@ -93,12 +93,12 @@ class PSdefinition(PSresource):
 
 class PSfont:
 
-    def __init__(self, font, registry):
+    def __init__(self, font, usedchars, registry):
         if font.getfontfile():
             registry.add(PSfontfile(font.getbasepsname(),
                                     font.getfontfile(),
                                     font.getencodingfile(),
-                                    font.usedchars))
+                                    usedchars))
         if font.getencoding():
             registry.add(_ReEncodeFont)
             registry.add(PSfontencoding(font.getencoding(),
