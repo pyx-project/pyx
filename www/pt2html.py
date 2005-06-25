@@ -151,7 +151,7 @@ for dir in [None] + examplepages:
         abstract = open(os.path.join(srcdir, "README")).read()
     except IOError:
         abstract = ""
-    abstract = abstract.replace("__version__", pyx.__version__).replace("\PyX{}", "PyX")
+    abstract = abstract.replace("__version__", pyx.__version__).replace("\PyX{}", "PyX").replace("\n\n", "<br><br>")
     examples = [example(item.strip(), dir)
                 for item in open(os.path.join(srcdir, "INDEX")).readlines()
                 if item[-2] != "/"]

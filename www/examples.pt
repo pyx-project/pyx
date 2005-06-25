@@ -6,7 +6,7 @@
 
     <h1>PyX - Examples</h1>
 
-    <p tal:condition="options/abstract" tal:content="options/abstract">
+    <p tal:condition="options/abstract" tal:content="structure options/abstract">
       We might have a short abstract about the examples shown on this page.
     </p>
 
