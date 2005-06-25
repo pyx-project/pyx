@@ -21,10 +21,16 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-__all__ = ["axis", "painter", "parter", "rater", "texter", "tick"]
-
-
-for module in __all__:
+__allmodules__ = ["painter", "parter", "rater", "texter", "tick"]
+for module in __allmodules__:
     __import__(module, globals(), locals(), [])
 
-from axis import linear, lin, logarithmic, log, bar, nestedbar, split, sizedlinear, sizedlin, autosizedlinear, autosizedlin, anchoredaxis, linkedaxis, pathaxis
+import axis
+__allaxis__ = ["linear", "lin", "logarithmic", "log",
+               "bar", "nestedbar", "split",
+               "sizedlinear", "sizedlin", "autosizedlinear", "autosizedlin",
+               "anchoredaxis", "linkedaxis", "pathaxis"]
+for importfromaxis in __allaxis__:
+    locals()[importfromaxis] = getattr(axis, importfromaxis)
+
+__all__ = __allmodules__ + __allaxis__

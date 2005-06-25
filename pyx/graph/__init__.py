@@ -21,10 +21,13 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-__all__ = ["data", "graph", "key", "style"]
-
-
-for module in __all__:
+__allmodules__ = ["data", "key", "style", "axis"]
+for module in __allmodules__:
     __import__(module, globals(), locals(), [])
 
-from graph import graphxy
+import graph
+__allgraph__ = ["graphxy"]
+for importfromgraph in __allgraph__:
+    locals()[importfromgraph] = getattr(graph, importfromgraph)
+
+__all__ = __allmodules__ + __allgraph__
