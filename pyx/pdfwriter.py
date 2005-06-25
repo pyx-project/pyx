@@ -22,8 +22,8 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import copy, warnings
-import pykpathsea, unit, resource, style
-from t1strip import fullfont
+import pykpathsea, unit, resource, style, type1font
+# from t1strip import fullfont
 try:
     import zlib
     haszlib = 1
@@ -299,64 +299,76 @@ class PDFfontdescriptor(PDFobject):
     def __init__(self, font, registry):
         PDFobject.__init__(self, "fontdescriptor")
         self.font = font
-        self.fontfile = PDFfontfile(self.font)
+        self.type1font = type1font.type1font(self.font)
+        self.fontfile = PDFfontfile(self.type1font)
         registry.add(self.fontfile)
 
     def outputPDF(self, file, writer, registry):
         file.write("<<\n"
                    "/Type /FontDescriptor\n"
-                   "/FontName /%s\n"
-                   "/Flags 4\n" # FIXME
-                   "/FontBBox [-10 -10 1000 1000]\n" # FIXME
-                   "/ItalicAngle 0\n" # FIXME
-                   "/Ascent 20\n" # FIXME
-                   "/Descent -5\n" # FIXME
-                   "/CapHeight 15\n" # FIXME
-                   "/StemV 3\n" # FIXME
-                   "/FontFile %d 0 R\n" # FIXME
-                   # "/CharSet \n" # fill in when stripping
-                   ">>\n" % (self.font.getbasepsname(), registry.getrefno(self.fontfile)))
+                   "/FontName /%s\n" % self.font.getbasepsname())
+        file.write("/Flags %d\n" % self.type1font.flags)
+        file.write("/FontBBox [%d %d %d %d]\n" % self.type1font.fontbbox)
+        file.write("/ItalicAngle %d\n" % self.type1font.italicangle)
+        file.write("/Ascent %d\n" % self.type1font.ascent)
+        file.write("/Descent %d\n" % self.type1font.descent)
+        file.write("/CapHeight %d\n" % self.type1font.capheight)
+        file.write("/StemV %d\n" % self.type1font.vstem)
+        file.write("/FontFile %d 0 R\n" % registry.getrefno(self.fontfile))
+        # file.write("/CharSet \n") # fill in when stripping
+        file.write(">>\n")
 
 class PDFfontfile(PDFobject):
 
-    def __init__(self, font):
-        PDFobject.__init__(self, "fontfile", font.getfontfile())
-        self.font = font
+    def __init__(self, type1font):
+        PDFobject.__init__(self, "fontfile", type1font.font.getfontfile())
+        self.type1font = type1font
 
     def outputPDF(self, file, writer, registry):
-        fontfile = open(self.font.getfontfile())
-        fontdata = fontfile.read()
-        fontfile.close()
-        if fontdata[0:2] != fullfont._PFB_ASCII:
-            raise RuntimeError("PFB_ASCII mark expected")
-        length1 = fullfont.pfblength(fontdata[2:6])
-        if fontdata[6+length1:8+length1] != fullfont._PFB_BIN:
-            raise RuntimeError("PFB_BIN mark expected")
-        length2 = fullfont.pfblength(fontdata[8+length1:12+length1])
-        if fontdata[12+length1+length2:14+length1+length2] != fullfont._PFB_ASCII:
-            raise RuntimeError("PFB_ASCII mark expected")
-        length3 = fullfont.pfblength(fontdata[14+length1+length2:18+length1+length2])
-        if fontdata[18+length1+length2+length3:20+length1+length2+length3] != fullfont._PFB_DONE:
-            raise RuntimeError("PFB_DONE mark expected")
-        if len(fontdata) != 20 + length1 + length2 + length3:
-            raise RuntimeError("end of pfb file expected")
-
         # we might be allowed to skip the third part ...
-        if fontdata[18+length1+length2:18+length1+length2+length3].replace("\n", "").replace("\r", "").replace("\t", "").replace(" ", "") == "0"*512 + "cleartomark":
+        if (self.type1font.fontdata3.replace("\n", "")
+                                    .replace("\r", "")
+                                    .replace("\t", "")
+                                    .replace(" ", "")) == "0"*512 + "cleartomark":
             length3 = 0
-
-        if length3:
-            data = fontdata[6:6+length1] + fontdata[12+length1:12+length1+length2] + fontdata[18+length1+length2:18+length1+length2+length3]
+            fontdata3 = ""
         else:
-            data = fontdata[6:6+length1] + fontdata[12+length1:12+length1+length2]
-        if writer.compress:
-            data = zlib.compress(data)
+            fontdata3 = self.type1font.fontdata3
+        data = self.type1font.fontdata1 + self.type1font.fontdata2 + fontdata3
+        
+        # fontfile = open(self.font.getfontfile())
+        # fontdata = fontfile.read()
+        # fontfile.close()
+        # if fontdata[0:2] != fullfont._PFB_ASCII:
+        #     raise RuntimeError("PFB_ASCII mark expected")
+        # length1 = fullfont.pfblength(fontdata[2:6])
+        # if fontdata[6+length1:8+length1] != fullfont._PFB_BIN:
+        #     raise RuntimeError("PFB_BIN mark expected")
+        # length2 = fullfont.pfblength(fontdata[8+length1:12+length1])
+        # if fontdata[12+length1+length2:14+length1+length2] != fullfont._PFB_ASCII:
+        #     raise RuntimeError("PFB_ASCII mark expected")
+        # length3 = fullfont.pfblength(fontdata[14+length1+length2:18+length1+length2])
+        # if fontdata[18+length1+length2+length3:20+length1+length2+length3] != fullfont._PFB_DONE:
+        #     raise RuntimeError("PFB_DONE mark expected")
+        # if len(fontdata) != 20 + length1 + length2 + length3:
+        #     raise RuntimeError("end of pfb file expected")
+
+        # # we might be allowed to skip the third part ...
+        # if fontdata[18+length1+length2:18+length1+length2+length3].replace("\n", "").replace("\r", "").replace("\t", "").replace(" ", "") == "0"*512 + "cleartomark":
+        #     length3 = 0
+
+        # if length3:
+        #     data = fontdata[6:6+length1] + fontdata[12+length1:12+length1+length2] + fontdata[18+length1+length2:18+length1+length2+length3]
+        # else:
+        #     data = fontdata[6:6+length1] + fontdata[12+length1:12+length1+length2]
+        # if writer.compress:
+        #     data = zlib.compress(data)
 
         file.write("<<\n"
                    "/Length %d\n"
                    "/Length1 %d\n"
                    "/Length2 %d\n"
-                   "/Length3 %d\n" % (len(data), length1, length2, length3))
+                   "/Length3 %d\n" % (len(data), self.type1font.length1, self.type1font.length2, length3))
         if writer.compress:
             file.write("/Filter /FlateDecode\n")
         file.write(">>\n"

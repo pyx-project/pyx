@@ -643,15 +643,15 @@ class font:
 
     def getwidth_pt(self, charcode):
         return self._convert_tfm_to_pt(self.tfmfile.width[self.tfmfile.char_info[charcode].width_index])
-#
-#    def getheight_pt(self, charcode):
-#        return self._convert_tfm_to_pt(self.tfmfile.height[self.tfmfile.char_info[charcode].height_index])
-#
-#    def getdepth_pt(self, charcode):
-#        return self._convert_tfm_to_pt(self.tfmfile.depth[self.tfmfile.char_info[charcode].depth_index])
-#
-#    def getitalic_pt(self, charcode):
-#        return self._convert_tfm_to_pt(self.tfmfile.italic[self.tfmfile.char_info[charcode].italic_index])
+
+    def getheight_pt(self, charcode):
+        return self._convert_tfm_to_pt(self.tfmfile.height[self.tfmfile.char_info[charcode].height_index])
+
+    def getdepth_pt(self, charcode):
+        return self._convert_tfm_to_pt(self.tfmfile.depth[self.tfmfile.char_info[charcode].depth_index])
+
+    def getitalic_pt(self, charcode):
+        return self._convert_tfm_to_pt(self.tfmfile.italic[self.tfmfile.char_info[charcode].italic_index])
 
     def markcharused(self, charcode):
         self.usedchars[charcode] = 1
