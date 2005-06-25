@@ -67,26 +67,30 @@ class py2html:
 
 class example:
 
-    def __init__(self, name):
-        if name.startswith("./"):
-            name = name[2:]
-        self.name = name
+    def __init__(self, basename, dir=None):
+        self.title = basename
+        if dir:
+            name = os.path.join(dir, basename)
+        else:
+            name = basename
         relname = os.path.join("..", "examples", name)
         htmlbuffer = StringIO.StringIO()
         py2html(codecs.open("%s.py" % relname, encoding="iso-8859-1"), htmlbuffer)
         self.code = htmlbuffer.getvalue()
-        self.png = "%s.png" % os.path.basename(name)
+        self.png = "%s.png" % basename
         self.width, self.height = Image.open("%s.png" % relname).size
         self.downloads = []
-        for suffix in ["py", "dat", "eps"]:
+        for suffix in ["py", "dat", "eps", "pdf"]:
             try:
                 filesize = "%.1f KB" % (os.path.getsize("%s.%s" % (relname, suffix)) / 1024.0)
             except OSError:
                 pass
             else:
-                self.downloads.append({"filename": "%s.%s" % (name, suffix),
+                self.downloads.append({"filename": "%s.%s" % (basename, suffix),
+                                       "suffixname": ".%s" % suffix,
                                        "filesize": filesize,
                                        "iconname": "%s.png" % suffix})
+                print self.downloads[-1]["filename"]
 
 
 class MyPageTemplateFile(PageTemplateFile):
@@ -135,18 +139,25 @@ for ptname in glob.glob("*.pt"):
     codecs.open("build/%s" % htmlname, "w", encoding="iso-8859-1").write(content)
 
 examplestemplate = MyPageTemplateFile("examples.pt")
-examplepages = [item[:-2] for item in open("../examples/INDEX").readlines() if item[-2] == "/"]
+examplepages = [item[:-2]
+                for item in open("../examples/INDEX").readlines()
+                if item[-2] == "/"]
 
-for dir in ["."] + examplepages:
+for dir in [None] + examplepages:
+    srcdir = "../examples"
+    destdir = "examples"
+    if dir:
+        srcdir = os.path.join(srcdir, dir)
+        destdir = os.path.join(destdir, dir)
     try:
-        abstract = open("../examples/%s/README" % dir).read().replace("__version__", pyx.__version__).replace("\PyX{}", "PyX")
+        abstract = open(os.path.join(srcdir, "README")).read()
     except IOError:
         abstract = ""
-    examples = [example(dir + "/" + item.strip()) for item in open("../examples/%s/INDEX" % dir).readlines() if item[-2] != "/"]
-    if dir != ".":
-        htmlname = "examples/%s/index.html" % dir
-    else:
-        htmlname = "examples/index.html"
+    abstract = abstract.replace("__version__", pyx.__version__).replace("\PyX{}", "PyX")
+    examples = [example(item.strip(), dir)
+                for item in open(os.path.join(srcdir, "INDEX")).readlines()
+                if item[-2] != "/"]
+    htmlname = os.path.join(destdir, "index.html")
     print htmlname
     content = examplestemplate(pagename=htmlname,
                                maintemplate=maintemplate,

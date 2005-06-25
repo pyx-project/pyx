@@ -195,6 +195,7 @@ a:hover {
 }
 
 #content .exampledownload {
+        margin-left: 10px;
         text-align: center;
         float: left;
 }

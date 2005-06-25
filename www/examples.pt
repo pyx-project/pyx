@@ -14,11 +14,11 @@
       <div class="exampleseparator" tal:condition="python: options['abstract'] or not repeat['example'].start()"></div>
       <div class="exampledownloads">
         <div tal:repeat="download example/downloads" class="exampledownload">
-          <div><a tal:attributes="href download/filename"><img tal:attributes="alt download/filename; src python: options['mkrellink']('icons/' + download['iconname'], options)" width=48 height=48 border=0></a></div>
-          <div class="exampledownloadsize" tal:content="download/filesize">0 KB</div>
+          <div><a tal:attributes="href download/filename" tal:content="download/suffixname">.xxx</a></div>
+          <div class="exampledownloadsize" tal:content="download/filesize"/>
         </div>
       </div>
-      <h2 tal:content="example/name">Name</h2>
+      <h2 tal:content="example/title">title</h2>
       <div class="exampleimage">
         <img tal:attributes="alt example/png; src example/png; width example/width; height example/height">
       </div>
