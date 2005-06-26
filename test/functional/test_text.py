@@ -64,9 +64,12 @@ t = c.text(0, 11, r"scale test", [color.rgb.red])
 # test font stripping (proper usedchar selection)
 c.text(0, 12, r"usechar test (``fl'' should be typed):")
 myrunner = text.texrunner(fontmaps="download35.map")
-# myrunner.preamble(r"\font\pyxfont=phvr8t\pyxfont") % currently does *not* work!
-myrunner.preamble(r"\font\pyxfont=ptmr8t\pyxfont")
+myrunner.preamble(r"\font\pyxfont=phvr8t\pyxfont")
 c.insert(myrunner.text(5.5, 12, r"\char'035"))
+
+myrunner2 = text.texrunner(fontmaps="download35.map")
+myrunner2.preamble(r"\font\pyxfont=ptmr8t\pyxfont")
+c.insert(myrunner2.text(6.5, 12, r"\char'035"))
 
 # test the specials
 c.stroke(c.text(10, 2, r"Hello, \color{green}world!", [trafo.slant(1)]).path())
@@ -113,3 +116,4 @@ c.stroke(c.text(15, 0, r"""
 c.text(4, 2, r"{\color[cmyk]{0.1,0.2,0.3,0.4}c\color[gray]{0.5}o\color[hsb]{0.2,0.3,0.4}l\color[rgb]{0.2,0.4,0.6}o\color[RGB]{100,200,50}r}s!")
 
 c.writeEPSfile("test_text", paperformat=document.paperformat.A4)
+c.writePDFfile("test_text", paperformat=document.paperformat.A4)
