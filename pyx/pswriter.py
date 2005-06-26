@@ -21,8 +21,8 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import time
-import style, version, type1font
+import time, math
+import style, version, type1font, unit
 
 
 class PSregistry:
@@ -298,19 +298,22 @@ class pswriter:
         # required paper formats
         paperformats = {}
         for page in document.pages:
-            paperformats[page.paperformat] = _paperformats[apage.paperformat]
+            paperformats[page.paperformat] = page.paperformat
 
-        for paperformat, size in paperformats.items():
+        first = 1
+        for paperformat in paperformats.values():
             if first:
                 file.write("%%DocumentMedia: ")
                 first = 0
             else:
                 file.write("%%+ ")
-            file.write("%s %d %d 75 white ()\n" % (paperformat, unit.topt(size[0]), unit.topt(size[1])))
+            file.write("%s %d %d 75 white ()\n" % (paperformat.name,
+                                                   unit.topt(paperformat.width),
+                                                   unit.topt(paperformat.height)))
 
         # file.write(%%DocumentNeededResources: ") # register not downloaded fonts here
 
-        file.write("%%%%Pages: %d\n" % len(self.pages))
+        file.write("%%%%Pages: %d\n" % len(document.pages))
         file.write("%%PageOrder: Ascend\n")
         file.write("%%EndComments\n")
 
@@ -322,7 +325,7 @@ class pswriter:
         file.write("%%BeginProlog\n")
         registry = PSregistry()
         for page in document.pages:
-            registry.register(page.canvas)
+            page.canvas.registerPS(registry)
         registry.outputPS(file)
         file.write("%%EndProlog\n")
 
@@ -343,7 +346,7 @@ class pswriter:
             file.write("/pgsave save def\n")
             # apply a possible page transformation
             if page._pagetrafo is not None:
-                _pagetrafo.outputPS(file)
+                page._pagetrafo.outputPS(file)
 
             style.linewidth.normal.outputPS(file)
             file.write("%%EndPageSetup\n")
