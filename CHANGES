@@ -54,7 +54,8 @@ TODO:
   - open discussion:
     - clearly distingish between readers and writers. dvifile, epsfile, etc. might
       be renamed to dvireader, epsreader ...
-
+  - canvas module:
+    - stroking of patterns does not work in PDF
 
   Documentation:
     - path module:
@@ -92,7 +93,7 @@ TODO:
   - bbox module:
     - add _pt methods
   - pdfwriter module:
-    - completely rewritten
+    - completely rewritten: support for fonts and patterns has been added
   - pswriter module: new
     - separate PS output from canvas
   - color module:
@@ -137,6 +138,7 @@ TODO:
     - correctly call base class constructor in linewidth
   - epsfile module:
     - correct EOL handling while reading DSC's (reported by Markus Meyer)
+  - update address of FSF in LICENSE file
 
 
 0.7.1 (2004/12/15):
