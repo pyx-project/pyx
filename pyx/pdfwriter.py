@@ -175,13 +175,17 @@ class PDFpage(PDFobject):
         file.write("/MediaBox [0 0 %d %d]\n" % (unit.topt(paperformat.width), unit.topt(paperformat.height)))
         file.write("/CropBox " )
         self.bbox.outputPDF(file, writer)
+        # XXX check whether we need to include patterns in /ProcSet
         if self.pageregistry.types.has_key("font"):
-            file.write("/Resources <<\n/ProcSet [ /PDF /Text ]\n")
+            file.write("/Resources <<\n"
+                       "/ProcSet [ /PDF /Text ]\n")
             file.write("/Font << %s >>\n" % " ".join(["/%s %i 0 R" % (font.name, registry.getrefno(font))
                                                     for font in self.pageregistry.types["font"].values()]))
         else:
             file.write("/Resources << /ProcSet [ /PDF ]\n")
-
+        if self.pageregistry.types.has_key("pattern"):
+            file.write("/Pattern << %s >>\n" % " ".join(["/%s %i 0 R" % (pattern.name, registry.getrefno(pattern))
+                                                         for pattern in self.pageregistry.types["pattern"].values()]))
         file.write(">>\n")
         file.write("/Contents %i 0 R\n"
                    ">>\n" % registry.getrefno(self.PDFcontent))
@@ -206,12 +210,12 @@ class PDFcontent(PDFobject):
         PDFobject.__init__(self, "content")
         self.canvas = canvas
         self.pagetrafo = pagetrafo
-        self.PDFcontentlength = PDFcontentlength()
-        registry.add(self.PDFcontentlength)
+        self.contentlength = PDFcontentlength()
+        registry.add(self.contentlength)
 
     def outputPDF(self, file, writer, registry):
         file.write("<<\n"
-                   "/Length %i 0 R\n" % registry.getrefno(self.PDFcontentlength))
+                   "/Length %i 0 R\n" % registry.getrefno(self.contentlength))
         if writer.compress:
             file.write("/Filter /FlateDecode\n")
         file.write(">>\n")
@@ -233,7 +237,7 @@ class PDFcontent(PDFobject):
         if writer.compress:
             stream.flush()
 
-        self.PDFcontentlength.contentlength = file.tell() - beginstreampos
+        self.contentlength.contentlength = file.tell() - beginstreampos
         file.write("endstream\n")
 
 
@@ -241,6 +245,7 @@ class PDFcontentlength(PDFobject):
 
     def __init__(self):
         PDFobject.__init__(self, "_contentlength")
+        self.contentlength = None
 
     def outputPDF(self, file, writer, registry):
         # initially we do not know about the content length
@@ -401,6 +406,70 @@ class PDFencoding(PDFobject):
         encodingfile.outputPDF(file, writer, registry)
 
 
+class PDFpattern(PDFobject):
+
+    def __init__(self, name, patterntype, painttype, tilingtype, bbox, xstep, ystep, trafo,
+                 canvasoutputPDF, canvasregisterPDF, registry):
+        PDFobject.__init__(self, "pattern", name)
+        self.name = name
+        self.patterntype = patterntype
+        self.painttype = painttype
+        self.tilingtype = tilingtype
+        self.bbox = bbox
+        self.xstep = xstep
+        self.ystep = ystep
+        self.trafo = trafo
+        self.canvasoutputPDF = canvasoutputPDF
+
+        self.contentlength = PDFcontentlength()
+        registry.add(self.contentlength)
+        
+        # we need to keep track of the resources used by the pattern, hence
+        # we create our own registry, which we merge immediately in the main registry
+        self.patternregistry = PDFregistry()
+        # XXX passing canvasregisterPDF is a Q&D way to get access to the registerPDF method
+        # of the _canvas superclass of the pattern
+        canvasregisterPDF(self.patternregistry)
+        registry.mergeregistry(self.patternregistry)
+
+    def outputPDF(self, file, writer, registry):
+        file.write("<<\n"
+                   "/Type /Pattern\n"
+                   "/PatternType %d\n" % self.patterntype)
+        file.write("/PaintType %d\n" % self.painttype)
+        file.write("/TilingType %d\n" % self.tilingtype)
+        file.write("/BBox [%s]\n" % str(self.bbox))
+        file.write("/XStep %f\n" % self.xstep)
+        file.write("/YStep %f\n" % self.ystep)
+        file.write("/Matrix %s\n" % str(self.trafo))
+        file.write("/Resources <<\n")
+        if self.patternregistry.types.has_key("font"):
+            file.write("/Font << %s >>\n" % " ".join(["/%s %i 0 R" % (font.name, registry.getrefno(font))
+                                                    for font in self.patternregistry.types["font"].values()]))
+        if self.patternregistry.types.has_key("pattern"):
+            file.write("/Pattern << %s >>\n" % " ".join(["/%s %i 0 R" % (pattern.name, registry.getrefno(pattern))
+                                                         for pattern in self.patternregistry.types["pattern"].values()]))
+        file.write(">>\n")
+        file.write("/Length %i 0 R\n" % registry.getrefno(self.contentlength))
+        file.write(">>\n")
+                   
+        file.write("stream\n")
+        beginstreampos = file.tell()
+
+        if writer.compress:
+            stream = _compressstream(file, writer.compresslevel)
+        else:
+            stream = file
+
+        acontext = context()
+        self.canvasoutputPDF(stream, writer, acontext)
+        if writer.compress:
+            stream.flush()
+
+        self.contentlength.contentlength = file.tell() - beginstreampos
+        file.write("endstream\n")
+
+
 class PDFwriter:
 
     def __init__(self, document, filename, compress=1, compresslevel=6):
@@ -433,6 +502,7 @@ class context:
 
     def __init__(self):
         self.linewidth_pt = None
+        # XXX there are both stroke and fill color spaces
         self.colorspace = None
         self.strokeattr = 1
         self.fillattr = 1

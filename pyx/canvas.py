@@ -60,7 +60,8 @@ class canvasitem:
         - file has to provide a write(string) method
         - writer contains properties like whether streamcompression is used.
         - context is used for keeping track of the graphics state, in particular
-        for the emulation of PS behaviour regarding fill and stroke styles.
+        for the emulation of PS behaviour regarding fill and stroke styles, for
+        keeping track of the currently selected font as well as of text regions.
         """
         pass
 
@@ -68,7 +69,7 @@ class canvasitem:
 
 
 import cStringIO
-import attr, deco, deformer, unit, style, trafo, pswriter, type1font
+import attr, color, deco, deformer, unit, style, trafo, pswriter, pdfwriter, type1font
 
 
 #
@@ -312,12 +313,13 @@ class _canvas(canvasitem):
 # canvas for patterns
 #
 
-class pattern(_canvas, attr.exclusiveattr, style.fillstyle):
+class pattern(_canvas, attr.exclusiveattr, style.fillstyle, color.color):
 
     def __init__(self, painttype=1, tilingtype=1, xstep=None, ystep=None, bbox=None, trafo=None, **kwargs):
         _canvas.__init__(self, **kwargs)
         attr.exclusiveattr.__init__(self, pattern)
         self.id = "pattern%d" % id(self)
+        self.patterntype = 1
         if painttype not in (1,2):
             raise ValueError("painttype must be 1 or 2")
         self.painttype = painttype
@@ -334,6 +336,17 @@ class pattern(_canvas, attr.exclusiveattr, style.fillstyle):
 
     def outputPS(self, file):
         file.write("%s setpattern\n" % self.id)
+
+    def outputPDF(self, file, writer, context):
+        if context.colorspace != "Pattern":
+            # XXX we set both the stroke and the fill color space
+            file.write("/Pattern cs\n")
+            file.write("/Pattern CS\n")
+            context.colorspace = "Pattern"
+        if context.strokeattr:
+            file.write("/%s SCN\n"% self.id)
+        if context.fillattr:
+            file.write("/%s scn\n"% self.id)
 
     def registerPS(self, registry):
         _canvas.registerPS(self, registry)
@@ -353,7 +366,7 @@ class pattern(_canvas, attr.exclusiveattr, style.fillstyle):
         patternbbox = self.patternbbox or realpatternbbox.enlarged(5*unit.pt)
 
         patternprefix = "\n".join(("<<",
-                                   "/PatternType 1",
+                                   "/PatternType %d" % self.patterntype,
                                    "/PaintType %d" % self.painttype,
                                    "/TilingType %d" % self.tilingtype,
                                    "/BBox[%s]" % str(patternbbox),
@@ -368,6 +381,29 @@ class pattern(_canvas, attr.exclusiveattr, style.fillstyle):
         patternsuffix = "end\n} bind\n>>\n%s\nmakepattern" % patterntrafostring
 
         registry.add(pswriter.PSdefinition(self.id, "".join((patternprefix, patternproc, patternsuffix))))
+
+    def registerPDF(self, registry):
+        realpatternbbox = _canvas.bbox(self)
+        if self.xstep is None:
+           xstep = unit.topt(realpatternbbox.width())
+        else:
+           xstep = unit.topt(self.xstep)
+        if self.ystep is None:
+            ystep = unit.topt(realpatternbbox.height())
+        else:
+           ystep = unit.topt(self.ystep)
+        if not xstep:
+            raise ValueError("xstep in pattern cannot be zero")
+        if not ystep:
+            raise ValueError("ystep in pattern cannot be zero")
+        patternbbox = self.patternbbox or realpatternbbox.enlarged(5*unit.pt)
+        patterntrafo = self.patterntrafo or trafo.trafo()
+
+        registry.add(pdfwriter.PDFpattern(self.id, self.patterntype, self.painttype, self.tilingtype,
+                                          patternbbox, xstep, ystep, patterntrafo,
+                                          lambda file, writer, context: _canvas.outputPDF(self, file, writer, context),
+                                          lambda registry: _canvas.registerPDF(self, registry),
+                                          registry))
 
 pattern.clear = attr.clearclass(pattern)
 
