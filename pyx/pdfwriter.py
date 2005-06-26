@@ -451,6 +451,8 @@ class PDFpattern(PDFobject):
                                                          for pattern in self.patternregistry.types["pattern"].values()]))
         file.write(">>\n")
         file.write("/Length %i 0 R\n" % registry.getrefno(self.contentlength))
+        if writer.compress:
+            file.write("/Filter /FlateDecode\n")
         file.write(">>\n")
                    
         file.write("stream\n")
