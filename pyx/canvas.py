@@ -198,10 +198,12 @@ class _canvas(canvasitem):
                     if context.textregion:
                         file.write("ET\n")
                         context.textregion = 0
+                        context.font = None
                 item.outputPDF(file, writer, context)
             if context.textregion:
                 file.write("ET\n")
                 context.textregion = 0
+                context.font = None
             file.write("Q\n") # grestore
 
     def insert(self, item, attrs=None):

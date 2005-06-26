@@ -22,7 +22,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import copy, cStringIO, exceptions, re, struct, string, sys, warnings
+import copy, cStringIO, exceptions, re, struct, string, sys, warnings, math
 import unit, epsfile, bbox, canvas, color, trafo, path, pykpathsea, pswriter, pdfwriter, type1font
 
 
@@ -396,6 +396,7 @@ def readfontmap(filenames):
 
 
 class font:
+
     def __init__(self, name, c, q, d, tfmconv, pyxconv, fontmap, debug=0):
         self.name = name
         self.q = q                  # desired size of font (fix_word) in TeX points
@@ -427,15 +428,23 @@ class font:
 
         self.scale = 1.0*q/d
 
-        # for bookkeeping of used characters
-        self.usedchars = [0] * 256
+        # The following code is a very crude way to obtain the information
+        # required for the PDF font descritor. (TODO: The correct way would
+        # be to read the information from the AFM file.)
+        self.fontbbox = (0,
+                         -self.getdepth_ds(ord("y")),
+                         self.getwidth_ds(ord("W")),
+                         self.getheight_ds(ord("H")))
+        self.italicangle = -180/math.pi*math.atan(self.tfmfile.param[0]/65536.0)
+        self.ascent = self.fontbbox[3]
+        self.descent = self.fontbbox[1]
+        self.capheight = self.getheight_ds(ord("h"))
+        self.vstem = self.getwidth_ds(ord("."))/3
 
     def __str__(self):
         return "font %s designed at %g TeX pts used at %g TeX pts" % (self.name, 
                                                                       16.0*self.d/16777216L,
                                                                       16.0*self.q/16777216L)
-
-
     __repr__ = __str__
 
     def getsize_pt(self):
@@ -473,7 +482,6 @@ class font:
             shift -= 1
         # length*z is a long integer, but the result will be a regular integer
         return int(length*long(z) >> shift)
-
 
     def _convert_tfm_to_ds(self, length):
         return (16*long(round(length*self.q*self.tfmconv))/16777216) * self.pyxconv * 1000 / self.getsize_pt()
@@ -522,17 +530,6 @@ class font:
 
     def getitalic_pt(self, charcode):
         return self._convert_tfm_to_pt(self.tfmfile.italic[self.tfmfile.char_info[charcode].italic_index])
-
-    def markcharused(self, charcode):
-        self.usedchars[charcode] = 1
-
-    def mergeusedchars(self, otherfont):
-        for i in range(len(self.usedchars)):
-            self.usedchars[i] = self.usedchars[i] or otherfont.usedchars[i]
-
-    def clearusedchars(self):
-        self.usedchars = [0] * 256
-
 
 
 class virtualfont(font):
@@ -674,7 +671,7 @@ class dvifile:
 
     def flushtext(self):
         """ finish currently active text object """
-        if self.debug:
+        if self.debug and self.activetext:
             self.debugfile.write("[%s]\n" % "".join([chr(char) for char in self.activetext.chars]))
         self.activetext = None
 
@@ -708,7 +705,7 @@ class dvifile:
             self.debugfile.write("%d: %s%s%d h:=%d+%d=%d, hh:=???\n" %
                                  (self.filepos,
                                   advancepos and "set" or "put",
-                                  yid1234 and "%i " % id1234 or "char",
+                                  id1234 and "%i " % id1234 or "char",
                                   char,
                                   self.pos[_POS_H], dx, self.pos[_POS_H]+dx))
 
@@ -721,18 +718,24 @@ class dvifile:
         else:
             if self.activetext is None:
                 fontmapinfo = self.fontmap.get(self.activefont.name)
-                
+
                 encodingname = fontmapinfo.reencodefont
-                encodingfilename = pykpathsea.find_file(fontmapinfo.encodingfile, pykpathsea.kpse_tex_ps_header_format)
-                if not encodingfilename:
-                    raise RuntimeError("cannot find font encoding file %s" % fontmapinfo.encodingfile)
-                fontencoding = type1font.encoding(encodingname, encodingfilename)
+                if encodingname is not None:
+                    encodingfilename = pykpathsea.find_file(fontmapinfo.encodingfile, pykpathsea.kpse_tex_ps_header_format)
+                    if not encodingfilename:
+                        raise RuntimeError("cannot find font encoding file %s" % fontmapinfo.encodingfile)
+                    fontencoding = type1font.encoding(encodingname, encodingfilename)
+                else:
+                    fontencoding = None
 
                 fontbasefontname = fontmapinfo.basepsname
-                fontfilename = pykpathsea.find_file(fontmapinfo.fontfile, pykpathsea.kpse_type1_format)
-                if not fontfilename:
-                    raise RuntimeError("cannot find type 1 font %s" % fontmapinfo.fontfile)
-
+                if fontmapinfo.fontfile is not None:
+                    fontfilename = pykpathsea.find_file(fontmapinfo.fontfile, pykpathsea.kpse_type1_format)
+                    if not fontfilename:
+                        raise RuntimeError("cannot find type 1 font %s" % fontmapinfo.fontfile)
+                else:
+                    fontfilename = None
+                
                 # XXX we currently misuse use self.activefont as metric 
                 font = type1font.font(fontbasefontname, fontfilename, fontencoding, self.activefont)
         
@@ -745,6 +748,7 @@ class dvifile:
             self.flushtext()
 
     def usefont(self, fontnum, id1234=0):
+        self.flushtext()
         self.activefont = self.fonts[fontnum]
         if self.debug:
             self.debugfile.write("%d: fnt%s%i current font is %s\n" %
@@ -1220,7 +1224,7 @@ class vffile:
                 #        )
 
                 # XXX allow for virtual fonts here too
-                self.fonts[num] =  type1font(fontname, c, reals, d, self.tfmconv, self.pyxconv, self.fontmap, self.debug > 1)
+                self.fonts[num] =  font(fontname, c, reals, d, self.tfmconv, self.pyxconv, self.fontmap, self.debug > 1)
             elif cmd == _VF_LONG_CHAR:
                 # character packet (long form)
                 pl = afile.readuint32()   # packet length

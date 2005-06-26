@@ -22,8 +22,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import time
-import style, version
-import t1strip
+import style, version, type1font
 
 
 class PSregistry:
@@ -93,12 +92,12 @@ class PSdefinition(PSresource):
 
 class PSfont:
 
-    def __init__(self, font, usedchars, registry):
+    def __init__(self, font, chars, registry):
         if font.filename:
-            registry.add(PSfontfile(font.name,
+            registry.add(PSfontfile(font.basefontname,
                                     font.filename,
                                     font.encoding,
-                                    usedchars))
+                                    chars))
         if font.encoding:
             registry.add(_ReEncodeFont)
             registry.add(PSfontencoding(font.encoding))
@@ -111,48 +110,39 @@ class PSfontfile(PSresource):
 
     """ PostScript font definition included in the prolog """
 
-    def __init__(self, fontname, filename, encoding, usedchars):
+    def __init__(self, name, filename, encoding, chars):
         """ include type 1 font defined by the following parameters
 
-        - fontname:    PostScript FontName of font
+        - name:        name of the PostScript font
         - filename:    name (without path) of file containing the font definition
         - encfilename: name (without path) of file containing used encoding of font
                        or None (if no encoding file used)
-        - usechars:    list with 256 elements containing used charcodes of font
+        - chars:       character list to fill usedchars
 
         """
 
         # Note that here we only need the encoding for selecting the used glyphs!
 
-        # XXX rewrite
-
         self.type = "fontfile"
-        self.id = self.fontname = fontname
+        self.id = self.name = name
         self.filename = filename
-        self.encoding = encoding
-        self.usedchars = usedchars
+        if encoding is None:
+            self.encodingfilename = None
+        else:
+            self.encodingfilename = encoding.filename
+        self.usedchars = {}
+        for char in chars:
+            self.usedchars[char] = 1
 
     def merge(self, other):
-        if self.encoding.name != other.encoding.name:
-            self.usedchars = None # stripping of font not possible
+        if self.encodingfilename == other.encodingfilename:
+            self.usedchars.update(other.usedchars)
         else:
-            for i in range(len(self.usedchars)):
-                self.usedchars[i] = self.usedchars[i] or other.usedchars[i]
+            self.usedchars = None # stripping of font not possible
 
     def outputPS(self, file):
-        file.write("%%%%BeginFont: %s\n" % self.fontname)
-        if self.usedchars:
-            file.write("%Included char codes:")
-            for i in range(len(self.usedchars)):
-                if self.usedchars[i]:
-                    file.write(" %d" % i)
-            file.write("\n")
-        if self.usedchars:
-            if self.encoding is not None:
-                t1strip.t1strip(file, self.filename, self.usedchars, self.encoding.filename)
-            else:
-                t1strip.t1strip(file, self.filename, self.usedchars)
-        file.write("%%EndFont\n")
+        fontfile = type1font.fontfile(self.name, self.filename, self.usedchars, self.encodingfilename)
+        fontfile.outputPS(file)
 
 
 class PSfontencoding(PSresource):
@@ -167,13 +157,8 @@ class PSfontencoding(PSresource):
         self.encoding = encoding
 
     def outputPS(self, file):
-        # TODO: we could as well write the encoding from the encoding vector
-        # in order to remove useless comments
-        file.write("%%%%BeginProcSet: %s\n" % self.encoding.name)
-        encfile = open(self.encoding.filename, "r")
-        file.write(encfile.read())
-        encfile.close()
-        file.write("%%EndProcSet\n")
+        encodingfile = type1font.encodingfile(self.encoding.name, self.encoding.filename)
+        encodingfile.outputPS(file)
 
 
 class PSfontreencoding(PSresource):
@@ -278,105 +263,96 @@ class epswriter:
 
 
 class pswriter:
-    pass
 
-#     def outputPS(self, file):
-#         file.write("%%%%PageMedia: %s\n" % self.paperformat)
-#         file.write("%%%%PageOrientation: %s\n" % (self.rotated and "Landscape" or "Portrait"))
-#         # file.write("%%%%PageBoundingBox: %d %d %d %d\n" % (math.floor(pbbox.llx_pt), math.floor(pbbox.lly_pt),
-#         #                                                    math.ceil(pbbox.urx_pt), math.ceil(pbbox.ury_pt)))
-# 
-#         # page setup section
-#         file.write("%%BeginPageSetup\n")
-#         file.write("/pgsave save def\n")
-#         # for scaling, we need the real bounding box of the page contents
-#         pbbox = canvas.bbox(self)
-#         pbbox.enlarge(self.bboxenlarge)
-#         ptrafo = calctrafo(pbbox, self.paperformat, self.margin, self.rotated, self.fittosize)
-#         if ptrafo:
-#             ptrafo.outputPS(file)
-#         file.write("%f setlinewidth\n" % unit.topt(style.linewidth.normal))
-#         file.write("%%EndPageSetup\n")
-# 
-#         # here comes the actual content
-#         canvas.outputPS(self, file)
-#         file.write("pgsave restore\n")
-#         file.write("showpage\n")
-#         # file.write("%%PageTrailer\n")
+    def __init__(self, document, filename):
+        if filename[-4:] != ".ps":
+            filename = filename + ".ps"
+        try:
+            file = open(filename, "w")
+        except IOError:
+            raise IOError("cannot open output file")
 
+        # calculated bounding boxes of separate pages and the bounding box of the whole document
+        documentbbox = None
+        for page in document.pages:
+            canvas = page.canvas
+            page.bbox = canvas.bbox()
+            page.bbox.enlarge(page.bboxenlarge)
+            page._pagetrafo = page.pagetrafo(page.bbox)
+            # if a page transformation is necessary, we have to adjust the bounding box
+            # accordingly
+            if page._pagetrafo is not None and page.bbox is not None:
+                page.bbox.transform(page._pagetrafo)
+            if documentbbox is None:
+                documentbbox = page.bbox
+            elif page.bbox is not None:
+                documentbbox += page.bbox
 
-#     def writePSfile(self, filename):
-#         """write pages to PS file """
-# 
-#         if filename[-3:]!=".ps":
-#             filename = filename + ".ps"
-# 
-#         try:
-#             file = open(filename, "w")
-#         except IOError:
-#             raise IOError("cannot open output file")
-# 
-#         docbbox = None
-#         for apage in self.pages:
-#             pbbox = apage.bbox()
-#             if docbbox is None:
-#                 docbbox = pbbox
-#             else:
-#                 docbbox += pbbox
-# 
-#         # document header
-#         file.write("%!PS-Adobe-3.0\n")
-#         docbbox.outputPS(file)
-#         file.write("%%%%Creator: PyX %s\n" % version.version)
-#         file.write("%%%%Title: %s\n" % filename)
-#         file.write("%%%%CreationDate: %s\n" %
-#                    time.asctime(time.localtime(time.time())))
-#         # required paper formats
-#         paperformats = {}
-#         for apage in self.pages:
-#             if isinstance(apage, page):
-#                 paperformats[apage.paperformat] = _paperformats[apage.paperformat]
-#         first = 1
-#         for paperformat, size in paperformats.items():
-#             if first:
-#                 file.write("%%DocumentMedia: ")
-#                 first = 0
-#             else:
-#                 file.write("%%+ ")
-#             file.write("%s %d %d 75 white ()\n" % (paperformat, unit.topt(size[0]), unit.topt(size[1])))
-# 
-#         file.write("%%%%Pages: %d\n" % len(self.pages))
-#         file.write("%%PageOrder: Ascend\n")
-#         file.write("%%EndComments\n")
-# 
-#         # document default section
-#         #file.write("%%BeginDefaults\n")
-#         #if paperformat:
-#         #    file.write("%%%%PageMedia: %s\n" % paperformat)
-#         #file.write("%%%%PageOrientation: %s\n" % (rotated and "Landscape" or "Portrait"))
-#         #file.write("%%EndDefaults\n")
-# 
-#         # document prolog section
-#         file.write("%%BeginProlog\n")
-#         mergedprolog = []
-#         for apage in self.pages:
-#             for pritem in apage.prolog():
-#                 for mpritem in mergedprolog:
-#                     if mpritem.merge(pritem) is None: break
-#                 else:
-#                     mergedprolog.append(pritem)
-#         for pritem in mergedprolog:
-#             pritem.outputPS(file)
-#         file.write("%%EndProlog\n")
-# 
-#         # document setup section
-#         #file.write("%%BeginSetup\n")
-#         #file.write("%%EndSetup\n")
-# 
-#         # pages section
-#         for nr, apage in enumerate(self.pages):
-#             file.write("%%%%Page: %s %d\n" % (apage.pagename is None and str(nr) or apage.pagename , nr+1))
-#             apage.outputPS(file)
-# 
-#         file.write("%%Trailer\n")
-#         file.write("%%EOF\n")
+        file.write("%!PS-Adobe-3.0\n")
+        documentbbox.outputPS(file)
+        file.write("%%%%Creator: PyX %s\n" % version.version)
+        file.write("%%%%Title: %s\n" % filename)
+        file.write("%%%%CreationDate: %s\n" %
+                   time.asctime(time.localtime(time.time())))
+
+        # required paper formats
+        paperformats = {}
+        for page in document.pages:
+            paperformats[page.paperformat] = _paperformats[apage.paperformat]
+
+        for paperformat, size in paperformats.items():
+            if first:
+                file.write("%%DocumentMedia: ")
+                first = 0
+            else:
+                file.write("%%+ ")
+            file.write("%s %d %d 75 white ()\n" % (paperformat, unit.topt(size[0]), unit.topt(size[1])))
+
+        # file.write(%%DocumentNeededResources: ") # register not downloaded fonts here
+
+        file.write("%%%%Pages: %d\n" % len(self.pages))
+        file.write("%%PageOrder: Ascend\n")
+        file.write("%%EndComments\n")
+
+        # document defaults section
+        #file.write("%%BeginDefaults\n")
+        #file.write("%%EndDefaults\n")
+
+        # document prolog section
+        file.write("%%BeginProlog\n")
+        registry = PSregistry()
+        for page in document.pages:
+            registry.register(page.canvas)
+        registry.outputPS(file)
+        file.write("%%EndProlog\n")
+
+        # document setup section
+        #file.write("%%BeginSetup\n")
+        #file.write("%%EndSetup\n")
+
+        # pages section
+        for nr, page in enumerate(document.pages):
+            file.write("%%%%Page: %s %d\n" % (page.pagename is None and str(nr+1) or page.pagename, nr+1))
+            file.write("%%%%PageMedia: %s\n" % page.paperformat)
+            file.write("%%%%PageOrientation: %s\n" % (page.rotated and "Landscape" or "Portrait"))
+            file.write("%%%%PageBoundingBox: %d %d %d %d\n" % (math.floor(page.bbox.llx_pt), math.floor(page.bbox.lly_pt),
+                                                               math.ceil(page.bbox.urx_pt), math.ceil(page.bbox.ury_pt)))
+
+            # page setup section
+            file.write("%%BeginPageSetup\n")
+            file.write("/pgsave save def\n")
+            # apply a possible page transformation
+            if page._pagetrafo is not None:
+                _pagetrafo.outputPS(file)
+
+            style.linewidth.normal.outputPS(file)
+            file.write("%%EndPageSetup\n")
+            
+            # here comes the actual content
+            page.canvas.outputPS(file)
+            file.write("pgsave restore\n")
+            file.write("showpage\n")
+            file.write("%%PageTrailer\n")
+
+        file.write("%%Trailer\n")
+        file.write("%%EOF\n")
