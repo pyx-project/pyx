@@ -22,8 +22,8 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import time
-import resource, style, version
-import pykpathsea, t1strip
+import style, version
+import t1strip
 
 
 class PSregistry:
@@ -94,25 +94,24 @@ class PSdefinition(PSresource):
 class PSfont:
 
     def __init__(self, font, usedchars, registry):
-        if font.getfontfile():
-            registry.add(PSfontfile(font.getbasepsname(),
-                                    font.getfontfile(),
-                                    font.getencodingfile(),
+        if font.filename:
+            registry.add(PSfontfile(font.name,
+                                    font.filename,
+                                    font.encoding,
                                     usedchars))
-        if font.getencoding():
+        if font.encoding:
             registry.add(_ReEncodeFont)
-            registry.add(PSfontencoding(font.getencoding(),
-                                        font.getencodingfile()))
-            registry.add(PSfontreencoding(font.getpsname(),
-                                          font.getbasepsname(),
-                                          font.getencoding()))
+            registry.add(PSfontencoding(font.encoding))
+            registry.add(PSfontreencoding(font.name,
+                                          font.basefontname,
+                                          font.encoding.name))
 
 
 class PSfontfile(PSresource):
 
     """ PostScript font definition included in the prolog """
 
-    def __init__(self, fontname, filename, encfilename, usedchars):
+    def __init__(self, fontname, filename, encoding, usedchars):
         """ include type 1 font defined by the following parameters
 
         - fontname:    PostScript FontName of font
@@ -130,11 +129,11 @@ class PSfontfile(PSresource):
         self.type = "fontfile"
         self.id = self.fontname = fontname
         self.filename = filename
-        self.encfilename = encfilename
+        self.encoding = encoding
         self.usedchars = usedchars
 
     def merge(self, other):
-        if self.encfilename != other.encfilename:
+        if self.encoding.name != other.encoding.name:
             self.usedchars = None # stripping of font not possible
         else:
             for i in range(len(self.usedchars)):
@@ -148,17 +147,11 @@ class PSfontfile(PSresource):
                 if self.usedchars[i]:
                     file.write(" %d" % i)
             file.write("\n")
-        pfbpath = pykpathsea.find_file(self.filename, pykpathsea.kpse_type1_format)
-        if not pfbpath:
-            raise RuntimeError("cannot find type 1 font %s" % self.filename)
         if self.usedchars:
-            if self.encfilename is not None:
-                encpath = pykpathsea.find_file(self.encfilename, pykpathsea.kpse_tex_ps_header_format)
-                if not encpath:
-                    raise RuntimeError("cannot find font encoding file %s" % self.encfilename)
-                t1strip.t1strip(file, pfbpath, self.usedchars, encpath)
+            if self.encoding is not None:
+                t1strip.t1strip(file, self.filename, self.usedchars, self.encoding.filename)
             else:
-                t1strip.t1strip(file, pfbpath, self.usedchars)
+                t1strip.t1strip(file, self.filename, self.usedchars)
         file.write("%%EndFont\n")
 
 
@@ -166,22 +159,18 @@ class PSfontencoding(PSresource):
 
     """ PostScript font encoding vector included in the prolog """
 
-    def __init__(self, name, filename):
-        """ include font encoding vector specified by
-
-        - name:        name of the encoding
-        - filename:    name (without path) of file containing the font encoding
-
-        """
+    def __init__(self, encoding):
+        """ include font encoding vector specified by encoding """
 
         self.type = "fontencoding"
-        self.id = self.name = name
-        self.filename = filename
+        self.id = encoding.name
+        self.encoding = encoding
 
     def outputPS(self, file):
-        file.write("%%%%BeginProcSet: %s\n" % self.name)
-        path = pykpathsea.find_file(self.filename, pykpathsea.kpse_tex_ps_header_format)
-        encfile = open(path, "r")
+        # TODO: we could as well write the encoding from the encoding vector
+        # in order to remove useless comments
+        file.write("%%%%BeginProcSet: %s\n" % self.encoding.name)
+        encfile = open(self.encoding.filename, "r")
         file.write(encfile.read())
         encfile.close()
         file.write("%%EndProcSet\n")
@@ -191,7 +180,7 @@ class PSfontreencoding(PSresource):
 
     """ PostScript font re-encoding directive included in the prolog """
 
-    def __init__(self, fontname, basefontname, encname):
+    def __init__(self, fontname, basefontname, encodingname):
         """ include font re-encoding directive specified by
 
         - fontname:     PostScript FontName of the new reencoded font
@@ -207,11 +196,11 @@ class PSfontreencoding(PSresource):
         self.type = "fontreencoding"
         self.id = self.fontname = fontname
         self.basefontname = basefontname
-        self.encname = encname
+        self.encodingname = encodingname
 
     def outputPS(self, file):
         file.write("%%%%BeginProcSet: %s\n" % self.fontname)
-        file.write("/%s /%s %s ReEncodeFont\n" % (self.basefontname, self.fontname, self.encname))
+        file.write("/%s /%s %s ReEncodeFont\n" % (self.basefontname, self.fontname, self.encodingname))
         file.write("%%EndProcSet\n")
 
 

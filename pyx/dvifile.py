@@ -92,30 +92,6 @@ class stringbinfile(binfile):
         self.file = cStringIO.StringIO(s)
 
 
-class tokenfile:
-    """ ascii file containing tokens separated by spaces.
-
-    Comments beginning with % are ignored. Strings containing spaces
-    are not handled correctly
-    """
-
-    def __init__(self, filename):
-        self.file = open(filename, "r")
-        self.line = None
-
-    def gettoken(self):
-        """ return next token or None if EOF """
-        while not self.line:
-            line = self.file.readline()
-            if line == "":
-                return None
-            self.line = line.split("%")[0].split()
-        token = self.line[0]
-        self.line = self.line[1:]
-        return token
-
-    def close(self):
-        self.file.close()
 
 
 ##############################################################################
@@ -312,36 +288,6 @@ class tfmfile:
         self.file.close()
 
 
-class fontencoding:
-
-    def __init__(self, filename):
-        """ font encoding contained in filename """
-        encpath = pykpathsea.find_file(filename, pykpathsea.kpse_tex_ps_header_format)
-        encfile = tokenfile(encpath)
-
-        # name of encoding
-        self.encname = encfile.gettoken()
-        token = encfile.gettoken()
-        if token != "[":
-            raise RuntimeError("cannot parse encoding file '%s', expecting '[' got '%s'" % (filename, token))
-        self.encvector = []
-        for i in range(256):
-            token = encfile.gettoken()
-            if token is None or token=="]":
-                raise RuntimeError("not enough charcodes in encoding file '%s'" % filename)
-            self.encvector.append(token)
-        if encfile.gettoken() != "]":
-            raise RuntimeError("too many charcodes in encoding file '%s'" % filename)
-        token = encfile.gettoken()
-        if token != "def":
-            raise RuntimeError("cannot parse encoding file '%s', expecting 'def' got '%s'" % (filename, token))
-        token = encfile.gettoken()
-        if token != None:
-            raise RuntimeError("encoding file '%s' too long" % filename)
-        encfile.close()
-
-    def encode(self, charcode):
-        return self.encvector[charcode]
 
 ##############################################################################
 # Font handling
@@ -528,6 +474,10 @@ class font:
         # length*z is a long integer, but the result will be a regular integer
         return int(length*long(z) >> shift)
 
+
+    def _convert_tfm_to_ds(self, length):
+        return (16*long(round(length*self.q*self.tfmconv))/16777216) * self.pyxconv * 1000 / self.getsize_pt()
+    
     def _convert_tfm_to_pt(self, length):
         return (16*long(round(length*self.q*self.tfmconv))/16777216) * self.pyxconv
 
@@ -545,6 +495,34 @@ class font:
     def getitalic_dvi(self, charcode):
         return self._convert_tfm_to_dvi(self.tfmfile.italic[self.tfmfile.char_info[charcode].italic_index])
 
+    # routines returning lengths as integers in design size (AFM) units 
+
+    def getwidth_ds(self, charcode):
+        return self._convert_tfm_to_ds(self.tfmfile.width[self.tfmfile.char_info[charcode].width_index])
+
+    def getheight_ds(self, charcode):
+        return self._convert_tfm_to_ds(self.tfmfile.height[self.tfmfile.char_info[charcode].height_index])
+
+    def getdepth_ds(self, charcode):
+        return self._convert_tfm_to_ds(self.tfmfile.depth[self.tfmfile.char_info[charcode].depth_index])
+
+    def getitalic_ds(self, charcode):
+        return self._convert_tfm_to_ds(self.tfmfile.italic[self.tfmfile.char_info[charcode].italic_index])
+
+    # routines returning lengths as floats in PostScript points
+
+    def getwidth_pt(self, charcode):
+        return self._convert_tfm_to_pt(self.tfmfile.width[self.tfmfile.char_info[charcode].width_index])
+
+    def getheight_pt(self, charcode):
+        return self._convert_tfm_to_pt(self.tfmfile.height[self.tfmfile.char_info[charcode].height_index])
+
+    def getdepth_pt(self, charcode):
+        return self._convert_tfm_to_pt(self.tfmfile.depth[self.tfmfile.char_info[charcode].depth_index])
+
+    def getitalic_pt(self, charcode):
+        return self._convert_tfm_to_pt(self.tfmfile.italic[self.tfmfile.char_info[charcode].italic_index])
+
     def markcharused(self, charcode):
         self.usedchars[charcode] = 1
 
@@ -554,14 +532,6 @@ class font:
 
     def clearusedchars(self):
         self.usedchars = [0] * 256
-
-
-# class type1font(font):
-#     def __init__(self, name, c, q, d, tfmconv, pyxconv, fontmap, debug=0):
-#         font.__init__(self, name, c, q, d, tfmconv, pyxconv, debug)
-#         self.fontmapping = fontmap.get(name)
-#         if self.fontmapping is None:
-#             raise RuntimeError("no information for font '%s' found in font mapping file, aborting" % name)
 
 
 
@@ -738,7 +708,7 @@ class dvifile:
             self.debugfile.write("%d: %s%s%d h:=%d+%d=%d, hh:=???\n" %
                                  (self.filepos,
                                   advancepos and "set" or "put",
-                                  id1234 and "%i " % id1234 or "char",
+                                  yid1234 and "%i " % id1234 or "char",
                                   char,
                                   self.pos[_POS_H], dx, self.pos[_POS_H]+dx))
 
@@ -750,8 +720,23 @@ class dvifile:
                                  self.activefont.getsize_pt())
         else:
             if self.activetext is None:
-                self.activetext = type1font.text_pt(self.pos[_POS_H] * self.pyxconv, -self.pos[_POS_V] * self.pyxconv,
-                                                    type1font.type1font(self.activefont))
+                fontmapinfo = self.fontmap.get(self.activefont.name)
+                
+                encodingname = fontmapinfo.reencodefont
+                encodingfilename = pykpathsea.find_file(fontmapinfo.encodingfile, pykpathsea.kpse_tex_ps_header_format)
+                if not encodingfilename:
+                    raise RuntimeError("cannot find font encoding file %s" % fontmapinfo.encodingfile)
+                fontencoding = type1font.encoding(encodingname, encodingfilename)
+
+                fontbasefontname = fontmapinfo.basepsname
+                fontfilename = pykpathsea.find_file(fontmapinfo.fontfile, pykpathsea.kpse_type1_format)
+                if not fontfilename:
+                    raise RuntimeError("cannot find type 1 font %s" % fontmapinfo.fontfile)
+
+                # XXX we currently misuse use self.activefont as metric 
+                font = type1font.font(fontbasefontname, fontfilename, fontencoding, self.activefont)
+        
+                self.activetext = type1font.text_pt(self.pos[_POS_H] * self.pyxconv, -self.pos[_POS_V] * self.pyxconv, font)
                 self.actpage.insert(self.activetext)
             self.activetext.addchar(char)
             self.pos[_POS_H] += dx

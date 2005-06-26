@@ -68,7 +68,7 @@ class canvasitem:
 
 
 import cStringIO
-import attr, deco, deformer, unit, resource, style, trafo, pswriter, type1font
+import attr, deco, deformer, unit, style, trafo, pswriter, type1font
 
 
 #

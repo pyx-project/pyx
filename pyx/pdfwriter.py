@@ -22,7 +22,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import copy, warnings
-import pykpathsea, unit, resource, style, dvifile, type1font
+import unit, style
 # from t1strip import fullfont
 try:
     import zlib
@@ -177,7 +177,7 @@ class PDFpage(PDFobject):
         self.bbox.outputPDF(file, writer)
         if self.pageregistry.types.has_key("font"):
             file.write("/Resources <<\n/ProcSet [ /PDF /Text ]\n")
-            file.write("/Font << %s >>\n" % " ".join(["/%s %i 0 R" % (font.type1font.getpsname(), registry.getrefno(font))
+            file.write("/Font << %s >>\n" % " ".join(["/%s %i 0 R" % (font.font.name, registry.getrefno(font))
                                                     for font in self.pageregistry.types["font"].values()]))
         else:
             file.write("/Resources << /ProcSet [ /PDF ]\n")
@@ -250,14 +250,14 @@ class PDFcontentlength(PDFobject):
 
 class PDFfont(PDFobject):
 
-    def __init__(self, type1font, usedchars, registry):
-        PDFobject.__init__(self, "font", type1font.getpsname())
-        self.type1font = type1font
+    def __init__(self, font, usedchars, registry):
+        PDFobject.__init__(self, "font", font.name)
+        self.font = font
         self.usedchars = usedchars
-        self.fontdescriptor = PDFfontdescriptor(self.type1font, registry)
+        self.fontdescriptor = PDFfontdescriptor(self.font, registry)
         registry.add(self.fontdescriptor)
-        if self.type1font.getencoding():
-            self.encoding = PDFencoding(self.type1font.getencodingfile())
+        if self.font.encoding:
+            self.encoding = PDFencoding(self.font.encoding)
             registry.add(self.encoding)
         else:
             self.encoding = None
@@ -266,8 +266,8 @@ class PDFfont(PDFobject):
         file.write("<<\n"
                    "/Type /Font\n"
                    "/Subtype /Type1\n")
-        file.write("/Name /%s\n" % self.type1font.getpsname())
-        file.write("/BaseFont /%s\n" % self.type1font.getbasepsname())
+        file.write("/Name /%s\n" % self.font.name)
+        file.write("/BaseFont /%s\n" % self.font.basefontname)
         file.write("/FirstChar 0\n" # FIXME
                    "/LastChar 255\n") # FIXME
         file.write("/Widths\n"
@@ -278,7 +278,7 @@ class PDFfont(PDFobject):
             else:
                 file.write(" ")
             try:
-                width = self.type1font.getwidth_pt(i)*1000/self.type1font.font.getsize_pt()
+                width = self.font.metric.getwidth_ds(i)
             except IndexError:
                 width = 0
             file.write("%f" % width)
@@ -293,44 +293,44 @@ class PDFfont(PDFobject):
 
 class PDFfontdescriptor(PDFobject):
 
-    def __init__(self, type1font, registry):
+    def __init__(self, font, registry):
         PDFobject.__init__(self, "fontdescriptor")
-        self.type1font = type1font
-        self.fontfile = PDFfontfile(self.type1font)
+        self.font = font
+        self.fontfile = PDFfontfile(self.font)
         registry.add(self.fontfile)
 
     def outputPDF(self, file, writer, registry):
         file.write("<<\n"
                    "/Type /FontDescriptor\n"
-                   "/FontName /%s\n" % self.type1font.getbasepsname())
-        file.write("/Flags %d\n" % self.type1font.flags)
-        file.write("/FontBBox [%d %d %d %d]\n" % self.type1font.fontbbox)
-        file.write("/ItalicAngle %d\n" % self.type1font.italicangle)
-        file.write("/Ascent %d\n" % self.type1font.ascent)
-        file.write("/Descent %d\n" % self.type1font.descent)
-        file.write("/CapHeight %d\n" % self.type1font.capheight)
-        file.write("/StemV %d\n" % self.type1font.vstem)
+                   "/FontName /%s\n" % self.font.basefontname)
+        file.write("/Flags %d\n" % self.font.flags)
+        file.write("/FontBBox [%d %d %d %d]\n" % self.font.fontbbox)
+        file.write("/ItalicAngle %d\n" % self.font.italicangle)
+        file.write("/Ascent %d\n" % self.font.ascent)
+        file.write("/Descent %d\n" % self.font.descent)
+        file.write("/CapHeight %d\n" % self.font.capheight)
+        file.write("/StemV %d\n" % self.font.vstem)
         file.write("/FontFile %d 0 R\n" % registry.getrefno(self.fontfile))
         # file.write("/CharSet \n") # fill in when stripping
         file.write(">>\n")
 
 class PDFfontfile(PDFobject):
 
-    def __init__(self, type1font):
-        PDFobject.__init__(self, "fontfile", type1font.getfontfile())
-        self.type1font = type1font
+    def __init__(self, font):
+        PDFobject.__init__(self, "fontfile", font.filename)
+        self.font = font
 
     def outputPDF(self, file, writer, registry):
         # we might be allowed to skip the third part ...
-        if (self.type1font.fontdata3.replace("\n", "")
+        if (self.font.fontdata3.replace("\n", "")
                                     .replace("\r", "")
                                     .replace("\t", "")
                                     .replace(" ", "")) == "0"*512 + "cleartomark":
             length3 = 0
             fontdata3 = ""
         else:
-            fontdata3 = self.type1font.fontdata3
-        data = self.type1font.fontdata1 + self.type1font.fontdata2 + fontdata3
+            fontdata3 = self.font.fontdata3
+        data = self.font.fontdata1 + self.font.fontdata2 + fontdata3
         
         if writer.compress:
             data = zlib.compress(data)
@@ -339,7 +339,7 @@ class PDFfontfile(PDFobject):
                    "/Length %d\n"
                    "/Length1 %d\n"
                    "/Length2 %d\n"
-                   "/Length3 %d\n" % (len(data), self.type1font.length1, self.type1font.length2, length3))
+                   "/Length3 %d\n" % (len(data), self.font.length1, self.font.length2, length3))
         if writer.compress:
             file.write("/Filter /FlateDecode\n")
         file.write(">>\n"
@@ -349,9 +349,9 @@ class PDFfontfile(PDFobject):
 
 class PDFencoding(PDFobject):
 
-    def __init__(self, encodingfilename):
-        PDFobject.__init__(self, "encoding", encodingfilename)
-        self.encoding = dvifile.fontencoding(encodingfilename)
+    def __init__(self, encoding):
+        PDFobject.__init__(self, "encoding", encoding.name)
+        self.encoding = encoding
 
     def outputPDF(self, file, writer, registry):
         file.write("<<\n"
