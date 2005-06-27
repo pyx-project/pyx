@@ -21,15 +21,10 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-# XXX what are the correct base classes of clip and pattern
-
 """The canvas module provides a PostScript canvas class and related classes
 
 A canvas holds a collection of all elements and corresponding attributes to be
 displayed. """
-
-__metaclass__ = type
-
 
 #
 # canvas item
@@ -70,7 +65,6 @@ class canvasitem:
 
 
 
-import cStringIO
 import attr, color, deco, deformer, unit, style, trafo, pswriter, pdfwriter, type1font
 
 
@@ -310,106 +304,6 @@ class _canvas(canvasitem):
         returns the inserted textbox"""
 
         return self.insert(self.texrunner.text_pt(x, y, atext, *args))
-
-#
-# canvas for patterns
-#
-
-class pattern(_canvas, attr.exclusiveattr, style.fillstyle):
-
-    def __init__(self, painttype=1, tilingtype=1, xstep=None, ystep=None, bbox=None, trafo=None, **kwargs):
-        _canvas.__init__(self, **kwargs)
-        attr.exclusiveattr.__init__(self, pattern)
-        self.id = "pattern%d" % id(self)
-        self.patterntype = 1
-        if painttype not in (1,2):
-            raise ValueError("painttype must be 1 or 2")
-        self.painttype = painttype
-        if tilingtype not in (1,2,3):
-            raise ValueError("tilingtype must be 1, 2 or 3")
-        self.tilingtype = tilingtype
-        self.xstep = xstep
-        self.ystep = ystep
-        self.patternbbox = bbox
-        self.patterntrafo = trafo
-
-    def bbox(self):
-        return None
-
-    def outputPS(self, file):
-        file.write("%s setpattern\n" % self.id)
-
-    def outputPDF(self, file, writer, context):
-        if context.colorspace != "Pattern":
-            # XXX we set both the stroke and the fill color space
-            #file.write("/Pattern CS\n")
-            file.write("/Pattern cs\n")
-            context.colorspace = "Pattern"
-#        if context.strokeattr:
-#            file.write("/%s SCN\n"% self.id)
-        if context.fillattr:
-            file.write("/%s scn\n"% self.id)
-
-    def registerPS(self, registry):
-        _canvas.registerPS(self, registry)
-        realpatternbbox = _canvas.bbox(self)
-        if self.xstep is None:
-           xstep = unit.topt(realpatternbbox.width())
-        else:
-           xstep = unit.topt(self.xstep)
-        if self.ystep is None:
-            ystep = unit.topt(realpatternbbox.height())
-        else:
-           ystep = unit.topt(self.ystep)
-        if not xstep:
-            raise ValueError("xstep in pattern cannot be zero")
-        if not ystep:
-            raise ValueError("ystep in pattern cannot be zero")
-        patternbbox = self.patternbbox or realpatternbbox.enlarged(5*unit.pt)
-
-        patternprefix = "\n".join(("<<",
-                                   "/PatternType %d" % self.patterntype,
-                                   "/PaintType %d" % self.painttype,
-                                   "/TilingType %d" % self.tilingtype,
-                                   "/BBox[%s]" % str(patternbbox),
-                                   "/XStep %g" % xstep,
-                                   "/YStep %g" % ystep,
-                                   "/PaintProc {\nbegin\n"))
-        stringfile = cStringIO.StringIO()
-        _canvas.outputPS(self, stringfile)
-        patternproc = stringfile.getvalue()
-        stringfile.close()
-        patterntrafostring = self.patterntrafo is None and "matrix" or str(self.patterntrafo)
-        patternsuffix = "end\n} bind\n>>\n%s\nmakepattern" % patterntrafostring
-
-        registry.add(pswriter.PSdefinition(self.id, "".join((patternprefix, patternproc, patternsuffix))))
-
-    def registerPDF(self, registry):
-        realpatternbbox = _canvas.bbox(self)
-        if self.xstep is None:
-           xstep = unit.topt(realpatternbbox.width())
-        else:
-           xstep = unit.topt(self.xstep)
-        if self.ystep is None:
-            ystep = unit.topt(realpatternbbox.height())
-        else:
-           ystep = unit.topt(self.ystep)
-        if not xstep:
-            raise ValueError("xstep in pattern cannot be zero")
-        if not ystep:
-            raise ValueError("ystep in pattern cannot be zero")
-        patternbbox = self.patternbbox or realpatternbbox.enlarged(5*unit.pt)
-        patterntrafo = self.patterntrafo or trafo.trafo()
-
-        registry.add(pdfwriter.PDFpattern(self.id, self.patterntype, self.painttype, self.tilingtype,
-                                          patternbbox, xstep, ystep, patterntrafo,
-                                          # lambda file, writer, context: _canvas.outputPDF(self, file, writer, context),
-                                          # lambda registry: _canvas.registerPDF(self, registry),
-                                          super(pattern, self).outputPDF, super(pattern, self).registerPDF,
-                                          registry))
-
-pattern.clear = attr.clearclass(pattern)
-
 
 #
 # user canvas class which adds a few convenience methods for single page output

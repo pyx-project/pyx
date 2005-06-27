@@ -138,6 +138,8 @@ TODO:
     - correctly call base class constructor in linewidth
   - epsfile module:
     - correct EOL handling while reading DSC's (reported by Markus Meyer)
+  - pattern module: new
+    - moved canvas.pattern to its own module together with the new PDFpattern class
   - update address of FSF in LICENSE file
 
 

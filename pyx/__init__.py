@@ -34,7 +34,7 @@ import version
 __version__ = version.version
 
 __all__ = ["attr", "box", "bitmap", "canvas", "color", "connector", "deco", "deformer", "document",
-           "epsfile", "graph", "path", "style", "trafo", "text", "unit"]
+           "epsfile", "graph", "path", "pattern", "style", "trafo", "text", "unit"]
 
 
 # automatically import main modules into pyx namespace

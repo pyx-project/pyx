@@ -204,19 +204,6 @@ class PDFpage(PDFobject):
                    ">>\n" % registry.getrefno(self.PDFcontent))
 
 
-class _compressstream:
-
-    def __init__(self, file, compresslevel):
-        self.file = file
-        self.compressobj = zlib.compressobj(compresslevel)
-
-    def write(self, string):
-        self.file.write(self.compressobj.compress(string))
-
-    def flush(self):
-        self.file.write(self.compressobj.flush())
-
-
 class PDFcontent(PDFobject):
 
     def __init__(self, canvas, pagetrafo, registry):
@@ -236,7 +223,7 @@ class PDFcontent(PDFobject):
         beginstreampos = file.tell()
 
         if writer.compress:
-            stream = _compressstream(file, writer.compresslevel)
+            stream = compressedstream(file, writer.compresslevel)
         else:
             stream = file
 
@@ -420,73 +407,6 @@ class PDFencoding(PDFobject):
         encodingfile.outputPDF(file, writer, registry)
 
 
-class PDFpattern(PDFobject):
-
-    def __init__(self, name, patterntype, painttype, tilingtype, bbox, xstep, ystep, trafo,
-                 canvasoutputPDF, canvasregisterPDF, registry):
-        PDFobject.__init__(self, "pattern", name)
-        self.name = name
-        self.patterntype = patterntype
-        self.painttype = painttype
-        self.tilingtype = tilingtype
-        self.bbox = bbox
-        self.xstep = xstep
-        self.ystep = ystep
-        self.trafo = trafo
-        self.canvasoutputPDF = canvasoutputPDF
-
-        self.contentlength = PDFcontentlength((self.type, self.id))
-        registry.add(self.contentlength)
-
-        # we need to keep track of the resources used by the pattern, hence
-        # we create our own registry, which we merge immediately in the main registry
-        self.patternregistry = PDFregistry()
-        # XXX passing canvasregisterPDF is a Q&D way to get access to the registerPDF method
-        # of the _canvas superclass of the pattern
-        canvasregisterPDF(self.patternregistry)
-        registry.mergeregistry(self.patternregistry)
-
-    def outputPDF(self, file, writer, registry):
-        file.write("<<\n"
-                   "/Type /Pattern\n"
-                   "/PatternType %d\n" % self.patterntype)
-        file.write("/PaintType %d\n" % self.painttype)
-        file.write("/TilingType %d\n" % self.tilingtype)
-        file.write("/BBox [%s]\n" % str(self.bbox))
-        file.write("/XStep %f\n" % self.xstep)
-        file.write("/YStep %f\n" % self.ystep)
-        file.write("/Matrix %s\n" % str(self.trafo))
-        file.write("/Resources <<\n")
-        if self.patternregistry.types.has_key("font"):
-            file.write("/Font << %s >>\n" % " ".join(["/%s %i 0 R" % (font.name, registry.getrefno(font))
-                                                    for font in self.patternregistry.types["font"].values()]))
-        if self.patternregistry.types.has_key("pattern"):
-            file.write("/Pattern << %s >>\n" % " ".join(["/%s %i 0 R" % (pattern.name, registry.getrefno(pattern))
-                                                         for pattern in self.patternregistry.types["pattern"].values()]))
-        file.write(">>\n")
-        file.write("/Length %i 0 R\n" % registry.getrefno(self.contentlength))
-        if writer.compress:
-            file.write("/Filter /FlateDecode\n")
-        file.write(">>\n")
-
-        file.write("stream\n")
-        beginstreampos = file.tell()
-
-        if writer.compress:
-            stream = _compressstream(file, writer.compresslevel)
-        else:
-            stream = file
-
-        acontext = context()
-        self.canvasoutputPDF(stream, writer, acontext)
-        if writer.compress:
-            stream.flush()
-
-        self.contentlength.contentlength = file.tell() - beginstreampos
-        file.write("\n"
-                   "endstream\n")
-
-
 class PDFwriter:
 
     def __init__(self, document, filename, compress=0, compresslevel=6):
@@ -511,6 +431,19 @@ class PDFwriter:
         registry.add(catalog)
         registry.write(file, self, catalog)
         file.close()
+
+
+class compressedstream:
+
+    def __init__(self, file, compresslevel):
+        self.file = file
+        self.compressobj = zlib.compressobj(compresslevel)
+
+    def write(self, string):
+        self.file.write(self.compressobj.compress(string))
+
+    def flush(self):
+        self.file.write(self.compressobj.flush())
 
 
 class context:
