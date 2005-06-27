@@ -49,12 +49,10 @@ class pattern(canvas._canvas, attr.exclusiveattr, style.fillstyle):
 
     def outputPDF(self, file, writer, context):
         if context.colorspace != "Pattern":
-            # XXX we set both the stroke and the fill color space
-            #file.write("/Pattern CS\n")
+            # we only set the fill color space
             file.write("/Pattern cs\n")
             context.colorspace = "Pattern"
-#        if context.strokeattr:
-#            file.write("/%s SCN\n"% self.id)
+        assert not context.strokeattr, "this should not happen"
         if context.fillattr:
             file.write("/%s scn\n"% self.id)
 
