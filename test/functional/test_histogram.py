@@ -39,3 +39,4 @@ draw(d2, 0, 14, y=graph.axis.lin(min=3, max=14), x=graph.axis.lin(min=-0.1, max=
 draw(d1, 10, 21, fillablesteps=1, x=graph.axis.lin(min=3, max=14), y=graph.axis.lin(min=-0.1, max=0.45))
 draw(d2, 0, 21, fillablesteps=1, y=graph.axis.lin(min=3, max=14), x=graph.axis.lin(min=-0.1, max=0.45))
 c.writeEPSfile("test_histogram")
+c.writePDFfile("test_histogram")

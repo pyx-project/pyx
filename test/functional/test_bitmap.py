@@ -27,4 +27,5 @@ c.insert(bitmap_rgb_storearray)
 c.insert(bitmap_bw_storearray)
 c.insert(bitmap_rgb_storearray)
 c.writeEPSfile("test_bitmap", paperformat=document.paperformat.A4)
+c.writePDFfile("test_bitmap", paperformat=document.paperformat.A4)
 

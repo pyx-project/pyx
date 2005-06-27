@@ -22,12 +22,5 @@ c.stroke(p.transformed(t1*t2*t3), [color.rgb.green, style.linestyle.dashed])
 c.stroke(p, [color.rgb.red, style.linestyle.dotted, t3, t2, t1])
 
 c.writeEPSfile("test_canvas", paperformat=document.paperformat.A4)
+c.writePDFfile("test_canvas", paperformat=document.paperformat.A4)
 
-# d = document.document()
-# 
-# for nr in range(1, 10):
-#      page = document.page(pagename = chr(64+nr), rotated=(nr-1)%2, fittosize=1)
-#      page.text(0, 0, "page %d" % nr)
-#      d.append(page)
-# 
-# d.writePSfile("test_document")

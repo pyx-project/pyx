@@ -22,4 +22,5 @@ else:
                                                     texter=timeaxis.timetexter("%d %b")))
     g.plot(d)
     g.writeEPSfile("test_timeaxis")
+    g.writePDFfile("test_timeaxis")
 

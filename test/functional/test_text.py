@@ -2,7 +2,6 @@
 import sys; sys.path[:0] = ["../.."]
 
 from pyx import *
-from pyx import text
 
 c = canvas.canvas()
 text.set(mode="latex")
