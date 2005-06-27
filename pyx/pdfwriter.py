@@ -210,7 +210,7 @@ class PDFcontent(PDFobject):
         PDFobject.__init__(self, "content")
         self.canvas = canvas
         self.pagetrafo = pagetrafo
-        self.contentlength = PDFcontentlength()
+        self.contentlength = PDFcontentlength("%s-%s" % (self.type, self.id))
         registry.add(self.contentlength)
 
     def outputPDF(self, file, writer, registry):
@@ -243,8 +243,8 @@ class PDFcontent(PDFobject):
 
 class PDFcontentlength(PDFobject):
 
-    def __init__(self):
-        PDFobject.__init__(self, "_contentlength")
+    def __init__(self, contentid):
+        PDFobject.__init__(self, "_contentlength", contentid)
         self.contentlength = None
 
     def outputPDF(self, file, writer, registry):
@@ -421,7 +421,7 @@ class PDFpattern(PDFobject):
         self.trafo = trafo
         self.canvasoutputPDF = canvasoutputPDF
 
-        self.contentlength = PDFcontentlength()
+        self.contentlength = PDFcontentlength("%s-%s" % (self.type, self.id))
         registry.add(self.contentlength)
 
         # we need to keep track of the resources used by the pattern, hence
