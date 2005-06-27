@@ -175,16 +175,29 @@ class PDFpage(PDFobject):
         file.write("/MediaBox [0 0 %d %d]\n" % (unit.topt(paperformat.width), unit.topt(paperformat.height)))
         file.write("/CropBox " )
         self.bbox.outputPDF(file, writer)
+        procset = []
         if self.pageregistry.types.has_key("font"):
-            file.write("/Resources <<\n"
-                       "/ProcSet [ /PDF /Text ]\n")
-            file.write("/Font << %s >>\n" % " ".join(["/%s %i 0 R" % (font.name, registry.getrefno(font))
-                                                    for font in self.pageregistry.types["font"].values()]))
-        else:
-            file.write("/Resources <<\n"
-                       "/ProcSet [ /PDF ]\n")
+            procset.append("/Text")
+        if self.pageregistry.types.has_key("image"):
+            if [image for image in self.pageregistry.types["image"].values()
+                if image.colorspace == "/DeviceGray"]:
+                procset.append("/ImageB")
+            if [image for image in self.pageregistry.types["image"].values()
+                if image.colorspace is not None and image.colorspace != "/DeviceGray"]:
+                procset.append("/ImageC")
+            if [image for image in self.pageregistry.types["image"].values()
+                if image.palettedata is not None]:
+                procset.append("/ImageI")
+        file.write("/Resources <<\n"
+                   "/ProcSet [ /PDF %s ]\n" % " ".join(procset))
+        if self.pageregistry.types.has_key("font"):
+            file.write("/Font <<\n%s\n>>\n" % "\n".join(["/%s %i 0 R" % (font.name, registry.getrefno(font))
+                                                      for font in self.pageregistry.types["font"].values()]))
+        if self.pageregistry.types.has_key("image"):
+            file.write("/XObject <<\n%s\n>>\n" % "\n".join(["/%s %i 0 R" % (image.name, registry.getrefno(image))
+                                                         for image in self.pageregistry.types["image"].values()]))
         if self.pageregistry.types.has_key("pattern"):
-            file.write("/Pattern << %s >>\n" % " ".join(["/%s %i 0 R" % (pattern.name, registry.getrefno(pattern))
+            file.write("/Pattern <<\n%s\n>>\n" % "\n".join(["/%s %i 0 R" % (pattern.name, registry.getrefno(pattern))
                                                          for pattern in self.pageregistry.types["pattern"].values()]))
         file.write(">>\n")
         file.write("/Contents %i 0 R\n"
@@ -218,8 +231,8 @@ class PDFcontent(PDFobject):
                    "/Length %i 0 R\n" % registry.getrefno(self.contentlength))
         if writer.compress:
             file.write("/Filter /FlateDecode\n")
-        file.write(">>\n")
-        file.write("stream\n")
+        file.write(">>\n"
+                   "stream\n")
         beginstreampos = file.tell()
 
         if writer.compress:
@@ -238,7 +251,8 @@ class PDFcontent(PDFobject):
             stream.flush()
 
         self.contentlength.contentlength = file.tell() - beginstreampos
-        file.write("endstream\n")
+        file.write("\n"
+                   "endstream\n")
 
 
 class PDFcontentlength(PDFobject):
@@ -469,14 +483,13 @@ class PDFpattern(PDFobject):
             stream.flush()
 
         self.contentlength.contentlength = file.tell() - beginstreampos
-        file.write("endstream\n")
+        file.write("\n"
+                   "endstream\n")
 
 
 class PDFwriter:
 
-    def __init__(self, document, filename, compress=1, compresslevel=6):
-        warnings.warn("writePDFfile is experimental and supports only a subset of PyX's features")
-
+    def __init__(self, document, filename, compress=0, compresslevel=6):
         if filename[-4:] != ".pdf":
             filename = filename + ".pdf"
         try:
