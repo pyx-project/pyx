@@ -234,17 +234,11 @@ class decoratedpath(canvas.canvasitem):
 
         def _writestrokestyles(strokestyles, file=file):
             for style in strokestyles:
-                #if isinstance(style, color.color):
-                    style.outputPDF(file, writer, context(fillattr=0))
-                #else:
-                #    style.outputPDF(file, writer, context)
+                style.outputPDF(file, writer, context(fillattr=0))
 
         def _writefillstyles(fillstyles, file=file):
             for style in fillstyles:
-                #if isinstance(style, color.color):
-                    style.outputPDF(file, writer, context(strokeattr=0))
-                #else:
-                #    style.outputPDF(file, writer, context)
+                style.outputPDF(file, writer, context(strokeattr=0))
 
         if self.strokestyles is None and self.fillstyles is None:
             raise RuntimeError("Path neither to be stroked nor filled")
