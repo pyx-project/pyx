@@ -264,7 +264,7 @@ class epswriter:
 
 class pswriter:
 
-    def __init__(self, document, filename):
+    def __init__(self, document, filename, insertpagebbox=0):
         if filename[-4:] != ".ps":
             filename = filename + ".ps"
         try:
@@ -284,7 +284,7 @@ class pswriter:
             if page._pagetrafo is not None and page.bbox is not None:
                 page.bbox.transform(page._pagetrafo)
             if documentbbox is None:
-                documentbbox = page.bbox
+                documentbbox = page.bbox.enlarged(0)
             elif page.bbox is not None:
                 documentbbox += page.bbox
 
@@ -336,10 +336,11 @@ class pswriter:
         # pages section
         for nr, page in enumerate(document.pages):
             file.write("%%%%Page: %s %d\n" % (page.pagename is None and str(nr+1) or page.pagename, nr+1))
-            file.write("%%%%PageMedia: %s\n" % page.paperformat)
+            file.write("%%%%PageMedia: %s\n" % page.paperformat.name)
             file.write("%%%%PageOrientation: %s\n" % (page.rotated and "Landscape" or "Portrait"))
-            file.write("%%%%PageBoundingBox: %d %d %d %d\n" % (math.floor(page.bbox.llx_pt), math.floor(page.bbox.lly_pt),
-                                                               math.ceil(page.bbox.urx_pt), math.ceil(page.bbox.ury_pt)))
+            if insertpagebbox:
+                file.write("%%%%PageBoundingBox: %d %d %d %d\n" % (math.floor(page.bbox.llx_pt), math.floor(page.bbox.lly_pt),
+                                                                   math.ceil(page.bbox.urx_pt), math.ceil(page.bbox.ury_pt)))
 
             # page setup section
             file.write("%%BeginPageSetup\n")
