@@ -28,6 +28,8 @@
 A canvas holds a collection of all elements and corresponding attributes to be
 displayed. """
 
+__metaclass__ = type
+
 
 #
 # canvas item
@@ -313,7 +315,7 @@ class _canvas(canvasitem):
 # canvas for patterns
 #
 
-class pattern(_canvas, attr.exclusiveattr, style.fillstyle, color.color):
+class pattern(_canvas, attr.exclusiveattr, style.fillstyle):
 
     def __init__(self, painttype=1, tilingtype=1, xstep=None, ystep=None, bbox=None, trafo=None, **kwargs):
         _canvas.__init__(self, **kwargs)
@@ -340,11 +342,11 @@ class pattern(_canvas, attr.exclusiveattr, style.fillstyle, color.color):
     def outputPDF(self, file, writer, context):
         if context.colorspace != "Pattern":
             # XXX we set both the stroke and the fill color space
+            #file.write("/Pattern CS\n")
             file.write("/Pattern cs\n")
-            file.write("/Pattern CS\n")
             context.colorspace = "Pattern"
-        if context.strokeattr:
-            file.write("/%s SCN\n"% self.id)
+#        if context.strokeattr:
+#            file.write("/%s SCN\n"% self.id)
         if context.fillattr:
             file.write("/%s scn\n"% self.id)
 
@@ -401,8 +403,9 @@ class pattern(_canvas, attr.exclusiveattr, style.fillstyle, color.color):
 
         registry.add(pdfwriter.PDFpattern(self.id, self.patterntype, self.painttype, self.tilingtype,
                                           patternbbox, xstep, ystep, patterntrafo,
-                                          lambda file, writer, context: _canvas.outputPDF(self, file, writer, context),
-                                          lambda registry: _canvas.registerPDF(self, registry),
+                                          # lambda file, writer, context: _canvas.outputPDF(self, file, writer, context),
+                                          # lambda registry: _canvas.registerPDF(self, registry),
+                                          super(pattern, self).outputPDF, super(pattern, self).registerPDF,
                                           registry))
 
 pattern.clear = attr.clearclass(pattern)

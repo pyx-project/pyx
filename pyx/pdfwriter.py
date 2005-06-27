@@ -423,7 +423,7 @@ class PDFpattern(PDFobject):
 
         self.contentlength = PDFcontentlength()
         registry.add(self.contentlength)
-        
+
         # we need to keep track of the resources used by the pattern, hence
         # we create our own registry, which we merge immediately in the main registry
         self.patternregistry = PDFregistry()
@@ -454,7 +454,7 @@ class PDFpattern(PDFobject):
         if writer.compress:
             file.write("/Filter /FlateDecode\n")
         file.write(">>\n")
-                   
+
         file.write("stream\n")
         beginstreampos = file.tell()
 
