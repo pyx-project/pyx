@@ -297,7 +297,7 @@ class PDFfont(PDFobject):
             file.write(" ]\n")
         else:
             file.write("/FirstChar 0\n"
-                       "/LastChar 256\n"
+                       "/LastChar 255\n"
                        "/Widths\n"
                        "[")
             for i in range(256):
