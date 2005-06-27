@@ -175,14 +175,14 @@ class PDFpage(PDFobject):
         file.write("/MediaBox [0 0 %d %d]\n" % (unit.topt(paperformat.width), unit.topt(paperformat.height)))
         file.write("/CropBox " )
         self.bbox.outputPDF(file, writer)
-        # XXX check whether we need to include patterns in /ProcSet
         if self.pageregistry.types.has_key("font"):
             file.write("/Resources <<\n"
                        "/ProcSet [ /PDF /Text ]\n")
             file.write("/Font << %s >>\n" % " ".join(["/%s %i 0 R" % (font.name, registry.getrefno(font))
                                                     for font in self.pageregistry.types["font"].values()]))
         else:
-            file.write("/Resources << /ProcSet [ /PDF ]\n")
+            file.write("/Resources <<\n"
+                       "/ProcSet [ /PDF ]\n")
         if self.pageregistry.types.has_key("pattern"):
             file.write("/Pattern << %s >>\n" % " ".join(["/%s %i 0 R" % (pattern.name, registry.getrefno(pattern))
                                                          for pattern in self.pageregistry.types["pattern"].values()]))
