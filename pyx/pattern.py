@@ -44,7 +44,7 @@ class pattern(canvas._canvas, attr.exclusiveattr, style.fillstyle):
     def bbox(self):
         return None
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         file.write("%s setpattern\n" % self.id)
 
     def outputPDF(self, file, writer, context):
@@ -82,7 +82,9 @@ class pattern(canvas._canvas, attr.exclusiveattr, style.fillstyle):
                                    "/YStep %g" % ystep,
                                    "/PaintProc {\nbegin\n"))
         stringfile = cStringIO.StringIO()
-        canvas._canvas.outputPS(self, stringfile)
+        # XXX here, we have a problem since the writer is not definined at that point
+        # for the moment, we just path None since we do not use it anyway
+        canvas._canvas.outputPS(self, stringfile, None, pswriter.context())
         patternproc = stringfile.getvalue()
         stringfile.close()
         patterntrafostring = self.patterntrafo is None and "matrix" or str(self.patterntrafo)
@@ -109,7 +111,7 @@ class pattern(canvas._canvas, attr.exclusiveattr, style.fillstyle):
 
         registry.add(PDFpattern(self.id, self.patterntype, self.painttype, self.tilingtype,
                                 patternbbox, xstep, ystep, patterntrafo,
-                                lambda file, writer, context: canvas._canvas.outputPDF(self, file, writer, context),
+                                lambda file, writer, context: canvas._canvas.outputPDF(self, file, writer, context()),
                                 lambda registry: canvas._canvas.registerPDF(self, registry),
                                 registry))
 

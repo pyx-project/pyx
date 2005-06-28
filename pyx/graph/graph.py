@@ -453,9 +453,9 @@ class graphxy(canvas.canvas):
         self.finish()
         canvas.canvas.registerPDF(self, registry)
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         self.finish()
-        canvas.canvas.outputPS(self, file)
+        canvas.canvas.outputPS(self, file, writer, context)
 
     def outputPDF(self, file, writer, context):
         self.finish()

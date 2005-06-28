@@ -103,7 +103,7 @@ class trafo_pt(canvas.canvasitem, deformer.deformer):
                  self.matrix[0][1], self.matrix[1][1],
                  self.vector[0], self.vector[1] )
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         file.write("[%f %f %f %f %f %f] concat\n" % \
                     ( self.matrix[0][0], self.matrix[1][0],
                       self.matrix[0][1], self.matrix[1][1],

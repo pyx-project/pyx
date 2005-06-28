@@ -21,7 +21,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import time, math
+import copy, time, math
 import style, version, type1font, unit
 
 
@@ -43,10 +43,10 @@ class PSregistry:
            self.resourceshash[rkey] = resource
            self.resourceslist.append(resource)
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer):
         """ write all PostScript code of the prolog resources """
         for resource in self.resourceslist:
-            resource.outputPS(file)
+            resource.outputPS(file, writer, self)
 
 #
 # Abstract base class
@@ -68,7 +68,7 @@ class PSresource:
         the same id"""
         pass
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, registry):
         raise NotImplementedError("outputPS not implemented for %s" % repr(self))
 
 #
@@ -84,7 +84,7 @@ class PSdefinition(PSresource):
         self.id = id
         self.body = body
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, registry):
         file.write("%%%%BeginRessource: %s\n" % self.id)
         file.write("%(body)s /%(id)s exch def\n" % self.__dict__)
         file.write("%%EndRessource\n")
@@ -140,9 +140,9 @@ class PSfontfile(PSresource):
         else:
             self.usedchars = None # stripping of font not possible
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, registry):
         fontfile = type1font.fontfile(self.name, self.filename, self.usedchars, self.encodingfilename)
-        fontfile.outputPS(file)
+        fontfile.outputPS(file, writer, registry)
 
 
 class PSfontencoding(PSresource):
@@ -156,9 +156,9 @@ class PSfontencoding(PSresource):
         self.id = encoding.name
         self.encoding = encoding
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, registry):
         encodingfile = type1font.encodingfile(self.encoding.name, self.encoding.filename)
-        encodingfile.outputPS(file)
+        encodingfile.outputPS(file, writer, registry)
 
 
 class PSfontreencoding(PSresource):
@@ -183,7 +183,7 @@ class PSfontreencoding(PSresource):
         self.basefontname = basefontname
         self.encodingname = encodingname
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, registry):
         file.write("%%%%BeginProcSet: %s\n" % self.fontname)
         file.write("/%s /%s %s ReEncodeFont\n" % (self.basefontname, self.fontname, self.encodingname))
         file.write("%%EndProcSet\n")
@@ -235,7 +235,7 @@ class epswriter:
             bbox.transform(pagetrafo)
 
         file.write("%!PS-Adobe-3.0 EPSF-3.0\n")
-        bbox.outputPS(file)
+        bbox.outputPS(file, self)
         file.write("%%%%Creator: PyX %s\n" % version.version)
         file.write("%%%%Title: %s\n" % filename)
         file.write("%%%%CreationDate: %s\n" %
@@ -245,17 +245,18 @@ class epswriter:
         file.write("%%BeginProlog\n")
         registry = PSregistry()
         canvas.registerPS(registry)
-        registry.outputPS(file)
+        registry.outputPS(file, self)
         file.write("%%EndProlog\n")
 
+        acontext = context()
         # apply a possible page transformation
         if pagetrafo is not None:
-            pagetrafo.outputPS(file)
+            pagetrafo.outputPS(file, self, acontext)
 
-        style.linewidth.normal.outputPS(file)
+        style.linewidth.normal.outputPS(file, self, acontext)
 
         # here comes the canvas content
-        canvas.outputPS(file)
+        canvas.outputPS(file, self, acontext)
 
         file.write("showpage\n")
         file.write("%%Trailer\n")
@@ -289,7 +290,7 @@ class pswriter:
                 documentbbox += page.bbox
 
         file.write("%!PS-Adobe-3.0\n")
-        documentbbox.outputPS(file)
+        documentbbox.outputPS(file, self)
         file.write("%%%%Creator: PyX %s\n" % version.version)
         file.write("%%%%Title: %s\n" % filename)
         file.write("%%%%CreationDate: %s\n" %
@@ -326,7 +327,7 @@ class pswriter:
         registry = PSregistry()
         for page in document.pages:
             page.canvas.registerPS(registry)
-        registry.outputPS(file)
+        registry.outputPS(file, self)
         file.write("%%EndProlog\n")
 
         # document setup section
@@ -345,18 +346,33 @@ class pswriter:
             # page setup section
             file.write("%%BeginPageSetup\n")
             file.write("/pgsave save def\n")
+            
+            acontext = context()
             # apply a possible page transformation
             if page._pagetrafo is not None:
-                page._pagetrafo.outputPS(file)
+                page._pagetrafo.outputPS(file, self, acontext)
 
-            style.linewidth.normal.outputPS(file)
+            style.linewidth.normal.outputPS(file, self, acontext)
             file.write("%%EndPageSetup\n")
             
             # here comes the actual content
-            page.canvas.outputPS(file)
+            page.canvas.outputPS(file, self, acontext)
             file.write("pgsave restore\n")
             file.write("showpage\n")
             file.write("%%PageTrailer\n")
 
         file.write("%%Trailer\n")
         file.write("%%EOF\n")
+
+class context:
+
+    def __init__(self):
+        self.linewidth_pt = None
+        self.colorspace = None
+        self.font = None
+
+    def __call__(self, **kwargs):
+        newcontext = copy.copy(self)
+        for key, value in kwargs.items():
+            setattr(newcontext, key, value)
+        return newcontext

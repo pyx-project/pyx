@@ -227,6 +227,10 @@ class PDFcontent(PDFobject):
         else:
             stream = file
 
+        # XXX this should maybe be handled by the page since removing
+        # this code would allow us to (nearly, since we also need to
+        # set more info in the content dict) reuse PDFcontent for
+        # patterns
         acontext = context()
         # apply a possible global transformation
         if self.pagetrafo:

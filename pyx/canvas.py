@@ -46,8 +46,15 @@ class canvasitem:
         """register resources needed for the canvasitem in the PDF registry"""
         pass
 
-    def outputPS(self, file):
-        """write PS code corresponding to canvasitem to file"""
+    def outputPS(self, file, writer, context):
+        """write PS code corresponding to canvasitem to file
+
+        - file has to provide a write(string) method
+        - writer is the PSwriter used for the output
+        - context is used for keeping track of the graphics state, in particular
+        for the emulation of PS behaviour regarding fill and stroke styles, for
+        keeping track of the currently selected font as well as of text regions.
+        """
         pass
 
     def outputPDF(self, file, writer, context):
@@ -88,9 +95,9 @@ class clip(canvasitem):
         # ... but for clipping, we nevertheless need the bbox
         return self.path.bbox()
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         file.write("newpath\n")
-        self.path.outputPS(file)
+        self.path.outputPS(file, writer, context)
         file.write("clip\n")
 
     def outputPDF(self, file, writer, context):
@@ -175,11 +182,12 @@ class _canvas(canvasitem):
         for item in self.items:
             item.registerPDF(registry)
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
+        context = context()
         if self.items:
             file.write("gsave\n")
             for item in self.items:
-                item.outputPS(file)
+                item.outputPS(file, writer, context)
             file.write("grestore\n")
 
     def outputPDF(self, file, writer, context):

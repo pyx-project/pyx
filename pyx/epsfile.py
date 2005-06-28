@@ -316,7 +316,7 @@ class epsfile(canvas.canvasitem):
         registry.add(_BeginEPSF)
         registry.add(_EndEPSF)
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         try:
             epsfile=open(self.filename,"rb")
         except:
@@ -328,10 +328,10 @@ class epsfile(canvas.canvasitem):
 
         if self.clip:
             file.write("newpath\n")
-            bbrect.outputPS(file)
+            bbrect.outputPS(file, writer, context)
             file.write("clip\n")
 
-        self.trafo.outputPS(file)
+        self.trafo.outputPS(file, writer, context)
 
         file.write("%%%%BeginDocument: %s\n" % self.filename)
         file.write(epsfile.read()) 

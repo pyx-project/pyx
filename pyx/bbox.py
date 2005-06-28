@@ -70,7 +70,7 @@ class bbox_pt:
     def __str__(self):
         return "%s %s %s %s" % (self.llx_pt, self.lly_pt, self.urx_pt, self.ury_pt)
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer):
         file.write("%%%%BoundingBox: %d %d %d %d\n" %
                    (math.floor(self.llx_pt), math.floor(self.lly_pt),
                     math.ceil(self.urx_pt), math.ceil(self.ury_pt)))

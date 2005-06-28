@@ -110,7 +110,7 @@ class encodingfile:
 #    def decode(self, charcode):
 #        return self.encvector[charcode]
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, registry):
         file.write("%%%%BeginProcSet: %s\n" % self.name)
         file.write("/%s\n"
                    "[" % self.name)
@@ -175,7 +175,7 @@ class fontfile:
             return 32
         return 4
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, registry):
         file.write("%%%%BeginFont: %s\n" % self.fontname)
         file.write("%Included char codes:")
         for i in range(len(self.usedchars)):
@@ -272,8 +272,12 @@ class text_pt(canvas.canvasitem):
     def registerPDF(self, registry):
         registry.add(pdfwriter.PDFfont(self.font, self.chars, registry))
 
-    def outputPS(self, file):
-        file.write("/%s %f selectfont\n" % (self.font.name, self.font.metric.getsize_pt()))
+    def outputPS(self, file, writer, context):
+        if ( context.font is None or 
+             context.font.name != self.font.name or 
+             context.font.metric.getsize_pt() !=  self.font.metric.getsize_pt() ):
+            file.write("/%s %f selectfont\n" % (self.font.name, self.font.metric.getsize_pt()))
+            context.font = self.font
         outstring = ""
         for char in self.chars:
             if char > 32 and char < 127 and chr(char) not in "()[]<>\\":

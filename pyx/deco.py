@@ -149,7 +149,7 @@ class decoratedpath(canvas.canvasitem):
         else:
             return self.path
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         # draw (stroke and/or fill) the decoratedpath on the canvas
         # while trying to produce an efficient output, e.g., by
         # not writing one path two times
@@ -157,7 +157,7 @@ class decoratedpath(canvas.canvasitem):
         # small helper
         def _writestyles(styles, file=file):
             for style in styles:
-                style.outputPS(file)
+                style.outputPS(file, writer, context)
 
         if self.strokestyles is None and self.fillstyles is None:
             raise RuntimeError("Path neither to be stroked nor filled")
@@ -172,7 +172,7 @@ class decoratedpath(canvas.canvasitem):
 
         if self.fillstyles is not None:
             file.write("newpath\n")
-            fillpath.outputPS(file)
+            fillpath.outputPS(file, writer, context)
 
             if self.strokestyles is not None and strokepath is fillpath:
                 # do efficient stroking + filling if respective paths are identical
@@ -212,14 +212,14 @@ class decoratedpath(canvas.canvasitem):
                 _writestyles(self.strokestyles)
 
             file.write("newpath\n")
-            strokepath.outputPS(file)
+            strokepath.outputPS(file, writer, context)
             file.write("stroke\n")
 
             if self.strokestyles:
                 file.write("grestore\n")
 
         # now, draw additional elements of decoratedpath
-        self.ornaments.outputPS(file)
+        self.ornaments.outputPS(file, writer, context)
 
         # restore global styles
         if self.styles:

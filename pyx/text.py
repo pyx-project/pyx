@@ -658,9 +658,9 @@ class textbox(box.rect, canvas._canvas):
         self.ensuredvicanvas()
         canvas._canvas.registerPDF(self, registry)
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         self.ensuredvicanvas()
-        canvas._canvas.outputPS(self, file)
+        canvas._canvas.outputPS(self, file, writer, context)
 
     def outputPDF(self, file, writer, context):
         self.ensuredvicanvas()

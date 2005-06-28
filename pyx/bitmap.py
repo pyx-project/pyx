@@ -150,7 +150,7 @@ class PSimagedata(pswriter.PSresource):
             self.singlestring = singlestring
             self.maxstrlen = maxstrlen
 
-      def outputPS(self, file):
+      def outputPS(self, file, writer, registry):
             # TODO resource data could be written directly on the output stream
             #      after proper code reorganization
             file.write("%%%%BeginRessource: %s\n" % self.id)
@@ -353,7 +353,7 @@ class bitmap(canvas.canvasitem):
                               self.palettecolorspace, self.palettedata, self.colorspace,
                               8, self.compressmode, self.data))
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         file.write("gsave\n")
         if self.palettedata is not None:
             file.write("[ /Indexed %s %i\n" % (self.palettecolorspace, len(self.palettedata)/3-1))

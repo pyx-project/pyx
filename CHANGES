@@ -56,6 +56,8 @@ TODO:
       be renamed to dvireader, epsreader ...
   - canvas module:
     - stroking of patterns does not work in PDF
+    - patterns call the outputPS method in registerPS and have no writer at that 
+      time -> rewrite this code
 
   Documentation:
     - path module:
@@ -96,6 +98,8 @@ TODO:
     - completely rewritten: support for fonts and patterns has been added
   - pswriter module: new
     - separate PS output from canvas
+    - new signature of outputPS methods: writer and context are passed as additional
+      arguments
   - color module:
     - allow selection on zero range palette (reported by Francisco Borges, cf. bug #1116257)
   - graph modules:

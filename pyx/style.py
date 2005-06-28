@@ -46,7 +46,7 @@ class linecap(attr.exclusiveattr, strokestyle):
         attr.exclusiveattr.__init__(self, linecap)
         self.value = value
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         file.write("%d setlinecap\n" % self.value)
 
     def outputPDF(self, file, writer, context):
@@ -66,7 +66,7 @@ class linejoin(attr.exclusiveattr, strokestyle):
         attr.exclusiveattr.__init__(self, linejoin)
         self.value = value
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         file.write("%d setlinejoin\n" % self.value)
 
     def outputPDF(self, file, writer, context):
@@ -86,7 +86,7 @@ class miterlimit(attr.exclusiveattr, strokestyle):
         attr.exclusiveattr.__init__(self, miterlimit)
         self.value = value
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         file.write("%f setmiterlimit\n" % self.value)
 
     def outoutPDF(self, file):
@@ -114,7 +114,7 @@ class dash(attr.exclusiveattr, strokestyle):
         self.offset = offset
         self.rellengths = rellengths
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         if self.rellengths:
             sep = " currentlinewidth mul "
         else:
@@ -141,9 +141,9 @@ class linestyle(attr.exclusiveattr, strokestyle):
         self.c = c
         self.d = d
 
-    def outputPS(self, file):
-        self.c.outputPS(file)
-        self.d.outputPS(file)
+    def outputPS(self, file, writer, context):
+        self.c.outputPS(file, writer, context)
+        self.d.outputPS(file, writer, context)
 
     def outputPDF(self, file, writer, context):
         self.c.outputPDF(file, writer, context)
@@ -164,11 +164,13 @@ class linewidth(unit.length, attr.sortbeforeexclusiveattr, strokestyle):
         unit.length.__init__(self, *args, **kwargs)
         attr.sortbeforeexclusiveattr.__init__(self, linewidth, [dash, linestyle])
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         file.write("%f setlinewidth\n" % unit.topt(self))
+        context.linewidth_pt = unit.topt(self)
 
     def outputPDF(self, file, writer, context):
         file.write("%f w\n" % unit.topt(self))
+        context.linewidth_pt = unit.topt(self)
 
 _base = 0.02
 

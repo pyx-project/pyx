@@ -197,8 +197,8 @@ class pathitem:
         """
         raise NotImplementedError()
 
-    def outputPS(self, file):
-        """write PS code corresponding to pathitem to file"""
+    def outputPS(self, file, writer, context):
+        """write PS code corresponding to pathitem to file, using writer and context"""
         raise NotImplementedError()
 
     def outputPDF(self, file, writer, context):
@@ -238,7 +238,7 @@ class closepath(pathitem):
     def _normalized(self, currentpoint):
         return [self]
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         file.write("closepath\n")
 
     def outputPDF(self, file, writer, context):
@@ -268,7 +268,7 @@ class moveto_pt(pathitem):
     def _normalized(self, currentpoint):
         return [moveto_pt(self.x_pt, self.y_pt)]
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         file.write("%g %g moveto\n" % (self.x_pt, self.y_pt) )
 
     def outputPDF(self, file, writer, context):
@@ -301,7 +301,7 @@ class lineto_pt(pathitem):
     def _normalized(self, currentpoint):
         return [normline_pt(currentpoint.x_pt, currentpoint.y_pt, self.x_pt, self.y_pt)]
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         file.write("%g %g lineto\n" % (self.x_pt, self.y_pt) )
 
 
@@ -340,7 +340,7 @@ class curveto_pt(pathitem):
                              self.x2_pt, self.y2_pt,
                              self.x3_pt, self.y3_pt)]
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         file.write("%g %g %g %g %g %g curveto\n" % ( self.x1_pt, self.y1_pt,
                                                      self.x2_pt, self.y2_pt,
                                                      self.x3_pt, self.y3_pt ) )
@@ -369,7 +369,7 @@ class rmoveto_pt(pathitem):
     def _normalized(self, currentpoint):
         return [moveto_pt(currentpoint.x_pt + self.dx_pt, currentpoint.y_pt + self.dy_pt)]
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         file.write("%g %g rmoveto\n" % (self.dx_pt, self.dy_pt) )
 
 
@@ -402,7 +402,7 @@ class rlineto_pt(pathitem):
         return [normline_pt(currentpoint.x_pt, currentpoint.y_pt,
                             currentpoint.x_pt + self.dx_pt, currentpoint.y_pt + self.dy_pt)]
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         file.write("%g %g rlineto\n" % (self.dx_pt, self.dy_pt) )
 
 
@@ -447,7 +447,7 @@ class rcurveto_pt(pathitem):
                              currentpoint.x_pt + self.dx2_pt, currentpoint.y_pt + self.dy2_pt,
                              currentpoint.x_pt + self.dx3_pt, currentpoint.y_pt + self.dy3_pt)]
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         file.write("%g %g %g %g %g %g rcurveto\n" % (self.dx1_pt, self.dy1_pt,
                                                      self.dx2_pt, self.dy2_pt,
                                                      self.dx3_pt, self.dy3_pt))
@@ -571,7 +571,7 @@ class arc_pt(pathitem):
         else:
             return [moveto_pt(sarcx_pt, sarcy_pt)] + nbarc
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         file.write("%g %g %g %g %g arc\n" % (self.x_pt, self.y_pt,
                                              self.r_pt,
                                              self.angle1,
@@ -663,7 +663,7 @@ class arcn_pt(pathitem):
             return [moveto_pt(sarcx_pt, sarcy_pt)] + nbarc
 
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         file.write("%g %g %g %g %g arcn\n" % (self.x_pt, self.y_pt,
                                               self.r_pt,
                                               self.angle1,
@@ -755,7 +755,7 @@ class arct_pt(pathitem):
     def _normalized(self, currentpoint):
         return self._pathitem(currentpoint)._normalized(currentpoint)
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         file.write("%g %g %g %g %g arct\n" % (self.x1_pt, self.y1_pt,
                                               self.x2_pt, self.y2_pt,
                                               self.r_pt))
@@ -898,7 +898,7 @@ class multilineto_pt(pathitem):
             x0_pt, y0_pt = x1_pt, y1_pt
         return result
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         for point_pt in self.points_pt:
             file.write("%g %g lineto\n" % point_pt )
 
@@ -942,7 +942,7 @@ class multicurveto_pt(pathitem):
             x_pt, y_pt = point_pt[4:]
         return result
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         for point_pt in self.points_pt:
             file.write("%g %g %g %g %g %g curveto\n" % point_pt)
 
@@ -1198,10 +1198,10 @@ class path(canvas.canvasitem):
         """return transformed path"""
         return self.normpath().transformed(trafo)
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         """write PS code to file"""
         for pitem in self.pathitems:
-            pitem.outputPS(file)
+            pitem.outputPS(file, writer, context)
 
     def outputPDF(self, file, writer, context):
         """write PDF code to file"""
@@ -1380,7 +1380,7 @@ class normsubpathitem:
         """return transformed normsubpathitem according to trafo"""
         pass
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         """write PS code corresponding to normsubpathitem to file"""
         pass
 
@@ -1496,7 +1496,7 @@ class normline_pt(normsubpathitem):
     def transformed(self, trafo):
         return normline_pt(*(trafo._apply(self.x0_pt, self.y0_pt) + trafo._apply(self.x1_pt, self.y1_pt)))
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         file.write("%g %g lineto\n" % (self.x1_pt, self.y1_pt))
 
     def outputPDF(self, file, writer, context):
@@ -1749,7 +1749,7 @@ class normcurve_pt(normsubpathitem):
         x3_pt, y3_pt = trafo._apply(self.x3_pt, self.y3_pt)
         return normcurve_pt(x0_pt, y0_pt, x1_pt, y1_pt, x2_pt, y2_pt, x3_pt, y3_pt)
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         file.write("%g %g %g %g %g %g curveto\n" % (self.x1_pt, self.y1_pt, self.x2_pt, self.y2_pt, self.x3_pt, self.y3_pt))
 
     def outputPDF(self, file, writer, context):
@@ -2272,8 +2272,7 @@ class normsubpath:
             nnormsubpath.append(self.skippedline.transformed(trafo))
         return nnormsubpath
 
-    def outputPS(self, file):
-        """write PS code to file"""
+    def outputPS(self, file, writer, context):
         # if the normsubpath is closed, we must not output a normline at
         # the end
         if not self.normsubpathitems:
@@ -2285,12 +2284,11 @@ class normsubpath:
             normsubpathitems = self.normsubpathitems
         file.write("%g %g moveto\n" % self.atbegin_pt())
         for anormsubpathitem in normsubpathitems:
-            anormsubpathitem.outputPS(file)
+            anormsubpathitem.outputPS(file, writer, context)
         if self.closed:
             file.write("closepath\n")
 
     def outputPDF(self, file, writer, context):
-        """write PDF code to file"""
         # if the normsubpath is closed, we must not output a normline at
         # the end
         if not self.normsubpathitems:
@@ -2852,12 +2850,10 @@ class normpath(canvas.canvasitem):
         """return transformed normpath"""
         return normpath([normsubpath.transformed(trafo) for normsubpath in self.normsubpaths])
 
-    def outputPS(self, file):
-        """write PS code to file"""
+    def outputPS(self, file, writer, context):
         for normsubpath in self.normsubpaths:
-            normsubpath.outputPS(file)
+            normsubpath.outputPS(file, writer, context)
 
     def outputPDF(self, file, writer, context):
-        """write PDF code to file"""
         for normsubpath in self.normsubpaths:
             normsubpath.outputPDF(file, writer, context)

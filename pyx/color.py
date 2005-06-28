@@ -45,7 +45,7 @@ class grey(color):
         if gray<0 or gray>1: raise ValueError
         self.color = {"gray": gray}
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         file.write("%(gray)g setgray\n" % self.color)
 
     def outputPDF(self, file, writer, context):
@@ -68,7 +68,7 @@ class rgb(color):
         if r<0 or r>1 or g<0 or g>1 or b<0 or b>1: raise ValueError
         self.color = {"r": r, "g": g, "b": b}
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         file.write("%(r)g %(g)g %(b)g setrgbcolor\n" % self.color)
 
     def outputPDF(self, file, writer, context):
@@ -93,7 +93,7 @@ class hsb(color):
         if h<0 or h>1 or s<0 or s>1 or b<0 or b>1: raise ValueError
         self.color = {"h": h, "s": s, "b": b}
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         file.write("%(h)g %(s)g %(b)g sethsbcolor\n" % self.color)
 
     def outputPDF(self, file, writer, context):
@@ -110,7 +110,7 @@ class cmyk(color):
         if c<0 or c>1 or m<0 or m>1 or y<0 or y>1 or k<0 or k>1: raise ValueError
         self.color = {"c": c, "m": m, "y": y, "k": k}
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer, context):
         file.write("%(c)g %(m)g %(y)g %(k)g setcmykcolor\n" % self.color)
 
     def outputPDF(self, file, writer, context):
@@ -219,8 +219,8 @@ class palette(color, attr.changeattr):
             return self.mincolor
         return self.getcolor(index/(total-1.0))
 
-    def outputPS(self, file):
-        self.getcolor(0).outputPS(file)
+    def outputPS(self, file, writer, context):
+        self.getcolor(0).outputPS(file, writer, context)
 
     def outputPDF(self, file, writer, context):
         self.getcolor(0).outputPDF(file, writer, context)
