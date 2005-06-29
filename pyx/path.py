@@ -1640,7 +1640,14 @@ class normcurve_pt(normsubpathitem):
                       6 * param * (self.x1_pt - 2*self.x2_pt + self.x3_pt) )
             yddot = ( 6 * (1-param) * (self.y0_pt - 2*self.y1_pt + self.y2_pt) +
                       6 * param * (self.y1_pt - 2*self.y2_pt + self.y3_pt) )
-            result.append((xdot**2 + ydot**2)**1.5 / (xdot*yddot - ydot*xddot))
+
+            try:
+                radius = (xdot**2 + ydot**2)**1.5 / (xdot*yddot - ydot*xddot)
+            except:
+                radius = None
+
+            result.append(radius)
+
         return result
 
     def intersect(self, other, epsilon):
