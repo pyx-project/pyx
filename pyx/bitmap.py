@@ -181,11 +181,29 @@ class PSimagedata(pswriter.PSresource):
             file.write("%%EndRessource\n")
 
 
+class PDFimagepalettedata(pdfwriter.PDFobject):
+
+    def __init__(self, name, data):
+        pdfwriter.PDFobject.__init__(self, "imagepalettedata", name)
+        self.data = data
+
+    def outputPDF(self, file, writer, registry):
+        file.write("<<\n"
+                   "/Length %d\n" % len(self.data))
+        file.write(">>\n"
+                   "stream\n")
+        file.write(self.data)
+        file.write("\n"
+                   "endstream\n")
+
 class PDFimage(pdfwriter.PDFobject):
 
     def __init__(self, name, width, height, palettecolorspace, palettedata, colorspace,
-                       bitspercomponent, compressmode, data):
+                       bitspercomponent, compressmode, data, registry):
         pdfwriter.PDFobject.__init__(self, "image", name)
+        if palettedata is not None:
+            self.palettedata1 = PDFimagepalettedata(name, palettedata)
+            registry.add(self.palettedata1)
         self.name = name
         self.width = width
         self.height = height
@@ -204,14 +222,8 @@ class PDFimage(pdfwriter.PDFobject):
         file.write("/Height %d\n" % self.height)
         if self.palettedata is not None:
             file.write("/ColorSpace [ /Indexed %s %i\n" % (self.palettecolorspace, len(self.palettedata)/3-1))
-            file.write("<<\n"
-                       "/Length %d\n" % len(self.palettedata))
-            file.write(">>\n"
-                       "stream\n")
-            file.write(self.palettedata)
-            file.write("\n"
-                       "endstream\n"
-                       "]\n")
+            file.write("%d 0 R\n" % registry.getrefno(self.palettedata1))
+            file.write("]\n")
         else:
             file.write("/ColorSpace %s\n" % self.colorspace)
         file.write("/BitsPerComponent %d\n" % self.bitspercomponent)
@@ -351,7 +363,7 @@ class bitmap(canvas.canvasitem):
     def registerPDF(self, registry):
         registry.add(PDFimage(self.PDFimagename, self.imagewidth, self.imageheight,
                               self.palettecolorspace, self.palettedata, self.colorspace,
-                              8, self.compressmode, self.data))
+                              8, self.compressmode, self.data, registry))
 
     def outputPS(self, file, writer, context):
         file.write("gsave\n")
