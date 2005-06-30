@@ -506,29 +506,7 @@ class smoothed(deformer): # <<<
         smoothpath = path.path()
         do_moveto = 1 # we do not know yet where to moveto
 
-        ## 3. First part of extra handling of open paths
-        #if not normsubpath.closed:
-
-        #    if len(params[0]) == 1:
-        #        beginpiece = npitems[npitemnumbers[0]].segments([0, params[0]])[0]
-        #    else:
-        #        beginpiece = npitems[npitemnumbers[0]].segments([0, params[0][0]])[0]
-
-        #    if do_moveto:
-        #        smoothpath.append(path.moveto_pt(*beginpiece.atbegin_pt()))
-        #        do_moveto = 0
-
-        #    if isinstance(beginpiece, path.normline_pt):
-        #        smoothpath.append(path.lineto_pt(*beginpiece.atend_pt()))
-        #    elif isinstance(beginpiece, path.normcurve_pt):
-        #        smoothpath.append(path.curveto_pt(
-        #           beginpiece.x1_pt, beginpiece.y1_pt,
-        #           beginpiece.x2_pt, beginpiece.y2_pt,
-        #           beginpiece.x3_pt, beginpiece.y3_pt))
-
-        #    do_moveto = 0
-
-        # 4. Do the splitting for the first to the last element,
+        # 3. Do the splitting for the first to the last element,
         #    a closed path must be closed later
         #
         for i in range(len(rel_npitems)):
@@ -633,22 +611,12 @@ class smoothed(deformer): # <<<
                 smoothpath.append(path.curveto_pt(*(B + C + D)))
 
 
-        # 5. Second part of extra handling of closed paths
+        # 4. Second part of extra handling of closed paths
         if normsubpath.closed:
             if do_moveto:
                 smoothpath.append(path.moveto_pt(*dp.strokepath.atbegin()))
                 warnings.warn("The whole subpath has been smoothed away -- sorry")
-            #smoothpath.append(path.closepath())
-
-        #else:
-        #    epart = npitems[npitemnumbers[-1]].segments([params[-1][0], 1])[0]
-        #    if do_moveto:
-        #        smoothpath.append(path.moveto_pt(*epart.atbegin_pt()))
-        #        do_moveto = 0
-        #    if isinstance(epart, path.normline_pt):
-        #        smoothpath.append(path.lineto_pt(*epart.atend_pt()))
-        #    elif isinstance(epart, path.normcurve_pt):
-        #        smoothpath.append(path.curveto_pt(epart.x1_pt, epart.y1_pt, epart.x2_pt, epart.y2_pt, epart.x3_pt, epart.y3_pt))
+            smoothpath.append(path.closepath())
 
         return smoothpath
 # >>>
