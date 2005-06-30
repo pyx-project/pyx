@@ -59,6 +59,13 @@ def testarcs(c):
     testarcn(c, 2, 6, 45, -90-360) 
     testarcn(c, 1, 6, 45, -90+360)
 
+
+    x0 = -5
+    for angle in [-45, 0, 45, 90, 135, 180, 225, 315]:
+        angle_rad = angle*pi/180
+        testarct(c, 0.1, x0, 0, 0, 1, 2*cos(angle_rad), 2*sin(angle_rad))
+        x0 += 2
+
     testarct(c, 0.5, 1, 8, 0, 1, 1, 1)
     testarct(c, 0.5, 3, 8, 1, 1, 1, 2)
     testarct(c, 0.5, 5, 8, 1, 0, 2, 1)
