@@ -53,13 +53,36 @@ def testcycloid(c):
 
 
 def testsmoothed(c):
-    p = path.path(path.moveto(0,0), path.lineto(3,0), path.lineto(5,7),
-    path.curveto(0,10, -2,8, 0,6),
-    path.lineto(0,4), path.lineto(-5,4), path.lineto(-5,2), path.lineto(-0.2,0.2),
-    path.closepath()
+    p = path.path(
+      path.moveto(0,0),
+      path.lineto(3,0),
+      path.lineto(5,7),
+      path.curveto(0,10, -2,8, 0,6),
+      path.lineto(0,4),
+      # horrible overshooting with obeycurv=1
+      #path.lineto(-4,4), path.curveto(-7,5, -4,2, -5,2),
+      path.lineto(-4,3), path.curveto(-7,5, -4,2, -5,2),
+      #path.arct(-6,4, -5,1, 1.5),
+      #path.arc(-5, 3, 0.5, 0, 180),
+      path.lineto(-5,1),
+      path.lineto(-0.2,0.2),
+      path.closepath()
     ) + path.circle(0,0,2)
 
     c.stroke(p, [color.gray(0.8), style.linewidth.THICk])
+    c.stroke(p.normpath(), [color.gray(0.8), style.linewidth.THICk])
+    c.stroke(p, [smoothed(radius=0.85, softness=1, obeycurv=1), style.linewidth.Thin])
+    c.stroke(p, [smoothed(radius=0.85, softness=1, obeycurv=0), color.rgb.red])
+    c.stroke(p, [smoothed(radius=0.20, softness=1, obeycurv=0), color.rgb.green])
+    c.stroke(p, [smoothed(radius=1.20, softness=1, obeycurv=0), color.rgb.blue])
+
+    p = path.path(
+      path.moveto(0,10),
+      path.curveto(1,10, 4,12, 2,11),
+      path.curveto(4,8, 4,12, 0,11)
+    )
+    c.stroke(p, [color.gray(0.8), style.linewidth.THICk])
+    c.stroke(p.normpath(), [color.gray(0.8), style.linewidth.THICk])
     c.stroke(p, [smoothed(radius=0.85, softness=1, obeycurv=1), style.linewidth.Thin])
     c.stroke(p, [smoothed(radius=0.85, softness=1, obeycurv=0), color.rgb.red])
     c.stroke(p, [smoothed(radius=0.20, softness=1, obeycurv=0), color.rgb.green])
@@ -67,7 +90,7 @@ def testsmoothed(c):
 
 c=canvas.canvas()
 dotest(c, 0, 0, "testcycloid")
-dotest(c, 15, 0, "testsmoothed")
+dotest(c, 17, 0, "testsmoothed")
 c.writeEPSfile("test_deformer", paperformat=document.paperformat.A4, rotated=0, fittosize=1)
 c.writePDFfile("test_deformer")
 
