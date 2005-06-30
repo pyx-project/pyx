@@ -30,7 +30,7 @@
 from __future__ import nested_scopes
 
 import math
-from math import cos, sin, pi
+from math import cos, sin, tan, acos, pi
 try:
     from math import radians, degrees
 except ImportError:
@@ -694,56 +694,59 @@ class arct_pt(pathitem):
         The return value is either a arc_pt, a arcn_pt or a line_pt instance.
 
         This is a helper routine for _updatecurrentpoint, _bbox and _normalized,
-        which will all deligate the work to the constructed pathitem.
+        which will all delegate the work to the constructed pathitem.
         """
 
-        # direction and length of tangent 1
-        dx1_pt = currentpoint.x_pt-self.x1_pt
-        dy1_pt = currentpoint.y_pt-self.y1_pt
-        l1 = math.hypot(dx1_pt, dy1_pt)
+        # direction of tangent 1
+        dx1_pt, dy1_pt = self.x1_pt-currentpoint.x_pt, self.y1_pt-currentpoint.y_pt
+        l1_pt = math.hypot(dx1_pt, dy1_pt)
+        dx1, dy1 = dx1_pt/l1_pt, dy1_pt/l1_pt
 
-        # direction and length of tangent 2
-        dx2_pt = self.x2_pt-self.x1_pt
-        dy2_pt = self.y2_pt-self.y1_pt
-        l2 = math.hypot(dx2_pt, dy2_pt)
+        # direction of tangent 2
+        dx2_pt, dy2_pt = self.x2_pt-self.x1_pt, self.y2_pt-self.y1_pt
+        l2_pt = math.hypot(dx2_pt, dy2_pt)
+        dx2, dy2 = dx2_pt/l2_pt, dy2_pt/l2_pt
 
-        # intersection angle between two tangents
-        alpha = math.acos((dx1_pt*dx2_pt+dy1_pt*dy2_pt)/(l1*l2))
+        # intersection angle between two tangents in the range (-pi, pi).
+        # We take the orientation from the sign of the vector product.
+        # Negative (positive) angles alpha corresponds to a turn to the right (left)
+        # as seen from currentpoint.
+        if dx1*dy2-dy1*dx2 > 0:
+            alpha = acos(dx1*dx2+dy1*dy2) 
+        else:
+            alpha = -acos(dx1*dx2+dy1*dy2) 
 
-        if math.fabs(sin(alpha)) >= 1e-15 and 1.0+self.r_pt != 1.0:
-            cotalpha2 = 1.0/math.tan(alpha/2)
-
+        try:
             # two tangent points
-            xt1_pt = self.x1_pt + dx1_pt*self.r_pt*cotalpha2/l1
-            yt1_pt = self.y1_pt + dy1_pt*self.r_pt*cotalpha2/l1
-            xt2_pt = self.x1_pt + dx2_pt*self.r_pt*cotalpha2/l2
-            yt2_pt = self.y1_pt + dy2_pt*self.r_pt*cotalpha2/l2
+            xt1_pt = self.x1_pt - dx1*self.r_pt*tan(abs(alpha)/2)
+            yt1_pt = self.y1_pt - dy1*self.r_pt*tan(abs(alpha)/2)
+            xt2_pt = self.x1_pt + dx2*self.r_pt*tan(abs(alpha)/2)
+            yt2_pt = self.y1_pt + dy2*self.r_pt*tan(abs(alpha)/2)
 
-            # direction of center of arc
-            rx_pt = self.x1_pt - 0.5*(xt1_pt+xt2_pt)
-            ry_pt = self.y1_pt - 0.5*(yt1_pt+yt2_pt)
-            lr = math.hypot(rx_pt, ry_pt)
+            # direction point 1 -> center of arc
+            dmx_pt = 0.5*(xt1_pt+xt2_pt) - self.x1_pt
+            dmy_pt = 0.5*(yt1_pt+yt2_pt) - self.y1_pt
+            lm_pt = math.hypot(dmx_pt, dmy_pt)
+            dmx, dmy = dmx_pt/lm_pt, dmy_pt/lm_pt
+
+            # center of arc
+            mx_pt = self.x1_pt + dmx*self.r_pt/cos(alpha/2)
+            my_pt = self.y1_pt + dmy*self.r_pt/cos(alpha/2)
 
             # angle around which arc is centered
-            if rx_pt >= 0:
-                phi = degrees(math.atan2(ry_pt, rx_pt))
-            else:
-                # XXX why is rx_pt/ry_pt and not ry_pt/rx_pt used???
-                phi = degrees(math.atan(rx_pt/ry_pt))+180
+            phi = degrees(math.atan2(-dmy, -dmx))
 
             # half angular width of arc
-            deltaphi = 90*(1-alpha/pi)
+            deltaphi = degrees(alpha)/2
 
-            # center position of arc
-            mx_pt = self.x1_pt - rx_pt*self.r_pt/(lr*sin(alpha/2))
-            my_pt = self.y1_pt - ry_pt*self.r_pt/(lr*sin(alpha/2))
-
-            if phi<0:
+            if alpha > 0:
                 return arc_pt(mx_pt, my_pt, self.r_pt, phi-deltaphi, phi+deltaphi)
             else:
-                return arcn_pt(mx_pt, my_pt, self.r_pt, phi+deltaphi, phi-deltaphi)
+                return arcn_pt(mx_pt, my_pt, self.r_pt, phi-deltaphi, phi+deltaphi)
 
-        else:
+        except ZeroDivisionError:
+            # in the degenerate case, we just return a line as specified by the PS 
+            # language reference
             return lineto_pt(self.x1_pt, self.y1_pt)
 
     def _updatecurrentpoint(self, currentpoint):

@@ -86,7 +86,8 @@ TODO:
 0.8 (????/??/??):
   - path module:
     - path parameters and argument handling
-    - repair normpath-conversion of arct
+    - the arct to arc/arcn conversion (needed for bbox calculation and for conversion into
+      normpath) has been fixed
   - document module: new
     - container classes for document and pages
     - document.paperformat class (strings are deprecated)
