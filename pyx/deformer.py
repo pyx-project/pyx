@@ -24,42 +24,57 @@
 
 import math, warnings
 import attr, color, helper, path, style, trafo, unit
+try:
+  import Numeric, LinearAlgebra
+  have_la_packages = 1
 
-### helpers
+  def realpolyroots(coeffs, epsilon=1e-5): # <<<
 
-def sign0(x):
-    return (x > 0) and 1 or (((x == 0) and 1 or 0) - 1)
+      """returns the roots of a polynom with given coefficients
+
+      This helper routine uses the package Numeric to find the roots
+      of the polynomial with coefficients given in coeffs:
+        0 = \sum_{i=0}^N x^{N-i} coeffs[i]
+      The solution is found via an equivalent eigenvalue problem
+      """
+
+      try:
+          1.0 / coeffs[0]
+      except:
+          return realpolyroots(coeffs[1:], epsilon=epsilon)
+      else:
+
+          N = len(coeffs)
+          # build the Matrix of the polynomial problem
+          mat = Numeric.zeros((N, N), Numeric.Float)
+          for i in range(N-1):
+              mat[i+1][i] = 1
+          for i in range(N-1):
+              mat[0][i] = -coeffs[i+1]/coeffs[0]
+          # find the eigenvalues of the matrix (== the zeros of the polynomial)
+          zeros = [complex(zero) for zero in LinearAlgebra.eigenvalues(mat)]
+          # take only the real zeros
+          zeros = [zero.real for zero in zeros if -epsilon < zero.imag < epsilon]
+
+          ## check if the zeros are really zeros!
+          #for zero in zeros:
+          #    p = 0
+          #    for i in range(N):
+          #        p += coeffs[i] * zero**(N-i)
+          #    if abs(p) > epsilon:
+          #        raise Exception("value %f instead of 0" % p)
+
+      return zeros
+  # >>>
+
+except ImportError:
+  have_la_packages = 0
+
+
 def sign1(x):
     return (x >= 0) and 1 or -1
 
-def realpolyroots(coeffs, epsilon=1e-5): # {{{
-    # use Numeric to find the roots (via an equivalent eigenvalue problem)
-    import Numeric, LinearAlgebra
-
-    N = len(coeffs)
-    # build the Matrix of the polynomial problem
-    mat = Numeric.zeros((N, N), Numeric.Float)
-    for i in range(N-1):
-        mat[i+1][i] = 1
-    for i in range(N-1):
-        mat[0][i] = -coeffs[i+1]/coeffs[0]
-    # find the eigenvalues of the matrix (== the zeros of the polynomial)
-    zeros = [complex(zero) for zero in LinearAlgebra.eigenvalues(mat)]
-    # take only the real zeros
-    zeros = [zero.real for zero in zeros if -epsilon < zero.imag < epsilon]
-
-    ## check if the zeros are really zeros!
-    #for zero in zeros:
-    #    p = 0
-    #    for i in range(N):
-    #        p += coeffs[i] * zero**(N-i)
-    #    if abs(p) > epsilon:
-    #        raise Exception("value %f instead of 0" % p)
-
-    return zeros
-# }}}
-
-def curvescontrols_from_endlines_pt(B, tangent1, tangent2, r1, r2, softness): # {{{
+def curvescontrols_from_endlines_pt (B, tangent1, tangent2, r1, r2, softness): # <<<
     # calculates the parameters for two bezier curves connecting two lines (curvature=0)
     # starting at B - r1*tangent1
     # ending at   B + r2*tangent2
@@ -95,86 +110,82 @@ def curvescontrols_from_endlines_pt(B, tangent1, tangent2, r1, r2, softness): # 
     e  = 0.5 * (f1[0] + f2[0]), 0.5 * (f1[1] + f2[1])
 
     return (d1, g1, f1, e, f2, g2, d2)
-# }}}
+# >>>
 
-def curveparams_from_endpoints_pt(A, B, tangentA, tangentB, curvA, curvB, obeycurv=0, epsilon=1e-5): # {{{
-    # connects points A and B with a bezier curve that has
-    # prescribed tangents dirA, dirB and curvatures curA, curB at the end points.
-    #
-    # The sign of the tangent vectors is _always_ enforced. If the solution goes
-    # into the opposite direction, None will be returned.
-    #
-    # If obeycurv, the sign of the curvature will be enforced which may cause a
-    # strange solution to be found (or none at all).
+def controldists_from_endpoints_pt (A, B, tangentA, tangentB, curvA, curvB, epsilon=1e-5): # <<<
+
+    """distances for a curve given by tangents and curvatures at the endpoints
+
+    This helper routine returns the two distances between the endpoints and the
+    corresponding control points of a (cubic) bezier curve that has
+    prescribed tangents tangentA, tangentB and curvatures curvA, curvB at the
+    end points.
+    """
 
     # normalise the tangent vectors
-    # XXX we get numeric instabilities for ||dirA||==||dirB||==1
-    #norm = math.hypot(*tangentA)
-    #norm = 1
-    #dirA = (tangentA[0] / norm, tangentA[1] / norm)
-    #norm = math.hypot(*tangentB)
-    #norm = 1
-    #dirB = (tangentB[0] / norm, tangentB[1] / norm)
-    dirA = tangentA
-    dirB = tangentB
+    normA = math.hypot(*tangentA)
+    tangA = (tangentA[0] / normA, tangentA[1] / normA)
+    normB = math.hypot(*tangentB)
+    tangB = (tangentB[0] / normB, tangentB[1] / normB)
     # some shortcuts
-    T = dirA[0] * dirB[1] - dirA[1] * dirB[0]
-    D = 3 * (dirA[0] * (B[1]-A[1]) - dirA[1] * (B[0]-A[0]))
-    E = 3 * (dirB[0] * (B[1]-A[1]) - dirB[1] * (B[0]-A[0]))
-    # the variables: \dot X(0) = a * dirA
-    #                \dot X(1) = b * dirB
+    T = tangB[0] * tangA[1] - tangB[1] * tangA[0]
+    D =   tangA[0] * (B[1]-A[1]) - tangA[1] * (B[0]-A[0])
+    E = - tangB[0] * (B[1]-A[1]) + tangB[1] * (B[0]-A[0])
+    # the variables: \dot X(0) = 3 * a * tangA
+    #                \dot X(1) = 3 * b * tangB
     a, b = None, None
 
-    # we may switch the sign of the curvatures if not obeycurv
-    # XXX are these formulae correct ??
-    # XXX improve the heuristic for choosing the sign of the curvature !!
-    if not obeycurv:
-        curvA = abs(curvA) * sign1(D)
-        curvB = abs(curvB) * sign1(E)
 
-    # ask for some special cases where the equations decouple
-    if abs(T) < epsilon*epsilon:
+    # try some special cases where the equations decouple
+    try:
+        1.0 / T
+    except ZeroDivisionError:
         try:
-            a = 2.0 * D / curvA
-            a = math.sqrt(abs(a)) * sign1(a)
-            b = -2.0 * E / curvB
-            b = math.sqrt(abs(b)) * sign1(b)
+            a = math.sqrt(2.0 * D / (3.0 * curvA))
+            b = math.sqrt(2.0 * E / (3.0 * curvB))
         except ZeroDivisionError:
-            warnings.warn("The connecting bezier is not uniquely determined. The simple heuristic solution may not be optimal.")
-            a = b = 1.5 * math.hypot(A[0] - B[0], A[1] - B[1])
+            a = b = None
     else:
-        if abs(curvA) < epsilon:
-            b = D / T
-            a = - (E + b*abs(b)*curvB*0.5) / T
-        elif abs(curvB) < epsilon:
-            a = -E / T
-            b = (D - a*abs(a)*curvA*0.5) / T
+        try:
+            1.0 / curvA
+        except ZeroDivisionError:
+            b = -D / T
+            a = (1.5*curvB*b*b - E) / T
         else:
-            a, b = None, None
+            try:
+                1.0 / curvB
+            except ZeroDivisionError:
+                a = -E / T
+                b = (1.5*curvA*a*a - D) / T
+            else:
+                a, b = None, None
+
 
     # else find a solution for the full problem
     if a is None:
-        try:
+        if have_la_packages:
             # we first try to find all the zeros of the polynomials for a or b (4th order)
             # this needs Numeric and LinearAlgebra
-            # First try the equation for a
-            coeffs = (0.125*curvA*curvA*curvB, 0, -0.5*D*curvA*curvB, T**3,  T*T*E + 0.5*curvB*D*D)
-            cands = [cand for cand in realpolyroots(coeffs) if cand > 0]
 
-            if cands:
-                a = min(cands)
-                b = (D - 0.5*curvA*a*a) / T
+            coeffs_a = (3.375*curvA*curvA*curvB, 0, -4.5*curvA*curvB*D, -T**3,  1.5*curvB*D*D - T*T*E)
+            coeffs_b = (3.375*curvA*curvB*curvB, 0, -4.5*curvA*curvB*E, -T**3,  1.5*curvA*E*E - T*T*D)
+
+            # First try the equation for a
+            cands_a = [cand for cand in realpolyroots(coeffs_a) if cand > 0]
+
+            if cands_a:
+                a = min(cands_a)
+                b = (1.5*curvA*a*a - D) / T
             else:
                 # then, try the equation for b
-                coeffs = (0.125*curvB*curvB*curvA, 0,  0.5*E*curvA*curvB, T**3, -T*T*D + 0.5*curvA*E*E)
-                cands = [cand for cand in realpolyroots(coeffs) if cand > 0]
-                if cands:
-                    b = min(cands)
-                    a = - (E + 0.5*curvB*b*b) / T
+                cands_b = [cand for cand in realpolyroots(coeffs_b) if cand > 0]
+                if cands_b:
+                    b = min(cands_b)
+                    a = (1.5*curvB*b*b - E) / T
                 else:
                     a = b = None
 
-        except ImportError:
+        else:
             # if the Numeric modules are not available:
             # solve the coupled system by Newton iteration
             #     0 = Ga(a,b) = 0.5 a |a| curvA + b * T - D
@@ -184,26 +195,57 @@ def curveparams_from_endpoints_pt(A, B, tangentA, tangentB, curvA, curvB, obeycu
             #     at parameters 0 and 1 are to be continuous
             # the system is solved by 2-dim Newton-Iteration
             # (a,b)^{i+1} = (a,b)^i - (DG)^{-1} (Ga(a^i,b^i), Gb(a^i,b^i))
-            a = b = 0
-            Ga = Gb = 1
-            while max(abs(Ga),abs(Gb)) > epsilon:
-                detDG = abs(a*b) * curvA*curvB - T*T
-                invDG = [[curvB*abs(b)/detDG, -T/detDG], [-T/detDG, curvA*abs(a)/detDG]]
+            a = 1.0 / abs(curvA)
+            b = 1.0 / abs(curvB)
+            eps = 1.0 # stepwith for the Newton iteration
+            da = db = 2*epsilon
+            counter = 0
+            while max(abs(da),abs(db)) > epsilon and counter < 1000:
 
-                Ga = a*abs(a)*curvA*0.5 + b*T - D
-                Gb = b*abs(b)*curvB*0.5 + a*T + E
+                Ga = eps * (1.5*curvA*a*a - T*b - D)
+                Gb = eps * (1.5*curvB*b*b - T*a - E)
 
-                a, b = a - 0.5*invDG[0][0]*Ga - 0.5*invDG[0][1]*Gb, b - 0.5*invDG[1][0]*Ga - 0.5*invDG[1][1]*Gb
+                detDG = 9.0*a*b*curvA*curvB - T*T
+                invDG = ((3.0*curvB*b/detDG, T/detDG), (T/detDG, 3.0*curvA*a/detDG))
 
+                da = invDG[0][0] * Ga + invDG[0][1] * Gb
+                db = invDG[1][0] * Ga + invDG[1][1] * Gb
 
-    return (abs(a) / 3.0, abs(b) / 3.0)
-# }}}
+                a -= da
+                b -= db
 
-def curvecontrols_from_endpoints_pt(A, B, tangentA, tangentB, curvA, curvB, obeycurv=0, epsilon=1e-5): # {{{
-    a, b = curveparams_from_endpoints_pt(A, B, tangentA, tangentB, curvA, curvB, obeycurv=obeycurv, epsilon=epsilon)
-    # XXX respect the normalization from curveparams_from_endpoints_pt
-    return A, (A[0] + a * tangentA[0], A[1] + a * tangentA[1]), (B[0] - b * tangentB[0], B[1] - b * tangentB[1]), B
-# }}}
+                counter += 1
+
+    if a < 0 or b < 0:
+        a = b = None
+
+    if a is not None: a /= normA
+    if b is not None: b /= normB
+
+    return a, b
+# >>>
+
+def intersection (A, D, tangA, tangD): # <<<
+
+    """returns the intersection parameters of two evens
+
+    they are defined by:
+      x(t) = A + t * tangA
+      x(s) = D + s * tangD
+    """
+    det = -tangA[0] * tangD[1] + tangA[1] * tangD[0]
+    try:
+        1.0 / det
+    except ArithmeticError:
+        return None, None
+
+    DA = D[0] - A[0], D[1] - A[1]
+
+    t = (-tangD[1]*DA[0] + tangD[0]*DA[1]) / det
+    s = (-tangA[1]*DA[0] + tangA[0]*DA[1]) / det
+
+    return t, s
+# >>>
 
 
 class deformer(attr.attr):
@@ -211,7 +253,7 @@ class deformer(attr.attr):
     def deform (self, basepath):
         return origpath
 
-class cycloid(deformer): # {{{
+class cycloid(deformer): # <<<
     """Wraps a cycloid around a path.
 
     The outcome looks like a metal spring with the originalpath as the axis.
@@ -352,9 +394,9 @@ class cycloid(deformer): # {{{
 
         # That's it
         return cycloidpath
-# }}}
+# >>>
 
-class smoothed(deformer): # {{{
+class smoothed(deformer): # <<<
 
     """Bends corners in a path.
 
@@ -399,140 +441,217 @@ class smoothed(deformer): # {{{
     def deformsubpath(self, normsubpath):
 
         radius = unit.topt(self.radius)
-
-        npitems = normsubpath.normsubpathitems
-        arclens = [npitem.arclen_pt(normsubpath.epsilon) for npitem in npitems]
+        epsilon = normsubpath.epsilon
 
         # 1. Build up a list of all relevant normsubpathitems
         #    and the lengths where they will be cut (length with respect to the normsubpath)
-        npitemnumbers = []
-        cumalen = 0
-        for no in range(len(arclens)):
-            alen = arclens[no]
-            # a first selection criterion for skipping too short normsubpathitems
-            # the rest will queeze the radius
-            if alen > radius:
-                npitemnumbers.append(no)
+        all_npitems = normsubpath.normsubpathitems
+        rel_npitems, arclengths = [], []
+        for npitem in all_npitems:
+
+            arclength = npitem.arclen_pt(epsilon)
+
+            # items that should be totally skipped:
+            # (we throw away the possible ending "closepath" piece)
+            if (arclength > radius):
+                rel_npitems.append(npitem)
+                arclengths.append(arclength)
             else:
-                warnings.warn("smoothed is skipping a normsubpathitem that is too short")
-            cumalen += alen
-        # XXX: what happens, if 0 or -1 is skipped and path not closed?
+                warnings.warn("smoothed is skipping a too short normsubpathitem")
 
         # 2. Find the parameters, points,
         #    and calculate tangents and curvatures
-        params, tangents, curvatures, points = [], [], [], []
-        for no in npitemnumbers:
-            npitem = npitems[no]
-            alen = arclens[no]
+        params, points, tangents, curvatures = [], [], [], []
+        for npitem, arclength in zip(rel_npitems, arclengths):
 
             # find the parameter(s): either one or two
-            if no is npitemnumbers[0] and not normsubpath.closed:
-                pars = npitem._arclentoparam_pt([max(0, alen - radius)], normsubpath.epsilon)[0]
-            elif alen > 2 * radius:
-                pars = npitem._arclentoparam_pt([radius, alen - radius], normsubpath.epsilon)[0]
+            # for short items we squeeze the radius
+            if arclength > 2 * radius:
+                cut_alengths = [radius, arclength - radius]
             else:
-                pars = npitem._arclentoparam_pt([0.5 * alen], normsubpath.epsilon)[0]
+                cut_alengths = [0.5 * radius]
+
+            # get the parameters
+            pars = npitem._arclentoparam_pt(cut_alengths, epsilon)[0]
+
+            # the endpoints of an open subpath must be handled specially
+            if not normsubpath.closed:
+                if npitem is rel_npitems[0]:
+                    pars[0] = 0
+                if npitem is rel_npitems[-1]:
+                    pars[-1] = 1
 
             # find points, tangents and curvatures
             ts,cs,ps = [],[],[]
             for par in pars:
-                # XXX: there is no trafo method for normsubpathitems?
-                thetrafo = normsubpath.trafo([par + no])[0]
+                thetrafo = npitem.trafo([par])[0]
                 p = thetrafo._apply(0,0)
-                # XXX thetrafo._apply(1,0) causes numeric instabilities in
-                # bezier_by_endpoints
-                t = thetrafo._apply(100,0)
+                t = thetrafo._apply(1,0)
                 ps.append(p)
                 ts.append((t[0]-p[0], t[1]-p[1]))
-                c = npitem.curveradius_pt([par])[0]
-                if c is None: cs.append(0)
-                else: cs.append(1.0/c)
+                r = npitem.curveradius_pt([par])[0]
+                if r is None:
+                    cs.append(0)
+                else:
+                    cs.append(1.0 / r)
 
             params.append(pars)
             points.append(ps)
             tangents.append(ts)
             curvatures.append(cs)
 
-        # create empty path to collect pathitems
+
+        # create an empty path to collect pathitems
         # this will be returned as normpath, later
         smoothpath = path.path()
         do_moveto = 1 # we do not know yet where to moveto
-        # 3. First part of extra handling of closed paths
-        if not normsubpath.closed:
-            bpart = npitems[npitemnumbers[0]].segments([0, params[0]])[0]
-            if do_moveto:
-                smoothpath.append(path.moveto_pt(*bpart.atbegin_pt()))
-                do_moveto = 0
-            if isinstance(bpart, path.normline_pt):
-                smoothpath.append(path.lineto_pt(*bpart.atend_pt()))
-            elif isinstance(bpart, path.normcurve_pt):
-                smoothpath.append(path.curveto_pt(bpart.x1_pt, bpart.y1_pt, bpart.x2_pt, bpart.y2_pt, bpart.x3_pt, bpart.y3_pt))
-            do_moveto = 0
+
+        ## 3. First part of extra handling of open paths
+        #if not normsubpath.closed:
+
+        #    if len(params[0]) == 1:
+        #        beginpiece = npitems[npitemnumbers[0]].segments([0, params[0]])[0]
+        #    else:
+        #        beginpiece = npitems[npitemnumbers[0]].segments([0, params[0][0]])[0]
+
+        #    if do_moveto:
+        #        smoothpath.append(path.moveto_pt(*beginpiece.atbegin_pt()))
+        #        do_moveto = 0
+
+        #    if isinstance(beginpiece, path.normline_pt):
+        #        smoothpath.append(path.lineto_pt(*beginpiece.atend_pt()))
+        #    elif isinstance(beginpiece, path.normcurve_pt):
+        #        smoothpath.append(path.curveto_pt(
+        #           beginpiece.x1_pt, beginpiece.y1_pt,
+        #           beginpiece.x2_pt, beginpiece.y2_pt,
+        #           beginpiece.x3_pt, beginpiece.y3_pt))
+
+        #    do_moveto = 0
 
         # 4. Do the splitting for the first to the last element,
         #    a closed path must be closed later
-        for i in range(len(npitemnumbers)-1+(normsubpath.closed==1)):
-            this = npitemnumbers[i]
-            next = npitemnumbers[(i+1) % len(npitemnumbers)]
-            thisnpitem, nextnpitem = npitems[this], npitems[next]
+        #
+        for i in range(len(rel_npitems)):
 
-            # split thisnpitem apart and take the middle peace
+            this = i
+            next = (i+1) % len(rel_npitems)
+            thisnpitem = rel_npitems[this]
+            nextnpitem = rel_npitems[next]
+
+            # split thisnpitem apart and take the middle piece
+            # We start the new path with the middle piece of the first path-elem
             if len(points[this]) == 2:
-                mpart = thisnpitem.segments(params[this] + [1])[0]
+
+                middlepiece = thisnpitem.segments(params[this])[0]
+
                 if do_moveto:
-                    smoothpath.append(path.moveto_pt(*mpart.atbegin_pt()))
+                    smoothpath.append(path.moveto_pt(*middlepiece.atbegin_pt()))
                     do_moveto = 0
-                if isinstance(mpart, path.normline_pt):
-                    smoothpath.append(path.lineto_pt(*mpart.atend_pt()))
-                elif isinstance(mpart, path.normcurve_pt):
-                    smoothpath.append(path.curveto_pt(mpart.x1_pt, mpart.y1_pt, mpart.x2_pt, mpart.y2_pt, mpart.x3_pt, mpart.y3_pt))
+
+                if isinstance(middlepiece, path.normline_pt):
+                    smoothpath.append(path.lineto_pt(*middlepiece.atend_pt()))
+                elif isinstance(middlepiece, path.normcurve_pt):
+                    smoothpath.append(path.curveto_pt(
+                      middlepiece.x1_pt, middlepiece.y1_pt,
+                      middlepiece.x2_pt, middlepiece.y2_pt,
+                      middlepiece.x3_pt, middlepiece.y3_pt))
+
+            if (not normsubpath.closed) and (thisnpitem is rel_npitems[-1]):
+                continue
 
             # add the curve(s) replacing the corner
-            if isinstance(thisnpitem, path.normline_pt) and isinstance(nextnpitem, path.normline_pt) \
-               and (next-this == 1 or (this==0 and next==len(npitems)-1)):
+            if isinstance(thisnpitem, path.normline_pt) and \
+               isinstance(nextnpitem, path.normline_pt) and \
+               epsilon > math.hypot(thisnpitem.atend_pt()[0] - nextnpitem.atbegin_pt()[0],
+                                    thisnpitem.atend_pt()[0] - nextnpitem.atbegin_pt()[0]):
+
                 d1,g1,f1,e,f2,g2,d2 = curvescontrols_from_endlines_pt(
                     thisnpitem.atend_pt(), tangents[this][-1], tangents[next][0],
                     math.hypot(points[this][-1][0] - thisnpitem.atend_pt()[0], points[this][-1][1] - thisnpitem.atend_pt()[1]),
                     math.hypot(points[next][0][0] - nextnpitem.atbegin_pt()[0], points[next][0][1] - nextnpitem.atbegin_pt()[1]),
                     softness=self.softness)
+
                 if do_moveto:
                     smoothpath.append(path.moveto_pt(*d1))
                     do_moveto = 0
+
                 smoothpath.append(path.curveto_pt(*(g1 + f1 + e)))
                 smoothpath.append(path.curveto_pt(*(f2 + g2 + d2)))
-                #for X in [d1,g1,f1,e,f2,g2,d2]:
-                #    dp.subcanvas.fill(path.circle_pt(X[0], X[1], 1.0))
+
             else:
-                A,B,C,D = curvecontrols_from_endpoints_pt(
-                    points[this][-1], points[next][0],
-                    tangents[this][-1], tangents[next][0],
-                    curvatures[this][-1], curvatures[next][0],
-                    obeycurv=self.obeycurv, epsilon=normsubpath.epsilon)
+
+                A, D = points[this][-1], points[next][0]
+                tangA, tangD = tangents[this][-1], tangents[next][0]
+                curvA, curvD = curvatures[this][-1], curvatures[next][0]
+                if not self.obeycurv:
+                    # do not obey the sign of the curvature but
+                    # make the sign such that the curve smoothly passes to the next point
+                    # this results in a discontinuous curvature
+                    # (but the absolute value is still continuous)
+                    sA = sign1(tangA[0] * (D[1]-A[1]) - tangA[1] * (D[0]-A[0]))
+                    sD = sign1(tangD[0] * (D[1]-A[1]) - tangD[1] * (D[0]-A[0]))
+                    curvA = sA * abs(curvA)
+                    curvD = sD * abs(curvD)
+
+                # get the length of the control "arms"
+                a, d = controldists_from_endpoints_pt (
+                    A, D, tangA, tangD, curvA, curvD,
+                    epsilon=epsilon)
+
+                # avoid overshooting at the corners:
+                # this changes not only the sign of the curvature
+                # but also the magnitude
+                if not self.obeycurv:
+                    t, s = intersection(A, D, tangA, tangD)
+                    if t is None or t < 0:
+                        a = None
+                    else:
+                        a = min(a, t)
+
+                    if s is None or s > 0:
+                        d = None
+                    else:
+                        d = min(d, -s)
+
+                # if there is no useful result:
+                # take arbitrary smoothing curve that does not obey
+                # the curvature constraints
+                if a is None or d is None:
+                    dist = math.hypot(A[0] - D[0], A[1] - D[1])
+                    a = dist / (3.0 * math.hypot(*tangA))
+                    d = dist / (3.0 * math.hypot(*tangD))
+                    #warnings.warn("The connecting bezier cannot be found. Using a simple fallback.")
+
+                # calculate the two missing control points
+                B = A[0] + a * tangA[0], A[1] + a * tangA[1]
+                C = D[0] - d * tangD[0], D[1] - d * tangD[1]
+
                 if do_moveto:
                     smoothpath.append(path.moveto_pt(*A))
                     do_moveto = 0
+
                 smoothpath.append(path.curveto_pt(*(B + C + D)))
-                #for X in [A,B,C,D]:
-                #    dp.subcanvas.fill(path.circle_pt(X[0], X[1], 1.0))
+
 
         # 5. Second part of extra handling of closed paths
         if normsubpath.closed:
             if do_moveto:
                 smoothpath.append(path.moveto_pt(*dp.strokepath.atbegin()))
                 warnings.warn("The whole subpath has been smoothed away -- sorry")
-            smoothpath.append(path.closepath())
-        else:
-            epart = npitems[npitemnumbers[-1]].segments([params[-1][0], 1])[0]
-            if do_moveto:
-                smoothpath.append(path.moveto_pt(*epart.atbegin_pt()))
-                do_moveto = 0
-            if isinstance(epart, path.normline_pt):
-                smoothpath.append(path.lineto_pt(*epart.atend_pt()))
-            elif isinstance(epart, path.normcurve_pt):
-                smoothpath.append(path.curveto_pt(epart.x1_pt, epart.y1_pt, epart.x2_pt, epart.y2_pt, epart.x3_pt, epart.y3_pt))
+            #smoothpath.append(path.closepath())
+
+        #else:
+        #    epart = npitems[npitemnumbers[-1]].segments([params[-1][0], 1])[0]
+        #    if do_moveto:
+        #        smoothpath.append(path.moveto_pt(*epart.atbegin_pt()))
+        #        do_moveto = 0
+        #    if isinstance(epart, path.normline_pt):
+        #        smoothpath.append(path.lineto_pt(*epart.atend_pt()))
+        #    elif isinstance(epart, path.normcurve_pt):
+        #        smoothpath.append(path.curveto_pt(epart.x1_pt, epart.y1_pt, epart.x2_pt, epart.y2_pt, epart.x3_pt, epart.y3_pt))
 
         return smoothpath
-# }}}
+# >>>
 
 smoothed.clear = attr.clearclass(smoothed)
 
@@ -551,4 +670,4 @@ smoothed.ROUnd = smoothed(radius=_base*math.sqrt(16))
 smoothed.ROUNd = smoothed(radius=_base*math.sqrt(32))
 smoothed.ROUND = smoothed(radius=_base*math.sqrt(64))
 
-
+# vim:foldmethod=marker:foldmarker=<<<,>>>
