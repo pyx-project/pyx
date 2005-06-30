@@ -26,7 +26,7 @@ try:
     import zlib
 except:
     pass
-import canvas, pswriter, pdfwriter, t1strip
+import bbox, canvas, pswriter, pdfwriter, t1strip
 
 # _PFB_ASCII = "\200\1"
 # _PFB_BIN = "\200\2"
