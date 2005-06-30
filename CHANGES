@@ -49,6 +49,7 @@ TODO:
   - deformer module:
     - better names for the helper functions ?
     - why does smoothed through away short normpathitems instead of simply ignoring them?
+      Where is the difference? [MS]
   - open discussion:
     - clearly distingish between readers and writers. dvifile, epsfile, etc. might
       be renamed to dvireader, epsreader ...
@@ -85,6 +86,7 @@ TODO:
 0.8 (????/??/??):
   - path module:
     - path parameters and argument handling
+    - repair normpath-conversion of arct
   - document module: new
     - container classes for document and pages
     - document.paperformat class (strings are deprecated)
