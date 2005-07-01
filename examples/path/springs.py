@@ -15,7 +15,7 @@ eps = 0.03            # extra spacing for surrounding circles
 c = canvas.canvas()
 for i in range(n):
   c.stroke(path.path(path.arc(0, 0, r, i*dphi, (i+1)*dphi)), 
-               [deformer.cycloid(rcyc, nl)])
+               [deformer.cycloid(rcyc, nl), deformer.smoothed(radius=0.1)])
   c.fill(path.circle(r*cos(i*dphir), r*sin(i*dphir), rc), 
                [deco.filled([color.grey.black])])
 
