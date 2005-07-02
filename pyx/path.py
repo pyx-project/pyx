@@ -145,7 +145,6 @@ class _currentpoint:
 
     __slots__ = "x_pt", "y_pt"
 
-
     def __init__(self, x_pt=_invalidcurrentpoint, y_pt=_invalidcurrentpoint):
         """initialize current point
 
