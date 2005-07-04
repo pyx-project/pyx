@@ -112,7 +112,7 @@ TODO:
       - dynamic function data on a logarithmic axis uses isinstance check now
     - graph key:
       - extend graph keys to allow for several columns (TODO: documentation)
-    - axis data handling refacturing:
+    - axis data handling refactoring:
       - introcuded an axis positioner
       - introduced anchoredaxis to make axis data and positioning local to a graph
       - linkedaxis is a special version of anchoredaxis and are generic (they use the new linkpainter provided by an axis)
