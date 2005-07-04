@@ -88,9 +88,37 @@ def testsmoothed(c):
     c.stroke(p, [smoothed(radius=0.20, softness=1, obeycurv=0), color.rgb.green])
     c.stroke(p, [smoothed(radius=1.20, softness=1, obeycurv=0), color.rgb.blue])
 
+
+def testparallel(c):
+    p = path.circle(-4,0,2)
+    p += path.path(
+        path.moveto(0,0),
+        path.curveto(0,16, -11,5, 5,5),
+    )
+
+    c.stroke(p, [color.gray(0.8), style.linewidth.THICk])
+    c.stroke(p, [style.linewidth.THIN])
+    c.stroke(p, [parallel(distance=1.9, relerr=0.05, expensive=1), color.rgb.green])
+    c.stroke(p, [parallel(distance=3.1, relerr=0.05, expensive=1), color.rgb.blue])
+
+    p += path.path(
+        path.lineto(5,4),
+        path.lineto(6,4),
+        path.lineto(6,6),
+        path.lineto(4,6),
+        path.lineto(4,7),
+        path.lineto(5,7),
+        path.lineto(3,3)
+    )
+
+    c.stroke(p, [parallel(distance=0.1, relerr=0.05, expensive=1), color.rgb.red])
+    c.stroke(p, [parallel(distance=-0.1, relerr=0.05, expensive=1), color.rgb.red])
+
+
 c=canvas.canvas()
 dotest(c, 0, 0, "testcycloid")
 dotest(c, 17, 0, "testsmoothed")
+dotest(c, 10, 15, "testparallel")
 c.writeEPSfile("test_deformer", paperformat=document.paperformat.A4, rotated=0, fittosize=1)
 c.writePDFfile("test_deformer")
 

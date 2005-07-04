@@ -145,6 +145,8 @@ def controldists_from_endpoints_pt (A, B, tangentA, tangentB, curvA, curvB, epsi
             b = math.sqrt(2.0 * E / (3.0 * curvB))
         except ZeroDivisionError:
             a = b = None
+        except ValueError:
+            raise # ???
     else:
         try:
             1.0 / curvA
@@ -245,6 +247,95 @@ def intersection (A, D, tangA, tangD): # <<<
     s = (-tangA[1]*DA[0] + tangA[0]*DA[1]) / det
 
     return t, s
+# >>>
+
+def parallel_curvespoints_pt (orig_ncurve, shift, expensive=0, relerr=0.05, epsilon=1e-5, counter=1): # <<<
+
+    A = orig_ncurve.x0_pt, orig_ncurve.y0_pt
+    B = orig_ncurve.x1_pt, orig_ncurve.y1_pt
+    C = orig_ncurve.x2_pt, orig_ncurve.y2_pt
+    D = orig_ncurve.x3_pt, orig_ncurve.y3_pt
+
+    # non-normalized tangential vector
+    # from begin/end point to the controlpoints
+    tangA = (B[0] - A[0], B[1] - A[1])
+    tangD = (D[0] - C[0], D[1] - C[1])
+
+    # normalized normal vectors
+    # turned to the left (+90 degrees) from the tangents
+    NormA = (-tangA[1] / math.hypot(*tangA), tangA[0] / math.hypot(*tangA))
+    NormD = (-tangD[1] / math.hypot(*tangD), tangD[0] / math.hypot(*tangD))
+
+    # radii of curvature
+    radiusA, radiusD = orig_ncurve.curveradius_pt([0,1])
+
+    # get the new begin/end points
+    A = A[0] + shift * NormA[0], A[1] + shift * NormA[1]
+    D = D[0] + shift * NormD[0], D[1] + shift * NormD[1]
+
+    try:
+        if radiusA is None:
+            curvA = 0
+        else:
+            curvA = 1.0 / (radiusA - shift)
+        if radiusD is None:
+            curvD = 0
+        else:
+            curvD = 1.0 / (radiusD - shift)
+    except ZeroDivisionError:
+        raise
+    else:
+        a, d = controldists_from_endpoints_pt (A, D, tangA, tangD, curvA, curvD, epsilon=epsilon)
+
+        if a is None or d is None:
+            # fallback heuristic
+            a = (radiusA - shift) / radiusA
+            d = (radiusD - shift) / radiusD
+
+        B = A[0] + a * tangA[0], A[1] + a * tangA[1]
+        C = D[0] - d * tangD[0], D[1] - d * tangD[1]
+
+    controlpoints = [(A,B,C,D)]
+
+    # check if the distance is really the wanted distance
+    if expensive and counter < 10:
+        # measure the distance in the "middle" of the original curve
+        trafo = orig_ncurve.trafo([0.5])[0]
+        M = trafo._apply(0,0)
+        NormM = trafo._apply(0,1)
+        NormM = NormM[0] - M[0], NormM[1] - M[1]
+
+        nline = path.normline_pt (
+          M[0] + (1.0 - 2*relerr) * shift * NormM[0],
+          M[1] + (1.0 - 2*relerr) * shift * NormM[1],
+          M[0] + (1.0 + 2*relerr) * shift * NormM[0],
+          M[1] + (1.0 + 2*relerr) * shift * NormM[1])
+
+        new_ncurve = path.normcurve_pt(A[0],A[1], B[0],B[1], C[0],C[1], D[0],D[1])
+
+        #cutparams = nline.intersect(orig_ncurve, epsilon)
+        cutparams = new_ncurve.intersect(nline, epsilon)
+        if cutparams:
+            cutparams = cutparams[0]
+        cutpoints = nline.at_pt(cutparams)
+        good = 0
+        for cutpoint in cutpoints:
+            if cutpoint is not None:
+                dist = math.hypot(M[0] - cutpoint[0], M[1] - cutpoint[1])
+                if abs(dist - shift) < relerr * shift:
+                    good = 1
+
+        if not good:
+            first, second = orig_ncurve.segments([0,0.5,1])
+            controlpoints = \
+              parallel_curvespoints_pt (first,  shift, expensive, relerr, epsilon, counter+1) + \
+              parallel_curvespoints_pt (second, shift, expensive, relerr, epsilon, counter+1)
+
+
+
+    # TODO:
+    # too big curvatures: intersect curves
+    return controlpoints
 # >>>
 
 
@@ -637,5 +728,150 @@ smoothed.ROund = smoothed(radius=_base*math.sqrt(8))
 smoothed.ROUnd = smoothed(radius=_base*math.sqrt(16))
 smoothed.ROUNd = smoothed(radius=_base*math.sqrt(32))
 smoothed.ROUND = smoothed(radius=_base*math.sqrt(64))
+
+class parallel(deformer): # <<<
+
+    """creates a parallel path with constant distance to the original path
+
+    """
+
+    def __init__(self, distance, relerr=0.05, expensive=1):
+        self.distance = distance
+        self.relerr = relerr
+        self.expensive = expensive
+
+    def __call__(self, distance=None, relerr=None, expensive=None):
+        if distance is None:
+            d = self.distance
+        if relerr is None:
+            r = self.relerr
+        if expensive is None:
+            e = self.expensive
+
+        return parallel(distance=d, relerr=r, expensive=e)
+
+    def deform(self, orig_path):
+        orig_npath = orig_path.normpath()
+        new_path = path.path()
+
+        for sp in orig_npath.normsubpaths:
+            new_path += self.deformsubpath(sp)
+
+        return new_path
+
+    def deformsubpath(self, normsubpath):
+
+        distance = unit.topt(self.distance)
+        relerr = self.relerr
+        expensive = self.expensive
+        epsilon = normsubpath.epsilon
+
+        newpath = None
+
+        # 1. Store endpoints, tangents and curvatures for each element
+        points, tangents, curvatures = [], [], []
+        for npitem in normsubpath:
+
+            ps,ts,cs = [],[],[]
+            trafos = npitem.trafo([0,1])
+            for t in trafos:
+                p = t._apply(0,0)
+                t = t._apply(1,0)
+                ps.append(p)
+                ts.append((t[0]-p[0], t[1]-p[1]))
+
+            rs = npitem.curveradius_pt([0,1])
+            cs = []
+            for r in rs:
+                if r is None:
+                    cs.append(0)
+                else:
+                    cs.append(1.0 / r)
+
+            points.append(ps)
+            tangents.append(ts)
+            curvatures.append(cs)
+
+        # 2. append the parallel path for each element:
+        for cur in range(len(normsubpath)):
+
+            if cur == 0:
+                old = cur
+                OldEnd = points[old][0]
+                OldEndTang = tangents[old][0]
+            else:
+                old = cur - 1
+                OldEnd = points[old][1]
+                OldEndTang = tangents[old][1]
+
+            CurBeg, CurEnd = points[cur]
+            CurBegTang, CurEndTang = tangents[cur]
+            CurBegCurv, CurEndCurv = curvatures[cur]
+
+            npitem = normsubpath[cur]
+
+            # get the control points for the shifted pathelement
+            if isinstance(npitem, path.normline_pt):
+                A = CurBeg[0] - distance * CurBegTang[1], CurBeg[1] + distance * CurBegTang[0]
+                D = CurEnd[0] - distance * CurEndTang[1], CurEnd[1] + distance * CurEndTang[0]
+                new_pitems = [path.lineto_pt(D[0], D[1])]
+            elif isinstance(npitem, path.normcurve_pt):
+                cpoints_list = parallel_curvespoints_pt(npitem, distance, expensive, relerr, epsilon)
+                new_pitems = []
+                for cpoints in cpoints_list:
+                    A,B,C,D = cpoints
+                    new_pitems.append(path.curveto_pt(B[0],B[1], C[0],C[1], D[0],D[1]))
+                # we will need the starting point of the new path
+                A = cpoints_list[0][0]
+
+            # start the new path
+            if newpath is None:
+                newpath = path.path(path.moveto_pt(*A))
+
+            # append the next piece of the path:
+            # it might contain of an extra arc or must be intersected before appending
+            parallel = (OldEndTang[0]*CurBegTang[1] - OldEndTang[1]*CurBegTang[0])
+            if parallel*distance < -epsilon:
+                # append an arc around the corner and then continue
+                endpoint = newpath.at_pt(newpath.end())
+                center = CurBeg
+                angle1 = math.atan2(endpoint[1] - center[1], endpoint[0] - center[0]) * 180.0 / math.pi
+                angle2 = math.atan2(A[1] - center[1], A[0] - center[0]) * 180.0 / math.pi
+                if parallel > 0:
+                    newpath.append(path.arc_pt(center[0], center[1], abs(distance), angle1, angle2))
+                else:
+                    newpath.append(path.arcn_pt(center[0], center[1], abs(distance), angle1, angle2))
+
+                for new_pitem in new_pitems:
+                    newpath.append(new_pitem)
+            elif parallel*distance > epsilon:
+                # intersect the extra piece of the path with the rest of the new path
+                # and append it
+                tmppath = path.path(path.moveto_pt(*A))
+                for new_pitem in new_pitems:
+                    tmppath.append(new_pitem)
+                intsparams = tmppath.intersect(newpath)
+                # [[a,b,c], [a,b,c]]
+                if intsparams:
+                    # TODO: re-write this for normpaths
+                    tmpparam, newparam = intsparams[0][0], intsparams[1][0]
+                    newpath = newpath.split([newparam])[0].path()
+                    tmppath = tmppath.split([tmpparam])[-1].path()
+                    for tmpitem in tmppath[1:]:
+                        newpath.append(tmpitem)
+                else:
+                    raise
+            else:
+                # simply continue the path
+                for new_pitem in new_pitems:
+                    newpath.append(new_pitem)
+
+        # 3. extra handling of closed paths
+        if normsubpath.closed:
+            # TODO
+            newpath.append(path.closepath())
+
+        return newpath
+# >>>
 
 # vim:foldmethod=marker:foldmarker=<<<,>>>
