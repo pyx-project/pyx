@@ -1256,7 +1256,7 @@ class circle_pt(path):
    """circle with center (x, y) and radius in pts"""
 
    def __init__(self, x, y, radius):
-       path.__init__(self, arc_pt(x, y, radius, 0, 360), closepath())
+       path.__init__(self, moveto_pt(x+radius,y), arc_pt(x, y, radius, 0, 360), closepath())
 
 
 class line(line_pt):
