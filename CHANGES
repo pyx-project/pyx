@@ -112,7 +112,7 @@ TODO:
       - dynamic function data on a logarithmic axis uses isinstance check now
     - graph key:
       - extend graph keys to allow for several columns (TODO: documentation)
-    - axis data handling refactureing:
+    - axis data handling refacturing:
       - introcuded an axis positioner
       - introduced anchoredaxis to make axis data and positioning local to a graph
       - linkedaxis is a special version of anchoredaxis and are generic (they use the new linkpainter provided by an axis)
@@ -125,8 +125,6 @@ TODO:
         defined the orthogonal axis
     - TODO: update documentation
   - prolog module: deleted (replaced by resource module)
-  - resource module: new
-    - resources: fonts and definitions
   - dvifile:
     - minimal dvitype.py
     - dvitype unit test
