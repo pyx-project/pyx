@@ -257,7 +257,7 @@ def parallel_curvespoints_pt (orig_ncurve, shift, expensive=0, relerr=0.05, epsi
     D = orig_ncurve.x3_pt, orig_ncurve.y3_pt
 
     # non-normalized tangential vector
-    # from begin/end point to the controlpoints
+    # from begin/end point to the corresponding controlpoint
     tangA = (B[0] - A[0], B[1] - A[1])
     tangD = (D[0] - C[0], D[1] - C[1])
 
@@ -316,13 +316,14 @@ def parallel_curvespoints_pt (orig_ncurve, shift, expensive=0, relerr=0.05, epsi
         #cutparams = nline.intersect(orig_ncurve, epsilon)
         cutparams = new_ncurve.intersect(nline, epsilon)
         if cutparams:
-            cutparams = cutparams[0]
-        cutpoints = nline.at_pt(cutparams)
+            cutpoints = nline.at_pt(cutparams[0])
+        else:
+            cutpoints = []
         good = 0
         for cutpoint in cutpoints:
             if cutpoint is not None:
                 dist = math.hypot(M[0] - cutpoint[0], M[1] - cutpoint[1])
-                if abs(dist - shift) < relerr * shift:
+                if abs(dist - abs(shift)) < relerr * abs(shift):
                     good = 1
 
         if not good:
@@ -335,6 +336,7 @@ def parallel_curvespoints_pt (orig_ncurve, shift, expensive=0, relerr=0.05, epsi
 
     # TODO:
     # too big curvatures: intersect curves
+    # there is something wrong with the recursion
     return controlpoints
 # >>>
 
@@ -733,7 +735,24 @@ class parallel(deformer): # <<<
 
     """creates a parallel path with constant distance to the original path
 
+    A positive 'distance' results in a curve left of the original one -- and a
+    negative 'distance' in a curve at the right. Left/Right are understood in
+    terms of the parameterization of the original curve.
+    At corners, either a circular arc is drawn around the corner, or, if the
+    curve is on the other side, the parallel curve also exhibits a corner.
+
+    For each path element a parallel curve/line is constructed. For curves, the
+    accuracy can be adjusted with the parameter 'relerr', thus, relerr*distance
+    is the maximum allowable error somewhere in the middle of the curve (at
+    parameter value 0.5).
+    'relerr' only applies for the 'expensive' mode where the parallel curve for
+    a single curve items may be composed of several (many) curve items.
     """
+
+    # TODO:
+    # - check for greatest curvature and introduce extra corners
+    #   if a normcurve is too heavily curved
+    # - do relerr-checks at better points than just at parameter 0.5
 
     def __init__(self, distance, relerr=0.05, expensive=1):
         self.distance = distance
@@ -741,6 +760,7 @@ class parallel(deformer): # <<<
         self.expensive = expensive
 
     def __call__(self, distance=None, relerr=None, expensive=None):
+        # returns a copy of the deformer with different parameters
         if distance is None:
             d = self.distance
         if relerr is None:
@@ -752,25 +772,25 @@ class parallel(deformer): # <<<
 
     def deform(self, orig_path):
         orig_npath = orig_path.normpath()
-        new_path = path.path()
+        new_npath = path.normpath()
 
-        for sp in orig_npath.normsubpaths:
-            new_path += self.deformsubpath(sp)
+        for orig_nspath in orig_npath:
+            new_npath.append(self.deformsubpath(orig_nspath))
 
-        return new_path
+        return new_npath
 
-    def deformsubpath(self, normsubpath):
+    def deformsubpath(self, orig_nspath):
 
         distance = unit.topt(self.distance)
         relerr = self.relerr
         expensive = self.expensive
-        epsilon = normsubpath.epsilon
+        epsilon = orig_nspath.epsilon
 
-        newpath = None
+        new_nspath = path.normsubpath(epsilon=epsilon)
 
         # 1. Store endpoints, tangents and curvatures for each element
         points, tangents, curvatures = [], [], []
-        for npitem in normsubpath:
+        for npitem in orig_nspath:
 
             ps,ts,cs = [],[],[]
             trafos = npitem.trafo([0,1])
@@ -792,8 +812,10 @@ class parallel(deformer): # <<<
             tangents.append(ts)
             curvatures.append(cs)
 
+        closeparallel = (tangents[-1][1][0]*tangents[0][0][1] - tangents[-1][1][1]*tangents[0][0][0])
+
         # 2. append the parallel path for each element:
-        for cur in range(len(normsubpath)):
+        for cur in range(len(orig_nspath)):
 
             if cur == 0:
                 old = cur
@@ -808,70 +830,121 @@ class parallel(deformer): # <<<
             CurBegTang, CurEndTang = tangents[cur]
             CurBegCurv, CurEndCurv = curvatures[cur]
 
-            npitem = normsubpath[cur]
+            npitem = orig_nspath[cur]
 
             # get the control points for the shifted pathelement
             if isinstance(npitem, path.normline_pt):
+                # get the points explicitly from the normal vector
                 A = CurBeg[0] - distance * CurBegTang[1], CurBeg[1] + distance * CurBegTang[0]
                 D = CurEnd[0] - distance * CurEndTang[1], CurEnd[1] + distance * CurEndTang[0]
-                new_pitems = [path.lineto_pt(D[0], D[1])]
+                new_npitems = [path.normline_pt(A[0], A[1], D[0], D[1])]
             elif isinstance(npitem, path.normcurve_pt):
+                # call a function to return a list of controlpoints
                 cpoints_list = parallel_curvespoints_pt(npitem, distance, expensive, relerr, epsilon)
-                new_pitems = []
+                new_npitems = []
                 for cpoints in cpoints_list:
                     A,B,C,D = cpoints
-                    new_pitems.append(path.curveto_pt(B[0],B[1], C[0],C[1], D[0],D[1]))
-                # we will need the starting point of the new path
+                    new_npitems.append(path.normcurve_pt(A[0],A[1], B[0],B[1], C[0],C[1], D[0],D[1]))
+                # we will need the starting point of the new normpath items
                 A = cpoints_list[0][0]
 
-            # start the new path
-            if newpath is None:
-                newpath = path.path(path.moveto_pt(*A))
 
             # append the next piece of the path:
             # it might contain of an extra arc or must be intersected before appending
             parallel = (OldEndTang[0]*CurBegTang[1] - OldEndTang[1]*CurBegTang[0])
             if parallel*distance < -epsilon:
-                # append an arc around the corner and then continue
-                endpoint = newpath.at_pt(newpath.end())
+
+                # append an arc around the corner
+                # from the preceding piece to the current piece
+                # we can never get here for the first npitem! (because cur==old)
+                endpoint = new_nspath.atend_pt()
                 center = CurBeg
                 angle1 = math.atan2(endpoint[1] - center[1], endpoint[0] - center[0]) * 180.0 / math.pi
                 angle2 = math.atan2(A[1] - center[1], A[0] - center[0]) * 180.0 / math.pi
                 if parallel > 0:
-                    newpath.append(path.arc_pt(center[0], center[1], abs(distance), angle1, angle2))
+                    arc_npath = path.path(path.arc_pt(
+                      center[0], center[1], abs(distance), angle1, angle2)).normpath()
                 else:
-                    newpath.append(path.arcn_pt(center[0], center[1], abs(distance), angle1, angle2))
+                    arc_npath = path.path(path.arcn_pt(
+                      center[0], center[1], abs(distance), angle1, angle2)).normpath()
 
-                for new_pitem in new_pitems:
-                    newpath.append(new_pitem)
+                for new_npitem in arc_npath[0]:
+                    new_nspath.append(new_npitem)
+
+
             elif parallel*distance > epsilon:
                 # intersect the extra piece of the path with the rest of the new path
-                # and append it
-                tmppath = path.path(path.moveto_pt(*A))
-                for new_pitem in new_pitems:
-                    tmppath.append(new_pitem)
-                intsparams = tmppath.intersect(newpath)
+                # and throw away the void parts
+                #
+                # build a subpath for intersection
+                extra_nspath = path.normsubpath(normsubpathitems=new_npitems, epsilon=epsilon)
+
+                intsparams = extra_nspath.intersect(new_nspath)
                 # [[a,b,c], [a,b,c]]
                 if intsparams:
-                    # TODO: re-write this for normpaths
-                    tmpparam, newparam = intsparams[0][0], intsparams[1][0]
-                    newpath = newpath.split([newparam])[0].path()
-                    tmppath = tmppath.split([tmpparam])[-1].path()
-                    for tmpitem in tmppath[1:]:
-                        newpath.append(tmpitem)
+                    # take the first intersection point:
+                    extra_param, new_param = intsparams[0][0], intsparams[1][0]
+                    new_nspath = new_nspath.segments([0, new_param])[0]
+                    extra_nspath = extra_nspath.segments([extra_param, len(extra_nspath)])[0]
+                    new_npitems = extra_nspath[:]
+                    # in case the intersection was not sufficiently exact:
+                    new_npitems[0].x0_pt, new_npitems[0].y0_pt = new_nspath.atend_pt()
                 else:
-                    raise
-            else:
-                # simply continue the path
-                for new_pitem in new_pitems:
-                    newpath.append(new_pitem)
+                    raise # how did we get here?
+
+
+            # at the (possible) closing corner we may have to intersect another time
+            # or add another corner:
+            # the intersection must be done before appending the parallel piece
+            if orig_nspath.closed and cur == len(orig_nspath) - 1:
+                if closeparallel * distance > epsilon:
+                    intsparams = extra_nspath.intersect(new_nspath)
+                    # [[a,b,c], [a,b,c]]
+                    if intsparams:
+                        # take the first intersection point:
+                        extra_param, new_param = intsparams[0][-1], intsparams[1][-1]
+                        new_nspath = new_nspath.segments([new_param, len(new_nspath)])[0]
+                        extra_nspath = extra_nspath.segments([0, extra_param])[0]
+                        new_npitems = extra_nspath[:]
+                        # in case the intersection was not sufficiently exact:
+                        if isinstance(new_npitems[0], path.normcurve_pt):
+                            new_npitems[0].x3_pt, new_npitems[0].y3_pt = new_nspath.atend_pt()
+                        elif isinstance(new_npitems[0], path.normline_pt):
+                            new_npitems[0].x1_pt, new_npitems[0].y1_pt = new_nspath.atend_pt()
+                    else:
+                        raise # how did we get here?
+
+                    pass
+
+
+            # append the parallel piece
+            for new_npitem in new_npitems:
+                new_nspath.append(new_npitem)
+
+
+        # the curve around the closing corner must be added at last:
+        if orig_nspath.closed:
+            if closeparallel * distance < -epsilon:
+                endpoint = new_nspath.atend_pt()
+                center = orig_nspath.atend_pt()
+                A = new_nspath.atbegin_pt()
+                angle1 = math.atan2(endpoint[1] - center[1], endpoint[0] - center[0]) * 180.0 / math.pi
+                angle2 = math.atan2(A[1] - center[1], A[0] - center[0]) * 180.0 / math.pi
+                if parallel > 0:
+                    arc_npath = path.path(path.arc_pt(
+                      center[0], center[1], abs(distance), angle1, angle2)).normpath()
+                else:
+                    arc_npath = path.path(path.arcn_pt(
+                      center[0], center[1], abs(distance), angle1, angle2)).normpath()
+
+                for new_npitem in arc_npath[0]:
+                    new_nspath.append(new_npitem)
 
         # 3. extra handling of closed paths
-        if normsubpath.closed:
-            # TODO
-            newpath.append(path.closepath())
+        if orig_nspath.closed:
+            new_nspath.close()
 
-        return newpath
+        return new_nspath
 # >>>
 
 # vim:foldmethod=marker:foldmarker=<<<,>>>

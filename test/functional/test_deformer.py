@@ -93,7 +93,10 @@ def testparallel(c):
     p = path.circle(-4,0,2)
     p += path.path(
         path.moveto(0,0),
+        # here, we get overshooting of the far distant parallels
         path.curveto(0,16, -11,5, 5,5),
+        # here, the midpoint checking fails:
+        #path.curveto(3,5, -3,5, 5,5),
     )
 
     c.stroke(p, [color.gray(0.8), style.linewidth.THICk])
@@ -108,7 +111,8 @@ def testparallel(c):
         path.lineto(4,6),
         path.lineto(4,7),
         path.lineto(5,7),
-        path.lineto(3,3)
+        path.lineto(3,1),
+        path.closepath()
     )
 
     c.stroke(p, [parallel(distance=0.1, relerr=0.05, expensive=1), color.rgb.red])
