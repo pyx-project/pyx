@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: ISO-8859-1 -*-
 
-"""Python package for the generation of encapsulated PostScript figures
+"""Python package for the generation of PostScript and PDF files
 
-PyX is a Python package for the creation of encapsulated PostScript figures.
-It provides both an abstraction of PostScript and a TeX/LaTeX interface.
-Complex tasks like 2d and 3d plots in publication-ready quality are built out
-of these primitives.
+PyX is a Python package for the creation of PostScript and PDF files. It
+combines an abstraction of the PostScript drawing model with a TeX/LaTeX
+interface. Complex tasks like 2d and 3d plots in publication-ready quality are
+built out of these primitives.
 """
 
 from distutils import log
