@@ -18,9 +18,6 @@
 # along with epstopng; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-# TODO: - set dpi in png (don't know how to do this in PIL)
-#       - this is much too slow --- consider a rewrite in C
-
 
 import getopt, sys
 from pyx import dvifile, canvas, trafo, unit
