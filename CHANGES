@@ -70,8 +70,6 @@ TODO:
     - section titles: "Axes" -> "Axes - module axis" or similar
     - box module:
       - linealign and circlealign
-    - unit module:
-      update length constructor description (strings are no longer supported, etc.)
     - graph module:
       styles: document what data name the styles accept (require). Try also to be more
       userfriendly and not to describe immediately the internals of the implementation:
@@ -80,6 +78,18 @@ TODO:
   FAQ:
     - describe creation and modification (inplace and ``modify by new'') of
       graph data
+
+TODO before release:
+  - update PyX description in setup.py, README (also update text on prebuilt manual.pdf?),
+    on webpage and later on sf.net project page
+
+  - Documentation:
+    - unit module:
+      - update length constructor description (strings are no longer supported, etc.)
+    - canvas module:
+      - move patterns to own module
+  - FAQ:
+    - check examples
 
 0.8 (????/??/??):
   - path module:
