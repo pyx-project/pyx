@@ -77,7 +77,7 @@ class pattern(canvas._canvas, attr.exclusiveattr, style.fillstyle):
                                    "/PatternType %d" % self.patterntype,
                                    "/PaintType %d" % self.painttype,
                                    "/TilingType %d" % self.tilingtype,
-                                   "/BBox[%s]" % str(patternbbox),
+                                   "/BBox[%d %d %d %d]" % patternbbox.lowrestuple_pt(),
                                    "/XStep %g" % xstep,
                                    "/YStep %g" % ystep,
                                    "/PaintProc {\nbegin\n"))
@@ -150,7 +150,7 @@ class PDFpattern(pdfwriter.PDFobject):
                    "/PatternType %d\n" % self.patterntype)
         file.write("/PaintType %d\n" % self.painttype)
         file.write("/TilingType %d\n" % self.tilingtype)
-        file.write("/BBox [%s]\n" % str(self.bbox))
+        file.write("/BBox [%d %d %d %d]\n" % self.bbox.lowrestuple_pt())
         file.write("/XStep %f\n" % self.xstep)
         file.write("/YStep %f\n" % self.ystep)
         file.write("/Matrix %s\n" % str(self.trafo))
