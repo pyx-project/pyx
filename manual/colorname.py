@@ -42,4 +42,4 @@ for line in lines: # we yet don't use a file iterator
             y = 0
             x += dx
 
-c.writeEPSfile("colorname", paperformat="a4")
+c.writeEPSfile("colorname", paperformat=document.paperformat.A4)

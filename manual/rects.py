@@ -27,4 +27,4 @@ c.text(9, -0.7, "(c)", [text.halign.center])
 c.stroke(rect3, [trafo.scale(2).translated(12, 0), style.linewidth.THICK, deco.filled([color.grey(0.95)])])
 c.text(13, -0.7, "(d)", [text.halign.center])
 
-c.writeEPSfile("rects", paperformat="a4")
+c.writeEPSfile("rects", paperformat=document.paperformat.A4)

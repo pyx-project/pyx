@@ -19,4 +19,4 @@ c.stroke(path.line(7.2, 0.5*(b.bottom()-b2.bottom()), 7.5, 0.5*(b.bottom()-b2.bo
 c.text(7.7, 0.5*(b.bottom()-b2.bottom()), "parbox.middle", [text.vshift.mathaxis])
 c.stroke(path.line(0, b.bottom()-b2.bottom(), 7.5, b.bottom()-b2.bottom()))
 c.text(7.7, b.bottom()-b2.bottom(), "parbox.bottom", [text.vshift.mathaxis])
-c.writeEPSfile("textvalign", paperformat="a4")
+c.writeEPSfile("textvalign", paperformat=document.paperformat.A4)
