@@ -2,8 +2,8 @@
 # -*- coding: ISO-8859-1 -*-
 #
 #
-# Copyright (C) 2003-2004 Michael Schindler <m-schindler@users.sourceforge.net>
-# Copyright (C) 2002-2004 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2003-2005 Michael Schindler <m-schindler@users.sourceforge.net>
+# Copyright (C) 2003-2004 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
@@ -386,18 +386,11 @@ class cycloid(deformer): # <<<
         return cycloid(radius=radius, halfloops=halfloops, skipfirst=skipfirst, skiplast=skiplast,
                        curvesperhloop=curvesperhloop, sign=sign, turnangle=turnangle)
 
-    def deform(self, abasepath):
-        basepath = abasepath.normpath()
+    def deform(self, basepath):
+        resultnormsubpaths = [self.deformsubpath(nsp) for nsp in basepath.normpath().normsubpaths]
+        return path.normpath(resultnormsubpaths)
 
-        for sp in basepath.normsubpaths:
-            if sp == basepath.normsubpaths[0]:
-                cycloidpath = self.deformsubpath(sp)
-            else:
-                cycloidpath.join(self.deformsubpath(sp))
-
-        return cycloidpath
-
-    def deformsubpath(self, subpath):
+    def deformsubpath(self, normsubpath):
 
         skipfirst = abs(unit.topt(self.skipfirst))
         skiplast = abs(unit.topt(self.skiplast))
@@ -407,11 +400,11 @@ class cycloid(deformer): # <<<
         cosTurn = math.cos(turnangle)
         sinTurn = math.sin(turnangle)
 
-        # make list of the lengths and parameters at points on subpath where we will add cycloid-points
-        totlength = subpath.arclen_pt()
+        # make list of the lengths and parameters at points on normsubpath where we will add cycloid-points
+        totlength = normsubpath.arclen_pt()
         if totlength <= skipfirst + skiplast + 2*radius*sinTurn:
-            warnings.warn("subpath is too short for deformation with cycloid -- skipping...")
-            return path.normpath([subpath])
+            warnings.warn("normsubpath is too short for deformation with cycloid -- skipping...")
+            return normsubpath
 
         # parametrisation is in rotation-angle around the basepath
         # differences in length, angle ... between two basepoints
@@ -429,14 +422,14 @@ class cycloid(deformer): # <<<
         Zs = [ skipfirst + radius*sinTurn # here the coordinate z starts
              - sinTurn*radius*math.cos(phi) + cosTurn*DzDphi*phi # the transformed z-coordinate
              for phi in phis]
-        params = subpath._arclentoparam_pt(Zs)[0]
+        params = normsubpath._arclentoparam_pt(Zs)[0]
 
         # get the positions of the splitpoints in the cycloid
         points = []
         for phi, param in zip(phis, params):
-            # the cycloid is a circle that is stretched along the subpath
+            # the cycloid is a circle that is stretched along the normsubpath
             # here are the points of that circle
-            basetrafo = subpath.trafo([param])[0]
+            basetrafo = normsubpath.trafo([param])[0]
 
             # The point on the cycloid, in the basepath's local coordinate system
             baseZ, baseY = 0, radius*math.sin(phi)
@@ -451,7 +444,7 @@ class cycloid(deformer): # <<<
             # Respect the curvature of the basepath for the cycloid's curvature
             # XXX this is only a heuristic, not a "true" expression for
             #     the curvature in curved coordinate systems
-            pathradius = subpath.curveradius_pt([param])[0]
+            pathradius = normsubpath.curveradius_pt([param])[0]
             if pathradius is not None:
                 factor = (pathradius - baseY) / pathradius
                 factor = abs(factor)
@@ -469,24 +462,24 @@ class cycloid(deformer): # <<<
                           basetrafo._apply(postZ, self.sign * postY))
 
         if len(points) <= 1:
-            warnings.warn("subpath is too short for deformation with cycloid -- skipping...")
-            return path.normpath([subpath])
+            warnings.warn("normsubpath is too short for deformation with cycloid -- skipping...")
+            return normsubpath
 
         # Build the path from the pointlist
         # containing (control x 2,  base x 2, control x 2)
-        if skipfirst > subpath.epsilon:
-            newpath = subpath.segments([0, params[0]])[0]
-            newpath.append(path.normcurve_pt(*(points[0][2:6] + points[1][0:4])))
-            cycloidpath = path.normpath([newpath])
+        if skipfirst > normsubpath.epsilon:
+            normsubpathitems = normsubpath.segments([0, params[0]])[0]
+            normsubpathitems.append(path.normcurve_pt(*(points[0][2:6] + points[1][0:4])))
         else:
-            cycloidpath = path.normpath([path.normsubpath([path.normcurve_pt(*(points[0][2:6] + points[1][0:4]))], 0)])
+            normsubpathitems = [path.normcurve_pt(*(points[0][2:6] + points[1][0:4]))]
         for i in range(1, len(points)-1):
-            cycloidpath.normsubpaths[-1].append(path.normcurve_pt(*(points[i][2:6] + points[i+1][0:4])))
-        if skiplast > subpath.epsilon:
-            cycloidpath.join(path.normpath(subpath.segments([params[-1], len(subpath)])))
+            normsubpathitems.append(path.normcurve_pt(*(points[i][2:6] + points[i+1][0:4])))
+        if skiplast > normsubpath.epsilon:
+            for nsp in normsubpath.segments([params[-1], len(normsubpath)]):
+                normsubpathitems.extend(nsp.normsubpathitems)
 
         # That's it
-        return cycloidpath
+        return path.normsubpath(normsubpathitems, epsilon=normsubpath.epsilon)
 # >>>
 
 class smoothed(deformer): # <<<
@@ -522,8 +515,8 @@ class smoothed(deformer): # <<<
             obeycurv = self.obeycurv
         return smoothed(radius=radius, softness=softness, obeycurv=obeycurv)
 
-    def deform(self, abasepath):
-        basepath = abasepath.normpath()
+    def deform(self, basepath):
+        basepath = basepath.normpath()
         smoothpath = path.path()
 
         for sp in basepath.normsubpaths:
@@ -770,14 +763,9 @@ class parallel(deformer): # <<<
 
         return parallel(distance=d, relerr=r, expensive=e)
 
-    def deform(self, orig_path):
-        orig_npath = orig_path.normpath()
-        new_npath = path.normpath()
-
-        for orig_nspath in orig_npath:
-            new_npath.append(self.deformsubpath(orig_nspath))
-
-        return new_npath
+    def deform(self, basepath):
+        resultnormsubpaths = [self.deformsubpath(nsp) for nsp in basepath.normpath().normsubpaths]
+        return path.normpath(resultnormsubpaths)
 
     def deformsubpath(self, orig_nspath):
 
