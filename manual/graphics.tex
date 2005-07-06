@@ -213,6 +213,8 @@ separated in their subpaths and only contain straight lines and
 B\'ezier curve segments. Thus, as is easily imaginable, they are much
 simpler to deal with.
 
+XXX explain normpathparams and things like p.begin(), p.end()-1,
+
 A more geometrical way of accessing a point on the path is to use the
 arc length of the path segment from the first point of the path to the
 given point. Thus, all \PyX{} path methods that accept a parameter
@@ -237,4 +239,140 @@ in Sect.~\ref{path:path}.
 
 \section{Attributes: Styles and Decorations}
 
-XXX to be done
+Attributes define properties of a given object when it is being used.
+Typically, there are different kind of attributes which are usually
+orthogonal to each other, while for one type of attribute, several
+choices are possible. An example is the stroking of a path. There,
+linewidth and linestyle are different kind of attributes. The linewidth
+might be normal, thin, thick, etc, and the linestyle might be solid,
+dashed etc.
+
+Attributes always occur in lists passed as an optional keyword argument
+to a method or a function. Usually, attributes are the first keyword
+argument, so one can just pass the list without specifying the keyword.
+Again, for the path example, a typical call looks like
+
+\begin{verbatim}
+c.stroke(path, [style.linewidth.Thick, style.linestyle.dashed])
+\end{verbatim}
+
+Here, we also encounter another feature of \PyX's attribute system. For
+many attributes useful default values are stored as member variables of
+the actual attribute. For instance, \code{style.linewidth.Thick} is
+equivalent to \code{style.linewidth(0.04, type="w", unit="cm")}, that is
+$0.04$ width cm (see Sect.~\ref{unit} for more information about
+\PyX's unit system). 
+
+Another important feature of \PyX{} attributes is what is call attributed
+merging. A trivial example is the following:
+\begin{verbatim}
+# the following two lines are equivalent
+c.stroke(path, [style.linewidth.Thick, style.linewidth.thin])
+c.stroke(path, [style.linewidth.thin])
+\end{verbatim}
+Here, the \code{style.linewidth.thin} attribute overrides the preceding
+\code{style.linewidth.Thick} declaration. This is especially important
+in more complex cases where \PyX defines default attributes for a
+certain operation. When calling the corresponding methods with an
+attribute list, this list is appended to the list of defaults.
+This way, the user can easily override certain defaults, while leaving
+the other default values intact. In addition, every attribute kind
+defines a special clear attribute, which allows to selectively delete
+a default value. For path stroking this looks like
+\begin{verbatim}
+# the following two lines are equivalent
+c.stroke(path, [style.linewidth.Thick, style.linewidth.clear])
+c.stroke(path)
+\end{verbatim}
+The clear attribute is also provided by the base classes of 
+the various styles. For instance, \class{style.strokestyle.clear}
+clears all strokestyle subclasses and thus \class{style.linewidth} and
+\class{style.linestyle}. Since all attributes derive from
+\class{attr.attr}, you can remove all defaults using
+\code{attr.clear}. An overview over the most important attribute typesprovided 
+by PyX is given in the following table.
+\medskip
+\begin{center}
+\begin{tabular}{l|l|p{0.3\linewidth}}
+Attribute category & description & examples\\
+\hline
+\class{deco.deco} & decorator specifying the way the path is drawn & 
+\class{deco.stroked}\newline
+\class{deco.filled}\newline
+\class{deco.arrow}
+\\
+\class{style.strokestyle} & style used for path stroking &
+\class{style.linecap}\newline
+\class{style.linejoin}\newline
+\class{style.miterlimit}\newline 
+\class{style.dash}\newline 
+\class{style.linestyle}\newline
+\class{style.linewidth}\newline
+\class{color.color}
+\\
+\class{style.fillstyle} & style used for path filling &
+\class{color.color}\newline\class{pattern.pattern}
+\\
+\class{deformer.deformer} &
+operations changing the shape of the path
+&
+\class{deformer.cycloid}\newline
+\class{deformer.smoothed}
+\\
+\class{text.textattr} & attributes used for typesetting &
+\class{text.halign}\newline
+\class{text.valign}\newline
+\class{text.mathmode}\newline
+\class{text.phantom}\newline
+\class{text.size}\newline
+\class{text.parbox}
+\\
+\class{trafo.trafo}
+& transformations applied when drawing object
+&
+\class{trafo.mirror}\newline
+\class{trafo.rotate}\newline
+\class{trafo.scale}\newline
+\class{trafo.slant}\newline
+\class{trafo.translate}
+\end{tabular}
+\end{center}
+\medskip
+
+XXX specify which classes in the table are in fact instances
+
+Note that operations usually allow for certain attribute categories
+only. For example when stroking a path, text attributes are not
+allowed, while stroke attributes and decorators are. Some attributes
+might belong to several attribute categories like colours, which are
+both, stroke and fill attributes.
+
+Last, we discuss another important feature of \PyX's attribute system.
+In order to allow the easy customisation of predefined attributes, it
+is possible to create a modified attribute by calling of an attribute
+instance, thereby specifying new parameters. A typical example is to
+modify the way a path is stroked or filled by constructing appropriate
+\class{deco.stroked} or \class{deco.filled} instances.
+For instance, the code
+\begin{verbatim}
+c.stroke(path, [deco.filled([color.rgb.green])])
+\end{verbatim}
+draws a path filled in green with a black outline. Here,
+\code{deco.filled} is already an instance which is modified to fill 
+with the given color. Note that an equivalent version would
+be
+\begin{verbatim}
+c.draw(path, [deco.stroked, deco.filled([color.rgb.green])])
+\end{verbatim}
+In particular, you can see that \class{deco.stroked} is already an
+attribute instance, since otherwise you were not allowed to pass
+it as a parameter to the draw method. Another example where 
+the modification of a decorator is useful are arrows. For instance, the following
+code draws an arrow head with a more acute angle (compared to the
+default value of $45$ degrees):
+\begin{verbatim}
+c.stroke(path, [deco.earrow(angle=30)])
+\end{verbatim}
+
+
+XXX changeable attributes
