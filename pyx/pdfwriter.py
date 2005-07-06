@@ -157,8 +157,7 @@ class PDFpage(PDFobject):
         # pageregistry is also merged in the global registry
         self.pageregistry = PDFregistry()
 
-        self.bbox = page.canvas.bbox()
-        self.bbox.enlarge(page.bboxenlarge)
+        self.bbox = page.bbox()
         self.pagetrafo = page.pagetrafo(self.bbox)
         if self.pagetrafo:
             self.bbox.transform(self.pagetrafo)
@@ -172,9 +171,9 @@ class PDFpage(PDFobject):
                    "/Type /Page\n"
                    "/Parent %i 0 R\n" % registry.getrefno(self.PDFpages))
         paperformat = self.page.paperformat
-        file.write("/MediaBox [0 0 %d %d]\n" % (unit.topt(paperformat.width), unit.topt(paperformat.height)))
-        file.write("/CropBox " )
-        self.bbox.outputPDF(file, writer)
+        file.write("/MediaBox [0 0 %f %f]\n" % (unit.topt(paperformat.width), unit.topt(paperformat.height)))
+        if self.bbox:
+            file.write("/CropBox [%f %f %f %f]\n" % self.bbox.highrestuple_pt())
         procset = []
         if self.pageregistry.types.has_key("font"):
             procset.append("/Text")

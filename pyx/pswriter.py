@@ -225,8 +225,7 @@ class epswriter:
         except IOError:
             raise IOError("cannot open output file")
 
-        bbox = canvas.bbox()
-        bbox.enlarge(page.bboxenlarge)
+        bbox = page.bbox()
         pagetrafo = page.pagetrafo(bbox)
 
         # if a page transformation is necessary, we have to adjust the bounding box
@@ -235,7 +234,9 @@ class epswriter:
             bbox.transform(pagetrafo)
 
         file.write("%!PS-Adobe-3.0 EPSF-3.0\n")
-        bbox.outputPS(file, self)
+        if bbox:
+            file.write("%%%%BoundingBox: %d %d %d %d\n" % bbox.lowrestuple_pt())
+            file.write("%%%%HiResBoundingBox: %g %g %g %g\n" % bbox.highrestuple_pt())
         file.write("%%%%Creator: PyX %s\n" % version.version)
         file.write("%%%%Title: %s\n" % filename)
         file.write("%%%%CreationDate: %s\n" %
@@ -250,7 +251,7 @@ class epswriter:
 
         acontext = context()
         # apply a possible page transformation
-        if pagetrafo is not None:
+        if pagetrafo:
             pagetrafo.outputPS(file, self, acontext)
 
         style.linewidth.normal.outputPS(file, self, acontext)
@@ -277,20 +278,22 @@ class pswriter:
         documentbbox = None
         for page in document.pages:
             canvas = page.canvas
-            page.bbox = canvas.bbox()
-            page.bbox.enlarge(page.bboxenlarge)
-            page._pagetrafo = page.pagetrafo(page.bbox)
+            page._bbox = page.bbox()
+            page._pagetrafo = page.pagetrafo(page._bbox)
             # if a page transformation is necessary, we have to adjust the bounding box
             # accordingly
-            if page._pagetrafo is not None and page.bbox is not None:
-                page.bbox.transform(page._pagetrafo)
-            if documentbbox is None:
-                documentbbox = page.bbox.enlarged(0)
-            elif page.bbox is not None:
-                documentbbox += page.bbox
+            if page._pagetrafo:
+                page._bbox.transform(page._pagetrafo)
+            if page._bbox:
+                if documentbbox:
+                    documentbbox += page._bbox
+                else:
+                    documentbbox = page._bbox.enlarge(0) # make a copy
 
         file.write("%!PS-Adobe-3.0\n")
-        documentbbox.outputPS(file, self)
+        if documentbbox:
+            file.write("%%%%BoundingBox: %d %d %d %d\n" % documentbbox.lowrestuple_pt())
+            file.write("%%%%HiResBoundingBox: %g %g %g %g\n" % documentbbox.highrestuple_pt())
         file.write("%%%%Creator: PyX %s\n" % version.version)
         file.write("%%%%Title: %s\n" % filename)
         file.write("%%%%CreationDate: %s\n" %
@@ -339,9 +342,8 @@ class pswriter:
             file.write("%%%%Page: %s %d\n" % (page.pagename is None and str(nr+1) or page.pagename, nr+1))
             file.write("%%%%PageMedia: %s\n" % page.paperformat.name)
             file.write("%%%%PageOrientation: %s\n" % (page.rotated and "Landscape" or "Portrait"))
-            if insertpagebbox:
-                file.write("%%%%PageBoundingBox: %d %d %d %d\n" % (math.floor(page.bbox.llx_pt), math.floor(page.bbox.lly_pt),
-                                                                   math.ceil(page.bbox.urx_pt), math.ceil(page.bbox.ury_pt)))
+            if insertpagebbox and page._bbox:
+                file.write("%%%%PageBoundingBox: %d %d %d %d\n" % page._bbox.lowrestuple)
 
             # page setup section
             file.write("%%BeginPageSetup\n")

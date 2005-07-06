@@ -44,7 +44,7 @@ class bbox_pt:
     def __add__(self, other):
         """join two bboxes"""
         return bbox_pt(min(self.llx_pt, other.llx_pt), min(self.lly_pt, other.lly_pt),
-                     max(self.urx_pt, other.urx_pt), max(self.ury_pt, other.ury_pt))
+                       max(self.urx_pt, other.urx_pt), max(self.ury_pt, other.ury_pt))
 
     def __iadd__(self, other):
         """join two bboxes inplace"""
@@ -67,20 +67,12 @@ class bbox_pt:
         self.ury_pt = min(self.ury_pt, other.ury_pt)
         return self
 
-    def __str__(self):
-        return "%s %s %s %s" % (self.llx_pt, self.lly_pt, self.urx_pt, self.ury_pt)
+    def lowrestuple_pt(self):
+        return (math.floor(self.llx_pt), math.floor(self.lly_pt),
+                math.ceil(self.urx_pt), math.ceil(self.ury_pt))
 
-    def outputPS(self, file, writer):
-        file.write("%%%%BoundingBox: %d %d %d %d\n" %
-                   (math.floor(self.llx_pt), math.floor(self.lly_pt),
-                    math.ceil(self.urx_pt), math.ceil(self.ury_pt)))
-        file.write("%%%%HiResBoundingBox: %g %g %g %g\n" %
-                   (self.llx_pt, self.lly_pt, self.urx_pt, self.ury_pt))
-
-    def outputPDF(self, file, writer):
-        file.write("[%d %d %d %d]\n" %
-                   (math.floor(self.llx_pt), math.floor(self.lly_pt),
-                    math.ceil(self.urx_pt), math.ceil(self.ury_pt)))
+    def highrestuple_pt(self):
+        return (self.llx_pt, self.lly_pt, self.urx_pt, self.ury_pt)
 
     def intersects(self, other):
         """check, if two bboxes intersect eachother"""

@@ -65,33 +65,43 @@ class page:
         self.fittosize = fittosize
         self.margin = margin
         self.bboxenlarge = bboxenlarge
-        self.bbox = bbox
+        self.pagebbox = bbox
 
-    def pagetrafo(self, abbox):
+    def bbox(self):
+        """ returns the bbox of the page
+
+        usually its the bbox of the canvas enlarged by self.bboxenlarge, but
+        it might be a different bbox as specified in the page constructor"""
+        if self.pagebbox:
+            bbox = self.pagebbox
+        else:
+            bbox = self.canvas.bbox()
+            if bbox:
+                bbox.enlarge(self.bboxenlarge)
+        return bbox
+
+    def pagetrafo(self, bbox):
         """ calculate a trafo which rotates and fits a canvas on the page
 
-        The canvas extents are described by abbox, which, however, is only used
-        when during page construction no bbox has been specified.
+        The canvas extents are described by bbox.
         """
-        if self.bbox is not None:
-            abbox = self.bbox
-        if self.rotated or self.centered or self.fittosize:
+        if bbox and (self.rotated or self.centered or self.fittosize):
             paperwidth, paperheight = self.paperformat.width, self.paperformat.height
 
             # center (optionally rotated) output on page
             if self.rotated:
                 atrafo = trafo.rotate(90).translated(paperwidth, 0)
                 if self.centered or self.fittosize:
-                    atrafo = atrafo.translated(-0.5*(paperwidth - abbox.height()) + abbox.bottom(),
-                                               0.5*(paperheight - abbox.width()) - abbox.left())
+                    atrafo = atrafo.translated(-0.5*(paperwidth - bbox.height()) + bbox.bottom(),
+                                               0.5*(paperheight - bbox.width()) - bbox.left())
             else:
                 if self.centered or self.fittosize:
                     atrafo = trafo.trafo()
                 else:
                     return None # no page transformation needed
                 if self.centered or self.fittosize:
-                    atrafo = atrafo.translated(0.5*(paperwidth - abbox.width())  - abbox.left(),
-                                               0.5*(paperheight - abbox.height()) - abbox.bottom())
+                    atrafo = atrafo.translated(0.5*(paperwidth - bbox.width())  - bbox.left(),
+                                               0.5*(paperheight - bbox.height()) - bbox.bottom())
 
             if self.fittosize:
 
@@ -103,9 +113,9 @@ class page:
 
                 # scale output to pagesize - margins
                 if self.rotated:
-                    sfactor = min(unit.topt(paperheight)/abbox.width_pt(), unit.topt(paperwidth)/abbox.height_pt())
+                    sfactor = min(unit.topt(paperheight)/bbox.width_pt(), unit.topt(paperwidth)/bbox.height_pt())
                 else:
-                    sfactor = min(unit.topt(paperwidth)/abbox.width_pt(), unit.topt(paperheight)/abbox.height_pt())
+                    sfactor = min(unit.topt(paperwidth)/bbox.width_pt(), unit.topt(paperheight)/bbox.height_pt())
 
                 atrafo = atrafo.scaled(sfactor, sfactor, self.margin + 0.5*paperwidth, self.margin + 0.5*paperheight)
 
