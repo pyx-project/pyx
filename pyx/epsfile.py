@@ -316,6 +316,9 @@ class epsfile(canvas.canvasitem):
         registry.add(_BeginEPSF)
         registry.add(_EndEPSF)
 
+    def registerPDF(self, registry):
+        raise RuntimeError("cannot include EPS file in PDF file")
+
     def outputPS(self, file, writer, context):
         try:
             epsfile=open(self.filename,"rb")
