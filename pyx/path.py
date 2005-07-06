@@ -1371,7 +1371,7 @@ class normsubpathitem:
         """return segments of the normsubpathitem
 
         The returned list of normsubpathitems for the segments between
-        the params. params need to contain at least two values.
+        the params. params needs to contain at least two values.
         """
         pass
 
