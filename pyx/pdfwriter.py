@@ -318,8 +318,6 @@ class PDFfont(PDFobject):
         file.write("/FontDescriptor %d 0 R\n" % registry.getrefno(self.fontdescriptor))
         if self.encoding:
             file.write("/Encoding %d 0 R\n" % registry.getrefno(self.encoding))
-        else:
-            file.write("/Encoding /StandardEncoding\n")
         file.write(">>\n")
 
 
