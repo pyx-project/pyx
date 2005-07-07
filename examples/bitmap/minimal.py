@@ -1,6 +1,5 @@
 # This example is identical to the introductory example in the
-# bitmap section of the manual. More eye-catchy examples are
-# very welcome (BTW not only for this case but in general).
+# bitmap section of the manual.
 
 from pyx import *
 
@@ -13,5 +12,4 @@ bitmap_rgb = bitmap.bitmap(0, 0, image_rgb, height=0.8)
 c = canvas.canvas()
 c.insert(bitmap_bw)
 c.insert(bitmap_rgb)
-c.writeEPSfile("bitmap")
-
+c.writeEPSfile("minimal")

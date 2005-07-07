@@ -1,0 +1,3 @@
+Although \PyX{} creates scaleable vector graphics, you can
+embed bitmap data into your output by means of the bitmap
+module.
