@@ -21,14 +21,14 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import copy, warnings
+import copy, warnings, time
 try:
     import zlib
     haszlib = 1
 except:
     haszlib = 0
 
-import unit, style, type1font
+import unit, style, type1font, version
 
 
 class PDFregistry:
@@ -86,12 +86,13 @@ class PDFregistry:
         # trailer
         file.write("trailer\n"
                    "<<\n"
-                   "/Size %i\n"
-                   "/Root %i 0 R\n"
-                   ">>\n"
+                   "/Size %i\n" % refno)
+        file.write("/Root %i 0 R\n" % self.getrefno(catalog))
+        file.write("/Info %i 0 R\n" % self.getrefno(catalog.PDFinfo))
+        file.write(">>\n"
                    "startxref\n"
-                   "%i\n"
-                   "%%%%EOF\n" % (refno, catalog.refno, xrefpos))
+                   "%i\n" % xrefpos)
+        file.write("%%%%EOF\n")
 
 
 class PDFobject:
@@ -117,12 +118,53 @@ class PDFcatalog(PDFobject):
         PDFobject.__init__(self, "catalog")
         self.PDFpages = PDFpages(document, registry)
         registry.add(self.PDFpages)
+        self.PDFinfo = PDFinfo()
+        registry.add(self.PDFinfo)
 
     def outputPDF(self, file, writer, registry):
         file.write("<<\n"
                    "/Type /Catalog\n"
-                   "/Pages %i 0 R\n"
-                   ">>\n" % registry.getrefno(self.PDFpages))
+                   "/Pages %i 0 R\n" % registry.getrefno(self.PDFpages))
+        if writer.fullscreen:
+            file.write("/PageMode /FullScreen\n")
+        file.write(">>\n")
+
+
+class PDFinfo(PDFobject):
+
+    def __init__(self):
+        PDFobject.__init__(self, "info")
+
+    def outputPDF(self, file, writer, registry):
+        if time.timezone < 0:
+            # divmod on positive numbers, otherwise the minutes have a different sign from the hours
+            timezone = "-%02i'%02i'" % divmod(-time.timezone/60, 60)
+        elif time.timezone > 0:
+            timezone = "+%02i'%02i'" % divmod(time.timezone/60, 60)
+        else:
+            timezone = "Z00'00'"
+
+        def pdfstring(s):
+            r = ""
+            for c in s:
+                if 32 <= ord(c) <= 127 and c not in "()[]<>\\":
+                    r += c
+                else:
+                    r += "\\%03o" % ord(c)
+            return r
+
+        file.write("<<\n")
+        if writer.title:
+            file.write("/Title (%s)\n" % pdfstring(writer.title))
+        if writer.author:
+            file.write("/Author (%s)\n" % pdfstring(writer.author))
+        if writer.subject:
+            file.write("/Subject (%s)\n" % pdfstring(writer.subject))
+        if writer.keywords:
+            file.write("/Keywords (%s)\n" % pdfstring(writer.keywords))
+        file.write("/Creator (PyX %s)\n" % version.version)
+        file.write("/CreationDate (D:%s%s)\n" % (time.strftime("%Y%m%d%H%M"), timezone))
+        file.write(">>\n")
 
 
 class PDFpages(PDFobject):
@@ -411,7 +453,9 @@ class PDFencoding(PDFobject):
 
 class PDFwriter:
 
-    def __init__(self, document, filename, compress=0, compresslevel=6):
+    def __init__(self, document, filename,
+                       title=None, author=None, subject=None, keywords=None,
+                       fullscreen=0, compress=1, compresslevel=6):
         if filename[-4:] != ".pdf":
             filename = filename + ".pdf"
         try:
@@ -419,6 +463,11 @@ class PDFwriter:
         except IOError:
             raise IOError("cannot open output file")
 
+        self.title = title
+        self.author = author
+        self.subject = subject
+        self.keywords = keywords
+        self.fullscreen = fullscreen
         if compress and not haszlib:
             compress = 0
             warnings.warn("compression disabled due to missing zlib module")
