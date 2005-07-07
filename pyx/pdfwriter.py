@@ -132,8 +132,9 @@ class PDFpages(PDFobject):
         self.PDFpagelist = []
         for pageno, page in enumerate(document.pages):
             page = PDFpage(page, pageno, self, registry)
-            registry.add(page)
             self.PDFpagelist.append(page)
+        for i in range(len(self.PDFpagelist), 0, -1):
+            registry.add(self.PDFpagelist[i-1])
 
     def outputPDF(self, file, writer, registry):
         file.write("<<\n"
