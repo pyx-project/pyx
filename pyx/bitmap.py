@@ -267,8 +267,8 @@ class bitmap(canvas.canvasitem):
             if ratio is not None:
                 raise ValueError("must specify width or height to set a ratio")
             widthdpi, heightdpi = image.info["dpi"] # fails when no dpi information available
-            self.width = unit.inch(self.imagewidth / float(widthdpi))
-            self.height = unit.inch(self.imageheight / float(heightdpi))
+            self.width = self.imagewidth / float(widthdpi) * unit.t_inch
+            self.height = self.imageheight / float(heightdpi) * unit.t_inch
 
         self.xpos_pt = unit.topt(self.xpos)
         self.ypos_pt = unit.topt(self.ypos)
