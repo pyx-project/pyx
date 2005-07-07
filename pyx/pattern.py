@@ -20,8 +20,10 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import cStringIO
-import attr, canvas, style, pdfwriter, pswriter, unit, trafo
+import cStringIO, math, warnings
+import attr, canvas, helper, path, pdfwriter, pswriter, style, unit, trafo
+
+# TODO: pattern should not derive from canvas but wrap a canvas
 
 class pattern(canvas._canvas, attr.exclusiveattr, style.fillstyle):
 
@@ -41,6 +43,22 @@ class pattern(canvas._canvas, attr.exclusiveattr, style.fillstyle):
         self.patternbbox = bbox
         self.patterntrafo = trafo
 
+    def __call__(self, painttype=helper.nodefault, tilingtype=helper.nodefault, xstep=helper.nodefault, ystep=helper.nodefault, 
+                 bbox=helper.nodefault, trafo=helper.nodefault):
+        if painttype is helper.nodefault:
+            painttype = self.painttype
+        if tilingtype is helper.nodefault:
+            tilingtype = self.tilingtype
+        if xstep is helper.nodefault:
+            xstep = self.xstep
+        if ystep is helper.nodefault:
+            ystep = self.ystep
+        if bbox is helper.nodefault:
+            bbox = self.bbox
+        if trafo is helper.nodefault:
+            trafo = self.trafo
+        return pattern(painttype, tilingtype, xstep, ystep, bbox, trafo)
+
     def bbox(self):
         return None
 
@@ -49,10 +67,13 @@ class pattern(canvas._canvas, attr.exclusiveattr, style.fillstyle):
 
     def outputPDF(self, file, writer, context):
         if context.colorspace != "Pattern":
-            # we only set the fill color space
+            # we only set the fill color space (see next comment)
             file.write("/Pattern cs\n")
             context.colorspace = "Pattern"
-        # assert not context.strokeattr, "this should not happen"
+        if context.strokeattr:
+            # using patterns as stroke colors doesn't seem to work, so
+            # we just don't do this...
+            pass
         if context.fillattr:
             file.write("/%s scn\n"% self.id)
 
@@ -117,6 +138,96 @@ class pattern(canvas._canvas, attr.exclusiveattr, style.fillstyle):
 
 pattern.clear = attr.clearclass(pattern)
 
+_base = 0.1 * unit.v_cm
+
+class hatched(pattern):
+    def __init__(self, dist, angle, strokestyles=[]):
+        pattern.__init__(self, painttype=1, tilingtype=1, xstep=dist, ystep=1000*unit.t_pt, bbox=None, trafo=trafo.rotate(angle))
+        strokestyles = attr.mergeattrs([style.linewidth.THIN] + strokestyles)
+        attr.checkattrs(strokestyles, [style.strokestyle])
+        self.stroke(path.line_pt(0, -500, 0, 500), strokestyles)
+
+    def __call__(self, dist=None, angle=None, strokestyles=None):
+        if dist is None:
+            dist = self.dist
+        if angle is None:
+            angle = self.angle
+        if strokestyles is None:
+            strokestyles = self.strokestyles
+        return hatched(dist, angle, strokestyles)
+
+hatched.SMALL0 = hatched(_base/math.sqrt(64), 0)
+hatched.SMALl0 = hatched(_base/math.sqrt(32), 0)
+hatched.SMAll0 = hatched(_base/math.sqrt(16), 0)
+hatched.SMall0 = hatched(_base/math.sqrt(8), 0)
+hatched.Small0 = hatched(_base/math.sqrt(4), 0)
+hatched.small0 = hatched(_base/math.sqrt(2), 0)
+hatched.normal0 = hatched(_base, 0)
+hatched.large0 = hatched(_base*math.sqrt(2), 0)
+hatched.Large0 = hatched(_base*math.sqrt(4), 0)
+hatched.LArge0 = hatched(_base*math.sqrt(8), 0)
+hatched.LARge0 = hatched(_base*math.sqrt(16), 0)
+hatched.LARGe0 = hatched(_base*math.sqrt(32), 0)
+hatched.LARGE0 = hatched(_base*math.sqrt(64), 0)
+
+hatched.SMALL45 = hatched(_base/math.sqrt(64), 45)
+hatched.SMALl45 = hatched(_base/math.sqrt(32), 45)
+hatched.SMAll45 = hatched(_base/math.sqrt(16), 45)
+hatched.SMall45 = hatched(_base/math.sqrt(8), 45)
+hatched.Small45 = hatched(_base/math.sqrt(4), 45)
+hatched.small45 = hatched(_base/math.sqrt(2), 45)
+hatched.normal45 = hatched(_base, 45)
+hatched.large45 = hatched(_base*math.sqrt(2), 45)
+hatched.Large45 = hatched(_base*math.sqrt(4), 45)
+hatched.LArge45 = hatched(_base*math.sqrt(8), 45)
+hatched.LARge45 = hatched(_base*math.sqrt(16), 45)
+hatched.LARGe45 = hatched(_base*math.sqrt(32), 45)
+hatched.LARGE45 = hatched(_base*math.sqrt(64), 45)
+
+class crosshatched(pattern):
+    def __init__(self, dist, angle, strokestyles=[]):
+        pattern.__init__(self, painttype=1, tilingtype=1, xstep=dist, ystep=dist, bbox=None, trafo=trafo.rotate(angle))
+        strokestyles = attr.mergeattrs([style.linewidth.THIN] + strokestyles)
+        attr.checkattrs(strokestyles, [style.strokestyle])
+        self.stroke(path.line_pt(0, 0, 0, unit.topt(dist)), strokestyles)
+        self.stroke(path.line_pt(0, 0, unit.topt(dist), 0), strokestyles)
+
+    def __call__(self, dist=None, angle=None, strokestyles=None):
+        if dist is None:
+            dist = self.dist
+        if angle is None:
+            angle = self.angle
+        if strokestyles is None:
+            strokestyles = self.strokestyles
+        return crosshatched(dist, angle, strokestyles)
+
+crosshatched.SMALL0 = crosshatched(_base/math.sqrt(64), 0)
+crosshatched.SMALl0 = crosshatched(_base/math.sqrt(32), 0)
+crosshatched.SMAll0 = crosshatched(_base/math.sqrt(16), 0)
+crosshatched.SMall0 = crosshatched(_base/math.sqrt(8), 0)
+crosshatched.Small0 = crosshatched(_base/math.sqrt(4), 0)
+crosshatched.small0 = crosshatched(_base/math.sqrt(2), 0)
+crosshatched.normal0 = crosshatched(_base, 0)
+crosshatched.large0 = crosshatched(_base*math.sqrt(2), 0)
+crosshatched.Large0 = crosshatched(_base*math.sqrt(4), 0)
+crosshatched.LArge0 = crosshatched(_base*math.sqrt(8), 0)
+crosshatched.LARge0 = crosshatched(_base*math.sqrt(16), 0)
+crosshatched.LARGe0 = crosshatched(_base*math.sqrt(32), 0)
+crosshatched.LARGE0 = crosshatched(_base*math.sqrt(64), 0)
+
+crosshatched.SMALL45 = crosshatched(_base/math.sqrt(64), 45)
+crosshatched.SMALl45 = crosshatched(_base/math.sqrt(32), 45)
+crosshatched.SMAll45 = crosshatched(_base/math.sqrt(16), 45)
+crosshatched.SMall45 = crosshatched(_base/math.sqrt(8), 45)
+crosshatched.Small45 = crosshatched(_base/math.sqrt(4), 45)
+crosshatched.small45 = crosshatched(_base/math.sqrt(2), 45)
+crosshatched.normal45 = crosshatched(_base, 45)
+crosshatched.large45 = crosshatched(_base*math.sqrt(2), 45)
+crosshatched.Large45 = crosshatched(_base*math.sqrt(4), 45)
+crosshatched.LArge45 = crosshatched(_base*math.sqrt(8), 45)
+crosshatched.LARge45 = crosshatched(_base*math.sqrt(16), 45)
+crosshatched.LARGe45 = crosshatched(_base*math.sqrt(32), 45)
+crosshatched.LARGE45 = crosshatched(_base*math.sqrt(64), 45)
 
 class PDFpattern(pdfwriter.PDFobject):
 

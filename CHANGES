@@ -2,7 +2,6 @@ PyX
 
 TODO:
   - style module:
-    - default patterns
     - make dash length available
   - text module:
     - SlantFont & Co support
@@ -32,6 +31,9 @@ TODO:
     - contructor should only take a texrunner keyword argument
     - set method???
     - SVG support
+    - stroking of patterns does not work in PDF
+    - patterns call the outputPS method in registerPS and have no writer at that 
+      time -> rewrite this code
   - style and color module:
     - support modification of existing styles via __call__
   - bbox module:
@@ -51,10 +53,7 @@ TODO:
   - open discussion:
     - clearly distingish between readers and writers. dvifile, epsfile, etc. might
       be renamed to dvireader, epsreader ...
-  - canvas module:
-    - stroking of patterns does not work in PDF
-    - patterns call the outputPS method in registerPS and have no writer at that 
-      time -> rewrite this code
+    - support gsave and grestore in some way to make context handling easier?
 
   Documentation:
     - path module:
@@ -151,6 +150,7 @@ TODO before release:
     - correct EOL handling while reading DSC's (reported by Markus Meyer)
   - pattern module: new
     - moved canvas.pattern to its own module together with the new PDFpattern class
+    - add some default patterns: hatched and crosshatched
   - update address of FSF in LICENSE file
 
 
