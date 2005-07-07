@@ -155,7 +155,7 @@ class decoratedpath(canvas.canvasitem):
         # not writing one path two times
 
         # small helper
-        def _writestyles(styles, file=file):
+        def _writestyles(styles, context):
             for style in styles:
                 style.outputPS(file, writer, context)
 
@@ -168,7 +168,8 @@ class decoratedpath(canvas.canvasitem):
         # apply global styles
         if self.styles:
             file.write("gsave\n")
-            _writestyles(self.styles)
+            context = context()
+            _writestyles(self.styles, context)
 
         if self.fillstyles is not None:
             file.write("newpath\n")
@@ -179,14 +180,14 @@ class decoratedpath(canvas.canvasitem):
                 file.write("gsave\n")
 
                 if self.fillstyles:
-                    _writestyles(self.fillstyles)
+                    _writestyles(self.fillstyles, context())
 
                 file.write("fill\n")
                 file.write("grestore\n")
 
                 if self.strokestyles:
                     file.write("gsave\n")
-                    _writestyles(self.strokestyles)
+                    _writestyles(self.strokestyles, context())
 
                 file.write("stroke\n")
 
@@ -196,7 +197,7 @@ class decoratedpath(canvas.canvasitem):
                 # only fill fillpath - for the moment
                 if self.fillstyles:
                     file.write("gsave\n")
-                    _writestyles(self.fillstyles)
+                    _writestyles(self.fillstyles, context())
 
                 file.write("fill\n")
 
@@ -206,17 +207,21 @@ class decoratedpath(canvas.canvasitem):
         if self.strokestyles is not None and (strokepath is not fillpath or self.fillstyles is None):
             # this is the only relevant case still left
             # Note that a possible stroking has already been done.
+            oldcontext = context
+            context = context()
 
             if self.strokestyles:
                 file.write("gsave\n")
-                _writestyles(self.strokestyles)
+                _writestyles(self.strokestyles, context)
 
             file.write("newpath\n")
             strokepath.outputPS(file, writer, context)
             file.write("stroke\n")
 
             if self.strokestyles:
-                file.write("grestore\n")
+                file.write("grestore\n", context)
+
+            context = oldcontext
 
         # now, draw additional elements of decoratedpath
         self.ornaments.outputPS(file, writer, context)
@@ -228,15 +233,15 @@ class decoratedpath(canvas.canvasitem):
     def outputPDF(self, file, writer, context):
         # draw (stroke and/or fill) the decoratedpath on the canvas
 
-        def _writestyles(styles, file=file):
+        def _writestyles(styles, context):
             for style in styles:
                 style.outputPDF(file, writer, context)
 
-        def _writestrokestyles(strokestyles, file=file):
+        def _writestrokestyles(strokestyles, context):
             for style in strokestyles:
                 style.outputPDF(file, writer, context(fillattr=0))
 
-        def _writefillstyles(fillstyles, file=file):
+        def _writefillstyles(fillstyles, context):
             for style in fillstyles:
                 style.outputPDF(file, writer, context(strokeattr=0))
 
@@ -249,7 +254,8 @@ class decoratedpath(canvas.canvasitem):
         # apply global styles
         if self.styles:
             file.write("q\n") # gsave
-            _writestyles(self.styles)
+            context = context()
+            _writestyles(self.styles, context)
 
         if self.fillstyles is not None:
             fillpath.outputPDF(file, writer, context)
@@ -257,19 +263,22 @@ class decoratedpath(canvas.canvasitem):
             if self.strokestyles is not None and strokepath is fillpath:
                 # do efficient stroking + filling
                 file.write("q\n") # gsave
+                oldcontext = context
+                context = context()
 
                 if self.fillstyles:
-                    _writefillstyles(self.fillstyles)
+                    _writefillstyles(self.fillstyles, context)
                 if self.strokestyles:
-                    _writestrokestyles(self.strokestyles)
+                    _writestrokestyles(self.strokestyles, context)
 
                 file.write("B\n") # both stroke and fill
                 file.write("Q\n") # grestore
+                context = oldcontext
             else:
                 # only fill fillpath - for the moment
                 if self.fillstyles:
                     file.write("q\n") # gsave
-                    _writefillstyles(self.fillstyles)
+                    _writefillstyles(self.fillstyles, context())
 
                 file.write("f\n") # fill
 
@@ -279,16 +288,19 @@ class decoratedpath(canvas.canvasitem):
         if self.strokestyles is not None and (strokepath is not fillpath or self.fillstyles is None):
             # this is the only relevant case still left
             # Note that a possible stroking has already been done.
+            oldcontext = context
+            context = context()
 
             if self.strokestyles:
                 file.write("q\n") # gsave
-                _writestrokestyles(self.strokestyles)
+                _writestrokestyles(self.strokestyles, context)
 
             strokepath.outputPDF(file, writer, context)
             file.write("S\n") # stroke
 
             if self.strokestyles:
                 file.write("Q\n") # grestore
+            context = oldcontext
 
         # now, draw additional elements of decoratedpath
         self.ornaments.outputPDF(file, writer, context)
