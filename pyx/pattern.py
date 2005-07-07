@@ -52,7 +52,7 @@ class pattern(canvas._canvas, attr.exclusiveattr, style.fillstyle):
             # we only set the fill color space
             file.write("/Pattern cs\n")
             context.colorspace = "Pattern"
-        assert not context.strokeattr, "this should not happen"
+        # assert not context.strokeattr, "this should not happen"
         if context.fillattr:
             file.write("/%s scn\n"% self.id)
 
