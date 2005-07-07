@@ -7,4 +7,4 @@ g.plot([graph.data.function("x(y)=y**(2**(3-%i))" % i) for i in range(3)] +
        [graph.data.function("y(x)=x**(2**%i)" % i) for i in range(4)],
        [graph.style.line([color.palette.Rainbow])])
 g.writeEPSfile("change")
-
+g.writePDFfile("change")

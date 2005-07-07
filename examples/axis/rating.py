@@ -23,3 +23,4 @@ c.insert(axis.pathaxis(p, axis.linear(min=0, max=10)))
 c.insert(axis.pathaxis(p.transformed(trafo.scale(1.25).translated(4, 0)),
                        axis.linear(min=0, max=10)))
 c.writeEPSfile("rating")
+c.writePDFfile("rating")

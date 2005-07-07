@@ -20,3 +20,4 @@ g.plot(graph.data.paramfunction("k", 0, 120,
                                 points=121, context=locals()),# access extern
        [graph.style.arrow()])                                 # variables&functions
 g.writeEPSfile("arrows")                                      # by passing a context
+g.writePDFfile("arrows")                                      # by passing a context

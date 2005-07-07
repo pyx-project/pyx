@@ -15,3 +15,4 @@ c = axis.pathaxis(path.curve(0, 0, 3, 0, 1, 4, 4, 4),
                         axis.linear(min=0, max=10, title="axis title",
                                     painter=ap))
 c.writeEPSfile("painter")
+c.writePDFfile("painter")

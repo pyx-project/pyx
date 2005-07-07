@@ -1,1 +1,1 @@
-examples.aux examples.log examples.dvi examples.toc examples.ps examples.pdf examples.tex *.eps *.png *.html
+examples.tex examples.log examples.aux examples.dvi *.eps *.pdf *.png

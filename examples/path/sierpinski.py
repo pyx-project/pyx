@@ -24,3 +24,4 @@ for i in range(6):
 c = canvas.canvas()
 c.stroke(p, [style.linewidth.Thin])
 c.writeEPSfile("sierpinski")
+c.writePDFfile("sierpinski")

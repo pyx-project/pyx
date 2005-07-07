@@ -23,3 +23,4 @@ c.insert(axis.pathaxis(p.transformed(trafo.translate(8, 0)),
                        axis.log(min=1, max=1024, parter=log2parter,
                                 texter=log2texter)))
 c.writeEPSfile("log")
+c.writePDFfile("log")

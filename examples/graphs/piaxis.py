@@ -14,3 +14,4 @@ g.finish()
 g.stroke(g.ygridpath(0))
 
 g.writeEPSfile("piaxis")
+g.writePDFfile("piaxis")

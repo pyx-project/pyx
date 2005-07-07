@@ -15,3 +15,4 @@ g.plot([graph.data.file("bar.dat", xname=1, y=2),
         graph.data.file("bar.dat", xname=1, y=3)],
        [graph.style.bar()])
 g.writeEPSfile("compare")
+g.writePDFfile("compare")

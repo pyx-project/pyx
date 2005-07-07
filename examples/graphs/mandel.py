@@ -39,3 +39,4 @@ g.plot(graph.data.list(d, xmin=1, xmax=2, ymin=3, ymax=4, color=5),
        [graph.style.rect(color.palette.Rainbow)])
 g.dodata() # plot data first, then axes
 g.writeEPSfile('mandel')
+g.writePDFfile('mandel')

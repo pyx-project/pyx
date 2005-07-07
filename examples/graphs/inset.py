@@ -7,3 +7,4 @@ g2 = g.insert(graph.graphxy(width=3.5, xpos=1, ypos=2,
                             y=graph.axis.linear(min=-2, max=2)))
 g2.plot(graph.data.function("y(x)=log(x)"))
 g.writeEPSfile("inset")
+g.writePDFfile("inset")

@@ -30,3 +30,4 @@ for t in tree(7):
     # c.stroke(path.line(0, 0, 0, l), [t])
     # The difference is, that the linewidth would not be scaled down.
 c.writeEPSfile("tree")
+c.writePDFfile("tree")

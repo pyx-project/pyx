@@ -26,3 +26,4 @@ c.text(4, 0, r"x=0", [text.mathmode, text.vshift.bottomzero])
 c.text(6, 0, r"x=0", [text.mathmode, text.vshift.mathaxis])
 
 c.writeEPSfile("valign")
+c.writePDFfile("valign")

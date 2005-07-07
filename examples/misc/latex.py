@@ -13,3 +13,4 @@ plaintex = text.texrunner() # plain TeX instance
 c.insert(plaintex.text(0, -1, r"This is plain \TeX."))
 
 c.writeEPSfile("latex")
+c.writePDFfile("latex")

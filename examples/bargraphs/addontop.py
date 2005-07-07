@@ -12,3 +12,4 @@ g.plot(graph.data.list([(i, i, 1) for i in range(1, 10)],
         graph.style.stackedbarpos("stack", addontop=1),
         graph.style.bar([color.rgb.green])])
 g.writeEPSfile("addontop")
+g.writePDFfile("addontop")

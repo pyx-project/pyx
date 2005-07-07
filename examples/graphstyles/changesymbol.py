@@ -43,3 +43,4 @@ g.plot(graph.data.list([[random.random() for i in range(4)]
                        x=1, y=2, size=3, color=4),
        [changesymbol()])
 g.writeEPSfile("changesymbol")
+g.writePDFfile("changesymbol")

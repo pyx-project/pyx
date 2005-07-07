@@ -23,3 +23,4 @@ c.stroke(curve(D, B, boxdists=0.2, relangle1=45, relangle2=-45, relbulge=0.8),
          [color.rgb.blue, deco.earrow.normal])
 
 c.writeEPSfile("connect")
+c.writePDFfile("connect")

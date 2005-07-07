@@ -23,4 +23,4 @@ c.stroke(path.circle(0, 0, r - rc - eps))
 c.stroke(path.circle(0, 0, r + rc + eps))
 
 c.writeEPSfile("springs")
-
+c.writePDFfile("springs")

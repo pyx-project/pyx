@@ -20,3 +20,4 @@ g.plot(graph.data.file("bar.dat", xname=0, y=2, stack=3,
         graph.style.range({"y": "stack"}),
         graph.style.errorbar()])
 g.writeEPSfile("errors")
+g.writePDFfile("errors")

@@ -35,3 +35,4 @@ g.text(x1-.6, y1-.1, r"$E_{\rm b}$", [text.halign.right])
 g.text(x3+.15, y2+.20, r"$2J_k(\varepsilon/\Omega)+\pi\gamma k\Omega$")
 
 g.writeEPSfile("washboard")
+g.writePDFfile("washboard")

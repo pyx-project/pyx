@@ -18,3 +18,4 @@ g.plot([graph.data.file("shift.dat", x=1, y="mktuple(i, $(i+2))",
                         context={"mktuple": lambda x, y: (x, y), "i": i})
         for i in range(3)], [graph.style.line()])
 g.writeEPSfile("shift")
+g.writePDFfile("shift")

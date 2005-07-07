@@ -16,3 +16,4 @@ g.plot(graph.data.file("stacked.dat", xname=0, y=2, stack=3),
         graph.style.bar([color.rgb.green]),
         graph.style.text("stack")])
 g.writeEPSfile("stacked")
+g.writePDFfile("stacked")

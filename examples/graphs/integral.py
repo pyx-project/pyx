@@ -27,4 +27,4 @@ g.stroke(area, [deco.filled([color.gray(0.8)])])
 g.text(g.pos(0.5 * (a + b), 0)[0], 1,
        r"\int_a^b f(x){\rm d}x", [text.halign.center, text.mathmode])
 g.writeEPSfile("integral")
-
+g.writePDFfile("integral")

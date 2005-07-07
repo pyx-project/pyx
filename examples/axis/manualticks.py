@@ -16,3 +16,4 @@ c.insert(axis.pathaxis(p, axis.linear(min=0, max=10)))
 c.insert(axis.pathaxis(p.transformed(trafo.translate(4, 0)),
                        axis.linear(min=0, max=10, manualticks=myticks)))
 c.writeEPSfile("manualticks")
+c.writePDFfile("manualticks")

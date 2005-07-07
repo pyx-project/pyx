@@ -2,3 +2,7 @@ The following examples are part of the \PyX{} release __version__. For each
 \PyX{} example the source code and the corresponding output are shown. Please
 pay attention to source code comments within the examples for further
 information.
+
+The examples typically end with "writeEPSfile" and "writePDFfile" method
+calls to create both, a PostScript and a PDF version of the example. Usually
+you want to create just one of the two choices.

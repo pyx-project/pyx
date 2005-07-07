@@ -29,3 +29,4 @@ c.insert(axis.pathaxis(p.transformed(trafo.translate(4, 0)),
 c.insert(axis.pathaxis(p.transformed(trafo.translate(8, 0)),
                        piaxis(min=0, max=2*math.pi)))
 c.writeEPSfile("texter")
+c.writePDFfile("texter")

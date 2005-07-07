@@ -17,3 +17,4 @@ for b in boxes:
     # a second time with bezier rounded corners
     c.stroke(b.path(), [deformer.smoothed(radius=0.5), color.rgb.red])
 c.writeEPSfile("box")
+c.writePDFfile("box")

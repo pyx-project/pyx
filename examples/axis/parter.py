@@ -22,3 +22,4 @@ c.insert(axis.pathaxis(p.transformed(trafo.translate(4, 0)),
                        axis.linear(min=0, max=1, parter=myparter,
                                    texter=axis.texter.rational())))
 c.writeEPSfile("parter")
+c.writePDFfile("parter")

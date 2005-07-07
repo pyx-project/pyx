@@ -18,4 +18,4 @@ g.plot(graph.data.function("x(y3)=5+sin(2*pi*y3)"))
 g.plot(graph.data.function("x(y4)=5+sin(2*pi*y4)"))
 
 g.writeEPSfile("manyaxes")
-
+g.writePDFfile("manyaxes")

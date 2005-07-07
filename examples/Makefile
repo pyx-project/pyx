@@ -1,22 +1,14 @@
 default: examples.dvi
 
 clean:
-	-rm -f examples.tex examples.log examples.aux examples.dvi examples.ps examples.pdf *.eps */*.eps *.png */*.png
+	-rm -f examples.tex examples.log examples.aux examples.dvi *.eps */*.eps *.pdf */*.pdf *.png */*.png
 
 all:
 	make clean
-	make pdf
+	make examples.dvi
 	make png
 
-pdf: examples.pdf
-ps: examples.ps
 dvi: examples.dvi
-
-examples.pdf: examples.ps
-	ps2pdf examples.ps
-
-examples.ps: examples.dvi
-	dvips -o examples.ps examples.dvi
 
 files = $(foreach item, $(shell grep -v / INDEX), $(item)) $(foreach item, $(shell grep / INDEX), $(addprefix $(item), $(shell cat $(item)INDEX)))
 pyfiles = $(addsuffix .py, $(files))
@@ -28,7 +20,6 @@ eps: $(epsfiles)
 examples.dvi: examples.py $(epsfiles)
 	python examples.py $(basename $(pyfiles))
 	latex examples.tex
-	-rm -f examples.ps examples.pdf
 
 png: $(pngfiles)
 

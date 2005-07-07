@@ -35,3 +35,4 @@ c.fill(area, [color.gray(0.6)])
 c.stroke(fline, [style.linewidth.Thick, style.linejoin.round])
 
 c.writeEPSfile("partialfill")
+c.writePDFfile("partialfill")
