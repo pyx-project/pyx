@@ -296,7 +296,7 @@ class text_pt(canvas.canvasitem):
             context.font = self.font
         outstring = ""
         for char in self.chars:
-            if char > 32 and char < 127 and chr(char) not in "()[]<>\\":
+            if 32 <= char <= 127 and chr(char) not in "()[]<>\\":
                 ascii = "%s" % chr(char)
             else:
                 ascii = "\\%03o" % char
