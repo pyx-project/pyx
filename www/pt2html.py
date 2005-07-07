@@ -80,7 +80,7 @@ class example:
         self.png = "%s.png" % basename
         self.width, self.height = Image.open("%s.png" % relname).size
         self.downloads = []
-        for suffix in ["py", "dat", "eps", "pdf"]:
+        for suffix in ["py", "dat", "jpg", "eps", "pdf"]:
             try:
                 filesize = "%.1f KB" % (os.path.getsize("%s.%s" % (relname, suffix)) / 1024.0)
             except OSError:

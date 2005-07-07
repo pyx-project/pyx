@@ -21,18 +21,16 @@ chmod:
 build: always
 	-mkdir build
 	cp main.css build
-	cp -r icons build
+	-mkdir build/icons
+	-cp icons/* build/icons
 	cp png/*.png ../manual/manual.pdf ../faq/pyxfaq.pdf build
 	cp -r ../manual/manual build
 	for d in "" $(shell grep / ../examples/INDEX); \
 	do \
 	  mkdir build/examples/$$d; \
-	  for s in png py dat eps pdf; \
+	  for s in png py jpg dat eps pdf; \
 	  do \
-	    if [[ -x ../examples/$$d*.$$s ]] ; \
-	    then \
-	      cp ../examples/$$d*.$$s build/examples/$$d; \
-	    fi; \
+	    cp ../examples/$$d*.$$s build/examples/$$d; \
 	  done; \
 	done
 	PYTHONPATH=~/bin/python/Zope3/src ./pt2html.py
