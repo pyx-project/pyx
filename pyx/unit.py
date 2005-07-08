@@ -84,8 +84,8 @@ class length:
     w=width, and x=TeX) which can be scaled separately (except for the true
     component, which is always unscaled). Lengths can be constructed in units
     of "pt", "mm", "cm", "m" and "inch". When no unit is given, a module
-    default is used, which can be changed with the help of the set method of
-    the present module.
+    default is used, which can be changed with the help of the module level function
+    set().
     """
 
     def __init__(self, f=0, type="u", unit=None):
