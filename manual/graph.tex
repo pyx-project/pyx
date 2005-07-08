@@ -49,16 +49,17 @@ Instead of plotting data from a file, other data source are available
 as well. For example function data is created and placed into
 \method{plot()} by the following line:
 \begin{verbatim}
-g.plot(graph.data.function("y=x**2"))
+g.plot(graph.data.function("y(x)=x**2"))
 \end{verbatim}
 You can plot different data in a single graph by calling
-\method{plot()} several times before \method{writeEPSfile()}. Note
-that a calling \method{plot()} will fail once a graph was forced to
-``finish'' itself. This happens automatically, when the graph is
-written to a file. Thus it is not an option to call \method{plot()}
-after \method{writeEPSfile()}. The topic of the finalization of a
-graph is addressed in more detail in section~\ref{graph:graph}. As you
-can see in figure~\ref{fig:graph2}, a function is plotted as a line by
+\method{plot()} several times before \method{writeEPSfile()} or
+\method{writePDFfile()}. Note that a calling \method{plot()} will fail
+once a graph was forced to ``finish'' itself. This happens
+automatically, when the graph is written to a file. Thus it is not an
+option to call \method{plot()} after \method{writeEPSfile()} or
+\method{writePDFfile()}. The topic of the finalization of a graph is
+addressed in more detail in section~\ref{graph:graph}. As you can see
+in figure~\ref{fig:graph2}, a function is plotted as a line by
 default.
 
 \begin{figure}[ht]
@@ -127,7 +128,7 @@ However, there is a shortcut to access this class via
 
 \begin{classdesc}{graphxy}{xpos=0, ypos=0, width=None, height=None,
 ratio=goldenmean, key=None, backgroundattrs=None,
-axesdist=0.8*unit.v\_cm, **axes}
+axesdist=0.8*unit.v\_cm, xaxisat=None, yaxisat=None, **axes}
   This class provides an x-y-graph. A graph instance is also a fully
   functional canvas.
 
@@ -150,28 +151,32 @@ axesdist=0.8*unit.v\_cm, **axes}
   \var{axisdist} is the distance between axes drawn at the same side
   of a graph.
 
+  \var{xaxisat} and \var{yaxisat} specify a value at the y and x axis,
+  where the corresponding axis should be moved to. It's a shortcut for
+  corresonding calls of \method{axisatv()} described below. Moving an
+  axis by \var{xaxisat} or \var{yaxisat} disables the automatic
+  creation of a linked axis at the opposite side of the graph.
+
   \var{**axes} receives axes instances. Allowed keywords (axes names)
   are \code{x}, \code{x2}, \code{x3}, \emph{etc.} and \code{y},
   \code{y2}, \code{y3}, \emph{etc.} When not providing an \code{x} or
   \code{y} axis, linear axes instances will be used automatically.
   When not providing a \code{x2} or \code{y2} axis, linked axes to the
-  \code{x} and \code{y} axes are created automatically. You may set
-  those axes to \code{None} to disable the automatic creation of axes.
-  The even numbered axes are plotted at the top (\code{x} axes) and
-  right (\code{y} axes) while the others are plotted at the bottom
-  (\code{x} axes) and left (\code{y} axes) in ascending order each.
-  Axes instances should only be used once.
+  \code{x} and \code{y} axes are created automatically and \emph{vice
+  versa}. As an exception, a linked axis is not created automatically
+  when the axis is placed at a specific position by \var{xaxisat} or
+  \var{yaxisat}. You can disable the automatic creation of axes by
+  setting the linked axes to \code{None}. The even numbered axes are
+  plotted at the top (\code{x} axes) and right (\code{y} axes) while
+  the others are plotted at the bottom (\code{x} axes) and left
+  (\code{y} axes) in ascending order each.
 \end{classdesc}
 
 Some instance attributes might be useful for outside read-access.
 Those are:
 
 \begin{memberdesc}{axes}
-  A dictionary mapping axes names to the \class{axis} instances.
-\end{memberdesc}
-
-\begin{memberdesc}{axespos}
-  A dictionary mapping axes names to the \class{axispos} instances.
+  A dictionary mapping axes names to the \class{anchoredaxis} instances.
 \end{memberdesc}
 
 To actually plot something into the graph, the following instance
@@ -282,13 +287,28 @@ The graph provides some methods to access its geometry:
 \index{ytickdirection()@\texttt{ytickdirection()} (graphxy method)}
 \index{yvtickdirection()@\texttt{yvtickdirection()} (graphxy method)}
 
-Further geometry information is available by the \member{axespos}
-instance variable. Shortcuts to the \class{axispos} methods for the
-\code{x}- and \code{y}-axis become available after \method{dolayout()}
-as \class{graphxy} methods \code{Xbasepath}, \code{Xvbasepath},
-\code{Xgridpath}, \code{Xvgridpath}, \code{Xtickpoint},
-\code{Xvtickpoint}, \code{Xtickdirection}, and \code{Xvtickdirection}
-where the prefix \code{X} stands for \code{x} and \code{y}. % }}}
+Further geometry information is available by the \member{axes}
+instance variable, with is a dictionary mapping axis names to
+\class{anchoredaxis} instances. Shortcuts to the \class{axispos}
+methods for the \code{x}- and \code{y}-axis become available after
+\method{dolayout()} as \class{graphxy} methods \code{Xbasepath},
+\code{Xvbasepath}, \code{Xgridpath}, \code{Xvgridpath},
+\code{Xtickpoint}, \code{Xvtickpoint}, \code{Xtickdirection}, and
+\code{Xvtickdirection} where the prefix \code{X} stands for \code{x}
+and \code{y}.
+
+\begin{methoddesc}{axistrafo}{axis, t}
+  This method can be used to apply a transformation \var{t} to an
+  \class{anchoredaxis} instance \var{axis} to modify the axis position
+  and the like. This method fails when called on a not yet finished
+  axis, i.e. it should be used after \method{dolayout()}.
+\end{methoddesc}
+
+\begin{methoddesc}{axisatv}{axis, v}
+  This method calls \method{axistrafo()} with a transformation to move
+  the axis \var{axis} to a graph position \var{v} (in graph
+  coordinates).
+\end{methoddesc} % }}}
 
 \section{Module graph.data: Data} % {{{
 \label{graph:data}
@@ -304,7 +324,8 @@ graph. The classes are implemented in \module{graph.data}.
                         columnpattern=defaultcolumnpattern,
                         stringpattern=defaultstringpattern,
                         skiphead=0, skiptail=0, every=1, title=notitle,
-                        parser=dataparser(), context=\{\}, **columns}
+                        parser=dataparser(), context=\{\}, copy=1,
+                        **columns}
   This class reads data from a file and makes them available to the
   graph system. \var{filename} is the name of the file to be read.
   The data should be organized in columns.
@@ -343,11 +364,14 @@ graph. The classes are implemented in \module{graph.data}.
   functions when evaluating mathematical expressions for columns. As
   an example you may use \code{context=locals()} or something similar.
 
-  Finally, \var{columns} defines the data columns. To make it a bit
-  more complicated, there are file column names and new created data
-  column names, namely the keys of the dictionary \var{**columns}.
-  Only the later, the data column names, are valid identifiers for the
-  data columns at later usage (by the graph styles).
+  Finally, \var{columns} define columns out of the existing columns
+  from the file by a column number or a mathematical expression (see
+  below). When \var{copy} is set the names of the columns in the file
+  (file column names) and the freshly created columns having the names
+  of the dictionary key (data column names) are passed as data to the
+  graph styles. The data columns may hide file columns when names are
+  equal. For unset \var{copy} the file columns are not available to
+  the graph styles.
 
   File column names occur when the data file contains a comment line
   immediately in front of the data (except for empty or empty comment
@@ -410,8 +434,9 @@ For the sake of completeness we list the default patterns:
                             context=\{\}}
   This class creates graph data from a function. \var{expression} is
   the mathematical expression of the function. It must also contain
-  the result variable name by assignment. Thus a typical example looks
-  like \code{"y=sin(x)"}.
+  the result variable name including the variable the function depends
+  on by assignment. Thus a typical example looks like
+  \code{"y(x)=sin(x)"}.
 
   \var{title} is the title of the data to be used in the graph key. By
   default \var{expression} is used. You may set \var{title} to
@@ -481,17 +506,16 @@ For the sake of completeness we list the default patterns:
 \end{classdesc} % }}}
 
 \begin{classdesc}{data}{data, title=notitle, parser=dataparser(), % {{{
-                        context={}, **columns}
+                        context={}, copy=1, **columns}
   This class provides graph data out of other graph data. \var{data}
   is the source of the data. All other parameters work like the equally
   called parameters in \class{graph.data.file}. Indeed, the latter is
   built on top of this class by reading the file and caching its
-  contents in a \class{graph.data.list} instance. The columns are then
-  selected by creating new data out of the existing data.
+  contents in a \class{graph.data.list} instance.
 \end{classdesc} % }}}
 
 \begin{classdesc}{conffile}{filename, title=notitle, parser=dataparser(), % {{{
-                            context={}, **columns}
+                            context={}, copy=1, **columns}
   This class reads data from a config file with the file name
   \var{filename}. The format of a config file is described within the
   documentation of the \module{ConfigParser} module of the Python
@@ -502,6 +526,14 @@ For the sake of completeness we list the default patterns:
   file column names. All other parameters work as in
   \var{graph.data.file} and \var{graph.data.data} since they all use
   the same code.
+\end{classdesc} % }}}
+
+\begin{classdesc}{cbdfile}{filename, minrank=None, maxrank=None, % {{{
+                           title=notitle, parser=dataparser(),
+                           context={}, copy=1, **columns}
+  This is an experimental class to read map data from cbd-files. See
+  \url{http://sepwww.stanford.edu/ftp/World_Map/} for some world-map
+  data.
 \end{classdesc} % }}} % }}}
 
 \section{Module graph.style: Styles} % {{{
@@ -722,6 +754,41 @@ definition is:
   \end{note}
 \end{classdesc} % }}}
 
+\begin{classdesc}{histogram}{lineattrs=[], steps=0, fromvalue=0, % {{{
+                             frompathattrs=[], fillable=0,
+                             autohistogramaxisindex=0,
+                             autohistogrampointpos=0.5, epsilon=1e-10}
+  This class is a style to plot histograms. \var{lineattrs} is merged
+  with \code{defaultlineattrs} which is \code{[deco.stroked]}. When
+  \var{steps} is set, the histrogram is plotted as steps instead of
+  the default being a boxed histogram. \var{fromvalue} is the baseline
+  value of the histogram. When set to \code{None}, the histogram will
+  start at the baseline. When fromvalue is set, \var{frompathattrs}
+  are the stroke attributes used to show the histogram baseline path.
+
+  The \var{fillable} flag changes the stoke line of the histogram to
+  make it fillable properly. This is important on non-steped
+  histograms or on histograms, which hit the graph boundary.
+
+  Usually, a histogram wants a range specification (like for an
+  errorbar) in one graph dimension and a value for the other graph
+  dimension. By that, the widths of the histogram boxes might be
+  variable. But a typical use case is, that you just provide graph
+  positions for both graph dimensions. Then
+  \var{autohistogramaxisindex} defines the graph dimension where the
+  histogram should be plotted on top of it. (\code{0} thus means a
+  histogram at the x axes and \code{1} for the y axes.) The style will
+  then demand equal spaced values on this axis. The histogram boxes
+  are usually centered on those values for \var{autohistogrampointpos}
+  equals \code{0.5}, but they can also be aligned at the right side or
+  left side of this value for \var{autohistogrampointpos} being
+  \code{0} or \code{1}.
+
+  Positions of the histograms are considered to be out of graph when
+  they exceed the graph coordinate range [0:1] by more than
+  \var{epsilon}.
+\end{classdesc} % }}}
+
 \begin{classdesc}{barpos}{fromvalue=None, frompathattrs=[], % {{{
                           subnames=None, epsilon=1e-10}
   This class is a hidden style providing position information in a bar
@@ -742,10 +809,12 @@ definition is:
   coordinates exceeds the range [0:1] by more than \var{epsilon}.
 \end{classdesc} % }}}
 
-\begin{classdesc}{stackedbarpos}{stackname, epsilon=1e-10} % {{{
+\begin{classdesc}{stackedbarpos}{stackname, addontop=0, epsilon=1e-10} % {{{
   This class is a hidden style providing position information in a bar
   graph by stacking a new bar on top of another bar. The value of the
-  new bar is taken from the data column named \var{stackname}.
+  new bar is taken from the data column named \var{stackname}. When
+  \var{addontop} is set, the values is taken relative to the previous
+  top of the bar.
 \end{classdesc} % }}}
 
 \begin{classdesc}{bar}{barattrs=[]} % {{{
@@ -774,6 +843,7 @@ implemented in \module{graph.key}.
                        symbolheight=0.25*unit.v\_cm,
                        symbolspace=0.2*unit.v\_cm,
                        textattrs=[],
+                       columns=1, columndist=0.5*unit.v\_cm,
                        border=0.3*unit.v\_cm, keyattrs=None}
   This class writes the title of the data in a plot together with a
   small illustration of the style. The style is responsible for its
@@ -796,6 +866,9 @@ implemented in \module{graph.key}.
   space between the illustration and the text. \var{textattrs} are
   attributes for the text creation. They are merged with
   \code{[text.vshift.mathaxis]}.
+
+  \var{columns} is a number of columns of the graph key and
+  \var{columndist} is the distance between those columns.
 
   When \var{keyattrs} is set to contain some draw attributes, the
   graph key is enlarged by \var{border} and the key area is drawn
