@@ -88,7 +88,7 @@ TODO before release:
   - FAQ:
     - check examples
 
-0.8 (????/??/??):
+0.8 (2005/07/??):
   - path module:
     - path parameters and argument handling
     - the arct to arc/arcn conversion (needed for bbox calculation and for conversion into
@@ -109,28 +109,37 @@ TODO before release:
   - color module:
     - allow selection on zero range palette (reported by Francisco Borges, cf. bug #1116257)
   - graph modules:
+    - modifications on __init__.py in graph and axis subdirectories to
+      make "from pyx.graph import *" working as expected
     - graph styles:
       - addontop added to stackedbarpos
       - column -> columnname renaming where appropriate
       - histogram style added
     - graph data:
       - function needs explicit variable definition (implicit variable definition is deprecated)
-      - column names are inherited by data.data() except when copy=0; unused columns are silently ignored now
+      - column names are inherited by data.data() except when copy=0;
+        unused columns are silently ignored now
       - dynamic function data on a logarithmic axis uses isinstance check now
+        (although it removes the only (mis)use of axis.inverse, it is a
+        temporary solution only)
     - graph key:
-      - extend graph keys to allow for several columns (TODO: documentation)
+      - extend graph keys to allow for several columns
     - axis data handling refactoring:
-      - introcuded an axis positioner
+      - introcuded an axis positioner (module graph.axis.positioner)
       - introduced anchoredaxis to make axis data and positioning local to a graph
-      - linkedaxis is a special version of anchoredaxis and are generic (they use the new linkpainter provided by an axis)
-      - unification of split and bar axes; removed some black magic in baraxis in favor of a nestedbar axis
+      - linkedaxis is a special version of anchoredaxis and is generic
+        (it uses the new linkpainter provided by an axis)
+      - unification of split and bar axes;
+        removed some black magic in baraxis in favor of a nestedbar axis
       - x linked to x2 etc. is now possible
       - axis.inverse was removed (the only place it was (mis)used was by a function)
     - graphxy:
       - allow to transform axis after layout
-      - [xy]axisat arguments in the constructor to easily move [xy]-axes to the position
-        defined the orthogonal axis
-    - TODO: update documentation
+      - [xy]axisat arguments in the constructor to easily move [xy]-axes
+        to a position defined the orthogonal axis
+      - remove axispos (use the axis dictionary now, since it now contains
+        anchored axis instances and those have shortcuts for the axis positioner
+        methods)
   - prolog module: deleted (replaced by resource module)
   - dvifile:
     - minimal dvitype.py
@@ -149,7 +158,7 @@ TODO before release:
   - pattern module: new
     - moved canvas.pattern to its own module together with the new PDFpattern class
     - add some default patterns: hatched and crosshatched
-  - update address of FSF in LICENSE file
+  - update address of FSF all over the place
 
 
 0.7.1 (2004/12/15):
