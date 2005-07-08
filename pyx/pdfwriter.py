@@ -92,7 +92,7 @@ class PDFregistry:
         file.write(">>\n"
                    "startxref\n"
                    "%i\n" % xrefpos)
-        file.write("%%%%EOF\n")
+        file.write("%%EOF\n")
 
 
 class PDFobject:
