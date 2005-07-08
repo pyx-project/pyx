@@ -106,49 +106,6 @@ The contents of the canvas can be written using:
   into account for the calculation of the bounding box.
 \end{methoddesc}
 
-\subsection{Patterns}
-
-The \class{pattern} class allows the definition of PostScript Tiling
-patterns (cf.\ Sect.~4.9 of the PostScript Language Reference Manual)
-which may then be used to fill paths. The classes \class{pattern} and
-\class{canvas} differ only in their constructor and in the absence of
-a \method{writeEPSfile()} method in the former. The \class{pattern}
-constructor accepts the following keyword arguments:
-
-\medskip
-\begin{tabularx}{\linewidth}{l>{\raggedright\arraybackslash}X}
-keyword&description\\
-\hline
-\texttt{painttype}&\texttt{1} (default) for coloured patterns or
-\texttt{2} for uncoloured patterns\\
-\texttt{tilingtype}&\texttt{1} (default) for constant spacing tilings
-(patterns are spaced constantly by a multiple of a device pixel),
-\texttt{2} for undistorted pattern cell, whereby the spacing may vary
-by as much as one device pixel, or \texttt{3} for constant spacing and
-faster tiling which behaves as tiling type \texttt{1} but with
-additional distortion allowed to permit a more efficient
-implementation.\\
-\texttt{xstep}&desired horizontal spacing between pattern cells, use
-\texttt{None} (default) for automatic calculation from pattern
-bounding box.\\
-\texttt{ystep}&desired vertical spacing between pattern cells, use
-\texttt{None} (default) for automatic calculation from pattern
-bounding box.\\
-\texttt{bbox}&bounding box of pattern. Use \texttt{None} for an
-automatic determination of the bounding box (including an
-enlargement by $5$ pts on each side.)\\
-\texttt{trafo}&additional transformation applied to pattern or
-\texttt{None} (default). This may be used to rotate the pattern or to
-shift its phase (by a translation).
-\end{tabularx}
-\medskip
-
-After you have created a pattern instance, you define the pattern
-shape by drawing in it like in an ordinary canvas. To use the pattern,
-you simply pass the pattern instance to a \method{stroke()},
-\method{fill()}, \method{draw()} or \method{set()} method of the
-canvas, just like you would do with a colour, etc.
-
 
 
 %%% Local Variables:
