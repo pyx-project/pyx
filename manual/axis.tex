@@ -1,21 +1,28 @@
-\chapter{Axes\label{axis}}
+\chapter{Axes}
+\label{axis}
+\section{Component architecture} % {{{
 
-Axes are a fundamental component of graphs although there might be 
-applications outside of the graph system. Internally axes are 
-constructed out of components, which handle different tasks axes 
-need to fulfill:
+Axes are a fundamental component of graphs although there might be
+applications outside of the graph system. Internally axes are
+constructed out of components, which handle different tasks axes need
+to fulfill:
 
 \begin{definitions}
 \term{axis}
-  Basically a container for axis data and the components. It
-  implements the conversion of a data value to a graph coordinate of
+  Implements the conversion of a data value to a graph coordinate of
   range [0:1]. It does also handle the proper usage of the components
   in complicated tasks (\emph{i.e.} combine the partitioner, texter,
   painter and rater to find the best partitioning).
+
+  An anchoredaxis is a container to combine an axis with an positioner
+  and provide a storage area for all kind of axis data. That way axis
+  instances are reusable (they do not store any data locally). The
+  anchoredaxis and the positioner are created by a graph corresponding
+  to its geometry.
 \term{tick}
   Ticks are plotted along the axis. They might be labeled with text as
   well.
-\term{partitioner, in the code the short form ``parter'' is used}
+\term{partitioner, we use ``parter'' as a short form}
   Creates one or several choices of tick lists suitable to a certain
   axis range.
 \term{texter}
@@ -25,12 +32,15 @@ need to fulfill:
 \term{rater}
   Calculate ratings, which can be used to select the best suitable
   partitioning.
+\term{positioner}
+  Defines the position of an axis.
 \end{definitions}
 
 The names above map directly to modules which are provided in the
-directory \file{graph/axis}. Sometimes it might be convenient to
-import the axis directory directly rather than to access iit through 
-the graph. This would look like:
+directory \file{graph/axis} except for the anchoredaxis, which is part
+of the axis module as well. Sometimes it might be convenient to import
+the axis directory directly rather than to access iit through the
+graph. This would look like:
 \begin{verbatim}
   from pyx import *
   graph.axis.painter() # and the like
@@ -44,9 +54,9 @@ different classes, which can be combined in various ways. There are
 various axis examples distributed with \PyX{}, where you can see some
 of the features of the axis with a few lines of code each. Hence we
 can here directly come to the reference of the available
-components.
+components. % }}}
 
-\section{Axes}
+\section{Axes} % {{{
 
 \declaremodule{}{graph.axis.axis}
 \modulesynopsis{Axes}
@@ -55,51 +65,14 @@ The following classes are part of the module \module{graph.axis.axis}.
 However, there is a shortcut to access those classes via
 \code{graph.axis} directly.
 
-The position of an axis is defined by an instance of a class providing
-the following methods:
-
-\begin{methoddesc}[axispos]{basepath}{x1=None, x2=None}
-  Returns a path instance for the base path. \var{x1} and \var{x2}
-  define the axis range, the base path should cover.
-\end{methoddesc}
-
-\begin{methoddesc}[axispos]{vbasepath}{v1=None, v2=None}
-  Like \method{basepath} but in graph coordinates.
-\end{methoddesc}
-
-\begin{methoddesc}[axispos]{gridpath}{x}
-  Returns a path instance for the grid path at position \var{x}.
-  Might return \code{None} when no grid path is available.
-\end{methoddesc}
-
-\begin{methoddesc}[axispos]{vgridpath}{v}
-  Like \method{gridpath} but in graph coordinates.
-\end{methoddesc}
-
-\begin{methoddesc}[axispos]{tickpoint}{x}
-  Returns the position of \var{x} as a tuple \samp{(x, y)}.
-\end{methoddesc}
-
-\begin{methoddesc}[axispos]{vtickpoint}{v}
-  Like \method{tickpoint} but in graph coordinates.
-\end{methoddesc}
-
-\begin{methoddesc}[axispos]{tickdirection}{x}
-  Returns the direction of a tick at \var{x} as a tuple \samp{(dx, dy)}.
-  The tick direction points inside of the graph.
-\end{methoddesc}
-
-\begin{methoddesc}[axispos]{vtickdirection}{v}
-  Like \method{tickdirection} but in graph coordinates.
-\end{methoddesc}
-
 Instances of the following classes can be passed to the \var{**axes}
 keyword arguments of a graph. Those instances should only be used once.
 
 \begin{classdesc}{linear}{min=None, max=None, reverse=0, divisor=None, title=None,
                           parter=parter.autolinear(), manualticks=[],
                           density=1, maxworse=2, rater=rater.linear(),
-                          texter=texter.mixed(), painter=painter.regular()}
+                          texter=texter.mixed(), painter=painter.regular(),
+                          linkpainter=painter.linked()}
   This class provides a linear axis. \var{min} and \var{max} define the
   axis range. When not set, they are adjusted automatically by the
   data to be plotted in the graph. Note, that some data might want to
@@ -139,7 +112,9 @@ keyword arguments of a graph. Those instances should only be used once.
   label strings by texters. The \var{painter} is finally used to
   construct the output. Note, that usually several output
   constructions are needed, since the rater is also used to rate the
-  distances between the label for an optimum.
+  distances between the labels for an optimum. The \var{linkedpainter}
+  is used as the axis painter, when automatic link axes are created by
+  the \method{createlinked()} method.
 \end{classdesc}
 
 \begin{classdesc}{lin}{...}
@@ -149,7 +124,8 @@ keyword arguments of a graph. Those instances should only be used once.
 \begin{classdesc}{logarithmic}{min=None, max=None, reverse=0, divisor=None, title=None,
                                parter=parter.autologarithmic(), manualticks=[],
                                density=1, maxworse=2, rater=rater.logarithmic(),
-                               texter=texter.mixed(), painter=painter.regular()}
+                               texter=texter.mixed(), painter=painter.regular(),
+                               linkpainter=painter.linked()}
   This class provides a logarithmic axis. All parameters work like
   \class{linear}. Only two parameters have a different default:
   \var{parter} and \var{rater}. Furthermore and most importantly, the
@@ -160,86 +136,38 @@ keyword arguments of a graph. Those instances should only be used once.
 This class is an abbreviation of \class{logarithmic} described above.
 \end{classdesc}
 
-\begin{classdesc}{linked}{linkedaxis, painter=painter.linked()}
-  This class provides an axis, which is linked to another axis
-  instance. This means, it shares all its properties with the axis it
-  is linked to except for the painter. Thus a linked axis is painted
-  differently.
-
-  A standard application are the \code{x2} and \code{y2} axes in an
-  x-y-graph. Linked axes to the \code{x} and \code{y} axes are created
-  automatically when not disabled by setting those axes to
-  \code{None}. By that, ticks are stroked at both sides of an
-  x-y-graph. However, linked axes can be used in other cases as
-  well. You can link axes within a graph or between different graphs
-  as long as the original axis is finished first (it must fix its
-  layout first).
-\end{classdesc}
-
-\begin{classdesc}{split}{subaxes, splitlist=[0.5],
-                         splitdist=0.1, relsizesplitdist=1,
-                         title=None, painter=painter.split()}
-  This class provides an axis, splitting the input values to its
-  subaxes depending on the range of the subaxes. Thus the subaxes
-  need to have fixed range, up to the minimum of the first axis and
-  the maximum of the last axis. \var{subaxes} actually takes the list
-  of subaxes. \var{splitlist} defines the positions of the splitting
-  in graph coordinates. Thus the length of \var{subaxes} must be the
-  length of \var{splitlist} plus one. If an entry in \var{splitlist}
-  is \code{None}, the axes aside define the split position taking into
-  account the ratio of the axes ranges (measured by an internal
-  \code{relsize} attribute of each axis).
-
-  \var{splitdist} is the space reserved for a splitting in graph
-  coordinates, when the corresponding entry in \var{splitlist} is not
-  \code{None}. \var{relsizesplitdist} is the space reserved for the
-  splitting in terms, when the corresponding entry in \var{splitlist}
-  is \code{None} compared to the \code{relsize} of the axes aside.
-
-  \var{title} is the title of the split axes and \var{painter} is a
-  specialized painter, which takes care of marking the axes breaks,
-  while the painting of the subaxes is performed by their painters
-  themselves.
-\end{classdesc}
-
-\begin{classdesc}{linkedsplit}{linkedaxis,
-                               painter=painter.linkedsplit(),
-                               subaxispainter=omitsubaxispainter}
-  This class provides an axis, which is linked to an instance of
-  \class{split}. The purpose of a linked axis is described in class
-  \class{linked} above. \var{painter} replaces the painter from the
-  \var{linkedaxis} instance.
-
-  While this class creates linked axes for the subaxes of
-  \var{linkedsplit} as well, the question arises what painters to use
-  there. When \var{subaxispainter} is not set, no painter is given
-  explicitly leaving this decision to the subaxes themself. This will
-  lead to omitting all labels and the title. However, you can use a
-  changeable attribute of painters in \var{subaxispainter} to replace
-  the default.
-\end{classdesc}
-
-\begin{classdesc}{bar}{subaxis=None, multisubaxis=None,
+\begin{classdesc}{bar}{subaxes=None,
+                       defaultsubaxis=linear(painter=None,
+                                             linkpainter=None,
+                                             parter=None,
+                                             texter=None),
                        dist=0.5, firstdist=None, lastdist=None,
-                       title=None, painter=painter.bar()}
+                       title=None, reverse=0,
+                       painter=painter.bar(),
+                       linkpainter=painter.linkedbar()}
   This class provides an axis suitable for a bar style. It handles a
   discrete set of values and maps them to distinct ranges in graph
-  coordinates. For that, the axis gets a list as data values. The
-  first entry is taken to be one of the discrete values valid on this
-  axis. All other parameters, lets call them others, are passed to a
-  subaxis. When others has only one entry, it is passed as a value,
-  otherwise as a list. The result of the conversion done by the
-  subaxis is mapped into the graph coordinate range for this discrete
-  value. When neither \var{subaxis} nor \var{multisubaxis} is set,
-  others must be a single value in the range [0:1]. This value is used 
-  for the position at the subaxis without conversion.
+  coordinates. For that, the axis gets a tuple of two values. The
+  first item is taken to be one of the discrete values valid on this
+  axis. The second item is passed to the corresponding subaxis. The
+  result of the conversion done by the subaxis is mapped to the graph
+  coordinate range reserved for this subaxis. This range is defined by
+  a size attribute of the subaxis, which can be added to any axis.
+  (see the sized linear axes described below for some axes already
+  having a size argument). When no size information is available for a
+  subaxis, a size value of 1 is used. The baraxis itself calculates
+  its size by suming up the sizes of its subaxes plus \var{firstdist},
+  \var{lastdist} and \var{dist} times the number of subaxes minus 1.
 
-  When \var{subaxis} is set, it is used for the conversion of others.
-  When \var{multisubaxis} is set, it must be an instance of \var{bar}
-  as well. It is then duplicated for each of the discrete values
-  allowed for the axis. By that, you can create nested bar axes with
-  different discrete values for each discrete value of the axis. It
-  is not allowed to set both, \var{subaxis} and \var{multisubaxis}.
+  \var{subaxes} should be a list to map a discrete value of the bar
+  axis to the corresponding subaxis. Since the subaxis have to have an
+  order, the discrete values of the bar axis need to be integers
+  starting at 0 for that case. When no subaxes are set or data is
+  recieved for a unknown descrete axis value, instances of
+  defaultsubaxis are used as the subaxis for this discrete value. For
+  this case, the discrete values can be any hashable type and the
+  order of the subaxis is defined by the order the data is recieved
+  or reversed when \var{reverse} is set.
 
   \var{dist} is used as the spacing between the ranges for each
   distinct value. It is measured in the same units as the subaxis
@@ -250,19 +178,100 @@ This class is an abbreviation of \class{logarithmic} described above.
   is used.
 
   \var{title} is the title of the split axes and \var{painter} is a
-  specialized painter for an bar axis. When \var{multisubaxis} is
-  used, their painters are called as well, otherwise they are not
-  taken into account.
+  specialized painter for an bar axis and \var{linkpainter} is used as
+  the painter, when automatic link axes are created by the
+  \method{createlinked()} method.
 \end{classdesc}
+
+\begin{classdesc}{nestedbar}{subaxes=None,
+                             defaultsubaxis=bar(dist=0, painter=None, linkpainter=None),
+                             dist=0.5, firstdist=None, lastdist=None,
+                             title=None, reverse=0,
+                             painter=painter.bar(),
+                             linkpainter=painter.linkedbar()}
+   This class is identical to the bar axis except for the different
+   default value for defaultsubaxis.
+\end{classdesc}
+
+\begin{classdesc}{split}{subaxes=None,
+                         defaultsubaxis=linear(),
+                         dist=0.5, firstdist=0, lastdist=0,
+                         title=None, reverse=0,
+                         painter=painter.split(),
+                         linkpainter=painter.linkedsplit()}
+   This class is identical to the bar axis except for the different
+   default value for defaultsubaxis, firstdist, lastdist, painter, and
+   linkedpainter.
+\end{classdesc}
+
+Sometimes you want to alter the default size of 1 of the subaxes. For
+that you have to add a size attribute to the axis data. The two
+classes \class{sizedlinear} and \class{autosizedlinear} do that for
+linear axes. Their short names are \class{sizedlin} and
+\class{autosizedlin}. \class{sizedlinear} extends the usual linear
+axis by an first argument \var{size}. \class{autosizedlinear} creates
+the size out of its data range automatically but sets an
+\class{autolinear} parter with \var{extendtick} being \code{None} in
+order to disable automatic range modifications while painting the
+axis.
+
+The \module{axis} has two classes implementing so called anchored
+axes, which combine an axis with an positioner and a storage place for
+axis related data. Since these features are not interesting for the
+average \PyX{} user, we'll not go into the details of their paramters
+and except for some handy axis positions methods:
+
+\begin{methoddesc}[anchoredaxis]{basepath}{x1=None, x2=None}
+  Returns a path instance for the base path. \var{x1} and \var{x2}
+  define the axis range, the base path should cover. For \code{None}
+  the beginning and end of the path is taken, which might cover a
+  longer range, when the axis is embedded as a subaxis. For that case,
+  a \code{None} value extends the range to the point of the middle
+  between two subaxes or the beginning or end of the whole axis, when
+  the subaxis is the first or last of the subaxes.
+\end{methoddesc}
+
+\begin{methoddesc}[anchoredaxis]{vbasepath}{v1=None, v2=None}
+  Like \method{basepath} but in graph coordinates.
+\end{methoddesc}
+
+\begin{methoddesc}[anchoredaxis]{gridpath}{x}
+  Returns a path instance for the grid path at position \var{x}.
+  Might return \code{None} when no grid path is available.
+\end{methoddesc}
+
+\begin{methoddesc}[anchoredaxis]{vgridpath}{v}
+  Like \method{gridpath} but in graph coordinates.
+\end{methoddesc}
+
+\begin{methoddesc}[anchoredaxis]{tickpoint}{x}
+  Returns the position of \var{x} as a tuple \samp{(x, y)}.
+\end{methoddesc}
+
+\begin{methoddesc}[anchoredaxis]{vtickpoint}{v}
+  Like \method{tickpoint} but in graph coordinates.
+\end{methoddesc}
+
+\begin{methoddesc}[anchoredaxis]{tickdirection}{x}
+  Returns the direction of a tick at \var{x} as a tuple \samp{(dx, dy)}.
+  The tick direction points inside of the graph.
+\end{methoddesc}
+
+\begin{methoddesc}[anchoredaxis]{vtickdirection}{v}
+  Like \method{tickdirection} but in graph coordinates.
+\end{methoddesc}
+
+Finally in the axis module there is an easy to use pathaxis function
+to create an anchored axis along an arbitrary path:
 
 \begin{funcdesc}{pathaxis}{path, axis, direction=1}
   This function returns a (specialized) canvas containing the axis
   \var{axis} painted along the path \var{path}. \var{direction}
   defines the direction of the ticks. Allowed values are \code{1}
   (left) and \code{-1} (right).
-\end{funcdesc}
+\end{funcdesc} % }}}
 
-\section{Ticks}
+\section{Ticks} % {{{
 
 \declaremodule{}{graph.axis.tick}
 \modulesynopsis{Axes ticks}
@@ -284,7 +293,7 @@ The following classes are part of the module \module{graph.axis.tick}.
     determined by \var{floatprecision}.
   \item A string, which is parsed to a rational number with full
     precision. It is also allowed to provide a fraction like
-    \samp{1/3}.
+    \code{\textquotedbl{}1/3\textquotedbl}.
   \item A sequence of two integers. Those integers are taken as
     numerator and denominator of the rational.
   \item An instance defining instance variables \code{num} and
@@ -313,9 +322,9 @@ The following classes are part of the module \module{graph.axis.tick}.
   tick or label. \var{label} is the text of the label. When not set,
   it can be created automatically by a texter. \var{labelattrs} are
   the attributes for the labels.
-\end{classdesc}
+\end{classdesc} % }}}
 
-\section{Partitioners}
+\section{Partitioners} % {{{
 
 \declaremodule{}{graph.axis.parter}
 \modulesynopsis{Axes partitioners}
@@ -465,9 +474,9 @@ This class is an abbreviation of \class{logarithmic} described above.
 
 \begin{classdesc}{autolog}{...}
 This class is an abbreviation of \class{autologarithmic} described above.
-\end{classdesc}
+\end{classdesc} % }}}
 
-\section{Texter}
+\section{Texter} % {{{
 
 \declaremodule{}{graph.axis.texter}
 \modulesynopsis{Axes texters}
@@ -495,7 +504,7 @@ above.
   respectively.
 
   The format string \var{period} should generate a period. It must
-  contain one string insert operators \samp{\%s} for the period.
+  contain one string insert operators \code{\%s} for the period.
 
   \var{labelattrs} is a list of attributes to be added to the label
   attributes given in the painter. It should be used to setup \TeX{}
@@ -519,18 +528,18 @@ above.
   unsigned value of the exponent.
 
   The format string \var{mantissaexp} should generate the exponent. It
-  must contain two string insert operators \samp{\%s}, the first for
+  must contain two string insert operators \code{\%s}, the first for
   the mantissa and the second for the exponent. An alternative to the
-  default is \samp{r\textquotedbl\{\{\%s\}\{\e rm e\}\{\%s\}\}\textquotedbl}.
+  default is \code{r\textquotedbl\{\{\%s\}\{\e rm e\}\{\%s\}\}\textquotedbl}.
 
   The format string \var{skipexp0} is used to skip exponent \code{0} and must
-  contain one string insert operator \samp{\%s} for the mantissa.
+  contain one string insert operator \code{\%s} for the mantissa.
   \code{None} turns off the special handling of exponent \code{0}.
   The format string \var{skipexp1} is similar to \var{skipexp0}, but
   for exponent \code{1}.
 
   The format string \var{nomantissaexp} is used to skip the mantissa
-  \code{1} and must contain one string insert operator \samp{\%s} for
+  \code{1} and must contain one string insert operator \code{\%s} for
   the exponent. \code{None} turns off the special handling of mantissa
   \code{1}. The format string \var{minusnomantissaexp} is similar
   to \var{nomantissaexp}, but for mantissa \code{-1}.
@@ -590,9 +599,9 @@ above.
   (in front of the fraction), and \code{-1} (at the denominator).
 
   The format string \var{over} should generate the fraction. It
-  must contain two string insert operators \samp{\%s}, the first for
+  must contain two string insert operators \code{\%s}, the first for
   the numerator and the second for the denominator. An alternative to
-  the default is \samp{\textquotedbl\{\{\%s\}/\{\%s\}\}\textquotedbl}.
+  the default is \code{\textquotedbl\{\{\%s\}/\{\%s\}\}\textquotedbl}.
 
   Usually, the numerator and denominator are canceled, while, when
   \var{equaldenom} is set, the least common multiple of all
@@ -613,9 +622,9 @@ above.
   \var{minuspos} and the sign of the number.
 
   \var{labelattrs} has the same meaning as for \var{decimal}.
-\end{classdesc}
+\end{classdesc} % }}}
 
-\section{Painter}
+\section{Painter} % {{{
 
 \declaremodule{}{graph.axis.painter}
 \modulesynopsis{Axes painters}
@@ -674,7 +683,7 @@ $\sqrt{2}$.
                            titleattrs=[],
                            titledirection=rotatetext.parallel,
                            titlepos=0.5,
-                           texrunner=text.defaulttexrunner}
+                           texrunner=None}
   Instances of this class are painters for regular axes like linear
   and logarithmic axes.
 
@@ -689,12 +698,12 @@ $\sqrt{2}$.
   for the ticks and the grid, where \code{None} turns off the feature.
   \var{basepathattrs} are stroke attributes for the axis or
   \code{None} to turn it off. \var{basepathattrs} is merged with
-  \samp{[style.linecap.square]}.
+  \code{[style.linecap.square]}.
 
   \var{labeldist} is the distance of the labels from the axis base path
   as a visual \PyX{} length. \var{labelattrs} is a list of text
   attributes for the labels. It is merged with
-  \samp{[text.halign.center, text.vshift.mathaxis]}.
+  \code{[text.halign.center, text.vshift.mathaxis]}.
   \var{labeldirection} is an instance of \var{rotatetext} to rotate
   the labels relative to the axis tick direction or \code{None}.
 
@@ -705,13 +714,14 @@ $\sqrt{2}$.
   \var{titledist} is the distance of the title from the rest of the
   axis as a visual \PyX{} length. \var{titleattrs} is a list of text
   attributes for the title. It is merged with
-  \samp{[text.halign.center, text.vshift.mathaxis]}.
+  \code{[text.halign.center, text.vshift.mathaxis]}.
   \var{titledirection} is an instance of \var{rotatetext} to rotate
   the title relative to the axis tick direction or \code{None}.
   \var{titlepos} is the position of the title in graph coordinates.
 
   \var{texrunner} is the texrunner instance to create axis text like
-  the axis title or labels.
+  the axis title or labels. When not set the texrunner of the graph
+  instance is taken to create the text.
 \end{classdesc}
 
 \begin{classdesc}{linked}{innerticklength=ticklength.short,
@@ -728,40 +738,10 @@ $\sqrt{2}$.
                           titleattrs=None,
                           titledirection=rotatetext.parallel,
                           titlepos=0.5,
-                          texrunner=text.defaulttexrunner}
+                          texrunner=None}
   This class is identical to \class{regular} up to the default values of
   \var{labelattrs} and \var{titleattrs}. By turning off those
   features, this painter is suitable for linked axes.
-\end{classdesc}
-
-\begin{classdesc}{split}{breaklinesdist="0.05 cm",
-                         breaklineslength="0.5 cm",
-                         breaklinesangle=-60,
-                         titledist="0.3 cm",
-                         titleattrs=None,
-                         titledirection=rotatetext.parallel,
-                         titlepos=0.5,
-                         texrunner=text.defaulttexrunner}
-  Instances of this class are suitable painters for split axes.
-
-  \var{breaklinesdist} and \var{breaklineslength} are the distance
-  between axes break markers in visual \PyX{} lengths.
-  \var{breaklinesangle} is the angle of the axis break marker with
-  respect to the base path of the axis. All other parameters have the
-  same meaning as in \class{regular}.
-\end{classdesc}
-
-\begin{classdesc}{linkedsplit}{breaklinesdist="0.05 cm",
-                               breaklineslength="0.5 cm",
-                               breaklinesangle=-60,
-                               titledist="0.3 cm",
-                               titleattrs=None,
-                               titledirection=rotatetext.parallel,
-                               titlepos=0.5,
-                               texrunner=text.defaulttexrunner}
-  This class is identical to \class{split} up to the default value of
-  \var{titleattrs}. By turning off this feature, this painter is
-  suitable for linked split axes.
 \end{classdesc}
 
 \begin{classdesc}{bar}{innerticklength=None,
@@ -778,7 +758,7 @@ $\sqrt{2}$.
                        titleattrs=[],
                        titledirection=rotatetext.parallel,
                        titlepos=0.5,
-                       texrunner=text.defaulttexrunner}
+                       texrunner=None}
   Instances of this class are suitable painters for bar axes.
 
   \var{innerticklength} and \var{outerticklength} are visual \PyX{}
@@ -806,13 +786,43 @@ $\sqrt{2}$.
                              titleattrs=None,
                              titledirection=rotatetext.parallel,
                              titlepos=0.5,
-                             texrunner=text.defaulttexrunner}
+                             texrunner=None}
   This class is identical to \class{bar} up to the default values of
   \var{nameattrs} and \var{titleattrs}. By turning off those features,
   this painter is suitable for linked bar axes.
 \end{classdesc}
 
-\section{Rater}
+\begin{classdesc}{split}{breaklinesdist="0.05 cm",
+                         breaklineslength="0.5 cm",
+                         breaklinesangle=-60,
+                         titledist="0.3 cm",
+                         titleattrs=[],
+                         titledirection=rotatetext.parallel,
+                         titlepos=0.5,
+                         texrunner=None}
+  Instances of this class are suitable painters for split axes.
+
+  \var{breaklinesdist} and \var{breaklineslength} are the distance
+  between axes break markers in visual \PyX{} lengths.
+  \var{breaklinesangle} is the angle of the axis break marker with
+  respect to the base path of the axis. All other parameters have the
+  same meaning as in \class{regular}.
+\end{classdesc}
+
+\begin{classdesc}{linkedsplit}{breaklinesdist="0.05 cm",
+                               breaklineslength="0.5 cm",
+                               breaklinesangle=-60,
+                               titledist="0.3 cm",
+                               titleattrs=None,
+                               titledirection=rotatetext.parallel,
+                               titlepos=0.5,
+                               texrunner=None}
+  This class is identical to \class{split} up to the default value of
+  \var{titleattrs}. By turning off this feature, this painter is
+  suitable for linked split axes.
+\end{classdesc} % }}}
+
+\section{Rater} % {{{
 
 \declaremodule{}{graph.axis.rater}
 \modulesynopsis{Axes raters}
@@ -898,5 +908,43 @@ receive a bad rating as well.
 
 \begin{classdesc}{log}{...}
   This class is an abbreviation of \class{logarithmic} described above.
-\end{classdesc}
+\end{classdesc} % }}}
 
+\section{Positioners} % {{{
+
+\declaremodule{}{graph.axis.positioners}
+\modulesynopsis{Axes positioners}
+
+The position of an axis is defined by an instance of a class providing
+the following methods:
+
+\begin{methoddesc}{vbasepath}{v1=None, v2=None}
+  Returns a path instance for the base path. \var{v1} and \var{v2}
+  define the axis range in graph coordinates the base path should
+  cover.
+\end{methoddesc}
+
+\begin{methoddesc}{vgridpath}{v}
+  Returns a path instance for the grid path at position \var{v} in
+  graph coordinates. The method might return \code{None} when no grid
+  path is available (for an axis along a path for example).
+\end{methoddesc}
+
+\begin{methoddesc}{vtickpoint_pt}{v}
+  Returns the position of \var{v} in graph coordinates as a tuple
+  \code{(x, y)} in points.
+\end{methoddesc}
+
+\begin{methoddesc}{vtickdirection}{v}
+  Returns the direction of a tick at \var{v} in graph coordinates as a
+  tuple \code{(dx, dy)}. The tick direction points inside of the
+  graph.
+\end{methoddesc}
+
+The module contains several implementations of those positioners, but
+since the positioner instances are created by graphs etc. as needed,
+the details are not interesting for the average \PyX{} user.
+
+% }}} % }}}
+
+% vim:fdm=marker
