@@ -866,7 +866,7 @@ class histogram(_style):
 
     needsdata = ["vpos", "vposmissing", "vrange", "vrangeminmissing", "vrangemaxmissing"]
 
-    defaultlineattrs = []
+    defaultlineattrs = [deco.stroked]
     defaultfrompathattrs = []
 
     def __init__(self, lineattrs=[], steps=0, fromvalue=0, frompathattrs=[], fillable=0,
@@ -1198,7 +1198,7 @@ class histogram(_style):
     def donedrawpoints(self, privatedata, sharedata, graph):
         self.drawvalue(privatedata, sharedata, graph, None, None, None)
         if privatedata.lineattrs is not None and len(privatedata.path):
-           graph.stroke(privatedata.path, privatedata.lineattrs)
+           graph.draw(privatedata.path, privatedata.lineattrs)
 
 
 class barpos(_style):
