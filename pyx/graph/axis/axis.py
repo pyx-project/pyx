@@ -397,10 +397,10 @@ class nestedbar(bar):
 
 class split(bar):
 
-    def __init__(self, subaxes=None, defaultsubaxis=linear(),
+    def __init__(self, defaultsubaxis=linear(),
                        firstdist=0, lastdist=0,
                        painter=painter.split(), linkpainter=painter.linkedsplit(), **kwargs):
-        bar.__init__(self, subaxes=subaxes, defaultsubaxis=defaultsubaxis,
+        bar.__init__(self, defaultsubaxis=defaultsubaxis,
                            firstdist=firstdist, lastdist=lastdist,
                            painter=painter, linkpainter=linkpainter, **kwargs)
 
