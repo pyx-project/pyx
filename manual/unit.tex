@@ -1,6 +1,10 @@
 \chapter{Module unit}
 \label{unit}
 
+\sectionauthor{J\"org Lehmann}{joergl@users.sourceforge.net}
+
+\declaremodule{}{unit}
+
 With the \verb|unit| module \PyX{} makes available classes and
 functions for the specification and manipulation of lengths. As usual,
 lengths consist of a number together with a measurement unit, e.g.,
@@ -23,88 +27,86 @@ applied to:
 \item[\TeX{} length:] used for all \TeX{} and \LaTeX{} output
 \end{description}
 
+    When not specified otherwise, all types of lengths are interpreted
+in terms of a default unit, which, by default, is \unit[1]{cm}.
+You may change this default unit by using the module level function
+\begin{funcdesc}{set}{uscale=None, vscale=None, wscale=None,
+xscale=None, defaultunit=None}
+When \var{uscale}, \var{vscale}, \var{wscale}, or \var{xscale} is not
+\keyword{None}, the corresponding scaling factor(s) is redefined to
+the given number. When \var{defaultunit} is not \keyword{None}, 
+the default unit is set to the given value, which has to be
+one of \code{"cm"}, \code{"mm"}, \code{"inch"}, or \code{"pt"}.
+\end{funcdesc}
+
 For instance, if you only want thicker lines for a publication
-version of your figure, you can just rescale the width lengths. How
-this all works, is described in the following sections.
-
-\section{Class length}
-
-The constructor of the \verb|length| class accepts as first argument
-either a number or a string:
-\begin{itemize}
-\item \verb|length(number)| means a user length in units of the default
-unit, defined via \verb|unit.set(defaultunit=defaultunit)|.
-\item For \verb|length(string)|, the \verb|string| has to consist of a
-  maximum of three parts separated by one or more whitespaces:
-\begin{description}
-\item[quantifier:] integer/float value. Optional, defaults to \verb|1|.
-\item[type:] \verb|"t"| (true), \verb|"u"| (user), \verb|"v"|
-  (visual), \verb|"w"| (width),
-  or \verb|"x"| (TeX).
-  Optional, defaults to \verb|"u"|.
-\item[unit:] \verb|"m"|, \verb|"cm"|, \verb|"mm"|, \verb|"inch"|, or
-  \verb|"pt"|. Optional, defaults to the default unit.
-\end{description}
-\end{itemize}
-The default for the first argument is chosen in such a way that
-\texttt{5*length()==length(5)}.  Note that the default unit  is
-initially set to \verb|"cm"|, but can be changed at any time by the
-user. For instance, use
-\begin{quote}
+version of your figure, you can just rescale all width lengths using
+\begin{verbatim}
+unit.set(wscale=2)
+\end{verbatim}
+Or suppose, you are used to specify length in imperial units. In this,
+admittedly rather unfortunate case, just use
 \begin{verbatim}
 unit.set(defaultunit="inch")
 \end{verbatim}
-\end{quote}
-if you want to specify per default every length in inches.
-Furthermore, the scaling of the user, visual and width types can be
-changed with the \verb|set| function, as well. To this end, \verb|set|
-accepts the named arguments \verb|uscale|, \verb|vscale|, and
-\verb|wscale|. For example, if you like to change the thickness of all
-lines (with predefined linewidths) by a factor of two, just insert
-\begin{quote}
-\begin{verbatim}
-unit.set(wscale = 2)
-\end{verbatim}
-\end{quote}
 at the beginning of your program.
 
-To complete the discussion of the \verb|length| class, we mention,
-that as expected \PyX{} lengths can be added, subtracted, multiplied by
-a numerical factor, converted to a string and compared with each other.
+\section{Class length}
 
-\section{Subclasses of length}
+\begin{classdesc}{length}{f, type="u", unit=None}
+The constructor of the \class{length} class expects as its first
+argument a number \var{f}, which represents the prefactor of the given length.
+By default this length is interpreted as a user length (\code{type="u"}) in units
+of the current default unit (see \function{set()} function of the \module{unit}
+module). Optionally, a different \var{type} may be specified, namely
+\code{"u"} for user lengths, \code{"v"} for visual lengths, \code{"w"}
+for width lengths, \code{"x"} for \TeX{} length, and \code{"t"} for true
+lengths. Furthermore, a different unit may be specified using the \var{unit}
+argument. Allowed values are \code{"cm"}, \code{"mm"}, \code{"inch"},
+and \code{"pt"}.
+\end{classdesc}
 
-A number of subclasses of \verb|length| are already predefined.  They
-only differ by their defaults for \verb|type| and \verb|unit|. Note
-that again the default value for the quantifier is \verb|1|, such
-that, for instance, \texttt{5*m(1)==m(5)}.
+Instances of the \class{length} class support addition and substraction either by another \class{length}
+or by a number which is then interpeted as being a user length in 
+default units, multiplication by a number and division either by another
+\class{length} in which case a float is returned or by a number in which
+case a \class{length} instance is returned. When two lengths are
+compared, they are first converted to meters (using the currently set
+scaling), and then the resulting values are compared.
+
+\section{Predefined length instances}
+
+A number of \verb|length| instances are already predefined, which
+only differ in there values for \verb|type| and \verb|unit|. They are
+summarized in the following table
 
 \medskip
 \begin{center}
 \begin{tabular}{lll|lll}
-Subclass of \texttt{length} & Type & Unit & Subclass of \texttt{length} & Type & Unit\\
+name & type & unit & name & type & unit\\
 \hline
-\texttt{m(x)} & user & m & \texttt{v\_m(x)} & visual & m\\
-\texttt{cm(x)} & user & cm & \texttt{v\_cm(x)} & visual & cm\\
-\texttt{mm(x)} & user & mm & \texttt{v\_mm(x)} & visual & mm\\
-\texttt{inch(x)} & user & inch & \texttt{v\_inch(x)} & visual & inch\\
-\texttt{pt(x)} & user & points & \texttt{v\_pt(x)} & visual & points\\
-\texttt{t\_m(x)} & true & m & \texttt{w\_m(x)} & width & m\\
-\texttt{t\_cm(x)} & true & cm & \texttt{w\_cm(x)} & width & cm\\
-\texttt{t\_mm(x)} & true & mm & \texttt{w\_mm(x)} & width & mm\\
-\texttt{t\_inch(x)} & true & inch & \texttt{w\_inch(x)} & width & inch\\
-\texttt{t\_pt(x)} & true & points & \texttt{w\_pt(x)} & width & points\\
-\texttt{u\_m(x)} & user & m & \texttt{x\_m(x)} & \TeX & m \\
-\texttt{u\_cm(x)} & user & cm & \texttt{x\_cm(x)} & \TeX & cm \\
-\texttt{u\_mm(x)} & user & mm & \texttt{x\_mm(x)} & \TeX & mm \\
-\texttt{u\_inch(x)} & user & inch & \texttt{x\_inch(x)} & \TeX & inch \\
-\texttt{u\_pt(x)} & user & points & \texttt{x\_pt(x)} & \TeX & points\\
+\constant{m} & user & m & \constant{v\_m} & visual & m\\
+\constant{cm} & user & cm & \constant{v\_cm} & visual & cm\\
+\constant{mm} & user & mm & \constant{v\_mm} & visual & mm\\
+\constant{inch} & user & inch & \constant{v\_inch} & visual & inch\\
+\constant{pt} & user & points & \constant{v\_pt} & visual & points\\
+\constant{t\_m} & true & m & \constant{w\_m} & width & m\\
+\constant{t\_cm} & true & cm & \constant{w\_cm} & width & cm\\
+\constant{t\_mm} & true & mm & \constant{w\_mm} & width & mm\\
+\constant{t\_inch} & true & inch & \constant{w\_inch} & width & inch\\
+\constant{t\_pt} & true & points & \constant{w\_pt} & width & points\\
+\constant{u\_m} & user & m & \constant{x\_m} & \TeX & m \\
+\constant{u\_cm} & user & cm & \constant{x\_cm} & \TeX & cm \\
+\constant{u\_mm} & user & mm & \constant{x\_mm} & \TeX & mm \\
+\constant{u\_inch} & user & inch & \constant{x\_inch} & \TeX & inch \\
+\constant{u\_pt} & user & points & \constant{x\_pt} & \TeX & points\\
 
 \end{tabular}
 \end{center}
 \medskip
-Here, \verb|x| is either a number or a string, which, as mentioned
-above, defaults to \texttt{1}.
+
+Thus, in order to specify, e.g., a length of 5 width points, just use
+\code{5*unit.w_pt}.
 
 \section{Conversion functions}
 If you want to know the value of a \PyX{} length in certain units, you
@@ -121,15 +123,8 @@ function & result \\
 \texttt{topt(l)} & \texttt{l} in units of points\\
 \end{tabular}
 \end{center}
-If \verb|l| is not yet a \verb|length| instance, it is converted first
-into one, as described above. You can also specify a tuple, if you
-want to convert multiple lengths at once.
-
-
-%\section{Examples}
-
-
-%\subsection{Example 1}
+If \verb|l| is not yet a \verb|length| instance but a number, it first
+is interpreted as a user length in the default units. 
 
 
 

@@ -83,8 +83,6 @@ TODO before release:
     on webpage and later on sf.net project page
 
   - Documentation:
-    - unit module:
-      - update length constructor description (strings are no longer supported, etc.)
     - canvas module:
       - move patterns to own module
   - FAQ:
