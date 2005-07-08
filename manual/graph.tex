@@ -289,13 +289,13 @@ The graph provides some methods to access its geometry:
 
 Further geometry information is available by the \member{axes}
 instance variable, with is a dictionary mapping axis names to
-\class{anchoredaxis} instances. Shortcuts to the \class{axispos}
-methods for the \code{x}- and \code{y}-axis become available after
-\method{dolayout()} as \class{graphxy} methods \code{Xbasepath},
-\code{Xvbasepath}, \code{Xgridpath}, \code{Xvgridpath},
-\code{Xtickpoint}, \code{Xvtickpoint}, \code{Xtickdirection}, and
-\code{Xvtickdirection} where the prefix \code{X} stands for \code{x}
-and \code{y}.
+\class{anchoredaxis} instances. Shortcuts to the anchoredaxis
+positioner methods for the \code{x}- and \code{y}-axis become
+available after \method{dolayout()} as \class{graphxy} methods
+\code{Xbasepath}, \code{Xvbasepath}, \code{Xgridpath},
+\code{Xvgridpath}, \code{Xtickpoint}, \code{Xvtickpoint},
+\code{Xtickdirection}, and \code{Xvtickdirection} where the prefix
+\code{X} stands for \code{x} and \code{y}.
 
 \begin{methoddesc}{axistrafo}{axis, t}
   This method can be used to apply a transformation \var{t} to an
