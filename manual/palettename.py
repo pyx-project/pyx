@@ -23,28 +23,26 @@ dy = -0.65
 
 p = re.compile("(?P<id>palette\\.(?P<name>[a-z]+)) += palette\\(.*\\)\n", re.IGNORECASE)
 lines = imp.find_module("color", pyx.__path__)[0].readlines()
-first = 1
+firstgraph = None
 for line in lines: # we yet don't use a file iterator
     m = p.match(line)
     if m:
-        xaxis = graph.axis.lin(
+        if firstgraph is None:
+            xaxis = graph.axis.lin(
                 parter=graph.axis.parter.lin(tickdist=("0.5","0.1"), labeldist="1"),
-                painter=graph.axis.painter.regular(innerticklength=None, labelattrs=None))
-        if first:
-            x2axis=graph.axis.linked(xaxis,
-                painter=graph.axis.painter.linked(
+                painter=graph.axis.painter.regular(
                     innerticklength=None,
-                    outerticklength=graph.axis.painter.ticklength.normal,
-                    labelattrs=[]))
-            first = 0
+                    outerticklength=graph.axis.painter.ticklength.normal),
+                linkpainter=graph.axis.painter.regular(innerticklength=None, labelattrs=None))
+            firstgraph = g = graph.graphxy(ypos=y, width=10, height=0.5, x2=xaxis, y=graph.axis.lin(parter=None))
         else:
-            x2axis=graph.axis.linked(xaxis, painter=graph.axis.painter.linked(innerticklength=None))
-        g = c.insert(graph.graphxy(ypos=y, width=10, height=0.5, x=xaxis, x2=x2axis, y=graph.axis.lin(parter=None)))
+            g = graph.graphxy(ypos=y, width=10, height=0.5, x2=graph.axis.linkedaxis(firstgraph.axes["x2"]), y=graph.axis.lin(parter=None))
         g.plot(pf, [graph.style.rect(getattr(pyx.color.palette, m.group("name")))])
         g.dodata()
         g.finish()
+        c.insert(g)
         c.text(10.2, y + 0.15, m.group("id"), [text.size.footnotesize])
         y += dy
 
 
-c.writeEPSfile("palettename", paperformat="a4")
+c.writeEPSfile("palettename", paperformat=document.paperformat.A4)
