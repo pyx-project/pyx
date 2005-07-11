@@ -203,7 +203,9 @@ class PDFpage(PDFobject):
         self.bbox = page.bbox()
         self.pagetrafo = page.pagetrafo(self.bbox)
         if self.pagetrafo:
-            self.bbox.transform(self.pagetrafo)
+            self.transformedbbox = self.bbox.transformed(self.pagetrafo)
+        else:
+            self.transformedbbox = self.bbox
         self.PDFcontent = PDFcontent(page.canvas, self.pagetrafo, self.pageregistry)
         self.pageregistry.add(self.PDFcontent)
         self.page.canvas.registerPDF(self.pageregistry)
@@ -215,8 +217,8 @@ class PDFpage(PDFobject):
                    "/Parent %i 0 R\n" % registry.getrefno(self.PDFpages))
         paperformat = self.page.paperformat
         file.write("/MediaBox [0 0 %f %f]\n" % (unit.topt(paperformat.width), unit.topt(paperformat.height)))
-        if self.bbox and writer.pagebbox:
-            file.write("/CropBox [%f %f %f %f]\n" % self.bbox.highrestuple_pt())
+        if self.transformedbbox:
+            file.write("/CropBox [%f %f %f %f]\n" % self.transformedbbox.highrestuple_pt())
         procset = []
         if self.pageregistry.types.has_key("font"):
             procset.append("/Text")
@@ -453,7 +455,7 @@ class PDFencoding(PDFobject):
 
 class PDFwriter:
 
-    def __init__(self, document, filename, pagebbox=1,
+    def __init__(self, document, filename,
                        title=None, author=None, subject=None, keywords=None,
                        fullscreen=0, compress=1, compresslevel=6):
         if not filename.endswith(".pdf"):
@@ -463,7 +465,6 @@ class PDFwriter:
         except IOError:
             raise IOError("cannot open output file")
 
-        self.pagebbox = pagebbox
         self.title = title
         self.author = author
         self.subject = subject

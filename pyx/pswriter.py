@@ -266,7 +266,7 @@ class epswriter:
 
 class pswriter:
 
-    def __init__(self, document, filename, pagebbox=0):
+    def __init__(self, document, filename):
         if not filename.endswith(".ps"):
             filename = filename + ".ps"
         try:
@@ -283,12 +283,14 @@ class pswriter:
             # if a page transformation is necessary, we have to adjust the bounding box
             # accordingly
             if page._pagetrafo:
-                page._bbox.transform(page._pagetrafo)
-            if page._bbox:
+                page._transformedbbox = page._bbox.transformed(page._pagetrafo)
+            else:
+                page._transformedbbox = page._bbox
+            if page._transformedbbox:
                 if documentbbox:
-                    documentbbox += page._bbox
+                    documentbbox += page._transformedbbox
                 else:
-                    documentbbox = page._bbox.enlarge(0) # make a copy
+                    documentbbox = page._transformedbbox.enlarge(0) # make a copy
 
         file.write("%!PS-Adobe-3.0\n")
         if documentbbox:
@@ -342,8 +344,8 @@ class pswriter:
             file.write("%%%%Page: %s %d\n" % (page.pagename is None and str(nr+1) or page.pagename, nr+1))
             file.write("%%%%PageMedia: %s\n" % page.paperformat.name)
             file.write("%%%%PageOrientation: %s\n" % (page.rotated and "Landscape" or "Portrait"))
-            if pagebbox and page._bbox:
-                file.write("%%%%PageBoundingBox: %d %d %d %d\n" % page._bbox.lowrestuple)
+            if page._transformedbbox:
+                file.write("%%%%PageBoundingBox: %d %d %d %d\n" % page._transformedbbox.lowrestuple_pt())
 
             # page setup section
             file.write("%%BeginPageSetup\n")
