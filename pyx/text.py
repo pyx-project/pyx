@@ -174,7 +174,7 @@ class _texmessagepyxpageout(texmessage):
             raise TexResultError("PyXPageOutMarker expected", texrunner)
 
 
-class _texmessagetexend(texmessage):
+class _texmessageend(texmessage):
     """validates TeX/LaTeX finish"""
 
     __implements__ = _Itexmessage
@@ -328,7 +328,7 @@ texmessage.noaux = _texmessagenoaux()
 texmessage.inputmarker = _texmessageinputmarker()
 texmessage.pyxbox = _texmessagepyxbox()
 texmessage.pyxpageout = _texmessagepyxpageout()
-texmessage.texend = _texmessagetexend()
+texmessage.end = _texmessageend()
 texmessage.emptylines = _texmessageemptylines()
 texmessage.load = _texmessageload()
 texmessage.loadfd = _texmessageloadfd()
@@ -536,29 +536,17 @@ _textattrspreamble += "\\newbox\\PyXBoxVAlign%\n\\newdimen\PyXDimenVAlign%\n"
 
 class valign(attr.sortbeforeexclusiveattr, textattr):
 
-    def __init__(self):
+    def __init__(self, valign):
+        self.valign = valign
         attr.sortbeforeexclusiveattr.__init__(self, valign, [parbox_pt, _localattr])
 
-class _valigntop(valign):
-
     def apply(self, expr):
-        return r"\setbox\PyXBoxVAlign=\hbox{{%s}}\lower\ht\PyXBoxVAlign\box\PyXBoxVAlign" % expr
+        return r"\setbox\PyXBoxVAlign=\hbox{{%s}}\PyXDimenVAlign=%.5f\ht\PyXBoxVAlign\advance\PyXDimenVAlign by -%.5f\dp\PyXBoxVAlign\lower\PyXDimenVAlign\box\PyXBoxVAlign" % (expr, 1-valign, valign)
 
-class _valignmiddle(valign):
-
-    def apply(self, expr):
-        return r"\setbox\PyXBoxVAlign=\hbox{{%s}}\PyXDimenVAlign=0.5\ht\PyXBoxVAlign\advance\PyXDimenVAlign by -0.5\dp\PyXBoxVAlign\lower\PyXDimenVAlign\box\PyXBoxVAlign" % expr
-
-class _valignbottom(valign):
-
-    def apply(self, expr):
-        return r"\setbox\PyXBoxVAlign=\hbox{{%s}}\raise\dp\PyXBoxVAlign\box\PyXBoxVAlign" % expr
-
-valign.top = _valigntop()
-valign.middle = _valignmiddle()
-valign.bottom = _valignbottom()
-valign.clear = attr.clearclass(valign)
-valign.baseline = valign.clear
+valign.top = valign(0)
+valign.middle = valign(0)
+valign.bottom = valign(0)
+valign.clear = valign.baseline = attr.clearclass(valign)
 
 
 class _vshift(attr.sortbeforeattr, textattr):
@@ -760,7 +748,7 @@ class texrunner:
     defaulttexmessagesstart = [texmessage.start]
     defaulttexmessagesdocclass = [texmessage.load]
     defaulttexmessagesbegindoc = [texmessage.load, texmessage.noaux]
-    defaulttexmessagesend = [texmessage.texend]
+    defaulttexmessagesend = [texmessage.end]
     defaulttexmessagesdefaultpreamble = [texmessage.load]
     defaulttexmessagesdefaultrun = [texmessage.loadfd, texmessage.graphicsload,
                                     texmessage.fontwarning, texmessage.boxwarning]
