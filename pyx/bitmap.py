@@ -196,14 +196,16 @@ class PDFimagepalettedata(pdfwriter.PDFobject):
         file.write("\n"
                    "endstream\n")
 
+
 class PDFimage(pdfwriter.PDFobject):
 
     def __init__(self, name, width, height, palettecolorspace, palettedata, colorspace,
                        bitspercomponent, compressmode, data, registry):
         pdfwriter.PDFobject.__init__(self, "image", name)
         if palettedata is not None:
-            self.palettedata1 = PDFimagepalettedata(name, palettedata)
-            registry.add(self.palettedata1)
+            # acrobat wants a palette to be an object
+            self.PDFpalettedata = PDFimagepalettedata(name, palettedata)
+            registry.add(self.PDFpalettedata)
         self.name = name
         self.width = width
         self.height = height
@@ -222,7 +224,7 @@ class PDFimage(pdfwriter.PDFobject):
         file.write("/Height %d\n" % self.height)
         if self.palettedata is not None:
             file.write("/ColorSpace [ /Indexed %s %i\n" % (self.palettecolorspace, len(self.palettedata)/3-1))
-            file.write("%d 0 R\n" % registry.getrefno(self.palettedata1))
+            file.write("%d 0 R\n" % registry.getrefno(self.PDFpalettedata))
             file.write("]\n")
         else:
             file.write("/ColorSpace %s\n" % self.colorspace)
