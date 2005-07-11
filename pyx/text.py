@@ -384,19 +384,72 @@ _textattrspreamble = ""
 class textattr:
     "a textattr defines a apply method, which modifies a (La)TeX expression"
 
-class halign(attr.exclusiveattr, textattr):
+_textattrspreamble += r"""\gdef\PyXFlushHAlign{0}%
+\newdimen\PyXraggedskipplus%
+\def\PyXragged{\PyXraggedskipplus=4em%
+\leftskip=0pt plus \PyXFlushHAlign\PyXraggedskipplus%
+\rightskip=0pt plus \PyXraggedskipplus%
+\advance\rightskip0pt plus -\PyXFlushHAlign\PyXraggedskipplus%
+\parfillskip=0pt%
+\spaceskip=0.333em%
+\xspaceskip=0.5em%
+\pretolerance=9999%
+\tolerance=9999%
+\parindent=0pt%
+\hyphenpenalty=9999%
+\exhyphenpenalty=9999}%
+"""
 
-    def __init__(self, hratio):
-        self.hratio = hratio
+class boxhalign(attr.exclusiveattr, textattr):
+
+    def __init__(self, aboxhalign):
+        self.boxhalign = aboxhalign
+        attr.exclusiveattr.__init__(self, boxhalign)
+
+    def apply(self, expr):
+        return r"\gdef\PyXBoxHAlign{%.5f}%s" % (self.boxhalign, expr)
+
+boxhalign.left = boxhalign(0)
+boxhalign.center = boxhalign(0.5)
+boxhalign.right = boxhalign(1)
+# boxhalign.clear = attr.clearclass(boxhalign) # we can't defined a clearclass for boxhalign since it can't clear a halign's boxhalign
+
+
+class flushhalign(attr.exclusiveattr, textattr):
+
+    def __init__(self, aflushhalign):
+        self.flushhalign = aflushhalign
+        attr.exclusiveattr.__init__(self, flushhalign)
+
+    def apply(self, expr):
+        return r"\gdef\PyXFlushHAlign{%.5f}\PyXragged{}%s" % (self.flushhalign, expr)
+
+flushhalign.left = flushhalign(0)
+flushhalign.center = flushhalign(0.5)
+flushhalign.right = flushhalign(1)
+# flushhalign.clear = attr.clearclass(flushhalign) # we can't defined a clearclass for flushhalign since it couldn't clear a halign's flushhalign
+
+
+class halign(attr.exclusiveattr, textattr, boxhalign, flushhalign):
+
+    def __init__(self, aboxhalign, aflushhalign):
+        self.boxhalign = aboxhalign
+        self.flushhalign = aflushhalign
         attr.exclusiveattr.__init__(self, halign)
 
     def apply(self, expr):
-        return r"\gdef\PyXHAlign{%.5f}%s" % (self.hratio, expr)
+        return r"\gdef\PyXBoxHAlign{%.5f}\gdef\PyXFlushHAlign{%.5f}\PyXragged{}%s" % (self.boxhalign, self.flushhalign, expr)
 
-halign.center = halign(0.5)
-halign.right = halign(1)
+halign.left = halign(0, 0)
+halign.center = halign(0.5, 0.5)
+halign.right = halign(1, 1)
 halign.clear = attr.clearclass(halign)
-halign.left = halign.clear
+halign.boxleft = boxhalign.left
+halign.boxcenter = boxhalign.center
+halign.boxright = boxhalign.right
+halign.flushleft = halign.raggedright = flushhalign.left
+halign.flushcenter = halign.raggedcenter = flushhalign.center
+halign.flushright = halign.raggedleft = flushhalign.right
 
 
 class _localattr: pass
@@ -465,17 +518,17 @@ class parbox_pt(attr.sortbeforeexclusiveattr, textattr):
     bottom = 3
 
     def __init__(self, width, baseline=top):
-        self.width = width
+        self.width = width * 72.27 / (unit.scale["x"] * 72)
         self.baseline = baseline
         attr.sortbeforeexclusiveattr.__init__(self, parbox_pt, [_localattr])
 
     def apply(self, expr):
         if self.baseline == self.top:
-            return r"\linewidth%.5ftruept\vtop{\hsize\linewidth{}%s}" % (self.width * 72.27 / 72, expr)
+            return r"\linewidth%.5ftruept\vtop{\hsize\linewidth{}%s}" % (self.width, expr)
         elif self.baseline == self.middle:
             return r"\linewidth%.5ftruept\setbox\PyXBoxVBox=\hbox{{\vtop{\hsize\linewidth{}%s}}}\PyXDimenVBox=0.5\dp\PyXBoxVBox\setbox\PyXBoxVBox=\hbox{{\vbox{\hsize\linewidth{}%s}}}\advance\PyXDimenVBox by -0.5\dp\PyXBoxVBox\lower\PyXDimenVBox\box\PyXBoxVBox" % (self.width, expr, expr)
         elif self.baseline == self.bottom:
-            return r"\linewidth%.5ftruept\vbox{\hsize\linewidth{}%s}" % (self.width * 72.27 / 72, expr)
+            return r"\linewidth%.5ftruept\vbox{\hsize\linewidth{}%s}" % (self.width, expr)
         else:
             RuntimeError("invalid baseline argument")
 
@@ -857,7 +910,7 @@ class texrunner:
             self.preamblemode = 1
             self.execute("\\scrollmode\n\\raiseerror%\n" # switch to and check scrollmode
                          "\\def\\PyX{P\\kern-.3em\\lower.5ex\hbox{Y}\kern-.18em X}%\n" # just the PyX Logo
-                         "\\gdef\\PyXHAlign{0}%\n" # global PyXHAlign (0.0-1.0) for the horizontal alignment, default to 0
+                         "\\gdef\\PyXBoxHAlign{0}%\n" # global PyXBoxHAlign (0.0-1.0) for the horizontal alignment, default to 0
                          "\\newbox\\PyXBox%\n" # PyXBox will contain the output
                          "\\newbox\\PyXBoxHAligned%\n" # PyXBox will contain the horizontal aligned output
                          "\\newdimen\\PyXDimenHAlignLT%\n" # PyXDimenHAlignLT/RT will contain the left/right extent
@@ -865,10 +918,10 @@ class texrunner:
                          _textattrspreamble + # insert preambles for textattrs macros
                          "\\long\\def\\ProcessPyXBox#1#2{%\n" # the ProcessPyXBox definition (#1 is expr, #2 is page number)
                          "\\setbox\\PyXBox=\\hbox{{#1}}%\n" # push expression into PyXBox
-                         "\\PyXDimenHAlignLT=\\PyXHAlign\\wd\\PyXBox%\n" # calculate the left/right extent
+                         "\\PyXDimenHAlignLT=\\PyXBoxHAlign\\wd\\PyXBox%\n" # calculate the left/right extent
                          "\\PyXDimenHAlignRT=\\wd\\PyXBox%\n"
                          "\\advance\\PyXDimenHAlignRT by -\\PyXDimenHAlignLT%\n"
-                         "\\gdef\\PyXHAlign{0}%\n" # reset the PyXHAlign to the default 0
+                         "\\gdef\\PyXBoxHAlign{0}%\n" # reset the PyXBoxHAlign to the default 0
                          "\\immediate\\write16{PyXBox:page=#2," # write page and extents of this box to stdout
                                                      "lt=\\the\\PyXDimenHAlignLT,"
                                                      "rt=\\the\\PyXDimenHAlignRT,"
