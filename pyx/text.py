@@ -777,7 +777,6 @@ class texrunner:
                        texdebug=None,
                        dvidebug=0,
                        errordebug=1,
-                       dvicopy=0,
                        pyxgraphics=1,
                        texmessagesstart=[],
                        texmessagesdocclass=[],
@@ -806,7 +805,6 @@ class texrunner:
             self.texdebug = None
         self.dvidebug = dvidebug
         self.errordebug = errordebug
-        self.dvicopy = dvicopy
         self.pyxgraphics = pyxgraphics
         self.texmessagesstart = texmessagesstart
         self.texmessagesdocclass = texmessagesdocclass
@@ -1033,11 +1031,7 @@ class texrunner:
         - this method ensures that all textboxes can access their
           dvicanvas"""
         self.execute(None, self.defaulttexmessagesend + self.texmessagesend)
-        if self.dvicopy:
-            os.system("dvicopy %(t)s.dvi %(t)s.dvicopy > %(t)s.dvicopyout 2> %(t)s.dvicopyerr" % {"t": self.texfilename})
-            dvifilename = "%s.dvicopy" % self.texfilename
-        else:
-            dvifilename = "%s.dvi" % self.texfilename
+        dvifilename = "%s.dvi" % self.texfilename
         if not self.texipc:
             self.dvifile = dvifile.dvifile(dvifilename, self.fontmap, debug=self.dvidebug)
             page = 1
@@ -1081,7 +1075,6 @@ class texrunner:
                   texdebug=None,
                   dvidebug=None,
                   errordebug=None,
-                  dvicopy=None,
                   pyxgraphics=None,
                   texmessagesstart=None,
                   texmessagesdocclass=None,
@@ -1127,8 +1120,6 @@ class texrunner:
             self.dvidebug = dvidebug
         if errordebug is not None:
             self.errordebug = errordebug
-        if dvicopy is not None:
-            self.dvicopy = dvicopy
         if pyxgraphics is not None:
             self.pyxgraphics = pyxgraphics
         if errordebug is not None:
@@ -1184,8 +1175,6 @@ class texrunner:
                 self.execute("\\begin{document}", self.defaulttexmessagesbegindoc + self.texmessagesbegindoc)
             self.preamblemode = 0
             first = 1
-            if self.texipc and self.dvicopy:
-                raise RuntimeError("texipc and dvicopy can't be mixed up")
         textattrs = attr.mergeattrs(textattrs) # perform cleans
         attr.checkattrs(textattrs, [textattr, trafo.trafo_pt, style.fillstyle])
         trafos = attr.getattrs(textattrs, [trafo.trafo_pt])
