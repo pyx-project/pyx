@@ -374,6 +374,8 @@ _textattrspreamble = ""
 class textattr:
     "a textattr defines a apply method, which modifies a (La)TeX expression"
 
+class _localattr: pass
+
 _textattrspreamble += r"""\gdef\PyXFlushHAlign{0}%
 \newdimen\PyXraggedskipplus%
 \def\PyXragged{\PyXraggedskipplus=4em%
@@ -390,7 +392,7 @@ _textattrspreamble += r"""\gdef\PyXFlushHAlign{0}%
 \exhyphenpenalty=9999}%
 """
 
-class boxhalign(attr.exclusiveattr, textattr):
+class boxhalign(attr.exclusiveattr, textattr, _localattr):
 
     def __init__(self, aboxhalign):
         self.boxhalign = aboxhalign
@@ -441,8 +443,6 @@ halign.flushleft = halign.raggedright = flushhalign.left
 halign.flushcenter = halign.raggedcenter = flushhalign.center
 halign.flushright = halign.raggedleft = flushhalign.right
 
-
-class _localattr: pass
 
 class _mathmode(attr.attr, textattr, _localattr):
     "math mode"
