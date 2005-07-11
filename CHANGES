@@ -6,9 +6,6 @@ TODO:
   - text module:
     - SlantFont & Co support
     - keep an eye on PEP 324 (popen 5): it could make the texrunner much easier
-    - messageparser for replaced fontsizes: Warning
-    - messageparser for size differences at the end: Warning not Exception
-    - messageparser for overfull/underfull vbox/hbox: Warning not Exception
     - newline removal when not disturbing texmessages only
   - graph.graph module
     - common bboxes for different graphs
@@ -152,6 +149,10 @@ TODO before release:
   - text module:
     - support for halign of boxes and content of boxes (see halign example)
     - take units xscale into account in parbox
+    - messageparser for replaced fontsizes: Warning -> implemented by texmessage.fontwarning
+    - messageparser for size differences at the end: Warning not Exception -> implemented by texmessage.fontwarning
+    - messageparser for overfull/underfull vbox/hbox: Warning not Exception -> implemented by texmessage.boxwarning
+    - dvicopy flag removed
   - tex module:
     - the very old tex module finally got removed completely
   - style module:
