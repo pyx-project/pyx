@@ -407,7 +407,7 @@ boxhalign.right = boxhalign(1)
 # boxhalign.clear = attr.clearclass(boxhalign) # we can't defined a clearclass for boxhalign since it can't clear a halign's boxhalign
 
 
-class flushhalign(attr.exclusiveattr, textattr):
+class flushhalign(attr.exclusiveattr, textattr, _localattr):
 
     def __init__(self, aflushhalign):
         self.flushhalign = aflushhalign
@@ -422,7 +422,7 @@ flushhalign.right = flushhalign(1)
 # flushhalign.clear = attr.clearclass(flushhalign) # we can't defined a clearclass for flushhalign since it couldn't clear a halign's flushhalign
 
 
-class halign(attr.exclusiveattr, textattr, boxhalign, flushhalign):
+class halign(attr.exclusiveattr, textattr, boxhalign, flushhalign, _localattr):
 
     def __init__(self, aboxhalign, aflushhalign):
         self.boxhalign = aboxhalign
