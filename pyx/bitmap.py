@@ -235,7 +235,8 @@ class PDFimage(pdfwriter.PDFobject):
         file.write(">>\n"
                    "stream\n")
         file.write(self.data)
-        file.write("\nendstream\n")
+        file.write("\n"
+                   "endstream\n")
 
 
 class bitmap(canvas.canvasitem):

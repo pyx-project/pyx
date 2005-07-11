@@ -334,4 +334,5 @@ class PDFpattern(pdfwriter.PDFobject):
             stream.flush()
 
         self.contentlength.contentlength = file.tell() - beginstreampos
-        file.write("endstream\n")
+        file.write("\n"
+                   "endstream\n")

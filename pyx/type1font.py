@@ -236,7 +236,8 @@ class fontfile:
         file.write(">>\n"
                    "stream\n")
         file.write(data)
-        file.write("\nendstream\n")
+        file.write("\n"
+                   "endstream\n")
 
 
 class text_pt(canvas.canvasitem):
