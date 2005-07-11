@@ -19,21 +19,29 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 from optparse import OptionParser
-from pyx import dvifile, document, version
+from pyx import *
+from pyx import bbox, dvifile, version
 
 parser = OptionParser(usage="usage: %prog -o output-file [-p paperformat] dvi-file", version="%prog " + version.version)
 parser.add_option("-o", "--output", type="string", dest="output", help="output-file")
-parser.add_option("-p", "--paperformat", type="string", dest="paperformat", default="A4", help="paper format string (default A4)")
+parser.add_option("-p", "--paperformat", type="string", dest="paperformat", default=None, help="paper format string (default A4)")
 (options, args) = parser.parse_args()
 if len(args) != 1:
     parser.error("can process a single dvi-file only")
 
+if options.paperformat:
+    paperformat = getattr(document.paperformat, options.paperformat)
+    pagebbox = bbox.bbox(0, -paperformat.height, paperformat.width, 0)
+    pagebbox.transform(trafo.translate(-unit.t_inch, unit.t_inch))
 df = dvifile.dvifile(args[0], dvifile.readfontmap(["psfonts.map"]))
 d = document.document()
 while 1:
-    c = df.readpage()
-    if not c:
+    dvipage = df.readpage()
+    if not dvipage:
         break
-    p = document.page(c, paperformat=getattr(document.paperformat, options.paperformat))
+    if options.paperformat:
+        p = document.page(dvipage, paperformat=paperformat, bbox=pagebbox)
+    else:
+        p = document.page(dvipage)
     d.append(p)
-d.writetofile(options.output, pagebbox=0)
+d.writetofile(options.output)
