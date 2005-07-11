@@ -149,6 +149,9 @@ TODO before release:
   - changed requirements to python 2.1:
     - nested scopes are needed without fallback solution by the path module
     - use warning module for warnings
+  - text module:
+    - support for halign of boxes and content of boxes (see halign example)
+    - take units xscale into account in parbox
   - tex module:
     - the very old tex module finally got removed completely
   - style module:
