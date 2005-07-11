@@ -134,19 +134,21 @@ class document:
     def append(self, page):
         self.pages.append(page)
 
-    def writePSfile(self, filename, *args, **kwargs):
-        pswriter.pswriter(self, filename, *args, **kwargs)
-
     def writeEPSfile(self, filename, *args, **kwargs):
         pswriter.epswriter(self, filename, *args, **kwargs)
+
+    def writePSfile(self, filename, *args, **kwargs):
+        pswriter.pswriter(self, filename, *args, **kwargs)
 
     def writePDFfile(self, filename, *args, **kwargs):
         pdfwriter.PDFwriter(self, filename, *args, **kwargs)
 
     def writetofile(self, filename, *args, **kwargs):
-        if filename[-4:] == ".eps":
+        if filename.endswith(".eps"):
             self.writeEPSfile(filename, *args, **kwargs)
-        elif filename[-4:] == ".pdf":
+        elif filename.endswith(".ps"):
+            self.writePSfile(filename, *args, **kwargs)
+        elif filename.endswith(".pdf"):
             self.writePDFfile(filename, *args, **kwargs)
         else:
             raise ValueError("unknown file extension")
