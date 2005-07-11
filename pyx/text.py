@@ -71,21 +71,13 @@ class TexResultError(RuntimeError):
             return self.description
 
 
-class TexResultWarning(TexResultError):
-    """as above, but with different handling of the exception
-    - when this exception is raised by a texmessage instance,
-      the information just get reported and the execution continues"""
-    pass
-
-
 class _Itexmessage:
     """validates/invalidates TeX/LaTeX response"""
 
     def check(self, texrunner):
         """check a Tex/LaTeX response and respond appropriate
         - read the texrunners texmessageparsed attribute
-        - if there is an problem found, raise an appropriate
-          exception (TexResultError or TexResultWarning)
+        - if there is an problem found, raise TexResultError
         - remove any valid and identified TeX/LaTeX response
           from the texrunners texmessageparsed attribute
           -> finally, there should be nothing left in there,
@@ -180,20 +172,6 @@ class _texmessagepyxpageout(texmessage):
             texrunner.texmessageparsed = s1 + s2
         except (IndexError, ValueError):
             raise TexResultError("PyXPageOutMarker expected", texrunner)
-
-
-class _texmessagefontsubstitution(texmessage):
-    """validates the font substituion Warning"""
-
-    __implements__ = _Itexmessage
-
-    pattern = re.compile("LaTeX Font Warning: Font shape (?P<font>.*) in size <(?P<orig>.*)> not available\s*\(Font\)(.*) size <(?P<subst>.*)> substituted on input line (?P<line>.*)\.")
-
-    def check(self, texrunner):
-        m = self.pattern.search(texrunner.texmessageparsed)
-        if m:
-            texrunner.texmessageparsed = texrunner.texmessageparsed[:m.start()] + texrunner.texmessageparsed[m.end():]
-            raise TexResultWarning("LaTeX Font Warning on input line %s" % (m.group('line')), texrunner)
 
 
 class _texmessagetexend(texmessage):
@@ -345,21 +323,6 @@ class _texmessageignore(_texmessageload):
         texrunner.texmessageparsed = ""
 
 
-class _texmessagewarning(_texmessageload):
-    """validates any TeX/LaTeX response
-    - this might be used, when the expression is ok, but no suitable texmessage
-      parser is available
-    - PLEASE: - consider writing suitable tex message parsers
-              - share your ideas/problems/solutions with others (use the PyX mailing lists)"""
-
-    __implements__ = _Itexmessage
-
-    def check(self, texrunner):
-        if len(texrunner.texmessageparsed):
-            texrunner.texmessageparsed = ""
-            raise TexResultWarning("TeX result is ignored", texrunner)
-
-
 texmessage.start = _texmessagestart()
 texmessage.noaux = _texmessagenoaux()
 texmessage.inputmarker = _texmessageinputmarker()
@@ -371,8 +334,35 @@ texmessage.load = _texmessageload()
 texmessage.loadfd = _texmessageloadfd()
 texmessage.graphicsload = _texmessagegraphicsload()
 texmessage.ignore = _texmessageignore()
-texmessage.warning = _texmessagewarning()
-texmessage.fontsubstitution = _texmessagefontsubstitution()
+
+
+class _texmessageallwarning(texmessage):
+    """validates a given pattern 'pattern' as a warning 'warning'"""
+
+    def check(self, texrunner):
+        warnings.warn("ignoring all warnings:\n%s" % texrunner.texmessageparsed)
+        texrunner.texmessageparsed = ""
+
+texmessage.allwarning = _texmessageallwarning()
+
+
+class _texmessagepatternwarning(texmessage):
+    """validates a given pattern 'pattern' as a warning 'warning'"""
+
+    def __init__(self, warning, pattern):
+        self.warning = warning
+        self.pattern = pattern
+
+    def check(self, texrunner):
+        m = self.pattern.search(texrunner.texmessageparsed)
+        while m:
+            texrunner.texmessageparsed = texrunner.texmessageparsed[:m.start()] + texrunner.texmessageparsed[m.end():]
+            warnings.warn("%s:\n%s" % (self.warning, m.string[m.start(): m.end()].rstrip()))
+            m = self.pattern.search(texrunner.texmessageparsed)
+
+texmessage.fontwarning = _texmessagepatternwarning("ignoring font warning", re.compile(r"^LaTeX Font Warning: .*$(\n^\(Font\).*$)*", re.MULTILINE))
+texmessage.boxwarning = _texmessagepatternwarning("ignoring overfull/underfull box warning", re.compile(r"^(Overfull|Underfull) \\[hv]box.*$(\n^..*$)*\n^$\n", re.MULTILINE))
+
 
 
 ###############################################################################
@@ -772,7 +762,8 @@ class texrunner:
     defaulttexmessagesbegindoc = [texmessage.load, texmessage.noaux]
     defaulttexmessagesend = [texmessage.texend]
     defaulttexmessagesdefaultpreamble = [texmessage.load]
-    defaulttexmessagesdefaultrun = [texmessage.loadfd, texmessage.graphicsload]
+    defaulttexmessagesdefaultrun = [texmessage.loadfd, texmessage.graphicsload,
+                                    texmessage.fontwarning, texmessage.boxwarning]
 
     def __init__(self, mode="tex",
                        lfs="10pt",
@@ -1030,10 +1021,7 @@ class texrunner:
                     texmessage.pyxpageout.check(self)
             texmessages = attr.mergeattrs(texmessages)
             for t in texmessages:
-                try:
-                    t.check(self)
-                except TexResultWarning:
-                    traceback.print_exc()
+                t.check(self)
             texmessage.emptylines.check(self)
             if len(self.texmessageparsed):
                 raise TexResultError("unhandled TeX response (might be an error)", self)
