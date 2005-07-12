@@ -57,9 +57,10 @@ TODO:
     - deco module:
       - cycloid decorator
       - smoothed decorator
+    - pattern module:
+      - check and update
     - graphics section:
-      Attributes (clearing merging ) and changeable attributes should be 
-      explained at a central place.
+      Changeable attributes should be explained at a central place.
     - section titles: "Axes" -> "Axes - module axis" or similar
     - box module:
       - linealign and circlealign
@@ -76,9 +77,6 @@ TODO before release:
   - update PyX description in setup.py, README (also update text on prebuilt manual.pdf?),
     on webpage and later on sf.net project page
 
-  - Documentation:
-    - canvas module:
-      - move patterns to own module
   - FAQ:
     - check examples
 
