@@ -153,6 +153,8 @@ TODO before release:
     - messageparser for size differences at the end: Warning not Exception -> implemented by texmessage.fontwarning
     - messageparser for overfull/underfull vbox/hbox: Warning not Exception -> implemented by texmessage.boxwarning
     - dvicopy flag removed
+    - allow argument of set to be None
+    - rename nomathmode and nophantom to clearmathmode and clearphantom
   - tex module:
     - the very old tex module finally got removed completely
   - style module:
