@@ -23,7 +23,6 @@ TODO:
       (When plotted, the graph does not complain, but the postscript will be broken)
   - graph.style module:
     - add styles using curves instead of lines
-    - add "steps" style for histogram-like plots
   - canvas module:
     - contructor should only take a texrunner keyword argument
     - set method???
@@ -43,8 +42,6 @@ TODO:
     - support single-character mode
   - color module:
     - what should we do for palette when only one entry
-  - connector module:
-    - is the early conversion with unit.topt unit-modification-save?
   - deformer module:
     - move numeric stuff into its own framework (also for box module)
   - open discussion:
