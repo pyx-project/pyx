@@ -156,34 +156,34 @@ linestyle.dashdotted = linestyle(linecap.round, dash([0, 2, 2, 2]))
 linestyle.clear = attr.clearclass(linestyle)
 
 
-class linewidth(unit.length, attr.sortbeforeexclusiveattr, strokestyle):
+class linewidth(attr.sortbeforeexclusiveattr, strokestyle):
 
     """linewidth of paths"""
 
-    def __init__(self, *args, **kwargs):
-        unit.length.__init__(self, *args, **kwargs)
+    def __init__(self, width):
         attr.sortbeforeexclusiveattr.__init__(self, linewidth, [dash, linestyle])
+        self.width = width
 
     def outputPS(self, file, writer, context):
-        file.write("%f setlinewidth\n" % unit.topt(self))
-        context.linewidth_pt = unit.topt(self)
+        file.write("%f setlinewidth\n" % unit.topt(self.width))
+        context.linewidth_pt = unit.topt(self.width)
 
     def outputPDF(self, file, writer, context):
-        file.write("%f w\n" % unit.topt(self))
-        context.linewidth_pt = unit.topt(self)
+        file.write("%f w\n" % unit.topt(self.width))
+        context.linewidth_pt = unit.topt(self.width)
 
-_base = 0.02
+_base = 0.02 * unit.w_cm
 
-linewidth.THIN = linewidth(_base/math.sqrt(32), type="w", unit="cm")
-linewidth.THIn = linewidth(_base/math.sqrt(16), type="w", unit="cm")
-linewidth.THin = linewidth(_base/math.sqrt(8), type="w", unit="cm")
-linewidth.Thin = linewidth(_base/math.sqrt(4), type="w", unit="cm")
-linewidth.thin = linewidth(_base/math.sqrt(2), type="w", unit="cm")
-linewidth.normal = linewidth(_base, type="w", unit="cm")
-linewidth.thick = linewidth(_base*math.sqrt(2), type="w", unit="cm")
-linewidth.Thick = linewidth(_base*math.sqrt(4), type="w", unit="cm")
-linewidth.THick = linewidth(_base*math.sqrt(8), type="w", unit="cm")
-linewidth.THIck = linewidth(_base*math.sqrt(16), type="w", unit="cm")
-linewidth.THICk = linewidth(_base*math.sqrt(32), type="w", unit="cm")
-linewidth.THICK = linewidth(_base*math.sqrt(64), type="w", unit="cm")
+linewidth.THIN = linewidth(_base/math.sqrt(32))
+linewidth.THIn = linewidth(_base/math.sqrt(16))
+linewidth.THin = linewidth(_base/math.sqrt(8))
+linewidth.Thin = linewidth(_base/math.sqrt(4))
+linewidth.thin = linewidth(_base/math.sqrt(2))
+linewidth.normal = linewidth(_base)
+linewidth.thick = linewidth(_base*math.sqrt(2))
+linewidth.Thick = linewidth(_base*math.sqrt(4))
+linewidth.THick = linewidth(_base*math.sqrt(8))
+linewidth.THIck = linewidth(_base*math.sqrt(16))
+linewidth.THICk = linewidth(_base*math.sqrt(32))
+linewidth.THICK = linewidth(_base*math.sqrt(64))
 linewidth.clear = attr.clearclass(linewidth)

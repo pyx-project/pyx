@@ -158,7 +158,7 @@ TODO before release:
   - tex module:
     - the very old tex module finally got removed completely
   - style module:
-    - correctly call base class constructor in linewidth
+    - linewidth is no longer a unit.length subclass but expects a such as first argument
   - epsfile module:
     - correct EOL handling while reading DSC's (reported by Markus Meyer)
   - pattern module: new
