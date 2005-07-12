@@ -482,6 +482,8 @@ class cycloid(deformer): # <<<
         return path.normsubpath(normsubpathitems, epsilon=normsubpath.epsilon)
 # >>>
 
+cycloid.clear = attr.clearclass(cycloid)
+
 class smoothed(deformer): # <<<
 
     """Bends corners in a path.
@@ -531,14 +533,13 @@ class smoothed(deformer): # <<<
 
         # 1. Build up a list of all relevant normsubpathitems
         #    and the lengths where they will be cut (length with respect to the normsubpath)
-        all_npitems = normsubpath.normsubpathitems
         rel_npitems, arclengths = [], []
-        for npitem in all_npitems:
+        for npitem in normsubpath.normsubpathitems:
 
             arclength = npitem.arclen_pt(epsilon)
 
             # items that should be totally skipped:
-            # (we throw away the possible ending "closepath" piece)
+            # (we throw away the possible ending "closepath" piece of zero length)
             if (arclength > radius):
                 rel_npitems.append(npitem)
                 arclengths.append(arclength)
@@ -708,21 +709,6 @@ class smoothed(deformer): # <<<
 # >>>
 
 smoothed.clear = attr.clearclass(smoothed)
-
-_base = unit.v_cm
-smoothed.SHARP = smoothed(radius=_base/math.sqrt(64))
-smoothed.SHARp = smoothed(radius=_base/math.sqrt(32))
-smoothed.SHArp = smoothed(radius=_base/math.sqrt(16))
-smoothed.SHarp = smoothed(radius=_base/math.sqrt(8))
-smoothed.Sharp = smoothed(radius=_base/math.sqrt(4))
-smoothed.sharp = smoothed(radius=_base/math.sqrt(2))
-smoothed.normal = smoothed(radius=_base)
-smoothed.round = smoothed(radius=_base*math.sqrt(2))
-smoothed.Round = smoothed(radius=_base*math.sqrt(4))
-smoothed.ROund = smoothed(radius=_base*math.sqrt(8))
-smoothed.ROUnd = smoothed(radius=_base*math.sqrt(16))
-smoothed.ROUNd = smoothed(radius=_base*math.sqrt(32))
-smoothed.ROUND = smoothed(radius=_base*math.sqrt(64))
 
 class parallel(deformer): # <<<
 
@@ -934,5 +920,7 @@ class parallel(deformer): # <<<
 
         return new_nspath
 # >>>
+
+parallel.clear = attr.clearclass(parallel)
 
 # vim:foldmethod=marker:foldmarker=<<<,>>>
