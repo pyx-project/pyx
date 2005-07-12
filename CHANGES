@@ -46,7 +46,7 @@ TODO:
   - connector module:
     - is the early conversion with unit.topt unit-modification-save?
   - deformer module:
-    - better names for the helper functions ?
+    - move numeric stuff into its own framework (also for box module)
   - open discussion:
     - clearly distingish between readers and writers. dvifile, epsfile, etc. might
       be renamed to dvireader, epsreader ...
@@ -164,6 +164,9 @@ TODO before release:
   - pattern module: new
     - moved canvas.pattern to its own module together with the new PDFpattern class
     - add some default patterns: hatched and crosshatched
+  - deformer module:
+    - improve the smoothing deformer
+    - add a parallel deformer
   - update address of FSF all over the place
 
 
