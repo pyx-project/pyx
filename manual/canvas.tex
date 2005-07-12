@@ -85,28 +85,31 @@ A canvas also allows one to set global options:
   Sets a new \var{texrunner} for the canvas.
 \end{methoddesc}
 
-The contents of the canvas can be written using:
+The contents of the canvas can be written using the following two
+convenience methods, which wrap the canvas into a single page
+document.
 
-\begin{methoddesc}{writeEPSfile}{filename, paperformat=None,
-    rotated=0, fittosize=0, margin=1*unit.t_cm, bbox=None,
-    bboxenlarge=1*unit.t_pt}
+\begin{methoddesc}{writeEPSfile}{filename, **kwargs}
   Writes the canvas to \var{filename} (the extension \texttt{.eps} is
-  appended automatically). Optionally, a \var{paperformat} can be
-  specified, in which case the output will be centered with respect to
-  the corresponding size using the given \var{margin}. See
-  \var{canvas.\_paperformats} for a list of known paper formats .  Use
-  \var{rotated}, if you want to center on a $90^\circ$ rotated version
-  of the respective paper format. If \var{fittosize} is set, the
-  output is additionally scaled to the maximal possible size.
-  Normally, the bounding box of the canvas is calculated automatically
-  from the bounding box of its elements.  Alternatively, you may
-  specify the \var{bbox} manually. In any case, the bounding box
-  becomes enlarged on all side by \var{bboxenlarge}. This may be used
-  to compensate for the inability of \PyX{} to take the linewidths
-  into account for the calculation of the bounding box.
+  appended automatically, if it is not present). This method
+  constructs a single page document, passing \var{kwargs} to the
+  \class{document.page} constructor and the calls the
+  \method{writeEPSfile} method of this \class{document.document}
+  instance passing the \var{filename}
+
 \end{methoddesc}
 
+\begin{methoddesc}{writePDFfile}{filename, **kwargs}
+  Writes the canvas to \var{filename} (the extension \texttt{.pdf} is
+  appended automatically, if it is not present). This method
+  constructs a single page document, passing \var{kwargs} to the
+  \class{document.page} constructor and the calls the
+  \method{writePDFfile} method of this \class{document.document}
+  instance passing the \var{filename}
+\end{methoddesc}
 
+For more information about the possible arguments of the
+\class{document.page} constructor, we refer to Sect.~\ref{document}.
 
 %%% Local Variables:
 %%% mode: latex

@@ -1,0 +1,103 @@
+\section{Module \module{document}}
+\label{document}
+
+\sectionauthor{J\"org Lehmann}{joergl@users.sourceforge.net} 
+
+\declaremodule{}{document}
+
+
+
+The document module contains two classes: \class{document} and
+\class{page}. A \class{document} consists of one or several
+\class{page}s.
+
+
+\subsection{Class \class{page}}
+
+A \class{page} is a thin wrapper around a \class{canvas}, which
+defines some additional properties of the page.
+
+\begin{classdesc}{page}{canvas, pagename=None,
+    paperformat=paperformat.A4, rotated=0, centered=1, fittosize=0,
+    margin=1 * unit.t_cm, bboxenlarge=1 * unit.t_pt, bbox=None}
+  Construct a new \class{page} from the given \class{canvas} instance.
+  A string \var{pagename} and the \var{paperformat} can be
+  defined. See below, for a list of known paper formats.
+  If \var{rotated} is set, the output is rotated by 90 degrees on the
+  page. If \var{centered} is set, the output is centered on the given
+  paperformat. If \var{fittosize} is set, the output is scaled to fill
+  the full page except for a given \var{margin}. 
+  Normally, the bounding box of the canvas is calculated automatically
+  from the bounding box of its elements.  Alternatively, you may
+  specify the \var{bbox} manually. In any case, the bounding box is
+  enlarged on all sides by \var{bboxenlarge}.
+\end{classdesc}
+
+\subsection{Class \class{document}}
+
+\begin{classdesc}{document}{pages=[]}
+    Construct a \class{document} consisting of a given list of \var{pages}.
+\end{classdesc}
+
+A \class{document} can be written to a file using one of the following methods:
+
+\begin{methoddesc}{writeEPSfile}{filename, *args, **kwargs}
+  Write a single page \class{document} to an EPS file, passing
+  \var{args} and \var{kwargs} to the \class{epswriter} instance
+  created for writing.
+\end{methoddesc}
+
+\begin{methoddesc}{writePSfile}{filename, *args, **kwargs}
+  Write a single page \class{document} to a PS file, passing
+  \var{args} and \var{kwargs} to the \class{pswriter} instance
+  created for writing.
+\end{methoddesc}
+
+\begin{methoddesc}{writePDFfile}{filename, *args, **kwargs}
+  Write a single page \class{document} to a PDS file, passing
+  \var{args} and \var{kwargs} to the \class{pdfwriter} instance
+  created for writing.
+\end{methoddesc}
+
+\begin{methoddesc}{writetofile}{filename, *args, **kwargs}
+  Determine the file type (EPS, PS, or PDF) from the file extension 
+  of \var{filename} and call the corresponding write method with
+  the given arguments \var{arg} and \var{kwargs}.
+\end{methoddesc}
+
+\subsection{Class \class{paperformat}}
+
+\begin{classdesc}{paperformat}{width, height, name=None}
+Define a \class{paperformat} with the given \var{width} and
+\var{height} and the optional \var{name}.
+\end{classdesc}
+
+Predefined paperformats are listed in the following table
+\medskip
+\begin{center}
+\begin{tabular}{l|l|l|l}
+instance & name & width  & height \\
+\hline
+\constant{document.paperformat.A0} & A0 & \unit[840]{mm} &
+\unit[1188]{mm}\\
+\constant{document.paperformat.A0b} &  &\unit[910]{mm} &
+\unit[1370]{mm}\\
+\constant{document.paperformat.A1} & A1& \unit[594]{mm} &
+\unit[840]{mm}\\
+\constant{document.paperformat.A2} & A2& \unit[420]{mm} &
+\unit[594]{mm}\\
+\constant{document.paperformat.A3} & A3 & \unit[297]{mm} & \unit[420]{mm}\\
+\constant{document.paperformat.A4} & A4& \unit[210]{mm} & \unit[297]{mm}\\
+\constant{document.paperformat.Letter} & Letter & \unit[8.5]{inch} &
+\unit[11]{inch}\\
+\constant{document.paperformat.Legal} & Legal & \unit[8.5]{inch} & \unit[14]{inch}
+\end{tabular}
+\end{center}
+\medskip
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "manual.tex"
+%%% End:

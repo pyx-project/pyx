@@ -12,9 +12,9 @@ generation of drawings. A PostScript path is an arbitrary shape
 consisting of straight lines, arc segments and cubic B\'ezier curves.
 Such a path does not have to be connected but may also comprise
 several disconnected segments, which will be called \textit{subpaths}
-in the following.
+in the following. 
 
-XXX example for paths and subpaths
+XXX example for paths and subpaths (figure)
 
 Usually, a path is constructed by passing a list of the path
 primitives \class{moveto}, \class{lineto}, \class{curveto}, etc., to the
@@ -48,7 +48,11 @@ c.writeEPSfile("line")
 To complete the example, we have added a \method{writeEPSfile()} call,
 which writes the contents of the canvas to the file \file{line.eps}.
 Note that an extension \file{.eps} is added automatically, if not
-already present in the given filename.
+already present in the given filename. Similarly, if you want to 
+generate a PDF file instead, use
+\begin{verbatim}
+c.writePDFfile("line")
+\end{verbatim}
 
 As a second example, let us define a path which consists of more than 
 one subpath:
@@ -109,12 +113,17 @@ Fig.~\ref{fig:rects}d), which results from
 \begin{verbatim}
 c.stroke(rect2, [deco.filled([color.grey(0.95)])])
 \end{verbatim}
-More details on the available path elements can be found in
-Sect.~\ref{path:pathitem}.
+Here, we supply as second argument of the \method{stroke()} method a
+list which in the present case only consists of a single element,
+namely the so called decorator \class{deco.filled}. As it name says,
+this decorator specifies that the path is not only being stroked but
+also filled with the given color. More information about decorators,
+styles and other attributes which can be passed as elements of the
+list can be found in Sect.~\ref{graphics:attributes}.  More details on
+the available path elements can be found in Sect.~\ref{path:pathitem}.
 
-XXX more on styles and attributes and reference to corresponding section
-
-Of course, rectangles are also predefined in \PyX{}, so above we could
+To conclude this section, we should not forget to mention that
+rectangles are, of course, predefined in \PyX{}, so above we could
 have as well written
 \begin{verbatim}
 rect2 = path.rect(0, 0, 1, 1)
@@ -238,6 +247,8 @@ More information on the available path methods can be found
 in Sect.~\ref{path:path}. 
 
 \section{Attributes: Styles and Decorations}
+
+\label{graphics:attributes}
 
 Attributes define properties of a given object when it is being used.
 Typically, there are different kind of attributes which are usually
