@@ -451,7 +451,7 @@ class _mathmode(attr.attr, textattr, _localattr):
         return r"$\displaystyle{%s}$" % expr
 
 mathmode = _mathmode()
-nomathmode = attr.clearclass(_mathmode)
+clearmathmode = attr.clearclass(_mathmode)
 
 
 class _phantom(attr.attr, textattr, _localattr):
@@ -461,7 +461,7 @@ class _phantom(attr.attr, textattr, _localattr):
         return r"\phantom{%s}" % expr
 
 phantom = _phantom()
-nophantom = attr.clearclass(_phantom)
+clearphantom = attr.clearclass(_phantom)
 
 
 defaultsizelist = ["normalsize", "large", "Large", "LARGE", "huge", "Huge", None, "tiny", "scriptsize", "footnotesize", "small"]
@@ -732,6 +732,9 @@ def _cleantmp(texrunner):
             pass
 
 
+class _unset:
+    pass
+
 class texrunner:
     """TeX/LaTeX interface
     - runs TeX/LaTeX expressions instantly
@@ -912,20 +915,26 @@ class texrunner:
                          self.defaulttexmessagesstart + self.texmessagesstart)
             os.remove("%s.tex" % self.texfilename)
             if self.mode == "tex":
-                if len(self.lfs) > 4 and self.lfs[-4:] == ".lfs":
-                    lfsname = self.lfs
+                if self.lfs:
+                    lfserror = None
+                    if len(self.lfs) > 4 and self.lfs[-4:] == ".lfs":
+                        lfsname = self.lfs
+                    else:
+                        lfsname = "%s.lfs" % self.lfs
+                    for fulllfsname in [lfsname,
+                                        os.path.join(siteconfig.lfsdir, lfsname)]:
+                        try:
+                            lfsfile = open(fulllfsname, "r")
+                            lfsdef = lfsfile.read()
+                            lfsfile.close()
+                            break
+                        except IOError:
+                            pass
+                    else:
+                        lfserror = "File '%s' is not available or not readable. " % lfsname
                 else:
-                    lfsname = "%s.lfs" % self.lfs
-                for fulllfsname in [lfsname,
-                                    os.path.join(siteconfig.lfsdir, lfsname)]:
-                    try:
-                        lfsfile = open(fulllfsname, "r")
-                        lfsdef = lfsfile.read()
-                        lfsfile.close()
-                        break
-                    except IOError:
-                        pass
-                else:
+                    lfserror = ""
+                if lfserror is not None:
                     allfiles = (glob.glob("*.lfs") +
                                 glob.glob(os.path.join(siteconfig.lfsdir, "*.lfs")))
                     lfsnames = []
@@ -937,9 +946,9 @@ class texrunner:
                             pass
                     lfsnames.sort()
                     if len(lfsnames):
-                        raise IOError("file '%s' is not available or not readable. Available LaTeX font size files (*.lfs): %s" % (lfsname, lfsnames))
+                        raise IOError("%sAvailable LaTeX font size files (*.lfs): %s" % (lfserror, lfsnames))
                     else:
-                        raise IOError("file '%s' is not available or not readable. No LaTeX font size files (*.lfs) available. Check your installation." % lfsname)
+                        raise IOError("%sNo LaTeX font size files (*.lfs) available. Check your installation." % lfserror)
                 self.execute(lfsdef, [])
                 self.execute("\\normalsize%\n", [])
                 self.execute("\\newdimen\\linewidth%\n", [])
@@ -1051,78 +1060,78 @@ class texrunner:
             self.preambles = []
             self.preamblemode = 1
 
-    def set(self, mode=None,
-                  lfs=None,
-                  docclass=None,
-                  docopt=None,
-                  usefiles=None,
-                  fontmaps=None,
-                  waitfortex=None,
-                  showwaitfortex=None,
-                  texipc=None,
-                  texdebug=None,
-                  dvidebug=None,
-                  errordebug=None,
-                  pyxgraphics=None,
-                  texmessagesstart=None,
-                  texmessagesdocclass=None,
-                  texmessagesbegindoc=None,
-                  texmessagesend=None,
-                  texmessagesdefaultpreamble=None,
-                  texmessagesdefaultrun=None):
+    def set(self, mode=_unset,
+                  lfs=_unset,
+                  docclass=_unset,
+                  docopt=_unset,
+                  usefiles=_unset,
+                  fontmaps=_unset,
+                  waitfortex=_unset,
+                  showwaitfortex=_unset,
+                  texipc=_unset,
+                  texdebug=_unset,
+                  dvidebug=_unset,
+                  errordebug=_unset,
+                  pyxgraphics=_unset,
+                  texmessagesstart=_unset,
+                  texmessagesdocclass=_unset,
+                  texmessagesbegindoc=_unset,
+                  texmessagesend=_unset,
+                  texmessagesdefaultpreamble=_unset,
+                  texmessagesdefaultrun=_unset):
         """provide a set command for TeX/LaTeX settings
         - TeX/LaTeX must not yet been started
         - especially needed for the defaultrunner, where no access to
           the constructor is available"""
         if self.texruns:
             raise RuntimeError("set not allowed -- TeX/LaTeX already started")
-        if mode is not None:
+        if mode is not _unset:
             mode = mode.lower()
             if mode != "tex" and mode != "latex":
                 raise ValueError("mode \"TeX\" or \"LaTeX\" expected")
             self.mode = mode
-        if lfs is not None:
+        if lfs is not _unset:
             self.lfs = lfs
-        if docclass is not None:
+        if docclass is not _unset:
             self.docclass = docclass
-        if docopt is not None:
+        if docopt is not _unset:
             self.docopt = docopt
-        if usefiles is not None:
+        if usefiles is not _unset:
             self.usefiles = usefiles
-        if fontmaps is not None:
+        if fontmaps is not _unset:
             self.fontmaps = fontmaps
-        if waitfortex is not None:
+        if waitfortex is not _unset:
             self.waitfortex = waitfortex
-        if showwaitfortex is not None:
+        if showwaitfortex is not _unset:
             self.showwaitfortex = showwaitfortex
-        if texipc is not None:
+        if texipc is not _unset:
             self.texipc = texipc
-        if texdebug is not None:
+        if texdebug is not _unset:
             if self.texdebug is not None:
                 self.texdebug.close()
             if texdebug[-4:] == ".tex":
                 self.texdebug = open(texdebug, "w")
             else:
                 self.texdebug = open("%s.tex" % texdebug, "w")
-        if dvidebug is not None:
+        if dvidebug is not _unset:
             self.dvidebug = dvidebug
-        if errordebug is not None:
+        if errordebug is not _unset:
             self.errordebug = errordebug
-        if pyxgraphics is not None:
+        if pyxgraphics is not _unset:
             self.pyxgraphics = pyxgraphics
-        if errordebug is not None:
+        if errordebug is not _unset:
             self.errordebug = errordebug
-        if texmessagesstart is not None:
+        if texmessagesstart is not _unset:
             self.texmessagesstart = texmessagesstart
-        if texmessagesdocclass is not None:
+        if texmessagesdocclass is not _unset:
             self.texmessagesdocclass = texmessagesdocclass
-        if texmessagesbegindoc is not None:
+        if texmessagesbegindoc is not _unset:
             self.texmessagesbegindoc = texmessagesbegindoc
-        if texmessagesend is not None:
+        if texmessagesend is not _unset:
             self.texmessagesend = texmessagesend
-        if texmessagesdefaultpreamble is not None:
+        if texmessagesdefaultpreamble is not _unset:
             self.texmessagesdefaultpreamble = texmessagesdefaultpreamble
-        if texmessagesdefaultrun is not None:
+        if texmessagesdefaultrun is not _unset:
             self.texmessagesdefaultrun = texmessagesdefaultrun
 
     def preamble(self, expr, texmessages=[]):
