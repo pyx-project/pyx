@@ -1,10 +1,10 @@
-\chapter[Module \module{text}: TeX/LaTeX interface]{Module \module{text}: \TeX/\LaTeX{} interface}
+\chapter[Module text: TeX/LaTeX interface]{Module \module{text}: \TeX/\LaTeX{} interface}
 \label{module:text}
 
 \section{Basic functionality}
 
-The \verb|text| module seamlessly integrates the famous typesetting
-technique of \TeX/\LaTeX{} into \PyX. The basic procedure is:
+The \module{text} module seamlessly integrates Donald E. Knuths famous
+\TeX{} typesetting engine into \PyX. The basic procedure is:
 \begin{itemize}
 \item start a \TeX/\LaTeX{} instance as soon as a \TeX/\LaTeX{}
 preamble setting or a text creation is requested
@@ -13,242 +13,578 @@ boxes to the dvi file
 \item immediately analyse the \TeX/\LaTeX{} output for errors; the box
 extents are also contained in the \TeX/\LaTeX{} output and thus become
 available immediately
-\item when your TeX installation supports the \verb|ipc| mode and
+\item when your TeX installation supports the \texttt{ipc} mode and
 \PyX{} is configured to use it, the dvi output is also analysed
 immediately; alternatively \PyX{} quits the \TeX/\LaTeX{} instance to
-read the dvi output once PostScript needs to be written or markers are
-accessed
+read the dvi file once the output needs to be generated or marker
+positions are accessed
 \item Type1 fonts are used for the PostScript generation
 \end{itemize}
 
 Note that for using Type1 fonts an appropriate font mapping file has
 to be provided. When your \TeX{} installation is configured to use
-Type1 fonts by default, the \verb|psfonts.map| will contain entries
+Type1 fonts by default, the \texttt{psfonts.map} will contain entries
 for the standard \TeX{} fonts already. Alternatively, you may either
-look for updmap used by many \TeX{} installations to create an
-appropriate font mapping file or you may specify some alternative
-font mapping files like \verb|psfonts.cmz| in the \verb|pyxrc| or the
-\verb|fontmaps| keyword argument of the \verb|texrunner| constructor
-(or the \verb|set| method).
+look for \texttt{updmap} used by many \TeX{} distributions to create
+an appropriate font mapping file. You may also specify one or several
+alternative font mapping files like \texttt{psfonts.cmz} in the global
+\texttt{pyxrc} or your local \texttt{.pyxrc}. Finally you can also use
+the \var{fontmaps} keyword argument of the \class{texrunner}
+constructor or its \method{set()} method.
 
-\section{The texrunner}
-Instances of the class \verb|texrunner| represent a \TeX/\LaTeX{}
-instance. The keyword arguments of the constructor are listed in the
-following table:
+\section[TeX/LaTeX instances: the texrunner class]{\TeX/\LaTeX{} instances: the \class{texrunner} class}
+\declaremodule{}{text}
+\modulesynopsis{\TeX/\LaTeX interface}
 
-\medskip
-\begin{tabularx}{\linewidth}{l>{\raggedright\arraybackslash}X}
-keyword&description\\
-\hline
-\texttt{mode}&\texttt{"tex"} (default) or \texttt{"latex"}\\
-\texttt{lfs}&Specifies a latex font size file to be used with \TeX{} (not in \LaTeX). Those files (with the suffix \texttt{.lfs}) can be created by \texttt{createlfs.tex}. Possible values are listed when a requested name could not be found.\\
-\texttt{docclass}&\LaTeX{} document class; default is \texttt{"article"}\\
-\texttt{docopt}&specifies options for the document class; default is \texttt{None}\\
-\texttt{usefiles}&access to \TeX/\LaTeX{} jobname files; default: \texttt{None}; example: \texttt{["spam.aux", "eggs.log"]}\\
-\texttt{fontmaps}&whitespace separated names of font mapping files; default \texttt{"psfonts.map"}\\
-\texttt{waitfortex}&wait this number of seconds for a \TeX/\LaTeX{} response; default \texttt{60}\\
-\texttt{showwaitfortex}&show a message about waiting for \TeX/\LaTeX{} response on \texttt{strerr}; default \texttt{5}\\
-\texttt{texipc}&use the \texttt{--ipc} option of \TeX/\LaTeX{} for immediate dvi-output access (boolean); check the output of \texttt{tex --help} if this option is available in your \TeX/\LaTeX{} installation; default \texttt{0}\\
-\texttt{texdebug}&filename to store \TeX/\LaTeX{} commands; default \texttt{None}\\
-\texttt{dvidebug}&dvi debug messages like \texttt{dvitype} (boolean); default \texttt{0}\\
-\texttt{errordebug}&verbose level of \TeX/\LaTeX{} error messages; valid values are \texttt{0}, \texttt{1} (default), \texttt{2}\\
-\texttt{pyxgraphics}&enables the usage of the graphics package without further configuration (boolean); default 1\\
-\texttt{texmessagesstart}&parsers for the \TeX/\LaTeX{} start message; default: \texttt{[texmessage.start]}\\
-\texttt{texmessagesdocclass}&parsers for \LaTeX{}s \texttt{\textbackslash{}documentclass} statement; default: \texttt{[texmessage.load]}\\
-\texttt{texmessagesbegindoc}&parsers for \LaTeX{}s \texttt{\textbackslash{}begin\{document\}} statement; default: \texttt{[texmessage.load, texmessage.noaux]}\\
-\texttt{texmessagesend}&parsers for \TeX{}s \texttt{\textbackslash{}end}/ \LaTeX{}s \texttt{\textbackslash{}end\{document\}} statement; default: \texttt{[texmessage.texend]}\\
-\texttt{texmessagesdefaultpreamble}&default parsers for preamble statements; default: \texttt{[texmessage.load]}\\
-\texttt{texmessagesdefaultrun}&default parsers for text statements; default: \texttt{[texmessage.loadfd, texmessage.graphicsload]}\\
-\end{tabularx}
-\medskip
+Instances of the class \class{texrunner} are responsible for executing
+and controling a \TeX/\LaTeX{} instance.
 
-The default values of the parameters \verb|fontmaps|, \verb|waitfortex|,
-\verb|showwaitfortex|, and \verb|texipc| can be modified in the \verb|text|
-section of a \verb|pyxrc|.
+\begin{classdesc}{texrunner}{mode="tex",
+                             lfs="10pt",
+                             docclass="article",
+                             docopt=None,
+                             usefiles=[],
+                             fontmaps=config.get("text", "fontmaps", "psfonts.map"),
+                             waitfortex=config.getint("text", "waitfortex", 60),
+                             showwaitfortex=config.getint("text", "showwaitfortex", 5),
+                             texipc=config.getboolean("text", "texipc", 0),
+                             texdebug=None,
+                             dvidebug=0,
+                             errordebug=1,
+                             pyxgraphics=1,
+                             texmessagesstart=[],
+                             texmessagesdocclass=[],
+                             texmessagesbegindoc=[],
+                             texmessagesend=[],
+                             texmessagesdefaultpreamble=[],
+                             texmessagesdefaultrun=[]}
+  \var{mode} should the string \samp{tex} or \samp{latex} and defines
+  whether \TeX{} or \LaTeX{} will be used. \var{lfs} specifies an
+  \texttt{lfs} file to simulate \LaTeX{} font size selection macros in
+  plain \TeX. \PyX{} comes with a set of \texttt{lfs} files and a
+  \LaTeX{} script to generate those files. For \var{lfs} being
+  \code{None} and \var{mode} equals \samp{tex} a list of installed
+  \texttt{lfs} files is shown.
+  
+  \var{docclass} is the document class to be used in \LaTeX{} mode and
+  \var{docopt} are the options to be passed to the document class.
 
-The \verb|texrunner| instance provides several methods to be called by
-the user. First there is a method called \verb|set|. It takes the same
-kewword arguments as the constructor and its purpose is to provide an
-access to the \verb|texrunner| settings for a given instance. This is
-important for the \verb|defaulttexrunner|. The \verb|set| method
-fails, when a modification cannot be applied anymore (e.g.
-\TeX/\LaTeX{} was already started).
+  \var{usefiles} is a list of \TeX/\LaTeX{} jobname files. \PyX{} will
+  take care of the creation and storing of the corresponding temporary
+  files. A typical use-case would be \var{usefiles=["spam.aux"]}, but
+  you can also use it to access \TeX{}s log and dvi file.
 
-The \verb|preamble| method can be called before the \verb|text| method
-only (see below). It takes a \TeX/\LaTeX{} expression and optionally
-a list of \TeX/\LaTeX{} message parsers. The preamble expressions should be
-used to perform global settings, but should not create any \TeX/\LaTeX{} dvi
-output. In \LaTeX, the preamble expressions are inserted before the
-\verb|\begin{document}| statement. Note, that you can use
-\verb|\AtBeginDocument{...}| to postpone the direct evaluation.
+  \var{fontmaps} is a string containing whitespace separated names of
+  font mapping files. \var{waitfortex} is a number of seconds \PyX{}
+  should wait for \TeX/\LaTeX{} to process a request. While waiting
+  for \TeX/\LaTeX{} a \PyX{} process might seem to do not perform any
+  work anymore. To give some feedback to the user, a messages is
+  issued each \var{waitfortex} seconds. The \texttt{texipc} flag
+  indicates whether \PyX{} should use the \texttt{--ipc} option of
+  \TeX/\LaTeX{} for immediate dvi file access to increase the
+  execution speed of certain operations. See the output of
+  \texttt{tex~--help} whether the option is available at your \TeX{}
+  installation.
 
-Finally there is a \verb|text| method. The first two parameters are
-the \verb|x| and \verb|y| position of the output to be generated. The
-third parameter is a \TeX/\LaTeX{} expression. There are two further
-keyword arguments. The first, \verb|textattrs|, is a list of
-\TeX/\LaTeX{} settings as described below, \PyX{} transformations, and
-\PyX{} fill styles (like colors). The second keyword argument
-\verb|texmessages| takes a list of \TeX/\LaTeX{} message parsers as
-described below as well. The \verb|text| method returns a box (see
-chapter~\ref{module:box}), which can be inserted into a canvas
-instance by its \verb|insert| method to get the text.
+  \var{texdebug} can be set to a filename to store the commands passed
+  to \TeX/\LaTeX{} for debugging. The flag \var{dvidebug} enables
+  debugging output in the dvi parser similar to \texttt{dvitype}.
+  \var{errordebug} controls the amount of information returned, when
+  an texmessage parser raises an error. Valid values are \code{0},
+  \code{1}, and \code{2}.
 
-The box returned by the \verb|text| method has an additional method
-\verb|marker|. You can place markers in the \TeX/\LaTeX{} expression
-by the command \verb|\PyXMarker{<string>}|. When calling the
-\verb|marker| method with the same \verb|<string>| you can get back the
-position of the marker later on. Only digits, letters and the \verb|@|
-symbol are allowed within the string. Strings containing the \verb|@|
-symbol are not considered for end users like it is done for commands
-including the \verb|@| symbol in \LaTeX{}.
+  \var{pyxgraphics} allows use \LaTeX{}s graphics package without
+  further configuration of \texttt{pyx.def}.
 
-Note that for the generation of the PostScript code the \TeX/\LaTeX{}
-instance must be terminated except when \verb|texipc| is turned on.
-However, a \TeX/\LaTeX{} instance is started again when the
-\verb|text| method is called again. A call of the \verb|preamble|
-method will still fail, but you can explicitly call the \verb|reset|
-method to allow for new \verb|preamble| settings as well. The
-\verb|reset| method takes a boolean parameter \verb|reinit| which can
-be set to run the old preamble settings.
+  The \TeX{} message parsers verify whether \TeX/\LaTeX{} could
+  properly process its input. By the parameters
+  \var{texmessagesstart}, \var{texmessagesdocclass},
+  \var{texmessagesbegindoc}, and \var{texmessagesend} you can set
+  \TeX{} message parsers to be used then \TeX/\LaTeX{} is started,
+  when the \texttt{documentclass} command is issued (\LaTeX{} only),
+  when the \texttt{\textbackslash{}begin\{document\}} is sent, and
+  when the \TeX/\LaTeX{} is stopped, respectively. The lists of
+  \TeX{} message parsers are merged with the following defaults:
+  \code{[texmessage.start]} for \var{texmessagesstart},
+  \code{[texmessage.load]} for \var{texmessagesdocclass},
+  \code{[texmessage.load, texmessage.noaux]} for
+  \var{texmessagesbegindoc}, and \code{[texmessage.texend]} for
+  \var{texmessagesend}.
+
+  Similarily \var{texmessagesdefaultpreamble} and
+  \var{texmessagesdefaultrun} take \TeX{} message parser to be merged
+  to the \TeX{} message parsers given in the \method{preamble()} and
+  \method{text()} methods. The \var{texmessagesdefaultpreamble} and
+  \var{texmessagesdefaultrun} are merged with \code{[texmessage.load]}
+  and \code{[texmessage.loadfd, texmessage.graphicsload,
+  texmessage.fontwarning, texmessage.boxwarning]}, respectively.
+\end{classdesc}
+
+\class{texrunner} instances provides several methods to be called by
+the user:
+
+\begin{methoddesc}{set}{**kwargs}
+  This method takes the same keyword arguments as the
+  \class{texrunner} constructor. Its purpose is to reconfigure an
+  already constructed \class{texrunner} instance. The most prominent
+  use-case is to alter the configuration of the default
+  \class{texrunner} instance \code{defaulttexrunner} which is created
+  at the time of loading of the \module{text} module.
+
+  The \verb|set| method fails, when a modification cannot be applied
+  anymore (e.g. \TeX/\LaTeX{} has already been started).
+\end{methoddesc}
+
+\begin{methoddesc}{preamble}{expr, texmessages=[]}
+  The \method{preamble()} can be called prior to the \method{text()}
+  method only or after reseting a texrunner instance by
+  \method{reset()}. The \var{expr} is passed to the \TeX/\LaTeX{}
+  instance not encapsulated in a group. It should not generate any
+  output to the dvi file. In \LaTeX{} preamble expressions are
+  inserted prior to the \texttt{\textbackslash{}begin\{document\}} and
+  a typical use-case is to load packages by
+  \texttt{\textbackslash{}usepackage}. Note, that you may use
+  \texttt{\textbackslash{}AtBeginDocument} to postpone the
+  immediate evaluation.
+
+  \var{texmessages} are \TeX{} message parsers to handle the output of
+  \TeX/\LaTeX. They are merged with the default \TeX{} message
+  parsers for the \method{preamble()} method. See the constructur
+  description for details on the default \TeX{} message parsers.
+\end{methoddesc}
+
+\begin{methoddesc}{text}{x, y, expr, textattrs=[], texmessages=[]}
+  \var{x} and \var{y} are the position where a text should be typeset
+  and \var{expr} is the \TeX/\LaTeX{} expression to be passed to
+  \TeX/\LaTeX{}.
+
+  \var{textattrs} is a list of \TeX/\LaTeX{} settings as described
+  below, \PyX{} transformations, and \PyX{} fill styles (like colors).
+
+  \var{texmessages} are \TeX{} message parsers to handle the output of
+  \TeX/\LaTeX. They are merged with the default \TeX{} message
+  parsers for the \method{text()} method. See the constructur
+  description for details on the default \TeX{} message parsers.
+
+  The \method{text()} method returns a \class{textbox} instance, which
+  is a special \class{canvas} instance. It has the methods
+  \method{width()}, \method{height()}, and \method{depth()} to access
+  the size of the text. Additionally the \method{marker()} method,
+  which takes a string \emph{s}, returns a position in the text, where
+  the expression \texttt{\textbackslash{}PyXMarker\{\emph{s}\}} is
+  contained in \var{expr}. You should not use \texttt{@} within your
+  strings \emph{s} to prevent prevent name clashes with \PyX{}
+  internal macros (although we don't the marker feature internally
+  right now).
+\end{methoddesc}
+
+Note that for the outout generation and the marker access the
+\TeX/\LaTeX{} instance must be terminated except when \texttt{texipc} is
+turned on. However, after such a termination a new \TeX/\LaTeX{}
+instance is started when the \method{text()} method is called again.
+
+\begin{methoddesc}{reset}{reinit=0}
+  This method can be used to manually force a restart of
+  \TeX/\LaTeX{}. The flag \var{reinit} will initialize the
+  \TeX/\LaTeX{} by repeating the \method{preamble()} calls. New
+  \method{set()} and \method{preamble()} calls are allowed when
+  \var{reinit} was not set only.
+\end{methoddesc}
+
 
 \section[TeX/LaTeX attributes]{\TeX/\LaTeX{} attributes}
+\declaremodule{}{text}
+\modulesynopsis{\TeX/\LaTeX interface}
 
-\begin{description}
-\raggedright
-\item[Horizontal alignment:] \verb|halign.left| (default),
-\verb|halign.center|, \verb|halign.right|, \verb|halign(x)| (\verb|x|
-is a value between \verb|0| and \verb|1| standing for left and right,
-respectively)
+\TeX/\LaTeX{} attributes are instances to be passed to a
+\class{texrunner}s \method{text()} method. They stand for
+\TeX/\LaTeX{} expression fragments and handle dependencies by proper
+ordering.
+
+\begin{classdesc}{halign}{boxhalign, flushhalign}
+  Instances of this class set the horizontal alignment of a text box
+  and the contents of a text box to be left, center and right for
+  \var{boxhalign} and \var{flushhalign} being \code{0}, \code{0.5},
+  and \code{1}. Other values are allowed as well, although such an
+  alignment seems quite unusual.
+\end{classdesc}
+
+Note that there are two separate classes \class{boxhalign} and
+\class{flushhalign} to set the alignment of the box and its contents
+independently, but those helper classes can't be cleared independently
+from each other. Some handy instances available as class members:
+
+\begin{memberdesc}{boxleft}
+  Left alignment of the text box, \emph{i.e.} sets \var{boxhalign} to
+  \code{0} and doesn't set \var{flushhalign}.
+\end{memberdesc}
+
+\begin{memberdesc}{boxcenter}
+  Center alignment of the text box, \emph{i.e.} sets \var{boxhalign} to
+  \code{0.5} and doesn't set \var{flushhalign}.
+\end{memberdesc}
+
+\begin{memberdesc}{boxright}
+  Right alignment of the text box, \emph{i.e.} sets \var{boxhalign} to
+  \code{1} and doesn't set \var{flushhalign}.
+\end{memberdesc}
+
+\begin{memberdesc}{flushleft}
+  Left alignment of the content of the text box in a multiline box,
+  \emph{i.e.} sets \var{flushhalign} to \code{0} and doesn't set
+  \var{boxhalign}.
+\end{memberdesc}
+
+\begin{memberdesc}{raggedright}
+  Identical to \member{flushleft}.
+\end{memberdesc}
+
+\begin{memberdesc}{flushcenter}
+  Center alignment of the content of the text box in a multiline box,
+  \emph{i.e.} sets \var{flushhalign} to \code{0.5} and doesn't set
+  \var{boxhalign}.
+\end{memberdesc}
+
+\begin{memberdesc}{raggedcenter}
+  Identical to \member{flushcenter}.
+\end{memberdesc}
+
+\begin{memberdesc}{flushright}
+  Right alignment of the content of the text box in a multiline box,
+  \emph{i.e.} sets \var{flushhalign} to \code{1} and doesn't set
+  \var{boxhalign}.
+\end{memberdesc}
+
+\begin{memberdesc}{raggedleft}
+  Identical to \member{flushright}.
+\end{memberdesc}
+
+\begin{memberdesc}{left}
+  Combines \member{boxleft} and \member{flushleft}, \emph{i.e.}
+  \code{halign(0, 0)}.
+\end{memberdesc}
+
+\begin{memberdesc}{center}
+  Combines \member{boxcenter} and \member{flushcenter}, \emph{i.e.}
+  \code{halign(0.5, 0.5)}.
+\end{memberdesc}
+
+\begin{memberdesc}{right}
+  Combines \member{boxright} and \member{flushright}, \emph{i.e.}
+  \code{halign(1, 1)}.
+\end{memberdesc}
+
 \begin{figure}
 \centerline{\includegraphics{textvalign}}
 \caption{valign example}
 \label{fig:textvalign}
 \end{figure}
-\item[Vertical alignment:] \verb|valign.top|, \verb|valign.middle|,
-\verb|valign.bottom|, \verb|valign.baseline| (default); see the left
-hand side of figure~\ref{fig:textvalign}
-\item[Vertical box:] Usually, \TeX/\LaTeX{} expressions are handled in
-horizontal mode (so-called LR-mode in \TeX/\LaTeX; everything goes
-into a single line). You may use \verb|parbox(x)|, where \verb|x| is the
-width of the text, to switch to a multiline mode (so-called vertical
-mode in \TeX/\LaTeX). The additional keyword parameter \verb|baseline|
-allows the user to alter the position of the baseline. It can be set
-to \verb|parbox.top| (default), \verb|parbox.middle|,
-\verb|parbox.bottom| (see the right hand side of
-figure~\ref{fig:textvalign}). The baseline position is relevant when
-the vertical alignment is set to baseline only.
-\item[Vertical shift:] \verb|vshift(lowerratio, heightstr="0")|
-(lowers the output by \verb|lowerratio| of the height of
-\verb|heightstr|), \verb|vshift.bottomzero=vshift(0)| (doesn't have an
-effect), \verb|vshift.middlezero=vshift(0.5)| (shifts down by half of
-the height of \verb|0|), \verb|vshift.topzero=vshift(1)| (shifts down
-by the height of \verb|0|), \verb|vshift.mathaxis| (shifts down by the
-height of the mathematical axis)
-\item[Mathmode:] \verb|mathmode| switches to mathmode of \TeX/\LaTeX{}
-in \verb|\displaystyle| (\verb|nomathmode| removes this attribute)
-\item[Font size:] \verb|size.tiny=size(-4)|,
-\verb|size.scriptsize=size(-3)|, \verb|size.footnotesize=size(-2)|,
-\verb|size.small=size(-1)|, \verb|size.normalsize=size(0)|,
-(default), \verb|size.large=size(1)|, \verb|size.Large=size(2)|,
-\verb|size.LARGE=size(3)|, \verb|size.huge=size(4)|,
-\verb|size.Huge=size(5)|
-\item[Phantom text:] \verb|phantom| creates an textbox with the proper
-extents but without the text (\verb|nophantom| removes this attribute)
-\end{description}
+
+\begin{classdesc}{valign}{valign}
+  Instances of this class set the vertical alignment of a text box to
+  be top, center and bottom for \var{valign} being \code{0},
+  \code{0.5}, and \code{1}. Other values are allowed as well, although
+  such an alignment seems quite unusual. See the left side of
+  figure~\ref{fig:textvalign} for an example.
+\end{classdesc}
+
+Some handy instances available as class members:
+
+\begin{memberdesc}{top}
+  \code{valign(0)}
+\end{memberdesc}
+
+\begin{memberdesc}{middle}
+  \code{valign(0.5)}
+\end{memberdesc}
+
+\begin{memberdesc}{bottom}
+  \code{valign(1)}
+\end{memberdesc}
+
+\begin{memberdesc}{baseline}
+  Identical to clearing the vertical alignment by \member{clear} to
+  emphasise that a baseline alignment is not a box-related alignment.
+  Baseline alignment is the default, \emph{i.e.} no valign is set by
+  default.
+\end{memberdesc}
+
+\begin{classdesc}{parbox}{width, baseline=top}
+  Instances of this class create a box with a finite width, where the
+  typesetter creates multiple lines in. Note, that you can't create
+  multiple lines in \TeX/\LaTeX{} without specifying a box width.
+  Since \PyX{} doesn't know a box width, it uses \TeX{}s LR-mode by
+  default, which will always put everything into a single line. Since
+  in a vertical box there are several baselines, you can specify the
+  baseline to be used by the optional \var{baseline} argument. You can
+  set it to the symbolic names \member{top}, \member{parbox.middle},
+  and \member{parbox.bottom} only, which are members of
+  \class{valign}. See the right side of figure~\ref{fig:textvalign}
+  for an example.
+\end{classdesc}
+
+Since you need to specify a box width no predefined instances are
+available as class members.
+
+\begin{classdesc}{vshift}{lowerratio, heightstr="0"}
+  Instances of this class lower the output by \var{lowerratio} of the
+  height of the string \var{heigthstring}. Note, that you can apply
+  several shifts to sum up the shift result. However, there is still a
+  \member{clear} class member to remove all vertical shifts.
+\end{classdesc}
+
+Some handy instances available as class members:
+
+\begin{memberdesc}{bottomzero}
+  \code{vshift(0)} (this doesn't shift at all)
+\end{memberdesc}
+
+\begin{memberdesc}{middlezero}
+  \code{vshift(0.5)}
+\end{memberdesc}
+
+\begin{memberdesc}{topzero}
+  \code{vshift(1)}
+\end{memberdesc}
+
+\begin{memberdesc}{mathaxis}
+  This is a special vertical shift to lower the output by the height
+  of the mathematical axis. The mathematical axis is used by \TeX{}
+  for the vertical alignment in mathematical expressions and is often
+  usefull for vertical alignment. The corresponding vertical shift is
+  less than \member{middlezero} and usually fits the height of the
+  minus sign. (It is the height of the minus sign in mathematical
+  mode, since that's that the mathematical axis is all about.)
+\end{memberdesc}
+
+There is a \TeX/\LaTeX{} attribute to switch to \TeX{}s math mode. The
+appropriate instances \code{mathmode} and \code{clearmathmode} (to
+clear the math mode attribute) are available at module level.
+
+\begin{datadesc}{mathmode}
+  Enables \TeX{}s mathematical mode in display style.
+\end{datadesc}
+
+The \class{size} class creates \TeX/\LaTeX{} attributes for changing
+the font size.
+
+\begin{classdesc}{size}{sizeindex=None, sizename=None,
+                        sizelist=defaultsizelist}
+  \LaTeX{} knows several commands to change the font size. The command
+  names are stored in the \var{sizelist}, which defaults to
+  \code{[\textquotedbl{}normalsize\textquotedbl{},
+  \textquotedbl{}large\textquotedbl{},
+  \textquotedbl{}Large\textquotedbl{},
+  \textquotedbl{}LARGE\textquotedbl{},
+  \textquotedbl{}huge\textquotedbl{},
+  \textquotedbl{}Huge\textquotedbl{},
+  None, \textquotedbl{}tiny\textquotedbl{},
+  \textquotedbl{}scriptsize\textquotedbl{},
+  \textquotedbl{}footnotesize\textquotedbl{},
+  \textquotedbl{}small\textquotedbl{}]}.
+
+  You can either provide an index \var{sizeindex} to access an item in
+  \var{sizelist} or set the command name by \var{sizename}.
+\end{classdesc}
+
+Instances for the \LaTeX{}s default size change commands are available
+as class members:
+
+\begin{memberdesc}{tiny}
+  \code{size(-4)}
+\end{memberdesc}
+
+\begin{memberdesc}{scriptsize}
+  \code{size(-3)}
+\end{memberdesc}
+
+\begin{memberdesc}{footnotesize}
+  \code{size(-2)}
+\end{memberdesc}
+
+\begin{memberdesc}{small}
+  \code{size(-1)}
+\end{memberdesc}
+
+\begin{memberdesc}{normalsize}
+  \code{size(0)}
+\end{memberdesc}
+
+\begin{memberdesc}{large}
+  \code{size(1)}
+\end{memberdesc}
+
+\begin{memberdesc}{Large}
+  \code{size(2)}
+\end{memberdesc}
+
+\begin{memberdesc}{LARGE}
+  \code{size(3)}
+\end{memberdesc}
+
+\begin{memberdesc}{huge}
+  \code{size(4)}
+\end{memberdesc}
+
+\begin{memberdesc}{Huge}
+  \code{size(5)}
+\end{memberdesc}
+
+There is a \TeX/\LaTeX{} attribute to create empty text boxes with the
+size of the material passed in. The appropriate instances
+\code{phantom} and \code{clearphantom} (to clear the phantom
+attribute) are available at module level.
+
+\begin{datadesc}{phantom}
+  Skip the text in the box, but keep its size.
+\end{datadesc}
 
 \section[Using the graphics-bundle with LaTeX]{Using the graphics-bundle with \LaTeX}
 
-The packages in the \LaTeX-graphics bundle (color.sty, graphics.sty,
-graphicx.sty, \ldots) make extensive use of \verb|\special| commands.
-Here are some notes on this topic. Please install the appropriate
-driver file \verb|pyx.def|, which defines all the specials, in your
-\LaTeX-tree and add the content of both files \verb|color.cfg| and
-\verb|graphics.cfg| to your personal configuration files.\footnote{If
-you do not know what I am talking about right now -- just ignore this
-paragraph, but make sure not to set the \texttt{pyxgraphics} keyword
-to 0.} After you have installed the \verb|.cfg| files please use the
-\verb|text| module always with the \verb|pyxgraphics| keyword set to
-0, this switches off a hack that might be convenient for less
-experienced \LaTeX-users.
+The packages in the \LaTeX{} graphics bundle (\texttt{color.sty},
+\texttt{graphics.sty}, \texttt{graphicx.sty}, \ldots) make extensive
+use of \texttt{\textbackslash{}special} commands and \PyX{} defines a
+clean set of \texttt{\textbackslash{}special} commands to fit the
+needs of the \LaTeX{} graphics bundle. The \texttt{pyx.def} driver
+file need be used to tell the \LaTeX{} graphics bundle about the
+syntax of the \texttt{\textbackslash{}special} commands as expected by
+\PyX{}. You can put the driver file \texttt{pyx.def} into your
+\LaTeX{} search path and add the content of both files
+\texttt{color.cfg} and \texttt{graphics.cfg} to your personal
+configuration files.\footnote{If you do not know what we're talking
+about you can just ignore this paragraph but keep sure to not unset
+the \var{pyxgraphics} keyword argument.} After you have installed the
+\texttt{cfg} files please use the \module{text} module with unset
+\code{pyxgraphics} keyword argument which will switch off a
+convenience hack for less experienced \LaTeX{} users. You can then
+import the \LaTeX{} graphics bundle packages and related packages
+(e.g.~\texttt{rotating}, \ldots) with the option~\texttt{pyx},
+e.g.~\texttt{\textbackslash{}usepackage[pyx]\{color,graphicx\}}. Please
+note that the option~\texttt{pyx} is only available with unset
+\var{pyxgraphics} keyword argument and a properly installed driver
+file. Otherwise omit the specification of a driver when loading the
+packages.
 
-You can then import the packages of the graphics-bundle and related
-packages (e.g.~rotating, \ldots) with the option~\verb|pyx|,
-e.g.~\verb|\usepackage[pyx]{color,graphicx}|. Please note that the
-option~\verb|pyx| is only available with \verb|pyxgraphics=0| and a
-properly installed driver file. Otherwise do not use this option, omit
-it completely or say~\verb|[dvips]|.
+When defining colours in \LaTeX{} in one of the colour models
+\texttt{gray}, \texttt{cmyk}, \texttt{rgb}, \texttt{RGB}, \texttt{hsb}
+\PyX{} will use the corresponding values (one to four real numbers).
+When you use one of the \texttt{named} colors in \LaTeX{} \PyX{} will
+use the corresponding predefined colour (see module \texttt{color} and
+the colour table at the end of the manual).
 
-When defining colours in \LaTeX{} as one of the colour models
-\verb|gray|, \verb|cmyk|, \verb|rgb|, \verb|RGB|, \verb|hsb| then
-\PyX{} will use the corresponding values (one to four real numbers)
-for output. When you use one of the \verb|named| colors in \LaTeX{}
-then \PyX{} will use the corresponding predefined colour (see module
-\verb|color| and the colour table at the end of the manual).
-
-When importing eps-graphics in \LaTeX{} then \PyX{} will rotate, scale
-and clip your file like you expect it. Note that \PyX{} cannot import
-other graphics files than \verb|eps| at the moment.
+When importing Encapsulated PostScript files (\texttt{eps} files)
+\PyX{} will rotate, scale and clip your file like you expect it. Other
+graphic formats can not be imported via the graphics package at the
+moment.
 
 For reference purpose, the following specials can be handled by the
-\verb|text| module at the moment:\medskip
+\PyX{} at the moment:
 
-\begingroup
-\leftskip3em
-\parindent-3em
-\parskip0.5ex
-\texttt{PyX:color\_begin (model) (spec)}\\
-  starts a colour. (model)~is one of
-  \{\verb|gray|, \verb|cmyk|, \verb|rgb|, \verb|hsb|, \verb|texnamed|\}.
-  (spec)~depends on the model: a name or some numbers.\par
-\texttt{PyX:color\_end} ends a colour.\par
-\texttt{PyX:epsinclude file= llx= lly= urx= ury= width= height= clip=0/1}\\
-  includes an eps-file. The values of llx to ury are in the files' coordinate
-  system and specify the part of the graphics that should become the specified
-  width and height in the outcome. The graphics may be clipped. The last three
-  parameters are optional.\par
-\texttt{PyX:scale\_begin (x) (y)}\\
-  begins scaling from the current point.\par
-\texttt{PyX:scale\_end} ends scaling.\par
-\texttt{PyX:rotate\_begin (angle)} begins rotation around the current
-  point.\par
-\texttt{PyX:rotate\_end} ends rotation.\par
-\endgroup
+\begin{description}
+\item[\texttt{PyX:color\_begin (model) (spec)}]
+  starts a colour. \texttt{(model)}~is one of
+  \texttt{gray}, \texttt{cmyk}, \texttt{rgb}, \texttt{hsb}, or
+  \texttt{texnamed}. \texttt{(spec)}~depends on the model: a name or
+  some numbers
+\item[\texttt{PyX:color\_end}]
+  ends a colour.
+\item[\texttt{PyX:epsinclude file= llx= lly= urx= ury= width= height= clip=0/1}]
+  includes an Encapsulated PostScript file (\texttt{eps}
+  files). The values of \texttt{llx} to \texttt{ury} are in the files'
+  coordinate system and specify the part of the graphics that should
+  become the specified \texttt{width} and \texttt{height} in the
+  outcome. The graphics may be clipped. The last three parameters are
+  optional.
+\item[\texttt{PyX:scale\_begin (x) (y)}]
+  begins scaling from the current point.
+\item[\texttt{PyX:scale\_end}]
+  ends scaling.
+\item[\texttt{PyX:rotate\_begin (angle)}]
+  begins rotation around the current point.
+\item[\texttt{PyX:rotate\_end}]
+  ends rotation.
+\end{description}
 
-
-\section[TeX/LaTeX message parsers]{\TeX/\LaTeX{} message parsers}
+\section[TeX message parsers]{\TeX{} message parsers}
+\declaremodule{}{text}
+\modulesynopsis{\TeX/\LaTeX interface}
 
 Message parsers are used to scan the output of \TeX/\LaTeX. The output
-is analysed by a sequence of message parsers. Each of them analyses
-the output and removes those parts of the output, it feels responsible
-for. If there is nothing left in the end, the message got validated,
-otherwise an exception is raised reporting the problem.
+is analysed by a sequence of \TeX{} message parsers. Each message
+parser analyses the output and removes those parts of the output, it
+feels responsible for. If there is nothing left in the end, the
+message got validated, otherwise an exception is raised reporting the
+problem. A message parser might issue a warning when removing some
+output to give some feedback to the user.
 
-\medskip
-\begin{tabular}{ll}
-parser name&purpose\\
-\hline
-\texttt{texmessage.load}&loading of files (accept \texttt{(file ...)})\\
-\texttt{texmessage.loadfd}&loading of files (accept \texttt{(file.fd)})\\
-\texttt{texmessage.graphicsload}&loading of graphic files (accept \texttt{<file.eps>})\\
-\texttt{texmessage.ignore}&accept everything as a valid output\\
-\end{tabular}
-\medskip
+\begin{classdesc}{texmessage}{}
+  This class acts as a container for \TeX{} message parsers instances,
+  which are all instances of classes derived from \class{texmessage}.
+\end{classdesc}
 
-More specialised message parsers should become available as required.
-Please feel free to contribute (e.g. with ideas/problems; code is
-desired as well, of course). There are further message parsers for
-\PyX{}s internal use, but we skip them here as they are not
-interesting from the users point of view.
+The following \TeX{} message parser instances are available:
+
+\begin{memberdesc}{start}
+  Check for \TeX/\LaTeX{} startup message including scrollmode test.
+\end{memberdesc}
+\begin{memberdesc}{noaux}
+  Ignore \LaTeX{}s no-aux-file warning.
+\end{memberdesc}
+\begin{memberdesc}{end}
+  Check for proper \TeX/\LaTeX{} tear down message.
+\end{memberdesc}
+\begin{memberdesc}{load}
+  Accepts arbitrary loading of files without checking for details,
+  \emph{i.e.} accept \texttt{(\emph{file} ...)} where
+  \texttt{\emph{file}} is an readable file.
+\end{memberdesc}
+\begin{memberdesc}{loadfd}
+  Accepts arbitrary loading of \texttt{fd} files,
+  \emph{i.e.} accept \texttt{(\emph{file}.fd)} where
+  \texttt{\emph{file}.fd} is an readable file.
+\end{memberdesc}
+\begin{memberdesc}{graphicsload}
+  Accepts arbitrary loading of \texttt{eps} files,
+  \emph{i.e.} accept \texttt{(\emph{file}.eps)} where
+  \texttt{\emph{file}.eps} is an readable file.
+\end{memberdesc}
+\begin{memberdesc}{ignore}
+  Ignores everything (this is probably a bad idea, but sometimes you
+  might just want to ignore everything).
+\end{memberdesc}
+\begin{memberdesc}{allwarning}
+  Ignores everything but issues a warning.
+\end{memberdesc}
+\begin{memberdesc}{fontwarning}
+  Issues a warning about font substitutions of the \LaTeX{}s NFSS.
+\end{memberdesc}
+\begin{memberdesc}{boxwarning}
+  Issues a warning on under- and overfull horizontal and vertical boxes.
+\end{memberdesc}
 
 \section{The defaulttexrunner instance}
-The \verb|defaulttexrunner| is an instance of the class
-\verb|texrunner|, which is automatically created by the \verb|text|
-module. Additionally, the methods \verb|text|, \verb|preamble|, and
-\verb|set| are available as module functions accessing the
-\verb|defaulttexrunner|. This single \verb|texrunner| instance is
-sufficient in most cases.
+\declaremodule{}{text}
+\modulesynopsis{\TeX/\LaTeX interface}
 
-%%% Local Variables:
-%%% mode: latex
-%%% TeX-master: "manual.tex"
-%%% End:
+\begin{datadesc}{defaulttexrunner}
+  The \code{defaulttexrunner} is an instance of \class{texrunner}. It
+  is created when the \module{text} module is loaded and it is used as
+  the default texrunner instance by all \class{canvas} instances to
+  implement its \method{text()} method.
+\end{datadesc}
+
+\begin{funcdesc}{preamble}{...}
+  \code{defaulttexrunner.preamble}
+\end{funcdesc}
+
+\begin{funcdesc}{text}{...}
+  \code{defaulttexrunner.text}
+\end{funcdesc}
+
+\begin{funcdesc}{set}{...}
+  \code{defaulttexrunner.set}
+\end{funcdesc}
+
+\begin{funcdesc}{reset}{...}
+  \code{defaulttexrunner.reset}
+\end{funcdesc}

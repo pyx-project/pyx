@@ -325,22 +325,25 @@ class _texmessageignore(_texmessageload):
 
 texmessage.start = _texmessagestart()
 texmessage.noaux = _texmessagenoaux()
-texmessage.inputmarker = _texmessageinputmarker()
-texmessage.pyxbox = _texmessagepyxbox()
-texmessage.pyxpageout = _texmessagepyxpageout()
 texmessage.end = _texmessageend()
-texmessage.emptylines = _texmessageemptylines()
 texmessage.load = _texmessageload()
 texmessage.loadfd = _texmessageloadfd()
 texmessage.graphicsload = _texmessagegraphicsload()
 texmessage.ignore = _texmessageignore()
+
+# for internal use:
+texmessage.inputmarker = _texmessageinputmarker()
+texmessage.pyxbox = _texmessagepyxbox()
+texmessage.pyxpageout = _texmessagepyxpageout()
+texmessage.emptylines = _texmessageemptylines()
 
 
 class _texmessageallwarning(texmessage):
     """validates a given pattern 'pattern' as a warning 'warning'"""
 
     def check(self, texrunner):
-        warnings.warn("ignoring all warnings:\n%s" % texrunner.texmessageparsed)
+        if texrunner.texmessageparsed:
+            warnings.warn("ignoring all warnings:\n%s" % texrunner.texmessageparsed)
         texrunner.texmessageparsed = ""
 
 texmessage.allwarning = _texmessageallwarning()
@@ -464,7 +467,8 @@ phantom = _phantom()
 clearphantom = attr.clearclass(_phantom)
 
 
-defaultsizelist = ["normalsize", "large", "Large", "LARGE", "huge", "Huge", None, "tiny", "scriptsize", "footnotesize", "small"]
+defaultsizelist = ["normalsize", "large", "Large", "LARGE", "huge", "Huge",
+None, "tiny", "scriptsize", "footnotesize", "small"]
 
 class size(attr.sortbeforeattr, textattr, _localattr):
     "font size"
