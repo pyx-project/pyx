@@ -28,6 +28,14 @@ except:
     pass
 import bbox, canvas, pswriter, pdfwriter, t1strip
 
+try:
+    enumerate([])
+except NameError:
+    # fallback implementation for Python 2.2 and below
+    def enumerate(list):
+        return zip(xrange(len(list)), list)
+
+
 # _PFB_ASCII = "\200\1"
 # _PFB_BIN = "\200\2"
 # _PFB_DONE = "\200\3"

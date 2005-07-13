@@ -283,6 +283,8 @@ class _texmessageload(texmessage):
                 if (os.access(filename, os.R_OK) or
                     len(additional) and additional[0] == "\n" and os.access(filename+additional.split()[0], os.R_OK)):
                     lowestbracketlevel = lowestbracketlevel[:m.start()] + lowestbracketlevel[m.end():]
+                else:
+                    break
                 m = self.pattern.search(lowestbracketlevel)
             else:
                 texrunner.texmessageparsed = lowestbracketlevel
@@ -541,12 +543,12 @@ _textattrspreamble += "\\newbox\\PyXBoxVAlign%\n\\newdimen\PyXDimenVAlign%\n"
 
 class valign(attr.sortbeforeexclusiveattr, textattr):
 
-    def __init__(self, valign):
-        self.valign = valign
+    def __init__(self, avalign):
+        self.valign = avalign
         attr.sortbeforeexclusiveattr.__init__(self, valign, [parbox_pt, _localattr])
 
     def apply(self, expr):
-        return r"\setbox\PyXBoxVAlign=\hbox{{%s}}\PyXDimenVAlign=%.5f\ht\PyXBoxVAlign\advance\PyXDimenVAlign by -%.5f\dp\PyXBoxVAlign\lower\PyXDimenVAlign\box\PyXBoxVAlign" % (expr, 1-valign, valign)
+        return r"\setbox\PyXBoxVAlign=\hbox{{%s}}\PyXDimenVAlign=%.5f\ht\PyXBoxVAlign\advance\PyXDimenVAlign by -%.5f\dp\PyXBoxVAlign\lower\PyXDimenVAlign\box\PyXBoxVAlign" % (expr, 1-self.valign, self.valign)
 
 valign.top = valign(0)
 valign.middle = valign(0)

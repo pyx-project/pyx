@@ -24,6 +24,13 @@
 import copy, time, math
 import style, version, type1font, unit
 
+try:
+    enumerate([])
+except NameError:
+    # fallback implementation for Python 2.2 and below
+    def enumerate(list):
+        return zip(xrange(len(list)), list)
+
 
 class PSregistry:
 

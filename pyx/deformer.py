@@ -860,7 +860,7 @@ class parallel(deformer): # <<<
                     extra_param, new_param = intsparams[0][0], intsparams[1][0]
                     new_nspath = new_nspath.segments([0, new_param])[0]
                     extra_nspath = extra_nspath.segments([extra_param, len(extra_nspath)])[0]
-                    new_npitems = extra_nspath[:]
+                    new_npitems = extra_nspath.normsubpathitems
                     # in case the intersection was not sufficiently exact:
                     new_npitems[0].x0_pt, new_npitems[0].y0_pt = new_nspath.atend_pt()
                 else:
@@ -879,7 +879,7 @@ class parallel(deformer): # <<<
                         extra_param, new_param = intsparams[0][-1], intsparams[1][-1]
                         new_nspath = new_nspath.segments([new_param, len(new_nspath)])[0]
                         extra_nspath = extra_nspath.segments([0, extra_param])[0]
-                        new_npitems = extra_nspath[:]
+                        new_npitems = extra_nspath.normsubpathitems
                         # in case the intersection was not sufficiently exact:
                         if isinstance(new_npitems[0], path.normcurve_pt):
                             new_npitems[0].x3_pt, new_npitems[0].y3_pt = new_nspath.atend_pt()

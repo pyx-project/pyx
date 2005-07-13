@@ -30,6 +30,13 @@ except:
 
 import unit, style, type1font, version
 
+try:
+    enumerate([])
+except NameError:
+    # fallback implementation for Python 2.2 and below
+    def enumerate(list):
+        return zip(xrange(len(list)), list)
+
 
 class PDFregistry:
 

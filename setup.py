@@ -9,7 +9,10 @@ interface. Complex tasks like 2d and 3d plots in publication-ready quality are
 built out of these primitives.
 """
 
-from distutils import log
+try:
+    from distutils import log
+except:
+    log = None
 from distutils.core import setup, Extension
 from distutils.util import change_root, convert_path
 from distutils.command.build_py import build_py
@@ -88,7 +91,8 @@ class pyx_build_py(build_py):
             outdir = os.path.dirname(outfile)
             self.mkpath(outdir)
 
-            log.info("creating proper %s" % outfile)
+            if log:
+                log.info("creating proper %s" % outfile)
 
             # create the additional relative path parts to be inserted into the
             # os.path.join methods in the original siteconfig.py
@@ -144,7 +148,8 @@ class pyx_install_lib(install_lib):
 
         # such that we can easily overwrite siteconfig.py
         outfile = os.path.join(self.install_dir, "pyx", "siteconfig.py")
-        log.info("creating proper %s" % outfile)
+        if log:
+            log.info("creating proper %s" % outfile)
         f = open(outfile, "w")
         f.writelines(siteconfiglines)
         f.close()

@@ -26,6 +26,8 @@
 # - should we improve on the arc length -> arg parametrization routine or
 #   should we at least factor it out?
 
+from __future__ import nested_scopes
+
 import sys, math
 import attr, canvas, color, helper, path, style, trafo, unit
 

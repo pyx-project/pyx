@@ -484,10 +484,10 @@ class font:
         return int(length*long(z) >> shift)
 
     def _convert_tfm_to_ds(self, length):
-        return (16*long(round(length*self.q*self.tfmconv))/16777216) * self.pyxconv * 1000 / self.getsize_pt()
+        return (16*long(round(length*float(self.q)*self.tfmconv))/16777216) * self.pyxconv * 1000 / self.getsize_pt()
     
     def _convert_tfm_to_pt(self, length):
-        return (16*long(round(length*self.q*self.tfmconv))/16777216) * self.pyxconv
+        return (16*long(round(length*float(self.q)*self.tfmconv))/16777216) * self.pyxconv
 
     # routines returning lengths as integers in dvi units
 
