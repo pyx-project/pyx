@@ -24,16 +24,13 @@
         <tr><td>clipping becomes a box property</td><td>not started</td><td>planned for one of the next releases</td></tr>
         <tr><td>union, intersection etc. of boxes</td><td>not started</td><td>low priority</td></tr>
         <tr><td colspan=3 class="tablehead">text</td></tr>
-        <tr><td>improve TeX/LaTeX message handling (overful/underful boxes etc.)</td><td>not started</td><td>planned for 0.8 (wobsta)</td></tr>
         <tr><td>text in arbitrarily shaped boxes and float text from box to box</td><td>experimental code</td><td>low priority</td></tr>
         <tr><td colspan=3 class="tablehead">graph system</td></tr>
-        <tr><td>axis data handling</td><td>not started</td><td>planned for 0.8 (wobsta)</td></tr>
-        <tr><td>merging of split and bar axes</td><td>not started</td><td>planned for 0.8 (wobsta)</td></tr>
         <tr><td>3d graph geometry and surface style</td><td>very old experimental code</td><td>planned for one of the next releases</td></tr>
         <tr><td>polar graph geometry</td><td>not started</td><td>planned for one of the next releases</td></tr>
         <tr><td colspan=3 class="tablehead">backend</td></tr>
         <tr><td>svg support</td><td>not started</td><td>low priority</td></tr>
-        <tr><td>internal Type1 font stripping</td><td>not started</td><td>low priority</td></tr>
+        <tr><td>internal Type1 font stripping</td><td>not started</td><td>planned for one of the next releases</td></tr>
       </table>
     </div>
 
