@@ -88,7 +88,7 @@ code to the current version of \PyX. In order to do that, one needs the
 corresponding \PyX{} package (see \uaref{q:where_do_I_get_PyX} if you need to
 download it), which should be unpacked below a directory, e.g.\ 
 \texttt{/home/xyz/Python},  where you want to keep the various \PyX{} versions.
-This will result in a subdirectory with a name like \texttt{PyX-0.6.3} which
+This will result in a subdirectory with a name like \texttt{PyX-0.8} which
 contains the contents of the corresponding package. You can then ask Python to 
 first look in the appropriate directory before looking for the current version 
 of \PyX{} by inserting the following code (appropriately modified according 
@@ -96,7 +96,7 @@ to your needs) at the beginning of your program before importing the \PyX{}
 module:
 \begin{progcode}
 import sys\\
-sys.path[:0]~=~["/home/xyz/Python/PyX-0.6.3"]
+sys.path.insert(0, "/home/xyz/Python/PyX-0.8")
 \end{progcode}
 Including appropriate lines even if the current version of \PyX{} is used, 
 might turn out to be helpful when the current version has become an old 
@@ -107,7 +107,7 @@ If your operating system supports path expansion, you might use as an
 alternative:
 \begin{progcode}
 import sys, os\\
-sys.path[:0]~=~[os.path.expanduser("\char126/Python/PyX-0.6.3")]
+sys.path.insert(0, os.path.expanduser("\char126/Python/PyX-0.8"))
 \end{progcode}
 which will expand the tilde to your home directory.
 }
@@ -122,11 +122,13 @@ get \PyX{} to work on your system.
 
 \question{c}{Under which versions of Python will \PyX{} run?}
 {}
-{\PyX{} is supposed to work with Python 2.0 and above. However, most of the
-development takes place under the current production version of Python (2.3.3
-by the time of this writing) and thus \PyX{} is better tested with this version. On the other hand, the examples and tests are verified to run with all Python
-versions 2.x. \PyX{} will not work with Python 1.x due to missing language 
-features. 
+{\PyX{} is supposed to work with Python 2.1 and above. However, most of the
+development takes place under the current production version of Python
+(2.4.1 by the time of this writing) and thus \PyX{} is better tested
+with this version. On the other hand, the examples and tests are
+verified to run with Python 2.1 and above using the latest bugfix
+releases each. \PyX{} will not work with earlier Python versions due
+to missing language features. 
 
 The version of your Python interpreter can be determined by calling 
 it with the option \texttt{-V}. Alternatively, you can simply start the 
@@ -138,16 +140,18 @@ default Python version need not be the same for all users.
 \question{a}{Does \PyX{} provide a GUI to view the produced image?}
 {}
 {No, \PyX{} itself does not provide a means to view the produced image. The 
-result of a \PyX{} run is an EPS (= Encapsulated PostScript) file which can
-be viewed, printed or imported into other applications. There are several
-means of viewing EPS files. A common way would be to use \texttt{ghostview}
-which provides a user interface to the PostScript interpreter
-\texttt{ghostscript}. More information about this software, which is
-available for a variety of platforms, can be found at 
-\url{http://www.cs.wisc.edu/~ghost/}. If you do not own a printer which is
-capable of printing PostScript files directly, \texttt{ghostscript} may
-also be useful to translate the EPS file produced by \PyX{} into something
-your printer will understand.}
+result of a \PyX{} run is an EPS (= Encapsulated PostScript) file, a
+PS (= PostScript) file or a PDF (= Portable Document Format) file, which can
+be viewed, printed or imported into other applications.
+
+There are several means of viewing PS and EPS files. A common way
+would be to use \texttt{ghostview} which provides a user interface to
+the PostScript interpreter \texttt{ghostscript}. More information
+about this software, which is available for a variety of platforms,
+can be found at \url{http://www.cs.wisc.edu/~ghost/}. If you do not
+own a printer which is capable of printing PostScript files directly,
+\texttt{ghostscript} may also be useful to translate PS and EPS files
+produced by \PyX{} into something your printer will understand.}
 
 \question{a}{Where can I get help if my question is not answered in this
 FAQ?}
@@ -211,9 +215,9 @@ from pyx import *
 when using \PyX. This allows you for example to write simply 
 \texttt{graph.graphxy}
 instead of \texttt{pyx.graph.graphxy}. The following modules will be loaded:
-\texttt{attr}, \texttt{box}, \texttt{canvas}, \texttt{color}, \texttt{connector}, \texttt{data},
-\texttt{deco}, \texttt{epsfile}, \texttt{graph}, \texttt{path},
-\texttt{style}, \texttt{trafo},  \texttt{text}, and \texttt{unit}.
+\texttt{attr}, \texttt{box}, \texttt{bitmap}, \texttt{canvas}, \texttt{color}, \texttt{connector},
+\texttt{deco}, \texttt{deformer}, \texttt{document}, \texttt{epsfile}, \texttt{graph}, \texttt{path},
+\texttt{pattern}, \texttt{style}, \texttt{trafo},  \texttt{text}, and \texttt{unit}.
 
 For convenience, you might import specific objects of a module like in
 \begin{progcode}
@@ -489,8 +493,6 @@ lines orthogonal to this axis. At least an empty list is needed like in
 \begin{progcode}
 g = graph.graphxy(width=10,\\
 ~~~~~~~~~~~~~~~~~~x=graph.axis.linear(painter=graph.axis.painter.regular(gridattrs=[])),\\
-%~~~~~~~~~~~~~~~~~~~~~~~~~~painter=graph.axis.painter.regular(gridattrs=[])\\
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~),\\
 ~~~~~~~~~~~~~~~~~~y=graph.axis.linear()\\
 ~~~~~~~~~~~~~~~~~~)
 \end{progcode}
