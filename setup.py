@@ -184,7 +184,7 @@ doclines = __doc__.split("\n")
 
 setup(name="PyX",
       version=pyx.__version__,
-      author="Jörg Lehmann, André Wobst",
+      author=u"Jörg Lehmann, André Wobst",
       author_email="pyx-devel@lists.sourceforge.net",
       url="http://pyx.sourceforge.net/",
       description=doclines[0],
