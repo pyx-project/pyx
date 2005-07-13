@@ -22,9 +22,14 @@ from optparse import OptionParser
 from pyx import *
 from pyx import bbox, dvifile, version
 
-parser = OptionParser(usage="usage: %prog -o output-file [-p paperformat] dvi-file", version="%prog " + version.version)
-parser.add_option("-o", "--output", type="string", dest="output", help="output-file")
-parser.add_option("-p", "--paperformat", type="string", dest="paperformat", default=None, help="paper format string (default A4)")
+parser = OptionParser(usage="usage: %prog -o output-file [-p paperformat] dvi-file",
+                      version="%prog " + version.version)
+parser.add_option("-o", "--output",
+                  type="string", dest="output",
+                  help="output-file")
+parser.add_option("-p", "--paperformat",
+                  type="string", dest="paperformat", default=None,
+                  help="optional paper format string")
 (options, args) = parser.parse_args()
 if len(args) != 1:
     parser.error("can process a single dvi-file only")
