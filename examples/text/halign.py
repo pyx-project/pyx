@@ -11,17 +11,17 @@ from pyx import *
 c = canvas.canvas()
 
 c.set([style.linestyle.dotted])
-c.stroke(path.line(-5, 0, -5, 8))
-c.stroke(path.line(0, 0, 0, 8))
-c.stroke(path.line(5, 0, 5, 8))
+c.stroke(path.line(-5, 0, -5, 4))
+c.stroke(path.line(0, 0, 0, 4))
+c.stroke(path.line(5, 0, 5, 4))
 
-c.text(-5, 8, r"Hello, world!", [text.halign.boxleft])
-c.text(0, 8, r"Hello, world!", [text.halign.boxcenter])
-c.text(5, 8, r"Hello, world!", [text.halign.boxright])
+c.text(-5, 4, r"Hello, world!", [text.halign.boxleft])
+c.text(0, 4, r"Hello, world!", [text.halign.boxcenter])
+c.text(5, 4, r"Hello, world!", [text.halign.boxright])
 
-c.text(0, 6, r"Hello,\par world!", [text.parbox(2.5), text.halign.boxcenter, text.halign.flushleft])
-c.text(0, 4, r"Hello,\par world!", [text.parbox(2.5), text.halign.boxcenter, text.halign.flushcenter])
-c.text(0, 2, r"Hello,\par world!", [text.parbox(2.5), text.halign.boxcenter, text.halign.flushright])
+c.text(0, 3, r"Hello,\par world!", [text.parbox(2.5), text.halign.boxcenter, text.halign.flushleft])
+c.text(0, 2, r"Hello,\par world!", [text.parbox(2.5), text.halign.boxcenter, text.halign.flushcenter])
+c.text(0, 1, r"Hello,\par world!", [text.parbox(2.5), text.halign.boxcenter, text.halign.flushright])
 
 c.text(-5, 0, r"Hello,\par world!", [text.parbox(2.5), text.halign.left])
 c.text(0, 0, r"Hello,\par world!", [text.parbox(2.5), text.halign.center])
