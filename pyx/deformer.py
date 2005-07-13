@@ -862,7 +862,9 @@ class parallel(deformer): # <<<
                     extra_nspath = extra_nspath.segments([extra_param, len(extra_nspath)])[0]
                     new_npitems = extra_nspath.normsubpathitems
                     # in case the intersection was not sufficiently exact:
-                    new_npitems[0].x0_pt, new_npitems[0].y0_pt = new_nspath.atend_pt()
+                    # CAREFUL! because we newly created all the new_npitems and
+                    # the items in extra_nspath, we may in-place change the starting point
+                    new_npitems[0] = new_npitems[0].modifiedbegin_pt(*new_nspath.atend_pt())
                 else:
                     raise # how did we get here?
 
@@ -875,16 +877,15 @@ class parallel(deformer): # <<<
                     intsparams = extra_nspath.intersect(new_nspath)
                     # [[a,b,c], [a,b,c]]
                     if intsparams:
-                        # take the first intersection point:
+                        # take the last intersection point:
                         extra_param, new_param = intsparams[0][-1], intsparams[1][-1]
                         new_nspath = new_nspath.segments([new_param, len(new_nspath)])[0]
                         extra_nspath = extra_nspath.segments([0, extra_param])[0]
                         new_npitems = extra_nspath.normsubpathitems
                         # in case the intersection was not sufficiently exact:
-                        if isinstance(new_npitems[0], path.normcurve_pt):
-                            new_npitems[0].x3_pt, new_npitems[0].y3_pt = new_nspath.atend_pt()
-                        elif isinstance(new_npitems[0], path.normline_pt):
-                            new_npitems[0].x1_pt, new_npitems[0].y1_pt = new_nspath.atend_pt()
+                        # CAREFUL! because we newly created all the new_npitems and
+                        # the items in extra_nspath, we may in-place change the end point
+                        new_npitems[-1] = new_npitems[-1].modifiedend_pt(*new_nspath.atbegin_pt())
                     else:
                         raise # how did we get here?
 
