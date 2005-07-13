@@ -551,8 +551,8 @@ class valign(attr.sortbeforeexclusiveattr, textattr):
         return r"\setbox\PyXBoxVAlign=\hbox{{%s}}\PyXDimenVAlign=%.5f\ht\PyXBoxVAlign\advance\PyXDimenVAlign by -%.5f\dp\PyXBoxVAlign\lower\PyXDimenVAlign\box\PyXBoxVAlign" % (expr, 1-self.valign, self.valign)
 
 valign.top = valign(0)
-valign.middle = valign(0)
-valign.bottom = valign(0)
+valign.middle = valign(0.5)
+valign.bottom = valign(1)
 valign.clear = valign.baseline = attr.clearclass(valign)
 
 
