@@ -349,22 +349,23 @@ class _texmessageallwarning(texmessage):
 texmessage.allwarning = _texmessageallwarning()
 
 
-class texmessagepatternwarning(texmessage):
-    """validates a given pattern 'pattern' as a warning 'warning'"""
+class texmessagepattern(texmessage):
+    """validates a given pattern and issue a warning (when set)"""
 
-    def __init__(self, warning, pattern):
-        self.warning = warning
+    def __init__(self, pattern, warning=None):
         self.pattern = pattern
+        self.warning = warning
 
     def check(self, texrunner):
         m = self.pattern.search(texrunner.texmessageparsed)
         while m:
             texrunner.texmessageparsed = texrunner.texmessageparsed[:m.start()] + texrunner.texmessageparsed[m.end():]
-            warnings.warn("%s:\n%s" % (self.warning, m.string[m.start(): m.end()].rstrip()))
+            if self.warning:
+                warnings.warn("%s:\n%s" % (self.warning, m.string[m.start(): m.end()].rstrip()))
             m = self.pattern.search(texrunner.texmessageparsed)
 
-texmessage.fontwarning = texmessagepatternwarning("ignoring font warning", re.compile(r"^LaTeX Font Warning: .*$(\n^\(Font\).*$)*", re.MULTILINE))
-texmessage.boxwarning = texmessagepatternwarning("ignoring overfull/underfull box warning", re.compile(r"^(Overfull|Underfull) \\[hv]box.*$(\n^..*$)*\n^$\n", re.MULTILINE))
+texmessage.fontwarning = texmessagepattern(re.compile(r"^LaTeX Font Warning: .*$(\n^\(Font\).*$)*", re.MULTILINE), "ignoring font warning")
+texmessage.boxwarning = texmessagepattern(re.compile(r"^(Overfull|Underfull) \\[hv]box.*$(\n^..*$)*\n^$\n", re.MULTILINE), "ignoring overfull/underfull box warning")
 
 
 
