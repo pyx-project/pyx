@@ -79,7 +79,7 @@ TODO before release:
   - FAQ:
     - check examples
 
-0.8 (2005/07/??):
+0.8 (2005/07/12):
   - path module:
     - path parameters and argument handling
     - the arct to arc/arcn conversion (needed for bbox calculation and for conversion into
@@ -265,6 +265,9 @@ TODO before release:
     - trafos are now deformers
   - examples:
     - a bunch of bargraph examples have been added
+  - contrib:
+    - a simple converter from dvi to EPS/PS/PDF files (dviconvert.py) has been added
+    - a simple imagine to EPS/PS/PDF converter (imgconvert.py) has been added
 
 
 0.6.x (????/??/??):
