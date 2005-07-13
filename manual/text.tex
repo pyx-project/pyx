@@ -108,8 +108,8 @@ and controling a \TeX/\LaTeX{} instance.
   \code{[texmessage.start]} for \var{texmessagesstart},
   \code{[texmessage.load]} for \var{texmessagesdocclass},
   \code{[texmessage.load, texmessage.noaux]} for
-  \var{texmessagesbegindoc}, and \code{[texmessage.texend]} for
-  \var{texmessagesend}.
+  \var{texmessagesbegindoc}, and \code{[texmessage.texend,
+  texmessage.fontwarning]} for \var{texmessagesend}.
 
   Similarily \var{texmessagesdefaultpreamble} and
   \var{texmessagesdefaultrun} take \TeX{} message parser to be merged
@@ -561,6 +561,15 @@ The following \TeX{} message parser instances are available:
 \begin{memberdesc}{boxwarning}
   Issues a warning on under- and overfull horizontal and vertical boxes.
 \end{memberdesc}
+
+\begin{classdesc}{texmessagepattern}{pattern, warning=None}
+  This is a derived class of \class{texmessage}. It can be used to
+  construct simple \TeX{} message parsers, which validate a \TeX{}
+  message matching a certain regular expression pattern \var{pattern}.
+  When \var{warning} is set, a warning message is issued. Several of
+  the \TeX{} message parsers described above are implemented using
+  this class.
+\end{classdesc}
 
 \section{The defaulttexrunner instance}
 \declaremodule{}{text}
