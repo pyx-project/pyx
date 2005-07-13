@@ -2,11 +2,11 @@ import sys
 if sys.path[0] != "../..":
     sys.path.insert(0, "../..")
 
-import unittest, warnings
+import unittest, warnings, os
 
 from pyx import text, unit
 
-text.set(mode="latex", texdebug="bla.tex", usefiles=["bla.log"])
+# text.set(texdebug="bla.tex", usefiles=["bla.log"])
 
 class MessageParserTestCase(unittest.TestCase):
 
@@ -63,6 +63,34 @@ Underfull \hbox (badness 171) detected at line 0
 Overfull \vbox (2.4917pt too high) detected at line 0""", textattrs=[text.parbox(1.9)])
         self.failUnlessRaisesUserWarning(r"\parindent=0pt\vbox to 1cm {hello, world, hello, world}", r"""ignoring overfull/underfull box warning:
 Underfull \vbox (badness 10000) detected at line 0""", textattrs=[text.parbox(1.9)])
+
+    def testLoadLongFileNames(self):
+        testfilename = "x"*100
+        f = open(testfilename + ".tex", "w")
+        f.write("\message{ignore this}")
+        f.close()
+        text.text(0, 0, "\\input %s\n" % testfilename, texmessages=[text.texmessage.load])
+        os.remove(testfilename + ".tex")
+        f = open(testfilename + ".eps", "w")
+        f.write("%%BoundingBox: 0 0 10 10")
+        f.close()
+        text.text(0, 0, r"\includegraphics{%s}" % testfilename)
+        os.remove(testfilename + ".eps")
+
+    def setUp(self):
+        text.set(mode="latex")
+        text.reset()
+        text.preamble(r"\usepackage{graphicx}")
+
+    def tearDown(self):
+        try:
+            warnings.resetwarnings()
+            warnings.filterwarnings(action="error")
+            text.defaulttexrunner.finishdvi()
+        except UserWarning, w:
+            if str(w) != """ignoring font warning:
+LaTeX Font Warning: Some font shapes were not available, defaults substituted.""":
+                raise
 
 
 if __name__ == "__main__":
