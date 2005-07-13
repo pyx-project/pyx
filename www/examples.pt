@@ -30,8 +30,12 @@
       <h2>Further examples</h2>
       <p>
         Further examples are available on separate pages:
-        <span tal:repeat="item options/examplepages" tal:omit-tag=""><a tal:attributes="href python:item+'/index.html'" tal:content="python: item.title()">Examples</a><span tal:omit-tag="" tal:condition="not: repeat/item/end">,</span></span>.
       </p>
+      <ul>
+        <li tal:repeat="item options/examplepages">
+          <a tal:attributes="href python:item+'/index.html'" tal:content="python: item.title()">Examples</a>
+        </li>
+      </ul>
     </span>
 
   </div>
