@@ -21,7 +21,8 @@
 from optparse import OptionParser
 from pyx import dvifile, version
 
-parser = OptionParser(usage="usage: %prog dvi-file", version="%prog " + version.version)
+parser = OptionParser(usage="usage: %prog dvi-file",
+                      version="%prog " + version.version)
 (options, args) = parser.parse_args()
 if len(args) != 1:
     parser.error("can process a single dvi-file only")
