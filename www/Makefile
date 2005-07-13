@@ -21,8 +21,7 @@ chmod:
 build: always
 	-mkdir build
 	cp main.css build
-	-mkdir build/icons
-	-cp icons/* build/icons
+	-cp *.png *.ico build
 	cp png/*.png ../manual/manual.pdf ../faq/pyxfaq.pdf build
 	cp -r ../manual/manual build
 	for d in "" $(shell grep / ../examples/INDEX); \
