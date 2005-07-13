@@ -192,13 +192,6 @@ class _texmessageend(texmessage):
             except (IndexError, ValueError):
                 pass
 
-        # pass font size summary over to PyX user
-        fontpattern = re.compile(r"LaTeX Font Warning: Size substitutions with differences\s*\(Font\).* have occurred.\s*")
-        m = fontpattern.search(texrunner.texmessageparsed)
-        if m:
-            warnings.warn("LaTeX has detected Font Size substituion differences.")
-            texrunner.texmessageparsed = texrunner.texmessageparsed[:m.start()] + texrunner.texmessageparsed[m.end():]
-
         # check for "(see the transcript file for additional information)"
         try:
             s1, s2 = texrunner.texmessageparsed.split("(see the transcript file for additional information)", 1)
@@ -252,7 +245,7 @@ class _texmessageload(texmessage):
 
     __implements__ = _Itexmessage
 
-    pattern = re.compile(r" *\((?P<filename>[^()\s\n]+)[^()]*\) *")
+    pattern = re.compile(r"\((?P<filename>[^()\s\n]+)(?P<additional>[^()]*)\)")
 
     def baselevels(self, s, maxlevel=1, brackets="()"):
         """strip parts of a string above a given bracket level
@@ -282,10 +275,14 @@ class _texmessageload(texmessage):
         if lowestbracketlevel is not None:
             m = self.pattern.search(lowestbracketlevel)
             while m:
-                if os.access(m.group("filename"), os.R_OK):
+                filename = m.group("filename").replace("\n", "")
+                try:
+                    additional = m.group("additional")
+                except IndexError:
+                    additional = ""
+                if (os.access(filename, os.R_OK) or
+                    len(additional) and additional[0] == "\n" and os.access(filename+additional.split()[0], os.R_OK)):
                     lowestbracketlevel = lowestbracketlevel[:m.start()] + lowestbracketlevel[m.end():]
-                else:
-                    break
                 m = self.pattern.search(lowestbracketlevel)
             else:
                 texrunner.texmessageparsed = lowestbracketlevel
@@ -296,7 +293,10 @@ class _texmessageloadfd(_texmessageload):
     - works like _texmessageload
     - filename must end with .fd and no further text is allowed"""
 
-    pattern = re.compile(r" *\((?P<filename>[^)]+.fd)\) *")
+    pattern = re.compile(r"\((?P<filename>[^)]+.fd)\)")
+
+    def baselevels(self, s, **kwargs):
+        return s
 
 
 class _texmessagegraphicsload(_texmessageload):
@@ -304,10 +304,10 @@ class _texmessagegraphicsload(_texmessageload):
     - works like _texmessageload, but using "<" and ">" as delimiters
     - filename must end with .eps and no further text is allowed"""
 
-    pattern = re.compile(r" *<(?P<filename>[^>]+.eps)> *")
+    pattern = re.compile(r"<(?P<filename>[^>]+.eps)>")
 
-    def baselevels(self, s, brackets="<>", **args):
-        return _texmessageload.baselevels(self, s, brackets=brackets, **args)
+    def baselevels(self, s, **kwargs):
+        return s
 
 
 class _texmessageignore(_texmessageload):
@@ -755,7 +755,7 @@ class texrunner:
     defaulttexmessagesstart = [texmessage.start]
     defaulttexmessagesdocclass = [texmessage.load]
     defaulttexmessagesbegindoc = [texmessage.load, texmessage.noaux]
-    defaulttexmessagesend = [texmessage.end]
+    defaulttexmessagesend = [texmessage.end, texmessage.fontwarning]
     defaulttexmessagesdefaultpreamble = [texmessage.load]
     defaulttexmessagesdefaultrun = [texmessage.loadfd, texmessage.graphicsload,
                                     texmessage.fontwarning, texmessage.boxwarning]
@@ -1011,6 +1011,7 @@ class texrunner:
                 self.texmessage += self.gotqueue.get_nowait()
         except Queue.Empty:
             pass
+        self.texmessage = self.texmessage.replace("\r\n", "\n").replace("\r", "\n")
         self.texmessageparsed = self.texmessage
         if gotevent:
             if expr is not None:
@@ -1021,8 +1022,10 @@ class texrunner:
             texmessages = attr.mergeattrs(texmessages)
             for t in texmessages:
                 t.check(self)
+            keeptexmessageparsed = self.texmessageparsed
             texmessage.emptylines.check(self)
             if len(self.texmessageparsed):
+                self.texmessageparsed = keeptexmessageparsed
                 raise TexResultError("unhandled TeX response (might be an error)", self)
         else:
             raise TexResultError("TeX didn't respond as expected within the timeout period (%i seconds)." % self.waitfortex, self)
