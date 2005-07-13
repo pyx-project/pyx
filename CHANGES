@@ -14,12 +14,13 @@ TODO:
     - translatecanvas should be the default in graph.style.symbol
   - graph.style and graph.data modules
     - exceptions in drawsymbol & friends...
-    - fix docu (or code) of gridattrs functionality of axis painters
+    - fix docu of gridattrs functionality of axis painters
       (how can one, e.g. draw a grid at the ticks and not at the subticks)
   - graph.data module:
     - use csv module (new in 2.3)
     - Check for "inf" and "nan" in datafiles.
-      (When plotted, the graph does not complain, but the postscript will be broken)
+      (When plotted, the graph does not complain, but the output will be broken;
+      this depends on the plattform and is not only an issue within the graph system)
   - graph.style module:
     - add styles using curves instead of lines
   - canvas module:
@@ -34,9 +35,7 @@ TODO:
   - bbox module:
     - height -> getheight, ...
   - mathtree:
-    - might be moved into the graph
-    - perform calc by means of Python itself (see eval code in graph.data, but
-      we should use compiled code instead of eval)
+    - remove and use python instead
   - dvifile module:
     - support single-character mode
   - color module:
@@ -60,9 +59,9 @@ TODO:
       - check and update
     - graphics section:
       Changeable attributes should be explained at a central place.
-    - section titles: "Axes" -> "Axes - module axis" or similar
     - box module:
       - linealign and circlealign
+      - need to be redone anyway
     - graph module:
       styles: document what data name the styles accept (require). Try also to be more
       userfriendly and not to describe immediately the internals of the implementation:
@@ -72,14 +71,12 @@ TODO:
     - describe creation and modification (inplace and ``modify by new'') of
       graph data
 
-TODO before release:
-  - update PyX description in setup.py, README (also update text on prebuilt manual.pdf?),
-    on webpage and later on sf.net project page
 
-  - FAQ:
-    - check examples
-
-0.8 (2005/07/12):
+0.8 (2005/07/13):
+  - changed requirements to python 2.1 or newer:
+    - nested scopes are needed without fallback solution by the path module
+      (at other places fallback solutions for missing nested scopes are missing as well)
+    - use warning module for warnings
   - path module:
     - path parameters and argument handling
     - the arct to arc/arcn conversion (needed for bbox calculation and for conversion into
@@ -99,6 +96,7 @@ TODO before release:
       arguments
   - color module:
     - allow selection on zero range palette (reported by Francisco Borges, cf. bug #1116257)
+  - prolog module: removed due to code reorganisation
   - graph modules:
     - modifications on __init__.py in graph and axis subdirectories to
       make "from pyx.graph import *" working as expected
@@ -131,15 +129,9 @@ TODO before release:
       - remove axispos (use the axis dictionary now, since it now contains
         anchored axis instances and those have shortcuts for the axis positioner
         methods)
-  - prolog module: deleted (replaced by resource module)
   - dvifile:
-    - minimal dvitype.py
-    - dvitype unit test
     - tfm->dvi conversion rounding bugfix
     - fix parsing of empty strings ("") in fontmap files (reported by John Owens, bug #1218983)
-  - changed requirements to python 2.1:
-    - nested scopes are needed without fallback solution by the path module
-    - use warning module for warnings
   - text module:
     - support for halign of boxes and content of boxes (see halign example)
     - take units xscale into account in parbox
@@ -152,9 +144,7 @@ TODO before release:
     - texmessagepattern for easy creation of simple TeX message parsers
     - allow long file names in file checking TeX message parsers
     - no newline removal to not disturbe TeX messages when reporting errors
-    - reworked documentation to match the python documentation standards
-  - tex module:
-    - the very old tex module finally got removed completely
+    - reworked documentation to use the python documentation standards
   - style module:
     - linewidth is no longer a unit.length subclass but expects a such as first argument
   - epsfile module:
@@ -165,9 +155,12 @@ TODO before release:
   - deformer module:
     - improve the smoothing deformer
     - add a parallel deformer
+  - tex module:
+    - the very old tex module finally got removed completely
   - contrib directory:
     - a simple converter from dvi to EPS/PS/PDF files (dviconvert.py) has been added
     - a simple imagine to EPS/PS/PDF converter (imgconvert.py) has been added
+    - a simple dvitype.py has been added
   - update address of FSF all over the place
 
 
