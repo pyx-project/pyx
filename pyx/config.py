@@ -3,7 +3,7 @@
 #
 #
 # Copyright (C) 2003-2004 Jörg Lehmann <joergl@users.sourceforge.net>
-# Copyright (C) 2003-2004 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2003-2005 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
