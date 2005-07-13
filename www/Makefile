@@ -30,7 +30,7 @@ build: always
 	  mkdir build/examples/$$d; \
 	  for s in png py jpg dat eps pdf; \
 	  do \
-	    cp ../examples/$$d*.$$s build/examples/$$d; \
+	    cp ../examples/$$d*.$$s build/examples/$$d 2> /dev/null; \
 	  done; \
 	done
 	PYTHONPATH=~/bin/python/Zope3/src ./pt2html.py
