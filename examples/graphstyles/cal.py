@@ -50,12 +50,12 @@ notes = {1: {17: r"\PyX{} 0.2 (2003)", 20: r"\PyX{} 0.5 (2004)", 22: r"\PyX{} 0.
          9: {17: r"\PyX{} 0.4.1 (2003)"},
          10: {7: r"\PyX{} 0.1 (2002)", 21: r"\PyX{} 0.7 (2004)"},
          12: {15: r"\PyX{} 0.7.1 (2004)"}}
-d = graph.data.list([(d,
-                      calendar.month_name[m],
-                      calendar.day_abbr[calendar.weekday(year, m, d)],
-                      notes.get(m, {}).get(d))
-                     for m in range(1, 13)
-                     for d in range(1, calendar.monthrange(year, m)[1]+1)],
+d = graph.data.list([(day,
+                      calendar.month_name[month],
+                      calendar.day_abbr[calendar.weekday(year, month, day)],
+                      notes.get(month, {}).get(day))
+                     for month in range(1, 13)
+                     for day in range(1, calendar.monthrange(year, month)[1]+1)],
                     day=1, month=2, weekday=3, note=4)
 
 # create the calendar
