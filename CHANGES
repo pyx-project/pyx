@@ -42,6 +42,8 @@ TODO:
     - what should we do for palette when only one entry
   - deformer module:
     - move numeric stuff into its own framework (also for box module)
+    - check for marked error in smoothed deformer
+    - check for unused local variables
   - open discussion:
     - clearly distingish between readers and writers. dvifile, epsfile, etc. might
       be renamed to dvireader, epsreader ...
@@ -75,6 +77,14 @@ TODO:
 0.8.1 (2005/07/??):
   - deco module:
     - fix bug in postscript deco code for stroking only attributes
+  - path module:
+    - fix multicurveto._normalized
+    - fix path.paramtoarclen and path.paramtoarclen_pt 
+    - remove unused method-local function
+  - epsfile module:
+    - fix a typo
+  - pattern module:
+    - issue a warning when not using a stroke color for patterns
 
 
 0.8 (2005/07/13):
