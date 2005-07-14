@@ -344,7 +344,7 @@ def parallel_curvespoints_pt (orig_ncurve, shift, expensive=0, relerr=0.05, epsi
 class deformer(attr.attr):
 
     def deform (self, basepath):
-        return origpath
+        return basepath
 
 class cycloid(deformer): # <<<
     """Wraps a cycloid around a path.
@@ -412,7 +412,7 @@ class cycloid(deformer): # <<<
         Dphi = math.pi / self.curvesperhloop
         phis = [i * Dphi for i in range(self.halfloops * self.curvesperhloop + 1)]
         DzDphi = (totlength - skipfirst - skiplast - 2*radius*sinTurn) * 1.0 / (self.halfloops * math.pi * cosTurn)
-        Dz = (totlength - skipfirst - skiplast - 2*radius*sinTurn) * 1.0 / (self.halfloops * self.curvesperhloop * cosTurn)
+        # Dz = (totlength - skipfirst - skiplast - 2*radius*sinTurn) * 1.0 / (self.halfloops * self.curvesperhloop * cosTurn)
         # zs = [i * Dz for i in range(self.halfloops * self.curvesperhloop + 1)]
         # from path._arctobcurve:
         # optimal relative distance along tangent for second and third control point
