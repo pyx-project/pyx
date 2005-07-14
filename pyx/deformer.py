@@ -413,7 +413,7 @@ class cycloid(deformer): # <<<
         phis = [i * Dphi for i in range(self.halfloops * self.curvesperhloop + 1)]
         DzDphi = (totlength - skipfirst - skiplast - 2*radius*sinTurn) * 1.0 / (self.halfloops * math.pi * cosTurn)
         Dz = (totlength - skipfirst - skiplast - 2*radius*sinTurn) * 1.0 / (self.halfloops * self.curvesperhloop * cosTurn)
-        zs = [i * Dz for i in range(self.halfloops * self.curvesperhloop + 1)]
+        # zs = [i * Dz for i in range(self.halfloops * self.curvesperhloop + 1)]
         # from path._arctobcurve:
         # optimal relative distance along tangent for second and third control point
         L = 4 * radius * (1 - math.cos(Dphi/2)) / (3 * math.sin(Dphi/2))
@@ -701,6 +701,8 @@ class smoothed(deformer): # <<<
         # 4. Second part of extra handling of closed paths
         if normsubpath.closed:
             if do_moveto:
+                # XXX the following does not work since dp is not defined
+                # probably, we just want a moveto_pt(*normsubpath.atbegin())
                 smoothpath.append(path.moveto_pt(*dp.strokepath.atbegin()))
                 warnings.warn("The whole subpath has been smoothed away -- sorry")
             smoothpath.append(path.closepath())
@@ -793,11 +795,11 @@ class parallel(deformer): # <<<
 
             if cur == 0:
                 old = cur
-                OldEnd = points[old][0]
+                # OldEnd = points[old][0]
                 OldEndTang = tangents[old][0]
             else:
                 old = cur - 1
-                OldEnd = points[old][1]
+                # OldEnd = points[old][1]
                 OldEndTang = tangents[old][1]
 
             CurBeg, CurEnd = points[cur]
