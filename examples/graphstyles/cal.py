@@ -12,7 +12,7 @@ class daystyle(graph.style._style):
         # register the new column names
         usecolumnnames = ["day", "month", "weekday", "note"]
         for columnname in usecolumnnames:
-            if columnname not in usecolumnnames:
+            if columnname not in columnnames:
                 raise ValueError("column '%s' missing" % columnname)
         return usecolumnnames
 
