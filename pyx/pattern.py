@@ -76,7 +76,7 @@ class pattern(canvas._canvas, attr.exclusiveattr, style.fillstyle):
         if context.strokeattr:
             # using patterns as stroke colors doesn't seem to work, so
             # we just don't do this...
-            pass
+            warnings.warn("ignoring stroke color for patterns in PDF")
         if context.fillattr:
             file.write("/%s scn\n"% self.id)
 
