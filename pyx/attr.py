@@ -259,4 +259,6 @@ class changelist(changeattr):
             return self.attrs[index % len(self.attrs)]
         elif index < len(self.attrs):
             return self.attrs[index]
+        else:
+            return None
 
