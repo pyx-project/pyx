@@ -72,6 +72,11 @@ TODO:
       graph data
 
 
+0.8.1 (2005/07/??):
+  - deco module:
+    - fix bug in postscript deco code for stroking only attributes
+
+
 0.8 (2005/07/13):
   - changed requirements to python 2.1 or newer:
     - nested scopes are needed without fallback solution by the path module

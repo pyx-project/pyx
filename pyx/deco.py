@@ -221,7 +221,7 @@ class decoratedpath(canvas.canvasitem):
             file.write("stroke\n")
 
             if self.strokestyles:
-                file.write("grestore\n", context)
+                file.write("grestore\n")
 
             context = oldcontext
 
