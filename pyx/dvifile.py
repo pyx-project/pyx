@@ -22,8 +22,8 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import copy, cStringIO, exceptions, re, struct, string, sys, warnings, math
-import unit, epsfile, bbox, canvas, color, trafo, path, pykpathsea, pswriter, pdfwriter, type1font
+import cStringIO, exceptions, re, struct, string, sys, warnings, math
+import unit, epsfile, bbox, canvas, color, trafo, path, pykpathsea, type1font
 
 
 class binfile:
