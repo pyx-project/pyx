@@ -2,7 +2,7 @@
 # -*- coding: ISO-8859-1 -*-
 #
 #
-# Copyright (C) 2002-2004 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2002-2005 Jörg Lehmann <joergl@users.sourceforge.net>
 # Copyright (C) 2002-2005 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
@@ -124,7 +124,7 @@ class linefilereader:
                 self.buffer += newbuffer
             else:
                 eol = len(self.buffer)
-                if not eol and EOFmsgo is not None:
+                if not eol and EOFmsg is not None:
                     raise IOError(EOFmsg)
                 if nlpos != -1:
                     eol = nlpos + 1
