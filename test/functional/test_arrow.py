@@ -70,7 +70,7 @@ def testarrow(c):
     c.stroke(path(moveto(11,12.5), rlineto(5,0)),
            [lt,
             deco.barrow(size=base*math.sqrt(4)*unit.t_pt, constriction=1),
-            deco.earrow.Large])
+            deco.earrow.Large(attrs=[deco.stroked([style.linestyle.dashed]), deco.filled.clear])])
     c.stroke(path(moveto(11,13), rlineto(5,0)),
            [lt,
             deco.barrow(size=base*math.sqrt(8)*unit.t_pt, constriction=1),
