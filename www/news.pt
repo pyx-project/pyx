@@ -9,7 +9,7 @@
     <h1>PyX - News</h1>
 
     <dl>
-      <dt>2004-07-13: PyX 0.8 released</dt>
+      <dt>2005-07-13: PyX 0.8 released</dt>
       <dd>
         PyX now supports PDF output and also the generation of multi-page PS/PDF
         documents. The internals of the path system have been cleaned up and the
