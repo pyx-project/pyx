@@ -72,7 +72,7 @@ class canvasitem:
 
 
 
-import attr, color, deco, deformer, unit, style, trafo, pswriter, pdfwriter, type1font
+import attr, deco, deformer, style, trafo, type1font
 
 
 #
