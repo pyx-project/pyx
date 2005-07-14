@@ -937,8 +937,8 @@ class multicurveto_pt(pathitem):
 
     def _normalized(self, currentpoint):
         result = []
-        x0_pt = currentpoint.x_pt
-        y0_pt = currentpoint.y_pt
+        x_pt = currentpoint.x_pt
+        y_pt = currentpoint.y_pt
         for point_pt in self.points_pt:
             result.append(normcurve_pt(x_pt, y_pt, *point_pt))
             x_pt, y_pt = point_pt[4:]
@@ -1148,11 +1148,11 @@ class path(canvas.canvasitem):
 
     def paramtoarclen_pt(self, params):
         """return arc lenght(s) in pts matching the given param(s)"""
-        return self.normpath().paramtoarclen_pt(lengths_pt)
+        return self.normpath().paramtoarclen_pt(params)
 
     def paramtoarclen(self, params):
         """return arc lenght(s) matching the given param(s)"""
-        return self.normpath().paramtoarclen(lengths_pt)
+        return self.normpath().paramtoarclen(params)
 
     def path(self):
         """return corresponding path, i.e., self"""
@@ -2023,19 +2023,6 @@ class normsubpath:
         intersections_a = zip(intersections_a, range(len(intersections_a)))
         intersections_b = zip(intersections_b, range(len(intersections_b)))
         intersections_b.sort()
-
-        # a helper function to join two normsubpaths
-        def joinnormsubpaths(nsp1, nsp2):
-            # we do not have closed paths
-            assert not nsp1.closed and not nsp2.closed
-            result = normsubpath()
-            result.normsubpathitems = nsp1.normsubpathitems[:]
-            result.epsilon = nsp1.epsilon
-            result.skippedline = self.skippedline
-            result.extend(nsp2.normsubpathitems)
-            if nsp2.skippedline:
-                result.append(nsp2.skippedline)
-            return result
 
         # now we search for intersections points which are closer together than epsilon
         # This task is handled by the following function
