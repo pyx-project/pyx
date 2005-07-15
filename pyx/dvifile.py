@@ -534,10 +534,10 @@ class font:
 
 class virtualfont(font):
     def __init__(self, name, c, q, d, tfmconv, pyxconv, fontmap, debug=0):
-        font.__init__(self, name, c, q, d, tfmconv, pyxconv, fontmap, debug)
         fontpath = pykpathsea.find_file(name, pykpathsea.kpse_vf_format)
         if fontpath is None or not len(fontpath):
             raise RuntimeError
+        font.__init__(self, name, c, q, d, tfmconv, pyxconv, fontmap, debug)
         self.vffile = vffile(fontpath, self.scale, tfmconv, pyxconv, fontmap, debug > 1)
 
     def getfonts(self):
