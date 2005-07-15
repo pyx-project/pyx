@@ -26,9 +26,12 @@ try:
     from _pykpathsea import * 
 except:
     import os
+    find_file_cache = {}
     def find_file(filename, kpse_file_format):
-        return os.popen('kpsewhich --format="%s" %s' % (kpse_file_format, filename), 
-                        "r").readline().rstrip()
+        command = 'kpsewhich --format="%s" %s' % (kpse_file_format, filename)
+        if not find_file_cache.has_key(command):
+            find_file_cache[command] = os.popen(command, "r").readline().strip()
+        return find_file_cache[command]
     kpse_gf_format = "gf"
     kpse_pk_format = "pk"
     kpse_any_glyph_format = "bitmap font"
