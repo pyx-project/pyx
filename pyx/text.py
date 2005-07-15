@@ -22,7 +22,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import glob, os, threading, Queue, traceback, re, tempfile, atexit, time, warnings
+import glob, os, threading, Queue, re, tempfile, atexit, time, warnings
 import config, siteconfig, unit, box, canvas, trafo, version, attr, style, dvifile
 
 ###############################################################################
