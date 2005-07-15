@@ -86,7 +86,7 @@ TODO:
   - pattern module:
     - issue a warning when not using a stroke color for patterns
   - kpathsea module:
-    - caching in fallback to weaken lower system call bottleneck
+    - caching in fallback to lower system call bottleneck
 
 
 0.8 (2005/07/13):
