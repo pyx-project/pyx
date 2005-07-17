@@ -127,7 +127,7 @@ development takes place under the current production version of Python
 (2.4.1 by the time of this writing) and thus \PyX{} is better tested
 with this version. On the other hand, the examples and tests are
 verified to run with Python 2.1 and above using the latest bugfix
-releases each. \PyX{} will not work with earlier Python versions due
+releases. \PyX{} will not work with earlier Python versions due
 to missing language features. 
 
 The version of your Python interpreter can be determined by calling 
@@ -137,7 +137,7 @@ different versions of Python installed on your system at the same time. The
 default Python version need not be the same for all users.
 }
 
-\question{a}{Does \PyX{} provide a GUI to view the produced image?}
+\question{a}{Does \PyX{} provide a GUI to view the produced image? \changed}
 {}
 {No, \PyX{} itself does not provide a means to view the produced image. The 
 result of a \PyX{} run is an EPS (= Encapsulated PostScript) file, a
@@ -151,7 +151,14 @@ about this software, which is available for a variety of platforms,
 can be found at \url{http://www.cs.wisc.edu/~ghost/}. If you do not
 own a printer which is capable of printing PostScript files directly,
 \texttt{ghostscript} may also be useful to translate PS and EPS files
-produced by \PyX{} into something your printer will understand.}
+produced by \PyX{} into something your printer will understand.
+
+PDF files can be viewed by means of the \texttt{Adobe
+Reader\textsuperscript{\textregistered}} 
+available from
+\url{http://www.adobe.com/products/acrobat/readstep2.html}. On systems
+running X11, \texttt{xpdf} might be an alternative. It is available from
+\url{http://www.foolabs.com/xpdf/}.}
 
 \question{a}{Where can I get help if my question is not answered in this
 FAQ?}
