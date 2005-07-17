@@ -90,6 +90,7 @@ TODO:
   - canvas module:
     - add missing writePSfile wrapper
     - add *args to writeEPSfile and writePDFfile wrappers
+  - correct description regarding the manual in the README file
 
 
 0.8 (2005/07/13):
