@@ -321,17 +321,23 @@ class canvas(_canvas):
 
     """a canvas holds a collection of canvasitems"""
 
-    def writeEPSfile(self, filename, **kwargs):
+    def writeEPSfile(self, filename, *args, **kwargs):
         import document
-        document.document([document.page(self, **kwargs)]).writeEPSfile(filename)
+        document.document([document.page(self, *args, **kwargs)]).writeEPSfile(filename)
 
-    def writePDFfile(self, filename, **kwargs):
+    def writePSfile(self, filename, *args, **kwargs):
         import document
-        document.document([document.page(self, **kwargs)]).writePDFfile(filename)
+        document.document([document.page(self, *args, **kwargs)]).writePSfile(filename)
+
+    def writePDFfile(self, filename, *args, **kwargs):
+        import document
+        document.document([document.page(self, *args, **kwargs)]).writePDFfile(filename)
 
     def writetofile(self, filename, *args, **kwargs):
         if filename[-4:] == ".eps":
             self.writeEPSfile(filename, *args, **kwargs)
+        elif filename[-3:] == ".ps":
+            self.writePSfile(filename, *args, **kwargs)
         elif filename[-4:] == ".pdf":
             self.writePDFfile(filename, *args, **kwargs)
         else:

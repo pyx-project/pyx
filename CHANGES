@@ -87,6 +87,9 @@ TODO:
     - issue a warning when not using a stroke color for patterns
   - kpathsea module:
     - caching in fallback to lower system call bottleneck
+  - canvas module:
+    - add missing writePSfile wrapper
+    - add *args to writeEPSfile and writePDFfile wrappers
 
 
 0.8 (2005/07/13):
