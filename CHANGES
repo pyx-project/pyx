@@ -81,6 +81,7 @@ TODO:
     - fix multicurveto._normalized
     - fix path.paramtoarclen and path.paramtoarclen_pt 
     - remove unused method-local function
+    - fix linestyle rellength in PostScript
   - epsfile module:
     - fix a typo
   - pattern module:
