@@ -124,8 +124,10 @@ class dash(attr.exclusiveattr, strokestyle):
 
     def outputPDF(self, file, writer, context):
         if self.rellengths:
-            raise RuntimeError("rellengths currently not supported in pdf output")
-        file.write("[%s] %d d\n" % (" ".join(["%f" % element for element in self.pattern]), self.offset))
+            patternstring = " ".join(["%f" % (element * context.linewidth_pt) for element in self.pattern])
+        else:
+            patternstring = " ".join(["%f" % element for element in self.pattern])
+        file.write("[%s] %d d\n" % (patternstring, self.offset))
 
 dash.clear = attr.clearclass(dash)
 
