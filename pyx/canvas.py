@@ -72,7 +72,7 @@ class canvasitem:
 
 
 
-import attr, deco, deformer, style, trafo, type1font
+import attr, deco, deformer, document, style, trafo, type1font
 
 
 #
@@ -317,29 +317,17 @@ class _canvas(canvasitem):
 # user canvas class which adds a few convenience methods for single page output
 #
 
+def _wrappedindocument(method):
+    def wrappedindocument(self, filename, *args, **kwargs):
+        d = document.document([document.page(self, *args, **kwargs)])
+        return method(d, filename)
+    return wrappedindocument
+
 class canvas(_canvas):
 
     """a canvas holds a collection of canvasitems"""
 
-    def writeEPSfile(self, filename, *args, **kwargs):
-        import document
-        document.document([document.page(self, *args, **kwargs)]).writeEPSfile(filename)
-
-    def writePSfile(self, filename, *args, **kwargs):
-        import document
-        document.document([document.page(self, *args, **kwargs)]).writePSfile(filename)
-
-    def writePDFfile(self, filename, *args, **kwargs):
-        import document
-        document.document([document.page(self, *args, **kwargs)]).writePDFfile(filename)
-
-    def writetofile(self, filename, *args, **kwargs):
-        if filename[-4:] == ".eps":
-            self.writeEPSfile(filename, *args, **kwargs)
-        elif filename[-3:] == ".ps":
-            self.writePSfile(filename, *args, **kwargs)
-        elif filename[-4:] == ".pdf":
-            self.writePDFfile(filename, *args, **kwargs)
-        else:
-            raise ValueError("writetofile needs a filename extension")
-
+    writeEPSfile = _wrappedindocument(document.document.writeEPSfile)
+    writePSfile = _wrappedindocument(document.document.writePSfile)
+    writePDFfile = _wrappedindocument(document.document.writePDFfile)
+    writetofile = _wrappedindocument(document.document.writetofile)
