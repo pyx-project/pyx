@@ -116,10 +116,9 @@ class dash(attr.exclusiveattr, strokestyle):
 
     def outputPS(self, file, writer, context):
         if self.rellengths:
-            sep = " currentlinewidth mul "
+            patternstring = " ".join(["%f" % (element * context.linewidth_pt) for element in self.pattern])
         else:
-            sep = " "
-        patternstring = sep.join(["%f" % element for element in self.pattern])
+            patternstring = " ".join(["%f" % element for element in self.pattern])
         file.write("[%s] %d setdash\n" % (patternstring, self.offset))
 
     def outputPDF(self, file, writer, context):
