@@ -82,6 +82,7 @@ TODO:
     - fix path.paramtoarclen and path.paramtoarclen_pt 
     - remove unused method-local function
     - fix linestyle rellength in PostScript
+    - correction to the rounding problems in circles (reported by Uwe Fabricius)
   - epsfile module:
     - fix a typo
   - pattern module:

@@ -1255,8 +1255,8 @@ class circle_pt(path):
 
    """circle with center (x, y) and radius in pts"""
 
-   def __init__(self, x, y, radius):
-       path.__init__(self, moveto_pt(x+radius,y), arc_pt(x, y, radius, 0, 360), closepath())
+   def __init__(self, x, y, radius, arcepsilon=0.1):
+       path.__init__(self, moveto_pt(x+radius,y), arc_pt(x, y, radius, arcepsilon, 360-arcepsilon), closepath())
 
 
 class line(line_pt):
@@ -1292,8 +1292,8 @@ class circle(circle_pt):
 
    """circle with center (x,y) and radius"""
 
-   def __init__(self, x, y, radius):
-       circle_pt.__init__(self, unit.topt(x), unit.topt(y), unit.topt(radius))
+   def __init__(self, x, y, radius, arcepsilon=0.1):
+       circle_pt.__init__(self, unit.topt(x), unit.topt(y), unit.topt(radius), arcepsilon=arcepsilon)
 
 
 ################################################################################
