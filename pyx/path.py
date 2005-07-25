@@ -1292,8 +1292,8 @@ class circle(circle_pt):
 
    """circle with center (x,y) and radius"""
 
-   def __init__(self, x, y, radius, arcepsilon=0.1):
-       circle_pt.__init__(self, unit.topt(x), unit.topt(y), unit.topt(radius), arcepsilon=arcepsilon)
+   def __init__(self, x, y, radius, **kwargs):
+       circle_pt.__init__(self, unit.topt(x), unit.topt(y), unit.topt(radius), **kwargs)
 
 
 ################################################################################
