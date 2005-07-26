@@ -87,6 +87,9 @@ TODO:
     - fix a typo
   - pattern module:
     - issue a warning when not using a stroke color for patterns
+  - text module:
+    - postpone PDFfontdescriptor information, since it raises an error on certain
+      fonts even when PostScript output was requested (reported by Gert Ingold)
   - kpathsea module:
     - caching in fallback to lower system call bottleneck
   - canvas module:

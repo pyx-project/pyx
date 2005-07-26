@@ -428,18 +428,24 @@ class font:
 
         self.scale = 1.0*q/d
 
+    def fontinfo(self):
+        class fontinfo:
+            pass
+
         # The following code is a very crude way to obtain the information
         # required for the PDF font descritor. (TODO: The correct way would
         # be to read the information from the AFM file.)
-        self.fontbbox = (0,
-                         -self.getdepth_ds(ord("y")),
-                         self.getwidth_ds(ord("W")),
-                         self.getheight_ds(ord("H")))
-        self.italicangle = -180/math.pi*math.atan(self.tfmfile.param[0]/65536.0)
-        self.ascent = self.fontbbox[3]
-        self.descent = self.fontbbox[1]
-        self.capheight = self.getheight_ds(ord("h"))
-        self.vstem = self.getwidth_ds(ord("."))/3
+        fontinfo = fontinfo()
+        fontinfo.fontbbox = (0,
+                             -self.getdepth_ds(ord("y")),
+                             self.getwidth_ds(ord("W")),
+                             self.getheight_ds(ord("H")))
+        fontinfo.italicangle = -180/math.pi*math.atan(self.tfmfile.param[0]/65536.0)
+        fontinfo.ascent = fontinfo.fontbbox[3]
+        fontinfo.descent = fontinfo.fontbbox[1]
+        fontinfo.capheight = self.getheight_ds(ord("h"))
+        fontinfo.vstem = self.getwidth_ds(ord("."))/3
+        return fontinfo
 
     def __str__(self):
         return "font %s designed at %g TeX pts used at %g TeX pts" % (self.name, 

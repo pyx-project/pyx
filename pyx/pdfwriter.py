@@ -385,7 +385,7 @@ class PDFfontdescriptor(PDFobject):
             registry.add(self.fontfile)
 
         self.name = font.basefontname
-        self.metric = font.metric
+        self.fontinfo = font.metric.fontinfo()
 
     def outputPDF(self, file, writer, registry):
         file.write("<<\n"
@@ -395,12 +395,12 @@ class PDFfontdescriptor(PDFobject):
             file.write("/Flags 32\n")
         else:
             file.write("/Flags %d\n" % self.fontfile.getflags())
-        file.write("/FontBBox [%d %d %d %d]\n" % self.metric.fontbbox)
-        file.write("/ItalicAngle %d\n" % self.metric.italicangle)
-        file.write("/Ascent %d\n" % self.metric.ascent)
-        file.write("/Descent %d\n" % self.metric.descent)
-        file.write("/CapHeight %d\n" % self.metric.capheight)
-        file.write("/StemV %d\n" % self.metric.vstem)
+        file.write("/FontBBox [%d %d %d %d]\n" % self.fontinfo.fontbbox)
+        file.write("/ItalicAngle %d\n" % self.fontinfo.italicangle)
+        file.write("/Ascent %d\n" % self.fontinfo.ascent)
+        file.write("/Descent %d\n" % self.fontinfo.descent)
+        file.write("/CapHeight %d\n" % self.fontinfo.capheight)
+        file.write("/StemV %d\n" % self.fontinfo.vstem)
         if self.fontfile is not None:
             file.write("/FontFile %d 0 R\n" % registry.getrefno(self.fontfile))
         file.write(">>\n")
