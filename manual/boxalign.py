@@ -16,5 +16,6 @@ c.stroke(path.line(5 + 1.5 * math.sqrt(2), -0.5 * math.sqrt(2), 5 - 0.5 * math.s
 c.stroke(t2.path(centerradius=0.05), [style.linewidth.THin])
 c.stroke(path.line(5, 0, 5 + x, y), [deco.earrow.normal])
 c.insert(t2)
-c.writeEPSfile("boxalign", paperformat=document.paperformat.A4)
+c.writeEPSfile("boxalign")
+c.writePDFfile("boxalign")
 

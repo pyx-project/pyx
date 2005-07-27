@@ -8,36 +8,29 @@
 default:dvi
 
 clean:
-	-rm -fr manual.dvi manual.ps manual.pdf *.eps *.aux *.out *.toc *.log *.png *.aux manual
+	-rm -fr manual.dvi *.eps *.pdf *.aux *.out *.toc *.log manual
 
 all:
 	make clean
 	make html
 	make pdf
 	make dvi
-	make ps
 
 src=$(wildcard *.tex) pyxversion.tex pyxdate.tex
 
 dvi:manual.dvi
-ps:manual.ps
 pdf:manual.pdf
 html:manual/manual.html
 
-manual.pdf: $(src) png
+manual.pdf: $(src) pdf
 	#for index-with-own-hyperrefs debugging, anybody interested?
 	#./mkhowto --a4 --pdf --keep manual.tex
 	./mkhowto --a4 --pdf manual.tex
-
-manual.ps: manual.dvi
-	dvips -o manual.ps manual.dvi
 
 manual.dvi: $(src) eps
 	./mkhowto --a4 --dvi manual.tex
 
 manual/manual.html: $(src) eps
-	# move pdf png's out of the way
-	-rm -f *.png
 	./mkhowto --image-type png --favicon "/pyx.ico" \
 	          --up-link "/" --up-title "PyX homepage" \
 	          --html manual.tex
@@ -49,11 +42,11 @@ pyxdate.tex: ../pyx/version.py
 	python -c "import sys;sys.path[:0]=[\"..\"];import pyx.version;print pyx.version.date+'%'" > pyxdate.tex
 
 eps: $(patsubst %.py, %.eps, $(wildcard *.py))
-png: $(patsubst %.py, %.png, $(wildcard *.py))
+
+pdf: $(patsubst %.py, %.pdf, $(wildcard *.py))
 
 %.eps: %.py
 	export PYTHONPATH=$(CURDIR)/.. ; python $^
 
-%.png: %.eps
-	gs -dEPSCrop -dNOPAUSE -dQUIET -dBATCH -sDEVICE=png16m -sOutputFile=$@ -r600 $^
-
+%.pdf: %.py
+	export PYTHONPATH=$(CURDIR)/.. ; python $^

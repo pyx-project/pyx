@@ -13,3 +13,4 @@ for isect in isects_circle:
     c.stroke(path.line(0, 0, isectx, isecty))
 
 c.writeEPSfile("radii")
+c.writePDFfile("radii")

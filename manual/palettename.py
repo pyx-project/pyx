@@ -45,4 +45,5 @@ for line in lines: # we yet don't use a file iterator
         y += dy
 
 
-c.writeEPSfile("palettename", paperformat=document.paperformat.A4)
+c.writeEPSfile("palettename")
+c.writePDFfile("palettename")

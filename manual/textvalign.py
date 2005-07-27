@@ -21,4 +21,5 @@ c.text(7.7, 0.5*(b.bottom()-b2.bottom()), "parbox.middle", [text.vshift.mathaxis
 c.stroke(path.line(0, b.bottom()-b2.bottom(), 7.2, b.bottom()-b2.bottom()))
 c.stroke(path.line(7.3, b.bottom()-b2.bottom(), 7.5, b.bottom()-b2.bottom()), [deco.barrow.Small])
 c.text(7.7, b.bottom()-b2.bottom(), "parbox.bottom", [text.vshift.mathaxis])
-c.writeEPSfile("textvalign", paperformat=document.paperformat.A4)
+c.writeEPSfile("textvalign")
+c.writePDFfile("textvalign")

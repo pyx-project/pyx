@@ -9,4 +9,5 @@ c.fill(path.rect(1, 1, 1, 1), [color.rgb.red])
 c.fill(path.rect(3, 1, 1, 1), [color.rgb.green])
 c.fill(path.rect(5, 1, 1, 1), [color.rgb.blue])
 c.writeEPSfile("color")
+c.writePDFfile("color")
 

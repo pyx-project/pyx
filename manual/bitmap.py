@@ -11,4 +11,5 @@ c = canvas.canvas()
 c.insert(bitmap_bw)
 c.insert(bitmap_rgb)
 c.writeEPSfile("bitmap")
+c.writePDFfile("bitmap")
 
