@@ -95,6 +95,11 @@ TODO:
   - canvas module:
     - add missing writePSfile wrapper
     - add *args to writeEPSfile and writePDFfile wrappers
+  - writer modules:
+    - writebbox option to write bbox information (disabled by default)
+      even when a paper format is specified (PS and PDF writers only)
+  - use arclen in spring example
+  - use pdf graphic files for pdf version of the manual
   - correct description regarding the manual in the README file
 
 

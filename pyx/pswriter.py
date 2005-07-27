@@ -273,7 +273,7 @@ class epswriter:
 
 class pswriter:
 
-    def __init__(self, document, filename):
+    def __init__(self, document, filename, writebbox=0):
         if not filename.endswith(".ps"):
             filename = filename + ".ps"
         try:
@@ -300,7 +300,7 @@ class pswriter:
                     documentbbox = page._transformedbbox.enlarge(0) # make a copy
 
         file.write("%!PS-Adobe-3.0\n")
-        if documentbbox:
+        if documentbbox and writebbox:
             file.write("%%%%BoundingBox: %d %d %d %d\n" % documentbbox.lowrestuple_pt())
             file.write("%%%%HiResBoundingBox: %g %g %g %g\n" % documentbbox.highrestuple_pt())
         file.write("%%%%Creator: PyX %s\n" % version.version)
@@ -311,7 +311,8 @@ class pswriter:
         # required paper formats
         paperformats = {}
         for page in document.pages:
-            paperformats[page.paperformat] = page.paperformat
+            if page.paperformat:
+                paperformats[page.paperformat] = page.paperformat
 
         first = 1
         for paperformat in paperformats.values():
@@ -349,9 +350,10 @@ class pswriter:
         # pages section
         for nr, page in enumerate(document.pages):
             file.write("%%%%Page: %s %d\n" % (page.pagename is None and str(nr+1) or page.pagename, nr+1))
-            file.write("%%%%PageMedia: %s\n" % page.paperformat.name)
+            if page.paperformat:
+                file.write("%%%%PageMedia: %s\n" % page.paperformat.name)
             file.write("%%%%PageOrientation: %s\n" % (page.rotated and "Landscape" or "Portrait"))
-            if page._transformedbbox:
+            if page._transformedbbox and writebbox:
                 file.write("%%%%PageBoundingBox: %d %d %d %d\n" % page._transformedbbox.lowrestuple_pt())
 
             # page setup section

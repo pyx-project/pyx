@@ -223,8 +223,11 @@ class PDFpage(PDFobject):
                    "/Type /Page\n"
                    "/Parent %i 0 R\n" % registry.getrefno(self.PDFpages))
         paperformat = self.page.paperformat
-        file.write("/MediaBox [0 0 %f %f]\n" % (unit.topt(paperformat.width), unit.topt(paperformat.height)))
-        if self.transformedbbox:
+        if paperformat:
+            file.write("/MediaBox [0 0 %f %f]\n" % (unit.topt(paperformat.width), unit.topt(paperformat.height)))
+        else:
+            file.write("/MediaBox [%f %f %f %f]\n" % self.transformedbbox.highrestuple_pt())
+        if self.transformedbbox and writer.writebbox:
             file.write("/CropBox [%f %f %f %f]\n" % self.transformedbbox.highrestuple_pt())
         procset = []
         if self.pageregistry.types.has_key("font"):
@@ -464,7 +467,7 @@ class PDFwriter:
 
     def __init__(self, document, filename,
                        title=None, author=None, subject=None, keywords=None,
-                       fullscreen=0, compress=1, compresslevel=6):
+                       fullscreen=0, writebbox=0, compress=1, compresslevel=6):
         if not filename.endswith(".pdf"):
             filename = filename + ".pdf"
         try:
@@ -477,6 +480,7 @@ class PDFwriter:
         self.subject = subject
         self.keywords = keywords
         self.fullscreen = fullscreen
+        self.writebbox = writebbox
         if compress and not haszlib:
             compress = 0
             warnings.warn("compression disabled due to missing zlib module")

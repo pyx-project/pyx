@@ -22,7 +22,7 @@ from optparse import OptionParser
 from pyx import *
 from pyx import bbox, dvifile, version
 
-parser = OptionParser(usage="usage: %prog -o output-file [-p paperformat] dvi-file",
+parser = OptionParser(usage="usage: %prog [-b] [-p paperformat] -o output-file dvi-file",
                       version="%prog " + version.version)
 parser.add_option("-o", "--output",
                   type="string", dest="output",
@@ -30,14 +30,15 @@ parser.add_option("-o", "--output",
 parser.add_option("-p", "--paperformat",
                   type="string", dest="paperformat", default=None,
                   help="optional paper format string")
+parser.add_option("-b", "--writebbox",
+                  action="store_true", dest="writebbox", default=0,
+                  help="Add bouding box information on PS and PDF when a paperformat is defined")
 (options, args) = parser.parse_args()
 if len(args) != 1:
     parser.error("can process a single dvi-file only")
 
 if options.paperformat:
-    paperformat = getattr(document.paperformat, options.paperformat)
-    pagebbox = bbox.bbox(0, -paperformat.height, paperformat.width, 0)
-    pagebbox.transform(trafo.translate(-unit.t_inch, unit.t_inch))
+    options.paperformat = getattr(document.paperformat, options.paperformat)
 df = dvifile.dvifile(args[0], dvifile.readfontmap(["psfonts.map"]))
 d = document.document()
 while 1:
@@ -45,8 +46,14 @@ while 1:
     if not dvipage:
         break
     if options.paperformat:
-        p = document.page(dvipage, paperformat=paperformat, bbox=pagebbox)
+        aligntrafo = trafo.translate(-unit.t_inch, unit.t_inch + paperformat.height)
+        aligneddvipage = canvas.canvas([aligntrafo])
+        aligneddvipage.insert(dvipage)
+        p = document.page(aligneddvipage, paperformat=paperformat)
     else:
         p = document.page(dvipage)
     d.append(p)
-d.writetofile(options.output)
+if options.writebbox:
+    d.writetofile(options.output)
+else:
+    d.writetofile(options.output, writebbox=1)

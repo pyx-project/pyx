@@ -47,7 +47,7 @@ def _paperformatfromstring(name):
 
 class page:
 
-    def __init__(self, canvas, pagename=None, paperformat=paperformat.A4, rotated=0, centered=1, fittosize=0,
+    def __init__(self, canvas, pagename=None, paperformat=None, rotated=0, centered=1, fittosize=0,
                  margin=1 * unit.t_cm, bboxenlarge=1 * unit.t_pt, bbox=None):
         self.canvas = canvas
         self.pagename = pagename
@@ -85,7 +85,7 @@ class page:
 
         The canvas extents are described by bbox.
         """
-        if bbox and (self.rotated or self.centered or self.fittosize):
+        if bbox and self.paperformat and (self.rotated or self.centered or self.fittosize):
             paperwidth, paperheight = self.paperformat.width, self.paperformat.height
 
             # center (optionally rotated) output on page
