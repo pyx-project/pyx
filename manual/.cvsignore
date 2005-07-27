@@ -1,1 +1,1 @@
-*.eps *.png *.aux manual.dvi manual.ps manual.pdf manual mkhowto pyxversion.tex pyxdate.tex
+*.eps *.pdf *.png *.aux *.idx *.syn *.ind manual.dvi manual.ps manual mkhowto pyxversion.tex pyxdate.tex
