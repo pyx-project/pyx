@@ -145,7 +145,10 @@ class autolinear(_parter):
         self.epsilon = epsilon
 
     def partfunctions(self, min, max, extendmin, extendmax):
-        logmm = math.log(max - min) / math.log(10)
+        try:
+            logmm = math.log(max - min) / math.log(10)
+        except ArithmeticError:
+            raise RuntimeError("partitioning failed due to empty or invalid axis range")
         if logmm < 0: # correction for rounding towards zero of the int routine
             base = tick.rational((10, 1), power=int(logmm-1))
         else:
