@@ -74,7 +74,7 @@ TODO:
       graph data
 
 
-0.8.1 (2005/07/??):
+0.8.1 (2005/08/??):
   - deco module:
     - fix bug in postscript deco code for stroking only attributes
   - path module:
@@ -100,6 +100,7 @@ TODO:
       even when a paper format is specified (PS and PDF writers only)
   - use arclen in spring example
   - use pdf graphic files for pdf version of the manual
+  - use PyX to create tipa fallbacks for FAQ
   - correct description regarding the manual in the README file
 
 

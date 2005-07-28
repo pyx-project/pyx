@@ -1,6 +1,6 @@
 include AUTHORS CHANGES INSTALL LICENSE README pyxrc setup.cfg setup.py
 include manual/Makefile manual/pyx.sty manual/*.tex manual/*.py manual/*.dat
-include faq/Makefile faq/pyxfaq.tex faq/glifaq.dtx faq/glifaq.ins faq/tipa?.tex faq/tipa?.pdf
+include faq/Makefile faq/pyxfaq.tex faq/glifaq.dtx faq/glifaq.ins faq/tipa.py faq/tipa*.pdf
 recursive-include pyx *.c *.h *.py
 recursive-include pyx/lfs *.lfs createlfs.tex
 recursive-include contrib *

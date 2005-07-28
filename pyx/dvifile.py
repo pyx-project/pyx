@@ -723,7 +723,9 @@ class dvifile:
                                  self.activefont.getsize_pt())
         else:
             if self.activetext is None:
-                fontmapinfo = self.fontmap.get(self.activefont.name)
+                if not self.fontmap.has_key(self.activefont.name):
+                    raise RuntimeError("missing font information for '%s'; check fontmapping file(s)" % self.activefont.name)
+                fontmapinfo = self.fontmap[self.activefont.name]
 
                 encodingname = fontmapinfo.reencodefont
                 if encodingname is not None:

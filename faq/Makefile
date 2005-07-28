@@ -37,11 +37,11 @@ public:
 	scp pyxfaq.pdf $(publicserver):$(publicpath)
 	-ssh $(publicserver) "cd $(publicpath); chmod -fR g+w pyxfaq.pdf"
 
-tipasnippets: $(patsubst %.tex, %.pdf, $(wildcard tipa?.tex))
+tipapyks.pdf: tipa.py
+	python tipa.py "pYks" "pyks"
 
-tipa%.pdf: tipa%.tex
-	latex tipa$*
-	dvips -E tipa$*
-	ps2pdf -dEPSCrop tipa$*.ps
-	rm tipa$*.log tipa$*.aux tipa$*.dvi tipa$*.ps
+tipapyx.pdf: tipa.py
+	python tipa.py "pYx" "pyx"
 
+tipapych.pdf: tipa.py
+	python tipa.py "pY\\c c" "pych"
