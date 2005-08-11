@@ -90,6 +90,7 @@ TODO:
   - text module:
     - postpone PDFfontdescriptor information, since it raises an error on certain
       fonts even when PostScript output was requested (reported by Gert Ingold)
+    - remove spurious spaces when checking for empty texmessages
   - kpathsea module:
     - caching in fallback to lower system call bottleneck
   - canvas module:

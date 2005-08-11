@@ -232,6 +232,7 @@ class _texmessageemptylines(texmessage):
 
     def check(self, texrunner):
         texrunner.texmessageparsed = texrunner.texmessageparsed.replace(r"(Please type a command or say `\end')", "")
+        texrunner.texmessageparsed = texrunner.texmessageparsed.replace(" ", "")
         texrunner.texmessageparsed = texrunner.texmessageparsed.replace("*\n", "")
         texrunner.texmessageparsed = texrunner.texmessageparsed.replace("\n", "")
 
