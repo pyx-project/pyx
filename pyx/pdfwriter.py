@@ -296,8 +296,9 @@ class PDFcontent(PDFobject):
             stream.flush()
 
         self.contentlength.contentlength = file.tell() - beginstreampos
-        file.write("\n"
-                   "endstream\n")
+        if writer.compress:
+            file.write("\n")
+        file.write("endstream\n")
 
 
 class PDFcontentlength(PDFobject):
