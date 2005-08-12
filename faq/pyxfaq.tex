@@ -258,26 +258,26 @@ c.text(0, 0, r"\${\cs alpha}{\cs beta}{\cs gamma}\$")
 {
 With versions 0.8 and higher it is possible to produce multipage output,
 i.e. a Postscript or PDF file containing more than one page. In order to
-achieve this, one creates canvasses, draws on them as usual, and finally
-appends them in the desired order to a list. This list is then used to
-define a document which can be written to a Postcript or PDF file. The
-following example serves as an illustration:
+achieve this, one creates pages by drawing on a canvas as usual and 
+appends them in the desired order to a document from which Postscript or
+PDF output is produced. The following example serves as an illustration:
 \begin{progcode}
 from pyx import *\\
 \\
-pp = []\\
+d = document.document()\\
 for i in range(3):\\
 ~~~~c = canvas.canvas()\\
 ~~~~c.text(0, 0, "page \%i" \% (i+1))\\
-~~~~pp.append(document.page(c))\\
-d = document.document(pages=pp)\\
+~~~~d.append(document.page(c, paperformat=document.paperformat.A4,\\
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~margin=3*unit.t\_cm,\\
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~fittosize=1))\\
 d.writePSfile("multipage")
 \end{progcode}
-Here, \texttt{pp} is the list containing the pages. These are produced
-from the canvas \texttt{c} with \texttt{document.page} and appended to
-\texttt{pp}. Note, that the canvas can be reused. Finally, one specifies
-the pages contained in the document \texttt{d} from which output is
-created.
+Here, \texttt{d} is the document into which pages are inserted by means
+of the \texttt{append} method. When converting from a canvas to a document
+page, the page properties like the paperformat are specified. Note, that 
+during the generation of pages, the canvas can be reused. In the last line,
+output is produced from the document.
 }
 
 \section{Plotting of graphs}
