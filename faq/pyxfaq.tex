@@ -52,7 +52,7 @@ different. According to the developers of \PyX{}, it should be pronounced as
 \tipagraph{[pYx]}{tipapyx} or \tipagraph{[pY\c c]}{tipapych}.
 }
 
-\question{a}{Where do I get the latest version of \PyX?}
+\question{a}{Where do I get the latest version of \PyX? \changed}
 {}
 {\label{q:where_do_I_get_PyX}
 The current release of \PyX{} (as well as older ones) is freely available 
@@ -62,9 +62,9 @@ also available as package for
 various Linux distributions: see, for instance,  
 \url{http://packages.debian.org/testing/python/python-pyx.html} for
 information on the \PyX{} package in Debian GNU/Linux, 
-\url{http://packages.gentoo.org/ebuilds/?pyx-0.3.1} for a Gentoo Linux
+\url{http://packages.gentoo.org/ebuilds/?pyx-0.7.1} for a Gentoo Linux
 ebuild, and
-\url{http://www.suse.de/en/private/products/suse_linux/i386/packages_professional/python-pyx.html}
+\url{http://www.novell.com/products/linuxpackages/professional/python-pyx.html}
 for the \PyX{} package in the SUSE LINUX professional distribution.
 }
 
@@ -249,6 +249,35 @@ like in
 \begin{progcode}
 c.text(0, 0, r"\${\cs alpha}{\cs beta}{\cs gamma}\$")
 \end{progcode}
+}
+
+\section{General aspects of plotting with \PyX}
+
+\question{a}{How do I generate multipage output? \new}
+{}
+{
+With versions 0.8 and higher it is possible to produce multipage output,
+i.e. a Postscript or PDF file containing more than one page. In order to
+achieve this, one creates canvasses, draws on them as usual, and finally
+appends them in the desired order to a list. This list is then used to
+define a document which can be written to a Postcript or PDF file. The
+following example serves as an illustration:
+\begin{progcode}
+from pyx import *\\
+\\
+pp = []\\
+for i in range(3):\\
+~~~~c = canvas.canvas()\\
+~~~~c.text(0, 0, "page \%i" \% (i+1))\\
+~~~~pp.append(document.page(c))\\
+d = document.document(pages=pp)\\
+d.writePSfile("multipage")
+\end{progcode}
+Here, \texttt{pp} is the list containing the pages. These are produced
+from the canvas \texttt{c} with \texttt{document.page} and appended to
+\texttt{pp}. Note, that the canvas can be reused. Finally, one specifies
+the pages contained in the document \texttt{d} from which output is
+created.
 }
 
 \section{Plotting of graphs}
