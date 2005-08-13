@@ -22,7 +22,7 @@ dvi:manual.dvi
 pdf:manual.pdf
 html:manual/manual.html
 
-manual.pdf: $(src) pdf
+manual.pdf: $(src)
 	#for index-with-own-hyperrefs debugging, anybody interested?
 	#./mkhowto --a4 --pdf --keep manual.tex
 	./mkhowto --a4 --pdf manual.tex
