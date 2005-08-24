@@ -1322,26 +1322,31 @@ preamble = defaulttexrunner.preamble
 text = defaulttexrunner.text
 text_pt = defaulttexrunner.text_pt
 
-def escapestring(s):
-    """escape special TeX/LaTeX characters
-
-    Returns a string, where some special characters of standard
-    TeX/LaTeX are replaced by appropriate escaped versions. Note
-    that we cannot handle the three ASCII characters '{', '}',
-    and '\' that way, since they do not occure in the TeX default
-    encoding and thus are more likely to need some special handling.
-    All other ASCII characters should usually (but not always)
-    work."""
-
-    # ASCII strings only
-    s = str(s)
+def escapestring(s, replace={" ": "~",
+                             "$": "\\$",
+                             "&": "\\&",
+                             "#": "\\#",
+                             "_": "\\_",
+                             "%": "\\%",
+                             "^": "\\string^",
+                             "~": "\\string~",
+                             "<": "{$<$}",
+                             ">": "{$>$}",
+                             "{": "{$\{$}",
+                             "}": "{$\}$}",
+                             "\\": "{$\setminus$}",
+                             "|": "{$\mid$}"}):
+    "escape all ascii characters such that they are printable by TeX/LaTeX"
     i = 0
     while i < len(s):
-        if s[i] in "$&#_%":
-            s = s[:i] + "\\" + s[i:]
+        if not 32 <= ord(s[i]) < 127:
+            raise ValueError("escapestring function handles ascii strings only")
+        c = s[i]
+        try:
+            r = replace[c]
+        except KeyError:
             i += 1
-        elif s[i] in "^~":
-            s = s[:i] + r"\string" + s[i:]
-            i += 7
-        i += 1
+        else:
+            s = s[:i] + r + s[i+1:]
+            i += len(r)
     return s
