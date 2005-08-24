@@ -243,23 +243,6 @@ class graphxy(canvas.canvas):
     def dolayout(self):
         if not self.removedomethod(self.dolayout): return
 
-        # count the usage of styles and perform selects
-        styletotal = {}
-        def stylesid(styles):
-            return ":".join([str(id(style)) for style in styles])
-        for plotitem in self.plotitems:
-            try:
-                styletotal[stylesid(plotitem.styles)] += 1
-            except:
-                styletotal[stylesid(plotitem.styles)] = 1
-        styleindex = {}
-        for plotitem in self.plotitems:
-            try:
-                styleindex[stylesid(plotitem.styles)] += 1
-            except:
-                styleindex[stylesid(plotitem.styles)] = 0
-            plotitem.selectstyles(self, styleindex[stylesid(plotitem.styles)], styletotal[stylesid(plotitem.styles)])
-
         # adjust the axes ranges
         for plotitem in self.plotitems:
             plotitem.adjustaxesstatic(self)
@@ -315,6 +298,25 @@ class graphxy(canvas.canvas):
 
     def dodata(self):
         self.dolayout()
+
+        # count the usage of styles and perform selects
+        styletotal = {}
+        def stylesid(styles):
+            return ":".join([str(id(style)) for style in styles])
+        for plotitem in self.plotitems:
+            try:
+                styletotal[stylesid(plotitem.styles)] += 1
+            except:
+                styletotal[stylesid(plotitem.styles)] = 1
+        styleindex = {}
+        for plotitem in self.plotitems:
+            try:
+                styleindex[stylesid(plotitem.styles)] += 1
+            except:
+                styleindex[stylesid(plotitem.styles)] = 0
+            plotitem.selectstyles(self, styleindex[stylesid(plotitem.styles)],
+                                        styletotal[stylesid(plotitem.styles)])
+
         if not self.removedomethod(self.dodata): return
         for plotitem in self.plotitems:
             plotitem.draw(self)

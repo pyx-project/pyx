@@ -3,7 +3,6 @@ import sys; sys.path[:0] = ["../.."]
 
 import math
 from pyx import *
-from pyx import mathtree
 
 text.set(mode="latex")
 
@@ -28,7 +27,7 @@ def test_piaxis_function(c, x, y):
     xaxis=graph.axis.lin(min=0, max=2*math.pi, divisor=math.pi, texter=graph.axis.texter.rational(suffix=r"\pi"))
     g = c.insert(graph.graphxy(x, y, height=5, x=xaxis))
     #g = c.insert(graph.graphxy(x, y, height=5, x=xaxis, x2=xaxis))
-    g.plot([graph.data.function("y=sin(x-i*pi/10)", context={"i": i}) for i in range(20)],
+    g.plot([graph.data.function("y(x)=sin(x-i*pi/10)", context={"i": i}) for i in range(20)],
            styles=[graph.style.line(lineattrs=[color.palette.Hue])])
     g.finish()
 
@@ -47,10 +46,10 @@ def test_ownmark(c, x, y):
     mod = lambda x, y: int(x)%int(y)
     g = c.insert(graph.graphxy(x, y, height=5, x=graph.axis.lin(min=0, max=10), y=graph.axis.lin(min=0, max=10)))
     g.plot(graph.data.paramfunction("k", 0, 120, "x, y, size, angle = mod(k, 11), div(k, 11), (1+sin(k*pi/120))/2, 3*k", points=121, context=locals()), [graph.style.arrow()])
-    line1 = g.plot(graph.data.function("y=10/x"))
-    line2 = g.plot(graph.data.function("y=12*x**-1.6"))
-    line3 = g.plot(graph.data.function("y=7/x"))
-    line4 = g.plot(graph.data.function("y=25*x**-1.6"))
+    line1 = g.plot(graph.data.function("y(x)=10/x"))
+    line2 = g.plot(graph.data.function("y(x)=12*x**-1.6"))
+    line3 = g.plot(graph.data.function("y(x)=7/x"))
+    line4 = g.plot(graph.data.function("y(x)=25*x**-1.6"))
     g.plot(graph.data.list([[-1, 1], [5, 2], [11, 5], [5, 11], [4, -1]], x=1, y=2), [graph.style.line(lineattrs=[color.rgb.red])])
     g.finish()
 

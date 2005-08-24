@@ -74,19 +74,19 @@ class _style:
         column names which the style will make use of."""
         return []
 
-    def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
-        """Select stroke/fill attributes
-
-        This method is called to allow for the selection of
-        changable attributes of a style."""
-        pass
-
     def adjustaxis(self, privatedata, sharedata, graph, columnname, data):
         """Adjust axis range
 
         This method is called in order to adjust the axis range to
         the provided data. columnname is the column name (each style
         is subsequently called for all column names)."""
+        pass
+
+    def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
+        """Select stroke/fill attributes
+
+        This method is called to allow for the selection of
+        changable attributes of a style."""
         pass
 
     def initdrawpoints(self, privatedata, sharedata, graph):
@@ -910,6 +910,7 @@ class histogram(_style):
                 graph.axes[columnname].adjustaxis([min, max])
 
     def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
+        privatedata.insertfrompath = selectindex == 0
         if self.lineattrs is not None:
             privatedata.lineattrs = attr.selectattrs(self.defaultlineattrs + self.lineattrs, selectindex, selecttotal)
         else:
@@ -1145,7 +1146,7 @@ class histogram(_style):
             if privatedata.vfromvalue > 1:
                 privatedata.vfromvalue = 1
                 privatedata.vfromvaluecut = 1
-            if self.frompathattrs is not None:
+            if self.frompathattrs is not None and privatedata.insertfrompath:
                 graph.stroke(graph.axes[valueaxisname].vgridpath(privatedata.vfromvalue),
                              self.defaultfrompathattrs + self.frompathattrs)
         else:
@@ -1207,13 +1208,9 @@ class barpos(_style):
 
     defaultfrompathattrs = []
 
-    def __init__(self, fromvalue=None, frompathattrs=[], subindex=0, subnames=None, epsilon=1e-10):
-        # NOTE subindex is a perspective for higher dimensional plots
-        #      (just ignore it for the moment -- we don't even need to document about it)
+    def __init__(self, fromvalue=None, frompathattrs=[], epsilon=1e-10):
         self.fromvalue = fromvalue
         self.frompathattrs = frompathattrs
-        self.subindex = subindex
-        self.subnames = subnames
         self.epsilon = epsilon
 
     def columnnames(self, privatedata, sharedata, graph, columnnames):
@@ -1237,23 +1234,19 @@ class barpos(_style):
                 raise ValueError("value/name missing")
         if sharedata.barvalueindex is None:
             raise ValueError("missing value")
-        if self.subindex >= sharedata.barvalueindex:
-            privatedata.barpossubindex = self.subindex + 1
-        else:
-            privatedata.barpossubindex = self.subindex
         sharedata.vposmissing = []
         return sharedata.barposcolumnnames
 
-    def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
-        if selecttotal == 1:
-            if self.subnames is not None:
-                raise ValueError("subnames set for single-bar data")
-            privatedata.barpossubname = None
+    def addsubvalue(self, value, subvalue):
+        try:
+            value + ""
+        except:
+            try:
+                return value[0], self.addsubvalue(value[1], subvalue)
+            except:
+                return value, subvalue
         else:
-            if self.subnames is not None:
-                privatedata.barpossubname = self.subnames[selectindex]
-            else:
-                privatedata.barpossubname = selectindex
+            return value, subvalue
 
     def adjustaxis(self, privatedata, sharedata, graph, columnname, data):
         try:
@@ -1266,12 +1259,11 @@ class barpos(_style):
                     graph.axes[sharedata.barposcolumnnames[i]].adjustaxis([self.fromvalue])
                 graph.axes[sharedata.barposcolumnnames[i]].adjustaxis(data)
             else:
-                if i == privatedata.barpossubindex and privatedata.barpossubname is not None:
-                    graph.axes[sharedata.barposcolumnnames[i][:-4]].adjustaxis([(x, (privatedata.barpossubname, 0)) for x in data])
-                    graph.axes[sharedata.barposcolumnnames[i][:-4]].adjustaxis([(x, (privatedata.barpossubname, 1)) for x in data])
-                else:
-                    graph.axes[sharedata.barposcolumnnames[i][:-4]].adjustaxis([(x, 0) for x in data])
-                    graph.axes[sharedata.barposcolumnnames[i][:-4]].adjustaxis([(x, 1) for x in data])
+                graph.axes[sharedata.barposcolumnnames[i][:-4]].adjustaxis([self.addsubvalue(x, 0) for x in data])
+                graph.axes[sharedata.barposcolumnnames[i][:-4]].adjustaxis([self.addsubvalue(x, 1) for x in data])
+
+    def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
+        privatedata.insertfrompath = selectindex == 0
 
     def initdrawpoints(self, privatedata, sharedata, graph):
         sharedata.vpos = [None]*(len(sharedata.barposcolumnnames))
@@ -1284,8 +1276,7 @@ class barpos(_style):
                 privatedata.vfromvalue = 0
             if privatedata.vfromvalue > 1:
                 privatedata.vfromvalue = 1
-            if self.frompathattrs is not None:
-                # TODO 2d only
+            if self.frompathattrs is not None and privatedata.insertfrompath:
                 graph.stroke(graph.axes[sharedata.barposcolumnnames[sharedata.barvalueindex][0]].vgridpath(privatedata.vfromvalue),
                              self.defaultfrompathattrs + self.frompathattrs)
         else:
@@ -1304,10 +1295,7 @@ class barpos(_style):
             else:
                 for j in xrange(2):
                     try:
-                        if i == privatedata.barpossubindex and privatedata.barpossubname is not None:
-                            sharedata.vbarrange[i][j] = graph.axes[barname[:-4]].convert((point[barname], (privatedata.barpossubname, j)))
-                        else:
-                            sharedata.vbarrange[i][j] = graph.axes[barname[:-4]].convert((point[barname], j))
+                        sharedata.vbarrange[i][j] = graph.axes[barname[:-4]].convert(self.addsubvalue(point[barname], j))
                     except (ArithmeticError, ValueError, TypeError):
                         sharedata.vbarrange[i][j] = None
                 try:

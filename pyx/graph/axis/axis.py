@@ -301,13 +301,6 @@ class bar(_axis):
 
     def createdata(self, errorname):
         data = axisdata(size=self.firstdist+self.lastdist-self.dist, subaxes={}, names=[])
-        try:
-            len(self.subaxes)
-        except:
-            pass
-        else:
-            for name, subaxis in enumerate(self.subaxes):
-                self.addsubaxis(data, name, subaxis, errorname)
         return data
 
     def addsubaxis(self, data, name, subaxis, errorname):
@@ -326,7 +319,6 @@ class bar(_axis):
 
     def adjustaxis(self, data, columndata, errorname):
         for value in columndata:
-            assert len(value) == 2, "wrong length"
             name = value[0]
             if name is not None and name not in data.names:
                 if self.subaxes:
@@ -338,12 +330,14 @@ class bar(_axis):
             subaxis = data.subaxes[name]
             if subaxis.sized:
                 data.size -= subaxis.data.size
-            subaxis.axis.adjustaxis(subaxis.data, [value[1] for value in columndata if value[0] == name], "%s, subaxis %s" % (errorname, name))
+            subaxis.axis.adjustaxis(subaxis.data, [value[1]
+                                                   for value in columndata
+                                                   if value[0] == name],
+                                                  "%s, subaxis %s" % (errorname, name))
             if subaxis.sized:
                 data.size += subaxis.data.size
 
     def convert(self, data, value):
-        assert len(value) == 2, "wrong length"
         try:
             axis = data.subaxes[value[0]]
         except KeyError:
@@ -370,7 +364,6 @@ class bar(_axis):
                 subaxis.vmaxover = 1
             else:
                 subaxis.vmaxover = position / float(data.size)
-            # print subaxis.vminover, subaxis.vmin, subaxis.vmax, subaxis.vmaxover
             subaxis.setpositioner(subaxispositioner(positioner, subaxis))
             subaxis.create(canvas.texrunner)
             canvas.insert(subaxis.canvas)
@@ -544,6 +537,9 @@ class linkedaxis(anchoredaxis):
         self.data = axis.data
         self.canvas = None
         self.positioner = None
+
+    def adjustaxis(self, columndata):
+        print "not adjusting"
 
     def create(self, graphtexrunner):
         assert self.positioner is not None, self.errorname

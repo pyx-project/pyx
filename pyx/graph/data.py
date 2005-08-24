@@ -25,7 +25,7 @@
 from __future__ import nested_scopes
 
 import math, re, ConfigParser, struct, warnings
-from pyx import mathtree, text
+from pyx import text
 from pyx.style import linestyle
 from pyx.graph import style
 
@@ -45,6 +45,42 @@ except NameError:
         for key, value in items:
             result[key] = value
         return result
+
+
+def _splitatvalue(x, *splits):
+    section = 0
+    while section < len(splits) and splits[section] < x:
+        section += 1
+    if len(splits) > 1:
+        if section % 2:
+            section = None
+        else:
+            section >>= 1
+    return (section, x)
+
+
+_mathglobals = {"neg": lambda x: -x,
+                "abs": lambda x: x < 0 and -x or x,
+                "sgn": lambda x: x < 0 and -1 or 1,
+                "sqrt": math.sqrt,
+                "exp": math.exp,
+                "log": math.log,
+                "sin": math.sin,
+                "cos": math.cos,
+                "tan": math.tan,
+                "asin": math.asin,
+                "acos": math.acos,
+                "atan": math.atan,
+                "sind": lambda x: math.sin(math.pi/180*x),
+                "cosd": lambda x: math.cos(math.pi/180*x),
+                "tand": lambda x: math.tan(math.pi/180*x),
+                "asind": lambda x: 180/math.pi*math.asin(x),
+                "acosd": lambda x: 180/math.pi*math.acos(x),
+                "atand": lambda x: 180/math.pi*math.atan(x),
+                "norm": lambda x, y: math.sqrt(x*x + y*y),
+                "splitatvalue": _splitatvalue,
+                "pi": math.pi,
+                "e": math.e}
 
 
 class _data:
@@ -119,88 +155,23 @@ class list(_data):
         self.defaultstyles = [style.symbol()]
 
 
-
-##############################################################
-# math tree enhanced by column number variables
-##############################################################
-
-class MathTreeFuncCol(mathtree.MathTreeFunc1):
-
-    def __init__(self, *args):
-        mathtree.MathTreeFunc1.__init__(self, "_column_", *args)
-
-    def VarList(self):
-        # we misuse VarList here:
-        # - instead of returning a string, we return this instance itself
-        # - before calculating the expression, you must call ColumnNameAndNumber
-        #   once (when limiting the context to external defined variables,
-        #   otherwise you have to call it each time)
-        return [self]
-
-    def ColumnNameAndNumber(_hidden_self, **args):
-        number = int(_hidden_self.Args[0].Calc(**args))
-        _hidden_self.varname = "_column_%i" % number
-        return _hidden_self.varname, number
-
-    def __str__(self):
-        return self.varname
-
-    def Calc(_hidden_self, **args):
-        return args[_hidden_self.varname]
-
-MathTreeFuncsWithCol = mathtree.DefaultMathTreeFuncs + [MathTreeFuncCol]
-
-
-class columntree:
-
-    def __init__(self, tree):
-        self.tree = tree
-        self.Calc = tree.Calc
-        self.__str__ = tree.__str__
-
-    def VarList(self):
-        # returns a list of regular variables (strings) like the original mathtree
-        return [var for var in self.tree.VarList() if not isinstance(var, MathTreeFuncCol) and var[:8] != "_column_"]
-
-    def columndict(_hidden_self, **context):
-        # returns a dictionary of column names (keys) and column numbers (values)
-        columndict = {}
-        for var in _hidden_self.tree.VarList():
-            if isinstance(var, MathTreeFuncCol):
-                name, number = var.ColumnNameAndNumber(**context)
-                columndict[name] = number
-            elif var[:8] == "_column_":
-                columndict[var] = int(var[8:])
-        return columndict
-
-
-class dataparser(mathtree.parser):
-    # mathtree parser enhanced by column handling
-    # parse returns a columntree instead of a regular tree
-
-    def __init__(self, MathTreeFuncs=MathTreeFuncsWithCol, **kwargs):
-        mathtree.parser.__init__(self, MathTreeFuncs=MathTreeFuncs, **kwargs)
-
-    def parse(self, expr):
-        return columntree(mathtree.parser.parse(self, expr.replace("$", "_column_")))
-
-##############################################################
-
-
 class _notitle:
     pass
+
+_columnintref = re.compile(r"\$(-?\d+)", re.IGNORECASE)
 
 class data(_data):
     "creates a new data set out of an existing data set"
 
-    def __init__(self, data, title=_notitle, parser=dataparser(), context={}, copy=1, **columns):
+    def __init__(self, data, title=_notitle, context={}, copy=1,
+                       replacedollar=1, columncallback="__column__", **columns):
         # build a nice title
         if title is _notitle:
             items = columns.items()
             items.sort() # we want sorted items (otherwise they would be unpredictable scrambled)
-            self.title = "%s: %s" % (data.title,
+            self.title = "%s: %s" % (text.escapestring(data.title or "unkown source"),
                                      ", ".join(["%s=%s" % (text.escapestring(key),
-                                                           text.escapestring(value))
+                                                           text.escapestring(str(value)))
                                                 for key, value in items]))
         else:
             self.title = title
@@ -211,57 +182,42 @@ class data(_data):
         # analyse the **columns argument
         self.columns = {}
         for columnname, value in columns.items():
+            # search in the columns dictionary
             try:
                 self.columns[columnname] = self.orgdata.columns[value]
-            except:
-                pass
-            try:
-                self.columns[columnname] = self.orgdata.columndata[value]
-            except:
-                pass
-            # value was not an valid column identifier
-            if not self.columns.has_key(columnname):
-                # take it as a mathematical expression
-                tree = parser.parse(value)
-                columndict = tree.columndict(**context)
-                vars = {}
-                for var, columnnumber in columndict.items():
-                    # column data accessed via $<column number>
-                    vars[var] = self.orgdata.columndata[columnnumber]
-                for var in tree.VarList():
-                    try:
-                        # column data accessed via the name of the column
-                        vars[var] = self.orgdata.columns[var]
-                    except (KeyError, ValueError):
-                        # other data available in context
-                        if var not in context.keys():
-                            raise ValueError("undefined variable '%s'" % var)
-                newdata = []
-                usevars = context.copy() # do not modify context, use a copy vars instead
-                if self.orgdata.columns:
-                    key, columndata = self.orgdata.columns.items()[0]
-                    count = len(columndata)
-                elif self.orgdata.columndata:
-                    count = len(self.orgdata.columndata[0])
-                else:
-                    count = 0
-                for i in xrange(count):
-                    # insert column data as prepared in vars
-                    for var, columndata in vars.items():
-                        usevars[var] = columndata[i]
-                    # evaluate expression
-                    try:
-                        newdata.append(tree.Calc(**usevars))
-                    except (ArithmeticError, ValueError):
-                        newdata.append(None)
-                    # we could also do:
-                    # point[newcolumnnumber] = eval(str(tree), vars)
-
-                    # XXX: It might happen, that the evaluation of the expression
-                    #      seems to work, but the result is NaN/Inf/-Inf. This
-                    #      is highly plattform dependend.
-
-                self.columns[columnname] = newdata
+            except KeyError:
+                # search in the columndata list
+                try:
+                    self.columns[columnname] = self.orgdata.columndata[value]
+                except (AttributeError, TypeError):
+                    # value was not an valid column identifier
+                    # i.e. take it as a mathematical expression
+                    if replacedollar:
+                        m = _columnintref.search(value)
+                        while m:
+                            value = "%s%s(%s)%s" % (value[:m.start()], columncallback, m.groups()[0], value[m.end():])
+                            m = _columnintref.search(value)
+                        value = value.replace("$", columncallback)
+                    expression = compile(value, __file__, "eval")
+                    context = context.copy()
+                    context[columncallback] = self.columncallback
+                    if self.orgdata.columns:
+                        key, columndata = self.orgdata.columns.items()[0]
+                        count = len(columndata)
+                    elif self.orgdata.columndata:
+                        count = len(self.orgdata.columndata[0])
+                    else:
+                        count = 0
+                    newdata = []
+                    for i in xrange(count):
+                        self.columncallbackcount = i
+                        for key, values in self.orgdata.columns.items():
+                            context[key] = values[i]
+                        try:
+                            newdata.append(eval(expression, _mathglobals, context))
+                        except (ArithmeticError, ValueError):
+                            newdata.append(None)
+                    self.columns[columnname] = newdata
 
         if copy:
             # copy other, non-conflicting column names
@@ -269,8 +225,11 @@ class data(_data):
                 if not self.columns.has_key(columnname):
                     self.columns[columnname] = columndata
 
-    def getcolumnpointsindex(self, column):
-        return self.columns[column]
+    def columncallback(self, value):
+        try:
+            return self.orgdata.columndata[value][self.columncallbackcount]
+        except:
+            return self.orgdata.columns[value][self.columncallbackcount]
 
 
 filecache = {}
@@ -546,7 +505,7 @@ class function(_data):
     assignmentpattern = re.compile(r"\s*([a-z_][a-z0-9_]*)\s*\(\s*([a-z_][a-z0-9_]*)\s*\)\s*=", re.IGNORECASE)
 
     def __init__(self, expression, title=_notitle, min=None, max=None,
-                 points=100, parser=mathtree.parser(), context={}):
+                 points=100, context={}):
 
         if title is _notitle:
             self.title = expression
@@ -561,22 +520,13 @@ class function(_data):
             self.yname, self.xname = m.groups()
             expression = expression[m.end():]
         else:
-            warnings.warn("implicit variables are deprecated, use y(x)=... and the like", DeprecationWarning)
-            self.xname = None
-            self.yname, expression = [x.strip() for x in expression.split("=")]
-        self.mathtree = parser.parse(expression)
+            raise ValueError("y(x)=... or similar expected")
+        if context.has_key(self.xname):
+            raise ValueError("xname in context")
+        self.expression = compile(expression, __file__, "eval")
         self.columns = {}
 
     def columnnames(self, graph):
-        if self.xname is None:
-            for xname in self.mathtree.VarList():
-                if xname in graph.axes.keys():
-                    if self.xname is None:
-                        self.xname = xname
-                    else:
-                        raise ValueError("multiple variables found")
-            if self.xname is None:
-                raise ValueError("no variable found")
         return [self.xname, self.yname]
 
     def dynamiccolumns(self, graph):
@@ -603,7 +553,7 @@ class function(_data):
             dynamiccolumns[self.xname].append(x)
             self.context[self.xname] = x
             try:
-                y = self.mathtree.Calc(**self.context)
+                y = eval(self.expression, _mathglobals, self.context)
             except (ArithmeticError, ValueError):
                 y = None
             dynamiccolumns[self.yname].append(y)
@@ -614,23 +564,22 @@ class paramfunction(_data):
 
     defaultstyles = [style.line()]
 
-    def __init__(self, varname, min, max, expression, title=_notitle, points=100, parser=mathtree.parser(), context={}):
+    def __init__(self, varname, min, max, expression, title=_notitle, points=100, context={}):
+        if context.has_key(varname):
+            raise ValueError("varname in context")
         if title is _notitle:
             self.title = expression
         else:
             self.title = title
-        varlist, expressionlist = expression.split("=")
+        varlist, expression = expression.split("=")
         keys = [key.strip() for key in varlist.split(",")]
-        mathtrees = parser.parse(expressionlist)
-        if len(keys) != len(mathtrees):
-            raise ValueError("unpack tuple of wrong size")
         self.columns = dict([(key, []) for key in keys])
         context = context.copy()
         for i in range(points):
             param = min + (max-min)*i / (points-1.0)
             context[varname] = param
-            for key, mathtree in zip(keys, mathtrees):
-                try:
-                    self.columns[key].append(mathtree.Calc(**context))
-                except (ArithmeticError, ValueError):
-                    self.columns[key].append(None)
+            values = eval(expression, _mathglobals, context)
+            for key, value in zip(keys, values):
+                self.columns[key].append(value)
+        if len(keys) != len(values):
+            raise ValueError("unpack tuple of wrong size")

@@ -147,10 +147,15 @@ This class is an abbreviation of \class{logarithmic} described above.
                        linkpainter=painter.linkedbar()}
   This class provides an axis suitable for a bar style. It handles a
   discrete set of values and maps them to distinct ranges in graph
-  coordinates. For that, the axis gets a tuple of two values. The
-  first item is taken to be one of the discrete values valid on this
-  axis. The second item is passed to the corresponding subaxis. The
-  result of the conversion done by the subaxis is mapped to the graph
+  coordinates. For that, the axis gets a tuple of two values.
+
+  The first item is taken to be one of the discrete values valid on
+  this axis. The discrete values can be any hashable type and the
+  order of the subaxes is defined by the order the data is recieved or
+  the inverse of that when \var{reverse} is set.
+
+  The second item is passed to the corresponding subaxis. The result
+  of the conversion done by the subaxis is mapped to the graph
   coordinate range reserved for this subaxis. This range is defined by
   a size attribute of the subaxis, which can be added to any axis.
   (see the sized linear axes described below for some axes already
@@ -159,15 +164,11 @@ This class is an abbreviation of \class{logarithmic} described above.
   its size by suming up the sizes of its subaxes plus \var{firstdist},
   \var{lastdist} and \var{dist} times the number of subaxes minus 1.
 
-  \var{subaxes} should be a list to map a discrete value of the bar
-  axis to the corresponding subaxis. Since the subaxis have to have an
-  order, the discrete values of the bar axis need to be integers
-  starting at 0 for that case. When no subaxes are set or data is
-  recieved for a unknown descrete axis value, instances of
-  defaultsubaxis are used as the subaxis for this discrete value. For
-  this case, the discrete values can be any hashable type and the
-  order of the subaxis is defined by the order the data is recieved
-  or reversed when \var{reverse} is set.
+  \var{subaxes} should be a list or a dictionary mapping a discrete
+  value of the bar axis to the corresponding subaxis. When no subaxes
+  are set or data is recieved for a unknown descrete axis value,
+  instances of defaultsubaxis are used as the subaxis for this
+  discrete value.
 
   \var{dist} is used as the spacing between the ranges for each
   distinct value. It is measured in the same units as the subaxis

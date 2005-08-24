@@ -324,7 +324,8 @@ graph. The classes are implemented in \module{graph.data}.
                         columnpattern=defaultcolumnpattern,
                         stringpattern=defaultstringpattern,
                         skiphead=0, skiptail=0, every=1, title=notitle,
-                        parser=dataparser(), context=\{\}, copy=1,
+                        context=\{\}, copy=1,
+                        replacedollar=1, columncallback="\_\_column\_\_",
                         **columns}
   This class reads data from a file and makes them available to the
   graph system. \var{filename} is the name of the file to be read.
@@ -358,11 +359,9 @@ graph. The classes are implemented in \module{graph.data}.
   \var{**columns}. You may set \var{title} to \code{None} to disable
   the title.
 
-  \var{parser} is the parser for mathematical expressions provided in
-  \var{**columns}. When in doubt, this is probably uninteresting for
-  you. \var{context} allows for accessing external variables and
-  functions when evaluating mathematical expressions for columns. As
-  an example you may use \code{context=locals()} or something similar.
+  \var{context} allows for accessing external variables and functions
+  when evaluating mathematical expressions for columns. As an example
+  you may use \code{context=locals()} or something similar.
 
   Finally, \var{columns} define columns out of the existing columns
   from the file by a column number or a mathematical expression (see
@@ -388,14 +387,14 @@ graph. The classes are implemented in \module{graph.data}.
   and \var{every}. Furthermore values of \var{**columns} can be
   strings: file column names or complex mathematical expressions. To
   refer to columns within mathematical expressions you can also use
-  file column names when they are valid variable names or by the
-  syntax \code{\$\textless number\textgreater} or even
-  \code{\$(\textless expression\textgreater)}, where \code{\textless
-  number\textgreater} is a non-negative integer and \code{\textless
-  expression\textgreater} a valid mathematical expression itself. In
-  those mathematical expressions the \var{context} is available, but
-  data from other columns are not. Negative numbers count the columns
-  from the end. Example:
+  file column names when they are valid variable identifiers. Equal
+  named items in context will then be hidden. Alternatively columns
+  can be access by the syntax \code{\$\textless number\textgreater}
+  when \var{replacedollar} is set. They will be translated into
+  function calls to \var{columncallback}, which is a function to
+  access column data by index or name.
+
+  Example:
   \begin{verbatim}
 graph.data.file("test.dat", a=1, b="B", c="2*B+$3")
   \end{verbatim}
@@ -407,7 +406,9 @@ graph.data.file("test.dat", a=1, b="B", c="2*B+$3")
   \end{verbatim}
   The columns with name \code{"a"}, \code{"b"}, \code{"c"} will become
   \code{"[1.234, 5.678]"}, \code{"[1.0, 3.0]"}, and \code{"[4.0,
-  10.0]"}, respectively.
+  10.0]"}, respectively. The columns \code{"A"}, \code{"B"},
+  \code{"C"} will be available as well, since \var{copy} is enabled by
+  default.
 
   When creating several data instances accessing the same file,
   the file is read only once. There is an inherent caching of the
@@ -430,7 +431,6 @@ For the sake of completeness we list the default patterns:
 
 \begin{classdesc}{function}{expression, title=notitle, % {{{
                             min=None, max=None, points=100,
-                            parser=mathtree.parser(),
                             context=\{\}}
   This class creates graph data from a function. \var{expression} is
   the mathematical expression of the function. It must also contain
@@ -448,27 +448,13 @@ For the sake of completeness we list the default patterns:
   the number of points for which the function is calculated. The
   points are choosen linearly in terms of graph coordinates.
 
-  \var{parser} is the parser for the mathematical expression. When in
-  doubt, this is probably uninteresting for you. \var{context} allows
-  for accessing external variables and functions. As an example you
-  may use \code{context=locals()} or something similar.
-
-  Note when accessing external variables: In principle, it is unclear, 
-  which of the variables should be used as the
-  dependent variable. The solution is, that there should be exactly
-  one variable, which is a valid and used axis name.
-  Example:
-  \begin{verbatim}
-  [graph.data.function("y=x**i", context=locals()) for i in range(1, 5)]
-  \end{verbatim}
-  The result of this expression could just be passed to a graphs
-  \method{plot()} method, since not only data instances but also lists
-  of data instances are allowed.
+  \var{context} allows for accessing external variables and functions.
+  As an example you may use \code{context=locals()} or something
+  similar.
 \end{classdesc} % }}}
 
 \begin{classdesc}{paramfunction}{varname, min, max, expression, % {{{
                                  title=notitle, points=100,
-                                 parser=mathtree.parser(),
                                  context=\{\}}
   This class creates graph data from a parametric function.
   \var{varname} is the parameter of the function. \var{min} and
@@ -484,10 +470,9 @@ For the sake of completeness we list the default patterns:
   default \var{expression} is used. You may set \var{title} to
   \code{None} to disable the title.
 
-  \var{parser} is the parser for mathematical expressions. When in
-  doubt, this is probably uninteresting for you. \var{context} allows
-  for accessing external variables and functions. As an example you
-  may use \code{context=locals()} or something similar.
+  \var{context} allows for accessing external variables and functions.
+  As an example you may use \code{context=locals()} or something
+  similar.
 \end{classdesc} % }}}
 
 \begin{classdesc}{list}{data, title="user provided list", % {{{
@@ -505,8 +490,8 @@ For the sake of completeness we list the default patterns:
   from zero, when \var{addlinenumbers} is switched off.
 \end{classdesc} % }}}
 
-\begin{classdesc}{data}{data, title=notitle, parser=dataparser(), % {{{
-                        context={}, copy=1, **columns}
+\begin{classdesc}{data}{data, title=notitle, context={}, copy=1, % {{{
+                        replacedollar=1, columncallback="\_\_column\_\_", **columns}
   This class provides graph data out of other graph data. \var{data}
   is the source of the data. All other parameters work like the equally
   called parameters in \class{graph.data.file}. Indeed, the latter is
@@ -514,8 +499,8 @@ For the sake of completeness we list the default patterns:
   contents in a \class{graph.data.list} instance.
 \end{classdesc} % }}}
 
-\begin{classdesc}{conffile}{filename, title=notitle, parser=dataparser(), % {{{
-                            context={}, copy=1, **columns}
+\begin{classdesc}{conffile}{filename, title=notitle, context={}, copy=1, % {{{
+                            replacedollar=1, columncallback="\_\_column\_\_", **columns}
   This class reads data from a config file with the file name
   \var{filename}. The format of a config file is described within the
   documentation of the \module{ConfigParser} module of the Python
@@ -529,8 +514,8 @@ For the sake of completeness we list the default patterns:
 \end{classdesc} % }}}
 
 \begin{classdesc}{cbdfile}{filename, minrank=None, maxrank=None, % {{{
-                           title=notitle, parser=dataparser(),
-                           context={}, copy=1, **columns}
+                           title=notitle, context={}, copy=1,
+                           replacedollar=1, columncallback="\_\_column\_\_", **columns}
   This is an experimental class to read map data from cbd-files. See
   \url{http://sepwww.stanford.edu/ftp/World_Map/} for some world-map
   data.
@@ -789,18 +774,14 @@ definition is:
   \var{epsilon}.
 \end{classdesc} % }}}
 
-\begin{classdesc}{barpos}{fromvalue=None, frompathattrs=[], % {{{
-                          subnames=None, epsilon=1e-10}
+\begin{classdesc}{barpos}{fromvalue=None, frompathattrs=[], epsilon=1e-10} % {{{
   This class is a hidden style providing position information in a bar
   graph. Those graphs need to contain a specialized axis, namely a bar
   axis. The data column for this bar axis is named \code{Xname} where
   \code{X} is an axis name. In the other graph dimension the data
-  column name must be equal to an axis name. When plotting several
-  bars in a single graph, those bars are placed side by side (at the
-  same value of \code{Xname}). The name axis, a bar axis, must then be
-  a nested bar axis. The names used for the subaxis can be set by
-  \var{subnames}. When not set, integer numbers starting from zero
-  will be used.
+  column name must be equal to an axis name. To plot several bars in a
+  single graph side by side, you need to have a nested bar axis and
+  provide a tuple as data for nested bar axis.
 
   The bars start at \var{fromvalue} when provided. The \var{fromvalue}
   is marked by a gridline stroked using \var{frompathattrs}. Thus this
