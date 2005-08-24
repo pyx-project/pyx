@@ -91,7 +91,7 @@ TODO:
         several graphs participating on axis range calculation (support for
         mutual linking of axis between graphs)
   - color module:
-    - transparenty support (PDF only) (TODO: documentation)
+    - transparency support (PDF only) (TODO: documentation)
   - text module:
     - improve escapestring to handle all ascii characters
 
