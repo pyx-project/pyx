@@ -23,7 +23,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import colorsys
-import attr, style
+import attr, style, pdfwriter
 
 class color(attr.exclusiveattr, style.strokestyle, style.fillstyle):
 
@@ -252,4 +252,33 @@ palette.Rainbow        = palette(hsb(0, 1, 1), hsb(2.0/3.0, 1, 1))
 palette.ReverseRainbow = palette(hsb(2.0/3.0, 1, 1), hsb(0, 1, 1))
 palette.Hue            = palette(hsb(0, 1, 1), hsb(1, 1, 1))
 palette.ReverseHue     = palette(hsb(1, 1, 1), hsb(0, 1, 1))
+
+
+class PDFextgstate(pdfwriter.PDFobject):
+
+    def __init__(self, name, extgstate):
+        pdfwriter.PDFobject.__init__(self, "extgstate", name, "ExtGState")
+        self.name = name
+        self.extgstate = extgstate
+
+    def outputPDF(self, file, writer, registry):
+        file.write("%s\n" % self.extgstate)
+
+
+class transparency(attr.exclusiveattr, style.strokestyle, style.fillstyle):
+
+    def __init__(self, value):
+        value = 1-value
+        attr.exclusiveattr.__init__(self, transparency)
+        self.name = "Transparency-%f" % value
+        self.extgstate = "<< /Type /ExtGState /CA %f /ca %f >>" % (value, value)
+
+    def outputPS(self, file, writer, context):
+        raise NotImplementedError("transparency not available in PostScript")
+
+    def registerPDF(self, registry):
+        registry.add(PDFextgstate(self.name, self.extgstate))
+
+    def outputPDF(self, file, writer, context):
+        file.write("/%s gs\n" % self.name)
 

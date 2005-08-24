@@ -104,12 +104,14 @@ class PDFregistry:
 
 class PDFobject:
 
-    def __init__(self, type, _id=None):
+    def __init__(self, type, _id=None, pageresource=None, pageprocset=None):
         self.type = type
         if _id is None:
             self.id = id(self)
         else:
             self.id = _id
+        self.pageresource = pageresource
+        self.pageprocset = pageprocset
         self.refno = None
 
     def merge(self, other):
@@ -229,30 +231,19 @@ class PDFpage(PDFobject):
             file.write("/MediaBox [%f %f %f %f]\n" % self.transformedbbox.highrestuple_pt())
         if self.transformedbbox and writer.writebbox:
             file.write("/CropBox [%f %f %f %f]\n" % self.transformedbbox.highrestuple_pt())
-        procset = []
-        if self.pageregistry.types.has_key("font"):
-            procset.append("/Text")
-        if self.pageregistry.types.has_key("image"):
-            if [image for image in self.pageregistry.types["image"].values()
-                if image.colorspace == "/DeviceGray"]:
-                procset.append("/ImageB")
-            if [image for image in self.pageregistry.types["image"].values()
-                if image.colorspace is not None and image.colorspace != "/DeviceGray"]:
-                procset.append("/ImageC")
-            if [image for image in self.pageregistry.types["image"].values()
-                if image.palettedata is not None]:
-                procset.append("/ImageI")
+        procset = ["PDF"]
+        resources = {}
+        for type in self.pageregistry.types.keys():
+            for resource in self.pageregistry.types[type].values():
+                if resource.pageprocset is not None and resource.pageprocset not in procset:
+                    procset.append(resource.pageprocset)
+                if resource.pageresource is not None:
+                    resources.setdefault(resource.pageresource, []).append(resource)
         file.write("/Resources <<\n"
-                   "/ProcSet [ /PDF %s ]\n" % " ".join(procset))
-        if self.pageregistry.types.has_key("font"):
-            file.write("/Font <<\n%s\n>>\n" % "\n".join(["/%s %i 0 R" % (font.name, registry.getrefno(font))
-                                                      for font in self.pageregistry.types["font"].values()]))
-        if self.pageregistry.types.has_key("image"):
-            file.write("/XObject <<\n%s\n>>\n" % "\n".join(["/%s %i 0 R" % (image.name, registry.getrefno(image))
-                                                         for image in self.pageregistry.types["image"].values()]))
-        if self.pageregistry.types.has_key("pattern"):
-            file.write("/Pattern <<\n%s\n>>\n" % "\n".join(["/%s %i 0 R" % (pattern.name, registry.getrefno(pattern))
-                                                         for pattern in self.pageregistry.types["pattern"].values()]))
+                   "/ProcSet [ %s ]\n" % " ".join(["/%s" % p for p in procset]))
+        for pageresource, resources in resources.items():
+            file.write("/%s <<\n%s\n>>\n" % (pageresource, "\n".join(["/%s %i 0 R" % (resource.name, registry.getrefno(resource))
+                                                                      for resource in resources])))
         file.write(">>\n")
         file.write("/Contents %i 0 R\n"
                    ">>\n" % registry.getrefno(self.PDFcontent))
@@ -316,7 +307,7 @@ class PDFcontentlength(PDFobject):
 class PDFfont(PDFobject):
 
     def __init__(self, font, chars, registry):
-        PDFobject.__init__(self, "font", font.name)
+        PDFobject.__init__(self, "font", font.name, "Font", "Text")
 
         self.fontdescriptor = PDFfontdescriptor(font, chars, registry)
         registry.add(self.fontdescriptor)

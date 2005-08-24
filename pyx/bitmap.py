@@ -201,7 +201,13 @@ class PDFimage(pdfwriter.PDFobject):
 
     def __init__(self, name, width, height, palettecolorspace, palettedata, colorspace,
                        bitspercomponent, compressmode, data, registry):
-        pdfwriter.PDFobject.__init__(self, "image", name)
+        if palettedata is not None:
+            procset = "ImageI"
+        elif colorspace == "/DeviceGray":
+            procset = "ImageB"
+        else:
+            procset = "ImageC"
+        pdfwriter.PDFobject.__init__(self, "image", name, "XObject", procset)
         if palettedata is not None:
             # acrobat wants a palette to be an object
             self.PDFpalettedata = PDFimagepalettedata(name, palettedata)

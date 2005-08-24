@@ -278,7 +278,7 @@ class PDFpattern(pdfwriter.PDFobject):
 
     def __init__(self, name, patterntype, painttype, tilingtype, bbox, xstep, ystep, trafo,
                  canvasoutputPDF, canvasregisterPDF, registry):
-        pdfwriter.PDFobject.__init__(self, "pattern", name)
+        pdfwriter.PDFobject.__init__(self, "pattern", name, "Pattern")
         self.name = name
         self.patterntype = patterntype
         self.painttype = painttype

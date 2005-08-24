@@ -74,6 +74,28 @@ TODO:
       graph data
 
 
+0.9 (2005/??/??):
+  - most important changes (to be included in the release notes):
+    - mathtree removal (warning about integer division)
+    - barpos style does not build tuples for nestedbar axes automatically
+  - graph modules:
+    - data module:
+      - mathtree removal: more flexibility due to true python expressions
+    - style module:
+      - automatic subaxis tuple creation removed in barpos (create tuples
+        in expressions now; subnames argument removed since it became pointless;
+        adujstaxis became independend from selectstyle for all styles now)
+      - remove multiple painting of frompath in histogram and barpos styles
+    - style&graph module:
+      - TODO: separate axis range calculation from dolayout and allow for
+        several graphs participating on axis range calculation (support for
+        mutual linking of axis between graphs)
+  - color module:
+    - transparenty support (PDF only) (TODO: documentation)
+  - text module:
+    - improve escapestring to handle all ascii characters
+
+
 0.8.1 (2005/08/13):
   - deco module:
     - fix bug in postscript deco code for stroking only attributes
