@@ -11,8 +11,8 @@ a = graph.axis.nestedbar(painter=bap(nameattrs=[trafo.rotate(45),
                                      innerticklength=0.2))
 
 g = graph.graphxy(width=8, x=a)
-g.plot([graph.data.file("bar.dat", xname=1, y=2),
-        graph.data.file("bar.dat", xname=1, y=3)],
+g.plot([graph.data.file("bar.dat", xname="$1, 0", y=2),
+        graph.data.file("bar.dat", xname="$1, 1", y=3)],
        [graph.style.bar()])
 g.writeEPSfile("compare")
 g.writePDFfile("compare")

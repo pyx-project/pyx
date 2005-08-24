@@ -8,8 +8,8 @@ from pyx import *
 mynestedbaraxis = graph.axis.bar(defaultsubaxis=graph.axis.bar(dist=0))
 
 g = graph.graphxy(width=8, x=mynestedbaraxis)
-g.plot([graph.data.list([["A", 5], ["B", 6]], xname=1, y=2),
-        graph.data.list([["A", 7], ["B", 8], ["C", 9]], xname=1, y=2)],
+g.plot([graph.data.list([[("A", "x"), 5], [("B", "x"), 6]], xname=1, y=2),
+        graph.data.list([[("A", "y"), 7], [("B", "y"), 8], [("C", "y"), 9]], xname=1, y=2)],
        [graph.style.barpos(fromvalue=0), graph.style.bar()])
 g.writeEPSfile("multisubaxis")
 g.writePDFfile("multisubaxis")

@@ -319,6 +319,20 @@ class bar(_axis):
 
     def adjustaxis(self, data, columndata, errorname):
         for value in columndata:
+
+            # some checks and error messages
+            try:
+                len(value)
+            except:
+                raise ValueError("tuple expected by bar axis '%s'" % errorname)
+            try:
+                value + ""
+            except:
+                pass
+            else:
+                raise ValueError("tuple expected by bar axis '%s'" % errorname)
+            assert len(value) == 2, "tuple of size two expected by bar axis '%s'" % errorname
+
             name = value[0]
             if name is not None and name not in data.names:
                 if self.subaxes:
@@ -338,10 +352,9 @@ class bar(_axis):
                 data.size += subaxis.data.size
 
     def convert(self, data, value):
-        try:
-            axis = data.subaxes[value[0]]
-        except KeyError:
+        if value[0] is None:
             return None
+        axis = data.subaxes[value[0]]
         vmin = axis.vmin
         vmax = axis.vmax
         return axis.vmin + axis.convert(value[1]) * (axis.vmax - axis.vmin)
@@ -453,7 +466,7 @@ autosizedlin = autosizedlinear
 
 class anchoredaxis:
 
-    def __init__(self, axis, errorname):
+    def __init__(self, axis=None, errorname="unknown"):
         assert not isinstance(axis, anchoredaxis), errorname
         self.axis = axis
         self.errorname = errorname
@@ -461,17 +474,29 @@ class anchoredaxis:
         self.canvas = None
         self.positioner = None
 
-    def convert(self, x):
-        assert self.canvas is not None, self.errorname
-        return self.axis.convert(self.data, x)
+    def setcreatecall(self, function, *args, **kwargs):
+        self._createfunction = function
+        self._createargs = args
+        self._createkwargs = kwargs
 
-    def adjustaxis(self, columndata):
-        self.axis.adjustaxis(self.data, columndata, self.errorname)
+    def createforlinked(self):
+        if not self.canvas:
+            self._createfunction(*self._createargs, **self._createkwargs)
 
     def setpositioner(self, positioner):
         assert positioner is not None, self.errorname
         assert self.positioner is None, self.errorname
         self.positioner = positioner
+
+    def convert(self, x):
+        assert self.canvas is not None, self.errorname
+        return self.axis.convert(self.data, x)
+
+    def adjustaxis(self, columndata):
+        if self.canvas is None:
+            self.axis.adjustaxis(self.data, columndata, self.errorname)
+        else:
+            warnings.warn("ignore axis range adjustment of already finished axis '%s'"  % self.errorname)
 
     def vbasepath(self, v1=None, v2=None):
         return self.positioner.vbasepath(v1=v1, v2=v2)
@@ -525,26 +550,29 @@ class _nopainter: pass
 
 class linkedaxis(anchoredaxis):
 
-    def __init__(self, axis, errorname="manual-linked", painter=_nopainter):
-        assert isinstance(axis, anchoredaxis), errorname
-        if painter is _nopainter:
-            self.painter = axis.axis.linkpainter
-        else:
-            self.painter = painter
-        self.linkedto = axis
-        self.axis = axis.axis
-        self.errorname = "%s (linked to %s)" % (errorname, axis.errorname)
-        self.data = axis.data
+    def __init__(self, linkedaxis=None, errorname="manual-linked", painter=_nopainter):
+        self.painter = painter
+        self.linkedto = None
+        self.errorname = errorname
         self.canvas = None
         self.positioner = None
+        if linkedaxis:
+            self.setlinkedaxis(linkedaxis)
 
-    def adjustaxis(self, columndata):
-        print "not adjusting"
+    def setlinkedaxis(self, linkedaxis):
+        assert isinstance(linkedaxis, anchoredaxis), errorname
+        self.linkedto = linkedaxis
+        self.axis = linkedaxis.axis
+        self.errorname = "%s (linked to %s)" % (self.errorname, linkedaxis.errorname)
+        self.data = linkedaxis.data
+        if self.painter is _nopainter:
+            self.painter = linkedaxis.axis.linkpainter
 
     def create(self, graphtexrunner):
+        assert self.linkedto is not None, self.errorname
         assert self.positioner is not None, self.errorname
         if self.canvas is None:
-            self.linkedto.create(graphtexrunner)
+            self.linkedto.createforlinked()
             self.canvas = self.axis.createlinked(self.data, self.positioner, graphtexrunner, self.errorname, self.painter)
         return self.canvas
 

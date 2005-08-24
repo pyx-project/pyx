@@ -96,7 +96,7 @@ class plotitem:
         for columnname in self.usedcolumnnames:
             try:
                 useitems.append((columnname, self.data.columns[columnname]))
-            except:
+            except KeyError:
                 useitems.append((columnname, self.dynamiccolumns[columnname]))
         if not useitems:
             raise ValueError("cannot draw empty data")
@@ -124,12 +124,50 @@ class plotitem:
         raise AttributeError("access to styledata attribute '%s' failed" % attr)
 
 
+class graph(canvas.canvas):
 
-class graphxy(canvas.canvas):
+    def __init__(self):
+        canvas.canvas.__init__(self)
+        self.axes = {}
+        self.plotitems = []
+        self._calls = {}
+        self.didranges = 0
+        self.diddata = 0
 
-    def plot(self, data, styles=None):
-        if self.haslayout:
-            raise RuntimeError("layout setup was already performed")
+    def did(self, method, *args, **kwargs):
+        if not self._calls.has_key(method):
+            self._calls[method] = []
+        for callargs in self._calls[method]:
+            if callargs == (args, kwargs):
+                return 1
+        self._calls[method].append((args, kwargs))
+        return 0
+
+    def bbox(self):
+        self.finish()
+        return canvas.canvas.bbox(self)
+
+    def registerPS(self, registry):
+        self.finish()
+        canvas.canvas.registerPS(self, registry)
+
+    def registerPDF(self, registry):
+        self.finish()
+        canvas.canvas.registerPDF(self, registry)
+
+    def outputPS(self, file, writer, context):
+        self.finish()
+        canvas.canvas.outputPS(self, file, writer, context)
+
+    def outputPDF(self, file, writer, context):
+        self.finish()
+        canvas.canvas.outputPDF(self, file, writer, context)
+
+    def plot(self, data, styles=None, rangewarning=1):
+        if self.didranges and rangewarnings:
+            raise warnings.warn("axes ranges have already been analysed; no further adjustments will be performed")
+        if self.diddata:
+            raise RuntimeError("can't add further data while data has already been processed")
         singledata = 0
         try:
             for d in data:
@@ -153,6 +191,49 @@ class graphxy(canvas.canvas):
             return plotitems[0]
         else:
             return plotitems
+
+    def doranges(self):
+        if self.did(self.doranges):
+            return
+        for plotitem in self.plotitems:
+            plotitem.adjustaxesstatic(self)
+        for plotitem in self.plotitems:
+            plotitem.makedynamicdata(self)
+        for plotitem in self.plotitems:
+            plotitem.adjustaxesdynamic(self)
+        self.didranges = 1
+
+    def dodata(self):
+        if self.did(self.dodata):
+            return
+        self.dolayout()
+        self.dobackground()
+
+        # count the usage of styles and perform selects
+        styletotal = {}
+        def stylesid(styles):
+            return ":".join([str(id(style)) for style in styles])
+        for plotitem in self.plotitems:
+            try:
+                styletotal[stylesid(plotitem.styles)] += 1
+            except:
+                styletotal[stylesid(plotitem.styles)] = 1
+        styleindex = {}
+        for plotitem in self.plotitems:
+            try:
+                styleindex[stylesid(plotitem.styles)] += 1
+            except:
+                styleindex[stylesid(plotitem.styles)] = 0
+            plotitem.selectstyles(self, styleindex[stylesid(plotitem.styles)],
+                                        styletotal[stylesid(plotitem.styles)])
+
+        for plotitem in self.plotitems:
+            plotitem.draw(self)
+
+        self.diddata = 1
+
+
+class graphxy(graph):
 
     def pos_pt(self, x, y, xaxis=None, yaxis=None):
         if xaxis is None:
@@ -210,23 +291,6 @@ class graphxy(canvas.canvas):
         return path.line_pt(self.xpos_pt, self.ypos_pt + vy*self.height_pt,
                             self.xpos_pt + self.width_pt, self.ypos_pt + vy*self.height_pt)
 
-    def keynum(self, key):
-        try:
-            while key[0] in string.letters:
-                key = key[1:]
-            return int(key)
-        except IndexError:
-            return 1
-
-    def removedomethod(self, method):
-        hadmethod = 0
-        while 1:
-            try:
-                self.domethods.remove(method)
-                hadmethod = 1
-            except ValueError:
-                return hadmethod
-
     def axistrafo(self, axis, t):
         c = canvas.canvas([t])
         c.insert(axis.canvas)
@@ -240,90 +304,80 @@ class graphxy(canvas.canvas):
             # it is an x-axis
             self.axistrafo(axis, trafo.translate_pt(0, self.ypos_pt + v*self.height_pt - axis.positioner.y1_pt))
 
-    def dolayout(self):
-        if not self.removedomethod(self.dolayout): return
-
-        # adjust the axes ranges
-        for plotitem in self.plotitems:
-            plotitem.adjustaxesstatic(self)
-        for plotitem in self.plotitems:
-            plotitem.makedynamicdata(self)
-        for plotitem in self.plotitems:
-            plotitem.adjustaxesdynamic(self)
-
-        # finish all axes
-        keys = list(self.axes.keys())
-        keys.sort() #TODO: alphabetical sorting breaks for axis numbers bigger than 9
-        for key in keys:
-            self.axes[key].create(self.texrunner)
-            if key[1:]:
-                num = int(key[1:])
+    def doaxispositioner(self, axisname):
+        if self.did(self.doaxispositioner, axisname):
+            return
+        self.doranges()
+        if axisname == "x":
+            self.axes["x"].setpositioner(positioner.lineaxispos_pt(self.xpos_pt, self.ypos_pt,
+                                                                   self.xpos_pt + self.width_pt, self.ypos_pt,
+                                                                   (0, 1), self.xvgridpath))
+        elif axisname == "x2":
+            self.axes["x2"].setpositioner(positioner.lineaxispos_pt(self.xpos_pt, self.ypos_pt + self.height_pt,
+                                                                    self.xpos_pt + self.width_pt, self.ypos_pt + self.height_pt,
+                                                                    (0, -1), self.xvgridpath))
+        elif axisname == "y":
+            self.axes["y"].setpositioner(positioner.lineaxispos_pt(self.xpos_pt, self.ypos_pt,
+                                                                   self.xpos_pt, self.ypos_pt + self.height_pt,
+                                                                   (1, 0), self.yvgridpath))
+        elif axisname == "y2":
+            self.axes["y2"].setpositioner(positioner.lineaxispos_pt(self.xpos_pt + self.width_pt, self.ypos_pt,
+                                                                    self.xpos_pt + self.width_pt, self.ypos_pt + self.height_pt,
+                                                                    (-1, 0), self.yvgridpath))
+        else:
+            if axisname[1:] == "3":
+                dependsonaxisname = axisname[0]
             else:
-                num = 1
-            if num:
-                nextkey = "%s%i" % (key[0], (num+2))
-                if self.axes.has_key(nextkey):
-                    sign = 2*(num % 2) - 1
-                    if key[0] == "x":
-                        y_pt = self.axes[key].positioner.y1_pt - sign * (self.axes[key].canvas.extent_pt + self.axesdist_pt)
-                        apositioner = positioner.lineaxispos_pt(self.xpos_pt, y_pt,
-                                                                self.xpos_pt + self.width_pt, y_pt,
-                                                                (0, sign), self.xvgridpath)
-                    else:
-                        x_pt = self.axes[key].positioner.x1_pt - sign * (self.axes[key].canvas.extent_pt + self.axesdist_pt)
-                        apositioner = positioner.lineaxispos_pt(x_pt, self.ypos_pt,
-                                                                x_pt, self.ypos_pt + self.height_pt,
-                                                                (sign, 0), self.yvgridpath)
-                    self.axes[nextkey].setpositioner(apositioner)
+                dependsonaxisname = "%s%d" % (axisname[0], int(axisname[1:]) - 2)
+            self.doaxiscreate(dependsonaxisname)
+            sign = 2*(int(axisname[1:]) % 2) - 1
+            if axisname[0] == "x":
+                y_pt = self.axes[dependsonaxisname].positioner.y1_pt - sign * (self.axes[dependsonaxisname].canvas.extent_pt + self.axesdist_pt)
+                self.axes[axisname].setpositioner(positioner.lineaxispos_pt(self.xpos_pt, y_pt,
+                                                                            self.xpos_pt + self.width_pt, y_pt,
+                                                                            (0, sign), self.xvgridpath))
+            else:
+                x_pt = self.axes[dependsonaxisname].positioner.x1_pt - sign * (self.axes[dependsonaxisname].canvas.extent_pt + self.axesdist_pt)
+                self.axes[axisname].setpositioner(positioner.lineaxispos_pt(x_pt, self.ypos_pt,
+                                                                            x_pt, self.ypos_pt + self.height_pt,
+                                                                            (sign, 0), self.yvgridpath))
 
+    def doaxiscreate(self, axisname):
+        if self.did(self.doaxiscreate, axisname):
+            return
+        self.doaxispositioner(axisname)
+        self.axes[axisname].create(self.texrunner)
+
+    def dolayout(self):
+        if self.did(self.dolayout):
+            return
+        for axisname in self.axes.keys():
+            self.doaxiscreate(axisname)
         if self.xaxisat is not None:
             self.axisatv(self.axes["x"], self.axes["y"].convert(self.xaxisat))
         if self.yaxisat is not None:
             self.axisatv(self.axes["y"], self.axes["x"].convert(self.yaxisat))
 
-        self.haslayout = 1
-
     def dobackground(self):
-        self.dolayout()
-        if not self.removedomethod(self.dobackground): return
+        if self.did(self.dobackground):
+            return
         if self.backgroundattrs is not None:
             self.draw(path.rect_pt(self.xpos_pt, self.ypos_pt, self.width_pt, self.height_pt),
                       self.backgroundattrs)
 
     def doaxes(self):
+        if self.did(self.doaxes):
+            return
         self.dolayout()
-        if not self.removedomethod(self.doaxes): return
+        self.dobackground()
         for axis in self.axes.values():
             self.insert(axis.canvas)
 
-    def dodata(self):
-        self.dolayout()
-
-        # count the usage of styles and perform selects
-        styletotal = {}
-        def stylesid(styles):
-            return ":".join([str(id(style)) for style in styles])
-        for plotitem in self.plotitems:
-            try:
-                styletotal[stylesid(plotitem.styles)] += 1
-            except:
-                styletotal[stylesid(plotitem.styles)] = 1
-        styleindex = {}
-        for plotitem in self.plotitems:
-            try:
-                styleindex[stylesid(plotitem.styles)] += 1
-            except:
-                styleindex[stylesid(plotitem.styles)] = 0
-            plotitem.selectstyles(self, styleindex[stylesid(plotitem.styles)],
-                                        styletotal[stylesid(plotitem.styles)])
-
-        if not self.removedomethod(self.dodata): return
-        for plotitem in self.plotitems:
-            plotitem.draw(self)
-
     def dokey(self):
-        self.dolayout()
-        if not self.removedomethod(self.dokey): return
+        if self.did(self.dokey):
+            return
+        self.dodata()
+        self.dobackground()
         if self.key is not None:
             c = self.key.paint(self.plotitems)
             bbox = c.bbox()
@@ -340,10 +394,25 @@ class graphxy(canvas.canvas):
             self.insert(c, [trafo.translate_pt(x, y)])
 
     def finish(self):
-        while len(self.domethods):
-            self.domethods[0]()
+        self.doaxes()
+        self.dodata()
+        self.dokey()
 
-    def initwidthheight(self, width, height, ratio):
+    def __init__(self, xpos=0, ypos=0, width=None, height=None, ratio=goldenmean,
+                 key=None, backgroundattrs=None, axesdist=0.8*unit.v_cm,
+                 xaxisat=None, yaxisat=None, **axes):
+        graph.__init__(self)
+
+        self.xpos = xpos
+        self.ypos = ypos
+        self.xpos_pt = unit.topt(self.xpos)
+        self.ypos_pt = unit.topt(self.ypos)
+        self.xaxisat = xaxisat
+        self.yaxisat = yaxisat
+        self.key = key
+        self.backgroundattrs = backgroundattrs
+        self.axesdist_pt = unit.topt(axesdist)
+
         self.width = width
         self.height = height
         if width is None:
@@ -356,29 +425,24 @@ class graphxy(canvas.canvas):
         self.width_pt = unit.topt(self.width)
         self.height_pt = unit.topt(self.height)
 
-    def initaxes(self, axes):
-        self.axes = {}
-        for key, aaxis in axes.items():
+        for axisname, aaxis in axes.items():
             if aaxis is not None:
                 if not isinstance(aaxis, axis.linkedaxis):
-                    self.axes[key] = axis.anchoredaxis(aaxis, key)
+                    self.axes[axisname] = axis.anchoredaxis(aaxis, axisname)
                 else:
-                    self.axes[key] = aaxis
-        for key, axisat in [("x", self.xaxisat), ("y", self.yaxisat)]:
-            okey = key + "2"
-            if not axes.has_key(key):
+                    self.axes[axisname] = aaxis
+        for axisname, axisat in [("x", xaxisat), ("y", yaxisat)]:
+            okey = axisname + "2"
+            if not axes.has_key(axisname):
                 if not axes.has_key(okey):
-                    self.axes[key] = axis.anchoredaxis(axis.linear(), key)
-                    self.axes[okey] = axis.linkedaxis(self.axes[key], okey)
+                    self.axes[axisname] = axis.anchoredaxis(axis.linear(), axisname)
+                    self.axes[okey] = axis.linkedaxis(self.axes[axisname], okey)
                 else:
-                    self.axes[key] = axis.linkedaxis(self.axes[okey], key)
+                    self.axes[axisname] = axis.linkedaxis(self.axes[okey], axisname)
             elif not axes.has_key(okey) and axisat is None:
-                self.axes[okey] = axis.linkedaxis(self.axes[key], okey)
+                self.axes[okey] = axis.linkedaxis(self.axes[axisname], okey)
 
         if self.axes.has_key("x"):
-            self.axes["x"].setpositioner(positioner.lineaxispos_pt(self.xpos_pt, self.ypos_pt,
-                                                                   self.xpos_pt + self.width_pt, self.ypos_pt,
-                                                                   (0, 1), self.xvgridpath))
             self.xbasepath = self.axes["x"].basepath
             self.xvbasepath = self.axes["x"].vbasepath
             self.xgridpath = self.axes["x"].gridpath
@@ -389,14 +453,7 @@ class graphxy(canvas.canvas):
             self.xtickdirection = self.axes["x"].tickdirection
             self.xvtickdirection = self.axes["x"].vtickdirection
 
-        if self.axes.has_key("x2"):
-            self.axes["x2"].setpositioner(positioner.lineaxispos_pt(self.xpos_pt, self.ypos_pt + self.height_pt,
-                                                                    self.xpos_pt + self.width_pt, self.ypos_pt + self.height_pt,
-                                                                    (0, -1), self.xvgridpath))
         if self.axes.has_key("y"):
-            self.axes["y"].setpositioner(positioner.lineaxispos_pt(self.xpos_pt, self.ypos_pt,
-                                                                   self.xpos_pt, self.ypos_pt + self.height_pt,
-                                                                   (1, 0), self.yvgridpath))
             self.ybasepath = self.axes["y"].basepath
             self.yvbasepath = self.axes["y"].vbasepath
             self.ygridpath = self.axes["y"].gridpath
@@ -407,62 +464,16 @@ class graphxy(canvas.canvas):
             self.ytickdirection = self.axes["y"].tickdirection
             self.yvtickdirection = self.axes["y"].vtickdirection
 
-        if self.axes.has_key("y2"):
-            self.axes["y2"].setpositioner(positioner.lineaxispos_pt(self.xpos_pt + self.width_pt, self.ypos_pt,
-                                                                    self.xpos_pt + self.width_pt, self.ypos_pt + self.height_pt,
-                                                                    (-1, 0), self.yvgridpath))
-
         self.axesnames = ([], [])
-        for key in self.axes.keys():
-            if len(key) != 1 and (not key[1:].isdigit() or key[1:] == "1"):
-                raise ValueError("invalid axis count")
-            if key[0] == "x":
-                self.axesnames[0].append(key)
-            elif key[0] == "y":
-                self.axesnames[1].append(key)
-            else:
+        for axisname, aaxis in self.axes.items():
+            if axisname[0] not in "xy" or (len(axisname) != 1 and (not axisname[1:].isdigit() or
+                                                                   axisname[1:] == "1")):
                 raise ValueError("invalid axis name")
-
-    def __init__(self, xpos=0, ypos=0, width=None, height=None, ratio=goldenmean,
-                 key=None, backgroundattrs=None, axesdist=0.8*unit.v_cm,
-                 xaxisat=None, yaxisat=None, **axes):
-        canvas.canvas.__init__(self)
-        self.xpos = xpos
-        self.ypos = ypos
-        self.xpos_pt = unit.topt(self.xpos)
-        self.ypos_pt = unit.topt(self.ypos)
-        self.xaxisat = xaxisat
-        self.yaxisat = yaxisat
-        self.initwidthheight(width, height, ratio)
-        self.initaxes(axes)
-        self.key = key
-        self.backgroundattrs = backgroundattrs
-        self.axesdist = axesdist
-        self.axesdist_pt = unit.topt(axesdist)
-        self.plotitems = []
-        self.domethods = [self.dolayout, self.dobackground, self.doaxes, self.dodata, self.dokey]
-        self.haslayout = 0
-
-    def bbox(self):
-        self.finish()
-        return canvas.canvas.bbox(self)
-
-    def registerPS(self, registry):
-        self.finish()
-        canvas.canvas.registerPS(self, registry)
-
-    def registerPDF(self, registry):
-        self.finish()
-        canvas.canvas.registerPDF(self, registry)
-
-    def outputPS(self, file, writer, context):
-        self.finish()
-        canvas.canvas.outputPS(self, file, writer, context)
-
-    def outputPDF(self, file, writer, context):
-        self.finish()
-        canvas.canvas.outputPDF(self, file, writer, context)
-
+            if axisname[0] == "x":
+                self.axesnames[0].append(axisname)
+            else:
+                self.axesnames[1].append(axisname)
+            aaxis.setcreatecall(self.doaxiscreate, axisname)
 
 
 # some thoughts, but deferred right now

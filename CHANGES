@@ -84,10 +84,11 @@ TODO:
         in expressions now; subnames argument removed since it became pointless;
         adujstaxis became independend from selectstyle for all styles now)
       - remove multiple painting of frompath in histogram and barpos styles
-    - style&graph module:
-      - TODO: separate axis range calculation from dolayout and allow for
-        several graphs participating on axis range calculation (support for
-        mutual linking of axis between graphs)
+    - graph, axis and style module:
+      - support for mutual linking of axes between graphs
+        (TODO: documentation, basically the setlinkedaxis method)
+      - new domethods dependency handling
+      - separate axis range calculation from dolayout
   - color module:
     - transparency support (PDF only) (TODO: documentation)
   - text module:
