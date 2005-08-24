@@ -34,8 +34,6 @@ TODO:
     - support modification of existing styles via __call__
   - bbox module:
     - height -> getheight, ...
-  - mathtree:
-    - remove and use python instead
   - dvifile module:
     - support single-character mode
   - color module:
