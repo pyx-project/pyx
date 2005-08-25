@@ -2,7 +2,7 @@ from pyx import *
 unit.set(uscale=3, wscale=3)
 
 dist = 0.15           # distance between the ropes
-thick = 0.08          # distance between the ropes
+thick = 0.08          # thickness of the ropes
 
 # build the basepath of the knot. This is the curve that lies
 # between both ropes.
@@ -32,7 +32,7 @@ seam = deformer.smoothed(0.4).deform(seam)
 # We need to split them at appropriate points.
 # This gives a list of segments for the middle curve
 l = seam.arclen()
-seam_segs = seam.split([0.28*l,0.42*l, 0.58*l, 0.72*l])
+seam_segs = seam.split([0.28*l, 0.42*l, 0.58*l, 0.72*l])
 
 
 # For each segment two shifted paths build the boundaries of each rope
