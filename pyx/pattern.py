@@ -310,13 +310,19 @@ class PDFpattern(pdfwriter.PDFobject):
         file.write("/XStep %f\n" % self.xstep)
         file.write("/YStep %f\n" % self.ystep)
         file.write("/Matrix %s\n" % str(self.trafo))
-        file.write("/Resources <<\n")
-        if self.patternregistry.types.has_key("font"):
-            file.write("/Font << %s >>\n" % " ".join(["/%s %i 0 R" % (font.name, registry.getrefno(font))
-                                                    for font in self.patternregistry.types["font"].values()]))
-        if self.patternregistry.types.has_key("pattern"):
-            file.write("/Pattern << %s >>\n" % " ".join(["/%s %i 0 R" % (pattern.name, registry.getrefno(pattern))
-                                                         for pattern in self.patternregistry.types["pattern"].values()]))
+        procset = ["PDF"]
+        resources = {}
+        for type in self.patternregistry.types.keys():
+            for resource in self.patternregistry.types[type].values():
+                if resource.pageprocset is not None and resource.pageprocset not in procset:
+                    procset.append(resource.pageprocset)
+                if resource.pageresource is not None:
+                    resources.setdefault(resource.pageresource, []).append(resource)
+        file.write("/Resources <<\n"
+                   "/ProcSet [ %s ]\n" % " ".join(["/%s" % p for p in procset]))
+        for pageresource, resources in resources.items():
+            file.write("/%s <<\n%s\n>>\n" % (pageresource, "\n".join(["/%s %i 0 R" % (resource.name, registry.getrefno(resource))
+                                                                      for resource in resources])))
         file.write(">>\n")
         file.write("/Length %i 0 R\n" % registry.getrefno(self.contentlength))
         if writer.compress:
