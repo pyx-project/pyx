@@ -105,6 +105,16 @@ class PDFregistry:
 class PDFobject:
 
     def __init__(self, type, _id=None, pageresource=None, pageprocset=None):
+        """create a PDFobject
+          - type has to be a string describing the type of the object
+          - _id is a unique identification used for the object if it is not None.
+            Otherwise id(self) is used
+          - If pageresource is not None, it has to be a string describing the name
+            of the resource to be included in the resource dictionary of the pages
+            including the PDFobject.
+          - If pageprocset is not None, it has to be a string describing the name 
+            to be used in the ProcSet list of the pages including the PDFObject.
+        """
         self.type = type
         if _id is None:
             self.id = id(self)
