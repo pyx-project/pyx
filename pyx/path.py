@@ -227,9 +227,7 @@ class closepath(pathitem):
         return "closepath()"
 
     def _updatecurrentpoint(self, currentpoint):
-        if not currentpoint.valid():
-            raise PathException("closepath on an empty path")
-        currentpoint.invalidate()
+        pass
 
     def _bbox(self, currentpoint):
         return None
