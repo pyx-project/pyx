@@ -203,6 +203,15 @@ class graph(canvas.canvas):
             plotitem.adjustaxesdynamic(self)
         self.didranges = 1
 
+    def dolayout(self):
+        raise NotImplementedError
+
+    def dobackground(self):
+        raise NotImplementedError
+
+    def doaxes(self):
+        raise NotImplementedError
+
     def dodata(self):
         if self.did(self.dodata):
             return
@@ -232,28 +241,119 @@ class graph(canvas.canvas):
 
         self.diddata = 1
 
+    def dokey(self):
+        raise NotImplementedError
+
+    def finish(self):
+        self.dobackground()
+        self.doaxes()
+        self.dodata()
+        self.dokey()
+
 
 class graphxy(graph):
+
+    def __init__(self, xpos=0, ypos=0, width=None, height=None, ratio=goldenmean,
+                 key=None, backgroundattrs=None, axesdist=0.8*unit.v_cm,
+                 xaxisat=None, yaxisat=None, **axes):
+        graph.__init__(self)
+
+        self.xpos = xpos
+        self.ypos = ypos
+        self.xpos_pt = unit.topt(self.xpos)
+        self.ypos_pt = unit.topt(self.ypos)
+        self.xaxisat = xaxisat
+        self.yaxisat = yaxisat
+        self.key = key
+        self.backgroundattrs = backgroundattrs
+        self.axesdist_pt = unit.topt(axesdist)
+
+        self.width = width
+        self.height = height
+        if width is None:
+            if height is None:
+                raise ValueError("specify width and/or height")
+            else:
+                self.width = ratio * self.height
+        elif height is None:
+            self.height = (1.0/ratio) * self.width
+        self.width_pt = unit.topt(self.width)
+        self.height_pt = unit.topt(self.height)
+
+        for axisname, aaxis in axes.items():
+            if aaxis is not None:
+                if not isinstance(aaxis, axis.linkedaxis):
+                    self.axes[axisname] = axis.anchoredaxis(aaxis, axisname)
+                else:
+                    self.axes[axisname] = aaxis
+        for axisname, axisat in [("x", xaxisat), ("y", yaxisat)]:
+            okey = axisname + "2"
+            if not axes.has_key(axisname):
+                if not axes.has_key(okey):
+                    self.axes[axisname] = axis.anchoredaxis(axis.linear(), axisname)
+                    self.axes[okey] = axis.linkedaxis(self.axes[axisname], okey)
+                else:
+                    self.axes[axisname] = axis.linkedaxis(self.axes[okey], axisname)
+            elif not axes.has_key(okey) and axisat is None:
+                self.axes[okey] = axis.linkedaxis(self.axes[axisname], okey)
+
+        if self.axes.has_key("x"):
+            self.xbasepath = self.axes["x"].basepath
+            self.xvbasepath = self.axes["x"].vbasepath
+            self.xgridpath = self.axes["x"].gridpath
+            self.xtickpoint_pt = self.axes["x"].tickpoint_pt
+            self.xtickpoint = self.axes["x"].tickpoint
+            self.xvtickpoint_pt = self.axes["x"].vtickpoint_pt
+            self.xvtickpoint = self.axes["x"].tickpoint
+            self.xtickdirection = self.axes["x"].tickdirection
+            self.xvtickdirection = self.axes["x"].vtickdirection
+
+        if self.axes.has_key("y"):
+            self.ybasepath = self.axes["y"].basepath
+            self.yvbasepath = self.axes["y"].vbasepath
+            self.ygridpath = self.axes["y"].gridpath
+            self.ytickpoint_pt = self.axes["y"].tickpoint_pt
+            self.ytickpoint = self.axes["y"].tickpoint
+            self.yvtickpoint_pt = self.axes["y"].vtickpoint_pt
+            self.yvtickpoint = self.axes["y"].tickpoint
+            self.ytickdirection = self.axes["y"].tickdirection
+            self.yvtickdirection = self.axes["y"].vtickdirection
+
+        self.axesnames = ([], [])
+        for axisname, aaxis in self.axes.items():
+            if axisname[0] not in "xy" or (len(axisname) != 1 and (not axisname[1:].isdigit() or
+                                                                   axisname[1:] == "1")):
+                raise ValueError("invalid axis name")
+            if axisname[0] == "x":
+                self.axesnames[0].append(axisname)
+            else:
+                self.axesnames[1].append(axisname)
+            aaxis.setcreatecall(self.doaxiscreate, axisname)
+
 
     def pos_pt(self, x, y, xaxis=None, yaxis=None):
         if xaxis is None:
             xaxis = self.axes["x"]
         if yaxis is None:
             yaxis = self.axes["y"]
-        return self.xpos_pt + xaxis.convert(x)*self.width_pt, self.ypos_pt + yaxis.convert(y)*self.height_pt
+        return (self.xpos_pt + xaxis.convert(x)*self.width_pt,
+                self.ypos_pt + yaxis.convert(y)*self.height_pt)
 
     def pos(self, x, y, xaxis=None, yaxis=None):
         if xaxis is None:
             xaxis = self.axes["x"]
         if yaxis is None:
             yaxis = self.axes["y"]
-        return self.xpos + xaxis.convert(x)*self.width, self.ypos + yaxis.convert(y)*self.height
+        return (self.xpos + xaxis.convert(x)*self.width,
+                self.ypos + yaxis.convert(y)*self.height)
 
     def vpos_pt(self, vx, vy):
-        return self.xpos_pt + vx*self.width_pt, self.ypos_pt + vy*self.height_pt
+        return (self.xpos_pt + vx*self.width_pt,
+                self.ypos_pt + vy*self.height_pt)
 
     def vpos(self, vx, vy):
-        return self.xpos + vx*self.width, self.ypos + vy*self.height
+        return (self.xpos + vx*self.width,
+                self.ypos + vy*self.height)
 
     def vgeodesic(self, vx1, vy1, vx2, vy2):
         """returns a geodesic path between two points in graph coordinates"""
@@ -376,8 +476,8 @@ class graphxy(graph):
     def dokey(self):
         if self.did(self.dokey):
             return
-        self.dodata()
         self.dobackground()
+        self.dodata()
         if self.key is not None:
             c = self.key.paint(self.plotitems)
             bbox = c.bbox()
@@ -392,88 +492,6 @@ class graphxy(graph):
                                  bbox.lly_pt, bbox.ury_pt,
                                  self.key.vpos, unit.topt(self.key.vdist), self.key.vinside)
             self.insert(c, [trafo.translate_pt(x, y)])
-
-    def finish(self):
-        self.doaxes()
-        self.dodata()
-        self.dokey()
-
-    def __init__(self, xpos=0, ypos=0, width=None, height=None, ratio=goldenmean,
-                 key=None, backgroundattrs=None, axesdist=0.8*unit.v_cm,
-                 xaxisat=None, yaxisat=None, **axes):
-        graph.__init__(self)
-
-        self.xpos = xpos
-        self.ypos = ypos
-        self.xpos_pt = unit.topt(self.xpos)
-        self.ypos_pt = unit.topt(self.ypos)
-        self.xaxisat = xaxisat
-        self.yaxisat = yaxisat
-        self.key = key
-        self.backgroundattrs = backgroundattrs
-        self.axesdist_pt = unit.topt(axesdist)
-
-        self.width = width
-        self.height = height
-        if width is None:
-            if height is None:
-                raise ValueError("specify width and/or height")
-            else:
-                self.width = ratio * self.height
-        elif height is None:
-            self.height = (1.0/ratio) * self.width
-        self.width_pt = unit.topt(self.width)
-        self.height_pt = unit.topt(self.height)
-
-        for axisname, aaxis in axes.items():
-            if aaxis is not None:
-                if not isinstance(aaxis, axis.linkedaxis):
-                    self.axes[axisname] = axis.anchoredaxis(aaxis, axisname)
-                else:
-                    self.axes[axisname] = aaxis
-        for axisname, axisat in [("x", xaxisat), ("y", yaxisat)]:
-            okey = axisname + "2"
-            if not axes.has_key(axisname):
-                if not axes.has_key(okey):
-                    self.axes[axisname] = axis.anchoredaxis(axis.linear(), axisname)
-                    self.axes[okey] = axis.linkedaxis(self.axes[axisname], okey)
-                else:
-                    self.axes[axisname] = axis.linkedaxis(self.axes[okey], axisname)
-            elif not axes.has_key(okey) and axisat is None:
-                self.axes[okey] = axis.linkedaxis(self.axes[axisname], okey)
-
-        if self.axes.has_key("x"):
-            self.xbasepath = self.axes["x"].basepath
-            self.xvbasepath = self.axes["x"].vbasepath
-            self.xgridpath = self.axes["x"].gridpath
-            self.xtickpoint_pt = self.axes["x"].tickpoint_pt
-            self.xtickpoint = self.axes["x"].tickpoint
-            self.xvtickpoint_pt = self.axes["x"].vtickpoint_pt
-            self.xvtickpoint = self.axes["x"].tickpoint
-            self.xtickdirection = self.axes["x"].tickdirection
-            self.xvtickdirection = self.axes["x"].vtickdirection
-
-        if self.axes.has_key("y"):
-            self.ybasepath = self.axes["y"].basepath
-            self.yvbasepath = self.axes["y"].vbasepath
-            self.ygridpath = self.axes["y"].gridpath
-            self.ytickpoint_pt = self.axes["y"].tickpoint_pt
-            self.ytickpoint = self.axes["y"].tickpoint
-            self.yvtickpoint_pt = self.axes["y"].vtickpoint_pt
-            self.yvtickpoint = self.axes["y"].tickpoint
-            self.ytickdirection = self.axes["y"].tickdirection
-            self.yvtickdirection = self.axes["y"].vtickdirection
-
-        self.axesnames = ([], [])
-        for axisname, aaxis in self.axes.items():
-            if axisname[0] not in "xy" or (len(axisname) != 1 and (not axisname[1:].isdigit() or
-                                                                   axisname[1:] == "1")):
-                raise ValueError("invalid axis name")
-            if axisname[0] == "x":
-                self.axesnames[0].append(axisname)
-            else:
-                self.axesnames[1].append(axisname)
-            aaxis.setcreatecall(self.doaxiscreate, axisname)
 
 
 # some thoughts, but deferred right now
