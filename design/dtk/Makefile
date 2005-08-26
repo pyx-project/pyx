@@ -9,7 +9,7 @@ pyx.ps: pyx.dvi
 	dvips pyx
 
 pyx.pdf: pyx.ps
-	ps2pdf pyx.ps
+	ps2pdf -sPAPERSIZE=a4 pyx.ps
 
 arrow.eps: arrow.py
 	PYTHONPATH=../.. python arrow.py
