@@ -1,0 +1,451 @@
+\documentclass{scrartcl}
+\usepackage[latin1]{inputenc}
+\usepackage{ngerman,graphicx,listings,hyperref}
+\lstloadlanguages{Python}
+\lstset{language=Python,numbers=left,numberstyle=\tiny,numbersep=5pt}
+\def\PyX{P\kern-.3em\lower.5ex\hbox{Y}\kern-.18em X}
+\begin{document}
+
+\title{Graphiken mit \PyX}
+\author{Jörg Lehmann, André Wobst}
+\maketitle
+
+\section{Einleitung}
+
+\PyX{} ist eine Bibliothek zur Erzeugung von Vektorgraphiken im
+PostScript und PDF Format. \PyX{} ist in Python implementiert, einer
+modernen und sehr leistungsfähigen Scriptsprache, die gleichzeitig
+auch als Eingabesprache für die Beschreibung der Graphiken genutzt
+wird. Damit erübrigt sich hier die dringende Notwendigkeit einer
+formalen Einführung in die Beschreibungssprache, zumal Python
+Quellcode sehr gut lesbar und ausgesprochen leicht erlernbar ist.
+
+Das Ziel von \PyX{} ist, sowohl elementare Graphikbefehle in höchster
+Qualität zur Verfügung zu stellen, als auch ausgefeilte Techniken zur
+Realisierung typischer Graphikaufgaben auf dieser Grundlage
+aufzubauen, beispielsweise für Funktionsgraphen. Zusammen mit einer
+herausragenden \TeX{}/\LaTeX{}-Integration entsteht so ein
+programmierbares Graphiksystem für den Endanwender.
+
+\PyX{} verwendet die GPL-Lizenz und kann unter allen gängigen
+Betriebssystemen betrieben werden. Voraussetzung ist nur ein
+Python-Interpreter ab Version 2.1, der im Handumdrehen installiert
+ist\footnote{Bei vielen Linux-Distributionen sowie unter neueren
+Versionen von OS X gehört Python zur Grundausstattung. Für Windows
+stehen unter \url{http://www.python.org} fertige Installer zur
+Verfügung.}. \PyX{} kann nach dem Auspacken des Archivs im
+Quellverzeichnis direkt verwendet werden; eine systemweite
+Installation ist in der Grundkonfiguration mit einem einzigen Befehl
+\verb|python setup.py install| erledigt. Darüber hinaus wird für die
+Text-Ausgabe eine funktionsfähige \TeX-Installation vorausgesetzt, die
+bei den Lesern der technischen Komödie sicher sowieso vorhanden ist.
+
+\section{Grundlagen für Vektorgraphiken: Pfade}
+
+\PyX{} abstrahiert das PostScript Pfadsystem, in dem Pfade als
+mathematische Objekte aufgefasst werden, also keine Linienbreite o.ä.
+besitzen. Pfade bestehen aus einzelnen Pfadelementen, wobei geraden
+Linienstücke, Bezierkurven und Kreissegmente zur Verfügung stehen.
+Zusätzlich lässt sich der aktuelle Punkt beim Pfadaufbau neu setzen,
+so dass Pfade möglich sind, die aus mehreren Pfadteilen bestehen.
+Natürlich können (Teil-)Pfade auch geschlossen werden.
+
+Diese Grundfunktionalität zur Beschreibung von Pfaden wird ergänzt
+durch eine Vielzahl an geometrischen Operationen, die mit Pfaden
+ausgeführt werden können. Pfade lassen sich in Teilstücke zerschneiden
+und neue Pfade aus bestehenden zusammensetzen. Die Parametrisierung
+eines Pfades ist aufgrund der Bogenlänge möglich wie auch mittels
+einer internen Parametrisierung auf der Basis der im Pfad enthaltenen
+Pfadelemente. Die Bestimmung von Schnittpunkten zwischen Pfaden und
+geometrische Eigenschaften entlang des Pfades wie Tangente und
+Krümmungsradius runden den Funktionsumfang ab. Für viele dieser
+Funktionen ist es notwendig, Pfade in sogenannte Normpfade zu
+überführen, die nur noch aus Linien und Bezierkurven bestehen und eine
+definierte, einstellbare Rechengenauigkeit besitzen. Dieser
+Konvertierungsschritt kann zwar explizit angestoßen werden, wird
+ansonsten aber auch automatisch ausgeführt, sobald die Konvertierung
+aufgrund der angeforderten Funktionen notwendig wird.
+
+In einem ersten Beispiel soll die Bogenlänge eines Einheitskreises
+bestimmt werden. Dies erledigt folgendes kleine Python-Script:
+\begin{quote}
+\lstinputlisting{unitcircle.py}
+\end{quote}
+Abgespeichert als Datei \verb|unitcircle.py| kann es mit dem Befehl
+\verb|python unitcircle.py| ausgeführt werden.
+
+In der ersten Zeile dieses Beispiels werden die \PyX{}-Module geladen.
+Die zweite Zeile legt einen Einheitskreis an der Koordinatenposition
+\verb|(0, 0)| mit dem Radius \verb|1| an. Das Koordinatensystem, das
+\PyX{} verwendet, ist eine x-y-Ebene, in der die x-Achse horizontal
+nach rechts verläuft und die y-Achse vertikal nach oben. Als Einheit
+wird standardmäßig \verb|1 cm| verwendet.
+
+In der dritten Zeile des Beispiels wird die Bogenlänge des Kreises
+ausgegeben. Als Ausgabe erscheint: \begin{quote} \begin{verbatim}
+(0.062832 t + 0.000000 u + 0.000000 v + 0.000000 w + 0.000000 x) m
+\end{verbatim} \end{quote} Dieses etwas längliche Ergebnis mag
+zunächst etwas überraschen. Andererseits zeigt es aber bereits eine
+Grundfunktionalität des Einheitensystems von \PyX. Es gibt mehrere
+Längenskalen, die unabhängig voneinander eingestellt werden können.
+Die Komponenten \verb|t| bis \verb|x| stehen für \glqq{}true\grqq{}
+(unskalierbar), \glqq{}user\grqq{} (Standardskala),
+\glqq{}visual\grqq{} (für Abstände), \glqq{}width\grqq{} (für
+Linienbreiten) und \glqq{}\TeX\grqq{} (für Textgrößen). Nachdem
+ursprünglich gar keine Einheiten angegeben wurden, wurde in der
+\glqq{}user\grqq-Längenskala im cm-Maßstab gearbeitet. Bei der
+Berechnung der Bogenlänge mussten die Einheiten aufgelöst werden.
+Folglich wird ein Ergebnis in der \glqq{}true\grqq-Längenskala in
+Metern zurückgeliefert. Die anderen Komponenten werden zwar mit
+ausgegeben, sind aber alle Null. Die recht komplizierte Darstellung
+einer Länge als Zeichenkette braucht nicht weiter zu beunruhigen, denn
+man kann mit diesen Einheiten ganz normal rechnen. Als Vorteil bleibt,
+dass man beispielsweise die Größe einer fertigen Abbildung und die
+verwendeten Liniendicken unabhängig voneinander variieren kann.
+
+\section{Ausgabe von Pfaden: Dekoratoren}
+
+Um Pfade auszugeben, müssen diese zunächst mit Zeichenattributen
+versehen werden. Diese Aufgabe wird von sogenannten Dekoratoren
+ausgeführt, die dekorierte Pfade erzeugen, die neben dem Pfad selbst
+auch Attribute für das Zeichnen und Füllen des Pfades enthalten.
+Zusätzlich können dekorierte Pfade Teile des ursprünglichen Pfades vom
+Zeichnen ausschließen und sogenannte Ornamente wie beispielsweise
+Pfeilspitzen anbringen. Es ist möglich, mehrere Dekoratoren zusammen
+oder sogar ineinander wirken zu lassen. Um das am Beispiel eines
+Pfeiles zu demonstrieren, benötigt man noch eine Zeichenfläche, die
+man nach Einfügen des dekorierten Pfades in eine PostScript oder PDF
+Datei ausgeben kann. Der entsprechende Quelltext lautet:
+\begin{quote}
+\lstinputlisting{arrow.py}
+\end{quote}
+\begin{figure}[tp]
+\centerline{\includegraphics[width=4cm]{arrow}}
+\caption{Pfeil-Beispiel. Die Abbildung ist stark vergrößert, da das
+Original sehr klein ist und auf die Weise die Details bequem sichtbar
+werden.}
+\label{fig:arrow}
+\end{figure}
+Die Ausgabe, die durch dieses Python-Script erzeugt wird, ist in
+Abbildung~\ref{fig:arrow} zu sehen.
+
+Zunächst werden in Zeile 2 und 3 eine Zeichenfläche \verb|c| und ein
+Pfad \verb|p| angelegt. In Zeile 4 und 5 wird eine Liste aus zwei
+Dekoratoren angelegt, die zum Zeichen und Füllen des Pfeils verwendet
+werden sollen. Der entsprechende Pfeildekorator wird in Zeile 6 aus
+dem bestehenden Pfeildekorator \verb|deco.earrow.large| erzeugt, also
+eine abgewandelte Version des schon existierenden Dekorators gebildet.
+
+In Zeile 7 kann nun die eigentliche Ausgabe stattfinden. Die
+ausführliche Schreibweise wäre, für den Pfad selbst nochmal einen
+\verb|stroked|-Dekorator anzuwenden und das Ganze mittels der
+\verb|canvas|-Methode \verb|show| auszugeben. Das würde dann so
+lauten: \verb|c.show(p, [deco.stoked([style.linestyle.dashed]), a])|.
+Nachdem man Pfade aber sehr oft einfach nur Zeichen oder Füllen
+möchte, gibt es die zwei \verb|canvas|-Methoden \verb|stroke| und
+\verb|fill|, die jeweils den unmodifizierten Dekorator
+\verb|deco.stroked| und \verb|deco.filled| zur Zeichenattributliste
+hinzufügen. In Wirklichkeit ist Zeile 7 in Beispiel also identisch zu
+\verb|c.show(p, [deco.stoked, style.linestyle.dashed, a])|. Hier
+werden also Dekoratoren und Zeichenattribute auf der selben
+Hierarchieebene gemischt, was bedeutet, dass die Zeichenattribute dann
+für alle Dekoratoren zu verwenden sind. Doch halt, das entspricht ja
+gar nicht dem, was in der Abbildung gezeigt ist. Dort ist nämlich die
+Umrandung des Pfeils nicht gestrichelt. In der Tat würde diese Linie
+gestrichelt dargestellt, hätte nicht bereits der Pfeildekorator
+\verb|deco.earrow.large| die Eigenschaft, den Linienstil für seinen
+Wirkungsbereich auf durchgezogen zu schalten. Aber man kann dieses
+Verhalten durch das zusätzliche Attribut \verb|deco.linestyle.clear|
+auf der richtigen Hierarchieebene beim Modifizieren eines Dekorators
+sogar wieder entfernen! Wenn man \verb|deco.linestyle.clear| in die
+Liste \verb|d| einfügt, erhält man eine gestrichelte Pfeilumrandung.
+
+Das Beispiel eben hat gezeigt, dass die Verknüpfung von
+Zeichenattributen im Detail recht komplex werden kann. Gleichzeitig
+ermöglicht \PyX{} es, solche komplexen Strukturen durch geeignete
+Dekoratoren überhaupt darzustellen und einmal vorgefertigt immer
+einsatzbereit zur Verfügung zu haben. Der Pfeildekorator, der
+automatisch auf durchgezogene Linien schaltet, ist so ein Beispiel,
+das zunächst unnötig komplex anmutet, aber im praktischen
+Anwendungsfall beinahe immer dem vorgreift, was man sowieso haben
+möchte.
+
+\section{Modifikation von Pfaden: Deformatoren}
+
+Deformatoren werden dazu verwendet, einen gegebenen beliebigen Pfad
+in einen anderen Pfad umzuwandeln. Ein ganz einfaches Beispiel sind
+affine Transformationen wie ein Verschieben oder eine Rotation.
+Mehrere solche Umformungen sind normalerweise nicht kommutativ. Man
+kann Pfade explizit umformen, indem man die \verb|deform|-Methode
+eines Deformators verwendet, aber es ist auch möglich, Deformatoren
+bei der Ausgabe eines Pfades direkt anzuwenden. Allerdings müssen die
+Deformatoren direkt auf der ersten Hierarchieebene angegeben sein,
+können also nicht als Argumente von Dekoratoren auftreten.
+Deformatoren werden dann stets in der Reihenfolge ihres Auftretens
+noch vor dem Dekorieren auf den gegebenen Pfad angewendet. Durch diese
+Einschränkungen bleibt das Ganze durchschaubar und vor allem auch
+wohldefiniert. Trotzdem lassen sich damit sehr elegante Ergebnisse
+erreichen, wie das folgende Beispiel illustriert:
+\begin{quote}
+\lstinputlisting{springs.py}
+\end{quote}
+\begin{figure}[tp]
+\centerline{\includegraphics{springs}}
+\caption{Feder-Beispiel}
+\label{fig:springs}
+\end{figure}
+Das Ergebnis ist in Abbildung~\ref{fig:springs} zu sehen.
+
+Bei der Besprechung dieses Beispiels kann man die ersten 10 Zeilen
+sicher getrost überspringen, denn dort passiert außer vorbereitenden
+Maßnahmen nichts besonderes. In Zeile 11 wird ein Pfad generiert, der
+später in die drei Federn umgeformt werden soll. Dazu wird in Zeile 12
+und 13 zunächst eine Liste von Bogenlängen erzeugt, auf denen die
+Massen platziert werden. Die Variable \verb|i| läuft mittels Python's
+\verb|range|-Funktion über die Werte \verb|0|, \verb|1|, und \verb|2|.
+Mit der Schleife beginnend auf Zeile 14 wird der ursprüngliche
+\verb|springcircle| in drei Einzelteile zerlegt, die der Variable
+\verb|springsegment| zugewiesen sind. Mit einem geeigneten
+Zykliod-Deformator kann dieses Pfadstück in den Zeilen 15-17 direkt
+ausgegeben werden. Interessant ist auch der zweite Deformator, der auf
+Zeile 17 steht. Dieser glättet den gegeben Pfad, was in diesem
+Beispiel zu den etwas abgerundet angedeuteten Übergängen zwischen den
+geraden Federendstücken und dem gedrillten Federmittelstück führt. In
+Zeile 18 und 19 werden die drei Massen gezeichnet und die Zeilen 20
+und 21 fügen die beiden Kreise hinzu, die das skizzierte Massesystem
+in eine Kreisbahn einschließen.
+% Die Bestimmung der Schwingungsmoden dieses System soll hier nicht
+% weiter verfolgt werden, gehört das doch eher in eine einführende
+% Mechanik-Vorlesung denn in die Technische Komödie.
+
+\section{Erzeugung von Text: die \TeX/\LaTeX-Integration}
+
+Für die Textausgabe in \PyX{} wird \TeX{} oder alternativ \LaTeX{}
+verwendet. Die Herausforderung besteht dabei darin, diese Programme
+möglichst perfekt in das Graphiksystem zu integrieren. Zu diesem Zweck
+ist im \verb|text|-Modul ein \verb|texrunner| implementiert, dessen
+Instanzen jeweils ein laufendes \TeX{} oder \LaTeX{} steuern.
+Normalerweise wird nur ein solcher \verb|texrunner| benötigt und
+dieser wird von dem System als \verb|defaulttexrunner| auch schon zu
+Beginn initialisiert. Die wesentlichen Schritte bei der Erzeugung von
+Text sind dann:
+\begin{itemize}
+\item \TeX{} oder \LaTeX{} wird als normaler Prozess gestartet und
+überwacht. \PyX{} kann dann Dinge auf den Eingabestrom des Prozesses
+schreiben und analysiert gleichzeitig, wie \TeX{} oder \LaTeX{} darauf
+reagiert.
+\item Sobald Text gesetzt werden muss, wird dieser von \PyX{} mit
+entsprechenden Befehlen versehen, die den Text in eine Box setzen und
+diese Box in der \verb|dvi|-Datei als einzelne Seite ausgeben. Die
+Größe der Box wird direkt auf dem Ausgabestrom zurückgegeben und steht
+instantan zur Verfügung steht. Auch merkt das System an dieser Stelle
+zuverlässig, ob Probleme beim Setzen des Textes aufgetreten sind.
+\item Sobald der gesetzte Text selbst benötigt wird, wird die
+\verb|dvi|-Datei analysiert. Das ist in der Regel erst bei der
+Erzeugung der Ausgabedateien nötig. Normalerweise muss \TeX{} bzw.
+\LaTeX{} dazu beendet werden. Die \verb|texrunner|-Instanz macht dies
+automatisch, wie auch das erneute Starten eines \TeX- bzw.
+\LaTeX-Prozesses, falls das notwendig wird. Es besteht auch die
+Möglichkeit, die \verb|ipc|-Option von \TeX/\LaTeX{} auszunutzen, so
+sie in der vorhandenen \TeX-Installation zur Verfügung steht und damit
+die \verb|dvi|-Datei zu analysieren, ohne \TeX{} bzw. \LaTeX{} beenden
+zu müssen.
+\item \PyX{} baut aus den Daten, die in der \verb|dvi|-Datei stehen,
+entsprechenden PostScript bzw. PDF Code. Dabei werden momentan
+ausschließlich Type1-Fonts verwendet, wie sie bei aktuellen
+\TeX-Installation auch von dvips oder pdf\TeX{} benutzt werden.
+\PyX{} arbeitet ähnlich zu diesen Programmen und verwendet die
+vorhandene \TeX{}-Installation, löst also virtuelle Fonts auf,
+schlägt in der vorliegenden \verb|map|-Datei nach und baut die
+Type1-Fonts heruntergerechnet auf die benötigten Gylphen ein. Im
+Grunde ist ein kleiner Teil von \PyX{} also ein \verb|dvips| und ein
+\verb|dvipdf|. In der Tat steht ein kleines Kommandozeilenprogramm zur
+Verfügung, welches aus einer gegebenen \verb|dvi|-Datei eine
+PostScript oder eine PDF-Datei erzeugt. Eine solche Funktionalität ist
+auf der Basis von \PyX{} mit einer handvoll Zeilen implementiert.
+\item Der \verb|dvi|-Interpreter von \PyX{} unterstützt einen
+wohldefinierten Satz an \verb|\special|-Anweisungen. Eine Anpassung an
+die \verb|graphic[s/x]|- und \verb|color|-Pakete wird mitgeliefert.
+Darüber hinaus ist es möglich, im gesetzten Text sogenannte Marker
+einzubauen und deren Position in der Ausgabe wiederzufinden.
+\end{itemize}
+
+Die Integration von \TeX/\LaTeX{} in \PyX{} bedeutet, dass man im
+normalen Anwendungfall überhaupt nichts vom verwendeten \TeX/\LaTeX{}
+merkt, außer, dass man für die Textausgabe einen echten
+\TeX-Interpreter zur Hand hat und in programmiertechnischer Hinsicht
+keinerlei Einschränkungen auferlegt sind. Wie das am Ende aussieht,
+soll auch wieder an einem Beispiel demonstriert werden. Dazu folgendes
+kleines Programm:
+\begin{quote}
+\lstinputlisting{text.py}
+\end{quote}
+Die entstehende Ausgabe lohnt nicht des Abdrucks als extra Abbildung
+-- in der Ausgabedatei erscheint schlicht und einfach der Text
+\glqq{}Das ist eine Textausgabe mit \TeX.\grqq{}
+
+Neu an diesem Beispiel ist nur die dritte Zeile, in der die
+\verb|canvas|-Methode \verb|text| aufgerufen wird. Diese fügt einen
+Text an der Position, die mit den ersten beiden Parametern beschrieben
+wird, ein. Das \verb|r| vor der Zeichenkette führt dabei dazu, dass
+das Zeichen \verb|\| innerhalb der Zeichenkette nicht als
+\glqq{}escape\grqq-Zeichen interpretiert wird. Diese nützlichen
+sogenannten \glqq{}raw-strings\grqq{} in Python sind natürlich
+insbesondere für Zeichenketten, die \TeX{}-Syntax enthalten, sehr
+praktisch. Ausführlicher geschrieben ist die dritte Zeile identisch zu
+dem Befehl
+\verb|c.insert(text.text(0, 0, r"Das ist eine Textausgabe mit \TeX."))|,
+wobei die Funktion \verb|text.text| wiederum eine Abkürzung für den
+Aufruf der Methode \verb|text| in der Instanz
+\verb|text.defaulttexrunner| ist. Der Rückgabewert dieser
+\verb|text|-Methode ist dabei eine spezielle Zeichenfläche, die den
+Inhalt der jeweiligen \verb|dvi|-Seite enthält. Da man Zeichenflächen
+per \verb|insert|-Methode ineinander einfügen kann, erscheint der
+Inhalt der Seite in der Ausgabezeichenfläche, die in der Variablen
+\verb|c| gespeichert ist. Statt die Ausgabe der \verb|text|-Methode in
+die Ausgabe einzubinden, könnte man stattdessen natürlich auch
+deren Größe abfragen oder ähnliches.
+
+\section{Komplexe Graphikaufgaben: Graphen}
+
+Aufgrund der Praxisrelevanz für die Autoren wurde bereits zu einem
+frühen Zeitpunkt in der \PyX-Entwicklung damit begonnen, Komponenten
+für die Erstellung von Daten- und Funktionsgraphen zu implementieren.
+Eine Designrichtlinie war dabei von Beginn an die Zerlegung eines
+solchen Systems in Einzelteile, die möglichst unabhängig voneinander
+sind und die mit einfachen Schnittstellen miteinander kommunizieren.
+Die grobe Struktur des Systems lautet:
+\begin{description}
+\item[Graph:] Der eigentliche Graph wird durch eine Graph-Instanz
+repräsentiert. Dieser legt die Graphengeometrie fest und dient als
+Container für alle graph-spezifischen Daten.
+\item[Achsen:] Die Achsen sind dafür zuständig, die Eingabedaten auf
+das graphinterne Koordinatensystem umzurechnen. Dabei ist es möglich,
+als Eingabedaten auch anderes als kontinuierliche Zahlen zu verwenden.
+beispielsweise sind diskrete Achsen möglich, wie sie für die saubere
+Implementation von Balkengraphen unverzichtbar sind. Auch
+Achsenteilungen sind möglich, indem man kontinuierliche Achsen in
+diskret geteilte Achsen schachtelt.
+
+Außerdem müssen Achsen eine graphische Repräsentation ihrer selbst
+entlang eines beliebigen Pfades erzeugen können, was wiederum durch
+eine Reihe von Einzelkomponenten erledigt wird:
+\begin{description}
+\item[Achsenteilung:] Bestimmung von Achsenteilungen, wobei manuell
+gesetzte Achsenstriche mit automatisch erzeugten Achsenstrichen
+gemischt werden können. Die Achsenteilung für normale Zahlenachsen
+basiert auf rationalen Zahlen und ist frei von jeglichen
+Rundungsproblemen.
+\item[Beschriftung von Achsenstrichen:] Die Erzeugung von Text passend
+zu den Achsenstrichen ist als getrennte Komponente ausgeführt und
+somit leicht änderbar.
+\item[Bewertung von Achsenteilungen:] Bei automatischer Achsenteilung
+sind normalerweise verschiedene Teilungen möglich, die bewertet werden
+müssen, um die beste Teilung zu finden. Dabei werden auch Abstände
+zwischen den Texte der Achsenstriche hinzugezogen.
+\item[Zeichner:] Der Zeichner ist eine Komponente, die die Ausgabe der
+Achse ausführt. Auch dieser Teil lässt sich anpassen oder auch
+komplett ersetzen.
+\end{description}
+\item[Daten:] Verschiedene Datenkomponenten bereiten Eingabedaten
+gegeben durch Zahlenspalten einer Datei, durch eine Funktion oder
+anderen Quellen für die Benutzung im Graphsystem vor. Insbesondere
+werden die Daten dabei mit Spaltennamen versehen, was die spätere
+Zuordnung zu Achsen oder Stileigenschaften ermöglicht.
+\item[Stile:] Graphstile erzeugen aus den eingehenden Daten eine
+graphische Repräsentation. Es gibt also beispielsweise Stile zum
+Zeichnen von Symbolen, Linien und Fehlerbalken und vieles andere mehr.
+Interessant ist die Eigenschaft, dass sich verschiedene Stile
+gleichzeitig auf Daten anwenden lassen. Außerdem lassen sich durch
+Implementation eigener Stile Dinge realisieren, die zunächst überhaupt
+nicht nach einem Graph aussehen sondern eher beispielsweise wie eine
+Tabelle. Dabei lässt sich dann aber gleichzeitig die
+Komponentenstruktur eines Graphen ausnutzen.
+\item[Legende:] Eine Legende schließlich erzeugt eine graphische
+Darstellung, die Stile mit Titeln der gezeigten Daten verknüpft.
+\end{description}
+
+Die Flexibilität des Graphsystems führt zu einer entsprechend großen
+Anzahl unterschiedlicher Anwendungsbeispiele, die den Rahmen dieses
+Artikels sprengen. Statt nun hier ein einfaches, nüchternes und dann
+halt auch eher unspektakuläres Beispiel zu zeigen, deshalb hier ein
+Verweis auf die \PyX-Beispielseite, die online unter
+\url{http://pyx.sourceforge.net/examples/} zu finden ist.
+
+\section{Entwicklung von \PyX}
+
+Das \PyX-Projekt ist, wie wohl die Mehrzahl der OpenSource-Projekte,
+zunächst aus Eigenbedarf der beiden Projektgründer und
+Hauptentwickler, Jörg Lehmann und André Wobst, Mitte 2000 gestartet
+wurden. Diesem Start eines sich schon seinerzeit abzeichnenden
+langwierigen Entwicklungsprozesses gingen zahlreiche Diskussionen und
+Tests existierender anderer Lösungen voraus. Ursprünglich waren die
+Entwickler Benutzer von GLE (\url{http://glx.sourceforge.net/}), was
+sich wie \PyX{} auch vor allem dadurch auszeichnete, dass sich damit
+Zeichnungen wie auch Daten- und Funktionsgraphen erstellen lassen. Die
+fehlende \TeX-Anbindung wurde durch gletex
+(\url{http://www.physik.uni-augsburg.de/~wobsta/gletex/}) im Rahmen
+der bescheidenen Möglichkeiten hinzugefügt, aber das eigentliche
+Problem der völlig fehldesignten GLE-eigenen Sprache konnte auf die
+Weise nicht angegangen werden. Zunächst trennten sich die Wege der
+Entwickler (auch räumlich) und während Jörg Lehmann versuchte, eine
+GLE-Ersatzlösung auf der Basis von Perl und einem GLE-Übersetzer zu
+starten und André Wobst einlud, daran mitzuwirken, beschäftigte sich
+dieser lieber mit Graphen-Lösungen auf der Basis von
+{\font\logo=logo10\logo{}METAPOST}, allerdings am Ende frustriert ob
+der Probleme aufgrund der für dieses Problem ungeeigneten, zu sehr auf
+Zeichnen spezialisierten und ansonsten unhandlich unvollständigen
+Sprache.
+
+Als schließlich die Entwickler wieder zusammentrafen, starteten sie
+das \PyX-Projekt auf der Basis der Programmiersprache Python und
+verwarfen die Idee, eine vollständige sprachliche GLE-Kompatibilität
+zu schaffen. Gleichwohl besaßen frühe Versionen eine
+Endbenutzer-Sprachschicht, die allein mit Funktionsaufrufen und nicht
+mit Objektinstanzen arbeitete. Allerdings liessen sich in Python keine
+Strukturen schaffen, die einem GLE-typischen Abschnitt zur
+Beschreibung eines Graphen entsprachen, weshalb hier relativ bald auf
+Objektmethoden ausgewichen wurde. Schließlich setzte sich die
+Benutzung von Objektinstanzen auch für Zeichenflächen, Pfade und
+dergleichen durch. In den ersten frühen Versionen wurde übrigens
+\verb|dvips| verwendet, um \TeX{} anzubinden. Erst deutlich später
+wurden die Einschränkungen, die diese Lösung mit sich brachte, Grund
+genug ein eigenen \verb|dvi|-Parser zu schreiben. Bereits 2001 wurden
+die Grundlagen soweit fertig, dass Ende 2001 für das Erzeugen einer
+komplexen Tabelle  das erste Mal \PyX{} den Vorzug gegenüber einer
+\TeX{} bzw. \LaTeX{} Lösung bekam. Im Frühjahr 2002 wurde das erste
+Mal ein A0-Poster mit \PyX{} erstellt, wobei die Graphen noch mit GLE
+erzeugt wurden. Zu diesem Zeitpunkt wurde der Quellcode
+einschließlich seiner Geschichte bis zurück ins Jahr 2000 bei
+SourceForge veröffentlicht. Im Herbst 2002 wurde \PyX{} 0.1
+freigegeben und seit Version 0.3.1 vom April 2003, die auf freshmeat
+bekanntgegeben wurde, erfreut sich das Projekt zunehmender Nutzung
+auch durch nicht den Entwicklern nahestehenden Personen. Zudem wurden
+mit Michael Schindler und Gert-Ludwig Ingold zwei Mitstreiter
+gewonnen, die das Projekt zusätzlich voranbringen.
+
+Die Entwicklung von \PyX{} ist aber keineswegs ein geradliniger
+Prozess. Insbesondere hat die Erarbeitung von effizienten Strukturen
+für den Endanwender viele Entwicklungsschritte und deshalb auch
+inkompatible Veränderungen zwischen den Versionen notwendig gemacht.
+Mittlerweile sind viele der Strukturen aber schon sehr ausgereift und
+stabil, wie man auch an den immer wieder neu freigegebenen Versionen
+beobachten kann. Die aktuelle Version \PyX{} 0.8.1 vom August 2005
+wird von den Entwicklern jedoch nach wie vor als Alpha-Release
+bezeichnet, was vor allem ausdrücken soll, dass in bestimmten
+Bereichen noch Aktualisierungen geplant sind, die zumindest teilweise
+auch vom Anwenderstandpunkt aus sichtbar sein werden. Nachdem aber
+bereits sehr viele \PyX-Programme existieren, sind größere, nicht
+einfach handhabbare Umstellungen in zukünftigen Versionen zunehmend
+sehr unwahrscheinlich.
+
+An dieser Stelle möchten wir uns ganz herzlich bei DANTE e.V. und
+dessen Vorstand bedanken, der im Sommer 2004 auf eine Anfrage hin ganz
+unbürokratisch zugestimmt hat, die relativ regelmäßig drei bis vielmal
+im Jahr stattfindenden Entwicklertreffen finanziell durch die
+Übernahme von anfallenden Fahrtkosten zu unterstützen. Durch die
+mittlerweile wieder vorhandene räumliche Trennung der Hauptentwickler
+ist diese Förderung enorm wichtig für die erfolgreiche Fortführung des
+Projekts.
+
+\end{document}
