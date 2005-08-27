@@ -93,6 +93,12 @@ TODO:
     - transparency support (PDF only) (TODO: documentation)
   - text module:
     - improve escapestring to handle all ascii characters
+  - path module:
+    - add rotate methods to path, normpath, normsubpath, and normsubpathitems
+    - add flushskippedline to normsubpath
+    - add arclentoparam to normsubpath and normsubpathitems
+  - trafo module:
+    - renamed _apply to apply_pt
 
 
 0.8.1 (2005/08/13):

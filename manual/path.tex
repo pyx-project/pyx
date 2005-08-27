@@ -119,6 +119,11 @@ Appends the list \var{pathitems} to the end of the path.
   Returns the reversed path.$^\dagger$
 \end{methoddesc}
 
+\begin{methoddesc}{rotation}{params}
+  Returns (a) rotations(s) which (each), which rotate the x-direction
+  to the tangent and the y-direction to the normal at that param.$^\dagger$
+\end{methoddesc}
+
 \begin{methoddesc}{split}{params}
   Splits the path at the parameter values \var{params}, which have to
   be sorted in ascending order, and returns a corresponding list of
@@ -132,10 +137,10 @@ Appends the list \var{pathitems} to the end of the path.
   tangent vector will be scaled correspondingly.$^\dagger$
 \end{methoddesc}
 
-
 \begin{methoddesc}{trafo}{params}
-  Returns (a) trafo(s) which maps a point $(0, 1)$ to the tangent vector to
-  the path at the parameter value(s) \var{params}.$^\ddagger$ $^\dagger$
+  Returns (a) trafo(s) which (each) translate to a point on the path
+  corresponding to the param, rotate the x-direction to the tangent
+  and the y-direction to the normal in that point.$^\dagger$
 \end{methoddesc}
 
 \begin{methoddesc}{transformed}{trafo}

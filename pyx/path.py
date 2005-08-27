@@ -1162,6 +1162,14 @@ class path(canvas.canvasitem):
         #       to a normpath (but this might not be worth the trouble)
         return self.normpath().reversed()
 
+    def rotation_pt(self, params):
+        """return rotation at param(s) or arc length(s) in pts"""
+        return self.normpath().rotation(params)
+
+    def rotation(self, params):
+        """return rotation at param(s) or arc length(s)"""
+        return self.normpath().rotation(params)
+
     def split_pt(self, params):
         """split normpath at param(s) or arc length(s) in pts and return list of normpaths"""
         return self.normpath().split(params)
@@ -1318,6 +1326,10 @@ class normsubpathitem:
         """return a tuple of params and the total length arc length in pts"""
         pass
 
+    def arclentoparam_pt(self, lengths_pt, epsilon):
+        """return a tuple of params"""
+        pass
+
     def at_pt(self, params):
         """return coordinates at params in pts"""
         pass
@@ -1363,6 +1375,10 @@ class normsubpathitem:
 
     def reversed(self):
         """return reversed normsubpathitem"""
+        pass
+
+    def rotation(self, params):
+        """return rotation trafos (i.e. trafos without translations) at params"""
         pass
 
     def segments(self, params):
@@ -1477,6 +1493,9 @@ class normline_pt(normsubpathitem):
 
     def reversed(self):
         return normline_pt(self.x1_pt, self.y1_pt, self.x0_pt, self.y0_pt)
+
+    def rotation(self, params):
+        return [trafo.rotate(degrees(math.atan2(self.y1_pt-self.y0_pt, self.x1_pt-self.x0_pt)))]*len(params)
 
     def segments(self, params):
         if len(params) < 2:
@@ -1691,6 +1710,18 @@ class normcurve_pt(normsubpathitem):
 
     def reversed(self):
         return normcurve_pt(self.x3_pt, self.y3_pt, self.x2_pt, self.y2_pt, self.x1_pt, self.y1_pt, self.x0_pt, self.y0_pt)
+
+    def rotation(self, params):
+        result = []
+        for param in params:
+            tdx_pt = (3*(  -self.x0_pt+3*self.x1_pt-3*self.x2_pt+self.x3_pt)*param*param +
+                      2*( 3*self.x0_pt-6*self.x1_pt+3*self.x2_pt           )*param +
+                        (-3*self.x0_pt+3*self.x1_pt                        ))
+            tdy_pt = (3*(  -self.y0_pt+3*self.y1_pt-3*self.y2_pt+self.y3_pt)*param*param +
+                      2*( 3*self.y0_pt-6*self.y1_pt+3*self.y2_pt           )*param +
+                        (-3*self.y0_pt+3*self.y1_pt                        ))
+            result.append(trafo.rotate(degrees(math.atan2(tdy_pt, tdx_pt))))
+        return result
 
     def segments(self, params):
         if len(params) < 2:
@@ -2190,6 +2221,14 @@ class normsubpath:
         for i in range(len(self.normsubpathitems)):
             nnormpathitems.append(self.normsubpathitems[-(i+1)].reversed())
         return normsubpath(nnormpathitems, self.closed)
+
+    def rotation(self, params):
+        """return rotations at params"""
+        result = [None] * len(params)
+        for normsubpathitemindex, (indices, params) in self._distributeparams(params).items():
+            for index, rotation in zip(indices, self.normsubpathitems[normsubpathitemindex].rotation(params)):
+                result[index] = rotation
+        return result
 
     def segments(self, params):
         """return segments of the normsubpath
@@ -2745,6 +2784,24 @@ class normpath(canvas.canvasitem):
         for i in range(len(self.normsubpaths)):
             nnormpath.normsubpaths.append(self.normsubpaths[-(i+1)].reversed())
         return nnormpath
+
+    def _rotation(self, params):
+        """return rotation at params"""
+        result = [None] * len(params)
+        for normsubpathindex, (indices, params) in self._distributeparams(params).items():
+            for index, rotation in zip(indices, self.normsubpaths[normsubpathindex].rotation(params)):
+                result[index] = rotation
+        return result
+
+    def rotation_pt(self, params):
+        """return rotation at param(s) or arc length(s) in pts"""
+        return self._rotation(self._convertparams(params, self.arclentoparam_pt))
+    rotation_pt = _valueorlistmethod(rotation_pt)
+
+    def rotation(self, params):
+        """return rotation at param(s) or arc length(s)"""
+        return self._rotation(self._convertparams(params, self.arclentoparam))
+    rotation = _valueorlistmethod(rotation)
 
     def _split_pt(self, params):
         """split path at params and return list of normpaths"""
