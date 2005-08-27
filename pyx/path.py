@@ -1404,10 +1404,14 @@ class normline_pt(normsubpathitem):
     def __str__(self):
         return "normline_pt(%g, %g, %g, %g)" % (self.x0_pt, self.y0_pt, self.x1_pt, self.y1_pt)
 
-    def _arclentoparam_pt(self, lengths, epsilon):
+    def _arclentoparam_pt(self, lengths_pt, epsilon):
         # do self.arclen_pt inplace for performance reasons
-        l = math.hypot(self.x0_pt-self.x1_pt, self.y0_pt-self.y1_pt)
-        return [length/l for length in lengths], l
+        l_pt = math.hypot(self.x0_pt-self.x1_pt, self.y0_pt-self.y1_pt)
+        return [length_pt/l_pt for length_pt in lengths_pt], l_pt
+
+    def arclentoparam_pt(self, lengths_pt):
+        """return a tuple of params"""
+        return self._arclentoparam_pt(lengths_pt)[0]
 
     def arclen_pt(self,  epsilon):
         return math.hypot(self.x0_pt-self.x1_pt, self.y0_pt-self.y1_pt)
@@ -1590,15 +1594,19 @@ class normcurve_pt(normsubpathitem):
 
     def _arclentoparam_pt(self, lengths_pt, epsilon):
         a, b = self._midpointsplit(epsilon)
-        params_a, arclen_a = a._arclentoparam_pt(lengths_pt, epsilon)
-        params_b, arclen_b = b._arclentoparam_pt([length_pt - arclen_a for length_pt in lengths_pt], epsilon)
+        params_a, arclen_a_pt = a._arclentoparam_pt(lengths_pt, epsilon)
+        params_b, arclen_b_pt = b._arclentoparam_pt([length_pt - arclen_a_pt for length_pt in lengths_pt], epsilon)
         params = []
         for param_a, param_b, length_pt in zip(params_a, params_b, lengths_pt):
-            if length_pt > arclen_a:
+            if length_pt > arclen_a_pt:
                 params.append(0.5+0.5*param_b)
             else:
                 params.append(0.5*param_a)
-        return params, arclen_a + arclen_b
+        return params, arclen_a_pt + arclen_b_pt
+
+    def arclentoparam_pt(self, lengths_pt):
+        """return a tuple of params"""
+        return self._arclentoparam_pt(lengths_pt)[0]
 
     def arclen_pt(self, epsilon):
         a, b = self._midpointsplit(epsilon)
@@ -1900,6 +1908,10 @@ class normsubpath:
             totalarclen += arclen
 
         return results, totalarclen
+
+    def arclentoparam_pt(self, lengths_pt):
+        """return a tuple of params"""
+        return self._arclentoparam_pt(lengths_pt)[0]
 
     def at_pt(self, params):
         """return coordinates at params in pts"""
