@@ -1425,9 +1425,9 @@ class normline_pt(normsubpathitem):
         l_pt = math.hypot(self.x0_pt-self.x1_pt, self.y0_pt-self.y1_pt)
         return [length_pt/l_pt for length_pt in lengths_pt], l_pt
 
-    def arclentoparam_pt(self, lengths_pt):
+    def arclentoparam_pt(self, lengths_pt, epsilon):
         """return a tuple of params"""
-        return self._arclentoparam_pt(lengths_pt)[0]
+        return self._arclentoparam_pt(lengths_pt, epsilon)[0]
 
     def arclen_pt(self,  epsilon):
         return math.hypot(self.x0_pt-self.x1_pt, self.y0_pt-self.y1_pt)
@@ -1623,9 +1623,9 @@ class normcurve_pt(normsubpathitem):
                 params.append(0.5*param_a)
         return params, arclen_a_pt + arclen_b_pt
 
-    def arclentoparam_pt(self, lengths_pt):
+    def arclentoparam_pt(self, lengths_pt, epsilon):
         """return a tuple of params"""
-        return self._arclentoparam_pt(lengths_pt)[0]
+        return self._arclentoparam_pt(lengths_pt, epsilon)[0]
 
     def arclen_pt(self, epsilon):
         a, b = self._midpointsplit(epsilon)
