@@ -118,18 +118,18 @@ class trafo_pt(canvas.canvasitem, deformer.deformer):
     def bbox(self):
         return None
 
-    def _apply(self, x, y):
-        """apply transformation to point (x,y) (coordinates in pts)"""
-        return (self.matrix[0][0]*x +
-                self.matrix[0][1]*y +
+    def apply_pt(self, x_pt, y_pt):
+        """apply transformation to point (x_pt, y_pt) in pts"""
+        return (self.matrix[0][0]*x_pt +
+                self.matrix[0][1]*y_pt +
                 self.vector[0],
-                self.matrix[1][0]*x +
-                self.matrix[1][1]*y +
+                self.matrix[1][0]*x_pt +
+                self.matrix[1][1]*y_pt +
                 self.vector[1])
 
     def apply(self, x, y):
         # for the transformation we have to convert to points
-        tx, ty = self._apply(unit.topt(x), unit.topt(y))
+        tx, ty = self.apply_pt(unit.topt(x), unit.topt(y))
         return tx * unit.t_pt, ty * unit.t_pt
 
     def deform(self, path):

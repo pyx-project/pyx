@@ -1498,7 +1498,7 @@ class normline_pt(normsubpathitem):
                 for param, at_pt in zip(params, self.at_pt(params))]
 
     def transformed(self, trafo):
-        return normline_pt(*(trafo._apply(self.x0_pt, self.y0_pt) + trafo._apply(self.x1_pt, self.y1_pt)))
+        return normline_pt(*(trafo.apply_pt(self.x0_pt, self.y0_pt) + trafo.apply_pt(self.x1_pt, self.y1_pt)))
 
     def outputPS(self, file, writer, context):
         file.write("%g %g lineto\n" % (self.x1_pt, self.y1_pt))
@@ -1758,10 +1758,10 @@ class normcurve_pt(normsubpathitem):
         return result
 
     def transformed(self, trafo):
-        x0_pt, y0_pt = trafo._apply(self.x0_pt, self.y0_pt)
-        x1_pt, y1_pt = trafo._apply(self.x1_pt, self.y1_pt)
-        x2_pt, y2_pt = trafo._apply(self.x2_pt, self.y2_pt)
-        x3_pt, y3_pt = trafo._apply(self.x3_pt, self.y3_pt)
+        x0_pt, y0_pt = trafo.apply_pt(self.x0_pt, self.y0_pt)
+        x1_pt, y1_pt = trafo.apply_pt(self.x1_pt, self.y1_pt)
+        x2_pt, y2_pt = trafo.apply_pt(self.x2_pt, self.y2_pt)
+        x3_pt, y3_pt = trafo.apply_pt(self.x3_pt, self.y3_pt)
         return normcurve_pt(x0_pt, y0_pt, x1_pt, y1_pt, x2_pt, y2_pt, x3_pt, y3_pt)
 
     def outputPS(self, file, writer, context):

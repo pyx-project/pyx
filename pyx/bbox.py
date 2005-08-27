@@ -84,10 +84,10 @@ class bbox_pt:
     def transform(self, trafo):
         """transform bbox in place by trafo"""
         # we have to transform all four corner points of the bbox
-        llx_pt, lly_pt = trafo._apply(self.llx_pt, self.lly_pt)
-        lrx, lry = trafo._apply(self.urx_pt, self.lly_pt)
-        urx_pt, ury_pt = trafo._apply(self.urx_pt, self.ury_pt)
-        ulx, uly = trafo._apply(self.llx_pt, self.ury_pt)
+        llx_pt, lly_pt = trafo.apply_pt(self.llx_pt, self.lly_pt)
+        lrx, lry = trafo.apply_pt(self.urx_pt, self.lly_pt)
+        urx_pt, ury_pt = trafo.apply_pt(self.urx_pt, self.ury_pt)
+        ulx, uly = trafo.apply_pt(self.llx_pt, self.ury_pt)
 
         # Now, by sorting, we obtain the lower left and upper right corner
         # of the new bounding box.
@@ -99,10 +99,10 @@ class bbox_pt:
     def transformed(self, trafo):
         """return bbox transformed by trafo"""
         # we have to transform all four corner points of the bbox
-        llx_pt, lly_pt = trafo._apply(self.llx_pt, self.lly_pt)
-        lrx, lry = trafo._apply(self.urx_pt, self.lly_pt)
-        urx_pt, ury_pt = trafo._apply(self.urx_pt, self.ury_pt)
-        ulx, uly = trafo._apply(self.llx_pt, self.ury_pt)
+        llx_pt, lly_pt = trafo.apply_pt(self.llx_pt, self.lly_pt)
+        lrx, lry = trafo.apply_pt(self.urx_pt, self.lly_pt)
+        urx_pt, ury_pt = trafo.apply_pt(self.urx_pt, self.ury_pt)
+        ulx, uly = trafo.apply_pt(self.llx_pt, self.ury_pt)
 
         # Now, by sorting, we obtain the lower left and upper right corner
         # of the new bounding box. 

@@ -108,8 +108,8 @@ class polygon_pt:
     def transform(self, *trafos):
         for trafo in trafos:
             if self.center is not None:
-                self.center = trafo._apply(*self.center)
-            self.corners = [trafo._apply(*point) for point in self.corners]
+                self.center = trafo.apply_pt(*self.center)
+            self.corners = [trafo.apply_pt(*point) for point in self.corners]
 
     def reltransform(self, *trafos):
         if self.center is not None:
