@@ -97,6 +97,9 @@ TODO:
     - add rotate methods to path, normpath, normsubpath, and normsubpathitems
     - add flushskippedline to normsubpath
     - add arclentoparam to normsubpath and normsubpathitems
+  - deformer module:
+    - rewrite smoother to make use of the subnormpath facilities
+    - XXX missing numeric fallback in helper
   - trafo module:
     - renamed _apply to apply_pt
 
