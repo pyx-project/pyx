@@ -1947,13 +1947,7 @@ class normsubpath:
         xs_pt, ys_pt = self.normsubpathitems[-1].atend_pt()
         xe_pt, ye_pt = self.normsubpathitems[0].atbegin_pt()
         self.append(normline_pt(xs_pt, ys_pt, xe_pt, ye_pt))
-
-        # the append might have left a skippedline, which we have to remove
-        # from the end of the closed path
-        if self.skippedline:
-            self.normsubpathitems[-1] = self.normsubpathitems[-1].modifiedend_pt(*self.skippedline.atend_pt())
-            self.skippedline = None
-
+        self.flushskippedline()
         self.closed = 1
 
     def copy(self):
@@ -1991,6 +1985,20 @@ class normsubpath:
         """
         for normsubpathitem in normsubpathitems:
             self.append(normsubpathitem)
+
+    def flushskippedline(self):
+        """flush the skippedline, i.e. apply it to the normsubpath
+
+        remove the skippedline by modifying the end point of the existing normsubpath
+        """
+        while self.skippedline:
+            try:
+                lastnormsubpathitem = self.normsubpathitems.pop()
+            except IndexError:
+                raise ValueError("normsubpath too short to flush the skippedline")
+            lastnormsubpathitem = lastnormsubpathitem.modifiedend_pt(*self.skippedline.atend_pt())
+            self.skippedline = None
+            self.append(lastnormsubpathitem)
 
     def intersect(self, other):
         """intersect self with other normsubpath
