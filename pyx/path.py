@@ -153,10 +153,6 @@ class _currentpoint:
         self.x_pt = x_pt
         self.y_pt = y_pt
 
-    def invalidate(self):
-        """mark current point invalid"""
-        self.x_pt = _invalidcurrentpoint
-
     def valid(self):
         """checks whether the current point is invalid"""
         return self.x_pt is not _invalidcurrentpoint
