@@ -466,10 +466,10 @@ class smoothed(deformer): # <<<
         if not normsubpath.closed:
             l1_pt = 0
             l2_pt = max(0, arclens_pt[0] - radius_pt)
-            params[0] = pertinentnormsubpathitem.arclentoparam_pt([l1_pt, l2_pt], epsilon)
+            params[0] = pertinentnormsubpathitems[0].arclentoparam_pt([l1_pt, l2_pt], epsilon)
             l1_pt = min(radius_pt, arclens_pt[-1])
             l2_pt = arclens_pt[-1]
-            params[-1] = pertinentnormsubpathitem.arclentoparam_pt([l1_pt, l2_pt], epsilon)
+            params[-1] = pertinentnormsubpathitems[-1].arclentoparam_pt([l1_pt, l2_pt], epsilon)
 
         newnormsubpath = path.normsubpath(epsilon=normsubpath.epsilon)
         for i in range(len(pertinentnormsubpathitems)):
