@@ -227,6 +227,8 @@ class closepath(pathitem):
         return "closepath()"
 
     def _updatecurrentpoint(self, currentpoint):
+        # XXX: this is still not correct! the currentpoint
+        # is moved back to the beginning of the normsubpath
         pass
 
     def _bbox(self, currentpoint):

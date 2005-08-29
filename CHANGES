@@ -99,6 +99,8 @@ TODO:
   - text module:
     - improve escapestring to handle all ascii characters
   - path module:
+    - correct closepath to not invalidating the currentpoint;
+      TODO: set the proper currentpoint
     - add rotate methods to path, normpath, normsubpath, and normsubpathitems
     - add flushskippedline to normsubpath
     - add arclentoparam to normsubpath and normsubpathitems
