@@ -340,11 +340,7 @@ class line(line_pt):
     """a line is the straight connector between the centers of two boxes"""
 
     def __init__(self, box1, box2, boxdists=[0,0]):
-
-        boxdists_pt = (unit.topt(helper.getitemno(boxdists, 0)),
-                       unit.topt(helper.getitemno(boxdists, 1)))
-
-        line_pt.__init__(self, box1, box2, boxdists=boxdists_pt)
+        line_pt.__init__(self, box1, box2, boxdists=map(unit.topt, boxdists))
 
 
 class curve(curve_pt):
@@ -358,15 +354,11 @@ class curve(curve_pt):
                  absangle1=None, absangle2=None,
                  absbulge=0, relbulge=0.39,
                  boxdists=[0,0]):
-
-        boxdists_pt = (unit.topt(helper.getitemno(boxdists, 0)),
-                       unit.topt(helper.getitemno(boxdists, 1)))
-
         curve_pt.__init__(self, box1, box2,
                           relangle1=relangle1, relangle2=relangle2,
                           absangle1=absangle1, absangle2=absangle2,
                           absbulge=unit.topt(absbulge), relbulge=relbulge,
-                          boxdists=boxdists_pt)
+                          boxdists=map(unit.topt, boxdists))
 
 class arc(arc_pt):
 
@@ -378,16 +370,12 @@ class arc(arc_pt):
 
     def __init__(self, box1, box2, relangle=45,
                  absbulge=None, relbulge=None, boxdists=[0,0]):
-
-        boxdists_pt = (unit.topt(helper.getitemno(boxdists, 0)),
-                       unit.topt(helper.getitemno(boxdists, 1)))
-
         if absbulge is not None:
             absbulge = unit.topt(absbulge)
         arc_pt.__init__(self, box1, box2,
                         relangle=relangle,
                         absbulge=absbulge, relbulge=relbulge,
-                        boxdists=boxdists_pt)
+                        boxdists=map(unit.topt, boxdists))
 
 
 class twolines(twolines_pt):
@@ -405,10 +393,6 @@ class twolines(twolines_pt):
                  bezierradius=None, beziersoftness=1,
                  arcradius=None,
                  boxdists=[0,0]):
-
-        boxdists_pt = (unit.topt(helper.getitemno(boxdists, 0)),
-                       unit.topt(helper.getitemno(boxdists, 1)))
-
         if length1 is not None:
             length1 = unit.topt(length1)
         if length2 is not None:
@@ -424,7 +408,7 @@ class twolines(twolines_pt):
                              length1=length1, length2=length2,
                              bezierradius=bezierradius, beziersoftness=1,
                              arcradius=arcradius,
-                             boxdists=boxdists_pt)
+                             boxdists=map(unit.topt, boxdists))
 
 
 

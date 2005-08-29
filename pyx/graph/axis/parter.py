@@ -69,15 +69,15 @@ class _parter:
 class linear(_parter):
     """partitioner to create a single linear parition"""
 
-    def __init__(self, tickdist=None, labeldist=None, extendtick=0, extendlabel=None, epsilon=1e-10):
-        if tickdist is None and labeldist is not None:
-            self.ticklist = (tick.rational(helper.ensuresequence(labeldist)[0]),)
+    def __init__(self, tickdists=None, labeldists=None, extendtick=0, extendlabel=None, epsilon=1e-10):
+        if tickdists is None and labeldists is not None:
+            self.ticklist = [tick.rational(labeldists[0])]
         else:
-            self.ticklist = map(tick.rational, helper.ensuresequence(tickdist))
-        if labeldist is None and tickdist is not None:
-            self.labellist = (tick.rational(helper.ensuresequence(tickdist)[0]),)
+            self.ticklist = map(tick.rational, tickdists)
+        if labeldists is None and tickdists is not None:
+            self.labellist = [tick.rational(tickdists[0])]
         else:
-            self.labellist = map(tick.rational, helper.ensuresequence(labeldist))
+            self.labellist = map(tick.rational, labeldists)
         self.extendtick = extendtick
         self.extendlabel = extendlabel
         self.epsilon = epsilon
@@ -176,8 +176,8 @@ class autolinear(_parter):
             else:
                 data.tickindex = len(self.variants) - 1
                 data.base.denom *= 10
-        tickdist = [tick.rational(t) * data.base for t in self.variants[data.tickindex]]
-        linearparter = linear(tickdist=tickdist, extendtick=self.extendtick, epsilon=self.epsilon)
+        tickdists = [tick.rational(t) * data.base for t in self.variants[data.tickindex]]
+        linearparter = linear(tickdists=tickdists, extendtick=self.extendtick, epsilon=self.epsilon)
         return linearparter.partfunctions(min=data.min, max=data.max, extendmin=data.extendmin, extendmax=data.extendmax)[0]()
 
 autolin = autolinear
@@ -210,16 +210,16 @@ class logarithmic(linear):
     pre1to9exp = preexp([tick.rational((x, 1)) for x in range(1, 10)], 10)
     #  ^- we always include 1 in order to get extendto(tick|label)level to work as expected
 
-    def __init__(self, tickpos=None, labelpos=None, extendtick=0, extendlabel=None, epsilon=1e-10):
-        if tickpos is None and labelpos is not None:
-            self.ticklist = (helper.ensuresequence(labelpos)[0],)
+    def __init__(self, tickpreexps=None, labelpreexps=None, extendtick=0, extendlabel=None, epsilon=1e-10):
+        if tickpreexps is None and labelpreexps is not None:
+            self.ticklist = [labelpreexps[0]]
         else:
-            self.ticklist = helper.ensuresequence(tickpos)
+            self.ticklist = tickpreexps
 
-        if labelpos is None and tickpos is not None:
-            self.labellist = (helper.ensuresequence(tickpos)[0],)
+        if labelpreexps is None and tickpreexps is not None:
+            self.labellist = [tickpreexps[0]]
         else:
-            self.labellist = helper.ensuresequence(labelpos)
+            self.labellist = labelpreexps
         self.extendtick = extendtick
         self.extendlabel = extendlabel
         self.epsilon = epsilon
@@ -320,7 +320,7 @@ class autologarithmic(logarithmic):
     def partfunction(self, data):
         data.variantsindex += data.sign
         if 0 <= data.variantsindex < len(self.variants):
-            logarithmicparter= logarithmic(tickpos=self.variants[data.variantsindex][0], labelpos=self.variants[data.variantsindex][1],
+            logarithmicparter= logarithmic(tickpreexps=self.variants[data.variantsindex][0], labelpreexps=self.variants[data.variantsindex][1],
                                            extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon)
             return logarithmicparter.partfunctions(min=data.min, max=data.max, extendmin=data.extendmin, extendmax=data.extendmax)[0]()
         return None

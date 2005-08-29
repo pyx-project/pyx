@@ -22,83 +22,12 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 
-class nodefault: pass
+class nodefault:
+    """not-set keyword argument marker
 
-
-def isstring(arg):
-    "arg is string-like (cf. python cookbook 3.2)"
-    try: arg + ''
-    except: return 0
-    return 1
-
-
-def isnumber(arg):
-    "arg is number-like"
-    try: arg + 0
-    except: return 0
-    return 1
-
-
-def isinteger(arg):
-    "arg is integer-like"
-    try:
-        if type(arg + 0.0) is type(arg):
-            return 0
-        return 1
-    except: return 0
-
-
-def issequence(arg):
-    """arg is sequence-like (e.g. has a len)
-       a string is *not* considered to be a sequence"""
-    if isstring(arg): return 0
-    try: len(arg)
-    except: return 0
-    return 1
-
-
-def ensuresequence(arg):
-    """return arg or (arg,) depending on the result of issequence,
-       None is converted to ()"""
-    if isstring(arg): return (arg,)
-    if arg is None: return ()
-    if issequence(arg): return arg
-    return (arg,)
-
-
-def ensurelist(arg):
-    """return list(arg) or [arg] depending on the result of isequence,
-       None is converted to []"""
-    if isstring(arg): return [arg]
-    if arg is None: return []
-    if issequence(arg): return list(arg)
-    return [arg]
-
-def getitemno(arg, n):
-    """get item number n if arg is a sequence (when the sequence
-       is not long enough, None is returned), otherweise arg is
-       returned"""
-    if issequence(arg):
-        try: return arg[n]
-        except: return None
-    else:
-        return arg
-
-
-def issequenceofsequences(arg):
-    """check if arg has a sequence or None as it's first entry"""
-    return issequence(arg) and len(arg) and (issequence(arg[0]) or arg[0] is None)
-
-
-def getsequenceno(arg, n):
-    """get sequence number n if arg is a sequence of sequences (when
-       the sequence is not long enough, None is returned), otherwise
-       arg is returned"""
-    if issequenceofsequences(arg):
-        try: return arg[n]
-        except: return None
-    else:
-        return arg
+    This class is used to mark keyword arguments to be not set by the user.
+    """
+    pass
 
 
 # XXX fallback for Numeric (eigenvalue computation) to be implemented along

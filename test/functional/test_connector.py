@@ -27,18 +27,18 @@ def testline(c):
 
 
 def testarc(c):
-    l = arc(endbox, startbox, boxdists=1)
+    l = arc(endbox, startbox, boxdists=[1,0])
     c.stroke(l, [color.rgb.blue, deco.earrow.normal])
 
     for a in [-135, -90, 0.0001, 45, 90]:
-        l = arc(startbox, endbox, relangle=a, boxdists=1)
+        l = arc(startbox, endbox, relangle=a, boxdists=[1,1])
         c.stroke(l, [color.rgb.red, deco.earrow.normal])
 
     for b in [-1.1, -0.4, 0.01, 0.5]:
-        l = arc(startbox, endbox, relbulge=b, boxdists=1)
+        l = arc(startbox, endbox, relbulge=b, boxdists=[1,1])
         c.stroke(l, [color.rgb.green, deco.earrow.normal])
 
-    l = arc(startbox, endbox, absbulge=5, relbulge=0, boxdists=1)
+    l = arc(startbox, endbox, absbulge=5, relbulge=0, boxdists=[1,0])
     c.stroke(l, [color.rgb.blue, deco.earrow.normal])
 
 
@@ -51,13 +51,13 @@ def testcurve(c):
                [ 90, -90,  1.0], \
                [-90,   0,  1.0], \
                [ 20,  20,  2.0] ]:
-        l = curve(startbox, endbox, boxdists=0.8,
+        l = curve(startbox, endbox, boxdists=[0.8,0.8],
             relangle1=a[0], relangle2=a[1], relbulge=a[2])
         c.stroke(l, [color.rgb.red, deco.earrow.normal])
 
     for a in [ [ 90,  90,  1.0], \
                [-90,  90,  1.0] ]:
-        l = curve(startbox, endbox, boxdists=0.8,
+        l = curve(startbox, endbox, boxdists=[0.8,0.8],
             absangle1=a[0], absangle2=a[1], relbulge=a[2])
         c.stroke(l, [color.rgb.green, deco.earrow.normal])
 
@@ -67,17 +67,17 @@ def testtwolines(c):
     c.stroke(l, [color.rgb.blue, deco.earrow.normal])
 
     for a in [ [0,90], [90,0] ]:
-        l = twolines(startbox, endbox, boxdists=0.8,
+        l = twolines(startbox, endbox, boxdists=[0.8,0.8],
             absangle1=a[0], absangle2=a[1])
         c.stroke(l, [color.rgb.red, deco.earrow.normal])
 
     for a in range(10,20,2):
-        l = twolines(startbox, endbox, boxdists=0.8,
+        l = twolines(startbox, endbox, boxdists=[0.8,0.8],
             absangle1=45, length2=a)
         c.stroke(l, [color.rgb.green, deco.earrow.normal])
 
     for a in range(5,20,2):
-        l = twolines(startbox, endbox, boxdists=0.8,
+        l = twolines(startbox, endbox, boxdists=[0.8,0.8],
             relangle1=45, length1=a)
         c.stroke(l, [color.rgb.green, deco.earrow.normal])
 

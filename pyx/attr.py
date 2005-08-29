@@ -30,19 +30,16 @@ except TypeError:
     # workaround for Python 2.1
     _isinstance = isinstance
     def isinstance(instance, clsarg):
-        # we explicitely check for clsarg being a sequence, because
-        # a Leap Before Look pattern, i.e., just trying out
-        # _isinstance(instance, clsarg) within an try/except
-        # block, may mask a TypeError occuring when clsarg is
-        # not a class
-        import helper
-        if not helper.issequence(clsarg):
-            return _isinstance(instance, clsarg)
-        else:
+        import types
+        try:
+            _isinstance(clsarg, types.ClassType)
+        except:
             for cls in clsarg:
                 if _isinstance(instance, cls):
                     return 1
             return 0
+        else:
+            return _isinstance(instance, clsarg)
 
 #
 # some helper functions for the attribute handling

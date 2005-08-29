@@ -545,12 +545,9 @@ class anchoredaxis:
         return self.canvas
 
 
-class _nopainter: pass
-
-
 class linkedaxis(anchoredaxis):
 
-    def __init__(self, linkedaxis=None, errorname="manual-linked", painter=_nopainter):
+    def __init__(self, linkedaxis=None, errorname="manual-linked", painter=helper.nodefault):
         self.painter = painter
         self.linkedto = None
         self.errorname = errorname
@@ -565,7 +562,7 @@ class linkedaxis(anchoredaxis):
         self.axis = linkedaxis.axis
         self.errorname = "%s (linked to %s)" % (self.errorname, linkedaxis.errorname)
         self.data = linkedaxis.data
-        if self.painter is _nopainter:
+        if self.painter is helper.nodefault:
             self.painter = linkedaxis.axis.linkpainter
 
     def create(self, graphtexrunner):

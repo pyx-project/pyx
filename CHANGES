@@ -89,6 +89,11 @@ TODO:
         (TODO: documentation, basically the setlinkedaxis method)
       - new domethods dependency handling
       - separate axis range calculation from dolayout
+    - axis.parter module:
+      - linear and logarthmic partitioners always need lists now
+        (as it was documented all the time; renamed tickdist/labeldist
+        to tickdists/labeldists; renamed tickpos/labelpos to
+        tickpreexps/labelpreexps)
   - color module:
     - transparency support (PDF only) (TODO: documentation)
   - text module:
@@ -100,6 +105,8 @@ TODO:
   - deformer module:
     - rewrite smoother to make use of the subnormpath facilities
     - XXX missing numeric fallback in helper
+  - connector module:
+    - boxdists parameter need to be a list/tuple of two items now
   - trafo module:
     - renamed _apply to apply_pt
 

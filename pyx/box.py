@@ -44,65 +44,18 @@ class polygon_pt:
                 self.center = self.center[0] + corn[0], self.center[1] + corn[1]
             self.center = self.center[0]/len(self.corners), self.center[1]/len(self.corners)
 
-    def path(self, centerradius=None, bezierradius=None, beziersoftness=1):
+    def path(self, centerradius=None, bezierradius=None, beziersoftness=None):
         pathitems = []
         if centerradius is not None and self.center is not None:
             r = unit.topt(centerradius)
             pathitems.append(path.arc_pt(self.center[0], self.center[1], r, 0, 360))
             pathitems.append(path.closepath())
-        if bezierradius is None:
-            pathitems.append(path.moveto_pt(self.corners[0][0], self.corners[0][1]))
-            for x, y in self.corners[1:]:
-                pathitems.append(path.lineto_pt(x, y))
-            pathitems.append(path.closepath())
-        else:
-            # curved box plotting by Michael Schindler
-            l = len(self.corners)
-            # make beziersoftnes a list of length l
-            if helper.issequence(beziersoftness):
-                if not (len(beziersoftness) == l): raise ValueError
-            else:
-                beziersoftness = [float(beziersoftness)]*l
-            # make bezierradius a list (lenght l) of 2-tuples
-            if helper.issequence(bezierradius):
-                r = list(bezierradius)
-                if len(bezierradius) == l:
-                    for oner, i in zip(r, range(l)):
-                        if helper.issequence(oner):
-                            if len(oner) == 2:
-                                r[i] = [unit.topt(oner[0]), unit.topt(oner[1])]
-                            else: raise ValueError
-                        else:
-                            r[i] = [unit.topt(oner)]*2
-                else: raise ValueError
-            else:
-                r = [[unit.topt(bezierradius)]*2]*l
-            for i in range(l):
-                c = self.corners[i]
-                def normed(*v):
-                    n = math.hypot(*v)
-                    return v[0] / n, v[1] / n
-                d1 = normed(self.corners[(i - 1 + l) % l][0] - c[0],
-                            self.corners[(i - 1 + l) % l][1] - c[1])
-                d2 = normed(self.corners[(i + 1 + l) % l][0] - c[0],
-                            self.corners[(i + 1 + l) % l][1] - c[1])
-                dc = normed(d1[0] + d2[0], d1[1] + d2[1])
-                f = 0.3192 * beziersoftness[i]
-                g = (15.0 * f + math.sqrt(-15.0*f*f + 24.0*f))/12.0
-                f1 = c[0] + f * d1[0] * r[i][0], c[1] + f * d1[1] * r[i][0]
-                f2 = c[0] + f * d2[0] * r[i][1], c[1] + f * d2[1] * r[i][1]
-                g1 = c[0] + g * d1[0] * r[i][0], c[1] + g * d1[1] * r[i][0]
-                g2 = c[0] + g * d2[0] * r[i][1], c[1] + g * d2[1] * r[i][1]
-                d1 = c[0] +     d1[0] * r[i][0], c[1] +     d1[1] * r[i][0]
-                d2 = c[0] +     d2[0] * r[i][1], c[1] +     d2[1] * r[i][1]
-                e  = 0.5 * (f1[0] + f2[0]), 0.5 * (f1[1] + f2[1])
-                if i:
-                    pathitems.append(path.lineto_pt(*d1))
-                else:
-                    pathitems.append(path.moveto_pt(*d1))
-                pathitems.append(path.curveto_pt(*(g1 + f1 + e)))
-                pathitems.append(path.curveto_pt(*(f2 + g2 + d2)))
-            pathitems.append(path.closepath())
+        if bezierradius is not None or beziersoftness is not None:
+            raise ValueError("smooth functionality removed; apply smooth deformer on path")
+        pathitems.append(path.moveto_pt(self.corners[0][0], self.corners[0][1]))
+        for x, y in self.corners[1:]:
+            pathitems.append(path.lineto_pt(x, y))
+        pathitems.append(path.closepath())
         return path.path(*pathitems)
 
     def transform(self, *trafos):
