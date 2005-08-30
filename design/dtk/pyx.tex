@@ -10,39 +10,74 @@
 \author{Jörg Lehmann, André Wobst}
 \maketitle
 
+\tolerance=1500
+
 \section{Einleitung}
 
-\PyX{} ist eine Bibliothek zur Erzeugung von Vektorgraphiken im
-PostScript und PDF Format. \PyX{} ist in Python implementiert, einer
-modernen und sehr leistungsfähigen Scriptsprache, die gleichzeitig
-auch als Eingabesprache für die Beschreibung der Graphiken genutzt
-wird. Damit erübrigt sich hier die dringende Notwendigkeit einer
-formalen Einführung in die Beschreibungssprache, zumal Python
-Quellcode sehr gut lesbar und ausgesprochen leicht erlernbar ist.
+Während sich \TeX/\LaTeX{} als De-facto-Standardlösung zum hochwertigen
+Textsatz herausgebildet haben, ist die Situation bei Programmen zum
+Erstellen von Abbildungen wesentlich unübersichtlicher. Verschiedenste,
+zumeist auf bestimmte Anwendungsfälle zugeschnittene, Lösungen
+konkurrieren miteinander. Ohne Anspruch auf Vollständigkeit seien hier
+nur \textsc{Metapost}, das vorallem Stärken bei der Erzeugung geometrischer
+Skizzen aufweist, \textsc{PSTricks}, das sich direkt in eine \LaTeX-Datei
+einbinden lässt, sowie \textsc{Gnuplot} zur Erstellung von
+Funktionsgraphen aufgeführt.
 
-Das Ziel von \PyX{} ist, sowohl elementare Graphikbefehle in höchster
-Qualität zur Verfügung zu stellen, als auch ausgefeilte Techniken zur
-Realisierung typischer Graphikaufgaben auf dieser Grundlage
-aufzubauen, beispielsweise für Funktionsgraphen. Zusammen mit einer
-herausragenden \TeX{}/\LaTeX{}-Integration entsteht so ein
-programmierbares Graphiksystem für den Endanwender.
+Ein Hauptkriterium bei der Auswahl einer geeigneten Lösung ist
+sicherlich die Integration mit \TeX/\LaTeX. Schliesslich sollte die
+Schriftart in der Abbildung möglichst mit derjenigen im Haupttext
+übereinstimmen und natürlich sollte es möglich sein, von den \TeX s
+Möglichkeiten des mathematischen Formelsatzes auch in Beschriftungen wie
+gewohnt gebrauch zu machen. Die gerade genannten Programme erfüllen
+diese Anforderung mehr oder minder, entweder bereits durch Ihr Design
+(z.B. im Falle von \textsc{PSTricks}) oder durch ein integriertes (wie
+bei \textsc{Metapost}) bzw. bei \textsc{Gnuplot} durch ein nachträglich aufgestülpbares 
+\TeX/\LaTeX-Interface. 
 
-\PyX{} verwendet die GPL-Lizenz und kann unter allen gängigen
-Betriebssystemen betrieben werden. Voraussetzung ist nur ein
-Python-Interpreter ab Version 2.1, der im Handumdrehen installiert
-ist\footnote{Bei vielen Linux-Distributionen sowie unter neueren
-Versionen von OS X gehört Python zur Grundausstattung. Für Windows
-stehen unter \url{http://www.python.org} fertige Installer zur
-Verfügung.}. \PyX{} kann nach dem Auspacken des Archivs im
-Quellverzeichnis direkt verwendet werden; eine systemweite
+Ist damit also alles in Butter? Leider nein, und der Hauptgrund liegt an
+der mangelnden Universitaliät der eben beschriebenen Programme. Wer
+schon einmal versucht hat das Resultat einer numerischen Berechnung
+mittels \textsc{Metapost} oder \textsc{PSTricks} darzustellen, weiss wie
+schwierig sich ein solches Unterfangen gestalten kann. Umgekehrt ist es
+praktisch unmöglich, eine Schemazeichnung in \textsc{Gnuplot} zu
+erstellen. Und wer kompliziertere programmatische Konstrukte zur
+Generierung der Abbildung verwenden will, stösst bei allen drei Lösung
+mehr oder minder schnell an seine Grenzen. 
+
+Neue Lösungen sind also gefragt und eine ebensolche, die Graphikbibliothek
+\PyX{}, soll der Gegenstand dieses Artikels sein.  Implementiert in der
+mächtigen, aber gleichzeitig leicht erlernbaren, Skriptsprache
+\textsc{Python}, stellt \PyX{} alle notwendigen Konstrukte zur
+programmatischen Erzeugung von qualitativ hochwertigen Abbildungen zur
+Verfügung. Aufbauend auf ein einer Abstraktion des \textsc{PostScript}
+Zeichenmodells und einer integrierten \TeX/\LaTeX-Schnittstelle werden
+ausgefeilte Techniken zur Realisierung typischer Graphikaufgaben von der
+schematischen Darstellung bis zum Funktionsgraphen angeboten. Darüber
+hinausgehend bietet die \TeX-Schnittstelle sogar Möglichkeiten im
+Textsatz die über das bisher mit \TeX{} mögliche hinausgehen.
+
+XXX Grundkenntnisse in Python sind notwendig, allerdings sollte
+die im folgenden beschriebenen Programmbeispiele auch ohne solche
+verständlich sein.
+
+\section{Installation}
+
+\PyX{} setzt einen Python-Interpreter ab Version 2.1 voraus, der im
+Handumdrehen installiert ist\footnote{Bei vielen Linux-Distributionen
+sowie unter neueren Versionen von OS X gehört Python zur
+Grundausstattung. Für Windows stehen unter \url{http://www.python.org}
+fertige Installer zur Verfügung.}. \PyX{} kann nach dem Auspacken des
+Archivs im Quellverzeichnis direkt verwendet werden; eine systemweite
 Installation ist in der Grundkonfiguration mit einem einzigen Befehl
 \verb|python setup.py install| erledigt. Darüber hinaus wird für die
 Text-Ausgabe eine funktionsfähige \TeX-Installation vorausgesetzt, die
-bei den Lesern der technischen Komödie sicher sowieso vorhanden ist.
+bei den Lesern der technischen Komödie sicher sowieso vorhanden sein
+dürfte.
 
 \section{Grundlagen für Vektorgraphiken: Pfade}
 
-\PyX{} abstrahiert das PostScript Pfadsystem, in dem Pfade als
+Wie bereits erwähnt, abstrahiert \PyX{} das PostScript Pfadsystem, in dem Pfade als
 mathematische Objekte aufgefasst werden, also keine Linienbreite o.ä.
 besitzen. Pfade bestehen aus einzelnen Pfadelementen, wobei geraden
 Linienstücke, Bezierkurven und Kreissegmente zur Verfügung stehen.
@@ -65,6 +100,9 @@ definierte, einstellbare Rechengenauigkeit besitzen. Dieser
 Konvertierungsschritt kann zwar explizit angestoßen werden, wird
 ansonsten aber auch automatisch ausgeführt, sobald die Konvertierung
 aufgrund der angeforderten Funktionen notwendig wird.
+
+XXX warum nicht was zum Anfang malen, ist doch die Hauptaufgabe von
+\PyX{}, oder?
 
 In einem ersten Beispiel soll die Bogenlänge eines Einheitskreises
 bestimmt werden. Dies erledigt folgendes kleine Python-Script:
@@ -116,6 +154,10 @@ oder sogar ineinander wirken zu lassen. Um das am Beispiel eines
 Pfeiles zu demonstrieren, benötigt man noch eine Zeichenfläche, die
 man nach Einfügen des dekorierten Pfades in eine PostScript oder PDF
 Datei ausgeben kann. Der entsprechende Quelltext lautet:
+
+XXX der Pfeil sieht ehrlicherweise nicht so toll aus (wegen der
+gestrichelten Linie
+
 \begin{quote}
 \lstinputlisting{arrow.py}
 \end{quote}
