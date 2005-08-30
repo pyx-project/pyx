@@ -77,11 +77,9 @@ def controldists_from_endpoints_pt (A, B, tangA, tangB, curvA, curvB): # <<<
     """
 
     # some shortcuts
-    T = tangB[0] * tangA[1] - tangB[1] * tangA[0]
-    D =   tangA[0] * (B[1]-A[1]) - tangA[1] * (B[0]-A[0])
-    E = - tangB[0] * (B[1]-A[1]) + tangB[1] * (B[0]-A[0])
-    # the variables: \dot X(0) = 3 * a * tangA
-    #                \dot X(1) = 3 * b * tangB
+    T = tangA[0] * tangB[1] - tangA[1] * tangB[0]
+    D = tangA[0] * (B[1]-A[1]) - tangA[1] * (B[0]-A[0])
+    E = tangB[0] * (B[1]-A[1]) - tangB[1] * (B[0]-A[0])
     a, b = None, None
 
 
@@ -90,24 +88,22 @@ def controldists_from_endpoints_pt (A, B, tangA, tangB, curvA, curvB): # <<<
         1.0 / T
     except ZeroDivisionError:
         try:
-            a = math.sqrt(2.0 * D / (3.0 * curvA))
-            b = math.sqrt(2.0 * E / (3.0 * curvB))
+            a = math.sqrt( 2.0 * D / (3.0 * curvA))
+            b = math.sqrt(-2.0 * E / (3.0 * curvB))
         except ZeroDivisionError:
             a = b = None
-        except ValueError:
-            raise # ???
     else:
         try:
             1.0 / curvA
         except ZeroDivisionError:
-            b = -D / T
-            a = (1.5*curvB*b*b - E) / T
+            b = D / T
+            a = (-1.5*curvB*b*b - E) / T
         else:
             try:
                 1.0 / curvB
             except ZeroDivisionError:
                 a = -E / T
-                b = (1.5*curvA*a*a - D) / T
+                b = (-1.5*curvA*a*a + D) / T
             else:
                 a, b = None, None
 
@@ -117,30 +113,34 @@ def controldists_from_endpoints_pt (A, B, tangA, tangB, curvA, curvB): # <<<
         # we first try to find all the zeros of the polynomials for a or b (4th order)
         # this needs Numeric and LinearAlgebra
 
+        # for the derivation see /design/beziers.tex
         #     0 = Ga(a,b) = 0.5 a |a| curvA + b * T - D
         #     0 = Gb(a,b) = 0.5 b |b| curvB + a * T + E
 
-        coeffs_a = (3.375*curvA*curvA*curvB, 0, -4.5*curvA*curvB*D, -T**3,  1.5*curvB*D*D - T*T*E)
-        coeffs_b = (3.375*curvA*curvB*curvB, 0, -4.5*curvA*curvB*E, -T**3,  1.5*curvA*E*E - T*T*D)
+        coeffs_a = (3.375*curvA*curvA*curvB, 0, -4.5*curvA*curvB*D, T**3, 1.5*curvB*D*D + T*T*E)
+        coeffs_b = (3.375*curvA*curvB*curvB, 0,  4.5*curvA*curvB*E, T**3, 1.5*curvA*E*E - T*T*D)
 
         # First try the equation for a
         cands_a = [cand for cand in helper.realpolyroots(coeffs_a) if cand > 0]
 
         if cands_a:
             a = min(cands_a)
-            b = (1.5*curvA*a*a - D) / T
+            b = (-1.5*curvA*a*a + D) / T
         else:
             # then, try the equation for b
             cands_b = [cand for cand in helper.realpolyroots(coeffs_b) if cand > 0]
             if cands_b:
                 b = min(cands_b)
-                a = (1.5*curvB*b*b - E) / T
+                a = (-1.5*curvB*b*b - E) / T
             else:
                 a = b = None
 
     if a < 0 or b < 0:
         a = b = None
 
+    # return the lengths of the control arms. The missing control points are
+    #  x_1 = A[0] + a * tangA[0]   y_1 = A[1] + a * tangA[1]
+    #  x_2 = B[0] - b * tangB[0]   y_2 = B[1] - b * tangB[1]
     return a, b
 # >>>
 
@@ -177,6 +177,9 @@ def parallel_curvespoints_pt (orig_ncurve, shift, expensive=0, relerr=0.05, epsi
     # from begin/end point to the corresponding controlpoint
     tangA = (B[0] - A[0], B[1] - A[1])
     tangD = (D[0] - C[0], D[1] - C[1])
+    # normalized tangential vector
+    TangA = (tangA[0] / math.hypot(*tangA), tangA[1] / math.hypot(*tangA))
+    TangD = (tangD[0] / math.hypot(*tangD), tangD[1] / math.hypot(*tangD))
 
     # normalized normal vectors
     # turned to the left (+90 degrees) from the tangents
@@ -202,15 +205,15 @@ def parallel_curvespoints_pt (orig_ncurve, shift, expensive=0, relerr=0.05, epsi
     except ZeroDivisionError:
         raise
     else:
-        a, d = controldists_from_endpoints_pt (A, D, tangA, tangD, curvA, curvD)
+        a, d = controldists_from_endpoints_pt (A, D, TangA, TangD, curvA, curvD)
 
         if a is None or d is None:
             # fallback heuristic
             a = (radiusA - shift) / radiusA
             d = (radiusD - shift) / radiusD
 
-        B = A[0] + a * tangA[0], A[1] + a * tangA[1]
-        C = D[0] - d * tangD[0], D[1] - d * tangD[1]
+        B = A[0] + a * TangA[0], A[1] + a * TangA[1]
+        C = D[0] - d * TangD[0], D[1] - d * TangD[1]
 
     controlpoints = [(A,B,C,D)]
 

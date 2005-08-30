@@ -44,16 +44,24 @@ points:
 %
 \begin{align}
   \left(\begin{array}{cc}
+    x_1-x_0 \\ y_1-y_0
+  \end{array}\right)
+  &= \frac{1}{3}
+  \left(\begin{array}{cc}
     \dot x(0) \\ \dot y(0)
   \end{array}\right)
-  = \alpha
+  =: \alpha
   \left(\begin{array}{cc}
     t_x(0) \\ t_y(0)
-  \end{array}\right) \qquad
+  \end{array}\right) \\
+  \left(\begin{array}{cc}
+    x_3-x_2 \\ y_3-y_2
+  \end{array}\right)
+  &= \frac{1}{3}
   \left(\begin{array}{cc}
     \dot x(1) \\ \dot y(1)
   \end{array}\right)
-  = \beta
+  =: \beta
   \left(\begin{array}{cc}
     t_x(1) \\ t_y(1)
   \end{array}\right) \qquad
@@ -61,7 +69,8 @@ points:
 %
 Here, the externally prescribed tangent vectors are expected to be parallel to
 the tangent vectors of the parameterization and normalized to 1. This implies
-$\alpha>0$ and $\beta>0$.
+$\alpha>0$ and $\beta>0$ are the distances between the endpoints and their
+corresponding control points.
 
 The problem to now to find proper parameters $\alpha>0$ and $\beta>0$ for a given set of
 endpoints $(x_0,y_0)$, $(x_3, y_3)$,
@@ -70,8 +79,8 @@ curvatures $\kappa(0), \kappa(1)$.
 The rest of the control points is then given by
 %
 \begin{equation}
-  x_1 = x_0 + \frac{\alpha}{3} t_x(0) \quad\text{and}\quad
-  x_2 = x_3 - \frac{\beta}{3} t_x(1).
+  x_1 = x_0 + \alpha t_x(0) \quad\text{and}\quad
+  x_2 = x_3 - \beta  t_x(1).
 \end{equation}
 %
 For the curvatures at the endpoints we get a nonlinear equation,
@@ -79,7 +88,7 @@ For the curvatures at the endpoints we get a nonlinear equation,
 \begin{align}
   \kappa(0) (\dot x^2(0) + \dot y^2(0))^{3/2}
   &= \dot x(0) \ddot y(0) - \ddot x(0) \dot y(0) \\
-  = \kappa(0) |\alpha|^3
+  = 27 \kappa(0) |\alpha|^3
   &= \begin{aligned}[t]
       +\dot x(0) &\bigl[- 4\dot y(0) - 2\dot y(1) + 6(y_3-y_0)\bigr] \\
       -\dot y(0) &\bigl[- 4\dot x(0) - 2\dot x(1) + 6(x_3-x_0)\bigr]
@@ -89,17 +98,17 @@ For the curvatures at the endpoints we get a nonlinear equation,
       &+6 \bigl[\dot x(0) (y_3-y_0) - \dot y(0) (x_3-x_0)\bigr]
      \end{aligned}\\
   &= \begin{aligned}[t]
-      &-2 \alpha\beta \bigl[t_x(0)t_y(1) - t_y(0)t_x(1)\bigr] \\
-      &+6 \alpha \bigl[t_x(0) (y_3-y_0) - t_y(0) (x_3-x_0)\bigr]
+      &-18 \alpha\beta \bigl[t_x(0)t_y(1) - t_y(0)t_x(1)\bigr] \\
+      &+18 \alpha \bigl[t_x(0) (y_3-y_0) - t_y(0) (x_3-x_0)\bigr]
      \end{aligned}
 \end{align}
 %
-And in short,
+And short,
 %
 \begin{equation}
-  0 = \kappa(0) \alpha^2 \sign(\alpha)
-    + 2\beta \bigl[t_x(0)t_y(1) - t_y(0)t_x(1)\bigr]
-    - 6 \bigl[t_x(0) (y_3-y_0) - t_y(0) (x_3-x_0)\bigr]
+  0 = \frac{3}{2}\kappa(0) \alpha^2 \sign(\alpha)
+    + \beta \bigl[t_x(0)t_y(1) - t_y(0)t_x(1)\bigr]
+    - \bigl[t_x(0) (y_3-y_0) - t_y(0) (x_3-x_0)\bigr]
 \end{equation}
 %
 A similar calculation can be done for the end curvature,
@@ -107,7 +116,7 @@ A similar calculation can be done for the end curvature,
 \begin{align}
   \kappa(1) (\dot x^2(1) + \dot y^2(1))^{3/2}
   &= \dot x(1) \ddot y(1) - \ddot x(1) \dot y(1) \\
-  = \kappa(1) |\beta|^3
+  = 27 \kappa(1) |\beta|^3
   &= \begin{aligned}[t]
        \dot x(1) &\bigl[ 4\dot y(1) + 2\dot y(0) - 6(y_3-y_1)\bigr] \\
       -\dot y(1) &\bigl[ 4\dot x(1) + 2\dot x(0) - 6(x_3-x_1)\bigr]
@@ -117,41 +126,41 @@ A similar calculation can be done for the end curvature,
        &-6 \bigl[\dot x(1) (y_3-y_1) - \dot y(1) (x_3-x_1)\bigr]
      \end{aligned}\\
   &= \begin{aligned}[t]
-       &-2 \alpha\beta \bigl[t_x(0)t_y(1) - t_y(0)t_x(1)\bigr] \\
-       &-6 \beta \bigl[t_x(1) (y_3-y_1) - t_y(1) (x_3-x_1)\bigr]
+       &-18 \alpha\beta \bigl[t_x(0)t_y(1) - t_y(0)t_x(1)\bigr] \\
+       &-18 \beta \bigl[t_x(1) (y_3-y_1) - t_y(1) (x_3-x_1)\bigr]
      \end{aligned}\\
 \end{align}
 \begin{equation}
-  0 = \kappa(1) \beta^2 \sign(\beta)
-    + 2\alpha \bigl[t_x(0)t_y(1) - t_y(0)t_x(1)\bigr]
-    + 6 \bigl[t_x(1) (y_3-y_1) - t_y(1) (x_3-x_1)\bigr]
+  0 = \frac{3}{2}\kappa(1) \beta^2 \sign(\beta)
+    + \alpha \bigl[t_x(0)t_y(1) - t_y(0)t_x(1)\bigr]
+    + \bigl[t_x(1) (y_3-y_1) - t_y(1) (x_3-x_1)\bigr]
 \end{equation}
 %
 Alltogether, we find the system of equations that is to be solved.
 %
 \begin{gather}
   \begin{aligned}
-    0 &= \frac{1}{2} \kappa(0) \alpha^2 \sign(\alpha) + \beta T - D \\
-    0 &= \frac{1}{2} \kappa(1) \beta^2 \sign(\beta) + \alpha T + E
+    0 &= \frac{3}{2} \kappa(0) \alpha^2 \sign(\alpha) + \beta T - D \\
+    0 &= \frac{3}{2} \kappa(1) \beta^2 \sign(\beta) + \alpha T + E
   \end{aligned}\\[\medskipamount]
   \begin{aligned}
     T &:= t_x(0)t_y(1) - t_y(0)t_x(1) \\
-    D &:= 3 \bigl[t_x(0) (y_3-y_0) - t_y(0) (x_3-x_0)\bigr]\\
-    E &:= 3 \bigl[t_x(1) (y_3-y_0) - t_y(1) (x_3-x_0)\bigr]
+    D &:= \bigl[t_x(0) (y_3-y_0) - t_y(0) (x_3-x_0)\bigr]\\
+    E &:= \bigl[t_x(1) (y_3-y_0) - t_y(1) (x_3-x_0)\bigr]
   \end{aligned}
 \end{gather}
 %
 Decoupled, we get two equations of fourth order,
 %
 \begin{align}
-  0 &= \frac{1}{8} \kappa(0)^2\kappa(1) \alpha^4
-     - \frac{1}{2}D\kappa(0)\kappa(1)\alpha^2
+  0 &= \frac{27}{8} \kappa(0)^2\kappa(1) \alpha^4
+     - \frac{9}{2}D\kappa(0)\kappa(1)\alpha^2
      + T^3 \alpha
-     + E T^2 + \frac{1}{2}\kappa(1) D^2 \\
-   0 &= \frac{1}{8} \kappa(0)\kappa(1)^2\beta^4
-     + \frac{1}{2}E\kappa(0)\kappa(1)\beta^2
+     + E T^2 + \frac{3}{2}\kappa(1) D^2 \\
+   0 &= \frac{27}{8} \kappa(0)\kappa(1)^2\beta^4
+     + \frac{9}{2}E\kappa(0)\kappa(1)\beta^2
      + T^3 \beta
-     - D T^2 + \frac{1}{2}\kappa(0) E^2 \\
+     - D T^2 + \frac{3}{2}\kappa(0) E^2 \\
 \end{align}
 %
 
