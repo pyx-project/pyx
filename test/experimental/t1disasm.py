@@ -4,6 +4,22 @@ from pyx import canvas, path, trafo
 
 # XXX: we do not yet transform between font coordinates in its design size and postsript points
 
+class T1context:
+
+    def __init__(self, callsubr):
+        self.callsubr = callsubr
+
+        self.path = None
+        self.wx = None
+        self.wy = None
+        self.t1stack = []
+        self.psstack = []
+        self.valid = 1
+
+    def invalidate(self):
+        assert self.valid
+        self.valid = 0
+
 
 # T1 commands
 
@@ -13,349 +29,386 @@ class _T1command:
         "returns a string representation of the T1 command"
         raise NotImplementedError
 
-    def pathitem(self, currentpoint):
-        "return the pathitem represented by the T1 command and/or update the currentpoint"
-        # by default do nothing
-        return None
+    def __call__(self, context):
+        "update path and stacks in context"
+        raise NotImplementedError
+
+
+class T1value(_T1command):
+
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return str(self.value)
+
+    def __call__(self, context):
+        context.t1stack.append(self.value)
+
 
 # commands for starting and finishing
 
-class T1endchar(_T1command):
+class _T1endchar(_T1command):
 
     def __str__(self):
         return "endchar"
 
+    def __call__(self, context):
+        context.invalidate()
 
-class T1hsbw(_T1command):
-
-    def __init__(self, sbx, wx):
-        self.sbx = sbx
-        self.wx = wx
-
-    def __str__(self):
-        return "hsbw(%s, %s)" % (self.sbx, self.wx)
-
-    def pathitem(self, currentpoint):
-        assert not currentpoint.valid()
-        currentpoint.x_pt = self.sbx
-        currentpoint.y_pt = 0
-        return path.moveto(self.sbx, 0)
+T1endchar = _T1endchar()
 
 
-class T1seac(_T1command):
-
-    def __init__(self, asb, adx, ady, bchar, achar):
-        self.asb = asb
-        self.adx = adx
-        self.ady = ady
-        self.bchar = bchar
-        self.achar = achar
+class _T1hsbw(_T1command):
 
     def __str__(self):
-        return "seac(%s, %s, %s, %s, %s)" % (self.asb, self.adx, self.ady, self.bchar, self.achar)
+        return "hsbw"
 
-    def pathitem(self, currentpoint):
+    def __call__(self, context):
+        assert context.path is None
+        sbx = context.t1stack.pop(0)
+        wx = context.t1stack.pop(0)
+        assert not context.t1stack
+        context.path = path.path(path.moveto(sbx, 0))
+        context.wx = wx
+        context.wy = 0
+
+T1hsbw = _T1hsbw()
+
+
+class _T1seac(_T1command):
+
+    # def __init__(self, asb, adx, ady, bchar, achar):
+
+    def __str__(self):
+        return "seac"
+
+    def __call__(self, context):
         raise NotImplementedError("can't convert glyph containing a T1seac into a path")
 
+T1seac = _T1seac()
 
-class T1sbw(_T1command):
 
-    def __init__(self, sbx, sby, wx, wy):
-        self.sbx = sbx
-        self.sby = sby
-        self.wx = wx
-        self.wy = wy
+class _T1sbw(_T1command):
 
     def __str__(self):
-        return "sbw(%s, %s, %s, %s)" % (self.sbx, self.sby, self.wx, self.wy)
+        return "sbw"
 
-    def pathitem(self, currentpoint):
-        assert not currentpoint.valid()
-        currentpoint.x_pt = self.sbx
-        currentpoint.y_pt = self.sby
-        return path.moveto(self.sbx, self.sby)
+    def __call__(self, context):
+        assert context.path is None
+        sbx = context.t1stack.pop(0)
+        sby = context.t1stack.pop(0)
+        wx = context.t1stack.pop(0)
+        wy = context.t1stack.pop(0)
+        assert not context.t1stack
+        context.path = path.path(path.moveto(sbx, sby))
+        context.wx = wx
+        context.wy = wy
+
+T1sbw = _T1sbw()
 
 
 # path construction commands
 
-class T1closepath(_T1command):
+class _T1closepath(_T1command):
 
     def __str__(self):
         return "closepath"
 
-    def pathitem(self, currentpoint):
-        # note: closepath does *not* invalidate the currentpoint!
-        assert currentpoint.valid()
-        return path.closepath()
+    def __call__(self, context):
+        assert not context.t1stack
+        context.path.append(path.closepath())
+
+T1closepath = _T1closepath()
 
 
-class T1hlineto(_T1command):
-
-    def __init__(self, dx):
-        self.dx = dx
+class _T1hlineto(_T1command):
 
     def __str__(self):
-        return "hlineto(%s)" % self.dx
+        return "hlineto"
 
-    def pathitem(self, currentpoint):
-        currentpoint.x_pt += self.dx
-        return path.rlineto(self.dx, 0)
+    def __call__(self, context):
+        dx = context.t1stack.pop(0)
+        assert not context.t1stack
+        context.path.append(path.rlineto(dx, 0))
 
-
-class T1hmoveto(_T1command):
-
-    def __init__(self, dx):
-        self.dx = dx
-
-    def __str__(self):
-        return "hmoveto(%s)" % self.dx
-
-    def pathitem(self, currentpoint):
-        currentpoint.x_pt += self.dx
-        return path.rmoveto(self.dx, 0)
+T1hlineto = _T1hlineto()
 
 
-class T1hvcurveto(_T1command):
-
-    def __init__(self, dx1, dx2, dy2, dy3):
-        self.dx1 = dx1
-        self.dx2 = dx2
-        self.dy2 = dy2
-        self.dy3 = dy3
+class _T1hmoveto(_T1command):
 
     def __str__(self):
-        return "hvcurveto(%s, %s, %s, %s)" % (self.dx1, self.dx2, self.dy2, self.dy3)
+        return "hmoveto"
 
-    def pathitem(self, currentpoint):
-        currentpoint.x_pt += self.dx1 + self.dx2
-        currentpoint.y_pt += self.dy2 + self.dy3
-        return path.rcurveto(self.dx1,          0,
-                             self.dx1+self.dx2, self.dy2,
-                             self.dx1+self.dx2, self.dy2+self.dy3)
+    def __call__(self, context):
+        dx = context.t1stack.pop(0)
+        assert not context.t1stack
+        context.path.append(path.rmoveto(dx, 0))
+
+T1hmoveto = _T1hmoveto()
 
 
-class T1rlineto(_T1command):
-
-    def __init__(self, dx, dy):
-        self.dx = dx
-        self.dy = dy
+class _T1hvcurveto(_T1command):
 
     def __str__(self):
-        return "rlineto(%s, %s)" % (self.dx, self.dy)
+        return "hvcurveto"
 
-    def pathitem(self, currentpoint):
-        currentpoint.x_pt += self.dx
-        currentpoint.y_pt += self.dy
-        return path.rlineto(self.dx, self.dy)
+    def __call__(self, context):
+        dx1 = context.t1stack.pop(0)
+        dx2 = context.t1stack.pop(0)
+        dy2 = context.t1stack.pop(0)
+        dy3 = context.t1stack.pop(0)
+        assert not context.t1stack
+        context.path.append(path.rcurveto(dx1,     0,
+                                          dx1+dx2, dy2,
+                                          dx1+dx2, dy2+dy3))
 
-
-class T1rmoveto(_T1command):
-
-    def __init__(self, dx, dy):
-        self.dx = dx
-        self.dy = dy
-
-    def __str__(self):
-        return "rmoveto(%s, %s)" % (self.dx, self.dy)
-
-    def pathitem(self, currentpoint):
-        currentpoint.x_pt += self.dx
-        currentpoint.y_pt += self.dy
-        return path.rmoveto(self.dx, self.dy)
+T1hvcurveto = _T1hvcurveto()
 
 
-class T1rrcurveto(_T1command):
-
-    def __init__(self, dx1, dy1, dx2, dy2, dx3, dy3):
-        self.dx1 = dx1
-        self.dy1 = dy1
-        self.dx2 = dx2
-        self.dy2 = dy2
-        self.dx3 = dx3
-        self.dy3 = dy3
+class _T1rlineto(_T1command):
 
     def __str__(self):
-        return "rrcurveto(%s, %s, %s, %s, %s, %s)" % (self.dx1, self.dy1, self.dx2, self.dy2, self.dx3, self.dy3)
+        return "rlineto"
 
-    def pathitem(self, currentpoint):
-        currentpoint.x_pt += self.dx1 + self.dx2 + self.dx3
-        currentpoint.y_pt += self.dy1 + self.dy2 + self.dy3
-        return path.rcurveto(self.dx1,                   self.dy1,
-                             self.dx1+self.dx2,          self.dy1+self.dy2,
-                             self.dx1+self.dx2+self.dx3, self.dy1+self.dy2+self.dy3)
+    def __call__(self, context):
+        dx = context.t1stack.pop(0)
+        dy = context.t1stack.pop(0)
+        assert not context.t1stack
+        context.path.append(path.rlineto(dx, dy))
+
+T1rlineto = _T1rlineto()
 
 
-class T1vlineto(_T1command):
-
-    def __init__(self, dy):
-        self.dy = dy
+class _T1rmoveto(_T1command):
 
     def __str__(self):
-        return "vlineto(%s)" % self.dy
+        return "rmoveto"
 
-    def pathitem(self, currentpoint):
-        currentpoint.y_pt += self.dy
-        return path.rlineto(0, self.dy)
+    def __call__(self, context):
+        dx = context.t1stack.pop(0)
+        dy = context.t1stack.pop(0)
+        assert not context.t1stack
+        context.path.append(path.rmoveto(dx, dy))
 
-
-class T1vmoveto(_T1command):
-
-    def __init__(self, dy):
-        self.dy = dy
-
-    def __str__(self):
-        return "vmoveto(%s)" % self.dy
-
-    def pathitem(self, currentpoint):
-        currentpoint.y_pt += self.dy
-        return path.rmoveto(0, self.dy)
+T1rmoveto = _T1rmoveto()
 
 
-class T1vhcurveto(_T1command):
-
-    def __init__(self, dy1, dx2, dy2, dx3):
-        self.dy1 = dy1
-        self.dx2 = dx2
-        self.dy2 = dy2
-        self.dx3 = dx3
+class _T1rrcurveto(_T1command):
 
     def __str__(self):
-        return "vhcurveto(%s, %s, %s, %s)" % (self.dy1, self.dx2, self.dy2, self.dx3)
+        return "rrcurveto"
 
-    def pathitem(self, currentpoint):
-        currentpoint.x_pt += self.dx2 + self.dx3
-        currentpoint.y_pt += self.dy1 + self.dy2
-        return path.rcurveto(0,                 self.dy1,
-                             self.dx2,          self.dy1+self.dy2,
-                             self.dx2+self.dx3, self.dy1+self.dy2)
+    def __call__(self, context):
+        dx1 = context.t1stack.pop(0)
+        dy1 = context.t1stack.pop(0)
+        dx2 = context.t1stack.pop(0)
+        dy2 = context.t1stack.pop(0)
+        dx3 = context.t1stack.pop(0)
+        dy3 = context.t1stack.pop(0)
+        assert not context.t1stack
+        context.path.append(path.rcurveto(dx1,         dy1,
+                                          dx1+dx2,     dy1+dy2,
+                                          dx1+dx2+dx3, dy1+dy2+dy3))
+
+T1rrcurveto = _T1rrcurveto()
+
+
+class _T1vlineto(_T1command):
+
+    def __str__(self):
+        return "vlineto"
+
+    def __call__(self, context):
+        dy = context.t1stack.pop(0)
+        assert not context.t1stack
+        context.path.append(path.rlineto(0, dy))
+
+T1vlineto = _T1vlineto()
+
+
+class _T1vmoveto(_T1command):
+
+    def __str__(self):
+        return "vmoveto"
+
+    def __call__(self, context):
+        dy = context.t1stack.pop(0)
+        assert not context.t1stack
+        context.path.append(path.rmoveto(0, dy))
+
+T1vmoveto = _T1vmoveto()
+
+
+class _T1vhcurveto(_T1command):
+
+    def __str__(self):
+        return "vhcurveto"
+
+    def __call__(self, context):
+        dy1 = context.t1stack.pop(0)
+        dx2 = context.t1stack.pop(0)
+        dy2 = context.t1stack.pop(0)
+        dx3 = context.t1stack.pop(0)
+        assert not context.t1stack
+        context.path.append(path.rcurveto(0,       dy1,
+                                          dx2,     dy1+dy2,
+                                          dx2+dx3, dy1+dy2))
+
+T1vhcurveto = _T1vhcurveto()
 
 
 # hint commands
 
-class T1dotsection(_T1command):
+class _T1dotsection(_T1command):
 
     def __str__(self):
         return "dotsection"
 
+    def __call__(self, context):
+        assert not context.t1stack
 
-class T1hstem(_T1command):
-
-    def __init__(self, y, dy):
-        self.y = y
-        self.dy = dy
-
-    def __str__(self):
-        return "hstem(%s, %s)" % (self.y, self.dy)
+T1dotsection = _T1dotsection()
 
 
-class T1hstem3(_T1command):
-
-    def __init__(self, y0, dy0, y1, dy1, x2, dy2):
-        self.y0 = y0
-        self.dy0 = dy0
-        self.y1 = y1
-        self.dy1 = dy1
-        self.y2 = y2
-        self.dy2 = dy2
+class _T1hstem(_T1command):
 
     def __str__(self):
-        return "hstem3(%s, %s, %s, %s, %s, %s)" % (self.y0, self, dy0, self.y1, self.dy1, self.y2, self.dy2)
+        return "hstem"
+
+    def __call__(self, context):
+        y = context.t1stack.pop(0)
+        dy = context.t1stack.pop(0)
+        assert not context.t1stack
+
+T1hstem = _T1hstem()
 
 
-class T1vstem(_T1command):
-
-    def __init__(self, x, dx):
-        self.x = x
-        self.dx = dx
+class _T1hstem3(_T1command):
 
     def __str__(self):
-        return "hstem(%s, %s)" % (self.x, self.dx)
+        return "hstem3"
+
+    def __call__(self, context):
+        y0 = context.t1stack.pop(0)
+        dy0 = context.t1stack.pop(0)
+        y1 = context.t1stack.pop(0)
+        dy1 = context.t1stack.pop(0)
+        y2 = context.t1stack.pop(0)
+        dy2 = context.t1stack.pop(0)
+        assert not context.t1stack
+
+T1hstem3 = _T1hstem3()
 
 
-class T1vstem3(_T1command):
+class _T1vstem(_T1command):
 
-    def __init__(self, x0, dx0, x1, dx1, x2, dx2):
-        self.x0 = x0
-        self.dx0 = dx0
-        self.x1 = x1
-        self.dx1 = dx1
-        self.x2 = x2
-        self.dx2 = dx2
+    def __str__(self):
+        return "hstem"
+
+    def __call__(self, context):
+        x = context.t1stack.pop(0)
+        dx = context.t1stack.pop(0)
+        assert not context.t1stack
+
+T1vstem = _T1vstem()
+
+
+class _T1vstem3(_T1command):
 
     def __str__(self):
         return "hstem3(%s, %s, %s, %s, %s, %s)" % (self.x0, self, dx0, self.x1, self.dx1, self.x2, self.dx2)
 
+    def __call__(self, context):
+        self.x0 = context.t1stack.pop(0)
+        self.dx0 = context.t1stack.pop(0)
+        self.x1 = context.t1stack.pop(0)
+        self.dx1 = context.t1stack.pop(0)
+        self.x2 = context.t1stack.pop(0)
+        self.dx2 = context.t1stack.pop(0)
+        assert not context.t1stack
+
+T1vstem3 = _T1vstem3()
+
 
 # arithmetic command
 
-class T1div(_T1command):
-
-    def __init__(self, num1, num2):
-        self.num1 = num1
-        self.num2 = num2
+class _T1div(_T1command):
 
     def __str__(self):
-        return "div(%s, %s)" % (self.num1, self.num2)
+        return "div"
 
-    def __float__(self):
-        return self.num1/self.num2
+    def __call__(self, context):
+        num2 = context.t1stack.pop()
+        num1 = context.t1stack.pop()
+        context.t1stack.append(num1//num2)
+
+T1div = _T1div()
 
 
 # subroutine commands
 
-class T1callothersubr(_T1command):
-
-    def __init__(self, othersubrnumber, *args):
-        self.othersubrnumber = othersubrnumber
-        self.args = args
+class _T1callothersubr(_T1command):
 
     def __str__(self):
-        return "callothersubr(%s, %s, %s)" % (", ".join(self.args), len(self.args), self.othersubrnumber)
+        return "callothersubr"
 
-    def pathitem(self, currentpoint):
-        raise NotImplementedError("can't convert glyph containing a T1callothersubr into a path")
+    def __call__(self, context):
+        othersubrnumber = context.t1stack.pop()
+        n = context.t1stack.pop()
+        for i in range(n):
+            context.psstack.append(context.t1stack.pop())
+
+T1callothersubr = _T1callothersubr()
 
 
-class T1callsubr(_T1command):
-
-    def __init__(self, subrnumber):
-        self.subrnumber = subrnumber
+class _T1callsubr(_T1command):
 
     def __str__(self):
-        return "callsubr(%s)" % self.subrnumber
+        return "callsubr"
 
-    def pathitem(self, currentpoint):
-        raise NotImplementedError("can't yet convert glyph containing a T1callsubr into a path")
+    def __call__(self, context):
+        subrnumber = context.t1stack.pop()
+        context.callsubr(subrnumber, context)
+
+T1callsubr = _T1callsubr()
 
 
-class T1pop(_T1command):
+class _T1pop(_T1command):
 
     def __str__(self):
         return "pop"
 
-    def pathitem(self, currentpoint):
-        raise NotImplementedError("can't convert glyph containing a T1pop command into a path")
+    def __call__(self, context):
+        context.t1stack.append(context.psstack.pop())
+
+T1pop = _T1pop()
 
 
-class T1return(_T1command):
+class _T1return(_T1command):
 
     def __str__(self):
         return "return"
 
+    def __call__(self, context):
+        # check to be at the end of a subroutine
+        pass
 
-class T1setcurrentpoint(_T1command):
+T1return = _T1return()
 
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
+
+class _T1setcurrentpoint(_T1command):
 
     def __str__(self):
-        return "setcurrentpoint(%s, %s)" % self.x, self.y
+        return "setcurrentpoint" % self.x, self.y
 
-    def pathitem(self, currentpoint):
-        currentpoint.x_pt = self.x
-        currentpoint.y_pt = self.y
-        return path.moveto(self.x, self.y)
+    def pathitem(self, context):
+        x = context.t1stack.pop(0)
+        y = context.t1stack.pop(0)
+        assert not context.t1stack
+        context.path.append(path.moveto(x, y))
+
+T1setcurrentpoint = _T1setcurrentpoint()
 
 
 ##########################
@@ -436,128 +489,108 @@ class T1font:
             r = ((x + r) * c1 + c2) & 0xffff
         return plain.tostring()[n: ]
 
-    def disasm(self, s):
+    def commands(self, s):
         s = array.array("B", s)
-        commands = []
-        stack = []
+        cmds = []
         while 1:
             x = s.pop(0)
             if 0 <= x < 32:
                 if x == 1:
-                    commands.append(T1hstem(*stack))
-                    stack = []
+                    cmds.append(T1hstem)
                 elif x == 3:
-                    commands.append(T1vstem(*stack))
-                    stack = []
+                    cmds.append(T1vstem)
                 elif x == 4:
-                    commands.append(T1vmoveto(*stack))
-                    stack = []
+                    cmds.append(T1vmoveto)
                 elif x == 5:
-                    commands.append(T1rlineto(*stack))
-                    stack = []
+                    cmds.append(T1rlineto)
                 elif x == 6:
-                    commands.append(T1hlineto(*stack))
-                    stack = []
+                    cmds.append(T1hlineto)
                 elif x == 7:
-                    commands.append(T1vlineto(*stack))
-                    stack = []
+                    cmds.append(T1vlineto)
                 elif x == 8:
-                    commands.append(T1rrcurveto(*stack))
-                    stack = []
+                    cmds.append(T1rrcurveto)
                 elif x == 9:
-                    commands.append(T1closepath())
-                    stack = []
+                    cmds.append(T1closepath)
                 elif x == 10:
-                    commands.append(T1callsubr(stack.pop()))
+                    cmds.append(T1callsubr)
                 elif x == 11:
-                    commands.append(T1return())
-                    # those asserts might be paranoid (and wrong for certain fonts ?!)
-                    assert not len(s), "tailing commands: %s" % s
-                    assert not len(stack), "stack is not empty: %s" % stack
+                    cmds.append(T1return)
                     break
                 elif x == 12:
                     x = s.pop(0)
                     if x == 0:
-                        commands.append(T1dotsection())
-                        stack = []
+                        cmds.append(T1dotsection)
                     elif x == 1:
-                        commands.append(T1vstem3(*stack))
-                        stack = []
+                        cmds.append(T1vstem3)
                     elif x == 2:
-                        commands.append(T1hstem3(*stack))
-                        stack = []
+                        cmds.append(T1hstem3)
                     elif x == 6:
-                        commands.append(T1seac(*stack))
-                        stack = []
+                        cmds.append(T1seac)
                     elif x == 7:
-                        commands.append(T1sbw(*stack))
-                        stack = []
+                        cmds.append(T1sbw)
                     elif x == 12:
-                        num2 = stack.pop()
-                        num1 = stack.pop()
-                        stack.append(T1div(num1, num2))
+                        cmds.append(T1div)
                     elif x == 16:
-                        othersubrnumber = stack.pop()
-                        args = []
-                        for i in range(stack.pop()):
-                            args.insert(0, stack.pop())
-                        commands.append(T1callothersubr(othersubrnumber, *args))
+                        cmds.append(T1callothersubr)
                     elif x == 17:
-                        stack.append(T1pop())
+                        cmds.append(T1pop)
                     elif x == 33:
-                        commands.append(T1setcurrentpoint(*stack))
-                        stack = []
+                        cmds.append(T1setcurrentpoint)
                     else:
                         raise ValueError("unknown escaped command %d" % x)
                 elif x == 13:
-                    commands.append(T1hsbw(*stack))
-                    stack = []
+                    cmds.append(T1hsbw)
                 elif x == 14:
-                    commands.append(T1endchar())
-                    # those asserts might be paranoid (and wrong for certain fonts ?!)
-                    assert not len(s), "tailing commands: %s" % s
-                    assert not len(stack), "stack is not empty: %s" % stack
+                    cmds.append(T1endchar)
                     break
                 elif x == 21:
-                    commands.append(T1rmoveto(*stack))
-                    stack = []
+                    cmds.append(T1rmoveto)
                 elif x == 22:
-                    commands.append(T1hmoveto(*stack))
-                    stack = []
+                    cmds.append(T1hmoveto)
                 elif x == 30:
-                    commands.append(T1vhcurveto(*stack))
-                    stack = []
+                    cmds.append(T1vhcurveto)
                 elif x == 31:
-                    commands.append(T1hvcurveto(*stack))
-                    stack = []
+                    cmds.append(T1hvcurveto)
                 else:
                     raise ValueError("unknown command %d" % x)
             elif 32 <= x <= 246:
-                stack.append(x-139)
+                cmds.append(T1value(x-139))
             elif 247 <= x <= 250:
-                stack.append(((x - 247)*256) + s.pop(0) + 108)
+                cmds.append(T1value(((x - 247)*256) + s.pop(0) + 108))
             elif 251 <= x <= 254:
-                stack.append(-((x - 251)*256) - s.pop(0) - 108)
+                cmds.append(T1value(-((x - 251)*256) - s.pop(0) - 108))
             else:
                 x = ((s.pop(0)*256+s.pop(0))*256+s.pop(0))*256+s.pop(0)
                 if x > (1l << 31):
-                    stack.append(x - (1l << 32))
+                    cmds.append(T1value(x - (1l << 32)))
                 else:
-                    stack.append(x)
-        return commands
+                    cmds.append(T1value(x))
+        assert not s, "tailing commands"
+        return cmds
 
-    def getsubr(self, n):
-        return self.disasm(self.subrs[n])
+    def getsubrcmds(self, n):
+        return self.commands(self.subrs[n])
 
-    def getglyph(self, glyphname):
-        return self.disasm(self.glyphs[glyphname])
+    def getglyphcmds(self, glyphname):
+        return self.commands(self.glyphs[glyphname])
+
+    def callsubr(self, n, context):
+        for cmd in self.getsubrcmds(n):
+            cmd(context)
+
+    def getglyphpath(self, glyphname):
+        context = T1context(self.callsubr)
+        for cmd in self.getglyphcmds(glyphname):
+            cmd(context)
+        assert not context.valid
+        return context.path
 
 
 def printcommands(commands):
     print "\n".join([str(command) for command in commands])
 
 def getpath(commands):
-    currentpoint = path._currentpoint()
+    context = T1context
     pathitems = []
     for command in commands:
         pathitem = command.pathitem(currentpoint)
@@ -567,8 +600,9 @@ def getpath(commands):
 
 f = T1font("cmr10.pfb")
 #printcommands(f.getsubr(5))
-#printcommands(f.getglyph("A"))
+#printcommands(f.getsubrcmds(4))
+#printcommands(f.getglyphcmds("d"))
 
 c = canvas.canvas()
-c.stroke(getpath(f.getglyph("A")), [trafo.scale(0.005)])
+c.stroke(f.getglyphpath("d"), [trafo.scale(0.005)])
 c.writeEPSfile("t1disasm")
