@@ -90,8 +90,8 @@ For the curvatures at the endpoints we get a nonlinear equation,
   &= \dot x(0) \ddot y(0) - \ddot x(0) \dot y(0) \\
   = 27 \kappa(0) |\alpha|^3
   &= \begin{aligned}[t]
-      +\dot x(0) &\bigl[- 4\dot y(0) - 2\dot y(1) + 6(y_3-y_0)\bigr] \\
-      -\dot y(0) &\bigl[- 4\dot x(0) - 2\dot x(1) + 6(x_3-x_0)\bigr]
+      &+\dot x(0) \bigl[- 4\dot y(0) - 2\dot y(1) + 6(y_3-y_0)\bigr] \\
+      &-\dot y(0) \bigl[- 4\dot x(0) - 2\dot x(1) + 6(x_3-x_0)\bigr]
      \end{aligned}\\
   &= \begin{aligned}[t]
       &-2 \bigl[\dot x(0) \dot y(1) - \dot y(0)\dot x(1)\bigr] \\
@@ -118,8 +118,8 @@ A similar calculation can be done for the end curvature,
   &= \dot x(1) \ddot y(1) - \ddot x(1) \dot y(1) \\
   = 27 \kappa(1) |\beta|^3
   &= \begin{aligned}[t]
-       \dot x(1) &\bigl[ 4\dot y(1) + 2\dot y(0) - 6(y_3-y_1)\bigr] \\
-      -\dot y(1) &\bigl[ 4\dot x(1) + 2\dot x(0) - 6(x_3-x_1)\bigr]
+       &+\dot x(1) \bigl[ 4\dot y(1) + 2\dot y(0) - 6(y_3-y_1)\bigr] \\
+       &-\dot y(1) \bigl[ 4\dot x(1) + 2\dot x(0) - 6(x_3-x_1)\bigr]
      \end{aligned}\\
   &= \begin{aligned}[t]
        &-2 \bigl[\dot x(0) \dot y(1) - \dot y(0)\dot x(1)\bigr] \\
@@ -128,7 +128,7 @@ A similar calculation can be done for the end curvature,
   &= \begin{aligned}[t]
        &-18 \alpha\beta \bigl[t_x(0)t_y(1) - t_y(0)t_x(1)\bigr] \\
        &-18 \beta \bigl[t_x(1) (y_3-y_1) - t_y(1) (x_3-x_1)\bigr]
-     \end{aligned}\\
+     \end{aligned}
 \end{align}
 \begin{equation}
   0 = \frac{3}{2}\kappa(1) \beta^2 \sign(\beta)
@@ -160,7 +160,7 @@ Decoupled, we get two equations of fourth order,
    0 &= \frac{27}{8} \kappa(0)\kappa(1)^2\beta^4
      + \frac{9}{2}E\kappa(0)\kappa(1)\beta^2
      + T^3 \beta
-     - D T^2 + \frac{3}{2}\kappa(0) E^2 \\
+     - D T^2 + \frac{3}{2}\kappa(0) E^2
 \end{align}
 %
 
