@@ -81,6 +81,12 @@ class bbox_pt:
                     self.urx_pt < other.llx_pt or
                     self.ury_pt < other.lly_pt)
 
+    def includepoint_pt(self, x_pt, y_pt):
+        self.llx_pt = min(self.llx_pt, x_pt)
+        self.lly_pt = min(self.lly_pt, y_pt)
+        self.urx_pt = max(self.urx_pt, x_pt)
+        self.ury_pt = max(self.ury_pt, y_pt)
+
     def transform(self, trafo):
         """transform bbox in place by trafo"""
         # we have to transform all four corner points of the bbox

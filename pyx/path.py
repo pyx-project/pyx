@@ -37,7 +37,8 @@ except ImportError:
     # fallback implementation for Python 2.1
     def radians(x): return x*pi/180
     def degrees(x): return x*180/pi
-import bbox, canvas, trafo, unit
+
+import bbox, canvas, helper, trafo, unit
 
 try:
     sum([])
@@ -65,6 +66,10 @@ def set(epsilon=None):
     global _epsilon
     if epsilon is not None:
         _epsilon = epsilon
+
+
+# specific exception for path-related problems
+class PathException(Exception): pass
 
 ################################################################################
 # Bezier helper functions
@@ -116,97 +121,152 @@ def _arctobezierpath(x_pt, y_pt, r_pt, phi1, phi2, dphimax=45):
 
     return apath
 
-#
-# we define one exception
-#
+def _arcpoint(x_pt, y_pt, r_pt, angle):
+    """return starting point of arc segment"""
+    return x_pt+r_pt*cos(radians(angle)), y_pt+r_pt*sin(radians(angle))
 
-class PathException(Exception): pass
+def _arcbboxdata(x_pt, y_pt, r_pt, angle1, angle2):
+    phi1 = radians(angle1)
+    phi2 = radians(angle2)
+
+    # starting end end point of arc segment
+    sarcx_pt, sarcy_pt = _arcpoint(x_pt, y_pt, r_pt, angle1)
+    earcx_pt, earcy_pt = _arcpoint(x_pt, y_pt, r_pt, angle2)
+
+    # Now, we have to determine the corners of the bbox for the
+    # arc segment, i.e. global maxima/mimima of cos(phi) and sin(phi)
+    # in the interval [phi1, phi2]. These can either be located
+    # on the borders of this interval or in the interior.
+
+    if phi2 < phi1:
+        # guarantee that phi2>phi1
+        phi2 = phi2 + (math.floor((phi1-phi2)/(2*pi))+1)*2*pi
+
+    # next minimum of cos(phi) looking from phi1 in counterclockwise
+    # direction: 2*pi*floor((phi1-pi)/(2*pi)) + 3*pi
+
+    if phi2 < (2*math.floor((phi1-pi)/(2*pi))+3)*pi:
+        minarcx_pt = min(sarcx_pt, earcx_pt)
+    else:
+        minarcx_pt = x_pt-r_pt
+
+    # next minimum of sin(phi) looking from phi1 in counterclockwise
+    # direction: 2*pi*floor((phi1-3*pi/2)/(2*pi)) + 7/2*pi
+
+    if phi2 < (2*math.floor((phi1-3.0*pi/2)/(2*pi))+7.0/2)*pi:
+        minarcy_pt = min(sarcy_pt, earcy_pt)
+    else:
+        minarcy_pt = y_pt-r_pt
+
+    # next maximum of cos(phi) looking from phi1 in counterclockwise
+    # direction: 2*pi*floor((phi1)/(2*pi))+2*pi
+
+    if phi2 < (2*math.floor((phi1)/(2*pi))+2)*pi:
+        maxarcx_pt = max(sarcx_pt, earcx_pt)
+    else:
+        maxarcx_pt = x_pt+r_pt
+
+    # next maximum of sin(phi) looking from phi1 in counterclockwise
+    # direction: 2*pi*floor((phi1-pi/2)/(2*pi)) + 1/2*pi
+
+    if phi2 < (2*math.floor((phi1-pi/2)/(2*pi))+5.0/2)*pi:
+        maxarcy_pt = max(sarcy_pt, earcy_pt)
+    else:
+        maxarcy_pt = y_pt+r_pt
+
+    return minarcx_pt, minarcy_pt, maxarcx_pt, maxarcy_pt
+
 
 ################################################################################
-# _currentpoint: current point during walk along path
+# path context and pathitem base class
 ################################################################################
 
-class _invalidcurrentpointclass:
+class context:
 
-    def invalid1(self):
-        raise PathException("current point not defined (path must start with moveto or the like)")
-    __str__ = __repr__ = __neg__ = invalid1
+    """context for pathitem"""
 
-    def invalid2(self, other):
-        self.invalid1()
-    __cmp__ = __add__ = __iadd__ = __sub__ = __isub__ = __mul__ = __imul__ = __div__ = __idiv__ = invalid2
+    def __init__(self, x_pt, y_pt, subfirstx_pt, subfirsty_pt):
+        """initializes a context for path items
 
-_invalidcurrentpoint = _invalidcurrentpointclass()
-
-
-class _currentpoint:
-
-    """current point during walk along path"""
-
-    __slots__ = "x_pt", "y_pt"
-
-    def __init__(self, x_pt=_invalidcurrentpoint, y_pt=_invalidcurrentpoint):
-        """initialize current point
-
-        By default the current point is marked invalid.
+        x_pt, y_pt are the currentpoint. subfirstx_pt, subfirsty_pt
+        are the starting point of the current subpath. There are no
+        invalid contexts, i.e. all variables need to be set to integer
+        or float numbers.
         """
         self.x_pt = x_pt
         self.y_pt = y_pt
+        self.subfirstx_pt = subfirstx_pt
+        self.subfirsty_pt = subfirsty_pt
 
-    def valid(self):
-        """checks whether the current point is invalid"""
-        return self.x_pt is not _invalidcurrentpoint
-
-
-################################################################################
-# pathitem: element of a PS style path
-################################################################################
 
 class pathitem:
 
     """element of a PS style path"""
 
-    def _updatecurrentpoint(self, currentpoint):
-        """update current point of during walk along pathitem
+    def __str__(self):
+        raise NotImplementedError()
 
-        changes currentpoint in place
+    def createcontext(self):
+        """creates a context from the current pathitem
+
+        Returns a context instance. Is called, when no context has yet
+        been defined, i.e. for the very first pathitem. Most of the
+        pathitems do not provide this method.
+        """
+        raise PathException("path must start with moveto or the like (%r)" % self)
+
+    def createbbox(self):
+        """creates a bbox from the current pathitem
+
+        Returns a bbox instance. Is called, whe a bbox has to be
+        created instead of updating it, i.e. for the very first
+        pathitem. Most pathitems do not provide this method.
+        updatebbox must not be called for the created instance and the
+        same pathitem.
+        """
+        raise PathException("path must start with moveto or the like (%r)" % self)
+
+    def createnormpath(self, epsilon):
+        """create a normpath from the current pathitem
+
+        Return a normpath instance. Is called, when a normpath has to
+        be created instead of updating it, i.e. for the very first
+        pathitem. Most pathitems do not provide this method.
+        updatenormpath must not be called for the created instance and
+        the same pathitem.
+        """
+        raise PathException("path must start with moveto or the like (%r)" % self)
+
+    def updatebbox(self, bbox, context):
+        """updates the bbox to contain the pathitem for the given
+        context
+
+        Is called for all subsequent pathitems in a path to complete
+        the bbox information. Both, the bbox and context are updated
+        inplace. Does not return anything.
         """
         raise NotImplementedError()
 
+    def updatenormpath(self, normpath, context):
+        """update the normpath to contain the pathitem for the given
+        context
 
-    def _bbox(self, currentpoint):
-        """return bounding box of pathitem
-
-        currentpoint: current point along path
+        Is called for all subsequent pathitems in a path to complete
+        the normpath. Both the normpath and the context are updated
+        inplace. Most pathitem implementations will use
+        normpath.normsubpath[-1].append to add normsubpathitem(s).
+        Does not return anything.
         """
         raise NotImplementedError()
 
-    def _normalized(self, currentpoint):
-        """return list of normalized version of pathitem
-
-        currentpoint: current point along path
-
-        Returns the path converted into a list of normline or normcurve
-        instances. Additionally instances of moveto_pt and closepath are
-        contained, which act as markers.
-        """
-        raise NotImplementedError()
-
-    def outputPS(self, file, writer, context):
-        """write PS code corresponding to pathitem to file, using writer and context"""
-        raise NotImplementedError()
-
-    def outputPDF(self, file, writer, context):
-        """write PDF code corresponding to pathitem to file
-
-        Since PDF is limited to lines and curves, _normalized is used to
-        generate PDF outout. Thus only moveto_pt and closepath need to
-        implement the outputPDF method."""
-        raise NotImplementedError()
+    def outputPS(self, file):
+        """write PS representation of pathitem to file"""
 
 
+
+################################################################################
 # various pathitems
-#
+################################################################################
 # Each one comes in two variants:
 #  - one with suffix _pt. This one requires the coordinates
 #    to be already in pts (mainly used for internal purposes)
@@ -222,27 +282,22 @@ class closepath(pathitem):
     def __str__(self):
         return "closepath()"
 
-    def _updatecurrentpoint(self, currentpoint):
-        # XXX: this is still not correct! the currentpoint
-        # is moved back to the beginning of the normsubpath
-        pass
+    def updatebbox(self, bbox, context):
+        context.x_pt = context.subfirstx_pt
+        context.y_pt = context.subfirsty_pt
 
-    def _bbox(self, currentpoint):
-        return None
+    def updatenormpath(self, normpath, context):
+        normpath.normsubpaths[-1].close()
+        context.x_pt = context.subfirstx_pt
+        context.y_pt = context.subfirsty_pt
 
-    def _normalized(self, currentpoint):
-        return [self]
-
-    def outputPS(self, file, writer, context):
+    def outputPS(self, file):
         file.write("closepath\n")
-
-    def outputPDF(self, file, writer, context):
-        file.write("h\n")
 
 
 class moveto_pt(pathitem):
 
-    """Set current point to (x_pt, y_pt) (coordinates in pts)"""
+    """Start a new subpath and set current point to (x_pt, y_pt) (coordinates in pts)"""
 
     __slots__ = "x_pt", "y_pt"
 
@@ -253,21 +308,27 @@ class moveto_pt(pathitem):
     def __str__(self):
         return "moveto_pt(%g, %g)" % (self.x_pt, self.y_pt)
 
-    def _updatecurrentpoint(self, currentpoint):
-        currentpoint.x_pt = self.x_pt
-        currentpoint.y_pt = self.y_pt
+    def createcontext(self):
+        return context(self.x_pt, self.y_pt, self.x_pt, self.y_pt)
 
-    def _bbox(self, currentpoint):
-        return None
+    def createbbox(self):
+        return bbox.bbox_pt(self.x_pt, self.y_pt, self.x_pt, self.y_pt)
 
-    def _normalized(self, currentpoint):
-        return [moveto_pt(self.x_pt, self.y_pt)]
+    def createnormpath(self, epsilon):
+        return normpath([normsubpath(epsilon=epsilon)])
 
-    def outputPS(self, file, writer, context):
+    def updatebbox(self, bbox, context):
+        bbox.includepoint_pt(self.x_pt, self.y_pt)
+        context.x_pt = context.subfirstx_pt = self.x_pt
+        context.y_pt = context.subfirsty_pt = self.y_pt
+
+    def updatenormpath(self, normpath, context):
+        normpath.append(normsubpath(epsilon=normpath.normsubpaths[-1].epsilon))
+        context.x_pt = context.subfirstx_pt = self.x_pt
+        context.y_pt = context.subfirsty_pt = self.y_pt
+
+    def outputPS(self, file):
         file.write("%g %g moveto\n" % (self.x_pt, self.y_pt) )
-
-    def outputPDF(self, file, writer, context):
-        file.write("%f %f m\n" % (self.x_pt, self.y_pt) )
 
 
 class lineto_pt(pathitem):
@@ -283,20 +344,18 @@ class lineto_pt(pathitem):
     def __str__(self):
         return "lineto_pt(%g, %g)" % (self.x_pt, self.y_pt)
 
-    def _updatecurrentpoint(self, currentpoint):
-        currentpoint.x_pt = self.x_pt
-        currentpoint.y_pt = self.y_pt
+    def updatebbox(self, bbox, context):
+        bbox.includepoint_pt(self.x_pt, self.y_pt)
+        context.x_pt = self.x_pt
+        context.y_pt = self.y_pt
 
-    def _bbox(self, currentpoint):
-        return bbox.bbox_pt(min(currentpoint.x_pt, self.x_pt),
-                            min(currentpoint.y_pt, self.y_pt),
-                            max(currentpoint.x_pt, self.x_pt),
-                            max(currentpoint.y_pt, self.y_pt))
+    def updatenormpath(self, normpath, context):
+        normpath.normsubpaths[-1].append(normline_pt(context.x_pt, context.y_pt,
+                                                     self.x_pt, self.y_pt))
+        context.x_pt = self.x_pt
+        context.y_pt = self.y_pt
 
-    def _normalized(self, currentpoint):
-        return [normline_pt(currentpoint.x_pt, currentpoint.y_pt, self.x_pt, self.y_pt)]
-
-    def outputPS(self, file, writer, context):
+    def outputPS(self, file):
         file.write("%g %g lineto\n" % (self.x_pt, self.y_pt) )
 
 
@@ -319,26 +378,25 @@ class curveto_pt(pathitem):
                                                       self.x2_pt, self.y2_pt,
                                                       self.x3_pt, self.y3_pt)
 
-    def _updatecurrentpoint(self, currentpoint):
-        currentpoint.x_pt = self.x3_pt
-        currentpoint.y_pt = self.y3_pt
+    def updatebbox(self, bbox, context):
+        bbox.includepoint_pt(self.x1_pt, self.y1_pt)
+        bbox.includepoint_pt(self.x2_pt, self.y2_pt)
+        bbox.includepoint_pt(self.x3_pt, self.y3_pt)
+        context.x_pt = self.x3_pt
+        context.y_pt = self.y3_pt
 
-    def _bbox(self, currentpoint):
-        return bbox.bbox_pt(min(currentpoint.x_pt, self.x1_pt, self.x2_pt, self.x3_pt),
-                            min(currentpoint.y_pt, self.y1_pt, self.y2_pt, self.y3_pt),
-                            max(currentpoint.x_pt, self.x1_pt, self.x2_pt, self.x3_pt),
-                            max(currentpoint.y_pt, self.y1_pt, self.y2_pt, self.y3_pt))
+    def updatenormpath(self, normpath, context):
+        normpath.normsubpaths[-1].append(normcurve_pt(context.x_pt, context.y_pt,
+                                                      self.x1_pt, self.y1_pt,
+                                                      self.x2_pt, self.y2_pt,
+                                                      self.x3_pt, self.y3_pt))
+        context.x_pt = self.x3_pt
+        context.y_pt = self.y3_pt
 
-    def _normalized(self, currentpoint):
-        return [normcurve_pt(currentpoint.x_pt, currentpoint.y_pt,
-                             self.x1_pt, self.y1_pt,
-                             self.x2_pt, self.y2_pt,
-                             self.x3_pt, self.y3_pt)]
-
-    def outputPS(self, file, writer, context):
-        file.write("%g %g %g %g %g %g curveto\n" % ( self.x1_pt, self.y1_pt,
-                                                     self.x2_pt, self.y2_pt,
-                                                     self.x3_pt, self.y3_pt ) )
+    def outputPS(self, file):
+        file.write("%g %g %g %g %g %g curveto\n" % (self.x1_pt, self.y1_pt,
+                                                    self.x2_pt, self.y2_pt,
+                                                    self.x3_pt, self.y3_pt))
 
 
 class rmoveto_pt(pathitem):
@@ -354,17 +412,21 @@ class rmoveto_pt(pathitem):
     def __str__(self):
         return "rmoveto_pt(%g, %g)" % (self.dx_pt, self.dy_pt)
 
-    def _updatecurrentpoint(self, currentpoint):
-        currentpoint.x_pt += self.dx_pt
-        currentpoint.y_pt += self.dy_pt
+    def updatebbox(self, bbox, context):
+        bbox.includepoint_pt(context.x_pt + self.dx_pt, context.y_pt + self.dy_pt)
+        context.x_pt += self.dx_pt
+        context.y_pt += self.dy_pt
+        context.subfirstx_pt = context.x_pt
+        context.subfirsty_pt = context.y_pt
 
-    def _bbox(self, currentpoint):
-        return None
+    def updatenormpath(self, normpath, context):
+        normpath.append(normsubpath(epsilon=normpath.normsubpaths[-1].epsilon))
+        context.x_pt += self.dx_pt
+        context.y_pt += self.dy_pt
+        context.subfirstx_pt = context.x_pt
+        context.subfirsty_pt = context.y_pt
 
-    def _normalized(self, currentpoint):
-        return [moveto_pt(currentpoint.x_pt + self.dx_pt, currentpoint.y_pt + self.dy_pt)]
-
-    def outputPS(self, file, writer, context):
+    def outputPS(self, file):
         file.write("%g %g rmoveto\n" % (self.dx_pt, self.dy_pt) )
 
 
@@ -381,23 +443,18 @@ class rlineto_pt(pathitem):
     def __str__(self):
         return "rlineto_pt(%g %g)" % (self.dx_pt, self.dy_pt)
 
-    def _updatecurrentpoint(self, currentpoint):
-        currentpoint.x_pt += self.dx_pt
-        currentpoint.y_pt += self.dy_pt
+    def updatebbox(self, bbox, context):
+        bbox.includepoint_pt(context.x_pt + self.dx_pt, context.y_pt + self.dy_pt)
+        context.x_pt += self.dx_pt
+        context.y_pt += self.dy_pt
 
-    def _bbox(self, currentpoint):
-        x_pt = currentpoint.x_pt + self.dx_pt
-        y_pt = currentpoint.y_pt + self.dy_pt
-        return bbox.bbox_pt(min(currentpoint.x_pt, x_pt),
-                            min(currentpoint.y_pt, y_pt),
-                            max(currentpoint.x_pt, x_pt),
-                            max(currentpoint.y_pt, y_pt))
+    def updatenormpath(self, normpath, context):
+        normpath.normsubpaths[-1].append(normline_pt(context.x_pt, context.y_pt,
+                                                     context.x_pt + self.dx_pt, context.y_pt + self.dy_pt))
+        context.x_pt += self.dx_pt
+        context.y_pt += self.dy_pt
 
-    def _normalized(self, currentpoint):
-        return [normline_pt(currentpoint.x_pt, currentpoint.y_pt,
-                            currentpoint.x_pt + self.dx_pt, currentpoint.y_pt + self.dy_pt)]
-
-    def outputPS(self, file, writer, context):
+    def outputPS(self, file):
         file.write("%g %g rlineto\n" % (self.dx_pt, self.dy_pt) )
 
 
@@ -420,29 +477,22 @@ class rcurveto_pt(pathitem):
                                                         self.dx2_pt, self.dy2_pt,
                                                         self.dx3_pt, self.dy3_pt)
 
-    def _updatecurrentpoint(self, currentpoint):
-        currentpoint.x_pt += self.dx3_pt
-        currentpoint.y_pt += self.dy3_pt
+    def updatebbox(self, bbox, context):
+        bbox.includepoint_pt(context.x_pt + self.dx1_pt, context.y_pt + self.dy1_pt)
+        bbox.includepoint_pt(context.x_pt + self.dx2_pt, context.y_pt + self.dy2_pt)
+        bbox.includepoint_pt(context.x_pt + self.dx3_pt, context.y_pt + self.dy3_pt)
+        context.x_pt += self.dx3_pt
+        context.y_pt += self.dy3_pt
 
-    def _bbox(self, currentpoint):
-        x1_pt = currentpoint.x_pt + self.dx1_pt
-        y1_pt = currentpoint.y_pt + self.dy1_pt
-        x2_pt = currentpoint.x_pt + self.dx2_pt
-        y2_pt = currentpoint.y_pt + self.dy2_pt
-        x3_pt = currentpoint.x_pt + self.dx3_pt
-        y3_pt = currentpoint.y_pt + self.dy3_pt
-        return bbox.bbox_pt(min(currentpoint.x_pt, x1_pt, x2_pt, x3_pt),
-                            min(currentpoint.y_pt, y1_pt, y2_pt, y3_pt),
-                            max(currentpoint.x_pt, x1_pt, x2_pt, x3_pt),
-                            max(currentpoint.y_pt, y1_pt, y2_pt, y3_pt))
+    def updatenormpath(self, normpath, context):
+        normpath.normsubpaths[-1].append(normcurve_pt(context.x_pt, context.y_pt,
+                                                      context.x_pt + self.dx1_pt, context.y_pt + self.dy1_pt,
+                                                      context.x_pt + self.dx2_pt, context.y_pt + self.dy2_pt,
+                                                      context.x_pt + self.dx3_pt, context.y_pt + self.dy3_pt))
+        context.x_pt += self.dx3_pt
+        context.y_pt += self.dy3_pt
 
-    def _normalized(self, currentpoint):
-        return [normcurve_pt(currentpoint.x_pt, currentpoint.y_pt,
-                             currentpoint.x_pt + self.dx1_pt, currentpoint.y_pt + self.dy1_pt,
-                             currentpoint.x_pt + self.dx2_pt, currentpoint.y_pt + self.dy2_pt,
-                             currentpoint.x_pt + self.dx3_pt, currentpoint.y_pt + self.dy3_pt)]
-
-    def outputPS(self, file, writer, context):
+    def outputPS(self, file):
         file.write("%g %g %g %g %g %g rcurveto\n" % (self.dx1_pt, self.dy1_pt,
                                                      self.dx2_pt, self.dy2_pt,
                                                      self.dx3_pt, self.dy3_pt))
@@ -465,108 +515,37 @@ class arc_pt(pathitem):
         return "arc_pt(%g, %g, %g, %g, %g)" % (self.x_pt, self.y_pt, self.r_pt,
                                                self.angle1, self.angle2)
 
-    def _sarc(self):
-        """return starting point of arc segment"""
-        return (self.x_pt+self.r_pt*cos(radians(self.angle1)),
-                self.y_pt+self.r_pt*sin(radians(self.angle1)))
+    def createcontext(self):
+        x_pt, y_pt = _arcpoint(self.x_pt, self.y_pt, self.r_pt, self.angle2)
+        return context(x_pt, y_pt, x_pt, y_pt)
 
-    def _earc(self):
-        """return end point of arc segment"""
-        return (self.x_pt+self.r_pt*cos(radians(self.angle2)),
-                self.y_pt+self.r_pt*sin(radians(self.angle2)))
+    def createbbox(self):
+        return bbox.bbox_pt(*_arcbboxdata(self.x_pt, self.y_pt, self.r_pt,
+                                          self.angle1, self.angle2))
 
-    def _updatecurrentpoint(self, currentpoint):
-        currentpoint.x_pt, currentpoint.y_pt = self._earc()
+    def createnormpath(self, epsilon):
+        return normpath([normsubpath(_arctobezierpath(self.x_pt, self.y_pt, self.r_pt, self.angle1, self.angle2),
+                                     epsilon=epsilon)])
 
-    def _bbox(self, currentpoint):
-        phi1 = radians(self.angle1)
-        phi2 = radians(self.angle2)
+    def updatebbox(self, bbox, context):
+        minarcx_pt, minarcy_pt, maxarcx_pt, maxarcy_pt = _arcbboxdata(self.x_pt, self.y_pt, self.r_pt,
+                                                                      self.angle1, self.angle2)
+        bbox.includepoint_pt(minarcx_pt, minarcy_pt)
+        bbox.includepoint_pt(maxarcx_pt, maxarcy_pt)
+        context.x_pt, context.y_pt = _arcpoint(self.x_pt, self.y_pt, self.r_pt, self.angle2)
 
-        # starting end end point of arc segment
-        sarcx_pt, sarcy_pt = self._sarc()
-        earcx_pt, earcy_pt = self._earc()
-
-        # Now, we have to determine the corners of the bbox for the
-        # arc segment, i.e. global maxima/mimima of cos(phi) and sin(phi)
-        # in the interval [phi1, phi2]. These can either be located
-        # on the borders of this interval or in the interior.
-
-        if phi2 < phi1:
-            # guarantee that phi2>phi1
-            phi2 = phi2 + (math.floor((phi1-phi2)/(2*pi))+1)*2*pi
-
-        # next minimum of cos(phi) looking from phi1 in counterclockwise
-        # direction: 2*pi*floor((phi1-pi)/(2*pi)) + 3*pi
-
-        if phi2 < (2*math.floor((phi1-pi)/(2*pi))+3)*pi:
-            minarcx_pt = min(sarcx_pt, earcx_pt)
+    def updatenormpath(self, normpath, context):
+        if normpath.normsubpaths[-1].closed:
+            normpath.append(normsubpath([normline_pt(context.x_pt, context.y_pt,
+                                                         *_arcpoint(self.x_pt, self.y_pt, self.r_pt, self.angle1))],
+                                        epsilon=normpath.normsubpaths[-1].epsilon))
         else:
-            minarcx_pt = self.x_pt-self.r_pt
+            normpath.normsubpaths[-1].append(normline_pt(context.x_pt, context.y_pt,
+                                                         *_arcpoint(self.x_pt, self.y_pt, self.r_pt, self.angle1)))
+        normpath.normsubpaths[-1].extend(_arctobezierpath(self.x_pt, self.y_pt, self.r_pt, self.angle1, self.angle2))
+        context.x_pt, context.y_pt = _arcpoint(self.x_pt, self.y_pt, self.r_pt, self.angle2)
 
-        # next minimum of sin(phi) looking from phi1 in counterclockwise
-        # direction: 2*pi*floor((phi1-3*pi/2)/(2*pi)) + 7/2*pi
-
-        if phi2 < (2*math.floor((phi1-3.0*pi/2)/(2*pi))+7.0/2)*pi:
-            minarcy_pt = min(sarcy_pt, earcy_pt)
-        else:
-            minarcy_pt = self.y_pt-self.r_pt
-
-        # next maximum of cos(phi) looking from phi1 in counterclockwise
-        # direction: 2*pi*floor((phi1)/(2*pi))+2*pi
-
-        if phi2 < (2*math.floor((phi1)/(2*pi))+2)*pi:
-            maxarcx_pt = max(sarcx_pt, earcx_pt)
-        else:
-            maxarcx_pt = self.x_pt+self.r_pt
-
-        # next maximum of sin(phi) looking from phi1 in counterclockwise
-        # direction: 2*pi*floor((phi1-pi/2)/(2*pi)) + 1/2*pi
-
-        if phi2 < (2*math.floor((phi1-pi/2)/(2*pi))+5.0/2)*pi:
-            maxarcy_pt = max(sarcy_pt, earcy_pt)
-        else:
-            maxarcy_pt = self.y_pt+self.r_pt
-
-        # Finally, we are able to construct the bbox for the arc segment.
-        # Note that if a current point is defined, we also
-        # have to include the straight line from this point
-        # to the first point of the arc segment.
-
-        if currentpoint.valid():
-            return (bbox.bbox_pt(min(currentpoint.x_pt, sarcx_pt),
-                                 min(currentpoint.y_pt, sarcy_pt),
-                                 max(currentpoint.x_pt, sarcx_pt),
-                                 max(currentpoint.y_pt, sarcy_pt)) +
-                    bbox.bbox_pt(minarcx_pt, minarcy_pt, maxarcx_pt, maxarcy_pt) )
-        else:
-            return  bbox.bbox_pt(minarcx_pt, minarcy_pt, maxarcx_pt, maxarcy_pt)
-
-    def _normalized(self, currentpoint):
-        # get starting and end point of arc segment and bpath corresponding to arc
-        sarcx_pt, sarcy_pt = self._sarc()
-        earcx_pt, earcy_pt = self._earc()
-        barc = _arctobezierpath(self.x_pt, self.y_pt, self.r_pt, self.angle1, self.angle2)
-
-        # convert to list of curvetos omitting movetos
-        nbarc = []
-
-        for bpathitem in barc:
-            nbarc.append(normcurve_pt(bpathitem.x0_pt, bpathitem.y0_pt,
-                                      bpathitem.x1_pt, bpathitem.y1_pt,
-                                      bpathitem.x2_pt, bpathitem.y2_pt,
-                                      bpathitem.x3_pt, bpathitem.y3_pt))
-
-        # Note that if a current point is defined, we also
-        # have to include the straight line from this point
-        # to the first point of the arc segment.
-        # Otherwise, we have to add a moveto at the beginning.
-
-        if currentpoint.valid():
-            return [normline_pt(currentpoint.x_pt, currentpoint.y_pt, sarcx_pt, sarcy_pt)] + nbarc
-        else:
-            return [moveto_pt(sarcx_pt, sarcy_pt)] + nbarc
-
-    def outputPS(self, file, writer, context):
+    def outputPS(self, file):
         file.write("%g %g %g %g %g arc\n" % (self.x_pt, self.y_pt,
                                              self.r_pt,
                                              self.angle1,
@@ -590,75 +569,43 @@ class arcn_pt(pathitem):
         return "arcn_pt(%g, %g, %g, %g, %g)" % (self.x_pt, self.y_pt, self.r_pt,
                                                 self.angle1, self.angle2)
 
-    def _sarc(self):
-        """return starting point of arc segment"""
-        return (self.x_pt+self.r_pt*cos(radians(self.angle1)),
-                self.y_pt+self.r_pt*sin(radians(self.angle1)))
+    def createcontext(self):
+        x_pt, y_pt = _arcpoint(self.x_pt, self.y_pt, self.r_pt, self.angle2)
+        return context(x_pt, y_pt, x_pt, y_pt)
 
-    def _earc(self):
-        """return end point of arc segment"""
-        return (self.x_pt+self.r_pt*cos(radians(self.angle2)),
-                self.y_pt+self.r_pt*sin(radians(self.angle2)))
+    def createbbox(self):
+        return bbox.bbox_pt(*_arcbboxdata(self.x_pt, self.y_pt, self.r_pt,
+                                          self.angle2, self.angle1))
+
+    def createnormpath(self, epsilon):
+        return normpath([normsubpath(_arctobezierpath(self.x_pt, self.y_pt, self.r_pt, self.angle2, self.angle1),
+                                     epsilon=epsilon)]).reversed()
 
     def _updatecurrentpoint(self, currentpoint):
         currentpoint.x_pt, currentpoint.y_pt = self._earc()
 
-    def _bbox(self, currentpoint):
-        # in principle, we obtain bbox of an arcn element from
-        # the bounding box of the corrsponding arc element with
-        # angle1 and angle2 interchanged. Though, we have to be carefull
-        # with the straight line segment, which is added if a current point
-        # is defined.
+    def updatebbox(self, bbox, context):
+        minarcx_pt, minarcy_pt, maxarcx_pt, maxarcy_pt = _arcbboxdata(self.x_pt, self.y_pt, self.r_pt,
+                                                                      self.angle2, self.angle1)
+        bbox.includepoint_pt(minarcx_pt, minarcy_pt)
+        bbox.includepoint_pt(maxarcx_pt, maxarcy_pt)
+        context.x_pt, context.y_pt = _arcpoint(self.x_pt, self.y_pt, self.r_pt, self.angle2)
 
-        # Hence, we first compute the bbox of the arc without this line:
-
-        a = arc_pt(self.x_pt, self.y_pt, self.r_pt,
-                   self.angle2,
-                   self.angle1)
-
-        sarcx_pt, sarcy_pt = self._sarc()
-        arcbb = a._bbox(_currentpoint())
-
-        # Then, we repeat the logic from arc.bbox, but with interchanged
-        # start and end points of the arc
-        # XXX: I found the code to be equal! (AW, 31.1.2005)
-
-        if currentpoint.valid():
-            return  bbox.bbox_pt(min(currentpoint.x_pt, sarcx_pt),
-                                 min(currentpoint.y_pt, sarcy_pt),
-                                 max(currentpoint.x_pt, sarcx_pt),
-                                 max(currentpoint.y_pt, sarcy_pt)) + arcbb
+    def updatenormpath(self, normpath, context):
+        if normpath.normsubpaths[-1].closed:
+            normpath.append(normsubpath([normline_pt(context.x_pt, context.y_pt,
+                                                         *_arcpoint(self.x_pt, self.y_pt, self.r_pt, self.angle1))],
+                                        epsilon=normpath.normsubpaths[-1].epsilon))
         else:
-            return arcbb
+            normpath.normsubpaths[-1].append(normline_pt(context.x_pt, context.y_pt,
+                                                         *_arcpoint(self.x_pt, self.y_pt, self.r_pt, self.angle1)))
+        bpathitems = _arctobezierpath(self.x_pt, self.y_pt, self.r_pt, self.angle2, self.angle1)
+        bpathitems.reverse()
+        for bpathitem in bpathitems:
+            normpath.normsubpaths[-1].append(bpathitem.reversed())
+        context.x_pt, context.y_pt = _arcpoint(self.x_pt, self.y_pt, self.r_pt, self.angle2)
 
-    def _normalized(self, currentpoint):
-        # get starting and end point of arc segment and bpath corresponding to arc
-        sarcx_pt, sarcy_pt = self._sarc()
-        earcx_pt, earcy_pt = self._earc()
-        barc = _arctobezierpath(self.x_pt, self.y_pt, self.r_pt, self.angle2, self.angle1)
-        barc.reverse()
-
-        # convert to list of curvetos omitting movetos
-        nbarc = []
-
-        for bpathitem in barc:
-            nbarc.append(normcurve_pt(bpathitem.x3_pt, bpathitem.y3_pt,
-                                      bpathitem.x2_pt, bpathitem.y2_pt,
-                                      bpathitem.x1_pt, bpathitem.y1_pt,
-                                      bpathitem.x0_pt, bpathitem.y0_pt))
-
-        # Note that if a current point is defined, we also
-        # have to include the straight line from this point
-        # to the first point of the arc segment.
-        # Otherwise, we have to add a moveto at the beginning.
-
-        if currentpoint.valid():
-            return [normline_pt(currentpoint.x_pt, currentpoint.y_pt, sarcx_pt, sarcy_pt)] + nbarc
-        else:
-            return [moveto_pt(sarcx_pt, sarcy_pt)] + nbarc
-
-
-    def outputPS(self, file, writer, context):
+    def outputPS(self, file):
         file.write("%g %g %g %g %g arcn\n" % (self.x_pt, self.y_pt,
                                               self.r_pt,
                                               self.angle1,
@@ -683,17 +630,17 @@ class arct_pt(pathitem):
                                                 self.x2_pt, self.y2_pt,
                                                 self.r_pt)
 
-    def _pathitem(self, currentpoint):
-        """return pathitem which corresponds to arct with the given currentpoint.
+    def _pathitems(self, x_pt, y_pt):
+        """return pathitems corresponding to arct for given currentpoint x_pt, y_pt.
 
-        The return value is either a arc_pt, a arcn_pt or a line_pt instance.
+        The return is a list containing line_pt, arc_pt, a arcn_pt instances.
 
-        This is a helper routine for _updatecurrentpoint, _bbox and _normalized,
-        which will all delegate the work to the constructed pathitem.
+        This is a helper routine for updatebbox and updatenormpath,
+        which will delegate the work to the constructed pathitem.
         """
 
         # direction of tangent 1
-        dx1_pt, dy1_pt = self.x1_pt-currentpoint.x_pt, self.y1_pt-currentpoint.y_pt
+        dx1_pt, dy1_pt = self.x1_pt-x_pt, self.y1_pt-y_pt
         l1_pt = math.hypot(dx1_pt, dy1_pt)
         dx1, dy1 = dx1_pt/l1_pt, dy1_pt/l1_pt
 
@@ -734,26 +681,26 @@ class arct_pt(pathitem):
             # half angular width of arc
             deltaphi = degrees(alpha)/2
 
+            line = lineto_pt(*_arcpoint(mx_pt, my_pt, self.r_pt, phi-deltaphi))
             if alpha > 0:
-                return arc_pt(mx_pt, my_pt, self.r_pt, phi-deltaphi, phi+deltaphi)
+                return [line, arc_pt(mx_pt, my_pt, self.r_pt, phi-deltaphi, phi+deltaphi)]
             else:
-                return arcn_pt(mx_pt, my_pt, self.r_pt, phi-deltaphi, phi+deltaphi)
+                return [line, arcn_pt(mx_pt, my_pt, self.r_pt, phi-deltaphi, phi+deltaphi)]
 
         except ZeroDivisionError:
             # in the degenerate case, we just return a line as specified by the PS 
             # language reference
-            return lineto_pt(self.x1_pt, self.y1_pt)
+            return [lineto_pt(self.x1_pt, self.y1_pt)]
 
-    def _updatecurrentpoint(self, currentpoint):
-        self._pathitem(currentpoint)._updatecurrentpoint(currentpoint)
+    def updatebbox(self, bbox, context):
+        for pathitem in self._pathitems(context.x_pt, context.y_pt):
+            pathitem.updatebbox(bbox, context)
 
-    def _bbox(self, currentpoint):
-        return self._pathitem(currentpoint)._bbox(currentpoint)
+    def updatenormpath(self, normpath, context):
+        for pathitem in self._pathitems(context.x_pt, context.y_pt):
+            pathitem.updatenormpath(normpath, context)
 
-    def _normalized(self, currentpoint):
-        return self._pathitem(currentpoint)._normalized(currentpoint)
-
-    def outputPS(self, file, writer, context):
+    def outputPS(self, file):
         file.write("%g %g %g %g %g arct\n" % (self.x1_pt, self.y1_pt,
                                               self.x2_pt, self.y2_pt,
                                               self.r_pt))
@@ -876,27 +823,20 @@ class multilineto_pt(pathitem):
             result.append("(%g, %g)" % point_pt )
         return "multilineto_pt([%s])" % (", ".join(result))
 
-    def _updatecurrentpoint(self, currentpoint):
-        currentpoint.x_pt, currentpoint.y_pt = self.points_pt[-1]
+    def updatebbox(self, bbox, context):
+        for point_pt in self.points_pt:
+            bbox.includepoint_pt(*point_pt)
+        if self.points_pt:
+            context.x_pt, context.y_pt = self.points_pt[-1]
 
-    def _bbox(self, currentpoint):
-        xs_pt = [point[0] for point in self.points_pt]
-        ys_pt = [point[1] for point in self.points_pt]
-        return bbox.bbox_pt(min(currentpoint.x_pt, *xs_pt),
-                            min(currentpoint.y_pt, *ys_pt),
-                            max(currentpoint.x_pt, *xs_pt),
-                            max(currentpoint.y_pt, *ys_pt))
+    def updatenormpath(self, normpath, context):
+        x0_pt, y0_pt = context.x_pt, context.y_pt
+        for point_pt in self.points_pt:
+            normpath.normsubpaths[-1].append(normline_pt(x0_pt, y0_pt, *point_pt))
+            x0_pt, y0_pt = point_pt
+        context.x_pt, context.y_pt = x0_pt, y0_pt
 
-    def _normalized(self, currentpoint):
-        result = []
-        x0_pt = currentpoint.x_pt
-        y0_pt = currentpoint.y_pt
-        for x1_pt, y1_pt in self.points_pt:
-            result.append(normline_pt(x0_pt, y0_pt, x1_pt, y1_pt))
-            x0_pt, y0_pt = x1_pt, y1_pt
-        return result
-
-    def outputPS(self, file, writer, context):
+    def outputPS(self, file):
         for point_pt in self.points_pt:
             file.write("%g %g lineto\n" % point_pt )
 
@@ -916,31 +856,22 @@ class multicurveto_pt(pathitem):
             result.append("(%g, %g, %g, %g, %g, %g)" % point_pt )
         return "multicurveto_pt([%s])" % (", ".join(result))
 
-    def _updatecurrentpoint(self, currentpoint):
-        currentpoint.x_pt, currentpoint.y_pt = self.points_pt[-1]
-
-    def _bbox(self, currentpoint):
-        xs_pt = ( [point[0] for point in self.points_pt] +
-                  [point[2] for point in self.points_pt] +
-                  [point[4] for point in self.points_pt] )
-        ys_pt = ( [point[1] for point in self.points_pt] +
-                  [point[3] for point in self.points_pt] +
-                  [point[5] for point in self.points_pt] )
-        return bbox.bbox_pt(min(currentpoint.x_pt, *xs_pt),
-                            min(currentpoint.y_pt, *ys_pt),
-                            max(currentpoint.x_pt, *xs_pt),
-                            max(currentpoint.y_pt, *ys_pt))
-
-    def _normalized(self, currentpoint):
-        result = []
-        x_pt = currentpoint.x_pt
-        y_pt = currentpoint.y_pt
+    def updatebbox(self, bbox, context):
         for point_pt in self.points_pt:
-            result.append(normcurve_pt(x_pt, y_pt, *point_pt))
-            x_pt, y_pt = point_pt[4:]
-        return result
+            bbox.includepoint_pt(*point_pt[0: 2])
+            bbox.includepoint_pt(*point_pt[2: 4])
+            bbox.includepoint_pt(*point_pt[4: 6])
+        if self.points_pt:
+            context.x_pt, context.y_pt = self.points_pt[-1][4:]
 
-    def outputPS(self, file, writer, context):
+    def updatenormpath(self, normpath, context):
+        x0_pt, y0_pt = context.x_pt, context.y_pt
+        for point_pt in self.points_pt:
+            normpath.normsubpaths[-1].append(normcurve_pt(x0_pt, y0_pt, *point_pt))
+            x0_pt, y0_pt = point_pt[4:]
+        context.x_pt, context.y_pt = x0_pt, y0_pt
+
+    def outputPS(self, file):
         for point_pt in self.points_pt:
             file.write("%g %g %g %g %g %g curveto\n" % point_pt)
 
@@ -962,7 +893,7 @@ class path(canvas.canvasitem):
             assert isinstance(apathitem, pathitem), "only pathitem instances allowed"
 
         self.pathitems = list(pathitems)
-        # normpath cache
+        # normpath cache (when no epsilon is set)
         self._normpath = None
 
     def __add__(self, other):
@@ -1039,18 +970,14 @@ class path(canvas.canvasitem):
 
     def bbox(self):
         """return bbox of path"""
-        currentpoint = _currentpoint()
-        abbox = None
-
-        for pitem in self.pathitems:
-            nbbox =  pitem._bbox(currentpoint)
-            pitem._updatecurrentpoint(currentpoint)
-            if abbox is None:
-                abbox = nbbox
-            elif nbbox:
-                abbox += nbbox
-
-        return abbox
+        if self.pathitems:
+            context = self.pathitems[0].createcontext()
+            bbox = self.pathitems[0].createbbox()
+            for pathitem in self.pathitems[1:]:
+                pathitem.updatebbox(bbox, context)
+            return bbox
+        else:
+            return None
 
     def begin(self):
         """return param corresponding of the beginning of the path"""
@@ -1108,39 +1035,21 @@ class path(canvas.canvasitem):
     # << operator also designates joining
     __lshift__ = joined
 
-    def normpath(self, epsilon=None):
+    def normpath(self, epsilon=helper.nodefault):
         """convert the path into a normpath"""
-        # use cached value if existent
-        if self._normpath is not None:
+        # use cached value if existent and epsilon is helper.nodefault
+        if self._normpath is not None and epsilon is helper.nodefault:
             return self._normpath
-        # split path in sub paths
-        subpaths = []
-        currentsubpathitems = []
-        currentpoint = _currentpoint()
-        for pitem in self.pathitems:
-            for npitem in pitem._normalized(currentpoint):
-                if isinstance(npitem, moveto_pt):
-                    if currentsubpathitems:
-                        # append open sub path
-                        subpaths.append(normsubpath(currentsubpathitems, closed=0, epsilon=epsilon))
-                    # start new sub path
-                    currentsubpathitems = []
-                elif isinstance(npitem, closepath):
-                    if currentsubpathitems:
-                        # append closed sub path
-                        currentsubpathitems.append(normline_pt(currentpoint.x_pt, currentpoint.y_pt,
-                                                               *currentsubpathitems[0].atbegin_pt()))
-                    subpaths.append(normsubpath(currentsubpathitems, closed=1, epsilon=epsilon))
-                    currentsubpathitems = []
-                else:
-                    currentsubpathitems.append(npitem)
-            pitem._updatecurrentpoint(currentpoint)
-
-        if currentsubpathitems:
-            # append open sub path
-            subpaths.append(normsubpath(currentsubpathitems, 0, epsilon))
-        self._normpath = normpath(subpaths)
-        return self._normpath
+        if self.pathitems:
+            context = self.pathitems[0].createcontext()
+            normpath = self.pathitems[0].createnormpath(epsilon)
+            for pathitem in self.pathitems[1:]:
+                pathitem.updatenormpath(normpath, context)
+        else:
+            normpath = normpath(epsilon=epsilon)
+        if epsilon is helper.nodefault:
+            self._normpath = normpath
+        return normpath
 
     def paramtoarclen_pt(self, params):
         """return arc lenght(s) in pts matching the given param(s)"""
@@ -1207,18 +1116,14 @@ class path(canvas.canvasitem):
     def outputPS(self, file, writer, context):
         """write PS code to file"""
         for pitem in self.pathitems:
-            pitem.outputPS(file, writer, context)
+            pitem.outputPS(file)
 
     def outputPDF(self, file, writer, context):
         """write PDF code to file"""
-        # PDF only supports normsubpathitems but instead of
-        # converting to a normpath, which will fail for short
-        # closed paths, we use outputPDF of the normalized paths
-        currentpoint = _currentpoint()
-        for pitem in self.pathitems:
-            for npitem in pitem._normalized(currentpoint):
-                npitem.outputPDF(file, writer, context)
-            pitem._updatecurrentpoint(currentpoint)
+        # PDF only supports normsubpathitems; we need to use a normpath
+        # with epsilon equals None to prevent failure for paths shorter
+        # than epsilon
+        self.normpath(epsilon=None).outputPDF(file, writer, context)
 
 
 #
@@ -1820,13 +1725,16 @@ class normsubpath:
       element have to be equal.
     - When the path is closed, the last point of last normsubpathitem has
       to be equal to the first point of the first normsubpathitem.
+    - epsilon might be none, disallowing any numerics, but allowing for
+      arbitrary short paths. This is used in pdf output, where all paths need
+      to be transformed to normpaths.
     """
 
     __slots__ = "normsubpathitems", "closed", "epsilon", "skippedline"
 
-    def __init__(self, normsubpathitems=[], closed=0, epsilon=None):
+    def __init__(self, normsubpathitems=[], closed=0, epsilon=helper.nodefault):
         """construct a normsubpath"""
-        if epsilon is None:
+        if epsilon is helper.nodefault:
             epsilon = _epsilon
         self.epsilon = epsilon
         # If one or more items appended to the normsubpath have been
@@ -1890,30 +1798,33 @@ class normsubpath:
 
         Fails on closed normsubpath.
         """
-        # consitency tests (might be temporary)
-        assert isinstance(anormsubpathitem, normsubpathitem), "only normsubpathitem instances allowed"
-        if self.skippedline:
-            assert math.hypot(*[x-y for x, y in zip(self.skippedline.atend_pt(), anormsubpathitem.atbegin_pt())]) < self.epsilon, "normsubpathitems do not match"
-        elif self.normsubpathitems:
-            assert math.hypot(*[x-y for x, y in zip(self.normsubpathitems[-1].atend_pt(), anormsubpathitem.atbegin_pt())]) < self.epsilon, "normsubpathitems do not match"
-
-        if self.closed:
-            raise PathException("Cannot append to closed normsubpath")
-
-        if self.skippedline:
-            xs_pt, ys_pt = self.skippedline.atbegin_pt()
-        else:
-            xs_pt, ys_pt = anormsubpathitem.atbegin_pt()
-        xe_pt, ye_pt = anormsubpathitem.atend_pt()
-
-        if (math.hypot(xe_pt-xs_pt, ye_pt-ys_pt) >= self.epsilon or
-            anormsubpathitem.arclen_pt(self.epsilon) >= self.epsilon):
-            if self.skippedline:
-                anormsubpathitem = anormsubpathitem.modifiedbegin_pt(xs_pt, ys_pt)
+        if self.epsilon is None:
             self.normsubpathitems.append(anormsubpathitem)
-            self.skippedline = None
         else:
-            self.skippedline = normline_pt(xs_pt, ys_pt, xe_pt, ye_pt)
+            # consitency tests (might be temporary)
+            assert isinstance(anormsubpathitem, normsubpathitem), "only normsubpathitem instances allowed"
+            if self.skippedline:
+                assert math.hypot(*[x-y for x, y in zip(self.skippedline.atend_pt(), anormsubpathitem.atbegin_pt())]) < self.epsilon, "normsubpathitems do not match"
+            elif self.normsubpathitems:
+                assert math.hypot(*[x-y for x, y in zip(self.normsubpathitems[-1].atend_pt(), anormsubpathitem.atbegin_pt())]) < self.epsilon, "normsubpathitems do not match"
+
+            if self.closed:
+                raise PathException("Cannot append to closed normsubpath")
+
+            if self.skippedline:
+                xs_pt, ys_pt = self.skippedline.atbegin_pt()
+            else:
+                xs_pt, ys_pt = anormsubpathitem.atbegin_pt()
+            xe_pt, ye_pt = anormsubpathitem.atend_pt()
+
+            if (math.hypot(xe_pt-xs_pt, ye_pt-ys_pt) >= self.epsilon or
+                anormsubpathitem.arclen_pt(self.epsilon) >= self.epsilon):
+                if self.skippedline:
+                    anormsubpathitem = anormsubpathitem.modifiedbegin_pt(xs_pt, ys_pt)
+                self.normsubpathitems.append(anormsubpathitem)
+                self.skippedline = None
+            else:
+                self.skippedline = normline_pt(xs_pt, ys_pt, xe_pt, ye_pt)
 
     def arclen_pt(self):
         """return arc length in pts"""
