@@ -39,9 +39,8 @@ TODO:
   - color module:
     - what should we do for palette when only one entry
   - deformer module:
-    - move numeric stuff into its own framework (also for box module)
-    - check for marked error in smoothed deformer
-    - check for unused local variables
+    - move helper path routines to some more generic place for paths?
+    - repair the parallel deformer
   - open discussion:
     - clearly distingish between readers and writers. dvifile, epsfile, etc. might
       be renamed to dvireader, epsreader ...
@@ -52,9 +51,6 @@ TODO:
       - describe + vs <<
       - more details in path constructor: allowed pathels, first pathel...
       - set method
-    - deco module:
-      - cycloid decorator
-      - smoothed decorator
     - pattern module:
       - check and update
     - graphics section:
