@@ -269,10 +269,15 @@ class deformer(attr.attr):
 class cycloid(deformer): # <<<
     """Wraps a cycloid around a path.
 
-    The outcome looks like a metal spring with the originalpath as the axis.
+    The outcome looks like a spring with the originalpath as the axis.
     radius: radius of the cycloid
-    loops:  number of loops from beginning to end of the original path
+    halfloops:  number of halfloops
     skipfirst/skiplast: undeformed end lines of the original path
+    curvesperhloop:
+    sign: start left (1) or right (-1) with the first halfloop
+    turnangle: angle of perspective on a (3D) spring
+               turnangle=0 will produce a sinus-like cycloid,
+               turnangle=90 will procude a row of connected circles
 
     """
 
@@ -316,17 +321,19 @@ class cycloid(deformer): # <<<
         skiplast = abs(unit.topt(self.skiplast))
         radius = abs(unit.topt(self.radius))
         turnangle = self.turnangle * math.pi / 180.0
+        sign = self.sign >= 0 and 1 or -1
 
         cosTurn = math.cos(turnangle)
         sinTurn = math.sin(turnangle)
 
-        # make list of the lengths and parameters at points on normsubpath where we will add cycloid-points
+        # make list of the lengths and parameters at points on normsubpath
+        # where we will add cycloid-points
         totlength = normsubpath.arclen_pt()
         if totlength <= skipfirst + skiplast + 2*radius*sinTurn:
             warnings.warn("normsubpath is too short for deformation with cycloid -- skipping...")
             return normsubpath
 
-        # parametrisation is in rotation-angle around the basepath
+        # parameterization is in rotation-angle around the basepath
         # differences in length, angle ... between two basepoints
         # and between basepoints and controlpoints
         Dphi = math.pi / self.curvesperhloop
@@ -377,9 +384,9 @@ class cycloid(deformer): # <<<
             postZ, postY = baseZ + l * tangentZ, baseY + l * tangentY
 
             # Now put everything at the proper place
-            points.append(basetrafo.apply_pt(preeZ, self.sign * preeY) +
-                          basetrafo.apply_pt(baseZ, self.sign * baseY) +
-                          basetrafo.apply_pt(postZ, self.sign * postY))
+            points.append(basetrafo.apply_pt(preeZ, sign * preeY) +
+                          basetrafo.apply_pt(baseZ, sign * baseY) +
+                          basetrafo.apply_pt(postZ, sign * postY))
 
         if len(points) <= 1:
             warnings.warn("normsubpath is too short for deformation with cycloid -- skipping...")
