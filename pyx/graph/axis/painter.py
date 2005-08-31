@@ -331,7 +331,7 @@ class bar(_title):
                 innerticklength_pt = unit.topt(self.innerticklength)
                 if canvas.extent_pt < -innerticklength_pt:
                     canvas.extent_pt = -innerticklength_pt
-            elif outerticklength is not None:
+            elif self.outerticklength is not None:
                 innerticklength_pt = 0
             if self.outerticklength is not None:
                 outerticklength_pt = unit.topt(self.outerticklength)
