@@ -414,10 +414,16 @@ class normcurve_pt(normsubpathitem):
         return self.x3_pt, self.y3_pt
 
     def bbox(self):
-        return bbox.bbox_pt(min(self.x0_pt, self.x1_pt, self.x2_pt, self.x3_pt),
-                            min(self.y0_pt, self.y1_pt, self.y2_pt, self.y3_pt),
-                            max(self.x0_pt, self.x1_pt, self.x2_pt, self.x3_pt),
-                            max(self.y0_pt, self.y1_pt, self.y2_pt, self.y3_pt))
+        xmin_pt, xmax_pt = path._bezierpolyrange(self.x0_pt, self.x1_pt, self.x2_pt, self.x3_pt)
+        ymin_pt, ymax_pt = path._bezierpolyrange(self.y0_pt, self.y1_pt, self.y2_pt, self.y3_pt)
+        return bbox.bbox_pt(xmin_pt, ymin_pt, xmax_pt, ymax_pt)
+
+#        XXX: the old bbox code might be used as controlbox for splitting etc.
+#    def bbox(self):
+#        return bbox.bbox_pt(min(self.x0_pt, self.x1_pt, self.x2_pt, self.x3_pt),
+#                            min(self.y0_pt, self.y1_pt, self.y2_pt, self.y3_pt),
+#                            max(self.x0_pt, self.x1_pt, self.x2_pt, self.x3_pt),
+#                            max(self.y0_pt, self.y1_pt, self.y2_pt, self.y3_pt))
 
     def curveradius_pt(self, params):
         result = []
@@ -979,7 +985,7 @@ class normsubpath:
         else:
             normsubpathitems = self.normsubpathitems
 
-        result = [moveto_pt(*self.atbegin_pt())]
+        result = [path.moveto_pt(*self.atbegin_pt())]
         for normsubpathitem in normsubpathitems:
             result.append(normsubpathitem.pathitem())
         if self.closed:
@@ -1296,15 +1302,9 @@ class normpath(canvas.canvasitem):
         elif isinstance(item, path.pathitem):
             # ... but we are kind and allow for regular path items as well
             # in order to make a normpath to behave more like a regular path
-
-            for pathitem in item._normalized(_currentpoint(*self.normsubpaths[-1].atend_pt())):
-                if isinstance(pathitem, closepath):
-                    self.normsubpaths[-1].close()
-                elif isinstance(pathitem, moveto_pt):
-                    self.normsubpaths.append(normsubpath([normline_pt(pathitem.x_pt, pathitem.y_pt,
-                                                                   pathitem.x_pt, pathitem.y_pt)]))
-                else:
-                    self.normsubpaths[-1].append(pathitem)
+            context = path.context(*(self.normsubpaths[-1].atend_pt() +
+                                     self.normsubpaths[-1].atbegin_pt()))
+            item.updatenormpath(self, context)
 
     def arclen_pt(self):
         """return arc length in pts"""
@@ -1547,7 +1547,7 @@ class normpath(canvas.canvasitem):
         pathitems = []
         for normsubpath in self.normsubpaths:
             pathitems.extend(normsubpath.pathitems())
-        return path(*pathitems)
+        return path.path(*pathitems)
 
     def reversed(self):
         """return reversed path"""

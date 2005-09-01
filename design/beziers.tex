@@ -164,6 +164,52 @@ Decoupled, we get two equations of fourth order,
 \end{align}
 %
 
+\section{Bounding boxes for bezier curves}
 
+The bounding box is defined by the minimal and maximal values of a
+curve. Hence the problem decouples for the two coordintes $x$ and $y$.
+We can search for the minima and maxima within the valid range for the
+parameter $t$ together with taking into account the values at the
+boundaries at $t=0$ and $t=1$.
+
+For the $x$ coordinate we have:
+\begin{align}
+  x(t) & = x_0(1-t)^3 + 3x_1t(1-t)^2 + 3x_2t^2(1-t) + x_3 t^3\\
+       & = (x_3-3x_2+3x_1-x_0)t^3 + (3x_0-6x_1+3x_2)t^2 + (3x_1-3x_0)t + x_0\\
+       & = a\,t^3 + \frac{3}{2}\,b\,t^2 + 3\,c\,t + x_0
+\end{align}
+%
+The constants $a$, $b$, and $c$ are
+%
+\begin{align}
+  a & = x_3-3x_2+3x_1-x_0 \\
+  b & = 2x_0-4x_1+2x_2 \\
+  c & = x_1-x_0
+\end{align}
+%
+Now $\dot x(t)$ is
+%
+\begin{equation}
+  \dot x(t) = 3\left[\,a\,t^2 + b\,t + c\,\right]
+\end{equation}
+%
+For a numerically stable calculation of the roots of the function, we
+first compute
+%
+\begin{equation}
+  q = -\frac{1}{2}\left[\,b+\mathrm{sgn}(b)\sqrt{b^2-4ac}\right]
+\end{equation}
+%
+In case the square root is negative, we only need to take into account
+the values at the boundaries. Otherwise we need to take into account
+the two solutions
+%
+\begin{equation}
+  t_1 = \frac{q}{a} \quad\text{and}\quad t_2 = \frac{c}{q}
+\end{equation}
+%
+Again, for numerical failures (divisions by zero) just need to skip
+the particular solution. The minima and maxima for $x(t)$ can now
+occure at $t=0$, $t=t_1$, $t=t_2$ and $t=1$.
 
 \end{document}

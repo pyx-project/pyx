@@ -70,6 +70,41 @@ class PathException(Exception): pass
 # Bezier helper functions
 ################################################################################
 
+def _bezierpolyrange(x0, x1, x2, x3):
+    tc = [0, 1]
+
+    a = x3 - 3*x2 + 3*x1 - x0
+    b = 2*x0 - 4*x1 + 2*x2
+    c = x1 - x0
+
+    s = b*b - 4*a*c
+    if s >= 0:
+        if b >= 0:
+            q = -0.5*(b+math.sqrt(s))
+        else:
+            q = -0.5*(b-math.sqrt(s))
+
+        try:
+            t = q*1.0/a
+        except ZeroDivisionError:
+            pass
+        else:
+            if 0 < t < 1:
+                tc.append(t)
+
+        try:
+            t = c*1.0/q
+        except ZeroDivisionError:
+            pass
+        else:
+            if 0 < t < 1:
+                tc.append(t)
+
+    p = [(((a*t + 1.5*b)*t + 3*c)*t + x0) for t in tc]
+
+    return min(*p), max(*p)
+
+
 def _arctobcurve(x_pt, y_pt, r_pt, phi1, phi2):
     """generate the best bezier curve corresponding to an arc segment"""
 
@@ -318,7 +353,11 @@ class moveto_pt(pathitem):
         context.y_pt = context.subfirsty_pt = self.y_pt
 
     def updatenormpath(self, normpath, context):
-        normpath.append(normsubpath(epsilon=normpath.normsubpaths[-1].epsilon))
+        if normpath.normsubpaths[-1].epsilon is not None:
+            normpath.append(normsubpath([path.normline_pt(self.x_pt, self.y_pt, self.x_pt, self.y_pt)],
+                                        epsilon=normpath.normsubpaths[-1].epsilon))
+        else:
+            normpath.append(normsubpath(epsilon=normpath.normsubpaths[-1].epsilon))
         context.x_pt = context.subfirstx_pt = self.x_pt
         context.y_pt = context.subfirsty_pt = self.y_pt
 
@@ -374,9 +413,10 @@ class curveto_pt(pathitem):
                                                       self.x3_pt, self.y3_pt)
 
     def updatebbox(self, bbox, context):
-        bbox.includepoint_pt(self.x1_pt, self.y1_pt)
-        bbox.includepoint_pt(self.x2_pt, self.y2_pt)
-        bbox.includepoint_pt(self.x3_pt, self.y3_pt)
+        xmin_pt, xmax_pt = _bezierpolyrange(context.x_pt, self.x1_pt, self.x2_pt, self.x3_pt)
+        ymin_pt, ymax_pt = _bezierpolyrange(context.y_pt, self.y1_pt, self.y2_pt, self.y3_pt)
+        bbox.includepoint_pt(xmin_pt, ymin_pt)
+        bbox.includepoint_pt(xmax_pt, ymax_pt)
         context.x_pt = self.x3_pt
         context.y_pt = self.y3_pt
 
@@ -415,11 +455,16 @@ class rmoveto_pt(pathitem):
         context.subfirsty_pt = context.y_pt
 
     def updatenormpath(self, normpath, context):
-        normpath.append(normsubpath(epsilon=normpath.normsubpaths[-1].epsilon))
         context.x_pt += self.dx_pt
         context.y_pt += self.dy_pt
         context.subfirstx_pt = context.x_pt
         context.subfirsty_pt = context.y_pt
+        if normpath.normsubpaths[-1].epsilon is not None:
+            normpath.append(normsubpath([path.normline_pt(context.x_pt, context.y_pt,
+                                                          context.x_pt, context.y_pt)],
+                                        epsilon=normpath.normsubpaths[-1].epsilon))
+        else:
+            normpath.append(normsubpath(epsilon=normpath.normsubpaths[-1].epsilon))
 
     def outputPS(self, file):
         file.write("%g %g rmoveto\n" % (self.dx_pt, self.dy_pt) )
@@ -473,9 +518,16 @@ class rcurveto_pt(pathitem):
                                                         self.dx3_pt, self.dy3_pt)
 
     def updatebbox(self, bbox, context):
-        bbox.includepoint_pt(context.x_pt + self.dx1_pt, context.y_pt + self.dy1_pt)
-        bbox.includepoint_pt(context.x_pt + self.dx2_pt, context.y_pt + self.dy2_pt)
-        bbox.includepoint_pt(context.x_pt + self.dx3_pt, context.y_pt + self.dy3_pt)
+        xmin_pt, xmax_pt = _bezierpolyrange(context.x_pt,
+                                            context.x_pt+self.dx1_pt,
+                                            context.x_pt+self.dx2_pt,
+                                            context.x_pt+self.dx3_pt)
+        ymin_pt, ymax_pt = _bezierpolyrange(context.y_pt,
+                                            context.y_pt+self.dy1_pt,
+                                            context.y_pt+self.dy2_pt,
+                                            context.y_pt+self.dy3_pt)
+        bbox.includepoint_pt(xmin_pt, ymin_pt)
+        bbox.includepoint_pt(xmax_pt, ymax_pt)
         context.x_pt += self.dx3_pt
         context.y_pt += self.dy3_pt
 
