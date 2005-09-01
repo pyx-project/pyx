@@ -6,6 +6,7 @@ import unittest
 
 from pyx import *
 from pyx.path import *
+from pyx.normpath import normpathparam
 import math
 set(epsilon=1e-7)
 

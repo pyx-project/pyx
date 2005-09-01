@@ -100,6 +100,9 @@ TODO:
     - add rotate methods to path, normpath, normsubpath, and normsubpathitems
     - add flushskippedline to normsubpath
     - add arclentoparam to normsubpath and normsubpathitems
+  - normpath module:
+    - contains normpath, normsubpath and normpathparam which have originally
+      been in the path module
   - deformer module:
     - rewrite smoother to make use of the subnormpath facilities
     - XXX missing numeric fallback in helper
