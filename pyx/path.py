@@ -354,7 +354,7 @@ class moveto_pt(pathitem):
 
     def updatenormpath(self, normpath, context):
         if normpath.normsubpaths[-1].epsilon is not None:
-            normpath.append(normsubpath([path.normline_pt(self.x_pt, self.y_pt, self.x_pt, self.y_pt)],
+            normpath.append(normsubpath([normline_pt(self.x_pt, self.y_pt, self.x_pt, self.y_pt)],
                                         epsilon=normpath.normsubpaths[-1].epsilon))
         else:
             normpath.append(normsubpath(epsilon=normpath.normsubpaths[-1].epsilon))
