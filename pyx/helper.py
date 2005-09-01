@@ -51,13 +51,13 @@ def realpolyroots(coeffs, epsilon=1e-5):
         return realpolyroots(coeffs[1:], epsilon=epsilon)
     else:
 
-        N = len(coeffs)
+        N = len(coeffs) - 1
         # build the Matrix of the polynomial problem
         mat = Numeric.zeros((N, N), Numeric.Float)
         for i in range(N-1):
             mat[i+1][i] = 1
-        for i in range(N-1):
-            mat[0][i] = -coeffs[i+1]/coeffs[0]
+        for i in range(N):
+            mat[0][i] = -coeffs[i+1] / coeffs[0]
         # find the eigenvalues of the matrix (== the zeros of the polynomial)
         zeros = [complex(zero) for zero in LinearAlgebra.eigenvalues(mat)]
         # take only the real zeros
@@ -66,7 +66,7 @@ def realpolyroots(coeffs, epsilon=1e-5):
         ## check if the zeros are really zeros!
         #for zero in zeros:
         #    p = 0
-        #    for i in range(N):
+        #    for i in range(N+1):
         #        p += coeffs[i] * zero**(N-i)
         #    if abs(p) > epsilon:
         #        raise Exception("value %f instead of 0" % p)
