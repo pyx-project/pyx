@@ -2,9 +2,9 @@
 \usepackage{amsmath}
 \newcommand{\sign}{\operatorname{sign}}
 \begin{document}
-\section{Bezier curves with prescribed tangent directions and curvatures at the endpoints}
+\section{B\'ezier curves with prescribed tangent directions and curvatures at the endpoints}
 
-Parameterization of the Bezier curve, for $x(t)$ and $y(t)$ equivalently,
+Parameterization of the B\'ezier curve, for $x(t)$ and $y(t)$ equivalently,
 %
 \begin{align}
   x(t) &= x_0(1-t)^3 + 3x_1t(1-t)^2 + 3x_2t^2(1-t) + x_3 t^3\\
@@ -164,7 +164,7 @@ Decoupled, we get two equations of fourth order,
 \end{align}
 %
 
-\section{Bounding boxes for bezier curves}
+\section{Bounding boxes for B\'ezier curves}
 
 The bounding box is defined by the minimal and maximal values of a
 curve. Hence the problem decouples for the two coordintes $x$ and $y$.
@@ -197,7 +197,7 @@ For a numerically stable calculation of the roots of the function, we
 first compute
 %
 \begin{equation}
-  q = -\frac{1}{2}\left[\,b+\mathrm{sgn}(b)\sqrt{b^2-4ac}\right]
+  q = -\frac{1}{2}\left[\,b+\mathrm{sgn}(b)\sqrt{b^2-4ac}\right]\, .
 \end{equation}
 %
 In case the square root is negative, we only need to take into account
@@ -208,7 +208,7 @@ the two solutions
   t_1 = \frac{q}{a} \quad\text{and}\quad t_2 = \frac{c}{q}
 \end{equation}
 %
-Again, for numerical failures (divisions by zero) just need to skip
+Again, for numerical failures (divisions by zero), we just need to skip
 the particular solution. The minima and maxima for $x(t)$ can now
 occure at $t=0$, $t=t_1$, $t=t_2$ and $t=1$.
 
