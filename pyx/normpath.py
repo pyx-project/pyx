@@ -22,11 +22,6 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-#       - correct bbox for normcurve
-#         (maybe we still need the current bbox implementation (then maybe called
-#          cbox = control box) for normcurve for the use during the
-#          intersection of bpaths)
-
 from __future__ import nested_scopes
 
 import math
@@ -109,6 +104,15 @@ class normsubpathitem:
 
     def bbox(self):
         """return bounding box of normsubpathitem"""
+        pass
+
+    def cbox(self):
+        """return control box of normsubpathitem
+
+        The control box also fully encloses the normsubpathitem but in the case of a Bezier
+        curve it is not the minimal box doing so. On the other hand, it is much faster
+        to calculate.
+        """
         pass
 
     def curveradius_pt(self, params):
@@ -210,6 +214,8 @@ class normline_pt(normsubpathitem):
     def bbox(self):
         return bbox.bbox_pt(min(self.x0_pt, self.x1_pt), min(self.y0_pt, self.y1_pt),
                             max(self.x0_pt, self.x1_pt), max(self.y0_pt, self.y1_pt))
+
+    cbox = bbox
 
     def curveradius_pt(self, params):
         return [None] * len(params)
@@ -418,12 +424,11 @@ class normcurve_pt(normsubpathitem):
         ymin_pt, ymax_pt = path._bezierpolyrange(self.y0_pt, self.y1_pt, self.y2_pt, self.y3_pt)
         return bbox.bbox_pt(xmin_pt, ymin_pt, xmax_pt, ymax_pt)
 
-#        XXX: the old bbox code might be used as controlbox for splitting etc.
-#    def bbox(self):
-#        return bbox.bbox_pt(min(self.x0_pt, self.x1_pt, self.x2_pt, self.x3_pt),
-#                            min(self.y0_pt, self.y1_pt, self.y2_pt, self.y3_pt),
-#                            max(self.x0_pt, self.x1_pt, self.x2_pt, self.x3_pt),
-#                            max(self.y0_pt, self.y1_pt, self.y2_pt, self.y3_pt))
+    def cbox(self):
+        return bbox.bbox_pt(min(self.x0_pt, self.x1_pt, self.x2_pt, self.x3_pt),
+                            min(self.y0_pt, self.y1_pt, self.y2_pt, self.y3_pt),
+                            max(self.x0_pt, self.x1_pt, self.x2_pt, self.x3_pt),
+                            max(self.y0_pt, self.y1_pt, self.y2_pt, self.y3_pt))
 
     def curveradius_pt(self, params):
         result = []
@@ -449,8 +454,11 @@ class normcurve_pt(normsubpathitem):
         return result
 
     def intersect(self, other, epsilon):
-        # we can immediately quit when the bboxes are not overlapping
-        if not self.bbox().intersects(other.bbox()):
+        # There can be no intersection point, when the control boxes are not
+        # overlapping. Note that we use the control box instead of the bounding
+        # box here, because the former can be calculated more efficiently for
+        # Bezier curves.
+        if not self.cbox().intersects(other.cbox()):
             return []
         a, b = self._midpointsplit(epsilon)
         # To improve the performance in the general case we alternate the
