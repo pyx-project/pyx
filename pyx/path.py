@@ -243,7 +243,7 @@ class pathitem:
     def createbbox(self):
         """creates a bbox from the current pathitem
 
-        Returns a bbox instance. Is called, whe a bbox has to be
+        Returns a bbox instance. Is called, when a bbox has to be
         created instead of updating it, i.e. for the very first
         pathitem. Most pathitems do not provide this method.
         updatebbox must not be called for the created instance and the
