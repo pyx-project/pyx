@@ -22,11 +22,6 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-#       - correct bbox for curveto and normcurve
-#         (maybe we still need the current bbox implementation (then maybe called
-#          cbox = control box) for normcurve for the use during the
-#          intersection of bpaths)
-
 from __future__ import nested_scopes
 
 import math
