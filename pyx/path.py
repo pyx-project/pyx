@@ -455,7 +455,7 @@ class rmoveto_pt(pathitem):
         context.subfirstx_pt = context.x_pt
         context.subfirsty_pt = context.y_pt
         if normpath.normsubpaths[-1].epsilon is not None:
-            normpath.append(normsubpath([path.normline_pt(context.x_pt, context.y_pt,
+            normpath.append(normsubpath([normline_pt(context.x_pt, context.y_pt,
                                                           context.x_pt, context.y_pt)],
                                         epsilon=normpath.normsubpaths[-1].epsilon))
         else:
