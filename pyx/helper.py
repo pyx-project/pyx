@@ -35,20 +35,20 @@ class nodefault:
 
 import Numeric, LinearAlgebra
 
-def realpolyroots(coeffs, epsilon=1e-5):
+def realpolyroots(coeffs, epsilon=1e-5, polish=0):
 
     """returns the roots of a polynom with given coefficients
 
     This helper routine uses the package Numeric to find the roots
     of the polynomial with coefficients given in coeffs:
-      0 = \sum_{i=0}^N x^{N-i} coeffs[i]
+      0 = \sum_{i=0}^N x^i coeffs[i]
     The solution is found via an equivalent eigenvalue problem
     """
 
     try:
-        1.0 / coeffs[0]
+        1.0 / coeffs[-1]
     except:
-        return realpolyroots(coeffs[1:], epsilon=epsilon)
+        roots = realpolyroots(coeffs[:-1], epsilon=epsilon)
     else:
 
         N = len(coeffs) - 1
@@ -57,19 +57,34 @@ def realpolyroots(coeffs, epsilon=1e-5):
         for i in range(N-1):
             mat[i+1][i] = 1
         for i in range(N):
-            mat[0][i] = -coeffs[i+1] / coeffs[0]
-        # find the eigenvalues of the matrix (== the zeros of the polynomial)
-        zeros = [complex(zero) for zero in LinearAlgebra.eigenvalues(mat)]
-        # take only the real zeros
-        zeros = [zero.real for zero in zeros if -epsilon < zero.imag < epsilon]
+            mat[0][i] = -coeffs[N-1-i] / coeffs[N]
+        # find the eigenvalues of the matrix (== the roots of the polynomial)
+        roots = [complex(root) for root in LinearAlgebra.eigenvalues(mat)]
+        # take only the real roots
+        roots = [root.real for root in roots if -epsilon < root.imag < epsilon]
 
-        ## check if the zeros are really zeros!
-        #for zero in zeros:
-        #    p = 0
-        #    for i in range(N+1):
-        #        p += coeffs[i] * zero**(N-i)
-        #    if abs(p) > epsilon:
-        #        raise Exception("value %f instead of 0" % p)
+        # polish the roots with Newton-Raphson
+        if polish:
+            def polish(root, epsilon):
+                polynom = 2*epsilon
+                while abs(polynom) > epsilon:
+                    polynom = coeffs[N]*root + coeffs[N-1]
+                    poprime = coeffs[N]*N
+                    for i in range(N-2,-1,-1):
+                        polynom = polynom*root + coeffs[i]
+                        poprime = poprime*root + coeffs[i+1]*(i+1)
+                    root -= polynom / poprime
+                return root
 
-    return zeros
+            roots = [polish(root, epsilon) for root in roots]
+
+        # # check if the roots are really roots!
+        # for root in roots:
+        #     polynom = coeffs[N]*root + coeffs[N-1]
+        #     for i in range(N-2,-1,-1):
+        #         polynom = polynom*root + coeffs[i]
+        #     if abs(polynom) > epsilon:
+        #         raise Exception("value %f instead of 0" % polynom)
+
+    return roots
 
