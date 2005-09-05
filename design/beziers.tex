@@ -1,9 +1,13 @@
 \documentclass{article}
 \usepackage{amsmath}
+\usepackage{array}
 \newcommand{\sign}{\operatorname{sign}}
+
 \begin{document}
+
 \section{B\'ezier curves with prescribed tangent directions and curvatures at the endpoints}
 
+% <<<
 Parameterization of the B\'ezier curve, for $x(t)$ and $y(t)$ equivalently,
 %
 \begin{align}
@@ -141,31 +145,59 @@ Alltogether, we find the system of equations that is to be solved.
 \begin{gather}
   \begin{aligned}
     0 &= \frac{3}{2} \kappa(0) \alpha^2 \sign(\alpha) + \beta T - D \\
-    0 &= \frac{3}{2} \kappa(1) \beta^2 \sign(\beta) + \alpha T + E
+    0 &= \frac{3}{2} \kappa(1) \beta^2 \sign(\beta) + \alpha T - E
   \end{aligned}\\[\medskipamount]
   \begin{aligned}
     T &:= t_x(0)t_y(1) - t_y(0)t_x(1) \\
     D &:= \bigl[t_x(0) (y_3-y_0) - t_y(0) (x_3-x_0)\bigr]\\
-    E &:= \bigl[t_x(1) (y_3-y_0) - t_y(1) (x_3-x_0)\bigr]
+    E &:= \bigl[t_x(1) (y_0-y_3) - t_y(1) (x_0-x_3)\bigr]
   \end{aligned}
 \end{gather}
 %
-Decoupled, we get two equations of fourth order,
+Decoupling the two equations causes problems with the absolute values,
+%
+\begin{align}
+  \alpha = \frac{1}{T}\left(E - \frac{3}{2}\kappa(1)\beta |\beta |\right)\quad\text{and}\quad
+  \beta  = \frac{1}{T}\left(D - \frac{3}{2}\kappa(0)\alpha|\alpha|\right)
+\end{align}
+%
+Thus, for $\alpha>0$ and $\beta>0$ we need also
+%
+\begin{align}
+  \frac{1}{T}\left(E - \frac{3}{2}\kappa(1)\beta |\beta |\right) > 0\quad\text{and}\quad
+  \frac{1}{T}\left(D - \frac{3}{2}\kappa(0)\alpha|\alpha|\right) > 0
+\end{align}
+%
+which is not always guaranteed. E.g. the combination
+%
+\begin{equation}
+  T>0,\quad E<0\quad\text{and}\quad \kappa(1)>0
+\end{equation}
+%
+is not compatible with a positive value of $\beta$. Under what circumstances do
+we get such geometrically invalid results? Tests show that even allowing
+arbitrary signs of the curvatures $\kappa(0)$~and $\kappa(1)$ does not help in
+all cases.
+
+Only when all the signs are correct, we can construct the solution by
+decoupling the equations,
 %
 \begin{align}
   0 &= \frac{27}{8} \kappa(0)^2\kappa(1) \alpha^4
      - \frac{9}{2}D\kappa(0)\kappa(1)\alpha^2
      + T^3 \alpha
-     + E T^2 + \frac{3}{2}\kappa(1) D^2 \\
+     - E T^2 + \frac{3}{2}\kappa(1) D^2 \\
    0 &= \frac{27}{8} \kappa(0)\kappa(1)^2\beta^4
-     + \frac{9}{2}E\kappa(0)\kappa(1)\beta^2
+     - \frac{9}{2}E\kappa(0)\kappa(1)\beta^2
      + T^3 \beta
      - D T^2 + \frac{3}{2}\kappa(0) E^2
 \end{align}
 %
+% >>>
 
 \section{Bounding boxes for B\'ezier curves}
 
+% <<<
 The bounding box is defined by the minimal and maximal values of a
 curve. Hence the problem decouples for the two coordintes $x$ and $y$.
 We can search for the minima and maxima within the valid range for the
@@ -212,4 +244,8 @@ Again, for numerical failures (divisions by zero), we just need to skip
 the particular solution. The minima and maxima for $x(t)$ can now
 occur at $t=0$, $t=t_1$, $t=t_2$ and $t=1$.
 
+% >>>
+
 \end{document}
+
+% vim:foldmethod=marker:foldmarker=<<<,>>>
