@@ -79,7 +79,7 @@ def controldists_from_endpoints_pt (A, B, tangA, tangB, curvA, curvB): # <<<
     # some shortcuts
     T = tangA[0] * tangB[1] - tangA[1] * tangB[0]
     D = tangA[0] * (B[1]-A[1]) - tangA[1] * (B[0]-A[0])
-    E = tangB[0] * (B[1]-A[1]) - tangB[1] * (B[0]-A[0])
+    E = tangB[0] * (A[1]-B[1]) - tangB[1] * (A[0]-B[0])
     a, b = None, None
 
 
@@ -88,8 +88,8 @@ def controldists_from_endpoints_pt (A, B, tangA, tangB, curvA, curvB): # <<<
         1.0 / T
     except ZeroDivisionError:
         try:
-            a = math.sqrt( 2.0 * D / (3.0 * curvA))
-            b = math.sqrt(-2.0 * E / (3.0 * curvB))
+            a = math.sqrt(2.0 * D / (3.0 * curvA))
+            b = math.sqrt(2.0 * E / (3.0 * curvB))
         except ZeroDivisionError:
             a = b = None
     else:
@@ -97,12 +97,12 @@ def controldists_from_endpoints_pt (A, B, tangA, tangB, curvA, curvB): # <<<
             1.0 / curvA
         except ZeroDivisionError:
             b = D / T
-            a = (-1.5*curvB*b*b - E) / T
+            a = (-1.5*curvB*b*b + E) / T
         else:
             try:
                 1.0 / curvB
             except ZeroDivisionError:
-                a = -E / T
+                a = E / T
                 b = (-1.5*curvA*a*a + D) / T
             else:
                 a, b = None, None
@@ -115,10 +115,10 @@ def controldists_from_endpoints_pt (A, B, tangA, tangB, curvA, curvB): # <<<
 
         # for the derivation see /design/beziers.tex
         #     0 = Ga(a,b) = 0.5 a |a| curvA + b * T - D
-        #     0 = Gb(a,b) = 0.5 b |b| curvB + a * T + E
+        #     0 = Gb(a,b) = 0.5 b |b| curvB + a * T - E
 
-        coeffs_a = (3.375*curvA*curvA*curvB, 0, -4.5*curvA*curvB*D, T**3, 1.5*curvB*D*D + T*T*E)
-        coeffs_b = (3.375*curvA*curvB*curvB, 0,  4.5*curvA*curvB*E, T**3, 1.5*curvA*E*E - T*T*D)
+        coeffs_a = (1.5*curvB*D*D - T*T*E, T**3, -4.5*curvA*curvB*D, 0, 3.375*curvA*curvA*curvB)
+        coeffs_b = (1.5*curvA*E*E - T*T*D, T**3, -4.5*curvA*curvB*E, 0, 3.375*curvA*curvB*curvB)
 
         # First try the equation for a
         cands_a = [cand for cand in helper.realpolyroots(coeffs_a) if cand > 0]
@@ -131,7 +131,7 @@ def controldists_from_endpoints_pt (A, B, tangA, tangB, curvA, curvB): # <<<
             cands_b = [cand for cand in helper.realpolyroots(coeffs_b) if cand > 0]
             if cands_b:
                 b = min(cands_b)
-                a = (-1.5*curvB*b*b - E) / T
+                a = (-1.5*curvB*b*b + E) / T
             else:
                 a = b = None
 
@@ -600,9 +600,16 @@ class parallel(deformer): # <<<
     """
 
     # TODO:
-    # - check for greatest curvature and introduce extra corners
-    #   if a normcurve is too heavily curved
-    # - do relerr-checks at better points than just at parameter 0.5
+    # - get range of curvatures
+    #   (via extremal calculation + curvature at endpoints)
+    #   if curv is too big/small everywhere: return no path
+    #   if curv is OK everywhere: proceed as usual
+    #   if curv is OK somewhere: split the path and proceed with the OK part only
+    #                            add an extra critical corner ending with curv=infty
+    # - to random testing for the geometric solution
+    #   (if no solution exists: split and try again)
+    # - the splitting also for non-existing intersection points
+    #
 
     def __init__(self, distance, relerr=0.05, expensive=1):
         self.distance = distance
@@ -628,7 +635,6 @@ class parallel(deformer): # <<<
 
         distance = unit.topt(self.distance)
         relerr = self.relerr
-        expensive = self.expensive
         epsilon = orig_nspath.epsilon
 
         new_nspath = path.normsubpath(epsilon=epsilon)
@@ -685,7 +691,7 @@ class parallel(deformer): # <<<
                 new_npitems = [path.normline_pt(A[0], A[1], D[0], D[1])]
             elif isinstance(npitem, path.normcurve_pt):
                 # call a function to return a list of controlpoints
-                cpoints_list = parallel_curvespoints_pt(npitem, distance, expensive, relerr, epsilon)
+                cpoints_list = parallel_curvespoints_pt(npitem, distance, self.expensive, relerr, epsilon)
                 new_npitems = []
                 for cpoints in cpoints_list:
                     A,B,C,D = cpoints
@@ -695,7 +701,7 @@ class parallel(deformer): # <<<
 
 
             # append the next piece of the path:
-            # it might contain of an extra arc or must be intersected before appending
+            # it might contain an extra arc or must be intersected before appending
             parallel = (OldEndTang[0]*CurBegTang[1] - OldEndTang[1]*CurBegTang[0])
             if parallel*distance < -epsilon:
 
