@@ -77,29 +77,32 @@ dürfte.
 
 \section{Grundlagen für Vektorgraphiken: Pfade}
 
-Wie bereits erwähnt, abstrahiert \PyX{} das PostScript Pfadsystem, in dem Pfade als
-mathematische Objekte aufgefasst werden, also keine Linienbreite o.ä.
-besitzen. Pfade bestehen aus einzelnen Pfadelementen, wobei geraden
-Linienstücke, Bezierkurven und Kreissegmente zur Verfügung stehen.
-Zusätzlich lässt sich der aktuelle Punkt beim Pfadaufbau neu setzen,
-so dass Pfade möglich sind, die aus mehreren Pfadteilen bestehen.
-Natürlich können (Teil-)Pfade auch geschlossen werden.
+Wie bereits erwähnt, abstrahiert \PyX{} das PostScript Pfadsystem.
+Dabei lassen sich Pfade aus einzelnen Pfadelementen zusammensetzen,
+wobei gerade Linienstücke, Bezierkurven und Kreissegmente zur
+Verfügung stehen. Zusätzlich lässt sich der aktuelle Punkt beim
+Pfadaufbau neu setzen, so dass Pfade möglich sind, die aus mehreren,
+nicht zusammenhängenden Pfadteilen bestehen.  Natürlich können
+(Teil-)Pfade auch geschlossen werden.
 
-Diese Grundfunktionalität zur Beschreibung von Pfaden wird ergänzt
-durch eine Vielzahl an geometrischen Operationen, die mit Pfaden
-ausgeführt werden können. Pfade lassen sich in Teilstücke zerschneiden
-und neue Pfade aus bestehenden zusammensetzen. Die Parametrisierung
-eines Pfades ist aufgrund der Bogenlänge möglich wie auch mittels
-einer internen Parametrisierung auf der Basis der im Pfad enthaltenen
-Pfadelemente. Die Bestimmung von Schnittpunkten zwischen Pfaden und
-geometrische Eigenschaften entlang des Pfades wie Tangente und
-Krümmungsradius runden den Funktionsumfang ab. Für viele dieser
-Funktionen ist es notwendig, Pfade in sogenannte Normpfade zu
-überführen, die nur noch aus Linien und Bezierkurven bestehen und eine
-definierte, einstellbare Rechengenauigkeit besitzen. Dieser
-Konvertierungsschritt kann zwar explizit angestoßen werden, wird
-ansonsten aber auch automatisch ausgeführt, sobald die Konvertierung
-aufgrund der angeforderten Funktionen notwendig wird.
+%Dabei werden Pfade als mathematische Objekte aufgefasst, also
+%keine Linienbreite o.ä.  besitzen. 
+
+\PyX{} ergänzt diese Grundfunktionalität zur Beschreibung von Pfaden
+durch eine Vielzahl an geometrischen Operationen, die auf Pfaden
+angewendet werden können. Beispielsweise lassen sich Pfade in
+Teilstücke zerschneiden und neue Pfade aus bestehenden zusammensetzen.
+Die Parametrisierung eines Pfades ist sowohl aufgrund der Bogenlänge
+möglich wie auch mittels einer internen Parametrisierung auf der Basis
+der im Pfad enthaltenen Pfadelemente. Weiterhin möglich ist die
+Bestimmung von Schnittpunkten zwischen Pfaden und von geometrische
+Eigenschaften entlang des Pfades, wie Tangenten und Krümmungsradien.
+Für viele dieser Funktionen ist es notwendig, Pfade in sogenannte
+Normpfade zu überführen, die nur noch aus Linien und Bezierkurven
+bestehen und eine definierte, einstellbare Rechengenauigkeit besitzen.
+Diese Konvertierung geschieht automatisch, sobald es für die
+angeforderten Operationen notwendig ist, kann aber auch auch explizit
+durchgeführt werden.
 
 XXX warum nicht was zum Anfang malen, ist doch die Hauptaufgabe von
 \PyX{}, oder?
@@ -111,6 +114,10 @@ bestimmt werden. Dies erledigt folgendes kleine Python-Script:
 \end{quote}
 Abgespeichert als Datei \verb|unitcircle.py| kann es mit dem Befehl
 \verb|python unitcircle.py| ausgeführt werden.
+
+XXX im folgenden sind wir schon ganz schön tief drinnen, obwohl wir
+noch gar nichts gezeigt haben. Der weniger geneigte Leser sagt hier
+eventuell ade. Ist also vielleicht ein schlechtes Beispiel, oder?
 
 In der ersten Zeile dieses Beispiels werden die \PyX{}-Module geladen.
 Die zweite Zeile legt einen Einheitskreis an der Koordinatenposition
@@ -148,7 +155,7 @@ versehen werden. Diese Aufgabe wird von sogenannten Dekoratoren
 ausgeführt, die dekorierte Pfade erzeugen, die neben dem Pfad selbst
 auch Attribute für das Zeichnen und Füllen des Pfades enthalten.
 Zusätzlich können dekorierte Pfade Teile des ursprünglichen Pfades vom
-Zeichnen ausschließen und sogenannte Ornamente wie beispielsweise
+Zeichnen ausschließen und Verziehrungen wie beispielsweise
 Pfeilspitzen anbringen. Es ist möglich, mehrere Dekoratoren zusammen
 oder sogar ineinander wirken zu lassen. Um das am Beispiel eines
 Pfeiles zu demonstrieren, benötigt man noch eine Zeichenfläche, die
@@ -156,7 +163,9 @@ man nach Einfügen des dekorierten Pfades in eine PostScript oder PDF
 Datei ausgeben kann. Der entsprechende Quelltext lautet:
 
 XXX der Pfeil sieht ehrlicherweise nicht so toll aus (wegen der
-gestrichelten Linie
+gestrichelten Linie -> als erstes Beispiel nicht optimal (TeX-Fritzen
+sind doch visuell empfindliche Zeitgenossen) Notfalls lassen wir
+einfach die gestrichelte Linie weg.
 
 \begin{quote}
 \lstinputlisting{arrow.py}
@@ -191,8 +200,8 @@ hinzufügen. In Wirklichkeit ist Zeile 7 in Beispiel also identisch zu
 \verb|c.show(p, [deco.stoked, style.linestyle.dashed, a])|. Hier
 werden also Dekoratoren und Zeichenattribute auf der selben
 Hierarchieebene gemischt, was bedeutet, dass die Zeichenattribute dann
-für alle Dekoratoren zu verwenden sind. Doch halt, das entspricht ja
-gar nicht dem, was in der Abbildung gezeigt ist. Dort ist nämlich die
+für alle Dekoratoren zu verwenden sind. Soweit so gut, doch der
+aufmerksame Leser mag einwenden, dass das gar nicht dem entspricht, was in der Abbildung gezeigt ist. Dort ist nämlich die
 Umrandung des Pfeils nicht gestrichelt. In der Tat würde diese Linie
 gestrichelt dargestellt, hätte nicht bereits der Pfeildekorator
 \verb|deco.earrow.large| die Eigenschaft, den Linienstil für seinen
@@ -209,25 +218,32 @@ Dekoratoren überhaupt darzustellen und einmal vorgefertigt immer
 einsatzbereit zur Verfügung zu haben. Der Pfeildekorator, der
 automatisch auf durchgezogene Linien schaltet, ist so ein Beispiel,
 das zunächst unnötig komplex anmutet, aber im praktischen
-Anwendungsfall beinahe immer dem vorgreift, was man sowieso haben
-möchte.
+Anwendungsfall beinahe immer automatisch das gewünschte Ergebnis liefert.
+
 
 \section{Modifikation von Pfaden: Deformatoren}
 
-Deformatoren werden dazu verwendet, einen gegebenen beliebigen Pfad
-in einen anderen Pfad umzuwandeln. Ein ganz einfaches Beispiel sind
-affine Transformationen wie ein Verschieben oder eine Rotation.
-Mehrere solche Umformungen sind normalerweise nicht kommutativ. Man
-kann Pfade explizit umformen, indem man die \verb|deform|-Methode
-eines Deformators verwendet, aber es ist auch möglich, Deformatoren
-bei der Ausgabe eines Pfades direkt anzuwenden. Allerdings müssen die
-Deformatoren direkt auf der ersten Hierarchieebene angegeben sein,
-können also nicht als Argumente von Dekoratoren auftreten.
-Deformatoren werden dann stets in der Reihenfolge ihres Auftretens
-noch vor dem Dekorieren auf den gegebenen Pfad angewendet. Durch diese
-Einschränkungen bleibt das Ganze durchschaubar und vor allem auch
-wohldefiniert. Trotzdem lassen sich damit sehr elegante Ergebnisse
-erreichen, wie das folgende Beispiel illustriert:
+Deformatoren werden dazu verwendet, einen gegebenen beliebigen Pfad in
+einen anderen Pfad umzuwandeln. Ein ganz einfaches Beispiel sind
+affine Transformationen wie die Translation oder die Rotation eines
+Pfads.  Mehrere solche Umformungen sind normalerweise nicht
+kommutativ. 
+
+XXX hier kommt die komplizierte Methode vor der einfachen. 
+Ebenso wird gleich auf ein Problem (Hierarchieebenen) hingewiesen,
+das für viele Benutzer gar keines sein dürfte.
+
+Man kann Pfade explizit umformen, indem man die
+\verb|deform|-Methode eines Deformators verwendet, aber es ist auch
+möglich, Deformatoren bei der Ausgabe eines Pfades direkt anzuwenden.
+Allerdings müssen die Deformatoren direkt auf der ersten
+Hierarchieebene angegeben sein, können also nicht als Argumente von
+Dekoratoren auftreten.  Deformatoren werden dann stets in der
+Reihenfolge ihres Auftretens noch vor dem Dekorieren auf den gegebenen
+Pfad angewendet. Durch diese Einschränkungen bleibt das Ganze
+durchschaubar und vor allem auch wohldefiniert. Trotzdem lassen sich
+damit sehr elegante Ergebnisse erreichen, wie das folgende Beispiel zeigt,
+das drei, kreisförmig angeordnete, durch Federn verbundene Massen darstellt.
 \begin{quote}
 \lstinputlisting{springs.py}
 \end{quote}
@@ -238,24 +254,24 @@ erreichen, wie das folgende Beispiel illustriert:
 \end{figure}
 Das Ergebnis ist in Abbildung~\ref{fig:springs} zu sehen.
 
-Bei der Besprechung dieses Beispiels kann man die ersten 10 Zeilen
-sicher getrost überspringen, denn dort passiert außer vorbereitenden
-Maßnahmen nichts besonderes. In Zeile 11 wird ein Pfad generiert, der
-später in die drei Federn umgeformt werden soll. Dazu wird in Zeile 12
-und 13 zunächst eine Liste von Bogenlängen erzeugt, auf denen die
-Massen platziert werden. Die Variable \verb|i| läuft mittels Python's
-\verb|range|-Funktion über die Werte \verb|0|, \verb|1|, und \verb|2|.
-Mit der Schleife beginnend auf Zeile 14 wird der ursprüngliche
-\verb|springcircle| in drei Einzelteile zerlegt, die der Variable
-\verb|springsegment| zugewiesen sind. Mit einem geeigneten
-Zykliod-Deformator kann dieses Pfadstück in den Zeilen 15-17 direkt
-ausgegeben werden. Interessant ist auch der zweite Deformator, der auf
-Zeile 17 steht. Dieser glättet den gegeben Pfad, was in diesem
-Beispiel zu den etwas abgerundet angedeuteten Übergängen zwischen den
-geraden Federendstücken und dem gedrillten Federmittelstück führt. In
-Zeile 18 und 19 werden die drei Massen gezeichnet und die Zeilen 20
-und 21 fügen die beiden Kreise hinzu, die das skizzierte Massesystem
-in eine Kreisbahn einschließen.
+In den ersten zehn Zeilen dieses Beispiels wird wie vorher gezeigt das
+\PyX-Paket geladen, ein paar Parameter definiert und eine
+Zeichenfläche erzeugt. Interessant wird es ab Zeile 11, wo ein
+kreisförmiger Pfad generiert wird, der später in die drei Federn
+umgeformt werden soll.  Dazu wird in Zeile 12 und 13 zunächst eine
+Liste von Bogenlängen erzeugt, auf denen die Massen platziert werden.
+Die Variable \verb|i| läuft mittels Python's \verb|range|-Funktion
+über die Werte \verb|0|, \verb|1|, und \verb|2|.  Mit der Schleife
+beginnend auf Zeile 14 wird der ursprüngliche \verb|springcircle| in
+drei Einzelteile zerlegt, die der Variable \verb|springsegment|
+zugewiesen sind. Mit einem geeigneten Zykliod-Deformator kann dieses
+Pfadstück in den Zeilen 15--17 direkt ausgegeben werden. Interessant
+ist auch der zweite Deformator, der auf Zeile 17 steht. Dieser glättet
+den gegeben Pfad, was in diesem Beispiel zu den etwas abgerundet
+angedeuteten Übergängen zwischen den geraden Federendstücken und dem
+gedrillten Federmittelstück führt. In Zeile 18 und 19 werden die drei
+Massen gezeichnet und die Zeilen 20 und 21 fügen die beiden Kreise
+hinzu, die das skizzierte Massesystem einschließen.
 % Die Bestimmung der Schwingungsmoden dieses System soll hier nicht
 % weiter verfolgt werden, gehört das doch eher in eine einführende
 % Mechanik-Vorlesung denn in die Technische Komödie.
@@ -267,7 +283,7 @@ verwendet. Die Herausforderung besteht dabei darin, diese Programme
 möglichst perfekt in das Graphiksystem zu integrieren. Zu diesem Zweck
 ist im \verb|text|-Modul ein \verb|texrunner| implementiert, dessen
 Instanzen jeweils ein laufendes \TeX{} oder \LaTeX{} steuern.
-Normalerweise wird nur ein solcher \verb|texrunner| benötigt und
+Normalerweise wird nur ein einziger solcher \verb|texrunner| benötigt und
 dieser wird von dem System als \verb|defaulttexrunner| auch schon zu
 Beginn initialisiert. Die wesentlichen Schritte bei der Erzeugung von
 Text sind dann:
@@ -293,7 +309,7 @@ sie in der vorhandenen \TeX-Installation zur Verfügung steht und damit
 die \verb|dvi|-Datei zu analysieren, ohne \TeX{} bzw. \LaTeX{} beenden
 zu müssen.
 \item \PyX{} baut aus den Daten, die in der \verb|dvi|-Datei stehen,
-entsprechenden PostScript bzw. PDF Code. Dabei werden momentan
+entsprechenden PostScript- bzw. PDF-Code. Dabei werden momentan
 ausschließlich Type1-Fonts verwendet, wie sie bei aktuellen
 \TeX-Installation auch von dvips oder pdf\TeX{} benutzt werden.
 \PyX{} arbeitet ähnlich zu diesen Programmen und verwendet die
@@ -301,10 +317,10 @@ vorhandene \TeX{}-Installation, löst also virtuelle Fonts auf,
 schlägt in der vorliegenden \verb|map|-Datei nach und baut die
 Type1-Fonts heruntergerechnet auf die benötigten Gylphen ein. Im
 Grunde ist ein kleiner Teil von \PyX{} also ein \verb|dvips| und ein
-\verb|dvipdf|. In der Tat steht ein kleines Kommandozeilenprogramm zur
-Verfügung, welches aus einer gegebenen \verb|dvi|-Datei eine
+\verb|dvipdf|.\footnote{In der Tat steht ein kleines Kommandozeilenprogramm zur
+Verfügung, welches aus einer gegebenen \texttt{dvi}-Datei eine
 PostScript oder eine PDF-Datei erzeugt. Eine solche Funktionalität ist
-auf der Basis von \PyX{} mit einer handvoll Zeilen implementiert.
+auf der Basis von \PyX{} mit einer handvoll Zeilen implementiert.}  
 \item Der \verb|dvi|-Interpreter von \PyX{} unterstützt einen
 wohldefinierten Satz an \verb|\special|-Anweisungen. Eine Anpassung an
 die \verb|graphic[s/x]|- und \verb|color|-Pakete wird mitgeliefert.
@@ -323,8 +339,7 @@ kleines Programm:
 \lstinputlisting{text.py}
 \end{quote}
 Die entstehende Ausgabe lohnt nicht des Abdrucks als extra Abbildung
--- in der Ausgabedatei erscheint schlicht und einfach der Text
-\glqq{}Das ist eine Textausgabe mit \TeX.\grqq{}
+-- in der Ausgabedatei erscheint schlicht und einfach der angegebene Text.
 
 Neu an diesem Beispiel ist nur die dritte Zeile, in der die
 \verb|canvas|-Methode \verb|text| aufgerufen wird. Diese fügt einen
@@ -366,7 +381,9 @@ das graphinterne Koordinatensystem umzurechnen. Dabei ist es möglich,
 als Eingabedaten auch anderes als kontinuierliche Zahlen zu verwenden.
 beispielsweise sind diskrete Achsen möglich, wie sie für die saubere
 Implementation von Balkengraphen unverzichtbar sind. Auch
-Achsenteilungen sind möglich, indem man kontinuierliche Achsen in
+Achsenteilungen 
+% XXX was meinst Du hier mit Achsenteilungen? Splitaxis?
+sind möglich, indem man kontinuierliche Achsen in
 diskret geteilte Achsen schachtelt.
 
 Außerdem müssen Achsen eine graphische Repräsentation ihrer selbst
@@ -414,7 +431,17 @@ halt auch eher unspektakuläres Beispiel zu zeigen, deshalb hier ein
 Verweis auf die \PyX-Beispielseite, die online unter
 \url{http://pyx.sourceforge.net/examples/} zu finden ist.
 
+XXX Vielleicht doch ein einfaches, nettes Beispiel??? Sinus mit
+pi-Achse, oder?
+
+
 \section{Entwicklung von \PyX}
+
+XXX wie gesagt -> löschen (bis auf den letzten Absatz)
+
+Aber: wir brauchen noch was zu den ausgefalleneren TeX-Sachen
+und einen Ausblick in die Zukunft.
+
 
 Das \PyX-Projekt ist, wie wohl die Mehrzahl der OpenSource-Projekte,
 zunächst aus Eigenbedarf der beiden Projektgründer und
