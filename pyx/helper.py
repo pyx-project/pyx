@@ -50,6 +50,10 @@ def realpolyroots(coeffs, epsilon=1e-5, polish=0):
     except:
         roots = realpolyroots(coeffs[:-1], epsilon=epsilon)
     else:
+        # divide the coefficients by the maximal order
+        # this is to be done in the matrix, anyhow and
+        # makes checking more stable
+        coeffs = [coeff/coeffs[-1] for coeff in coeffs]
 
         N = len(coeffs) - 1
         # build the Matrix of the polynomial problem
@@ -57,7 +61,7 @@ def realpolyroots(coeffs, epsilon=1e-5, polish=0):
         for i in range(N-1):
             mat[i+1][i] = 1
         for i in range(N):
-            mat[0][i] = -coeffs[N-1-i] / coeffs[N]
+            mat[0][i] = -coeffs[N-1-i]
         # find the eigenvalues of the matrix (== the roots of the polynomial)
         roots = [complex(root) for root in LinearAlgebra.eigenvalues(mat)]
         # take only the real roots
