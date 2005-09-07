@@ -40,7 +40,8 @@ TODO:
     - what should we do for palette when only one entry
   - deformer module:
     - move helper path routines to some more generic place for paths?
-    - repair the parallel deformer
+    - make the curve generation by tangents and curvatures stable
+    - rewrite the parallel deformer
   - open discussion:
     - clearly distingish between readers and writers. dvifile, epsfile, etc. might
       be renamed to dvireader, epsreader ...
@@ -62,6 +63,7 @@ TODO:
       styles: document what data name the styles accept (require). Try also to be more
       userfriendly and not to describe immediately the internals of the implementation:
       (see e.g. class.style.symbol)
+    - include the deformer docu somewhere in path
 
   FAQ:
     - describe creation and modification (inplace and ``modify by new'') of
