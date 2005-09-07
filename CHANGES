@@ -13,7 +13,6 @@ TODO:
     - when all titles are None, a graph key currently raises an exception
     - translatecanvas should be the default in graph.style.symbol
   - graph.style and graph.data modules
-    - exceptions in drawsymbol & friends...
     - fix docu of gridattrs functionality of axis painters
       (how can one, e.g. draw a grid at the ticks and not at the subticks)
   - graph.data module:
@@ -108,7 +107,7 @@ TODO:
       been in the path module
   - deformer module:
     - rewrite smoother to make use of the subnormpath facilities
-    - XXX missing numeric fallback in helper
+    - TODO: missing numeric fallback in helper
   - connector module:
     - boxdists parameter need to be a list/tuple of two items now
   - trafo module:
