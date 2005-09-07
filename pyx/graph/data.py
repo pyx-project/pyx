@@ -47,16 +47,16 @@ except NameError:
         return result
 
 
-def _splitatvalue(x, *splits):
+def splitatvalue(value, *splitpoints):
     section = 0
-    while section < len(splits) and splits[section] < x:
+    while section < len(splitpoints) and splitpoints[section] < value:
         section += 1
-    if len(splits) > 1:
+    if len(splitpoints) > 1:
         if section % 2:
-            section = None
+            section = (None, value)
         else:
             section >>= 1
-    return (section, x)
+    return (section, value)
 
 
 _mathglobals = {"neg": lambda x: -x,
@@ -77,8 +77,8 @@ _mathglobals = {"neg": lambda x: -x,
                 "asind": lambda x: 180/math.pi*math.asin(x),
                 "acosd": lambda x: 180/math.pi*math.acos(x),
                 "atand": lambda x: 180/math.pi*math.atan(x),
-                "norm": lambda x, y: math.sqrt(x*x + y*y),
-                "splitatvalue": _splitatvalue,
+                "norm": lambda x, y: math.hypot(x, y),
+                "splitatvalue": splitatvalue,
                 "pi": math.pi,
                 "e": math.e}
 

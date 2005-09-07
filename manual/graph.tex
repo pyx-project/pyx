@@ -364,10 +364,6 @@ graph. The classes are implemented in \module{graph.data}.
   \var{**columns}. You may set \var{title} to \code{None} to disable
   the title.
 
-  \var{context} allows for accessing external variables and functions
-  when evaluating mathematical expressions for columns. As an example
-  you may use \code{context=locals()} or something similar.
-
   Finally, \var{columns} define columns out of the existing columns
   from the file by a column number or a mathematical expression (see
   below). When \var{copy} is set the names of the columns in the file
@@ -398,6 +394,13 @@ graph. The classes are implemented in \module{graph.data}.
   when \var{replacedollar} is set. They will be translated into
   function calls to \var{columncallback}, which is a function to
   access column data by index or name.
+
+  \var{context} allows for accessing external variables and functions
+  when evaluating mathematical expressions for columns. Additionally
+  to the identifiers in \var{context}, the file column names, the
+  \var{columncallback} function and the functions shown in the table
+  ``builtins in math expressions'' at the end of the section are
+  available.
 
   Example:
   \begin{verbatim}
@@ -440,8 +443,7 @@ For the sake of completeness we list the default patterns:
   This class creates graph data from a function. \var{expression} is
   the mathematical expression of the function. It must also contain
   the result variable name including the variable the function depends
-  on by assignment. Thus a typical example looks like
-  \code{"y(x)=sin(x)"}.
+  on by assignment. A typical example looks like \code{"y(x)=sin(x)"}.
 
   \var{title} is the title of the data to be used in the graph key. By
   default \var{expression} is used. You may set \var{title} to
@@ -454,8 +456,9 @@ For the sake of completeness we list the default patterns:
   points are choosen linearly in terms of graph coordinates.
 
   \var{context} allows for accessing external variables and functions.
-  As an example you may use \code{context=locals()} or something
-  similar.
+  Additionally to the identifiers in \var{context}, the variable name
+  and the functions shown in the table ``builtins in math
+  expressions'' at the end of the section are available.
 \end{classdesc} % }}}
 
 \begin{classdesc}{paramfunction}{varname, min, max, expression, % {{{
@@ -469,15 +472,17 @@ For the sake of completeness we list the default patterns:
 
   \var{expression} is the mathematical expression for the parametric
   function. It contains an assignment of a tuple of functions to a
-  tuple of variables.
+  tuple of variables. A typical example looks like
+  \code{"x, y = cos(k), sin(k)"}.
 
   \var{title} is the title of the data to be used in the graph key. By
   default \var{expression} is used. You may set \var{title} to
   \code{None} to disable the title.
 
   \var{context} allows for accessing external variables and functions.
-  As an example you may use \code{context=locals()} or something
-  similar.
+  Additionally to the identifiers in \var{context}, \var{varname} and
+  the functions shown in the table ``builtins in math expressions'' at
+  the end of the section are available.
 \end{classdesc} % }}}
 
 \begin{classdesc}{list}{data, title="user provided list", % {{{
@@ -524,7 +529,50 @@ For the sake of completeness we list the default patterns:
   This is an experimental class to read map data from cbd-files. See
   \url{http://sepwww.stanford.edu/ftp/World_Map/} for some world-map
   data.
-\end{classdesc} % }}} % }}}
+\end{classdesc} % }}}
+
+The builtins in math expressions are listed in the following table:
+\begin{tableii}{l|l}{textrm}{name}{value}
+\code{neg}&\code{lambda x: -x}\\
+\code{abs}&\code{lambda x: x < 0 and -x or x}\\
+\code{sgn}&\code{lambda x: x < 0 and -1 or 1}\\
+\code{sqrt}&\code{math.sqrt}\\
+\code{exp}&\code{math.exp}\\
+\code{log}&\code{math.log}\\
+\code{sin}&\code{math.sin}\\
+\code{cos}&\code{math.cos}\\
+\code{tan}&\code{math.tan}\\
+\code{asin}&\code{math.asin}\\
+\code{acos}&\code{math.acos}\\
+\code{atan}&\code{math.atan}\\
+\code{sind}&\code{lambda x: math.sin(math.pi/180*x)}\\
+\code{cosd}&\code{lambda x: math.cos(math.pi/180*x)}\\
+\code{tand}&\code{lambda x: math.tan(math.pi/180*x)}\\
+\code{asind}&\code{lambda x: 180/math.pi*math.asin(x)}\\
+\code{acosd}&\code{lambda x: 180/math.pi*math.acos(x)}\\
+\code{atand}&\code{lambda x: 180/math.pi*math.atan(x)}\\
+\code{norm}&\code{lambda x, y: math.hypot(x, y)}\\
+\code{splitatvalue}&see the \code{splitatvalue} description below\\
+\code{pi}&\code{math.pi}\\
+\code{e}&\code{math.e}
+\end{tableii}
+\code{math} refers to Pythons \module{math} module. The
+\code{splitatvalue} function is defined as:
+
+\begin{funcdesc}{splitatvalue}{value, *splitpoints}
+  This method returns a tuple \code{(section, \var{value})}.
+  The section is calculated by comparing \var{value} with the values
+  of {splitpoints}. If \var{splitpoints} contains only a single item,
+  \code{section} is \code{0} when value is lower or equal this item
+  and \code{1} else. For multiple splitpoints, \code{section} is
+  \code{0} when its lower or equal the first item, \code{None} when
+  its bigger than the first item but lower or equal the second item,
+  \code{1} when its even bigger the second item, but lower or equal
+  the third item. It continues to alter between \code{None} and
+  \code{2}, \code{3}, etc.
+\end{funcdesc}
+
+% }}}
 
 \section{Module \module{graph.style}: Styles} % {{{
 \label{graph:style}
