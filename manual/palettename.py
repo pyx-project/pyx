@@ -29,7 +29,7 @@ for line in lines: # we yet don't use a file iterator
     if m:
         if firstgraph is None:
             xaxis = graph.axis.lin(
-                parter=graph.axis.parter.lin(tickdist=("0.5","0.1"), labeldist="1"),
+                parter=graph.axis.parter.lin(tickdists=("0.5","0.1"), labeldists="1"),
                 painter=graph.axis.painter.regular(
                     innerticklength=None,
                     outerticklength=graph.axis.painter.ticklength.normal),
