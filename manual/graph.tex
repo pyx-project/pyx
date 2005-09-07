@@ -1,5 +1,10 @@
 \chapter{Graphs}
 \label{graph}
+% workaround for a bug in pdftex 1.21 or in whatever:
+% the \file macro contains \let\e=\textbackslash and pdfTeX
+% complains about \e being undefined. ???
+\let\e=\textbackslash
+
 \section{Introduction} % {{{
 \PyX{} can be used for data and function plotting. At present only
 x-y-graphs are supported. However, the component architecture of the
