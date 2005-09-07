@@ -5,7 +5,7 @@
 # the manual (see the python documentation about creating documentations
 # for details).
 
-default:dvi
+default: dvi
 
 clean:
 	-rm -fr manual.dvi *.eps *.pdf *.aux *.out *.toc *.log manual
@@ -18,19 +18,19 @@ all:
 
 src=$(wildcard *.tex) pyxversion.tex pyxdate.tex
 
-dvi:manual.dvi
-pdf:manual.pdf
-html:manual/manual.html
+dvi: manual.dvi
+pdf: manual.pdf
+html: manual/manual.html
 
-manual.pdf: $(src)
+manual.pdf: $(src) pdf_figs
 	#for index-with-own-hyperrefs debugging, anybody interested?
 	#./mkhowto --a4 --pdf --keep manual.tex
 	./mkhowto --a4 --pdf manual.tex
 
-manual.dvi: $(src) eps
+manual.dvi: $(src) eps_figs
 	./mkhowto --a4 --dvi manual.tex
 
-manual/manual.html: $(src) eps
+manual/manual.html: $(src) eps_figs
 	./mkhowto --image-type png --favicon "/pyx.ico" \
 	          --up-link "/" --up-title "PyX homepage" \
 	          --html manual.tex
@@ -41,9 +41,9 @@ pyxversion.tex: ../pyx/version.py
 pyxdate.tex: ../pyx/version.py
 	python -c "import sys;sys.path[:0]=[\"..\"];import pyx.version;print pyx.version.date+'%'" > pyxdate.tex
 
-eps: $(patsubst %.py, %.eps, $(wildcard *.py))
+eps_figs: $(patsubst %.py, %.eps, $(wildcard *.py))
 
-pdf: $(patsubst %.py, %.pdf, $(wildcard *.py))
+pdf_figs: $(patsubst %.py, %.pdf, $(wildcard *.py))
 
 %.eps: %.py
 	export PYTHONPATH=$(CURDIR)/.. ; python $^
