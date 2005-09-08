@@ -98,7 +98,7 @@ TODO:
   - path module:
     - correct closepath (do not invalidate currentpoint but set it to the
       beginning of the current subpath); structural rework of pathitems
-    - calculate real bboxes for bezier curves
+    - calculate real bboxes for Bezier curves
     - add rotate methods to path, normpath, normsubpath, and normsubpathitems
     - add flushskippedline to normsubpath
     - add arclentoparam to normsubpath and normsubpathitems
