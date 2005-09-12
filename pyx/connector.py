@@ -23,20 +23,21 @@
 
 import math
 from math import pi, sin, cos, atan2, tan, hypot, acos, sqrt
-import path, unit, helper
+import path, unit, helper, normpath
 try:
     from math import radians, degrees
 except ImportError:
     # fallback implementation for Python 2.1 and below
     def radians(x): return x*pi/180
     def degrees(x): return x*180/pi
+from deformer import sign
 
 
 #########################
 ##   helpers
 #########################
 
-class connector_pt(path.normpath):
+class connector_pt(normpath.normpath):
 
     def omitends(self, box1, box2):
         """intersects a path with the boxes' paths"""
@@ -92,7 +93,7 @@ class line_pt(connector_pt):
         self.box2 = box2
 
         connector_pt.__init__(self,
-            [path.normsubpath([path.normline_pt(*(self.box1.center+self.box2.center))], 0)])
+            [path.normsubpath([path.normline_pt(*(self.box1.center+self.box2.center))], closed=0)])
 
         self.omitends(box1, box2)
         self.shortenpath(boxdists)
@@ -101,7 +102,7 @@ class line_pt(connector_pt):
 class arc_pt(connector_pt):
 
     def __init__(self, box1, box2, relangle=45,
-                 absbulge=None, relbulge=None, boxdists=[0,0]):
+                 absbulge=None, relbulge=None, boxdists=[0,0], epsilon=1.0e-5):
 
         # the deviation of arc from the straight line can be specified:
         # 1. By an angle between a straight line and the arc
@@ -111,52 +112,49 @@ class arc_pt(connector_pt):
         #    straight line from center to center.
         # Only one can be used.
 
+        self.epsilon = epsilon
         self.box1 = box1
         self.box2 = box2
 
-        rel = (self.box2.center[0] - self.box1.center[0],
-               self.box2.center[1] - self.box1.center[1])
-        distance = hypot(*rel)
+        tangent = (self.box2.center[0] - self.box1.center[0],
+                   self.box2.center[1] - self.box1.center[1])
+        distance = hypot(*tangent)
+        tangent = tangent[0] / distance, tangent[1] / distance
 
-        # usage of bulge overrides the relangle parameter
         if relbulge is not None or absbulge is not None:
-            relangle = None
+            # usage of bulge overrides the relangle parameter
             bulge = 0
-            try: bulge += absbulge
-            except: pass
-            try: bulge += relbulge*distance
-            except: pass
-
-            try: radius = abs(0.5 * (bulge + 0.25 * distance**2 / bulge))
-            except: radius = 10 * distance # default value for too straight arcs
-            radius = min(radius, 10 * distance)
-            center = 2.0*(radius-abs(bulge))/distance
-            center *= 2*(bulge>0.0)-1
-        # otherwise use relangle
+            if absbulge is not None:
+                bulge += absbulge
+            if relbulge is not None:
+                bulge += relbulge*distance
         else:
-            bulge=None
-            try: radius = 0.5 * distance / abs(cos(0.5*math.pi - radians(relangle)))
-            except: radius = 10 * distance
-            try: center = tan(0.5*math.pi - radians(relangle))
-            except: center = 0
+            # otherwise use relangle, which should be present
+            bulge = 0.5 * distance * math.tan(0.25*radians(relangle))
 
-        # up to here center is only the distance from the middle of the
-        # straight connection
-        center = (0.5 * (self.box1.center[0] + self.box2.center[0] - rel[1]*center),
-                  0.5 * (self.box1.center[1] + self.box2.center[1] + rel[0]*center))
-        angle1 = atan2(self.box1.center[1] - center[1], self.box1.center[0] - center[0])
-        angle2 = atan2(self.box2.center[1] - center[1], self.box2.center[0] - center[0])
-
-        # draw the arc in positive direction by default
-        # negative direction if relangle<0 or bulge<0
-        if (relangle is not None and relangle < 0) or (bulge is not None and bulge < 0):
-            connectorpath = path.path(path.moveto_pt(*self.box1.center),
-                                      path.arcn_pt(center[0], center[1], radius, degrees(angle1), degrees(angle2)))
-            connector_pt.__init__(self, connectorpath.normpath().normsubpaths)
+        if abs(bulge) < self.epsilon:
+            # fallback solution for too straight arcs
+            # epsilon is a length_pt-parameter, as everywhere else for the normpath
+            connector_pt.__init__(self,
+                [path.normsubpath([path.normline_pt(*(self.box1.center+self.box2.center))], closed=0)])
         else:
-            connectorpath = path.path(path.moveto_pt(*self.box1.center),
-                                      path.arc_pt(center[0], center[1], radius, degrees(angle1), degrees(angle2)))
-            connector_pt.__init__(self, connectorpath.normpath().normsubpaths)
+            radius = abs(0.5 * (bulge + 0.25 * distance**2 / bulge))
+            centerdist = sign(bulge) * (radius - abs(bulge))
+            center = (0.5 * (self.box1.center[0] + self.box2.center[0]) - tangent[1]*centerdist,
+                      0.5 * (self.box1.center[1] + self.box2.center[1]) + tangent[0]*centerdist)
+            angle1 = atan2(self.box1.center[1] - center[1], self.box1.center[0] - center[0])
+            angle2 = atan2(self.box2.center[1] - center[1], self.box2.center[0] - center[0])
+
+            # draw the arc in positive direction by default
+            # negative direction if relangle<0 or bulge<0
+            if bulge < 0:
+                connectorpath = path.path(path.moveto_pt(*self.box1.center),
+                                          path.arcn_pt(center[0], center[1], radius, degrees(angle1), degrees(angle2)))
+                connector_pt.__init__(self, connectorpath.normpath().normsubpaths)
+            else:
+                connectorpath = path.path(path.moveto_pt(*self.box1.center),
+                                          path.arc_pt(center[0], center[1], radius, degrees(angle1), degrees(angle2)))
+                connector_pt.__init__(self, connectorpath.normpath().normsubpaths)
 
         self.omitends(box1, box2)
         self.shortenpath(boxdists)
@@ -369,13 +367,13 @@ class arc(arc_pt):
            (relbulge and absbulge are added)"""
 
     def __init__(self, box1, box2, relangle=45,
-                 absbulge=None, relbulge=None, boxdists=[0,0]):
+                 absbulge=None, relbulge=None, boxdists=[0,0], epsilon=1.0e-5):
         if absbulge is not None:
             absbulge = unit.topt(absbulge)
         arc_pt.__init__(self, box1, box2,
                         relangle=relangle,
                         absbulge=absbulge, relbulge=relbulge,
-                        boxdists=map(unit.topt, boxdists))
+                        boxdists=map(unit.topt, boxdists), epsilon=epsilon)
 
 
 class twolines(twolines_pt):
