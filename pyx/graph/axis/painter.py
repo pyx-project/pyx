@@ -205,7 +205,7 @@ class regular(_title):
                     t.temp_labelbox.linealign_pt(labeldist_pt, -t.temp_dx, -t.temp_dy)
 
         for t in data.ticks:
-            if t.ticklevel is not None:
+            if t.ticklevel is not None and self.tickattrs is not None:
                 tickattrs = attr.selectattrs(self.defaulttickattrs + self.tickattrs, t.ticklevel, maxticklevel)
                 if tickattrs is not None:
                     innerticklength = attr.selectattr(self.innerticklength, t.ticklevel, maxticklevel)

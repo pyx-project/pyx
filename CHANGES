@@ -94,6 +94,8 @@ TODO:
     - axis module:
       - patch to tickpos and vtickpos (reported by Wojciech Smigaj, cf. patch #1286112)
       - anchoredpathaxis added (suggested by Wojciech Smigaj)
+    - painter module:
+      - patch to allow for tickattrs=None (reported by Wojciech Smigaj, cf. patch #1286116)
   - color module:
     - transparency support (PDF only) (TODO: documentation)
   - text module:
