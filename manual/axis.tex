@@ -262,15 +262,20 @@ and except for some handy axis position methods:
   Like \method{tickdirection} but in graph coordinates.
 \end{methoddesc}
 
-Finally in the axis module there is an easy to use pathaxis function
-to create an anchored axis along an arbitrary path:
+Finally in the axis module there is an easy to use
+\class{anchoredpathaxis} class to create an anchored axis along an
+arbitrary path:
 
-\begin{funcdesc}{pathaxis}{path, axis, direction=1}
-  This function returns a (specialized) canvas containing the axis
-  \var{axis} painted along the path \var{path}. \var{direction}
-  defines the direction of the ticks. Allowed values are \code{1}
-  (left) and \code{-1} (right).
-\end{funcdesc} % }}}
+\begin{classdesc}{anchoredpathaxis}{path, axis, direction=1}
+  This class implements an anchored axis the path \var{path}.
+  \var{direction} defines the direction of the ticks. Allowed values
+  are \code{1} (left) and \code{-1} (right).
+\end{classdesc}
+
+The \class{anchoredpathaxis} contains the painted axis in the
+\member{canvas} member attribute. The function \function{pathaxis} has
+the same signature like the \class{anchoredpathaxis} class, but
+directly returns the painted axis. % }}}
 
 \section{Module \module{graph.axis.tick}: Ticks} % {{{
 

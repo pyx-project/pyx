@@ -575,10 +575,15 @@ class linkedaxis(anchoredaxis):
         return self.canvas
 
 
-def pathaxis(path, axis, **kwargs):
+class anchoredpathaxis(anchoredaxis):
+    """an anchored axis along a path"""
+
+    def __init__(self, path, axis, **kwargs):
+        anchoredaxis.__init__(self, axis, "pathaxis")
+        self.setpositioner(positioner.pathpositioner(path, **kwargs))
+        self.create(None)
+
+def pathaxis(*args, **kwargs):
     """creates an axiscanvas for an axis along a path"""
-    aanchoredaxis = anchoredaxis(axis, "pathaxis")
-    aanchoredaxis.setpositioner(positioner.pathpositioner(path, **kwargs))
-    aanchoredaxis.create(None)
-    return aanchoredaxis.canvas
+    return anchoredpathaxis(*args, **kwargs).canvas
 

@@ -29,7 +29,8 @@ import axis
 __allaxis__ = ["linear", "lin", "logarithmic", "log",
                "bar", "nestedbar", "split",
                "sizedlinear", "sizedlin", "autosizedlinear", "autosizedlin",
-               "anchoredaxis", "linkedaxis", "pathaxis"]
+               "anchoredaxis", "linkedaxis",
+               "anchoredpathaxis", "pathaxis"]
 for importfromaxis in __allaxis__:
     locals()[importfromaxis] = getattr(axis, importfromaxis)
 

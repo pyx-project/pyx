@@ -93,6 +93,7 @@ TODO:
         tickpreexps/labelpreexps)
     - axis module:
       - patch to tickpos and vtickpos (reported by Wojciech Smigaj, cf. patch #1286112)
+      - anchoredpathaxis added (suggested by Wojciech Smigaj)
   - color module:
     - transparency support (PDF only) (TODO: documentation)
   - text module:
