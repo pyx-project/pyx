@@ -53,7 +53,7 @@ def splitatvalue(value, *splitpoints):
         section += 1
     if len(splitpoints) > 1:
         if section % 2:
-            section = (None, value)
+            section = None
         else:
             section >>= 1
     return (section, value)
@@ -198,7 +198,7 @@ class data(_data):
                             value = "%s%s(%s)%s" % (value[:m.start()], columncallback, m.groups()[0], value[m.end():])
                             m = _columnintref.search(value)
                         value = value.replace("$", columncallback)
-                    expression = compile(value, __file__, "eval")
+                    expression = compile(value.strip(), __file__, "eval")
                     context = context.copy()
                     context[columncallback] = self.columncallback
                     if self.orgdata.columns:
@@ -523,7 +523,7 @@ class function(_data):
             raise ValueError("y(x)=... or similar expected")
         if context.has_key(self.xname):
             raise ValueError("xname in context")
-        self.expression = compile(expression, __file__, "eval")
+        self.expression = compile(expression.strip(), __file__, "eval")
         self.columns = {}
 
     def columnnames(self, graph):
@@ -572,6 +572,7 @@ class paramfunction(_data):
         else:
             self.title = title
         varlist, expression = expression.split("=")
+        expression = compile(expression.strip(), __file__, "eval")
         keys = [key.strip() for key in varlist.split(",")]
         self.columns = dict([(key, []) for key in keys])
         context = context.copy()
