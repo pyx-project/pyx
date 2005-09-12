@@ -471,43 +471,7 @@ phantom = _phantom()
 clearphantom = attr.clearclass(_phantom)
 
 
-defaultsizelist = ["normalsize", "large", "Large", "LARGE", "huge", "Huge",
-None, "tiny", "scriptsize", "footnotesize", "small"]
-
-class size(attr.sortbeforeattr, textattr, _localattr):
-    "font size"
-
-    def __init__(self, sizeindex=None, sizename=None, sizelist=defaultsizelist):
-        if (sizeindex is None and sizename is None) or (sizeindex is not None and sizename is not None):
-            raise RuntimeError("either specify sizeindex or sizename")
-        attr.sortbeforeattr.__init__(self, [_mathmode])
-        if sizeindex is not None:
-            if sizeindex >= 0 and sizeindex < sizelist.index(None):
-                self.size = sizelist[sizeindex]
-            elif sizeindex < 0 and sizeindex + len(sizelist) > sizelist.index(None):
-                self.size = sizelist[sizeindex]
-            else:
-                raise IndexError("index out of sizelist range")
-        else:
-            self.size = sizename
-
-    def apply(self, expr):
-        return r"\%s{%s}" % (self.size, expr)
-
-size.tiny = size(-4)
-size.scriptsize = size.script = size(-3)
-size.footnotesize = size.footnote = size(-2)
-size.small = size(-1)
-size.normalsize = size.normal = size(0)
-size.large = size(1)
-size.Large = size(2)
-size.LARGE = size(3)
-size.huge = size(4)
-size.Huge = size(5)
-size.clear = attr.clearclass(size)
-
-
-_textattrspreamble += "\\newbox\\PyXBoxVBox%\n\\newdimen\PyXDimenVBox%\n"
+_textattrspreamble += "\\newbox\\PyXBoxVBox%\n\\newdimen\\PyXDimenVBox%\n"
 
 class parbox_pt(attr.sortbeforeexclusiveattr, textattr):
 
@@ -540,7 +504,7 @@ class parbox(parbox_pt):
 parbox.clear = parbox_pt.clear
 
 
-_textattrspreamble += "\\newbox\\PyXBoxVAlign%\n\\newdimen\PyXDimenVAlign%\n"
+_textattrspreamble += "\\newbox\\PyXBoxVAlign%\n\\newdimen\\PyXDimenVAlign%\n"
 
 class valign(attr.sortbeforeexclusiveattr, textattr):
 
@@ -557,10 +521,15 @@ valign.bottom = valign(1)
 valign.clear = valign.baseline = attr.clearclass(valign)
 
 
+_textattrspreamble += "\\newdimen\\PyXDimenVShift%\n"
+
 class _vshift(attr.sortbeforeattr, textattr):
 
     def __init__(self):
         attr.sortbeforeattr.__init__(self, [valign, parbox_pt, _localattr])
+
+    def apply(self, expr):
+        return r"%s\setbox0\hbox{{%s}}\lower\PyXDimenVShift\box0" % (self.setheightexpr(), expr)
 
 class vshift(_vshift):
     "vertical down shift by a fraction of a character height"
@@ -570,14 +539,14 @@ class vshift(_vshift):
         self.lowerratio = lowerratio
         self.heightstr = heightstr
 
-    def apply(self, expr):
-        return r"\setbox0\hbox{{%s}}\lower%.5f\ht0\hbox{{%s}}" % (self.heightstr, self.lowerratio, expr)
+    def setheightexpr(self):
+        return r"\setbox0\hbox{{%s}}\PyXDimenVShift=%.5f\ht0" % (self.heightstr, self.lowerratio)
 
 class _vshiftmathaxis(_vshift):
     "vertical down shift by the height of the math axis"
 
-    def apply(self, expr):
-        return r"\setbox0\hbox{$\vcenter{\vrule width0pt}$}\lower\ht0\hbox{{%s}}" % expr
+    def setheightexpr(self):
+        return r"\setbox0\hbox{$\vcenter{\vrule width0pt}$}\PyXDimenVShift=\ht0"
 
 
 vshift.bottomzero = vshift(0)
@@ -585,6 +554,42 @@ vshift.middlezero = vshift(0.5)
 vshift.topzero = vshift(1)
 vshift.mathaxis = _vshiftmathaxis()
 vshift.clear = attr.clearclass(_vshift)
+
+
+defaultsizelist = ["normalsize", "large", "Large", "LARGE", "huge", "Huge",
+None, "tiny", "scriptsize", "footnotesize", "small"]
+
+class size(attr.sortbeforeattr, textattr):
+    "font size"
+
+    def __init__(self, sizeindex=None, sizename=None, sizelist=defaultsizelist):
+        if (sizeindex is None and sizename is None) or (sizeindex is not None and sizename is not None):
+            raise RuntimeError("either specify sizeindex or sizename")
+        attr.sortbeforeattr.__init__(self, [_mathmode, _vshift])
+        if sizeindex is not None:
+            if sizeindex >= 0 and sizeindex < sizelist.index(None):
+                self.size = sizelist[sizeindex]
+            elif sizeindex < 0 and sizeindex + len(sizelist) > sizelist.index(None):
+                self.size = sizelist[sizeindex]
+            else:
+                raise IndexError("index out of sizelist range")
+        else:
+            self.size = sizename
+
+    def apply(self, expr):
+        return r"\%s{}%s" % (self.size, expr)
+
+size.tiny = size(-4)
+size.scriptsize = size.script = size(-3)
+size.footnotesize = size.footnote = size(-2)
+size.small = size(-1)
+size.normalsize = size.normal = size(0)
+size.large = size(1)
+size.Large = size(2)
+size.LARGE = size(3)
+size.huge = size(4)
+size.Huge = size(5)
+size.clear = attr.clearclass(size)
 
 
 ###############################################################################
