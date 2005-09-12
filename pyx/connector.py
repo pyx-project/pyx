@@ -102,7 +102,7 @@ class line_pt(connector_pt):
 class arc_pt(connector_pt):
 
     def __init__(self, box1, box2, relangle=45,
-                 absbulge=None, relbulge=None, boxdists=[0,0], epsilon=1.0e-5):
+                 absbulge=None, relbulge=None, boxdists=[0,0]):
 
         # the deviation of arc from the straight line can be specified:
         # 1. By an angle between a straight line and the arc
@@ -112,7 +112,6 @@ class arc_pt(connector_pt):
         #    straight line from center to center.
         # Only one can be used.
 
-        self.epsilon = epsilon
         self.box1 = box1
         self.box2 = box2
 
@@ -132,9 +131,8 @@ class arc_pt(connector_pt):
             # otherwise use relangle, which should be present
             bulge = 0.5 * distance * math.tan(0.25*radians(relangle))
 
-        if abs(bulge) < self.epsilon:
+        if abs(bulge) < normpath._epsilon:
             # fallback solution for too straight arcs
-            # epsilon is a length_pt-parameter, as everywhere else for the normpath
             connector_pt.__init__(self,
                 [path.normsubpath([path.normline_pt(*(self.box1.center+self.box2.center))], closed=0)])
         else:
@@ -367,13 +365,13 @@ class arc(arc_pt):
            (relbulge and absbulge are added)"""
 
     def __init__(self, box1, box2, relangle=45,
-                 absbulge=None, relbulge=None, boxdists=[0,0], epsilon=1.0e-5):
+                 absbulge=None, relbulge=None, boxdists=[0,0]):
         if absbulge is not None:
             absbulge = unit.topt(absbulge)
         arc_pt.__init__(self, box1, box2,
                         relangle=relangle,
                         absbulge=absbulge, relbulge=relbulge,
-                        boxdists=map(unit.topt, boxdists), epsilon=epsilon)
+                        boxdists=map(unit.topt, boxdists))
 
 
 class twolines(twolines_pt):
