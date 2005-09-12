@@ -91,6 +91,8 @@ TODO:
         (as it was documented all the time; renamed tickdist/labeldist
         to tickdists/labeldists; renamed tickpos/labelpos to
         tickpreexps/labelpreexps)
+    - axis module:
+      - patch to tickpos and vtickpos (reported by Wojciech Smigaj, cf. patch #1286112)
   - color module:
     - transparency support (PDF only) (TODO: documentation)
   - text module:

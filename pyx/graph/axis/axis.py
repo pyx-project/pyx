@@ -25,7 +25,7 @@
 from __future__ import nested_scopes
 
 import math
-from pyx import attr, helper
+from pyx import attr, helper, unit
 from pyx.graph.axis import painter, parter, positioner, rater, texter, tick
 
 try:
@@ -524,13 +524,14 @@ class anchoredaxis:
         return self.positioner.vtickpoint_pt(v)
 
     def vtickpoint(self, v):
-        return self.positioner.vtickpoint(v) * unit.t_pt
+        return self.positioner.vtickpoint_pt(v) * unit.t_pt
 
     def tickpoint_pt(self, x):
         return self.positioner.vtickpoint_pt(self.axis.convert(self.data, x))
 
     def tickpoint(self, x):
-        return self.positioner.vtickpoint(self.axis.convert(self.data, x)) * unit.t_pt
+        x_pt, y_pt = self.positioner.vtickpoint_pt(self.axis.convert(self.data, x))
+        return  x_pt * unit.t_pt, y_pt * unit.t_pt
 
     def vtickdirection(self, v):
         return self.positioner.vtickdirection(v)
