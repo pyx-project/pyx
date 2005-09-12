@@ -30,11 +30,11 @@ def testarc(c):
     l = arc(endbox, startbox, boxdists=[1,0])
     c.stroke(l, [color.rgb.blue, deco.earrow.normal])
 
-    for a in [-135, -90, 0.0001, 45, 90]:
-        l = arc(startbox, endbox, relangle=a, boxdists=[1,1])
+    for a in [-135, -90, 0, 45, 90]:
+        l = arc(startbox, endbox, relangle=a, boxdists=[0.5,0.5])
         c.stroke(l, [color.rgb.red, deco.earrow.normal])
 
-    for b in [-1.1, -0.4, 0.01, 0.5]:
+    for b in [-1.1, -0.4, 0, 0.5]:
         l = arc(startbox, endbox, relbulge=b, boxdists=[1,1])
         c.stroke(l, [color.rgb.green, deco.earrow.normal])
 
