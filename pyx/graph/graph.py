@@ -23,7 +23,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 
-import math, re, string
+import math, re, string, warnings
 from pyx import canvas, path, trafo, unit
 from pyx.graph import style
 from pyx.graph.axis import axis, positioner
@@ -164,8 +164,8 @@ class graph(canvas.canvas):
         canvas.canvas.outputPDF(self, file, writer, context)
 
     def plot(self, data, styles=None, rangewarning=1):
-        if self.didranges and rangewarnings:
-            raise warnings.warn("axes ranges have already been analysed; no further adjustments will be performed")
+        if self.didranges and rangewarning:
+            warnings.warn("axes ranges have already been analysed; no further adjustments will be performed")
         if self.diddata:
             raise RuntimeError("can't add further data while data has already been processed")
         singledata = 0
