@@ -42,10 +42,10 @@ class _positioner:
         return None
 
     def vtickpoint_pt(self, v):
-        "like tickpoint_pt, but for graph coordinates"
+        """return tick position (x, y) in pts for a tick at position v in graph coordinates"""
 
     def vtickdirection(self, v):
-        """like tickposition, but for graph coordinates"""
+        """return direction tuple (dx, dy) for a tick at position v in graph coordinates"""
 
 
 class pathpositioner(_positioner):
