@@ -1,7 +1,7 @@
 default: pyx.pdf
 	#
 
-pyx.dvi: pyx.tex unitcircle.py arrow.py springs.py text.py arrow.eps springs.eps text.eps
+pyx.dvi: pyx.tex unitcircle.py arrow.py springs.py text.py piaxis.py arrow.eps springs.eps text.eps valign.eps piaxis.eps
 	latex pyx
 	latex pyx
 
@@ -20,5 +20,11 @@ springs.eps: springs.py
 text.eps: text.py
 	PYTHONPATH=../.. python text.py
 
+valign.eps: valign.py
+	PYTHONPATH=../.. python valign.py
+
+piaxis.eps: piaxis.py
+	PYTHONPATH=../.. python piaxis.py
+
 clean:
-	rm pyx.dvi pyx.log pyx.aux pyx.out pyx.toc pyx.ps pyx.pdf arrow.eps springs.eps text.eps
+	rm pyx.dvi pyx.log pyx.aux pyx.out pyx.ps pyx.pdf arrow.eps springs.eps text.eps valign.eps piaxis.eps

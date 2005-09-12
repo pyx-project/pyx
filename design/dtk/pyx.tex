@@ -363,6 +363,19 @@ Inhalt der Seite in der Ausgabezeichenfläche, die in der Variablen
 die Ausgabe einzubinden, könnte man stattdessen natürlich auch
 deren Größe abfragen oder ähnliches.
 
+\begin{figure}[tp]
+\centerline{\includegraphics{valign}}
+\caption{Beispiel der vertikalen Ausrichtung von Text mittels
+Textattributen}
+\label{fig:valign}
+\end{figure}
+Abbildung~\ref{fig:valign} zeigt beispielhaft anhand verschiedener
+vertikaler Ausrichtungsmethoden, was im Rahmen der \TeX-Integration in
+\PyX{} möglich ist. Die Textausrichtung, wie auch viele andere
+Eigenschaften, lassen sich dabei ganz einfach anhand von Attributen
+setzen. Beispiele mit zugehörigem Quellcode finden sich auf der
+\PyX-Beispielseite unter \url{http://pyx.sourceforge.net/examples/}.
+
 \section{Komplexe Graphikaufgaben: Graphen}
 
 Aufgrund der Praxisrelevanz für die Autoren wurde bereits zu einem
@@ -425,15 +438,32 @@ Darstellung, die Stile mit Titeln der gezeigten Daten verknüpft.
 \end{description}
 
 Die Flexibilität des Graphsystems führt zu einer entsprechend großen
-Anzahl unterschiedlicher Anwendungsbeispiele, die den Rahmen dieses
-Artikels sprengen. Statt nun hier ein einfaches, nüchternes und dann
-halt auch eher unspektakuläres Beispiel zu zeigen, deshalb hier ein
-Verweis auf die \PyX-Beispielseite, die online unter
-\url{http://pyx.sourceforge.net/examples/} zu finden ist.
+Anzahl unterschiedlicher Anwendungsbeispiele. An dieser Stelle soll
+nur ein einfaches Beispiel gezeigt werden, um die prinzipielle
+Funktionsweise vorzustellen. Darüber hinaus ist ein Besuch auf der
+\PyX-Beispielseite unter \url{http://pyx.sourceforge.net/examples/}
+sehr zu empfehlen.
 
-XXX Vielleicht doch ein einfaches, nettes Beispiel??? Sinus mit
-pi-Achse, oder?
-
+\begin{figure}[tp]
+\centerline{\includegraphics{piaxis}}
+\caption{Graph-Beispiel}
+\label{fig:piaxis}
+\end{figure}
+Die Abbildung~\ref{fig:piaxis} wird durch folgendes Programm erzeugt:
+\begin{quote}
+\lstinputlisting{piaxis.py}
+\end{quote}
+In Zeile 1 wird die Variable \verb|pi| aus dem \verb|math| Modul von
+Python geladen. Dann folgt wieder der übliche Import der \PyX-Module.
+In Zeile 3 und 4 werden zwei Klassen direkt importiert. Durch Zeile 3
+wird beispielsweise erreicht, dass eine lineare Achse statt unter
+ihrem langen Namen \verb|pxy.graph.axis.linear| direkt unter dem Namen
+\verb|linear| zur Verfügung steht. In den Zeilen 6 bis 9 wird eine
+Graph-Instanz \verb|g| angelegt. Als Grapheigenschaften werden dabei
+unter anderem \verb|x| und \verb|y|-Achsen mit speziellen
+Einstellungen explizit gesetzt. In Zeile 11 und 12 werden zwei
+Funktionen zum Graph hinzugefügt und schon ist alles fertig und kann
+in Zeile 14 in einer Datei gesichert werden.
 
 \section{Entwicklung von \PyX}
 
