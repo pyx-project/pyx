@@ -22,14 +22,6 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 
-class nodefault:
-    """not-set keyword argument marker
-
-    This class is used to mark keyword arguments to be not set by the user.
-    """
-    pass
-
-
 # XXX fallback for Numeric (eigenvalue computation) to be implemented along
 # know algorithms (like from numerical recipes)
 

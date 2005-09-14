@@ -118,6 +118,8 @@ TODO:
   - trafo module:
     - renamed _apply to apply_pt
     - introduce _epsilon for checking the singularity of a trafo
+  - helper module:
+    - remove nodefault marker in favour of separate _marker classes
 
 
 0.8.1 (2005/08/13):

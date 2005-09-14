@@ -24,7 +24,9 @@
 from __future__ import nested_scopes
 
 import cStringIO, math, warnings
-import attr, canvas, helper, path, pdfwriter, pswriter, style, unit, trafo
+import attr, canvas, path, pdfwriter, pswriter, style, unit, trafo
+
+class _marker: pass
 
 # TODO: pattern should not derive from canvas but wrap a canvas
 
@@ -46,19 +48,19 @@ class pattern(canvas._canvas, attr.exclusiveattr, style.fillstyle):
         self.patternbbox = bbox
         self.patterntrafo = trafo
 
-    def __call__(self, painttype=helper.nodefault, tilingtype=helper.nodefault, xstep=helper.nodefault, ystep=helper.nodefault, 
-                 bbox=helper.nodefault, trafo=helper.nodefault):
-        if painttype is helper.nodefault:
+    def __call__(self, painttype=_marker, tilingtype=_marker, xstep=_marker, ystep=_marker, 
+                 bbox=_marker, trafo=_marker):
+        if painttype is _marker:
             painttype = self.painttype
-        if tilingtype is helper.nodefault:
+        if tilingtype is _marker:
             tilingtype = self.tilingtype
-        if xstep is helper.nodefault:
+        if xstep is _marker:
             xstep = self.xstep
-        if ystep is helper.nodefault:
+        if ystep is _marker:
             ystep = self.ystep
-        if bbox is helper.nodefault:
+        if bbox is _marker:
             bbox = self.bbox
-        if trafo is helper.nodefault:
+        if trafo is _marker:
             trafo = self.trafo
         return pattern(painttype, tilingtype, xstep, ystep, bbox, trafo)
 

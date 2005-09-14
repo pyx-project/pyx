@@ -33,8 +33,8 @@ except ImportError:
     def radians(x): return x*pi/180
     def degrees(x): return x*180/pi
 
-import bbox, canvas, helper, unit
-from normpath import normpath, normsubpath, normline_pt, normcurve_pt
+import bbox, canvas, unit
+from normpath import normpath, normsubpath, normline_pt, normcurve_pt, _epsilon
 
 # set is available as an external interface to the normpath.set method
 from normpath import set
@@ -55,6 +55,8 @@ except NameError:
 
 # use new style classes when possible
 __metaclass__ = type
+
+class _marker: pass
 
 ################################################################################
 
@@ -1077,11 +1079,16 @@ class path(canvas.canvasitem):
     # << operator also designates joining
     __lshift__ = joined
 
-    def normpath(self, epsilon=helper.nodefault):
+    def normpath(self, epsilon=_marker):
         """convert the path into a normpath"""
-        # use cached value if existent and epsilon is helper.nodefault
-        if self._normpath is not None and epsilon is helper.nodefault:
+        # use cached value if existent and epsilon is _marker
+        if self._normpath is not None and epsilon is _marker:
             return self._normpath
+        if epsilon is _marker:
+           epsilon = _epsilon
+           cacheresult = 1
+        else:
+           cacheresult = 0
         if self.pathitems:
             context = self.pathitems[0].createcontext()
             normpath = self.pathitems[0].createnormpath(epsilon)
@@ -1089,7 +1096,7 @@ class path(canvas.canvasitem):
                 pathitem.updatenormpath(normpath, context)
         else:
             normpath = normpath(epsilon=epsilon)
-        if epsilon is helper.nodefault:
+        if cacheresult:
             self._normpath = normpath
         return normpath
 

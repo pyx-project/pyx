@@ -25,7 +25,7 @@
 from __future__ import nested_scopes
 
 import math
-from pyx import attr, helper, unit
+from pyx import attr, unit
 from pyx.graph.axis import painter, parter, positioner, rater, texter, tick
 
 try:
@@ -34,6 +34,8 @@ except NameError:
     # fallback implementation for Python 2.2 and below
     def enumerate(list):
         return zip(xrange(len(list)), list)
+
+class _marker: pass
 
 
 class axisdata:
@@ -548,7 +550,7 @@ class anchoredaxis:
 
 class linkedaxis(anchoredaxis):
 
-    def __init__(self, linkedaxis=None, errorname="manual-linked", painter=helper.nodefault):
+    def __init__(self, linkedaxis=None, errorname="manual-linked", painter=_marker):
         self.painter = painter
         self.linkedto = None
         self.errorname = errorname
@@ -563,7 +565,7 @@ class linkedaxis(anchoredaxis):
         self.axis = linkedaxis.axis
         self.errorname = "%s (linked to %s)" % (self.errorname, linkedaxis.errorname)
         self.data = linkedaxis.data
-        if self.painter is helper.nodefault:
+        if self.painter is _marker:
             self.painter = linkedaxis.axis.linkpainter
 
     def create(self, graphtexrunner):

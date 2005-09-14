@@ -24,8 +24,9 @@
 
 
 import types, math
-import bbox, path, unit, trafo, helper
+import bbox, path, unit, trafo
 
+class _marker: pass
 
 class BoxCrossError(Exception): pass
 
@@ -304,8 +305,8 @@ class polygon(polygon_pt):
 class rect_pt(polygon_pt):
 
     def __init__(self, x, y, width, height, relcenter=(0, 0), abscenter=(0, 0),
-                       corners=helper.nodefault, center=helper.nodefault, **args):
-        if corners != helper.nodefault or center != helper.nodefault:
+                       corners=_marker, center=_marker, **args):
+        if corners != _marker or center != _marker:
             raise ValueError
         polygon_pt.__init__(self, corners=((x, y),
                                          (x + width, y),

@@ -32,7 +32,7 @@ except ImportError:
     def radians(x): return x*math.pi/180
     def degrees(x): return x*180/math.pi
 
-import bbox, canvas, helper, path, trafo, unit
+import bbox, canvas, path, trafo, unit
 
 try:
     sum([])
@@ -50,6 +50,8 @@ except NameError:
 
 # use new style classes when possible
 __metaclass__ = type
+
+class _marker: pass
 
 ################################################################################
 
@@ -499,7 +501,15 @@ class normcurve_pt(normsubpathitem):
             tdy_pt = (3*(  -self.y0_pt+3*self.y1_pt-3*self.y2_pt+self.y3_pt)*param*param +
                       2*( 3*self.y0_pt-6*self.y1_pt+3*self.y2_pt           )*param +
                         (-3*self.y0_pt+3*self.y1_pt                        ))
-            result.append(trafo.rotate(degrees(math.atan2(tdy_pt, tdx_pt))))
+            if math.hypot(tdx_pt, tdy_pt) > 1e-5 or 1:
+                result.append(trafo.rotate(degrees(math.atan2(tdy_pt, tdx_pt))))
+            else:
+                # use rule of l'Hopital instead
+                t2dx_pt = (6*(  -self.x0_pt+3*self.x1_pt-3*self.x2_pt+self.x3_pt)*param +
+                           2*( 3*self.x0_pt-6*self.x1_pt+3*self.x2_pt           ))
+                t2dy_pt = (6*(  -self.y0_pt+3*self.y1_pt-3*self.y2_pt+self.y3_pt)*param +
+                           2*( 3*self.y0_pt-6*self.y1_pt+3*self.y2_pt           ))
+                result.append(trafo.rotate(degrees(math.atan2(t2dy_pt, t2dx_pt))))
         return result
 
     def segments(self, params):
@@ -608,9 +618,9 @@ class normsubpath:
 
     __slots__ = "normsubpathitems", "closed", "epsilon", "skippedline"
 
-    def __init__(self, normsubpathitems=[], closed=0, epsilon=helper.nodefault):
+    def __init__(self, normsubpathitems=[], closed=0, epsilon=_marker):
         """construct a normsubpath"""
-        if epsilon is helper.nodefault:
+        if epsilon is _marker:
             epsilon = _epsilon
         self.epsilon = epsilon
         # If one or more items appended to the normsubpath have been

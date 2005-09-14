@@ -29,13 +29,15 @@
 from __future__ import nested_scopes
 
 import sys, math
-import attr, canvas, color, helper, path, style, trafo, unit
+import attr, canvas, color, path, style, trafo, unit
 
 try:
     from math import radians
 except ImportError:
     # fallback implementation for Python 2.1 and below
     def radians(x): return x*math.pi/180
+
+class _marker: pass
 
 #
 # Decorated path
@@ -442,7 +444,7 @@ class arrow(deco, attr.attr):
         self.angle = angle
         self.constriction = constriction
 
-    def __call__(self, attrs=None, position=None, size=None, angle=None, constriction=helper.nodefault):
+    def __call__(self, attrs=None, position=None, size=None, angle=None, constriction=_marker):
         if attrs is None:
             attrs = self.attrs
         if position is None:
@@ -451,7 +453,7 @@ class arrow(deco, attr.attr):
             size = self.size
         if angle is None:
             angle = self.angle
-        if constriction is helper.nodefault:
+        if constriction is _marker:
             constriction = self.constriction
         return arrow(attrs=attrs, position=position, size=size, angle=angle, constriction=constriction)
 
