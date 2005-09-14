@@ -24,6 +24,15 @@
 import math
 import attr, canvas, deformer, unit
 
+# global epsilon (used to judge whether a matrix is singular
+_epsilon = 1e-5
+
+def set(epsilon=None):
+    global _epsilon
+    if epsilon is not None:
+        _epsilon = epsilon
+
+
 # some helper routines
 
 def _rmatrix(angle):
@@ -47,12 +56,9 @@ def _mmatrix(angle):
              (-2*math.sin(phi)*math.cos(phi),
               math.sin(phi)*math.sin(phi)-math.cos(phi)*math.cos(phi) ) )
 
-def _det(matrix):
-    return matrix[0][0]*matrix[1][1] - matrix[0][1]*matrix[1][0]
-
 # Exception
 
-class UndefinedResultError(ArithmeticError):
+class TrafoException(Exception):
     pass
 
 # trafo: affine transformations
@@ -67,11 +73,11 @@ class trafo_pt(canvas.canvasitem, deformer.deformer):
 
     """
 
-    def __init__(self, matrix=((1,0),(0,1)), vector=(0,0)):
-        if _det(matrix)==0:
-            raise UndefinedResultError, "transformation matrix must not be singular" 
+    def __init__(self, matrix=((1, 0), (0, 1)), vector=(0, 0)):
+        if abs(matrix[0][0]*matrix[1][1] - matrix[0][1]*matrix[1][0]) < _epsilon:
+            raise TrafoException("transformation matrix must not be singular")
         else:
-            self.matrix=matrix
+            self.matrix = matrix
         self.vector = vector
 
     def __mul__(self, other):
@@ -95,7 +101,7 @@ class trafo_pt(canvas.canvasitem, deformer.deformer):
 
             return trafo_pt(matrix=matrix, vector=vector)
         else:
-            raise NotImplementedError, "can only multiply two transformations"
+            raise NotImplementedError("can only multiply two transformations")
 
     def __str__(self):
         return "[%f %f %f %f %f %f]" % \
@@ -136,15 +142,10 @@ class trafo_pt(canvas.canvasitem, deformer.deformer):
         return path.transformed(self)
 
     def inverse(self):
-        det = _det(self.matrix)                       # shouldn't be zero, but
-        try:
-          matrix = ( ( self.matrix[1][1]/det, -self.matrix[0][1]/det),
-                     (-self.matrix[1][0]/det,  self.matrix[0][0]/det)
-                   )
-        except ZeroDivisionError:
-           raise UndefinedResultError, "transformation matrix must not be singular" 
-        return trafo_pt(matrix=matrix) * \
-               trafo_pt(vector=(-self.vector[0], -self.vector[1]))
+        det = 1.0*(self.matrix[0][0]*self.matrix[1][1] - self.matrix[0][1]*self.matrix[1][0])
+        matrix = ( ( self.matrix[1][1]/det, -self.matrix[0][1]/det),
+                   (-self.matrix[1][0]/det,  self.matrix[0][0]/det) )
+        return trafo_pt(matrix=matrix) * trafo_pt(vector=(-self.vector[0], -self.vector[1]))
 
     def mirrored(self, angle):
         return mirror(angle)*self
@@ -198,8 +199,7 @@ class rotate_pt(trafo_pt):
         vector = 0, 0
         if x is not None or y is not None:
             if x is None or y is None:
-                raise (UndefinedResultError, 
-                       "either specify both x and y or none of them")
+                raise TrafoException("either specify both x and y or none of them")
             vector=_rvector(angle, x, y)
 
         trafo_pt.__init__(self,
@@ -212,8 +212,7 @@ class rotate(trafo_pt):
         vector = 0, 0 
         if x is not None or y is not None:
             if x is None or y is None:
-                raise (UndefinedResultError, 
-                       "either specify both x and y or none of them")
+                raise TrafoException("either specify both x and y or none of them")
             vector=_rvector(angle, unit.topt(x), unit.topt(y))
 
         trafo_pt.__init__(self,
@@ -223,34 +222,26 @@ class rotate(trafo_pt):
 
 class scale_pt(trafo_pt):
     def __init__(self, sx, sy=None, x=None, y=None):
-        sy = sy or sx
-        if not sx or not sy:
-            raise (UndefinedResultError, 
-                   "one scaling factor is 0")
-        vector = 0, 0 
+        if sy is None:
+            sy = sx
+        vector = 0, 0
         if x is not None or y is not None:
             if x is None or y is None:
-                raise (UndefinedResultError, 
-                       "either specify both x and y or none of them")
+                raise TrafoException("either specify both x and y or none of them")
             vector = (1-sx)*x, (1-sy)*y
-
-        trafo_pt.__init__(self, matrix=((sx,0),(0,sy)), vector=vector)
+        trafo_pt.__init__(self, matrix=((sx,0), (0,sy)), vector=vector)
 
 
 class scale(trafo):
     def __init__(self, sx, sy=None, x=None, y=None):
-        sy = sy or sx
-        if not sx or not sy:
-            raise (UndefinedResultError, 
-                   "one scaling factor is 0")
-        vector = 0, 0 
+        if sy is None:
+            sy = sx
+        vector = 0, 0
         if x is not None or y is not None:
             if x is None or y is None:
-                raise (UndefinedResultError, 
-                       "either specify both x and y or none of them")
+                raise TrafoException("either specify both x and y or none of them")
             vector = (1-sx)*x, (1-sy)*y
-
-        trafo.__init__(self, matrix=((sx,0),(0,sy)), vector=vector)
+        trafo.__init__(self, matrix=((sx,0), (0,sy)), vector=vector)
 
 
 class slant_pt(trafo_pt):
