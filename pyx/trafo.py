@@ -76,9 +76,14 @@ class trafo_pt(canvas.canvasitem, deformer.deformer):
     """
 
     def __init__(self, matrix=((1, 0), (0, 1)), vector=(0, 0), epsilon=_marker):
+        """Return trafo with given transformation matrix and vector. If epsilon
+        is passed it is used instead of the global epsilon defined in the module to
+        check whether the matrix is singular or not. Use epsilon=None to turn of this
+        checking.
+        """
         if epsilon is _marker:
             epsilon = _epsilon
-        if abs(matrix[0][0]*matrix[1][1] - matrix[0][1]*matrix[1][0]) < epsilon:
+        if epsilon is not None and abs(matrix[0][0]*matrix[1][1] - matrix[0][1]*matrix[1][0]) < epsilon:
             raise TrafoException("transformation matrix must not be singular")
         else:
             self.matrix = matrix
