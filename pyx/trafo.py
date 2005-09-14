@@ -56,6 +56,8 @@ def _mmatrix(angle):
              (-2*math.sin(phi)*math.cos(phi),
               math.sin(phi)*math.sin(phi)-math.cos(phi)*math.cos(phi) ) )
 
+class _marker: pass
+
 # Exception
 
 class TrafoException(Exception):
@@ -73,8 +75,10 @@ class trafo_pt(canvas.canvasitem, deformer.deformer):
 
     """
 
-    def __init__(self, matrix=((1, 0), (0, 1)), vector=(0, 0)):
-        if abs(matrix[0][0]*matrix[1][1] - matrix[0][1]*matrix[1][0]) < _epsilon:
+    def __init__(self, matrix=((1, 0), (0, 1)), vector=(0, 0), epsilon=_marker):
+        if epsilon is _marker:
+            epsilon = _epsilon
+        if abs(matrix[0][0]*matrix[1][1] - matrix[0][1]*matrix[1][0]) < epsilon:
             raise TrafoException("transformation matrix must not be singular")
         else:
             self.matrix = matrix
