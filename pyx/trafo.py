@@ -24,8 +24,8 @@
 import math
 import attr, canvas, deformer, unit
 
-# global epsilon (used to judge whether a matrix is singular
-_epsilon = 1e-5
+# global epsilon (used to judge whether a matrix is singular)
+_epsilon = (1e-5)**2
 
 def set(epsilon=None):
     global _epsilon
