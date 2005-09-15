@@ -25,7 +25,7 @@
 from __future__ import nested_scopes
 
 import math
-from pyx import attr, unit
+from pyx import attr, unit, text
 from pyx.graph.axis import painter, parter, positioner, rater, texter, tick
 
 try:
@@ -583,7 +583,7 @@ class anchoredpathaxis(anchoredaxis):
     def __init__(self, path, axis, **kwargs):
         anchoredaxis.__init__(self, axis, "pathaxis")
         self.setpositioner(positioner.pathpositioner(path, **kwargs))
-        self.create(None)
+        self.create(text.defaulttexrunner)
 
 def pathaxis(*args, **kwargs):
     """creates an axiscanvas for an axis along a path"""
