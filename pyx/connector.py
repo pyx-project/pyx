@@ -62,7 +62,7 @@ class connector_pt(normpath.normpath):
         cutpath = path.circle_pt(center[0], center[1], dists[0])
         try:
             cutpath = cutpath.normpath()
-        except path.PathException:
+        except normpath.NormpathException:
             pass
         else:
             sp = self.intersect(cutpath)[0]
@@ -73,7 +73,7 @@ class connector_pt(normpath.normpath):
         cutpath = path.circle_pt(center[0], center[1], dists[1])
         try:
             cutpath = cutpath.normpath()
-        except path.PathException:
+        except normpath.NormpathException:
             pass
         else:
             sp = self.intersect(cutpath)[0]
