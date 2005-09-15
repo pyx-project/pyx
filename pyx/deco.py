@@ -327,11 +327,11 @@ class deco:
 
     """
 
-    def decorate(self, dp):
+    def decorate(self, dp, texrunner):
         """apply a style to a given decoratedpath object dp
 
         decorate accepts a decoratedpath object dp, applies PathStyle
-        by modifying dp in place and returning the new dp.
+        by modifying dp in place.
         """
 
         pass
@@ -354,11 +354,10 @@ class _stroked(deco, attr.exclusiveattr):
         # XXX or should we also merge self.styles
         return _stroked(styles)
 
-    def decorate(self, dp):
+    def decorate(self, dp, texrunner):
         if dp.strokestyles is not None:
             raise RuntimeError("Cannot stroke an already stroked path")
         dp.strokestyles = self.styles
-        return dp
 
 stroked = _stroked()
 stroked.clear = attr.clearclass(_stroked)
@@ -377,11 +376,10 @@ class _filled(deco, attr.exclusiveattr):
         # XXX or should we also merge self.styles
         return _filled(styles)
 
-    def decorate(self, dp):
+    def decorate(self, dp, texrunner):
         if dp.fillstyles is not None:
             raise RuntimeError("Cannot fill an already filled path")
         dp.fillstyles = self.styles
-        return dp
 
 filled = _filled()
 filled.clear = attr.clearclass(_filled)
@@ -457,7 +455,7 @@ class arrow(deco, attr.attr):
             constriction = self.constriction
         return arrow(attrs=attrs, position=position, size=size, angle=angle, constriction=constriction)
 
-    def decorate(self, dp):
+    def decorate(self, dp, texrunner):
         dp.ensurenormpath()
         anormpath = dp.path
 
@@ -487,8 +485,6 @@ class arrow(deco, attr.attr):
             dp.excluderange(0, min(self.size, constrictionlen))
         else:
             dp.excluderange(anormpath.end() - min(self.size, constrictionlen), anormpath.end())
-
-        return dp
 
 arrow.clear = attr.clearclass(arrow)
 
@@ -524,3 +520,40 @@ earrow.LARge = earrow(size=_base*math.sqrt(16))
 earrow.LARGe = earrow(size=_base*math.sqrt(32))
 earrow.LARGE = earrow(size=_base*math.sqrt(64))
 
+
+
+class text(deco, attr.attr):
+    """a simple text decorator"""
+
+    def __init__(self, text, textattrs=[], angle=0, textdist=0.2,
+                       relarclenpos=0.5, arclenfrombegin=None, arclenfromend=None,
+                       texrunner=None):
+        if arclenfrombegin is not None and arclenfromend is not None:
+            raise ValueError("either set arclenfrombegin or arclenfromend")
+        self.text = text
+        self.textattrs = textattrs
+        self.angle = angle
+        self.textdist = textdist
+        self.relarclenpos = relarclenpos
+        self.arclenfrombegin = arclenfrombegin
+        self.arclenfromend = arclenfromend
+        self.texrunner = texrunner
+
+    def decorate(self, dp, texrunner):
+        if self.texrunner:
+            texrunner = self.texrunner
+        import text as textmodule
+        textattrs = attr.mergeattrs([textmodule.halign.center, textmodule.vshift.mathaxis] + self.textattrs)
+
+        # note that we cannot call ensurenormpath (the asserts might be a bit too strong)
+        if self.arclenfrombegin is not None:
+            x, y = dp.path.at(dp.path.begin() + self.arclenfrombegin)
+        elif self.arclenfromend is not None:
+            x, y = dp.path.at(dp.path.end() - self.arclenfromend)
+        else:
+            # relarcpos is used, when neither arcfrombegin nor arcfromend is given
+            x, y = dp.path.at(self.relarclenpos * dp.path.arclen())
+
+        t = texrunner.text(x, y, self.text, textattrs)
+        t.linealign(self.textdist, math.cos(self.angle*math.pi/180), math.sin(self.angle*math.pi/180))
+        dp.ornaments.insert(t)
