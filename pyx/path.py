@@ -33,8 +33,8 @@ except ImportError:
     def radians(x): return x*pi/180
     def degrees(x): return x*180/pi
 
-import bbox, canvas, unit
-from normpath import normpath, normsubpath, normline_pt, normcurve_pt, _epsilon
+import bbox, canvas, helper, unit
+from normpath import NormpathException, normpath, normsubpath, normline_pt, normcurve_pt, _epsilon
 
 # set is available as an external interface to the normpath.set method
 from normpath import set
@@ -1181,74 +1181,96 @@ class path(canvas.canvasitem):
 
 class line_pt(path):
 
-   """straight line from (x1_pt, y1_pt) to (x2_pt, y2_pt) in pts"""
+    """straight line from (x1_pt, y1_pt) to (x2_pt, y2_pt) in pts"""
 
-   def __init__(self, x1_pt, y1_pt, x2_pt, y2_pt):
-       path.__init__(self, moveto_pt(x1_pt, y1_pt), lineto_pt(x2_pt, y2_pt))
+    def __init__(self, x1_pt, y1_pt, x2_pt, y2_pt):
+        path.__init__(self, moveto_pt(x1_pt, y1_pt), lineto_pt(x2_pt, y2_pt))
 
 
 class curve_pt(path):
 
-   """bezier curve with control points (x0_pt, y1_pt),..., (x3_pt, y3_pt) in pts"""
+    """bezier curve with control points (x0_pt, y1_pt),..., (x3_pt, y3_pt) in pts"""
 
-   def __init__(self, x0_pt, y0_pt, x1_pt, y1_pt, x2_pt, y2_pt, x3_pt, y3_pt):
-       path.__init__(self,
-                     moveto_pt(x0_pt, y0_pt),
-                     curveto_pt(x1_pt, y1_pt, x2_pt, y2_pt, x3_pt, y3_pt))
+    def __init__(self, x0_pt, y0_pt, x1_pt, y1_pt, x2_pt, y2_pt, x3_pt, y3_pt):
+        path.__init__(self,
+                      moveto_pt(x0_pt, y0_pt),
+                      curveto_pt(x1_pt, y1_pt, x2_pt, y2_pt, x3_pt, y3_pt))
 
 
 class rect_pt(path):
 
-   """rectangle at position (x, y) with width and height in pts"""
+    """rectangle at position (x_pt, y_pt) with width_pt and height_pt in pts"""
 
-   def __init__(self, x, y, width, height):
-       path.__init__(self, moveto_pt(x, y),
-                           lineto_pt(x+width, y),
-                           lineto_pt(x+width, y+height),
-                           lineto_pt(x, y+height),
-                           closepath())
+    def __init__(self, x_pt, y_pt, width_pt, height_pt):
+        path.__init__(self, moveto_pt(x_pt, y_pt),
+                            lineto_pt(x_pt+width_pt, y_pt),
+                            lineto_pt(x_pt+width_pt, y_pt+height_pt),
+                            lineto_pt(x_pt, y_pt+height_pt),
+                            closepath())
 
 
 class circle_pt(path):
 
-   """circle with center (x, y) and radius in pts"""
+    """circle with center (x_pt, y_pt) and radius_pt in pts"""
 
-   def __init__(self, x, y, radius, arcepsilon=0.1):
-       path.__init__(self, moveto_pt(x+radius,y), arc_pt(x, y, radius, arcepsilon, 360-arcepsilon), closepath())
+    def __init__(self, x_pt, y_pt, radius_pt, arcepsilon=0.1):
+        path.__init__(self, moveto_pt(x_pt+radius_pt, y_pt),
+                            arc_pt(x_pt, y_pt, radius_pt, arcepsilon, 360-arcepsilon),
+                            closepath())
+
+
+class ellipse_pt(path):
+
+    """ellipse with center (x_pt, y_pt) in pts,
+    the two axes (a_pt, b_pt) in pts,
+    and the angle angle of the first axis"""
+
+    def __init__(self, x_pt, y_pt, a_pt, b_pt, angle, **kwargs):
+        t = trafo.scale(a_pt, b_pt, epsilon=None).rotated(angle).translated_pt(x_pt, y_pt)
+        return path.circle_pt(0, 0, 1, **kwargs).normpath(epsilon=None).transformed(t).path()
 
 
 class line(line_pt):
 
-   """straight line from (x1, y1) to (x2, y2)"""
+    """straight line from (x1, y1) to (x2, y2)"""
 
-   def __init__(self, x1, y1, x2, y2):
-       line_pt.__init__(self, unit.topt(x1), unit.topt(y1),
-                              unit.topt(x2), unit.topt(y2))
+    def __init__(self, x1, y1, x2, y2):
+        line_pt.__init__(self, unit.topt(x1), unit.topt(y1),
+                               unit.topt(x2), unit.topt(y2))
 
 
 class curve(curve_pt):
 
-   """bezier curve with control points (x0, y1),..., (x3, y3)"""
+    """bezier curve with control points (x0, y1),..., (x3, y3)"""
 
-   def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
-       curve_pt.__init__(self, unit.topt(x0), unit.topt(y0),
-                               unit.topt(x1), unit.topt(y1),
-                               unit.topt(x2), unit.topt(y2),
-                               unit.topt(x3), unit.topt(y3))
+    def __init__(self, x0, y0, x1, y1, x2, y2, x3, y3):
+        curve_pt.__init__(self, unit.topt(x0), unit.topt(y0),
+                                unit.topt(x1), unit.topt(y1),
+                                unit.topt(x2), unit.topt(y2),
+                                unit.topt(x3), unit.topt(y3))
 
 
 class rect(rect_pt):
 
-   """rectangle at position (x,y) with width and height"""
+    """rectangle at position (x,y) with width and height"""
 
-   def __init__(self, x, y, width, height):
-       rect_pt.__init__(self, unit.topt(x), unit.topt(y),
-                              unit.topt(width), unit.topt(height))
+    def __init__(self, x, y, width, height):
+        rect_pt.__init__(self, unit.topt(x), unit.topt(y),
+                               unit.topt(width), unit.topt(height))
 
 
 class circle(circle_pt):
 
-   """circle with center (x,y) and radius"""
+    """circle with center (x,y) and radius"""
 
-   def __init__(self, x, y, radius, **kwargs):
-       circle_pt.__init__(self, unit.topt(x), unit.topt(y), unit.topt(radius), **kwargs)
+    def __init__(self, x, y, radius, **kwargs):
+        circle_pt.__init__(self, unit.topt(x), unit.topt(y), unit.topt(radius), **kwargs)
+
+
+class ellipse(ellipse_pt):
+
+    """ellipse with center (x, y), the two axes (a, b),
+    and the angle angle of the first axis"""
+
+    def __init__(self, x, y, a, b, **kwargs):
+        ellipse_pt.__init__(self, unit.topt(x), unit.topt(y), unit.topt(a), unit.topt(b), **kwargs)
