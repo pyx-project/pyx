@@ -1,3 +1,4 @@
+import sys; sys.path.insert(0, "../..")
 from pyx import *
 
 def bracepath(w1, w2, h=0.1, slant=0.1):
