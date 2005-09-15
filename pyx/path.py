@@ -34,7 +34,7 @@ except ImportError:
     def degrees(x): return x*180/pi
 
 import bbox, canvas, helper, unit
-from normpath import NormpathException, normpath, normsubpath, normline_pt, normcurve_pt, _epsilon
+from normpath import NormpathException, normpath, normsubpath, normline_pt, normcurve_pt
 
 # set is available as an external interface to the normpath.set method
 from normpath import set
@@ -253,7 +253,7 @@ class pathitem:
         """
         raise PathException("path must start with moveto or the like (%r)" % self)
 
-    def createnormpath(self, epsilon):
+    def createnormpath(self, epsilon=_marker):
         """create a normpath from the current pathitem
 
         Return a normpath instance. Is called, when a normpath has to
@@ -341,8 +341,11 @@ class moveto_pt(pathitem):
     def createbbox(self):
         return bbox.bbox_pt(self.x_pt, self.y_pt, self.x_pt, self.y_pt)
 
-    def createnormpath(self, epsilon):
-        return normpath([normsubpath(epsilon=epsilon)])
+    def createnormpath(self, epsilon=_marker):
+        if epsilon is _marker:
+            return normpath([normsubpath()])
+        else:
+            return normpath([normsubpath(epsilon=epsilon)])
 
     def updatebbox(self, bbox, context):
         bbox.includepoint_pt(self.x_pt, self.y_pt)
@@ -567,9 +570,12 @@ class arc_pt(pathitem):
         return bbox.bbox_pt(*_arcbboxdata(self.x_pt, self.y_pt, self.r_pt,
                                           self.angle1, self.angle2))
 
-    def createnormpath(self, epsilon):
-        return normpath([normsubpath(_arctobezierpath(self.x_pt, self.y_pt, self.r_pt, self.angle1, self.angle2),
-                                     epsilon=epsilon)])
+    def createnormpath(self, epsilon=_marker):
+        if epsilon is _marker:
+            return normpath([normsubpath(_arctobezierpath(self.x_pt, self.y_pt, self.r_pt, self.angle1, self.angle2))])
+        else:
+            return normpath([normsubpath(_arctobezierpath(self.x_pt, self.y_pt, self.r_pt, self.angle1, self.angle2),
+                                         epsilon=epsilon)])
 
     def updatebbox(self, bbox, context):
         minarcx_pt, minarcy_pt, maxarcx_pt, maxarcy_pt = _arcbboxdata(self.x_pt, self.y_pt, self.r_pt,
@@ -621,9 +627,12 @@ class arcn_pt(pathitem):
         return bbox.bbox_pt(*_arcbboxdata(self.x_pt, self.y_pt, self.r_pt,
                                           self.angle2, self.angle1))
 
-    def createnormpath(self, epsilon):
-        return normpath([normsubpath(_arctobezierpath(self.x_pt, self.y_pt, self.r_pt, self.angle2, self.angle1),
-                                     epsilon=epsilon)]).reversed()
+    def createnormpath(self, epsilon=_marker):
+        if epsilon is _marker:
+            return normpath([normsubpath(_arctobezierpath(self.x_pt, self.y_pt, self.r_pt, self.angle2, self.angle1))]).reversed()
+        else:
+            return normpath([normsubpath(_arctobezierpath(self.x_pt, self.y_pt, self.r_pt, self.angle2, self.angle1),
+                                         epsilon=epsilon)]).reversed()
 
     def _updatecurrentpoint(self, currentpoint):
         currentpoint.x_pt, currentpoint.y_pt = self._earc()
@@ -1084,19 +1093,20 @@ class path(canvas.canvasitem):
         # use cached value if existent and epsilon is _marker
         if self._normpath is not None and epsilon is _marker:
             return self._normpath
-        if epsilon is _marker:
-           epsilon = _epsilon
-           cacheresult = 1
-        else:
-           cacheresult = 0
         if self.pathitems:
             context = self.pathitems[0].createcontext()
-            normpath = self.pathitems[0].createnormpath(epsilon)
+            if epsilon is _marker:
+                normpath = self.pathitems[0].createnormpath()
+            else:
+                normpath = self.pathitems[0].createnormpath(epsilon)
             for pathitem in self.pathitems[1:]:
                 pathitem.updatenormpath(normpath, context)
         else:
-            normpath = normpath(epsilon=epsilon)
-        if cacheresult:
+            if epsilon is _marker:
+                normpath = normpath([])
+            else:
+                normpath = normpath(epsilon=epsilon)
+        if epsilon is _marker:
             self._normpath = normpath
         return normpath
 
