@@ -74,17 +74,7 @@ class pathpositioner(_positioner):
         return self.normpath.at_pt(self.normpath.arclentoparam(v * self.arclen))
 
     def vtickdirection(self, v):
-        t= self.normpath.tangent(self.normpath.arclentoparam(v * self.arclen))
-        tbegin = t.atbegin_pt()
-        tend = t.atend_pt()
-        dx = tend[0]-tbegin[0]
-        dy = tend[1]-tbegin[1]
-        norm = math.hypot(dx, dy)
-        if self.direction == 1:
-            return -dy/norm, dx/norm
-        elif self.direction == -1:
-            return dy/norm, -dx/norm
-        raise RuntimeError("unknown direction")
+        return self.normpath.rotation(self.normpath.arclentoparam(v * self.arclen)).apply_pt(0, self.direction)
 
 
 class lineaxispos_pt:
