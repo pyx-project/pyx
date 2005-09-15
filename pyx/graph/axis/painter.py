@@ -44,7 +44,7 @@ class axiscanvas(canvas.canvas):
         self.labels = []
         if isinstance(painter, _text) and painter.texrunner:
             self.settexrunner(painter.texrunner)
-        elif graphtexrunner:
+        else:
             self.settexrunner(graphtexrunner)
 
 
