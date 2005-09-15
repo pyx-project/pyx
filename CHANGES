@@ -100,6 +100,7 @@ TODO:
     - transparency support (PDF only) (TODO: documentation)
   - text module:
     - improve escapestring to handle all ascii characters
+    - correct vshift when text size is modified by a text.size instance
   - path module:
     - correct closepath (do not invalidate currentpoint but set it to the
       beginning of the current subpath); structural rework of pathitems
@@ -110,14 +111,22 @@ TODO:
   - normpath module:
     - contains normpath, normsubpath and normpathparam which have originally
       been in the path module
+    - return "invalid" for certain path opterations when the curve "speed" is
+      below a certain threshold
   - deformer module:
     - rewrite smoother to make use of the subnormpath facilities
     - TODO: missing numeric fallback in helper
+  - deco module:
+    - add basic text decorator (TODO: documentation)
   - connector module:
     - boxdists parameter need to be a list/tuple of two items now
   - trafo module:
     - renamed _apply to apply_pt
     - introduce _epsilon for checking the singularity of a trafo
+  - epsfile module:
+    - use rectclip instead of clip to remove the clipping path from the
+      PostScript stack, which otherwise might create strange effects for
+      certain PostScript files (reported by Gert Ingold)
   - helper module:
     - remove nodefault marker in favour of separate _marker classes
 
