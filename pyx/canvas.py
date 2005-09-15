@@ -261,7 +261,7 @@ class _canvas(canvasitem):
 
         # add path decorations and modify path accordingly
         for adeco in attr.getattrs(attrs, [deco.deco]):
-            dp = adeco.decorate(dp)
+            adeco.decorate(dp, self)
 
         self.insert(dp)
 
