@@ -327,12 +327,9 @@ class epsfile(canvas.canvasitem):
 
         file.write("BeginEPSF\n")
 
-        bbrect = self.mybbox.rect().transformed(self.trafo)
-
         if self.clip:
-            file.write("newpath\n")
-            bbrect.outputPS(file, writer, context)
-            file.write("clip\n")
+            llx_pt, lly_pt, urx_pt, ury_pt = self.mybbox.transformed(self.trafo).highrestuple_pt()
+            file.write("%g %g %g %g rectclip\n" % (llx_pt, lly_pt, urx_pt-llx_pt, ury_pt-lly_pt))
 
         self.trafo.outputPS(file, writer, context)
 
