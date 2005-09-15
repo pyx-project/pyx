@@ -22,19 +22,24 @@ def testarrow(c):
 
     c.stroke(path(moveto(5,10), rlineto(5,0)),
            [#deco.barrow(size=base/math.sqrt(8)*unit.t_pt, constriction=1),
-            deco.earrow.SMall])
+            deco.earrow.SMall,
+            deco.text("start", arclenfrombegin=0, angle=90)])
     c.stroke(path(moveto(5,10.5), rlineto(5,0)),
            [deco.barrow(size=base/math.sqrt(4)*unit.t_pt, constriction=1),
-            deco.earrow.Small])
+            deco.earrow.Small,
+            deco.text("start+1", arclenfrombegin=1, angle=90)])
     c.stroke(path(moveto(5,11), rlineto(5,0)),
            [deco.barrow(size=base/math.sqrt(2)*unit.t_pt, constriction=1),
-            deco.earrow.small])
+            deco.earrow.small,
+            deco.text("center", angle=90)])
     c.stroke(path(moveto(5,11.5), rlineto(5,0)),
            [deco.barrow(size=base/math.sqrt(1)*unit.t_pt, constriction=1),
-            deco.earrow.normal])
+            deco.earrow.normal,
+            deco.text("end-1", arclenfromend=1, angle=90)])
     c.stroke(path(moveto(5,12), rlineto(5,0)),
            [deco.barrow(size=base*math.sqrt(2)*unit.t_pt, constriction=1),
-            deco.earrow.large])
+            deco.earrow.large,
+            deco.text("end", arclenfromend=0, angle=90)])
     c.stroke(path(moveto(5,12.5), rlineto(5,0)),
            [deco.barrow(size=base*math.sqrt(4)*unit.t_pt, constriction=1),
             deco.earrow.Large])
