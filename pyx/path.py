@@ -38,6 +38,8 @@ from normpath import NormpathException, normpath, normsubpath, normline_pt, norm
 
 # set is available as an external interface to the normpath.set method
 from normpath import set
+# normpath's invalid is available as an external interface
+from normpath import invalid
 
 try:
     sum([])
