@@ -482,7 +482,7 @@ class anchoredaxis:
         self._createargs = args
         self._createkwargs = kwargs
 
-    def createforlinked(self):
+    def docreate(self):
         if not self.canvas:
             self._createfunction(*self._createargs, **self._createkwargs)
 
@@ -492,7 +492,7 @@ class anchoredaxis:
         self.positioner = positioner
 
     def convert(self, x):
-        self.create()
+        self.docreate()
         return self.axis.convert(self.data, x)
 
     def adjustaxis(self, columndata):
@@ -505,7 +505,7 @@ class anchoredaxis:
         return self.positioner.vbasepath(v1=v1, v2=v2)
 
     def basepath(self, x1=None, x2=None):
-        self.create()
+        self.docreate()
         if x1 is None:
             if x2 is None:
                 return self.positioner.vbasepath()
@@ -522,7 +522,7 @@ class anchoredaxis:
         return self.positioner.vgridpath(v)
 
     def gridpath(self, x):
-        self.create()
+        self.docreate()
         return self.positioner.vgridpath(self.axis.convert(self.data, x))
 
     def vtickpoint_pt(self, v):
@@ -532,11 +532,11 @@ class anchoredaxis:
         return self.positioner.vtickpoint_pt(v) * unit.t_pt
 
     def tickpoint_pt(self, x):
-        self.create()
+        self.docreate()
         return self.positioner.vtickpoint_pt(self.axis.convert(self.data, x))
 
     def tickpoint(self, x):
-        self.create()
+        self.docreate()
         x_pt, y_pt = self.positioner.vtickpoint_pt(self.axis.convert(self.data, x))
         return  x_pt * unit.t_pt, y_pt * unit.t_pt
 
@@ -544,7 +544,7 @@ class anchoredaxis:
         return self.positioner.vtickdirection(v)
 
     def tickdirection(self, x):
-        self.create()
+        self.docreate()
         return self.positioner.vtickdirection(self.axis.convert(self.data, x))
 
     def create(self):
@@ -579,7 +579,7 @@ class linkedaxis(anchoredaxis):
         assert self.linkedto is not None, self.errorname
         assert self.positioner is not None, self.errorname
         if self.canvas is None:
-            self.linkedto.createforlinked()
+            self.linkedto.docreate()
             self.canvas = self.axis.createlinked(self.data, self.positioner, self.graphtexrunner, self.errorname, self.painter)
         return self.canvas
 
