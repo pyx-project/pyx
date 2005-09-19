@@ -126,6 +126,14 @@ a:hover {
         font-weight: bolder;
 }
 
+#content h3 {
+        padding: 0px;
+        margin: 0px;
+        padding-bottom: 10px;
+        font-size: 12pt;
+        font-weight: bold;
+}
+
 #content .image {
         margin-left: 10px;
         margin-bottom: 10px;
@@ -141,7 +149,7 @@ a:hover {
 #content p {
         padding: 0px;
         margin: 0px;
-        padding-bottom: 15pt;
+        padding-bottom: 10pt;
 }
 
 #content dl {
@@ -212,6 +220,10 @@ a:hover {
 
 #content .examplecode {
         padding-bottom: 15px;
+}
+
+#content .codeindent {
+        padding-left: 50px;
 }
 
 /* python syntax */

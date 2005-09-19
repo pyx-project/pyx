@@ -1,0 +1,26 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+            "http://www.w3.org/TR/html4/strict.dtd">
+<html metal:use-macro="options/maintemplate/macros/page">
+
+  <div metal:fill-slot="body">
+
+    <h1>PyX - Examples</h1>
+
+    <div class="exampledownloads">
+      <div tal:repeat="download options/example/downloads" class="exampledownload">
+        <div><a tal:attributes="href download/filename" tal:content="download/suffixname">.xxx</a></div>
+        <div class="exampledownloadsize" tal:content="download/filesize"/>
+      </div>
+    </div>
+    <h2 tal:content="options/example/title">title</h2>
+    <div class="exampleimage">
+      <img tal:attributes="alt options/example/png; src options/example/png; width options/example/width; height options/example/height">
+    </div>
+    <div class="examplecode" tal:content="structure options/example/code">Code</div>
+    <h3 tal:condition="options/example/text">Description</h3>
+    <div class="exampletext" tal:content="structure options/example/text">Code</div>
+
+  </div>
+
+</html>
+<!-- vim:set syntax=html: -->

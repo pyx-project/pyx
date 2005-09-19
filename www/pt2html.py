@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, os, os.path, cgi, StringIO, codecs, glob
+import sys, os, os.path, cgi, StringIO, codecs, glob, re
 import keyword, token, tokenize
 import xml.dom.minidom
 from zope.pagetemplate.pagetemplatefile import PageTemplateFile
@@ -18,10 +18,11 @@ tokclasses = {token.NUMBER: 'number',
               token.NAME: 'name',
               _KEYWORD: 'keyword'}
 
-class py2html:
+class MakeHtml:
 
-    def __init__(self, input, output):
-        self.output = output
+    def fromPython(self, input):
+        input = StringIO.StringIO(input)
+        self.output = StringIO.StringIO()
         self.col = 0
         self.tokclass = None
         self.output.write("<pre id=python>")
@@ -29,6 +30,7 @@ class py2html:
         if self.tokclass is not None:
             self.output.write('</span>')
         self.output.write("</pre>\n")
+        return self.output.getvalue()
 
     def tokeneater(self, toktype, toktext, (srow, scol), (erow, ecol), line):
         if toktype == token.ERRORTOKEN:
@@ -64,6 +66,46 @@ class py2html:
             if newline != -1:
                 self.col = len(toktext) - newline - 1
 
+    emptypattern = re.compile(r"\s*$")
+    parpattern = re.compile(r"([ \t]*\n)*(?P<data>(\S[^\n]*\n)+)(([ \t]*\n)+.*)?")
+    parmakeline = re.compile(r"\s*[\r\n]\s*")
+    parmakeinline = re.compile(r"`([^`]*)`")
+    parmakeitalic = re.compile(r"''([^`]*)''")
+    parmakebold = re.compile(r"'''([^`]*)'''")
+    codepattern = re.compile(r"([ \t]*\n)*(?P<data>(([ \t]+[^\n]*)?\n)+)")
+    indentpattern = re.compile(r"([ \t]*\n)*(?P<indent>[ \t]+)")
+
+    def fromText(self, input):
+        pos = 0
+        output = StringIO.StringIO()
+        while not self.emptypattern.match(input, pos):
+            par = self.parpattern.match(input, pos)
+            if par:
+                pos = par.end("data")
+                par = par.group("data").strip()
+                par = par.replace("__version__", pyx.__version__)
+                par = par.replace("&", "&amp;")
+                par = par.replace("<", "&lt;")
+                par = par.replace(">", "&gt;")
+                par = par.replace("\"", "&quot;")
+                par = self.parmakeline.subn(" ", par)[0]
+                par = self.parmakeinline.subn(r"<code>\1</code>", par)[0]
+                par = self.parmakeitalic.subn(r"<em>\1</em>", par)[0]
+                par = self.parmakebold.subn(r"<strong>\1</strong>", par)[0]
+                output.write("<p>%s</p>\n" % par)
+            else:
+                code = self.codepattern.match(input, pos)
+                if not code:
+                    raise RuntimeError("couldn't parse text file")
+                pos = code.end("data")
+                code = code.group("data")
+                indent = self.indentpattern.match(code).group("indent")
+                code = re.subn(r"\s*[\r\n]%s" % indent, "\n", code.strip())[0]
+                output.write("<div class=\"codeindent\">%s</div>\n" % self.fromPython(code + "\n"))
+        return output.getvalue()
+
+makehtml = MakeHtml()
+
 
 class example:
 
@@ -74,9 +116,7 @@ class example:
         else:
             name = basename
         relname = os.path.join("..", "examples", name)
-        htmlbuffer = StringIO.StringIO()
-        py2html(codecs.open("%s.py" % relname, encoding="iso-8859-1"), htmlbuffer)
-        self.code = htmlbuffer.getvalue()
+        self.code = makehtml.fromPython(codecs.open("%s.py" % relname, encoding="iso-8859-1").read())
         self.png = "%s.png" % basename
         self.width, self.height = Image.open("%s.png" % relname).size
         self.downloads = []
@@ -90,6 +130,10 @@ class example:
                                        "suffixname": ".%s" % suffix,
                                        "filesize": filesize,
                                        "iconname": "%s.png" % suffix})
+        if os.path.exists("%s.txt" % relname):
+            self.text = makehtml.fromText(codecs.open("%s.txt" % relname, encoding="iso-8859-1").read())
+        else:
+            self.text = None
 
 
 class MyPageTemplateFile(PageTemplateFile):
@@ -124,19 +168,19 @@ news = "".join(["%s%s" % (dt.toxml(), dd.toxml())
                                   newsdom.getElementsByTagName("dd")[:latestnews])])
 
 for ptname in glob.glob("*.pt"):
-    if ptname in ["maintemplate.pt", "examples.pt"]:
-        continue
-    htmlname = "%s.html" % ptname[:-3]
-    template = MyPageTemplateFile(ptname)
-    content = template(pagename=htmlname,
-                       maintemplate=maintemplate,
-                       examplepages=[],
-                       mkrellink=mkrellink,
-                       version=pyx.__version__,
-                       news=news)
-    codecs.open("build/%s" % htmlname, "w", encoding="iso-8859-1").write(content)
+    if ptname not in ["maintemplate.pt", "examples.pt", "example.pt"]:
+        htmlname = "%s.html" % ptname[:-3]
+        template = MyPageTemplateFile(ptname)
+        content = template(pagename=htmlname,
+                           maintemplate=maintemplate,
+                           examplepages=[],
+                           mkrellink=mkrellink,
+                           version=pyx.__version__,
+                           news=news)
+        codecs.open("build/%s" % htmlname, "w", encoding="iso-8859-1").write(content)
 
 examplestemplate = MyPageTemplateFile("examples.pt")
+exampletemplate = MyPageTemplateFile("example.pt")
 examplepages = [item[:-2]
                 for item in open("../examples/INDEX").readlines()
                 if item[-2] == "/"]
@@ -148,10 +192,9 @@ for dir in [None] + examplepages:
         srcdir = os.path.join(srcdir, dir)
         destdir = os.path.join(destdir, dir)
     try:
-        abstract = open(os.path.join(srcdir, "README")).read()
+        abstract = makehtml.fromText(open(os.path.join(srcdir, "README")).read())
     except IOError:
         abstract = ""
-    abstract = abstract.replace("__version__", pyx.__version__).replace("\PyX{}", "PyX").replace("\TeX{}", "TeX").replace("\LaTeX{}", "LaTeX").replace("\n\n", "<br><br>")
     examples = [example(item.strip(), dir)
                 for item in open(os.path.join(srcdir, "INDEX")).readlines()
                 if item[-2] != "/"]
@@ -163,4 +206,14 @@ for dir in [None] + examplepages:
                                examplepages=examplepages,
                                mkrellink=mkrellink)
     codecs.open("build/%s" % htmlname, "w", encoding="iso-8859-1").write(content)
+    for aexample in examples:
+        if aexample.text:
+            htmlname = os.path.join(destdir, "%s.html" % aexample.title)
+            content = exampletemplate(pagename=htmlname,
+                                      maintemplate=maintemplate,
+                                      abstract=abstract,
+                                      example=aexample,
+                                      examplepages=examplepages,
+                                      mkrellink=mkrellink)
+            codecs.open("build/%s" % htmlname, "w", encoding="iso-8859-1").write(content)
 
