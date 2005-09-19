@@ -101,23 +101,12 @@ class _data:
     Otherwise the columndata list should be missing and an access to a column
     number will fail.
 
+    The names of all columns (static and dynamic) must be fixed at the constructor
+    and stated in the columnnames dictionary.
+
     The instance variable title and defaultstyles contain the data title and
     the default styles (a list of styles), respectively.
     """
-
-    def columnnames(self, graph):
-        """return a list of column names
-
-        Currently the column names might depend on the axes names. This dynamic
-        nature is subject of removal for the future. Then the method could be
-        replaced by an instance variable already initialized in the contructor.
-
-        The result will be self.columns.keys() + self.dynamiccolums.keys(), but
-        the later can only be called after the static axes ranges have been
-        fixed. OTOH the column names are already needed in the initialization
-        process of the styles sharedata and privatedata.
-        """
-        return self.columns.keys()
 
     def dynamiccolumns(self, graph):
         """create and return dynamic columns data
@@ -151,6 +140,7 @@ class list(_data):
             self.columns = dict([(key, self.columndata[i]) for key, i in columns.items()])
         else:
             self.columns = dict([(key, []) for key, i in columns])
+        self.columnnames = self.columns.keys()
         self.title = title
         self.defaultstyles = [style.symbol()]
 
@@ -224,6 +214,8 @@ class data(_data):
             for columnname, columndata in self.orgdata.columns.items():
                 if not self.columns.has_key(columnname):
                     self.columns[columnname] = columndata
+
+        self.columnnames = self.columns.keys()
 
     def columncallback(self, value):
         try:
@@ -497,7 +489,6 @@ class cbdfile(data):
             data.__init__(self, readfile(filename, "user provided file-like object"), **kwargs)
 
 
-
 class function(_data):
 
     defaultstyles = [style.line()]
@@ -525,9 +516,7 @@ class function(_data):
             raise ValueError("xname in context")
         self.expression = compile(expression.strip(), __file__, "eval")
         self.columns = {}
-
-    def columnnames(self, graph):
-        return [self.xname, self.yname]
+        self.columnnames = [self.xname, self.yname]
 
     def dynamiccolumns(self, graph):
         dynamiccolumns = {self.xname: [], self.yname: []}
@@ -560,6 +549,12 @@ class function(_data):
         return dynamiccolumns
 
 
+class functionxy(function):
+
+    def __init__(self, f, min=None, max=None, **kwargs):
+        function.__init__(self, "y(x)=f(x)", context={"f": f}, min=min, max=max, **kwargs)
+
+
 class paramfunction(_data):
 
     defaultstyles = [style.line()]
@@ -584,3 +579,10 @@ class paramfunction(_data):
                 self.columns[key].append(value)
         if len(keys) != len(values):
             raise ValueError("unpack tuple of wrong size")
+        self.columnnames = self.columns.keys()
+
+
+class paramfunctionxy(paramfunction):
+
+    def __init__(self, f, min, max, **kwargs):
+        paramfunction.__init__(self, "t", min, max, "x, y = f(t)", context={"f": f}, **kwargs)
