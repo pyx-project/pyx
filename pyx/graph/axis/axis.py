@@ -111,7 +111,7 @@ class _regularaxis(_axis):
 
     zero = 0.0
 
-    def adjustaxis(self, data, columndata, errorname):
+    def adjustaxis(self, data, columndata, graphtexrunner, errorname):
         if self.min is None or self.max is None:
             for value in columndata:
                 try:
@@ -188,7 +188,7 @@ class _regularaxis(_axis):
         # get best variant
         if self.painter is None or len(variants) == 1:
             # in case of a single variant we're almost done
-            self.adjustaxis(data, variants[0].ticks, errorname)
+            self.adjustaxis(data, variants[0].ticks, graphtexrunner, errorname)
             if variants[0].ticks:
                 self.texter.labels(variants[0].ticks)
             if self.divisor:
@@ -205,7 +205,7 @@ class _regularaxis(_axis):
                 variant.storedcanvas = None
             variants.sort()
             while not variants[0].storedcanvas:
-                self.adjustaxis(variants[0], variants[0].ticks, errorname)
+                self.adjustaxis(variants[0], variants[0].ticks, graphtexrunner, errorname)
                 if variants[0].ticks:
                     self.texter.labels(variants[0].ticks)
                 if self.divisor:
@@ -222,7 +222,7 @@ class _regularaxis(_axis):
                     variants[0].rate += ratelayout
                     variants[0].storedcanvas = canvas
                 variants.sort()
-            self.adjustaxis(data, variants[0].ticks, errorname)
+            self.adjustaxis(data, variants[0].ticks, graphtexrunner, errorname)
             data.ticks = variants[0].ticks
             return variants[0].storedcanvas
 
@@ -305,8 +305,8 @@ class bar(_axis):
         data = axisdata(size=self.firstdist+self.lastdist-self.dist, subaxes={}, names=[])
         return data
 
-    def addsubaxis(self, data, name, subaxis, errorname):
-        subaxis = anchoredaxis(subaxis, "%s, subaxis %s" % (errorname, name))
+    def addsubaxis(self, data, name, subaxis, graphtexrunner, errorname):
+        subaxis = anchoredaxis(subaxis, graphtexrunner, "%s, subaxis %s" % (errorname, name))
         subaxis.sized = hasattr(subaxis.data, "size")
         if subaxis.sized:
             data.size += subaxis.data.size
@@ -319,7 +319,7 @@ class bar(_axis):
         else:
             data.names.append(name)
 
-    def adjustaxis(self, data, columndata, errorname):
+    def adjustaxis(self, data, columndata, graphtexrunner, errorname):
         for value in columndata:
 
             # some checks and error messages
@@ -339,17 +339,17 @@ class bar(_axis):
             if name is not None and name not in data.names:
                 if self.subaxes:
                     if self.subaxes[name] is not None:
-                        self.addsubaxis(data, name, self.subaxes[name], errorname)
+                        self.addsubaxis(data, name, self.subaxes[name], graphtexrunner, errorname)
                 else:
-                    self.addsubaxis(data, name, self.defaultsubaxis, errorname)
+                    self.addsubaxis(data, name, self.defaultsubaxis, graphtexrunner, errorname)
         for name in data.names:
             subaxis = data.subaxes[name]
             if subaxis.sized:
                 data.size -= subaxis.data.size
-            subaxis.axis.adjustaxis(subaxis.data, [value[1]
-                                                   for value in columndata
-                                                   if value[0] == name],
-                                                  "%s, subaxis %s" % (errorname, name))
+            subaxis.axis.adjustaxis(subaxis.data,
+                                    [value[1] for value in columndata if value[0] == name],
+                                    graphtexrunner,
+                                    "%s, subaxis %s" % (errorname, name))
             if subaxis.sized:
                 data.size += subaxis.data.size
 
@@ -380,7 +380,7 @@ class bar(_axis):
             else:
                 subaxis.vmaxover = position / float(data.size)
             subaxis.setpositioner(subaxispositioner(positioner, subaxis))
-            subaxis.create(canvas.texrunner)
+            subaxis.create()
             canvas.insert(subaxis.canvas)
             if canvas.extent_pt < subaxis.canvas.extent_pt:
                 canvas.extent_pt = subaxis.canvas.extent_pt
@@ -396,7 +396,7 @@ class bar(_axis):
             subaxis = data.subaxes[name]
             subaxis = linkedaxis(subaxis, name)
             subaxis.setpositioner(subaxispositioner(positioner, data.subaxes[name]))
-            subaxis.create(canvas.texrunner)
+            subaxis.create()
             canvas.insert(subaxis.canvas)
             if canvas.extent_pt < subaxis.canvas.extent_pt:
                 canvas.extent_pt = subaxis.canvas.extent_pt
@@ -448,8 +448,8 @@ class autosizedlinear(linear):
             data.size = 0
         return data
 
-    def adjustaxis(self, data, columndata, errorname):
-        linear.adjustaxis(self, data, columndata, errorname)
+    def adjustaxis(self, data, columndata, graphtexrunner, errorname):
+        linear.adjustaxis(self, data, columndata, graphtexrunner, errorname)
         try:
             data.size = data.max - data.min
         except:
@@ -468,10 +468,11 @@ autosizedlin = autosizedlinear
 
 class anchoredaxis:
 
-    def __init__(self, axis=None, errorname="unknown"):
+    def __init__(self, axis, graphtexrunner, errorname):
         assert not isinstance(axis, anchoredaxis), errorname
         self.axis = axis
         self.errorname = errorname
+        self.graphtexrunner = graphtexrunner
         self.data = axis.createdata(errorname)
         self.canvas = None
         self.positioner = None
@@ -491,19 +492,20 @@ class anchoredaxis:
         self.positioner = positioner
 
     def convert(self, x):
-        assert self.canvas is not None, self.errorname
+        self.create()
         return self.axis.convert(self.data, x)
 
     def adjustaxis(self, columndata):
         if self.canvas is None:
-            self.axis.adjustaxis(self.data, columndata, self.errorname)
+            self.axis.adjustaxis(self.data, columndata, self.graphtexrunner, self.errorname)
         else:
-            warnings.warn("ignore axis range adjustment of already finished axis '%s'"  % self.errorname)
+            warnings.warn("ignore axis range adjustment of already created axis '%s'"  % self.errorname)
 
     def vbasepath(self, v1=None, v2=None):
         return self.positioner.vbasepath(v1=v1, v2=v2)
 
     def basepath(self, x1=None, x2=None):
+        self.create()
         if x1 is None:
             if x2 is None:
                 return self.positioner.vbasepath()
@@ -520,6 +522,7 @@ class anchoredaxis:
         return self.positioner.vgridpath(v)
 
     def gridpath(self, x):
+        self.create()
         return self.positioner.vgridpath(self.axis.convert(self.data, x))
 
     def vtickpoint_pt(self, v):
@@ -529,9 +532,11 @@ class anchoredaxis:
         return self.positioner.vtickpoint_pt(v) * unit.t_pt
 
     def tickpoint_pt(self, x):
+        self.create()
         return self.positioner.vtickpoint_pt(self.axis.convert(self.data, x))
 
     def tickpoint(self, x):
+        self.create()
         x_pt, y_pt = self.positioner.vtickpoint_pt(self.axis.convert(self.data, x))
         return  x_pt * unit.t_pt, y_pt * unit.t_pt
 
@@ -539,12 +544,13 @@ class anchoredaxis:
         return self.positioner.vtickdirection(v)
 
     def tickdirection(self, x):
+        self.create()
         return self.positioner.vtickdirection(self.axis.convert(self.data, x))
 
-    def create(self, graphtexrunner):
-        assert self.positioner is not None, self.errorname
+    def create(self):
         if self.canvas is None:
-            self.canvas = self.axis.create(self.data, self.positioner, graphtexrunner, self.errorname)
+            assert self.positioner is not None, self.errorname
+            self.canvas = self.axis.create(self.data, self.positioner, self.graphtexrunner, self.errorname)
         return self.canvas
 
 
@@ -563,17 +569,18 @@ class linkedaxis(anchoredaxis):
         assert isinstance(linkedaxis, anchoredaxis), errorname
         self.linkedto = linkedaxis
         self.axis = linkedaxis.axis
+        self.graphtexrunner = self.linkedto.graphtexrunner
         self.errorname = "%s (linked to %s)" % (self.errorname, linkedaxis.errorname)
         self.data = linkedaxis.data
         if self.painter is _marker:
             self.painter = linkedaxis.axis.linkpainter
 
-    def create(self, graphtexrunner):
+    def create(self):
         assert self.linkedto is not None, self.errorname
         assert self.positioner is not None, self.errorname
         if self.canvas is None:
             self.linkedto.createforlinked()
-            self.canvas = self.axis.createlinked(self.data, self.positioner, graphtexrunner, self.errorname, self.painter)
+            self.canvas = self.axis.createlinked(self.data, self.positioner, self.graphtexrunner, self.errorname, self.painter)
         return self.canvas
 
 
@@ -581,9 +588,9 @@ class anchoredpathaxis(anchoredaxis):
     """an anchored axis along a path"""
 
     def __init__(self, path, axis, **kwargs):
-        anchoredaxis.__init__(self, axis, "pathaxis")
+        anchoredaxis.__init__(self, axis, text.defaulttexrunner, "pathaxis")
         self.setpositioner(positioner.pathpositioner(path, **kwargs))
-        self.create(text.defaulttexrunner)
+        self.create()
 
 def pathaxis(*args, **kwargs):
     """creates an axiscanvas for an axis along a path"""
