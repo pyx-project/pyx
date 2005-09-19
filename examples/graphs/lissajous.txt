@@ -1,0 +1,45 @@
+The example shows how to use a `paramfunction` as a data source for a graph.
+`paramfunction` defines a parameter variable name given as a string in the
+first argument, a minimal and a maximal value given as the second and third
+argument of `paramfunction` and an expression string as forth argument. This
+expression string assigns a tuple of expressions to a tuple of data names. As
+usual the styles will decide what those data names are responsible for.
+
+Like for the function, you can also access external data and functions in your
+expression. Suppose we want to provide the data for this example by the
+following python function:
+
+    def lissajousdata(k):
+        return sin(2*k), cos(3*k)
+
+Then we would need to modify the plot command to:
+
+    g.plot(graph.data.paramfunction("t", min, max, "x, y = f(t)",
+                                    context={"f": lissajousdata}))
+
+Note, that `t` and `f` in the string expression stand for `k` and
+`lissajousdata` respectively. You can also use the same names in the expression
+if you like.
+
+When you try this, you'll notice, that you need to add `sin` and `cos` from the
+list of imported symbols from the math module. While this is expected, it is
+more interesting to notice, that you ''didn't'' need to import those functions
+before. The reason is, that the string expressions are evaluated in a certain
+context. This context doesn't only contain the symbols given in the `context`
+keyword argument, but additionally some standard mathematical functions (and
+constants) including `sin` and `cos`. See the reference manual for a complete
+list.
+
+For the common case of plotting a parametric function providing data for `x`
+and `y` by an external function, there is a special `paramfunctionxy` which
+directly calls the external function instead of using a context in a string
+expression. By a `lambda` expression we could provide the data inline, which
+results in:
+
+    g.plot(graph.data.paramfunctionxy(lambda k: (sin(2*k), cos(3*k)), 0, 2*pi))
+
+Note that the external expression is provided in the first argument here. Since
+the system just need to call the function, the parameter variable name doesn't
+need to be provided to `paramfunctionxy`.
+
+
