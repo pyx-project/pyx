@@ -663,6 +663,36 @@ class normcurve_pt(normsubpathitem):
     def outputPDF(self, file, writer, context):
         file.write("%f %f %f %f %f %f c\n" % (self.x1_pt, self.y1_pt, self.x2_pt, self.y2_pt, self.x3_pt, self.y3_pt))
 
+    def x_pt(self, t):
+        return (((  self.x3_pt-3*self.x2_pt+3*self.x1_pt-self.x0_pt)*t +
+                  3*self.x0_pt-6*self.x1_pt+3*self.x2_pt)*t +
+                  3*self.x1_pt-3*self.x0_pt)*t + self.x0_pt
+
+    def xdot_pt(self, t):
+        return ((3*self.x3_pt-9*self.x2_pt+9*self.x1_pt-3*self.x0_pt)*t +
+                 6*self.x0_pt-12*self.x1_pt+6*self.x2_pt)*t + 3*self.x1_pt - 3*self.x0_pt
+
+    def xddot_pt(self, t):
+        return (6*self.x3_pt-18*self.x2_pt+18*self.x1_pt-6*self.x0_pt)*t + 6*self.x0_pt - 12*self.x1_pt + 6*self.x2_pt
+
+    def xdddot_pt(self, t):
+        return 6*self.x3_pt-18*self.x2_pt+18*self.x1_pt-6*self.x0_pt
+
+    def y_pt(self, t):
+        return (((  self.y3_pt-3*self.y2_pt+3*self.y1_pt-self.y0_pt)*t +
+                  3*self.y0_pt-6*self.y1_pt+3*self.y2_pt)*t +
+                  3*self.y1_pt-3*self.y0_pt)*t + self.y0_pt
+
+    def ydot_pt(self, t):
+        return ((3*self.y3_pt-9*self.y2_pt+9*self.y1_pt-3*self.y0_pt)*t +
+                 6*self.y0_pt-12*self.y1_pt+6*self.y2_pt)*t + 3*self.y1_pt - 3*self.y0_pt
+
+    def yddot_pt(self, t):
+        return (6*self.y3_pt-18*self.y2_pt+18*self.y1_pt-6*self.y0_pt)*t + 6*self.y0_pt - 12*self.y1_pt + 6*self.y2_pt
+
+    def ydddot_pt(self, t):
+        return 6*self.y3_pt-18*self.y2_pt+18*self.y1_pt-6*self.y0_pt
+
 
 ################################################################################
 # normsubpath
