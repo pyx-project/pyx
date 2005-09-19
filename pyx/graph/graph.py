@@ -66,10 +66,9 @@ class plotitem:
         self.privatedatalist = [styledata() for s in self.styles]
 
         # perform setcolumns to all styles
-        columnnames = self.data.columnnames(graph)
         self.usedcolumnnames = []
         for privatedata, s in zip(self.privatedatalist, self.styles):
-            self.usedcolumnnames.extend(s.columnnames(privatedata, self.sharedata, graph, columnnames))
+            self.usedcolumnnames.extend(s.columnnames(privatedata, self.sharedata, graph, self.data.columnnames))
 
     def selectstyles(self, graph, selectindex, selecttotal):
         for privatedata, style in zip(self.privatedatalist, self.styles):
@@ -95,9 +94,9 @@ class plotitem:
         useitems = []
         for columnname in self.usedcolumnnames:
             try:
-                useitems.append((columnname, self.data.columns[columnname]))
-            except KeyError:
                 useitems.append((columnname, self.dynamiccolumns[columnname]))
+            except KeyError:
+                useitems.append((columnname, self.data.columns[columnname]))
         if not useitems:
             raise ValueError("cannot draw empty data")
         for i in xrange(len(useitems[0][1])):
@@ -187,6 +186,9 @@ class graph(canvas.canvas):
         for d in usedata:
             plotitems.append(plotitem(self, d, styles))
         self.plotitems.extend(plotitems)
+        if self.didranges:
+            for aplotitem in plotitems:
+                aplotitem.makedynamicdata(self)
         if singledata:
             return plotitems[0]
         else:
@@ -283,14 +285,14 @@ class graphxy(graph):
         for axisname, aaxis in axes.items():
             if aaxis is not None:
                 if not isinstance(aaxis, axis.linkedaxis):
-                    self.axes[axisname] = axis.anchoredaxis(aaxis, axisname)
+                    self.axes[axisname] = axis.anchoredaxis(aaxis, self.texrunner, axisname)
                 else:
                     self.axes[axisname] = aaxis
         for axisname, axisat in [("x", xaxisat), ("y", yaxisat)]:
             okey = axisname + "2"
             if not axes.has_key(axisname):
                 if not axes.has_key(okey):
-                    self.axes[axisname] = axis.anchoredaxis(axis.linear(), axisname)
+                    self.axes[axisname] = axis.anchoredaxis(axis.linear(), self.texrunner, axisname)
                     self.axes[okey] = axis.linkedaxis(self.axes[axisname], okey)
                 else:
                     self.axes[axisname] = axis.linkedaxis(self.axes[okey], axisname)
@@ -446,7 +448,7 @@ class graphxy(graph):
         if self.did(self.doaxiscreate, axisname):
             return
         self.doaxispositioner(axisname)
-        self.axes[axisname].create(self.texrunner)
+        self.axes[axisname].create()
 
     def dolayout(self):
         if self.did(self.dolayout):
