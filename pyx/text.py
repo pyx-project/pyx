@@ -1039,7 +1039,7 @@ class texrunner:
         else:
             raise TexResultError("TeX didn't respond as expected within the timeout period (%i seconds)." % self.waitfortex, self)
 
-    def finishdvi(self):
+    def finishdvi(self, ignoretail=0):
         """finish TeX/LaTeX and read the dvifile
         - this method ensures that all textboxes can access their
           dvicanvas"""
@@ -1051,7 +1051,7 @@ class texrunner:
             for box in self.needdvitextboxes:
                 box.setdvicanvas(self.dvifile.readpage([ord("P"), ord("y"), ord("X"), page, 0, 0, 0, 0, 0, 0]))
                 page += 1
-        if self.dvifile.readpage(None) is not None:
+        if not ignoretail and self.dvifile.readpage(None) is not None:
             raise RuntimeError("end of dvifile expected")
         self.dvifile = None
         self.needdvitextboxes = []
@@ -1197,7 +1197,11 @@ class texrunner:
         lentextattrs = len(textattrs)
         for i in range(lentextattrs):
             expr = textattrs[lentextattrs-1-i].apply(expr)
-        self.execute(expr, self.defaulttexmessagesdefaultrun + self.texmessagesdefaultrun + texmessages)
+        try:
+            self.execute(expr, self.defaulttexmessagesdefaultrun + self.texmessagesdefaultrun + texmessages)
+        except TexResultError:
+            self.finishdvi(ignoretail=1)
+            raise
         if self.texipc:
             if first:
                 self.dvifile = dvifile.dvifile("%s.dvi" % self.texfilename, self.fontmap, debug=self.dvidebug)
