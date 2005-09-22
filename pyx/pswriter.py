@@ -145,20 +145,24 @@ class PSfontfile(PSresource):
         if self.encodingfilename == other.encodingfilename:
             self.usedchars.update(other.usedchars)
         else:
-            self.usedchars = None # stripping of font not possible
+            self.encodingfilename = None # stripping of font not possible
 
     def outputPS(self, file, writer, registry):
         # XXX: access to the encoding file
-        encodingfile = type1font.encodingfile(self.encodingfilename, self.encodingfilename)
-        usedglyphs = [encodingfile.decode(char)[1:] for char in self.usedchars.keys()]
+        if self.encodingfilename:
+            encodingfile = type1font.encodingfile(self.encodingfilename, self.encodingfilename)
+            usedglyphs = [encodingfile.decode(char)[1:] for char in self.usedchars.keys()]
 
         file.write("%%%%BeginFont: %s\n" % self.name)
         # file.write("%%Included glyphs: %s\n" % " ".join(usedglyphs))
         import font.t1font
         font = font.t1font.T1pfbfont(self.filename)
-        strippedfont = font.getstrippedfont(usedglyphs)
+        if self.encodingfilename:
+            strippedfont = font.getstrippedfont(usedglyphs)
+        else:
+            strippedfont = font
         strippedfont.outputPS(file)
-        file.write("%%EndFont\n")
+        file.write("\n%%EndFont\n")
 
 
 class PSfontencoding(PSresource):
