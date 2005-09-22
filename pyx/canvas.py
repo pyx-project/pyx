@@ -154,6 +154,12 @@ class _canvas(canvasitem):
             else:
                 self.set([attr])
 
+    def __len__(self):
+        return len(self.items)
+
+    def __getitem__(self, i):
+        return self.pathitems[i]
+
     def bbox(self):
         """returns bounding box of canvas"""
         obbox = None

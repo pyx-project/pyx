@@ -29,7 +29,7 @@
 from __future__ import nested_scopes
 
 import sys, math
-import attr, canvas, color, path, style, trafo, unit
+import attr, canvas, color, path, normpath, style, trafo, unit
 
 try:
     from math import radians
@@ -164,7 +164,11 @@ class decoratedpath(canvas.canvasitem):
                 style.outputPS(file, writer, context)
 
         if self.strokestyles is None and self.fillstyles is None:
-            raise RuntimeError("Path neither to be stroked nor filled")
+            if not len(self.ornaments):
+                raise RuntimeError("Path neither to be stroked nor filled nor decorated in another way")
+            # just draw additional elements of decoratedpath
+            self.ornaments.outputPS(file, writer, context)
+            return
 
         strokepath = self.strokepath()
         fillpath = self.path
@@ -250,7 +254,11 @@ class decoratedpath(canvas.canvasitem):
                 style.outputPDF(file, writer, context(strokeattr=0))
 
         if self.strokestyles is None and self.fillstyles is None:
-            raise RuntimeError("Path neither to be stroked nor filled")
+            if not len(self.ornaments):
+                raise RuntimeError("Path neither to be stroked nor filled nor decorated in another way")
+            # just draw additional elements of decoratedpath
+            self.ornaments.outputPDF(file, writer, context)
+            return
 
         strokepath = self.strokepath()
         fillpath = self.path
@@ -545,7 +553,7 @@ class text(deco, attr.attr):
         import text as textmodule
         textattrs = attr.mergeattrs([textmodule.halign.center, textmodule.vshift.mathaxis] + self.textattrs)
 
-        # note that we cannot call ensurenormpath (the asserts might be a bit too strong)
+        dp.ensurenormpath()
         if self.arclenfrombegin is not None:
             x, y = dp.path.at(dp.path.begin() + self.arclenfrombegin)
         elif self.arclenfromend is not None:
@@ -557,3 +565,31 @@ class text(deco, attr.attr):
         t = texrunner.text(x, y, self.text, textattrs)
         t.linealign(self.textdist, math.cos(self.angle*math.pi/180), math.sin(self.angle*math.pi/180))
         dp.ornaments.insert(t)
+
+
+
+class shownormpath(deco, attr.attr):
+
+    def decorate(self, dp, texrunner):
+        r_pt = 2
+        dp.ensurenormpath()
+        for normsubpath in dp.path.normsubpaths:
+            for i, normsubpathitem in enumerate(normsubpath.normsubpathitems):
+                if isinstance(normsubpathitem, normpath.normcurve_pt):
+                    dp.ornaments.stroke(normpath.normpath([normpath.normsubpath([normsubpathitem])]), [color.rgb.green])
+                else:
+                    dp.ornaments.stroke(normpath.normpath([normpath.normsubpath([normsubpathitem])]), [color.rgb.blue])
+        for normsubpath in dp.path.normsubpaths:
+            for i, normsubpathitem in enumerate(normsubpath.normsubpathitems):
+                if isinstance(normsubpathitem, normpath.normcurve_pt):
+                    dp.ornaments.stroke(path.line_pt(normsubpathitem.x0_pt, normsubpathitem.y0_pt, normsubpathitem.x1_pt, normsubpathitem.y1_pt), [style.linestyle.dashed, color.rgb.red])
+                    dp.ornaments.stroke(path.line_pt(normsubpathitem.x2_pt, normsubpathitem.y2_pt, normsubpathitem.x3_pt, normsubpathitem.y3_pt), [style.linestyle.dashed, color.rgb.red])
+                    dp.ornaments.draw(path.circle_pt(normsubpathitem.x1_pt, normsubpathitem.y1_pt, r_pt), [filled([color.rgb.red])])
+                    dp.ornaments.draw(path.circle_pt(normsubpathitem.x2_pt, normsubpathitem.y2_pt, r_pt), [filled([color.rgb.red])])
+        for normsubpath in dp.path.normsubpaths:
+            for i, normsubpathitem in enumerate(normsubpath.normsubpathitems):
+                if not i:
+                    x_pt, y_pt = normsubpathitem.atbegin_pt()
+                    dp.ornaments.draw(path.circle_pt(x_pt, y_pt, r_pt), [filled])
+                x_pt, y_pt = normsubpathitem.atend_pt()
+                dp.ornaments.draw(path.circle_pt(x_pt, y_pt, r_pt), [filled])
