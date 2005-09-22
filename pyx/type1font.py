@@ -115,8 +115,8 @@ class encodingfile:
             raise RuntimeError("encoding file '%s' too long" % filename)
         encfile.close()
 
-#    def decode(self, charcode):
-#        return self.encvector[charcode]
+    def decode(self, charcode):
+        return self.encvector[charcode]
 
     def outputPS(self, file, writer, registry):
         file.write("%%%%BeginProcSet: %s\n" % self.name)
@@ -158,94 +158,6 @@ class font:
             self.name = basefontname
         else:
             self.name = "%s-%s" % (basefontname, encoding.name)
-
-
-class fontfile:
-
-    # TODO: own stripping using glyph names instead of char codes; completely remove encoding
-
-    def __init__(self, fontname, fontfilename, usedchars, encodingfilename):
-        self.fontname = fontname
-        self.fontfilename = fontfilename
-        self.usedchars = [0]*256
-        for charcode in usedchars.keys():
-            self.usedchars[charcode] = 1
-        self.encodingfilename = encodingfilename
-
-    def getflags(self):
-        # As a simple heuristics we assume non-symbolic fonts if and only
-        # if the Adobe standard encoding is used. All other font flags are
-        # not specified here.
-        fontfile = open(self.fontfilename, "rb")
-        fontdata = fontfile.read()
-        fontfile.close()
-        if _StandardEncodingMatch.search(fontdata):
-            return 32
-        return 4
-
-    def outputPS(self, file, writer, registry):
-        file.write("%%%%BeginFont: %s\n" % self.fontname)
-        file.write("%Included char codes:")
-        for i in range(len(self.usedchars)):
-            if self.usedchars[i]:
-                file.write(" %d" % i)
-        file.write("\n")
-        if self.encodingfilename is not None:
-            t1strip.t1strip(file, self.fontfilename, self.usedchars, self.encodingfilename)
-        else:
-            t1strip.t1strip(file, self.fontfilename, self.usedchars)
-        file.write("%%EndFont\n")
-
-    def outputPDF(self, file, writer, registry):
-        strippedfontfilename = tempfile.mktemp()
-        strippedfontfile = open(strippedfontfilename, "w")
-        if self.usedchars:
-            if self.encodingfilename is not None:
-                t1strip.t1strip(strippedfontfile, self.fontfilename, self.usedchars, self.encodingfilename)
-            else:
-                t1strip.t1strip(strippedfontfile, self.fontfilename, self.usedchars)
-        strippedfontfile.close()
-        strippedfontfile = open(strippedfontfilename, "r")
-        fontdata = strippedfontfile.read()
-        strippedfontfile.close()
-        os.unlink(strippedfontfilename)
-
-        # split the font into its three parts
-        length1 = fontdata.index("currentfile eexec") + 18
-        length2 = fontdata.index("0"*20)
-        fontdata1 = fontdata[:length1]
-        fontdata2 = fontdata[length1:length2]
-        fontdata3 = fontdata[length2:]
-        length3 = len(fontdata3)
-
-        # convert to pfa
-        fontdata2 = binascii.a2b_hex(fontdata2.replace(" ", "").replace("\r", "").replace("\n", "").replace("\t", ""))
-        length2 = len(fontdata2)
-
-        # we might be allowed to skip the third part ...
-        if (fontdata3.replace("\n", "")
-                     .replace("\r", "")
-                     .replace("\t", "")
-                     .replace(" ", "")) == "0"*512 + "cleartomark":
-            length3 = 0
-            fontdata3 = ""
-        
-        data = fontdata1 + fontdata2 + fontdata3
-        if writer.compress:
-            data = zlib.compress(fontdata1 + fontdata2 + fontdata3)
-
-        file.write("<<\n"
-                   "/Length %d\n"
-                   "/Length1 %d\n"
-                   "/Length2 %d\n"
-                   "/Length3 %d\n" % (len(data), length1, length2, length3))
-        if writer.compress:
-            file.write("/Filter /FlateDecode\n")
-        file.write(">>\n"
-                   "stream\n")
-        file.write(data)
-        file.write("\n"
-                   "endstream\n")
 
 
 class text_pt(canvas.canvasitem):

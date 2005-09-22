@@ -148,8 +148,17 @@ class PSfontfile(PSresource):
             self.usedchars = None # stripping of font not possible
 
     def outputPS(self, file, writer, registry):
-        fontfile = type1font.fontfile(self.name, self.filename, self.usedchars, self.encodingfilename)
-        fontfile.outputPS(file, writer, registry)
+        # XXX: access to the encoding file
+        encodingfile = type1font.encodingfile(self.encodingfilename, self.encodingfilename)
+        usedglyphs = [encodingfile.decode(char)[1:] for char in self.usedchars.keys()]
+
+        file.write("%%%%BeginFont: %s\n" % self.name)
+        # file.write("%%Included glyphs: %s\n" % " ".join(usedglyphs))
+        import font.t1font
+        font = font.t1font.T1pfbfont(self.filename)
+        strippedfont = font.getstrippedfont(usedglyphs)
+        strippedfont.outputPS(file)
+        file.write("%%EndFont\n")
 
 
 class PSfontencoding(PSresource):
