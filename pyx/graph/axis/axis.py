@@ -307,6 +307,7 @@ class bar(_axis):
 
     def addsubaxis(self, data, name, subaxis, graphtexrunner, errorname):
         subaxis = anchoredaxis(subaxis, graphtexrunner, "%s, subaxis %s" % (errorname, name))
+        subaxis.setcreatecall(lambda: None)
         subaxis.sized = hasattr(subaxis.data, "size")
         if subaxis.sized:
             data.size += subaxis.data.size
