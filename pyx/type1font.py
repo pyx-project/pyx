@@ -26,7 +26,7 @@ try:
     import zlib
 except:
     pass
-import bbox, canvas, pswriter, pdfwriter, t1strip
+import bbox, canvas, pswriter, pdfwriter
 
 try:
     enumerate([])

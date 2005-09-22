@@ -30,8 +30,8 @@ ext_modules = []
 pykpathsea_ext_module = Extension("pyx.pykpathsea._pykpathsea",
                                   sources=["pyx/pykpathsea/pykpathsea.c"],
                                   libraries=["kpathsea"])
-t1strip_ext_module = Extension("pyx.t1strip._t1strip",
-                               sources=["pyx/t1strip/t1strip.c", "pyx/t1strip/writet1.c"])
+# t1code_ext_module = Extension("pyx.font._t1code",
+#                               sources=["pyx/font/_t1code.c"])
 
 # obtain information on which modules have to be built from setup.cfg file
 cfg = ConfigParser.ConfigParser()
@@ -39,8 +39,8 @@ cfg.read("setup.cfg")
 if cfg.has_section("PyX"):
     if cfg.has_option("PyX", "build_pykpathsea") and cfg.getboolean("PyX", "build_pykpathsea"):
         ext_modules.append(pykpathsea_ext_module)
-    if cfg.has_option("PyX", "build_t1strip") and cfg.getboolean("PyX", "build_t1strip"):
-        ext_modules.append(t1strip_ext_module)
+    if cfg.has_option("PyX", "build_t1code") and cfg.getboolean("PyX", "build_t1code"):
+        ext_modules.append(t1code_ext_module)
 
 ################################################################################
 # data files
@@ -190,7 +190,7 @@ setup(name="PyX",
       description=doclines[0],
       long_description="\n".join(doclines[2:]),
       license="GPL",
-      packages=["pyx", "pyx/graph", "pyx/graph/axis", "pyx/t1strip", "pyx/pykpathsea"],
+      packages=["pyx", "pyx/graph", "pyx/graph/axis", "pyx/font", "pyx/pykpathsea"],
       ext_modules=ext_modules,
       data_files=data_files,
       cmdclass = {"build_py": pyx_build_py,
