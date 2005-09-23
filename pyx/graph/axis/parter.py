@@ -25,7 +25,6 @@
 from __future__ import nested_scopes
 
 import math
-from pyx import helper # TODO to be removed
 from pyx.graph.axis import tick
 
 
