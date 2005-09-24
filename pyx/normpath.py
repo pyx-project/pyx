@@ -159,6 +159,7 @@ class normsubpathitem:
 
         The result contains the invalid instance at positions, where the
         curvature is undefined."""
+        pass
 
     def curveradius_pt(self, params):
         """return the curvature radius at params in pts
@@ -264,7 +265,7 @@ class normline_pt(normsubpathitem):
     cbox = bbox
 
     def curvature_pt(self, params):
-        result = [0] * len(params)
+        return [0] * len(params)
 
     def curveradius_pt(self, params):
         return [invalid] * len(params)
@@ -1554,11 +1555,9 @@ class normpath(canvas.canvasitem):
         return result
 
     def _curvature_pt(self, params):
-        """return the curvature in 1/pts at params in pts
+        """return the curvature in 1/pts at params
 
-        The curvature radius is the inverse of the curvature. When the
-        curvature is 0, None is returned. Note that this radius can be negative
-        or positive, depending on the sign of the curvature."""
+        When the curvature is undefined, the invalid instance is returned."""
 
         result = [None] * len(params)
         for normsubpathindex, (indices, params) in self._distributeparams(params).items():
@@ -1567,11 +1566,12 @@ class normpath(canvas.canvasitem):
         return result
 
     def curvature_pt(self, params):
-        """return the curvature in 1/pt at param(s) or arc length(s) in pts
+        """return the curvature in 1/pt at params
 
         The curvature radius is the inverse of the curvature. When the
-        curvature is 0, None is returned. Note that this radius can be negative
-        or positive, depending on the sign of the curvature."""
+        curvature is undefined, the invalid instance is returned. Note that
+        this radius can be negative or positive, depending on the sign of the
+        curvature."""
 
         return self._curveradius_pt(self._convertparams(params, self.arclentoparam_pt))
     curvature_pt = _valueorlistmethod(curvature_pt)
