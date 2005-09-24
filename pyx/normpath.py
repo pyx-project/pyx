@@ -1078,10 +1078,11 @@ class normsubpath:
         if other.closed:
             raise NormpathException("Cannot join closed normsubpath")
 
-        # insert connection line
-        x0_pt, y0_pt = self.atend_pt()
-        x1_pt, y1_pt = other.atbegin_pt()
-        self.append(normline_pt(x0_pt, y0_pt, x1_pt, y1_pt))
+        if self.normsubpathitems:
+            # insert connection line
+            x0_pt, y0_pt = self.atend_pt()
+            x1_pt, y1_pt = other.atbegin_pt()
+            self.append(normline_pt(x0_pt, y0_pt, x1_pt, y1_pt))
 
         # append other normsubpathitems
         self.extend(other.normsubpathitems)
