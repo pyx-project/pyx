@@ -30,8 +30,8 @@ ext_modules = []
 pykpathsea_ext_module = Extension("pyx.pykpathsea._pykpathsea",
                                   sources=["pyx/pykpathsea/pykpathsea.c"],
                                   libraries=["kpathsea"])
-# t1code_ext_module = Extension("pyx.font._t1code",
-#                               sources=["pyx/font/_t1code.c"])
+t1code_ext_module = Extension("pyx.font._t1code",
+                              sources=["pyx/font/_t1code.c"])
 
 # obtain information on which modules have to be built from setup.cfg file
 cfg = ConfigParser.ConfigParser()
