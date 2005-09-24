@@ -114,7 +114,7 @@ class normsubpathitem:
     which is the accuracy needed expressed as a length in pts.
 
     normsubpathitems should never be modified inplace, since references
-    might be shared betweeen several normsubpaths.
+    might be shared between several normsubpaths.
     """
 
     def arclen_pt(self, epsilon):
@@ -154,12 +154,19 @@ class normsubpathitem:
         """
         pass
 
+    def curvature_pt(self, params):
+        """return the curvature at params in 1/pts
+
+        The result contains the invalid instance at positions, where the
+        curvature is undefined."""
+
     def curveradius_pt(self, params):
         """return the curvature radius at params in pts
 
-        The curvature radius is the inverse of the curvature. When the
-        curvature is 0, None is returned. Note that this radius can be negative
-        or positive, depending on the sign of the curvature."""
+        The curvature radius is the inverse of the curvature. Where the
+        curvature is undefined, the invalid instance is returned. Note that
+        this radius can be negative or positive, depending on the sign of the
+        curvature."""
         pass
 
     def intersect(self, other, epsilon):
@@ -260,7 +267,7 @@ class normline_pt(normsubpathitem):
         result = [0] * len(params)
 
     def curveradius_pt(self, params):
-        return [None] * len(params)
+        return [invalid] * len(params)
 
     def intersect(self, other, epsilon):
         if isinstance(other, normline_pt):
@@ -499,6 +506,10 @@ class normcurve_pt(normsubpathitem):
 
     def curveradius_pt(self, params):
         result = []
+        # see notes in rotation
+        approxarclen = (math.hypot(self.x1_pt-self.x0_pt, self.y1_pt-self.y0_pt) +
+                        math.hypot(self.x2_pt-self.x1_pt, self.y2_pt-self.y1_pt) +
+                        math.hypot(self.x3_pt-self.x2_pt, self.y3_pt-self.y2_pt))
         for param in params:
             xdot = ( 3 * (1-param)*(1-param) * (-self.x0_pt + self.x1_pt) +
                      6 * (1-param)*param * (-self.x1_pt + self.x2_pt) +
@@ -511,15 +522,11 @@ class normcurve_pt(normsubpathitem):
             yddot = ( 6 * (1-param) * (self.y0_pt - 2*self.y1_pt + self.y2_pt) +
                       6 * param * (self.y1_pt - 2*self.y2_pt + self.y3_pt) )
 
-            # TODO: The curveradius can become huge. Shall we add/need/whatever an
-            #       invalid threshold here too?
-            try:
-                radius = (xdot**2 + ydot**2)**1.5 / (xdot*yddot - ydot*xddot)
-            except:
-                radius = None
-
-            result.append(radius)
-
+            hypot = math.hypot(xdot, ydot)
+            if hypot/approxarclen > _minrelspeed:
+                result.append(hypot**3 / (xdot*yddot - ydot*xddot))
+            else:
+                result.append(invalid)
         return result
 
     def intersect(self, other, epsilon):
@@ -922,7 +929,7 @@ class normsubpath:
         """return the curvature radius at params in pts
 
         The curvature radius is the inverse of the curvature. When the
-        curvature is 0, None is returned. Note that this radius can be negative
+        curvature is 0, the invalid instance is returned. Note that this radius can be negative
         or positive, depending on the sign of the curvature."""
         result = [None] * len(params)
         for normsubpathitemindex, (indices, params) in self._distributeparams(params).items():
