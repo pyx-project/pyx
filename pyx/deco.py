@@ -398,34 +398,33 @@ filled.clear = attr.clearclass(_filled)
 
 # helper function which constructs the arrowhead
 
-def _arrowhead(anormpath, size, angle, constrictionlen, reversed):
+def _arrowhead(anormpath, arclenfrombegin, direction, size, angle, constrictionlen):
 
     """helper routine, which returns an arrowhead from a given anormpath
 
-    returns arrowhead at begin of anormpath with size,
-    opening angle and constriction length constrictionlen. If constrictionlen is None, we
-    do not add a constriction.
+    - arclenfrombegin: position of arrow in arc length from the start of the path
+    - direction: +1 for an arrow pointing along the direction of anormpath or
+                 -1 for an arrow pointing opposite to the direction of normpath
+    - size: size of the arrow as arc length
+    - angle. opening angle
+    - constrictionlen: None (no constriction) or arc length of constriction.
     """
 
-    if reversed:
-        anormpath = anormpath.reversed()
-    alen = anormpath.arclentoparam(size)
-    tx, ty = anormpath.atbegin()
+    # arc length and coordinates of tip
+    tx, ty = anormpath.at(arclenfrombegin)
 
-    # now we construct the template for our arrow but cutting
-    # the path a the corresponding length
-    arrowtemplate = anormpath.split(alen)[0]
+    # construct the template for the arrow by cutting the path at the
+    # corresponding length
+    arrowtemplate = anormpath.split([arclenfrombegin, arclenfrombegin - direction * size])[1]
 
-    # from this template, we construct the two outer curves
-    # of the arrow
+    # from this template, we construct the two outer curves of the arrow
     arrowl = arrowtemplate.transformed(trafo.rotate(-angle/2.0, tx, ty))
     arrowr = arrowtemplate.transformed(trafo.rotate( angle/2.0, tx, ty))
 
     # now come the joining backward parts
-
     if constrictionlen is not None:
         # constriction point (cx, cy) lies on path
-        cx, cy = anormpath.at(anormpath.arclentoparam(constrictionlen))
+        cx, cy = anormpath.at(arclenfrombegin - direction * constrictionlen)
         arrowcr= path.line(*(arrowr.atend() + (cx,cy)))
         arrow = arrowl.reversed() << arrowr << arrowcr
     else:
@@ -442,26 +441,29 @@ class arrow(deco, attr.attr):
 
     """arrow is a decorator which adds an arrow to either side of the path"""
 
-    def __init__(self, attrs=[], position=0, size=_base, angle=45, constriction=0.8):
+    def __init__(self, attrs=[], pos=1, reversed=0, size=_base, angle=45, constriction=0.8):
         self.attrs = attr.mergeattrs([style.linestyle.solid, filled] + attrs)
         attr.checkattrs(self.attrs, [deco, style.fillstyle, style.strokestyle])
-        self.position = position
+        self.pos = pos
+        self.reversed = reversed
         self.size = size
         self.angle = angle
         self.constriction = constriction
 
-    def __call__(self, attrs=None, position=None, size=None, angle=None, constriction=_marker):
+    def __call__(self, attrs=None, pos=None, reversed=None, size=None, angle=None, constriction=_marker):
         if attrs is None:
             attrs = self.attrs
-        if position is None:
-            position = self.position
+        if pos is None:
+            pos = self.pos
+        if reversed is None:
+            reversed = self.reversed
         if size is None:
             size = self.size
         if angle is None:
             angle = self.angle
         if constriction is _marker:
             constriction = self.constriction
-        return arrow(attrs=attrs, position=position, size=size, angle=angle, constriction=constriction)
+        return arrow(attrs=attrs, pos=pos, reversed=reversed, size=size, angle=angle, constriction=constriction)
 
     def decorate(self, dp, texrunner):
         dp.ensurenormpath()
@@ -480,24 +482,23 @@ class arrow(deco, attr.attr):
             constrictionlen = self.size * 1 * math.cos(radians(self.angle/2.0))
             arrowheadconstrictionlen = None
 
-        if self.position == 0:
-            arrowhead = _arrowhead(anormpath, self.size, self.angle, arrowheadconstrictionlen, reversed=0)
-        else:
-            arrowhead = _arrowhead(anormpath, self.size, self.angle, arrowheadconstrictionlen, reversed=1)
+        arclenfrombegin = self.pos * anormpath.arclen()
+        direction = self.reversed and -1 or 1
+        arrowhead = _arrowhead(anormpath, arclenfrombegin, direction, self.size, self.angle, arrowheadconstrictionlen)
 
         # add arrowhead to decoratedpath
         dp.ornaments.draw(arrowhead, self.attrs)
 
-        if self.position == 0:
-            # exclude first part of the first normsubpath from stroking
+        # exlude part of the path from stroking when the arrow is strictly at the begin or the end
+        if self.pos == 0 and self.reversed:
             dp.excluderange(0, min(self.size, constrictionlen))
-        else:
+        elif self.pos == 1 and not self.reversed:
             dp.excluderange(anormpath.end() - min(self.size, constrictionlen), anormpath.end())
 
 arrow.clear = attr.clearclass(arrow)
 
 # arrows at begin of path
-barrow = arrow(position=0)
+barrow = arrow(pos=0, reversed=1)
 barrow.SMALL = barrow(size=_base/math.sqrt(64))
 barrow.SMALl = barrow(size=_base/math.sqrt(32))
 barrow.SMAll = barrow(size=_base/math.sqrt(16))
@@ -513,7 +514,7 @@ barrow.LARGe = barrow(size=_base*math.sqrt(32))
 barrow.LARGE = barrow(size=_base*math.sqrt(64))
 
 # arrows at end of path
-earrow = arrow(position=1)
+earrow = arrow()
 earrow.SMALL = earrow(size=_base/math.sqrt(64))
 earrow.SMALl = earrow(size=_base/math.sqrt(32))
 earrow.SMAll = earrow(size=_base/math.sqrt(16))
@@ -527,7 +528,6 @@ earrow.LArge = earrow(size=_base*math.sqrt(8))
 earrow.LARge = earrow(size=_base*math.sqrt(16))
 earrow.LARGe = earrow(size=_base*math.sqrt(32))
 earrow.LARGE = earrow(size=_base*math.sqrt(64))
-
 
 
 class text(deco, attr.attr):
@@ -565,7 +565,6 @@ class text(deco, attr.attr):
         t = texrunner.text(x, y, self.text, textattrs)
         t.linealign(self.textdist, math.cos(self.angle*math.pi/180), math.sin(self.angle*math.pi/180))
         dp.ornaments.insert(t)
-
 
 
 class shownormpath(deco, attr.attr):

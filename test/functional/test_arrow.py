@@ -10,7 +10,9 @@ def testarrow(c):
     c.stroke(path(moveto(10,20),
                 curveto(12,16,14,15,12,19),
                 rcurveto(-3,2,3,3,-2,4)),
-             [deco.barrow.small, deco.earrow.normal])
+             [deco.barrow.small, deco.earrow.normal,
+              deco.arrow(pos=0.5),
+              deco.arrow(pos=0.7, reversed=1)])
 
     c.stroke(path(arc(8,15,4,10,70)), [deco.barrow.small, deco.earrow.normal])
     c.stroke(path(arc(8,15,3,10,70)), [deco.barrow.small, deco.earrow.normal])
@@ -86,7 +88,6 @@ def testarrow(c):
             deco.earrow.LARge(attrs=[color.rgb.red,
                                      deco.stroked([style.linejoin.round]),
                                      deco.filled([color.rgb.blue])])])
-
 
 
 c=canvas.canvas()

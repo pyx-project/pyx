@@ -119,6 +119,7 @@ TODO:
     - TODO: missing numeric fallback in helper
   - deco module:
     - add basic text decorator (TODO: documentation)
+    - allow arrows at arbitrary positions along the path (TODO: check documentation)
   - connector module:
     - boxdists parameter need to be a list/tuple of two items now
   - trafo module:
