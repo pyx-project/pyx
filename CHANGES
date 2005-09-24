@@ -554,7 +554,7 @@ TODO:
     - new fallback solution in pure python
     - bugfix: pyxadapt.h needs to open files binary under Windows (reported by Gary Pajer)
   - t1code extension module (new):
-    - C version for decoders and encoders uses in Type 1 font files
+    - C version of de-/encoding routines used in Type 1 font files
   - box module:
     - _xxx -> xxx_pt renaming
   - trafo module:
