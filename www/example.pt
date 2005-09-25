@@ -4,7 +4,11 @@
 
   <div metal:fill-slot="body">
 
-    <h1>PyX - Examples</h1>
+    <div class="examplenavigations">
+      <a class="examplenavigation" tal:attributes="href python: options['mkrellink'](options['prev'], options)">prev</a>
+      <a class="examplenavigation" tal:attributes="href python: options['mkrellink'](options['next'], options)" tal:condition="options/next">next</a>
+    </div>
+    <h1>PyX - Examples: <tal:block tal:content="options/dir"/></h1>
 
     <div class="exampledownloads">
       <div tal:repeat="download options/example/downloads" class="exampledownload">
@@ -17,8 +21,10 @@
       <img tal:attributes="alt options/example/png; src options/example/png; width options/example/width; height options/example/height">
     </div>
     <div class="examplecode" tal:content="structure options/example/code">Code</div>
-    <h3 tal:condition="options/example/text">Description</h3>
-    <div class="exampletext" tal:content="structure options/example/text">Code</div>
+    <tal:block tal:condition="options/example/text">
+        <h3>Description</h3>
+        <div class="exampletext" tal:content="structure options/example/text">Code</div>
+    </tal:block>
 
   </div>
 

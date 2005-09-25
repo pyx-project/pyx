@@ -117,8 +117,11 @@ class example:
             name = basename
         relname = os.path.join("..", "examples", name)
         self.code = makehtml.fromPython(codecs.open("%s.py" % relname, encoding="iso-8859-1").read())
+        self.html = "%s.html" % basename
         self.png = "%s.png" % basename
         self.width, self.height = Image.open("%s.png" % relname).size
+        self.thumbpng = "%s_thumb.png" % basename
+        self.thumbwidth, self.thumbheight = Image.open("%s_thumb.png" % relname).size
         self.downloads = []
         for suffix in ["py", "dat", "jpg", "eps", "pdf"]:
             try:
@@ -168,7 +171,7 @@ news = "".join(["%s%s" % (dt.toxml(), dd.toxml())
                                   newsdom.getElementsByTagName("dd")[:latestnews])])
 
 for ptname in glob.glob("*.pt"):
-    if ptname not in ["maintemplate.pt", "examples.pt", "example.pt"]:
+    if ptname not in ["maintemplate.pt", "exampleindex.pt", "examples.pt", "example.pt"]:
         htmlname = "%s.html" % ptname[:-3]
         template = MyPageTemplateFile(ptname)
         content = template(pagename=htmlname,
@@ -179,15 +182,22 @@ for ptname in glob.glob("*.pt"):
                            news=news)
         codecs.open("build/%s" % htmlname, "w", encoding="iso-8859-1").write(content)
 
+exampleindextemplate = MyPageTemplateFile("exampleindex.pt")
 examplestemplate = MyPageTemplateFile("examples.pt")
 exampletemplate = MyPageTemplateFile("example.pt")
 examplepages = [item[:-2]
                 for item in open("../examples/INDEX").readlines()
                 if item[-2] == "/"]
 
-for dir in [None] + examplepages:
+prev = None
+for dirindex, dir in enumerate([None] + examplepages):
     srcdir = "../examples"
     destdir = "examples"
+    try:
+        nextdir = examplepages[dirindex] # don't increment due to the None in the list
+        nextdir = os.path.join(destdir, nextdir)
+    except IndexError:
+        nextdir = None
     if dir:
         srcdir = os.path.join(srcdir, dir)
         destdir = os.path.join(destdir, dir)
@@ -199,21 +209,45 @@ for dir in [None] + examplepages:
                 for item in open(os.path.join(srcdir, "INDEX")).readlines()
                 if item[-2] != "/"]
     htmlname = os.path.join(destdir, "index.html")
-    content = examplestemplate(pagename=htmlname,
-                               maintemplate=maintemplate,
-                               abstract=abstract,
-                               examples=examples,
-                               examplepages=examplepages,
-                               mkrellink=mkrellink)
+    if dir:
+        template = examplestemplate
+        next = os.path.join(destdir, examples[0].html)
+    else:
+        template = exampleindextemplate
+        next = os.path.join(nextdir, "index.html")
+    content = template(pagename=htmlname,
+                       maintemplate=maintemplate,
+                       dir=dir,
+                       abstract=abstract,
+                       examples=examples,
+                       examplepages=examplepages,
+                       mkrellink=mkrellink,
+                       prev=prev,
+                       next=next)
+    #print next, htmlname
+    #for line in content.split("\n"):
+    #    if line.find("next") != -1:
+    #        print line
     codecs.open("build/%s" % htmlname, "w", encoding="iso-8859-1").write(content)
-    for aexample in examples:
-        if aexample.text:
+    prev = os.path.join(destdir, "index.html")
+    if dir:
+        for exampleindex, aexample in enumerate(examples):
+            try:
+                next = os.path.join(destdir, examples[exampleindex+1].html)
+            except (TypeError, IndexError):
+                if nextdir:
+                    next = os.path.join(nextdir, "index.html")
+                else:
+                    next = None
             htmlname = os.path.join(destdir, "%s.html" % aexample.title)
             content = exampletemplate(pagename=htmlname,
                                       maintemplate=maintemplate,
+                                      dir=dir,
                                       abstract=abstract,
                                       example=aexample,
                                       examplepages=examplepages,
-                                      mkrellink=mkrellink)
+                                      mkrellink=mkrellink,
+                                      prev=prev,
+                                      next=next)
             codecs.open("build/%s" % htmlname, "w", encoding="iso-8859-1").write(content)
-
+            prev = os.path.join(destdir, aexample.html)
