@@ -12,6 +12,7 @@
 
 #include <Python.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #define C1 52845
 #define C2 22719
@@ -32,7 +33,7 @@ static PyObject *py_decoder(PyObject *self, PyObject *args)
 {
     unsigned char *code;
     int lcode, n;
-    unsigned int r;
+    uint32_t r;
 
     /* XXX: should we use U (unsigned int) for argument r */
     if (PyArg_ParseTuple(args, "s#ii", (char **) &code, &lcode, (int *) &r, &n)) {
@@ -75,7 +76,7 @@ static PyObject *py_encoder(PyObject *self, PyObject *args)
     unsigned char *data;
     unsigned char *random;
     int ldata, lrandom;
-    unsigned int r;
+    uint32_t r;
 
     /* XXX: should we use U (unsigned int) for argument r */
     if (PyArg_ParseTuple(args, "s#is#", (char **) &data, &ldata, (int *) &r, (char **) &random, &lrandom)) {
