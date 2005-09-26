@@ -31,9 +31,11 @@ def decoder(code, r, n):
 static PyObject *py_decoder(PyObject *self, PyObject *args)
 {
     unsigned char *code;
-    int lcode, r, n;
+    int lcode, n;
+    unsigned int r;
 
-    if (PyArg_ParseTuple(args, "s#ii", (char **) &code, &lcode, &r, &n)) {
+    /* XXX: should we use U (unsigned int) for argument r */
+    if (PyArg_ParseTuple(args, "s#ii", (char **) &code, &lcode, (int *) &r, &n)) {
       unsigned char *data;
       int i;
       unsigned char x;
@@ -45,7 +47,7 @@ static PyObject *py_decoder(PyObject *self, PyObject *args)
       for (i=0; i<lcode; i++) {
         x = code[i];
         data[i] = x ^ ( r >> 8);
-        r = ((x + r) * C1 + C2) & 0xFFFF;
+        r = (x + r) * C1 + C2;
       }
 
       /* convert result to string stripping first n chars */
@@ -72,9 +74,11 @@ static PyObject *py_encoder(PyObject *self, PyObject *args)
 {
     unsigned char *data;
     unsigned char *random;
-    int ldata, lrandom, r;
+    int ldata, lrandom;
+    unsigned int r;
 
-    if (PyArg_ParseTuple(args, "s#is#", (char **) &data, &ldata, &r, (char **) &random, &lrandom)) {
+    /* XXX: should we use U (unsigned int) for argument r */
+    if (PyArg_ParseTuple(args, "s#is#", (char **) &data, &ldata, (int *) &r, (char **) &random, &lrandom)) {
       unsigned char *code;
       int i;
       PyObject *result;
@@ -84,12 +88,12 @@ static PyObject *py_encoder(PyObject *self, PyObject *args)
 
       for (i=0; i<lrandom; i++) {
         code[i] = random[i] ^ ( r >> 8);
-        r = ((code[i] + r) * C1 + C2) & 0xFFFF;
+        r = (code[i] + r) * C1 + C2;
       }
 
       for (i=0; i<ldata; i++) {
         code[i+lrandom] = data[i] ^ ( r >> 8);
-        r = ((code[i+lrandom] + r) * C1 + C2) & 0xFFFF;
+        r = (code[i+lrandom] + r) * C1 + C2;
       }
 
       result = PyString_FromStringAndSize((const char *)code, ldata + lrandom);
