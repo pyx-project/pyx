@@ -22,20 +22,22 @@
 
 import array
 
+c1 = 52845
+c1_16, c1_8 = divmod(c1, 0x100) # to avoid overflow (or conversion to the slow long integers)
+c2 = 22719
+
 def decoder(code, r, n):
-    c1 = 52845
-    c2 = 22719
     plain = array.array("B")
     for x in array.array("B", code):
         plain.append(x ^ (r >> 8))
-        r = ((x + r) * c1 + c2) & 0xffff
+        # r = ((x + r) * c1 + c2) & 0xffff # this might overflow
+        r = ((((x + r) * c1_16) & 0xff) * 0x100 + (x + r) * c1_8 + c2) & 0xffff
     return plain.tostring()[n:]
 
 def encoder(data, r, random):
-    c1 = 52845
-    c2 = 22719
     code = array.array("B")
     for x in array.array("B", random+data):
         code.append(x ^ (r>>8))
-        r = ((code[-1] + r) * c1 + c2) & 0xffff;
+        # r = ((code[-1] + r) * c1 + c2) & 0xffff # this might overflow
+        r = ((((code[-1] + r) * c1_16) & 0xff) * 0x100 + (code[-1] + r) * c1_8 + c2) & 0xffff
     return code.tostring()
