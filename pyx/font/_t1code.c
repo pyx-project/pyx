@@ -76,7 +76,6 @@ static PyObject *py_encoder(PyObject *self, PyObject *args)
     unsigned char *random;
     int ldata, pr, lrandom;
 
-    /* XXX: should we use U (unsigned int) for argument r */
     if (PyArg_ParseTuple(args, "s#is#", (char **) &data, &ldata, &pr, (char **) &random, &lrandom)) {
       unsigned char *code;
       int i;
