@@ -27,33 +27,15 @@ try:
     haszlib = 1
 except ImportError:
     haszlib = 0
+
 from pyx import trafo
 from pyx.path import path, moveto_pt, lineto_pt, curveto_pt, closepath
+import encoding
 
 try:
     from _t1code import *
 except:
     from t1code import *
-
-StandardEncoding = {32: "space", 33: "exclam", 34: "quotedbl", 35: "numbersign", 36: "dollar", 37: "percent", 38: "ampersand", 39: "quoteright",
-                    40: "parenleft", 41: "parenright", 42: "asterisk", 43: "plus", 44: "comma", 45: "hyphen", 46: "period", 47: "slash",
-                    48: "zero", 49: "one", 50: "two", 51: "three", 52: "four", 53: "five", 54: "six", 55: "seven",
-                    56: "eight", 57: "nine", 58: "colon", 59: "semicolon", 60: "less", 61: "equal", 62: "greater", 63: "question",
-                    64: "at", 65: "A", 66: "B", 67: "C", 68: "D", 69: "E", 70: "F", 71: "G",
-                    72: "H", 73: "I", 74: "J", 75: "K", 76: "L", 77: "M", 78: "N", 79: "O",
-                    80: "P", 81: "Q", 82: "R", 83: "S", 84: "T", 85: "U", 86: "V", 87: "W",
-                    88: "X", 89: "Y", 90: "Z", 91: "bracketleft", 92: "backslash", 93: "bracketright", 94: "asciicircum", 95: "underscore",
-                    96: "quoteleft", 97: "a", 98: "b", 99: "c", 100: "d", 101: "e", 102: "f", 103: "g",
-                    104: "h", 105: "i", 106: "j", 107: "k", 108: "l", 109: "m", 110: "n", 111: "o",
-                    112: "p", 113: "q", 114: "r", 115: "s", 116: "t", 117: "u", 118: "v", 119: "w",
-                    120: "x", 121: "y", 122: "z", 123: "braceleft", 124: "bar", 125: "braceright", 126: "asciitilde", 161: "exclamdown",
-                    162: "cent", 163: "sterling", 164: "fraction", 165: "yen", 166: "florin", 167: "section", 168: "currency", 169: "quotesingle",
-                    170: "quotedblleft", 171: "guillemotleft", 172: "guilsinglleft", 173: "guilsinglright", 174: "fi", 175: "fl", 177: "endash", 178: "dagger",
-                    179: "daggerdbl", 180: "periodcentered", 182: "paragraph", 183: "bullet", 184: "quotesinglbase", 185: "quotedblbase", 186: "quotedblright", 187: "guillemotright",
-                    188: "ellipsis", 189: "perthousand", 191: "questiondown", 193: "grave", 194: "acute", 195: "circumflex", 196: "tilde", 197: "macron",
-                    198: "breve", 199: "dotaccent", 200: "dieresis", 202: "ring", 203: "cedilla", 205: "hungarumlaut", 206: "ogonek", 207: "caron",
-                    208: "emdash", 225: "AE", 227: "ordfeminine", 232: "Lslash", 233: "Oslash", 234: "OE", 235: "ordmasculine", 241: "ae",
-                    245: "dotlessi", 248: "lslash", 249: "oslash", 250: "oe", 251: "germandbls"}
 
 
 class T1context:
@@ -167,22 +149,22 @@ class _T1seac(_T1cmd):
         ady = context.t1stack.pop(0)
         bchar = context.t1stack.pop(0)
         achar = context.t1stack.pop(0)
-        for cmd in context.t1font.getglyphcmds(StandardEncoding[bchar]):
+        for cmd in context.t1font.getglyphcmds(encoding.adobestandardencoding.decode(bchar)):
             cmd.updatepath(path, atrafo, context)
         atrafo = atrafo * trafo.translate_pt(adx-sab, ady)
-        for cmd in context.t1font.getglyphcmds(StandardEncoding[achar]):
+        for cmd in context.t1font.getglyphcmds(encoding.adobestandardencoding.decode(achar)):
             cmd.updatepath(path, atrafo, context)
 
     def gathercalls(self, seacglyphs, subrs, othersubrs, context):
         bchar = context.t1stack.pop()
         achar = context.t1stack.pop()
-        aname = StandardEncoding[achar]
-        bname = StandardEncoding[bchar]
-        seacglyphs[aname] = 1
-        seacglyphs[bname] = 1
-        for cmd in context.t1font.getglyphcmds(bname):
+        aglyph = encoding.adobestandardencoding.decode(achar)
+        bglyph = encoding.adobestandardencoding.decode(bchar)
+        seacglyphs[aglyph] = 1
+        seacglyphs[bglyph] = 1
+        for cmd in context.t1font.getglyphcmds(bglyph):
             cmd.gathercalls(seacglyphs, subrs, othersubrs, context)
-        for cmd in context.t1font.getglyphcmds(aname):
+        for cmd in context.t1font.getglyphcmds(aglyph):
             cmd.gathercalls(seacglyphs, subrs, othersubrs, context)
 
 T1seac = _T1seac()
@@ -598,8 +580,11 @@ class T1font:
         self.data2eexec = data2eexec
         self.data3 = data3
 
-        # marker to check whether decoded data is available:
+        # marker and value for decoded data
         self.data2 = None
+
+        # marker and value for standard encoding check
+        self.encoding = None
 
     def _eexecdecode(self, code):
         """eexec decoding of code"""
@@ -622,6 +607,31 @@ class T1font:
                      [T1value(0), T1value(1), T1callothersubr, T1return],
                      [T1value(0), T1value(2), T1callothersubr, T1return],
                      [T1return]]
+
+    def _encoding(self):
+        c = cursor(self.data1, "/Encoding")
+        token1 = c.gettoken()
+        token2 = c.gettoken()
+        if token1 == "StandardEncoding" and token2 == "def":
+            self.encoding = encoding.adobestandardencoding
+        else:
+            encvector = [None]*255
+            while 1:
+                self.encodingstart = c.pos
+                if c.gettoken() == "dup":
+                    break
+            while 1:
+                i = c.getint()
+                glyph = c.gettoken()
+                if 0 <= i < 256:
+                    encvector[i] = glyph[1:]
+                token = c.gettoken(); assert token == "put"
+                self.encodingend = c.pos
+                token = c.gettoken()
+                if token == "readonly" or token == "def":
+                    break
+                assert token == "dup"
+            self.encoding = encoding.encoding(encvector)
 
     def _data2decode(self):
         """decodes data2eexec to the data2 string and the subr and glyphs dictionary
@@ -675,7 +685,7 @@ class T1font:
 
         # extract glyphs
         self.glyphs = {}
-        self.glyphnames = [] # we want to keep the order of the glyph names
+        self.glyphlist = [] # we want to keep the order of the glyph names
         c = cursor(self.data2, "/CharStrings")
         self.charstingsstart = c.pos
         c.getint()
@@ -693,7 +703,7 @@ class T1font:
                 self.glyphrdtoken = c.gettoken()
             else:
                 token = c.gettoken(); assert token == self.glyphrdtoken
-            self.glyphnames.append(chartoken[1:])
+            self.glyphlist.append(chartoken[1:])
             self.glyphs[chartoken[1:]] = c.getbytes(size)
             if first:
                 self.glyphndtoken = c.gettoken()
@@ -830,7 +840,7 @@ class T1font:
 
         # strip charstrings (i.e. glyphs) to those actually used
         strippedcharstrings = ["%d dict dup begin\n" % len(glyphs)]
-        for glyph in self.glyphnames:
+        for glyph in self.glyphlist:
             if glyph in glyphs:
                 strippedcharstrings.append("/%s %d %s %s %s\n" % (glyph, len(self.glyphs[glyph]), self.glyphrdtoken, self.glyphs[glyph], self.glyphndtoken))
         strippedcharstrings.append("end\n")
@@ -838,22 +848,31 @@ class T1font:
 
         # TODO: we could also strip othersubrs to those actually used
 
-        # replace parts of data2 by its stripped versions
+        # strip data1
+        if not self.encoding:
+            self._encoding()
+        if self.encoding is encoding.adobestandardencoding:
+            data1 = self.data1
+        else:
+            encodingstrings = []
+            for char, glyph in enumerate(self.encoding.encvector):
+                if glyph in glyphs:
+                    encodingstrings.append("dup %i /%s put\n" % (char, glyph))
+            data1 = self.data1[:self.encodingstart] + "".join(encodingstrings) + self.data1[self.encodingend:]
+        data1 = self.newlinepattern.subn("\n", data1)[0]
+        data1 = self.uniqueidpattern.subn("", data1)[0]
+
+        # strip data2
         # TODO: in the future, for full control, we might want to write data2 as well as data1 and data3 from scratch
-        data2 = self.data2
         if self.subrsstart < self.charstingsstart:
-            data2 = data2[:self.charstingsstart] + strippedcharstrings + data2[self.charstingsend:]
+            data2 = self.data2[:self.charstingsstart] + strippedcharstrings + self.data2[self.charstingsend:]
             data2 = data2[:self.subrsstart] + strippedsubrs + data2[self.subrsend:]
         else:
-            data2 = data2[:self.subrsstart] + strippedsubrs + data2[self.subrsend:]
+            data2 = self.data2[:self.subrsstart] + strippedsubrs + self.data2[self.subrsend:]
             data2 = data2[:self.charstingsstart] + strippedcharstrings + data2[self.charstingsend:]
-
-        data1 = self.newlinepattern.subn("\n", self.data1)[0]
-        for glyph in self.glyphnames:
-            if glyph not in glyphs:
-                data1 = re.subn("dup \d+ /%s put\s*" % glyph, "", data1)[0]
-        data1 = self.uniqueidpattern.subn("", data1)[0]
         data2 = self.uniqueidpattern.subn("", data2)[0]
+
+        # strip data3
         data3 = self.newlinepattern.subn("\n", self.data3)[0]
 
         # create and return the new font instance
@@ -869,13 +888,13 @@ class T1font:
             file.write("\n")
         file.write(self.data3)
 
-    _StandardEncodingMatch = re.compile(r"\b/Encoding\s+StandardEncoding\s+def\b")
-
     def getflags(self):
         # As a simple heuristics we assume non-symbolic fonts if and only
         # if the Adobe standard encoding is used. All other font flags are
         # not specified here.
-        if self._StandardEncodingMatch.search(self.data1):
+        if not self.encoding:
+            self._encoding()
+        if self.encoding is encoding.adobestandardencoding:
             return 32
         return 4
 

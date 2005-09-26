@@ -73,6 +73,11 @@ TODO:
   - most important changes (to be included in the release notes):
     - mathtree removal (warning about integer division)
     - barpos style does not build tuples for nestedbar axes automatically
+  - font modules:
+    - new framework for font handling
+    - own implementation of type1 font stripping (old pdftex code fragments removed)
+    - complete type1 font command representation and glyph path extraction from font programs
+    - t1code extension module (C version of de-/encoding routines used in Type 1 font files)
   - graph modules:
     - data module:
       - mathtree removal: more flexibility due to true python expressions
@@ -554,8 +559,6 @@ TODO:
   - t1strip module:
     - new fallback solution in pure python
     - bugfix: pyxadapt.h needs to open files binary under Windows (reported by Gary Pajer)
-  - t1code extension module (new):
-    - C version of de-/encoding routines used in Type 1 font files
   - box module:
     - _xxx -> xxx_pt renaming
   - trafo module:

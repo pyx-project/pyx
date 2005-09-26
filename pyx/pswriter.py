@@ -141,23 +141,29 @@ class PSfontfile(PSresource):
         for char in chars:
             self.usedchars[char] = 1
 
+        self.strip = 1
+
     def merge(self, other):
         if self.encodingfilename == other.encodingfilename:
             self.usedchars.update(other.usedchars)
         else:
-            self.encodingfilename = None # stripping of font not possible
+            # TODO: need to resolve the encoding when several encodings are in the play
+            self.strip = 0
 
     def outputPS(self, file, writer, registry):
-        # XXX: access to the encoding file
-        if self.encodingfilename:
-            encodingfile = type1font.encodingfile(self.encodingfilename, self.encodingfilename)
-            usedglyphs = [encodingfile.decode(char)[1:] for char in self.usedchars.keys()]
+        import font.t1font
+        font = font.t1font.T1pfbfont(self.filename)
 
         file.write("%%%%BeginFont: %s\n" % self.name)
         # file.write("%%Included glyphs: %s\n" % " ".join(usedglyphs))
-        import font.t1font
-        font = font.t1font.T1pfbfont(self.filename)
-        if self.encodingfilename:
+        if self.strip:
+            # XXX: access to the encoding file
+            if self.encodingfilename:
+                encodingfile = type1font.encodingfile(self.encodingfilename, self.encodingfilename)
+                usedglyphs = [encodingfile.decode(char)[1:] for char in self.usedchars.keys()]
+            else:
+                font._encoding()
+                usedglyphs = [font.encoding.decode(char) for char in self.usedchars.keys()]
             strippedfont = font.getstrippedfont(usedglyphs)
         else:
             strippedfont = font

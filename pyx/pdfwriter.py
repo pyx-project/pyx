@@ -425,13 +425,15 @@ class PDFfontfile(PDFobject):
         for char in chars:
             self.usedchars[char] = 1
 
+        self.strip = 1
         self.font = None
 
     def merge(self, other):
         if self.encodingfilename == other.encodingfilename:
             self.usedchars.update(other.usedchars)
         else:
-            self.encodingfilename = None # stripping of font not possible
+            # TODO: need to resolve the encoding when several encodings are in the play
+            self.strip = 0
 
     def mkfontfile(self):
         import font.t1font
@@ -443,14 +445,16 @@ class PDFfontfile(PDFobject):
         return self.font.getflags()
 
     def outputPDF(self, file, writer, registry):
-        # XXX: access to the encoding file
-        if self.encodingfilename:
-            encodingfile = type1font.encodingfile(self.encodingfilename, self.encodingfilename)
-            usedglyphs = [encodingfile.decode(char)[1:] for char in self.usedchars.keys()]
-
         if self.font is None:
             self.mkfontfile()
-        if self.encodingfilename:
+        if self.strip:
+            # XXX: access to the encoding file
+            if self.encodingfilename:
+                encodingfile = type1font.encodingfile(self.encodingfilename, self.encodingfilename)
+                usedglyphs = [encodingfile.decode(char)[1:] for char in self.usedchars.keys()]
+            else:
+                self.font._encoding()
+                usedglyphs = [self.font.encoding.decode(char) for char in self.usedchars.keys()]
             strippedfont = self.font.getstrippedfont(usedglyphs)
         else:
             strippedfont = self.font
