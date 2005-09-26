@@ -32,14 +32,13 @@ def decoder(code, r, n):
 static PyObject *py_decoder(PyObject *self, PyObject *args)
 {
     unsigned char *code;
-    int lcode, n;
-    uint16_t r;
+    int lcode, pr, n;
 
-    /* XXX: should we use U (unsigned int) for argument r */
-    if (PyArg_ParseTuple(args, "s#ii", (char **) &code, &lcode, (int *) &r, &n)) {
+    if (PyArg_ParseTuple(args, "s#ii", (char **) &code, &lcode, &pr, &n)) {
       unsigned char *data;
       int i;
       unsigned char x;
+      uint16_t r=pr;
       PyObject *result;
 
       if (! (data = (unsigned char *) malloc(lcode)) )
@@ -75,13 +74,13 @@ static PyObject *py_encoder(PyObject *self, PyObject *args)
 {
     unsigned char *data;
     unsigned char *random;
-    int ldata, lrandom;
-    uint16_t r;
+    int ldata, pr, lrandom;
 
     /* XXX: should we use U (unsigned int) for argument r */
-    if (PyArg_ParseTuple(args, "s#is#", (char **) &data, &ldata, (int *) &r, (char **) &random, &lrandom)) {
+    if (PyArg_ParseTuple(args, "s#is#", (char **) &data, &ldata, &pr, (char **) &random, &lrandom)) {
       unsigned char *code;
       int i;
+      uint16_t r=pr;
       PyObject *result;
 
       if (! (code = (unsigned char *) malloc(ldata + lrandom)) )
