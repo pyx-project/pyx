@@ -36,24 +36,6 @@ except NameError:
         return zip(xrange(len(list)), list)
 
 
-# _PFB_ASCII = "\200\1"
-# _PFB_BIN = "\200\2"
-# _PFB_DONE = "\200\3"
-# _PFA = "%!"
-
-_StandardEncodingMatch = re.compile(r"\b/Encoding\s+StandardEncoding\s+def\b")
-#_FontBBoxMatch = re.compile(r"\bFontBBox\s*\{\s*(-?\d+)\s+(-?\d+)\s+(-?\d+)\s+(-?\d+)\s*\}\s*readonly\s+def\b")
-#_ItalicAngle = re.compile(r"\bItalicAngle\s+(-?\d+)\b")
-
-
-def _pfblength(s):
-    if len(s) != 4:
-        raise ValueError("invalid string length")
-    return (ord(s[0]) +
-            ord(s[1])*256 +
-            ord(s[2])*256*256 +
-            ord(s[3])*256*256*256)
-
 class _tokenfile:
     """ ascii file containing tokens separated by spaces.
 
