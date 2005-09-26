@@ -33,7 +33,7 @@ static PyObject *py_decoder(PyObject *self, PyObject *args)
 {
     unsigned char *code;
     int lcode, n;
-    uint32_t r;
+    uint16_t r;
 
     /* XXX: should we use U (unsigned int) for argument r */
     if (PyArg_ParseTuple(args, "s#ii", (char **) &code, &lcode, (int *) &r, &n)) {
@@ -76,7 +76,7 @@ static PyObject *py_encoder(PyObject *self, PyObject *args)
     unsigned char *data;
     unsigned char *random;
     int ldata, lrandom;
-    uint32_t r;
+    uint16_t r;
 
     /* XXX: should we use U (unsigned int) for argument r */
     if (PyArg_ParseTuple(args, "s#is#", (char **) &data, &ldata, (int *) &r, (char **) &random, &lrandom)) {
