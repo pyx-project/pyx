@@ -37,18 +37,21 @@ static PyObject *py_decoder(PyObject *self, PyObject *args)
       unsigned char *data;
       int i;
       unsigned char x;
+      PyObject *result;
 
       if (! (data = (unsigned char *) malloc(lcode)) )
-  	  return NULL;
+          return NULL;
 
       for (i=0; i<lcode; i++) {
-	x = code[i];
-	data[i] = x ^ ( r >> 8);
-	r = ((x + r) * C1 + C2) & 0xFFFF;
+        x = code[i];
+        data[i] = x ^ ( r >> 8);
+        r = ((x + r) * C1 + C2) & 0xFFFF;
       }
 
       /* convert result to string stripping first n chars */
-      return PyString_FromStringAndSize((const char *)data + n, lcode - n);
+      result = PyString_FromStringAndSize((const char *)data + n, lcode - n);
+      free(data);
+      return result;
     }
     else return NULL;
 
@@ -74,21 +77,24 @@ static PyObject *py_encoder(PyObject *self, PyObject *args)
     if (PyArg_ParseTuple(args, "s#is#", (char **) &data, &ldata, &r, (char **) &random, &lrandom)) {
       unsigned char *code;
       int i;
+      PyObject *result;
 
       if (! (code = (unsigned char *) malloc(ldata + lrandom)) )
-  	  return NULL;
+          return NULL;
 
       for (i=0; i<lrandom; i++) {
-	code[i] = random[i] ^ ( r >> 8);
-	r = ((code[i] + r) * C1 + C2) & 0xFFFF;
+        code[i] = random[i] ^ ( r >> 8);
+        r = ((code[i] + r) * C1 + C2) & 0xFFFF;
       }
 
       for (i=0; i<ldata; i++) {
-	code[i+lrandom] = data[i] ^ ( r >> 8);
-	r = ((code[i+lrandom] + r) * C1 + C2) & 0xFFFF;
+        code[i+lrandom] = data[i] ^ ( r >> 8);
+        r = ((code[i+lrandom] + r) * C1 + C2) & 0xFFFF;
       }
 
-      return PyString_FromStringAndSize((const char *)code, ldata + lrandom);
+      result = PyString_FromStringAndSize((const char *)code, ldata + lrandom);
+      free(code);
+      return result;
     }
     else return NULL;
 
