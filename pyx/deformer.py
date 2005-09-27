@@ -769,7 +769,8 @@ class parallel(deformer): # <<<
                     result[-1].append(nspitem)
                 result.normsubpaths = result.normsubpaths[1:]
 
-        result = self.rebuild_intersected_normpath(result, normpath.normpath([orig_nsp]), epsilon)
+        if self.dointersection:
+            result = self.rebuild_intersected_normpath(result, normpath.normpath([orig_nsp]), epsilon)
 
         return result
         # >>>
