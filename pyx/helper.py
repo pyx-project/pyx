@@ -41,9 +41,12 @@ def realpolyroots(coeffs, epsilon=1e-5, polish=0):
     The solution is found via an equivalent eigenvalue problem
     """
 
+    if not coeffs:
+        return []
+
     try:
         1.0 / coeffs[-1]
-    except:
+    except ZeroDivisionError:
         roots = realpolyroots(coeffs[:-1], epsilon=epsilon)
     else:
         # divide the coefficients by the maximal order
