@@ -1608,10 +1608,10 @@ class normpath(canvas.canvasitem):
 
         result = []
         for radius_pt in self._curveradius_pt(self._convertparams(params, self.arclentoparam)):
-            if radius_pt is not None:
+            if radius_pt is not invalid:
                 result.append(radius_pt * unit.t_pt)
             else:
-                result.append(None)
+                result.append(invalid)
         return result
     curveradius = _valueorlistmethod(curveradius)
 

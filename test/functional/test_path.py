@@ -3,6 +3,7 @@ import sys; sys.path[:0] = ["../.."]
 
 from pyx import *
 from pyx.path import *
+from pyx import normpath
 
 def bboxrect(cmd):
     return cmd.bbox().rect()
@@ -171,7 +172,7 @@ def testtangent(c):
     cc = canvas.canvas([canvas.clip(cc.bbox().path())])
     for i in range(points):
         radius = p.curveradius(arclen*i/points)
-        if radius is not None:
+        if radius is not normpath.invalid:
             radius = unit.tocm(radius)
             pos = p.trafo(arclen*i/points).apply(0,radius*radius/abs(radius))
             cc.stroke(circle(0, 0,unit.t_cm * abs(radius)), [color.grey(0.5), trafo.translate(*pos)])
