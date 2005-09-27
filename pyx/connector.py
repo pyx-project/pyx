@@ -30,7 +30,6 @@ except ImportError:
     # fallback implementation for Python 2.1 and below
     def radians(x): return x*pi/180
     def degrees(x): return x*180/pi
-from deformer import sign1
 
 
 #########################
@@ -137,7 +136,7 @@ class arc_pt(connector_pt):
                 [path.normsubpath([path.normline_pt(*(self.box1.center+self.box2.center))], closed=0)])
         else:
             radius = abs(0.5 * (bulge + 0.25 * distance**2 / bulge))
-            centerdist = sign1(bulge) * (radius - abs(bulge))
+            centerdist = helper.sign(bulge) * (radius - abs(bulge))
             center = (0.5 * (self.box1.center[0] + self.box2.center[0]) - tangent[1]*centerdist,
                       0.5 * (self.box1.center[1] + self.box2.center[1]) + tangent[0]*centerdist)
             angle1 = atan2(self.box1.center[1] - center[1], self.box1.center[0] - center[0])
