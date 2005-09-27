@@ -25,7 +25,7 @@ seam = path.path(
   path.curveto(pts[8][0],pts[8][1],pts[9][0],pts[9][1],pts[10][0],pts[10][1]),
   path.lineto(*(pts[11])) )
 # We smooth this curve a little because we used curveto together with lineto
-seam = deformer.smoothed(0.4).deform(seam)
+seam = deformer.smoothed(0.2).deform(seam)
 
 
 # The ropes, when drawn later, will have to overlap in a very specific way.
