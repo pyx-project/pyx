@@ -91,7 +91,7 @@ def testsmoothed(c):
 
 
 def hard_test(c, p, dist, pardef, move=(0, 0), label=""):
-    print "hard test of: ", label
+    print "hard test of parallel: ", label
     p = p.transformed(trafo.translate(*move))
     c.text(move[0], move[1], label)
     c.stroke(p)
@@ -154,7 +154,7 @@ def testparallel_1(c):
     p.append(path.lineto(-0.15, 0))
     p.append(path.closepath())
     hard_test(c, p, 0.3, parallel(0.0), move, "B")
-    hard_test(c, p, 0.12, parallel(0.0), move, "B")
+    hard_test(c, p, 0.05, parallel(0.0), move, "B")
 
     # test extremely sensitively:
     move = (3.5, 2)
@@ -225,7 +225,7 @@ def testparallel_2(c):
     p = p.transformed(trafo.scale(0.5))
     hard_test(c, p, 0.05, parallel(0.0), move, "K")
     hard_test(c, p, 0.3, parallel(0.0), move, "K")
-    #hard_test(c, p, 0.6, parallel(0.0), move, "K")
+    hard_test(c, p, 0.6, parallel(0.0), move, "K")
 
 
 c=canvas.canvas()
