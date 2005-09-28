@@ -104,7 +104,7 @@ def hard_test(c, p, dist, pardef, move=(0, 0), label=""):
         p2 = pardef(distance=-dist).deform(p)
         c.stroke(p2, [color.rgb.blue])
         pps.append(p2)
-    #return
+    return
     for pp in pps:
         for nsp in pp.normsubpaths:
             beg, end = nsp.at_pt([0, len(nsp)])
@@ -140,10 +140,11 @@ def testparallel_1(c):
     # HARD TESTS of elementary geometry:
     #
     # test for correct skipping of short ugly pieces:
-    move = (0, 0)
+    move = (-2, 0)
     p = path.path(path.moveto(0, 1), path.lineto(10, 0.3), path.lineto(12, 0), path.lineto(0, 0))
     p.append(path.closepath())
     hard_test(c, p, -0.2, parallel(0.0), move, "A")
+    hard_test(c, p, -0.25, parallel(0.0, sharpoutercorners=1), move, "A")
 
     # test non-intersecting/too short neighbouring pathels
     move = (0, 4)
@@ -155,6 +156,8 @@ def testparallel_1(c):
     p.append(path.closepath())
     hard_test(c, p, 0.3, parallel(0.0), move, "B")
     hard_test(c, p, 0.05, parallel(0.0), move, "B")
+    hard_test(c, p, 0.3, parallel(0.0, sharpoutercorners=1), move, "B")
+    hard_test(c, p, 0.02, parallel(0.0, sharpoutercorners=1), move, "B")
 
     # test extremely sensitively:
     move = (3.5, 2)
@@ -162,7 +165,7 @@ def testparallel_1(c):
     p.append(path.closepath())
     hard_test(c, p, -0.1, parallel(0.0), move, "C")
     # takes quite long:
-#   hard_test(c, p, -0.1, parallel(0.0, relerr=1e-15, checkdistanceparams=[0.5]), move, "C")
+    hard_test(c, p, -0.1, parallel(0.0, relerr=1e-15, checkdistanceparams=[0.5]), move, "C")
 
     # test for numeric instabilities:
     move = (6, 2)
@@ -214,7 +217,6 @@ def testparallel_1(c):
     move = (2, 6)
     p = path.path(path.moveto(0,0), path.curveto(0,5, -4,1, 1,1))
     hard_test(c, p, 0.7, parallel(0.0, dointersection=0), move, "K")
-    hard_test(c, p, 0.6, parallel(0.0), move, "K")
 
 def testparallel_2(c):
 

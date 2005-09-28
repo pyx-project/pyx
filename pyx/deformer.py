@@ -594,22 +594,25 @@ class parallel(deformer): # <<<
     # * improve the intersection of nearly degenerate paths
 
 
-    def __init__(self, distance, relerr=0.05, checkdistanceparams=[0.5],
+    def __init__(self, distance, relerr=0.05, sharpoutercorners=0, checkdistanceparams=[0.5],
                        lookforcurvatures=11, dointersection=1, debug=None):
         self.distance = distance
         self.relerr = relerr
+        self.sharpoutercorners = sharpoutercorners
         self.checkdistanceparams = checkdistanceparams
         self.lookforcurvatures = lookforcurvatures
         self.dointersection = dointersection
         self.debug = debug
 
-    def __call__(self, distance=None, relerr=None, checkdistanceparams=None,
+    def __call__(self, distance=None, relerr=None, sharpoutercorners=None, checkdistanceparams=None,
                        lookforcurvatures=None, dointersection=None, debug=None):
         # returns a copy of the deformer with different parameters
         if distance is None:
             distance = self.distance
         if relerr is None:
             relerr = self.relerr
+        if sharpoutercorners is None:
+            sharpoutercorners = self.sharpoutercorners
         if checkdistanceparams is None:
             checkdistanceparams = self.checkdistanceparams
         if lookforcurvatures is None:
@@ -619,7 +622,8 @@ class parallel(deformer): # <<<
         if debug is None:
             debug = self.debug
 
-        return parallel(distance=distance, relerr=relerr, checkdistanceparams=checkdistanceparams,
+        return parallel(distance=distance, relerr=relerr, sharpoutercorners=sharpoutercorners,
+                        checkdistanceparams=checkdistanceparams,
                         lookforcurvatures=lookforcurvatures, dointersection=dointersection,
                         debug=debug)
 
@@ -701,21 +705,30 @@ class parallel(deformer): # <<<
             sinangle = prev_tangent[0]*next_tangent[1] - prev_tangent[1]*next_tangent[0]
             cosangle = prev_tangent[0]*next_tangent[0] + prev_tangent[1]*next_tangent[1]
             if cosangle < 0 or abs(dist*math.asin(sinangle)) >= epsilon:
-                # We must append an arc around the corner
-                arccenter = next_orig_nspitem.atbegin_pt()
-                arcbeg = result.atend_pt()
-                arcend = next_parallel_normpath.atbegin_pt()
-                angle1 = math.atan2(arcbeg[1] - arccenter[1], arcbeg[0] - arccenter[0])
-                angle2 = math.atan2(arcend[1] - arccenter[1], arcend[0] - arccenter[0])
-
-                # depending on the direction we have to use arc or arcn
-                if dist > 0:
-                    arcclass = path.arcn_pt
+                if self.sharpoutercorners and dist*sinangle < 0:
+                    A1, A2 = result.atend_pt(), next_parallel_normpath.atbegin_pt()
+                    t1, t2 = intersection(A1, A2, prev_tangent, next_tangent)
+                    B = A1[0] + t1 * prev_tangent[0], A1[1] + t1 * prev_tangent[1]
+                    arc_normpath = normpath.normpath([normpath.normsubpath([
+                        normpath.normline_pt(A1[0], A1[1], B[0], B[1]),
+                        normpath.normline_pt(B[0], B[1], A2[0], A2[1])
+                        ])])
                 else:
-                    arcclass = path.arc_pt
-                arc_normpath = path.path(arcclass(
-                  arccenter[0], arccenter[1], abs(dist),
-                  degrees(angle1), degrees(angle2))).normpath(epsilon=epsilon)
+                    # We must append an arc around the corner
+                    arccenter = next_orig_nspitem.atbegin_pt()
+                    arcbeg = result.atend_pt()
+                    arcend = next_parallel_normpath.atbegin_pt()
+                    angle1 = math.atan2(arcbeg[1] - arccenter[1], arcbeg[0] - arccenter[0])
+                    angle2 = math.atan2(arcend[1] - arccenter[1], arcend[0] - arccenter[0])
+
+                    # depending on the direction we have to use arc or arcn
+                    if dist > 0:
+                        arcclass = path.arcn_pt
+                    else:
+                        arcclass = path.arc_pt
+                    arc_normpath = path.path(arcclass(
+                      arccenter[0], arccenter[1], abs(dist),
+                      degrees(angle1), degrees(angle2))).normpath(epsilon=epsilon)
 
                 # append the arc to the parallel path
                 result.join(arc_normpath)
@@ -747,20 +760,29 @@ class parallel(deformer): # <<<
             if cosangle < 0 or abs(dist*math.asin(sinangle)) >= epsilon:
                 # We must append an arc around the corner
                 # TODO: avoid the code dublication
-                arccenter = orig_nsp.atend_pt()
-                arcbeg = result.atend_pt()
-                arcend = result.atbegin_pt()
-                angle1 = math.atan2(arcbeg[1] - arccenter[1], arcbeg[0] - arccenter[0])
-                angle2 = math.atan2(arcend[1] - arccenter[1], arcend[0] - arccenter[0])
-
-                # depending on the direction we have to use arc or arcn
-                if dist > 0:
-                    arcclass = path.arcn_pt
+                if self.sharpoutercorners and dist*sinangle < 0:
+                    A1, A2 = result.atend_pt(), result.atbegin_pt()
+                    t1, t2 = intersection(A1, A2, prev_tangent, next_tangent)
+                    B = A1[0] + t1 * prev_tangent[0], A1[1] + t1 * prev_tangent[1]
+                    arc_normpath = normpath.normpath([normpath.normsubpath([
+                        normpath.normline_pt(A1[0], A1[1], B[0], B[1]),
+                        normpath.normline_pt(B[0], B[1], A2[0], A2[1])
+                        ])])
                 else:
-                    arcclass = path.arc_pt
-                arc_normpath = path.path(arcclass(
-                  arccenter[0], arccenter[1], abs(dist),
-                  degrees(angle1), degrees(angle2))).normpath(epsilon=epsilon)
+                    arccenter = orig_nsp.atend_pt()
+                    arcbeg = result.atend_pt()
+                    arcend = result.atbegin_pt()
+                    angle1 = math.atan2(arcbeg[1] - arccenter[1], arcbeg[0] - arccenter[0])
+                    angle2 = math.atan2(arcend[1] - arccenter[1], arcend[0] - arccenter[0])
+
+                    # depending on the direction we have to use arc or arcn
+                    if dist > 0:
+                        arcclass = path.arcn_pt
+                    else:
+                        arcclass = path.arc_pt
+                    arc_normpath = path.path(arcclass(
+                        arccenter[0], arccenter[1], abs(dist),
+                        degrees(angle1), degrees(angle2))).normpath(epsilon=epsilon)
 
                 # append the arc to the parallel path
                 if (result.normsubpaths and result[-1].normsubpathitems and
