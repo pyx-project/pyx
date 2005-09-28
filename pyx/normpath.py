@@ -1436,16 +1436,19 @@ class normpath(canvas.canvasitem):
         return result
 
     def append(self, item):
-        """append a normsubpath by a normsubpath or a pathitem"""
+        """append a normpath by a normsubpath or a pathitem"""
         if isinstance(item, normsubpath):
             # the normsubpaths list can be appended by a normsubpath only
             self.normsubpaths.append(item)
         elif isinstance(item, path.pathitem):
             # ... but we are kind and allow for regular path items as well
             # in order to make a normpath to behave more like a regular path
-            context = path.context(*(self.normsubpaths[-1].atend_pt() +
-                                     self.normsubpaths[-1].atbegin_pt()))
-            item.updatenormpath(self, context)
+            if self.normsubpaths:
+                context = path.context(*(self.normsubpaths[-1].atend_pt() +
+                                         self.normsubpaths[-1].atbegin_pt()))
+                item.updatenormpath(self, context)
+            else:
+                self.normsubpaths = item.createnormpath(self).normsubpaths
 
     def arclen_pt(self):
         """return arc length in pts"""
