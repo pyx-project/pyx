@@ -628,8 +628,9 @@ class parallel(deformer): # <<<
         resultnormsubpaths = []
         for nsp in basepath.normpath().normsubpaths:
             parallel_normpath = self.deformsubpath(nsp)
-            resultnormsubpaths += parallel_normpath
-        return normpath.normpath(resultnormsubpaths)
+            resultnormsubpaths += parallel_normpath.normsubpaths
+        result = normpath.normpath(resultnormsubpaths)
+        return result
 
     def deformsubpath(self, orig_nsp): # <<<
 
@@ -1071,8 +1072,17 @@ class parallel(deformer): # <<<
         for nsp_i in range(n):
             for nsp_j in range(nsp_i, n):
                 for nspitem_i in range(len(np[nsp_i])):
-                    for nspitem_j in range(nspitem_i+1, len(np[nsp_j])):
+                    if nsp_j == nsp_i:
+                        nspitem_j_range = range(nspitem_i+1, len(np[nsp_j]))
+                    else:
+                        nspitem_j_range = range(len(np[nsp_j]))
+                    for nspitem_j in nspitem_j_range:
+                        #print "intersecting (%d,%d) with (%d,%d)" %(nsp_i, nspitem_i, nsp_j, nspitem_j)
                         intsparams = np[nsp_i][nspitem_i].intersect(np[nsp_j][nspitem_j], epsilon)
+                        #if 1:#intsparams:
+                        #    print np[nsp_i][nspitem_i]
+                        #    print np[nsp_j][nspitem_j]
+                        #    print intsparams
                         if intsparams:
                             for intsparam_i, intsparam_j in intsparams:
                                 if ( (abs(intsparam_i) < epsilon and abs(1-intsparam_j) < epsilon) or 
@@ -1125,8 +1135,6 @@ class parallel(deformer): # <<<
         selfintparams, selfintpairs, selfintsriap = self.normpath_selfintersections(par_np, epsilon)
         # calculate the intersections of the par_np with the original path
         origintparams = par_np.intersect(orig_np)[0]
-        if origintparams:
-            assert selfintparams
 
         # visualize the intersection points: # <<<
         if self.debug is not None:
@@ -1228,6 +1236,8 @@ class parallel(deformer): # <<<
                 assert begin.normsubpathindex is end.normsubpathindex
                 for item in par_np[begin.normsubpathindex].segments(
                     [begin.normsubpathparam, end.normsubpathparam])[0].normsubpathitems:
+                    # TODO: this should be obsolete with an improved intersecion algorithm
+                    # guaranteeing epsilon
                     if add_nsp.normsubpathitems:
                         item = item.modifiedbegin_pt(*(add_nsp.atend_pt()))
                     add_nsp.append(item)

@@ -104,7 +104,7 @@ def hard_test(c, p, dist, pardef, move=(0, 0), label=""):
         p2 = pardef(distance=-dist).deform(p)
         c.stroke(p2, [color.rgb.blue])
         pps.append(p2)
-    return
+    #return
     for pp in pps:
         for nsp in pp.normsubpaths:
             beg, end = nsp.at_pt([0, len(nsp)])
@@ -162,7 +162,7 @@ def testparallel_1(c):
     p.append(path.closepath())
     hard_test(c, p, -0.1, parallel(0.0), move, "C")
     # takes quite long:
-    hard_test(c, p, -0.1, parallel(0.0, relerr=1e-15, checkdistanceparams=[0.5]), move, "C")
+#   hard_test(c, p, -0.1, parallel(0.0, relerr=1e-15, checkdistanceparams=[0.5]), move, "C")
 
     # test for numeric instabilities:
     move = (6, 2)
@@ -175,7 +175,6 @@ def testparallel_1(c):
     move = (5, 5)
     p = path.circle(0, 0, 0.5)
     hard_test(c, p, 0.55, parallel(0.0), move, "E")
-    hard_test(c, p, 0.499, parallel(0.0), move, "E")
     hard_test(c, p, 0.499999, parallel(0.0), move, "E")
 
     # a degenerate path:
@@ -211,6 +210,11 @@ def testparallel_1(c):
     p.append(path.rlineto(1, 0))
     hard_test(c, p, -0.22, parallel(0.0), move, "J")
 
+    # test for too big curvature in the middle, the non-intersecting case
+    move = (2, 6)
+    p = path.path(path.moveto(0,0), path.curveto(0,5, -4,1, 1,1))
+    hard_test(c, p, 0.7, parallel(0.0, dointersection=0), move, "K")
+    hard_test(c, p, 0.6, parallel(0.0), move, "K")
 
 def testparallel_2(c):
 
@@ -223,16 +227,16 @@ def testparallel_2(c):
     p += path.path(path.lineto(5,4), path.lineto(7,4), path.lineto(7,6), path.lineto(4,6),
                    path.lineto(4,7), path.lineto(5,7), path.lineto(3,1), path.closepath())
     p = p.transformed(trafo.scale(0.5))
-    hard_test(c, p, 0.05, parallel(0.0), move, "K")
-    hard_test(c, p, 0.3, parallel(0.0), move, "K")
-    hard_test(c, p, 0.6, parallel(0.0), move, "K")
+    hard_test(c, p, 0.05, parallel(0.0), move, "Z")
+    hard_test(c, p, 0.3, parallel(0.0), move, "Z")
+    hard_test(c, p, 0.6, parallel(0.0), move, "Z")
 
 
 c=canvas.canvas()
 dotest(c, 13, 15, "testcycloid")
 dotest(c, 20, 0, "testsmoothed")
 dotest(c, 0, 0, "testparallel_1")
-dotest(c, 6, 12, "testparallel_2")
-c.writeEPSfile("test_deformer", paperformat=document.paperformat.A4, rotated=0, fittosize=1)
+dotest(c, 6, 13, "testparallel_2")
+c.writeEPSfile("test_deformer", paperformat=document.paperformat.A4, rotated=1, fittosize=1)
 c.writePDFfile("test_deformer")
 
