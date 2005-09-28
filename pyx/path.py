@@ -240,7 +240,10 @@ class pathitem:
 
         Returns a context instance. Is called, when no context has yet
         been defined, i.e. for the very first pathitem. Most of the
-        pathitems do not provide this method.
+        pathitems do not provide this method. Note, that you should pass
+        the context created by createcontext to updatebbox and updatenormpath
+        of successive pathitems only; use the context-free createbbox and
+        createnormpath for the first pathitem instead.
         """
         raise PathException("path must start with moveto or the like (%r)" % self)
 
@@ -345,9 +348,10 @@ class moveto_pt(pathitem):
 
     def createnormpath(self, epsilon=_marker):
         if epsilon is _marker:
-            return normpath([normsubpath()])
+            return normpath([normsubpath([normline_pt(self.x_pt, self.y_pt, self.x_pt, self.y_pt)])])
         else:
-            return normpath([normsubpath(epsilon=epsilon)])
+            return normpath([normsubpath([normline_pt(self.x_pt, self.y_pt, self.x_pt, self.y_pt)],
+                                         epsilon=epsilon)])
 
     def updatebbox(self, bbox, context):
         bbox.includepoint_pt(self.x_pt, self.y_pt)
@@ -463,7 +467,7 @@ class rmoveto_pt(pathitem):
         context.subfirsty_pt = context.y_pt
         if normpath.normsubpaths[-1].epsilon is not None:
             normpath.append(normsubpath([normline_pt(context.x_pt, context.y_pt,
-                                                          context.x_pt, context.y_pt)],
+                                                     context.x_pt, context.y_pt)],
                                         epsilon=normpath.normsubpaths[-1].epsilon))
         else:
             normpath.append(normsubpath(epsilon=normpath.normsubpaths[-1].epsilon))
@@ -1026,8 +1030,8 @@ class path(canvas.canvasitem):
     def bbox(self):
         """return bbox of path"""
         if self.pathitems:
-            context = self.pathitems[0].createcontext()
             bbox = self.pathitems[0].createbbox()
+            context = self.pathitems[0].createcontext()
             for pathitem in self.pathitems[1:]:
                 pathitem.updatebbox(bbox, context)
             return bbox
@@ -1096,11 +1100,11 @@ class path(canvas.canvasitem):
         if self._normpath is not None and epsilon is _marker:
             return self._normpath
         if self.pathitems:
-            context = self.pathitems[0].createcontext()
             if epsilon is _marker:
                 normpath = self.pathitems[0].createnormpath()
             else:
                 normpath = self.pathitems[0].createnormpath(epsilon)
+            context = self.pathitems[0].createcontext()
             for pathitem in self.pathitems[1:]:
                 pathitem.updatenormpath(normpath, context)
         else:
