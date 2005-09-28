@@ -26,6 +26,13 @@ import math, warnings
 import attr, helper, path, normpath, unit, color
 from path import degrees
 
+# specific exception for an invalid parameterization point
+# used in parallel
+class InvalidParamException(Exception):
+
+    def __init__(self, param):
+        self.normsubpathitemparam = param
+
 def curvescontrols_from_endlines_pt(B, tangent1, tangent2, r1, r2, softness): # <<<
     # calculates the parameters for two bezier curves connecting two lines (curvature=0)
     # starting at B - r1*tangent1
@@ -659,8 +666,8 @@ class parallel(deformer): # <<<
             # get the next parallel piece for the normpath
             try:
                 next_parallel_normpath = self.deformsubpathitem(next_orig_nspitem, epsilon)
-            except normpath.NormpathException, e:
-                invalid_nspitem_param = e[0]
+            except InvalidParamException, e:
+                invalid_nspitem_param = e.normsubpathitemparam
                 # split the nspitem apart and continue with pieces that do not contain
                 # the invalid point anymore. At the end, simply take one piece, otherwise two.
                 stepsize = 0.01
@@ -815,7 +822,7 @@ class parallel(deformer): # <<<
                 middleparam = 0.5*(crossings[i] + crossings[i+1])
                 middlecurv = nspitem.curvature_pt([middleparam])[0]
                 if middlecurv is normpath.invalid:
-                    raise normpath.NormpathException(middleparam)
+                    raise InvalidParamException(middleparam)
                 # the radius is good if
                 #  - middlecurv and dist have opposite signs or
                 #  - middlecurv is "smaller" than 1/dist
@@ -861,9 +868,9 @@ class parallel(deformer): # <<<
         # if we find an unexpected normpath.invalid we have to
         # parallelise this normcurve on the level of split normsubpaths
         if tangA is normpath.invalid:
-            raise normpath.NormpathException(startparam)
+            raise InvalidParamException(startparam)
         if tangD is normpath.invalid:
-            raise normpath.NormpathException(endparam)
+            raise InvalidParamException(endparam)
         tangA = tangA.apply_pt(1, 0)
         tangD = tangD.apply_pt(1, 0)
 
@@ -952,7 +959,7 @@ class parallel(deformer): # <<<
             # check if the distance is really the wanted distance
             # measure the distance in the "middle" of the original curve
             if rotation is normpath.invalid:
-                raise normpath.NormpathException(param)
+                raise InvalidParamException(param)
 
             normal = rotation.apply_pt(0, 1)
 
@@ -993,7 +1000,7 @@ class parallel(deformer): # <<<
         # break everything at invalid curvatures
         for param, curv in zip(params, curvs):
             if curv is normpath.invalid:
-                raise normpath.NormpathException(param)
+                raise InvalidParamException(param)
 
         parampairs = zip(params[:-1], params[1:])
         curvpairs = zip(curvs[:-1], curvs[1:])
@@ -1011,7 +1018,7 @@ class parallel(deformer): # <<<
                 middleradius = normcurve.curveradius_pt([middleparam])[0]
 
                 if middleradius is normpath.invalid:
-                    raise normpath.NormpathException(middleparam)
+                    raise InvalidParamException(middleparam)
 
                 if abs(middleradius - dist) < epsilon:
                     # get the parmeter value by linear interpolation:
@@ -1114,16 +1121,53 @@ class parallel(deformer): # <<<
 
         dist = self.dist_pt
 
-        def otherparam(p): # <<<
-            if (p is selfintpairs[selfintsriap[p]][0]):
-                return selfintpairs[selfintsriap[p]][1]
-            else:
-                return selfintpairs[selfintsriap[p]][0]
+        # calculate the self-intersections of the par_np
+        selfintparams, selfintpairs, selfintsriap = self.normpath_selfintersections(par_np, epsilon)
+        # calculate the intersections of the par_np with the original path
+        origintparams = par_np.intersect(orig_np)[0]
+        if origintparams:
+            assert selfintparams
+
+        # visualize the intersection points: # <<<
+        if self.debug is not None:
+            for param1, param2 in selfintpairs:
+                point1, point2 = par_np.at([param1, param2])
+                self.debug.fill(path.circle(point1[0], point1[1], 0.05), [color.rgb.red])
+                self.debug.fill(path.circle(point2[0], point2[1], 0.03), [color.rgb.black])
+            for param in origintparams:
+                point = par_np.at([param])[0]
+                self.debug.fill(path.circle(point[0], point[1], 0.05), [color.rgb.green])
         # >>>
-        def index(list, elem): # <<<
-            for i, el in enumerate(list):
-                if el is elem:
-                    return i
+
+        result = normpath.normpath()
+        if not selfintparams:
+            if origintparams:
+                return result
+            else:
+                return par_np
+
+        beginparams = []
+        endparams = []
+        for i in range(len(par_np)):
+            beginparams.append(normpath.normpathparam(par_np, i, 0))
+            endparams.append(normpath.normpathparam(par_np, i, len(par_np[i])))
+
+        allparams = selfintparams + origintparams + beginparams + endparams
+        allparams.sort()
+        allparamindices = {}
+        for i, param in enumerate(allparams):
+            allparamindices[param] = i
+
+        done = {}
+        for param in allparams:
+            done[param] = 0
+
+        def otherparam(p): # <<<
+            pair = selfintpairs[selfintsriap[p]]
+            if (p is pair[0]):
+                return pair[1]
+            else:
+                return pair[0]
         # >>>
         def trial_parampairs(startp): # <<<
             tried = {}
@@ -1131,7 +1175,7 @@ class parallel(deformer): # <<<
                 tried[param] = done[param]
 
             lastp = startp
-            currentp = allparams[index(allparams, startp) + 1]
+            currentp = allparams[allparamindices[startp] + 1]
             result = []
 
             while 1:
@@ -1157,52 +1201,14 @@ class parallel(deformer): # <<<
                     lastp = otherparam(currentp)
                     tried[currentp] = 1
                     tried[otherparam(currentp)] = 1
-                    currentp = allparams[index(allparams, otherparam(currentp)) + 1]
+                    currentp = allparams[allparamindices[otherparam(currentp)] + 1]
                 else:
                     # go to the next pair on the curve, seen from currentpair[0]
                     tried[currentp] = 1
                     tried[otherparam(currentp)] = 1
-                    currentp = allparams[index(allparams, currentp) + 1]
+                    currentp = allparams[allparamindices[currentp] + 1]
             assert 0
         # >>>
-
-        # calculate the self-intersections of the par_np
-        selfintparams, selfintpairs, selfintsriap = self.normpath_selfintersections(par_np, epsilon)
-        # calculate the intersections of the par_np with the original path
-        origintparams = par_np.intersect(orig_np)[0]
-        if origintparams:
-            assert selfintparams
-
-        ## visualize the intersection points: # <<<
-        #if self.debug is not None:
-        #    for param1, param2 in selfintpairs:
-        #        point1, point2 = par_np.at([param1, param2])
-        #        self.debug.fill(path.circle(point1[0], point1[1], 0.05), [color.rgb.red])
-        #        self.debug.fill(path.circle(point2[0], point2[1], 0.03), [color.rgb.black])
-        #    for param in origintparams:
-        #        point = par_np.at([param])[0]
-        #        self.debug.fill(path.circle(point[0], point[1], 0.05), [color.rgb.green])
-        ## >>>
-
-        result = normpath.normpath()
-        if not selfintparams:
-            if origintparams:
-                return result
-            else:
-                return par_np
-
-        beginparams = []
-        endparams = []
-        for i in range(len(par_np)):
-            beginparams.append(normpath.normpathparam(par_np, i, 0))
-            endparams.append(normpath.normpathparam(par_np, i, len(par_np[i])))
-
-        allparams = selfintparams + origintparams + beginparams + endparams
-        allparams.sort()
-
-        done = {}
-        for param in allparams:
-            done[param] = 0
 
         # first the paths that start at the beginning of a subnormpath:
         for startp in beginparams + selfintparams:
