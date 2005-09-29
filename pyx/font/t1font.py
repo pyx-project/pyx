@@ -615,7 +615,7 @@ class T1font:
         if token1 == "StandardEncoding" and token2 == "def":
             self.encoding = encoding.adobestandardencoding
         else:
-            encvector = [None]*255
+            encvector = [None]*256
             while 1:
                 self.encodingstart = c.pos
                 if c.gettoken() == "dup":
