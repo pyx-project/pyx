@@ -30,8 +30,8 @@ Gert-Ludwig Ingold \par
 \section*{Acknowledgements}
 The following persons have in one way or the other, e.g.\ by asking good 
 questions or providing answers, contributed to this FAQ:\\ 
-Walter Brisken, Jörg Lehmann, Michael Schindler, Gerhard Schmid, Andr{\'e} 
-Wobst.
+Walter Brisken, Pierre Joyot, Jörg Lehmann, John Owens, Michael Schindler, 
+Gerhard Schmid, Andr{\'e} Wobst.
 \newpage
 
 \section{General aspects of \PyX}
@@ -52,7 +52,7 @@ different. According to the developers of \PyX{}, it should be pronounced as
 \tipagraph{[pYx]}{tipapyx} or \tipagraph{[pY\c c]}{tipapych}.
 }
 
-\question{a}{Where do I get the latest version of \PyX? \changed}
+\question{a}{Where do I get the latest version of \PyX?}
 {}
 {\label{q:where_do_I_get_PyX}
 The current release of \PyX{} (as well as older ones) is freely available 
@@ -80,7 +80,7 @@ prompt)
 \end{progcode}
 }
 
-\question{a}{How can I access older versions of \PyX? \new}
+\question{a}{How can I access older versions of \PyX?}
 {}
 {As at present it is not guaranteed that \PyX{} is backward compatible, it may
 be desirable to access an older version of \PyX{} instead of adapting older 
@@ -137,7 +137,7 @@ different versions of Python installed on your system at the same time. The
 default Python version need not be the same for all users.
 }
 
-\question{a}{Does \PyX{} provide a GUI to view the produced image? \changed}
+\question{a}{Does \PyX{} provide a GUI to view the produced image?}
 {}
 {No, \PyX{} itself does not provide a means to view the produced image. The 
 result of a \PyX{} run is an EPS (= Encapsulated PostScript) file, a
@@ -253,7 +253,7 @@ c.text(0, 0, r"\${\cs alpha}{\cs beta}{\cs gamma}\$")
 
 \section{General aspects of plotting with \PyX}
 
-\question{a}{How do I generate multipage output? \new}
+\question{a}{How do I generate multipage output?}
 {}
 {
 With versions 0.8 and higher it is possible to produce multipage output,
@@ -561,7 +561,7 @@ for ticks but not subticks.
 
 \subsection{Data properties}
 
-\question{a}{How do I choose the symbol?}
+\question{a}{How do I choose the symbol and its attributes? \changed}
 {}
 {\label{q:choose_symbol}
 Suppose a graph called \texttt{g} has been initialized, e.g.\ by using
@@ -572,6 +572,12 @@ example in which filled circles are requested:
 g.plot(graph.data.file("test.dat"),\\
 ~~~~~~~[graph.style.symbol(graph.style.symbol.circle, symbolattrs=[deco.filled])]\\
 ~~~~~~~)
+\end{progcode}
+As another example, if the linewidth of the symbol is too thin for your 
+purposes, you could use something like:
+\begin{progcode}
+[graph.style.symbol(graph.style.symbol.plus, 
+   symbolattrs=[style.linewidth.Thick])]\\
 \end{progcode}
 }
 
@@ -616,9 +622,54 @@ to plot the symbols on top of a thin, dashed line. You may alter the
 order of the styles to plot the line on top of the symbols.
 }
 
+\question{a}{How can I change the color of symbols or lines according to a
+palette? \new}
+{}
+{If several data sets should be plotted in different colors, one can specify
+in \texttt{symbolattrs} and/or \texttt{lineattrs} a palette like 
+\texttt{color.palette.Rainbow}. Equidistant colors are chosen spanning the 
+palette from one end to the other.
+}
+
+\question{a}{How can I specify changing colors (or other attributes) for 
+symbols or lines? \new}
+{}
+{In \texttt{symbolattrs} and/or \texttt{lineattrs} so-called changelist can
+be used. As an example
+\begin{progcode}
+mystyle = graph.style.symbol(symbolattrs=\\
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[attr.changelist([color.rgb.red, color.rgb.green])])\\
+g.plot(graph.data.file("x.dat", x=1, y=2), [mystyle])\\
+g.plot(graph.data.file("y.dat", x=1, y=2), [mystyle])\\
+g.plot(graph.data.file("z.dat", x=1, y=2), [mystyle])
+\end{progcode}
+will switch between red and green symbols each time a new data set is 
+plotted. Several changelists can be specified. They are cycled independently 
+and need not be of the same length. It may be necessary to repeat attributes
+in order that several changelists cooperate to produce the desired result.
+A common situation is that one would like to cycle through a list of symbols
+which should be used in alternating colors. This can be achieved with
+the following code:
+\begin{progcode}
+mystyle = graph.style.symbol(\\
+~~~~~~~~~~~~~~~~graph.style.symbol.changetriangletwice,\\
+~~~~~~~~~~~~~~~~symbolattrs=[attr.changelist([color.rgb.red, color.rgb.green])])
+\end{progcode}
+which will produce a red triangle, a green triangle, a red circle, a green
+circle and so on for diamond and square because \texttt{changetriangletwice}
+lists each symbol twice. If instead of changing between colors
+one would like to change between filled and open symbols, one can make use of
+a predefined changelist
+\begin{progcode}
+mystyle = graph.style.symbol(\\
+~~~~~~~~~~~~~~~~graph.style.symbol.changetriangletwice,\\
+~~~~~~~~~~~~~~~~symbolattrs=[graph.style.symbol.changefilledstroked])
+\end{progcode}
+}
+
 \section{Other plotting tasks}
 
-\question{a}{How can I rotate text? \new}
+\question{a}{How can I rotate text?}
 {}
 {Text can be written at an arbitrary angle by specifying the appropriate 
 transformation as an attribute. The command
@@ -632,6 +683,20 @@ following example, the pivot coincides with the center of the text:
 \begin{progcode}
 c.text(0, 0, "Text", [text.halign.center,text.valign.middle,trafo.rotate(60)])
 \end{progcode}
+}
+
+\question{a}{How can I clip a canvas? \new}
+{}
+{In order to use only a part of a larger canvas, one may want to clip it. This
+can be done by creating a clipping object which is used when creating a canvas
+instance:
+\begin{progcode}
+clippath = path.circle(0.,0.,1.)\\
+clipobject = canvas.clip(clippath)\\
+c = canvas.canvas([clipobject])
+\end{progcode}
+In this example, the clipping path used to define the clipping object is a 
+circle.
 }
 \section{\TeX{} and \LaTeX{}}
 
