@@ -73,6 +73,51 @@ If you really need a geometrically smooth path on the basis of Bezier curves,
 then set \var{obeycurv=1}.
 \end{classdesc}
 
+\begin{classdesc}{parallel}{distance, }%
+This deformer creates a parallel curve to a given path. The result is similar to
+what is usually referred to as the \emph{set with constant distance} to the set of
+points on the path. It differs in one important respect, because the
+\var{distance} parameter in the deformer is a signed distance. The resulting
+parallel normpath is constructed on the level of the original pathitems. For
+each of them a parallel pathitem is constructed. Then, they are connected by
+circular arcs (or by sharp edges) around the corners of the original path.
+Later, everything that is nearer to the original path than distance is cut away.
+
+There are some caveats:
+\begin{itemize}
+  \item When the original path is too curved then the parallel path would
+  contain points with infinte curvature. The resulting path stops at such points
+  and leaves the too strongly curved piece out.
+  \item When the original path contains self-intersection, then the resulting
+  parallel path is not continuous in the parameterisation of the original path.
+  It may first take a piece that corresponds to ``later'' parameter values and
+  then continue with an ``earlier'' one. Please don't get confused.
+\end{itemize}
+
+The parameters are the following:
+
+\var{distance} is the minimal (signed) distance between the original and the
+parallel paths.
+
+\var{relerr} is the allowed error in the distance is given by
+\code{distance*relerr}.
+
+\var{sharpoutercorners} connects the parallel pathitems by wegde build of
+straight lines, instead of taking circular arcs. This preserves the angle of the
+original corners.
+
+\var{dointersection} is a boolean for performing the last step, the intersection
+step, in the path construction. Setting this to 0 gives the full parallel path,
+which can be favourable for self-intersecting paths.
+
+\var{checkdistanceparams} is a list of parameter values in the interval (0,1)
+where the distance is checked on each parallel pathitem
+
+\var{lookforcurvatures} is the number of points per normpathitem where its
+curvature is checked for critical values
+
+\end{classdesc}
+
 %%% Local Variables:
 %%% mode: latex
 %%% TeX-master: "manual.tex"
