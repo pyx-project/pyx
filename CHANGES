@@ -104,7 +104,8 @@ TODO:
   - text module:
     - improve escapestring to handle all ascii characters
     - correct vshift when text size is modified by a text.size instance
-    - recover from exceptions after executing a note (reported by Alan Isaac)
+    - recover from exceptions (reported by Alan Isaac)
+    - handle missing italic angle information in tfm for pdf output (reported by Brett Calcott)
   - path module:
     - correct closepath (do not invalidate currentpoint but set it to the
       beginning of the current subpath); structural rework of pathitems
