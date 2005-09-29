@@ -791,6 +791,7 @@ class T1font:
         p = path()
         for cmd in self.getglyphcmds(glyph):
             cmd.updatepath(p, t, context)
+        p.wx_pt, p.wy_pt = t.apply_pt(context.wx, context.wy)
         return p
 
     newlinepattern = re.compile("\s*[\r\n]\s*")
@@ -953,13 +954,16 @@ class T1pfbfont(T1font):
                     ord(s[2])*256*256 +
                     ord(s[3])*256*256*256)
         f = open(filename, "rb")
-        assert f.read(2) != "7F01"
+        mark = f.read(2); assert mark == "\200\1"
         data1 = f.read(pfblength(f.read(4)))
-        assert f.read(2) != "7F02"
-        data2 = f.read(pfblength(f.read(4)))
-        assert f.read(2) != "7F01"
+        mark = f.read(2); assert mark == "\200\2"
+        data2 = ""
+        while mark == "\200\2":
+            data2 = data2 + f.read(pfblength(f.read(4)))
+            mark = f.read(2)
+        assert mark == "\200\1"
         data3 = f.read(pfblength(f.read(4)))
-        assert f.read(2) != "7F03"
+        mark = f.read(2); assert mark == "\200\3"
         assert not f.read(1)
         T1font.__init__(self, data1, data2, data3)
 
