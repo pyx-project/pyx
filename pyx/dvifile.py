@@ -440,7 +440,10 @@ class font:
                              -self.getdepth_ds(ord("y")),
                              self.getwidth_ds(ord("W")),
                              self.getheight_ds(ord("H")))
-        fontinfo.italicangle = -180/math.pi*math.atan(self.tfmfile.param[0]/65536.0)
+        try:
+            fontinfo.italicangle = -180/math.pi*math.atan(self.tfmfile.param[0]/65536.0)
+        except IndexError:
+            fontinfo.italicangle = 0
         fontinfo.ascent = fontinfo.fontbbox[3]
         fontinfo.descent = fontinfo.fontbbox[1]
         fontinfo.capheight = self.getheight_ds(ord("h"))
