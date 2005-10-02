@@ -943,7 +943,7 @@ class path(canvas.canvasitem):
 
     """PS style path"""
 
-    __slots__ = "path", "_normpath"
+    __slots__ = "pathitems", "_normpath"
 
     def __init__(self, *pathitems):
         """construct a path from pathitems *args"""
@@ -1243,7 +1243,7 @@ class ellipse_pt(path):
 
     def __init__(self, x_pt, y_pt, a_pt, b_pt, angle, **kwargs):
         t = trafo.scale(a_pt, b_pt, epsilon=None).rotated(angle).translated_pt(x_pt, y_pt)
-        return path.circle_pt(0, 0, 1, **kwargs).normpath(epsilon=None).transformed(t).path()
+        self.pathitems = path.circle_pt(0, 0, 1, **kwargs).normpath(epsilon=None).transformed(t).path().pathitems
 
 
 class line(line_pt):
