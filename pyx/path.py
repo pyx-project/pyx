@@ -33,7 +33,7 @@ except ImportError:
     def radians(x): return x*pi/180
     def degrees(x): return x*180/pi
 
-import bbox, canvas, helper, trafo, unit
+import bbox, canvas, trafo, unit
 from normpath import NormpathException, normpath, normsubpath, normline_pt, normcurve_pt
 
 # set is available as an external interface to the normpath.set method
@@ -639,9 +639,6 @@ class arcn_pt(pathitem):
         else:
             return normpath([normsubpath(_arctobezierpath(self.x_pt, self.y_pt, self.r_pt, self.angle2, self.angle1),
                                          epsilon=epsilon)]).reversed()
-
-    def _updatecurrentpoint(self, currentpoint):
-        currentpoint.x_pt, currentpoint.y_pt = self._earc()
 
     def updatebbox(self, bbox, context):
         minarcx_pt, minarcy_pt, maxarcx_pt, maxarcy_pt = _arcbboxdata(self.x_pt, self.y_pt, self.r_pt,
