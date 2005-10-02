@@ -33,7 +33,7 @@ except ImportError:
     def radians(x): return x*pi/180
     def degrees(x): return x*180/pi
 
-import bbox, canvas, helper, unit
+import bbox, canvas, helper, trafo, unit
 from normpath import NormpathException, normpath, normsubpath, normline_pt, normcurve_pt
 
 # set is available as an external interface to the normpath.set method
@@ -1243,7 +1243,8 @@ class ellipse_pt(path):
 
     def __init__(self, x_pt, y_pt, a_pt, b_pt, angle, **kwargs):
         t = trafo.scale(a_pt, b_pt, epsilon=None).rotated(angle).translated_pt(x_pt, y_pt)
-        self.pathitems = path.circle_pt(0, 0, 1, **kwargs).normpath(epsilon=None).transformed(t).path().pathitems
+        p = circle_pt(0, 0, 1, **kwargs).normpath(epsilon=None).transformed(t).path()
+        path.__init__(self, *p.pathitems)
 
 
 class line(line_pt):
