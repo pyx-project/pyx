@@ -1288,5 +1288,5 @@ class ellipse(ellipse_pt):
     """ellipse with center (x, y), the two axes (a, b),
     and the angle angle of the first axis"""
 
-    def __init__(self, x, y, a, b, **kwargs):
-        ellipse_pt.__init__(self, unit.topt(x), unit.topt(y), unit.topt(a), unit.topt(b), **kwargs)
+    def __init__(self, x, y, a, b, angle, **kwargs):
+        ellipse_pt.__init__(self, unit.topt(x), unit.topt(y), unit.topt(a), unit.topt(b), angle, **kwargs)
