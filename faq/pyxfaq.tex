@@ -628,7 +628,14 @@ palette? \new}
 {If several data sets should be plotted in different colors, one can specify
 in \texttt{symbolattrs} and/or \texttt{lineattrs} a palette like 
 \texttt{color.palette.Rainbow}. Equidistant colors are chosen spanning the 
-palette from one end to the other.
+palette from one end to the other. In the following example, symbols vary in
+form and change their color according to the rainbow palette at the same time
+as the connecting lines:
+\begin{progcode}
+mystyle = [graph.style.symbol(graph.style.symbol.changecircle,\\
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~symbolattrs=[color.palette.Rainbow]),\\
+~~~~~~~~~~~graph.style.line(lineattrs=[color.palette.Rainbow])]
+\end{progcode}
 }
 
 \question{a}{How can I specify changing colors (or other attributes) for 
