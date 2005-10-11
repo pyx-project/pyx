@@ -640,7 +640,8 @@ mystyle = [graph.style.symbol(graph.style.symbol.changecircle,\\
 ~~~~~~~~~~~graph.style.line(lineattrs=[color.palette.Rainbow])]
 \end{progcode}
 See question~\ref{q:changelist} for a more complete example demonstrating
-how to use this style definition.
+how to use this style definition and for a comment on the necessity of 
+defining \texttt{mystyle} (you are of course free to choose a different name).
 }
 
 \question{a}{How can I specify changing colors (or other attributes) for 
@@ -658,7 +659,14 @@ g.plot(graph.data.file("z.dat", x=1, y=2), [mystyle])
 \end{progcode}
 will switch between red and green symbols each time a new data set is 
 plotted. Several changelists can be specified. They are cycled independently 
-and need not be of the same length. It may be necessary to repeat attributes
+and need not be of the same length. It should be noted that the definition of
+\texttt{mystyle} in this example ensures that there is only one instance of
+the definition of \texttt{symbolattrs}. Putting an explicit definition of
+\texttt{symbolattrs} in each call to \texttt{plot} would not lead to the
+desired result because each time a new instance would be created which then
+starts with the first item in the changelist.
+
+It may be necessary to repeat attributes
 in order that several changelists cooperate to produce the desired result.
 A common situation is that one would like to cycle through a list of symbols
 which should be used in alternating colors. This can be achieved with
