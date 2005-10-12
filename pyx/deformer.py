@@ -576,12 +576,14 @@ class parallel(deformer): # <<<
 
     distance:            the distance of the parallel normpath
     relerr:              distance*relerr is the maximal allowed error in the parallel distance
+    sharpoutercorners:   make the outer corners not round but sharp.
+                         The inner corners (corners after inflection points) will stay round
+    dointersection:      boolean for doing the intersection step (default: 1).
+                         Set this value to 0 if you want the whole parallel path
     checkdistanceparams: a list of parameter values in the interval (0,1) where the
                          parallel distance is checked on each normpathitem
     lookforcurvatures:   number of points per normpathitem where is looked for
                          a critical value of the curvature
-    dointersection:      boolean for doing the intersection step (default: 1).
-                         Set this value to 0 if you want the whole parallel path
     """
 
     # TODO:
@@ -594,8 +596,8 @@ class parallel(deformer): # <<<
     # * improve the intersection of nearly degenerate paths
 
 
-    def __init__(self, distance, relerr=0.05, sharpoutercorners=0, checkdistanceparams=[0.5],
-                       lookforcurvatures=11, dointersection=1, debug=None):
+    def __init__(self, distance, relerr=0.05, sharpoutercorners=0, dointersection=1,
+                       checkdistanceparams=[0.5], lookforcurvatures=11, debug=None):
         self.distance = distance
         self.relerr = relerr
         self.sharpoutercorners = sharpoutercorners
@@ -604,8 +606,8 @@ class parallel(deformer): # <<<
         self.dointersection = dointersection
         self.debug = debug
 
-    def __call__(self, distance=None, relerr=None, sharpoutercorners=None, checkdistanceparams=None,
-                       lookforcurvatures=None, dointersection=None, debug=None):
+    def __call__(self, distance=None, relerr=None, sharpoutercorners=None, dointersection=None,
+                       checkdistanceparams=None, lookforcurvatures=None, debug=None):
         # returns a copy of the deformer with different parameters
         if distance is None:
             distance = self.distance
@@ -613,18 +615,20 @@ class parallel(deformer): # <<<
             relerr = self.relerr
         if sharpoutercorners is None:
             sharpoutercorners = self.sharpoutercorners
+        if dointersection is None:
+            dointersection = self.dointersection
         if checkdistanceparams is None:
             checkdistanceparams = self.checkdistanceparams
         if lookforcurvatures is None:
             lookforcurvatures = self.lookforcurvatures
-        if dointersection is None:
-            dointersection = self.dointersection
         if debug is None:
             debug = self.debug
 
-        return parallel(distance=distance, relerr=relerr, sharpoutercorners=sharpoutercorners,
+        return parallel(distance=distance, relerr=relerr,
+                        sharpoutercorners=sharpoutercorners,
+                        dointersection=dointersection,
                         checkdistanceparams=checkdistanceparams,
-                        lookforcurvatures=lookforcurvatures, dointersection=dointersection,
+                        lookforcurvatures=lookforcurvatures,
                         debug=debug)
 
     def deform(self, basepath):
