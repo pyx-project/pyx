@@ -3,7 +3,7 @@
 #
 #
 # Copyright (C) 2002-2004 Jörg Lehmann <joergl@users.sourceforge.net>
-# Copyright (C) 2003-2004 Michael Schindler <m-schindler@users.sourceforge.net>
+# Copyright (C) 2003-2005 Michael Schindler <m-schindler@users.sourceforge.net>
 # Copyright (C) 2002-2004 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
@@ -22,8 +22,33 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import colorsys
+import colorsys, math
 import attr, style, pdfwriter
+
+# device-dependend (nonlinear) functions for color conversion
+# UCRx : [0,1] -> [-1, 1] UnderColorRemoval (removes black from c, y, m)
+# BG   : [0,1] -> [0, 1]  BlackGeneration (generate the black from the nominal k-value)
+# as long as we have no further knowledge we define them linearly with constants 1
+def _UCRc(x): return x
+def _UCRm(x): return x
+def _UCRy(x): return x
+def _BG(x): return x
+
+def set(UCRc=None, UCRm=None, UCRy=None, BG=None):
+    global _UCRc
+    global _UCRm
+    global _UCRy
+    global _BG
+
+    if UCRc is not None:
+        _UCRc = UCRc
+    if UCRm is not None:
+        _UCRm = UCRm
+    if UCRy is not None:
+        _UCRy = UCRy
+    if BG is not None:
+        _BG = BG
+
 
 class color(attr.exclusiveattr, style.strokestyle, style.fillstyle):
 
@@ -54,6 +79,18 @@ class grey(color):
         if context.fillattr:
             file.write("%(gray)f g\n" % self.color)
 
+    def cmyk(self):
+        return cmyk(0, 0, 0, 1 - self.color["gray"])
+
+    def grey(self):
+        return self
+
+    def hsb(self):
+        return hsb(0, 0, self.color["gray"])
+
+    def rgb(self):
+        return rgb(self.color["gray"], self.color["gray"], self.color["gray"])
+
 grey.black = grey(0.0)
 grey.white = grey(1.0)
 gray = grey
@@ -76,6 +113,47 @@ class rgb(color):
             file.write("%(r)f %(g)f %(b)f RG\n" % self.color)
         if context.fillattr:
             file.write("%(r)f %(g)f %(b)f rg\n" % self.color)
+
+    def cmyk(self):
+        # conversion to cmy
+        c, m, y = 1 - self.color["r"], 1 - self.color["g"], 1 - self.color["b"]
+        # conversion from cmy to cmyk with device-dependent functions
+        k = min([c, m, y])
+        return cmyk(min(1, max(0, c - _UCRc(k))),
+                    min(1, max(0, m - _UCRm(k))),
+                    min(1, max(0, y - _UCRy(k))),
+                    _BG(k))
+
+    def grey(self):
+        return grey(0.3*self.color["r"] + 0.59*self.color["g"] + 0.11*self.color["b"])
+    gray = grey
+
+    def hsb(self):
+
+        values = self.color.values()
+        values.sort()
+        z, y, x = values
+        r, g, b = self.color["r"], self.color["g"], self.color["b"]
+        try:
+            if r == x and g == z:
+                return hsb((5 + (x-b)/(x-z)) / 6.0, (x - z) / x, x)
+            elif r == x and g > z:
+                return hsb((1 - (x-g)/(x-z)) / 6.0, (x - z) / x, x)
+            elif g == x and b == z:
+                return hsb((1 + (x-r)/(x-z)) / 6.0, (x - z) / x, x)
+            elif g == x and b > z:
+                return hsb((3 - (x-b)/(x-z)) / 6.0, (x - z) / x, x)
+            elif b == x and r == z:
+                return hsb((3 + (x-g)/(x-z)) / 6.0, (x - z) / x, x)
+            elif b == x and r > z:
+                return hsb((5 - (x-r)/(x-z)) / 6.0, (x - z) / x, x)
+            else:
+                raise ValueError
+        except ZeroDivisionError:
+            return hsb(0, 0, x)
+
+    def rgb(self):
+        return self
 
 rgb.red   = rgb(1 ,0, 0)
 rgb.green = rgb(0 ,1, 0)
@@ -100,6 +178,34 @@ class hsb(color):
         r, g, b = colorsys.hsv_to_rgb(self.color["h"], self.color["s"], self.color["b"])
         rgb(r, g, b).outputPDF(file, writer, context)
 
+    def cmyk(self):
+        return self.rgb().cmyk()
+
+    def grey(self):
+        return self.rgb().grey()
+    gray = grey
+
+    def hsb(self):
+        return self
+
+    def rgb(self):
+        h, s, b = self.color["h"], self.color["s"], self.color["b"]
+        i = int(6*h)
+        f = 6*h - i
+        m, n, k = 1 - s, 1 - s*f, 1 - s*(1-f)
+        if i == 1:
+            return rgb(b*n, b, b*m)
+        elif i == 2:
+            return rgb(b*m, b, b*k)
+        elif i == 3:
+            return rgb(b*m, b*n, b)
+        elif i == 4:
+            return rgb(b*k, b*m, b)
+        elif i == 5:
+            return rgb(b, b*m, b*n)
+        else:
+            return rgb(b, b*k, b*m)
+
 
 class cmyk(color):
 
@@ -119,6 +225,24 @@ class cmyk(color):
         if context.fillattr:
             file.write("%(c)f %(m)f %(y)f %(k)f k\n" % self.color)
 
+    def cmyk(self):
+        return self
+
+    def grey(self):
+        return grey(1 - min([1, 0.3*self.color["c"] + 0.59*self.color["m"] +
+                                0.11*self.color["y"] + self.color["k"]]))
+    gray = grey
+
+    def hsb(self):
+        return self.rgb().hsb()
+
+    def rgb(self):
+        # conversion to cmy:
+        c = min(1, self.color["c"] + self.color["k"])
+        m = min(1, self.color["m"] + self.color["k"])
+        y = min(1, self.color["y"] + self.color["k"])
+        # conversion from cmy to rgb:
+        return rgb(1 - c, 1 - m, 1 - y)
 
 cmyk.GreenYellow    = cmyk(0.15, 0, 0.69, 0)
 cmyk.Yellow         = cmyk(0, 0, 1, 0)
