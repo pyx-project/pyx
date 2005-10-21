@@ -106,6 +106,8 @@ TODO:
     - correct vshift when text size is modified by a text.size instance
     - recover from exceptions (reported by Alan Isaac)
     - handle missing italic angle information in tfm for pdf output (reported by Brett Calcott)
+    - allow for .def and .fd files in texmessage.loaddef (new name for
+      texmessage.loadfd, which was restricted to .fd files)
   - path module:
     - correct closepath (do not invalidate currentpoint but set it to the
       beginning of the current subpath); structural rework of pathitems

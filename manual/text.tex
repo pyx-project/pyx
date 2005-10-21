@@ -116,7 +116,7 @@ and controling a \TeX/\LaTeX{} instance.
   to the \TeX{} message parsers given in the \method{preamble()} and
   \method{text()} methods. The \var{texmessagesdefaultpreamble} and
   \var{texmessagesdefaultrun} are merged with \code{[texmessage.load]}
-  and \code{[texmessage.loadfd, texmessage.graphicsload,
+  and \code{[texmessage.loaddef, texmessage.graphicsload,
   texmessage.fontwarning, texmessage.boxwarning]}, respectively.
 \end{classdesc}
 
@@ -538,10 +538,11 @@ The following \TeX{} message parser instances are available:
   \emph{i.e.} accept \texttt{(\emph{file} ...)} where
   \texttt{\emph{file}} is an readable file.
 \end{memberdesc}
-\begin{memberdesc}{loadfd}
-  Accepts arbitrary loading of \texttt{fd} files,
-  \emph{i.e.} accept \texttt{(\emph{file}.fd)} where
-  \texttt{\emph{file}.fd} is an readable file.
+\begin{memberdesc}{loaddef}
+  Accepts arbitrary loading of \texttt{fd} files, \emph{i.e.} accept
+  \texttt{(\emph{file}.def)} and \texttt{(\emph{file}.fd)} where
+  \texttt{\emph{file}.def} or \texttt{\emph{file}.fd} is an readable
+  file, respectively.
 \end{memberdesc}
 \begin{memberdesc}{graphicsload}
   Accepts arbitrary loading of \texttt{eps} files,

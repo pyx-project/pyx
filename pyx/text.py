@@ -291,12 +291,12 @@ class _texmessageload(texmessage):
                 texrunner.texmessageparsed = lowestbracketlevel
 
 
-class _texmessageloadfd(_texmessageload):
+class _texmessageloaddef(_texmessageload):
     """validates the inclusion of font description files (fd-files)
     - works like _texmessageload
-    - filename must end with .fd and no further text is allowed"""
+    - filename must end with .def or .fd and no further text is allowed"""
 
-    pattern = re.compile(r"\((?P<filename>[^)]+.fd)\)")
+    pattern = re.compile(r"\((?P<filename>[^)]+(\.fd|\.def))\)")
 
     def baselevels(self, s, **kwargs):
         return s
@@ -330,7 +330,7 @@ texmessage.start = _texmessagestart()
 texmessage.noaux = _texmessagenoaux()
 texmessage.end = _texmessageend()
 texmessage.load = _texmessageload()
-texmessage.loadfd = _texmessageloadfd()
+texmessage.loaddef = _texmessageloaddef()
 texmessage.graphicsload = _texmessagegraphicsload()
 texmessage.ignore = _texmessageignore()
 
@@ -766,7 +766,7 @@ class texrunner:
     defaulttexmessagesbegindoc = [texmessage.load, texmessage.noaux]
     defaulttexmessagesend = [texmessage.end, texmessage.fontwarning]
     defaulttexmessagesdefaultpreamble = [texmessage.load]
-    defaulttexmessagesdefaultrun = [texmessage.loadfd, texmessage.graphicsload,
+    defaulttexmessagesdefaultrun = [texmessage.loaddef, texmessage.graphicsload,
                                     texmessage.fontwarning, texmessage.boxwarning]
 
     def __init__(self, mode="tex",
