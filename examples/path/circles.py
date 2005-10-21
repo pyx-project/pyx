@@ -1,6 +1,6 @@
 from pyx import *
 
-circ1 = path.circle(0, 0, 1)
+circ1 = path.circle(0, 0, 1.5)
 circ2 = path.circle(1, 1, 1)
 (circ1a, circ1b), (circ2a, circ2b) = circ1.intersect(circ2)
 intersection = (circ2.split([circ2b, circ2a])[1]
