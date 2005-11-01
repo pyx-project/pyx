@@ -101,6 +101,7 @@ TODO:
       - patch to allow for tickattrs=None (reported by Wojciech Smigaj, cf. patch #1286116)
   - color module:
     - transparency support (PDF only) (TODO: documentation)
+    - conversion between colorspaces
   - text module:
     - improve escapestring to handle all ascii characters
     - correct vshift when text size is modified by a text.size instance
