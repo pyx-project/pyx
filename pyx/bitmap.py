@@ -378,7 +378,7 @@ class bitmap(canvas.canvasitem):
         file.write("gsave\n")
         if self.palettedata is not None:
             file.write("[ /Indexed %s %i\n" % (self.palettecolorspace, len(self.palettedata)/3-1))
-            file.write("%%%%BeginData: %i ASCII Lines\n" % ascii85lines(len(self.data)))
+            file.write("%%%%BeginData: %i ASCII Lines\n" % ascii85lines(len(self.palettedata)))
             file.write("<~")
             ascii85stream(file, self.palettedata)
             file.write("~>\n"
