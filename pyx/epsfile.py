@@ -212,7 +212,8 @@ def _readbbox(filename):
 
     usebbox = None
     # parse the trailer (use the last BoundingBox)
-    while 1:
+    line = True
+    while line:
         line = file.readline(EOFmsg=None)
         if line.startswith("%%BoundingBox:"):
             values = line.split(":", 1)[1].split()
