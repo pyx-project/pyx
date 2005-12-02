@@ -73,7 +73,7 @@ class page:
         usually its the bbox of the canvas enlarged by self.bboxenlarge, but
         it might be a different bbox as specified in the page constructor"""
         if self.pagebbox:
-            bbox = self.pagebbox
+            bbox = self.pagebbox.copy()
         else:
             bbox = self.canvas.bbox()
             if bbox:

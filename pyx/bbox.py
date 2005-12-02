@@ -67,6 +67,9 @@ class bbox_pt:
         self.ury_pt = min(self.ury_pt, other.ury_pt)
         return self
 
+    def copy(self):
+        return bbox_pt(self.llx_pt, self.lly_pt, self.urx_pt, self.ury_pt)
+
     def lowrestuple_pt(self):
         return (math.floor(self.llx_pt), math.floor(self.lly_pt),
                 math.ceil(self.urx_pt), math.ceil(self.ury_pt))
