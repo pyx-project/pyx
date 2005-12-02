@@ -316,7 +316,7 @@ class pswriter:
                 if documentbbox:
                     documentbbox += page._transformedbbox
                 else:
-                    documentbbox = page._transformedbbox.enlarge(0) # make a copy
+                    documentbbox = page._transformedbbox.copy() # make a copy
 
         file.write("%!PS-Adobe-3.0\n")
         if documentbbox and writebbox:
