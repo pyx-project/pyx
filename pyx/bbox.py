@@ -94,29 +94,29 @@ class bbox_pt:
         """transform bbox in place by trafo"""
         # we have to transform all four corner points of the bbox
         llx_pt, lly_pt = trafo.apply_pt(self.llx_pt, self.lly_pt)
-        lrx, lry = trafo.apply_pt(self.urx_pt, self.lly_pt)
+        lrx_pt, lry_pt = trafo.apply_pt(self.urx_pt, self.lly_pt)
         urx_pt, ury_pt = trafo.apply_pt(self.urx_pt, self.ury_pt)
-        ulx, uly = trafo.apply_pt(self.llx_pt, self.ury_pt)
+        ulx_pt, uly_pt = trafo.apply_pt(self.llx_pt, self.ury_pt)
 
         # Now, by sorting, we obtain the lower left and upper right corner
         # of the new bounding box.
-        self.llx_pt = min(llx_pt, lrx, urx_pt, ulx)
-        self.lly_pt = min(lly_pt, lry, ury_pt, uly)
-        self.urx_pt = max(llx_pt, lrx, urx_pt, ulx)
-        self.ury_pt = max(lly_pt, lry, ury_pt, uly)
+        self.llx_pt = min(llx_pt, lrx_pt, urx_pt, ulx_pt)
+        self.lly_pt = min(lly_pt, lry_pt, ury_pt, uly_pt)
+        self.urx_pt = max(llx_pt, lrx_pt, urx_pt, ulx_pt)
+        self.ury_pt = max(lly_pt, lry_pt, ury_pt, uly_pt)
 
     def transformed(self, trafo):
         """return bbox transformed by trafo"""
         # we have to transform all four corner points of the bbox
         llx_pt, lly_pt = trafo.apply_pt(self.llx_pt, self.lly_pt)
-        lrx, lry = trafo.apply_pt(self.urx_pt, self.lly_pt)
+        lrx_pt, lry_pt = trafo.apply_pt(self.urx_pt, self.lly_pt)
         urx_pt, ury_pt = trafo.apply_pt(self.urx_pt, self.ury_pt)
-        ulx, uly = trafo.apply_pt(self.llx_pt, self.ury_pt)
+        ulx_pt, uly_pt = trafo.apply_pt(self.llx_pt, self.ury_pt)
 
         # Now, by sorting, we obtain the lower left and upper right corner
-        # of the new bounding box. 
-        return bbox_pt(min(llx_pt, lrx, urx_pt, ulx), min(lly_pt, lry, ury_pt, uly),
-                     max(llx_pt, lrx, urx_pt, ulx), max(lly_pt, lry, ury_pt, uly))
+        # of the new bounding box.
+        return bbox_pt(min(llx_pt, lrx_pt, urx_pt, ulx_pt), min(lly_pt, lry_pt, ury_pt, uly_pt),
+                       max(llx_pt, lrx_pt, urx_pt, ulx_pt), max(lly_pt, lry_pt, ury_pt, uly_pt))
 
     def enlarge(self, all=0, bottom=None, left=None, top=None, right=None):
         """enlarge bbox in place
