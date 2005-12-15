@@ -1,6 +1,8 @@
 PyX
 
 TODO:
+  - normpath module:
+    - fix intersection (see test/functional)
   - style module:
     - make dash length available
   - text module:

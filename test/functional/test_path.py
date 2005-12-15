@@ -114,6 +114,15 @@ def testintersectline(c):
         x, y = l1.at(i)
         c.stroke(circle(x, y, 0.1), [style.linewidth.THIN])
 
+    l1=curve(0, 0, 0, 0, 0, 0, 1, 1)
+    c.stroke(l1, [style.linewidth.THIN])
+
+    isect = l1.intersect(l2)
+
+    for i in isect[0]:
+        x, y = l1.at(i)
+        c.stroke(circle(x, y, 0.1), [style.linewidth.THIN])
+
 
 def testnormpathtrafo(c):
     p = path(moveto(0, 5),
