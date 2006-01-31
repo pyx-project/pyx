@@ -141,6 +141,8 @@ TODO:
       certain PostScript files (reported by Gert Ingold)
   - helper module:
     - remove nodefault marker in favour of separate _marker classes
+  - dvifile module:
+    - silently ignore TrueType fonts in font mapping files (reported by Gabriel Vasseur)
 
 
 0.8.1 (2005/08/13):

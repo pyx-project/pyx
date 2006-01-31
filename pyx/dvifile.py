@@ -297,7 +297,11 @@ class tfmfile:
 # PostScript font selection and output primitives
 #
 
+class UnsupportedFontFormat(Exception):
+    pass
 
+class UnsupportedPSFragment(Exception):
+    pass
 
 class fontmapping:
 
@@ -336,6 +340,8 @@ class fontmapping:
                     self.fontfile = token[1:]
                 elif token.endswith(".enc"):
                     self.encodingfile = token[1:]
+                elif toke.endswith(".ttf"):
+                    raise UnsupportedFontFormat("TrueType font")
                 else:
                     raise RuntimeError("wrong syntax")
             elif token.startswith('"'):
@@ -345,7 +351,7 @@ class fontmapping:
                     try:
                         arg, cmd = pscode[:2]
                     except:
-                        raise RuntimeError("Unsupported Postscript fragment '%s'" % pscode)
+                        raise UnsupportedPSFragment("Unsupported Postscript fragment '%s'" % pscode)
                     pscode = pscode[2:]
                     if cmd == "ReEncodeFont":
                         self.reencodefont = arg
@@ -354,7 +360,7 @@ class fontmapping:
                     elif cmd == "SlantFont":
                         self.slantfont = arg
                     else:
-                        raise RuntimeError("Unsupported Postscript fragment '%s %s'" % (arg, cmd))
+                        raise UnsupportedPSFragment("Unsupported Postscript fragment '%s %s'" % (arg, cmd))
             else:
                 if self.texname is None:
                     self.texname = token
@@ -387,8 +393,10 @@ def readfontmap(filenames):
             if not (line=="" or line[0] in (" ", "%", "*", ";" , "#")):
                 try:
                     fm = fontmapping(line)
-                except RuntimeError, e:
+                except (RuntimeError, UnsupportedPSFragment), e:
                     warnings.warn("Ignoring line %i in mapping file '%s': %s" % (lineno, filename, e))
+                except UnsupportedFontFormat, e:
+                    pass
                 else:
                     fontmap[fm.texname] = fm
         mapfile.close()
