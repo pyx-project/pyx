@@ -59,6 +59,15 @@ or install PyX system wide by using
 or an appropriate variant thereof.
 
 
+For Mac OS X users
+------------------
+
+A complete install of the TeX i-Package contains the kpathsea library. The
+include files and the library itself can be found in /usr/local/teTeX/include
+and /usr/local/teTeX/lib, respectively. These directories should be indicated
+in the setup.cfg file.
+
+
 Path setup when installing to a non-standard directory layout
 -------------------------------------------------------------
 
