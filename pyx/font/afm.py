@@ -26,7 +26,7 @@ class AFMError(Exception):
     pass
 
 _READ_START = 0
-_READ_HEADER = 1
+_READ_MAIN = 1
 _READ_DIRECTION = 2
 _READ_CHARMETRICS = 3
 _READ_KERNDATA = 4
@@ -158,15 +158,15 @@ class AFMfile:
         key, args = line.split(None, 1)
         if key != "StartFontMetrics":
             raise AFMError("Expecting StartFontMetrics, no found")
-        return _READ_HEADER, None
+        return _READ_MAIN, None
 
-    def _processline_header(self, line):
+    def _processline_main(self, line):
         try:
             key, args = line.split(None, 1)
         except ValueError:
             key = line.rstrip()
         if key == "Comment":
-            return _READ_HEADER, None
+            return _READ_MAIN, None
         elif key == "MetricsSets":
             self.metricssets = parseint(args)
             if direction is not None:
@@ -236,7 +236,7 @@ class AFMfile:
         elif key[0] in string.lowercase:
             # ignoring private commands
             pass
-        return _READ_HEADER, None
+        return _READ_MAIN, None
 
     def _processline_direction(self, line, direction):
         try:
@@ -254,18 +254,18 @@ class AFMfile:
         elif key == "IsFixedPitch":
             self.isfixedpitchs[direction] = parsebool(args)
         elif key == "EndDirection":
-            return _READ_HEADER, None
+            return _READ_MAIN, None
         else:
             # we assume that we are implicitly leaving the direction section again,
             # so try to reprocess the line in the header reader state
-            return self._processline_header(line)
+            return self._processline_main(line)
         return _READ_DIRECTION, direction
 
     def _processline_charmetrics(self, line, charno):
         if line.rstrip() == "EndCharMetrics":
             if charno != len(self.charmetrics):
                 raise AFMError("Fewer character metrics than expected")
-            return _READ_HEADER, None
+            return _READ_MAIN, None
         if charno >= len(self.charmetrics):
             raise AFMError("More character metrics than expected")
 
@@ -329,14 +329,14 @@ class AFMfile:
             if self.kernpairs[0] is not None:
                 raise AFMError("Multiple kerning pairs data sections for direction 0")
             self.kernpairs[0] = [None] * parseint(args)
-            return _READ_KERNPAIRS, 0
+            return _READ_KERNPAIRS, (0, 0)
         elif key == "StartKernPairs1":
             if self.kernpairs[1] is not None:
                 raise AFMError("Multiple kerning pairs data sections for direction 0")
             self.kernpairs[1] = [None] * parseint(args)
-            return _READ_KERNPAIRS, 1
+            return _READ_KERNPAIRS, (1, 0)
         elif key == "EndKernData":
-            return _READ_HEADER, None
+            return _READ_MAIN, None
         else:
             raise AFMError("Unsupported key %s in kerning data section" % key)
 
@@ -367,9 +367,13 @@ class AFMfile:
             key = line.rstrip()
         if key == "Comment":
             return _READ_KERNPAIRS, (direction, i)
+        elif key == "EndKernPairs":
+            if i < len(self.kernpairs[direction]):
+                raise AFMError("Fewer kerning pairs than expected")
+            return _READ_KERNDATA, None
         else:
-            if i >= len(self.kernpairs):
-                raise AFMError("More track kerning data sets than expected")
+            if i >= len(self.kernpairs[direction]):
+                raise AFMError("More kerning pairs than expected")
             if key == "KP":
                 try:
                     name1, name2, x, y = args.split()
@@ -395,9 +399,6 @@ class AFMfile:
                 except:
                     raise AFMError("Expecting name1, name2, x, got '%s'" % args)
                 self.kernpairs[direction][i] = AFMkernpair(name1, name2, 0, parsefloat(y))
-            elif key == "EndKernPairs":
-                if i < len(self.kernpairs[direction]):
-                    raise AFMError("Fewer kerning pairs than expected")
             else:
                 raise AFMError("Unknown key '%s' in kern pair section" % key)
             return _READ_KERNPAIRS, (direction, i+1)
@@ -406,7 +407,7 @@ class AFMfile:
         if line.rstrip() == "EndComposites":
             if i < len(self.composites):
                 raise AFMError("Fewer composite character data sets than expected")
-            return _READ_HEADER, None
+            return _READ_MAIN, None
         if i >= len(self.composites):
             raise AFMError("More composite character data sets than expected")
 
@@ -453,14 +454,14 @@ class AFMfile:
                     # except for the first line, any empty will be ignored
                     if not line.strip():
                        continue
-                    if mstate == _READ_HEADER:
-                        state = self._processline_header(line)
+                    if mstate == _READ_MAIN:
+                        state = self._processline_main(line)
                     elif mstate == _READ_DIRECTION:
                         state = self._processline_direction(line, sstate)
                     elif mstate == _READ_CHARMETRICS:
                         state = self._processline_charmetrics(line, sstate)
                     elif mstate == _READ_KERNDATA:
-                        state = self._processline_kerndata(line, sstate)
+                        state = self._processline_kerndata(line)
                     elif mstate == _READ_TRACKKERN:
                         state = self._processline_trackkern(line, sstate)
                     elif mstate == _READ_KERNPAIRS:
@@ -473,5 +474,7 @@ class AFMfile:
             f.close()
 
 if __name__ == "__main__":
-    a = AFMfile("/private/opt/local/share/texmf-dist/fonts/afm/yandy/lucida/lbc.afm")
+    a = AFMfile("/opt/local/share/texmf-dist/fonts/afm/yandy/lucida/lbc.afm")
     print a.charmetrics[0].name
+    a = AFMfile("/usr/share/enscript/hv.afm")
+    print a.charmetrics[32].name
