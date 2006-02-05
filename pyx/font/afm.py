@@ -25,6 +25,7 @@ import string
 class AFMError(Exception):
     pass
 
+# reader states
 _READ_START = 0
 _READ_MAIN = 1
 _READ_DIRECTION = 2
@@ -35,13 +36,14 @@ _READ_KERNPAIRS = 6
 _READ_COMPOSITES = 7
 _READ_END = 8
 
-def parseint(s):
+# various parsing functions
+def _parseint(s):
     try:
         return int(s)
     except:
         raise AFMError("Expecting int, got '%s'" % s)
 
-def parsehex(s):
+def _parsehex(s):
     try:
         if s[0] != "<" or s[-1] != ">":
             raise AFMError()
@@ -49,13 +51,13 @@ def parsehex(s):
     except:
         raise AFMError("Expecting hexadecimal int, got '%s'" % s)
 
-def parsefloat(s):
+def _parsefloat(s):
     try:
         return float(s)
     except:
         raise AFMError("Expecting float, got '%s'" % s)
 
-def parsefloats(s, nos):
+def _parsefloats(s, nos):
     try:
         numbers = s.split()
         result = map(float, numbers)
@@ -65,11 +67,11 @@ def parsefloats(s, nos):
         raise AFMError("Expecting list of %d numbers, got '%s'" % (s, nos))
     return result
 
-def parsestr(s):
+def _parsestr(s):
     # XXX: check for invalid characters in s
     return s
 
-def parsebool(s):
+def _parsebool(s):
     s = s.rstrip()
     if s == "true":
        return 1
@@ -77,6 +79,7 @@ def parsebool(s):
        return 0
     else:
         raise AFMError("Expecting boolean, got '%s'" % s)
+
 
 class AFMcharmetrics:
     def __init__(self, code, widths=None, vvector=None, name=None, bbox=None, ligatures=None):
@@ -153,7 +156,7 @@ class AFMfile:
        self.parse()
        if self.isfixedv is None:
            self.isfixedv = self.vvector is not None
-       # XXX we should check the constraints on some parameters and 
+       # XXX we should check the constraints on some parameters
 
     # the following methods process a line when the reader is in the corresponding
     # state and return the new state
@@ -171,49 +174,49 @@ class AFMfile:
         if key == "Comment":
             return _READ_MAIN, None
         elif key == "MetricsSets":
-            self.metricssets = parseint(args)
+            self.metricssets = _parseint(args)
             if direction is not None:
                 raise AFMError("MetricsSets not allowed after first (implicit) StartDirection")
         elif key == "FontName":
-            self.fontname = parsestr(args)
+            self.fontname = _parsestr(args)
         elif key == "FullName":
-            self.fullname = parsestr(args)
+            self.fullname = _parsestr(args)
         elif key == "FamilyName":
-            self.familyname = parsestr(args)
+            self.familyname = _parsestr(args)
         elif key == "Weight":
-            self.weight = parsestr(args)
+            self.weight = _parsestr(args)
         elif key == "FontBBox":
-            self.fontbbox = parsefloats(args, 4)
+            self.fontbbox = _parsefloats(args, 4)
         elif key == "Version":
-            self.version = parsestr(args)
+            self.version = _parsestr(args)
         elif key == "Notice":
-            self.notice = parsestr(args)
+            self.notice = _parsestr(args)
         elif key == "EncodingScheme":
-            self.encodingscheme = parsestr(args)
+            self.encodingscheme = _parsestr(args)
         elif key == "MappingScheme":
-            self.mappingscheme = parseint(args)
+            self.mappingscheme = _parseint(args)
         elif key == "EscChar":
-            self.escchar = parseint(args)
+            self.escchar = _parseint(args)
         elif key == "CharacterSet":
-            self.characterset = parsestr(args)
+            self.characterset = _parsestr(args)
         elif key == "Characters":
-            self.characters = parseint(args)
+            self.characters = _parseint(args)
         elif key == "IsBaseFont":
-            self.isbasefont = parsebool(args)
+            self.isbasefont = _parsebool(args)
         elif key == "VVector":
-            self.vvector = parsefloats(args, 2)
+            self.vvector = _parsefloats(args, 2)
         elif key == "IsFixedV":
-            self.isfixedv = parsebool(args)
+            self.isfixedv = _parsebool(args)
         elif key == "CapHeight":
-            self.capheight = parsefloat(args)
+            self.capheight = _parsefloat(args)
         elif key == "XHeight":
-            self.xheight = parsefloat(args)
+            self.xheight = _parsefloat(args)
         elif key == "Ascender":
-            self.ascender = parsefloat(args)
+            self.ascender = _parsefloat(args)
         elif key == "Descender":
-            self.descender = parsefloat(args)
+            self.descender = _parsefloat(args)
         elif key == "StartDirection":
-            direction = parseint(args)
+            direction = _parseint(args)
             if 0 <= direction <= 2:
                 return _READ_DIRECTION, direction
             else:
@@ -225,14 +228,14 @@ class AFMfile:
         elif key == "StartCharMetrics":
             if self.charmetrics is not None:
                 raise AFMError("Multiple character metrics sections")
-            self.charmetrics = [None] * parseint(args)
+            self.charmetrics = [None] * _parseint(args)
             return _READ_CHARMETRICS, 0
         elif key == "StartKernData":
             return _READ_KERNDATA, None
         elif key == "StartComposites":
             if self.composites is not None:
                 raise AFMError("Multiple composite character data sections")
-            self.composites = [None] * parseint(args)
+            self.composites = [None] * _parseint(args)
             return _READ_COMPOSITES, 0
         elif key == "EndFontMetrics":
             return _READ_END, None
@@ -247,15 +250,15 @@ class AFMfile:
         except ValueError:
             key = line.rstrip()
         if key == "UnderLinePosition":
-            self.underlinepositions[direction] = parseint(args)
+            self.underlinepositions[direction] = _parseint(args)
         elif key == "UnderlineThickness":
-            self.underlinethicknesses[direction] = parsefloat(args)
+            self.underlinethicknesses[direction] = _parsefloat(args)
         elif key == "ItalicAngle":
-            self.italicangles[direction] = parsefloat(args)
+            self.italicangles[direction] = _parsefloat(args)
         elif key == "Charwidth":
-            self.charwidths[direction] = parsefloats(args, 2)
+            self.charwidths[direction] = _parsefloats(args, 2)
         elif key == "IsFixedPitch":
-            self.isfixedpitchs[direction] = parsebool(args)
+            self.isfixedpitchs[direction] = _parsebool(args)
         elif key == "EndDirection":
             return _READ_MAIN, None
         else:
@@ -281,33 +284,33 @@ class AFMfile:
             if key == "C":
                 if char is not None:
                     raise AFMError("Cannot define char code twice")
-                char = AFMcharmetrics(parseint(args))
+                char = AFMcharmetrics(_parseint(args))
             elif key == "CH":
                 if char is not None:
                     raise AFMError("Cannot define char code twice")
-                char = AFMcharmetrics(parsehex(args))
+                char = AFMcharmetrics(_parsehex(args))
             elif key == "WX" or key == "W0X":
-                char.widths[0] = parsefloat(args), 0
+                char.widths[0] = _parsefloat(args), 0
             elif key == "W1X":
-                char.widths[1] = parsefloat(args), 0
+                char.widths[1] = _parsefloat(args), 0
             elif key == "WY" or key == "W0Y":
-                char.widths[0] = 0, parsefloat(args)
+                char.widths[0] = 0, _parsefloat(args)
             elif key == "W1Y":
-                char.widths[1] = 0, parsefloat(args)
+                char.widths[1] = 0, _parsefloat(args)
             elif key == "W" or key == "W0":
-                char.widths[0] = parsefloats(args, 2)
+                char.widths[0] = _parsefloats(args, 2)
             elif key == "W1":
-                char.widths[1] = parsefloats(args, 2)
+                char.widths[1] = _parsefloats(args, 2)
             elif key == "VV":
-                char.vvector = parsefloats(args, 2)
+                char.vvector = _parsefloats(args, 2)
             elif key == "N":
                 # XXX: we should check that name is valid (no whitespcae, etc.)
-                char.name = parsestr(args)
+                char.name = _parsestr(args)
             elif key == "B":
-                char.bbox = parsefloats(args, 4)
+                char.bbox = _parsefloats(args, 4)
             elif key == "L":
                 successor, ligature = args.split(None, 1)
-                char.ligatures.append((parsestr(successor), ligature))
+                char.ligatures.append((_parsestr(successor), ligature))
             else:
                 raise AFMError("Undefined command in character widths specification: '%s'", s)
         if char is None:
@@ -326,17 +329,17 @@ class AFMfile:
         if key == "StartTrackKern":
             if self.trackkerns is not None:
                 raise AFMError("Multiple track kernings data sections")
-            self.trackkerns = [None] * parseint(args)
+            self.trackkerns = [None] * _parseint(args)
             return _READ_TRACKKERN, 0
         elif key == "StartKernPairs" or key == "StartKernPairs0":
             if self.kernpairs[0] is not None:
                 raise AFMError("Multiple kerning pairs data sections for direction 0")
-            self.kernpairs[0] = [None] * parseint(args)
+            self.kernpairs[0] = [None] * _parseint(args)
             return _READ_KERNPAIRS, (0, 0)
         elif key == "StartKernPairs1":
             if self.kernpairs[1] is not None:
                 raise AFMError("Multiple kerning pairs data sections for direction 0")
-            self.kernpairs[1] = [None] * parseint(args)
+            self.kernpairs[1] = [None] * _parseint(args)
             return _READ_KERNPAIRS, (1, 0)
         elif key == "EndKernData":
             return _READ_MAIN, None
@@ -354,7 +357,7 @@ class AFMfile:
             if i >= len(self.trackkerns):
                 raise AFMError("More track kerning data sets than expected")
             degrees, args = args.split(None, 1)
-            self.trackkerns[i] = AFMtrackkern(int(degrees), *parsefloats(args, 4))
+            self.trackkerns[i] = AFMtrackkern(int(degrees), *_parsefloats(args, 4))
             return _READ_TRACKKERN, i+1
         elif key == "EndTrackKern":
             if i < len(self.trackkerns):
@@ -382,26 +385,26 @@ class AFMfile:
                     name1, name2, x, y = args.split()
                 except:
                     raise AFMError("Expecting name1, name2, x, y, got '%s'" % args)
-                self.kernpairs[direction][i] = AFMkernpair(name1, name2, parsefloat(x), parsefloat(y))
+                self.kernpairs[direction][i] = AFMkernpair(name1, name2, _parsefloat(x), _parsefloat(y))
             elif key == "KPH":
                 try:
                     hex1, hex2, x, y = args.split()
                 except:
                     raise AFMError("Expecting <hex1>, <hex2>, x, y, got '%s'" % args)
-                self.kernpairs[direction][i] = AFMkernpair(parsehex(hex1), parsehex(hex2),
-                                                           parsefloat(x), parsefloat(y))
+                self.kernpairs[direction][i] = AFMkernpair(_parsehex(hex1), _parsehex(hex2),
+                                                           _parsefloat(x), _parsefloat(y))
             elif key == "KPX":
                 try:
                     name1, name2, x = args.split()
                 except:
                     raise AFMError("Expecting name1, name2, x, got '%s'" % args)
-                self.kernpairs[direction][i] = AFMkernpair(name1, name2, parsefloat(x), 0)
+                self.kernpairs[direction][i] = AFMkernpair(name1, name2, _parsefloat(x), 0)
             elif key == "KPY":
                 try:
                     name1, name2, y = args.split()
                 except:
                     raise AFMError("Expecting name1, name2, x, got '%s'" % args)
-                self.kernpairs[direction][i] = AFMkernpair(name1, name2, 0, parsefloat(y))
+                self.kernpairs[direction][i] = AFMkernpair(name1, name2, 0, _parsefloat(y))
             else:
                 raise AFMError("Unknown key '%s' in kern pair section" % key)
             return _READ_KERNPAIRS, (direction, i+1)
@@ -427,13 +430,13 @@ class AFMfile:
                     name, no = args.split()
                 except:
                     raise AFMError("Expecting name number, got '%s'" % args)
-                no = parseint(no)
+                no = _parseint(no)
             elif key == "PCC":
                 try:
                     name1, x, y = args.split()
                 except:
                     raise AFMError("Expecting name x y, got '%s'" % args)
-                parts.append((name1, parsefloat(x), parsefloat(y)))
+                parts.append((name1, _parsefloat(x), _parsefloat(y)))
             else:
                 raise AFMError("Unknown key '%s' in composite character data section" % key)
         if len(parts) != no:
