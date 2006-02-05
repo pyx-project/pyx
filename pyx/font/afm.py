@@ -26,15 +26,15 @@ class AFMError(Exception):
     pass
 
 # reader states
-_READ_START = 0
-_READ_MAIN = 1
-_READ_DIRECTION = 2
+_READ_START       = 0
+_READ_MAIN        = 1
+_READ_DIRECTION   = 2
 _READ_CHARMETRICS = 3
-_READ_KERNDATA = 4
-_READ_TRACKKERN = 5
-_READ_KERNPAIRS = 6
-_READ_COMPOSITES = 7
-_READ_END = 8
+_READ_KERNDATA    = 4
+_READ_TRACKKERN   = 5
+_READ_KERNPAIRS   = 6
+_READ_COMPOSITES  = 7
+_READ_END         = 8
 
 # various parsing functions
 def _parseint(s):
