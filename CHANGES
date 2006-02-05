@@ -78,6 +78,7 @@ TODO:
     - own implementation of type1 font stripping (old pdftex code fragments removed)
     - complete type1 font command representation and glyph path extraction from font programs
     - t1code extension module (C version of de-/encoding routines used in Type 1 font files)
+    - AFM file parser
   - graph modules:
     - data module:
       - mathtree removal: more flexibility due to true python expressions
