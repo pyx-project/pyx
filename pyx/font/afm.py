@@ -151,6 +151,9 @@ class AFMfile:
        self.kernpairs = [None] * 2              # list of list of kerning pairs (for each direction), optional
        self.composites = None                   # list of composite character data sets, optional
        self.parse()
+       if self.isfixedv is None:
+           self.isfixedv = self.vvector is not None
+       # XXX we should check the constraints on some parameters and 
 
     # the following methods process a line when the reader is in the corresponding
     # state and return the new state
@@ -443,8 +446,12 @@ class AFMfile:
         try:
              # state of the reader, consisting of 
              #  - the main state, i.e. the type of the section
-             #  - optionally a substate, which defines the section, if it can occur more than once
+             #  - a parameter sstate
              state = _READ_START, None
+             # Note that we do a line by line processing here, since one
+             # of the states (_READ_DIRECTION) can be entered implicitly, i.e.
+             # without a corresponding StartDirection section and we thus
+             # may need to reprocess a line in the context of the new state
              for line in f:
                 line = line[:-1]
                 mstate, sstate = state
