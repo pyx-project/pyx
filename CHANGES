@@ -2,7 +2,6 @@ PyX
 
 TODO:
   - normpath module:
-    - fix intersection (see test/functional)
   - style module:
     - make dash length available
   - text module:
@@ -24,6 +23,7 @@ TODO:
       this depends on the plattform and is not only an issue within the graph system)
   - graph.style module:
     - add styles using curves instead of lines
+    - histogram doesn't stroke lines to the baseline for steps=0 when two subsequent values are equal
   - canvas module:
     - contructor should only take a texrunner keyword argument
     - set method???
@@ -67,6 +67,11 @@ TODO:
   FAQ:
     - describe creation and modification (inplace and ``modify by new'') of
       graph data
+
+
+TODO for 0.9:
+  - text module:
+    - add encoding; check whether encoding=ascii works well for the common existing cases
 
 
 0.9 (2005/??/??):
@@ -116,6 +121,7 @@ TODO:
     - correct closepath (do not invalidate currentpoint but set it to the
       beginning of the current subpath); structural rework of pathitems
     - calculate real bboxes for Bezier curves
+    - fix intersection due to non-linear parametrization of bezier curves
     - add rotate methods to path, normpath, normsubpath, and normsubpathitems
     - add flushskippedline to normsubpath
     - add arclentoparam to normsubpath and normsubpathitems
@@ -142,6 +148,7 @@ TODO:
       certain PostScript files (reported by Gert Ingold)
   - helper module:
     - remove nodefault marker in favour of separate _marker classes
+    - add some linear algebra functions
   - dvifile module:
     - silently ignore TrueType fonts in font mapping files (reported by Gabriel Vasseur)
 

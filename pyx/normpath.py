@@ -4,7 +4,7 @@
 #
 # Copyright (C) 2002-2005 Jörg Lehmann <joergl@users.sourceforge.net>
 # Copyright (C) 2003-2004 Michael Schindler <m-schindler@users.sourceforge.net>
-# Copyright (C) 2002-2005 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2002-2006 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
@@ -32,7 +32,7 @@ except ImportError:
     def radians(x): return x*math.pi/180
     def degrees(x): return x*180/math.pi
 
-import bbox, canvas, path, trafo, unit
+import bbox, canvas, helper, path, trafo, unit
 
 try:
     sum([])
@@ -406,31 +406,31 @@ class normcurve_pt(normsubpathitem):
         # bound for the length, and the length of the straight line
         # between start and end point of the normcurve (i.e. |P3-P1|),
         # which represents a lower bound.
-        upperlen1 = (math.hypot(x01_pt - self.x0_pt, y01_pt - self.y0_pt) +
-                     math.hypot(x01_12_pt - x01_pt, y01_12_pt - y01_pt) +
-                     math.hypot(xmidpoint_pt - x01_12_pt, ymidpoint_pt - y01_12_pt))
-        lowerlen1 = math.hypot(xmidpoint_pt - self.x0_pt, ymidpoint_pt - self.y0_pt)
-        if upperlen1-lowerlen1 < epsilon:
-            c1 = normline_pt(self.x0_pt, self.y0_pt, xmidpoint_pt, ymidpoint_pt)
+        l0_pt = math.hypot(xmidpoint_pt - self.x0_pt, ymidpoint_pt - self.y0_pt)
+        l1_pt = math.hypot(x01_pt - self.x0_pt, y01_pt - self.y0_pt)
+        l2_pt = math.hypot(x01_12_pt - x01_pt, y01_12_pt - y01_pt)
+        l3_pt = math.hypot(xmidpoint_pt - x01_12_pt, ymidpoint_pt - y01_12_pt)
+        if l1_pt+l2_pt+l3_pt-l0_pt < epsilon:
+            a = leftnormline_pt(self.x0_pt, self.y0_pt, xmidpoint_pt, ymidpoint_pt, l1_pt, l2_pt, l3_pt)
         else:
-            c1 = normcurve_pt(self.x0_pt, self.y0_pt,
-                              x01_pt, y01_pt,
-                              x01_12_pt, y01_12_pt,
-                              xmidpoint_pt, ymidpoint_pt)
+            a = leftnormcurve_pt(self.x0_pt, self.y0_pt,
+                                 x01_pt, y01_pt,
+                                 x01_12_pt, y01_12_pt,
+                                 xmidpoint_pt, ymidpoint_pt)
 
-        upperlen2 = (math.hypot(x12_23_pt - xmidpoint_pt, y12_23_pt - ymidpoint_pt) +
-                     math.hypot(x23_pt - x12_23_pt, y23_pt - y12_23_pt) +
-                     math.hypot(self.x3_pt - x23_pt, self.y3_pt - y23_pt))
-        lowerlen2 = math.hypot(self.x3_pt - xmidpoint_pt, self.y3_pt - ymidpoint_pt)
-        if upperlen2-lowerlen2 < epsilon:
-            c2 = normline_pt(xmidpoint_pt, ymidpoint_pt, self.x3_pt, self.y3_pt)
+        l0_pt = math.hypot(self.x3_pt - xmidpoint_pt, self.y3_pt - ymidpoint_pt)
+        l1_pt = math.hypot(x12_23_pt - xmidpoint_pt, y12_23_pt - ymidpoint_pt)
+        l2_pt = math.hypot(x23_pt - x12_23_pt, y23_pt - y12_23_pt)
+        l3_pt = math.hypot(self.x3_pt - x23_pt, self.y3_pt - y23_pt)
+        if l1_pt+l2_pt+l3_pt-l0_pt < epsilon:
+            b = rightnormline_pt(xmidpoint_pt, ymidpoint_pt, self.x3_pt, self.y3_pt, l1_pt, l2_pt, l3_pt)
         else:
-            c2 = normcurve_pt(xmidpoint_pt, ymidpoint_pt,
-                              x12_23_pt, y12_23_pt,
-                              x23_pt, y23_pt,
-                              self.x3_pt, self.y3_pt)
+            b = rightnormcurve_pt(xmidpoint_pt, ymidpoint_pt,
+                                  x12_23_pt, y12_23_pt,
+                                  x23_pt, y23_pt,
+                                  self.x3_pt, self.y3_pt)
 
-        return c1, c2
+        return a, b
 
     def _arclentoparam_pt(self, lengths_pt, epsilon):
         a, b = self._midpointsplit(epsilon)
@@ -439,9 +439,9 @@ class normcurve_pt(normsubpathitem):
         params = []
         for param_a, param_b, length_pt in zip(params_a, params_b, lengths_pt):
             if length_pt > arclen_a_pt:
-                params.append(0.5+0.5*param_b)
+                params.append(b.convertparam(param_b))
             else:
-                params.append(0.5*param_a)
+                params.append(a.convertparam(param_a))
         return params, arclen_a_pt + arclen_b_pt
 
     def arclentoparam_pt(self, lengths_pt, epsilon):
@@ -540,8 +540,8 @@ class normcurve_pt(normsubpathitem):
         a, b = self._midpointsplit(epsilon)
         # To improve the performance in the general case we alternate the
         # splitting process between the two normsubpathitems
-        return ( [(    0.5*a_t, o_t) for o_t, a_t in other.intersect(a, epsilon)] +
-                 [(0.5+0.5*b_t, o_t) for o_t, b_t in other.intersect(b, epsilon)] )
+        return ( [(a.convertparam(a_t), o_t) for o_t, a_t in other.intersect(a, epsilon)] +
+                 [(b.convertparam(b_t), o_t) for o_t, b_t in other.intersect(b, epsilon)] )
 
     def modifiedbegin_pt(self, x_pt, y_pt):
         return normcurve_pt(x_pt, y_pt,
@@ -700,6 +700,63 @@ class normcurve_pt(normsubpathitem):
 
     def ydddot_pt(self, t):
         return 6*self.y3_pt-18*self.y2_pt+18*self.y1_pt-6*self.y0_pt
+
+
+# curve replacements used by midpointsplit:
+# The replacements are normline_pt and normcurve_pt instances with an
+# additional convertparam function taking care of the proper conversion
+# the parametrization. Note that we need only one parametric conversion
+# (when a parameter gets calculated), since in the other direction no
+# midpointsplits are needed at all
+
+class leftnormline_pt(normline_pt):
+
+    __slots__ = "x0_pt", "y0_pt", "x1_pt", "y1_pt", "l1_pt", "l2_pt", "l3_pt"
+
+    def __init__(self, x0_pt, y0_pt, x1_pt, y1_pt, l1_pt, l2_pt, l3_pt):
+        normline_pt.__init__(self, x0_pt, y0_pt, x1_pt, y1_pt)
+        self.l1_pt = l1_pt
+        self.l2_pt = l2_pt
+        self.l3_pt = l3_pt
+
+    def convertparam(self, param):
+        if 0 <= param <= 1:
+            params = helper.realpolyroots([-param*(self.l1_pt+self.l2_pt+self.l3_pt),
+                                           3*self.l1_pt,
+                                           -3*self.l1_pt+3*self.l2_pt,
+                                           self.l1_pt-2*self.l2_pt+self.l3_pt])
+            # we might get several solutions and choose the one closest to 0.5
+            params.sort(lambda t1, t2: cmp(abs(t1-0.5), abs(t2-0.5)))
+            return 0.5*params[0]
+        else:
+            # when we are outside the proper parameter range, we skip the non-linear
+            # transformation, since it becomes slow and it might even start to be
+            # numerically instable
+            return 0.5*param
+
+
+class rightnormline_pt(leftnormline_pt):
+
+    __slots__ = "x0_pt", "y0_pt", "x1_pt", "y1_pt", "l1_pt", "l2_pt", "l3_pt"
+
+    def convertparam(self, param):
+        return 0.5+leftnormline_pt.convertparam(self, param)
+
+
+class leftnormcurve_pt(normcurve_pt):
+
+    __slots__ = "x0_pt", "y0_pt", "x1_pt", "y1_pt", "x2_pt", "y2_pt", "x3_pt", "y3_pt"
+
+    def convertparam(self, param):
+        return 0.5*param
+
+
+class rightnormcurve_pt(normcurve_pt):
+
+    __slots__ = "x0_pt", "y0_pt", "x1_pt", "y1_pt", "x2_pt", "y2_pt", "x3_pt", "y3_pt"
+
+    def convertparam(self, param):
+        return 0.5+0.5*param
 
 
 ################################################################################
