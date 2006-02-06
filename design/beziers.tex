@@ -1,6 +1,7 @@
 \documentclass{article}
 \usepackage{amsmath}
 \usepackage{array}
+\usepackage{graphicx}
 \newcommand{\sign}{\operatorname{sign}}
 
 \begin{document}
@@ -244,6 +245,70 @@ Again, for numerical failures (divisions by zero), we just need to skip
 the particular solution. The minima and maxima for $x(t)$ can now
 occur at $t=0$, $t=t_1$, $t=t_2$ and $t=1$.
 
+% >>>
+
+\section{Replacing B\'ezier curves by straight lines}
+
+% <<<
+\begin{figure}
+\centerline{\includegraphics{beziertoline}}
+\caption{Example for a replacement of a B\'ezier curve by a straight
+line.}
+\label{fig:beziertoline}
+\end{figure}
+
+To solve certain geometrical tasks like measuring the length of a
+path or finding intersection points between paths, B\'ezier curves
+are recusively reduced to smaller B\'ezier curves by splitting the
+curves at the parameter value 0.5 until the parts become almost
+straight. Using the notation shown in fig.~\ref{fig:beziertoline} the
+straightness is expressed by a length measurement summing up the
+distances $\overline{AB}=l_1$, $\overline{BC}=l_2$ and
+$\overline{CD}=l_3$ and comparing this to the direct connection
+$\overline{AD}$. When the difference becomes smaller than a threshold
+$\epsilon$, the curve is adequately expressed by a straight line
+either because the curve is almost straight or it is very short.
+
+However, although the geometric changes are limited to distances of
+$\epsilon$, the parametrization $t$ of the B\'ezier curve might be
+mistakenly represented by the straight line on a much larger scale.
+In the shown example, the point $X$ on the straight line and $Y$ on
+the B\'ezier curve are both taken at the parameter value $t=0.5$, but
+clearly are more separated from each other than one would expect from
+the geometric distance of the two paths. While the parametrization on
+a line is proportional to the arc length, a non-linear behaviour is
+found on a B\'ezier curve. This non-linearity has is originated in
+considerably different lengths $l_1$, $l_2$ and $l_3$ and the mapping
+of the non-linear parameter to a linear parametrization (in terms of
+the arc length) can be reduced to a one-dimensional problem upon an
+error $\epsilon$:
+%
+\begin{equation}
+  x_0(1-t')+x_3t' = x_0(1-t)^3 + 3x_1t(1-t)^2 + 3x_2t^2(1-t) + x_3 t^3\,.
+\end{equation}
+%
+In this one-dimensional approximation the parameter $t'$ performs a
+linear mapping as for any straight line while $t$ represents the usual
+B\'ezier curve parametrization. It now becomes a matter of expression
+$t$ by $t'$. The polynomial in $t$ to be solved is:
+%
+\begin{equation}
+  0 = at^3+bt^2+ct+d
+\end{equation}
+%
+with
+%
+\begin{align}
+  a & = x_3-3x_2+3x_1-x_0 = l_1-2l_2+l_3 \\
+  b & = 3x_0-6x_1+3x_2 = -3l_1+3l_2 \\
+  c & = 3x_1-3x_0 = 3l_1 \\
+  d & = t'(x_0-x_3) = -t'(l_1+l_2+l_3)\,.
+\end{align}
+%
+For $0\le t'\le1$ there will be at least one solution $0\le t\le1$.
+Several solutions are possible as well, although they should be close
+to each other since otherwise the straight line approximation would
+not be valid at all.
 % >>>
 
 \end{document}
