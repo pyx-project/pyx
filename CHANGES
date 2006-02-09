@@ -45,6 +45,8 @@ TODO:
     - clearly distingish between readers and writers. dvifile, epsfile, etc. might
       be renamed to dvireader, epsreader ...
     - support gsave and grestore in some way to make context handling easier?
+  - ps/pdfwriters:
+    - support colorspace argument (like c.writeEPSfile("bla", colorspace="cmyk"))
 
   Documentation:
     - path module:
