@@ -60,29 +60,6 @@ class _axis:
         return canvas
 
 
-class _linmap:
-    "linear conversion methods"
-
-    def convert(self, data, value):
-        """axis coordinates -> graph coordinates"""
-        if self.reverse:
-            return (data.max - float(value)) / (data.max - data.min)
-        else:
-            return (float(value) - data.min) / (data.max - data.min)
-
-
-class _logmap:
-    "logarithmic convertion methods"
-
-    def convert(self, data, value):
-        """axis coordinates -> graph coordinates"""
-        # TODO: store log(data.min) and log(data.max)
-        if self.reverse:
-            return (math.log(data.max) - math.log(float(value))) / (math.log(data.max) - math.log(data.min))
-        else:
-            return (math.log(float(value)) - math.log(data.min)) / (math.log(data.max) - math.log(data.min))
-
-
 class _regularaxis(_axis):
     """base implementation a regular axis
 
@@ -227,7 +204,7 @@ class _regularaxis(_axis):
             return variants[0].storedcanvas
 
 
-class linear(_regularaxis, _linmap):
+class linear(_regularaxis):
     """linear axis"""
 
     def __init__(self, parter=parter.autolinear(), rater=rater.linear(), **args):
@@ -235,16 +212,31 @@ class linear(_regularaxis, _linmap):
         self.parter = parter
         self.rater = rater
 
+    def convert(self, data, value):
+        """axis coordinates -> graph coordinates"""
+        if self.reverse:
+            return (data.max - float(value)) / (data.max - data.min)
+        else:
+            return (float(value) - data.min) / (data.max - data.min)
+
 lin = linear
 
 
-class logarithmic(_regularaxis, _logmap):
+class logarithmic(_regularaxis):
     """logarithmic axis"""
 
     def __init__(self, parter=parter.autologarithmic(), rater=rater.logarithmic(), **args):
         _regularaxis.__init__(self, **args)
         self.parter = parter
         self.rater = rater
+
+    def convert(self, data, value):
+        """axis coordinates -> graph coordinates"""
+        # TODO: store log(data.min) and log(data.max)
+        if self.reverse:
+            return (math.log(data.max) - math.log(float(value))) / (math.log(data.max) - math.log(data.min))
+        else:
+            return (math.log(float(value)) - math.log(data.min)) / (math.log(data.max) - math.log(data.min))
 
 log = logarithmic
 
