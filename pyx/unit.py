@@ -22,7 +22,6 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import types
-import helper
 
 scale = { 't':1, 'u':1, 'v':1, 'w':1, 'x':1 }
 

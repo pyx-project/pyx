@@ -23,7 +23,7 @@
 
 
 import math, warnings
-import attr, helper, path, normpath, unit, color
+import attr, mathutils, path, normpath, unit, color
 from path import degrees
 
 # specific exception for an invalid parameterization point
@@ -107,13 +107,13 @@ def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, epsilon):
 
     # extreme case: curvA geometrically too big
     if fallback_threshold * abs(curvA*AB) > 1:
-        a = math.sqrt(abs(D / (1.5 * curvA))) * helper.sign(D*curvA)
+        a = math.sqrt(abs(D / (1.5 * curvA))) * mathutils.sign(D*curvA)
         b = (D - 1.5*curvA*a*abs(a)) / T
         return [(a, b)]
 
     # extreme case: curvB geometrically too big
     if fallback_threshold * abs(curvB*AB) > 1:
-        b = math.sqrt(abs(E / (1.5 * curvB))) * helper.sign(E*curvB)
+        b = math.sqrt(abs(E / (1.5 * curvB))) * mathutils.sign(E*curvB)
         a = (E - 1.5*curvB*b*abs(b)) / T
         return [(a, b)]
 
@@ -139,14 +139,14 @@ def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, epsilon):
 
     # extreme case: T much smaller than both curvatures
     try:
-        a = math.sqrt(abs(D / (1.5 * curvA))) * helper.sign(D*curvA)
+        a = math.sqrt(abs(D / (1.5 * curvA))) * mathutils.sign(D*curvA)
     except ZeroDivisionError:
         # we have tried the case with small curvA already
         # and we cannot divide by T
         pass
     else:
         try:
-            b = math.sqrt(abs(E / (1.5 * curvB))) * helper.sign(E*curvB)
+            b = math.sqrt(abs(E / (1.5 * curvB))) * mathutils.sign(E*curvB)
         except ZeroDivisionError:
             # we have tried the case with small curvB already
             # and we cannot divide by T
@@ -169,10 +169,10 @@ def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, epsilon):
     candidates_a, candidates_b = [], []
     for sign_a in [+1, -1]:
         for sign_b in [+1, -1]:
-            coeffs_a = (sign_b*1.5*curvB*D*D - T*T*E, T**3, -sign_b*sign_a*4.5*curvA*curvB*D, 0.0, sign_b*3.375*curvA*curvA*curvB)
-            coeffs_b = (sign_a*1.5*curvA*E*E - T*T*D, T**3, -sign_a*sign_b*4.5*curvA*curvB*E, 0.0, sign_a*3.375*curvA*curvB*curvB)
-            candidates_a += [root for root in helper.realpolyroots(coeffs_a) if sign_a*root >= 0]
-            candidates_b += [root for root in helper.realpolyroots(coeffs_b) if sign_b*root >= 0]
+            coeffs_a = (sign_b*3.375*curvA*curvA*curvB, 0.0, -sign_b*sign_a*4.5*curvA*curvB*D, T**3, sign_b*1.5*curvB*D*D - T*T*E)
+            coeffs_b = (sign_a*3.375*curvA*curvB*curvB, 0.0, -sign_a*sign_b*4.5*curvA*curvB*E, T**3, sign_a*1.5*curvA*E*E - T*T*D)
+            candidates_a += [root for root in mathutils.realpolyroots(*coeffs_a) if sign_a*root >= 0]
+            candidates_b += [root for root in mathutils.realpolyroots(*coeffs_b) if sign_b*root >= 0]
 
     # check the combined equations
     # and find the candidate pairs
@@ -300,7 +300,7 @@ class cycloid(deformer): # <<<
         skiplast = abs(unit.topt(self.skiplast))
         radius = abs(unit.topt(self.radius))
         turnangle = degrees(self.turnangle)
-        sign = helper.sign(self.sign)
+        sign = mathutils.sign(self.sign)
 
         cosTurn = math.cos(turnangle)
         sinTurn = math.sin(turnangle)
@@ -513,8 +513,8 @@ class smoothed(deformer): # <<<
                         # make the sign such that the curve smoothly passes to the next point
                         # this results in a discontinuous curvature
                         # (but the absolute value is still continuous)
-                        s1 = helper.sign(t1[0] * (p2[1]-p1[1]) - t1[1] * (p2[0]-p1[0]))
-                        s2 = helper.sign(t2[0] * (p2[1]-p1[1]) - t2[1] * (p2[0]-p1[0]))
+                        s1 = mathutils.sign(t1[0] * (p2[1]-p1[1]) - t1[1] * (p2[0]-p1[0]))
+                        s2 = mathutils.sign(t2[0] * (p2[1]-p1[1]) - t2[1] * (p2[0]-p1[0]))
                         c1 = s1 * abs(c1)
                         c2 = s2 * abs(c2)
 
@@ -976,7 +976,7 @@ class parallel(deformer): # <<<
 
         dist = self.dist_pt
         # do not look closer than epsilon:
-        dist_relerr = helper.sign(dist) * max(abs(self.relerr*dist), epsilon)
+        dist_relerr = mathutils.sign(dist) * max(abs(self.relerr*dist), epsilon)
 
         checkdistanceparams = [tstart + (tend-tstart)*t for t in self.checkdistanceparams]
 

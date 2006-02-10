@@ -23,7 +23,7 @@
 
 import math
 from math import pi, sin, cos, atan2, tan, hypot, acos, sqrt
-import path, unit, helper, normpath
+import path, unit, mathutils, normpath
 try:
     from math import radians, degrees
 except ImportError:
@@ -136,7 +136,7 @@ class arc_pt(connector_pt):
                 [path.normsubpath([path.normline_pt(*(self.box1.center+self.box2.center))], closed=0)])
         else:
             radius = abs(0.5 * (bulge + 0.25 * distance**2 / bulge))
-            centerdist = helper.sign(bulge) * (radius - abs(bulge))
+            centerdist = mathutils.sign(bulge) * (radius - abs(bulge))
             center = (0.5 * (self.box1.center[0] + self.box2.center[0]) - tangent[1]*centerdist,
                       0.5 * (self.box1.center[1] + self.box2.center[1]) + tangent[0]*centerdist)
             angle1 = atan2(self.box1.center[1] - center[1], self.box1.center[0] - center[0])
