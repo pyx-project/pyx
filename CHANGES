@@ -89,6 +89,7 @@ TODO for 0.9:
   - graph modules:
     - data module:
       - mathtree removal: more flexibility due to true python expressions
+      - default style instantiation bug (reported by Gregory Novak)
     - style module:
       - automatic subaxis tuple creation removed in barpos (create tuples
         in expressions now; subnames argument removed since it became pointless;

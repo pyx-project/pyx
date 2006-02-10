@@ -142,7 +142,6 @@ class list(_data):
             self.columns = dict([(key, []) for key, i in columns])
         self.columnnames = self.columns.keys()
         self.title = title
-        self.defaultstyles = [style.symbol()]
 
 
 class _notitle:
@@ -388,6 +387,8 @@ cbdfilecache = {}
 
 class cbdfile(data):
 
+    defaultstyles = [style.line()]
+
     def getcachekey(self, *args):
         return ":".join([str(x) for x in args])
 
@@ -473,7 +474,7 @@ class cbdfile(data):
                                        for lat, long in sb.points])
 
             result = list(columndata, title=title)
-            result.defaultstyles = [style.line()]
+            result.defaultstyles = self.defaultstyles
             return result
 
 
