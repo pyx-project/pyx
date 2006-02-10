@@ -23,11 +23,11 @@
 
 import math, types
 
-try:
-    import Numeric, LinearAlgebra
-    _has_numeric = 1
-except:
-    _has_numeric = 0
+# try:
+#     import Numeric, LinearAlgebra
+#     _has_numeric = 1
+# except:
+#     _has_numeric = 0
 
 
 def sign(x):
@@ -113,7 +113,7 @@ def realpolyroots(*cs):
         return [0]
     try:
         f = 1.0/cs[0]
-        cs = [f*coeff for coeff in cs[1:]]
+        cs = [f*c for c in cs[1:]]
     except ArithmeticError:
         return realpolyroots(*cs[1:])
     else:
@@ -132,33 +132,33 @@ def realpolyroots(*cs):
             raise RuntimeError("realpolyroots solver currently limited to polynoms up to the power of 4")
 
 
-def realpolyroots_eigenvalue(*cs):
-    # as realpolyroots but using an equivalent eigenvalue problem
-    # (this code is currently used for functional tests only)
-    if not _has_numeric:
-        raise RuntimeError("realpolyroots_eigenvalue depends on Numeric")
-    if not cs:
-        return [0]
-    try:
-        f = 1.0/cs[0]
-        cs = [f*coeff for coeff in cs[1:]]
-    except ArithmeticError:
-        return realpolyroots_eigenvalue(*cs[1:])
-    else:
-        if not cs:
-            return []
-        n = len(cs)
-        a = Numeric.zeros((n, n), Numeric.Float)
-        for i in range(n-1):
-            a[i+1][i] = 1
-        for i in range(n):
-            a[0][i] = -cs[i]
-        roots = []
-        for root in LinearAlgebra.eigenvalues(a):
-            if type(root) == types.ComplexType:
-                if not root.imag:
-                    roots.append(root.real)
-            else:
-                roots.append(root)
-        return roots
-
+# def realpolyroots_eigenvalue(*cs):
+#     # as realpolyroots but using an equivalent eigenvalue problem
+#     # (this code is currently used for functional tests only)
+#     if not _has_numeric:
+#         raise RuntimeError("realpolyroots_eigenvalue depends on Numeric")
+#     if not cs:
+#         return [0]
+#     try:
+#         f = 1.0/cs[0]
+#         cs = [f*c for c in cs[1:]]
+#     except ArithmeticError:
+#         return realpolyroots_eigenvalue(*cs[1:])
+#     else:
+#         if not cs:
+#             return []
+#         n = len(cs)
+#         a = Numeric.zeros((n, n), Numeric.Float)
+#         for i in range(n-1):
+#             a[i+1][i] = 1
+#         for i in range(n):
+#             a[0][i] = -cs[i]
+#         rs = []
+#         for r in LinearAlgebra.eigenvalues(a):
+#             if type(r) == types.ComplexType:
+#                 if not r.imag:
+#                     rs.append(r.real)
+#             else:
+#                 rs.append(r)
+#         return rs
+# 
