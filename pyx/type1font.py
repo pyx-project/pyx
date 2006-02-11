@@ -21,11 +21,6 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import re, tempfile, os, binascii
-try:
-    import zlib
-except:
-    pass
 import bbox, canvas, pswriter, pdfwriter
 
 try:
@@ -45,18 +40,17 @@ class _tokenfile:
 
     def __init__(self, filename):
         self.file = open(filename, "r")
-        self.line = None
+        self.tokens = None
 
     def gettoken(self):
         """ return next token or None if EOF """
-        while not self.line:
+        while not self.tokens:
             line = self.file.readline()
             if line == "":
                 return None
-            self.line = line.split("%")[0].split()
-        token = self.line[0]
-        self.line = self.line[1:]
-        return token
+            line = line.split("%")[0].replace("[", " [ ").replace("]", " ] ")
+            self.tokens = line.split()
+        return self.tokens.pop(0)
 
     def close(self):
         self.file.close()
