@@ -3,11 +3,6 @@ from pyx import *
 
 c = canvas.canvas()
 
-# transparency tests
-c.fill(path.rect(-1, -1, 2, 2), [color.rgb.red])
-c.fill(path.circle(0, 0, 1.2), [color.transparency(0.5), color.rgb.green])
-c.fill(path.rect(-2, -0.5, 4, 1), [color.transparency(0.9), color.rgb.blue])
-
 # color conversion tests
 def UCRc(x): return x
 def UCRm(x): return x
@@ -42,6 +37,12 @@ for col in [color.grey.black, color.grey(0.25), color.grey(0.5), color.grey(0.75
     pos = colrow(c, pos, col)
 
 
-#c.writeEPSfile("test_color", paperformat=document.paperformat.A4, fittosize=1)
+c.writeEPSfile("test_color", paperformat=document.paperformat.A4, fittosize=1)
+
+# transparency tests
+c.fill(path.rect(-1, -1, 2, 2), [color.rgb.red])
+c.fill(path.circle(0, 0, 1.2), [color.transparency(0.5), color.rgb.green])
+c.fill(path.rect(-2, -0.5, 4, 1), [color.transparency(0.9), color.rgb.blue])
+
 c.writePDFfile("test_color", paperformat=document.paperformat.A4, fittosize=1)
 
