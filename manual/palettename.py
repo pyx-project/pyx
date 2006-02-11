@@ -21,7 +21,7 @@ dy = -0.65
 
 # see comment in colorname.py
 
-p = re.compile("(?P<id>palette\\.(?P<name>[a-z]+)) += palette\\(.*\\)\n", re.IGNORECASE)
+p = re.compile("(?P<id>palette\\.(?P<name>[a-z]+)) += [a-z]+palette\\(.*\\)\n", re.IGNORECASE)
 lines = imp.find_module("color", pyx.__path__)[0].readlines()
 firstgraph = None
 for line in lines: # we yet don't use a file iterator

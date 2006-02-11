@@ -319,63 +319,114 @@ cmyk.black          = cmyk.Black
 
 class palette(color, attr.changeattr):
 
-    """palette is a collection of two colors for calculating transitions between them"""
+    """base class for all palettes
+
+    a palette is a collection of colors with a single parameter to address them"""
+
+    def __init__(self, min, max):
+        color.__init__(self)
+        self.min = min
+        self.max = max
+
+    def getcolor(self, param):
+        pass
+
+    def select(self, index, n_indices):
+        if n_indices == 1:
+            param = self.min
+        else:
+            param = self.min + index * (self.max - self.min) / (n_indices - 1.0)
+        return self.getcolor(param)
+
+    def outputPS(self, file, writer, context):
+        self.getcolor(self.min).outputPS(file, writer, context)
+
+    def outputPDF(self, file, writer, context):
+        self.getcolor(self.min).outputPDF(file, writer, context)
+
+
+class linearpalette(palette):
+
+    """linearpalette is a collection of two colors for a linear transition between them"""
 
     def __init__(self, mincolor, maxcolor, min=0, max=1):
-        color.__init__(self)
+        palette.__init__(self, min=min, max=max)
         if mincolor.__class__ != maxcolor.__class__:
             raise ValueError
         self.colorclass = mincolor.__class__
         self.mincolor = mincolor
         self.maxcolor = maxcolor
-        self.min = min
-        self.max = max
 
-    def getcolor(self, index):
-        color = {}
+    def getcolor(self, param):
+        colordict = {}
         for key in self.mincolor.color.keys():
-            color[key] = ((index - self.min) * self.maxcolor.color[key] +
-                          (self.max - index) * self.mincolor.color[key]) / float(self.max - self.min)
-        return self.colorclass(**color)
-
-    def select(self, index, total):
-        if total == 1:
-            return self.mincolor
-        return self.getcolor(index/(total-1.0))
-
-    def outputPS(self, file, writer, context):
-        self.getcolor(0).outputPS(file, writer, context)
-
-    def outputPDF(self, file, writer, context):
-        self.getcolor(0).outputPDF(file, writer, context)
+            colordict[key] = ((param - self.min) * self.maxcolor.color[key] +
+                              (self.max - param) * self.mincolor.color[key]) / float(self.max - self.min)
+        return self.colorclass(**colordict)
 
 
-palette.Gray           = palette(gray.white, gray.black)
+class functionpalette(palette):
+
+    """functionpalette is a collection of colors for an arbitray non-linear transition between them
+
+    parameters:
+    functions: a dictionary for the color values
+    type:      a string indicating the color class
+    """
+
+    def __init__(self, functions, type, min=0, max=1):
+        palette.__init__(self, min=min, max=max)
+        if type == "cmyk":
+            self.colorclass = cmyk
+        elif type == "rgb":
+            self.colorclass = rgb
+        elif type == "hsb":
+            self.colorclass = hsb
+        elif type == "grey" or type == "gray":
+            self.colorclass = grey
+        else:
+            raise ValueError
+        self.functions = functions
+
+    def getcolor(self, param):
+        t = self.min + (param - self.min) * 1.0 / (self.max - self.min)
+        colordict = {}
+        for key in self.functions.keys():
+            colordict[key] = self.functions[key](t)
+        return self.colorclass(**colordict)
+
+
+palette.Gray           = linearpalette(gray.white, gray.black)
 palette.Grey           = palette.Gray
-palette.ReverseGray    = palette(gray.black, gray.white)
+palette.ReverseGray    = linearpalette(gray.black, gray.white)
 palette.ReverseGrey    = palette.ReverseGray
-palette.RedGreen       = palette(rgb.red, rgb.green)
-palette.RedBlue        = palette(rgb.red, rgb.blue)
-palette.GreenRed       = palette(rgb.green, rgb.red)
-palette.GreenBlue      = palette(rgb.green, rgb.blue)
-palette.BlueRed        = palette(rgb.blue, rgb.red)
-palette.BlueGreen      = palette(rgb.blue, rgb.green)
-palette.RedBlack       = palette(rgb.red, rgb.black)
-palette.BlackRed       = palette(rgb.black, rgb.red)
-palette.RedWhite       = palette(rgb.red, rgb.white)
-palette.WhiteRed       = palette(rgb.white, rgb.red)
-palette.GreenBlack     = palette(rgb.green, rgb.black)
-palette.BlackGreen     = palette(rgb.black, rgb.green)
-palette.GreenWhite     = palette(rgb.green, rgb.white)
-palette.WhiteGreen     = palette(rgb.white, rgb.green)
-palette.BlueBlack      = palette(rgb.blue, rgb.black)
-palette.BlackBlue      = palette(rgb.black, rgb.blue)
-palette.BlueWhite      = palette(rgb.blue, rgb.white)
-palette.WhiteBlue      = palette(rgb.white, rgb.blue)
-palette.Rainbow        = palette(hsb(0, 1, 1), hsb(2.0/3.0, 1, 1))
-palette.ReverseRainbow = palette(hsb(2.0/3.0, 1, 1), hsb(0, 1, 1))
-palette.Hue            = palette(hsb(0, 1, 1), hsb(1, 1, 1))
-palette.ReverseHue     = palette(hsb(1, 1, 1), hsb(0, 1, 1))
+palette.BlackYellow    = functionpalette(functions={#(compare this with reversegray above)
+    "r":(lambda x: 2*x*(1-x)**5 + 3.5*x**2*(1-x)**3 + 2.1*x*x*(1-x)**2 + 3.0*x**3*(1-x)**2 + x**0.5*(1-(1-x)**2)),
+    "g":(lambda x: 1.5*x**2*(1-x)**3 - 0.8*x**3*(1-x)**2 + 2.0*x**4*(1-x) + x**4),
+    "b":(lambda x: 5*x*(1-x)**5 - 0.5*x**2*(1-x)**3 + 0.3*x*x*(1-x)**2 + 5*x**3*(1-x)**2 + 0.5*x**6)},
+    type="rgb", min=0, max=1)
+palette.RedGreen       = linearpalette(rgb.red, rgb.green)
+palette.RedBlue        = linearpalette(rgb.red, rgb.blue)
+palette.GreenRed       = linearpalette(rgb.green, rgb.red)
+palette.GreenBlue      = linearpalette(rgb.green, rgb.blue)
+palette.BlueRed        = linearpalette(rgb.blue, rgb.red)
+palette.BlueGreen      = linearpalette(rgb.blue, rgb.green)
+palette.RedBlack       = linearpalette(rgb.red, rgb.black)
+palette.BlackRed       = linearpalette(rgb.black, rgb.red)
+palette.RedWhite       = linearpalette(rgb.red, rgb.white)
+palette.WhiteRed       = linearpalette(rgb.white, rgb.red)
+palette.GreenBlack     = linearpalette(rgb.green, rgb.black)
+palette.BlackGreen     = linearpalette(rgb.black, rgb.green)
+palette.GreenWhite     = linearpalette(rgb.green, rgb.white)
+palette.WhiteGreen     = linearpalette(rgb.white, rgb.green)
+palette.BlueBlack      = linearpalette(rgb.blue, rgb.black)
+palette.BlackBlue      = linearpalette(rgb.black, rgb.blue)
+palette.BlueWhite      = linearpalette(rgb.blue, rgb.white)
+palette.WhiteBlue      = linearpalette(rgb.white, rgb.blue)
+palette.Rainbow        = linearpalette(hsb(0, 1, 1), hsb(2.0/3.0, 1, 1))
+palette.ReverseRainbow = linearpalette(hsb(2.0/3.0, 1, 1), hsb(0, 1, 1))
+palette.Hue            = linearpalette(hsb(0, 1, 1), hsb(1, 1, 1))
+palette.ReverseHue     = linearpalette(hsb(1, 1, 1), hsb(0, 1, 1))
 
 
 class PDFextgstate(pdfwriter.PDFobject):
