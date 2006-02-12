@@ -523,7 +523,7 @@ T1setcurrentpoint = _T1setcurrentpoint()
 class cursor:
     """cursor to read a string token by token"""
 
-    def __init__(self, data, startstring, eattokensep=1, tokenseps=" \t\r\n"):
+    def __init__(self, data, startstring, eattokensep=1, tokenseps=" \t\r\n", tokenstarts="()<>[]{}/"):
         """creates a cursor for the string data
 
         startstring is a string at which the cursor should start at. The first
@@ -532,15 +532,18 @@ class cursor:
         after the startstring. When eattokenseps is set, startstring must be
         followed by a tokensep and this first tokensep is also consumed.
         tokenseps is a string containing characters to be used as token
-        separators.
+        separators. tokenstarts is a string containing characters which 
+        directly (even without intermediate token separator) start a new token.
         """
         self.data = data
         self.pos = data.index(startstring) + len(startstring)
         self.tokenseps = tokenseps
+        self.tokenstarts = tokenstarts
         if eattokensep:
-            if self.data[self.pos] not in self.tokenseps:
-                raise ValueError("cursor initialization string is not followed by a token separator")
-            self.pos += 1
+            if self.data[self.pos] not in self.tokenstarts:
+                if self.data[self.pos] not in self.tokenseps:
+                    raise ValueError("cursor initialization string is not followed by a token separator")
+                self.pos += 1
 
     def gettoken(self):
         """get the next token
@@ -551,9 +554,14 @@ class cursor:
             self.pos += 1
         startpos = self.pos
         while self.data[self.pos] not in self.tokenseps:
+            # any character in self.tokenstarts ends the token
+            if self.pos>startpos and self.data[self.pos] in self.tokenstarts:
+                break
             self.pos += 1
-        self.pos += 1 # consume a single tokensep
-        return self.data[startpos: self.pos-1]
+        result = self.data[startpos:self.pos]
+        if self.data[self.pos] in self.tokenseps:
+            self.pos += 1 # consume a single tokensep
+        return result
 
     def getint(self):
         """get the next token as an integer"""
