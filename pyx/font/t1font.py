@@ -3,6 +3,7 @@
 #
 #
 # Copyright (C) 2005 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2006 Jörg Lehmann <joergl@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
@@ -523,7 +524,7 @@ T1setcurrentpoint = _T1setcurrentpoint()
 class cursor:
     """cursor to read a string token by token"""
 
-    def __init__(self, data, startstring, eattokensep=1, tokenseps=" \t\r\n", tokenstarts="()<>[]{}/"):
+    def __init__(self, data, startstring, eattokensep=1, tokenseps=" \t\r\n", tokenstarts="()<>[]{}/%"):
         """creates a cursor for the string data
 
         startstring is a string at which the cursor should start at. The first
@@ -536,7 +537,7 @@ class cursor:
         directly (even without intermediate token separator) start a new token.
         """
         self.data = data
-        self.pos = data.index(startstring) + len(startstring)
+        self.pos = self.data.index(startstring) + len(startstring)
         self.tokenseps = tokenseps
         self.tokenstarts = tokenstarts
         if eattokensep:
@@ -548,10 +549,16 @@ class cursor:
     def gettoken(self):
         """get the next token
 
-        Leading token separators are silently consumed. The first token
+        Leading token separators and comments are silently consumed. The first token
         separator after the token is also silently consumed."""
         while self.data[self.pos] in self.tokenseps:
             self.pos += 1
+        # ignore comments including subsequent whitespace characters
+        while self.data[self.pos] == "%":
+            while self.data[self.pos] not in "\r\n":
+                self.pos += 1
+            while self.data[self.pos] in self.tokenseps:
+                self.pos += 1
         startpos = self.pos
         while self.data[self.pos] not in self.tokenseps:
             # any character in self.tokenstarts ends the token
