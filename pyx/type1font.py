@@ -31,31 +31,6 @@ except NameError:
         return zip(xrange(len(list)), list)
 
 
-class _tokenfile:
-    """ ascii file containing tokens separated by spaces.
-
-    Comments beginning with % are ignored. Strings containing spaces
-    are not handled correctly
-    """
-
-    def __init__(self, filename):
-        self.file = open(filename, "r")
-        self.tokens = None
-
-    def gettoken(self):
-        """ return next token or None if EOF """
-        while not self.tokens:
-            line = self.file.readline()
-            if line == "":
-                return None
-            line = line.split("%")[0].replace("[", " [ ").replace("]", " ] ")
-            self.tokens = line.split()
-        return self.tokens.pop(0)
-
-    def close(self):
-        self.file.close()
-
-
 class encoding:
 
     def __init__(self, name, filename):
@@ -67,29 +42,29 @@ class encoding:
 class encodingfile:
 
     def __init__(self, name, filename):
+        # XXX move the cursor to a module of its own
+        from font.t1font import cursor
         self.name = name
-        encfile = _tokenfile(filename)
+        encfile = open(filename, "r")
+        c = cursor(encfile.read(), "")
+        encfile.close()
 
         # name of encoding
-        self.encname = encfile.gettoken()
-        token = encfile.gettoken()
+        self.encname = c.gettoken()
+        token = c.gettoken()
         if token != "[":
             raise RuntimeError("cannot parse encoding file '%s', expecting '[' got '%s'" % (filename, token))
         self.encvector = []
         for i in range(256):
-            token = encfile.gettoken()
-            if token is None or token=="]":
+            token = c.gettoken()
+            if token == "]":
                 raise RuntimeError("not enough charcodes in encoding file '%s'" % filename)
             self.encvector.append(token)
-        if encfile.gettoken() != "]":
+        if c.gettoken() != "]":
             raise RuntimeError("too many charcodes in encoding file '%s'" % filename)
-        token = encfile.gettoken()
+        token = c.gettoken()
         if token != "def":
             raise RuntimeError("cannot parse encoding file '%s', expecting 'def' got '%s'" % (filename, token))
-        token = encfile.gettoken()
-        if token != None:
-            raise RuntimeError("encoding file '%s' too long" % filename)
-        encfile.close()
 
     def decode(self, charcode):
         return self.encvector[charcode]
