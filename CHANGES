@@ -113,6 +113,8 @@ TODO for 0.9:
   - color module:
     - transparency support (PDF only) (TODO: documentation)
     - conversion between colorspaces
+    - nonlinear palettes added
+    - the former palette must now be initialized as linearpalette
   - text module:
     - improve escapestring to handle all ascii characters
     - correct vshift when text size is modified by a text.size instance

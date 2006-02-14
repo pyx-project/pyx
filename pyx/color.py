@@ -3,7 +3,7 @@
 #
 #
 # Copyright (C) 2002-2004 Jörg Lehmann <joergl@users.sourceforge.net>
-# Copyright (C) 2003-2005 Michael Schindler <m-schindler@users.sourceforge.net>
+# Copyright (C) 2003-2006 Michael Schindler <m-schindler@users.sourceforge.net>
 # Copyright (C) 2002-2004 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
@@ -84,6 +84,7 @@ class grey(color):
 
     def grey(self):
         return self
+    gray = grey
 
     def hsb(self):
         return hsb(0, 0, self.color["gray"])
