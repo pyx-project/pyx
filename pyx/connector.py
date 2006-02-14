@@ -128,7 +128,7 @@ class arc_pt(connector_pt):
                 bulge += relbulge*distance
         else:
             # otherwise use relangle, which should be present
-            bulge = 0.5 * distance * math.tan(0.25*radians(relangle))
+            bulge = 0.5 * distance * math.tan(0.5*radians(relangle))
 
         if abs(bulge) < normpath._epsilon:
             # fallback solution for too straight arcs
@@ -137,14 +137,12 @@ class arc_pt(connector_pt):
         else:
             radius = abs(0.5 * (bulge + 0.25 * distance**2 / bulge))
             centerdist = mathutils.sign(bulge) * (radius - abs(bulge))
-            center = (0.5 * (self.box1.center[0] + self.box2.center[0]) - tangent[1]*centerdist,
-                      0.5 * (self.box1.center[1] + self.box2.center[1]) + tangent[0]*centerdist)
+            center = (0.5 * (self.box1.center[0] + self.box2.center[0]) + tangent[1]*centerdist,
+                      0.5 * (self.box1.center[1] + self.box2.center[1]) - tangent[0]*centerdist)
             angle1 = atan2(self.box1.center[1] - center[1], self.box1.center[0] - center[0])
             angle2 = atan2(self.box2.center[1] - center[1], self.box2.center[0] - center[0])
 
-            # draw the arc in positive direction by default
-            # negative direction if relangle<0 or bulge<0
-            if bulge < 0:
+            if bulge > 0:
                 connectorpath = path.path(path.moveto_pt(*self.box1.center),
                                           path.arcn_pt(center[0], center[1], radius, degrees(angle1), degrees(angle2)))
                 connector_pt.__init__(self, connectorpath.normpath().normsubpaths)
@@ -192,7 +190,7 @@ class curve_pt(connector_pt):
         if absangle1 is not None:
             angle1 = radians(absangle1)
         else:
-            angle1 = dangle - radians(relangle1)
+            angle1 = dangle + radians(relangle1)
         if absangle2 is not None:
             angle2 = radians(absangle2)
         else:
