@@ -142,6 +142,7 @@ TODO for 0.9:
     - allow arrows at arbitrary positions along the path (TODO: check documentation)
   - connector module:
     - boxdists parameter need to be a list/tuple of two items now
+    - changed the orientation of the angle parameters
   - trafo module:
     - renamed _apply to apply_pt
     - introduce _epsilon for checking the singularity of a trafo
