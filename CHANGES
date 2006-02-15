@@ -37,8 +37,6 @@ TODO:
     - height -> getheight, ...
   - dvifile module:
     - support single-character mode
-  - color module:
-    - what should we do for palette when only one entry
   - deformer module:
     - move helper path routines to some more generic place for paths?
   - open discussion:
@@ -157,7 +155,8 @@ TODO for 0.9:
     - add some linear algebra functions
   - dvifile module:
     - silently ignore TrueType fonts in font mapping files (reported by Gabriel Vasseur)
-
+  - type1font module:
+    - accept [ and ] as separators in encoding files (reported by Mojca Miklavec, cf. bug #1429524)
 
 0.8.1 (2005/08/13):
   - deco module:
