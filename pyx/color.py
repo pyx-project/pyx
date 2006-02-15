@@ -2,7 +2,7 @@
 # -*- coding: ISO-8859-1 -*-
 #
 #
-# Copyright (C) 2002-2004 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2002-2004, 2006 Jörg Lehmann <joergl@users.sourceforge.net>
 # Copyright (C) 2003-2006 Michael Schindler <m-schindler@users.sourceforge.net>
 # Copyright (C) 2002-2004 André Wobst <wobsta@users.sourceforge.net>
 #
@@ -330,9 +330,11 @@ class palette(color, attr.changeattr):
         self.max = max
 
     def getcolor(self, param):
+        """return color corresponding to param"""
         pass
 
     def select(self, index, n_indices):
+        """return a color corresponding to an index out of n_indices"""
         if n_indices == 1:
             param = self.min
         else:
@@ -340,10 +342,10 @@ class palette(color, attr.changeattr):
         return self.getcolor(param)
 
     def outputPS(self, file, writer, context):
-        self.getcolor(self.min).outputPS(file, writer, context)
+        self.getcolor(0).outputPS(file, writer, context)
 
     def outputPDF(self, file, writer, context):
-        self.getcolor(self.min).outputPDF(file, writer, context)
+        self.getcolor(0).outputPDF(file, writer, context)
 
 
 class linearpalette(palette):
