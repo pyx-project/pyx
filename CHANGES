@@ -37,6 +37,8 @@ TODO:
     - height -> getheight, ...
   - dvifile module:
     - support single-character mode
+  - color module:
+    - palette.getcolor() vs. palette.select(). Shouldn't the latter be named selectcolor()?
   - deformer module:
     - move helper path routines to some more generic place for paths?
   - open discussion:
