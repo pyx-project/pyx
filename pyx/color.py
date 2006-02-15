@@ -322,7 +322,8 @@ class palette(color, attr.changeattr):
 
     """base class for all palettes
 
-    a palette is a collection of colors with a single parameter to address them"""
+    A palette is a collection of colors with a single parameter ranging from min to max
+    to address them"""
 
     def __init__(self, min, max):
         color.__init__(self)
@@ -342,10 +343,10 @@ class palette(color, attr.changeattr):
         return self.getcolor(param)
 
     def outputPS(self, file, writer, context):
-        self.getcolor(0).outputPS(file, writer, context)
+        self.getcolor(self.min).outputPS(file, writer, context)
 
     def outputPDF(self, file, writer, context):
-        self.getcolor(0).outputPDF(file, writer, context)
+        self.getcolor(self.min).outputPDF(file, writer, context)
 
 
 class linearpalette(palette):
