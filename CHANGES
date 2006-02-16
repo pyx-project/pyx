@@ -38,7 +38,6 @@ TODO:
   - dvifile module:
     - support single-character mode
   - color module:
-    - palette.getcolor() vs. palette.select(). Shouldn't the latter be named selectcolor()?
     - palette: are the min and max parameters really needed or shouldn't we just assume
       that param lies within the range [0,1]. Note that when using a predefined palette (which
       is the common use case), they will be 0 and 1, anyway.
