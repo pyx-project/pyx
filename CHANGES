@@ -16,6 +16,7 @@ TODO:
   - graph.style and graph.data modules
     - fix docu of gridattrs functionality of axis painters
       (how can one, e.g. draw a grid at the ticks and not at the subticks)
+    - make graph.style.symbol.diamond a graph.style.symbol instance (to be discussed)
   - graph.data module:
     - use csv module (new in 2.3)
     - Check for "inf" and "nan" in datafiles.
@@ -76,9 +77,11 @@ TODO:
 TODO for 0.9:
   - text module:
     - add encoding; check whether encoding=ascii works well for the common existing cases
+    - we need output-specific map files (see Palatino example
+      http://sourceforge.net/mailarchive/message.php?msg_id=14863643)
 
 
-0.9 (2005/??/??):
+0.9 (2006/??/??):
   - most important changes (to be included in the release notes):
     - mathtree removal (warning about integer division)
     - barpos style does not build tuples for nestedbar axes automatically
