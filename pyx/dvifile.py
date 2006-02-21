@@ -444,18 +444,27 @@ class font:
         # required for the PDF font descritor. (TODO: The correct way would
         # be to read the information from the AFM file.)
         fontinfo = fontinfo()
-        fontinfo.fontbbox = (0,
-                             -self.getdepth_ds(ord("y")),
-                             self.getwidth_ds(ord("W")),
-                             self.getheight_ds(ord("H")))
+        try:
+            fontinfo.fontbbox = (0,
+                                 -self.getdepth_ds(ord("y")),
+                                 self.getwidth_ds(ord("W")),
+                                 self.getheight_ds(ord("H")))
+        except:
+            fontinfo.fontbbox = (0, -10, 100, 100)
         try:
             fontinfo.italicangle = -180/math.pi*math.atan(self.tfmfile.param[0]/65536.0)
         except IndexError:
             fontinfo.italicangle = 0
         fontinfo.ascent = fontinfo.fontbbox[3]
         fontinfo.descent = fontinfo.fontbbox[1]
-        fontinfo.capheight = self.getheight_ds(ord("h"))
-        fontinfo.vstem = self.getwidth_ds(ord("."))/3
+        try:
+            fontinfo.capheight = self.getheight_ds(ord("h"))
+        except:
+            fontinfo.capheight = 100
+        try:
+            fontinfo.vstem = self.getwidth_ds(ord("."))/3
+        except:
+            fontinfo.vstem = 5
         return fontinfo
 
     def __str__(self):
