@@ -231,14 +231,15 @@ value also allow the user to pass an arc length. For instance,
 \begin{verbatim}
 from math import pi
 
-pt1 = path.circle(0, 0, 1).at(pi)
-pt2 = path.circle(0, 0, 1).at(3*pi/2)
+r = 2
+pt1 = path.circle(0, 0, r).at(r*pi)
+pt2 = path.circle(0, 0, r).at(r*3*pi/2)
 
 c.stroke(path.path(path.moveto(*pt1), path.lineto(*pt2)))
 \end{verbatim}
 will draw a straight line from a point at angle $180$ degrees (in
 radians $\pi$) to another point at angle $270$ degrees (in radians
-$3\pi/2$) on the unit circle. Note however, that the mapping arc
+$3\pi/2$) on a circle with radius $r=2$. Note however, that the mapping arc
 length $\to$ point is in general discontinuous at the begin and the
 end of a subpath, and thus \PyX{} does not guarantee any particular
 result for this boundary case.
