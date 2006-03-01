@@ -322,13 +322,11 @@ class palette(color, attr.changeattr):
 
     """base class for all palettes
 
-    A palette is a collection of colors with a single parameter ranging from min to max
+    A palette is a collection of colors with a single parameter ranging from 0 to 1
     to address them"""
 
-    def __init__(self, min, max):
+    def __init__(self):
         color.__init__(self)
-        self.min = min
-        self.max = max
 
     def getcolor(self, param):
         """return color corresponding to param"""
@@ -337,24 +335,24 @@ class palette(color, attr.changeattr):
     def select(self, index, n_indices):
         """return a color corresponding to an index out of n_indices"""
         if n_indices == 1:
-            param = self.min
+            param = 0
         else:
-            param = self.min + index * (self.max - self.min) / (n_indices - 1.0)
+            param = index / (n_indices - 1.0)
         return self.getcolor(param)
 
     def outputPS(self, file, writer, context):
-        self.getcolor(self.min).outputPS(file, writer, context)
+        self.getcolor(0).outputPS(file, writer, context)
 
     def outputPDF(self, file, writer, context):
-        self.getcolor(self.min).outputPDF(file, writer, context)
+        self.getcolor(0).outputPDF(file, writer, context)
 
 
 class linearpalette(palette):
 
     """linearpalette is a collection of two colors for a linear transition between them"""
 
-    def __init__(self, mincolor, maxcolor, min=0, max=1):
-        palette.__init__(self, min=min, max=max)
+    def __init__(self, mincolor, maxcolor):
+        palette.__init__(self)
         if mincolor.__class__ != maxcolor.__class__:
             raise ValueError
         self.colorclass = mincolor.__class__
@@ -364,8 +362,7 @@ class linearpalette(palette):
     def getcolor(self, param):
         colordict = {}
         for key in self.mincolor.color.keys():
-            colordict[key] = ((param - self.min) * self.maxcolor.color[key] +
-                              (self.max - param) * self.mincolor.color[key]) / float(self.max - self.min)
+            colordict[key] = param * self.maxcolor.color[key] + (1 - param) * self.mincolor.color[key]
         return self.colorclass(**colordict)
 
 
@@ -378,8 +375,8 @@ class functionpalette(palette):
     type:      a string indicating the color class
     """
 
-    def __init__(self, functions, type, min=0, max=1):
-        palette.__init__(self, min=min, max=max)
+    def __init__(self, functions, type):
+        palette.__init__(self)
         if type == "cmyk":
             self.colorclass = cmyk
         elif type == "rgb":
@@ -393,10 +390,9 @@ class functionpalette(palette):
         self.functions = functions
 
     def getcolor(self, param):
-        t = self.min + (param - self.min) * 1.0 / (self.max - self.min)
         colordict = {}
         for key in self.functions.keys():
-            colordict[key] = self.functions[key](t)
+            colordict[key] = self.functions[key](param)
         return self.colorclass(**colordict)
 
 
@@ -408,7 +404,7 @@ palette.BlackYellow    = functionpalette(functions={#(compare this with reverseg
     "r":(lambda x: 2*x*(1-x)**5 + 3.5*x**2*(1-x)**3 + 2.1*x*x*(1-x)**2 + 3.0*x**3*(1-x)**2 + x**0.5*(1-(1-x)**2)),
     "g":(lambda x: 1.5*x**2*(1-x)**3 - 0.8*x**3*(1-x)**2 + 2.0*x**4*(1-x) + x**4),
     "b":(lambda x: 5*x*(1-x)**5 - 0.5*x**2*(1-x)**3 + 0.3*x*x*(1-x)**2 + 5*x**3*(1-x)**2 + 0.5*x**6)},
-    type="rgb", min=0, max=1)
+    type="rgb")
 palette.RedGreen       = linearpalette(rgb.red, rgb.green)
 palette.RedBlue        = linearpalette(rgb.red, rgb.blue)
 palette.GreenRed       = linearpalette(rgb.green, rgb.red)
