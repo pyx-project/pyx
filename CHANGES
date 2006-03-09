@@ -165,6 +165,8 @@ TODO for 0.9:
     - silently ignore TrueType fonts in font mapping files (reported by Gabriel Vasseur)
   - type1font module:
     - accept [ and ] as separators in encoding files (reported by Mojca Miklavec, cf. bug #1429524)
+  - random notes:
+    - switched to subversion on 2006/02/09
 
 0.8.1 (2005/08/13):
   - deco module:
