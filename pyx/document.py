@@ -92,16 +92,18 @@ class page:
             if self.rotated:
                 atrafo = trafo.rotate(90).translated(paperwidth, 0)
                 if self.centered or self.fittosize:
+                    if not self.fittosize and (bbox.height() > paperwidth or bbox.width() > paperheight):
+                        warnings.warn("content exceeds the papersize")
                     atrafo = atrafo.translated(-0.5*(paperwidth - bbox.height()) + bbox.bottom(),
                                                0.5*(paperheight - bbox.width()) - bbox.left())
             else:
                 if self.centered or self.fittosize:
-                    atrafo = trafo.trafo()
+                    if not self.fittosize and (bbox.width() > paperwidth or bbox.height() > paperheight):
+                        warnings.warn("content exceeds the papersize")
+                    atrafo = trafo.translate(0.5*(paperwidth - bbox.width())  - bbox.left(),
+                                             0.5*(paperheight - bbox.height()) - bbox.bottom())
                 else:
                     return None # no page transformation needed
-                if self.centered or self.fittosize:
-                    atrafo = atrafo.translated(0.5*(paperwidth - bbox.width())  - bbox.left(),
-                                               0.5*(paperheight - bbox.height()) - bbox.bottom())
 
             if self.fittosize:
 
