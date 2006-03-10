@@ -100,6 +100,7 @@ TODO for 0.9:
         in expressions now; subnames argument removed since it became pointless;
         adujstaxis became independend from selectstyle for all styles now)
       - remove multiple painting of frompath in histogram and barpos styles
+      - fix missing attribute select when using a bar style once only (reported by Alan Isaac)
     - graph, axis and style module:
       - support for mutual linking of axes between graphs
         (TODO: documentation, basically the setlinkedaxis method)

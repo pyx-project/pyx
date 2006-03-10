@@ -1373,10 +1373,7 @@ class bar(_style):
         return []
 
     def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
-        if selecttotal > 1:
-            privatedata.barattrs = attr.selectattrs(self.defaultbarattrs + self.barattrs, selectindex, selecttotal)
-        else:
-            privatedata.barattrs = self.defaultbarattrs + self.barattrs
+        privatedata.barattrs = attr.selectattrs(self.defaultbarattrs + self.barattrs, selectindex, selecttotal)
 
     def initdrawpoints(self, privatedata, sharedata, graph):
         privatedata.rectcanvas = graph.insert(canvas.canvas())
