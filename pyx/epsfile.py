@@ -128,7 +128,7 @@ class linefilereader:
                     raise IOError(EOFmsg)
                 if nlpos != -1:
                     eol = nlpos + 1
-                if crpos != -1 and crpos < nlpos - 1:
+                if crpos != -1 and (nlpos == -1 or crpos < nlpos - 1):
                     eol = crpos + 1
                 result = self.buffer[:eol]
                 self.buffer = self.buffer[eol:]
