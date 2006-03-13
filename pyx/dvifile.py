@@ -340,7 +340,7 @@ class fontmapping:
                     self.fontfile = token[1:]
                 elif token.endswith(".enc"):
                     self.encodingfile = token[1:]
-                elif toke.endswith(".ttf"):
+                elif token.endswith(".ttf"):
                     raise UnsupportedFontFormat("TrueType font")
                 else:
                     raise RuntimeError("wrong syntax")
