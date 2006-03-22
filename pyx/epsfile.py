@@ -92,7 +92,7 @@ class linefilereader:
         if count is not None:
             if count > len(self.buffer):
                 self.buffer += self.file.read(count - len(self.buffer))
-            if EOFmsg is not None and len(buffer) < count:
+            if EOFmsg is not None and len(self.buffer) < count:
                 raise IOError(EOFmsg)
             result = self.buffer[:count]
             self.buffer = self.buffer[count:]
