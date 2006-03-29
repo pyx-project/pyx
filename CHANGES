@@ -44,6 +44,7 @@ TODO:
       is the common use case), they will be 0 and 1, anyway.
   - deformer module:
     - move helper path routines to some more generic place for paths?
+  - pdffile module needed (similar to epsfile)
   - open discussion:
     - clearly distingish between readers and writers. dvifile, epsfile, etc. might
       be renamed to dvireader, epsreader ...
