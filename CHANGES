@@ -7,6 +7,9 @@ TODO:
   - text module:
     - SlantFont & Co support
     - keep an eye on PEP 324 (popen 5): it could make the texrunner much easier
+    - add encoding; check whether encoding=ascii works well for the common existing cases
+    - we need output-specific map files (see Palatino example
+      http://sourceforge.net/mailarchive/message.php?msg_id=14863643)
   - graph.graph module
     - common bboxes for different graphs
     - 3d graphs, circular graphs
@@ -75,13 +78,6 @@ TODO:
       graph data
 
 
-TODO for 0.9:
-  - text module:
-    - add encoding; check whether encoding=ascii works well for the common existing cases
-    - we need output-specific map files (see Palatino example
-      http://sourceforge.net/mailarchive/message.php?msg_id=14863643)
-
-
 0.9 (2006/??/??):
   - most important changes (to be included in the release notes):
     - mathtree removal (warning about integer division)
@@ -146,7 +142,6 @@ TODO for 0.9:
   - deformer module:
     - rewritten smoother to make use of the subnormpath facilities
     - rewritten parallel for arbitrary paths
-    - TODO: missing numeric fallback in helper
   - deco module:
     - add basic text decorator (TODO: documentation)
     - allow arrows at arbitrary positions along the path (TODO: check documentation)
