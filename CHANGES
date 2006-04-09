@@ -162,6 +162,8 @@ TODO:
     - silently ignore TrueType fonts in font mapping files (reported by Gabriel Vasseur)
   - type1font module:
     - accept [ and ] as separators in encoding files (reported by Mojca Miklavec, cf. bug #1429524)
+  - canvas module:
+    - remove registerPS/registerPDF in favour of registering resourcing during the outputPS/outputPDF run
   - random notes:
     - switched to subversion on 2006/03/09
 

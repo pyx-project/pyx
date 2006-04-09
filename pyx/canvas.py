@@ -38,15 +38,7 @@ class canvasitem:
         """return bounding box of canvasitem or None"""
         pass
     
-    def registerPS(self, registry):
-        """register resources needed for the canvasitem in the PS registry"""
-        pass
-
-    def registerPDF(self, registry):
-        """register resources needed for the canvasitem in the PDF registry"""
-        pass
-
-    def outputPS(self, file, writer, context):
+    def outputPS(self, file, writer, context, registry):
         """write PS code corresponding to canvasitem to file
 
         - file has to provide a write(string) method
@@ -54,10 +46,11 @@ class canvasitem:
         - context is used for keeping track of the graphics state, in particular
         for the emulation of PS behaviour regarding fill and stroke styles, for
         keeping track of the currently selected font as well as of text regions.
+	- registry is used for tracking resources needed
         """
         pass
 
-    def outputPDF(self, file, writer, context):
+    def outputPDF(self, file, writer, context, registry):
         """write PDF code corresponding to canvasitem to file using the given writer
         and context.
 
@@ -66,6 +59,7 @@ class canvasitem:
         - context is used for keeping track of the graphics state, in particular
         for the emulation of PS behaviour regarding fill and stroke styles, for
         keeping track of the currently selected font as well as of text regions.
+	- registry is used for tracking resources needed
         """
         pass
 
@@ -95,13 +89,13 @@ class clip(canvasitem):
         # ... but for clipping, we nevertheless need the bbox
         return self.path.bbox()
 
-    def outputPS(self, file, writer, context):
+    def outputPS(self, file, writer, context, registry):
         file.write("newpath\n")
-        self.path.outputPS(file, writer, context)
+        self.path.outputPS(file, writer, context, registry)
         file.write("clip\n")
 
-    def outputPDF(self, file, writer, context):
-        self.path.outputPDF(file, writer, context)
+    def outputPDF(self, file, writer, context, registry):
+        self.path.outputPDF(file, writer, context, registry)
         file.write("W n\n")
 
 
@@ -180,23 +174,15 @@ class _canvas(canvasitem):
         else:
             return self.clipbbox
 
-    def registerPS(self, registry):
-        for item in self.items:
-            item.registerPS(registry)
-
-    def registerPDF(self, registry):
-        for item in self.items:
-            item.registerPDF(registry)
-
-    def outputPS(self, file, writer, context):
+    def outputPS(self, file, writer, context, registry):
         context = context()
         if self.items:
             file.write("gsave\n")
             for item in self.items:
-                item.outputPS(file, writer, context)
+                item.outputPS(file, writer, context, registry)
             file.write("grestore\n")
 
-    def outputPDF(self, file, writer, context):
+    def outputPDF(self, file, writer, context, registry):
         context = context()
         if self.items:
             file.write("q\n") # gsave
@@ -210,7 +196,7 @@ class _canvas(canvasitem):
                         file.write("ET\n")
                         context.textregion = 0
                         context.font = None
-                item.outputPDF(file, writer, context)
+                item.outputPDF(file, writer, context, registry)
             if context.textregion:
                 file.write("ET\n")
                 context.textregion = 0

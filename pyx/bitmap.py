@@ -187,7 +187,7 @@ class PDFimagepalettedata(pdfwriter.PDFobject):
         pdfwriter.PDFobject.__init__(self, "imagepalettedata", name)
         self.data = data
 
-    def outputPDF(self, file, writer, registry):
+    def output(self, file, writer, registry):
         file.write("<<\n"
                    "/Length %d\n" % len(self.data))
         file.write(">>\n"
@@ -222,7 +222,7 @@ class PDFimage(pdfwriter.PDFobject):
         self.compressmode = compressmode
         self.data = data
 
-    def outputPDF(self, file, writer, registry):
+    def output(self, file, writer, registry):
         file.write("<<\n"
                    "/Type /XObject\n"
                    "/Subtype /Image\n"
@@ -360,7 +360,7 @@ class bitmap(canvas.canvasitem):
         return bbox.bbox_pt(self.xpos_pt, self.ypos_pt,
                             self.xpos_pt+self.width_pt, self.ypos_pt+self.height_pt)
 
-    def registerPS(self, registry):
+    def outputPS(self, file, writer, context, registry):
         if self.PSstoreimage and not self.PSsinglestring:
             registry.add(pswriter.PSdefinition("imagedataaccess",
                                                "{ /imagedataindex load " # get list index
@@ -369,12 +369,6 @@ class bitmap(canvas.canvasitem):
         if self.PSstoreimage:
             registry.add(PSimagedata(self.PSimagename, self.data, self.PSsinglestring, self.PSmaxstrlen))
 
-    def registerPDF(self, registry):
-        registry.add(PDFimage(self.PDFimagename, self.imagewidth, self.imageheight,
-                              self.palettecolorspace, self.palettedata, self.colorspace,
-                              8, self.compressmode, self.data, registry))
-
-    def outputPS(self, file, writer, context):
         file.write("gsave\n")
         if self.palettedata is not None:
             file.write("[ /Indexed %s %i\n" % (self.palettecolorspace, len(self.palettedata)/3-1))
@@ -424,8 +418,12 @@ class bitmap(canvas.canvasitem):
 
         file.write("grestore\n")
 
-    def outputPDF(self, file, writer, context):
+    def outputPDF(self, file, writer, context, registry):
+        registry.add(PDFimage(self.PDFimagename, self.imagewidth, self.imageheight,
+                              self.palettecolorspace, self.palettedata, self.colorspace,
+                              8, self.compressmode, self.data, registry))
+
         file.write("q\n")
-        self.imagematrixPDF.outputPDF(file, writer, context)
+        self.imagematrixPDF.outputPDF(file, writer, context, registry)
         file.write("/%s Do\n" % self.PDFimagename)
         file.write("Q\n")

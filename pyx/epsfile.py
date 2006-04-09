@@ -313,14 +313,9 @@ class epsfile(canvas.canvasitem):
     def bbox(self):
         return self.mybbox.transformed(self.trafo)
 
-    def registerPS(self, registry):
+    def outputPS(self, file, writer, context, registry):
         registry.add(_BeginEPSF)
         registry.add(_EndEPSF)
-
-    def registerPDF(self, registry):
-        raise RuntimeError("cannot include EPS file in PDF file")
-
-    def outputPS(self, file, writer, context):
         try:
             epsfile=open(self.filename,"rb")
         except:
@@ -332,9 +327,12 @@ class epsfile(canvas.canvasitem):
             llx_pt, lly_pt, urx_pt, ury_pt = self.mybbox.transformed(self.trafo).highrestuple_pt()
             file.write("%g %g %g %g rectclip\n" % (llx_pt, lly_pt, urx_pt-llx_pt, ury_pt-lly_pt))
 
-        self.trafo.outputPS(file, writer, context)
+        self.trafo.outputPS(file, writer, context, registry)
 
         file.write("%%%%BeginDocument: %s\n" % self.filename)
         file.write(epsfile.read()) 
         file.write("%%EndDocument\n")
         file.write("EndEPSF\n")
+
+    def outputPDF(self, file, writer, context, registry):
+	raise RuntimeError("Including EPS files in PDF files not supported")

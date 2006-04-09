@@ -212,11 +212,11 @@ class normsubpathitem:
         """return transformed normsubpathitem according to trafo"""
         pass
 
-    def outputPS(self, file, writer, context):
+    def outputPS(self, file, writer, context, registry):
         """write PS code corresponding to normsubpathitem to file"""
         pass
 
-    def outputPDF(self, file, writer, context):
+    def outputPDF(self, file, writer, context, registry):
         """write PDF code corresponding to normsubpathitem to file"""
         pass
 
@@ -340,10 +340,10 @@ class normline_pt(normsubpathitem):
     def transformed(self, trafo):
         return normline_pt(*(trafo.apply_pt(self.x0_pt, self.y0_pt) + trafo.apply_pt(self.x1_pt, self.y1_pt)))
 
-    def outputPS(self, file, writer, context):
+    def outputPS(self, file, writer, context, registry):
         file.write("%g %g lineto\n" % (self.x1_pt, self.y1_pt))
 
-    def outputPDF(self, file, writer, context):
+    def outputPDF(self, file, writer, context, registry):
         file.write("%f %f l\n" % (self.x1_pt, self.y1_pt))
 
 
@@ -665,10 +665,10 @@ class normcurve_pt(normsubpathitem):
         x3_pt, y3_pt = trafo.apply_pt(self.x3_pt, self.y3_pt)
         return normcurve_pt(x0_pt, y0_pt, x1_pt, y1_pt, x2_pt, y2_pt, x3_pt, y3_pt)
 
-    def outputPS(self, file, writer, context):
+    def outputPS(self, file, writer, context, registry):
         file.write("%g %g %g %g %g %g curveto\n" % (self.x1_pt, self.y1_pt, self.x2_pt, self.y2_pt, self.x3_pt, self.y3_pt))
 
-    def outputPDF(self, file, writer, context):
+    def outputPDF(self, file, writer, context, registry):
         file.write("%f %f %f %f %f %f c\n" % (self.x1_pt, self.y1_pt, self.x2_pt, self.y2_pt, self.x3_pt, self.y3_pt))
 
     def x_pt(self, t):
@@ -1303,7 +1303,7 @@ class normsubpath:
             nnormsubpath.append(self.skippedline.transformed(trafo))
         return nnormsubpath
 
-    def outputPS(self, file, writer, context):
+    def outputPS(self, file, writer, context, registry):
         # if the normsubpath is closed, we must not output a normline at
         # the end
         if not self.normsubpathitems:
@@ -1315,11 +1315,11 @@ class normsubpath:
             normsubpathitems = self.normsubpathitems
         file.write("%g %g moveto\n" % self.atbegin_pt())
         for anormsubpathitem in normsubpathitems:
-            anormsubpathitem.outputPS(file, writer, context)
+            anormsubpathitem.outputPS(file, writer, context, registry)
         if self.closed:
             file.write("closepath\n")
 
-    def outputPDF(self, file, writer, context):
+    def outputPDF(self, file, writer, context, registry):
         # if the normsubpath is closed, we must not output a normline at
         # the end
         if not self.normsubpathitems:
@@ -1331,7 +1331,7 @@ class normsubpath:
             normsubpathitems = self.normsubpathitems
         file.write("%f %f m\n" % self.atbegin_pt())
         for anormsubpathitem in normsubpathitems:
-            anormsubpathitem.outputPDF(file, writer, context)
+            anormsubpathitem.outputPDF(file, writer, context, registry)
         if self.closed:
             file.write("h\n")
 
@@ -1917,10 +1917,10 @@ class normpath(canvas.canvasitem):
         """return transformed normpath"""
         return normpath([normsubpath.transformed(trafo) for normsubpath in self.normsubpaths])
 
-    def outputPS(self, file, writer, context):
+    def outputPS(self, file, writer, context, registry):
         for normsubpath in self.normsubpaths:
-            normsubpath.outputPS(file, writer, context)
+            normsubpath.outputPS(file, writer, context, registry)
 
-    def outputPDF(self, file, writer, context):
+    def outputPDF(self, file, writer, context, registry):
         for normsubpath in self.normsubpaths:
-            normsubpath.outputPDF(file, writer, context)
+            normsubpath.outputPDF(file, writer, context, registry)

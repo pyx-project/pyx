@@ -21,7 +21,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import copy, time, math
+import cStringIO, copy, time, math
 import style, version, type1font, unit
 
 try:
@@ -184,7 +184,7 @@ class PSfontencoding(PSresource):
 
     def outputPS(self, file, writer, registry):
         encodingfile = type1font.encodingfile(self.encoding.name, self.encoding.filename)
-        encodingfile.outputPS(file, writer, registry)
+        encodingfile.outputPS(file, writer)
 
 
 class PSfontreencoding(PSresource):
@@ -269,21 +269,24 @@ class epswriter:
                    time.asctime(time.localtime(time.time())))
         file.write("%%EndComments\n")
 
-        file.write("%%BeginProlog\n")
+        canvasfile = cStringIO.StringIO()
         registry = PSregistry()
-        canvas.registerPS(registry)
+        acontext = context()
+
+        style.linewidth.normal.outputPS(file, self, acontext, registry)
+
+        # here comes the canvas content
+        canvas.outputPS(canvasfile, self, acontext, registry)
+
+        file.write("%%BeginProlog\n")
         registry.outputPS(file, self)
         file.write("%%EndProlog\n")
 
-        acontext = context()
-        # apply a possible page transformation
+        # apply a possible page transformation (using fake context and registry)
         if pagetrafo:
-            pagetrafo.outputPS(file, self, acontext)
+            pagetrafo.outputPS(file, self, context(), PSregistry())
 
-        style.linewidth.normal.outputPS(file, self, acontext)
-
-        # here comes the canvas content
-        canvas.outputPS(file, self, acontext)
+        file.write(canvasfile.getvalue())
 
         file.write("showpage\n")
         file.write("%%Trailer\n")
@@ -354,11 +357,38 @@ class pswriter:
         #file.write("%%BeginDefaults\n")
         #file.write("%%EndDefaults\n")
 
+        pagesfile = cStringIO.StringIO()
+        registry = PSregistry()
+
+        # pages section
+        for nr, page in enumerate(document.pages):
+            pagesfile.write("%%%%Page: %s %d\n" % (page.pagename is None and str(nr+1) or page.pagename, nr+1))
+            if page.paperformat:
+                pagesfile.write("%%%%PageMedia: %s\n" % page.paperformat.name)
+            pagesfile.write("%%%%PageOrientation: %s\n" % (page.rotated and "Landscape" or "Portrait"))
+            if page._transformedbbox and writebbox:
+                pagesfile.write("%%%%PageBoundingBox: %d %d %d %d\n" % page._transformedbbox.lowrestuple_pt())
+
+            # page setup section
+            pagesfile.write("%%BeginPageSetup\n")
+            pagesfile.write("/pgsave save def\n")
+
+            acontext = context()
+            # apply a possible page transformation
+            if page._pagetrafo is not None:
+                page._pagetrafo.outputPS(pagesfile, self, acontext, registry)
+
+            style.linewidth.normal.outputPS(pagesfile, self, acontext, registry)
+            pagesfile.write("%%EndPageSetup\n")
+
+            # here comes the actual content
+            page.canvas.outputPS(pagesfile, self, acontext, registry)
+            pagesfile.write("pgsave restore\n")
+            pagesfile.write("showpage\n")
+            pagesfile.write("%%PageTrailer\n")
+
         # document prolog section
         file.write("%%BeginProlog\n")
-        registry = PSregistry()
-        for page in document.pages:
-            page.canvas.registerPS(registry)
         registry.outputPS(file, self)
         file.write("%%EndProlog\n")
 
@@ -366,32 +396,7 @@ class pswriter:
         #file.write("%%BeginSetup\n")
         #file.write("%%EndSetup\n")
 
-        # pages section
-        for nr, page in enumerate(document.pages):
-            file.write("%%%%Page: %s %d\n" % (page.pagename is None and str(nr+1) or page.pagename, nr+1))
-            if page.paperformat:
-                file.write("%%%%PageMedia: %s\n" % page.paperformat.name)
-            file.write("%%%%PageOrientation: %s\n" % (page.rotated and "Landscape" or "Portrait"))
-            if page._transformedbbox and writebbox:
-                file.write("%%%%PageBoundingBox: %d %d %d %d\n" % page._transformedbbox.lowrestuple_pt())
-
-            # page setup section
-            file.write("%%BeginPageSetup\n")
-            file.write("/pgsave save def\n")
-            
-            acontext = context()
-            # apply a possible page transformation
-            if page._pagetrafo is not None:
-                page._pagetrafo.outputPS(file, self, acontext)
-
-            style.linewidth.normal.outputPS(file, self, acontext)
-            file.write("%%EndPageSetup\n")
-            
-            # here comes the actual content
-            page.canvas.outputPS(file, self, acontext)
-            file.write("pgsave restore\n")
-            file.write("showpage\n")
-            file.write("%%PageTrailer\n")
+        file.write(pagesfile.getvalue())
 
         file.write("%%Trailer\n")
         file.write("%%EOF\n")

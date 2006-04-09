@@ -82,64 +82,64 @@ class pattern(canvas._canvas, attr.exclusiveattr, style.fillstyle):
         if context.fillattr:
             file.write("/%s scn\n"% self.id)
 
-    def registerPS(self, registry):
-        canvas._canvas.registerPS(self, registry)
-        realpatternbbox = canvas._canvas.bbox(self)
-        if self.xstep is None:
-           xstep = unit.topt(realpatternbbox.width())
-        else:
-           xstep = unit.topt(self.xstep)
-        if self.ystep is None:
-            ystep = unit.topt(realpatternbbox.height())
-        else:
-           ystep = unit.topt(self.ystep)
-        if not xstep:
-            raise ValueError("xstep in pattern cannot be zero")
-        if not ystep:
-            raise ValueError("ystep in pattern cannot be zero")
-        patternbbox = self.patternbbox or realpatternbbox.enlarged(5*unit.pt)
+#     def registerPS(self, registry):
+#         canvas._canvas.registerPS(self, registry)
+#         realpatternbbox = canvas._canvas.bbox(self)
+#         if self.xstep is None:
+#            xstep = unit.topt(realpatternbbox.width())
+#         else:
+#            xstep = unit.topt(self.xstep)
+#         if self.ystep is None:
+#             ystep = unit.topt(realpatternbbox.height())
+#         else:
+#            ystep = unit.topt(self.ystep)
+#         if not xstep:
+#             raise ValueError("xstep in pattern cannot be zero")
+#         if not ystep:
+#             raise ValueError("ystep in pattern cannot be zero")
+#         patternbbox = self.patternbbox or realpatternbbox.enlarged(5*unit.pt)
 
-        patternprefix = "\n".join(("<<",
-                                   "/PatternType %d" % self.patterntype,
-                                   "/PaintType %d" % self.painttype,
-                                   "/TilingType %d" % self.tilingtype,
-                                   "/BBox[%d %d %d %d]" % patternbbox.lowrestuple_pt(),
-                                   "/XStep %g" % xstep,
-                                   "/YStep %g" % ystep,
-                                   "/PaintProc {\nbegin\n"))
-        stringfile = cStringIO.StringIO()
-        # XXX here, we have a problem since the writer is not definined at that point
-        # for the moment, we just path None since we do not use it anyway
-        canvas._canvas.outputPS(self, stringfile, None, pswriter.context())
-        patternproc = stringfile.getvalue()
-        stringfile.close()
-        patterntrafostring = self.patterntrafo is None and "matrix" or str(self.patterntrafo)
-        patternsuffix = "end\n} bind\n>>\n%s\nmakepattern" % patterntrafostring
+#         patternprefix = "\n".join(("<<",
+#                                    "/PatternType %d" % self.patterntype,
+#                                    "/PaintType %d" % self.painttype,
+#                                    "/TilingType %d" % self.tilingtype,
+#                                    "/BBox[%d %d %d %d]" % patternbbox.lowrestuple_pt(),
+#                                    "/XStep %g" % xstep,
+#                                    "/YStep %g" % ystep,
+#                                    "/PaintProc {\nbegin\n"))
+#         stringfile = cStringIO.StringIO()
+#         # XXX here, we have a problem since the writer is not definined at that point
+#         # for the moment, we just path None since we do not use it anyway
+#         canvas._canvas.outputPS(self, stringfile, None, pswriter.context())
+#         patternproc = stringfile.getvalue()
+#         stringfile.close()
+#         patterntrafostring = self.patterntrafo is None and "matrix" or str(self.patterntrafo)
+#         patternsuffix = "end\n} bind\n>>\n%s\nmakepattern" % patterntrafostring
 
-        registry.add(pswriter.PSdefinition(self.id, "".join((patternprefix, patternproc, patternsuffix))))
+#         registry.add(pswriter.PSdefinition(self.id, "".join((patternprefix, patternproc, patternsuffix))))
 
-    def registerPDF(self, registry):
-        realpatternbbox = canvas._canvas.bbox(self)
-        if self.xstep is None:
-           xstep = unit.topt(realpatternbbox.width())
-        else:
-           xstep = unit.topt(self.xstep)
-        if self.ystep is None:
-            ystep = unit.topt(realpatternbbox.height())
-        else:
-           ystep = unit.topt(self.ystep)
-        if not xstep:
-            raise ValueError("xstep in pattern cannot be zero")
-        if not ystep:
-            raise ValueError("ystep in pattern cannot be zero")
-        patternbbox = self.patternbbox or realpatternbbox.enlarged(5*unit.pt)
-        patterntrafo = self.patterntrafo or trafo.trafo()
+#     def registerPDF(self, registry):
+#         realpatternbbox = canvas._canvas.bbox(self)
+#         if self.xstep is None:
+#            xstep = unit.topt(realpatternbbox.width())
+#         else:
+#            xstep = unit.topt(self.xstep)
+#         if self.ystep is None:
+#             ystep = unit.topt(realpatternbbox.height())
+#         else:
+#            ystep = unit.topt(self.ystep)
+#         if not xstep:
+#             raise ValueError("xstep in pattern cannot be zero")
+#         if not ystep:
+#             raise ValueError("ystep in pattern cannot be zero")
+#         patternbbox = self.patternbbox or realpatternbbox.enlarged(5*unit.pt)
+#         patterntrafo = self.patterntrafo or trafo.trafo()
 
-        registry.add(PDFpattern(self.id, self.patterntype, self.painttype, self.tilingtype,
-                                patternbbox, xstep, ystep, patterntrafo,
-                                lambda file, writer, context: canvas._canvas.outputPDF(self, file, writer, context()),
-                                lambda registry: canvas._canvas.registerPDF(self, registry),
-                                registry))
+#         registry.add(PDFpattern(self.id, self.patterntype, self.painttype, self.tilingtype,
+#                                 patternbbox, xstep, ystep, patterntrafo,
+#                                 lambda file, writer, context: canvas._canvas.outputPDF(self, file, writer, context()),
+#                                 lambda registry: canvas._canvas.registerPDF(self, registry),
+#                                 registry))
 
 pattern.clear = attr.clearclass(pattern)
 

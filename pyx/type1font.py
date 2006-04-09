@@ -35,6 +35,7 @@ class encoding:
 
     def __init__(self, name, filename):
         """ font encoding contained in filename """
+        print "x"*100
         self.name = name
         self.filename = filename
 
@@ -69,7 +70,7 @@ class encodingfile:
     def decode(self, charcode):
         return self.encvector[charcode]
 
-    def outputPS(self, file, writer, registry):
+    def outputPS(self, file, writer):
         file.write("%%%%BeginProcSet: %s\n" % self.name)
         file.write("/%s\n"
                    "[" % self.name)
@@ -82,7 +83,7 @@ class encodingfile:
         file.write(" ] def\n"
                    "%%EndProcSet\n")
 
-    def outputPDF(self, file, writer, registry):
+    def outputPDF(self, file, writer):
         file.write("<<\n"
                    "/Type /Encoding\n"
                    "/Differences\n"
@@ -136,15 +137,11 @@ class text_pt(canvas.canvasitem):
     def bbox(self):
         return bbox.bbox_pt(self.x_pt, self.y_pt-self.depth_pt, self.x_pt+self.width_pt, self.y_pt+self.height_pt)
 
-    def registerPS(self, registry):
+    def outputPS(self, file, writer, context, registry):
         # note that we don't register PSfont as it is just a helper resource
         # which registers the needed components
         pswriter.PSfont(self.font, self.chars, registry)
 
-    def registerPDF(self, registry):
-        registry.add(pdfwriter.PDFfont(self.font, self.chars, registry))
-
-    def outputPS(self, file, writer, context):
         if ( context.font is None or 
              context.font.name != self.font.name or 
              context.font.metric.getsize_pt() !=  self.font.metric.getsize_pt() ):
@@ -160,7 +157,9 @@ class text_pt(canvas.canvasitem):
         file.write("%g %g moveto (%s) show\n" % (self.x_pt, self.y_pt, outstring))
 
 
-    def outputPDF(self, file, writer, context):
+    def outputPDF(self, file, writer, context, registry):
+        registry.add(pdfwriter.PDFfont(self.font, self.chars, writer, registry))
+
         if ( context.font is None or 
              context.font.name != self.font.name or 
              context.font.metric.getsize_pt() !=  self.font.metric.getsize_pt() ):

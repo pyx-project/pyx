@@ -154,13 +154,13 @@ class graph(canvas.canvas):
         self.finish()
         canvas.canvas.registerPDF(self, registry)
 
-    def outputPS(self, file, writer, context):
+    def outputPS(self, file, writer, context, registry):
         self.finish()
-        canvas.canvas.outputPS(self, file, writer, context)
+        canvas.canvas.outputPS(self, file, writer, context, registry)
 
-    def outputPDF(self, file, writer, context):
+    def outputPDF(self, file, writer, context, registry):
         self.finish()
-        canvas.canvas.outputPDF(self, file, writer, context)
+        canvas.canvas.outputPDF(self, file, writer, context, registry)
 
     def plot(self, data, styles=None, rangewarning=1):
         if self.didranges and rangewarning:

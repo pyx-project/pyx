@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+##!/usr/bin/env python
 # -*- coding: ISO-8859-1 -*-
 #
 #
@@ -1175,17 +1175,17 @@ class path(canvas.canvasitem):
         """return transformed path"""
         return self.normpath().transformed(trafo)
 
-    def outputPS(self, file, writer, context):
+    def outputPS(self, file, writer, context, registry):
         """write PS code to file"""
         for pitem in self.pathitems:
             pitem.outputPS(file)
 
-    def outputPDF(self, file, writer, context):
+    def outputPDF(self, file, writer, context, registry):
         """write PDF code to file"""
         # PDF only supports normsubpathitems; we need to use a normpath
         # with epsilon equals None to prevent failure for paths shorter
         # than epsilon
-        self.normpath(epsilon=None).outputPDF(file, writer, context)
+        self.normpath(epsilon=None).outputPDF(file, writer, context, registry)
 
 
 #
