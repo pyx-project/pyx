@@ -41,6 +41,7 @@ class PSregistry:
         # kept)
         self.resourceshash = {}
         self.resourceslist = []
+        self.bbox = None
 
     def add(self, resource):
         rkey = (resource.type, resource.id)
@@ -49,6 +50,15 @@ class PSregistry:
         else:
            self.resourceshash[rkey] = resource
            self.resourceslist.append(resource)
+
+    def mergeregistry(self, registry):
+        for resource in registry.resources:
+            self.add(resource)
+        if self.bbox:
+            if registry.bbox:
+                self.bbox += registry.bbox
+        else:
+            self.bbox = registry.bbox
 
     def outputPS(self, file, writer):
         """ write all PostScript code of the prolog resources """
@@ -251,7 +261,16 @@ class epswriter:
         except IOError:
             raise IOError("cannot open output file")
 
-        bbox = page.bbox()
+        canvasfile = cStringIO.StringIO()
+        registry = PSregistry()
+        acontext = context()
+
+        style.linewidth.normal.outputPS(file, self, acontext, registry)
+
+        # here comes the page content
+        page.outputPS(canvasfile, self, acontext, registry)
+
+        bbox = registry.bbox
         pagetrafo = page.pagetrafo(bbox)
 
         # if a page transformation is necessary, we have to adjust the bounding box
@@ -268,15 +287,6 @@ class epswriter:
         file.write("%%%%CreationDate: %s\n" %
                    time.asctime(time.localtime(time.time())))
         file.write("%%EndComments\n")
-
-        canvasfile = cStringIO.StringIO()
-        registry = PSregistry()
-        acontext = context()
-
-        style.linewidth.normal.outputPS(file, self, acontext, registry)
-
-        # here comes the canvas content
-        canvas.outputPS(canvasfile, self, acontext, registry)
 
         file.write("%%BeginProlog\n")
         registry.outputPS(file, self)

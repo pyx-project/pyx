@@ -44,6 +44,7 @@ class PDFregistry:
         self.types = {}
         # we need to keep the original order of the resources (for PDFcontentlength)
         self.resources = []
+        self.bbox = None
 
     def add(self, resource):
         """ register resource, merging it with an already registered resource of the same type and id"""
@@ -60,15 +61,15 @@ class PDFregistry:
     def mergeregistry(self, registry):
         for resource in registry.resources:
             self.add(resource)
+        if self.bbox:
+            if registry.bbox:
+                 self.bbox += registry.bbox
+        else:
+            self.bbox = registry.bbox
 
     def write(self, file, writer, catalog):
         # first we set all refnos
         refno = 1
-
-        # we recursively inserted the resources such that the topmost resources in
-        # the dependency tree of the resources come last. Hence, we need to 
-        # reverse the resources list before writing the output
-        self.resources.reverse()
         for resource in self.resources:
             resource.refno = refno
             refno += 1
@@ -219,15 +220,19 @@ class PDFpage(PDFobject):
         # pageregistry is also merged in the global registry
         self.pageregistry = PDFregistry()
 
-        self.bbox = page.bbox()
+        self.PDFcontent = PDFcontent(self, writer, self.pageregistry)
+        self.pageregistry.add(self.PDFcontent)
+        if self.pageregistry.bbox is not None:
+            self.bbox = self.pageregistry.bbox.copy()
+        else:
+            self.bbox = None
+        registry.mergeregistry(self.pageregistry)
+
         self.pagetrafo = page.pagetrafo(self.bbox)
         if self.pagetrafo:
             self.transformedbbox = self.bbox.transformed(self.pagetrafo)
         else:
             self.transformedbbox = self.bbox
-        self.PDFcontent = PDFcontent(page.canvas, self.pagetrafo, writer, self.pageregistry)
-        self.pageregistry.add(self.PDFcontent)
-        registry.mergeregistry(self.pageregistry)
 
     def output(self, file, writer, registry):
         file.write("<<\n"
@@ -260,12 +265,9 @@ class PDFpage(PDFobject):
 
 class PDFcontent(PDFobject):
 
-    def __init__(self, canvas, pagetrafo, writer, registry):
+    def __init__(self, PDFpage, writer, registry):
         PDFobject.__init__(self, "content")
-        self.canvas = canvas
-        self.pagetrafo = pagetrafo
-        self.contentlength = PDFcontentlength((self.type, self.id), writer, registry)
-        registry.add(self.contentlength)
+        self.PDFpage = PDFpage
 
         self.contentfile = cStringIO.StringIO()
         # XXX this should maybe be handled by the page since removing
@@ -273,16 +275,21 @@ class PDFcontent(PDFobject):
         # set more info in the content dict) reuse PDFcontent for
         # patterns
         acontext = context()
-        # apply a possible global transformation
-        if self.pagetrafo:
-            self.pagetrafo.outputPDF(self.contentfile, writer, acontext, registry)
         style.linewidth.normal.outputPDF(self.contentfile, writer, acontext, registry)
 
-        self.canvas.outputPDF(self.contentfile, writer, acontext, registry)
+        self.PDFpage.page.canvas.outputPDF(self.contentfile, writer, acontext, registry)
 
     def output(self, file, writer, registry):
+        # apply a possible global transformation
+        if self.PDFpage.pagetrafo:
+            pagetrafofile = cStringIO.StringIO()
+            self.PDFpage.pagetrafo.outputPDF(pagetrafofile, writer, context(), registry)
+            content = pagetrafofile.getvalue() + self.contentfile.getvalue()
+        else:
+            content = self.contentfile.getvalue()
+
         file.write("<<\n"
-                   "/Length %i 0 R\n" % registry.getrefno(self.contentlength))
+                   "/Length %i\n" % len(content))
         # if writer.compress:
         #     file.write("/Filter /FlateDecode\n")
         file.write(">>\n"
@@ -294,27 +301,14 @@ class PDFcontent(PDFobject):
         #else:
         #    stream = file
 
-        file.write(self.contentfile.getvalue())
+        file.write(content)
 
         #if writer.compress:
         #    stream.flush()
 
-        self.contentlength.contentlength = file.tell() - beginstreampos
         #if writer.compress:
         #    file.write("\n")
         file.write("endstream\n")
-
-
-class PDFcontentlength(PDFobject):
-
-    def __init__(self, contentid, writer, registry):
-        PDFobject.__init__(self, "_contentlength", contentid)
-        self.contentlength = None
-
-    def output(self, file, writer, registry):
-        # initially we do not know about the content length
-        # -> it has to be written into the instance later on
-        file.write("%d\n" % self.contentlength)
 
 
 class PDFfont(PDFobject):
@@ -506,7 +500,6 @@ class PDFwriter:
 
         file.write("%%PDF-1.4\n%%%s%s%s%s\n" % (chr(195), chr(182), chr(195), chr(169)))
         registry.write(file, self, catalog)
-        # TODO write tailing PDF structure
         file.close()
 
 

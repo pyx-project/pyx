@@ -118,6 +118,41 @@ class bbox_pt:
         return bbox_pt(min(llx_pt, lrx_pt, urx_pt, ulx_pt), min(lly_pt, lry_pt, ury_pt, uly_pt),
                        max(llx_pt, lrx_pt, urx_pt, ulx_pt), max(lly_pt, lry_pt, ury_pt, uly_pt))
 
+    def enlarge_pt(self, all_pt=0, bottom_pt=None, left_pt=None, top_pt=None, right_pt=None):
+        """enlarge bbox in place by the given amounts in pts
+
+        all is used, if bottom, left, top and/or right are not given.
+
+        """
+        if bottom_pt is None:
+           bottom_pt = all_pt
+        if left_pt is None:
+           left_pt = all_pt
+        if top_pt is None:
+           top_pt = all_pt
+        if right_pt is None:
+           right_pt = all_pt
+        self.llx_pt -= left_pt
+        self.lly_pt -= bottom_pt
+        self.urx_pt += right_pt
+        self.ury_pt += top_pt
+
+    def enlarged_pt(self, all_pt=0, bottom_pt=None, left_pt=None, top_pt=None, right_pt=None):
+        """return bbox enlarged by the given amounts in pts
+
+        all is used, if bottom, left, top and/or right are not given.
+
+        """
+        if bottom_pt is None:
+           bottom_pt = all_pt
+        if left_pt is None:
+           left_pt = all_pt
+        if top_pt is None:
+           top_pt = all_pt
+        if right_pt is None:
+           right_pt = all_pt
+        return bbox_pt(self.llx_pt-left_pt, self.lly_pt-bottom_pt, self.urx_pt+right_pt, self.ury_pt+top_pt)
+
     def enlarge(self, all=0, bottom=None, left=None, top=None, right=None):
         """enlarge bbox in place
 

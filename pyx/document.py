@@ -48,7 +48,7 @@ def _paperformatfromstring(name):
 class page:
 
     def __init__(self, canvas, pagename=None, paperformat=None, rotated=0, centered=1, fittosize=0,
-                 margin=1 * unit.t_cm, bboxenlarge=1 * unit.t_pt, bbox=None):
+                 margin=1 * unit.t_cm, bboxenlarge=0, bbox=None):
         self.canvas = canvas
         self.pagename = pagename
         # support for depricated string specification of paper formats
@@ -67,18 +67,14 @@ class page:
         self.bboxenlarge = bboxenlarge
         self.pagebbox = bbox
 
-    def bbox(self):
-        """ returns the bbox of the page
-
-        usually its the bbox of the canvas enlarged by self.bboxenlarge, but
-        it might be a different bbox as specified in the page constructor"""
+    def outputPS(self, file, writer, context, registry):
+        self.canvas.outputPS(file, writer, context, registry)
+        # usually its the bbox of the canvas enlarged by self.bboxenlarge, but
+        # it might be a different bbox as specified in the page constructor
         if self.pagebbox:
-            bbox = self.pagebbox.copy()
-        else:
-            bbox = self.canvas.bbox()
-            if bbox:
-                bbox.enlarge(self.bboxenlarge)
-        return bbox
+            registry.bbox = self.pagebbox.copy()
+        elif registry.bbox:
+            registry.bbox.enlarge(self.bboxenlarge)
 
     def pagetrafo(self, bbox):
         """ calculate a trafo which rotates and fits a canvas on the page

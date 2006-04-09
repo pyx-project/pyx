@@ -141,6 +141,10 @@ class text_pt(canvas.canvasitem):
         # note that we don't register PSfont as it is just a helper resource
         # which registers the needed components
         pswriter.PSfont(self.font, self.chars, registry)
+        if registry.bbox:
+            registry.bbox += self.bbox()
+        else:
+            registry.bbox = self.bbox()
 
         if ( context.font is None or 
              context.font.name != self.font.name or 
@@ -156,9 +160,12 @@ class text_pt(canvas.canvasitem):
             outstring += ascii
         file.write("%g %g moveto (%s) show\n" % (self.x_pt, self.y_pt, outstring))
 
-
     def outputPDF(self, file, writer, context, registry):
         registry.add(pdfwriter.PDFfont(self.font, self.chars, writer, registry))
+        if registry.bbox:
+            registry.bbox += self.bbox()
+        else:
+            registry.bbox = self.bbox()
 
         if ( context.font is None or 
              context.font.name != self.font.name or 

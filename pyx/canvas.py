@@ -167,25 +167,36 @@ class _canvas(canvasitem):
         # transform according to our global transformation and
         # intersect with clipping bounding box (which has already been
         # transformed in canvas.__init__())
-        if obbox is not None and self.clipbbox is not None:
-            return obbox.transformed(self.trafo)*self.clipbbox
-        elif obbox is not None:
-            return obbox.transformed(self.trafo)
-        else:
-            return self.clipbbox
+        if obbox is not None:
+            obbox.transform(self.trafo)
+            if self.clipbbox is not None:
+                obbox *= self.clipbbox
+        return obbox
 
     def outputPS(self, file, writer, context, registry):
         context = context()
         if self.items:
             file.write("gsave\n")
+            origbbox = registry.bbox
+            registry.bbox = None
             for item in self.items:
                 item.outputPS(file, writer, context, registry)
+            if registry.bbox is not None:
+                registry.bbox.transform(self.trafo)
+                if self.clipbbox is not None:
+                    registry.bbox *= self.clipbbox
+                if origbbox:
+                    registry.bbox += origbbox
+            else:
+                registry.bbox = origbbox
             file.write("grestore\n")
 
     def outputPDF(self, file, writer, context, registry):
         context = context()
         if self.items:
             file.write("q\n") # gsave
+            origbbox = registry.bbox
+            registry.bbox = None
             for item in self.items:
                 if isinstance(item, type1font.text_pt):
                     if not context.textregion:
@@ -201,6 +212,14 @@ class _canvas(canvasitem):
                 file.write("ET\n")
                 context.textregion = 0
                 context.font = None
+            if registry.bbox is not None:
+                registry.bbox.transform(self.trafo)
+                if self.clipbbox is not None:
+                    registry.bbox *= self.clipbbox
+                if origbbox:
+                    registry.bbox += origbbox
+            else:
+                registry.bbox = origbbox
             file.write("Q\n") # grestore
 
     def insert(self, item, attrs=None):
