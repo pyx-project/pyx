@@ -2,9 +2,9 @@
 # -*- coding: ISO-8859-1 -*-
 #
 #
-# Copyright (C) 2002-2005 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2002-2006 Jörg Lehmann <joergl@users.sourceforge.net>
 # Copyright (C) 2003-2004 Michael Schindler <m-schindler@users.sourceforge.net>
-# Copyright (C) 2002-2005 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2002-2006 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
@@ -129,21 +129,21 @@ class decoratedpath(canvas.canvasitem):
         else:
             return self.path
 
-    def outputPS(self, file, writer, context, registry):
+    def processPS(self, file, writer, context, registry, bbox):
         # draw (stroke and/or fill) the decoratedpath on the canvas
         # while trying to produce an efficient output, e.g., by
         # not writing one path two times
 
         # small helper
-        def _writestyles(styles, context, registry):
+        def _writestyles(styles, context, registry, bbox):
             for style in styles:
-                style.outputPS(file, writer, context, registry)
+                style.processPS(file, writer, context, registry, bbox)
 
         if self.strokestyles is None and self.fillstyles is None:
             if not len(self.ornaments):
                 raise RuntimeError("Path neither to be stroked nor filled nor decorated in another way")
             # just draw additional elements of decoratedpath
-            self.ornaments.outputPS(file, writer, context, registry)
+            self.ornaments.processPS(file, writer, context, registry, bbox)
             return
 
         strokepath = self.strokepath()
@@ -153,18 +153,18 @@ class decoratedpath(canvas.canvasitem):
         if self.styles:
             file.write("gsave\n")
             context = context()
-            _writestyles(self.styles, context, registry)
+            _writestyles(self.styles, context, registry, bbox)
 
         if self.fillstyles is not None:
             file.write("newpath\n")
-            fillpath.outputPS(file, writer, context, registry)
+            fillpath.outputPS(file, writer)
 
             if self.strokestyles is not None and strokepath is fillpath:
                 # do efficient stroking + filling if respective paths are identical
                 file.write("gsave\n")
 
                 if self.fillstyles:
-                    _writestyles(self.fillstyles, context(), registry)
+                    _writestyles(self.fillstyles, context(), registry, bbox)
 
                 file.write("fill\n")
                 file.write("grestore\n")
@@ -172,15 +172,11 @@ class decoratedpath(canvas.canvasitem):
                 acontext = context()
                 if self.strokestyles:
                     file.write("gsave\n")
-                    _writestyles(self.strokestyles, acontext, registry)
+                    _writestyles(self.strokestyles, acontext, registry, bbox)
 
                 file.write("stroke\n")
                 # take linewidth into account for bbox when stroking a path
-                abbox = fillpath.bbox().enlarged_pt(0.5*acontext.linewidth_pt)
-                if registry.bbox:
-                    registry.bbox += abbox
-                else:
-                    registry.bbox = abbox
+                bbox += strokepath.bbox().enlarged_pt(0.5*acontext.linewidth_pt)
 
                 if self.strokestyles:
                     file.write("grestore\n")
@@ -188,14 +184,10 @@ class decoratedpath(canvas.canvasitem):
                 # only fill fillpath - for the moment
                 if self.fillstyles:
                     file.write("gsave\n")
-                    _writestyles(self.fillstyles, context(), registry)
+                    _writestyles(self.fillstyles, context(), registry, bbox)
 
                 file.write("fill\n")
-                abbox = fillpath.bbox()
-                if registry.bbox:
-                    registry.bbox += abbox
-                else:
-                    registry.bbox = abbox
+                bbox += fillpath.bbox()
 
                 if self.fillstyles:
                     file.write("grestore\n")
@@ -206,55 +198,48 @@ class decoratedpath(canvas.canvasitem):
             acontext = context()
             if self.strokestyles:
                 file.write("gsave\n")
-                _writestyles(self.strokestyles, acontext, registry)
+                _writestyles(self.strokestyles, acontext, registry, bbox)
 
             file.write("newpath\n")
-            strokepath.outputPS(file, writer, acontext, registry)
+            strokepath.outputPS(file, writer)
             file.write("stroke\n")
             # take linewidth into account for bbox when stroking a path
-            abbox = strokepath.bbox()
-            if abbox is not None:
-                abbox.enlarge_pt(0.5*acontext.linewidth_pt)
-            if registry.bbox:
-                if abbox is not None:
-                    registry.bbox += abbox
-            else:
-                registry.bbox = abbox
+            bbox += strokepath.bbox().enlarged_pt(0.5*acontext.linewidth_pt)
 
             if self.strokestyles:
                 file.write("grestore\n")
 
         # now, draw additional elements of decoratedpath
-        self.ornaments.outputPS(file, writer, context, registry)
+        self.ornaments.processPS(file, writer, context, registry, bbox)
 
         # restore global styles
         if self.styles:
             file.write("grestore\n")
 
-    def outputPDF(self, file, writer, context, registry):
+    def processPDF(self, file, writer, context, registry, bbox):
         # draw (stroke and/or fill) the decoratedpath on the canvas
 
-        def _writestyles(styles, context, registry):
+        def _writestyles(styles, context, registry, bbox):
             for style in styles:
-                style.outputPDF(file, writer, context, registry)
+                style.processPDF(file, writer, context, registry, bbox)
 
-        def _writestrokestyles(strokestyles, context, registry):
+        def _writestrokestyles(strokestyles, context, registry, bbox):
             context.fillattr = 0
             for style in strokestyles:
-                style.outputPDF(file, writer, context, registry)
+                style.processPDF(file, writer, context, registry, bbox)
             context.fillattr = 1
 
-        def _writefillstyles(fillstyles, context, registry):
+        def _writefillstyles(fillstyles, context, registry, bbox):
             context.strokeattr = 0
             for style in fillstyles:
-                style.outputPDF(file, writer, context, registry)
+                style.processPDF(file, writer, context, registry, bbox)
             context.strokeattr = 1
 
         if self.strokestyles is None and self.fillstyles is None:
             if not len(self.ornaments):
                 raise RuntimeError("Path neither to be stroked nor filled nor decorated in another way")
             # just draw additional elements of decoratedpath
-            self.ornaments.outputPDF(file, writer, context, registry)
+            self.ornaments.processPDF(file, writer, context, registry, bbox)
             return
 
         strokepath = self.strokepath()
@@ -264,10 +249,10 @@ class decoratedpath(canvas.canvasitem):
         if self.styles:
             file.write("q\n") # gsave
             context = context()
-            _writestyles(self.styles, context, registry)
+            _writestyles(self.styles, context, registry, bbox)
 
         if self.fillstyles is not None:
-            fillpath.outputPDF(file, writer, context, registry)
+            fillpath.outputPDF(file, writer)
 
             if self.strokestyles is not None and strokepath is fillpath:
                 # do efficient stroking + filling
@@ -275,31 +260,23 @@ class decoratedpath(canvas.canvasitem):
                 acontext = context()
 
                 if self.fillstyles:
-                    _writefillstyles(self.fillstyles, acontext, registry)
+                    _writefillstyles(self.fillstyles, acontext, registry, bbox)
                 if self.strokestyles:
-                    _writestrokestyles(self.strokestyles, acontext, registry)
+                    _writestrokestyles(self.strokestyles, acontext, registry, bbox)
 
                 file.write("B\n") # both stroke and fill
                 # take linewidth into account for bbox when stroking a path
-                abbox = fillpath.bbox().enlarged_pt(0.5*acontext.linewidth_pt)
-                if registry.bbox:
-                    registry.bbox += abbox
-                else:
-                    registry.bbox = abbox
+                bbox += strokepath.bbox().enlarged_pt(0.5*acontext.linewidth_pt)
 
                 file.write("Q\n") # grestore
             else:
                 # only fill fillpath - for the moment
                 if self.fillstyles:
                     file.write("q\n") # gsave
-                    _writefillstyles(self.fillstyles, context(), registry)
+                    _writefillstyles(self.fillstyles, context(), registry, bbox)
 
                 file.write("f\n") # fill
-                abbox = fillpath.bbox()
-                if registry.bbox:
-                    registry.bbox += abbox
-                else:
-                    registry.bbox = abbox
+                bbox += fillpath.bbox()
 
                 if self.fillstyles:
                     file.write("Q\n") # grestore
@@ -311,25 +288,18 @@ class decoratedpath(canvas.canvasitem):
 
             if self.strokestyles:
                 file.write("q\n") # gsave
-                _writestrokestyles(self.strokestyles, acontext, registry)
+                _writestrokestyles(self.strokestyles, acontext, registry, bbox)
 
-            strokepath.outputPDF(file, writer, context, registry)
+            strokepath.outputPDF(file, writer)
             file.write("S\n") # stroke
             # take linewidth into account for bbox when stroking a path
-            abbox = strokepath.bbox()
-            if abbox is not None:
-                abbox.enlarge_pt(0.5*acontext.linewidth_pt)
-            if registry.bbox:
-                if abbox is not None:
-                    registry.bbox += abbox
-            else:
-                registry.bbox = abbox
+            bbox += strokepath.bbox().enlarged_pt(0.5*acontext.linewidth_pt)
 
             if self.strokestyles:
                 file.write("Q\n") # grestore
 
         # now, draw additional elements of decoratedpath
-        self.ornaments.outputPDF(file, writer, context, registry)
+        self.ornaments.processPDF(file, writer, context, registry, bbox)
 
         # restore global styles
         if self.styles:

@@ -2,8 +2,8 @@
 # -*- coding: ISO-8859-1 -*-
 #
 #
-# Copyright (C) 2005 Jörg Lehmann <joergl@users.sourceforge.net>
-# Copyright (C) 2005 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2005-2006 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2005-2006 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
@@ -22,7 +22,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import cStringIO, copy, time, math
-import style, version, type1font, unit
+import bbox, style, version, type1font, unit
 
 try:
     enumerate([])
@@ -41,7 +41,6 @@ class PSregistry:
         # kept)
         self.resourceshash = {}
         self.resourceslist = []
-        self.bbox = None
 
     def add(self, resource):
         rkey = (resource.type, resource.id)
@@ -54,16 +53,11 @@ class PSregistry:
     def mergeregistry(self, registry):
         for resource in registry.resources:
             self.add(resource)
-        if self.bbox:
-            if registry.bbox:
-                self.bbox += registry.bbox
-        else:
-            self.bbox = registry.bbox
 
-    def outputPS(self, file, writer):
+    def output(self, file, writer):
         """ write all PostScript code of the prolog resources """
         for resource in self.resourceslist:
-            resource.outputPS(file, writer, self)
+            resource.output(file, writer, self)
 
 #
 # Abstract base class
@@ -85,8 +79,8 @@ class PSresource:
         the same id"""
         pass
 
-    def outputPS(self, file, writer, registry):
-        raise NotImplementedError("outputPS not implemented for %s" % repr(self))
+    def output(self, file, writer, registry):
+        raise NotImplementedError("output not implemented for %s" % repr(self))
 
 #
 # Different variants of prolog items
@@ -101,7 +95,7 @@ class PSdefinition(PSresource):
         self.id = id
         self.body = body
 
-    def outputPS(self, file, writer, registry):
+    def output(self, file, writer, registry):
         file.write("%%%%BeginRessource: %s\n" % self.id)
         file.write("%(body)s /%(id)s exch def\n" % self.__dict__)
         file.write("%%EndRessource\n")
@@ -160,7 +154,7 @@ class PSfontfile(PSresource):
             # TODO: need to resolve the encoding when several encodings are in the play
             self.strip = 0
 
-    def outputPS(self, file, writer, registry):
+    def output(self, file, writer, registry):
         import font.t1font
         font = font.t1font.T1pfbfont(self.filename)
 
@@ -192,7 +186,7 @@ class PSfontencoding(PSresource):
         self.id = encoding.name
         self.encoding = encoding
 
-    def outputPS(self, file, writer, registry):
+    def output(self, file, writer, registry):
         encodingfile = type1font.encodingfile(self.encoding.name, self.encoding.filename)
         encodingfile.outputPS(file, writer)
 
@@ -219,7 +213,7 @@ class PSfontreencoding(PSresource):
         self.basefontname = basefontname
         self.encodingname = encodingname
 
-    def outputPS(self, file, writer, registry):
+    def output(self, file, writer, registry):
         file.write("%%%%BeginProcSet: %s\n" % self.fontname)
         file.write("/%s /%s %s ReEncodeFont\n" % (self.basefontname, self.fontname, self.encodingname))
         file.write("%%EndProcSet\n")
@@ -264,24 +258,24 @@ class epswriter:
         canvasfile = cStringIO.StringIO()
         registry = PSregistry()
         acontext = context()
+        abbox = bbox.empty()
 
-        style.linewidth.normal.outputPS(file, self, acontext, registry)
+        style.linewidth.normal.processPS(canvasfile, self, acontext, registry, abbox)
 
         # here comes the page content
-        page.outputPS(canvasfile, self, acontext, registry)
+        page.processPS(canvasfile, self, acontext, registry, abbox)
 
-        bbox = registry.bbox
-        pagetrafo = page.pagetrafo(bbox)
+        pagetrafo = page.pagetrafo(abbox)
 
         # if a page transformation is necessary, we have to adjust the bounding box
         # accordingly
         if pagetrafo is not None:
-            bbox.transform(pagetrafo)
+            abbox.transform(pagetrafo)
 
         file.write("%!PS-Adobe-3.0 EPSF-3.0\n")
         if bbox:
-            file.write("%%%%BoundingBox: %d %d %d %d\n" % bbox.lowrestuple_pt())
-            file.write("%%%%HiResBoundingBox: %g %g %g %g\n" % bbox.highrestuple_pt())
+            file.write("%%%%BoundingBox: %d %d %d %d\n" % abbox.lowrestuple_pt())
+            file.write("%%%%HiResBoundingBox: %g %g %g %g\n" % abbox.highrestuple_pt())
         file.write("%%%%Creator: PyX %s\n" % version.version)
         file.write("%%%%Title: %s\n" % filename)
         file.write("%%%%CreationDate: %s\n" %
@@ -289,12 +283,12 @@ class epswriter:
         file.write("%%EndComments\n")
 
         file.write("%%BeginProlog\n")
-        registry.outputPS(file, self)
+        registry.output(file, self)
         file.write("%%EndProlog\n")
 
         # apply a possible page transformation (using fake context and registry)
         if pagetrafo:
-            pagetrafo.outputPS(file, self, context(), PSregistry())
+            pagetrafo.processPS(file, self, context(), PSregistry(), abbox)
 
         file.write(canvasfile.getvalue())
 
@@ -313,23 +307,54 @@ class pswriter:
         except IOError:
             raise IOError("cannot open output file")
 
-        # calculated bounding boxes of separate pages and the bounding box of the whole document
-        documentbbox = None
-        for page in document.pages:
-            canvas = page.canvas
-            page._bbox = page.bbox()
-            page._pagetrafo = page.pagetrafo(page._bbox)
+
+        # We first have to process the content of the pages, writing them into the stream pagesfile
+        # Doing so, we fill the registry and also calculate the page bounding boxes, which are
+        # stored in page._bbox for every page
+        pagesfile = cStringIO.StringIO()
+        registry = PSregistry()
+
+        # calculated bounding boxes of the whole document
+        documentbbox = bbox.empty()
+
+        for nr, page in enumerate(document.pages):
+            # process conents of page
+            pagefile = cStringIO.StringIO()
+            acontext = context()
+            pagebbox = bbox.empty()
+            style.linewidth.normal.processPS(pagefile, self, acontext, registry, pagebbox)
+            page.canvas.processPS(pagefile, self, acontext, registry, pagebbox)
+
+            # calculate transformed bbox
+            pagetrafo = page.pagetrafo(pagebbox)
             # if a page transformation is necessary, we have to adjust the bounding box
             # accordingly
-            if page._pagetrafo:
-                page._transformedbbox = page._bbox.transformed(page._pagetrafo)
-            else:
-                page._transformedbbox = page._bbox
-            if page._transformedbbox:
-                if documentbbox:
-                    documentbbox += page._transformedbbox
-                else:
-                    documentbbox = page._transformedbbox.copy() # make a copy
+            if pagetrafo:
+                pagebbox = pagebbox.transformed(pagetrafo)
+
+            documentbbox += pagebbox
+
+            pagesfile.write("%%%%Page: %s %d\n" % (page.pagename is None and str(nr+1) or page.pagename, nr+1))
+            if page.paperformat:
+                pagesfile.write("%%%%PageMedia: %s\n" % page.paperformat.name)
+            pagesfile.write("%%%%PageOrientation: %s\n" % (page.rotated and "Landscape" or "Portrait"))
+            if pagebbox and writebbox:
+                pagesfile.write("%%%%PageBoundingBox: %d %d %d %d\n" % pagebbox.lowrestuple_pt())
+
+            # page setup section
+            pagesfile.write("%%BeginPageSetup\n")
+            pagesfile.write("/pgsave save def\n")
+
+            # apply a possible page transformation
+            if pagetrafo is not None:
+                pagetrafo.processPS(pagesfile, self, acontext, registry, bbox.empty())
+
+            pagesfile.write("%%EndPageSetup\n")
+            # insert page content
+            pagesfile.write(pagefile.getvalue())
+            pagesfile.write("pgsave restore\n")
+            pagesfile.write("showpage\n")
+            pagesfile.write("%%PageTrailer\n")
 
         file.write("%!PS-Adobe-3.0\n")
         if documentbbox and writebbox:
@@ -367,39 +392,9 @@ class pswriter:
         #file.write("%%BeginDefaults\n")
         #file.write("%%EndDefaults\n")
 
-        pagesfile = cStringIO.StringIO()
-        registry = PSregistry()
-
-        # pages section
-        for nr, page in enumerate(document.pages):
-            pagesfile.write("%%%%Page: %s %d\n" % (page.pagename is None and str(nr+1) or page.pagename, nr+1))
-            if page.paperformat:
-                pagesfile.write("%%%%PageMedia: %s\n" % page.paperformat.name)
-            pagesfile.write("%%%%PageOrientation: %s\n" % (page.rotated and "Landscape" or "Portrait"))
-            if page._transformedbbox and writebbox:
-                pagesfile.write("%%%%PageBoundingBox: %d %d %d %d\n" % page._transformedbbox.lowrestuple_pt())
-
-            # page setup section
-            pagesfile.write("%%BeginPageSetup\n")
-            pagesfile.write("/pgsave save def\n")
-
-            acontext = context()
-            # apply a possible page transformation
-            if page._pagetrafo is not None:
-                page._pagetrafo.outputPS(pagesfile, self, acontext, registry)
-
-            style.linewidth.normal.outputPS(pagesfile, self, acontext, registry)
-            pagesfile.write("%%EndPageSetup\n")
-
-            # here comes the actual content
-            page.canvas.outputPS(pagesfile, self, acontext, registry)
-            pagesfile.write("pgsave restore\n")
-            pagesfile.write("showpage\n")
-            pagesfile.write("%%PageTrailer\n")
-
         # document prolog section
         file.write("%%BeginProlog\n")
-        registry.outputPS(file, self)
+        registry.output(file, self)
         file.write("%%EndProlog\n")
 
         # document setup section

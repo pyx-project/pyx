@@ -2,8 +2,8 @@
 # -*- coding: ISO-8859-1 -*-
 #
 #
-# Copyright (C) 2005 Jörg Lehmann <joergl@users.sourceforge.net>
-# Copyright (C) 2005 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2005-2006 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2005-2006 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
@@ -28,7 +28,7 @@ try:
 except:
     haszlib = 0
 
-import unit, style, type1font, version
+import bbox, unit, style, type1font, version
 
 try:
     enumerate([])
@@ -61,11 +61,6 @@ class PDFregistry:
     def mergeregistry(self, registry):
         for resource in registry.resources:
             self.add(resource)
-        if self.bbox:
-            if registry.bbox:
-                 self.bbox += registry.bbox
-        else:
-            self.bbox = registry.bbox
 
     def write(self, file, writer, catalog):
         # first we set all refnos
@@ -219,13 +214,10 @@ class PDFpage(PDFobject):
         # resources are used within the page. However, the
         # pageregistry is also merged in the global registry
         self.pageregistry = PDFregistry()
+        self.bbox = bbox.empty()
 
-        self.PDFcontent = PDFcontent(self, writer, self.pageregistry)
+        self.PDFcontent = PDFcontent(self, writer, self.pageregistry, self.bbox)
         self.pageregistry.add(self.PDFcontent)
-        if self.pageregistry.bbox is not None:
-            self.bbox = self.pageregistry.bbox.copy()
-        else:
-            self.bbox = None
         registry.mergeregistry(self.pageregistry)
 
         self.pagetrafo = page.pagetrafo(self.bbox)
@@ -265,7 +257,7 @@ class PDFpage(PDFobject):
 
 class PDFcontent(PDFobject):
 
-    def __init__(self, PDFpage, writer, registry):
+    def __init__(self, PDFpage, writer, registry, bbox):
         PDFobject.__init__(self, "content")
         self.PDFpage = PDFpage
 
@@ -275,15 +267,15 @@ class PDFcontent(PDFobject):
         # set more info in the content dict) reuse PDFcontent for
         # patterns
         acontext = context()
-        style.linewidth.normal.outputPDF(self.contentfile, writer, acontext, registry)
+        style.linewidth.normal.processPDF(self.contentfile, writer, acontext, registry, bbox)
 
-        self.PDFpage.page.canvas.outputPDF(self.contentfile, writer, acontext, registry)
+        self.PDFpage.page.canvas.processPDF(self.contentfile, writer, acontext, registry, bbox)
 
     def output(self, file, writer, registry):
         # apply a possible global transformation
         if self.PDFpage.pagetrafo:
             pagetrafofile = cStringIO.StringIO()
-            self.PDFpage.pagetrafo.outputPDF(pagetrafofile, writer, context(), registry)
+            self.PDFpage.pagetrafo.processPDF(pagetrafofile, writer, context(), registry, bbox.empty())
             content = pagetrafofile.getvalue() + self.contentfile.getvalue()
         else:
             content = self.contentfile.getvalue()

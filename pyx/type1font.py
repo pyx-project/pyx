@@ -2,8 +2,8 @@
 # -*- coding: ISO-8859-1 -*-
 #
 #
-# Copyright (C) 2005 Jörg Lehmann <joergl@users.sourceforge.net>
-# Copyright (C) 2005 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2005-2006 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2005-2006 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
@@ -35,7 +35,6 @@ class encoding:
 
     def __init__(self, name, filename):
         """ font encoding contained in filename """
-        print "x"*100
         self.name = name
         self.filename = filename
 
@@ -137,14 +136,11 @@ class text_pt(canvas.canvasitem):
     def bbox(self):
         return bbox.bbox_pt(self.x_pt, self.y_pt-self.depth_pt, self.x_pt+self.width_pt, self.y_pt+self.height_pt)
 
-    def outputPS(self, file, writer, context, registry):
+    def processPS(self, file, writer, context, registry, bbox):
         # note that we don't register PSfont as it is just a helper resource
         # which registers the needed components
         pswriter.PSfont(self.font, self.chars, registry)
-        if registry.bbox:
-            registry.bbox += self.bbox()
-        else:
-            registry.bbox = self.bbox()
+        bbox += self.bbox()
 
         if ( context.font is None or 
              context.font.name != self.font.name or 
@@ -160,12 +156,9 @@ class text_pt(canvas.canvasitem):
             outstring += ascii
         file.write("%g %g moveto (%s) show\n" % (self.x_pt, self.y_pt, outstring))
 
-    def outputPDF(self, file, writer, context, registry):
+    def processPDF(self, file, writer, context, registry, bbox):
         registry.add(pdfwriter.PDFfont(self.font, self.chars, writer, registry))
-        if registry.bbox:
-            registry.bbox += self.bbox()
-        else:
-            registry.bbox = self.bbox()
+        bbox += self.bbox()
 
         if ( context.font is None or 
              context.font.name != self.font.name or 

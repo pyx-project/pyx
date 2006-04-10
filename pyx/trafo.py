@@ -2,7 +2,7 @@
 # -*- coding: ISO-8859-1 -*-
 #
 #
-# Copyright (C) 2002-2005 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2002-2006 Jörg Lehmann <joergl@users.sourceforge.net>
 # Copyright (C) 2002-2004 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
@@ -23,6 +23,7 @@
 
 import math
 import attr, canvas, deformer, unit
+import bbox as bboxmodule
 
 # global epsilon (used to judge whether a matrix is singular)
 _epsilon = (1e-5)**2
@@ -125,20 +126,20 @@ class trafo_pt(canvas.canvasitem, deformer.deformer):
                  self.matrix[0][1], self.matrix[1][1],
                  self.vector[0], self.vector[1] )
 
-    def outputPS(self, file, writer, context, registry):
+    def processPS(self, file, writer, context, registry, bbox):
         file.write("[%f %f %f %f %f %f] concat\n" % \
                     ( self.matrix[0][0], self.matrix[1][0],
                       self.matrix[0][1], self.matrix[1][1],
                       self.vector[0], self.vector[1] ) )
 
-    def outputPDF(self, file, writer, context, registry):
+    def processPDF(self, file, writer, context, registry, bbox):
         file.write("%f %f %f %f %f %f cm\n" % \
                     ( self.matrix[0][0], self.matrix[1][0],
                       self.matrix[0][1], self.matrix[1][1],
                       self.vector[0], self.vector[1] ) )
 
     def bbox(self):
-        return None
+        return bboxmodule.empty()
 
     def apply_pt(self, x_pt, y_pt):
         """apply transformation to point (x_pt, y_pt) in pts"""

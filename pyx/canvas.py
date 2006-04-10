@@ -2,8 +2,8 @@
 # -*- coding: ISO-8859-1 -*-
 #
 #
-# Copyright (C) 2002-2005 Jörg Lehmann <joergl@users.sourceforge.net>
-# Copyright (C) 2002-2005 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2002-2006 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2002-2006 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
@@ -35,38 +35,40 @@ class canvasitem:
     """Base class for everything which can be inserted into a canvas"""
 
     def bbox(self):
-        """return bounding box of canvasitem or None"""
+        """return bounding box of canvasitem"""
         pass
-    
-    def outputPS(self, file, writer, context, registry):
-        """write PS code corresponding to canvasitem to file
+
+    def processPS(self, file, writer, context, registry, bbox):
+        """write PS code corresponding to canvasitem to file and update context,
+        registry as well as bbox
 
         - file has to provide a write(string) method
         - writer is the PSwriter used for the output
         - context is used for keeping track of the graphics state, in particular
         for the emulation of PS behaviour regarding fill and stroke styles, for
         keeping track of the currently selected font as well as of text regions.
-	- registry is used for tracking resources needed
+        - registry is used for tracking resources needed
+        - bbox is used to keep track of the bounding box of the processed items
         """
         pass
 
-    def outputPDF(self, file, writer, context, registry):
-        """write PDF code corresponding to canvasitem to file using the given writer
-        and context.
+    def processPDF(self, file, writer, context, registry, bbox):
+        """write PDF code corresponding to canvasitem to file and update context,
+        registry as well as bbox
 
         - file has to provide a write(string) method
         - writer contains properties like whether streamcompression is used.
         - context is used for keeping track of the graphics state, in particular
         for the emulation of PS behaviour regarding fill and stroke styles, for
         keeping track of the currently selected font as well as of text regions.
-	- registry is used for tracking resources needed
+        - registry is used for tracking resources needed
+        - bbox is used to keep track of the bounding box of the processed items
         """
         pass
 
 
-
-
 import attr, deco, deformer, document, style, trafo, type1font
+import bbox as bboxmodule
 
 
 #
@@ -83,19 +85,19 @@ class clip(canvasitem):
 
     def bbox(self):
         # as a canvasitem a clipping path has NO influence on the bbox...
-        return None
+        return bboxmodule.empty()
 
     def clipbbox(self):
         # ... but for clipping, we nevertheless need the bbox
         return self.path.bbox()
 
-    def outputPS(self, file, writer, context, registry):
+    def processPS(self, file, writer, context, registry, bbox):
         file.write("newpath\n")
-        self.path.outputPS(file, writer, context, registry)
+        self.path.outputPS(file, writer)
         file.write("clip\n")
 
-    def outputPDF(self, file, writer, context, registry):
-        self.path.outputPDF(file, writer, context, registry)
+    def processPDF(self, file, writer, context, registry, bbox):
+        self.path.outputPDF(file, writer)
         file.write("W n\n")
 
 
@@ -155,48 +157,42 @@ class _canvas(canvasitem):
         return self.items[i]
 
     def bbox(self):
-        """returns bounding box of canvas"""
-        obbox = None
+        """returns bounding box of canvas
+
+        Note that this bounding box doesn't take into account the linewidths, so
+        is less accurate than the one used when writing the output to a file.
+        """
+        obbox = bboxmodule.empty()
         for cmd in self.items:
-            abbox = cmd.bbox()
-            if obbox is None:
-                obbox = abbox
-            elif abbox is not None:
-                obbox += abbox
+            obbox += cmd.bbox()
 
         # transform according to our global transformation and
         # intersect with clipping bounding box (which has already been
         # transformed in canvas.__init__())
-        if obbox is not None:
-            obbox.transform(self.trafo)
-            if self.clipbbox is not None:
-                obbox *= self.clipbbox
+        obbox.transform(self.trafo)
+        if self.clipbbox is not None:
+            obbox *= self.clipbbox
         return obbox
 
-    def outputPS(self, file, writer, context, registry):
+    def processPS(self, file, writer, context, registry, bbox):
         context = context()
         if self.items:
             file.write("gsave\n")
-            origbbox = registry.bbox
-            registry.bbox = None
+            nbbox = bboxmodule.empty()
             for item in self.items:
-                item.outputPS(file, writer, context, registry)
-            if registry.bbox is not None:
-                registry.bbox.transform(self.trafo)
-                if self.clipbbox is not None:
-                    registry.bbox *= self.clipbbox
-                if origbbox:
-                    registry.bbox += origbbox
-            else:
-                registry.bbox = origbbox
+                item.processPS(file, writer, context, registry, nbbox)
+            # update bounding bbox
+            nbbox.transform(self.trafo)
+            if self.clipbbox is not None:
+                nbbox *= self.clipbbox
+            bbox += nbbox
             file.write("grestore\n")
 
-    def outputPDF(self, file, writer, context, registry):
+    def processPDF(self, file, writer, context, registry, bbox):
         context = context()
         if self.items:
             file.write("q\n") # gsave
-            origbbox = registry.bbox
-            registry.bbox = None
+            nbbox = bboxmodule.empty()
             for item in self.items:
                 if isinstance(item, type1font.text_pt):
                     if not context.textregion:
@@ -207,19 +203,16 @@ class _canvas(canvasitem):
                         file.write("ET\n")
                         context.textregion = 0
                         context.font = None
-                item.outputPDF(file, writer, context, registry)
+                item.processPDF(file, writer, context, registry, nbbox)
             if context.textregion:
                 file.write("ET\n")
                 context.textregion = 0
                 context.font = None
-            if registry.bbox is not None:
-                registry.bbox.transform(self.trafo)
-                if self.clipbbox is not None:
-                    registry.bbox *= self.clipbbox
-                if origbbox:
-                    registry.bbox += origbbox
-            else:
-                registry.bbox = origbbox
+            # update bounding bbox
+            nbbox.transform(self.trafo)
+            if self.clipbbox is not None:
+                nbbox *= self.clipbbox
+            bbox += nbbox
             file.write("Q\n") # grestore
 
     def insert(self, item, attrs=None):

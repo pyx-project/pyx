@@ -150,7 +150,7 @@ class PSimagedata(pswriter.PSresource):
             self.singlestring = singlestring
             self.maxstrlen = maxstrlen
 
-      def outputPS(self, file, writer, registry):
+      def output(self, file, writer, registry):
             # TODO resource data could be written directly on the output stream
             #      after proper code reorganization
             file.write("%%%%BeginRessource: %s\n" % self.id)
@@ -360,7 +360,7 @@ class bitmap(canvas.canvasitem):
         return bbox.bbox_pt(self.xpos_pt, self.ypos_pt,
                             self.xpos_pt+self.width_pt, self.ypos_pt+self.height_pt)
 
-    def outputPS(self, file, writer, context, registry):
+    def processPS(self, file, writer, context, registry, bbox):
         if self.PSstoreimage and not self.PSsinglestring:
             registry.add(pswriter.PSdefinition("imagedataaccess",
                                                "{ /imagedataindex load " # get list index
@@ -368,6 +368,7 @@ class bitmap(canvas.canvasitem):
                                                "/imagedataid load exch get }")) # select string from array
         if self.PSstoreimage:
             registry.add(PSimagedata(self.PSimagename, self.data, self.PSsinglestring, self.PSmaxstrlen))
+        bbox += self.bbox()
 
         file.write("gsave\n")
         if self.palettedata is not None:
@@ -418,12 +419,13 @@ class bitmap(canvas.canvasitem):
 
         file.write("grestore\n")
 
-    def outputPDF(self, file, writer, context, registry):
+    def processPDF(self, file, writer, context, registry, bbox):
         registry.add(PDFimage(self.PDFimagename, self.imagewidth, self.imageheight,
                               self.palettecolorspace, self.palettedata, self.colorspace,
                               8, self.compressmode, self.data, registry))
+        bbox += self.bbox()
 
         file.write("q\n")
-        self.imagematrixPDF.outputPDF(file, writer, context, registry)
+        self.imagematrixPDF.processPDF(file, writer, context, registry, bbox)
         file.write("/%s Do\n" % self.PDFimagename)
         file.write("Q\n")

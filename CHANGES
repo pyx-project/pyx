@@ -134,11 +134,15 @@ TODO:
     - add rotate methods to path, normpath, normsubpath, and normsubpathitems
     - add flushskippedline to normsubpath
     - add arclentoparam to normsubpath and normsubpathitems
+    - path is no longer a canvasitem
+    - reduce number of parameters of outputPS/outputPDF methods (do not pass context and registry)
   - normpath module:
     - contains normpath, normsubpath and normpathparam which have originally
       been in the path module
     - return "invalid" for certain path operations when the curve "speed" is
       below a certain threshold
+    - normpath is no longer a canvasitem
+    - reduce number of parameters of outputPS/outputPDF methods (do not pass context and registry)
   - deformer module:
     - rewritten smoother to make use of the subnormpath facilities
     - rewritten parallel for arbitrary paths
@@ -165,6 +169,7 @@ TODO:
   - canvas module:
     - remove registerPS/registerPDF in favour of registering resourcing during the outputPS/outputPDF run
     - move bbox handling to registry
+    - rename outputPS/outputPDF -> processPS/processPDF
   - random notes:
     - switched to subversion on 2006/03/09
 

@@ -2,8 +2,8 @@
 # -*- coding: ISO-8859-1 -*-
 #
 #
-# Copyright (C) 2002-2005 Jörg Lehmann <joergl@users.sourceforge.net>
-# Copyright (C) 2002-2005 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2002-2006 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2002-2006 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
@@ -313,9 +313,10 @@ class epsfile(canvas.canvasitem):
     def bbox(self):
         return self.mybbox.transformed(self.trafo)
 
-    def outputPS(self, file, writer, context, registry):
+    def processPS(self, file, writer, context, registry, bbox):
         registry.add(_BeginEPSF)
         registry.add(_EndEPSF)
+        bbox += self.bbox()
         try:
             epsfile=open(self.filename,"rb")
         except:
@@ -327,12 +328,12 @@ class epsfile(canvas.canvasitem):
             llx_pt, lly_pt, urx_pt, ury_pt = self.mybbox.transformed(self.trafo).highrestuple_pt()
             file.write("%g %g %g %g rectclip\n" % (llx_pt, lly_pt, urx_pt-llx_pt, ury_pt-lly_pt))
 
-        self.trafo.outputPS(file, writer, context, registry)
+        self.trafo.processPS(file, writer, context, registry, bbox)
 
         file.write("%%%%BeginDocument: %s\n" % self.filename)
         file.write(epsfile.read()) 
         file.write("%%EndDocument\n")
         file.write("EndEPSF\n")
 
-    def outputPDF(self, file, writer, context, registry):
-	raise RuntimeError("Including EPS files in PDF files not supported")
+    def processPDF(self, file, writer, context, registry, bbox):
+        raise RuntimeError("Including EPS files in PDF files not supported")

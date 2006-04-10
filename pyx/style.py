@@ -2,7 +2,7 @@
 # -*- coding: ISO-8859-1 -*-
 #
 #
-# Copyright (C) 2002-2005 Jörg Lehmann <joergl@users.sourceforge.net>
+# Copyright (C) 2002-2006 Jörg Lehmann <joergl@users.sourceforge.net>
 # Copyright (C) 2003-2004 Michael Schindler <m-schindler@users.sourceforge.net>
 # Copyright (C) 2002-2004 André Wobst <wobsta@users.sourceforge.net>
 #
@@ -46,10 +46,10 @@ class linecap(attr.exclusiveattr, strokestyle):
         attr.exclusiveattr.__init__(self, linecap)
         self.value = value
 
-    def outputPS(self, file, writer, context, registry):
+    def processPS(self, file, writer, context, registry, bbox):
         file.write("%d setlinecap\n" % self.value)
 
-    def outputPDF(self, file, writer, context, registry):
+    def processPDF(self, file, writer, context, registry, bbox):
         file.write("%d J\n" % self.value)
 
 linecap.butt = linecap(0)
@@ -66,10 +66,10 @@ class linejoin(attr.exclusiveattr, strokestyle):
         attr.exclusiveattr.__init__(self, linejoin)
         self.value = value
 
-    def outputPS(self, file, writer, context, registry):
+    def processPS(self, file, writer, context, registry, bbox):
         file.write("%d setlinejoin\n" % self.value)
 
-    def outputPDF(self, file, writer, context, registry):
+    def processPDF(self, file, writer, context, registry, bbox):
         file.write("%d j\n" % self.value)
 
 linejoin.miter = linejoin(0)
@@ -86,7 +86,7 @@ class miterlimit(attr.exclusiveattr, strokestyle):
         attr.exclusiveattr.__init__(self, miterlimit)
         self.value = value
 
-    def outputPS(self, file, writer, context, registry):
+    def processPS(self, file, writer, context, registry, bbox):
         file.write("%f setmiterlimit\n" % self.value)
 
     def outoutPDF(self, file):
@@ -114,14 +114,14 @@ class dash(attr.exclusiveattr, strokestyle):
         self.offset = offset
         self.rellengths = rellengths
 
-    def outputPS(self, file, writer, context, registry):
+    def processPS(self, file, writer, context, registry, bbox):
         if self.rellengths:
             patternstring = " ".join(["%f" % (element * context.linewidth_pt) for element in self.pattern])
         else:
             patternstring = " ".join(["%f" % element for element in self.pattern])
         file.write("[%s] %d setdash\n" % (patternstring, self.offset))
 
-    def outputPDF(self, file, writer, context, registry):
+    def processPDF(self, file, writer, context, registry, bbox):
         if self.rellengths:
             patternstring = " ".join(["%f" % (element * context.linewidth_pt) for element in self.pattern])
         else:
@@ -142,13 +142,13 @@ class linestyle(attr.exclusiveattr, strokestyle):
         self.c = c
         self.d = d
 
-    def outputPS(self, file, writer, context, registry):
-        self.c.outputPS(file, writer, context, registry)
-        self.d.outputPS(file, writer, context, registry)
+    def processPS(self, file, writer, context, registry, bbox):
+        self.c.processPS(file, writer, context, registry, bbox)
+        self.d.processPS(file, writer, context, registry, bbox)
 
-    def outputPDF(self, file, writer, context, registry):
-        self.c.outputPDF(file, writer, context, registry)
-        self.d.outputPDF(file, writer, context, registry)
+    def processPDF(self, file, writer, context, registry, bbox):
+        self.c.processPDF(file, writer, context, registry, bbox)
+        self.d.processPDF(file, writer, context, registry, bbox)
 
 linestyle.solid = linestyle(linecap.butt, dash([]))
 linestyle.dashed = linestyle(linecap.butt, dash([2]))
@@ -165,11 +165,11 @@ class linewidth(attr.sortbeforeexclusiveattr, strokestyle):
         attr.sortbeforeexclusiveattr.__init__(self, linewidth, [dash, linestyle])
         self.width = width
 
-    def outputPS(self, file, writer, context, registry):
+    def processPS(self, file, writer, context, registry, bbox):
         file.write("%f setlinewidth\n" % unit.topt(self.width))
         context.linewidth_pt = unit.topt(self.width)
 
-    def outputPDF(self, file, writer, context, registry):
+    def processPDF(self, file, writer, context, registry, bbox):
         file.write("%f w\n" % unit.topt(self.width))
         context.linewidth_pt = unit.topt(self.width)
 

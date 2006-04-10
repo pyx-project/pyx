@@ -694,13 +694,13 @@ class textbox(box.rect, canvas._canvas):
         self.ensuredvicanvas()
         return self.texttrafo.apply(*self.dvicanvas.markers[marker])
 
-    def outputPS(self, file, writer, context, registry):
+    def processPS(self, file, writer, context, registry, bbox):
         self.ensuredvicanvas()
-        canvas._canvas.outputPS(self, file, writer, context, registry)
+        canvas._canvas.processPS(self, file, writer, context, registry, bbox)
 
-    def outputPDF(self, file, writer, context, registry):
+    def processPDF(self, file, writer, context, registry, bbox):
         self.ensuredvicanvas()
-        canvas._canvas.outputPDF(self, file, writer, context, registry)
+        canvas._canvas.processPDF(self, file, writer, context, registry, bbox)
 
 
 def _cleantmp(texrunner):

@@ -72,14 +72,14 @@ c.insert(myrunner2.text(6.5, 12, r"\char'035"))
 
 # test the specials
 c.stroke(c.text(10, 2, r"Hello, \color{green}world!", [trafo.slant(1)]).path())
-c.stroke(c.text(10, 0, r"\begin{rotate}{90}\parbox{5cm}{rotated\\ in \LaTeX}\end{rotate}"))
+c.insert(c.text(10, 0, r"\begin{rotate}{90}\parbox{5cm}{rotated\\ in \LaTeX}\end{rotate}"))
 
 d = canvas.canvas()
 d.stroke(path.rect(0,0, 1,1))
 d.stroke(path.line(0,0, 1,1))
 d.stroke(path.line(1,0, 0,1))
 d.writeEPSfile("sample")
-c.stroke(c.text(10, 0, r"""
+c.insert(c.text(10, 0, r"""
     \textcolor{col0}{abc}
     \textcolor{col1}{abc}
     \textcolor{col2}{abc}
@@ -88,7 +88,7 @@ c.stroke(c.text(10, 0, r"""
     \textcolor{col5}{abc}
 %    \textcolor{col6}{abc}%
     """, [text.parbox(3)]))
-c.stroke(c.text(15, 0, r"""
+c.insert(c.text(15, 0, r"""
     \colorbox{col2}{ColorBox}\\
     \fcolorbox{col3}{col4}{FColorBox}"""))
 
@@ -96,7 +96,7 @@ c.text(4, 2, r"{\color[cmyk]{0.1,0.2,0.3,0.4}c\color[gray]{0.5}o\color[hsb]{0.2,
 
 c.writePDFfile("test_text", paperformat=document.paperformat.A4)
 
-c.stroke(c.text(10, 4, r"""%
+c.insert(c.text(10, 4, r"""%
     \fbox{\includegraphics[%
     %type=eps,             %% type of the file ... should not change anything --
                            %   BUG!!!!!!  size and filename information gets

@@ -177,7 +177,7 @@ def testtangent(c):
 
     # test the curvature
     cc = canvas.canvas()
-    cc.insert(p)
+    cc.stroke(p)
     cc = canvas.canvas([canvas.clip(cc.bbox().path())])
     for i in range(points):
         radius = p.curveradius(arclen*i/points)

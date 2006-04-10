@@ -67,21 +67,27 @@ class page:
         self.bboxenlarge = bboxenlarge
         self.pagebbox = bbox
 
-    def outputPS(self, file, writer, context, registry):
-        self.canvas.outputPS(file, writer, context, registry)
+    def processPS(self, file, writer, context, registry, bbox):
+        self.canvas.processPS(file, writer, context, registry, bbox)
         # usually its the bbox of the canvas enlarged by self.bboxenlarge, but
         # it might be a different bbox as specified in the page constructor
         if self.pagebbox:
-            registry.bbox = self.pagebbox.copy()
-        elif registry.bbox:
-            registry.bbox.enlarge(self.bboxenlarge)
+            # we have to modify the bbox in place
+            # XXX maybe there should be a bbox.set/replace routine which accepts another bbox as argument
+            bbox.llx_pt = self.pagebbox.llx_pt
+            bbox.lly_pt = self.pagebbox.lly_pt
+            bbox.urx_pt = self.pagebbox.urx_pt
+            bbox.ury_pt = self.pagebbox.ury_pt
+        elif bbox:
+            bbox.enlarge(self.bboxenlarge)
 
     def pagetrafo(self, bbox):
         """ calculate a trafo which rotates and fits a canvas on the page
 
         The canvas extents are described by bbox.
         """
-        if bbox and self.paperformat and (self.rotated or self.centered or self.fittosize):
+        # XXX should we provide a method for bbox != empty (or use __zero__)
+        if bbox.llx_pt is not None and self.paperformat and (self.rotated or self.centered or self.fittosize):
             paperwidth, paperheight = self.paperformat.width, self.paperformat.height
 
             # center (optionally rotated) output on page
