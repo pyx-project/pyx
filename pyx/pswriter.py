@@ -291,6 +291,7 @@ class epswriter:
             pagetrafo.processPS(file, self, context(), PSregistry(), abbox)
 
         file.write(canvasfile.getvalue())
+        canvasfile.close()
 
         file.write("showpage\n")
         file.write("%%Trailer\n")
@@ -352,6 +353,7 @@ class pswriter:
             pagesfile.write("%%EndPageSetup\n")
             # insert page content
             pagesfile.write(pagefile.getvalue())
+            pagefile.close()
             pagesfile.write("pgsave restore\n")
             pagesfile.write("showpage\n")
             pagesfile.write("%%PageTrailer\n")
@@ -402,6 +404,7 @@ class pswriter:
         #file.write("%%EndSetup\n")
 
         file.write(pagesfile.getvalue())
+        pagesfiles.close()
 
         file.write("%%Trailer\n")
         file.write("%%EOF\n")

@@ -279,6 +279,7 @@ class PDFcontent(PDFobject):
             content = pagetrafofile.getvalue() + self.contentfile.getvalue()
         else:
             content = self.contentfile.getvalue()
+        self.contentfile.close()
 
         file.write("<<\n"
                    "/Length %i\n" % len(content))
