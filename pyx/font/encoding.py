@@ -29,7 +29,8 @@ class encoding:
     def decode(self, char):
         return self.encvector[char]
 
-    def outputPS(self, file, name):
+    # XXX why do we need to pass the name during the outputPS call
+    def outputPS(self, file, writer, name):
         file.write("%%%%BeginProcSet: %s\n" % name)
         file.write("/%s\n"
                    "[" % self.name)
@@ -42,7 +43,7 @@ class encoding:
         file.write(" ] def\n"
                    "%%EndProcSet\n")
 
-    def outputPDF(self, file):
+    def outputPDF(self, file, writer):
         file.write("<<\n"
                    "/Type /Encoding\n"
                    "/Differences\n"

@@ -894,7 +894,7 @@ class T1font:
         # create and return the new font instance
         return T1font(data1, self._eexecencode(data2), data3.rstrip())
 
-    def outputPS(self, file):
+    def outputPS(self, file, writer):
         """output the PostScript code for the T1font to the file file"""
         file.write(self.data1)
         data2eexechex = binascii.b2a_hex(self.data2eexec)

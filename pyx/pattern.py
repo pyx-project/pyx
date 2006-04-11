@@ -306,7 +306,7 @@ class PDFpattern(pdfwriter.PDFobject):
         # canvasregisterPDF(self.patternregistry)
         # registry.mergeregistry(self.patternregistry)
 
-    def outputPDF(self, file, writer, registry):
+    def output(self, file, writer, registry):
         file.write("<<\n"
                    "/Type /Pattern\n"
                    "/PatternType %d\n" % self.patterntype)

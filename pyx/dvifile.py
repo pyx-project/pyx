@@ -633,33 +633,33 @@ class DVIError(exceptions.Exception): pass
 # save and restore colors
 
 class _savecolor(canvas.canvasitem):
-    def outputPS(self, file, writer, context):
+    def processPS(self, file, writer, context, registry, bbox):
         file.write("currentcolor currentcolorspace\n")
 
-    def outputPDF(self, file, writer, context):
+    def processPDF(self, file, writer, context, registry, bbox):
         file.write("q\n")
 
 
 class _restorecolor(canvas.canvasitem):
-    def outputPS(self, file, writer, context):
+    def processPS(self, file, writer, context, registry, bbox):
         file.write("setcolorspace setcolor\n")
 
-    def outputPDF(self, file, writer, context):
+    def processPDF(self, file, writer, context, registry, bbox):
         file.write("Q\n")
 
 class _savetrafo(canvas.canvasitem):
-    def outputPS(self, file, writer, context):
+    def processPS(self, file, writer, context, registry, bbox):
         file.write("matrix currentmatrix\n")
 
-    def outputPDF(self, file, writer, context):
+    def processPDF(self, file, writer, context, registry, bbox):
         file.write("q\n")
 
 
 class _restoretrafo(canvas.canvasitem):
-    def outputPS(self, file, writer, context):
+    def processPS(self, file, writer, context, registry, bbox):
         file.write("setmatrix\n")
 
-    def outputPDF(self, file, writer, context):
+    def processPDF(self, file, writer, context, registry, bbox):
         file.write("Q\n")
 
 

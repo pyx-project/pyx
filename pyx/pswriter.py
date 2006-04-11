@@ -171,7 +171,7 @@ class PSfontfile(PSresource):
             strippedfont = font.getstrippedfont(usedglyphs)
         else:
             strippedfont = font
-        strippedfont.outputPS(file)
+        strippedfont.outputPS(file, writer)
         file.write("\n%%EndFont\n")
 
 
@@ -404,7 +404,7 @@ class pswriter:
         #file.write("%%EndSetup\n")
 
         file.write(pagesfile.getvalue())
-        pagesfiles.close()
+        pagesfile.close()
 
         file.write("%%Trailer\n")
         file.write("%%EOF\n")
