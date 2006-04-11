@@ -33,8 +33,6 @@ TODO:
     - set method???
     - SVG support
     - stroking of patterns does not work in PDF
-    - patterns call the outputPS method in registerPS and have no writer at that 
-      time -> rewrite this code
   - style and color module:
     - support modification of existing styles via __call__
   - bbox module:
