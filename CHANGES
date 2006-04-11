@@ -1,7 +1,6 @@
 PyX
 
 TODO:
-  - normpath module:
   - style module:
     - make dash length available
   - text module:
