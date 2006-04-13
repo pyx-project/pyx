@@ -107,11 +107,21 @@ class pattern(canvas._canvas, attr.exclusiveattr, style.fillstyle):
         file.write("%s setpattern\n" % self.id)
 
     def processPDF(self, file, writer, context, registry, bbox):
+        # # we need to keep track of the resources used by the pattern, hence
+        # # we create our own registry, which we merge immediately in the main registry
+        self.patternregistry = pdfwriter.PDFregistry()
+        # # XXX passing canvasregisterPDF is a Q&D way to get access to the registerPDF method
+        # # of the _canvas superclass of the pattern
+        # canvasregisterPDF(self.patternregistry)
+
         patternfile = cStringIO.StringIO()
         realpatternbbox = bboxmodule.empty()
-        canvas._canvas.processPDF(self, patternfile, writer, pdfwriter.context(), registry, realpatternbbox)
+        canvas._canvas.processPDF(self, patternfile, writer, pdfwriter.context(), self.patternregistry, realpatternbbox)
         patternproc = patternfile.getvalue()
         patternfile.close()
+
+        registry.mergeregistry(self.patternregistry)
+
         if self.xstep is None:
            xstep = unit.topt(realpatternbbox.width())
         else:
@@ -128,8 +138,7 @@ class pattern(canvas._canvas, attr.exclusiveattr, style.fillstyle):
         patterntrafo = self.patterntrafo or trafo.trafo()
 
         registry.add(PDFpattern(self.id, self.patterntype, self.painttype, self.tilingtype,
-                                patternbbox, xstep, ystep, patterntrafo,
-                                patternproc, registry))
+                                patternbbox, xstep, ystep, patterntrafo, patternproc, writer, registry, self.patternregistry))
 
         # activate pattern
         if context.colorspace != "Pattern":
@@ -282,8 +291,11 @@ crosshatched45.LARGE = crosshatched45(_base*math.sqrt(64))
 class PDFpattern(pdfwriter.PDFobject):
 
     def __init__(self, name, patterntype, painttype, tilingtype, bbox, xstep, ystep, trafo,
-                 patternproc, registry):
-        pdfwriter.PDFobject.__init__(self, "pattern", name, "Pattern")
+                 patternproc, writer, registry, patternregistry):
+        self.patternregistry = patternregistry
+        pdfwriter.PDFobject.__init__(self, "pattern")
+        registry.pageresources.setdefault("Pattern", {})[name] = self
+
         self.name = name
         self.patterntype = patterntype
         self.painttype = painttype
@@ -293,20 +305,8 @@ class PDFpattern(pdfwriter.PDFobject):
         self.ystep = ystep
         self.trafo = trafo
         self.patternproc = patternproc
-        #self.canvasoutputPDF = canvasoutputPDF
 
-        self.contentlength = pdfwriter.PDFcontentlength((self.type, self.id))
-        registry.add(self.contentlength)
-
-        # # we need to keep track of the resources used by the pattern, hence
-        # # we create our own registry, which we merge immediately in the main registry
-        # self.patternregistry = pdfwriter.PDFregistry()
-        # # XXX passing canvasregisterPDF is a Q&D way to get access to the registerPDF method
-        # # of the _canvas superclass of the pattern
-        # canvasregisterPDF(self.patternregistry)
-        # registry.mergeregistry(self.patternregistry)
-
-    def output(self, file, writer, registry):
+    def write(self, file, writer, registry):
         file.write("<<\n"
                    "/Type /Pattern\n"
                    "/PatternType %d\n" % self.patterntype)
@@ -316,37 +316,21 @@ class PDFpattern(pdfwriter.PDFobject):
         file.write("/XStep %f\n" % self.xstep)
         file.write("/YStep %f\n" % self.ystep)
         file.write("/Matrix %s\n" % str(self.trafo))
-        procset = ["PDF"]
-        resources = {}
-        for type in self.patternregistry.types.keys():
-            for resource in self.patternregistry.types[type].values():
-                if resource.pageprocset is not None and resource.pageprocset not in procset:
-                    procset.append(resource.pageprocset)
-                if resource.pageresource is not None:
-                    resources.setdefault(resource.pageresource, []).append(resource)
-        file.write("/Resources <<\n"
-                   "/ProcSet [ %s ]\n" % " ".join(["/%s" % p for p in procset]))
-        for pageresource, resources in resources.items():
-            file.write("/%s <<\n%s\n>>\n" % (pageresource, "\n".join(["/%s %i 0 R" % (resource.name, registry.getrefno(resource))
-                                                                      for resource in resources])))
+        file.write("/Resources <<\n")
+        for patternresource, resources in self.patternregistry.pageresources.items():
+            file.write("/%s <<\n%s\n>>\n" % (patternresource, "\n".join(["/%s %i 0 R" % (name, self.patternregistry.getrefno(resource))
+                                                                      for name, resource in resources.items()])))
         file.write(">>\n")
-        file.write("/Length %i 0 R\n" % registry.getrefno(self.contentlength))
+        if writer.compress:
+            import zlib
+            content = zlib.compress(self.patternproc)
+        else:
+            content = self.patterproc
+
+        file.write("/Length %i\n" % len(content))
         if writer.compress:
             file.write("/Filter /FlateDecode\n")
-        file.write(">>\n")
-
-        file.write("stream\n")
-        beginstreampos = file.tell()
-
-        if writer.compress:
-            stream = pdfwriter.compressedstream(file, writer.compresslevel)
-        else:
-            stream = file
-
-        stream.write(self.patternproc)
-        if writer.compress:
-            stream.flush()
-
-        self.contentlength.contentlength = file.tell() - beginstreampos
-        file.write("\n"
-                   "endstream\n")
+        file.write(">>\n"
+                   "stream\n")
+        file.write(content)
+        file.write("endstream\n")
