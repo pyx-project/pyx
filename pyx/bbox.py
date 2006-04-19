@@ -45,6 +45,9 @@ class bbox_pt:
         self.urx_pt = urx_pt
         self.ury_pt = ury_pt
 
+    def __nonzero__(self):
+        return self.llx_pt is not None
+
     def __add__(self, other):
         """join two bboxes"""
         if self.llx_pt is not None:
