@@ -24,7 +24,7 @@
 
 from __future__ import nested_scopes
 
-import math
+import math, warnings
 from pyx import attr, unit, text
 from pyx.graph.axis import painter, parter, positioner, rater, texter, tick
 
@@ -58,6 +58,11 @@ class _axis:
         if linkpainter is not None:
             linkpainter.paint(canvas, data, self, positioner)
         return canvas
+
+
+class NoValidPartitionError(RuntimeError):
+
+    pass
 
 
 class _regularaxis(_axis):
@@ -113,7 +118,7 @@ class _regularaxis(_axis):
             last = item
         return sorted
 
-    def create(self, data, positioner, graphtexrunner, errorname):
+    def _create(self, data, positioner, graphtexrunner, parter, rater, errorname):
         errorname = " for axis %s" % errorname
         if data.min is None or data.max is None:
             raise RuntimeError("incomplete axis range%s" % errorname)
@@ -133,13 +138,13 @@ class _regularaxis(_axis):
 
         # build a list of variants
         bestrate = None
-        if self.parter is not None:
+        if parter is not None:
             if self.divisor is not None:
-                partfunctions = self.parter.partfunctions(data.min/self.divisor, data.max/self.divisor,
-                                                          self.min is None, self.max is None)
+                partfunctions = parter.partfunctions(data.min/self.divisor, data.max/self.divisor,
+                                                     self.min is None, self.max is None)
             else:
-                partfunctions = self.parter.partfunctions(data.min, data.max,
-                                                          self.min is None, self.max is None)
+                partfunctions = parter.partfunctions(data.min, data.max,
+                                                     self.min is None, self.max is None)
             variants = []
             for partfunction in partfunctions:
                 worse = 0
@@ -150,13 +155,13 @@ class _regularaxis(_axis):
                         break
                     ticks = tick.mergeticklists(self.manualticks, ticks, mergeequal=0)
                     if ticks:
-                        rate = self.rater.rateticks(self, ticks, self.density)
+                        rate = rater.rateticks(self, ticks, self.density)
                         if self.reverse:
-                            self.rater.raterange(self.convert(data, ticks[0]) -
-                                                 self.convert(data, ticks[-1]), 1)
+                            rater.raterange(self.convert(data, ticks[0]) -
+                                            self.convert(data, ticks[-1]), 1)
                         else:
-                            self.rater.raterange(self.convert(data, ticks[-1]) -
-                                                 self.convert(data, ticks[0]), 1)
+                            rater.raterange(self.convert(data, ticks[-1]) -
+                                            self.convert(data, ticks[0]), 1)
                         if bestrate is None or rate < bestrate:
                             bestrate = rate
                             worse = 0
@@ -194,11 +199,11 @@ class _regularaxis(_axis):
                         t *= tick.rational(self.divisor)
                 canvas = painter.axiscanvas(self.painter, graphtexrunner)
                 self.painter.paint(canvas, variants[0], self, positioner)
-                ratelayout = self.rater.ratelayout(canvas, self.density)
+                ratelayout = rater.ratelayout(canvas, self.density)
                 if ratelayout is None:
                     del variants[0]
                     if not variants:
-                        raise RuntimeError("no valid axis partitioning found%s" % errorname)
+                        raise NoValidPartitionError("no valid axis partitioning found%s" % errorname)
                 else:
                     variants[0].rate += ratelayout
                     variants[0].storedcanvas = canvas
@@ -223,16 +228,21 @@ class linear(_regularaxis):
         else:
             return (float(value) - data.min) / (data.max - data.min)
 
+    def create(self, data, positioner, graphtexrunner, errorname):
+        return _regularaxis._create(self, data, positioner, graphtexrunner, self.parter, self.rater, errorname)
+
 lin = linear
 
 
 class logarithmic(_regularaxis):
     """logarithmic axis"""
 
-    def __init__(self, parter=parter.autologarithmic(), rater=rater.logarithmic(), **args):
+    def __init__(self, parter=parter.autologarithmic(), rater=rater.logarithmic(),
+                       linearparter=parter.autolinear(extendtick=None), **args):
         _regularaxis.__init__(self, **args)
         self.parter = parter
         self.rater = rater
+        self.linearparter = linearparter
 
     def convert(self, data, value):
         """axis coordinates -> graph coordinates"""
@@ -241,6 +251,15 @@ class logarithmic(_regularaxis):
             return (math.log(data.max) - math.log(float(value))) / (math.log(data.max) - math.log(data.min))
         else:
             return (math.log(float(value)) - math.log(data.min)) / (math.log(data.max) - math.log(data.min))
+
+    def create(self, data, positioner, graphtexrunner, errorname):
+        try:
+            return _regularaxis._create(self, data, positioner, graphtexrunner, self.parter, self.rater, errorname)
+        except NoValidPartitionError:
+            if self.linearparter:
+                warnings.warn("no valid logarithmic partitioning found for axis %s, switch to linear partitioning" % errorname)
+                return _regularaxis._create(self, data, positioner, graphtexrunner, self.linearparter, self.rater, errorname)
+            raise
 
 log = logarithmic
 
