@@ -224,55 +224,37 @@ class PDFpage(PDFobject):
         if paperformat:
             file.write("/MediaBox [0 0 %f %f]\n" % (unit.topt(paperformat.width), unit.topt(paperformat.height)))
         else:
-            file.write("/MediaBox [%f %f %f %f]\n" % self.PDFcontent.transformedbbox.highrestuple_pt())
-        if self.PDFcontent.transformedbbox and writer.writebbox:
-            file.write("/CropBox [%f %f %f %f]\n" % self.PDFcontent.transformedbbox.highrestuple_pt())
+            file.write("/MediaBox [%f %f %f %f]\n" % self.PDFcontent.bbox.highrestuple_pt())
+        if self.PDFcontent.bbox and writer.writebbox:
+            file.write("/CropBox [%f %f %f %f]\n" % self.PDFcontent.bbox.highrestuple_pt())
         file.write("/Resources <<\n"
                    "/ProcSet [ /PDF %s ]\n" % " ".join(["/%s" % p for p in self.pageregistry.pageprocsets.keys()]))
         for pageresource, resources in self.pageregistry.pageresources.items():
             file.write("/%s <<\n%s\n>>\n" % (pageresource, "\n".join(["/%s %i 0 R" % (name, registry.getrefno(resource))
                                                                       for name, resource in resources.items()])))
         file.write(">>\n"
-                   "/Contents %i 0 R\n"
-                   ">>\n" % registry.getrefno(self.PDFcontent))
+                   "/Contents %i 0 R\n" % registry.getrefno(self.PDFcontent))
+        if self.page.rotated:
+            file.write("/Rotate 90\n")
+        file.write(">>\n")
 
 
 class PDFcontent(PDFobject):
 
     def __init__(self, page, writer, registry):
         PDFobject.__init__(self, registry, "content")
-
-        self.contentfile = cStringIO.StringIO()
-        # XXX this should maybe be handled by the page since removing
-        # this code would allow us to (nearly, since we also need to
-        # set more info in the content dict) reuse PDFcontent for
-        # patterns
+        contentfile = cStringIO.StringIO()
         self.bbox = bbox.empty()
         acontext = context()
-        style.linewidth.normal.processPDF(self.contentfile, writer, acontext, registry, self.bbox)
-
-        page.canvas.processPDF(self.contentfile, writer, acontext, registry, self.bbox)
-
-        self.pagetrafo = page.pagetrafo(self.bbox)
-        if self.pagetrafo:
-            self.transformedbbox = self.bbox.transformed(self.pagetrafo)
-        else:
-            self.transformedbbox = self.bbox
+        page.process("processPDF", contentfile, writer, acontext, registry, self.bbox)
+        self.content = contentfile.getvalue()
+        contentfile.close()
 
     def write(self, file, writer, registry):
-        # apply a possible global transformation
-        if self.pagetrafo:
-            pagetrafofile = cStringIO.StringIO()
-            self.pagetrafo.processPDF(pagetrafofile, writer, context(), registry, bbox.empty())
-            content = pagetrafofile.getvalue() + self.contentfile.getvalue()
-            pagetrafofile.close()
-        else:
-            content = self.contentfile.getvalue()
-        self.contentfile.close()
-
         if writer.compress:
-            content = zlib.compress(content)
-
+            content = zlib.compress(self.content)
+        else:
+            content = self.content
         file.write("<<\n"
                    "/Length %i\n" % len(content))
         if writer.compress:

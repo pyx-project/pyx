@@ -21,8 +21,8 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import warnings
-import pswriter, pdfwriter, trafo, unit
+import cStringIO, warnings
+import bbox, pswriter, pdfwriter, trafo, style, unit
 
 
 class paperformat:
@@ -48,7 +48,7 @@ def _paperformatfromstring(name):
 class page:
 
     def __init__(self, canvas, pagename=None, paperformat=None, rotated=0, centered=1, fittosize=0,
-                 margin=1 * unit.t_cm, bboxenlarge=0, bbox=None):
+                 margin=1*unit.t_cm, bboxenlarge=1*unit.t_pt, bbox=None):
         self.canvas = canvas
         self.pagename = pagename
         # support for depricated string specification of paper formats
@@ -67,65 +67,73 @@ class page:
         self.bboxenlarge = bboxenlarge
         self.pagebbox = bbox
 
-    def processPS(self, file, writer, context, registry, bbox):
-        self.canvas.processPS(file, writer, context, registry, bbox)
+    def process(self, processMethod, contentfile, writer, context, registry, bbox):
+        assert not bbox
+
+        # check whether we expect a page trafo and use a temporary canvasfile to insert the
+        # pagetrafo in front after the bbox was calculated
+        expectpagetrafo = self.paperformat and (self.rotated or self.centered or self.fittosize)
+        if expectpagetrafo:
+            canvasfile = cStringIO.StringIO()
+        else:
+            canvasfile = contentfile
+
+        getattr(style.linewidth.normal, processMethod)(canvasfile, writer, context, registry, bbox)
+        getattr(self.canvas, processMethod)(canvasfile, writer, context, registry, bbox)
+
         # usually its the bbox of the canvas enlarged by self.bboxenlarge, but
         # it might be a different bbox as specified in the page constructor
         if self.pagebbox:
-            # we have to modify the bbox in place
-            # XXX maybe there should be a bbox.set/replace routine which accepts another bbox as argument
-            bbox.llx_pt = self.pagebbox.llx_pt
-            bbox.lly_pt = self.pagebbox.lly_pt
-            bbox.urx_pt = self.pagebbox.urx_pt
-            bbox.ury_pt = self.pagebbox.ury_pt
+            bbox.set(self.pagebbox)
         elif bbox:
             bbox.enlarge(self.bboxenlarge)
 
-    def pagetrafo(self, bbox):
-        """ calculate a trafo which rotates and fits a canvas on the page
+        if expectpagetrafo:
 
-        The canvas extents are described by bbox.
-        """
-        # XXX should we provide a method for bbox != empty (or use __zero__)
-        if bbox.llx_pt is not None and self.paperformat and (self.rotated or self.centered or self.fittosize):
-            paperwidth, paperheight = self.paperformat.width, self.paperformat.height
+            if bbox:
+                # calculate the pagetrafo
+                paperwidth, paperheight = self.paperformat.width, self.paperformat.height
 
-            # center (optionally rotated) output on page
-            if self.rotated:
-                atrafo = trafo.rotate(90).translated(paperwidth, 0)
-                if self.centered or self.fittosize:
-                    if not self.fittosize and (bbox.height() > paperwidth or bbox.width() > paperheight):
-                        warnings.warn("content exceeds the papersize")
-                    atrafo = atrafo.translated(-0.5*(paperwidth - bbox.height()) + bbox.bottom(),
-                                               0.5*(paperheight - bbox.width()) - bbox.left())
-            else:
-                if self.centered or self.fittosize:
+                # center (optionally rotated) output on page
+                if self.rotated:
+                    pagetrafo = trafo.rotate(90).translated(paperwidth, 0)
+                    if self.centered or self.fittosize:
+                        if not self.fittosize and (bbox.height() > paperwidth or bbox.width() > paperheight):
+                            warnings.warn("content exceeds the papersize")
+                        pagetrafo = pagetrafo.translated(-0.5*(paperwidth - bbox.height()) + bbox.bottom(),
+                                                          0.5*(paperheight - bbox.width()) - bbox.left())
+                else:
                     if not self.fittosize and (bbox.width() > paperwidth or bbox.height() > paperheight):
                         warnings.warn("content exceeds the papersize")
-                    atrafo = trafo.translate(0.5*(paperwidth - bbox.width())  - bbox.left(),
-                                             0.5*(paperheight - bbox.height()) - bbox.bottom())
-                else:
-                    return None # no page transformation needed
+                    pagetrafo = trafo.translate(0.5*(paperwidth - bbox.width())  - bbox.left(),
+                                                0.5*(paperheight - bbox.height()) - bbox.bottom())
 
-            if self.fittosize:
+                if self.fittosize:
 
-                if 2*self.margin > paperwidth or 2*self.margin > paperheight:
-                    raise ValueError("Margins too broad for selected paperformat. Aborting.")
+                    if 2*self.margin > paperwidth or 2*self.margin > paperheight:
+                        raise ValueError("Margins too broad for selected paperformat. Aborting.")
 
-                paperwidth -= 2 * self.margin
-                paperheight -= 2 * self.margin
+                    paperwidth -= 2 * self.margin
+                    paperheight -= 2 * self.margin
 
-                # scale output to pagesize - margins
-                if self.rotated:
-                    sfactor = min(unit.topt(paperheight)/bbox.width_pt(), unit.topt(paperwidth)/bbox.height_pt())
-                else:
-                    sfactor = min(unit.topt(paperwidth)/bbox.width_pt(), unit.topt(paperheight)/bbox.height_pt())
+                    # scale output to pagesize - margins
+                    if self.rotated:
+                        sfactor = min(unit.topt(paperheight)/bbox.width_pt(), unit.topt(paperwidth)/bbox.height_pt())
+                    else:
+                        sfactor = min(unit.topt(paperwidth)/bbox.width_pt(), unit.topt(paperheight)/bbox.height_pt())
 
-                atrafo = atrafo.scaled(sfactor, sfactor, self.margin + 0.5*paperwidth, self.margin + 0.5*paperheight)
+                    pagetrafo = pagetrafo.scaled(sfactor, sfactor, self.margin + 0.5*paperwidth, self.margin + 0.5*paperheight)
 
-            return atrafo
+                # apply the pagetrafo and write it to the contentfile
+                bbox.transform(pagetrafo)
+                pagetrafofile = cStringIO.StringIO()
+                # context, bbox, registry are just passed as stubs (the trafo should not touch them)
+                getattr(pagetrafo, processMethod)(pagetrafofile, writer, context, registry, bbox)
+                contentfile.write(pagetrafofile.getvalue())
+                pagetrafofile.close()
 
-        return None # no page transformation needed
+            contentfile.write(canvasfile.getvalue())
+            canvasfile.close()
 
 
 class document:

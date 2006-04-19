@@ -255,27 +255,28 @@ class epswriter:
         except IOError:
             raise IOError("cannot open output file")
 
-        canvasfile = cStringIO.StringIO()
+        pagefile = cStringIO.StringIO()
         registry = PSregistry()
         acontext = context()
-        abbox = bbox.empty()
+        pagebbox = bbox.empty()
 
-        style.linewidth.normal.processPS(canvasfile, self, acontext, registry, abbox)
+#        style.linewidth.normal.processPS(pagefile, self, acontext, registry, pagebbox)
 
         # here comes the page content
-        page.processPS(canvasfile, self, acontext, registry, abbox)
 
-        pagetrafo = page.pagetrafo(abbox)
+        page.process("processPS", pagefile, self, acontext, registry, pagebbox)
+
+        #pagetrafo = page.pagetrafo(pagebbox)
 
         # if a page transformation is necessary, we have to adjust the bounding box
         # accordingly
-        if pagetrafo is not None:
-            abbox.transform(pagetrafo)
+        #if pagetrafo is not None:
+            #pagebbox.transform(pagetrafo)
 
         file.write("%!PS-Adobe-3.0 EPSF-3.0\n")
         if bbox:
-            file.write("%%%%BoundingBox: %d %d %d %d\n" % abbox.lowrestuple_pt())
-            file.write("%%%%HiResBoundingBox: %g %g %g %g\n" % abbox.highrestuple_pt())
+            file.write("%%%%BoundingBox: %d %d %d %d\n" % pagebbox.lowrestuple_pt())
+            file.write("%%%%HiResBoundingBox: %g %g %g %g\n" % pagebbox.highrestuple_pt())
         file.write("%%%%Creator: PyX %s\n" % version.version)
         file.write("%%%%Title: %s\n" % filename)
         file.write("%%%%CreationDate: %s\n" %
@@ -286,12 +287,12 @@ class epswriter:
         registry.output(file, self)
         file.write("%%EndProlog\n")
 
-        # apply a possible page transformation (using fake context and registry)
-        if pagetrafo:
-            pagetrafo.processPS(file, self, context(), PSregistry(), abbox)
+#        # apply a possible page transformation (using fake context and registry)
+#        if pagetrafo:
+#            pagetrafo.processPS(file, self, context(), PSregistry(), pagebbox)
 
-        file.write(canvasfile.getvalue())
-        canvasfile.close()
+        file.write(pagefile.getvalue())
+        pagefile.close()
 
         file.write("showpage\n")
         file.write("%%Trailer\n")
@@ -319,19 +320,20 @@ class pswriter:
         documentbbox = bbox.empty()
 
         for nr, page in enumerate(document.pages):
-            # process conents of page
+            # process contents of page
             pagefile = cStringIO.StringIO()
             acontext = context()
             pagebbox = bbox.empty()
-            style.linewidth.normal.processPS(pagefile, self, acontext, registry, pagebbox)
-            page.canvas.processPS(pagefile, self, acontext, registry, pagebbox)
+            page.process("processPS", pagefile, self, acontext, registry, pagebbox)
+            # style.linewidth.normal.processPS(pagefile, self, acontext, registry, pagebbox)
+            # page.canvas.processPS(pagefile, self, acontext, registry, pagebbox)
 
             # calculate transformed bbox
-            pagetrafo = page.pagetrafo(pagebbox)
+            # pagetrafo = page.pagetrafo(pagebbox)
             # if a page transformation is necessary, we have to adjust the bounding box
             # accordingly
-            if pagetrafo:
-                pagebbox = pagebbox.transformed(pagetrafo)
+            # if pagetrafo:
+            #     pagebbox = pagebbox.transformed(pagetrafo)
 
             documentbbox += pagebbox
 
@@ -347,8 +349,8 @@ class pswriter:
             pagesfile.write("/pgsave save def\n")
 
             # apply a possible page transformation
-            if pagetrafo is not None:
-                pagetrafo.processPS(pagesfile, self, acontext, registry, bbox.empty())
+            # if pagetrafo is not None:
+            #     pagetrafo.processPS(pagesfile, self, acontext, registry, bbox.empty())
 
             pagesfile.write("%%EndPageSetup\n")
             # insert page content
