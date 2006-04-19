@@ -551,5 +551,5 @@ for triangle in triangles:
         usecolor = color.hsb(triangle[3], 1, 0.25 + 0.65 * ((triangle[1] - mincol)/(maxcol - mincol)) ** 0.5 )
         c.fill(triangle[2], [usecolor])
 
-c.writetofile("example")
+c.writeEPSfile("example")
 
