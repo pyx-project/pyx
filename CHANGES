@@ -104,6 +104,7 @@ TODO:
     - axis module:
       - patch to tickpos and vtickpos (reported by Wojciech Smigaj, cf. patch #1286112)
       - anchoredpathaxis added (suggested by Wojciech Smigaj)
+      - properly handle range rating on inversed axis (reported by Dominic Ford, cf. bug #1461513)
     - painter module:
       - patch to allow for tickattrs=None (reported by Wojciech Smigaj, cf. patch #1286116)
   - color module:

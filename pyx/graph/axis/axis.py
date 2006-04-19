@@ -150,9 +150,13 @@ class _regularaxis(_axis):
                         break
                     ticks = tick.mergeticklists(self.manualticks, ticks, mergeequal=0)
                     if ticks:
-                        rate = ( self.rater.rateticks(self, ticks, self.density) +
-                                 self.rater.raterange(self.convert(data, ticks[-1]) -
-                                                      self.convert(data, ticks[0]), 1) )
+                        rate = self.rater.rateticks(self, ticks, self.density)
+                        if self.reverse:
+                            self.rater.raterange(self.convert(data, ticks[0]) -
+                                                 self.convert(data, ticks[-1]), 1)
+                        else:
+                            self.rater.raterange(self.convert(data, ticks[-1]) -
+                                                 self.convert(data, ticks[0]), 1)
                         if bestrate is None or rate < bestrate:
                             bestrate = rate
                             worse = 0
