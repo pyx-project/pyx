@@ -41,34 +41,33 @@ class TexResultError(RuntimeError):
     """specialized texrunner exception class
     - it is raised by texmessage instances, when a texmessage indicates an error
     - it is raised by the texrunner itself, whenever there is a texmessage left
-      after all parsing of this message (by texmessage instances)"""
+      after all parsing of this message (by texmessage instances)
+    prints a detailed report about the problem
+    - the verbose level is controlled by texrunner.errordebug"""
 
     def __init__(self, description, texrunner):
-        self.description = description
-        self.texrunner = texrunner
-
-    def __str__(self):
-        """prints a detailed report about the problem
-        - the verbose level is controlled by texrunner.errordebug"""
-        if self.texrunner.errordebug >= 2:
-            return ("%s\n" % self.description +
-                    "The expression passed to TeX was:\n"
-                    "  %s\n" % self.texrunner.expr.replace("\n", "\n  ").rstrip() +
-                    "The return message from TeX was:\n"
-                    "  %s\n" % self.texrunner.texmessage.replace("\n", "\n  ").rstrip() +
-                    "After parsing this message, the following was left:\n"
-                    "  %s" % self.texrunner.texmessageparsed.replace("\n", "\n  ").rstrip())
-        elif self.texrunner.errordebug == 1:
-            firstlines = self.texrunner.texmessageparsed.split("\n")
+        if texrunner.errordebug >= 2:
+            self.description = ("%s\n" % description +
+                                "The expression passed to TeX was:\n"
+                                "  %s\n" % texrunner.expr.replace("\n", "\n  ").rstrip() +
+                                "The return message from TeX was:\n"
+                                "  %s\n" % texrunner.texmessage.replace("\n", "\n  ").rstrip() +
+                                "After parsing this message, the following was left:\n"
+                                "  %s" % texrunner.texmessageparsed.replace("\n", "\n  ").rstrip())
+        elif texrunner.errordebug == 1:
+            firstlines = texrunner.texmessageparsed.split("\n")
             if len(firstlines) > 5:
                 firstlines = firstlines[:5] + ["(cut after 5 lines, increase errordebug for more output)"]
-            return ("%s\n" % self.description +
-                    "The expression passed to TeX was:\n"
-                    "  %s\n" % self.texrunner.expr.replace("\n", "\n  ").rstrip() +
-                    "After parsing the return message from TeX, the following was left:\n" +
-                    reduce(lambda x, y: "%s  %s\n" % (x,y), firstlines, "").rstrip())
+            self.description = ("%s\n" % description +
+                                "The expression passed to TeX was:\n"
+                                "  %s\n" % texrunner.expr.replace("\n", "\n  ").rstrip() +
+                                "After parsing the return message from TeX, the following was left:\n" +
+                                reduce(lambda x, y: "%s  %s\n" % (x,y), firstlines, "").rstrip())
         else:
-            return self.description
+            self.description = description
+
+    def __str__(self):
+        return self.description
 
 
 class _Itexmessage:
@@ -916,7 +915,7 @@ class texrunner:
                          "\\ht\\PyXBoxHAligned0pt%\n" # baseline alignment (hight to zero)
                          "{\\count0=80\\count1=121\\count2=88\\count3=#2\\shipout\\box\\PyXBoxHAligned}}%\n" # shipout PyXBox to Page 80.121.88.<page number>
                          "\\def\\PyXInput#1{\\immediate\\write16{PyXInputMarker:executeid=#1:}}%\n" # write PyXInputMarker to stdout
-                         "\\def\\PyXMarker#1{\\hskip0pt\\special{PyX:marker #1}}%\n", # write PyXMarker special into the dvi-file
+                         "\\def\\PyXMarker#1{\\hskip0pt\\special{PyX:marker #1}}%", # write PyXMarker special into the dvi-file
                          self.defaulttexmessagesstart + self.texmessagesstart)
             os.remove("%s.tex" % self.texfilename)
             if self.mode == "tex":
