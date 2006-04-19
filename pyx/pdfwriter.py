@@ -43,39 +43,39 @@ class PDFregistry:
     def __init__(self):
         self.types = {}
         # we want to keep the order of the resources
-        self.resources = []
+        self.objects = []
         self.pageresources = {}
         self.pageprocsets = {}
 
-    def add(self, resource):
-        """ register resource, merging it with an already registered resource of the same type and id """
-        resources = self.types.setdefault(resource.type, {})
-        if resources.has_key(resource.id):
-            resources[resource.id].merge(resource)
+    def add(self, object):
+        """ register object, merging it with an already registered object of the same type and id """
+        sameobjects = self.types.setdefault(object.type, {})
+        if sameobjects.has_key(object.id):
+            sameobjects[object.id].merge(object)
         else:
-            self.resources.append(resource)
-            resources[resource.id] = resource
+            self.objects.append(object)
+            sameobjects[object.id] = object
 
-    def getrefno(self, resource):
-        return self.types[resource.type][resource.id].refno
+    def getrefno(self, object):
+        return self.types[object.type][object.id].refno
 
     def mergeregistry(self, registry):
-        for resource in registry.resources:
-            self.add(resource)
+        for object in registry.objects:
+            self.add(object)
 
     def write(self, file, writer, catalog):
         # first we set all refnos
         refno = 1
-        for resource in self.resources:
-            resource.refno = refno
+        for object in self.objects:
+            object.refno = refno
             refno += 1
 
         # second, all objects are written, keeping the positions in the output file
         fileposes = []
-        for resource in self.resources:
+        for object in self.objects:
             fileposes.append(file.tell())
-            file.write("%i 0 obj\n" % resource.refno)
-            resource.write(file, writer, self)
+            file.write("%i 0 obj\n" % object.refno)
+            object.write(file, writer, self)
             file.write("endobj\n")
 
         # xref
@@ -106,11 +106,6 @@ class PDFobject:
           - type has to be a string describing the type of the object
           - _id is a unique identification used for the object if it is not None.
             Otherwise id(self) is used
-          - If pageresource is not None, it has to be a string describing the name
-            of the resource to be included in the resource dictionary of the pages
-            including the PDFobject.
-          - If pageprocset is not None, it has to be a string describing the name 
-            to be used in the ProcSet list of the pages including the PDFObject.
         """
         self.type = type
         if _id is None:
@@ -229,9 +224,9 @@ class PDFpage(PDFobject):
             file.write("/CropBox [%f %f %f %f]\n" % self.PDFcontent.bbox.highrestuple_pt())
         file.write("/Resources <<\n"
                    "/ProcSet [ /PDF %s ]\n" % " ".join(["/%s" % p for p in self.pageregistry.pageprocsets.keys()]))
-        for pageresource, resources in self.pageregistry.pageresources.items():
-            file.write("/%s <<\n%s\n>>\n" % (pageresource, "\n".join(["/%s %i 0 R" % (name, registry.getrefno(resource))
-                                                                      for name, resource in resources.items()])))
+        for pageresource, objects in self.pageregistry.pageresources.items():
+            file.write("/%s <<\n%s\n>>\n" % (pageresource, "\n".join(["/%s %i 0 R" % (name, registry.getrefno(object))
+                                                                      for name, object in objects.items()])))
         file.write(">>\n"
                    "/Contents %i 0 R\n" % registry.getrefno(self.PDFcontent))
         if self.page.rotated:
