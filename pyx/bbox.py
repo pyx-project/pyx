@@ -93,6 +93,12 @@ class bbox_pt:
     def copy(self):
         return bbox_pt(self.llx_pt, self.lly_pt, self.urx_pt, self.ury_pt)
 
+    def set(self, other):
+        self.llx_pt = other.llx_pt
+        self.lly_pt = other.lly_pt
+        self.urx_pt = other.urx_pt
+        self.ury_pt = other.ury_pt
+
     def lowrestuple_pt(self):
         if self.llx_pt is None:
             raise ValueError("Cannot return low-res tuple for empty bbox")
