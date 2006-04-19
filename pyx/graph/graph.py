@@ -487,13 +487,14 @@ class graphxy(graph):
                 ppos = pmin+0.5*(cmax-cmin)+dist+pos*(pmax-pmin-cmax+cmin-2*dist)
                 cpos = 0.5*(cmin+cmax)+(1-inside)*(1-2*pos)*(cmax-cmin+2*dist)
                 return ppos-cpos
-            x = parentchildalign(self.xpos_pt, self.xpos_pt+self.width_pt,
-                                 bbox.llx_pt, bbox.urx_pt,
-                                 self.key.hpos, unit.topt(self.key.hdist), self.key.hinside)
-            y = parentchildalign(self.ypos_pt, self.ypos_pt+self.height_pt,
-                                 bbox.lly_pt, bbox.ury_pt,
-                                 self.key.vpos, unit.topt(self.key.vdist), self.key.vinside)
-            self.insert(c, [trafo.translate_pt(x, y)])
+            if bbox:
+                x = parentchildalign(self.xpos_pt, self.xpos_pt+self.width_pt,
+                                     bbox.llx_pt, bbox.urx_pt,
+                                     self.key.hpos, unit.topt(self.key.hdist), self.key.hinside)
+                y = parentchildalign(self.ypos_pt, self.ypos_pt+self.height_pt,
+                                     bbox.lly_pt, bbox.ury_pt,
+                                     self.key.vpos, unit.topt(self.key.vdist), self.key.vinside)
+                self.insert(c, [trafo.translate_pt(x, y)])
 
 
 # some thoughts, but deferred right now
