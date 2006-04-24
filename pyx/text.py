@@ -24,6 +24,7 @@
 
 import glob, os, threading, Queue, re, tempfile, atexit, time, warnings
 import config, siteconfig, unit, box, canvas, trafo, version, attr, style, dvifile
+import bbox as bboxmodule
 
 ###############################################################################
 # texmessages
@@ -695,11 +696,15 @@ class textbox(box.rect, canvas._canvas):
 
     def processPS(self, file, writer, context, registry, bbox):
         self.ensuredvicanvas()
-        canvas._canvas.processPS(self, file, writer, context, registry, bbox)
+        abbox = bboxmodule.empty()
+        canvas._canvas.processPS(self, file, writer, context, registry, abbox)
+        bbox += box.rect.bbox(self)
 
     def processPDF(self, file, writer, context, registry, bbox):
         self.ensuredvicanvas()
-        canvas._canvas.processPDF(self, file, writer, context, registry, bbox)
+        abbox = bboxmodule.empty()
+        canvas._canvas.processPDF(self, file, writer, context, registry, abbox)
+        bbox += box.rect.bbox(self)
 
 
 def _cleantmp(texrunner):
