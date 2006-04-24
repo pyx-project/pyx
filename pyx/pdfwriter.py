@@ -44,8 +44,8 @@ class PDFregistry:
         self.types = {}
         # we want to keep the order of the resources
         self.objects = []
-        self.pageresources = {}
-        self.pageprocsets = {}
+        self.resources = {}
+        self.procsets = {"PDF": 1}
 
     def add(self, object):
         """ register object, merging it with an already registered object of the same type and id """
@@ -97,6 +97,21 @@ class PDFregistry:
                    "startxref\n"
                    "%i\n" % xrefpos)
         file.write("%%EOF\n")
+
+    def addresource(self, resourcetype, resourcename, object):
+        self.resources.setdefault(resourcetype, {})[resourcename] = object
+
+    def addprocset(self, procset):
+        self.procsets[procset] = 1
+
+    def writeResources(self, file):
+        file.write("/Resources <<\n")
+        file.write("/ProcSet [ %s ]\n" % " ".join(["/%s" % p for p in self.procsets.keys()]))
+        if self.resources:
+            for resourcetype, resources in self.resources.items():
+                file.write("/%s <<\n%s\n>>\n" % (resourcetype, "\n".join(["/%s %i 0 R" % (name, self.getrefno(object))
+                                                                          for name, object in resources.items()])))
+        file.write(">>\n")
 
 
 class PDFobject:
@@ -222,15 +237,10 @@ class PDFpage(PDFobject):
             file.write("/MediaBox [%f %f %f %f]\n" % self.PDFcontent.bbox.highrestuple_pt())
         if self.PDFcontent.bbox and writer.writebbox:
             file.write("/CropBox [%f %f %f %f]\n" % self.PDFcontent.bbox.highrestuple_pt())
-        file.write("/Resources <<\n"
-                   "/ProcSet [ /PDF %s ]\n" % " ".join(["/%s" % p for p in self.pageregistry.pageprocsets.keys()]))
-        for pageresource, objects in self.pageregistry.pageresources.items():
-            file.write("/%s <<\n%s\n>>\n" % (pageresource, "\n".join(["/%s %i 0 R" % (name, registry.getrefno(object))
-                                                                      for name, object in objects.items()])))
-        file.write(">>\n"
-                   "/Contents %i 0 R\n" % registry.getrefno(self.PDFcontent))
         if self.page.rotated:
             file.write("/Rotate 90\n")
+        file.write("/Contents %i 0 R\n" % registry.getrefno(self.PDFcontent))
+        self.pageregistry.writeResources(file)
         file.write(">>\n")
 
 
@@ -264,8 +274,8 @@ class PDFfont(PDFobject):
 
     def __init__(self, font, chars, writer, registry):
         PDFobject.__init__(self, "font", font.name)
-        registry.pageprocsets["Text"] = 1
-        registry.pageresources.setdefault("Font", {})[font.name] = self
+        registry.addprocset("Text")
+        registry.addresource("Font", font.name, self)
 
         self.fontdescriptor = PDFfontdescriptor(font, chars, writer, registry)
         registry.add(self.fontdescriptor)

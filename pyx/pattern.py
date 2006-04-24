@@ -294,7 +294,7 @@ class PDFpattern(pdfwriter.PDFobject):
                  patternproc, writer, registry, patternregistry):
         self.patternregistry = patternregistry
         pdfwriter.PDFobject.__init__(self, "pattern")
-        registry.pageresources.setdefault("Pattern", {})[name] = self
+        registry.addresource("Pattern", name, self)
 
         self.name = name
         self.patterntype = patterntype
@@ -317,7 +317,7 @@ class PDFpattern(pdfwriter.PDFobject):
         file.write("/YStep %f\n" % self.ystep)
         file.write("/Matrix %s\n" % str(self.trafo))
         file.write("/Resources <<\n")
-        for patternresource, resources in self.patternregistry.pageresources.items():
+        for patternresource, resources in self.patternregistry.resources.items():
             file.write("/%s <<\n%s\n>>\n" % (patternresource, "\n".join(["/%s %i 0 R" % (name, self.patternregistry.getrefno(resource))
                                                                       for name, resource in resources.items()])))
         file.write(">>\n")
