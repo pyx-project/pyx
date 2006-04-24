@@ -316,11 +316,7 @@ class PDFpattern(pdfwriter.PDFobject):
         file.write("/XStep %f\n" % self.xstep)
         file.write("/YStep %f\n" % self.ystep)
         file.write("/Matrix %s\n" % str(self.trafo))
-        file.write("/Resources <<\n")
-        for patternresource, resources in self.patternregistry.resources.items():
-            file.write("/%s <<\n%s\n>>\n" % (patternresource, "\n".join(["/%s %i 0 R" % (name, self.patternregistry.getrefno(resource))
-                                                                      for name, resource in resources.items()])))
-        file.write(">>\n")
+        self.patternregistry.writeresources(file)
         if writer.compress:
             import zlib
             content = zlib.compress(self.patternproc)

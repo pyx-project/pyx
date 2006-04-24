@@ -98,13 +98,12 @@ class PDFregistry:
                    "%i\n" % xrefpos)
         file.write("%%EOF\n")
 
-    def addresource(self, resourcetype, resourcename, object):
+    def addresource(self, resourcetype, resourcename, object, procset=None):
         self.resources.setdefault(resourcetype, {})[resourcename] = object
+        if procset:
+            self.procsets[procset] = 1
 
-    def addprocset(self, procset):
-        self.procsets[procset] = 1
-
-    def writeResources(self, file):
+    def writeresources(self, file):
         file.write("/Resources <<\n")
         file.write("/ProcSet [ %s ]\n" % " ".join(["/%s" % p for p in self.procsets.keys()]))
         if self.resources:
@@ -240,7 +239,7 @@ class PDFpage(PDFobject):
         if self.page.rotated:
             file.write("/Rotate 90\n")
         file.write("/Contents %i 0 R\n" % registry.getrefno(self.PDFcontent))
-        self.pageregistry.writeResources(file)
+        self.pageregistry.writeresources(file)
         file.write(">>\n")
 
 
@@ -274,8 +273,7 @@ class PDFfont(PDFobject):
 
     def __init__(self, font, chars, writer, registry):
         PDFobject.__init__(self, "font", font.name)
-        registry.addprocset("Text")
-        registry.addresource("Font", font.name, self)
+        registry.addresource("Font", font.name, self, procset="Text")
 
         self.fontdescriptor = PDFfontdescriptor(font, chars, writer, registry)
         registry.add(self.fontdescriptor)
