@@ -260,21 +260,10 @@ class epswriter:
         acontext = context()
         pagebbox = bbox.empty()
 
-#        style.linewidth.normal.processPS(pagefile, self, acontext, registry, pagebbox)
-
-        # here comes the page content
-
         page.process("processPS", pagefile, self, acontext, registry, pagebbox)
 
-        #pagetrafo = page.pagetrafo(pagebbox)
-
-        # if a page transformation is necessary, we have to adjust the bounding box
-        # accordingly
-        #if pagetrafo is not None:
-            #pagebbox.transform(pagetrafo)
-
         file.write("%!PS-Adobe-3.0 EPSF-3.0\n")
-        if bbox:
+        if pagebbox:
             file.write("%%%%BoundingBox: %d %d %d %d\n" % pagebbox.lowrestuple_pt())
             file.write("%%%%HiResBoundingBox: %g %g %g %g\n" % pagebbox.highrestuple_pt())
         file.write("%%%%Creator: PyX %s\n" % version.version)
@@ -286,10 +275,6 @@ class epswriter:
         file.write("%%BeginProlog\n")
         registry.output(file, self)
         file.write("%%EndProlog\n")
-
-#        # apply a possible page transformation (using fake context and registry)
-#        if pagetrafo:
-#            pagetrafo.processPS(file, self, context(), PSregistry(), pagebbox)
 
         file.write(pagefile.getvalue())
         pagefile.close()
@@ -325,15 +310,6 @@ class pswriter:
             acontext = context()
             pagebbox = bbox.empty()
             page.process("processPS", pagefile, self, acontext, registry, pagebbox)
-            # style.linewidth.normal.processPS(pagefile, self, acontext, registry, pagebbox)
-            # page.canvas.processPS(pagefile, self, acontext, registry, pagebbox)
-
-            # calculate transformed bbox
-            # pagetrafo = page.pagetrafo(pagebbox)
-            # if a page transformation is necessary, we have to adjust the bounding box
-            # accordingly
-            # if pagetrafo:
-            #     pagebbox = pagebbox.transformed(pagetrafo)
 
             documentbbox += pagebbox
 
@@ -348,12 +324,7 @@ class pswriter:
             pagesfile.write("%%BeginPageSetup\n")
             pagesfile.write("/pgsave save def\n")
 
-            # apply a possible page transformation
-            # if pagetrafo is not None:
-            #     pagetrafo.processPS(pagesfile, self, acontext, registry, bbox.empty())
-
             pagesfile.write("%%EndPageSetup\n")
-            # insert page content
             pagesfile.write(pagefile.getvalue())
             pagefile.close()
             pagesfile.write("pgsave restore\n")
