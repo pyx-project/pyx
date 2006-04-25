@@ -431,12 +431,13 @@ palette.ReverseHue     = linearpalette(hsb(1, 1, 1), hsb(0, 1, 1))
 
 class PDFextgstate(pdfwriter.PDFobject):
 
-    def __init__(self, name, extgstate):
-        pdfwriter.PDFobject.__init__(self, "extgstate", name, "ExtGState")
+    def __init__(self, name, extgstate, registry):
+        pdfwriter.PDFobject.__init__(self, "extgstate", name)
+        registry.addresource("ExtGState", name, self)
         self.name = name
         self.extgstate = extgstate
 
-    def output(self, file, writer, registry):
+    def write(self, file, writer, registry):
         file.write("%s\n" % self.extgstate)
 
 
@@ -452,6 +453,6 @@ class transparency(attr.exclusiveattr, style.strokestyle, style.fillstyle):
         raise NotImplementedError("transparency not available in PostScript")
 
     def processPDF(self, file, writer, context, registry, bbox):
-        registry.add(PDFextgstate(self.name, self.extgstate))
+        registry.add(PDFextgstate(self.name, self.extgstate, registry))
         file.write("/%s gs\n" % self.name)
 
