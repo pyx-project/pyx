@@ -107,20 +107,17 @@ class pattern(canvas._canvas, attr.exclusiveattr, style.fillstyle):
         file.write("%s setpattern\n" % self.id)
 
     def processPDF(self, file, writer, context, registry, bbox):
-        # # we need to keep track of the resources used by the pattern, hence
-        # # we create our own registry, which we merge immediately in the main registry
-        self.patternregistry = pdfwriter.PDFregistry()
-        # # XXX passing canvasregisterPDF is a Q&D way to get access to the registerPDF method
-        # # of the _canvas superclass of the pattern
-        # canvasregisterPDF(self.patternregistry)
+        # we need to keep track of the resources used by the pattern, hence
+        # we create our own registry, which we merge immediately in the main registry
+        patternregistry = pdfwriter.PDFregistry()
 
         patternfile = cStringIO.StringIO()
         realpatternbbox = bboxmodule.empty()
-        canvas._canvas.processPDF(self, patternfile, writer, pdfwriter.context(), self.patternregistry, realpatternbbox)
+        canvas._canvas.processPDF(self, patternfile, writer, pdfwriter.context(), patternregistry, realpatternbbox)
         patternproc = patternfile.getvalue()
         patternfile.close()
 
-        registry.mergeregistry(self.patternregistry)
+        registry.mergeregistry(patternregistry)
 
         if self.xstep is None:
            xstep = unit.topt(realpatternbbox.width())
@@ -138,7 +135,7 @@ class pattern(canvas._canvas, attr.exclusiveattr, style.fillstyle):
         patterntrafo = self.patterntrafo or trafo.trafo()
 
         registry.add(PDFpattern(self.id, self.patterntype, self.painttype, self.tilingtype,
-                                patternbbox, xstep, ystep, patterntrafo, patternproc, writer, registry, self.patternregistry))
+                                patternbbox, xstep, ystep, patterntrafo, patternproc, writer, registry, patternregistry))
 
         # activate pattern
         if context.colorspace != "Pattern":
@@ -293,7 +290,7 @@ class PDFpattern(pdfwriter.PDFobject):
     def __init__(self, name, patterntype, painttype, tilingtype, bbox, xstep, ystep, trafo,
                  patternproc, writer, registry, patternregistry):
         self.patternregistry = patternregistry
-        pdfwriter.PDFobject.__init__(self, "pattern")
+        pdfwriter.PDFobject.__init__(self, "pattern", name)
         registry.addresource("Pattern", name, self)
 
         self.name = name
