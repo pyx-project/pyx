@@ -151,8 +151,6 @@ class PSimagedata(pswriter.PSresource):
             self.maxstrlen = maxstrlen
 
       def output(self, file, writer, registry):
-            # TODO resource data could be written directly on the output stream
-            #      after proper code reorganization
             file.write("%%%%BeginRessource: %s\n" % self.id)
             if self.singlestring:
                 file.write("%%%%BeginData: %i ASCII Lines\n"
@@ -187,7 +185,7 @@ class PDFimagepalettedata(pdfwriter.PDFobject):
         pdfwriter.PDFobject.__init__(self, "imagepalettedata", name)
         self.data = data
 
-    def output(self, file, writer, registry):
+    def write(self, file, writer, registry):
         file.write("<<\n"
                    "/Length %d\n" % len(self.data))
         file.write(">>\n"
@@ -207,7 +205,8 @@ class PDFimage(pdfwriter.PDFobject):
             procset = "ImageB"
         else:
             procset = "ImageC"
-        pdfwriter.PDFobject.__init__(self, "image", name, "XObject", procset)
+        pdfwriter.PDFobject.__init__(self, "image", name)
+        registry.addresource("XObject", name, self, procset=procset)
         if palettedata is not None:
             # acrobat wants a palette to be an object
             self.PDFpalettedata = PDFimagepalettedata(name, palettedata)
@@ -222,7 +221,7 @@ class PDFimage(pdfwriter.PDFobject):
         self.compressmode = compressmode
         self.data = data
 
-    def output(self, file, writer, registry):
+    def write(self, file, writer, registry):
         file.write("<<\n"
                    "/Type /XObject\n"
                    "/Subtype /Image\n"
