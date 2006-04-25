@@ -144,39 +144,39 @@ class jpegimage(image):
 
 class PSimagedata(pswriter.PSresource):
 
-      def __init__(self, name, data, singlestring, maxstrlen):
-            pswriter.PSresource.__init__(self, "imagedata", name)
-            self.data = data
-            self.singlestring = singlestring
-            self.maxstrlen = maxstrlen
+    def __init__(self, name, data, singlestring, maxstrlen):
+        pswriter.PSresource.__init__(self, "imagedata", name)
+        self.data = data
+        self.singlestring = singlestring
+        self.maxstrlen = maxstrlen
 
-      def output(self, file, writer, registry):
-            file.write("%%%%BeginRessource: %s\n" % self.id)
-            if self.singlestring:
-                file.write("%%%%BeginData: %i ASCII Lines\n"
-                           "<~" % ascii85lines(len(self.data)))
-                ascii85stream(file, self.data)
-                file.write("~>\n"
-                             "%%EndData\n")
-            else:
-                datalen = len(self.data)
-                tailpos = datalen - datalen % self.maxstrlen
-                file.write("%%%%BeginData: %i ASCII Lines\n" %
-                           ((tailpos/self.maxstrlen) * ascii85lines(self.maxstrlen) +
-                            ascii85lines(datalen-tailpos)))
-                file.write("[ ")
-                for i in xrange(0, tailpos, self.maxstrlen):
-                    file.write("<~")
-                    ascii85stream(file, self.data[i: i+self.maxstrlen])
-                    file.write("~>\n")
-                if datalen != tailpos:
-                    file.write("<~")
-                    ascii85stream(file, self.data[tailpos:])
-                    file.write("~>")
-                file.write("]\n"
-                           "%%EndData\n")
-            file.write("/%s exch def\n" % self.id)
-            file.write("%%EndRessource\n")
+    def output(self, file, writer, registry):
+        file.write("%%%%BeginRessource: %s\n" % self.id)
+        if self.singlestring:
+            file.write("%%%%BeginData: %i ASCII Lines\n"
+                       "<~" % ascii85lines(len(self.data)))
+            ascii85stream(file, self.data)
+            file.write("~>\n"
+                         "%%EndData\n")
+        else:
+            datalen = len(self.data)
+            tailpos = datalen - datalen % self.maxstrlen
+            file.write("%%%%BeginData: %i ASCII Lines\n" %
+                       ((tailpos/self.maxstrlen) * ascii85lines(self.maxstrlen) +
+                        ascii85lines(datalen-tailpos)))
+            file.write("[ ")
+            for i in xrange(0, tailpos, self.maxstrlen):
+                file.write("<~")
+                ascii85stream(file, self.data[i: i+self.maxstrlen])
+                file.write("~>\n")
+            if datalen != tailpos:
+                file.write("<~")
+                ascii85stream(file, self.data[tailpos:])
+                file.write("~>")
+            file.write("]\n"
+                       "%%EndData\n")
+        file.write("/%s exch def\n" % self.id)
+        file.write("%%EndRessource\n")
 
 
 class PDFimagepalettedata(pdfwriter.PDFobject):
