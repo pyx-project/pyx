@@ -46,6 +46,7 @@ class PDFregistry:
         self.objects = []
         self.resources = {}
         self.procsets = {"PDF": 1}
+        self.merged = None
 
     def add(self, object):
         """ register object, merging it with an already registered object of the same type and id """
@@ -57,11 +58,15 @@ class PDFregistry:
             sameobjects[object.id] = object
 
     def getrefno(self, object):
-        return self.types[object.type][object.id].refno
+        if self.merged:
+            return self.merged.getrefno(object)
+        else:
+            return self.types[object.type][object.id].refno
 
     def mergeregistry(self, registry):
         for object in registry.objects:
             self.add(object)
+        registry.merged = self
 
     def write(self, file, writer, catalog):
         # first we set all refnos
