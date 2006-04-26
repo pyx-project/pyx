@@ -7,7 +7,7 @@ from pyx.graph.axis import axis, rater
 - a timeaxis is always based on the datetime data type (there is no distinction between times and dates)
 """
 
-class timeaxis(axis._regularaxis):
+class timeaxis(axis.linear):
     "time axis mapping based "
 
     # TODO: how to deal with reversed timeaxis?
