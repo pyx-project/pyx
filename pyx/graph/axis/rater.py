@@ -206,6 +206,8 @@ class rater:
           access to the labels whose distances have to be taken
           into account
         - the density is used within the distancerate instance"""
+        if axiscanvas.labels is None: # to disable any layout rating
+            return 0
         if len(axiscanvas.labels) > 1:
             try:
                 distances = [axiscanvas.labels[i].boxdistance_pt(axiscanvas.labels[i+1])

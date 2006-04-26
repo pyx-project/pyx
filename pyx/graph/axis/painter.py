@@ -236,6 +236,10 @@ class regular(_title):
                 extent_pt = t.temp_labelbox.extent_pt(t.temp_dx, t.temp_dy) + labeldist_pt
                 if extent_pt > canvas.extent_pt:
                     canvas.extent_pt = extent_pt
+
+        if self.labelattrs is None:
+            canvas.labels = None
+
         if self.basepathattrs is not None:
             canvas.stroke(axispos.vbasepath(), self.defaultbasepathattrs + self.basepathattrs)
 
