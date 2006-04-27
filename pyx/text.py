@@ -384,14 +384,11 @@ class textattr:
 class _localattr: pass
 
 _textattrspreamble += r"""\gdef\PyXFlushHAlign{0}%
-\newdimen\PyXraggedskipplus%
-\def\PyXragged{\PyXraggedskipplus=4em%
-\leftskip=0pt plus \PyXFlushHAlign\PyXraggedskipplus%
-\rightskip=0pt plus \PyXraggedskipplus%
-\advance\rightskip0pt plus -\PyXFlushHAlign\PyXraggedskipplus%
+\def\PyXragged{%
+\leftskip=0pt plus \PyXFlushHAlign fil%
+\rightskip=0pt plus 1fil%
+\advance\rightskip0pt plus -\PyXFlushHAlign fil%
 \parfillskip=0pt%
-\spaceskip=0.333em%
-\xspaceskip=0.5em%
 \pretolerance=9999%
 \tolerance=9999%
 \parindent=0pt%
