@@ -177,22 +177,25 @@ def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, epsilon, 
     #     0 = 1.5 b |b| curvB + a * T - E
     # because of the absolute values we get several possibilities for the signs
     # in the equation. We test all signs, also the invalid ones!
-    solutions = []
     if allownegative:
-        for sign_a, sign_b in [(+1, +1), (-1, +1), (+1, -1), (-1, -1)]:
-            coeffs_a = (sign_b*3.375*curvA*curvA*curvB, 0.0, -sign_b*sign_a*4.5*curvA*curvB*D, T**3, sign_b*1.5*curvB*D*D - T*T*E)
-            candidates_a = [root for root in mathutils.realpolyroots(*coeffs_a) if sign_a*root >= 0]
-            for a in candidates_a:
-                b = (D - 1.5*curvA*a*abs(a)) / T
-                if (sign_b*b >= 0):
-                    solutions.append((a, b))
+        signs = [(+1, +1), (-1, +1), (+1, -1), (-1, -1)]
     else:
-        coeffs_a = (3.375*curvA*curvA*curvB, 0.0, -4.5*curvA*curvB*D, T**3, 1.5*curvB*D*D - T*T*E)
-        candidates_a = [root for root in mathutils.realpolyroots(*coeffs_a) if root >= 0]
+        signs = [(+1, +1)]
+
+    solutions = []
+    for sign_a, sign_b in signs:
+        coeffs_a = (sign_b*3.375*curvA*curvA*curvB, 0.0, -sign_b*sign_a*4.5*curvA*curvB*D, T**3, sign_b*1.5*curvB*D*D - T*T*E)
+        candidates_a = [root for root in mathutils.realpolyroots(*coeffs_a) if sign_a*root >= 0]
         for a in candidates_a:
             b = (D - 1.5*curvA*a*abs(a)) / T
-            if (b >= 0):
+            if (sign_b*b >= 0):
                 solutions.append((a, b))
+        #coeffs_b = (sign_a*3.375*curvA*curvB*curvB, 0.0, -sign_a*sign_b*4.5*curvA*curvB*E, T**3, sign_a*1.5*curvA*E*E - T*T*D)
+        #candidates_b = [root for root in mathutils.realpolyroots(*coeffs_b) if sign_b*root >= 0]
+        #for b in candidates_b:
+        #    a = (E - 1.5*curvB*b*abs(b)) / T
+        #    if (sign_a*a >= 0):
+        #        solutions.append((a, b))
 
 
     # sort the solutions: the more reasonable values at the beginning
@@ -201,10 +204,50 @@ def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, epsilon, 
         # inside the two sets: sort by magnitude
         sx = (x[0] > 0 and x[1] > 0)
         sy = (y[0] > 0 and y[1] > 0)
-        if sx == sy:
-            return cmp(x[0]**2 + x[1]**2, y[0]**2 + y[1]**2)
+
+        # experimental stuff:
+        # what criterion should be used for sorting ?
+        #
+        #errx = abs(1.5*curvA*x[0]*abs(x[0]) + x[1]*T - D) + abs(1.5*curvB*x[1]*abs(x[1]) + x[0]*T - E)
+        #erry = abs(1.5*curvA*y[0]*abs(y[0]) + y[1]*T - D) + abs(1.5*curvB*y[1]*abs(y[1]) + y[0]*T - E)
+        # # For each equation, a value like
+        # #   abs(1.5*curvA*y[0]*abs(y[0]) + y[1]*T - D) / abs(curvA*(D - y[1]*T))
+        # # indicates how good the solution is. In order to avoid the division,
+        # # we here multiply with all four denominators:
+        # errx = max(abs( (1.5*curvA*y[0]*abs(y[0]) + y[1]*T - D) * (curvB*(E - y[0]*T))*(curvA*(D - x[1]*T))*(curvB*(E - x[0]*T)) ),
+        #            abs( (1.5*curvB*y[1]*abs(y[1]) + y[0]*T - E) * (curvA*(D - y[1]*T))*(curvA*(D - x[1]*T))*(curvB*(E - x[0]*T)) ))
+        # errx = max(abs( (1.5*curvA*x[0]*abs(x[0]) + x[1]*T - D) * (curvA*(D - y[1]*T))*(curvB*(E - y[0]*T))*(curvB*(E - x[0]*T)) ),
+        #            abs( (1.5*curvB*x[1]*abs(x[1]) + x[0]*T - E) * (curvA*(D - y[1]*T))*(curvB*(E - y[0]*T))*(curvA*(D - x[1]*T)) ))
+        #errx = (abs(curvA*x[0]) - 1.0)**2 + (abs(curvB*x[1]) - 1.0)**2
+        #erry = (abs(curvA*y[0]) - 1.0)**2 + (abs(curvB*y[1]) - 1.0)**2
+
+        errx = x[0]**2 + x[1]**2
+        erry = y[0]**2 + y[1]**2
+
+        if sx == 1 and sy == 1:
+            # try to use longer solutions if there are any crossings in the control-arms
+            # the following combination yielded fewest sorting errors in test_bezier.py
+            t, s = intersection(A, B, tangA, tangB)
+            t, s = abs(t), abs(s)
+            if (t > 0 and t < x[0] and s > 0 and s < x[1]):
+                if (t > 0 and t < y[0] and s > 0 and s < y[1]):
+                    # use the shorter one
+                    return cmp(errx, erry)
+                else:
+                    # use the longer one
+                    return -1
+            else:
+                if (t > 0 and t < y[0] and s > 0 and s < y[1]):
+                    # use the longer one
+                    return 1
+                else:
+                    # use the shorter one
+                    return cmp(errx, erry)
+            #return cmp(x[0]**2 + x[1]**2, y[0]**2 + y[1]**2)
         else:
             return cmp(sy, sx)
+
+
 
     solutions.sort(mycmp)
 
