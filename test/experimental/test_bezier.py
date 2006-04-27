@@ -79,18 +79,13 @@ def test_reproductions(seed, n_tests, xmax, ymax, accuracy): # <<<
 
             # selectively draw the curves:
             #if minindex == -1:
+            #if minindex > 0:
             if minmaxdist > accuracy:
                 # draw the failure curves
                 can.stroke(path.rect_pt(0,0,xmax,ymax), [trafo.translate_pt(xpos, ypos)])
-                can.stroke(normpath.normpath([normpath.normsubpath([origcurve])]),  [trafo.translate_pt(xpos, ypos), style.linewidth.THIck])
+                can.draw(normpath.normpath([normpath.normsubpath([origcurve])]),  [trafo.translate_pt(xpos, ypos), deco.stroked([style.linewidth.THIck]), deco.shownormpath()])
                 if minindex != -1:
                     can.stroke(normpath.normpath([normpath.normsubpath([reprocurves[minindex]])]), [trafo.translate_pt(xpos, ypos), color.rgb.red])
-                if cnt == 604:
-                    print controldistpairs
-                    for j, controldistpair in enumerate(controldistpairs):
-                        can.stroke(normpath.normpath([normpath.normsubpath([reprocurves[j]])]),
-                        [trafo.translate_pt(xpos, ypos), color.palette.ReverseRainbow.select(j, len(controldistpairs))])
-
                 can.text(0, 0, r"(%d)" % (cnt), [trafo.translate_pt(xpos+0.5*xmax, ypos), text.halign.center, text.vshift(2.0)])
                 xpos += 1.1*xmax
                 if xpos > 11*xmax:
