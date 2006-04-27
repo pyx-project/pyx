@@ -71,7 +71,7 @@ def curvescontrols_from_endlines_pt(B, tangent1, tangent2, r1, r2, softness): # 
     return (d1, g1, f1, e, f2, g2, d2)
 # >>>
 
-def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, epsilon): # <<<
+def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, epsilon, allownegative=0): # <<<
 
     """For a curve with given tangents and curvatures at the endpoints this gives the distances between the controlpoints
 
@@ -85,9 +85,10 @@ def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, epsilon):
           The outcome is sorted so that the first entry is expected to be the
           most reasonable one
     """
+    debug = 0
 
-    # these two thresholds are dimensionless, not lengths:
-    fallback_threshold = 1.0e-3
+    # this threshold is dimensionless, not a length:
+    fallback_threshold = 1.0e-6
 
     # some shortcuts
     T = tangA[0] * tangB[1] - tangA[1] * tangB[0]
@@ -99,23 +100,29 @@ def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, epsilon):
     # Terefore, we need a fallback.
     # When the curvature is nearly zero or when T is nearly zero
     # we know the exact answer to the problem.
+    # The fallback is done only for results that are positive!
 
     # extreme case: all parameters are nearly zero
     a = b = 0.3 * AB
     if max([abs(1.5*a*a*curvA), abs(1.5*b*b*curvB), abs(a*T), abs(b*T), abs(D), abs(E)]) < epsilon:
+        if debug: print "extreme case 1"
         return [(a, b)]
 
     # extreme case: curvA geometrically too big
     if fallback_threshold * abs(curvA*AB) > 1:
+        if debug: print "extreme case 2a"
         a = math.sqrt(abs(D / (1.5 * curvA))) * mathutils.sign(D*curvA)
         b = (D - 1.5*curvA*a*abs(a)) / T
-        return [(a, b)]
+        if a >= 0 and b >= 0:
+            return [(a, b)]
 
     # extreme case: curvB geometrically too big
     if fallback_threshold * abs(curvB*AB) > 1:
+        if debug: print "extreme case 2b"
         b = math.sqrt(abs(E / (1.5 * curvB))) * mathutils.sign(E*curvB)
         a = (E - 1.5*curvB*b*abs(b)) / T
-        return [(a, b)]
+        if a >= 0 and b >= 0:
+            return [(a, b)]
 
     # extreme case: curvA much smaller than T
     try:
@@ -124,7 +131,8 @@ def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, epsilon):
     except ZeroDivisionError:
         pass
     else:
-        if abs(1.5*a*a*curvA) < fallback_threshold * abs(b*T):
+        if abs(1.5*a*a*curvA) < fallback_threshold * abs(b*T) and a >= 0 and b >= 0:
+            if debug: print "extreme case 3a"
             return [(a, b)]
 
     # extreme case: curvB much smaller than T
@@ -134,7 +142,8 @@ def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, epsilon):
     except ZeroDivisionError:
         pass
     else:
-        if abs(1.5*b*b*curvB) < fallback_threshold * abs(a*T):
+        if abs(1.5*b*b*curvB) < fallback_threshold * abs(a*T) and a >= 0 and b >= 0:
+            if debug: print "extreme case 3b"
             return [(a, b)]
 
     # extreme case: T much smaller than both curvatures
@@ -153,7 +162,9 @@ def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, epsilon):
             pass
         else:
             if (abs(b*T) < fallback_threshold * abs(1.5*a*a*curvA) and
-                abs(a*T) < fallback_threshold * abs(1.5*b*b*curvB) ):
+                abs(a*T) < fallback_threshold * abs(1.5*b*b*curvB) and
+                a >= 0 and b >= 0):
+                if debug: print "extreme case 4"
                 return [(a, b)]
 
     # Now the general case:
@@ -167,20 +178,21 @@ def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, epsilon):
     # because of the absolute values we get several possibilities for the signs
     # in the equation. We test all signs, also the invalid ones!
     solutions = []
-    for sign_a in [+1, -1]:
-        for sign_b in [+1, -1]:
+    if allownegative:
+        for sign_a, sign_b in [(+1, +1), (-1, +1), (+1, -1), (-1, -1)]:
             coeffs_a = (sign_b*3.375*curvA*curvA*curvB, 0.0, -sign_b*sign_a*4.5*curvA*curvB*D, T**3, sign_b*1.5*curvB*D*D - T*T*E)
             candidates_a = [root for root in mathutils.realpolyroots(*coeffs_a) if sign_a*root >= 0]
             for a in candidates_a:
                 b = (D - 1.5*curvA*a*abs(a)) / T
                 if (sign_b*b >= 0):
                     solutions.append((a, b))
-#            coeffs_b = (sign_a*3.375*curvA*curvB*curvB, 0.0, -sign_a*sign_b*4.5*curvA*curvB*E, T**3, sign_a*1.5*curvA*E*E - T*T*D)
-#            candidates_b = [root for root in mathutils.realpolyroots(*coeffs_b) if sign_b*root >= 0]
-#            for b in candidates_b:
-#                a = (E - 1.5*curvB*b*abs(b)) / T
-#                if (sign_a*a >= 0):
-#                    solutions.append((a, b))
+    else:
+        coeffs_a = (3.375*curvA*curvA*curvB, 0.0, -4.5*curvA*curvB*D, T**3, 1.5*curvB*D*D - T*T*E)
+        candidates_a = [root for root in mathutils.realpolyroots(*coeffs_a) if root >= 0]
+        for a in candidates_a:
+            b = (D - 1.5*curvA*a*abs(a)) / T
+            if (b >= 0):
+                solutions.append((a, b))
 
 
     # sort the solutions: the more reasonable values at the beginning
@@ -199,10 +211,10 @@ def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, epsilon):
     # XXX should the solutions's list also be unique'fied?
 
     # XXX we will stop here, if solutions is empty
-    if not solutions:
-        # TODO: remove this Exception.
-        #       this exception is only for getting aware of possible fallback situations
-        raise ValueError, "no curve found. Try adjusting the fallback-parameters."
+    #if not solutions:
+    #    # TODO: remove this Exception.
+    #    #       this exception is only for getting aware of possible fallback situations
+    #    raise ValueError, "no curve found. Try adjusting the fallback-parameters."
 
     return solutions
 # >>>
@@ -587,13 +599,9 @@ class parallel(deformer): # <<<
     """
 
     # TODO:
-    # * more testing of controldists_from_endgeometry_pt
     # * do testing for curv=0, T=0, D=0, E=0 cases
     # * do testing for several random curves
     #   -- does the recursive deformnicecurve converge?
-    #
-    # TODO for the test cases:
-    # * improve the intersection of nearly degenerate paths
 
 
     def __init__(self, distance, relerr=0.05, sharpoutercorners=0, dointersection=1,
@@ -934,21 +942,24 @@ class parallel(deformer): # <<<
             curvD = orig_curvD / (1.0 - dist*orig_curvD)
 
             # first try to approximate the normcurve with a single item
-            # TODO: is it good enough to get the first entry here?
-            # TODO: we rely on getting a result!
-            a, d = controldists_from_endgeometry_pt(A, D, tangA, tangD, curvA, curvD, epsilon=epsilon)[0]
-            if a >= 0 and d >= 0:
-                if a < epsilon and d < epsilon:
-                    result = normpath.normsubpath([normpath.normline_pt(A[0], A[1], D[0], D[1])], epsilon=epsilon)
-                else:
-                    # we avoid curves with invalid parameterization
-                    a = max(a, epsilon)
-                    d = max(d, epsilon)
-                    result = normpath.normsubpath([normpath.normcurve_pt(
-                        A[0], A[1],
-                        A[0] + a * tangA[0], A[1] + a * tangA[1],
-                        D[0] - d * tangD[0], D[1] - d * tangD[1],
-                        D[0], D[1])], epsilon=epsilon)
+            controldistpairs = controldists_from_endgeometry_pt(A, D, tangA, tangD, curvA, curvD, epsilon=epsilon)
+
+            if controldistpairs:
+                # TODO: is it good enough to get the first entry here?
+                #       from testing: this fails if there are loops in the original curve
+                a, d = controldistpairs[0]
+                if a >= 0 and d >= 0:
+                    if a < epsilon and d < epsilon:
+                        result = normpath.normsubpath([normpath.normline_pt(A[0], A[1], D[0], D[1])], epsilon=epsilon)
+                    else:
+                        # we avoid curves with invalid parameterization
+                        a = max(a, epsilon)
+                        d = max(d, epsilon)
+                        result = normpath.normsubpath([normpath.normcurve_pt(
+                            A[0], A[1],
+                            A[0] + a * tangA[0], A[1] + a * tangA[1],
+                            D[0] - d * tangD[0], D[1] - d * tangD[1],
+                            D[0], D[1])], epsilon=epsilon)
 
             # then try with two items, recursive call
             if ((not result.normsubpathitems) or
@@ -1271,7 +1282,7 @@ class parallel(deformer): # <<<
                     #done[otherparam(end)] = 1
 
             # eventually close the path
-            if (parampairs[0][0] is parampairs[-1][-1] or
+            if add_nsp and (parampairs[0][0] is parampairs[-1][-1] or
                 (parampairs[0][0] in selfintparams and otherparam(parampairs[0][0]) is parampairs[-1][-1])):
                 add_nsp.normsubpathitems[-1] = add_nsp.normsubpathitems[-1].modifiedend_pt(*add_nsp.atbegin_pt())
                 add_nsp.close()
