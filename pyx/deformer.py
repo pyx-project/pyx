@@ -515,9 +515,12 @@ class smoothed(deformer): # <<<
                         c2 = s2 * abs(c2)
 
                     # get the length of the control "arms"
-                    a, d = controldists_from_endgeometry_pt(p1, p2, t1, t2, c1, c2, epsilon=epsilon)[0]
+                    controldists = controldists_from_endgeometry_pt(p1, p2, t1, t2, c1, c2, epsilon=epsilon)
 
-                    if a >= 0 and d >= 0:
+                    if controldists and (controldists[0][0] >= 0 and controldists[0][1] >= 0):
+                        # use the first entry in the controldists
+                        # this should be the "smallest" pair
+                        a, d = controldists[0]
                         # avoid curves with invalid parameterization
                         a = max(a, epsilon)
                         d = max(d, epsilon)
@@ -533,10 +536,11 @@ class smoothed(deformer): # <<<
                                 d = min(d, abs(s))
 
                     else:
+                        # use a fallback
                         t, s = intersection(p1, p2, t1, t2)
                         if t is not None and s is not None:
-                            a = abs(t)
-                            d = abs(s)
+                            a = 0.65 * abs(t)
+                            d = 0.65 * abs(s)
                         else:
                             # if there is no useful result:
                             # take an arbitrary smoothing curve that does not obey
