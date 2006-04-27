@@ -77,11 +77,14 @@ def test_reproductions(seed, n_tests, xmax, ymax, accuracy): # <<<
             if minindex >=0 and not (controldistpairs[minindex][0] >= 0 and controldistpairs[minindex][1] >= 0):
                 print "%4d Failure: signs are wrong" % (cnt)
 
-            if minindex == 0:
+            # selectively draw the curves:
+            #if minindex == -1:
+            if minmaxdist > accuracy:
                 # draw the failure curves
                 can.stroke(path.rect_pt(0,0,xmax,ymax), [trafo.translate_pt(xpos, ypos)])
                 can.stroke(normpath.normpath([normpath.normsubpath([origcurve])]),  [trafo.translate_pt(xpos, ypos), style.linewidth.THIck])
-                can.stroke(normpath.normpath([normpath.normsubpath([reprocurves[minindex]])]), [trafo.translate_pt(xpos, ypos), color.rgb.red])
+                if minindex != -1:
+                    can.stroke(normpath.normpath([normpath.normsubpath([reprocurves[minindex]])]), [trafo.translate_pt(xpos, ypos), color.rgb.red])
                 if cnt == 604:
                     print controldistpairs
                     for j, controldistpair in enumerate(controldistpairs):
