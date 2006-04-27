@@ -25,14 +25,18 @@ seam = path.path(
   path.curveto(pts[8][0],pts[8][1],pts[9][0],pts[9][1],pts[10][0],pts[10][1]),
   path.lineto(*(pts[11])) )
 # We smooth this curve a little because we used curveto together with lineto
-seam = deformer.smoothed(0.2).deform(seam)
+seam = deformer.smoothed(0.6).deform(seam)
 
 
 # The ropes, when drawn later, will have to overlap in a very specific way.
 # We need to split them at appropriate points.
 # This gives a list of segments for the middle curve
 l = seam.arclen()
-seam_segs = seam.split([0.28*l, 0.42*l, 0.58*l, 0.72*l])
+eps = 0.002*l
+lenghts = [eps, 0.28*l, 0.42*l, 0.58*l, 0.72*l, l-eps]
+seam_segs = []
+for i in range(len(lenghts)-1):
+    seam_segs.append(seam.split([lenghts[i]-eps, lenghts[i+1]+eps])[1])
 
 
 # For each segment two shifted paths build the boundaries of each rope
