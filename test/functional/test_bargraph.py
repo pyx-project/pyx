@@ -23,7 +23,7 @@ def test_bar4(c, x, y):
                                     painter=graph.axis.painter.bar(basepathattrs=None),
                                     linkpainter=graph.axis.painter.bar(basepathattrs=None))
     g = c.insert(graph.graphxy(x, y, height=5, width=12,
-                               x=graph.axis.nestedbar(defaultsubaxis=graph.axis.bar(subaxes={'A': graph.axis.lin(painter=None, linkpainter=None, parter=None, texter=None),
+                               x=graph.axis.nestedbar(defaultsubaxis=graph.axis.bar(subaxes={'A': graph.axis.lin(painter=None, linkpainter=None, parter=None),
                                                                                              'B': graph.axis.bar(painter=graph.axis.painter.bar(basepathattrs=None),
                                                                                                                  linkpainter=graph.axis.painter.bar(basepathattrs=None))},
                                                                                     painter=graph.axis.painter.bar(basepathattrs=None),
