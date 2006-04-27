@@ -64,12 +64,13 @@ class _invalid:
 
     """invalid result marker class
 
-    The followin norm(sub)path(item) methods:
+    The following norm(sub)path(item) methods:
       - trafo
       - rotation
       - tangent_pt
       - tangent
       - curvature_pt
+      - curvradius_pt
     return list of result values, which might contain the invalid instance
     defined below to signal points, where the result is undefined due to
     properties of the norm(sub)path(item). Accessing invalid leads to an
@@ -1633,7 +1634,11 @@ class normpath:
         this radius can be negative or positive, depending on the sign of the
         curvature."""
 
-        return self._curveradius_pt(self._convertparams(params, self.arclentoparam_pt))
+        result = [None] * len(params)
+        for normsubpathindex, (indices, params) in self._distributeparams(params).items():
+            for index, curv_pt in zip(indices, self.normsubpaths[normsubpathindex].curvature_pt(params)):
+                result[index] = curv_pt
+        return result
     curvature_pt = _valueorlistmethod(curvature_pt)
 
     def _curveradius_pt(self, params):
