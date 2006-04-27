@@ -166,34 +166,29 @@ def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, epsilon):
     #     0 = 1.5 b |b| curvB + a * T - E
     # because of the absolute values we get several possibilities for the signs
     # in the equation. We test all signs, also the invalid ones!
-    candidates_a, candidates_b = [], []
+    solutions = []
     for sign_a in [+1, -1]:
         for sign_b in [+1, -1]:
             coeffs_a = (sign_b*3.375*curvA*curvA*curvB, 0.0, -sign_b*sign_a*4.5*curvA*curvB*D, T**3, sign_b*1.5*curvB*D*D - T*T*E)
-            coeffs_b = (sign_a*3.375*curvA*curvB*curvB, 0.0, -sign_a*sign_b*4.5*curvA*curvB*E, T**3, sign_a*1.5*curvA*E*E - T*T*D)
-            candidates_a += [root for root in mathutils.realpolyroots(*coeffs_a) if sign_a*root >= 0]
-            candidates_b += [root for root in mathutils.realpolyroots(*coeffs_b) if sign_b*root >= 0]
+            candidates_a = [root for root in mathutils.realpolyroots(*coeffs_a) if sign_a*root >= 0]
+            for a in candidates_a:
+                b = (D - 1.5*curvA*a*abs(a)) / T
+                if (sign_b*b >= 0):
+                    solutions.append((a, b))
+#            coeffs_b = (sign_a*3.375*curvA*curvB*curvB, 0.0, -sign_a*sign_b*4.5*curvA*curvB*E, T**3, sign_a*1.5*curvA*E*E - T*T*D)
+#            candidates_b = [root for root in mathutils.realpolyroots(*coeffs_b) if sign_b*root >= 0]
+#            for b in candidates_b:
+#                a = (E - 1.5*curvB*b*abs(b)) / T
+#                if (sign_a*a >= 0):
+#                    solutions.append((a, b))
 
-    # check the combined equations
-    # and find the candidate pairs
-    solutions = []
-    for a in candidates_a:
-        for b in candidates_b:
-            # check if the calculated radii of curvature do not differ from 1/curv
-            # by more than epsilon. This uses epsilon like in all normpath
-            # methods as a criterion for "length".
-            # In mathematical language this is
-            #   abs(1.5a|a|/(D-bT) - 1/curvA) < epsilon
-            if ( abs(1.5*curvA*a*abs(a) + b*T - D) < epsilon * abs(curvA*(D - b*T)) and
-                 abs(1.5*curvB*b*abs(b) + a*T - E) < epsilon * abs(curvB*(E - a*T)) ):
-                solutions.append((a, b))
 
     # sort the solutions: the more reasonable values at the beginning
     def mycmp(x,y):
         # first the pairs that are purely positive, then all the pairs with some negative signs
         # inside the two sets: sort by magnitude
-        sx = x[0] > 0 and x[1] > 0
-        sy = y[0] > 0 and y[1] > 0
+        sx = (x[0] > 0 and x[1] > 0)
+        sy = (y[0] > 0 and y[1] > 0)
         if sx == sy:
             return cmp(x[0]**2 + x[1]**2, y[0]**2 + y[1]**2)
         else:
@@ -205,7 +200,8 @@ def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, epsilon):
 
     # XXX we will stop here, if solutions is empty
     if not solutions:
-        #print curvA, curvB, T, D, E
+        # TODO: remove this Exception.
+        #       this exception is only for getting aware of possible fallback situations
         raise ValueError, "no curve found. Try adjusting the fallback-parameters."
 
     return solutions
@@ -513,8 +509,8 @@ class smoothed(deformer): # <<<
                         # make the sign such that the curve smoothly passes to the next point
                         # this results in a discontinuous curvature
                         # (but the absolute value is still continuous)
-                        s1 = mathutils.sign(t1[0] * (p2[1]-p1[1]) - t1[1] * (p2[0]-p1[0]))
-                        s2 = mathutils.sign(t2[0] * (p2[1]-p1[1]) - t2[1] * (p2[0]-p1[0]))
+                        s1 = +mathutils.sign(t1[0] * (p2[1]-p1[1]) - t1[1] * (p2[0]-p1[0]))
+                        s2 = -mathutils.sign(t2[0] * (p2[1]-p1[1]) - t2[1] * (p2[0]-p1[0]))
                         c1 = s1 * abs(c1)
                         c2 = s2 * abs(c2)
 
@@ -1103,12 +1099,7 @@ class parallel(deformer): # <<<
                     else:
                         nspitem_j_range = range(len(np[nsp_j]))
                     for nspitem_j in nspitem_j_range:
-                        #print "intersecting (%d,%d) with (%d,%d)" %(nsp_i, nspitem_i, nsp_j, nspitem_j)
                         intsparams = np[nsp_i][nspitem_i].intersect(np[nsp_j][nspitem_j], epsilon)
-                        #if 1:#intsparams:
-                        #    print np[nsp_i][nspitem_i]
-                        #    print np[nsp_j][nspitem_j]
-                        #    print intsparams
                         if intsparams:
                             for intsparam_i, intsparam_j in intsparams:
                                 if ( (abs(intsparam_i) < epsilon and abs(1-intsparam_j) < epsilon) or 
@@ -1262,8 +1253,8 @@ class parallel(deformer): # <<<
                 assert begin.normsubpathindex is end.normsubpathindex
                 for item in par_np[begin.normsubpathindex].segments(
                     [begin.normsubpathparam, end.normsubpathparam])[0].normsubpathitems:
-                    # TODO: this should be obsolete with an improved intersecion algorithm
-                    # guaranteeing epsilon
+                    # TODO: this should be obsolete with an improved intersection algorithm
+                    #       guaranteeing epsilon
                     if add_nsp.normsubpathitems:
                         item = item.modifiedbegin_pt(*(add_nsp.atend_pt()))
                     add_nsp.append(item)
