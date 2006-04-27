@@ -483,11 +483,11 @@ class parbox_pt(attr.sortbeforeexclusiveattr, textattr):
 
     def apply(self, expr):
         if self.baseline == self.top:
-            return r"\linewidth%.5ftruept\vtop{\hsize\linewidth{}%s}" % (self.width, expr)
+            return r"\linewidth=%.5ftruept\vtop{\hsize=\linewidth\textwidth=\linewidth{}%s}" % (self.width, expr)
         elif self.baseline == self.middle:
-            return r"\linewidth%.5ftruept\setbox\PyXBoxVBox=\hbox{{\vtop{\hsize\linewidth{}%s}}}\PyXDimenVBox=0.5\dp\PyXBoxVBox\setbox\PyXBoxVBox=\hbox{{\vbox{\hsize\linewidth{}%s}}}\advance\PyXDimenVBox by -0.5\dp\PyXBoxVBox\lower\PyXDimenVBox\box\PyXBoxVBox" % (self.width, expr, expr)
+            return r"\linewidth=%.5ftruept\setbox\PyXBoxVBox=\hbox{{\vtop{\hsize=\linewidth\textwidth=\linewidth{}%s}}}\PyXDimenVBox=0.5\dp\PyXBoxVBox\setbox\PyXBoxVBox=\hbox{{\vbox{\hsize=\linewidth\textwidth=\linewidth{}%s}}}\advance\PyXDimenVBox by -0.5\dp\PyXBoxVBox\lower\PyXDimenVBox\box\PyXBoxVBox" % (self.width, expr, expr)
         elif self.baseline == self.bottom:
-            return r"\linewidth%.5ftruept\vbox{\hsize\linewidth{}%s}" % (self.width, expr)
+            return r"\linewidth=%.5ftruept\vbox{\hsize=\linewidth\textwidth=\linewidth{}%s}" % (self.width, expr)
         else:
             RuntimeError("invalid baseline argument")
 
@@ -957,7 +957,7 @@ class texrunner:
                         raise IOError("%sNo LaTeX font size files (*.lfs) available. Check your installation." % lfserror)
                 self.execute(lfsdef, [])
                 self.execute("\\normalsize%\n", [])
-                self.execute("\\newdimen\\linewidth%\n", [])
+                self.execute("\\newdimen\\linewidth\\newdimen\\textwidth%\n", [])
             elif self.mode == "latex":
                 if self.pyxgraphics:
                     pyxdef = os.path.join(siteconfig.sharedir, "pyx.def")
