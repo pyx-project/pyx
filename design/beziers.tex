@@ -281,12 +281,12 @@ either because the curve is almost straight or it is very short.
 However, although the geometric changes are limited to distances of
 $\epsilon$, the parametrization $t$ of the B\'ezier curve might be
 mistakenly represented by the straight line on a much larger scale.
-In the shown example, the point $X$ on the straight line and $Y$ on
-the B\'ezier curve are both taken at the parameter value $t=0.5$, but
+In the shown example, the point $X$ on the B\'ezier curve and $Y$ on
+the straight line are both taken at the parameter value $t=0.5$, but
 clearly are more separated from each other than one would expect from
 the geometric distance of the two paths. While the parametrization on
 a line is proportional to the arc length, a non-linear behaviour is
-found on a B\'ezier curve. This non-linearity has is originated in
+found on a B\'ezier curve. This non-linearity is originated in
 considerably different lengths $l_1$, $l_2$ and $l_3$ and the mapping
 of the non-linear parameter to a linear parametrization (in terms of
 the arc length) can be reduced to a one-dimensional problem upon an
@@ -298,7 +298,7 @@ error $\epsilon$:
 %
 In this one-dimensional approximation the parameter $t'$ performs a
 linear mapping as for any straight line while $t$ represents the usual
-B\'ezier curve parametrization. It now becomes a matter of expression
+B\'ezier curve parametrization. It now becomes a matter of expressing
 $t$ by $t'$. The polynomial in $t$ to be solved is:
 %
 \begin{equation}
