@@ -169,12 +169,12 @@ def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, epsilon, 
         return result
     # >>>
     def findnearest(x, ys): # <<<
-        I = None
-        Y = None
-        mindist = float("inf")
+        I = 0
+        Y = ys[I]
+        mindist = abs(x - Y)
 
         # find the value in ys which is nearest to x
-        for i, y in enumerate(ys):
+        for i, y in enumerate(ys[1:]):
             dist = abs(x - y)
             if dist < mindist:
                 I, Y, mindist = i, y, dist
@@ -207,21 +207,6 @@ def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, epsilon, 
         signs = [(+1, +1), (-1, +1), (+1, -1), (-1, -1)]
     else:
         signs = [(+1, +1)]
-
-#    solutions = []
-#    for sign_a, sign_b in signs:
-#        coeffs_a = (sign_b*3.375*curvA*curvA*curvB, 0.0, -sign_b*sign_a*4.5*curvA*curvB*D, T**3, sign_b*1.5*curvB*D*D - T*T*E)
-#        candidates_a = [root for root in mathutils.realpolyroots(*coeffs_a) if sign_a*root >= 0]
-#        for a in candidates_a:
-#            b = (D - 1.5*curvA*a*abs(a)) / T
-#            if (sign_b*b >= 0):
-#                solutions.append((a, b))
-#        #coeffs_b = (sign_a*3.375*curvA*curvB*curvB, 0.0, -sign_a*sign_b*4.5*curvA*curvB*E, T**3, sign_a*1.5*curvA*E*E - T*T*D)
-#        #candidates_b = [root for root in mathutils.realpolyroots(*coeffs_b) if sign_b*root >= 0]
-#        #for b in candidates_b:
-#        #    a = (E - 1.5*curvB*b*abs(b)) / T
-#        #    if (sign_a*a >= 0):
-#        #        solutions.append((a, b))
 
     candidates_a = []
     candidates_b = []
