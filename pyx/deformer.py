@@ -2,7 +2,7 @@
 # -*- coding: ISO-8859-1 -*-
 #
 #
-# Copyright (C) 2003-2005 Michael Schindler <m-schindler@users.sourceforge.net>
+# Copyright (C) 2003-2006 Michael Schindler <m-schindler@users.sourceforge.net>
 # Copyright (C) 2003-2005 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
@@ -24,7 +24,7 @@
 
 import math, warnings
 import attr, mathutils, path, normpath, unit, color
-from path import degrees
+from path import degrees, radians
 
 # specific exception for an invalid parameterization point
 # used in parallel
@@ -87,8 +87,100 @@ def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, epsilon, 
     """
     debug = 0
 
-    # this threshold is dimensionless, not a length:
-    fallback_threshold = 1.0e-6
+    def test_divisions(T, D, E, AB, curvA, curvB, debug):# <<<
+
+        def is_zero(x):
+            try:
+                1.0 / x
+            except ZeroDivisionError:
+                return 1
+            return 0
+
+        T_is_zero = is_zero(T)
+        curvA_is_zero = is_zero(curvA)
+        curvB_is_zero = is_zero(curvB)
+
+        if T_is_zero:
+            if curvA_is_zero:
+                assert abs(D) < 1.0e-10
+                a = AB / 3.0
+                if curvB_is_zero:
+                    assert abs(E) < 1.0e-10
+                    b = AB / 3.0
+                else:
+                    b = math.sqrt(abs(E / (1.5 * curvB))) * mathutils.sign(E*curvB)
+            else:
+                a = math.sqrt(abs(D / (1.5 * curvA))) * mathutils.sign(D*curvA)
+                if curvB_is_zero:
+                    assert abs(E) < 1.0e-10
+                    b = AB / 3.0
+                else:
+                    b = math.sqrt(abs(E / (1.5 * curvB))) * mathutils.sign(E*curvB)
+        else:
+            if curvA_is_zero:
+                b = D / T
+                a = (E - 1.5*curvB*b*abs(b)) / T
+            elif curvB_is_zero:
+                a = E / T
+                b = (D - 1.5*curvA*a*abs(a)) / T
+            else:
+                return []
+
+        if debug:
+            print "fallback with exact zero value"
+        return [(a, b)]
+    # >>>
+    def fallback_smallT(T, D, E, AB, curvA, curvB, threshold, debug):# <<<
+        a = math.sqrt(abs(D / (1.5 * curvA))) * mathutils.sign(D*curvA)
+        b = math.sqrt(abs(E / (1.5 * curvB))) * mathutils.sign(E*curvB)
+        q1 = min(abs(1.5*a*a*curvA), abs(D))
+        q2 = min(abs(1.5*b*b*curvB), abs(E))
+        if (a >= 0 and b >= 0 and
+            abs(b*T) < threshold * q1 and abs(1.5*a*abs(a)*curvA - D) < threshold * q1 and
+            abs(a*T) < threshold * q2 and abs(1.5*b*abs(b)*curvB - E) < threshold * q2):
+            if debug:
+                print "fallback with T approx 0"
+            return [(a, b)]
+        return []
+    # >>>
+    def fallback_smallcurv(T, D, E, AB, curvA, curvB, threshold, debug):# <<<
+        result = []
+
+        # is curvB approx zero?
+        a = E / T
+        b = (D - 1.5*curvA*a*abs(a)) / T
+        if (a >= 0 and b >= 0 and
+            abs(1.5*b*b*curvB) < threshold * min(abs(a*T), abs(E)) and
+            abs(a*T - E) < threshold * min(abs(a*T), abs(E))):
+            if debug:
+                print "fallback with curvB approx 0"
+            result.append((a, b))
+
+        # is curvA approx zero?
+        b = D / T
+        a = (E - 1.5*curvB*b*abs(b)) / T
+        if (a >= 0 and b >= 0 and
+            abs(1.5*a*a*curvA) < threshold * min(abs(b*T), abs(D)) and
+            abs(b*T - D) < threshold * min(abs(b*T), abs(D))):
+            if debug:
+                print "fallback with curvA approx 0"
+            result.append((a, b))
+
+        return result
+    # >>>
+    def findnearest(x, ys): # <<<
+        I = None
+        Y = None
+        mindist = float("inf")
+
+        # find the value in ys which is nearest to x
+        for i, y in enumerate(ys):
+            dist = abs(x - y)
+            if dist < mindist:
+                I, Y, mindist = i, y, dist
+
+        return I, Y
+    # >>>
 
     # some shortcuts
     T = tangA[0] * tangB[1] - tangA[1] * tangB[0]
@@ -96,78 +188,12 @@ def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, epsilon, 
     E = tangB[0] * (A[1]-B[1]) - tangB[1] * (A[0]-B[0])
     AB = math.hypot(A[0] - B[0], A[1] - B[1])
 
-    # For curvatures zero we found no solutions (during testing)
-    # Terefore, we need a fallback.
-    # When the curvature is nearly zero or when T is nearly zero
-    # we know the exact answer to the problem.
-    # The fallback is done only for results that are positive!
+    # try if one of the prefactors is exactly zero
+    testsols = test_divisions(T, D, E, AB, curvA, curvB, debug)
+    if testsols:
+        return testsols
 
-    # extreme case: all parameters are nearly zero
-    a = b = 0.3 * AB
-    if max([abs(1.5*a*a*curvA), abs(1.5*b*b*curvB), abs(a*T), abs(b*T), abs(D), abs(E)]) < epsilon:
-        if debug: print "extreme case 1"
-        return [(a, b)]
-
-    # extreme case: curvA geometrically too big
-    if fallback_threshold * abs(curvA*AB) > 1:
-        if debug: print "extreme case 2a"
-        a = math.sqrt(abs(D / (1.5 * curvA))) * mathutils.sign(D*curvA)
-        b = (D - 1.5*curvA*a*abs(a)) / T
-        if a >= 0 and b >= 0:
-            return [(a, b)]
-
-    # extreme case: curvB geometrically too big
-    if fallback_threshold * abs(curvB*AB) > 1:
-        if debug: print "extreme case 2b"
-        b = math.sqrt(abs(E / (1.5 * curvB))) * mathutils.sign(E*curvB)
-        a = (E - 1.5*curvB*b*abs(b)) / T
-        if a >= 0 and b >= 0:
-            return [(a, b)]
-
-    # extreme case: curvA much smaller than T
-    try:
-        b = D / T
-        a = (E - 1.5*curvB*b*abs(b)) / T
-    except ZeroDivisionError:
-        pass
-    else:
-        if abs(1.5*a*a*curvA) < fallback_threshold * abs(b*T) and a >= 0 and b >= 0:
-            if debug: print "extreme case 3a"
-            return [(a, b)]
-
-    # extreme case: curvB much smaller than T
-    try:
-        a = E / T
-        b = (D - 1.5*curvA*a*abs(a)) / T
-    except ZeroDivisionError:
-        pass
-    else:
-        if abs(1.5*b*b*curvB) < fallback_threshold * abs(a*T) and a >= 0 and b >= 0:
-            if debug: print "extreme case 3b"
-            return [(a, b)]
-
-    # extreme case: T much smaller than both curvatures
-    try:
-        a = math.sqrt(abs(D / (1.5 * curvA))) * mathutils.sign(D*curvA)
-    except ZeroDivisionError:
-        # we have tried the case with small curvA already
-        # and we cannot divide by T
-        pass
-    else:
-        try:
-            b = math.sqrt(abs(E / (1.5 * curvB))) * mathutils.sign(E*curvB)
-        except ZeroDivisionError:
-            # we have tried the case with small curvB already
-            # and we cannot divide by T
-            pass
-        else:
-            if (abs(b*T) < fallback_threshold * abs(1.5*a*a*curvA) and
-                abs(a*T) < fallback_threshold * abs(1.5*b*b*curvB) and
-                a >= 0 and b >= 0):
-                if debug: print "extreme case 4"
-                return [(a, b)]
-
-    # Now the general case:
+    # The general case:
     # we try to find all the zeros of the decoupled 4th order problem
     # for the combined problem:
     # The control points of a cubic Bezier curve are given by a, b:
@@ -182,24 +208,43 @@ def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, epsilon, 
     else:
         signs = [(+1, +1)]
 
-    solutions = []
+#    solutions = []
+#    for sign_a, sign_b in signs:
+#        coeffs_a = (sign_b*3.375*curvA*curvA*curvB, 0.0, -sign_b*sign_a*4.5*curvA*curvB*D, T**3, sign_b*1.5*curvB*D*D - T*T*E)
+#        candidates_a = [root for root in mathutils.realpolyroots(*coeffs_a) if sign_a*root >= 0]
+#        for a in candidates_a:
+#            b = (D - 1.5*curvA*a*abs(a)) / T
+#            if (sign_b*b >= 0):
+#                solutions.append((a, b))
+#        #coeffs_b = (sign_a*3.375*curvA*curvB*curvB, 0.0, -sign_a*sign_b*4.5*curvA*curvB*E, T**3, sign_a*1.5*curvA*E*E - T*T*D)
+#        #candidates_b = [root for root in mathutils.realpolyroots(*coeffs_b) if sign_b*root >= 0]
+#        #for b in candidates_b:
+#        #    a = (E - 1.5*curvB*b*abs(b)) / T
+#        #    if (sign_a*a >= 0):
+#        #        solutions.append((a, b))
+
+    candidates_a = []
+    candidates_b = []
     for sign_a, sign_b in signs:
         coeffs_a = (sign_b*3.375*curvA*curvA*curvB, 0.0, -sign_b*sign_a*4.5*curvA*curvB*D, T**3, sign_b*1.5*curvB*D*D - T*T*E)
-        candidates_a = [root for root in mathutils.realpolyroots(*coeffs_a) if sign_a*root >= 0]
+        coeffs_b = (sign_a*3.375*curvA*curvB*curvB, 0.0, -sign_a*sign_b*4.5*curvA*curvB*E, T**3, sign_a*1.5*curvA*E*E - T*T*D)
+        candidates_a += [root for root in mathutils.realpolyroots(*coeffs_a) if sign_a*root >= 0]
+        candidates_b += [root for root in mathutils.realpolyroots(*coeffs_b) if sign_b*root >= 0]
+    solutions = []
+    if candidates_a and candidates_b:
         for a in candidates_a:
-            b = (D - 1.5*curvA*a*abs(a)) / T
-            if (sign_b*b >= 0):
-                solutions.append((a, b))
-        #coeffs_b = (sign_a*3.375*curvA*curvB*curvB, 0.0, -sign_a*sign_b*4.5*curvA*curvB*E, T**3, sign_a*1.5*curvA*E*E - T*T*D)
-        #candidates_b = [root for root in mathutils.realpolyroots(*coeffs_b) if sign_b*root >= 0]
-        #for b in candidates_b:
-        #    a = (E - 1.5*curvB*b*abs(b)) / T
-        #    if (sign_a*a >= 0):
-        #        solutions.append((a, b))
+            i, b = findnearest((D - 1.5*curvA*a*abs(a))/T, candidates_b)
+            solutions.append((a, b))
 
+    # try if there is an approximate solution
+    for thr in [1.0e-2, 1.0e-1]:
+        if not solutions:
+            solutions = fallback_smallT(T, D, E, AB, curvA, curvB, thr, debug)
+        if not solutions:
+            solutions = fallback_smallcurv(T, D, E, AB, curvA, curvB, thr, debug)
 
     # sort the solutions: the more reasonable values at the beginning
-    def mycmp(x,y):
+    def mycmp(x,y): # <<<
         # first the pairs that are purely positive, then all the pairs with some negative signs
         # inside the two sets: sort by magnitude
         sx = (x[0] > 0 and x[1] > 0)
@@ -246,18 +291,8 @@ def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, epsilon, 
             #return cmp(x[0]**2 + x[1]**2, y[0]**2 + y[1]**2)
         else:
             return cmp(sy, sx)
-
-
-
+    # >>>
     solutions.sort(mycmp)
-
-    # XXX should the solutions's list also be unique'fied?
-
-    # XXX we will stop here, if solutions is empty
-    #if not solutions:
-    #    # TODO: remove this Exception.
-    #    #       this exception is only for getting aware of possible fallback situations
-    #    raise ValueError, "no curve found. Try adjusting the fallback-parameters."
 
     return solutions
 # >>>
