@@ -83,7 +83,13 @@ def _realroots_cubic(a2, a1, a0):
             return [2*S - a2/3.0, -S - a2/3.0]
     else:             # three real roots (Q<0)
         SQ = math.sqrt(-Q)
-        theta = math.acos(R/(SQ**3))
+        arg = R / (SQ**3)
+        if arg >= 1:
+            theta = 0
+        elif arg <= -1:
+            theta = math.pi
+        else:
+            theta = math.acos(R/(SQ**3))
         return [2 * SQ * math.cos((theta + 2*2*i*math.pi)/3.0) - a2/3.0 for i in range(3)]
 
 
