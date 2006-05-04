@@ -50,7 +50,7 @@ TODO:
 
   Documentation:
     - path module:
-      - describe + vs <<
+      - describe + vs << vs join
       - more details in path constructor: allowed pathels, first pathel...
       - set method
     - pattern module:
@@ -64,7 +64,6 @@ TODO:
       styles: document what data name the styles accept (require). Try also to be more
       userfriendly and not to describe immediately the internals of the implementation:
       (see e.g. class.style.symbol)
-    - include the deformer docu somewhere in path
 
   FAQ:
     - describe creation and modification (inplace and ``modify by new'') of
@@ -75,6 +74,7 @@ TODO:
   - most important changes (to be included in the release notes):
     - mathtree removal (warning about integer division)
     - barpos style does not build tuples for nestedbar axes automatically
+    - new deformers for path manipulation (for smoothing, shifting, ... paths)
   - font modules:
     - new framework for font handling
     - own implementation of type1 font stripping (old pdftex code fragments removed)
@@ -140,7 +140,7 @@ TODO:
     - normpath is no longer a canvasitem
     - reduce number of parameters of outputPS/outputPDF methods (do not pass context and registry)
   - deformer module:
-    - rewritten smoother to make use of the subnormpath facilities
+    - rewritten smoothed to make use of the subnormpath facilities
     - rewritten parallel for arbitrary paths
   - deco module:
     - add basic text decorator (TODO: documentation)
