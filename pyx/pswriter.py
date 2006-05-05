@@ -164,10 +164,10 @@ class PSfontfile(PSresource):
             # XXX: access to the encoding file
             if self.encodingfilename:
                 encodingfile = type1font.encodingfile(self.encodingfilename, self.encodingfilename)
-                usedglyphs = [encodingfile.decode(char)[1:] for char in self.usedchars.keys()]
+                usedglyphs = dict([(encodingfile.decode(char)[1:], 1) for char in self.usedchars.keys()])
             else:
                 font._encoding()
-                usedglyphs = [font.encoding.decode(char) for char in self.usedchars.keys()]
+                usedglyphs = dict([(font.encoding.decode(char), 1) for char in self.usedchars.keys()])
             strippedfont = font.getstrippedfont(usedglyphs)
         else:
             strippedfont = font
