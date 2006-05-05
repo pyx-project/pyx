@@ -3,7 +3,7 @@
 #
 #
 # Copyright (C) 2002-2006 Jörg Lehmann <joergl@users.sourceforge.net>
-# Copyright (C) 2003-2004 Michael Schindler <m-schindler@users.sourceforge.net>
+# Copyright (C) 2003-2004,2006 Michael Schindler <m-schindler@users.sourceforge.net>
 # Copyright (C) 2002-2004 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
@@ -89,7 +89,7 @@ class miterlimit(attr.exclusiveattr, strokestyle):
     def processPS(self, file, writer, context, registry, bbox):
         file.write("%f setmiterlimit\n" % self.value)
 
-    def outoutPDF(self, file):
+    def processPDF(self, file, writer, context, registry, bbox):
         file.write("%f M\n" % self.value)
 
 miterlimit.lessthan180deg = miterlimit(1/math.sin(math.pi*180/360))
