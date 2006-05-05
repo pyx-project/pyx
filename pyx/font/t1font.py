@@ -21,6 +21,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
+from __future__ import nested_scopes
 
 import array, binascii, re
 try:
@@ -56,10 +57,22 @@ class T1context:
 
 ######################################################################
 # T1 commands
-# Note, that all commands except for the T1value are variable-free and
-# are thus implemented as instances.
+# Note, that the T1 commands are variable-free except for plain number,
+# which are stored as integers. All other T1 commands exist as a single
+# instance only
 
-class _T1cmd:
+T1cmds = {}
+T1subcmds = {}
+
+class T1cmd:
+
+    def __init__(self, code, subcmd=False):
+        self.code = code
+        self.subcmd = subcmd
+        if subcmd:
+            T1subcmds[code] = self
+        else:
+            T1cmds[code] = self
 
     def __str__(self):
         """returns a string representation of the T1 command"""
@@ -73,7 +86,7 @@ class _T1cmd:
         """gather dependancy information
 
         subrs is the "called-subrs" dictionary. gathercalls will insert the
-        subrnumber as key having the value 1, i.e. subrs.keys() will become the
+        subr number as key having the value 1, i.e. subrs.keys() will become the
         numbers of used subrs. Similar seacglyphs will contain all glyphs in
         composite characters (subrs and othersubrs for those glyphs will also
         already be included) and othersubrs the othersubrs called.
@@ -86,32 +99,12 @@ class _T1cmd:
         pass
 
 
-class T1value(_T1cmd):
-
-    def __init__(self, value):
-        self.value = value
-
-    def __str__(self):
-        return str(self.value)
-
-    def updatepath(self, path, trafo, context):
-        context.t1stack.append(self.value)
-
-    def gathercalls(self, seacglyphs, subrs, othersubrs, context):
-        context.t1stack.append(self.value)
-
-    def __eq__(self, other):
-        # while we can compare the other commands, since they are instances, 
-        # for T1value we need to compare its values
-        if isinstance(other, T1value):
-            return self.value == other.value
-        else:
-            return 0
-
-
 # commands for starting and finishing
 
-class _T1endchar(_T1cmd):
+class _T1endchar(T1cmd):
+
+    def __init__(self):
+        T1cmd.__init__(self, 14)
 
     def __str__(self):
         return "endchar"
@@ -122,7 +115,10 @@ class _T1endchar(_T1cmd):
 T1endchar = _T1endchar()
 
 
-class _T1hsbw(_T1cmd):
+class _T1hsbw(T1cmd):
+
+    def __init__(self):
+        T1cmd.__init__(self, 13)
 
     def __str__(self):
         return "hsbw"
@@ -139,7 +135,10 @@ class _T1hsbw(_T1cmd):
 T1hsbw = _T1hsbw()
 
 
-class _T1seac(_T1cmd):
+class _T1seac(T1cmd):
+
+    def __init__(self):
+        T1cmd.__init__(self, 6, subcmd=True)
 
     def __str__(self):
         return "seac"
@@ -150,11 +149,9 @@ class _T1seac(_T1cmd):
         ady = context.t1stack.pop(0)
         bchar = context.t1stack.pop(0)
         achar = context.t1stack.pop(0)
-        for cmd in context.t1font.getglyphcmds(encoding.adobestandardencoding.decode(bchar)):
-            cmd.updatepath(path, atrafo, context)
+        context.t1font.updateglyphpath(bglyph, path, atrafo, context)
         atrafo = atrafo * trafo.translate_pt(adx-sab, ady)
-        for cmd in context.t1font.getglyphcmds(encoding.adobestandardencoding.decode(achar)):
-            cmd.updatepath(path, atrafo, context)
+        context.t1font.updateglyphpath(aglyph, path, atrafo, context)
 
     def gathercalls(self, seacglyphs, subrs, othersubrs, context):
         bchar = context.t1stack.pop()
@@ -163,15 +160,16 @@ class _T1seac(_T1cmd):
         bglyph = encoding.adobestandardencoding.decode(bchar)
         seacglyphs[aglyph] = 1
         seacglyphs[bglyph] = 1
-        for cmd in context.t1font.getglyphcmds(bglyph):
-            cmd.gathercalls(seacglyphs, subrs, othersubrs, context)
-        for cmd in context.t1font.getglyphcmds(aglyph):
-            cmd.gathercalls(seacglyphs, subrs, othersubrs, context)
+        context.t1font.gatherglyphcalls(bglyph, seacglyphs, subrs, othersubrs, context)
+        context.t1font.gatherglyphcalls(aglyph, seacglyphs, subrs, othersubrs, context)
 
 T1seac = _T1seac()
 
 
-class _T1sbw(_T1cmd):
+class _T1sbw(T1cmd):
+
+    def __init__(self):
+        T1cmd.__init__(self, 7, subcmd=True)
 
     def __str__(self):
         return "sbw"
@@ -192,7 +190,10 @@ T1sbw = _T1sbw()
 
 # path construction commands
 
-class _T1closepath(_T1cmd):
+class _T1closepath(T1cmd):
+
+    def __init__(self):
+        T1cmd.__init__(self, 9)
 
     def __str__(self):
         return "closepath"
@@ -207,7 +208,10 @@ class _T1closepath(_T1cmd):
 T1closepath = _T1closepath()
 
 
-class _T1hlineto(_T1cmd):
+class _T1hlineto(T1cmd):
+
+    def __init__(self):
+        T1cmd.__init__(self, 6)
 
     def __str__(self):
         return "hlineto"
@@ -220,7 +224,10 @@ class _T1hlineto(_T1cmd):
 T1hlineto = _T1hlineto()
 
 
-class _T1hmoveto(_T1cmd):
+class _T1hmoveto(T1cmd):
+
+    def __init__(self):
+        T1cmd.__init__(self, 22)
 
     def __str__(self):
         return "hmoveto"
@@ -233,7 +240,10 @@ class _T1hmoveto(_T1cmd):
 T1hmoveto = _T1hmoveto()
 
 
-class _T1hvcurveto(_T1cmd):
+class _T1hvcurveto(T1cmd):
+
+    def __init__(self):
+        T1cmd.__init__(self, 31)
 
     def __str__(self):
         return "hvcurveto"
@@ -252,7 +262,10 @@ class _T1hvcurveto(_T1cmd):
 T1hvcurveto = _T1hvcurveto()
 
 
-class _T1rlineto(_T1cmd):
+class _T1rlineto(T1cmd):
+
+    def __init__(self):
+        T1cmd.__init__(self, 5)
 
     def __str__(self):
         return "rlineto"
@@ -267,7 +280,10 @@ class _T1rlineto(_T1cmd):
 T1rlineto = _T1rlineto()
 
 
-class _T1rmoveto(_T1cmd):
+class _T1rmoveto(T1cmd):
+
+    def __init__(self):
+        T1cmd.__init__(self, 21)
 
     def __str__(self):
         return "rmoveto"
@@ -282,7 +298,10 @@ class _T1rmoveto(_T1cmd):
 T1rmoveto = _T1rmoveto()
 
 
-class _T1rrcurveto(_T1cmd):
+class _T1rrcurveto(T1cmd):
+
+    def __init__(self):
+        T1cmd.__init__(self, 8)
 
     def __str__(self):
         return "rrcurveto"
@@ -303,7 +322,10 @@ class _T1rrcurveto(_T1cmd):
 T1rrcurveto = _T1rrcurveto()
 
 
-class _T1vlineto(_T1cmd):
+class _T1vlineto(T1cmd):
+
+    def __init__(self):
+        T1cmd.__init__(self, 7)
 
     def __str__(self):
         return "vlineto"
@@ -316,7 +338,10 @@ class _T1vlineto(_T1cmd):
 T1vlineto = _T1vlineto()
 
 
-class _T1vmoveto(_T1cmd):
+class _T1vmoveto(T1cmd):
+
+    def __init__(self):
+        T1cmd.__init__(self, 4)
 
     def __str__(self):
         return "vmoveto"
@@ -329,7 +354,10 @@ class _T1vmoveto(_T1cmd):
 T1vmoveto = _T1vmoveto()
 
 
-class _T1vhcurveto(_T1cmd):
+class _T1vhcurveto(T1cmd):
+
+    def __init__(self):
+        T1cmd.__init__(self, 30)
 
     def __str__(self):
         return "vhcurveto"
@@ -350,7 +378,10 @@ T1vhcurveto = _T1vhcurveto()
 
 # hint commands
 
-class _T1dotsection(_T1cmd):
+class _T1dotsection(T1cmd):
+
+    def __init__(self):
+        T1cmd.__init__(self, 0, subcmd=True)
 
     def __str__(self):
         return "dotsection"
@@ -361,7 +392,10 @@ class _T1dotsection(_T1cmd):
 T1dotsection = _T1dotsection()
 
 
-class _T1hstem(_T1cmd):
+class _T1hstem(T1cmd):
+
+    def __init__(self):
+        T1cmd.__init__(self, 1)
 
     def __str__(self):
         return "hstem"
@@ -373,7 +407,10 @@ class _T1hstem(_T1cmd):
 T1hstem = _T1hstem()
 
 
-class _T1hstem3(_T1cmd):
+class _T1hstem3(T1cmd):
+
+    def __init__(self):
+        T1cmd.__init__(self, 2, subcmd=True)
 
     def __str__(self):
         return "hstem3"
@@ -389,10 +426,13 @@ class _T1hstem3(_T1cmd):
 T1hstem3 = _T1hstem3()
 
 
-class _T1vstem(_T1cmd):
+class _T1vstem(T1cmd):
+
+    def __init__(self):
+        T1cmd.__init__(self, 3)
 
     def __str__(self):
-        return "hstem"
+        return "vstem"
 
     def updatepath(self, path, trafo, context):
         x = context.t1stack.pop(0)
@@ -401,10 +441,13 @@ class _T1vstem(_T1cmd):
 T1vstem = _T1vstem()
 
 
-class _T1vstem3(_T1cmd):
+class _T1vstem3(T1cmd):
+
+    def __init__(self):
+        T1cmd.__init__(self, 1, subcmd=True)
 
     def __str__(self):
-        return "hstem3"
+        return "vstem3"
 
     def updatepath(self, path, trafo, context):
         self.x0 = context.t1stack.pop(0)
@@ -419,7 +462,10 @@ T1vstem3 = _T1vstem3()
 
 # arithmetic command
 
-class _T1div(_T1cmd):
+class _T1div(T1cmd):
+
+    def __init__(self):
+        T1cmd.__init__(self, 12, subcmd=True)
 
     def __str__(self):
         return "div"
@@ -439,7 +485,10 @@ T1div = _T1div()
 
 # subroutine commands
 
-class _T1callothersubr(_T1cmd):
+class _T1callothersubr(T1cmd):
+
+    def __init__(self):
+        T1cmd.__init__(self, 16, subcmd=True)
 
     def __str__(self):
         return "callothersubr"
@@ -460,26 +509,30 @@ class _T1callothersubr(_T1cmd):
 T1callothersubr = _T1callothersubr()
 
 
-class _T1callsubr(_T1cmd):
+class _T1callsubr(T1cmd):
+
+    def __init__(self):
+        T1cmd.__init__(self, 10)
 
     def __str__(self):
         return "callsubr"
 
     def updatepath(self, path, trafo, context):
-        subrnumber = context.t1stack.pop()
-        for cmd in context.t1font.getsubrcmds(subrnumber):
-            cmd.updatepath(path, trafo, context)
+        subr = context.t1stack.pop()
+        context.t1font.updatesubrpath(subr, path, trafo, context)
 
     def gathercalls(self, seacglyphs, subrs, othersubrs, context):
-        subrnumber = context.t1stack.pop()
-        subrs[subrnumber] = 1
-        for cmd in context.t1font.getsubrcmds(subrnumber):
-            cmd.gathercalls(seacglyphs, subrs, othersubrs, context)
+        subr = context.t1stack.pop()
+        subrs[subr] = 1
+        context.t1font.gathersubrcalls(subr, seacglyphs, subrs, othersubrs, context)
 
 T1callsubr = _T1callsubr()
 
 
-class _T1pop(_T1cmd):
+class _T1pop(T1cmd):
+
+    def __init__(self):
+        T1cmd.__init__(self, 17, subcmd=True)
 
     def __str__(self):
         return "pop"
@@ -493,7 +546,10 @@ class _T1pop(_T1cmd):
 T1pop = _T1pop()
 
 
-class _T1return(_T1cmd):
+class _T1return(T1cmd):
+
+    def __init__(self):
+        T1cmd.__init__(self, 11)
 
     def __str__(self):
         return "return"
@@ -504,7 +560,10 @@ class _T1return(_T1cmd):
 T1return = _T1return()
 
 
-class _T1setcurrentpoint(_T1cmd):
+class _T1setcurrentpoint(T1cmd):
+
+    def __init__(self):
+        T1cmd.__init__(self, 33, subcmd=True)
 
     def __str__(self):
         return "setcurrentpoint" % self.x, self.y
@@ -592,11 +651,15 @@ class T1font:
         data1 and data3 are the two clear text data parts and data2 is
         the binary data part"""
         self.data1 = data1
-        self.data2eexec = data2eexec
+        self._data2eexec = data2eexec
         self.data3 = data3
 
         # marker and value for decoded data
-        self.data2 = None
+        self._data2 = None
+        # note that data2eexec is set to none by setsubrcmds and setglyphcmds
+        # this *also* denotes, that data2 is out-of-date; hence they are both
+        # marked by an _ and getdata2 and getdata2eexec will properly resolve
+        # the current state of decoding ...
 
         # marker and value for standard encoding check
         self.encoding = None
@@ -618,12 +681,13 @@ class T1font:
         return encoder(data, self.charstringr, "PyX!"[:self.lenIV])
 
     lenIVpattern = re.compile("/lenIV\s+(\d+)\s+def\s+")
-    flexhintsubrs = [[T1value(3), T1value(0), T1callothersubr, T1pop, T1pop, T1setcurrentpoint, T1return],
-                     [T1value(0), T1value(1), T1callothersubr, T1return],
-                     [T1value(0), T1value(2), T1callothersubr, T1return],
+    flexhintsubrs = [[3, 0, T1callothersubr, T1pop, T1pop, T1setcurrentpoint, T1return],
+                     [0, 1, T1callothersubr, T1return],
+                     [0, 2, T1callothersubr, T1return],
                      [T1return]]
 
     def _encoding(self):
+        """helper method to lookup the encoding in the font"""
         c = cursor(self.data1, "/Encoding")
         token1 = c.gettoken()
         token2 = c.gettoken()
@@ -653,12 +717,10 @@ class T1font:
 
         It doesn't make sense to call this method twice -- check the content of
         data2 before calling. The method also keeps the subrs and charstrings
-        start and end positions for later replacement by stripped data.
-        """
+        start and end positions for later use."""
+        self._data2 = self._eexecdecode(self._data2eexec)
 
-        self.data2 = self._eexecdecode(self.data2eexec)
-
-        m = self.lenIVpattern.search(self.data2)
+        m = self.lenIVpattern.search(self._data2)
         if m:
             self.lenIV = int(m.group(1))
         else:
@@ -666,7 +728,7 @@ class T1font:
         self.emptysubr = self._charstringencode(chr(11))
 
         # extract Subrs
-        c = cursor(self.data2, "/Subrs")
+        c = cursor(self._data2, "/Subrs")
         self.subrsstart = c.pos
         arraycount = c.getint()
         token = c.gettoken(); assert token == "array"
@@ -701,8 +763,8 @@ class T1font:
         # extract glyphs
         self.glyphs = {}
         self.glyphlist = [] # we want to keep the order of the glyph names
-        c = cursor(self.data2, "/CharStrings")
-        self.charstingsstart = c.pos
+        c = cursor(self._data2, "/CharStrings")
+        self.charstringsstart = c.pos
         c.getint()
         token = c.gettoken(); assert token == "dict"
         token = c.gettoken(); assert token == "dup"
@@ -725,7 +787,7 @@ class T1font:
             else:
                 token = c.gettoken(); assert token == self.glyphndtoken
             first = 0
-        self.charstingsend = c.pos
+        self.charstringsend = c.pos
         assert not self.subrs or self.subrrdtoken == self.glyphrdtoken
 
     def _cmds(self, code):
@@ -734,80 +796,192 @@ class T1font:
         cmds = []
         while code:
             x = code.pop(0)
-            if 0 <= x < 32: # those are cmd's
-                try:
-                    cmds.append({1: T1hstem,
-                                 3: T1vstem,
-                                 4: T1vmoveto,
-                                 5: T1rlineto,
-                                 6: T1hlineto,
-                                 7: T1vlineto,
-                                 8: T1rrcurveto,
-                                 9: T1closepath,
-                                 10: T1callsubr,
-                                 11: T1return,
-                                 13: T1hsbw,
-                                 14: T1endchar,
-                                 21: T1rmoveto,
-                                 22: T1hmoveto,
-                                 30: T1vhcurveto,
-                                 31: T1hvcurveto}[x])
-                except KeyError:
-                    if x == 12: # this starts an escaped cmd
-                        x = code.pop(0)
-                        try:
-                            cmds.append({0: T1dotsection,
-                                         1: T1vstem3,
-                                         2: T1hstem3,
-                                         6: T1seac,
-                                         7: T1sbw,
-                                         12: T1div,
-                                         16: T1callothersubr,
-                                         17: T1pop,
-                                         33: T1setcurrentpoint}[x])
-                        except KeyError:
-                            raise ValueError("invalid escaped command %d" % x)
-                    else:
-                        raise ValueError("invalid command %d" % x)
+            if x == 12: # this starts an escaped cmd
+                cmds.append(T1subcmds[code.pop(0)])
+            elif 0 <= x < 32: # those are cmd's
+                cmds.append(T1cmds[x])
             elif 32 <= x <= 246: # short ints
-                cmds.append(T1value(x-139))
+                cmds.append(x-139)
             elif 247 <= x <= 250: # mid size ints
-                cmds.append(T1value(((x - 247)*256) + code.pop(0) + 108))
+                cmds.append(((x - 247)*256) + code.pop(0) + 108)
             elif 251 <= x <= 254: # mid size ints
-                cmds.append(T1value(-((x - 251)*256) - code.pop(0) - 108))
+                cmds.append(-((x - 251)*256) - code.pop(0) - 108)
             else: # x = 255, i.e. full size ints
                 y = ((code.pop(0)*256+code.pop(0))*256+code.pop(0))*256+code.pop(0)
                 if y > (1l << 31):
-                    cmds.append(T1value(y - (1l << 32)))
+                    cmds.append(y - (1l << 32))
                 else:
-                    cmds.append(T1value(y))
+                    cmds.append(y)
         return cmds
 
-    def getsubrcmds(self, n):
-        """return a list of T1cmd's for subr n"""
-        if not self.data2:
+    def _code(self, cmds):
+        """return an encoded charstring data for list of T1cmd's in cmds"""
+        code = array.array("B")
+        for cmd in cmds:
+            try:
+                if cmd.subcmd:
+                    code.append(12)
+                code.append(cmd.code)
+            except AttributeError:
+                if -107 <= cmd <= 107:
+                    code.append(cmd+139)
+                elif 108 <= cmd <= 1131:
+                    a, b = divmod(cmd-108, 256)
+                    code.append(a+247)
+                    code.append(b)
+                elif -1131 <= cmd <= -108:
+                    a, b = divmod(-cmd-108, 256)
+                    code.append(a+251)
+                    code.append(b)
+                else:
+                    if cmd < 0:
+                        cmd += 1l << 32
+                    cmd, x4 = divmod(cmd, 256)
+                    cmd, x3 = divmod(cmd, 256)
+                    x1, x2 = divmod(cmd, 256)
+                    code.append(255)
+                    code.append(x1)
+                    code.append(x2)
+                    code.append(x3)
+                    code.append(x4)
+        return self._charstringencode(code.tostring())
+
+    def getsubrcmds(self, subr):
+        """return a list of T1cmd's for subr subr"""
+        if not self._data2:
             self._data2decode()
-        return self._cmds(self.subrs[n])
+        return self._cmds(self.subrs[subr])
 
     def getglyphcmds(self, glyph):
         """return a list of T1cmd's for glyph glyph"""
-        if not self.data2:
+        if not self._data2:
             self._data2decode()
         return self._cmds(self.glyphs[glyph])
 
+    def setsubrcmds(self, subr, cmds):
+        """replaces the T1cmd's by the list cmds for subr subr"""
+        if not self._data2:
+            self._data2decode()
+        self._data2eexec = None
+        self.subrs[subr] = self._code(cmds)
+
+    def setglyphcmds(self, glyph, cmds):
+        """replaces the T1cmd's by the list cmds for glyph glyph"""
+        if not self._data2:
+            self._data2decode()
+        self._data2eexec = None
+        self.glyphs[glyph] = self._code(cmds)
+
+    def updatepath(self, cmds, path, trafo, context):
+        for cmd in cmds:
+            if isinstance(cmd, T1cmd):
+                cmd.updatepath(path, trafo, context)
+            else:
+                context.t1stack.append(cmd)
+
+    def updatesubrpath(self, subr, path, trafo, context):
+        self.updatepath(self.getsubrcmds(subr), path, trafo, context)
+
+    def updateglyphpath(self, glyph, path, trafo, context):
+        self.updatepath(self.getglyphcmds(glyph), path, trafo, context)
+
+    def gathercalls(self, cmds, seacglyphs, subrs, othersubrs, context):
+        for cmd in cmds:
+            if isinstance(cmd, T1cmd):
+                cmd.gathercalls(seacglyphs, subrs, othersubrs, context)
+            else:
+                context.t1stack.append(cmd)
+
+    def gathersubrcalls(self, subr, seacglyphs, subrs, othersubrs, context):
+        self.gathercalls(self.getsubrcmds(subr), seacglyphs, subrs, othersubrs, context)
+
+    def gatherglyphcalls(self, glyph, seacglyphs, subrs, othersubrs, context):
+        self.gathercalls(self.getglyphcmds(glyph), seacglyphs, subrs, othersubrs, context)
+
     fontmatrixpattern = re.compile("/FontMatrix\s*\[\s*(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s*\]\s*(readonly\s+)?def")
 
-    def getglyphpath(self, glyph, size):
-        """return a PyX path for glyph named glyph"""
+    def getglyphpathwxwy_pt(self, glyph, size):
         m = self.fontmatrixpattern.search(self.data1)
         m11, m12, m21, m22, v1, v2 = map(float, m.groups()[:6])
         t = trafo.trafo_pt(matrix=((m11, m12), (m21, m22)), vector=(v1, v2)).scaled(size)
         context = T1context(self)
         p = path()
-        for cmd in self.getglyphcmds(glyph):
-            cmd.updatepath(p, t, context)
-        p.wx_pt, p.wy_pt = t.apply_pt(context.wx, context.wy)
-        return p
+        self.updateglyphpath(glyph, p, t, context)
+        wx, wy = t.apply_pt(context.wx, context.wy)
+        return p, wx, wy
+
+    def getglyphpath(self, glyph, size):
+        """return a PyX path for glyph named glyph"""
+        return self.getglyphpathwxwy_pt(glyph, size)[0]
+
+    def getglyphwxwy_pt(self, glyph, size):
+        return self.getglyphpathwxwy_pt(glyph, size)[1:]
+
+    def getdata2(self, subrs=None, glyphs=None):
+        """makes a data2 string
+
+        subrs is a dict containing those subrs numbers as keys,
+        which are to be contained in the subrsstring to be created.
+        If subrs is None, all subrs in self.subrs will be used.
+        The subrs dict might be modified *in place*.
+
+        glyphs is a dict containing those glyph names as keys,
+        which are to be contained in the charstringsstring to be created.
+        If glyphs is None, all glyphs in self.glyphs will be used."""
+        def addsubrs(subrs, result):
+            if subrs is not None:
+                # some adjustments to the subrs dict
+                if subrs:
+                    subrsindices = subrs.keys()
+                    subrsmin = min(subrsindices)
+                    subrsmax = max(subrsindices)
+                    if self.hasflexhintsubrs and subrsmin < len(self.flexhintsubrs):
+                        # According to the spec we need to keep all the flex and hint subrs
+                        # as long as any of it is used.
+                        for subr in len(self.flexhintsubrs):
+                            subrs[subr] = 1
+                else:
+                    subrsmax = -1
+            else:
+                # build a new subrs dict containing all subrs
+                subrs = dict([(subr, 1) for subr in range(len(self.subrs))])
+                subrsmax = len(self.subrs) - 1
+
+            # build the string from all selected subrs
+            result.append("%d array\n" % (subrsmax + 1))
+            for subr in range(subrsmax+1):
+                if subrs.has_key(subr):
+                    code = self.subrs[subr]
+                else:
+                    code = self.emptysubr
+                result.append("dup %d %d %s %s %s\n" % (subr, len(code), self.subrrdtoken, code, self.subrnptoken))
+
+        def addcharstrings(glyphs, result):
+            result.append("%d dict dup begin\n" % (glyphs is None and len(self.glyphlist) or len(glyphs)))
+            for glyph in self.glyphlist:
+                if glyphs is None or glyphs.has_key(glyph):
+                    result.append("/%s %d %s %s %s\n" % (glyph, len(self.glyphs[glyph]), self.glyphrdtoken, self.glyphs[glyph], self.glyphndtoken))
+            result.append("end\n")
+
+        if self.subrsstart < self.charstringsstart:
+            result = [self._data2[:self.subrsstart]]
+            addsubrs(subrs, result)
+            result.append(self._data2[self.subrsend:self.charstringsstart])
+            addcharstrings(glyphs, result)
+            result.append(self._data2[self.charstringsend:])
+        else:
+            result = [self._data2[:self.charstringsstart]]
+            addcharstrings(glyphs, result)
+            result.append(self._data2[self.charstringsend:self.subrsstart])
+            addsubrs(subrs, result)
+            result.append(self._data2[self.subrsend:])
+        return "".join(result)
+
+    def getdata2eexec(self):
+        if self._data2eexec:
+            return self._data2eexec
+        # note that self._data2 is out-of-date here too, hence we need to call getdata2
+        return self._eexecencode(self.getdata2())
 
     newlinepattern = re.compile("\s*[\r\n]\s*")
     uniqueidpattern = re.compile("/UniqueID\s+\d+\s+def\s+")
@@ -815,54 +989,21 @@ class T1font:
     def getstrippedfont(self, glyphs):
         """create a T1font instance containing only certain glyphs
 
-        glyphs is a list of glyph names to be contained.
+        glyphs is a dict having the glyph names to be contained as keys.
+        The glyphs dict might be modified *in place*.
         """
+        # TODO: we could also strip othersubrs to those actually used
 
         # collect information about used glyphs and subrs
         seacglyphs = {}
         subrs = {}
         othersubrs = {}
-        for glyph in glyphs:
-            context = T1context(self)
-            for cmd in self.getglyphcmds(glyph):
-                cmd.gathercalls(seacglyphs, subrs, othersubrs, context)
-        for glyph in seacglyphs.keys():
-            if glyph not in glyphs:
-                glyphs.append(glyph)
-        if ".notdef" not in glyphs:
-            glyphs.append(".notdef")
-
-        # strip subrs to those actually used
-        subrs = subrs.keys()
-        subrs.sort()
-        if subrs:
-            if self.hasflexhintsubrs and subrs[0] < len(self.flexhintsubrs):
-                # According to the spec we need to keep all the flex and hint subrs
-                # as long as any of it is used.
-                while subrs and subrs[0] < len(self.flexhintsubrs):
-                    del subrs[0]
-                subrs = list(range(len(self.flexhintsubrs))) + subrs
-            count = subrs[-1]+1
-        else:
-            count = 0
-        strippedsubrs = ["%d array\n" % count]
-        for subr in range(count):
-            if subr in subrs:
-                code = self.subrs[subr]
-            else:
-                code = self.emptysubr
-            strippedsubrs.append("dup %d %d %s %s %s\n" % (subr, len(code), self.subrrdtoken, code, self.subrnptoken))
-        strippedsubrs = "".join(strippedsubrs)
-
-        # strip charstrings (i.e. glyphs) to those actually used
-        strippedcharstrings = ["%d dict dup begin\n" % len(glyphs)]
-        for glyph in self.glyphlist:
-            if glyph in glyphs:
-                strippedcharstrings.append("/%s %d %s %s %s\n" % (glyph, len(self.glyphs[glyph]), self.glyphrdtoken, self.glyphs[glyph], self.glyphndtoken))
-        strippedcharstrings.append("end\n")
-        strippedcharstrings = "".join(strippedcharstrings)
-
-        # TODO: we could also strip othersubrs to those actually used
+        for glyph in glyphs.keys():
+            self.gatherglyphcalls(glyph, seacglyphs, subrs, othersubrs, T1context(self))
+        # while we have gathered all subrs for the seacglyphs alreadys, we
+        # might have missed the glyphs themself (when they are not used stand-alone)
+        glyphs.update(seacglyphs)
+        glyphs[".notdef"] = 1
 
         # strip data1
         if not self.encoding:
@@ -872,37 +1013,20 @@ class T1font:
         else:
             encodingstrings = []
             for char, glyph in enumerate(self.encoding.encvector):
-                if glyph in glyphs:
+                if glyph in glyphs.keys():
                     encodingstrings.append("dup %i /%s put\n" % (char, glyph))
             data1 = self.data1[:self.encodingstart] + "".join(encodingstrings) + self.data1[self.encodingend:]
         data1 = self.newlinepattern.subn("\n", data1)[0]
         data1 = self.uniqueidpattern.subn("", data1)[0]
 
         # strip data2
-        # TODO: in the future, for full control, we might want to write data2 as well as data1 and data3 from scratch
-        if self.subrsstart < self.charstingsstart:
-            data2 = self.data2[:self.charstingsstart] + strippedcharstrings + self.data2[self.charstingsend:]
-            data2 = data2[:self.subrsstart] + strippedsubrs + data2[self.subrsend:]
-        else:
-            data2 = self.data2[:self.subrsstart] + strippedsubrs + self.data2[self.subrsend:]
-            data2 = data2[:self.charstingsstart] + strippedcharstrings + data2[self.charstingsend:]
-        data2 = self.uniqueidpattern.subn("", data2)[0]
+        data2 = self.uniqueidpattern.subn("", self.getdata2(subrs, glyphs))[0]
 
         # strip data3
         data3 = self.newlinepattern.subn("\n", self.data3)[0]
 
         # create and return the new font instance
-        return T1font(data1, self._eexecencode(data2), data3.rstrip())
-
-    def outputPS(self, file, writer):
-        """output the PostScript code for the T1font to the file file"""
-        file.write(self.data1)
-        data2eexechex = binascii.b2a_hex(self.data2eexec)
-        linelength = 64
-        for i in range((len(data2eexechex)-1)/linelength + 1):
-            file.write(data2eexechex[i*linelength: i*linelength+linelength])
-            file.write("\n")
-        file.write(self.data3)
+        return T1font(data1.rstrip() + "\n", self._eexecencode(data2), data3.rstrip() + "\n")
 
     def getflags(self):
         # As a simple heuristics we assume non-symbolic fonts if and only
@@ -914,7 +1038,42 @@ class T1font:
             return 32
         return 4
 
+    def outputPFA(self, file):
+        """output the T1font in PFA format"""
+        file.write(self.data1)
+        data2eexechex = binascii.b2a_hex(self.getdata2eexec())
+        linelength = 64
+        for i in range((len(data2eexechex)-1)/linelength + 1):
+            file.write(data2eexechex[i*linelength: i*linelength+linelength])
+            file.write("\n")
+        file.write(self.data3)
+
+    def outputPFB(self, file):
+        """output the T1font in PFB format"""
+        data2eexec = self.getdata2eexec()
+        def pfblength(data):
+            l = len(data)
+            l, x1 = divmod(l, 256)
+            l, x2 = divmod(l, 256)
+            x4, x3 = divmod(l, 256)
+            return chr(x1) + chr(x2) + chr(x3) + chr(x4)
+        file.write("\200\1")
+        file.write(pfblength(self.data1))
+        file.write(self.data1)
+        file.write("\200\2")
+        file.write(pfblength(data2eexec))
+        file.write(data2eexec)
+        file.write("\200\1")
+        file.write(pfblength(self.data3))
+        file.write(self.data3)
+        file.write("\200\3")
+
+    def outputPS(self, file, writer):
+        """output the PostScript code for the T1font to the file file"""
+        self.outputPFA(file)
+
     def outputPDF(self, file, writer):
+        data2eexec = self.getdata2eexec()
         data3 = self.data3
         # we might be allowed to skip the third part ...
         if (data3.replace("\n", "")
@@ -923,7 +1082,7 @@ class T1font:
                  .replace(" ", "")) == "0"*512 + "cleartomark":
             data3 = ""
 
-        data = self.data1 + self.data2eexec + data3
+        data = self.data1 + data2eexec + data3
         if writer.compress and haszlib:
             data = zlib.compress(data)
 
@@ -931,7 +1090,7 @@ class T1font:
                    "/Length %d\n"
                    "/Length1 %d\n"
                    "/Length2 %d\n"
-                   "/Length3 %d\n" % (len(data), len(self.data1), len(self.data2eexec), len(data3)))
+                   "/Length3 %d\n" % (len(data), len(self.data1), len(data2eexec), len(data3)))
         if writer.compress and haszlib:
             file.write("/Filter /FlateDecode\n")
         file.write(">>\n"
