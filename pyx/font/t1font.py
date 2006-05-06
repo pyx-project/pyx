@@ -938,7 +938,7 @@ class T1font:
                     if self.hasflexhintsubrs and subrsmin < len(self.flexhintsubrs):
                         # According to the spec we need to keep all the flex and hint subrs
                         # as long as any of it is used.
-                        for subr in len(self.flexhintsubrs):
+                        for subr in range(len(self.flexhintsubrs)):
                             subrs[subr] = 1
                 else:
                     subrsmax = -1
