@@ -9,12 +9,10 @@
     </div>
     <h1>PyX - Examples</h1>
 
-    <p tal:condition="options/abstract" tal:content="structure options/abstract">
-      A short introduction about the example pages.
-    </p>
+    <tal:block content="structure options/text"/>
 
     <span class="example" tal:repeat="example options/examples">
-      <div class="exampleseparator" tal:condition="python: options['abstract'] or not repeat['example'].start()"></div>
+      <div class="exampleseparator"></div>
       <div class="exampledownloads">
         <div tal:repeat="download example/downloads" class="exampledownload">
           <div><a tal:attributes="href download/filename" tal:content="download/suffixname">.xxx</a></div>
@@ -34,12 +32,9 @@
 
     <div class="exampleseparator"></div>
     <h2>Further examples</h2>
-    <p>
-      Further examples are available on separate pages:
-    </p>
     <ul>
-      <li tal:repeat="item options/examplepages">
-        <a tal:attributes="href python:item+'/index.html'" tal:content="python: item.title()">Examples</a>
+      <li tal:repeat="examplepage options/examplepages">
+        <a tal:attributes="href string:${examplepage/dir}/index.html" tal:content="examplepage/title">Examples</a>
       </li>
     </ul>
 

@@ -1,6 +1,8 @@
+Running and controlling TeX
+
 Usually all you will ever need is a single `texrunner` instance which controls
 a single running TeX or LaTeX instance at the time. To make live easy to our
-users, such an instance is created automatically upon startup and its called
+users..., such an instance is created automatically upon startup and its called
 the `defaulttexrunner`. Whenever you use the function shortcuts like
 `text.text()` and most to be emphasized `text.set()` you are accessing this
 `defaulttexrunner` instance. Also, the shortcut method `text` of any canvas

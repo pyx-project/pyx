@@ -1,3 +1,5 @@
+Horizontal alignment
+
 The example shows the result of the different text attributes for horizontal
 alignment. At first we need to emphasize, that PyX distinguishes between the
 alignment of the text box and the alignment of the material within the text box.
@@ -7,10 +9,10 @@ aligment regarding the dotted lines.
 
 The middle part shows the examples for centering a box, but aligning the content
 of the box at the left box boundary by `flushleft`, at the center by
-`flushcenter` and at the right box boundary by `flushright`, respectively. Note,
-that such an alignment of material is available only when you create a parbox in
-TeX. This is easy done by the `parbox` attribute, where you have to specify a
-width of the box.
+`flushcenter` and at the right box boundary by `flushright`, respectively. ...
+Note, that such an alignment of material is available only when you create a
+parbox in TeX. This is easy done by the `parbox` attribute, where you have to
+specify a width of the box.
 
 At the bottom you can see combinations of `boxleft` and `flushleft`, `boxcenter`
 and `flushcenter`, and `boxright` and `boxcenter` in action. Those combinations

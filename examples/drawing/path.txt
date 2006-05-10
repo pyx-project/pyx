@@ -1,0 +1,24 @@
+Basic paths
+
+This first path example shows you how to create a canvas, how to draw some
+simple geometric objects onto it and how to write the result into a PostScript
+or PDF file. ...
+
+First we import all top-level symbols of the PyX package by the usual Python
+import statement. In the further examples we'll always use this form of the
+import statement to make the PyX package available to our scripts.
+
+After that we can create a canvas instance `c`, where our basic paths are to be
+drawn at. The later is done by passing some path instances (a line, a rectange
+and a circle) to the `strokes` or `fill` methods of the canvas instance we just
+created and stored in the variable `c`. Finally we can call the `writeEPSfile`
+and `writePDFfile` methods of the canvas to create an Encapsulated PostScript
+and a PDF file for our drawing. While typically you'll only create either a
+PostScript or a PDF file, in our examples we always create both output formats
+to have them both available for download.
+
+This example additionally shows some basics of the PyX coordinate system. The
+first coordinate (often refered as `x`) goes horizontally from left to right
+and the second coordinate (`y`) goes perpendicular to that vertically from the
+bottom to the top. The default unit is `1 cm`. The boundary of the resulting
+image is calculated automatically.

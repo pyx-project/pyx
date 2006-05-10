@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, os, os.path, cgi, StringIO, codecs, glob, re
+import sys, os, os.path, cgi, StringIO, codecs, glob, re, warnings
 import keyword, token, tokenize
 import xml.dom.minidom
 from zope.pagetemplate.pagetemplatefile import PageTemplateFile
@@ -69,13 +69,14 @@ class MakeHtml:
     emptypattern = re.compile(r"\s*$")
     parpattern = re.compile(r"([ \t]*\n)*(?P<data>(\S[^\n]*\n)+)(([ \t]*\n)+.*)?")
     parmakeline = re.compile(r"\s*[\r\n]\s*")
-    parmakeinline = re.compile(r"`([^`]*)`")
-    parmakeitalic = re.compile(r"''([^`]*)''")
-    parmakebold = re.compile(r"'''([^`]*)'''")
+    parmakeinline = re.compile(r"`(.*?)`")
+    parmakeitalic = re.compile(r"''(.*?)''")
+    parmakebold = re.compile(r"'''(.*?)'''")
     codepattern = re.compile(r"([ \t]*\n)*(?P<data>(([ \t]+[^\n]*)?\n)+)")
     indentpattern = re.compile(r"([ \t]*\n)*(?P<indent>[ \t]+)")
 
-    def fromText(self, input):
+    def fromText(self, input, bend=""):
+        title = None
         pos = 0
         output = StringIO.StringIO()
         while not self.emptypattern.match(input, pos):
@@ -92,7 +93,17 @@ class MakeHtml:
                 par = self.parmakeinline.subn(r"<code>\1</code>", par)[0]
                 par = self.parmakeitalic.subn(r"<em>\1</em>", par)[0]
                 par = self.parmakebold.subn(r"<strong>\1</strong>", par)[0]
-                output.write("<p>%s</p>\n" % par)
+                if not title:
+                    title = par
+                else:
+                    bends = 0
+                    while par.startswith("!"):
+                        if not bend:
+                            warnings.warn("ignore bend sign")
+                            break
+                        bends += 1
+                        par = par[1:]
+                    output.write("%s<p>%s</p>\n" % (bend*bends, par))
             else:
                 code = self.codepattern.match(input, pos)
                 if not code:
@@ -102,7 +113,10 @@ class MakeHtml:
                 indent = self.indentpattern.match(code).group("indent")
                 code = re.subn(r"\s*[\r\n]%s" % indent, "\n", code.strip())[0]
                 output.write("<div class=\"codeindent\">%s</div>\n" % self.fromPython(code + "\n"))
-        return output.getvalue()
+        text = output.getvalue()
+        shorttext = text.split("...")[0]
+        text = text.replace("...", "", 1)
+        return title, shorttext, text
 
 makehtml = MakeHtml()
 
@@ -110,12 +124,13 @@ makehtml = MakeHtml()
 class example:
 
     def __init__(self, basename, dir=None):
-        self.title = basename
+        self.basename = basename
         if dir:
             name = os.path.join(dir, basename)
         else:
             name = basename
         relname = os.path.join("..", "examples", name)
+        self.filename = "%s.py" % name
         self.code = makehtml.fromPython(codecs.open("%s.py" % relname, encoding="iso-8859-1").read())
         self.html = "%s.html" % basename
         self.png = "%s.png" % basename
@@ -134,9 +149,10 @@ class example:
                                        "filesize": filesize,
                                        "iconname": "%s.png" % suffix})
         if os.path.exists("%s.txt" % relname):
-            self.text = makehtml.fromText(codecs.open("%s.txt" % relname, encoding="iso-8859-1").read())
+            self.title, self.shorttext, self.text = makehtml.fromText(codecs.open("%s.txt" % relname, encoding="iso-8859-1").read(), bend="<div class=\"examplebend\"><img src=\"../../bend.png\" width=22 height=31></div>\n")
         else:
-            self.text = None
+            self.title = basename
+            self.shorttext = self.text = None
 
 
 class MyPageTemplateFile(PageTemplateFile):
@@ -185,16 +201,25 @@ for ptname in glob.glob("*.pt"):
 exampleindextemplate = MyPageTemplateFile("exampleindex.pt")
 examplestemplate = MyPageTemplateFile("examples.pt")
 exampletemplate = MyPageTemplateFile("example.pt")
-examplepages = [item[:-2]
-                for item in open("../examples/INDEX").readlines()
-                if item[-2] == "/"]
+exampledirs = [None]
+examplepages = []
+for dir in open("../examples/INDEX").readlines():
+    dir = dir.strip()
+    if dir.endswith("/"):
+        exampledirs.append(dir)
+        dir = dir.rstrip("/")
+        try:
+            title = open("../examples/%s/README" % dir).readline().strip()
+        except:
+            title = dir
+        examplepages.append({"dir": dir, "title": title})
 
 prev = None
-for dirindex, dir in enumerate([None] + examplepages):
+for dirindex, dir in enumerate(exampledirs):
     srcdir = "../examples"
     destdir = "examples"
     try:
-        nextdir = examplepages[dirindex] # don't increment due to the None in the list
+        nextdir = exampledirs[dirindex + 1]
         nextdir = os.path.join(destdir, nextdir)
     except IndexError:
         nextdir = None
@@ -202,9 +227,10 @@ for dirindex, dir in enumerate([None] + examplepages):
         srcdir = os.path.join(srcdir, dir)
         destdir = os.path.join(destdir, dir)
     try:
-        abstract = makehtml.fromText(open(os.path.join(srcdir, "README")).read())
+        title, shorttext, text = makehtml.fromText(open(os.path.join(srcdir, "README")).read())
     except IOError:
-        abstract = ""
+        title = dir
+        text = ""
     examples = [example(item.strip(), dir)
                 for item in open(os.path.join(srcdir, "INDEX")).readlines()
                 if item[-2] != "/"]
@@ -218,7 +244,8 @@ for dirindex, dir in enumerate([None] + examplepages):
     content = template(pagename=htmlname,
                        maintemplate=maintemplate,
                        dir=dir,
-                       abstract=abstract,
+                       title=title,
+                       text=text,
                        examples=examples,
                        examplepages=examplepages,
                        mkrellink=mkrellink,
@@ -239,11 +266,10 @@ for dirindex, dir in enumerate([None] + examplepages):
                     next = os.path.join(nextdir, "index.html")
                 else:
                     next = None
-            htmlname = os.path.join(destdir, "%s.html" % aexample.title)
+            htmlname = os.path.join(destdir, "%s.html" % aexample.basename)
             content = exampletemplate(pagename=htmlname,
                                       maintemplate=maintemplate,
                                       dir=dir,
-                                      abstract=abstract,
                                       example=aexample,
                                       examplepages=examplepages,
                                       mkrellink=mkrellink,

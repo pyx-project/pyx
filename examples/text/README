@@ -1,3 +1,5 @@
+Creating text
+
 One of the major features of PyX is to use the TeX typesetting engine to
 create text. PyX will start a single TeX or LaTeX instance as soon as
 text needs to be typeset. It passes the texts to this instance and directly

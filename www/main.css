@@ -204,6 +204,7 @@ a:hover {
 #content .exampleseparator {
         margin-bottom: 15px;
         border-bottom: 1px solid #88a;
+        clear: both;
 }
 
 #content .exampledownloads {
@@ -218,6 +219,18 @@ a:hover {
 
 #content .exampledownloadsize {
         font-size: 8pt;
+}
+
+#content .examplethumbnail {
+        padding-left: 15px;
+        padding-bottom: 15px;
+        text-align: center;
+        float: right;
+}
+
+#content .examplebend {
+        padding-right: 5px;
+        float: left;
 }
 
 #content .exampleimage {

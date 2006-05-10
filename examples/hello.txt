@@ -1,3 +1,5 @@
+Hello, world!
+
 As it's a good pratice to say "Hello, world!" in the first example, let's
 discuss how to do that in PyX.
 

@@ -1,10 +1,12 @@
+Vertical alignment
+
 The example demonstrates the effect of several text attributes for vertical
 alignment.
 
 In the first line of the output the extent of the whole text box is taken into
 account by various versions of valign. While in this case the valign attributes
 are combined with a parbox each, the valign technique also perfectly works for
-single line text.
+single line text. ...
 
 Different from that, in the second line of the output a parbox is shown with
 different values for the baseline. Note, that by default text is vertically

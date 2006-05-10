@@ -1,0 +1,25 @@
+Adding and joining paths
+
+The result of this example looks very much the same like the ''pathitems''
+example from the ''Basic drawing'' section. However we're using a different
+approach to construct the paths in this example: we're adding and joining
+paths. ... The difference is in whether the resulting path just contains all
+the subpaths from the first and the second path or the last subpath from the
+first path continued by the first subpath of the second path leading to a
+single subpath only.
+
+! An similar result in terms of the line thickness could be achieved by
+setting a different scale for the linewidth by
+
+    unit.set(wscale=10)
+
+immediately after the import statement. The unit system of PyX is aware of
+several length types (unscaleable ''true'' coordinates `t`, regular ''user''
+coordinates `u`, ''visual'' coordinates `v` for arrows, symbols and other
+Jsmall visual components, line ''widths'' `w` and the ``teXt`` sizes `x`). The
+length types can be scaled independantly from each other (except for ''true''
+coordinates).
+
+! Note that joining of two paths might inserts an connection line between the
+first and the second path. Hence we could for example skip the second line when
+constructing `rect2` in our example above without any change in the result.

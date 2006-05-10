@@ -1,9 +1,11 @@
+Customize fonts
+
 There are nice packages to influence fonts in LaTeX. Hence for a simple example
 we change the mode of the default texrunner instance to `latex` and use the
-`preamble` method to load the `palatino` package.
+`preamble` method to load the `palatino` package. ...
 
 In general LaTeX is also favourable for using your own Type1 fonts. Still you
-can also use different fonts in TeX if you are familiar with the topic, but
+can also use different fonts in plain TeX if you are familiar with the topic, but
 LaTeXs NFSS (new font selection scheme) is preferable by the ordinary user and
 has great advantages in daily use later on. All you need to do is to integrate
 the fonts into your LaTeX system. Probably you'll need to create your own LaTeX

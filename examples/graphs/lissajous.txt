@@ -1,5 +1,7 @@
+Parametric function
+
 The example shows how to use a `paramfunction` as a data source for a graph.
-`paramfunction` defines a parameter variable name given as a string in the
+`paramfunction` defines a parameter variable name ... given as a string in the
 first argument, a minimal and a maximal value given as the second and third
 argument of `paramfunction` and an expression string as forth argument. This
 expression string assigns a tuple of expressions to a tuple of data names. As

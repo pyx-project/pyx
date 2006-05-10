@@ -33,8 +33,8 @@
         <div class="link" tal:define="htmlname python: 'roadmap.html'; navname python: 'Roadmap'"><span metal:use-macro="options/maintemplate/macros/navlink"></span></div>
         <div class="link" tal:define="htmlname python: 'documentation.html'; navname python: 'Documentation'"><span metal:use-macro="options/maintemplate/macros/navlink"></span></div>
         <div class="link" tal:define="htmlname python: 'examples/index.html'; navname python: 'Examples'"><span metal:use-macro="options/maintemplate/macros/navlink"></span></div>
-        <span tal:repeat="item options/examplepages" tal:omit-tag="">
-          <div class="sublink" tal:define="htmlname python: 'examples/'+item+'/index.html'; navname python: item.title()">- <span metal:use-macro="options/maintemplate/macros/navlink"></span></div>
+        <span tal:repeat="examplepage options/examplepages" tal:omit-tag="">
+          <div class="sublink" tal:define="htmlname string:examples/${examplepage/dir}/index.html; navname examplepage/title">- <span metal:use-macro="options/maintemplate/macros/navlink"></span></div>
         </span>
         <div class="link" tal:define="htmlname python: 'license.html'; navname python: 'License'"><span metal:use-macro="options/maintemplate/macros/navlink"></span></div>
       </div>

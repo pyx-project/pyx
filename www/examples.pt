@@ -8,19 +8,21 @@
       <a class="examplenavigation" tal:attributes="href python: options['mkrellink'](options['prev'], options)">prev</a>
       <a class="examplenavigation" tal:attributes="href python: options['mkrellink'](options['next'], options)">next</a>
     </div>
-    <h1>PyX - Examples: <tal:block tal:content="options/dir"/></h1>
+    <h1>PyX - Examples: <tal:block content="options/title"/></h1>
 
-    <p tal:condition="options/abstract" tal:content="structure options/abstract">
-      A short introduction about the examples shown in this section.
-    </p>
+    <tal:block tal:content="structure options/text"/>
 
+    <div class="exampleseparator" tal:condition="options/text"></div>
     <h2>Example overview for this section</h2>
     <span class="example" tal:repeat="example options/examples">
       <div class="exampleseparator" tal:condition="not: repeat/example/start"></div>
-      <a tal:attributes="href example/html"><h3 tal:content="example/title">title</h3></a>
-      <div class="exampleimage">
+      <div class="examplethumbnail">
         <a tal:attributes="href example/html"><img tal:attributes="alt example/png; src example/thumbpng; width example/thumbwidth; height example/thumbheight" border=0></a>
       </div>
+      <a tal:attributes="href example/html"><h3 tal:content="example/title">title</h3></a>
+      <tal:block content="structure example/shorttext"/>
+      <a tal:attributes="href example/html" tal:condition="example/shorttext">more&nbsp;...</a>
+      <tal:block content="structure string:</p>" condition="example/shorttext"/>
     </span>
 
   </div>

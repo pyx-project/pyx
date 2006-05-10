@@ -1,0 +1,5 @@
+Basic drawing
+
+In this first section we demonstrate some basic drawing features of PyX. The
+goal is to present you some of the basic concepts of the PyX package like
+canvases, paths, styles and decorators.

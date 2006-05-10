@@ -1,3 +1,5 @@
+Split axes
+
 Split axes can be used to build axes containing axis breaks.
 While split axes work exactly like bar axes (they even share
 the same code except for the painter), their usage differs.
