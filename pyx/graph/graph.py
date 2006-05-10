@@ -166,7 +166,7 @@ class graph(canvas.canvas):
         if self.didranges and rangewarning:
             warnings.warn("axes ranges have already been analysed; no further adjustments will be performed")
         if self.diddata:
-            raise RuntimeError("can't add further data while data has already been processed")
+            raise RuntimeError("can't plot further data after dodata() has been executed")
         singledata = 0
         try:
             for d in data:
