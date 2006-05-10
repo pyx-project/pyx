@@ -104,7 +104,7 @@ class dash(attr.exclusiveattr, strokestyle):
 
     """dash of paths"""
 
-    def __init__(self, pattern=[], offset=0, rellengths=0):
+    def __init__(self, pattern=[], offset=0, rellengths=1):
         """set pattern with offset.
 
         If rellengths is True, interpret all dash lengths relative to current linewidth.
