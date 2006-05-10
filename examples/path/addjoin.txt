@@ -16,10 +16,11 @@ setting a different scale for the linewidth by
 immediately after the import statement. The unit system of PyX is aware of
 several length types (unscaleable ''true'' coordinates `t`, regular ''user''
 coordinates `u`, ''visual'' coordinates `v` for arrows, symbols and other
-Jsmall visual components, line ''widths'' `w` and the ``teXt`` sizes `x`). The
-length types can be scaled independantly from each other (except for ''true''
+small visual components, line ''widths'' `w` and the ``teXt`` sizes `x`). The
+length types can be scaled indepenently from each other (except for ''true''
 coordinates).
 
-! Note that joining of two paths might inserts an connection line between the
-first and the second path. Hence we could for example skip the second line when
-constructing `rect2` in our example above without any change in the result.
+! Note that joining of two paths might insert a connection line between the
+last point of the first path and the first point of the second path. Hence, we
+could for example skip the second line when constructing `rect2` in our example
+above without any change in the result.
