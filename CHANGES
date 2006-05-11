@@ -27,6 +27,7 @@ TODO:
   - graph.style module:
     - add styles using curves instead of lines
     - histogram doesn't stroke lines to the baseline for steps=0 when two subsequent values are equal
+    - implement a changebar style
   - canvas module:
     - contructor should only take a texrunner keyword argument
     - set method???
