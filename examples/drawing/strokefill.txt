@@ -3,37 +3,34 @@ Stroke and fill paths at the same time
 To stroke and fill a path you could call the `fill` and `stroke` methods of a
 canvas instance one after the other. However, such a solution is not optimal,
 since the path would be written into the output file twice. Instead you can use
-the `filled` decorator within a `stroke` method call as an additional
-attribute. ...
+the `filled` decorator within a `stroke` method call as an additional attribute. ...
 
-As shown in the example the filled decorator can be called to pass additional
+As shown in the example, the filled decorator can be called to pass additional
 styles, which will then only be used for the fill operation. Other styles
 passed in the second argument of the `stroke` method are used for both, the
-stroke and the fill operation. Here we set a linewidth, which only affect the
+stroke and the fill operation. Here we set a linewidth, which only affects the
 stroke operation.
 
-There is a similar functionality the other way around: you can use a
-`deco.stroked` instance to add a stroke operation within a `fill` method call.
+A complementary functionality exists as well: you can use a `deco.stroked`
+instance to add a stroke operation within a `fill` method call.
 
-! The `filled` and `stroked` are already instances, but they accept a ''modify
-by call'' operation. This is a common feature of decorators and other
-attributes.
+! The `filled` and `stroked` are already instances, but they accept a ''modify by call''
+operation. This is a common feature of decorators and other attributes.
 
-!! Internally the `stroke` and the `fill` methods are implemented by adding
-either `deco.stroked` or `deco.filled` to the list passed as the second
-parameter to the `stroke` or `fill` method of a canvas. This whole list is then
-evaluated by the `draw` method of the canvas instance. The draw method is the
-real basic operation to output a path. Calling it directly, one can implement a
-symmetric stroke and fill operation:
+!! Internally the `stroke` and the `fill` methods are implemented by adding either
+`deco.stroked` or `deco.filled` to the list passed as the second parameter to the
+`stroke` or `fill` method of a canvas. This whole construction is then evaluated by
+the `draw` method of the canvas instance. The draw method is really the basic
+operation to output a path. It transforms a path into a so-called decorated
+path. The path itself is a pure mathematical object without any information
+about how it should be drawn and which styles should be applied.
+Output-specific properties like dashing or the linewidth are not attached to
+the path at all. Instead, the decorated path attaches styles and the two output
+operations stroke and fill to the mathematical path object. A symmetric stroke
+and fill operation therefore looks like
 
     c.draw(p, l1 + [deco.stroked(l2), deco.filled(l3)])
 
-Here `c` is the canvas instance, `p` is the path to be stroked and filled, `l1`
-is a list of styles used for both stroking and filling, `l2` are additional
-styles used for stroking, and `l3` are additional styles used for filling.
-
-!! The draw method transforms the path into a so-called ''decorated path''. In
-contrast to the path itself, which  is a pure mathematical object (think about
-it having zero width), the decorated path additionally knows about
-output-specific properties like the stroke or fill operation, the dashing or
-the linewidth.
+where `c` is the canvas instance, `p` is the path to be stroked and filled, `l1` is
+a list of styles used for both stroking and filling, `l2` are additional styles
+used for stroking, and `l3` are additional styles used for filling.

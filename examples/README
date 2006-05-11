@@ -1,11 +1,16 @@
 PyX examples
 
 The following examples are part of the PyX release __version__. For each PyX
-example the source code and the corresponding output are shown. You can cycle
-through all examples in their intended order by the ''prev'' and ''next'' links
-on the upper right.
+example the source code and the corresponding output are shown. You can take a
+guided tour through all examples by the ''prev'' and ''next'' links on the
+upper right.
 
-! Some explanations are marked with the ''double bend sign''. This means that
-the topics explained there require some experience with PyX. When you are
-acquainted with the interface and some internals of PyX, then these paragraphs
-are of use to you.
+! Some paragraphs (like the one you're just reading) are marked with a ''bend
+sign''. Some people will recognize this classification from the TeXbook by
+D.E.Knuth and we use it at the PyX example pages for the same purpose. The
+bend mark parts of the description, which require some experiences with PyX. On
+the other hand those parts can savely be ignored by PyX beginners.
+
+!! There are even some paragraphs marked by ''double bends''. The explanations
+given in those paragraphs provide some deeper insights of what's really going
+on, but are not important for the average PyX user.
