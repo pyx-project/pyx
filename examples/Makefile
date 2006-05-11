@@ -1,5 +1,5 @@
-PYTHON = python
-GS = gs
+PYTHON ?= python
+GS ?= gs
 
 default: examples.dvi
 

@@ -1,3 +1,4 @@
+PYTHON ?= python
 
 pyfiles = $(wildcard *.py)
 pngfiles = $(patsubst %.py, %.png, $(pyfiles))
@@ -8,6 +9,6 @@ clean:
 	-rm $(pngfiles)
 
 %.png: %.py
-	export PYTHONPATH=$(CURDIR)/../.. ; cd $(dir $^) ; python $(notdir $^)
-	python ../../contrib/epstopng.py -o $@ $*.eps
+	export PYTHONPATH=$(CURDIR)/../.. ; cd $(dir $^) ; $(PYTHON) $(notdir $^)
+	$(PYTHON) ../../contrib/epstopng.py -o $@ $*.eps
 	rm $*.eps

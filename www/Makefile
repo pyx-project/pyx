@@ -1,5 +1,5 @@
-ZOPEDIR = $(HOME)/bin/python/Zope3/src
-PYTHON = python
+ZOPEDIR ?= $(HOME)/python/zope-3.2.1/lib/python
+PYTHON ?= python2.4
 
 default: build
 

@@ -5,6 +5,8 @@
 # the manual (see the python documentation about creating documentations
 # for details).
 
+PYTHON ?= python
+
 default: dvi
 
 clean:
@@ -36,17 +38,17 @@ manual/manual.html: $(src) eps_figs
 	          --html manual.tex
 
 pyxversion.tex: ../pyx/version.py
-	python -c "import sys;sys.path[:0]=[\"..\"];import pyx.version;print pyx.version.version+'%'" > pyxversion.tex
+	$(PYTHON) -c "import sys;sys.path[:0]=[\"..\"];import pyx.version;print pyx.version.version+'%'" > pyxversion.tex
 
 pyxdate.tex: ../pyx/version.py
-	python -c "import sys;sys.path[:0]=[\"..\"];import pyx.version;print pyx.version.date+'%'" > pyxdate.tex
+	$(PYTHON) -c "import sys;sys.path[:0]=[\"..\"];import pyx.version;print pyx.version.date+'%'" > pyxdate.tex
 
 eps_figs: $(patsubst %.py, %.eps, $(wildcard *.py))
 
 pdf_figs: $(patsubst %.py, %.pdf, $(wildcard *.py))
 
 %.eps: %.py
-	export PYTHONPATH=$(CURDIR)/.. ; python $^
+	export PYTHONPATH=$(CURDIR)/.. ; $(PYTHON) $^
 
 %.pdf: %.py
-	export PYTHONPATH=$(CURDIR)/.. ; python $^
+	export PYTHONPATH=$(CURDIR)/.. ; $(PYTHON) $^

@@ -1,3 +1,5 @@
+PYTHON ?= python
+
 all:
-	cd unit; python test.py
+	cd unit; $(PYTHON) test.py
 	cd functional; make
