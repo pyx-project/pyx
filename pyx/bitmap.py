@@ -20,7 +20,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import struct, warnings
+import struct, warnings, binascii
 try:
     import zlib
     haszlib = 1
@@ -70,6 +70,16 @@ def ascii85stream(file, data):
         l[1], c3 = divmod(l[2], 85)
         c1  , c2 = divmod(l[1], 85)
         file.write(struct.pack('BBBB', c1+33, c2+33, c3+33, c4+33)[:(i%4)+2])
+
+_asciihexlinelength = 64
+def asciihexlines(datalen):
+    return (datalen*2 + _asciihexlinelength - 1) / _asciihexlinelength
+
+def asciihexstream(file, data):
+    hexdata = binascii.b2a_hex(data)
+    for i in range((len(hexdata)-1)/_asciihexlinelength + 1):
+        file.write(hexdata[i*_asciihexlinelength: i*_asciihexlinelength+_asciihexlinelength])
+        file.write("\n")
 
 
 class image:
@@ -247,7 +257,7 @@ class PDFimage(pdfwriter.PDFobject):
 class bitmap(canvas.canvasitem):
 
     def __init__(self, xpos, ypos, image, width=None, height=None, ratio=None,
-                       PSstoreimage=0, PSmaxstrlen=4093,
+                       PSstoreimage=0, PSmaxstrlen=4093, PSbinexpand=1,
                        compressmode="Flate", flatecompresslevel=6,
                        dctquality=75, dctoptimize=0, dctprogression=0):
         self.xpos = xpos
@@ -255,6 +265,7 @@ class bitmap(canvas.canvasitem):
         self.imagewidth, self.imageheight = image.size
         self.PSstoreimage = PSstoreimage
         self.PSmaxstrlen = PSmaxstrlen
+        self.PSbinexpand = PSbinexpand
 
         if width is not None or height is not None:
             self.width = width
@@ -400,7 +411,10 @@ class bitmap(canvas.canvasitem):
             else:
                 file.write("/imagedataaccess load") # some printers do not allow for inline code here -> we store it in a resource
         else:
-            file.write("currentfile /ASCII85Decode filter")
+            if self.PSbinexpand == 2:
+                file.write("currentfile /ASCIIHexDecode filter")
+            else:
+                file.write("currentfile /ASCII85Decode filter")
         if self.compressmode:
             file.write(" /%sDecode filter" % self.compressmode)
         file.write("\n")
@@ -410,11 +424,17 @@ class bitmap(canvas.canvasitem):
         if self.PSstoreimage:
             file.write("image\n")
         else:
-            # the datasource is currentstream (plus some filters)
-            file.write("%%%%BeginData: %i ASCII Lines\n"
-                       "image\n" % (ascii85lines(len(self.data)) + 1))
-            ascii85stream(file, self.data)
-            file.write("~>\n%%EndData\n")
+            if self.PSbinexpand == 2:
+                file.write("%%%%BeginData: %i ASCII Lines\n"
+                           "image\n" % (asciihexlines(len(self.data)) + 1))
+                asciihexstream(file, self.data)
+            else:
+                # the datasource is currentstream (plus some filters)
+                file.write("%%%%BeginData: %i ASCII Lines\n"
+                           "image\n" % (ascii85lines(len(self.data)) + 1))
+                ascii85stream(file, self.data)
+                file.write("~>\n")
+            file.write("%%EndData\n")
 
         file.write("grestore\n")
 
