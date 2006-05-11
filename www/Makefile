@@ -1,3 +1,6 @@
+ZOPEDIR = $(HOME)/bin/python/Zope3/src
+PYTHON = python
+
 default: build
 
 htmlfiles = $(patsubst %.pt, %.html, $(filter-out maintemplate.pt examples.pt, $(wildcard *.pt))) examples/index.html $(patsubst %, examples/%index.html, $(shell grep / ../examples/INDEX))
@@ -32,7 +35,7 @@ build: always
 	    cp ../examples/$$d*.$$s build/examples/$$d 2> /dev/null; \
 	  done; \
 	done
-	PYTHONPATH=~/bin/python/Zope3/src ./pt2html.py
+	PYTHONPATH=$(ZOPEDIR) $(PYTHON) pt2html.py
 
 always:
 	@# just ensure to always build new even when the directory already exists

@@ -1,3 +1,6 @@
+PYTHON = python
+GS = gs
+
 default: examples.dvi
 
 clean:
@@ -19,22 +22,22 @@ thumbpngfiles = $(addsuffix _thumb.png, $(files))
 eps: $(epsfiles)
 
 examples.dvi: examples.py $(epsfiles)
-	python examples.py $(basename $(pyfiles))
+	$(PYTHON) examples.py $(basename $(pyfiles))
 	latex examples.tex
 
 png: $(pngfiles) $(thumbpngfiles)
 
 %.eps: %.py
-	cd $(dir $^); PYTHONPATH=$(CURDIR)/.. python $(notdir $^)
+	cd $(dir $^); PYTHONPATH=$(CURDIR)/.. $(PYTHON) $(notdir $^)
 
 misc/pattern.png: misc/pattern.eps
-	gs -r400 -dEPSCrop -dNOPAUSE -dQUIET -dBATCH -sDEVICE=pnm -sOutputFile=- $^|pnmscale 0.25|pnmtopng -transparent 'rgb:ff/ff/ff' > $@
+	$(GS) -r400 -dEPSCrop -dNOPAUSE -dQUIET -dBATCH -sDEVICE=pnm -sOutputFile=- $^|pnmscale 0.25|pnmtopng -transparent 'rgb:ff/ff/ff' > $@
 
 misc/pattern_thumb.png: misc/pattern.eps
-	gs -r200 -dEPSCrop -dNOPAUSE -dQUIET -dBATCH -sDEVICE=pnm -sOutputFile=- $^|pnmscale 0.25|pnmtopng -transparent 'rgb:ff/ff/ff' > $@
+	$(GS) -r200 -dEPSCrop -dNOPAUSE -dQUIET -dBATCH -sDEVICE=pnm -sOutputFile=- $^|pnmscale 0.25|pnmtopng -transparent 'rgb:ff/ff/ff' > $@
 
 %.png: %.eps
-	gs -r100 -dEPSCrop -dNOPAUSE -dQUIET -dBATCH -sDEVICE=pngalpha -dTextAlphaBits=4 -dGraphicsAlphaBits=4 -sOutputFile=$@ $^
+	$(GS) -r100 -dEPSCrop -dNOPAUSE -dQUIET -dBATCH -sDEVICE=pngalpha -dTextAlphaBits=4 -dGraphicsAlphaBits=4 -sOutputFile=$@ $^
 
 %_thumb.png: %.eps
-	gs -r50 -dEPSCrop -dNOPAUSE -dQUIET -dBATCH -sDEVICE=pngalpha -dTextAlphaBits=4 -dGraphicsAlphaBits=4 -sOutputFile=$@ $^
+	$(GS) -r50 -dEPSCrop -dNOPAUSE -dQUIET -dBATCH -sDEVICE=pngalpha -dTextAlphaBits=4 -dGraphicsAlphaBits=4 -sOutputFile=$@ $^
