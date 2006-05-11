@@ -2,5 +2,10 @@ PyX examples
 
 The following examples are part of the PyX release __version__. For each PyX
 example the source code and the corresponding output are shown. You can cycle
-thru all examples in their intended order by the pref and next links on the
-upper right.
+through all examples in their intended order by the ''prev'' and ''next'' links
+on the upper right.
+
+! Some explanations are marked with the ''double bend sign''. This means that
+the topics explained there require some experience with PyX. When you are
+acquainted with the interface and some internals of PyX, then these paragraphs
+are of use to you.

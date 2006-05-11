@@ -1,10 +1,12 @@
-#!/usr/bin/env python
-
 import sys, os, os.path, cgi, StringIO, codecs, glob, re, warnings
 import keyword, token, tokenize
 import xml.dom.minidom
 from zope.pagetemplate.pagetemplatefile import PageTemplateFile
 import Image
+
+# make zope 3.2.1 run:
+import zope.pagetemplate.pagetemplatefile as pagetemplatefile
+pagetemplatefile.DEFAULT_ENCODING = "latin1"
 
 sys.path[:0]=[".."]
 import pyx
@@ -227,7 +229,8 @@ for dirindex, dir in enumerate(exampledirs):
         srcdir = os.path.join(srcdir, dir)
         destdir = os.path.join(destdir, dir)
     try:
-        title, shorttext, text = makehtml.fromText(open(os.path.join(srcdir, "README")).read())
+        title, shorttext, text = makehtml.fromText(open(os.path.join(srcdir, "README")).read(),
+        bend="<div class=\"examplebend\"><img src=\"../bend.png\" width=22 height=31></div>\n")
     except IOError:
         title = dir
         text = ""
