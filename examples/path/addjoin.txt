@@ -14,10 +14,10 @@ setting a different scale for the linewidth by
     unit.set(wscale=10)
 
 immediately after the import statement. The unit system of PyX is aware of
-several length types (unscaleable ''true'' coordinates `t`, regular ''user''
+several length types (unscalable ''true'' coordinates `t`, regular ''user''
 coordinates `u`, ''visual'' coordinates `v` for arrows, symbols and other
-small visual components, line ''widths'' `w` and the ``teXt`` sizes `x`). The
-length types can be scaled indepenently from each other (except for ''true''
+small visual components, line ''widths'' `w` and the ``text`` sizes `x`). The
+length types can be scaled independently of each other (except for ''true''
 coordinates).
 
 ! Note that joining of two paths might insert a connection line between the

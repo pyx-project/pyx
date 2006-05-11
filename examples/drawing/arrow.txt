@@ -24,7 +24,7 @@ head. We could for example also skip the color.rgb.green value in the
 !! To go further with removing the deco.filled features, it is equivalent to
 write `deco.filled([])`, `deco.filled()` and `deco.filled`. This is due to the
 fact that `deco.filled` already is an instance, which can be ''modified by
-call''. An emphy list doesn't really modify it. But you could even skip
+call''. An empty list doesn't really modify it. But you could even skip
 `deco.filled` completely and the arrow would still be filled with blue color.
 The reason is, that the arrow is implemented that way, that it always
 ''merges'' the `filled` decorator. This step in the evaluation of the
@@ -32,7 +32,7 @@ attributes is transparent to other settings: if we would replace the
 `deco.filled([color.rgb.green])` by color.rgb.green we would still get a filled
 green arrow. You could than remove the `color.rgb.red` in `deco.stroked` inside
 of the arrow instance and the line would become green as well. Note that the
-order of the attributes is not important for this style deligation feature.
+order of the attributes is not important for this style delegation feature.
 
 !! As we're learned that the arrow decorators always fill the arrow head by
 default, the question is, whether and how such a feature can be removed. This

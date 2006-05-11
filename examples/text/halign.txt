@@ -5,7 +5,7 @@ alignment. At first we need to emphasize, that PyX distinguishes between the
 alignment of the text box and the alignment of the material within the text box.
 The first line in the output shows the effect of the box alignment created by
 `boxleft`, `boxcenter` and `boxright` leading to left, center, and right
-aligment regarding the dotted lines.
+alignment regarding the dotted lines.
 
 The middle part shows the examples for centering a box, but aligning the content
 of the box at the left box boundary by `flushleft`, at the center by
@@ -18,7 +18,7 @@ At the bottom you can see combinations of `boxleft` and `flushleft`, `boxcenter`
 and `flushcenter`, and `boxright` and `boxcenter` in action. Those combinations
 are available by the attributes `left`, `center` and `right` to shortcut the
 setting of both corresponding attributes. You can use those shortcuts for box
-aligment as well, when you do not create a parbox.
+alignment as well, when you do not create a parbox.
 
 Note that the alignment features are implemented that way, that they work in TeX
 and in LaTeX mode. Furthermore you can always influence the alignment of the box

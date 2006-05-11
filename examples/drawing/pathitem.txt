@@ -3,7 +3,7 @@ Constructing paths from pathitems
 In this example some simple paths are constructed out of pathitems, which are
 the building blocks of paths. While we only use `moveto`, `lineto` and
 `closepath` instances, we can already see some features of paths in PyX. ... In
-the first path instance `rect1` we alternatingly use `moveto` and `lineto`
+the first path instance `rect1` we successively use `moveto` and `lineto`
 pathitem instances. A `moveto` instance sets an internal ''current point''
 while a `lineto` instance additionally creates a straight connection line
 between the old and the new ''current point''.

@@ -22,7 +22,7 @@ At the last line of the output the text.vshift is used to create some vertical
 shift of the output corresponding to certain criteria. The universal case is to
 use a certain fraction of a character height (or the height of any TeX
 expression). For `vshift.topzero` the full height of the character `0` is used.
-for `vshift.middlezero` half of the height of the height of the character `0` is
+For `vshift.middlezero` half of the height of the height of the character `0` is
 used and for `vshift.bottomzero` zero percent of the height of the character `0`
 is applied as the vertical shift, which means, no shift will be done at all and
 the usual alignment at the baseline will take place. Another interesting
@@ -34,11 +34,11 @@ compared to `vshift.middlezero` and fits well in various cases to visually
 center a single line output in vertical direction. Its also useful to align
 text, although the value of the shift is based on the configuration of the
 mathematical mode. This means that the alignment might not be suitable for
-cases, where the TeXs text mode was reconfigured without also adapting the math
+cases, where the text mode of TeX was reconfigured without also adapting the math
 mode configuration.
 
 Please don't get confused by the additional text.mathmode attribute in this
-vshift example, which leads the text to be rendered in TeXs mathematical mode.
+vshift example, which leads the text to be rendered in TeX's mathematical mode.
 The `text.mathmode` attribute is by the way similar but not identical (due to
-the use of `\displaystyle`) to encapsulating your expression in the TeXs
+the use of `\displaystyle`) to encapsulating your expression in TeX's
 mathmode delimiters `$`.

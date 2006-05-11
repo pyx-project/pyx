@@ -1,6 +1,6 @@
 Hello, world!
 
-As it's a good pratice to say "Hello, world!" in the first example, let's
+As it's a good practice to say "Hello, world!" in the first example, let's
 discuss how to do that in PyX.
 
 At first we import the PyX modules. Most PyX programs will start with a line

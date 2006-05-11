@@ -30,10 +30,10 @@ symmetric stroke and fill operation:
 
 Here `c` is the canvas instance, `p` is the path to be stroked and filled, `l1`
 is a list of styles used for both stroking and filling, `l2` are additional
-styles used for stroking, and `l3` are additional styles used for filling. 
+styles used for stroking, and `l3` are additional styles used for filling.
 
 !! The draw method transforms the path into a so-called ''decorated path''. In
 contrast to the path itself, which  is a pure mathematical object (think about
 it having zero width), the decorated path additionally knows about
 output-specific properties like the stroke or fill operation, the dashing or
-the linewidth. 
+the linewidth.
