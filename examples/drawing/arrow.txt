@@ -38,11 +38,11 @@ delegation feature.
 default, the question is, whether and how such a feature can be removed. This
 is done by ''clear'' instances available as a `clear` class attribute. Hence in case
 of `deco.filled` it is available as `deco.filled.clear`. When you add this
-attribute to the earrow call, you will see that the blue line is not stroked
-inside the arrowhead.
+attribute to the earrow call, the arrowhead will not be filled anymore and you
+will notice that the blue line is not stroked inside the arrowhead.
 
 !! You might also have noticed, that the dashed linestyle is not used when
 stroking the arrowhead. This is similar to the default `filled` feature of the
-arrowhead: The arrowhead merges a `style.linewidth.normal` to ensure a solid
-line. Instead of manually setting `style.linewidth.dashed` in the arrowhead you
-could use `style.linewidth.clear` to restore the setting of the path.
+arrowhead: The arrowhead merges a `style.linestyle.normal` to ensure a solid
+line. Instead of manually setting `style.linestyle.dashed` in the arrowhead you
+could use `style.linestyle.clear` to restore the linestyle setting of the path.
