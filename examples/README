@@ -7,7 +7,7 @@ upper right.
 
 ! Some paragraphs (like the one you're just reading) are marked with a
 ''dangerous bend sign''. Some people will recognize this classification from
-the TeXbook by D.E.Knuth and we use it at the PyX example pages for the same
+the TeXbook by D.E. Knuth and we use it at the PyX example pages for the same
 purpose. The bend mark parts of the description, which require some experiences
 with PyX. On the other hand those parts can savely be ignored by PyX beginners.
 
