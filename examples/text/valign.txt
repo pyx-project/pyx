@@ -3,15 +3,15 @@ Vertical alignment
 The example demonstrates the effect of several text attributes for vertical
 alignment.
 
-In the first line of the output the extent of the whole text box is taken into
-account by various versions of valign. While in this case the valign attributes
+In the first line of the output, the extent of the whole text box is taken into
+account by various versions of valign. While in this case, the valign attributes
 are combined with a parbox each, the valign technique also perfectly works for
 single line text. ...
 
 In contrast, in the second line of the output a parbox is shown with different
-values for the baseline. Note, that by default text is vertically aligned at
+values for the baseline. Note that by default, text is vertically aligned at
 its baseline, that is, the line the letters are typed upon. For a parbox
-containing several lines there are several choices. PyX allows you to use the
+containing several lines, there are several choices. PyX allows you to use the
 top-most baseline (which is, by the way, the default when skipping the baseline
 keyword argument of the parbox completely), and the bottom-most baseline in
 your paragraph. Additionally you can also use the position just in the middle
@@ -19,7 +19,7 @@ of these two cases. Since the alignment along a baseline does not depend on the
 size of the characters in your output, it is preferable to valign in most
 use-cases.
 
-In the last line of the output the text.vshift is used to create some vertical
+In the last line of the output, the text.vshift is used to create some vertical
 shift of the output corresponding to certain criteria. The universal case is
 to use a certain fraction of a character height (or the height of any TeX
 expression). For `vshift.topzero` the full height of the character `0` is used,
