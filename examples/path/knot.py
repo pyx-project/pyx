@@ -27,10 +27,7 @@ seam = path.path(
 # We smooth this curve a little because we used curveto together with lineto
 seam = deformer.smoothed(0.6).deform(seam)
 
-
 # The ropes, when drawn later, will have to overlap in a very specific way.
-# We need to split them at appropriate points.
-# This gives a list of segments for the middle curve
 l = seam.arclen()
 eps = 0.002*l
 lenghts = [eps, 0.28*l, 0.42*l, 0.58*l, 0.72*l, l-eps]
@@ -38,24 +35,19 @@ seam_segs = []
 for i in range(len(lenghts)-1):
     seam_segs.append(seam.split([lenghts[i]-eps, lenghts[i+1]+eps])[1])
 
-
-# For each segment two shifted paths build the boundaries of each rope
+# For each segment, two shifted paths build the boundaries of each rope
 ropes_segs = []
 for seam_seg in seam_segs:
     ropes_segs.append([])
     for ropeshift in [-0.5*dist, 0.5*dist]:
         ropes_segs[-1].append([])
         for edgeshift in [-0.5*thick, 0.5*thick]:
-            # We use the parallel deformer to create the parallel segments
-            # for each rope from the base curve:
             ropes_segs[-1][-1].append(
               deformer.parallel(ropeshift + edgeshift).deform(seam_seg))
 # Now, ropes_segs is a list of segments, containing a list of ropes,
 # each containing the two bounding paths of the rope segment
 
-
 rope_colors = [color.rgb.blue, color.rgb.red]
-
 c = canvas.canvas()
 # Because the segments should overlap in a very specific manner
 # we have to draw them in the correct order

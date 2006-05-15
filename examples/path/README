@@ -1,5 +1,5 @@
 Path features
 
-In first section we demonstrate more drawing features of PyX. The goal is to
+In this section we demonstrate more drawing features of PyX. The goal is to
 present use-cases for tasks like joining, intersecting, moving and deforming
 paths.

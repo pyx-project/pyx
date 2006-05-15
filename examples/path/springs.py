@@ -20,9 +20,6 @@ for springsegment in springcircle.split(masspositions):
 for x, y in springcircle.at(masspositions):
     c.fill(path.circle(x, y, rc))
 
-# draw border around springs.
-# In order to demonstrate another deformer, we construct
-# the border by expanding/constricting the original circle
 c.stroke(springcircle, [deformer.parallel(rc+eps)])
 c.stroke(springcircle, [deformer.parallel(-rc-eps)])
 
