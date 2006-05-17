@@ -1,31 +1,22 @@
 PYTHON ?= python
 GS ?= gs
 
-default: examples.dvi
-
-clean:
-	-rm -f examples.tex examples.log examples.aux examples.dvi *.eps */*.eps *.pdf */*.pdf *.png */*.png
-
-all:
-	make clean
-	make examples.dvi
-	make png
-
-dvi: examples.dvi
-
 files = $(foreach item, $(shell grep -v / INDEX), $(item)) $(foreach item, $(shell grep / INDEX), $(addprefix $(item), $(shell cat $(item)INDEX)))
 pyfiles = $(addsuffix .py, $(files))
 epsfiles = $(addsuffix .eps, $(files))
 pngfiles = $(addsuffix .png, $(files))
 thumbpngfiles = $(addsuffix _thumb.png, $(files))
 
+png: $(pngfiles) $(thumbpngfiles)
+
 eps: $(epsfiles)
 
-examples.dvi: examples.py $(epsfiles)
-	$(PYTHON) examples.py $(basename $(pyfiles))
-	latex examples.tex
+clean:
+	-rm -f *.eps */*.eps *.pdf */*.pdf *.png */*.png
 
-png: $(pngfiles) $(thumbpngfiles)
+all:
+	make clean
+	make png
 
 %.eps: %.py
 	cd $(dir $^); PYTHONPATH=$(CURDIR)/.. $(PYTHON) $(notdir $^)

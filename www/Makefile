@@ -1,9 +1,8 @@
-ZOPEDIR ?= $(HOME)/python/zope-3.2.1/lib/python
-PYTHON ?= python2.4
+ZOPEDIR ?= $(HOME)/bin/python/Zope3/src
+PYTHON ?= python
 
 default: build
 
-htmlfiles = $(patsubst %.pt, %.html, $(filter-out maintemplate.pt examples.pt, $(wildcard *.pt))) examples/index.html $(patsubst %, examples/%index.html, $(shell grep / ../examples/INDEX))
 publicserver = shell.sourceforge.net
 publicpath = /home/groups/p/py/pyx/htdocs
 
@@ -21,21 +20,25 @@ public:
 chmod:
 	-ssh $(publicserver) "cd $(publicpath); chmod -fR g+w *"
 
-build: always
+build: copy html
+
+copy:
 	-mkdir build
 	cp main.css build
 	-cp *.png *.ico build
 	cp png/*.png ../manual/manual.pdf ../faq/pyxfaq.pdf build
 	cp -r ../manual/manual build
-	for d in "" $(shell grep / ../examples/INDEX); \
+	for s in examples gallery; \
 	do \
-	  mkdir build/examples/$$d; \
-	  for s in png py jpg dat eps pdf; \
+	  for d in "" $$(grep / ../$$s/INDEX); \
 	  do \
-	    cp ../examples/$$d*.$$s build/examples/$$d 2> /dev/null; \
+	    mkdir build/$$s/$$d; \
+	    for t in png py jpg dat eps pdf; \
+	    do \
+	      cp ../$$s/$$d*.$$t build/$$s/$$d 2> /dev/null; \
+	    done; \
 	  done; \
 	done
-	PYTHONPATH=$(ZOPEDIR) $(PYTHON) pt2html.py
 
-always:
-	@# just ensure to always build new even when the directory already exists
+html:
+	PYTHONPATH=$(ZOPEDIR) $(PYTHON) pt2html.py
