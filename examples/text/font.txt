@@ -23,7 +23,7 @@ are therefore not explicitly included in the output of PyX. This behaviour is
 standard font-map file `psfonts.map`.
 If you say
 
-text.set(fontmaps=\"download35.map\")
+    text.set(fontmaps="download35.map")
 
 then PyX finds the corresponding fonts in the map-file and includes the fonts
 in the output EPS and PDF files.
