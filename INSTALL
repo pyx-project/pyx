@@ -32,9 +32,8 @@ First, you have to decide which C extension modules you want to build. This can
 be done by setting the respective flags in the setup.cfg config file. By default
 no C extension modules are built and appropriate fallbacks will be used instead.
 
-The build_t1strip option enables the t1strip extension module, which provides
-partial font downloading (i.e. only the glyphs of a font that are used are
-included in the resulting EPS file). The only requisites for building this
+The build_t1code option enables building of an extension module, which enables
+faster coding/decoding of Type 1 fonts. The only requisites for building this
 module are the Python header files and a C compiler. Note that the C compiler
 has to suit the Python distribution you are using.
 
