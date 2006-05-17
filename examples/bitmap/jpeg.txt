@@ -1,0 +1,41 @@
+Insert jpeg images without reencoding
+
+You can insert a jpeg image directly in PyX by the jpegimage
+class. It extracts the compressed jpeg data and makes the
+data available to a PyX bitmap without recompression (i.e.
+no loss of quality). ...
+
+! Note that you need to set `compressmode` to `None` when creating the
+bitmap instance, since the data provided by the image instance `i` is
+already compressed. However, PyX will fail and report about this
+mistake in case you forget disable the compression. (The original
+source of the problem is that PyX tries to compress all images using
+the gzip method by default and you need to turn off this feature to
+prevent the data from being double compressed.)
+
+Since we have some image data in this example, let us also discuss how
+to use the PIL to load such data and write it to the file. The
+straight forward solution would be to replace the creation of the
+`bitmap.jpegimage` instance by:
+
+    import Image
+    i = image.open("jpeg.jpg")
+
+While this works perfectly, it'll result in a totally uncompressed
+image. The size of the EPS file will for example become almost 1.1MB.
+
+Of course you could than turn on the default gzip based compression by
+omitting the 'compressmode=None'. This will reduce the filesize down
+to about 727KB. Still much, much larger than the version we get by the
+jpeg compression.
+
+Since the image instance is a PIL instance we can also use
+`compressmode="DCT"`, which turns on the loosy jpeg compression
+method. This will restore a file size similar to what we get by using
+the `jpegimage` instance. The file size and quality of the loosy
+compression can be adjusted by the `dctquality`, `dctoptimize`, and
+`dctprogression` parameters of the `bitmap` constructor. But it is
+important to note that you will always get some additional artifacts
+due to the recompression by the loosy jpeg compression method. It is
+also important to note that the version using `jpegimage` doesn't make
+use of the PIL at all.

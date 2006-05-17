@@ -1,6 +1,3 @@
-# This example is identical to the introductory example in the
-# bitmap section of the manual.
-
 from pyx import *
 
 image_bw = bitmap.image(2, 2, "L", "\0\377\377\0")

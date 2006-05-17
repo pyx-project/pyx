@@ -1,10 +1,3 @@
-# You can use image instances from the Python Image Library
-# (http://www.pythonware.com/products/pil/) to create bitmaps.
-# While you do not need the PIL to create an image pixel by
-# pixel (and its slow to use putpixel for that), you do have
-# an easy access to all the bitmap formats available in PIL,
-# you may use PIL features to create/modify bitmaps etc.
-
 from pyx import *
 import Image
 
