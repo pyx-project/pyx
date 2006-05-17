@@ -1,7 +1,7 @@
 %%
 %% This is file 'pyx.def',
 %%
-%% Copyright (C) 2003 Michael Schindler <m-schindler@users.sourceforge.net>
+%% Copyright (C) 2003,2006 Michael Schindler <m-schindler@users.sourceforge.net>
 %%
 %% this file is based on `dvips.def' from the Standard LaTeX `Graphics Bundle',
 %% available via ftp from CTAN
@@ -14,9 +14,9 @@
 % TODO: - documentation
 %
 \ProvidesFile{pyx.def}
-        [2003/06/12 driver-dependant file]
-%
-% %%%%%%  auxiliary macros  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ///
+        [2006/05/17 driver-dependant file]
+
+% %%%%%%  auxiliary macros  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% <<<
 % used in DEF file only:
 % check if #1 is in [0,1]
 %
@@ -27,9 +27,9 @@
     \PackageError{color}{Argument `#1' not in range [0,1]}\@ehd
   \fi}
 %
-% //\
-%
-% %%%%%%  (1a) gray, cmyk, rgb and RGB colors  %%%%%%%%%%%%%%%%%%%%%%%%%%% ///
+% >>>
+
+% %%%%%%  (1a) gray, cmyk, rgb and RGB colors  %%%%%%%%%%%%%%%%%%%%%%%%%%% <<<
 % used in color.sty:  \color@gray, cmyk, rgb, RGB, hsb
 % these commands are created with \csname as a
 % combination of 'color@' and 'gray'/'cmyk'/'rgb'/'RGB'/'hsb'
@@ -79,8 +79,8 @@
   \edef#4{hsb #1 #2 #3}% this is the string defining the color in the special.
 %                      % it is stored in the variable \current@color
   }
-%% //\
-% %%%%%%  (1b) "texnamed" colors  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ///
+%% >>>
+% %%%%%%  (1b) "texnamed" colors  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% <<<
 % used in color.sty: \color@named \col@...
 % like above with the use of \csname
 %
@@ -93,18 +93,18 @@
 \def\current@color{texnamed Black}
 \def\define@color@named#1#2{% for \DefineNamedColor only
   \expandafter\let\csname col@#1\endcsname\@nnil}
-% //\
-% %%%%%%  (1c) "pyxgray", "pyxcmyk", "pyxrgb", "pyxhsb" colors  %%%%%%%%%% ///
+% >>>
+% %%%%%%  (1c) "pyxcolor" colors  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% <<<
 %
-% use with \textcolor[pyxcmyk]{Name}
-% where Name has to be defined in PyX as 'color.cmyk.Name'
+% use with \textcolor[pyxcolor]{Name}
+% where Name has to be defined in PyX as 'color.cmyk.Name', 'color.rgb.red', ...
 % Attention! PyX has to do the error detection if the color is not defined!
 %
-\def\color@pyx#1#2{\c@olor@@pyx#2,,\@@#1}
-\def\c@olor@@pyx#1,#2,#3\@@#4{%
-  \edef#4{pyx #1}}
-% //\
-% %%%%%%  (1) colors general  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ///
+\def\color@pyx#1#2{\c@olor@@pyx#2\@@#1}
+\def\c@olor@@pyx#1\@@#2{%
+  \edef#2{pyxcolor #1}}
+% >>>
+% %%%%%%  (1) colors general  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% <<<
 %
 % \set@color is called by \@(un)declaredcolor in color.sty
 % This is the starting string of the special
@@ -116,9 +116,9 @@
 %
 % BACKGROUND COLOR is disabled
 \def\set@page@color{\PackageError{color}{Please adjust the pagecolor in PyX, not in LaTeX!}}
-% //\
-%
-% %%%%%%  (2) eps-file inclusion %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ///
+% >>>
+
+% %%%%%%  (2) eps-file inclusion %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% <<<
 %
 \def\Ginclude@eps#1{%
  \message{<#1>}%
@@ -162,20 +162,21 @@
 \@namedef{Gin@rule@.eps}#1{{eps}{.eps}{#1}}
 \@namedef{Gin@rule@*}#1{{eps}{\Gin@ext}{#1}}
 %
-% //\
-%
-% %%%%%%  (3) rotations  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ///
+% >>>
+
+% %%%%%%  (3) rotations  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% <<<
 \def\Grot@start{\special{PyX:rotate_begin \Grot@angle}}
 \def\Grot@end{\special{PyX:rotate_end}}
-% //\
-%
-% %%%%%%  (4) scalings  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ///
+% >>>
+
+% %%%%%%  (4) scalings  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% <<<
 %
 \def\Gscale@start{\special{PyX:scale_begin \Gscale@x\space \Gscale@y}}
 \def\Gscale@end{\special{PyX:scale_end}}
-% //\
+% >>>
 \endinput
-%
-% vim:fdm=marker:fmr=///,//\\
-%
+
+% vim:foldmethod=marker:foldmarker=<<<,>>>
+% vim:syntax=tex
+
 %% End of file `pyx.def'.

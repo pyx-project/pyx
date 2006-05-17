@@ -841,6 +841,11 @@ class dvifile:
                     c = getattr(color.cmyk, args[1])
                 except AttributeError:
                     raise RuntimeError("unknown TeX color '%s', aborting" % args[1])
+            elif args[0] == "pyxcolor":
+                try:
+                    c = eval(args[1])
+                except NameError:
+                    raise RuntimeError("cannot access PyX color '%s' in TeX, aborting" % args[1])
             else:
                 raise RuntimeError("color model '%s' cannot be handled by PyX, aborting" % args[0])
             self.actpage.insert(_savecolor())
