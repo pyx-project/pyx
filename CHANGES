@@ -48,6 +48,7 @@ TODO:
     - support gsave and grestore in some way to make context handling easier?
   - ps/pdfwriters:
     - support colorspace argument (like c.writeEPSfile("bla", colorspace="cmyk"))
+  - move pyx.def, lfs-files etc. into a new share directory
 
   Documentation:
     - path module:
