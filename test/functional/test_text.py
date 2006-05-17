@@ -10,16 +10,17 @@ text.preamble(r"""%
     \usepackage{color}
     \usepackage{rotating}
     \usepackage{helvet}
-%    \graphicspath{{eps/}}
-
+    \graphicspath{{eps/}}
+%
     \definecolor{col0}{gray}{0.1}
     \definecolor{col1}{cmyk}{0.3, 0.2, 0.1, 0.1}
     \definecolor{col2}{rgb}{0.4, 0.3, 0.1}
     \definecolor{col3}{RGB}{200, 200, 200}
     \definecolor{col4}{hsb}{0.1, 0.1, 0.1}
     \definecolor{col5}{named}{Red}
-%    \definecolor{col6}{pyx}{Some-PyX-Colour}
-    \definecolor{col0}{gray}{0.5}""", [text.texmessage.ignore])
+    \definecolor{col6}{pyx}{color.cmyk.PineGreen}
+    \definecolor{col7}{pyx}{color.cmyk(0.92,0,0.59,0.25)}
+    \definecolor{col0}{gray}{0.5}""")
 
 c.stroke(path.line(-1, 0, 6, 0))
 
@@ -78,19 +79,20 @@ d = canvas.canvas()
 d.stroke(path.rect(0,0, 1,1))
 d.stroke(path.line(0,0, 1,1))
 d.stroke(path.line(1,0, 0,1))
-d.writeEPSfile("sample")
+d.writeEPSfile("eps/sample")
 c.insert(c.text(10, 0, r"""
-    \textcolor{col0}{abc}
-    \textcolor{col1}{abc}
-    \textcolor{col2}{abc}
-    \textcolor{col3}{abc}
-    \textcolor{col4}{abc}
-    \textcolor{col5}{abc}
-%    \textcolor{col6}{abc}%
-    """, [text.parbox(3)]))
+    \textcolor{col0}{col0}
+    \textcolor{col1}{col1}
+    \textcolor{col2}{col2}
+    \textcolor{col3}{col3}
+    \textcolor{col4}{col4}
+    \textcolor{col5}{col5}
+    \textcolor{col6}{col6}
+    \textcolor{col7}{col7}%
+    """, [text.parbox(3.5)]))
 c.insert(c.text(15, 0, r"""
-    \colorbox{col2}{ColorBox}\\
-    \fcolorbox{col3}{col4}{FColorBox}"""))
+    \colorbox{col1}{ColorBox}\\
+    \fcolorbox{col5}{col6}{FColorBox}"""))
 
 c.text(4, 2, r"{\color[cmyk]{0.1,0.2,0.3,0.4}c\color[gray]{0.5}o\color[hsb]{0.2,0.3,0.4}l\color[rgb]{0.2,0.4,0.6}o\color[RGB]{100,200,50}r}s!")
 
@@ -102,7 +104,7 @@ c.insert(c.text(10, 4, r"""%
                            %   BUG!!!!!!  size and filename information gets
                            %   wrong when this is used  ===> not supported!
     %command=...,          %% not supported!
-    %bb = 0 0 20 20,        %% bounding box in original size
+    bb = 0 0 25 25,        %% bounding box in original size
     hiresbb=,              %! read high resolution in original file (if not bb)
     %viewport= 0 0 15 15,   %% bounding box with respect to bb
     %trim=1 1 1 1,          %% correction of the bounding box with respect to bb
