@@ -10,4 +10,4 @@ since the path already analyses the PyX units and the return value thus needs
 to be fixed and can not be scaled anymore. Printing the result of the `arclen`
 method call of path `p1` would show you:
 
-    (0.023110 t + 0.000000 u + 0.000000 v + 0.000000 w + 0.000000 x) m
+  (0.023110 t + 0.000000 u + 0.000000 v + 0.000000 w + 0.000000 x) m
