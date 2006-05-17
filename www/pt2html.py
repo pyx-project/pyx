@@ -74,6 +74,7 @@ class MakeHtml:
     parmakeinline = re.compile(r"`(.*?)`")
     parmakeitalic = re.compile(r"''(.*?)''")
     parmakebold = re.compile(r"'''(.*?)'''")
+    parmakeref = re.compile(r"\[([^]]*)\s([^\s]*)\]")
     codepattern = re.compile(r"([ \t]*\n)*(?P<data>(([ \t]+[^\n]*)?\n)+)")
     indentpattern = re.compile(r"([ \t]*\n)*(?P<indent>[ \t]+)")
 
@@ -95,6 +96,7 @@ class MakeHtml:
                 par = self.parmakeinline.subn(r"<code>\1</code>", par)[0]
                 par = self.parmakeitalic.subn(r"<em>\1</em>", par)[0]
                 par = self.parmakebold.subn(r"<strong>\1</strong>", par)[0]
+                par = self.parmakeref.subn(r'<a href="\2">\1</a>', par)[0]
                 if not title:
                     title = par
                 else:
@@ -114,7 +116,11 @@ class MakeHtml:
                 code = code.group("data")
                 indent = self.indentpattern.match(code).group("indent")
                 code = re.subn(r"\s*[\r\n]%s" % indent, "\n", code.strip())[0]
-                output.write("<div class=\"codeindent\">%s</div>\n" % self.fromPython(code + "\n"))
+                if len(indent.expandtabs()) >= 4:
+                    code = self.fromPython(code + "\n")
+                else:
+                    code = "<pre>%s</pre>" % code
+                output.write("<div class=\"codeindent\">%s</div>\n" % code)
         text = output.getvalue()
         shorttext = text.split("...")[0]
         text = text.replace("...", "", 1)

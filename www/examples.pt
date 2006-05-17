@@ -23,9 +23,12 @@
       </div>
       <a tal:attributes="href example/html"><h3 tal:content="example/title">title</h3></a>
       <tal:block content="structure example/shorttext"/>
-      <a tal:attributes="href example/html" tal:condition="example/shorttext">more&nbsp;...</a>
-      <tal:block content="structure string:</p>" condition="example/shorttext"/>
+      <tal:block condition="python: example.shorttext != example.text">
+        <a tal:attributes="href example/html" tal:condition="example/shorttext">more&nbsp;...</a>
+        <tal:block content="structure string:</p>" condition="example/shorttext"/>
+      </tal:block>
     </span>
+    <div style="clear: both;"></div>
 
   </div>
 
