@@ -6,14 +6,27 @@
 
     <h1>PyX - Documentation</h1>
 
+
+    <h2>Examples and gallery</h2>
+
+    <p>For a quick introduction to PyX, we recommend having a look on our <a
+    href="examples/index.html">examples</a> page. There you find lots of small
+    cookbook-like examples describing how to solve common drawing and plotting
+    tasks in PyX. Every example is accompanied by a detailed description of the
+    concepts it makes use of. By taking a tour through the examples, you should, thus,
+    learn how to effectively use PyX.</p>
+
+    <p>More elaborate PyX drawings together with the corresponding sources can
+    be found in the <a href="gallery/index.html">gallery</a>. </p>
+
     <h2>Manual</h2>
 
-    <p>Detailed information about PyX can be found in the PyX manual, which
+    <p>Detailed information about PyX can be found in the PyX reference manual, which
     is available both as PDF and as online HTML version:</p>
 
     <ul>
-      <li><a href="manual.pdf">manual (PDF version)</a></li>
-      <li><a href="manual/index.html">online manual (HTML version)</a></li>
+      <li><a href="manual.pdf">reference manual (PDF version)</a></li>
+      <li><a href="manual/index.html">online reference manual (HTML version)</a></li>
     </ul>
 
     <h2>FAQ</h2>
@@ -25,11 +38,12 @@
       <li><a href="pyxfaq.pdf">FAQ (PDF version)</a></li>
     </ul>
 
-    <h2>Examples</h2>
 
-    <p>Please have also a look on our <a href="examples/index.html">examples</a> page,
-    which contains a comprehensive set of PyX drawings together with the
-    corresponding Python source code.</p>
+    <h2>External resources</h2>
+
+    <ul> 
+      <li><a href="http://www.cs.ucr.edu/~titus/pyxTutorial/">PyX tutorial for Gnuplot users</a> by Titus Winters</li>
+    </ul>
 
   </div>
 
