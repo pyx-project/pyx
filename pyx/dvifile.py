@@ -843,7 +843,7 @@ class dvifile:
                     raise RuntimeError("unknown TeX color '%s', aborting" % args[1])
             elif args[0] == "pyxcolor":
                 try:
-                    c = eval(args[1])
+                    c = eval(" ".join(args[1:]), {"color":color})
                 except NameError:
                     raise RuntimeError("cannot access PyX color '%s' in TeX, aborting" % args[1])
             else:
