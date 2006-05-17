@@ -1,0 +1,20 @@
+Splitting paths
+
+In this example we use the `split` method of a path to split it into
+several paths. Similar to the `at` method you can use pass numbers to
+the split method (or PyX length instances) to specify the splitting
+point by the arc length ... or you can use parametrization instances like
+the one returned by the `end` method, where you can substract a length
+to conventiently express a certain location measured from end of the
+path.
+
+The return value of the `split` method is always a list. For a single
+splitting point you can also pass the parameter directly instead of
+wrapping this single value into a list.
+
+! When splitting at non-closed subpaths the result of the split method
+will be a list containing one path more than the number of splitting
+points. However, for a closed subpath a splitting at a single point
+will open the subpath but return a single path only. Consider a circle
+which you split at a single value: The result will still be a circle,
+but the path will not be closed anymore.
