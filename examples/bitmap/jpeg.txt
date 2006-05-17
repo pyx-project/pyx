@@ -1,4 +1,4 @@
-Insert jpeg images without reencoding
+Insert jpeg images without recompression
 
 You can insert a jpeg image directly in PyX by the jpegimage
 class. It extracts the compressed jpeg data and makes the
@@ -37,5 +37,5 @@ compression can be adjusted by the `dctquality`, `dctoptimize`, and
 `dctprogression` parameters of the `bitmap` constructor. But it is
 important to note that you will always get some additional artifacts
 due to the recompression by the loosy jpeg compression method. It is
-also important to note that the version using `jpegimage` doesn't make
-use of the PIL at all.
+also important to note that the original version shown in this example
+(using `jpegimage`) does not use the PIL at all.
