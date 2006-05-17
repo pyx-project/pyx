@@ -842,10 +842,26 @@ class dvifile:
                 except AttributeError:
                     raise RuntimeError("unknown TeX color '%s', aborting" % args[1])
             elif args[0] == "pyxcolor":
-                try:
-                    c = eval(" ".join(args[1:]), {"color":color})
-                except NameError:
-                    raise RuntimeError("cannot access PyX color '%s' in TeX, aborting" % args[1])
+                # pyx.color.cmyk.PineGreen or
+                # pyx.color.cmyk(0,0,0,0.0)
+                pat = re.compile(r"(pyx\.)?(color\.)?(?P<model>(cmyk)|(rgb)|(grey)|(gray)|(hsb))[\.]?(?P<arg>.*)")
+                sd = pat.match(" ".join(args[1:]))
+                if sd:
+                    sd = sd.groupdict()
+                    if sd["arg"][0] == "(":
+                        numpat = re.compile(r"[+-]?((\d+\.\d*)|(\d*\.\d+)|(\d+))([eE][+-]\d+)?")
+                        arg = tuple([float(x[0]) for x in numpat.findall(sd["arg"])])
+                        try:
+                            c = getattr(color, sd["model"])(*arg)
+                        except TypeError or AttributeError:
+                            raise RuntimeError("cannot access PyX color '%s' in TeX, aborting" % " ".join(args[1:]))
+                    else:
+                        try:
+                            c = getattr(getattr(color, sd["model"]), sd["arg"])
+                        except AttributeError:
+                            raise RuntimeError("cannot access PyX color '%s' in TeX, aborting" % " ".join(args[1:]))
+                else:
+                    raise RuntimeError("cannot access PyX color '%s' in TeX, aborting" % " ".join(args[1:]))
             else:
                 raise RuntimeError("color model '%s' cannot be handled by PyX, aborting" % args[0])
             self.actpage.insert(_savecolor())
