@@ -3,7 +3,6 @@ errorbar
 histogram
 lissajous
 piaxis
-symbolline
 manyaxes
 inset
 link
