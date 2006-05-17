@@ -29,11 +29,11 @@ seam = deformer.smoothed(0.6).deform(seam)
 
 # The ropes, when drawn later, will have to overlap in a very specific way.
 l = seam.arclen()
-eps = 0.002*l
-lenghts = [eps, 0.28*l, 0.42*l, 0.58*l, 0.72*l, l-eps]
-seam_segs = []
-for i in range(len(lenghts)-1):
-    seam_segs.append(seam.split([lenghts[i]-eps, lenghts[i+1]+eps])[1])
+epsilon = 0.002*l # small overlap between the segments
+seam_segs = seam.split([0.28*l+epsilon, 0.28*l-epsilon,
+                        0.42*l+epsilon, 0.42*l-epsilon,
+                        0.58*l+epsilon, 0.58*l-epsilon,
+                        0.72*l+epsilon, 0.72*l-epsilon])[::2]
 
 # For each segment, two shifted paths build the boundaries of each rope
 ropes_segs = []
