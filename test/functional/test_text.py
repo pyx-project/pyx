@@ -18,8 +18,8 @@ text.preamble(r"""%
     \definecolor{col3}{RGB}{200, 200, 200}
     \definecolor{col4}{hsb}{0.1, 0.1, 0.1}
     \definecolor{col5}{named}{Red}
-    \definecolor{col6}{pyx}{color.cmyk.PineGreen}
-    \definecolor{col7}{pyx}{color.cmyk(0.92,0,0.59,0.25)}
+    \definecolor{col6}{pyx}{pyx.color.cmyk.PineGreen}
+    \definecolor{col7}{pyx}{color.cmyk(0.92, 0, 0.59, 0.25)}
     \definecolor{col0}{gray}{0.5}""")
 
 c.stroke(path.line(-1, 0, 6, 0))
