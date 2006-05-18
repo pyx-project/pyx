@@ -6,3 +6,6 @@ While you do not need the PIL to create an image pixel by
 pixel ... (and its slow to use putpixel for that), you do have
 an easy access to all the bitmap formats available in PIL,
 you may use PIL features to create/load/modify bitmaps etc.
+
+!! Using PIL image instances you can also pass indexed images
+to PyX's `bitmap` class.
