@@ -55,7 +55,15 @@ or install PyX system wide by using
 
     python setup.py install
 
-or an appropriate variant thereof.
+or an appropriate variant thereof. To install the complete package at some
+other place, say /tmp, use the command
+
+    python setup.py install --root=/tmp --install-data=/ --install-lib=/
+
+you can then tell python to use this installation with
+
+    import sys
+    sys.path.insert(0, "/tmp")
 
 
 For Mac OS X users
