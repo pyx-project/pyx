@@ -55,15 +55,7 @@ or install PyX system wide by using
 
     python setup.py install
 
-or an appropriate variant thereof. To install the complete package at some
-other place, say /tmp, use the command
-
-    python setup.py install --root=/tmp --install-data=/ --install-lib=/
-
-you can then tell python to use this installation with
-
-    import sys
-    sys.path.insert(0, "/tmp")
+or an appropriate variant thereof.
 
 
 For Mac OS X users
@@ -80,11 +72,22 @@ Path setup when installing to a non-standard directory layout
 
 PyX places shared data in the directory <install-dir>/share/pyx and the system
 wide configuration in the file <root>/etc/pyxrc. <install-dir> and <root> are
-options to the distutils install-data command (and thus the install command).
-See the distutils documentation for details. The final path information is
-stored in siteconfig.py. While the original siteconfig.py calculates the
-positions relative to its current position thus enabling local usage, during
-install a proper siteconfig.py will be created.
+options to the distutils install-data command. See the distutils documentation
+for details. The final path information is stored in siteconfig.py. While the
+original siteconfig.py calculates the positions relative to its current
+position thus enabling local usage, during install a proper siteconfig.py will
+be created.
+
+To install the complete package at some other place, say /tmp, use the command
+
+    python setup.py install --root=/tmp --install-data=/ --install-lib=/
+
+You can then tell python to use this installation by
+
+    import sys
+    sys.path.insert(0, "/tmp")
+
+or by adjusting your PYTHONPATH environment variable.
 
 
 Compiling the manual
