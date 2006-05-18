@@ -1,7 +1,6 @@
 from pyx import *
 
 c = canvas.canvas()
-c.set([style.linestyle.dotted])
 
 # apply global TeX setting
 text.preamble(r"\parindent=0pt")

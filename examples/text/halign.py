@@ -2,7 +2,6 @@ from pyx import *
 
 c = canvas.canvas()
 
-c.set([style.linestyle.dotted])
 c.stroke(path.line(-5, 0, -5, 5))
 c.stroke(path.line(0, 0, 0, 5))
 c.stroke(path.line(5, 0, 5, 5))
