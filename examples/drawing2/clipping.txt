@@ -7,7 +7,3 @@ circle. ...
 
 The clipping property of a canvas must be specified on creation with an
 instance of `canvas.clip`, which takes a path as an argument.
-
-! The clipped canvas `cl` is additionally equipped with the argument
-`color.rgb.red`, which is then the default color of the canvas. If no other
-color ist specified while drawing, all drawing is performed with this color.
