@@ -661,10 +661,9 @@ class textbox(box.rect, canvas._canvas):
         self.depth = depth
         self.texttrafo = trafo.scale(unit.scale["x"]).translated(x, y)
         box.rect.__init__(self, x - left, y - depth, left + right, depth + height, abscenter = (left, depth))
-        canvas._canvas.__init__(self)
+        canvas._canvas.__init__(self, attrs)
         self.finishdvi = finishdvi
         self.dvicanvas = None
-        self.set(attrs)
         self.insertdvicanvas = 0
 
     def transform(self, *trafos):
