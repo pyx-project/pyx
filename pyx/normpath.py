@@ -1720,6 +1720,8 @@ class normpath:
         The last normsubpath of self will be joined to the first
         normsubpath of other.
         """
+        other = other.normpath()
+
         if not self.normsubpaths:
             raise NormpathException("cannot join to empty path")
         if not other.normsubpaths:
