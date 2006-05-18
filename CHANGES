@@ -169,7 +169,6 @@ TODO:
     - move bbox handling to registry
     - rename outputPS/outputPDF -> processPS/processPDF
     - remove set method of canvas
-    - insert doesn't return the inserted item anymore
   - style module:
     - make rellength the default for dash styles
   - random notes:

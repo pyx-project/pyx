@@ -234,6 +234,7 @@ class _canvas(canvasitem):
             self.items.append(sc)
         else:
             self.items.append(item)
+        return item
 
     def draw(self, path, attrs):
         """draw path on canvas using the style given by args
