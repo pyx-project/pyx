@@ -255,7 +255,7 @@ class PDFcontent(PDFobject):
         contentfile = cStringIO.StringIO()
         self.bbox = bbox.empty()
         acontext = context()
-        page.process("processPDF", contentfile, writer, acontext, registry, self.bbox)
+        page.processPDF(contentfile, writer, acontext, registry, self.bbox)
         self.content = contentfile.getvalue()
         contentfile.close()
 

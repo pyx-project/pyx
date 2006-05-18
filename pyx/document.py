@@ -67,7 +67,7 @@ class page:
         self.bboxenlarge = bboxenlarge
         self.pagebbox = bbox
 
-    def process(self, processMethod, contentfile, writer, context, registry, bbox):
+    def _process(self, processMethod, contentfile, writer, context, registry, bbox):
         assert not bbox
 
         # check whether we expect a page trafo and use a temporary canvasfile to insert the
@@ -134,6 +134,12 @@ class page:
 
             contentfile.write(canvasfile.getvalue())
             canvasfile.close()
+
+    def processPS(self, *args):
+        self._process("processPS", *args)
+
+    def processPDF(self, *args):
+        self._process("processPDF", *args)
 
 
 class document:

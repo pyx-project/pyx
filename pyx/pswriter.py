@@ -260,7 +260,7 @@ class epswriter:
         acontext = context()
         pagebbox = bbox.empty()
 
-        page.process("processPS", pagefile, self, acontext, registry, pagebbox)
+        page.processPS(pagefile, self, acontext, registry, pagebbox)
 
         file.write("%!PS-Adobe-3.0 EPSF-3.0\n")
         if pagebbox:
@@ -309,7 +309,7 @@ class pswriter:
             pagefile = cStringIO.StringIO()
             acontext = context()
             pagebbox = bbox.empty()
-            page.process("processPS", pagefile, self, acontext, registry, pagebbox)
+            page.processPS(pagefile, self, acontext, registry, pagebbox)
 
             documentbbox += pagebbox
 
