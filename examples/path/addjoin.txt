@@ -1,13 +1,14 @@
 Adding and joining paths
 
-The result of this example looks the same as the ''pathitems'' example from the
-''Basic drawing'' section. However, we are using a different approach to
-construct the paths in this example: we add and join paths. ... When ''adding''
-two paths, the resulting path just contains all the subpaths from the first and
-the second path as its subpaths. The ''join'' operation between two paths is
-similar but it combines the last subpath from the first path and continues it
-by the first subpath of the second path. Thus, ''join'' does not increase the
-number of subpaths like the ''add'' operation.
+The result of this example looks the same as the [''pathitem''
+../drawing/pathitem.html] example from the ''Basic drawing'' section. However, we
+are using a different approach to construct the paths in this example: we add
+and join paths. ... When ''adding'' two paths, the resulting path just contains
+all the subpaths from the first and the second path as its subpaths. The
+''join'' operation between two paths is similar but it combines the last
+subpath from the first path and continues it by the first subpath of the second
+path. Thus, ''join'' does not increase the number of subpaths like the ''add''
+operation.
 
 ! A similar result in terms of the line thickness could be achieved by setting a
 different scale for the linewidth by
