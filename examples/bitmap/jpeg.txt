@@ -1,44 +1,43 @@
-Insert jpeg images without recompression
+Insert JPEG images without and with recompression
 
-You can insert a jpeg image directly in PyX by the jpegimage
-class. It extracts the compressed jpeg data and makes the
-data available to a PyX bitmap without recompression (i.e.
-no loss of quality). ...
+With the `bitmap.jpegimage` class PyX allows you to directly insert a
+JPEG image into a canvas. It extracts the compressed JPEG data and makes
+the data available to a PyX bitmap without recompression (i.e. no loss
+of quality). ...
 
 ! Note that you need to set `compressmode` to `None` when creating the
 bitmap instance, since the data provided by the image instance `i` is
-already compressed. However, PyX will fail and report about this
-mistake in case you forget disable the compression. (The original
-source of the problem is that PyX tries to compress all images using
-the gzip method by default and you need to turn off this feature to
-prevent the data from being double compressed.)
+already compressed. If you forget to do so, PyX will fail and report about
+this mistake. (The original source of the problem is that PyX tries to
+compress all images using the gzip method by default and you need to
+turn off this feature to prevent the data from being double compressed.)
 
-Since we have some image data in this example, let us also discuss how
-to use the PIL to load such data and write it to the file. The
-straight forward solution would be to replace the creation of the
-`bitmap.jpegimage` instance by:
+Since we have some image data in this example, let us also discuss how to use
+the [Python Imaging Libary PIL http://www.pythonware.com/products/pil/] to load
+the data and write it to the file. The straightforward solution would be to
+replace the creation of the `bitmap.jpegimage` instance by:
 
     import Image
     i = image.open("jpeg.jpg")
 
-While this works perfectly, it'll result in a totally uncompressed
+While this works perfectly, it will result in a totally uncompressed
 image. The size of the EPS file will for example become almost 1.1MB.
 
 In a next step you may turn on the default gzip based compression by
-omitting the 'compressmode=None' (or setting `compressmode="Flate"`
+omitting the 'compressmode=None' (or by setting `compressmode="Flate"`
 explicitely). This will reduce the file size down to about 727KB (EPS)
-which is still much, much larger than the version we get by the jpeg
-compression. Note that this does not mean that the gzip based
-compression method is bad in general - it is just bad compared to the
-jpeg method for certain kind of image data like photos.
+which is still much larger than the version in the above example which
+used the JPEG compression. Note that this does not mean that the gzip
+based compression method is bad in general - it is just bad compared to
+the JPEG method for certain kind of image data like photos.
 
-Since the image instance is a PIL instance we can also use
-`compressmode="DCT"`, which turns on the loosy jpeg compression
-method. This will restore a file size similar to what we get by using
-the `jpegimage` instance. The file size and quality of the loosy
+Finally, since the image instance is a PIL instance we can also use
+`compressmode="DCT"`, which turns on the lossy JPEG compression method.
+This will restore a file size similar to what we got previously by using
+the `bitmap.jpegimage` instance. The file size and quality of the loosy
 compression can be adjusted by the `dctquality`, `dctoptimize`, and
 `dctprogression` parameters of the `bitmap` constructor. But it is
-important to note that you will always get some additional artifacts
-due to the recompression by the loosy jpeg compression method. It is
-also important to note that the original version shown in this example
-(using `jpegimage`) does not use the PIL at all.
+important to note that you will always get some additional artifacts due
+to the recompression by the lossy JPEG compression method. It is also
+important to note that the original version shown in this example (using
+`bitmap.jpegimage`) does not use the PIL at all.
