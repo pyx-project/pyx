@@ -445,52 +445,50 @@ attribute) are available at module level.
 {Using the graphics-bundle with \LaTeX}
 
 The packages in the \LaTeX{} graphics bundle (\texttt{color.sty},
-\texttt{graphics.sty}, \texttt{graphicx.sty}, \ldots) make extensive
-use of \texttt{\textbackslash{}special} commands and \PyX{} defines a
-clean set of \texttt{\textbackslash{}special} commands to fit the
-needs of the \LaTeX{} graphics bundle. The \texttt{pyx.def} driver
-file need be used to tell the \LaTeX{} graphics bundle about the
-syntax of the \texttt{\textbackslash{}special} commands as expected by
-\PyX{}. You can put the driver file \texttt{pyx.def} into your
-\LaTeX{} search path and add the content of both files
-\texttt{color.cfg} and \texttt{graphics.cfg} to your personal
-configuration files.\footnote{If you do not know what we're talking
-about you can just ignore this paragraph but keep sure to not unset
-the \var{pyxgraphics} keyword argument.} After you have installed the
-\texttt{cfg} files please use the \module{text} module with unset
-\code{pyxgraphics} keyword argument which will switch off a
-convenience hack for less experienced \LaTeX{} users. You can then
-import the \LaTeX{} graphics bundle packages and related packages
-(e.g.~\texttt{rotating}, \ldots) with the option~\texttt{pyx},
-e.g.~\texttt{\textbackslash{}usepackage[pyx]\{color,graphicx\}}. Please
-note that the option~\texttt{pyx} is only available with unset
-\var{pyxgraphics} keyword argument and a properly installed driver
-file. Otherwise omit the specification of a driver when loading the
-packages.
+\texttt{graphics.sty}, \texttt{graphicx.sty}, \ldots) make extensive use of
+\texttt{\textbackslash{}special} commands. \PyX{} defines a clean set of such
+commands to fit the needs of the \LaTeX{} graphics bundle. This is done via the
+\texttt{pyx.def} driver file, which tells the graphics bundle about the syntax
+of the \texttt{\textbackslash{}special} commands as expected by \PyX{}. You can
+install the driver file \texttt{pyx.def} into your \LaTeX{} search path and add
+the content of both files \texttt{color.cfg} and \texttt{graphics.cfg} to your
+personal configuration files.\footnote{If you do not know what this is all
+about, you can just ignore this paragraph. But be sure that the
+\var{pyxgraphics} keyword argument is always set!} After you have installed the
+\texttt{cfg} files, please use the \module{text} module with unset
+\code{pyxgraphics} keyword argument which will switch off a convenience hack
+for less experienced \LaTeX{} users. You can then import the \LaTeX{} graphics
+bundle packages and related packages (e.g.~\texttt{rotating}, \ldots) with the
+option~\texttt{pyx},
+e.g.~\texttt{\textbackslash{}usepackage[pyx]\{color,graphicx\}}. Note that the
+option~\texttt{pyx} is only available with unset \var{pyxgraphics} keyword
+argument and a properly installed driver file. Otherwise, omit the
+specification of a driver when loading the packages.
 
-When defining colours in \LaTeX{} in one of the colour models
-\texttt{gray}, \texttt{cmyk}, \texttt{rgb}, \texttt{RGB}, \texttt{hsb}
-\PyX{} will use the corresponding values (one to four real numbers).
-When you use one of the \texttt{named} colors in \LaTeX{} \PyX{} will
-use the corresponding predefined colour (see module \texttt{color} and
-the colour table at the end of the manual).
+When you define colors in \LaTeX{} via one of the color models \texttt{gray},
+\texttt{cmyk}, \texttt{rgb}, \texttt{RGB}, \texttt{hsb}, then \PyX{} will use
+the corresponding values (one to four real numbers). In case you use any of the
+\texttt{named} colors in \LaTeX{}, \PyX{} will use the corresponding predefined
+color (see module \texttt{color} and the color table at the end of the manual).
+The additional \LaTeX{} color model \texttt{pyx} allows to use a PyX color
+expression, such as \texttt{color.cmyk(0,0,0,0)} directly in LaTeX. It is
+passed to PyX.
 
-When importing Encapsulated PostScript files (\texttt{eps} files)
-\PyX{} will rotate, scale and clip your file like you expect it. Other
-graphic formats can not be imported via the graphics package at the
-moment.
+When importing Encapsulated PostScript files (\texttt{eps} files) \PyX{} will
+rotate, scale and clip your file like you expect it. Other graphic formats can
+not be imported via the graphics package at the moment.
 
-For reference purpose, the following specials can be handled by the
-\PyX{} at the moment:
+For reference purpose, the following specials can be handled by \PyX{} at the
+moment:
 
 \begin{description}
 \item[\texttt{PyX:color\_begin (model) (spec)}]
-  starts a colour. \texttt{(model)}~is one of
-  \texttt{gray}, \texttt{cmyk}, \texttt{rgb}, \texttt{hsb}, or
-  \texttt{texnamed}. \texttt{(spec)}~depends on the model: a name or
+  starts a color. \texttt{(model)}~is one of
+  \texttt{gray}, \texttt{cmyk}, \texttt{rgb}, \texttt{hsb}, \texttt{texnamed}, or
+  \texttt{pyxcolor}. \texttt{(spec)}~depends on the model: a name or
   some numbers
 \item[\texttt{PyX:color\_end}]
-  ends a colour.
+  ends a color.
 \item[\texttt{PyX:epsinclude file= llx= lly= urx= ury= width= height= clip=0/1}]
   includes an Encapsulated PostScript file (\texttt{eps}
   files). The values of \texttt{llx} to \texttt{ury} are in the files'
