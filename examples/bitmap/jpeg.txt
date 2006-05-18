@@ -24,10 +24,13 @@ straight forward solution would be to replace the creation of the
 While this works perfectly, it'll result in a totally uncompressed
 image. The size of the EPS file will for example become almost 1.1MB.
 
-Of course you could than turn on the default gzip based compression by
-omitting the 'compressmode=None'. This will reduce the filesize down
-to about 727KB. Still much, much larger than the version we get by the
-jpeg compression.
+In a next step you may turn on the default gzip based compression by
+omitting the 'compressmode=None' (or setting `compressmode="Flate"`
+explicitely). This will reduce the file size down to about 727KB (EPS)
+which is still much, much larger than the version we get by the jpeg
+compression. Note that this does not mean that the gzip based
+compression method is bad in general - it is just bad compared to the
+jpeg method for certain kind of image data like photos.
 
 Since the image instance is a PIL instance we can also use
 `compressmode="DCT"`, which turns on the loosy jpeg compression
