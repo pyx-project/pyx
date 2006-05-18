@@ -140,18 +140,16 @@ class _canvas(canvasitem):
             import text
             self.texrunner = text.defaulttexrunner
 
-        for attr in attrs:
-            if isinstance(attr, trafo.trafo_pt):
-                self.trafo = self.trafo*attr
-                self.items.append(attr)
-            elif isinstance(attr, clip):
+        attr.checkattrs(attrs, [trafo.trafo_pt, clip, style.strokestyle, style.fillstyle])
+        for aattr in attrs:
+            if isinstance(aattr, trafo.trafo_pt):
+                self.trafo = self.trafo*aattr
+            elif isinstance(aattr, clip):
                 if self.clipbbox is None:
-                    self.clipbbox = attr.clipbbox().transformed(self.trafo)
+                    self.clipbbox = aattr.clipbbox().transformed(self.trafo)
                 else:
-                    self.clippbox *= attr.clipbbox().transformed(self.trafo)
-                self.items.append(attr)
-            else:
-                self.set([attr])
+                    self.clippbox *= aattr.clipbbox().transformed(self.trafo)
+            self.items.append(aattr)
 
     def __len__(self):
         return len(self.items)
