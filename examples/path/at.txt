@@ -1,7 +1,7 @@
 Positions along a path
 
 There are several methods to access certain positions at a path. At first there
-are `atbegin` and `atend` methods, which return a coordinate tuple.
+are `atbegin` and `atend` methods, which return a coordinate tuple. ...
 
 ! In this example, we have defined a small helper function `mark` to which we
 can pass the return value of the `at...` methods. We do this by transforming
