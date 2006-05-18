@@ -1,0 +1,13 @@
+Paths with constant distance
+
+This example shows how to use the `deformer.parallel` class. It provides the
+path which has always constant (signed) distance to an original path. ...
+
+! Note that the order of the deformer attributes is not arbitrary, since the
+deforming operations do not commute. If you want first to smooth and then get
+the parallel curve to the smoothed curve, you have to say
+
+  [deformer.smoothed(radius), deformer.parallel(dist)]
+
+since the stroke attributes are evaluated from left to right.
+

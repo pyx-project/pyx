@@ -1,0 +1,13 @@
+Smoothing paths
+
+This example shows how to use the `deformer` class. A deformer takes an
+original path and return a modified one, which is here a smoothed variant. The
+deformer can be used like any other attribute when stroking or filling a path.
+...
+
+In the example code, the original curve comprises a straight line and a curve,
+exhibiting a sharp corner in between. This sharp corner is smoothed away.
+
+! The deformed path can be accessed directly from the deformer by
+
+  ps = deformer.smoothed(1.0).deform(p)
