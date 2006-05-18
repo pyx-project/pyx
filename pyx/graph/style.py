@@ -650,8 +650,7 @@ class errorbar(_style):
 
     def initdrawpoints(self, privatedata, sharedata, graph):
         if privatedata.errorbarattrs is not None:
-            privatedata.errorbarcanvas = canvas.canvas()
-            privatedata.errorbarcanvas.set(privatedata.errorbarattrs)
+            privatedata.errorbarcanvas = canvas.canvas(privatedata.errorbarattrs)
             privatedata.dimensionlist = list(xrange(len(sharedata.vpos)))
 
     def drawpoint(self, privatedata, sharedata, graph, point):

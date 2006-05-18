@@ -237,14 +237,6 @@ class _canvas(canvasitem):
 
         return item
 
-    def set(self, attrs):
-        """sets styles args globally for the rest of the canvas
-        """
-
-        attr.checkattrs(attrs, [style.strokestyle, style.fillstyle])
-        for astyle in attrs:
-            self.insert(astyle)
-
     def draw(self, path, attrs):
         """draw path on canvas using the style given by args
 
