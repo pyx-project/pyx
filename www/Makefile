@@ -23,16 +23,16 @@ chmod:
 build: copy html
 
 copy:
-	-mkdir build
+	mkdir -p build
 	cp main.css build
-	-cp *.png *.ico build
+	cp *.png *.ico build
 	cp png/*.png ../manual/manual.pdf ../faq/pyxfaq.pdf build
 	cp -r ../manual/manual build
 	for s in examples gallery; \
 	do \
 	  for d in "" $$(grep / ../$$s/INDEX); \
 	  do \
-	    mkdir build/$$s/$$d; \
+	    mkdir -p build/$$s/$$d; \
 	    for t in png py jpg dat eps pdf; \
 	    do \
 	      cp ../$$s/$$d*.$$t build/$$s/$$d 2> /dev/null; \
