@@ -9,6 +9,7 @@ TODO:
     - add encoding; check whether encoding=ascii works well for the common existing cases
     - we need output-specific map files (see Palatino example
       http://sourceforge.net/mailarchive/message.php?msg_id=14863643)
+    - write graphics driver for pgf.sty from LaTeX
   - graph.graph module
     - common bboxes for different graphs
     - 3d graphs, circular graphs
@@ -49,6 +50,8 @@ TODO:
   - ps/pdfwriters:
     - support colorspace argument (like c.writeEPSfile("bla", colorspace="cmyk"))
   - move pyx.def, lfs-files etc. into a new share directory
+  - write fakepattern.py which substitutes some of the pattern functionality using
+    re-usable canvases
 
   Documentation:
     - path module:
