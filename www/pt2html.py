@@ -237,7 +237,7 @@ def processexamples(basedir):
             bend = "<div class=\"examplebend\"><img src=\"../bend.png\" width=22 height=31></div>\n"
         try:
             nextdir = exampledirs[dirindex + 1]
-            nextdir = os.path.join(destdir, nextdir)
+            nextdir = os.path.join(basedir, nextdir)
         except IndexError:
             nextdir = None
         try:
