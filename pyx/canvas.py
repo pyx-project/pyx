@@ -149,7 +149,6 @@ class _canvas(canvasitem):
         attrs.reverse()
         for aattr in attrs:
             if isinstance(aattr, trafo.trafo_pt):
-                print self.trafo, aattr, self.trafo*aattr
                 self.trafo = self.trafo * aattr
             elif isinstance(aattr, clip):
                 if self.clipbbox is None:
