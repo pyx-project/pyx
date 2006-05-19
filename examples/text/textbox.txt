@@ -1,0 +1,25 @@
+Enlarge the surrounding of a textbox
+
+! This example introduces the concept of the `textbox`, which is a canvas-like
+structure containing the text and its surrounding path and reference point. We
+demonstrate how to enlarge the surrounding box a little and use it as a
+decoration of the path. ...
+
+! The `textbox` is a specialized version of the [`box` concept
+../../roadmap.html] which has been introduced into PyX in a preliminary
+version. In the example, we obtain the bounding box (this is a `bbox` instance,
+not to be mixed up with the `box`) and enlarge it a bit. We then draw the path
+of the bounding box.
+
+! In future releases of PyX, the boxes will have generic support for enlarging.
+The syntax will then be
+
+    tpath = tbox.enlarged(3*unit.x_pt).path()
+
+! An alternative, geometrically different approach to enlarging the textbox path
+is via an appropriate transformation, such as
+
+    tbox = text.text(0, 0, r"Boxed text", [text.halign.boxcenter, text.valign.middle])
+    tpath = tbox.path().transformed(trafo.scale(1.5, 1.5, 0, 0))
+
+
