@@ -114,20 +114,24 @@ class _texmessagestart(texmessage):
             raise TexResultError("TeX scrollmode check failed", texrunner)
 
 
-class _texmessagenoaux(texmessage):
-    """allows for LaTeXs no-aux-file warning"""
+class _texmessagenofile(texmessage):
+    """allows for LaTeXs no-file warning"""
 
     __implements__ = _Itexmessage
 
+    def __init__(self, fileending):
+        self.fileending = fileending
+
     def check(self, texrunner):
         try:
-            s1, s2 = texrunner.texmessageparsed.split("No file %s.aux." % texrunner.texfilename, 1)
+            s1, s2 = texrunner.texmessageparsed.split("No file %s.%s." % (texrunner.texfilename, self.fileending), 1)
             texrunner.texmessageparsed = s1 + s2
         except (IndexError, ValueError):
             try:
-                s1, s2 = texrunner.texmessageparsed.split("No file %s%s%s.aux." % (os.curdir,
+                s1, s2 = texrunner.texmessageparsed.split("No file %s%s%s.%s." % (os.curdir,
                                                                                    os.sep,
-                                                                                    texrunner.texfilename), 1)
+                                                                                   texrunner.texfilename,
+                                                                                   self.fileending), 1)
                 texrunner.texmessageparsed = s1 + s2
             except (IndexError, ValueError):
                 pass
@@ -327,7 +331,8 @@ class _texmessageignore(_texmessageload):
 
 
 texmessage.start = _texmessagestart()
-texmessage.noaux = _texmessagenoaux()
+texmessage.noaux = _texmessagenofile("aux")
+texmessage.nonav = _texmessagenofile("nav")
 texmessage.end = _texmessageend()
 texmessage.load = _texmessageload()
 texmessage.loaddef = _texmessageloaddef()
