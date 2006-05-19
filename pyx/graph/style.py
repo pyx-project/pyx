@@ -824,7 +824,6 @@ class rect(_style):
 
     def initdrawpoints(self, privatedata, sharedata, graph):
         privatedata.rectcanvas = graph.insert(canvas.canvas())
-        privatedata.lastcolorvalue = None
 
     def drawpoint(self, privatedata, sharedata, graph, point):
         xvmin = sharedata.vrange[0][0]
@@ -848,14 +847,7 @@ class rect(_style):
             p.append(graph.vgeodesic_el(xvmax, yvmax, xvmin, yvmax))
             p.append(graph.vgeodesic_el(xvmin, yvmax, xvmin, yvmin))
             p.append(path.closepath())
-            colorvalue = point["color"]
-            try:
-                if colorvalue != privatedata.lastcolorvalue:
-                    privatedata.rectcanvas.set([self.palette.getcolor(colorvalue)])
-            except:
-                pass
-            else:
-                privatedata.rectcanvas.fill(p)
+            privatedata.rectcanvas.fill(p, [self.palette.getcolor(point["color"])])
 
     def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
         raise RuntimeError("Style currently doesn't provide a graph key")
