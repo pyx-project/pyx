@@ -157,12 +157,12 @@ _base = 0.1 * unit.v_cm
 
 class hatched(pattern):
     def __init__(self, dist, angle, strokestyles=[]):
-        pattern.__init__(self, painttype=1, tilingtype=1, xstep=dist, ystep=1000*unit.t_pt, bbox=None, trafo=trafo.rotate(angle))
+        pattern.__init__(self, painttype=1, tilingtype=1, xstep=dist, ystep=100*unit.t_pt, bbox=None, trafo=trafo.rotate(angle))
         self.strokestyles = attr.mergeattrs([style.linewidth.THIN] + strokestyles)
         attr.checkattrs(self.strokestyles, [style.strokestyle])
         self.dist = dist
         self.angle = angle
-        self.stroke(path.line_pt(0, -500, 0, 500), self.strokestyles)
+        self.stroke(path.line_pt(0, -50, 0, 50), self.strokestyles)
 
     def __call__(self, dist=None, angle=None, strokestyles=None):
         if dist is None:
