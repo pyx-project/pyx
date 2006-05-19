@@ -5,10 +5,10 @@ original path and return a modified one, which is here a smoothed variant. The
 deformer can be used like any other attribute when stroking or filling a path.
 
 Here, we show the use of `deformer.smoothed`, which smoothes away corners in
-the original path. ... It operates on the pathelements of the original path and
+the original path. ... It operates on the `pathitem`s of the original path and
 cuts out pieces of a given length (`1.0` in the example) surrounding a corner
 and replaces them by a smooth curve. This new curve is determined to be
-''geometrical smooth'', exhibiting the same tangents and curvatures as the
+''geometrically smooth'', exhibiting the same tangents and curvatures as the
 original path at the connection points. Alltogether, the smoothing is performed
 not in a strictly ''geometrical'' sense but also depends on the
 parameterization of the path. If you try to smooth a path consisting of many
