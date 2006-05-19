@@ -72,8 +72,8 @@ class MakeHtml:
     parpattern = re.compile(r"([ \t]*\n)*(?P<data>(\S[^\n]*\n)+)(([ \t]*\n)+.*)?")
     parmakeline = re.compile(r"\s*[\r\n]\s*")
     parmakeinline = re.compile(r"`(.*?)`")
-    parmakeitalic = re.compile(r"''(.*?)''")
     parmakebold = re.compile(r"'''(.*?)'''")
+    parmakeitalic = re.compile(r"''(.*?)''")
     parmakeref = re.compile(r"\[([^]]*)\s([^\s]*)\]")
     codepattern = re.compile(r"([ \t]*\n)*(?P<data>(([ \t]+[^\n]*)?\n)+)")
     indentpattern = re.compile(r"([ \t]*\n)*(?P<indent>[ \t]+)")
@@ -94,8 +94,8 @@ class MakeHtml:
                 par = par.replace("\"", "&quot;")
                 par = self.parmakeline.subn(" ", par)[0]
                 par = self.parmakeinline.subn(r"<code>\1</code>", par)[0]
-                par = self.parmakeitalic.subn(r"<em>\1</em>", par)[0]
                 par = self.parmakebold.subn(r"<strong>\1</strong>", par)[0]
+                par = self.parmakeitalic.subn(r"<em>\1</em>", par)[0]
                 par = self.parmakeref.subn(r'<a href="\2">\1</a>', par)[0]
                 if not title:
                     title = par
