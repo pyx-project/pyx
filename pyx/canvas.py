@@ -141,9 +141,16 @@ class _canvas(canvasitem):
             self.texrunner = text.defaulttexrunner
 
         attr.checkattrs(attrs, [trafo.trafo_pt, clip, style.strokestyle, style.fillstyle])
+        # We have to reverse the trafos such that the PostScript concat operators
+        # are in the right order. Correspondingly, we below multiply the current self.trafo
+        # from the right. 
+        # Note that while for the stroke and fill styles the order doesn't matter at all, 
+        # this is not true for the clip operation.
+        attrs.reverse()
         for aattr in attrs:
             if isinstance(aattr, trafo.trafo_pt):
-                self.trafo = self.trafo*aattr
+                print self.trafo, aattr, self.trafo*aattr
+                self.trafo = self.trafo * aattr
             elif isinstance(aattr, clip):
                 if self.clipbbox is None:
                     self.clipbbox = aattr.clipbbox().transformed(self.trafo)
