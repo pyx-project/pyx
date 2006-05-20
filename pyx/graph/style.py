@@ -1371,6 +1371,10 @@ class bar(_style):
         sharedata.stackedbardraw = 1
         privatedata.stackedbar = sharedata.stackedbar
 
+    def drawpointfill(self, privatedata, p):
+        if p:
+            privatedata.rectcanvas.fill(p, privatedata.barattrs)
+
     def drawpoint(self, privatedata, sharedata, graph, point):
         xvmin = sharedata.vbarrange[0][0]
         xvmax = sharedata.vbarrange[0][1]
@@ -1403,10 +1407,35 @@ class bar(_style):
             p.append(graph.vgeodesic_el(xvmax, yvmax, xvmin, yvmax))
             p.append(graph.vgeodesic_el(xvmin, yvmax, xvmin, yvmin))
             p.append(path.closepath())
-            privatedata.rectcanvas.fill(p, privatedata.barattrs)
+            self.drawpointfill(privatedata, p)
+        else:
+            self.drawpointfill(privatedata, None)
 
     def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
         selectindex = privatedata.stackedbar
         selecttotal = sharedata.stackedbar + 1
         graph.fill(path.rect_pt(x_pt + width_pt*selectindex/float(selecttotal), y_pt, width_pt/float(selecttotal), height_pt), privatedata.barattrs)
 
+
+class changebar(bar):
+
+    def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
+        if selecttotal != 1:
+            raise RuntimeError("Changebar can't change its appearance. Thus you can't use it to plot several bars side by side on a subaxis.")
+
+    def initdrawpoints(self, privatedata, sharedata, graph):
+        bar.initdrawpoints(self, privatedata, sharedata, graph)
+        privatedata.bars = []
+
+    def drawpointfill(self, privatedata, p):
+        privatedata.bars.append(p)
+
+    def donedrawpoints(self, privatedata, sharedata, graph):
+        selecttotal = len(privatedata.bars)
+        for selectindex, p in enumerate(privatedata.bars):
+            if p:
+                barattrs = attr.selectattrs(self.defaultbarattrs + self.barattrs, selectindex, selecttotal)
+                privatedata.rectcanvas.fill(p, barattrs)
+
+    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
+        raise RuntimeError("Style currently doesn't provide a graph key")
