@@ -2,9 +2,9 @@ Comparing bars
 
 To draw bars side by side to show differences for the same value you basically
 need to replace the bar axis by a nestedbar axis and adjust the data to that
-nesting. ... The later is done by providing a tuple of two to the nested bar axis
-instead of a single value. The first value provided by the tuple is used to
-select a subaxis at the nestedbar axis and the second value is used on that
+nesting. ... The latter is done by providing a tuple of two values to the nested bar axis
+instead of a single value. The first elemented of the tuple is used to
+select a subaxis at the nestedbar axis and the second one is used on that
 selected bar axis.
 
 ! You can replace `0` and `1` in the values provided to the xname parameter of
