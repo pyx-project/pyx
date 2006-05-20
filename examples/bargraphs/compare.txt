@@ -1,0 +1,40 @@
+Comparing bars
+
+To draw bars side by side to show differences for the same value you basically
+need to replace the bar axis by a nestedbar axis and adjust the data to that
+nesting. ... The later is done by providing a tuple of two to the nested bar axis
+instead of a single value. The first value provided by the tuple is used to
+select a subaxis at the nestedbar axis and the second value is used on that
+selected bar axis.
+
+! You can replace `0` and `1` in the values provided to the xname parameter of
+the data by other hashable objects as long as they differ. The order of the
+bars at the subaxis does not depend by their selection value (as for bar axes
+in general), but by the order data is added to the bar axes. So when you
+exchange `0` and `1` in the xname parameter nothing will change in the output.
+
+!! You can also use the same value (i.e. an object with the same hash value)
+for the subselection of the nested bar axis. Then the bars will overpaint each
+other and by proper ordering of the data you can fake stacked bars by that.
+
+!! Guess what happens when you change the values provided to the xname
+parameter of the data from `"$1, 0"` and `"$1, 1"` to `"0, $1"` and `"1, $1"`,
+respectively. The answer is, that all blue bars will be shown on one subaxis
+and all red bars will be shown on another subaxis.
+
+!! A nested bar axis is totally equivalent to a regular bar axis except for its
+default value for the defaultsubaxis parameter in the constructor. While this
+defaultsubaxis parameter is a special instance of a linear axis for the bar
+axis, for a nestedbar axis its a special instance of another bar axis. The
+nesting of bar axes is not limited to a single level: You can nest bar axes
+into each other to any level you want. Providing explicit subaxes for certain
+values, the nesting levels can even vary for the differen subaxes. (This is
+totally crazy.)
+
+! In PyX versions prior to PyX 0.9 the creation of nested data for the bar axes
+was hidden inside the graph styles (with the limitation as we use it here in
+this example: adding precisely a single nesting level when passing multiple
+data to a single set of styles). In previous versions we didn't had the
+possibility to simply generate tuples for data columns. The automatism was
+removed completely, which makes ''all'' the bended sections above possible.
+This is a quite incompatible but absolutely necessary change.

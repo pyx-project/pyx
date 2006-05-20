@@ -1,0 +1,5 @@
+Naming bars
+
+To name the bars you just need to use a proper data column (instead of column
+0, which is the line number in `data.file` instances). ... Beside that we show
+in this example how to adjust the bar axis painter to properly show the names.

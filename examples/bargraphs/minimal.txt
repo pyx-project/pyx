@@ -1,0 +1,11 @@
+Minimal bar-graph example
+
+For a minimal bar plot you have set an bar axis in the graph constructor and
+provide Xname column data (X stands for the bar axis to be used). ...
+Furthermore you need to specify the graph style, since the default graph styles
+symbol and function (depending on the data type) are not appropriate for bar
+graphs.
+
+!! By using the bar style you implicitly also select a different positioning
+style, namepy `barpos`. This positioning style handles a single-nested axes
+with sub-axis values of the range going from 0 to 1.
