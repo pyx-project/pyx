@@ -5,7 +5,7 @@ This example shows how to use a `paramfunction` as a data source for a graph.
 argument, a minimal and a maximal value given as the second and third argument
 and an expression string as forth argument. ... This expression string assigns a
 tuple of expressions to a tuple of data names. As usual the styles will decide
-#what those data names are responsible for.
+what those data names are responsible for.
 
 ! Like for the function, you can also access external data and functions in your
 expression. Suppose we want to provide the data for this example by means of
