@@ -1,13 +1,14 @@
 Basic plotting
 
-One of PyX major strengths are its graph plotting capabilities. PyX offers you
-a flexible system which, while providing sensible defaults, allows you to
+One of PyX's major strengths are its graph-plotting capabilities. PyX offers
+you a flexible system which, while providing sensible defaults, allows you to
 customize almost every aspect of the graph output. Such a flexibility comes at
 a price, though: you need to learn at least a little bit about the different
 components playing together in order to produce a graph. In this section, we
 try to give you a gentle introduction to one component after the other. We
 start by demonstrating how to plot various kind of data (from a file, a
 function mapping x values to y values, a parametric function, a histogram).
-Along the way, we introduce more and more concepts which you need to understand
-in order to be able to make use of the full power of PyX's graph-plotting
-system.
+Subsequently, we explain how to modify various properties of the axes of the
+graph. Along the way, we introduce more and more concepts which you need to
+understand in order to be able to make use of the full power of PyX's
+graph-plotting system.
