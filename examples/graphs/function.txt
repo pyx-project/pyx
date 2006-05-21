@@ -1,4 +1,4 @@
-Plotting a mathematical function
+Plotting a function graph
 
 Here, we explain how to plot the graph of a real-valued mathematical function of
 a single real parameter. ...

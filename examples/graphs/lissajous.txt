@@ -1,4 +1,4 @@
-Parametric function
+Plotting a parametric function
 
 This example shows how to use a `paramfunction` as a data source for a graph.
 `paramfunction` defines a parameter variable name given as a string in the first
