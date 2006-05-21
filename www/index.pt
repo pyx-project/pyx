@@ -26,7 +26,7 @@
       <li>PostScript and PDF output for device independent, free scalable figures</li>
       <li>seamless TeX/LaTeX integration</li>
       <li>full access to PostScript features like paths, linestyles, fill patterns, transformations, clipping, bitmap inclusion, etc.</li>
-      <li>advanced geometric operations on paths like intersections, transformations, splitting, etc.</li>
+      <li>advanced geometric operations on paths like intersections, affine transformations, splitting, smoothing, etc.</li>
       <li>sophisticated graph generation: modular design, pluggable axes, axes partitioning based on rational number arithmetics, flexible graph styles, etc.</li>
     </ul>
 
