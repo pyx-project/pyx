@@ -1806,6 +1806,8 @@ class normpath:
 
     def _split_pt(self, params):
         """split path at params and return list of normpaths"""
+        if not params:
+            return []
 
         # instead of distributing the parameters, we need to keep their
         # order and collect parameters for splitting of normsubpathitem
