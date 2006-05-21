@@ -1,8 +1,8 @@
 minimal
 function
-errorbar
-histogram
 lissajous
+histogram
+errorbar
 piaxis
 manyaxes
 inset
