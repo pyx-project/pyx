@@ -2,6 +2,7 @@ minimal
 function
 lissajous
 histogram
+axis
 errorbar
 piaxis
 manyaxes
