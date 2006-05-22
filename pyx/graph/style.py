@@ -1192,6 +1192,10 @@ class histogram(_style):
         if privatedata.lineattrs is not None and len(privatedata.path):
            graph.draw(privatedata.path, privatedata.lineattrs)
 
+    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
+        if privatedata.lineattrs is not None:
+            graph.stroke(path.line_pt(x_pt, y_pt+0.5*height_pt, x_pt+width_pt, y_pt+0.5*height_pt), privatedata.lineattrs)
+
 
 class barpos(_style):
 
