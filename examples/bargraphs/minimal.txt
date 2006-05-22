@@ -15,7 +15,10 @@ i.e. a bar axis, and the usage of appropriate graph styles.
 ! A bar graph is fundamentally different from a graph with a histogram style in
 its usage of a ''discrete axis'' in one graph dimension. A histogram instead is
 created using ''continuous axes'' in all graph dimensions and just drawing the
-data in a specific bar-graph-like presentation.
+data in a specific bar-graph-like presentation. In particular, the discreteness
+of the bar axis is reflected in the naming of its column name: instead of the
+continuous "X" it expects an "Xname" (where X stands for the bar axis used) as
+mentioned above.
 
 ! As all axes and graph dimensions in the PyX graph system are treated equally
 all you need to modify to get bar graph with horizontal bars is to assign the
