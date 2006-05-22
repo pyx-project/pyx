@@ -250,8 +250,8 @@ The graph provides some methods to access its geometry:
 \begin{methoddesc}{pos}{x, y, xaxis=None, yaxis=None}
   Returns the given point at \var{x} and \var{y} as a tuple
   \code{(xpos, ypos)} at the graph canvas. \var{x} and \var{y} are
-  axis data values for the two axes \var{xaxis} and \var{yaxis}. When
-  \var{xaxis} or \var{yaxis} are \code{None}, the axes with names
+  anchoredaxis instances for the two axes \var{xaxis} and \var{yaxis}.
+  When \var{xaxis} or \var{yaxis} are \code{None}, the axes with names
   \code{x} and \code{y} are used. This method fails if called before
   \method{dolayout()}.
 \end{methoddesc}
