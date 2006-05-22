@@ -1208,7 +1208,9 @@ class texrunner:
         left, right, height, depth = [float(xxx)*72/72.27*unit.x_pt for xxx in match.group("lt", "rt", "ht", "dp")]
         box = textbox(x, y, left, right, height, depth, self.finishdvi, fillstyles)
         for t in trafos:
-            box.reltransform(t)
+            box.reltransform(t) # TODO: should trafos really use reltransform???
+                                #       this is quite different from what we do elsewhere!!!
+                                #       see https://sourceforge.net/mailarchive/forum.php?thread_id=9137692&forum_id=23700
         if self.texipc:
             box.setdvicanvas(self.dvifile.readpage([ord("P"), ord("y"), ord("X"), self.page, 0, 0, 0, 0, 0, 0]))
         else:
