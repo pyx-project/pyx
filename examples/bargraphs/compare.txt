@@ -29,8 +29,8 @@ answer is, that all blue bars will be shown on one subaxis and all red bars
 will be shown on another subaxis.
 
 !! A nested bar axis is totally equivalent to a regular bar axis except for its
-default value for the defaultsubaxis parameter in the constructor. While this
-defaultsubaxis parameter is a special instance of a linear axis for the bar
+default value for the `defaultsubaxis` parameter in the constructor. While this
+`defaultsubaxis` parameter is a special instance of a linear axis for the bar
 axis, for a nestedbar axis its a special instance of another bar axis. The
 nesting of bar axes is not limited to a single level: You can nest bar axes
 into each other to any level you want. Providing explicit subaxes for certain
