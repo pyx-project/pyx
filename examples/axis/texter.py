@@ -1,14 +1,3 @@
-# Texters create the label strings written to the ticks. There are
-# texters available for decimal numbers without and with an
-# exponential part as well as fractions. Internally, the partitioning
-# is based on fractions to avoid any rounding problems.
-#
-# Although we could modify axis.linear into a piaxis "inplace", we
-# define a special piaxis below to give an impression, how easy
-# alternative default settings can be implemented. A more advanced
-# task would be to add an appropriate special partitioner for a
-# piaxis.
-
 import math
 from pyx import *
 from pyx.graph import axis

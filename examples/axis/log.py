@@ -1,9 +1,3 @@
-# Certainly logarithmic axes are supported in PyX. By playing with
-# partitioners and texters, you can easily change the base.
-#
-# It is left as an exercise to the reader to create a automatic
-# partitioner for logarithmic axes with base 2.
-
 import math
 from pyx import *
 from pyx.graph import axis

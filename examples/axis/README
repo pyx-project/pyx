@@ -1,5 +1,7 @@
 Graph axes
 
-This section demonstrates the axis subsystem of the graph module. While here
-axes are created along paths, all the demonstrated features can be used in
-graphs as well.
+This section demonstrates some axes features of the graph system. For that we
+draw axes along paths, although this ''might'' look a bit esoteric (especially
+since we're using curved paths). But please be not distracted by that: all the
+shown functionality is available to the quite boring case of straight axes as
+they are typically used in graphs.
