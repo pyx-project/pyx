@@ -1,7 +1,7 @@
 Manually place ticks at certain positions
 
 Ticks can be set manually by passing tick instances to the `manualticks`
-argument of the axis instance as shown at the right axis in this example.
+argument of the axis instance as shown at the right axis in this example. ...
 
 As you can see the manual ticks are combined with tick created automatically.
 You could disable any automatic tick creation by setting the `parter` argument

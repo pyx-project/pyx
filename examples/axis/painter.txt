@@ -1,7 +1,7 @@
 Painting of an axis
 
 Axis painters performs the painting of an axis, which means they take all the
-information of the axis an create a proper drawing for that.
+information of the axis an create a proper drawing for that. ...
 
 While an usual axis painter has quite some parameters to adjust the output,
 here we only alter the ticks. By default, ticks are stroked only towards the

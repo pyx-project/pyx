@@ -4,7 +4,7 @@ In this example several axes with the same parameters are plotted on a path
 scaled at 3 different sizes. Note that the axes adjust the ticks appropriately
 to the available space. For that a `partitioner` (the short form `parter` is
 used in the code) creates several possible solutions for placing ticks and
-labels at the axis.
+labels at the axis. ...
 
 However, we do not address this partioning feature here (we just use the
 default), but we show you the rating facilities instead. Still, we don't modify

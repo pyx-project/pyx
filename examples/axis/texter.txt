@@ -2,7 +2,7 @@ Texter
 
 Texters create the label strings written to the ticks. There are texters
 available for decimal numbers without and with an exponential part as well as
-fractions.
+fractions. ...
 
 ! At the right axis we also show how to create a special piaxis. Here some axis
 parameters are altered to fit an pi-scaled axis nicely. Futhermore instead of

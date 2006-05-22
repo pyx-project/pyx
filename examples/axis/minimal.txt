@@ -2,7 +2,7 @@ Minimal example drawing an axis along a path
 
 This is the basic example how to draw an axis along an arbitrary path. The
 function `pathaxis` from the `graph.axis` module takes a path and returns a
-canvas. Different from the typical usecase in graphs, we must fix the axis
+canvas. ... As opposed to the typical usecase in graphs, we must fix the axis
 range by appropriate `min` and `max` arguments, because no data is provided to
 the axis instance where a data range could be extracted from. In graphs the
 range of an axis gets adjusted automatically although you can still set minimal
