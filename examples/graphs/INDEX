@@ -1,12 +1,10 @@
 minimal
 function
 lissajous
-histogram
 axis
-errorbar
 change
+histogram
+errorbar
 piaxis
 manyaxes
-inset
 link
-arrows
