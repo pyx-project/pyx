@@ -248,12 +248,18 @@ class epswriter:
         page = document.pages[0]
         canvas = page.canvas
 
-        if not filename.endswith(".eps"):
-            filename = filename + ".eps"
         try:
-            file = open(filename, "w")
-        except IOError:
-            raise IOError("cannot open output file")
+            filename.write("")
+        except:
+            if not filename.endswith(".eps"):
+                filename = filename + ".eps"
+            try:
+                file = open(filename, "w")
+            except IOError:
+                raise IOError("cannot open output file")
+        else:
+            file = filename
+            filename = "stream"
 
         pagefile = cStringIO.StringIO()
         registry = PSregistry()
@@ -287,13 +293,18 @@ class epswriter:
 class pswriter:
 
     def __init__(self, document, filename, writebbox=0):
-        if not filename.endswith(".ps"):
-            filename = filename + ".ps"
         try:
-            file = open(filename, "w")
-        except IOError:
-            raise IOError("cannot open output file")
-
+            filename.write("")
+        except:
+            if not filename.endswith(".ps"):
+                filename = filename + ".ps"
+            try:
+                file = open(filename, "w")
+            except IOError:
+                raise IOError("cannot open output file")
+        else:
+            file = filename
+            filename = "stream"
 
         # We first have to process the content of the pages, writing them into the stream pagesfile
         # Doing so, we fill the registry and also calculate the page bounding boxes, which are

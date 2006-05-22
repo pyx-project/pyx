@@ -438,12 +438,17 @@ class PDFwriter:
     def __init__(self, document, filename,
                        title=None, author=None, subject=None, keywords=None,
                        fullscreen=0, writebbox=0, compress=1, compresslevel=6):
-        if not filename.endswith(".pdf"):
-            filename = filename + ".pdf"
         try:
-            file = open(filename, "wb")
-        except IOError:
-            raise IOError("cannot open output file")
+            filename.write("")
+        except:
+            if not filename.endswith(".pdf"):
+                filename = filename + ".pdf"
+            try:
+                file = open(filename, "wb")
+            except IOError:
+                raise IOError("cannot open output file")
+        else:
+            file = filename
 
         self.title = title
         self.author = author

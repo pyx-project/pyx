@@ -175,6 +175,8 @@ TODO:
     - move bbox handling to registry
     - rename outputPS/outputPDF -> processPS/processPDF
     - remove set method of canvas
+  - canvas and document modules:
+    - allow file instances as paramter of the writeXXXfile methods (feature request #1419658 by Jason Pratt)
   - style module:
     - make rellength the default for dash styles
   - random notes:
