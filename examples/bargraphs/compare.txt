@@ -13,9 +13,11 @@ the data by other unique hashable objects. Note, however, that this does not
 affect the  order of the bars of the subaxis. Instead, the order is defined by
 the order that data is added to the bar axis. Consequently, when you swap `0`
 and `1` in the xname parameter nothing will change in the output. However, this
-value become relevant if you turn on naming of the sub-axis via
+value becomes relevant if you turn on naming of the sub-axis by using
 
-    XXX
+    graph.axis.bar(defaultsubaxis=graph.axis.bar(dist=0))
+
+instead of the `graph.axis.nestedbar` instance in the graph constructor.
 
 !! You can also use the same values (i.e. objects with the same hash value) for
 the subselection of the nested bar axis. Then the bars will overpaint each
