@@ -27,7 +27,7 @@ bars on top of each other].
 
 !! Let's suppose you change the values provided to the xname parameter of the
 data from `"$1, 0"` and `"$1, 1"` to `"0, $1"` and `"1, $1"`, respectively. The
-answer is, that all blue bars will be shown on one subaxis and all red bars
+answer is, that all red bars will be shown on one subaxis and all blue bars
 will be shown on another subaxis.
 
 !! A nested bar axis is totally equivalent to a regular bar axis except for its
