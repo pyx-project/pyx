@@ -95,6 +95,7 @@ TODO:
         adujstaxis became independend from selectstyle for all styles now)
       - remove multiple painting of frompath in histogram and barpos styles
       - fix missing attribute select when using a bar style once only (reported by Alan Isaac)
+      - fix histograms for negative y-coordinates (reported by Dominic Ford, bug #1492548)
       - implement a changebar style (TODO: documentation)
     - graph, axis and style module:
       - support for mutual linking of axes between graphs

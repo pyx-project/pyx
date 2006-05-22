@@ -1099,7 +1099,7 @@ class histogram(_style):
             else:
                 if (privatedata.lastvvalue is not None and
                     (not currentvalid or
-                     privatedata.lastvvalue > vvalue or
+                     abs(privatedata.lastvvalue-privatedata.vfromvalue) > abs(vvalue-privatedata.vfromvalue) or
                      gap)):
                     self.vposline(privatedata, sharedata, graph,
                                   privatedata.lastvmax, privatedata.lastvvalue, privatedata.vfromvalue)
@@ -1108,7 +1108,7 @@ class histogram(_style):
                                      vmin, vvalue)
                 if (currentvalid and
                     (privatedata.lastvvalue is None or
-                     privatedata.lastvvalue < vvalue or
+                     abs(privatedata.lastvvalue-privatedata.vfromvalue)  < abs(vvalue-privatedata.vfromvalue) or
                      gap)):
                     self.vmoveto(privatedata, sharedata, graph,
                                  vmin, privatedata.vfromvalue)
