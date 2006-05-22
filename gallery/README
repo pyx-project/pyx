@@ -1,12 +1,12 @@
 PyX gallery
 
 Similar to the PyX example pages the gallery shows you some ready-to-run PyX
-code. But while the examples try to provide you minimal examples to explain
-certain PyX features, the subject for the gallery is to show you some fancy
-and/or real world examples. While sometimes you will find some explanations
-similar to those of the example pages, but a full description of all the
-details are far out of scope for the gallery. Still, the shown code might be
-well suited as a starting point for own experiments with PyX.
+code. But whereas the examples try to provide you minimal examples to explain
+various features of PyX, in the gallery, we show you some fancy and/or real world
+examples. While sometimes you will find some explanations similar to those of
+the example pages, a full description of all the details is far out of scope
+for the gallery. Still, the shown code might be well suited as a starting point
+for your own experiments with PyX.
 
 We encourage you to submit suitable gallery examples via the [PyX mailing lists
 http://sourceforge.net/mail/?group_id=45430]. In case the example needs
