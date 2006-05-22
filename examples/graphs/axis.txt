@@ -19,9 +19,7 @@ of the function in the y-direction, which, moreover, would strongly depend on
 the sampling points choosen by PyX along the x-direction.
 
 ! Note how PyX changes the way the x-axis is drawn. Instead of simple decimal
-numbers, an exponential notation is used. This happens automatically, if the axis 
-values become too big.
-
-XXX Andre, please more info: I don't feel being qualified enough
-
-
+numbers, an exponential notation is used. This happens automatically by
+default, if at least one of the values to be shown becomes 10,000 or bigger
+smaller than 0.001. This behaviour can be altered by using a different axis
+texter.
