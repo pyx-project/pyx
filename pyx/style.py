@@ -100,6 +100,9 @@ miterlimit.lessthan11deg = miterlimit(10) # the default, approximately 11.4783 d
 miterlimit.clear = attr.clearclass(miterlimit)
 
 
+_defaultlinewidth = 0.02 * unit.w_cm
+_defaultlinewidth_pt = unit.topt(_defaultlinewidth)
+
 class dash(attr.exclusiveattr, strokestyle):
 
     """dash of paths"""
@@ -116,14 +119,14 @@ class dash(attr.exclusiveattr, strokestyle):
 
     def processPS(self, file, writer, context, registry, bbox):
         if self.rellengths:
-            patternstring = " ".join(["%f" % (element * context.linewidth_pt) for element in self.pattern])
+            patternstring = " ".join(["%f" % (element * context.linewidth_pt/_defaultlinewidth_pt) for element in self.pattern])
         else:
             patternstring = " ".join(["%f" % element for element in self.pattern])
         file.write("[%s] %d setdash\n" % (patternstring, self.offset))
 
     def processPDF(self, file, writer, context, registry, bbox):
         if self.rellengths:
-            patternstring = " ".join(["%f" % (element * context.linewidth_pt) for element in self.pattern])
+            patternstring = " ".join(["%f" % (element * context.linewidth_pt/_defaultlinewidth_pt) for element in self.pattern])
         else:
             patternstring = " ".join(["%f" % element for element in self.pattern])
         file.write("[%s] %d d\n" % (patternstring, self.offset))
@@ -173,18 +176,16 @@ class linewidth(attr.sortbeforeexclusiveattr, strokestyle):
         file.write("%f w\n" % unit.topt(self.width))
         context.linewidth_pt = unit.topt(self.width)
 
-_base = 0.02 * unit.w_cm
-
-linewidth.THIN = linewidth(_base/math.sqrt(32))
-linewidth.THIn = linewidth(_base/math.sqrt(16))
-linewidth.THin = linewidth(_base/math.sqrt(8))
-linewidth.Thin = linewidth(_base/math.sqrt(4))
-linewidth.thin = linewidth(_base/math.sqrt(2))
-linewidth.normal = linewidth(_base)
-linewidth.thick = linewidth(_base*math.sqrt(2))
-linewidth.Thick = linewidth(_base*math.sqrt(4))
-linewidth.THick = linewidth(_base*math.sqrt(8))
-linewidth.THIck = linewidth(_base*math.sqrt(16))
-linewidth.THICk = linewidth(_base*math.sqrt(32))
-linewidth.THICK = linewidth(_base*math.sqrt(64))
+linewidth.THIN = linewidth(_defaultlinewidth/math.sqrt(32))
+linewidth.THIn = linewidth(_defaultlinewidth/math.sqrt(16))
+linewidth.THin = linewidth(_defaultlinewidth/math.sqrt(8))
+linewidth.Thin = linewidth(_defaultlinewidth/math.sqrt(4))
+linewidth.thin = linewidth(_defaultlinewidth/math.sqrt(2))
+linewidth.normal = linewidth(_defaultlinewidth)
+linewidth.thick = linewidth(_defaultlinewidth*math.sqrt(2))
+linewidth.Thick = linewidth(_defaultlinewidth*math.sqrt(4))
+linewidth.THick = linewidth(_defaultlinewidth*math.sqrt(8))
+linewidth.THIck = linewidth(_defaultlinewidth*math.sqrt(16))
+linewidth.THICk = linewidth(_defaultlinewidth*math.sqrt(32))
+linewidth.THICK = linewidth(_defaultlinewidth*math.sqrt(64))
 linewidth.clear = attr.clearclass(linewidth)
