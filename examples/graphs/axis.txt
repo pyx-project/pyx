@@ -16,7 +16,10 @@ the x-axis this is not strictly necessary (we could as well tell the
 important for the y-axis because the function diverges for certain x values. If
 we do not set the y range manually, we would obtain a rather compressed display
 of the function in the y-direction, which, moreover, would strongly depend on
-the sampling points choosen by PyX along the x-direction.
+the sampling points choosen by PyX along the x-direction. Since the function only
+diverges towards positive y-values, we only need to set the maximal value of
+the y-axis (using the `max`-argument). Of course, you can also fix the lower end
+of the axis range by providing a `min`-argument.
 
 ! Note how PyX changes the way the x-axis is drawn. Instead of simple decimal
 numbers, an exponential notation is used. This happens automatically by
