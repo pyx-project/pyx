@@ -252,23 +252,23 @@ _ReEncodeFont = PSdefinition("ReEncodeFont", """{
 
 class epswriter:
 
-    def __init__(self, document, filename):
+    def __init__(self, document, file):
         if len(document.pages) != 1:
             raise ValueError("EPS file can be construced out of a single page document only")
         page = document.pages[0]
         canvas = page.canvas
 
         try:
-            filename.write("")
+            file.write("")
         except:
+            filename = file
             if not filename.endswith(".eps"):
-                filename = filename + ".eps"
+                filename += ".eps"
             try:
                 file = open(filename, "w")
             except IOError:
                 raise IOError("cannot open output file")
         else:
-            file = filename
             filename = "stream"
 
         pagefile = cStringIO.StringIO()
@@ -302,18 +302,18 @@ class epswriter:
 
 class pswriter:
 
-    def __init__(self, document, filename, writebbox=0):
+    def __init__(self, document, file, writebbox=0):
         try:
-            filename.write("")
+            file.write("")
         except:
+            filename = file
             if not filename.endswith(".ps"):
-                filename = filename + ".ps"
+                filename += ".ps"
             try:
                 file = open(filename, "w")
             except IOError:
                 raise IOError("cannot open output file")
         else:
-            file = filename
             filename = "stream"
 
         # We first have to process the content of the pages, writing them into the stream pagesfile

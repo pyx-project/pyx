@@ -41,26 +41,24 @@ defines some additional properties of the page.
 
 A \class{document} can be written to a file using one of the following methods:
 
-\begin{methoddesc}{writeEPSfile}{filename, *args, **kwargs}
+\begin{methoddesc}{writeEPSfile}{file, *args, **kwargs}
   Write a single page \class{document} to an EPS file, passing
   \var{args} and \var{kwargs} to the \class{epswriter} instance
   created for writing.
 \end{methoddesc}
 
-\begin{methoddesc}{writePSfile}{filename, *args, **kwargs}
-  Write \class{document} to a PS file, passing
-  \var{args} and \var{kwargs} to the \class{pswriter} instance
-  created for writing.
+\begin{methoddesc}{writePSfile}{file, *args, **kwargs}
+  Write \class{document} to a PS file, passing \var{args} and
+  \var{kwargs} to the \class{pswriter} instance created for writing.
 \end{methoddesc}
 
-\begin{methoddesc}{writePDFfile}{filename, *args, **kwargs}
-  Write \class{document} to a PDF file, passing
-  \var{args} and \var{kwargs} to the \class{pdfwriter} instance
-  created for writing.
+\begin{methoddesc}{writePDFfile}{file, *args, **kwargs}
+  Write \class{document} to a PDF file, passing \var{args} and
+  \var{kwargs} to the \class{pdfwriter} instance created for writing.
 \end{methoddesc}
 
 \begin{methoddesc}{writetofile}{filename, *args, **kwargs}
-  Determine the file type (EPS, PS, or PDF) from the file extension 
+  Determine the file type (EPS, PS, or PDF) from the file extension
   of \var{filename} and call the corresponding write method with
   the given arguments \var{arg} and \var{kwargs}.
 \end{methoddesc}

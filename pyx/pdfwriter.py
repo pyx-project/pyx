@@ -445,20 +445,19 @@ class PDFencoding(PDFobject):
 
 class PDFwriter:
 
-    def __init__(self, document, filename,
+    def __init__(self, document, file,
                        title=None, author=None, subject=None, keywords=None,
                        fullscreen=0, writebbox=0, compress=1, compresslevel=6):
         try:
-            filename.write("")
+            file.write("")
         except:
+            filename = file
             if not filename.endswith(".pdf"):
-                filename = filename + ".pdf"
+                filename += ".pdf"
             try:
                 file = open(filename, "wb")
             except IOError:
                 raise IOError("cannot open output file")
-        else:
-            file = filename
 
         self.title = title
         self.author = author

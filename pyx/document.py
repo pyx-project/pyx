@@ -152,14 +152,14 @@ class document:
     def append(self, page):
         self.pages.append(page)
 
-    def writeEPSfile(self, filename, *args, **kwargs):
-        pswriter.epswriter(self, filename, *args, **kwargs)
+    def writeEPSfile(self, file, *args, **kwargs):
+        pswriter.epswriter(self, file, *args, **kwargs)
 
-    def writePSfile(self, filename, *args, **kwargs):
-        pswriter.pswriter(self, filename, *args, **kwargs)
+    def writePSfile(self, file, *args, **kwargs):
+        pswriter.pswriter(self, file, *args, **kwargs)
 
-    def writePDFfile(self, filename, *args, **kwargs):
-        pdfwriter.PDFwriter(self, filename, *args, **kwargs)
+    def writePDFfile(self, file, *args, **kwargs):
+        pdfwriter.PDFwriter(self, file, *args, **kwargs)
 
     def writetofile(self, filename, *args, **kwargs):
         if filename.endswith(".eps"):

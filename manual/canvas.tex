@@ -83,23 +83,29 @@ The contents of the canvas can be written using the following two
 convenience methods, which wrap the canvas into a single page
 document.
 
-\begin{methoddesc}{writeEPSfile}{filename, **kwargs}
-  Writes the canvas to \var{filename} (the extension \texttt{.eps} is
-  appended automatically, if it is not present). This method
-  constructs a single page document, passing \var{kwargs} to the
+\begin{methoddesc}{writeEPSfile}{file, *args, **kwargs}
+  Writes the canvas to \var{file} using the EPS format. \var{file}
+  either has to provide a write method or it is used as a string
+  containing the filename (the extension \texttt{.eps} is appended
+  automatically, if it is not present). This method constructs a
+  single page document, passing \var{args} and \var{kwargs} to the
   \class{document.page} constructor and the calls the
   \method{writeEPSfile} method of this \class{document.document}
-  instance passing the \var{filename}
-
+  instance passing the \var{file}.
 \end{methoddesc}
 
-\begin{methoddesc}{writePDFfile}{filename, **kwargs}
-  Writes the canvas to \var{filename} (the extension \texttt{.pdf} is
-  appended automatically, if it is not present). This method
-  constructs a single page document, passing \var{kwargs} to the
-  \class{document.page} constructor and the calls the
-  \method{writePDFfile} method of this \class{document.document}
-  instance passing the \var{filename}
+\begin{methoddesc}{writePSfile}{file, *args, **kwargs}
+  Similar to \method{writePSfile} but using the PS format.
+\end{methoddesc}
+
+\begin{methoddesc}{writePDFfile}{file, *args, **kwargs}
+  Similar to \method{writeEPSfile} but using the PDF format.
+\end{methoddesc}
+
+\begin{methoddesc}{writetofile}{filename, *args, **kwargs}
+  Determine the file type (EPS, PS, or PDF) from the file extension
+  of \var{filename} and call the corresponding write method with
+  the given arguments \var{arg} and \var{kwargs}.
 \end{methoddesc}
 
 For more information about the possible arguments of the
