@@ -25,6 +25,11 @@ or clear a previous setting of the line style using the `clear` attribute
 of the corresponding class:
     graph.style.line([style.linestyle.clear, color.palette.Rainbow])
 
+!! It is also possible to call the `plot` method several times. Note that the
+changing of the styles is also performed when the style instances are used on
+several plot commands within the same graph as long as the same set of style
+instances are passed at the `plot` method calls.
+
 Finally, when plotting more than one data set you might want to label them in
 your graph. We already have passed titles identifying each data set, so we only
 have to add a graph key. This is done by passing a `graph.key.key` instance as
