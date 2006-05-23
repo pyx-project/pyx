@@ -31,6 +31,16 @@ except NameError:
     def enumerate(list):
         return zip(xrange(len(list)), list)
 
+try:
+    dict([])
+except NameError:
+    # fallback implementation for Python 2.1
+    def dict(list):
+        result = {}
+        for key, value in list:
+            result[key] = value
+        return result
+
 
 class PSregistry:
 

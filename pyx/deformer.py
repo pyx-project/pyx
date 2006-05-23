@@ -21,10 +21,19 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
+from __future__ import nested_scopes
 
 import math, warnings
 import attr, mathutils, path, normpath, unit, color
 from path import degrees, radians
+
+try:
+    enumerate([])
+except NameError:
+    # fallback implementation for Python 2.2 and below
+    def enumerate(list):
+        return zip(xrange(len(list)), list)
+
 
 # specific exception for an invalid parameterization point
 # used in parallel
@@ -755,8 +764,8 @@ class parallel(deformer): # <<<
                     if self.length_pt(next_orig_nspitem, invalid_nspitem_param, 1) > epsilon:
                         p1, foo = self.valid_near_rotation(next_orig_nspitem, invalid_nspitem_param, 0, stepsize, 0.5*epsilon)
                         p2, foo = self.valid_near_rotation(next_orig_nspitem, invalid_nspitem_param, 1, stepsize, 0.5*epsilon)
-                        segments = next_orig_nspitem.segments([0, p1, p2, 1])[0:3:2]
-                        segments[1] = segments[1].modifiedbegin_pt(*(segments[0].atend_pt()))
+                        segments = next_orig_nspitem.segments([0, p1, p2, 1])
+                        segments = segments[0], segments[2].modifiedbegin_pt(*(segments[0].atend_pt()))
                     else:
                         p1, foo = self.valid_near_rotation(next_orig_nspitem, invalid_nspitem_param, 0, stepsize, 0.5*epsilon)
                         segments = next_orig_nspitem.segments([0, p1])
@@ -1187,8 +1196,8 @@ class parallel(deformer): # <<<
                                 npp_j = normpath.normpathparam(np, nsp_j, float(nspitem_j)+intsparam_j)
                                 linearparams.append(npp_i)
                                 linearparams.append(npp_j)
-                                paramsriap[npp_i] = len(parampairs)
-                                paramsriap[npp_j] = len(parampairs)
+                                paramsriap[id(npp_i)] = len(parampairs)
+                                paramsriap[id(npp_j)] = len(parampairs)
                                 parampairs.append((npp_i, npp_j))
         linearparams.sort()
         return linearparams, parampairs, paramsriap
@@ -1259,14 +1268,14 @@ class parallel(deformer): # <<<
         allparams.sort()
         allparamindices = {}
         for i, param in enumerate(allparams):
-            allparamindices[param] = i
+            allparamindices[id(param)] = i
 
         done = {}
         for param in allparams:
-            done[param] = 0
+            done[id(param)] = 0
 
         def otherparam(p): # <<<
-            pair = selfintpairs[selfintsriap[p]]
+            pair = selfintpairs[selfintsriap[id(p)]]
             if (p is pair[0]):
                 return pair[1]
             else:
@@ -1275,10 +1284,10 @@ class parallel(deformer): # <<<
         def trial_parampairs(startp): # <<<
             tried = {}
             for param in allparams:
-                tried[param] = done[param]
+                tried[id(param)] = done[id(param)]
 
             lastp = startp
-            currentp = allparams[allparamindices[startp] + 1]
+            currentp = allparams[allparamindices[id(startp)] + 1]
             result = []
 
             while 1:
@@ -1291,7 +1300,7 @@ class parallel(deformer): # <<<
                 if currentp in endparams:
                     result.append((lastp, currentp))
                     return result
-                if tried[currentp]:
+                if tried[id(currentp)]:
                     return []
                 if currentp in origintparams:
                     return []
@@ -1302,20 +1311,20 @@ class parallel(deformer): # <<<
                     # go to the next pair on the curve, seen from currentpair[1]
                     result.append((lastp, currentp))
                     lastp = otherparam(currentp)
-                    tried[currentp] = 1
-                    tried[otherparam(currentp)] = 1
-                    currentp = allparams[allparamindices[otherparam(currentp)] + 1]
+                    tried[id(currentp)] = 1
+                    tried[id(otherparam(currentp))] = 1
+                    currentp = allparams[allparamindices[id(otherparam(currentp))] + 1]
                 else:
                     # go to the next pair on the curve, seen from currentpair[0]
-                    tried[currentp] = 1
-                    tried[otherparam(currentp)] = 1
-                    currentp = allparams[allparamindices[currentp] + 1]
+                    tried[id(currentp)] = 1
+                    tried[id(otherparam(currentp))] = 1
+                    currentp = allparams[allparamindices[id(currentp)] + 1]
             assert 0
         # >>>
 
         # first the paths that start at the beginning of a subnormpath:
         for startp in beginparams + selfintparams:
-            if done[startp]:
+            if done[id(startp)]:
                 continue
 
             parampairs = trial_parampairs(startp)
@@ -1338,10 +1347,10 @@ class parallel(deformer): # <<<
                     add_nsp.append(item)
 
                 if begin in selfintparams:
-                    done[begin] = 1
+                    done[id(begin)] = 1
                     #done[otherparam(begin)] = 1
                 if end in selfintparams:
-                    done[end] = 1
+                    done[id(end)] = 1
                     #done[otherparam(end)] = 1
 
             # eventually close the path

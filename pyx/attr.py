@@ -31,15 +31,12 @@ except TypeError:
     _isinstance = isinstance
     def isinstance(instance, clsarg):
         import types
-        try:
-            _isinstance(clsarg, types.ClassType)
-        except:
-            for cls in clsarg:
-                if _isinstance(instance, cls):
-                    return 1
-            return 0
-        else:
+        if _isinstance(clsarg, types.ClassType):
             return _isinstance(instance, clsarg)
+        for cls in clsarg:
+            if _isinstance(instance, cls):
+                return 1
+        return 0
 
 #
 # some helper functions for the attribute handling

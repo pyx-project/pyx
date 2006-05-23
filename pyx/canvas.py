@@ -30,6 +30,8 @@ displayed. """
 # canvas item
 #
 
+from __future__ import nested_scopes
+
 class canvasitem:
 
     """Base class for everything which can be inserted into a canvas"""

@@ -1,6 +1,14 @@
 import sys; sys.path.insert(0, "../..")
 from pyx import *
 
+try:
+    enumerate([])
+except NameError:
+    # fallback implementation for Python 2.2 and below
+    def enumerate(list):
+        return zip(xrange(len(list)), list)
+
+
 c = canvas.canvas()
 
 # color conversion tests

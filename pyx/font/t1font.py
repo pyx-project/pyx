@@ -30,6 +30,13 @@ try:
 except ImportError:
     haszlib = 0
 
+try:
+    enumerate([])
+except NameError:
+    # fallback implementation for Python 2.2 and below
+    def enumerate(list):
+        return zip(xrange(len(list)), list)
+
 from pyx import trafo
 from pyx.path import path, moveto_pt, lineto_pt, curveto_pt, closepath
 import encoding
@@ -66,7 +73,7 @@ T1subcmds = {}
 
 class T1cmd:
 
-    def __init__(self, code, subcmd=False):
+    def __init__(self, code, subcmd=0):
         self.code = code
         self.subcmd = subcmd
         if subcmd:
@@ -138,7 +145,7 @@ T1hsbw = _T1hsbw()
 class _T1seac(T1cmd):
 
     def __init__(self):
-        T1cmd.__init__(self, 6, subcmd=True)
+        T1cmd.__init__(self, 6, subcmd=1)
 
     def __str__(self):
         return "seac"
@@ -169,7 +176,7 @@ T1seac = _T1seac()
 class _T1sbw(T1cmd):
 
     def __init__(self):
-        T1cmd.__init__(self, 7, subcmd=True)
+        T1cmd.__init__(self, 7, subcmd=1)
 
     def __str__(self):
         return "sbw"
@@ -381,7 +388,7 @@ T1vhcurveto = _T1vhcurveto()
 class _T1dotsection(T1cmd):
 
     def __init__(self):
-        T1cmd.__init__(self, 0, subcmd=True)
+        T1cmd.__init__(self, 0, subcmd=1)
 
     def __str__(self):
         return "dotsection"
@@ -410,7 +417,7 @@ T1hstem = _T1hstem()
 class _T1hstem3(T1cmd):
 
     def __init__(self):
-        T1cmd.__init__(self, 2, subcmd=True)
+        T1cmd.__init__(self, 2, subcmd=1)
 
     def __str__(self):
         return "hstem3"
@@ -444,7 +451,7 @@ T1vstem = _T1vstem()
 class _T1vstem3(T1cmd):
 
     def __init__(self):
-        T1cmd.__init__(self, 1, subcmd=True)
+        T1cmd.__init__(self, 1, subcmd=1)
 
     def __str__(self):
         return "vstem3"
@@ -465,7 +472,7 @@ T1vstem3 = _T1vstem3()
 class _T1div(T1cmd):
 
     def __init__(self):
-        T1cmd.__init__(self, 12, subcmd=True)
+        T1cmd.__init__(self, 12, subcmd=1)
 
     def __str__(self):
         return "div"
@@ -488,7 +495,7 @@ T1div = _T1div()
 class _T1callothersubr(T1cmd):
 
     def __init__(self):
-        T1cmd.__init__(self, 16, subcmd=True)
+        T1cmd.__init__(self, 16, subcmd=1)
 
     def __str__(self):
         return "callothersubr"
@@ -532,7 +539,7 @@ T1callsubr = _T1callsubr()
 class _T1pop(T1cmd):
 
     def __init__(self):
-        T1cmd.__init__(self, 17, subcmd=True)
+        T1cmd.__init__(self, 17, subcmd=1)
 
     def __str__(self):
         return "pop"
@@ -563,7 +570,7 @@ T1return = _T1return()
 class _T1setcurrentpoint(T1cmd):
 
     def __init__(self):
-        T1cmd.__init__(self, 33, subcmd=True)
+        T1cmd.__init__(self, 33, subcmd=1)
 
     def __str__(self):
         return "setcurrentpoint" % self.x, self.y
@@ -807,7 +814,7 @@ class T1font:
             elif 251 <= x <= 254: # mid size ints
                 cmds.append(-((x - 251)*256) - code.pop(0) - 108)
             else: # x = 255, i.e. full size ints
-                y = ((code.pop(0)*256+code.pop(0))*256+code.pop(0))*256+code.pop(0)
+                y = ((code.pop(0)*256l+code.pop(0))*256+code.pop(0))*256+code.pop(0)
                 if y > (1l << 31):
                     cmds.append(y - (1l << 32))
                 else:
