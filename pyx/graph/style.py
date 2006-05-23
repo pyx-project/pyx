@@ -1089,27 +1089,20 @@ class histogram(_style):
                 gap = abs(vmin - privatedata.lastvmax) > self.epsilon
             except (ArithmeticError, ValueError, TypeError):
                 gap = 1
-            if (privatedata.lastvvalue is not None and
-                currentvalid and
-                not gap and
-                (self.steps or
-                 (privatedata.lastvvalue-privatedata.vfromvalue)*(vvalue-privatedata.vfromvalue) < 0)):
+            if (privatedata.lastvvalue is not None and currentvalid and not gap and
+                (self.steps or (privatedata.lastvvalue-privatedata.vfromvalue)*(vvalue-privatedata.vfromvalue) < 0)):
                 self.vposline(privatedata, sharedata, graph,
                               vmin, privatedata.lastvvalue, vvalue)
             else:
-                if (privatedata.lastvvalue is not None and
-                    (not currentvalid or
-                     abs(privatedata.lastvvalue-privatedata.vfromvalue) > abs(vvalue-privatedata.vfromvalue) or
-                     gap)):
+                if privatedata.lastvvalue is not None and currentvalid:
+                    currentbigger = abs(privatedata.lastvvalue-privatedata.vfromvalue) < abs(vvalue-privatedata.vfromvalue)
+                if privatedata.lastvvalue is not None and (not currentvalid or not currentbigger or gap):
                     self.vposline(privatedata, sharedata, graph,
                                   privatedata.lastvmax, privatedata.lastvvalue, privatedata.vfromvalue)
                     if currentvalid:
                         self.vmoveto(privatedata, sharedata, graph,
                                      vmin, vvalue)
-                if (currentvalid and
-                    (privatedata.lastvvalue is None or
-                     abs(privatedata.lastvvalue-privatedata.vfromvalue)  < abs(vvalue-privatedata.vfromvalue) or
-                     gap)):
+                if currentvalid and (privatedata.lastvvalue is None or currentbigger or gap):
                     self.vmoveto(privatedata, sharedata, graph,
                                  vmin, privatedata.vfromvalue)
                     self.vposline(privatedata, sharedata, graph,

@@ -28,7 +28,6 @@ TODO:
       this depends on the plattform and is not only an issue within the graph system)
   - graph.style module:
     - add styles using curves instead of lines
-    - histogram doesn't stroke lines to the baseline for steps=0 when two subsequent values are equal
   - canvas module:
     - contructor should only take a texrunner keyword argument
     - set method???
@@ -97,6 +96,7 @@ TODO:
       - remove multiple painting of frompath in histogram and barpos styles
       - fix missing attribute select when using a bar style once only (reported by Alan Isaac)
       - fix histograms for negative y-coordinates (reported by Dominic Ford, bug #1492548)
+      - fix histogram to stroke lines to the baseline for steps=0 when two subsequent values are equal
       - add key method for histogram style (reported by Hagemann, bug #1371554)
       - implement a changebar style (TODO: documentation)
     - graph, axis and style module:
