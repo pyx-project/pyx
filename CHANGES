@@ -98,10 +98,9 @@ TODO:
       - fix histograms for negative y-coordinates (reported by Dominic Ford, bug #1492548)
       - fix histogram to stroke lines to the baseline for steps=0 when two subsequent values are equal
       - add key method for histogram style (reported by Hagemann, bug #1371554)
-      - implement a changebar style (TODO: documentation)
+      - implement a changebar style
     - graph, axis and style module:
       - support for mutual linking of axes between graphs
-        (TODO: documentation, basically the setlinkedaxis method)
       - new domethods dependency handling
       - separate axis range calculation from dolayout
     - axis.parter module:
@@ -118,7 +117,7 @@ TODO:
     - painter module:
       - patch to allow for tickattrs=None (reported by Wojciech Smigaj, cf. patch #1286116)
   - color module:
-    - transparency support (PDF only) (TODO: documentation)
+    - transparency support (PDF only)
     - conversion between colorspaces
     - nonlinear palettes added
     - the former palette must now be initialized as linearpalette

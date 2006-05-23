@@ -216,11 +216,11 @@ the size out of its data range automatically but sets an
 order to disable automatic range modifications while painting the
 axis.
 
-The \module{axis} has two classes implementing so called anchored
-axes, which combine an axis with an positioner and a storage place for
-axis related data. Since these features are not interesting for the
-average \PyX{} user, we'll not go into the details of their paramters
-and except for some handy axis position methods:
+The \module{axis} module also contains classes implementing so called
+anchored axes, which combine an axis with an positioner and a storage
+place for axis related data. Since these features are not interesting
+for the average \PyX{} user, we'll not go into all the details of
+their parameters and except for some handy axis position methods:
 
 \begin{methoddesc}[anchoredaxis]{basepath}{x1=None, x2=None}
   Returns a path instance for the base path. \var{x1} and \var{x2}
@@ -262,9 +262,30 @@ and except for some handy axis position methods:
   Like \method{tickdirection} but in graph coordinates.
 \end{methoddesc}
 
-Finally in the axis module there is an easy to use
-\class{anchoredpathaxis} class to create an anchored axis along an
-arbitrary path:
+\begin{methoddesc}[anchoredaxis]{vtickdirection}{v}
+  Like \method{tickdirection} but in graph coordinates.
+\end{methoddesc}
+
+However, there are two anchored axes implementations
+\class{linkedaxis} and \class{anchoredpathaxis} which are available to
+the user to create special forms of anchored axes.
+
+\begin{classdesc}{linkedaxis}{linkedaxis=None, errorname="manual-linked", painter=_marker}
+  This class implements an anchored axis to be passed to a graph
+  constructor to manually link the axis to another anchored axis
+  instance \var{linkedaxis}. Note that you can skip setting the value
+  of \var{linkedaxis} in the constructor, but set it later on by the
+  \method{setlinkedaxis} method described below. \var{errorname} is
+  printed within error messages when the data is used and some problem
+  occurs. \var{painter} is used for painting the linked axis instead
+  of the \var{linkedpainter} provided by the \var{linkedaxis}.
+\end{classdesc}
+
+\begin{methoddesc}{setlinkedaxis}{linkedaxis}
+  This method can be used to set the \var{linkedaxis} after
+  constructing the axis. By that you can create several graph
+  instances with cycled linked axes.
+\end{methoddesc}
 
 \begin{classdesc}{anchoredpathaxis}{path, axis, direction=1}
   This class implements an anchored axis the path \var{path}.
@@ -272,10 +293,11 @@ arbitrary path:
   are \code{1} (left) and \code{-1} (right).
 \end{classdesc}
 
-The \class{anchoredpathaxis} contains the painted axis in the
+The \class{anchoredpathaxis} contains as any anchored axis after
+calling its \method{create} method the painted axis in the
 \member{canvas} member attribute. The function \function{pathaxis} has
 the same signature like the \class{anchoredpathaxis} class, but
-directly returns the painted axis. % }}}
+immediately creates the axis and returns the painted axis. % }}}
 
 \section{Module \module{graph.axis.tick}: Ticks} % {{{
 

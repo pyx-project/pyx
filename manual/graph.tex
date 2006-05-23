@@ -858,6 +858,14 @@ definition is:
   deco.stroked([color.grey.black])]}.
 \end{classdesc} % }}} % }}}
 
+\begin{classdesc}{changebar}{barattrs=[]} % {{{
+  This style works like the \class{bar} style, but instead of the
+  \var{barattrs} to be changed on subsequent data instances the
+  \var{barattrs} are changed for each value within a single data
+  instance. In the result the style can't be applied to several data
+  instances. The style raises an error instead.
+\end{classdesc} % }}} % }}}
+
 \section{Module \module{graph.key}: Keys} % {{{
 \label{graph:key}
 

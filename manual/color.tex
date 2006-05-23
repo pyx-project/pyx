@@ -83,4 +83,15 @@ colors. A list of named palettes is available in appendix~\ref{palettename}.
 
 \end{classdesc}
 
+\section{Transparency}
+
+\begin{classdesc}{transparency}{value}
+  Instances of this class will make drawing operations (stroking,
+  filling) to become partially transparent. \var{value} defines the
+  transparency factor in the range \code{0} (opaque) to \code{1}
+  (transparent).
+
+  Transparency is available in PDF output only since it is not
+  supported by PostScript.
+\end{classdesc}
 
