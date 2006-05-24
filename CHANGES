@@ -176,6 +176,7 @@ TODO:
     - remove set method of canvas
   - canvas and document modules:
     - allow file instances as paramter of the writeXXXfile methods (feature request #1419658 by Jason Pratt)
+    - add a pipeGS method to directly pass the PyX output to ghostscript
   - style module:
     - make rellength the default for dash styles
   - random notes:

@@ -31,6 +31,7 @@ displayed. """
 #
 
 from __future__ import nested_scopes
+import os
 
 class canvasitem:
 
@@ -329,6 +330,7 @@ def _wrappedindocument(method):
         return method(d, file)
     return wrappedindocument
 
+
 class canvas(_canvas):
 
     """a canvas holds a collection of canvasitems"""
@@ -337,3 +339,23 @@ class canvas(_canvas):
     writePSfile = _wrappedindocument(document.document.writePSfile)
     writePDFfile = _wrappedindocument(document.document.writePDFfile)
     writetofile = _wrappedindocument(document.document.writetofile)
+
+    def pipeGS(self, filename="-", device=None, resolution=100,
+               gscommand="gs", gsoptions="",
+               textalphabits=4, graphicsalphabits=4,
+               **kwargs):
+        if device is None:
+            if filename.endswith(".png"):
+                device = "png16m"
+            if filename.endswith(".jpg"):
+                device = "jpeg"
+        gscommand += " -dEPSCrop -dNOPAUSE -dQUIET -dBATCH -r%i -sDEVICE=%s -sOutputFile=%s" % (resolution, device, filename)
+        if gsoptions:
+            gscommand += " %s" % gsoptions
+        if textalphabits is not None:
+            gscommand += " -dTextAlphaBits=%i" % textalphabits
+        if graphicsalphabits is not None:
+            gscommand += " -dGraphicsAlphaBits=%i" % graphicsalphabits
+        gscommand += " -"
+        input = os.popen(gscommand, "w")
+        self.writeEPSfile(input, **kwargs)
