@@ -1,6 +1,7 @@
 PyX
 
 TODO:
+  - discuss author status of m-schindler
   - style module:
     - make dash length available
   - text module:
@@ -172,9 +173,9 @@ TODO:
     - rename outputPS/outputPDF -> processPS/processPDF
     - remove set method of canvas
     - add a pipeGS method to directly pass the PyX output to ghostscript
-    - allow file instances as paramter of the writeXXXfile methods (feature request #1419658 by Jason Pratt)
+    - allow file instances as parameter of the writeXXXfile methods (feature request #1419658 by Jason Pratt)
   - document modules:
-    - allow file instances as paramter of the writeXXXfile methods (feature request #1419658 by Jason Pratt)
+    - allow file instances as parameter of the writeXXXfile methods (feature request #1419658 by Jason Pratt)
   - style module:
     - make rellength the default for dash styles
   - random notes:
