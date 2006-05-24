@@ -1,6 +1,3 @@
-# This example extends the symbol style of a graph to make
-# the symbol size and color data dependent.
-
 import random
 from pyx import *
 

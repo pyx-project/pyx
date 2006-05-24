@@ -1,8 +1,3 @@
-# In this example we create a calendar graph style. The style uses
-# bar axes for both graph coordinates and it is a simple and minimal
-# example in the sense that it does not make use of other styles
-# for positioning.
-
 import calendar
 from pyx import *
 
