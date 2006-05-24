@@ -70,6 +70,9 @@ TODO:
       userfriendly and not to describe immediately the internals of the implementation:
       (see e.g. class.style.symbol)
 
+  Examples:
+    - add an epsfile example (suggested by Stathis Sideris)
+
   FAQ:
     - describe creation and modification (inplace and ``modify by new'') of
       graph data
