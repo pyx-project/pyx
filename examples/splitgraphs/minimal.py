@@ -1,6 +1,3 @@
-# In the most simple case we create a data column
-# containing a tuple and use a splitaxis.
-
 from pyx import *
 
 g = graph.graphxy(width=8, x=graph.axis.split())

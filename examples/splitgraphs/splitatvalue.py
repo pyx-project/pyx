@@ -1,8 +1,3 @@
-# You can use the splitatvalue function to split data at
-# certain values. When splitting at several positions, the
-# splitatvalue function marks odd regions to be a "None",
-# which will in the end be ignored by a splitaxis.
-
 from pyx import *
 
 pf = graph.data.paramfunction
