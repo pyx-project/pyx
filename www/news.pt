@@ -9,14 +9,17 @@
     <h1>PyX - News</h1>
 
     <dl>
-      <dt>2006-05-xx: PyX 0.9 released</dt>
+      <dt>2006-05-24: PyX 0.9 released</dt>
       <dd>
-        This release features a new set of deformers for path manipulations like smoothing, shifting, 
-        etc. A new set of extensively documented examples describing various aspects of PyX in a 
-        cookbook-like fashion have been written. Type 1 font-stripping is now handled by a newly
-        written Python module. The evaluating of functions for graph plotting is now left to Python.
-        Transparency is now supported for PDF output. Many more small improvements and bug fixes top
-        off this release. 
+        This release features a new set of deformers for path manipulations
+        like smoothing, shifting, etc. A new set of extensively documented
+        examples describing various aspects of PyX in a cookbook-like fashion
+        have been written. Type 1 font-stripping is now handled by a newly
+        written Python module. The evaluation of functions for graph plotting
+        is now left to Python. Thereby some obscure data manipulation could be
+        removed from the bar style for handling of nested bar graphs.
+        Transparency is now supported for PDF output. Many more small
+        improvements and bug fixes top off this release.
       </dd>
       <dt>2006-01-20: New PyX tutorial for Gnuplot users</dt>
       <dd>
