@@ -2,6 +2,7 @@ import sys; sys.path.insert(0, "../..")
 
 import math
 from pyx import *
+from pyx import normpath
 
 # make math.sqrt raising an exception for negativ values
 try:
@@ -19,13 +20,13 @@ else:
 
 c = canvas.canvas()
 
-def connect(normpathel1, normpathel2, round):
-    "returns a list of normpathels connecting normpathel1 and normpathel2 either rounded or not"
+def connect(normpathitem1, normpathitem2, round):
+    "returns a list of normsubpathitems connecting normpathitem1 and normpathitem2 either rounded or not"
     # this is for corners, i.e. when there are jumps in the tangent vector
-    t1 = normpathel1.trafo(1)
-    t2 = normpathel2.trafo(0)
-    xs, ys = t1._apply(0, 0) # TODO: _apply -> apply_pt
-    xe, ye = t2._apply(0, 0)
+    t1 = normpathitem1.trafo([1])[0]
+    t2 = normpathitem2.trafo([0])[0]
+    xs, ys = t1.apply_pt(0, 0)
+    xe, ye = t2.apply_pt(0, 0)
     if (xs-xe)*(xs-xe) + (xs-xe)*(xs-xe) < 1e-5**2:
         return []
     if round:
@@ -36,12 +37,12 @@ def connect(normpathel1, normpathel2, round):
                      (t2.matrix[1][1]*t1.matrix[0][1] -
                       t2.matrix[0][1]*t1.matrix[1][1]))
         except ArithmeticError:
-            return [path.normline(xs, ys, xe, ye)]
+            return [path.normline_pt(xs, ys, xe, ye)]
         else:
             # since t1 is a translation + rotation, param is the radius
             # hence, param should be equal to enlargeby_pt
             # print param
-            x, y = t1._apply(0, param)
+            x, y = t1.apply_pt(0, param)
             # c.fill(path.circle_pt(x, y, 1))
             angle1 = math.atan2(ys-y, xs-x)
             angle2 = math.atan2(ye-y, xe-x)
@@ -56,81 +57,80 @@ def connect(normpathel1, normpathel2, round):
                      (t2.matrix[1][0]*t1.matrix[0][0] -
                       t2.matrix[0][0]*t1.matrix[1][0]))
         except ArithmeticError:
-            return [path.normline(xs, ys, xe, ye)]
+            return [path.normline_pt(xs, ys, xe, ye)]
         else:
-            x, y = t1._apply(param, 0)
-            return [path.normline(xs, ys, x, y), path.normline(x, y, xe, ye)]
+            x, y = t1.apply_pt(param, 0)
+            return [path.normline_pt(xs, ys, x, y), path.normline_pt(x, y, xe, ye)]
 
 
-def enlarged(normpath, enlargeby_pt, round):
+def enlarged(anormpath, enlargeby_pt, round):
     newnormsubpaths = []
-    for subpath in normpath.subpaths:
-        splitnormpathels = subpath.normpathels[:] # do splitting on a copy
+    for normsubpath in anormpath.normsubpaths:
+        splitnormsubpathitems = normsubpath.normsubpathitems[:] # do splitting on a copy
         i = 0
-        while i < len(splitnormpathels):
-            if isinstance(splitnormpathels[i], path.normcurve) and splitnormpathels[i].arclen_pt() > 100:
-                splitnormpathels[i:i+1] = splitnormpathels[i].midpointsplit()
+        while i < len(splitnormsubpathitems):
+            if isinstance(splitnormsubpathitems[i], normpath.normcurve_pt) and splitnormsubpathitems[i].arclen_pt(normsubpath.epsilon) > 100:
+                splitnormsubpathitems[i:i+1] = splitnormsubpathitems[i]._midpointsplit(normsubpath.epsilon)
             else:
                 i += 1
-        newnormpathels = []
-        for normpathel in splitnormpathels:
+        newnormsubpathitems = []
+        for normsubpathitem in splitnormsubpathitems:
             # get old and new start and end points
-            ts = normpathel.trafo(0)
-            xs, ys = ts._apply(0, 0)
-            nxs, nys = ts._apply(0, -enlargeby_pt)
-            te = normpathel.trafo(1)
-            xe, ye = te._apply(0, 0)
-            nxe, nye = te._apply(0, -enlargeby_pt)
+            ts, te = normsubpathitem.trafo([0, 1])
+            xs, ys = ts.apply_pt(0, 0)
+            nxs, nys = ts.apply_pt(0, -enlargeby_pt)
+            xe, ye = te.apply_pt(0, 0)
+            nxe, nye = te.apply_pt(0, -enlargeby_pt)
 
-            if isinstance(normpathel, path.normcurve):
+            if isinstance(normsubpathitem, normpath.normcurve_pt):
                 # We should do not alter the sign. Could we do any better here?
                 try:
-                    cs = 1/(normpathel.curvradius_pt(0) + enlargeby_pt)
+                    cs = 1/(normsubpathitem.curveradius_pt([0])[0] + enlargeby_pt)
                 except ArithmeticError:
                     cs = 0
                 try:
-                    ce = 1/(normpathel.curvradius_pt(1) + enlargeby_pt)
+                    ce = 1/(normsubpathitem.curveradius_pt([1])[0] + enlargeby_pt)
                 except ArithmeticError:
                     ce = 0
 
                 # this should be a function (in path?), not a method in a class
                 # the parameter convention is quite different from other places ...
-                bezierparams = deco.smoothed.normal._onebezierbetweentwopathels((nxs, nys), (nxe, nye),
-                                                                                (ts.matrix[0][0], ts.matrix[1][0]),
-                                                                                (te.matrix[0][0], te.matrix[1][0]),
-                                                                                cs, ce, strict=1)
-                c.fill(path.circle_pt(bezierparams[0][0], bezierparams[0][1], 1), [color.rgb.blue])
-                c.fill(path.circle_pt(bezierparams[3][0], bezierparams[3][1], 1), [color.rgb.blue])
-                newnormpathel = path.normcurve(bezierparams[0][0], bezierparams[0][1],
-                                               bezierparams[1][0], bezierparams[1][1],
-                                               bezierparams[2][0], bezierparams[2][1],
-                                               bezierparams[3][0], bezierparams[3][1])
-                #showtangent(newnormpathel) # line alignment of bezier curves
-                showcircle(newnormpathel)  # circle alignment of bezier curves
+                bezierparams = deformer.normcurve_from_endgeometry_pt((nxs, nys), (nxe, nye),
+                                                                      (ts.matrix[0][0], ts.matrix[1][0]),
+                                                                      (te.matrix[0][0], te.matrix[1][0]),
+                                                                      cs, ce)
+                c.fill(path.circle_pt(bezierparams.x0_pt, bezierparams.y0_pt, 1), [color.rgb.blue])
+                c.fill(path.circle_pt(bezierparams.x3_pt, bezierparams.y3_pt, 1), [color.rgb.blue])
+                newnormpathitems = normpath.normcurve_pt(bezierparams.x0_pt, bezierparams.y0_pt,
+                                               bezierparams.x1_pt, bezierparams.y1_pt,
+                                               bezierparams.x2_pt, bezierparams.y2_pt,
+                                               bezierparams.x3_pt, bezierparams.y3_pt)
+                showtangent(newnormpathitems) # line alignment of bezier curves
+                showcircle(newnormpathitems)  # circle alignment of bezier curves
             else:
                 # line
-                newnormpathel = path.normline(nxs, nys, nxe, nye)
+                newnormpathitems = path.normline_pt(nxs, nys, nxe, nye)
 
-            if len(newnormpathels):
-                newnormpathels.extend(connect(newnormpathels[-1], newnormpathel, round=round))
-            newnormpathels.append(newnormpathel)
-        if subpath.closed:
-            newnormpathels.extend(connect(newnormpathels[-1], newnormpathels[0], round=round))
-        newnormsubpaths.append(path.normsubpath(newnormpathels, subpath.closed))
-    return path.normpath(newnormsubpaths)
+            if len(newnormsubpathitems):
+                newnormsubpathitems.extend(connect(newnormsubpathitems[-1], newnormpathitems, round=round))
+            newnormsubpathitems.append(newnormpathitems)
+        if normsubpath.closed:
+            newnormsubpathitems.extend(connect(newnormsubpathitems[-1], newnormsubpathitems[0], round=round))
+        newnormsubpaths.append(path.normsubpath(newnormsubpathitems, normsubpath.closed))
+    return normpath.normpath(newnormsubpaths)
 
 
-def showtangent(normcurve):
+def showtangent(normcurve_pt):
     dx = 2
     dy = 1
 
-    cx =                                       3*normcurve.x1_pt - 3*normcurve.x0_pt
-    bx =                   3*normcurve.x2_pt - 6*normcurve.x1_pt + 3*normcurve.x0_pt
-    ax = normcurve.x3_pt - 3*normcurve.x2_pt + 3*normcurve.x1_pt -   normcurve.x0_pt
+    cx =                                       3*normcurve_pt.x1_pt - 3*normcurve_pt.x0_pt
+    bx =                   3*normcurve_pt.x2_pt - 6*normcurve_pt.x1_pt + 3*normcurve_pt.x0_pt
+    ax = normcurve_pt.x3_pt - 3*normcurve_pt.x2_pt + 3*normcurve_pt.x1_pt -   normcurve_pt.x0_pt
 
-    cy =                                       3*normcurve.y1_pt - 3*normcurve.y0_pt
-    by =                   3*normcurve.y2_pt - 6*normcurve.y1_pt + 3*normcurve.y0_pt
-    ay = normcurve.y3_pt - 3*normcurve.y2_pt + 3*normcurve.y1_pt -   normcurve.y0_pt
+    cy =                                       3*normcurve_pt.y1_pt - 3*normcurve_pt.y0_pt
+    by =                   3*normcurve_pt.y2_pt - 6*normcurve_pt.y1_pt + 3*normcurve_pt.y0_pt
+    ay = normcurve_pt.y3_pt - 3*normcurve_pt.y2_pt + 3*normcurve_pt.y1_pt -   normcurve_pt.y0_pt
 
     try:
         x = - (dy*bx-dx*by)/(3.0*dy*ax-3.0*dx*ay)
@@ -145,10 +145,12 @@ def showtangent(normcurve):
     if 0 < t2 < 1:
         ts.append(t2)
     for t in ts:
-        trafo = normcurve.trafo(t)
-        c.stroke(path.line_pt(*list(trafo._apply(-100, 0))+list(trafo._apply(100, 0))), [color.rgb.red])
+        trafo = normcurve_pt.trafo([t])[0]
+        x, y = trafo.apply_pt(0, 0)
+        c.fill(path.circle_pt(x, y, 1), [color.rgb.red])
+        c.stroke(path.line_pt(*list(trafo.apply_pt(-100, 0))+list(trafo.apply_pt(100, 0))), [color.rgb.red])
 
-def showcircle(normcurve):
+def showcircle(normcurve_pt):
     gx = 350
     gy = 200
     hx = -1
@@ -158,20 +160,20 @@ def showcircle(normcurve):
 
     r = 16
 
-    dx =                                                             normcurve.x0_pt
-    cx =                                       3*normcurve.x1_pt - 3*normcurve.x0_pt
-    bx =                   3*normcurve.x2_pt - 6*normcurve.x1_pt + 3*normcurve.x0_pt
-    ax = normcurve.x3_pt - 3*normcurve.x2_pt + 3*normcurve.x1_pt -   normcurve.x0_pt
+    dx =                                                             normcurve_pt.x0_pt
+    cx =                                       3*normcurve_pt.x1_pt - 3*normcurve_pt.x0_pt
+    bx =                   3*normcurve_pt.x2_pt - 6*normcurve_pt.x1_pt + 3*normcurve_pt.x0_pt
+    ax = normcurve_pt.x3_pt - 3*normcurve_pt.x2_pt + 3*normcurve_pt.x1_pt -   normcurve_pt.x0_pt
 
-    dy =                                                             normcurve.y0_pt
-    cy =                                       3*normcurve.y1_pt - 3*normcurve.y0_pt
-    by =                   3*normcurve.y2_pt - 6*normcurve.y1_pt + 3*normcurve.y0_pt
-    ay = normcurve.y3_pt - 3*normcurve.y2_pt + 3*normcurve.y1_pt -   normcurve.y0_pt
+    dy =                                                             normcurve_pt.y0_pt
+    cy =                                       3*normcurve_pt.y1_pt - 3*normcurve_pt.y0_pt
+    by =                   3*normcurve_pt.y2_pt - 6*normcurve_pt.y1_pt + 3*normcurve_pt.y0_pt
+    ay = normcurve_pt.y3_pt - 3*normcurve_pt.y2_pt + 3*normcurve_pt.y1_pt -   normcurve_pt.y0_pt
 
     def x(t, gx=gx):
-        return ax*t*t*t+bx*t*t+cx*t+normcurve.x0_pt
+        return ax*t*t*t+bx*t*t+cx*t+normcurve_pt.x0_pt
     def y(t, gy=gy):
-        return ay*t*t*t+by*t*t+cy*t+normcurve.y0_pt
+        return ay*t*t*t+by*t*t+cy*t+normcurve_pt.y0_pt
     def xdot(t):
         return 3*ax*t*t+2*bx*t+cx
     def ydot(t):
@@ -405,24 +407,24 @@ enlargeby_pt = 10
 round = 0 # a boolean to turn round corners on and off
 
 # some examples:
-for normpath in [path.normpath(path.rect(0, 0, 5, 5)),
-                 path.normpath(path.circle(10, 3, 3)),
-                 path.normpath(path.path(path.moveto(0, 8),
-                                         path.curveto(1, 8, 1, 9, 2, 11),
-                                         path.curveto(1, 12, 1, 12, 0, 11),
-                                         path.lineto(0, 8),
-                                         path.closepath())),
-                 path.normpath(path.path(path.moveto(5, 8),
-                                         path.curveto(20, 8, 6, 9, 7, 11),
-                                         path.curveto(6, 12, 6, 12, 5, 11),
-                                         path.lineto(5, 8),
-                                         path.closepath())),
-                 path.normpath(path.path(path.moveto(16, 0),
-                                         path.curveto(18, 0, 18, 4, 20, 4),
-                                         path.lineto(20, 12),
-                                         path.curveto(12, 12, 20, 8, 16, 8),
-                                         path.closepath()))]:
-    c.stroke(normpath)
-    c.stroke(enlarged(normpath, enlargeby_pt, round), [color.rgb.blue])
+for anormpath in [path.rect(0, 0, 5, 5).normpath(),
+                 path.circle(10, 3, 3).normpath(),
+                 path.path(path.moveto(0, 8),
+                           path.curveto(1, 8, 1, 9, 2, 11),
+                           path.curveto(1, 12, 1, 12, 0, 11),
+                           path.lineto(0, 8),
+                           path.closepath()).normpath(),
+                 path.path(path.moveto(5, 8),
+                           path.curveto(20, 8, 6, 9, 7, 11),
+                           path.curveto(6, 12, 6, 12, 5, 11),
+                           path.lineto(5, 8),
+                           path.closepath()).normpath(),
+                 path.path(path.moveto(16, 0),
+                           path.curveto(18, 0, 18, 4, 20, 4),
+                           path.lineto(20, 12),
+                           path.curveto(12, 12, 20, 8, 16, 8),
+                           path.closepath()).normpath()]:
+    c.stroke(anormpath)
+    c.stroke(enlarged(anormpath, enlargeby_pt, round), [color.rgb.blue])
 
 c.writeEPSfile("newbox")
