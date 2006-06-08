@@ -79,7 +79,7 @@ def curvescontrols_from_endlines_pt(B, tangent1, tangent2, r1, r2, softness): # 
     return (d1, g1, f1, e, f2, g2, d2)
 # >>>
 
-def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, epsilon, allownegative=0): # <<<
+def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, allownegative=0): # <<<
 
     """For a curve with given tangents and curvatures at the endpoints this gives the distances between the controlpoints
 
@@ -291,7 +291,7 @@ def controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, epsilon, 
 # >>>
 
 def normcurve_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB): # <<<
-    a, b = controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB, epsilon=epsilon)[0]
+    a, b = controldists_from_endgeometry_pt(A, B, tangA, tangB, curvA, curvB)[0]
     return normpath.normcurve_pt(A[0], A[1],
         A[0] + a * tangA[0], A[1] + a * tangA[1],
         B[0] - b * tangB[0], B[1] - b * tangB[1], B[0], B[1])
@@ -598,7 +598,7 @@ class smoothed(deformer): # <<<
                         c2 = s2 * abs(c2)
 
                     # get the length of the control "arms"
-                    controldists = controldists_from_endgeometry_pt(p1, p2, t1, t2, c1, c2, epsilon=epsilon)
+                    controldists = controldists_from_endgeometry_pt(p1, p2, t1, t2, c1, c2)
 
                     if controldists and (controldists[0][0] >= 0 and controldists[0][1] >= 0):
                         # use the first entry in the controldists
@@ -990,7 +990,7 @@ class parallel(deformer): # <<<
         # or even split it for recursive calls
         if (math.hypot(A[0] - D[0], A[1] - D[1]) < epsilon and
             math.hypot(tangA[0] - tangD[0], tangA[1] - tangD[1]) < T_threshold):
-            return normpath.normsubpath([normpath.normline_pt(A[0], A[1], D[0], D[1])], epsilon=epsilon)
+            return normpath.normsubpath([normpath.normline_pt(A[0], A[1], D[0], D[1])])
 
         result = normpath.normsubpath(epsilon=epsilon)
         # is there enough space on the normals before they intersect?
@@ -1013,7 +1013,7 @@ class parallel(deformer): # <<<
             curvD = orig_curvD / (1.0 - dist*orig_curvD)
 
             # first try to approximate the normcurve with a single item
-            controldistpairs = controldists_from_endgeometry_pt(A, D, tangA, tangD, curvA, curvD, epsilon=epsilon)
+            controldistpairs = controldists_from_endgeometry_pt(A, D, tangA, tangD, curvA, curvD)
 
             if controldistpairs:
                 # TODO: is it good enough to get the first entry here?
