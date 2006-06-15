@@ -72,6 +72,7 @@ TODO:
 
   Examples:
     - add an epsfile example (suggested by Stathis Sideris)
+    - add a small example line on y="f($1)" in one of the plot examples
 
   FAQ:
     - describe creation and modification (inplace and ``modify by new'') of
