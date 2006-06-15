@@ -18,6 +18,7 @@ TODO:
     - axis painter labelattrs=None + automatic axis partitioning leads to no valid partitioning
     - when all titles are None, a graph key currently raises an exception
     - translatecanvas should be the default in graph.style.symbol
+    - automatic scaling of y-axis according to subset of data shown on x-axis
   - graph.style and graph.data modules
     - fix docu of gridattrs functionality of axis painters
       (how can one, e.g. draw a grid at the ticks and not at the subticks)
