@@ -106,49 +106,49 @@ class image:
 
 class jpegimage(image):
 
-   def __init__(self, file):
-       try:
-           data = file.read()
-       except:
-           data = open(file, "rb").read()
-       pos = 0
-       nestinglevel = 0
-       try:
-           while 1:
-               if data[pos] == "\377" and data[pos+1] not in ["\0", "\377"]:
-                   # print "marker: 0x%02x \\%03o" % (ord(data[pos+1]), ord(data[pos+1]))
-                   if data[pos+1] == "\330":
-                       if not nestinglevel:
-                           begin = pos
-                       nestinglevel += 1
-                   elif not nestinglevel:
-                       raise ValueError("begin marker expected")
-                   elif data[pos+1] == "\331":
-                       nestinglevel -= 1
-                       if not nestinglevel:
-                           end = pos + 2
-                           break
-                   elif data[pos+1] in ["\300", "\301"]:
-                       l, bits, height, width, components = struct.unpack(">HBHHB", data[pos+2:pos+10])
-                       if bits != 8:
-                           raise ValueError("implementation limited to 8 bit per component only")
-                       try:
-                           mode = {1: "L", 3: "RGB", 4: "CMYK"}[components]
-                       except KeyError:
-                           raise ValueError("invalid number of components")
-                       pos += l+1
-                   elif data[pos+1] == "\340":
-                       l, id, major, minor, dpikind, xdpi, ydpi = struct.unpack(">H5sBBBHH", data[pos+2:pos+16])
-                       if dpikind == 1:
-                           self.info = {"dpi": (xdpi, ydpi)}
-                       elif dpikind == 2:
-                           self.info = {"dpi": (xdpi*2.54, ydpi*2.45)}
-                       # else do not provide dpi information
-                       pos += l+1
-               pos += 1
-       except IndexError:
-           raise ValueError("end marker expected")
-       image.__init__(self, width, height, mode, data[begin:end], compressed="DCT")
+    def __init__(self, file):
+        try:
+            data = file.read()
+        except:
+            data = open(file, "rb").read()
+        pos = 0
+        nestinglevel = 0
+        try:
+            while 1:
+                if data[pos] == "\377" and data[pos+1] not in ["\0", "\377"]:
+                    # print "marker: 0x%02x \\%03o" % (ord(data[pos+1]), ord(data[pos+1]))
+                    if data[pos+1] == "\330":
+                        if not nestinglevel:
+                            begin = pos
+                        nestinglevel += 1
+                    elif not nestinglevel:
+                        raise ValueError("begin marker expected")
+                    elif data[pos+1] == "\331":
+                        nestinglevel -= 1
+                        if not nestinglevel:
+                            end = pos + 2
+                            break
+                    elif data[pos+1] in ["\300", "\301"]:
+                        l, bits, height, width, components = struct.unpack(">HBHHB", data[pos+2:pos+10])
+                        if bits != 8:
+                            raise ValueError("implementation limited to 8 bit per component only")
+                        try:
+                            mode = {1: "L", 3: "RGB", 4: "CMYK"}[components]
+                        except KeyError:
+                            raise ValueError("invalid number of components")
+                        pos += l+1
+                    elif data[pos+1] == "\340":
+                        l, id, major, minor, dpikind, xdpi, ydpi = struct.unpack(">H5sBBBHH", data[pos+2:pos+16])
+                        if dpikind == 1:
+                            self.info = {"dpi": (xdpi, ydpi)}
+                        elif dpikind == 2:
+                            self.info = {"dpi": (xdpi*2.54, ydpi*2.45)}
+                        # else do not provide dpi information
+                        pos += l+1
+                pos += 1
+        except IndexError:
+            raise ValueError("end marker expected")
+        image.__init__(self, width, height, mode, data[begin:end], compressed="DCT")
 
 
 class PSimagedata(pswriter.PSresource):
