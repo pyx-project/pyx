@@ -259,6 +259,9 @@ class bitmap(canvas.canvasitem):
                        PSstoreimage=0, PSmaxstrlen=4093, PSbinexpand=1,
                        compressmode="Flate", flatecompresslevel=6,
                        dctquality=75, dctoptimize=0, dctprogression=0):
+        # keep a copy of the image instance to ensure different id's
+        self.image = image
+
         self.xpos = xpos
         self.ypos = ypos
         self.imagewidth, self.imageheight = image.size
