@@ -1,4 +1,4 @@
-Changing the starting value for bars
+Changing the starting values of the bars
 
 To adjust the value the bars are starting at you need to set a `fromvalue` at
 the `barpos` style. ... By default the bars start at the baseline not taking

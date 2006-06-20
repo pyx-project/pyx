@@ -1,4 +1,4 @@
-Changing bars
+Changing the attributes of the bars
 
 This example is equal to the [minimal bar-graph example minimal.html] except for
 the used style to draw the bars. ...
