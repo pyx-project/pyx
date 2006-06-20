@@ -10,7 +10,7 @@ Max_Im = 1.5
 Min_Re = -1.5
 Max_Re = 1.5
 c = 0.41 + 0.3j
-p = color.palette.RedBlue
+p = color.gradient.RedBlue
 
 def rgbcolortostring(c):
     return "".join([chr(int(255*c.color[name])) for name in "rgb"])

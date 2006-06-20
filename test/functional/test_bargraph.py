@@ -33,7 +33,7 @@ def test_bar4(c, x, y):
             graph.data.data(graph.data.list([['x',  4,  9], ['y',  5,  8], ['z',  6,  7]], id=1, y=2, ystack1=3, title="test"), xname="id, ('B', 'X')"),
             graph.data.data(graph.data.list([['x',  7,  6], ['y',  8,  5], ['z',  9,  4]], id=1, y=2, ystack1=3, title="test"), xname="id, ('B', 'Y')"),
             graph.data.data(graph.data.list([['x', 10,  3], ['y', 11,  2], ['z', 12,  1]], id=1, y=2, ystack1=3, title="test"), xname="id, ('B', 'Z')")],
-           [graph.style.barpos(fromvalue=0), graph.style.bar(), graph.style.stackedbarpos("ystack1", addontop=1), graph.style.bar([color.palette.ReverseRainbow])])
+           [graph.style.barpos(fromvalue=0), graph.style.bar(), graph.style.stackedbarpos("ystack1", addontop=1), graph.style.bar([color.gradient.ReverseRainbow])])
 
 c = canvas.canvas()
 test_bar(c, 0, 0)

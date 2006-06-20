@@ -777,12 +777,12 @@ definition is:
   order to prevent numerical instabilities.
 \end{classdesc} % }}}
 
-\begin{classdesc}{rect}{palette=color.palette.Grey} % {{{
+\begin{classdesc}{rect}{gradient=color.gradient.Grey} % {{{
   This class is a style to plot colored rectangles into a
   two-dimensional graph. The size of the rectangles is taken from
   the data provided by the \class{range} style. The additional
   data column named \code{color} specifies the color of the rectangle
-  defined by \var{palette}. The valid color range is [0:1].
+  defined by \var{gradient}. The valid color range is [0:1].
 
   \begin{note}
     Although this style can be used for plotting colored surfaces, it
@@ -854,7 +854,7 @@ definition is:
 \begin{classdesc}{bar}{barattrs=[]} % {{{
   This class draws bars in a bar graph. The bars are filled using
   \var{barattrs}. \var{barattrs} is merged with \code{defaultbarattrs}
-  which is a list containing \code{[color.palette.Rainbow,
+  which is a list containing \code{[color.gradient.Rainbow,
   deco.stroked([color.grey.black])]}.
 \end{classdesc} % }}} % }}}
 

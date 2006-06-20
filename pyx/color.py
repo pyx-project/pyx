@@ -316,16 +316,20 @@ cmyk.White          = cmyk(0, 0, 0, 0)
 cmyk.white          = cmyk.White
 cmyk.black          = cmyk.Black
 
+class palette(attr.changelist):
+    """color palettes
 
-class palette(color, attr.changeattr):
+    A color palette is a discrete, ordered list of colors"""
 
-    """base class for all palettes
+palette.clear = attr.clearclass(palette)
 
-    A palette is a collection of colors with a single parameter ranging from 0 to 1
+
+class gradient(attr.changeattr):
+
+    """base class for color gradients
+
+    A gradient is a continuous collection of colors with a single parameter ranging from 0 to 1
     to address them"""
-
-    def __init__(self):
-        color.__init__(self)
 
     def getcolor(self, param):
         """return color corresponding to param"""
@@ -339,19 +343,14 @@ class palette(color, attr.changeattr):
             param = index / (n_indices - 1.0)
         return self.getcolor(param)
 
-    def processPS(self, file, writer, context, registry, bbox):
-        self.getcolor(0).processPS(file, writer, context)
-
-    def processPDF(self, file, writer, context, registry, bbox):
-        self.getcolor(0).processPDF(file, writer, context)
+gradient.clear = attr.clearclass(gradient)
 
 
-class linearpalette(palette):
+class lineargradient(gradient):
 
-    """linearpalette is a collection of two colors for a linear transition between them"""
+    """collection of two colors for a linear transition between them"""
 
     def __init__(self, mincolor, maxcolor):
-        palette.__init__(self)
         if mincolor.__class__ != maxcolor.__class__:
             raise ValueError
         self.colorclass = mincolor.__class__
@@ -365,9 +364,9 @@ class linearpalette(palette):
         return self.colorclass(**colordict)
 
 
-class functionpalette(palette):
+class functiongradient(gradient):
 
-    """functionpalette is a collection of colors for an arbitray non-linear transition between them
+    """collection of colors for an arbitray non-linear transition between them
 
     parameters:
     functions: a dictionary for the color values
@@ -375,7 +374,6 @@ class functionpalette(palette):
     """
 
     def __init__(self, functions, type):
-        palette.__init__(self)
         if type == "cmyk":
             self.colorclass = cmyk
         elif type == "rgb":
@@ -395,37 +393,37 @@ class functionpalette(palette):
         return self.colorclass(**colordict)
 
 
-palette.Gray           = linearpalette(gray.white, gray.black)
-palette.Grey           = palette.Gray
-palette.ReverseGray    = linearpalette(gray.black, gray.white)
-palette.ReverseGrey    = palette.ReverseGray
-palette.BlackYellow    = functionpalette(functions={#(compare this with reversegray above)
+gradient.Gray           = lineargradient(gray.white, gray.black)
+gradient.Grey           = gradient.Gray
+gradient.ReverseGray    = lineargradient(gray.black, gray.white)
+gradient.ReverseGrey    = gradient.ReverseGray
+gradient.BlackYellow    = functiongradient(functions={ # compare this with reversegray above
     "r":(lambda x: 2*x*(1-x)**5 + 3.5*x**2*(1-x)**3 + 2.1*x*x*(1-x)**2 + 3.0*x**3*(1-x)**2 + x**0.5*(1-(1-x)**2)),
     "g":(lambda x: 1.5*x**2*(1-x)**3 - 0.8*x**3*(1-x)**2 + 2.0*x**4*(1-x) + x**4),
     "b":(lambda x: 5*x*(1-x)**5 - 0.5*x**2*(1-x)**3 + 0.3*x*x*(1-x)**2 + 5*x**3*(1-x)**2 + 0.5*x**6)},
     type="rgb")
-palette.RedGreen       = linearpalette(rgb.red, rgb.green)
-palette.RedBlue        = linearpalette(rgb.red, rgb.blue)
-palette.GreenRed       = linearpalette(rgb.green, rgb.red)
-palette.GreenBlue      = linearpalette(rgb.green, rgb.blue)
-palette.BlueRed        = linearpalette(rgb.blue, rgb.red)
-palette.BlueGreen      = linearpalette(rgb.blue, rgb.green)
-palette.RedBlack       = linearpalette(rgb.red, rgb.black)
-palette.BlackRed       = linearpalette(rgb.black, rgb.red)
-palette.RedWhite       = linearpalette(rgb.red, rgb.white)
-palette.WhiteRed       = linearpalette(rgb.white, rgb.red)
-palette.GreenBlack     = linearpalette(rgb.green, rgb.black)
-palette.BlackGreen     = linearpalette(rgb.black, rgb.green)
-palette.GreenWhite     = linearpalette(rgb.green, rgb.white)
-palette.WhiteGreen     = linearpalette(rgb.white, rgb.green)
-palette.BlueBlack      = linearpalette(rgb.blue, rgb.black)
-palette.BlackBlue      = linearpalette(rgb.black, rgb.blue)
-palette.BlueWhite      = linearpalette(rgb.blue, rgb.white)
-palette.WhiteBlue      = linearpalette(rgb.white, rgb.blue)
-palette.Rainbow        = linearpalette(hsb(0, 1, 1), hsb(2.0/3.0, 1, 1))
-palette.ReverseRainbow = linearpalette(hsb(2.0/3.0, 1, 1), hsb(0, 1, 1))
-palette.Hue            = linearpalette(hsb(0, 1, 1), hsb(1, 1, 1))
-palette.ReverseHue     = linearpalette(hsb(1, 1, 1), hsb(0, 1, 1))
+gradient.RedGreen       = lineargradient(rgb.red, rgb.green)
+gradient.RedBlue        = lineargradient(rgb.red, rgb.blue)
+gradient.GreenRed       = lineargradient(rgb.green, rgb.red)
+gradient.GreenBlue      = lineargradient(rgb.green, rgb.blue)
+gradient.BlueRed        = lineargradient(rgb.blue, rgb.red)
+gradient.BlueGreen      = lineargradient(rgb.blue, rgb.green)
+gradient.RedBlack       = lineargradient(rgb.red, rgb.black)
+gradient.BlackRed       = lineargradient(rgb.black, rgb.red)
+gradient.RedWhite       = lineargradient(rgb.red, rgb.white)
+gradient.WhiteRed       = lineargradient(rgb.white, rgb.red)
+gradient.GreenBlack     = lineargradient(rgb.green, rgb.black)
+gradient.BlackGreen     = lineargradient(rgb.black, rgb.green)
+gradient.GreenWhite     = lineargradient(rgb.green, rgb.white)
+gradient.WhiteGreen     = lineargradient(rgb.white, rgb.green)
+gradient.BlueBlack      = lineargradient(rgb.blue, rgb.black)
+gradient.BlackBlue      = lineargradient(rgb.black, rgb.blue)
+gradient.BlueWhite      = lineargradient(rgb.blue, rgb.white)
+gradient.WhiteBlue      = lineargradient(rgb.white, rgb.blue)
+gradient.Rainbow        = lineargradient(hsb(0, 1, 1), hsb(2.0/3.0, 1, 1))
+gradient.ReverseRainbow = lineargradient(hsb(2.0/3.0, 1, 1), hsb(0, 1, 1))
+gradient.Hue            = lineargradient(hsb(0, 1, 1), hsb(1, 1, 1))
+gradient.ReverseHue     = lineargradient(hsb(1, 1, 1), hsb(0, 1, 1))
 
 
 class PDFextgstate(pdfwriter.PDFobject):

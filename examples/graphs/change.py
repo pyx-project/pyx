@@ -9,6 +9,6 @@ g.plot([graph.data.function("x(y)=y**4", title=r"$x = y^4$"),
         graph.data.function("x(y)=y", title=r"$x = y$"),
         graph.data.function("y(x)=x**2", title=r"$y = x^2$"),
         graph.data.function("y(x)=x**4", title=r"$y = x^4$")],
-       [graph.style.line([color.palette.Rainbow])])
+       [graph.style.line([color.gradient.Rainbow])])
 g.writeEPSfile("change")
 g.writePDFfile("change")

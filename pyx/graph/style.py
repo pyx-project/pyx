@@ -809,8 +809,8 @@ class rect(_style):
 
     needsdata = ["vrange", "vrangeminmissing", "vrangemaxmissing"]
 
-    def __init__(self, palette=color.palette.Grey):
-        self.palette = palette
+    def __init__(self, gradient=color.gradient.Grey):
+        self.gradient = gradient
 
     def columnnames(self, privatedata, sharedata, graph, columnnames):
         if len(graph.axesnames) != 2:
@@ -846,7 +846,7 @@ class rect(_style):
             p.append(graph.vgeodesic_el(xvmax, yvmax, xvmin, yvmax))
             p.append(graph.vgeodesic_el(xvmin, yvmax, xvmin, yvmin))
             p.append(path.closepath())
-            privatedata.rectcanvas.fill(p, [self.palette.getcolor(point["color"])])
+            privatedata.rectcanvas.fill(p, [self.gradient.getcolor(point["color"])])
 
     def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
         raise RuntimeError("Style currently doesn't provide a graph key")
@@ -1349,7 +1349,7 @@ class bar(_style):
 
     needsdata = ["vbarrange"]
 
-    defaultbarattrs = [color.palette.Rainbow, deco.stroked([color.grey.black])]
+    defaultbarattrs = [color.gradient.Rainbow, deco.stroked([color.grey.black])]
 
     def __init__(self, barattrs=[]):
         self.barattrs = barattrs

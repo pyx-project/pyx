@@ -37,14 +37,15 @@ The file \verb|color.eps| is created and looks like:
 \includegraphics{color}
 \end{quote}
 
-\section{Color palettes}
+\section{Color gradients}
 
-The color module provides a class \verb|palette| for transitions between
-colors. A list of named palettes is available in appendix~\ref{palettename}.
+The color module provides a class \verb|gradient| for continous transitions between
+colors. A list of named gradients is available in appendix~\ref{gradientname}.
 
-\begin{classdesc}{palette}{min=0, max=1}
-  This class provides the methods for the \verb|palette|. Different
-  initializations can be found in \verb|linearpalette| and \verb|functionpalette|.
+\begin{classdesc}{gradient}{min=0, max=1}
+  This class provides the methods for the \verb|gradient|. Different
+  initializations can be found in \verb|lineargradient| and
+  \verb|functiongradient|.
 
   \var{min} and \var{max} provide the valid range of the arguments for
   \verb|getcolor|.
@@ -56,13 +57,13 @@ colors. A list of named palettes is available in appendix~\ref{palettename}.
 
   \begin{funcdesc}{select}{index, n\_indices}
     When a total number of \var{n\_indices} different colors is needed from the
-    palette, this method returns the \var{index}-th color.
+    gradient, this method returns the \var{index}-th color.
   \end{funcdesc}
 
 \end{classdesc}
 
 
-\begin{classdesc}{linearpalette}{startcolor, endcolor, min=0, max=1}
+\begin{classdesc}{lineargradient}{startcolor, endcolor, min=0, max=1}
   This class provides a linear transition between two given colors. The linear
   interpolation is performed on the color components of the specific color
   model.
@@ -70,7 +71,7 @@ colors. A list of named palettes is available in appendix~\ref{palettename}.
   \var{startcolor} and \var{endcolor} must be colors of the same color model.
 \end{classdesc}
 
-\begin{classdesc}{functionpalette}{functions, type, min=0, max=1}
+\begin{classdesc}{functiongradient}{functions, type, min=0, max=1}
   This class provides an arbitray transition between colors of the same
   color model.
 

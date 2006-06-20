@@ -8,9 +8,9 @@ In order to display more than one data set, we pass a list of data sets to the
 three lists of `graph.data.function` instances. For each data set we also
 set a title using the corresponding keyword argument of the data class.
 
-For a more colorful output, we pass the `color.palette.Rainbow` color palette
+For a more colorful output, we pass the `color.gradient.Rainbow` color gradient
 to the `graph.style.line` class. PyX then automatically chooses color spanning
-the whole range of the rainbow palette.
+the whole range of the rainbow gradient.
 
 ! If you look at the output, you will notice that not only the colors are
 cycled through, but also the line style changes. The reason for this behavior
@@ -20,10 +20,10 @@ additional line attributes, these are appended to the default attributes (this
 is generally the case in PyX). Consequently, you get a change of both the
 color and the line style. If you only want to change the color, either
 pass the desired line style explicitly, i.e., use
-    graph.style.line([style.linestyle.solid, color.palette.Rainbow])
+    graph.style.line([style.linestyle.solid, color.gradient.Rainbow])
 or clear a previous setting of the line style using the `clear` attribute
 of the corresponding class:
-    graph.style.line([style.linestyle.clear, color.palette.Rainbow])
+    graph.style.line([style.linestyle.clear, color.gradient.Rainbow])
 
 !! It is also possible to call the `plot` method several times. Note that the
 changing of the styles is also performed when the style instances are used on

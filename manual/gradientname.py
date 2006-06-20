@@ -16,12 +16,12 @@ pf = graph.data.paramfunction("k", 0, 1, "color, xmin, xmax, ymin, ymax= k, k, 1
 y = 0
 dy = -0.65
 
-# we could use palette.__dict__ to get the instances, but we
+# we could use gradient.__dict__ to get the instances, but we
 # would loose the ordering ... instead we just parse the file:
 
 # see comment in colorname.py
 
-p = re.compile("(?P<id>palette\\.(?P<name>[a-z]+)) += [a-z]+palette\\(.*\\)\n", re.IGNORECASE)
+p = re.compile("(?P<id>gradient\\.(?P<name>[a-z]+)) += [a-z]+gradient\\(.*\\)\n", re.IGNORECASE)
 lines = imp.find_module("color", pyx.__path__)[0].readlines()
 firstgraph = None
 for line in lines: # we yet don't use a file iterator
@@ -37,7 +37,7 @@ for line in lines: # we yet don't use a file iterator
             firstgraph = g = graph.graphxy(ypos=y, width=10, height=0.5, x2=xaxis, y=graph.axis.lin(parter=None))
         else:
             g = graph.graphxy(ypos=y, width=10, height=0.5, x2=graph.axis.linkedaxis(firstgraph.axes["x2"]), y=graph.axis.lin(parter=None))
-        g.plot(pf, [graph.style.rect(getattr(pyx.color.palette, m.group("name")))])
+        g.plot(pf, [graph.style.rect(getattr(pyx.color.gradient, m.group("name")))])
         g.dodata()
         g.finish()
         c.insert(g)
@@ -45,5 +45,5 @@ for line in lines: # we yet don't use a file iterator
         y += dy
 
 
-c.writeEPSfile("palettename")
-c.writePDFfile("palettename")
+c.writeEPSfile("gradientname")
+c.writePDFfile("gradientname")

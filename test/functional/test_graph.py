@@ -13,14 +13,14 @@ def test_multiaxes_data(c, x, y):
                                                painter=graph.axis.painter.regular(titledirection=None)),
                                y2=graph.axis.log(title="$P_2$"),
                                y3=graph.axis.log(title="$PPP_3$",
-                                                painter=graph.axis.painter.regular(titledirection=graph.axis.painter.rotatetext(45), gridattrs=[color.palette.RedGreen]),
+                                                painter=graph.axis.painter.regular(titledirection=graph.axis.painter.rotatetext(45), gridattrs=[color.gradient.RedGreen]),
                                                 texter=graph.axis.texter.decimal(equalprecision=1)),
                                y5=graph.axis.log(title="$P_5$")))
     g.plot((graph.data.file("data/testdata", x=1, y="sqrt(sqrt($3))", title="mytitle"),
             graph.data.file("data/testdata", x=1, y2=4),
             graph.data.file("data/testdata", x=1, y3=5, title=None),
             graph.data.file("data/testdata", x=1, y5=6)),
-           styles=[graph.style.symbol(symbolattrs=[deco.stroked.clear, color.palette.RedGreen, graph.style.symbol.changestrokedfilled], symbol=graph.style.symbol.changesquaretwice)])
+           styles=[graph.style.symbol(symbolattrs=[deco.stroked.clear, color.gradient.RedGreen, graph.style.symbol.changestrokedfilled], symbol=graph.style.symbol.changesquaretwice)])
     g.finish()
 
 def test_piaxis_function(c, x, y):
@@ -28,7 +28,7 @@ def test_piaxis_function(c, x, y):
     g = c.insert(graph.graphxy(x, y, height=5, x=xaxis))
     #g = c.insert(graph.graphxy(x, y, height=5, x=xaxis, x2=xaxis))
     g.plot([graph.data.function("y(x)=sin(x-i*pi/10)", context={"i": i}) for i in range(20)],
-           styles=[graph.style.line(lineattrs=[color.palette.Hue])])
+           styles=[graph.style.line(lineattrs=[color.gradient.Hue])])
     g.finish()
 
 def test_textaxis_errorbars(c, x, y):
