@@ -253,7 +253,7 @@ class epswriter:
 
     def __init__(self, document, file):
         if len(document.pages) != 1:
-            raise ValueError("EPS file can be construced out of a single page document only")
+            raise ValueError("EPS file can be constructed out of a single page document only")
         page = document.pages[0]
         canvas = page.canvas
 
