@@ -53,6 +53,8 @@ TODO:
   - move pyx.def, lfs-files etc. into a new share directory
   - write fakepattern.py which substitutes some of the pattern functionality using
     re-usable canvases
+  - libkpathsea bindung:
+    - create a ctypes based binding to replace the extension module implementation in the long
 
   Documentation:
     - path module:
