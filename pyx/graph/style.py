@@ -1464,10 +1464,10 @@ class surface(_line):
 
     needsdata = ["vpos", "vposmissing", "vposavailable", "vposvalid"]
 
-    def __init__(self, colorname="color", palette=color.palette.Rainbow,
+    def __init__(self, colorname="color", gradient=color.gradient.Rainbow,
                        mincolor=None, maxcolor=None, index1=0, index2=1, epsilon=1e-10):
         self.colorname = colorname
-        self.palette = palette
+        self.gradient = gradient
         self.mincolor = mincolor
         self.maxcolor = maxcolor
         self.index1 = index1
@@ -1562,7 +1562,7 @@ class surface(_line):
                             pass
                         else:
                             color = (color - privatedata.mincolor) / float(privatedata.maxcolor - privatedata.mincolor)
-                            graph.fill(path.circle_pt(x_pt, y_pt, 1), [self.palette.getcolor(color)])
+                            graph.fill(path.circle_pt(x_pt, y_pt, 1), [self.gradient.getcolor(color)])
 
     def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
         raise NotImplementedError
