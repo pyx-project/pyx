@@ -1552,17 +1552,19 @@ class surface(_line):
                 self.initpointstopath(privatedata)
                 for value2 in values2:
                     try:
-                        x_pt, y_pt = graph.vpos_pt(*data2[value2][2])
+                        vposavailable, vposvalid, vpos = data2[value2]
                     except KeyError:
                         pass
                     else:
-                        try:
-                            color = privatedata.colors[value1][value2]
-                        except KeyError:
-                            pass
-                        else:
-                            color = (color - privatedata.mincolor) / float(privatedata.maxcolor - privatedata.mincolor)
-                            graph.fill(path.circle_pt(x_pt, y_pt, 1), [self.gradient.getcolor(color)])
+                        if vposvalid:
+                            x_pt, y_pt = graph.vpos_pt(*vpos)
+                            try:
+                                color = privatedata.colors[value1][value2]
+                            except KeyError:
+                                pass
+                            else:
+                                color = (color - privatedata.mincolor) / float(privatedata.maxcolor - privatedata.mincolor)
+                                graph.fill(path.circle_pt(x_pt, y_pt, 1), [self.gradient.getcolor(color)])
 
     def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
         raise NotImplementedError
