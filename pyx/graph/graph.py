@@ -204,11 +204,17 @@ class graph(canvas.canvas):
             plotitem.adjustaxesdynamic(self)
         self.didranges = 1
 
+    def doaxiscreate(self, axisname):
+        if self.did(self.doaxiscreate, axisname):
+            return
+        self.doaxispositioner(axisname)
+        self.axes[axisname].create()
+
     def dolayout(self):
         raise NotImplementedError
 
     def dobackground(self):
-        raise NotImplementedError
+        pass
 
     def doaxes(self):
         raise NotImplementedError
@@ -443,12 +449,6 @@ class graphxy(graph):
                                                                             x_pt, self.ypos_pt + self.height_pt,
                                                                             (sign, 0), self.yvgridpath))
 
-    def doaxiscreate(self, axisname):
-        if self.did(self.doaxiscreate, axisname):
-            return
-        self.doaxispositioner(axisname)
-        self.axes[axisname].create()
-
     def dolayout(self):
         if self.did(self.dolayout):
             return
@@ -496,245 +496,264 @@ class graphxy(graph):
                 self.insert(c, [trafo.translate_pt(x, y)])
 
 
-# some thoughts, but deferred right now
-# 
-# class graphxyz(graphxy):
-# 
-#     axisnames = "x", "y", "z"
-# 
-#     def _vxtickpoint(self, axis, v):
-#         return self._vpos(v, axis.vypos, axis.vzpos)
-# 
-#     def _vytickpoint(self, axis, v):
-#         return self._vpos(axis.vxpos, v, axis.vzpos)
-# 
-#     def _vztickpoint(self, axis, v):
-#         return self._vpos(axis.vxpos, axis.vypos, v)
-# 
-#     def vxtickdirection(self, axis, v):
-#         x1, y1 = self._vpos(v, axis.vypos, axis.vzpos)
-#         x2, y2 = self._vpos(v, 0.5, 0)
-#         dx, dy = x1 - x2, y1 - y2
-#         norm = math.hypot(dx, dy)
-#         return dx/norm, dy/norm
-# 
-#     def vytickdirection(self, axis, v):
-#         x1, y1 = self._vpos(axis.vxpos, v, axis.vzpos)
-#         x2, y2 = self._vpos(0.5, v, 0)
-#         dx, dy = x1 - x2, y1 - y2
-#         norm = math.hypot(dx, dy)
-#         return dx/norm, dy/norm
-# 
-#     def vztickdirection(self, axis, v):
-#         return -1, 0
-#         x1, y1 = self._vpos(axis.vxpos, axis.vypos, v)
-#         x2, y2 = self._vpos(0.5, 0.5, v)
-#         dx, dy = x1 - x2, y1 - y2
-#         norm = math.hypot(dx, dy)
-#         return dx/norm, dy/norm
-# 
-#     def _pos(self, x, y, z, xaxis=None, yaxis=None, zaxis=None):
-#         if xaxis is None: xaxis = self.axes["x"]
-#         if yaxis is None: yaxis = self.axes["y"]
-#         if zaxis is None: zaxis = self.axes["z"]
-#         return self._vpos(xaxis.convert(x), yaxis.convert(y), zaxis.convert(z))
-# 
-#     def pos(self, x, y, z, xaxis=None, yaxis=None, zaxis=None):
-#         if xaxis is None: xaxis = self.axes["x"]
-#         if yaxis is None: yaxis = self.axes["y"]
-#         if zaxis is None: zaxis = self.axes["z"]
-#         return self.vpos(xaxis.convert(x), yaxis.convert(y), zaxis.convert(z))
-# 
-#     def _vpos(self, vx, vy, vz):
-#         x, y, z = (vx - 0.5)*self._depth, (vy - 0.5)*self._width, (vz - 0.5)*self._height
-#         d0 = float(self.a[0]*self.b[1]*(z-self.eye[2])
-#                  + self.a[2]*self.b[0]*(y-self.eye[1])
-#                  + self.a[1]*self.b[2]*(x-self.eye[0])
-#                  - self.a[2]*self.b[1]*(x-self.eye[0])
-#                  - self.a[0]*self.b[2]*(y-self.eye[1])
-#                  - self.a[1]*self.b[0]*(z-self.eye[2]))
-#         da = (self.eye[0]*self.b[1]*(z-self.eye[2])
-#             + self.eye[2]*self.b[0]*(y-self.eye[1])
-#             + self.eye[1]*self.b[2]*(x-self.eye[0])
-#             - self.eye[2]*self.b[1]*(x-self.eye[0])
-#             - self.eye[0]*self.b[2]*(y-self.eye[1])
-#             - self.eye[1]*self.b[0]*(z-self.eye[2]))
-#         db = (self.a[0]*self.eye[1]*(z-self.eye[2])
-#             + self.a[2]*self.eye[0]*(y-self.eye[1])
-#             + self.a[1]*self.eye[2]*(x-self.eye[0])
-#             - self.a[2]*self.eye[1]*(x-self.eye[0])
-#             - self.a[0]*self.eye[2]*(y-self.eye[1])
-#             - self.a[1]*self.eye[0]*(z-self.eye[2]))
-#         return da/d0 + self._xpos, db/d0 + self._ypos
-# 
-#     def vpos(self, vx, vy, vz):
-#         tx, ty = self._vpos(vx, vy, vz)
-#         return unit.t_pt(tx), unit.t_pt(ty)
-# 
-#     def xbaseline(self, axis, x1, x2, xaxis=None):
-#         if xaxis is None: xaxis = self.axes["x"]
-#         return self.vxbaseline(axis, xaxis.convert(x1), xaxis.convert(x2))
-# 
-#     def ybaseline(self, axis, y1, y2, yaxis=None):
-#         if yaxis is None: yaxis = self.axes["y"]
-#         return self.vybaseline(axis, yaxis.convert(y1), yaxis.convert(y2))
-# 
-#     def zbaseline(self, axis, z1, z2, zaxis=None):
-#         if zaxis is None: zaxis = self.axes["z"]
-#         return self.vzbaseline(axis, zaxis.convert(z1), zaxis.convert(z2))
-# 
-#     def vxbaseline(self, axis, v1, v2):
-#         return (path._line(*(self._vpos(v1, 0, 0) + self._vpos(v2, 0, 0))) +
-#                 path._line(*(self._vpos(v1, 0, 1) + self._vpos(v2, 0, 1))) +
-#                 path._line(*(self._vpos(v1, 1, 1) + self._vpos(v2, 1, 1))) +
-#                 path._line(*(self._vpos(v1, 1, 0) + self._vpos(v2, 1, 0))))
-# 
-#     def vybaseline(self, axis, v1, v2):
-#         return (path._line(*(self._vpos(0, v1, 0) + self._vpos(0, v2, 0))) +
-#                 path._line(*(self._vpos(0, v1, 1) + self._vpos(0, v2, 1))) +
-#                 path._line(*(self._vpos(1, v1, 1) + self._vpos(1, v2, 1))) +
-#                 path._line(*(self._vpos(1, v1, 0) + self._vpos(1, v2, 0))))
-# 
-#     def vzbaseline(self, axis, v1, v2):
-#         return (path._line(*(self._vpos(0, 0, v1) + self._vpos(0, 0, v2))) +
-#                 path._line(*(self._vpos(0, 1, v1) + self._vpos(0, 1, v2))) +
-#                 path._line(*(self._vpos(1, 1, v1) + self._vpos(1, 1, v2))) +
-#                 path._line(*(self._vpos(1, 0, v1) + self._vpos(1, 0, v2))))
-# 
-#     def xgridpath(self, x, xaxis=None):
-#         assert 0
-#         if xaxis is None: xaxis = self.axes["x"]
-#         v = xaxis.convert(x)
-#         return path._line(self._xpos+v*self._width, self._ypos,
-#                           self._xpos+v*self._width, self._ypos+self._height)
-# 
-#     def ygridpath(self, y, yaxis=None):
-#         assert 0
-#         if yaxis is None: yaxis = self.axes["y"]
-#         v = yaxis.convert(y)
-#         return path._line(self._xpos, self._ypos+v*self._height,
-#                           self._xpos+self._width, self._ypos+v*self._height)
-# 
-#     def zgridpath(self, z, zaxis=None):
-#         assert 0
-#         if zaxis is None: zaxis = self.axes["z"]
-#         v = zaxis.convert(z)
-#         return path._line(self._xpos, self._zpos+v*self._height,
-#                           self._xpos+self._width, self._zpos+v*self._height)
-# 
-#     def vxgridpath(self, v):
-#         return path.path(path._moveto(*self._vpos(v, 0, 0)),
-#                          path._lineto(*self._vpos(v, 0, 1)),
-#                          path._lineto(*self._vpos(v, 1, 1)),
-#                          path._lineto(*self._vpos(v, 1, 0)),
-#                          path.closepath())
-# 
-#     def vygridpath(self, v):
-#         return path.path(path._moveto(*self._vpos(0, v, 0)),
-#                          path._lineto(*self._vpos(0, v, 1)),
-#                          path._lineto(*self._vpos(1, v, 1)),
-#                          path._lineto(*self._vpos(1, v, 0)),
-#                          path.closepath())
-# 
-#     def vzgridpath(self, v):
-#         return path.path(path._moveto(*self._vpos(0, 0, v)),
-#                          path._lineto(*self._vpos(0, 1, v)),
-#                          path._lineto(*self._vpos(1, 1, v)),
-#                          path._lineto(*self._vpos(1, 0, v)),
-#                          path.closepath())
-# 
-#     def _addpos(self, x, y, dx, dy):
-#         assert 0
-#         return x+dx, y+dy
-# 
-#     def _connect(self, x1, y1, x2, y2):
-#         assert 0
-#         return path._lineto(x2, y2)
-# 
-#     def doaxes(self):
-#         self.dolayout()
-#         if not self.removedomethod(self.doaxes): return
-#         axesdist_pt = unit.topt(self.axesdist)
-#         XPattern = re.compile(r"%s([2-9]|[1-9][0-9]+)?$" % self.axisnames[0])
-#         YPattern = re.compile(r"%s([2-9]|[1-9][0-9]+)?$" % self.axisnames[1])
-#         ZPattern = re.compile(r"%s([2-9]|[1-9][0-9]+)?$" % self.axisnames[2])
-#         items = list(self.axes.items())
-#         items.sort() #TODO: alphabetical sorting breaks for axis numbers bigger than 9
-#         for key, axis in items:
-#             num = self.keynum(key)
-#             num2 = 1 - num % 2 # x1 -> 0, x2 -> 1, x3 -> 0, x4 -> 1, ...
-#             num3 = 1 - 2 * (num % 2) # x1 -> -1, x2 -> 1, x3 -> -1, x4 -> 1, ...
-#             if XPattern.match(key):
-#                 axis.vypos = 0
-#                 axis.vzpos = 0
-#                 axis._vtickpoint = self._vxtickpoint
-#                 axis.vgridpath = self.vxgridpath
-#                 axis.vbaseline = self.vxbaseline
-#                 axis.vtickdirection = self.vxtickdirection
-#             elif YPattern.match(key):
-#                 axis.vxpos = 0
-#                 axis.vzpos = 0
-#                 axis._vtickpoint = self._vytickpoint
-#                 axis.vgridpath = self.vygridpath
-#                 axis.vbaseline = self.vybaseline
-#                 axis.vtickdirection = self.vytickdirection
-#             elif ZPattern.match(key):
-#                 axis.vxpos = 0
-#                 axis.vypos = 0
-#                 axis._vtickpoint = self._vztickpoint
-#                 axis.vgridpath = self.vzgridpath
-#                 axis.vbaseline = self.vzbaseline
-#                 axis.vtickdirection = self.vztickdirection
-#             else:
-#                 raise ValueError("Axis key '%s' not allowed" % key)
-#             if axis.painter is not None:
-#                 axis.dopaint(self)
-# #            if XPattern.match(key):
-# #                self._xaxisextents[num2] += axis._extent
-# #                needxaxisdist[num2] = 1
-# #            if YPattern.match(key):
-# #                self._yaxisextents[num2] += axis._extent
-# #                needyaxisdist[num2] = 1
-# 
-#     def __init__(self, tex, xpos=0, ypos=0, width=None, height=None, depth=None,
-#                  phi=30, theta=30, distance=1,
-#                  backgroundattrs=None, axesdist=0.8*unit.v_cm, **axes):
-#         canvas.canvas.__init__(self)
-#         self.tex = tex
-#         self.xpos = xpos
-#         self.ypos = ypos
-#         self._xpos = unit.topt(xpos)
-#         self._ypos = unit.topt(ypos)
-#         self._width = unit.topt(width)
-#         self._height = unit.topt(height)
-#         self._depth = unit.topt(depth)
-#         self.width = width
-#         self.height = height
-#         self.depth = depth
-#         if self._width <= 0: raise ValueError("width < 0")
-#         if self._height <= 0: raise ValueError("height < 0")
-#         if self._depth <= 0: raise ValueError("height < 0")
-#         self._distance = distance*math.sqrt(self._width*self._width+
-#                                             self._height*self._height+
-#                                             self._depth*self._depth)
-#         phi *= -math.pi/180
-#         theta *= math.pi/180
-#         self.a = (-math.sin(phi), math.cos(phi), 0)
-#         self.b = (-math.cos(phi)*math.sin(theta),
-#                   -math.sin(phi)*math.sin(theta),
-#                   math.cos(theta))
-#         self.eye = (self._distance*math.cos(phi)*math.cos(theta),
-#                     self._distance*math.sin(phi)*math.cos(theta),
-#                     self._distance*math.sin(theta))
-#         self.initaxes(axes)
-#         self.axesdist = axesdist
-#         self.backgroundattrs = backgroundattrs
-# 
-#         self.data = []
-#         self.domethods = [self.dolayout, self.dobackground, self.doaxes, self.dodata]
-#         self.haslayout = 0
-#         self.defaultstyle = {}
-# 
-#     def bbox(self):
-#         self.finish()
-#         return bbox._bbox(self._xpos - 200, self._ypos - 200, self._xpos + 200, self._ypos + 200)
+class graphxyz(graphxy):
+
+    def __init__(self, xpos=0, ypos=0, width=None, height=None, depth=None,
+                 phi=30, theta=30, distance=1,
+                 key=None, backgroundattrs=None, **axes):
+        graph.__init__(self)
+
+        self.xpos = xpos
+        self.ypos = ypos
+        self.xpos_pt = unit.topt(xpos)
+        self.ypos_pt = unit.topt(ypos)
+        self.width = width
+        self.height = height
+        self.depth = depth
+        self.width_pt = unit.topt(width)
+        self.height_pt = unit.topt(height)
+        self.depth_pt = unit.topt(depth)
+        self.key = key
+        self.backgroundattrs = backgroundattrs
+
+        if self.width_pt <= 0: raise ValueError("width < 0")
+        if self.height_pt <= 0: raise ValueError("height < 0")
+        if self.depth_pt <= 0: raise ValueError("height < 0")
+        self.distance_pt = distance*math.sqrt(self.width_pt*self.width_pt+
+                                              self.height_pt*self.height_pt+
+                                              self.depth_pt*self.depth_pt)
+        phi *= -math.pi/180
+        theta *= math.pi/180
+        self.a = (-math.sin(phi), math.cos(phi), 0)
+        self.b = (-math.cos(phi)*math.sin(theta),
+                  -math.sin(phi)*math.sin(theta),
+                  math.cos(theta))
+        self.eye = (self.distance_pt*math.cos(phi)*math.cos(theta),
+                    self.distance_pt*math.sin(phi)*math.cos(theta),
+                    self.distance_pt*math.sin(theta))
+
+        for axisname, aaxis in axes.items():
+            if aaxis is not None:
+                if not isinstance(aaxis, axis.linkedaxis):
+                    self.axes[axisname] = axis.anchoredaxis(aaxis, self.texrunner, axisname)
+                else:
+                    self.axes[axisname] = aaxis
+
+        for axisname in ["x", "y", "z"]:
+            if not axes.has_key(axisname):
+                self.axes[axisname] = axis.anchoredaxis(axis.linear(), self.texrunner, axisname)
+
+        if self.axes.has_key("x"):
+            self.xbasepath = self.axes["x"].basepath
+            self.xvbasepath = self.axes["x"].vbasepath
+            self.xgridpath = self.axes["x"].gridpath
+            self.xtickpoint_pt = self.axes["x"].tickpoint_pt
+            self.xtickpoint = self.axes["x"].tickpoint
+            self.xvtickpoint_pt = self.axes["x"].vtickpoint_pt
+            self.xvtickpoint = self.axes["x"].tickpoint
+            self.xtickdirection = self.axes["x"].tickdirection
+            self.xvtickdirection = self.axes["x"].vtickdirection
+
+        if self.axes.has_key("y"):
+            self.ybasepath = self.axes["y"].basepath
+            self.yvbasepath = self.axes["y"].vbasepath
+            self.ygridpath = self.axes["y"].gridpath
+            self.ytickpoint_pt = self.axes["y"].tickpoint_pt
+            self.ytickpoint = self.axes["y"].tickpoint
+            self.yvtickpoint_pt = self.axes["y"].vtickpoint_pt
+            self.yvtickpoint = self.axes["y"].tickpoint
+            self.ytickdirection = self.axes["y"].tickdirection
+            self.yvtickdirection = self.axes["y"].vtickdirection
+
+        if self.axes.has_key("z"):
+            self.zbasepath = self.axes["z"].basepath
+            self.zvbasepath = self.axes["z"].vbasepath
+            self.zgridpath = self.axes["z"].gridpath
+            self.ztickpoint_pt = self.axes["z"].tickpoint_pt
+            self.ztickpoint = self.axes["z"].tickpoint
+            self.zvtickpoint_pt = self.axes["z"].vtickpoint_pt
+            self.zvtickpoint = self.axes["z"].tickpoint
+            self.ztickdirection = self.axes["z"].tickdirection
+            self.zvtickdirection = self.axes["z"].vtickdirection
+
+        self.axesnames = ([], [], [])
+        for axisname, aaxis in self.axes.items():
+            if axisname[0] not in "xyz" or (len(axisname) != 1 and (not axisname[1:].isdigit() or
+                                                                    axisname[1:] == "1")):
+                raise ValueError("invalid axis name")
+            if axisname[0] == "x":
+                self.axesnames[0].append(axisname)
+            elif axisname[0] == "y":
+                self.axesnames[1].append(axisname)
+            else:
+                self.axesnames[2].append(axisname)
+            aaxis.setcreatecall(self.doaxiscreate, axisname)
+
+    def pos_pt(self, x, y, z, xaxis=None, yaxis=None, zaxis=None):
+        if xaxis is None:
+            xaxis = self.axes["x"]
+        if yaxis is None:
+            yaxis = self.axes["y"]
+        if zaxis is None:
+            zaxis = self.axes["z"]
+        return self.vpos_pt(xaxis.convert(x), yaxis.convert(y), zaxis.convert(y))
+
+    def pos(self, x, y, z, xaxis=None, yaxis=None, zaxis=None):
+        if xaxis is None:
+            xaxis = self.axes["x"]
+        if yaxis is None:
+            yaxis = self.axes["y"]
+        if zaxis is None:
+            zaxis = self.axes["z"]
+        return self.vpos(xaxis.convert(x), yaxis.convert(y), zaxis.convert(y))
+
+    def vpos_pt(self, vx, vy, vz):
+        x, y, z = (vx - 0.5)*self.depth_pt, (vy - 0.5)*self.width_pt, (vz - 0.5)*self.height_pt
+        d0 = float(self.a[0]*self.b[1]*(z-self.eye[2])
+                 + self.a[2]*self.b[0]*(y-self.eye[1])
+                 + self.a[1]*self.b[2]*(x-self.eye[0])
+                 - self.a[2]*self.b[1]*(x-self.eye[0])
+                 - self.a[0]*self.b[2]*(y-self.eye[1])
+                 - self.a[1]*self.b[0]*(z-self.eye[2]))
+        da = (self.eye[0]*self.b[1]*(z-self.eye[2])
+            + self.eye[2]*self.b[0]*(y-self.eye[1])
+            + self.eye[1]*self.b[2]*(x-self.eye[0])
+            - self.eye[2]*self.b[1]*(x-self.eye[0])
+            - self.eye[0]*self.b[2]*(y-self.eye[1])
+            - self.eye[1]*self.b[0]*(z-self.eye[2]))
+        db = (self.a[0]*self.eye[1]*(z-self.eye[2])
+            + self.a[2]*self.eye[0]*(y-self.eye[1])
+            + self.a[1]*self.eye[2]*(x-self.eye[0])
+            - self.a[2]*self.eye[1]*(x-self.eye[0])
+            - self.a[0]*self.eye[2]*(y-self.eye[1])
+            - self.a[1]*self.eye[0]*(z-self.eye[2]))
+        return da/d0 + self.xpos_pt, db/d0 + self.ypos_pt
+
+    def vpos(self, vx, vy, vz):
+        x_pt, y_pt = self.vpos_pt(vx, vy, vz)
+        return unit.t_pt(x_pt), unit.t_pt(y_pt)
+
+    def xbaseline(self, axis, x1, x2, xaxis=None):
+        if xaxis is None: xaxis = self.axes["x"]
+        return self.vxbaseline(axis, xaxis.convert(x1), xaxis.convert(x2))
+
+    def ybaseline(self, axis, y1, y2, yaxis=None):
+        if yaxis is None: yaxis = self.axes["y"]
+        return self.vybaseline(axis, yaxis.convert(y1), yaxis.convert(y2))
+
+    def zbaseline(self, axis, z1, z2, zaxis=None):
+        if zaxis is None: zaxis = self.axes["z"]
+        return self.vzbaseline(axis, zaxis.convert(z1), zaxis.convert(z2))
+
+    def vxbaseline(self, axis, v1, v2):
+        return (path.line_pt(*(self.vpos_pt(v1, 0, 0) + self.vpos_pt(v2, 0, 0))) +
+                path.line_pt(*(self.vpos_pt(v1, 0, 1) + self.vpos_pt(v2, 0, 1))) +
+                path.line_pt(*(self.vpos_pt(v1, 1, 1) + self.vpos_pt(v2, 1, 1))) +
+                path.line_pt(*(self.vpos_pt(v1, 1, 0) + self.vpos_pt(v2, 1, 0))))
+
+    def vybaseline(self, axis, v1, v2):
+        return (path.line_pt(*(self.vpos_pt(0, v1, 0) + self.vpos_pt(0, v2, 0))) +
+                path.line_pt(*(self.vpos_pt(0, v1, 1) + self.vpos_pt(0, v2, 1))) +
+                path.line_pt(*(self.vpos_pt(1, v1, 1) + self.vpos_pt(1, v2, 1))) +
+                path.line_pt(*(self.vpos_pt(1, v1, 0) + self.vpos_pt(1, v2, 0))))
+
+    def vzbaseline(self, axis, v1, v2):
+        return (path.line_pt(*(self.vpos_pt(0, 0, v1) + self.vpos_pt(0, 0, v2))) +
+                path.line_pt(*(self.vpos_pt(0, 1, v1) + self.vpos_pt(0, 1, v2))) +
+                path.line_pt(*(self.vpos_pt(1, 1, v1) + self.vpos_pt(1, 1, v2))) +
+                path.line_pt(*(self.vpos_pt(1, 0, v1) + self.vpos_pt(1, 0, v2))))
+
+    def vgeodesic(self, vx1, vy1, vz1, vx2, vy2, vz2):
+        """returns a geodesic path between two points in graph coordinates"""
+        return path.line_pt(*(self.vpos_pt(vx1, vy1, vz1) + self.vpos_pt(vx2, vy2, vz2)))
+
+    def vgeodesic_el(self, vx1, vy1, vz1, vx2, vy2, vz2):
+        """returns a geodesic path element between two points in graph coordinates"""
+        return path.lineto_pt(*(self.vpos_pt(vx1, vy1, vz1) + self.vpos_pt(vx2, vy2, vz2)))
+
+    def vcap_pt(self, coordinate, length_pt, vx, vy, vz):
+        """returns an error cap path for a given coordinate, lengths and
+        point in graph coordinates"""
+        raise NotImplementedError
+        if coordinate == 0:
+            return path.line_pt(self.xpos_pt + vx*self.width_pt - 0.5*length_pt,
+                                self.ypos_pt + vy*self.height_pt,
+                                self.xpos_pt + vx*self.width_pt + 0.5*length_pt,
+                                self.ypos_pt + vy*self.height_pt)
+        elif coordinate == 1:
+            return path.line_pt(self.xpos_pt + vx*self.width_pt,
+                                self.ypos_pt + vy*self.height_pt - 0.5*length_pt,
+                                self.xpos_pt + vx*self.width_pt,
+                                self.ypos_pt + vy*self.height_pt + 0.5*length_pt)
+        else:
+            raise ValueError("direction invalid")
+
+    def xvgridpath(self, vx):
+        raise NotImplementedError
+
+    def yvgridpath(self, vy):
+        raise NotImplementedError
+
+    def zvgridpath(self, vz):
+        raise NotImplementedError
+
+    def doaxispositioner(self, axisname):
+        if self.did(self.doaxispositioner, axisname):
+            return
+        self.doranges()
+        if axisname == "x":
+            x1_pt, y1_pt = self.vpos_pt(0, 0, 0)
+            x2_pt, y2_pt = self.vpos_pt(1, 0, 0)
+            self.axes["x"].setpositioner(positioner.lineaxispos_pt(x1_pt, y1_pt, x2_pt, y2_pt,
+                                                                   (0, 1), self.xvgridpath))
+        elif axisname == "y":
+            x1_pt, y1_pt = self.vpos_pt(0, 0, 0)
+            x2_pt, y2_pt = self.vpos_pt(0, 1, 0)
+            self.axes["y"].setpositioner(positioner.lineaxispos_pt(x1_pt, y1_pt, x2_pt, y2_pt,
+                                                                   (0, 1), self.yvgridpath))
+        elif axisname == "z":
+            x1_pt, y1_pt = self.vpos_pt(0, 0, 0)
+            x2_pt, y2_pt = self.vpos_pt(0, 0, 1)
+            self.axes["z"].setpositioner(positioner.lineaxispos_pt(x1_pt, y1_pt, x2_pt, y2_pt,
+                                                                   (1, 0), self.yvgridpath))
+        else:
+            raise NotImplementedError
+
+    def dolayout(self):
+        if self.did(self.dolayout):
+            return
+        for axisname in self.axes.keys():
+            self.doaxiscreate(axisname)
+
+    def dobackground(self):
+        if self.did(self.dobackground):
+            return
+
+    def doaxes(self):
+        if self.did(self.doaxes):
+            return
+        self.dolayout()
+        self.dobackground()
+        for axis in self.axes.values():
+            self.insert(axis.canvas)
+
+    def dokey(self):
+        if self.did(self.dokey):
+            return
+        self.dobackground()
+        self.dodata()
+        if self.key is not None:
+            c = self.key.paint(self.plotitems)
+            bbox = c.bbox()
+            def parentchildalign(pmin, pmax, cmin, cmax, pos, dist, inside):
+                ppos = pmin+0.5*(cmax-cmin)+dist+pos*(pmax-pmin-cmax+cmin-2*dist)
+                cpos = 0.5*(cmin+cmax)+(1-inside)*(1-2*pos)*(cmax-cmin+2*dist)
+                return ppos-cpos
+            if bbox:
+                x = parentchildalign(self.xpos_pt, self.xpos_pt+self.width_pt,
+                                     bbox.llx_pt, bbox.urx_pt,
+                                     self.key.hpos, unit.topt(self.key.hdist), self.key.hinside)
+                y = parentchildalign(self.ypos_pt, self.ypos_pt+self.height_pt,
+                                     bbox.lly_pt, bbox.ury_pt,
+                                     self.key.vpos, unit.topt(self.key.vdist), self.key.vinside)
+                self.insert(c, [trafo.translate_pt(x, y)])

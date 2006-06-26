@@ -463,32 +463,19 @@ class symbol(_styleneedingpointpos):
             privatedata.symbol(graph, x_pt+0.5*width_pt, y_pt+0.5*height_pt, privatedata.size_pt, privatedata.symbolattrs)
 
 
-class line(_styleneedingpointpos):
+class _line(_styleneedingpointpos):
 
-    needsdata = ["vpos", "vposmissing", "vposavailable", "vposvalid"]
+    # this style is not a complete style, but it provides the basic functionality to
+    # create a line, which is cut at the graph boundaries (or at otherwise invalid points)
 
-    changelinestyle = attr.changelist([style.linestyle.solid,
-                                       style.linestyle.dashed,
-                                       style.linestyle.dotted,
-                                       style.linestyle.dashdotted])
+    needsdata = ["vposmissing"]
 
-    defaultlineattrs = [changelinestyle]
-
-    def __init__(self, lineattrs=[]):
-        self.lineattrs = lineattrs
-
-    def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
-        if self.lineattrs is not None:
-            privatedata.lineattrs = attr.selectattrs(self.defaultlineattrs + self.lineattrs, selectindex, selecttotal)
-        else:
-            privatedata.lineattrs = None
-
-    def initdrawpoints(self, privatedata, sharedata, graph):
+    def initpointstopath(self, privatedata):
         privatedata.path = path.path()
         privatedata.linebasepoints = []
         privatedata.lastvpos = None
 
-    def addpointstopath(self, privatedata, sharedata):
+    def addpointstopath(self, privatedata):
         # add baselinepoints to privatedata.path
         if len(privatedata.linebasepoints) > 1:
             privatedata.path.append(path.moveto_pt(*privatedata.linebasepoints[0]))
@@ -498,17 +485,17 @@ class line(_styleneedingpointpos):
                 privatedata.path.append(path.lineto_pt(*privatedata.linebasepoints[1]))
         privatedata.linebasepoints = []
 
-    def drawpoint(self, privatedata, sharedata, graph, point):
+    def addpoint(self, privatedata, graphvpos_pt, vposavailable, vposvalid, vpos):
         # append linebasepoints
-        if sharedata.vposavailable:
+        if vposavailable:
             if len(privatedata.linebasepoints):
                 # the last point was inside the graph
-                if sharedata.vposvalid: # shortcut for the common case
-                    privatedata.linebasepoints.append(graph.vpos_pt(*sharedata.vpos))
+                if vposvalid: # shortcut for the common case
+                    privatedata.linebasepoints.append(graphvpos_pt(*vpos))
                 else:
                     # cut end
                     cut = 1
-                    for vstart, vend in zip(privatedata.lastvpos, sharedata.vpos):
+                    for vstart, vend in zip(privatedata.lastvpos, vpos):
                         newcut = None
                         if vend > 1:
                             # 1 = vstart + (vend - vstart) * cut
@@ -526,17 +513,17 @@ class line(_styleneedingpointpos):
                             cut = newcut
                     else:
                         cutvpos = []
-                        for vstart, vend in zip(privatedata.lastvpos, sharedata.vpos):
+                        for vstart, vend in zip(privatedata.lastvpos, vpos):
                             cutvpos.append(vstart + (vend - vstart) * cut)
-                        privatedata.linebasepoints.append(graph.vpos_pt(*cutvpos))
-                    self.addpointstopath(privatedata, sharedata)
+                        privatedata.linebasepoints.append(graphvpos_pt(*cutvpos))
+                    self.addpointstopath(privatedata)
             else:
                 # the last point was outside the graph
                 if privatedata.lastvpos is not None:
-                    if sharedata.vposvalid:
+                    if vposvalid:
                         # cut beginning
                         cut = 0
-                        for vstart, vend in zip(privatedata.lastvpos, sharedata.vpos):
+                        for vstart, vend in zip(privatedata.lastvpos, vpos):
                             newcut = None
                             if vstart > 1:
                                 # 1 = vstart + (vend - vstart) * cut
@@ -554,15 +541,15 @@ class line(_styleneedingpointpos):
                                 cut = newcut
                         else:
                             cutvpos = []
-                            for vstart, vend in zip(privatedata.lastvpos, sharedata.vpos):
+                            for vstart, vend in zip(privatedata.lastvpos, vpos):
                                 cutvpos.append(vstart + (vend - vstart) * cut)
-                            privatedata.linebasepoints.append(graph.vpos_pt(*cutvpos))
-                            privatedata.linebasepoints.append(graph.vpos_pt(*sharedata.vpos))
+                            privatedata.linebasepoints.append(graphvpos_pt(*cutvpos))
+                            privatedata.linebasepoints.append(graphvpos_pt(*vpos))
                     else:
                         # sometimes cut beginning and end
                         cutfrom = 0
                         cutto = 1
-                        for vstart, vend in zip(privatedata.lastvpos, sharedata.vpos):
+                        for vstart, vend in zip(privatedata.lastvpos, vpos):
                             newcutfrom = None
                             if vstart > 1:
                                 if vend > 1:
@@ -601,23 +588,59 @@ class line(_styleneedingpointpos):
                             if cutfrom < cutto:
                                 cutfromvpos = []
                                 cuttovpos = []
-                                for vstart, vend in zip(privatedata.lastvpos, sharedata.vpos):
+                                for vstart, vend in zip(privatedata.lastvpos, vpos):
                                     cutfromvpos.append(vstart + (vend - vstart) * cutfrom)
                                     cuttovpos.append(vstart + (vend - vstart) * cutto)
-                                privatedata.linebasepoints.append(graph.vpos_pt(*cutfromvpos))
-                                privatedata.linebasepoints.append(graph.vpos_pt(*cuttovpos))
-                                self.addpointstopath(privatedata, sharedata)
-            privatedata.lastvpos = sharedata.vpos[:]
+                                privatedata.linebasepoints.append(graphvpos_pt(*cutfromvpos))
+                                privatedata.linebasepoints.append(graphvpos_pt(*cuttovpos))
+                                self.addpointstopath(privatedata)
+            privatedata.lastvpos = vpos[:]
         else:
             if len(privatedata.linebasepoints) > 1:
-                self.addpointstopath(privatedata, sharedata)
+                self.addpointstopath(privatedata)
             privatedata.lastvpos = None
 
-    def donedrawpoints(self, privatedata, sharedata, graph):
+    def addinvalid(self, privatedata):
         if len(privatedata.linebasepoints) > 1:
-            self.addpointstopath(privatedata, sharedata)
-        if privatedata.lineattrs is not None and len(privatedata.path):
-            graph.stroke(privatedata.path, privatedata.lineattrs)
+            self.addpointstopath(privatedata)
+        privatedata.lastvpos = None
+
+    def donepointstopath(self, privatedata):
+        if len(privatedata.linebasepoints) > 1:
+            self.addpointstopath(privatedata)
+        return privatedata.path
+
+
+class line(_line):
+
+    needsdata = ["vpos", "vposmissing", "vposavailable", "vposvalid"]
+
+    changelinestyle = attr.changelist([style.linestyle.solid,
+                                       style.linestyle.dashed,
+                                       style.linestyle.dotted,
+                                       style.linestyle.dashdotted])
+
+    defaultlineattrs = [changelinestyle]
+
+    def __init__(self, lineattrs=[]):
+        self.lineattrs = lineattrs
+
+    def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
+        if self.lineattrs is not None:
+            privatedata.lineattrs = attr.selectattrs(self.defaultlineattrs + self.lineattrs, selectindex, selecttotal)
+        else:
+            privatedata.lineattrs = None
+
+    def initdrawpoints(self, privatedata, sharedata, graph):
+        self.initpointstopath(privatedata)
+
+    def drawpoint(self, privatedata, sharedata, graph, point):
+        self.addpoint(privatedata, graph.vpos_pt, sharedata.vposavailable, sharedata.vposvalid, sharedata.vpos)
+
+    def donedrawpoints(self, privatedata, sharedata, graph):
+        path = self.donepointstopath(privatedata)
+        if privatedata.lineattrs is not None and len(path):
+            graph.stroke(path, privatedata.lineattrs)
 
     def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
         if privatedata.lineattrs is not None:
@@ -1435,3 +1458,111 @@ class changebar(bar):
 
     def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
         raise RuntimeError("Style currently doesn't provide a graph key")
+
+
+class surface(_line):
+
+    needsdata = ["vpos", "vposmissing", "vposavailable", "vposvalid"]
+
+    def __init__(self, colorname="color", palette=color.palette.Rainbow,
+                       mincolor=None, maxcolor=None, index1=0, index2=1, epsilon=1e-10):
+        self.colorname = colorname
+        self.palette = palette
+        self.mincolor = mincolor
+        self.maxcolor = maxcolor
+        self.index1 = index1
+        self.index2 = index2
+        self.epsilon = epsilon
+
+    def columnnames(self, privatedata, sharedata, graph, columnnames):
+        privatedata.colorize = self.colorname in columnnames
+        return privatedata.colorize and [self.colorname] or [] + _line.columnnames(self, privatedata, sharedata, graph, columnnames)
+
+    def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
+        if selecttotal != 1:
+            raise RuntimeError("Surface can't change its appearance.")
+
+    def initdrawpoints(self, privatedata, sharedata, graph):
+        privatedata.values1 = {}
+        privatedata.values2 = {}
+        privatedata.data12 = {}
+        privatedata.data21 = {}
+        privatedata.colors = {}
+        privatedata.mincolor = privatedata.maxcolor = None
+
+    def drawpoint(self, privatedata, sharedata, graph, point):
+        if sharedata.vposavailable:
+            value1 = sharedata.vpos[self.index1]
+            value2 = sharedata.vpos[self.index2]
+            privatedata.values1.setdefault(value1, 1)
+            privatedata.values2.setdefault(value2, 1)
+            data = sharedata.vposavailable, sharedata.vposvalid, sharedata.vpos[:]
+            privatedata.data12.setdefault(value1, {})[value2] = data
+            privatedata.data21.setdefault(value2, {})[value1] = data
+        if privatedata.colorize:
+            try:
+                color = point[self.colorname] + 0
+            except:
+                pass
+            else:
+                privatedata.colors.setdefault(value1, {})[value2] = color
+                if privatedata.mincolor is None or color < privatedata.mincolor:
+                    privatedata.mincolor = color
+                if privatedata.mincolor is None or privatedata.maxcolor < color:
+                    privatedata.maxcolor = color
+
+    def donedrawpoints(self, privatedata, sharedata, graph):
+        values1 = privatedata.values1.keys()
+        values1.sort()
+        values2 = privatedata.values2.keys()
+        values2.sort()
+        if self.mincolor is not None:
+            mincolor = self.mincolor
+        if self.maxcolor is not None:
+            maxcolor = self.maxcolor
+        for value1 in values1:
+            data2 = privatedata.data12[value1]
+            self.initpointstopath(privatedata)
+            for value2 in values2:
+                try:
+                    data = data2[value2]
+                except KeyError:
+                    self.addinvalid(privatedata)
+                else:
+                    self.addpoint(privatedata, graph.vpos_pt, *data)
+            p = self.donepointstopath(privatedata)
+            if len(p):
+                graph.stroke(p)
+        for value2 in values2:
+            data1 = privatedata.data21[value2]
+            self.initpointstopath(privatedata)
+            for value1 in values1:
+                try:
+                    data = data1[value1]
+                except KeyError:
+                    self.addinvalid(privatedata)
+                else:
+                    self.addpoint(privatedata, graph.vpos_pt, *data)
+            p = self.donepointstopath(privatedata)
+            if len(p):
+                graph.stroke(p)
+        if privatedata.colorize:
+            for value1 in values1:
+                data2 = privatedata.data12[value1]
+                self.initpointstopath(privatedata)
+                for value2 in values2:
+                    try:
+                        x_pt, y_pt = graph.vpos_pt(*data2[value2][2])
+                    except KeyError:
+                        pass
+                    else:
+                        try:
+                            color = privatedata.colors[value1][value2]
+                        except KeyError:
+                            pass
+                        else:
+                            color = (color - privatedata.mincolor) / float(privatedata.maxcolor - privatedata.mincolor)
+                            graph.fill(path.circle_pt(x_pt, y_pt, 1), [self.palette.getcolor(color)])
+
+    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
+        raise NotImplementedError
