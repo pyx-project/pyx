@@ -19,7 +19,6 @@ TODO:
     - when all titles are None, a graph key currently raises an exception
     - translatecanvas should be the default in graph.style.symbol
     - automatic scaling of y-axis according to subset of data shown on x-axis
-    - add support for grids and/or add/document interface to access tick positions
   - graph.style and graph.data modules
     - fix docu of gridattrs functionality of axis painters
       (how can one, e.g. draw a grid at the ticks and not at the subticks)
@@ -72,10 +71,12 @@ TODO:
       styles: document what data name the styles accept (require). Try also to be more
       userfriendly and not to describe immediately the internals of the implementation:
       (see e.g. class.style.symbol)
+    - document interface to access tick positions
 
   Examples:
     - add an epsfile example (suggested by Stathis Sideris)
     - add a small example line on y="f($1)" in one of the plot examples
+    - add a grid example
 
   FAQ:
     - describe creation and modification (inplace and ``modify by new'') of
