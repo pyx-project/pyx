@@ -30,7 +30,7 @@ Schriftart in der Abbildung möglichst mit derjenigen im Haupttext
 übereinstimmen und natürlich sollte es möglich sein, von den \TeX s
 Möglichkeiten des mathematischen Formelsatzes auch in Beschriftungen wie
 gewohnt gebrauch zu machen. Die gerade genannten Programme erfüllen
-diese Anforderung mehr oder minder, entweder bereits durch Ihr Design
+diese Anforderung mehr oder minder, entweder bereits qua Design
 (z.B. im Falle von \textsc{PSTricks}) oder durch ein integriertes (wie
 bei \textsc{Metapost}) bzw. bei \textsc{Gnuplot} durch ein nachträglich aufgestülpbares 
 \TeX/\LaTeX-Interface. 
@@ -45,21 +45,24 @@ erstellen. Und wer kompliziertere programmatische Konstrukte zur
 Generierung der Abbildung verwenden will, stösst bei allen drei Lösung
 mehr oder minder schnell an seine Grenzen. 
 
-Neue Lösungen sind also gefragt und eine ebensolche, die Graphikbibliothek
-\PyX{}, soll der Gegenstand dieses Artikels sein.  Implementiert in der
-mächtigen, aber gleichzeitig leicht erlernbaren, Skriptsprache
-\textsc{Python}, stellt \PyX{} alle notwendigen Konstrukte zur
-programmatischen Erzeugung von qualitativ hochwertigen Abbildungen zur
-Verfügung. Aufbauend auf ein einer Abstraktion des \textsc{PostScript}
-Zeichenmodells und einer integrierten \TeX/\LaTeX-Schnittstelle werden
-ausgefeilte Techniken zur Realisierung typischer Graphikaufgaben von der
-schematischen Darstellung bis zum Funktionsgraphen angeboten. Darüber
-hinausgehend bietet die \TeX-Schnittstelle sogar Möglichkeiten im
-Textsatz die über das bisher mit \TeX{} mögliche hinausgehen.
+Neue Lösungen sind also gefragt und eine ebensolche, die
+Graphikbibliothek \PyX{}, soll der Gegenstand dieses Artikels sein.
+Implementiert in der mächtigen, aber gleichzeitig leicht erlernbaren,
+Skriptsprache \textsc{Python}, stellt \PyX{} alle notwendigen
+Konstrukte zur programmatischen Erzeugung von qualitativ hochwertigen
+Abbildungen zur Verfügung. Aufbauend auf ein einer Abstraktion des
+\textsc{PostScript}-Zeichenmodells und einer integrierten
+\TeX/\LaTeX-Schnittstelle werden ausgefeilte Techniken zur
+Realisierung typischer Graphikaufgaben von der schematischen
+Darstellung bis zum Funktionsgraphen angeboten. Darüber hinausgehend
+bietet die \TeX-Schnittstelle sogar Möglichkeiten im Textsatz die über
+das bisher mit \TeX{} mögliche hinausgehen.
 
-XXX Grundkenntnisse in Python sind notwendig, allerdings sollte
-die im folgenden beschriebenen Programmbeispiele auch ohne solche
-verständlich sein.
+Während für das Arbeiten mit \PyX{} Grundkenntnisse in Python
+empfehlenswert sind, zeigt die Erfahrung, dass es, eine gewisse
+Programmiererfahrung vorausgesetzt, am Anfang ganz gut auch ohne
+solche geht. Insbesondere sollten die in diesem Artikel vorgestellten
+Programmbeispiele auch für Python-Neulinge verständlich sein.
 
 \section{Installation}
 
@@ -75,9 +78,17 @@ Text-Ausgabe eine funktionsfähige \TeX-Installation vorausgesetzt, die
 bei den Lesern der technischen Komödie sicher sowieso vorhanden sein
 dürfte.
 
+XXX bis hierher ist eigentlich alles ganz gut, aber jetzt
+wird's zu theoretisch. Ich würde vorschlagen, an die Sache
+viel anwendungsbezogener ranzugehen, sprich mit einem
+Graphen anzufangen. Ob die Erklärung des PostScript-Pfadmodells
+dann überhaupt noch notwendig ist, denke ich nicht. 
+
 \section{Grundlagen für Vektorgraphiken: Pfade}
 
-Wie bereits erwähnt, abstrahiert \PyX{} das PostScript Pfadsystem.
+
+
+Wie bereits erwähnt, abstrahiert \PyX{} das PostScript-Pfadsystem.
 Dabei lassen sich Pfade aus einzelnen Pfadelementen zusammensetzen,
 wobei gerade Linienstücke, Bezierkurven und Kreissegmente zur
 Verfügung stehen. Zusätzlich lässt sich der aktuelle Punkt beim
