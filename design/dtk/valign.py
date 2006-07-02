@@ -1,9 +1,5 @@
 from pyx import *
 
-from pyx import __version__
-if __version__ != "0.8+":
-    raise RuntimeError("need the current developer version to use text.vshift and text.size at the same time (in earlier versions the shift is wrong, since the size change was not taken into account for the shift)")
-
 text.set(mode="latex")
 text.preamble(r"\usepackage{exscale}")
 
