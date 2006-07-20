@@ -1464,14 +1464,21 @@ class surface(_line):
 
     needsdata = ["vpos", "vposmissing", "vposavailable", "vposvalid"]
 
+    defaultgridattrs = []
+
     def __init__(self, colorname="color", gradient=color.gradient.Rainbow,
-                       mincolor=None, maxcolor=None, index1=0, index2=1, epsilon=1e-10):
+                       mincolor=None, maxcolor=None,
+                       index1=0, index2=1, strokelines1=1, strokelines2=1, gridattrs=[],
+                       epsilon=1e-10):
         self.colorname = colorname
         self.gradient = gradient
         self.mincolor = mincolor
         self.maxcolor = maxcolor
         self.index1 = index1
         self.index2 = index2
+        self.strokelines1 = strokelines1
+        self.strokelines2 = strokelines2
+        self.gridattrs = gridattrs
         self.epsilon = epsilon
 
     def columnnames(self, privatedata, sharedata, graph, columnnames):
@@ -1479,8 +1486,11 @@ class surface(_line):
         return privatedata.colorize and [self.colorname] or [] + _line.columnnames(self, privatedata, sharedata, graph, columnnames)
 
     def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
-        if selecttotal != 1:
-            raise RuntimeError("Surface can't change its appearance.")
+        if self.gridattrs is not None:
+            privatedata.gridattrs = attr.selectattrs(self.defaultgridattrs + self.gridattrs, selectindex, selecttotal)
+        else:
+            privatedata.gridattrs = None
+
 
     def initdrawpoints(self, privatedata, sharedata, graph):
         privatedata.values1 = {}
@@ -1494,22 +1504,34 @@ class surface(_line):
         if sharedata.vposavailable:
             value1 = sharedata.vpos[self.index1]
             value2 = sharedata.vpos[self.index2]
-            privatedata.values1.setdefault(value1, 1)
-            privatedata.values2.setdefault(value2, 1)
+            if not privatedata.values1.has_key(value1):
+                for hasvalue in privatedata.values1.keys():
+                    if hasvalue - self.epsilon <= value1 <= hasvalue + self.epsilon:
+                        value1 = hasvalue
+                        break
+                else:
+                    privatedata.values1[value1] = 1
+            if not privatedata.values2.has_key(value2):
+                for hasvalue in privatedata.values2.keys():
+                    if hasvalue - self.epsilon <= value2 <= hasvalue + self.epsilon:
+                        value2 = hasvalue
+                        break
+                else:
+                    privatedata.values2[value2] = 1
             data = sharedata.vposavailable, sharedata.vposvalid, sharedata.vpos[:]
             privatedata.data12.setdefault(value1, {})[value2] = data
             privatedata.data21.setdefault(value2, {})[value1] = data
-        if privatedata.colorize:
-            try:
-                color = point[self.colorname] + 0
-            except:
-                pass
-            else:
-                privatedata.colors.setdefault(value1, {})[value2] = color
-                if privatedata.mincolor is None or color < privatedata.mincolor:
-                    privatedata.mincolor = color
-                if privatedata.mincolor is None or privatedata.maxcolor < color:
-                    privatedata.maxcolor = color
+            if privatedata.colorize:
+                try:
+                    color = point[self.colorname] + 0
+                except:
+                    pass
+                else:
+                    privatedata.colors.setdefault(value1, {})[value2] = color
+                    if privatedata.mincolor is None or color < privatedata.mincolor:
+                        privatedata.mincolor = color
+                    if privatedata.mincolor is None or privatedata.maxcolor < color:
+                        privatedata.maxcolor = color
 
     def donedrawpoints(self, privatedata, sharedata, graph):
         values1 = privatedata.values1.keys()
@@ -1520,32 +1542,34 @@ class surface(_line):
             mincolor = self.mincolor
         if self.maxcolor is not None:
             maxcolor = self.maxcolor
-        for value1 in values1:
-            data2 = privatedata.data12[value1]
-            self.initpointstopath(privatedata)
-            for value2 in values2:
-                try:
-                    data = data2[value2]
-                except KeyError:
-                    self.addinvalid(privatedata)
-                else:
-                    self.addpoint(privatedata, graph.vpos_pt, *data)
-            p = self.donepointstopath(privatedata)
-            if len(p):
-                graph.stroke(p)
-        for value2 in values2:
-            data1 = privatedata.data21[value2]
-            self.initpointstopath(privatedata)
+        if self.strokelines2:
             for value1 in values1:
-                try:
-                    data = data1[value1]
-                except KeyError:
-                    self.addinvalid(privatedata)
-                else:
-                    self.addpoint(privatedata, graph.vpos_pt, *data)
-            p = self.donepointstopath(privatedata)
-            if len(p):
-                graph.stroke(p)
+                data2 = privatedata.data12[value1]
+                self.initpointstopath(privatedata)
+                for value2 in values2:
+                    try:
+                        data = data2[value2]
+                    except KeyError:
+                        self.addinvalid(privatedata)
+                    else:
+                        self.addpoint(privatedata, graph.vpos_pt, *data)
+                p = self.donepointstopath(privatedata)
+                if len(p):
+                    graph.stroke(p, privatedata.gridattrs)
+        if self.strokelines1:
+            for value2 in values2:
+                data1 = privatedata.data21[value2]
+                self.initpointstopath(privatedata)
+                for value1 in values1:
+                    try:
+                        data = data1[value1]
+                    except KeyError:
+                        self.addinvalid(privatedata)
+                    else:
+                        self.addpoint(privatedata, graph.vpos_pt, *data)
+                p = self.donepointstopath(privatedata)
+                if len(p):
+                    graph.stroke(p, privatedata.gridattrs)
         if privatedata.colorize:
             for value1 in values1:
                 data2 = privatedata.data12[value1]
