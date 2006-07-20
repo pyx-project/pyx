@@ -4,7 +4,7 @@ unit.set(uscale=2, xscale=2)
 col = color.cmyk.PineGreen
 
 text.set(mode="latex")
-text.preamble("\usepackage{color}")
+text.preamble(r"\usepackage{color}")
 text.preamble(r"\definecolor{COL}{cmyk}{%(c)g,%(m)g,%(y)g,%(k)g}" % col.color)
 
 c = canvas.canvas()
