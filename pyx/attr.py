@@ -255,3 +255,16 @@ class changelist(changeattr):
         else:
             return None
 
+
+class multichangeattr(changeattr):
+
+    """a changeable attr, which selects a changeable attr from
+    a given dict (or list) of changeable attrs depending on the
+    value of total in the select call"""
+
+    def __init__(self, changeattrs):
+        self.changeattrs = changeattrs
+
+    def select(self, index, total):
+        return self.changeattrs[total].select(index, total)
+
