@@ -86,6 +86,9 @@ TODO:
   - color module:
     - renamed: palette->gradient, functionpalette->functiongradient, linearpalette->lineargradient
     - new class palette representing a discrete ordered list of colors
+  - graph modules:
+    - axis module:
+      - painter: don't insert axis title twice (thanks to Tim Gray for reporting this problem)
 
 0.9 (2006/05/24):
   - most important changes (to be included in the release notes):

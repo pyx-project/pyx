@@ -105,7 +105,6 @@ class _title(_text):
             canvas.extent_pt += unit.topt(self.titledist)
             title.linealign_pt(canvas.extent_pt, -dx, -dy)
             canvas.extent_pt += title.extent_pt(dx, dy)
-            canvas.insert(title)
 
 
 class geometricseries(attr.changeattr):
