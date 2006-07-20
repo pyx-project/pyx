@@ -7,10 +7,12 @@
 
 PYTHON ?= python
 
+.PHONY: mkhowto
+
 default: dvi
 
 clean:
-	-rm -fr manual.dvi *.eps *.pdf *.aux *.out *.toc *.log manual
+	-rm -fr manual.dvi *.eps *.pdf *.aux *.out *.toc *.log manual mkhowto
 
 all:
 	make clean
@@ -24,15 +26,18 @@ dvi: manual.dvi
 pdf: manual.pdf
 html: manual/manual.html
 
-manual.pdf: $(src) pdf_figs
+mkhowto:
+	ln -sfn `$(PYTHON) -c "import site ; print site.here"`/doc/tools/$@ $@
+
+manual.pdf: mkhowto $(src) pdf_figs
 	#for index-with-own-hyperrefs debugging, anybody interested?
 	#./mkhowto --a4 --pdf --keep manual.tex
 	./mkhowto --a4 --pdf manual.tex
 
-manual.dvi: $(src) eps_figs
+manual.dvi: mkhowto $(src) eps_figs
 	./mkhowto --a4 --dvi manual.tex
 
-manual/manual.html: $(src) eps_figs
+manual/manual.html: mkhowto $(src) eps_figs
 	./mkhowto --image-type png --favicon "/pyx.ico" \
 	          --up-link "/" --up-title "PyX homepage" \
 	          --html manual.tex
