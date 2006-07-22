@@ -95,6 +95,8 @@ TODO:
   - attr module:
     - add multichangeattr to perform a select on different changeable attributes
       depending on the selects total number
+  - canvas module:
+    - don't change order of attrs passed to canvas constructor in place
 
 
 0.9 (2006/05/24):
