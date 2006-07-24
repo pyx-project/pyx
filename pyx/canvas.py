@@ -148,7 +148,8 @@ class _canvas(canvasitem):
         # from the right. 
         # Note that while for the stroke and fill styles the order doesn't matter at all, 
         # this is not true for the clip operation.
-        attrs = attrs[::-1]
+        attrs = attrs[:]
+        attrs.reverse()
         for aattr in attrs:
             if isinstance(aattr, trafo.trafo_pt):
                 self.trafo = self.trafo * aattr
