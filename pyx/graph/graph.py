@@ -130,7 +130,7 @@ class graph(canvas.canvas):
         self.plotitems = []
         self._calls = {}
         self.didranges = 0
-        self.diddata = 0
+        self.didstyles = 0
 
     def did(self, method, *args, **kwargs):
         if not self._calls.has_key(method):
@@ -164,8 +164,8 @@ class graph(canvas.canvas):
     def plot(self, data, styles=None, rangewarning=1):
         if self.didranges and rangewarning:
             warnings.warn("axes ranges have already been analysed; no further adjustments will be performed")
-        if self.diddata:
-            raise RuntimeError("can't plot further data after dodata() has been executed")
+        if self.didstyles:
+            raise RuntimeError("can't plot further data after dostyles() has been executed")
         singledata = 0
         try:
             for d in data:
@@ -219,8 +219,8 @@ class graph(canvas.canvas):
     def doaxes(self):
         raise NotImplementedError
 
-    def dodata(self):
-        if self.did(self.dodata):
+    def dostyles(self):
+        if self.did(self.dostyles):
             return
         self.dolayout()
         self.dobackground()
@@ -243,10 +243,17 @@ class graph(canvas.canvas):
             plotitem.selectstyles(self, styleindex[stylesid(plotitem.styles)],
                                         styletotal[stylesid(plotitem.styles)])
 
-        for plotitem in self.plotitems:
-            plotitem.draw(self)
+        self.didstyles = 1
 
-        self.diddata = 1
+    def doplot(self, plotitem):
+        if self.did(self.doplot, plotitem):
+            return
+        self.dostyles()
+        plotitem.draw(self)
+
+    def dodata(self):
+        for plotitem in self.plotitems:
+            self.doplot(plotitem)
 
     def dokey(self):
         raise NotImplementedError
@@ -478,7 +485,7 @@ class graphxy(graph):
         if self.did(self.dokey):
             return
         self.dobackground()
-        self.dodata()
+        self.dostyles()
         if self.key is not None:
             c = self.key.paint(self.plotitems)
             bbox = c.bbox()
@@ -741,7 +748,7 @@ class graphxyz(graphxy):
         if self.did(self.dokey):
             return
         self.dobackground()
-        self.dodata()
+        self.dostyles()
         if self.key is not None:
             c = self.key.paint(self.plotitems)
             bbox = c.bbox()
