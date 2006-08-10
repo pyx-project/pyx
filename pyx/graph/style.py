@@ -730,8 +730,14 @@ class text(_styleneedingpointpos):
 
     defaulttextattrs = [textmodule.halign.center, textmodule.vshift.mathaxis]
 
-    def __init__(self, textname="text", textdx=0*unit.v_cm, textdy=0.3*unit.v_cm, textattrs=[]):
+    def __init__(self, textname="text", dxname=None, dyname=None,
+                       dxunit=0.3*unit.v_cm, dyunit=0.3*unit.v_cm,
+                       textdx=0*unit.v_cm, textdy=0.3*unit.v_cm, textattrs=[]):
         self.textname = textname
+        self.dxname = dxname
+        self.dyname = dyname
+        self.dxunit = dxunit
+        self.dyunit = dyunit
         self.textdx = textdx
         self.textdy = textdy
         self.textattrs = textattrs
@@ -739,7 +745,16 @@ class text(_styleneedingpointpos):
     def columnnames(self, privatedata, sharedata, graph, columnnames):
         if self.textname not in columnnames:
             raise ValueError("column '%s' missing" % self.textname)
-        return [self.textname] + _styleneedingpointpos.columnnames(self, privatedata, sharedata, graph, columnnames)
+        names = [self.textname]
+        if self.dxname is not None:
+            if self.dxname not in columnnames:
+                raise ValueError("column '%s' missing" % self.dxname)
+            names.append(self.dxname)
+        if self.dyname is not None:
+            if self.dyname not in columnnames:
+                raise ValueError("column '%s' missing" % self.dyname)
+            names.append(self.dyname)
+        return names + _styleneedingpointpos.columnnames(self, privatedata, sharedata, graph, columnnames)
 
     def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
         if self.textattrs is not None:
@@ -748,8 +763,14 @@ class text(_styleneedingpointpos):
             privatedata.textattrs = None
 
     def initdrawpoints(self, privatedata, sharedata, grap):
-        privatedata.textdx_pt = unit.topt(self.textdx)
-        privatedata.textdy_pt = unit.topt(self.textdy)
+        if self.dxname is None:
+            privatedata.textdx_pt = unit.topt(self.textdx)
+        else:
+            privatedata.dxunit_pt = unit.topt(self.dxunit)
+        if self.dyname is None:
+            privatedata.textdy_pt = unit.topt(self.textdy)
+        else:
+            privatedata.dyunit_pt = unit.topt(self.dyunit)
 
     def drawpoint(self, privatedata, sharedata, graph, point):
         if privatedata.textattrs is not None and sharedata.vposvalid:
@@ -759,7 +780,15 @@ class text(_styleneedingpointpos):
             except:
                 pass
             else:
-                graph.text_pt(x_pt + privatedata.textdx_pt, y_pt + privatedata.textdy_pt, text, privatedata.textattrs)
+                if self.dxname is None:
+                    dx_pt = privatedata.textdx_pt
+                else:
+                    dx_pt = float(point[self.dxname]) * privatedata.dxunit_pt
+                if self.dyname is None:
+                    dy_pt = privatedata.textdy_pt
+                else:
+                    dy_pt = float(point[self.dyname]) * privatedata.dyunit_pt
+                graph.text_pt(x_pt + dx_pt, y_pt + dy_pt, text, privatedata.textattrs)
 
     def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
         raise RuntimeError("Style currently doesn't provide a graph key")

@@ -92,6 +92,8 @@ TODO:
   - graph modules:
     - axis module:
       - painter: don't insert axis title twice (thanks to Tim Gray for reporting this problem)
+    - graph styles:
+      - optional textdx/textdy columns to the text style added (TODO: documentation)
   - attr module:
     - add multichangeattr to perform a select on different changeable attributes
       depending on the selects total number
