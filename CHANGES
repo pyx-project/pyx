@@ -96,7 +96,8 @@ TODO:
     - axis module:
       - painter: don't insert axis title twice (thanks to Tim Gray for reporting this problem)
     - graph styles:
-      - optional textdx/textdy columns to the text style added (TODO: documentation)
+      - optional textdx/textdy columns to the text style added
+      - arrowpos parameter to the arrow style added
     - graph module:
       - doplot method (to be called with a plotitem) to alter the plotitem order etc. (TODO: documentation)
   - attr module:

@@ -749,19 +749,25 @@ definition is:
   omitted and the errorbars are cut to the valid graph range.
 \end{classdesc} % }}}
 
-\begin{classdesc}{text}{textname="text", % {{{
+\begin{classdesc}{text}{textname="text", dxname=None, dyname=None, % {{{
+                        dxunit=0.3*unit.v\_cm, dyunit=0.3*unit.v\_cm,
                         textdx=0*unit.v\_cm, textdy=0.3*unit.v\_cm,
                         textattrs=[]}
   This class is a style to stroke text in a graph. The
   text to be written has to be provided in the data column named
   \code{textname}. \var{textdx} and \var{textdy} are the position of the
-  text with respect to the position in the graph. \var{textattrs} are text
-  attributes for the output of the text.
+  text with respect to the position in the graph. Alternatively you can
+  specify a \code{dxname} and a \code{dyname} and provide appropriate
+  data in those columns to be taken in units of \var{dxunit} and
+  \var{dyunit} to specify the position of the text for each point
+  separately. \var{textattrs} are text attributes for the output of
+  the text. Those attributes are merged with the default attributes
+  \code{textmodule.halign.center} and \code{textmodule.vshift.mathaxis}.
 \end{classdesc} % }}}
 
 \begin{classdesc}{arrow}{linelength=0.25*unit.v\_cm, % {{{
                          arrowsize=0.15*unit.v\_cm,
-                         lineattrs=[], arrowattrs=[],
+                         lineattrs=[], arrowattrs=[], arrowpos=0.5,
                          epsilon=1e-10}
   This class is a style to plot short lines with arrows into a
   two-dimensional graph to a given graph position. The arrow
@@ -773,6 +779,10 @@ definition is:
   to with respect to a horizontal line. The \code{angle} is taken in
   degrees and used in mathematically positive sense. \var{lineattrs}
   and \var{arrowattrs} are styles for the arrow line and arrow head,
+  respectively. \var{arrowpos} defines the position of the arrow line
+  with respect to the position at the graph. The default \code{0.5}
+  means centered at the graph position, whereas \code{0} and \code{1}
+  creates the arrows to start or end at the graph position,
   respectively. \var{epsilon} is used as a cutoff for short arrows in
   order to prevent numerical instabilities.
 \end{classdesc} % }}}
