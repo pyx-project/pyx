@@ -1600,24 +1600,53 @@ class surface(_line):
                 if len(p):
                     graph.stroke(p, privatedata.gridattrs)
         if privatedata.colorize:
-            for value1 in values1:
-                data2 = privatedata.data12[value1]
-                self.initpointstopath(privatedata)
-                for value2 in values2:
+            from pyx import mesh
+            nodes = []
+            elements = []
+            for value1a, value1b in zip(values1[:-1], values1[1:]):
+                for value2a, value2b in zip(values2[:-1], values2[1:]):
                     try:
-                        vposavailable, vposvalid, vpos = data2[value2]
+                        available1, valid1, v1 = privatedata.data12[value1a][value2a]
+                        available2, valid2, v2 = privatedata.data12[value1a][value2b]
+                        available3, valid3, v3 = privatedata.data12[value1b][value2a]
+                        available4, valid4, v4 = privatedata.data12[value1b][value2b]
                     except KeyError:
-                        pass
-                    else:
-                        if vposvalid:
-                            x_pt, y_pt = graph.vpos_pt(*vpos)
-                            try:
-                                color = privatedata.colors[value1][value2]
-                            except KeyError:
-                                pass
-                            else:
-                                color = (color - privatedata.mincolor) / float(privatedata.maxcolor - privatedata.mincolor)
-                                graph.fill(path.circle_pt(x_pt, y_pt, 1), [self.gradient.getcolor(color)])
+                        continue
+                    if not available1 or not available2 or not available3 or not available4:
+                        continue
+                    if not valid1 or not valid2 or not valid3 or not valid4:
+                        continue
+                    v5 = [0.25*sum(values) for values in zip(v1, v2, v3, v4)]
+                    x1_pt, y1_pt = graph.vpos_pt(*v1)
+                    x2_pt, y2_pt = graph.vpos_pt(*v2)
+                    x3_pt, y3_pt = graph.vpos_pt(*v3)
+                    x4_pt, y4_pt = graph.vpos_pt(*v4)
+                    x5_pt, y5_pt = graph.vpos_pt(*v5)
+                    c1 = privatedata.colors[value1a][value2a]
+                    c2 = privatedata.colors[value1a][value2b]
+                    c3 = privatedata.colors[value1b][value2a]
+                    c4 = privatedata.colors[value1b][value2b]
+                    c5 = 0.25*(c1+c2+c3+c4)
+                    def color(c):
+                        return self.gradient.getcolor((c - privatedata.mincolor) / float(privatedata.maxcolor - privatedata.mincolor)).rgb()
+                    color1 = color(c1)
+                    color2 = color(c2)
+                    color3 = color(c3)
+                    color4 = color(c4)
+                    color5 = color(c5)
+                    n1 = mesh.node_pt((x1_pt, y1_pt), color1)
+                    n2 = mesh.node_pt((x2_pt, y2_pt), color2)
+                    n3 = mesh.node_pt((x3_pt, y3_pt), color3)
+                    n4 = mesh.node_pt((x4_pt, y4_pt), color4)
+                    n5 = mesh.node_pt((x5_pt, y5_pt), color5)
+                    e1 = mesh.element((n1, n2, n5))
+                    e2 = mesh.element((n1, n3, n5))
+                    e3 = mesh.element((n2, n4, n5))
+                    e4 = mesh.element((n3, n4, n5))
+                    nodes.extend([n1, n2, n3, n4, n5])
+                    elements.extend([e1, e2, e3, e4])
+            m = mesh.canvasmesh(elements, nodes)
+            graph.insert(m)
 
     def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
         raise NotImplementedError

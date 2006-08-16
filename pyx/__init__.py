@@ -2,7 +2,7 @@
 #
 #
 # Copyright (C) 2002-2005 Jörg Lehmann <joergl@users.sourceforge.net>
-# Copyright (C) 2002-2005 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2002-2006 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
@@ -32,7 +32,7 @@ import version
 __version__ = version.version
 
 __all__ = ["attr", "box", "bitmap", "canvas", "color", "connector", "deco", "deformer", "document",
-           "epsfile", "graph", "path", "pattern", "style", "trafo", "text", "unit"]
+           "epsfile", "graph", "mesh", "path", "pattern", "style", "trafo", "text", "unit"]
 
 
 # automatically import main modules into pyx namespace

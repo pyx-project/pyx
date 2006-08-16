@@ -21,7 +21,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import colorsys, math
+import colorsys, math, struct
 import attr, style, pdfwriter
 
 # device-dependend (nonlinear) functions for color conversion
@@ -91,6 +91,12 @@ class grey(color):
     def rgb(self):
         return rgb(self.color["gray"], self.color["gray"], self.color["gray"])
 
+    def colorspacestring(self):
+        return "/DeviceGray"
+
+    def tostring8bit(self):
+        return chr(round(self.color["gray"]*255))
+
 grey.black = grey(0.0)
 grey.white = grey(1.0)
 gray = grey
@@ -154,6 +160,12 @@ class rgb(color):
 
     def rgb(self):
         return self
+
+    def colorspacestring(self):
+        return "/DeviceRGB"
+
+    def tostring8bit(self):
+        return struct.pack("BBB", round(self.color["r"]*255), round(self.color["g"]*255), round(self.color["b"]*255))
 
 rgb.red   = rgb(1 ,0, 0)
 rgb.green = rgb(0 ,1, 0)
@@ -243,6 +255,12 @@ class cmyk(color):
         y = min(1, self.color["y"] + self.color["k"])
         # conversion from cmy to rgb:
         return rgb(1 - c, 1 - m, 1 - y)
+
+    def colorspacestring(self):
+        return "/DeviceCMYK"
+
+    def tostring8bit(self):
+        return struct.pack("BBBB", round(self.color["c"]*255), round(self.color["m"]*255), round(self.color["y"]*255), round(self.color["k"]*255))
 
 cmyk.GreenYellow    = cmyk(0.15, 0, 0.69, 0)
 cmyk.Yellow         = cmyk(0, 0, 1, 0)
