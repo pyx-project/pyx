@@ -38,6 +38,9 @@ TODO:
     - stroking of patterns does not work in PDF
   - style and color module:
     - support modification of existing styles via __call__
+  - bitmap module:
+    - ReusableStreamDecode?
+    - proper ASCII85Decode/HexDecode switch
   - bbox module:
     - rewrite height, etc. using properties
   - dvifile module:
