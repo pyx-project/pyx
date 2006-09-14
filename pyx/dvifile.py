@@ -326,7 +326,7 @@ class fontmapping:
                     tokens.append(match.groups()[2])
                 s = s[match.end():]
             else:
-                raise RuntimeError("wrong syntax")
+                raise RuntimeError("Cannot tokenize string '%s'" % s)
 
         for token in tokens:
             if token.startswith("<"):
@@ -342,7 +342,7 @@ class fontmapping:
                 elif token.endswith(".ttf"):
                     raise UnsupportedFontFormat("TrueType font")
                 else:
-                    raise RuntimeError("wrong syntax")
+                    raise RuntimeError("Unknown token '%s'" % token)
             elif token.startswith('"'):
                 pscode = token[1:-1].split()
                 # parse standard postscript code fragments
@@ -384,7 +384,7 @@ def readfontmap(filenames):
             mappath = pykpathsea.find_file(filename, pykpathsea.kpse_dvips_config_format)
         if not mappath:
             raise RuntimeError("cannot find font mapping file '%s'" % filename)
-        mapfile = open(mappath, "r")
+        mapfile = open(mappath, "rU")
         lineno = 0
         for line in mapfile.readlines():
             lineno += 1
@@ -393,7 +393,7 @@ def readfontmap(filenames):
                 try:
                     fm = fontmapping(line)
                 except (RuntimeError, UnsupportedPSFragment), e:
-                    warnings.warn("Ignoring line %i in mapping file '%s': %s" % (lineno, filename, e))
+                    warnings.warn("Ignoring line %i in mapping file '%s': %s" % (lineno, mappath, e))
                 except UnsupportedFontFormat, e:
                     pass
                 else:
