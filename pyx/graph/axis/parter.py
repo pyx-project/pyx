@@ -199,10 +199,6 @@ class logarithmic(linear):
     """partitioner to create a single logarithmic parition"""
 
     # define some useful constants
-    pre1exp5   = preexp([tick.rational((1, 1))], 100000)
-    pre1exp4   = preexp([tick.rational((1, 1))], 10000)
-    pre1exp3   = preexp([tick.rational((1, 1))], 1000)
-    pre1exp2   = preexp([tick.rational((1, 1))], 100)
     pre1exp    = preexp([tick.rational((1, 1))], 10)
     pre125exp  = preexp([tick.rational((1, 1)), tick.rational((2, 1)), tick.rational((5, 1))], 10)
     pre1to9exp = preexp([tick.rational((x, 1)) for x in range(1, 10)], 10)
@@ -279,48 +275,35 @@ class autologarithmic(logarithmic):
 
                        ([logarithmic.pre1exp,      # ticks
                          logarithmic.pre1to9exp],  # subticks
-                        None),                     # labels like ticks
-
-                       ([logarithmic.pre1exp2,     # ticks
-                         logarithmic.pre1exp],     # subticks
-                        None),                     # labels like ticks
-
-                       ([logarithmic.pre1exp3,     # ticks
-                         logarithmic.pre1exp],     # subticks
-                        None),                     # labels like ticks
-
-                       ([logarithmic.pre1exp4,     # ticks
-                         logarithmic.pre1exp],     # subticks
-                        None),                     # labels like ticks
-
-                       ([logarithmic.pre1exp5,     # ticks
-                         logarithmic.pre1exp],     # subticks
                         None)]                     # labels like ticks
 
-    def __init__(self, variants=defaultvariants, extendtick=0, extendlabel=None, epsilon=1e-10):
+    def __init__(self, variants=defaultvariants, extendtick=0, extendlabel=None, autoexponent=10, epsilon=1e-10):
         self.variants = variants
-        if len(variants) > 2:
-            self.variantsindex = divmod(len(variants), 2)[0]
-        else:
-            self.variantsindex = 0
         self.extendtick = extendtick
         self.extendlabel = extendlabel
+        self.autoexponent = autoexponent
         self.epsilon = epsilon
 
     def partfunctions(self, min, max, extendmin, extendmax):
         return [lambda d=_partdata(min=min, max=max, extendmin=extendmin, extendmax=extendmax,
-                                   sign=1, variantsindex=self.variantsindex-1):
-                       self.partfunction(d),
+                                   variantsindex=len(self.variants)):
+                       self.variantspartfunction(d),
                 lambda d=_partdata(min=min, max=max, extendmin=extendmin, extendmax=extendmax,
-                                   sign=-1, variantsindex=self.variantsindex):
-                       self.partfunction(d)]
+                                   exponent=self.autoexponent):
+                       self.autopartfunction(d)]
 
-    def partfunction(self, data):
-        data.variantsindex += data.sign
-        if 0 <= data.variantsindex < len(self.variants):
+    def variantspartfunction(self, data):
+        data.variantsindex -= 1
+        if 0 <= data.variantsindex:
             logarithmicparter= logarithmic(tickpreexps=self.variants[data.variantsindex][0], labelpreexps=self.variants[data.variantsindex][1],
                                            extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon)
             return logarithmicparter.partfunctions(min=data.min, max=data.max, extendmin=data.extendmin, extendmax=data.extendmax)[0]()
         return None
+
+    def autopartfunction(self, data):
+        data.exponent *= self.autoexponent
+        logarithmicparter= logarithmic(tickpreexps=[preexp([tick.rational((1, 1))], data.exponent), logarithmic.pre1exp],
+                                       extendtick=self.extendtick, extendlabel=self.extendlabel, epsilon=self.epsilon)
+        return logarithmicparter.partfunctions(min=data.min, max=data.max, extendmin=data.extendmin, extendmax=data.extendmax)[0]()
 
 autolog = autologarithmic

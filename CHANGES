@@ -95,6 +95,8 @@ TODO:
   - graph modules:
     - axis module:
       - painter: don't insert axis title twice (thanks to Tim Gray for reporting this problem)
+      - parter: extend the logarithmic parter to calculate automatic partitions for huge ranges
+        (TODO: documentation of the new autoexponent parameter) (suggested by Dominic Ford)
     - graph styles:
       - optional textdx/textdy columns to the text style added
       - arrowpos parameter to the arrow style added
