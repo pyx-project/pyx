@@ -9,6 +9,14 @@
     <h1>PyX - News</h1>
 
     <dl>
+      <dt>2006-09-11: First public version of PyXPlot released</dt>
+      <dd>
+        Dominic Ford released the first public version of <a
+        href="http://www.pyxplot.org.uk/">PyXPlot</a>, which provides a
+        Gnuplot-style interface to PyX. PyXPlot already supports a large subset
+        of Gnuplot's original functionality, always combined with the
+        high-quality output of PyX.
+      </dd>
       <dt>2006-05-24: PyX 0.9 released</dt>
       <dd>
         This release features a new set of deformers for path manipulations
