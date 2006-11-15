@@ -82,7 +82,7 @@ class grey(color):
         return cmyk(0, 0, 0, 1 - self.color["gray"])
 
     def grey(self):
-        return self
+        return grey(**self.color)
     gray = grey
 
     def hsb(self):
@@ -159,7 +159,7 @@ class rgb(color):
             return hsb(0, 0, x)
 
     def rgb(self):
-        return self
+        return rgb(**self.color)
 
     def colorspacestring(self):
         return "/DeviceRGB"
@@ -198,7 +198,7 @@ class hsb(color):
     gray = grey
 
     def hsb(self):
-        return self
+        return hsb(**self.color)
 
     def rgb(self):
         h, s, b = self.color["h"], self.color["s"], self.color["b"]
@@ -238,7 +238,7 @@ class cmyk(color):
             file.write("%(c)f %(m)f %(y)f %(k)f k\n" % self.color)
 
     def cmyk(self):
-        return self
+        return cmyk(**self.color)
 
     def grey(self):
         return grey(1 - min([1, 0.3*self.color["c"] + 0.59*self.color["m"] +
