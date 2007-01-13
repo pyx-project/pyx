@@ -2,7 +2,7 @@
 #
 #
 # Copyright (C) 2002-2004 Jörg Lehmann <joergl@users.sourceforge.net>
-# Copyright (C) 2003-2004,2006 Michael Schindler <m-schindler@users.sourceforge.net>
+# Copyright (C) 2003-2007 Michael Schindler <m-schindler@users.sourceforge.net>
 # Copyright (C) 2002-2006 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
@@ -243,13 +243,14 @@ class _texmessageemptylines(texmessage):
 class _texmessageload(texmessage):
     """validates inclusion of arbitrary files
     - the matched pattern is "(<filename> <arbitrary other stuff>)", where
-      <fielname> is a readable file and other stuff can be anything
+      <filename> is a readable file and other stuff can be anything
+    - If the filename is enclosed in double quotes, it may contain blank space.
     - "(" and ")" must be used consistent (otherwise this validator just does nothing)
     - this is not always wanted, but we just assume that file inclusion is fine"""
 
     __implements__ = _Itexmessage
 
-    pattern = re.compile(r"\((?P<filename>[^()\s\n]+)(?P<additional>[^()]*)\)")
+    pattern = re.compile(r"\([\"]?(?P<filename>(?:(?<!\")[^()\s\n]+(?!\"))|[^()\"\n]+)[\"]?(?P<additional>[^()]*)\)")
 
     def baselevels(self, s, maxlevel=1, brackets="()"):
         """strip parts of a string above a given bracket level
