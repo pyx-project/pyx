@@ -21,6 +21,8 @@ TODO:
     - when all titles are None, a graph key currently raises an exception
     - translatecanvas should be the default in graph.style.symbol
     - automatic scaling of y-axis according to subset of data shown on x-axis
+    - graph.axis.timeaxis.timetick must not override datetime.datetime __init__ method (since datetime.datetime
+      instances are immutable like ints)
   - graph.style and graph.data modules
     - fix docu of gridattrs functionality of axis painters
       (how can one, e.g. draw a grid at the ticks and not at the subticks)
