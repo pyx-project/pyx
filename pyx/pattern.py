@@ -317,7 +317,7 @@ class PDFpattern(pdfwriter.PDFobject):
             import zlib
             content = zlib.compress(self.patternproc)
         else:
-            content = self.patterproc
+            content = self.patternproc
 
         file.write("/Length %i\n" % len(content))
         if writer.compress:

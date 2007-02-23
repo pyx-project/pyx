@@ -505,7 +505,7 @@ class function(_data):
         self.min = min
         self.max = max
         self.numberofpoints = points
-        self.context = context.copy() # be save on late evaluations
+        self.context = context.copy() # be safe on late evaluations
         m = self.assignmentpattern.match(expression)
         if m:
             self.yname, self.xname = m.groups()
