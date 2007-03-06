@@ -1147,7 +1147,7 @@ class path:
         """split normpath at param(s) or arc length(s) and return list of normpaths"""
         return self.normpath().split(params)
 
-    def tangent_pt(self, params, length=None):
+    def tangent_pt(self, params, length):
         """return tangent vector of path at param(s) or arc length(s) in pts
 
         If length in pts is not None, the tangent vector will be scaled to
@@ -1155,7 +1155,7 @@ class path:
         """
         return self.normpath().tangent_pt(params, length)
 
-    def tangent(self, params, length=None):
+    def tangent(self, params, length=1):
         """return tangent vector of path at param(s) or arc length(s)
 
         If length is not None, the tangent vector will be scaled to

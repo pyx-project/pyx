@@ -130,11 +130,11 @@ Appends the list \var{pathitems} to the end of the path.
   \class{normpath} instances.$^\dagger$
 \end{methoddesc}
 
-\begin{methoddesc}{tangent}{params, length=None}
+\begin{methoddesc}{tangent}{params, length=1}
   Return (a) \class{line} instance(s) corresponding to the tangent
   vector(s) to the path at the parameter value(s)
-  \var{params}.$^\ddagger$ If \var{length} is not \texttt{None}, the
-  tangent vector will be scaled correspondingly.$^\dagger$
+  \var{params}.$^\ddagger$ The tangent vector will be scaled to the length
+  \var{length}.$^\dagger$
 \end{methoddesc}
 
 \begin{methoddesc}{trafo}{params}
