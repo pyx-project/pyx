@@ -180,6 +180,8 @@ class rational:
     def __div__(self, other):
         return rational((self.num * other.denom, self.denom * other.num))
 
+    __truediv__ = __div__
+
     def __idiv__(self, other):
         self.num *= other.denom
         self.denom *= other.num

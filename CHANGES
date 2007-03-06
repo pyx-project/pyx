@@ -92,6 +92,7 @@ TODO:
 
 
 0.10 (2006/XX/XX):
+  - added __truediv__ methods according to PEP 238
   - color module:
     - renamed: palette->gradient, functionpalette->functiongradient, linearpalette->lineargradient
     - new class palette representing a discrete ordered list of colors

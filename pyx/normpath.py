@@ -82,7 +82,7 @@ class _invalid:
 
     def invalid2(self, other):
         self.invalid1()
-    __cmp__ = __add__ = __iadd__ = __sub__ = __isub__ = __mul__ = __imul__ = __div__ = __idiv__ = invalid2
+    __cmp__ = __add__ = __iadd__ = __sub__ = __isub__ = __mul__ = __imul__ = __div__ = __truediv__ = __idiv__ = invalid2
 
 invalid = _invalid()
 

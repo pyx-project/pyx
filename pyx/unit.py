@@ -134,6 +134,8 @@ class length:
         result.x = self.x / divisor
         return result
 
+    __truediv__ = __div__
+
     def __add__(self, other):
         # convert to length if necessary
         if not isinstance(other, length):
