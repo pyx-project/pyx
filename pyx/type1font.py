@@ -3,6 +3,7 @@
 #
 # Copyright (C) 2005-2006 Jörg Lehmann <joergl@users.sourceforge.net>
 # Copyright (C) 2005-2006 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2007 Michael Schindler <m-schindler@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
@@ -98,16 +99,22 @@ class encodingfile:
 
 class font:
 
-    def __init__(self, basefontname, filename, encoding, metric):
+    def __init__(self, basefontname, filename, encoding, slant, metric):
         self.basefontname = basefontname
         self.filename = filename
         self.encoding = encoding
+        self.slant = slant
         self.metric = metric
 
         if encoding is None:
             self.name = basefontname
         else:
             self.name = "%s-%s" % (basefontname, encoding.name)
+
+        if slant is None:
+            self.slant = 0.0
+        else:
+            self.name = "%s-slanted%f" % (self.name, self.slant)
 
 
 class text_pt(canvas.canvasitem):
@@ -141,8 +148,8 @@ class text_pt(canvas.canvasitem):
         pswriter.PSfont(self.font, self.chars, registry)
         bbox += self.bbox()
 
-        if ( context.font is None or 
-             context.font.name != self.font.name or 
+        if ( context.font is None or
+             context.font.name != self.font.name or
              context.font.metric.getsize_pt() !=  self.font.metric.getsize_pt() ):
             file.write("/%s %f selectfont\n" % (self.font.name, self.font.metric.getsize_pt()))
             context.font = self.font
@@ -159,8 +166,8 @@ class text_pt(canvas.canvasitem):
         registry.add(pdfwriter.PDFfont(self.font, self.chars, writer, registry))
         bbox += self.bbox()
 
-        if ( context.font is None or 
-             context.font.name != self.font.name or 
+        if ( context.font is None or
+             context.font.name != self.font.name or
              context.font.metric.getsize_pt() !=  self.font.metric.getsize_pt() ):
             file.write("/%s %f Tf\n" % (self.font.name, self.font.metric.getsize_pt()))
             context.font = self.font
@@ -171,5 +178,5 @@ class text_pt(canvas.canvasitem):
             else:
                 ascii = "\\%03o" % char
             outstring += ascii
-        file.write("1 0 0 1 %f %f Tm (%s) Tj\n" % (self.x_pt, self.y_pt, outstring))
+        file.write("1 0 %f 1 %f %f Tm (%s) Tj\n" % (self.font.slant, self.x_pt, self.y_pt, outstring))
 

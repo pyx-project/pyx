@@ -2,7 +2,7 @@
 #
 #
 # Copyright (C) 2002-2006 Jörg Lehmann <joergl@users.sourceforge.net>
-# Copyright (C) 2003-2004,2006 Michael Schindler <m-schindler@users.sourceforge.net>
+# Copyright (C) 2003-2004,2006,2007 Michael Schindler <m-schindler@users.sourceforge.net>
 # Copyright (C) 2002-2006 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
@@ -762,10 +762,14 @@ class dvifile:
                         raise RuntimeError("cannot find type 1 font %s" % fontmapinfo.fontfile)
                 else:
                     fontfilename = None
-                
+
+                fontslant = fontmapinfo.slantfont
+                if fontslant is not None:
+                    fontslant = float(fontslant)
+
                 # XXX we currently misuse use self.activefont as metric 
-                font = type1font.font(fontbasefontname, fontfilename, fontencoding, self.activefont)
-        
+                font = type1font.font(fontbasefontname, fontfilename, fontencoding, fontslant, self.activefont)
+
                 self.activetext = type1font.text_pt(self.pos[_POS_H] * self.pyxconv, -self.pos[_POS_V] * self.pyxconv, font)
                 self.actpage.insert(self.activetext)
             self.activetext.addchar(char)

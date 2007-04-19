@@ -21,7 +21,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import cStringIO, copy, time, math
-import bbox, style, version, type1font, unit
+import bbox, style, version, type1font, unit, trafo
 
 try:
     enumerate([])
@@ -118,12 +118,33 @@ class PSfont:
                                     font.filename,
                                     font.encoding,
                                     chars))
+        if font.encoding and font.slant:
+            tmpname = font.name + "tmpunslanted"
+            # do first the reencoding and then the slanting:
+            enc_basename, enc_finalname = font.basefontname, tmpname
+            slt_basename, slt_finalname = tmpname, font.name
+        elif font.encoding:
+            enc_basename, enc_finalname = font.basefontname, font.name
+        elif font.slant:
+            slt_basename, slt_finalname = font.basefontname, font.name
+
         if font.encoding:
             registry.add(_ReEncodeFont)
             registry.add(PSfontencoding(font.encoding))
-            registry.add(PSfontreencoding(font.name,
-                                          font.basefontname,
-                                          font.encoding.name))
+            registry.add(PSfontreencoding(enc_finalname, enc_basename, font.encoding.name))
+
+        if font.slant:
+            # we need the current fontmatrix in order to manipulate it:
+            # for this we need to re-read the fontfile as below in
+            # PSfontfile.ouput:
+            # XXX Is there a better way to do this?
+            import font.t1font as t1fontmodule
+            t1font = t1fontmodule.T1pfbfont(font.filename)
+            m = t1font.fontmatrixpattern.search(t1font.data1)
+            m11, m12, m21, m22, v1, v2 = map(float, m.groups()[:6])
+            t = trafo.trafo_pt(matrix=((1, font.slant), (0, 1)))
+            t *= trafo.trafo_pt(matrix=((m11, m12), (m21, m22)), vector=(v1, v2))
+            registry.add(PSfontslanting(slt_finalname, slt_basename, t.__str__()))
 
 
 class PSfontfile(PSresource):
@@ -200,6 +221,34 @@ class PSfontencoding(PSresource):
         encodingfile.outputPS(file, writer)
 
 
+class PSfontslanting(PSresource):
+
+    """ PostScript font slanting directive included in the prolog """
+
+    def __init__(self, fontname, basefontname, matrixstring):
+        """ include transformed font directive specified by
+
+        - fontname:     PostScript FontName of the new slanted font
+        - basefontname: PostScript FontName of the original font
+        - slant:        the value of slanting
+        """
+
+        self.type = "fontslanting"
+        self.id = self.fontname = fontname
+        self.basefontname = basefontname
+        self.matrixstring = matrixstring
+
+    def output(self, file, writer, registry):
+        file.write("%%%%BeginProcSet: %s\n" % self.fontname)
+        file.write("/%s findfont\n" % self.basefontname)
+        file.write("dup length dict begin\n")
+        file.write("{ 1 index /FID ne {def} {pop pop} ifelse } forall\n")
+        file.write("/FontMatrix %s readonly def\n" % self.matrixstring)
+        file.write("currentdict\n")
+        file.write("end\n")
+        file.write("/%s exch definefont pop\n" % self.fontname)
+        file.write("%%EndProcSet\n")
+
 class PSfontreencoding(PSresource):
 
     """ PostScript font re-encoding directive included in the prolog """
@@ -210,7 +259,6 @@ class PSfontreencoding(PSresource):
         - fontname:     PostScript FontName of the new reencoded font
         - basefontname: PostScript FontName of the original font
         - encname:      name of the encoding
-        - font:         a reference to the font instance (temporarily added for pdf support)
 
         Before being able to reencode a font, you have to include the
         encoding via a fontencoding prolog item with name=encname
