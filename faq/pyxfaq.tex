@@ -30,8 +30,8 @@ Gert-Ludwig Ingold \par
 \section*{Acknowledgements}
 The following persons have in one way or the other, e.g.\ by asking good 
 questions or providing answers, contributed to this FAQ:\\ 
-Walter Brisken, Pierre Joyot, Jörg Lehmann, John Owens, Michael Schindler, 
-Gerhard Schmid, Andr{\'e} Wobst.
+Walter Brisken, Alejandro Gaita-Arinyo, Pierre Joyot, Jörg Lehmann, 
+John Owens, Michael Schindler, Gerhard Schmid, Andr{\'e} Wobst.
 \newpage
 
 \section{General aspects of \PyX}
@@ -408,7 +408,7 @@ $(x_\mathrm{max},y_\mathrm{max})$ of the triangle and a value between 0 and 1
 determining the color via a \PyX{} color palette. The following code gives an 
 idea of how to proceed:
 \begin{progcode}
-g.plot(graph.data.file("datafile.dat"), xmin=1, xmax=2, ymin=3, ymax=4, color=5),\\
+g.plot(graph.data.file("datafile.dat"), xmin=1, xmax=2, ymin=3, ymax=4, color=5,\\
 ~~~~~~~[graph.style.rect(color.palette.ReverseRainbow)]\\
 ~~~~~~)\\
 g.dodata()
