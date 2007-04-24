@@ -119,10 +119,10 @@ class PSfont:
                                     font.encoding,
                                     chars))
         if font.encoding and font.slant:
-            tmpname = font.name + "tmpunslanted"
+            assert font.encname
             # do first the reencoding and then the slanting:
-            enc_basename, enc_finalname = font.basefontname, tmpname
-            slt_basename, slt_finalname = tmpname, font.name
+            enc_basename, enc_finalname = font.basefontname, font.encname
+            slt_basename, slt_finalname = tfont.encname, font.name
         elif font.encoding:
             enc_basename, enc_finalname = font.basefontname, font.name
         elif font.slant:
@@ -138,12 +138,17 @@ class PSfont:
             # for this we need to re-read the fontfile as below in
             # PSfontfile.ouput:
             # XXX Is there a better way to do this?
-            import font.t1font as t1fontmodule
-            t1font = t1fontmodule.T1pfbfont(font.filename)
-            m = t1font.fontmatrixpattern.search(t1font.data1)
-            m11, m12, m21, m22, v1, v2 = map(float, m.groups()[:6])
             t = trafo.trafo_pt(matrix=((1, font.slant), (0, 1)))
-            t *= trafo.trafo_pt(matrix=((m11, m12), (m21, m22)), vector=(v1, v2))
+            if font.filename:
+                # for the builtin fonts, we assume a trivial fontmatrix
+                import font.t1font as t1fontmodule
+                t1font = t1fontmodule.T1pfbfont(font.filename)
+                m = t1font.fontmatrixpattern.search(t1font.data1)
+                m11, m12, m21, m22, v1, v2 = map(float, m.groups()[:6])
+                t *= trafo.trafo_pt(matrix=((m11, m12), (m21, m22)), vector=(v1, v2))
+            else:
+                raise NotImplementedError(
+                "cannot slant unembedded fonts -- try to include \"download35.map\" in fontmaps")
             registry.add(PSfontslanting(slt_finalname, slt_basename, t.__str__()))
 
 

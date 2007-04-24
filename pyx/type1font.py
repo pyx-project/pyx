@@ -103,18 +103,18 @@ class font:
         self.basefontname = basefontname
         self.filename = filename
         self.encoding = encoding
-        self.slant = slant
+        self.slant = slant # None or a float
         self.metric = metric
 
-        if encoding is None:
-            self.name = basefontname
-        else:
+        if encoding is not None and slant is not None:
+            self.encname = "%s-%s" % (basefontname, encoding.name)
+            self.name = "%s-slant%f" % (self.encname, self.slant)
+        elif encoding is not None:
             self.name = "%s-%s" % (basefontname, encoding.name)
-
-        if slant is None:
-            self.slant = 0.0
+        elif slant is not None:
+            self.name = "%s-slant%f" % (basefontname, self.slant)
         else:
-            self.name = "%s-slanted%f" % (self.name, self.slant)
+            self.name = basefontname
 
 
 class text_pt(canvas.canvasitem):
@@ -178,5 +178,9 @@ class text_pt(canvas.canvasitem):
             else:
                 ascii = "\\%03o" % char
             outstring += ascii
-        file.write("1 0 %f 1 %f %f Tm (%s) Tj\n" % (self.font.slant, self.x_pt, self.y_pt, outstring))
+        if self.font.slant is None:
+            slantvalue = 0
+        else:
+            slantvalue = self.font.slant
+        file.write("1 0 %f 1 %f %f Tm (%s) Tj\n" % (slantvalue, self.x_pt, self.y_pt, outstring))
 

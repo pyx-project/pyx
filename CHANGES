@@ -4,6 +4,7 @@ TODO:
   - style module:
     - make dash length available
   - text module:
+    - repair PDF generation with unincluded standard fonts (currently broken)
     - SlantFont & Co support
     - keep an eye on PEP 324 (popen 5): it could make the texrunner much easier
     - discuss reltransform: https://sourceforge.net/mailarchive/forum.php?thread_id=9137692&forum_id=23700
