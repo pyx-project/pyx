@@ -374,6 +374,7 @@ class texmessagepattern(texmessage):
 
 texmessage.fontwarning = texmessagepattern(re.compile(r"^LaTeX Font Warning: .*$(\n^\(Font\).*$)*", re.MULTILINE), "ignoring font warning")
 texmessage.boxwarning = texmessagepattern(re.compile(r"^(Overfull|Underfull) \\[hv]box.*$(\n^..*$)*\n^$\n", re.MULTILINE), "ignoring overfull/underfull box warning")
+texmessage.rerunwarning = texmessagepattern(re.compile(r"^(LaTeX Warning: Label\(s\) may have changed\. Rerun to get cross-references right\s*\.)$", re.MULTILINE), "ignoring rerun warning")
 
 
 
@@ -761,7 +762,7 @@ class texrunner:
     defaulttexmessagesstart = [texmessage.start]
     defaulttexmessagesdocclass = [texmessage.load]
     defaulttexmessagesbegindoc = [texmessage.load, texmessage.noaux]
-    defaulttexmessagesend = [texmessage.end, texmessage.fontwarning]
+    defaulttexmessagesend = [texmessage.end, texmessage.fontwarning, texmessage.rerunwarning]
     defaulttexmessagesdefaultpreamble = [texmessage.load]
     defaulttexmessagesdefaultrun = [texmessage.loaddef, texmessage.graphicsload,
                                     texmessage.fontwarning, texmessage.boxwarning]
