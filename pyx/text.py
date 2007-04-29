@@ -793,7 +793,7 @@ class texrunner:
         self.lfs = lfs
         self.docclass = docclass
         self.docopt = docopt
-        self.usefiles = usefiles
+        self.usefiles = usefiles[:]
         self.fontmaps = fontmaps
         self.waitfortex = waitfortex
         self.showwaitfortex = showwaitfortex
@@ -808,12 +808,12 @@ class texrunner:
         self.dvidebug = dvidebug
         self.errordebug = errordebug
         self.pyxgraphics = pyxgraphics
-        self.texmessagesstart = texmessagesstart
-        self.texmessagesdocclass = texmessagesdocclass
-        self.texmessagesbegindoc = texmessagesbegindoc
-        self.texmessagesend = texmessagesend
-        self.texmessagesdefaultpreamble = texmessagesdefaultpreamble
-        self.texmessagesdefaultrun = texmessagesdefaultrun
+        self.texmessagesstart = texmessagesstart[:]
+        self.texmessagesdocclass = texmessagesdocclass[:]
+        self.texmessagesbegindoc = texmessagesbegindoc[:]
+        self.texmessagesend = texmessagesend[:]
+        self.texmessagesdefaultpreamble = texmessagesdefaultpreamble[:]
+        self.texmessagesdefaultrun = texmessagesdefaultrun[:]
 
         self.texruns = 0
         self.texdone = 0
