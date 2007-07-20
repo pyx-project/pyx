@@ -97,6 +97,9 @@ TODO:
   - color module:
     - renamed: palette->gradient, functionpalette->functiongradient, linearpalette->lineargradient
     - new class palette representing a discrete ordered list of colors
+    - convenience methods for css-like color specification
+    - support transparency for filling/stroking in pdf separately
+    - transparency support for postscript as available in a proprietary ghostscript extension (at least for ps2pdf)
   - graph modules:
     - axis module:
       - painter: don't insert axis title twice (thanks to Tim Gray for reporting this problem)
@@ -110,6 +113,11 @@ TODO:
   - attr module:
     - add multichangeattr to perform a select on different changeable attributes
       depending on the selects total number
+  - font modules:
+    - t1font:
+      - add missing glyph resolution in t1seacs updatepath
+  - normpath module:
+    - support zero-length normsubpaths
   - canvas module:
     - don't change order of attrs passed to canvas constructor in place
 
