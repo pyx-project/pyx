@@ -414,9 +414,9 @@ class curveto_pt(pathitem):
         self.y3_pt = y3_pt
 
     def __str__(self):
-        return "curveto_pt(%g,%g, %g, %g, %g, %g)" % (self.x1_pt, self.y1_pt,
-                                                      self.x2_pt, self.y2_pt,
-                                                      self.x3_pt, self.y3_pt)
+        return "curveto_pt(%g, %g, %g, %g, %g, %g)" % (self.x1_pt, self.y1_pt,
+                                                       self.x2_pt, self.y2_pt,
+                                                       self.x3_pt, self.y3_pt)
 
     def updatebbox(self, bbox, context):
         xmin_pt, xmax_pt = _bezierpolyrange(context.x_pt, self.x1_pt, self.x2_pt, self.x3_pt)
