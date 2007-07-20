@@ -913,6 +913,8 @@ class normsubpath:
 
     def at_pt(self, params):
         """return coordinates at params in pts"""
+        if not self.normsubpathitems and self.skippedline:
+            return [self.skippedline.atbegin_pt()]*len(params)
         result = [None] * len(params)
         for normsubpathitemindex, (indices, params) in self._distributeparams(params).items():
             for index, point_pt in zip(indices, self.normsubpathitems[normsubpathitemindex].at_pt(params)):
@@ -1162,6 +1164,8 @@ class normsubpath:
 
     def _paramtoarclen_pt(self, params):
         """return a tuple of arc lengths and the total arc length in pts"""
+        if not self.normsubpathitems:
+            return [0] * len(params), 0
         result = [None] * len(params)
         totalarclen_pt = 0
         distributeparams = self._distributeparams(params)
