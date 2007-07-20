@@ -155,6 +155,8 @@ class _T1seac(T1cmd):
         ady = context.t1stack.pop(0)
         bchar = context.t1stack.pop(0)
         achar = context.t1stack.pop(0)
+        aglyph = encoding.adobestandardencoding.decode(achar)
+        bglyph = encoding.adobestandardencoding.decode(bchar)
         context.t1font.updateglyphpath(bglyph, path, atrafo, context)
         atrafo = atrafo * trafo.translate_pt(adx-sab, ady)
         context.t1font.updateglyphpath(aglyph, path, atrafo, context)
