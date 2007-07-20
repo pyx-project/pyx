@@ -21,7 +21,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import colorsys, math, struct
+import binascii, colorsys, math, struct, warnings
 import attr, style, pdfwriter
 
 # device-dependend (nonlinear) functions for color conversion
@@ -164,14 +164,31 @@ class rgb(color):
     def colorspacestring(self):
         return "/DeviceRGB"
 
-    def tostring8bit(self):
-        return struct.pack("BBB", round(self.color["r"]*255), round(self.color["g"]*255), round(self.color["b"]*255))
+    def to8bitstring(self):
+        return struct.pack("BBB", int(self.color["r"]*255), int(self.color["g"]*255), int(self.color["b"]*255))
 
-rgb.red   = rgb(1 ,0, 0)
-rgb.green = rgb(0 ,1, 0)
-rgb.blue  = rgb(0 ,0, 1)
-rgb.white = rgb(1 ,1, 1)
-rgb.black = rgb(0 ,0, 0)
+    def tohexstring(self, cssstrip=1, addhash=1):
+        hexstring = binascii.b2a_hex(self.to8bitstring())
+        if cssstrip and hexstring[0] == hexstring[1] and hexstring[2] == hexstring[3] and hexstring[4] == hexstring[5]:
+            hexstring = "".join([hexstring[0], hexstring[1], hexstring[2]])
+        if addhash:
+            hexstring = "#" + hexstring
+        return hexstring
+
+
+def rgbfromhexstring(hexstring):
+    hexstring = hexstring.strip().lstrip("#")
+    if len(hexstring) == 3:
+        hexstring = "".join([hexstring[0], hexstring[0], hexstring[1], hexstring[1], hexstring[2], hexstring[2]])
+    elif len(hexstring) != 6:
+        raise ValueError("3 or 6 digit hex number expected (with optional leading hash character)")
+    return rgb(*[value/255.0 for value in struct.unpack("BBB", binascii.a2b_hex(hexstring))])
+
+rgb.red   = rgb(1, 0, 0)
+rgb.green = rgb(0, 1, 0)
+rgb.blue  = rgb(0, 0, 1)
+rgb.white = rgb(1, 1, 1)
+rgb.black = rgb(0, 0, 0)
 
 
 class hsb(color):
@@ -459,15 +476,24 @@ class PDFextgstate(pdfwriter.PDFobject):
 class transparency(attr.exclusiveattr, style.strokestyle, style.fillstyle):
 
     def __init__(self, value):
-        value = 1-value
+        self.value = 1-value
         attr.exclusiveattr.__init__(self, transparency)
-        self.name = "Transparency-%f" % value
-        self.extgstate = "<< /Type /ExtGState /CA %f /ca %f >>" % (value, value)
 
     def processPS(self, file, writer, context, registry, bbox):
-        raise NotImplementedError("transparency not available in PostScript")
+        warnings.warn("Transparency not available in PostScript, proprietary ghostscript extension code inserted.")
+        file.write("%f .setshapealpha\n" % self.value)
 
     def processPDF(self, file, writer, context, registry, bbox):
-        registry.add(PDFextgstate(self.name, self.extgstate, registry))
-        file.write("/%s gs\n" % self.name)
+        if context.strokeattr and context.fillattr:
+            registry.add(PDFextgstate("Transparency-%f" % self.value,
+                                      "<< /Type /ExtGState /CA %f /ca %f >>" % (self.value, self.value), registry))
+            file.write("/Transparency-%f gs\n" % self.value)
+        elif context.strokeattr:
+            registry.add(PDFextgstate("Transparency-Stroke-%f" % self.value,
+                                      "<< /Type /ExtGState /CA %f >>" % self.value, registry))
+            file.write("/Transparency-Stroke-%f gs\n" % self.value)
+        elif context.fillattr:
+            registry.add(PDFextgstate("Transparency-Fill-%f" % self.value,
+                                      "<< /Type /ExtGState /ca %f >>" % self.value, registry))
+            file.write("/Transparency-Fill-%f gs\n" % self.value)
 
