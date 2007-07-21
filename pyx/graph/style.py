@@ -647,6 +647,71 @@ class line(_line):
             graph.stroke(path.line_pt(x_pt, y_pt+0.5*height_pt, x_pt+width_pt, y_pt+0.5*height_pt), privatedata.lineattrs)
 
 
+class impulses(_styleneedingpointpos):
+
+    needsdata = ["vpos", "vposmissing", "vposavailable", "vposvalid", "poscolumnnames"]
+
+    changelinestyle = attr.changelist([style.linestyle.solid,
+                                       style.linestyle.dashed,
+                                       style.linestyle.dotted,
+                                       style.linestyle.dashdotted])
+
+    defaultlineattrs = [changelinestyle]
+    defaultfrompathattrs = []
+
+    def __init__(self, lineattrs=[], fromvalue=0, frompathattrs=[], valueaxisindex=1):
+        self.lineattrs = lineattrs
+        self.fromvalue = fromvalue
+        self.frompathattrs = frompathattrs
+        self.valueaxisindex = valueaxisindex
+
+    def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
+        privatedata.insertfrompath = selectindex == 0
+        if self.lineattrs is not None:
+            privatedata.lineattrs = attr.selectattrs(self.defaultlineattrs + self.lineattrs, selectindex, selecttotal)
+        else:
+            privatedata.lineattrs = None
+
+    def adjustaxis(self, privatedata, sharedata, graph, columnname, data):
+        if self.fromvalue is not None:
+            try:
+                i = sharedata.poscolumnnames.index(columnname)
+            except ValueError:
+                pass
+            else:
+                if i == self.valueaxisindex:
+                    graph.axes[sharedata.poscolumnnames[i]].adjustaxis([self.fromvalue])
+
+    def initdrawpoints(self, privatedata, sharedata, graph):
+        privatedata.impulsescanvas = canvas.canvas()
+        if self.fromvalue is not None:
+            valueaxisname = sharedata.poscolumnnames[self.valueaxisindex]
+            privatedata.vfromvalue = graph.axes[valueaxisname].convert(self.fromvalue)
+            privatedata.vfromvaluecut = 0
+            if privatedata.vfromvalue < 0:
+                privatedata.vfromvalue = 0
+            if privatedata.vfromvalue > 1:
+                privatedata.vfromvalue = 1
+            if self.frompathattrs is not None and privatedata.insertfrompath:
+                graph.stroke(graph.axes[valueaxisname].vgridpath(privatedata.vfromvalue),
+                             self.defaultfrompathattrs + self.frompathattrs)
+        else:
+            privatedata.vfromvalue = 0
+
+    def drawpoint(self, privatedata, sharedata, graph, point):
+        if sharedata.vposvalid and privatedata.lineattrs is not None:
+            vpos = sharedata.vpos[:]
+            vpos[self.valueaxisindex] = privatedata.vfromvalue
+            privatedata.impulsescanvas.stroke(graph.vgeodesic(*(vpos + sharedata.vpos)), privatedata.lineattrs)
+
+    def donedrawpoints(self, privatedata, sharedata, graph):
+        graph.insert(privatedata.impulsescanvas)
+
+    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
+        if privatedata.lineattrs is not None:
+            graph.stroke(path.line_pt(x_pt, y_pt+0.5*height_pt, x_pt+width_pt, y_pt+0.5*height_pt), privatedata.lineattrs)
+
+
 class errorbar(_style):
 
     needsdata = ["vpos", "vposmissing", "vposavailable", "vposvalid", "vrange", "vrangeminmissing", "vrangemaxmissing"]
@@ -951,6 +1016,8 @@ class histogram(_style):
                 min = data[0] - self.autohistogrampointpos * delta
                 max = data[-1] + (1-self.autohistogrampointpos) * delta
                 graph.axes[columnname].adjustaxis([min, max])
+        elif self.fromvalue is not None and columnname != sharedata.poscolumnnames[privatedata.rangeaxisindex]:
+            graph.axes[columnname].adjustaxis([self.fromvalue])
 
     def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
         privatedata.insertfrompath = selectindex == 0

@@ -739,6 +739,17 @@ definition is:
   attr.changelist([style.linestyle.solid, style.linestyle.dashed, style.linestyle.dotted, style.linestyle.dashdotted])
 \end{memberdesc} % }}}
 
+\begin{classdesc}{impulses}{lineattrs=[], fromvalue=0, % {{{
+                             frompathattrs=[], valueaxisindex=1}
+  This class is a style to plot impulses. \var{lineattrs} is merged
+  with \code{defaultlineattrs} which is a list containing the member
+  variable \code{changelinestyle} as described above. \var{fromvalue}
+  is the baseline value of the impulses. When set to \code{None}, the
+  impulses will start at the baseline. When fromvalue is set,
+  \var{frompathattrs} are the stroke attributes used to show the
+  impulses baseline path.
+\end{classdesc} % }}}
+
 \begin{classdesc}{errorbar}{size=0.1*unit.v\_cm, errorbarattrs=[], % {{{
                             epsilon=1e-10}
   This class is a style to stroke errorbars in a graph. \var{size} is

@@ -92,22 +92,24 @@ TODO:
       graph data
 
 
-0.10 (2006/XX/XX):
+0.10 (2007/XX/XX):
   - added __truediv__ methods according to PEP 238
   - color module:
     - renamed: palette->gradient, functionpalette->functiongradient, linearpalette->lineargradient
     - new class palette representing a discrete ordered list of colors
-    - convenience methods for css-like color specification
+    - convenience methods for css-like color specification (TODO: update doc?)
     - support transparency for filling/stroking in pdf separately
-    - transparency support for postscript as available in a proprietary ghostscript extension (at least for ps2pdf)
+    - transparency support for postscript as available in a proprietary ghostscript extension (at least for ps2pdf) (TODO: update doc)
   - graph modules:
     - axis module:
       - painter: don't insert axis title twice (thanks to Tim Gray for reporting this problem)
       - parter: extend the logarithmic parter to calculate automatic partitions for huge ranges
         (TODO: documentation of the new autoexponent parameter) (suggested by Dominic Ford)
     - graph styles:
+      - impulses style
       - optional textdx/textdy columns to the text style added
       - arrowpos parameter to the arrow style added
+      - bugfix: fromvalue axis range adjustment in histogram style
     - graph module:
       - doplot method (to be called with a plotitem) to alter the plotitem order etc. (TODO: documentation)
   - attr module:
