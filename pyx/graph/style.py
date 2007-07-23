@@ -291,17 +291,19 @@ class range(_style):
                     if k != self.mask_value:
                         if k & (self.mask_dmin | self.mask_d):
                             mindata = []
-                            try:
-                                mindata.append(d[self.mask_value] - d[k])
-                            except:
-                                pass
+                            for value, delta in zip(d[self.mask_value], d[k]):
+                                try:
+                                    mindata.append(value-delta)
+                                except:
+                                    pass
                             graph.axes[a].adjustaxis(mindata)
                         if k & (self.mask_dmax | self.mask_d):
                             maxdata = []
-                            try:
-                                maxdata.append(d[self.mask_value] + d[k])
-                            except:
-                                pass
+                            for value, delta in zip(d[self.mask_value], d[k]):
+                                try:
+                                    maxdata.append(value+delta)
+                                except:
+                                    pass
                             graph.axes[a].adjustaxis(maxdata)
                         del d[k]
 

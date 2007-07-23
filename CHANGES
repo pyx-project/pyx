@@ -110,6 +110,7 @@ TODO:
       - optional textdx/textdy columns to the text style added
       - arrowpos parameter to the arrow style added
       - bugfix: fromvalue axis range adjustment in histogram style
+      - bugfix: axis range adjustment in range style
     - graph module:
       - doplot method (to be called with a plotitem) to alter the plotitem order etc. (TODO: documentation)
   - attr module:
