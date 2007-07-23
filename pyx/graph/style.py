@@ -1018,7 +1018,7 @@ class histogram(_style):
                 min = data[0] - self.autohistogrampointpos * delta
                 max = data[-1] + (1-self.autohistogrampointpos) * delta
                 graph.axes[columnname].adjustaxis([min, max])
-        elif self.fromvalue is not None and columnname != sharedata.poscolumnnames[privatedata.rangeaxisindex]:
+        elif self.fromvalue is not None and columnname == sharedata.poscolumnnames[1-privatedata.rangeaxisindex]:
             graph.axes[columnname].adjustaxis([self.fromvalue])
 
     def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
