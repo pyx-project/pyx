@@ -600,3 +600,55 @@ The following \TeX{} message parser instances are available:
 \begin{funcdesc}{reset}{...}
   \code{defaulttexrunner.reset}
 \end{funcdesc}
+
+\section{Some internals on temporary files etc.}
+
+It is not totally obvious how \TeX{} processes are supervised by
+\PyX{} and why it's done that way. However there are good reasons for
+it and the following description is intended for people wanting and/or
+needing to understand how temporary files are used by \PyX. All others
+don't need to care.
+
+Each time \PyX{} needs to start a new \TeX{} process, it creates a
+base file name for temporary files associated with this process. This
+file name is used as \verb|\jobname| by \TeX. Since \TeX{} does not
+handle directory names as part of \verb|\jobname|, the temporary files
+will be created in the current directory. The \PyX{} developers
+decided to not change the current directory at all, avoiding all kind
+of issues with accessing files in the local directory, like for
+loading graph data, \LaTeX{} style files etc.
+
+\PyX{} creates a \TeX{} file containing \verb|\relax| only. It's only
+use is to set \TeX{}s \verb|\jobname|. Immediately after processing
+\verb|\relax| \TeX{} falls back to stdin to read more commands. \PyX{}
+than uses \code{stdin} and \code{stdout} to avoid various buffering
+issues which would occur when using files (or named pipes). By that
+\PyX{} can fetch \TeX{} errors as soon as they occur while keeping the
+\TeX{} process running (i.e. in a waiting state) for further input.
+The size of the \TeX{} output is also availble immediately without
+fetching the \code{dvi} file created by \TeX, since \PyX{} uses some
+\TeX{} macros to output the extents of the boxes created for the
+requested texts to \code{stdout} immediately. There is a TeX hack
+\verb|--ipc| which \PyX{} knows to take advantage of to fetch
+informations from the \code{dvi} file immediately as well, but it's
+not available on all \TeX installations. Thus this feature is disabled
+by default and fetching informations from the \code{dvi} is tried to
+be limited to those cases, where no other option exists. By that
+\TeX{} usually doesn't need to be started several times.
+
+By default \PyX{} will clean up all temporary files after \TeX{} was
+stopped. However the \code{usefiles} list allows for a renaming of the
+files from (and to, if existing) the temporary \verb|\jobname| (+
+suffix) handled by \PyX{}. Additionally, since \PyX{} does not write a
+useful \TeX{} input file in a file and thus a
+\code{usefiles=["example.tex"]} would not contain the code actually
+passed to \TeX{}, the \code{texdebug} feature of the texrunner can be
+used instead to get a the full input passed to \TeX{}.
+
+In case you need to control the position where the temporary files are
+created (say, you're working on a read-only directory), the suggested
+solution is to switch the current directory before starting with text
+processing in \PyX{} (i.e. an \code{os.chdir} at the beginning of your
+script will do fine). You than just need to take care of specifying
+full paths when accessing data from your original working directory,
+but that's intended and necessary for that case.
