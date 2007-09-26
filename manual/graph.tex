@@ -814,7 +814,7 @@ definition is:
 \end{classdesc} % }}}
 
 \begin{classdesc}{histogram}{lineattrs=[], steps=0, fromvalue=0, % {{{
-                             frompathattrs=[], fillable=0,
+                             frompathattrs=[], fillable=0, rectkey=0,
                              autohistogramaxisindex=0,
                              autohistogrampointpos=0.5, epsilon=1e-10}
   This class is a style to plot histograms. \var{lineattrs} is merged
@@ -828,6 +828,8 @@ definition is:
   The \var{fillable} flag changes the stoke line of the histogram to
   make it fillable properly. This is important on non-steped
   histograms or on histograms, which hit the graph boundary.
+  \var{rectkey} can be set to generate a rectanglar area instead of a
+  line in the graph key.
 
   Usually, a histogram wants a range specification (like for an
   errorbar) in one graph dimension and a value for the other graph
@@ -877,7 +879,7 @@ definition is:
   \var{barattrs}. \var{barattrs} is merged with \code{defaultbarattrs}
   which is a list containing \code{[color.gradient.Rainbow,
   deco.stroked([color.grey.black])]}.
-\end{classdesc} % }}} % }}}
+\end{classdesc} % }}}
 
 \begin{classdesc}{changebar}{barattrs=[]} % {{{
   This style works like the \class{bar} style, but instead of the

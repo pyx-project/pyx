@@ -979,13 +979,14 @@ class histogram(_style):
     defaultlineattrs = [deco.stroked]
     defaultfrompathattrs = []
 
-    def __init__(self, lineattrs=[], steps=0, fromvalue=0, frompathattrs=[], fillable=0,
+    def __init__(self, lineattrs=[], steps=0, fromvalue=0, frompathattrs=[], fillable=0, rectkey=0,
                        autohistogramaxisindex=0, autohistogrampointpos=0.5, epsilon=1e-10):
         self.lineattrs = lineattrs
         self.steps = steps
         self.fromvalue = fromvalue
         self.frompathattrs = frompathattrs
         self.fillable = fillable # TODO: fillable paths might not properly be closed by straight lines on curved graph geometries
+        self.rectkey = rectkey
         self.autohistogramaxisindex = autohistogramaxisindex
         self.autohistogrampointpos = autohistogrampointpos
         self.epsilon = epsilon
@@ -1308,7 +1309,11 @@ class histogram(_style):
 
     def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
         if privatedata.lineattrs is not None:
-            graph.stroke(path.line_pt(x_pt, y_pt+0.5*height_pt, x_pt+width_pt, y_pt+0.5*height_pt), privatedata.lineattrs)
+            if self.rectkey:
+                p = path.rect_pt(x_pt, y_pt, width_pt, height_pt)
+            else:
+                p = path.line_pt(x_pt, y_pt+0.5*height_pt, x_pt+width_pt, y_pt+0.5*height_pt)
+            graph.draw(p, privatedata.lineattrs)
 
 
 class barpos(_style):
