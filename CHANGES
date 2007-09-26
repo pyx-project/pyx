@@ -105,6 +105,7 @@ TODO:
       - painter: don't insert axis title twice (thanks to Tim Gray for reporting this problem)
       - parter: extend the logarithmic parter to calculate automatic partitions for huge ranges
         (TODO: documentation of the new autoexponent parameter) (suggested by Dominic Ford)
+      - axis: range rating was not taken into account due in the 0.9 release
     - graph styles:
       - impulses style
       - optional textdx/textdy columns to the text style added
@@ -113,6 +114,10 @@ TODO:
       - bugfix: axis range adjustment in range style
     - graph module:
       - doplot method (to be called with a plotitem) to alter the plotitem order etc. (TODO: documentation)
+    - data module:
+      - list class was renamed to points; deprecation warning added
+        for instance creation, but inheritance from list failes
+      - new values class
   - attr module:
     - add multichangeattr to perform a select on different changeable attributes
       depending on the selects total number

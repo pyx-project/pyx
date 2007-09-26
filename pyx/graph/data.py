@@ -117,12 +117,31 @@ class _data:
         return {}
 
 
-class list(_data):
+defaultsymbols = [style.symbol()]
+defaultlines = [style.line()]
+
+
+class values(_data):
+
+    defaultstyles = defaultsymbols
+
+    def __init__(self, title="user provided values", **columns):
+        for i, values in enumerate(columns.values()):
+            if i and len(values) != l:
+                raise ValueError("different number of values")
+            else:
+                l = len(values)
+        self.columns = columns
+        self.columnnames = columns.keys()
+        self.title = title
+
+
+class points(_data):
     "Graph data from a list of points"
 
-    defaultstyles = [style.symbol()]
+    defaultstyles = defaultsymbols
 
-    def __init__(self, points, title="user provided list", addlinenumbers=1, **columns):
+    def __init__(self, points, title="user provided points", addlinenumbers=1, **columns):
         if len(points):
             l = len(points[0])
             self.columndata = [[x] for x in points[0]]
@@ -141,6 +160,11 @@ class list(_data):
             self.columns = dict([(key, []) for key, i in columns])
         self.columnnames = self.columns.keys()
         self.title = title
+
+
+def list(*args, **kwargs):
+    warnings.warn("graph.data.list is deprecated. Use graph.data.points instead.")
+    return points(*args, **kwargs)
 
 
 class _notitle:
@@ -310,8 +334,8 @@ class file(data):
             for i in xrange(len(columndata)):
                 if len(columndata[i]) != maxcolumns:
                     columndata[i].extend([None]*(maxcolumns-len(columndata[i])))
-            return list(columndata, title=title, addlinenumbers=0,
-                        **dict([(column, i+1) for i, column in enumerate(columns[:maxcolumns-1])]))
+            return points(columndata, title=title, addlinenumbers=0,
+                          **dict([(column, i+1) for i, column in enumerate(columns[:maxcolumns-1])]))
 
         try:
             filename.readlines
@@ -366,7 +390,7 @@ class conffile(data):
                         point[index] = value
                 columndata[i] = point
             # wrap result into a data instance to remove column numbers
-            result = data(list(columndata, addlinenumbers=0, **columns), title=title)
+            result = data(points(columndata, addlinenumbers=0, **columns), title=title)
             # ... but reinsert sections as linenumbers
             result.columndata = [[x[0] for x in columndata]]
             return result
@@ -386,7 +410,7 @@ cbdfilecache = {}
 
 class cbdfile(data):
 
-    defaultstyles = [style.line()]
+    defaultstyles = defaultlines
 
     def getcachekey(self, *args):
         return ":".join([str(x) for x in args])
@@ -472,7 +496,7 @@ class cbdfile(data):
                     columndata.extend([(long/3600.0, lat/3600.0)
                                        for lat, long in sb.points])
 
-            result = list(columndata, title=title)
+            result = points(columndata, title=title)
             result.defaultstyles = self.defaultstyles
             return result
 
@@ -491,7 +515,7 @@ class cbdfile(data):
 
 class function(_data):
 
-    defaultstyles = [style.line()]
+    defaultstyles = defaultlines
 
     assignmentpattern = re.compile(r"\s*([a-z_][a-z0-9_]*)\s*\(\s*([a-z_][a-z0-9_]*)\s*\)\s*=", re.IGNORECASE)
 
@@ -557,7 +581,7 @@ class functionxy(function):
 
 class paramfunction(_data):
 
-    defaultstyles = [style.line()]
+    defaultstyles = defaultlines
 
     def __init__(self, varname, min, max, expression, title=_notitle, points=100, context={}):
         if context.has_key(varname):

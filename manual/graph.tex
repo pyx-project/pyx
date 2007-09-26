@@ -485,8 +485,16 @@ For the sake of completeness we list the default patterns:
   the end of the section are available.
 \end{classdesc} % }}}
 
-\begin{classdesc}{list}{data, title="user provided list", % {{{
-                        addlinenumbers=1, **columns}
+\begin{classdesc}{values}{title="user provided values", % {{{
+                          **columns}
+  This class creates graph data from externally provided data.
+  Each column is a list of values to be used for that column.
+
+  \var{title} is the title of the data to be used in the graph key.
+\end{classdesc} % }}}
+
+\begin{classdesc}{points}{data, title="user provided points", % {{{
+                          addlinenumbers=1, **columns}
   This class creates graph data from externally provided data.
   \var{data} is a list of lines, where each line is a list of data
   values for the columns.
