@@ -79,13 +79,13 @@ class pathpositioner(_positioner):
 class lineaxispos_pt:
     """an axispos linear along a line with a fix direction for the ticks"""
 
-    def __init__(self, x1_pt, y1_pt, x2_pt, y2_pt, fixtickdirection, vgridpathfunction):
+    def __init__(self, x1_pt, y1_pt, x2_pt, y2_pt, fixtickdirection, vgridpath):
         self.x1_pt = x1_pt
         self.y1_pt = y1_pt
         self.x2_pt = x2_pt
         self.y2_pt = y2_pt
         self.fixtickdirection = fixtickdirection
-        self.vgridpathfunction = vgridpathfunction
+        self.vgridpath = vgridpath
 
     def vbasepath(self, v1=None, v2=None):
         if v1 is None:
@@ -97,12 +97,26 @@ class lineaxispos_pt:
                             (1-v2)*self.x1_pt+v2*self.x2_pt,
                             (1-v2)*self.y1_pt+v2*self.y2_pt)
 
-    def vgridpath(self, v):
-        return self.vgridpathfunction(v)
-
     def vtickpoint_pt(self, v):
         return (1-v)*self.x1_pt+v*self.x2_pt, (1-v)*self.y1_pt+v*self.y2_pt
 
     def vtickdirection(self, v):
         return self.fixtickdirection
 
+
+class flexlineaxispos_pt(lineaxispos_pt):
+    """an axispos linear along a line with flexible direction for the ticks"""
+
+    def __init__(self, vtickpoint_pt, vtickdirection, vgridpath):
+        self.vtickpoint_pt = vtickpoint_pt
+        self.vtickdirection = vtickdirection
+        self.vgridpath = vgridpath
+
+    def vbasepath(self, v1=None, v2=None):
+        if v1 is None:
+            v1 = 0
+        if v2 is None:
+            v2 = 1
+        x1_pt, y1_pt = self.vtickpoint_pt(v1)
+        x2_pt, y2_pt = self.vtickpoint_pt(v2)
+        return path.line_pt(x1_pt, y1_pt, x2_pt, y2_pt)

@@ -40,12 +40,6 @@ import struct, binascii, zlib
 import bbox, canvas, color, pdfwriter, unit
 
 
-class mesh:
-
-    def __init__(self, elements):
-        self.elements = elements
-
-
 class node_pt:
 
     def __init__(self, coords_pt, value):
@@ -80,10 +74,10 @@ class PDFGenericResource(pdfwriter.PDFobject):
         file.write(self.content)
 
 
-class canvasmesh(mesh, canvas.canvasitem):
+class mesh(canvas.canvasitem):
 
     def __init__(self, elements, check=1):
-        mesh.__init__(self, elements)
+        self.elements = elements
         if check:
             colorspacestring = ""
             for element in elements:

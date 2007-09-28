@@ -7,15 +7,15 @@ from pyx import *
 text.set(mode="latex")
 
 def test_minimal(c, x, y):
-    g = c.insert(graph.graphxyz(x, y, width=5, height=5, depth=5))
+    g = c.insert(graph.graphxyz(x, y, size=5))
     g.plot(graph.data.file("data/husimi_small.dat", x=1, y=2, z=3))
 
 def test_line(c, x, y):
-    g = c.insert(graph.graphxyz(x, y, width=5, height=5, depth=5))
+    g = c.insert(graph.graphxyz(x, y, size=5))
     g.plot(graph.data.file("data/husimi_small.dat", x=1, y=2, z=3), [graph.style.line()])
 
 def test_surface(c, x, y):
-    g = c.insert(graph.graphxyz(x, y, width=5, height=5, depth=5))
+    g = c.insert(graph.graphxyz(x, y, size=5))
     g.plot(graph.data.file("data/husimi_small.dat", x=1, y=2, z=3, color=3), [graph.style.surface(strokelines1=0)])
 
 def test_surface2d(c, x, y):

@@ -23,7 +23,7 @@
 
 
 import math, warnings
-from pyx import attr, deco, style, color, unit, canvas, path
+from pyx import attr, deco, style, color, unit, canvas, path, mesh
 from pyx import text as textmodule
 
 builtinrange = range
@@ -1675,7 +1675,6 @@ class surface(_line):
                 if len(p):
                     graph.stroke(p, privatedata.gridattrs)
         if privatedata.colorize:
-            from pyx import mesh
             nodes = []
             elements = []
             for value1a, value1b in zip(values1[:-1], values1[1:]):
@@ -1720,7 +1719,7 @@ class surface(_line):
                     e4 = mesh.element((n3, n4, n5))
                     nodes.extend([n1, n2, n3, n4, n5])
                     elements.extend([e1, e2, e3, e4])
-            m = mesh.canvasmesh(elements, nodes)
+            m = mesh.mesh(elements, nodes)
             graph.insert(m)
 
     def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):

@@ -164,7 +164,7 @@ class rgb(color):
     def colorspacestring(self):
         return "/DeviceRGB"
 
-    def to8bitstring(self):
+    def tostring8bit(self):
         return struct.pack("BBB", int(self.color["r"]*255), int(self.color["g"]*255), int(self.color["b"]*255))
 
     def tohexstring(self, cssstrip=1, addhash=1):
