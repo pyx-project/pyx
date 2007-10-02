@@ -1564,30 +1564,57 @@ class changebar(bar):
         raise RuntimeError("Style currently doesn't provide a graph key")
 
 
-class surface(_line):
+class _surface:
 
     needsdata = ["vpos", "vposmissing", "vposavailable", "vposvalid"]
 
-    defaultgridattrs = []
-
-    def __init__(self, colorname="color", gradient=color.gradient.Rainbow,
-                       mincolor=None, maxcolor=None,
-                       index1=0, index2=1, strokelines1=1, strokelines2=1, gridattrs=[],
+    def __init__(self, index1=0, index2=1, strokelines1=1, strokelines2=1, gridattrs=[],
                        epsilon=1e-10):
-        self.colorname = colorname
-        self.gradient = gradient
-        self.mincolor = mincolor
-        self.maxcolor = maxcolor
         self.index1 = index1
         self.index2 = index2
+        self.epsilon = epsilon
+
+    def initdrawpoints(self, privatedata, sharedata, graph):
+        privatedata.values1 = {}
+        privatedata.values2 = {}
+        privatedata.data12 = {}
+        privatedata.data21 = {}
+
+    def drawpoint(self, privatedata, sharedata, graph, point):
+        if sharedata.vposavailable:
+            privatedata.value1 = sharedata.vpos[self.index1]
+            privatedata.value2 = sharedata.vpos[self.index2]
+            if not privatedata.values1.has_key(privatedata.value1):
+                for hasvalue in privatedata.values1.keys():
+                    if hasvalue - self.epsilon <= privatedata.value1 <= hasvalue + self.epsilon:
+                        privatedata.value1 = hasvalue
+                        break
+                else:
+                    privatedata.values1[privatedata.value1] = 1
+            if not privatedata.values2.has_key(privatedata.value2):
+                for hasvalue in privatedata.values2.keys():
+                    if hasvalue - self.epsilon <= privatedata.value2 <= hasvalue + self.epsilon:
+                        privatedata.value2 = hasvalue
+                        break
+                else:
+                    privatedata.values2[privatedata.value2] = 1
+            data = sharedata.vposavailable, sharedata.vposvalid, sharedata.vpos[:]
+            privatedata.data12.setdefault(privatedata.value1, {})[privatedata.value2] = data
+            privatedata.data21.setdefault(privatedata.value2, {})[privatedata.value1] = data
+
+    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
+        raise NotImplementedError
+
+
+class grid(_surface, _line):
+
+    defaultgridattrs = []
+
+    def __init__(self, strokelines1=1, strokelines2=1, gridattrs=[], **kwargs):
+        _surface.__init__(self, **kwargs)
         self.strokelines1 = strokelines1
         self.strokelines2 = strokelines2
         self.gridattrs = gridattrs
-        self.epsilon = epsilon
-
-    def columnnames(self, privatedata, sharedata, graph, columnnames):
-        privatedata.colorize = self.colorname in columnnames
-        return privatedata.colorize and [self.colorname] or [] + _line.columnnames(self, privatedata, sharedata, graph, columnnames)
 
     def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
         if self.gridattrs is not None:
@@ -1595,71 +1622,11 @@ class surface(_line):
         else:
             privatedata.gridattrs = None
 
-
-    def initdrawpoints(self, privatedata, sharedata, graph):
-        privatedata.values1 = {}
-        privatedata.values2 = {}
-        privatedata.data12 = {}
-        privatedata.data21 = {}
-        privatedata.colors = {}
-        privatedata.mincolor = privatedata.maxcolor = None
-
-    def drawpoint(self, privatedata, sharedata, graph, point):
-        if sharedata.vposavailable:
-            value1 = sharedata.vpos[self.index1]
-            value2 = sharedata.vpos[self.index2]
-            if not privatedata.values1.has_key(value1):
-                for hasvalue in privatedata.values1.keys():
-                    if hasvalue - self.epsilon <= value1 <= hasvalue + self.epsilon:
-                        value1 = hasvalue
-                        break
-                else:
-                    privatedata.values1[value1] = 1
-            if not privatedata.values2.has_key(value2):
-                for hasvalue in privatedata.values2.keys():
-                    if hasvalue - self.epsilon <= value2 <= hasvalue + self.epsilon:
-                        value2 = hasvalue
-                        break
-                else:
-                    privatedata.values2[value2] = 1
-            data = sharedata.vposavailable, sharedata.vposvalid, sharedata.vpos[:]
-            privatedata.data12.setdefault(value1, {})[value2] = data
-            privatedata.data21.setdefault(value2, {})[value1] = data
-            if privatedata.colorize:
-                try:
-                    color = point[self.colorname] + 0
-                except:
-                    pass
-                else:
-                    privatedata.colors.setdefault(value1, {})[value2] = color
-                    if privatedata.mincolor is None or color < privatedata.mincolor:
-                        privatedata.mincolor = color
-                    if privatedata.mincolor is None or privatedata.maxcolor < color:
-                        privatedata.maxcolor = color
-
     def donedrawpoints(self, privatedata, sharedata, graph):
         values1 = privatedata.values1.keys()
         values1.sort()
         values2 = privatedata.values2.keys()
         values2.sort()
-        if self.mincolor is not None:
-            mincolor = self.mincolor
-        if self.maxcolor is not None:
-            maxcolor = self.maxcolor
-        if self.strokelines2:
-            for value1 in values1:
-                data2 = privatedata.data12[value1]
-                self.initpointstopath(privatedata)
-                for value2 in values2:
-                    try:
-                        data = data2[value2]
-                    except KeyError:
-                        self.addinvalid(privatedata)
-                    else:
-                        self.addpoint(privatedata, graph.vpos_pt, *data)
-                p = self.donepointstopath(privatedata)
-                if len(p):
-                    graph.stroke(p, privatedata.gridattrs)
         if self.strokelines1:
             for value2 in values2:
                 data1 = privatedata.data21[value2]
@@ -1674,53 +1641,169 @@ class surface(_line):
                 p = self.donepointstopath(privatedata)
                 if len(p):
                     graph.stroke(p, privatedata.gridattrs)
-        if privatedata.colorize:
-            nodes = []
-            elements = []
-            for value1a, value1b in zip(values1[:-1], values1[1:]):
-                for value2a, value2b in zip(values2[:-1], values2[1:]):
+        if self.strokelines2:
+            for value1 in values1:
+                data2 = privatedata.data12[value1]
+                self.initpointstopath(privatedata)
+                for value2 in values2:
                     try:
-                        available1, valid1, v1 = privatedata.data12[value1a][value2a]
-                        available2, valid2, v2 = privatedata.data12[value1a][value2b]
-                        available3, valid3, v3 = privatedata.data12[value1b][value2a]
-                        available4, valid4, v4 = privatedata.data12[value1b][value2b]
+                        data = data2[value2]
                     except KeyError:
-                        continue
-                    if not available1 or not available2 or not available3 or not available4:
-                        continue
-                    if not valid1 or not valid2 or not valid3 or not valid4:
-                        continue
-                    v5 = [0.25*sum(values) for values in zip(v1, v2, v3, v4)]
-                    x1_pt, y1_pt = graph.vpos_pt(*v1)
-                    x2_pt, y2_pt = graph.vpos_pt(*v2)
-                    x3_pt, y3_pt = graph.vpos_pt(*v3)
-                    x4_pt, y4_pt = graph.vpos_pt(*v4)
-                    x5_pt, y5_pt = graph.vpos_pt(*v5)
-                    c1 = privatedata.colors[value1a][value2a]
-                    c2 = privatedata.colors[value1a][value2b]
-                    c3 = privatedata.colors[value1b][value2a]
-                    c4 = privatedata.colors[value1b][value2b]
-                    c5 = 0.25*(c1+c2+c3+c4)
-                    def color(c):
-                        return self.gradient.getcolor((c - privatedata.mincolor) / float(privatedata.maxcolor - privatedata.mincolor)).rgb()
-                    color1 = color(c1)
-                    color2 = color(c2)
-                    color3 = color(c3)
-                    color4 = color(c4)
-                    color5 = color(c5)
-                    n1 = mesh.node_pt((x1_pt, y1_pt), color1)
-                    n2 = mesh.node_pt((x2_pt, y2_pt), color2)
-                    n3 = mesh.node_pt((x3_pt, y3_pt), color3)
-                    n4 = mesh.node_pt((x4_pt, y4_pt), color4)
-                    n5 = mesh.node_pt((x5_pt, y5_pt), color5)
-                    e1 = mesh.element((n1, n2, n5))
-                    e2 = mesh.element((n1, n3, n5))
-                    e3 = mesh.element((n2, n4, n5))
-                    e4 = mesh.element((n3, n4, n5))
-                    nodes.extend([n1, n2, n3, n4, n5])
-                    elements.extend([e1, e2, e3, e4])
-            m = mesh.mesh(elements, nodes)
-            graph.insert(m)
+                        self.addinvalid(privatedata)
+                    else:
+                        self.addpoint(privatedata, graph.vpos_pt, *data)
+                p = self.donepointstopath(privatedata)
+                if len(p):
+                    graph.stroke(p, privatedata.gridattrs)
 
-    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
-        raise NotImplementedError
+
+class surface(_surface, _style):
+
+    needsdata = ["vpos", "vposmissing", "vposavailable", "vposvalid"]
+
+    def __init__(self, colorname="color", gradient=color.gradient.Rainbow,
+                       mincolor=None, maxcolor=None, **kwargs):
+        _surface.__init__(self, **kwargs)
+        self.colorname = colorname
+        self.gradient = gradient
+        self.mincolor = mincolor
+        self.maxcolor = maxcolor
+
+    def columnnames(self, privatedata, sharedata, graph, columnnames):
+        privatedata.colorize = self.colorname in columnnames
+        return privatedata.colorize and [self.colorname] or [] + _surface.columnnames(self, privatedata, sharedata, graph, columnnames)
+
+    def initdrawpoints(self, privatedata, sharedata, graph):
+        _surface.initdrawpoints(self, privatedata, sharedata, graph)
+        privatedata.colors = {}
+        privatedata.mincolor = privatedata.maxcolor = None
+
+    def drawpoint(self, privatedata, sharedata, graph, point):
+        _surface.drawpoint(self, privatedata, sharedata, graph, point)
+        if sharedata.vposavailable:
+            try:
+                color = point[self.colorname] + 0
+            except:
+                pass
+            else:
+                privatedata.colors.setdefault(privatedata.value1, {})[privatedata.value2] = color
+                if privatedata.mincolor is None or color < privatedata.mincolor:
+                    privatedata.mincolor = color
+                if privatedata.mincolor is None or privatedata.maxcolor < color:
+                    privatedata.maxcolor = color
+
+    def donedrawpoints(self, privatedata, sharedata, graph):
+        v1 = [0]*len(graph.axesnames)
+        v2 = [0]*len(graph.axesnames)
+        v3 = [0]*len(graph.axesnames)
+        v4 = [0]*len(graph.axesnames)
+        v1[self.index2] = 0.5
+        v2[self.index1] = 0.5
+        v3[self.index1] = 0.5
+        v3[self.index2] = 1
+        v4[self.index1] = 1
+        v4[self.index2] = 0.5
+        sortElements = [-graph.vzindex(*v1),
+                        -graph.vzindex(*v2),
+                        -graph.vzindex(*v3),
+                        -graph.vzindex(*v4)]
+
+        values1 = privatedata.values1.keys()
+        values1.sort()
+        v1 = [0]*len(graph.axesnames)
+        v2 = [0]*len(graph.axesnames)
+        v1[self.index1] = -1
+        v2[self.index1] = 1
+        sign = 1
+        if graph.vzindex(*v1) < graph.vzindex(*v2):
+            values1.reverse()
+            sign *= -1
+            sortElements = [sortElements[3], sortElements[1], sortElements[2], sortElements[0]]
+
+        values2 = privatedata.values2.keys()
+        values2.sort()
+        v1 = [0]*len(graph.axesnames)
+        v2 = [0]*len(graph.axesnames)
+        v1[self.index2] = -1
+        v2[self.index2] = 1
+        if graph.vzindex(*v1) < graph.vzindex(*v2):
+            values2.reverse()
+            sign *= -1
+            sortElements = [sortElements[0], sortElements[2], sortElements[1], sortElements[3]]
+
+        sortElements = [(zindex, i) for i, zindex in enumerate(sortElements)]
+        sortElements.sort()
+        sortElements = dict([(i, pos) for i, (zindex, pos) in enumerate(sortElements)])
+
+        if self.mincolor is not None:
+            mincolor = self.mincolor
+        if self.maxcolor is not None:
+            maxcolor = self.maxcolor
+        nodes = []
+        elements = []
+        for value1a, value1b in zip(values1[:-1], values1[1:]):
+            for value2a, value2b in zip(values2[:-1], values2[1:]):
+                try:
+                    available1, valid1, v1 = privatedata.data12[value1a][value2a]
+                    available2, valid2, v2 = privatedata.data12[value1a][value2b]
+                    available3, valid3, v3 = privatedata.data12[value1b][value2a]
+                    available4, valid4, v4 = privatedata.data12[value1b][value2b]
+                except KeyError:
+                    continue
+                if not available1 or not available2 or not available3 or not available4:
+                    continue
+                if not valid1 or not valid2 or not valid3 or not valid4:
+                    warnings.warn("surface elements partially outside of the graph are (currently) skipped completely")
+                v5 = [0.25*sum(values) for values in zip(v1, v2, v3, v4)]
+                x1_pt, y1_pt = graph.vpos_pt(*v1)
+                x2_pt, y2_pt = graph.vpos_pt(*v2)
+                x3_pt, y3_pt = graph.vpos_pt(*v3)
+                x4_pt, y4_pt = graph.vpos_pt(*v4)
+                x5_pt, y5_pt = graph.vpos_pt(*v5)
+                c1 = privatedata.colors[value1a][value2a]
+                c2 = privatedata.colors[value1a][value2b]
+                c3 = privatedata.colors[value1b][value2a]
+                c4 = privatedata.colors[value1b][value2b]
+                c5 = 0.25*(c1+c2+c3+c4)
+                def getcolor(c):
+                    return self.gradient.getcolor((c - privatedata.mincolor) / float(privatedata.maxcolor - privatedata.mincolor)).rgb()
+                color1 = getcolor(c1)
+                color2 = getcolor(c2)
+                color3 = getcolor(c3)
+                color4 = getcolor(c4)
+                color5 = getcolor(c5)
+                if sign*graph.vangle(*(v1+v2+v5)) >= 0:
+                    e1 = mesh.element((mesh.node_pt((x1_pt, y1_pt), color1),
+                                       mesh.node_pt((x2_pt, y2_pt), color2),
+                                       mesh.node_pt((x5_pt, y5_pt), color5)))
+                else:
+                    e1 = mesh.element((mesh.node_pt((x1_pt, y1_pt), color.rgb.black),
+                                       mesh.node_pt((x2_pt, y2_pt), color.rgb.black),
+                                       mesh.node_pt((x5_pt, y5_pt), color.rgb.black)))
+                if sign*graph.vangle(*(v3+v1+v5)) >= 0:
+                    e2 = mesh.element((mesh.node_pt((x1_pt, y1_pt), color1),
+                                       mesh.node_pt((x3_pt, y3_pt), color3),
+                                       mesh.node_pt((x5_pt, y5_pt), color5)))
+                else:
+                    e2 = mesh.element((mesh.node_pt((x1_pt, y1_pt), color.rgb.black),
+                                       mesh.node_pt((x3_pt, y3_pt), color.rgb.black),
+                                       mesh.node_pt((x5_pt, y5_pt), color.rgb.black)))
+                if sign*graph.vangle(*(v2+v4+v5)) >= 0:
+                    e3 = mesh.element((mesh.node_pt((x2_pt, y2_pt), color2),
+                                       mesh.node_pt((x4_pt, y4_pt), color4),
+                                       mesh.node_pt((x5_pt, y5_pt), color5)))
+                else:
+                    e3 = mesh.element((mesh.node_pt((x2_pt, y2_pt), color.rgb.black),
+                                       mesh.node_pt((x4_pt, y4_pt), color.rgb.black),
+                                       mesh.node_pt((x5_pt, y5_pt), color.rgb.black)))
+                if sign*graph.vangle(*(v4+v3+v5)) >= 0:
+                    e4 = mesh.element((mesh.node_pt((x3_pt, y3_pt), color3),
+                                       mesh.node_pt((x4_pt, y4_pt), color4),
+                                       mesh.node_pt((x5_pt, y5_pt), color5)))
+                else:
+                    e4 = mesh.element((mesh.node_pt((x3_pt, y3_pt), color.rgb.black),
+                                       mesh.node_pt((x4_pt, y4_pt), color.rgb.black),
+                                       mesh.node_pt((x5_pt, y5_pt), color.rgb.black)))
+                elements.extend([[e1, e2, e3, e4][sortElements[i]] for i in builtinrange(4)])
+        m = mesh.mesh(elements)
+        graph.insert(m)

@@ -329,7 +329,7 @@ class graphxy(graph):
             self.ytickpoint_pt = self.axes["y"].tickpoint_pt
             self.ytickpoint = self.axes["y"].tickpoint
             self.yvtickpoint_pt = self.axes["y"].vtickpoint_pt
-            self.yvtickpoint = self.axes["y"].tickpoint
+            self.yvtickpoint = self.axes["y"].vtickpoint
             self.ytickdirection = self.axes["y"].tickdirection
             self.yvtickdirection = self.axes["y"].vtickdirection
 
@@ -368,6 +368,12 @@ class graphxy(graph):
     def vpos(self, vx, vy):
         return (self.xpos + vx*self.width,
                 self.ypos + vy*self.height)
+
+    def vzindex(self, vx, vy):
+        return 0
+
+    def vangle(self, vx1, vy1, vx2, vy2, vx3, vy3):
+        return 1
 
     def vgeodesic(self, vx1, vy1, vx2, vy2):
         """returns a geodesic path between two points in graph coordinates"""
@@ -540,6 +546,15 @@ class graphxyz(graphxy):
                 - self.a[1]*self.eye[0]*(z-self.eye[2]))
             return da/d0, db/d0
 
+        def zindex(self, x, y, z):
+            return math.sqrt((x-self.eye[0])*(x-self.eye[0])+(y-self.eye[1])*(y-self.eye[1])+(z-self.eye[2])*(z-self.eye[2]))
+
+        def angle(self, x1, y1, z1, x2, y2, z2, x3, y3, z3):
+            nx = (y2-y1)*(z3-z1)-(z2-z1)*(y3-y1)
+            ny = (z2-z1)*(x3-x1)-(x2-x1)*(z3-z1)
+            nz = (x2-x1)*(y3-y1)-(y2-y1)*(x3-x1)
+            return (x1-self.eye[0])*nx+(y1-self.eye[1])*ny+(z1-self.eye[2])*nz
+
 
     class parallel:
 
@@ -551,15 +566,26 @@ class graphxyz(graphxy):
             self.b = (-math.cos(phi)*math.sin(theta),
                       -math.sin(phi)*math.sin(theta),
                       math.cos(theta))
+            self.c = (-math.cos(phi)*math.cos(theta),
+                      -math.sin(phi)*math.cos(theta),
+                      -math.sin(theta))
 
         def point(self, x, y, z):
             return self.a[0]*x+self.a[1]*y+self.a[2]*z, self.b[0]*x+self.b[1]*y+self.b[2]*z
 
+        def zindex(self, x, y, z):
+            return self.c[0]*x+self.c[1]*y+self.c[2]*z
+
+        def angle(self, x1, y1, z1, x2, y2, z2, x3, y3, z3):
+            nx = (y2-y1)*(z3-z1)-(z2-z1)*(y3-y1)
+            ny = (z2-z1)*(x3-x1)-(x2-x1)*(z3-z1)
+            nz = (x2-x1)*(y3-y1)-(y2-y1)*(x3-x1)
+            return self.c[0]*nx+self.c[1]*ny+self.c[2]*nz
+
 
     def __init__(self, xpos=0, ypos=0, size=None,
                  xscale=1, yscale=1, zscale=1/goldenmean,
-                 projector=central(10, -30, 30),
-                 key=None, backgroundattrs=None,
+                 projector=central(10, -30, 30), key=None,
                  **axes):
         graph.__init__(self)
 
@@ -574,7 +600,8 @@ class graphxyz(graphxy):
         self.zscale = zscale
         self.projector = projector
         self.key = key
-        self.backgroundattrs = backgroundattrs
+        self.xorder = projector.zindex(0, -1, 0) > projector.zindex(0, 1, 0) and 1 or 0
+        self.yorder = projector.zindex(-1, 0, 0) > projector.zindex(1, 0, 0) and 1 or 0
 
         for axisname, aaxis in axes.items():
             if aaxis is not None:
@@ -582,10 +609,16 @@ class graphxyz(graphxy):
                     self.axes[axisname] = axis.anchoredaxis(aaxis, self.texrunner, axisname)
                 else:
                     self.axes[axisname] = aaxis
-
-        for axisname in ["x", "y", "z"]:
+        for axisname in ["x", "y"]:
+            okey = axisname + "2"
             if not axes.has_key(axisname):
-                self.axes[axisname] = axis.anchoredaxis(axis.linear(), self.texrunner, axisname)
+                if not axes.has_key(okey):
+                    self.axes[axisname] = axis.anchoredaxis(axis.linear(), self.texrunner, axisname)
+                    self.axes[okey] = axis.linkedaxis(self.axes[axisname], okey)
+                else:
+                    self.axes[axisname] = axis.linkedaxis(self.axes[okey], axisname)
+        if not axes.has_key("z"):
+            self.axes["z"] = axis.anchoredaxis(axis.linear(), self.texrunner, axisname)
 
         if self.axes.has_key("x"):
             self.xbasepath = self.axes["x"].basepath
@@ -593,8 +626,10 @@ class graphxyz(graphxy):
             self.xgridpath = self.axes["x"].gridpath
             self.xtickpoint_pt = self.axes["x"].tickpoint_pt
             self.xtickpoint = self.axes["x"].tickpoint
+            self.xvtickpoint_pt = self.axes["x"].vtickpoint_pt
             self.xvtickpoint = self.axes["x"].tickpoint
             self.xtickdirection = self.axes["x"].tickdirection
+            self.xvtickdirection = self.axes["x"].vtickdirection
 
         if self.axes.has_key("y"):
             self.ybasepath = self.axes["y"].basepath
@@ -602,8 +637,10 @@ class graphxyz(graphxy):
             self.ygridpath = self.axes["y"].gridpath
             self.ytickpoint_pt = self.axes["y"].tickpoint_pt
             self.ytickpoint = self.axes["y"].tickpoint
-            self.yvtickpoint = self.axes["y"].tickpoint
+            self.yvtickpoint_pt = self.axes["y"].vtickpoint_pt
+            self.yvtickpoint = self.axes["y"].vtickpoint
             self.ytickdirection = self.axes["y"].tickdirection
+            self.yvtickdirection = self.axes["y"].vtickdirection
 
         if self.axes.has_key("z"):
             self.zbasepath = self.axes["z"].basepath
@@ -611,8 +648,10 @@ class graphxyz(graphxy):
             self.zgridpath = self.axes["z"].gridpath
             self.ztickpoint_pt = self.axes["z"].tickpoint_pt
             self.ztickpoint = self.axes["z"].tickpoint
-            self.zvtickpoint = self.axes["z"].tickpoint
+            self.zvtickpoint_pt = self.axes["z"].vtickpoint
+            self.zvtickpoint = self.axes["z"].vtickpoint
             self.ztickdirection = self.axes["z"].tickdirection
+            self.zvtickdirection = self.axes["z"].vtickdirection
 
         self.axesnames = ([], [], [])
         for axisname, aaxis in self.axes.items():
@@ -657,35 +696,21 @@ class graphxyz(graphxy):
                                     2*self.zscale*(vz - 0.5))
         return self.xpos+x*self.size, self.ypos+y*self.size
 
-#     def xbaseline(self, axis, x1, x2, xaxis=None):
-#         if xaxis is None: xaxis = self.axes["x"]
-#         return self.vxbaseline(axis, xaxis.convert(x1), xaxis.convert(x2))
-# 
-#     def ybaseline(self, axis, y1, y2, yaxis=None):
-#         if yaxis is None: yaxis = self.axes["y"]
-#         return self.vybaseline(axis, yaxis.convert(y1), yaxis.convert(y2))
-# 
-#     def zbaseline(self, axis, z1, z2, zaxis=None):
-#         if zaxis is None: zaxis = self.axes["z"]
-#         return self.vzbaseline(axis, zaxis.convert(z1), zaxis.convert(z2))
-# 
-#     def vxbaseline(self, axis, v1, v2):
-#         return (path.line_pt(*(self.vpos_pt(v1, 0, 0) + self.vpos_pt(v2, 0, 0))) +
-#                 path.line_pt(*(self.vpos_pt(v1, 0, 1) + self.vpos_pt(v2, 0, 1))) +
-#                 path.line_pt(*(self.vpos_pt(v1, 1, 1) + self.vpos_pt(v2, 1, 1))) +
-#                 path.line_pt(*(self.vpos_pt(v1, 1, 0) + self.vpos_pt(v2, 1, 0))))
-# 
-#     def vybaseline(self, axis, v1, v2):
-#         return (path.line_pt(*(self.vpos_pt(0, v1, 0) + self.vpos_pt(0, v2, 0))) +
-#                 path.line_pt(*(self.vpos_pt(0, v1, 1) + self.vpos_pt(0, v2, 1))) +
-#                 path.line_pt(*(self.vpos_pt(1, v1, 1) + self.vpos_pt(1, v2, 1))) +
-#                 path.line_pt(*(self.vpos_pt(1, v1, 0) + self.vpos_pt(1, v2, 0))))
-# 
-#     def vzbaseline(self, axis, v1, v2):
-#         return (path.line_pt(*(self.vpos_pt(0, 0, v1) + self.vpos_pt(0, 0, v2))) +
-#                 path.line_pt(*(self.vpos_pt(0, 1, v1) + self.vpos_pt(0, 1, v2))) +
-#                 path.line_pt(*(self.vpos_pt(1, 1, v1) + self.vpos_pt(1, 1, v2))) +
-#                 path.line_pt(*(self.vpos_pt(1, 0, v1) + self.vpos_pt(1, 0, v2))))
+    def vzindex(self, vx, vy, vz):
+        return self.projector.zindex(2*self.xscale*(vx - 0.5),
+                                     2*self.yscale*(vy - 0.5),
+                                     2*self.zscale*(vz - 0.5))
+
+    def vangle(self, vx1, vy1, vz1, vx2, vy2, vz2, vx3, vy3, vz3):
+        return self.projector.angle(2*self.xscale*(vx1 - 0.5),
+                                    2*self.yscale*(vy1 - 0.5),
+                                    2*self.zscale*(vz1 - 0.5),
+                                    2*self.xscale*(vx2 - 0.5),
+                                    2*self.yscale*(vy2 - 0.5),
+                                    2*self.zscale*(vz2 - 0.5),
+                                    2*self.xscale*(vx3 - 0.5),
+                                    2*self.yscale*(vy3 - 0.5),
+                                    2*self.zscale*(vz3 - 0.5))
 
     def vgeodesic(self, vx1, vy1, vz1, vx2, vy2, vz2):
         """returns a geodesic path between two points in graph coordinates"""
@@ -712,72 +737,113 @@ class graphxyz(graphxy):
         else:
             raise ValueError("direction invalid")
 
-    def xvtickpoint_pt(self, vx):
-        return self.vpos_pt(vx, 0, 0)
-
-    def yvtickpoint_pt(self, vy):
-        return self.vpos_pt(1, vy, 0)
-
-    def zvtickpoint_pt(self, vz):
-        return self.vpos_pt(0, 0, vz)
-
     def xvtickdirection(self, vx):
-        x1_pt, y1_pt = self.vpos_pt(vx, 0, 0)
-        x2_pt, y2_pt = self.vpos_pt(vx, 1, 0)
+        if self.xorder:
+            x1_pt, y1_pt = self.vpos_pt(vx, 1, 0)
+            x2_pt, y2_pt = self.vpos_pt(vx, 0, 0)
+        else:
+            x1_pt, y1_pt = self.vpos_pt(vx, 0, 0)
+            x2_pt, y2_pt = self.vpos_pt(vx, 1, 0)
         dx_pt = x2_pt - x1_pt
         dy_pt = y2_pt - y1_pt
         norm = math.hypot(dx_pt, dy_pt)
         return dx_pt/norm, dy_pt/norm
 
     def yvtickdirection(self, vy):
-        x1_pt, y1_pt = self.vpos_pt(1, vy, 0)
-        x2_pt, y2_pt = self.vpos_pt(0, vy, 0)
+        if self.yorder:
+            x1_pt, y1_pt = self.vpos_pt(1, vy, 0)
+            x2_pt, y2_pt = self.vpos_pt(0, vy, 0)
+        else:
+            x1_pt, y1_pt = self.vpos_pt(0, vy, 0)
+            x2_pt, y2_pt = self.vpos_pt(1, vy, 0)
         dx_pt = x2_pt - x1_pt
         dy_pt = y2_pt - y1_pt
         norm = math.hypot(dx_pt, dy_pt)
         return dx_pt/norm, dy_pt/norm
 
-    def zvtickdirection(self, vz):
-        x1_pt, y1_pt = self.vpos_pt(0, 0, vz)
-        x2_pt, y2_pt = self.vpos_pt(1, 1, vz)
+    def vtickdirection(self, vx1, vy1, vz1, vx2, vy2, vz2):
+        x1_pt, y1_pt = self.vpos_pt(vx1, vy1, vz1)
+        x2_pt, y2_pt = self.vpos_pt(vx2, vy2, vz2)
         dx_pt = x2_pt - x1_pt
         dy_pt = y2_pt - y1_pt
         norm = math.hypot(dx_pt, dy_pt)
         return dx_pt/norm, dy_pt/norm
-
-    def yvgridpath(self, vy):
-        raise NotImplementedError
-
-    def zvgridpath(self, vz):
-        raise NotImplementedError
 
     def xvgridpath(self, vx):
-        raise NotImplementedError
+        return path.path(path.moveto_pt(*self.vpos_pt(vx, 0, 0)),
+                         path.lineto_pt(*self.vpos_pt(vx, 1, 0)),
+                         path.lineto_pt(*self.vpos_pt(vx, 1, 1)),
+                         path.lineto_pt(*self.vpos_pt(vx, 0, 1)),
+                         path.closepath())
 
     def yvgridpath(self, vy):
-        raise NotImplementedError
+        return path.path(path.moveto_pt(*self.vpos_pt(0, vy, 0)),
+                         path.lineto_pt(*self.vpos_pt(1, vy, 0)),
+                         path.lineto_pt(*self.vpos_pt(1, vy, 1)),
+                         path.lineto_pt(*self.vpos_pt(0, vy, 1)),
+                         path.closepath())
 
     def zvgridpath(self, vz):
-        raise NotImplementedError
+        return path.path(path.moveto_pt(*self.vpos_pt(0, 0, vz)),
+                         path.lineto_pt(*self.vpos_pt(1, 0, vz)),
+                         path.lineto_pt(*self.vpos_pt(1, 1, vz)),
+                         path.lineto_pt(*self.vpos_pt(0, 1, vz)),
+                         path.closepath())
 
     def doaxispositioner(self, axisname):
         if self.did(self.doaxispositioner, axisname):
             return
         self.doranges()
         if axisname == "x":
-            x1_pt, y1_pt = self.vpos_pt(0, 0, 0)
-            x2_pt, y2_pt = self.vpos_pt(1, 0, 0)
-            self.axes["x"].setpositioner(positioner.flexlineaxispos_pt(self.xvtickpoint_pt, self.xvtickdirection, self.xvgridpath))
+            self.axes["x"].setpositioner(positioner.flexlineaxispos_pt(lambda vx: self.vpos_pt(vx, self.xorder, 0),
+                                                                       lambda vx: self.vtickdirection(vx, self.xorder, 0, vx, 1-self.xorder, 0),
+                                                                       self.xvgridpath))
+        elif axisname == "x2":
+            self.axes["x2"].setpositioner(positioner.flexlineaxispos_pt(lambda vx: self.vpos_pt(vx, 1-self.xorder, 0),
+                                                                        lambda vx: self.vtickdirection(vx, 1-self.xorder, 0, vx, self.xorder, 0),
+                                                                        self.xvgridpath))
+        elif axisname == "x3":
+            self.axes["x3"].setpositioner(positioner.flexlineaxispos_pt(lambda vx: self.vpos_pt(vx, self.xorder, 1),
+                                                                        lambda vx: self.vtickdirection(vx, self.xorder, 1, vx, 1-self.xorder, 1),
+                                                                        self.xvgridpath))
+        elif axisname == "x4":
+            self.axes["x4"].setpositioner(positioner.flexlineaxispos_pt(lambda vx: self.vpos_pt(vx, 1-self.xorder, 1),
+                                                                        lambda vx: self.vtickdirection(vx, 1-self.xorder, 1, vx, self.xorder, 1),
+                                                                        self.xvgridpath))
         elif axisname == "y":
-            x1_pt, y1_pt = self.vpos_pt(1, 0, 0)
-            x2_pt, y2_pt = self.vpos_pt(1, 1, 0)
-            self.axes["y"].setpositioner(positioner.flexlineaxispos_pt(self.yvtickpoint_pt, self.yvtickdirection, self.yvgridpath))
+            self.axes["y"].setpositioner(positioner.flexlineaxispos_pt(lambda vy: self.vpos_pt(self.yorder, vy, 0),
+                                                                       lambda vy: self.vtickdirection(self.yorder, vy, 0, 1-self.yorder, vy, 0),
+                                                                       self.yvgridpath))
+        elif axisname == "y2":
+            self.axes["y2"].setpositioner(positioner.flexlineaxispos_pt(lambda vy: self.vpos_pt(1-self.yorder, vy, 0),
+                                                                       lambda vy: self.vtickdirection(1-self.yorder, vy, 0, self.yorder, vy, 0),
+                                                                       self.yvgridpath))
+        elif axisname == "y3":
+            self.axes["y3"].setpositioner(positioner.flexlineaxispos_pt(lambda vy: self.vpos_pt(self.yorder, vy, 1),
+                                                                       lambda vy: self.vtickdirection(self.yorder, vy, 1, 1-self.yorder, vy, 1),
+                                                                       self.yvgridpath))
+        elif axisname == "y4":
+            self.axes["y4"].setpositioner(positioner.flexlineaxispos_pt(lambda vy: self.vpos_pt(1-self.yorder, vy, 1),
+                                                                       lambda vy: self.vtickdirection(1-self.yorder, vy, 1, self.yorder, vy, 1),
+                                                                       self.yvgridpath))
         elif axisname == "z":
-            x1_pt, y1_pt = self.vpos_pt(0, 0, 0)
-            x2_pt, y2_pt = self.vpos_pt(0, 0, 1)
-            self.axes["z"].setpositioner(positioner.flexlineaxispos_pt(self.zvtickpoint_pt, self.zvtickdirection, self.yvgridpath))
+            self.axes["z"].setpositioner(positioner.flexlineaxispos_pt(lambda vz: self.vpos_pt(0, 0, vz),
+                                                                       lambda vz: self.vtickdirection(0, 0, vz, 1, 1, vz),
+                                                                       self.zvgridpath))
+        elif axisname == "z2":
+            self.axes["z2"].setpositioner(positioner.flexlineaxispos_pt(lambda vz: self.vpos_pt(1, 0, vz),
+                                                                       lambda vz: self.vtickdirection(1, 0, vz, 0, 1, vz),
+                                                                       self.zvgridpath))
+        elif axisname == "z3":
+            self.axes["z3"].setpositioner(positioner.flexlineaxispos_pt(lambda vz: self.vpos_pt(0, 1, vz),
+                                                                       lambda vz: self.vtickdirection(0, 1, vz, 1, 0, vz),
+                                                                       self.zvgridpath))
+        elif axisname == "z4":
+            self.axes["z4"].setpositioner(positioner.flexlineaxispos_pt(lambda vz: self.vpos_pt(0, 0, vz),
+                                                                       lambda vz: self.vtickdirection(1, 1, vz, 0, 0, vz),
+                                                                       self.zvgridpath))
         else:
-            raise NotImplementedError("multiple axes not yet supported")
+            raise NotImplementedError("4 axis per dimension supported only")
 
     def dolayout(self):
         if self.did(self.dolayout):
