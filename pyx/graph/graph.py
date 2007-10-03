@@ -723,17 +723,12 @@ class graphxyz(graphxy):
     def vcap_pt(self, coordinate, length_pt, vx, vy, vz):
         """returns an error cap path for a given coordinate, lengths and
         point in graph coordinates"""
-        raise NotImplementedError
         if coordinate == 0:
-            return path.line_pt(self.xpos_pt + vx*self.width_pt - 0.5*length_pt,
-                                self.ypos_pt + vy*self.height_pt,
-                                self.xpos_pt + vx*self.width_pt + 0.5*length_pt,
-                                self.ypos_pt + vy*self.height_pt)
+            return self.vgeodesic(vx-0.5*length_pt/self.size_pt, vy, vz, vx+0.5*length_pt/self.size_pt, vy, vz)
         elif coordinate == 1:
-            return path.line_pt(self.xpos_pt + vx*self.width_pt,
-                                self.ypos_pt + vy*self.height_pt - 0.5*length_pt,
-                                self.xpos_pt + vx*self.width_pt,
-                                self.ypos_pt + vy*self.height_pt + 0.5*length_pt)
+            return self.vgeodesic(vx, vy-0.5*length_pt/self.size_pt, vz, vx, vy+0.5*length_pt/self.size_pt, vz)
+        elif coordinate == 2:
+            return self.vgeodesic(vx, vy, vz-0.5*length_pt/self.size_pt, vx, vy, vz+0.5*length_pt/self.size_pt)
         else:
             raise ValueError("direction invalid")
 
