@@ -1,7 +1,6 @@
 PYTHON ?= python
 
-pyfiles = $(wildcard *.py)
-pngfiles = $(patsubst %.py, %.png, $(pyfiles))
+pngfiles = example.png bend.png pyxlogo.png
 
 default: $(pngfiles)
 
