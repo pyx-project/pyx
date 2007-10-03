@@ -1657,7 +1657,7 @@ class surface(_style):
 
     def __init__(self, colorname="color", gradient=color.gradient.Grey, mincolor=None, maxcolor=None,
                        gridlines1=0.05, gridlines2=0.05, gridcolor=None,
-                       backcolor=color.gray.black, **kwargs):
+                       backcolor=color.gray.black):
         self.colorname = colorname
         self.gradient = gradient
         self.mincolor = mincolor
