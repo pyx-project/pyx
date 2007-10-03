@@ -5,8 +5,8 @@ if sys.path[0] != "../..":
 import unittest
 
 from pyx import *
-from pyx.graph.axis.tick import tick
-from pyx.graph.axis.parter import lin, log
+from pyx.graph.axis.tick import tick, rational
+from pyx.graph.axis.parter import lin, log, preexp
 
 
 class ParterTestCase(unittest.TestCase):
@@ -74,7 +74,7 @@ class ParterTestCase(unittest.TestCase):
                        [tick((1, 1), 0, None), tick((10, 1), 0, None)])
         self.PartEqual(log(tickpreexps=[log.pre1exp], labelpreexps=[]).partfunctions(1, 100, 1, 1)[0](),
                        [tick((1, 1), 0, None), tick((10, 1), 0, None), tick((100, 1), 0, None)])
-        self.PartEqual(log(tickpreexps=[log.pre1exp2], labelpreexps=[]).partfunctions(1, 100, 1, 1)[0](),
+        self.PartEqual(log(tickpreexps=[preexp([rational((1, 1))], 100)], labelpreexps=[]).partfunctions(1, 100, 1, 1)[0](),
                        [tick((1, 1), 0, None), tick((100, 1), 0, None)])
         self.PartEqual(log(tickpreexps=[log.pre1to9exp], labelpreexps=[]).partfunctions(1, 10, 1, 1)[0](),
                        [tick((1, 1), 0, None), tick((2, 1), 0, None), tick((3, 1), 0, None), tick((4, 1), 0, None), tick((5, 1), 0, None), tick((6, 1), 0, None), tick((7, 1), 0, None), tick((8, 1), 0, None), tick((9, 1), 0, None), tick((10, 1), 0, None)])

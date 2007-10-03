@@ -9,15 +9,20 @@ from pyx.graph import data
 
 class DataTestCase(unittest.TestCase):
 
-    def testList(self):
-        mydata = data.list([[1, 2, 3], [4, 5, 6]], a=1, b=2)
+    def testPoints(self):
+        mydata = data.points([[1, 2, 3], [4, 5, 6]], a=1, b=2)
         self.failUnlessEqual(mydata.columndata[0], [1, 2])
         self.failUnlessEqual(mydata.columns["a"], [1, 4])
         self.failUnlessEqual(mydata.columndata[2], [2, 5])
         self.failUnlessEqual("c" in mydata.columns.keys(), 0)
 
+    def testValues(self):
+        mydata = data.values(a=[1, 4])
+        self.failUnlessEqual(mydata.columns["a"], [1, 4])
+        self.failUnlessEqual("c" in mydata.columns.keys(), 0)
+
     def testData(self):
-        mydata = data.list([[1], [2]], a=1)
+        mydata = data.points([[1], [2]], a=1)
         mydata2 = data.data(mydata, a="2*a", b="2*$1*a", c="4*$(i)*a*$(-1)", context={"i":1})
         self.failUnlessEqual(mydata.columns["a"], [1, 2])
         self.failUnlessAlmostEqual(mydata2.columns["a"][0], 2.0)
@@ -34,7 +39,7 @@ class DataTestCase(unittest.TestCase):
         a = "nothing"
         two = 2
         f = lambda x: x*x
-        mydata = data.list([[1], [2]], a=1)
+        mydata = data.points([[1], [2]], a=1)
         mydata2 = data.data(mydata, b="two*a", c="two*$1*a", d="f($1)", context=locals())
         self.failUnlessEqual(mydata.columndata[0], [1, 2])
         self.failUnlessAlmostEqual(mydata2.columns["b"][0], 2.0)
