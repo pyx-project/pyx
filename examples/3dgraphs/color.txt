@@ -1,0 +1,20 @@
+A colored surface
+
+To add colors to the surface you need to pass color data to the plot command.
+As in this example, you can just reuse the z value. Alternatively you could
+pass some independend color data. ...
+
+To bring colors instead of black/white to the surface, you need to change the
+gradient. Be sure to use the same color space for the gridcolor and the
+backcolor too.
+
+! In this example we also modified the projector. By that you can change the
+view angle, and you can also (as in this example) use a parallel projection
+instead of the default central projection. While the later looks more natural,
+a parallel projection keeps lines parallel independend from their depths. An
+very simple justification of the parallel projection is the vertical z axis,
+which stays vertical in the projection. Also the linear axes have equal
+distances between the ticks, which is not true for central projections.
+
+! Skipping the value for the z component will allow you to plot this surface
+on a two-dimensional graph as well.

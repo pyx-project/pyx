@@ -1,0 +1,15 @@
+Simple 3d surface
+
+This first simple example provides data for the x, y and z coordinates. PyX
+creates a rectangular grid from the data from the first two coordinates without
+relying on a special ordering of the data. ...
+
+! In this example we turn off the other two axes x2 and y2, which would be
+plotted on the opposite side of the bottom horizontal plane. The data are
+plotted prior to the axes by the dodata call.
+
+! A missing point will create a hole in the surface.
+
+!! The underlying rectangular grid is created by the gridpos style. By changing
+its parameters you can also create the base rectangular grid from others than
+the first two coordinates.
