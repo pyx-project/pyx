@@ -92,42 +92,48 @@ TODO:
       graph data
 
 
-0.10 (2007/XX/XX):
-  - added __truediv__ methods according to PEP 238
-  - color module:
-    - renamed: palette->gradient, functionpalette->functiongradient, linearpalette->lineargradient
-    - new class palette representing a discrete ordered list of colors
-    - convenience methods for css-like color specification (TODO: update doc?)
-    - support transparency for filling/stroking in pdf separately
-    - transparency support for postscript as available in a proprietary ghostscript extension (at least for ps2pdf) (TODO: update doc)
+0.10 (2007/10/03):
   - graph modules:
-    - axis module:
-      - painter: don't insert axis title twice (thanks to Tim Gray for reporting this problem)
-      - parter: extend the logarithmic parter to calculate automatic partitions for huge ranges
-        (TODO: documentation of the new autoexponent parameter) (suggested by Dominic Ford)
-      - axis: range rating was not taken into account due in the 0.9 release
+    - graph module:
+      - graphxyz for 3d graphs with parallel and central projection
+      - doplot method (to be called with a plotitem) to alter the plotitem order etc.
     - graph styles:
-      - impulses style
+      - new surface style for 3d graphs (colored surfaces are functional
+        (and useful!) for 2d graphs as well)
+      - new grid style for 3d graphs
+      - new impulses style
       - optional textdx/textdy columns to the text style added
       - arrowpos parameter to the arrow style added
       - bugfix: fromvalue axis range adjustment in histogram style
       - bugfix: axis range adjustment in range style
-    - graph module:
-      - doplot method (to be called with a plotitem) to alter the plotitem order etc. (TODO: documentation)
+    - axis module:
+      - painter: don't insert axis title twice (thanks to Tim Gray for reporting this problem)
+      - parter: extend the logarithmic parter to calculate automatic partitions for huge ranges
+        (TODO: documentation of the new autoexponent parameter) (suggested by Dominic Ford)
+      - fix: range rating was not taken into account due in the 0.9 release
     - data module:
       - list class was renamed to points; deprecation warning added
         for instance creation, but inheritance from list failes
       - new values class
+  - new mesh module:
+    - internal helper module for efficient handling of triangular colored meshs
+  - color module:
+    - renamed: palette->gradient, functionpalette->functiongradient, linearpalette->lineargradient
+    - new class palette representing a discrete ordered list of colors
+    - support transparency for filling/stroking in pdf separately
+    - transparency support for postscript as available by means of a proprietary
+      ghostscript extension (for ps2pdf)
   - attr module:
     - add multichangeattr to perform a select on different changeable attributes
       depending on the selects total number
   - font modules:
     - t1font:
-      - add missing glyph resolution in t1seacs updatepath
+      - add missing glyph traversal in t1seacs updatepath
   - normpath module:
     - support zero-length normsubpaths
   - canvas module:
     - don't change order of attrs passed to canvas constructor in place
+  - added __truediv__ methods according to PEP 238
 
 
 0.9 (2006/05/24):

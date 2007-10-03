@@ -93,6 +93,10 @@ colors. A list of named gradients is available in appendix~\ref{gradientname}.
   (transparent).
 
   Transparency is available in PDF output only since it is not
-  supported by PostScript.
+  supported by PostScript. However, for certain ghostscript devices
+  (for example the pdf backend as used by ps2pdf) proprietary
+  PostScript extension allows for transparency in PostScript code too.
+  \PyX{} creates such PostScript proprietary code, but issues a
+  warning when doing so.
 \end{classdesc}
 

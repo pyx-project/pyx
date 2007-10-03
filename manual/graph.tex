@@ -1,16 +1,12 @@
 \chapter{Graphs}
 \label{graph}
-% workaround for a bug in pdftex 1.21 or in whatever:
-% the \file macro contains \let\e=\textbackslash and pdfTeX
-% complains about \e being undefined. ???
-\let\e=\textbackslash
 
 \section{Introduction} % {{{
-\PyX{} can be used for data and function plotting. At present only
-x-y-graphs are supported. However, the component architecture of the
-graph system described in section \ref{graph:components} allows for
-additional graph geometries while reusing most of the existing
-components.
+\PyX{} can be used for data and function plotting. At present
+x-y-graphs and x-y-z-graphs are supported only. However, the component
+architecture of the graph system described in section
+\ref{graph:components} allows for additional graph geometries while
+reusing most of the existing components.
 
 Creating a graph splits into two basic steps. First you have to create
 a graph instance. The most simple form would look like:
@@ -121,15 +117,16 @@ continuous development quite clearly. The basic parts of a graph are:
   subtasks. Axes are discussed separately in chapter~\ref{axis}.
 \end{definitions} % }}}
 
-\section{Module \module{graph.graph}: X-Y-Graphs} % {{{
+\section{Module \module{graph.graph}: Graphs} % {{{
 \label{graph:graph}
 
 \declaremodule{}{graph.graph}
 \modulesynopsis{Graph geometry}
 
-The class \class{graphxy} is part of the module \module{graph.graph}.
-However, there is a shortcut to access this class via
-\code{graph.graphxy}.
+The classes \class{graphxy} and \class{graphxyz} are part of the
+module \module{graph.graph}. However, there are shortcuts to access
+the classes via \code{graph.graphxy} and \code{graph.graphxyz},
+respectively.
 
 \begin{classdesc}{graphxy}{xpos=0, ypos=0, width=None, height=None,
 ratio=goldenmean, key=None, backgroundattrs=None,
@@ -232,6 +229,10 @@ orginal order in which the \method{do}-methods are called is:
   Inserts the axes.
 \end{methoddesc}
 
+\begin{methoddesc}{doplot}{plotitem}
+  Plots the plotitem as returned by the graphs plot method.
+\end{methoddesc}
+
 \begin{methoddesc}{dodata}{}
   Plots the data.
 \end{methoddesc}
@@ -313,7 +314,118 @@ available after \method{dolayout()} as \class{graphxy} methods
   This method calls \method{axistrafo()} with a transformation to move
   the axis \var{axis} to a graph position \var{v} (in graph
   coordinates).
-\end{methoddesc} % }}}
+\end{methoddesc}
+
+The class \class{graphxyz} is very similar to the \class{graphxy}
+class, except for its additional dimension. In the following
+documentation only the differences to the \class{graphxy} class are
+described.
+
+\begin{classdesc}{graphxyz}{xpos=0, ypos=0, size=None,
+                            xscale=1, yscale=1, zscale=1/goldenmean,
+                            projector=central(10, -30, 30), key=None,
+                            **axes}
+  This class provides an x-y-z-graph.
+
+  The position of the graph on its own canvas is specified by
+  \var{xpos} and \var{ypos}. The size of the graph is specified by
+  \var{size} and the length factors \var{xscale}, \var{yscale}, and
+  \var{zscale}. The final size of the graph depends on the projector
+  \var{projector}, which is called with \code{x}, \code{y}, and
+  \code{z} values up to \var{xscale}, \var{yscale}, and  \var{zscale}
+  respectively and scaling the result by \var{size}. For a parallel
+  projector changing \var{size} is thus identical to changing
+  \var{xscale}, \var{yscale}, and \var{zscale} by the same factor. For
+  the central projector the projectors internal distance would also
+  need to be changed by this factor. Thus \var{size} changes the size
+  of the whole graph without changing the projection.
+
+  \var{projector} defines the conversion of 3d coordinates to 2d
+  coordinates. It can be an instance of \class{central} or
+  \class{parallel} described below.
+
+  \var{**axes} receives axes instances as for \class{graphxyz}. The
+  graphxyz allows for 4 axes per graph dimension \code{x}, \code{x2},
+  \code{x3}, \code{x4}, \code{y}, \code{y2}, \code{y3}, \code{y4},
+  \code{z}, \code{z2}, \code{z3}, and \code{z4}. The x-y-plane is the
+  horizontal plane at the bottom and the \code{x}, \code{x2},
+  \code{y}, and \code{y2} axes are placed at the boundary of this
+  plane with \code{x} and \code{y} always being in front. \code{x3},
+  \code{x4}, \code{y3}, and \code{y4} are handled similar, but for the
+  top plane of the graph. The \code{z} axis is placed at the origin of
+  the \code{x} and \code{y} dimension, whereas \code{z2} is placed at
+  the final point of the \code{x} dimension, \code{z3} at the final
+  point of the \code{y} dimension and \code{z4} at the final point of
+  the \code{x} and \code{y} dimension together.
+\end{classdesc}
+
+\begin{memberdesc}{central}
+  The central attribute of the graphxyz is the \class{central} class.
+  See the class description below.
+\end{memberdesc}
+
+\begin{memberdesc}{parallel}
+  The parallel attribute of the graphxyz is the \class{parallel} class.
+  See the class description below.
+\end{memberdesc}
+
+Regarding the 3d to 2d transformation the methods \method{pos},
+\method{vpos}, \method{vgeodesic}, and \method{vgeodesic\_el} are
+available as for class \class{graphxy} and just take an additional
+argument for the dimension. Note that a similar transformation method
+(3d to 2d) is available as part of the projector as well already, but
+only the graph acknowledges its size, the scaling and the internal
+tranformation of the graph coordinates to the scaled coordinates. As
+the projector also implements a \method{zindex} and a \method{angle}
+method, those are also available at the graph level in the graph
+coordinate variant (i.e. having an additional v in its name and using
+values from 0 to 1 per dimension).
+
+\begin{methoddesc}{vzindex}{vx, vy, vz}
+  The depths of the point defined by \var{vx}, \var{vy}, and \var{vz}
+  scaled to a range [-1:1] where 1 in closed to the viewer. All
+  arguments passed to the method are in graph coordinates with range
+  [0:1].
+\end{methoddesc}
+
+\begin{methoddesc}{vangle}{vx1, vy1, vz1, vx2, vy2, vz2, vx3, vy3, vz3}
+  The cosine of the angle of the view ray thru point \code{(vx1, vy1,
+  vz1)} and the plane defined by the points \code{(vx1, vy1, vz1)},
+  \code{(vx2, vy2, vz2)}, and \code{(vx3, vy3, vz3)}. All arguments
+  passed to the method are in graph coordinates with range [0:1].
+\end{methoddesc}
+
+There are two projector classes \class{central} and \class{parallel}:
+
+\begin{classdesc}{central}{distance, phi, theta, anglefactor=math.pi/180}
+  Instances of this class implement a central projection for the given
+  parameters.
+
+  \var{distance} is the distance of the viewer from the origin. Note
+  that the \class{graphxyz} class uses the range \code{-xscale} to
+  \code{xscale}, \code{-yscale} to \code{yscale}, and \code{-zscale}
+  to \code{zscale} for the coordinates \code{x}, \code{y}, and
+  \code{z}. As those scales are of the order of one (by default), the
+  distance should be of the order of 10 to give nice results. Smaller
+  distances increase the central projection character while for huge
+  distances the central projection becomes identical to the parallel
+  projection.
+
+  \code{phi} is the angle of the viewer in the x-y-plane and
+  \code{theta} is the angle of the viewer to the x-y-plane. The
+  standard notation for spheric coordinates are used. The angles are
+  multiplied by \var{anglefactor} which is initialized to do a degree
+  in radiant transformation such that you can specify \code{phi} and
+  \code{theta} in degree while the internal computation is always done
+  in radiants.
+\end{classdesc}
+
+\begin{classdesc}{parallel}{phi, theta, anglefactor=math.pi/180}
+  Instances of this class implement a parallel projection for the
+  given parameters. There is no distance for that transformation
+  (compared to the central projection). All other parameters are
+  identical to the \class{central} class.
+\end{classdesc} % }}}
 
 \section{Module \module{graph.data}: Data} % {{{
 \label{graph:data}
@@ -751,11 +863,11 @@ definition is:
                              frompathattrs=[], valueaxisindex=1}
   This class is a style to plot impulses. \var{lineattrs} is merged
   with \code{defaultlineattrs} which is a list containing the member
-  variable \code{changelinestyle} as described above. \var{fromvalue}
-  is the baseline value of the impulses. When set to \code{None}, the
-  impulses will start at the baseline. When fromvalue is set,
-  \var{frompathattrs} are the stroke attributes used to show the
-  impulses baseline path.
+  variable \code{changelinestyle} of the \class{line} class.
+  \var{fromvalue} is the baseline value of the impulses. When set to
+  \code{None}, the impulses will start at the baseline. When fromvalue
+  is set, \var{frompathattrs} are the stroke attributes used to show
+  the impulses baseline path.
 \end{classdesc} % }}}
 
 \begin{classdesc}{errorbar}{size=0.1*unit.v\_cm, errorbarattrs=[], % {{{
@@ -895,7 +1007,74 @@ definition is:
   \var{barattrs} are changed for each value within a single data
   instance. In the result the style can't be applied to several data
   instances. The style raises an error instead.
-\end{classdesc} % }}} % }}}
+\end{classdesc} % }}}
+
+\begin{classdesc}{gridpos}{index1=0, index2=1, % {{{
+                        gridlines1=1, gridlines2=1, gridattrs=[],
+                        epsilon=1e-10}
+  This class is a hidden style providing rectangular grid information
+  out of graph positions for graph dimensions \var{index1} and
+  \var{index2}. Data points are considered to be out of graph when
+  their position in graph coordinates exceeds the range [0:1] by more
+  than \var{epsilon}. Data points are merged to a single graph
+  coordinate value when their difference in graph coordinates is below
+  \var{epsilon}.
+\end{classdesc} % }}}
+
+\begin{classdesc}{grid}{gridlines1=1, gridlines2=1, gridattrs=[]} % {{{
+  Strokes a rectangular grid in the first grid direction, when
+  \var{gridlines1} is set and in the second grid direction, when
+  \var{gridlines2} is set. \var{gridattrs} is merged with
+  \code{defaultgridattrs} which is a list containing the member
+  variable \code{changelinestyle} of the \class{line} class.
+\end{classdesc} % }}}
+
+\begin{classdesc}{surface}{colorname="color", % {{{
+                           gradient=color.gradient.Grey,
+                           mincolor=None, maxcolor=None,
+                           gridlines1=0.05, gridlines2=0.05,
+                           gridcolor=None,
+                           backcolor=color.gray.black}
+  Draws a surface of a rectangular grid. Each rectangle is divided
+  into 4 triangles.
+
+  The grid can be colored using values provided by the data column
+  named \var{columnname}. The values are rescaled to the range [0:1]
+  using mincolor and maxcolor (which are taken from the minimal and
+  maximal values, but larger bounds could be set).
+
+  If no \var{columnname} column exists, the surface style falls back
+  to a lightning coloring taking into account the angle between the
+  view ray and the triangle and the distance between viewer and
+  triangle. The precise conversion is defined in the
+  \method{lightning} method.
+
+  If a \var{gridcolor} is set, the rectangular grid is marked by small
+  stripes of the relative (compared to each rectangle) size of
+  \var{gridlines1} and \var{gridlines2} for the first and second grid
+  direction, respectively.
+
+  \var{backcolor} is used to fill triangles shown from the back. If
+  \var{backcolor} is set to \code{None}, back sides are not drawn
+  differently from the front sides.
+
+  The surface is encoded using a single mesh. While this is quite
+  space efficient, it has the following implications:
+  \begin{itemize}
+    \item All colors must use the same color space.
+    \item HSB colors are not allowed, whereas Gray, RGB, and CMYK are
+    allowed. You can convert HSB colors into a different color space
+    before passing them to the surface.
+    \item The grid itself is also constructed out of triangles. The
+    grid is transformed along with the triangles thus looking quite
+    different from a stroked grid (as done by the grid style).
+    \item Occlusion is handled by proper painting order.
+    \item Color changes are continuous (in the selected color
+    space) for each triangle.
+  \end{itemize}
+\end{classdesc} % }}}
+
+% }}}
 
 \section{Module \module{graph.key}: Keys} % {{{
 \label{graph:key}
