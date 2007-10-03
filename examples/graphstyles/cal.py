@@ -36,7 +36,7 @@ class daystyle(graph.style._style):
             graph.text_pt(x1_pt+3, y1_pt+3, point["note"], [text.size.tiny])
 
 # create calendar data
-year = 2006
+year = 2007
 notes = {1: {17: r"\PyX{} 0.2 (2003)", 20: r"\PyX{} 0.5 (2004)", 22: r"\PyX{} 0.5.1 (2004)"},
          3: {30: r"\PyX{} 0.6 (2004)", 31: r"\PyX{} 0.3 ('03), \PyX{} 0.6.1 ('04)"},
          4: {4: r"\PyX{} 0.3.1 (2003)", 7: r"\PyX{} 0.6.2 (2004)", 27: r"\PyX{} 0.6.3 (2004)"},
@@ -44,15 +44,15 @@ notes = {1: {17: r"\PyX{} 0.2 (2003)", 20: r"\PyX{} 0.5 (2004)", 22: r"\PyX{} 0.
          7: {13: r"\PyX{} 0.8 (2005)"},
          8: {13: r"\PyX{} 0.8.1 (2005)", 22: r"\PyX{} 0.4 (2003)"},
          9: {17: r"\PyX{} 0.4.1 (2003)"},
-         10: {7: r"\PyX{} 0.1 (2002)", 21: r"\PyX{} 0.7 (2004)"},
+         10: {3: r"\PyX{} 0.10 (2007)", 7: r"\PyX{} 0.1 (2002)", 21: r"\PyX{} 0.7 (2004)"},
          12: {15: r"\PyX{} 0.7.1 (2004)"}}
-d = graph.data.list([(day,
-                      calendar.month_name[month],
-                      calendar.day_abbr[calendar.weekday(year, month, day)],
-                      notes.get(month, {}).get(day))
-                     for month in range(1, 13)
-                     for day in range(1, calendar.monthrange(year, month)[1]+1)],
-                    day=1, month=2, weekday=3, note=4)
+d = graph.data.points([(day,
+                        calendar.month_name[month],
+                        calendar.day_abbr[calendar.weekday(year, month, day)],
+                        notes.get(month, {}).get(day))
+                       for month in range(1, 13)
+                       for day in range(1, calendar.monthrange(year, month)[1]+1)],
+                      day=1, month=2, weekday=3, note=4)
 
 # create the calendar
 g = graph.graphxy(width=40, x2=graph.axis.bar(dist=0, linkpainter=None),

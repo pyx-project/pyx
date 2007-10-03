@@ -35,9 +35,9 @@ class changesymbol(graph.style.symbol):
                                privatedata.symbolattrs + [color])
 
 g = graph.graphxy(width=10)
-g.plot(graph.data.list([[random.random() for i in range(4)]
-                        for i in range(1000)],
-                       x=1, y=2, size=3, color=4),
+g.plot(graph.data.points([[random.random() for i in range(4)]
+                          for i in range(1000)],
+                         x=1, y=2, size=3, color=4),
        [changesymbol()])
 g.writeEPSfile("changesymbol")
 g.writePDFfile("changesymbol")
