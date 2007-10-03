@@ -306,9 +306,10 @@ class graphxy(graph):
         for axisname, axisat in [("x", xaxisat), ("y", yaxisat)]:
             okey = axisname + "2"
             if not axes.has_key(axisname):
-                if not axes.has_key(okey):
+                if not axes.has_key(okey) or axes[okey] is None:
                     self.axes[axisname] = axis.anchoredaxis(axis.linear(), self.texrunner, axisname)
-                    self.axes[okey] = axis.linkedaxis(self.axes[axisname], okey)
+                    if not axes.has_key(okey):
+                        self.axes[okey] = axis.linkedaxis(self.axes[axisname], okey)
                 else:
                     self.axes[axisname] = axis.linkedaxis(self.axes[okey], axisname)
             elif not axes.has_key(okey) and axisat is None:
@@ -621,9 +622,10 @@ class graphxyz(graphxy):
         for axisname in ["x", "y"]:
             okey = axisname + "2"
             if not axes.has_key(axisname):
-                if not axes.has_key(okey):
+                if not axes.has_key(okey) or axes[okey] is None:
                     self.axes[axisname] = axis.anchoredaxis(axis.linear(), self.texrunner, axisname)
-                    self.axes[okey] = axis.linkedaxis(self.axes[axisname], okey)
+                    if not axes.has_key(okey):
+                        self.axes[okey] = axis.linkedaxis(self.axes[axisname], okey)
                 else:
                     self.axes[axisname] = axis.linkedaxis(self.axes[okey], axisname)
         if not axes.has_key("z"):
