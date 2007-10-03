@@ -121,7 +121,6 @@ _defaultprovider = {}
 
 def registerdefaultprovider(style, keys):
     """sets a style as a default creator for sharedata variables 'keys'"""
-    assert not len(style.needsdata), "currently we state, that a style should not depend on other sharedata variables"
     for key in keys:
         assert key in style.providesdata, "key not provided by style"
         # we might allow for overwriting the defaults, i.e. the following is not checked:
@@ -470,8 +469,6 @@ class _line(_styleneedingpointpos):
     # this style is not a complete style, but it provides the basic functionality to
     # create a line, which is cut at the graph boundaries (or at otherwise invalid points)
 
-    needsdata = ["vposmissing"]
-
     def initpointstopath(self, privatedata):
         privatedata.path = path.path()
         privatedata.linebasepoints = []
@@ -653,12 +650,7 @@ class impulses(_styleneedingpointpos):
 
     needsdata = ["vpos", "vposmissing", "vposavailable", "vposvalid", "poscolumnnames"]
 
-    changelinestyle = attr.changelist([style.linestyle.solid,
-                                       style.linestyle.dashed,
-                                       style.linestyle.dotted,
-                                       style.linestyle.dashdotted])
-
-    defaultlineattrs = [changelinestyle]
+    defaultlineattrs = [line.changelinestyle]
     defaultfrompathattrs = []
 
     def __init__(self, lineattrs=[], fromvalue=0, frompathattrs=[], valueaxisindex=1):
@@ -1564,9 +1556,10 @@ class changebar(bar):
         raise RuntimeError("Style currently doesn't provide a graph key")
 
 
-class _surface:
+class gridpos(_style):
 
     needsdata = ["vpos", "vposmissing", "vposavailable", "vposvalid"]
+    providesdata = ["values1", "values2", "data12", "data21", "index1", "index2"]
 
     def __init__(self, index1=0, index2=1, epsilon=1e-10):
         self.index1 = index1
@@ -1574,43 +1567,45 @@ class _surface:
         self.epsilon = epsilon
 
     def initdrawpoints(self, privatedata, sharedata, graph):
-        privatedata.values1 = {}
-        privatedata.values2 = {}
-        privatedata.data12 = {}
-        privatedata.data21 = {}
+        sharedata.index1 = self.index1
+        sharedata.index2 = self.index2
+        sharedata.values1 = {}
+        sharedata.values2 = {}
+        sharedata.data12 = {}
+        sharedata.data21 = {}
 
     def drawpoint(self, privatedata, sharedata, graph, point):
         if sharedata.vposavailable:
-            privatedata.value1 = sharedata.vpos[self.index1]
-            privatedata.value2 = sharedata.vpos[self.index2]
-            if not privatedata.values1.has_key(privatedata.value1):
-                for hasvalue in privatedata.values1.keys():
-                    if hasvalue - self.epsilon <= privatedata.value1 <= hasvalue + self.epsilon:
-                        privatedata.value1 = hasvalue
+            sharedata.value1 = sharedata.vpos[self.index1]
+            sharedata.value2 = sharedata.vpos[self.index2]
+            if not sharedata.values1.has_key(sharedata.value1):
+                for hasvalue in sharedata.values1.keys():
+                    if hasvalue - self.epsilon <= sharedata.value1 <= hasvalue + self.epsilon:
+                        sharedata.value1 = hasvalue
                         break
                 else:
-                    privatedata.values1[privatedata.value1] = 1
-            if not privatedata.values2.has_key(privatedata.value2):
-                for hasvalue in privatedata.values2.keys():
-                    if hasvalue - self.epsilon <= privatedata.value2 <= hasvalue + self.epsilon:
-                        privatedata.value2 = hasvalue
+                    sharedata.values1[sharedata.value1] = 1
+            if not sharedata.values2.has_key(sharedata.value2):
+                for hasvalue in sharedata.values2.keys():
+                    if hasvalue - self.epsilon <= sharedata.value2 <= hasvalue + self.epsilon:
+                        sharedata.value2 = hasvalue
                         break
                 else:
-                    privatedata.values2[privatedata.value2] = 1
+                    sharedata.values2[sharedata.value2] = 1
             data = sharedata.vposavailable, sharedata.vposvalid, sharedata.vpos[:]
-            privatedata.data12.setdefault(privatedata.value1, {})[privatedata.value2] = data
-            privatedata.data21.setdefault(privatedata.value2, {})[privatedata.value1] = data
+            sharedata.data12.setdefault(sharedata.value1, {})[sharedata.value2] = data
+            sharedata.data21.setdefault(sharedata.value2, {})[sharedata.value1] = data
 
-    def key_pt(self, privatedata, sharedata, graph, x_pt, y_pt, width_pt, height_pt):
-        raise NotImplementedError
+registerdefaultprovider(gridpos(), gridpos.providesdata)
 
 
-class grid(_surface, _line):
+class grid(_line, _style):
 
-    defaultgridattrs = []
+    needsdata = ["values1", "values2", "data12", "data21"]
 
-    def __init__(self, gridlines1=1, gridlines2=1, gridattrs=[], **kwargs):
-        _surface.__init__(self, **kwargs)
+    defaultgridattrs = [line.changelinestyle]
+
+    def __init__(self, gridlines1=1, gridlines2=1, gridattrs=[]):
         self.gridlines1 = gridlines1
         self.gridlines2 = gridlines2
         self.gridattrs = gridattrs
@@ -1622,13 +1617,13 @@ class grid(_surface, _line):
             privatedata.gridattrs = None
 
     def donedrawpoints(self, privatedata, sharedata, graph):
-        values1 = privatedata.values1.keys()
+        values1 = sharedata.values1.keys()
         values1.sort()
-        values2 = privatedata.values2.keys()
+        values2 = sharedata.values2.keys()
         values2.sort()
         if self.gridlines1:
             for value2 in values2:
-                data1 = privatedata.data21[value2]
+                data1 = sharedata.data21[value2]
                 self.initpointstopath(privatedata)
                 for value1 in values1:
                     try:
@@ -1642,7 +1637,7 @@ class grid(_surface, _line):
                     graph.stroke(p, privatedata.gridattrs)
         if self.gridlines2:
             for value1 in values1:
-                data2 = privatedata.data12[value1]
+                data2 = sharedata.data12[value1]
                 self.initpointstopath(privatedata)
                 for value2 in values2:
                     try:
@@ -1656,14 +1651,13 @@ class grid(_surface, _line):
                     graph.stroke(p, privatedata.gridattrs)
 
 
-class surface(_surface, _styleneedingpointpos):
+class surface(_style):
 
-    needsdata = ["vpos", "vposmissing", "vposavailable", "vposvalid"]
+    needsdata = ["values1", "values2", "data12", "data21"]
 
     def __init__(self, colorname="color", gradient=color.gradient.Grey, mincolor=None, maxcolor=None,
                        gridlines1=0.05, gridlines2=0.05, gridcolor=None,
                        backcolor=color.gray.black, **kwargs):
-        _surface.__init__(self, **kwargs)
         self.colorname = colorname
         self.gradient = gradient
         self.mincolor = mincolor
@@ -1692,22 +1686,22 @@ class surface(_surface, _styleneedingpointpos):
 
     def columnnames(self, privatedata, sharedata, graph, columnnames):
         privatedata.colorize = self.colorname in columnnames
-        return (privatedata.colorize and [self.colorname] or []) + _styleneedingpointpos.columnnames(self, privatedata, sharedata, graph, columnnames)
+        if privatedata.colorize:
+            return [self.colorname]
+        return []
 
     def initdrawpoints(self, privatedata, sharedata, graph):
-        _surface.initdrawpoints(self, privatedata, sharedata, graph)
         privatedata.colors = {}
         privatedata.mincolor = privatedata.maxcolor = None
 
     def drawpoint(self, privatedata, sharedata, graph, point):
-        _surface.drawpoint(self, privatedata, sharedata, graph, point)
-        if sharedata.vposavailable and privatedata.colorize:
+        if privatedata.colorize:
             try:
                 color = point[self.colorname] + 0
             except:
                 pass
             else:
-                privatedata.colors.setdefault(privatedata.value1, {})[privatedata.value2] = color
+                privatedata.colors.setdefault(sharedata.value1, {})[sharedata.value2] = color
                 if privatedata.mincolor is None or color < privatedata.mincolor:
                     privatedata.mincolor = color
                 if privatedata.mincolor is None or privatedata.maxcolor < color:
@@ -1718,35 +1712,35 @@ class surface(_surface, _styleneedingpointpos):
         v2 = [0]*len(graph.axesnames)
         v3 = [0]*len(graph.axesnames)
         v4 = [0]*len(graph.axesnames)
-        v1[self.index2] = 0.5
-        v2[self.index1] = 0.5
-        v3[self.index1] = 0.5
-        v3[self.index2] = 1
-        v4[self.index1] = 1
-        v4[self.index2] = 0.5
+        v1[sharedata.index2] = 0.5
+        v2[sharedata.index1] = 0.5
+        v3[sharedata.index1] = 0.5
+        v3[sharedata.index2] = 1
+        v4[sharedata.index1] = 1
+        v4[sharedata.index2] = 0.5
         sortElements = [-graph.vzindex(*v1),
                         -graph.vzindex(*v2),
                         -graph.vzindex(*v3),
                         -graph.vzindex(*v4)]
 
-        values1 = privatedata.values1.keys()
+        values1 = sharedata.values1.keys()
         values1.sort()
         v1 = [0]*len(graph.axesnames)
         v2 = [0]*len(graph.axesnames)
-        v1[self.index1] = -1
-        v2[self.index1] = 1
+        v1[sharedata.index1] = -1
+        v2[sharedata.index1] = 1
         sign = 1
         if graph.vzindex(*v1) < graph.vzindex(*v2):
             values1.reverse()
             sign *= -1
             sortElements = [sortElements[3], sortElements[1], sortElements[2], sortElements[0]]
 
-        values2 = privatedata.values2.keys()
+        values2 = sharedata.values2.keys()
         values2.sort()
         v1 = [0]*len(graph.axesnames)
         v2 = [0]*len(graph.axesnames)
-        v1[self.index2] = -1
-        v2[self.index2] = 1
+        v1[sharedata.index2] = -1
+        v2[sharedata.index2] = 1
         if graph.vzindex(*v1) < graph.vzindex(*v2):
             values2.reverse()
             sign *= -1
@@ -1764,10 +1758,10 @@ class surface(_surface, _styleneedingpointpos):
         for value1a, value1b in zip(values1[:-1], values1[1:]):
             for value2a, value2b in zip(values2[:-1], values2[1:]):
                 try:
-                    available1, valid1, v1 = privatedata.data12[value1a][value2a]
-                    available2, valid2, v2 = privatedata.data12[value1a][value2b]
-                    available3, valid3, v3 = privatedata.data12[value1b][value2a]
-                    available4, valid4, v4 = privatedata.data12[value1b][value2b]
+                    available1, valid1, v1 = sharedata.data12[value1a][value2a]
+                    available2, valid2, v2 = sharedata.data12[value1a][value2b]
+                    available3, valid3, v3 = sharedata.data12[value1b][value2a]
+                    available4, valid4, v4 = sharedata.data12[value1b][value2b]
                 except KeyError:
                     continue
                 if not available1 or not available2 or not available3 or not available4:
@@ -1784,11 +1778,11 @@ class surface(_surface, _styleneedingpointpos):
                     return v1, v2
                 v1f, v2f, v3f, v4f = v1, v2, v3, v4
                 if self.gridcolor is not None and self.gridlines1:
-                    v1, v2 = shrink(self.index1, v1, v2, self.gridlines1)
-                    v3, v4 = shrink(self.index1, v3, v4, self.gridlines1)
+                    v1, v2 = shrink(sharedata.index1, v1, v2, self.gridlines1)
+                    v3, v4 = shrink(sharedata.index1, v3, v4, self.gridlines1)
                 if self.gridcolor is not None and self.gridlines2:
-                    v1, v3 = shrink(self.index2, v1, v3, self.gridlines2)
-                    v2, v4 = shrink(self.index2, v2, v4, self.gridlines2)
+                    v1, v3 = shrink(sharedata.index2, v1, v3, self.gridlines2)
+                    v2, v4 = shrink(sharedata.index2, v2, v4, self.gridlines2)
                 v5 = self.midvalue(v1, v2, v3, v4)
                 x1_pt, y1_pt = graph.vpos_pt(*v1)
                 x2_pt, y2_pt = graph.vpos_pt(*v2)

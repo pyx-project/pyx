@@ -49,18 +49,21 @@ class plotitem:
         self.data = data
         self.title = data.title
 
-        # add styles to ensure all needs of the given styles
-        provided = [] # already provided sharedata variables
-        addstyles = [] # a list of style instances to be added in front
-        for s in styles:
-            for n in s.needsdata:
-                if n not in provided:
-                    defaultprovider = style.getdefaultprovider(n)
-                    addstyles.append(defaultprovider)
-                    provided.extend(defaultprovider.providesdata)
-            provided.extend(s.providesdata)
+        addstyles = [None]
+        while addstyles:
+            # add styles to ensure all needs of the given styles
+            provided = [] # already provided sharedata variables
+            addstyles = [] # a list of style instances to be added in front
+            for s in styles:
+                for n in s.needsdata:
+                    if n not in provided:
+                        defaultprovider = style.getdefaultprovider(n)
+                        addstyles.append(defaultprovider)
+                        provided.extend(defaultprovider.providesdata)
+                provided.extend(s.providesdata)
+            styles = addstyles + styles
 
-        self.styles = addstyles + styles
+        self.styles = styles
         self.sharedata = styledata()
         self.privatedatalist = [styledata() for s in self.styles]
 
