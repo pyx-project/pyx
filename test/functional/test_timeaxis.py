@@ -12,7 +12,7 @@ else:
     from pyx.graph import data
 
     d = data.file("data/timedata", date=1, value=2)
-    d = data.list([[datetime.datetime(*(time.strptime(date)[:6])), value] for date, value in zip(d.columns["date"], d.columns["value"])], x=1, y=2)
+    d = data.points([[datetime.datetime(*(time.strptime(date)[:6])), value] for date, value in zip(d.columns["date"], d.columns["value"])], x=1, y=2)
 
     g = graph.graphxy(height=5, x=timeaxis.timeaxis(manualticks=[timeaxis.timetick(2003, 8, 12),
                                                           timeaxis.timetick(2003, 8, 13),

@@ -51,7 +51,7 @@ def test_ownmark(c, x, y):
     line3 = g.plot(graph.data.function("y(x)=7/x"))
     g.dolayout()
     line4 = g.plot(graph.data.function("y(x)=25*x**-1.6"))
-    g.plot(graph.data.list([[-1, 1], [5, 2], [11, 5], [5, 11], [4, -1]], x=1, y=2), [graph.style.line(lineattrs=[color.rgb.red])])
+    g.plot(graph.data.points([[-1, 1], [5, 2], [11, 5], [5, 11], [4, -1]], x=1, y=2), [graph.style.line(lineattrs=[color.rgb.red])])
     g.finish()
 
     p1=line1.path

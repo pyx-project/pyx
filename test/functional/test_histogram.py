@@ -2,7 +2,7 @@ import random
 import sys; sys.path[:0] = ["../.."]
 from pyx import *
 
-d1 = graph.data.list([(1.5, 1, 0.3),
+d1 = graph.data.points([(1.5, 1, 0.3),
                       (3, 0.5, 0.5),
                       (4, 0.5, 0.2),
                       (None, 0.5, 0.8),
@@ -12,7 +12,7 @@ d1 = graph.data.list([(1.5, 1, 0.3),
                       (13, 0.5, -0.2),
                       (14, 0.5, 0.4)], x=1, dx=2, y=3)
 d2 = graph.data.data(d1, y="x", dy="dx", x="y", copy=0)
-d3 = graph.data.list([(1, 0.3),
+d3 = graph.data.points([(1, 0.3),
                       (2, 0.5),
                       (3, -0.2),
                       (4, 0.8),
