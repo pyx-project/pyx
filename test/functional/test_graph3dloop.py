@@ -16,8 +16,9 @@ while phi < 360:
                                 y=graph.axis.lin(painter=graph.axis.painter.regular(gridattrs=[])),
                                 z=graph.axis.lin(painter=graph.axis.painter.regular(gridattrs=[]))))
     g.plot(graph.data.values(x=[0, 0, 0, 1], y=[0, 0, 1, 1], z=[0, 1, 0, 1], color=[0, 0.33, 0.67, 1]),
-           [graph.style.surface(index1=1, index2=2)])
+           [graph.style.surface(index1=1, index2=2, gridcolor=color.gray(0.9))])
     g.dodata()
+    g.text(2, 2, str(phi))
     d.append(document.page(c))
     phi += 5.67
 

@@ -1568,8 +1568,7 @@ class _surface:
 
     needsdata = ["vpos", "vposmissing", "vposavailable", "vposvalid"]
 
-    def __init__(self, index1=0, index2=1, strokelines1=1, strokelines2=1, gridattrs=[],
-                       epsilon=1e-10):
+    def __init__(self, index1=0, index2=1, epsilon=1e-10):
         self.index1 = index1
         self.index2 = index2
         self.epsilon = epsilon
@@ -1610,10 +1609,10 @@ class grid(_surface, _line):
 
     defaultgridattrs = []
 
-    def __init__(self, strokelines1=1, strokelines2=1, gridattrs=[], **kwargs):
+    def __init__(self, gridlines1=1, gridlines2=1, gridattrs=[], **kwargs):
         _surface.__init__(self, **kwargs)
-        self.strokelines1 = strokelines1
-        self.strokelines2 = strokelines2
+        self.gridlines1 = gridlines1
+        self.gridlines2 = gridlines2
         self.gridattrs = gridattrs
 
     def selectstyle(self, privatedata, sharedata, graph, selectindex, selecttotal):
@@ -1627,7 +1626,7 @@ class grid(_surface, _line):
         values1.sort()
         values2 = privatedata.values2.keys()
         values2.sort()
-        if self.strokelines1:
+        if self.gridlines1:
             for value2 in values2:
                 data1 = privatedata.data21[value2]
                 self.initpointstopath(privatedata)
@@ -1641,7 +1640,7 @@ class grid(_surface, _line):
                 p = self.donepointstopath(privatedata)
                 if len(p):
                     graph.stroke(p, privatedata.gridattrs)
-        if self.strokelines2:
+        if self.gridlines2:
             for value1 in values1:
                 data2 = privatedata.data12[value1]
                 self.initpointstopath(privatedata)
@@ -1657,21 +1656,43 @@ class grid(_surface, _line):
                     graph.stroke(p, privatedata.gridattrs)
 
 
-class surface(_surface, _style):
+class surface(_surface, _styleneedingpointpos):
 
     needsdata = ["vpos", "vposmissing", "vposavailable", "vposvalid"]
 
-    def __init__(self, colorname="color", gradient=color.gradient.Rainbow,
-                       mincolor=None, maxcolor=None, **kwargs):
+    def __init__(self, colorname="color", gradient=color.gradient.Grey, mincolor=None, maxcolor=None,
+                       gridlines1=0.05, gridlines2=0.05, gridcolor=None,
+                       backcolor=color.gray.black, **kwargs):
         _surface.__init__(self, **kwargs)
         self.colorname = colorname
         self.gradient = gradient
         self.mincolor = mincolor
         self.maxcolor = maxcolor
+        self.gridlines1 = gridlines1
+        self.gridlines2 = gridlines2
+        self.gridcolor = gridcolor
+        self.backcolor = backcolor
+
+        colorspacestring = gradient.getcolor(0).colorspacestring()
+        if self.gridcolor is not None and self.gridcolor.colorspacestring() != colorspacestring:
+            raise RuntimeError("colorspace mismatch (gradient/grid)")
+        if self.backcolor is not None and self.backcolor.colorspacestring() != colorspacestring:
+            raise RuntimeError("colorspace mismatch (gradient/back)")
+
+    def midvalue(self, v1, v2, v3, v4):
+        return [0.25*sum(values) for values in zip(v1, v2, v3, v4)]
+
+    def midcolor(self, c1, c2, c3, c4):
+        return 0.25*(c1+c2+c3+c4)
+
+    def lightning(self, angle, zindex):
+        if angle < 0 and self.backcolor is not None:
+            return self.backcolor
+        return self.gradient.getcolor(0.7-0.4*abs(angle)+0.1*zindex)
 
     def columnnames(self, privatedata, sharedata, graph, columnnames):
         privatedata.colorize = self.colorname in columnnames
-        return privatedata.colorize and [self.colorname] or [] + _surface.columnnames(self, privatedata, sharedata, graph, columnnames)
+        return (privatedata.colorize and [self.colorname] or []) + _styleneedingpointpos.columnnames(self, privatedata, sharedata, graph, columnnames)
 
     def initdrawpoints(self, privatedata, sharedata, graph):
         _surface.initdrawpoints(self, privatedata, sharedata, graph)
@@ -1680,7 +1701,7 @@ class surface(_surface, _style):
 
     def drawpoint(self, privatedata, sharedata, graph, point):
         _surface.drawpoint(self, privatedata, sharedata, graph, point)
-        if sharedata.vposavailable:
+        if sharedata.vposavailable and privatedata.colorize:
             try:
                 color = point[self.colorname] + 0
             except:
@@ -1733,7 +1754,6 @@ class surface(_surface, _style):
 
         sortElements = [(zindex, i) for i, zindex in enumerate(sortElements)]
         sortElements.sort()
-        sortElements = dict([(i, pos) for i, (zindex, pos) in enumerate(sortElements)])
 
         if self.mincolor is not None:
             mincolor = self.mincolor
@@ -1754,56 +1774,99 @@ class surface(_surface, _style):
                     continue
                 if not valid1 or not valid2 or not valid3 or not valid4:
                     warnings.warn("surface elements partially outside of the graph are (currently) skipped completely")
-                v5 = [0.25*sum(values) for values in zip(v1, v2, v3, v4)]
+                    continue
+                def shrink(index, v1, v2, by):
+                    v1 = v1[:]
+                    v2 = v2[:]
+                    for i in builtinrange(3):
+                        if i != index:
+                            v1[i], v2[i] = v1[i] + by*(v2[i]-v1[i]), v2[i] + by*(v1[i]-v2[i])
+                    return v1, v2
+                v1f, v2f, v3f, v4f = v1, v2, v3, v4
+                if self.gridcolor is not None and self.gridlines1:
+                    v1, v2 = shrink(self.index1, v1, v2, self.gridlines1)
+                    v3, v4 = shrink(self.index1, v3, v4, self.gridlines1)
+                if self.gridcolor is not None and self.gridlines2:
+                    v1, v3 = shrink(self.index2, v1, v3, self.gridlines2)
+                    v2, v4 = shrink(self.index2, v2, v4, self.gridlines2)
+                v5 = self.midvalue(v1, v2, v3, v4)
                 x1_pt, y1_pt = graph.vpos_pt(*v1)
                 x2_pt, y2_pt = graph.vpos_pt(*v2)
                 x3_pt, y3_pt = graph.vpos_pt(*v3)
                 x4_pt, y4_pt = graph.vpos_pt(*v4)
                 x5_pt, y5_pt = graph.vpos_pt(*v5)
-                c1 = privatedata.colors[value1a][value2a]
-                c2 = privatedata.colors[value1a][value2b]
-                c3 = privatedata.colors[value1b][value2a]
-                c4 = privatedata.colors[value1b][value2b]
-                c5 = 0.25*(c1+c2+c3+c4)
-                def getcolor(c):
-                    return self.gradient.getcolor((c - privatedata.mincolor) / float(privatedata.maxcolor - privatedata.mincolor)).rgb()
-                color1 = getcolor(c1)
-                color2 = getcolor(c2)
-                color3 = getcolor(c3)
-                color4 = getcolor(c4)
-                color5 = getcolor(c5)
-                if sign*graph.vangle(*(v1+v2+v5)) >= 0:
-                    e1 = mesh.element((mesh.node_pt((x1_pt, y1_pt), color1),
-                                       mesh.node_pt((x2_pt, y2_pt), color2),
-                                       mesh.node_pt((x5_pt, y5_pt), color5)))
+                if privatedata.colorize:
+                    def colorfromgradient(c):
+                        return self.gradient.getcolor((c - privatedata.mincolor) /
+                                                      float(privatedata.maxcolor - privatedata.mincolor))
+                    c1 = privatedata.colors[value1a][value2a]
+                    c2 = privatedata.colors[value1a][value2b]
+                    c3 = privatedata.colors[value1b][value2a]
+                    c4 = privatedata.colors[value1b][value2b]
+                    c5 = self.midcolor(c1, c2, c3, c4)
+                    c1a = c1b = colorfromgradient(c1)
+                    c2a = c2c = colorfromgradient(c2)
+                    c3b = c3d = colorfromgradient(c3)
+                    c4c = c4d = colorfromgradient(c4)
+                    c5a = c5b = c5c = c5d = colorfromgradient(c5)
+                    if self.backcolor is not None and sign*graph.vangle(*(v1+v2+v5)) < 0:
+                        c1a = c2a = c5a = self.backcolor
+                    if self.backcolor is not None and sign*graph.vangle(*(v3+v1+v5)) < 0:
+                        c3b = c1b = c5b = self.backcolor
+                    if self.backcolor is not None and sign*graph.vangle(*(v2+v4+v5)) < 0:
+                        c2c = c4c = c5c = self.backcolor
+                    if self.backcolor is not None and sign*graph.vangle(*(v4+v3+v5)) < 0:
+                        c4d = c3d = c5d = self.backcolor
                 else:
-                    e1 = mesh.element((mesh.node_pt((x1_pt, y1_pt), color.rgb.black),
-                                       mesh.node_pt((x2_pt, y2_pt), color.rgb.black),
-                                       mesh.node_pt((x5_pt, y5_pt), color.rgb.black)))
-                if sign*graph.vangle(*(v3+v1+v5)) >= 0:
-                    e2 = mesh.element((mesh.node_pt((x1_pt, y1_pt), color1),
-                                       mesh.node_pt((x3_pt, y3_pt), color3),
-                                       mesh.node_pt((x5_pt, y5_pt), color5)))
-                else:
-                    e2 = mesh.element((mesh.node_pt((x1_pt, y1_pt), color.rgb.black),
-                                       mesh.node_pt((x3_pt, y3_pt), color.rgb.black),
-                                       mesh.node_pt((x5_pt, y5_pt), color.rgb.black)))
-                if sign*graph.vangle(*(v2+v4+v5)) >= 0:
-                    e3 = mesh.element((mesh.node_pt((x2_pt, y2_pt), color2),
-                                       mesh.node_pt((x4_pt, y4_pt), color4),
-                                       mesh.node_pt((x5_pt, y5_pt), color5)))
-                else:
-                    e3 = mesh.element((mesh.node_pt((x2_pt, y2_pt), color.rgb.black),
-                                       mesh.node_pt((x4_pt, y4_pt), color.rgb.black),
-                                       mesh.node_pt((x5_pt, y5_pt), color.rgb.black)))
-                if sign*graph.vangle(*(v4+v3+v5)) >= 0:
-                    e4 = mesh.element((mesh.node_pt((x3_pt, y3_pt), color3),
-                                       mesh.node_pt((x4_pt, y4_pt), color4),
-                                       mesh.node_pt((x5_pt, y5_pt), color5)))
-                else:
-                    e4 = mesh.element((mesh.node_pt((x3_pt, y3_pt), color.rgb.black),
-                                       mesh.node_pt((x4_pt, y4_pt), color.rgb.black),
-                                       mesh.node_pt((x5_pt, y5_pt), color.rgb.black)))
-                elements.extend([[e1, e2, e3, e4][sortElements[i]] for i in builtinrange(4)])
-        m = mesh.mesh(elements)
+                    zindex = graph.vzindex(*v5)
+                    c1a = c2a = c5a = self.lightning(sign*graph.vangle(*(v1+v2+v5)), zindex)
+                    c3b = c1b = c5b = self.lightning(sign*graph.vangle(*(v3+v1+v5)), zindex)
+                    c2c = c4c = c5c = self.lightning(sign*graph.vangle(*(v2+v4+v5)), zindex)
+                    c4d = c3d = c5d = self.lightning(sign*graph.vangle(*(v4+v3+v5)), zindex)
+                for zindex, i in sortElements:
+                    if i == 0:
+                        elements.append(mesh.element((mesh.node_pt((x1_pt, y1_pt), c1a),
+                                                      mesh.node_pt((x2_pt, y2_pt), c2a),
+                                                      mesh.node_pt((x5_pt, y5_pt), c5a))))
+                        if self.gridcolor is not None and self.gridlines2:
+                            elements.append(mesh.element((mesh.node_pt(graph.vpos_pt(*v1f), self.gridcolor),
+                                                          mesh.node_pt(graph.vpos_pt(*v2), self.gridcolor),
+                                                          mesh.node_pt(graph.vpos_pt(*v1), self.gridcolor))))
+                            elements.append(mesh.element((mesh.node_pt(graph.vpos_pt(*v1f), self.gridcolor),
+                                                          mesh.node_pt(graph.vpos_pt(*v2), self.gridcolor),
+                                                          mesh.node_pt(graph.vpos_pt(*v2f), self.gridcolor))))
+                    elif i == 1:
+                        elements.append(mesh.element((mesh.node_pt((x3_pt, y3_pt), c3b),
+                                                      mesh.node_pt((x1_pt, y1_pt), c1b),
+                                                      mesh.node_pt((x5_pt, y5_pt), c5b))))
+                        if self.gridcolor is not None and self.gridlines1:
+                            elements.append(mesh.element((mesh.node_pt(graph.vpos_pt(*v1f), self.gridcolor),
+                                                          mesh.node_pt(graph.vpos_pt(*v3), self.gridcolor),
+                                                          mesh.node_pt(graph.vpos_pt(*v1), self.gridcolor))))
+                            elements.append(mesh.element((mesh.node_pt(graph.vpos_pt(*v1f), self.gridcolor),
+                                                          mesh.node_pt(graph.vpos_pt(*v3), self.gridcolor),
+                                                          mesh.node_pt(graph.vpos_pt(*v3f), self.gridcolor))))
+                    elif i == 2:
+                        elements.append(mesh.element((mesh.node_pt((x2_pt, y2_pt), c2c),
+                                                      mesh.node_pt((x4_pt, y4_pt), c4c),
+                                                      mesh.node_pt((x5_pt, y5_pt), c5c))))
+                        if self.gridcolor is not None and self.gridlines1:
+                            elements.append(mesh.element((mesh.node_pt(graph.vpos_pt(*v2f), self.gridcolor),
+                                                          mesh.node_pt(graph.vpos_pt(*v4), self.gridcolor),
+                                                          mesh.node_pt(graph.vpos_pt(*v2), self.gridcolor))))
+                            elements.append(mesh.element((mesh.node_pt(graph.vpos_pt(*v2f), self.gridcolor),
+                                                          mesh.node_pt(graph.vpos_pt(*v4), self.gridcolor),
+                                                          mesh.node_pt(graph.vpos_pt(*v4f), self.gridcolor))))
+                    elif i == 3:
+                        elements.append(mesh.element((mesh.node_pt((x4_pt, y4_pt), c4d),
+                                                      mesh.node_pt((x3_pt, y3_pt), c3d),
+                                                      mesh.node_pt((x5_pt, y5_pt), c5d))))
+                        if self.gridcolor is not None and self.gridlines2:
+                            elements.append(mesh.element((mesh.node_pt(graph.vpos_pt(*v3f), self.gridcolor),
+                                                          mesh.node_pt(graph.vpos_pt(*v4), self.gridcolor),
+                                                          mesh.node_pt(graph.vpos_pt(*v3), self.gridcolor))))
+                            elements.append(mesh.element((mesh.node_pt(graph.vpos_pt(*v3f), self.gridcolor),
+                                                          mesh.node_pt(graph.vpos_pt(*v4), self.gridcolor),
+                                                          mesh.node_pt(graph.vpos_pt(*v4f), self.gridcolor))))
+        m = mesh.mesh(elements, check=0)
         graph.insert(m)

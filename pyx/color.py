@@ -3,7 +3,7 @@
 #
 # Copyright (C) 2002-2004, 2006 Jörg Lehmann <joergl@users.sourceforge.net>
 # Copyright (C) 2003-2006 Michael Schindler <m-schindler@users.sourceforge.net>
-# Copyright (C) 2002-2004 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2002-2007 André Wobst <wobsta@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
@@ -95,7 +95,7 @@ class grey(color):
         return "/DeviceGray"
 
     def tostring8bit(self):
-        return chr(round(self.color["gray"]*255))
+        return chr(int(self.color["gray"]*255))
 
 grey.black = grey(0.0)
 grey.white = grey(1.0)
@@ -235,6 +235,9 @@ class hsb(color):
         else:
             return rgb(b, b*k, b*m)
 
+    def colorspacestring(self):
+        raise RuntimeError("colorspace string not available for hsb colors")
+
 
 class cmyk(color):
 
@@ -277,7 +280,7 @@ class cmyk(color):
         return "/DeviceCMYK"
 
     def tostring8bit(self):
-        return struct.pack("BBBB", round(self.color["c"]*255), round(self.color["m"]*255), round(self.color["y"]*255), round(self.color["k"]*255))
+        return struct.pack("BBBB", int(self.color["c"]*255), int(self.color["m"]*255), int(self.color["y"]*255), int(self.color["k"]*255))
 
 cmyk.GreenYellow    = cmyk(0.15, 0, 0.69, 0)
 cmyk.Yellow         = cmyk(0, 0, 1, 0)
@@ -408,35 +411,26 @@ class functiongradient(gradient):
     type:      a string indicating the color class
     """
 
-    def __init__(self, functions, type):
-        if type == "cmyk":
-            self.colorclass = cmyk
-        elif type == "rgb":
-            self.colorclass = rgb
-        elif type == "hsb":
-            self.colorclass = hsb
-        elif type == "grey" or type == "gray":
-            self.colorclass = grey
-        else:
-            raise ValueError
+    def __init__(self, functions, cls):
         self.functions = functions
+        self.cls = cls
 
     def getcolor(self, param):
         colordict = {}
         for key in self.functions.keys():
             colordict[key] = self.functions[key](param)
-        return self.colorclass(**colordict)
+        return self.cls(**colordict)
 
 
 gradient.Gray           = lineargradient(gray.white, gray.black)
 gradient.Grey           = gradient.Gray
 gradient.ReverseGray    = lineargradient(gray.black, gray.white)
 gradient.ReverseGrey    = gradient.ReverseGray
-gradient.BlackYellow    = functiongradient(functions={ # compare this with reversegray above
+gradient.BlackYellow    = functiongradient({ # compare this with reversegray above
     "r":(lambda x: 2*x*(1-x)**5 + 3.5*x**2*(1-x)**3 + 2.1*x*x*(1-x)**2 + 3.0*x**3*(1-x)**2 + x**0.5*(1-(1-x)**2)),
     "g":(lambda x: 1.5*x**2*(1-x)**3 - 0.8*x**3*(1-x)**2 + 2.0*x**4*(1-x) + x**4),
     "b":(lambda x: 5*x*(1-x)**5 - 0.5*x**2*(1-x)**3 + 0.3*x*x*(1-x)**2 + 5*x**3*(1-x)**2 + 0.5*x**6)},
-    type="rgb")
+    rgb)
 gradient.RedGreen       = lineargradient(rgb.red, rgb.green)
 gradient.RedBlue        = lineargradient(rgb.red, rgb.blue)
 gradient.GreenRed       = lineargradient(rgb.green, rgb.red)

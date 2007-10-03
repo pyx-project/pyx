@@ -516,6 +516,7 @@ class graphxyz(graphxy):
         def __init__(self, distance, phi, theta, anglefactor=math.pi/180):
             phi *= anglefactor
             theta *= anglefactor
+            self.distance = distance
 
             self.a = (-math.sin(phi), math.cos(phi), 0)
             self.b = (-math.cos(phi)*math.sin(theta),
@@ -547,13 +548,16 @@ class graphxyz(graphxy):
             return da/d0, db/d0
 
         def zindex(self, x, y, z):
-            return math.sqrt((x-self.eye[0])*(x-self.eye[0])+(y-self.eye[1])*(y-self.eye[1])+(z-self.eye[2])*(z-self.eye[2]))
+            return math.sqrt((x-self.eye[0])*(x-self.eye[0])+(y-self.eye[1])*(y-self.eye[1])+(z-self.eye[2])*(z-self.eye[2]))-self.distance
 
         def angle(self, x1, y1, z1, x2, y2, z2, x3, y3, z3):
+            sx = (x1-self.eye[0])
+            sy = (y1-self.eye[1])
+            sz = (z1-self.eye[2])
             nx = (y2-y1)*(z3-z1)-(z2-z1)*(y3-y1)
             ny = (z2-z1)*(x3-x1)-(x2-x1)*(z3-z1)
             nz = (x2-x1)*(y3-y1)-(y2-y1)*(x3-x1)
-            return (x1-self.eye[0])*nx+(y1-self.eye[1])*ny+(z1-self.eye[2])*nz
+            return (sx*nx+sy*ny+sz*nz)/math.sqrt(nx*nx+ny*ny+nz*nz)/math.sqrt(sx*sx+sy*sy+sz*sz)
 
 
     class parallel:
@@ -580,7 +584,7 @@ class graphxyz(graphxy):
             nx = (y2-y1)*(z3-z1)-(z2-z1)*(y3-y1)
             ny = (z2-z1)*(x3-x1)-(x2-x1)*(z3-z1)
             nz = (x2-x1)*(y3-y1)-(y2-y1)*(x3-x1)
-            return self.c[0]*nx+self.c[1]*ny+self.c[2]*nz
+            return (self.c[0]*nx+self.c[1]*ny+self.c[2]*nz)/math.sqrt(nx*nx+ny*ny+nz*nz)
 
 
     def __init__(self, xpos=0, ypos=0, size=None,
@@ -600,8 +604,10 @@ class graphxyz(graphxy):
         self.zscale = zscale
         self.projector = projector
         self.key = key
+
         self.xorder = projector.zindex(0, -1, 0) > projector.zindex(0, 1, 0) and 1 or 0
         self.yorder = projector.zindex(-1, 0, 0) > projector.zindex(1, 0, 0) and 1 or 0
+        self.zindexscale = math.sqrt(xscale*xscale+yscale*yscale+zscale*zscale)
 
         for axisname, aaxis in axes.items():
             if aaxis is not None:
@@ -699,7 +705,7 @@ class graphxyz(graphxy):
     def vzindex(self, vx, vy, vz):
         return self.projector.zindex(2*self.xscale*(vx - 0.5),
                                      2*self.yscale*(vy - 0.5),
-                                     2*self.zscale*(vz - 0.5))
+                                     2*self.zscale*(vz - 0.5))/self.zindexscale
 
     def vangle(self, vx1, vy1, vz1, vx2, vy2, vz2, vx3, vy3, vz3):
         return self.projector.angle(2*self.xscale*(vx1 - 0.5),
