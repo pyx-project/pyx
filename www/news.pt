@@ -9,6 +9,14 @@
     <h1>PyX - News</h1>
 
     <dl>
+      <dt>2007-10-03: PyX 0.10 released</dt>
+      <dd>
+        This release adds 3d plotting facilities to PyX using parallel or central
+        projection. Two new graph styles grids and surfaces can be used in 3d
+        graphs as well as some existing generic graph styles (symbols, lines,
+        errorbars etc.). Several new examples, various other improvements
+        requested by PyX users and some bugfixes complete this release.
+      </dd>
       <dt>2006-09-14: Talk about Type1 fonts and PyX in Rosenheim</dt>
       <dd>
         A talk about Type1 fonts and PyX was presented at the
