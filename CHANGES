@@ -92,6 +92,11 @@ TODO:
       graph data
 
 
+0.11 (2007/xx/xx):
+  - canvas module:
+    - auto-guess output filename from the script filename
+
+
 0.10 (2007/10/03):
   - graph modules:
     - graph module:

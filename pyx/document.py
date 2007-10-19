@@ -141,6 +141,20 @@ class page:
         self._process("processPDF", *args)
 
 
+def _outputstream(file, suffix):
+    if file is None:
+        if not sys.argv[0].endswith(".py"):
+            raise RuntimeError("could not auto-guess filename")
+        return open("%s.%s" % (sys.argv[0][:-3], suffix), "wb")
+    try:
+        file.write()
+        return file
+    except:
+        if not file.endswith(".%s" % suffix):
+            return open("%s.%s" % (file, suffix), "wb")
+        return open(file, "wb")
+
+
 class document:
 
     """holds a collection of page instances which are output as pages of a document"""
@@ -151,21 +165,21 @@ class document:
     def append(self, page):
         self.pages.append(page)
 
-    def writeEPSfile(self, file, *args, **kwargs):
-        pswriter.epswriter(self, file, *args, **kwargs)
+    def writeEPSfile(self, file, **kwargs):
+        pswriter.epswriter(self, _outputstream(file, "eps"), **kwargs)
 
-    def writePSfile(self, file, *args, **kwargs):
-        pswriter.pswriter(self, file, *args, **kwargs)
+    def writePSfile(self, file, **kwargs):
+        pswriter.pswriter(self, _outputstream(file, "ps"), **kwargs)
 
-    def writePDFfile(self, file, *args, **kwargs):
-        pdfwriter.PDFwriter(self, file, *args, **kwargs)
+    def writePDFfile(self, file, **kwargs):
+        pdfwriter.PDFwriter(self, _outputstream(file, "pdf"), **kwargs)
 
-    def writetofile(self, filename, *args, **kwargs):
+    def writetofile(self, filename, **kwargs):
         if filename.endswith(".eps"):
-            self.writeEPSfile(filename, *args, **kwargs)
+            self.writeEPSfile(open(filename, "wb"), **kwargs)
         elif filename.endswith(".ps"):
-            self.writePSfile(filename, *args, **kwargs)
+            self.writePSfile(open(filename, "wb"), **kwargs)
         elif filename.endswith(".pdf"):
-            self.writePDFfile(filename, *args, **kwargs)
+            self.writePDFfile(open(filename, "wb"), **kwargs)
         else:
             raise ValueError("unknown file extension")
