@@ -304,24 +304,11 @@ _ReEncodeFont = PSdefinition("ReEncodeFont", """{
 
 class epswriter:
 
-    def __init__(self, document, file):
+    def __init__(self, document, file, title=None):
         if len(document.pages) != 1:
             raise ValueError("EPS file can be constructed out of a single page document only")
         page = document.pages[0]
         canvas = page.canvas
-
-        try:
-            file.write("")
-        except:
-            filename = file
-            if not filename.endswith(".eps"):
-                filename += ".eps"
-            try:
-                file = open(filename, "w")
-            except IOError:
-                raise IOError("cannot open output file")
-        else:
-            filename = "stream"
 
         pagefile = cStringIO.StringIO()
         registry = PSregistry()
@@ -335,7 +322,8 @@ class epswriter:
             file.write("%%%%BoundingBox: %d %d %d %d\n" % pagebbox.lowrestuple_pt())
             file.write("%%%%HiResBoundingBox: %g %g %g %g\n" % pagebbox.highrestuple_pt())
         file.write("%%%%Creator: PyX %s\n" % version.version)
-        file.write("%%%%Title: %s\n" % filename)
+        if title is not None:
+            file.write("%%%%Title: %s\n" % title)
         file.write("%%%%CreationDate: %s\n" %
                    time.asctime(time.localtime(time.time())))
         file.write("%%EndComments\n")
@@ -354,20 +342,7 @@ class epswriter:
 
 class pswriter:
 
-    def __init__(self, document, file, writebbox=0):
-        try:
-            file.write("")
-        except:
-            filename = file
-            if not filename.endswith(".ps"):
-                filename += ".ps"
-            try:
-                file = open(filename, "w")
-            except IOError:
-                raise IOError("cannot open output file")
-        else:
-            filename = "stream"
-
+    def __init__(self, document, file, writebbox=0, title=None):
         # We first have to process the content of the pages, writing them into the stream pagesfile
         # Doing so, we fill the registry and also calculate the page bounding boxes, which are
         # stored in page._bbox for every page
@@ -409,7 +384,8 @@ class pswriter:
             file.write("%%%%BoundingBox: %d %d %d %d\n" % documentbbox.lowrestuple_pt())
             file.write("%%%%HiResBoundingBox: %g %g %g %g\n" % documentbbox.highrestuple_pt())
         file.write("%%%%Creator: PyX %s\n" % version.version)
-        file.write("%%%%Title: %s\n" % filename)
+        if title is not None:
+            file.write("%%%%Title: %s\n" % title)
         file.write("%%%%CreationDate: %s\n" %
                    time.asctime(time.localtime(time.time())))
 
