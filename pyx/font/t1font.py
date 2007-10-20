@@ -648,7 +648,7 @@ class cursor:
         return self.data[startpos: self.pos]
 
 
-class T1font:
+class T1file:
 
     eexecr = 55665
     charstringr = 4330
@@ -995,7 +995,7 @@ class T1font:
     uniqueidpattern = re.compile("/UniqueID\s+\d+\s+def\s+")
 
     def getstrippedfont(self, glyphs):
-        """create a T1font instance containing only certain glyphs
+        """create a T1file instance containing only certain glyphs
 
         glyphs is a dict having the glyph names to be contained as keys.
         The glyphs dict might be modified *in place*.
@@ -1034,7 +1034,7 @@ class T1font:
         data3 = self.newlinepattern.subn("\n", self.data3)[0]
 
         # create and return the new font instance
-        return T1font(data1.rstrip() + "\n", self._eexecencode(data2), data3.rstrip() + "\n")
+        return T1file(data1.rstrip() + "\n", self._eexecencode(data2), data3.rstrip() + "\n")
 
     def getflags(self):
         # As a simple heuristics we assume non-symbolic fonts if and only
@@ -1047,7 +1047,7 @@ class T1font:
         return 4
 
     def outputPFA(self, file):
-        """output the T1font in PFA format"""
+        """output the T1file in PFA format"""
         file.write(self.data1)
         data2eexechex = binascii.b2a_hex(self.getdata2eexec())
         linelength = 64
@@ -1057,7 +1057,7 @@ class T1font:
         file.write(self.data3)
 
     def outputPFB(self, file):
-        """output the T1font in PFB format"""
+        """output the T1file in PFB format"""
         data2eexec = self.getdata2eexec()
         def pfblength(data):
             l = len(data)
@@ -1077,7 +1077,7 @@ class T1font:
         file.write("\200\3")
 
     def outputPS(self, file, writer):
-        """output the PostScript code for the T1font to the file file"""
+        """output the PostScript code for the T1file to the file file"""
         self.outputPFA(file)
 
     def outputPDF(self, file, writer):
@@ -1108,9 +1108,9 @@ class T1font:
                    "endstream\n")
 
 
-class T1pfafont(T1font):
+class PFAfont(T1file):
 
-    """create a T1font instance from a pfa font file"""
+    """create a T1file instance from a pfa font file"""
 
     def __init__(self, filename):
         d = open(filename, "rb").read()
@@ -1120,12 +1120,12 @@ class T1pfafont(T1font):
         data1 = d[:m1]
         data2 = binascii.a2b_hex(d[m1: m2].replace(" ", "").replace("\r", "").replace("\n", ""))
         data3 = d[m2:]
-        T1font.__init__(self, data1, data2, data3)
+        T1file.__init__(self, data1, data2, data3)
 
 
-class T1pfbfont(T1font):
+class PFBfont(T1file):
 
-    """create a T1font instance from a pfb font file"""
+    """create a T1file instance from a pfb font file"""
 
     def __init__(self, filename):
         def pfblength(s):
@@ -1147,5 +1147,5 @@ class T1pfbfont(T1font):
         data3 = f.read(pfblength(f.read(4)))
         mark = f.read(2); assert mark == "\200\3"
         assert not f.read(1)
-        T1font.__init__(self, data1, data2, data3)
+        T1file.__init__(self, data1, data2, data3)
 
