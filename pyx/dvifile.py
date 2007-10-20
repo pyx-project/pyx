@@ -22,85 +22,44 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import cStringIO, exceptions, re, struct, string, sys, warnings, math
-import unit, epsfile, bbox, canvas, color, trafo, path, pykpathsea, type1font
-
-
-class binfile:
-
-    def __init__(self, filename, mode="r"):
-        self.file = open(filename, mode)
-
-    def close(self):
-        self.file.close()
-
-    def tell(self):
-        return self.file.tell()
-
-    def eof(self):
-        return self.file.eof()
-
-    def read(self, bytes):
-        return self.file.read(bytes)
-
-    def readint(self, bytes=4, signed=0):
-        first = 1
-        result = 0
-        while bytes:
-            value = ord(self.file.read(1))
-            if first and signed and value > 127:
-                value -= 256
-            first = 0
-            result = 256 * result + value
-            bytes -= 1
-        return result
-
-    def readint32(self):
-        return struct.unpack(">l", self.file.read(4))[0]
-
-    def readuint32(self):
-        return struct.unpack(">L", self.file.read(4))[0]
-
-    def readint24(self):
-        # XXX: checkme
-        return struct.unpack(">l", "\0"+self.file.read(3))[0]
-
-    def readuint24(self):
-        # XXX: checkme
-        return struct.unpack(">L", "\0"+self.file.read(3))[0]
-
-    def readint16(self):
-        return struct.unpack(">h", self.file.read(2))[0]
-
-    def readuint16(self):
-        return struct.unpack(">H", self.file.read(2))[0]
-
-    def readchar(self):
-        return struct.unpack("b", self.file.read(1))[0]
-
-    def readuchar(self):
-        return struct.unpack("B", self.file.read(1))[0]
-
-    def readstring(self, bytes):
-        l = self.readuchar()
-        assert l <= bytes-1, "inconsistency in file: string too long"
-        return self.file.read(bytes-1)[:l]
-
-class stringbinfile(binfile):
-
-    def __init__(self, s):
-        self.file = cStringIO.StringIO(s)
-
-
+import unit, epsfile, bbox, canvas, color, trafo, path, pykpathsea, reader, type1font
 
 
 ##############################################################################
-# TFM file handling
+# TeX font encoding file
 ##############################################################################
 
-class TFMError(exceptions.Exception): pass
+class ENCfile:
 
+    def __init__(self, filename):
+        encfile = open(filename, "r")
+        encdata = encfile.read()
+        encfile.close()
+
+        t = reader.PStokenizer(encdata, "")
+
+        self.encname = t.gettoken()
+        token = t.gettoken()
+        if token != "[":
+            raise RuntimeError("cannot parse encoding file '%s', expecting '[' got '%s'" % (filename, token))
+        self.encvector = []
+        for i in range(256):
+            token = t.gettoken()
+            if token == "]":
+                raise RuntimeError("not enough charcodes in encoding file '%s'" % filename)
+            self.encvector.append(token)
+        if t.gettoken() != "]":
+            raise RuntimeError("too many charcodes in encoding file '%s'" % filename)
+        token = t.gettoken()
+        if token != "def":
+            raise RuntimeError("cannot parse encoding file '%s', expecting 'def' got '%s'" % (filename, token))
+
+##############################################################################
+# TeX font matrix (TFM file)
+##############################################################################
 
 class char_info_word:
+
     def __init__(self, word):
         self.width_index  = int((word & 0xFF000000L) >> 24) #make sign-safe
         self.height_index = (word & 0x00F00000) >> 20
@@ -110,9 +69,10 @@ class char_info_word:
         self.remainder    = (word & 0x000000FF)
 
 
-class tfmfile:
+class TFMfile:
+
     def __init__(self, name, debug=0):
-        self.file = binfile(name, "rb")
+        self.file = reader.reader(name)
 
         #
         # read pre header
@@ -135,7 +95,7 @@ class tfmfile:
                 self.ne <= 256 and
                 self.lf == 6+self.lh+(self.ec-self.bc+1)+self.nw+self.nh+self.nd
                 +self.ni+self.nl+self.nk+self.ne+self.np):
-            raise TFMError, "error in TFM pre-header"
+            raise RuntimeError("error in TFM pre-header")
 
         if debug:
             print "lh=%d" % self.lh
@@ -162,7 +122,7 @@ class tfmfile:
         if debug:
             print "(FAMILY %s)" % self.fontfamily
             print "(CODINGSCHEME %s)" % self.charcoding
-            print "(DESINGSIZE R %f)" % 16.0*self.designsize/16777216L
+            print "(DESINGSIZE R %f)" % (16.0*self.designsize/16777216L)
 
         if self.lh > 17:
             self.sevenbitsave = self.file.readuchar()
@@ -286,15 +246,9 @@ class tfmfile:
 
         self.file.close()
 
-
-
 ##############################################################################
-# Font handling
+# Font map (MAP file)
 ##############################################################################
-
-#
-# PostScript font selection and output primitives
-#
 
 class UnsupportedFontFormat(Exception):
     pass
@@ -302,7 +256,7 @@ class UnsupportedFontFormat(Exception):
 class UnsupportedPSFragment(Exception):
     pass
 
-class fontmapping:
+class MAPfile:
 
     tokenpattern = re.compile(r'"(.*?)("\s+|"$|$)|(.*?)(\s+|$)')
 
@@ -391,7 +345,7 @@ def readfontmap(filenames):
             line = line.rstrip()
             if not (line=="" or line[0] in (" ", "%", "*", ";" , "#")):
                 try:
-                    fm = fontmapping(line)
+                    fm = MAPfile(line)
                 except (RuntimeError, UnsupportedPSFragment), e:
                     warnings.warn("Ignoring line %i in mapping file '%s': %s" % (lineno, mappath, e))
                 except UnsupportedFontFormat, e:
@@ -401,33 +355,40 @@ def readfontmap(filenames):
         mapfile.close()
     return fontmap
 
+##############################################################################
+# Font handling
+##############################################################################
+
+#
+# PostScript font selection and output primitives
+#
+
 
 class font:
 
-    def __init__(self, name, c, q, d, tfmconv, pyxconv, fontmap, debug=0):
+    def __init__(self, name, c, q, d, tfmconv, pyxconv, debug=0):
         self.name = name
         self.q = q                  # desired size of font (fix_word) in TeX points
         self.d = d                  # design size of font (fix_word) in TeX points
         self.tfmconv = tfmconv      # conversion factor from tfm units to dvi units
         self.pyxconv = pyxconv      # conversion factor from dvi units to PostScript points
-        self.fontmap = fontmap
         tfmpath = pykpathsea.find_file("%s.tfm" % self.name, pykpathsea.kpse_tfm_format)
         if not tfmpath:
             raise TFMError("cannot find %s.tfm" % self.name)
-        self.tfmfile = tfmfile(tfmpath, debug)
+        self.TFMfile = TFMfile(tfmpath, debug)
 
         # We only check for equality of font checksums if none of them
         # is zero. The case c == 0 happend in some VF files and
         # according to the VFtoVP documentation, paragraph 40, a check
-        # is only performed if tfmfile.checksum > 0. Anyhow, being
+        # is only performed if TFMfile.checksum > 0. Anyhow, being
         # more generous here seems to be reasonable
-        if self.tfmfile.checksum != c and self.tfmfile.checksum != 0 and c != 0:
+        if self.TFMfile.checksum != c and self.TFMfile.checksum != 0 and c != 0:
             raise DVIError("check sums do not agree: %d vs. %d" %
-                           (self.tfmfile.checksum, c))
+                           (self.TFMfile.checksum, c))
 
         # Check whether the given design size matches the one defined in the tfm file
-        if abs(self.tfmfile.designsize - d) > 2:
-            raise DVIError("design sizes do not agree: %d vs. %d" % (self.tfmfile.designsize, d))
+        if abs(self.TFMfile.designsize - d) > 2:
+            raise DVIError("design sizes do not agree: %d vs. %d" % (self.TFMfile.designsize, d))
         #if q < 0 or q > 134217728:
         #    raise DVIError("font '%s' not loaded: bad scale" % self.name)
         if d < 0 or d > 134217728:
@@ -451,7 +412,7 @@ class font:
         except:
             fontinfo.fontbbox = (0, -10, 100, 100)
         try:
-            fontinfo.italicangle = -180/math.pi*math.atan(self.tfmfile.param[0]/65536.0)
+            fontinfo.italicangle = -180/math.pi*math.atan(self.TFMfile.param[0]/65536.0)
         except IndexError:
             fontinfo.italicangle = 0
         fontinfo.ascent = fontinfo.fontbbox[3]
@@ -470,7 +431,6 @@ class font:
         return "font %s designed at %g TeX pts used at %g TeX pts" % (self.name, 
                                                                       16.0*self.d/16777216L,
                                                                       16.0*self.q/16777216L)
-    __repr__ = __str__
 
     def getsize_pt(self):
         """ return size of font in (PS) points """
@@ -517,53 +477,54 @@ class font:
     # routines returning lengths as integers in dvi units
 
     def getwidth_dvi(self, charcode):
-        return self._convert_tfm_to_dvi(self.tfmfile.width[self.tfmfile.char_info[charcode].width_index])
+        return self._convert_tfm_to_dvi(self.TFMfile.width[self.TFMfile.char_info[charcode].width_index])
 
     def getheight_dvi(self, charcode):
-        return self._convert_tfm_to_dvi(self.tfmfile.height[self.tfmfile.char_info[charcode].height_index])
+        return self._convert_tfm_to_dvi(self.TFMfile.height[self.TFMfile.char_info[charcode].height_index])
 
     def getdepth_dvi(self, charcode):
-        return self._convert_tfm_to_dvi(self.tfmfile.depth[self.tfmfile.char_info[charcode].depth_index])
+        return self._convert_tfm_to_dvi(self.TFMfile.depth[self.TFMfile.char_info[charcode].depth_index])
 
     def getitalic_dvi(self, charcode):
-        return self._convert_tfm_to_dvi(self.tfmfile.italic[self.tfmfile.char_info[charcode].italic_index])
+        return self._convert_tfm_to_dvi(self.TFMfile.italic[self.TFMfile.char_info[charcode].italic_index])
 
     # routines returning lengths as integers in design size (AFM) units 
 
     def getwidth_ds(self, charcode):
-        return self._convert_tfm_to_ds(self.tfmfile.width[self.tfmfile.char_info[charcode].width_index])
+        return self._convert_tfm_to_ds(self.TFMfile.width[self.TFMfile.char_info[charcode].width_index])
 
     def getheight_ds(self, charcode):
-        return self._convert_tfm_to_ds(self.tfmfile.height[self.tfmfile.char_info[charcode].height_index])
+        return self._convert_tfm_to_ds(self.TFMfile.height[self.TFMfile.char_info[charcode].height_index])
 
     def getdepth_ds(self, charcode):
-        return self._convert_tfm_to_ds(self.tfmfile.depth[self.tfmfile.char_info[charcode].depth_index])
+        return self._convert_tfm_to_ds(self.TFMfile.depth[self.TFMfile.char_info[charcode].depth_index])
 
     def getitalic_ds(self, charcode):
-        return self._convert_tfm_to_ds(self.tfmfile.italic[self.tfmfile.char_info[charcode].italic_index])
+        return self._convert_tfm_to_ds(self.TFMfile.italic[self.TFMfile.char_info[charcode].italic_index])
 
     # routines returning lengths as floats in PostScript points
 
     def getwidth_pt(self, charcode):
-        return self._convert_tfm_to_pt(self.tfmfile.width[self.tfmfile.char_info[charcode].width_index])
+        return self._convert_tfm_to_pt(self.TFMfile.width[self.TFMfile.char_info[charcode].width_index])
 
     def getheight_pt(self, charcode):
-        return self._convert_tfm_to_pt(self.tfmfile.height[self.tfmfile.char_info[charcode].height_index])
+        return self._convert_tfm_to_pt(self.TFMfile.height[self.TFMfile.char_info[charcode].height_index])
 
     def getdepth_pt(self, charcode):
-        return self._convert_tfm_to_pt(self.tfmfile.depth[self.tfmfile.char_info[charcode].depth_index])
+        return self._convert_tfm_to_pt(self.TFMfile.depth[self.TFMfile.char_info[charcode].depth_index])
 
     def getitalic_pt(self, charcode):
-        return self._convert_tfm_to_pt(self.tfmfile.italic[self.tfmfile.char_info[charcode].italic_index])
+        return self._convert_tfm_to_pt(self.TFMfile.italic[self.TFMfile.char_info[charcode].italic_index])
 
 
 class virtualfont(font):
-    def __init__(self, name, c, q, d, tfmconv, pyxconv, fontmap, debug=0):
+
+    def __init__(self, name, c, q, d, tfmconv, pyxconv, debug=0):
         fontpath = pykpathsea.find_file(name, pykpathsea.kpse_vf_format)
         if fontpath is None or not len(fontpath):
             raise RuntimeError
-        font.__init__(self, name, c, q, d, tfmconv, pyxconv, fontmap, debug)
-        self.vffile = vffile(fontpath, self.scale, tfmconv, pyxconv, fontmap, debug > 1)
+        font.__init__(self, name, c, q, d, tfmconv, pyxconv, debug)
+        self.vffile = vffile(fontpath, self.scale, tfmconv, pyxconv, debug > 1)
 
     def getfonts(self):
         """ return fonts used in virtual font itself """
@@ -662,12 +623,11 @@ class _restoretrafo(canvas.canvasitem):
         file.write("Q\n")
 
 
-class dvifile:
+class DVIfile:
 
-    def __init__(self, filename, fontmap, debug=0, debugfile=sys.stdout):
+    def __init__(self, filename, debug=0, debugfile=sys.stdout):
         """ opens the dvi file and reads the preamble """
         self.filename = filename
-        self.fontmap = fontmap
         self.debug = debug
         self.debugfile = debugfile
         self.debugstack = []
@@ -685,7 +645,7 @@ class dvifile:
         # stack for self.file, self.fonts and self.stack, needed for VF inclusion
         self.statestack = []
 
-        self.file = binfile(self.filename, "rb")
+        self.file = reader.reader(self.filename)
 
         # currently read byte in file (for debugging output)
         self.filepos = None
@@ -696,9 +656,42 @@ class dvifile:
 
     def flushtext(self):
         """ finish currently active text object """
+        if self.activetext:
+            if not self.fontmap.has_key(self.activefont.name):
+                raise RuntimeError("missing font information for '%s'; check fontmapping file(s)" % self.activefont.name)
+            fontmapinfo = self.fontmap[self.activefont.name]
+
+            encodingname = fontmapinfo.reencodefont
+            if encodingname is not None:
+                encodingfilename = pykpathsea.find_file(fontmapinfo.encodingfile, pykpathsea.kpse_tex_ps_header_format)
+                if not encodingfilename:
+                    raise RuntimeError("cannot find font encoding file %s" % fontmapinfo.encodingfile)
+                fontencoding = type1font.encoding(encodingname, encodingfilename)
+            else:
+                fontencoding = None
+
+            fontbasefontname = fontmapinfo.basepsname
+            if fontmapinfo.fontfile is not None:
+                fontfilename = pykpathsea.find_file(fontmapinfo.fontfile, pykpathsea.kpse_type1_format)
+                if not fontfilename:
+                    raise RuntimeError("cannot find type 1 font %s" % fontmapinfo.fontfile)
+            else:
+                fontfilename = None
+
+            fontslant = fontmapinfo.slantfont
+            if fontslant is not None:
+                fontslant = float(fontslant)
+
+            # XXX we currently misuse use self.activefont as metric 
+            font = type1font.font(fontbasefontname, fontfilename, fontencoding, fontslant, self.activefont)
+
+            self.activetext = type1font.text_pt(self.pos[_POS_H] * self.pyxconv, -self.pos[_POS_V] * self.pyxconv, font)
+            self.actpage.insert(self.activetext)
+
         if self.debug and self.activetext:
             self.debugfile.write("[%s]\n" % "".join([chr(char) for char in self.activetext.chars]))
-        self.activetext = None
+
+        self.activetext = []
 
     def putrule(self, height, width, advancepos=1):
         self.flushtext()
@@ -741,38 +734,7 @@ class dvifile:
             self._push_dvistring(self.activefont.getchar(char), self.activefont.getfonts(), afterpos,
                                  self.activefont.getsize_pt())
         else:
-            if self.activetext is None:
-                if not self.fontmap.has_key(self.activefont.name):
-                    raise RuntimeError("missing font information for '%s'; check fontmapping file(s)" % self.activefont.name)
-                fontmapinfo = self.fontmap[self.activefont.name]
-
-                encodingname = fontmapinfo.reencodefont
-                if encodingname is not None:
-                    encodingfilename = pykpathsea.find_file(fontmapinfo.encodingfile, pykpathsea.kpse_tex_ps_header_format)
-                    if not encodingfilename:
-                        raise RuntimeError("cannot find font encoding file %s" % fontmapinfo.encodingfile)
-                    fontencoding = type1font.encoding(encodingname, encodingfilename)
-                else:
-                    fontencoding = None
-
-                fontbasefontname = fontmapinfo.basepsname
-                if fontmapinfo.fontfile is not None:
-                    fontfilename = pykpathsea.find_file(fontmapinfo.fontfile, pykpathsea.kpse_type1_format)
-                    if not fontfilename:
-                        raise RuntimeError("cannot find type 1 font %s" % fontmapinfo.fontfile)
-                else:
-                    fontfilename = None
-
-                fontslant = fontmapinfo.slantfont
-                if fontslant is not None:
-                    fontslant = float(fontslant)
-
-                # XXX we currently misuse use self.activefont as metric 
-                font = type1font.font(fontbasefontname, fontfilename, fontencoding, fontslant, self.activefont)
-
-                self.activetext = type1font.text_pt(self.pos[_POS_H] * self.pyxconv, -self.pos[_POS_V] * self.pyxconv, font)
-                self.actpage.insert(self.activetext)
-            self.activetext.addchar(char)
+            self.activetext.append(char)
             self.pos[_POS_H] += dx
 
         if not advancepos:
@@ -797,9 +759,9 @@ class dvifile:
         # d:     design size (fix_word)
 
         try:
-            afont = virtualfont(fontname, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.fontmap, self.debug > 1)
+            afont = virtualfont(fontname, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.debug > 1)
         except (TypeError, RuntimeError):
-            afont = font(fontname, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.fontmap, self.debug > 1)
+            afont = font(fontname, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.debug > 1)
 
         self.fonts[num] = afont
 
@@ -1028,8 +990,8 @@ class dvifile:
         self.actpage.markers = {}
         self.pos = [0, 0, 0, 0, 0, 0]
 
-        # currently active output: text instance currently used
-        self.activetext = None
+        # list of codepoints to be output
+        self.activetext = []
 
         while 1:
             afile = self.file
