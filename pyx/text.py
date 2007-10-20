@@ -22,7 +22,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import glob, os, threading, Queue, re, tempfile, atexit, time, warnings
-import config, siteconfig, unit, box, canvas, trafo, version, attr, style, dvifile
+import config, siteconfig, unit, box, canvas, trafo, version, attr, style
+from pyx.dvi import dvifile
 import bbox as bboxmodule
 
 ###############################################################################

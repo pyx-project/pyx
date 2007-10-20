@@ -22,6 +22,7 @@
 
 import cStringIO, copy, time, math
 import bbox, style, version, type1font, unit, trafo
+from pyx.dvi import mapfile
 
 try:
     enumerate([])
@@ -113,6 +114,8 @@ class PSdefinition(PSresource):
 class epswriter:
 
     def __init__(self, document, file, title=None):
+        self._fontmap = None
+
         if len(document.pages) != 1:
             raise ValueError("EPS file can be constructed out of a single page document only")
         page = document.pages[0]
@@ -146,6 +149,11 @@ class epswriter:
         file.write("showpage\n")
         file.write("%%Trailer\n")
         file.write("%%EOF\n")
+
+    def getfontmap(self):
+        if self._fontmap is None:
+            self._fontmap = mapfile.readfontmap(["psfonts.map"])
+        return self._fontmap
 
 
 class pswriter:

@@ -20,8 +20,6 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-from __future__ import nested_scopes
-
 import array, binascii, re
 try:
     import zlib
@@ -36,7 +34,7 @@ except NameError:
     from sets import Set as set
 
 
-from pyx import trafo
+from pyx import trafo, reader
 from pyx.path import path, moveto_pt, lineto_pt, curveto_pt, closepath
 import encoding
 
@@ -45,6 +43,39 @@ try:
 except:
     from t1code import *
 
+
+adobestandardencoding = [None, None, None, None, None, None, None, None,
+                         None, None, None, None, None, None, None, None,
+                         None, None, None, None, None, None, None, None,
+                         None, None, None, None, None, None, None, None,
+                         "space", "exclam", "quotedbl", "numbersign", "dollar", "percent", "ampersand", "quoteright",
+                         "parenleft", "parenright", "asterisk", "plus", "comma", "hyphen", "period", "slash",
+                         "zero", "one", "two", "three", "four", "five", "six", "seven",
+                         "eight", "nine", "colon", "semicolon", "less", "equal", "greater", "question",
+                         "at", "A", "B", "C", "D", "E", "F", "G",
+                         "H", "I", "J", "K", "L", "M", "N", "O",
+                         "P", "Q", "R", "S", "T", "U", "V", "W",
+                         "X", "Y", "Z", "bracketleft", "backslash", "bracketright", "asciicircum", "underscore",
+                         "quoteleft", "a", "b", "c", "d", "e", "f", "g",
+                         "h", "i", "j", "k", "l", "m", "n", "o",
+                         "p", "q", "r", "s", "t", "u", "v", "w",
+                         "x", "y", "z", "braceleft", "bar", "braceright", "asciitilde", None,
+                         None, None, None, None, None, None, None, None,
+                         None, None, None, None, None, None, None, None,
+                         None, None, None, None, None, None, None, None,
+                         None, None, None, None, None, None, None, None,
+                         None, "exclamdown", "cent", "sterling", "fraction", "yen", "florin", "section",
+                         "currency", "quotesingle", "quotedblleft", "guillemotleft", "guilsinglleft", "guilsinglright", "fi", "fl",
+                         None, "endash", "dagger", "daggerdbl", "periodcentered", None, "paragraph", "bullet",
+                         "quotesinglbase", "quotedblbase", "quotedblright", "guillemotright", "ellipsis", "perthousand", None, "questiondown",
+                         None, "grave", "acute", "circumflex", "tilde", "macron", "breve", "dotaccent",
+                         "dieresis", None, "ring", "cedilla", None, "hungarumlaut", "ogonek", "caron",
+                         "emdash", None, None, None, None, None, None, None,
+                         None, None, None, None, None, None, None, None,
+                         None, "AE", None, "ordfeminine", None, None, None, None,
+                         "Lslash", "Oslash", "OE", "ordmasculine", None, None, None, None,
+                         None, "ae", None, None, None, "dotlessi", None, None,
+                         "lslash", "oslash", "oe", "germandbls", None, None, None, None]
 
 class T1context:
 
@@ -155,8 +186,8 @@ class _T1seac(T1cmd):
         ady = context.t1stack.pop(0)
         bchar = context.t1stack.pop(0)
         achar = context.t1stack.pop(0)
-        aglyph = encoding.adobestandardencoding.decode(achar)
-        bglyph = encoding.adobestandardencoding.decode(bchar)
+        aglyph = adobestandardencoding[achar]
+        bglyph = adobestandardencoding[bchar]
         context.t1font.updateglyphpath(bglyph, path, atrafo, context)
         atrafo = atrafo * trafo.translate_pt(adx-sab, ady)
         context.t1font.updateglyphpath(aglyph, path, atrafo, context)
@@ -164,8 +195,8 @@ class _T1seac(T1cmd):
     def gathercalls(self, seacglyphs, subrs, othersubrs, context):
         bchar = context.t1stack.pop()
         achar = context.t1stack.pop()
-        aglyph = encoding.adobestandardencoding.decode(achar)
-        bglyph = encoding.adobestandardencoding.decode(bchar)
+        aglyph = adobestandardencoding[achar]
+        bglyph = adobestandardencoding[bchar]
         seacglyphs[aglyph] = 1
         seacglyphs[bglyph] = 1
         context.t1font.gatherglyphcalls(bglyph, seacglyphs, subrs, othersubrs, context)
@@ -588,66 +619,6 @@ T1setcurrentpoint = _T1setcurrentpoint()
 
 ######################################################################
 
-class cursor:
-    """cursor to read a string token by token"""
-
-    def __init__(self, data, startstring, eattokensep=1, tokenseps=" \t\r\n", tokenstarts="()<>[]{}/%"):
-        """creates a cursor for the string data
-
-        startstring is a string at which the cursor should start at. The first
-        ocurance of startstring is used. When startstring is not in data, an
-        exception is raised, otherwise the cursor is set to the position right
-        after the startstring. When eattokenseps is set, startstring must be
-        followed by a tokensep and this first tokensep is also consumed.
-        tokenseps is a string containing characters to be used as token
-        separators. tokenstarts is a string containing characters which 
-        directly (even without intermediate token separator) start a new token.
-        """
-        self.data = data
-        self.pos = self.data.index(startstring) + len(startstring)
-        self.tokenseps = tokenseps
-        self.tokenstarts = tokenstarts
-        if eattokensep:
-            if self.data[self.pos] not in self.tokenstarts:
-                if self.data[self.pos] not in self.tokenseps:
-                    raise ValueError("cursor initialization string is not followed by a token separator")
-                self.pos += 1
-
-    def gettoken(self):
-        """get the next token
-
-        Leading token separators and comments are silently consumed. The first token
-        separator after the token is also silently consumed."""
-        while self.data[self.pos] in self.tokenseps:
-            self.pos += 1
-        # ignore comments including subsequent whitespace characters
-        while self.data[self.pos] == "%":
-            while self.data[self.pos] not in "\r\n":
-                self.pos += 1
-            while self.data[self.pos] in self.tokenseps:
-                self.pos += 1
-        startpos = self.pos
-        while self.data[self.pos] not in self.tokenseps:
-            # any character in self.tokenstarts ends the token
-            if self.pos>startpos and self.data[self.pos] in self.tokenstarts:
-                break
-            self.pos += 1
-        result = self.data[startpos:self.pos]
-        if self.data[self.pos] in self.tokenseps:
-            self.pos += 1 # consume a single tokensep
-        return result
-
-    def getint(self):
-        """get the next token as an integer"""
-        return int(self.gettoken())
-
-    def getbytes(self, count):
-        """get the next count bytes"""
-        startpos = self.pos
-        self.pos += count
-        return self.data[startpos: self.pos]
-
-
 class T1file:
 
     eexecr = 55665
@@ -703,13 +674,13 @@ class T1file:
 
     def _encoding(self):
         """helper method to lookup the encoding in the font"""
-        c = cursor(self.data1, "/Encoding")
+        c = reader.PStokenizer(self.data1, "/Encoding")
         token1 = c.gettoken()
         token2 = c.gettoken()
         if token1 == "StandardEncoding" and token2 == "def":
-            self.encoding = encoding.adobestandardencoding
+            self.encoding = adobestandardencoding
         else:
-            encvector = [None]*256
+            self.encoding = [None]*256
             while 1:
                 self.encodingstart = c.pos
                 if c.gettoken() == "dup":
@@ -718,14 +689,13 @@ class T1file:
                 i = c.getint()
                 glyph = c.gettoken()
                 if 0 <= i < 256:
-                    encvector[i] = glyph[1:]
+                    self.encoding[i] = glyph[1:]
                 token = c.gettoken(); assert token == "put"
                 self.encodingend = c.pos
                 token = c.gettoken()
                 if token == "readonly" or token == "def":
                     break
                 assert token == "dup"
-            self.encoding = encoding.encoding(encvector)
 
     def _data2decode(self):
         """decodes data2eexec to the data2 string and the subr and glyphs dictionary
@@ -743,7 +713,7 @@ class T1file:
         self.emptysubr = self._charstringencode(chr(11))
 
         # extract Subrs
-        c = cursor(self._data2, "/Subrs")
+        c = reader.PStokenizer(self._data2, "/Subrs")
         self.subrsstart = c.pos
         arraycount = c.getint()
         token = c.gettoken(); assert token == "array"
@@ -778,7 +748,7 @@ class T1file:
         # extract glyphs
         self.glyphs = {}
         self.glyphlist = [] # we want to keep the order of the glyph names
-        c = cursor(self._data2, "/CharStrings")
+        c = reader.PStokenizer(self._data2, "/CharStrings")
         self.charstringsstart = c.pos
         c.getint()
         token = c.gettoken(); assert token == "dict"
@@ -997,12 +967,16 @@ class T1file:
     newlinepattern = re.compile("\s*[\r\n]\s*")
     uniqueidpattern = re.compile("/UniqueID\s+\d+\s+def\s+")
 
-    def getstrippedfont(self, glyphs):
+    def getstrippedfont(self, glyphs, charcodes):
         """create a T1file instance containing only certain glyphs
 
         glyphs is a set of the glyph names. It might be modified *in place*!
         """
         # TODO: we could also strip othersubrs to those actually used
+        if not self.encoding:
+            self._encoding()
+        for charcode in charcodes:
+            glyphs.add(self.encoding[charcode])
 
         # collect information about used glyphs and subrs
         seacglyphs = set()
@@ -1016,13 +990,11 @@ class T1file:
         glyphs.add(".notdef")
 
         # strip data1
-        if not self.encoding:
-            self._encoding()
-        if self.encoding is encoding.adobestandardencoding:
+        if self.encoding is adobestandardencoding:
             data1 = self.data1
         else:
             encodingstrings = []
-            for char, glyph in enumerate(self.encoding.encvector):
+            for char, glyph in enumerate(self.encoding):
                 if glyph in glyphs:
                     encodingstrings.append("dup %i /%s put\n" % (char, glyph))
             data1 = self.data1[:self.encodingstart] + "".join(encodingstrings) + self.data1[self.encodingend:]
@@ -1044,7 +1016,7 @@ class T1file:
         # not specified here.
         if not self.encoding:
             self._encoding()
-        if self.encoding is encoding.adobestandardencoding:
+        if self.encoding is adobestandardencoding:
             return 32
         return 4
 

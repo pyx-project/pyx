@@ -37,61 +37,35 @@ class PST1file(pswriter.PSresource):
 
     """ PostScript font definition included in the prolog """
 
-    def __init__(self, t1file, glyphnames):
+    def __init__(self, t1file, glyphnames, charcodes):
         """ include type 1 font t1file stripped to the given glyphnames"""
         self.type = "t1file"
         self.t1file = t1file
         self.id = t1file.name
-        self.usedglyphs = set(glyphnames)
+        self.glyphnames = set(glyphnames)
+        self.charcodes = set(charcodes)
         self.strip = 1
 
     def merge(self, other):
-        self.usedglyphs.update(other.usedglyphs)
+        self.glyphnames.update(other.glyphnames)
+        self.charcodes.update(other.charcodes)
 
     def output(self, file, writer, registry):
         file.write("%%%%BeginFont: %s\n" % self.t1file.name)
         if self.strip:
-            file.write("%%Included glyphs: %s\n" % " ".join(self.usedglyphs))
-            self.t1file.getstrippedfont(self.usedglyphs).outputPS(file, writer)
+            if self.glyphnames:
+                file.write("%%Included glyphs: %s\n" % " ".join(self.glyphnames))
+            if self.charcodes:
+                file.write("%%Included charcodes: %s\n" % " ".join([str(charcode) for charcode in self.charcodes]))
+            self.t1file.getstrippedfont(self.glyphnames, self.charcodes).outputPS(file, writer)
         else:
             self.t1file.outputPS(file, writer)
         file.write("\n%%EndFont\n")
 
 
-class PSencodefont(pswriter.PSresource):
-
-    """ encoded and transformed PostScript font"""
-
-    def __init__(self, basefontname, newfontname, encoding, newfontmatrix):
-        """ include the font in the given encoding """
-
-        self.type = "encodedfont"
-        self.basefontname = basefontname
-	self.id = self.newfontname = newfontname
-        self.encoding = encoding
-	self.newfontmatrix = newfontmatrix
-
-    def output(self, file, writer, registry):
-        file.write("%%%%BeginResource: %s\n" % self.newfontname)
-        file.write("/%s /%s [\n" % (self.basefontname, self.newfontname))
-        vector = [None] * len(self.encoding)
-        for glyphname, codepoint in self.encoding.items():
-            vector[codepoint] = glyphname
-        for glyphname in vector:
-            file.write("/%s " % glyphname)
-        file.write("]\n") 
-	if self.newfontmatrix:
-	    file.write(str(self.newfontmatrix))
-	else:
-	    file.write("0")
-	file.write(" ReEncodeFont\n")
-        file.write("%%EndResource\n")
-
-
 _ReEncodeFont = pswriter.PSdefinition("ReEncodeFont", """{
-  6 dict
+  5 dict
   begin
-    /newfontmatrix exch def
     /newencoding exch def
     /newfontname exch def
     /basefontname exch def
@@ -105,27 +79,95 @@ _ReEncodeFont = pswriter.PSdefinition("ReEncodeFont", """{
     } forall
     newfontdict /FontName newfontname put
     newfontdict /Encoding newencoding put
-    0 newfontmatrix ne { newfontdict /FontMatrix newfontmatrix readonly put } if
     newfontname newfontdict definefont pop
   end
 }""")
 
 
+class PSreencodefont(pswriter.PSresource):
+
+    """ reencoded PostScript font"""
+
+    def __init__(self, basefontname, newfontname, encoding):
+        """ reencode the font """
+
+        self.type = "reencodefont"
+        self.basefontname = basefontname
+        self.id = self.newfontname = newfontname
+        self.encoding = encoding
+
+    def output(self, file, writer, registry):
+        file.write("%%%%BeginResource: %s\n" % self.newfontname)
+        file.write("/%s /%s\n[" % (self.basefontname, self.newfontname))
+        vector = [None] * len(self.encoding)
+        for glyphname, charcode in self.encoding.items():
+            vector[charcode] = glyphname
+        for i, glyphname in enumerate(vector):
+            if i:
+                if not (i % 8):
+                    file.write("\n")
+                else:
+                    file.write(" ")
+            file.write("/%s" % glyphname)
+        file.write("]\n")
+        file.write("ReEncodeFont\n")
+        file.write("%%EndResource\n")
+
+
+_ChangeFontMatrix = pswriter.PSdefinition("ChangeFontMatrix", """{
+  5 dict
+  begin
+    /newfontmatrix exch def
+    /newfontname exch def
+    /basefontname exch def
+    /basefontdict basefontname findfont def
+    /newfontdict basefontdict maxlength dict def
+    basefontdict {
+      exch dup dup /FID ne exch /FontMatrix ne and
+      { exch newfontdict 3 1 roll put }
+      { pop pop }
+      ifelse
+    } forall
+    newfontdict /FontName newfontname put
+    newfontdict /FontMatrix newfontmatrix readonly put
+    newfontname newfontdict definefont pop
+  end
+}""")
+
+
+class PSchangefontmatrix(pswriter.PSresource):
+
+    """ change font matrix of a PostScript font"""
+
+    def __init__(self, basefontname, newfontname, newfontmatrix):
+        """ change the font matrix """
+
+        self.type = "changefontmatrix"
+        self.basefontname = basefontname
+        self.id = self.newfontname = newfontname
+        self.newfontmatrix = newfontmatrix
+
+    def output(self, file, writer, registry):
+        file.write("%%%%BeginResource: %s\n" % self.newfontname)
+        file.write("/%s /%s\n" % (self.basefontname, self.newfontname))
+        file.write(str(self.newfontmatrix))
+        file.write("\nChangeFontMatrix\n")
+        file.write("%%EndResource\n")
+
+
 class font:
 
-    def text_pt(self, x, y, text, decoding, size, slant=0, **features):
-        # features: kerning, ligatures
-        glyphnames = [decoding[character] for character in text]
-        return T1text_pt(self, x, y, glyphnames, size, slant)
-
-    def text(self, x, y, text, decoding, size, **features):
-        return self.text_pt(unit.topt(x), unit.topt(y), text, decoding, size, **features)
+    def text(self, x, y, charcodes, size, **kwargs):
+        return self.text_pt(unit.topt(x), unit.topt(y), charcodes, size, **kwargs)
 
 
 class T1font(font):
 
-    def __init__(self, pfbname=None):
-        self.t1file = t1file.PFBfile(pfbname)
+    def __init__(self, t1file):
+        self.t1file = t1file
+
+    def text_pt(self, x, y, charcodes, size, **kwargs):
+        return T1text_pt(self, x, y, charcodes, size, **kwargs)
 
 
 class selectedfont:
@@ -138,16 +180,22 @@ class selectedfont:
         return self.name == other.name and self.size == other.size
 
     def outputPS(self, file, writer):
-	file.write("/%s %f selectfont\n" % (self.name, self.size))
+        file.write("/%s %f selectfont\n" % (self.name, self.size))
 
 
 class T1text_pt(canvas.canvasitem):
 
-    def __init__(self, font, x_pt, y_pt, glyphnames, size, slant):
+    def __init__(self, font, x_pt, y_pt, charcodes, size, decoding=None, slant=0): #, **features):
+        # features: kerning, ligatures
+        if decoding is not None:
+            self.glyphnames = [decoding[character] for character in charcodes]
+            self.reencode = True
+        else:
+            self.charcodes = charcodes
+            self.reencode = False
         self.font = font
         self.x_pt = x_pt
         self.y_pt = y_pt
-        self.glyphnames = glyphnames
         self.size = size
         self.slant = slant
 
@@ -163,47 +211,58 @@ class T1text_pt(canvas.canvasitem):
             for glyphname in glyphnames:
                 if glyphname not in encoding.keys():
                     glyphsmissing.append(glyphname)
-            
+
             if glyphsmissing + len(encoding) < 256:
                 # new glyphs fit in existing encoding which will thus be extended
                 for glyphname in glyphsmissing:
                     encoding[glyphname] = len(encoding)
                 return encodingname
         # create a new encoding for the glyphnames
-        encodingname = "PyX%d" % len(encodings)
+        encodingname = "encoding%d" % len(encodings)
         encodings[encodingname] = dict([(glyphname, i) for i, glyphname in enumerate(glyphnames)])
         return encodingname
 
     def processPS(self, file, writer, context, registry, bbox):
         # bbox += self.bbox()
 
-        encodingname = self.getencodingname(context.encodings.setdefault(self.font.t1file.name, {}))
-        encoding = context.encodings[self.font.t1file.name][encodingname]
-
-	if self.slant:
-            newfontmatrix = trafo.trafo_pt(matrix=((1, self.slant), (0, 1))) * self.font.t1file.fontmatrix
-	    newfontname = "%s-%s-slant%f" % (self.font.t1file.name, encodingname, self.slant)
-	else:
-	    newfontmatrix = None
-	    newfontname = "%s-%s" % (self.font.t1file.name, encodingname)
-
         # register resources
         if self.font.t1file is not None:
-            registry.add(PST1file(self.font.t1file, self.glyphnames))
-        registry.add(_ReEncodeFont)
-        registry.add(PSencodefont(self.font.t1file.name, newfontname, encoding, newfontmatrix))
+            if self.reencode:
+                registry.add(PST1file(self.font.t1file, self.glyphnames, []))
+            else:
+                registry.add(PST1file(self.font.t1file, [], self.charcodes))
+
+        fontname = self.font.t1file.name
+        if self.reencode:
+            encodingname = self.getencodingname(context.encodings.setdefault(self.font.t1file.name, {}))
+            encoding = context.encodings[self.font.t1file.name][encodingname]
+            newfontname = "%s-%s" % (fontname, encodingname)
+            registry.add(_ReEncodeFont)
+            registry.add(PSreencodefont(fontname, newfontname, encoding))
+            fontname = newfontname
+
+        if self.slant:
+            newfontmatrix = trafo.trafo_pt(matrix=((1, self.slant), (0, 1))) * self.font.t1file.fontmatrix
+            newfontname = "%s-slant%f" % (fontname, self.slant)
+            registry.add(_ChangeFontMatrix)
+            registry.add(PSchangefontmatrix(fontname, newfontname, newfontmatrix))
+            fontname = newfontname
+
 
         # select font if necessary
-        sf = selectedfont(newfontname, self.size)
+        sf = selectedfont(fontname, self.size)
         if context.selectedfont is None or sf != context.selectedfont:
             context.selectedfont = sf
             sf.outputPS(file, writer)
 
         file.write("%f %f moveto (" % (self.x_pt, self.y_pt))
-        for glyphname in self.glyphnames:
-            codepoint = encoding[glyphname]
-            if codepoint > 32 and codepoint < 127 and chr(codepoint) not in "()[]<>\\":
-                file.write("%s" % chr(codepoint))
+        if self.reencode:
+            charcodes = [encoding[glyphname] for glyphname in self.glyphnames]
+        else:
+            charcodes = self.charcodes
+        for charcode in charcodes:
+            if 32 < charcode < 127 and chr(charcode) not in "()[]<>\\":
+                file.write("%s" % chr(charcode))
             else:
-                file.write("\\%03o" % codepoint)
+                file.write("\\%03o" % charcode)
         file.write(") show\n")
