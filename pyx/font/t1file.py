@@ -653,6 +653,9 @@ class T1file:
     eexecr = 55665
     charstringr = 4330
 
+    fontnamepattern = re.compile("/FontName\s+(.*?)\s+def\s+")
+    fontmatrixpattern = re.compile("/FontMatrix\s*\[\s*(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s*\]\s*(readonly\s+)?def")
+
     def __init__(self, data1, data2eexec, data3):
         """initializes a t1font instance
 
@@ -671,6 +674,10 @@ class T1file:
 
         # marker and value for standard encoding check
         self.encoding = None
+
+        self.name, = self.fontnamepattern.search(self.data1).groups()
+        m11, m12, m21, m22, v1, v2 = map(float, self.fontmatrixpattern.search(self.data1).groups()[:6])
+        self.fontmatrix = trafo.trafo_pt(matrix=((m11, m12), (m21, m22)), vector=(v1, v2))
 
     def _eexecdecode(self, code):
         """eexec decoding of code"""
@@ -906,12 +913,8 @@ class T1file:
     def gatherglyphcalls(self, glyph, seacglyphs, subrs, othersubrs, context):
         self.gathercalls(self.getglyphcmds(glyph), seacglyphs, subrs, othersubrs, context)
 
-    fontmatrixpattern = re.compile("/FontMatrix\s*\[\s*(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s*\]\s*(readonly\s+)?def")
-
     def getglyphpathwxwy_pt(self, glyph, size):
-        m = self.fontmatrixpattern.search(self.data1)
-        m11, m12, m21, m22, v1, v2 = map(float, m.groups()[:6])
-        t = trafo.trafo_pt(matrix=((m11, m12), (m21, m22)), vector=(v1, v2)).scaled(size)
+        t = self.fontmatrix.scaled(size)
         context = T1context(self)
         p = path()
         self.updateglyphpath(glyph, p, t, context)
