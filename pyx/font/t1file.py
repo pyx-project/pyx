@@ -1108,7 +1108,7 @@ class T1file:
                    "endstream\n")
 
 
-class PFAfont(T1file):
+class PFAfile(T1file):
 
     """create a T1file instance from a pfa font file"""
 
@@ -1123,7 +1123,7 @@ class PFAfont(T1file):
         T1file.__init__(self, data1, data2, data3)
 
 
-class PFBfont(T1file):
+class PFBfile(T1file):
 
     """create a T1file instance from a pfb font file"""
 
