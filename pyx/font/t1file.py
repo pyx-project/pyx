@@ -30,11 +30,11 @@ except ImportError:
     haszlib = 0
 
 try:
-    enumerate([])
+    set()
 except NameError:
-    # fallback implementation for Python 2.2 and below
-    def enumerate(list):
-        return zip(xrange(len(list)), list)
+    # Python 2.3
+    from sets import Set as set
+
 
 from pyx import trafo
 from pyx.path import path, moveto_pt, lineto_pt, curveto_pt, closepath
@@ -653,7 +653,7 @@ class T1file:
     eexecr = 55665
     charstringr = 4330
 
-    fontnamepattern = re.compile("/FontName\s+(.*?)\s+def\s+")
+    fontnamepattern = re.compile("/FontName\s+/(.*?)\s+def\s+")
     fontmatrixpattern = re.compile("/FontMatrix\s*\[\s*(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s+(-?[0-9.]+)\s*\]\s*(readonly\s+)?def")
 
     def __init__(self, data1, data2eexec, data3):
@@ -970,7 +970,7 @@ class T1file:
         def addcharstrings(glyphs, result):
             result.append("%d dict dup begin\n" % (glyphs is None and len(self.glyphlist) or len(glyphs)))
             for glyph in self.glyphlist:
-                if glyphs is None or glyphs.has_key(glyph):
+                if glyphs is None or glyph in glyphs:
                     result.append("/%s %d %s %s %s\n" % (glyph, len(self.glyphs[glyph]), self.glyphrdtoken, self.glyphs[glyph], self.glyphndtoken))
             result.append("end\n")
 
@@ -1000,21 +1000,20 @@ class T1file:
     def getstrippedfont(self, glyphs):
         """create a T1file instance containing only certain glyphs
 
-        glyphs is a dict having the glyph names to be contained as keys.
-        The glyphs dict might be modified *in place*.
+        glyphs is a set of the glyph names. It might be modified *in place*!
         """
         # TODO: we could also strip othersubrs to those actually used
 
         # collect information about used glyphs and subrs
-        seacglyphs = {}
-        subrs = {}
-        othersubrs = {}
-        for glyph in glyphs.keys():
+        seacglyphs = set()
+        subrs = set()
+        othersubrs = set()
+        for glyph in glyphs:
             self.gatherglyphcalls(glyph, seacglyphs, subrs, othersubrs, T1context(self))
         # while we have gathered all subrs for the seacglyphs alreadys, we
         # might have missed the glyphs themself (when they are not used stand-alone)
         glyphs.update(seacglyphs)
-        glyphs[".notdef"] = 1
+        glyphs.add(".notdef")
 
         # strip data1
         if not self.encoding:
@@ -1024,7 +1023,7 @@ class T1file:
         else:
             encodingstrings = []
             for char, glyph in enumerate(self.encoding.encvector):
-                if glyph in glyphs.keys():
+                if glyph in glyphs:
                     encodingstrings.append("dup %i /%s put\n" % (char, glyph))
             data1 = self.data1[:self.encodingstart] + "".join(encodingstrings) + self.data1[self.encodingend:]
         data1 = self.newlinepattern.subn("\n", data1)[0]
