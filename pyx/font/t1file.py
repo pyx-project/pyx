@@ -123,7 +123,7 @@ class T1cmd:
         """gather dependancy information
 
         subrs is the "called-subrs" dictionary. gathercalls will insert the
-        subr number as key having the value 1, i.e. subrs.keys() will become the
+        subr number as key having the value 1, i.e. subrs will become the
         numbers of used subrs. Similar seacglyphs will contain all glyphs in
         composite characters (subrs and othersubrs for those glyphs will also
         already be included) and othersubrs the othersubrs called.
@@ -197,8 +197,8 @@ class _T1seac(T1cmd):
         achar = context.t1stack.pop()
         aglyph = adobestandardencoding[achar]
         bglyph = adobestandardencoding[bchar]
-        seacglyphs[aglyph] = 1
-        seacglyphs[bglyph] = 1
+        seacglyphs.add(aglyph)
+        seacglyphs.add(bglyph)
         context.t1font.gatherglyphcalls(bglyph, seacglyphs, subrs, othersubrs, context)
         context.t1font.gatherglyphcalls(aglyph, seacglyphs, subrs, othersubrs, context)
 
@@ -540,7 +540,7 @@ class _T1callothersubr(T1cmd):
 
     def gathercalls(self, seacglyphs, subrs, othersubrs, context):
         othersubrnumber = context.t1stack.pop()
-        othersubrs[othersubrnumber] = 1
+        othersubrs.add(othersubrnumber)
         n = context.t1stack.pop()
         for i in range(n):
             context.psstack.append(context.t1stack.pop())
@@ -562,7 +562,7 @@ class _T1callsubr(T1cmd):
 
     def gathercalls(self, seacglyphs, subrs, othersubrs, context):
         subr = context.t1stack.pop()
-        subrs[subr] = 1
+        subrs.add(subr)
         context.t1font.gathersubrcalls(subr, seacglyphs, subrs, othersubrs, context)
 
 T1callsubr = _T1callsubr()
@@ -913,14 +913,13 @@ class T1file:
             if subrs is not None:
                 # some adjustments to the subrs dict
                 if subrs:
-                    subrsindices = subrs.keys()
-                    subrsmin = min(subrsindices)
-                    subrsmax = max(subrsindices)
+                    subrsmin = min(subrs)
+                    subrsmax = max(subrs)
                     if self.hasflexhintsubrs and subrsmin < len(self.flexhintsubrs):
                         # According to the spec we need to keep all the flex and hint subrs
                         # as long as any of it is used.
                         for subr in range(len(self.flexhintsubrs)):
-                            subrs[subr] = 1
+                            subrs.add(subr)
                 else:
                     subrsmax = -1
             else:
@@ -931,7 +930,7 @@ class T1file:
             # build the string from all selected subrs
             result.append("%d array\n" % (subrsmax + 1))
             for subr in range(subrsmax+1):
-                if subrs.has_key(subr):
+                if subr in subrs:
                     code = self.subrs[subr]
                 else:
                     code = self.emptysubr

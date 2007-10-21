@@ -1,5 +1,7 @@
 import re
 from pyx import pykpathsea
+from pyx.font import font, t1file
+from pyx.dvi import encfile
 
 class UnsupportedFontFormat(Exception):
     pass
@@ -7,19 +9,26 @@ class UnsupportedFontFormat(Exception):
 class UnsupportedPSFragment(Exception):
     pass
 
-class MAPfile:
+_marker = object()
+
+class MAPline:
 
     tokenpattern = re.compile(r'"(.*?)("\s+|"$|$)|(.*?)(\s+|$)')
 
     def __init__(self, s):
         """ construct font mapping from line s of font mapping file """
-        self.texname = self.basepsname = self.fontfile = None
+        self.texname = self.basepsname = self.fontfilename = None
 
         # standard encoding
-        self.encodingfile = None
+        self.encodingfilename = None
 
         # supported postscript fragments occuring in psfonts.map
-        self.reencodefont = self.extendfont = self.slantfont = None
+	# XXX extendfont not yet implemented
+        self.reencodefont = self.extendfont = self.slant = None
+
+	# cache for openend font and encoding
+	self._font = None
+	self._encoding = _marker
 
         tokens = []
         while len(s):
@@ -37,13 +46,13 @@ class MAPfile:
             if token.startswith("<"):
                 if token.startswith("<<"):
                     # XXX: support non-partial download here
-                    self.fontfile = token[2:]
+                    self.fontfilename = token[2:]
                 elif token.startswith("<["):
-                    self.encodingfile = token[2:]
+                    self.encodingfilename = token[2:]
                 elif token.endswith(".pfa") or token.endswith(".pfb"):
-                    self.fontfile = token[1:]
+                    self.fontfilename = token[1:]
                 elif token.endswith(".enc"):
-                    self.encodingfile = token[1:]
+                    self.encodingfilename = token[1:]
                 elif token.endswith(".ttf"):
                     raise UnsupportedFontFormat("TrueType font")
                 else:
@@ -62,7 +71,7 @@ class MAPfile:
                     elif cmd == "ExtendFont":
                         self.extendfont = arg
                     elif cmd == "SlantFont":
-                        self.slantfont = arg
+                        self.slant = float(arg)
                     else:
                         raise UnsupportedPSFragment("Unsupported Postscript fragment '%s %s'" % (arg, cmd))
             else:
@@ -72,6 +81,39 @@ class MAPfile:
                     self.basepsname = token
         if self.basepsname is None:
             self.basepsname = self.texname
+
+    def getfontname(self):
+	return self.basepsname
+
+    def getfont(self):
+	if self._font is None:
+	    if self.fontfilename is not None:
+		fontpath = pykpathsea.find_file(self.fontfilename, pykpathsea.kpse_type1_format)
+		if not fontpath:
+		    raise RuntimeError("cannot find type 1 font %s" % self.fontfilename)
+		if fontpath.endswith(".pfb"):
+		    t1font = t1file.PFBfile(fontpath)
+		else:
+		    t1font = t1file.PFAfile(fontpath)
+		assert self.basepsname == t1font.name, "corrupt MAP file"
+		self._font = font.T1font(t1font)
+	    else:
+		self._font = font.T1builtinfont(self.basepsname)
+	return self._font
+
+    def getencoding(self):
+	if self._encoding is _marker:
+	    if self.encodingfilename is not None:
+		encodingpath = pykpathsea.find_file(self.encodingfilename, pykpathsea.kpse_tex_ps_header_format)
+		if not encodingpath:
+		    raise RuntimeError("cannot find font encoding file %s" % self.encodingfilename)
+		ef = encfile.ENCfile(encodingpath)
+		assert ef.name == "/%s" % self.reencodefont
+		self._encoding = ef.vector
+
+	    else:
+		self._encoding = None
+	return self._encoding
 
     def __str__(self):
         return ("'%s' is '%s' read from '%s' encoded as '%s'" %
@@ -96,7 +138,7 @@ def readfontmap(filenames):
             line = line.rstrip()
             if not (line=="" or line[0] in (" ", "%", "*", ";" , "#")):
                 try:
-                    fm = MAPfile(line)
+                    fm = MAPline(line)
                 except (RuntimeError, UnsupportedPSFragment), e:
                     warnings.warn("Ignoring line %i in mapping file '%s': %s" % (lineno, mappath, e))
                 except UnsupportedFontFormat, e:

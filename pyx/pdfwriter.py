@@ -27,7 +27,7 @@ try:
 except:
     haszlib = 0
 
-import bbox, unit, style, type1font, version
+import bbox, unit, style, version
 
 try:
     enumerate([])

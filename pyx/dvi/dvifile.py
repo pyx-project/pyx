@@ -22,7 +22,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import cStringIO, exceptions, re, struct, string, sys, warnings, math
-from pyx import unit, epsfile, bbox, canvas, color, trafo, path, pykpathsea, reader, type1font
+from pyx import unit, epsfile, bbox, canvas, color, trafo, path, pykpathsea, reader
 import tfmfile, texfont
 
 
@@ -144,13 +144,12 @@ class DVIfile:
     def flushtext(self):
         """ finish currently active text object """
         if self.activetext:
-            # self.actpage.insert(self.activefont.text_pt(self.pos[_POS_H] * self.pyxconv, -self.pos[_POS_V] * self.pyxconv, font))
-            self.actpage.insert(self.activefont.text(self.pos[_POS_H], self.pos[_POS_V], self.activetext))
-
-        if self.debug and self.activetext:
-            self.debugfile.write("[%s]\n" % "".join([chr(char) for char in self.activetext]))
-
-        self.activetext = []
+	    x, y, charcodes = self.activetext
+	    x_pt, y_pt = x * self.pyxconv, -y*self.pyxconv
+            self.actpage.insert(self.activefont.text_pt(x_pt, y_pt, charcodes))
+            if self.debug:
+                self.debugfile.write("[%s]\n" % "".join([chr(char) for char in self.activetext[2]]))
+            self.activetext = None
 
     def putrule(self, height, width, advancepos=1):
         self.flushtext()
@@ -193,7 +192,9 @@ class DVIfile:
             self._push_dvistring(self.activefont.getchar(char), self.activefont.getfonts(), afterpos,
                                  self.activefont.getsize_pt())
         else:
-            self.activetext.append(char)
+            if self.activetext is None:
+                self.activetext = (self.pos[_POS_H], self.pos[_POS_V], [])
+            self.activetext[2].append(char)
             self.pos[_POS_H] += dx
 
         if not advancepos:
@@ -217,9 +218,11 @@ class DVIfile:
         #        Note that q is actually s in large parts of the documentation.
         # d:     design size (fix_word)
 
-        try:
-            afont = texfont.virtualfont(fontname, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.debug > 1)
-        except (TypeError, RuntimeError):
+        # check whether it's a virtual font
+        vffontpath = pykpathsea.find_file(fontname, pykpathsea.kpse_vf_format)
+        if vffontpath:
+            afont = texfont.virtualfont(fontname, vffontpath, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.debug > 1)
+        else:
             afont = texfont.TeXfont(fontname, c, q/self.tfmconv, d/self.tfmconv, self.tfmconv, self.pyxconv, self.debug > 1)
 
         self.fonts[num] = afont
@@ -357,7 +360,7 @@ class DVIfile:
         self.pyxconv = fontsize/2**20
         rescale = self.pyxconv/oldpyxconv
 
-        self.file = stringbinfile(dvi)
+        self.file = reader.stringreader(dvi)
         self.fonts = fonts
         self.stack = []
         self.filepos = 0
@@ -449,8 +452,8 @@ class DVIfile:
         self.actpage.markers = {}
         self.pos = [0, 0, 0, 0, 0, 0]
 
-        # list of codepoints to be output
-        self.activetext = []
+        # tuple (hpos, vpos, codepoints) to be output, or None if no output is pending
+        self.activetext = None
 
         while 1:
             afile = self.file
@@ -631,99 +634,3 @@ class DVIfile:
                                 afile.read(afile.readuchar()+afile.readuchar()))
             else:
                 raise DVIError
-
-
-##############################################################################
-# VF file handling
-##############################################################################
-
-_VF_LONG_CHAR  = 242              # character packet (long version)
-_VF_FNTDEF1234 = _DVI_FNTDEF1234  # font definition
-_VF_PRE        = _DVI_PRE         # preamble
-_VF_POST       = _DVI_POST        # postamble
-
-_VF_ID         = 202              # VF id byte
-
-class VFError(exceptions.Exception): pass
-
-class vffile:
-    def __init__(self, filename, scale, tfmconv, pyxconv, fontmap, debug=0):
-        self.filename = filename
-        self.scale = scale
-        self.tfmconv = tfmconv
-        self.pyxconv = pyxconv
-        self.fontmap = fontmap
-        self.debug = debug
-        self.fonts = {}            # used fonts
-        self.widths = {}           # widths of defined chars
-        self.chardefs = {}         # dvi chunks for defined chars
-
-        afile = binfile(self.filename, "rb")
-
-        cmd = afile.readuchar()
-        if cmd == _VF_PRE:
-            if afile.readuchar() != _VF_ID: raise VFError
-            comment = afile.read(afile.readuchar())
-            self.cs = afile.readuint32()
-            self.ds = afile.readuint32()
-        else:
-            raise VFError
-
-        while 1:
-            cmd = afile.readuchar()
-            if cmd >= _VF_FNTDEF1234 and cmd < _VF_FNTDEF1234 + 4:
-                # font definition
-                if cmd == _VF_FNTDEF1234:
-                    num = afile.readuchar()
-                elif cmd == _VF_FNTDEF1234+1:
-                    num = afile.readuint16()
-                elif cmd == _VF_FNTDEF1234+2:
-                    num = afile.readuint24()
-                elif cmd == _VF_FNTDEF1234+3:
-                    num = afile.readint32()
-                c = afile.readint32()
-                s = afile.readint32()     # relative scaling used for font (fix_word)
-                d = afile.readint32()     # design size of font
-                fontname = afile.read(afile.readuchar()+afile.readuchar())
-
-                # rescaled size of font: s is relative to the scaling
-                # of the virtual font itself.  Note that realscale has
-                # to be a fix_word (like s)
-                # XXX: check rounding
-                reals = int(round(self.scale * (16*self.ds/16777216L) * s))
-
-                # print ("defining font %s -- VF scale: %g, VF design size: %d, relative font size: %d => real size: %d" %
-                #        (fontname, self.scale, self.ds, s, reals)
-                #        )
-
-                # XXX allow for virtual fonts here too
-                self.fonts[num] =  font(fontname, c, reals, d, self.tfmconv, self.pyxconv, self.fontmap, self.debug > 1)
-            elif cmd == _VF_LONG_CHAR:
-                # character packet (long form)
-                pl = afile.readuint32()   # packet length
-                cc = afile.readuint32()   # char code (assumed unsigned, but anyhow only 0 <= cc < 255 is actually used)
-                tfm = afile.readuint24()  # character width
-                dvi = afile.read(pl)      # dvi code of character
-                self.widths[cc] = tfm
-                self.chardefs[cc] = dvi
-            elif cmd < _VF_LONG_CHAR:
-                # character packet (short form)
-                cc = afile.readuchar()    # char code
-                tfm = afile.readuint24()  # character width
-                dvi = afile.read(cmd)
-                self.widths[cc] = tfm
-                self.chardefs[cc] = dvi
-            elif cmd == _VF_POST:
-                break
-            else:
-                raise VFError
-
-        afile.close()
-
-    def getfonts(self):
-        return self.fonts
-
-    def getchar(self, cc):
-        return self.chardefs[cc]
-
-

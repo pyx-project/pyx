@@ -29,7 +29,6 @@ displayed. """
 # canvas item
 #
 
-from __future__ import nested_scopes
 import os
 
 class canvasitem:
@@ -72,7 +71,7 @@ class canvasitem:
         raise NotImplementedError()
 
 
-import attr, deco, deformer, document, style, trafo, type1font
+import attr, deco, deformer, document, style, trafo
 import bbox as bboxmodule
 
 

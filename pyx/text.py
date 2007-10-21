@@ -773,7 +773,6 @@ class texrunner:
                        docclass="article",
                        docopt=None,
                        usefiles=[],
-                       fontmaps=config.get("text", "fontmaps", "psfonts.map"),
                        waitfortex=config.getint("text", "waitfortex", 60),
                        showwaitfortex=config.getint("text", "showwaitfortex", 5),
                        texipc=config.getboolean("text", "texipc", 0),
@@ -795,7 +794,6 @@ class texrunner:
         self.docclass = docclass
         self.docopt = docopt
         self.usefiles = usefiles[:]
-        self.fontmaps = fontmaps
         self.waitfortex = waitfortex
         self.showwaitfortex = showwaitfortex
         self.texipc = texipc
@@ -897,7 +895,6 @@ class texrunner:
             self.quitevent = threading.Event() # keeps for end of terminal event
             self.readoutput = _readpipe(self.texoutput, self.expectqueue, self.gotevent, self.gotqueue, self.quitevent)
             self.texruns = 1
-            self.fontmap = dvifile.readfontmap(self.fontmaps.split())
             oldpreamblemode = self.preamblemode
             self.preamblemode = 1
             self.execute("\\scrollmode\n\\raiseerror%\n" # switch to and check scrollmode
@@ -1045,7 +1042,7 @@ class texrunner:
         self.execute(None, self.defaulttexmessagesend + self.texmessagesend)
         dvifilename = "%s.dvi" % self.texfilename
         if not self.texipc:
-            self.dvifile = dvifile.dvifile(dvifilename, self.fontmap, debug=self.dvidebug)
+            self.dvifile = dvifile.DVIfile(dvifilename, debug=self.dvidebug)
             page = 1
             for box in self.needdvitextboxes:
                 box.setdvicanvas(self.dvifile.readpage([ord("P"), ord("y"), ord("X"), page, 0, 0, 0, 0, 0, 0]))
@@ -1080,7 +1077,6 @@ class texrunner:
                   docclass=_unset,
                   docopt=_unset,
                   usefiles=_unset,
-                  fontmaps=_unset,
                   waitfortex=_unset,
                   showwaitfortex=_unset,
                   texipc=_unset,
@@ -1113,8 +1109,6 @@ class texrunner:
             self.docopt = docopt
         if usefiles is not _unset:
             self.usefiles = usefiles
-        if fontmaps is not _unset:
-            self.fontmaps = fontmaps
         if waitfortex is not _unset:
             self.waitfortex = waitfortex
         if showwaitfortex is not _unset:
@@ -1203,7 +1197,7 @@ class texrunner:
             raise
         if self.texipc:
             if first:
-                self.dvifile = dvifile.dvifile("%s.dvi" % self.texfilename, self.fontmap, debug=self.dvidebug)
+                self.dvifile = dvifile.DVIfile("%s.dvi" % self.texfilename, debug=self.dvidebug)
         match = self.PyXBoxPattern.search(self.texmessage)
         if not match or int(match.group("page")) != self.page:
             raise TexResultError("box extents not found", self)
@@ -1264,7 +1258,7 @@ class texrunner:
                          "\\vfill\\supereject%%\n" % text, [texmessage.ignore])
             if self.texipc:
                 if self.dvifile is None:
-                    self.dvifile = dvifile.dvifile("%s.dvi" % self.texfilename, self.fontmap, debug=self.dvidebug)
+                    self.dvifile = dvifile.DVIfile("%s.dvi" % self.texfilename, debug=self.dvidebug)
             else:
                 raise RuntimeError("textboxes currently needs texipc")
             lastparnos = parnos

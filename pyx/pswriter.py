@@ -22,7 +22,6 @@
 
 import cStringIO, copy, time, math
 import bbox, style, version, type1font, unit, trafo
-from pyx.dvi import mapfile
 
 try:
     enumerate([])
@@ -152,7 +151,11 @@ class epswriter:
 
     def getfontmap(self):
         if self._fontmap is None:
+	    # late import due to cyclic dependency
+	    from pyx.dvi import mapfile
             self._fontmap = mapfile.readfontmap(["psfonts.map"])
+	    # config.get("text", "fontmaps", "psfonts.map")
+            # self.fontmap = dvifile.readfontmap(self.fontmaps.split())
         return self._fontmap
 
 

@@ -19,6 +19,7 @@
 # You should have received a copy of the GNU General Public License
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+
 from pyx import canvas, pswriter, trafo, unit
 import t1file
 
@@ -157,35 +158,43 @@ class PSchangefontmatrix(pswriter.PSresource):
 
 class font:
 
-    def text(self, x, y, charcodes, size, **kwargs):
-        return self.text_pt(unit.topt(x), unit.topt(y), charcodes, size, **kwargs)
+    def text(self, x, y, charcodes, size_pt, **kwargs):
+        return self.text_pt(unit.topt(x), unit.topt(y), charcodes, size_pt, **kwargs)
 
 
 class T1font(font):
 
     def __init__(self, t1file):
         self.t1file = t1file
+	self.name = t1file.name
 
-    def text_pt(self, x, y, charcodes, size, **kwargs):
-        return T1text_pt(self, x, y, charcodes, size, **kwargs)
+    def text_pt(self, x, y, charcodes, size_pt, **kwargs):
+        return T1text_pt(self, x, y, charcodes, size_pt, **kwargs)
+
+
+class T1builtinfont(T1font):
+
+    def __init__(self, name):
+        self.name = name
+	self.t1file = None
 
 
 class selectedfont:
 
-    def __init__(self, name, size):
+    def __init__(self, name, size_pt):
         self.name = name
-        self.size = size
+        self.size_pt = size_pt
 
     def __eq__(self, other):
-        return self.name == other.name and self.size == other.size
+        return self.name == other.name and self.size_pt == other.size_pt
 
     def outputPS(self, file, writer):
-        file.write("/%s %f selectfont\n" % (self.name, self.size))
+        file.write("/%s %f selectfont\n" % (self.name, self.size_pt))
 
 
 class T1text_pt(canvas.canvasitem):
 
-    def __init__(self, font, x_pt, y_pt, charcodes, size, decoding=None, slant=0): #, **features):
+    def __init__(self, font, x_pt, y_pt, charcodes, size_pt, decoding=None, slant=None): #, **features):
         # features: kerning, ligatures
         if decoding is not None:
             self.glyphnames = [decoding[character] for character in charcodes]
@@ -196,7 +205,7 @@ class T1text_pt(canvas.canvasitem):
         self.font = font
         self.x_pt = x_pt
         self.y_pt = y_pt
-        self.size = size
+        self.size_pt = size_pt
         self.slant = slant
 
     def getencodingname(self, encodings):
@@ -206,13 +215,13 @@ class T1text_pt(canvas.canvasitem):
         glyphnames = set(self.glyphnames)
         if len(glyphnames) > 256:
             raise ValueError("glyphs do not fit into one single encoding")
-        for encodingname, encoding in encodings:
+        for encodingname, encoding in encodings.items():
             glyphsmissing = []
             for glyphname in glyphnames:
                 if glyphname not in encoding.keys():
                     glyphsmissing.append(glyphname)
-
-            if glyphsmissing + len(encoding) < 256:
+		    
+            if len(glyphsmissing) + len(encoding) < 256:
                 # new glyphs fit in existing encoding which will thus be extended
                 for glyphname in glyphsmissing:
                     encoding[glyphname] = len(encoding)
@@ -232,10 +241,10 @@ class T1text_pt(canvas.canvasitem):
             else:
                 registry.add(PST1file(self.font.t1file, [], self.charcodes))
 
-        fontname = self.font.t1file.name
+        fontname = self.font.name
         if self.reencode:
-            encodingname = self.getencodingname(context.encodings.setdefault(self.font.t1file.name, {}))
-            encoding = context.encodings[self.font.t1file.name][encodingname]
+            encodingname = self.getencodingname(context.encodings.setdefault(self.font.name, {}))
+            encoding = context.encodings[self.font.name][encodingname]
             newfontname = "%s-%s" % (fontname, encodingname)
             registry.add(_ReEncodeFont)
             registry.add(PSreencodefont(fontname, newfontname, encoding))
@@ -250,7 +259,7 @@ class T1text_pt(canvas.canvasitem):
 
 
         # select font if necessary
-        sf = selectedfont(fontname, self.size)
+        sf = selectedfont(fontname, self.size_pt)
         if context.selectedfont is None or sf != context.selectedfont:
             context.selectedfont = sf
             sf.outputPS(file, writer)

@@ -1,4 +1,4 @@
-import struct
+import cStringIO, struct
 
 
 class reader:

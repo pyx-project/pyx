@@ -1,7 +1,6 @@
 from pyx import pykpathsea, canvas
-import tfmfile
+import tfmfile, vffile
 from pyx.font import font, t1file
-
 
 class TeXfont:
 
@@ -155,48 +154,20 @@ class TeXfont:
     def getitalic_pt(self, charcode):
         return self._convert_tfm_to_pt(self.TFMfile.italic[self.TFMfile.char_info[charcode].italic_index])
 
-    def text(self, x, y, charcodes):
-        return TeXtext(self, x, y, charcodes)
+    def text_pt(self, x_pt, y_pt, charcodes):
+        return TeXtext_pt(self, x_pt, y_pt, charcodes, self.getsize_pt())
 
-    def getfont(self, fontmap):
-        if not fontmap.has_key(self.name):
-            raise RuntimeError("missing font information for '%s'; check fontmapping file(s)" % self.activefont.name)
-        fontmapinfo = fontmap[self.name]
-
-        encodingname = fontmapinfo.reencodefont
-        if encodingname is not None:
-            encodingfilename = pykpathsea.find_file(fontmapinfo.encodingfile, pykpathsea.kpse_tex_ps_header_format)
-            if not encodingfilename:
-                raise RuntimeError("cannot find font encoding file %s" % fontmapinfo.encodingfile)
-            fontencoding = type1font.encoding(encodingname, encodingfilename)
-        else:
-            fontencoding = None
-
-        fontbasefontname = fontmapinfo.basepsname
-        if fontmapinfo.fontfile is not None:
-            fontfilename = pykpathsea.find_file(fontmapinfo.fontfile, pykpathsea.kpse_type1_format)
-            if not fontfilename:
-                raise RuntimeError("cannot find type 1 font %s" % fontmapinfo.fontfile)
-        else:
-            fontfilename = None
-
-        fontslant = fontmapinfo.slantfont
-        if fontslant is not None:
-            fontslant = float(fontslant)
-
-        # XXX we currently misuse use self.activefont as metric 
-        return font.T1font(t1file.PFBfile(fontfilename))
-        # font = type1font.font(fontbasefontname, fontfilename, fontencoding, fontslant, self.activefont)
+    def getMAPline(self, fontmap):
+        if self.name not in fontmap:
+            raise RuntimeError("missing font information for '%s'; check fontmapping file(s)" % self.name)
+        return fontmap[self.name]
 
 
 class virtualfont(TeXfont):
 
-    def __init__(self, name, c, q, d, tfmconv, pyxconv, debug=0):
-        fontpath = pykpathsea.find_file(name, pykpathsea.kpse_vf_format)
-        if fontpath is None or not len(fontpath):
-            raise RuntimeError
-        font.__init__(self, name, c, q, d, tfmconv, pyxconv, debug)
-        self.vffile = vffile(fontpath, self.scale, tfmconv, pyxconv, debug > 1)
+    def __init__(self, name, path, c, q, d, tfmconv, pyxconv, debug=0):
+        TeXfont.__init__(self, name, c, q, d, tfmconv, pyxconv, debug)
+        self.vffile = vffile.vffile(path, self.scale, tfmconv, pyxconv, debug > 1)
 
     def getfonts(self):
         """ return fonts used in virtual font itself """
@@ -206,20 +177,24 @@ class virtualfont(TeXfont):
         """ return dvi chunk corresponding to char code cc """
         return self.vffile.getchar(cc)
 
-    def text(self, x, y, charcodes):
+    def text_pt(self, x_pt, y_pt, charcodes):
         raise RuntimeError("you don't know what you're doing")
 
 
-class TeXtext(canvas.canvasitem):
+class TeXtext_pt(canvas.canvasitem):
 
-    def __init__(self, font, x, y, charcodes):
+    def __init__(self, font, x_pt, y_pt, charcodes, size_pt):
         self.font = font
-        self.x = x
-        self.y = y
+        self.x_pt = x_pt
+        self.y_pt = y_pt
         self.charcodes = charcodes
+	self.size_pt = size_pt
 
     def processPS(self, file, writer, context, registry, bbox):
-        f = self.font.getfont(writer.getfontmap())
+        mapline = self.font.getMAPline(writer.getfontmap())
+	font = mapline.getfont()
+	text = font.text_pt(self.x_pt, self.y_pt, self.charcodes, self.size_pt, decoding=mapline.getencoding(), slant=mapline.slant)
+	text.processPS(file, writer, context, registry, bbox)
 
     def processPDF(self, file, writer, context, registry, bbox):
         pass

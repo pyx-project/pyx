@@ -1,25 +1,31 @@
+from pyx import reader
+
+class ENFfileError(Exception):
+    pass
+
 class ENCfile:
 
     def __init__(self, filename):
-        encfile = open(filename, "r")
-        encdata = encfile.read()
+        encfile = open(filename, "rb")
+        c = reader.PStokenizer(encfile.read(), "")
         encfile.close()
 
-        t = reader.PStokenizer(encdata, "")
-
-        self.encname = t.gettoken()
-        token = t.gettoken()
+        # name of encoding
+        self.name = c.gettoken()
+        token = c.gettoken()
         if token != "[":
-            raise RuntimeError("cannot parse encoding file '%s', expecting '[' got '%s'" % (filename, token))
-        self.encvector = []
+            raise ENCfileError("cannot parse encoding file '%s', expecting '[' got '%s'" % (filename, token))
+        self.vector = []
         for i in range(256):
-            token = t.gettoken()
+            token = c.gettoken()
             if token == "]":
-                raise RuntimeError("not enough charcodes in encoding file '%s'" % filename)
-            self.encvector.append(token)
-        if t.gettoken() != "]":
-            raise RuntimeError("too many charcodes in encoding file '%s'" % filename)
-        token = t.gettoken()
+                raise ENCfileError("not enough charcodes in encoding file '%s'" % filename)
+	    if not token[0] == "/":
+                raise ENCfileError("token does not start with / in encoding file '%s'" % filename)
+            self.vector.append(token[1:])
+        if c.gettoken() != "]":
+            raise ENCfileError("too many charcodes in encoding file '%s'" % filename)
+        token = c.gettoken()
         if token != "def":
-            raise RuntimeError("cannot parse encoding file '%s', expecting 'def' got '%s'" % (filename, token))
+            raise ENCfileError("cannot parse encoding file '%s', expecting 'def' got '%s'" % (filename, token))
 
