@@ -21,7 +21,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import cStringIO, copy, time, math
-import bbox, style, version, type1font, unit, trafo
+import bbox, style, version, unit, trafo
 
 try:
     enumerate([])
