@@ -20,7 +20,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-from pyx import canvas, pswriter, trafo, unit
+from pyx import canvasitem, pswriter, trafo, unit
 import t1file
 
 try:
@@ -192,7 +192,11 @@ class selectedfont:
         file.write("/%s %f selectfont\n" % (self.name, self.size_pt))
 
 
-class T1text_pt(canvas.canvasitem):
+class text_pt(canvasitem.canvasitem):
+    pass
+
+
+class T1text_pt(text_pt):
 
     def __init__(self, font, x_pt, y_pt, charcodes, size_pt, decoding=None, slant=None): #, **features):
         # features: kerning, ligatures

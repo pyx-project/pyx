@@ -18,3 +18,10 @@
 # You should have received a copy of the GNU General Public License
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+
+import font
+__allfont__ = ["T1font", "T1builtinfont", "text_pt", "font"]
+for importfromfont in __allfont__:
+    locals()[importfromfont] = getattr(font, importfromfont)
+
+__all__ = __allfont__

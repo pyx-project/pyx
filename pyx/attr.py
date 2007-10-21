@@ -21,22 +21,6 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-# check for an isinstance which accepts both a class and a sequence of classes
-# as second argument and emulate this behaviour if necessary
-try:
-    isinstance(1, (int, float))
-except TypeError:
-    # workaround for Python 2.1
-    _isinstance = isinstance
-    def isinstance(instance, clsarg):
-        import types
-        if _isinstance(clsarg, types.ClassType):
-            return _isinstance(instance, clsarg)
-        for cls in clsarg:
-            if _isinstance(instance, cls):
-                return 1
-        return 0
-
 #
 # some helper functions for the attribute handling
 #

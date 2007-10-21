@@ -246,9 +246,9 @@ class bbox_pt:
 
     def rect(self):
         """return rectangle corresponding to bbox"""
+	import path
         if self.llx_pt is None:
             raise ValueError("Cannot return path for empty bbox")
-        import path
         return path.rect_pt(self.llx_pt, self.lly_pt, self.urx_pt-self.llx_pt, self.ury_pt-self.lly_pt)
 
     path = rect

@@ -21,7 +21,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import math
-import attr, canvas, deformer, unit
+import attr, canvasitem, deformer, unit
 import bbox as bboxmodule
 
 # global epsilon (used to judge whether a matrix is singular)
@@ -65,7 +65,7 @@ class TrafoException(Exception):
 
 # trafo: affine transformations
 
-class trafo_pt(canvas.canvasitem, deformer.deformer):
+class trafo_pt(canvasitem.canvasitem, deformer.deformer):
 
     """affine transformation (coordinates in constructor in pts)
 

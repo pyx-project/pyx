@@ -26,7 +26,7 @@ try:
 except:
     haszlib = 0
 
-import bbox, canvas, pswriter, pdfwriter, trafo, unit
+import bbox, canvasitem, pswriter, pdfwriter, trafo, unit
 
 def ascii85lines(datalen):
     if datalen < 4:
@@ -253,7 +253,7 @@ class PDFimage(pdfwriter.PDFobject):
                    "endstream\n")
 
 
-class bitmap(canvas.canvasitem):
+class bitmap(canvasitem.canvasitem):
 
     def __init__(self, xpos, ypos, image, width=None, height=None, ratio=None,
                        PSstoreimage=0, PSmaxstrlen=4093, PSbinexpand=1,

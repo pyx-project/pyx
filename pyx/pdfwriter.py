@@ -27,24 +27,8 @@ try:
 except:
     haszlib = 0
 
-import bbox, unit, style, version
+import bbox, style, unit, version
 
-try:
-    enumerate([])
-except NameError:
-    # fallback implementation for Python 2.2 and below
-    def enumerate(list):
-        return zip(xrange(len(list)), list)
-
-try:
-    dict([])
-except NameError:
-    # fallback implementation for Python 2.1
-    def dict(list):
-        result = {}
-        for key, value in list:
-            result[key] = value
-        return result
 
 
 class PDFregistry:
@@ -406,7 +390,7 @@ class PDFfontfile(PDFobject):
             self.strip = 0
 
     def mkfontfile(self):
-        import font.t1font
+	import font.t1font
         self.font = font.t1font.T1pfbfont(self.filename)
 
     def getflags(self):

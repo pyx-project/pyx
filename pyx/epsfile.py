@@ -21,7 +21,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import string
-import canvas, bbox, pykpathsea, unit, trafo, pswriter
+import canvasitem, bbox, pykpathsea, unit, trafo, pswriter
 
 # PostScript-procedure definitions (cf. 5002.EPSF_Spec_v3.0.pdf)
 # with important correction in EndEPSF:
@@ -224,7 +224,7 @@ def _readbbox(filename):
     return usebbox
 
 
-class epsfile(canvas.canvasitem):
+class epsfile(canvasitem.canvasitem):
 
     """class for epsfiles"""
 

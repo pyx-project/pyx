@@ -1,6 +1,6 @@
 import re
-from pyx import pykpathsea
-from pyx.font import font, t1file
+from pyx import font, pykpathsea
+from pyx.font import t1file
 from pyx.dvi import encfile
 
 class UnsupportedFontFormat(Exception):

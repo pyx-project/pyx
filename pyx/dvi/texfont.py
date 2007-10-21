@@ -1,6 +1,6 @@
-from pyx import pykpathsea, canvas
+from pyx import canvasitem, font, pykpathsea
 import tfmfile, vffile
-from pyx.font import font, t1file
+from pyx.font import t1file
 
 class TeXfont:
 
@@ -181,7 +181,7 @@ class virtualfont(TeXfont):
         raise RuntimeError("you don't know what you're doing")
 
 
-class TeXtext_pt(canvas.canvasitem):
+class TeXtext_pt(canvasitem.canvasitem):
 
     def __init__(self, font, x_pt, y_pt, charcodes, size_pt):
         self.font = font

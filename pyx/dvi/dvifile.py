@@ -21,9 +21,9 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import cStringIO, exceptions, re, struct, string, sys, warnings, math
-from pyx import unit, epsfile, bbox, canvas, color, trafo, path, pykpathsea, reader
-import tfmfile, texfont
+import cStringIO, math, re, string, struct, sys, warnings
+from pyx import  bbox, canvas, canvasitem, color, epsfile, path, pykpathsea, reader, trafo, unit
+import texfont, tfmfile
 
 
 _DVI_CHARMIN     =   0 # typeset a character and move right (range min)
@@ -75,11 +75,11 @@ _READ_POSTPOST  = 5 # XXX not used
 _READ_DONE      = 6
 
 
-class DVIError(exceptions.Exception): pass
+class DVIError(Exception): pass
 
 # save and restore colors
 
-class _savecolor(canvas.canvasitem):
+class _savecolor(canvasitem.canvasitem):
     def processPS(self, file, writer, context, registry, bbox):
         file.write("currentcolor currentcolorspace\n")
 
@@ -87,14 +87,14 @@ class _savecolor(canvas.canvasitem):
         file.write("q\n")
 
 
-class _restorecolor(canvas.canvasitem):
+class _restorecolor(canvasitem.canvasitem):
     def processPS(self, file, writer, context, registry, bbox):
         file.write("setcolorspace setcolor\n")
 
     def processPDF(self, file, writer, context, registry, bbox):
         file.write("Q\n")
 
-class _savetrafo(canvas.canvasitem):
+class _savetrafo(canvasitem.canvasitem):
     def processPS(self, file, writer, context, registry, bbox):
         file.write("matrix currentmatrix\n")
 
@@ -102,7 +102,7 @@ class _savetrafo(canvas.canvasitem):
         file.write("q\n")
 
 
-class _restoretrafo(canvas.canvasitem):
+class _restoretrafo(canvasitem.canvasitem):
     def processPS(self, file, writer, context, registry, bbox):
         file.write("setmatrix\n")
 

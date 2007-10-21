@@ -25,24 +25,16 @@
 # - should we improve on the arc length -> arg parametrization routine or
 #   should we at least factor it out?
 
-from __future__ import nested_scopes
-
 import sys, math
-import attr, canvas, color, path, normpath, style, trafo, unit
+import attr, canvas, canvasitem, color, path, normpath, style, trafo, unit
 
-try:
-    from math import radians
-except ImportError:
-    # fallback implementation for Python 2.1 and below
-    def radians(x): return x*math.pi/180
-
-class _marker: pass
+_marker = object()
 
 #
 # Decorated path
 #
 
-class decoratedpath(canvas.canvasitem):
+class decoratedpath(canvasitem.canvasitem):
     """Decorated path
 
     The main purpose of this class is during the drawing
@@ -458,11 +450,11 @@ class arrow(deco, attr.attr):
         # self.constriction = 1, we actually have a length which is approximately shorter
         # by the given geometrical factor.
         if self.constriction is not None:
-            constrictionlen = arrowheadconstrictionlen = self.size * self.constriction * math.cos(radians(self.angle/2.0))
+            constrictionlen = arrowheadconstrictionlen = self.size * self.constriction * math.cos(math.radians(self.angle/2.0))
         else:
             # if we do not want a constriction, i.e. constriction is None, we still
             # need constrictionlen for cutting the path
-            constrictionlen = self.size * 1 * math.cos(radians(self.angle/2.0))
+            constrictionlen = self.size * 1 * math.cos(math.radians(self.angle/2.0))
             arrowheadconstrictionlen = None
 
         arclenfrombegin = self.pos * anormpath.arclen()

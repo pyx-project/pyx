@@ -37,7 +37,7 @@
 
 
 import struct, binascii, zlib
-import bbox, canvas, color, pdfwriter, unit
+import bbox, canvasitem, color, pdfwriter, unit
 
 
 class node_pt:
@@ -74,7 +74,7 @@ class PDFGenericResource(pdfwriter.PDFobject):
         file.write(self.content)
 
 
-class mesh(canvas.canvasitem):
+class mesh(canvasitem.canvasitem):
 
     def __init__(self, elements, check=1):
         self.elements = elements

@@ -22,15 +22,15 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import math
-import attr, unit, canvas
+import attr, unit, canvasitem
 
 #
 # base classes for stroke and fill styles
 #
 
-class strokestyle(canvas.canvasitem): pass
+class strokestyle(canvasitem.canvasitem): pass
 
-class fillstyle(canvas.canvasitem): pass
+class fillstyle(canvasitem.canvasitem): pass
 
 #
 # common stroke styles
