@@ -207,5 +207,10 @@ class TeXtext_pt(canvasitem.canvasitem):
         text.processPS(file, writer, context, registry, bbox)
 
     def processPDF(self, file, writer, context, registry, bbox):
-        pass
+        bbox += self.bbox()
+
+        mapline = self.font.getMAPline(writer.getfontmap())
+        font = mapline.getfont()
+        text = font.text_pt(self.x_pt, self.y_pt, self.charcodes, self.size_pt, decoding=mapline.getencoding(), slant=mapline.slant, ignorebbox=True)
+        text.processPDF(file, writer, context, registry, bbox)
 

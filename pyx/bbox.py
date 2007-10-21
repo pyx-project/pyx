@@ -21,7 +21,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import math
-import unit
+import path, unit
 
 #
 # classes representing bounding boxes
@@ -246,7 +246,6 @@ class bbox_pt:
 
     def rect(self):
         """return rectangle corresponding to bbox"""
-	import path
         if self.llx_pt is None:
             raise ValueError("Cannot return path for empty bbox")
         return path.rect_pt(self.llx_pt, self.lly_pt, self.urx_pt-self.llx_pt, self.ury_pt-self.lly_pt)

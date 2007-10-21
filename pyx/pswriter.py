@@ -151,10 +151,10 @@ class epswriter:
 
     def getfontmap(self):
         if self._fontmap is None:
-	    # late import due to cyclic dependency
-	    from pyx.dvi import mapfile
+            # late import due to cyclic dependency
+            from pyx.dvi import mapfile
             self._fontmap = mapfile.readfontmap(["psfonts.map"])
-	    # config.get("text", "fontmaps", "psfonts.map")
+            # config.get("text", "fontmaps", "psfonts.map")
             # self.fontmap = dvifile.readfontmap(self.fontmaps.split())
         return self._fontmap
 
@@ -256,9 +256,9 @@ class context:
         self.linewidth_pt = None
         self.colorspace = None
         self.selectedfont = None
-	# dictionary mapping font names to dictionaries mapping encoding names to encodings
-	# encodings themselves are mappings from glyphnames to codepoints
-	self.encodings = {}
+        # dictionary mapping font names to dictionaries mapping encoding names to encodings
+        # encodings themselves are mappings from glyphnames to codepoints
+        self.encodings = {}
 
     def __call__(self, **kwargs):
         newcontext = copy.copy(self)
