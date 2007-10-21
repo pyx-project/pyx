@@ -1,4 +1,4 @@
-from pyx import canvasitem, font, pykpathsea
+from pyx import bbox, canvasitem, font, pykpathsea
 import tfmfile, vffile
 from pyx.font import t1file
 
@@ -188,13 +188,23 @@ class TeXtext_pt(canvasitem.canvasitem):
         self.x_pt = x_pt
         self.y_pt = y_pt
         self.charcodes = charcodes
-	self.size_pt = size_pt
+        self.size_pt = size_pt
+
+        self.width_pt = sum([self.font.getwidth_pt(charcode) for charcode in charcodes])
+        self.height_pt = max([self.font.getheight_pt(charcode) for charcode in charcodes])
+        self.depth_pt = max([self.font.getdepth_pt(charcode) for charcode in charcodes])
+
+        self._bbox = bbox.bbox_pt(self.x_pt, self.y_pt-self.depth_pt, self.x_pt+self.width_pt, self.y_pt+self.height_pt)
+
+    def bbox(self):
+        return self._bbox
 
     def processPS(self, file, writer, context, registry, bbox):
+        bbox += self.bbox()
         mapline = self.font.getMAPline(writer.getfontmap())
-	font = mapline.getfont()
-	text = font.text_pt(self.x_pt, self.y_pt, self.charcodes, self.size_pt, decoding=mapline.getencoding(), slant=mapline.slant)
-	text.processPS(file, writer, context, registry, bbox)
+        font = mapline.getfont()
+        text = font.text_pt(self.x_pt, self.y_pt, self.charcodes, self.size_pt, decoding=mapline.getencoding(), slant=mapline.slant, ignorebbox=True)
+        text.processPS(file, writer, context, registry, bbox)
 
     def processPDF(self, file, writer, context, registry, bbox):
         pass

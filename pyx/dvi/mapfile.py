@@ -23,12 +23,12 @@ class MAPline:
         self.encodingfilename = None
 
         # supported postscript fragments occuring in psfonts.map
-	# XXX extendfont not yet implemented
+        # XXX extendfont not yet implemented
         self.reencodefont = self.extendfont = self.slant = None
 
-	# cache for openend font and encoding
-	self._font = None
-	self._encoding = _marker
+        # cache for openend font and encoding
+        self._font = None
+        self._encoding = _marker
 
         tokens = []
         while len(s):
@@ -83,37 +83,37 @@ class MAPline:
             self.basepsname = self.texname
 
     def getfontname(self):
-	return self.basepsname
+        return self.basepsname
 
     def getfont(self):
-	if self._font is None:
-	    if self.fontfilename is not None:
-		fontpath = pykpathsea.find_file(self.fontfilename, pykpathsea.kpse_type1_format)
-		if not fontpath:
-		    raise RuntimeError("cannot find type 1 font %s" % self.fontfilename)
-		if fontpath.endswith(".pfb"):
-		    t1font = t1file.PFBfile(fontpath)
-		else:
-		    t1font = t1file.PFAfile(fontpath)
-		assert self.basepsname == t1font.name, "corrupt MAP file"
-		self._font = font.T1font(t1font)
-	    else:
-		self._font = font.T1builtinfont(self.basepsname)
-	return self._font
+        if self._font is None:
+            if self.fontfilename is not None:
+                fontpath = pykpathsea.find_file(self.fontfilename, pykpathsea.kpse_type1_format)
+                if not fontpath:
+                    raise RuntimeError("cannot find type 1 font %s" % self.fontfilename)
+                if fontpath.endswith(".pfb"):
+                    t1font = t1file.PFBfile(fontpath)
+                else:
+                    t1font = t1file.PFAfile(fontpath)
+                assert self.basepsname == t1font.name, "corrupt MAP file"
+                self._font = font.T1font(t1font, None)
+            else:
+                self._font = font.T1builtinfont(self.basepsname, None)
+        return self._font
 
     def getencoding(self):
-	if self._encoding is _marker:
-	    if self.encodingfilename is not None:
-		encodingpath = pykpathsea.find_file(self.encodingfilename, pykpathsea.kpse_tex_ps_header_format)
-		if not encodingpath:
-		    raise RuntimeError("cannot find font encoding file %s" % self.encodingfilename)
-		ef = encfile.ENCfile(encodingpath)
-		assert ef.name == "/%s" % self.reencodefont
-		self._encoding = ef.vector
+        if self._encoding is _marker:
+            if self.encodingfilename is not None:
+                encodingpath = pykpathsea.find_file(self.encodingfilename, pykpathsea.kpse_tex_ps_header_format)
+                if not encodingpath:
+                    raise RuntimeError("cannot find font encoding file %s" % self.encodingfilename)
+                ef = encfile.ENCfile(encodingpath)
+                assert ef.name == "/%s" % self.reencodefont
+                self._encoding = ef.vector
 
-	    else:
-		self._encoding = None
-	return self._encoding
+            else:
+                self._encoding = None
+        return self._encoding
 
     def __str__(self):
         return ("'%s' is '%s' read from '%s' encoded as '%s'" %

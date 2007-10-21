@@ -20,7 +20,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-from pyx import canvasitem, pswriter, trafo, unit
+from pyx import bbox, canvasitem, pswriter, trafo, unit
 import t1file
 
 try:
@@ -164,9 +164,10 @@ class font:
 
 class T1font(font):
 
-    def __init__(self, t1file):
+    def __init__(self, t1file, metric):
         self.t1file = t1file
-	self.name = t1file.name
+        self.name = t1file.name
+        self.metric = metric
 
     def text_pt(self, x, y, charcodes, size_pt, **kwargs):
         return T1text_pt(self, x, y, charcodes, size_pt, **kwargs)
@@ -174,9 +175,10 @@ class T1font(font):
 
 class T1builtinfont(T1font):
 
-    def __init__(self, name):
+    def __init__(self, name, metric):
         self.name = name
-	self.t1file = None
+        self.t1file = None
+        self.metric = metric
 
 
 class selectedfont:
@@ -193,12 +195,13 @@ class selectedfont:
 
 
 class text_pt(canvasitem.canvasitem):
+
     pass
 
 
 class T1text_pt(text_pt):
 
-    def __init__(self, font, x_pt, y_pt, charcodes, size_pt, decoding=None, slant=None): #, **features):
+    def __init__(self, font, x_pt, y_pt, charcodes, size_pt, decoding=None, slant=None, ignorebbox=False): #, **features):
         # features: kerning, ligatures
         if decoding is not None:
             self.glyphnames = [decoding[character] for character in charcodes]
@@ -211,6 +214,15 @@ class T1text_pt(text_pt):
         self.y_pt = y_pt
         self.size_pt = size_pt
         self.slant = slant
+        self.ignorebbox = ignorebbox
+
+    def bbox(self):
+        if self.font.metric is None:
+            raise NotImplementedError("we don't yet have access to the metric")
+        return bbox.bbox_pt(self.x_pt,
+                            self.y_pt-self.font.metric.depth_pt(self.glyphnames, self.size_pt),
+                            self.x_pt+self.font.metric.width_pt(self.glyphnames, self.size_pt),
+                            self.y_pt+self.font.metric.height_pt(self.glyphnames, self.size_pt))
 
     def getencodingname(self, encodings):
         """returns the name of the encoding (in encodings) mapping self.glyphnames to codepoints
@@ -224,7 +236,7 @@ class T1text_pt(text_pt):
             for glyphname in glyphnames:
                 if glyphname not in encoding.keys():
                     glyphsmissing.append(glyphname)
-		    
+
             if len(glyphsmissing) + len(encoding) < 256:
                 # new glyphs fit in existing encoding which will thus be extended
                 for glyphname in glyphsmissing:
@@ -236,7 +248,8 @@ class T1text_pt(text_pt):
         return encodingname
 
     def processPS(self, file, writer, context, registry, bbox):
-        # bbox += self.bbox()
+        if not self.ignorebbox:
+            bbox += self.bbox()
 
         # register resources
         if self.font.t1file is not None:
