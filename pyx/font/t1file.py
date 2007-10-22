@@ -1019,7 +1019,7 @@ class T1file:
             glyphinfo_period = self.getglyphinfo("period")
             glyphinfo_colon = self.getglyphinfo("colon")
         except:
-            warnings.warn("Auto-guessing font information failed. We're writing stub data instead.")
+            warnings.warn("Auto-guessing of font information for font '%s' failed. We're writing stub data instead." % self.name)
             file.write("/Flags 4\n")
             file.write("/FontBBox [0 -100 0 1000]\n")
             file.write("/ItalicAngle 0\n")
@@ -1045,7 +1045,7 @@ class T1file:
             file.write("/StemV %f\n" % (glyphinfo_period[4]-glyphinfo_period[2]))
 
     def getglyphinfo(self, glyph):
-        warnings.warn("We are about to extract font information from a type 1 font directly. This is bad practice (and it's slow). You should use an afm file instead.")
+        warnings.warn("We are about to extract font information for the Type 1 font '%s' from its pfb file. This is bad practice (and it's slow). You should use an afm file instead." % self.name)
         context = T1context(self)
         p = path()
         self.updateglyphpath(glyph, p, trafo.trafo(), context)
