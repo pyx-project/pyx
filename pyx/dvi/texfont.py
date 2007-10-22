@@ -1,6 +1,6 @@
 from pyx import bbox, canvasitem, font, pykpathsea
 import tfmfile, vffile
-from pyx.font import t1file
+
 
 class TeXfont:
 

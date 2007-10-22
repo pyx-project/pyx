@@ -1,5 +1,8 @@
 class metric:
 
+    def width_ds(self, glyphname):
+        raise NotImplementedError()
+
     def width_pt(self, glyphnames, size):
         raise NotImplementedError()
 

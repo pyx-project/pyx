@@ -1,6 +1,6 @@
 import re
 from pyx import font, pykpathsea
-from pyx.font import t1file
+from pyx.font import t1file, afmfile
 from pyx.dvi import encfile
 
 class UnsupportedFontFormat(Exception):
@@ -96,9 +96,17 @@ class MAPline:
                 else:
                     t1font = t1file.PFAfile(fontpath)
                 assert self.basepsname == t1font.name, "corrupt MAP file"
-                self._font = font.T1font(t1font, None)
+                metricpath = pykpathsea.find_file(self.fontfilename.replace(".pfb", ".afm"), pykpathsea.kpse_afm_format)
+                if metricpath:
+                    self._font = font.T1font(t1font, afmfile.AFMfile(metricpath))
+                else:
+                    self._font = font.T1font(t1font, None)
             else:
-                self._font = font.T1builtinfont(self.basepsname, None)
+                afmfilename = "%s.afm" % self.basepsname
+                metricpath = pykpathsea.find_file(afmfilename, pykpathsea.kpse_afm_format)
+                if metricpath is None:
+                    raise RuntimeError("cannot find type 1 font metric %s" % afmfilename)
+                self._font = font.T1builtinfont(self.basepsname, afmfile.AFMfile(metricpath))
         return self._font
 
     def getencoding(self):

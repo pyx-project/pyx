@@ -162,7 +162,7 @@ class PSchangefontmatrix(pswriter.PSresource):
 
 class PDFfont(pdfwriter.PDFobject):
 
-    def __init__(self, fontname, basefontname, charcodes, fontdescriptor, encoding):
+    def __init__(self, fontname, basefontname, charcodes, fontdescriptor, encoding, metric):
         pdfwriter.PDFobject.__init__(self, "font", fontname)
 
         self.fontname = fontname
@@ -170,6 +170,7 @@ class PDFfont(pdfwriter.PDFobject):
         self.charcodes = set(charcodes)
         self.fontdescriptor = fontdescriptor
         self.encoding = encoding
+        self.metric = metric
 
     def merge(self, other):
         self.charcodes.update(other.charcodes)
@@ -191,12 +192,16 @@ class PDFfont(pdfwriter.PDFobject):
         else:
             encoding = self.fontdescriptor.fontfile.t1file.encoding
         for i in range(firstchar, lastchar+1):
-            if i and not (i % 8):
-                file.write("\n")
+            if i:
+                if not (i % 8):
+                    file.write("\n")
+                else:
+                    file.write(" ")
+            if self.metric is not None:
+                file.write("%i" % self.metric.width_ds(encoding[i]))
             else:
-                file.write(" ")
-            file.write("%i" % self.fontdescriptor.fontfile.t1file.getglyphinfo(encoding[i])[0])
-        file.write(" ]\n")
+                file.write("%i" % self.fontdescriptor.fontfile.t1file.getglyphinfo(encoding[i])[0])
+        file.write("]\n")
         file.write("/FontDescriptor %d 0 R\n" % registry.getrefno(self.fontdescriptor))
         if self.encoding:
             file.write("/Encoding %d 0 R\n" % registry.getrefno(self.encoding))
@@ -205,27 +210,22 @@ class PDFfont(pdfwriter.PDFobject):
 
 class PDFfontdescriptor(pdfwriter.PDFobject):
 
-    def __init__(self, fontname, fontfile):
+    def __init__(self, fontname, fontfile, metric):
         pdfwriter.PDFobject.__init__(self, "fontdescriptor", fontname)
         self.fontname = fontname
         self.fontfile = fontfile
+        self.metric = metric
 
     def write(self, file, writer, registry):
         file.write("<<\n"
                    "/Type /FontDescriptor\n"
                    "/FontName /%s\n" % self.fontname)
-        if self.fontfile is not None:
-            self.fontfile.t1file.writePDFfontinfo(file)
-            file.write("/FontFile %d 0 R\n" % registry.getrefno(self.fontfile))
+        if self.metric is not None:
+            self.metric.writePDFfontinfo(file)
         else:
-            file.write("/Flags 32\n")
-            # TODO: add other required font info for PDF builtin fonts
-            # file.write("/FontBBox [%d %d %d %d]\n")
-            # file.write("/ItalicAngle %d\n")
-            # file.write("/Ascent %d\n")
-            # file.write("/Descent %d\n")
-            # file.write("/CapHeight %d\n")
-            # file.write("/StemV %d\n")
+            self.fontfile.t1file.writePDFfontinfo(file)
+        if self.fontfile is not None:
+            file.write("/FontFile %d 0 R\n" % registry.getrefno(self.fontfile))
         file.write(">>\n")
 
 
@@ -450,8 +450,8 @@ class T1text_pt(text_pt):
                 fontfile = PDFfontfile(self.font.t1file, [], self.charcodes)
         else:
             fontfile = None
-        fontdescriptor = PDFfontdescriptor(self.font.name, fontfile)
-        font = PDFfont(fontname, self.font.name, charcodes, fontdescriptor, encoding)
+        fontdescriptor = PDFfontdescriptor(self.font.name, fontfile, self.font.metric)
+        font = PDFfont(fontname, self.font.name, charcodes, fontdescriptor, encoding, self.font.metric)
 
         # register resources
         if fontfile is not None:

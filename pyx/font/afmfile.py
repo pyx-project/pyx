@@ -149,6 +149,7 @@ class AFMfile:
        self.charwidths = [None] * 2             # 2 floats, optional (for each direction)
        self.isfixedpitchs = [None] * 2          # bool, optional (for each direction)
        self.charmetrics = None                  # list of character metrics information, optional
+       self.glyphs = None                       # dictionary mapping glyph names to character metrics information, optional
        self.trackkerns = None                   # list of track kernings, optional
        self.kernpairs = [None] * 2              # list of list of kerning pairs (for each direction), optional
        self.composites = None                   # list of composite character data sets, optional
@@ -228,6 +229,7 @@ class AFMfile:
             if self.charmetrics is not None:
                 raise AFMError("Multiple character metrics sections")
             self.charmetrics = [None] * _parseint(args)
+            self.glyphs = {}
             return _READ_CHARMETRICS, 0
         elif key == "StartKernData":
             return _READ_KERNDATA, None
@@ -274,6 +276,7 @@ class AFMfile:
         if charno >= len(self.charmetrics):
             raise AFMError("More character metrics than expected")
 
+        has_name = False
         char = None
         for s in line.split(";"):
             s = s.strip()
@@ -304,6 +307,7 @@ class AFMfile:
                 char.vvector = _parsefloats(args, 2)
             elif key == "N":
                 # XXX: we should check that name is valid (no whitespcae, etc.)
+                has_name = True
                 char.name = _parsestr(args)
             elif key == "B":
                 char.bbox = _parsefloats(args, 4)
@@ -316,6 +320,8 @@ class AFMfile:
             raise AFMError("Character metrics not defined")
 
         self.charmetrics[charno] = char
+        if has_name:
+            self.glyphs[char.name] = char
         return _READ_CHARMETRICS, charno+1
 
     def _processline_kerndata(self, line):
@@ -481,6 +487,33 @@ class AFMfile:
                         raise RuntimeError("Undefined state in AFM reader")
         finally:
             f.close()
+
+    def width_ds(self, glyphname):
+        return self.glyphs[glyphname].widths[0][0]
+
+    def width_pt(self, glyphnames, size):
+        return sum([self.glyphs[glyphname].widths[0][0] for glyphname in glyphnames])*size/1000.0
+
+    def height_pt(self, glyphnames, size):
+        return max([self.glyphs[glyphname].bbox[3] for glyphname in glyphnames])*size/1000.0
+
+    def depth_pt(self, glyphnames, size):
+        return min([self.glyphs[glyphname].bbox[1] for glyphname in glyphnames])*size/1000.0
+
+    def writePDFfontinfo(self, file):
+        file.write("/Flags 4\n") # any better???
+        if self.fontbbox is not None:
+            file.write("/FontBBox [%d %d %d %d]\n" % tuple(self.fontbbox))
+        if self.italicangles is not None:
+            file.write("/ItalicAngles %d\n" % self.italicangles[0])
+        if self.fontbbox is not None:
+            file.write("/Ascent %d\n" % self.fontbbox[3]) # TODO: any better???
+        if self.fontbbox is not None:
+            file.write("/Descent %d\n" % self.fontbbox[1]) # TODO: any better???
+        if self.capheight is not None:
+            file.write("/CapHeight %d\n" % self.capheight)
+        file.write("/StemV %d\n" % 100) # TODO: any better???
+
 
 if __name__ == "__main__":
     a = AFMfile("/opt/local/share/texmf-dist/fonts/afm/yandy/lucida/lbc.afm")

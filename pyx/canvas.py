@@ -166,12 +166,12 @@ class _canvas(canvasitem.canvasitem):
                     if context.textregion:
                         file.write("ET\n")
                         context.textregion = 0
-                        context.font = None
+                        context.selectedfont = None
                 item.processPDF(file, writer, context, registry, nbbox)
             if context.textregion:
                 file.write("ET\n")
                 context.textregion = 0
-                context.font = None
+                context.selectedfont = None
             # update bounding bbox
             nbbox.transform(self.trafo)
             if self.clipbbox is not None:
