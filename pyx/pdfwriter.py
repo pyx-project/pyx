@@ -315,6 +315,9 @@ class context:
         self.fillattr = 1
         self.selectedfont = None
         self.textregion = 0
+        # dictionary mapping font names to dictionaries mapping encoding names to encodings
+        # encodings themselves are mappings from glyphnames to codepoints
+        self.encodings = {}
 
     def __call__(self, **kwargs):
         newcontext = copy.copy(self)
