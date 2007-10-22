@@ -157,7 +157,7 @@ class points(_data):
                 self.columndata = [range(1, len(points) + 1)] + self.columndata
             self.columns = dict([(key, self.columndata[i]) for key, i in columns.items()])
         else:
-            self.columns = dict([(key, []) for key, i in columns])
+            self.columns = dict([(key, []) for key, i in columns.items()])
         self.columnnames = self.columns.keys()
         self.title = title
 
