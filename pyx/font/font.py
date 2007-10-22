@@ -162,63 +162,49 @@ class PSchangefontmatrix(pswriter.PSresource):
 
 class PDFfont(pdfwriter.PDFobject):
 
-    def __init__(self, font, chars, writer, registry):
-        PDFobject.__init__(self, "font", font.name)
-        registry.addresource("Font", font.name, self, procset="Text")
+    def __init__(self, fontname, basefontname, charcodes, fontdescriptor, encoding):
+        pdfwriter.PDFobject.__init__(self, "font", fontname)
 
-        self.fontdescriptor = PDFfontdescriptor(font, chars, writer, registry)
-        registry.add(self.fontdescriptor)
+        # self.fontdescriptor = PDFfontdescriptor(font, chars, writer, registry)
+        # registry.add(self.fontdescriptor)
 
-        if font.encoding:
-            self.encoding = PDFencoding(font.encoding, writer, registry)
-            registry.add(self.encoding)
-        else:
-            self.encoding = None
+        # if font.encoding:
+        #     self.encoding = PDFencoding(font.encoding, writer, registry)
+        #     registry.add(self.encoding)
+        # else:
+        #     self.encoding = None
 
-        self.name = font.name
-        self.basefontname = font.basefontname
-        self.metric = font.metric
+        self.fontname = fontname
+        self.basefontname = basefontname
+        self.charcodes = set(charcodes)
+        self.fontdescriptor = fontdescriptor
+        self.encoding = encoding
+
+    def merge(self, other):
+        self.charcodes.update(other.charcodes)
 
     def write(self, file, writer, registry):
         file.write("<<\n"
                    "/Type /Font\n"
                    "/Subtype /Type1\n")
-        file.write("/Name /%s\n" % self.name)
+        file.write("/Name /%s\n" % self.fontname)
         file.write("/BaseFont /%s\n" % self.basefontname)
-        if self.fontdescriptor.fontfile is not None and self.fontdescriptor.fontfile.usedchars is not None:
-            usedchars = self.fontdescriptor.fontfile.usedchars
-            firstchar = min(usedchars.keys())
-            lastchar = max(usedchars.keys())
-            file.write("/FirstChar %d\n" % firstchar)
-            file.write("/LastChar %d\n" % lastchar)
-            file.write("/Widths\n"
-                       "[")
-            for i in range(firstchar, lastchar+1):
-                if i and not (i % 8):
-                    file.write("\n")
-                else:
-                    file.write(" ")
-                if usedchars.has_key(i):
-                    file.write("%f" % self.metric.getwidth_ds(i))
-                else:
-                    file.write("0")
-            file.write(" ]\n")
-        else:
-            file.write("/FirstChar 0\n"
-                       "/LastChar 255\n"
-                       "/Widths\n"
-                       "[")
-            for i in range(256):
-                if i and not (i % 8):
-                    file.write("\n")
-                else:
-                    file.write(" ")
-                try:
-                    width = self.metric.getwidth_ds(i)
-                except (IndexError, AttributeError):
-                    width = 0
-                file.write("%f" % width)
-            file.write(" ]\n")
+        firstchar = min(self.charcodes)
+        lastchar = max(self.charcodes)
+        file.write("/FirstChar %d\n" % firstchar)
+        file.write("/LastChar %d\n" % lastchar)
+        file.write("/Widths\n"
+                   "[")
+        for i in range(firstchar, lastchar+1):
+            if i and not (i % 8):
+                file.write("\n")
+            else:
+                file.write(" ")
+            if i in self.charcodes:
+                file.write("%i" % self.fontdescriptor.fontfile.t1file.getglyphinfo(self.fontdescriptor.fontfile.t1file.encoding[i])[0])
+            else:
+                file.write("0")
+        file.write(" ]\n")
         file.write("/FontDescriptor %d 0 R\n" % registry.getrefno(self.fontdescriptor))
         if self.encoding:
             file.write("/Encoding %d 0 R\n" % registry.getrefno(self.encoding))
@@ -227,91 +213,54 @@ class PDFfont(pdfwriter.PDFobject):
 
 class PDFfontdescriptor(pdfwriter.PDFobject):
 
-    def __init__(self, font, chars, writer, registry):
-        PDFobject.__init__(self, "fontdescriptor", font.basefontname)
-
-        if font.filename is None:
-            self.fontfile = None
-        else:
-            self.fontfile = PDFfontfile(font.basefontname, font.filename, font.encoding, chars, writer, registry)
-            registry.add(self.fontfile)
-
-        self.name = font.basefontname
-        self.fontinfo = font.metric.fontinfo()
+    def __init__(self, fontname, fontfile):
+        pdfwriter.PDFobject.__init__(self, "fontdescriptor", fontname)
+        self.fontname = fontname
+        self.fontfile = fontfile
 
     def write(self, file, writer, registry):
         file.write("<<\n"
                    "/Type /FontDescriptor\n"
-                   "/FontName /%s\n" % self.name)
-        if self.fontfile is None:
-            file.write("/Flags 32\n")
-        else:
-            file.write("/Flags %d\n" % self.fontfile.getflags())
-        file.write("/FontBBox [%d %d %d %d]\n" % self.fontinfo.fontbbox)
-        file.write("/ItalicAngle %d\n" % self.fontinfo.italicangle)
-        file.write("/Ascent %d\n" % self.fontinfo.ascent)
-        file.write("/Descent %d\n" % self.fontinfo.descent)
-        file.write("/CapHeight %d\n" % self.fontinfo.capheight)
-        file.write("/StemV %d\n" % self.fontinfo.vstem)
+                   "/FontName /%s\n" % self.fontname)
         if self.fontfile is not None:
+            self.fontfile.t1file.writePDFfontinfo(file)
             file.write("/FontFile %d 0 R\n" % registry.getrefno(self.fontfile))
+        else:
+            file.write("/Flags 32\n")
+            # TODO: add other required font info for PDF builtin fonts
+            # file.write("/FontBBox [%d %d %d %d]\n")
+            # file.write("/ItalicAngle %d\n")
+            # file.write("/Ascent %d\n")
+            # file.write("/Descent %d\n")
+            # file.write("/CapHeight %d\n")
+            # file.write("/StemV %d\n")
         file.write(">>\n")
 
 
 class PDFfontfile(pdfwriter.PDFobject):
 
-    def __init__(self, name, filename, encoding, chars, writer, registry):
-        PDFobject.__init__(self, "fontfile", filename)
-        self.name = name
-        self.filename = filename
-        if encoding is None:
-            self.encodingfilename = None
-        else:
-            self.encodingfilename = encoding.filename
-        self.usedchars = {}
-        for char in chars:
-            self.usedchars[char] = 1
-
+    def __init__(self, t1file, glyphnames, charcodes):
+        pdfwriter.PDFobject.__init__(self, "fontfile", t1file.name)
+        self.t1file = t1file
+        self.glyphnames = set(glyphnames)
+        self.charcodes = set(charcodes)
         self.strip = 1
-        self.font = None
 
     def merge(self, other):
-        if self.encodingfilename == other.encodingfilename:
-            self.usedchars.update(other.usedchars)
-        else:
-            # TODO: need to resolve the encoding when several encodings are in the play
-            self.strip = 0
-
-    def mkfontfile(self):
-	import font.t1font
-        self.font = font.t1font.T1pfbfont(self.filename)
-
-    def getflags(self):
-        if self.font is None:
-            self.mkfontfile()
-        return self.font.getflags()
+        self.glyphnames.update(other.glyphnames)
+        self.charcodes.update(other.charcodes)
 
     def write(self, file, writer, registry):
-        if self.font is None:
-            self.mkfontfile()
         if self.strip:
-            # XXX: access to the encoding file
-            if self.encodingfilename:
-                encodingfile = type1font.encodingfile(self.encodingfilename, self.encodingfilename)
-                usedglyphs = dict([(encodingfile.decode(char)[1:], 1) for char in self.usedchars.keys()])
-            else:
-                self.font._encoding()
-                usedglyphs = dict([(self.font.encoding.decode(char), 1) for char in self.usedchars.keys()])
-            strippedfont = self.font.getstrippedfont(usedglyphs)
+            self.t1file.getstrippedfont(self.glyphnames, self.charcodes).outputPDF(file, writer)
         else:
-            strippedfont = self.font
-        strippedfont.outputPDF(file, writer)
+            self.t1file.outputPDF(file, writer)
 
 
 class PDFencoding(pdfwriter.PDFobject):
 
     def __init__(self, encoding, writer, registry):
-        PDFobject.__init__(self, "encoding", encoding.name)
+        pdfwriter.PDFobject.__init__(self, "encoding", encoding.name)
         self.encoding = encoding
 
     def write(self, file, writer, registry):
@@ -365,7 +314,6 @@ class selectedfont:
         self.size_pt = size_pt
 
     def __ne__(self, other):
-        print self.name != other.name or self.size_pt != other.size_pt
         return self.name != other.name or self.size_pt != other.size_pt
 
     def outputPS(self, file, writer):
@@ -480,23 +428,45 @@ class T1text_pt(text_pt):
         if not self.ignorebbox:
             bbox += self.bbox()
 
-        # register resources
+        fontname = self.font.name
+        if self.reencode:
+            encodingname = self.getencodingname(context.encodings.setdefault(self.font.name, {}))
+            encoding = context.encodings[self.font.name][encodingname]
+            newfontname = "%s-%s" % (fontname, encodingname)
+#             registry.add(PSreencodefont(fontname, newfontname, encoding))
+            fontname = newfontname
+
+        if self.reencode:
+            charcodes = [encoding[glyphname] for glyphname in self.glyphnames]
+        else:
+            charcodes = self.charcodes
+
+        # create resources
         if self.font.t1file is not None:
             if self.reencode:
-                registry.add(PST1file(self.font.t1file, self.glyphnames, []))
+                fontfile = PDFfontfile(self.font.t1file, self.glyphnames, [])
             else:
-                registry.add(PST1file(self.font.t1file, [], self.charcodes))
+                fontfile = PDFfontfile(self.font.t1file, [], self.charcodes)
+        else:
+            fontfile = None
+        fontdescriptor = PDFfontdescriptor(self.font.name, fontfile)
+        encoding = None
+        font = PDFfont(fontname, self.font.name, self.charcodes, fontdescriptor, encoding)
 
-        registry.add(PDFfont(self.font, self.chars, writer, registry))
+        # register resources
+        if fontfile is not None:
+            registry.add(fontfile)
+        registry.add(fontdescriptor)
+        if fontfile is not None:
+            registry.add(fontfile)
+        registry.add(font)
 
-#         fontname = self.font.name
-#         if self.reencode:
-#             encodingname = self.getencodingname(context.encodings.setdefault(self.font.name, {}))
-#             encoding = context.encodings[self.font.name][encodingname]
-#             newfontname = "%s-%s" % (fontname, encodingname)
-#             registry.add(_ReEncodeFont)
-#             registry.add(PSreencodefont(fontname, newfontname, encoding))
-#             fontname = newfontname
+        registry.addresource("Font", fontname, font, procset="Text")
+
+        if self.slant is None:
+            slantvalue = 0
+        else:
+            slantvalue = self.slant
 
         # select font if necessary
         sf = selectedfont(fontname, self.size_pt)
@@ -504,16 +474,7 @@ class T1text_pt(text_pt):
             context.selectedfont = sf
             sf.outputPDF(file, writer)
 
-        if self.slant is None:
-            slantvalue = 0
-        else:
-            slantvalue = self.slant
-
         file.write("1 0 %f 1 %f %f Tm (" % (slantvalue, self.x_pt, self.y_pt))
-        if self.reencode:
-            charcodes = [encoding[glyphname] for glyphname in self.glyphnames]
-        else:
-            charcodes = self.charcodes
         for charcode in charcodes:
             if 32 <= charcode <= 127 and chr(charcode) not in "()[]<>\\":
                 file.write("%s" % chr(charcode))

@@ -34,37 +34,6 @@ class TeXfont:
 
         self.scale = 1.0*q/d
 
-    def fontinfo(self):
-        class fontinfo:
-            pass
-
-        # The following code is a very crude way to obtain the information
-        # required for the PDF font descritor. (TODO: The correct way would
-        # be to read the information from the AFM file.)
-        fontinfo = fontinfo()
-        try:
-            fontinfo.fontbbox = (0,
-                                 -self.getdepth_ds(ord("y")),
-                                 self.getwidth_ds(ord("W")),
-                                 self.getheight_ds(ord("H")))
-        except:
-            fontinfo.fontbbox = (0, -10, 100, 100)
-        try:
-            fontinfo.italicangle = -180/math.pi*math.atan(self.TFMfile.param[0]/65536.0)
-        except IndexError:
-            fontinfo.italicangle = 0
-        fontinfo.ascent = fontinfo.fontbbox[3]
-        fontinfo.descent = fontinfo.fontbbox[1]
-        try:
-            fontinfo.capheight = self.getheight_ds(ord("h"))
-        except:
-            fontinfo.capheight = 100
-        try:
-            fontinfo.vstem = self.getwidth_ds(ord("."))/3
-        except:
-            fontinfo.vstem = 5
-        return fontinfo
-
     def __str__(self):
         return "font %s designed at %g TeX pts used at %g TeX pts" % (self.name, 
                                                                       16.0*self.d/16777216L,
@@ -181,7 +150,7 @@ class virtualfont(TeXfont):
         raise RuntimeError("you don't know what you're doing")
 
 
-class TeXtext_pt(canvasitem.canvasitem):
+class TeXtext_pt(font.text_pt):
 
     def __init__(self, font, x_pt, y_pt, charcodes, size_pt):
         self.font = font

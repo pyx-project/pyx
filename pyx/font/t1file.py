@@ -20,7 +20,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import array, binascii, re
+import array, binascii, math, re, warnings
 try:
     import zlib
     haszlib = 1
@@ -36,7 +36,6 @@ except NameError:
 
 from pyx import trafo, reader
 from pyx.path import path, moveto_pt, lineto_pt, curveto_pt, closepath
-import encoding
 
 try:
     from _t1code import *
@@ -666,12 +665,6 @@ class T1file:
         """eexec encoding of data"""
         return encoder(data, self.charstringr, "PyX!"[:self.lenIV])
 
-    lenIVpattern = re.compile("/lenIV\s+(\d+)\s+def\s+")
-    flexhintsubrs = [[3, 0, T1callothersubr, T1pop, T1pop, T1setcurrentpoint, T1return],
-                     [0, 1, T1callothersubr, T1return],
-                     [0, 2, T1callothersubr, T1return],
-                     [T1return]]
-
     def _encoding(self):
         """helper method to lookup the encoding in the font"""
         c = reader.PStokenizer(self.data1, "/Encoding")
@@ -696,6 +689,12 @@ class T1file:
                 if token == "readonly" or token == "def":
                     break
                 assert token == "dup"
+
+    lenIVpattern = re.compile("/lenIV\s+(\d+)\s+def\s+")
+    flexhintsubrs = [[3, 0, T1callothersubr, T1pop, T1pop, T1setcurrentpoint, T1return],
+                     [0, 1, T1callothersubr, T1return],
+                     [0, 2, T1callothersubr, T1return],
+                     [T1return]]
 
     def _data2decode(self):
         """decodes data2eexec to the data2 string and the subr and glyphs dictionary
@@ -1009,15 +1008,49 @@ class T1file:
         # create and return the new font instance
         return T1file(data1.rstrip() + "\n", self._eexecencode(data2), data3.rstrip() + "\n")
 
-    def getflags(self):
-        # As a simple heuristics we assume non-symbolic fonts if and only
-        # if the Adobe standard encoding is used. All other font flags are
-        # not specified here.
-        if not self.encoding:
-            self._encoding()
-        if self.encoding is adobestandardencoding:
-            return 32
-        return 4
+    # The following two methods, writePDFfontinfo and getglyphinfo,
+    # extract informtion which should better be taken from the afm file.
+    def writePDFfontinfo(self, file):
+        try:
+            glyphinfo_y = self.getglyphinfo("y")
+            glyphinfo_W = self.getglyphinfo("W")
+            glyphinfo_H = self.getglyphinfo("H")
+            glyphinfo_h = self.getglyphinfo("h")
+            glyphinfo_period = self.getglyphinfo("period")
+            glyphinfo_colon = self.getglyphinfo("colon")
+        except:
+            warnings.warn("Auto-guessing font information failed. We're writing stub data instead.")
+            file.write("/Flags 4\n")
+            file.write("/FontBBox [0 -100 0 1000]\n")
+            file.write("/ItalicAngle 0\n")
+            file.write("/Ascent 1000\n")
+            file.write("/Descent -100\n")
+            file.write("/CapHeight 700\n")
+            file.write("/StemV 100\n")
+        else:
+            if not self.encoding:
+                self._encoding()
+            # As a simple heuristics we assume non-symbolic fonts if and only
+            # if the Adobe standard encoding is used. All other font flags are
+            # not specified here.
+            if self.encoding is adobestandardencoding:
+                file.write("/Flags 32\n")
+            else:
+                file.write("/Flags 4\n")
+            file.write("/FontBBox [0 %f %f %f]\n" % (glyphinfo_y[3], glyphinfo_W[0], glyphinfo_H[5]))
+            file.write("/ItalicAngle %f\n" % math.degrees(math.atan2(glyphinfo_period[4]-glyphinfo_colon[4], glyphinfo_colon[5]-glyphinfo_period[5])))
+            file.write("/Ascent %f\n" % glyphinfo_H[5])
+            file.write("/Descent %f\n" % glyphinfo_y[3])
+            file.write("/CapHeight %f\n" % glyphinfo_h[5])
+            file.write("/StemV %f\n" % (glyphinfo_period[4]-glyphinfo_period[2]))
+
+    def getglyphinfo(self, glyph):
+        warnings.warn("We are about to extract font information from a type 1 font directly. This is bad practice (and it's slow). You should use an afm file instead.")
+        context = T1context(self)
+        p = path()
+        self.updateglyphpath(glyph, p, trafo.trafo(), context)
+        bbox = p.bbox()
+        return context.wx, context.wy, bbox.llx_pt, bbox.lly_pt, bbox.urx_pt, bbox.ury_pt
 
     def outputPFA(self, file):
         """output the T1file in PFA format"""

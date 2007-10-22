@@ -144,8 +144,8 @@ class DVIfile:
     def flushtext(self):
         """ finish currently active text object """
         if self.activetext:
-	    x, y, charcodes = self.activetext
-	    x_pt, y_pt = x * self.pyxconv, -y*self.pyxconv
+            x, y, charcodes = self.activetext
+            x_pt, y_pt = x * self.pyxconv, -y*self.pyxconv
             self.actpage.insert(self.activefont.text_pt(x_pt, y_pt, charcodes))
             if self.debug:
                 self.debugfile.write("[%s]\n" % "".join([chr(char) for char in self.activetext[2]]))
