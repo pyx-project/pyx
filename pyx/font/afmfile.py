@@ -143,6 +143,8 @@ class AFMfile:
        self.xheight = None                      # float, optional
        self.ascender = None                     # float, optional
        self.descender = None                    # float, optional
+       self.stdhw = None                        # float, optional
+       self.stdvw = None                        # float, optional
        self.underlinepositions = [None] * 2     # int, optional (for each direction)
        self.underlinethicknesses = [None] * 2   # float, optional (for each direction)
        self.italicangles = [None] * 2           # float, optional (for each direction)
@@ -215,6 +217,10 @@ class AFMfile:
             self.ascender = _parsefloat(args)
         elif key == "Descender":
             self.descender = _parsefloat(args)
+        elif key == "StdHW":
+            self.stdhw = _parsefloat(args)
+        elif key == "StdVW":
+            self.stdvw = _parsefloat(args)
         elif key == "StartDirection":
             direction = _parseint(args)
             if 0 <= direction <= 2:
@@ -306,7 +312,7 @@ class AFMfile:
             elif key == "VV":
                 char.vvector = _parsefloats(args, 2)
             elif key == "N":
-                # XXX: we should check that name is valid (no whitespcae, etc.)
+                # XXX: we should check that name is valid (no whitespace, etc.)
                 has_name = True
                 char.name = _parsestr(args)
             elif key == "B":
@@ -500,19 +506,52 @@ class AFMfile:
     def depth_pt(self, glyphnames, size):
         return min([self.glyphs[glyphname].bbox[1] for glyphname in glyphnames])*size/1000.0
 
-    def writePDFfontinfo(self, file):
-        file.write("/Flags 4\n") # any better???
+    def writePDFfontinfo(self, file, seriffont=False, symbolfont=True):
+        flags = 0
+        if self.isfixedpitchs[0]:
+            flags += 1<<0
+        if seriffont: 
+            flags += 1<<1
+        if symbolfont:
+            flags += 1<<2
+        else:
+            flags += 1<<5
+        if self.italicangles[0]:
+            flags += 1<<6
+        file.write("/Flags %d\n" % flags)
+        if self.italicangles[0] is not None:
+            file.write("/ItalicAngles %d\n" % self.italicangles[0])
+        if self.ascender is not None:
+            ascent = self.ascender
+        elif self.fontbbox is not None:
+            ascent = self.fontbbox[3]
+        else:
+            ascent = 1000 # guessed default
+        file.write("/Ascent %d\n" % ascent)
+        if self.descender is not None:
+            descent = self.descender
+        elif self.fontbbox is not None:
+            decent = self.fontbbox[3]
+        else:
+            descent = -200 # guessed default
+        file.write("/Descent %d\n" % descent)
         if self.fontbbox is not None:
             file.write("/FontBBox [%d %d %d %d]\n" % tuple(self.fontbbox))
-        if self.italicangles is not None:
-            file.write("/ItalicAngles %d\n" % self.italicangles[0])
-        if self.fontbbox is not None:
-            file.write("/Ascent %d\n" % self.fontbbox[3]) # TODO: any better???
-        if self.fontbbox is not None:
-            file.write("/Descent %d\n" % self.fontbbox[1]) # TODO: any better???
+        else:
+            # the fontbbox is required, so we have to have to provide some default
+            file.write("/FontBBox [0 %d 1000 %d]\n" % (descent, ascent))
         if self.capheight is not None:
             file.write("/CapHeight %d\n" % self.capheight)
-        file.write("/StemV %d\n" % 100) # TODO: any better???
+        else:
+            # the CapHeight is required, so we have to have to provide some default
+            file.write("/CapHeight %d\n" % ascent)
+        if self.stdvw is not None:
+            stemv = self.stdvw
+        elif self.weight is not None and ("bold" in self.weight.lower() or "black" in self.weight.lower()):
+            stemv = 120 # guessed default
+        else:
+            stemv = 70 # guessed default
+        file.write("/StemV %d\n" % stemv)
 
 
 if __name__ == "__main__":
