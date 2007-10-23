@@ -93,8 +93,18 @@ TODO:
 
 
 0.11 (2007/xx/xx):
+  - font and dvi modules:
+    - major reorganization
+    - TeX mapping files are a property of the writer now (TODO: documentation)
+      By that the pdfwriter now uses pdftex.map instead of psfonts.map
+    - support for font matrices (afm, pfm) for Type1 fonts
+      (using fonts without a metrics is still supported, but properly issues
+      a warning now)
+    - interface for basic TeX-less text output
   - canvas module:
     - auto-guess output filename from the script filename
+  - config module:
+    - config option for format warnings
 
 
 0.10 (2007/10/03):

@@ -5,6 +5,15 @@
 # configuration overwritting both, the PyX defaults and the systemwide
 # configuration.
 
+[general]
+# general options
+#
+# warnings are issued using pythons warning module. You can influence
+# the output by the following option, using the values "default" (for
+# the python default), "short" (for a single line format), and
+# "shortest" for printing the warning message itself only.
+warnings = shortest
+
 [text]
 # runtime configuration of the text module
 #

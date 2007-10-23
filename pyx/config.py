@@ -20,7 +20,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import ConfigParser, os.path
+import ConfigParser, os.path, warnings
 import siteconfig
 
 cflist = [os.path.join(siteconfig.pyxrcdir, "pyxrc"),  os.path.expanduser("~/.pyxrc")]
@@ -52,3 +52,15 @@ def getboolean(section, option, default):
     except:
         return default
 
+
+formatWarnings = get("general", "warnings", "default")
+print formatWarnings
+if formatWarnings not in ["default", "short", "shortest"]:
+    raise RuntimeError("invalid config value for option 'warnings' in section 'general'")
+if formatWarnings != "default":
+    def formatwarning(message, category, filename, lineno):
+        if formatWarnings == "short":
+            return "%s:%s: %s: %s\n" % (filename, lineno, category.__name__, message)
+        else:
+            return "%s\n" % message
+    warnings.formatwarning = formatwarning
