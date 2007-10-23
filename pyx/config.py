@@ -54,7 +54,6 @@ def getboolean(section, option, default):
 
 
 formatWarnings = get("general", "warnings", "default")
-print formatWarnings
 if formatWarnings not in ["default", "short", "shortest"]:
     raise RuntimeError("invalid config value for option 'warnings' in section 'general'")
 if formatWarnings != "default":
