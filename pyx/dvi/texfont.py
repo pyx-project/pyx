@@ -75,9 +75,6 @@ class TeXfont:
         # length*z is a long integer, but the result will be a regular integer
         return int(length*long(z) >> shift)
 
-    def _convert_tfm_to_ds(self, length):
-        return (16*long(round(length*float(self.q)*self.tfmconv))/16777216) * self.pyxconv * 1000 / self.getsize_pt()
-    
     def _convert_tfm_to_pt(self, length):
         return (16*long(round(length*float(self.q)*self.tfmconv))/16777216) * self.pyxconv
 
@@ -94,20 +91,6 @@ class TeXfont:
 
     def getitalic_dvi(self, charcode):
         return self._convert_tfm_to_dvi(self.TFMfile.italic[self.TFMfile.char_info[charcode].italic_index])
-
-    # routines returning lengths as integers in design size (AFM) units 
-
-    def getwidth_ds(self, charcode):
-        return self._convert_tfm_to_ds(self.TFMfile.width[self.TFMfile.char_info[charcode].width_index])
-
-    def getheight_ds(self, charcode):
-        return self._convert_tfm_to_ds(self.TFMfile.height[self.TFMfile.char_info[charcode].height_index])
-
-    def getdepth_ds(self, charcode):
-        return self._convert_tfm_to_ds(self.TFMfile.depth[self.TFMfile.char_info[charcode].depth_index])
-
-    def getitalic_ds(self, charcode):
-        return self._convert_tfm_to_ds(self.TFMfile.italic[self.TFMfile.char_info[charcode].italic_index])
 
     # routines returning lengths as floats in PostScript points
 
