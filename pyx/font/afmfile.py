@@ -484,7 +484,7 @@ class AFMfile:
                     elif mstate == _READ_COMPOSITES:
                         state = self._processline_composites(line, sstate)
                     else:
-                        raise RuntimeError("Undefined state in AFM reader")
+                        raise AFMError("Undefined state in AFM reader")
         finally:
             f.close()
 
