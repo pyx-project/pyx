@@ -106,8 +106,8 @@ class TeXfont:
     def getitalic_pt(self, charcode):
         return self._convert_tfm_to_pt(self.TFMfile.italic[self.TFMfile.char_info[charcode].italic_index])
 
-    def text_pt(self, x_pt, y_pt, charcodes):
-        return TeXtext_pt(self, x_pt, y_pt, charcodes, self.getsize_pt())
+    def text_pt(self, x_pt, y_pt, charcodes, fontmap=None):
+        return TeXtext_pt(self, x_pt, y_pt, charcodes, self.getsize_pt(), fontmap=fontmap)
 
     def getMAPline(self, fontmap):
         if self.name not in fontmap:
@@ -129,18 +129,19 @@ class virtualfont(TeXfont):
         """ return dvi chunk corresponding to char code cc """
         return self.vffile.getchar(cc)
 
-    def text_pt(self, x_pt, y_pt, charcodes):
+    def text_pt(self, *args, **kwargs):
         raise RuntimeError("you don't know what you're doing")
 
 
 class TeXtext_pt(font.text_pt):
 
-    def __init__(self, font, x_pt, y_pt, charcodes, size_pt):
+    def __init__(self, font, x_pt, y_pt, charcodes, size_pt, fontmap=None):
         self.font = font
         self.x_pt = x_pt
         self.y_pt = y_pt
         self.charcodes = charcodes
         self.size_pt = size_pt
+        self.fontmap = fontmap
 
         self.width_pt = sum([self.font.getwidth_pt(charcode) for charcode in charcodes])
         self.height_pt = max([self.font.getheight_pt(charcode) for charcode in charcodes])
@@ -153,7 +154,10 @@ class TeXtext_pt(font.text_pt):
 
     def processPS(self, file, writer, context, registry, bbox):
         bbox += self.bbox()
-        mapline = self.font.getMAPline(writer.getfontmap())
+        if self.fontmap is not None:
+            mapline = self.font.getMAPline(self.fontmap)
+        else:
+            mapline = self.font.getMAPline(writer.getfontmap())
         font = mapline.getfont()
         text = font.text_pt(self.x_pt, self.y_pt, self.charcodes, self.size_pt, decoding=mapline.getencoding(), slant=mapline.slant, ignorebbox=True)
         text.processPS(file, writer, context, registry, bbox)

@@ -97,7 +97,9 @@ TODO:
     - major reorganization
     - TeX mapping files are a property of the writer now (TODO: documentation)
       By that the pdfwriter now uses pdftex.map instead of psfonts.map
-    - support for font matrices (afm, pfm) for Type1 fonts
+      (It's also possible to pass a fontmap to a texrunners text method to use
+      different mappings within a single output file)
+    - support for font matrices (afm) for Type1 fonts
       (using fonts without a metrics is still supported, but properly issues
       a warning now)
     - interface for basic TeX-less text output

@@ -141,18 +141,18 @@ class DVIfile:
 
     # helper routines
 
-    def flushtext(self):
+    def flushtext(self, fontmap):
         """ finish currently active text object """
         if self.activetext:
             x, y, charcodes = self.activetext
             x_pt, y_pt = x * self.pyxconv, -y*self.pyxconv
-            self.actpage.insert(self.activefont.text_pt(x_pt, y_pt, charcodes))
+            self.actpage.insert(self.activefont.text_pt(x_pt, y_pt, charcodes, fontmap=fontmap))
             if self.debug:
                 self.debugfile.write("[%s]\n" % "".join([chr(char) for char in self.activetext[2]]))
             self.activetext = None
 
-    def putrule(self, height, width, advancepos=1):
-        self.flushtext()
+    def putrule(self, height, width, advancepos, fontmap):
+        self.flushtext(fontmap)
         x1 =  self.pos[_POS_H] * self.pyxconv
         y1 = -self.pos[_POS_V] * self.pyxconv
         w = width * self.pyxconv
@@ -174,7 +174,7 @@ class DVIfile:
                                      (self.pos[_POS_H], width, self.pos[_POS_H]+width))
             self.pos[_POS_H] += width
 
-    def putchar(self, char, advancepos=1, id1234=0):
+    def putchar(self, char, advancepos, id1234, fontmap):
         dx = advancepos and self.activefont.getwidth_dvi(char) or 0
 
         if self.debug:
@@ -190,7 +190,7 @@ class DVIfile:
             afterpos = list(self.pos)
             afterpos[_POS_H] += dx
             self._push_dvistring(self.activefont.getchar(char), self.activefont.getfonts(), afterpos,
-                                 self.activefont.getsize_pt())
+                                 self.activefont.getsize_pt(), fontmap)
         else:
             if self.activetext is None:
                 self.activetext = (self.pos[_POS_H], self.pos[_POS_V], [])
@@ -198,10 +198,10 @@ class DVIfile:
             self.pos[_POS_H] += dx
 
         if not advancepos:
-            self.flushtext()
+            self.flushtext(fontmap)
 
-    def usefont(self, fontnum, id1234=0):
-        self.flushtext()
+    def usefont(self, fontnum, id1234, fontmap):
+        self.flushtext(fontmap)
         self.activefont = self.fonts[fontnum]
         if self.debug:
             self.debugfile.write("%d: fnt%s%i current font is %s\n" %
@@ -238,7 +238,7 @@ class DVIfile:
 #            if scale!=1000:
 #                print " (this font is magnified %d%%)" % round(scale/10)
 
-    def special(self, s):
+    def special(self, s, fontmap):
         x =  self.pos[_POS_H] * self.pyxconv
         y = -self.pos[_POS_V] * self.pyxconv
         if self.debug:
@@ -249,7 +249,7 @@ class DVIfile:
 
         # it is in general not safe to continue using the currently active font because
         # the specials may involve some gsave/grestore operations
-        self.flushtext()
+        self.flushtext(fontmap)
 
         command, args = s[4:].split()[0], s[4:].split()[1:]
         if command == "color_begin":
@@ -338,7 +338,7 @@ class DVIfile:
 
     # routines for pushing and popping different dvi chunks on the reader
 
-    def _push_dvistring(self, dvi, fonts, afterpos, fontsize):
+    def _push_dvistring(self, dvi, fonts, afterpos, fontsize, fontmap):
         """ push dvi string with defined fonts on top of reader
         stack. Every positions gets scaled relatively by the factor
         scale. After the interpreting of the dvi chunk has been finished,
@@ -371,10 +371,10 @@ class DVIfile:
         # since tfmconv converts from tfm units to dvi units, rescale it as well
         self.tfmconv /= rescale
 
-        self.usefont(0)
+        self.usefont(0, 0, fontmap)
 
-    def _pop_dvistring(self):
-        self.flushtext()
+    def _pop_dvistring(self, fontmap):
+        self.flushtext(fontmap)
         #if self.debug:
         #    self.debugfile.write("finished executing dvi chunk\n")
         self.debug = self.debugstack.pop()
@@ -422,7 +422,7 @@ class DVIfile:
             else:
                 raise DVIError
 
-    def readpage(self, pageid=None):
+    def readpage(self, pageid=None, fontmap=None):
         """ reads a page from the dvi file
 
         This routine reads a page from the dvi file which is
@@ -463,22 +463,22 @@ class DVIfile:
             except struct.error:
                 # we most probably (if the dvi file is not corrupt) hit the end of a dvi chunk,
                 # so we have to continue with the rest of the dvi file
-                self._pop_dvistring()
+                self._pop_dvistring(fontmap)
                 continue
             if cmd == _DVI_NOP:
                 pass
             if cmd >= _DVI_CHARMIN and cmd <= _DVI_CHARMAX:
-                self.putchar(cmd)
+                self.putchar(cmd, True, 0, fontmap)
             elif cmd >= _DVI_SET1234 and cmd < _DVI_SET1234 + 4:
-                self.putchar(afile.readint(cmd - _DVI_SET1234 + 1), id1234=cmd-_DVI_SET1234+1)
+                self.putchar(afile.readint(cmd - _DVI_SET1234 + 1), True, cmd-_DVI_SET1234+1, fontmap)
             elif cmd == _DVI_SETRULE:
-                self.putrule(afile.readint32(), afile.readint32())
+                self.putrule(afile.readint32(), afile.readint32(), True, fontmap)
             elif cmd >= _DVI_PUT1234 and cmd < _DVI_PUT1234 + 4:
-                self.putchar(afile.readint(cmd - _DVI_PUT1234 + 1), advancepos=0, id1234=cmd-_DVI_SET1234+1)
+                self.putchar(afile.readint(cmd - _DVI_PUT1234 + 1), False, cmd-_DVI_SET1234+1, fontmap)
             elif cmd == _DVI_PUTRULE:
-                self.putrule(afile.readint32(), afile.readint32(), 0)
+                self.putrule(afile.readint32(), afile.readint32(), False, fontmap)
             elif cmd == _DVI_EOP:
-                self.flushtext()
+                self.flushtext(fontmap)
                 if self.debug:
                     self.debugfile.write("%d: eop\n \n" % self.filepos)
                 return self.actpage
@@ -489,14 +489,14 @@ class DVIfile:
                                          "level %d:(h=%d,v=%d,w=%d,x=%d,y=%d,z=%d,hh=???,vv=???)\n" %
                                          ((self.filepos, len(self.stack)-1) + tuple(self.pos)))
             elif cmd == _DVI_POP:
-                self.flushtext()
+                self.flushtext(fontmap)
                 self.pos = self.stack.pop()
                 if self.debug:
                     self.debugfile.write("%s: pop\n"
                                          "level %d:(h=%d,v=%d,w=%d,x=%d,y=%d,z=%d,hh=???,vv=???)\n" %
                                          ((self.filepos, len(self.stack)) + tuple(self.pos)))
             elif cmd >= _DVI_RIGHT1234 and cmd < _DVI_RIGHT1234 + 4:
-                self.flushtext()
+                self.flushtext(fontmap)
                 dh = afile.readint(cmd - _DVI_RIGHT1234 + 1, 1)
                 if self.debug:
                     self.debugfile.write("%d: right%d %d h:=%d%+d=%d, hh:=???\n" %
@@ -508,7 +508,7 @@ class DVIfile:
                                           self.pos[_POS_H]+dh))
                 self.pos[_POS_H] += dh
             elif cmd == _DVI_W0:
-                self.flushtext()
+                self.flushtext(fontmap)
                 if self.debug:
                     self.debugfile.write("%d: w0 %d h:=%d%+d=%d, hh:=???\n" %
                                          (self.filepos,
@@ -518,7 +518,7 @@ class DVIfile:
                                           self.pos[_POS_H]+self.pos[_POS_W]))
                 self.pos[_POS_H] += self.pos[_POS_W]
             elif cmd >= _DVI_W1234 and cmd < _DVI_W1234 + 4:
-                self.flushtext()
+                self.flushtext(fontmap)
                 self.pos[_POS_W] = afile.readint(cmd - _DVI_W1234 + 1, 1)
                 if self.debug:
                     self.debugfile.write("%d: w%d %d h:=%d%+d=%d, hh:=???\n" %
@@ -530,7 +530,7 @@ class DVIfile:
                                           self.pos[_POS_H]+self.pos[_POS_W]))
                 self.pos[_POS_H] += self.pos[_POS_W]
             elif cmd == _DVI_X0:
-                self.flushtext()
+                self.flushtext(fontmap)
                 if self.debug:
                     self.debugfile.write("%d: x0 %d h:=%d%+d=%d, hh:=???\n" %
                                          (self.filepos,
@@ -540,7 +540,7 @@ class DVIfile:
                                           self.pos[_POS_H]+self.pos[_POS_X]))
                 self.pos[_POS_H] += self.pos[_POS_X]
             elif cmd >= _DVI_X1234 and cmd < _DVI_X1234 + 4:
-                self.flushtext()
+                self.flushtext(fontmap)
                 self.pos[_POS_X] = afile.readint(cmd - _DVI_X1234 + 1, 1)
                 if self.debug:
                     self.debugfile.write("%d: x%d %d h:=%d%+d=%d, hh:=???\n" %
@@ -552,7 +552,7 @@ class DVIfile:
                                           self.pos[_POS_H]+self.pos[_POS_X]))
                 self.pos[_POS_H] += self.pos[_POS_X]
             elif cmd >= _DVI_DOWN1234 and cmd < _DVI_DOWN1234 + 4:
-                self.flushtext()
+                self.flushtext(fontmap)
                 dv = afile.readint(cmd - _DVI_DOWN1234 + 1, 1)
                 if self.debug:
                     self.debugfile.write("%d: down%d %d v:=%d%+d=%d, vv:=???\n" %
@@ -564,7 +564,7 @@ class DVIfile:
                                           self.pos[_POS_V]+dv))
                 self.pos[_POS_V] += dv
             elif cmd == _DVI_Y0:
-                self.flushtext()
+                self.flushtext(fontmap)
                 if self.debug:
                     self.debugfile.write("%d: y0 %d v:=%d%+d=%d, vv:=???\n" %
                                          (self.filepos,
@@ -574,7 +574,7 @@ class DVIfile:
                                           self.pos[_POS_V]+self.pos[_POS_Y]))
                 self.pos[_POS_V] += self.pos[_POS_Y]
             elif cmd >= _DVI_Y1234 and cmd < _DVI_Y1234 + 4:
-                self.flushtext()
+                self.flushtext(fontmap)
                 self.pos[_POS_Y] = afile.readint(cmd - _DVI_Y1234 + 1, 1)
                 if self.debug:
                     self.debugfile.write("%d: y%d %d v:=%d%+d=%d, vv:=???\n" %
@@ -586,7 +586,7 @@ class DVIfile:
                                           self.pos[_POS_V]+self.pos[_POS_Y]))
                 self.pos[_POS_V] += self.pos[_POS_Y]
             elif cmd == _DVI_Z0:
-                self.flushtext()
+                self.flushtext(fontmap)
                 if self.debug:
                     self.debugfile.write("%d: z0 %d v:=%d%+d=%d, vv:=???\n" %
                                          (self.filepos,
@@ -596,7 +596,7 @@ class DVIfile:
                                           self.pos[_POS_V]+self.pos[_POS_Z]))
                 self.pos[_POS_V] += self.pos[_POS_Z]
             elif cmd >= _DVI_Z1234 and cmd < _DVI_Z1234 + 4:
-                self.flushtext()
+                self.flushtext(fontmap)
                 self.pos[_POS_Z] = afile.readint(cmd - _DVI_Z1234 + 1, 1)
                 if self.debug:
                     self.debugfile.write("%d: z%d %d v:=%d%+d=%d, vv:=???\n" %
@@ -608,14 +608,14 @@ class DVIfile:
                                           self.pos[_POS_V]+self.pos[_POS_Z]))
                 self.pos[_POS_V] += self.pos[_POS_Z]
             elif cmd >= _DVI_FNTNUMMIN and cmd <= _DVI_FNTNUMMAX:
-                self.usefont(cmd - _DVI_FNTNUMMIN, 0)
+                self.usefont(cmd - _DVI_FNTNUMMIN, 0, fontmap)
             elif cmd >= _DVI_FNT1234 and cmd < _DVI_FNT1234 + 4:
                 # note that according to the DVI docs, for four byte font numbers,
                 # the font number is signed. Don't ask why!
                 fntnum = afile.readint(cmd - _DVI_FNT1234 + 1, cmd == _DVI_FNT1234 + 3)
-                self.usefont(fntnum, id1234=cmd-_DVI_FNT1234+1)
+                self.usefont(fntnum, cmd-_DVI_FNT1234+1, fontmap)
             elif cmd >= _DVI_SPECIAL1234 and cmd < _DVI_SPECIAL1234 + 4:
-                self.special(afile.read(afile.readint(cmd - _DVI_SPECIAL1234 + 1)))
+                self.special(afile.read(afile.readint(cmd - _DVI_SPECIAL1234 + 1)), fontmap)
             elif cmd >= _DVI_FNTDEF1234 and cmd < _DVI_FNTDEF1234 + 4:
                 if cmd == _DVI_FNTDEF1234:
                     num = afile.readuchar()

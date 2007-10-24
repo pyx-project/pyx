@@ -62,14 +62,16 @@ unit.set(xscale=1)
 t = c.text(0, 11, r"scale test", [color.rgb.red])
 
 # test font stripping (proper usedchar selection)
+from pyx.dvi import mapfile
+fontmap = mapfile.readfontmap(["download35.map"])
 c.text(0, 12, r"usechar test (``fl'' should be typed):")
-myrunner = text.texrunner(fontmaps="download35.map")
+myrunner = text.texrunner()
 myrunner.preamble(r"\font\pyxfont=phvr8t\pyxfont")
-c.insert(myrunner.text(5.5, 12, r"\char'035"))
+c.insert(myrunner.text(5.5, 12, r"\char'035", fontmap=fontmap))
 
-myrunner2 = text.texrunner(fontmaps="download35.map")
+myrunner2 = text.texrunner()
 myrunner2.preamble(r"\font\pyxfont=ptmr8t\pyxfont")
-c.insert(myrunner2.text(6.5, 12, r"\char'035"))
+c.insert(myrunner2.text(6.5, 12, r"\char'035", fontmap=fontmap))
 
 # test the specials
 c.stroke(c.text(10, 2, r"Hello, \color{green}world!", [trafo.slant(1)]).path())

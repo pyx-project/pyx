@@ -104,7 +104,7 @@ class MAPline:
             else:
                 afmfilename = "%s.afm" % self.basepsname
                 metricpath = pykpathsea.find_file(afmfilename, pykpathsea.kpse_afm_format)
-                if metricpath is None:
+                if not metricpath:
                     raise RuntimeError("cannot find type 1 font metric %s" % afmfilename)
                 self._font = font.T1builtinfont(self.basepsname, afmfile.AFMfile(metricpath))
         return self._font
