@@ -147,7 +147,7 @@ def _outputstream(file, suffix):
             raise RuntimeError("could not auto-guess filename")
         return open("%s.%s" % (sys.argv[0][:-3], suffix), "wb")
     try:
-        file.write()
+        file.write("")
         return file
     except:
         if not file.endswith(".%s" % suffix):
