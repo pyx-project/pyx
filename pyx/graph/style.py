@@ -1015,7 +1015,7 @@ class histogram(_style):
         if privatedata.autohistogram and columnname == sharedata.poscolumnnames[privatedata.rangeaxisindex]:
             if len(data) == 1:
                 raise ValueError("several data points needed for automatic histogram width calculation")
-            if data:
+            if len(data) > 1:
                 delta = data[1] - data[0]
                 min = data[0] - self.autohistogrampointpos * delta
                 max = data[-1] + (1-self.autohistogrampointpos) * delta
