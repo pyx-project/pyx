@@ -104,16 +104,15 @@ class _canvas(canvasitem.canvasitem):
         # from the right. 
         # Note that while for the stroke and fill styles the order doesn't matter at all, 
         # this is not true for the clip operation.
-        if attrs is not None:
-            for aattr in attrs[::-1]:
-                if isinstance(aattr, trafo.trafo_pt):
-                    self.trafo = self.trafo * aattr
-                elif isinstance(aattr, clip):
-                    if self.clipbbox is None:
-                        self.clipbbox = aattr.clipbbox().transformed(self.trafo)
-                    else:
-                        self.clippbox *= aattr.clipbbox().transformed(self.trafo)
-                self.items.append(aattr)
+        for aattr in attrs[::-1]:
+            if isinstance(aattr, trafo.trafo_pt):
+                self.trafo = self.trafo * aattr
+            elif isinstance(aattr, clip):
+                if self.clipbbox is None:
+                    self.clipbbox = aattr.clipbbox().transformed(self.trafo)
+                else:
+                    self.clippbox *= aattr.clipbbox().transformed(self.trafo)
+            self.items.append(aattr)
 
     def __len__(self):
         return len(self.items)
