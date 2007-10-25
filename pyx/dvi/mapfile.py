@@ -1,4 +1,4 @@
-import re
+import re, warnings
 from pyx import font, pykpathsea
 from pyx.font import t1file, afmfile
 from pyx.dvi import encfile

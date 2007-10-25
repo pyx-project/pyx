@@ -1,4 +1,4 @@
-=# -*- coding: ISO-8859-1 -*-
+# -*- coding: ISO-8859-1 -*-
 #
 #
 # Copyright (C) 2002-2006 Jörg Lehmann <joergl@users.sourceforge.net>
@@ -89,6 +89,8 @@ class _canvas(canvasitem.canvasitem):
         self.items     = []
         self.trafo     = trafo.trafo()
         self.clipbbox  = None
+        if attrs is None:
+            attrs = []
         if texrunner is not None:
             self.texrunner = texrunner
         else:
@@ -102,8 +104,8 @@ class _canvas(canvasitem.canvasitem):
         # from the right. 
         # Note that while for the stroke and fill styles the order doesn't matter at all, 
         # this is not true for the clip operation.
-	if attrs is not None:
-	    for aattr in attrs[::-1]:
+        if attrs is not None:
+            for aattr in attrs[::-1]:
                 if isinstance(aattr, trafo.trafo_pt):
                     self.trafo = self.trafo * aattr
                 elif isinstance(aattr, clip):
