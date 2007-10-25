@@ -15,7 +15,7 @@ class metric:
     def resolveligatures(self, glyphnames):
         return glyphnames
 
-    def resolvekernings(self, glyphnames):
+    def resolvekernings(self, glyphnames, size=None):
         result = [None]*(2*len(glyphnames)-1)
         for i, glyphname in enumerate(glyphnames):
             result[2*i] = glyphname

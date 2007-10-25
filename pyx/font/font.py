@@ -331,28 +331,36 @@ class text_pt(canvasitem.canvasitem):
 
 class T1text_pt(text_pt):
 
-    def __init__(self, font, x_pt, y_pt, charcodes, size_pt, decoding=None, slant=None, ignorebbox=False): #, **features):
-        # features: kerning, ligatures
+    def __init__(self, font, x_pt, y_pt, charcodes, size_pt, decoding=None, slant=None, ignorebbox=False, kerning=False, ligatures=False):
         if decoding is not None:
             self.glyphnames = [decoding[character] for character in charcodes]
-            self.reencode = True
+            self.decode = True
         else:
             self.charcodes = charcodes
-            self.reencode = False
+            self.decode = False
         self.font = font
         self.x_pt = x_pt
         self.y_pt = y_pt
         self.size_pt = size_pt
         self.slant = slant
         self.ignorebbox = ignorebbox
+        self.kerning = kerning
+        self.ligatures = ligatures
+
+        if self.kerning and not self.decode:
+            raise ValueError("decoding required for font metric access (kerning)")
+        if self.ligatures and not self.decode:
+            raise ValueError("decoding required for font metric access (ligatures)")
+        if self.ligatures:
+            self.glyphnames = self.font.metric.resolveligatures(self.glyphnames)
 
     def bbox(self):
         if self.font.metric is None:
-            raise NotImplementedError("we don't yet have access to the metric")
-        if not self.reencode:
-            raise NotImplementedError("can only handle glyphname based font metrics")
+            raise ValueError("metric missing")
+        if not self.decode:
+            raise ValueError("decoding required for font metric access (bbox)")
         return bbox.bbox_pt(self.x_pt,
-                            self.y_pt-self.font.metric.depth_pt(self.glyphnames, self.size_pt),
+                            self.y_pt+self.font.metric.depth_pt(self.glyphnames, self.size_pt),
                             self.x_pt+self.font.metric.width_pt(self.glyphnames, self.size_pt),
                             self.y_pt+self.font.metric.height_pt(self.glyphnames, self.size_pt))
 
@@ -385,13 +393,13 @@ class T1text_pt(text_pt):
 
         # register resources
         if self.font.t1file is not None:
-            if self.reencode:
+            if self.decode:
                 registry.add(PST1file(self.font.t1file, self.glyphnames, []))
             else:
                 registry.add(PST1file(self.font.t1file, [], self.charcodes))
 
         fontname = self.font.name
-        if self.reencode:
+        if self.decode:
             encodingname = self.getencodingname(context.encodings.setdefault(self.font.name, {}))
             encoding = context.encodings[self.font.name][encodingname]
             newfontname = "%s-%s" % (fontname, encodingname)
@@ -413,22 +421,31 @@ class T1text_pt(text_pt):
             sf.outputPS(file, writer)
 
         file.write("%f %f moveto (" % (self.x_pt, self.y_pt))
-        if self.reencode:
-            charcodes = [encoding[glyphname] for glyphname in self.glyphnames]
-        else:
-            charcodes = self.charcodes
-        for charcode in charcodes:
-            if 32 < charcode < 127 and chr(charcode) not in "()[]<>\\":
-                file.write("%s" % chr(charcode))
+        if self.decode:
+            if self.kerning:
+                data = self.font.metric.resolvekernings(self.glyphnames, self.size_pt)
             else:
-                file.write("\\%03o" % charcode)
+                data = self.glyphnames
+        else:
+            data = self.charcodes
+        for i, value in enumerate(data):
+            if self.kerning and i % 2:
+                if value is not None:
+                    file.write(") show\n%f 0 rmoveto (" % value)
+            else:
+                if self.decode:
+                    value = encoding[value]
+                if 32 < value < 127 and chr(value) not in "()[]<>\\":
+                    file.write("%s" % chr(value))
+                else:
+                    file.write("\\%03o" % value)
         file.write(") show\n")
 
     def processPDF(self, file, writer, context, registry, bbox):
         if not self.ignorebbox:
             bbox += self.bbox()
 
-        if self.reencode:
+        if self.decode:
             encodingname = self.getencodingname(context.encodings.setdefault(self.font.name, {}))
             encoding = context.encodings[self.font.name][encodingname]
             charcodes = [encoding[glyphname] for glyphname in self.glyphnames]
@@ -437,28 +454,28 @@ class T1text_pt(text_pt):
 
         # create resources
         fontname = self.font.name
-        if self.reencode:
+        if self.decode:
             newfontname = "%s-%s" % (fontname, encodingname)
-            encoding = PDFencoding(encoding, newfontname)
+            _encoding = PDFencoding(encoding, newfontname)
             fontname = newfontname
         else:
-            encoding = None
+            _encoding = None
         if self.font.t1file is not None:
-            if self.reencode:
+            if self.decode:
                 fontfile = PDFfontfile(self.font.t1file, self.glyphnames, [])
             else:
                 fontfile = PDFfontfile(self.font.t1file, [], self.charcodes)
         else:
             fontfile = None
         fontdescriptor = PDFfontdescriptor(self.font.name, fontfile, self.font.metric)
-        font = PDFfont(fontname, self.font.name, charcodes, fontdescriptor, encoding, self.font.metric)
+        font = PDFfont(fontname, self.font.name, charcodes, fontdescriptor, _encoding, self.font.metric)
 
         # register resources
         if fontfile is not None:
             registry.add(fontfile)
         registry.add(fontdescriptor)
-        if encoding is not None:
-            registry.add(encoding)
+        if _encoding is not None:
+            registry.add(_encoding)
         registry.add(font)
 
         registry.addresource("Font", fontname, font, procset="Text")
@@ -474,10 +491,23 @@ class T1text_pt(text_pt):
             context.selectedfont = sf
             sf.outputPDF(file, writer)
 
-        file.write("1 0 %f 1 %f %f Tm (" % (slantvalue, self.x_pt, self.y_pt))
-        for charcode in charcodes:
-            if 32 <= charcode <= 127 and chr(charcode) not in "()[]<>\\":
-                file.write("%s" % chr(charcode))
+        file.write("1 0 %f 1 %f %f Tm [(" % (slantvalue, self.x_pt, self.y_pt))
+        if self.decode:
+            if self.kerning:
+                data = self.font.metric.resolvekernings(self.glyphnames)
             else:
-                file.write("\\%03o" % charcode)
-        file.write(") Tj\n")
+                data = self.glyphnames
+        else:
+            data = self.charcodes
+        for i, value in enumerate(data):
+            if self.kerning and i % 2:
+                if value is not None:
+                    file.write(")%f(" % (-value))
+            else:
+                if self.decode:
+                    value = encoding[value]
+                if 32 <= value <= 127 and chr(value) not in "()[]<>\\":
+                    file.write("%s" % chr(value))
+                else:
+                    file.write("\\%03o" % value)
+        file.write(")] TJ\n")
