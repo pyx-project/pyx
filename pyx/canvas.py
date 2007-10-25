@@ -1,4 +1,4 @@
-# -*- coding: ISO-8859-1 -*-
+=# -*- coding: ISO-8859-1 -*-
 #
 #
 # Copyright (C) 2002-2006 Jörg Lehmann <joergl@users.sourceforge.net>
@@ -68,11 +68,11 @@ class _canvas(canvasitem.canvasitem):
 
     """a canvas holds a collection of canvasitems"""
 
-    def __init__(self, attrs=[], texrunner=None):
+    def __init__(self, attrs=None, texrunner=None):
 
         """construct a canvas
 
-        The canvas can be modfied by supplying args, which have
+        The canvas can be modfied by supplying a list of attrs, which have
         to be instances of one of the following classes:
          - trafo.trafo (leading to a global transformation of the canvas)
          - canvas.clip (clips the canvas)
@@ -102,17 +102,16 @@ class _canvas(canvasitem.canvasitem):
         # from the right. 
         # Note that while for the stroke and fill styles the order doesn't matter at all, 
         # this is not true for the clip operation.
-        attrs = attrs[:]
-        attrs.reverse()
-        for aattr in attrs:
-            if isinstance(aattr, trafo.trafo_pt):
-                self.trafo = self.trafo * aattr
-            elif isinstance(aattr, clip):
-                if self.clipbbox is None:
-                    self.clipbbox = aattr.clipbbox().transformed(self.trafo)
-                else:
-                    self.clippbox *= aattr.clipbbox().transformed(self.trafo)
-            self.items.append(aattr)
+	if attrs is not None:
+	    for aattr in attrs[::-1]:
+                if isinstance(aattr, trafo.trafo_pt):
+                    self.trafo = self.trafo * aattr
+                elif isinstance(aattr, clip):
+                    if self.clipbbox is None:
+                        self.clipbbox = aattr.clipbbox().transformed(self.trafo)
+                    else:
+                        self.clippbox *= aattr.clipbbox().transformed(self.trafo)
+                self.items.append(aattr)
 
     def __len__(self):
         return len(self.items)
