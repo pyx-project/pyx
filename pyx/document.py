@@ -168,13 +168,13 @@ class document:
     def append(self, page):
         self.pages.append(page)
 
-    def writeEPSfile(self, file, **kwargs):
+    def writeEPSfile(self, file=None, **kwargs):
         pswriter.epswriter(self, _outputstream(file, "eps"), **kwargs)
 
-    def writePSfile(self, file, **kwargs):
+    def writePSfile(self, file=None, **kwargs):
         pswriter.pswriter(self, _outputstream(file, "ps"), **kwargs)
 
-    def writePDFfile(self, file, **kwargs):
+    def writePDFfile(self, file=None, **kwargs):
         pdfwriter.PDFwriter(self, _outputstream(file, "pdf"), **kwargs)
 
     def writetofile(self, filename, **kwargs):
