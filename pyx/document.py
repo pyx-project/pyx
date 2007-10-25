@@ -159,8 +159,11 @@ class document:
 
     """holds a collection of page instances which are output as pages of a document"""
 
-    def __init__(self, pages=[]):
-        self.pages = pages[:]
+    def __init__(self, pages=None):
+        if pages is None:
+            self.pages = []
+        else:
+            self.pages = pages
 
     def append(self, page):
         self.pages.append(page)
