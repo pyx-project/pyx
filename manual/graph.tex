@@ -951,19 +951,23 @@ definition is:
   \var{rectkey} can be set to generate a rectanglar area instead of a
   line in the graph key.
 
-  Usually, a histogram wants a range specification (like for an
-  errorbar) in one graph dimension and a value for the other graph
-  dimension. By that, the widths of the histogram boxes might be
-  variable. But a typical use case is, that you just provide graph
-  positions for both graph dimensions. Then
-  \var{autohistogramaxisindex} defines the graph dimension where the
-  histogram should be plotted on top of it. (\code{0} thus means a
-  histogram at the x axes and \code{1} for the y axes.) The style will
-  then demand equal spaced values on this axis. The histogram boxes
-  are usually centered on those values for \var{autohistogrampointpos}
-  equals \code{0.5}, but they can also be aligned at the right side or
-  left side of this value for \var{autohistogrampointpos} being
-  \code{0} or \code{1}.
+  In the most general case, a histogram is defined by a range
+  specification (like for an errorbar) in one graph dimension (say,
+  along the x-axis) and a value for the other graph dimension. This
+  allows for the widths of the histogram boxes being variable. Often,
+  however, all histogram bin ranges are equally sized, and instead of
+  passing the range, the position of the bin along the x-axis fully
+  specifies the histogram - assuming that there are at least two bins.
+  This common case is supported via two parameters:
+  \var{autohistogramaxisindex}, which defines the index of the
+  independent histogram axis (in the case just described this would be
+  \code{0} designating the x axis). \var{autohistogrampointpos},
+  defines the relative position of the center of the histogram bin:
+  \code{0.5} means that the bin is centered at the values passed to
+  the style, \code{0} (\code{1}) means that the bin is aligned at the
+  right-(left-)hand side.
+
+  XXX describe, how to specify general histograms with varying bin widths
 
   Positions of the histograms are considered to be out of graph when
   they exceed the graph coordinate range [0:1] by more than
