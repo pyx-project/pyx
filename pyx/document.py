@@ -50,7 +50,7 @@ class page:
                  margin=1*unit.t_cm, bboxenlarge=1*unit.t_pt, bbox=None):
         self.canvas = canvas
         self.pagename = pagename
-        # support for depricated string specification of paper formats
+        # support for deprecated string specification of paper formats
         try:
             paperformat + ""
         except:
@@ -160,7 +160,7 @@ class document:
     """holds a collection of page instances which are output as pages of a document"""
 
     def __init__(self, pages=[]):
-        self.pages = pages
+        self.pages = pages[:]
 
     def append(self, page):
         self.pages.append(page)
@@ -183,3 +183,4 @@ class document:
             self.writePDFfile(open(filename, "wb"), **kwargs)
         else:
             raise ValueError("unknown file extension")
+
