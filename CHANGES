@@ -103,7 +103,7 @@ TODO:
       (using fonts without a metrics is still supported, but properly issues
       a warning now)
     - interface for basic TeX-less text output
-  - canvas module:
+  - canvas and document modules:
     - auto-guess output filename from the script filename
   - config module:
     - config option for format warnings
