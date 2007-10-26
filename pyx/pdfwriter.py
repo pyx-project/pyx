@@ -27,7 +27,7 @@ try:
 except:
     haszlib = 0
 
-import bbox, style, unit, version
+import bbox, config, style, unit, version
 
 
 
@@ -271,7 +271,8 @@ class PDFwriter:
 
     def __init__(self, document, file,
                        title=None, author=None, subject=None, keywords=None,
-                       fullscreen=0, writebbox=0, compress=1, compresslevel=6):
+                       fullscreen=0, writebbox=0, compress=1, compresslevel=6,
+                       stripfonts=True, textaspath=False):
         self._fontmap = None
 
         self.title = title
@@ -285,6 +286,8 @@ class PDFwriter:
             warnings.warn("compression disabled due to missing zlib module")
         self.compress = compress
         self.compresslevel = compresslevel
+        self.stripfonts = stripfonts
+        self.textaspath = textaspath
 
         # the PDFcatalog class automatically builds up the pdfobjects from a document
         registry = PDFregistry()
@@ -299,9 +302,9 @@ class PDFwriter:
         if self._fontmap is None:
             # late import due to cyclic dependency
             from pyx.dvi import mapfile
-            self._fontmap = mapfile.readfontmap(["pdftex.map"])
-            # config.get("text", "fontmaps", "psfonts.map")
-            # self.fontmap = dvifile.readfontmap(self.fontmaps.split())
+            fontmapfiles = config.get("text", "pdffontmaps", "pdftex.map")
+            separator = config.get("general", "separator", "|")
+            self._fontmap = mapfile.readfontmap(fontmapfiles.split(separator))
         return self._fontmap
 
 

@@ -882,7 +882,11 @@ class T1file:
     def gatherglyphcalls(self, glyph, seacglyphs, subrs, othersubrs, context):
         self.gathercalls(self.getglyphcmds(glyph), seacglyphs, subrs, othersubrs, context)
 
-    def getglyphpathwxwy_pt(self, glyph, size):
+    def getglyphpathwxwy_pt(self, glyph, size, convertcharcode=False):
+        if convertcharcode:
+            if not self.encoding:
+                self._encoding()
+            glyph = self.encoding[glyph]
         t = self.fontmatrix.scaled(size)
         context = T1context(self)
         p = path()
@@ -890,11 +894,11 @@ class T1file:
         wx, wy = t.apply_pt(context.wx, context.wy)
         return p, wx, wy
 
-    def getglyphpath(self, glyph, size):
+    def getglyphpath(self, glyph, size, convertcharcode=False):
         """return a PyX path for glyph named glyph"""
         return self.getglyphpathwxwy_pt(glyph, size)[0]
 
-    def getglyphwxwy_pt(self, glyph, size):
+    def getglyphwxwy_pt(self, glyph, size, convertcharcode=False):
         return self.getglyphpathwxwy_pt(glyph, size)[1:]
 
     def getdata2(self, subrs=None, glyphs=None):

@@ -20,7 +20,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-from pyx import bbox, canvasitem, pswriter, pdfwriter, trafo, unit
+from pyx import bbox, canvasitem, deco, path, pswriter, pdfwriter, trafo, unit
 import t1file
 
 try:
@@ -45,7 +45,6 @@ class PST1file(pswriter.PSresource):
         self.id = t1file.name
         self.glyphnames = set(glyphnames)
         self.charcodes = set(charcodes)
-        self.strip = 1
 
     def merge(self, other):
         self.glyphnames.update(other.glyphnames)
@@ -53,7 +52,7 @@ class PST1file(pswriter.PSresource):
 
     def output(self, file, writer, registry):
         file.write("%%%%BeginFont: %s\n" % self.t1file.name)
-        if self.strip:
+        if writer.stripfonts:
             if self.glyphnames:
                 file.write("%%Included glyphs: %s\n" % " ".join(self.glyphnames))
             if self.charcodes:
@@ -236,14 +235,13 @@ class PDFfontfile(pdfwriter.PDFobject):
         self.t1file = t1file
         self.glyphnames = set(glyphnames)
         self.charcodes = set(charcodes)
-        self.strip = 1
 
     def merge(self, other):
         self.glyphnames.update(other.glyphnames)
         self.charcodes.update(other.charcodes)
 
     def write(self, file, writer, registry):
-        if self.strip:
+        if writer.stripfonts:
             self.t1file.getstrippedfont(self.glyphnames, self.charcodes).outputPDF(file, writer)
         else:
             self.t1file.outputPDF(file, writer)
@@ -391,123 +389,169 @@ class T1text_pt(text_pt):
         if not self.ignorebbox:
             bbox += self.bbox()
 
-        # register resources
-        if self.font.t1file is not None:
+        if writer.textaspath:
             if self.decode:
-                registry.add(PST1file(self.font.t1file, self.glyphnames, []))
-            else:
-                registry.add(PST1file(self.font.t1file, [], self.charcodes))
-
-        fontname = self.font.name
-        if self.decode:
-            encodingname = self.getencodingname(context.encodings.setdefault(self.font.name, {}))
-            encoding = context.encodings[self.font.name][encodingname]
-            newfontname = "%s-%s" % (fontname, encodingname)
-            registry.add(_ReEncodeFont)
-            registry.add(PSreencodefont(fontname, newfontname, encoding))
-            fontname = newfontname
-
-        if self.slant:
-            newfontmatrix = trafo.trafo_pt(matrix=((1, self.slant), (0, 1))) * self.font.t1file.fontmatrix
-            newfontname = "%s-slant%f" % (fontname, self.slant)
-            registry.add(_ChangeFontMatrix)
-            registry.add(PSchangefontmatrix(fontname, newfontname, newfontmatrix))
-            fontname = newfontname
-
-        # select font if necessary
-        sf = selectedfont(fontname, self.size_pt)
-        if context.selectedfont is None or sf != context.selectedfont:
-            context.selectedfont = sf
-            sf.outputPS(file, writer)
-
-        file.write("%f %f moveto (" % (self.x_pt, self.y_pt))
-        if self.decode:
-            if self.kerning:
-                data = self.font.metric.resolvekernings(self.glyphnames, self.size_pt)
-            else:
-                data = self.glyphnames
-        else:
-            data = self.charcodes
-        for i, value in enumerate(data):
-            if self.kerning and i % 2:
-                if value is not None:
-                    file.write(") show\n%f 0 rmoveto (" % value)
-            else:
-                if self.decode:
-                    value = encoding[value]
-                if 32 < value < 127 and chr(value) not in "()[]<>\\":
-                    file.write("%s" % chr(value))
+                if self.kerning:
+                    data = self.font.metric.resolvekernings(self.glyphnames, self.size_pt)
                 else:
-                    file.write("\\%03o" % value)
-        file.write(") show\n")
+                    data = self.glyphnames
+            else:
+                data = self.charcodes
+            textpath = path.path()
+            for i, value in enumerate(data):
+                if self.kerning and i % 2:
+                    if value is not None:
+                        self.x_pt += value
+                else:
+                    glyphpath, wx_pt, wy_pt = self.font.t1file.getglyphpathwxwy_pt(value, self.size_pt, convertcharcode=not self.decode)
+                    textpath += glyphpath.transformed(trafo.translate_pt(self.x_pt, self.y_pt))
+                    self.x_pt += wx_pt
+                    self.y_pt += wy_pt
+            deco.decoratedpath(textpath, fillstyles=[]).processPS(file, writer, context, registry, bbox)
+        else:
+            # register resources
+            if self.font.t1file is not None:
+                if self.decode:
+                    registry.add(PST1file(self.font.t1file, self.glyphnames, []))
+                else:
+                    registry.add(PST1file(self.font.t1file, [], self.charcodes))
+
+            fontname = self.font.name
+            if self.decode:
+                encodingname = self.getencodingname(context.encodings.setdefault(self.font.name, {}))
+                encoding = context.encodings[self.font.name][encodingname]
+                newfontname = "%s-%s" % (fontname, encodingname)
+                registry.add(_ReEncodeFont)
+                registry.add(PSreencodefont(fontname, newfontname, encoding))
+                fontname = newfontname
+
+            if self.slant:
+                newfontmatrix = trafo.trafo_pt(matrix=((1, self.slant), (0, 1))) * self.font.t1file.fontmatrix
+                newfontname = "%s-slant%f" % (fontname, self.slant)
+                registry.add(_ChangeFontMatrix)
+                registry.add(PSchangefontmatrix(fontname, newfontname, newfontmatrix))
+                fontname = newfontname
+
+            # select font if necessary
+            sf = selectedfont(fontname, self.size_pt)
+            if context.selectedfont is None or sf != context.selectedfont:
+                context.selectedfont = sf
+                sf.outputPS(file, writer)
+
+            file.write("%f %f moveto (" % (self.x_pt, self.y_pt))
+            if self.decode:
+                if self.kerning:
+                    data = self.font.metric.resolvekernings(self.glyphnames, self.size_pt)
+                else:
+                    data = self.glyphnames
+            else:
+                data = self.charcodes
+            for i, value in enumerate(data):
+                if self.kerning and i % 2:
+                    if value is not None:
+                        file.write(") show\n%f 0 rmoveto (" % value)
+                else:
+                    if self.decode:
+                        value = encoding[value]
+                    if 32 < value < 127 and chr(value) not in "()[]<>\\":
+                        file.write("%s" % chr(value))
+                    else:
+                        file.write("\\%03o" % value)
+            file.write(") show\n")
 
     def processPDF(self, file, writer, context, registry, bbox):
         if not self.ignorebbox:
             bbox += self.bbox()
 
-        if self.decode:
-            encodingname = self.getencodingname(context.encodings.setdefault(self.font.name, {}))
-            encoding = context.encodings[self.font.name][encodingname]
-            charcodes = [encoding[glyphname] for glyphname in self.glyphnames]
-        else:
-            charcodes = self.charcodes
-
-        # create resources
-        fontname = self.font.name
-        if self.decode:
-            newfontname = "%s-%s" % (fontname, encodingname)
-            _encoding = PDFencoding(encoding, newfontname)
-            fontname = newfontname
-        else:
-            _encoding = None
-        if self.font.t1file is not None:
+        if writer.textaspath:
             if self.decode:
-                fontfile = PDFfontfile(self.font.t1file, self.glyphnames, [])
-            else:
-                fontfile = PDFfontfile(self.font.t1file, [], self.charcodes)
-        else:
-            fontfile = None
-        fontdescriptor = PDFfontdescriptor(self.font.name, fontfile, self.font.metric)
-        font = PDFfont(fontname, self.font.name, charcodes, fontdescriptor, _encoding, self.font.metric)
-
-        # register resources
-        if fontfile is not None:
-            registry.add(fontfile)
-        registry.add(fontdescriptor)
-        if _encoding is not None:
-            registry.add(_encoding)
-        registry.add(font)
-
-        registry.addresource("Font", fontname, font, procset="Text")
-
-        if self.slant is None:
-            slantvalue = 0
-        else:
-            slantvalue = self.slant
-
-        # select font if necessary
-        sf = selectedfont(fontname, self.size_pt)
-        if context.selectedfont is None or sf != context.selectedfont:
-            context.selectedfont = sf
-            sf.outputPDF(file, writer)
-
-        file.write("1 0 %f 1 %f %f Tm [(" % (slantvalue, self.x_pt, self.y_pt))
-        if self.decode:
-            if self.kerning:
-                data = self.font.metric.resolvekernings(self.glyphnames)
-            else:
-                data = self.glyphnames
-        else:
-            data = self.charcodes
-        for i, value in enumerate(data):
-            if self.kerning and i % 2:
-                if value is not None:
-                    file.write(")%f(" % (-value))
-            else:
-                if self.decode:
-                    value = encoding[value]
-                if 32 <= value <= 127 and chr(value) not in "()[]<>\\":
-                    file.write("%s" % chr(value))
+                if self.kerning:
+                    data = self.font.metric.resolvekernings(self.glyphnames, self.size_pt)
                 else:
-                    file.write("\\%03o" % value)
-        file.write(")] TJ\n")
+                    data = self.glyphnames
+            else:
+                data = self.charcodes
+            textpath = path.path()
+            for i, value in enumerate(data):
+                if self.kerning and i % 2:
+                    if value is not None:
+                        self.x_pt += value
+                else:
+                    glyphpath, wx_pt, wy_pt = self.font.t1file.getglyphpathwxwy_pt(value, self.size_pt, convertcharcode=not self.decode)
+                    textpath += glyphpath.transformed(trafo.translate_pt(self.x_pt, self.y_pt))
+                    self.x_pt += wx_pt
+                    self.y_pt += wy_pt
+            deco.decoratedpath(textpath, fillstyles=[]).processPDF(file, writer, context, registry, bbox)
+        else:
+            if self.decode:
+                encodingname = self.getencodingname(context.encodings.setdefault(self.font.name, {}))
+                encoding = context.encodings[self.font.name][encodingname]
+                charcodes = [encoding[glyphname] for glyphname in self.glyphnames]
+            else:
+                charcodes = self.charcodes
+
+            # create resources
+            fontname = self.font.name
+            if self.decode:
+                newfontname = "%s-%s" % (fontname, encodingname)
+                _encoding = PDFencoding(encoding, newfontname)
+                fontname = newfontname
+            else:
+                _encoding = None
+            if self.font.t1file is not None:
+                if self.decode:
+                    fontfile = PDFfontfile(self.font.t1file, self.glyphnames, [])
+                else:
+                    fontfile = PDFfontfile(self.font.t1file, [], self.charcodes)
+            else:
+                fontfile = None
+            fontdescriptor = PDFfontdescriptor(self.font.name, fontfile, self.font.metric)
+            font = PDFfont(fontname, self.font.name, charcodes, fontdescriptor, _encoding, self.font.metric)
+
+            # register resources
+            if fontfile is not None:
+                registry.add(fontfile)
+            registry.add(fontdescriptor)
+            if _encoding is not None:
+                registry.add(_encoding)
+            registry.add(font)
+
+            registry.addresource("Font", fontname, font, procset="Text")
+
+            if self.slant is None:
+                slantvalue = 0
+            else:
+                slantvalue = self.slant
+
+            # select font if necessary
+            sf = selectedfont(fontname, self.size_pt)
+            if context.selectedfont is None or sf != context.selectedfont:
+                context.selectedfont = sf
+                sf.outputPDF(file, writer)
+
+            if self.kerning:
+                file.write("1 0 %f 1 %f %f Tm [(" % (slantvalue, self.x_pt, self.y_pt))
+            else:
+                file.write("1 0 %f 1 %f %f Tm (" % (slantvalue, self.x_pt, self.y_pt))
+            if self.decode:
+                if self.kerning:
+                    data = self.font.metric.resolvekernings(self.glyphnames)
+                else:
+                    data = self.glyphnames
+            else:
+                data = self.charcodes
+            for i, value in enumerate(data):
+                if self.kerning and i % 2:
+                    if value is not None:
+                        file.write(")%f(" % (-value))
+                else:
+                    if self.decode:
+                        value = encoding[value]
+                    if 32 <= value <= 127 and chr(value) not in "()[]<>\\":
+                        file.write("%s" % chr(value))
+                    else:
+                        file.write("\\%03o" % value)
+            if self.kerning:
+                file.write(")] TJ\n")
+            else:
+                file.write(") Tj\n")

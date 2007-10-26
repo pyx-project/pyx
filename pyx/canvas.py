@@ -158,15 +158,16 @@ class _canvas(canvasitem.canvasitem):
             file.write("q\n") # gsave
             nbbox = bboxmodule.empty()
             for item in self.items:
-                if isinstance(item, font.text_pt):
-                    if not context.textregion:
-                        file.write("BT\n")
-                        context.textregion = 1
-                else:
-                    if context.textregion:
-                        file.write("ET\n")
-                        context.textregion = 0
-                        context.selectedfont = None
+                if not writer.textaspath:
+                    if isinstance(item, font.text_pt):
+                        if not context.textregion:
+                            file.write("BT\n")
+                            context.textregion = 1
+                    else:
+                        if context.textregion:
+                            file.write("ET\n")
+                            context.textregion = 0
+                            context.selectedfont = None
                 item.processPDF(file, writer, context, registry, nbbox)
             if context.textregion:
                 file.write("ET\n")

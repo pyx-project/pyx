@@ -21,24 +21,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import cStringIO, copy, time, math
-import bbox, style, version, unit, trafo
-
-try:
-    enumerate([])
-except NameError:
-    # fallback implementation for Python 2.2 and below
-    def enumerate(list):
-        return zip(xrange(len(list)), list)
-
-try:
-    dict([])
-except NameError:
-    # fallback implementation for Python 2.1
-    def dict(list):
-        result = {}
-        for key, value in list:
-            result[key] = value
-        return result
+import bbox, config, style, version, unit, trafo
 
 
 class PSregistry:
@@ -91,10 +74,6 @@ class PSresource:
     def output(self, file, writer, registry):
         raise NotImplementedError("output not implemented for %s" % repr(self))
 
-#
-# Different variants of prolog items
-#
-
 class PSdefinition(PSresource):
 
     """ PostScript function definition included in the prolog """
@@ -109,11 +88,39 @@ class PSdefinition(PSresource):
         file.write("%(body)s /%(id)s exch def\n" % self.__dict__)
         file.write("%%EndRessource\n")
 
+#
+# Writers
+#
 
-class epswriter:
+class _PSwriter:
 
-    def __init__(self, document, file, title=None):
+    def __init__(self, title=None, stripfonts=True, textaspath=False):
         self._fontmap = None
+        self.title = title
+        self.stripfonts = stripfonts
+        self.textaspath = textaspath
+
+    def writeinfo(self, file):
+        file.write("%%%%Creator: PyX %s\n" % version.version)
+        if self.title is not None:
+            file.write("%%%%Title: %s\n" % self.title)
+        file.write("%%%%CreationDate: %s\n" %
+                   time.asctime(time.localtime(time.time())))
+
+    def getfontmap(self):
+        if self._fontmap is None:
+            # late import due to cyclic dependency
+            from pyx.dvi import mapfile
+            fontmapfiles = config.get("text", "psfontmaps", "psfonts.map")
+            separator = config.get("general", "separator", "|")
+            self._fontmap = mapfile.readfontmap(fontmapfiles.split(separator))
+        return self._fontmap
+
+
+class EPSwriter(_PSwriter):
+
+    def __init__(self, document, file, **kwargs):
+        _PSwriter.__init__(self, **kwargs)
 
         if len(document.pages) != 1:
             raise ValueError("EPS file can be constructed out of a single page document only")
@@ -131,11 +138,7 @@ class epswriter:
         if pagebbox:
             file.write("%%%%BoundingBox: %d %d %d %d\n" % pagebbox.lowrestuple_pt())
             file.write("%%%%HiResBoundingBox: %g %g %g %g\n" % pagebbox.highrestuple_pt())
-        file.write("%%%%Creator: PyX %s\n" % version.version)
-        if title is not None:
-            file.write("%%%%Title: %s\n" % title)
-        file.write("%%%%CreationDate: %s\n" %
-                   time.asctime(time.localtime(time.time())))
+        self.writeinfo(file)
         file.write("%%EndComments\n")
 
         file.write("%%BeginProlog\n")
@@ -149,19 +152,12 @@ class epswriter:
         file.write("%%Trailer\n")
         file.write("%%EOF\n")
 
-    def getfontmap(self):
-        if self._fontmap is None:
-            # late import due to cyclic dependency
-            from pyx.dvi import mapfile
-            self._fontmap = mapfile.readfontmap(["psfonts.map"])
-            # config.get("text", "fontmaps", "psfonts.map")
-            # self.fontmap = dvifile.readfontmap(self.fontmaps.split())
-        return self._fontmap
 
+class PSwriter(_PSwriter):
 
-class pswriter:
+    def __init__(self, document, file, writebbox=0, **kwargs):
+        _PSwriter.__init__(self, **kwargs)
 
-    def __init__(self, document, file, writebbox=0, title=None):
         # We first have to process the content of the pages, writing them into the stream pagesfile
         # Doing so, we fill the registry and also calculate the page bounding boxes, which are
         # stored in page._bbox for every page
@@ -202,11 +198,7 @@ class pswriter:
         if documentbbox and writebbox:
             file.write("%%%%BoundingBox: %d %d %d %d\n" % documentbbox.lowrestuple_pt())
             file.write("%%%%HiResBoundingBox: %g %g %g %g\n" % documentbbox.highrestuple_pt())
-        file.write("%%%%Creator: PyX %s\n" % version.version)
-        if title is not None:
-            file.write("%%%%Title: %s\n" % title)
-        file.write("%%%%CreationDate: %s\n" %
-                   time.asctime(time.localtime(time.time())))
+        self.writeinfo(file)
 
         # required paper formats
         paperformats = {}
@@ -249,6 +241,7 @@ class pswriter:
 
         file.write("%%Trailer\n")
         file.write("%%EOF\n")
+
 
 class context:
 
