@@ -207,6 +207,37 @@ class PDFfont(pdfwriter.PDFobject):
         file.write(">>\n")
 
 
+class PDFstdfont(pdfwriter.PDFobject):
+
+    def __init__(self, name, basename):
+        pdfwriter.PDFobject.__init__(self, "font", "stdfont-%s" % name)
+        self.name = name
+        self.basename = basename
+
+    def write(self, file, writer, registry):
+        file.write("<</BaseFont /%s\n" % self.basename)
+        file.write("/Name /%s\n" % self.name)
+        file.write("/Type /Font\n")
+        file.write("/Subtype /Type1\n")
+        file.write(">>\n")
+
+# the 14 standard fonts that are always available in PDF
+PDFTimesRoman           = PDFstdfont("Time", "Times-Roman")
+PDFTimesBold            = PDFstdfont("TiBo", "Times-Bold")
+PDFTimesItalic          = PDFstdfont("TiIt", "Times-Italic")
+PDFTimesBoldItalic      = PDFstdfont("TiBI", "Times-BoldItalic")
+PDFHelvetica            = PDFstdfont("Helv", "Helvetica")
+PDFHelveticaBold        = PDFstdfont("HeBo", "Helvetica-Bold")
+PDFHelveticaOblique     = PDFstdfont("HeOb", "Helvetica-Oblique")
+PDFHelveticaBoldOblique = PDFstdfont("HeBO", "Helvetica-BoldOblique")
+PDFCourier              = PDFstdfont("Cour", "Courier")
+PDFCourierBold          = PDFstdfont("CoBo", "Courier-Bold")
+PDFCourierOblique       = PDFstdfont("CoOb", "Courier-Oblique")
+PDFCourierBoldOblique   = PDFstdfont("CoBO", "Courier-BoldOblique")
+PDFSymbol               = PDFstdfont("Symb", "Symbol")
+PDFZapfDingbats         = PDFstdfont("Zapf", "ZapfDingbats")
+
+
 class PDFfontdescriptor(pdfwriter.PDFobject):
 
     def __init__(self, fontname, fontfile, metric):

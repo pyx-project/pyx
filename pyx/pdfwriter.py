@@ -3,6 +3,7 @@
 #
 # Copyright (C) 2005-2006 Jörg Lehmann <joergl@users.sourceforge.net>
 # Copyright (C) 2005-2006 André Wobst <wobsta@users.sourceforge.net>
+# Copyright (C) 2007 Michael Schindler <m-schindler@users.sourceforge.net>
 #
 # This file is part of PyX (http://pyx.sourceforge.net/).
 #
@@ -27,7 +28,7 @@ try:
 except:
     haszlib = 0
 
-import bbox, config, style, unit, version
+import bbox, config, style, unit, version, trafo
 
 
 
@@ -102,7 +103,7 @@ class PDFregistry:
             self.procsets[procset] = 1
 
     def writeresources(self, file):
-        file.write("/Resources <<\n")
+        file.write("<<\n")
         file.write("/ProcSet [ %s ]\n" % " ".join(["/%s" % p for p in self.procsets.keys()]))
         if self.resources:
             for resourcetype, resources in self.resources.items():
@@ -136,6 +137,8 @@ class PDFcatalog(PDFobject):
 
     def __init__(self, document, writer, registry):
         PDFobject.__init__(self, "catalog")
+        self.PDFform = PDFform(writer, registry)
+        registry.add(self.PDFform)
         self.PDFpages = PDFpages(document, writer, registry)
         registry.add(self.PDFpages)
         self.PDFinfo = PDFinfo()
@@ -145,6 +148,8 @@ class PDFcatalog(PDFobject):
         file.write("<<\n"
                    "/Type /Catalog\n"
                    "/Pages %i 0 R\n" % registry.getrefno(self.PDFpages))
+        if not self.PDFform.empty():
+            file.write("/AcroForm %i 0 R\n" % registry.getrefno(self.PDFform))
         if writer.fullscreen:
             file.write("/PageMode /FullScreen\n")
         file.write(">>\n")
@@ -218,6 +223,14 @@ class PDFpage(PDFobject):
         # resources are used within the page. However, the
         # pageregistry is also merged in the global registry
         self.pageregistry = PDFregistry()
+        self.pageregistry.add(self)
+
+        self.PDFannotations = PDFannotations()
+        self.pageregistry.add(self.PDFannotations)
+        # we eventually need the form dictionary to append formfields
+        for object in registry.objects:
+            if object.type == "form":
+                self.pageregistry.add(object)
 
         self.PDFcontent = PDFcontent(page, writer, self.pageregistry)
         self.pageregistry.add(self.PDFcontent)
@@ -236,7 +249,10 @@ class PDFpage(PDFobject):
             file.write("/CropBox [%f %f %f %f]\n" % self.PDFcontent.bbox.highrestuple_pt())
         if self.page.rotated:
             file.write("/Rotate 90\n")
+        if not self.PDFannotations.empty():
+            file.write("/Annots %i 0 R\n" % registry.getrefno(self.PDFannotations))
         file.write("/Contents %i 0 R\n" % registry.getrefno(self.PDFcontent))
+        file.write("/Resources ")
         self.pageregistry.writeresources(file)
         file.write(">>\n")
 
@@ -308,6 +324,51 @@ class PDFwriter:
         return self._fontmap
 
 
+class PDFannotations(PDFobject):
+
+    def __init__(self):
+        PDFobject.__init__(self, "annotations")
+        self.annots = []
+
+    def append(self, item):
+        if item not in self.annots:
+            self.annots.append(item)
+
+    def empty(self):
+        return len(self.annots) == 0
+
+    def write(self, file, writer, registry):
+        # XXX problem: This object will be written to the file even if it is useless (empty)
+        file.write("[ %s ]\n" % " ".join(["%d 0 R" % registry.getrefno(annot) for annot in self.annots]))
+
+
+class PDFform(PDFobject):
+
+    def __init__(self, writer, registry):
+        PDFobject.__init__(self, "form")
+        self.fields = []
+
+    def merge(self, other):
+        for field in other.fields:
+            self.append(field)
+
+    def append(self, field):
+        if field not in self.fields:
+            self.fields.append(field)
+
+    def empty(self):
+        return len(self.fields) == 0
+
+    def write(self, file, writer, registry):
+        # XXX problem: This object will be written to the file even if it is useless (empty)
+        file.write("<<")
+        file.write("/Fields [")
+        for field in self.fields:
+            file.write(" %d 0 R" % registry.getrefno(field))
+        file.write(" ]\n")
+        file.write(">>\n")
+
+
 class context:
 
     def __init__(self):
@@ -318,6 +379,8 @@ class context:
         self.fillattr = 1
         self.selectedfont = None
         self.textregion = 0
+        self.trafo = trafo.trafo()
+        self.fillstyles = []
         # dictionary mapping font names to dictionaries mapping encoding names to encodings
         # encodings themselves are mappings from glyphnames to codepoints
         self.encodings = {}
@@ -327,3 +390,4 @@ class context:
         for key, value in kwargs.items():
             setattr(newcontext, key, value)
         return newcontext
+
