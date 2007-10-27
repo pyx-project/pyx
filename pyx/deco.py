@@ -508,7 +508,7 @@ earrow.LARGE = earrow(size=_base*math.sqrt(64))
 class text(deco, attr.attr):
     """a simple text decorator"""
 
-    def __init__(self, text, textattrs=[], angle=0, textdist=0.2,
+    def __init__(self, text, textattrs=[], angle=0, relangle=None, textdist=0.2,
                        relarclenpos=0.5, arclenfrombegin=None, arclenfromend=None,
                        texrunner=None):
         if arclenfrombegin is not None and arclenfromend is not None:
@@ -516,6 +516,7 @@ class text(deco, attr.attr):
         self.text = text
         self.textattrs = textattrs
         self.angle = angle
+        self.relangle = relangle
         self.textdist = textdist
         self.relarclenpos = relarclenpos
         self.arclenfrombegin = arclenfrombegin
@@ -530,15 +531,22 @@ class text(deco, attr.attr):
 
         dp.ensurenormpath()
         if self.arclenfrombegin is not None:
-            x, y = dp.path.at(dp.path.begin() + self.arclenfrombegin)
+            param = dp.path.begin() + self.arclenfrombegin
         elif self.arclenfromend is not None:
-            x, y = dp.path.at(dp.path.end() - self.arclenfromend)
+            param = dp.path.end() - self.arclenfromend
         else:
             # relarcpos is used, when neither arcfrombegin nor arcfromend is given
-            x, y = dp.path.at(self.relarclenpos * dp.path.arclen())
+            param = self.relarclenpos * dp.path.arclen()
+        x, y = dp.path.at(param)
 
+        if self.relangle is not None:
+            a = dp.path.trafo(param).apply_pt(math.cos(self.relangle*math.pi/180), math.sin(self.relangle*math.pi/180))
+            b = dp.path.trafo(param).apply_pt(0, 0)
+            angle = math.atan2(a[1] - b[1], a[0] - b[0])
+        else:
+            angle = self.angle*math.pi/180
         t = texrunner.text(x, y, self.text, textattrs)
-        t.linealign(self.textdist, math.cos(self.angle*math.pi/180), math.sin(self.angle*math.pi/180))
+        t.linealign(self.textdist, math.cos(angle), math.sin(angle))
         dp.ornaments.insert(t)
 
 
