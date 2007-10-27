@@ -22,6 +22,7 @@
 
 import cStringIO, sys, warnings
 import bbox, pswriter, pdfwriter, trafo, style, unit
+import canvas as canvasmodule
 
 
 class paperformat:
@@ -67,72 +68,64 @@ class page:
         self.pagebbox = bbox
 
     def _process(self, processMethod, contentfile, writer, context, registry, bbox):
-        assert not bbox
 
-        # check whether we expect a page trafo and use a temporary canvasfile to insert the
-        # pagetrafo in front after the bbox was calculated
+        # check whether we expect a page trafo and use a temporary canvas to insert the
+        # page canvas
         expectpagetrafo = self.paperformat and (self.rotated or self.centered or self.fittosize)
-        if expectpagetrafo:
-            canvasfile = cStringIO.StringIO()
-        else:
-            canvasfile = contentfile
 
-        getattr(style.linewidth.normal, processMethod)(canvasfile, writer, context, registry, bbox)
-        getattr(self.canvas, processMethod)(canvasfile, writer, context, registry, bbox)
-
-        # usually its the bbox of the canvas enlarged by self.bboxenlarge, but
+        # usually, it is the bbox of the canvas enlarged by self.bboxenlarge, but
         # it might be a different bbox as specified in the page constructor
+        assert not bbox
         if self.pagebbox:
             bbox.set(self.pagebbox)
         elif bbox:
             bbox.enlarge(self.bboxenlarge)
+        else:
+            bbox.set(self.canvas.bbox())
+            bbox.enlarge(self.bboxenlarge)
 
+        cc = self.canvas
         if expectpagetrafo:
 
-            if bbox:
-                # calculate the pagetrafo
-                paperwidth, paperheight = self.paperformat.width, self.paperformat.height
+            # calculate the pagetrafo
+            paperwidth, paperheight = self.paperformat.width, self.paperformat.height
 
-                # center (optionally rotated) output on page
-                if self.rotated:
-                    pagetrafo = trafo.rotate(90).translated(paperwidth, 0)
-                    if self.centered or self.fittosize:
-                        if not self.fittosize and (bbox.height() > paperwidth or bbox.width() > paperheight):
-                            warnings.warn("content exceeds the papersize")
-                        pagetrafo = pagetrafo.translated(-0.5*(paperwidth - bbox.height()) + bbox.bottom(),
-                                                          0.5*(paperheight - bbox.width()) - bbox.left())
-                else:
-                    if not self.fittosize and (bbox.width() > paperwidth or bbox.height() > paperheight):
+            # center (optionally rotated) output on page
+            if self.rotated:
+                pagetrafo = trafo.rotate(90).translated(paperwidth, 0)
+                if self.centered or self.fittosize:
+                    if not self.fittosize and (bbox.height() > paperwidth or bbox.width() > paperheight):
                         warnings.warn("content exceeds the papersize")
-                    pagetrafo = trafo.translate(0.5*(paperwidth - bbox.width())  - bbox.left(),
-                                                0.5*(paperheight - bbox.height()) - bbox.bottom())
+                    pagetrafo = pagetrafo.translated(-0.5*(paperwidth - bbox.height()) + bbox.bottom(),
+                                                      0.5*(paperheight - bbox.width()) - bbox.left())
+            else:
+                if not self.fittosize and (bbox.width() > paperwidth or bbox.height() > paperheight):
+                    warnings.warn("content exceeds the papersize")
+                pagetrafo = trafo.translate(0.5*(paperwidth - bbox.width())  - bbox.left(),
+                                            0.5*(paperheight - bbox.height()) - bbox.bottom())
 
-                if self.fittosize:
+            if self.fittosize:
 
-                    if 2*self.margin > paperwidth or 2*self.margin > paperheight:
-                        raise ValueError("Margins too broad for selected paperformat. Aborting.")
+                if 2*self.margin > paperwidth or 2*self.margin > paperheight:
+                    raise ValueError("Margins too broad for selected paperformat. Aborting.")
 
-                    paperwidth -= 2 * self.margin
-                    paperheight -= 2 * self.margin
+                paperwidth -= 2 * self.margin
+                paperheight -= 2 * self.margin
 
-                    # scale output to pagesize - margins
-                    if self.rotated:
-                        sfactor = min(unit.topt(paperheight)/bbox.width_pt(), unit.topt(paperwidth)/bbox.height_pt())
-                    else:
-                        sfactor = min(unit.topt(paperwidth)/bbox.width_pt(), unit.topt(paperheight)/bbox.height_pt())
+                # scale output to pagesize - margins
+                if self.rotated:
+                    sfactor = min(unit.topt(paperheight)/bbox.width_pt(), unit.topt(paperwidth)/bbox.height_pt())
+                else:
+                    sfactor = min(unit.topt(paperwidth)/bbox.width_pt(), unit.topt(paperheight)/bbox.height_pt())
 
-                    pagetrafo = pagetrafo.scaled(sfactor, sfactor, self.margin + 0.5*paperwidth, self.margin + 0.5*paperheight)
+                pagetrafo = pagetrafo.scaled(sfactor, sfactor, self.margin + 0.5*paperwidth, self.margin + 0.5*paperheight)
 
-                # apply the pagetrafo and write it to the contentfile
-                bbox.transform(pagetrafo)
-                pagetrafofile = cStringIO.StringIO()
-                # context, bbox, registry are just passed as stubs (the trafo should not touch them)
-                getattr(pagetrafo, processMethod)(pagetrafofile, writer, context, registry, bbox)
-                contentfile.write(pagetrafofile.getvalue())
-                pagetrafofile.close()
+            bbox.transform(pagetrafo)
+            cc = canvasmodule.canvas()
+            cc.insert(self.canvas, [pagetrafo])
 
-            contentfile.write(canvasfile.getvalue())
-            canvasfile.close()
+        getattr(style.linewidth.normal, processMethod)(contentfile, writer, context, registry, bbox)
+        getattr(cc, processMethod)(contentfile, writer, context, registry, bbox)
 
     def processPS(self, *args):
         self._process("processPS", *args)

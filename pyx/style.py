@@ -23,14 +23,19 @@
 
 import math
 import attr, unit, canvasitem
+import bbox as bboxmodule
 
 #
 # base classes for stroke and fill styles
 #
 
-class strokestyle(canvasitem.canvasitem): pass
+class strokestyle(canvasitem.canvasitem):
+    def bbox(self):
+        return bboxmodule.empty()
 
-class fillstyle(canvasitem.canvasitem): pass
+class fillstyle(canvasitem.canvasitem):
+    def bbox(self):
+        return bboxmodule.empty()
 
 #
 # common stroke styles

@@ -101,8 +101,8 @@ class _canvas(canvasitem.canvasitem):
         attr.checkattrs(attrs, [trafo.trafo_pt, clip, style.strokestyle, style.fillstyle])
         # We have to reverse the trafos such that the PostScript concat operators
         # are in the right order. Correspondingly, we below multiply the current self.trafo
-        # from the right. 
-        # Note that while for the stroke and fill styles the order doesn't matter at all, 
+        # from the right.
+        # Note that while for the stroke and fill styles the order doesn't matter at all,
         # this is not true for the clip operation.
         for aattr in attrs[::-1]:
             if isinstance(aattr, trafo.trafo_pt):
@@ -154,10 +154,13 @@ class _canvas(canvasitem.canvasitem):
 
     def processPDF(self, file, writer, context, registry, bbox):
         context = context()
+        context.trafo = context.trafo * self.trafo
         if self.items:
             file.write("q\n") # gsave
             nbbox = bboxmodule.empty()
             for item in self.items:
+                if isinstance(item, style.fillstyle):
+                    context.fillstyles.append(item)
                 if not writer.textaspath:
                     if isinstance(item, font.text_pt):
                         if not context.textregion:
