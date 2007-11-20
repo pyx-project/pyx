@@ -847,7 +847,7 @@ class graphxyz(graphxy):
                                                                        lambda vz: self.vtickdirection(0, 1, vz, 1, 0, vz),
                                                                        self.zvgridpath))
         elif axisname == "z4":
-            self.axes["z4"].setpositioner(positioner.flexlineaxispos_pt(lambda vz: self.vpos_pt(0, 0, vz),
+            self.axes["z4"].setpositioner(positioner.flexlineaxispos_pt(lambda vz: self.vpos_pt(1, 1, vz),
                                                                        lambda vz: self.vtickdirection(1, 1, vz, 0, 0, vz),
                                                                        self.zvgridpath))
         else:

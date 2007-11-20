@@ -104,6 +104,8 @@ TODO:
       a warning now)
     - interface for basic TeX-less text output
     - new PS and PDF writer options: fontstripping and textaspath (TODO: documentation)
+  - graph modules:
+    - graphxyz: fix position of z4 axis
   - canvas and document modules:
     - auto-guess output filename from the script filename
   - config module:
