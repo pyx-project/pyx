@@ -108,6 +108,7 @@ TODO:
     - graphxyz: fix position of z4 axis
   - canvas and document modules:
     - auto-guess output filename from the script filename
+    - add ciecolor flag to the pipeGS method of canvas
   - config module:
     - psfontmaps and pdffontmaps config options (TODO: documentation)
     - config option for format warnings

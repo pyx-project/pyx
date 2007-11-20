@@ -301,7 +301,7 @@ class canvas(_canvas):
     def pipeGS(self, filename="-", device=None, resolution=100,
                gscommand="gs", gsoptions="",
                textalphabits=4, graphicsalphabits=4,
-               **kwargs):
+               ciecolor=False, **kwargs):
         if device is None:
             if filename.endswith(".png"):
                 device = "png16m"
@@ -314,6 +314,8 @@ class canvas(_canvas):
             gscommand += " -dTextAlphaBits=%i" % textalphabits
         if graphicsalphabits is not None:
             gscommand += " -dGraphicsAlphaBits=%i" % graphicsalphabits
+        if ciecolor:
+            gscommand += " -dUseCIEColor"
         gscommand += " -"
         input = os.popen(gscommand, "w")
         self.writeEPSfile(input, **kwargs)
