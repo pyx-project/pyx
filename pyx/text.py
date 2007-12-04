@@ -21,7 +21,7 @@
 # along with PyX; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-import glob, os, threading, Queue, re, tempfile, atexit, time, warnings
+import errno, glob, os, threading, Queue, re, tempfile, atexit, time, warnings
 import config, siteconfig, unit, box, canvas, trafo, version, attr, style
 from pyx.dvi import dvifile
 import bbox as bboxmodule
@@ -621,11 +621,18 @@ class _readpipe(threading.Thread):
         self.gotqueue = gotqueue
         self.quitevent = quitevent
         self.expect = None
-        self.start()
 
     def run(self):
         """thread routine"""
-        read = self.pipe.readline() # read, what comes in
+        def _read():
+            # catch interupted system call errors while reading
+            while 1:
+                try:
+                    return self.pipe.readline()
+                except IOError, e:
+                    if e.errno != errno.EINTR:
+                         raise
+        read = _read() # read, what comes in
         try:
             self.expect = self.expectqueue.get_nowait() # read, what should be expected
         except Queue.Empty:
@@ -637,7 +644,7 @@ class _readpipe(threading.Thread):
             self.gotqueue.put(read) # report, whats read
             if self.expect is not None and read.find(self.expect) != -1:
                 self.gotevent.set() # raise the got event, when the output was expected (XXX: within a single line)
-            read = self.pipe.readline() # read again
+            read = _read() # read again
             try:
                 self.expect = self.expectqueue.get_nowait()
             except Queue.Empty:
@@ -897,6 +904,7 @@ class texrunner:
             self.texruns = 1
             oldpreamblemode = self.preamblemode
             self.preamblemode = 1
+            self.readoutput.start()
             self.execute("\\scrollmode\n\\raiseerror%\n" # switch to and check scrollmode
                          "\\def\\PyX{P\\kern-.3em\\lower.5ex\hbox{Y}\kern-.18em X}%\n" # just the PyX Logo
                          "\\gdef\\PyXBoxHAlign{0}%\n" # global PyXBoxHAlign (0.0-1.0) for the horizontal alignment, default to 0

@@ -112,6 +112,9 @@ TODO:
   - config module:
     - psfontmaps and pdffontmaps config options (TODO: documentation)
     - config option for format warnings
+  - text module:
+    - fix two bugs in the read pipe of the texrunner (thanks to
+     Laurence Tratt and Eric Faurot)
 
 
 0.10 (2007/10/03):
