@@ -1025,7 +1025,7 @@ class T1file:
         except:
             warnings.warn("Auto-guessing of font information for font '%s' failed. We're writing stub data instead." % self.name)
             file.write("/Flags 4\n")
-            file.write("/FontBBox [0 -100 0 1000]\n")
+            file.write("/FontBBox [0 -100 1000 1000]\n")
             file.write("/ItalicAngle 0\n")
             file.write("/Ascent 1000\n")
             file.write("/Descent -100\n")
