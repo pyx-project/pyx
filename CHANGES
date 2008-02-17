@@ -35,6 +35,9 @@ TODO:
       this depends on the plattform and is not only an issue within the graph system)
   - graph.style module:
     - add styles using curves instead of lines
+  - graph.texter module:
+    - rename period argument of decimal texters to recurring_decimal or something similar (as pointed out
+      by Tim Head)
   - canvas module:
     - contructor should only take a texrunner keyword argument
     - SVG support
