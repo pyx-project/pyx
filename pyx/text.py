@@ -277,9 +277,10 @@ class _texmessageload(texmessage):
             return res
 
     def check(self, texrunner):
-        lowestbracketlevel = self.baselevels(texrunner.texmessageparsed)
-        if lowestbracketlevel is not None:
-            m = self.pattern.search(lowestbracketlevel)
+        search = self.baselevels(texrunner.texmessageparsed)
+        res = []
+        if search is not None:
+            m = self.pattern.search(search)
             while m:
                 filename = m.group("filename").replace("\n", "")
                 try:
@@ -288,12 +289,14 @@ class _texmessageload(texmessage):
                     additional = ""
                 if (os.access(filename, os.R_OK) or
                     len(additional) and additional[0] == "\n" and os.access(filename+additional.split()[0], os.R_OK)):
-                    lowestbracketlevel = lowestbracketlevel[:m.start()] + lowestbracketlevel[m.end():]
+                    res.append(search[:m.start()])
                 else:
-                    break
-                m = self.pattern.search(lowestbracketlevel)
+                    res.append(search[:m.end()])
+                search = search[m.end():]
+                m = self.pattern.search(search)
             else:
-                texrunner.texmessageparsed = lowestbracketlevel
+                res.append(search)
+                texrunner.texmessageparsed = "".join(res)
 
 
 class _texmessageloaddef(_texmessageload):
