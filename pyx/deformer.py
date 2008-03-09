@@ -378,7 +378,7 @@ class cycloid(deformer): # <<<
         skipfirst = abs(unit.topt(self.skipfirst))
         skiplast = abs(unit.topt(self.skiplast))
         radius = abs(unit.topt(self.radius))
-        turnangle = degrees(self.turnangle)
+        turnangle = radians(self.turnangle)
         sign = mathutils.sign(self.sign)
 
         cosTurn = math.cos(turnangle)
