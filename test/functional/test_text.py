@@ -73,6 +73,12 @@ myrunner2 = text.texrunner()
 myrunner2.preamble(r"\font\pyxfont=ptmr8t\pyxfont")
 c.insert(myrunner2.text(6.5, 12, r"\char'035", fontmap=fontmap))
 
+# test for ligatures/kerning in virtual fonts
+c.text(0, 13, r"usechar test (``affa'' should be typed):")
+myrunner = text.texrunner()
+myrunner.preamble(r"\font\pyxfont=ptmr7t\pyxfont")
+c.insert(myrunner.text(6.0, 13, r"affa", fontmap=fontmap))
+
 # test the specials
 c.stroke(c.text(10, 2, r"Hello, \color{green}world!", [trafo.slant(1)]).path())
 c.insert(c.text(10, 0, r"\begin{rotate}{90}\parbox{5cm}{rotated\\ in \LaTeX}\end{rotate}"))
