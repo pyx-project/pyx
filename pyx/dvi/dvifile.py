@@ -155,8 +155,8 @@ class DVIfile:
         self.flushtext(fontmap)
         x1 =  self.pos[_POS_H] * self.pyxconv
         y1 = -self.pos[_POS_V] * self.pyxconv
-        w = width * self.pyxconv
-        h = height * self.pyxconv
+        w = width * self.pyxconv * self.scale
+        h = height * self.pyxconv * self.scale
 
         if height > 0 and width > 0:
             if self.debug:
@@ -172,7 +172,7 @@ class DVIfile:
             if self.debug:
                 self.debugfile.write(" h:=%d+%d=%d, hh:=???\n" %
                                      (self.pos[_POS_H], width, self.pos[_POS_H]+width))
-            self.pos[_POS_H] += width
+            self.pos[_POS_H] += width * self.scale
 
     def putchar(self, char, advancepos, id1234, fontmap):
         dx = advancepos and self.activefont.getwidth_dvi(char) or 0
@@ -350,26 +350,19 @@ class DVIfile:
         #if self.debug:
         #    self.debugfile.write("executing new dvi chunk\n")
         self.debugstack.append(self.debug)
-        self.debug = 0
+        # self.debug = 0
 
-        self.statestack.append((self.file, self.fonts, self.activefont, afterpos, self.stack, self.pyxconv, self.tfmconv))
+        self.statestack.append((self.file, self.fonts, self.activefont, afterpos, self.stack, self.scale))
 
         # units in vf files are relative to the size of the font and given as fix_words
-        # which can be converted to floats by diving by 2**20
-        oldpyxconv = self.pyxconv
-        self.pyxconv = fontsize/2**20
-        rescale = self.pyxconv/oldpyxconv
+        # which can be converted to floats by diving by 2**20.
+        # This yields the following scale factor for the height and width of rects:
+        self.scale = fontsize/2**20/self.pyxconv
 
         self.file = reader.stringreader(dvi)
         self.fonts = fonts
         self.stack = []
         self.filepos = 0
-
-        # rescale self.pos in order to be consistent with the new scaling
-        self.pos = map(lambda x, rescale=rescale:1.0*x/rescale, self.pos)
-
-        # since tfmconv converts from tfm units to dvi units, rescale it as well
-        self.tfmconv /= rescale
 
         self.usefont(0, 0, fontmap)
 
@@ -380,7 +373,7 @@ class DVIfile:
         self.debug = self.debugstack.pop()
 
         self.file.close()
-        self.file, self.fonts, self.activefont, self.pos, self.stack, self.pyxconv, self.tfmconv = self.statestack.pop()
+        self.file, self.fonts, self.activefont, self.pos, self.stack, self.scale = self.statestack.pop()
 
     # routines corresponding to the different reader states of the dvi maschine
 
@@ -416,6 +409,9 @@ class DVIfile:
                 # - 1/self.resolution: conversion from pixels to inch
                 # - 72               : conversion from inch to points
                 self.pyxconv = self.mag/1000.0*self.conv/self.resolution*72
+
+                # scaling used for rules when VF chunks are interpreted
+                self.scale = 1
 
                 comment = afile.read(afile.readuchar())
                 return
