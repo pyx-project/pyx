@@ -350,7 +350,7 @@ class DVIfile:
         #if self.debug:
         #    self.debugfile.write("executing new dvi chunk\n")
         self.debugstack.append(self.debug)
-        # self.debug = 0
+        self.debug = 0
 
         self.statestack.append((self.file, self.fonts, self.activefont, afterpos, self.stack, self.scale))
 
