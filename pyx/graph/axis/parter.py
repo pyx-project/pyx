@@ -65,7 +65,7 @@ class _parter:
 
 
 class linear(_parter):
-    """partitioner to create a single linear parition"""
+    """partitioner to create a single linear partition"""
 
     def __init__(self, tickdists=None, labeldists=None, extendtick=0, extendlabel=None, epsilon=1e-10):
         if tickdists is None and labeldists is not None:
@@ -130,7 +130,7 @@ lin = linear
 
 
 class autolinear(_parter):
-    """partitioner to create an arbitrary number of linear paritions"""
+    """partitioner to create an arbitrary number of linear partitions"""
 
     defaultvariants = [[tick.rational((1, 1)), tick.rational((1, 2))],
                        [tick.rational((2, 1)), tick.rational((1, 1))],
@@ -196,7 +196,7 @@ class preexp:
 
 
 class logarithmic(linear):
-    """partitioner to create a single logarithmic parition"""
+    """partitioner to create a single logarithmic partition"""
 
     # define some useful constants
     pre1exp    = preexp([tick.rational((1, 1))], 10)
@@ -266,7 +266,7 @@ log = logarithmic
 
 
 class autologarithmic(logarithmic):
-    """partitioner to create several logarithmic paritions"""
+    """partitioner to create several logarithmic partitions"""
 
     defaultvariants = [([logarithmic.pre1exp,      # ticks
                          logarithmic.pre1to9exp],  # subticks
