@@ -1,0 +1,18 @@
+Plotting a list of data points
+
+Here, we explain how to plot data which has been calculated before and which is
+contained in a list. ...
+
+The procedure is quite the same as for plotting a data file or a function in
+the above examples. The difference is that we here use a `graph.data.points`
+instance to the `plot` method of the graph. It takes a list of data points
+which come as tuples. You will have to say something like `x=1, y=2` to specify
+which entry in your tuples is to be used on which axis.
+
+Similarly to the plotting of a data file, the default plotting style is with
+symbols. This appears to be the the natural choice, since the data is of
+discrete nature.
+
+Caution: This feature has been renamed between versions 0.9 and 0.10. The old
+name in version 0.9 and before was `graph.data.list`.
+
