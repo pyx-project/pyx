@@ -360,7 +360,7 @@ class text_pt(canvasitem.canvasitem):
 
 class T1text_pt(text_pt):
 
-    def __init__(self, font, x_pt, y_pt, charcodes, size_pt, decoding=None, slant=None, ignorebbox=False, kerning=False, ligatures=False):
+    def __init__(self, font, x_pt, y_pt, charcodes, size_pt, decoding=None, slant=None, ignorebbox=False, kerning=False, ligatures=False, spaced_pt=0):
         if decoding is not None:
             self.glyphnames = [decoding[character] for character in charcodes]
             self.decode = True
@@ -375,6 +375,7 @@ class T1text_pt(text_pt):
         self.ignorebbox = ignorebbox
         self.kerning = kerning
         self.ligatures = ligatures
+        self.spaced_pt = spaced_pt
 
         if self.kerning and not self.decode:
             raise ValueError("decoding required for font metric access (kerning)")
@@ -429,15 +430,19 @@ class T1text_pt(text_pt):
             else:
                 data = self.charcodes
             textpath = path.path()
+            x_pt = self.x_pt
+            y_pt = self.y_pt
             for i, value in enumerate(data):
                 if self.kerning and i % 2:
                     if value is not None:
-                        self.x_pt += value
+                        x_pt += value
                 else:
+                    if i:
+                        x_pt += self.spaced_pt
                     glyphpath, wx_pt, wy_pt = self.font.t1file.getglyphpathwxwy_pt(value, self.size_pt, convertcharcode=not self.decode)
-                    textpath += glyphpath.transformed(trafo.translate_pt(self.x_pt, self.y_pt))
-                    self.x_pt += wx_pt
-                    self.y_pt += wy_pt
+                    textpath += glyphpath.transformed(trafo.translate_pt(x_pt, y_pt))
+                    x_pt += wx_pt
+                    y_pt += wy_pt
             deco.decoratedpath(textpath, fillstyles=[]).processPS(file, writer, context, registry, bbox)
         else:
             # register resources
@@ -480,8 +485,12 @@ class T1text_pt(text_pt):
             for i, value in enumerate(data):
                 if self.kerning and i % 2:
                     if value is not None:
-                        file.write(") show\n%f 0 rmoveto (" % value)
+                        file.write(") show\n%f 0 rmoveto (" % (value+self.spaced_pt))
+                    elif self.spaced_pt:
+                        file.write(") show\n%f 0 rmoveto (" % self.spaced_pt)
                 else:
+                    if i and not self.kerning and self.spaced_pt:
+                        file.write(") show\n%f 0 rmoveto (" % self.spaced_pt)
                     if self.decode:
                         value = encoding[value]
                     if 32 < value < 127 and chr(value) not in "()[]<>\\":
@@ -503,15 +512,19 @@ class T1text_pt(text_pt):
             else:
                 data = self.charcodes
             textpath = path.path()
+            x_pt = self.x_pt
+            y_pt = self.y_pt
             for i, value in enumerate(data):
                 if self.kerning and i % 2:
                     if value is not None:
-                        self.x_pt += value
+                        x_pt += value
                 else:
+                    if i:
+                        x_pt += self.spaced_pt
                     glyphpath, wx_pt, wy_pt = self.font.t1file.getglyphpathwxwy_pt(value, self.size_pt, convertcharcode=not self.decode)
-                    textpath += glyphpath.transformed(trafo.translate_pt(self.x_pt, self.y_pt))
-                    self.x_pt += wx_pt
-                    self.y_pt += wy_pt
+                    textpath += glyphpath.transformed(trafo.translate_pt(x_pt, y_pt))
+                    x_pt += wx_pt
+                    y_pt += wy_pt
             deco.decoratedpath(textpath, fillstyles=[]).processPDF(file, writer, context, registry, bbox)
         else:
             if self.decode:
@@ -574,8 +587,12 @@ class T1text_pt(text_pt):
             for i, value in enumerate(data):
                 if self.kerning and i % 2:
                     if value is not None:
-                        file.write(")%f(" % (-value))
+                        file.write(")%f(" % (-value-self.spaced_pt))
+                    elif self.spaced_pt:
+                        file.write(")%f(" % (-self.spaced_pt))
                 else:
+                    if i and not self.kerning and self.spaced_pt:
+                        file.write(")%f(" % (-self.spaced_pt))
                     if self.decode:
                         value = encoding[value]
                     if 32 <= value <= 127 and chr(value) not in "()[]<>\\":
