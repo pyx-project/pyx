@@ -2,7 +2,7 @@ Graph axes
 
 This section demonstrates the axis subsystem of the graph module. The axes
 delegate a lot of tasks to different components like ''painters'' (which
-control how the baseline of the axis, the ticks and the axis title is drawn),
+control how the baseline of the axis, the ticks and the axis title are drawn),
 ''texters'' (which create the label strings written on the ticks), ''parters''
 (short for partionioners, which take care of determining appropriate tick
 positions along the axis, and ''raters'' (which adjust the number of ticks to
