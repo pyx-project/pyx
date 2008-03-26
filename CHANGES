@@ -47,6 +47,7 @@ TODO:
   - bitmap module:
     - ReusableStreamDecode?
     - proper ASCII85Decode/HexDecode switch
+    - Support for transparent bitmaps?
   - bbox module:
     - rewrite height, etc. using properties
   - dvifile module:
@@ -109,6 +110,7 @@ TODO:
     - new PS and PDF writer options: fontstripping and textaspath (TODO: documentation)
   - graph modules:
     - graphxyz: fix position of z4 axis
+    - fallbackrange for axes with vanishing range
   - canvas and document modules:
     - auto-guess output filename from the script filename
     - add ciecolor flag to the pipeGS method of canvas

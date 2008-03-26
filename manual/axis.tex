@@ -72,14 +72,17 @@ keyword arguments of a graph. Those instances should only be used once.
                           parter=parter.autolinear(), manualticks=[],
                           density=1, maxworse=2, rater=rater.linear(),
                           texter=texter.mixed(), painter=painter.regular(),
-                          linkpainter=painter.linked()}
+                          linkpainter=painter.linked(), fallbackrange=None}
   This class provides a linear axis. \var{min} and \var{max} define the
   axis range. When not set, they are adjusted automatically by the
   data to be plotted in the graph. Note, that some data might want to
   access the range of an axis (\emph{e.g.} the \class{function} class
   when no range was provided there) or you need to specify a range
   when using the axis without plugging it into a graph (\emph{e.g.}
-  when drawing an axis along a path).
+  when drawing an axis along a path). In cases where the data provides
+  a range of zero (e.g.~a when plotting a constant function), then a
+  \var{fallbackrange} can be set to guarantee a minimal range of the
+  axis.
 
   \var{reverse} can be set to indicate a reversed axis starting with
   bigger values first. Alternatively you can fix the axis range by
@@ -125,7 +128,7 @@ keyword arguments of a graph. Those instances should only be used once.
                                parter=parter.autologarithmic(), manualticks=[],
                                density=1, maxworse=2, rater=rater.logarithmic(),
                                texter=texter.mixed(), painter=painter.regular(),
-                               linkpainter=painter.linked()}
+                               linkpainter=painter.linked(), fallbackrange=None}
   This class provides a logarithmic axis. All parameters work like
   \class{linear}. Only two parameters have a different default:
   \var{parter} and \var{rater}. Furthermore and most importantly, the

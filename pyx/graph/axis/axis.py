@@ -72,7 +72,7 @@ class _regularaxis(_axis):
 
     def __init__(self, min=None, max=None, reverse=0, divisor=None, title=None,
                        painter=painter.regular(), texter=texter.mixed(), linkpainter=painter.linked(),
-                       density=1, maxworse=2, manualticks=[]):
+                       density=1, maxworse=2, manualticks=[], fallbackrange=None):
         if min is not None and max is not None and min > max:
             min, max, reverse = max, min, not reverse
         self.min = min
@@ -86,6 +86,7 @@ class _regularaxis(_axis):
         self.density = density
         self.maxworse = maxworse
         self.manualticks = self.checkfraclist(manualticks)
+        self.fallbackrange = fallbackrange
 
     def createdata(self, errorname):
         return axisdata(min=self.min, max=self.max)
@@ -121,6 +122,11 @@ class _regularaxis(_axis):
         errorname = " for axis %s" % errorname
         if data.min is None or data.max is None:
             raise RuntimeError("incomplete axis range%s" % errorname)
+        if data.max == data.min:
+            if self.fallbackrange is not None:
+                data.min, data.max = data.min - 0.5*self.fallbackrange, data.min + 0.5*self.fallbackrange
+            else:
+                raise RuntimeError("zero axis range%s" % errorname)
 
         def layout(data):
             self.adjustaxis(data, data.ticks, graphtexrunner, errorname)
