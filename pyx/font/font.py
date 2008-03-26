@@ -454,8 +454,8 @@ class T1text_pt(text_pt):
 
             fontname = self.font.name
             if self.decode:
-                encodingname = self.getencodingname(context.encodings.setdefault(self.font.name, {}))
-                encoding = context.encodings[self.font.name][encodingname]
+                encodingname = self.getencodingname(writer.encodings.setdefault(self.font.name, {}))
+                encoding = writer.encodings[self.font.name][encodingname]
                 newfontname = "%s-%s" % (fontname, encodingname)
                 registry.add(_ReEncodeFont)
                 registry.add(PSreencodefont(fontname, newfontname, encoding))
@@ -528,8 +528,8 @@ class T1text_pt(text_pt):
             deco.decoratedpath(textpath, fillstyles=[]).processPDF(file, writer, context, registry, bbox)
         else:
             if self.decode:
-                encodingname = self.getencodingname(context.encodings.setdefault(self.font.name, {}))
-                encoding = context.encodings[self.font.name][encodingname]
+                encodingname = self.getencodingname(writer.encodings.setdefault(self.font.name, {}))
+                encoding = writer.encodings[self.font.name][encodingname]
                 charcodes = [encoding[glyphname] for glyphname in self.glyphnames]
             else:
                 charcodes = self.charcodes

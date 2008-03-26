@@ -100,6 +100,10 @@ class _PSwriter:
         self.stripfonts = stripfonts
         self.textaspath = textaspath
 
+        # dictionary mapping font names to dictionaries mapping encoding names to encodings
+        # encodings themselves are mappings from glyphnames to codepoints
+        self.encodings = {}
+
     def writeinfo(self, file):
         file.write("%%%%Creator: PyX %s\n" % version.version)
         if self.title is not None:
@@ -249,9 +253,6 @@ class context:
         self.linewidth_pt = None
         self.colorspace = None
         self.selectedfont = None
-        # dictionary mapping font names to dictionaries mapping encoding names to encodings
-        # encodings themselves are mappings from glyphnames to codepoints
-        self.encodings = {}
 
     def __call__(self, **kwargs):
         newcontext = copy.copy(self)

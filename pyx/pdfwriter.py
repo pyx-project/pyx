@@ -305,6 +305,10 @@ class PDFwriter:
         self.stripfonts = stripfonts
         self.textaspath = textaspath
 
+        # dictionary mapping font names to dictionaries mapping encoding names to encodings
+        # encodings themselves are mappings from glyphnames to codepoints
+        self.encodings = {}
+
         # the PDFcatalog class automatically builds up the pdfobjects from a document
         registry = PDFregistry()
         catalog = PDFcatalog(document, self, registry)
@@ -381,9 +385,6 @@ class context:
         self.textregion = 0
         self.trafo = trafo.trafo()
         self.fillstyles = []
-        # dictionary mapping font names to dictionaries mapping encoding names to encodings
-        # encodings themselves are mappings from glyphnames to codepoints
-        self.encodings = {}
 
     def __call__(self, **kwargs):
         newcontext = copy.copy(self)
