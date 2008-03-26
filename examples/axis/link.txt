@@ -14,6 +14,6 @@ the axis dictionary `axes` of the graph.
 
 Note that for a linked axis, PyX automatically turns off the drawing of the axis
 labels, as you can see in the upper panel. If you do not like this behaviour, you
-have to pass a different axis painter to the `´linkedaxis` constructor.
+have to pass a different axis painter to the `linkedaxis` constructor.
 
 
