@@ -20,7 +20,7 @@ class ENCfile:
             token = c.gettoken()
             if token == "]":
                 raise ENCfileError("not enough charcodes in encoding file '%s'" % filename)
-	    if not token[0] == "/":
+            if not token[0] == "/":
                 raise ENCfileError("token does not start with / in encoding file '%s'" % filename)
             self.vector.append(token[1:])
         if c.gettoken() != "]":
