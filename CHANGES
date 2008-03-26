@@ -9,8 +9,6 @@ TODO:
     - keep an eye on PEP 324 (popen 5): it could make the texrunner much easier
     - discuss reltransform: https://sourceforge.net/mailarchive/forum.php?thread_id=9137692&forum_id=23700
     - add encoding; check whether encoding=ascii works well for the common existing cases
-    - we need output-specific map files (see Palatino example
-      http://sourceforge.net/mailarchive/message.php?msg_id=14863643)
     - write graphics driver for pgf.sty from LaTeX
     - ignore "(Please type a command or say `\end')" in preamble method
     - properly handle file names with spaces in (like "C:\program files\texmf\tex\latex\base\article.cls" in
