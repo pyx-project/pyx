@@ -1,12 +1,11 @@
 Logarithmic axes
 
 Logarithmic axes are quite similar to linear axes and differ only in a very few
-properties, namely the non-linear convert method in which they transform values
-to positions on the axis, a different default partitioner and a different
-default rater. ... While the partitioner really is quite different - it implements
-a logarithmic positioning of the ticks - the rater just alters some defaults in
-favour of using more subticks to improve the visualization of the logarithmic
-nature of the axis.
+properties, namely a non-linear mapping of values to axis positions. They also
+have different default partitioners and raters (see below). ... While the
+partitioner really is quite different - it implements a logarithmic positioning
+of the ticks - the rater just alters some defaults in favour of using more
+subticks to improve the visualization of the logarithmic nature of the axis.
 
 ! Beside presenting a standard logarithmic axis we also show you how to alter
 the base used by the logarithmic axis. Since the functionality of a logarithmic

@@ -1,4 +1,4 @@
-Linking an axis to another one
+Linking one axis to another one
 
 When plotting two or more related graphs, you sometimes want to have identical
 axes. This example demonstrates how to achieve this goal in PyX using a

@@ -1,13 +1,12 @@
-Minimal example drawing an axis along a path
+Minimal example for drawing an isolated axis
 
-This is the basic example how to draw an axis along an arbitrary path. The
-function `pathaxis` from the `graph.axis` module takes a path and returns a
-canvas. ... As opposed to the typical usecase in graphs, we must fix the axis
-range by appropriate `min` and `max` arguments, because no data is provided to
-the axis instance where a data range could be extracted from. In graphs the
-range of an axis gets adjusted automatically although you can still set minimal
-and/or maximal values to force a certain axis range.
+This is the basic example of how to draw an axis alone -- without the whole
+graph. It serves to simplify the following examples. ... The function
+`pathaxis` from the `graph.axis` module takes a path and returns a canvas which
+contains the drawn axis.
 
-The axis instance is passed as the second argument to the `pathaxis` function.
-To use the axis at a graph all you need to do is to path the instance to the
-axis constructor using an appropriate keyword specifying the axis name.
+Differently than in the typical usecase of graphs containing data, we must here
+provide the range explicitly (`min` and `max` arguments). graphs the range of
+an axis gets adjusted automatically although you can still set minimal and/or
+maximal values to force a certain axis range.
+

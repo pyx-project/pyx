@@ -1,14 +1,16 @@
-Rating of axis partitionings
+Rater: How a nicely looking axis partition is chosen
 
-In this example several axes with the same parameters are plotted on a path
-scaled at 3 different sizes. Note that the axes adjust the ticks appropriately
-to the available space. For that a `partitioner` (the short form `parter` is
-used in the code) creates several possible solutions for placing ticks and
-labels at the axis. ...
+We here demonstrate how an axis actually chooses its partition. ...
 
-However, we do not address this partioning feature here (we just use the
-default), but we show you the rating facilities instead. Still, we don't modify
-the defaults either, but we want to discuss certain features of this system.
+There are good-looking partitions of an axis and bad-looking ones. The element
+which chooses one or the other, is the `rater` of an axis. It asks yet another
+element, the `parter` to suggest several partitions and then chooses the best,
+according to criteria such as tick distance, number of ticks, subticks, etc.
+(The partitioning process itself is explained in a later example).
+
+In this example we show the influence of the tick distances: Several axes with
+the same parameters are plotted on a path which is scaled. Note that the axes
+choose the ticks appropriately to the available space.
 
 The rating mechanism takes into account the number of ticks and subticks, but
 also the distances between the labels. Thus, the example in the middle has less
@@ -22,10 +24,10 @@ instances to the `rater` keyword of the axis constructor. But instead of
 reconfiguring the whole rating mechanism, simple adjustments to favour more or
 less ticks are easily possible by the axis keyword argument `density`.
 
-!! In this example the same axis instance is used several times. This works
+!! In this example, the same axis instance is used several times. This works
 since the axis does not store any data within its own instance. Instead, an
-`anchoredaxis` instance is created by the `pathaxis` which embbeds the axis in
-a proper environment. Among others a place for storing information for this
-specific use of the axis instance is provided that way. When using axes in a
-graph the graph instance takes care of the proper setup of the anchored axes
-instances.
+`anchoredaxis` instance is created by the `pathaxis` which embeds the axis in a
+proper environment. This way, a place for storing information for this specific
+use of the axis instance is provided. When using axes in a graph, the graph
+instance takes care of the proper setup of the anchored axes instances.
+
