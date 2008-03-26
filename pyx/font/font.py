@@ -196,10 +196,13 @@ class PDFfont(pdfwriter.PDFobject):
                     file.write("\n")
                 else:
                     file.write(" ")
-            if self.metric is not None:
-                file.write("%i" % self.metric.width_ds(encoding[i]))
+            if encoding[i] is None:
+                file.write("0")
             else:
-                file.write("%i" % self.fontdescriptor.fontfile.t1file.getglyphinfo(encoding[i])[0])
+                if self.metric is not None:
+                    file.write("%i" % self.metric.width_ds(encoding[i]))
+                else:
+                    file.write("%i" % self.fontdescriptor.fontfile.t1file.getglyphinfo(encoding[i])[0])
         file.write("]\n")
         file.write("/FontDescriptor %d 0 R\n" % registry.getrefno(self.fontdescriptor))
         if self.encoding:
