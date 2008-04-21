@@ -133,6 +133,7 @@ class graph(canvas.canvas):
         canvas.canvas.__init__(self)
         self.axes = {}
         self.plotitems = []
+        self.keyitems = []
         self._calls = {}
         self.didranges = 0
         self.didstyles = 0
@@ -259,6 +260,13 @@ class graph(canvas.canvas):
     def dodata(self):
         for plotitem in self.plotitems:
             self.doplot(plotitem)
+
+    def dokeyitem(self, plotitem):
+        if self.did(self.dokeyitem, plotitem):
+            return
+        self.dostyles()
+        if plotitem.title is not None:
+            self.keyitems.append(plotitem)
 
     def dokey(self):
         raise NotImplementedError
@@ -497,9 +505,10 @@ class graphxy(graph):
         if self.did(self.dokey):
             return
         self.dobackground()
-        self.dostyles()
+        for plotitem in self.plotitems:
+            self.dokeyitem(plotitem)
         if self.key is not None:
-            c = self.key.paint(self.plotitems)
+            c = self.key.paint(self.keyitems)
             bbox = c.bbox()
             def parentchildalign(pmin, pmax, cmin, cmax, pos, dist, inside):
                 ppos = pmin+0.5*(cmax-cmin)+dist+pos*(pmax-pmin-cmax+cmin-2*dist)
@@ -875,9 +884,10 @@ class graphxyz(graphxy):
         if self.did(self.dokey):
             return
         self.dobackground()
-        self.dostyles()
+        for plotitem in self.plotitems:
+            self.dokeyitem(plotitem)
         if self.key is not None:
-            c = self.key.paint(self.plotitems)
+            c = self.key.paint(self.keyitems)
             bbox = c.bbox()
             def parentchildalign(pmin, pmax, cmin, cmax, pos, dist, inside):
                 ppos = pmin+0.5*(cmax-cmin)+dist+pos*(pmax-pmin-cmax+cmin-2*dist)

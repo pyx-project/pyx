@@ -99,7 +99,6 @@ class key:
         "creates the layout of the key"
         columndist_pt = unit.topt(self.columndist)
         c = canvas.canvas()
-        plotitems = [plotitem for plotitem in plotitems if plotitem.title is not None]
         itemspercolumn = (len(plotitems) + self.columns - 1) / self.columns # integer division
         x_pt = 0
         while plotitems:
