@@ -251,15 +251,19 @@ class graph(canvas.canvas):
 
         self.didstyles = 1
 
-    def doplot(self, plotitem):
-        if self.did(self.doplot, plotitem):
+    def doplotitem(self, plotitem):
+        if self.did(self.doplotitem, plotitem):
             return
         self.dostyles()
         plotitem.draw(self)
 
-    def dodata(self):
+    def doplot(self):
         for plotitem in self.plotitems:
-            self.doplot(plotitem)
+            self.doplotitem(plotitem)
+
+    def dodata(self):
+        warnings.warn("dodata() has been deprecated. Use doplot() instead.")
+        self.doplot()
 
     def dokeyitem(self, plotitem):
         if self.did(self.dokeyitem, plotitem):
@@ -274,7 +278,7 @@ class graph(canvas.canvas):
     def finish(self):
         self.dobackground()
         self.doaxes()
-        self.dodata()
+        self.doplot()
         self.dokey()
 
 

@@ -109,6 +109,8 @@ TODO:
     - graphxyz: fix position of z4 axis
     - fallbackrange for axes with vanishing range
     - dokeyitem method (to be called with a plotitem) to alter the key order (TODO: documentation)
+    - doplot() was renamed to doplotitem(), dodata() was renamed to doplot()
+      to have similar naming conventions like for the graph key (TODO: update documentation)
   - canvas and document modules:
     - auto-guess output filename from the script filename
     - add ciecolor flag to the pipeGS method of canvas
