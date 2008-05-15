@@ -1895,7 +1895,7 @@ class normpath:
         return self._tangent(self._convertparams(params, self.arclentoparam_pt), length_pt)
     tangent_pt = _valueorlistmethod(tangent_pt)
 
-    def tangent(self, params, length):
+    def tangent(self, params, length=1):
         """return tangent vector of path at param(s) or arc length(s)
 
         If length is not None, the tangent vector will be scaled to

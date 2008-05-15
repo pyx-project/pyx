@@ -115,9 +115,8 @@ class _PSwriter:
         if self._fontmap is None:
             # late import due to cyclic dependency
             from pyx.dvi import mapfile
-            fontmapfiles = config.get("text", "psfontmaps", "psfonts.map")
-            separator = config.get("general", "separator", "|")
-            self._fontmap = mapfile.readfontmap(fontmapfiles.split(separator))
+            fontmapfiles = config.getlist("text", "psfontmaps", ["psfonts.map"])
+            self._fontmap = mapfile.readfontmap(fontmapfiles)
         return self._fontmap
 
 
