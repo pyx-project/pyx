@@ -28,6 +28,15 @@ except:
 
 import bbox, canvasitem, pswriter, pdfwriter, trafo, unit
 
+devicenames = {"L": "/DeviceGray",
+               "RGB": "/DeviceRGB",
+               "CMYK": "/DeviceCMYK"}
+decodestrings = {"L": "[0 1]",
+                 "RGB": "[0 1 0 1 0 1]",
+                 "CMYK": "[0 1 0 1 0 1 0 1]",
+                 "P": "[0 255]"}
+
+
 def ascii85lines(datalen):
     if datalen < 4:
         return 1
@@ -83,10 +92,10 @@ def asciihexstream(file, data):
 
 class image:
 
-    def __init__(self, width, height, mode, data, compressed=None):
+    def __init__(self, width, height, mode, data, compressed=None, palette=None):
         if width <= 0 or height <= 0:
             raise ValueError("valid image size")
-        if mode not in ["L", "RGB", "CMYK"]:
+        if mode not in ["L", "RGB", "CMYK", "LA", "RGBA", "CMYKA", "AL", "ARGB", "ACMYK"]:
             raise ValueError("invalid mode")
         if compressed is None and len(mode)*width*height != len(data):
             raise ValueError("wrong size of uncompressed data")
@@ -94,6 +103,15 @@ class image:
         self.mode = mode
         self.data = data
         self.compressed = compressed
+        self.palette = palette
+
+    def split(self):
+        if self.compressed is not None:
+            raise RuntimeError("cannot extract bands from compressed image")
+        bands = len(self.mode)
+        return [image(self.width, self.height, "L", "".join([self.data[i*bands+band]
+                                                             for i in range(self.width*self.height)]))
+                for band in range(bands)]
 
     def tostring(self, *args):
         if len(args):
@@ -206,37 +224,33 @@ class PDFimagepalettedata(pdfwriter.PDFobject):
 
 class PDFimage(pdfwriter.PDFobject):
 
-    def __init__(self, name, width, height, palettecolorspace, palettedata, colorspace,
-                       bitspercomponent, compressmode, data, alpha, registry, addresource=True):
-        if palettedata is not None:
-            procset = "ImageI"
-        elif colorspace == "/DeviceGray":
-            procset = "ImageB"
-        else:
-            procset = "ImageC"
+    def __init__(self, name, width, height, palettemode, palettedata, mode,
+                       bitspercomponent, compressmode, data, smask, registry, addresource=True):
         pdfwriter.PDFobject.__init__(self, "image", name)
+
         if addresource:
+            if palettedata is not None:
+                procset = "ImageI"
+            elif mode == "L":
+                procset = "ImageB"
+            else:
+                procset = "ImageC"
             registry.addresource("XObject", name, self, procset=procset)
         if palettedata is not None:
-            # acrobat wants a palette to be an object
+            # note that acrobat wants a palette to be an object (which clearly is a bug)
             self.PDFpalettedata = PDFimagepalettedata(name, palettedata)
             registry.add(self.PDFpalettedata)
+
         self.name = name
         self.width = width
         self.height = height
-        self.palettecolorspace = palettecolorspace
+        self.palettemode = palettemode
         self.palettedata = palettedata
-        self.colorspace = colorspace
+        self.mode = mode
         self.bitspercomponent = bitspercomponent
         self.compressmode = compressmode
         self.data = data
-        self.smask = None
-        if alpha is not None:
-            smask = bitmap_pt(0, 0, alpha, width_pt=1, height_pt=1)
-            self.smask = PDFimage(smask.PDFimagename, smask.imagewidth, smask.imageheight,
-                                  smask.palettecolorspace, smask.palettedata, smask.colorspace,
-                                  8, smask.compressmode, smask.data, None, registry, addresource=False)
-            registry.add(self.smask)
+        self.smask = smask
 
     def write(self, file, writer, registry):
         file.write("<<\n"
@@ -245,11 +259,11 @@ class PDFimage(pdfwriter.PDFobject):
                    "/Width %d\n" % self.width)
         file.write("/Height %d\n" % self.height)
         if self.palettedata is not None:
-            file.write("/ColorSpace [ /Indexed %s %i\n" % (self.palettecolorspace, len(self.palettedata)/3-1))
+            file.write("/ColorSpace [ /Indexed %s %i\n" % (devicenames[self.palettemode], len(self.palettedata)/3-1))
             file.write("%d 0 R\n" % registry.getrefno(self.PDFpalettedata))
             file.write("]\n")
         else:
-            file.write("/ColorSpace %s\n" % self.colorspace)
+            file.write("/ColorSpace %s\n" % devicenames[self.mode])
         if self.smask:
             file.write("/SMask %d 0 R\n" % registry.getrefno(self.smask))
         file.write("/BitsPerComponent %d\n" % self.bitspercomponent)
@@ -269,15 +283,11 @@ class bitmap_pt(canvasitem.canvasitem):
                        PSstoreimage=0, PSmaxstrlen=4093, PSbinexpand=1,
                        compressmode="Flate", flatecompresslevel=6,
                        dctquality=75, dctoptimize=0, dctprogression=0):
-        # keep a copy of the image instance to ensure different id's
-        self.image = image
-
         self.xpos_pt = xpos_pt
         self.ypos_pt = ypos_pt
+        self.image = image
+
         self.imagewidth, self.imageheight = image.size
-        self.PSstoreimage = PSstoreimage
-        self.PSmaxstrlen = PSmaxstrlen
-        self.PSbinexpand = PSbinexpand
 
         if width_pt is not None or height_pt is not None:
             self.width_pt = width_pt
@@ -301,131 +311,161 @@ class bitmap_pt(canvasitem.canvasitem):
             self.width_pt = 72.0 * self.imagewidth / float(widthdpi)
             self.height_pt = 72.0 * self.imageheight / float(heightdpi)
 
-        # separate alpha channel (requires PIL-like interface of the image instance)
-        self.alpha = None
-        if image.mode in ["RGBA", "CMYKA"]:
-            bands = image.split()
-            import Image
-            image = Image.merge(image.mode[:-1], bands[:-1])
-            self.alpha = bands[-1]
-
-        # create decode and colorspace (conversions requrire PIL-like interface of the image instance)
-        self.colorspace = self.palettecolorspace = self.palettedata = None
-        if image.mode == "P":
-            palettemode, self.palettedata = image.palette.getdata()
-            self.decode = "[0 255]"
-            try:
-                self.palettecolorspace = {"L": "/DeviceGray",
-                                          "RGB": "/DeviceRGB",
-                                          "CMYK": "/DeviceCMYK"}[palettemode]
-            except KeyError:
-                warnings.warn("image with unknown palette mode '%s' converted to rgb image" % palettemode)
-                image = image.convert("RGB")
-                self.decode = "[0 1 0 1 0 1]"
-                self.palettedata = None
-                self.colorspace = "/DeviceRGB"
-        elif len(image.mode) == 1:
-            if image.mode != "L":
-                warnings.warn("specific single channel image mode not natively supported, converted to regular grayscale")
-                image = image.convert("L")
-            self.decode = "[0 1]"
-            self.colorspace = "/DeviceGray"
-        elif image.mode == "CMYK":
-            self.decode = "[0 1 0 1 0 1 0 1]"
-            self.colorspace = "/DeviceCMYK"
-        else:
-            if image.mode != "RGB":
-                warnings.warn("image with unknown mode converted to rgb")
-                image = image.convert("RGB")
-            self.decode = "[0 1 0 1 0 1]"
-            self.colorspace = "/DeviceRGB"
-
-        # create imagematrix
-        self.imagematrixPS = (trafo.mirror(0)
-                              .translated_pt(-self.xpos_pt, self.ypos_pt+self.height_pt)
-                              .scaled_pt(self.imagewidth/self.width_pt, self.imageheight/self.height_pt))
-        self.imagematrixPDF = (trafo.scale_pt(self.width_pt, self.height_pt)
-                               .translated_pt(self.xpos_pt, self.ypos_pt))
-
-        # check whether imagedata is compressed or not
-        try:
-            imagecompressed = image.compressed
-        except:
-            imagecompressed = None
-        if compressmode != None and imagecompressed != None:
-            raise ValueError("compression of a compressed image not supported")
+        self.PSstoreimage = PSstoreimage
+        self.PSmaxstrlen = PSmaxstrlen
+        self.PSbinexpand = PSbinexpand
         self.compressmode = compressmode
-        if compressmode is not None and compressmode not in ["Flate", "DCT"]:
-                raise ValueError("invalid compressmode '%s'" % compressmode)
-        if imagecompressed is not None:
-            self.compressmode = imagecompressed
-            if imagecompressed not in ["Flate", "DCT"]:
-                raise ValueError("invalid compressed image '%s'" % imagecompressed)
-        if not haszlib and compressmode == "Flate":
+        self.flatecompresslevel = flatecompresslevel
+        self.dctquality = dctquality
+        self.dctoptimize = dctoptimize
+        self.dctprogression = dctprogression
+
+        try:
+            self.imagecompressed = image.compressed
+        except:
+            self.imagecompressed = None
+        if self.compressmode not in [None, "Flate", "DCT"]:
+            raise ValueError("invalid compressmode '%s'" % self.compressmode)
+        if self.imagecompressed not in [None, "Flate", "DCT"]:
+            raise ValueError("invalid compressed image '%s'" % self.imagecompressed)
+        if self.compressmode is not None and self.imagecompressed is not None:
+            raise ValueError("compression of a compressed image not supported")
+        if not haszlib and self.compressmode == "Flate":
             warnings.warn("zlib module not available, disable compression")
-            self.compressmode = compressmode = None
+            self.compressmode = None
 
-        # create data
-        if compressmode == "Flate":
-            self.data = zlib.compress(image.tostring(), flatecompresslevel)
-        elif compressmode == "DCT":
-            self.data = image.tostring("jpeg", image.mode,
-                                       dctquality, dctoptimize, dctprogression)
-        else:
-            self.data = image.tostring()
+    def imagedata(self, interleavealpha):
+        """internal function
 
-        self.PSsinglestring = self.PSstoreimage and len(self.data) < self.PSmaxstrlen
-        if self.PSsinglestring:
-            self.PSimagename = "image-%d-%s-singlestring" % (id(image), compressmode)
+        returns a tuple (mode, data, alpha, palettemode, palettedata)
+        where mode does not contain antialiasing anymore
+        """
+
+        alpha = palettemode = palettedata = None
+        data = self.image
+        mode = data.mode
+        if mode.startswith("A"):
+            mode = mode[1:]
+            if interleavealpha:
+                alpha = True
+            else:
+                bands = data.split()
+                alpha = band[0]
+                data = image(self.imagewidth, self.imageheight, mode,
+                             "".join(["".join(values)
+                                      for values in zip(*[band.tostring()
+                                                          for band in bands[1:]])]), palette=data.palette)
+        if mode.endswith("A"):
+            bands = data.split()
+            bands = list(bands[-1:]) + list(bands[:-1])
+            mode = mode[:-1]
+            if interleavealpha:
+                alpha = True
+                # TODO: this is slow, but we don't want to depend on PIL or anything ... still, its incredibly slow to do it with lists and joins
+                data = image(self.imagewidth, self.imageheight, "A%s" % mode,
+                             "".join(["".join(values)
+                                      for values in zip(*[band.tostring()
+                                                          for band in bands])]), palette=data.palette)
+            else:
+                alpha = bands[0]
+                data = image(self.imagewidth, self.imageheight, mode,
+                             "".join(["".join(values)
+                                      for values in zip(*[band.tostring()
+                                                          for band in bands[1:]])]), palette=data.palette)
+
+        if mode == "P":
+            palettemode, palettedata = data.palette.getdata()
+            if palettemode not in ["L", "RGB", "CMYK"]:
+                warnings.warn("image with unknown palette mode '%s' converted to rgb image" % palettemode)
+                data = data.convert("RGB")
+                mode = "RGB"
+                palettemode = None
+                palettedata = None
+        elif len(mode) == 1:
+            if mode != "L":
+                warnings.warn("specific single channel image mode not natively supported, converted to regular grayscale")
+                data = data.convert("L")
+                mode = "L"
+        elif mode not in ["CMYK", "RGB"]:
+            warnings.warn("image with unknown mode converted to rgb")
+            data = data.convert("RGB")
+            mode = "RGB"
+
+        if self.compressmode == "Flate":
+            data = zlib.compress(data.tostring(), self.flatecompresslevel)
+        elif self.compressmode == "DCT":
+            data = data.tostring("jpeg", mode, self.dctquality, self.dctoptimize, self.dctprogression)
         else:
-            self.PSimagename = "image-%d-%s-stringarray" % (id(image), compressmode)
-        self.PDFimagename = "image-%d-%s" % (id(image), compressmode)
+            data = data.tostring()
+        if not interleavealpha:
+            if self.compressmode == "Flate":
+                alpha = zlib.compress(alpha.tostring(), self.flatecompresslevel)
+            elif self.compressmode == "DCT":
+                # well, this here is strange, we might want a alphacompressmode ...
+                alpha = alpha.tostring("jpeg", mode, self.dctquality, self.dctoptimize, self.dctprogression)
+            else:
+                alpha = alpha.tostring()
+
+        return mode, data, alpha, palettemode, palettedata
 
     def bbox(self):
         return bbox.bbox_pt(self.xpos_pt, self.ypos_pt,
                             self.xpos_pt+self.width_pt, self.ypos_pt+self.height_pt)
 
     def processPS(self, file, writer, context, registry, bbox):
-        if self.alpha:
-            warnings.warn("ignoring alpha channel in PostScript")
-            # TODO: we could add a stancil mask
-        if self.PSstoreimage and not self.PSsinglestring:
+        mode, data, alpha, palettemode, palettedata = self.imagedata(True)
+        imagematrixPS = (trafo.mirror(0)
+                         .translated_pt(-self.xpos_pt, self.ypos_pt+self.height_pt)
+                         .scaled_pt(self.imagewidth/self.width_pt, self.imageheight/self.height_pt))
+
+
+        PSsinglestring = self.PSstoreimage and len(data) < self.PSmaxstrlen
+        if PSsinglestring:
+            PSimagename = "image-%d-%s-singlestring" % (id(self.image), self.compressmode)
+        else:
+            PSimagename = "image-%d-%s-stringarray" % (id(self.image), self.compressmode)
+
+        if self.PSstoreimage and not PSsinglestring:
             registry.add(pswriter.PSdefinition("imagedataaccess",
                                                "{ /imagedataindex load " # get list index
                                                "dup 1 add /imagedataindex exch store " # store increased index
                                                "/imagedataid load exch get }")) # select string from array
         if self.PSstoreimage:
-            registry.add(PSimagedata(self.PSimagename, self.data, self.PSsinglestring, self.PSmaxstrlen))
+            registry.add(PSimagedata(PSimagename, data, PSsinglestring, self.PSmaxstrlen))
         bbox += self.bbox()
 
         file.write("gsave\n")
-        if self.palettedata is not None:
-            file.write("[ /Indexed %s %i\n" % (self.palettecolorspace, len(self.palettedata)/3-1))
-            file.write("%%%%BeginData: %i ASCII Lines\n" % ascii85lines(len(self.palettedata)))
+        if palettedata is not None:
+            file.write("[ /Indexed %s %i\n" % (devicenames[palettemode], len(palettedata)/3-1))
+            file.write("%%%%BeginData: %i ASCII Lines\n" % ascii85lines(len(palettedata)))
             file.write("<~")
-            ascii85stream(file, self.palettedata)
+            ascii85stream(file, palettedata)
             file.write("~>\n"
                        "%%EndData\n")
             file.write("] setcolorspace\n")
         else:
-            file.write("%s setcolorspace\n" % self.colorspace)
+            file.write("%s setcolorspace\n" % devicenames[mode])
 
-        if self.PSstoreimage and not self.PSsinglestring:
+        if self.PSstoreimage and not PSsinglestring:
             file.write("/imagedataindex 0 store\n" # not use the stack since interpreters differ in their stack usage
-                       "/imagedataid %s store\n" % self.PSimagename)
+                       "/imagedataid %s store\n" % PSimagename)
 
-        file.write("<<\n"
-                   "/ImageType 1\n"
+        file.write("<<\n")
+        if alpha:
+            file.write("/ImageType 3\n"
+                       "/DataDict\n"
+                       "<<\n")
+        file.write("/ImageType 1\n"
                    "/Width %i\n" % self.imagewidth)
         file.write("/Height %i\n" % self.imageheight)
         file.write("/BitsPerComponent 8\n"
-                   "/ImageMatrix %s\n" % self.imagematrixPS)
-        file.write("/Decode %s\n" % self.decode)
+                   "/ImageMatrix %s\n" % imagematrixPS)
+        file.write("/Decode %s\n" % decodestrings[mode])
 
         file.write("/DataSource ")
         if self.PSstoreimage:
-            if self.PSsinglestring:
-                file.write("/%s load" % self.PSimagename)
+            if PSsinglestring:
+                file.write("/%s load" % PSimagename)
             else:
                 file.write("/imagedataaccess load") # some printers do not allow for inline code here -> we store it in a resource
         else:
@@ -433,38 +473,62 @@ class bitmap_pt(canvasitem.canvasitem):
                 file.write("currentfile /ASCIIHexDecode filter")
             else:
                 file.write("currentfile /ASCII85Decode filter")
-        if self.compressmode:
-            file.write(" /%sDecode filter" % self.compressmode)
+        if self.compressmode or self.imagecompressed:
+            file.write(" /%sDecode filter" % (self.compressmode or self.imagecompressed))
         file.write("\n")
 
         file.write(">>\n")
+
+        if alpha:
+            file.write("/MaskDict\n"
+                       "<<\n"
+                       "/ImageType 1\n"
+                       "/Width %i\n" % self.imagewidth)
+            file.write("/Height %i\n" % self.imageheight)
+            file.write("/BitsPerComponent 8\n"
+                       "/ImageMatrix %s\n" % imagematrixPS)
+            file.write("/Decode [1 0]\n"
+                       ">>\n"
+                       "/InterleaveType 1\n"
+                       ">>\n")
 
         if self.PSstoreimage:
             file.write("image\n")
         else:
             if self.PSbinexpand == 2:
                 file.write("%%%%BeginData: %i ASCII Lines\n"
-                           "image\n" % (asciihexlines(len(self.data)) + 1))
-                asciihexstream(file, self.data)
+                           "image\n" % (asciihexlines(len(data)) + 1))
+                asciihexstream(file, data)
             else:
                 # the datasource is currentstream (plus some filters)
                 file.write("%%%%BeginData: %i ASCII Lines\n"
-                           "image\n" % (ascii85lines(len(self.data)) + 1))
-                ascii85stream(file, self.data)
+                           "image\n" % (ascii85lines(len(data)) + 1))
+                ascii85stream(file, data)
                 file.write("~>\n")
             file.write("%%EndData\n")
 
         file.write("grestore\n")
 
     def processPDF(self, file, writer, context, registry, bbox):
-        registry.add(PDFimage(self.PDFimagename, self.imagewidth, self.imageheight,
-                              self.palettecolorspace, self.palettedata, self.colorspace,
-                              8, self.compressmode, self.data, self.alpha, registry))
+        mode, data, alpha, palettemode, palettedata = self.imagedata(False)
+
+        name = "image-%d-%s" % (id(image), self.compressmode or self.imagecompress)
+        if alpha:
+            alpha = PDFimage("%s-smask" % name, self.imagewidth, self.imageheight,
+                             None, None, "L", 8,
+                             self.compressmode, alpha, None, registry, addresource=False)
+            registry.add(alpha)
+        registry.add(PDFimage(name, self.imagewidth, self.imageheight,
+                              palettemode, palettedata, mode, 8,
+                              self.compressmode or self.imagecompress, data, alpha, registry))
+
         bbox += self.bbox()
+        imagematrixPDF = (trafo.scale_pt(self.width_pt, self.height_pt)
+                          .translated_pt(self.xpos_pt, self.ypos_pt))
 
         file.write("q\n")
-        self.imagematrixPDF.processPDF(file, writer, context, registry, bbox)
-        file.write("/%s Do\n" % self.PDFimagename)
+        imagematrixPDF.processPDF(file, writer, context, registry, bbox)
+        file.write("/%s Do\n" % name)
         file.write("Q\n")
 
 
@@ -480,6 +544,6 @@ class bitmap(bitmap_pt):
         if height is not None:
             height_pt = unit.topt(height)
         else:
-            heigth_pt = None
+            height_pt = None
 
-        self.__init__(xpos_pt, ypos_pt, image, width_pt=width_pt, height_pt=height_pt, **kwargs)
+        bitmap_pt.__init__(self, xpos_pt, ypos_pt, image, width_pt=width_pt, height_pt=height_pt, **kwargs)

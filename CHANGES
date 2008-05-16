@@ -121,7 +121,7 @@ TODO:
     - fix two bugs in the read pipe of the texrunner (thanks to
      Laurence Tratt and Eric Faurot)
   - bitmap module:
-    - add support for transparent png (pdf only)
+    - add support for transparent bitmaps (in postscript stencil masking only)
 
 
 0.10 (2007/10/03):
