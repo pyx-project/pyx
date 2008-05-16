@@ -253,48 +253,43 @@ class PDFimage(pdfwriter.PDFobject):
                    "endstream\n")
 
 
-class bitmap(canvasitem.canvasitem):
+class bitmap_pt(canvasitem.canvasitem):
 
-    def __init__(self, xpos, ypos, image, width=None, height=None, ratio=None,
+    def __init__(self, xpos_pt, ypos_pt, image, width_pt=None, height_pt=None, ratio=None,
                        PSstoreimage=0, PSmaxstrlen=4093, PSbinexpand=1,
                        compressmode="Flate", flatecompresslevel=6,
                        dctquality=75, dctoptimize=0, dctprogression=0):
         # keep a copy of the image instance to ensure different id's
         self.image = image
 
-        self.xpos = xpos
-        self.ypos = ypos
+        self.xpos_pt = xpos_pt
+        self.ypos_pt = ypos_pt
         self.imagewidth, self.imageheight = image.size
         self.PSstoreimage = PSstoreimage
         self.PSmaxstrlen = PSmaxstrlen
         self.PSbinexpand = PSbinexpand
 
-        if width is not None or height is not None:
-            self.width = width
-            self.height = height
-            if self.width is None:
+        if width_pt is not None or height_pt is not None:
+            self.width_pt = width_pt
+            self.height_pt = height_pt
+            if self.width_pt is None:
                 if ratio is None:
-                    self.width = self.height * self.imagewidth / float(self.imageheight)
+                    self.width_pt = self.height_pt * self.imagewidth / float(self.imageheight)
                 else:
-                    self.width = ratio * self.height
-            elif self.height is None:
+                    self.width_pt = ratio * self.height_pt
+            elif self.height_pt is None:
                 if ratio is None:
-                    self.height = self.width * self.imageheight / float(self.imagewidth)
+                    self.height_pt = self.width_pt * self.imageheight / float(self.imagewidth)
                 else:
-                    self.height = (1.0/ratio) * self.width
+                    self.height_pt = (1.0/ratio) * self.width_pt
             elif ratio is not None:
-                raise ValueError("can't specify a ratio when setting width and height")
+                raise ValueError("can't specify a ratio when setting width_pt and height_pt")
         else:
             if ratio is not None:
-                raise ValueError("must specify width or height to set a ratio")
+                raise ValueError("must specify width_pt or height_pt to set a ratio")
             widthdpi, heightdpi = image.info["dpi"] # fails when no dpi information available
-            self.width = self.imagewidth / float(widthdpi) * unit.t_inch
-            self.height = self.imageheight / float(heightdpi) * unit.t_inch
-
-        self.xpos_pt = unit.topt(self.xpos)
-        self.ypos_pt = unit.topt(self.ypos)
-        self.width_pt = unit.topt(self.width)
-        self.height_pt = unit.topt(self.height)
+            self.width_pt = 72.0 * self.imagewidth / float(widthdpi)
+            self.height_pt = 72.0 * self.imageheight / float(heightdpi)
 
         # create decode and colorspace
         self.colorspace = self.palettecolorspace = self.palettedata = None
@@ -450,3 +445,20 @@ class bitmap(canvasitem.canvasitem):
         self.imagematrixPDF.processPDF(file, writer, context, registry, bbox)
         file.write("/%s Do\n" % self.PDFimagename)
         file.write("Q\n")
+
+
+class bitmap(bitmap_pt):
+
+    def __init__(self, xpos, ypos, image, width=None, height=None, **kwargs):
+        xpos_pt = unit.topt(xpos)
+        ypos_pt = unit.topt(ypos)
+        if width is not None:
+            width_pt = unit.topt(width)
+        else:
+            width_pt = None
+        if height is not None:
+            height_pt = unit.topt(height)
+        else:
+            heigth_pt = None
+
+        self.__init__(xpos_pt, ypos_pt, image, width_pt=width_pt, height_pt=height_pt, **kwargs)
