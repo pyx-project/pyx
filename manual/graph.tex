@@ -229,12 +229,16 @@ orginal order in which the \method{do}-methods are called is:
   Inserts the axes.
 \end{methoddesc}
 
-\begin{methoddesc}{doplot}{plotitem}
+\begin{methoddesc}{doplotitem}{plotitem}
   Plots the plotitem as returned by the graphs plot method.
 \end{methoddesc}
 
-\begin{methoddesc}{dodata}{}
-  Plots the data.
+\begin{methoddesc}{doplot}{}
+  Plots all (remaining) plotitems.
+\end{methoddesc}
+
+\begin{methoddesc}{dokeyitem}{}
+  Inserts a plotitem in the graph key as returned by the graphs plot method.
 \end{methoddesc}
 
 \begin{methoddesc}{dokey}{}
