@@ -207,7 +207,7 @@ class PDFimagepalettedata(pdfwriter.PDFobject):
 class PDFimage(pdfwriter.PDFobject):
 
     def __init__(self, name, width, height, palettecolorspace, palettedata, colorspace,
-                       bitspercomponent, compressmode, data, registry):
+                       bitspercomponent, compressmode, data, alpha, registry, addresource=True):
         if palettedata is not None:
             procset = "ImageI"
         elif colorspace == "/DeviceGray":
@@ -215,7 +215,8 @@ class PDFimage(pdfwriter.PDFobject):
         else:
             procset = "ImageC"
         pdfwriter.PDFobject.__init__(self, "image", name)
-        registry.addresource("XObject", name, self, procset=procset)
+        if addresource:
+            registry.addresource("XObject", name, self, procset=procset)
         if palettedata is not None:
             # acrobat wants a palette to be an object
             self.PDFpalettedata = PDFimagepalettedata(name, palettedata)
@@ -229,6 +230,13 @@ class PDFimage(pdfwriter.PDFobject):
         self.bitspercomponent = bitspercomponent
         self.compressmode = compressmode
         self.data = data
+        self.smask = None
+        if alpha is not None:
+            smask = bitmap_pt(0, 0, alpha, width_pt=1, height_pt=1)
+            self.smask = PDFimage(smask.PDFimagename, smask.imagewidth, smask.imageheight,
+                                  smask.palettecolorspace, smask.palettedata, smask.colorspace,
+                                  8, smask.compressmode, smask.data, None, registry, addresource=False)
+            registry.add(self.smask)
 
     def write(self, file, writer, registry):
         file.write("<<\n"
@@ -242,6 +250,8 @@ class PDFimage(pdfwriter.PDFobject):
             file.write("]\n")
         else:
             file.write("/ColorSpace %s\n" % self.colorspace)
+        if self.smask:
+            file.write("/SMask %d 0 R\n" % registry.getrefno(self.smask))
         file.write("/BitsPerComponent %d\n" % self.bitspercomponent)
         file.write("/Length %d\n" % len(self.data))
         if self.compressmode:
@@ -291,7 +301,15 @@ class bitmap_pt(canvasitem.canvasitem):
             self.width_pt = 72.0 * self.imagewidth / float(widthdpi)
             self.height_pt = 72.0 * self.imageheight / float(heightdpi)
 
-        # create decode and colorspace
+        # separate alpha channel (requires PIL-like interface of the image instance)
+        self.alpha = None
+        if image.mode in ["RGBA", "CMYKA"]:
+            bands = image.split()
+            import Image
+            image = Image.merge(image.mode[:-1], bands[:-1])
+            self.alpha = bands[-1]
+
+        # create decode and colorspace (conversions requrire PIL-like interface of the image instance)
         self.colorspace = self.palettecolorspace = self.palettedata = None
         if image.mode == "P":
             palettemode, self.palettedata = image.palette.getdata()
@@ -308,8 +326,8 @@ class bitmap_pt(canvasitem.canvasitem):
                 self.colorspace = "/DeviceRGB"
         elif len(image.mode) == 1:
             if image.mode != "L":
-                image = image.convert("L")
                 warnings.warn("specific single channel image mode not natively supported, converted to regular grayscale")
+                image = image.convert("L")
             self.decode = "[0 1]"
             self.colorspace = "/DeviceGray"
         elif image.mode == "CMYK":
@@ -317,8 +335,8 @@ class bitmap_pt(canvasitem.canvasitem):
             self.colorspace = "/DeviceCMYK"
         else:
             if image.mode != "RGB":
-                image = image.convert("RGB")
                 warnings.warn("image with unknown mode converted to rgb")
+                image = image.convert("RGB")
             self.decode = "[0 1 0 1 0 1]"
             self.colorspace = "/DeviceRGB"
 
@@ -368,6 +386,9 @@ class bitmap_pt(canvasitem.canvasitem):
                             self.xpos_pt+self.width_pt, self.ypos_pt+self.height_pt)
 
     def processPS(self, file, writer, context, registry, bbox):
+        if self.alpha:
+            warnings.warn("ignoring alpha channel in PostScript")
+            # TODO: we could add a stancil mask
         if self.PSstoreimage and not self.PSsinglestring:
             registry.add(pswriter.PSdefinition("imagedataaccess",
                                                "{ /imagedataindex load " # get list index
@@ -438,7 +459,7 @@ class bitmap_pt(canvasitem.canvasitem):
     def processPDF(self, file, writer, context, registry, bbox):
         registry.add(PDFimage(self.PDFimagename, self.imagewidth, self.imageheight,
                               self.palettecolorspace, self.palettedata, self.colorspace,
-                              8, self.compressmode, self.data, registry))
+                              8, self.compressmode, self.data, self.alpha, registry))
         bbox += self.bbox()
 
         file.write("q\n")
