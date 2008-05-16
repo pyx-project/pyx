@@ -111,7 +111,7 @@ document.
 \begin{methoddesc}{pipeGS}{filename="-", device=None, resolution=100,
                            gscommand="gs", gsoptions="",
                            textalphabits=4, graphicsalphabits=4,
-                           ciecolor=False, **kwargs}
+                           ciecolor=False, input="eps", **kwargs}
   This method pipes the content of a canvas to the ghostscript
   interpreter directly to generate other output formats. At least
   \var{filename} or \var{device} must be set. \var{filename} specifies
@@ -136,7 +136,10 @@ document.
   \texttt{GraphicsAlphaBits} options of ghostscript. You can skip
   the addition of those option by set their value to \code{None}.
   \var{ciecolor} adds the \texttt{-dUseCIEColor} flag to improve
-  the CMYK to RGB color conversion.
+  the CMYK to RGB color conversion. \var{input} can be either
+  \code{"eps"} or \code{"pdf"} to select the input type to be passed
+  to ghostscript (note slightly different features available in the
+  different input types).
 
   \var{kwargs} are passed to the \method{writeEPSfile} method (not
   counting the \var{file} parameter), which is used to generate the

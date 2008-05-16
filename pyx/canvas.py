@@ -25,7 +25,7 @@
 A canvas holds a collection of all elements and corresponding attributes to be
 displayed. """
 
-import os
+import os, tempfile
 import attr, canvasitem, deco, deformer, document, font, style, trafo
 import bbox as bboxmodule
 
@@ -301,7 +301,7 @@ class canvas(_canvas):
     def pipeGS(self, filename="-", device=None, resolution=100,
                gscommand="gs", gsoptions="",
                textalphabits=4, graphicsalphabits=4,
-               ciecolor=False, **kwargs):
+               ciecolor=False, input="eps", **kwargs):
         if device is None:
             if filename.endswith(".png"):
                 device = "png16m"
@@ -316,6 +316,17 @@ class canvas(_canvas):
             gscommand += " -dGraphicsAlphaBits=%i" % graphicsalphabits
         if ciecolor:
             gscommand += " -dUseCIEColor"
-        gscommand += " -"
-        input = os.popen(gscommand, "w")
-        self.writeEPSfile(input, **kwargs)
+        if input == "eps":
+            gscommand += " -"
+            pipe = os.popen(gscommand, "wb")
+            self.writeEPSfile(pipe, **kwargs)
+        elif input == "pdf":
+            fd, fname = tempfile.mkstemp()
+            f = os.fdopen(fd, "wb")
+            gscommand += " %s" % fname
+            self.writePDFfile(f, **kwargs)
+            f.close()
+            os.system(gscommand)
+            os.unlink(fname)
+        else:
+            raise RuntimeError("input 'eps' or 'pdf' expected")

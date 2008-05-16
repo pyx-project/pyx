@@ -113,7 +113,7 @@ TODO:
       to have similar naming conventions like for the graph key (TODO: update documentation)
   - canvas and document modules:
     - auto-guess output filename from the script filename
-    - add ciecolor flag to the pipeGS method of canvas
+    - add ciecolor flag and input type to the pipeGS method of canvas
   - config module:
     - psfontmaps and pdffontmaps config options (TODO: documentation)
     - config option for format warnings
