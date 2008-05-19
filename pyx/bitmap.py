@@ -397,7 +397,7 @@ class bitmap_pt(canvasitem.canvasitem):
             data = data.tostring("jpeg", mode, self.dctquality, self.dctoptimize, self.dctprogression)
         else:
             data = data.tostring()
-        if not interleavealpha:
+        if alpha and not interleavealpha:
             if self.compressmode == "Flate":
                 alpha = zlib.compress(alpha.tostring(), self.flatecompresslevel)
             elif self.compressmode == "DCT":
@@ -512,7 +512,7 @@ class bitmap_pt(canvasitem.canvasitem):
     def processPDF(self, file, writer, context, registry, bbox):
         mode, data, alpha, palettemode, palettedata = self.imagedata(False)
 
-        name = "image-%d-%s" % (id(image), self.compressmode or self.imagecompress)
+        name = "image-%d-%s" % (id(self.image), self.compressmode or self.imagecompress)
         if alpha:
             alpha = PDFimage("%s-smask" % name, self.imagewidth, self.imageheight,
                              None, None, "L", 8,
