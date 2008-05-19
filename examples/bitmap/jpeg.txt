@@ -18,7 +18,7 @@ the data and write it to the file. The straightforward solution would be to
 replace the creation of the `bitmap.jpegimage` instance by:
 
     import Image
-    i = image.open("jpeg.jpg")
+    i = Image.open("jpeg.jpg")
 
 While this works perfectly, it will result in a totally uncompressed
 image. The size of the EPS file will for example become almost 1.1MB.
