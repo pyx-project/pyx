@@ -93,7 +93,7 @@ TODO:
       graph data
 
 
-0.11 (2007/xx/xx):
+0.11 (2008/xx/xx):
   - font and dvi modules:
     - major reorganization
     - TeX mapping files are a property of the writer now (TODO: documentation)
@@ -104,7 +104,8 @@ TODO:
       (using fonts without a metrics is still supported, but properly issues
       a warning now)
     - interface for basic TeX-less text output
-    - new PS and PDF writer options: fontstripping and textaspath (TODO: documentation)
+    - new PS and PDF writer options: fontstripping, textaspath, mashasbitmap,
+      mashasbitmap_resolution (TODO: documentation)
   - graph modules:
     - graphxyz: fix position of z4 axis
     - fallbackrange for axes with vanishing range

@@ -94,11 +94,13 @@ class PSdefinition(PSresource):
 
 class _PSwriter:
 
-    def __init__(self, title=None, stripfonts=True, textaspath=False):
+    def __init__(self, title=None, stripfonts=1, textaspath=0, mashasbitmap=0, mashasbitmap_resolution=300):
         self._fontmap = None
         self.title = title
         self.stripfonts = stripfonts
         self.textaspath = textaspath
+        self.mashasbitmap = mashasbitmap
+        self.mashasbitmap_resolution = mashasbitmap_resolution
 
         # dictionary mapping font names to dictionaries mapping encoding names to encodings
         # encodings themselves are mappings from glyphnames to codepoints

@@ -36,7 +36,7 @@
 #      node2 *
 
 
-import struct, binascii, zlib
+import struct, binascii, zlib, os, tempfile
 import bbox, canvasitem, color, pdfwriter, unit
 
 
@@ -108,9 +108,27 @@ class mesh(canvasitem.canvasitem):
                         for element in self.elements for node in element.nodes])
 
     def processPS(self, file, writer, context, registry, bbox):
-        thisbbox = self.bbox()
-        bbox += thisbbox
-        file.write("""<< /ShadingType 4
+        if writer.mashasbitmap:
+            from pyx import bitmap, canvas
+            import Image
+            c = canvas.canvas()
+            c.insert(self)
+            fd, fname = tempfile.mkstemp()
+            f = os.fdopen(fd, "wb")
+            f.close()
+            c.pipeGS(fname, device="pngalpha", resolution=writer.mashasbitmap_resolution)
+            i = Image.open(fname)
+            os.unlink(fname)
+            b = bitmap.bitmap_pt(self.bbox().llx_pt, self.bbox().lly_pt, i)
+            # we slightly shift the bitmap to re-center it, as the bitmap might contain some additional border
+            # unfortunately we need to construct another bitmap instance for that ...
+            b = bitmap.bitmap_pt(self.bbox().llx_pt + 0.5*(self.bbox().width_pt()-b.bbox().width_pt()),
+                                 self.bbox().lly_pt + 0.5*(self.bbox().height_pt()-b.bbox().height_pt()), i)
+            b.processPS(file, writer, context, registry, bbox)
+        else:
+            thisbbox = self.bbox()
+            bbox += thisbbox
+            file.write("""<< /ShadingType 4
 /ColorSpace %s
 /BitsPerCoordinate 24
 /BitsPerComponent 8
@@ -120,20 +138,39 @@ class mesh(canvasitem.canvasitem):
 >> shfill\n""" % (self.elements[0].nodes[0].value.colorspacestring(),
                   thisbbox.llx_pt, thisbbox.urx_pt, thisbbox.lly_pt, thisbbox.ury_pt,
                   " ".join(["0 1" for value in self.elements[0].nodes[0].value.tostring8bit()])))
-        file.write(binascii.b2a_hex(zlib.compress(self.data(thisbbox))))
-        file.write("\n")
+            file.write(binascii.b2a_hex(zlib.compress(self.data(thisbbox))))
+            file.write("\n")
 
     def processPDF(self, file, writer, context, registry, bbox):
-        thisbbox = self.bbox()
-        bbox += thisbbox
-        d = self.data(thisbbox)
-        if writer.compress:
-            filter = "/Filter /FlateDecode\n"
-            d = zlib.compress(d)
+        if writer.mashasbitmap:
+            from pyx import bitmap, canvas
+            import Image
+            c = canvas.canvas()
+            c.insert(self)
+            fd, fname = tempfile.mkstemp()
+            f = os.fdopen(fd, "wb")
+            f.close()
+            c.pipeGS(fname, device="pngalpha", resolution=writer.mashasbitmap_resolution)
+            i = Image.open(fname)
+            os.unlink(fname)
+            b = bitmap.bitmap_pt(self.bbox().llx_pt, self.bbox().lly_pt, i)
+            # we slightly shift the bitmap to re-center it, as the bitmap might contain some additional border
+            # unfortunately we need to construct another bitmap instance for that ...
+            b = bitmap.bitmap_pt(self.bbox().llx_pt + 0.5*(self.bbox().width_pt()-b.bbox().width_pt()),
+                                 self.bbox().lly_pt + 0.5*(self.bbox().height_pt()-b.bbox().height_pt()), i)
+            b.processPDF(file, writer, context, registry, bbox)
         else:
-            filter = ""
-        name = "shading-%s" % id(self)
-        shading = PDFGenericResource("shading", name, """<< /ShadingType 4
+            thisbbox = self.bbox()
+            bbox += thisbbox
+            d = self.data(thisbbox)
+            if writer.compress:
+                filter = "/Filter /FlateDecode\n"
+                d = zlib.compress(d)
+            else:
+                filter = ""
+            name = "shading-%s" % id(self)
+            shading = PDFGenericResource("shading", name, """<<
+/ShadingType 4
 /ColorSpace %s
 /BitsPerCoordinate 24
 /BitsPerComponent 8
@@ -147,6 +184,6 @@ endstream\n""" % (self.elements[0].nodes[0].value.colorspacestring(),
                   thisbbox.llx_pt, thisbbox.urx_pt, thisbbox.lly_pt, thisbbox.ury_pt,
                   " ".join(["0 1" for value in self.elements[0].nodes[0].value.tostring8bit()]),
                   len(d), filter, d))
-        registry.add(shading)
-        registry.addresource("Shading", name, shading)
-        file.write("/%s sh\n" % name)
+            registry.add(shading)
+            registry.addresource("Shading", name, shading)
+            file.write("/%s sh\n" % name)
