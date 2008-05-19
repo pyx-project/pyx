@@ -108,7 +108,7 @@ class mesh(canvasitem.canvasitem):
                         for element in self.elements for node in element.nodes])
 
     def processPS(self, file, writer, context, registry, bbox):
-        if writer.mashasbitmap:
+        if writer.mesh_as_bitmap:
             from pyx import bitmap, canvas
             import Image
             c = canvas.canvas()
@@ -116,7 +116,7 @@ class mesh(canvasitem.canvasitem):
             fd, fname = tempfile.mkstemp()
             f = os.fdopen(fd, "wb")
             f.close()
-            c.pipeGS(fname, device="pngalpha", resolution=writer.mashasbitmap_resolution)
+            c.pipeGS(fname, device="pngalpha", resolution=writer.mesh_as_bitmap_resolution)
             i = Image.open(fname)
             os.unlink(fname)
             b = bitmap.bitmap_pt(self.bbox().llx_pt, self.bbox().lly_pt, i)
@@ -142,7 +142,7 @@ class mesh(canvasitem.canvasitem):
             file.write("\n")
 
     def processPDF(self, file, writer, context, registry, bbox):
-        if writer.mashasbitmap:
+        if writer.mesh_as_bitmap:
             from pyx import bitmap, canvas
             import Image
             c = canvas.canvas()
@@ -150,7 +150,7 @@ class mesh(canvasitem.canvasitem):
             fd, fname = tempfile.mkstemp()
             f = os.fdopen(fd, "wb")
             f.close()
-            c.pipeGS(fname, device="pngalpha", resolution=writer.mashasbitmap_resolution)
+            c.pipeGS(fname, device="pngalpha", resolution=writer.mesh_as_bitmap_resolution)
             i = Image.open(fname)
             os.unlink(fname)
             b = bitmap.bitmap_pt(self.bbox().llx_pt, self.bbox().lly_pt, i)

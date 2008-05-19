@@ -18,8 +18,8 @@ enable the mash by bitmap replacement feature use the option `mashasbitmap`
 (together with its `mashasbitmap_resolution` option)::
 
     d = document.document([document.page(g)])
-    d.writeEPSfile("color", mashasbitmap=1)
-    d.writePDFfile("color", mashasbitmap=1)
+    d.writeEPSfile("color", mesh_as_bitmap=1)
+    d.writePDFfile("color", mesh_as_bitmap=1)
 
 !! The underlying rectangular grid is created by the gridpos style. By changing
 its parameters you can also create the base rectangular grid from others than

@@ -52,7 +52,7 @@ class PST1file(pswriter.PSresource):
 
     def output(self, file, writer, registry):
         file.write("%%%%BeginFont: %s\n" % self.t1file.name)
-        if writer.stripfonts:
+        if writer.strip_fonts:
             if self.glyphnames:
                 file.write("%%Included glyphs: %s\n" % " ".join(self.glyphnames))
             if self.charcodes:
@@ -275,7 +275,7 @@ class PDFfontfile(pdfwriter.PDFobject):
         self.charcodes.update(other.charcodes)
 
     def write(self, file, writer, registry):
-        if writer.stripfonts:
+        if writer.strip_fonts:
             self.t1file.getstrippedfont(self.glyphnames, self.charcodes).outputPDF(file, writer)
         else:
             self.t1file.outputPDF(file, writer)
@@ -424,7 +424,7 @@ class T1text_pt(text_pt):
         if not self.ignorebbox:
             bbox += self.bbox()
 
-        if writer.textaspath:
+        if writer.text_as_path:
             if self.decode:
                 if self.kerning:
                     data = self.font.metric.resolvekernings(self.glyphnames, self.size_pt)
@@ -506,7 +506,7 @@ class T1text_pt(text_pt):
         if not self.ignorebbox:
             bbox += self.bbox()
 
-        if writer.textaspath:
+        if writer.text_as_path:
             if self.decode:
                 if self.kerning:
                     data = self.font.metric.resolvekernings(self.glyphnames, self.size_pt)

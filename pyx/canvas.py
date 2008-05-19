@@ -161,7 +161,7 @@ class _canvas(canvasitem.canvasitem):
             for item in self.items:
                 if isinstance(item, style.fillstyle):
                     context.fillstyles.append(item)
-                if not writer.textaspath:
+                if not writer.text_as_path:
                     if isinstance(item, font.text_pt):
                         if not context.textregion:
                             file.write("BT\n")

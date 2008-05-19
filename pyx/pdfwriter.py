@@ -288,7 +288,7 @@ class PDFwriter:
     def __init__(self, document, file,
                        title=None, author=None, subject=None, keywords=None,
                        fullscreen=0, writebbox=0, compress=1, compresslevel=6,
-                       stripfonts=1, textaspath=0, mashasbitmap=0, mashasbitmap_resolution=300):
+                       strip_fonts=1, text_as_path=0, mesh_as_bitmap=0, mesh_as_bitmap_resolution=300):
         self._fontmap = None
 
         self.title = title
@@ -302,10 +302,10 @@ class PDFwriter:
             warnings.warn("compression disabled due to missing zlib module")
         self.compress = compress
         self.compresslevel = compresslevel
-        self.stripfonts = stripfonts
-        self.textaspath = textaspath
-        self.mashasbitmap = mashasbitmap
-        self.mashasbitmap_resolution = mashasbitmap_resolution
+        self.strip_fonts = strip_fonts
+        self.text_as_path = text_as_path
+        self.mesh_as_bitmap = mesh_as_bitmap
+        self.mesh_as_bitmap_resolution = mesh_as_bitmap_resolution
 
         # dictionary mapping font names to dictionaries mapping encoding names to encodings
         # encodings themselves are mappings from glyphnames to codepoints
