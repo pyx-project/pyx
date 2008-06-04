@@ -728,7 +728,7 @@ class parallel(deformer): # <<<
 
         # avoid too small dists: we would run into instabilities
         if abs(dist) < abs(epsilon):
-            return orig_nsp
+            return normpath.normpath([orig_nsp])
 
         result = normpath.normpath()
 
