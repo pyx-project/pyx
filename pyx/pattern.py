@@ -312,6 +312,7 @@ class PDFpattern(pdfwriter.PDFobject):
         file.write("/XStep %f\n" % self.xstep)
         file.write("/YStep %f\n" % self.ystep)
         file.write("/Matrix %s\n" % str(self.trafo))
+        file.write("/Resources ")
         self.patternregistry.writeresources(file)
         if writer.compress:
             import zlib
