@@ -100,7 +100,12 @@ class _title(_text):
             dx, dy = axispos.vtickdirection(self.titlepos)
             titleattrs = self.defaulttitleattrs + self.titleattrs
             if self.titledirection is not None:
-                titleattrs.append(self.titledirection.trafo(dx, dy))
+                x2, y2 = axispos.vtickpoint_pt(self.titlepos+0.001) # XXX: axisdirection needed
+                dx2, dy2 = x2-x, y2-y
+                if dx*dy2-dy*dx2 < 0:
+                    dy2 *= -1
+                    dx2 *= -1
+                titleattrs.append(self.titledirection.trafo(dy2, -dx2))
             title = canvas.text_pt(x, y, axis.title, titleattrs)
             canvas.extent_pt += unit.topt(self.titledist)
             title.linealign_pt(canvas.extent_pt, -dx, -dy)
