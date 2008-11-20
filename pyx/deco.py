@@ -44,7 +44,7 @@ class decoratedpath(canvasitem.canvasitem):
 
     def __init__(self, path, strokepath=None, fillpath=None,
                  styles=None, strokestyles=None, fillstyles=None,
-                 ornaments=None):
+                 ornaments=None, fillrule=style.fillrule.nonzero_winding):
 
         self.path = path
 
@@ -61,6 +61,9 @@ class decoratedpath(canvasitem.canvasitem):
             self.ornaments = canvas.canvas()
         else:
             self.ornaments = ornaments
+
+        # the fillrule is either fillrule.nonzero_winding or fillrule.even_odd
+        self.fillrule = fillrule
 
         self.nostrokeranges = None
 
@@ -157,7 +160,10 @@ class decoratedpath(canvasitem.canvasitem):
                 if self.fillstyles:
                     _writestyles(self.fillstyles, context(), registry, bbox)
 
-                file.write("fill\n")
+                if self.fillrule.even_odd:
+                    file.write("eofill\n")
+                else:
+                    file.write("fill\n")
                 file.write("grestore\n")
 
                 acontext = context()
@@ -177,7 +183,10 @@ class decoratedpath(canvasitem.canvasitem):
                     file.write("gsave\n")
                     _writestyles(self.fillstyles, context(), registry, bbox)
 
-                file.write("fill\n")
+                if self.fillrule.even_odd:
+                    file.write("eofill\n")
+                else:
+                    file.write("fill\n")
                 bbox += fillpath.bbox()
 
                 if self.fillstyles:
@@ -255,7 +264,10 @@ class decoratedpath(canvasitem.canvasitem):
                 if self.strokestyles:
                     _writestrokestyles(self.strokestyles, acontext, registry, bbox)
 
-                file.write("B\n") # both stroke and fill
+                if self.fillrule.even_odd:
+                    file.write("B*\n")
+                else:
+                    file.write("B\n") # both stroke and fill
                 # take linewidth into account for bbox when stroking a path
                 bbox += strokepath.bbox().enlarged_pt(0.5*acontext.linewidth_pt)
 
@@ -266,7 +278,10 @@ class decoratedpath(canvasitem.canvasitem):
                     file.write("q\n") # gsave
                     _writefillstyles(self.fillstyles, context(), registry, bbox)
 
-                file.write("f\n") # fill
+                if self.fillrule.even_odd:
+                    file.write("f*\n")
+                else:
+                    file.write("f\n") # fill
                 bbox += fillpath.bbox()
 
                 if self.fillstyles:

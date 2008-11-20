@@ -214,13 +214,14 @@ class _canvas(canvasitem.canvasitem):
         """
 
         attrs = attr.mergeattrs(attrs)
-        attr.checkattrs(attrs, [deco.deco, deformer.deformer, style.fillstyle, style.strokestyle])
+        attr.checkattrs(attrs, [deco.deco, deformer.deformer, style.fillstyle, style.strokestyle, style.fillrule])
 
         for adeformer in attr.getattrs(attrs, [deformer.deformer]):
             path = adeformer.deform(path)
 
         styles = attr.getattrs(attrs, [style.fillstyle, style.strokestyle])
-        dp = deco.decoratedpath(path, styles=styles)
+        fillrule, = attr.getattrs(attrs, [style.fillrule]) or [style.fillrule.nonzero_winding]
+        dp = deco.decoratedpath(path, styles=styles, fillrule=fillrule)
 
         # add path decorations and modify path accordingly
         for adeco in attr.getattrs(attrs, [deco.deco]):

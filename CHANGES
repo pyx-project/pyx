@@ -123,6 +123,8 @@ TODO:
   - text module:
     - fix two bugs in the read pipe of the texrunner (thanks to
      Laurence Tratt and Eric Faurot)
+  - style module:
+    - implement style.fillrule
   - bitmap module:
     - add support for transparent bitmaps (in postscript stencil masking only)
 

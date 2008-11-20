@@ -193,3 +193,22 @@ linewidth.THIck = linewidth(_defaultlinewidth*math.sqrt(16))
 linewidth.THICk = linewidth(_defaultlinewidth*math.sqrt(32))
 linewidth.THICK = linewidth(_defaultlinewidth*math.sqrt(64))
 linewidth.clear = attr.clearclass(linewidth)
+
+
+class fillrule(attr.exclusiveattr):
+
+    """defines the fill rule to be used"""
+
+    def __init__(self, even_odd):
+        attr.exclusiveattr.__init__(self, fillrule)
+        self.even_odd = even_odd
+
+    def processPS(self, file, writer, context, registry, bbox):
+        pass
+
+    def processPDF(self, file, writer, context, registry, bbox):
+        pass
+
+fillrule.nonzero_winding = fillrule(0)
+fillrule.even_odd = fillrule(1)
+fillrule.clear = attr.clearclass(fillrule)
