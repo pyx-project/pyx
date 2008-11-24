@@ -122,7 +122,8 @@ TODO:
     - config option for format warnings
   - text module:
     - fix two bugs in the read pipe of the texrunner (thanks to
-     Laurence Tratt and Eric Faurot)
+      Laurence Tratt and Eric Faurot)
+    - fix "<" token handling in mapping file parser (thanks to Matthew West)
   - style module:
     - implement style.fillrule
   - bitmap module:
