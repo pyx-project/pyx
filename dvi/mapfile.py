@@ -42,9 +42,15 @@ class MAPline:
             else:
                 raise RuntimeError("Cannot tokenize string '%s'" % s)
 
+        next_token_is_encfile = False
         for token in tokens:
-            if token.startswith("<"):
-                if token.startswith("<<"):
+            if next_token_is_encfile:
+                self.encodingfilename = token
+                next_token_is_encfile = False
+            elif token.startswith("<"):
+                if token == "<":
+                    next_token_is_encfile = True
+                elif token.startswith("<<"):
                     # XXX: support non-partial download here
                     self.fontfilename = token[2:]
                 elif token.startswith("<["):
