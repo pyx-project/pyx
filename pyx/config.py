@@ -54,10 +54,9 @@ def getboolean(section, option, default):
 
 def getlist(section, option, default):
     try:
-        options = config.get(section, option).split()
+        return config.get(section, option).split()
     except:
         return default
-    return [config.get(section, option) for option in options]
 
 
 formatWarnings = get("general", "warnings", "default")
