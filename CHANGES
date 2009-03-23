@@ -50,6 +50,7 @@ TODO:
     - rewrite height, etc. using properties
   - dvifile module:
     - support single-character mode
+    - fix problem reported by Gert Ingold: http://sourceforge.net/mailarchive/forum.php?thread_name=20090323081817.GA34112%40physik.uni-augsburg.de&forum_name=pyx-user
   - deformer module:
     - move helper path routines to some more generic place for paths?
   - pdffile module needed (similar to epsfile)
