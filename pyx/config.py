@@ -63,7 +63,7 @@ formatWarnings = get("general", "warnings", "default")
 if formatWarnings not in ["default", "short", "shortest"]:
     raise RuntimeError("invalid config value for option 'warnings' in section 'general'")
 if formatWarnings != "default":
-    def formatwarning(message, category, filename, lineno):
+    def formatwarning(message, category, filename, lineno, line=None):
         if formatWarnings == "short":
             return "%s:%s: %s: %s\n" % (filename, lineno, category.__name__, message)
         else:
