@@ -1417,7 +1417,7 @@ class AFMfile(metric.metric):
         if self.descender is not None:
             descent = self.descender
         elif self.fontbbox is not None:
-            decent = self.fontbbox[3]
+            descent = self.fontbbox[3]
         else:
             descent = -200 # guessed default
         file.write("/Descent %d\n" % descent)
