@@ -101,12 +101,6 @@ class _texmessagestart(texmessage):
             raise TexResultError("TeX startup failed", texrunner)
         texrunner.texmessageparsed = texrunner.texmessageparsed[m.end():]
 
-        # check for filename to be processed
-        try:
-            texrunner.texmessageparsed = texrunner.texmessageparsed.split("%s.tex" % texrunner.texfilename, 1)[1]
-        except (IndexError, ValueError):
-            raise TexResultError("TeX running startup file failed", texrunner)
-
         # check for \raiseerror -- just to be sure that communication works
         try:
             texrunner.texmessageparsed = texrunner.texmessageparsed.split("*! Undefined control sequence.\n<*> \\raiseerror\n               %\n", 1)[1]
