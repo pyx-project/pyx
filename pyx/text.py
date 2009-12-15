@@ -245,28 +245,39 @@ class _texmessageload(texmessage):
 
     __implements__ = _Itexmessage
 
-    pattern = re.compile(r"\([\"]?(?P<filename>(?:(?<!\")[^()\s\n]+(?!\"))|[^()\"\n]+)[\"]?(?P<additional>[^()]*)\)")
+    pattern = re.compile(r"\([\"]?(?P<filename>(?:(?<!\")[^()\s\n]+(?!\"))|[^\"\n]+)[\"]?(?P<additional>[^()]*)\)")
 
-    def baselevels(self, s, maxlevel=1, brackets="()"):
+    def baselevels(self, s, maxlevel=1, brackets="()", quotes='""'):
         """strip parts of a string above a given bracket level
         - return a modified (some parts might be removed) version of the string s
           where all parts inside brackets with level higher than maxlevel are
           removed
         - if brackets do not match (number of left and right brackets is wrong
           or at some points there were more right brackets than left brackets)
-          just return the unmodified string"""
+          just return the unmodified string
+        - a quoted string immediately followed after a bracket is left untouched
+          even if it contains quotes itself"""
         level = 0
         highestlevel = 0
+        inquote = 0
         res = ""
-        for c in s:
-            if c == brackets[0]:
-                level += 1
-                if level > highestlevel:
-                    highestlevel = level
-            if level <= maxlevel:
+        for i, c in enumerate(s):
+            if quotes:
+                if not inquote and c == quotes[0] and i and s[i-1] == brackets[0]
+                    inquote = 1
+                elif inquote and c == quotes[1]:
+                    inquote = 0
+            if inquote:
                 res += c
-            if c == brackets[1]:
-                level -= 1
+            else:
+                if c == brackets[0]:
+                    level += 1
+                    if level > highestlevel:
+                        highestlevel = level
+                if level <= maxlevel:
+                    res += c
+                if c == brackets[1]:
+                    level -= 1
         if level == 0 and highestlevel > 0:
             return res
 
