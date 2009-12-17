@@ -262,7 +262,7 @@ class _texmessageload(texmessage):
         inquote = 0
         res = ""
         for i, c in enumerate(s):
-            if quotes:
+            if quotes and level <= maxlevel:
                 if not inquote and c == quotes[0] and i and s[i-1] == brackets[0]:
                     inquote = 1
                 elif inquote and c == quotes[1]:
