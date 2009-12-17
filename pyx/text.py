@@ -188,7 +188,13 @@ class _texmessageend(texmessage):
                                                                         texrunner.texfilename), 1)
                 texrunner.texmessageparsed = s1 + s2
             except (IndexError, ValueError):
-                pass
+                try:
+                    s1, s2 = texrunner.texmessageparsed.split("(\"%s%s%s.aux\")" % (os.curdir,
+                                                                            os.sep,
+                                                                            texrunner.texfilename), 1)
+                    texrunner.texmessageparsed = s1 + s2
+                except (IndexError, ValueError):
+                    print "debug:(\"%s%s%s.aux\")" % (os.curdir, os.sep, texrunner.texfilename)
 
         # check for "(see the transcript file for additional information)"
         try:
