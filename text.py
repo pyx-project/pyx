@@ -177,24 +177,12 @@ class _texmessageend(texmessage):
 
     __implements__ = _Itexmessage
 
+    auxPattern = re.compile(r"\(([^()]+\.aux|\"[^\"]+\.aux\")\)")
+
     def check(self, texrunner):
-        try:
-            s1, s2 = texrunner.texmessageparsed.split("(%s.aux)" % texrunner.texfilename, 1)
-            texrunner.texmessageparsed = s1 + s2
-        except (IndexError, ValueError):
-            try:
-                s1, s2 = texrunner.texmessageparsed.split("(%s%s%s.aux)" % (os.curdir,
-                                                                        os.sep,
-                                                                        texrunner.texfilename), 1)
-                texrunner.texmessageparsed = s1 + s2
-            except (IndexError, ValueError):
-                try:
-                    s1, s2 = texrunner.texmessageparsed.split("(\"%s%s%s.aux\")" % (os.curdir,
-                                                                            os.sep,
-                                                                            texrunner.texfilename), 1)
-                    texrunner.texmessageparsed = s1 + s2
-                except (IndexError, ValueError):
-                    print "debug:(\"%s%s%s.aux\")" % (os.curdir, os.sep, texrunner.texfilename)
+        m = self.auxPattern.search(texrunner.texmessageparsed)
+        if m:
+            texrunner.texmessageparsed = texrunner.texmessageparsed[:m.start()] + texrunner.texmessageparsed[m.end():]
 
         # check for "(see the transcript file for additional information)"
         try:
