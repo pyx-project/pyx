@@ -967,7 +967,8 @@ class T1file:
         return self._eexecencode(self.getdata2())
 
     newlinepattern = re.compile("\s*[\r\n]\s*")
-    uniqueidpattern = re.compile("/UniqueID\s+\d+\s+def\s+")
+    uniqueidpattern = re.compile("%?/UniqueID\s+\d+\s+def\s+")
+        # when UniqueID is commented out (as in modern latin), prepare to remove the comment character as well
 
     def getstrippedfont(self, glyphs, charcodes):
         """create a T1file instance containing only certain glyphs
