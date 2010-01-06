@@ -107,6 +107,7 @@ TODO:
     - interface for basic TeX-less text output
     - new PS and PDF writer options: strip_fonts, text_as_path, mesh_as_bitmap,
       mesh_as_bitmap_resolution (TODO: documentation)
+    - fix for commented out UniqueID
   - graph modules:
     - graphxyz: fix position of z4 axis
     - fallbackrange for axes with vanishing range
