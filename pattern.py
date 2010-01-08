@@ -32,24 +32,26 @@ class _marker: pass
 
 class pattern(canvas._canvas, attr.exclusiveattr, style.fillstyle):
 
-    def __init__(self, painttype=1, tilingtype=1, xstep=None, ystep=None, bbox=None, trafo=None, **kwargs):
+    def __init__(self, painttype=1, tilingtype=1, xstep=None, ystep=None,
+                 bbox=None, trafo=None, bboxenlarge=5*unit.t_pt, **kwargs):
         canvas._canvas.__init__(self, **kwargs)
         attr.exclusiveattr.__init__(self, pattern)
         self.id = "pattern%d" % id(self)
         self.patterntype = 1
-        if painttype not in (1,2):
+        if painttype not in (1, 2):
             raise ValueError("painttype must be 1 or 2")
         self.painttype = painttype
-        if tilingtype not in (1,2,3):
-            raise ValueError("tilingtype must be 1, 2 or 3")
+        if tilingtype not in (1, 2, 3):
+            raise ValueError("tilingtype must be 1, 2, or 3")
         self.tilingtype = tilingtype
         self.xstep = xstep
         self.ystep = ystep
         self.patternbbox = bbox
         self.patterntrafo = trafo
+        self.bboxenlarge = bboxenlarge
 
-    def __call__(self, painttype=_marker, tilingtype=_marker, xstep=_marker, ystep=_marker, 
-                 bbox=_marker, trafo=_marker):
+    def __call__(self, painttype=_marker, tilingtype=_marker, xstep=_marker, ystep=_marker,
+                 bbox=_marker, trafo=_marker, bboxenlarge=_marker):
         if painttype is _marker:
             painttype = self.painttype
         if tilingtype is _marker:
@@ -62,7 +64,9 @@ class pattern(canvas._canvas, attr.exclusiveattr, style.fillstyle):
             bbox = self.bbox
         if trafo is _marker:
             trafo = self.trafo
-        return pattern(painttype, tilingtype, xstep, ystep, bbox, trafo)
+        if bboxenlarge is _marker:
+            bboxenlarge = self.bboxenlarge
+        return pattern(painttype, tilingtype, xstep, ystep, bbox, trafo, bboxenlarge)
 
     def bbox(self):
         return bboxmodule.empty()
@@ -76,24 +80,24 @@ class pattern(canvas._canvas, attr.exclusiveattr, style.fillstyle):
         patternfile.close()
 
         if self.xstep is None:
-           xstep = unit.topt(realpatternbbox.width())
+            xstep = unit.topt(realpatternbbox.width())
         else:
-           xstep = unit.topt(self.xstep)
+            xstep = unit.topt(self.xstep)
         if self.ystep is None:
             ystep = unit.topt(realpatternbbox.height())
         else:
-           ystep = unit.topt(self.ystep)
+            ystep = unit.topt(self.ystep)
         if not xstep:
             raise ValueError("xstep in pattern cannot be zero")
         if not ystep:
             raise ValueError("ystep in pattern cannot be zero")
-        patternbbox = self.patternbbox or realpatternbbox.enlarged(5*unit.pt)
+        patternbbox = self.patternbbox or realpatternbbox.enlarged(self.bboxenlarge)
 
         patternprefix = "\n".join(("<<",
                                    "/PatternType %d" % self.patterntype,
                                    "/PaintType %d" % self.painttype,
                                    "/TilingType %d" % self.tilingtype,
-                                   "/BBox[%d %d %d %d]" % patternbbox.lowrestuple_pt(),
+                                   "/BBox [%g %g %g %g]" % patternbbox.highrestuple_pt(),
                                    "/XStep %g" % xstep,
                                    "/YStep %g" % ystep,
                                    "/PaintProc {\nbegin\n"))
