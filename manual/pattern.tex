@@ -39,10 +39,12 @@ bounding box.\\
 bounding box.\\
 \texttt{bbox}&bounding box of pattern. Use \texttt{None} for an
 automatic determination of the bounding box (including an
-enlargement by $5$ pts on each side.)\\
+enlargement by \texttt{bboxenlarge} pts on each side.)\\
 \texttt{trafo}&additional transformation applied to pattern or
 \texttt{None} (default). This may be used to rotate the pattern or to
-shift its phase (by a translation).
+shift its phase (by a translation).\\
+\texttt{bboxenlarge}&enlargement when using the automatic bounding box
+determination; default is 5 pts.
 \end{tabularx}
 \medskip
 
