@@ -132,6 +132,8 @@ TODO:
     - implement style.fillrule
   - bitmap module:
     - add support for transparent bitmaps (in postscript stencil masking only)
+  - normpath module:
+    - raise correct exception (thanks to Axel Freyn)
 
 
 0.10 (2007/10/03):
