@@ -109,7 +109,9 @@ TODO:
       mesh_as_bitmap_resolution (TODO: documentation)
     - fix for commented out UniqueID
   - graph modules:
-    - graphxyz: fix position of z4 axis
+    - graphxyz:
+      - fix position of z4 axis
+      - set correct errorname for z axis (thanks to Axel Freyn)
     - fallbackrange for axes with vanishing range
     - dokeyitem method (to be called with a plotitem) to alter the key order
     - doplot() was renamed to doplotitem(), dodata() was renamed to doplot()

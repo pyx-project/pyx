@@ -644,7 +644,7 @@ class graphxyz(graphxy):
                 else:
                     self.axes[axisname] = axis.linkedaxis(self.axes[okey], axisname)
         if not axes.has_key("z"):
-            self.axes["z"] = axis.anchoredaxis(axis.linear(), self.texrunner, axisname)
+            self.axes["z"] = axis.anchoredaxis(axis.linear(), self.texrunner, "z")
 
         if self.axes.has_key("x"):
             self.xbasepath = self.axes["x"].basepath
